@@ -31,20 +31,19 @@ import static org.mockito.Mockito.*;
 public class GetBlockHeaderMessageTest {
 
     private byte[] blockHash;
-    private int id;
-    private GetBlockHeaderMessage testMessage;
     private LCMessageFactory messageFactory;
 
     @Before
     public void setUp() {
-        id = 1;
         blockHash = randomHash();
         messageFactory = new LCMessageFactory(mock(BlockFactory.class));
-        testMessage = new GetBlockHeaderMessage(id, blockHash);
     }
 
     @Test
     public void messageCreationShouldBeCorrect() {
+        long id = 1;
+        GetBlockHeaderMessage testMessage = new GetBlockHeaderMessage(id, blockHash);
+
         assertEquals(id, testMessage.getId());
         assertArrayEquals(blockHash, testMessage.getBlockHash());
         assertEquals(BlockHeaderMessage.class, testMessage.getAnswerMessage());
@@ -53,6 +52,18 @@ public class GetBlockHeaderMessageTest {
 
     @Test
     public void messageEncodeDecodeShouldBeCorrect() {
+        long id = 1;
+        createMessageAndAssertEncodeDecode(id);
+    }
+
+    @Test
+    public void messageEncodeDecodeShouldBeCorrectWithZeroId() {
+        long id = 0;
+        createMessageAndAssertEncodeDecode(id);
+    }
+
+    private void createMessageAndAssertEncodeDecode(long id) {
+        GetBlockHeaderMessage testMessage = new GetBlockHeaderMessage(id, blockHash);
         byte[] encoded = testMessage.getEncoded();
         GetBlockHeaderMessage getBlockHeaderMessage = (GetBlockHeaderMessage) messageFactory.create(GET_BLOCK_HEADER.asByte(), encoded);
 

@@ -33,19 +33,18 @@ public class GetCodeMessageTest {
 
     private byte[] blockHash;
     private byte[] address;
-    private int id;
-    private GetCodeMessage testMessage;
 
     @Before
     public void setUp() {
         blockHash = randomHash();
         address = randomAddress().getBytes();
-        id = 1;
-        testMessage = new GetCodeMessage(id, blockHash, address);
+
     }
 
     @Test
     public void messageCreationShouldBeCorrect() {
+        long id = 1;
+        GetCodeMessage testMessage = new GetCodeMessage(id, blockHash, address);
         assertEquals(testMessage.getId(), id);
         assertArrayEquals(testMessage.getBlockHash(), blockHash);
         assertArrayEquals(testMessage.getAddress(), address);
@@ -54,6 +53,18 @@ public class GetCodeMessageTest {
 
     @Test
     public void messageEncodeDecodeShouldBeCorrect() {
+        long id = 1;
+        createMessageAndAssertEncodeDecode(id);
+    }
+
+    @Test
+    public void messageEncodeDecodeShouldBeCorrectWithZeroId() {
+        long id = 0;
+        createMessageAndAssertEncodeDecode(id);
+    }
+
+    private void createMessageAndAssertEncodeDecode(long id) {
+        GetCodeMessage testMessage = new GetCodeMessage(id, blockHash, address);
         byte[] encoded = testMessage.getEncoded();
         GetCodeMessage getCodeMessage = new GetCodeMessage(encoded);
 

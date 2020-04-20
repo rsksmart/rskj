@@ -35,10 +35,20 @@ public class BlockReceiptsMessageTest {
 
     @Test
     public void messageEncodeDecodeShouldBeCorrect() {
+        int requestId = 1;
+        createMessageAndAssertEncodeDecode(requestId);
+    }
+
+    @Test
+    public void messageEncodeDecodeShouldBeCorrectWithZeroId() {
+        int requestId = 0;
+        createMessageAndAssertEncodeDecode(requestId);
+    }
+
+    private void createMessageAndAssertEncodeDecode(int requestId) {
         List<TransactionReceipt> receipts = new LinkedList<>();
         receipts.add(createReceipt());
         receipts.add(createReceipt());
-        int requestId = 1;
 
         BlockReceiptsMessage testMessage = new BlockReceiptsMessage(requestId, receipts);
         byte[] encoded = testMessage.getEncoded();

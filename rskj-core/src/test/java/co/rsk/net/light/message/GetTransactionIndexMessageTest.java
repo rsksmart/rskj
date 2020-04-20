@@ -32,16 +32,15 @@ import static org.mockito.Mockito.mock;
 public class GetTransactionIndexMessageTest {
 
     private byte[] txHash;
-    private int id;
 
     @Before
     public void setUp() {
         txHash = HashUtil.randomHash();
-        id = 1;
     }
 
     @Test
     public void messageCreationShouldBeCorrect() {
+        long id = 1;
         GetTransactionIndexMessage testMessage = new GetTransactionIndexMessage(id, txHash);
         assertEquals(LightClientMessageCodes.GET_TRANSACTION_INDEX, testMessage.getCommand());
         assertArrayEquals(testMessage.getTxHash(), txHash);
@@ -50,7 +49,17 @@ public class GetTransactionIndexMessageTest {
 
     @Test
     public void messageEncodeDecodeShouldBeCorrect() {
+        long id = 1;
+        createMessageAndAssertEncodeDecode(id);
+    }
 
+    @Test
+    public void messageEncodeDecodeShouldBeCorrectWithZeroId() {
+        long id = 0;
+        createMessageAndAssertEncodeDecode(id);
+    }
+
+    private void createMessageAndAssertEncodeDecode(long id) {
         GetTransactionIndexMessage testMessage = new GetTransactionIndexMessage(id, txHash);
         byte[] encoded = testMessage.getEncoded();
         LCMessageFactory lcMessageFactory = new LCMessageFactory(mock(BlockFactory.class));

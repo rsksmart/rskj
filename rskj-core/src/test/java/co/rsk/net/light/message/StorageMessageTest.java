@@ -31,19 +31,18 @@ import static org.mockito.Mockito.mock;
 
 public class StorageMessageTest {
 
-    private long id;
     private byte[] merkleInclusionProof;
     private byte[] storageValue;
 
     @Before
     public void setUp() {
-        id = 1;
         merkleInclusionProof = HashUtil.randomHash();
         storageValue = HashUtil.randomHash();
     }
 
     @Test
     public void messageCreationShouldBeCorrect() {
+        long id = 1;
         StorageMessage testMessage = new StorageMessage(id, merkleInclusionProof, storageValue);
         assertEquals(LightClientMessageCodes.STORAGE, testMessage.getCommand());
         assertEquals(testMessage.getId(), id);
@@ -53,6 +52,17 @@ public class StorageMessageTest {
 
     @Test
     public void messageEncodeDecodeShouldBeCorrect() {
+        long id = 1;
+        createMessageAndAssertEncodeDecode(id);
+    }
+
+    @Test
+    public void messageEncodeDecodeShouldBeCorrectWithZeroId() {
+        long id = 0;
+        createMessageAndAssertEncodeDecode(id);
+    }
+
+    private void createMessageAndAssertEncodeDecode(long id) {
         StorageMessage testMessage = new StorageMessage(id, merkleInclusionProof, storageValue);
         byte[] encoded = testMessage.getEncoded();
         LCMessageFactory lcMessageFactory = new LCMessageFactory(mock(BlockFactory.class));

@@ -31,17 +31,15 @@ import static org.mockito.Mockito.mock;
 public class GetBlockBodyMessageTest {
 
     private byte[] hash;
-    private int id;
 
     @Before
     public void setUp() {
         hash = HashUtil.randomHash();
-        id = 1;
     }
 
     @Test
     public void messageCreationShouldBeCorrect() {
-
+        long id = 1;
         GetBlockBodyMessage testMessage = new GetBlockBodyMessage(id, hash);
         assertEquals(GET_BLOCK_BODY, testMessage.getCommand());
         assertArrayEquals(testMessage.getBlockHash(), hash);
@@ -50,7 +48,17 @@ public class GetBlockBodyMessageTest {
 
     @Test
     public void messageEncodeDecodeShouldBeCorrect() {
+        long id = 1;
+        createMessageAndAssertEncodeDecode(id);
+    }
 
+    @Test
+    public void messageEncodeDecodeShouldBeCorrectWithZeroId() {
+        long id = 0;
+        createMessageAndAssertEncodeDecode(id);
+    }
+
+    private void createMessageAndAssertEncodeDecode(long id) {
         GetBlockBodyMessage testMessage = new GetBlockBodyMessage(id, hash);
         byte[] encoded = testMessage.getEncoded();
         LCMessageFactory lcMessageFactory = new LCMessageFactory(mock(BlockFactory.class));
