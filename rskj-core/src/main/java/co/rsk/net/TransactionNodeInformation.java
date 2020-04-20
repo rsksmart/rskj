@@ -34,11 +34,8 @@ import java.util.*;
 public class TransactionNodeInformation {
     private final LinkedHashMap<Keccak256, Set<NodeID>> nodesByTransaction;
     private final int maxTransactions;
-    private final int maxPeers;
-
-    public TransactionNodeInformation(final int maxTransactions, final int maxPeers) {
+    public TransactionNodeInformation(final int maxTransactions) {
         this.maxTransactions = maxTransactions;
-        this.maxPeers = maxPeers;
 
         // Transactions are evicted in Least-recently-accessed order.
         nodesByTransaction = new LinkedHashMap<Keccak256, Set<NodeID>>(TransactionNodeInformation.this.maxTransactions, 0.75f, true) {
@@ -50,7 +47,7 @@ public class TransactionNodeInformation {
     }
 
     public TransactionNodeInformation() {
-        this(1000, 50);
+        this(1000);
     }
 
     /**
