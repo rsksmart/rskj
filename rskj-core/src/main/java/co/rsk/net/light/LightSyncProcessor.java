@@ -80,7 +80,8 @@ public class LightSyncProcessor {
     public void processStatusMessage(StatusMessage msg, LightPeer lightPeer, ChannelHandlerContext ctx, LightClientHandler lightClientHandler) {
         LightStatus status = msg.getStatus();
         try {
-            loggerNet.debug("Receiving Status - block {} {}", status.getBestNumber(), HashUtil.shortHash(status.getBestHash()));
+            String bestHashLog = HashUtil.shortHash(status.getBestHash());
+            loggerNet.debug("Receiving Status - block {} {}", status.getBestNumber(), bestHashLog);
 
             byte protocolVersion = status.getProtocolVersion();
             if (protocolVersion != version) {
@@ -115,7 +116,7 @@ public class LightSyncProcessor {
                 return;
             }
         } catch (NoSuchElementException e) {
-            loggerNet.debug("LCHandler already removed");
+            loggerNet.debug("LCHandler already removed - exception: {}", e.getMessage());
         }
 
         if (peerStatuses.size() >= MAX_PEER_CONNECTIONS) {
