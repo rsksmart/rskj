@@ -46,7 +46,7 @@ public class LightClientHandler extends SimpleChannelInboundHandler<LightClientM
     @Override
     public void channelRead0(ChannelHandlerContext ctx, LightClientMessage msg) throws UnsupportedOperationException {
         if (!LightClientMessageCodes.inRange(msg.getCommand().asByte())) {
-            throw new UnsupportedOperationException("Message not in supported Range");
+            return;
         }
 
         MessageVisitor visitor = new MessageVisitor(lightPeer, lightProcessor, lightSyncProcessor, ctx,this);
