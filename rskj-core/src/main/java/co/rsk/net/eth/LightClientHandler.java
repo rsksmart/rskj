@@ -22,8 +22,6 @@ import co.rsk.net.light.*;
 import co.rsk.net.light.message.*;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 
 /**
@@ -32,7 +30,6 @@ import org.slf4j.LoggerFactory;
  */
 
 public class LightClientHandler extends SimpleChannelInboundHandler<LightClientMessage> {
-    private static final Logger logger = LoggerFactory.getLogger("lightnet");
     private final LightPeer lightPeer;
     private final LightSyncProcessor lightSyncProcessor;
     private final LightProcessor lightProcessor;
