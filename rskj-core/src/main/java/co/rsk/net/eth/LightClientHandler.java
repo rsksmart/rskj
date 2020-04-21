@@ -44,7 +44,7 @@ public class LightClientHandler extends SimpleChannelInboundHandler<LightClientM
     }
 
     @Override
-    public void channelRead0(ChannelHandlerContext ctx, LightClientMessage msg) throws UnsupportedOperationException {
+    public void channelRead0(ChannelHandlerContext ctx, LightClientMessage msg) {
         if (!LightClientMessageCodes.inRange(msg.getCommand().asByte())) {
             return;
         }
