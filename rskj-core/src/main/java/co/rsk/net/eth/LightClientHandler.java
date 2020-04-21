@@ -45,10 +45,6 @@ public class LightClientHandler extends SimpleChannelInboundHandler<LightClientM
 
     @Override
     public void channelRead0(ChannelHandlerContext ctx, LightClientMessage msg) {
-        if (!LightClientMessageCodes.inRange(msg.getCommand().asByte())) {
-            return;
-        }
-
         MessageVisitor visitor = new MessageVisitor(lightPeer, lightProcessor, lightSyncProcessor, ctx,this);
         msg.accept(visitor);
     }
