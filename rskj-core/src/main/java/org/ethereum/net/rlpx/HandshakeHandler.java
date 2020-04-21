@@ -375,7 +375,7 @@ public class HandshakeHandler extends ByteToMessageDecoder {
     private void processHelloMessage(ChannelHandlerContext ctx, HelloMessage helloMessage) {
         List<Capability> capInCommon = configCapabilities.getSupportedCapabilities(helloMessage);
         channel.initMessageCodes(capInCommon);
-        List<Capability> capsToActivate = new LinkedList();
+        List<Capability> capsToActivate = new LinkedList<>();
         for (Capability capability : capInCommon) {
             if (Capability.RSK.equals(capability.getName()) || Capability.LC.equals(capability.getName())) {
                 capsToActivate.add(capability);
