@@ -17,6 +17,7 @@
  */
 package co.rsk;
 
+import co.rsk.trie.NodeReference;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStore;
 import org.bouncycastle.util.encoders.Hex;
@@ -43,26 +44,32 @@ public class ExportState {
 
         processTrie(trie);
     }
-
+git 
     private static void processTrie(Trie trie) {
         System.out.println(Hex.toHexString(trie.toMessage()));
 
-        Optional<Trie> left = trie.getLeft().getNode();
+        NodeReference leftReference = trie.getLeft();
 
-        if (left.isPresent()) {
-            processTrie(left.get());
+        if (!leftReference.isEmpty() && !leftReference.isEmbeddable()) {
+            Optional<Trie> left = leftReference.getNode();
+
+            if (left.isPresent()) {
+                processTrie(left.get());
+            }
         }
 
-        Optional<Trie> right = trie.getRight().getNode();
+        NodeReference rightReference = trie.getRight();
 
-        if (right.isPresent()) {
-            processTrie(right.get());
+        if (!rightReference.isEmpty() && !rightReference.isEmbeddable()) {
+            Optional<Trie> right = rightReference.getNode();
+
+            if (right.isPresent()) {
+                processTrie(right.get());
+            }
         }
 
-        if (!trie.hasLongValue()) {
-            return;
+        if (trie.hasLongValue()) {
+            System.out.println(Hex.toHexString(trie.getValue()));
         }
-
-        System.out.println(Hex.toHexString(trie.getValue()));
     }
 }
