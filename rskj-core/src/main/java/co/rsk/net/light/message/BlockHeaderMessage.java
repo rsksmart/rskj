@@ -19,6 +19,7 @@
 package co.rsk.net.light.message;
 
 import co.rsk.net.light.LightClientMessageCodes;
+import co.rsk.net.light.MessageVisitor;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.util.RLP;
@@ -70,5 +71,10 @@ public class BlockHeaderMessage extends LightClientMessage {
 
     public long getId() {
         return id;
+    }
+
+    @Override
+    public void accept(MessageVisitor v) {
+        v.apply(this);
     }
 }

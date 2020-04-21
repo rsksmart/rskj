@@ -18,9 +18,7 @@
 
 package co.rsk.net.eth;
 
-import co.rsk.net.light.LightPeer;
-import co.rsk.net.light.LightProcessor;
-import co.rsk.net.light.LightSyncProcessor;
+import co.rsk.net.light.*;
 import co.rsk.net.light.message.*;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
@@ -36,8 +34,8 @@ import org.slf4j.LoggerFactory;
 public class LightClientHandler extends SimpleChannelInboundHandler<LightClientMessage> {
     private static final Logger logger = LoggerFactory.getLogger("lightnet");
     private final LightPeer lightPeer;
-    private LightSyncProcessor lightSyncProcessor;
-    private LightProcessor lightProcessor;
+    private final LightSyncProcessor lightSyncProcessor;
+    private final LightProcessor lightProcessor;
 
     public LightClientHandler(LightPeer lightPeer, LightProcessor lightProcessor, LightSyncProcessor lightSyncProcessor) {
         this.lightProcessor = lightProcessor;
@@ -46,91 +44,13 @@ public class LightClientHandler extends SimpleChannelInboundHandler<LightClientM
     }
 
     @Override
-    public void channelRead0(ChannelHandlerContext ctx, LightClientMessage msg) {
-        switch (msg.getCommand()) {
-            case STATUS:
-                logger.debug("Read message: {} STATUS. Sending Test response", msg);
-                lightSyncProcessor.processStatusMessage((StatusMessage) msg, lightPeer, ctx, this);
-                break;
-            case GET_BLOCK_RECEIPTS:
-                logger.debug("Read message: {} GET_BLOCK_RECEIPTS", msg);
-                GetBlockReceiptsMessage getBlockReceiptsMsg = (GetBlockReceiptsMessage) msg;
-                lightProcessor.processGetBlockReceiptsMessage(getBlockReceiptsMsg.getId(), getBlockReceiptsMsg.getBlockHash(), lightPeer);
-                break;
-            case BLOCK_RECEIPTS:
-                logger.debug("Read message: {} BLOCK_RECEIPTS", msg);
-                BlockReceiptsMessage blockReceiptsMsg = (BlockReceiptsMessage) msg;
-                lightProcessor.processBlockReceiptsMessage(blockReceiptsMsg.getId(), blockReceiptsMsg.getBlockReceipts(), lightPeer);
-                break;
-            case GET_TRANSACTION_INDEX:
-                logger.debug("Read message: {} GET_TRANSACTION_INDEX.", msg);
-                GetTransactionIndexMessage getTxIndexMsg = (GetTransactionIndexMessage) msg;
-                lightProcessor.processGetTransactionIndex(getTxIndexMsg.getId(), getTxIndexMsg.getTxHash(), lightPeer);
-                break;
-            case TRANSACTION_INDEX:
-                logger.debug("Read message: {} TRANSACTION_INDEX.", msg);
-                TransactionIndexMessage txIndexMsg = (TransactionIndexMessage) msg;
-                lightProcessor.processTransactionIndexMessage(txIndexMsg.getId(), txIndexMsg.getBlockNumber(),
-                        txIndexMsg.getBlockHash(), txIndexMsg.getTransactionIndex(), lightPeer);
-                break;
-            case GET_CODE:
-                logger.debug("Read message: {} GET_CODE", msg);
-                GetCodeMessage getCodeMsg = (GetCodeMessage) msg;
-                lightProcessor.processGetCodeMessage(getCodeMsg.getId(), getCodeMsg.getBlockHash(), getCodeMsg.getAddress(), lightPeer);
-                break;
-            case CODE:
-                logger.debug("Read message: {} CODE", msg);
-                CodeMessage codeMsg = (CodeMessage) msg;
-                lightProcessor.processCodeMessage(codeMsg.getId(), codeMsg.getCodeHash(), lightPeer);
-                break;
-            case GET_ACCOUNTS:
-                logger.debug("Read message: {} GET_ACCOUNTS.", msg);
-                GetAccountsMessage getAccountsMsg = (GetAccountsMessage) msg;
-                lightProcessor.processGetAccountsMessage(getAccountsMsg.getId(), getAccountsMsg.getBlockHash(), getAccountsMsg.getAddressHash(), lightPeer);
-                break;
-            case ACCOUNTS:
-                logger.debug("Read message: {} ACCOUNTS.", msg);
-                AccountsMessage accountsMsg = (AccountsMessage) msg;
-                lightProcessor.processAccountsMessage(accountsMsg.getId(), accountsMsg.getMerkleInclusionProof(),
-                        accountsMsg.getNonce(), accountsMsg.getBalance(), accountsMsg.getCodeHash(),
-                        accountsMsg.getStorageRoot(), lightPeer);
-                break;
-            case GET_BLOCK_HEADER:
-                logger.debug("Read message: {} GET_BLOCK_HEADER", msg);
-                GetBlockHeaderMessage getBlockHeaderMessage = (GetBlockHeaderMessage) msg;
-                lightProcessor.processGetBlockHeaderMessage(getBlockHeaderMessage.getId(), getBlockHeaderMessage.getBlockHash(), lightPeer);
-                break;
-            case BLOCK_HEADER:
-                logger.debug("Read message: {} BLOCK_HEADER", msg);
-                BlockHeaderMessage blockHeaderMessage = (BlockHeaderMessage) msg;
-                lightSyncProcessor.processBlockHeaderMessage(blockHeaderMessage.getId(), blockHeaderMessage.getBlockHeader(), lightPeer);
-                break;
-            case GET_BLOCK_BODY:
-                logger.debug("Read message: {} GET_BLOCK_BODY", msg);
-                GetBlockBodyMessage getBlockBodyMessage = (GetBlockBodyMessage) msg;
-                lightProcessor.processGetBlockBodyMessage(getBlockBodyMessage.getId(), getBlockBodyMessage.getBlockHash(), lightPeer);
-                break;
-            case BLOCK_BODY:
-                logger.debug("Read message: {} BLOCK_BODY", msg);
-                BlockBodyMessage blockBodyMessage = (BlockBodyMessage) msg;
-                lightProcessor.processBlockBodyMessage(blockBodyMessage.getId(), blockBodyMessage.getUncles(), blockBodyMessage.getTransactions(), lightPeer);
-                break;
-            case GET_STORAGE:
-                logger.debug("Read message: {} GET_STORAGE", msg);
-                GetStorageMessage getStorageMessage = (GetStorageMessage) msg;
-                lightProcessor.processGetStorageMessage(getStorageMessage.getId(), getStorageMessage.getBlockHash(),
-                        getStorageMessage.getAddressHash(), getStorageMessage.getStorageKeyHash(), lightPeer);
-                break;
-            case STORAGE:
-                logger.debug("Read message: {} STORAGE", msg);
-                StorageMessage storageMessage = (StorageMessage) msg;
-                lightProcessor.processStorageMessage(storageMessage.getId(), storageMessage.getMerkleInclusionProof(),
-                        storageMessage.getStorageValue(), lightPeer);
-                break;
-            default:
-                break;
+    public void channelRead0(ChannelHandlerContext ctx, LightClientMessage msg) throws UnsupportedOperationException {
+        if (LightClientMessageCodes.inRange(msg.getCommand().asByte())) {
+            throw new UnsupportedOperationException("Message not in supported Range");
         }
 
+        MessageVisitor visitor = new MessageVisitor(lightPeer, lightProcessor, lightSyncProcessor, ctx,this);
+        msg.accept(visitor);
     }
 
     public void activate() {

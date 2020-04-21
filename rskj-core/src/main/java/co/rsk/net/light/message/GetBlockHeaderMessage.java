@@ -19,6 +19,7 @@
 package co.rsk.net.light.message;
 
 import co.rsk.net.light.LightClientMessageCodes;
+import co.rsk.net.light.MessageVisitor;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
 import org.spongycastle.util.BigIntegers;
@@ -70,5 +71,10 @@ public class GetBlockHeaderMessage extends LightClientMessage {
     @Override
     public String toString() {
         return "";
+    }
+
+    @Override
+    public void accept(MessageVisitor v) {
+        v.apply(this);
     }
 }

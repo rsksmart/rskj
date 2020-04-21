@@ -18,6 +18,7 @@
 
 package co.rsk.net.light.message;
 
+import co.rsk.net.light.MessageVisitor;
 import org.bouncycastle.util.BigIntegers;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.core.BlockHeader;
@@ -110,5 +111,10 @@ public class BlockBodyMessage extends LightClientMessage {
 
     public List<BlockHeader> getUncles() {
         return new LinkedList<>(uncles);
+    }
+
+    @Override
+    public void accept(MessageVisitor v) {
+        v.apply(this);
     }
 }

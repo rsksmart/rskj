@@ -1,6 +1,7 @@
 package co.rsk.net.light.message;
 
 import co.rsk.net.light.LightClientMessageCodes;
+import co.rsk.net.light.MessageVisitor;
 import org.ethereum.net.message.Message;
 
 public abstract class LightClientMessage extends Message {
@@ -15,4 +16,6 @@ public abstract class LightClientMessage extends Message {
     public LightClientMessageCodes getCommand() {
         return LightClientMessageCodes.fromByte(code);
     }
+
+    public abstract void accept(MessageVisitor v);
 }
