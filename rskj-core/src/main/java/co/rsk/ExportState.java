@@ -44,7 +44,7 @@ public class ExportState {
 
         processTrie(trie);
     }
-git 
+
     private static void processTrie(Trie trie) {
         System.out.println(Hex.toHexString(trie.toMessage()));
 
