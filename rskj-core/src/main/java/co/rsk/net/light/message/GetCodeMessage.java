@@ -18,6 +18,7 @@
 
 package co.rsk.net.light.message;
 
+import co.rsk.net.light.MessageVisitor;
 import org.bouncycastle.util.BigIntegers;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
@@ -76,5 +77,10 @@ public class GetCodeMessage extends LightClientMessage {
     @Override
     public String toString() {
         return "";
+    }
+
+    @Override
+    public void accept(MessageVisitor v) {
+        v.apply(this);
     }
 }

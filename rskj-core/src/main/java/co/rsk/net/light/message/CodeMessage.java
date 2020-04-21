@@ -18,6 +18,7 @@
 
 package co.rsk.net.light.message;
 
+import co.rsk.net.light.MessageVisitor;
 import org.bouncycastle.util.BigIntegers;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
@@ -67,5 +68,10 @@ public class CodeMessage extends LightClientMessage{
 
     public byte[] getCodeHash() {
         return codeHash.clone();
+    }
+
+    @Override
+    public void accept(MessageVisitor v) {
+        v.apply(this);
     }
 }
