@@ -18,36 +18,46 @@
 package co.rsk;
 
 import co.rsk.core.BlockDifficulty;
-import co.rsk.trie.NodeReference;
-import co.rsk.trie.Trie;
-import co.rsk.trie.TrieStore;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.Block;
+import org.ethereum.core.BlockFactory;
 import org.ethereum.db.BlockStore;
 
-import java.util.Optional;
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+import java.math.BigInteger;
 
 /**
- * The entrypoint for export blocks CLI util
+ * The entrypoint for import blocks CLI util
  */
-public class ExportBlocks {
-    public static void main(String[] args) {
+public class ImportBlocks {
+    public static void main(String[] args) throws IOException {
         RskContext ctx = new RskContext(args);
+        BlockFactory blockFactory = ctx.getBlockFactory();
         BlockStore blockStore = ctx.getBlockStore();
 
-        long fromBlockNumber = Long.parseLong(args[0]);
-        long toBlockNumber = Long.parseLong(args[1]);
+        String filename = args[0];
 
-        for (long n = fromBlockNumber; n <= toBlockNumber; n++) {
-            Block block = blockStore.getChainBlockByNumber(n);
-            BlockDifficulty totalDifficulty = blockStore.getTotalDifficultyForHash(block.getHash().getBytes());
+        BufferedReader reader = new BufferedReader(new FileReader(filename));
 
-            System.out.println(
-                block.getNumber() + "," +
-                Hex.toHexString(block.getHash().getBytes()) + "," +
-                Hex.toHexString(totalDifficulty.getBytes()) + "," +
-                Hex.toHexString(block.getEncoded())
-            );
+        for (String line = reader.readLine(); line != null; line = reader.readLine()) {
+            String[] parts = line.split(",");
+
+            if (parts.length < 4) {
+                continue;
+            }
+
+            byte[] encoded = Hex.decode(parts[3]);
+
+            Block block = blockFactory.decodeBlock(encoded);
+
+            BlockDifficulty totalDifficulty = new BlockDifficulty(new BigInteger(Hex.decode(parts[2])));
+
+            blockStore.saveBlock(block, totalDifficulty, true);
         }
+
+        blockStore.flush();
     }
 }
