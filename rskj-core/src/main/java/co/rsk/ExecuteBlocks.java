@@ -42,6 +42,14 @@ public class ExecuteBlocks {
             Block block = blockStore.getChainBlockByNumber(n);
             Block parent = blockStore.getBlockByHash(block.getParentHash().getBytes());
 
+            System.out.println("block number " + block.getNumber());
+            System.out.println("block hash " + Hex.toHexString(block.getHash().getBytes()));
+            System.out.println("state root " + Hex.toHexString(block.getStateRoot()));
+
+            System.out.println("parent number " + parent.getNumber());
+            System.out.println("parent hash " + Hex.toHexString(parent.getHash().getBytes()));
+            System.out.println("parent root " + Hex.toHexString(parent.getStateRoot()));
+
             blockExecutor.execute(block, parent.getHeader(), false, false);
         }
 
