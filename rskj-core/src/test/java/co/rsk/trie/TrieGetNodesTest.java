@@ -75,12 +75,12 @@ public class TrieGetNodesTest {
     @Test
     public void putKeyAndSubkeyAndGetNodes() {
         Trie trie = new Trie();
-
         //order of trie puts() does not matter for getNodes()
-        trie = trie.put("foo", "bar".getBytes()); // "foo": main key of interest 
+        trie = trie.put("foo", "abc".getBytes()); // "foo": main key of interest
         trie = trie.put("f", "shortSubKeyVal".getBytes()); //short subkey "f", even empty "" works
         trie = trie.put("baz", "notSubkeyValue".getBytes()); // not a subkey
         trie = trie.put("fo", "longSubKeyVal".getBytes()); //a longer subkey
+        // System.out.println(trie.getSharedPath());
         // adding "super" keys is irrelevant for getNodes()
         // Cos we walk up the path, towards root node, not down.
         // Unrelated keys are fine, as they can be linked to upstream branches.  
@@ -88,7 +88,9 @@ public class TrieGetNodesTest {
         trie = trie.put("foodies", "superPlusKeyVal".getBytes()); //a larger super key
         
         // add another unrelated key (different keypath from "foo")
-        trie = trie.put("diffKey", "diffVal".getBytes());
+        trie = trie.put("diffKey", "diffVal".getBytes()); //5th node for getNodes()
+        // adding the following "fad" will add a 6th node, but draw an error for null
+        //trie = trie.put("fad", "diffValFad".getBytes()); //6th node for getNodes()
         
         // getNodes() ..
         // nodes with subkeys are added to the list first, along with their values.
@@ -101,7 +103,7 @@ public class TrieGetNodesTest {
         Assert.assertFalse(nodes.isEmpty());
         Assert.assertEquals(5, nodes.size());  
 
-        Assert.assertArrayEquals("bar".getBytes(StandardCharsets.UTF_8), nodes.get(0).getValue());
+        Assert.assertArrayEquals("abc".getBytes(StandardCharsets.UTF_8), nodes.get(0).getValue());
         Assert.assertArrayEquals("longSubKeyVal".getBytes(StandardCharsets.UTF_8), nodes.get(1).getValue());
         //Assert.assertNotNull(nodes.get(1).getValue()); //subkey's value is getable
         Assert.assertNotNull(nodes.get(2).getValue()); // subkey values are getable

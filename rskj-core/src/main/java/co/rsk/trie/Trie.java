@@ -88,9 +88,8 @@ public class Trie {
     // execute much faster without the need to actually retrieve the data.
     // if valueLength>32 and value==null this means the value has not been retrieved yet.
     // if valueLength==0, then there is no value AND no node.
-    // This trie structure does not distinguish between empty arrays
-    // and nulls. Storing an empty byte array has the same effect as removing the node.
-    //
+    // This trie structure does not distinguish between empty arrays and nulls.
+    // Thus, storing an empty byte array has the same effect as removing the node.
     private final Uint24 valueLength;
 
     // For lazy retrieval and also for cache.
@@ -98,6 +97,8 @@ public class Trie {
 
     // the size of this node along with its children (in bytes)
     // note that we use a long because an int would allow only up to 4GB of state to be stored.
+    // @mish: int is 32 bits. If this limit is applied to trie root node, 
+    // then it limits state size (all children from root) to 2^32 ~ 4GB. 
     private VarInt childrenSize;
 
     // associated store, to store or retrieve nodes in the trie
@@ -105,6 +106,14 @@ public class Trie {
 
     // shared Path
     private final TrieKeySlice sharedPath;
+
+    /* @mish. Storage rent fully paid for this node until block number (hence, "long" )
+     * alternative is to use int timestamp from unix.time() 
+     * This is a modification of `lastRentPaidTime` (RSKIP113). 
+     * Per RSKIP113: rent only paid for nodes with payload (i.e. terminal nodes only).
+     * Check with SDL if intermediute nodes should be charged to discourage 
+     * attacks that force look ups of non-existent nodes */
+    private long rentPaidUntilBN;
 
 
     // default constructor, no secure
@@ -124,7 +133,7 @@ public class Trie {
         this(store, sharedPath, value, left, right, valueLength, valueHash, null);
     }
 
-    // full constructor
+    //  (almost) full constructor, without storage rent
     private Trie(TrieStore store, TrieKeySlice sharedPath, byte[] value, NodeReference left, NodeReference right, Uint24 valueLength, Keccak256 valueHash, VarInt childrenSize) {
         this.value = value;
         this.left = left;
@@ -134,6 +143,20 @@ public class Trie {
         this.valueLength = valueLength;
         this.valueHash = valueHash;
         this.childrenSize = childrenSize;
+        checkValueLength();
+    }
+
+    // @mish full constructor with storage rent (extended from above) 
+    private Trie(TrieStore store, TrieKeySlice sharedPath, byte[] value, NodeReference left, NodeReference right, Uint24 valueLength, Keccak256 valueHash, VarInt childrenSize, long rentPaidUntilBN) {
+        this.value = value;
+        this.left = left;
+        this.right = right;
+        this.store = store;
+        this.sharedPath = sharedPath;
+        this.valueLength = valueLength;
+        this.valueHash = valueHash;
+        this.childrenSize = childrenSize;
+        this.rentPaidUntilBN = rentPaidUntilBN;
         checkValueLength();
     }
 
@@ -1422,4 +1445,11 @@ public class Trie {
 
         return subnodes;
     }
+
+    // @mish Additional method for storage rent. Block number until which rent has been paid.
+    public long getRentPaidUntilBN() {
+        return rentPaidUntilBN;
+    }
+
 }
+
