@@ -57,7 +57,7 @@ public class BlockNodeInformation {
      * @param blockHash the block hash.
      * @param nodeID    the node to add the block to.
      */
-    public void addBlockToNode(@Nonnull final Keccak256 blockHash, @Nonnull final NodeID nodeID) {
+    public synchronized void addBlockToNode(@Nonnull final Keccak256 blockHash, @Nonnull final NodeID nodeID) {
         Set<NodeID> blockNodes = nodesByBlock.get(blockHash);
         if (blockNodes == null) {
             // Create a new set for the nodes that know about a block.
@@ -68,8 +68,7 @@ public class BlockNodeInformation {
 
         blockNodes.add(nodeID);
     }
-
-
+    
     /**
      * getNodesByBlock retrieves all the nodes that contain a given block.
      *
@@ -77,12 +76,12 @@ public class BlockNodeInformation {
      * @return A set containing all the nodes that have that block.
      */
     @Nonnull
-    public Set<NodeID> getNodesByBlock(@Nonnull final Keccak256 blockHash) {
+    public synchronized Set<NodeID> getNodesByBlock(@Nonnull final Keccak256 blockHash) {
         Set<NodeID> result = nodesByBlock.get(blockHash);
         if (result == null) {
             result = new HashSet<>();
         }
-        return Collections.unmodifiableSet(result);
+        return new HashSet<>(result);
     }
 
     /**

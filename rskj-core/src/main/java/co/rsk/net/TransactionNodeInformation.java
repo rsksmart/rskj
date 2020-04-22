@@ -56,7 +56,7 @@ public class TransactionNodeInformation {
      * @param transactionHash the transaction hash.
      * @param nodeID    the node to add the block to.
      */
-    public void addTransactionToNode(@Nonnull final Keccak256 transactionHash, @Nonnull final NodeID nodeID) {
+    public synchronized void addTransactionToNode(@Nonnull final Keccak256 transactionHash, @Nonnull final NodeID nodeID) {
         Set<NodeID> transactionNodes = nodesByTransaction.get(transactionHash);
         if (transactionNodes == null) {
             // Create a new set for the nodes that know about a block.
@@ -75,12 +75,12 @@ public class TransactionNodeInformation {
      * @return A set containing all the nodes that have that block.
      */
     @Nonnull
-    public Set<NodeID> getNodesByTransaction(@Nonnull final Keccak256 transactionHash) {
+    public synchronized Set<NodeID> getNodesByTransaction(@Nonnull final Keccak256 transactionHash) {
         Set<NodeID> result = nodesByTransaction.get(transactionHash);
         if (result == null) {
             result = new HashSet<>();
         }
-        return Collections.unmodifiableSet(result);
+        return new HashSet<>(result);
     }
 
 }
