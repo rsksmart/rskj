@@ -17,6 +17,7 @@
  */
 package co.rsk;
 
+import co.rsk.trie.NodeReference;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStore;
 import org.bouncycastle.util.encoders.Hex;
@@ -37,12 +38,19 @@ public class ShowStateInfo {
         RskContext ctx = new RskContext(args);
         BlockStore blockStore = ctx.getBlockStore();
 
-        Block block = blockStore.getBestBlock();
+        Block block;
 
-        System.out.println("Best block number: " + block.getNumber());
-        System.out.println("Best block hash: " + Hex.toHexString(block.getHash().getBytes()));
-        System.out.println("Best block parent hash: " + Hex.toHexString(block.getParentHash().getBytes()));
-        System.out.println("Best block root hash: " + Hex.toHexString(block.getStateRoot()));
+        if ("best".equals(args[0])) {
+            block = blockStore.getBestBlock();
+        }
+        else {
+            block = blockStore.getChainBlockByNumber(Long.parseLong(args[0]));
+        }
+
+        System.out.println("Block number: " + block.getNumber());
+        System.out.println("Block hash: " + Hex.toHexString(block.getHash().getBytes()));
+        System.out.println("Block parent hash: " + Hex.toHexString(block.getParentHash().getBytes()));
+        System.out.println("Block root hash: " + Hex.toHexString(block.getStateRoot()));
 
         TrieStore trieStore = ctx.getTrieStore();
 
@@ -56,26 +64,35 @@ public class ShowStateInfo {
     }
 
     private static void processTrie(Trie trie) {
+        System.out.println("Trie " + Hex.toHexString(trie.getHash().getBytes()));
+
         nnodes++;
         nbytes += trie.getMessageLength();
 
-        Optional<Trie> left = trie.getLeft().getNode();
+        NodeReference leftReference = trie.getLeft();
 
-        if (left.isPresent()) {
-            processTrie(left.get());
+        if (!leftReference.isEmpty() && !leftReference.isEmbeddable()) {
+            Optional<Trie> left = leftReference.getNode();
+
+            if (left.isPresent()) {
+                processTrie(left.get());
+            }
         }
 
-        Optional<Trie> right = trie.getRight().getNode();
+        NodeReference rightReference = trie.getRight();
 
-        if (right.isPresent()) {
-            processTrie(right.get());
+        if (!rightReference.isEmpty() && !rightReference.isEmbeddable()) {
+            Optional<Trie> right = rightReference.getNode();
+
+            if (right.isPresent()) {
+                processTrie(right.get());
+            }
         }
 
-        if (!trie.hasLongValue()) {
-            return;
+        if (trie.hasLongValue()) {
+            System.out.println("Value from Trie " + Hex.toHexString(trie.getHash().getBytes()));
+            nvalues++;
+            nbytes += trie.getValue().length;
         }
-
-        nvalues++;
-        nbytes += trie.getValue().length;
     }
 }

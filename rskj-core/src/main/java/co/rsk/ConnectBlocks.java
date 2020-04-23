@@ -23,6 +23,7 @@ import org.ethereum.core.Block;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.core.Blockchain;
 import org.ethereum.db.BlockStore;
+import org.ethereum.db.ReceiptStore;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -39,6 +40,7 @@ public class ConnectBlocks {
         Blockchain blockchain = ctx.getBlockchain();
         TrieStore trieStore = ctx.getTrieStore();
         BlockStore blockStore = ctx.getBlockStore();
+        ReceiptStore receiptStore = ctx.getReceiptStore();
 
         String filename = args[0];
 
@@ -59,7 +61,14 @@ public class ConnectBlocks {
             blockchain.tryToConnect(block);
         }
 
+        System.out.println("Starting flush");
         blockStore.flush();
+        System.out.println("Block store flush done");
         trieStore.flush();
+        System.out.println("Trie store flush done");
+        receiptStore.flush();
+        System.out.println("Receipt store flush done");
+
+        System.exit(0);
     }
 }

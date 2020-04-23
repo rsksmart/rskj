@@ -50,21 +50,37 @@ public class ExportState {
 
         NodeReference leftReference = trie.getLeft();
 
-        if (!leftReference.isEmpty() && !leftReference.isEmbeddable()) {
+        if (!leftReference.isEmpty()) {
             Optional<Trie> left = leftReference.getNode();
 
             if (left.isPresent()) {
-                processTrie(left.get());
+                Trie leftTrie = left.get();
+
+                if (!leftReference.isEmbeddable()) {
+                    processTrie(leftTrie);
+                }
+
+                if (leftTrie.hasLongValue()) {
+                    System.out.println(Hex.toHexString(leftTrie.getValue()));
+                }
             }
         }
 
         NodeReference rightReference = trie.getRight();
 
-        if (!rightReference.isEmpty() && !rightReference.isEmbeddable()) {
+        if (!rightReference.isEmpty()) {
             Optional<Trie> right = rightReference.getNode();
 
             if (right.isPresent()) {
-                processTrie(right.get());
+                Trie rightTrie = right.get();
+
+                if (!rightReference.isEmbeddable()) {
+                    processTrie(rightTrie);
+                }
+
+                if (rightTrie.hasLongValue()) {
+                    System.out.println(Hex.toHexString(rightTrie.getValue()));
+                }
             }
         }
 
