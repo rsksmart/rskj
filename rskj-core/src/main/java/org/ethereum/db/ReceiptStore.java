@@ -43,4 +43,6 @@ public interface ReceiptStore {
     List<TransactionInfo> getAll(byte[] transactionHash);
 
     void saveMultiple(byte[] blockHash, List<TransactionReceipt> receipts);
+
+    void flush();
 }
