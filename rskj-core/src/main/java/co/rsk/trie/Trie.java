@@ -725,7 +725,7 @@ public class Trie {
 
         buffer.put(flags);
 
-        buffer.put((byte) this.rentPaidUntilBN); //  known size (int, 4 bytes) 
+        buffer.putInt(this.rentPaidUntilBN); //  known size (int, 4 bytes) 
 
         sharedPathSerializer.serializeInto(buffer);
 

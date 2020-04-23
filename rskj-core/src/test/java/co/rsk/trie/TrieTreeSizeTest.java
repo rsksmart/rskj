@@ -36,7 +36,8 @@ public class TrieTreeSizeTest {
         Trie trie = new Trie()
                 .put(new byte[]{0x00}, new byte[]{0x01})
                 .put(new byte[]{0x01}, new byte[32]);
-        Assert.assertThat(trie.getChildrenSize().value, is(35L));
+        //System.out.println(trie.getChildrenSize().value);
+        Assert.assertThat(trie.getChildrenSize().value, is(43L)); //@mish 35L before starge rent which adds 2X4 bytes 
     }
 
     @Test
@@ -44,6 +45,7 @@ public class TrieTreeSizeTest {
         Trie trie = new Trie()
                 .put(new byte[]{0x00}, new byte[]{0x01})
                 .put(new byte[]{0x01}, new byte[33]);
-        Assert.assertThat(trie.getChildrenSize().value, is(71L));
+        //System.out.println(trie.getChildrenSize().value);
+        Assert.assertThat(trie.getChildrenSize().value, is(79L)); //@mish 71L prior to storage rent, which adds 8 bytes (2X4)
     }
 }

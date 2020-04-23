@@ -237,8 +237,10 @@ public class TrieSaveRetrieveTest {
 
         store.save(trie);
 
-        Assert.assertNotEquals(0, trie.trieSize());
-        int embeddableNodes = 3;
+        Assert.assertEquals(5, trie.trieSize()); //3 leaf nodes => need 1 root, 1 intermediate (binary tree) 
+        int embeddableNodes = 3; //3 nodes are small, can be embedded in parent node (1 level of embedding max)). 
+        //System.out.println(trie.trieSize()); 
+        //System.out.println(map.keys().size());
         Assert.assertEquals(trie.trieSize() - embeddableNodes, map.keys().size());
     }
 
@@ -253,9 +255,11 @@ public class TrieSaveRetrieveTest {
 
         store.save(trie);
 
-        Assert.assertNotEquals(0, trie.trieSize());
+        Assert.assertEquals(5, trie.trieSize());
         int embeddableNodes = 3;
         int longValues = 2;
+        //System.out.println(trie.trieSize());
+        //System.out.println(map.keys().size());
         Assert.assertEquals(trie.trieSize() - embeddableNodes + longValues, map.keys().size());
     }
 
