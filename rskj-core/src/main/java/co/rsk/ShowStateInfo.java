@@ -64,33 +64,48 @@ public class ShowStateInfo {
     }
 
     private static void processTrie(Trie trie) {
-        System.out.println("Trie " + Hex.toHexString(trie.getHash().getBytes()));
-
         nnodes++;
         nbytes += trie.getMessageLength();
 
         NodeReference leftReference = trie.getLeft();
 
-        if (!leftReference.isEmpty() && !leftReference.isEmbeddable()) {
+        if (!leftReference.isEmpty()) {
             Optional<Trie> left = leftReference.getNode();
 
             if (left.isPresent()) {
-                processTrie(left.get());
+                Trie leftTrie = left.get();
+
+                if (!leftReference.isEmbeddable()) {
+                    processTrie(leftTrie);
+                }
+
+                if (leftTrie.hasLongValue()) {
+                    nvalues++;
+                    nbytes += leftTrie.getValue().length;
+                }
             }
         }
 
         NodeReference rightReference = trie.getRight();
 
-        if (!rightReference.isEmpty() && !rightReference.isEmbeddable()) {
+        if (!rightReference.isEmpty()) {
             Optional<Trie> right = rightReference.getNode();
 
             if (right.isPresent()) {
-                processTrie(right.get());
+                Trie rightTrie = right.get();
+
+                if (!rightReference.isEmbeddable()) {
+                    processTrie(rightTrie);
+                }
+
+                if (rightTrie.hasLongValue()) {
+                    nvalues++;
+                    nbytes += rightTrie.getValue().length;
+                }
             }
         }
 
         if (trie.hasLongValue()) {
-            System.out.println("Value from Trie " + Hex.toHexString(trie.getHash().getBytes()));
             nvalues++;
             nbytes += trie.getValue().length;
         }
