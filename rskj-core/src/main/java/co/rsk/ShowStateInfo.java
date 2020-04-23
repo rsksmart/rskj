@@ -37,14 +37,12 @@ public class ShowStateInfo {
         RskContext ctx = new RskContext(args);
         BlockStore blockStore = ctx.getBlockStore();
 
-        long blockNumber = Long.parseLong(args[0]);
+        Block block = blockStore.getBestBlock();
 
-        System.out.println("Block: " + blockNumber);
-
-        Block block = blockStore.getChainBlockByNumber(blockNumber);
-
-        System.out.println("Block hash: " + Hex.toHexString(block.getHash().getBytes()));
-        System.out.println("Root hash: " + Hex.toHexString(block.getStateRoot()));
+        System.out.println("Best block number: " + block.getNumber());
+        System.out.println("Best block hash: " + Hex.toHexString(block.getHash().getBytes()));
+        System.out.println("Best block parent hash: " + Hex.toHexString(block.getParentHash().getBytes()));
+        System.out.println("Best block root hash: " + Hex.toHexString(block.getStateRoot()));
 
         TrieStore trieStore = ctx.getTrieStore();
 

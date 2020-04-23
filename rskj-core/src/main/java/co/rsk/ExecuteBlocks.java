@@ -17,7 +17,6 @@
  */
 package co.rsk;
 
-import co.rsk.core.BlockDifficulty;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.trie.TrieStore;
 import org.bouncycastle.util.encoders.Hex;

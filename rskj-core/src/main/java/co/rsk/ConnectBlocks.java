@@ -17,44 +17,49 @@
  */
 package co.rsk;
 
-import co.rsk.core.BlockDifficulty;
-import co.rsk.crypto.Keccak256;
+import co.rsk.trie.TrieStore;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockFactory;
-import org.ethereum.crypto.Keccak256Helper;
-import org.ethereum.datasource.KeyValueDataSource;
-import org.ethereum.datasource.LevelDbDataSource;
+import org.ethereum.core.Blockchain;
 import org.ethereum.db.BlockStore;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
-import java.math.BigInteger;
-import java.nio.file.Paths;
 
 /**
- * The entrypoint for import state CLI util
+ * The entry point for connect blocks CLI util
  */
-public class ImportState {
+public class ConnectBlocks {
     public static void main(String[] args) throws IOException {
         RskContext ctx = new RskContext(args);
-        String databaseDir = ctx.getRskSystemProperties().databaseDir();
-        KeyValueDataSource trieDB = LevelDbDataSource.makeDataSource(Paths.get(databaseDir, "unitrie"));
+
+        BlockFactory blockFactory = ctx.getBlockFactory();
+        Blockchain blockchain = ctx.getBlockchain();
+        TrieStore trieStore = ctx.getTrieStore();
+        BlockStore blockStore = ctx.getBlockStore();
 
         String filename = args[0];
 
         BufferedReader reader = new BufferedReader(new FileReader(filename));
 
         for (String line = reader.readLine(); line != null; line = reader.readLine()) {
-            line = line.trim();
-            byte[] value = Hex.decode(line);
-            byte[] key = new Keccak256(Keccak256Helper.keccak256(value)).getBytes();
+            String[] parts = line.split(",");
 
-            trieDB.put(key, value);
+            if (parts.length < 4) {
+                continue;
+            }
+
+            byte[] encoded = Hex.decode(parts[3]);
+
+            Block block = blockFactory.decodeBlock(encoded);
+            block.seal();
+
+            blockchain.tryToConnect(block);
         }
 
-        trieDB.flush();
-        trieDB.close();
+        blockStore.flush();
+        trieStore.flush();
     }
 }
