@@ -139,7 +139,7 @@ public class LightSyncProcessor {
     public void sendStatusMessage(LightPeer lightPeer) {
         Block block = blockStore.getBestBlock();
         LightStatus status = getCurrentStatus(block);
-        StatusMessage statusMessage = new StatusMessage(0L, status);
+        StatusMessage statusMessage = new StatusMessage(0L, status, false);
 
         lightPeer.sendMessage(statusMessage);
 

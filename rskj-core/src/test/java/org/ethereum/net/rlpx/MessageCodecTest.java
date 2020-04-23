@@ -156,7 +156,7 @@ public class MessageCodecTest {
         BlockDifficulty totalDifficulty = new BlockDifficulty(BigInteger.ONE);
         LightStatus status = new LightStatus(protocolVersion, networkId,
                 totalDifficulty, bestHash.getBytes(), bestNumber, genesisHash);
-        StatusMessage lcStatusMessage = new StatusMessage(id, status);
+        StatusMessage lcStatusMessage = new StatusMessage(id, status, false);
 
         List<Capability> cap = new LinkedList<>();
         cap.add(new Capability(Capability.LC, (byte) 0));
