@@ -27,19 +27,26 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 /**
- * Created by mish on April 21.
+  * Created by mish on April 21.
+  * for testing gradle build modified to permit standard system streams 
  */
 public class TrieRentTest {
-
+    
+    // trie put, get node and r 
     @Test
     public void putKeyGetRent() {
         Trie trie = new Trie();        
-        trie = trie.put("foo", "abc".getBytes()); // "foo": main key of interest 
+        trie = trie.put("foo", "abc".getBytes());
         System.out.println(trie);
         System.out.println("Rent paid until block number "+ trie.getRentPaidUntilBN());
         
+        // replace with findNode?
         List<Trie> nodes = trie.getNodes("foo"); 
         Assert.assertArrayEquals("abc".getBytes(StandardCharsets.UTF_8), nodes.get(0).getValue());
-        
+        Assert.assertEquals(0,trie.getRentPaidUntilBN()); // 0 (int cannot be null)
     }
+
+    // trie save, retrieve, check rent status
+    // trie to and from message
+
 }

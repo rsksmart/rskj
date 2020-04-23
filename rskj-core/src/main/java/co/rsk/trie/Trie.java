@@ -112,8 +112,11 @@ public class Trie {
      * This is a modification of `lastRentPaidTime` (RSKIP113). 
      * Per RSKIP113: rent only paid for nodes with payload (i.e. terminal nodes only).
      * Check with SDL if intermediute nodes should be charged to discourage 
-     * attacks that force look ups of non-existent nodes */
-    private long rentPaidUntilBN;
+     * attacks that force look ups of non-existent nodes 
+     
+     * Using int (4 bytes), max +2^31 ~ should be good for 2000 years for RSK (2*60*24*365 = 1_051_200 blocks/year), 
+       will initialized to 0 by default (genesis block), that's not intentional but is simpler than using Long with null.*/
+    private int rentPaidUntilBN; 
 
 
     // default constructor, no secure
@@ -147,7 +150,7 @@ public class Trie {
     }
 
     // @mish full constructor with storage rent (extended from above) 
-    private Trie(TrieStore store, TrieKeySlice sharedPath, byte[] value, NodeReference left, NodeReference right, Uint24 valueLength, Keccak256 valueHash, VarInt childrenSize, long rentPaidUntilBN) {
+    private Trie(TrieStore store, TrieKeySlice sharedPath, byte[] value, NodeReference left, NodeReference right, Uint24 valueLength, Keccak256 valueHash, VarInt childrenSize, int rentPaidUntilBN) {
         this.value = value;
         this.left = left;
         this.right = right;
@@ -268,6 +271,9 @@ public class Trie {
         boolean leftNodeEmbedded = (flags & 0b00000010) == 0b00000010;
         boolean rightNodeEmbedded = (flags & 0b00000001) == 0b00000001;
 
+        //get next 4 bytes from current positin of byte buffer (storage rent)
+        int rentPaidUntilBN = message.getInt();
+
         TrieKeySlice sharedPath = SharedPathSerializer.deserialize(message, sharedPrefixPresent);
 
         NodeReference left = NodeReference.empty();
@@ -310,7 +316,7 @@ public class Trie {
 
         VarInt childrenSize = new VarInt(0);
         if (leftNodePresent || rightNodePresent) {
-            childrenSize = readVarInt(message);
+            childrenSize = readVarInt(message);     //reads without changing buffer position
         }
 
         byte[] value;
@@ -318,8 +324,8 @@ public class Trie {
         Keccak256 valueHash;
 
         if (hasLongVal) {
-            value = null;
-            byte[] valueHashBytes = new byte[Keccak256Helper.DEFAULT_SIZE_BYTES];
+            value = null;   //bcos it's long! grab the value hash and length only
+            byte[] valueHashBytes = new byte[Keccak256Helper.DEFAULT_SIZE_BYTES]; // 256/8 = 32 (checked April 2020)
             message.get(valueHashBytes);
             valueHash = new Keccak256(valueHashBytes);
             byte[] lvalueBytes = new byte[Uint24.BYTES];
@@ -343,7 +349,7 @@ public class Trie {
             throw new IllegalArgumentException("The message had more data than expected");
         }
 
-        return new Trie(store, sharedPath, value, left, right, lvalue, valueHash, childrenSize);
+        return new Trie(store, sharedPath, value, left, right, lvalue, valueHash, childrenSize, rentPaidUntilBN);
     }
 
     /**
@@ -683,29 +689,30 @@ public class Trie {
 
         ByteBuffer buffer = ByteBuffer.allocate(
                 1 + // flags
+                4 + // 4 bytes (int) for storage rent paid until block number
                         sharedPathSerializer.serializedLength() +
-                        this.left.serializedLength() +
+                        this.left.serializedLength() +  //this method is from NodeReference.java (should only be used for save)
                         this.right.serializedLength() +
                         (this.isTerminal() ? 0 : childrenSize.getSizeInBytes()) +
                         (hasLongVal ? Keccak256Helper.DEFAULT_SIZE_BYTES + Uint24.BYTES : lvalue.intValue())
-        );
+        );      //@mish add rent bytes here.. easiest to put the fixed 4 bytes (int) after the flag
 
-        // current serialization version: 01
+        // current serialization version: 01 //see RSKIP107
         byte flags = 0b01000000;
         if (hasLongVal) {
-            flags = (byte) (flags | 0b00100000);
+            flags = (byte) (flags | 0b00100000);   //bit 5 long value
         }
 
-        if (sharedPathSerializer.isPresent()) {
+        if (sharedPathSerializer.isPresent()) {     //bit 4 sharedprefix present
             flags = (byte) (flags | 0b00010000);
         }
 
         if (!this.left.isEmpty()) {
-            flags = (byte) (flags | 0b00001000);
+            flags = (byte) (flags | 0b00001000);    // bit 2,3 left/right child present
         }
 
         if (!this.right.isEmpty()) {
-            flags = (byte) (flags | 0b00000100);
+            flags = (byte) (flags | 0b00000100);    // bit 0,1 left/right embedded
         }
 
         if (this.left.isEmbeddable()) {
@@ -718,9 +725,11 @@ public class Trie {
 
         buffer.put(flags);
 
+        buffer.put((byte) this.rentPaidUntilBN); //  known size (int, 4 bytes) 
+
         sharedPathSerializer.serializeInto(buffer);
 
-        this.left.serializeInto(buffer);
+        this.left.serializeInto(buffer);    //method from NodeReference.java
 
         this.right.serializeInto(buffer);
 
@@ -728,13 +737,13 @@ public class Trie {
             buffer.put(childrenSize.encode());
         }
 
+        //if longvalue, then just put the valuehash and valuelength. Else grab the value itself.
         if (hasLongVal) {
             buffer.put(this.getValueHash().getBytes());
             buffer.put(lvalue.encode());
         } else if (lvalue.compareTo(Uint24.ZERO) > 0) {
             buffer.put(this.getValue());
         }
-
         encoded = buffer.array();
     }
 
@@ -1077,6 +1086,7 @@ public class Trie {
         return getHash().equals(otherTrie.getHash());
     }
 
+    //override the internal Java toString() method
     @Override
     public String toString() {
         String s = printParam("TRIE: ", "value", getValue());
@@ -1313,6 +1323,12 @@ public class Trie {
         }
     }
 
+
+    /*
+     * convert sharedPath into an object (no relation to storage rent) 
+     * fields: path itself and pathlength
+     * methods: deserialize and serialise sharedpath from/toMessage() and some helpers 
+    */
     private static class SharedPathSerializer {
         private final TrieKeySlice sharedPath;
         private final int lshared;
@@ -1447,9 +1463,10 @@ public class Trie {
     }
 
     // @mish Additional method for storage rent. Block number until which rent has been paid.
-    public long getRentPaidUntilBN() {
+    // This will change (increase/decrease) when a node is updated/deleted or when rent is paid.
+    @Nullable
+    public int getRentPaidUntilBN() {
         return rentPaidUntilBN;
     }
 
 }
-
