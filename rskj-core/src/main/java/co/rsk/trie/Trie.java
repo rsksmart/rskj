@@ -835,13 +835,14 @@ public class Trie {
     }
 
     private Trie internalPut(TrieKeySlice key, byte[] value, boolean isRecursiveDelete) {
+        // @mish find the common path between the given key and the current node's (top of the trie) sharedpath
         TrieKeySlice commonPath = key.commonPath(sharedPath);
+
         if (commonPath.length() < sharedPath.length()) {
             // when we are removing a key we know splitting is not necessary. the key wasn't found at this point.
             if (value == null) {
                 return this;
             }
-
             return this.split(commonPath).put(key, value, isRecursiveDelete);
         }
 
