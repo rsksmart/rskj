@@ -55,6 +55,7 @@ public class LightSyncProcessor {
     private final byte version;
     private static final Logger loggerNet = LoggerFactory.getLogger("lightnet");
     private Map<LightPeer, LightStatus> peerStatuses = new HashMap<>();
+    private Map<LightPeer, Boolean> txRelay = new HashMap<>();
     private long lastRequestedId;
     private final Map<Long, LightClientMessageCodes> pendingMessages;
 
@@ -129,6 +130,9 @@ public class LightSyncProcessor {
 
         peerStatuses.put(lightPeer, status);
 
+        if (msg.isTxRelay()) {
+            txRelay.put(lightPeer, true);
+        }
 
         byte[] bestBlockHash = status.getBestHash();
         GetBlockHeaderMessage blockHeaderMessage = new GetBlockHeaderMessage(++lastRequestedId, bestBlockHash);
@@ -139,7 +143,7 @@ public class LightSyncProcessor {
     public void sendStatusMessage(LightPeer lightPeer) {
         Block block = blockStore.getBestBlock();
         LightStatus status = getCurrentStatus(block);
-        StatusMessage statusMessage = new StatusMessage(0L, status);
+        StatusMessage statusMessage = new StatusMessage(0L, status, false);
 
         lightPeer.sendMessage(statusMessage);
 
