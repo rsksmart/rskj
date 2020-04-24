@@ -149,7 +149,8 @@ public class Trie {
         checkValueLength();
     }
 
-    // @mish full constructor with storage rent (extended from above) 
+    // @mish full constructor with storage rent (extended from above)
+    //new Trie(store, sharedPath, value, left, right, lvalue, valueHash, childrenSize, rentPaidUntilBN);
     private Trie(TrieStore store, TrieKeySlice sharedPath, byte[] value, NodeReference left, NodeReference right, Uint24 valueLength, Keccak256 valueHash, VarInt childrenSize, int rentPaidUntilBN) {
         this.value = value;
         this.left = left;
@@ -258,6 +259,7 @@ public class Trie {
         }
 
         // it doesn't need to clone value since it's retrieved from store or created from message
+        // @mish: orchid unaffected by rent at present.
         return new Trie(store, sharedPath, value, left, right, lvalue, valueHash);
     }
 
@@ -271,7 +273,7 @@ public class Trie {
         boolean leftNodeEmbedded = (flags & 0b00000010) == 0b00000010;
         boolean rightNodeEmbedded = (flags & 0b00000001) == 0b00000001;
 
-        //get next 4 bytes from current positin of byte buffer (storage rent)
+        //get int (next 4 bytes) from current positin of byte buffer (storage rent)
         int rentPaidUntilBN = message.getInt();
 
         TrieKeySlice sharedPath = SharedPathSerializer.deserialize(message, sharedPrefixPresent);
@@ -281,14 +283,15 @@ public class Trie {
         if (leftNodePresent) {
             if (leftNodeEmbedded) {
                 byte[] lengthBytes = new byte[Uint8.BYTES];
-                message.get(lengthBytes);
+                message.get(lengthBytes); //read get (of required length) into lengthBytes
                 Uint8 length = Uint8.decode(lengthBytes, 0);
 
                 byte[] serializedNode = new byte[length.intValue()];
-                message.get(serializedNode);
+                message.get(serializedNode); //read serialized data for embedded node into the buffer serializedNode
+                //make a recursive call. Also embedding is limited to one layer, so recursion is limited.
                 Trie node = fromMessageRskip107(ByteBuffer.wrap(serializedNode), store);
                 left = new NodeReference(store, node, null);
-            } else {
+            } else { //not embedded, grab the hash and assign to the new left pointer 
                 byte[] valueHash = new byte[Keccak256Helper.DEFAULT_SIZE_BYTES];
                 message.get(valueHash);
                 Keccak256 nodeHash = new Keccak256(valueHash);
@@ -349,7 +352,7 @@ public class Trie {
             throw new IllegalArgumentException("The message had more data than expected");
         }
 
-        return new Trie(store, sharedPath, value, left, right, lvalue, valueHash, childrenSize, rentPaidUntilBN);
+        return new Trie(store, sharedPath, value, left, right, lvalue, valueHash, childrenSize, rentPaidUntilBN);// @mish added rent
     }
 
     /**
@@ -819,7 +822,8 @@ public class Trie {
         }
 
         TrieKeySlice newSharedPath = trie.sharedPath.rebuildSharedPath(childImplicitByte, child.sharedPath);
-        return new Trie(child.store, newSharedPath, child.value, child.left, child.right, child.valueLength, child.valueHash);
+        //full constructor: new Trie(store, sharedPath, value, left, right, lvalue, valueHash, childrenSize, rentPaidUntilBN)
+        return new Trie(child.store, newSharedPath, child.value, child.left, child.right, child.valueLength, child.valueHash, child.childrenSize, child.rentPaidUntilBN);
     }
 
     private static Uint24 getDataLength(byte[] value) {
@@ -857,7 +861,7 @@ public class Trie {
             if (isEmptyTrie(getDataLength(value), this.left, this.right)) {
                 return null;
             }
-
+            //full constructor: new Trie(store, sharedPath, value, left, right, lvalue, valueHash, childrenSize, rentPaidUntilBN)
             return new Trie(
                     this.store,
                     this.sharedPath,
@@ -865,7 +869,9 @@ public class Trie {
                     this.left,
                     this.right,
                     getDataLength(value),
-                    null
+                    null,
+                    null,
+                    this.rentPaidUntilBN
             );
         }
 
@@ -903,14 +909,14 @@ public class Trie {
         if (isEmptyTrie(this.valueLength, newLeft, newRight)) {
             return null;
         }
-
-        return new Trie(this.store, this.sharedPath, this.value, newLeft, newRight, this.valueLength, this.valueHash);
+        //full constructor: new Trie(store, sharedPath, value, left, right, lvalue, valueHash, childrenSize, rentPaidUntilBN)
+        return new Trie(this.store, this.sharedPath, this.value, newLeft, newRight, this.valueLength, this.valueHash, null, this.rentPaidUntilBN);
     }
 
     private Trie split(TrieKeySlice commonPath) {
         int commonPathLength = commonPath.length();
         TrieKeySlice newChildSharedPath = sharedPath.slice(commonPathLength + 1, sharedPath.length());
-        Trie newChildTrie = new Trie(this.store, newChildSharedPath, this.value, this.left, this.right, this.valueLength, this.valueHash);
+        Trie newChildTrie = new Trie(this.store, newChildSharedPath, this.value, this.left, this.right, this.valueLength, this.valueHash, null, this.rentPaidUntilBN);
         NodeReference newChildReference = new NodeReference(this.store, newChildTrie, null);
 
         // this bit will be implicit and not present in a shared path

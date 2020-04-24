@@ -244,6 +244,10 @@ public class TrieSaveRetrieveTest {
         Assert.assertEquals(trie.trieSize() - embeddableNodes, map.keys().size());
     }
 
+    /* @mish: this test failed after adding storage rent. The number of embeddable nodes dropped to 0.
+    //   * increasing MAX_EMBEDDED_NODE_SIZE_IN_BYTES = 48 from 44 in Trie.java takes care of it as that accounts
+    //   * for the additional 4 bytes consumed by rentPaidUntilBN (which is an int)  
+    */
     @Test
     public void saveTrieWithKeyLongValues() {
         HashMapDB map = new HashMapDB();
