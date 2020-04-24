@@ -113,7 +113,7 @@ public class LightClientHandlerTest {
         when(config.networkId()).thenReturn(networkId);
 
         LightStatus status = new LightStatus(protocolVersion, networkId, blockDifficulty, blockHash.getBytes(), bestNumber, genesisHash.getBytes());
-        StatusMessage statusMessage = new StatusMessage(0L, status);
+        StatusMessage statusMessage = new StatusMessage(0L, status, false);
 
         lightClientHandler.activate();
 
@@ -131,7 +131,7 @@ public class LightClientHandlerTest {
         when(genesis.getHash()).thenReturn(genesisHash);
 
         LightStatus status = new LightStatus((byte) 1, 0, blockDifficulty, blockHash.getBytes(), bestNumber, genesisHash.getBytes());
-        StatusMessage m = new StatusMessage(0L, status);
+        StatusMessage m = new StatusMessage(0L, status, false);
 
         lightClientHandler.channelRead0(ctx, m);
 
@@ -146,7 +146,7 @@ public class LightClientHandlerTest {
         when(genesis.getHash()).thenReturn(genesisHash);
 
         LightStatus status = new LightStatus((byte) 0, 55, blockDifficulty, blockHash.getBytes(), bestNumber, genesisHash.getBytes());
-        StatusMessage m = new StatusMessage(0L, status);
+        StatusMessage m = new StatusMessage(0L, status, false);
 
 
         lightClientHandler.channelRead0(ctx, m);
@@ -161,7 +161,7 @@ public class LightClientHandlerTest {
         byte[] invalidHash = HashUtil.randomHash();
 
         LightStatus status = new LightStatus((byte) 0, 0, blockDifficulty, blockHash.getBytes(), bestNumber, invalidHash);
-        StatusMessage m = new StatusMessage(0L, status);
+        StatusMessage m = new StatusMessage(0L, status, false);
         lightClientHandler.channelRead0(ctx, m);
 
         verify(messageQueue).disconnect(eq(ReasonCode.UNEXPECTED_GENESIS));
@@ -179,7 +179,7 @@ public class LightClientHandlerTest {
 
         LightStatus status = new LightStatus((byte) 0, 0, blockDifficulty, blockHash.getBytes(), bestNumber, genesisHash.getBytes());
 
-        StatusMessage m = new StatusMessage(0L, status);
+        StatusMessage m = new StatusMessage(0L, status, false);
         lightClientHandler.channelRead0(ctx, m);
 
         verify(messageQueue, times(0)).sendMessage(any());

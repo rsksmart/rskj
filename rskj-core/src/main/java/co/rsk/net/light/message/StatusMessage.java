@@ -35,10 +35,12 @@ public class StatusMessage extends LightClientMessage {
 
     private final long id;
     private final LightStatus status;
+    private boolean txRelay; // 1 byte - 0x00 = false or 0x01 = true
 
-    public StatusMessage(long id, LightStatus status) {
+    public StatusMessage(long id, LightStatus status, boolean txRelay) {
         this.id = id;
         this.status = status;
+        this.txRelay = txRelay;
         this.code = STATUS.asByte();
     }
 
@@ -47,14 +49,17 @@ public class StatusMessage extends LightClientMessage {
         byte[] rlpId = list.get(0).getRLPData();
         this.id = rlpId == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpId).longValue();
         this.status = new LightStatus(list.get(1).getRLPData());
+        byte[] rlpTxRelay = list.get(2).getRLPData();
+        this.txRelay = rlpTxRelay != null;
         this.code = STATUS.asByte();
     }
 
     @Override
     public byte[] getEncoded() {
         byte[] rlpId = RLP.encodeBigInteger(BigInteger.valueOf(getId()));
-        byte[] rlpStatus = status.getEncoded();
-        return RLP.encodeList(rlpId, rlpStatus);
+        byte[] rlpStatus = getStatus().getEncoded();
+        byte[] rlpTxRelay = RLP.encodeByte((byte)(isTxRelay() ? 0x01 : 0x00));
+        return RLP.encodeList(rlpId, rlpStatus, rlpTxRelay);
     }
 
     @Override
@@ -78,6 +83,10 @@ public class StatusMessage extends LightClientMessage {
 
     public long getId() {
         return id;
+    }
+
+    public boolean isTxRelay() {
+        return txRelay;
     }
 
     @Override

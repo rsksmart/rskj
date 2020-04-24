@@ -93,7 +93,7 @@ public class LightSyncProcessorTest {
 
         //lastRequestId in a new LightSyncProcessor starts in zero.
         requestId = 0;
-        statusMessage = new StatusMessage(requestId, lightStatus);
+        statusMessage = new StatusMessage(requestId, lightStatus, false);
     }
 
     @Test
@@ -137,7 +137,7 @@ public class LightSyncProcessorTest {
 
         //Message sent
         long requestId = 0; //lastRequestId in a new LightSyncProcessor starts in zero.
-        StatusMessage statusMessage = new StatusMessage(requestId, lightStatus);
+        StatusMessage statusMessage = new StatusMessage(requestId, lightStatus, false);
 
         LightPeer lightPeer2 = mock(LightPeer.class);
         lightSyncProcessor.processStatusMessage(statusMessage, lightPeer, ctx, lightClientHandler);

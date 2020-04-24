@@ -56,7 +56,7 @@ public class StatusMessageTest {
                 totalDifficulty, bestHash.getBytes(), bestNumber, genesisHash);
 
         long id = 1L;
-        StatusMessage testMessage = new StatusMessage(id, lightStatus);
+        StatusMessage testMessage = new StatusMessage(id, lightStatus, true);
 
         assertEquals(STATUS, testMessage.getCommand());
         assertEquals(id, testMessage.getId());
@@ -71,7 +71,7 @@ public class StatusMessageTest {
         int networkId = 2;
         long bestNumber = 10L;
 
-        createMessageAndAssertEncodeDecode(id, protocolVersion, networkId, totalDifficulty, bestNumber);
+        createMessageAndAssertEncodeDecode(id, protocolVersion, networkId, totalDifficulty, bestNumber, true);
     }
 
     @Test
@@ -81,15 +81,14 @@ public class StatusMessageTest {
         byte protocolVersion = (byte) 0;
         int networkId = 0;
         long bestNumber = 0;
-
-        createMessageAndAssertEncodeDecode(id, protocolVersion, networkId, totalDifficulty, bestNumber);
+        createMessageAndAssertEncodeDecode(id, protocolVersion, networkId, totalDifficulty, bestNumber, false);
     }
 
-    private void createMessageAndAssertEncodeDecode(long id, byte protocolVersion, int networkId, BlockDifficulty totalDifficulty, long bestNumber) {
+    private void createMessageAndAssertEncodeDecode(long id, byte protocolVersion, int networkId, BlockDifficulty totalDifficulty, long bestNumber, boolean txRelay) {
         LightStatus lightStatus = new LightStatus(protocolVersion, networkId,
                 totalDifficulty, bestHash.getBytes(), bestNumber, genesisHash);
         LCMessageFactory lcMessageFactory = new LCMessageFactory(mock(BlockFactory.class));
-        StatusMessage testMessage = new StatusMessage(id, lightStatus);
+        StatusMessage testMessage = new StatusMessage(id, lightStatus, txRelay);
         StatusMessage decodedMessage = (StatusMessage) lcMessageFactory.create(STATUS.asByte(), testMessage.getEncoded());
         assertArrayEquals(testMessage.getEncoded(), decodedMessage.getEncoded());
     }
