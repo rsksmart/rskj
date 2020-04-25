@@ -38,12 +38,12 @@ public class TrieRentTest {
         Trie trie = new Trie();        
         trie = trie.put("foo", "abc".getBytes());
         System.out.println(trie);
-        System.out.println("Rent paid until block number "+ trie.getRentPaidUntilBN());
+        System.out.println("Rent paid until block number "+ trie.getLastRentPaidTime());
         
         // replace with findNode?
         List<Trie> nodes = trie.getNodes("foo"); 
         Assert.assertArrayEquals("abc".getBytes(StandardCharsets.UTF_8), nodes.get(0).getValue());
-        Assert.assertEquals(0,trie.getRentPaidUntilBN()); // 0 (int cannot be null)
+        Assert.assertEquals(0,trie.getLastRentPaidTime()); // 0 (long cannot be null)
     }
 
     // trie save, retrieve, check rent status

@@ -107,16 +107,8 @@ public class Trie {
     // shared Path
     private final TrieKeySlice sharedPath;
 
-    /* @mish. Storage rent fully paid for this node until block number (hence, "long" )
-     * alternative is to use int timestamp from unix.time() 
-     * This is a modification of `lastRentPaidTime` (RSKIP113). 
-     * Per RSKIP113: rent only paid for nodes with payload (i.e. terminal nodes only).
-     * Check with SDL if intermediute nodes should be charged to discourage 
-     * attacks that force look ups of non-existent nodes 
-     
-     * Using int (4 bytes), max +2^31 ~ should be good for 2000 years for RSK (2*60*24*365 = 1_051_200 blocks/year), 
-       will initialized to 0 by default (genesis block), that's not intentional but is simpler than using Long with null.*/
-    private int rentPaidUntilBN; 
+    // @mish.  (RSKIP113) 
+    private long lastRentPaidTime; // some parts of the cocde use strings for timestmaps
 
 
     // default constructor, no secure
@@ -150,8 +142,8 @@ public class Trie {
     }
 
     // @mish full constructor with storage rent (extended from above)
-    //new Trie(store, sharedPath, value, left, right, lvalue, valueHash, childrenSize, rentPaidUntilBN);
-    private Trie(TrieStore store, TrieKeySlice sharedPath, byte[] value, NodeReference left, NodeReference right, Uint24 valueLength, Keccak256 valueHash, VarInt childrenSize, int rentPaidUntilBN) {
+    //new Trie(store, sharedPath, value, left, right, lvalue, valueHash, childrenSize, lastRentPaidTime);
+    private Trie(TrieStore store, TrieKeySlice sharedPath, byte[] value, NodeReference left, NodeReference right, Uint24 valueLength, Keccak256 valueHash, VarInt childrenSize, long lastRentPaidTime) {
         this.value = value;
         this.left = left;
         this.right = right;
@@ -160,7 +152,7 @@ public class Trie {
         this.valueLength = valueLength;
         this.valueHash = valueHash;
         this.childrenSize = childrenSize;
-        this.rentPaidUntilBN = rentPaidUntilBN;
+        this.lastRentPaidTime = lastRentPaidTime;
         checkValueLength();
     }
 
@@ -273,8 +265,8 @@ public class Trie {
         boolean leftNodeEmbedded = (flags & 0b00000010) == 0b00000010;
         boolean rightNodeEmbedded = (flags & 0b00000001) == 0b00000001;
 
-        //get int (next 4 bytes) from current positin of byte buffer (storage rent)
-        int rentPaidUntilBN = message.getInt();
+        //getLong (8 bytes for storage rent)
+        long lastRentPaidTime = message.getLong();
 
         TrieKeySlice sharedPath = SharedPathSerializer.deserialize(message, sharedPrefixPresent);
 
@@ -352,7 +344,7 @@ public class Trie {
             throw new IllegalArgumentException("The message had more data than expected");
         }
 
-        return new Trie(store, sharedPath, value, left, right, lvalue, valueHash, childrenSize, rentPaidUntilBN);// @mish added rent
+        return new Trie(store, sharedPath, value, left, right, lvalue, valueHash, childrenSize, lastRentPaidTime);// @mish added rent
     }
 
     /**
@@ -692,7 +684,7 @@ public class Trie {
 
         ByteBuffer buffer = ByteBuffer.allocate(
                 1 + // flags
-                4 + // 4 bytes (int) for storage rent paid until block number
+                8 + // 8 bytes (long) for lastRentPaidTime}
                         sharedPathSerializer.serializedLength() +
                         this.left.serializedLength() +  //this method is from NodeReference.java (should only be used for save)
                         this.right.serializedLength() +
@@ -728,7 +720,7 @@ public class Trie {
 
         buffer.put(flags);
 
-        buffer.putInt(this.rentPaidUntilBN); //  known size (int, 4 bytes) 
+        buffer.putLong(this.lastRentPaidTime); 
 
         sharedPathSerializer.serializeInto(buffer);
 
@@ -822,8 +814,8 @@ public class Trie {
         }
 
         TrieKeySlice newSharedPath = trie.sharedPath.rebuildSharedPath(childImplicitByte, child.sharedPath);
-        //full constructor: new Trie(store, sharedPath, value, left, right, lvalue, valueHash, childrenSize, rentPaidUntilBN)
-        return new Trie(child.store, newSharedPath, child.value, child.left, child.right, child.valueLength, child.valueHash, child.childrenSize, child.rentPaidUntilBN);
+        //full constructor: new Trie(store, sharedPath, value, left, right, lvalue, valueHash, childrenSize, lastRentPaidTime)
+        return new Trie(child.store, newSharedPath, child.value, child.left, child.right, child.valueLength, child.valueHash, child.childrenSize, child.lastRentPaidTime);
     }
 
     private static Uint24 getDataLength(byte[] value) {
@@ -862,7 +854,7 @@ public class Trie {
             if (isEmptyTrie(getDataLength(value), this.left, this.right)) {
                 return null;
             }
-            //full constructor: new Trie(store, sharedPath, value, left, right, lvalue, valueHash, childrenSize, rentPaidUntilBN)
+            //full constructor: new Trie(store, sharedPath, value, left, right, lvalue, valueHash, childrenSize, lastRentPaidTime)
             return new Trie(
                     this.store,
                     this.sharedPath,
@@ -872,7 +864,7 @@ public class Trie {
                     getDataLength(value),
                     null,
                     null,
-                    this.rentPaidUntilBN
+                    this.lastRentPaidTime
             );
         }
 
@@ -910,14 +902,14 @@ public class Trie {
         if (isEmptyTrie(this.valueLength, newLeft, newRight)) {
             return null;
         }
-        //full constructor: new Trie(store, sharedPath, value, left, right, lvalue, valueHash, childrenSize, rentPaidUntilBN)
-        return new Trie(this.store, this.sharedPath, this.value, newLeft, newRight, this.valueLength, this.valueHash, null, this.rentPaidUntilBN);
+        //full constructor: new Trie(store, sharedPath, value, left, right, lvalue, valueHash, childrenSize, lastRentPaidTime)
+        return new Trie(this.store, this.sharedPath, this.value, newLeft, newRight, this.valueLength, this.valueHash, null, this.lastRentPaidTime);
     }
 
     private Trie split(TrieKeySlice commonPath) {
         int commonPathLength = commonPath.length();
         TrieKeySlice newChildSharedPath = sharedPath.slice(commonPathLength + 1, sharedPath.length());
-        Trie newChildTrie = new Trie(this.store, newChildSharedPath, this.value, this.left, this.right, this.valueLength, this.valueHash, null, this.rentPaidUntilBN);
+        Trie newChildTrie = new Trie(this.store, newChildSharedPath, this.value, this.left, this.right, this.valueLength, this.valueHash, null, this.lastRentPaidTime);
         NodeReference newChildReference = new NodeReference(this.store, newChildTrie, null);
 
         // this bit will be implicit and not present in a shared path
@@ -1472,8 +1464,8 @@ public class Trie {
     // @mish Additional method for storage rent. Block number until which rent has been paid.
     // This will change (increase/decrease) when a node is updated/deleted or when rent is paid.
     @Nullable
-    public int getRentPaidUntilBN() {
-        return rentPaidUntilBN;
+    public long getLastRentPaidTime() {
+        return lastRentPaidTime;
     }
 
 }
