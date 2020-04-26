@@ -55,7 +55,7 @@ import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
  */
 public class Trie {
     private static final int ARITY = 2;
-    private static final int MAX_EMBEDDED_NODE_SIZE_IN_BYTES = 44;
+    private static final int MAX_EMBEDDED_NODE_SIZE_IN_BYTES = 52; //@mish: was 44. Increase by 8 bytes for lastRentPaidTime
 
     private static final Profiler profiler = ProfilerFactory.getInstance();
     private static final String INVALID_ARITY = "Invalid arity";
