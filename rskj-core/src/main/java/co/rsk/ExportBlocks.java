@@ -18,23 +18,24 @@
 package co.rsk;
 
 import co.rsk.core.BlockDifficulty;
-import co.rsk.trie.NodeReference;
-import co.rsk.trie.Trie;
-import co.rsk.trie.TrieStore;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.Block;
 import org.ethereum.db.BlockStore;
 
-import java.util.Optional;
+import java.io.PrintStream;
 
 /**
- * The entrypoint for export blocks CLI util
+ * The entry point for export blocks CLI tool
  */
 public class ExportBlocks {
     public static void main(String[] args) {
         RskContext ctx = new RskContext(args);
         BlockStore blockStore = ctx.getBlockStore();
 
+        exportBlocks(args, blockStore, System.out);
+    }
+
+    public static void exportBlocks(String[] args, BlockStore blockStore, PrintStream writer) {
         long fromBlockNumber = Long.parseLong(args[0]);
         long toBlockNumber = Long.parseLong(args[1]);
 
@@ -42,7 +43,7 @@ public class ExportBlocks {
             Block block = blockStore.getChainBlockByNumber(n);
             BlockDifficulty totalDifficulty = blockStore.getTotalDifficultyForHash(block.getHash().getBytes());
 
-            System.out.println(
+            writer.println(
                 block.getNumber() + "," +
                 Hex.toHexString(block.getHash().getBytes()) + "," +
                 Hex.toHexString(totalDifficulty.getBytes()) + "," +
