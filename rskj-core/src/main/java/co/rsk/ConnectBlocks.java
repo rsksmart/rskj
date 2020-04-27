@@ -44,9 +44,9 @@ public class ConnectBlocks {
 
         String filename = args[0];
 
-        BufferedReader reader = new BufferedReader(new FileReader(filename));
-
-        execute(blockFactory, blockchain, trieStore, blockStore, receiptStore, reader);
+        try (BufferedReader reader = new BufferedReader(new FileReader(filename))) {
+            execute(blockFactory, blockchain, trieStore, blockStore, receiptStore, reader);
+        }
     }
 
     public static void execute(BlockFactory blockFactory, Blockchain blockchain, TrieStore trieStore, BlockStore blockStore, ReceiptStore receiptStore, BufferedReader reader) throws IOException {

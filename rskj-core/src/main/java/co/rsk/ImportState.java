@@ -39,9 +39,9 @@ public class ImportState {
 
         String filename = args[0];
 
-        BufferedReader reader = new BufferedReader(new FileReader(filename));
-
-        execute(reader, trieDB);
+        try (BufferedReader reader = new BufferedReader(new FileReader(filename))) {
+            execute(reader, trieDB);
+        }
     }
 
     public static void execute(BufferedReader reader, KeyValueDataSource trieDB) throws IOException {
