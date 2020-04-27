@@ -23,6 +23,8 @@ import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.Block;
 import org.ethereum.db.BlockStore;
 
+import java.io.PrintStream;
+
 /**
  * The entrypoint for execute blocks CLI util
  */
@@ -33,7 +35,11 @@ public class ExecuteBlocks {
         BlockExecutor blockExecutor = ctx.getBlockExecutor();
         BlockStore blockStore = ctx.getBlockStore();
         TrieStore trieStore = ctx.getTrieStore();
-
+        
+        executeBlocks(args, blockExecutor, blockStore, trieStore, System.out);
+    }
+    
+    public static void executeBlocks(String[] args, BlockExecutor blockExecutor, BlockStore blockStore, TrieStore trieStore, PrintStream writer) {
         long fromBlockNumber = Long.parseLong(args[0]);
         long toBlockNumber = Long.parseLong(args[1]);
 
@@ -41,13 +47,13 @@ public class ExecuteBlocks {
             Block block = blockStore.getChainBlockByNumber(n);
             Block parent = blockStore.getBlockByHash(block.getParentHash().getBytes());
 
-            System.out.println("block number " + block.getNumber());
-            System.out.println("block hash " + Hex.toHexString(block.getHash().getBytes()));
-            System.out.println("state root " + Hex.toHexString(block.getStateRoot()));
+            writer.println("block number " + block.getNumber());
+            writer.println("block hash " + Hex.toHexString(block.getHash().getBytes()));
+            writer.println("state root " + Hex.toHexString(block.getStateRoot()));
 
-            System.out.println("parent number " + parent.getNumber());
-            System.out.println("parent hash " + Hex.toHexString(parent.getHash().getBytes()));
-            System.out.println("parent root " + Hex.toHexString(parent.getStateRoot()));
+            writer.println("parent number " + parent.getNumber());
+            writer.println("parent hash " + Hex.toHexString(parent.getHash().getBytes()));
+            writer.println("parent root " + Hex.toHexString(parent.getStateRoot()));
 
             blockExecutor.execute(block, parent.getHeader(), false, false);
         }

@@ -18,6 +18,7 @@
 package co.rsk;
 
 import co.rsk.core.BlockDifficulty;
+import co.rsk.core.bc.BlockchainBranchComparator;
 import co.rsk.net.BlockSyncService;
 import co.rsk.test.World;
 import co.rsk.test.dsl.DslParser;
@@ -99,6 +100,33 @@ public class CliToolsTest {
         byte[] encoded = trie.toMessage();
 
         String line = Hex.toHexString(encoded);
+
+        Assert.assertTrue(data.indexOf(line) >= 0);
+    }
+
+    @Test
+    public void executeBlocks() throws FileNotFoundException, DslProcessorException, UnsupportedEncodingException {
+        DslParser parser = DslParser.fromResource("dsl/contracts02.txt");
+        World world = new World();
+        WorldDslProcessor processor = new WorldDslProcessor(world);
+        processor.processCommands(parser);
+
+        String[] args = new String[] { "1", "2" };
+
+        final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        final String utf8 = StandardCharsets.UTF_8.name();
+
+        try (PrintStream ps = new PrintStream(baos, true, utf8)) {
+            ExecuteBlocks.executeBlocks(args, world.getBlockExecutor(), world.getBlockStore(), world.getTrieStore(), ps);
+        }
+
+        String data = baos.toString(utf8);
+
+        Block block = world.getBlockByName("b02");
+
+        String hash = Hex.toHexString(block.getHash().getBytes());
+
+        String line = "block hash " + hash;
 
         Assert.assertTrue(data.indexOf(line) >= 0);
     }
