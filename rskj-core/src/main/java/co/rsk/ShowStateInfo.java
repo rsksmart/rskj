@@ -61,7 +61,7 @@ public class ShowStateInfo {
         Optional<Trie> otrie = trieStore.retrieve(block.getStateRoot());
 
         if (otrie.isPresent()) {
-            Trie trie = trieStore.retrieve(block.getStateRoot()).get();
+            Trie trie = otrie.get();
 
             processTrie(trie);
         }
