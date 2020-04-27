@@ -24,6 +24,7 @@ import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.Block;
 import org.ethereum.db.BlockStore;
 
+import java.io.PrintStream;
 import java.util.Optional;
 
 /**
@@ -33,20 +34,23 @@ public class ExportState {
     public static void main(String[] args) {
         RskContext ctx = new RskContext(args);
         BlockStore blockStore = ctx.getBlockStore();
+        TrieStore trieStore = ctx.getTrieStore();
 
+        exportState(args, blockStore, trieStore, System.out);
+    }
+
+    public static void exportState(String[] args, BlockStore blockStore, TrieStore trieStore, PrintStream writer) {
         long blockNumber = Long.parseLong(args[0]);
 
         Block block = blockStore.getChainBlockByNumber(blockNumber);
 
-        TrieStore trieStore = ctx.getTrieStore();
-
         Trie trie = trieStore.retrieve(block.getStateRoot()).get();
 
-        processTrie(trie);
+        processTrie(trie, writer);
     }
 
-    private static void processTrie(Trie trie) {
-        System.out.println(Hex.toHexString(trie.toMessage()));
+    private static void processTrie(Trie trie, PrintStream writer) {
+        writer.println(Hex.toHexString(trie.toMessage()));
 
         NodeReference leftReference = trie.getLeft();
 
@@ -57,11 +61,11 @@ public class ExportState {
                 Trie leftTrie = left.get();
 
                 if (!leftReference.isEmbeddable()) {
-                    processTrie(leftTrie);
+                    processTrie(leftTrie, writer);
                 }
 
                 if (leftTrie.hasLongValue()) {
-                    System.out.println(Hex.toHexString(leftTrie.getValue()));
+                    writer.println(Hex.toHexString(leftTrie.getValue()));
                 }
             }
         }
@@ -75,17 +79,17 @@ public class ExportState {
                 Trie rightTrie = right.get();
 
                 if (!rightReference.isEmbeddable()) {
-                    processTrie(rightTrie);
+                    processTrie(rightTrie, writer);
                 }
 
                 if (rightTrie.hasLongValue()) {
-                    System.out.println(Hex.toHexString(rightTrie.getValue()));
+                    writer.println(Hex.toHexString(rightTrie.getValue()));
                 }
             }
         }
 
         if (trie.hasLongValue()) {
-            System.out.println(Hex.toHexString(trie.getValue()));
+            writer.println(Hex.toHexString(trie.getValue()));
         }
     }
 }

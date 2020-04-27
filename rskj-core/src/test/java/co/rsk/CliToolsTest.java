@@ -23,6 +23,7 @@ import co.rsk.test.World;
 import co.rsk.test.dsl.DslParser;
 import co.rsk.test.dsl.DslProcessorException;
 import co.rsk.test.dsl.WorldDslProcessor;
+import co.rsk.trie.Trie;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
@@ -32,6 +33,7 @@ import org.junit.Test;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
+import java.util.Optional;
 
 /**
  * Created by ajlopez on 26/04/2020.
@@ -66,5 +68,38 @@ public class CliToolsTest {
 
             Assert.assertTrue(data.indexOf(line) >= 0);
         }
+    }
+
+    @Test
+    public void exportState() throws FileNotFoundException, DslProcessorException, UnsupportedEncodingException {
+        DslParser parser = DslParser.fromResource("dsl/contracts02.txt");
+        World world = new World();
+        WorldDslProcessor processor = new WorldDslProcessor(world);
+        processor.processCommands(parser);
+
+        String[] args = new String[] { "2" };
+
+        final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        final String utf8 = StandardCharsets.UTF_8.name();
+
+        try (PrintStream ps = new PrintStream(baos, true, utf8)) {
+            ExportState.exportState(args, world.getBlockStore(), world.getTrieStore(), ps);
+        }
+
+        String data = baos.toString(utf8);
+
+        Block block = world.getBlockByName("b02");
+
+        Optional<Trie> otrie = world.getTrieStore().retrieve(block.getStateRoot());
+
+        Assert.assertTrue(otrie.isPresent());
+
+        Trie trie = otrie.get();
+
+        byte[] encoded = trie.toMessage();
+
+        String line = Hex.toHexString(encoded);
+
+        Assert.assertTrue(data.indexOf(line) >= 0);
     }
 }
