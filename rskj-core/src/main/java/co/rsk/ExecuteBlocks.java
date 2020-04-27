@@ -23,7 +23,7 @@ import org.ethereum.core.Block;
 import org.ethereum.db.BlockStore;
 
 /**
- * The entrypoint for execute blocks CLI util
+ * The entry point for execute blocks CLI util
  */
 public class ExecuteBlocks {
     public static void main(String[] args) {

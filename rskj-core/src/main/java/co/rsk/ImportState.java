@@ -17,24 +17,19 @@
  */
 package co.rsk;
 
-import co.rsk.core.BlockDifficulty;
 import co.rsk.crypto.Keccak256;
 import org.bouncycastle.util.encoders.Hex;
-import org.ethereum.core.Block;
-import org.ethereum.core.BlockFactory;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.datasource.LevelDbDataSource;
-import org.ethereum.db.BlockStore;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
-import java.math.BigInteger;
 import java.nio.file.Paths;
 
 /**
- * The entrypoint for import state CLI util
+ * The entry point for import state CLI util
  */
 public class ImportState {
     public static void main(String[] args) throws IOException {
@@ -46,6 +41,10 @@ public class ImportState {
 
         BufferedReader reader = new BufferedReader(new FileReader(filename));
 
+        importState(reader, trieDB);
+    }
+
+    public static void importState(BufferedReader reader, KeyValueDataSource trieDB) throws IOException {
         for (String line = reader.readLine(); line != null; line = reader.readLine()) {
             line = line.trim();
             byte[] value = Hex.decode(line);

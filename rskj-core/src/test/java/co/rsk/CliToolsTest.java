@@ -18,8 +18,7 @@
 package co.rsk;
 
 import co.rsk.core.BlockDifficulty;
-import co.rsk.core.bc.BlockchainBranchComparator;
-import co.rsk.net.BlockSyncService;
+import co.rsk.crypto.Keccak256;
 import co.rsk.test.World;
 import co.rsk.test.dsl.DslParser;
 import co.rsk.test.dsl.DslProcessorException;
@@ -31,7 +30,9 @@ import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.core.Blockchain;
+import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.datasource.HashMapDB;
+import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.db.ReceiptStoreImpl;
@@ -41,6 +42,7 @@ import org.junit.Test;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
+import java.util.Random;
 
 /**
  * Created by ajlopez on 26/04/2020.
@@ -164,5 +166,28 @@ public class CliToolsTest {
         Assert.assertEquals(2, blockchain.getBestBlock().getNumber());
         Assert.assertEquals(block1.getHash(), blockchain.getBlockByNumber(1).getHash());
         Assert.assertEquals(block2.getHash(), blockchain.getBlockByNumber(2).getHash());
+    }
+
+    @Test
+    public void importState() throws IOException {
+        KeyValueDataSource trieDB = new HashMapDB();
+        ((HashMapDB) trieDB).setClearOnClose(false);
+        byte[] value = new byte[42];
+        Random random = new Random();
+        random.nextBytes(value);
+
+        StringBuilder stringBuilder = new StringBuilder();
+        stringBuilder.append(Hex.toHexString(value));
+        stringBuilder.append("\n");
+
+        BufferedReader reader = new BufferedReader(new StringReader(stringBuilder.toString()));
+
+        ImportState.importState(reader, trieDB);
+
+        byte[] key = new Keccak256(Keccak256Helper.keccak256(value)).getBytes();
+        byte[] result = trieDB.get(key);
+
+        Assert.assertNotNull(result);
+        Assert.assertArrayEquals(value, result);
     }
 }
