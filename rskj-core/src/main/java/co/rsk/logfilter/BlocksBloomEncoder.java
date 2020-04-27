@@ -52,7 +52,7 @@ public class BlocksBloomEncoder {
         long to = decodeLong(list.get(1).getRLPData());
         Bloom bloom = new Bloom(list.get(2).getRLPData());
 
-        if (from == 0 && to == 0 && Arrays.equals((new Bloom()).getData(), bloom.getData())) {
+        if (from == 0 && to == 0 && Arrays.equals(emptyBloom.getData(), bloom.getData())) {
             return new BlocksBloom();
         }
 
