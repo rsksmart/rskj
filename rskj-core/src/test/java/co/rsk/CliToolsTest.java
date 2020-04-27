@@ -32,7 +32,6 @@ import org.ethereum.core.BlockFactory;
 import org.ethereum.core.Blockchain;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.datasource.HashMapDB;
-import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.db.ReceiptStoreImpl;
@@ -113,6 +112,35 @@ public class CliToolsTest {
     }
 
     @Test
+    public void showStateInfo() throws FileNotFoundException, DslProcessorException, UnsupportedEncodingException {
+        DslParser parser = DslParser.fromResource("dsl/contracts02.txt");
+        World world = new World();
+        WorldDslProcessor processor = new WorldDslProcessor(world);
+        processor.processCommands(parser);
+
+        String[] args = new String[] { "best" };
+
+        final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        final String utf8 = StandardCharsets.UTF_8.name();
+
+        try (PrintStream ps = new PrintStream(baos, true, utf8)) {
+            ShowStateInfo.execute(args, world.getBlockStore(), world.getTrieStore(), ps);
+        }
+
+        String data = baos.toString(utf8);
+
+        Block block = world.getBlockByName("b02");
+
+        String blockLine = "Block hash: " + Hex.toHexString(block.getHash().getBytes());
+
+        Assert.assertTrue(data.indexOf(blockLine) >= 0);
+
+        String longValueLine = "Trie long values: 1";
+
+        Assert.assertTrue(data.indexOf(longValueLine) >= 0);
+    }
+
+    @Test
     public void executeBlocks() throws FileNotFoundException, DslProcessorException, UnsupportedEncodingException {
         DslParser parser = DslParser.fromResource("dsl/contracts02.txt");
         World world = new World();
@@ -170,8 +198,8 @@ public class CliToolsTest {
 
     @Test
     public void importState() throws IOException {
-        KeyValueDataSource trieDB = new HashMapDB();
-        ((HashMapDB) trieDB).setClearOnClose(false);
+        HashMapDB trieDB = new HashMapDB();
+        trieDB.setClearOnClose(false);
         byte[] value = new byte[42];
         Random random = new Random();
         random.nextBytes(value);

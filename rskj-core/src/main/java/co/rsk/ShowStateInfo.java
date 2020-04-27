@@ -24,10 +24,11 @@ import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.Block;
 import org.ethereum.db.BlockStore;
 
+import java.io.PrintStream;
 import java.util.Optional;
 
 /**
- * The entrypoint for state info CLI util
+ * The entry point for show state info CLI util
  */
 public class ShowStateInfo {
     private static int nnodes;
@@ -37,7 +38,12 @@ public class ShowStateInfo {
     public static void main(String[] args) {
         RskContext ctx = new RskContext(args);
         BlockStore blockStore = ctx.getBlockStore();
+        TrieStore trieStore = ctx.getTrieStore();
 
+        execute(args, blockStore, trieStore, System.out);
+    }
+    
+    public static void execute(String[] args, BlockStore blockStore, TrieStore trieStore, PrintStream writer) {
         Block block;
 
         if ("best".equals(args[0])) {
@@ -47,20 +53,18 @@ public class ShowStateInfo {
             block = blockStore.getChainBlockByNumber(Long.parseLong(args[0]));
         }
 
-        System.out.println("Block number: " + block.getNumber());
-        System.out.println("Block hash: " + Hex.toHexString(block.getHash().getBytes()));
-        System.out.println("Block parent hash: " + Hex.toHexString(block.getParentHash().getBytes()));
-        System.out.println("Block root hash: " + Hex.toHexString(block.getStateRoot()));
-
-        TrieStore trieStore = ctx.getTrieStore();
+        writer.println("Block number: " + block.getNumber());
+        writer.println("Block hash: " + Hex.toHexString(block.getHash().getBytes()));
+        writer.println("Block parent hash: " + Hex.toHexString(block.getParentHash().getBytes()));
+        writer.println("Block root hash: " + Hex.toHexString(block.getStateRoot()));
 
         Trie trie = trieStore.retrieve(block.getStateRoot()).get();
 
         processTrie(trie);
 
-        System.out.println("Trie nodes: " + nnodes);
-        System.out.println("Trie long values: " + nvalues);
-        System.out.println("Trie MB: " + (double)nbytes / (1024*1024));
+        writer.println("Trie nodes: " + nnodes);
+        writer.println("Trie long values: " + nvalues);
+        writer.println("Trie MB: " + (double)nbytes / (1024*1024));
     }
 
     private static void processTrie(Trie trie) {
