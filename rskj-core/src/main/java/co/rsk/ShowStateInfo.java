@@ -58,9 +58,13 @@ public class ShowStateInfo {
         writer.println("Block parent hash: " + Hex.toHexString(block.getParentHash().getBytes()));
         writer.println("Block root hash: " + Hex.toHexString(block.getStateRoot()));
 
-        Trie trie = trieStore.retrieve(block.getStateRoot()).get();
+        Optional<Trie> otrie = trieStore.retrieve(block.getStateRoot());
 
-        processTrie(trie);
+        if (otrie.isPresent()) {
+            Trie trie = trieStore.retrieve(block.getStateRoot()).get();
+
+            processTrie(trie);
+        }
 
         writer.println("Trie nodes: " + nnodes);
         writer.println("Trie long values: " + nvalues);

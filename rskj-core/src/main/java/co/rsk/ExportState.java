@@ -44,7 +44,13 @@ public class ExportState {
 
         Block block = blockStore.getChainBlockByNumber(blockNumber);
 
-        Trie trie = trieStore.retrieve(block.getStateRoot()).get();
+        Optional<Trie> otrie = trieStore.retrieve(block.getStateRoot());
+
+        if (!otrie.isPresent()) {
+            return;
+        }
+
+        Trie trie = otrie.get();
 
         processTrie(trie, writer);
     }
