@@ -28,18 +28,20 @@ public class BlocksBloom {
     private final Bloom bloom;
     private long fromBlock;
     private long toBlock;
-    private boolean empty = true;
+    private boolean empty;
 
     public BlocksBloom() {
         this.bloom = new Bloom();
         this.fromBlock = 0;
         this.toBlock = 0;
+        this.empty = true;
     }
 
     public BlocksBloom(long fromBlock, long toBlock, Bloom bloom) {
         this.bloom = bloom;
         this.fromBlock = fromBlock;
         this.toBlock = toBlock;
+        this.empty = false;
     }
 
     public Bloom getBloom() { return this.bloom; }

@@ -25,11 +25,14 @@ import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
 
 import java.math.BigInteger;
+import java.util.Arrays;
 
 /**
  * Created by ajlopez on 19/02/2020.
  */
 public class BlocksBloomEncoder {
+    private static final Bloom emptyBloom = new Bloom();
+
     private BlocksBloomEncoder() {
 
     }
@@ -48,6 +51,10 @@ public class BlocksBloomEncoder {
         long from = decodeLong(list.get(0).getRLPData());
         long to = decodeLong(list.get(1).getRLPData());
         Bloom bloom = new Bloom(list.get(2).getRLPData());
+
+        if (from == 0 && to == 0 && Arrays.equals((new Bloom()).getData(), bloom.getData())) {
+            return new BlocksBloom();
+        }
 
         return new BlocksBloom(from, to, bloom);
     }
