@@ -101,6 +101,10 @@ public class BlocksBloomStore {
     public int getNoConfirmations() { return this.noConfirmations; }
 
     public static byte[] longToKey(long value) {
+        if (value == 0) {
+            return new byte[0];
+        }
+
         return DataWord.valueOf(value).getByteArrayForStorage();
     }
 }

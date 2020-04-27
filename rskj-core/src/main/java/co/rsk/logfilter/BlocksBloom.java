@@ -28,6 +28,7 @@ public class BlocksBloom {
     private final Bloom bloom;
     private long fromBlock;
     private long toBlock;
+    private boolean empty = true;
 
     public BlocksBloom() {
         this.bloom = new Bloom();
@@ -48,7 +49,7 @@ public class BlocksBloom {
     public long toBlock() { return this.toBlock; }
 
     public long size() {
-        if (this.fromBlock == 0 && this.toBlock == 0) {
+        if (this.empty) {
             return 0;
         }
 
@@ -56,9 +57,10 @@ public class BlocksBloom {
     }
 
     public void addBlockBloom(long blockNumber, Bloom blockBloom) {
-        if (this.fromBlock == 0 && this.toBlock == 0) {
+        if (this.empty) {
             this.fromBlock = blockNumber;
             this.toBlock = blockNumber;
+            this.empty = false;
         }
         else if (blockNumber == toBlock + 1) {
             this.toBlock = blockNumber;

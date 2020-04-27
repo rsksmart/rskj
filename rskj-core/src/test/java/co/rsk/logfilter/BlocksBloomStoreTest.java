@@ -41,6 +41,24 @@ public class BlocksBloomStoreTest {
     }
 
     @Test
+    public void hasBlockNumberZero() {
+        BlocksBloomStore blocksBloomStore = new BlocksBloomStore(64, 0, new HashMapDB());
+
+        Assert.assertFalse(blocksBloomStore.hasBlockNumber(0));
+
+        BlocksBloom blocksBloom = new BlocksBloom();
+        Bloom bloom1 = new Bloom();
+        Bloom bloom2 = new Bloom();
+
+        blocksBloom.addBlockBloom(0, bloom1);
+        blocksBloom.addBlockBloom(1, bloom2);
+
+        blocksBloomStore.setBlocksBloom(blocksBloom);
+
+        Assert.assertTrue(blocksBloomStore.hasBlockNumber(0));
+    }
+
+    @Test
     public void setBlocksBloom() {
         BlocksBloom blocksBloom = new BlocksBloom();
         byte[] bytes1 = new byte[Bloom.BLOOM_BYTES];
