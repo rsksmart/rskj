@@ -29,7 +29,7 @@ import java.io.IOException;
 import java.math.BigInteger;
 
 /**
- * The entrypoint for import blocks CLI util
+ * The entry point for import blocks CLI tool
  */
 public class ImportBlocks {
     public static void main(String[] args) throws IOException {
