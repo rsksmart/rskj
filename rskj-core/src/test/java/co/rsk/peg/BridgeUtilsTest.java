@@ -323,39 +323,32 @@ public class BridgeUtilsTest {
 
     @Test
     public void countMissingSignatures_two_signatures() {
-        // Setup
-        BridgeRegTestConstants bridgeConstants = BridgeRegTestConstants.getInstance();
-        NetworkParameters btcParams = RegTestParams.get();
-        Federation federation = bridgeConstants.getGenesisFederation();
-
-        // Build prev btc tx
-        BtcTransaction prevTx = new BtcTransaction(btcParams);
-        TransactionOutput prevOut = new TransactionOutput(btcParams, prevTx, Coin.FIFTY_COINS, federation.getAddress());
-        prevTx.addOutput(prevOut);
-
-        // Build btc tx to be signed
-        BtcTransaction btcTx = new BtcTransaction(btcParams);
-        btcTx.addInput(prevOut);
-
-        // Create federation redeem script
-        Script redeemScript = createBaseRedeemScriptThatSpendsFromTheFederation(federation);
-        Script redeemDataScript = RedeemData.of(federation.getBtcPublicKeys(), redeemScript).redeemScript;
-
-        // Add 2 signatures
+        // Create 2 signatures
         byte[] sign1 = new byte[]{0x79};
         byte[] sign2 = new byte[]{0x78};
 
-        Script scriptSig = ScriptBuilder.createMultiSigInputScriptBytes(Arrays.asList(sign1, sign2), redeemDataScript.getProgram());
-        btcTx.getInput(0).setScriptSig(scriptSig);
-
-        TransactionOutput output = new TransactionOutput(btcParams, btcTx, Coin.COIN, new BtcECKey().toAddress(btcParams));
-        btcTx.addOutput(output);
-
+        BtcTransaction btcTx = createReleaseTx(Arrays.asList(sign1, sign2));
         Assert.assertEquals(0, BridgeUtils.countMissingSignatures(mock(Context.class), btcTx));
     }
 
     @Test
     public void countMissingSignatures_one_signature() {
+        // Add 1 signature
+        byte[] sign1 = new byte[]{0x79};
+        byte[] MISSING_SIGNATURE = new byte[0];
+
+        BtcTransaction btcTx = createReleaseTx(Arrays.asList(sign1, MISSING_SIGNATURE));
+        Assert.assertEquals(1, BridgeUtils.countMissingSignatures(mock(Context.class), btcTx));
+    }
+
+    @Test
+    public void countMissingSignatures_no_signatures() {
+        // As no signature was added, missing signatures is 2
+        BtcTransaction btcTx = createReleaseTx(Collections.emptyList());
+        Assert.assertEquals(2, BridgeUtils.countMissingSignatures(mock(Context.class), btcTx));
+    }
+
+    private BtcTransaction createReleaseTx(List<byte[]> signatures) {
         // Setup
         BridgeRegTestConstants bridgeConstants = BridgeRegTestConstants.getInstance();
         NetworkParameters btcParams = RegTestParams.get();
@@ -373,40 +366,20 @@ public class BridgeUtilsTest {
         // Create federation redeem script
         Script redeemScript = createBaseRedeemScriptThatSpendsFromTheFederation(federation);
         Script redeemDataScript = RedeemData.of(federation.getBtcPublicKeys(), redeemScript).redeemScript;
+        Script scriptSig;
 
-        // Add 1 signature
-        byte[] sign1 = new byte[]{0x79};
-        byte[] MISSING_SIGNATURE = new byte[0];
+        if (signatures.isEmpty()) {
+            scriptSig = PegTestUtils.createBaseInputScriptThatSpendsFromTheFederation(federation);
+        } else {
+            scriptSig = ScriptBuilder.createMultiSigInputScriptBytes(signatures, redeemDataScript.getProgram());
+        }
 
-        Script scriptSig = ScriptBuilder.createMultiSigInputScriptBytes(Arrays.asList(sign1, MISSING_SIGNATURE), redeemDataScript.getProgram());
         btcTx.getInput(0).setScriptSig(scriptSig);
 
         TransactionOutput output = new TransactionOutput(btcParams, btcTx, Coin.COIN, new BtcECKey().toAddress(btcParams));
         btcTx.addOutput(output);
 
-        Assert.assertEquals(1, BridgeUtils.countMissingSignatures(mock(Context.class), btcTx));
-    }
-
-    @Test
-    public void countMissingSignatures_no_signatures() {
-        // Setup
-        BridgeRegTestConstants bridgeConstants = BridgeRegTestConstants.getInstance();
-        NetworkParameters btcParams = RegTestParams.get();
-        Federation federation = bridgeConstants.getGenesisFederation();
-
-        // Build prev btc tx
-        BtcTransaction prevTx = new BtcTransaction(btcParams);
-        TransactionOutput prevOut = new TransactionOutput(btcParams, prevTx, Coin.FIFTY_COINS, federation.getAddress());
-        prevTx.addOutput(prevOut);
-
-        // Build btc tx to be signed
-        BtcTransaction btcTx = new BtcTransaction(btcParams);
-        btcTx.addInput(prevOut).setScriptSig(PegTestUtils.createBaseInputScriptThatSpendsFromTheFederation(federation));
-        TransactionOutput output = new TransactionOutput(btcParams, btcTx, Coin.COIN, new BtcECKey().toAddress(btcParams));
-        btcTx.addOutput(output);
-
-        // As no signature was added, missing signatures is 2
-        Assert.assertEquals(2, BridgeUtils.countMissingSignatures(mock(Context.class), btcTx));
+        return btcTx;
     }
 
     private byte[] generatePrivKey() {

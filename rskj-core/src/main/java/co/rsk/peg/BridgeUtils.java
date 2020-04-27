@@ -188,7 +188,7 @@ public class BridgeUtils {
         for (TransactionInput input : btcTx.getInputs()) {
             Script scriptSig = input.getScriptSig();
             List<ScriptChunk> chunks = scriptSig.getChunks();
-            for (int i = 1; i < chunks.size(); i++) {
+            for (int i = 1; i < chunks.size() - 1; i++) {
                 ScriptChunk chunk = chunks.get(i);
                 if (!chunk.isOpCode() && chunk.data.length == 0) {
                     unsigned++;
