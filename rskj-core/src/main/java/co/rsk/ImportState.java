@@ -29,7 +29,7 @@ import java.io.IOException;
 import java.nio.file.Paths;
 
 /**
- * The entry point for import state CLI util
+ * The entry point for import state CLI tool
  */
 public class ImportState {
     public static void main(String[] args) throws IOException {
@@ -41,10 +41,10 @@ public class ImportState {
 
         BufferedReader reader = new BufferedReader(new FileReader(filename));
 
-        importState(reader, trieDB);
+        execute(reader, trieDB);
     }
 
-    public static void importState(BufferedReader reader, KeyValueDataSource trieDB) throws IOException {
+    public static void execute(BufferedReader reader, KeyValueDataSource trieDB) throws IOException {
         for (String line = reader.readLine(); line != null; line = reader.readLine()) {
             line = line.trim();
             byte[] value = Hex.decode(line);

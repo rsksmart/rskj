@@ -30,7 +30,7 @@ import java.io.FileReader;
 import java.io.IOException;
 
 /**
- * The entry point for connect blocks CLI util
+ * The entry point for connect blocks CLI tool
  */
 public class ConnectBlocks {
     public static void main(String[] args) throws IOException {
@@ -46,10 +46,10 @@ public class ConnectBlocks {
 
         BufferedReader reader = new BufferedReader(new FileReader(filename));
 
-        connectBlocks(blockFactory, blockchain, trieStore, blockStore, receiptStore, reader);
+        execute(blockFactory, blockchain, trieStore, blockStore, receiptStore, reader);
     }
 
-    public static void connectBlocks(BlockFactory blockFactory, Blockchain blockchain, TrieStore trieStore, BlockStore blockStore, ReceiptStore receiptStore, BufferedReader reader) throws IOException {
+    public static void execute(BlockFactory blockFactory, Blockchain blockchain, TrieStore trieStore, BlockStore blockStore, ReceiptStore receiptStore, BufferedReader reader) throws IOException {
         for (String line = reader.readLine(); line != null; line = reader.readLine()) {
             String[] parts = line.split(",");
 

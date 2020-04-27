@@ -23,7 +23,7 @@ import org.ethereum.core.Block;
 import org.ethereum.db.BlockStore;
 
 /**
- * The entry point for execute blocks CLI util
+ * The entry point for execute blocks CLI tool
  */
 public class ExecuteBlocks {
     public static void main(String[] args) {
@@ -33,10 +33,10 @@ public class ExecuteBlocks {
         BlockStore blockStore = ctx.getBlockStore();
         TrieStore trieStore = ctx.getTrieStore();
         
-        executeBlocks(args, blockExecutor, blockStore, trieStore);
+        execute(args, blockExecutor, blockStore, trieStore);
     }
     
-    public static void executeBlocks(String[] args, BlockExecutor blockExecutor, BlockStore blockStore, TrieStore trieStore) {
+    public static void execute(String[] args, BlockExecutor blockExecutor, BlockStore blockStore, TrieStore trieStore) {
         long fromBlockNumber = Long.parseLong(args[0]);
         long toBlockNumber = Long.parseLong(args[1]);
 

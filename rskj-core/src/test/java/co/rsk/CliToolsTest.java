@@ -60,7 +60,7 @@ public class CliToolsTest {
         final String utf8 = StandardCharsets.UTF_8.name();
 
         try (PrintStream ps = new PrintStream(baos, true, utf8)) {
-            ExportBlocks.exportBlocks(args, world.getBlockStore(), ps);
+            ExportBlocks.execute(args, world.getBlockStore(), ps);
         }
 
         String data = baos.toString(utf8);
@@ -91,7 +91,7 @@ public class CliToolsTest {
         final String utf8 = StandardCharsets.UTF_8.name();
 
         try (PrintStream ps = new PrintStream(baos, true, utf8)) {
-            ExportState.exportState(args, world.getBlockStore(), world.getTrieStore(), ps);
+            ExportState.execute(args, world.getBlockStore(), world.getTrieStore(), ps);
         }
 
         String data = baos.toString(utf8);
@@ -149,7 +149,7 @@ public class CliToolsTest {
 
         String[] args = new String[] { "1", "2" };
 
-        ExecuteBlocks.executeBlocks(args, world.getBlockExecutor(), world.getBlockStore(), world.getTrieStore());
+        ExecuteBlocks.execute(args, world.getBlockExecutor(), world.getBlockStore(), world.getTrieStore());
 
         Assert.assertEquals(2, world.getBlockChain().getBestBlock().getNumber());
     }
@@ -183,7 +183,7 @@ public class CliToolsTest {
 
         BufferedReader reader = new BufferedReader(new StringReader(stringBuilder.toString()));
 
-        ConnectBlocks.connectBlocks(
+        ConnectBlocks.execute(
                 new BlockFactory(ActivationConfigsForTest.allBut(ConsensusRule.RSKIPUMM)),
                 blockchain,
                 world.getTrieStore(),
@@ -210,7 +210,7 @@ public class CliToolsTest {
 
         BufferedReader reader = new BufferedReader(new StringReader(stringBuilder.toString()));
 
-        ImportState.importState(reader, trieDB);
+        ImportState.execute(reader, trieDB);
 
         byte[] key = new Keccak256(Keccak256Helper.keccak256(value)).getBytes();
         byte[] result = trieDB.get(key);

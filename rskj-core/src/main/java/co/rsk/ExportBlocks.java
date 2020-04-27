@@ -32,10 +32,10 @@ public class ExportBlocks {
         RskContext ctx = new RskContext(args);
         BlockStore blockStore = ctx.getBlockStore();
 
-        exportBlocks(args, blockStore, System.out);
+        execute(args, blockStore, System.out);
     }
 
-    public static void exportBlocks(String[] args, BlockStore blockStore, PrintStream writer) {
+    public static void execute(String[] args, BlockStore blockStore, PrintStream writer) {
         long fromBlockNumber = Long.parseLong(args[0]);
         long toBlockNumber = Long.parseLong(args[1]);
 

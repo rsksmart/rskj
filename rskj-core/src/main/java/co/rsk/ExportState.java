@@ -28,7 +28,7 @@ import java.io.PrintStream;
 import java.util.Optional;
 
 /**
- * The entrypoint for export state CLI util
+ * The entry point for export state CLI tool
  */
 public class ExportState {
     public static void main(String[] args) {
@@ -36,10 +36,10 @@ public class ExportState {
         BlockStore blockStore = ctx.getBlockStore();
         TrieStore trieStore = ctx.getTrieStore();
 
-        exportState(args, blockStore, trieStore, System.out);
+        execute(args, blockStore, trieStore, System.out);
     }
 
-    public static void exportState(String[] args, BlockStore blockStore, TrieStore trieStore, PrintStream writer) {
+    public static void execute(String[] args, BlockStore blockStore, TrieStore trieStore, PrintStream writer) {
         long blockNumber = Long.parseLong(args[0]);
 
         Block block = blockStore.getChainBlockByNumber(blockNumber);
