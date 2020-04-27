@@ -119,22 +119,9 @@ public class CliToolsTest {
 
         String[] args = new String[] { "1", "2" };
 
-        final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        final String utf8 = StandardCharsets.UTF_8.name();
+        ExecuteBlocks.executeBlocks(args, world.getBlockExecutor(), world.getBlockStore(), world.getTrieStore());
 
-        try (PrintStream ps = new PrintStream(baos, true, utf8)) {
-            ExecuteBlocks.executeBlocks(args, world.getBlockExecutor(), world.getBlockStore(), world.getTrieStore(), ps);
-        }
-
-        String data = baos.toString(utf8);
-
-        Block block = world.getBlockByName("b02");
-
-        String hash = Hex.toHexString(block.getHash().getBytes());
-
-        String line = "block hash " + hash;
-
-        Assert.assertTrue(data.indexOf(line) >= 0);
+        Assert.assertEquals(2, world.getBlockChain().getBestBlock().getNumber());
     }
 
     @Test
