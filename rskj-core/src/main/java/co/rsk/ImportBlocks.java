@@ -41,20 +41,29 @@ public class ImportBlocks {
 
         BufferedReader reader = new BufferedReader(new FileReader(filename));
 
-        for (String line = reader.readLine(); line != null; line = reader.readLine()) {
-            String[] parts = line.split(",");
+        execute(blockFactory, blockStore, reader);
+    }
 
-            if (parts.length < 4) {
-                continue;
+    public static void execute(BlockFactory blockFactory, BlockStore blockStore, BufferedReader reader) throws IOException {
+        try {
+            for (String line = reader.readLine(); line != null; line = reader.readLine()) {
+                String[] parts = line.split(",");
+
+                if (parts.length < 4) {
+                    continue;
+                }
+
+                byte[] encoded = Hex.decode(parts[3]);
+
+                Block block = blockFactory.decodeBlock(encoded);
+
+                BlockDifficulty totalDifficulty = new BlockDifficulty(new BigInteger(Hex.decode(parts[2])));
+
+                blockStore.saveBlock(block, totalDifficulty, true);
             }
-
-            byte[] encoded = Hex.decode(parts[3]);
-
-            Block block = blockFactory.decodeBlock(encoded);
-
-            BlockDifficulty totalDifficulty = new BlockDifficulty(new BigInteger(Hex.decode(parts[2])));
-
-            blockStore.saveBlock(block, totalDifficulty, true);
+        }
+        finally {
+            reader.close();
         }
 
         blockStore.flush();

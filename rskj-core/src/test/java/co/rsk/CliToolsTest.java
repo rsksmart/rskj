@@ -197,6 +197,44 @@ public class CliToolsTest {
     }
 
     @Test
+    public void importBlocks() throws IOException, DslProcessorException {
+        DslParser parser = DslParser.fromResource("dsl/blocks01b.txt");
+        ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
+        World world = new World(receiptStore);
+        WorldDslProcessor processor = new WorldDslProcessor(world);
+        processor.processCommands(parser);
+
+        Blockchain blockchain = world.getBlockChain();
+
+        Assert.assertEquals(0, blockchain.getBestBlock().getNumber());
+
+        Block block1 = world.getBlockByName("b01");
+        Block block2 = world.getBlockByName("b02");
+
+        StringBuilder stringBuilder = new StringBuilder();
+        stringBuilder.append("1,");
+        stringBuilder.append(Hex.toHexString(block1.getHash().getBytes()));
+        stringBuilder.append(",02,");
+        stringBuilder.append(Hex.toHexString(block1.getEncoded()));
+        stringBuilder.append("\n");
+        stringBuilder.append("1,");
+        stringBuilder.append(Hex.toHexString(block2.getHash().getBytes()));
+        stringBuilder.append(",03,");
+        stringBuilder.append(Hex.toHexString(block2.getEncoded()));
+        stringBuilder.append("\n");
+
+        BufferedReader reader = new BufferedReader(new StringReader(stringBuilder.toString()));
+
+        ImportBlocks.execute(
+                new BlockFactory(ActivationConfigsForTest.allBut(ConsensusRule.RSKIPUMM)),
+                world.getBlockStore(),
+                reader);
+
+        Assert.assertEquals(block1.getHash(), blockchain.getBlockByNumber(1).getHash());
+        Assert.assertEquals(block2.getHash(), blockchain.getBlockByNumber(2).getHash());
+    }
+
+    @Test
     public void importState() throws IOException {
         HashMapDB trieDB = new HashMapDB();
         trieDB.setClearOnClose(false);
