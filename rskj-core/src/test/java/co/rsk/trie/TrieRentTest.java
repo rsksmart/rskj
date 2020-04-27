@@ -38,7 +38,7 @@ public class TrieRentTest {
         Trie trie = new Trie();        
         trie = trie.put("foo", "abc".getBytes());
         System.out.println(trie);
-        System.out.println("Rent paid until block number "+ trie.getLastRentPaidTime());
+        System.out.println("Rent fully paid until time  "+ trie.getLastRentPaidTime());
         
         // replace with findNode?
         List<Trie> nodes = trie.getNodes("foo"); 
@@ -46,7 +46,20 @@ public class TrieRentTest {
         Assert.assertEquals(0,trie.getLastRentPaidTime()); // 0 (long cannot be null)
     }
 
+    // rent time delta
+    @Test
+    public void putKeyGetRentTimeDelta() {
+        Trie trie = new Trie();        
+        trie = trie.put("foo", "abc".getBytes());
+        long timeDelta = trie.getRentPaidTimeDelta();
+        System.out.println("Time delta between now and rent last paid (fully) "+ timeDelta + " sec, or about "+ timeDelta/(365.25*24*3600) + " years");
+        
+        // replace with findNode?
+        List<Trie> nodes = trie.getNodes("foo"); 
+        Assert.assertArrayEquals("abc".getBytes(StandardCharsets.UTF_8), nodes.get(0).getValue());
+    }
+
     // trie save, retrieve, check rent status
-    // trie to and from message
+    // trie to and from message 
 
 }

@@ -34,6 +34,12 @@ import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.Set;
 
+/* @mish Implements a mutable trie, which links a trie with a current trie store
+ * Inner class implements an iterator, used to iterate over an account's storage keys (pre-order traversal, skipping the root)
+ * The triestore saves and retrieves trie nodes in a key-value DB using a node's hash (of its serialization). 
+    Thus, the iterator operates on Dataword (32 bytes) and not on trie key slices
+ * apart from that has methods for trie put, get, delete, getTrie, getHash, getValue, getValueLength, getValueHash
+*/
 public class MutableTrieImpl implements MutableTrie {
 
     private Trie trie;
@@ -105,7 +111,7 @@ public class MutableTrieImpl implements MutableTrie {
         if (storageTrie != null) {
             Iterator<Trie.IterationElement> storageIterator = storageTrie.getPreOrderIterator();
             storageIterator.next(); // skip storage root
-            return new StorageKeysIterator(storageIterator, storageKeyOffset);
+            return new StorageKeysIterator(storageIterator, storageKeyOffset); //@mish, see implementation of inner class below
         }
         return Collections.emptyIterator();
     }

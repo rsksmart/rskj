@@ -36,6 +36,8 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
+import java.time.Instant; //@mish for storage rent computation
+
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
 /**
@@ -1461,11 +1463,19 @@ public class Trie {
         return subnodes;
     }
 
-    // @mish Additional method for storage rent. Block number until which rent has been paid.
+    // @mish Additional method for storage rent. 
+    
+    // Time until which rent has been paid.
     // This will change (increase/decrease) when a node is updated/deleted or when rent is paid.
     @Nullable
     public long getLastRentPaidTime() {
         return lastRentPaidTime;
+    }
+
+    // @mish  seconds since (+ve) or until (-ve) rentLastPaidTime compared to now
+    @Nullable
+    public long getRentPaidTimeDelta(){
+        return Instant.now().getEpochSecond() - lastRentPaidTime; //https://docs.oracle.com/javase/8/docs/api/java/time/Instant.html
     }
 
 }
