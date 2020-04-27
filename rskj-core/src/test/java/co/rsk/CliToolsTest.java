@@ -26,9 +26,15 @@ import co.rsk.test.dsl.DslProcessorException;
 import co.rsk.test.dsl.WorldDslProcessor;
 import co.rsk.trie.Trie;
 import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Block;
+import org.ethereum.core.BlockFactory;
 import org.ethereum.core.Blockchain;
+import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.BlockStore;
+import org.ethereum.db.ReceiptStore;
+import org.ethereum.db.ReceiptStoreImpl;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -129,5 +135,47 @@ public class CliToolsTest {
         String line = "block hash " + hash;
 
         Assert.assertTrue(data.indexOf(line) >= 0);
+    }
+
+    @Test
+    public void connectBlocks() throws IOException, DslProcessorException {
+        DslParser parser = DslParser.fromResource("dsl/blocks01b.txt");
+        ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
+        World world = new World(receiptStore);
+        WorldDslProcessor processor = new WorldDslProcessor(world);
+        processor.processCommands(parser);
+
+        Blockchain blockchain = world.getBlockChain();
+
+        Assert.assertEquals(0, blockchain.getBestBlock().getNumber());
+
+        Block block1 = world.getBlockByName("b01");
+        Block block2 = world.getBlockByName("b02");
+
+        StringBuilder stringBuilder = new StringBuilder();
+        stringBuilder.append("1,");
+        stringBuilder.append(Hex.toHexString(block1.getHash().getBytes()));
+        stringBuilder.append(",02,");
+        stringBuilder.append(Hex.toHexString(block1.getEncoded()));
+        stringBuilder.append("\n");
+        stringBuilder.append("1,");
+        stringBuilder.append(Hex.toHexString(block2.getHash().getBytes()));
+        stringBuilder.append(",03,");
+        stringBuilder.append(Hex.toHexString(block2.getEncoded()));
+        stringBuilder.append("\n");
+
+        BufferedReader reader = new BufferedReader(new StringReader(stringBuilder.toString()));
+
+        ConnectBlocks.connectBlocks(
+                new BlockFactory(ActivationConfigsForTest.allBut(ConsensusRule.RSKIPUMM)),
+                blockchain,
+                world.getTrieStore(),
+                world.getBlockStore(),
+                receiptStore,
+                reader);
+
+        Assert.assertEquals(2, blockchain.getBestBlock().getNumber());
+        Assert.assertEquals(block1.getHash(), blockchain.getBlockByNumber(1).getHash());
+        Assert.assertEquals(block2.getHash(), blockchain.getBlockByNumber(2).getHash());
     }
 }

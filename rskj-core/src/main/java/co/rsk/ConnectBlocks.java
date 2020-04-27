@@ -46,6 +46,10 @@ public class ConnectBlocks {
 
         BufferedReader reader = new BufferedReader(new FileReader(filename));
 
+        connectBlocks(blockFactory, blockchain, trieStore, blockStore, receiptStore, reader);
+    }
+
+    public static void connectBlocks(BlockFactory blockFactory, Blockchain blockchain, TrieStore trieStore, BlockStore blockStore, ReceiptStore receiptStore, BufferedReader reader) throws IOException {
         for (String line = reader.readLine(); line != null; line = reader.readLine()) {
             String[] parts = line.split(",");
 
@@ -61,14 +65,8 @@ public class ConnectBlocks {
             blockchain.tryToConnect(block);
         }
 
-        System.out.println("Starting flush");
         blockStore.flush();
-        System.out.println("Block store flush done");
         trieStore.flush();
-        System.out.println("Trie store flush done");
         receiptStore.flush();
-        System.out.println("Receipt store flush done");
-
-        System.exit(0);
     }
 }
