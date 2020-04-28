@@ -110,7 +110,7 @@ public class EthModule
 
         byte[] result = bridgeSupport.getStateForDebugging();
 
-        BridgeState state = BridgeState.create(bridgeConstants, result);
+        BridgeState state = BridgeState.create(bridgeConstants, result, null);
 
         return state.stateToMap();
     }
