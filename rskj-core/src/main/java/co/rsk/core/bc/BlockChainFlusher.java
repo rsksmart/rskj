@@ -22,6 +22,7 @@ import co.rsk.trie.TrieStore;
 import org.ethereum.core.Block;
 import org.ethereum.core.TransactionReceipt;
 import org.ethereum.db.BlockStore;
+import org.ethereum.db.ReceiptStore;
 import org.ethereum.listener.CompositeEthereumListener;
 import org.ethereum.listener.EthereumListenerAdapter;
 import org.slf4j.Logger;
@@ -39,6 +40,7 @@ public class BlockChainFlusher implements InternalService {
     private final CompositeEthereumListener emitter;
     private final TrieStore trieStore;
     private final BlockStore blockStore;
+    private final ReceiptStore receiptStore;
 
     private final OnBestBlockListener listener = new OnBestBlockListener();
 
@@ -48,11 +50,12 @@ public class BlockChainFlusher implements InternalService {
             int flushNumberOfBlocks,
             CompositeEthereumListener emitter,
             TrieStore trieStore,
-            BlockStore blockStore) {
+            BlockStore blockStore, ReceiptStore receiptStore) {
         this.flushNumberOfBlocks = flushNumberOfBlocks;
         this.emitter = emitter;
         this.trieStore = trieStore;
         this.blockStore = blockStore;
+        this.receiptStore = receiptStore;
     }
 
     @Override
@@ -63,22 +66,31 @@ public class BlockChainFlusher implements InternalService {
     @Override
     public void stop() {
         emitter.removeListener(listener);
+        flushAll();
     }
 
     private void flush() {
         if (nFlush == 0) {
-            long saveTime = System.nanoTime();
-            trieStore.flush();
-            long totalTime = System.nanoTime() - saveTime;
-            logger.trace("repository flush: [{}]nano", totalTime);
-            saveTime = System.nanoTime();
-            blockStore.flush();
-            totalTime = System.nanoTime() - saveTime;
-            logger.trace("blockstore flush: [{}]nano", totalTime);
+            flushAll();
         }
 
         nFlush++;
         nFlush = nFlush % flushNumberOfBlocks;
+    }
+
+    private void flushAll() {
+        long saveTime = System.nanoTime();
+        trieStore.flush();
+        long totalTime = System.nanoTime() - saveTime;
+        logger.trace("repository flush: [{}]nano", totalTime);
+        saveTime = System.nanoTime();
+        blockStore.flush();
+        totalTime = System.nanoTime() - saveTime;
+        logger.trace("blockstore flush: [{}]nano", totalTime);
+        saveTime = System.nanoTime();
+        receiptStore.flush();
+        totalTime = System.nanoTime() - saveTime;
+        logger.trace("receiptstore flush: [{}]nano", totalTime);
     }
 
     private class OnBestBlockListener extends EthereumListenerAdapter {
