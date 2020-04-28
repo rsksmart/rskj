@@ -19,13 +19,17 @@
 
 package org.ethereum.core.genesis;
 
+import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.genesis.TestGenesisLoader;
 import co.rsk.db.RepositorySnapshot;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Blockchain;
 import org.ethereum.util.RskTestFactory;
 import org.ethereum.vm.DataWord;
+import org.ethereum.vm.PrecompiledContracts;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -45,7 +49,16 @@ public class BlockchainLoaderTest {
         Blockchain blockchain = objects.getBlockchain();// calls loadBlockchain
         RepositorySnapshot repository = objects.getRepositoryLocator().snapshotAt(blockchain.getBestBlock().getHeader());
 
-        int genesisAccountKeysSize = 12; // PCCs + test accounts in blockchain_loader_genesis.json
+        TestSystemProperties testSystemProperties = new TestSystemProperties();
+        ActivationConfig.ForBlock activations = testSystemProperties.getActivationConfig().forBlock(0);
+        int enabledPCCs = PrecompiledContracts.GENESIS_ADDRESSES.size();
+        for (ConsensusRule consensusRule:PrecompiledContracts.CONSENSUS_ENABLED_ADDRESSES.values()) {
+            if (activations.isActive(consensusRule)) {
+                enabledPCCs++;
+            }
+        }
+        int testAccountsSize = 3;
+        int genesisAccountKeysSize = enabledPCCs + testAccountsSize; // PCCs + test accounts in blockchain_loader_genesis.json
         Assert.assertEquals(genesisAccountKeysSize, repository.getAccountsKeys().size());
 
         RskAddress daba01 = new RskAddress("dabadabadabadabadabadabadabadabadaba0001");
