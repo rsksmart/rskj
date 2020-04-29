@@ -31,6 +31,7 @@ import co.rsk.test.builders.BlockBuilder;
 import co.rsk.trie.TrieStore;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.db.BlockStore;
@@ -80,6 +81,9 @@ public class RskForksBridgeTest {
         //keyHoldingRSKs = new ECKey();
         co.rsk.core.Coin balance = new co.rsk.core.Coin(new BigInteger("10000000000000000000"));
         repository.addBalance(new RskAddress(fedECPrivateKey.getAddress()), balance);
+
+        co.rsk.core.Coin bridgeBalance = co.rsk.core.Coin .fromBitcoin(BridgeRegTestConstants.getInstance().getMaxRbtc());
+        repository.addBalance(PrecompiledContracts.BRIDGE_ADDR, bridgeBalance);
         genesis.setStateRoot(repository.getRoot());
         genesis.flushRLP();
 
@@ -484,7 +488,8 @@ public class RskForksBridgeTest {
 
         Object[] result = Bridge.GET_STATE_FOR_DEBUGGING.decodeResult(res.getHReturn());
 
-        return BridgeState.create(beforeBambooProperties.getNetworkConstants().getBridgeConstants(), (byte[])result[0]);
+        ActivationConfig.ForBlock activations = beforeBambooProperties.getActivationConfig().forBlock(blockChain.getBestBlock().getNumber());
+        return BridgeState.create(beforeBambooProperties.getNetworkConstants().getBridgeConstants(), (byte[])result[0], activations);
     }
 
 

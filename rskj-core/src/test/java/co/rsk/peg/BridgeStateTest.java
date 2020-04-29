@@ -48,9 +48,9 @@ public class BridgeStateTest {
                 bridgeConstants, config.getActivationConfig().forBlock(0L)
         );
 
-        BridgeState state = new BridgeState(42, provider);
+        BridgeState state = new BridgeState(42, provider, null);
 
-        BridgeState clone = BridgeState.create(bridgeConstants, state.getEncoded());
+        BridgeState clone = BridgeState.create(bridgeConstants, state.getEncoded(), null);
 
         Assert.assertNotNull(clone);
         Assert.assertEquals(42, clone.getBtcBlockchainBestChainHeight());
