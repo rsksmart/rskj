@@ -27,7 +27,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 /**
-  * Created by mish on April 21.
+  * Created by #mish on April 21, 2020.
   * for testing gradle build modified to permit standard system streams 
  */
 public class TrieRentTest {
@@ -37,7 +37,8 @@ public class TrieRentTest {
     public void putKeyGetRent() {
         Trie trie = new Trie();        
         trie = trie.put("foo", "abc".getBytes());
-        System.out.println(trie);
+        trie = trie.put("foot", "abc".getBytes());
+        //System.out.println(trie);
         System.out.println("Rent fully paid until time  "+ trie.getLastRentPaidTime());
         
         // replace with findNode?

@@ -36,7 +36,7 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
-import java.time.Instant; //@mish for storage rent computation
+import java.time.Instant; //#mish for storage rent
 
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
@@ -57,7 +57,7 @@ import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
  */
 public class Trie {
     private static final int ARITY = 2;
-    private static final int MAX_EMBEDDED_NODE_SIZE_IN_BYTES = 52; //@mish: was 44. Increase by 8 bytes for lastRentPaidTime
+    private static final int MAX_EMBEDDED_NODE_SIZE_IN_BYTES = 52; //#mish: was 44. Increase by 8 bytes for lastRentPaidTime
 
     private static final Profiler profiler = ProfilerFactory.getInstance();
     private static final String INVALID_ARITY = "Invalid arity";
@@ -99,7 +99,7 @@ public class Trie {
 
     // the size of this node along with its children (in bytes)
     // note that we use a long because an int would allow only up to 4GB of state to be stored.
-    // @mish: int is 32 bits. If this limit is applied to trie root node, 
+    // #mish: int is 32 bits. If this limit is applied to trie root node, 
     // then it limits state size (all children from root) to 2^32 ~ 4GB. 
     private VarInt childrenSize;
 
@@ -109,7 +109,7 @@ public class Trie {
     // shared Path
     private final TrieKeySlice sharedPath;
 
-    // @mish.  (RSKIP113) 
+    // #mish.  (RSKIP113) 
     private long lastRentPaidTime; // some parts of the cocde use strings for timestmaps
 
 
@@ -143,7 +143,7 @@ public class Trie {
         checkValueLength();
     }
 
-    // @mish full constructor with storage rent (extended from above)
+    // #mish full constructor with storage rent (extended from above)
     //new Trie(store, sharedPath, value, left, right, lvalue, valueHash, childrenSize, lastRentPaidTime);
     private Trie(TrieStore store, TrieKeySlice sharedPath, byte[] value, NodeReference left, NodeReference right, Uint24 valueLength, Keccak256 valueHash, VarInt childrenSize, long lastRentPaidTime) {
         this.value = value;
@@ -253,7 +253,7 @@ public class Trie {
         }
 
         // it doesn't need to clone value since it's retrieved from store or created from message
-        // @mish: orchid unaffected by rent at present.
+        // #mish: orchid unaffected by rent at present.
         return new Trie(store, sharedPath, value, left, right, lvalue, valueHash);
     }
 
@@ -346,7 +346,7 @@ public class Trie {
             throw new IllegalArgumentException("The message had more data than expected");
         }
 
-        return new Trie(store, sharedPath, value, left, right, lvalue, valueHash, childrenSize, lastRentPaidTime);// @mish added rent
+        return new Trie(store, sharedPath, value, left, right, lvalue, valueHash, childrenSize, lastRentPaidTime);// #mish added rent
     }
 
     /**
@@ -692,7 +692,7 @@ public class Trie {
                         this.right.serializedLength() +
                         (this.isTerminal() ? 0 : childrenSize.getSizeInBytes()) +
                         (hasLongVal ? Keccak256Helper.DEFAULT_SIZE_BYTES + Uint24.BYTES : lvalue.intValue())
-        );      //@mish add rent bytes here.. easiest to put the fixed 4 bytes (int) after the flag
+        );      //#mish add rent bytes here.. easiest to put the fixed 4 bytes (int) after the flag
 
         // current serialization version: 01 //see RSKIP107
         byte flags = 0b01000000;
@@ -829,7 +829,7 @@ public class Trie {
     }
 
     private Trie internalPut(TrieKeySlice key, byte[] value, boolean isRecursiveDelete) {
-        // @mish find the common path between the given key and the current node's (top of the trie) sharedpath
+        // #mish find the common path between the given key and the current node's (top of the trie) sharedpath
         TrieKeySlice commonPath = key.commonPath(sharedPath);
 
         if (commonPath.length() < sharedPath.length()) {
@@ -1463,7 +1463,7 @@ public class Trie {
         return subnodes;
     }
 
-    // @mish Additional method for storage rent. 
+    // #mish Additional method for storage rent. 
     
     // Time until which rent has been paid.
     // This will change (increase/decrease) when a node is updated/deleted or when rent is paid.
@@ -1472,7 +1472,7 @@ public class Trie {
         return lastRentPaidTime;
     }
 
-    // @mish  seconds since (+ve) or until (-ve) rentLastPaidTime compared to now
+    // #mish  seconds since (+ve) or until (-ve) rentLastPaidTime compared to now
     @Nullable
     public long getRentPaidTimeDelta(){
         return Instant.now().getEpochSecond() - lastRentPaidTime; //https://docs.oracle.com/javase/8/docs/api/java/time/Instant.html

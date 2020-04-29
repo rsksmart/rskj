@@ -81,3 +81,7 @@ classes/
 
 #Infer
 infer-out/
+
+#Mish 
+failedTests.txt
+failed.txt
