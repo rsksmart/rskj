@@ -691,8 +691,7 @@ public class Trie {
                         this.left.serializedLength() +  //this method is from NodeReference.java (should only be used for save)
                         this.right.serializedLength() +
                         (this.isTerminal() ? 0 : childrenSize.getSizeInBytes()) +
-                        (hasLongVal ? Keccak256Helper.DEFAULT_SIZE_BYTES + Uint24.BYTES : lvalue.intValue())
-        );      //#mish add rent bytes here.. easiest to put the fixed 4 bytes (int) after the flag
+                        (hasLongVal ? Keccak256Helper.DEFAULT_SIZE_BYTES + Uint24.BYTES : lvalue.intValue()));
 
         // current serialization version: 01 //see RSKIP107
         byte flags = 0b01000000;

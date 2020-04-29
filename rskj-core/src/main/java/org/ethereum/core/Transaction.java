@@ -153,9 +153,8 @@ public class Transaction {
      * or SIMPLE SEND tx
      * [ nonce, gasPrice, gasLimit, receiveAddress, value, data, signature(v, r, s) ]
      */
-    // #mish the full constructor. Move this up to the top, and add rentGasLimit
-    // add rentGas to the full constructor
-    // 8 elem byte array
+    // #mish the full constructor. Move this up to the top, and add rentGasLimit to the full constructor
+    // 8 elem byte array: call this C0
     public Transaction(byte[] nonce, byte[] gasPriceRaw, byte[] gasLimit, byte[] receiveAddress, byte[] valueRaw, byte[] data,
                        byte chainId, byte[] rentGasLimit) {
         this.nonce = ByteUtil.cloneBytes(nonce);
@@ -172,25 +171,24 @@ public class Transaction {
     * then extend them to introduce new versions where rentGasLimit is an explicit argument/parameter*/
 
     // #mish: this constructor existed earlier as the full constructor (pre storage rent)
-    // 7 elem byte array
+    // 7 elem byte array : call this C1: this is like C0 but without explicit rentGasLimit
     public Transaction(byte[] nonce, byte[] gasPriceRaw, byte[] gasLimit, byte[] receiveAddress, byte[] valueRaw, byte[] data,
                         byte chainId){
         this(nonce, gasPriceRaw, gasLimit, receiveAddress, valueRaw, data, chainId, gasLimit);
     }
 
-    // #mish: this constructor present prior to rent
-    // 6 elem byte array (chainID missing)
-    // This cannot work with rentGas also in arglist, cos 7 elem byte array signature conflict
+    // #mish: this constructor present prior to rent. 6 elem byte array, Call this C2. Compared to C1 is does not have chainID.
+    // We cannot have a version of this with rentGas added to arglist, cos 7 elem byte array would conflict with C1's signature
     public Transaction(byte[] nonce, byte[] gasPriceRaw, byte[] gasLimit, byte[] receiveAddress, byte[] value, byte[] data) {
         this(nonce, gasPriceRaw, gasLimit, receiveAddress, value, data, (byte) 0, gasLimit);
     }
 
-    // #mish: existed prior to rent: 9 elem byte array..  
+    // #mish: existed prior to rent: Call this C3. m9 elem byte array..  
     public Transaction(byte[] nonce, byte[] gasPriceRaw, byte[] gasLimit, byte[] receiveAddress, byte[] value, byte[] data, byte[] r, byte[] s, byte v) {
         this(nonce, gasPriceRaw, gasLimit, receiveAddress, value, data, (byte) 0, gasLimit);
         this.signature = ECDSASignature.fromComponents(r, s, v);
     }
-    // #mish: new. same as above but with rentGas added to arglist. 10 elem byte array.. so no conflict  
+    // #mish: new. call this C3Ext. Same as C3 above but with rentGasLimit in arglist. 10 elem byte array.. so no conflict with any prior 
     public Transaction(byte[] nonce, byte[] gasPriceRaw, byte[] gasLimit, byte[] receiveAddress, byte[] value, byte[] data, 
                 byte[] rentGasLimit, byte[] r, byte[] s, byte v) {
         this(nonce, gasPriceRaw, gasLimit, receiveAddress, value, data, (byte) 0, rentGasLimit);
@@ -202,6 +200,7 @@ public class Transaction {
 
     // This alt. version uses parameters "to" (instead of receiver addr) and "amount" (instead of value)
     // First extend the prior constructor to account for rentGas
+    // Call this C4.
     public Transaction(String to, BigInteger amount, BigInteger nonce, BigInteger gasPrice, BigInteger gasLimit, byte[] decodedData,
                                                                      byte chainId, BigInteger rentGasLimit) {
         this(BigIntegers.asUnsignedByteArray(nonce),
@@ -214,7 +213,8 @@ public class Transaction {
                 BigIntegers.asUnsignedByteArray(rentGasLimit));
     }
 
-    /** The version of the constructor used prior to rentGas addition (with rentGas set equal to gasLimit)*/
+    /** The version of the constructor used prior to rentGas addition (with rentGas set equal to gasLimit)
+    // call this C5. */
     public Transaction(String to, BigInteger amount, BigInteger nonce, BigInteger gasPrice, BigInteger gasLimit, byte[] decodedData,byte chainId){
         this(BigIntegers.asUnsignedByteArray(nonce),
                 gasPrice.toByteArray(),
@@ -225,35 +225,50 @@ public class Transaction {
                 chainId,
                 BigIntegers.asUnsignedByteArray(gasLimit));
     }
-    // #mish: existed prior to rent
+    // #mish: existed prior to rent: Similar to C5, except 'data' is String not byte[]. param types SBBBBSb
+    // call this C6: 
     public Transaction(String to, BigInteger amount, BigInteger nonce, BigInteger gasPrice, BigInteger gasLimit, String data, byte chainId) {
-        this(to, amount, nonce, gasPrice, gasLimit, data == null ? null : Hex.decode(data), chainId);//, gasLimit);
+        this(to, amount, nonce, gasPrice, gasLimit, data == null ? null : Hex.decode(data), chainId, gasLimit);
+    }
+    // C6Ext: Extend C6 to explicitly add rentGasLimit to arglist: param types SBBBBSbB
+    public Transaction(String to, BigInteger amount, BigInteger nonce, BigInteger gasPrice, BigInteger gasLimit, String data, byte chainId, BigInteger rentGasLimit) {
+        this(to, amount, nonce, gasPrice, gasLimit, data == null ? null : Hex.decode(data), chainId, rentGasLimit);
     }
 
-    // #mish: existed prior to rent
+    //Call this C7: existed prior to rent: param types SBBBBb no 'data'
     public Transaction(String to, BigInteger amount, BigInteger nonce, BigInteger gasPrice, BigInteger gasLimit, byte chainId) {
-        this(to, amount, nonce, gasPrice, gasLimit, (byte[]) null, chainId);//, gasLimit);
+        this(to, amount, nonce, gasPrice, gasLimit, (byte[]) null, chainId, gasLimit);
+    }
+    //C7Ext: extend C7 to add rentGasLimit in arglist
+    public Transaction(String to, BigInteger amount, BigInteger nonce, BigInteger gasPrice, BigInteger gasLimit, byte chainId, BigInteger rentGasLimit) {
+        this(to, amount, nonce, gasPrice, gasLimit, (byte[]) null, chainId, rentGasLimit);
     }
 
-    // #mish: existed prior to rent, data is byte[] instead of string and order of the args is a bit different
+    // #mish: existed prior to rent, param types BBBSBbb, so a reordering of C7. Plus mixed up names (value/amount).
+    // Call this C8:
     public Transaction(BigInteger nonce, BigInteger gasPrice, BigInteger gas, String to, BigInteger value, byte[] data, byte chainId) {
         this(nonce.toByteArray(), gasPrice.toByteArray(), gas.toByteArray(), Hex.decode(to), value.toByteArray(), data,
-                chainId);//, gas.toByteArray());
+                chainId, gas.toByteArray());
+    }
+    //C8Ext: add rentGasLimit toarglist in C8
+    public Transaction(BigInteger nonce, BigInteger gasPrice, BigInteger gas, String to, BigInteger value, byte[] data, byte chainId, BigInteger rentGasLimit) {
+        this(nonce.toByteArray(), gasPrice.toByteArray(), gas.toByteArray(), Hex.decode(to), value.toByteArray(), data,
+                chainId, rentGasLimit.toByteArray());
     }
 
-
-    // #mish: Existed prior to rentGas
+    // #mish: Existed prior to rentGas: different param types. lllSlbb
+    // call ths C9:
     public Transaction(long nonce, long gasPrice, long gas, String to, long value, byte[] data, byte chainId) {
         this(BigInteger.valueOf(nonce).toByteArray(), BigInteger.valueOf(gasPrice).toByteArray(),
                 BigInteger.valueOf(gas).toByteArray(), Hex.decode(to), BigInteger.valueOf(value).toByteArray(),
-                data, chainId);//, BigInteger.valueOf(gas).toByteArray());        
+                data, chainId, BigInteger.valueOf(gas).toByteArray());        
     }
-    // #mish: replica of above with rentGas added to arglist
-    // public Transaction(long nonce, long gasPrice, long gas, String to, long value, byte[] data, byte chainId) {
-    //     this(BigInteger.valueOf(nonce).toByteArray(), BigInteger.valueOf(gasPrice).toByteArray(),
-    //             BigInteger.valueOf(gas).toByteArray(), Hex.decode(to), BigInteger.valueOf(value).toByteArray(),
-    //             data, chainId);//, BigInteger.valueOf(gas).toByteArray());        
-    // }
+    //C9Ext: extend C9 to add rentGasLimit to arglist
+    public Transaction(long nonce, long gasPrice, long gas, String to, long value, byte[] data, byte chainId, long rentGasLimit) {
+        this(BigInteger.valueOf(nonce).toByteArray(), BigInteger.valueOf(gasPrice).toByteArray(),
+                BigInteger.valueOf(gas).toByteArray(), Hex.decode(to), BigInteger.valueOf(value).toByteArray(),
+                data, chainId, BigInteger.valueOf(rentGasLimit).toByteArray());        
+    }
 
 
 // #mish now the methods
