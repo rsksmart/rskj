@@ -46,8 +46,7 @@ import org.mockito.ArgumentCaptor;
 import java.math.BigInteger;
 
 import static org.ethereum.crypto.HashUtil.randomHash;
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 import static org.mockito.ArgumentCaptor.forClass;
 import static org.mockito.Mockito.*;
 
@@ -113,6 +112,7 @@ public class LightSyncProcessorTest {
         lightSyncProcessor.processStatusMessage(statusMessage, lightPeer, ctx, lightClientHandler);
         verify(lightPeer).sendMessage(argument.capture());
         assertArrayEquals(expectedMessage.getEncoded(), argument.getValue().getEncoded());
+        assertFalse(lightSyncProcessor.hasTxRelay(lightPeer));
 
         //BlockHeader response
 
@@ -145,6 +145,19 @@ public class LightSyncProcessorTest {
 
         verify(lightPeer, times(1)).sendMessage(any());
         verify(lightPeer2, times(0)).sendMessage(any());
+    }
+
+    @Test
+    public void peerWithTxRelayActivatedConnectCorrectly() {
+        ChannelHandlerContext ctx = mock(ChannelHandlerContext.class);
+        LightClientHandler lightClientHandler = mock(LightClientHandler.class);
+
+        //Message sent
+        long requestId = 0; //lastRequestId in a new LightSyncProcessor starts in zero.
+        StatusMessage statusMessageWithTxRelaySet = new StatusMessage(requestId, lightStatus, true);
+
+        lightSyncProcessor.processStatusMessage(statusMessageWithTxRelaySet, lightPeer, ctx, lightClientHandler);
+        assertTrue(lightSyncProcessor.hasTxRelay(lightPeer));
     }
 
 

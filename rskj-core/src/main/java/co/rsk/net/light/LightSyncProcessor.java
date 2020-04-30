@@ -160,6 +160,14 @@ public class LightSyncProcessor {
         lightPeer.receivedBlock(blockHeader);
     }
 
+    public boolean hasTxRelay(LightPeer peer) {
+        if (!txRelay.containsKey(peer)) {
+            return false;
+        }
+
+        return txRelay.get(peer);
+    }
+
     private boolean isPending(long id, LightClientMessageCodes code) {
         return pendingMessages.containsKey(id) && pendingMessages.get(id).asByte() == code.asByte();
     }
