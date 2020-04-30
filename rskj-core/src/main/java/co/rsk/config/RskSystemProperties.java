@@ -328,4 +328,6 @@ public class RskSystemProperties extends SystemProperties {
     public long getVmExecutionStackSize() {
         return configFromFiles.getBytes("vm.executionStackSize");
     }
+
+    public String cryptoLibrary() { return configFromFiles.getString("crypto.library");}
 }
