@@ -22,6 +22,7 @@ package org.ethereum.net.rlpx;
 import org.ethereum.crypto.ECKey;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.crypto.signature.ECDSASignature;
 
 import static org.ethereum.util.ByteUtil.merge;
 import static org.bouncycastle.util.BigIntegers.asUnsignedByteArray;
@@ -32,7 +33,7 @@ import static org.bouncycastle.util.BigIntegers.asUnsignedByteArray;
  * Created by devrandom on 2015-04-07.
  */
 public class AuthInitiateMessage {
-    ECKey.ECDSASignature signature; // 65 bytes
+    private ECDSASignature signature; // 65 bytes
     byte[] ephemeralPublicHash; // 32 bytes
     ECPoint publicKey; // 64 bytes - uncompressed and no type byte
     byte[] nonce; // 32 bytes
@@ -56,7 +57,7 @@ public class AuthInitiateMessage {
         offset += 32;
         int v = wire[offset] + 27;
         offset += 1;
-        message.signature = ECKey.ECDSASignature.fromComponents(r, s, (byte)v);
+        message.signature = ECDSASignature.fromComponents(r, s, (byte)v);
         message.ephemeralPublicHash = new byte[32];
         System.arraycopy(wire, offset, message.ephemeralPublicHash, 0, 32);
         offset += 32;
@@ -80,14 +81,14 @@ public class AuthInitiateMessage {
     public byte[] encode() {
 
         byte[] rsigPad = new byte[32];
-        byte[] rsig = asUnsignedByteArray(signature.r);
+        byte[] rsig = asUnsignedByteArray(signature.getR());
         System.arraycopy(rsig, 0, rsigPad, rsigPad.length - rsig.length, rsig.length);
 
         byte[] ssigPad = new byte[32];
-        byte[] ssig = asUnsignedByteArray(signature.s);
+        byte[] ssig = asUnsignedByteArray(signature.getS());
         System.arraycopy(ssig, 0, ssigPad, ssigPad.length - ssig.length, ssig.length);
 
-        byte[] sigBytes = merge(rsigPad, ssigPad, new byte[]{EncryptionHandshake.recIdFromSignatureV(signature.v)});
+        byte[] sigBytes = merge(rsigPad, ssigPad, new byte[]{EncryptionHandshake.recIdFromSignatureV(signature.getV())});
 
         byte[] buffer = new byte[getLength()];
         int offset = 0;
@@ -105,11 +106,19 @@ public class AuthInitiateMessage {
         return buffer;
     }
 
+    public ECDSASignature getSignature() {
+        return signature;
+    }
+
+    public void setSignature(ECDSASignature signature) {
+        this.signature = signature;
+    }
+
     @Override
     public String toString() {
 
-        byte[] sigBytes = merge(asUnsignedByteArray(signature.r),
-                asUnsignedByteArray(signature.s), new byte[]{EncryptionHandshake.recIdFromSignatureV(signature.v)});
+        byte[] sigBytes = merge(asUnsignedByteArray(signature.getR()),
+                asUnsignedByteArray(signature.getS()), new byte[]{EncryptionHandshake.recIdFromSignatureV(signature.getV())});
 
         return "AuthInitiateMessage{" +
                 "\n  sigBytes=" + Hex.toHexString(sigBytes) +

@@ -20,14 +20,16 @@ package co.rsk.net.discovery.message;
 
 import co.rsk.net.NodeID;
 import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.bouncycastle.util.BigIntegers;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
+import org.ethereum.crypto.signature.ECDSASignature;
+import org.ethereum.crypto.signature.Secp256k1;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLPElement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.bouncycastle.util.BigIntegers;
-import org.bouncycastle.util.encoders.Hex;
 
 import java.security.SignatureException;
 import java.util.Optional;
@@ -65,13 +67,13 @@ public abstract class PeerDiscoveryMessage {
         byte[] forSig = HashUtil.keccak256(payload);
 
         /* [2] Crate signature*/
-        ECKey.ECDSASignature ecdsaSignature = privKey.sign(forSig);
+        ECDSASignature ecdsaSignature = ECDSASignature.fromSignature(privKey.sign(forSig));
 
-        ecdsaSignature.v -= 27;
+        ecdsaSignature.setV((byte)(ecdsaSignature.getV() - 27));
 
         byte[] sigBytes =
-                merge(BigIntegers.asUnsignedByteArray(32, ecdsaSignature.r),
-                        BigIntegers.asUnsignedByteArray(32, ecdsaSignature.s), new byte[]{ecdsaSignature.v});
+                merge(BigIntegers.asUnsignedByteArray(32, ecdsaSignature.getR()),
+                        BigIntegers.asUnsignedByteArray(32, ecdsaSignature.getS()), new byte[]{ecdsaSignature.getV()});
 
         // [3] calculate MDC
         byte[] forSha = merge(sigBytes, type, data);
@@ -108,7 +110,7 @@ public abstract class PeerDiscoveryMessage {
 
         ECKey outKey = null;
         try {
-            outKey = ECKey.signatureToKey(msgHash, ECKey.ECDSASignature.fromComponents(r, s, v));
+            outKey = Secp256k1.getInstance().signatureToKey(msgHash, ECDSASignature.fromComponents(r, s, v));
         } catch (SignatureException e) {
             logger.error("Error generating key from message", e);
         }
