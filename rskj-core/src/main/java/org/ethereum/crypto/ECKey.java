@@ -559,6 +559,42 @@ public class ECKey {
         return sig;
     }
 
+
+    /**
+     * Given a piece of text and a message signature encoded in base64, returns an ECKey
+     * containing the public key that was used to sign it. This can then be compared to the expected public key to
+     * determine if the signature was correct.
+     *
+     * @Deprecated in favor of {@link org.ethereum.crypto.signature.Secp256k1Service#signatureToKey(byte[], org.ethereum.crypto.signature.ECDSASignature)}
+     *
+     * @param messageHash a piece of human readable text that was signed
+     * @param signature The message signature
+     *
+     * @return -
+     * @throws SignatureException If the public key could not be recovered or if there was a signature format error.
+     */
+    @Deprecated
+    public static ECKey signatureToKey(byte[] messageHash, ECDSASignature signature) throws SignatureException {
+        int header = signature.v & 0xFF;
+        // The header byte: 0x1B = first key with even y, 0x1C = first key with odd y,
+        //                  0x1D = second key with even y, 0x1E = second key with odd y
+        if (header < 27 || header > 34) {
+            throw new SignatureException("Header byte out of range: " + header);
+        }
+
+        boolean compressed = false;
+        if (header >= 31) {
+            compressed = true;
+            header -= 4;
+        }
+        int recId = header - 27;
+        ECKey key = ECKey.recoverFromSignature(recId, signature, messageHash, compressed);
+        if (key == null) {
+            throw new SignatureException("Could not recover public key from signature");
+        }
+        return key;
+    }
+
     /**
      * Decrypt cipher by AES in SIC(also know as CTR) mode
      *
