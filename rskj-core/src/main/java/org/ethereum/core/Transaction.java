@@ -109,7 +109,7 @@ public class Transaction {
      * (including public key recovery bits) */
     private ECDSASignature signature;
     private byte[] rlpEncoding;
-    private byte[] rawRlpEncoding;
+    private byte[] rawRlpEncoding; //raw is without signature data
     private Keccak256 hash;
     private Keccak256 rawHash;
 
@@ -270,9 +270,9 @@ public class Transaction {
                 data, chainId, BigInteger.valueOf(rentGasLimit).toByteArray());        
     }
 
-
-// #mish now the methods
-
+    // now the methods
+    
+    //just what it says..
     public Transaction toImmutableTransaction() {
         return new ImmutableTransaction(this.getEncoded());
     }
@@ -307,10 +307,11 @@ public class Transaction {
 
         long nonZeroes = this.nonZeroDataBytes();
         long zeroVals = ListArrayUtil.getLength(this.getData()) - nonZeroes;
-
+        // Base cost (e.g. 53K contract creation, 21K reg) + data cost (e.g. 68 per non-0 data byte, 4 for 0)
         return (this.isContractCreation() ? GasCost.TRANSACTION_CREATE_CONTRACT : GasCost.TRANSACTION) + zeroVals * GasCost.TX_ZERO_DATA + nonZeroes * GasCost.TX_NO_ZERO_DATA;
     }
 
+    // alias for validate
     public void verify() {
         validate();
     }
@@ -324,6 +325,9 @@ public class Transaction {
         }
         if (gasLimit.length > DATAWORD_LENGTH) {
             throw new RuntimeException("Gas Limit is not valid");
+        }
+        if (rentGasLimit.length > DATAWORD_LENGTH) {
+            throw new RuntimeException("Rent Gas Limit is not valid");
         }
         if (gasPrice != null && gasPrice.getBytes().length > DATAWORD_LENGTH) {
             throw new RuntimeException("Gas Price is not valid");
@@ -386,6 +390,10 @@ public class Transaction {
 
     public byte[] getGasLimit() {
         return gasLimit;
+    }
+
+    public byte[] getRentGasLimit() {
+        return rentGasLimit;
     }
 
     public byte[] getData() {
@@ -502,7 +510,8 @@ public class Transaction {
         return "TransactionData [" + "hash=" + ByteUtil.toHexString(getHash().getBytes()) +
                 "  nonce=" + ByteUtil.toHexString(nonce) +
                 ", gasPrice=" + gasPrice.toString() +
-                ", gas=" + ByteUtil.toHexString(gasLimit) +
+                ", gasLimit=" + ByteUtil.toHexString(gasLimit) +
+                ", rentGasLimit=" + ByteUtil.toHexString(rentGasLimit) +
                 ", receiveAddress=" + receiveAddress.toString() +
                 ", value=" + value.toString() +
                 ", data=" + ByteUtil.toHexString(data) +
@@ -533,7 +542,7 @@ public class Transaction {
 
         return ByteUtil.cloneBytes(this.rawRlpEncoding);
     }
-
+    // with signature data
     public byte[] getEncoded() {
         if (this.rlpEncoding == null) {
             byte[] v;
@@ -581,6 +590,10 @@ public class Transaction {
 
     public BigInteger getGasLimitAsInteger() {
         return (this.getGasLimit() == null) ? null : BigIntegers.fromUnsignedByteArray(this.getGasLimit());
+    }
+
+    public BigInteger getRentGasLimitAsInteger() {
+        return (this.getRentGasLimit() == null) ? null : BigIntegers.fromUnsignedByteArray(this.getRentGasLimit());
     }
 
     public BigInteger getNonceAsInteger() {

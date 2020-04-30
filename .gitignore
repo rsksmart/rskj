@@ -83,5 +83,4 @@ classes/
 infer-out/
 
 #Mish 
-failedTests.txt
-failed.txt
+failed*.txt

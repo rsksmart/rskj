@@ -151,16 +151,20 @@ public class TransactionExecutor {
      * set readyToExecute = true
      */
     private boolean init() {
+        //e.g. 21K TX or 53K contract creation + 'data' cost (68 per non=0 byte) 
         basicTxCost = tx.transactionCost(constants, activations);
 
         if (localCall) {
             return true;
         }
 
+        //'GasCost defined in ethereum/vm/GasCost'
         long txGasLimit = GasCost.toGas(tx.getGasLimit());
+        long txRentGasLimit = GasCost.toGas(tx.getRentGasLimit());
+
         long curBlockGasLimit = GasCost.toGas(executionBlock.getGasLimit());
 
-        if (!gasIsValid(txGasLimit, curBlockGasLimit)) {
+        if (!gasIsValid(txGasLimit, curBlockGasLimit)) { //rentGasLimit does not count towards block gas limits
             return false;
         }
 
@@ -173,8 +177,11 @@ public class TransactionExecutor {
 
         if (basicTxCost > 0 ) {
             // add gas cost only for priced transactions
+            //execution cost
             Coin txGasCost = tx.getGasPrice().multiply(BigInteger.valueOf(txGasLimit));
-            totalCost = totalCost.add(txGasCost);
+            //storage rent cost
+            Coin txRentGasCost = tx.getGasPrice().multiply(BigInteger.valueOf(txRentGasLimit));
+            totalCost = totalCost.add(txGasCost).add(txRentGasCost);
         }
 
         Coin senderBalance = track.getBalance(tx.getSender());
@@ -242,6 +249,7 @@ public class TransactionExecutor {
         return true;
     }
 
+    //note: storage rent gas does not count towards block gas limits 
     private boolean gasIsValid(long txGasLimit, long curBlockGasLimit) {
         // if we've passed the curBlockGas limit we must stop exec
         // cumulativeGas being equal to GasCost.MAX_GAS is a border condition
@@ -274,10 +282,15 @@ public class TransactionExecutor {
             track.increaseNonce(tx.getSender());
 
             long txGasLimit = GasCost.toGas(tx.getGasLimit());
+            long txRentGasLimit = GasCost.toGas(tx.getRentGasLimit());
+            //execution gas limit
             Coin txGasCost = tx.getGasPrice().multiply(BigInteger.valueOf(txGasLimit));
-            track.addBalance(tx.getSender(), txGasCost.negate());
+            //storage rent gas limit
+            Coin txRentGasCost = tx.getGasPrice().multiply(BigInteger.valueOf(txRentGasLimit));
+            track.addBalance(tx.getSender(), txGasCost.add(txRentGasCost).negate()); //deduct (exec gas limit + storage rent gas limit)
 
-            logger.trace("Paying: txGasCost: [{}], gasPrice: [{}], gasLimit: [{}]", txGasCost, tx.getGasPrice(), txGasLimit);
+            logger.trace("Paying: txGasCost: [{}], txRentGasCost: [{}], gasPrice: [{}], gasLimit: [{}], rentGasLimit: [{}]",
+                                    txGasCost, txRentGasCost, tx.getGasPrice(), txGasLimit, txRentGasLimit);
         }
 
         if (tx.isContractCreation()) {
@@ -293,6 +306,15 @@ public class TransactionExecutor {
         }
         return txGasLimit >= gasUsed;
     }
+
+    //#mish: similar as above for execution Gas, but no dependence on RSKIP136 (whatever that may be, can't find it)
+    private boolean enoughRentGas(long txRentGasLimit, long requiredRentGas, long rentGasUsed) {
+        // when a TX does not specify rent gas limit, it is set equal to the regular execution gas limit 
+        // this happens when the TX object is initialized. So the following condition fails when
+        // rentGasLimit is explicitly specified but turns out to be inadequate
+        return txRentGasLimit >= requiredRentGas;  
+    }
+
 
     private void call() {
         logger.trace("Call transaction {} {}", toBI(tx.getNonce()), tx.getHash());

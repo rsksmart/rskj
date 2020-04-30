@@ -62,5 +62,6 @@ public class TrieRentTest {
 
     // trie save, retrieve, check rent status
     // trie to and from message 
-
+    
 }
+

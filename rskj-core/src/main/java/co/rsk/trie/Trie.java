@@ -131,20 +131,12 @@ public class Trie {
     }
 
     //  (almost) full constructor, without storage rent
-    private Trie(TrieStore store, TrieKeySlice sharedPath, byte[] value, NodeReference left, NodeReference right, Uint24 valueLength, Keccak256 valueHash, VarInt childrenSize) {
-        this.value = value;
-        this.left = left;
-        this.right = right;
-        this.store = store;
-        this.sharedPath = sharedPath;
-        this.valueLength = valueLength;
-        this.valueHash = valueHash;
-        this.childrenSize = childrenSize;
+    public Trie(TrieStore store, TrieKeySlice sharedPath, byte[] value, NodeReference left, NodeReference right, Uint24 valueLength, Keccak256 valueHash, VarInt childrenSize) {
+        this(store, sharedPath, value, left, right, valueLength, valueHash, childrenSize, 0);
         checkValueLength();
     }
 
-    // #mish full constructor with storage rent (extended from above)
-    //new Trie(store, sharedPath, value, left, right, lvalue, valueHash, childrenSize, lastRentPaidTime);
+    // #mish full constructor with storage rent
     private Trie(TrieStore store, TrieKeySlice sharedPath, byte[] value, NodeReference left, NodeReference right, Uint24 valueLength, Keccak256 valueHash, VarInt childrenSize, long lastRentPaidTime) {
         this.value = value;
         this.left = left;
@@ -157,6 +149,8 @@ public class Trie {
         this.lastRentPaidTime = lastRentPaidTime;
         checkValueLength();
     }
+
+    
 
     /**
      * Deserialize a Trie, either using the original format or RSKIP 107 format, based on version flags.
