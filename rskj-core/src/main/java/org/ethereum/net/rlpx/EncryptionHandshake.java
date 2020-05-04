@@ -88,7 +88,7 @@ public class EncryptionHandshake {
 
         byte[] nonce = initiatorNonce;
         byte[] signed = xor(token, nonce);
-        message.signature = ephemeralKey.sign(signed);
+        message.setSignature(ephemeralKey.sign(signed));
         message.publicKey = key.getPubKeyPoint();
         message.nonce = initiatorNonce;
         return message;
@@ -153,8 +153,8 @@ public class EncryptionHandshake {
         byte[] token = ByteUtil.bigIntegerToBytes(secretScalar, NONCE_SIZE);
         byte[] signed = xor(token, initiatorNonce);
 
-        ECKey ephemeral = SignatureService.getInstance().recoverFromSignature(recIdFromSignatureV(initiate.signature.getV()),
-                initiate.signature, signed, false);
+        ECKey ephemeral = SignatureService.getInstance().recoverFromSignature(recIdFromSignatureV(initiate.getSignature().getV()),
+                initiate.getSignature(), signed, false);
         if (ephemeral == null) {
             throw new RuntimeException("failed to recover signatue from message");
         }
@@ -207,7 +207,7 @@ public class EncryptionHandshake {
 
         byte[] nonce = initiatorNonce;
         byte[] signed = xor(token, nonce);
-        message.signature = ephemeralKey.sign(signed);
+        message.setSignature(ephemeralKey.sign(signed));
         message.isTokenUsed = isToken;
         message.ephemeralPublicHash = keccak256(ephemeralKey.getPubKeyPoint().getEncoded(false), 1, 64);
         message.publicKey = key.getPubKeyPoint();
@@ -309,8 +309,8 @@ public class EncryptionHandshake {
         byte[] token = ByteUtil.bigIntegerToBytes(secretScalar, NONCE_SIZE);
         byte[] signed = xor(token, initiatorNonce);
 
-        ECKey ephemeral = SignatureService.getInstance().recoverFromSignature(recIdFromSignatureV(initiate.signature.getV()),
-                initiate.signature, signed, false);
+        ECKey ephemeral = SignatureService.getInstance().recoverFromSignature(recIdFromSignatureV(initiate.getSignature().getV()),
+                initiate.getSignature(), signed, false);
         if (ephemeral == null) {
             throw new RuntimeException("failed to recover signatue from message");
         }

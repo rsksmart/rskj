@@ -24,7 +24,73 @@ import org.ethereum.crypto.HashUtil;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.math.BigInteger;
+
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
 public class ECDSASignatureTest {
+
+    private final String exampleMessage = "This is an example of a signed message.";
+    private static final BigInteger SECP256K1N = new BigInteger("fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141", 16);
+
+    @Test
+    public void testValidateComponents() {
+
+        // Valid components.
+        // valid v
+        assertTrue(new ECDSASignature(BigInteger.ONE, BigInteger.ONE, (byte) 27).validateComponents());
+        assertTrue(new ECDSASignature(BigInteger.ONE, BigInteger.ONE, (byte) 28).validateComponents());
+        //valid r
+        assertTrue(new ECDSASignature(SECP256K1N.subtract(BigInteger.ONE), BigInteger.ONE, (byte) 28).validateComponents());
+        //valid s
+        assertTrue(new ECDSASignature(BigInteger.ONE, SECP256K1N.subtract(BigInteger.ONE), (byte) 28).validateComponents());
+
+        // Not Valid components.
+        //invalid "r"
+        assertFalse(new ECDSASignature(BigInteger.ZERO, BigInteger.ONE, (byte) 27).validateComponents());
+        assertFalse(new ECDSASignature(SECP256K1N, BigInteger.ONE, (byte) 27).validateComponents());
+
+        //invalid "s"
+        assertFalse(new ECDSASignature(BigInteger.ONE, BigInteger.ZERO, (byte) 27).validateComponents());
+        assertFalse(new ECDSASignature(BigInteger.ONE, SECP256K1N, (byte) 27).validateComponents());
+
+        //invalid "v"
+        assertFalse(new ECDSASignature(BigInteger.ONE, BigInteger.ONE, (byte) 29).validateComponents());
+        assertFalse(new ECDSASignature(BigInteger.ONE, BigInteger.ONE, (byte) 26).validateComponents());
+    }
+
+    @Test
+    public void testEquals() {
+        ECDSASignature expected = new ECDSASignature(BigInteger.ONE, BigInteger.ONE, (byte) 27);
+
+        //same instance
+        assertTrue(expected.equals(expected));
+
+        //same values
+        assertTrue(expected.equals(new ECDSASignature(expected.getR(), expected.getS(), expected.getV())));
+
+        //same values - but diff v
+        assertTrue(expected.equals(new ECDSASignature(expected.getR(), expected.getS(), (byte) 0)));
+
+        //dif classes
+        assertFalse(expected.equals(BigInteger.ZERO));
+
+        //diff r
+        assertFalse(new ECDSASignature(BigInteger.ONE, BigInteger.ONE, (byte) 27).equals(new ECDSASignature(BigInteger.TEN, BigInteger.ONE, (byte) 27)));
+
+        //diff s
+        assertFalse(new ECDSASignature(BigInteger.ONE, BigInteger.ONE, (byte) 27).equals(new ECDSASignature(BigInteger.ONE, BigInteger.TEN, (byte) 27)));
+
+    }
+
+    @Test
+    public void testValidateComponents_SignedMsg() {
+        ECKey key = new ECKey();
+        byte[] hash = HashUtil.keccak256(exampleMessage.getBytes());
+        ECDSASignature signature = key.sign(hash);
+        assertTrue(signature.validateComponents());
+    }
 
     @Test
     public void fromComponentsWithRecoveryCalculation() {
@@ -59,11 +125,10 @@ public class ECDSASignatureTest {
 
 
     /**
-     *
-     * @param r -
-     * @param s -
+     * @param r    -
+     * @param s    -
      * @param hash - the hash used to compute this signature
-     * @param pub - public key bytes, used to calculate the recovery byte 'v'
+     * @param pub  - public key bytes, used to calculate the recovery byte 'v'
      * @return -
      */
     public static ECDSASignature fromComponentsWithRecoveryCalculation(byte[] r, byte[] s, byte[] hash, byte[] pub) {
