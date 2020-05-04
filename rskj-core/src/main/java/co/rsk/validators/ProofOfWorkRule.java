@@ -264,23 +264,23 @@ public class ProofOfWorkRule implements BlockHeaderValidationRule, BlockValidati
 
         ECDSASignature signature = ECDSASignature.fromComponents(r, s, v[0]);
 
-        if (!Arrays.equals(r, signature.r.toByteArray())) {
+        if (!Arrays.equals(r, signature.getR().toByteArray())) {
             return false;
         }
 
-        if (!Arrays.equals(s, signature.s.toByteArray())) {
+        if (!Arrays.equals(s, signature.getS().toByteArray())) {
             return false;
         }
 
-        if (signature.v > 31 || signature.v < 27) {
+        if (signature.getV() > 31 || signature.getV() < 27) {
             return false;
         }
 
-        if (signature.s.compareTo(SECP256K1N_HALF) >= 0) {
+        if (signature.getS().compareTo(SECP256K1N_HALF) >= 0) {
             return false;
         }
 
-        ECKey pub = SignatureService.getInstance().recoverFromSignature(signature.v - 27, signature, header.getHashForMergedMining(), false);
+        ECKey pub = SignatureService.getInstance().recoverFromSignature(signature.getV() - 27, signature, header.getHashForMergedMining(), false);
 
         return pub.getPubKeyPoint().equals(fallbackMiningPubKey.getPubKeyPoint());
     }

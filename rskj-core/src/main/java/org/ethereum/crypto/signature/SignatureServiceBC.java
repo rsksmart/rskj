@@ -42,20 +42,20 @@ import java.security.SignatureException;
  */
 class SignatureServiceBC extends SignatureService {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(SignatureServiceBC.class);
+    private static final Logger logger = LoggerFactory.getLogger(SignatureServiceBC.class);
     /**
      * The parameters of the secp256k1 curve that Ethereum uses.
      */
     public static final ECDomainParameters CURVE;
     public static final BigInteger HALF_CURVE_ORDER;
-    private static final SecureRandom secureRandom;
+    //private static final SecureRandom secureRandom;
 
     static {
         // All clients must agree on the curve to use by agreement. Ethereum uses secp256k1.
         X9ECParameters params = SECNamedCurves.getByName("secp256k1");
         CURVE = new ECDomainParameters(params.getCurve(), params.getG(), params.getN(), params.getH());
         HALF_CURVE_ORDER = params.getN().shiftRight(1);
-        secureRandom = new SecureRandom();
+        //secureRandom = new SecureRandom();
     }
 
     /**
@@ -66,7 +66,7 @@ class SignatureServiceBC extends SignatureService {
 
     @Override
     public ECKey signatureToKey(byte[] messageHash, ECDSASignature signature) throws SignatureException {
-        int header = signature.v & 0xFF;
+        int header = signature.getV() & 0xFF;
         // The header byte: 0x1B = first key with even y, 0x1C = first key with odd y,
         //                  0x1D = second key with even y, 0x1E = second key with odd y
         if (header < 27 || header > 34) {
@@ -90,14 +90,14 @@ class SignatureServiceBC extends SignatureService {
     @Override
     public ECKey recoverFromSignature(int recId, ECDSASignature sig, byte[] messageHash, boolean compressed) {
         check(recId >= 0, "recId must be positive");
-        check(sig.r.signum() >= 0, "r must be positive");
-        check(sig.s.signum() >= 0, "s must be positive");
+        check(sig.getR().signum() >= 0, "r must be positive");
+        check(sig.getS().signum() >= 0, "s must be positive");
         check(messageHash != null, "messageHash must not be null");
         // 1.0 For j from 0 to h   (h == recId here and the loop is outside this function)
         //   1.1 Let x = r + jn
         BigInteger n = CURVE.getN();  // Curve order.
         BigInteger i = BigInteger.valueOf((long) recId / 2);
-        BigInteger x = sig.r.add(i.multiply(n));
+        BigInteger x = sig.getR().add(i.multiply(n));
         //   1.2. Convert the integer x to an octet string X of length mlen using the conversion routine
         //        specified in Section 2.3.7, where mlen = ⌈(log2 p)/8⌉ or mlen = ⌈m/8⌉.
         //   1.3. Convert the octet string (16 set binary digits)||X to an elliptic curve point R using the
@@ -132,8 +132,8 @@ class SignatureServiceBC extends SignatureService {
         // We can find the additive inverse by subtracting e from zero then taking the mod. For example the additive
         // inverse of 3 modulo 11 is 8 because 3 + 8 mod 11 = 0, and -3 mod 11 = 8.
         BigInteger eInv = BigInteger.ZERO.subtract(e).mod(n);
-        BigInteger rInv = sig.r.modInverse(n);
-        BigInteger srInv = rInv.multiply(sig.s).mod(n);
+        BigInteger rInv = sig.getR().modInverse(n);
+        BigInteger srInv = rInv.multiply(sig.getS()).mod(n);
         BigInteger eInvrInv = rInv.multiply(eInv).mod(n);
         ECPoint.Fp q = (ECPoint.Fp) ECAlgorithms.sumOfTwoMultiplies(CURVE.getG(), eInvrInv, r, srInv);
         return ECKey.fromPublicOnly(q.getEncoded(compressed));
@@ -145,11 +145,11 @@ class SignatureServiceBC extends SignatureService {
         ECPublicKeyParameters params = new ECPublicKeyParameters(CURVE.getCurve().decodePoint(pub), CURVE);
         signer.init(false, params);
         try {
-            return signer.verifySignature(data, signature.r, signature.s);
+            return signer.verifySignature(data, signature.getR(), signature.getS());
         } catch (NullPointerException npe) {
             // Bouncy Castle contains a bug that can cause NPEs given specially crafted signatures.
             // Those signatures are inherently invalid/attack sigs so we just fail them here rather than crash the thread.
-            LOGGER.error("Caught NPE inside bouncy castle", npe);
+            logger.error("Caught NPE inside bouncy castle", npe);
             return false;
         }
     }

@@ -153,7 +153,7 @@ public class EncryptionHandshake {
         byte[] token = ByteUtil.bigIntegerToBytes(secretScalar, NONCE_SIZE);
         byte[] signed = xor(token, initiatorNonce);
 
-        ECKey ephemeral = SignatureService.getInstance().recoverFromSignature(recIdFromSignatureV(initiate.signature.v),
+        ECKey ephemeral = SignatureService.getInstance().recoverFromSignature(recIdFromSignatureV(initiate.signature.getV()),
                 initiate.signature, signed, false);
         if (ephemeral == null) {
             throw new RuntimeException("failed to recover signatue from message");
@@ -309,7 +309,7 @@ public class EncryptionHandshake {
         byte[] token = ByteUtil.bigIntegerToBytes(secretScalar, NONCE_SIZE);
         byte[] signed = xor(token, initiatorNonce);
 
-        ECKey ephemeral = SignatureService.getInstance().recoverFromSignature(recIdFromSignatureV(initiate.signature.v),
+        ECKey ephemeral = SignatureService.getInstance().recoverFromSignature(recIdFromSignatureV(initiate.signature.getV()),
                 initiate.signature, signed, false);
         if (ephemeral == null) {
             throw new RuntimeException("failed to recover signatue from message");

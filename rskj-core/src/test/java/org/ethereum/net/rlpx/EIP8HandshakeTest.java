@@ -88,17 +88,17 @@ public class EIP8HandshakeTest {
 
         assertEquals(4, msg2.version);
         assertArrayEquals(nonceA, msg2.nonce);
-        assertEquals(signatureA.r, msg2.signature.r);
-        assertEquals(signatureA.s, msg2.signature.s);
-        assertEquals(signatureA.v, msg2.signature.v);
+        assertEquals(signatureA.getR(), msg2.signature.getR());
+        assertEquals(signatureA.getS(), msg2.signature.getS());
+        assertEquals(signatureA.getV(), msg2.signature.getV());
 
         AuthInitiateMessageV4 msg3 = handshakerB.decryptAuthInitiateV4(authMessageData, keyB);
 
         assertEquals(4, msg3.version);
         assertArrayEquals(nonceA, msg3.nonce);
-        assertEquals(signatureA.r, msg3.signature.r);
-        assertEquals(signatureA.s, msg3.signature.s);
-        assertEquals(signatureA.v, msg3.signature.v);
+        assertEquals(signatureA.getR(), msg3.signature.getR());
+        assertEquals(signatureA.getS(), msg3.signature.getS());
+        assertEquals(signatureA.getV(), msg3.signature.getV());
     }
 
     // AuthInitiate EIP-8 format with version 56 and 3 additional list elements (sent from A to B)

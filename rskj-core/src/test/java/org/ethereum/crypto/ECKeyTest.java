@@ -136,9 +136,9 @@ public class ECKeyTest {
         byte[] messageHash = HashUtil.keccak256(exampleMessage.getBytes());
         ECDSASignature signature = key.sign(messageHash);
 
-        assertEquals(r, signature.r);
-        assertEquals(s, signature.s);
-        assertEquals(v, signature.v);
+        assertEquals(r, signature.getR());
+        assertEquals(s, signature.getS());
+        assertEquals(v, signature.getV());
     }
 
     @Test
@@ -160,9 +160,9 @@ public class ECKeyTest {
         }
         List<ECDSASignature> sigs = Futures.allAsList(sigFutures).get();
         for (ECDSASignature signature : sigs) {
-            assertTrue(signature.s.compareTo(ECKey.HALF_CURVE_ORDER) <= 0);
+            assertTrue(signature.getS().compareTo(ECKey.HALF_CURVE_ORDER) <= 0);
         }
-        final ECDSASignature duplicate = new ECDSASignature(sigs.get(0).r, sigs.get(0).s);
+        final ECDSASignature duplicate = new ECDSASignature(sigs.get(0).getR(), sigs.get(0).getS());
         assertEquals(sigs.get(0), duplicate);
         assertEquals(sigs.get(0).hashCode(), duplicate.hashCode());
     }

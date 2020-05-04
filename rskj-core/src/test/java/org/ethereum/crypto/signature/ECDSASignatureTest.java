@@ -34,27 +34,27 @@ public class ECDSASignatureTest {
 
         // With uncompressed public key
         ECDSASignature signatureWithCalculatedV = fromComponentsWithRecoveryCalculation(
-                signature.r.toByteArray(),
-                signature.s.toByteArray(),
+                signature.getR().toByteArray(),
+                signature.getS().toByteArray(),
                 hash,
                 key.getPubKey(false)
         );
 
-        Assert.assertEquals(signature.r, signatureWithCalculatedV.r);
-        Assert.assertEquals(signature.s, signatureWithCalculatedV.s);
-        Assert.assertEquals(signature.v, signatureWithCalculatedV.v);
+        Assert.assertEquals(signature.getR(), signatureWithCalculatedV.getR());
+        Assert.assertEquals(signature.getS(), signatureWithCalculatedV.getS());
+        Assert.assertEquals(signature.getV(), signatureWithCalculatedV.getV());
 
         // With compressed public key
         signatureWithCalculatedV = fromComponentsWithRecoveryCalculation(
-                signature.r.toByteArray(),
-                signature.s.toByteArray(),
+                signature.getR().toByteArray(),
+                signature.getS().toByteArray(),
                 hash,
                 key.getPubKey(true)
         );
 
-        Assert.assertEquals(signature.r, signatureWithCalculatedV.r);
-        Assert.assertEquals(signature.s, signatureWithCalculatedV.s);
-        Assert.assertEquals(signature.v, signatureWithCalculatedV.v);
+        Assert.assertEquals(signature.getR(), signatureWithCalculatedV.getR());
+        Assert.assertEquals(signature.getS(), signatureWithCalculatedV.getS());
+        Assert.assertEquals(signature.getV(), signatureWithCalculatedV.getV());
     }
 
 

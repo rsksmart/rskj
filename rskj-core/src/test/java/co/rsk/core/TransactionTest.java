@@ -72,9 +72,9 @@ public class TransactionTest {
 
         tx.sign(senderPrivKey);
 
-        System.out.println("v\t\t\t: " + Hex.toHexString(new byte[]{tx.getSignature().v}));
-        System.out.println("r\t\t\t: " + Hex.toHexString(BigIntegers.asUnsignedByteArray(tx.getSignature().r)));
-        System.out.println("s\t\t\t: " + Hex.toHexString(BigIntegers.asUnsignedByteArray(tx.getSignature().s)));
+        System.out.println("v\t\t\t: " + Hex.toHexString(new byte[]{tx.getSignature().getV()}));
+        System.out.println("r\t\t\t: " + Hex.toHexString(BigIntegers.asUnsignedByteArray(tx.getSignature().getR())));
+        System.out.println("s\t\t\t: " + Hex.toHexString(BigIntegers.asUnsignedByteArray(tx.getSignature().getS())));
 
         System.out.println("RLP encoded tx\t\t: " + Hex.toHexString(tx.getEncoded()));
 
@@ -112,9 +112,9 @@ public class TransactionTest {
 
         tx.sign(senderPrivateKey);
 
-        System.out.println("v\t\t\t: " + Hex.toHexString(new byte[]{tx.getSignature().v}));
-        System.out.println("r\t\t\t: " + Hex.toHexString(BigIntegers.asUnsignedByteArray(tx.getSignature().r)));
-        System.out.println("s\t\t\t: " + Hex.toHexString(BigIntegers.asUnsignedByteArray(tx.getSignature().s)));
+        System.out.println("v\t\t\t: " + Hex.toHexString(new byte[]{tx.getSignature().getV()}));
+        System.out.println("r\t\t\t: " + Hex.toHexString(BigIntegers.asUnsignedByteArray(tx.getSignature().getR())));
+        System.out.println("s\t\t\t: " + Hex.toHexString(BigIntegers.asUnsignedByteArray(tx.getSignature().getS())));
 
         System.out.println("RLP encoded tx\t\t: " + Hex.toHexString(tx.getEncoded()));
 

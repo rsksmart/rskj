@@ -79,17 +79,17 @@ public class AuthInitiateMessageV4 {
     public byte[] encode() {
 
         byte[] rsigPad = new byte[32];
-        byte[] rsig = asUnsignedByteArray(signature.r);
+        byte[] rsig = asUnsignedByteArray(signature.getR());
         System.arraycopy(rsig, 0, rsigPad, rsigPad.length - rsig.length, rsig.length);
 
         byte[] ssigPad = new byte[32];
-        byte[] ssig = asUnsignedByteArray(signature.s);
+        byte[] ssig = asUnsignedByteArray(signature.getS());
         System.arraycopy(ssig, 0, ssigPad, ssigPad.length - ssig.length, ssig.length);
 
         byte[] publicKey = new byte[64];
         System.arraycopy(this.publicKey.getEncoded(false), 1, publicKey, 0, publicKey.length);
 
-        byte[] sigBytes = RLP.encode(merge(rsigPad, ssigPad, new byte[]{EncryptionHandshake.recIdFromSignatureV(signature.v)}));
+        byte[] sigBytes = RLP.encode(merge(rsigPad, ssigPad, new byte[]{EncryptionHandshake.recIdFromSignatureV(signature.getV())}));
         byte[] publicBytes = RLP.encode(publicKey);
         byte[] nonceBytes = RLP.encode(nonce);
         byte[] versionBytes = RLP.encodeInt(version);
@@ -100,8 +100,8 @@ public class AuthInitiateMessageV4 {
     @Override
     public String toString() {
 
-        byte[] sigBytes = merge(asUnsignedByteArray(signature.r),
-                asUnsignedByteArray(signature.s), new byte[]{EncryptionHandshake.recIdFromSignatureV(signature.v)});
+        byte[] sigBytes = merge(asUnsignedByteArray(signature.getR()),
+                asUnsignedByteArray(signature.getS()), new byte[]{EncryptionHandshake.recIdFromSignatureV(signature.getV())});
 
         return "AuthInitiateMessage{" +
                 "\n  sigBytes=" + Hex.toHexString(sigBytes) +
