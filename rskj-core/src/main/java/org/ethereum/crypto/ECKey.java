@@ -36,7 +36,6 @@ package org.ethereum.crypto;
 
 import org.bouncycastle.asn1.sec.SECNamedCurves;
 import org.bouncycastle.asn1.x9.X9ECParameters;
-import org.bouncycastle.asn1.x9.X9IntegerConverter;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.engines.AESEngine;
@@ -45,8 +44,6 @@ import org.bouncycastle.crypto.modes.SICBlockCipher;
 import org.bouncycastle.crypto.params.*;
 import org.bouncycastle.crypto.signers.ECDSASigner;
 import org.bouncycastle.crypto.signers.HMacDSAKCalculator;
-import org.bouncycastle.math.ec.ECAlgorithms;
-import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.encoders.Hex;
@@ -58,7 +55,6 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.Nullable;
 import java.math.BigInteger;
 import java.security.SecureRandom;
-import java.security.SignatureException;
 import java.util.Arrays;
 
 import static org.ethereum.util.ByteUtil.bigIntegerToBytes;
@@ -387,7 +383,7 @@ public class ECKey {
         if (recId == -1) {
             throw new RuntimeException("Could not construct a recoverable key. This should never happen.");
         }
-        sig.v = (byte) (recId + 27);
+        sig.setV((byte) (recId + 27));
         return sig;
     }
 

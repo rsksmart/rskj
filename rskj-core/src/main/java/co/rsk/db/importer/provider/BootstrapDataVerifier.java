@@ -22,7 +22,6 @@ import co.rsk.db.importer.BootstrapImportException;
 import co.rsk.db.importer.provider.index.data.BootstrapDataEntry;
 import co.rsk.db.importer.provider.index.data.BootstrapDataSignature;
 import org.bouncycastle.util.encoders.Hex;
-import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.signature.ECDSASignature;
 import org.ethereum.crypto.signature.SignatureService;
 

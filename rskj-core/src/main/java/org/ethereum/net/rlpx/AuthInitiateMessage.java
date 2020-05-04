@@ -81,14 +81,14 @@ public class AuthInitiateMessage {
     public byte[] encode() {
 
         byte[] rsigPad = new byte[32];
-        byte[] rsig = asUnsignedByteArray(signature.r);
+        byte[] rsig = asUnsignedByteArray(signature.getR());
         System.arraycopy(rsig, 0, rsigPad, rsigPad.length - rsig.length, rsig.length);
 
         byte[] ssigPad = new byte[32];
-        byte[] ssig = asUnsignedByteArray(signature.s);
+        byte[] ssig = asUnsignedByteArray(signature.getS());
         System.arraycopy(ssig, 0, ssigPad, ssigPad.length - ssig.length, ssig.length);
 
-        byte[] sigBytes = merge(rsigPad, ssigPad, new byte[]{EncryptionHandshake.recIdFromSignatureV(signature.v)});
+        byte[] sigBytes = merge(rsigPad, ssigPad, new byte[]{EncryptionHandshake.recIdFromSignatureV(signature.getV())});
 
         byte[] buffer = new byte[getLength()];
         int offset = 0;
@@ -109,8 +109,8 @@ public class AuthInitiateMessage {
     @Override
     public String toString() {
 
-        byte[] sigBytes = merge(asUnsignedByteArray(signature.r),
-                asUnsignedByteArray(signature.s), new byte[]{EncryptionHandshake.recIdFromSignatureV(signature.v)});
+        byte[] sigBytes = merge(asUnsignedByteArray(signature.getR()),
+                asUnsignedByteArray(signature.getS()), new byte[]{EncryptionHandshake.recIdFromSignatureV(signature.getV())});
 
         return "AuthInitiateMessage{" +
                 "\n  sigBytes=" + Hex.toHexString(sigBytes) +

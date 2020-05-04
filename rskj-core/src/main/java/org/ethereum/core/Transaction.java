@@ -248,10 +248,10 @@ public class Transaction {
             throw new RuntimeException("Value is not valid");
         }
         if (getSignature() != null) {
-            if (BigIntegers.asUnsignedByteArray(signature.r).length > DATAWORD_LENGTH) {
+            if (BigIntegers.asUnsignedByteArray(signature.getR()).length > DATAWORD_LENGTH) {
                 throw new RuntimeException("Signature R is not valid");
             }
-            if (BigIntegers.asUnsignedByteArray(signature.s).length > DATAWORD_LENGTH) {
+            if (BigIntegers.asUnsignedByteArray(signature.getS()).length > DATAWORD_LENGTH) {
                 throw new RuntimeException("Signature S is not valid");
             }
             if (getSender().getBytes() != null && getSender().getBytes().length != Constants.getMaxAddressByteLength()) {
@@ -314,7 +314,7 @@ public class Transaction {
 
     public boolean acceptTransactionSignature(byte currentChainId) {
         ECDSASignature signature = getSignature();
-        if (signature == null || !signature.validateComponents() || signature.s.compareTo(SECP256K1N_HALF) >= 0) {
+        if (signature == null || !signature.validateComponents() || signature.getS().compareTo(SECP256K1N_HALF) >= 0) {
             return false;
         }
 
@@ -372,7 +372,7 @@ public class Transaction {
         Metric metric = profiler.start(Profiler.PROFILING_TYPE.KEY_RECOV_FROM_SIG);
         byte[] raw = getRawHash().getBytes();
         //We clear the 4th bit, the compress bit, in case a signature is using compress in true
-        ECKey key = SignatureService.getInstance().recoverFromSignature((signature.v - 27) & ~4, signature, raw, true);
+        ECKey key = SignatureService.getInstance().recoverFromSignature((signature.getV() - 27) & ~4, signature, raw, true);
         profiler.stop(metric);
         return key;
     }
@@ -422,9 +422,9 @@ public class Transaction {
                 ", receiveAddress=" + receiveAddress.toString() +
                 ", value=" + value.toString() +
                 ", data=" + ByteUtil.toHexString(data) +
-                ", signatureV=" + (signature == null ? "" : signature.v) +
-                ", signatureR=" + (signature == null ? "" : ByteUtil.toHexString(BigIntegers.asUnsignedByteArray(signature.r))) +
-                ", signatureS=" + (signature == null ? "" : ByteUtil.toHexString(BigIntegers.asUnsignedByteArray(signature.s))) +
+                ", signatureV=" + (signature == null ? "" : signature.getV()) +
+                ", signatureR=" + (signature == null ? "" : ByteUtil.toHexString(BigIntegers.asUnsignedByteArray(signature.getR()))) +
+                ", signatureS=" + (signature == null ? "" : ByteUtil.toHexString(BigIntegers.asUnsignedByteArray(signature.getS()))) +
                 "]";
 
     }
@@ -457,9 +457,9 @@ public class Transaction {
             byte[] s;
 
             if (this.signature != null) {
-                v = RLP.encodeByte((byte) (chainId == 0 ? signature.v : (signature.v - LOWER_REAL_V) + (chainId * 2 + CHAIN_ID_INC)));
-                r = RLP.encodeElement(BigIntegers.asUnsignedByteArray(signature.r));
-                s = RLP.encodeElement(BigIntegers.asUnsignedByteArray(signature.s));
+                v = RLP.encodeByte((byte) (chainId == 0 ? signature.getV() : (signature.getV() - LOWER_REAL_V) + (chainId * 2 + CHAIN_ID_INC)));
+                r = RLP.encodeElement(BigIntegers.asUnsignedByteArray(signature.getR()));
+                s = RLP.encodeElement(BigIntegers.asUnsignedByteArray(signature.getS()));
             } else {
                 v = chainId == 0 ? RLP.encodeElement(EMPTY_BYTE_ARRAY) : RLP.encodeByte(chainId);
                 r = RLP.encodeElement(EMPTY_BYTE_ARRAY);
