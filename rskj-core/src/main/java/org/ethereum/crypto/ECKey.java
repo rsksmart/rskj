@@ -51,7 +51,6 @@ import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
-import org.ethereum.crypto.signature.ECDSASignature;
 import org.ethereum.crypto.signature.Secp256k1;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

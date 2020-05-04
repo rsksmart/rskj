@@ -34,7 +34,6 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.math.BigInteger;
-import java.security.SecureRandom;
 import java.security.SignatureException;
 
 /**
@@ -42,20 +41,20 @@ import java.security.SignatureException;
  */
 class SignatureServiceBC extends SignatureService {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(SignatureServiceBC.class);
+    private static final Logger logger = LoggerFactory.getLogger(SignatureServiceBC.class);
     /**
      * The parameters of the secp256k1 curve that Ethereum uses.
      */
     public static final ECDomainParameters CURVE;
     public static final BigInteger HALF_CURVE_ORDER;
-    private static final SecureRandom secureRandom;
+    //private static final SecureRandom secureRandom;
 
     static {
         // All clients must agree on the curve to use by agreement. Ethereum uses secp256k1.
         X9ECParameters params = SECNamedCurves.getByName("secp256k1");
         CURVE = new ECDomainParameters(params.getCurve(), params.getG(), params.getN(), params.getH());
         HALF_CURVE_ORDER = params.getN().shiftRight(1);
-        secureRandom = new SecureRandom();
+        //secureRandom = new SecureRandom();
     }
 
     /**
@@ -149,7 +148,7 @@ class SignatureServiceBC extends SignatureService {
         } catch (NullPointerException npe) {
             // Bouncy Castle contains a bug that can cause NPEs given specially crafted signatures.
             // Those signatures are inherently invalid/attack sigs so we just fail them here rather than crash the thread.
-            LOGGER.error("Caught NPE inside bouncy castle", npe);
+            logger.error("Caught NPE inside bouncy castle", npe);
             return false;
         }
     }
