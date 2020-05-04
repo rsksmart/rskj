@@ -39,22 +39,22 @@ import static org.junit.Assert.fail;
 
 public class SignatureServiceTest {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(SignatureServiceTest.class);
+    private static final Logger logger = LoggerFactory.getLogger(SignatureServiceTest.class);
 
-    private String pubString = "0497466f2b32bc3bb76d4741ae51cd1d8578b48d3f1e68da206d47321aec267ce78549b514e4453d74ef11b0cd5e4e4c364effddac8b51bcfc8de80682f952896f";
-    private byte[] pubKey = Hex.decode(pubString);
+    private final String pubString = "0497466f2b32bc3bb76d4741ae51cd1d8578b48d3f1e68da206d47321aec267ce78549b514e4453d74ef11b0cd5e4e4c364effddac8b51bcfc8de80682f952896f";
+    private final byte[] pubKey = Hex.decode(pubString);
 
-    private String privString = "3ecb44df2159c26e0f995712d4f39b6f6e499b40749b1cf1246c37f9516cb6a4";
-    private BigInteger privateKey = new BigInteger(Hex.decode(privString));
+    private final String privString = "3ecb44df2159c26e0f995712d4f39b6f6e499b40749b1cf1246c37f9516cb6a4";
+    private final BigInteger privateKey = new BigInteger(Hex.decode(privString));
 
-    private String exampleMessage = "This is an example of a signed message.";
+    private final String exampleMessage = "This is an example of a signed message.";
 
     // Signature components
     private final BigInteger r = new BigInteger("28157690258821599598544026901946453245423343069728565040002908283498585537001");
     private final BigInteger s = new BigInteger("30212485197630673222315826773656074299979444367665131281281249560925428307087");
-    byte v = 28;
+    private final byte v = 28;
 
-    SignatureService signatureService = SignatureService.getInstance();
+    private final SignatureService signatureService = SignatureService.getInstance();
 
     @Test
     public void testVerifySignature() {
@@ -64,8 +64,8 @@ public class SignatureServiceTest {
         byte[] rawtx = Hex.decode("f82804881bc16d674ec8000094cd2a3d9f938e13cd947ec05abc7fe734df8dd8268609184e72a0006480");
         try {
             ECKey key = this.getSignatureService().signatureToKey(HashUtil.keccak256(rawtx), sig);
-            LOGGER.debug("Signature public key\t: {}", Hex.toHexString(key.getPubKey()));
-            LOGGER.debug("Sender is\t\t: {}", Hex.toHexString(key.getAddress()));
+            logger.debug("Signature public key\t: {}", Hex.toHexString(key.getPubKey()));
+            logger.debug("Sender is\t\t: {}", Hex.toHexString(key.getAddress()));
             assertEquals("cd2a3d9f938e13cd947ec05abc7fe734df8dd826", Hex.toHexString(key.getAddress()));
             this.getSignatureService().verify(HashUtil.keccak256(rawtx), sig, key.getPubKey());
         } catch (SignatureException e) {
@@ -79,7 +79,7 @@ public class SignatureServiceTest {
         BigInteger r = new BigInteger("28157690258821599598544026901946453245423343069728565040002908283498585537001");
         BigInteger s = new BigInteger("30212485197630673222315826773656074299979444367665131281281249560925428307087");
         ECDSASignature sig = ECDSASignature.fromComponents(r.toByteArray(), s.toByteArray(), (byte) 28);
-        this.getSignatureService().verify(HashUtil.keccak256(exampleMessage.getBytes()), sig, key.getPubKey());
+        assertTrue(this.getSignatureService().verify(HashUtil.keccak256(exampleMessage.getBytes()), sig, key.getPubKey()));
     }
 
     @Test
@@ -90,29 +90,44 @@ public class SignatureServiceTest {
         byte[] rawtx = Hex.decode("f82804881bc16d674ec8000094cd2a3d9f938e13cd947ec05abc7fe734df8dd8268609184e72a0006480");
         try {
             ECKey key = this.getSignatureService().signatureToKey(HashUtil.keccak256(rawtx), sig);
-            LOGGER.debug("Signature public key\t: {}", Hex.toHexString(key.getPubKey()));
-            LOGGER.debug("Sender is\t\t: {}", Hex.toHexString(key.getAddress()));
+            logger.debug("Signature public key\t: {}", Hex.toHexString(key.getPubKey()));
+            logger.debug("Sender is\t\t: {}", Hex.toHexString(key.getAddress()));
             assertEquals("cd2a3d9f938e13cd947ec05abc7fe734df8dd826", Hex.toHexString(key.getAddress()));
-            this.getSignatureService().verify(HashUtil.keccak256(rawtx), sig, key.getPubKey());
+            assertTrue(this.getSignatureService().verify(HashUtil.keccak256(rawtx), sig, key.getPubKey()));
         } catch (SignatureException e) {
             fail();
         }
     }
 
     @Test
-    @Ignore("The TX sender is not 20-byte long")
-    public void testVerifySignature3() throws SignatureException {
+    public void testTransactionSignRecovery() throws SignatureException {
 
-        byte[] rawtx = Hex.decode("f86e80893635c9adc5dea000008609184e72a00082109f9479b08ad8787060333663d19704909ee7b1903e58801ba0899b92d0c76cbf18df24394996beef19c050baa9823b4a9828cd9b260c97112ea0c9e62eb4cf0a9d95ca35c8830afac567619d6b3ebee841a3c8be61d35acd8049");
+        byte[] messageHash = HashUtil.keccak256(exampleMessage.getBytes());
+        byte[] pk = this.privateKey.toByteArray();
+        String receiver = "CD2A3D9F938E13CD947EC05ABC7FE734DF8DD826";
+        ECKey fromPrivate = ECKey.fromPrivate(pk);
+        String pubKeyExpected = Hex.toHexString(fromPrivate.decompress().getPubKey());
+        String addressExpected = Hex.toHexString(fromPrivate.decompress().getAddress());
 
-        Transaction tx = new ImmutableTransaction(rawtx);
-        ECKey key = this.getSignatureService().signatureToKey(HashUtil.keccak256(rawtx), tx.getSignature());
+        // Create tx and sign, then recover from serialized.
+        Transaction newTx = new Transaction(2l, 2l, 2l, receiver, 2l, messageHash, (byte)0);
+        newTx.sign(pk);
+        ImmutableTransaction recoveredTx = new ImmutableTransaction(newTx.getEncoded());
 
-        LOGGER.debug("Signature public key\t: {}", Hex.toHexString(key.getPubKey()));
-        LOGGER.debug("Sender is\t\t: {}", Hex.toHexString(key.getAddress()));
+        // Recover Pub Key from recovered tx
+        ECKey expectedKey = this.getSignatureService().signatureToKey(HashUtil.keccak256(recoveredTx.getEncodedRaw()), recoveredTx.getSignature());
 
-        //  sender: CD2A3D9F938E13CD947EC05ABC7FE734DF8DD826
-        // TODO: add test assertion when the sign/verify part actually works.
+        // Recover PK and Address.
+
+        String pubKeyActual = Hex.toHexString(expectedKey.getPubKey());
+        logger.debug("Signature public key\t: {}", pubKeyActual);
+        assertEquals(pubKeyExpected, pubKeyActual);
+        assertEquals(pubString, pubKeyActual);
+        assertArrayEquals(pubKey, expectedKey.getPubKey());
+
+        String addressActual = Hex.toHexString(expectedKey.getAddress());
+        logger.debug("Sender is\t\t: {}", addressActual);
+        assertEquals(addressExpected, addressActual);
     }
 
     @Test
@@ -135,7 +150,7 @@ public class SignatureServiceTest {
     }
 
     @Test
-    public void keyRecovery() throws Exception {
+    public void keyRecovery() {
         ECKey key = new ECKey();
         String message = "Hello World!";
         byte[] hash = HashUtil.sha256(message.getBytes());

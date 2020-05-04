@@ -47,14 +47,12 @@ class SignatureServiceBC extends SignatureService {
      */
     public static final ECDomainParameters CURVE;
     public static final BigInteger HALF_CURVE_ORDER;
-    //private static final SecureRandom secureRandom;
 
     static {
         // All clients must agree on the curve to use by agreement. Ethereum uses secp256k1.
         X9ECParameters params = SECNamedCurves.getByName("secp256k1");
         CURVE = new ECDomainParameters(params.getCurve(), params.getG(), params.getN(), params.getH());
         HALF_CURVE_ORDER = params.getN().shiftRight(1);
-        //secureRandom = new SecureRandom();
     }
 
     /**
