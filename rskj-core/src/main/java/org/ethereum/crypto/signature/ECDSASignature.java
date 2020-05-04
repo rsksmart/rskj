@@ -35,9 +35,9 @@ public class ECDSASignature {
     /**
      * The two components of the signature.
      */
-    public final BigInteger r;
-    public final BigInteger s;
-    public byte v;
+    private final BigInteger r;
+    private final BigInteger s;
+    private byte v;
 
     /**
      * Constructs a signature with the given components. Does NOT automatically canonicalise the signature.
@@ -48,6 +48,35 @@ public class ECDSASignature {
     public ECDSASignature(BigInteger r, BigInteger s) {
         this.r = r;
         this.s = s;
+    }
+
+    /**
+     *  Constructs a signature with the given components. Does NOT automatically canonicalise the signature.
+     *
+     * @param r
+     * @param s
+     * @param v
+     */
+    public ECDSASignature(BigInteger r, BigInteger s, byte v) {
+        this.r = r;
+        this.s = s;
+        this.v = v;
+    }
+
+    public BigInteger getR() {
+        return r;
+    }
+
+    public BigInteger getS() {
+        return s;
+    }
+
+    public byte getV() {
+        return v;
+    }
+
+    public void setV(byte v) {
+        this.v = v;
     }
 
     /**
@@ -95,11 +124,7 @@ public class ECDSASignature {
             return false;
         }
 
-        if (!isLessThan(s, Constants.getSECP256K1N())) {
-            return false;
-        }
-
-        return true;
+        return isLessThan(s, Constants.getSECP256K1N());
     }
 
     /**

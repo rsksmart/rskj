@@ -69,11 +69,11 @@ public abstract class PeerDiscoveryMessage {
         /* [2] Crate signature*/
         ECDSASignature ecdsaSignature = privKey.sign(forSig);
 
-        ecdsaSignature.v -= 27;
+        ecdsaSignature.setV((byte)(ecdsaSignature.getV() - 27));
 
         byte[] sigBytes =
-                merge(BigIntegers.asUnsignedByteArray(32, ecdsaSignature.r),
-                        BigIntegers.asUnsignedByteArray(32, ecdsaSignature.s), new byte[]{ecdsaSignature.v});
+                merge(BigIntegers.asUnsignedByteArray(32, ecdsaSignature.getR()),
+                        BigIntegers.asUnsignedByteArray(32, ecdsaSignature.getS()), new byte[]{ecdsaSignature.getV()});
 
         // [3] calculate MDC
         byte[] forSha = merge(sigBytes, type, data);

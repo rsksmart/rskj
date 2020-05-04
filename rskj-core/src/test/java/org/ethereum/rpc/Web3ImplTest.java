@@ -425,9 +425,9 @@ public class Web3ImplTest {
         org.junit.Assert.assertEquals("0x", tr.input);
         org.junit.Assert.assertEquals("0x" + Hex.toHexString(tx.getReceiveAddress().getBytes()), tr.to);
 
-        Assert.assertArrayEquals(new byte[] {tx.getSignature().v}, TypeConverter.stringHexToByteArray(tr.v));
-        Assert.assertThat(TypeConverter.stringHexToBigInteger(tr.s), is(tx.getSignature().s));
-        Assert.assertThat(TypeConverter.stringHexToBigInteger(tr.r), is(tx.getSignature().r));
+        Assert.assertArrayEquals(new byte[] {tx.getSignature().getV()}, TypeConverter.stringHexToByteArray(tr.v));
+        Assert.assertThat(TypeConverter.stringHexToBigInteger(tr.s), is(tx.getSignature().getS()));
+        Assert.assertThat(TypeConverter.stringHexToBigInteger(tr.r), is(tx.getSignature().getR()));
     }
 
     @Test
