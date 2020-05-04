@@ -49,8 +49,6 @@ import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.signature.ECDSASignature;
 import org.ethereum.crypto.signature.SignatureService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.math.BigInteger;
@@ -84,7 +82,6 @@ import static org.ethereum.util.ByteUtil.bigIntegerToBytes;
  * bitcoinj on GitHub</a>.
  */
 public class ECKey {
-    private static final Logger logger = LoggerFactory.getLogger(ECKey.class);
 
     /**
      * The parameters of the secp256k1 curve that Ethereum uses.
@@ -503,13 +500,6 @@ public class ECKey {
 
     @SuppressWarnings("serial")
     public static class MissingPrivateKeyException extends RuntimeException {
-    }
-
-    private static void check(boolean test, String message) {
-        if (!test) {
-            throw new IllegalArgumentException(message);
-        }
-        
     }
 
 }

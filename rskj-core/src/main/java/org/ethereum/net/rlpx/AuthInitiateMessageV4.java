@@ -38,7 +38,7 @@ import static org.bouncycastle.util.BigIntegers.asUnsignedByteArray;
  */
 public class AuthInitiateMessageV4 {
 
-    ECDSASignature signature; // 65 bytes
+    private ECDSASignature signature; // 65 bytes
     ECPoint publicKey; // 64 bytes - uncompressed and no type byte
     byte[] nonce; // 32 bytes
     int version = 4; // 4 bytes
@@ -95,6 +95,14 @@ public class AuthInitiateMessageV4 {
         byte[] versionBytes = RLP.encodeInt(version);
 
         return RLP.encodeList(sigBytes, publicBytes, nonceBytes, versionBytes);
+    }
+
+    public ECDSASignature getSignature() {
+        return signature;
+    }
+
+    public void setSignature(ECDSASignature signature) {
+        this.signature = signature;
     }
 
     @Override

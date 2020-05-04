@@ -21,6 +21,8 @@ package org.ethereum.crypto.signature;
 
 import co.rsk.config.RskSystemProperties;
 import org.ethereum.crypto.ECKey;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.security.SignatureException;
@@ -37,8 +39,10 @@ import java.security.SignatureException;
 public abstract class SignatureService {
 
     private static final String NATIVE_LIB = "native";
+    private static final Logger logger = LoggerFactory.getLogger(SignatureService.class);
 
-    private static SignatureService INSTANCE;
+    private static SignatureService instance = new SignatureServiceBC();
+    private static Boolean initialized = Boolean.FALSE;
 
     /**
      * <p> It should be called only once in Node Startup.</p>
@@ -49,11 +53,14 @@ public abstract class SignatureService {
      *
      * @param rskSystemProperties
      */
-    public static void initialize(RskSystemProperties rskSystemProperties) {
-        if (NATIVE_LIB.equals(rskSystemProperties.cryptoLibrary())) {//TODO: Check if Native library is loaded.
-            INSTANCE = new SignatureServiceNative();
+    public static synchronized void initialize(RskSystemProperties rskSystemProperties) {
+        if (initialized) {
+            logger.warn("This init method. Should be called only once.");
         } else {
-            INSTANCE = new SignatureServiceBC();
+            logger.debug("Initializing Signature Service.");
+            if (NATIVE_LIB.equals(rskSystemProperties.cryptoLibrary())) {//TODO: Check if Native library is loaded.
+                instance = new SignatureServiceNative();
+            }
         }
     }
     /**
@@ -61,11 +68,8 @@ public abstract class SignatureService {
      *
      * @return either {@link SignatureServiceBC} or Native Signature (future) implementation.
      */
-    public synchronized static final SignatureService getInstance() {
-        if (INSTANCE == null) {
-            INSTANCE = new SignatureServiceBC();
-        }
-        return INSTANCE;
+    public static final SignatureService getInstance() {
+        return instance;
     }
 
 

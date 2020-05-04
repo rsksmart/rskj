@@ -33,7 +33,7 @@ import static org.bouncycastle.util.BigIntegers.asUnsignedByteArray;
  * Created by devrandom on 2015-04-07.
  */
 public class AuthInitiateMessage {
-    ECDSASignature signature; // 65 bytes
+    private ECDSASignature signature; // 65 bytes
     byte[] ephemeralPublicHash; // 32 bytes
     ECPoint publicKey; // 64 bytes - uncompressed and no type byte
     byte[] nonce; // 32 bytes
@@ -104,6 +104,14 @@ public class AuthInitiateMessage {
         buffer[offset] = (byte)(isTokenUsed ? 0x01 : 0x00);
         offset += 1;
         return buffer;
+    }
+
+    public ECDSASignature getSignature() {
+        return signature;
+    }
+
+    public void setSignature(ECDSASignature signature) {
+        this.signature = signature;
     }
 
     @Override

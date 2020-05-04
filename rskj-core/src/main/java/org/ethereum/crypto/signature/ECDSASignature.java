@@ -165,11 +165,7 @@ public class ECDSASignature {
             return false;
         }
 
-        if (!s.equals(signature.s)) {
-            return false;
-        }
-
-        return true;
+        return s.equals(signature.s);
     }
 
     @Override
