@@ -94,6 +94,7 @@ public class TransactionExecutor {
     private PrecompiledContracts.PrecompiledContract precompiledContract;
 
     private long mEndGas = 0;
+    private long mEndRentGas = 0;
     private long basicTxCost = 0;
     private List<LogInfo> logs = null;
     private final Set<DataWord> deletedAccounts;
@@ -151,7 +152,7 @@ public class TransactionExecutor {
      * set readyToExecute = true
      */
     private boolean init() {
-        //e.g. 21K TX or 53K contract creation + 'data' cost (68 per non=0 byte) 
+        //e.g. 21K TX or 53K contract creation (32K for create + 21k) + 'data' cost (68 per non=0 byte) 
         basicTxCost = tx.transactionCost(constants, activations);
 
         if (localCall) {
@@ -304,15 +305,14 @@ public class TransactionExecutor {
         if (!activations.isActive(ConsensusRule.RSKIP136)) {
             return txGasLimit >= requiredGas;
         }
-        return txGasLimit >= gasUsed;
+        //this is more restrictive than above. gasUsed = baseTxCost (fixed) + requiredGas (variable, pre-compiled contacts)
+        return txGasLimit >= gasUsed;    
     }
 
-    //#mish: similar as above for execution Gas, but no dependence on RSKIP136 (whatever that may be, can't find it)
-    private boolean enoughRentGas(long txRentGasLimit, long requiredRentGas, long rentGasUsed) {
-        // when a TX does not specify rent gas limit, it is set equal to the regular execution gas limit 
-        // this happens when the TX object is initialized. So the following condition fails when
-        // rentGasLimit is explicitly specified but turns out to be inadequate
-        return txRentGasLimit >= requiredRentGas;  
+    private boolean enoughRentGas(long txRentGasLimit, long rentGasUsed) {
+        // #mish: when txRentGasLimit is not specified (TX initialization), it is set equal to txGasLimit 
+        // this condition will fail if txRentGasLimit IS specified but set too low
+        return txRentGasLimit >= rentGasUsed;
     }
 
 
@@ -328,7 +328,7 @@ public class TransactionExecutor {
         precompiledContract = precompiledContracts.getContractForAddress(activations, DataWord.valueOf(targetAddress.getBytes()));
 
         this.subtraces = new ArrayList<>();
-
+        // #mish: No storage rent implications for calls to pre compiled contracts?
         if (precompiledContract != null) {
             Metric metric = profiler.start(Profiler.PROFILING_TYPE.PRECOMPILED_CONTRACT_INIT);
             precompiledContract.init(tx, executionBlock, track, blockStore, receiptStore, result.getLogInfoList());
@@ -337,6 +337,7 @@ public class TransactionExecutor {
 
             long requiredGas = precompiledContract.getGasForData(tx.getData());
             long txGasLimit = GasCost.toGas(tx.getGasLimit());
+            long txRentGasLimit = GasCost.toGas(tx.getRentGasLimit());
             long gasUsed = GasCost.add(requiredGas, basicTxCost);
             if (!localCall && !enoughGas(txGasLimit, requiredGas, gasUsed)) {
                 // no refund no endowment
@@ -344,6 +345,8 @@ public class TransactionExecutor {
                                 "for address 0x%s. required: %s, used: %s, left: %s ",
                         executionBlock.getNumber(), targetAddress.toString(), requiredGas, gasUsed, mEndGas));
                 mEndGas = 0;
+                // #mish: if exec gas OOG, do not refund all rent Gas.. keep 25% as per RSKIP113
+                mEndRentGas = 3*txRentGasLimit/4; //#mish: with pre compiles should all rent gas be refunded?
                 profiler.stop(metric);
                 return;
             }
@@ -394,7 +397,9 @@ public class TransactionExecutor {
         cacheTrack.createAccount(newContractAddress); // pre-created
 
         if (isEmpty(tx.getData())) {
-            mEndGas = GasCost.subtract(GasCost.toGas(tx.getGasLimit()), basicTxCost);
+            mEndGas = GasCost.subtract(GasCost.toGas(tx.getGasLimit()), basicTxCost); //reduce refund by basicTxCost
+            // #mish: rentGasRefund?
+
             // If there is no data, then the account is created, but without code nor
             // storage. It doesn't even call setupContract() to setup a storage root
         } else {
@@ -404,6 +409,8 @@ public class TransactionExecutor {
             this.vm = new VM(vmConfig, precompiledContracts);
             this.program = new Program(vmConfig, precompiledContracts, blockFactory, activations, tx.getData(), programInvoke, tx, deletedAccounts);
 
+            // #mish: no adjustments to returns here
+            
             // reset storage if the contract with the same address already exists
             // TCK test case only - normally this is near-impossible situation in the real network
             /* Storage keys not available anymore in a fast way

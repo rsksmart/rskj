@@ -491,7 +491,6 @@ public class TransactionTest {
     public void contractCreationTest() throws Exception {
         // Checks Homestead updates (1) & (3) from
         // https://github.com/ethereum/EIPs/blob/master/EIPS/eip-2.mediawiki
-
         /*
           trying to create a contract with the following Solidity code:
 

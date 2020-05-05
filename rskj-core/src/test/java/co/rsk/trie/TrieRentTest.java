@@ -42,7 +42,8 @@ public class TrieRentTest {
         System.out.println("Rent fully paid until time  "+ trie.getLastRentPaidTime());
         
         // replace with findNode?
-        List<Trie> nodes = trie.getNodes("foo"); 
+        List<Trie> nodes = trie.getNodes("foo");
+
         Assert.assertArrayEquals("abc".getBytes(StandardCharsets.UTF_8), nodes.get(0).getValue());
         Assert.assertEquals(0,trie.getLastRentPaidTime()); // 0 (long cannot be null)
     }
@@ -61,6 +62,23 @@ public class TrieRentTest {
     }
 
     // trie save, retrieve, check rent status
+    // base: a test modified from TrieKeyValueTest
+    @Test
+    public void putAndGetKeyValueTwice() {
+        Trie trie = new Trie();
+        Trie trie1 = trie.put("foo".getBytes(), "bar".getBytes());
+        System.out.println("Rent fully paid until time Trie 1: "+ trie1.getLastRentPaidTime());
+        
+        Assert.assertNotNull(trie1.get("foo"));
+        Assert.assertArrayEquals("bar".getBytes(), trie1.get("foo".getBytes()));
+
+        Trie trie2 = trie1.putRentTime("foo".getBytes(), "zip".getBytes(), 1000_000); 
+        Assert.assertNotNull(trie2.get("foo"));
+        Assert.assertArrayEquals("zip".getBytes(), trie2.get("foo".getBytes()));
+        System.out.println("Rent fully paid until time Trie 2: "+ trie2.getLastRentPaidTime());
+        //Assert.assertSame(trie1, trie2);
+    }
+    
     // trie to and from message 
     
 }

@@ -64,7 +64,6 @@ public class TrieStoreImplTest {
         verifyNoMoreInteractions(map);
 
         Trie newTrie = store.retrieve(trie.getHash().getBytes()).get();
-
         Assert.assertNotNull(newTrie);
         Assert.assertEquals(1, newTrie.trieSize());
         Assert.assertNotNull(newTrie.get(Keccak256Helper.keccak256("foo".getBytes())));

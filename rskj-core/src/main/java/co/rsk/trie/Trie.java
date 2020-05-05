@@ -901,6 +901,148 @@ public class Trie {
         return new Trie(this.store, this.sharedPath, this.value, newLeft, newRight, this.valueLength, this.valueHash, null, this.lastRentPaidTime);
     }
 
+    /* #mish: version of internalput to update rent paid time: duplicated existing code and then track value (do the same for rent)
+    */
+    public Trie putRentTime(byte[] key, byte[] value, long newLastRentPaidTime) {
+        TrieKeySlice keySlice = TrieKeySlice.fromKey(key);
+        Trie trie = putRentTime(keySlice, value, false, newLastRentPaidTime);
+
+        return trie == null ? new Trie(this.store) : trie;
+    }
+
+    private Trie putRentTime(TrieKeySlice key, byte[] value, boolean isRecursiveDelete, long newLastRentPaidTime) {
+        // First of all, setting the value as an empty byte array is equivalent
+        // to removing the key/value. This is because other parts of the trie make
+        // this equivalent. Use always null to mark a node for deletion.
+        if (value != null && value.length == 0) {
+            value = null;
+        }
+
+        Trie trie = this.internalPutRentTime(key, value, isRecursiveDelete, newLastRentPaidTime);
+
+        // the following code coalesces nodes if needed for delete operation
+
+        // it's null or it is not a delete operation
+        if (trie == null || value != null) {
+            return trie;
+        }
+
+        if (trie.isEmptyTrie()) {
+            return null;
+        }
+
+        // only coalesce if node has only one child and no value
+        if (trie.valueLength.compareTo(Uint24.ZERO) > 0) {
+            return trie;
+        }
+
+        Optional<Trie> leftOpt = trie.left.getNode();
+        Optional<Trie> rightOpt = trie.right.getNode();
+        if (leftOpt.isPresent() && rightOpt.isPresent()) {
+            return trie;
+        }
+
+        if (!leftOpt.isPresent() && !rightOpt.isPresent()) {
+            return trie;
+        }
+
+        Trie child;
+        byte childImplicitByte;
+        if (leftOpt.isPresent()) {
+            child = leftOpt.get();
+            childImplicitByte = (byte) 0;
+        } else { // has right node
+            child = rightOpt.get();
+            childImplicitByte = (byte) 1;
+        }
+
+        TrieKeySlice newSharedPath = trie.sharedPath.rebuildSharedPath(childImplicitByte, child.sharedPath);
+        //full constructor: new Trie(store, sharedPath, value, left, right, lvalue, valueHash, childrenSize, lastRentPaidTime)
+        return new Trie(child.store, newSharedPath, child.value, child.left, child.right, child.valueLength, child.valueHash, child.childrenSize, child.lastRentPaidTime);
+    }
+
+
+    private Trie internalPutRentTime(TrieKeySlice key, byte[] value, boolean isRecursiveDelete, long newLastRentPaidTime) {
+        // #mish find the common path between the given key and the current node's (top of the trie) sharedpath
+        TrieKeySlice commonPath = key.commonPath(sharedPath);
+
+        if (commonPath.length() < sharedPath.length()) {
+            // when we are removing a key we know splitting is not necessary. the key wasn't found at this point.
+            if (value == null) {
+                return this;
+            }
+            return this.split(commonPath).putRentTime(key, value, isRecursiveDelete, newLastRentPaidTime);
+        }
+
+        if (sharedPath.length() >= key.length()) {
+            // To compare values we need to retrieve the previous value
+            // if not already done so. We could also compare by hash, to avoid retrieval
+            // We do a small optimization here: if sizes are not equal, then values
+            // obviously are not.
+            if (this.valueLength.equals(getDataLength(value)) && Arrays.equals(this.getValue(), value)) {
+                return this;
+            }
+
+            if (isRecursiveDelete) {
+                return new Trie(this.store, this.sharedPath, null);
+            }
+
+            if (isEmptyTrie(getDataLength(value), this.left, this.right)) {
+                return null;
+            }
+            //full constructor: new Trie(store, sharedPath, value, left, right, lvalue, valueHash, childrenSize, lastRentPaidTime)
+            return new Trie(
+                    this.store,
+                    this.sharedPath,
+                    cloneArray(value),
+                    this.left,
+                    this.right,
+                    getDataLength(value),
+                    null,
+                    null,
+                    newLastRentPaidTime
+            );
+        }
+
+        if (isEmptyTrie()) {
+            return new Trie(this.store, key, cloneArray(value));
+        }
+
+        // this bit will be implicit and not present in a shared path
+        byte pos = key.get(sharedPath.length());
+
+        Trie node = retrieveNode(pos);
+        if (node == null) {
+            node = new Trie(this.store);
+        }
+
+        TrieKeySlice subKey = key.slice(sharedPath.length() + 1, key.length());
+        Trie newNode = node.putRentTime(subKey, value, isRecursiveDelete, newLastRentPaidTime);
+
+        // reference equality
+        if (newNode == node) {
+            return this;
+        }
+
+        NodeReference newNodeReference = new NodeReference(this.store, newNode, null);
+        NodeReference newLeft;
+        NodeReference newRight;
+        if (pos == 0) {
+            newLeft = newNodeReference;
+            newRight = this.right;
+        } else {
+            newLeft = this.left;
+            newRight = newNodeReference;
+        }
+
+        if (isEmptyTrie(this.valueLength, newLeft, newRight)) {
+            return null;
+        }
+        //full constructor: new Trie(store, sharedPath, value, left, right, lvalue, valueHash, childrenSize, lastRentPaidTime)
+        return new Trie(this.store, this.sharedPath, this.value, newLeft, newRight, this.valueLength, this.valueHash, null, this.lastRentPaidTime);
+    } 
+
+
     private Trie split(TrieKeySlice commonPath) {
         int commonPathLength = commonPath.length();
         TrieKeySlice newChildSharedPath = sharedPath.slice(commonPathLength + 1, sharedPath.length());
