@@ -26,6 +26,7 @@ import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.wallet.CoinSelector;
 import co.rsk.bitcoinj.wallet.Wallet;
 import co.rsk.blockchain.utils.BlockGenerator;
+import co.rsk.config.BridgeConstants;
 import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.core.genesis.TestGenesisLoader;
@@ -33,6 +34,7 @@ import co.rsk.db.MutableTrieCache;
 import co.rsk.db.MutableTrieImpl;
 import co.rsk.peg.bitcoin.RskAllowUnconfirmedCoinSelector;
 import co.rsk.peg.btcLockSender.BtcLockSender;
+import co.rsk.peg.utils.BtcTransactionFormatUtils;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
@@ -48,8 +50,10 @@ import org.ethereum.vm.PrecompiledContracts;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import sun.nio.ch.Net;
 
 import java.math.BigInteger;
+import java.nio.ByteBuffer;
 import java.security.SecureRandom;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -511,6 +515,79 @@ public class BridgeUtilsTest {
         Assert.assertEquals(Coin.COIN, BridgeUtils.getCoinFromBigInteger(BigInteger.valueOf(Coin.COIN.getValue())));
     }
 
+    @Test(expected = Exception.class)
+    public void validateHeightAndConfirmations_invalid_height() throws Exception {
+        BridgeUtils.validateHeightAndConfirmations(-1, 0, 0, null);
+    }
+
+    @Test
+    public void validateHeightAndConfirmation_insufficient_confirmations() throws Exception {
+        Assert.assertFalse(BridgeUtils.validateHeightAndConfirmations(2, 5, 10, Sha256Hash.of(Hex.decode("ab"))));
+    }
+
+    @Test
+    public void validateHeightAndConfirmation_enough_confirmations() throws Exception {
+        Assert.assertTrue(BridgeUtils.validateHeightAndConfirmations(2, 5, 3, Sha256Hash.of(Hex.decode("ab"))));
+    }
+
+    @Test(expected = Exception.class)
+    public void calculateMerkleRoot_invalid_pmt() {
+        BridgeUtils.calculateMerkleRoot(mock(NetworkParameters.class), Hex.decode("ab"), null);
+    }
+
+    @Test
+    public void calculateMerkleRoot_hashes_not_in_pmt() {
+        byte[] bits = new byte[1];
+        bits[0] = 0x01;
+        List<Sha256Hash> hashes = new ArrayList<>();
+        hashes.add(PegTestUtils.createHash());
+
+        BridgeConstants bridgeConstants = BridgeRegTestConstants.getInstance();
+        NetworkParameters networkParameters = bridgeConstants.getBtcParams();
+
+        BtcTransaction tx = new BtcTransaction(networkParameters);
+        PartialMerkleTree pmt = new PartialMerkleTree(networkParameters, bits, hashes, 1);
+
+        Assert.assertNull(BridgeUtils.calculateMerkleRoot(networkParameters, pmt.bitcoinSerialize(), tx.getHash()));
+    }
+
+    @Test
+    public void calculateMerkleRoot_hashes_in_pmt() {
+        BridgeConstants bridgeConstants = BridgeRegTestConstants.getInstance();
+        NetworkParameters networkParameters = bridgeConstants.getBtcParams();
+
+        BtcTransaction tx = new BtcTransaction(networkParameters);
+
+        byte[] bits = new byte[1];
+        bits[0] = 0x01;
+        List<Sha256Hash> hashes = new ArrayList<>();
+        hashes.add(tx.getHash());
+
+        PartialMerkleTree pmt = new PartialMerkleTree(networkParameters, bits, hashes, 1);
+
+        Assert.assertEquals(Sha256Hash.wrap("d21633ba23f70118185227be58a63527675641ad37967e2aa461559f577aec43"), BridgeUtils.calculateMerkleRoot(networkParameters, pmt.bitcoinSerialize(), tx.getHash()));
+    }
+
+    @Test(expected = VerificationException.class)
+    public void validateInputsCount_active_rskip() {
+        BridgeConstants bridgeConstants = BridgeRegTestConstants.getInstance();
+        NetworkParameters networkParameters = bridgeConstants.getBtcParams();
+
+        BtcTransaction tx = new BtcTransaction(networkParameters);
+
+        BridgeUtils.validateInputsCount(Hex.decode("00000000000100"), true, tx.getHash());
+    }
+
+    @Test(expected = VerificationException.class)
+    public void validateInputsCount_inactive_rskip() {
+        BridgeConstants bridgeConstants = BridgeRegTestConstants.getInstance();
+        NetworkParameters networkParameters = bridgeConstants.getBtcParams();
+
+        BtcTransaction tx = new BtcTransaction(networkParameters);
+
+        BridgeUtils.validateInputsCount(tx.bitcoinSerialize(), false, tx.getHash());
+    }
+
     private void assertIsWatching(Address address, Wallet wallet, NetworkParameters parameters) {
         List<Script> watchedScripts = wallet.getWatchedScripts();
         Assert.assertEquals(1, watchedScripts.size());
@@ -519,9 +596,7 @@ public class BridgeUtilsTest {
         Assert.assertEquals(address.toString(), watchedScript.getToAddress(parameters).toString());
     }
 
-
     private void isFreeBridgeTx(boolean expected, RskAddress destinationAddress, byte[] privKeyBytes) {
-
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
                 new RepositoryBtcBlockStoreWithCache.Factory(constants.getBridgeConstants().getBtcParams()),
                 constants.getBridgeConstants(),

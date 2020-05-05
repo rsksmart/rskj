@@ -25,6 +25,7 @@ import co.rsk.config.BridgeConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.peg.bitcoin.RskAllowUnconfirmedCoinSelector;
 import co.rsk.peg.btcLockSender.BtcLockSender;
+import co.rsk.peg.utils.BtcTransactionFormatUtils;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -34,10 +35,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.math.BigInteger;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 /**
  * @author Oscar Guindzberg
@@ -242,5 +240,50 @@ public class BridgeUtils {
     private static boolean isFromFeePerKbChangeAuthorizedSender(org.ethereum.core.Transaction rskTx, BridgeConstants bridgeConfiguration) {
         AddressBasedAuthorizer authorizer = bridgeConfiguration.getFeePerKbChangeAuthorizer();
         return authorizer.isAuthorized(rskTx);
+    }
+
+    public static boolean validateHeightAndConfirmations(int height, int btcBestChainHeight, int acceptableConfirmationsAmount, Sha256Hash btcTxHash) throws Exception {
+        // Check there are at least N blocks on top of the supplied height
+        if (height < 0) {
+            throw new Exception();
+        }
+        int confirmations = btcBestChainHeight - height + 1;
+        if (confirmations < acceptableConfirmationsAmount) {
+            logger.warn(
+                    "Btc Tx {} at least {} confirmations are required, but there are only {} confirmations",
+                    btcTxHash,
+                    acceptableConfirmationsAmount,
+                    confirmations
+            );
+            return false;
+        }
+        return true;
+    }
+
+    public static Sha256Hash calculateMerkleRoot(NetworkParameters networkParameters, byte[] pmtSerialized, Sha256Hash btcTxHash) throws VerificationException{
+        PartialMerkleTree pmt = new PartialMerkleTree(networkParameters, pmtSerialized, 0);
+        List<Sha256Hash> hashesInPmt = new ArrayList<>();
+        Sha256Hash merkleRoot = pmt.getTxnHashAndMerkleRoot(hashesInPmt);
+        if (!hashesInPmt.contains(btcTxHash)) {
+            logger.warn("Supplied Btc Tx {} is not in the supplied partial merkle tree", btcTxHash);
+            return null;
+        }
+        return merkleRoot;
+    }
+
+    public static void validateInputsCount(byte[] btcTxSerialized, boolean isActiveRskip, Sha256Hash btcTxHash) throws VerificationException.EmptyInputsOrOutputs {
+        if (BtcTransactionFormatUtils.getInputsCount(btcTxSerialized) == 0) {
+            if (isActiveRskip) {
+                if (BtcTransactionFormatUtils.getInputsCountForSegwit(btcTxSerialized) == 0) {
+                    logger.warn("Btc Segwit Tx {} has no inputs ", btcTxHash);
+                    // this is the exception thrown by co.rsk.bitcoinj.core.BtcTransaction#verify when there are no inputs.
+                    throw new VerificationException.EmptyInputsOrOutputs();
+                }
+            } else {
+                logger.warn("Btc Tx {} has no inputs ", btcTxHash);
+                // this is the exception thrown by co.rsk.bitcoinj.core.BtcTransaction#verify when there are no inputs.
+                throw new VerificationException.EmptyInputsOrOutputs();
+            }
+        }
     }
 }

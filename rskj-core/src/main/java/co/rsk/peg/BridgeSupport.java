@@ -260,77 +260,15 @@ public class BridgeSupport {
      */
     public void registerBtcTransaction(Transaction rskTx, byte[] btcTxSerialized, int height, byte[] pmtSerialized) throws IOException, BlockStoreException {
         Context.propagate(btcContext);
-
         Sha256Hash btcTxHash = BtcTransactionFormatUtils.calculateBtcTxHash(btcTxSerialized);
+
         // Check the tx was not already processed
-        if (getBtcTxHashProcessedHeight(btcTxHash) > -1L) {
-            logger.warn("Supplied Btc Tx {} was already processed", btcTxHash);
+        if (isAlreadyBtcTxHashProcessedHeight(btcTxHash)) {
             return;
         }
 
-        if (height < 0) {
-            String panicMessage = String.format("Btc Tx %s Supplied Height is %d but should be greater than 0", btcTxHash, height);
-            logger.warn(panicMessage);
-            panicProcessor.panic("btclock", panicMessage);
-            return;
-        }
-
-        // Check there are at least N blocks on top of the supplied height
-        int btcBestChainHeight = getBtcBlockchainBestChainHeight();
-        int confirmations = btcBestChainHeight - height + 1;
-        if (confirmations < bridgeConstants.getBtc2RskMinimumAcceptableConfirmations()) {
-            logger.warn(
-                    "Btc Tx {} at least {} confirmations are required, but there are only {} confirmations",
-                    btcTxHash,
-                    bridgeConstants.getBtc2RskMinimumAcceptableConfirmations(),
-                    confirmations
-            );
-            return;
-        }
-
-        if (!PartialMerkleTreeFormatUtils.hasExpectedSize(pmtSerialized)) {
-            throw new BridgeIllegalArgumentException("PartialMerkleTree doesn't have expected size");
-        }
-
-        Sha256Hash merkleRoot;
-        try {
-            PartialMerkleTree pmt = new PartialMerkleTree(bridgeConstants.getBtcParams(), pmtSerialized, 0);
-            List<Sha256Hash> hashesInPmt = new ArrayList<>();
-            merkleRoot = pmt.getTxnHashAndMerkleRoot(hashesInPmt);
-            if (!hashesInPmt.contains(btcTxHash)) {
-                logger.warn("Supplied Btc Tx {} is not in the supplied partial merkle tree", btcTxHash);
-                return;
-            }
-        } catch (VerificationException e) {
-            throw new BridgeIllegalArgumentException(String.format("PartialMerkleTree could not be parsed {}", Hex.toHexString(pmtSerialized)), e);
-        }
-
-        if (BtcTransactionFormatUtils.getInputsCount(btcTxSerialized) == 0) {
-            if (activations.isActive(ConsensusRule.RSKIP143)) {
-                if (BtcTransactionFormatUtils.getInputsCountForSegwit(btcTxSerialized) == 0) {
-                    logger.warn("Btc Segwit Tx {} has no inputs ", btcTxHash);
-                    // this is the exception thrown by co.rsk.bitcoinj.core.BtcTransaction#verify when there are no inputs.
-                    throw new VerificationException.EmptyInputsOrOutputs();
-                }
-            } else {
-                logger.warn("Btc Tx {} has no inputs ", btcTxHash);
-                // this is the exception thrown by co.rsk.bitcoinj.core.BtcTransaction#verify when there are no inputs.
-                throw new VerificationException.EmptyInputsOrOutputs();
-            }
-        }
-
-        // Check the the merkle root equals merkle root of btc block at specified height in the btc best chain
-        // BTC blockstore is available since we've already queried the best chain height
-        BtcBlock blockHeader = btcBlockStore.getStoredBlockAtMainChainHeight(height).getHeader();
-        if (!isBlockMerkleRootValid(merkleRoot, blockHeader)){
-            String panicMessage = String.format(
-                    "Btc Tx %s Supplied merkle root %s does not match block's merkle root %s",
-                    btcTxHash.toString(),
-                    merkleRoot,
-                    blockHeader.getMerkleRoot()
-            );
-            logger.warn(panicMessage);
-            panicProcessor.panic("btclock", panicMessage);
+        // Validations for register
+        if (!validationsForRegisterBtcTransaction(btcTxHash, height, pmtSerialized, btcTxSerialized)){
             return;
         }
 
@@ -338,14 +276,14 @@ public class BridgeSupport {
         btcTx.verify();
 
         // Check again that the tx was not already processed but making sure to use the txid (no witness)
-        if (getBtcTxHashProcessedHeight(btcTx.getHash(false)) > -1L) {
-            logger.warn("Supplied Btc Tx {} was already processed", btcTx.getHash(false));
+        if (isAlreadyBtcTxHashProcessedHeight(btcTx.getHash(false))) {
             return;
         }
 
         boolean locked = true;
 
         Federation activeFederation = getActiveFederation();
+
         // Specific code for lock/release/none txs
         if (BridgeUtils.isLockTx(btcTx, getLiveFederations(), btcContext, bridgeConstants)) {
             logger.debug("This is a lock tx {}", btcTx);
@@ -605,8 +543,8 @@ public class BridgeSupport {
 
             // Add the TX to the release set
             if (activations.isActive(ConsensusRule.RSKIP146)) {
-                Coin amountMigrated = selectedUTXOs.stream().map(utxo -> utxo.getValue())
-                        .reduce(Coin.ZERO, (total, elem) -> total.add(elem));
+                Coin amountMigrated = selectedUTXOs.stream().map(UTXO::getValue)
+                        .reduce(Coin.ZERO, Coin::add);
                 releaseTransactionSet.add(btcTx, rskExecutionBlock.getNumber(), rskTx.getHash());
                 // Log the Release request
                 eventLogger.logReleaseBtcRequested(rskTx.getHash().getBytes(), btcTx, amountMigrated);
@@ -633,8 +571,8 @@ public class BridgeSupport {
 
                     // Add the TX to the release set
                     if (activations.isActive(ConsensusRule.RSKIP146)) {
-                        Coin amountMigrated = selectedUTXOs.stream().map(utxo -> utxo.getValue())
-                                .reduce(Coin.ZERO, (total, elem) -> total.add(elem));
+                        Coin amountMigrated = selectedUTXOs.stream().map(UTXO::getValue)
+                                .reduce(Coin.ZERO, Coin::add);
                         releaseTransactionSet.add(btcTx, rskExecutionBlock.getNumber(), rskTx.getHash());
                         // Log the Release request
                         eventLogger.logReleaseBtcRequested(rskTx.getHash().getBytes(), btcTx, amountMigrated);
@@ -1165,7 +1103,7 @@ public class BridgeSupport {
             }
         } catch (BlockStoreException e) {
             logger.warn(String.format(
-                    "Illegal state trying to get block with hash {}",
+                    "Illegal state trying to get block with hash %s",
                     btcBlockHash
             ), e);
             return BTC_TRANSACTION_CONFIRMATION_INCONSISTENT_BLOCK_ERROR_CODE;
@@ -1217,6 +1155,21 @@ public class BridgeSupport {
     public Long getBtcTxHashProcessedHeight(Sha256Hash btcTxHash) throws IOException {
         // Return -1 if the transaction hasn't been processed
         return provider.getHeightIfBtcTxhashIsAlreadyProcessed(btcTxHash).orElse(-1L);
+    }
+
+    /**
+     * Returns if tx was already processed by the bridge
+     * @param btcTxHash the btc tx hash for which to retrieve the height.
+     * @return true or false according
+     * @throws  IOException
+     * */
+    public boolean isAlreadyBtcTxHashProcessedHeight(Sha256Hash btcTxHash) throws IOException {
+        if (getBtcTxHashProcessedHeight(btcTxHash) > -1L) {
+            logger.warn("Supplied Btc Tx {} was already processed", btcTxHash);
+            return true;
+        }
+
+        return false;
     }
 
     /**
@@ -1480,8 +1433,8 @@ public class BridgeSupport {
         }
 
         if (currentPendingFederation.getBtcPublicKeys().contains(btcKey) ||
-            currentPendingFederation.getMembers().stream().map(m -> m.getRskPublicKey()).anyMatch(k -> k.equals(rskKey)) ||
-            currentPendingFederation.getMembers().stream().map(m -> m.getMstPublicKey()).anyMatch(k -> k.equals(mstKey))) {
+            currentPendingFederation.getMembers().stream().map(FederationMember::getRskPublicKey).anyMatch(k -> k.equals(rskKey)) ||
+            currentPendingFederation.getMembers().stream().map(FederationMember::getMstPublicKey).anyMatch(k -> k.equals(mstKey))) {
             return -2;
         }
 
@@ -1535,7 +1488,7 @@ public class BridgeSupport {
         provider.getNewFederationBtcUTXOs().clear();
         List<UTXO> oldFederationUTXOs = provider.getOldFederationBtcUTXOs();
         oldFederationUTXOs.clear();
-        utxosToMove.forEach(utxo -> oldFederationUTXOs.add(utxo));
+        oldFederationUTXOs.addAll(utxosToMove);
 
         // Network parameters for the new federation are taken from the bridge constants.
         // Creation time is the block's timestamp.
@@ -1595,9 +1548,7 @@ public class BridgeSupport {
         ABICallVoteResult result;
         try {
             result = executeVoteFederationChangeFunction(true, callSpec);
-        } catch (IOException e) {
-            result = new ABICallVoteResult(false, FEDERATION_CHANGE_GENERIC_ERROR_CODE);
-        } catch (BridgeIllegalArgumentException e) {
+        } catch (IOException | BridgeIllegalArgumentException e) {
             result = new ABICallVoteResult(false, FEDERATION_CHANGE_GENERIC_ERROR_CODE);
         }
 
@@ -2285,6 +2236,61 @@ public class BridgeSupport {
             }
         }
         return isValid;
+    }
+    
+    @VisibleForTesting
+    protected boolean validationsForRegisterBtcTransaction(Sha256Hash btcTxHash, int height, byte[] pmtSerialized, byte[] btcTxSerialized)
+            throws BlockStoreException, VerificationException.EmptyInputsOrOutputs, BridgeIllegalArgumentException {
+
+        // Validates height and confirmations for tx
+        try {
+            int acceptableConfirmationsAmount = bridgeConstants.getBtc2RskMinimumAcceptableConfirmations();
+            if (!BridgeUtils.validateHeightAndConfirmations(height, getBtcBlockchainBestChainHeight(), acceptableConfirmationsAmount, btcTxHash)) {
+                return false;
+            }
+        } catch (Exception e) {
+            String panicMessage = String.format("Btc Tx %s Supplied Height is %d but should be greater than 0", btcTxHash, height);
+            logger.warn(panicMessage);
+            panicProcessor.panic("btclock", panicMessage);
+            return false;
+        }
+
+        // Validates pmt size
+        if (!PartialMerkleTreeFormatUtils.hasExpectedSize(pmtSerialized)) {
+            throw new BridgeIllegalArgumentException("PartialMerkleTree doesn't have expected size");
+        }
+
+        // Calculates merkleRoot
+        Sha256Hash merkleRoot;
+        try {
+            NetworkParameters networkParameters = bridgeConstants.getBtcParams();
+            merkleRoot = BridgeUtils.calculateMerkleRoot(networkParameters, pmtSerialized, btcTxHash);
+            if (merkleRoot == null) {
+                return false;
+            }
+        } catch (VerificationException e) {
+            throw new BridgeIllegalArgumentException(e.getMessage(), e);
+        }
+
+        // Validates inputs count
+        BridgeUtils.validateInputsCount(btcTxSerialized, activations.isActive(ConsensusRule.RSKIP143), btcTxHash);
+
+        // Check the the merkle root equals merkle root of btc block at specified height in the btc best chain
+        // BTC blockstore is available since we've already queried the best chain height
+        BtcBlock blockHeader = btcBlockStore.getStoredBlockAtMainChainHeight(height).getHeader();
+        if (!isBlockMerkleRootValid(merkleRoot, blockHeader)){
+            String panicMessage = String.format(
+                    "Btc Tx %s Supplied merkle root %s does not match block's merkle root %s",
+                    btcTxHash.toString(),
+                    merkleRoot,
+                    blockHeader.getMerkleRoot()
+            );
+            logger.warn(panicMessage);
+            panicProcessor.panic("btclock", panicMessage);
+            return false;
+        }
+
+        return true;
     }
 }
 
