@@ -101,6 +101,25 @@ public abstract class Secp256k1ServiceTest {
     }
 
     @Test
+    public void testSignatureToKey_invalid_params() {
+        byte[] messageHash = HashUtil.keccak256(exampleMessage.getBytes());
+        try {
+            byte v = (byte) 35;
+            this.getSecp256k1().signatureToKey(messageHash, ECDSASignature.fromComponents(r.toByteArray(), s.toByteArray(), v));
+            fail();
+        } catch (SignatureException e) {
+            assertThat(e.getMessage(), containsString("Header byte out of range"));
+        }
+        try {
+            byte v = (byte) 26;
+            this.getSecp256k1().signatureToKey(messageHash, ECDSASignature.fromComponents(r.toByteArray(), s.toByteArray(), v));
+            fail();
+        } catch (SignatureException e) {
+            assertThat(e.getMessage(), containsString("Header byte out of range"));
+        }
+    }
+
+    @Test
     public void testSignatureToKey_from_Tx() throws SignatureException {
 
         byte[] messageHash = HashUtil.keccak256(exampleMessage.getBytes());

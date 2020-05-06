@@ -39,11 +39,13 @@ public interface Secp256k1Service {
      * containing the public key that was used to sign it. This can then be compared to the expected public key to
      * determine if the signature was correct.
      *
+     * signature.v  => from 31 to 34 is compressed
+     *              => from 27 to 30 is uncompressed
+     *
      * @param messageHash a piece of human readable text that was signed
      * @param signature   The message signature
      * @return -
      * @throws SignatureException If the public key could not be recovered or if there was a signature format error.
-     * @Deprecated will be replaced by {@link Secp256k1Service#signatureToKey(byte[], ECDSASignature)}
      */
     default ECKey signatureToKey(byte[] messageHash, ECDSASignature signature) throws SignatureException {
         int header = signature.getV() & 0xFF;

@@ -29,12 +29,15 @@ import org.slf4j.LoggerFactory;
  * It returns an instance of {@link Secp256k1Service}
  * Is implemented as a Singleton, so the only way to access an instance is through getInstance().
  */
-public abstract class Secp256k1 {
+public final class Secp256k1 {
 
     private static final String NATIVE_LIB = "native";
     private static final Logger logger = LoggerFactory.getLogger(Secp256k1.class);
 
     private static Secp256k1Service instance;
+
+    private Secp256k1() {
+    }
 
     /**
      * <p> It should be called only once in Node Startup.</p>
@@ -45,7 +48,7 @@ public abstract class Secp256k1 {
      *
      * @param rskSystemProperties
      */
-    public final static synchronized void initialize(RskSystemProperties rskSystemProperties) {
+    public static final synchronized void initialize(RskSystemProperties rskSystemProperties) {
         // Just a warning for duplicate initialization.
         if (instance != null) {
             logger.warn("Instance was already initialized. This could be either for duplicate initialization or calling to getInstance before init.");
