@@ -144,7 +144,7 @@ public class ECDSASignatureTest {
         // Now we have to work backwards to figure out the recId needed to recover the signature.
         int recId = -1;
         for (int i = 0; i < 4; i++) {
-            ECKey k = SignatureService.getInstance().recoverFromSignature(i, sig, hash, false);
+            ECKey k = Secp256k1.getInstance().recoverFromSignature(i, sig, hash, false);
             if (k != null && k.equalsPub(pubKey)) {
                 recId = i;
                 break;

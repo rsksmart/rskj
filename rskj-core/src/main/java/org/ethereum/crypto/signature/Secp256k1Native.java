@@ -23,6 +23,6 @@ package org.ethereum.crypto.signature;
  * Implementation of SignatureService with Native library.
  * TODO: once integrated native implementation, should implement all methods.
  */
-public class SignatureServiceNative extends SignatureServiceBC {
+public class Secp256k1Native extends Secp256k1BC {
 
 }
