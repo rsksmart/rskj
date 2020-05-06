@@ -34,7 +34,8 @@ public final class Secp256k1 {
     private static final String NATIVE_LIB = "native";
     private static final Logger logger = LoggerFactory.getLogger(Secp256k1.class);
 
-    private static Secp256k1Service instance;
+    private static Secp256k1Service instance = new Secp256k1ServiceBC();
+    private static Boolean initialized = Boolean.FALSE;
 
     private Secp256k1() {
     }
@@ -48,10 +49,12 @@ public final class Secp256k1 {
      *
      * @param rskSystemProperties
      */
-    public static final synchronized void initialize(RskSystemProperties rskSystemProperties) {
+    public static synchronized void initialize(RskSystemProperties rskSystemProperties) {
         // Just a warning for duplicate initialization.
-        if (instance != null) {
+        if (initialized) {
             logger.warn("Instance was already initialized. This could be either for duplicate initialization or calling to getInstance before init.");
+        } else {
+            initialized = Boolean.TRUE;
         }
         String cryptoLibrary = rskSystemProperties.cryptoLibrary();
         logger.debug("Initializing Signature Service: {}.", cryptoLibrary);
@@ -67,19 +70,13 @@ public final class Secp256k1 {
      *
      * @return either {@link Secp256k1ServiceBC} or Native Signature (future) implementation.
      */
-    public static final Secp256k1Service getInstance() {
-        if (instance == null) {
-            setDefault();
-        }
+    public static Secp256k1Service getInstance() {
         return instance;
     }
 
-    private static synchronized void setDefault() {
-        instance = new Secp256k1ServiceBC();
-    }
-
     @VisibleForTesting
-    static final void reset() {
-        instance = null;
+    static void reset() {
+        instance = new Secp256k1ServiceBC();
+        initialized = Boolean.FALSE;
     }
 }
