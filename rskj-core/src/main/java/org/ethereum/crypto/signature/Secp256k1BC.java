@@ -39,9 +39,9 @@ import java.security.SignatureException;
 /**
  * Implementation of SignatureService with Bouncy Castle.
  */
-class SignatureServiceBC extends SignatureService {
+class Secp256k1BC extends Secp256k1 {
 
-    private static final Logger logger = LoggerFactory.getLogger(SignatureServiceBC.class);
+    private static final Logger logger = LoggerFactory.getLogger(Secp256k1BC.class);
     /**
      * The parameters of the secp256k1 curve that Ethereum uses.
      */
@@ -57,31 +57,9 @@ class SignatureServiceBC extends SignatureService {
 
     /**
      * Part of the Singleton Signature service.
-     * {@link SignatureService#getInstance()}
+     * {@link Secp256k1#getInstance()}
      */
-    SignatureServiceBC(){}
-
-    @Override
-    public ECKey signatureToKey(byte[] messageHash, ECDSASignature signature) throws SignatureException {
-        int header = signature.getV() & 0xFF;
-        // The header byte: 0x1B = first key with even y, 0x1C = first key with odd y,
-        //                  0x1D = second key with even y, 0x1E = second key with odd y
-        if (header < 27 || header > 34) {
-            throw new SignatureException("Header byte out of range: " + header);
-        }
-
-        boolean compressed = false;
-        if (header >= 31) {
-            compressed = true;
-            header -= 4;
-        }
-        int recId = header - 27;
-        ECKey key = this.recoverFromSignature(recId, signature, messageHash, compressed);
-        if (key == null) {
-            throw new SignatureException("Could not recover public key from signature");
-        }
-        return key;
-    }
+    Secp256k1BC(){}
 
     @Nullable
     @Override

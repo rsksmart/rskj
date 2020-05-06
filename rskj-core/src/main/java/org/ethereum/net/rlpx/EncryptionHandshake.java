@@ -24,7 +24,7 @@ import com.google.common.base.Throwables;
 import org.ethereum.crypto.ECIESCoder;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.Keccak256Helper;
-import org.ethereum.crypto.signature.SignatureService;
+import org.ethereum.crypto.signature.Secp256k1;
 import org.ethereum.util.ByteUtil;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.digests.KeccakDigest;
@@ -153,7 +153,7 @@ public class EncryptionHandshake {
         byte[] token = ByteUtil.bigIntegerToBytes(secretScalar, NONCE_SIZE);
         byte[] signed = xor(token, initiatorNonce);
 
-        ECKey ephemeral = SignatureService.getInstance().recoverFromSignature(recIdFromSignatureV(initiate.getSignature().getV()),
+        ECKey ephemeral = Secp256k1.getInstance().recoverFromSignature(recIdFromSignatureV(initiate.getSignature().getV()),
                 initiate.getSignature(), signed, false);
         if (ephemeral == null) {
             throw new RuntimeException("failed to recover signatue from message");
@@ -309,7 +309,7 @@ public class EncryptionHandshake {
         byte[] token = ByteUtil.bigIntegerToBytes(secretScalar, NONCE_SIZE);
         byte[] signed = xor(token, initiatorNonce);
 
-        ECKey ephemeral = SignatureService.getInstance().recoverFromSignature(recIdFromSignatureV(initiate.getSignature().getV()),
+        ECKey ephemeral = Secp256k1.getInstance().recoverFromSignature(recIdFromSignatureV(initiate.getSignature().getV()),
                 initiate.getSignature(), signed, false);
         if (ephemeral == null) {
             throw new RuntimeException("failed to recover signatue from message");

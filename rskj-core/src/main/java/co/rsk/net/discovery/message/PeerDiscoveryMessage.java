@@ -25,7 +25,7 @@ import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.crypto.signature.ECDSASignature;
-import org.ethereum.crypto.signature.SignatureService;
+import org.ethereum.crypto.signature.Secp256k1;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLPElement;
 import org.slf4j.Logger;
@@ -110,7 +110,7 @@ public abstract class PeerDiscoveryMessage {
 
         ECKey outKey = null;
         try {
-            outKey = SignatureService.getInstance().signatureToKey(msgHash, ECDSASignature.fromComponents(r, s, v));
+            outKey = Secp256k1.getInstance().signatureToKey(msgHash, ECDSASignature.fromComponents(r, s, v));
         } catch (SignatureException e) {
             logger.error("Error generating key from message", e);
         }

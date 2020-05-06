@@ -23,7 +23,7 @@ import co.rsk.db.importer.provider.index.data.BootstrapDataEntry;
 import co.rsk.db.importer.provider.index.data.BootstrapDataSignature;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.signature.ECDSASignature;
-import org.ethereum.crypto.signature.SignatureService;
+import org.ethereum.crypto.signature.Secp256k1;
 
 import java.math.BigInteger;
 import java.util.Map;
@@ -57,7 +57,7 @@ public class BootstrapDataVerifier {
             BigInteger s = new BigInteger(1, Hex.decode(bds.getS()));
 
             ECDSASignature signature = new ECDSASignature(r, s);
-            if (SignatureService.getInstance().verify(dbHash, signature, publicKey)) {
+            if (Secp256k1.getInstance().verify(dbHash, signature, publicKey)) {
                 verifications++;
             }
         }
