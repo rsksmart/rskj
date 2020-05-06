@@ -546,7 +546,7 @@ public class ECKey {
         // Now we have to work backwards to figure out the recId needed to recover the signature.
         int recId = -1;
         for (int i = 0; i < 4; i++) {
-            ECKey k = ECKey.recoverFromSignature(i, sig, messageHash, false);
+            ECKey k = Secp256k1.getInstance().recoverFromSignature(i, org.ethereum.crypto.signature.ECDSASignature.fromSignature(sig), messageHash, false);
             if (k != null && k.pub.equals(pub)) {
                 recId = i;
                 break;
