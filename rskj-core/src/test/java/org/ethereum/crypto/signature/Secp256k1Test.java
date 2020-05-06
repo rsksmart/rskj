@@ -23,15 +23,14 @@ import co.rsk.config.RskSystemProperties;
 import org.junit.Test;
 import org.mockito.Mockito;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertTrue;
 
 public class Secp256k1Test {
 
     @Test
     public void testInitialization_notInitialized() {
         Secp256k1.reset();
-        assertTrue(Secp256k1.getInstance() instanceof Secp256k1BC);
+        assertTrue(Secp256k1.getInstance() instanceof Secp256k1ServiceBC);
     }
 
     @Test
@@ -41,7 +40,7 @@ public class Secp256k1Test {
         RskSystemProperties properties = Mockito.mock(RskSystemProperties.class);
         Mockito.when(properties.cryptoLibrary()).thenReturn("bc");
         Secp256k1.initialize(properties);
-        assertTrue(Secp256k1.getInstance() instanceof Secp256k1BC);
+        assertTrue(Secp256k1.getInstance() instanceof Secp256k1ServiceBC);
     }
 
     @Test
@@ -51,7 +50,7 @@ public class Secp256k1Test {
         RskSystemProperties properties = Mockito.mock(RskSystemProperties.class);
         Mockito.when(properties.cryptoLibrary()).thenReturn("native");
         Secp256k1.initialize(properties);
-        assertTrue(Secp256k1.getInstance() instanceof Secp256k1Native);
+        assertTrue(Secp256k1.getInstance() instanceof Secp256K1ServiceNative);
     }
 
     @Test
@@ -61,10 +60,10 @@ public class Secp256k1Test {
         RskSystemProperties properties = Mockito.mock(RskSystemProperties.class);
         Mockito.when(properties.cryptoLibrary()).thenReturn("native");
         Secp256k1.initialize(properties);
-        assertTrue(Secp256k1.getInstance() instanceof Secp256k1Native);
+        assertTrue(Secp256k1.getInstance() instanceof Secp256K1ServiceNative);
         Mockito.when(properties.cryptoLibrary()).thenReturn("bc");
         Secp256k1.initialize(properties);
-        assertTrue(Secp256k1.getInstance() instanceof Secp256k1BC);
+        assertTrue(Secp256k1.getInstance() instanceof Secp256k1ServiceBC);
     }
 
 }

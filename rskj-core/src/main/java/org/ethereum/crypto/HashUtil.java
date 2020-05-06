@@ -20,12 +20,12 @@
 package org.ethereum.crypto;
 
 import co.rsk.core.RskAddress;
-import org.ethereum.crypto.cryptohash.Keccak256;
-import org.ethereum.util.RLP;
-import org.ethereum.util.Utils;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.RIPEMD160Digest;
 import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.crypto.cryptohash.Keccak256;
+import org.ethereum.util.RLP;
+import org.ethereum.util.Utils;
 
 import javax.annotation.Nonnull;
 import java.math.BigInteger;
