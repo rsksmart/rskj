@@ -34,6 +34,7 @@ import java.math.BigInteger;
 import java.security.SignatureException;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.*;
 
 @Ignore
@@ -148,29 +149,29 @@ public abstract class Secp256k1ServiceTest {
         byte[] validBytes = validBigInt.toByteArray();
         BigInteger invalidBigInt = BigInteger.valueOf(-1l);
         byte[] invalidNullBytes = null;
-        boolean validBoolean = true;
+        boolean validBoolean = false;
         int validRecId = 0;
         int invalidRecId = -1;
-        // Invalid recId
         try {
             this.getSecp256k1().recoverFromSignature(invalidRecId, ECDSASignature.fromComponents(validBytes, validBytes), validBytes, validBoolean);
             fail();
-        }catch (IllegalArgumentException e){}
-        // Invalid r
+        }catch (IllegalArgumentException e){assertThat(e.getMessage(), containsString("recId must be positive"));}
+
         try {
             this.getSecp256k1().recoverFromSignature(validRecId, new ECDSASignature(invalidBigInt, validBigInt), validBytes, validBoolean);
             fail();
-        }catch (IllegalArgumentException e){}
-        // Invalid s
+        }catch (IllegalArgumentException e){assertThat(e.getMessage(), containsString("r must be positive"));}
+
         try {
             this.getSecp256k1().recoverFromSignature(validRecId, new ECDSASignature(validBigInt, invalidBigInt), validBytes, validBoolean);
             fail();
-        }catch (IllegalArgumentException e){}
-        // Invalid msg
+        }catch (IllegalArgumentException e){assertThat(e.getMessage(), containsString("s must be positive"));}
+
         try {
             this.getSecp256k1().recoverFromSignature(validRecId, new ECDSASignature(validBigInt, validBigInt), invalidNullBytes, validBoolean);
             fail();
-        }catch (IllegalArgumentException e){}
+        }catch (IllegalArgumentException e){assertThat(e.getMessage(), containsString("messageHash must not be null"));}
+
     }
 
     @Test
