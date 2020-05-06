@@ -35,7 +35,7 @@ public final class Secp256k1 {
     private static final Logger logger = LoggerFactory.getLogger(Secp256k1.class);
 
     private static Secp256k1Service instance = new Secp256k1ServiceBC();
-    private static Boolean initialized = Boolean.FALSE;
+    private static boolean initialized = false;
 
     private Secp256k1() {
     }
@@ -54,7 +54,7 @@ public final class Secp256k1 {
         if (initialized) {
             logger.warn("Instance was already initialized. This could be either for duplicate initialization or calling to getInstance before init.");
         } else {
-            initialized = Boolean.TRUE;
+            initialized = true;
         }
         String cryptoLibrary = rskSystemProperties.cryptoLibrary();
         logger.debug("Initializing Signature Service: {}.", cryptoLibrary);
@@ -77,6 +77,6 @@ public final class Secp256k1 {
     @VisibleForTesting
     static void reset() {
         instance = new Secp256k1ServiceBC();
-        initialized = Boolean.FALSE;
+        initialized = false;
     }
 }
