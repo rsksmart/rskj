@@ -63,12 +63,17 @@ public class MutableTrieImpl implements MutableTrie {
 
     @Override
     public byte[] get(byte[] key) {
-        return trie.get(key);
+        return trie.get(key);   //#mish get returns the value associated with a key
     }
 
     @Override
     public void put(byte[] key, byte[] value) {
         trie = trie.put(key, value);
+    }
+
+    //@Override //#mish no override, this method is not present in the interace
+    public void putRentTime(byte[] key, byte[] value, long newLastRentPaidTime) {
+        trie = trie.putRentTime(key, value, newLastRentPaidTime);
     }
 
     @Override

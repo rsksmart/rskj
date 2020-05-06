@@ -901,7 +901,9 @@ public class Trie {
         return new Trie(this.store, this.sharedPath, this.value, newLeft, newRight, this.valueLength, this.valueHash, null, this.lastRentPaidTime);
     }
 
-    /* #mish: version of internalput to update rent paid time: duplicated existing code and then track value (do the same for rent)
+    /* #mish: version of put to update rent paid time: 
+     * duplicated existing code and then track value (do the same for rent)
+     * could have used the same name 'put' with overloading. Introducing new name for emphasis.
     */
     public Trie putRentTime(byte[] key, byte[] value, long newLastRentPaidTime) {
         TrieKeySlice keySlice = TrieKeySlice.fromKey(key);
@@ -932,22 +934,26 @@ public class Trie {
         }
 
         // only coalesce if node has only one child and no value
+        // suppose there is a value
         if (trie.valueLength.compareTo(Uint24.ZERO) > 0) {
             return trie;
         }
-
+        // no value.. still need to ensure only one child.
         Optional<Trie> leftOpt = trie.left.getNode();
         Optional<Trie> rightOpt = trie.right.getNode();
+        // if both present, return
         if (leftOpt.isPresent() && rightOpt.isPresent()) {
             return trie;
         }
-
+        // if both absent, return.
         if (!leftOpt.isPresent() && !rightOpt.isPresent()) {
             return trie;
         }
-
+        // now we have a node with a value and exactly one child, proceed with combining/coalescing.
         Trie child;
         byte childImplicitByte;
+        
+         // leftOpt/rightOpt are optional lists of tries, so get() below is just usual list method
         if (leftOpt.isPresent()) {
             child = leftOpt.get();
             childImplicitByte = (byte) 0;
@@ -955,7 +961,7 @@ public class Trie {
             child = rightOpt.get();
             childImplicitByte = (byte) 1;
         }
-
+        // reconstruct the shared path
         TrieKeySlice newSharedPath = trie.sharedPath.rebuildSharedPath(childImplicitByte, child.sharedPath);
         //full constructor: new Trie(store, sharedPath, value, left, right, lvalue, valueHash, childrenSize, lastRentPaidTime)
         return new Trie(child.store, newSharedPath, child.value, child.left, child.right, child.valueLength, child.valueHash, child.childrenSize, child.lastRentPaidTime);
@@ -980,7 +986,10 @@ public class Trie {
             // We do a small optimization here: if sizes are not equal, then values
             // obviously are not.
             if (this.valueLength.equals(getDataLength(value)) && Arrays.equals(this.getValue(), value)) {
-                return this;
+                //values are equal..  if rent paid time is also unchanged, then return
+                if (this.lastRentPaidTime == newLastRentPaidTime){
+                    return this;
+                }
             }
 
             if (isRecursiveDelete) {

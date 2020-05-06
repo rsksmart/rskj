@@ -79,7 +79,52 @@ public class TrieRentTest {
         //Assert.assertSame(trie1, trie2);
     }
     
-    // trie to and from message 
-    
+    @Test
+    public void putAndGetKeyValueSameTrie() {
+        Trie trie = new Trie();
+        trie = trie.put("foo".getBytes(), "bar".getBytes());
+        System.out.println("Rent fully paid until time Trie : " + trie.getLastRentPaidTime() +
+                        " value:  " + new String(trie.get("foo".getBytes())) );
+        //System.out.println(new String("bar".getBytes()));
+        //add same key with rent update
+        trie = trie.putRentTime("foo".getBytes(), "zip".getBytes(), 1000_000); 
+        System.out.println("Rent fully paid until time (same key with rentupdate): " + trie.getLastRentPaidTime() +
+                        " value:  " + new String( trie.get("foo".getBytes())));
+          
+        //back to initial value, same key. RentpadDatewill be retained
+        trie = trie.put("foo".getBytes(), "bar".getBytes());
+        System.out.println("Rent fully paid until time (still the same key, no rent info): "+ trie.getLastRentPaidTime() +
+                        " value:  " + new String( trie.get("foo".getBytes())));
+        Assert.assertEquals(1000_000, trie.getLastRentPaidTime());        
+
+    }
+
+    // #mish: this is a variant of a test of the same name from TrieGetNodesTest.
+    @Test
+    public void putKeyAndSubkeyAndGetNodes() {
+        Trie trie = new Trie();
+        //order of trie puts() does not matter for getNodes()
+        trie = trie.put("foo".getBytes(), "abc".getBytes()); // "foo": main key of interest
+
+        trie = trie.putRentTime("fo".getBytes(), "longSubKeyVal".getBytes(), 4000); //a longer subkey
+        trie = trie.putRentTime("fo".getBytes(), "longSubKeyVal".getBytes(), 3000); // value unchanged, rent changed
+        //trie = trie.putRentTime("fo".getBytes(), "newlongSubKeyVal".getBytes(), 3000); //value and changed, rent unchanged 
+        
+        trie = trie.putRentTime("f".getBytes(), "shortSubKeyVal".getBytes(), 100); //short subkey "f", even empty "" works
+        trie = trie.putRentTime("f".getBytes(), "newshortSubKeyVal".getBytes(), 200); //value and rent both changed
+        //regular put, this will not alter last rent paid time
+        trie = trie.put("f".getBytes(), "newInfo".getBytes()); //value changed, but this should not change last rent paid time
+        
+        List<Trie> nodes = trie.getNodes("foo"); //foo, then fo, then f
+
+        for (int n = 0; n < nodes.size(); n++){
+            //System.out.println("Rent last paid through block: " + nodes.get(n).getLastRentPaidTime());
+            System.out.println("Rent last paid time: "+ nodes.get(n).getLastRentPaidTime() + " value: " + new String(nodes.get(n).getValue()));
+        }
+        Assert.assertEquals(0, nodes.get(0).getLastRentPaidTime()); // foo renttime not added
+        Assert.assertEquals(3000, nodes.get(1).getLastRentPaidTime()); // fo 
+        Assert.assertEquals("newInfo",new String(nodes.get(2).getValue())); // f updated value
+        Assert.assertEquals(200, nodes.get(2).getLastRentPaidTime()); // even though value updated, last rent paid status unchanged    
+    }
 }
 
