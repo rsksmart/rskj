@@ -34,14 +34,13 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.math.BigInteger;
-import java.security.SignatureException;
 
 /**
  * Implementation of SignatureService with Bouncy Castle.
  */
-class Secp256k1BC extends Secp256k1 {
+class Secp256k1ServiceBC implements Secp256k1Service {
 
-    private static final Logger logger = LoggerFactory.getLogger(Secp256k1BC.class);
+    private static final Logger logger = LoggerFactory.getLogger(Secp256k1ServiceBC.class);
     /**
      * The parameters of the secp256k1 curve that Ethereum uses.
      */
@@ -59,7 +58,7 @@ class Secp256k1BC extends Secp256k1 {
      * Part of the Singleton Signature service.
      * {@link Secp256k1#getInstance()}
      */
-    Secp256k1BC(){}
+    Secp256k1ServiceBC(){}
 
     @Nullable
     @Override
