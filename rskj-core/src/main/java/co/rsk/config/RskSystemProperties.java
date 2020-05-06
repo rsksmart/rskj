@@ -272,6 +272,11 @@ public class RskSystemProperties extends SystemProperties {
     }
 
     // Sync config properties
+
+    public boolean getIsHeartBeatEnabled() {
+        return getBoolean("sync.heartBeat.enabled", false);
+    }
+
     public int getExpectedPeers() {
         return configFromFiles.getInt("sync.expectedPeers");
     }
