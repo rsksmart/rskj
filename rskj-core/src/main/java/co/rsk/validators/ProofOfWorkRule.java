@@ -36,7 +36,7 @@ import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.signature.ECDSASignature;
-import org.ethereum.crypto.signature.SignatureService;
+import org.ethereum.crypto.signature.Secp256k1;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPElement;
 import org.ethereum.util.RLPList;
@@ -280,7 +280,7 @@ public class ProofOfWorkRule implements BlockHeaderValidationRule, BlockValidati
             return false;
         }
 
-        ECKey pub = SignatureService.getInstance().recoverFromSignature(signature.getV() - 27, signature, header.getHashForMergedMining(), false);
+        ECKey pub = Secp256k1.getInstance().recoverFromSignature(signature.getV() - 27, signature, header.getHashForMergedMining(), false);
 
         return pub.getPubKeyPoint().equals(fallbackMiningPubKey.getPubKeyPoint());
     }

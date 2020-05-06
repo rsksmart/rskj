@@ -40,7 +40,7 @@ import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.crypto.signature.ECDSASignature;
-import org.ethereum.crypto.signature.SignatureService;
+import org.ethereum.crypto.signature.Secp256k1;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.util.BIUtil;
@@ -315,7 +315,7 @@ public class PrecompiledContracts {
                 if (isValid(r, s, v)) {
                     ECDSASignature signature = ECDSASignature.fromComponents(r, s, v[31]);
 
-                    ECKey key = SignatureService.getInstance().signatureToKey(h, signature);
+                    ECKey key = Secp256k1.getInstance().signatureToKey(h, signature);
                     out = DataWord.valueOf(key.getAddress());
                 }
             } catch (Exception any) {

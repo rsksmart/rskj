@@ -37,9 +37,10 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static org.junit.Assert.*;
 import static org.junit.Assert.fail;
 
-public class SignatureServiceTest {
+@Ignore
+public abstract class AbstractSecp256k1Test {
 
-    private static final Logger logger = LoggerFactory.getLogger(SignatureServiceTest.class);
+    private static final Logger logger = LoggerFactory.getLogger(AbstractSecp256k1Test.class);
 
     private final String pubString = "0497466f2b32bc3bb76d4741ae51cd1d8578b48d3f1e68da206d47321aec267ce78549b514e4453d74ef11b0cd5e4e4c364effddac8b51bcfc8de80682f952896f";
     private final byte[] pubKey = Hex.decode(pubString);
@@ -54,7 +55,15 @@ public class SignatureServiceTest {
     private final BigInteger s = new BigInteger("30212485197630673222315826773656074299979444367665131281281249560925428307087");
     private final byte v = 28;
 
-    private final SignatureService signatureService = SignatureService.getInstance();
+    private Secp256k1 secp256k1;
+
+    protected AbstractSecp256k1Test(Secp256k1 secp256k1) {
+        this.secp256k1 = secp256k1;
+    }
+
+    protected Secp256k1 getSecp256k1() {
+        return this.secp256k1;
+    }
 
     @Test
     public void testVerifySignature() {
@@ -63,11 +72,11 @@ public class SignatureServiceTest {
         ECDSASignature sig = ECDSASignature.fromComponents(r.toByteArray(), s.toByteArray(), (byte) 0x1b);
         byte[] rawtx = Hex.decode("f82804881bc16d674ec8000094cd2a3d9f938e13cd947ec05abc7fe734df8dd8268609184e72a0006480");
         try {
-            ECKey key = this.getSignatureService().signatureToKey(HashUtil.keccak256(rawtx), sig);
+            ECKey key = this.getSecp256k1().signatureToKey(HashUtil.keccak256(rawtx), sig);
             logger.debug("Signature public key\t: {}", Hex.toHexString(key.getPubKey()));
             logger.debug("Sender is\t\t: {}", Hex.toHexString(key.getAddress()));
             assertEquals("cd2a3d9f938e13cd947ec05abc7fe734df8dd826", Hex.toHexString(key.getAddress()));
-            this.getSignatureService().verify(HashUtil.keccak256(rawtx), sig, key.getPubKey());
+            this.getSecp256k1().verify(HashUtil.keccak256(rawtx), sig, key.getPubKey());
         } catch (SignatureException e) {
             fail();
         }
@@ -79,7 +88,7 @@ public class SignatureServiceTest {
         BigInteger r = new BigInteger("28157690258821599598544026901946453245423343069728565040002908283498585537001");
         BigInteger s = new BigInteger("30212485197630673222315826773656074299979444367665131281281249560925428307087");
         ECDSASignature sig = ECDSASignature.fromComponents(r.toByteArray(), s.toByteArray(), (byte) 28);
-        assertTrue(this.getSignatureService().verify(HashUtil.keccak256(exampleMessage.getBytes()), sig, key.getPubKey()));
+        assertTrue(this.getSecp256k1().verify(HashUtil.keccak256(exampleMessage.getBytes()), sig, key.getPubKey()));
     }
 
     @Test
@@ -89,11 +98,11 @@ public class SignatureServiceTest {
         ECDSASignature sig = ECDSASignature.fromComponents(r.toByteArray(), s.toByteArray(), (byte) 0x1b);
         byte[] rawtx = Hex.decode("f82804881bc16d674ec8000094cd2a3d9f938e13cd947ec05abc7fe734df8dd8268609184e72a0006480");
         try {
-            ECKey key = this.getSignatureService().signatureToKey(HashUtil.keccak256(rawtx), sig);
+            ECKey key = this.getSecp256k1().signatureToKey(HashUtil.keccak256(rawtx), sig);
             logger.debug("Signature public key\t: {}", Hex.toHexString(key.getPubKey()));
             logger.debug("Sender is\t\t: {}", Hex.toHexString(key.getAddress()));
             assertEquals("cd2a3d9f938e13cd947ec05abc7fe734df8dd826", Hex.toHexString(key.getAddress()));
-            assertTrue(this.getSignatureService().verify(HashUtil.keccak256(rawtx), sig, key.getPubKey()));
+            assertTrue(this.getSecp256k1().verify(HashUtil.keccak256(rawtx), sig, key.getPubKey()));
         } catch (SignatureException e) {
             fail();
         }
@@ -115,7 +124,7 @@ public class SignatureServiceTest {
         ImmutableTransaction recoveredTx = new ImmutableTransaction(newTx.getEncoded());
 
         // Recover Pub Key from recovered tx
-        ECKey expectedKey = this.getSignatureService().signatureToKey(HashUtil.keccak256(recoveredTx.getEncodedRaw()), recoveredTx.getSignature());
+        ECKey expectedKey = this.getSecp256k1().signatureToKey(HashUtil.keccak256(recoveredTx.getEncodedRaw()), recoveredTx.getSignature());
 
         // Recover PK and Address.
 
@@ -134,7 +143,7 @@ public class SignatureServiceTest {
     public void testSignedMessageToKey() throws SignatureException {
         byte[] messageHash = HashUtil.keccak256(exampleMessage.getBytes());
 
-        ECKey key = this.getSignatureService().signatureToKey(messageHash, ECDSASignature.fromComponents(ByteUtil.bigIntegerToBytes(r, 32),
+        ECKey key = this.getSecp256k1().signatureToKey(messageHash, ECDSASignature.fromComponents(ByteUtil.bigIntegerToBytes(r, 32),
                 ByteUtil.bigIntegerToBytes(s, 32), v));
 
         assertNotNull(key);
@@ -146,7 +155,7 @@ public class SignatureServiceTest {
         ECKey key = ECKey.fromPrivate(privateKey);
         String message = "This is an example of a signed message.";
         ECDSASignature output = key.doSign(message.getBytes());
-        assertTrue(this.getSignatureService().verify(message.getBytes(), output, key.getPubKey()));
+        assertTrue(this.getSecp256k1().verify(message.getBytes(), output, key.getPubKey()));
     }
 
     @Test
@@ -158,7 +167,7 @@ public class SignatureServiceTest {
         key = ECKey.fromPublicOnly(key.getPubKeyPoint());
         boolean found = false;
         for (int i = 0; i < 4; i++) {
-            ECKey key2 = this.getSignatureService().recoverFromSignature(i, sig, hash, true);
+            ECKey key2 = this.getSecp256k1().recoverFromSignature(i, sig, hash, true);
             checkNotNull(key2);
             if (key.equals(key2)) {
                 found = true;
@@ -166,10 +175,6 @@ public class SignatureServiceTest {
             }
         }
         assertTrue(found);
-    }
-
-    public SignatureService getSignatureService() {
-        return signatureService;
     }
 
 }

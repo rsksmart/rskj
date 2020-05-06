@@ -90,7 +90,7 @@ import org.ethereum.core.genesis.BlockChainLoader;
 import org.ethereum.core.genesis.GenesisLoader;
 import org.ethereum.core.genesis.GenesisLoaderImpl;
 import org.ethereum.crypto.ECKey;
-import org.ethereum.crypto.signature.SignatureService;
+import org.ethereum.crypto.signature.Secp256k1;
 import org.ethereum.datasource.DataSourceWithCache;
 import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.datasource.LevelDbDataSource;
@@ -835,7 +835,7 @@ public class RskContext implements NodeBootstrapper {
                     getRepositoryLocator()
             ));
         }
-        SignatureService.initialize(getRskSystemProperties());
+        Secp256k1.initialize(getRskSystemProperties());
         return Collections.unmodifiableList(internalServices);
     }
 

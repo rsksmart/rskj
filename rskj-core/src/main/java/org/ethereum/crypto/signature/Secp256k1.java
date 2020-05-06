@@ -20,6 +20,7 @@
 package org.ethereum.crypto.signature;
 
 import co.rsk.config.RskSystemProperties;
+import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.crypto.ECKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,16 +34,15 @@ import java.security.SignatureException;
  * - Sign data (future)
  * - Recover PK from signature
  * - Verify
- *
+ * <p>
  * Is implemented as a Singleton, so the only way to access an instance is through getInstance().
  */
-public abstract class SignatureService {
+public abstract class Secp256k1 {
 
     private static final String NATIVE_LIB = "native";
-    private static final Logger logger = LoggerFactory.getLogger(SignatureService.class);
+    private static final Logger logger = LoggerFactory.getLogger(Secp256k1.class);
 
-    private static SignatureService instance = new SignatureServiceBC();
-    private static Boolean initialized = Boolean.FALSE;
+    private static Secp256k1 instance;
 
     /**
      * <p> It should be called only once in Node Startup.</p>
@@ -54,24 +54,38 @@ public abstract class SignatureService {
      * @param rskSystemProperties
      */
     public static synchronized void initialize(RskSystemProperties rskSystemProperties) {
-        if (initialized) {
-            logger.warn("This init method. Should be called only once.");
+        // Just a warning for duplicate initialization.
+        if (instance != null) {
+            logger.warn("Instance was already initialized. This could be either for duplicate initialization or calling to getInstance before init.");
+        }
+        logger.debug("Initializing Signature Service: {}.", rskSystemProperties.cryptoLibrary());
+        if (NATIVE_LIB.equals(rskSystemProperties.cryptoLibrary())) {//TODO: Check if Native library is loaded.
+            instance = new Secp256k1Native();
         } else {
-            logger.debug("Initializing Signature Service.");
-            if (NATIVE_LIB.equals(rskSystemProperties.cryptoLibrary())) {//TODO: Check if Native library is loaded.
-                instance = new SignatureServiceNative();
-            }
+            instance = new Secp256k1BC();
         }
     }
+
     /**
      * As a singleton this should be the only entry point for creating instances of SignatureService classes.
      *
-     * @return either {@link SignatureServiceBC} or Native Signature (future) implementation.
+     * @return either {@link Secp256k1BC} or Native Signature (future) implementation.
      */
-    public static final SignatureService getInstance() {
+    public static final Secp256k1 getInstance() {
+        if (instance == null) {
+            setDefault();
+        }
         return instance;
     }
 
+    private static synchronized void setDefault() {
+        instance = new Secp256k1BC();
+    }
+
+    @VisibleForTesting
+    static final void reset() {
+        instance = null;
+    }
 
     /**
      * Given a piece of text and a message signature encoded in base64, returns an ECKey
@@ -82,10 +96,28 @@ public abstract class SignatureService {
      * @param signature   The message signature
      * @return -
      * @throws SignatureException If the public key could not be recovered or if there was a signature format error.
-     * @Deprecated will be replaced by {@link SignatureService#signatureToKey(byte[], ECDSASignature)}
+     * @Deprecated will be replaced by {@link Secp256k1#signatureToKey(byte[], ECDSASignature)}
      */
-    public abstract ECKey signatureToKey(byte[] messageHash, ECDSASignature signature) throws SignatureException;
+    public ECKey signatureToKey(byte[] messageHash, ECDSASignature signature) throws SignatureException {
+        int header = signature.getV() & 0xFF;
+        // The header byte: 0x1B = first key with even y, 0x1C = first key with odd y,
+        //                  0x1D = second key with even y, 0x1E = second key with odd y
+        if (header < 27 || header > 34) {
+            throw new SignatureException("Header byte out of range: " + header);
+        }
 
+        boolean compressed = false;
+        if (header >= 31) {
+            compressed = true;
+            header -= 4;
+        }
+        int recId = header - 27;
+        ECKey key = this.recoverFromSignature(recId, signature, messageHash, compressed);
+        if (key == null) {
+            throw new SignatureException("Could not recover public key from signature");
+        }
+        return key;
+    }
     /**
      * <p>Given the components of a signature and a selector value, recover and return the public key
      * that generated the signature according to the algorithm in SEC1v2 section 4.1.6.</p>
@@ -115,10 +147,9 @@ public abstract class SignatureService {
      * <p>When using native ECDSA verification, data must be 32 bytes, and no element may be
      * larger than 520 bytes.</p>
      *
-     * @param data Hash of the data to verify.
+     * @param data      Hash of the data to verify.
      * @param signature signature.
-     * @param pub The public key bytes to use.
-     *
+     * @param pub       The public key bytes to use.
      * @return -
      */
     public abstract boolean verify(byte[] data, ECDSASignature signature, byte[] pub);
@@ -129,7 +160,7 @@ public abstract class SignatureService {
      * @param test
      * @param message
      */
-    protected void check(boolean test, String message) {
+    protected static void check(boolean test, String message) {
         if (!test) {
             throw new IllegalArgumentException(message);
         }
