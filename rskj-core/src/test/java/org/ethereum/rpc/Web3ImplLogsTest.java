@@ -348,6 +348,7 @@ public class Web3ImplLogsTest {
 
         Web3.FilterRequest fr = new Web3.FilterRequest();
         fr.fromBlock = "earliest";
+        fr.toBlock = "latest";
         Object[] logs = web3.eth_getLogs(fr);
 
         Assert.assertNotNull(logs);
@@ -1030,7 +1031,7 @@ public class Web3ImplLogsTest {
                 null,
                 new SimpleConfigCapabilities(),
                 null,
-                new BlocksBloomStore(2, 0),
+                new BlocksBloomStore(2, 0, null),
                 mock(Web3InformationRetriever.class));
     }
 
