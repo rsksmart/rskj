@@ -836,7 +836,7 @@ public class RskContext implements NodeBootstrapper {
                 getCompositeEthereumListener(),
                 getTrieStore(),
                 getBlockStore(),
-                null));
+                getReceiptStore()));
         GarbageCollectorConfig gcConfig = getRskSystemProperties().garbageCollectorConfig();
         if (gcConfig.enabled()) {
             internalServices.add(new GarbageCollector(
