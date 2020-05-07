@@ -19,6 +19,7 @@
 
 package org.ethereum.crypto.signature;
 
+import org.bouncycastle.math.ec.ECPoint;
 import org.ethereum.config.Constants;
 import org.ethereum.crypto.ECKey;
 
@@ -61,6 +62,41 @@ public class ECDSASignature {
         this.r = r;
         this.s = s;
         this.v = v;
+    }
+
+    /**
+     * Warning: Used in Fed Node.
+     *
+     * @param r -
+     * @param s -
+     * @param hash - the hash used to compute this signature
+     * @param pub - public key bytes, used to calculate the recovery byte 'v'
+     * @return -
+     */
+    public static ECDSASignature fromComponentsWithRecoveryCalculation(byte[] r, byte[] s, byte[] hash, byte[] pub) {
+        byte v = calculateRecoveryByte(r, s, hash, pub);
+        return fromComponents(r, s, v);
+    }
+
+    private static byte calculateRecoveryByte(byte[] r, byte[] s, byte[] hash, byte[] pub) {
+        ECDSASignature sig = ECDSASignature.fromComponents(r, s);
+        ECKey pubKey = ECKey.fromPublicOnly(pub);
+
+        // Now we have to work backwards to figure out the recId needed to recover the signature.
+        int recId = -1;
+        for (int i = 0; i < 4; i++) {
+            ECKey k = Secp256k1.getInstance().recoverFromSignature(i, sig, hash, false);
+            if (k != null && k.equalsPub(pubKey)) {
+                recId = i;
+                break;
+            }
+        }
+
+        if (recId == -1) {
+            throw new RuntimeException("Could not construct a recoverable key. This should never happen.");
+        }
+
+        return (byte) (recId + 27);
     }
 
     public BigInteger getR() {
