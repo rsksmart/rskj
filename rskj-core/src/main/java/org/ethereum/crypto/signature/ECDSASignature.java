@@ -99,6 +99,16 @@ public class ECDSASignature {
         return (byte) (recId + 27);
     }
 
+    /**
+     * Only for compatibility until we could finally remove old {@link org.ethereum.crypto.ECKey.ECDSASignature}.
+     *
+     * @param sign
+     * @return
+     */
+    public static ECDSASignature fromSignature(ECKey.ECDSASignature sign) {
+        return ECDSASignature.fromComponents(sign.r.toByteArray(), sign.s.toByteArray(), sign.v);
+    }
+
     public BigInteger getR() {
         return r;
     }

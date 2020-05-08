@@ -24,6 +24,7 @@ import com.google.common.base.Throwables;
 import org.ethereum.crypto.ECIESCoder;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.Keccak256Helper;
+import org.ethereum.crypto.signature.ECDSASignature;
 import org.ethereum.crypto.signature.Secp256k1;
 import org.ethereum.util.ByteUtil;
 import org.bouncycastle.crypto.InvalidCipherTextException;
@@ -88,7 +89,7 @@ public class EncryptionHandshake {
 
         byte[] nonce = initiatorNonce;
         byte[] signed = xor(token, nonce);
-        message.setSignature(ephemeralKey.sign(signed));
+        message.setSignature(ECDSASignature.fromSignature(ephemeralKey.sign(signed)));
         message.publicKey = key.getPubKeyPoint();
         message.nonce = initiatorNonce;
         return message;
@@ -207,7 +208,7 @@ public class EncryptionHandshake {
 
         byte[] nonce = initiatorNonce;
         byte[] signed = xor(token, nonce);
-        message.setSignature(ephemeralKey.sign(signed));
+        message.setSignature(ECDSASignature.fromSignature(ephemeralKey.sign(signed)));
         message.isTokenUsed = isToken;
         message.ephemeralPublicHash = keccak256(ephemeralKey.getPubKeyPoint().getEncoded(false), 1, 64);
         message.publicKey = key.getPubKeyPoint();

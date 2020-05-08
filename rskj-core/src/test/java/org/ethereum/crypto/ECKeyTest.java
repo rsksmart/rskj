@@ -134,7 +134,7 @@ public class ECKeyTest {
         System.out.println("Pubkey\t: " + Hex.toHexString(key.getPubKey()));
         System.out.println("Data\t: " + exampleMessage);
         byte[] messageHash = HashUtil.keccak256(exampleMessage.getBytes());
-        ECDSASignature signature = key.sign(messageHash);
+        ECDSASignature signature = ECDSASignature.fromSignature(key.sign(messageHash));
 
         assertEquals(r, signature.getR());
         assertEquals(s, signature.getS());
@@ -154,7 +154,7 @@ public class ECKeyTest {
             sigFutures.add(executor.submit(new Callable<ECDSASignature>() {
                 @Override
                 public ECDSASignature call() throws Exception {
-                    return key.doSign(hash);
+                    return ECDSASignature.fromSignature(key.doSign(hash));
                 }
             }));
         }

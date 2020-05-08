@@ -67,7 +67,7 @@ public abstract class PeerDiscoveryMessage {
         byte[] forSig = HashUtil.keccak256(payload);
 
         /* [2] Crate signature*/
-        ECDSASignature ecdsaSignature = privKey.sign(forSig);
+        ECDSASignature ecdsaSignature = ECDSASignature.fromSignature(privKey.sign(forSig));
 
         ecdsaSignature.setV((byte)(ecdsaSignature.getV() - 27));
 

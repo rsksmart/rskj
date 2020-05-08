@@ -96,7 +96,7 @@ public abstract class Secp256k1ServiceTest {
     public void testVerify_after_doSign() {
         ECKey key = ECKey.fromPrivate(privateKey);
         String message = "This is an example of a signed message.";
-        ECDSASignature output = key.doSign(message.getBytes());
+        ECDSASignature output = ECDSASignature.fromSignature(key.doSign(message.getBytes()));
         assertTrue(this.getSecp256k1().verify(message.getBytes(), output, key.getPubKey()));
     }
 
@@ -199,7 +199,7 @@ public abstract class Secp256k1ServiceTest {
         ECKey key = new ECKey();
         String message = "Hello World!";
         byte[] hash = HashUtil.sha256(message.getBytes());
-        ECDSASignature sig = key.doSign(hash);
+        ECDSASignature sig = ECDSASignature.fromSignature(key.doSign(hash));
         key = ECKey.fromPublicOnly(key.getPubKeyPoint());
         boolean found = false;
         for (int i = 0; i < 4; i++) {

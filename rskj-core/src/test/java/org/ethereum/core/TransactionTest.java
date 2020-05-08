@@ -86,7 +86,7 @@ public class TransactionTest {
         // step 2: hash = sha3(step1)
         byte[] txHash = HashUtil.keccak256(data);
 
-        ECDSASignature signature = key.doSign(txHash);
+        ECDSASignature signature = ECDSASignature.fromSignature(key.doSign(txHash));
         System.out.println(signature);
     }
 
