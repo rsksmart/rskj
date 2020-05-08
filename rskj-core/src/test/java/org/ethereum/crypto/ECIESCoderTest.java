@@ -19,10 +19,10 @@
 
 package org.ethereum.crypto;
 
-import org.junit.Assert;
-import org.junit.Test;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.util.encoders.Hex;
+import org.junit.Assert;
+import org.junit.Test;
 
 import java.math.BigInteger;
 

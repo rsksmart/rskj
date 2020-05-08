@@ -73,6 +73,9 @@ public class ECDSASignatureTest {
         //same values - but diff v
         assertTrue(expected.equals(new ECDSASignature(expected.getR(), expected.getS(), (byte) 0)));
 
+        // null
+        assertFalse(expected.equals(null));
+
         //dif classes
         assertFalse(expected.equals(BigInteger.ZERO));
 

@@ -288,7 +288,6 @@ public class RskContext implements NodeBootstrapper {
             if (rskSystemProperties.importEnabled()) {
                 getBootstrapImporter().importData();
             }
-
             nodeRunner = buildNodeRunner();
         }
 
