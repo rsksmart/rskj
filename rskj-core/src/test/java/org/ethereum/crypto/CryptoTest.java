@@ -19,12 +19,6 @@
 
 package org.ethereum.crypto;
 
-import org.ethereum.util.Utils;
-
-import org.junit.Test;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.BufferedBlockCipher;
 import org.bouncycastle.crypto.KeyEncoder;
@@ -41,11 +35,14 @@ import org.bouncycastle.crypto.modes.SICBlockCipher;
 import org.bouncycastle.crypto.params.*;
 import org.bouncycastle.crypto.parsers.ECIESPublicKeyParser;
 import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.util.Utils;
+import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.math.BigInteger;
 import java.security.SecureRandom;
 
-import static org.ethereum.crypto.HashUtil.keccak256;
 import static org.junit.Assert.assertEquals;
 
 public class CryptoTest {

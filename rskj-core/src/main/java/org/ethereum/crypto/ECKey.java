@@ -51,7 +51,6 @@ import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
-import org.ethereum.crypto.signature.ECDSASignature;
 import org.ethereum.crypto.signature.Secp256k1;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -59,7 +58,6 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.Nullable;
 import java.math.BigInteger;
 import java.security.SecureRandom;
-import java.security.SignatureException;
 import java.util.Arrays;
 
 import static org.ethereum.util.BIUtil.isLessThan;
@@ -546,7 +544,7 @@ public class ECKey {
         // Now we have to work backwards to figure out the recId needed to recover the signature.
         int recId = -1;
         for (int i = 0; i < 4; i++) {
-            ECKey k = ECKey.recoverFromSignature(i, sig, messageHash, false);
+            ECKey k = Secp256k1.getInstance().recoverFromSignature(i, org.ethereum.crypto.signature.ECDSASignature.fromSignature(sig), messageHash, false);
             if (k != null && k.pub.equals(pub)) {
                 recId = i;
                 break;

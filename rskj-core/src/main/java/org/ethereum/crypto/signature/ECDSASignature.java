@@ -19,7 +19,6 @@
 
 package org.ethereum.crypto.signature;
 
-import org.bouncycastle.math.ec.ECPoint;
 import org.ethereum.config.Constants;
 import org.ethereum.crypto.ECKey;
 
