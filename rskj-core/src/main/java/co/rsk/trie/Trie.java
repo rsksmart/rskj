@@ -904,15 +904,15 @@ public class Trie {
     /* #mish: version of put to update rent paid time: 
      * duplicated existing code and then track value (do the same for rent)
      * could have used the same name 'put' with overloading. Introducing new name for emphasis.
-    */
-    public Trie putRentTime(byte[] key, byte[] value, long newLastRentPaidTime) {
+     * also, value must be passed explicitly, even if unchanged*/
+    public Trie putLastRentPaidTime(byte[] key, byte[] value, long newLastRentPaidTime) {
         TrieKeySlice keySlice = TrieKeySlice.fromKey(key);
-        Trie trie = putRentTime(keySlice, value, false, newLastRentPaidTime);
+        Trie trie = putLastRentPaidTime(keySlice, value, false, newLastRentPaidTime);
 
         return trie == null ? new Trie(this.store) : trie;
     }
 
-    private Trie putRentTime(TrieKeySlice key, byte[] value, boolean isRecursiveDelete, long newLastRentPaidTime) {
+    private Trie putLastRentPaidTime(TrieKeySlice key, byte[] value, boolean isRecursiveDelete, long newLastRentPaidTime) {
         // First of all, setting the value as an empty byte array is equivalent
         // to removing the key/value. This is because other parts of the trie make
         // this equivalent. Use always null to mark a node for deletion.
@@ -920,7 +920,7 @@ public class Trie {
             value = null;
         }
 
-        Trie trie = this.internalPutRentTime(key, value, isRecursiveDelete, newLastRentPaidTime);
+        Trie trie = this.internalPutLastRentPaidTime(key, value, isRecursiveDelete, newLastRentPaidTime);
 
         // the following code coalesces nodes if needed for delete operation
 
@@ -968,7 +968,7 @@ public class Trie {
     }
 
 
-    private Trie internalPutRentTime(TrieKeySlice key, byte[] value, boolean isRecursiveDelete, long newLastRentPaidTime) {
+    private Trie internalPutLastRentPaidTime(TrieKeySlice key, byte[] value, boolean isRecursiveDelete, long newLastRentPaidTime) {
         // #mish find the common path between the given key and the current node's (top of the trie) sharedpath
         TrieKeySlice commonPath = key.commonPath(sharedPath);
 
@@ -977,7 +977,7 @@ public class Trie {
             if (value == null) {
                 return this;
             }
-            return this.split(commonPath).putRentTime(key, value, isRecursiveDelete, newLastRentPaidTime);
+            return this.split(commonPath).putLastRentPaidTime(key, value, isRecursiveDelete, newLastRentPaidTime);
         }
 
         if (sharedPath.length() >= key.length()) {
@@ -1026,7 +1026,7 @@ public class Trie {
         }
 
         TrieKeySlice subKey = key.slice(sharedPath.length() + 1, key.length());
-        Trie newNode = node.putRentTime(subKey, value, isRecursiveDelete, newLastRentPaidTime);
+        Trie newNode = node.putLastRentPaidTime(subKey, value, isRecursiveDelete, newLastRentPaidTime);
 
         // reference equality
         if (newNode == node) {
@@ -1118,8 +1118,8 @@ public class Trie {
     }
 
     public byte[] getValue() {
-        if (value == null && valueLength.compareTo(Uint24.ZERO) > 0) {
-            value = retrieveLongValue();
+        if (value == null && valueLength.compareTo(Uint24.ZERO) > 0) { // i.e. a long value
+            value = retrieveLongValue(); // see triestoreImpl.save() long values saved with own hash as key.. not part of node serialization
             checkValueLengthAfterRetrieve();
         }
 
@@ -1145,7 +1145,7 @@ public class Trie {
         return childrenSize;
     }
 
-    private byte[] retrieveLongValue() {
+    private byte[] retrieveLongValue() { //long values are stored in trieStore with their own hash as the key (not part of node serialization)
         return store.retrieveValue(getValueHash().getBytes());
     }
 
@@ -1609,8 +1609,7 @@ public class Trie {
 
     // #mish Additional method for storage rent. 
     
-    // Time until which rent has been paid.
-    // This will change (increase/decrease) when a node is updated/deleted or when rent is paid.
+    // Time until which storage rent has been paid.
     @Nullable
     public long getLastRentPaidTime() {
         return lastRentPaidTime;

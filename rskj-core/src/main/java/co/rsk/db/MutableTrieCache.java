@@ -29,6 +29,7 @@ import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.db.TrieKeyMapper;
 import org.ethereum.vm.DataWord;
 
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.function.Function;
@@ -38,16 +39,29 @@ public class MutableTrieCache implements MutableTrie {
     private final TrieKeyMapper trieKeyMapper = new TrieKeyMapper();
 
     private MutableTrie trie;
+
     // We use a single cache to mark both changed elements and removed elements.
     // null value means the element has been removed.
+    // /* #mish:  ByteArrayWrapper converts byte[] to an object with size and lexicographic comparison methods
+    // The cache is implemented as a nested hashmap. 
+    // * 1st/outer layer key is AccountKeyWrapper: extracts "account key" component (not storage, not code) as a bytearraywrapper
+    //      see getAccountKeyWrapper
+    // * 2nd or inner map has just the key wrapper (as byteArraywrapper object)
+    //      if the given key is a regular account key (unique size), then both wrappers are the same
+    // * Instead of base accountKey, the first key could also be the base for the storageRoot  */
     private final Map<ByteArrayWrapper, Map<ByteArrayWrapper, byte[]>> cache;
+
+    // #mish: add a similar cache to track storage rent. Instead of a node's value, this one tracks lastRentPaidTime
+    // one way to implement a single cache is to use a ByteBuffer with node rent (8 bytes) + value (whatever).
+    private final Map<ByteArrayWrapper, Map<ByteArrayWrapper, byte[]>> rentCache; 
 
     // this logs recursive delete operations to be performed at commit time
     private final Set<ByteArrayWrapper> deleteRecursiveLog;
 
-    public MutableTrieCache(MutableTrie parentTrie) {
+    public MutableTrieCache(MutableTrie parentTrie) { //#mish this is a mutableTrie, not a regular one
         trie = parentTrie;
         cache = new HashMap<>();
+        rentCache = new HashMap<>();
         deleteRecursiveLog = new HashSet<>();
     }
 
@@ -63,36 +77,45 @@ public class MutableTrieCache implements MutableTrie {
         return trie.getHash();
     }
 
+    // for value.. similar methods for getvaluehash and valuelength later
     @Override
     public byte[] get(byte[] key) {
-        return internalGet(key, trie::get, Function.identity()).orElse(null);
+        return internalGet(key, cache, trie::get, Function.identity()).orElse(null); //identity, no need to transform cacheditem in byte[]
     }
 
+    // #mish: gets value from cache (a nested hashMap).. if not cached then use trie.get()
+    // modify original to add cache (value or rent) as arg
     private <T> Optional<T> internalGet(
             byte[] key,
+            Map<ByteArrayWrapper, Map<ByteArrayWrapper, byte[]>> selectedCache, // select from 'cache' or 'rentCache' (node value or storage rent)
             Function<byte[], T> trieRetriever,
             Function<byte[], T> cacheTransformer) {
+        // convert key to bytearray object
         ByteArrayWrapper wrapper = new ByteArrayWrapper(key);
+        // convert key to account key bytearray object (could be same as above)
         ByteArrayWrapper accountWrapper = getAccountWrapper(wrapper);
-
-        Map<ByteArrayWrapper, byte[]> accountItems = cache.get(accountWrapper);
+        // check if accountkey (for given key) is in cache (a nested hashMap)
+        // the (unique or null) return from map.get() will be a inner map containing key-value pairs
+        // with distinct keys (wrappers) but the same account wrapper. 
+        Map<ByteArrayWrapper, byte[]> accountItems = selectedCache.get(accountWrapper);
+        // check if the account is marked for deletion
         boolean isDeletedAccount = deleteRecursiveLog.contains(accountWrapper);
+        // account not in cache
         if (accountItems == null || !accountItems.containsKey(wrapper)) {
             if (isDeletedAccount) {
                 return Optional.empty();
             }
             // uncached account
-            return Optional.ofNullable(trieRetriever.apply(key));
+            return Optional.ofNullable(trieRetriever.apply(key)); //apply the trie method (get, getValueHash, getLastRentPaid etc)
         }
-
+        // if account is in cache, get value for for the specific wrapper
         byte[] cacheItem = accountItems.get(wrapper);
         if (cacheItem == null) {
             // deleted account key
             return Optional.empty();
         }
-
         // cached account key
-        return Optional.ofNullable(cacheTransformer.apply(cacheItem));
+        return Optional.ofNullable(cacheTransformer.apply(cacheItem)); //in case of value, no transformation needed, byte[] (i.e. identity)
     }
 
     public Iterator<DataWord> getStorageKeys(RskAddress addr) {
@@ -149,6 +172,21 @@ public class MutableTrieCache implements MutableTrie {
         put(keybytes, value);
     }
 
+    // #mish: this allows updating value at the same time as rent
+    // if updating rent along, then pass current value
+    @Override
+    public void putLastRentPaidTime(byte[] key, byte[] value, long newLastRentPaidTime) {
+        putLastRentPaidTime(new ByteArrayWrapper(key), value, newLastRentPaidTime);
+    }  
+    
+    public void putLastRentPaidTime(ByteArrayWrapper wrapper, byte[] value, long newLastRentPaidTime){
+        ByteArrayWrapper accountWrapper = getAccountWrapper(wrapper);
+        Map<ByteArrayWrapper, byte[]> accountMap = Cache.computeIfAbsent(accountWrapper, k -> new HashMap<>());
+        accountMap.put(wrapper, value);
+        Map<ByteArrayWrapper, byte[]> rentAccountMap = rentCache.computeIfAbsent(accountWrapper, k -> new HashMap<>());
+        rentAccountMap.put(wrapper, newLastRentPaidTime.getBytes());
+    }
+
     ////////////////////////////////////////////////////////////////////////////////////
     // The semantic of implementations is special, and not the same of the MutableTrie
     // It is DELETE ON COMMIT, which means that changes are not applies until commit()
@@ -156,7 +194,7 @@ public class MutableTrieCache implements MutableTrie {
     ////////////////////////////////////////////////////////////////////////////////////
     @Override
     public void deleteRecursive(byte[] key) {
-        // Can there be wrongly unhandled interactions interactions between put() and deleteRecurse()
+        // Can there be wrongly unhandled interactions between put() and deleteRecurse()
         // In theory, yes. In practice, never.
         // Suppose that a contract X calls a contract S.
         // Contract S calls itself with CALL.
@@ -170,6 +208,7 @@ public class MutableTrieCache implements MutableTrie {
         ByteArrayWrapper wrap = new ByteArrayWrapper(key);
         deleteRecursiveLog.add(wrap);
         cache.remove(wrap);
+        rentCache.remove(wrap);
     }
 
     @Override
@@ -185,6 +224,7 @@ public class MutableTrieCache implements MutableTrie {
 
         deleteRecursiveLog.clear();
         cache.clear();
+        rentCache.clear();
     }
 
     @Override
@@ -196,6 +236,7 @@ public class MutableTrieCache implements MutableTrie {
     @Override
     public void rollback() {
         cache.clear();
+        rentCache.clear();
         deleteRecursiveLog.clear();
     }
 
@@ -223,6 +264,10 @@ public class MutableTrieCache implements MutableTrie {
             throw new IllegalStateException();
         }
 
+        if (!rentCache.isEmpty()) {
+            throw new IllegalStateException();
+        }
+
         if (!deleteRecursiveLog.isEmpty()) {
             throw new IllegalStateException();
         }
@@ -230,13 +275,22 @@ public class MutableTrieCache implements MutableTrie {
 
     @Override
     public Uint24 getValueLength(byte[] key) {
-        return internalGet(key, trie::getValueLength, cachedBytes -> new Uint24(cachedBytes.length)).orElse(Uint24.ZERO);
+        return internalGet(key, cache, trie::getValueLength, cachedBytes -> new Uint24(cachedBytes.length)).orElse(Uint24.ZERO);
     }
 
     @Override
     public Keccak256 getValueHash(byte[] key) {
-        return internalGet(key, trie::getValueHash, cachedBytes -> new Keccak256(Keccak256Helper.keccak256(cachedBytes))).orElse(Keccak256.ZERO_HASH);
+        return internalGet(key, cache, trie::getValueHash, cachedBytes -> new Keccak256(Keccak256Helper.keccak256(cachedBytes))).orElse(Keccak256.ZERO_HASH);
     }
+
+    public long getLastRentPaidTime(byte[] key) {
+        return internalGet(key, rentCache, trie::getLastRentPaidTime, cachedBytes -> ByteBuffer.wrap(cachedBytes).getLong()).orElse(0L);
+    }
+    
+    public long getRentPaidTimeDelta(byte[] key) {
+        return internalGet(key, rentCache, trie::getRentPaidTimeDelta, cachedBytes -> ByteBuffer.wrap(cachedBytes).getLong()).orElse(0L);
+    }
+
 
     private static class StorageKeysIterator implements Iterator<DataWord> {
         private final Iterator<DataWord> keysIterator;
