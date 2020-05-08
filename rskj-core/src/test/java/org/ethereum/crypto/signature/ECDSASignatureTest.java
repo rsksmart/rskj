@@ -91,7 +91,7 @@ public class ECDSASignatureTest {
     public void testValidateComponents_SignedMsg() {
         ECKey key = new ECKey();
         byte[] hash = HashUtil.keccak256(exampleMessage.getBytes());
-        ECDSASignature signature = key.sign(hash);
+        ECDSASignature signature = ECDSASignature.fromSignature(key.sign(hash));
         assertTrue(signature.validateComponents());
     }
 
@@ -99,7 +99,7 @@ public class ECDSASignatureTest {
     public void fromComponentsWithRecoveryCalculation() {
         ECKey key = new ECKey();
         byte[] hash = HashUtil.randomHash();
-        ECDSASignature signature = key.sign(hash);
+        ECDSASignature signature = ECDSASignature.fromSignature(key.sign(hash));
 
         // With uncompressed public key
         ECDSASignature signatureWithCalculatedV = fromComponentsWithRecoveryCalculation(

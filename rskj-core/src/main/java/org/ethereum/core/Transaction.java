@@ -324,7 +324,7 @@ public class Transaction {
     public void sign(byte[] privKeyBytes) throws MissingPrivateKeyException {
         byte[] raw = this.getRawHash().getBytes();
         ECKey key = ECKey.fromPrivate(privKeyBytes).decompress();
-        this.signature = key.sign(raw);
+        this.signature = ECDSASignature.fromSignature(key.sign(raw));
         this.rlpEncoding = null;
         this.hash = null;
         this.sender = null;
@@ -332,6 +332,19 @@ public class Transaction {
 
     public void setSignature(ECDSASignature signature) {
         this.signature = signature;
+        this.rlpEncoding = null;
+        this.hash = null;
+        this.sender = null;
+    }
+
+    /**
+     * Only for compatibility until we could finally remove old {@link org.ethereum.crypto.ECKey.ECDSASignature}.
+     *
+     * @param sign
+     * @return
+     */
+    public void setSignature(ECKey.ECDSASignature signature) {
+        this.signature = ECDSASignature.fromSignature(signature);
         this.rlpEncoding = null;
         this.hash = null;
         this.sender = null;
