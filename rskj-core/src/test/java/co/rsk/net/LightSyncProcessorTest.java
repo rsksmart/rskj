@@ -26,8 +26,8 @@ import co.rsk.net.light.LightPeer;
 import co.rsk.net.light.LightProcessor;
 import co.rsk.net.light.LightStatus;
 import co.rsk.net.light.LightSyncProcessor;
-import co.rsk.net.light.message.BlockHeaderMessage;
-import co.rsk.net.light.message.GetBlockHeaderMessage;
+import co.rsk.net.light.message.BlockHeadersMessage;
+import co.rsk.net.light.message.GetBlockHeadersMessage;
 import co.rsk.net.light.message.StatusMessage;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.embedded.EmbeddedChannel;
@@ -44,6 +44,8 @@ import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 
 import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.ethereum.crypto.HashUtil.randomHash;
 import static org.junit.Assert.*;
@@ -106,9 +108,9 @@ public class LightSyncProcessorTest {
         ChannelHandlerContext ctx = ch.pipeline().firstContext();
 
         //Message expected
-        GetBlockHeaderMessage expectedMessage = new GetBlockHeaderMessage(++requestId, blockHash.getBytes());
+        GetBlockHeadersMessage expectedMessage = new GetBlockHeadersMessage(++requestId, blockHash.getBytes(), 1);
 
-        ArgumentCaptor<GetBlockHeaderMessage> argument = forClass(GetBlockHeaderMessage.class);
+        ArgumentCaptor<GetBlockHeadersMessage> argument = forClass(GetBlockHeadersMessage.class);
         lightSyncProcessor.processStatusMessage(statusMessage, lightPeer, ctx, lightClientHandler);
         verify(lightPeer).sendMessage(argument.capture());
         assertArrayEquals(expectedMessage.getEncoded(), argument.getValue().getEncoded());
@@ -120,14 +122,16 @@ public class LightSyncProcessorTest {
         when(blockHeader.getHash()).thenReturn(blockHash);
         byte[] fullEncodedBlockHeader = randomHash();
         when(blockHeader.getFullEncoded()).thenReturn(fullEncodedBlockHeader);
+        List<BlockHeader> bHs = new ArrayList<>();
+        bHs.add(blockHeader);
 
-        BlockHeaderMessage blockHeaderMessage = new BlockHeaderMessage(requestId, blockHeader);
+        BlockHeadersMessage blockHeadersMessage = new BlockHeadersMessage(requestId, bHs);
 
 
-        lightClientHandler.channelRead0(ctx, blockHeaderMessage);
+        lightClientHandler.channelRead0(ctx, blockHeadersMessage);
 
         assertEquals(1, lightPeer.getBlocks().size());
-        assertEquals(blockHeader.getFullEncoded(), lightPeer.getBlocks().get(0).getFullEncoded());
+        assertEquals(bHs, lightPeer.getBlocks().get(0));
     }
 
     @Test

@@ -47,6 +47,7 @@ import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 
 import java.math.BigInteger;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -329,16 +330,18 @@ public class LightClientHandlerTest {
         Keccak256 blockHash = new Keccak256(HashUtil.randomHash());
         Block block = mock(Block.class);
         BlockHeader blockHeader = mock(BlockHeader.class);
+        List<BlockHeader> bHs = new ArrayList<>();
+        bHs.add(blockHeader);
         when(blockStore.getBlockByHash(blockHash.getBytes())).thenReturn(block);
         when(block.getHeader()).thenReturn(blockHeader);
 
-        GetBlockHeaderMessage m = new GetBlockHeaderMessage(1, blockHash.getBytes());
+        GetBlockHeadersMessage m = new GetBlockHeadersMessage(1, blockHash.getBytes(), 1);
 
         lightClientHandler.channelRead0(ctx, m);
 
-        BlockHeaderMessage response = new BlockHeaderMessage(1, blockHeader);
+        BlockHeadersMessage response = new BlockHeadersMessage(1, bHs);
 
-        ArgumentCaptor<BlockHeaderMessage> argument = forClass(BlockHeaderMessage.class);
+        ArgumentCaptor<BlockHeadersMessage> argument = forClass(BlockHeadersMessage.class);
         verify(messageQueue).sendMessage(argument.capture());
         assertArrayEquals(response.getEncoded(), argument.getValue().getEncoded());
     }
@@ -347,15 +350,31 @@ public class LightClientHandlerTest {
     public void receiveNotPendingMessageAndShouldBeIgnored() {
 
         BlockHeader blockHeader = mock(BlockHeader.class);
+        List<BlockHeader> bHs = new ArrayList<>();
+        bHs.add(blockHeader);
         long requestId = 0; //lastRequestId in a new LightSyncProcessor starts in zero.
 
         when(blockHeader.getHash()).thenReturn(blockHash);
         byte[] fullEncodedBlockHeader = randomHash().getBytes();
         when(blockHeader.getFullEncoded()).thenReturn(fullEncodedBlockHeader);
 
-        BlockHeaderMessage blockHeaderMessage = new BlockHeaderMessage(requestId, blockHeader);
+        BlockHeadersMessage blockHeadersMessage = new BlockHeadersMessage(requestId, bHs);
 
-        lightClientHandler.channelRead0(ctx, blockHeaderMessage);
+        lightClientHandler.channelRead0(ctx, blockHeadersMessage);
+
+        verify(lightPeer, times(0)).receivedBlock(any());
+
+    }
+
+    @Test
+    public void receiveEmptyBlockHeadersListMessageAndShouldBeIgnored() {
+
+        List<BlockHeader> bHs = new ArrayList<>();
+        long requestId = 0; //lastRequestId in a new LightSyncProcessor starts in zero.
+
+        BlockHeadersMessage blockHeadersMessage = new BlockHeadersMessage(requestId, bHs);
+
+        lightClientHandler.channelRead0(ctx, blockHeadersMessage);
 
         verify(lightPeer, times(0)).receivedBlock(any());
 

@@ -22,7 +22,7 @@ import co.rsk.core.BlockDifficulty;
 import co.rsk.core.bc.BlockChainStatus;
 import co.rsk.crypto.Keccak256;
 import co.rsk.net.eth.LightClientHandler;
-import co.rsk.net.light.message.GetBlockHeaderMessage;
+import co.rsk.net.light.message.GetBlockHeadersMessage;
 import co.rsk.net.light.message.StatusMessage;
 import io.netty.channel.ChannelHandlerContext;
 import org.ethereum.config.SystemProperties;
@@ -36,10 +36,7 @@ import org.ethereum.net.message.ReasonCode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.NoSuchElementException;
+import java.util.*;
 
 import static co.rsk.net.light.LightClientMessageCodes.*;
 
@@ -135,7 +132,7 @@ public class LightSyncProcessor {
         }
 
         byte[] bestBlockHash = status.getBestHash();
-        GetBlockHeaderMessage blockHeaderMessage = new GetBlockHeaderMessage(++lastRequestedId, bestBlockHash);
+        GetBlockHeadersMessage blockHeaderMessage = new GetBlockHeadersMessage(++lastRequestedId, bestBlockHash, 1);
         pendingMessages.put(lastRequestedId, BLOCK_HEADER);
         lightPeer.sendMessage(blockHeaderMessage);
     }
@@ -151,8 +148,12 @@ public class LightSyncProcessor {
                 block.getNumber(), lightPeer.getPeerIdShort());
     }
 
-    public void processBlockHeaderMessage(long id, BlockHeader blockHeader, LightPeer lightPeer) {
+    public void processBlockHeadersMessage(long id, List<BlockHeader> blockHeader, LightPeer lightPeer) {
         if (!isPending(id, BLOCK_HEADER)) {
+            return;
+        }
+
+        if (blockHeader.isEmpty()) {
             return;
         }
 
