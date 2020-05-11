@@ -24,6 +24,7 @@ import org.ethereum.db.BlockStore;
 
 /**
  * The entry point for execute blocks CLI tool
+ * This is an experimental/unsupported tool
  */
 public class ExecuteBlocks {
     public static void main(String[] args) {

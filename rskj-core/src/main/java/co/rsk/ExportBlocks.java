@@ -26,6 +26,7 @@ import java.io.PrintStream;
 
 /**
  * The entry point for export blocks CLI tool
+ * This is an experimental/unsupported tool
  */
 public class ExportBlocks {
     public static void main(String[] args) {

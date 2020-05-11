@@ -29,6 +29,7 @@ import java.util.Optional;
 
 /**
  * The entry point for show state info CLI util
+ * This is an experimental/unsupported tool
  */
 public class ShowStateInfo {
     private static int nnodes;

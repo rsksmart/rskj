@@ -30,6 +30,7 @@ import java.math.BigInteger;
 
 /**
  * The entry point for import blocks CLI tool
+ * This is an experimental/unsupported tool
  */
 public class ImportBlocks {
     public static void main(String[] args) throws IOException {

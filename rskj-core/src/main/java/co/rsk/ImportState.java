@@ -30,6 +30,7 @@ import java.nio.file.Paths;
 
 /**
  * The entry point for import state CLI tool
+ * This is an experimental/unsupported tool
  */
 public class ImportState {
     public static void main(String[] args) throws IOException {

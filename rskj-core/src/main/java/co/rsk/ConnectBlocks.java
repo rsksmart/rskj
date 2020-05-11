@@ -31,6 +31,7 @@ import java.io.IOException;
 
 /**
  * The entry point for connect blocks CLI tool
+ * This is an experimental/unsupported tool
  */
 public class ConnectBlocks {
     public static void main(String[] args) throws IOException {
