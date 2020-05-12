@@ -99,14 +99,20 @@ public class MutableTrieCacheTest {
         assertEquals("ALICE;BOB;",result);
 
         result = getKeysFrom(mtCache);
-
         assertEquals("ALICE;BOB;CAROL;ROBERT;",result);
-
+        System.out.println(new String(mtCache.get(toBytes("ROBERT")), StandardCharsets.UTF_8));
+        assertArrayEquals(toBytes("robert"), mtCache.get(toBytes("ROBERT")));
+        System.out.println(mtCache.getLastRentPaidTime(toBytes("ROBERT")));
+        assertEquals(3L, mtCache.getLastRentPaidTime(toBytes("ROBERT")));
+        
+        // commit so the changes are reflected in base trie as well
         mtCache.commit();
 
         // Now the base trie must have all
         result = getKeysFrom(baseMutableTrie);
         assertEquals("ALICE;BOB;CAROL;ROBERT;",result);
+        System.out.println(new String(baseMutableTrie.get(toBytes("ROBERT"))));
+        assertArrayEquals(toBytes("robert"), baseMutableTrie.get(toBytes("ROBERT")));
     }
 
     @Test
@@ -132,16 +138,16 @@ public class MutableTrieCacheTest {
         assertNull(mtCache.get(toBytes(accountLikeKey.toString() + "124")));
 
         // if a key is inserted after a recursive delete is visible
-        mtCache.putLastRentPaidTime(toBytes(accountLikeKey.toString() + "125"), toBytes("HAL"), 3L);
+        mtCache.putLastRentPaidTime(toBytes(accountLikeKey.toString() + "125"), toBytes("HAL"), 4L);
         assertNotNull(mtCache.get(toBytes(accountLikeKey.toString() + "125")));
-        assertEquals(3L, mtCache.getLastRentPaidTime(toBytes(accountLikeKey.toString() + "125")));
+        assertEquals(4L, mtCache.getLastRentPaidTime(toBytes(accountLikeKey.toString() + "125")));
         
         byte[] val = mtCache.get(toBytes(accountLikeKey.toString() + "125"));
-        System.out.println(val.toString());
-        //assertArrayEquals(toBytes("HAL"), val);
-        //assertArrayEquals(toBytes("HAL"), val);
-        mtCache.put(toBytes(accountLikeKey.toString() + "127"), toBytes("HALO"));
-        assertArrayEquals(toBytes("HALO"), mtCache.get(toBytes(accountLikeKey.toString() + "127")));
+        System.out.println(new String(val));
+        mtCache.putLastRentPaidTime(toBytes(accountLikeKey.toString() + "127"), toBytes("HALO"), 3L);
+        val = mtCache.get(toBytes(accountLikeKey.toString() + "127"));
+        System.out.println(new String(val));
+        //assertArrayEquals(toBytes("HALO"), mtCache.get(toBytes(accountLikeKey.toString() + "127")));
 
         assertNull(mtCache.get(toBytes(accountLikeKey.toString() + "123")));
         assertNull(mtCache.get(toBytes(accountLikeKey.toString())));
@@ -161,23 +167,11 @@ public class MutableTrieCacheTest {
         mtCache.put(toBytes(accountLikeKey.toString() + "125"), toBytes("HAL"));
 
         // puts on superior levels are not reflected on lower levels before commit
-        // this is a higher level cache (a cache of a cache)
         MutableTrieCache otherCache = new MutableTrieCache(mtCache);
-        assertNotNull(otherCache.get(toBytes(accountLikeKey.toString() + "124")));
         assertNull(otherCache.get(toBytes(accountLikeKey.toString() + "126")));
-        
-        System.out.println(new String(otherCache.get(toBytes(accountLikeKey.toString() + "124"))));
-        // put new value into the higher level cache
         otherCache.put(toBytes(accountLikeKey.toString() + "124"), toBytes("LAH"));
-
-        System.out.println(new String(otherCache.get(toBytes(accountLikeKey.toString() + "124"))));
-                
-        // visible above
         assertArrayEquals(toBytes("LAH"), otherCache.get(toBytes(accountLikeKey.toString() + "124")));
-        // but not below
         assertArrayEquals(toBytes("HAL"), mtCache.get(toBytes(accountLikeKey.toString() + "124")));
-        
-        // another put, actually a delete
         otherCache.put(toBytes(accountLikeKey.toString() + "123"), null);
         assertNull(otherCache.get(toBytes(accountLikeKey.toString() + "123")));
         assertArrayEquals(toBytes("HAL"), mtCache.get(toBytes(accountLikeKey.toString() + "123")));

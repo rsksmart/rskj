@@ -33,6 +33,7 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.function.Function;
+import java.time.Instant; //#mish for storage rent
 
 public class MutableTrieCache implements MutableTrie {
 
@@ -81,7 +82,19 @@ public class MutableTrieCache implements MutableTrie {
     // for value.. similar methods for getvaluehash and valuelength later
     @Override
     public byte[] get(byte[] key) {
-        return internalGet(key, trie::get, Function.identity()).orElse(null); //identity, no need to transform cacheditem in byte[]
+        // prior to storage rent, the value stored in cache (nested hashmap) could be returned directly ie.e identity
+        // with storage rent paid time included in data, the node's cached value needs to be separated
+        //return  internalGet(key, trie::get, Function.identity()).orElse(null);
+        return internalGet(key, trie::get, cachedBytes -> extractValue(cachedBytes)).orElse(null);  
+    }
+
+    // extract node value stored together with node rentLastPaidTime in nested hashmap
+    private byte[] extractValue(byte[] data){
+        ByteBuffer currData = ByteBuffer.wrap(data);
+        long currLastRentPaidTime = currData.getLong(); // this is stored first
+        byte[] currValue = new byte[data.length - 8]; // whatever is left over is actual node data
+        currData.get(currValue);
+        return currValue;
     }
 
     // #mish: gets value from cache (a nested hashMap).. if not cached then use trie.get()
@@ -108,7 +121,7 @@ public class MutableTrieCache implements MutableTrie {
             // uncached account
             return Optional.ofNullable(trieRetriever.apply(key)); //apply the trie method (get, getValueHash, getLastRentPaid etc)
         }
-        // if account is in cache, get value for for the specific wrapper
+        // if account is in cache, get value for the specific wrapper
         byte[] cacheItem = accountItems.get(wrapper);
         if (cacheItem == null) {
             // deleted account key
@@ -158,8 +171,7 @@ public class MutableTrieCache implements MutableTrie {
     // This method optimizes cache-to-cache transfers
     @Override
     public void put(ByteArrayWrapper wrapper, byte[] value) {
-        ByteBuffer buffer = ByteBuffer.allocate(8 + value.length);
-        long newLastRentPaidTime = 0L; // initialized to 0.. should check for prior value in cache
+        long newLastRentPaidTime = 0L; // initialized to 0.. we'll check for prior value in cache
         ByteArrayWrapper accountWrapper = getAccountWrapper(wrapper);
         Map<ByteArrayWrapper, byte[]> comboAccountMap = comboCache.computeIfAbsent(accountWrapper, k -> new HashMap<>());
         // with computeIfAbsent(), comboCache.get(accountWrapper) != null.. so only check for the inner Map 
@@ -168,11 +180,17 @@ public class MutableTrieCache implements MutableTrie {
             // something already in cache for that wrapper/node.. grab that first. Since value is explicitly passed as argument,
             //  only cached rentPaidTime needs to be preserved. The cached value is not relevant
             newLastRentPaidTime = ByteBuffer.wrap(currentCachedData).getLong();
-            //byte[] currValue = ByteBuffer.wrap(currentCachedData).remaining(); // not needed, value passed as argument matters
+        }    
+        // now for the actual put (into the cache)
+        if (value != null){
+            ByteBuffer buffer = ByteBuffer.allocate(8 + value.length);    
+            buffer.putLong(newLastRentPaidTime);
+            buffer.put(value);
+            comboAccountMap.put(wrapper, buffer.array());
+        }else { // marked for deletion
+            comboAccountMap.put(wrapper, value); // put the null value in the hashmap and discard rent paid time
         }
-        buffer.putLong(newLastRentPaidTime);
-        buffer.put(value);
-        comboAccountMap.put(wrapper, buffer.array());
+        
     }
 
     @Override
@@ -192,16 +210,22 @@ public class MutableTrieCache implements MutableTrie {
         byte[] keybytes = key.getBytes(StandardCharsets.UTF_8);
         putLastRentPaidTime(keybytes, value, newLastRentPaidTime);
     }
-    
+
     public void putLastRentPaidTime(ByteArrayWrapper wrapper, byte[] value, long newLastRentPaidTime){
-        ByteArrayWrapper accountWrapper = getAccountWrapper(wrapper);
-        ByteBuffer buffer = ByteBuffer.allocate(8 + value.length);
-        buffer.putLong(newLastRentPaidTime);
-        buffer.put(value);
-        Map<ByteArrayWrapper, byte[]> comboAccountMap = comboCache.computeIfAbsent(accountWrapper, k -> new HashMap<>());
-        // Since node value and rentLastPaidTime are explicitly passed as arguments, 
-        //  there is no need to check to see if some value or rent time already in the cache, okay to overwrite
-        comboAccountMap.put(wrapper, buffer.array());
+        if (value == null){ // alternative is to add it to delete cache.. just staying close to orig imlementation
+            ByteArrayWrapper accountWrapper = getAccountWrapper(wrapper);
+            Map<ByteArrayWrapper, byte[]> accountMap = comboCache.computeIfAbsent(accountWrapper, k -> new HashMap<>());
+            accountMap.put(wrapper, value);
+        } else {
+            ByteArrayWrapper accountWrapper = getAccountWrapper(wrapper);
+            ByteBuffer buffer = ByteBuffer.allocate(8 + value.length);
+            buffer.putLong(newLastRentPaidTime);
+            buffer.put(value);
+            Map<ByteArrayWrapper, byte[]> comboAccountMap = comboCache.computeIfAbsent(accountWrapper, k -> new HashMap<>());
+            // Since node value and rentLastPaidTime are explicitly passed as arguments, 
+            //  there is no need to check to see if some value or rent time already in the cache, okay to overwrite
+            comboAccountMap.put(wrapper, buffer.array());
+        }
     }
 
     ////////////////////////////////////////////////////////////////////////////////////
@@ -243,11 +267,15 @@ public class MutableTrieCache implements MutableTrie {
             if (accountData != null) {
                 // cached account
                 accountData.forEach((realKey, data) -> {
-                    ByteBuffer currData = ByteBuffer.wrap(data);
-                    long currLastRentPaidTime = currData.getLong();
-                    byte[] currValue = new byte[data.length - 8];
-                    currData.get(currValue);
-                    this.trie.putLastRentPaidTime(realKey.getData(), currValue, currLastRentPaidTime);
+                    if (data == null){
+                        this.trie.put(realKey.getData(), data);
+                    } else{
+                        ByteBuffer currData = ByteBuffer.wrap(data);
+                        long currLastRentPaidTime = currData.getLong();
+                        byte[] currValue = new byte[data.length - 8];
+                        currData.get(currValue);
+                        this.trie.putLastRentPaidTime(realKey.getData(), currValue, currLastRentPaidTime);
+                    }
                 });
             }    
 
@@ -306,20 +334,20 @@ public class MutableTrieCache implements MutableTrie {
 
     @Override
     public Uint24 getValueLength(byte[] key) {
-        return internalGet(key,  trie::getValueLength, cachedBytes -> new Uint24(cachedBytes.length)).orElse(Uint24.ZERO);
+        return internalGet(key,  trie::getValueLength, cachedBytes -> new Uint24(extractValue(cachedBytes).length)).orElse(Uint24.ZERO);
     }
 
     @Override
     public Keccak256 getValueHash(byte[] key) {
-        return internalGet(key,  trie::getValueHash, cachedBytes -> new Keccak256(Keccak256Helper.keccak256(cachedBytes))).orElse(Keccak256.ZERO_HASH);
+        return internalGet(key,  trie::getValueHash, cachedBytes -> new Keccak256(Keccak256Helper.keccak256(extractValue(cachedBytes)))).orElse(Keccak256.ZERO_HASH);
     }
 
     public long getLastRentPaidTime(byte[] key) {
         return internalGet(key,  trie::getLastRentPaidTime, cachedBytes -> ByteBuffer.wrap(cachedBytes).getLong()).orElse(0L);
     }
     
-    public long getRentPaidTimeDelta(byte[] key) {
-        return internalGet(key,  trie::getRentPaidTimeDelta, cachedBytes -> ByteBuffer.wrap(cachedBytes).getLong()).orElse(0L);
+    public long getRentPaidTimeDelta(byte[] key) {     
+        return Instant.now().getEpochSecond() -  getLastRentPaidTime(key);
     }
 
 
