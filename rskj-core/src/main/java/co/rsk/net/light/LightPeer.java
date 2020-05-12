@@ -29,7 +29,7 @@ import java.util.List;
 
 public class LightPeer {
 
-    private final LinkedList<List<BlockHeader>> blockHeaders;
+    private final LinkedList<BlockHeader> blockHeaders;
     private Channel channel;
     private MessageQueue msgQueue;
 
@@ -52,10 +52,10 @@ public class LightPeer {
     }
 
     public void receivedBlock(List<BlockHeader> blockHeader) {
-        blockHeaders.add(blockHeader);
+        blockHeaders.addAll(blockHeader);
     }
 
-    public List<List<BlockHeader>> getBlocks() {
+    public List<BlockHeader> getBlocks() {
         return new LinkedList<>(blockHeaders);
     }
 }
