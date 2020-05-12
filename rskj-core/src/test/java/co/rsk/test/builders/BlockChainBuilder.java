@@ -101,6 +101,10 @@ public class BlockChainBuilder {
         return this;
     }
 
+    public ReceiptStore getReceiptStore() {
+        return this.receiptStore;
+    }
+
     public BlockChainBuilder setReceiptStore(ReceiptStore receiptStore) {
         this.receiptStore = receiptStore;
         return this;

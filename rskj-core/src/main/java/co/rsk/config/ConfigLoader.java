@@ -18,25 +18,18 @@
 package co.rsk.config;
 
 import co.rsk.cli.CliArgs;
-import com.typesafe.config.Config;
-import com.typesafe.config.ConfigFactory;
+import com.typesafe.config.*;
 import org.ethereum.config.SystemProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nonnull;
 import java.io.File;
 import java.util.Map;
 import java.util.Objects;
 
 /**
- * Loads configurations from different sources with the following precedence:
- * 1. Command line arguments
- * 2. Environment variables
- * 3. System properties
- * 4. User configuration file
- * 5. Installer configuration file
- * 6. Default settings per network in resources/[network].conf
- * 7. Default settings for all networks in resources/reference.conf
+ * Class that encapsulates config loading strategy.
  */
 public class ConfigLoader {
 
@@ -46,6 +39,7 @@ public class ConfigLoader {
     private static final String TESTNET_RESOURCE_PATH = "config/testnet";
     private static final String REGTEST_RESOURCE_PATH = "config/regtest";
     private static final String DEVNET_RESOURCE_PATH = "config/devnet";
+    private static final String EXPECTED_RESOURCE_PATH = "expected";
     private static final String YES = "yes";
     private static final String NO = "no";
 
@@ -55,14 +49,59 @@ public class ConfigLoader {
         this.cliArgs = Objects.requireNonNull(cliArgs);
     }
 
+    /**
+     * Loads configurations from different sources with the following precedence:
+     * 1. Command line arguments
+     * 2. Environment variables
+     * 3. System properties
+     * 4. User configuration file
+     * 5. Installer configuration file
+     * 6. Default settings per network in resources/[network].conf
+     * 7. Default settings for all networks in resources/reference.conf
+     *
+     * <p>
+     * During the verification process the unified configuration is being tested against the setting names
+     * defined in the expected.conf config file. The process is silent by default which means that in a case of any problems
+     * with the config settings only error logs will be generated and the node will continue its running.
+     *
+     * <p>
+     * If the <b><blockchain.config.verify/b> setting is {@code true} (either set in a .conf file or via <b>--verify-config</b> command line flag),
+     * then in a case of any problems an exception will be thrown.
+     *
+     * Note:
+     *  1. The <b><blockchain.config.verify/b> setting is {@code false} by default.
+     *  2. Config verification process of matching actual and expected config settings is a recursive process and takes into
+     *  account appropriate setting names. Scalar values are not tested for matching, e.g. if we have settingKey="some value"
+     *  in the expected.conf file and settingKey=100 in a user config file, then it will pass the verification process.
+     *
+     * @throws RskConfigurationException on configuration errors
+     */
     public Config getConfig() {
-        Config userConfig = getConfigFromCliArgs()
-                .withFallback(ConfigFactory.systemProperties())
-                .withFallback(ConfigFactory.systemEnvironment())
-                .withFallback(getUserCustomConfig())
-                .withFallback(getInstallerConfig());
+        Config cliConfig = getConfigFromCliArgs();
+        Config systemPropsConfig = ConfigFactory.systemProperties();
+        Config systemEnvConfig = ConfigFactory.systemEnvironment();
+        Config userCustomConfig = getUserCustomConfig();
+        Config installerConfig = getInstallerConfig();
+
+        Config userConfig = ConfigFactory.empty()
+                .withFallback(cliConfig)
+                .withFallback(systemPropsConfig)
+                .withFallback(systemEnvConfig)
+                .withFallback(userCustomConfig)
+                .withFallback(installerConfig);
         Config networkBaseConfig = getNetworkDefaultConfig(userConfig);
-        return userConfig.withFallback(networkBaseConfig);
+        Config unifiedConfig = userConfig.withFallback(networkBaseConfig);
+
+        Config expectedConfig = ConfigFactory.parseResourcesAnySyntax(EXPECTED_RESOURCE_PATH)
+                .withFallback(systemPropsConfig)
+                .withFallback(systemEnvConfig);
+        boolean valid = isActualObjectValid("", expectedConfig.root(), unifiedConfig.root());
+
+        if (unifiedConfig.getBoolean(SystemProperties.PROPERTY_BC_VERIFY) && !valid) {
+            throw new RskConfigurationException("Verification of node config settings has failed. See the previous error logs for details.");
+        }
+
+        return unifiedConfig;
     }
 
     private Config getConfigFromCliArgs() {
@@ -128,4 +167,97 @@ public class ConfigLoader {
         logger.info("Network not set, using mainnet by default");
         return ConfigFactory.load(MAINNET_RESOURCE_PATH);
     }
+
+    private static boolean isActualObjectValid(@Nonnull String keyPath, @Nonnull ConfigObject expectedObject, @Nonnull ConfigObject actualObject) {
+        boolean valid = true;
+        String prefix = keyPath.isEmpty() ? "" : keyPath + ".";
+        for (Map.Entry<String, ConfigValue> actualEntry : actualObject.entrySet()) {
+            String actualEntryKey = actualEntry.getKey();
+            ConfigValue actualEntryValue = actualEntry.getValue();
+            if (expectedObject.isEmpty()) {
+                // if expected object is empty, then the actual object should contain only scalar items
+                if (isCollectionType(actualEntryValue.valueType())) {
+                    String entryKeyPath = prefix + actualEntryKey;
+                    logger.error("Expected scalar config value for key path `{}`. Actual value is {}. See expected.conf for the expected settings",
+                            entryKeyPath, actualEntryValue);
+                    valid = false;
+                }
+            } else {
+                ConfigValue expectedEntryValue = expectedObject.get(actualEntryKey);
+                String entryKeyPath = prefix + actualEntryKey;
+                if (expectedEntryValue == null) {
+                    logger.error("Unexpected config value {} for key path `{}`. See expected.conf for the expected settings", actualEntryValue, entryKeyPath);
+                    valid = false;
+                } else {
+                    valid &= isActualValueValid(entryKeyPath, expectedEntryValue, actualEntryValue);
+                }
+            }
+        }
+        return valid;
+    }
+
+    private static boolean isActualListValid(@Nonnull String keyPath, @Nonnull ConfigList expectedList, @Nonnull ConfigList actualList) {
+        if (expectedList.size() > 1) {
+            throw new RuntimeException("An array in expected.conf should either be empty or contain one template item.");
+        }
+
+        boolean valid = true;
+        int index = 0;
+        for (ConfigValue actualItem : actualList) {
+            if (expectedList.isEmpty()) {
+                // if expected list is empty, then the actual list should contain only scalar items
+                if (isCollectionType(actualItem.valueType())) {
+                    String itemKeyPath = keyPath + "[" + index + "]";
+                    logger.error("Expected scalar config value for key path `{}`. Actual value is {}. See expected.conf for the expected settings",
+                            itemKeyPath, actualItem);
+                    valid = false;
+                }
+            } else {
+                // Assuming that all items in the list should have the same configuration structure.
+                String itemKeyPath = keyPath + "[" + index + "]";
+                ConfigValue expectedItem = expectedList.get(0);
+                valid &= isActualValueValid(itemKeyPath, expectedItem, actualItem);
+            }
+            index++;
+        }
+        return valid;
+    }
+
+    private static boolean isActualValueValid(@Nonnull String keyPath, @Nonnull ConfigValue expectedValue, @Nonnull ConfigValue actualValue) {
+        ConfigValueType actualValueType = Objects.requireNonNull(actualValue.valueType());
+        ConfigValueType expectedValueType = Objects.requireNonNull(expectedValue.valueType());
+
+        if (!isCollectionType(expectedValueType) && !isCollectionType(actualValueType)) {
+            return true; // We don't verify non-collection types
+        }
+
+        if (expectedValueType != actualValueType) {
+            logger.error("Config value type mismatch. `{}` has type {}, but should have {}. See expected.conf for the expected settings",
+                    keyPath, actualValueType, expectedValueType);
+            return false;
+        }
+
+        switch (actualValueType) {
+            case OBJECT:
+                ConfigObject actualObject = (ConfigObject) actualValue;
+                ConfigObject expectedObject = (ConfigObject) expectedValue;
+                return isActualObjectValid(keyPath, expectedObject, actualObject);
+            case LIST:
+                ConfigList actualList = (ConfigList) actualValue;
+                ConfigList expectedList = (ConfigList) expectedValue;
+                return isActualListValid(keyPath, expectedList, actualList);
+            default:
+                return true;
+        }
+    }
+
+    /**
+     * Checks whether the value type is a collection of other values.
+     *
+     * @return {@code true} if the value type is either {@link ConfigValueType#OBJECT} or {@link ConfigValueType#LIST}.
+     */
+    public static boolean isCollectionType(ConfigValueType valueType) {
+        return valueType == ConfigValueType.OBJECT || valueType == ConfigValueType.LIST;
+    }
+
 }

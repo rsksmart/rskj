@@ -738,6 +738,16 @@ public class Web3ImplTest {
         Assert.assertNull(hexString);
     }
 
+    @Test(expected=org.ethereum.rpc.exception.RskJsonRpcRequestException.class)
+    public void getBlockByNumberWhenNumberIsInvalidThrowsException() throws Exception {
+        World world = new World();
+
+        Web3Impl web3 = createWeb3(world);
+
+        String bnOrId = "991234";
+        web3.eth_getBlockByNumber(bnOrId, false);
+    }
+
     @Test
     public void getBlockByHash() throws Exception {
         World world = new World();

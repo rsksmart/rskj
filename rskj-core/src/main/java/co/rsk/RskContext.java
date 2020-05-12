@@ -225,6 +225,7 @@ public class RskContext implements NodeBootstrapper {
     private StaticMessages staticMessages;
     private MinerServer minerServer;
     private BlocksBloomStore blocksBloomStore;
+    private KeyValueDataSource blocksBloomDataSource;
     private BlockExecutor blockExecutor;
     private BtcBlockStoreWithCache.Factory btcBlockStoreFactory;
     private PrecompiledContracts precompiledContracts;
@@ -769,10 +770,22 @@ public class RskContext implements NodeBootstrapper {
 
     public BlocksBloomStore getBlocksBloomStore() {
         if (blocksBloomStore == null) {
-            blocksBloomStore = new BlocksBloomStore(64, 20);
+            blocksBloomStore = new BlocksBloomStore(64, 20, getBlocksBloomDataSource());
         }
 
         return blocksBloomStore;
+    }
+
+    private KeyValueDataSource getBlocksBloomDataSource() {
+        if (this.blocksBloomDataSource == null) {
+            this.blocksBloomDataSource = this.buildBlocksBloomDataSource();
+        }
+
+        return this.blocksBloomDataSource;
+    }
+
+    protected KeyValueDataSource buildBlocksBloomDataSource() {
+        return LevelDbDataSource.makeDataSource(Paths.get(getRskSystemProperties().databaseDir(), "blooms"));
     }
 
     protected NodeRunner buildNodeRunner() {
