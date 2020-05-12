@@ -71,6 +71,8 @@ public interface MutableTrie {
     // for storage rent:  //for mutableTrieImp and mutableTRieCache
     void putLastRentPaidTime(byte[] key, byte[] value, long newLastRentPaidTime);
 
+    void putLastRentPaidTime(ByteArrayWrapper key, byte[] value, long newLastRentPaidTime);
+
     long getLastRentPaidTime(byte[] key);
 
     long getRentPaidTimeDelta(byte[] key);

@@ -33,6 +33,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.Set;
+import java.nio.charset.StandardCharsets;
 
 import java.time.Instant; //#mish for storage rent
 
@@ -70,6 +71,15 @@ public class MutableTrieImpl implements MutableTrie {
     @Override
     public void putLastRentPaidTime(byte[] key, byte[] value, long newLastRentPaidTime) {
         trie = trie.putLastRentPaidTime(key, value, newLastRentPaidTime);
+    }
+
+    public void putLastRentPaidTime(ByteArrayWrapper key, byte[] value, long newLastRentPaidTime) {
+        trie = trie.putLastRentPaidTime(key.getData(), value, newLastRentPaidTime);
+    }
+
+    public void putLastRentPaidTime(String key, byte[] value, long newLastRentPaidTime) {
+        byte[] keybytes = key.getBytes(StandardCharsets.UTF_8);
+        trie = trie.putLastRentPaidTime(keybytes, value, newLastRentPaidTime);
     }
 
     @Override

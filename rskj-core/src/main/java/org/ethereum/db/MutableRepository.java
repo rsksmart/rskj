@@ -44,10 +44,10 @@ import java.util.*;
 public class MutableRepository implements Repository {
     private static final Logger logger = LoggerFactory.getLogger("repository");
     private static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
-    private static final byte[] ONE_BYTE_ARRAY = new byte[] { 0x01 };
+    private static final byte[] ONE_BYTE_ARRAY = new byte[] { 0x01 }; // #mish: for storage root. See state size reduction in Unitrie post
 
     private final TrieKeyMapper trieKeyMapper;
-    private final MutableTrie mutableTrie;
+    private final MutableTrie mutableTrie; // #mish: this can be a mutableTrieImpl or a mutableTrieCache (for tracking)
 
     public MutableRepository(TrieStore trieStore, Trie trie) {
         this(new MutableTrieImpl(trieStore, trie));
@@ -63,6 +63,7 @@ public class MutableRepository implements Repository {
         return mutableTrie.getTrie();
     }
 
+    // #mish this is the same for regular accounts and contracts (e.g. see addstoragebytes)
     @Override
     public synchronized AccountState createAccount(RskAddress addr) {
         AccountState accountState = new AccountState();
@@ -73,6 +74,7 @@ public class MutableRepository implements Repository {
     @Override
     public synchronized void setupContract(RskAddress addr) {
         byte[] prefix = trieKeyMapper.getAccountStoragePrefixKey(addr);
+         // #mish: 0x01 value for storage root. See state size reduction in Unitrie post
         mutableTrie.put(prefix, ONE_BYTE_ARRAY);
     }
 
@@ -197,7 +199,7 @@ public class MutableRepository implements Repository {
 
     @Override
     public synchronized void addStorageRow(RskAddress addr, DataWord key, DataWord value) {
-        // DataWords are stored stripping leading zeros.
+        // DataWords are stored stripping leading zeros. That's what Dataword.getByteArrayForStorage() does
         addStorageBytes(addr, key, value.getByteArrayForStorage());
     }
 
@@ -273,12 +275,14 @@ public class MutableRepository implements Repository {
 
         return result;
     }
-
+    // #mish: despite the name this returns as hashset of account addresses in the trie/repository.. not accoount keys
+    // account addresses isolated via keys of length = 1+10_20, via pre-order traversal
     @Override
     public synchronized Set<RskAddress> getAccountsKeys() {
         Set<RskAddress> result = new HashSet<>();
         //TODO(diegoll): this is needed when trie is a MutableTrieCache, check if makes sense to commit here
         mutableTrie.commit();
+        //for MTCache it's not "really" implemented, just ParentTrie.getTrie() method, hence 'commit' above?
         Trie trie = mutableTrie.getTrie();
         Iterator<Trie.IterationElement> preOrderIterator = trie.getPreOrderIterator();
         while (preOrderIterator.hasNext()) {
@@ -293,6 +297,7 @@ public class MutableRepository implements Repository {
     }
 
     // To start tracking, a new repository is created, with a MutableTrieCache in the middle
+    // #mish: recall MTCache uses a nested HashMap [accounKey ->[nodeKey -> value]]
     @Override
     public synchronized Repository startTracking() {
         return new MutableRepository(new MutableTrieCache(mutableTrie));

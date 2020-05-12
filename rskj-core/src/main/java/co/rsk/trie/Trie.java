@@ -248,6 +248,7 @@ public class Trie {
 
         // it doesn't need to clone value since it's retrieved from store or created from message
         // #mish: orchid unaffected by rent at present.
+        //return new Trie(store, sharedPath, value, left, right, lvalue, valueHash, childrenSize, lastRentPaidTime)
         return new Trie(store, sharedPath, value, left, right, lvalue, valueHash);
     }
 

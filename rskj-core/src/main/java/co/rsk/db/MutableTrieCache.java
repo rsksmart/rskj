@@ -40,8 +40,9 @@ public class MutableTrieCache implements MutableTrie {
 
     private MutableTrie trie;
 
-    // We use a single cache to mark both changed elements and removed elements.
+    // We use a single cache to mark both changed elements (new node value or rent paid time) and removed elements.
     // null value means the element has been removed.
+    
     // /* #mish:  ByteArrayWrapper converts byte[] to an object with size and lexicographic comparison methods
     // The cache is implemented as a nested hashmap. 
     // * 1st/outer layer key is AccountKeyWrapper: extracts "account key" component (not storage, not code) as a bytearraywrapper
@@ -49,7 +50,7 @@ public class MutableTrieCache implements MutableTrie {
     // * 2nd or inner map has just the key wrapper (as byteArraywrapper object)
     //      if the given key is a regular account key (unique size), then both wrappers are the same
     // * Instead of base accountKey, the first key could also be the base for the storageRoot  */
-    private final Map<ByteArrayWrapper, Map<ByteArrayWrapper, byte[]>> cache;
+    // private final Map<ByteArrayWrapper, Map<ByteArrayWrapper, byte[]>> cache; //this is no longer used. remove references after review
 
     // #mish: add a similar combo cache to track storage rent as well as value 
     // use a ByteBuffer with node rent (8 bytes) + value (whatever).
@@ -60,7 +61,7 @@ public class MutableTrieCache implements MutableTrie {
 
     public MutableTrieCache(MutableTrie parentTrie) {
         trie = parentTrie;   //#mish this is a mutableTrie, not a regular one
-        cache = new HashMap<>(); // cache for value updates and deletions via null value
+        //cache = new HashMap<>(); // cache for value updates and deletions via null value
         comboCache = new HashMap<>(); // combined cache for value and or storage rent updates
         deleteRecursiveLog = new HashSet<>();
     }
@@ -80,14 +81,13 @@ public class MutableTrieCache implements MutableTrie {
     // for value.. similar methods for getvaluehash and valuelength later
     @Override
     public byte[] get(byte[] key) {
-        return internalGet(key, comboCache, trie::get, Function.identity()).orElse(null); //identity, no need to transform cacheditem in byte[]
+        return internalGet(key, trie::get, Function.identity()).orElse(null); //identity, no need to transform cacheditem in byte[]
     }
 
     // #mish: gets value from cache (a nested hashMap).. if not cached then use trie.get()
     // modify original to add cache (value or rent) as arg
     private <T> Optional<T> internalGet(
             byte[] key,
-            Map<ByteArrayWrapper, Map<ByteArrayWrapper, byte[]>> selectedCache, // select from 'cache' or 'comboCache' (node value or storage rent)
             Function<byte[], T> trieRetriever,
             Function<byte[], T> cacheTransformer) {
         // convert key to bytearray object
@@ -97,7 +97,7 @@ public class MutableTrieCache implements MutableTrie {
         // check if accountkey (for given key) is in cache (a nested hashMap)
         // the (unique or null) return from map.get() will be a inner map containing key-value pairs
         // with distinct keys (wrappers) but the same account wrapper. 
-        Map<ByteArrayWrapper, byte[]> accountItems = selectedCache.get(accountWrapper);
+        Map<ByteArrayWrapper, byte[]> accountItems = comboCache.get(accountWrapper);
         // check if the account is marked for deletion
         boolean isDeletedAccount = deleteRecursiveLog.contains(accountWrapper);
         // account not in cache
@@ -165,7 +165,7 @@ public class MutableTrieCache implements MutableTrie {
         // with computeIfAbsent(), comboCache.get(accountWrapper) != null.. so only check for the inner Map 
         byte[] currentCachedData = comboCache.get(accountWrapper).get(wrapper);
         if (currentCachedData != null){
-            // something already in cache for that wrapper/node.. grab that first. Since value is explicitcly passed as argument,
+            // something already in cache for that wrapper/node.. grab that first. Since value is explicitly passed as argument,
             //  only cached rentPaidTime needs to be preserved. The cached value is not relevant
             newLastRentPaidTime = ByteBuffer.wrap(currentCachedData).getLong();
             //byte[] currValue = ByteBuffer.wrap(currentCachedData).remaining(); // not needed, value passed as argument matters
@@ -187,6 +187,11 @@ public class MutableTrieCache implements MutableTrie {
     public void putLastRentPaidTime(byte[] key, byte[] value, long newLastRentPaidTime) {
         putLastRentPaidTime(new ByteArrayWrapper(key), value, newLastRentPaidTime);
     }  
+    
+    public void putLastRentPaidTime(String key, byte[] value, long newLastRentPaidTime) {
+        byte[] keybytes = key.getBytes(StandardCharsets.UTF_8);
+        putLastRentPaidTime(keybytes, value, newLastRentPaidTime);
+    }
     
     public void putLastRentPaidTime(ByteArrayWrapper wrapper, byte[] value, long newLastRentPaidTime){
         ByteArrayWrapper accountWrapper = getAccountWrapper(wrapper);
@@ -219,7 +224,7 @@ public class MutableTrieCache implements MutableTrie {
         // See TransactionExecutor.finalization(), when it iterates the list with getDeleteAccounts().forEach()
         ByteArrayWrapper wrap = new ByteArrayWrapper(key);
         deleteRecursiveLog.add(wrap);
-        cache.remove(wrap);
+        // cache.remove(wrap);
         comboCache.remove(wrap);
     }
 
@@ -249,7 +254,7 @@ public class MutableTrieCache implements MutableTrie {
         });
 
         deleteRecursiveLog.clear();
-        cache.clear();
+        // cache.clear();
         comboCache.clear();
     }
 
@@ -261,7 +266,7 @@ public class MutableTrieCache implements MutableTrie {
 
     @Override
     public void rollback() {
-        cache.clear();
+        // cache.clear();
         comboCache.clear();
         deleteRecursiveLog.clear();
     }
@@ -286,9 +291,9 @@ public class MutableTrieCache implements MutableTrie {
     }
 
     private void assertNoCache() {
-        if (!cache.isEmpty()) {
-            throw new IllegalStateException();
-        }
+        //if (!cache.isEmpty()) {
+        //    throw new IllegalStateException();
+        //}
 
         if (!comboCache.isEmpty()) {
             throw new IllegalStateException();
@@ -301,20 +306,20 @@ public class MutableTrieCache implements MutableTrie {
 
     @Override
     public Uint24 getValueLength(byte[] key) {
-        return internalGet(key, comboCache, trie::getValueLength, cachedBytes -> new Uint24(cachedBytes.length)).orElse(Uint24.ZERO);
+        return internalGet(key,  trie::getValueLength, cachedBytes -> new Uint24(cachedBytes.length)).orElse(Uint24.ZERO);
     }
 
     @Override
     public Keccak256 getValueHash(byte[] key) {
-        return internalGet(key, comboCache, trie::getValueHash, cachedBytes -> new Keccak256(Keccak256Helper.keccak256(cachedBytes))).orElse(Keccak256.ZERO_HASH);
+        return internalGet(key,  trie::getValueHash, cachedBytes -> new Keccak256(Keccak256Helper.keccak256(cachedBytes))).orElse(Keccak256.ZERO_HASH);
     }
 
     public long getLastRentPaidTime(byte[] key) {
-        return internalGet(key, comboCache, trie::getLastRentPaidTime, cachedBytes -> ByteBuffer.wrap(cachedBytes).getLong()).orElse(0L);
+        return internalGet(key,  trie::getLastRentPaidTime, cachedBytes -> ByteBuffer.wrap(cachedBytes).getLong()).orElse(0L);
     }
     
     public long getRentPaidTimeDelta(byte[] key) {
-        return internalGet(key, comboCache, trie::getRentPaidTimeDelta, cachedBytes -> ByteBuffer.wrap(cachedBytes).getLong()).orElse(0L);
+        return internalGet(key,  trie::getRentPaidTimeDelta, cachedBytes -> ByteBuffer.wrap(cachedBytes).getLong()).orElse(0L);
     }
 
 
