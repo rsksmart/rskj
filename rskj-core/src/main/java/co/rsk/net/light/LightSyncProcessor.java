@@ -24,6 +24,7 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.net.eth.LightClientHandler;
 import co.rsk.net.light.message.GetBlockHeadersMessage;
 import co.rsk.net.light.message.StatusMessage;
+import co.rsk.validators.ProofOfWorkRule;
 import io.netty.channel.ChannelHandlerContext;
 import org.ethereum.config.SystemProperties;
 import org.ethereum.core.Block;
@@ -55,13 +56,15 @@ public class LightSyncProcessor {
     private Map<LightPeer, Boolean> txRelay = new HashMap<>();
     private long lastRequestedId;
     private final Map<Long, LightClientMessageCodes> pendingMessages;
+    private ProofOfWorkRule blockHeaderValidationRule;
 
 
-    public LightSyncProcessor(SystemProperties config, Genesis genesis, BlockStore blockStore, Blockchain blockchain) {
+    public LightSyncProcessor(SystemProperties config, Genesis genesis, BlockStore blockStore, Blockchain blockchain, ProofOfWorkRule blockHeaderValidationRule) {
         this.config = config;
         this.genesis = genesis;
         this.blockStore = blockStore;
         this.blockchain = blockchain;
+        this.blockHeaderValidationRule = blockHeaderValidationRule;
         this.version = (byte) 0;
         this.pendingMessages = new LinkedHashMap<Long, LightClientMessageCodes>() {
             @Override
@@ -148,17 +151,24 @@ public class LightSyncProcessor {
                 block.getNumber(), lightPeer.getPeerIdShort());
     }
 
-    public void processBlockHeadersMessage(long id, List<BlockHeader> blockHeader, LightPeer lightPeer) {
+    public void processBlockHeadersMessage(long id, List<BlockHeader> blockHeaders, LightPeer lightPeer) {
         if (!isPending(id, BLOCK_HEADER)) {
             return;
         }
 
-        if (blockHeader.isEmpty()) {
+        if (blockHeaders.isEmpty()) {
             return;
         }
 
+        //TODO: Mechanism of disconnecting when peer gives bad information
+        for (BlockHeader h : blockHeaders) {
+            if (!blockHeaderValidationRule.isValid(h)) {
+                return;
+            }
+        }
+
         pendingMessages.remove(id, BLOCK_HEADER);
-        lightPeer.receivedBlock(blockHeader);
+        lightPeer.receivedBlock(blockHeaders);
     }
 
     public boolean hasTxRelay(LightPeer peer) {

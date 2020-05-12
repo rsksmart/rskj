@@ -29,6 +29,7 @@ import co.rsk.net.light.LightSyncProcessor;
 import co.rsk.net.light.message.BlockHeadersMessage;
 import co.rsk.net.light.message.GetBlockHeadersMessage;
 import co.rsk.net.light.message.StatusMessage;
+import co.rsk.validators.ProofOfWorkRule;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.embedded.EmbeddedChannel;
 import org.ethereum.config.SystemProperties;
@@ -61,13 +62,15 @@ public class LightSyncProcessorTest {
     private StatusMessage statusMessage;
     private long requestId;
     private Keccak256 blockHash;
+    private ProofOfWorkRule proofOfWorkRule;
 
     @Before
     public void setUp() {
         //Light Sync Processor
         Genesis genesis = mock(Genesis.class);
         Blockchain blockchain = mock(Blockchain.class);
-        lightSyncProcessor = new LightSyncProcessor(mock(SystemProperties.class), genesis, mock(BlockStore.class), blockchain);
+        proofOfWorkRule = mock(ProofOfWorkRule.class);
+        lightSyncProcessor = new LightSyncProcessor(mock(SystemProperties.class), genesis, mock(BlockStore.class), blockchain, proofOfWorkRule);
 
         //Light peer
         Channel channel = mock(Channel.class);
@@ -120,13 +123,13 @@ public class LightSyncProcessorTest {
 
         BlockHeader blockHeader = mock(BlockHeader.class);
         when(blockHeader.getHash()).thenReturn(blockHash);
+        when(proofOfWorkRule.isValid(blockHeader)).thenReturn(true);
         byte[] fullEncodedBlockHeader = randomHash();
         when(blockHeader.getFullEncoded()).thenReturn(fullEncodedBlockHeader);
         List<BlockHeader> bHs = new ArrayList<>();
         bHs.add(blockHeader);
 
         BlockHeadersMessage blockHeadersMessage = new BlockHeadersMessage(requestId, bHs);
-
 
         lightClientHandler.channelRead0(ctx, blockHeadersMessage);
 

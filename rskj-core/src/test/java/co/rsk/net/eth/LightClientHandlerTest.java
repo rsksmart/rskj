@@ -30,6 +30,7 @@ import co.rsk.net.light.LightProcessor;
 import co.rsk.net.light.LightStatus;
 import co.rsk.net.light.LightSyncProcessor;
 import co.rsk.net.light.message.*;
+import co.rsk.validators.ProofOfWorkRule;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.embedded.EmbeddedChannel;
 import org.ethereum.TestUtils;
@@ -71,6 +72,7 @@ public class LightClientHandlerTest {
     private Keccak256 genesisHash;
     private Keccak256 blockHash;
     private LightPeer lightPeer;
+    private ProofOfWorkRule proofOfWorkRule;
 
     @Before
     public void setup() {
@@ -82,7 +84,8 @@ public class LightClientHandlerTest {
         genesis = mock(Genesis.class);
         genesisHash = new Keccak256(HashUtil.randomHash());
         lightProcessor = new LightProcessor(blockchain, blockStore, repositoryLocator);
-        lightSyncProcessor = new LightSyncProcessor(config, genesis, blockStore, blockchain);
+        proofOfWorkRule = mock(ProofOfWorkRule.class);
+        lightSyncProcessor = new LightSyncProcessor(config, genesis, blockStore, blockchain, proofOfWorkRule);
         lightPeer = spy(new LightPeer(mock(Channel.class), messageQueue));
         LightClientHandler.Factory factory = (lightPeer) -> new LightClientHandler(lightPeer, lightProcessor, lightSyncProcessor);
         lightClientHandler = factory.newInstance(lightPeer);
@@ -357,6 +360,29 @@ public class LightClientHandlerTest {
         when(blockHeader.getHash()).thenReturn(blockHash);
         byte[] fullEncodedBlockHeader = randomHash().getBytes();
         when(blockHeader.getFullEncoded()).thenReturn(fullEncodedBlockHeader);
+
+        BlockHeadersMessage blockHeadersMessage = new BlockHeadersMessage(requestId, bHs);
+
+        lightClientHandler.channelRead0(ctx, blockHeadersMessage);
+
+        verify(lightPeer, times(0)).receivedBlock(any());
+
+    }
+
+    @Test
+    public void receiveInvalidPoWHeaderInMessageAndShouldBeIgnored() {
+
+        BlockHeader blockHeader = mock(BlockHeader.class);
+        List<BlockHeader> bHs = new ArrayList<>();
+        bHs.add(blockHeader);
+        long requestId = 0; //lastRequestId in a new LightSyncProcessor starts in zero.
+
+
+        when(blockHeader.getHash()).thenReturn(blockHash);
+        byte[] fullEncodedBlockHeader = randomHash().getBytes();
+        when(blockHeader.getFullEncoded()).thenReturn(fullEncodedBlockHeader);
+
+        when(proofOfWorkRule.isValid(blockHeader)).thenReturn(false);
 
         BlockHeadersMessage blockHeadersMessage = new BlockHeadersMessage(requestId, bHs);
 
