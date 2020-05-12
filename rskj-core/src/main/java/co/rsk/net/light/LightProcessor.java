@@ -158,18 +158,31 @@ public class LightProcessor {
         throw new UnsupportedOperationException("Not supported AccountsMessage processing");
     }
 
-    public void processGetBlockHeaderMessage(long id, byte[] blockHash, LightPeer lightPeer) {
+    public void processGetBlockHeadersMessage(long id, byte[] blockHash, int count, LightPeer lightPeer) {
         String blockHashLog = Hex.toHexString(blockHash);
-        logger.trace("Processing block header request {} block {}", id, blockHashLog);
+        logger.trace("Processing block header request {} block {} from {}", id, blockHashLog, lightPeer.getPeerIdShort());
 
-        final Block block = blockStore.getBlockByHash(blockHash);
+        Block block = blockStore.getBlockByHash(blockHash);
 
         if (block == null) {
             // Don't waste time sending an empty response.
             return;
         }
 
-        BlockHeaderMessage response = new BlockHeaderMessage(id, block.getHeader());
+        List<BlockHeader> headers = new ArrayList<>();
+        headers.add(block.getHeader());
+
+        for (int i = 1; i < count; i++) {
+            block = blockStore.getBlockByHash(block.getParentHash().getBytes());
+
+            if (block == null) {
+                break;
+            }
+
+            headers.add(block.getHeader());
+        }
+
+        BlockHeadersMessage response = new BlockHeadersMessage(id, headers);
         lightPeer.sendMessage(response);
     }
 

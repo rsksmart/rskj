@@ -22,8 +22,9 @@ import co.rsk.core.BlockDifficulty;
 import co.rsk.core.bc.BlockChainStatus;
 import co.rsk.crypto.Keccak256;
 import co.rsk.net.eth.LightClientHandler;
-import co.rsk.net.light.message.GetBlockHeaderMessage;
+import co.rsk.net.light.message.GetBlockHeadersMessage;
 import co.rsk.net.light.message.StatusMessage;
+import co.rsk.validators.ProofOfWorkRule;
 import io.netty.channel.ChannelHandlerContext;
 import org.ethereum.config.SystemProperties;
 import org.ethereum.core.Block;
@@ -36,10 +37,7 @@ import org.ethereum.net.message.ReasonCode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.NoSuchElementException;
+import java.util.*;
 
 import static co.rsk.net.light.LightClientMessageCodes.*;
 
@@ -58,13 +56,15 @@ public class LightSyncProcessor {
     private Map<LightPeer, Boolean> txRelay = new HashMap<>();
     private long lastRequestedId;
     private final Map<Long, LightClientMessageCodes> pendingMessages;
+    private ProofOfWorkRule blockHeaderValidationRule;
 
 
-    public LightSyncProcessor(SystemProperties config, Genesis genesis, BlockStore blockStore, Blockchain blockchain) {
+    public LightSyncProcessor(SystemProperties config, Genesis genesis, BlockStore blockStore, Blockchain blockchain, ProofOfWorkRule blockHeaderValidationRule) {
         this.config = config;
         this.genesis = genesis;
         this.blockStore = blockStore;
         this.blockchain = blockchain;
+        this.blockHeaderValidationRule = blockHeaderValidationRule;
         this.version = (byte) 0;
         this.pendingMessages = new LinkedHashMap<Long, LightClientMessageCodes>() {
             @Override
@@ -135,7 +135,7 @@ public class LightSyncProcessor {
         }
 
         byte[] bestBlockHash = status.getBestHash();
-        GetBlockHeaderMessage blockHeaderMessage = new GetBlockHeaderMessage(++lastRequestedId, bestBlockHash);
+        GetBlockHeadersMessage blockHeaderMessage = new GetBlockHeadersMessage(++lastRequestedId, bestBlockHash, 1);
         pendingMessages.put(lastRequestedId, BLOCK_HEADER);
         lightPeer.sendMessage(blockHeaderMessage);
     }
@@ -151,13 +151,24 @@ public class LightSyncProcessor {
                 block.getNumber(), lightPeer.getPeerIdShort());
     }
 
-    public void processBlockHeaderMessage(long id, BlockHeader blockHeader, LightPeer lightPeer) {
+    public void processBlockHeadersMessage(long id, List<BlockHeader> blockHeaders, LightPeer lightPeer) {
         if (!isPending(id, BLOCK_HEADER)) {
             return;
         }
 
+        if (blockHeaders.isEmpty()) {
+            return;
+        }
+
+        //TODO: Mechanism of disconnecting when peer gives bad information
+        for (BlockHeader h : blockHeaders) {
+            if (!blockHeaderValidationRule.isValid(h)) {
+                return;
+            }
+        }
+
         pendingMessages.remove(id, BLOCK_HEADER);
-        lightPeer.receivedBlock(blockHeader);
+        lightPeer.receivedBlock(blockHeaders);
     }
 
     public boolean hasTxRelay(LightPeer peer) {
