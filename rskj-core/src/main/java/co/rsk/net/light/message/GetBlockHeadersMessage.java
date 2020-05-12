@@ -26,22 +26,26 @@ import org.spongycastle.util.BigIntegers;
 
 import java.math.BigInteger;
 
-public class GetBlockHeaderMessage extends LightClientMessage {
+public class GetBlockHeadersMessage extends LightClientMessage {
 
     private final long id;
     private final byte[] blockHash;
+    private int count;
 
-    public GetBlockHeaderMessage(long id, byte[] blockHash) {
+    public GetBlockHeadersMessage(long id, byte[] blockHash, int count) {
         this.id = id;
         this.blockHash = blockHash.clone();
+        this.count = count;
         this.code = LightClientMessageCodes.GET_BLOCK_HEADER.asByte();
     }
 
-    public GetBlockHeaderMessage(byte[] encoded) {
+    public GetBlockHeadersMessage(byte[] encoded) {
         RLPList paramsList = (RLPList) RLP.decode2(encoded).get(0);
         byte[] rlpId = paramsList.get(0).getRLPData();
         id = rlpId == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpId).longValue();
         blockHash = paramsList.get(1).getRLPData();
+        byte[] rlpCount = paramsList.get(2).getRLPData();
+        count = rlpCount == null? 0 : BigIntegers.fromUnsignedByteArray(rlpCount).intValue();
         this.code = LightClientMessageCodes.GET_BLOCK_HEADER.asByte();
     }
 
@@ -59,12 +63,13 @@ public class GetBlockHeaderMessage extends LightClientMessage {
     public byte[] getEncoded() {
         byte[] rlpId = RLP.encodeBigInteger(BigInteger.valueOf(getId()));
         byte[] rlpHash = RLP.encodeElement(getBlockHash());
-        return RLP.encodeList(rlpId, rlpHash);
+        byte[] rlpCount = RLP.encodeBigInteger(BigInteger.valueOf(getCount()));
+        return RLP.encodeList(rlpId, rlpHash, rlpCount);
     }
 
     @Override
     public Class<?> getAnswerMessage() {
-        return BlockHeaderMessage.class;
+        return BlockHeadersMessage.class;
     }
 
 
@@ -76,5 +81,9 @@ public class GetBlockHeaderMessage extends LightClientMessage {
     @Override
     public void accept(MessageVisitor v) {
         v.apply(this);
+    }
+
+    public int getCount() {
+        return count;
     }
 }

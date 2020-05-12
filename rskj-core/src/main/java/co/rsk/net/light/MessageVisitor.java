@@ -91,14 +91,14 @@ public class MessageVisitor {
                 msg.getNonce(), msg.getBalance(), msg.getCodeHash(), msg.getStorageRoot(), lightPeer);
     }
 
-    public void apply(GetBlockHeaderMessage msg) {
+    public void apply(GetBlockHeadersMessage msg) {
         logger.debug("Read message: {} GET_BLOCK_HEADER", msg);
-        lightProcessor.processGetBlockHeaderMessage(msg.getId(), msg.getBlockHash(), lightPeer);
+        lightProcessor.processGetBlockHeadersMessage(msg.getId(), msg.getBlockHash(), msg.getCount(), lightPeer);
     }
 
-    public void apply(BlockHeaderMessage msg) {
+    public void apply(BlockHeadersMessage msg) {
         logger.debug("Read message: {} BLOCK_HEADER", msg);
-        lightSyncProcessor.processBlockHeaderMessage(msg.getId(), msg.getBlockHeader(), lightPeer);
+        lightSyncProcessor.processBlockHeadersMessage(msg.getId(), msg.getBlockHeaders(), lightPeer);
     }
 
     public void apply(GetBlockBodyMessage msg) {

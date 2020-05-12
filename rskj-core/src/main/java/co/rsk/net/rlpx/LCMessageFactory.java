@@ -52,9 +52,9 @@ public class LCMessageFactory {
             case ACCOUNTS:
                 return new AccountsMessage(encoded);
             case GET_BLOCK_HEADER:
-                return new GetBlockHeaderMessage(encoded);
+                return new GetBlockHeadersMessage(encoded);
             case BLOCK_HEADER:
-                return new BlockHeaderMessage(encoded, blockFactory);
+                return new BlockHeadersMessage(encoded, blockFactory);
             case GET_BLOCK_BODY:
                 return new GetBlockBodyMessage(encoded);
             case BLOCK_BODY:

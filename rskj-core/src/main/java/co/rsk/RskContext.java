@@ -1578,7 +1578,7 @@ public class RskContext implements NodeBootstrapper {
 
     private LightSyncProcessor getLightSyncProcessor() {
         if (lightSyncProcessor == null) {
-            lightSyncProcessor = new LightSyncProcessor(getRskSystemProperties(), getGenesis(), getBlockStore(), getBlockchain());
+            lightSyncProcessor = new LightSyncProcessor(getRskSystemProperties(), getGenesis(), getBlockStore(), getBlockchain(), getProofOfWorkRule());
         }
 
         return lightSyncProcessor;

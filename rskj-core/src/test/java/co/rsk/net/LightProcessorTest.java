@@ -252,9 +252,10 @@ public class LightProcessorTest {
     }
 
     @Test
-    public void processGetBlockHeaderMessageAndShouldReturnsBlockHeaderCorrectly() {
-        final Block block = mock(Block.class);
+    public void processGetBlockHeadersMessageAndShouldReturnsBlockHeaderCorrectly() {
         long requestId = 100;
+
+        final Block block = mock(Block.class);
         BlockHeader blockHeader = mock(BlockHeader.class);
         byte[] blockHeaderHash = randomHash().getBytes();
 
@@ -262,27 +263,41 @@ public class LightProcessorTest {
         when(block.getHeader()).thenReturn(blockHeader);
         when(blockHeader.getFullEncoded()).thenReturn(blockHeaderHash);
 
-        BlockHeaderMessage expectedMessage = new BlockHeaderMessage(requestId, blockHeader);
+        final Block block1 = mock(Block.class);
+        BlockHeader blockHeader1 = mock(BlockHeader.class);
+        byte[] blockHeaderHash1 = randomHash().getBytes();
+        Keccak256 blockHash1 = randomHash();
 
-        ArgumentCaptor<BlockHeaderMessage> argument = forClass(BlockHeaderMessage.class);
-        lightProcessor.processGetBlockHeaderMessage(requestId, blockHash.getBytes(), lightPeer);
+        when(block.getParentHash()).thenReturn(blockHash1);
+        when(blockStore.getBlockByHash(blockHash1.getBytes())).thenReturn(block1);
+        when(block1.getHeader()).thenReturn(blockHeader1);
+        when(blockHeader1.getFullEncoded()).thenReturn(blockHeaderHash1);
+
+        List<BlockHeader> blockHeaders = new ArrayList<>();
+        blockHeaders.add(blockHeader);
+        blockHeaders.add(blockHeader1);
+
+        BlockHeadersMessage expectedMessage = new BlockHeadersMessage(requestId, blockHeaders);
+
+        ArgumentCaptor<BlockHeadersMessage> argument = forClass(BlockHeadersMessage.class);
+        lightProcessor.processGetBlockHeadersMessage(requestId, blockHash.getBytes(), 2, lightPeer);
         verify(msgQueue).sendMessage(argument.capture());
 
         assertArrayEquals(expectedMessage.getEncoded(), argument.getValue().getEncoded());
     }
 
     @Test
-    public void processGetBlockHeaderMessageWithInvalidBlockHash() {
+    public void processGetBlockHeadersMessageWithInvalidBlockHash() {
         long requestId = 100;
         when(blockStore.getBlockByHash(blockHash.getBytes())).thenReturn(null);
 
-        lightProcessor.processGetBlockHeaderMessage(requestId, blockHash.getBytes(), lightPeer);
+        lightProcessor.processGetBlockHeadersMessage(requestId, blockHash.getBytes(), 1, lightPeer);
 
         verify(msgQueue, times(0)).sendMessage(any());
     }
 
     @Test
-    public void processGetBlocBodyMessageAndShouldReturnsBlockBodyCorrectly() {
+    public void processGetBlockBodyMessageAndShouldReturnsBlockBodyCorrectly() {
         final Block block = mock(Block.class);
         Transaction transaction = mock(Transaction.class);
         BlockHeader blockHeader = mock(BlockHeader.class);
