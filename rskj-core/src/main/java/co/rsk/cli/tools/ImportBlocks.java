@@ -15,42 +15,38 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package co.rsk;
+package co.rsk.cli.tools;
 
-import co.rsk.trie.TrieStore;
+import co.rsk.RskContext;
+import co.rsk.core.BlockDifficulty;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockFactory;
-import org.ethereum.core.Blockchain;
 import org.ethereum.db.BlockStore;
-import org.ethereum.db.ReceiptStore;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.math.BigInteger;
 
 /**
- * The entry point for connect blocks CLI tool
+ * The entry point for import blocks CLI tool
  * This is an experimental/unsupported tool
  */
-public class ConnectBlocks {
+public class ImportBlocks {
     public static void main(String[] args) throws IOException {
         RskContext ctx = new RskContext(args);
-
         BlockFactory blockFactory = ctx.getBlockFactory();
-        Blockchain blockchain = ctx.getBlockchain();
-        TrieStore trieStore = ctx.getTrieStore();
         BlockStore blockStore = ctx.getBlockStore();
-        ReceiptStore receiptStore = ctx.getReceiptStore();
 
         String filename = args[0];
 
         try (BufferedReader reader = new BufferedReader(new FileReader(filename))) {
-            execute(blockFactory, blockchain, trieStore, blockStore, receiptStore, reader);
+            execute(blockFactory, blockStore, reader);
         }
     }
 
-    public static void execute(BlockFactory blockFactory, Blockchain blockchain, TrieStore trieStore, BlockStore blockStore, ReceiptStore receiptStore, BufferedReader reader) throws IOException {
+    public static void execute(BlockFactory blockFactory, BlockStore blockStore, BufferedReader reader) throws IOException {
         for (String line = reader.readLine(); line != null; line = reader.readLine()) {
             String[] parts = line.split(",");
 
@@ -61,13 +57,12 @@ public class ConnectBlocks {
             byte[] encoded = Hex.decode(parts[3]);
 
             Block block = blockFactory.decodeBlock(encoded);
-            block.seal();
 
-            blockchain.tryToConnect(block);
+            BlockDifficulty totalDifficulty = new BlockDifficulty(new BigInteger(Hex.decode(parts[2])));
+
+            blockStore.saveBlock(block, totalDifficulty, true);
         }
 
         blockStore.flush();
-        trieStore.flush();
-        receiptStore.flush();
     }
 }

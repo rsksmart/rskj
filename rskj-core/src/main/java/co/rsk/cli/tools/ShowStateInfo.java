@@ -15,8 +15,9 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package co.rsk;
+package co.rsk.cli.tools;
 
+import co.rsk.RskContext;
 import co.rsk.trie.NodeReference;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStore;
@@ -28,10 +29,14 @@ import java.io.PrintStream;
 import java.util.Optional;
 
 /**
- * The entry point for export state CLI tool
+ * The entry point for show state info CLI util
  * This is an experimental/unsupported tool
  */
-public class ExportState {
+public class ShowStateInfo {
+    private static int nnodes;
+    private static int nvalues;
+    private static int nbytes;
+
     public static void main(String[] args) {
         RskContext ctx = new RskContext(args);
         BlockStore blockStore = ctx.getBlockStore();
@@ -39,25 +44,38 @@ public class ExportState {
 
         execute(args, blockStore, trieStore, System.out);
     }
-
+    
     public static void execute(String[] args, BlockStore blockStore, TrieStore trieStore, PrintStream writer) {
-        long blockNumber = Long.parseLong(args[0]);
+        Block block;
 
-        Block block = blockStore.getChainBlockByNumber(blockNumber);
+        if ("best".equals(args[0])) {
+            block = blockStore.getBestBlock();
+        }
+        else {
+            block = blockStore.getChainBlockByNumber(Long.parseLong(args[0]));
+        }
+
+        writer.println("Block number: " + block.getNumber());
+        writer.println("Block hash: " + Hex.toHexString(block.getHash().getBytes()));
+        writer.println("Block parent hash: " + Hex.toHexString(block.getParentHash().getBytes()));
+        writer.println("Block root hash: " + Hex.toHexString(block.getStateRoot()));
 
         Optional<Trie> otrie = trieStore.retrieve(block.getStateRoot());
 
-        if (!otrie.isPresent()) {
-            return;
+        if (otrie.isPresent()) {
+            Trie trie = otrie.get();
+
+            processTrie(trie);
         }
 
-        Trie trie = otrie.get();
-
-        processTrie(trie, writer);
+        writer.println("Trie nodes: " + nnodes);
+        writer.println("Trie long values: " + nvalues);
+        writer.println("Trie MB: " + (double)nbytes / (1024*1024));
     }
 
-    private static void processTrie(Trie trie, PrintStream writer) {
-        writer.println(Hex.toHexString(trie.toMessage()));
+    private static void processTrie(Trie trie) {
+        nnodes++;
+        nbytes += trie.getMessageLength();
 
         NodeReference leftReference = trie.getLeft();
 
@@ -68,11 +86,12 @@ public class ExportState {
                 Trie leftTrie = left.get();
 
                 if (!leftReference.isEmbeddable()) {
-                    processTrie(leftTrie, writer);
+                    processTrie(leftTrie);
                 }
 
                 if (leftTrie.hasLongValue()) {
-                    writer.println(Hex.toHexString(leftTrie.getValue()));
+                    nvalues++;
+                    nbytes += leftTrie.getValue().length;
                 }
             }
         }
@@ -86,17 +105,19 @@ public class ExportState {
                 Trie rightTrie = right.get();
 
                 if (!rightReference.isEmbeddable()) {
-                    processTrie(rightTrie, writer);
+                    processTrie(rightTrie);
                 }
 
                 if (rightTrie.hasLongValue()) {
-                    writer.println(Hex.toHexString(rightTrie.getValue()));
+                    nvalues++;
+                    nbytes += rightTrie.getValue().length;
                 }
             }
         }
 
         if (trie.hasLongValue()) {
-            writer.println(Hex.toHexString(trie.getValue()));
+            nvalues++;
+            nbytes += trie.getValue().length;
         }
     }
 }

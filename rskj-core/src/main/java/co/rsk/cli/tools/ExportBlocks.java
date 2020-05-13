@@ -15,40 +15,42 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package co.rsk;
+package co.rsk.cli.tools;
 
-import co.rsk.core.bc.BlockExecutor;
-import co.rsk.trie.TrieStore;
+import co.rsk.RskContext;
+import co.rsk.core.BlockDifficulty;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.Block;
 import org.ethereum.db.BlockStore;
 
+import java.io.PrintStream;
+
 /**
- * The entry point for execute blocks CLI tool
+ * The entry point for export blocks CLI tool
  * This is an experimental/unsupported tool
  */
-public class ExecuteBlocks {
+public class ExportBlocks {
     public static void main(String[] args) {
         RskContext ctx = new RskContext(args);
-
-        BlockExecutor blockExecutor = ctx.getBlockExecutor();
         BlockStore blockStore = ctx.getBlockStore();
-        TrieStore trieStore = ctx.getTrieStore();
-        
-        execute(args, blockExecutor, blockStore, trieStore);
+
+        execute(args, blockStore, System.out);
     }
-    
-    public static void execute(String[] args, BlockExecutor blockExecutor, BlockStore blockStore, TrieStore trieStore) {
+
+    public static void execute(String[] args, BlockStore blockStore, PrintStream writer) {
         long fromBlockNumber = Long.parseLong(args[0]);
         long toBlockNumber = Long.parseLong(args[1]);
 
         for (long n = fromBlockNumber; n <= toBlockNumber; n++) {
             Block block = blockStore.getChainBlockByNumber(n);
-            Block parent = blockStore.getBlockByHash(block.getParentHash().getBytes());
+            BlockDifficulty totalDifficulty = blockStore.getTotalDifficultyForHash(block.getHash().getBytes());
 
-            blockExecutor.execute(block, parent.getHeader(), false, false);
+            writer.println(
+                block.getNumber() + "," +
+                Hex.toHexString(block.getHash().getBytes()) + "," +
+                Hex.toHexString(totalDifficulty.getBytes()) + "," +
+                Hex.toHexString(block.getEncoded())
+            );
         }
-
-        trieStore.flush();
-        blockStore.flush();
     }
 }
