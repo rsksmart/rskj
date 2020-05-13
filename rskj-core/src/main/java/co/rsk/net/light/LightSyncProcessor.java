@@ -25,6 +25,7 @@ import co.rsk.net.eth.LightClientHandler;
 import co.rsk.net.light.message.GetBlockHeadersMessage;
 import co.rsk.net.light.message.StatusMessage;
 import co.rsk.validators.ProofOfWorkRule;
+import com.google.common.annotations.VisibleForTesting;
 import io.netty.channel.ChannelHandlerContext;
 import org.ethereum.config.SystemProperties;
 import org.ethereum.core.Block;
@@ -57,6 +58,7 @@ public class LightSyncProcessor {
     private long lastRequestedId;
     private final Map<Long, LightClientMessageCodes> pendingMessages;
     private ProofOfWorkRule blockHeaderValidationRule;
+    private CheckingBestHeaderLightSyncState state;
 
 
     public LightSyncProcessor(SystemProperties config, Genesis genesis, BlockStore blockStore, Blockchain blockchain, ProofOfWorkRule blockHeaderValidationRule) {
@@ -135,9 +137,19 @@ public class LightSyncProcessor {
         }
 
         byte[] bestBlockHash = status.getBestHash();
+        setState(new CheckingBestHeaderLightSyncState(this, bestBlockHash, lightPeer, blockHeaderValidationRule));
+
+    }
+
+    public void sendGetBlockHeadersMessage(LightPeer lightPeer, byte[] bestBlockHash) {
         GetBlockHeadersMessage blockHeaderMessage = new GetBlockHeadersMessage(++lastRequestedId, bestBlockHash, 1);
         pendingMessages.put(lastRequestedId, BLOCK_HEADER);
         lightPeer.sendMessage(blockHeaderMessage);
+    }
+
+    private void setState(CheckingBestHeaderLightSyncState checkingBestHeaderLightSyncState) {
+        state = checkingBestHeaderLightSyncState;
+        state.onEnter();
     }
 
     public void sendStatusMessage(LightPeer lightPeer) {
@@ -156,19 +168,9 @@ public class LightSyncProcessor {
             return;
         }
 
-        if (blockHeaders.isEmpty()) {
-            return;
-        }
-
-        //TODO: Mechanism of disconnecting when peer gives bad information
-        for (BlockHeader h : blockHeaders) {
-            if (!blockHeaderValidationRule.isValid(h)) {
-                return;
-            }
-        }
-
         pendingMessages.remove(id, BLOCK_HEADER);
-        lightPeer.receivedBlock(blockHeaders);
+        state.newBlockHeaderMessage(blockHeaders);
+
     }
 
     public boolean hasTxRelay(LightPeer peer) {
@@ -197,5 +199,10 @@ public class LightSyncProcessor {
         long bestNumber = block.getNumber();
         BlockDifficulty totalDifficulty = blockStore.getTotalDifficultyForHash(bestHash);
         return new LightStatus((byte) 0, config.networkId(), totalDifficulty, bestHash, bestNumber, genesis.getHash().getBytes());
+    }
+
+    @VisibleForTesting
+    public CheckingBestHeaderLightSyncState getSyncState() {
+        return this.state;
     }
 }

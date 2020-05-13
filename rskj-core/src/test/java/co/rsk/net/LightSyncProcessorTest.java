@@ -22,10 +22,7 @@ import co.rsk.core.BlockDifficulty;
 import co.rsk.core.bc.BlockChainStatus;
 import co.rsk.crypto.Keccak256;
 import co.rsk.net.eth.LightClientHandler;
-import co.rsk.net.light.LightPeer;
-import co.rsk.net.light.LightProcessor;
-import co.rsk.net.light.LightStatus;
-import co.rsk.net.light.LightSyncProcessor;
+import co.rsk.net.light.*;
 import co.rsk.net.light.message.BlockHeadersMessage;
 import co.rsk.net.light.message.GetBlockHeadersMessage;
 import co.rsk.net.light.message.StatusMessage;
@@ -133,6 +130,7 @@ public class LightSyncProcessorTest {
 
         lightClientHandler.channelRead0(ctx, blockHeadersMessage);
 
+        assertEquals(lightSyncProcessor.getSyncState().getClass(), CheckingBestHeaderLightSyncState.class);
         assertEquals(1, lightPeer.getBlocks().size());
         assertEquals(bHs, lightPeer.getBlocks());
     }
