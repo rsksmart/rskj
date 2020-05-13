@@ -25,10 +25,7 @@ import co.rsk.core.bc.BlockChainStatus;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.db.RepositorySnapshot;
-import co.rsk.net.light.LightPeer;
-import co.rsk.net.light.LightProcessor;
-import co.rsk.net.light.LightStatus;
-import co.rsk.net.light.LightSyncProcessor;
+import co.rsk.net.light.*;
 import co.rsk.net.light.message.*;
 import co.rsk.validators.ProofOfWorkRule;
 import io.netty.channel.ChannelHandlerContext;
@@ -54,7 +51,7 @@ import java.util.List;
 
 import static org.ethereum.TestUtils.randomAddress;
 import static org.ethereum.TestUtils.randomHash;
-import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.*;
 import static org.mockito.ArgumentCaptor.forClass;
 import static org.mockito.Mockito.*;
 
@@ -350,7 +347,7 @@ public class LightClientHandlerTest {
     }
 
     @Test
-    public void receiveNotPendingMessageAndShouldBeIgnored() {
+    public void receiveNotPendingBlockHeadersMessageAndShouldBeIgnored() {
 
         BlockHeader blockHeader = mock(BlockHeader.class);
         List<BlockHeader> bHs = new ArrayList<>();
@@ -366,7 +363,7 @@ public class LightClientHandlerTest {
         lightClientHandler.channelRead0(ctx, blockHeadersMessage);
 
         verify(lightPeer, times(0)).receivedBlock(any());
-
+        assertEquals(lightSyncProcessor.getSyncState().getClass(), BaseLightSyncState.class);
     }
 
     @Test
@@ -389,7 +386,7 @@ public class LightClientHandlerTest {
         lightClientHandler.channelRead0(ctx, blockHeadersMessage);
 
         verify(lightPeer, times(0)).receivedBlock(any());
-
+        assertEquals(lightSyncProcessor.getSyncState().getClass(), BaseLightSyncState.class);
     }
 
     @Test
@@ -403,7 +400,7 @@ public class LightClientHandlerTest {
         lightClientHandler.channelRead0(ctx, blockHeadersMessage);
 
         verify(lightPeer, times(0)).receivedBlock(any());
-
+        assertEquals(lightSyncProcessor.getSyncState().getClass(), BaseLightSyncState.class);
     }
 
     @Test

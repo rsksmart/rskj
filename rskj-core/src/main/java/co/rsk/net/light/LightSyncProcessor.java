@@ -58,7 +58,7 @@ public class LightSyncProcessor {
     private long lastRequestedId;
     private final Map<Long, LightClientMessageCodes> pendingMessages;
     private ProofOfWorkRule blockHeaderValidationRule;
-    private CheckingBestHeaderLightSyncState state;
+    private LightSyncState state;
 
 
     public LightSyncProcessor(SystemProperties config, Genesis genesis, BlockStore blockStore, Blockchain blockchain, ProofOfWorkRule blockHeaderValidationRule) {
@@ -78,6 +78,7 @@ public class LightSyncProcessor {
                 return shouldDiscard;
             }
         };
+        this.state = new BaseLightSyncState();
     }
 
     public void processStatusMessage(StatusMessage msg, LightPeer lightPeer, ChannelHandlerContext ctx, LightClientHandler lightClientHandler) {
@@ -202,7 +203,7 @@ public class LightSyncProcessor {
     }
 
     @VisibleForTesting
-    public CheckingBestHeaderLightSyncState getSyncState() {
+    public LightSyncState getSyncState() {
         return this.state;
     }
 }

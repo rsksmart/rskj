@@ -150,6 +150,8 @@ public class LightSyncProcessorTest {
 
         verify(lightPeer, times(1)).sendMessage(any());
         verify(lightPeer2, times(0)).sendMessage(any());
+
+        assertEquals(lightSyncProcessor.getSyncState().getClass(), CheckingBestHeaderLightSyncState.class);
     }
 
     @Test
@@ -163,6 +165,7 @@ public class LightSyncProcessorTest {
 
         lightSyncProcessor.processStatusMessage(statusMessageWithTxRelaySet, lightPeer, ctx, lightClientHandler);
         assertTrue(lightSyncProcessor.hasTxRelay(lightPeer));
+        assertEquals(lightSyncProcessor.getSyncState().getClass(), CheckingBestHeaderLightSyncState.class);
     }
 
 

@@ -23,7 +23,7 @@ import org.ethereum.core.BlockHeader;
 
 import java.util.List;
 
-public class CheckingBestHeaderLightSyncState {
+public class CheckingBestHeaderLightSyncState implements LightSyncState {
 
     private LightSyncProcessor lightSyncProcessor;
     private byte[] bestBlockHash;
@@ -37,14 +37,12 @@ public class CheckingBestHeaderLightSyncState {
         this.blockHeaderValidationRule = blockHeaderValidationRule;
     }
 
+    @Override
     public void onEnter() {
         trySendHeaderRequest();
     }
 
-    private void trySendHeaderRequest() {
-        lightSyncProcessor.sendGetBlockHeadersMessage(lightPeer, bestBlockHash);
-    }
-
+    @Override
     public void newBlockHeaderMessage(List<BlockHeader> blockHeaders) {
 
         if (blockHeaders.isEmpty()) {
@@ -59,5 +57,9 @@ public class CheckingBestHeaderLightSyncState {
         }
 
         this.lightPeer.receivedBlock(blockHeaders);
+    }
+
+    private void trySendHeaderRequest() {
+        lightSyncProcessor.sendGetBlockHeadersMessage(lightPeer, bestBlockHash);
     }
 }

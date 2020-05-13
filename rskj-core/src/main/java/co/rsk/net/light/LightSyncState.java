@@ -1,15 +1,28 @@
-package co.rsk.net.light;public class LightSyncState{private final co.rsk.net.light.CheckingBestHeaderLightSyncState checkingBestHeaderLightSyncState;	public LightSyncState(co.rsk.net.light.CheckingBestHeaderLightSyncState checkingBestHeaderLightSyncState)	{		this.checkingBestHeaderLightSyncState = checkingBestHeaderLightSyncState;	}public void newBlockHeaderMessage(java.util.List<org.ethereum.core.BlockHeader> blockHeaders) {
+/*
+ * This file is part of RskJ
+ * Copyright (C) 2020 RSK Labs Ltd.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
 
-        if (blockHeaders.isEmpty()) {
-            return;
-        }
+package co.rsk.net.light;
 
-        //TODO: Mechanism of disconnecting when peer gives bad information
-        for (org.ethereum.core.BlockHeader h : blockHeaders) {
-            if (!checkingBestHeaderLightSyncState.getBlockHeaderValidationRule().isValid(h)) {
-                return;
-            }
-        }
+import org.ethereum.core.BlockHeader;
 
-        checkingBestHeaderLightSyncState.getLightPeer().receivedBlock(blockHeaders);
-    }}
+import java.util.List;
+
+public interface LightSyncState {
+    void onEnter();
+    void newBlockHeaderMessage(List<BlockHeader> blockHeaders);
+}
