@@ -45,12 +45,16 @@ public class TransactionReceipt {
 
     private Transaction transaction;
 
+    // status codes
     protected static final byte[] FAILED_STATUS = EMPTY_BYTE_ARRAY;
     protected static final byte[] SUCCESS_STATUS = new byte[]{0x01};
+    protected static final byte[] MANUAL_REVERT_RSKIP113_STATUS = new byte[]{-1}; 
+    protected static final byte[] RENT_OOG_RSKIP113_STATUS = new byte[]{-2};
 
     private byte[] postTxState = EMPTY_BYTE_ARRAY;
     private byte[] cumulativeGas = EMPTY_BYTE_ARRAY;
     private byte[] gasUsed = EMPTY_BYTE_ARRAY;
+    private byte[] rentGasUsed = EMPTY_BYTE_ARRAY; // storage rent at end of TX (even if reverted, RSKIP113), not included in cumulativeGas
     private byte[] status = EMPTY_BYTE_ARRAY;
 
     private Bloom bloomFilter = new Bloom();
@@ -82,6 +86,11 @@ public class TransactionReceipt {
             byte[] transactionStatus = nullToEmpty(receipt.get(5).getRLPData());
             this.status = transactionStatus;
         }
+        // also contains storage rent information 
+        if (receipt.size() > 6 ) {
+            RLPItem rentGasUsedRLP = (RLPItem) receipt.get(6);
+            this.rentGasUsed = rentGasUsedRLP.getRLPData() == null ? EMPTY_BYTE_ARRAY : rentGasUsedRLP.getRLPData();
+        }
 
         for (int k = 0; k < logs.size(); k++) {
             RLPElement log = logs.get(k);
@@ -92,7 +101,7 @@ public class TransactionReceipt {
         rlpEncoded = rlp;
     }
 
-
+    // original constructor without storage rent
     public TransactionReceipt(byte[] postTxState, byte[] cumulativeGas, byte[] gasUsed,
                               Bloom bloomFilter, List<LogInfo> logInfoList, byte[] status) {
         this.postTxState = postTxState;
@@ -100,10 +109,28 @@ public class TransactionReceipt {
         this.gasUsed = gasUsed;
         this.bloomFilter = bloomFilter;
         this.logInfoList = logInfoList;
-        if (Arrays.equals(status, FAILED_STATUS) || Arrays.equals(status, SUCCESS_STATUS)) {
+        if (Arrays.equals(status, FAILED_STATUS) || Arrays.equals(status, SUCCESS_STATUS) ||
+                Arrays.equals(status, MANUAL_REVERT_RSKIP113_STATUS) || Arrays.equals(status, RENT_OOG_RSKIP113_STATUS)) {
             this.status = status;
         }
+        this.rentGasUsed = EMPTY_BYTE_ARRAY;
     }
+
+    // new constructor with storag rent 
+    public TransactionReceipt(byte[] postTxState, byte[] cumulativeGas, byte[] gasUsed,
+                              Bloom bloomFilter, List<LogInfo> logInfoList, byte[] status, byte[] rentGasUsed) {
+        this.postTxState = postTxState;
+        this.cumulativeGas = cumulativeGas;
+        this.gasUsed = gasUsed;
+        this.bloomFilter = bloomFilter;
+        this.logInfoList = logInfoList;
+        if (Arrays.equals(status, FAILED_STATUS) || Arrays.equals(status, SUCCESS_STATUS) || 
+                Arrays.equals(status, MANUAL_REVERT_RSKIP113_STATUS) || Arrays.equals(status, RENT_OOG_RSKIP113_STATUS)) {
+            this.status = status;
+        }
+        this.rentGasUsed = rentGasUsed;
+    }
+
 
     public byte[] getPostTxState() {
         return postTxState;
@@ -116,6 +143,10 @@ public class TransactionReceipt {
     // TODO: return gas used for this transaction instead of cumulative gas
     public byte[] getGasUsed() {
         return gasUsed;
+    }
+
+    public byte[] getRentGasUsed() {
+        return rentGasUsed;
     }
 
     public long getCumulativeGasLong() {
@@ -141,6 +172,7 @@ public class TransactionReceipt {
         byte[] postTxStateRLP = RLP.encodeElement(this.postTxState);
         byte[] cumulativeGasRLP = RLP.encodeElement(this.cumulativeGas);
         byte[] gasUsedRLP = RLP.encodeElement(this.gasUsed);
+        byte[] rentGasUsedRLP = RLP.encodeElement(this.rentGasUsed);
         byte[] bloomRLP = RLP.encodeElement(this.bloomFilter.getData());
         byte[] statusRLP = RLP.encodeElement(this.status);
 
@@ -158,7 +190,7 @@ public class TransactionReceipt {
             logInfoListRLP = RLP.encodeList();
         }
 
-        rlpEncoded = RLP.encodeList(postTxStateRLP, cumulativeGasRLP, bloomRLP, logInfoListRLP, gasUsedRLP, statusRLP);
+        rlpEncoded = RLP.encodeList(postTxStateRLP, cumulativeGasRLP, bloomRLP, logInfoListRLP, gasUsedRLP, statusRLP, rentGasUsedRLP);
 
         return rlpEncoded;
     }
@@ -168,6 +200,10 @@ public class TransactionReceipt {
             this.status = FAILED_STATUS;
         } else if (Arrays.equals(status, SUCCESS_STATUS)){
             this.status = SUCCESS_STATUS;
+        } else if (Arrays.equals(status, MANUAL_REVERT_RSKIP113_STATUS)){
+            this.status = MANUAL_REVERT_RSKIP113_STATUS;
+        } else if (Arrays.equals(status, RENT_OOG_RSKIP113_STATUS)){
+            this.status = RENT_OOG_RSKIP113_STATUS;
         }
     }
 
@@ -200,12 +236,20 @@ public class TransactionReceipt {
         this.gasUsed = BigIntegers.asUnsignedByteArray(BigInteger.valueOf(gasUsed));
     }
 
+    public void setRentGasUsed(long rentGasUsed) {
+        this.rentGasUsed = BigIntegers.asUnsignedByteArray(BigInteger.valueOf(rentGasUsed));
+    }
+
     public void setCumulativeGas(byte[] cumulativeGas) {
         this.cumulativeGas = cumulativeGas;
     }
 
     public void setGasUsed(byte[] gasUsed) {
         this.gasUsed = gasUsed;
+    }
+
+    public void setRentGasUsed(byte[] rentGasUsed) {
+        this.rentGasUsed = rentGasUsed;
     }
 
     public void setLogInfoList(List<LogInfo> logInfoList) {

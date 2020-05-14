@@ -183,7 +183,7 @@ public class Transaction {
         this(nonce, gasPriceRaw, gasLimit, receiveAddress, value, data, (byte) 0, gasLimit);
     }
 
-    // #mish: existed prior to rent: Call this C3. m9 elem byte array..  
+    // #mish: existed prior to rent: Call this C3. a 9 elem byte array..   //rentgaslimit default set to gaslimit
     public Transaction(byte[] nonce, byte[] gasPriceRaw, byte[] gasLimit, byte[] receiveAddress, byte[] value, byte[] data, byte[] r, byte[] s, byte v) {
         this(nonce, gasPriceRaw, gasLimit, receiveAddress, value, data, (byte) 0, gasLimit);
         this.signature = ECDSASignature.fromComponents(r, s, v);
@@ -223,10 +223,10 @@ public class Transaction {
                 BigIntegers.asUnsignedByteArray(amount),
                 decodedData,
                 chainId,
-                BigIntegers.asUnsignedByteArray(gasLimit));
+                BigIntegers.asUnsignedByteArray(gasLimit)); //rentgaslimit default set to gaslimit
     }
     // #mish: existed prior to rent: Similar to C5, except 'data' is String not byte[]. param types SBBBBSb
-    // call this C6: 
+    // call this C6:   //rentgaslimit default set to gaslimit
     public Transaction(String to, BigInteger amount, BigInteger nonce, BigInteger gasPrice, BigInteger gasLimit, String data, byte chainId) {
         this(to, amount, nonce, gasPrice, gasLimit, data == null ? null : Hex.decode(data), chainId, gasLimit);
     }
@@ -235,7 +235,7 @@ public class Transaction {
         this(to, amount, nonce, gasPrice, gasLimit, data == null ? null : Hex.decode(data), chainId, rentGasLimit);
     }
 
-    //Call this C7: existed prior to rent: param types SBBBBb no 'data'
+    //Call this C7: existed prior to rent: param types SBBBBb no 'data'.  //rentgaslimit default set to gaslimit
     public Transaction(String to, BigInteger amount, BigInteger nonce, BigInteger gasPrice, BigInteger gasLimit, byte chainId) {
         this(to, amount, nonce, gasPrice, gasLimit, (byte[]) null, chainId, gasLimit);
     }
@@ -245,7 +245,7 @@ public class Transaction {
     }
 
     // #mish: existed prior to rent, param types BBBSBbb, so a reordering of C7. Plus mixed up names (value/amount).
-    // Call this C8:
+    // Call this C8:  //rentgaslimit default set to gaslimit
     public Transaction(BigInteger nonce, BigInteger gasPrice, BigInteger gas, String to, BigInteger value, byte[] data, byte chainId) {
         this(nonce.toByteArray(), gasPrice.toByteArray(), gas.toByteArray(), Hex.decode(to), value.toByteArray(), data,
                 chainId, gas.toByteArray());
@@ -257,7 +257,7 @@ public class Transaction {
     }
 
     // #mish: Existed prior to rentGas: different param types. lllSlbb
-    // call ths C9:
+    // call ths C9:  //rentgaslimit default set to gaslimit
     public Transaction(long nonce, long gasPrice, long gas, String to, long value, byte[] data, byte chainId) {
         this(BigInteger.valueOf(nonce).toByteArray(), BigInteger.valueOf(gasPrice).toByteArray(),
                 BigInteger.valueOf(gas).toByteArray(), Hex.decode(to), BigInteger.valueOf(value).toByteArray(),
@@ -575,17 +575,18 @@ public class Transaction {
         }
         byte[] toEncodeGasPrice = RLP.encodeCoinNonNullZero(this.gasPrice);
         byte[] toEncodeGasLimit = RLP.encodeElement(this.gasLimit);
+        byte[] toEncodeRentGasLimit = RLP.encodeElement(this.rentGasLimit);
         byte[] toEncodeReceiveAddress = RLP.encodeRskAddress(this.receiveAddress);
         byte[] toEncodeValue = RLP.encodeCoinNullZero(this.value);
         byte[] toEncodeData = RLP.encodeElement(this.data);
 
         if (v == null && r == null && s == null) {
             return RLP.encodeList(toEncodeNonce, toEncodeGasPrice, toEncodeGasLimit,
-                    toEncodeReceiveAddress, toEncodeValue, toEncodeData);
+                    toEncodeReceiveAddress, toEncodeValue, toEncodeData, toEncodeRentGasLimit);
         }
 
         return RLP.encodeList(toEncodeNonce, toEncodeGasPrice, toEncodeGasLimit,
-                toEncodeReceiveAddress, toEncodeValue, toEncodeData, v, r, s);
+                toEncodeReceiveAddress, toEncodeValue, toEncodeData, v, r, s, toEncodeRentGasLimit);
     }
 
     public BigInteger getGasLimitAsInteger() {

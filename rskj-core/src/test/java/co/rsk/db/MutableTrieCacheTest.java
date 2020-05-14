@@ -76,42 +76,33 @@ public class MutableTrieCacheTest {
     @Test
     public void testPuts() {
         MutableTrieImpl baseMutableTrie = new MutableTrieImpl(null, new Trie());
-
         // First put some strings in the base
         baseMutableTrie.put("ALICE",toBytes("alice"));
-
         String result;
         result = getKeysFrom(baseMutableTrie);
         assertEquals("ALICE;",result);
-
-        // try one using the rent version
+        // one using the rent version
         baseMutableTrie.putLastRentPaidTime("BOB",toBytes("bob"), 1L);
-
+        // initalize a cache
         MutableTrieCache mtCache = new MutableTrieCache(baseMutableTrie);
 
-        // Now add two more
-        mtCache.put("CAROL",toBytes("carol"));
-        
-        // one with rent data
+        // Now add two more to the cache, not the parent
+        mtCache.put("CAROL",toBytes("carol"));  
+        // with rent data
         mtCache.putLastRentPaidTime("ROBERT",toBytes("robert"), 3L);
-
+        // parent trie is unaware of these changes..         
         result = getKeysFrom(baseMutableTrie);
         assertEquals("ALICE;BOB;",result);
 
         result = getKeysFrom(mtCache);
         assertEquals("ALICE;BOB;CAROL;ROBERT;",result);
-        System.out.println(new String(mtCache.get(toBytes("ROBERT")), StandardCharsets.UTF_8));
         assertArrayEquals(toBytes("robert"), mtCache.get(toBytes("ROBERT")));
-        System.out.println(mtCache.getLastRentPaidTime(toBytes("ROBERT")));
         assertEquals(3L, mtCache.getLastRentPaidTime(toBytes("ROBERT")));
         
         // commit so the changes are reflected in base trie as well
         mtCache.commit();
-
-        // Now the base trie must have all
         result = getKeysFrom(baseMutableTrie);
         assertEquals("ALICE;BOB;CAROL;ROBERT;",result);
-        System.out.println(new String(baseMutableTrie.get(toBytes("ROBERT"))));
         assertArrayEquals(toBytes("robert"), baseMutableTrie.get(toBytes("ROBERT")));
     }
 
@@ -124,8 +115,7 @@ public class MutableTrieCacheTest {
         StringBuilder accountLikeKey = new StringBuilder("HAL");
         int keySize = TrieKeyMapper.ACCOUNT_KEY_SIZE + TrieKeyMapper.domainPrefix().length + TrieKeyMapper.SECURE_KEY_SIZE;
         // expand base key to the desired size by appending 0's
-        for (; accountLikeKey.length() < keySize;) accountLikeKey.append("0");
-        
+        for (; accountLikeKey.length() < keySize;) accountLikeKey.append("0");        
         // put couple of nodes under the account
         mtCache.put(toBytes(accountLikeKey.toString() + "123"), toBytes("HAL"));
         mtCache.putLastRentPaidTime(toBytes(accountLikeKey.toString() + "124"), toBytes("HAL"), 2L);
@@ -143,14 +133,16 @@ public class MutableTrieCacheTest {
         assertEquals(4L, mtCache.getLastRentPaidTime(toBytes(accountLikeKey.toString() + "125")));
         
         byte[] val = mtCache.get(toBytes(accountLikeKey.toString() + "125"));
-        System.out.println(new String(val));
         mtCache.putLastRentPaidTime(toBytes(accountLikeKey.toString() + "127"), toBytes("HALO"), 3L);
-        val = mtCache.get(toBytes(accountLikeKey.toString() + "127"));
-        System.out.println(new String(val));
-        //assertArrayEquals(toBytes("HALO"), mtCache.get(toBytes(accountLikeKey.toString() + "127")));
+        assertArrayEquals(toBytes("HALO"), mtCache.get(toBytes(accountLikeKey.toString() + "127")));
 
         assertNull(mtCache.get(toBytes(accountLikeKey.toString() + "123")));
         assertNull(mtCache.get(toBytes(accountLikeKey.toString())));
+
+        mtCache.putLastRentPaidTime(toBytes(accountLikeKey.toString() + "125"), null, 4L);
+        assertNull(mtCache.get(toBytes(accountLikeKey.toString() + "125")));
+        assertEquals(0, mtCache.getLastRentPaidTime(toBytes(accountLikeKey.toString() + "125"))); //cos long cannot be null
+
     }
 
     @Test
@@ -163,17 +155,24 @@ public class MutableTrieCacheTest {
         int keySize = TrieKeyMapper.ACCOUNT_KEY_SIZE + TrieKeyMapper.domainPrefix().length + TrieKeyMapper.SECURE_KEY_SIZE;
         for (; accountLikeKey.length() < keySize;) accountLikeKey.append("0");
         mtCache.put(toBytes(accountLikeKey.toString() + "123"), toBytes("HAL"));
-        mtCache.put(toBytes(accountLikeKey.toString() + "124"), toBytes("HAL"));
+        mtCache.putLastRentPaidTime(toBytes(accountLikeKey.toString() + "124"), toBytes("HAL"), 2L);
         mtCache.put(toBytes(accountLikeKey.toString() + "125"), toBytes("HAL"));
 
         // puts on superior levels are not reflected on lower levels before commit
         MutableTrieCache otherCache = new MutableTrieCache(mtCache);
         assertNull(otherCache.get(toBytes(accountLikeKey.toString() + "126")));
-        otherCache.put(toBytes(accountLikeKey.toString() + "124"), toBytes("LAH"));
+        otherCache.putLastRentPaidTime(toBytes(accountLikeKey.toString() + "124"), toBytes("LAH"),3000);
+        // node's value in higher and lower level caches
         assertArrayEquals(toBytes("LAH"), otherCache.get(toBytes(accountLikeKey.toString() + "124")));
         assertArrayEquals(toBytes("HAL"), mtCache.get(toBytes(accountLikeKey.toString() + "124")));
-        otherCache.put(toBytes(accountLikeKey.toString() + "123"), null);
+        // a node's rent paid time in higher and lower level caches
+        assertEquals(3000, otherCache.getLastRentPaidTime(toBytes(accountLikeKey.toString() + "124")));
+        assertEquals(2, mtCache.getLastRentPaidTime(toBytes(accountLikeKey.toString() + "124")));
+
+        //this is a delete in the higher level cache
+        otherCache.putLastRentPaidTime(toBytes(accountLikeKey.toString() + "123"), null, 0);
         assertNull(otherCache.get(toBytes(accountLikeKey.toString() + "123")));
+        // value unchanged in the lower level cache
         assertArrayEquals(toBytes("HAL"), mtCache.get(toBytes(accountLikeKey.toString() + "123")));
 
         // after commit puts on superior levels are reflected on lower levels
@@ -222,40 +221,45 @@ public class MutableTrieCacheTest {
         MutableRepository otherCacheRepository = new MutableRepository(otherCache);
 
         RskAddress addr = new RskAddress("b86ca7db8c7ae687ac8d098789987eee12333fc7");
-
+        // storage => contract account, not a regular one.. so two steps.. 
         baseRepository.createAccount(addr);
         baseRepository.setupContract(addr);
 
+        //5 storage node keys. toSrageKey defined at the top
         DataWord sk120 = toStorageKey("120");
         DataWord sk121 = toStorageKey("121");
         DataWord sk122 = toStorageKey("122");
         DataWord sk123 = toStorageKey("123");
         DataWord sk124 = toStorageKey("124");
-
+        // base repo.. these nodes are added to baseMutableTrie
         baseRepository.addStorageBytes(addr, sk120, toBytes("HAL"));
         baseRepository.addStorageBytes(addr, sk121, toBytes("HAL"));
         baseRepository.addStorageBytes(addr, sk122, toBytes("HAL"));
-        cacheRepository.addStorageBytes(addr, sk120, null);
+        // cache based on lower level mtCache
+        // overwrite the above keys in first cache . the trie here is the same parent trie baseMutableTrie
+        cacheRepository.addStorageBytes(addr, sk120, null); // deleted
         cacheRepository.addStorageBytes(addr, sk121, toBytes("LAH"));
         cacheRepository.addStorageBytes(addr, sk123, toBytes("LAH"));
+        // higher level Repo cache.. based on higher level mtCache
         otherCacheRepository.addStorageBytes(addr, sk124, toBytes("HAL"));
 
         // assertions
-
+        // these are based on the first cached trie
         Iterator<DataWord> storageKeys = mtCache.getStorageKeys(addr);
         Set<DataWord> keys = new HashSet<>();
         storageKeys.forEachRemaining(keys::add);
-        assertFalse(keys.contains(sk120));
+        assertFalse(keys.contains(sk120)); //was deleted
         assertTrue(keys.contains(sk121));
         assertTrue(keys.contains(sk122));
-        assertTrue(keys.contains(sk123));
-        assertFalse(keys.contains(sk124));
+        assertTrue(keys.contains(sk123)); // will find this from the underlying baseMuttrie
+        assertFalse(keys.contains(sk124)); // won't see this, not yet committed from higgher level cache
         assertEquals(3, keys.size());
 
+        // repeat for higher level cahce    
         storageKeys = otherCache.getStorageKeys(addr);
         keys = new HashSet<>();
         storageKeys.forEachRemaining(keys::add);
-        assertFalse(keys.contains(sk120));
+        assertFalse(keys.contains(sk120)); // was nulled/deleted
         assertTrue(keys.contains(sk121));
         assertTrue(keys.contains(sk122));
         assertTrue(keys.contains(sk123));
@@ -264,7 +268,7 @@ public class MutableTrieCacheTest {
     }
 
     @Test
-    public void testStorageKeysNoCache() {
+    public void testStorageKeysNoCache() {  // no cached repository, just a base.. there is howwver a mutTrieCache shares the same parent trie
         // SUTs
         MutableTrieImpl baseMutableTrie = new MutableTrieImpl(null, new Trie());
         MutableTrieCache mtCache = new MutableTrieCache(baseMutableTrie);
@@ -464,6 +468,8 @@ public class MutableTrieCacheTest {
         getValueHashAndAssert(baseMutableTrie, wrongKey, zeroHash);
         getValueHashAndAssert(mtCache, wrongKey, zeroHash);
     }
+
+    
 
     private void getValueHashAndAssert(MutableTrie trie, byte[] key, Keccak256 expectedHash) {
         Keccak256 hash = trie.getValueHash(key);
