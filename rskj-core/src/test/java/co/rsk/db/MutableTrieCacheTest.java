@@ -98,6 +98,7 @@ public class MutableTrieCacheTest {
         assertEquals("ALICE;BOB;CAROL;ROBERT;",result);
         assertArrayEquals(toBytes("robert"), mtCache.get(toBytes("ROBERT")));
         assertEquals(3L, mtCache.getLastRentPaidTime(toBytes("ROBERT")));
+        assertEquals(0, mtCache.getLastRentPaidTime(toBytes("missingROBERT"))); // key not in trie
         
         // commit so the changes are reflected in base trie as well
         mtCache.commit();

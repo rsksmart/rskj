@@ -1015,7 +1015,7 @@ public class Trie {
         }
 
         if (isEmptyTrie()) {
-            return new Trie(this.store, key, cloneArray(value));
+            return new Trie(this.store, key, cloneArray(value), NodeReference.empty(), NodeReference.empty(), getDataLength(value), null, null, newLastRentPaidTime);
         }
 
         // this bit will be implicit and not present in a shared path

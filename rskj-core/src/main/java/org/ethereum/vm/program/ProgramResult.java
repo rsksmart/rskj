@@ -35,6 +35,7 @@ import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 public class ProgramResult {
 
     private long gasUsed;
+    private long rentGasUsed;
     private byte[] hReturn = EMPTY_BYTE_ARRAY;
     private RuntimeException exception;
     private boolean revert;
@@ -60,8 +61,16 @@ public class ProgramResult {
         gasUsed = 0;
     }
 
+    public void clearUsedRentGas() {
+        rentGasUsed = 0;
+    }
+  
     public void spendGas(long gas) {
         gasUsed = GasCost.add(gasUsed, gas);
+    }
+
+    public void spendRentGas(long rentGas) {
+        rentGasUsed = GasCost.add(rentGasUsed, rentGas);
     }
 
     public void setRevert() {
@@ -74,6 +83,10 @@ public class ProgramResult {
 
     public void refundGas(long gas) {
         gasUsed = GasCost.subtract(gasUsed, gas);
+    }
+
+    public void refundRentGas(long rentGas) {
+        rentGasUsed = GasCost.subtract(rentGasUsed, rentGas);
     }
 
     public void setHReturn(byte[] hReturn) {
@@ -91,6 +104,10 @@ public class ProgramResult {
 
     public long getGasUsed() {
         return gasUsed;
+    }
+
+    public long getRentGasUsed() {
+        return rentGasUsed;
     }
 
     public void setException(RuntimeException exception) {

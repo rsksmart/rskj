@@ -84,19 +84,36 @@ public class TrieRentTest {
         trie = trie.put("foo".getBytes(), "bar".getBytes());
         System.out.println("Rent fully paid until time Trie : " + trie.getLastRentPaidTime() +
                         " value:  " + new String(trie.get("foo".getBytes())) );
-        //System.out.println(new String("bar".getBytes()));
+         //System.out.println(new String("bar".getBytes()));
         //add same key with rent update
         trie = trie.putLastRentPaidTime("foo".getBytes(), "zip".getBytes(), 1000_000); 
         System.out.println("Rent fully paid until time (same key with rentupdate): " + trie.getLastRentPaidTime() +
                         " value:  " + new String( trie.get("foo".getBytes())));
           
         //back to initial value, same key. RentpadDatewill be retained
-        trie = trie.put("foo".getBytes(), "bar".getBytes());
+        trie = trie.put("foo".getBytes(), "bar2".getBytes());
         System.out.println("Rent fully paid until time (still the same key, no rent info): "+ trie.getLastRentPaidTime() +
                         " value:  " + new String( trie.get("foo".getBytes())));
-        Assert.assertEquals(1000_000, trie.getLastRentPaidTime());        
+        Assert.assertEquals(1000_000, trie.getLastRentPaidTime());       
 
     }
+    
+    // similar to above, but now the first put contains rent info.. so uses putLastRentPaidTime() first, instead of put()
+    @Test
+    public void putLRPTAndGetKeyValueSameKey() {
+        Trie trie = new Trie();
+        trie = trie.putLastRentPaidTime("foo".getBytes(), "zip".getBytes(), 1000_000); 
+        System.out.println("Rent fully paid until time (same key with rentupdate): " + trie.getLastRentPaidTime() +
+                        " value:  " + new String( trie.get("foo".getBytes())));
+          
+        //back to initial value, same key. RentpadDatewill be retained
+        trie = trie.put("foo".getBytes(), "bar2".getBytes());
+        System.out.println("Rent fully paid until time (still the same key, no rent info): "+ trie.getLastRentPaidTime() +
+                        " value:  " + new String( trie.get("foo".getBytes())));
+        Assert.assertEquals(1000_000, trie.getLastRentPaidTime());       
+
+    }
+
 
     // #mish: this is a variant of a test of the same name from TrieGetNodesTest.
     @Test

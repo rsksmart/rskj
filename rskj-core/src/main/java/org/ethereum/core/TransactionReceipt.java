@@ -48,7 +48,7 @@ public class TransactionReceipt {
     // status codes
     protected static final byte[] FAILED_STATUS = EMPTY_BYTE_ARRAY;
     protected static final byte[] SUCCESS_STATUS = new byte[]{0x01};
-    protected static final byte[] MANUAL_REVERT_RSKIP113_STATUS = new byte[]{-1}; 
+    protected static final byte[] MANUAL_REVERT_RSKIP113_STATUS = new byte[]{-1}; // #mish e.g. doREVERT() opCode in VM.java
     protected static final byte[] RENT_OOG_RSKIP113_STATUS = new byte[]{-2};
 
     private byte[] postTxState = EMPTY_BYTE_ARRAY;

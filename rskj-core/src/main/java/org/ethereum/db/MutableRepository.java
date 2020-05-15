@@ -71,6 +71,7 @@ public class MutableRepository implements Repository {
         return accountState;
     }
 
+    // setup storage root node with value 0x01 i.e. ONE_BYTE_ARRAY
     @Override
     public synchronized void setupContract(RskAddress addr) {
         byte[] prefix = trieKeyMapper.getAccountStoragePrefixKey(addr);
@@ -138,6 +139,7 @@ public class MutableRepository implements Repository {
         return account.getNonce();
     }
 
+    // without node storage rent use saveCodeLRPT() to save code with last rent paid time
     @Override
     public synchronized void saveCode(RskAddress addr, byte[] code) {
         byte[] key = trieKeyMapper.getCodeKey(addr);
@@ -191,6 +193,7 @@ public class MutableRepository implements Repository {
         return mutableTrie.get(key);
     }
 
+    // Only contract has storage, and storage root node is marked with value 0x01), so check  storage root node value ? null  
     @Override
     public boolean isContract(RskAddress addr) {
         byte[] prefix = trieKeyMapper.getAccountStoragePrefixKey(addr);
@@ -327,6 +330,7 @@ public class MutableRepository implements Repository {
         return rootHash.getBytes();
     }
 
+    // cannot update account storage rent with this method. Use updateAccountStateLRPTime()
     @Override
     public synchronized void updateAccountState(RskAddress addr, final AccountState accountState) {
         byte[] accountKey = trieKeyMapper.getAccountKey(addr);
@@ -358,4 +362,24 @@ public class MutableRepository implements Repository {
     private byte[] getAccountData(RskAddress addr) {
         return mutableTrie.get(trieKeyMapper.getAccountKey(addr));
     }
+    
+    // storage rent related methods 
+
+    // for account root node.. both regular accounts as well as contracts
+    // account node's last rent paid time
+    public synchronized long getAccountNodeLRPTime(RskAddress addr) {
+        return mutableTrie.getLastRentPaidTime(trieKeyMapper.getAccountKey(addr));
+    }
+    // account node's last rent paid timeDelta i.e time.now - time until when rent has been fully paid
+    // long cannot be null, 
+    public synchronized long getAccountNodeLRPTimeDelta(RskAddress addr) {
+        return mutableTrie.getRentPaidTimeDelta(trieKeyMapper.getAccountKey(addr));
+    }
+    // update with lastRentPaidTime. This is an extension of updateAccountState(addr, State)
+    public synchronized void updateAccountStateLRPTime(RskAddress addr, final AccountState accountState, final long newlastRentPaidTime) {
+        byte[] accountKey = trieKeyMapper.getAccountKey(addr);
+        mutableTrie.putLastRentPaidTime(accountKey, accountState.getEncoded(), newlastRentPaidTime);
+    }
+    
+    // storage rent for contract code
 }

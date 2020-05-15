@@ -173,7 +173,6 @@ public class TransactionExecutor {
             return false;
         }
 
-
         Coin totalCost = tx.getValue();
 
         if (basicTxCost > 0 ) {
@@ -275,6 +274,8 @@ public class TransactionExecutor {
         return true;
     }
 
+    // TX exec flow : init() -> execute() -> go() -> finalize() 
+    // execute(): post valid from init(). increase sender nonce, reduce balance by gasPrice X gasLimit(s), then either call() or create()
     private void execute() {
         logger.trace("Execute transaction {} {}", toBI(tx.getNonce()), tx.getHash());
 
@@ -301,6 +302,7 @@ public class TransactionExecutor {
         }
     }
 
+    // used in call()
     private boolean enoughGas(long txGasLimit, long requiredGas, long gasUsed) {
         if (!activations.isActive(ConsensusRule.RSKIP136)) {
             return txGasLimit >= requiredGas;
@@ -328,7 +330,7 @@ public class TransactionExecutor {
         precompiledContract = precompiledContracts.getContractForAddress(activations, DataWord.valueOf(targetAddress.getBytes()));
 
         this.subtraces = new ArrayList<>();
-        // #mish: No storage rent implications for calls to pre compiled contracts?
+        // #mish: No storage rent implications for calls to pre compiled contracts, apart from sender's own account node rent status
         if (precompiledContract != null) {
             Metric metric = profiler.start(Profiler.PROFILING_TYPE.PRECOMPILED_CONTRACT_INIT);
             precompiledContract.init(tx, executionBlock, track, blockStore, receiptStore, result.getLogInfoList());
@@ -350,10 +352,12 @@ public class TransactionExecutor {
                 profiler.stop(metric);
                 return;
             }
-
+            // continue with pcc call.. update refund amount to limit - used so far
             mEndGas = activations.isActive(ConsensusRule.RSKIP136) ?
                     GasCost.subtract(txGasLimit, gasUsed) :
                     txGasLimit - gasUsed;
+            // update refund status of rentGas
+            mEndRentGas = txRentGasLimit; // no rentgas computed yet
 
             // FIXME: save return for vm trace
             try {
@@ -371,7 +375,7 @@ public class TransactionExecutor {
             }
             result.spendGas(gasUsed);
             profiler.stop(metric);
-        } else {
+        } else {    // #mish if not pre-compiled contract
             byte[] code = track.getCode(targetAddress);
             // Code can be null
             if (isEmpty(code)) {
@@ -392,6 +396,8 @@ public class TransactionExecutor {
         }
     }
 
+    // #mish create() uses the sender's address to determine contract address. It creates the account (in cache repository) 
+    // and if there's data in the tx then calls setupcontract (storage root). Any value in the Tx is transferred as the contract's endowment 
     private void create() {
         RskAddress newContractAddress = tx.getContractAddress();
         cacheTrack.createAccount(newContractAddress); // pre-created
@@ -435,6 +441,10 @@ public class TransactionExecutor {
         executionError = err;
     }
 
+    // #mish TX exec flow : init() -> execute() -> go() -> finalize() 
+    // the last stages of execute() sets up vm and program. If vm!=null (e.g. pcc don't need vm, vm ==null there), 
+    // the actual code execution (playVm, vm.play(program)), contractCreation, saving contract code, gas computation, 
+    // and cache commitment happens here in go(). cache rollbacks as well, e.g. reversion or exception 
     private void go() {
         // TODO: transaction call for pre-compiled  contracts
         if (vm == null) {
@@ -484,6 +494,9 @@ public class TransactionExecutor {
         profiler.stop(metric);
     }
 
+    // create() is called in execute(), that's only sets up the account and storage root. 
+    // createContract() called in go() is more concrete. It estimates gas costs based on contract size,
+    // saves the code, commits changes from cache to main repository.
     private void createContract() {
         int createdContractSize = getLength(program.getResult().getHReturn());
         long returnDataGasValue = GasCost.multiply(GasCost.CREATE_DATA, createdContractSize);
@@ -508,7 +521,7 @@ public class TransactionExecutor {
             cacheTrack.saveCode(tx.getContractAddress(), result.getHReturn());
         }
     }
-
+    // #mish todo: set status needs to be modified to reflect Manual revert, or rentgas OOG as per RSKIP113 
     public TransactionReceipt getReceipt() {
         if (receipt == null) {
             receipt = new TransactionReceipt();
@@ -517,7 +530,8 @@ public class TransactionExecutor {
             receipt.setTransaction(tx);
             receipt.setLogInfoList(getVMLogs());
             receipt.setGasUsed(getGasUsed());
-            receipt.setStatus(executionError.isEmpty()?TransactionReceipt.SUCCESS_STATUS:TransactionReceipt.FAILED_STATUS);
+            receipt.setRentGasUsed(getRentGasUsed());
+            receipt.setStatus(executionError.isEmpty()?TransactionReceipt.SUCCESS_STATUS:TransactionReceipt.FAILED_STATUS); // #mish todo: RSKIP113
         }
         return receipt;
     }
@@ -541,6 +555,7 @@ public class TransactionExecutor {
                 .filter(logInfo -> !logInfo.isRejected())
                 .collect(Collectors.toList());
 
+        // #mish todo: rent mods in builder and here
         TransactionExecutionSummary.Builder summaryBuilder = TransactionExecutionSummary.builderFor(tx)
                 .gasLeftover(BigInteger.valueOf(mEndGas))
                 .logs(notRejectedLogInfos)
@@ -642,5 +657,13 @@ public class TransactionExecutor {
         return toBI(tx.getGasLimit()).subtract(toBI(mEndGas)).longValue();
     }
 
+    public long getRentGasUsed() {
+        if (activations.isActive(ConsensusRule.RSKIP136)) {
+            return GasCost.subtract(GasCost.toGas(tx.getRentGasLimit()), mEndRentGas);
+        }
+        return toBI(tx.getRentGasLimit()).subtract(toBI(mEndRentGas)).longValue();
+    }
+
     public Coin getPaidFees() { return paidFees; }
 }
+
