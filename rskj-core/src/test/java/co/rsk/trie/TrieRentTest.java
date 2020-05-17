@@ -20,11 +20,14 @@ package co.rsk.trie;
 
 import co.rsk.crypto.Keccak256;
 import org.ethereum.crypto.Keccak256Helper;
+import org.ethereum.vm.GasCost;
+
 import org.junit.Assert;
 import org.junit.Test;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+
 
 /**
   * Created by #mish on April 21, 2020.
@@ -142,5 +145,19 @@ public class TrieRentTest {
         Assert.assertEquals("newInfo",new String(nodes.get(2).getValue())); // f updated value
         Assert.assertEquals(200, nodes.get(2).getLastRentPaidTime()); // even though value updated, last rent paid status unchanged    
     }
-}
 
+    @Test
+    public void computeRentGas() {
+        Trie trie = new Trie();
+        trie = trie.putLastRentPaidTime("foo".getBytes(), "must pay rent or hibernate dodo!".getBytes(), 40000);
+        System.out.println("Rent due for time (in seconds, negative for advance) " + trie.getRentPaidTimeDelta());
+        System.out.println("Value length (in bytes) " + trie.getValueLength());
+        //System.out.println("Rent Due (in gas)  " + GasCost.calculateStorageRent(trie.getValueLength(),trie.getRentPaidTimeDelta()));
+
+        long sixMonths = 6 * 30 * 24 *3600L;
+        // rent due for 6 months = (32 bytes + 128 bytes overhead)  * 6*30*24*3600 seconds / (2^21) 
+        Assert.assertEquals(1186, GasCost.calculateStorageRent(trie.getValueLength(), sixMonths));    
+    }
+
+
+}

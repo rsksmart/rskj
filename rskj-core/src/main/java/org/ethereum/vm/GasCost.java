@@ -23,6 +23,8 @@ package org.ethereum.vm;
 import org.ethereum.util.ByteUtil;
 import java.math.BigInteger;
 
+import co.rsk.core.types.ints.Uint24; //#mish for value length for storage rent computation
+
 /**
  * The fundamental network cost unit. Paid for exclusively by SBTC, which is converted
  * freely to and from Gas as required. Gas does not exist outside of the internal RSK
@@ -99,6 +101,9 @@ public class GasCost {
 
     public static final long MAX_GAS = Long.MAX_VALUE;
 
+    public static final long STORAGE_RENT_DIVISOR = 1<<21; // RSKIP113: storage rent is 1/(2^21) gas units per byte per second
+    // 6 months advance rent payment for new trie nodes. About 1186 gas for 32 bytes (+ 128 bytes overhead) 
+    public static final long sixMonths = 6 * 30 * 24 *3600L;
     /**
      * An exception which is thrown be methods in GasCost when
      * an operation overflows, has invalid inputs or wants to return
@@ -185,7 +190,7 @@ public class GasCost {
     }
 
     /**
-     * Multply two longs representing gas, capping at Long.MAX_VALUE.
+     * Multiply two longs representing gas, capping at Long.MAX_VALUE.
      * @param x some gas.
      * @param y another gas.
      * @return the multiplication of the two numbers, capped.
@@ -237,6 +242,33 @@ public class GasCost {
         }
         return result;
     }
+
+
+    /**
+     * calculate storage rent (RSKIP113). Rent is computed in units of has per byte stored per second
+     * @param valueLength : actual length of data stored in a trie node representing bytes stored (an overhead of 128 bytes is added)
+     * @param timeDelta : time period for computing storage rent in seconds 
+     * @return valueLength*timeDelta/STORAGE_RENT_DIVISOR, or Long.Max_Value when mutl overflows
+     * @throws InvalidGasException if any of the inputs are negative. 
+     */
+    public static long calculateStorageRent(Uint24 valueLength, long timeDelta) throws InvalidGasException {
+        long valLen = new Long(valueLength.intValue()); // convert to long for mult overflow check
+        valLen += 128L ; // add storage overhead of 128 bytes (RSKIP113)
+        if (valLen < 0 || timeDelta < 0) {
+            throw new InvalidGasException(String.format(" method calculateStorageRent"));
+        }
+        long mult = valLen * timeDelta;
+        if (multiplicationOverflowed(valLen, timeDelta, mult)) {
+            return Long.MAX_VALUE;
+        }
+        long result = mult/STORAGE_RENT_DIVISOR;
+        if (result < 0) {
+            return Long.MAX_VALUE;
+        }
+        return result;
+    }
+
+
 
     /**
      * Returns whether r is overflowed in `x * y = r`

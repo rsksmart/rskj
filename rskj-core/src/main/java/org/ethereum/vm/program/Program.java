@@ -68,6 +68,7 @@ public class Program {
     // These logs should never be in Info mode in production
     private static final Logger logger = LoggerFactory.getLogger("VM");
     private static final Logger gasLogger = LoggerFactory.getLogger("gas");
+    private static final Logger rentGasLogger = LoggerFactory.getLogger("rentGas");
 
     public static final long MAX_MEMORY = (1<<30);
 
@@ -108,6 +109,7 @@ public class Program {
 
     private boolean isLogEnabled;
     private boolean isGasLogEnabled;
+    private boolean isRentGasLogEnabled;
 
     private RskAddress rskOwnerAddress;
 
@@ -129,6 +131,7 @@ public class Program {
         this.transaction = transaction;
         isLogEnabled = logger.isInfoEnabled();
         isGasLogEnabled = gasLogger.isInfoEnabled();
+        isRentGasLogEnabled = rentGasLogger.isInfoEnabled();
 
         if (isLogEnabled ) {
             logger.warn("WARNING! VM logging is enabled. This will make the VM 200 times slower. Do not use in production.");
@@ -136,6 +139,10 @@ public class Program {
 
         if (isGasLogEnabled) {
             gasLogger.warn("WARNING! Gas logging is enabled. This will the make VM 200 times slower. Do not use in production.");
+        }
+
+        if (isRentGasLogEnabled) {   // #mish: quantitative impact of adding rent gas logging on VM is unknown
+            rentGasLogger.warn("WARNING! Rent gas logging is enabled. This will the make VM orders of magnitude slower. Do not use in production.");
         }
 
         this.invoke = programInvoke;
@@ -472,7 +479,7 @@ public class Program {
         long gasLimit = getRemainingGas();
         spendGas(gasLimit, "internal call");
 
-
+        // #mish TODO: include rentgaslimit
         if (byTestingSuite()) {
             // This keeps track of the contracts created for a test
             getResult().addCallCreate(programCode, EMPTY_BYTE_ARRAY,

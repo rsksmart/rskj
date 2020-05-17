@@ -39,6 +39,11 @@ public class TransactionExecutionSummary {
     private BigInteger gasUsed = BigInteger.ZERO;
     private BigInteger gasLeftover = BigInteger.ZERO;
     private BigInteger gasRefund = BigInteger.ZERO;
+    // #mish for storage rent gas
+    private BigInteger rentGasLimit = BigInteger.ZERO;
+    private BigInteger rentGasUsed = BigInteger.ZERO;
+    private BigInteger rentGasLeftover = BigInteger.ZERO;
+    private BigInteger rentGasRefund = BigInteger.ZERO;
 
     private List<DataWord> deletedAccounts = emptyList();
     private List<InternalTransaction> internalTransactions = emptyList();

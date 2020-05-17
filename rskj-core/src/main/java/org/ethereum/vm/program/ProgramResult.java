@@ -43,12 +43,17 @@ public class ProgramResult {
     // Important:
     // DataWord is used as a ByteArrayWrapper, because Java data Maps/Sets cannot distiguish duplicate
     // keys if the key is of type byte[].
-    private Map<DataWord, byte[]> codeChanges;
+    private Map<DataWord, byte[]> codeChanges; // #mish: used in TX exec finalization
+
+    // #mish: sets for storage rent (RSKIP113) checks and computations (only nodes that have some value) 
+    private Set<DataWord> newTrieNodes; //  storage rent to be charged for 6 months in advance when nodes are created
+    private Set<DataWord> accessedNodes; // check rent status for nodes accessed or modified, collect rent as per RSKIP113
 
     private Set<DataWord> deleteAccounts;
     private List<InternalTransaction> internalTransactions;
     private List<LogInfo> logInfoList;
-    private long futureRefund = 0;
+    private long futureRefund = 0;  // e.g. for contract suicide refund
+    private long futureRentGasRefund = 0; // #mish to keep track of storage rent refund on node deletion (caps not decided!) 
 
     /*
      * for testing runs ,
@@ -142,6 +147,38 @@ public class ProgramResult {
         getDeleteAccounts().addAll(accounts);
     }
 
+    // #mish tracking additions, updates and storage rent due status for trie ndoes
+    public Set<DataWord> getNewTrieNodes() {
+        if (newTrieNodes == null) {
+            newTrieNodes = new HashSet<>();
+        }
+        return newTrieNodes;
+    }
+
+    public void addNewTrieNode(DataWord nodeKey) {    //addr should 
+        getNewTrieNodes().add(nodeKey);
+    }
+
+    // add a set of new trie nodes
+    public void addNewTrieNodes(Set<DataWord> nodeKeys) {
+        getNewTrieNodes().addAll(nodeKeys);
+    }
+
+    public Set<DataWord> getAccessedNodes() {
+        if (accessedNodes == null) {
+            accessedNodes = new HashSet<>();
+        }
+        return accessedNodes;
+    }
+
+    public void addAccessedNode(DataWord nodeKey) {
+        getAccessedNodes().add(nodeKey);
+    }
+
+    public void addAccessedNodes(Set<DataWord> nodeKeys) {
+        getAccessedNodes().addAll(nodeKeys);
+    }
+
     public void clearFieldsOnException() {
         if (deleteAccounts!=null) {
             deleteAccounts.clear();
@@ -152,7 +189,15 @@ public class ProgramResult {
         if (codeChanges!=null) {
             codeChanges.clear();
         }
+        if (newTrieNodes!=null) {
+            newTrieNodes.clear();
+        }
+        if (accessedNodes!=null) {
+            accessedNodes.clear();
+        }
         resetFutureRefund();
+        resetFutureRentGasRefund();
+
     }
 
 
@@ -178,6 +223,13 @@ public class ProgramResult {
         return callCreateList;
     }
 
+    // #mish with storage rent 
+    // TODO: testing suite in program uses a version without rent
+    public void addCallCreate(byte[] data, byte[] destination, long gasLimit, byte[] value, long rentGasLimit) {
+        getCallCreateList().add(new CallCreate(data, destination, gasLimit, value, rentGasLimit));
+    }
+
+    // #mish without storage rent
     public void addCallCreate(byte[] data, byte[] destination, long gasLimit, byte[] value) {
         getCallCreateList().add(new CallCreate(data, destination, gasLimit, value));
     }
@@ -188,14 +240,23 @@ public class ProgramResult {
         }
         return internalTransactions;
     }
-
+    // #mish: this version does not have rentGasLimit in the list of arguments.. legacy, remove later, internally, gasLimit is used for rentGasLImit
     public InternalTransaction addInternalTransaction(byte[] parentHash, int deep, byte[] nonce, DataWord gasPrice, DataWord gasLimit,
                                                       byte[] senderAddress, byte[] receiveAddress, byte[] value, byte[] data, String note) {
         InternalTransaction transaction = new InternalTransaction(parentHash, deep, getInternalTransactions().size(),
-                                        nonce, gasPrice, gasLimit, senderAddress, receiveAddress, value, data, note);
+                                        nonce, gasPrice, gasLimit, gasLimit, senderAddress, receiveAddress, value, data, note); //gasLImit repeated, one is for storage rent
         getInternalTransactions().add(transaction);
         return transaction;
     }
+
+    // #mish: version with storag rentGasLimit in args
+    public InternalTransaction addInternalTransaction(byte[] parentHash, int deep, byte[] nonce, DataWord gasPrice, DataWord gasLimit,
+                                   DataWord rentGasLimit, byte[] senderAddress, byte[] receiveAddress, byte[] value, byte[] data, String note) {
+        InternalTransaction transaction = new InternalTransaction(parentHash, deep, getInternalTransactions().size(),
+                                        nonce, gasPrice, gasLimit, rentGasLimit, senderAddress, receiveAddress, value, data, note);
+        getInternalTransactions().add(transaction);
+        return transaction;
+    }    
 
     public void addInternalTransactions(List<InternalTransaction> internalTransactions) {
         getInternalTransactions().addAll(internalTransactions);
@@ -225,12 +286,27 @@ public class ProgramResult {
         futureRefund = 0;
     }
 
+    public void addFutureRentGasRefund(long rentGasValue) {
+        futureRentGasRefund += rentGasValue;
+    }
+
+    public long getFutureRentGasRefund() {
+        return futureRentGasRefund;
+    }
+
+    public void resetFutureRentGasRefund() {
+        futureRentGasRefund = 0;
+    }
+
     public void merge(ProgramResult another) {
         addInternalTransactions(another.getInternalTransactions());
         if (another.getException() == null && !another.isRevert()) {
             addDeleteAccounts(another.getDeleteAccounts());
+            addNewTrieNodes(another.getNewTrieNodes());
+            addAccessedNodes(another.getAccessedNodes());
             addLogInfos(another.getLogInfoList());
             addFutureRefund(another.getFutureRefund());
+            addFutureRentGasRefund(another.getFutureRentGasRefund());
         }
     }
     
