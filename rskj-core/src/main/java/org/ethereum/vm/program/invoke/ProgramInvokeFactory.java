@@ -41,4 +41,10 @@ public interface ProgramInvokeFactory {
                                       Coin balanceInt, byte[] dataIn,
                                       Repository repository, BlockStore blockStore,
                                       boolean isStaticCall, boolean byTestingSuite);
+    
+    ProgramInvoke createProgramInvoke(Program program, DataWord toAddress, DataWord callerAddress,
+                                      DataWord inValue, long inGas, long inRentGas,
+                                      Coin balanceInt, byte[] dataIn,
+                                      Repository repository, BlockStore blockStore,
+                                      boolean isStaticCall, boolean byTestingSuite);
 }

@@ -249,7 +249,7 @@ public class ProgramResult {
         return transaction;
     }
 
-    // #mish: version with storag rentGasLimit in args
+    // #mish: version with storage rentGasLimit in args
     public InternalTransaction addInternalTransaction(byte[] parentHash, int deep, byte[] nonce, DataWord gasPrice, DataWord gasLimit,
                                    DataWord rentGasLimit, byte[] senderAddress, byte[] receiveAddress, byte[] value, byte[] data, String note) {
         InternalTransaction transaction = new InternalTransaction(parentHash, deep, getInternalTransactions().size(),

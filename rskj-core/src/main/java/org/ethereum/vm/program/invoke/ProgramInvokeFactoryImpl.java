@@ -70,6 +70,9 @@ public class ProgramInvokeFactoryImpl implements ProgramInvokeFactory {
         /*** GAS op ***/
         byte[] gas = tx.getGasLimit();
 
+        /*** RENTGAS op ***/
+        byte[] rentGas = tx.getRentGasLimit();
+
         /***        CALLVALUE op      ***/
         Coin callValue = tx.getValue();
 
@@ -104,6 +107,7 @@ public class ProgramInvokeFactoryImpl implements ProgramInvokeFactory {
                             "balance={}\n" +
                             "gasPrice={}\n" +
                             "gas={}\n" +
+                            "rentGas={}\n" +
                             "callValue={}\n" +
                             "data={}\n" +
                             "lastHash={}\n" +
@@ -120,6 +124,7 @@ public class ProgramInvokeFactoryImpl implements ProgramInvokeFactory {
                     balance,
                     gasPrice,
                     new BigInteger(1, gas).longValue(),
+                    new BigInteger(1, rentGas).longValue(),
                     callValue,
                     Hex.toHexString(data),
                     Hex.toHexString(lastHash),
@@ -131,7 +136,7 @@ public class ProgramInvokeFactoryImpl implements ProgramInvokeFactory {
                     gaslimit);
         }
 
-        return new ProgramInvokeImpl(addr.getBytes(), origin, caller, balance.getBytes(), gasPrice.getBytes(), gas, callValue.getBytes(), data,
+        return new ProgramInvokeImpl(addr.getBytes(), origin, caller, balance.getBytes(), gasPrice.getBytes(), gas, rentGas, callValue.getBytes(), data,
                 lastHash, coinbase, timestamp, number, txindex,difficulty, gaslimit,
                 repository, blockStore);
     }
@@ -200,6 +205,76 @@ public class ProgramInvokeFactoryImpl implements ProgramInvokeFactory {
         }
 
         return new ProgramInvokeImpl(address, origin, caller, balance, gasPrice, agas, callValue,
+                data, lastHash, coinbase, timestamp, number, transactionIndex, difficulty, gasLimit,
+                repository, program.getCallDeep() + 1, blockStore,
+                isStaticCall, byTestingSuite);
+    }
+
+    // #mish: add new signature for version with rentgas
+    @Override
+    public ProgramInvoke createProgramInvoke(Program program, DataWord toAddress, DataWord callerAddress,
+                                             DataWord inValue,
+                                             long inGas, long inRentGas,
+                                             Coin balanceInt, byte[] dataIn,
+                                             Repository repository, BlockStore blockStore,
+                                             boolean isStaticCall, boolean byTestingSuite) {
+
+        DataWord address = toAddress;
+        DataWord origin = program.getOriginAddress();
+        DataWord caller = callerAddress;
+
+        DataWord balance = DataWord.valueOf(balanceInt.getBytes());
+        DataWord gasPrice = program.getGasPrice();
+        long agas = inGas;
+        long aRentGas = inRentGas; // internal transaction
+        DataWord callValue = inValue;
+
+        byte[] data = dataIn;
+        DataWord lastHash = program.getPrevHash();
+        DataWord coinbase = program.getCoinbase();
+        DataWord timestamp = program.getTimestamp();
+        DataWord number = program.getNumber();
+        DataWord transactionIndex = program.getTransactionIndex();
+        DataWord difficulty = program.getDifficulty();
+        DataWord gasLimit = program.getGasLimit();
+
+        if (logger.isInfoEnabled()) {
+            logger.info("Internal call: \n" +
+                            "address={}\n" +
+                            "origin={}\n" +
+                            "caller={}\n" +
+                            "balance={}\n" +
+                            "gasPrice={}\n" +
+                            "gas={}\n" +
+                            "rentGas={}\n" +
+                            "callValue={}\n" +
+                            "data={}\n" +
+                            "lastHash={}\n" +
+                            "coinbase={}\n" +
+                            "timestamp={}\n" +
+                            "blockNumber={}\n" +
+                            "transactionIndex={}\n" +
+                            "difficulty={}\n" +
+                            "gaslimit={}\n",
+                    Hex.toHexString(address.getLast20Bytes()),
+                    Hex.toHexString(origin.getLast20Bytes()),
+                    Hex.toHexString(caller.getLast20Bytes()),
+                    balance.toString(),
+                    gasPrice.longValue(),
+                    agas,
+                    aRentGas,
+                    Hex.toHexString(callValue.getNoLeadZeroesData()),
+                    data == null ? "" : Hex.toHexString(data),
+                    Hex.toHexString(lastHash.getData()),
+                    Hex.toHexString(coinbase.getLast20Bytes()),
+                    timestamp.longValue(),
+                    number.longValue(),
+                    transactionIndex.intValue(),
+                    Hex.toHexString(difficulty.getNoLeadZeroesData()),
+                    gasLimit.bigIntValue());
+        }
+
+        return new ProgramInvokeImpl(address, origin, caller, balance, gasPrice, agas, aRentGas, callValue,
                 data, lastHash, coinbase, timestamp, number, transactionIndex, difficulty, gasLimit,
                 repository, program.getCallDeep() + 1, blockStore,
                 isStaticCall, byTestingSuite);

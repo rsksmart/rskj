@@ -101,7 +101,7 @@ public class GasCost {
 
     public static final long MAX_GAS = Long.MAX_VALUE;
 
-    public static final long STORAGE_RENT_DIVISOR = 1<<21; // RSKIP113: storage rent is 1/(2^21) gas units per byte per second
+    public static final long STORAGE_RENT_DIVISOR = (1<<21); // RSKIP113: storage rent is 1/(2^21) gas units per byte per second
     // 6 months advance rent payment for new trie nodes. About 1186 gas for 32 bytes (+ 128 bytes overhead) 
     public static final long sixMonths = 6 * 30 * 24 *3600L;
     /**
