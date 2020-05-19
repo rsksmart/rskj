@@ -835,8 +835,8 @@ public class RskContext implements NodeBootstrapper {
                 getRskSystemProperties().flushNumberOfBlocks(),
                 getCompositeEthereumListener(),
                 getTrieStore(),
-                getBlockStore()
-        ));
+                getBlockStore(),
+                getReceiptStore()));
         GarbageCollectorConfig gcConfig = getRskSystemProperties().garbageCollectorConfig();
         if (gcConfig.enabled()) {
             internalServices.add(new GarbageCollector(
@@ -928,7 +928,13 @@ public class RskContext implements NodeBootstrapper {
     }
 
     protected ReceiptStore buildReceiptStore() {
+        int receiptsCacheSize = getRskSystemProperties().getReceiptsCacheSize();
         KeyValueDataSource ds = LevelDbDataSource.makeDataSource(Paths.get(getRskSystemProperties().databaseDir(), "receipts"));
+
+        if (receiptsCacheSize != 0) {
+            ds = new DataSourceWithCache(ds, receiptsCacheSize);
+        }
+
         return new ReceiptStoreImpl(ds);
     }
 
