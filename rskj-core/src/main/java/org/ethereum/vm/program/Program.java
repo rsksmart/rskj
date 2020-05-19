@@ -210,7 +210,7 @@ public class Program {
                 note);
     }
 
-    // #mish versopm with storage rentgaslimit in arglist
+    // #mish version with storage rentgaslimit in arglist
     private InternalTransaction addInternalTx(byte[] nonce, DataWord gasLimit, DataWord rentGasLimit, RskAddress senderAddress, RskAddress receiveAddress,
                                               Coin value, byte[] data, String note) {
         if (transaction == null) {
@@ -503,12 +503,17 @@ public class Program {
         long gasLimit = getRemainingGas();
         spendGas(gasLimit, "internal call");
 
-        // #mish TODO: include rentgaslimit
+        // #mish  rentgaslimit get Remaining for internal call
+        long rentGasLimit = getRemainingRentGas();
+        spendRentGas(rentGasLimit, "internal call");
+
+
         if (byTestingSuite()) {
             // This keeps track of the contracts created for a test
             getResult().addCallCreate(programCode, EMPTY_BYTE_ARRAY,
                     gasLimit,
-                    value.getNoLeadZeroesData());
+                    value.getNoLeadZeroesData(),
+                    rentGasLimit);
         }
 
         // [3] UPDATE THE NONCE
@@ -735,7 +740,7 @@ public class Program {
      * - Normal calls invoke a specified contract which updates itself
      * - Stateless calls invoke code from another contract, within the context of the caller
      *
-     * @param msg is the message call object
+     * @param msg is the message call object // from org.eth.vm.MessageCall
      */
     public void callToAddress(MessageCall msg) {
 
@@ -842,7 +847,8 @@ public class Program {
                 this, DataWord.valueOf(contextAddress.getBytes()),
                 msg.getType() == MsgType.DELEGATECALL ? getCallerAddress() : getOwnerAddress(),
                 msg.getType() == MsgType.DELEGATECALL ? getCallValue() : msg.getEndowment(),
-                limitToMaxLong(msg.getGas()), contextBalance, data, track, this.invoke.getBlockStore(),
+                limitToMaxLong(msg.getGas()), limitToMaxLong(msg.getRentGas()), 
+                contextBalance, data, track, this.invoke.getBlockStore(),
                 msg.getType() == MsgType.STATICCALL || isStaticCall(), byTestingSuite());
 
         VM vm = new VM(config, precompiledContracts);
@@ -862,7 +868,7 @@ public class Program {
             if (isGasLogEnabled) {
                 gasLogger.debug("contract run halted by Exception: contract: [{}], exception: ",
                         contextAddress,
-                        childResult .getException());
+                        childResult.getException());
             }
 
             internalTx.reject();
@@ -872,7 +878,9 @@ public class Program {
             track.rollback();
             // when there's an exception we skip applying results and refunding gas,
             // and we only do that when the call is successful or there's a REVERT operation.
-            if (childResult.getException() != null) {
+            // #mish todo: if there is an exception some rentgas should be refunded?
+            // Partial refund of rentgas depends on the exception type of childResult.getException()  
+            if (childResult.getException() != null) {    
                 return false;
             }
 
@@ -892,7 +900,7 @@ public class Program {
 
         returnDataBuffer = buffer;
 
-        // 5. REFUND THE REMAIN GAS
+        // 5.1 REFUND THE REMAIN GAS
         BigInteger refundGas = msg.getGas().value().subtract(toBI(childResult.getGasUsed()));
         if (isPositive(refundGas)) {
             // Since the original gas transferred was < Long.MAX_VALUE then the refund
@@ -906,6 +914,18 @@ public class Program {
                 gasLogger.info("The remaining gas refunded, account: [{}], gas: [{}] ", senderAddress, refundGas);
             }
         }
+
+        // 5.2 REFUND REMIAINING STORAGE RENT GAS
+        BigInteger refundRentGas = msg.getRentGas().value().subtract(toBI(childResult.getRentGasUsed()));
+        if (isPositive(refundRentGas)) {
+            // Since the original gas transferred was < Long.MAX_VALUE then the refund
+            // also fits in a long.
+            refundRentGas(refundRentGas.longValue(), "remaining rent gas from the internal call");
+            if (isRentGasLogEnabled) {
+                rentGasLogger.info("The remaining gas refunded, account: [{}], gas: [{}] ", senderAddress, refundRentGas);
+            }
+        }
+
         return childCallSuccessful;
     }
 
@@ -921,10 +941,23 @@ public class Program {
         getResult().spendGas(gasValue);
     }
 
+    public void spendRentGas(long rentGasValue, String cause) {
+        if (isRentGasLogEnabled) {
+            rentGasLogger.info("[{}] Spent for cause: [{}], rentgas: [{}]", invoke.hashCode(), cause, rentGasValue);
+        }
+
+        if (getRemainingRentGas()  < rentGasValue) {
+            throw ExceptionHelper.notEnoughSpendingGas(cause, rentGasValue, this);
+        }
+
+        getResult().spendRentGas(rentGasValue);
+    }
+
     public void restart() {
         setPC(startAddr);
         stackClear();
         clearUsedGas();
+        clearUsedRentGas();
         stopped=false;
     }
 
@@ -932,8 +965,16 @@ public class Program {
         getResult().clearUsedGas();
     }
 
+    private void clearUsedRentGas() {
+        getResult().clearUsedRentGas();
+    }
+
     public void spendAllGas() {
         spendGas(getRemainingGas(), "Spending all remaining");
+    }
+
+    public void spendAllRentGas() {
+        spendRentGas(getRemainingRentGas(), "Spending all remaining rentgas");
     }
 
     private void refundGas(long gasValue, String cause) {
@@ -943,15 +984,33 @@ public class Program {
         getResult().refundGas(gasValue);
     }
 
+    private void refundRentGas(long rentGasValue, String cause) {
+        if (isRentGasLogEnabled) {
+            rentGasLogger.info("[{}] Refund for cause: [{}], rent gas: [{}]", invoke.hashCode(), cause, rentGasValue);
+        }
+        getResult().refundGas(rentGasValue);
+    }
+
     public void futureRefundGas(long gasValue) {
-        if (isLogEnabled) {
-            logger.info("Future refund added: [{}]", gasValue);
+        if (isLogEnabled) { // #mish: should this be isGasLogEnabled?
+            logger.info("Future refund added: [{}]", gasValue); // and gaslogger.info instead ?
         }
         getResult().addFutureRefund(gasValue);
     }
 
+    public void futureRentGasRefund(long rentGasValue) {
+        if (isRentGasLogEnabled) { // #mish: should this be isGasLogEnabled?
+            rentGasLogger.info("Future refund added: [{}]", rentGasValue);
+        }
+        getResult().addFutureRentGasRefund(rentGasValue);
+    }
+
     public void resetFutureRefund() {
         getResult().resetFutureRefund();
+    }
+
+    public void resetFutureRentGasRefund() {
+        getResult().resetFutureRentGasRefund();
     }
 
     public void storageSave(DataWord word1, DataWord word2) {
@@ -1040,6 +1099,10 @@ public class Program {
 
     public long getRemainingGas() {
         return invoke.getGas()- getResult().getGasUsed();
+    }
+
+    public long getRemainingRentGas() {
+        return invoke.getRentGas()- getResult().getRentGasUsed();
     }
 
     public DataWord getCallValue() {
@@ -1453,6 +1516,15 @@ public class Program {
             super(format(message, args));
         }
     }
+    
+    // #mish to be explicit about exceptions rising from rent gas
+    @SuppressWarnings("serial")
+    public static class OutOfRentGasException extends RuntimeException {
+
+        public OutOfRentGasException(String message, Object... args) {
+            super(format(message, args));
+        }
+    }
 
     @SuppressWarnings("serial")
     public static class IllegalOperationException extends RuntimeException {
@@ -1477,8 +1549,6 @@ public class Program {
             super(format(message, args));
         }
     }
-
-    @SuppressWarnings("serial")
     public static class StaticCallModificationException extends RuntimeException {
         public StaticCallModificationException() {
             super("Attempt to call a state modifying opcode inside STATICCALL");
@@ -1521,6 +1591,11 @@ public class Program {
         }
         public static OutOfGasException gasOverflow(long actualGas, BigInteger gasLimit) {
             return new OutOfGasException("Gas value overflow: actualGas[%d], gasLimit[%d];", actualGas, gasLimit.longValue());
+        }
+        
+        public static OutOfRentGasException notEnoughRentGas(String cause, long rentGasValue, Program program) {
+            return new OutOfRentGasException("Not enough rent gas for '%s' cause spending: invokeGas[%d], rentGas[%d], usedRentGas[%d];",
+                    cause, program.invoke.getRentGas(), rentGasValue, program.getResult().getRentGasUsed());
         }
         public static IllegalOperationException invalidOpCode(byte... opCode) {
             return new IllegalOperationException("Invalid operation code: opcode[%s];", Hex.toHexString(opCode, 0, 1));

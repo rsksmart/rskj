@@ -150,13 +150,13 @@ public class TrieRentTest {
     public void computeRentGas() {
         Trie trie = new Trie();
         trie = trie.putLastRentPaidTime("foo".getBytes(), "must pay rent or hibernate dodo!".getBytes(), 40000);
-        System.out.println("Rent due for time (in seconds, negative for advance) " + trie.getRentPaidTimeDelta());
+        System.out.println("Rent due for time in seconds (negative for advance) " + trie.getRentPaidTimeDelta());
         System.out.println("Value length (in bytes) " + trie.getValueLength());
         //System.out.println("Rent Due (in gas)  " + GasCost.calculateStorageRent(trie.getValueLength(),trie.getRentPaidTimeDelta()));
 
-        long sixMonths = 6 * 30 * 24 *3600L;
+        //long sixMonths = 6 * 30 * 24 *3600L;
         // rent due for 6 months = (32 bytes + 128 bytes overhead)  * 6*30*24*3600 seconds / (2^21) 
-        Assert.assertEquals(1186, GasCost.calculateStorageRent(trie.getValueLength(), sixMonths));    
+        Assert.assertEquals(1186, GasCost.calculateStorageRent(trie.getValueLength(), GasCost.SIX_MONTHS));    
     }
 
 

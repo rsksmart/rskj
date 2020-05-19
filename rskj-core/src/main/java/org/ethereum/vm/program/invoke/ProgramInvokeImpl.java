@@ -198,7 +198,7 @@ public class ProgramInvokeImpl implements ProgramInvoke {
         this.blockStore = blockStore;
     }
 
-        // #mish: Constructor C1A:  similar to C1 but also has rentGas in arglist
+    // #mish: Constructor C1A:  similar to C1 but also has rentGas in arglist
     public ProgramInvokeImpl(byte[] address, byte[] origin, byte[] caller, byte[] balance,
                              byte[] gasPrice, byte[] gas, byte[] rentGas, byte[] callValue, byte[] msgData,
                              byte[] lastHash, byte[] coinbase, long timestamp, long number, int transactionIndex, byte[] difficulty,
