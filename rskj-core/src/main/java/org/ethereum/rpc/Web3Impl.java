@@ -772,6 +772,11 @@ public class Web3Impl implements Web3 {
     }
 
     @Override
+    public Map<String, CompilationResultDTO> eth_compileSolidity(String contract) {
+        throw new UnsupportedOperationException("Solidity compiler not supported");
+    }
+
+    @Override
     public String eth_newFilter(FilterRequest fr) throws Exception {
         String str = null;
 

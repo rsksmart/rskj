@@ -41,6 +41,22 @@ public class BlocksBloomTest {
     }
 
     @Test
+    public void addBlockZeroToBlocksBloom() {
+        BlocksBloom blocksBloom = new BlocksBloom();
+        byte[] bytes = new byte[Bloom.BLOOM_BYTES];
+        bytes[0] = 0x01;
+        Bloom bloom = new Bloom(bytes);
+
+        blocksBloom.addBlockBloom(0, bloom);
+
+        Assert.assertEquals(1, blocksBloom.size());
+        Assert.assertEquals(0, blocksBloom.fromBlock());
+        Assert.assertEquals(0, blocksBloom.toBlock());
+
+        Assert.assertArrayEquals(bytes, blocksBloom.getBloom().getData());
+    }
+
+    @Test
     public void addTwoBlocksToBlocksBloom() {
         BlocksBloom blocksBloom = new BlocksBloom();
         byte[] bytes1 = new byte[Bloom.BLOOM_BYTES];

@@ -41,6 +41,7 @@ import org.ethereum.core.*;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
+import org.ethereum.db.TransactionInfo;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 
@@ -60,6 +61,7 @@ public class World {
     private StateRootHandler stateRootHandler;
     private BlockStore blockStore;
     private TrieStore trieStore;
+    private ReceiptStore receiptStore;
     private Repository repository;
     private TransactionPool transactionPool;
     private BridgeSupportFactory bridgeSupportFactory;
@@ -75,18 +77,20 @@ public class World {
     }
 
     private World(BlockChainBuilder blockChainBuilder) {
-        this(blockChainBuilder.build(), blockChainBuilder.getBlockStore(), blockChainBuilder.getTrieStore(), blockChainBuilder.getRepository(), blockChainBuilder.getTransactionPool(), null);
+        this(blockChainBuilder.build(), blockChainBuilder.getBlockStore(), blockChainBuilder.getReceiptStore(), blockChainBuilder.getTrieStore(), blockChainBuilder.getRepository(), blockChainBuilder.getTransactionPool(), null);
     }
 
     public World(
             BlockChainImpl blockChain,
             BlockStore blockStore,
+            ReceiptStore receiptStore,
             TrieStore trieStore,
             Repository repository,
             TransactionPool transactionPool,
             Genesis genesis) {
         this.blockChain = blockChain;
         this.blockStore = blockStore;
+        this.receiptStore = receiptStore;
         this.trieStore = trieStore;
         this.repository = repository;
         this.transactionPool = transactionPool;
@@ -175,6 +179,18 @@ public class World {
     public void saveAccount(String name, Account account) { accounts.put(name, account); }
 
     public Transaction getTransactionByName(String name) { return transactions.get(name); }
+
+    public TransactionReceipt getTransactionReceiptByName(String name) {
+        Transaction transaction = this.getTransactionByName(name);
+
+        TransactionInfo transactionInfo = this.receiptStore.get(transaction.getHash().getBytes());
+
+        TransactionReceipt transactionReceipt = transactionInfo.getReceipt();
+
+        transactionReceipt.setTransaction(transaction);
+
+        return transactionReceipt;
+    }
 
     public void saveTransaction(String name, Transaction transaction) { transactions.put(name, transaction); }
 
