@@ -26,6 +26,7 @@ import co.rsk.core.bc.BlockHashesHelper;
 import co.rsk.crypto.Keccak256;
 import co.rsk.panic.PanicProcessor;
 import org.bouncycastle.util.Arrays;
+import com.google.common.collect.ImmutableList;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.util.RLP;
@@ -82,8 +83,8 @@ public class Block {
         }
 
         this.header = header;
-        this.transactionsList = Collections.unmodifiableList(transactionsList);
-        this.uncleList = Collections.unmodifiableList(uncleList);
+        this.transactionsList = ImmutableList.copyOf(transactionsList);
+        this.uncleList = ImmutableList.copyOf(uncleList);
         this.sealed = sealed;
     }
 

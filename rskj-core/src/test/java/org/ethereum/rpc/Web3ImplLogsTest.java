@@ -32,7 +32,6 @@ import co.rsk.rpc.Web3RskImpl;
 import co.rsk.rpc.modules.debug.DebugModule;
 import co.rsk.rpc.modules.debug.DebugModuleImpl;
 import co.rsk.rpc.modules.eth.EthModule;
-import co.rsk.rpc.modules.eth.EthModuleSolidityDisabled;
 import co.rsk.rpc.modules.eth.EthModuleWalletEnabled;
 import co.rsk.rpc.modules.personal.PersonalModule;
 import co.rsk.rpc.modules.personal.PersonalModuleWalletEnabled;
@@ -349,6 +348,7 @@ public class Web3ImplLogsTest {
 
         Web3.FilterRequest fr = new Web3.FilterRequest();
         fr.fromBlock = "earliest";
+        fr.toBlock = "latest";
         Object[] logs = web3.eth_getLogs(fr);
 
         Assert.assertNotNull(logs);
@@ -1002,7 +1002,7 @@ public class Web3ImplLogsTest {
         EthModule ethModule = new EthModule(
                 config.getNetworkConstants().getBridgeConstants(), config.getNetworkConstants().getChainId(), blockChain, transactionPool,
                 null, new ExecutionBlockRetriever(mainchainView, blockChain, null, null),
-                null, new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(wallet), null,
+                null, new EthModuleWalletEnabled(wallet), null,
                 new BridgeSupportFactory(
                         null, config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig())
         );
@@ -1031,7 +1031,7 @@ public class Web3ImplLogsTest {
                 null,
                 new SimpleConfigCapabilities(),
                 null,
-                new BlocksBloomStore(2, 0),
+                new BlocksBloomStore(2, 0, null),
                 mock(Web3InformationRetriever.class));
     }
 

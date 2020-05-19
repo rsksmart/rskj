@@ -1480,17 +1480,23 @@ public class VM {
         DataWord gas = program.stackPop();
         DataWord codeAddress = program.stackPop();
 
-        DataWord value;
-
         ActivationConfig.ForBlock activations = program.getActivations();
 
-        if (activations.isActive(RSKIP103)) {
-            // value is always zero in a DELEGATECALL or STATICCALL operation
-            value = op == OpCode.DELEGATECALL || op == OpCode.STATICCALL ? DataWord.ZERO : program.stackPop();
+        MessageCall msg = getMessageCall(gas, codeAddress, activations);
+
+        PrecompiledContracts.PrecompiledContract contract = precompiledContracts.getContractForAddress(activations, codeAddress);
+
+        if (contract != null) {
+            program.callToPrecompiledAddress(msg, contract);
         } else {
-            // value is always zero in a DELEGATECALL operation
-            value = op == OpCode.DELEGATECALL ? DataWord.ZERO : program.stackPop();
+            program.callToAddress(msg);
         }
+
+        program.step();
+    }
+
+    private MessageCall getMessageCall(DataWord gas, DataWord codeAddress, ActivationConfig.ForBlock activations) {
+        DataWord value = calculateCallValue(activations);
 
         if (program.isStaticCall() && op == CALL && !value.isZero()) {
             throw Program.ExceptionHelper.modificationException();
@@ -1513,17 +1519,7 @@ public class VM {
             throw Program.ExceptionHelper.gasOverflow(BigInteger.valueOf(program.getRemainingGas()), BigInteger.valueOf(requiredGas));
         }
         long remainingGas = GasCost.subtract(program.getRemainingGas(), requiredGas);
-
-        // We give the callee a basic stipend whenever we transfer value,
-        // basically to avoid problems when invoking a contract's default function.
-        long minimumTransferGas = 0;
-        if (!value.isZero()) {
-
-            minimumTransferGas = GasCost.add(minimumTransferGas, GasCost.STIPEND_CALL);
-            if (remainingGas < minimumTransferGas) {
-                throw Program.ExceptionHelper.notEnoughSpendingGas(op.name(), minimumTransferGas, program);
-            }
-        }
+        long minimumTransferGas = calculateGetMinimumTransferGas(value, remainingGas);
 
         long userSpecifiedGas = Program.limitToMaxLong(gas);
         long specifiedGasPlusMin = activations.isActive(RSKIP150) ?
@@ -1553,25 +1549,38 @@ public class VM {
 
         program.memoryExpand(outDataOffs, outDataSize);
 
-        MessageCall msg = new MessageCall(
+        return new MessageCall(
                 MsgType.fromOpcode(op),
                 DataWord.valueOf(calleeGas), codeAddress, value, inDataOffs, inDataSize,
                 outDataOffs, outDataSize);
-
-        callToAddress(codeAddress, msg);
-
-        program.step();
     }
 
-    private void callToAddress(DataWord codeAddress, MessageCall msg) {
-        ActivationConfig.ForBlock activations = program.getActivations();
-        PrecompiledContracts.PrecompiledContract contract = precompiledContracts.getContractForAddress(activations, codeAddress);
-
-        if (contract != null) {
-            program.callToPrecompiledAddress(msg, contract);
+    private DataWord calculateCallValue(ActivationConfig.ForBlock activations) {
+        DataWord value;
+        if (activations.isActive(RSKIP103)) {
+            // value is always zero in a DELEGATECALL or STATICCALL operation
+            value = op == OpCode.DELEGATECALL || op == OpCode.STATICCALL ? DataWord.ZERO : program.stackPop();
         } else {
-            program.callToAddress(msg);
+            // value is always zero in a DELEGATECALL operation
+            value = op == OpCode.DELEGATECALL ? DataWord.ZERO : program.stackPop();
         }
+        return value;
+    }
+
+    private long calculateGetMinimumTransferGas(DataWord value, long remainingGas) {
+        // We give the callee a basic stipend whenever we transfer value,
+        // basically to avoid problems when invoking a contract's default function.
+        long minimumTransferGas = 0;
+
+        if (!value.isZero()) {
+
+            minimumTransferGas = GasCost.add(minimumTransferGas, GasCost.STIPEND_CALL);
+            if (remainingGas < minimumTransferGas) {
+                throw Program.ExceptionHelper.notEnoughSpendingGas(op.name(), minimumTransferGas, program);
+            }
+        }
+
+        return minimumTransferGas;
     }
 
     private long computeCallGas(DataWord codeAddress,

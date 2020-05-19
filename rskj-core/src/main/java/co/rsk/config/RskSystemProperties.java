@@ -330,6 +330,10 @@ public class RskSystemProperties extends SystemProperties {
         return configFromFiles.getInt("cache.states.max-elements");
     }
 
+    public int getReceiptsCacheSize() {
+        return configFromFiles.getInt("cache.receipts.max-elements");
+    }
+
     public long getVmExecutionStackSize() {
         return configFromFiles.getBytes("vm.executionStackSize");
     }

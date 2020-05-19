@@ -51,6 +51,8 @@ public class BlockParentCompositeRule implements BlockParentDependantValidationR
         long number = block.getNumber();
         logger.debug("Validating block {} {}", shortHash, number);
         for(BlockParentDependantValidationRule rule : this.rules) {
+            logger.debug("Validation rule {}", rule.getClass().getSimpleName());
+
             if(!rule.isValid(block, parent)) {
                 logger.warn("Error Validating block {} {}", shortHash, number);
                 return false;

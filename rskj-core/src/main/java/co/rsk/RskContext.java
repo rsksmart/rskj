@@ -194,7 +194,6 @@ public class RskContext implements NodeBootstrapper {
     private PeerServer peerServer;
     private PersonalModule personalModule;
     private EthModuleWallet ethModuleWallet;
-    private EthModuleSolidity ethModuleSolidity;
     private EthModuleTransaction ethModuleTransaction;
     private MinerClient minerClient;
     private SyncConfiguration syncConfiguration;
@@ -225,8 +224,8 @@ public class RskContext implements NodeBootstrapper {
     private NodeManager nodeManager;
     private StaticMessages staticMessages;
     private MinerServer minerServer;
-    private SolidityCompiler solidityCompiler;
     private BlocksBloomStore blocksBloomStore;
+    private KeyValueDataSource blocksBloomDataSource;
     private BlockExecutor blockExecutor;
     private BtcBlockStoreWithCache.Factory btcBlockStoreFactory;
     private PrecompiledContracts precompiledContracts;
@@ -566,7 +565,6 @@ public class RskContext implements NodeBootstrapper {
                     getReversibleTransactionExecutor(),
                     getExecutionBlockRetriever(),
                     getRepositoryLocator(),
-                    getEthModuleSolidity(),
                     getEthModuleWallet(),
                     getEthModuleTransaction(),
                     getBridgeSupportFactory()
@@ -772,10 +770,22 @@ public class RskContext implements NodeBootstrapper {
 
     public BlocksBloomStore getBlocksBloomStore() {
         if (blocksBloomStore == null) {
-            blocksBloomStore = new BlocksBloomStore(64, 20);
+            blocksBloomStore = new BlocksBloomStore(64, 20, getBlocksBloomDataSource());
         }
 
         return blocksBloomStore;
+    }
+
+    private KeyValueDataSource getBlocksBloomDataSource() {
+        if (this.blocksBloomDataSource == null) {
+            this.blocksBloomDataSource = this.buildBlocksBloomDataSource();
+        }
+
+        return this.blocksBloomDataSource;
+    }
+
+    protected KeyValueDataSource buildBlocksBloomDataSource() {
+        return LevelDbDataSource.makeDataSource(Paths.get(getRskSystemProperties().databaseDir(), "blooms"));
     }
 
     protected NodeRunner buildNodeRunner() {
@@ -825,8 +835,8 @@ public class RskContext implements NodeBootstrapper {
                 getRskSystemProperties().flushNumberOfBlocks(),
                 getCompositeEthereumListener(),
                 getTrieStore(),
-                getBlockStore()
-        ));
+                getBlockStore(),
+                getReceiptStore()));
         GarbageCollectorConfig gcConfig = getRskSystemProperties().garbageCollectorConfig();
         if (gcConfig.enabled()) {
             internalServices.add(new GarbageCollector(
@@ -918,7 +928,13 @@ public class RskContext implements NodeBootstrapper {
     }
 
     protected ReceiptStore buildReceiptStore() {
+        int receiptsCacheSize = getRskSystemProperties().getReceiptsCacheSize();
         KeyValueDataSource ds = LevelDbDataSource.makeDataSource(Paths.get(getRskSystemProperties().databaseDir(), "receipts"));
+
+        if (receiptsCacheSize != 0) {
+            ds = new DataSourceWithCache(ds, receiptsCacheSize);
+        }
+
         return new ReceiptStoreImpl(ds);
     }
 
@@ -1353,27 +1369,6 @@ public class RskContext implements NodeBootstrapper {
         }
 
         return ethModuleWallet;
-    }
-
-    private EthModuleSolidity getEthModuleSolidity() {
-        if (ethModuleSolidity == null) {
-            try {
-                ethModuleSolidity = new EthModuleSolidityEnabled(getSolidityCompiler());
-            } catch (RuntimeException e) {
-                logger.trace("Can't find find Solidity compiler, disabling Solidity support in Web3", e);
-                ethModuleSolidity = new EthModuleSolidityDisabled();
-            }
-        }
-
-        return ethModuleSolidity;
-    }
-
-    private SolidityCompiler getSolidityCompiler() {
-        if (solidityCompiler == null) {
-            solidityCompiler = buildSolidityCompiler();
-        }
-
-        return solidityCompiler;
     }
 
     private EthModuleTransaction getEthModuleTransaction() {
