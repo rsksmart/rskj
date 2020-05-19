@@ -184,7 +184,7 @@ public class CliToolsTest {
         BufferedReader reader = new BufferedReader(new StringReader(stringBuilder.toString()));
 
         ConnectBlocks.execute(
-                new BlockFactory(ActivationConfigsForTest.allBut(ConsensusRule.RSKIPUMM)),
+                new BlockFactory(ActivationConfigsForTest.all()),
                 blockchain,
                 world.getTrieStore(),
                 world.getBlockStore(),
@@ -226,7 +226,7 @@ public class CliToolsTest {
         BufferedReader reader = new BufferedReader(new StringReader(stringBuilder.toString()));
 
         ImportBlocks.execute(
-                new BlockFactory(ActivationConfigsForTest.allBut(ConsensusRule.RSKIPUMM)),
+                new BlockFactory(ActivationConfigsForTest.all()),
                 world.getBlockStore(),
                 reader);
 
