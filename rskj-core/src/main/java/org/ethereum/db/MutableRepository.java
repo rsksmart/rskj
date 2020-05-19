@@ -378,7 +378,7 @@ public class MutableRepository implements Repository {
     // update with lastRentPaidTime. This is an extension of updateAccountState(addr, State)
     public synchronized void updateAccountStateLRPTime(RskAddress addr, final AccountState accountState, final long newlastRentPaidTime) {
         byte[] accountKey = trieKeyMapper.getAccountKey(addr);
-        mutableTrie.putLastRentPaidTime(accountKey, accountState.getEncoded(), newlastRentPaidTime);
+        mutableTrie.putWithRent(accountKey, accountState.getEncoded(), newlastRentPaidTime);
     }
     
     // storage rent for contract code

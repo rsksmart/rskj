@@ -74,7 +74,7 @@ public class TrieRentTest {
         Assert.assertNotNull(trie1.get("foo"));
         Assert.assertArrayEquals("bar".getBytes(), trie1.get("foo".getBytes()));
 
-        Trie trie2 = trie1.putLastRentPaidTime("foo".getBytes(), "zip".getBytes(), 1000_000); 
+        Trie trie2 = trie1.putWithRent("foo".getBytes(), "zip".getBytes(), 1000_000); 
         Assert.assertNotNull(trie2.get("foo"));
         Assert.assertArrayEquals("zip".getBytes(), trie2.get("foo".getBytes()));
         System.out.println("Rent fully paid until time Trie 2: "+ trie2.getLastRentPaidTime());
@@ -89,7 +89,7 @@ public class TrieRentTest {
                         " value:  " + new String(trie.get("foo".getBytes())) );
          //System.out.println(new String("bar".getBytes()));
         //add same key with rent update
-        trie = trie.putLastRentPaidTime("foo".getBytes(), "zip".getBytes(), 1000_000); 
+        trie = trie.putWithRent("foo".getBytes(), "zip".getBytes(), 1000_000); 
         System.out.println("Rent fully paid until time (same key with rentupdate): " + trie.getLastRentPaidTime() +
                         " value:  " + new String( trie.get("foo".getBytes())));
           
@@ -101,11 +101,11 @@ public class TrieRentTest {
 
     }
     
-    // similar to above, but now the first put contains rent info.. so uses putLastRentPaidTime() first, instead of put()
+    // similar to above, but now the first put contains rent info.. so uses putWithRent() first, instead of put()
     @Test
     public void putLRPTAndGetKeyValueSameKey() {
         Trie trie = new Trie();
-        trie = trie.putLastRentPaidTime("foo".getBytes(), "zip".getBytes(), 1000_000); 
+        trie = trie.putWithRent("foo".getBytes(), "zip".getBytes(), 1000_000); 
         System.out.println("Rent fully paid until time (same key with rentupdate): " + trie.getLastRentPaidTime() +
                         " value:  " + new String( trie.get("foo".getBytes())));
           
@@ -125,12 +125,12 @@ public class TrieRentTest {
         //order of trie puts() does not matter for getNodes()
         trie = trie.put("foo".getBytes(), "abc".getBytes()); // "foo": main key of interest
 
-        trie = trie.putLastRentPaidTime("fo".getBytes(), "longSubKeyVal".getBytes(), 4000); //a longer subkey
-        trie = trie.putLastRentPaidTime("fo".getBytes(), "longSubKeyVal".getBytes(), 3000); // value unchanged, rent changed
-        //trie = trie.putLastRentPaidTime("fo".getBytes(), "newlongSubKeyVal".getBytes(), 3000); //value and changed, rent unchanged 
+        trie = trie.putWithRent("fo".getBytes(), "longSubKeyVal".getBytes(), 4000); //a longer subkey
+        trie = trie.putWithRent("fo".getBytes(), "longSubKeyVal".getBytes(), 3000); // value unchanged, rent changed
+        //trie = trie.putWithRent("fo".getBytes(), "newlongSubKeyVal".getBytes(), 3000); //value and changed, rent unchanged 
         
-        trie = trie.putLastRentPaidTime("f".getBytes(), "shortSubKeyVal".getBytes(), 100); //short subkey "f", even empty "" works
-        trie = trie.putLastRentPaidTime("f".getBytes(), "newshortSubKeyVal".getBytes(), 200); //value and rent both changed
+        trie = trie.putWithRent("f".getBytes(), "shortSubKeyVal".getBytes(), 100); //short subkey "f", even empty "" works
+        trie = trie.putWithRent("f".getBytes(), "newshortSubKeyVal".getBytes(), 200); //value and rent both changed
         //regular put, this will not alter last rent paid time
         trie = trie.put("f".getBytes(), "newInfo".getBytes()); //value changed, but this should not change last rent paid time
         
@@ -149,7 +149,7 @@ public class TrieRentTest {
     @Test
     public void computeRentGas() {
         Trie trie = new Trie();
-        trie = trie.putLastRentPaidTime("foo".getBytes(), "must pay rent or hibernate dodo!".getBytes(), 40000);
+        trie = trie.putWithRent("foo".getBytes(), "must pay rent or hibernate dodo!".getBytes(), 40000);
         System.out.println("Rent due for time in seconds (negative for advance) " + trie.getRentPaidTimeDelta());
         System.out.println("Value length (in bytes) " + trie.getValueLength());
         //System.out.println("Rent Due (in gas)  " + GasCost.calculateStorageRent(trie.getValueLength(),trie.getRentPaidTimeDelta()));

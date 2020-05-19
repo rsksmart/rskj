@@ -69,17 +69,17 @@ public class MutableTrieImpl implements MutableTrie {
     }
 
     @Override
-    public void putLastRentPaidTime(byte[] key, byte[] value, long newLastRentPaidTime) {
-        trie = trie.putLastRentPaidTime(key, value, newLastRentPaidTime);
+    public void putWithRent(byte[] key, byte[] value, long newLastRentPaidTime) {
+        trie = trie.putWithRent(key, value, newLastRentPaidTime);
     }
 
-    public void putLastRentPaidTime(ByteArrayWrapper key, byte[] value, long newLastRentPaidTime) {
-        trie = trie.putLastRentPaidTime(key.getData(), value, newLastRentPaidTime);
+    public void putWithRent(ByteArrayWrapper key, byte[] value, long newLastRentPaidTime) {
+        trie = trie.putWithRent(key.getData(), value, newLastRentPaidTime);
     }
 
-    public void putLastRentPaidTime(String key, byte[] value, long newLastRentPaidTime) {
+    public void putWithRent(String key, byte[] value, long newLastRentPaidTime) {
         byte[] keybytes = key.getBytes(StandardCharsets.UTF_8);
-        trie = trie.putLastRentPaidTime(keybytes, value, newLastRentPaidTime);
+        trie = trie.putWithRent(keybytes, value, newLastRentPaidTime);
     }
 
     @Override

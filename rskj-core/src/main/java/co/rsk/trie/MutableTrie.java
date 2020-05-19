@@ -69,9 +69,9 @@ public interface MutableTrie {
     Keccak256 getValueHash(byte[] key);
 
     // for storage rent:  //for mutableTrieImp and mutableTRieCache
-    void putLastRentPaidTime(byte[] key, byte[] value, long newLastRentPaidTime);
+    void putWithRent(byte[] key, byte[] value, long newLastRentPaidTime);
 
-    void putLastRentPaidTime(ByteArrayWrapper key, byte[] value, long newLastRentPaidTime);
+    void putWithRent(ByteArrayWrapper key, byte[] value, long newLastRentPaidTime);
 
     long getLastRentPaidTime(byte[] key);
 

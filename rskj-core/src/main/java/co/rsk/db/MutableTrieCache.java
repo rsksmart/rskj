@@ -202,16 +202,16 @@ public class MutableTrieCache implements MutableTrie {
     // #mish: this allows updating value at the same time as rent
     // if updating rent alone, then pass current value
     @Override
-    public void putLastRentPaidTime(byte[] key, byte[] value, long newLastRentPaidTime) {
-        putLastRentPaidTime(new ByteArrayWrapper(key), value, newLastRentPaidTime);
+    public void putWithRent(byte[] key, byte[] value, long newLastRentPaidTime) {
+        putWithRent(new ByteArrayWrapper(key), value, newLastRentPaidTime);
     }  
     
-    public void putLastRentPaidTime(String key, byte[] value, long newLastRentPaidTime) {
+    public void putWithRent(String key, byte[] value, long newLastRentPaidTime) {
         byte[] keybytes = key.getBytes(StandardCharsets.UTF_8);
-        putLastRentPaidTime(keybytes, value, newLastRentPaidTime);
+        putWithRent(keybytes, value, newLastRentPaidTime);
     }
 
-    public void putLastRentPaidTime(ByteArrayWrapper wrapper, byte[] value, long newLastRentPaidTime){
+    public void putWithRent(ByteArrayWrapper wrapper, byte[] value, long newLastRentPaidTime){
         if (value == null){ // alternative is to add it to delete cache.. just staying close to orig imlementation
             ByteArrayWrapper accountWrapper = getAccountWrapper(wrapper);
             Map<ByteArrayWrapper, byte[]> accountMap = comboCache.computeIfAbsent(accountWrapper, k -> new HashMap<>());
@@ -274,7 +274,7 @@ public class MutableTrieCache implements MutableTrie {
                         long currLastRentPaidTime = currData.getLong();
                         byte[] currValue = new byte[data.length - 8];
                         currData.get(currValue);
-                        this.trie.putLastRentPaidTime(realKey.getData(), currValue, currLastRentPaidTime);
+                        this.trie.putWithRent(realKey.getData(), currValue, currLastRentPaidTime);
                     }
                 });
             }    
