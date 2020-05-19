@@ -22,9 +22,12 @@ import co.rsk.bitcoinj.core.BtcTransaction;
 import co.rsk.bitcoinj.core.UTXO;
 import co.rsk.config.BridgeConstants;
 import co.rsk.crypto.Keccak256;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
 
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.util.*;
@@ -41,22 +44,30 @@ public class BridgeState {
     private final SortedMap<Keccak256, BtcTransaction> rskTxsWaitingForSignatures;
     private final ReleaseRequestQueue releaseRequestQueue;
     private final ReleaseTransactionSet releaseTransactionSet;
+    private final ActivationConfig.ForBlock activations;
 
-    private BridgeState(int btcBlockchainBestChainHeight, List<UTXO> activeFederationBtcUTXOs,
-                        SortedMap<Keccak256, BtcTransaction> rskTxsWaitingForSignatures, ReleaseRequestQueue releaseRequestQueue, ReleaseTransactionSet releaseTransactionSet) {
+    private BridgeState(int btcBlockchainBestChainHeight,
+                        List<UTXO> activeFederationBtcUTXOs,
+                        SortedMap<Keccak256,
+                        BtcTransaction> rskTxsWaitingForSignatures,
+                        ReleaseRequestQueue releaseRequestQueue,
+                        ReleaseTransactionSet releaseTransactionSet,
+                        @Nullable ActivationConfig.ForBlock activations) {
         this.btcBlockchainBestChainHeight = btcBlockchainBestChainHeight;
         this.activeFederationBtcUTXOs = activeFederationBtcUTXOs;
         this.rskTxsWaitingForSignatures = rskTxsWaitingForSignatures;
         this.releaseRequestQueue = releaseRequestQueue;
         this.releaseTransactionSet = releaseTransactionSet;
+        this.activations = activations;
     }
 
-    public BridgeState(int btcBlockchainBestChainHeight, BridgeStorageProvider provider) throws IOException {
+    public BridgeState(int btcBlockchainBestChainHeight, BridgeStorageProvider provider, ActivationConfig.ForBlock activations) throws IOException {
         this(btcBlockchainBestChainHeight,
                 provider.getNewFederationBtcUTXOs(),
                 provider.getRskTxsWaitingForSignatures(),
                 provider.getReleaseRequestQueue(),
-                provider.getReleaseTransactionSet());
+                provider.getReleaseTransactionSet(),
+                activations);
     }
 
     public int getBtcBlockchainBestChainHeight() {
@@ -101,13 +112,19 @@ public class BridgeState {
         byte[] rlpBtcBlockchainBestChainHeight = RLP.encodeBigInteger(BigInteger.valueOf(this.btcBlockchainBestChainHeight));
         byte[] rlpActiveFederationBtcUTXOs = RLP.encodeElement(BridgeSerializationUtils.serializeUTXOList(activeFederationBtcUTXOs));
         byte[] rlpRskTxsWaitingForSignatures = RLP.encodeElement(BridgeSerializationUtils.serializeMap(rskTxsWaitingForSignatures));
-        byte[] rlpReleaseRequestQueue = RLP.encodeElement(BridgeSerializationUtils.serializeReleaseRequestQueue(releaseRequestQueue));
-        byte[] rlpReleaseTransactionSet = RLP.encodeElement(BridgeSerializationUtils.serializeReleaseTransactionSet(releaseTransactionSet));
+        byte[] serializedReleaseRequestQueue = shouldUsePapyrusEncoding(this.activations) ?
+                BridgeSerializationUtils.serializeReleaseRequestQueueWithTxHash(releaseRequestQueue):
+                BridgeSerializationUtils.serializeReleaseRequestQueue(releaseRequestQueue);
+        byte[] rlpReleaseRequestQueue = RLP.encodeElement(serializedReleaseRequestQueue);
+        byte[] serializedReleaseTransactionSet = shouldUsePapyrusEncoding(this.activations) ?
+                BridgeSerializationUtils.serializeReleaseTransactionSetWithTxHash(releaseTransactionSet):
+                BridgeSerializationUtils.serializeReleaseTransactionSet(releaseTransactionSet);
+        byte[] rlpReleaseTransactionSet = RLP.encodeElement(serializedReleaseTransactionSet);
 
         return RLP.encodeList(rlpBtcBlockchainBestChainHeight, rlpActiveFederationBtcUTXOs, rlpRskTxsWaitingForSignatures, rlpReleaseRequestQueue, rlpReleaseTransactionSet);
     }
 
-    public static BridgeState create(BridgeConstants bridgeConstants, byte[] data) throws IOException {
+    public static BridgeState create(BridgeConstants bridgeConstants, byte[] data, @Nullable ActivationConfig.ForBlock activations) throws IOException {
         RLPList rlpList = (RLPList)RLP.decode2(data).get(0);
 
         byte[] btcBlockchainBestChainHeightBytes = rlpList.get(0).getRLPData();
@@ -117,16 +134,17 @@ public class BridgeState {
         byte[] rskTxsWaitingForSignaturesBytes = rlpList.get(2).getRLPData();
         SortedMap<Keccak256, BtcTransaction> rskTxsWaitingForSignatures = BridgeSerializationUtils.deserializeMap(rskTxsWaitingForSignaturesBytes, bridgeConstants.getBtcParams(), false);
         byte[] releaseRequestQueueBytes = rlpList.get(3).getRLPData();
-        ReleaseRequestQueue releaseRequestQueue = new ReleaseRequestQueue(BridgeSerializationUtils.deserializeReleaseRequestQueue(releaseRequestQueueBytes, bridgeConstants.getBtcParams()));
+        ReleaseRequestQueue releaseRequestQueue = new ReleaseRequestQueue(BridgeSerializationUtils.deserializeReleaseRequestQueue(releaseRequestQueueBytes, bridgeConstants.getBtcParams(), shouldUsePapyrusEncoding(activations)));
         byte[] releaseTransactionSetBytes = rlpList.get(4).getRLPData();
-        ReleaseTransactionSet releaseTransactionSet = BridgeSerializationUtils.deserializeReleaseTransactionSet(releaseTransactionSetBytes, bridgeConstants.getBtcParams());
+        ReleaseTransactionSet releaseTransactionSet = BridgeSerializationUtils.deserializeReleaseTransactionSet(releaseTransactionSetBytes, bridgeConstants.getBtcParams(), shouldUsePapyrusEncoding(activations));
 
         return new BridgeState(
                 btcBlockchainBestChainHeight,
                 btcUTXOs,
                 rskTxsWaitingForSignatures,
                 releaseRequestQueue,
-                releaseTransactionSet
+                releaseTransactionSet,
+                activations
         );
     }
 
@@ -137,5 +155,9 @@ public class BridgeState {
         }
 
         return hashes;
+    }
+
+    public static boolean shouldUsePapyrusEncoding(ActivationConfig.ForBlock activations) {
+        return activations != null && activations.isActive(ConsensusRule.RSKIP146);
     }
 }
