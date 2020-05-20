@@ -24,37 +24,50 @@ import org.ethereum.core.BlockHeader;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import static co.rsk.net.light.LightClientMessageCodes.BLOCK_HEADER;
 import static org.ethereum.crypto.HashUtil.randomHash;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
 
-public class BlockHeaderMessageTest {
+public class BlockHeadersMessageTest {
 
-    private byte[] blockHeaderHash;
-    private BlockHeader blockHeader;
     private LCMessageFactory messageFactory;
+    private List<BlockHeader> blockHeaders;
 
     @Before
     public void setUp() {
-        blockHeaderHash = randomHash();
-        byte[] fullBlockHeaderHash = randomHash();
         BlockFactory blockFactory = mock(BlockFactory.class);
-        blockHeader = mock(BlockHeader.class);
+
+        BlockHeader bh = mockBlockHeader(blockFactory);
+        BlockHeader bh2 = mockBlockHeader(blockFactory);
+
+        blockHeaders = new ArrayList<>();
+        blockHeaders.add(bh);
+        blockHeaders.add(bh2);
         messageFactory = new LCMessageFactory(blockFactory);
-        when(blockHeader.getEncoded()).thenReturn(blockHeaderHash);
-        when(blockHeader.getFullEncoded()).thenReturn(fullBlockHeaderHash);
-        when(blockFactory.decodeHeader(fullBlockHeaderHash)).thenReturn(blockHeader);
+    }
+
+    private BlockHeader mockBlockHeader(BlockFactory blockFactory) {
+        BlockHeader bh = mock(BlockHeader.class);
+        byte[] bhHash = randomHash();
+        byte[] fullbhHash = randomHash();
+        when(bh.getEncoded()).thenReturn(bhHash);
+        when(bh.getFullEncoded()).thenReturn(fullbhHash);
+        when(blockFactory.decodeHeader(fullbhHash)).thenReturn(bh);
+        return bh;
     }
 
     @Test
     public void messageCreationShouldBeCorrect() {
         long id = 1;
-        BlockHeaderMessage testMessage = new BlockHeaderMessage(id, blockHeader);
+        BlockHeadersMessage testMessage = new BlockHeadersMessage(id, blockHeaders);
 
         assertEquals(id, testMessage.getId());
-        assertArrayEquals(blockHeaderHash, testMessage.getBlockHeader().getEncoded());
+        assertEquals(blockHeaders, testMessage.getBlockHeaders());
         assertNull(testMessage.getAnswerMessage());
         assertEquals(BLOCK_HEADER, testMessage.getCommand());
     }
@@ -72,15 +85,15 @@ public class BlockHeaderMessageTest {
     }
 
     private void createMessageAndAssertEncodeDecode(long id) {
-        BlockHeaderMessage testMessage = new BlockHeaderMessage(id, blockHeader);
+        BlockHeadersMessage testMessage = new BlockHeadersMessage(id, blockHeaders);
         byte[] encoded = testMessage.getEncoded();
 
-        BlockHeaderMessage blockHeaderMessage = (BlockHeaderMessage) messageFactory.create(BLOCK_HEADER.asByte(), encoded);
+        BlockHeadersMessage blockHeadersMessage = (BlockHeadersMessage) messageFactory.create(BLOCK_HEADER.asByte(), encoded);
 
-        assertEquals(id, blockHeaderMessage.getId());
-        assertArrayEquals(blockHeader.getEncoded(), blockHeaderMessage.getBlockHeader().getEncoded());
-        assertEquals(BLOCK_HEADER, blockHeaderMessage.getCommand());
-        assertEquals(testMessage.getAnswerMessage(), blockHeaderMessage.getAnswerMessage());
-        assertArrayEquals(encoded, blockHeaderMessage.getEncoded());
+        assertEquals(id, blockHeadersMessage.getId());
+        assertEquals(blockHeaders, blockHeadersMessage.getBlockHeaders());
+        assertEquals(BLOCK_HEADER, blockHeadersMessage.getCommand());
+        assertEquals(testMessage.getAnswerMessage(), blockHeadersMessage.getAnswerMessage());
+        assertArrayEquals(encoded, blockHeadersMessage.getEncoded());
     }
 }
