@@ -23,36 +23,51 @@ import co.rsk.net.light.MessageVisitor;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.util.RLP;
+import org.ethereum.util.RLPElement;
 import org.ethereum.util.RLPList;
 import org.spongycastle.util.BigIntegers;
 
 import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.List;
 
-public class BlockHeaderMessage extends LightClientMessage {
+public class BlockHeadersMessage extends LightClientMessage {
 
     private long id;
-    private BlockHeader blockHeader;
+    private List<BlockHeader> blockHeaders;
 
-    public BlockHeaderMessage(long id, BlockHeader blockHeader) {
+    public BlockHeadersMessage(long id, List<BlockHeader> blockHeaders) {
         this.id = id;
-        this.blockHeader = blockHeader;
+        this.blockHeaders = new ArrayList<>(blockHeaders);
         this.code = LightClientMessageCodes.BLOCK_HEADER.asByte();
     }
 
-    public BlockHeaderMessage(byte[] encoded, BlockFactory blockFactory) {
+    public BlockHeadersMessage(byte[] encoded, BlockFactory blockFactory) {
         RLPList paramsList = (RLPList) RLP.decode2(encoded).get(0);
         byte[] rlpId = paramsList.get(0).getRLPData();
         id = rlpId == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpId).longValue();
-        blockHeader = blockFactory.decodeHeader(paramsList.get(1).getRLPData());
+
+        RLPList rlpBlockHeaders = (RLPList)RLP.decode2(paramsList.get(1).getRLPData()).get(0);
+        List<BlockHeader> headers = new ArrayList<>();
+        
+        for (int k = 0; k < rlpBlockHeaders.size(); k++) {
+            RLPElement element = rlpBlockHeaders.get(k);
+            BlockHeader header = blockFactory.decodeHeader(element.getRLPData());
+            headers.add(header);
+        }
+
+        this.blockHeaders = headers;
         this.code = LightClientMessageCodes.BLOCK_HEADER.asByte();
     }
 
     @Override
     public byte[] getEncoded() {
         byte[] rlpId = RLP.encodeBigInteger(BigInteger.valueOf(getId()));
-        byte[] rlpBlockHeader = RLP.encodeElement(blockHeader.getFullEncoded());
+        byte[][] rlpBlockHeader = this.blockHeaders.stream()
+                .map(BlockHeader::getFullEncoded).map(RLP::encodeElement)
+                .toArray(byte[][]::new);
 
-        return RLP.encodeList(rlpId, rlpBlockHeader);
+        return RLP.encodeList(rlpId, RLP.encodeList(rlpBlockHeader));
     }
 
     @Override
@@ -65,8 +80,8 @@ public class BlockHeaderMessage extends LightClientMessage {
         return "";
     }
 
-    public BlockHeader getBlockHeader() {
-        return blockHeader;
+    public List<BlockHeader> getBlockHeaders() {
+        return new ArrayList<>(blockHeaders);
     }
 
     public long getId() {
