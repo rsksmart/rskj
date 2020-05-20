@@ -28,7 +28,7 @@ import static org.ethereum.crypto.HashUtil.randomHash;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
-public class GetBlockHeaderMessageTest {
+public class GetBlockHeadersMessageTest {
 
     private byte[] blockHash;
     private LCMessageFactory messageFactory;
@@ -42,35 +42,40 @@ public class GetBlockHeaderMessageTest {
     @Test
     public void messageCreationShouldBeCorrect() {
         long id = 1;
-        GetBlockHeaderMessage testMessage = new GetBlockHeaderMessage(id, blockHash);
+        int count = 2;
+        GetBlockHeadersMessage testMessage = new GetBlockHeadersMessage(id, blockHash, count);
 
         assertEquals(id, testMessage.getId());
         assertArrayEquals(blockHash, testMessage.getBlockHash());
-        assertEquals(BlockHeaderMessage.class, testMessage.getAnswerMessage());
+        assertEquals(count, testMessage.getCount());
+        assertEquals(BlockHeadersMessage.class, testMessage.getAnswerMessage());
         assertEquals(GET_BLOCK_HEADER, testMessage.getCommand());
     }
 
     @Test
     public void messageEncodeDecodeShouldBeCorrect() {
         long id = 1;
-        createMessageAndAssertEncodeDecode(id);
+        int count = 2;
+        createMessageAndAssertEncodeDecode(id, count);
     }
 
     @Test
-    public void messageEncodeDecodeShouldBeCorrectWithZeroId() {
+    public void messageEncodeDecodeShouldBeCorrectWithZeroParameters() {
         long id = 0;
-        createMessageAndAssertEncodeDecode(id);
+        int count = 0;
+        createMessageAndAssertEncodeDecode(id, count);
     }
 
-    private void createMessageAndAssertEncodeDecode(long id) {
-        GetBlockHeaderMessage testMessage = new GetBlockHeaderMessage(id, blockHash);
+    private void createMessageAndAssertEncodeDecode(long id, int count) {
+        GetBlockHeadersMessage testMessage = new GetBlockHeadersMessage(id, blockHash, count);
         byte[] encoded = testMessage.getEncoded();
-        GetBlockHeaderMessage getBlockHeaderMessage = (GetBlockHeaderMessage) messageFactory.create(GET_BLOCK_HEADER.asByte(), encoded);
+        GetBlockHeadersMessage getBlockHeadersMessage = (GetBlockHeadersMessage) messageFactory.create(GET_BLOCK_HEADER.asByte(), encoded);
 
-        assertEquals(id, getBlockHeaderMessage.getId());
-        assertArrayEquals(blockHash, getBlockHeaderMessage.getBlockHash());
-        assertEquals(GET_BLOCK_HEADER, getBlockHeaderMessage.getCommand());
-        assertEquals(testMessage.getAnswerMessage(), getBlockHeaderMessage.getAnswerMessage());
-        assertArrayEquals(encoded, getBlockHeaderMessage.getEncoded());
+        assertEquals(id, getBlockHeadersMessage.getId());
+        assertArrayEquals(blockHash, getBlockHeadersMessage.getBlockHash());
+        assertEquals(count, getBlockHeadersMessage.getCount());
+        assertEquals(GET_BLOCK_HEADER, getBlockHeadersMessage.getCommand());
+        assertEquals(testMessage.getAnswerMessage(), getBlockHeadersMessage.getAnswerMessage());
+        assertArrayEquals(encoded, getBlockHeadersMessage.getEncoded());
     }
 }
