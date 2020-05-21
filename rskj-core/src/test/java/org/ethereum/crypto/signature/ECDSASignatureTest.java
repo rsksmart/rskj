@@ -26,8 +26,7 @@ import org.junit.Test;
 
 import java.math.BigInteger;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 public class ECDSASignatureTest {
 
@@ -65,25 +64,25 @@ public class ECDSASignatureTest {
         ECDSASignature expected = new ECDSASignature(BigInteger.ONE, BigInteger.ONE, (byte) 27);
 
         //same instance
-        assertTrue(expected.equals(expected));
+        assertEquals(expected, expected);
 
         //same values
-        assertTrue(expected.equals(new ECDSASignature(expected.getR(), expected.getS(), expected.getV())));
+        assertEquals(expected, new ECDSASignature(expected.getR(), expected.getS(), expected.getV()));
 
         //same values - but diff v
-        assertTrue(expected.equals(new ECDSASignature(expected.getR(), expected.getS(), (byte) 0)));
+        assertEquals(expected, new ECDSASignature(expected.getR(), expected.getS(), (byte) 0));
 
         // null
-        assertFalse(expected.equals(null));
+        assertNotEquals(expected, null);
 
         //dif classes
-        assertFalse(expected.equals(BigInteger.ZERO));
+        assertNotEquals(expected, BigInteger.ZERO);
 
         //diff r
-        assertFalse(new ECDSASignature(BigInteger.ONE, BigInteger.ONE, (byte) 27).equals(new ECDSASignature(BigInteger.TEN, BigInteger.ONE, (byte) 27)));
+        assertNotEquals(new ECDSASignature(BigInteger.ONE, BigInteger.ONE, (byte) 27), new ECDSASignature(BigInteger.TEN, BigInteger.ONE, (byte) 27));
 
         //diff s
-        assertFalse(new ECDSASignature(BigInteger.ONE, BigInteger.ONE, (byte) 27).equals(new ECDSASignature(BigInteger.ONE, BigInteger.TEN, (byte) 27)));
+        assertNotEquals(new ECDSASignature(BigInteger.ONE, BigInteger.ONE, (byte) 27), new ECDSASignature(BigInteger.ONE, BigInteger.TEN, (byte) 27));
 
     }
 
