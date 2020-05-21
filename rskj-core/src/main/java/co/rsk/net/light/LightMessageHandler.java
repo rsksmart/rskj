@@ -22,8 +22,8 @@ public class LightMessageHandler implements InternalService, Runnable {
     private final LightProcessor lightProcessor;
     private final LightSyncProcessor lightSyncProcessor;
 
-    private PriorityBlockingQueue<LightMessageHandler.MessageTask> queue;
-    private Set<Keccak256> receivedMessages = Collections.synchronizedSet(new HashSet<>());
+    private final PriorityBlockingQueue<LightMessageHandler.MessageTask> queue;
+    private final Set<Keccak256> receivedMessages = Collections.synchronizedSet(new HashSet<>());
 
     private boolean stopped = true;
 
@@ -32,6 +32,7 @@ public class LightMessageHandler implements InternalService, Runnable {
     public LightMessageHandler(LightProcessor lightProcessor, LightSyncProcessor lightSyncProcessor) {
         this.lightProcessor = lightProcessor;
         this.lightSyncProcessor = lightSyncProcessor;
+        this.queue = new PriorityBlockingQueue<>(11);
     }
 
     public void processMessage(LightPeer lightPeer, LightClientMessage message,
@@ -41,7 +42,7 @@ public class LightMessageHandler implements InternalService, Runnable {
     }
 
     public void postMessage(LightPeer sender, LightClientMessage message, ChannelHandlerContext ctx,
-                            LightClientHandler lightClientHandler) throws InterruptedException {
+                            LightClientHandler lightClientHandler) {
         logger.trace("Start post message (queue size {}) (message type {})", this.queue.size(), message);
 
         //cleanExpiredMessages();
@@ -115,7 +116,6 @@ public class LightMessageHandler implements InternalService, Runnable {
         private final LightPeer sender;
         private final LightClientMessage message;
         private final ChannelHandlerContext ctx;
-
         private final LightClientHandler lightClientHandler;
 
         public MessageTask(LightPeer sender, LightClientMessage message,
@@ -135,11 +135,11 @@ public class LightMessageHandler implements InternalService, Runnable {
         }
 
         public ChannelHandlerContext getCtx() {
-            return ctx;
+            return this.ctx;
         }
 
         public LightClientHandler getLightClientHandler() {
-            return lightClientHandler;
+            return this.lightClientHandler;
         }
 
         @Override
@@ -147,8 +147,9 @@ public class LightMessageHandler implements InternalService, Runnable {
             return "MessageTask{" +
                     "sender=" + sender +
                     ", message=" + message +
+                    ", ctx=" + ctx +
+                    ", lightClientHandler=" + lightClientHandler +
                     '}';
         }
-
     }
 }
