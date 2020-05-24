@@ -57,6 +57,24 @@ import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
  * @author Roman Mandeleil
  * @since 19.12.2014
  */
+/** #mish notes: 
+ // Overview: 
+ * 4 stages: init() -> exec() -> go() -> finalize()
+ * init(): does basic checks, like add are valid, valid gaslimits, balance, valid nonce
+ * exec(): * Transfer basic cost + gasLImits from sender. Then switch to call() or create()
+           * call(): either PCC or not. 
+                - If PCC execute and return the result. 
+                - If not PCC, getCode(), set up vm and prog for next stage `go()`
+           * create() : create account + storage root, but code is not saved to trie yet. 
+                        Setup vm and prog for next stage createContract() in go().
+ * go(): * if PCC.. nothing to do, commit the cache
+         * else (call to non PCC or create), then use vm and prog setup eaerlier to execute prog i.e. vm.Play(prog)
+         * if create, then call createContract()
+                - this computes contract size, gascost, saves the code to repository
+ * finalize(): - commit changes to repository, make refunds, execution summary and logs.. wrap things up. 
+//  Gas spending and endowment changes along the way at every step..  some permanent (track),
+//  some temporary via cacheTrack or spendgas() thru program.result. Can be committed or rolledback.
+ */
 public class TransactionExecutor {
 
     private static final Logger logger = LoggerFactory.getLogger("execute");
@@ -364,6 +382,12 @@ public class TransactionExecutor {
                 byte[] out = precompiledContract.execute(tx.getData());
                 this.subtraces = precompiledContract.getSubtraces();
                 result.setHReturn(out);
+                // #mish: As per SDL. Pre-compiled contracts to do not exist in Trie (they don't have to).
+                // In ethereum a contract calling another contract costs 700. But if that contract does not exist,
+                // then a new account is created which costs an additional 25000 for `NEW_ACCT_CALL`
+                // One way to avoid this cost for pre compiled contracts is to create nodes in the trie for them
+                // as done here, so calls to PCCs cost 700 and not 700 + 25000. 
+                // per SDL -> this check should ideally happen before a precompiled is executed.                 
                 if (!track.isExist(targetAddress)) {
                     track.createAccount(targetAddress);
                     track.setupContract(targetAddress);
@@ -441,10 +465,6 @@ public class TransactionExecutor {
         executionError = err;
     }
 
-    // #mish TX exec flow : init() -> execute() -> go() -> finalize() 
-    // the last stages of execute() sets up vm and program. If vm!=null (e.g. pcc don't need vm, vm ==null there), 
-    // the actual code execution (playVm, vm.play(program)), contractCreation, saving contract code, gas computation, 
-    // and cache commitment happens here in go(). cache rollbacks as well, e.g. reversion or exception 
     private void go() {
         // TODO: transaction call for pre-compiled  contracts
         if (vm == null) {
@@ -494,8 +514,8 @@ public class TransactionExecutor {
         profiler.stop(metric);
     }
 
-    // create() is called in execute(), that's only sets up the account and storage root. 
-    // createContract() called in go() is more concrete. It estimates gas costs based on contract size,
+    // #mish create() is called in execute(), where is sets up the account and storage root. 
+    // createContract() called in go(). It estimates gas costs based on contract size,
     // saves the code, commits changes from cache to main repository.
     private void createContract() {
         int createdContractSize = getLength(program.getResult().getHReturn());
@@ -586,6 +606,7 @@ public class TransactionExecutor {
         track.addBalance(tx.getSender(), summary.getLeftover().add(summary.getRefund()));
         logger.trace("Pay total refund to sender: [{}], refund val: [{}]", tx.getSender(), summary.getRefund());
 
+
         // Transfer fees to miner
         Coin summaryFee = summary.getFee();
 
@@ -614,6 +635,7 @@ public class TransactionExecutor {
     /**
      * This extracts the trace to an object in memory.
      * Refer to {@link org.ethereum.vm.VMUtils#saveProgramTraceFile} for a way to saving the trace to a file.
+     * #mish: for tracing only this is not called as part of TX execution. 
      */
     public void extractTrace(ProgramTraceProcessor programTraceProcessor) {
         if (program != null) {

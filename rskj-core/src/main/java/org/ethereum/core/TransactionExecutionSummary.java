@@ -47,7 +47,7 @@ public class TransactionExecutionSummary {
 
     private List<DataWord> deletedAccounts = emptyList();
     private List<InternalTransaction> internalTransactions = emptyList();
-
+    
     private byte[] result;
     private List<LogInfo> logs;
 

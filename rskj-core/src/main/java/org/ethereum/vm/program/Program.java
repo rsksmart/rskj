@@ -740,7 +740,7 @@ public class Program {
      * - Normal calls invoke a specified contract which updates itself
      * - Stateless calls invoke code from another contract, within the context of the caller
      *
-     * @param msg is the message call object // from org.eth.vm.MessageCall
+     * @param msg is the message call object of type org.ethereuem.vm.MessageCall
      */
     public void callToAddress(MessageCall msg) {
 
@@ -1153,6 +1153,7 @@ public class Program {
         return invoke.getGaslimit();
     }
 
+    // static calls cannot modify state
     public boolean isStaticCall() {
         return invoke.isStaticCall();
     }

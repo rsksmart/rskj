@@ -36,6 +36,7 @@ public class ProgramResult {
 
     private long gasUsed;
     private long rentGasUsed;
+    // #mish data returned from memory, program. can be empty, can be output from func call, even contract code to be written to trie
     private byte[] hReturn = EMPTY_BYTE_ARRAY;
     private RuntimeException exception;
     private boolean revert;

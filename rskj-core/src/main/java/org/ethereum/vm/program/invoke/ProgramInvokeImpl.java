@@ -68,7 +68,7 @@ public class ProgramInvokeImpl implements ProgramInvoke {
     private boolean byTransaction = true;
     private boolean byTestingSuite = false;
     private int callDeep = 0;
-    private boolean isStaticCall = false;
+    private boolean isStaticCall = false;   //static calls cannot change state
 
     // #mish modifications to constructors for storage rent. For each constructor add a field for rentGas. Also, in the previously existing versions,
     //rentGas is not part of the arglist. For these implementations, as per RSKIP113, use gas (TX execution gas limit) as rentGaslimit as well 
