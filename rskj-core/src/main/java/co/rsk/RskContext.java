@@ -247,6 +247,11 @@ public class RskContext implements NodeBootstrapper {
 
     private RskContext(CliArgs<NodeCliOptions, NodeCliFlags> cliArgs) {
         this.cliArgs = cliArgs;
+        initializeSingletons();
+    }
+
+    private void initializeSingletons() {
+        Secp256k1.initialize(getRskSystemProperties());
     }
 
     public BootstrapImporter getBootstrapImporter() {
@@ -849,7 +854,6 @@ public class RskContext implements NodeBootstrapper {
                     getRepositoryLocator()
             ));
         }
-        Secp256k1.initialize(getRskSystemProperties());
         return Collections.unmodifiableList(internalServices);
     }
 

@@ -24,6 +24,8 @@ import com.google.common.annotations.VisibleForTesting;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
+
 /**
  * Class in charge of being the access point to implementations of all the Signature related functionality.
  * It returns an instance of {@link Secp256k1Service}
@@ -47,21 +49,25 @@ public final class Secp256k1 {
      *
      * <p> By default it initialize Bouncy Castle impl.</p>
      *
-     * @param rskSystemProperties
+     * @param @{@link Nullable} rskSystemProperties = Could be null in tests.
      */
-    public static synchronized void initialize(RskSystemProperties rskSystemProperties) {
+    public static synchronized void initialize(@Nullable RskSystemProperties rskSystemProperties) {
         // Just a warning for duplicate initialization.
         if (initialized) {
             logger.warn("Instance was already initialized. This could be either for duplicate initialization or calling to getInstance before init.");
         } else {
             initialized = true;
         }
-        String cryptoLibrary = rskSystemProperties.cryptoLibrary();
-        logger.debug("Initializing Signature Service: {}.", cryptoLibrary);
-        if (NATIVE_LIB.equals(cryptoLibrary)) {//TODO: Check if Native library is loaded.
-            instance = new Secp256K1ServiceNative();
+        if (rskSystemProperties != null) {
+            String cryptoLibrary = rskSystemProperties.cryptoLibrary();
+            logger.debug("Initializing Signature Service: {}.", cryptoLibrary);
+            if (NATIVE_LIB.equals(cryptoLibrary)) {//TODO: Check if Native library is loaded.
+                instance = new Secp256k1ServiceNative();
+            } else {
+                instance = new Secp256k1ServiceBC();
+            }
         } else {
-            instance = new Secp256k1ServiceBC();
+            logger.warn("Empty system properties.");
         }
     }
 
