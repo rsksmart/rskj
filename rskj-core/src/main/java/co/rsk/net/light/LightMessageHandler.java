@@ -1,17 +1,12 @@
 package co.rsk.net.light;
 
 import co.rsk.config.InternalService;
-import co.rsk.crypto.Keccak256;
 import co.rsk.net.eth.LightClientHandler;
 import co.rsk.net.light.message.LightClientMessage;
 import io.netty.channel.ChannelHandlerContext;
-import org.ethereum.crypto.HashUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
@@ -23,11 +18,8 @@ public class LightMessageHandler implements InternalService, Runnable {
     private final LightSyncProcessor lightSyncProcessor;
 
     private final PriorityBlockingQueue<LightMessageHandler.MessageTask> queue;
-    private final Set<Keccak256> receivedMessages = Collections.synchronizedSet(new HashSet<>());
 
     private boolean stopped = true;
-
-    public static final int MAX_NUMBER_OF_MESSAGES_CACHED = 5000;
 
     public LightMessageHandler(LightProcessor lightProcessor, LightSyncProcessor lightSyncProcessor) {
         this.lightProcessor = lightProcessor;
@@ -45,28 +37,10 @@ public class LightMessageHandler implements InternalService, Runnable {
                             LightClientHandler lightClientHandler) {
         logger.trace("Start post message (queue size {}) (message type {})", this.queue.size(), message);
 
-        //cleanExpiredMessages();
-        tryAddMessage(sender, message, ctx, lightClientHandler);
-        logger.trace("End post message (queue size {})", this.queue.size());
-    }
-
-    private void tryAddMessage(LightPeer sender, LightClientMessage message,
-                               ChannelHandlerContext ctx, LightClientHandler lightClientHandler) {
-        Keccak256 encodedMessage = new Keccak256(HashUtil.keccak256(message.getEncoded()));
-        if (!receivedMessages.contains(encodedMessage)) {
-            //if (message.getMessageType() == MessageType.BLOCK_MESSAGE || message.getMessageType() == MessageType.TRANSACTIONS) {
-                if (this.receivedMessages.size() >= MAX_NUMBER_OF_MESSAGES_CACHED) {
-                    this.receivedMessages.clear();
-                }
-                this.receivedMessages.add(encodedMessage);
-            //}
-
-            if (!this.queue.offer(new LightMessageHandler.MessageTask(sender, message, ctx, lightClientHandler))) {
-                logger.warn("Unexpected path. Is message queue bounded now?");
-            }
-        } else {
-            logger.trace("Received message already known, not added to the queue");
+        if (!this.queue.offer(new LightMessageHandler.MessageTask(sender, message, ctx, lightClientHandler))) {
+            logger.warn("Unexpected path. Is message queue bounded now?");
         }
+        logger.trace("End post message (queue size {})", this.queue.size());
     }
 
     public long getMessageQueueSize() {

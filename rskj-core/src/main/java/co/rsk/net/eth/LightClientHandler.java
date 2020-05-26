@@ -32,18 +32,18 @@ import io.netty.channel.SimpleChannelInboundHandler;
 public class LightClientHandler extends SimpleChannelInboundHandler<LightClientMessage> {
     private final LightPeer lightPeer;
     private final LightSyncProcessor lightSyncProcessor;
-    private final LightProcessor lightProcessor;
+    private final LightMessageHandler lightMessageHandler;
 
-    public LightClientHandler(LightPeer lightPeer, LightProcessor lightProcessor, LightSyncProcessor lightSyncProcessor) {
-        this.lightProcessor = lightProcessor;
+    public LightClientHandler(LightPeer lightPeer,
+                              LightSyncProcessor lightSyncProcessor, LightMessageHandler lightMessageHandler) {
         this.lightSyncProcessor = lightSyncProcessor;
         this.lightPeer = lightPeer;
+        this.lightMessageHandler = lightMessageHandler;
     }
 
     @Override
     public void channelRead0(ChannelHandlerContext ctx, LightClientMessage msg) {
-        LightClientMessageVisitor visitor = new LightClientMessageVisitor(lightPeer, lightProcessor, lightSyncProcessor, ctx,this);
-        msg.accept(visitor);
+        lightMessageHandler.postMessage(lightPeer, msg, ctx, this);
     }
 
     public void activate() {
