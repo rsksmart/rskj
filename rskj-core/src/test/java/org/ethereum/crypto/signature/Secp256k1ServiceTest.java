@@ -96,8 +96,9 @@ public abstract class Secp256k1ServiceTest {
     public void testVerify_after_doSign() {
         ECKey key = ECKey.fromPrivate(privateKey);
         String message = "This is an example of a signed message.";
-        ECDSASignature output = ECDSASignature.fromSignature(key.doSign(message.getBytes()));
-        assertTrue(this.getSecp256k1().verify(message.getBytes(), output, key.getPubKey()));
+        byte[] messageBytes = HashUtil.keccak256(message.getBytes());
+        ECDSASignature output = ECDSASignature.fromSignature(key.doSign(messageBytes));
+        assertTrue(this.getSecp256k1().verify(messageBytes, output, key.getPubKey()));
     }
 
     @Test
@@ -132,11 +133,16 @@ public abstract class Secp256k1ServiceTest {
 
         // Create tx and sign, then recover from serialized.
         Transaction newTx = new Transaction(2l, 2l, 2l, receiver, 2l, messageHash, (byte) 0);
+
+        logger.debug("1");
         newTx.sign(pk);
+        logger.debug("1.1");
         ImmutableTransaction recoveredTx = new ImmutableTransaction(newTx.getEncoded());
 
+        logger.debug("2");
         // Recover Pub Key from recovered tx
         ECKey actualKey = this.getSecp256k1().signatureToKey(HashUtil.keccak256(recoveredTx.getEncodedRaw()), recoveredTx.getSignature());
+        logger.debug("3");
 
         // Recover PK and Address.
 

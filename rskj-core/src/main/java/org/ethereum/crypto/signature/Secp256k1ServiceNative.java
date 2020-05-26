@@ -19,10 +19,53 @@
 
 package org.ethereum.crypto.signature;
 
+import org.bitcoin.NativeSecp256k1;
+import org.bouncycastle.util.Arrays;
+import org.ethereum.crypto.ECKey;
+
+import javax.annotation.Nullable;
+import java.nio.ByteBuffer;
+
 /**
  * Implementation of SignatureService with Native library.
  * TODO: once integrated native implementation, should implement all methods.
  */
 public class Secp256k1ServiceNative extends Secp256k1ServiceBC {
 
+    @Nullable
+    @Override
+    public ECKey recoverFromSignature(int recId, ECDSASignature sig, byte[] messageHash, boolean compressed) {
+        check(recId >= 0, "recId must be positive");
+        check(sig.getR().signum() >= 0, "r must be positive");
+        check(sig.getS().signum() >= 0, "s must be positive");
+        check(messageHash != null, "messageHash must not be null");
+        byte[] sigBytes = concatenate(sig);
+        byte[] pbKey = new byte[0];
+        try {
+            pbKey = NativeSecp256k1.ecdsaRecover(sigBytes, messageHash, recId, compressed);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return ECKey.fromPublicOnly(pbKey);
+    }
+
+    @Override
+    public boolean verify(byte[] data, ECDSASignature signature, byte[] pub) {
+        try {
+            return NativeSecp256k1.verify(data, concatenate(signature), pub);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    byte[] concatenate(ECDSASignature sig) {
+        byte[] rBytes = sig.getR().toByteArray();
+        byte[] sBytes = sig.getS().toByteArray();
+        byte[] allByteArray = new byte[64];
+        ByteBuffer buff = ByteBuffer.wrap(allByteArray);
+        buff.put(Arrays.copyOfRange(rBytes, rBytes.length - 32, rBytes.length));
+        buff.put(Arrays.copyOfRange(sBytes, sBytes.length - 32, sBytes.length));
+        return buff.array();
+    }
 }
