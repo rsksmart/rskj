@@ -286,6 +286,7 @@ public class TransactionExecutorTest {
         assertFalse(blockTxSignatureCache.containsTx(transaction));
     }
 
+    // #mish: some helper functions to get and execute transations
     private boolean executeValidTransaction(Transaction transaction, BlockTxSignatureCache blockTxSignatureCache) {
         when(executionBlock.getGasLimit()).thenReturn(BigInteger.valueOf(6800000).toByteArray());
 

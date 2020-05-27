@@ -19,6 +19,8 @@
 
 package org.ethereum.vm.program;
 
+import co.rsk.core.types.ints.Uint24;
+
 import org.ethereum.vm.CallCreate;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.GasCost;
@@ -47,9 +49,11 @@ public class ProgramResult {
     private Map<DataWord, byte[]> codeChanges; // #mish: used in TX exec finalization
 
     // #mish: sets for storage rent (RSKIP113) checks and computations (only nodes that have some value) 
-    private Set<DataWord> newTrieNodes; //  storage rent to be charged for 6 months in advance when nodes are created
-    private Set<DataWord> accessedNodes; // check rent status for nodes accessed or modified, collect rent as per RSKIP113
+    private Map<DataWord, Uint24> newTrieNodes; //  storage rent to be charged for 6 months in advance when nodes are created
+    private Map<DataWord, RentData> accessedNodes; // nodes accessed (value may not have been modified)
+    private Map<DataWord, RentData> modifiedNodes; // nodes with value modified.
 
+    // #mish Set of selfdestruct i.e. suicide accounts. Todo: any refund for prepaid rent?
     private Set<DataWord> deleteAccounts;
     private List<InternalTransaction> internalTransactions;
     private List<LogInfo> logInfoList;
@@ -149,35 +153,54 @@ public class ProgramResult {
     }
 
     // #mish tracking additions, updates and storage rent due status for trie ndoes
-    public Set<DataWord> getNewTrieNodes() {
+    public Map<DataWord, Uint24> getNewTrieNodes() {
         if (newTrieNodes == null) {
-            newTrieNodes = new HashSet<>();
+            newTrieNodes = new HashMap<>();
         }
         return newTrieNodes;
     }
 
-    public void addNewTrieNode(DataWord nodeKey) {    //addr should 
-        getNewTrieNodes().add(nodeKey);
+    public void addNewTrieNode(DataWord nodeKey, Uint24 valueLength) {    //addr should 
+        getNewTrieNodes().put(nodeKey, valueLength);
     }
 
-    // add a set of new trie nodes
-    public void addNewTrieNodes(Set<DataWord> nodeKeys) {
-        getNewTrieNodes().addAll(nodeKeys);
+    // add a set of new trie nodes 
+    public void addNewTrieNodes(Map<DataWord, Uint24> newNodes) {
+        getNewTrieNodes().putAll(newNodes);
     }
 
-    public Set<DataWord> getAccessedNodes() {
+    // #mish nodes accessed (may or may not be modified)
+    public Map<DataWord, RentData> getAccessedNodes() {
         if (accessedNodes == null) {
-            accessedNodes = new HashSet<>();
+            accessedNodes = new HashMap<>();
         }
         return accessedNodes;
     }
 
-    public void addAccessedNode(DataWord nodeKey) {
-        getAccessedNodes().add(nodeKey);
+    public void addAccessedNode(DataWord nodeKey, RentData rentData) {
+        // #mish: for accessed, keep the first read value, updates are stored in modified
+        getAccessedNodes().putIfAbsent(nodeKey, rentData);
     }
 
-    public void addAccessedNodes(Set<DataWord> nodeKeys) {
-        getAccessedNodes().addAll(nodeKeys);
+    public void addAccessedNodes(Map<DataWord, RentData> nodesAcc) {
+        nodesAcc.forEach(getAccessedNodes()::putIfAbsent);
+    }
+
+    // modified nodes
+    public Map<DataWord, RentData> getModifiedNodes() {
+        if (modifiedNodes == null) {
+            modifiedNodes = new HashMap<>();
+        }
+        return modifiedNodes;
+    }
+
+    public void addModifiedNode(DataWord nodeKey, RentData rentData) {
+        // #mish: for modified, keep the latest information, overwrite previous stored in modifed
+        getModifiedNodes().put(nodeKey, rentData);
+    }
+
+    public void addModifiedNodes(Map<DataWord, RentData> nodesMod) {
+        getModifiedNodes().putAll(nodesMod);
     }
 
     public void clearFieldsOnException() {
@@ -195,6 +218,9 @@ public class ProgramResult {
         }
         if (accessedNodes!=null) {
             accessedNodes.clear();
+        }
+        if (modifiedNodes!=null) {
+            modifiedNodes.clear();
         }
         resetFutureRefund();
         resetFutureRentGasRefund();

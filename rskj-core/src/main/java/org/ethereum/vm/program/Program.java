@@ -72,7 +72,7 @@ public class Program {
 
     public static final long MAX_MEMORY = (1<<30);
 
-    //Max size for stack checks
+    //Max size for stack checks  //#mish: is this still needed?
     private static final int MAX_STACKSIZE = 1024;
 
     private final ActivationConfig.ForBlock activations;
@@ -423,6 +423,8 @@ public class Program {
             }
         }
         // In any case, remove the account
+        // #mish: this simply marks for deletion
+        // actual deletion happens at end of TxExecutor (finalization stage) 
         getResult().addDeleteAccount(this.getOwnerAddress());
 
         SuicideInvoke invoke = new SuicideInvoke(DataWord.valueOf(owner.getBytes()), obtainerAddress, DataWord.valueOf(balance.getBytes()));
