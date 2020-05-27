@@ -23,6 +23,7 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositorySnapshot;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.net.light.message.*;
+import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.*;
 import org.ethereum.net.message.Message;
 import org.bouncycastle.util.encoders.Hex;
@@ -36,7 +37,7 @@ import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
-
+import static java.util.stream.LongStream.*;
 
 /**
  * Created by Julian Len and Sebastian Sicardi on 21/10/19.
@@ -158,32 +159,65 @@ public class LightProcessor {
         throw new UnsupportedOperationException("Not supported AccountsMessage processing");
     }
 
-    public void processGetBlockHeadersMessage(long id, byte[] blockHash, int count, LightPeer lightPeer) {
-        String blockHashLog = Hex.toHexString(blockHash);
+    public void processGetBlockHeadersMessage(long id, byte[] startBlockHash, int max, int skip, boolean reverse, LightPeer lightPeer) {
+        String blockHashLog = Hex.toHexString(startBlockHash);
         logger.trace("Processing block header request {} block {} from {}", id, blockHashLog, lightPeer.getPeerIdShort());
 
-        Block block = blockStore.getBlockByHash(blockHash);
-
-        if (block == null) {
-            // Don't waste time sending an empty response.
+        if (max == 0) {
             return;
         }
 
         List<BlockHeader> headers = new ArrayList<>();
-        headers.add(block.getHeader());
+        Block startBlock = blockStore.getBlockByHash(startBlockHash);
 
-        for (int i = 1; i < count; i++) {
-            block = blockStore.getBlockByHash(block.getParentHash().getBytes());
+        if (startBlock == null) {
+            return;
+        }
 
-            if (block == null) {
-                break;
-            }
+        if (max == 1) {
+            headers.add(startBlock.getHeader());
+            BlockHeadersMessage response = new BlockHeadersMessage(id, headers);
+            lightPeer.sendMessage(response);
+            return;
+        }
 
-            headers.add(block.getHeader());
+        headers = getBlockNumbersToResponse(max, skip, reverse, startBlock.getNumber(), blockStore.getBestBlock());
+
+        if (headers.isEmpty()) {
+            return;
         }
 
         BlockHeadersMessage response = new BlockHeadersMessage(id, headers);
         lightPeer.sendMessage(response);
+    }
+
+    @VisibleForTesting
+    public List<BlockHeader> getBlockNumbersToResponse(int max, int skip, boolean reverse, long startNumber, Block bestBlock) {
+        ArrayList<BlockHeader> headers = new ArrayList<>();
+
+        long[] nums = range(0, max).map(num -> num * (skip + 1)).toArray();
+
+        for (long num : nums) {
+
+            if ((reverse && startNumber <= num) ||
+                    (!reverse && num > bestBlock.getNumber() - startNumber)) {
+                continue;
+            }
+
+            Block b;
+            if (reverse) {
+                b = blockStore.getChainBlockByNumber(startNumber - num);
+            } else {
+                b = blockStore.getChainBlockByNumber(startNumber + num);
+            }
+
+            if (b == null){
+                continue;
+            }
+            headers.add(b.getHeader());
+        }
+
+        return headers;
     }
 
     public void processGetBlockBodyMessage(long id, byte[] blockHash, LightPeer lightPeer) {

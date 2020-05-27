@@ -46,6 +46,7 @@ import java.util.List;
 
 import static org.ethereum.TestUtils.*;
 import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentCaptor.forClass;
 import static org.mockito.Mockito.*;
 
@@ -69,7 +70,7 @@ public class LightProcessorTest {
         blockchain = mock(Blockchain.class);
         blockStore = mock(BlockStore.class);
         repositoryLocator = mock(RepositoryLocator.class);
-        lightProcessor = new LightProcessor(blockchain, blockStore, repositoryLocator);
+        lightProcessor = spy(new LightProcessor(blockchain, blockStore, repositoryLocator));
         msgQueue = spy(MessageQueue.class);
         blockHash = new Keccak256(HASH_1);
         lightPeer = new LightPeer(mock(Channel.class), msgQueue);
@@ -252,48 +253,217 @@ public class LightProcessorTest {
     }
 
     @Test
-    public void processGetBlockHeadersMessageAndShouldReturnsBlockHeaderCorrectly() {
+    public void processGetBlockHeadersMessageWithNoSkipNoReverseAndShouldReturnsBlockHeaderCorrectly() {
         long requestId = 100;
+        int max = 2;
+        int skip = 0;
 
-        final Block block = mock(Block.class);
-        BlockHeader blockHeader = mock(BlockHeader.class);
-        byte[] blockHeaderHash = randomHash().getBytes();
+        //Starting block
+        final int startBlockNumber = 0;
+        final Block startBlock = mock(Block.class);
+        final byte[] startBlockHash = blockHash.getBytes();
+        BlockHeader startBlockHeader = mock(BlockHeader.class);
+        byte[] startBlockHeaderHash = randomHash().getBytes();
 
-        when(blockStore.getBlockByHash(blockHash.getBytes())).thenReturn(block);
-        when(block.getHeader()).thenReturn(blockHeader);
-        when(blockHeader.getFullEncoded()).thenReturn(blockHeaderHash);
+        when(blockStore.getBlockByHash(startBlockHash)).thenReturn(startBlock);
+        when(startBlock.getHeader()).thenReturn(startBlockHeader);
+        when(startBlockHeader.getFullEncoded()).thenReturn(startBlockHeaderHash);
+        when(blockStore.getChainBlockByNumber(startBlockNumber)).thenReturn(startBlock);
 
-        final Block block1 = mock(Block.class);
-        BlockHeader blockHeader1 = mock(BlockHeader.class);
-        byte[] blockHeaderHash1 = randomHash().getBytes();
-        Keccak256 blockHash1 = randomHash();
+        //Second block
+        final int secondBlockNumber = 1;
+        final Block secondBlock = mock(Block.class);
+        BlockHeader secondBlockHeader = mock(BlockHeader.class);
+        byte[] secondBlockHeaderHash = randomHash().getBytes();
 
-        when(block.getParentHash()).thenReturn(blockHash1);
-        when(blockStore.getBlockByHash(blockHash1.getBytes())).thenReturn(block1);
-        when(block1.getHeader()).thenReturn(blockHeader1);
-        when(blockHeader1.getFullEncoded()).thenReturn(blockHeaderHash1);
+        when(secondBlock.getHeader()).thenReturn(secondBlockHeader);
+        when(secondBlockHeader.getFullEncoded()).thenReturn(secondBlockHeaderHash);
+        when(blockStore.getChainBlockByNumber(secondBlockNumber)).thenReturn(secondBlock);
 
+        //Best block of header server
+        Block bestBlock = mock(Block.class);
+        when(bestBlock.getNumber()).thenReturn(50L);
+        when(blockStore.getBestBlock()).thenReturn(bestBlock);
+
+        //Result expected
         List<BlockHeader> blockHeaders = new ArrayList<>();
-        blockHeaders.add(blockHeader);
-        blockHeaders.add(blockHeader1);
+        blockHeaders.add(startBlockHeader);
+        blockHeaders.add(secondBlockHeader);
 
         BlockHeadersMessage expectedMessage = new BlockHeadersMessage(requestId, blockHeaders);
-
         ArgumentCaptor<BlockHeadersMessage> argument = forClass(BlockHeadersMessage.class);
-        lightProcessor.processGetBlockHeadersMessage(requestId, blockHash.getBytes(), 2, lightPeer);
+
+        lightProcessor.processGetBlockHeadersMessage(requestId, startBlockHash, max, skip, false, lightPeer);
+        verify(msgQueue).sendMessage(argument.capture());
+
+        assertArrayEquals(expectedMessage.getEncoded(), argument.getValue().getEncoded());
+        assertEquals(expectedMessage.getBlockHeaders(), argument.getValue().getBlockHeaders());
+
+    }
+
+    @Test
+    public void processGetBlockHeaderMessageWithReverseNoSkipReturnsEmptyBlockHeaderListAndShouldntBeProcessed() {
+        final boolean reverse = true;
+        long requestId = 100;
+        int max = 2;
+        int skip = 0;
+
+        //Starting block
+        final long startBlockNumber = 0;
+        final Block startBlock = mock(Block.class);
+        BlockHeader startBlockHeader = mock(BlockHeader.class);
+        final byte[] startBlockHash = blockHash.getBytes();
+
+        when(blockStore.getBlockByHash(startBlockHash)).thenReturn(startBlock);
+        when(startBlock.getHeader()).thenReturn(startBlockHeader);
+        when(blockStore.getChainBlockByNumber(startBlockNumber)).thenReturn(startBlock);
+
+        //Best block of header server
+        Block bestBlock = mock(Block.class);
+        final long bestBlockNumber = 50;
+        when(bestBlock.getNumber()).thenReturn(bestBlockNumber);
+        when(blockStore.getBestBlock()).thenReturn(bestBlock);
+
+        lightProcessor.processGetBlockHeadersMessage(requestId, startBlockHash, max, skip, reverse, lightPeer);
+
+        verify(lightProcessor, times(1)).getBlockNumbersToResponse(max, skip, reverse, startBlockNumber, bestBlock);
+        verify(msgQueue, times(0)).sendMessage(any());
+    }
+
+    @Test
+    public void processGetBlockHeaderWithOneRequestedBlockHeaderAndNoReverseShouldReturnsBlockHeaderCorrectly() {
+        long requestId = 100;
+        int max = 1;
+        int skip = 0;
+
+        //Starting block
+        BlockHeader startBlockHeader = mock(BlockHeader.class);
+        final Block startBlock = mock(Block.class);
+        byte[] startBlockHeaderHash = randomHash().getBytes();
+        final long startBlockNumber = 0;
+        final byte[] startBlockHash = blockHash.getBytes();
+
+        when(blockStore.getBlockByHash(startBlockHash)).thenReturn(startBlock);
+        when(startBlock.getHeader()).thenReturn(startBlockHeader);
+        when(startBlockHeader.getFullEncoded()).thenReturn(startBlockHeaderHash);
+        when(blockStore.getChainBlockByNumber(startBlockNumber)).thenReturn(startBlock);
+
+        //Best block of header server
+        Block bestBlock = mock(Block.class);
+        final long bestBlockNumber = 50;
+        when(bestBlock.getNumber()).thenReturn(bestBlockNumber);
+        when(blockStore.getBestBlock()).thenReturn(bestBlock);
+
+        //Result expected
+        List<BlockHeader> blockHeaders = new ArrayList<>();
+        blockHeaders.add(startBlockHeader);
+
+        BlockHeadersMessage expectedMessage = new BlockHeadersMessage(requestId, blockHeaders);
+        ArgumentCaptor<BlockHeadersMessage> argument = forClass(BlockHeadersMessage.class);
+
+        lightProcessor.processGetBlockHeadersMessage(requestId, startBlockHash, max, skip, false, lightPeer);
         verify(msgQueue).sendMessage(argument.capture());
 
         assertArrayEquals(expectedMessage.getEncoded(), argument.getValue().getEncoded());
     }
 
     @Test
-    public void processGetBlockHeadersMessageWithInvalidBlockHash() {
+    public void processWithNoSkipReverseGetBlockHeadersMessageAndShouldReturnsBlockHeaderCorrectly() {
         long requestId = 100;
-        when(blockStore.getBlockByHash(blockHash.getBytes())).thenReturn(null);
+        int skip = 0;
+        int max = 2;
 
-        lightProcessor.processGetBlockHeadersMessage(requestId, blockHash.getBytes(), 1, lightPeer);
+        //Starting block
+        final Block startBlock = mock(Block.class);
+        BlockHeader startBlockHeader = mock(BlockHeader.class);
+        byte[] startBlockHeaderHash = randomHash().getBytes();
+        Keccak256 startBlockHash = randomHash();
+        final long startBlockNumber = 1;
+
+        when(startBlock.getHeader()).thenReturn(startBlockHeader);
+        when(startBlock.getNumber()).thenReturn(startBlockNumber);
+        when(startBlockHeader.getFullEncoded()).thenReturn(startBlockHeaderHash);
+        when(blockStore.getBlockByHash(startBlockHash.getBytes())).thenReturn(startBlock);
+        when(blockStore.getChainBlockByNumber(startBlockNumber)).thenReturn(startBlock);
+
+        //Best block of header server
+        Block bestBlock = mock(Block.class);
+        final long bestBlockNumber = 50;
+        when(bestBlock.getNumber()).thenReturn(bestBlockNumber);
+        when(blockStore.getBestBlock()).thenReturn(bestBlock);
+
+        //Result expected (In reverse search zero block number is not included because it belongs to Genesis)
+        List<BlockHeader> blockHeaders = new ArrayList<>();
+        blockHeaders.add(startBlockHeader);
+
+        BlockHeadersMessage expectedMessage = new BlockHeadersMessage(requestId, blockHeaders);
+        ArgumentCaptor<BlockHeadersMessage> argument = forClass(BlockHeadersMessage.class);
+
+        lightProcessor.processGetBlockHeadersMessage(requestId, startBlockHash.getBytes(), max, skip, true, lightPeer);
+        verify(msgQueue).sendMessage(argument.capture());
+
+        assertArrayEquals(expectedMessage.getEncoded(), argument.getValue().getEncoded());
+    }
+
+    @Test
+    public void processGetBlockHeadersMessageWithZeroMaxShouldNotBeProcessed() {
+        long requestId = 100;
+        int skip = 0;
+
+        lightProcessor.processGetBlockHeadersMessage(requestId, blockHash.getBytes(), 0, skip, false, lightPeer);
+        lightProcessor.processGetBlockHeadersMessage(requestId, blockHash.getBytes(), 0, skip, true, lightPeer);
+
+        verify(blockStore, times(0)).getBlockByHash(any());
+        verify(msgQueue, times(0)).sendMessage(any());
+    }
+
+    @Test
+    public void processGetBlockHeadersMessageWithInvalidStartingBlockHashShouldNotBeProcessed() {
+        long requestId = 100;
+        int skip = 0;
+
+        when(blockStore.getBlockByHash(blockHash.getBytes())).thenReturn(null);
+        when(blockStore.getChainBlockByNumber(0)).thenReturn(null);
+
+        lightProcessor.processGetBlockHeadersMessage(requestId, blockHash.getBytes(), 1, skip, false, lightPeer);
+        lightProcessor.processGetBlockHeadersMessage(requestId, blockHash.getBytes(), 1, skip, true, lightPeer);
 
         verify(msgQueue, times(0)).sendMessage(any());
+    }
+
+    @Test
+    public void getBlockNumberToResponseNoReverseTest() {
+        int max = 10;
+        int skip = 2;
+        boolean reverse = false;
+        long startNumber = 0;
+        final int startingFrom = 0;
+        final Block bestBlock = mock(Block.class);
+        when(bestBlock.getNumber()).thenReturn(50L);
+
+        List<BlockHeader> blockHeadersExpected = getBlockHeadersMocked(max, skip, startingFrom); // {0,3,6,9,12,15,18,21,24,27} skipped by 2
+        List<BlockHeader> blockHeaders = lightProcessor.getBlockNumbersToResponse(max, skip, reverse, startNumber, bestBlock);
+
+        assertEquals(blockHeadersExpected, blockHeaders);
+    }
+
+    @Test
+    public void getBlockNumberToResponseReverseTest() {
+        int max = 10;
+        int skip = 2;
+        boolean reverse = true;
+        long startNumber = 27;
+        final Block bestBlock = mock(Block.class);
+        when(bestBlock.getNumber()).thenReturn(50L);
+        final int startingFrom = 1;
+
+        List<BlockHeader> blockHeadersExpected = getBlockHeadersMocked(max, skip, startingFrom); // {0,3,6,9,12,15,18,21,24,27} skipped by 2
+        List<BlockHeader> blockHeaders = lightProcessor.getBlockNumbersToResponse(max, skip, reverse, startNumber, bestBlock);
+
+        assertEquals(blockHeadersExpected.size(), blockHeaders.size());
+        for (int i = 1; i < blockHeaders.size(); i++) {
+            assertEquals(blockHeadersExpected.get(blockHeaders.size() - i - 1), blockHeaders.get(i));
+        }
     }
 
     @Test
@@ -423,5 +593,19 @@ public class LightProcessorTest {
         receipt.setTransaction(new Transaction(null, null, null, null, null, null));
 
         return receipt;
+    }
+
+    private List<BlockHeader> getBlockHeadersMocked(int max, int skip, int startingFrom) {
+        List<BlockHeader> blockHeadersExpected = new ArrayList<>();
+        for (int i = startingFrom; i < max; i++) {
+            final Block block = mock(Block.class);
+            final BlockHeader blockHeader = mock(BlockHeader.class);
+            long blockNumber = i * (skip + 1);
+            when(block.getHeader()).thenReturn(blockHeader);
+            when(blockStore.getChainBlockByNumber(blockNumber)).thenReturn(block);
+            when(block.getNumber()).thenReturn(blockNumber);
+            blockHeadersExpected.add(blockHeader);
+        }
+        return blockHeadersExpected;
     }
 }

@@ -42,12 +42,15 @@ public class GetBlockHeadersMessageTest {
     @Test
     public void messageCreationShouldBeCorrect() {
         long id = 1;
-        int count = 2;
-        GetBlockHeadersMessage testMessage = new GetBlockHeadersMessage(id, blockHash, count);
+        int max = 2;
+        int skip = 5;
+        GetBlockHeadersMessage testMessage = new GetBlockHeadersMessage(id, blockHash, max, skip, true);
 
         assertEquals(id, testMessage.getId());
         assertArrayEquals(blockHash, testMessage.getBlockHash());
-        assertEquals(count, testMessage.getCount());
+        assertEquals(max, testMessage.getMax());
+        assertEquals(skip, testMessage.getSkip());
+        assertTrue(testMessage.isReverse());
         assertEquals(BlockHeadersMessage.class, testMessage.getAnswerMessage());
         assertEquals(GET_BLOCK_HEADER, testMessage.getCommand());
     }
@@ -55,25 +58,28 @@ public class GetBlockHeadersMessageTest {
     @Test
     public void messageEncodeDecodeShouldBeCorrect() {
         long id = 1;
-        int count = 2;
-        createMessageAndAssertEncodeDecode(id, count);
+        int max = 2;
+        int skip = 3;
+
+        createMessageAndAssertEncodeDecode(id, max, skip, true);
     }
 
     @Test
     public void messageEncodeDecodeShouldBeCorrectWithZeroParameters() {
         long id = 0;
-        int count = 0;
-        createMessageAndAssertEncodeDecode(id, count);
+        int max = 0;
+        int skip = 0;
+        createMessageAndAssertEncodeDecode(id, max, skip, false);
     }
 
-    private void createMessageAndAssertEncodeDecode(long id, int count) {
-        GetBlockHeadersMessage testMessage = new GetBlockHeadersMessage(id, blockHash, count);
+    private void createMessageAndAssertEncodeDecode(long id, int max, int skip, boolean reverse) {
+        GetBlockHeadersMessage testMessage = new GetBlockHeadersMessage(id, blockHash, max, skip, reverse);
         byte[] encoded = testMessage.getEncoded();
         GetBlockHeadersMessage getBlockHeadersMessage = (GetBlockHeadersMessage) messageFactory.create(GET_BLOCK_HEADER.asByte(), encoded);
 
         assertEquals(id, getBlockHeadersMessage.getId());
         assertArrayEquals(blockHash, getBlockHeadersMessage.getBlockHash());
-        assertEquals(count, getBlockHeadersMessage.getCount());
+        assertEquals(max, getBlockHeadersMessage.getMax());
         assertEquals(GET_BLOCK_HEADER, getBlockHeadersMessage.getCommand());
         assertEquals(testMessage.getAnswerMessage(), getBlockHeadersMessage.getAnswerMessage());
         assertArrayEquals(encoded, getBlockHeadersMessage.getEncoded());

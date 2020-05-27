@@ -338,7 +338,7 @@ public class LightClientHandlerTest {
         when(blockStore.getBlockByHash(blockHash.getBytes())).thenReturn(block);
         when(block.getHeader()).thenReturn(blockHeader);
 
-        GetBlockHeadersMessage m = new GetBlockHeadersMessage(1, blockHash.getBytes(), 1);
+        GetBlockHeadersMessage m = new GetBlockHeadersMessage(1, blockHash.getBytes(), 1, 0, false);
 
         lightClientHandler.channelRead0(ctx, m);
 
