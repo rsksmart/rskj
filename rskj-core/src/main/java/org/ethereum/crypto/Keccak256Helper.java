@@ -20,7 +20,6 @@
 package org.ethereum.crypto;
 
 import org.bouncycastle.crypto.digests.KeccakDigest;
-import org.bouncycastle.crypto.digests.KeccakDigest;
 import org.bouncycastle.util.encoders.Hex;
 
 import java.math.BigInteger;

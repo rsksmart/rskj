@@ -23,6 +23,7 @@ import co.rsk.core.Wallet;
 import org.ethereum.core.Account;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
+import org.ethereum.crypto.signature.ECDSASignature;
 import org.ethereum.rpc.TypeConverter;
 import org.ethereum.util.ByteUtil;
 import org.slf4j.Logger;
@@ -77,12 +78,12 @@ public class EthModuleWalletEnabled implements EthModuleWallet {
                 prefix.getBytes(StandardCharsets.UTF_8),
                 dataHash
         ));
-        ECKey.ECDSASignature signature = ecKey.sign(messageHash);
+        ECDSASignature signature = ECDSASignature.fromSignature(ecKey.sign(messageHash));
 
         return TypeConverter.toJsonHex(ByteUtil.merge(
-                ByteUtil.bigIntegerToBytes(signature.r),
-                ByteUtil.bigIntegerToBytes(signature.s),
-                new byte[] {signature.v}
+                ByteUtil.bigIntegerToBytes(signature.getR()),
+                ByteUtil.bigIntegerToBytes(signature.getS()),
+                new byte[] {signature.getV()}
         ));
     }
 }
