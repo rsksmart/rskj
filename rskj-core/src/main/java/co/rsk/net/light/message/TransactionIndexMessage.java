@@ -26,6 +26,8 @@ import org.bouncycastle.util.BigIntegers;
 
 import java.math.BigInteger;
 
+import static org.ethereum.util.ByteUtil.toHexString;
+
 public class TransactionIndexMessage extends LightClientMessage {
 
     private final long id;
@@ -89,7 +91,12 @@ public class TransactionIndexMessage extends LightClientMessage {
 
     @Override
     public String toString() {
-        return "";
+        return "TransactionIndexMessage {" +
+                "\nid= " + getId() +
+                "\nblockNumber= " + getBlockNumber() +
+                "\nblockHash= " + toHexString(getBlockHash()) +
+                "\ntxIndex= " + getTransactionIndex() +
+                "\n}";
     }
 
     @Override

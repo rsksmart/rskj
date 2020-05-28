@@ -26,6 +26,7 @@ import org.ethereum.util.RLPList;
 import java.math.BigInteger;
 
 import static co.rsk.net.light.LightClientMessageCodes.GET_STORAGE;
+import static org.ethereum.util.ByteUtil.toHexString;
 
 public class GetStorageMessage extends LightClientMessage {
 
@@ -86,7 +87,12 @@ public class GetStorageMessage extends LightClientMessage {
 
     @Override
     public String toString() {
-        return "";
+        return "GetStorageMessage {" +
+                "\nid= " + getId() +
+                "\nblockHash= " + toHexString(getBlockHash()) +
+                "\naddressHash= " + toHexString(getAddressHash()) +
+                "\nstorageKeyHash= " + toHexString(getStorageKeyHash()) +
+                "\n} ";
     }
 
     @Override

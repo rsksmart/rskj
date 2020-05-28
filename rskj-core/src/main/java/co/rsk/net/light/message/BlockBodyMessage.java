@@ -98,7 +98,11 @@ public class BlockBodyMessage extends LightClientMessage {
 
     @Override
     public String toString() {
-        return "";
+        return  "BlockBodyMessage {" +
+                "\nid= " + getId() +
+                "\ntxs= " + getTransactions().toString() +
+                "\nuncles= " + getUncles().toString() +
+                "\n}";
     }
 
     public long getId() {

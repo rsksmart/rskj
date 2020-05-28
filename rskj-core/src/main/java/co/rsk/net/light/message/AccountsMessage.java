@@ -26,6 +26,8 @@ import org.ethereum.util.RLPList;
 
 import java.math.BigInteger;
 
+import static org.ethereum.util.ByteUtil.toHexString;
+
 /**
  * Created by Julian Len and Sebastian Sicardi on 01/04/20.
  */
@@ -112,7 +114,14 @@ public class AccountsMessage extends LightClientMessage {
 
     @Override
     public String toString() {
-        return "";
+        return "AccountMessage {" +
+                "\nid=" + getId() +
+                "\nmerkle proof=" + toHexString(getMerkleInclusionProof()) +
+                "\nnonce=" + getNonce() +
+                "\nbalance=" + getBalance() +
+                "\ncodeHash=" + toHexString(getCodeHash()) +
+                "\nstorageRoot=" + toHexString(getStorageRoot()) +
+                "\n}";
     }
 
     @Override

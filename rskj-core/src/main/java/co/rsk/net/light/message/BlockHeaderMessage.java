@@ -62,7 +62,10 @@ public class BlockHeaderMessage extends LightClientMessage {
 
     @Override
     public String toString() {
-        return "";
+        return "BlockHeaderMessage {" +
+                "\nid= " + getId() +
+                "\nblockHeader= " + getBlockHeader().toString() +
+                "\n}";
     }
 
     public BlockHeader getBlockHeader() {
