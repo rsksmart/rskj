@@ -18,6 +18,7 @@
 
 package co.rsk.net.light;
 
+import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.net.MessageQueue;
 import org.ethereum.net.message.Message;
@@ -36,7 +37,7 @@ public class LightPeer {
     public LightPeer(Channel channel, MessageQueue msgQueue) {
         this.channel = channel;
         this.msgQueue = msgQueue;
-        this.blockHeaders = new LinkedList<>();
+        this.blockHeaders = new LinkedList<>(); //This is a dummy chain of headers. It is going to be replaced by an unique header chain
     }
 
     public String getPeerIdShort() {
@@ -55,6 +56,7 @@ public class LightPeer {
         blockHeaders.add(blockHeader);
     }
 
+    @VisibleForTesting
     public List<BlockHeader> getBlocks() {
         return new LinkedList<>(blockHeaders);
     }
