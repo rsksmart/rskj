@@ -92,7 +92,10 @@ public class BlockReceiptsMessage extends LightClientMessage {
 
     @Override
     public String toString() {
-        return "";
+        return "BlockReceiptsMessage {" +
+                "\nid= " + getId() +
+                "\nreceipts= " + getBlockReceipts().toString() +
+                "\n}";
     }
 
     @Override
