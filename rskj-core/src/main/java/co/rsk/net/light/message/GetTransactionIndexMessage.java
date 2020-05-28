@@ -26,6 +26,8 @@ import org.spongycastle.util.BigIntegers;
 
 import java.math.BigInteger;
 
+import static org.ethereum.util.ByteUtil.toHexString;
+
 public class GetTransactionIndexMessage extends LightClientMessage {
 
     private final long id;
@@ -68,7 +70,10 @@ public class GetTransactionIndexMessage extends LightClientMessage {
 
     @Override
     public String toString() {
-        return "";
+        return "GetTransactionIndexMessage {" +
+                "\nid= " + getId() +
+                "\ntxHash= " + toHexString(getTxHash()) +
+                "\n}";
     }
 
     @Override

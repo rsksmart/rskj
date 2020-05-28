@@ -26,6 +26,8 @@ import org.spongycastle.util.BigIntegers;
 
 import java.math.BigInteger;
 
+import static org.ethereum.util.ByteUtil.toHexString;
+
 public class GetAccountsMessage extends LightClientMessage {
 
     private final long id;
@@ -80,7 +82,11 @@ public class GetAccountsMessage extends LightClientMessage {
 
     @Override
     public String toString() {
-        return "";
+        return "GetAccountsMessage {" +
+                "\nid= " + getId() +
+                "\nblockHash= " + toHexString(getBlockHash()) +
+                "\naddressHash= " + toHexString(getAddressHash()) +
+                "\n}";
     }
 
     @Override

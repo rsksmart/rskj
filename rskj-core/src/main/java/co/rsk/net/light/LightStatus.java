@@ -27,6 +27,8 @@ import org.ethereum.util.RLPList;
 
 import java.math.BigInteger;
 
+import static org.ethereum.util.ByteUtil.toHexString;
+
 public class LightStatus {
     private final long bestNumber;
     private final byte[] bestHash;
@@ -89,5 +91,16 @@ public class LightStatus {
         byte[] rlpBestNumber = RLP.encodeBigInteger(BigInteger.valueOf(getBestNumber()));
         byte[] rlpGenesisHash = RLP.encodeElement(getGenesisHash());
         return RLP.encodeList(rlpProtocolVersion, rlpNetworkId, rlpTotalDifficulty, rlpBestHash, rlpBestNumber, rlpGenesisHash);
+    }
+
+    public String toString() {
+        return "[" +
+            "\nprotocolVersion= " + getProtocolVersion() +
+            "\nnetworkId= " + getNetworkId() +
+            "\ntotalDifficulty= " + getTotalDifficulty().toString() +
+            "\nbestHash= " + toHexString(getBestHash()) +
+            "\nbestNumber= " + getBestNumber() +
+            "\nGenesisHash= " + toHexString(getGenesisHash()) +
+        "\n]";
     }
 }

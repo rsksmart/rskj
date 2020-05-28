@@ -25,6 +25,7 @@ import org.ethereum.util.RLPList;
 
 import java.math.BigInteger;
 import static co.rsk.net.light.LightClientMessageCodes.CODE;
+import static org.ethereum.util.ByteUtil.toHexString;
 
 public class CodeMessage extends LightClientMessage{
 
@@ -59,7 +60,10 @@ public class CodeMessage extends LightClientMessage{
 
     @Override
     public String toString() {
-        return "";
+        return "CodeMessage {" +
+                "\nid= " + getId() +
+                "\ncodeHash= " + toHexString(getCodeHash()) +
+                "\n}";
     }
 
     public long getId() {

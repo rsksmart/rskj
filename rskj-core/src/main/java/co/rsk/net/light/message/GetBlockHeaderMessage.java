@@ -26,6 +26,8 @@ import org.spongycastle.util.BigIntegers;
 
 import java.math.BigInteger;
 
+import static org.ethereum.util.ByteUtil.toHexString;
+
 public class GetBlockHeaderMessage extends LightClientMessage {
 
     private final long id;
@@ -70,7 +72,10 @@ public class GetBlockHeaderMessage extends LightClientMessage {
 
     @Override
     public String toString() {
-        return "";
+        return "GetBlockHeaderMessage{" +
+                "\nid= " + getId() +
+                "\nblockHash= " + toHexString(getBlockHash()) +
+                "\n}";
     }
 
     @Override

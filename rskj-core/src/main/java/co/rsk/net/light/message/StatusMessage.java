@@ -29,6 +29,7 @@ import org.ethereum.util.RLPList;
 import java.math.BigInteger;
 
 import static co.rsk.net.light.LightClientMessageCodes.STATUS;
+import static org.ethereum.util.ByteUtil.toHexString;
 
 public class StatusMessage extends LightClientMessage {
 
@@ -69,7 +70,10 @@ public class StatusMessage extends LightClientMessage {
 
     @Override
     public String toString() {
-        return "";
+        return "StatusMessage {" +
+                "\nid= " + getId() +
+                "\nstatus= " + getStatus().toString() +
+                "\n}";
     }
 
     @Override

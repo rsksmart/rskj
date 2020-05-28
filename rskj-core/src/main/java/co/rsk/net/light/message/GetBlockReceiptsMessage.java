@@ -26,6 +26,7 @@ import org.ethereum.util.RLPList;
 import java.math.BigInteger;
 
 import static co.rsk.net.light.LightClientMessageCodes.GET_BLOCK_RECEIPTS;
+import static org.ethereum.util.ByteUtil.toHexString;
 
 
 public class GetBlockReceiptsMessage extends LightClientMessage {
@@ -68,7 +69,10 @@ public class GetBlockReceiptsMessage extends LightClientMessage {
 
     @Override
     public String toString() {
-        return "";
+        return "GetBlockReceiptsMessage {" +
+                "\nid= " + getId() +
+                "\nblockHash= " + toHexString(getBlockHash()) +
+                "\n}";
     }
 
     @Override
