@@ -337,6 +337,7 @@ public class MutableRepository implements Repository {
         mutableTrie.put(accountKey, accountState.getEncoded());
     }
 
+    // #mish is this annotation needed? public method?
     @VisibleForTesting
     public byte[] getStorageStateRoot(RskAddress addr) {
         byte[] prefix = trieKeyMapper.getAccountStoragePrefixKey(addr);
@@ -363,23 +364,116 @@ public class MutableRepository implements Repository {
         return mutableTrie.get(trieKeyMapper.getAccountKey(addr));
     }
     
-    // storage rent related methods 
+    /* #mish additional helper methods for storage rent
+     * what matters for rent is a node's valueLength and lastRentPaidTime
+     * This includes
+     *  - main Account Node which contains account State info
+     *  - Code for contract
+     *  - storage nodes (including root).
+     * For each type of value-containing trie node, we define helper methods
+     * to get a node's key, value Length, last rent paid timestamp
+     * and a setter method to update node data via trie putWithRent() 
+     */
+     
+    // Accountkey as DataWord for situations where trikeymapper is not used directly 
+    // e.g. HashMaps in programResult to keep track of nodes created, deleted, modified etc  
+    public synchronized DataWord getAccountNodeKey(RskAddress addr) {
+        return DataWord.valueOf(trieKeyMapper.getAccountKey(addr));
+    }
 
-    // for account root node.. both regular accounts as well as contracts
-    // account node's last rent paid time
+    // for account state node.. both regular accounts as well as contracts
+    public synchronized Uint24 getAccountNodeValueLength(RskAddress addr) {
+        return mutableTrie.getValueLength(trieKeyMapper.getAccountKey(addr));
+    }
+    
     public synchronized long getAccountNodeLRPTime(RskAddress addr) {
         return mutableTrie.getLastRentPaidTime(trieKeyMapper.getAccountKey(addr));
     }
-    // account node's last rent paid timeDelta i.e time.now - time until when rent has been fully paid
-    // long cannot be null, 
-    public synchronized long getAccountNodeLRPTimeDelta(RskAddress addr) {
-        return mutableTrie.getRentPaidTimeDelta(trieKeyMapper.getAccountKey(addr));
-    }
+
     // update with lastRentPaidTime. This is an extension of updateAccountState(addr, State)
-    public synchronized void updateAccountStateLRPTime(RskAddress addr, final AccountState accountState, final long newlastRentPaidTime) {
+    public synchronized void updateAccountNodeWithRent(RskAddress addr, final AccountState accountState, final long newlastRentPaidTime) {
         byte[] accountKey = trieKeyMapper.getAccountKey(addr);
         mutableTrie.putWithRent(accountKey, accountState.getEncoded(), newlastRentPaidTime);
     }
     
-    // storage rent for contract code
+    // For nodes containing contract code
+    
+    // Start with key as DataWord for HashMaps. Using `getCodeNodexx` to emphasize this is about the node,
+    // rather than the code, and to dinsinguish from prior methods
+    public synchronized DataWord getCodeNodeKey(RskAddress addr) {        
+        AccountState account = getAccountState(addr);
+        if (account == null || account.isHibernated()) {
+            return null;
+        }
+        return DataWord.valueOf(trieKeyMapper.getCodeKey(addr));
+    }
+
+    // this returns an Uint24, unlike `getCodeLength()` which returns an int. Same otherwise.
+    public synchronized Uint24 getCodeNodeLength(RskAddress addr) {
+        AccountState account = getAccountState(addr);
+        if (account == null || account.isHibernated()) {
+            return Uint24.ZERO;
+        }
+
+        byte[] key = trieKeyMapper.getCodeKey(addr);
+        return mutableTrie.getValueLength(key);
+    }
+
+    public synchronized long getCodeNodeLRPTime(RskAddress addr) {
+        AccountState account = getAccountState(addr);
+        if (account == null || account.isHibernated()) {
+            return 0L;
+        }
+
+        byte[] key = trieKeyMapper.getCodeKey(addr);
+        return mutableTrie.getLastRentPaidTime(key);
+    }
+
+    // update node with rent info (and code) 
+    public synchronized void saveCodeWithRent(RskAddress addr, final byte[] code, final long newlastRentPaidTime) {
+        byte[] codeKey = trieKeyMapper.getCodeKey(addr);
+        mutableTrie.putWithRent(codeKey, code, newlastRentPaidTime);
+
+        if (code != null && code.length != 0 && !isExist(addr)) {
+            createAccount(addr);
+        }
+
+    }
+    
+    // For nodes containing contract storage
+
+    // start with key for stortage root (value is always '0x01' i.e ONE_BYTE_ARRAY, but rent timestamp varies) 
+    public synchronized DataWord getStorageRootKey(RskAddress addr) {        
+        return DataWord.valueOf(trieKeyMapper.getAccountStoragePrefixKey(addr));
+    }
+
+    //storage root node value is always 0x01
+    public synchronized Uint24 getStorageRootValueLength(RskAddress addr) {        
+        return new Uint24(1);
+    }
+
+    public synchronized long getStorageRootLRPTime(RskAddress addr) {        
+        return mutableTrie.getLastRentPaidTime(trieKeyMapper.getAccountStoragePrefixKey(addr));
+    }
+
+    public synchronized void updateStorageRootWithRent(RskAddress addr, final byte[] value, final long newlastRentPaidTime) {        
+        mutableTrie.putWithRent(trieKeyMapper.getAccountStoragePrefixKey(addr), ONE_BYTE_ARRAY, newlastRentPaidTime);
+    }
+
+    // methods for individual storage nodes: addr is not enough, also need the key
+    public synchronized Uint24 getStorageValueLength(RskAddress addr, DataWord key) {
+        byte[] triekey = trieKeyMapper.getAccountStorageKey(addr, key);
+        return mutableTrie.getValueLength(triekey);
+    }
+
+    public synchronized long getStorageLRPTime(RskAddress addr, DataWord key) {
+        byte[] triekey = trieKeyMapper.getAccountStorageKey(addr, key);
+        return mutableTrie.getLastRentPaidTime(triekey);
+    }
+
+    public synchronized void updateStorageWithRent(RskAddress addr,  DataWord key, final byte[] value, final long newlastRentPaidTime) {        
+        byte[] triekey = trieKeyMapper.getAccountStorageKey(addr, key);
+        mutableTrie.putWithRent(triekey, value, newlastRentPaidTime);
+    }
+
 }

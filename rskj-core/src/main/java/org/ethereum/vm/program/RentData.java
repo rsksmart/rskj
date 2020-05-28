@@ -24,8 +24,8 @@ import java.util.*;
 
 /**
  * @author mish, May 2020
- * class for keeping track of storage rent for nodes
  * object to hold a node's value length and last rent paid time
+ * to keeping track of nodes created, modified during transaction execution
  */
 public class RentData {
     private Uint24 valueLength;
@@ -34,5 +34,13 @@ public class RentData {
     public RentData(Uint24 valueLength, long lastRentPaidTime){
         this.valueLength = valueLength;
         this.lastRentPaidTime = lastRentPaidTime;
+    }
+
+    public Uint24 getValueLength(){
+        return this.valueLength;
+    }
+
+    public long getLRPTime(){
+        return this.lastRentPaidTime;
     }
 }

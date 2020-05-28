@@ -195,7 +195,7 @@ public class ProgramResult {
     }
 
     public void addModifiedNode(DataWord nodeKey, RentData rentData) {
-        // #mish: for modified, keep the latest information, overwrite previous stored in modifed
+        // #mish: for modified, keep the latest information, overwrite any previously stored info
         getModifiedNodes().put(nodeKey, rentData);
     }
 

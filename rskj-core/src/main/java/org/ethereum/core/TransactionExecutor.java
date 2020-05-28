@@ -60,7 +60,7 @@ import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 /** #mish notes: 
  // Overview: 
  * 4 stages: init() -> exec() -> go() -> finalize()
- * init(): does basic checks, like add are valid, valid gaslimits, balance, valid nonce
+ * init(): does basic checks, addr are valid, gaslimits, sufficient balance, valid nonce
  * exec(): * Transfer basic cost + gasLImits from sender. Then switch to call() or create()
            * call(): either PCC or not. 
                 - If PCC execute and return the result. 
@@ -68,7 +68,7 @@ import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
            * create() : create account + storage root, but code is not saved to trie yet. 
                         Setup vm and prog for next stage createContract() in go().
  * go(): * if PCC.. nothing to do, commit the cache
-         * else (call to non PCC or create), then use vm and prog setup eaerlier to execute prog i.e. vm.Play(prog)
+         * else (call to non PCC or create), then use vm and prog setup earlier to execute prog i.e. vm.Play(prog)
          * if create, then call createContract()
                 - this computes contract size, gascost, saves the code to repository
  * finalize(): - commit changes to repository, make refunds, execution summary and logs.. wrap things up. 
