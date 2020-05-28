@@ -42,7 +42,6 @@ import java.util.List;
  */
 public class LightProcessor {
     private static final Logger logger = LoggerFactory.getLogger("lightprocessor");
-    // keep tabs on which nodes know which blocks.
     private final BlockStore blockStore;
     private final RepositoryLocator repositoryLocator;
     private final Blockchain blockchain;
