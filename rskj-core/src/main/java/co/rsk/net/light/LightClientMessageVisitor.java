@@ -27,7 +27,7 @@ import org.slf4j.LoggerFactory;
 /**
  * Created by Julian Len and Sebastian Sicardi on 21/04/20.
  */
-public class MessageVisitor {
+public class LightClientMessageVisitor {
     private static final Logger logger = LoggerFactory.getLogger("lightnet");
     private final LightPeer lightPeer;
     private final LightSyncProcessor lightSyncProcessor;
@@ -35,8 +35,8 @@ public class MessageVisitor {
     private final LightClientHandler handler;
     private final ChannelHandlerContext ctx;
 
-    public MessageVisitor(LightPeer lightPeer, LightProcessor lightProcessor, LightSyncProcessor lightSyncProcessor,
-                          ChannelHandlerContext ctx, LightClientHandler handler) {
+    public LightClientMessageVisitor(LightPeer lightPeer, LightProcessor lightProcessor, LightSyncProcessor lightSyncProcessor,
+                                     ChannelHandlerContext ctx, LightClientHandler handler) {
         this.lightProcessor = lightProcessor;
         this.lightSyncProcessor = lightSyncProcessor;
         this.lightPeer = lightPeer;

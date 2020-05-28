@@ -145,6 +145,7 @@ public class LightProcessor {
         RskAddress address = new RskAddress(addressHash);
         AccountState state = repositorySnapshot.getAccountState(address);
 
+        // TODO: ssicardi: Merkle proof getter and validator
         AccountsMessage response = new AccountsMessage(id, new byte[] {0x00}, state.getNonce().longValue(),
                 state.getBalance().asBigInteger().longValue(), repositorySnapshot.getCodeHash(address).getBytes(),
                 repositorySnapshot.getRoot());
@@ -212,6 +213,7 @@ public class LightProcessor {
             return;
         }
 
+        // TODO: ssicardi: Merkle proof getter and validator
         StorageMessage response = new StorageMessage(id, new byte[] {0x00}, storageValue);
         lightPeer.sendMessage(response);
     }

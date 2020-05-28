@@ -18,7 +18,7 @@
 
 package co.rsk.net.light.message;
 
-import co.rsk.net.light.MessageVisitor;
+import co.rsk.net.light.LightClientMessageVisitor;
 import org.bouncycastle.util.BigIntegers;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.core.BlockHeader;
@@ -118,7 +118,7 @@ public class BlockBodyMessage extends LightClientMessage {
     }
 
     @Override
-    public void accept(MessageVisitor v) {
+    public void accept(LightClientMessageVisitor v) {
         v.apply(this);
     }
 }

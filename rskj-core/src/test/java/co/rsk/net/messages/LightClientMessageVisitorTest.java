@@ -24,7 +24,7 @@ import java.util.stream.Stream;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
-public class MessageVisitorTest {
+public class LightClientMessageVisitorTest {
 
     private MessageVisitor target;
     private Peer sender;
