@@ -21,7 +21,7 @@ package co.rsk.net.light.message;
 
 import co.rsk.net.light.LightClientMessageCodes;
 import co.rsk.net.light.LightStatus;
-import co.rsk.net.light.MessageVisitor;
+import co.rsk.net.light.LightClientMessageVisitor;
 import org.bouncycastle.util.BigIntegers;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
@@ -94,7 +94,7 @@ public class StatusMessage extends LightClientMessage {
     }
 
     @Override
-    public void accept(MessageVisitor v) {
+    public void accept(LightClientMessageVisitor v) {
         v.apply(this);
     }
 }

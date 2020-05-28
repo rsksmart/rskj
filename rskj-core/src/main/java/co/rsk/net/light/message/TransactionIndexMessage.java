@@ -19,7 +19,7 @@
 package co.rsk.net.light.message;
 
 import co.rsk.net.light.LightClientMessageCodes;
-import co.rsk.net.light.MessageVisitor;
+import co.rsk.net.light.LightClientMessageVisitor;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
 import org.bouncycastle.util.BigIntegers;
@@ -100,7 +100,7 @@ public class TransactionIndexMessage extends LightClientMessage {
     }
 
     @Override
-    public void accept(MessageVisitor v) {
+    public void accept(LightClientMessageVisitor v) {
         v.apply(this);
     }
 }

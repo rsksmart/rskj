@@ -42,7 +42,7 @@ public class LightClientHandler extends SimpleChannelInboundHandler<LightClientM
 
     @Override
     public void channelRead0(ChannelHandlerContext ctx, LightClientMessage msg) {
-        MessageVisitor visitor = new MessageVisitor(lightPeer, lightProcessor, lightSyncProcessor, ctx,this);
+        LightClientMessageVisitor visitor = new LightClientMessageVisitor(lightPeer, lightProcessor, lightSyncProcessor, ctx,this);
         msg.accept(visitor);
     }
 
