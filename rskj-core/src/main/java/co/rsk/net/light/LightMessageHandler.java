@@ -7,7 +7,7 @@ import io.netty.channel.ChannelHandlerContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.concurrent.PriorityBlockingQueue;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 public class LightMessageHandler implements InternalService, Runnable {
@@ -17,14 +17,14 @@ public class LightMessageHandler implements InternalService, Runnable {
     private final LightProcessor lightProcessor;
     private final LightSyncProcessor lightSyncProcessor;
 
-    private final PriorityBlockingQueue<LightMessageHandler.MessageTask> queue;
+    private final ArrayBlockingQueue<MessageTask> queue;
 
     private boolean stopped = true;
 
     public LightMessageHandler(LightProcessor lightProcessor, LightSyncProcessor lightSyncProcessor) {
         this.lightProcessor = lightProcessor;
         this.lightSyncProcessor = lightSyncProcessor;
-        this.queue = new PriorityBlockingQueue<>(11);
+        this.queue = new ArrayBlockingQueue<>(11);
     }
 
     public void processMessage(LightPeer lightPeer, LightClientMessage message,

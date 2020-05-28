@@ -71,6 +71,7 @@ public class LightClientHandlerTest {
     private Keccak256 blockHash;
     private LightPeer lightPeer;
     private ProofOfWorkRule proofOfWorkRule;
+    private LightMessageHandler lightMessageHandler;
 
     @Before
     public void setup() {
@@ -86,7 +87,8 @@ public class LightClientHandlerTest {
         LightPeersInformation lightPeersInformation = mock(LightPeersInformation.class);
         lightSyncProcessor = new LightSyncProcessor(config, genesis, blockStore, blockchain, proofOfWorkRule, lightPeersInformation);
         lightPeer = spy(new LightPeer(mock(Channel.class), messageQueue));
-        LightClientHandler.Factory factory = (lightPeer) -> new LightClientHandler(lightPeer, lightProcessor, lightSyncProcessor);
+        lightMessageHandler = mock(LightMessageHandler.class);
+        LightClientHandler.Factory factory = (lightPeer) -> new LightClientHandler(lightPeer, lightSyncProcessor, lightMessageHandler);
         lightClientHandler = factory.newInstance(lightPeer);
         blockHash = new Keccak256(HashUtil.randomHash());
 
