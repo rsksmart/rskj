@@ -53,15 +53,16 @@ public class LightProcessor {
         this.blockStore = blockStore;
         this.repositoryLocator = repositoryLocator;
     }
+
     /**
      * processBlockReceiptsRequest sends the requested block receipts if it is available.
-     * @param requestId the id of the request
-     * @param blockHash   the requested block hash.
-     * @param lightPeer
+     * @param id the id of the request
+     * @param blockHash the requested block hash.
+     * @param lightPeer the connected peer
      */
-    public void processGetBlockReceiptsMessage(long requestId, byte[] blockHash, LightPeer lightPeer) {
+    public void processGetBlockReceiptsMessage(long id, byte[] blockHash, LightPeer lightPeer) {
         String blockHashLog = Hex.toHexString(blockHash);
-        logger.trace("Processing block receipts request {} block {}", requestId, blockHashLog);
+        logger.trace("Processing block receipts request {} block {}", id, blockHashLog);
         final Block block = blockStore.getBlockByHash(blockHash);
 
         if (block == null) {
@@ -76,7 +77,7 @@ public class LightProcessor {
             receipts.add(txInfo.getReceipt());
         }
 
-        Message responseMessage = new BlockReceiptsMessage(requestId, receipts);
+        Message responseMessage = new BlockReceiptsMessage(id, receipts);
         lightPeer.sendMessage(responseMessage);
     }
 
@@ -106,10 +107,10 @@ public class LightProcessor {
         throw new UnsupportedOperationException("Not supported TransactionIndexMessage processing");
     }
 
-    public void processGetCodeMessage(long requestId, byte[] blockHash, byte[] address, LightPeer lightPeer) {
+    public void processGetCodeMessage(long id, byte[] blockHash, byte[] address, LightPeer lightPeer) {
         String blockHashLog = Hex.toHexString(blockHash);
         String addressLog = Hex.toHexString(address);
-        logger.trace("Processing code request {} block {} code {}", requestId, blockHashLog, addressLog);
+        logger.trace("Processing code request {} block {} code {}", id, blockHashLog, addressLog);
 
         final Block block = blockStore.getBlockByHash(blockHash);
 
@@ -122,7 +123,7 @@ public class LightProcessor {
         RskAddress addr = new RskAddress(address);
         Keccak256 codeHash = repositorySnapshot.getCodeHash(addr);
 
-        CodeMessage response = new CodeMessage(requestId, codeHash.getBytes());
+        CodeMessage response = new CodeMessage(id, codeHash.getBytes());
         lightPeer.sendMessage(response);
     }
 
