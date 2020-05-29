@@ -124,7 +124,11 @@ public interface Repository extends RepositorySnapshot {
         addBalance(toAddr, value);
     }
 
-    // #mish extend repository for methods related to storage rent (see mutable repository for implementation)
+    /* #mish extend repository for methods related to storage rent
+    * (i.e. put/get methods for node (accountState, code, storage) value length and last rent paid timestamp
+    * These are implemented in MutableRepository
+    */
+
     DataWord getAccountNodeKey(RskAddress addr);
 
     // for account state node.. both regular accounts as well as contracts

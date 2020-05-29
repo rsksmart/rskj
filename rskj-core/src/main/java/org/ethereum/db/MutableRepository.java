@@ -377,20 +377,24 @@ public class MutableRepository implements Repository {
      
     // Accountkey as DataWord for situations where trikeymapper is not used directly 
     // e.g. HashMaps in programResult to keep track of nodes created, deleted, modified etc  
+    @Override
     public synchronized DataWord getAccountNodeKey(RskAddress addr) {
         return DataWord.valueOf(trieKeyMapper.getAccountKey(addr));
     }
 
     // for account state node.. both regular accounts as well as contracts
+    @Override
     public synchronized Uint24 getAccountNodeValueLength(RskAddress addr) {
         return mutableTrie.getValueLength(trieKeyMapper.getAccountKey(addr));
     }
     
+    @Override
     public synchronized long getAccountNodeLRPTime(RskAddress addr) {
         return mutableTrie.getLastRentPaidTime(trieKeyMapper.getAccountKey(addr));
     }
 
     // update with lastRentPaidTime. This is an extension of updateAccountState(addr, State)
+    @Override
     public synchronized void updateAccountNodeWithRent(RskAddress addr, final AccountState accountState, final long newlastRentPaidTime) {
         byte[] accountKey = trieKeyMapper.getAccountKey(addr);
         mutableTrie.putWithRent(accountKey, accountState.getEncoded(), newlastRentPaidTime);
@@ -400,6 +404,7 @@ public class MutableRepository implements Repository {
     
     // Start with key as DataWord for HashMaps. Using `getCodeNodexx` to emphasize this is about the node,
     // rather than the code, and to dinsinguish from prior methods
+    @Override
     public synchronized DataWord getCodeNodeKey(RskAddress addr) {        
         AccountState account = getAccountState(addr);
         if (account == null || account.isHibernated()) {
@@ -409,6 +414,7 @@ public class MutableRepository implements Repository {
     }
 
     // this returns an Uint24, unlike `getCodeLength()` which returns an int. Same otherwise.
+    @Override
     public synchronized Uint24 getCodeNodeLength(RskAddress addr) {
         AccountState account = getAccountState(addr);
         if (account == null || account.isHibernated()) {
@@ -419,6 +425,7 @@ public class MutableRepository implements Repository {
         return mutableTrie.getValueLength(key);
     }
 
+    @Override
     public synchronized long getCodeNodeLRPTime(RskAddress addr) {
         AccountState account = getAccountState(addr);
         if (account == null || account.isHibernated()) {
@@ -430,6 +437,7 @@ public class MutableRepository implements Repository {
     }
 
     // update node with rent info (and code) 
+    @Override
     public synchronized void saveCodeWithRent(RskAddress addr, final byte[] code, final long newlastRentPaidTime) {
         byte[] codeKey = trieKeyMapper.getCodeKey(addr);
         mutableTrie.putWithRent(codeKey, code, newlastRentPaidTime);
@@ -443,34 +451,41 @@ public class MutableRepository implements Repository {
     // For nodes containing contract storage
 
     // start with key for stortage root (value is always '0x01' i.e ONE_BYTE_ARRAY, but rent timestamp varies) 
+    @Override
     public synchronized DataWord getStorageRootKey(RskAddress addr) {        
         return DataWord.valueOf(trieKeyMapper.getAccountStoragePrefixKey(addr));
     }
 
     //storage root node value is always 0x01
+    @Override
     public synchronized Uint24 getStorageRootValueLength(RskAddress addr) {        
         return new Uint24(1);
     }
-
+    
+    @Override
     public synchronized long getStorageRootLRPTime(RskAddress addr) {        
         return mutableTrie.getLastRentPaidTime(trieKeyMapper.getAccountStoragePrefixKey(addr));
     }
 
+    @Override
     public synchronized void updateStorageRootWithRent(RskAddress addr, final byte[] value, final long newlastRentPaidTime) {        
         mutableTrie.putWithRent(trieKeyMapper.getAccountStoragePrefixKey(addr), ONE_BYTE_ARRAY, newlastRentPaidTime);
     }
 
     // methods for individual storage nodes: addr is not enough, also need the key
+    @Override
     public synchronized Uint24 getStorageValueLength(RskAddress addr, DataWord key) {
         byte[] triekey = trieKeyMapper.getAccountStorageKey(addr, key);
         return mutableTrie.getValueLength(triekey);
     }
-
+    
+    @Override
     public synchronized long getStorageLRPTime(RskAddress addr, DataWord key) {
         byte[] triekey = trieKeyMapper.getAccountStorageKey(addr, key);
         return mutableTrie.getLastRentPaidTime(triekey);
     }
 
+    @Override
     public synchronized void updateStorageWithRent(RskAddress addr,  DataWord key, final byte[] value, final long newlastRentPaidTime) {        
         byte[] triekey = trieKeyMapper.getAccountStorageKey(addr, key);
         mutableTrie.putWithRent(triekey, value, newlastRentPaidTime);

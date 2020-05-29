@@ -28,8 +28,6 @@ import co.rsk.metrics.profilers.ProfilerFactory;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.rpc.modules.trace.ProgramSubtrace;
 import co.rsk.core.types.ints.Uint24;
-//import co.rsk.db.RepositorySnapshot;
-//import co.rsk.core.bc.AccountInformationProvider;
 
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -37,6 +35,7 @@ import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.vm.*;
+import org.ethereum.vm.program.RentData;
 import org.ethereum.vm.program.Program;
 import org.ethereum.vm.program.ProgramResult;
 import org.ethereum.vm.program.invoke.ProgramInvoke;
@@ -692,10 +691,14 @@ public class TransactionExecutor {
 
     public Coin getPaidFees() { return paidFees; }
 
-    /** Helper methods for storage rent 
-    */
-    // Add new nodes to the program result hashmap, these will be charged 6 months advanced rent 
-    public void newNodeHandler(RskAddress addr){
+    /** #mish Helper methods for storage rent 
+    *  Add nodes to program result hashmaps
+    * AccountState, code, and storage "root" nodes only since
+    * (as of this time May 2020) TX executor class does not deal with storage cells directly.
+    * should that change, then we need to add storage nodes as well.
+    */       
+    // new nodes created during Tx execution: 
+    public void newNodeAdder(RskAddress addr){
         DataWord accKey = track.getAccountNodeKey(addr);
         Uint24 vLen = track.getAccountNodeValueLength(addr);
         
@@ -710,6 +713,60 @@ public class TransactionExecutor {
             DataWord srKey = track.getStorageRootKey(addr);
             Uint24 srLen = track.getStorageRootValueLength(addr);
             result.addNewTrieNode(srKey, srLen);
+        }
+    }
+    // #mish record (HashMap) of nodes touched by a transaction but prior to any modifications
+    // entries are added for a node only if there are no pre-existing ones, no overwrites
+    // this should be called the first time any RSK addr is referenced in a TX or a child process
+    public void accessedNodeAdder(RskAddress addr){
+        DataWord accKey = track.getAccountNodeKey(addr);
+        Uint24 vLen = track.getAccountNodeValueLength(addr);
+        long accLrpt = track.getAccountNodeLRPTime(addr);
+        
+        result.addAccessedNode(accKey, new RentData(vLen, accLrpt));
+        // if this is a new contract then add info for storage root and code
+        if (track.isContract(addr)) {
+            // code
+            DataWord cKey = track.getCodeNodeKey(addr);
+            Uint24 cLen = track.getCodeNodeLength(addr);
+            long cLrpt = track.getCodeNodeLRPTime(addr);
+        
+            result.addAccessedNode(cKey, new RentData(cLen, cLrpt));
+            // storage root node
+            DataWord srKey = track.getStorageRootKey(addr);
+            Uint24 srLen = track.getStorageRootValueLength(addr);
+            long srLrpt = track.getStorageRootLRPTime(addr);
+        
+            result.addAccessedNode(srKey, new RentData(srLen, srLrpt));
+        }
+    }
+
+    /** #mish record (HashMap) of nodes modified by a transaction 
+     * new calls overwrite any previously exisitng entry. Only the latest info is preserved
+     * this should be called when a transaction is being finalized and cacheTrack has been commited
+     * care needs to be taken, because computations made using this Map
+     * will lead to further account state changes (for storage rent compuation, balance updates). 
+    */
+    public void modifiedNodeAdder(RskAddress addr){
+        DataWord accKey = track.getAccountNodeKey(addr);
+        Uint24 vLen = track.getAccountNodeValueLength(addr);
+        long accLrpt = track.getAccountNodeLRPTime(addr);
+        
+        result.addModifiedNode(accKey, new RentData(vLen, accLrpt));
+        // if this is a new contract then add info for storage root and code
+        if (track.isContract(addr)) {
+            // code
+            DataWord cKey = track.getCodeNodeKey(addr);
+            Uint24 cLen = track.getCodeNodeLength(addr);
+            long cLrpt = track.getCodeNodeLRPTime(addr);
+        
+            result.addModifiedNode(cKey, new RentData(cLen, cLrpt));
+            // storage root node
+            DataWord srKey = track.getStorageRootKey(addr);
+            Uint24 srLen = track.getStorageRootValueLength(addr);
+            long srLrpt = track.getStorageRootLRPTime(addr);
+        
+            result.addModifiedNode(srKey, new RentData(srLen, srLrpt));
         }
     }
 
