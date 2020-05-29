@@ -84,8 +84,7 @@ public class LightSyncProcessor {
             String bestHashLog = HashUtil.shortHash(status.getBestHash());
             loggerNet.debug("Receiving Status - block {} {}", status.getBestNumber(), bestHashLog);
 
-            CompatibilityChecker checker = new CompatibilityChecker(lightPeer, ctx, lightClientHandler, status);
-            if (!checker.isCompatible()){
+            if (!isCompatible(status, lightPeer, ctx, lightClientHandler)){
                 return;
             }
 
@@ -161,47 +160,32 @@ public class LightSyncProcessor {
         return new LightStatus((byte) 0, config.networkId(), totalDifficulty, bestHash, bestNumber, genesis.getHash().getBytes());
     }
 
-    private class CompatibilityChecker {
-        LightPeer lightPeer;
-        ChannelHandlerContext ctx;
-        LightClientHandler lightClientHandler;
-        LightStatus msgStatus;
+    private boolean isCompatible(LightStatus msgStatus, LightPeer lightPeer, ChannelHandlerContext ctx,
+                                 LightClientHandler lightClientHandler){
+        // HOW TO USE: Any new check you want to include, you should add a compareStatusParam with its
+        // properties to compare
+        return compareStatusParam(version, msgStatus.getProtocolVersion(),
+                ReasonCode.INCOMPATIBLE_PROTOCOL, "Protocol Incompatibility",
+                lightPeer, ctx, lightClientHandler) &&
 
-        private CompatibilityChecker(LightPeer lightPeer,
-                                     ChannelHandlerContext ctx,
-                                     LightClientHandler lightClientHandler,
-                                     LightStatus msgStatus){
-            this.lightPeer = lightPeer;
-            this.ctx = ctx;
-            this.lightClientHandler = lightClientHandler;
-            this.msgStatus = msgStatus;
-        }
+        compareStatusParam(config.networkId(), msgStatus.getNetworkId(),
+                ReasonCode.NULL_IDENTITY, "Invalid Network",
+                lightPeer, ctx, lightClientHandler) &&
 
-        private boolean isCompatible(){
-            return compare(version, msgStatus.getProtocolVersion(),
-            ReasonCode.INCOMPATIBLE_PROTOCOL, "Protocol Incompatibility") &&
+        compareStatusParam(genesis.getHash(), new Keccak256(msgStatus.getGenesisHash()),
+                ReasonCode.UNEXPECTED_GENESIS, "Unexpected Genesis",
+                lightPeer, ctx, lightClientHandler);
+    }
 
-            compare(config.networkId(), msgStatus.getNetworkId(),
-                    ReasonCode.NULL_IDENTITY, "Invalid Network") &&
-
-            compare(genesis.getHash(), new Keccak256(msgStatus.getGenesisHash()),
-                    ReasonCode.UNEXPECTED_GENESIS, "Unexpected Genesis");
-        }
-
-        private boolean compare(Object expected, Object msg, ReasonCode reason, String reasonText){
-            if (!expected.equals(msg)) {
-                disconnect(reason, reasonText, expected, msg);
-                return false;
-            }
-            return true;
-        }
-
-        private void disconnect(ReasonCode reason, String reasonText,
-                                Object expectedParam, Object returnedParam) {
+    private boolean compareStatusParam(Object expectedParam, Object msgParam, ReasonCode reason, String reasonText,
+                                       LightPeer lightPeer, ChannelHandlerContext ctx, LightClientHandler lightClientHandler){
+        if (!expectedParam.equals(msgParam)) {
+            loggerNet.info("Client expected {} - but was {}", expectedParam, msgParam);
             loggerNet.info("Removing LCHandler for {} reason: {}", ctx.channel().remoteAddress(), reasonText);
-            loggerNet.info("Client expected {} - but was {}", expectedParam, returnedParam);
             lightPeer.disconnect(reason);
             ctx.pipeline().remove(lightClientHandler);
+            return false;
         }
+        return true;
     }
 }
