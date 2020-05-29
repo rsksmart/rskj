@@ -122,6 +122,10 @@ public class LightProcessor {
         RskAddress addr = new RskAddress(address);
         byte[] bytecode = repositorySnapshot.getCode(addr);
 
+        if (bytecode == null) {
+            // Don't waste time sending an empty response.
+            return;
+        }
         CodeMessage response = new CodeMessage(id, bytecode);
         lightPeer.sendMessage(response);
     }
