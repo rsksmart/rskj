@@ -84,38 +84,11 @@ public class LightSyncProcessor {
             String bestHashLog = HashUtil.shortHash(status.getBestHash());
             loggerNet.debug("Receiving Status - block {} {}", status.getBestNumber(), bestHashLog);
 
-            byte protocolVersion = status.getProtocolVersion();
-            if (protocolVersion != version) {
-                loggerNet.info("Removing LCHandler for {} due to protocol incompatibility", ctx.channel().remoteAddress());
-                loggerNet.info("Protocol version {} - message protocol version {}",
-                        version,
-                        protocolVersion);
-                lightPeer.disconnect(ReasonCode.INCOMPATIBLE_PROTOCOL);
-                ctx.pipeline().remove(lightClientHandler); // Peer is not compatible for the 'lc' sub-protocol
+            CompatibilityChecker checker = new CompatibilityChecker(lightPeer, ctx, lightClientHandler, status);
+            if (!checker.isCompatible()){
                 return;
             }
 
-            int networkId = config.networkId();
-            int msgNetworkId = status.getNetworkId();
-            if (msgNetworkId != networkId) {
-                loggerNet.info("Removing LCHandler for {} due to invalid network", ctx.channel().remoteAddress());
-                loggerNet.info("Different network received: config network ID {} - message network ID {}",
-                        networkId, msgNetworkId);
-                lightPeer.disconnect(ReasonCode.NULL_IDENTITY);
-                ctx.pipeline().remove(lightClientHandler);
-                return;
-            }
-
-            Keccak256 genesisHash = genesis.getHash();
-            Keccak256 msgGenesisHash = new Keccak256(status.getGenesisHash());
-            if (!msgGenesisHash.equals(genesisHash)) {
-                loggerNet.info("Removing LCHandler for {} due to unexpected genesis", ctx.channel().remoteAddress());
-                loggerNet.info("Config genesis hash {} - message genesis hash {}",
-                        genesisHash, msgGenesisHash);
-                lightPeer.disconnect(ReasonCode.UNEXPECTED_GENESIS);
-                ctx.pipeline().remove(lightClientHandler);
-                return;
-            }
         } catch (NoSuchElementException e) {
             loggerNet.debug("LCHandler already removed - exception: {}", e.getMessage());
         }
@@ -186,5 +159,49 @@ public class LightSyncProcessor {
         long bestNumber = block.getNumber();
         BlockDifficulty totalDifficulty = blockStore.getTotalDifficultyForHash(bestHash);
         return new LightStatus((byte) 0, config.networkId(), totalDifficulty, bestHash, bestNumber, genesis.getHash().getBytes());
+    }
+
+    private class CompatibilityChecker {
+        LightPeer lightPeer;
+        ChannelHandlerContext ctx;
+        LightClientHandler lightClientHandler;
+        LightStatus msgStatus;
+
+        private CompatibilityChecker(LightPeer lightPeer,
+                                     ChannelHandlerContext ctx,
+                                     LightClientHandler lightClientHandler,
+                                     LightStatus msgStatus){
+            this.lightPeer = lightPeer;
+            this.ctx = ctx;
+            this.lightClientHandler = lightClientHandler;
+            this.msgStatus = msgStatus;
+        }
+
+        private boolean isCompatible(){
+            return compare(version, msgStatus.getProtocolVersion(),
+            ReasonCode.INCOMPATIBLE_PROTOCOL, "Protocol Incompatibility") &&
+
+            compare(config.networkId(), msgStatus.getNetworkId(),
+                    ReasonCode.NULL_IDENTITY, "Invalid Network") &&
+
+            compare(genesis.getHash(), new Keccak256(msgStatus.getGenesisHash()),
+                    ReasonCode.UNEXPECTED_GENESIS, "Unexpected Genesis");
+        }
+
+        private boolean compare(Object expected, Object msg, ReasonCode reason, String reasonText){
+            if (!expected.equals(msg)) {
+                disconnect(reason, reasonText, expected, msg);
+                return false;
+            }
+            return true;
+        }
+
+        private void disconnect(ReasonCode reason, String reasonText,
+                                Object expectedParam, Object returnedParam) {
+            loggerNet.info("Removing LCHandler for {} reason: {}", ctx.channel().remoteAddress(), reasonText);
+            loggerNet.info("Client expected {} - but was {}", expectedParam, returnedParam);
+            lightPeer.disconnect(reason);
+            ctx.pipeline().remove(lightClientHandler);
+        }
     }
 }
