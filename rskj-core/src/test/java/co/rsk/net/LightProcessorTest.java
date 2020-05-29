@@ -26,6 +26,7 @@ import co.rsk.db.RepositorySnapshot;
 import co.rsk.net.light.LightPeer;
 import co.rsk.net.light.LightProcessor;
 import co.rsk.net.light.message.*;
+import co.rsk.vm.BytecodeCompiler;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.*;
 import org.ethereum.crypto.HashUtil;
@@ -161,16 +162,17 @@ public class LightProcessorTest {
         final Block block = mock(Block.class);
         final RepositorySnapshot repositorySnapshot = mock(RepositorySnapshot.class);
 
-        byte[] codeHash = randomBytes(32);
+        BytecodeCompiler compiler = new BytecodeCompiler();
+        byte[] bytecode = compiler.compile("PUSH1 0x01 PUSH1 0x02 ADD");
         RskAddress address = randomAddress();
         long id = 0;
 
         when(block.getHash()).thenReturn(blockHash);
         when(blockStore.getBlockByHash(blockHash.getBytes())).thenReturn(block);
         when(repositoryLocator.snapshotAt(block.getHeader())).thenReturn(repositorySnapshot);
-        when(repositorySnapshot.getCodeHash(address)).thenReturn(new Keccak256(codeHash));
+        when(repositorySnapshot.getCode(address)).thenReturn(bytecode);
 
-        CodeMessage expectedMessage = new CodeMessage(id, codeHash);
+        CodeMessage expectedMessage = new CodeMessage(id, bytecode);
 
         ArgumentCaptor<CodeMessage> argument = forClass(CodeMessage.class);
         lightProcessor.processGetCodeMessage(id, blockHash.getBytes(), address.getBytes(), lightPeer);
@@ -181,6 +183,22 @@ public class LightProcessorTest {
 
     @Test
     public void processGetCodeMessageWithInvalidBlockHash() {
+        long id = 100;
+        final Block block = mock(Block.class);
+        final RepositorySnapshot repositorySnapshot = mock(RepositorySnapshot.class);
+        RskAddress address = randomAddress();
+
+        when(block.getHash()).thenReturn(blockHash);
+        when(blockStore.getBlockByHash(blockHash.getBytes())).thenReturn(block);
+        when(repositoryLocator.snapshotAt(block.getHeader())).thenReturn(repositorySnapshot);
+        when(repositorySnapshot.getCode(address)).thenReturn(null);
+
+        lightProcessor.processGetCodeMessage(id, blockHash.getBytes(), address.getBytes(), lightPeer);
+        verify(msgQueue, times(0)).sendMessage(any());
+    }
+
+    @Test
+    public void processGetCodeMessageWithNoCode() {
         long id = 100;
         RskAddress address = randomAddress();
 

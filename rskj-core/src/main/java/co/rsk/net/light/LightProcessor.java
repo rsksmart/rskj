@@ -19,15 +19,14 @@
 package co.rsk.net.light;
 
 import co.rsk.core.RskAddress;
-import co.rsk.crypto.Keccak256;
-import co.rsk.db.RepositorySnapshot;
 import co.rsk.db.RepositoryLocator;
+import co.rsk.db.RepositorySnapshot;
 import co.rsk.net.light.message.*;
-import org.ethereum.core.*;
-import org.ethereum.net.message.Message;
 import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.core.*;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.TransactionInfo;
+import org.ethereum.net.message.Message;
 import org.ethereum.vm.DataWord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -121,13 +120,17 @@ public class LightProcessor {
 
         RepositorySnapshot repositorySnapshot = repositoryLocator.snapshotAt(block.getHeader());
         RskAddress addr = new RskAddress(address);
-        Keccak256 codeHash = repositorySnapshot.getCodeHash(addr);
+        byte[] bytecode = repositorySnapshot.getCode(addr);
 
-        CodeMessage response = new CodeMessage(id, codeHash.getBytes());
+        if (bytecode == null) {
+            // Don't waste time sending an empty response.
+            return;
+        }
+        CodeMessage response = new CodeMessage(id, bytecode);
         lightPeer.sendMessage(response);
     }
 
-    public void processCodeMessage(long id, byte[] codeHash, LightPeer lightPeer) {
+    public void processCodeMessage(long id, byte[] bytecode, LightPeer lightPeer) {
         throw new UnsupportedOperationException("Not supported Code processing");
     }
 

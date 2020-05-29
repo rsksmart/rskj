@@ -30,11 +30,11 @@ import static org.ethereum.util.ByteUtil.toHexString;
 public class CodeMessage extends LightClientMessage{
 
     private final long id;
-    private final byte[] codeHash;
+    private final byte[] bytecode;
 
-    public CodeMessage(long id, byte[] codeHash) {
+    public CodeMessage(long id, byte[] bytecode) {
         this.id = id;
-        this.codeHash = codeHash.clone();
+        this.bytecode = bytecode.clone();
         this.code = CODE.asByte();
     }
 
@@ -42,7 +42,7 @@ public class CodeMessage extends LightClientMessage{
         RLPList list = (RLPList) RLP.decode2(encoded).get(0);
         byte[] rlpId = list.get(0).getRLPData();
         this.id = rlpId == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpId).longValue();
-        this.codeHash = list.get(1).getRLPData();
+        this.bytecode = list.get(1).getRLPData();
         this.code = CODE.asByte();
     }
 
@@ -71,7 +71,7 @@ public class CodeMessage extends LightClientMessage{
     }
 
     public byte[] getCodeHash() {
-        return codeHash.clone();
+        return bytecode.clone();
     }
 
     @Override
