@@ -184,6 +184,22 @@ public class LightProcessorTest {
     @Test
     public void processGetCodeMessageWithInvalidBlockHash() {
         long id = 100;
+        final Block block = mock(Block.class);
+        final RepositorySnapshot repositorySnapshot = mock(RepositorySnapshot.class);
+        RskAddress address = randomAddress();
+
+        when(block.getHash()).thenReturn(blockHash);
+        when(blockStore.getBlockByHash(blockHash.getBytes())).thenReturn(block);
+        when(repositoryLocator.snapshotAt(block.getHeader())).thenReturn(repositorySnapshot);
+        when(repositorySnapshot.getCode(address)).thenReturn(null);
+
+        lightProcessor.processGetCodeMessage(id, blockHash.getBytes(), address.getBytes(), lightPeer);
+        verify(msgQueue, times(0)).sendMessage(any());
+    }
+
+    @Test
+    public void processGetCodeMessageWithNoCode() {
+        long id = 100;
         RskAddress address = randomAddress();
 
         lightProcessor.processGetCodeMessage(id, blockHash.getBytes(), address.getBytes(), lightPeer);
