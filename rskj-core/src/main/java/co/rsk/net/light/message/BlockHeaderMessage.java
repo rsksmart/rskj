@@ -50,7 +50,7 @@ public class BlockHeaderMessage extends LightClientMessage {
     @Override
     public byte[] getEncoded() {
         byte[] rlpId = RLP.encodeBigInteger(BigInteger.valueOf(getId()));
-        byte[] rlpBlockHeader = RLP.encodeElement(blockHeader.getFullEncoded());
+        byte[] rlpBlockHeader = RLP.encodeElement(getBlockHeader().getFullEncoded());
 
         return RLP.encodeList(rlpId, rlpBlockHeader);
     }

@@ -61,9 +61,9 @@ public class TransactionIndexMessage extends LightClientMessage {
     @Override
     public byte[] getEncoded() {
         byte[] rlpId = RLP.encodeBigInteger(BigInteger.valueOf(getId()));
-        byte[] rlpBlockNumber = RLP.encodeBigInteger(BigInteger.valueOf(this.blockNumber));
-        byte[] rlpBlockHash = RLP.encodeElement(this.blockHash);
-        byte[] rlpTxIndex = RLP.encodeBigInteger((BigInteger.valueOf(this.txIndex)));
+        byte[] rlpBlockNumber = RLP.encodeBigInteger(BigInteger.valueOf(getBlockNumber()));
+        byte[] rlpBlockHash = RLP.encodeElement(getBlockHash());
+        byte[] rlpTxIndex = RLP.encodeBigInteger((BigInteger.valueOf(getTransactionIndex())));
 
         return RLP.encodeList(rlpId, rlpBlockNumber, rlpBlockHash, rlpTxIndex);
     }

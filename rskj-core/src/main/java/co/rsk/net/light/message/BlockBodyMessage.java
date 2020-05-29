@@ -19,6 +19,7 @@
 package co.rsk.net.light.message;
 
 import co.rsk.net.light.LightClientMessageVisitor;
+import co.rsk.net.light.message.utils.RLPUtils;
 import org.bouncycastle.util.BigIntegers;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.core.BlockHeader;
@@ -41,29 +42,14 @@ public class BlockBodyMessage extends LightClientMessage {
 
     public BlockBodyMessage(byte[] encoded, BlockFactory blockFactory) {
         RLPList list = (RLPList) decode2(encoded).get(0);
-        byte[] rlpId = list.get(0).getRLPData();
-        this.id = rlpId == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpId).longValue();
-
         RLPList rlpTransactions = (RLPList) decode2(list.get(1).getRLPData()).get(0);
-
-        List<Transaction> transactionList = new LinkedList<>();
-        for (int k = 0; k < rlpTransactions.size(); k++) {
-            byte[] rlpData = rlpTransactions.get(k).getRLPData();
-            Transaction tx = new ImmutableTransaction(rlpData);
-            transactionList.add(tx);
-        }
-
         RLPList rlpUncles = (RLPList) decode2(list.get(2).getRLPData()).get(0);
 
-        List<BlockHeader> uncleList = new LinkedList<>();
-        for (int k = 0; k < rlpUncles.size(); k++) {
-            byte[] rlpData = rlpUncles.get(k).getRLPData();
-            BlockHeader uncle = blockFactory.decodeHeader(rlpData);
-            uncleList.add(uncle);
-        }
+        byte[] rlpId = list.get(0).getRLPData();
 
-        this.transactions = transactionList;
-        this.uncles = uncleList;
+        this.id = rlpId == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpId).longValue();
+        this.transactions =  RLPUtils.mapInputRlp(rlpTransactions, ImmutableTransaction::new);
+        this.uncles = RLPUtils.mapInputRlp(rlpUncles, blockFactory::decodeHeader);
         this.code = BLOCK_BODY.asByte();
     }
 

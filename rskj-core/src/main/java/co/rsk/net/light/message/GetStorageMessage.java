@@ -57,10 +57,10 @@ public class GetStorageMessage extends LightClientMessage {
 
     @Override
     public byte[] getEncoded() {
-        byte[] rlpId = RLP.encodeBigInteger(BigInteger.valueOf(id));
-        byte[] rlpBlockHash = RLP.encodeElement(blockHash);
-        byte[] rlpAddressHash = RLP.encodeElement(addressHash);
-        byte[] rlpStorageKeyHash = RLP.encodeElement(storageKeyHash);
+        byte[] rlpId = RLP.encodeBigInteger(BigInteger.valueOf(getId()));
+        byte[] rlpBlockHash = RLP.encodeElement(getBlockHash());
+        byte[] rlpAddressHash = RLP.encodeElement(getAddressHash());
+        byte[] rlpStorageKeyHash = RLP.encodeElement(getStorageKeyHash());
         return RLP.encodeList(rlpId, rlpBlockHash, rlpAddressHash, rlpStorageKeyHash);
     }
 
