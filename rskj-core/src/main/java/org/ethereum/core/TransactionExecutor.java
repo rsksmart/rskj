@@ -27,6 +27,10 @@ import co.rsk.metrics.profilers.Profiler;
 import co.rsk.metrics.profilers.ProfilerFactory;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.rpc.modules.trace.ProgramSubtrace;
+import co.rsk.core.types.ints.Uint24;
+//import co.rsk.db.RepositorySnapshot;
+//import co.rsk.core.bc.AccountInformationProvider;
+
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -687,5 +691,27 @@ public class TransactionExecutor {
     }
 
     public Coin getPaidFees() { return paidFees; }
+
+    /** Helper methods for storage rent 
+    */
+    // Add new nodes to the program result hashmap, these will be charged 6 months advanced rent 
+    public void newNodeHandler(RskAddress addr){
+        DataWord accKey = track.getAccountNodeKey(addr);
+        Uint24 vLen = track.getAccountNodeValueLength(addr);
+        
+        result.addNewTrieNode(accKey, vLen);
+        // if this is a new contract then add info for storage root and code
+        if (track.isContract(addr)) {
+            // code
+            DataWord cKey = track.getCodeNodeKey(addr);
+            Uint24 cLen = track.getCodeNodeLength(addr);
+            result.addNewTrieNode(cKey, cLen);
+            // storage root node
+            DataWord srKey = track.getStorageRootKey(addr);
+            Uint24 srLen = track.getStorageRootValueLength(addr);
+            result.addNewTrieNode(srKey, srLen);
+        }
+    }
+
 }
 

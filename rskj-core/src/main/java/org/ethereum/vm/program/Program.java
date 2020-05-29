@@ -1040,6 +1040,7 @@ public class Program {
         return Arrays.copyOf(ops, ops.length);
     }
 
+    // #mish: why do these getCodeAt methods use invoke.getRepository() and not getStorage()? 
     public Keccak256 getCodeHashAt(RskAddress addr) { return invoke.getRepository().getCodeHash(addr); }
 
     public Keccak256 getCodeHashAt(DataWord address) { return getCodeHashAt(new RskAddress(address)); }
@@ -1087,6 +1088,8 @@ public class Program {
         return DataWord.valueOf(balance.getBytes());
     }
 
+    // #mish this is no longer "origin", but same as caller or sender (see progInvokeFactoryImpl)
+    // was supposed to be the original sender of a TX (never a contract). Deprecated?
     public DataWord getOriginAddress() {
         return invoke.getOriginAddress();
     }

@@ -23,6 +23,8 @@ import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.trie.Trie;
+import co.rsk.core.types.ints.Uint24;
+
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Repository;
 import org.ethereum.vm.DataWord;
@@ -217,4 +219,80 @@ public class Storage implements Repository, ProgramListenerAware {
     public void updateAccountState(RskAddress addr, AccountState accountState) {
         throw new UnsupportedOperationException();
     }
+
+    // #mish add methods for storage rent
+
+    public DataWord getAccountNodeKey(RskAddress addr){
+        return repository.getAccountNodeKey(addr);
+    }
+
+    // for account state node.. both regular accounts as well as contracts
+    public Uint24 getAccountNodeValueLength(RskAddress addr){
+        return repository.getAccountNodeValueLength(addr);
+    }
+    
+    public long getAccountNodeLRPTime(RskAddress addr){
+        return repository.getAccountNodeLRPTime(addr);
+    }
+
+    // update with lastRentPaidTime. This is an extension of updateAccountState(addr, State)
+    public void updateAccountNodeWithRent(RskAddress addr, final AccountState accountState, final long newlastRentPaidTime){
+        repository.updateAccountNodeWithRent(addr, accountState, newlastRentPaidTime);
+    }
+    
+    // For nodes containing contract code
+    
+    // Start with key as DataWord for HashMaps. Using `getCodeNodexx` to emphasize this is about the node,
+    // rather than the code, and to dinsinguish from prior methods
+    public DataWord getCodeNodeKey(RskAddress addr){
+        return repository.getCodeNodeKey(addr);
+    }
+
+    // this returns an Uint24, unlike `getCodeLength()` which returns an int. Same otherwise.
+    public Uint24 getCodeNodeLength(RskAddress addr){
+        return getCodeNodeLength(addr);
+    }
+
+    public long getCodeNodeLRPTime(RskAddress addr){
+        return repository.getCodeNodeLRPTime(addr);
+    }
+
+    // update node with rent info (and code) 
+    public void saveCodeWithRent(RskAddress addr, final byte[] code, final long newlastRentPaidTime){
+       repository.saveCodeWithRent(addr, code, newlastRentPaidTime); 
+    }
+    
+    // For nodes containing contract storage
+
+    // start with key for stortage root
+    public DataWord getStorageRootKey(RskAddress addr){
+        return repository.getStorageRootKey(addr);
+    }
+
+    //storage root node value is always 0x01
+    public Uint24 getStorageRootValueLength(RskAddress addr){
+        return repository.getStorageRootValueLength(addr);
+    }
+
+    public long getStorageRootLRPTime(RskAddress addr){
+        return repository.getStorageRootLRPTime(addr);
+    }
+
+    public void updateStorageRootWithRent(RskAddress addr, final byte[] value, final long newlastRentPaidTime){
+        repository.updateStorageRootWithRent(addr, value, newlastRentPaidTime);
+    }
+
+    // methods for individual storage nodes: addr is not enough, also need the key
+    public Uint24 getStorageValueLength(RskAddress addr, DataWord key){
+        return repository.getStorageValueLength(addr, key);
+    }
+
+    public long getStorageLRPTime(RskAddress addr, DataWord key){
+        return repository.getStorageLRPTime(addr, key);
+    }
+
+    public void updateStorageWithRent(RskAddress addr,  DataWord key, final byte[] value, final long newlastRentPaidTime){
+        repository.updateStorageWithRent(addr, key, value, newlastRentPaidTime);
+    }
+
 }
