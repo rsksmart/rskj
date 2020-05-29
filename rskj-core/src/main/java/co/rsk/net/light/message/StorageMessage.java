@@ -67,9 +67,9 @@ public class StorageMessage extends LightClientMessage{
 
     @Override
     public byte[] getEncoded() {
-        byte[] rlpId = RLP.encodeBigInteger(BigInteger.valueOf(id));
-        byte[] rlpMerkleInclusionProof = RLP.encodeElement(merkleInclusionProof);
-        byte[] rlpStorageValue = RLP.encodeElement(storageValue);
+        byte[] rlpId = RLP.encodeBigInteger(BigInteger.valueOf(getId()));
+        byte[] rlpMerkleInclusionProof = RLP.encodeElement(getMerkleInclusionProof());
+        byte[] rlpStorageValue = RLP.encodeElement(getStorageValue());
         return RLP.encodeList(rlpId, rlpMerkleInclusionProof, rlpStorageValue);
     }
 
