@@ -19,6 +19,7 @@
 package co.rsk.net.light.message;
 
 import co.rsk.net.light.LightClientMessageVisitor;
+import co.rsk.net.light.message.utils.RLPUtils;
 import org.bouncycastle.util.BigIntegers;
 import org.ethereum.core.TransactionReceipt;
 import org.ethereum.util.RLP;
@@ -26,10 +27,10 @@ import org.ethereum.util.RLPList;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.List;
 
 import static co.rsk.net.light.LightClientMessageCodes.BLOCK_RECEIPTS;
+import static org.ethereum.util.RLP.decode2;
 
 public class BlockReceiptsMessage extends LightClientMessage {
 
@@ -51,19 +52,11 @@ public class BlockReceiptsMessage extends LightClientMessage {
 
     public BlockReceiptsMessage(byte[] encoded) {
 
-        RLPList list = (RLPList) RLP.decode2(encoded).get(0);
+        RLPList list = (RLPList) decode2(encoded).get(0);
         byte[] rlpId = list.get(0).getRLPData();
         this.id = rlpId == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpId).longValue();
-
-        RLPList rlpReceipts = (RLPList)RLP.decode2(list.get(1).getRLPData()).get(0);
-        List<TransactionReceipt> receipts = new LinkedList<>();
-        for (int k = 0; k < rlpReceipts.size(); k++) {
-            byte[] rpData = rlpReceipts.get(k).getRLPData();
-            TransactionReceipt rp = new TransactionReceipt(rpData);
-            receipts.add(rp);
-        }
-
-        this.blockReceipts = receipts;
+        RLPList rlpReceipts = (RLPList) decode2(list.get(1).getRLPData()).get(0);
+        this.blockReceipts = RLPUtils.mapInputRlp(rlpReceipts, TransactionReceipt::new);
         this.code = BLOCK_RECEIPTS.asByte();
     }
 
@@ -76,11 +69,9 @@ public class BlockReceiptsMessage extends LightClientMessage {
     @Override
     public byte[] getEncoded() {
         byte[] rlpId = RLP.encodeBigInteger(BigInteger.valueOf(getId()));
-        byte[][] rlpReceipts = new byte[this.blockReceipts.size()][];
-
-        for (int k = 0; k < this.blockReceipts.size(); k++) {
-            rlpReceipts[k] = this.blockReceipts.get(k).getEncoded();
-        }
+        byte[][] rlpReceipts = getBlockReceipts().stream()
+                .map(TransactionReceipt::getEncoded)
+                .toArray(byte[][]::new);
 
         return RLP.encodeList(rlpId, RLP.encodeList(rlpReceipts));
     }

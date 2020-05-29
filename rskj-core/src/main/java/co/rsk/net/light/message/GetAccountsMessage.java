@@ -56,9 +56,9 @@ public class GetAccountsMessage extends LightClientMessage {
 
     @Override
     public byte[] getEncoded() {
-        byte[] rlpId = RLP.encodeBigInteger(BigInteger.valueOf(id));
-        byte[] rlpBlockHash = RLP.encodeElement(blockHash);
-        byte[] rlpAddressHash = RLP.encodeElement(addressHash);
+        byte[] rlpId = RLP.encodeBigInteger(BigInteger.valueOf(getId()));
+        byte[] rlpBlockHash = RLP.encodeElement(getBlockHash());
+        byte[] rlpAddressHash = RLP.encodeElement(getAddressHash());
 
         return RLP.encodeList(rlpId, rlpBlockHash, rlpAddressHash);
     }
