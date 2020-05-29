@@ -30,6 +30,7 @@ import co.rsk.net.light.LightProcessor;
 import co.rsk.net.light.LightStatus;
 import co.rsk.net.light.LightSyncProcessor;
 import co.rsk.net.light.message.*;
+import co.rsk.vm.BytecodeCompiler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.embedded.EmbeddedChannel;
 import org.ethereum.TestUtils;
@@ -246,7 +247,8 @@ public class LightClientHandlerTest {
 
     @Test
     public void lightClientHandlerSendsGetCodeToQueue() throws Exception {
-        byte[] codeHash = HashUtil.randomHash();
+        BytecodeCompiler compiler = new BytecodeCompiler();
+        byte[] bytecode = compiler.compile("PUSH1 0x01 PUSH1 0x02 ADD");
         RepositorySnapshot repositorySnapshot = mock(RepositorySnapshot.class);
         RskAddress address = TestUtils.randomAddress();
         Block block = mock(Block.class);
@@ -255,11 +257,11 @@ public class LightClientHandlerTest {
         when(block.getHash()).thenReturn(blockHash);
         when(blockStore.getBlockByHash(blockHash.getBytes())).thenReturn(block);
         when(repositoryLocator.snapshotAt(block.getHeader())).thenReturn(repositorySnapshot);
-        when(repositorySnapshot.getCodeHash(address)).thenReturn(new Keccak256(codeHash));
+        when(repositorySnapshot.getCode(address)).thenReturn(bytecode);
 
         GetCodeMessage m = new GetCodeMessage(0, blockHash.getBytes(), address.getBytes());
 
-        CodeMessage response = new CodeMessage(0, codeHash);
+        CodeMessage response = new CodeMessage(0, bytecode);
 
         lightClientHandler.channelRead0(ctx, m);
 
