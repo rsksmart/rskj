@@ -19,6 +19,7 @@
 
 package org.ethereum.net.wire;
 
+import co.rsk.net.light.LightClientMessageCodes;
 import org.ethereum.net.client.Capability;
 import org.ethereum.net.eth.EthVersion;
 import org.ethereum.net.eth.message.EthMessageCodes;
@@ -126,5 +127,11 @@ public class AdaptiveMessageIdsTest {
         assertEquals(0x10 + 5, messageCodesResolver.withEthOffset(EthMessageCodes.GET_BLOCK_BODIES.asByte()));
         assertEquals(0x10 + 6, messageCodesResolver.withEthOffset(EthMessageCodes.BLOCK_BODIES.asByte()));
         assertEquals(0x10 + 7, messageCodesResolver.withEthOffset(EthMessageCodes.NEW_BLOCK.asByte()));
+    }
+
+    @Test
+    public void quantityOfMessagesAndOffsetOfEachMessageShouldBeCorrect() {
+        assertEquals(1, LightClientMessageCodes.values().length);
+        assertEquals(0, messageCodesResolver.withLightClientOffset(LightClientMessageCodes.STATUS.asByte()));
     }
 }

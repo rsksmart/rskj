@@ -318,7 +318,7 @@ public abstract class SystemProperties {
     }
 
     public List<String> peerCapabilities() {
-        return configFromFiles.hasPath("peer.capabilities") ?  configFromFiles.getStringList("peer.capabilities") : new ArrayList<>(Arrays.asList("rsk"));
+        return configFromFiles.hasPath("peer.capabilities") ?  configFromFiles.getStringList("peer.capabilities") : new ArrayList<>(Arrays.asList("rsk","lc"));
     }
 
     public boolean vmTrace() {

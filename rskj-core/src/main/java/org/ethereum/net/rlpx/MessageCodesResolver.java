@@ -22,6 +22,7 @@ package org.ethereum.net.rlpx;
 import org.ethereum.net.client.Capability;
 import org.ethereum.net.eth.EthVersion;
 import org.ethereum.net.eth.message.EthMessageCodes;
+import co.rsk.net.light.LightClientMessageCodes;
 import org.ethereum.net.p2p.P2pMessageCodes;
 
 import java.util.Collections;
@@ -57,6 +58,10 @@ public class MessageCodesResolver {
                 offset += EthMessageCodes.values(v).length;
             }
 
+            if (capability.getName().equals(Capability.LC)) {
+                setLightClientOffset(offset);
+                offset += LightClientMessageCodes.values().length;
+            }
         }
     }
 
@@ -66,6 +71,10 @@ public class MessageCodesResolver {
 
     public byte withEthOffset(byte code) {
         return withOffset(code, Capability.RSK);
+    }
+
+    public byte withLightClientOffset(byte code) {
+        return withOffset(code, Capability.LC);
     }
 
     public byte withOffset(byte code, String cap) {
@@ -81,6 +90,10 @@ public class MessageCodesResolver {
         return resolve(code, Capability.RSK);
     }
 
+    public byte resolveLC(byte code) {
+        return resolve(code, Capability.LC);
+    }
+
     private byte resolve(byte code, String cap) {
         byte offset = getOffset(cap);
         return (byte)(code - offset);
@@ -93,6 +106,11 @@ public class MessageCodesResolver {
 
     public void setEthOffset(int offset) {
         setOffset(Capability.RSK, offset);
+    }
+
+    private void setLightClientOffset(int offset) {
+        setOffset(Capability.LC, offset);
+
     }
 
     private void setOffset(String cap, int offset) {

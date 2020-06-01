@@ -43,10 +43,10 @@ import co.rsk.net.discovery.PeerExplorer;
 import co.rsk.net.discovery.UDPServer;
 import co.rsk.net.discovery.table.KademliaOptions;
 import co.rsk.net.discovery.table.NodeDistanceTable;
-import co.rsk.net.eth.MessageFilter;
-import co.rsk.net.eth.MessageRecorder;
-import co.rsk.net.eth.RskWireProtocol;
-import co.rsk.net.eth.WriterMessageRecorder;
+import co.rsk.net.eth.*;
+import co.rsk.net.light.LightProcessor;
+import co.rsk.net.light.LightSyncProcessor;
+import co.rsk.net.rlpx.LCMessageFactory;
 import co.rsk.net.sync.PeersInformation;
 import co.rsk.net.sync.SyncConfiguration;
 import co.rsk.peg.BridgeSupportFactory;
@@ -182,6 +182,7 @@ public class RskContext implements NodeBootstrapper {
     private PeerScoringManager peerScoringManager;
     private NodeBlockProcessor nodeBlockProcessor;
     private SyncProcessor syncProcessor;
+    private LightProcessor lightProcessor;
     private BlockSyncService blockSyncService;
     private SyncPool syncPool;
     private Web3 web3;
@@ -217,7 +218,10 @@ public class RskContext implements NodeBootstrapper {
     private TxPoolModule txPoolModule;
     private RskModule rskModule;
     private RskWireProtocol.Factory rskWireProtocolFactory;
+    private LightClientHandler.Factory lightClientHandlerFactory;
     private Eth62MessageFactory eth62MessageFactory;
+    private LCMessageFactory lcMessageFactory;
+    private LightSyncProcessor lightSyncProcessor;
     private GasLimitCalculator gasLimitCalculator;
     private ReversibleTransactionExecutor reversibleTransactionExecutor;
     private TransactionExecutorFactory transactionExecutorFactory;
@@ -1168,12 +1172,22 @@ public class RskContext implements NodeBootstrapper {
                     getNodeManager(),
                     getRskWireProtocolFactory(),
                     getEth62MessageFactory(),
+                    getLightClientHandlerFactory(),
+                    getLCMessageFactory(),
                     getStaticMessages(),
                     getPeerScoringManager()
             );
         }
 
         return ethereumChannelInitializerFactory;
+    }
+
+    private LCMessageFactory getLCMessageFactory() {
+        if (lcMessageFactory == null) {
+            lcMessageFactory = new LCMessageFactory(getBlockFactory());
+        }
+
+        return lcMessageFactory;
     }
 
     private Eth62MessageFactory getEth62MessageFactory() {
@@ -1570,6 +1584,29 @@ public class RskContext implements NodeBootstrapper {
         }
 
         return nodeMessageHandler;
+    }
+
+    private LightProcessor getLightProcessor() {
+        if (lightProcessor == null) {
+            lightProcessor = new LightProcessor(getBlockchain(), getBlockStore(), getRepositoryLocator());
+        }
+        return lightProcessor;
+    }
+
+    private LightClientHandler.Factory getLightClientHandlerFactory() {
+        if (lightClientHandlerFactory == null) {
+            lightClientHandlerFactory = lightPeer -> new LightClientHandler(lightPeer, getLightProcessor(), getLightSyncProcessor());
+        }
+
+        return lightClientHandlerFactory;
+    }
+
+    private LightSyncProcessor getLightSyncProcessor() {
+        if (lightSyncProcessor == null) {
+            lightSyncProcessor = new LightSyncProcessor(getRskSystemProperties(), getGenesis(), getBlockStore(), getBlockchain());
+        }
+
+        return lightSyncProcessor;
     }
 
     private StatusResolver getStatusResolver() {
