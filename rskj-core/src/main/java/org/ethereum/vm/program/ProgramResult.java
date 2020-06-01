@@ -51,7 +51,7 @@ public class ProgramResult {
     // #mish: sets for storage rent (RSKIP113) checks and computations (only nodes that have some value) 
     private Map<DataWord, Uint24> newTrieNodes; //  storage rent to be charged for 6 months in advance when nodes are created
     private Map<DataWord, RentData> accessedNodes; // nodes accessed (value may not have been modified)
-    private Map<DataWord, RentData> modifiedNodes; // nodes with value modified.
+    private Map<DataWord, Uint24> modifiedNodes; // nodes with value modified.
 
     // #mish Set of selfdestruct i.e. suicide accounts. Todo: any refund for prepaid rent?
     private Set<DataWord> deleteAccounts;
@@ -160,7 +160,7 @@ public class ProgramResult {
         return newTrieNodes;
     }
 
-    public void addNewTrieNode(DataWord nodeKey, Uint24 valueLength) {    //addr should 
+    public void addNewTrieNode(DataWord nodeKey, Uint24 valueLength) {
         getNewTrieNodes().put(nodeKey, valueLength);
     }
 
@@ -187,22 +187,22 @@ public class ProgramResult {
     }
 
     // modified nodes
-    public Map<DataWord, RentData> getModifiedNodes() {
+    public Map<DataWord, Uint24> getModifiedNodes() {
         if (modifiedNodes == null) {
             modifiedNodes = new HashMap<>();
         }
         return modifiedNodes;
     }
 
-    public void addModifiedNode(DataWord nodeKey, RentData rentData) {
+    public void addModifiedNode(DataWord nodeKey, Uint24 valueLength) {
         // #mish: for modified, keep the latest information, overwrite any previously stored info
-        getModifiedNodes().put(nodeKey, rentData);
+        getModifiedNodes().put(nodeKey, valueLength);
     }
 
-    public void addModifiedNodes(Map<DataWord, RentData> nodesMod) {
+    public void addModifiedNodes(Map<DataWord, Uint24> nodesMod) {
         getModifiedNodes().putAll(nodesMod);
     }
-
+   
     public void clearFieldsOnException() {
         if (deleteAccounts!=null) {
             deleteAccounts.clear();

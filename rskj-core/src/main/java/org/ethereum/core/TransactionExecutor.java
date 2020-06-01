@@ -50,6 +50,7 @@ import org.slf4j.LoggerFactory;
 import java.math.BigInteger;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.time.Instant;
 
 import static co.rsk.util.ListArrayUtil.getLength;
 import static co.rsk.util.ListArrayUtil.isEmpty;
@@ -116,6 +117,8 @@ public class TransactionExecutor {
 
     private long mEndGas = 0;
     private long mEndRentGas = 0;
+    private long refTimeStamp; // reference to estimate storage rent
+    private long estRentGas = 0; //#mish unlike execution gas, rent gas is only collected at EOT. Use this for tracking estimateduse
     private long basicTxCost = 0;
     private List<LogInfo> logs = null;
     private final Set<DataWord> deletedAccounts;
@@ -204,7 +207,7 @@ public class TransactionExecutor {
             Coin txRentGasCost = tx.getGasPrice().multiply(BigInteger.valueOf(txRentGasLimit));
             totalCost = totalCost.add(txGasCost).add(txRentGasCost);
         }
-
+        
         Coin senderBalance = track.getBalance(tx.getSender());
 
         if (!isCovers(senderBalance, totalCost)) {
@@ -294,14 +297,18 @@ public class TransactionExecutor {
 
         return true;
     }
-
-    // TX exec flow : init() -> execute() -> go() -> finalize() 
-    // execute(): post valid from init(). increase sender nonce, reduce balance by gasPrice X gasLimit(s), then either call() or create()
+ 
     private void execute() {
         logger.trace("Execute transaction {} {}", toBI(tx.getNonce()), tx.getHash());
 
         if (!localCall) {
-
+            // set reference timestamp
+            refTimeStamp = Instant.now().getEpochSecond();
+            // #mish add sender to Map of accessed nodes (for storage rent tracking)
+            accessedNodeAdder(tx.getSender(),track, result);    
+            /* Don't add receiver address yet as it may be a pre-compiled contract (won't be in trie).
+            //accessedNodeAdder(tx.getReceiveAddress(),track, result);
+            */
             track.increaseNonce(tx.getSender());
 
             long txGasLimit = GasCost.toGas(tx.getGasLimit());
@@ -328,16 +335,9 @@ public class TransactionExecutor {
         if (!activations.isActive(ConsensusRule.RSKIP136)) {
             return txGasLimit >= requiredGas;
         }
-        //this is more restrictive than above. gasUsed = baseTxCost (fixed) + requiredGas (variable, pre-compiled contacts)
+        //the following is more restrictive since gasUsed = baseTxCost (fixed) + requiredGas
         return txGasLimit >= gasUsed;    
     }
-
-    private boolean enoughRentGas(long txRentGasLimit, long rentGasUsed) {
-        // #mish: when txRentGasLimit is not specified (TX initialization), it is set equal to txGasLimit 
-        // this condition will fail if txRentGasLimit IS specified but set too low
-        return txRentGasLimit >= rentGasUsed;
-    }
-
 
     private void call() {
         logger.trace("Call transaction {} {}", toBI(tx.getNonce()), tx.getHash());
@@ -373,24 +373,24 @@ public class TransactionExecutor {
                 profiler.stop(metric);
                 return;
             }
-            // continue with pcc call.. update refund amount to limit - used so far
+            // continue with pcc call.. update refund amount to limit minus used so far
             mEndGas = activations.isActive(ConsensusRule.RSKIP136) ?
                     GasCost.subtract(txGasLimit, gasUsed) :
                     txGasLimit - gasUsed;
             // update refund status of rentGas
-            mEndRentGas = txRentGasLimit; // no rentgas computed yet
+            // mEndRentGas = txRentGasLimit; // no rentgas computed yet
 
             // FIXME: save return for vm trace
             try {
                 byte[] out = precompiledContract.execute(tx.getData());
                 this.subtraces = precompiledContract.getSubtraces();
                 result.setHReturn(out);
-                // #mish: As per SDL. Pre-compiled contracts to do not exist in Trie (they don't have to).
+                // #mish: Pre-compiled contracts to do not exist in Trie (they don't have to).
                 // In ethereum a contract calling another contract costs 700. But if that contract does not exist,
                 // then a new account is created which costs an additional 25000 for `NEW_ACCT_CALL`
                 // One way to avoid this cost for pre compiled contracts is to create nodes in the trie for them
                 // as done here, so calls to PCCs cost 700 and not 700 + 25000. 
-                // per SDL -> this check should ideally happen before a precompiled is executed.                 
+                // As per SDL -> this check should ideally happen before a precompiled is executed.                 
                 if (!track.isExist(targetAddress)) {
                     track.createAccount(targetAddress);
                     track.setupContract(targetAddress);
@@ -403,6 +403,8 @@ public class TransactionExecutor {
             result.spendGas(gasUsed);
             profiler.stop(metric);
         } else {    // #mish if not pre-compiled contract
+            // add the node to accessed nodes Map for rent tracking
+            accessedNodeAdder(tx.getReceiveAddress(),track, result);
             byte[] code = track.getCode(targetAddress);
             // Code can be null
             if (isEmpty(code)) {
@@ -692,52 +694,71 @@ public class TransactionExecutor {
     public Coin getPaidFees() { return paidFees; }
 
     /** #mish Helper methods for storage rent 
-    *  Add nodes to program result hashmaps
+    */
+    
+    public long getRefTimeStamp(){
+        return this.refTimeStamp;
+    }
+    
+    public long getEstRentGas(){
+        return this.estRentGas;
+    }
+
+    /* Methods to add nodes to program result hashmaps
     * AccountState, code, and storage "root" nodes only since
     * (as of this time May 2020) TX executor class does not deal with storage cells directly.
     * should that change, then we need to add storage nodes as well.
     */       
-    // new nodes created during Tx execution: 
-    public void newNodeAdder(RskAddress addr){
-        DataWord accKey = track.getAccountNodeKey(addr);
-        Uint24 vLen = track.getAccountNodeValueLength(addr);
+    // new nodes created during Tx execution: to be added to the Map programresult.NewTrieNodes
+    public void createdNodeAdder(RskAddress addr, Repository repository, ProgramResult progRes){
+        DataWord accKey = repository.getAccountNodeKey(addr);
+        Uint24 vLen = repository.getAccountNodeValueLength(addr);
         
-        result.addNewTrieNode(accKey, vLen);
+        progRes.addNewTrieNode(accKey, vLen);
         // if this is a new contract then add info for storage root and code
-        if (track.isContract(addr)) {
+        if (repository.isContract(addr)) {
             // code
-            DataWord cKey = track.getCodeNodeKey(addr);
-            Uint24 cLen = track.getCodeNodeLength(addr);
-            result.addNewTrieNode(cKey, cLen);
+            DataWord cKey = repository.getCodeNodeKey(addr);
+            Uint24 cLen = repository.getCodeNodeLength(addr);
+            progRes.addNewTrieNode(cKey, cLen);
             // storage root node
-            DataWord srKey = track.getStorageRootKey(addr);
-            Uint24 srLen = track.getStorageRootValueLength(addr);
-            result.addNewTrieNode(srKey, srLen);
+            DataWord srKey = repository.getStorageRootKey(addr);
+            Uint24 srLen = repository.getStorageRootValueLength(addr);
+            progRes.addNewTrieNode(srKey, srLen);
         }
     }
     // #mish record (HashMap) of nodes touched by a transaction but prior to any modifications
     // entries are added for a node only if there are no pre-existing ones, no overwrites
     // this should be called the first time any RSK addr is referenced in a TX or a child process
-    public void accessedNodeAdder(RskAddress addr){
-        DataWord accKey = track.getAccountNodeKey(addr);
-        Uint24 vLen = track.getAccountNodeValueLength(addr);
-        long accLrpt = track.getAccountNodeLRPTime(addr);
-        
-        result.addAccessedNode(accKey, new RentData(vLen, accLrpt));
-        // if this is a new contract then add info for storage root and code
-        if (track.isContract(addr)) {
+    public void accessedNodeAdder(RskAddress addr, Repository repository, ProgramResult progRes){
+        DataWord accKey = repository.getAccountNodeKey(addr);
+        Uint24 vLen = repository.getAccountNodeValueLength(addr);
+        long accLrpt = repository.getAccountNodeLRPTime(addr);
+        RentData accNode = new RentData(vLen, accLrpt);
+        // compute the rent due
+        accNode.setRentDue(this.getRefTimeStamp());
+        // if the node is not in the map, add the rent owed to current estimate
+        if (!progRes.getAccessedNodes().containsKey(accKey)){
+            long rd = accNode.getRentDue();
+            if (rd > 0){          // negative values do not affect estimate
+                estRentGas += rd;
+            }
+        }
+        progRes.addAccessedNode(accKey, accNode);
+        // if this is a contract then add info for storage root and code
+        if (repository.isContract(addr)) {
             // code
-            DataWord cKey = track.getCodeNodeKey(addr);
-            Uint24 cLen = track.getCodeNodeLength(addr);
-            long cLrpt = track.getCodeNodeLRPTime(addr);
+            DataWord cKey = repository.getCodeNodeKey(addr);
+            Uint24 cLen = repository.getCodeNodeLength(addr);
+            long cLrpt = repository.getCodeNodeLRPTime(addr);
         
-            result.addAccessedNode(cKey, new RentData(cLen, cLrpt));
+            progRes.addAccessedNode(cKey, new RentData(cLen, cLrpt));
             // storage root node
-            DataWord srKey = track.getStorageRootKey(addr);
-            Uint24 srLen = track.getStorageRootValueLength(addr);
-            long srLrpt = track.getStorageRootLRPTime(addr);
+            DataWord srKey = repository.getStorageRootKey(addr);
+            Uint24 srLen = repository.getStorageRootValueLength(addr);
+            long srLrpt = repository.getStorageRootLRPTime(addr);
         
-            result.addAccessedNode(srKey, new RentData(srLen, srLrpt));
+            progRes.addAccessedNode(srKey, new RentData(srLen, srLrpt));
         }
     }
 
@@ -745,28 +766,30 @@ public class TransactionExecutor {
      * new calls overwrite any previously exisitng entry. Only the latest info is preserved
      * this should be called when a transaction is being finalized and cacheTrack has been commited
      * care needs to be taken, because computations made using this Map
-     * will lead to further account state changes (for storage rent compuation, balance updates). 
+     * will lead to further account state changes (for storage rent compuation, balance updates).
+     * Account node is almost certain to be updated at EOT. 
+     * Storare root and contract code will usually not be "modified", only rent timestamp updated
+     *  
     */
-    public void modifiedNodeAdder(RskAddress addr){
-        DataWord accKey = track.getAccountNodeKey(addr);
-        Uint24 vLen = track.getAccountNodeValueLength(addr);
-        long accLrpt = track.getAccountNodeLRPTime(addr);
+    public void modifiedNodeAdder(RskAddress addr, Repository repository, ProgramResult progRes){
+        DataWord accKey = repository.getAccountNodeKey(addr);
+        Uint24 vLen = repository.getAccountNodeValueLength(addr);
         
-        result.addModifiedNode(accKey, new RentData(vLen, accLrpt));
-        // if this is a new contract then add info for storage root and code
-        if (track.isContract(addr)) {
+        progRes.addModifiedNode(accKey, vLen);
+        // if this is contract then add info for storage root and code
+        if (repository.isContract(addr)) {
             // code
-            DataWord cKey = track.getCodeNodeKey(addr);
-            Uint24 cLen = track.getCodeNodeLength(addr);
-            long cLrpt = track.getCodeNodeLRPTime(addr);
+            DataWord cKey = repository.getCodeNodeKey(addr);
+            Uint24 cLen = repository.getCodeNodeLength(addr);
+           //long cLrpt = repository.getCodeNodeLRPTime(addr);
         
-            result.addModifiedNode(cKey, new RentData(cLen, cLrpt));
+            progRes.addModifiedNode(cKey, cLen);
             // storage root node
-            DataWord srKey = track.getStorageRootKey(addr);
-            Uint24 srLen = track.getStorageRootValueLength(addr);
-            long srLrpt = track.getStorageRootLRPTime(addr);
+            DataWord srKey = repository.getStorageRootKey(addr);
+            Uint24 srLen = repository.getStorageRootValueLength(addr);
+            //long srLrpt = repository.getStorageRootLRPTime(addr);
         
-            result.addModifiedNode(srKey, new RentData(srLen, srLrpt));
+            progRes.addModifiedNode(srKey, srLen);
         }
     }
 

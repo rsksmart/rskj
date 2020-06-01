@@ -19,8 +19,12 @@
 
 package org.ethereum.vm.program;
 
+import org.ethereum.vm.GasCost;
+
 import co.rsk.core.types.ints.Uint24;
+
 import java.util.*;
+
 
 /**
  * @author mish, May 2020
@@ -29,7 +33,8 @@ import java.util.*;
  */
 public class RentData {
     private Uint24 valueLength;
-    private long lastRentPaidTime; 
+    private long lastRentPaidTime;
+    private long rentDue;
 
     public RentData(Uint24 valueLength, long lastRentPaidTime){
         this.valueLength = valueLength;
@@ -42,5 +47,29 @@ public class RentData {
 
     public long getLRPTime(){
         return this.lastRentPaidTime;
+    }
+
+    public void setLRPTime(long newLRPTime){
+        this.lastRentPaidTime = newLRPTime;
+    }
+
+    public long getRentDue(){
+        return this.rentDue;
+    }
+
+    public void setRentDue(long refTime){
+        if (this.valueLength != null){
+            this.rentDue = GasCost.calculateStorageRent(this.valueLength, refTime - this.lastRentPaidTime);
+        } else {
+            this.rentDue = 0L;
+        }
+    }
+
+    // returns 6 months advance rent due for new trie nodes
+    public long getSixMonthsRent(){
+        if (this.valueLength == null){
+            return 0L;
+        }
+        return GasCost.calculateStorageRent(this.valueLength, GasCost.SIX_MONTHS);
     }
 }
