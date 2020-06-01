@@ -1,7 +1,8 @@
 package org.ethereum.net.server;
 
+import co.rsk.net.eth.LightClientHandler;
 import co.rsk.net.eth.RskWireProtocol;
-import co.rsk.net.messages.Message;
+import co.rsk.net.rlpx.LCMessageFactory;
 import org.ethereum.net.MessageQueue;
 import org.ethereum.net.NodeManager;
 import org.ethereum.net.eth.message.Eth62MessageFactory;
@@ -24,6 +25,8 @@ public class ChannelTest {
     private NodeManager nodeManager;
     private RskWireProtocol.Factory rskWireProtocolFactory;
     private Eth62MessageFactory eth62MessageFactory;
+    private LightClientHandler.Factory lightClientHandlerFactory;
+    private LCMessageFactory lcMessageFactory;
     private StaticMessages staticMessages;
     private String remoteId;
     private Channel target;
@@ -37,14 +40,17 @@ public class ChannelTest {
         rskWireProtocolFactory = mock(RskWireProtocol.Factory.class);
         eth62MessageFactory = mock(Eth62MessageFactory.class);
         staticMessages = mock(StaticMessages.class);
+        lightClientHandlerFactory = mock(LightClientHandler.Factory.class);
+        lcMessageFactory = mock(LCMessageFactory.class);
         target = new Channel(
                 messageQueue,
                 messageCodec,
                 nodeManager,
                 rskWireProtocolFactory,
+                lightClientHandlerFactory,
                 eth62MessageFactory,
-                staticMessages,
-                remoteId);
+                lcMessageFactory,
+                staticMessages, remoteId);
     }
 
 
@@ -56,9 +62,10 @@ public class ChannelTest {
                 messageCodec,
                 nodeManager,
                 rskWireProtocolFactory,
+                lightClientHandlerFactory,
                 eth62MessageFactory,
-                staticMessages,
-                remoteId);
+                lcMessageFactory,
+                staticMessages, remoteId);
 
         target.setInetSocketAddress(inetSocketAddress);
         otherChannel.setInetSocketAddress(inetSocketAddress);
@@ -74,9 +81,10 @@ public class ChannelTest {
                 messageCodec,
                 nodeManager,
                 rskWireProtocolFactory,
+                lightClientHandlerFactory,
                 eth62MessageFactory,
-                staticMessages,
-                remoteId);
+                lcMessageFactory,
+                staticMessages, remoteId);
 
         target.setInetSocketAddress(inetSocketAddress);
 
