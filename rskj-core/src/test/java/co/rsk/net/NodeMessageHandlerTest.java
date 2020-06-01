@@ -46,7 +46,6 @@ import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.Mockito;
-import org.mockito.invocation.InvocationOnMock;
 
 import javax.annotation.Nonnull;
 import java.math.BigDecimal;
@@ -326,8 +325,7 @@ public class NodeMessageHandlerTest {
                 new SyncBlockValidatorRule(new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())),
                 null,
                 new PeersInformation(RskMockFactory.getChannelManager(), syncConfiguration, blockchain, RskMockFactory.getPeerScoringManager()), mock(Genesis.class));
-        final NodeMessageHandler handler = new NodeMessageHandler(config,
-                bp, syncProcessor, null, null,
+        final NodeMessageHandler handler = new NodeMessageHandler(config, bp, syncProcessor, null, null,
                 null, mock(StatusResolver.class));
 
         BlockGenerator blockGenerator = new BlockGenerator();

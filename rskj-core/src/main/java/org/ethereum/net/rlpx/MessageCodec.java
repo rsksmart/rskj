@@ -19,6 +19,8 @@
 
 package org.ethereum.net.rlpx;
 
+import co.rsk.net.light.LightClientMessageCodes;
+import co.rsk.net.rlpx.LCMessageFactory;
 import com.google.common.io.ByteStreams;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToMessageCodec;
@@ -62,6 +64,8 @@ public class MessageCodec extends MessageToMessageCodec<Frame, Message> {
 
     private P2pMessageFactory p2pMessageFactory;
     private Eth62MessageFactory ethMessageFactory;
+    private LCMessageFactory lcMessageFactory;
+
     private EthVersion ethVersion;
 
     private final EthereumListener ethereumListener;
@@ -211,6 +215,10 @@ public class MessageCodec extends MessageToMessageCodec<Frame, Message> {
         if (msgCommand instanceof EthMessageCodes){
             code = messageCodesResolver.withEthOffset(((EthMessageCodes) msgCommand).asByte());
         }
+        
+        if (msgCommand instanceof LightClientMessageCodes) {
+            code = messageCodesResolver.withLightClientOffset(((LightClientMessageCodes) msgCommand).asByte());
+        }
 
         return code;
     }
@@ -225,6 +233,11 @@ public class MessageCodec extends MessageToMessageCodec<Frame, Message> {
         resolved = messageCodesResolver.resolveEth(code);
         if (ethMessageFactory != null && EthMessageCodes.inRange(resolved, ethVersion)) {
             return ethMessageFactory.create(resolved, payload);
+        }
+
+        resolved = messageCodesResolver.resolveLC(code);
+        if (lcMessageFactory != null && LightClientMessageCodes.inRange(resolved)) {
+            return lcMessageFactory.create(resolved, payload);
         }
 
         throw new IllegalArgumentException("No such message: " + code + " [" + Hex.toHexString(payload) + "]");
@@ -252,6 +265,10 @@ public class MessageCodec extends MessageToMessageCodec<Frame, Message> {
 
     public void setEthMessageFactory(Eth62MessageFactory ethMessageFactory) {
         this.ethMessageFactory = ethMessageFactory;
+    }
+
+    public void setLCMessageFactory(LCMessageFactory lcMessageFactory) {
+        this.lcMessageFactory = lcMessageFactory;
     }
 
 }
