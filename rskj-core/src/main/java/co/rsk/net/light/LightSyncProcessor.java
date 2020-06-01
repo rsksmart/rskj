@@ -24,6 +24,7 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.net.eth.LightClientHandler;
 import co.rsk.net.light.message.GetBlockHeaderMessage;
 import co.rsk.net.light.message.StatusMessage;
+import com.google.common.annotations.VisibleForTesting;
 import io.netty.channel.ChannelHandlerContext;
 import org.ethereum.config.SystemProperties;
 import org.ethereum.core.Block;
@@ -132,6 +133,7 @@ public class LightSyncProcessor {
         lightPeer.receivedBlock(blockHeader);
     }
 
+    @VisibleForTesting
     public boolean hasTxRelay(LightPeer peer) {
         if (!txRelay.containsKey(peer)) {
             return false;
