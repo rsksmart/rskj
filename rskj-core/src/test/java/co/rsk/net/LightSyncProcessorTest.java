@@ -111,7 +111,7 @@ public class LightSyncProcessorTest {
         ChannelHandlerContext ctx = ch.pipeline().firstContext();
 
         //Message expected
-        GetBlockHeadersMessage expectedMessage = new GetBlockHeadersMessage(++requestId, blockHash.getBytes(), 1);
+        GetBlockHeadersMessage expectedMessage = new GetBlockHeadersMessage(++requestId, blockHash.getBytes(), 1, 0, false);
 
         ArgumentCaptor<GetBlockHeadersMessage> argument = forClass(GetBlockHeadersMessage.class);
         lightSyncProcessor.processStatusMessage(statusMessage, lightPeer, ctx, lightClientHandler);
