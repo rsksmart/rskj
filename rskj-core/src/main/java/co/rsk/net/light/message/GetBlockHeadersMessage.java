@@ -32,25 +32,32 @@ public class GetBlockHeadersMessage extends LightClientMessage {
 
     private final long id;
     private final byte[] blockHash;
-    private int count;
+    private final boolean reverse;
+    private int max;
+    private int skip;
 
-    public GetBlockHeadersMessage(long id, byte[] blockHash, int count) {
+    public GetBlockHeadersMessage(long id, byte[] blockHash, int max, int skip, boolean reverse) {
         this.id = id;
         this.blockHash = blockHash.clone();
-        this.count = count;
+        this.max = max;
+        this.skip = skip;
+        this.reverse = reverse;
         this.code = LightClientMessageCodes.GET_BLOCK_HEADER.asByte();
     }
 
     public GetBlockHeadersMessage(byte[] encoded) {
         RLPList paramsList = (RLPList) RLP.decode2(encoded).get(0);
         byte[] rlpId = paramsList.get(0).getRLPData();
-        id = rlpId == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpId).longValue();
-        blockHash = paramsList.get(1).getRLPData();
-        byte[] rlpCount = paramsList.get(2).getRLPData();
-        count = rlpCount == null? 0 : BigIntegers.fromUnsignedByteArray(rlpCount).intValue();
+        this.id = rlpId == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpId).longValue();
+        this.blockHash = paramsList.get(1).getRLPData();
+        byte[] rlpMax = paramsList.get(2).getRLPData();
+        this.max = rlpMax == null? 0 : BigIntegers.fromUnsignedByteArray(rlpMax).intValue();
+        byte[] rlpSkip = paramsList.get(3).getRLPData();
+        this.skip = rlpSkip == null? 0 : BigIntegers.fromUnsignedByteArray(rlpSkip).intValue();
+        byte[] rlpReverse = paramsList.get(4).getRLPData();
+        this.reverse = rlpReverse != null;
         this.code = LightClientMessageCodes.GET_BLOCK_HEADER.asByte();
     }
-
 
     public long getId() {
         return this.id;
@@ -60,13 +67,23 @@ public class GetBlockHeadersMessage extends LightClientMessage {
         return blockHash.clone();
     }
 
+    public int getSkip() {
+        return skip;
+    }
+
+    public boolean isReverse() {
+        return reverse;
+    }
 
     @Override
     public byte[] getEncoded() {
         byte[] rlpId = RLP.encodeBigInteger(BigInteger.valueOf(getId()));
         byte[] rlpHash = RLP.encodeElement(getBlockHash());
-        byte[] rlpCount = RLP.encodeBigInteger(BigInteger.valueOf(getCount()));
-        return RLP.encodeList(rlpId, rlpHash, rlpCount);
+        byte[] rlpMax = RLP.encodeBigInteger(BigInteger.valueOf(getMax()));
+        byte[] rlpSkip = RLP.encodeBigInteger(BigInteger.valueOf(getSkip()));
+        byte[] rlpReverse = RLP.encodeByte((byte)(isReverse() ? 0x01 : 0x00));
+
+        return RLP.encodeList(rlpId, rlpHash, rlpMax, rlpSkip, rlpReverse);
     }
 
     @Override
@@ -88,7 +105,7 @@ public class GetBlockHeadersMessage extends LightClientMessage {
         v.apply(this);
     }
 
-    public int getCount() {
-        return count;
+    public int getMax() {
+        return max;
     }
 }
