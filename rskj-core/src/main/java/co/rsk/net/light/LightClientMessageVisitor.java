@@ -93,7 +93,7 @@ public class LightClientMessageVisitor {
 
     public void apply(GetBlockHeadersMessage msg) {
         logger.debug("Read message: {} GET_BLOCK_HEADER", msg);
-        lightProcessor.processGetBlockHeadersMessage(msg.getId(), msg.getBlockHash(), msg.getCount(), lightPeer);
+        lightProcessor.processGetBlockHeadersMessage(msg.getId(), msg.getBlockHash(), msg.getMax(), msg.getSkip(), msg.isReverse(), lightPeer);
     }
 
     public void apply(BlockHeadersMessage msg) {
