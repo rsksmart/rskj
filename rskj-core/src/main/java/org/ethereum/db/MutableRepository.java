@@ -374,7 +374,16 @@ public class MutableRepository implements Repository {
      * to get a node's key, value Length, last rent paid timestamp
      * and a setter method to update node data via trie putWithRent() 
      */
-     
+    
+    // a generic method to update a node's last rent paid time
+    @Override
+    public synchronized void updateNodeWithRent(DataWord key, long newlastRentPaidTime){
+        byte[] val = mutableTrie.get(key.getData()); // get current value
+        if (val != null){
+            mutableTrie.putWithRent(key.getData(), val, newlastRentPaidTime);
+        }
+    }
+ 
     // Accountkey as DataWord for situations where trikeymapper is not used directly 
     // e.g. HashMaps in programResult to keep track of nodes created, deleted, modified etc  
     @Override

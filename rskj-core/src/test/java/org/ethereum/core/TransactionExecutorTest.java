@@ -103,7 +103,7 @@ public class TransactionExecutorTest {
         when(transaction.acceptTransactionSignature(constants.getChainId())).thenReturn(true);
         // sender has no balance
         when(repository.getBalance(transaction.getSender())).thenReturn(new Coin(BigInteger.valueOf(0L)));
-        // but is sending some nice value over the wire
+        // but is sending some nice value over tLet's see if I can he wire
         when(transaction.getValue()).thenReturn(new Coin(BigInteger.valueOf(68000)));
         // note that the transaction is free of cost
         assertEquals(0, transaction.transactionCost(constants, activationConfig.forBlock(executionBlock.getNumber())));
@@ -136,7 +136,7 @@ public class TransactionExecutorTest {
     }
 
     @Test
-    public void TwoTxsAreInBlockAndThemShouldBeContainedInCache(){
+    public void TwoTxsAreInBlockAndTheyShouldBeContainedInCache(){
         ReceivedTxSignatureCache receivedTxSignatureCache = mock(ReceivedTxSignatureCache.class);
         BlockTxSignatureCache blockTxSignatureCache = new BlockTxSignatureCache(receivedTxSignatureCache);
         MutableRepository cacheTrack = mock(MutableRepository.class);
@@ -384,7 +384,7 @@ public class TransactionExecutorTest {
         when(repository.getAccountNodeKey(receiver)).thenReturn(DataWord.fromString("receiverKey"));
         when(repository.getAccountNodeValueLength(receiver)).thenReturn(new Uint24(128));
         when(repository.getAccountNodeLRPTime(receiver)).thenReturn(130_000L);
-
+        
         TransactionExecutor txExecutor = new TransactionExecutor(
                 constants, activationConfig, transaction, txIndex, rskAddress,
                 repository, blockStore, receiptStore, blockFactory,
@@ -401,12 +401,12 @@ public class TransactionExecutorTest {
             assertEquals(2,txExecutor.getResult().getAccessedNodes().size());
 
             assertEquals(new Uint24(32), txExecutor.getResult().getAccessedNodes().get(DataWord.fromString("senderKey")).getValueLength());
-            assertEquals(70_000L, txExecutor.getResult().getAccessedNodes().get(DataWord.fromString("senderKey")).getLRPTime());
-
             assertEquals(new Uint24(128), txExecutor.getResult().getAccessedNodes().get(DataWord.fromString("receiverKey")).getValueLength());
-            assertEquals(130_000L, txExecutor.getResult().getAccessedNodes().get(DataWord.fromString("receiverKey")).getLRPTime());
+            //these assertions (from prior test version) will fail for nodes with updated LRPT
+            //assertEquals(70_000L, txExecutor.getResult().getAccessedNodes().get(DataWord.fromString("senderKey")).getLRPTime());
+            //assertEquals(130_000L, txExecutor.getResult().getAccessedNodes().get(DataWord.fromString("receiverKey")).getLRPTime());
 
-            // The rent computation within Tx Exec uses an real time.now() value, so mocking is not needed    
+            // Rent computation within Tx Exec uses an real time.now() value, so mocking is not needed    
             long rentDueSender = txExecutor.getResult().getAccessedNodes().get(DataWord.fromString("senderKey")).getRentDue();
             long rentDueReceiver = txExecutor.getResult().getAccessedNodes().get(DataWord.fromString("receiverKey")).getRentDue();  
             long estimatedRentGas = txExecutor.getEstRentGas(); 

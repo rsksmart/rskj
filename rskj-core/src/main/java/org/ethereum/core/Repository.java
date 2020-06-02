@@ -129,6 +129,9 @@ public interface Repository extends RepositorySnapshot {
     * These are implemented in MutableRepository
     */
 
+    // method to update a pre-existing node's rent timestamp (will copy existing value)
+    void updateNodeWithRent(DataWord key, long newlastRentPaidTime);
+
     DataWord getAccountNodeKey(RskAddress addr);
 
     // for account state node.. both regular accounts as well as contracts

@@ -224,6 +224,10 @@ public class Storage implements Repository, ProgramListenerAware {
     * (i.e. put/get methods for node valuelength and rent last paid timestamps)
     * These are implemented in MutableRepository
     */
+    @Override
+    public synchronized void updateNodeWithRent(DataWord key, long newlastRentPaidTime){
+        repository.updateNodeWithRent(key, newlastRentPaidTime);
+    }
 
     @Override
     public DataWord getAccountNodeKey(RskAddress addr){

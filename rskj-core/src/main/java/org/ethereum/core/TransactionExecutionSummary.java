@@ -67,18 +67,25 @@ public class TransactionExecutionSummary {
 
     public Coin getFee() {
         if (failed) {
-            return calcCost(gasLimit);
+            BigInteger failedFee = gasLimit.add(rentGasLimit.divide(BigInteger.valueOf(4)));  // keep 1/4=25% rentgas limit (RSKIP113)
+            return calcCost(failedFee); 
         }
-
-        return calcCost(gasLimit.subtract(gasLeftover.add(gasRefund)));
+        // TX execution fee
+        BigInteger txFee = gasLimit.subtract(gasLeftover.add(gasRefund));
+        // TX storage rent fee
+        BigInteger txRentFee = rentGasLimit.subtract(rentGasLeftover.add(rentGasRefund));
+        return calcCost(txFee.add(txRentFee));
     }
 
     public Coin getRefund() {
         if (failed) {
-            return Coin.ZERO;
+            // #mish even if failed, refund 3/4 of rentgaslimit as per RSKIP113
+            //return Coin.ZERO;
+            BigInteger rentGasRefund = rentGasLimit.multiply(BigInteger.valueOf(3)).divide(BigInteger.valueOf(4));
+            return calcCost(rentGasRefund);
         }
 
-        return calcCost(gasRefund);
+        return calcCost(gasRefund.add(rentGasRefund));
     }
 
     public Coin getLeftover() {
@@ -105,6 +112,18 @@ public class TransactionExecutionSummary {
         return gasLeftover;
     }
 
+    public BigInteger getRentGasLimit() {
+        return rentGasLimit;
+    }
+
+    public BigInteger getRentGasUsed() {
+        return rentGasUsed;
+    }
+
+    public BigInteger getRentGasLeftover() {
+        return rentGasLeftover;
+    }
+
     public Coin getValue() {
         return value;
     }
@@ -119,6 +138,10 @@ public class TransactionExecutionSummary {
 
     public BigInteger getGasRefund() {
         return gasRefund;
+    }
+
+    public BigInteger getRentGasRefund() {
+        return rentGasRefund;
     }
 
     public boolean isFailed() {
@@ -147,6 +170,7 @@ public class TransactionExecutionSummary {
             summary = new TransactionExecutionSummary();
             summary.tx = transaction;
             summary.gasLimit = toBI(transaction.getGasLimit());
+            summary.rentGasLimit = toBI(transaction.getRentGasLimit());
             summary.gasPrice = transaction.getGasPrice();
             summary.value = transaction.getValue();
         }
@@ -163,6 +187,21 @@ public class TransactionExecutionSummary {
 
         public Builder gasRefund(BigInteger gasRefund) {
             summary.gasRefund = gasRefund;
+            return this;
+        }
+
+        public Builder rentGasUsed(BigInteger rentGasUsed) {
+            summary.rentGasUsed = rentGasUsed;
+            return this;
+        }
+
+        public Builder rentGasLeftover(BigInteger rentGasLeftover) {
+            summary.rentGasLeftover = rentGasLeftover;
+            return this;
+        }
+
+        public Builder rentGasRefund(BigInteger rentGasRefund) {
+            summary.rentGasRefund = rentGasRefund;
             return this;
         }
 

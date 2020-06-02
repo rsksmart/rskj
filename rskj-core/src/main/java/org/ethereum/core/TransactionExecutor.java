@@ -61,7 +61,7 @@ import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
  * @author Roman Mandeleil
  * @since 19.12.2014
  */
-/** #mish notes: 
+/** #mish notes:
  // Overview: 
  * 4 stages: init() -> exec() -> go() -> finalize()
  * init(): does basic checks, addr are valid, gaslimits, sufficient balance, valid nonce
@@ -307,7 +307,6 @@ public class TransactionExecutor {
             // #mish add sender to Map of accessed nodes (for storage rent tracking)
             accessedNodeAdder(tx.getSender(),track, result);    
             /* Don't add receiver address yet as it may be a pre-compiled contract (won't be in trie).
-            //accessedNodeAdder(tx.getReceiveAddress(),track, result);
             */
             track.increaseNonce(tx.getSender());
 
@@ -351,7 +350,6 @@ public class TransactionExecutor {
         precompiledContract = precompiledContracts.getContractForAddress(activations, DataWord.valueOf(targetAddress.getBytes()));
 
         this.subtraces = new ArrayList<>();
-        // #mish: No storage rent implications for calls to pre compiled contracts, apart from sender's own account node rent status
         if (precompiledContract != null) {
             Metric metric = profiler.start(Profiler.PROFILING_TYPE.PRECOMPILED_CONTRACT_INIT);
             precompiledContract.init(tx, executionBlock, track, blockStore, receiptStore, result.getLogInfoList());
@@ -370,6 +368,8 @@ public class TransactionExecutor {
                 mEndGas = 0;
                 // #mish: if exec gas OOG, do not refund all rent Gas.. keep 25% as per RSKIP113
                 mEndRentGas = 3*txRentGasLimit/4; //#mish: with pre compiles should all rent gas be refunded?
+                // increase estimated rentgas
+                estRentGas += txRentGasLimit/4;
                 profiler.stop(metric);
                 return;
             }
@@ -415,6 +415,7 @@ public class TransactionExecutor {
                         programInvokeFactory.createProgramInvoke(tx, txindex, executionBlock, cacheTrack, blockStore);
 
                 this.vm = new VM(vmConfig, precompiledContracts);
+                // same as create, except `code` instead of `tx.getData()`
                 this.program = new Program(vmConfig, precompiledContracts, blockFactory, activations, code, programInvoke, tx, deletedAccounts);
             }
         }
@@ -433,7 +434,7 @@ public class TransactionExecutor {
 
         if (isEmpty(tx.getData())) {
             mEndGas = GasCost.subtract(GasCost.toGas(tx.getGasLimit()), basicTxCost); //reduce refund by basicTxCost
-            // #mish: rentGasRefund?
+            //mEndRentGas = GasCost.toGas(tx.getRentGasLimit()); // wait until EOT
 
             // If there is no data, then the account is created, but without code nor
             // storage. It doesn't even call setupContract() to setup a storage root
@@ -442,10 +443,9 @@ public class TransactionExecutor {
             ProgramInvoke programInvoke = programInvokeFactory.createProgramInvoke(tx, txindex, executionBlock, cacheTrack, blockStore);
 
             this.vm = new VM(vmConfig, precompiledContracts);
+            // same as call, except `tx.getData()`, rather than `code`
             this.program = new Program(vmConfig, precompiledContracts, blockFactory, activations, tx.getData(), programInvoke, tx, deletedAccounts);
-
-            // #mish: no adjustments to returns here
-            
+ 
             // reset storage if the contract with the same address already exists
             // TCK test case only - normally this is near-impossible situation in the real network
             /* Storage keys not available anymore in a fast way
@@ -473,6 +473,8 @@ public class TransactionExecutor {
     private void go() {
         // TODO: transaction call for pre-compiled  contracts
         if (vm == null) {
+            //System.out.println("vm null in go(), returning"); // #mish TX Exec tests don't have real calls or creates
+            //System.out.println(result.getAccessedNodes().size()); //
             cacheTrack.commit();
             return;
         }
@@ -486,12 +488,19 @@ public class TransactionExecutor {
 
             // Charge basic cost of the transaction
             program.spendGas(tx.transactionCost(constants, activations), "TRANSACTION COST");
-
+            // program operations: `code from repository` (call to addr) or `tx.getData()` (in case of create)
             if (playVm) {
                 vm.play(program);
             }
+            /*#mish 1st & only time `result` is called explicitly. Other 2 instances are errors in createContract()
+             * however by calling nodeadder methods, we have already set some result fields (e.g. accessedNodes).
+             * hence, to preserve those, use merge
+             * to verify that result was initialized properly, look at the size of accessedNodes within 
+             * if (vm==null){} block at the start of go(){}
+             */ 
+            //#mish: this was `result = program.getResult();`
+            result.merge(program.getResult());
 
-            result = program.getResult();
             mEndGas = GasCost.subtract(GasCost.toGas(tx.getGasLimit()), program.getResult().getGasUsed());
 
             if (tx.isContractCreation() && !result.isRevert()) {
@@ -511,17 +520,19 @@ public class TransactionExecutor {
         } catch (Exception e) {
             cacheTrack.rollback();
             mEndGas = 0;
+            mEndRentGas = 3 * GasCost.toGas(tx.getRentGasLimit()) / 4 ; //refund 75 % rentGasLimit on exception RSKIP113
             execError(e);
             profiler.stop(metric);
             return;
         }
         cacheTrack.commit();
+        // add node to createdNode Map for rent computation after the cached repository is committed
+        createdNodeAdder(tx.getContractAddress(), track, result);
         profiler.stop(metric);
     }
 
     // #mish create() is called in execute(), where is sets up the account and storage root. 
-    // createContract() called in go(). It estimates gas costs based on contract size,
-    // saves the code, commits changes from cache to main repository.
+    // createContract() called in go(). It estimates gas costs based on contract size, saves code to cached repository
     private void createContract() {
         int createdContractSize = getLength(program.getResult().getHReturn());
         long returnDataGasValue = GasCost.multiply(GasCost.CREATE_DATA, createdContractSize);
@@ -628,6 +639,12 @@ public class TransactionExecutor {
         logger.trace("Processing result");
         logs = notRejectedLogInfos;
 
+        // save created and accessed node with updated rent timestamps to repository. Any value modifications 
+        result.getCreatedNodes().forEach((key, rentData) -> track.updateNodeWithRent(key, rentData.getLRPTime()));        
+        
+        result.getAccessedNodes().forEach((key, rentData) -> track.updateNodeWithRent(key, rentData.getLRPTime()));
+        
+        // #mish what is this for? Github search in May 2020 doesn't reveal anything  (indexed April 2020)
         result.getCodeChanges().forEach((key, value) -> track.saveCode(new RskAddress(key), value));
         // Traverse list of suicides
         result.getDeleteAccounts().forEach(address -> track.delete(new RskAddress(address)));
@@ -704,32 +721,15 @@ public class TransactionExecutor {
         return this.estRentGas;
     }
 
-    /* Methods to add nodes to program result hashmaps
-    * AccountState, code, and storage "root" nodes only since
-    * (as of this time May 2020) TX executor class does not deal with storage cells directly.
-    * should that change, then we need to add storage nodes as well.
-    */       
-    // new nodes created during Tx execution: to be added to the Map programresult.NewTrieNodes
-    public void createdNodeAdder(RskAddress addr, Repository repository, ProgramResult progRes){
-        DataWord accKey = repository.getAccountNodeKey(addr);
-        Uint24 vLen = repository.getAccountNodeValueLength(addr);
-        
-        progRes.addNewTrieNode(accKey, vLen);
-        // if this is a new contract then add info for storage root and code
-        if (repository.isContract(addr)) {
-            // code
-            DataWord cKey = repository.getCodeNodeKey(addr);
-            Uint24 cLen = repository.getCodeNodeLength(addr);
-            progRes.addNewTrieNode(cKey, cLen);
-            // storage root node
-            DataWord srKey = repository.getStorageRootKey(addr);
-            Uint24 srLen = repository.getStorageRootValueLength(addr);
-            progRes.addNewTrieNode(srKey, srLen);
-        }
-    }
-    // #mish record (HashMap) of nodes touched by a transaction but prior to any modifications
-    // entries are added for a node only if there are no pre-existing ones, no overwrites
-    // this should be called the first time any RSK addr is referenced in a TX or a child process
+    /* #mish Add nodes accessed by or created in a transaction to the maps
+    * "accessedNodes" or "createdNodes" in programResult. 
+     * Methods compute outstanding rent due for exsiting nodes and 6 months advance for new nodes.
+     * node info obtained for each provided RSK addr via methods defined in mutableRepository
+     * The method retreives nodes containing account state and for contracts: code and storage root. 
+     * This should be called the first time any RSK addr is referenced in a TX or a child process
+     * Storage nodes accessed via SLOAD or SSTORE are not included.
+     * While quite similar, for clarity, using separate adder methods for accessed nodes and created nodes 
+    */
     public void accessedNodeAdder(RskAddress addr, Repository repository, ProgramResult progRes){
         DataWord accKey = repository.getAccountNodeKey(addr);
         Uint24 vLen = repository.getAccountNodeValueLength(addr);
@@ -737,61 +737,95 @@ public class TransactionExecutor {
         RentData accNode = new RentData(vLen, accLrpt);
         // compute the rent due
         accNode.setRentDue(this.getRefTimeStamp());
+        long rd = accNode.getRentDue();
         // if the node is not in the map, add the rent owed to current estimate
-        if (!progRes.getAccessedNodes().containsKey(accKey)){
-            long rd = accNode.getRentDue();
-            if (rd > 0){          // negative values do not affect estimate
-                estRentGas += rd;
-            }
+        // only add rent due > 0. Prepaid rent does not matter here. 
+        if (!progRes.getAccessedNodes().containsKey(accKey) && rd >0){
+                estRentGas += rd;   //"collect" rent due
+                accNode.setLRPTime(this.getRefTimeStamp()); //update rent paid timestamp
         }
+        // add to hashmap (internally this is a putIfAbsent)
         progRes.addAccessedNode(accKey, accNode);
         // if this is a contract then add info for storage root and code
         if (repository.isContract(addr)) {
-            // code
+            // code node
             DataWord cKey = repository.getCodeNodeKey(addr);
             Uint24 cLen = repository.getCodeNodeLength(addr);
             long cLrpt = repository.getCodeNodeLRPTime(addr);
-        
-            progRes.addAccessedNode(cKey, new RentData(cLen, cLrpt));
+            RentData codeNode = new RentData(cLen, cLrpt);
+            // compute rent and update estRent as needed
+            codeNode.setRentDue(this.getRefTimeStamp());
+            rd = codeNode.getRentDue();
+            if (!progRes.getAccessedNodes().containsKey(cKey) && rd >0){
+                estRentGas += rd;
+                codeNode.setLRPTime(this.getRefTimeStamp());
+            }
+
+            progRes.addAccessedNode(cKey, codeNode);
+            
             // storage root node
             DataWord srKey = repository.getStorageRootKey(addr);
             Uint24 srLen = repository.getStorageRootValueLength(addr);
             long srLrpt = repository.getStorageRootLRPTime(addr);
-        
-            progRes.addAccessedNode(srKey, new RentData(srLen, srLrpt));
+            RentData srNode = new RentData(srLen, srLrpt);
+            // compute rent and update estRent as needed
+            srNode.setRentDue(this.getRefTimeStamp());
+            rd = srNode.getRentDue();
+            if (!progRes.getAccessedNodes().containsKey(srKey) && rd >0){
+                estRentGas += rd;
+                srNode.setLRPTime(this.getRefTimeStamp());
+            }
+            progRes.addAccessedNode(srKey, srNode);
         }
     }
-
-    /** #mish record (HashMap) of nodes modified by a transaction 
-     * new calls overwrite any previously exisitng entry. Only the latest info is preserved
-     * this should be called when a transaction is being finalized and cacheTrack has been commited
-     * care needs to be taken, because computations made using this Map
-     * will lead to further account state changes (for storage rent compuation, balance updates).
-     * Account node is almost certain to be updated at EOT. 
-     * Storare root and contract code will usually not be "modified", only rent timestamp updated
-     *  
-    */
-    public void modifiedNodeAdder(RskAddress addr, Repository repository, ProgramResult progRes){
+    // Similar to accessednodes adder. Different HashMap, 6 months timestamp, rent computation, no check for prepaid rent
+    // also, its more likely that created nodes will be in a cached repository, e.g. cachetrack in Tx execution 
+    public void createdNodeAdder(RskAddress addr, Repository repository, ProgramResult progRes){
         DataWord accKey = repository.getAccountNodeKey(addr);
         Uint24 vLen = repository.getAccountNodeValueLength(addr);
-        
-        progRes.addModifiedNode(accKey, vLen);
-        // if this is contract then add info for storage root and code
+        long advTS = this.getRefTimeStamp() + GasCost.SIX_MONTHS; //advanced time stamp time.now + 6 months
+        long accLrpt = advTS;
+        RentData accNode = new RentData(vLen, accLrpt);
+        // compute the rent due
+        accNode.setSixMonthsRent();
+        long rd = accNode.getRentDue();
+        // if the node is not in the map, add the rent owed to current estimate
+        if (!progRes.getCreatedNodes().containsKey(accKey)){
+                estRentGas += rd;
+        }
+        // add to hashmap (internally this is a putIfAbsent)
+        progRes.addCreatedNode(accKey, accNode);
+        // if this is a contract then add info for storage root and code
         if (repository.isContract(addr)) {
-            // code
+            // code node
             DataWord cKey = repository.getCodeNodeKey(addr);
             Uint24 cLen = repository.getCodeNodeLength(addr);
-           //long cLrpt = repository.getCodeNodeLRPTime(addr);
-        
-            progRes.addModifiedNode(cKey, cLen);
+            long cLrpt = advTS;
+            RentData codeNode = new RentData(cLen, cLrpt);
+            // compute rent and update estRent as needed
+            codeNode.setSixMonthsRent();
+            rd = codeNode.getRentDue();
+            if (!progRes.getCreatedNodes().containsKey(cKey)){
+                estRentGas += rd;
+            }
+
+            progRes.addCreatedNode(cKey, codeNode);
+            
             // storage root node
             DataWord srKey = repository.getStorageRootKey(addr);
             Uint24 srLen = repository.getStorageRootValueLength(addr);
-            //long srLrpt = repository.getStorageRootLRPTime(addr);
-        
-            progRes.addModifiedNode(srKey, srLen);
+            long srLrpt = advTS;
+            RentData srNode = new RentData(srLen, srLrpt);
+            // compute rent and update estRent as needed
+            srNode.setSixMonthsRent();
+            rd = srNode.getRentDue();
+            if (!progRes.getCreatedNodes().containsKey(srKey)){
+                estRentGas += rd;
+            }
+            progRes.addCreatedNode(srKey, srNode);
         }
     }
+
 
 }
 

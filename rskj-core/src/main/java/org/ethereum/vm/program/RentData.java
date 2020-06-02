@@ -28,7 +28,7 @@ import java.util.*;
 
 /**
  * @author mish, May 2020
- * object to hold a node's value length and last rent paid time
+ * object to hold a node's value length, last rent paid time and rent due
  * to keeping track of nodes created, modified during transaction execution
  */
 public class RentData {
@@ -65,11 +65,12 @@ public class RentData {
         }
     }
 
-    // returns 6 months advance rent due for new trie nodes
-    public long getSixMonthsRent(){
-        if (this.valueLength == null){
-            return 0L;
-        }
-        return GasCost.calculateStorageRent(this.valueLength, GasCost.SIX_MONTHS);
+    // compute and set 6 months advance rent (for new trie nodes)
+    public void setSixMonthsRent(){
+        if (this.valueLength != null){
+            this.rentDue = GasCost.calculateStorageRent(this.valueLength, GasCost.SIX_MONTHS);
+        } else {
+            this.rentDue = 0L;
+        }        
     }
 }

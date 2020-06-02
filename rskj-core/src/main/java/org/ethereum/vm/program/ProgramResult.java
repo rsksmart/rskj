@@ -16,7 +16,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-
+ 
 package org.ethereum.vm.program;
 
 import co.rsk.core.types.ints.Uint24;
@@ -49,16 +49,16 @@ public class ProgramResult {
     private Map<DataWord, byte[]> codeChanges; // #mish: used in TX exec finalization
 
     // #mish: sets for storage rent (RSKIP113) checks and computations (only nodes that have some value) 
-    private Map<DataWord, Uint24> newTrieNodes; //  storage rent to be charged for 6 months in advance when nodes are created
+    private Map<DataWord, RentData> createdNodes; //  storage rent to be charged for 6 months in advance when nodes are created
     private Map<DataWord, RentData> accessedNodes; // nodes accessed (value may not have been modified)
-    private Map<DataWord, Uint24> modifiedNodes; // nodes with value modified.
-
-    // #mish Set of selfdestruct i.e. suicide accounts. Todo: any refund for prepaid rent?
+    
+    // #mish Set of selfdestruct i.e. suicide accounts, i.e. contracts (and all associated nodes)
+    // todo: compute rent for deleted nodes?
     private Set<DataWord> deleteAccounts;
     private List<InternalTransaction> internalTransactions;
     private List<LogInfo> logInfoList;
-    private long futureRefund = 0;  // e.g. for contract suicide refund
-    private long futureRentGasRefund = 0; // #mish to keep track of storage rent refund on node deletion (caps not decided!) 
+    private long futureRefund = 0;  // e.g. for contract suicide refund // "future" is really just end of transaction
+    private long futureRentGasRefund = 0; // #mish to keep track of storage rent refund on node modification/deletion (caps not decided!) 
 
     /*
      * for testing runs ,
@@ -153,20 +153,20 @@ public class ProgramResult {
     }
 
     // #mish tracking additions, updates and storage rent due status for trie ndoes
-    public Map<DataWord, Uint24> getNewTrieNodes() {
-        if (newTrieNodes == null) {
-            newTrieNodes = new HashMap<>();
+    public Map<DataWord, RentData> getCreatedNodes() {
+        if (createdNodes == null) {
+            createdNodes = new HashMap<>();
         }
-        return newTrieNodes;
+        return createdNodes;
     }
 
-    public void addNewTrieNode(DataWord nodeKey, Uint24 valueLength) {
-        getNewTrieNodes().put(nodeKey, valueLength);
+    public void addCreatedNode(DataWord nodeKey, RentData rentData) {
+        getCreatedNodes().put(nodeKey, rentData);   //putifabsent not needed, just created
     }
 
     // add a set of new trie nodes 
-    public void addNewTrieNodes(Map<DataWord, Uint24> newNodes) {
-        getNewTrieNodes().putAll(newNodes);
+    public void addCreatedNodes(Map<DataWord, RentData> newNodes) {
+        getCreatedNodes().putAll(newNodes);
     }
 
     // #mish nodes accessed (may or may not be modified)
@@ -185,23 +185,6 @@ public class ProgramResult {
     public void addAccessedNodes(Map<DataWord, RentData> nodesAcc) {
         nodesAcc.forEach(getAccessedNodes()::putIfAbsent);
     }
-
-    // modified nodes
-    public Map<DataWord, Uint24> getModifiedNodes() {
-        if (modifiedNodes == null) {
-            modifiedNodes = new HashMap<>();
-        }
-        return modifiedNodes;
-    }
-
-    public void addModifiedNode(DataWord nodeKey, Uint24 valueLength) {
-        // #mish: for modified, keep the latest information, overwrite any previously stored info
-        getModifiedNodes().put(nodeKey, valueLength);
-    }
-
-    public void addModifiedNodes(Map<DataWord, Uint24> nodesMod) {
-        getModifiedNodes().putAll(nodesMod);
-    }
    
     public void clearFieldsOnException() {
         if (deleteAccounts!=null) {
@@ -213,14 +196,11 @@ public class ProgramResult {
         if (codeChanges!=null) {
             codeChanges.clear();
         }
-        if (newTrieNodes!=null) {
-            newTrieNodes.clear();
+        if (createdNodes!=null) {
+            createdNodes.clear();
         }
         if (accessedNodes!=null) {
             accessedNodes.clear();
-        }
-        if (modifiedNodes!=null) {
-            modifiedNodes.clear();
         }
         resetFutureRefund();
         resetFutureRentGasRefund();
@@ -329,7 +309,7 @@ public class ProgramResult {
         addInternalTransactions(another.getInternalTransactions());
         if (another.getException() == null && !another.isRevert()) {
             addDeleteAccounts(another.getDeleteAccounts());
-            addNewTrieNodes(another.getNewTrieNodes());
+            addCreatedNodes(another.getCreatedNodes());
             addAccessedNodes(another.getAccessedNodes());
             addLogInfos(another.getLogInfoList());
             addFutureRefund(another.getFutureRefund());
