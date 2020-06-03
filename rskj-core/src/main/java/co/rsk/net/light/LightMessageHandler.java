@@ -64,9 +64,9 @@ public class LightMessageHandler implements InternalService, Runnable {
             try {
                 logger.trace("Get task");
 
-                task = this.queue.poll(1, TimeUnit.SECONDS);
+                task = queue.poll(1, TimeUnit.SECONDS);
 
-                loggerMessageProcess.debug("Queued Messages: {}", this.queue.size());
+                loggerMessageProcess.debug("Queued Messages: {}", queue.size());
 
                 if (task != null) {
                     logger.trace("Start task");

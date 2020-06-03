@@ -141,7 +141,7 @@ public class LightSyncProcessorTest {
 
         BlockHeadersMessage blockHeadersMessage = new BlockHeadersMessage(requestId, bHs);
 
-        lightClientHandler.channelRead0(ctx, blockHeadersMessage);
+        lightMessageHandler.processMessage(lightPeer, blockHeadersMessage, ctx, lightClientHandler);
 
         assertEquals(1, lightPeer.getBlocks().size());
         assertEquals(bHs, lightPeer.getBlocks());
