@@ -55,33 +55,33 @@ public class ExtCodeHashTest {
     @Test(expected = Program.IllegalOperationException.class)
     public void testDoEXTCODEHASHWithHardForkDeactivated() {
         when(activationConfig.isActive(RSKIP140)).thenReturn(false);
-        excecuteExtCodeHash("0x471fd3ad3e9eeadeec4608b92d16ce6b500704cc", 0,
+        executeExtCodeHash("0x471fd3ad3e9eeadeec4608b92d16ce6b500704cc", 0,
                 null);
     }
 
     @Test
     public void testDoEXTCODEHASHToContractAndGetTheCodeHash() {
         byte[] resultCode = invoke.getRepository().getCode(invoke.getContractAddress());
-        excecuteExtCodeHash("0x471fd3ad3e9eeadeec4608b92d16ce6b500704cc", 403,
+        executeExtCodeHash("0x471fd3ad3e9eeadeec4608b92d16ce6b500704cc", 403,
                 Keccak256Helper.keccak256(resultCode));
     }
 
     @Test
     public void testDoEXTCODEHASHToAccountAndGetEmptyHash() {
-        excecuteExtCodeHash("0xcd2a3d9f938e13cd947ec05abc7fe734df8dd826", 403,
+        executeExtCodeHash("0xcd2a3d9f938e13cd947ec05abc7fe734df8dd826", 403,
                 Keccak256Helper.keccak256(EMPTY_BYTE_ARRAY));
 
     }
 
     @Test
     public void testDoEXTCODEHASHToNonExistentAccountAndGetZero() {
-        excecuteExtCodeHash("0x1111111111222222222233333333334444444444", 403,
+        executeExtCodeHash("0x1111111111222222222233333333334444444444", 403,
                 ByteUtil.intToBytes(0));
     }
 
     @Test
     public void testDoEXTCODEHASHToPrecompiledContractAndGetEmptyHash() {
-        excecuteExtCodeHash("0x"+precompiledContracts.BRIDGE_ADDR.toHexString(), 403,
+        executeExtCodeHash("0x"+precompiledContracts.BRIDGE_ADDR.toHexString(), 403,
                 Keccak256Helper.keccak256(EMPTY_BYTE_ARRAY));
     }
 
@@ -104,7 +104,7 @@ public class ExtCodeHashTest {
          }
     }
 
-    private void excecuteExtCodeHash(String destAddress, int gasExpected, byte[] codeHashExpected) {
+    private void executeExtCodeHash(String destAddress, int gasExpected, byte[] codeHashExpected) {
         String stringCode = " PUSH20 " + destAddress +
                 " EXTCODEHASH";
 
@@ -124,8 +124,7 @@ public class ExtCodeHashTest {
         Assert.assertEquals(gasExpected, program.getResult().getGasUsed());
     }
 
-
-
+    
     private static Transaction createTransaction() {
         int number = 0;
         AccountBuilder acbuilder = new AccountBuilder();
