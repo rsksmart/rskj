@@ -22,10 +22,7 @@ import co.rsk.core.BlockDifficulty;
 import co.rsk.core.bc.BlockChainStatus;
 import co.rsk.crypto.Keccak256;
 import co.rsk.net.eth.LightClientHandler;
-import co.rsk.net.light.LightPeer;
-import co.rsk.net.light.LightProcessor;
-import co.rsk.net.light.LightStatus;
-import co.rsk.net.light.LightSyncProcessor;
+import co.rsk.net.light.*;
 import co.rsk.net.light.message.BlockHeadersMessage;
 import co.rsk.net.light.message.GetBlockHeadersMessage;
 import co.rsk.net.light.message.StatusMessage;
@@ -63,6 +60,7 @@ public class LightSyncProcessorTest {
     private long requestId;
     private Keccak256 blockHash;
     private ProofOfWorkRule proofOfWorkRule;
+    private LightPeersInformation lightPeersInformation;
 
     @Before
     public void setUp() {
@@ -70,7 +68,8 @@ public class LightSyncProcessorTest {
         Genesis genesis = mock(Genesis.class);
         Blockchain blockchain = mock(Blockchain.class);
         proofOfWorkRule = mock(ProofOfWorkRule.class);
-        lightSyncProcessor = new LightSyncProcessor(mock(SystemProperties.class), genesis, mock(BlockStore.class), blockchain, proofOfWorkRule);
+        lightPeersInformation = new LightPeersInformation();
+        lightSyncProcessor = new LightSyncProcessor(mock(SystemProperties.class), genesis, mock(BlockStore.class), blockchain, proofOfWorkRule, lightPeersInformation);
 
         //Light peer
         Channel channel = mock(Channel.class);
@@ -117,7 +116,7 @@ public class LightSyncProcessorTest {
         lightSyncProcessor.processStatusMessage(statusMessage, lightPeer, ctx, lightClientHandler);
         verify(lightPeer).sendMessage(argument.capture());
         assertArrayEquals(expectedMessage.getEncoded(), argument.getValue().getEncoded());
-        assertFalse(lightSyncProcessor.hasTxRelay(lightPeer));
+        assertFalse(lightPeersInformation.hasTxRelay(lightPeer));
 
         //BlockHeader response
 
@@ -152,6 +151,7 @@ public class LightSyncProcessorTest {
 
         verify(lightPeer, times(1)).sendMessage(any());
         verify(lightPeer2, times(0)).sendMessage(any());
+        assertFalse(lightPeersInformation.hasTxRelay(lightPeer));
     }
 
     @Test
@@ -164,8 +164,6 @@ public class LightSyncProcessorTest {
         StatusMessage statusMessageWithTxRelaySet = new StatusMessage(requestId, lightStatus, true);
 
         lightSyncProcessor.processStatusMessage(statusMessageWithTxRelaySet, lightPeer, ctx, lightClientHandler);
-        assertTrue(lightSyncProcessor.hasTxRelay(lightPeer));
+        assertTrue(lightPeersInformation.hasTxRelay(lightPeer));
     }
-
-
 }

@@ -24,7 +24,6 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.net.eth.LightClientHandler;
 import co.rsk.net.light.message.GetBlockHeadersMessage;
 import co.rsk.net.light.message.StatusMessage;
-import com.google.common.annotations.VisibleForTesting;
 import co.rsk.validators.ProofOfWorkRule;
 import io.netty.channel.ChannelHandlerContext;
 import org.ethereum.config.SystemProperties;
@@ -47,20 +46,19 @@ public class LightSyncProcessor {
 
     private static final int MAX_PENDING_MESSAGES = 1;
     private static final int MAX_PEER_CONNECTIONS = 1;
+    private final LightPeersInformation lightPeersInformation;
     private SystemProperties config;
     private final Genesis genesis;
     private final BlockStore blockStore;
     private Blockchain blockchain;
     private final byte version;
     private static final Logger loggerNet = LoggerFactory.getLogger("lightnet");
-    private Map<LightPeer, LightStatus> peerStatuses = new HashMap<>();
-    private Map<LightPeer, Boolean> txRelay = new HashMap<>();
     private long lastRequestedId;
     private final Map<Long, LightClientMessageCodes> pendingMessages;
     private ProofOfWorkRule blockHeaderValidationRule;
 
 
-    public LightSyncProcessor(SystemProperties config, Genesis genesis, BlockStore blockStore, Blockchain blockchain, ProofOfWorkRule blockHeaderValidationRule) {
+    public LightSyncProcessor(SystemProperties config, Genesis genesis, BlockStore blockStore, Blockchain blockchain, ProofOfWorkRule blockHeaderValidationRule, LightPeersInformation lightPeersInformation) {
         this.config = config;
         this.genesis = genesis;
         this.blockStore = blockStore;
@@ -77,6 +75,7 @@ public class LightSyncProcessor {
                 return shouldDiscard;
             }
         };
+        this.lightPeersInformation = lightPeersInformation;
     }
 
     public void processStatusMessage(StatusMessage msg, LightPeer lightPeer, ChannelHandlerContext ctx, LightClientHandler lightClientHandler) {
@@ -93,7 +92,7 @@ public class LightSyncProcessor {
             loggerNet.debug("LCHandler already removed - exception: {}", e.getMessage());
         }
 
-        if (peerStatuses.size() >= MAX_PEER_CONNECTIONS) {
+        if (lightPeersInformation.getConnectedPeersSize() >= MAX_PEER_CONNECTIONS) {
             return;
         }
 
@@ -101,13 +100,15 @@ public class LightSyncProcessor {
             return;
         }
 
-        peerStatuses.put(lightPeer, status);
+        lightPeersInformation.registerLightPeer(lightPeer, status, msg.isTxRelay());
 
-        if (msg.isTxRelay()) {
-            txRelay.put(lightPeer, true);
+        final Optional<LightPeer> bestPeer = lightPeersInformation.getBestPeer();
+
+        if (!bestPeer.isPresent()) {
+            return;
         }
 
-        byte[] bestBlockHash = status.getBestHash();
+        byte[] bestBlockHash = lightPeersInformation.getLightPeerStatus(bestPeer.get()).getBestHash();
         GetBlockHeadersMessage blockHeaderMessage = new GetBlockHeadersMessage(++lastRequestedId, bestBlockHash, 1, 0, false);
         pendingMessages.put(lastRequestedId, BLOCK_HEADER);
         lightPeer.sendMessage(blockHeaderMessage);
@@ -142,15 +143,6 @@ public class LightSyncProcessor {
 
         pendingMessages.remove(id, BLOCK_HEADER);
         lightPeer.receivedBlock(blockHeaders);
-    }
-
-    @VisibleForTesting
-    public boolean hasTxRelay(LightPeer peer) {
-        if (!txRelay.containsKey(peer)) {
-            return false;
-        }
-
-        return txRelay.get(peer);
     }
 
     private boolean isPending(long id, LightClientMessageCodes code) {
