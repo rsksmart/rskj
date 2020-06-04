@@ -1,6 +1,6 @@
 ## Storage Rent Project
 
-**Branch: `mish`**: [branch](https://github.com/optimalbrew/rskj/tree/mish) and [comparison with rskj master](https://github.com/rsksmart/rskj/compare/master...optimalbrew:mish) 
+**Code:** [branch 'mish'](https://github.com/optimalbrew/rskj/tree/mish) and [comparison with rskj master](https://github.com/rsksmart/rskj/compare/master...optimalbrew:mish) (for overview).
 
 The goal of this project is to implement storage rent as described in [RSKIP113](https://github.com/rsksmart/RSKIPs/blob/master/IPs/RSKIP113.md). Storage rent is intended to lead to more efficient resource utilization by charging users for the size as well as duration for which their data is stored in blockchain state. The project may reveal new issues (computatinal, economic, usability etc) to be addressed prior to eventual adoption decisions and/or future RSKIPs.
 
