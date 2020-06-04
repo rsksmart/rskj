@@ -39,7 +39,13 @@ public class TransactionExecutionSummary {
     private BigInteger gasUsed = BigInteger.ZERO;
     private BigInteger gasLeftover = BigInteger.ZERO;
     private BigInteger gasRefund = BigInteger.ZERO;
-    // #mish for storage rent gas
+    
+    /** #mish for storage rent gas
+     * rent gas is collected at end of transaction. 
+     * so rent gas is more like an estimate, rather than definite spending 
+     * however, for clarity of thought we use the same terminology "used, "leftover", "refund" 
+     * as for regular execution gas  
+    */ 
     private BigInteger rentGasLimit = BigInteger.ZERO;
     private BigInteger rentGasUsed = BigInteger.ZERO;
     private BigInteger rentGasLeftover = BigInteger.ZERO;

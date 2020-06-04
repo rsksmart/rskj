@@ -37,6 +37,10 @@ import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 public class ProgramResult {
 
     private long gasUsed;
+    /** #mish rent gas is collected at end of transaction. 
+     * so rentgas "used" is more like an "estimate" of eventual cost, rather than definite spending. 
+     * However, for clarity of thought, use the same terminology as for regular execution gas.  
+    */
     private long rentGasUsed;
     // #mish data returned from memory, program. can be empty, can be output from func call, even contract code to be written to trie
     private byte[] hReturn = EMPTY_BYTE_ARRAY;
@@ -50,7 +54,7 @@ public class ProgramResult {
 
     // #mish: sets for storage rent (RSKIP113) checks and computations (only nodes that have some value) 
     private Map<DataWord, RentData> createdNodes; //  storage rent to be charged for 6 months in advance when nodes are created
-    private Map<DataWord, RentData> accessedNodes; // nodes accessed (value may not have been modified)
+    private Map<DataWord, RentData> accessedNodes; // nodes accessed (value may or may not be modified by TX)
     
     // #mish Set of selfdestruct i.e. suicide accounts, i.e. contracts (and all associated nodes)
     // todo: compute rent for deleted nodes?
@@ -58,7 +62,7 @@ public class ProgramResult {
     private List<InternalTransaction> internalTransactions;
     private List<LogInfo> logInfoList;
     private long futureRefund = 0;  // e.g. for contract suicide refund // "future" is really just end of transaction
-    private long futureRentGasRefund = 0; // #mish to keep track of storage rent refund on node modification/deletion (caps not decided!) 
+    private long futureRentGasRefund = 0; // #mish to keep track of storage rent refund on node modification/deletion (policy not decided!) 
 
     /*
      * for testing runs ,
