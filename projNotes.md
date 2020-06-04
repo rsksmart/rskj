@@ -2,21 +2,21 @@
 
 **Branch: `mish`**: [branch](https://github.com/optimalbrew/rskj/tree/mish) and [comparison with rskj master](https://github.com/rsksmart/rskj/compare/master...optimalbrew:mish) 
 
-**Overview:** The initial goal of this project is to implement storage rent as described in [RSKIP113](https://github.com/rsksmart/RSKIPs/blob/master/IPs/RSKIP113.md). Storage rent is intended to lead to more efficient resource utilization by charging users for both the size as well as time for which they store data in blockchain state.
+The goal of this project is to implement storage rent as described in [RSKIP113](https://github.com/rsksmart/RSKIPs/blob/master/IPs/RSKIP113.md). Storage rent is intended to lead to more efficient resource utilization by charging users for the size as well as duration for which their data is stored in blockchain state. The project may reveal new issues (computatinal, economic, usability etc) to be addressed prior to eventual adoption decisions and/or future RSKIPs.
 
-### Implementation (highligths)
+### Implementation highligths
 
-- All value-containing nodes in the Unitrie will be charged storage rent. This includes all nodes containing *account state*, *code*, *storage root*, and obviously, *storage nodes or cells*.
+- All value-containing nodes in the Unitrie will be charged storage rent. This includes nodes containing *account state*, *code*, *storage root*, and obviously, *storage nodes or cells*.
 
 - As per RSKIP 113, rent is computed at the rate *1/(2^21) gas per byte per second*. For rent computations, an overhead of 136 (bytes) is added to a node's `valueLength` field.  The RSKIP has some sample computations.
 
-- Just like regular (execution gas), all collected rent is passed to miners as additional revenue. Rent gas does not count towards block gas limits. 
+- Just like regular (execution) *gas*, all collected *rentgas* will be passed to miners as additional revenue. *Rentgas* will not count towards block gas limits. 
 
-- RSKIP113 describes several details. For example, newlt crfeated nodes are to be charged 6 months rent in advance. Furthermore, to avoid micro-payments for rent, the RSKIP defines minimum thresholds for rent checks and collections.
+- RSKIP113 describes several other details. For example, newly created nodes are to be charged six months storage rent in advance. Furthermore, to avoid micro-payments for rent, the RSKIP defines minimum thresholds for rent checks and collections.
 
-- While not an objective of the current implementation, the project (rent timestamps) can be used to enable **node hibernation** in the future.
+- While not an objective of the current implementation, rent timestamps can be used to enable **node hibernation** in the future.
 
-### Inital changes
+### Inital changes to RSKJ code
 - Several changes in `Trie`. There's quite a bit of code duplication, mainly to avoid breaking things (to be removed later).
     - add a new field for `lastRentPaidTime`. This increases the size of each node by 8 bytes. To pass   existing tests *embeddability*, increased the max_embedded_node_size limit from 44 to 52. 
     - modify constuctors, new `putWithRent` method to update Trie node's value and rent timestamp, new `get` methods.
