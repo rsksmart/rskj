@@ -21,6 +21,9 @@ package org.ethereum.crypto.signature;
 
 import co.rsk.config.RskSystemProperties;
 import com.google.common.annotations.VisibleForTesting;
+import org.bitcoin.NativeSecp256k1;
+import org.bitcoin.NativeSecp256k1Util;
+import org.bitcoin.Secp256k1Context;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,7 +39,7 @@ public final class Secp256k1 {
     private static final String NATIVE_LIB = "native";
     private static final Logger logger = LoggerFactory.getLogger(Secp256k1.class);
 
-    private static Secp256k1Service instance = new Secp256k1ServiceBC();
+    private static Secp256k1Service instance = new Secp256k1ServiceNative();
     private static boolean initialized = false;
 
     private Secp256k1() {
@@ -61,10 +64,10 @@ public final class Secp256k1 {
         if (rskSystemProperties != null) {
             String cryptoLibrary = rskSystemProperties.cryptoLibrary();
             logger.debug("Initializing Signature Service: {}.", cryptoLibrary);
-            if (NATIVE_LIB.equals(cryptoLibrary)) {//TODO: Check if Native library is loaded.
+            if (NATIVE_LIB.equals(cryptoLibrary) && Secp256k1Context.isEnabled()) {
                 instance = new Secp256k1ServiceNative();
             } else {
-                instance = new Secp256k1ServiceBC();
+                instance = new Secp256k1ServiceNative();
             }
         } else {
             logger.warn("Empty system properties.");
@@ -82,7 +85,7 @@ public final class Secp256k1 {
 
     @VisibleForTesting
     static void reset() {
-        instance = new Secp256k1ServiceBC();
+        instance = new Secp256k1ServiceNative();
         initialized = false;
     }
 }

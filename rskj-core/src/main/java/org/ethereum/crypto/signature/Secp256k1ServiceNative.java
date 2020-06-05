@@ -22,15 +22,18 @@ package org.ethereum.crypto.signature;
 import org.bitcoin.NativeSecp256k1;
 import org.bouncycastle.util.Arrays;
 import org.ethereum.crypto.ECKey;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.nio.ByteBuffer;
 
 /**
  * Implementation of SignatureService with Native library.
- * TODO: once integrated native implementation, should implement all methods.
  */
 public class Secp256k1ServiceNative extends Secp256k1ServiceBC {
+
+    private static final Logger logger = LoggerFactory.getLogger(Secp256k1ServiceNative.class);
 
     @Nullable
     @Override
@@ -39,12 +42,14 @@ public class Secp256k1ServiceNative extends Secp256k1ServiceBC {
         check(sig.getR().signum() >= 0, "r must be positive");
         check(sig.getS().signum() >= 0, "s must be positive");
         check(messageHash != null, "messageHash must not be null");
-        byte[] sigBytes = concatenate(sig);
-        byte[] pbKey = new byte[0];
+        byte[] pbKey;
         try {
+            byte[] sigBytes = concatenate(sig);
+            logger.trace("Recovering key from signature: comporessed[{}] - recId[{}] - sig[{}] - msgHash[{}].", compressed, recId, sigBytes, messageHash);
             pbKey = NativeSecp256k1.ecdsaRecover(sigBytes, messageHash, recId, compressed);
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Couldnt recover key from signature.", e);
+            return null;
         }
         return ECKey.fromPublicOnly(pbKey);
     }
@@ -52,20 +57,45 @@ public class Secp256k1ServiceNative extends Secp256k1ServiceBC {
     @Override
     public boolean verify(byte[] data, ECDSASignature signature, byte[] pub) {
         try {
-            return NativeSecp256k1.verify(data, concatenate(signature), pub);
+            byte[] signatureRS = concatenate(signature);
+            logger.trace("Verifying signature: sig[{}] - pub[{}] - data[{}].", signature, pub, data);
+            return NativeSecp256k1.verify(data, signatureRS, pub);
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Couldn't verify signature.", e);
             return false;
         }
     }
 
+    /**
+     * It returns a 64 byte array long, with r + s
+     * @param sig {r,s}
+     * @return r + s (64 bytes array)
+     */
     byte[] concatenate(ECDSASignature sig) {
         byte[] rBytes = sig.getR().toByteArray();
         byte[] sBytes = sig.getS().toByteArray();
         byte[] allByteArray = new byte[64];
         ByteBuffer buff = ByteBuffer.wrap(allByteArray);
-        buff.put(Arrays.copyOfRange(rBytes, rBytes.length - 32, rBytes.length));
-        buff.put(Arrays.copyOfRange(sBytes, sBytes.length - 32, sBytes.length));
+        for (int i = rBytes.length; i < 32; i++) {
+            buff.put((byte) 0);
+        }
+        buff.put(Arrays.copyOfRange(rBytes, getStartIndex(rBytes), rBytes.length));
+        for (int i = sBytes.length; i < 32; i++) {
+            buff.put((byte) 0);
+        }
+        buff.put(Arrays.copyOfRange(sBytes, getStartIndex(sBytes), sBytes.length));
         return buff.array();
+    }
+
+    /**
+     *  If bytes length  is greater than 32, we keep the last 32 bytes at the right.
+     *          - So starting byte index will be = length - 32.
+     *  If not
+     *          -  Starting byte index = 0.
+     * @param sBytes
+     * @return
+     */
+    private int getStartIndex(byte[] sBytes) {
+        return sBytes.length > 32 ? sBytes.length - 32 : 0;
     }
 }
