@@ -302,7 +302,7 @@ public class TransactionExecutor {
         logger.trace("Execute transaction {} {}", toBI(tx.getNonce()), tx.getHash());
 
         if (!localCall) {
-            // set reference timestamp
+            // set reference timestamp for rent computations: ToDo: should this be at the block level?
             refTimeStamp = Instant.now().getEpochSecond();
             // #mish add sender to Map of accessed nodes (for storage rent tracking)
             accessedNodeAdder(tx.getSender(),track, result);    
@@ -378,19 +378,22 @@ public class TransactionExecutor {
                     GasCost.subtract(txGasLimit, gasUsed) :
                     txGasLimit - gasUsed;
             // update refund status of rentGas
-            // mEndRentGas = txRentGasLimit; // no rentgas computed yet
+            mEndRentGas = txRentGasLimit; // no rentgas computed yet
 
             // FIXME: save return for vm trace
             try {
                 byte[] out = precompiledContract.execute(tx.getData());
                 this.subtraces = precompiledContract.getSubtraces();
                 result.setHReturn(out);
-                // #mish: Pre-compiled contracts to do not exist in Trie (they don't have to).
-                // In ethereum a contract calling another contract costs 700. But if that contract does not exist,
-                // then a new account is created which costs an additional 25000 for `NEW_ACCT_CALL`
-                // One way to avoid this cost for pre compiled contracts is to create nodes in the trie for them
-                // as done here, so calls to PCCs cost 700 and not 700 + 25000. 
-                // As per SDL -> this check should ideally happen before a precompiled is executed.                 
+                /** #mish: create dummy accounts for pre-compiled contracts 
+                 * Pre-compiled contracts to do not exist in Trie/repository (they don't have to).
+                 * In ethereum a contract calling another contract costs 700. But if that contract does not exist,
+                 * then a new account is created which costs an additional 25000 for `NEW_ACCT_CALL`
+                 * see computecallgas() in VM.java
+                 * One way to avoid this cost for pre compiled contracts is to create nodes in the trie for them
+                 * as done here, so calls to PCCs cost 700 and not 700 + 25000. 
+                 * As per SDL -> this check should ideally happen before a precompiled is executed.                 
+                */
                 if (!track.isExist(targetAddress)) {
                     track.createAccount(targetAddress);
                     track.setupContract(targetAddress);
@@ -401,12 +404,14 @@ public class TransactionExecutor {
                 result.setException(e);
             }
             result.spendGas(gasUsed);
+            // #mish no storage rent implications here.. moving on.
             profiler.stop(metric);
         } else {    // #mish if not pre-compiled contract
             // add the node to accessed nodes Map for rent tracking
             accessedNodeAdder(tx.getReceiveAddress(),track, result);
             byte[] code = track.getCode(targetAddress);
-            // Code can be null
+            // Code can be null 
+            // #mish Aside: even for empty code, storage rent will be > 0, because of overhead (RSKIP 113) 
             if (isEmpty(code)) {
                 mEndGas = GasCost.subtract(GasCost.toGas(tx.getGasLimit()), basicTxCost);
                 result.spendGas(basicTxCost);
@@ -415,7 +420,7 @@ public class TransactionExecutor {
                         programInvokeFactory.createProgramInvoke(tx, txindex, executionBlock, cacheTrack, blockStore);
 
                 this.vm = new VM(vmConfig, precompiledContracts);
-                // same as create, except `code` instead of `tx.getData()`
+                // #mish: same as in create(), except `code` instead of `tx.getData()`
                 this.program = new Program(vmConfig, precompiledContracts, blockFactory, activations, code, programInvoke, tx, deletedAccounts);
             }
         }
@@ -426,15 +431,12 @@ public class TransactionExecutor {
         }
     }
 
-    // #mish create() uses the sender's address to determine contract address. It creates the account (in cache repository) 
-    // and if there's data in the tx then calls setupcontract (storage root). Any value in the Tx is transferred as the contract's endowment 
     private void create() {
         RskAddress newContractAddress = tx.getContractAddress();
         cacheTrack.createAccount(newContractAddress); // pre-created
 
         if (isEmpty(tx.getData())) {
             mEndGas = GasCost.subtract(GasCost.toGas(tx.getGasLimit()), basicTxCost); //reduce refund by basicTxCost
-            //mEndRentGas = GasCost.toGas(tx.getRentGasLimit()); // wait until EOT
 
             // If there is no data, then the account is created, but without code nor
             // storage. It doesn't even call setupContract() to setup a storage root
@@ -443,7 +445,7 @@ public class TransactionExecutor {
             ProgramInvoke programInvoke = programInvokeFactory.createProgramInvoke(tx, txindex, executionBlock, cacheTrack, blockStore);
 
             this.vm = new VM(vmConfig, precompiledContracts);
-            // same as call, except `tx.getData()`, rather than `code`
+            // same as call, except using `tx.getData()`, rather than `code`
             this.program = new Program(vmConfig, precompiledContracts, blockFactory, activations, tx.getData(), programInvoke, tx, deletedAccounts);
  
             // reset storage if the contract with the same address already exists
@@ -472,9 +474,8 @@ public class TransactionExecutor {
 
     private void go() {
         // TODO: transaction call for pre-compiled  contracts
+        
         if (vm == null) {
-            //System.out.println("vm null in go(), returning"); // #mish TX Exec tests don't have real calls or creates
-            //System.out.println(result.getAccessedNodes().size()); //
             cacheTrack.commit();
             return;
         }
@@ -488,17 +489,16 @@ public class TransactionExecutor {
 
             // Charge basic cost of the transaction
             program.spendGas(tx.transactionCost(constants, activations), "TRANSACTION COST");
-            // program operations: `code from repository` (call to addr) or `tx.getData()` (in case of create)
+            // #mish: program operations: `code` from repository (call to addr) or `tx.getData()` (in case of create)
             if (playVm) {
                 vm.play(program);
             }
-            /*#mish 1st & only time `result` is called explicitly. Other 2 instances are errors in createContract()
-             * however by calling nodeadder methods, we have already set some result fields (e.g. accessedNodes).
-             * hence, to preserve those, use merge
-             * to verify that result was initialized properly, look at the size of accessedNodes within 
-             * if (vm==null){} block at the start of go(){}
+            /*#mish  this used to be the following initialization
+             *      result = program.getResult();             
+             * However, previous calls to new nodeadder methods have already set some `result` fields (e.g. accessedNodes).
+             * Hence, to preserve those changes, use merge().
+             * This only matters if program !=null (not precompiled contract)
              */ 
-            //#mish: this was `result = program.getResult();`
             result.merge(program.getResult());
 
             mEndGas = GasCost.subtract(GasCost.toGas(tx.getGasLimit()), program.getResult().getGasUsed());
@@ -526,13 +526,15 @@ public class TransactionExecutor {
             return;
         }
         cacheTrack.commit();
-        // add node to createdNode Map for rent computation after the cached repository is committed
+        // add newly created contract nodes to createdNode Map for rent computation. After the cached repository is committed.
         createdNodeAdder(tx.getContractAddress(), track, result);
         profiler.stop(metric);
     }
 
-    // #mish create() is called in execute(), where is sets up the account and storage root. 
-    // createContract() called in go(). It estimates gas costs based on contract size, saves code to cached repository
+      
+    /**#mish  createContract() is called in go(). It estimates gas costs based on contract size, saves code to cached repository 
+     * In contrast, create() is called earlier [in execute()], where is sets up the account and storage root. 
+    */ 
     private void createContract() {
         int createdContractSize = getLength(program.getResult().getHReturn());
         long returnDataGasValue = GasCost.multiply(GasCost.CREATE_DATA, createdContractSize);
@@ -557,7 +559,7 @@ public class TransactionExecutor {
             cacheTrack.saveCode(tx.getContractAddress(), result.getHReturn());
         }
     }
-    // #mish todo: set status needs to be modified to reflect Manual revert, or rentgas OOG as per RSKIP113 
+    // #mish todo: setStatus needs to be modified to reflect Manual revert, or rentgas OOG as per RSKIP113 
     public TransactionReceipt getReceipt() {
         if (receipt == null) {
             receipt = new TransactionReceipt();
@@ -600,6 +602,7 @@ public class TransactionExecutor {
         // Accumulate refunds for suicides
         result.addFutureRefund(GasCost.multiply(result.getDeleteAccounts().size(), GasCost.SUICIDE_REFUND));
         long gasRefund = Math.min(result.getFutureRefund(), result.getGasUsed() / 2);
+         // #mish: update mEndGas to its final value. 
         mEndGas = activations.isActive(ConsensusRule.RSKIP136) ?
                 GasCost.add(mEndGas, gasRefund) :
                 mEndGas + gasRefund;
@@ -694,6 +697,7 @@ public class TransactionExecutor {
         return result;
     }
 
+    // #mish: This is used only twice and that too within getReceipt(). ProgramResult.getGasUsed() is used more generally.
     public long getGasUsed() {
         if (activations.isActive(ConsensusRule.RSKIP136)) {
             return GasCost.subtract(GasCost.toGas(tx.getGasLimit()), mEndGas);

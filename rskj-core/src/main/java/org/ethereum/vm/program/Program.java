@@ -481,6 +481,7 @@ public class Program {
         createContract(senderAddress, nonce, value, memStart, memSize, newAddress);
     }
 
+    // #mish contract code is fetched from memory location memStart though memStart + memSize 
     private void createContract( RskAddress senderAddress, byte[] nonce, DataWord value, DataWord memStart, DataWord memSize, RskAddress contractAddress) {
         if (getCallDeep() == getMaxDepth()) {
             logger.debug("max depth reached creating a new contract inside contract run: [{}]", senderAddress);
@@ -579,7 +580,10 @@ public class Program {
 
                 return;
             }
-
+            /** #mish if there is an address collision but
+             * there is no code or non-0 nonce associated with it, 
+             * then it's okay to continue, just preserve any prior balance 
+            */ 
             Coin oldBalance = track.getBalance(contractAddress);
             track.createAccount(contractAddress);
             track.addBalance(contractAddress, oldBalance);
@@ -737,7 +741,7 @@ public class Program {
     }
 
     /**
-     * That method is for internal code invocations
+     * This method is for internal code invocations
      * <p/>
      * - Normal calls invoke a specified contract which updates itself
      * - Stateless calls invoke code from another contract, within the context of the caller
@@ -1267,6 +1271,10 @@ public class Program {
                     getResult().getGasUsed(),
                     invoke.getGas(),
                     getRemainingGas());
+            logger.trace("\n  Spent Rent Gas: [{}]/[{}]\n  Left Rent Gas:  [{}]\n",
+                    getResult().getRentGasUsed(),
+                    invoke.getRentGas(),
+                    getRemainingRentGas());
 
             StringBuilder globalOutput = new StringBuilder("\n");
             if (stackData.length() > 0) {
@@ -1294,6 +1302,7 @@ public class Program {
                 globalOutput.append("\n  msg.data: ").append(Hex.toHexString(txData));
             }
             globalOutput.append("\n\n  Spent Gas: ").append(getResult().getGasUsed());
+            globalOutput.append("\n\n  Spent Rent Gas: ").append(getResult().getRentGasUsed());
 
             if (listener != null) {
                 listener.output(globalOutput.toString());
@@ -1510,7 +1519,7 @@ public class Program {
     private boolean byTestingSuite() {
         return invoke.byTestingSuite();
     }
-
+ 
     public interface ProgramOutListener {
         void output(String out);
     }
