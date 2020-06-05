@@ -323,9 +323,9 @@ public class BridgeStorageProviderTest {
         Assert.assertEquals(null, storageProvider.getNewFederation());
         Assert.assertEquals(null, storageProvider.getNewFederation());
         Assert.assertEquals(3, storageCalls.size());
-        PowerMockito.verifyStatic(never());
+        PowerMockito.verifyStatic(BridgeSerializationUtils.class, never());
         BridgeSerializationUtils.deserializeFederationOnlyBtcKeys(any(byte[].class), any(NetworkParameters.class));
-        PowerMockito.verifyStatic(never());
+        PowerMockito.verifyStatic(BridgeSerializationUtils.class, never());
         BridgeSerializationUtils.deserializeFederation(any(byte[].class), any(NetworkParameters.class));
     }
 
@@ -402,9 +402,9 @@ public class BridgeStorageProviderTest {
         Assert.assertEquals(null, storageProvider.getNewFederation());
         Assert.assertEquals(null, storageProvider.getNewFederation());
         Assert.assertEquals(3, storageCalls.size());
-        PowerMockito.verifyStatic(never());
+        PowerMockito.verifyStatic(BridgeSerializationUtils.class, never());
         BridgeSerializationUtils.deserializeFederationOnlyBtcKeys(any(byte[].class), any(NetworkParameters.class));
-        PowerMockito.verifyStatic(never());
+        PowerMockito.verifyStatic(BridgeSerializationUtils.class, never());
         BridgeSerializationUtils.deserializeFederation(any(byte[].class), any(NetworkParameters.class));
     }
 
@@ -568,9 +568,9 @@ public class BridgeStorageProviderTest {
         Assert.assertEquals(null, storageProvider.getOldFederation());
         Assert.assertEquals(null, storageProvider.getOldFederation());
         Assert.assertEquals(3, storageCalls.size());
-        PowerMockito.verifyStatic(never());
+        PowerMockito.verifyStatic(BridgeSerializationUtils.class, never());
         BridgeSerializationUtils.deserializeFederationOnlyBtcKeys(any(byte[].class), any(NetworkParameters.class));
-        PowerMockito.verifyStatic(never());
+        PowerMockito.verifyStatic(BridgeSerializationUtils.class, never());
         BridgeSerializationUtils.deserializeFederation(any(byte[].class), any(NetworkParameters.class));
     }
 
@@ -646,9 +646,9 @@ public class BridgeStorageProviderTest {
         Assert.assertEquals(null, storageProvider.getOldFederation());
         Assert.assertEquals(null, storageProvider.getOldFederation());
         Assert.assertEquals(3, storageCalls.size());
-        PowerMockito.verifyStatic(never());
+        PowerMockito.verifyStatic(BridgeSerializationUtils.class, never());
         BridgeSerializationUtils.deserializeFederationOnlyBtcKeys(any(byte[].class), any(NetworkParameters.class));
-        PowerMockito.verifyStatic(never());
+        PowerMockito.verifyStatic(BridgeSerializationUtils.class, never());
         BridgeSerializationUtils.deserializeFederation(any(byte[].class), any(NetworkParameters.class));
     }
 
@@ -765,9 +765,9 @@ public class BridgeStorageProviderTest {
         storageProvider.saveOldFederation();
         Assert.assertEquals(1, storageBytesCalls.size());
 
-        PowerMockito.verifyStatic(never());
+        PowerMockito.verifyStatic(BridgeSerializationUtils.class, never());
         BridgeSerializationUtils.serializeFederation(any(Federation.class));
-        PowerMockito.verifyStatic(never());
+        PowerMockito.verifyStatic(BridgeSerializationUtils.class, never());
         BridgeSerializationUtils.serializeFederationOnlyBtcKeys(any(Federation.class));
     }
 
@@ -807,9 +807,9 @@ public class BridgeStorageProviderTest {
         storageProvider.saveOldFederation();
         Assert.assertEquals(2, storageBytesCalls.size());
 
-        PowerMockito.verifyStatic(never());
+        PowerMockito.verifyStatic(BridgeSerializationUtils.class, never());
         BridgeSerializationUtils.serializeFederation(any(Federation.class));
-        PowerMockito.verifyStatic(never());
+        PowerMockito.verifyStatic(BridgeSerializationUtils.class, never());
         BridgeSerializationUtils.serializeFederationOnlyBtcKeys(any(Federation.class));
     }
 
@@ -883,7 +883,7 @@ public class BridgeStorageProviderTest {
         Assert.assertEquals(null, storageProvider.getPendingFederation());
         Assert.assertEquals(2, storageCalls.size());
 
-        PowerMockito.verifyStatic(never());
+        PowerMockito.verifyStatic(BridgeSerializationUtils.class, never());
         BridgeSerializationUtils.deserializePendingFederation(any(byte[].class));
     }
 
@@ -957,7 +957,7 @@ public class BridgeStorageProviderTest {
         Assert.assertEquals(null, storageProvider.getPendingFederation());
         Assert.assertEquals(2, storageCalls.size());
 
-        PowerMockito.verifyStatic(never());
+        PowerMockito.verifyStatic(BridgeSerializationUtils.class, never());
         BridgeSerializationUtils.deserializePendingFederation(any(byte[].class));
     }
 
@@ -1024,9 +1024,9 @@ public class BridgeStorageProviderTest {
         storageProvider.savePendingFederation();
         Assert.assertEquals(1, storageBytesCalls.size());
 
-        PowerMockito.verifyStatic(never());
+        PowerMockito.verifyStatic(BridgeSerializationUtils.class, never());
         BridgeSerializationUtils.serializePendingFederationOnlyBtcKeys(any(PendingFederation.class));
-        PowerMockito.verifyStatic(never());
+        PowerMockito.verifyStatic(BridgeSerializationUtils.class, never());
         BridgeSerializationUtils.serializePendingFederation(any(PendingFederation.class));
     }
 
@@ -1111,9 +1111,9 @@ public class BridgeStorageProviderTest {
         storageProvider.savePendingFederation();
         Assert.assertEquals(2, storageBytesCalls.size());
 
-        PowerMockito.verifyStatic(never());
+        PowerMockito.verifyStatic(BridgeSerializationUtils.class, never());
         BridgeSerializationUtils.serializePendingFederationOnlyBtcKeys(any(PendingFederation.class));
-        PowerMockito.verifyStatic(never());
+        PowerMockito.verifyStatic(BridgeSerializationUtils.class, never());
         BridgeSerializationUtils.serializePendingFederation(any(PendingFederation.class));
     }
 

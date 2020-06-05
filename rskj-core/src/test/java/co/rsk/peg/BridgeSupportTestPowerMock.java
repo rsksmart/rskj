@@ -1363,7 +1363,7 @@ public class BridgeSupportTestPowerMock {
 
         ArgumentCaptor<BtcTransaction> releasedBtcTxCaptor = ArgumentCaptor.forClass(BtcTransaction.class);
         ArgumentCaptor<List<Federation>> fedListCaptor = ArgumentCaptor.forClass((Class) List.class);
-        PowerMockito.verifyStatic();
+        PowerMockito.verifyStatic(BridgeUtils.class);
         BridgeUtils.isReleaseTx(releasedBtcTxCaptor.capture(), fedListCaptor.capture());
 
         assertThat(releasedBtcTxCaptor.getValue(), is(releaseWithChangeTx));

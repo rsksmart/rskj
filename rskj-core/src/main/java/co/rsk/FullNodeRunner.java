@@ -19,6 +19,7 @@ package co.rsk;
 
 import co.rsk.config.InternalService;
 import co.rsk.config.RskSystemProperties;
+import co.rsk.util.SystemUtils;
 import org.ethereum.net.eth.EthVersion;
 import org.ethereum.util.BuildInfo;
 import org.slf4j.Logger;
@@ -55,6 +56,10 @@ public class FullNodeRunner implements NodeRunner {
                 rskSystemProperties.projectVersionModifier()
         );
         buildInfo.printInfo(logger);
+
+        if (rskSystemProperties.shouldPrintSystemInfo()) {
+            SystemUtils.printSystemInfo(logger);
+        }
 
         for (InternalService internalService : internalServices) {
             internalService.start();
