@@ -415,8 +415,7 @@ public class TransactionExecutorTest {
             System.out.println("Receiver rent: " + rentDueReceiver);
             //System.out.println("Estimted rent: " + estimatedRentGas);
             assertEquals(rentDueSender + rentDueReceiver, estimatedRentGas);
-
-
+            
         } else {
             System.out.println("TX execution failed");
         }
