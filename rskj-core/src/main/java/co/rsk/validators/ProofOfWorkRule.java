@@ -35,6 +35,8 @@ import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.crypto.ECKey;
+import org.ethereum.crypto.signature.ECDSASignature;
+import org.ethereum.crypto.signature.Secp256k1;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPElement;
 import org.ethereum.util.RLPList;
@@ -260,25 +262,25 @@ public class ProofOfWorkRule implements BlockHeaderValidationRule, BlockValidati
             return false;
         }
 
-        ECKey.ECDSASignature signature = ECKey.ECDSASignature.fromComponents(r, s, v[0]);
+        ECDSASignature signature = ECDSASignature.fromComponents(r, s, v[0]);
 
-        if (!Arrays.equals(r, signature.r.toByteArray())) {
+        if (!Arrays.equals(r, signature.getR().toByteArray())) {
             return false;
         }
 
-        if (!Arrays.equals(s, signature.s.toByteArray())) {
+        if (!Arrays.equals(s, signature.getS().toByteArray())) {
             return false;
         }
 
-        if (signature.v > 31 || signature.v < 27) {
+        if (signature.getV() > 31 || signature.getV() < 27) {
             return false;
         }
 
-        if (signature.s.compareTo(SECP256K1N_HALF) >= 0) {
+        if (signature.getS().compareTo(SECP256K1N_HALF) >= 0) {
             return false;
         }
 
-        ECKey pub = ECKey.recoverFromSignature(signature.v - 27, signature, header.getHashForMergedMining(), false);
+        ECKey pub = Secp256k1.getInstance().recoverFromSignature(signature.getV() - 27, signature, header.getHashForMergedMining(), false);
 
         return pub.getPubKeyPoint().equals(fallbackMiningPubKey.getPubKeyPoint());
     }

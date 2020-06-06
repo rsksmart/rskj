@@ -272,6 +272,11 @@ public class RskSystemProperties extends SystemProperties {
     }
 
     // Sync config properties
+
+    public boolean getIsHeartBeatEnabled() {
+        return getBoolean("sync.heartBeat.enabled", false);
+    }
+
     public int getExpectedPeers() {
         return configFromFiles.getInt("sync.expectedPeers");
     }
@@ -332,4 +337,6 @@ public class RskSystemProperties extends SystemProperties {
     public long getVmExecutionStackSize() {
         return configFromFiles.getBytes("vm.executionStackSize");
     }
+
+    public String cryptoLibrary() { return configFromFiles.getString("crypto.library");}
 }
