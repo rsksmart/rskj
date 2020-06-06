@@ -420,7 +420,7 @@ public class TransactionExecutor {
                         programInvokeFactory.createProgramInvoke(tx, txindex, executionBlock, cacheTrack, blockStore);
 
                 this.vm = new VM(vmConfig, precompiledContracts);
-                // #mish: same as in create(), except `code` instead of `tx.getData()`
+                // #mish: same as in create(), except program arg (byte[] ops) is `code` instead of `tx.getData()`
                 this.program = new Program(vmConfig, precompiledContracts, blockFactory, activations, code, programInvoke, tx, deletedAccounts);
             }
         }
@@ -739,8 +739,8 @@ public class TransactionExecutor {
         Uint24 vLen = repository.getAccountNodeValueLength(addr);
         long accLrpt = repository.getAccountNodeLRPTime(addr);
         RentData accNode = new RentData(vLen, accLrpt);
-        // compute the rent due
-        accNode.setRentDue(this.getRefTimeStamp());
+        // compute the rent due. Treat these nodes as 'modified' (since account state will be updated)
+        accNode.setRentDue(this.getRefTimeStamp(), true); // account node value length may not change much
         long rd = accNode.getRentDue();
         // if the node is not in the map, add the rent owed to current estimate
         // only add rent due > 0. Prepaid rent does not matter here. 
@@ -758,7 +758,7 @@ public class TransactionExecutor {
             long cLrpt = repository.getCodeNodeLRPTime(addr);
             RentData codeNode = new RentData(cLen, cLrpt);
             // compute rent and update estRent as needed
-            codeNode.setRentDue(this.getRefTimeStamp());
+            codeNode.setRentDue(this.getRefTimeStamp(), false); // code is unlikely to be modified
             rd = codeNode.getRentDue();
             if (!progRes.getAccessedNodes().containsKey(cKey) && rd >0){
                 estRentGas += rd;
@@ -773,7 +773,7 @@ public class TransactionExecutor {
             long srLrpt = repository.getStorageRootLRPTime(addr);
             RentData srNode = new RentData(srLen, srLrpt);
             // compute rent and update estRent as needed
-            srNode.setRentDue(this.getRefTimeStamp());
+            srNode.setRentDue(this.getRefTimeStamp(), false);  // storage root value is never modified
             rd = srNode.getRentDue();
             if (!progRes.getAccessedNodes().containsKey(srKey) && rd >0){
                 estRentGas += rd;

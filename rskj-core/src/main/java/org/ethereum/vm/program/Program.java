@@ -93,7 +93,7 @@ public class Program {
     private final ProgramResult result = new ProgramResult();
     private final ProgramTrace trace;
 
-    private final byte[] ops;
+    private final byte[] ops; // #mish: the ops can be from contract code or Tx.data()
     private int pc;
     private byte lastOp;
     private boolean stopped;
@@ -1183,6 +1183,7 @@ public class Program {
         }
     }
 
+    /** #mish: Called externally, not used here */
     public void fullTrace() {
 
         if (logger.isTraceEnabled() || listener != null) {

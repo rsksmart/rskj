@@ -2,7 +2,7 @@
 
 **Code:** [branch 'mish'](https://github.com/optimalbrew/rskj/tree/mish) and [comparison with rskj master](https://github.com/rsksmart/rskj/compare/master...optimalbrew:mish) (for overview).
 
-The goal of this project is to implement storage rent as described in [RSKIP113](https://github.com/rsksmart/RSKIPs/blob/master/IPs/RSKIP113.md). Storage rent is intended to lead to more efficient resource utilization by charging users for the size as well as duration for which their data is stored in blockchain state. The project may reveal new issues (computatinal, economic, usability etc) to be addressed prior to eventual adoption decisions and/or future RSKIPs.
+The goal of this project is to implement storage rent as described in [RSKIP113](https://github.com/rsksmart/RSKIPs/blob/master/IPs/RSKIP113.md). Storage rent is intended to lead to more efficient resource utilization by charging users for the size as well as duration for which data is stored in blockchain state. The project may reveal new issues (computational, economic, usability etc) to be addressed prior to eventual adoption decisions and/or future RSKIPs.
 
 ### Implementation highligths
 
@@ -30,8 +30,8 @@ The goal of this project is to implement storage rent as described in [RSKIP113]
     - Most of these are helper functions to gather information (e.g. `valueLength` and `lastRentPaidTime`}) from specific types of nodes (Account State, Code, Storage) for a given RSK address. There are new put methods as well to update a node's rent paid timestamp.
 - New fields and methods in `GasCost`
     - This includes the constants e.g. the price to charge for storage, methods to compute storage rent.
-
-- Several other files modified  
+    - There is a new small class `RentData` in `org.ethereum.vm.program`. These objects will be used to **cache rent data** for nodes created, accessed or modifed during transaction execution. This class has separate rent computation methods for new and pre-existing nodes. For pre-existing nodes, rent is collected only if it is higher than thresholds described in RSKIP113: 1000 gas for modified nodes, and 10_000 gas for nodes that are not modified.
+- Several other files modified **June 5th update:** These changes will very likely be reverted to use a **single gas field** for both execution as well as rent gas.  
     - `Transactions` family: `Transaction Receipts`, `InternalTransaction`, `MessageCall`, `CreateCall` etc. 
     - `ProgramInvoke` family e.g. `ProgramInvokeImpl`, `ProgramInvokeFactoryImpl` etc.
     - There are *no fundamental* changes in these files. Mostly adding a field for *rentGas* and minor changes to constructor signatures, and getters/setter methods to account for the new storage rent field.

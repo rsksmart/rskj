@@ -93,6 +93,7 @@ public class BlockExecutorTest {
 
         Assert.assertNotNull(result);
         Assert.assertNotNull(result.getTransactionReceipts());
+        System.out.println(result.getTransactionReceipts().size());
         Assert.assertTrue(result.getTransactionReceipts().isEmpty());
         Assert.assertArrayEquals(repository.getRoot(), parent.getStateRoot());
         Assert.assertArrayEquals(repository.getRoot(), result.getFinalState().getHash().getBytes());

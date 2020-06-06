@@ -27,14 +27,18 @@ import java.util.*;
 
 
 /**
- * @author mish, May 2020
- * object to hold a node's value length, last rent paid time and rent due
- * to keeping track of nodes created, modified during transaction execution
+ * @author smishra, May 2020
+ * object to keep track of storage rent for nodes created, 
+ * accessed or modified during transaction execution 
  */
 public class RentData {
     private Uint24 valueLength;
-    private long lastRentPaidTime;
+    private long lastRentPaidTime; // for nodes created within the last 6 months this may still be in the future
     private long rentDue;
+    private final long RSK_START_DATE = 48L*365*24*3600; // Jan 2018, approx 48 years since 1970 unix time epoch seconds
+    // as per RSKIP113 there are cutoffs to avoid collecting very small amount of rent
+    private final long modifiedTh = 1_000L; // threshold if a node is modified (smaller cutoff)
+    private final long notModifiedTh = 10_000L; //threshold if a node is not modified (larger cutoff)
 
     public RentData(Uint24 valueLength, long lastRentPaidTime){
         this.valueLength = valueLength;
@@ -57,12 +61,41 @@ public class RentData {
         return this.rentDue;
     }
 
-    public void setRentDue(long refTime){
+    /**logic for rent computation follows RSKIP113 for pre-existing nodes.
+     * There are separate thresholds for nodes that are modified (account state, SSTORE) 
+     * or not modified (e.g. code) by the transaction  
+    */
+    public void setRentDue(long currentTime, boolean modified){
         if (this.valueLength != null){
-            this.rentDue = GasCost.calculateStorageRent(this.valueLength, refTime - this.lastRentPaidTime);
+            /** #mish  what if lrpTime was never set? then it would be initialized to 0 (1970 in Unix time)
+             * Use RSK start date for now as lower bound (change later to date when rent is adopted
+             */
+            long lrpt = Math.max(this.lastRentPaidTime, RSK_START_DATE);
+            long timeDelta = currentTime - lrpt; //time since rent last paid
+            long rd = 0; //initialize rent due to 0
+            // compute rent due but only for nodes with past due rent
+            if (timeDelta >0) {
+                 // formula is 1/2^21 (gas/byte/second) * (node valuelength + 136 bytes overhead) * timeDelta (seconds)
+                rd = GasCost.calculateStorageRent(this.valueLength, timeDelta);
+            }
+            
+            // if rent due exceeds high threshold, does not matter if the node is modified or not            
+            if (rd > notModifiedTh){
+                this.rentDue = rd;
+            } else {
+                /* rent due is less than high threshold. 
+                 * Check if amount due exceeds lower threshold but only if the node is marked modified
+                 */ 
+                if (modified && rd > modifiedTh){
+                this.rentDue = rd;
+                } else {
+                    // not worth collecting rent for this node at this time
+                    this.rentDue = 0L;
+                }            
+            }
         } else {
             this.rentDue = 0L;
-        }
+        }    
     }
 
     // compute and set 6 months advance rent (for new trie nodes)

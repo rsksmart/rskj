@@ -378,7 +378,7 @@ public class TransactionExecutorTest {
         
         //mock repository for accessedNodeAdder()
         when(repository.getAccountNodeKey(sender)).thenReturn(DataWord.fromString("senderKey"));
-        when(repository.getAccountNodeValueLength(sender)).thenReturn(new Uint24(32));
+        when(repository.getAccountNodeValueLength(sender)).thenReturn(new Uint24(10));
         when(repository.getAccountNodeLRPTime(sender)).thenReturn(70_000L);
 
         when(repository.getAccountNodeKey(receiver)).thenReturn(DataWord.fromString("receiverKey"));
@@ -400,18 +400,19 @@ public class TransactionExecutorTest {
             // one entry for sender and one for receiver;
             assertEquals(2,txExecutor.getResult().getAccessedNodes().size());
 
-            assertEquals(new Uint24(32), txExecutor.getResult().getAccessedNodes().get(DataWord.fromString("senderKey")).getValueLength());
+            assertEquals(new Uint24(10), txExecutor.getResult().getAccessedNodes().get(DataWord.fromString("senderKey")).getValueLength());
             assertEquals(new Uint24(128), txExecutor.getResult().getAccessedNodes().get(DataWord.fromString("receiverKey")).getValueLength());
             //these assertions (from prior test version) will fail for nodes with updated LRPT
             //assertEquals(70_000L, txExecutor.getResult().getAccessedNodes().get(DataWord.fromString("senderKey")).getLRPTime());
             //assertEquals(130_000L, txExecutor.getResult().getAccessedNodes().get(DataWord.fromString("receiverKey")).getLRPTime());
 
-            // Rent computation within Tx Exec uses an real time.now() value, so mocking is not needed    
+            // Rent computation within Tx Exec uses time.now() value, so mocking is not needed    
             long rentDueSender = txExecutor.getResult().getAccessedNodes().get(DataWord.fromString("senderKey")).getRentDue();
             long rentDueReceiver = txExecutor.getResult().getAccessedNodes().get(DataWord.fromString("receiverKey")).getRentDue();  
-            long estimatedRentGas = txExecutor.getEstRentGas(); 
-            //System.out.println("Sender rent: " + rentDueSender);
-            //System.out.println("Receiver rent: " + rentDueReceiver);
+            long estimatedRentGas = txExecutor.getEstRentGas();
+            //System.out.println(Instant.now().getEpochSecond());
+            System.out.println("Sender rent: " + rentDueSender);
+            System.out.println("Receiver rent: " + rentDueReceiver);
             //System.out.println("Estimted rent: " + estimatedRentGas);
             assertEquals(rentDueSender + rentDueReceiver, estimatedRentGas);
 
