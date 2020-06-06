@@ -420,7 +420,11 @@ public class TransactionExecutor {
                         programInvokeFactory.createProgramInvoke(tx, txindex, executionBlock, cacheTrack, blockStore);
 
                 this.vm = new VM(vmConfig, precompiledContracts);
+<<<<<<< HEAD
                 // #mish: same as in create(), except program arg (byte[] ops) is `code` instead of `tx.getData()`
+=======
+                // #mish: same as in create(), except `code` instead of `tx.getData()`
+>>>>>>> cd6c0909d04fba0b1db5ff22f7d33a349b0462a4
                 this.program = new Program(vmConfig, precompiledContracts, blockFactory, activations, code, programInvoke, tx, deletedAccounts);
             }
         }
