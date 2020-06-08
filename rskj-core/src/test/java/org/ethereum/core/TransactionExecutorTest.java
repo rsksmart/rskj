@@ -93,7 +93,7 @@ public class TransactionExecutorTest {
         // paperwork: transaction has high gas limit, execution block has normal gas limit
         // and the nonces are okey
         when(transaction.getGasLimit()).thenReturn(BigInteger.valueOf(4000000).toByteArray());
-        when(transaction.getRentGasLimit()).thenReturn(BigInteger.valueOf(2_000_000).toByteArray());
+        //when(transaction.getRentGasLimit()).thenReturn(BigInteger.valueOf(2_000_000).toByteArray());
         when(executionBlock.getGasLimit()).thenReturn(BigInteger.valueOf(6800000).toByteArray());
         when(repository.getNonce(transaction.getSender())).thenReturn(BigInteger.valueOf(1L));
         when(transaction.getNonce()).thenReturn(BigInteger.valueOf(1L).toByteArray());
@@ -128,7 +128,7 @@ public class TransactionExecutorTest {
 
         when(repository.getNonce(sender)).thenReturn(BigInteger.valueOf(1L));
         when(repository.getBalance(sender)).thenReturn(new Coin(BigInteger.valueOf(68000L)));
-        Transaction transaction = getTransaction(sender, receiver, gasLimit, rentGasLimit, txNonce, gasPrice, value);
+        Transaction transaction = getTransaction(sender, receiver, gasLimit, txNonce, gasPrice, value);
 
         assertTrue(executeValidTransaction(transaction, blockTxSignatureCache));
         assertTrue(blockTxSignatureCache.containsTx(transaction));
@@ -153,7 +153,7 @@ public class TransactionExecutorTest {
 
         when(repository.getNonce(sender)).thenReturn(BigInteger.valueOf(1L));
         when(repository.getBalance(sender)).thenReturn(new Coin(BigInteger.valueOf(68000L)));
-        Transaction transaction = getTransaction(sender, receiver, gasLimit, rentGasLimit, txNonce, gasPrice, value);
+        Transaction transaction = getTransaction(sender, receiver, gasLimit, txNonce, gasPrice, value);
 
         assertTrue(executeValidTransaction(transaction, blockTxSignatureCache));
 
@@ -186,7 +186,7 @@ public class TransactionExecutorTest {
         Coin gasPrice = Coin.valueOf(1);
         Coin value = new Coin(BigInteger.valueOf(2));
 
-        Transaction transaction = getTransaction(sender, receiver, gasLimit, rentGasLimit, txNonce, gasPrice, value);
+        Transaction transaction = getTransaction(sender, receiver, gasLimit,  txNonce, gasPrice, value);
         when(executionBlock.getGasLimit()).thenReturn(BigInteger.valueOf(6800000).toByteArray());
         when(repository.getNonce(sender)).thenReturn(BigInteger.valueOf(1L));
         //#mish this will trip Tx exec, insufficient balance
@@ -221,7 +221,7 @@ public class TransactionExecutorTest {
         Coin gasPrice = Coin.valueOf(1);
         Coin value = new Coin(BigInteger.valueOf(2));
 
-        Transaction transaction = getTransaction(sender, receiver, gasLimit, rentGasLimit, txNonce, gasPrice, value);
+        Transaction transaction = getTransaction(sender, receiver, gasLimit, txNonce, gasPrice, value);
         when(executionBlock.getGasLimit()).thenReturn(BigInteger.valueOf(6800000).toByteArray());
         when(repository.getNonce(sender)).thenReturn(BigInteger.valueOf(1L));
         // #mish: execution fails because of insufficient balance (failure unrelated to remasc)
@@ -258,7 +258,7 @@ public class TransactionExecutorTest {
 
         when(repository.getNonce(sender)).thenReturn(BigInteger.valueOf(1L));
         when(repository.getBalance(sender)).thenReturn(new Coin(BigInteger.valueOf(68000L)));
-        Transaction transaction = getTransaction(sender, receiver, gasLimit, rentGasLimit, txNonce, gasPrice, value);
+        Transaction transaction = getTransaction(sender, receiver, gasLimit, txNonce, gasPrice, value);
         when(receivedTxSignatureCache.getSender(transaction)).thenReturn(sender);
         when(receivedTxSignatureCache.containsTx(transaction)).thenReturn(true);
 
@@ -286,7 +286,7 @@ public class TransactionExecutorTest {
 
         when(repository.getNonce(sender)).thenReturn(BigInteger.valueOf(1L));
         when(repository.getBalance(sender)).thenReturn(new Coin(BigInteger.valueOf(68000L)));
-        Transaction transaction = getTransaction(sender, receiver, gasLimit, rentGasLimit, txNonce, gasPrice, value);
+        Transaction transaction = getTransaction(sender, receiver, gasLimit, txNonce, gasPrice, value);
         assertTrue(executeValidTransaction(transaction, blockTxSignatureCache));
 
         for (int i = 0; i < MAX_CACHE_SIZE; i++) {
@@ -296,7 +296,7 @@ public class TransactionExecutorTest {
             sender = new RskAddress(TestUtils.randomAddress().getBytes());
             when(repository.getNonce(sender)).thenReturn(BigInteger.valueOf(1L));
             when(repository.getBalance(sender)).thenReturn(new Coin(BigInteger.valueOf(68000L)));
-            Transaction transactionAux = getTransaction(sender, receiver, gasLimit, rentGasLimit, txNonce, gasPrice, value);
+            Transaction transactionAux = getTransaction(sender, receiver, gasLimit, txNonce, gasPrice, value);
             assertTrue(executeValidTransaction(transactionAux, blockTxSignatureCache));
         }
 
@@ -325,7 +325,7 @@ public class TransactionExecutorTest {
         when(transaction.getSender()).thenReturn(sender);
         when(transaction.getGasPrice()).thenReturn(gasPrice);
         when(transaction.getGasLimit()).thenReturn(gasLimit);
-        when(transaction.getRentGasLimit()).thenReturn(gasLimit); //#mish if rentGasLimit not specified use gasLimit in its place (RSKIP113)
+        //when(transaction.getRentGasLimit()).thenReturn(gasLimit); //#mish if rentGasLimit not specified use gasLimit in its place (RSKIP113)
         when(transaction.getSender(any())).thenCallRealMethod();
         when(transaction.getNonce()).thenReturn(txNonce);
         when(transaction.getReceiveAddress()).thenReturn(receiver);
@@ -333,22 +333,6 @@ public class TransactionExecutorTest {
         when(transaction.getValue()).thenReturn(value);
         return transaction;
     }
-
-    // #mish same as above but with rentGasLimit in arglist
-    private Transaction getTransaction(RskAddress sender, RskAddress receiver, byte[] gasLimit, byte[] rentGasLimit, byte[] txNonce, Coin gasPrice, Coin value) {
-        Transaction transaction = mock(Transaction.class);
-        when(transaction.getSender()).thenReturn(sender);
-        when(transaction.getGasPrice()).thenReturn(gasPrice);
-        when(transaction.getGasLimit()).thenReturn(gasLimit);
-        when(transaction.getRentGasLimit()).thenReturn(rentGasLimit);
-        when(transaction.getSender(any())).thenCallRealMethod();
-        when(transaction.getNonce()).thenReturn(txNonce);
-        when(transaction.getReceiveAddress()).thenReturn(receiver);
-        when(transaction.acceptTransactionSignature(constants.getChainId())).thenReturn(true);
-        when(transaction.getValue()).thenReturn(value);
-        return transaction;
-    }
-
 
     // #mish: May 2020 Storage rent related tests
     
@@ -365,14 +349,14 @@ public class TransactionExecutorTest {
         RskAddress sender = new RskAddress("0000000000000000000000000000000000000001");
         RskAddress receiver = new RskAddress("0000000000000000000000000000000000000002");
         byte[] gasLimit = BigInteger.valueOf(4000000).toByteArray();
-        byte[] rentGasLimit = BigInteger.valueOf(2_000_000).toByteArray();
+        //byte[] rentGasLimit = BigInteger.valueOf(2_000_000).toByteArray();
         byte[] txNonce = BigInteger.valueOf(1L).toByteArray();
         Coin gasPrice = Coin.valueOf(1);
         Coin value = new Coin(BigInteger.valueOf(2));
 
         when(repository.getNonce(sender)).thenReturn(BigInteger.valueOf(1L));
         when(repository.getBalance(sender)).thenReturn(new Coin(BigInteger.valueOf(68_000L)));
-        Transaction transaction = getTransaction(sender, receiver, gasLimit, rentGasLimit, txNonce, gasPrice, value);
+        Transaction transaction = getTransaction(sender, receiver, gasLimit, txNonce, gasPrice, value);
 
         when(executionBlock.getGasLimit()).thenReturn(BigInteger.valueOf(6_800_000).toByteArray());
         

@@ -28,8 +28,6 @@ public interface InvokeData {
 
     long getGas();
 
-    long getRentGas();
-
     DataWord getCallValue();
 
     DataWord getDataSize();

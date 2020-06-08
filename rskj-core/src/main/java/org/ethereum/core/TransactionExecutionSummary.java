@@ -43,13 +43,11 @@ public class TransactionExecutionSummary {
     /** #mish for storage rent gas
      * rent gas is collected at end of transaction. 
      * so rent gas is more like an estimate, rather than definite spending 
-     * however, for clarity of thought we use the same terminology "used, "leftover", "refund" 
-     * as for regular execution gas  
     */ 
-    private BigInteger rentGasLimit = BigInteger.ZERO;
+    //private BigInteger rentGasLimit = BigInteger.ZERO;
     private BigInteger rentGasUsed = BigInteger.ZERO;
-    private BigInteger rentGasLeftover = BigInteger.ZERO;
-    private BigInteger rentGasRefund = BigInteger.ZERO;
+    //private BigInteger rentGasLeftover = BigInteger.ZERO;
+    //private BigInteger rentGasRefund = BigInteger.ZERO;
 
     private List<DataWord> deletedAccounts = emptyList();
     private List<InternalTransaction> internalTransactions = emptyList();
@@ -73,25 +71,25 @@ public class TransactionExecutionSummary {
 
     public Coin getFee() {
         if (failed) {
-            BigInteger failedFee = gasLimit.add(rentGasLimit.divide(BigInteger.valueOf(4)));  // keep 1/4=25% rentgas limit (RSKIP113)
+            BigInteger failedFee = gasLimit;  // keep 1/4=25% rentgas limit (RSKIP113)
             return calcCost(failedFee); 
         }
         // TX execution fee
         BigInteger txFee = gasLimit.subtract(gasLeftover.add(gasRefund));
         // TX storage rent fee
-        BigInteger txRentFee = rentGasLimit.subtract(rentGasLeftover.add(rentGasRefund));
+        BigInteger txRentFee = rentGasUsed;
         return calcCost(txFee.add(txRentFee));
     }
 
     public Coin getRefund() {
-        if (failed) {
+        /*if (failed) {
             // #mish even if failed, refund 3/4 of rentgaslimit as per RSKIP113
             //return Coin.ZERO;
             BigInteger rentGasRefund = rentGasLimit.multiply(BigInteger.valueOf(3)).divide(BigInteger.valueOf(4));
             return calcCost(rentGasRefund);
-        }
+        }*/
 
-        return calcCost(gasRefund.add(rentGasRefund));
+        return calcCost(gasRefund);
     }
 
     public Coin getLeftover() {
@@ -118,17 +116,19 @@ public class TransactionExecutionSummary {
         return gasLeftover;
     }
 
+    /*
     public BigInteger getRentGasLimit() {
         return rentGasLimit;
-    }
+    }*/
 
     public BigInteger getRentGasUsed() {
         return rentGasUsed;
     }
 
+    /*
     public BigInteger getRentGasLeftover() {
         return rentGasLeftover;
-    }
+    }*/
 
     public Coin getValue() {
         return value;
@@ -146,9 +146,9 @@ public class TransactionExecutionSummary {
         return gasRefund;
     }
 
-    public BigInteger getRentGasRefund() {
+    /*public BigInteger getRentGasRefund() {
         return rentGasRefund;
-    }
+    }*/
 
     public boolean isFailed() {
         return failed;
@@ -176,7 +176,7 @@ public class TransactionExecutionSummary {
             summary = new TransactionExecutionSummary();
             summary.tx = transaction;
             summary.gasLimit = toBI(transaction.getGasLimit());
-            summary.rentGasLimit = toBI(transaction.getRentGasLimit());
+            //summary.rentGasLimit = toBI(transaction.getRentGasLimit());
             summary.gasPrice = transaction.getGasPrice();
             summary.value = transaction.getValue();
         }
@@ -201,15 +201,15 @@ public class TransactionExecutionSummary {
             return this;
         }
 
-        public Builder rentGasLeftover(BigInteger rentGasLeftover) {
+        /*public Builder rentGasLeftover(BigInteger rentGasLeftover) {
             summary.rentGasLeftover = rentGasLeftover;
             return this;
-        }
+        }*/
 
-        public Builder rentGasRefund(BigInteger rentGasRefund) {
+        /*public Builder rentGasRefund(BigInteger rentGasRefund) {
             summary.rentGasRefund = rentGasRefund;
             return this;
-        }
+        }*/
 
         public Builder internalTransactions(List<InternalTransaction> internalTransactions) {
             summary.internalTransactions = unmodifiableList(internalTransactions);

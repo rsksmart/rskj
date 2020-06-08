@@ -164,9 +164,11 @@ public class TransactionExecutor {
         }
 
         this.execute();
+        System.out.println("done execute() in Tx Exec ");
         this.go();
+        System.out.println("done with go() in Tx Exec ");
         this.finalization();
-
+        System.out.println("done with finalization() in Tx Exec ");
         return true;
     }
 
@@ -185,7 +187,7 @@ public class TransactionExecutor {
 
         //'GasCost defined in ethereum/vm/GasCost'
         long txGasLimit = GasCost.toGas(tx.getGasLimit());
-        long txRentGasLimit = GasCost.toGas(tx.getRentGasLimit());
+        //long txRentGasLimit = GasCost.toGas(tx.getRentGasLimit());
 
         long curBlockGasLimit = GasCost.toGas(executionBlock.getGasLimit());
 
@@ -204,8 +206,8 @@ public class TransactionExecutor {
             //execution cost
             Coin txGasCost = tx.getGasPrice().multiply(BigInteger.valueOf(txGasLimit));
             //storage rent cost
-            Coin txRentGasCost = tx.getGasPrice().multiply(BigInteger.valueOf(txRentGasLimit));
-            totalCost = totalCost.add(txGasCost).add(txRentGasCost);
+            //Coin txRentGasCost = tx.getGasPrice().multiply(BigInteger.valueOf(txRentGasLimit));
+            totalCost = totalCost.add(txGasCost);//.add(txRentGasCost);
         }
         
         Coin senderBalance = track.getBalance(tx.getSender());
@@ -311,15 +313,15 @@ public class TransactionExecutor {
             track.increaseNonce(tx.getSender());
 
             long txGasLimit = GasCost.toGas(tx.getGasLimit());
-            long txRentGasLimit = GasCost.toGas(tx.getRentGasLimit());
+            //long txRentGasLimit = GasCost.toGas(tx.getRentGasLimit());
             //execution gas limit
             Coin txGasCost = tx.getGasPrice().multiply(BigInteger.valueOf(txGasLimit));
             //storage rent gas limit
-            Coin txRentGasCost = tx.getGasPrice().multiply(BigInteger.valueOf(txRentGasLimit));
-            track.addBalance(tx.getSender(), txGasCost.add(txRentGasCost).negate()); //deduct (exec gas limit + storage rent gas limit)
+            //Coin txRentGasCost = tx.getGasPrice().multiply(BigInteger.valueOf(txRentGasLimit));
+            track.addBalance(tx.getSender(), txGasCost.negate());
 
-            logger.trace("Paying: txGasCost: [{}], txRentGasCost: [{}], gasPrice: [{}], gasLimit: [{}], rentGasLimit: [{}]",
-                                    txGasCost, txRentGasCost, tx.getGasPrice(), txGasLimit, txRentGasLimit);
+            logger.trace("Paying: txGasCost: [{}],  gasPrice: [{}], gasLimit: [{}]",
+                                    txGasCost, tx.getGasPrice(), txGasLimit);
         }
 
         if (tx.isContractCreation()) {
@@ -358,7 +360,7 @@ public class TransactionExecutor {
 
             long requiredGas = precompiledContract.getGasForData(tx.getData());
             long txGasLimit = GasCost.toGas(tx.getGasLimit());
-            long txRentGasLimit = GasCost.toGas(tx.getRentGasLimit());
+            //long txRentGasLimit = GasCost.toGas(tx.getRentGasLimit());
             long gasUsed = GasCost.add(requiredGas, basicTxCost);
             if (!localCall && !enoughGas(txGasLimit, requiredGas, gasUsed)) {
                 // no refund no endowment
@@ -367,9 +369,9 @@ public class TransactionExecutor {
                         executionBlock.getNumber(), targetAddress.toString(), requiredGas, gasUsed, mEndGas));
                 mEndGas = 0;
                 // #mish: if exec gas OOG, do not refund all rent Gas.. keep 25% as per RSKIP113
-                mEndRentGas = 3*txRentGasLimit/4; //#mish: with pre compiles should all rent gas be refunded?
+                //mEndRentGas = 3*txRentGasLimit/4; //#mish: with pre compiles should all rent gas be refunded?
                 // increase estimated rentgas
-                estRentGas += txRentGasLimit/4;
+                //estRentGas += txRentGasLimit/4;
                 profiler.stop(metric);
                 return;
             }
@@ -378,7 +380,7 @@ public class TransactionExecutor {
                     GasCost.subtract(txGasLimit, gasUsed) :
                     txGasLimit - gasUsed;
             // update refund status of rentGas
-            mEndRentGas = txRentGasLimit; // no rentgas computed yet
+            //mEndRentGas = txRentGasLimit; // no rentgas computed yet
 
             // FIXME: save return for vm trace
             try {
@@ -479,7 +481,6 @@ public class TransactionExecutor {
             cacheTrack.commit();
             return;
         }
-
         logger.trace("Go transaction {} {}", toBI(tx.getNonce()), tx.getHash());
 
         //Set the deleted accounts in the block in the remote case there is a CREATE2 creating a deleted account
@@ -493,13 +494,9 @@ public class TransactionExecutor {
             if (playVm) {
                 vm.play(program);
             }
-            /*#mish  this used to be the following initialization
-             *      result = program.getResult();             
-             * However, previous calls to new nodeadder methods have already set some `result` fields (e.g. accessedNodes).
-             * Hence, to preserve those changes, use merge().
-             * This only matters if program !=null (not precompiled contract)
-             */ 
-            result.merge(program.getResult());
+
+            //result.merge(program.getResult());
+            result = program.getResult();
 
             mEndGas = GasCost.subtract(GasCost.toGas(tx.getGasLimit()), program.getResult().getGasUsed());
 
@@ -520,14 +517,15 @@ public class TransactionExecutor {
         } catch (Exception e) {
             cacheTrack.rollback();
             mEndGas = 0;
-            mEndRentGas = 3 * GasCost.toGas(tx.getRentGasLimit()) / 4 ; //refund 75 % rentGasLimit on exception RSKIP113
             execError(e);
             profiler.stop(metric);
             return;
         }
         cacheTrack.commit();
         // add newly created contract nodes to createdNode Map for rent computation. After the cached repository is committed.
-        createdNodeAdder(tx.getContractAddress(), track, result);
+        if (tx.isContractCreation() && !result.isRevert()) {
+                createdNodeAdder(tx.getContractAddress(), track, result);    
+            }
         profiler.stop(metric);
     }
 
@@ -568,7 +566,7 @@ public class TransactionExecutor {
             receipt.setTransaction(tx);
             receipt.setLogInfoList(getVMLogs());
             receipt.setGasUsed(getGasUsed());
-            receipt.setRentGasUsed(getRentGasUsed());
+            //receipt.setRentGasUsed(getRentGasUsed());
             receipt.setStatus(executionError.isEmpty()?TransactionReceipt.SUCCESS_STATUS:TransactionReceipt.FAILED_STATUS); // #mish todo: RSKIP113
         }
         return receipt;
@@ -705,12 +703,13 @@ public class TransactionExecutor {
         return toBI(tx.getGasLimit()).subtract(toBI(mEndGas)).longValue();
     }
 
+    /*
     public long getRentGasUsed() {
         if (activations.isActive(ConsensusRule.RSKIP136)) {
             return GasCost.subtract(GasCost.toGas(tx.getRentGasLimit()), mEndRentGas);
         }
         return toBI(tx.getRentGasLimit()).subtract(toBI(mEndRentGas)).longValue();
-    }
+    }*/
 
     public Coin getPaidFees() { return paidFees; }
 

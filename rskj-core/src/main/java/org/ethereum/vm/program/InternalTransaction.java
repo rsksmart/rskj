@@ -35,17 +35,10 @@ public class InternalTransaction extends Transaction {
     private boolean rejected = false;
     private String note;
 
-   // #mish: recall TX (nonce, gasPrice, gasLimit, receiveAddress, value, data, chainid, rentGasLimit)
-   // Aside: Gas is consumed for intermal calls. Even `pure` or `view` methods (that are free in local calls, no change in state)
-   // are not free when called internally.
-   // Because internal calls that are part of a real (state alterning) TX, and all EVM computations will cost some gas,
-
-
-   // #mish original constructor prior to storage rent. Remove later after storage rent integration?
     public InternalTransaction(byte[] parentHash, int deep, int index, byte[] nonce, DataWord gasPrice, DataWord gasLimit,
                                byte[] sendAddress, byte[] receiveAddress, byte[] value, byte[] data, String note) {
 
-        super(nonce, getData(gasPrice), getData(gasLimit), receiveAddress, nullToEmpty(value), nullToEmpty(data), (byte) 0, getData(gasLimit));
+        super(nonce, getData(gasPrice), getData(gasLimit), receiveAddress, nullToEmpty(value), nullToEmpty(data));
 
         this.parentHash = parentHash;
         this.deep = deep;
@@ -53,20 +46,6 @@ public class InternalTransaction extends Transaction {
         this.sender = RLP.parseRskAddress(sendAddress);
         this.note = note;
     }
-
-    // # mish modified constructor with storage rent : does not include chain id
-    public InternalTransaction(byte[] parentHash, int deep, int index, byte[] nonce, DataWord gasPrice, DataWord gasLimit, DataWord rentGasLimit,  
-                               byte[] sendAddress, byte[] receiveAddress, byte[] value, byte[] data, String note) {
-
-        super(nonce, getData(gasPrice), getData(gasLimit), receiveAddress, nullToEmpty(value), nullToEmpty(data), (byte) 0, getData(rentGasLimit));
-
-        this.parentHash = parentHash;
-        this.deep = deep;
-        this.index = index;
-        this.sender = RLP.parseRskAddress(sendAddress);
-        this.note = note;
-    }
-
     // gasprice used as generic arg
     private static byte[] getData(DataWord gasPrice) {
         return (gasPrice == null) ? ByteUtil.EMPTY_BYTE_ARRAY : gasPrice.getData();
@@ -110,7 +89,6 @@ public class InternalTransaction extends Transaction {
         byte[] value = RLP.encodeCoin(getValue());
         byte[] gasPrice = RLP.encodeCoin(getGasPrice());
         byte[] gasLimit = RLP.encodeElement(getGasLimit());
-        byte[] rentGasLimit = RLP.encodeElement(getRentGasLimit());
         byte[] data = RLP.encodeElement(getData());
         byte[] parentHash = RLP.encodeElement(this.parentHash);
         byte[] type = RLP.encodeString(this.note);
@@ -119,7 +97,7 @@ public class InternalTransaction extends Transaction {
         byte[] rejected = RLP.encodeInt(this.rejected ? 1 : 0);
 
         return RLP.encodeList(nonce, parentHash, senderAddress, receiveAddress, value,
-                gasPrice, gasLimit, data, type, deep, index, rejected, rentGasLimit);
+                gasPrice, gasLimit, data, type, deep, index, rejected);
     }
 
     // same as getencoded, there is no signing of internal transactions

@@ -49,11 +49,6 @@ public class SuicideInvoke implements InvokeData {
     }
 
     @Override
-    public long getRentGas() {
-        return 0L;
-    }
-
-    @Override
     public DataWord getCallValue() {
         return this.balance;
     }

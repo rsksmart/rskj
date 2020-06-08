@@ -26,23 +26,12 @@ public class TransferInvoke implements InvokeData {
     private final DataWord ownerAddress;
     private final DataWord callerAddress;
     private final long gas;
-    private final long rentGas;
     private final DataWord callValue;
 
     public TransferInvoke(DataWord callerAddress, DataWord ownerAddress, long gas, DataWord callValue) {
         this.callerAddress = callerAddress;
         this.ownerAddress = ownerAddress;
         this.gas = gas;
-        this.rentGas = gas; // as per RSKIP113, if rentgasLimit is not specified use gasLimit in its place
-        this.callValue = callValue;
-    }
-
-    // #mish version with storage rent gas limit in arglist
-    public TransferInvoke(DataWord callerAddress, DataWord ownerAddress, long gas, long rentGas, DataWord callValue) {
-        this.callerAddress = callerAddress;
-        this.ownerAddress = ownerAddress;
-        this.gas = gas;
-        this.rentGas = rentGas;
         this.callValue = callValue;
     }
 
@@ -59,11 +48,6 @@ public class TransferInvoke implements InvokeData {
     @Override
     public long getGas() {
         return this.gas;
-    }
-
-    @Override
-    public long getRentGas() {
-        return this.rentGas;
     }
 
     @Override
