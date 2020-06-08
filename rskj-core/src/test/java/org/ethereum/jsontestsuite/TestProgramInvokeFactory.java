@@ -59,14 +59,6 @@ public class TestProgramInvokeFactory implements ProgramInvokeFactory {
         return null;
     }
 
-    @Override
-    public ProgramInvoke createProgramInvoke(Program program, DataWord toAddress, DataWord callerAddress,
-                                             DataWord inValue, long inGas, long inRentGas,
-                                             Coin balanceInt, byte[] dataIn,
-                                             Repository repository, BlockStore blockStore,
-                                             boolean isStaticCall, boolean byTestingSuite) {
-        return null;
-    }
 
     private ProgramInvoke generalInvoke(Transaction tx, int txindex, Repository repository, BlockStore blockStore) {
 

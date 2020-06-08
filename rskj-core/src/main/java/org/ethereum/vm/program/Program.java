@@ -202,7 +202,7 @@ public class Program {
                 senderNonce,
                 getGasPrice(),
                 gasLimit,
-                gasLimit, // #mish 'gasLimit' repeated. This instance for rentGasLimit which has not been stated (as per RSKIP113, use gasLimit instead)
+                //gasLimit, // #mish 'gasLimit' repeated. This instance for rentGasLimit which has not been stated (as per RSKIP113, use gasLimit instead)
                 senderAddress.getBytes(),
                 receiveAddress.getBytes(),
                 value.getBytes(),
@@ -210,7 +210,7 @@ public class Program {
                 note);
     }
 
-    // #mish version with storage rentgaslimit in arglist
+    /*// #mish version with storage rentgaslimit in arglist
     private InternalTransaction addInternalTx(byte[] nonce, DataWord gasLimit, DataWord rentGasLimit, RskAddress senderAddress, RskAddress receiveAddress,
                                               Coin value, byte[] data, String note) {
         if (transaction == null) {
@@ -231,7 +231,7 @@ public class Program {
                 value.getBytes(),
                 data,
                 note);
-    }
+    }*/
 
     private <T extends ProgramListenerAware> T setupProgramListener(T traceListenerAware) {
         if (programListener.isEmpty()) {
@@ -413,7 +413,7 @@ public class Program {
         if (!balance.equals(Coin.ZERO)) {
             logger.info("Transfer to: [{}] heritage: [{}]", obtainer, balance);
 
-            addInternalTx(null, null, null, owner, obtainer, balance, null, "suicide");
+            addInternalTx(null, null, owner, obtainer, balance, null, "suicide");
 
             if (FastByteComparisons.compareTo(owner.getBytes(), 0, 20, obtainer.getBytes(), 0, 20) == 0) {
                 // if owner == obtainer just zeroing account according to Yellow Paper
@@ -449,7 +449,7 @@ public class Program {
                     amount);
         }
 
-        addInternalTx(null, null, null, owner, dest, amount, null, "send");
+        addInternalTx(null, null, owner, dest, amount, null, "send");
 
         getStorage().transfer(owner, dest, amount);
     }
@@ -507,16 +507,15 @@ public class Program {
         spendGas(gasLimit, "internal call");
 
         // #mish  rentgaslimit get Remaining for internal call
-        long rentGasLimit = getRemainingRentGas();
-        spendRentGas(rentGasLimit, "internal call");
+        //long rentGasLimit = getRemainingRentGas();
+        //spendRentGas(rentGasLimit, "internal call");
 
 
         if (byTestingSuite()) {
             // This keeps track of the contracts created for a test
             getResult().addCallCreate(programCode, EMPTY_BYTE_ARRAY,
                     gasLimit,
-                    value.getNoLeadZeroesData(),
-                    rentGasLimit);
+                    value.getNoLeadZeroesData());
         }
 
         // [3] UPDATE THE NONCE
@@ -853,7 +852,7 @@ public class Program {
                 this, DataWord.valueOf(contextAddress.getBytes()),
                 msg.getType() == MsgType.DELEGATECALL ? getCallerAddress() : getOwnerAddress(),
                 msg.getType() == MsgType.DELEGATECALL ? getCallValue() : msg.getEndowment(),
-                limitToMaxLong(msg.getGas()), limitToMaxLong(msg.getRentGas()), 
+                limitToMaxLong(msg.getGas()), 
                 contextBalance, data, track, this.invoke.getBlockStore(),
                 msg.getType() == MsgType.STATICCALL || isStaticCall(), byTestingSuite());
 
@@ -922,7 +921,7 @@ public class Program {
         }
 
         // 5.2 REFUND REMIAINING STORAGE RENT GAS
-        BigInteger refundRentGas = msg.getRentGas().value().subtract(toBI(childResult.getRentGasUsed()));
+        /*BigInteger refundRentGas = msg.getRentGas().value().subtract(toBI(childResult.getRentGasUsed()));
         if (isPositive(refundRentGas)) {
             // Since the original gas transferred was < Long.MAX_VALUE then the refund
             // also fits in a long.
@@ -930,7 +929,7 @@ public class Program {
             if (isRentGasLogEnabled) {
                 rentGasLogger.info("The remaining gas refunded, account: [{}], gas: [{}] ", senderAddress, refundRentGas);
             }
-        }
+        }*/
 
         return childCallSuccessful;
     }
@@ -952,9 +951,9 @@ public class Program {
             rentGasLogger.info("[{}] Spent for cause: [{}], rentgas: [{}]", invoke.hashCode(), cause, rentGasValue);
         }
 
-        if (getRemainingRentGas()  < rentGasValue) {
+        /*if (getRemainingRentGas()  < rentGasValue) {
             throw ExceptionHelper.notEnoughSpendingGas(cause, rentGasValue, this);
-        }
+        }*/
 
         getResult().spendRentGas(rentGasValue);
     }
@@ -979,9 +978,9 @@ public class Program {
         spendGas(getRemainingGas(), "Spending all remaining");
     }
 
-    public void spendAllRentGas() {
+    /*public void spendAllRentGas() {
         spendRentGas(getRemainingRentGas(), "Spending all remaining rentgas");
-    }
+    }*/
 
     private void refundGas(long gasValue, String cause) {
         if (isGasLogEnabled) {
@@ -1004,20 +1003,20 @@ public class Program {
         getResult().addFutureRefund(gasValue);
     }
 
-    public void futureRentGasRefund(long rentGasValue) {
+    /*public void futureRentGasRefund(long rentGasValue) {
         if (isRentGasLogEnabled) { // #mish: should this be isGasLogEnabled?
             rentGasLogger.info("Future refund added: [{}]", rentGasValue);
         }
         getResult().addFutureRentGasRefund(rentGasValue);
-    }
+    }*/
 
     public void resetFutureRefund() {
         getResult().resetFutureRefund();
     }
 
-    public void resetFutureRentGasRefund() {
+    /*public void resetFutureRentGasRefund() {
         getResult().resetFutureRentGasRefund();
-    }
+    }*/
 
     public void storageSave(DataWord word1, DataWord word2) {
         storageSave(word1.getData(), word2.getData());
@@ -1110,9 +1109,9 @@ public class Program {
         return invoke.getGas()- getResult().getGasUsed();
     }
 
-    public long getRemainingRentGas() {
+    /*public long getRemainingRentGas() {
         return invoke.getRentGas()- getResult().getRentGasUsed();
-    }
+    }*/
 
     public DataWord getCallValue() {
         return invoke.getCallValue();
@@ -1272,10 +1271,10 @@ public class Program {
                     getResult().getGasUsed(),
                     invoke.getGas(),
                     getRemainingGas());
-            logger.trace("\n  Spent Rent Gas: [{}]/[{}]\n  Left Rent Gas:  [{}]\n",
+            /*logger.trace("\n  Spent Rent Gas: [{}]/[{}]\n  Left Rent Gas:  [{}]\n",
                     getResult().getRentGasUsed(),
                     invoke.getRentGas(),
-                    getRemainingRentGas());
+                    getRemainingRentGas());*/
 
             StringBuilder globalOutput = new StringBuilder("\n");
             if (stackData.length() > 0) {
@@ -1609,10 +1608,11 @@ public class Program {
             return new OutOfGasException("Gas value overflow: actualGas[%d], gasLimit[%d];", actualGas, gasLimit.longValue());
         }
         
-        public static OutOfRentGasException notEnoughRentGas(String cause, long rentGasValue, Program program) {
+        /*public static OutOfRentGasException notEnoughRentGas(String cause, long rentGasValue, Program program) {
             return new OutOfRentGasException("Not enough rent gas for '%s' cause spending: invokeGas[%d], rentGas[%d], usedRentGas[%d];",
                     cause, program.invoke.getRentGas(), rentGasValue, program.getResult().getRentGasUsed());
-        }
+        }*/
+        
         public static IllegalOperationException invalidOpCode(byte... opCode) {
             return new IllegalOperationException("Invalid operation code: opcode[%s];", Hex.toHexString(opCode, 0, 1));
         }

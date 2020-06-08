@@ -234,11 +234,10 @@ public class ProgramResult {
         return callCreateList;
     }
 
-    // #mish with storage rent 
-    // TODO: testing suite in program uses a version without rent
-    public void addCallCreate(byte[] data, byte[] destination, long gasLimit, byte[] value, long rentGasLimit) {
-        getCallCreateList().add(new CallCreate(data, destination, gasLimit, value, rentGasLimit));
-    }
+    /* // TODO: testing suite in program uses a version without rent
+    public void addCallCreate(byte[] data, byte[] destination, long gasLimit, byte[] value) {
+        getCallCreateList().add(new CallCreate(data, destination, gasLimit, value);
+    }*/
 
     // #mish without storage rent
     public void addCallCreate(byte[] data, byte[] destination, long gasLimit, byte[] value) {
@@ -255,19 +254,10 @@ public class ProgramResult {
     public InternalTransaction addInternalTransaction(byte[] parentHash, int deep, byte[] nonce, DataWord gasPrice, DataWord gasLimit,
                                                       byte[] senderAddress, byte[] receiveAddress, byte[] value, byte[] data, String note) {
         InternalTransaction transaction = new InternalTransaction(parentHash, deep, getInternalTransactions().size(),
-                                        nonce, gasPrice, gasLimit, gasLimit, senderAddress, receiveAddress, value, data, note); //gasLImit repeated, one is for storage rent
+                                        nonce, gasPrice, gasLimit, senderAddress, receiveAddress, value, data, note); //gasLImit repeated, one is for storage rent
         getInternalTransactions().add(transaction);
         return transaction;
-    }
-
-    // #mish: version with storage rentGasLimit in args
-    public InternalTransaction addInternalTransaction(byte[] parentHash, int deep, byte[] nonce, DataWord gasPrice, DataWord gasLimit,
-                                   DataWord rentGasLimit, byte[] senderAddress, byte[] receiveAddress, byte[] value, byte[] data, String note) {
-        InternalTransaction transaction = new InternalTransaction(parentHash, deep, getInternalTransactions().size(),
-                                        nonce, gasPrice, gasLimit, rentGasLimit, senderAddress, receiveAddress, value, data, note);
-        getInternalTransactions().add(transaction);
-        return transaction;
-    }    
+    } 
 
     public void addInternalTransactions(List<InternalTransaction> internalTransactions) {
         getInternalTransactions().addAll(internalTransactions);

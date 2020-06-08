@@ -45,7 +45,7 @@ public class ProgramInvokeImpl implements ProgramInvoke {
     private final DataWord gasPrice;
     private final DataWord callValue;
     private long gas; //#mish this is TX gaslimit
-    private long rentGas; // storage rent gasLimit.. 
+    //private long rentGas; // storage rent gasLimit.. 
 
     byte[] msgData;
 
@@ -93,7 +93,7 @@ public class ProgramInvokeImpl implements ProgramInvoke {
         this.balance = balance;
         this.gasPrice = gasPrice;
         this.gas = gas;
-        this.rentGas = gas; // rentGas not in arglist, so use gas as per RSKIP113
+        //this.rentGas = gas; // rentGas not in arglist, so use gas as per RSKIP113
         this.callValue = callValue;
         this.msgData = msgData;
 
@@ -115,9 +115,10 @@ public class ProgramInvokeImpl implements ProgramInvoke {
     }
 
     // #mish Constructor C3A: In contrast to C3, this has rentGas in arglist
+    /*
     public ProgramInvokeImpl(DataWord address, DataWord origin, DataWord caller, DataWord balance,
                              DataWord gasPrice,
-                             long gas, long rentGas,
+                             long gas, //long rentGas,
                              DataWord callValue, byte[] msgData,
                              DataWord lastHash, DataWord coinbase, DataWord timestamp, DataWord number, DataWord transactionIndex, DataWord
                                      difficulty,
@@ -132,7 +133,7 @@ public class ProgramInvokeImpl implements ProgramInvoke {
         this.balance = balance;
         this.gasPrice = gasPrice;
         this.gas = gas;
-        this.rentGas = rentGas; 
+        //this.rentGas = rentGas; 
         this.callValue = callValue;
         this.msgData = msgData;
 
@@ -151,7 +152,7 @@ public class ProgramInvokeImpl implements ProgramInvoke {
         this.blockStore = blockStore;
         this.isStaticCall = isStaticCall;
         this.byTestingSuite = byTestingSuite;
-    }
+    }*/
 
     // #mish: constructor C2: This is based on C1, Compared to C1, has TestingSuite in arglist 
     public ProgramInvokeImpl(byte[] address, byte[] origin, byte[] caller, byte[] balance,
@@ -164,7 +165,7 @@ public class ProgramInvokeImpl implements ProgramInvoke {
                 timestamp, number, transactionIndex, difficulty, gaslimit, repository, blockStore);
 
         this.byTestingSuite = byTestingSuite;
-        this.rentGas = Program.limitToMaxLong(DataWord.valueOf(gas)); // #mish rentGas not provided, so use gas (Tx gasLimit) in its place (as per RSKIP113)
+        //this.rentGas = Program.limitToMaxLong(DataWord.valueOf(gas)); // #mish rentGas not provided, so use gas (Tx gasLimit) in its place (as per RSKIP113)
     }
 
     // #mish: Constructor C1:  this is the base constructor.. but not an exhaustive one
@@ -181,7 +182,7 @@ public class ProgramInvokeImpl implements ProgramInvoke {
         this.balance = DataWord.valueOf(balance);
         this.gasPrice = DataWord.valueOf(gasPrice);
         this.gas = Program.limitToMaxLong(DataWord.valueOf(gas));
-        this.rentGas = Program.limitToMaxLong(DataWord.valueOf(gas)); // rentgas not in arglist, so use gas (as per RSKIP113)
+        //this.rentGas = Program.limitToMaxLong(DataWord.valueOf(gas)); // rentgas not in arglist, so use gas (as per RSKIP113)
         this.callValue = DataWord.valueOf(callValue);
         this.msgData = msgData;
 
@@ -196,50 +197,6 @@ public class ProgramInvokeImpl implements ProgramInvoke {
 
         this.repository = repository;
         this.blockStore = blockStore;
-    }
-
-    // #mish: Constructor C1A:  similar to C1 but also has rentGas in arglist
-    public ProgramInvokeImpl(byte[] address, byte[] origin, byte[] caller, byte[] balance,
-                             byte[] gasPrice, byte[] gas, byte[] rentGas, byte[] callValue, byte[] msgData,
-                             byte[] lastHash, byte[] coinbase, long timestamp, long number, int transactionIndex, byte[] difficulty,
-                             byte[] gaslimit,
-                             Repository repository, BlockStore blockStore) {
-
-        // Transaction env
-        this.address = DataWord.valueOf(address);
-        this.origin = DataWord.valueOf(origin);
-        this.caller = DataWord.valueOf(caller);
-        this.balance = DataWord.valueOf(balance);
-        this.gasPrice = DataWord.valueOf(gasPrice);
-        this.gas = Program.limitToMaxLong(DataWord.valueOf(gas));
-        this.rentGas = Program.limitToMaxLong(DataWord.valueOf(rentGas));
-        this.callValue = DataWord.valueOf(callValue);
-        this.msgData = msgData;
-
-        // last Block env
-        this.prevHash = DataWord.valueOf(lastHash);
-        this.coinbase = DataWord.valueOf(coinbase);
-        this.timestamp = DataWord.valueOf(timestamp);
-        this.number = DataWord.valueOf(number);
-        this.transactionIndex = DataWord.valueOf(transactionIndex);
-        this.difficulty = DataWord.valueOf(difficulty);
-        this.gaslimit = DataWord.valueOf(gaslimit);
-
-        this.repository = repository;
-        this.blockStore = blockStore;
-    }
-
-    // #mish: constructor C2A: Similar to C2, but has rentgas in arglist. Uses C1A as base. 
-    public ProgramInvokeImpl(byte[] address, byte[] origin, byte[] caller, byte[] balance,
-                             byte[] gasPrice, byte[] gas, byte[] rentGas, byte[] callValue, byte[] msgData,
-                             byte[] lastHash, byte[] coinbase, long timestamp, long number, int transactionIndex, byte[] difficulty,
-                             byte[] gaslimit,
-                             Repository repository, BlockStore blockStore,
-                             boolean byTestingSuite) {
-        this(address, origin, caller, balance, gasPrice, gas, rentGas, callValue, msgData, lastHash, coinbase,
-                timestamp, number, transactionIndex, difficulty, gaslimit, repository, blockStore);
-
-        this.byTestingSuite = byTestingSuite;
     }
 
     /*           ADDRESS op         */
@@ -273,10 +230,10 @@ public class ProgramInvokeImpl implements ProgramInvoke {
     }
 
     // #mish added, todo: RENTGAS op outside of invoke
-    /*           RENTGAS op       */
+    /*           RENTGAS op       
     public long  getRentGas() {
         return rentGas;
-    }
+    }*/
 
     /*          CALLVALUE op    */
     public DataWord getCallValue() {
@@ -451,10 +408,7 @@ public class ProgramInvokeImpl implements ProgramInvoke {
         }
         if (gas!=that.gas) {
             return false;
-        }
-        if (rentGas!=that.rentGas) {
-            return false;
-        }
+        }        
         if (gasPrice != null ? !gasPrice.equals(that.gasPrice) : that.gasPrice != null) {
             return false;
         }
@@ -494,7 +448,7 @@ public class ProgramInvokeImpl implements ProgramInvoke {
                 ", caller=" + caller +
                 ", balance=" + balance +
                 ", gas=" + gas +
-                ", rentGas=" + rentGas +
+                //", rentGas=" + rentGas +
                 ", gasPrice=" + gasPrice +
                 ", callValue=" + callValue +
                 ", msgData=" + Arrays.toString(msgData) +

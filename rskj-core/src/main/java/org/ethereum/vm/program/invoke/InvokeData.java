@@ -28,7 +28,7 @@ public interface InvokeData {
 
     long getGas();
 
-    long getRentGas();
+    //long getRentGas();
 
     DataWord getCallValue();
 

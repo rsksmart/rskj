@@ -45,7 +45,7 @@ public class InternalTransaction extends Transaction {
     public InternalTransaction(byte[] parentHash, int deep, int index, byte[] nonce, DataWord gasPrice, DataWord gasLimit,
                                byte[] sendAddress, byte[] receiveAddress, byte[] value, byte[] data, String note) {
 
-        super(nonce, getData(gasPrice), getData(gasLimit), receiveAddress, nullToEmpty(value), nullToEmpty(data), (byte) 0, getData(gasLimit));
+        super(nonce, getData(gasPrice), getData(gasLimit), receiveAddress, nullToEmpty(value), nullToEmpty(data), (byte) 0);
 
         this.parentHash = parentHash;
         this.deep = deep;
@@ -55,7 +55,8 @@ public class InternalTransaction extends Transaction {
     }
 
     // # mish modified constructor with storage rent : does not include chain id
-    public InternalTransaction(byte[] parentHash, int deep, int index, byte[] nonce, DataWord gasPrice, DataWord gasLimit, DataWord rentGasLimit,  
+   /* 
+   public InternalTransaction(byte[] parentHash, int deep, int index, byte[] nonce, DataWord gasPrice, DataWord gasLimit, DataWord rentGasLimit,  
                                byte[] sendAddress, byte[] receiveAddress, byte[] value, byte[] data, String note) {
 
         super(nonce, getData(gasPrice), getData(gasLimit), receiveAddress, nullToEmpty(value), nullToEmpty(data), (byte) 0, getData(rentGasLimit));
@@ -65,7 +66,7 @@ public class InternalTransaction extends Transaction {
         this.index = index;
         this.sender = RLP.parseRskAddress(sendAddress);
         this.note = note;
-    }
+    }*/
 
     // gasprice used as generic arg
     private static byte[] getData(DataWord gasPrice) {
@@ -110,7 +111,7 @@ public class InternalTransaction extends Transaction {
         byte[] value = RLP.encodeCoin(getValue());
         byte[] gasPrice = RLP.encodeCoin(getGasPrice());
         byte[] gasLimit = RLP.encodeElement(getGasLimit());
-        byte[] rentGasLimit = RLP.encodeElement(getRentGasLimit());
+        //byte[] rentGasLimit = RLP.encodeElement(getRentGasLimit());
         byte[] data = RLP.encodeElement(getData());
         byte[] parentHash = RLP.encodeElement(this.parentHash);
         byte[] type = RLP.encodeString(this.note);
@@ -119,7 +120,7 @@ public class InternalTransaction extends Transaction {
         byte[] rejected = RLP.encodeInt(this.rejected ? 1 : 0);
 
         return RLP.encodeList(nonce, parentHash, senderAddress, receiveAddress, value,
-                gasPrice, gasLimit, data, type, deep, index, rejected, rentGasLimit);
+                gasPrice, gasLimit, data, type, deep, index, rejected);
     }
 
     // same as getencoded, there is no signing of internal transactions

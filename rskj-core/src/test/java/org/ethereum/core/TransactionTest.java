@@ -221,7 +221,7 @@ public class TransactionTest {
         assertEquals(new BigInteger(1, testGasLimit), new BigInteger(1, txUnsigned.getGasLimit()));
         /*the rent gas limit test is not as interesting here, cos the encoded RLP does not actually have rent info, 
                 so exec gas limit is copied into the field for rent gas as well*/
-        assertEquals(new BigInteger(1, testRentGasLimit), new BigInteger(1, txUnsigned.getRentGasLimit()));
+        //assertEquals(new BigInteger(1, testRentGasLimit), new BigInteger(1, txUnsigned.getRentGasLimit()));
         assertEquals(Hex.toHexString(testReceiveAddress), Hex.toHexString(txUnsigned.getReceiveAddress().getBytes()));
         assertEquals(new BigInteger(1, testValue), txUnsigned.getValue().asBigInteger());
         assertNull(txUnsigned.getData());
@@ -233,12 +233,12 @@ public class TransactionTest {
     @Ignore
     @Test
     public void testTransactionFromNew1() throws MissingPrivateKeyException {
-        Transaction txNew = new Transaction(testNonce, testGasPrice, testGasLimit, testReceiveAddress, testValue, testData, (byte)0, testRentGasLimit);
+        Transaction txNew = new Transaction(testNonce, testGasPrice, testGasLimit, testReceiveAddress, testValue, testData, (byte)0);
         
         assertEquals("", Hex.toHexString(txNew.getNonce()));
         assertEquals(new BigInteger(1, testGasPrice), txNew.getGasPrice().asBigInteger());
         assertEquals(new BigInteger(1, testGasLimit), new BigInteger(1, txNew.getGasLimit()));
-        assertEquals(new BigInteger(1, testRentGasLimit), new BigInteger(1, txNew.getRentGasLimit()));
+        //assertEquals(new BigInteger(1, testRentGasLimit), new BigInteger(1, txNew.getRentGasLimit()));
         assertEquals(Hex.toHexString(testReceiveAddress), Hex.toHexString(txNew.getReceiveAddress().getBytes()));
         assertEquals(new BigInteger(1, testValue), txNew.getValue().asBigInteger());
         assertEquals("", Hex.toHexString(txNew.getData()));

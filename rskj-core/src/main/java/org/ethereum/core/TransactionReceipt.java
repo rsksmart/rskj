@@ -54,7 +54,7 @@ public class TransactionReceipt {
     private byte[] postTxState = EMPTY_BYTE_ARRAY;
     private byte[] cumulativeGas = EMPTY_BYTE_ARRAY;
     private byte[] gasUsed = EMPTY_BYTE_ARRAY;
-    private byte[] rentGasUsed = EMPTY_BYTE_ARRAY; // storage rent at end of TX (even if reverted, RSKIP113), not included in cumulativeGas
+    //private byte[] rentGasUsed = EMPTY_BYTE_ARRAY; // storage rent at end of TX (even if reverted, RSKIP113), not included in cumulativeGas
     private byte[] status = EMPTY_BYTE_ARRAY;
 
     private Bloom bloomFilter = new Bloom();
@@ -87,10 +87,11 @@ public class TransactionReceipt {
             this.status = transactionStatus;
         }
         // also contains storage rent information 
+        /*
         if (receipt.size() > 6 ) {
             RLPItem rentGasUsedRLP = (RLPItem) receipt.get(6);
             this.rentGasUsed = rentGasUsedRLP.getRLPData() == null ? EMPTY_BYTE_ARRAY : rentGasUsedRLP.getRLPData();
-        }
+        }*/
 
         for (int k = 0; k < logs.size(); k++) {
             RLPElement log = logs.get(k);
@@ -113,10 +114,11 @@ public class TransactionReceipt {
                 Arrays.equals(status, MANUAL_REVERT_RSKIP113_STATUS) || Arrays.equals(status, RENT_OOG_RSKIP113_STATUS)) {
             this.status = status;
         }
-        this.rentGasUsed = EMPTY_BYTE_ARRAY;
+        //this.rentGasUsed = EMPTY_BYTE_ARRAY;
     }
 
     // new constructor with storag rent 
+    /*
     public TransactionReceipt(byte[] postTxState, byte[] cumulativeGas, byte[] gasUsed,
                               Bloom bloomFilter, List<LogInfo> logInfoList, byte[] status, byte[] rentGasUsed) {
         this.postTxState = postTxState;
@@ -129,7 +131,7 @@ public class TransactionReceipt {
             this.status = status;
         }
         this.rentGasUsed = rentGasUsed;
-    }
+    }*/
 
 
     public byte[] getPostTxState() {
@@ -145,9 +147,10 @@ public class TransactionReceipt {
         return gasUsed;
     }
 
+    /*
     public byte[] getRentGasUsed() {
         return rentGasUsed;
-    }
+    }*/
 
     public long getCumulativeGasLong() {
         return new BigInteger(1, cumulativeGas).longValue();
@@ -172,7 +175,7 @@ public class TransactionReceipt {
         byte[] postTxStateRLP = RLP.encodeElement(this.postTxState);
         byte[] cumulativeGasRLP = RLP.encodeElement(this.cumulativeGas);
         byte[] gasUsedRLP = RLP.encodeElement(this.gasUsed);
-        byte[] rentGasUsedRLP = RLP.encodeElement(this.rentGasUsed);
+        //byte[] rentGasUsedRLP = RLP.encodeElement(this.rentGasUsed);
         byte[] bloomRLP = RLP.encodeElement(this.bloomFilter.getData());
         byte[] statusRLP = RLP.encodeElement(this.status);
 
@@ -190,11 +193,13 @@ public class TransactionReceipt {
             logInfoListRLP = RLP.encodeList();
         }
 
-        rlpEncoded = RLP.encodeList(postTxStateRLP, cumulativeGasRLP, bloomRLP, logInfoListRLP, gasUsedRLP, statusRLP, rentGasUsedRLP);
+        //rlpEncoded = RLP.encodeList(postTxStateRLP, cumulativeGasRLP, bloomRLP, logInfoListRLP, gasUsedRLP, statusRLP, rentGasUsedRLP);
+        rlpEncoded = RLP.encodeList(postTxStateRLP, cumulativeGasRLP, bloomRLP, logInfoListRLP, gasUsedRLP, statusRLP);
 
         return rlpEncoded;
     }
 
+    // #mish todo: going back to single gas field, is this change still needed?
     public void setStatus(byte[] status) {
         if (Arrays.equals(status, FAILED_STATUS)){
             this.status = FAILED_STATUS;
@@ -236,9 +241,10 @@ public class TransactionReceipt {
         this.gasUsed = BigIntegers.asUnsignedByteArray(BigInteger.valueOf(gasUsed));
     }
 
+    /*
     public void setRentGasUsed(long rentGasUsed) {
         this.rentGasUsed = BigIntegers.asUnsignedByteArray(BigInteger.valueOf(rentGasUsed));
-    }
+    }*/
 
     public void setCumulativeGas(byte[] cumulativeGas) {
         this.cumulativeGas = cumulativeGas;
@@ -248,9 +254,10 @@ public class TransactionReceipt {
         this.gasUsed = gasUsed;
     }
 
+    /*
     public void setRentGasUsed(byte[] rentGasUsed) {
         this.rentGasUsed = rentGasUsed;
-    }
+    }*/
 
     public void setLogInfoList(List<LogInfo> logInfoList) {
         if (logInfoList == null) {

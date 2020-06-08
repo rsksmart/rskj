@@ -48,10 +48,10 @@ public class SuicideInvoke implements InvokeData {
         return 0L;
     }
 
-    @Override
+    /*@Override
     public long getRentGas() {
         return 0L;
-    }
+    }*/
 
     @Override
     public DataWord getCallValue() {

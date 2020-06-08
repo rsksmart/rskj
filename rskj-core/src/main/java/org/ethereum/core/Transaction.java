@@ -88,18 +88,6 @@ public class Transaction {
      * to the state or transaction list consumes some gas. */
     private byte[] gasLimit;
     
-    /* #mish storage rent gas limit. This is separate from the gasLimit.
-       * as with computational (or comp-gas) gasLimit, the rentGasLimit is deducted from origin at start of TX processing
-       * unused rent gas is refunded 
-     * RSKIP113: 
-        * if this field is not specified in a TX, it is set equal to the gasLimit
-        * OOG for rentGasLimit -> all rentGas is consumed and TX is reverted
-            * Todo: what if there is enough comp gas leftover at EOT to cover rent.. still revert TX?
-            * 
-        * OOG for comp gasLimit -> 25% of rentGas consumed (even if trie nodes are not touched)
-        * rent gas is not included/ has no implications for block gas limit*/
-    private byte[] rentGasLimit;
-    
     /* An unlimited size byte array specifying
      * input [data] of the message call or
      * Initialization code for a new contract */
@@ -116,8 +104,8 @@ public class Transaction {
     protected Transaction(byte[] rawData) {
         RLPList transaction = RLP.decodeList(rawData);
         int txSize = transaction.size(); 
-        if (txSize < 9 || txSize >10) { // #mish: prev was !=9, TX strictly has 9 elements
-            throw new IllegalArgumentException("A transaction must have either 9 (without storage rent) or 10 elements (with rent)");
+        if (txSize != 9) {
+            throw new IllegalArgumentException("A transaction must have exactly 9 elements");
         }
 
         this.nonce = transaction.get(0).getRLPData();
@@ -127,9 +115,9 @@ public class Transaction {
         this.value = RLP.parseCoinNullZero(transaction.get(4).getRLPData());
         this.data = transaction.get(5).getRLPData();
         // 6, 7, 8 are related to signature
-        if (txSize==10){ // #mish: has storage rent data
+        /*if (txSize==10){ // #mish: has storage rent data
             this.rentGasLimit = transaction.get(9).getRLPData();
-        }
+        }*/
  
         // only parse signature in case tx is signed
         byte[] vData = transaction.get(6).getRLPData();
@@ -154,9 +142,7 @@ public class Transaction {
      * [ nonce, gasPrice, gasLimit, receiveAddress, value, data, signature(v, r, s) ]
      */
     // #mish the full constructor. Move this up to the top, and add rentGasLimit to the full constructor
-    // 8 elem byte array: call this C0
-    public Transaction(byte[] nonce, byte[] gasPriceRaw, byte[] gasLimit, byte[] receiveAddress, byte[] valueRaw, byte[] data,
-                       byte chainId, byte[] rentGasLimit) {
+    public Transaction(byte[] nonce, byte[] gasPriceRaw, byte[] gasLimit, byte[] receiveAddress, byte[] valueRaw, byte[] data, byte chainId){
         this.nonce = ByteUtil.cloneBytes(nonce);
         this.gasPrice = RLP.parseCoinNonNullZero(ByteUtil.cloneBytes(gasPriceRaw));
         this.gasLimit = ByteUtil.cloneBytes(gasLimit);
@@ -165,110 +151,65 @@ public class Transaction {
         this.data = ByteUtil.cloneBytes(data);
         this.chainId = chainId;
         this.isLocalCall = false;
-        this.rentGasLimit = ByteUtil.cloneBytes(rentGasLimit);
+       // this.rentGasLimit = ByteUtil.cloneBytes(rentGasLimit);
     } 
     /*#mish: modify existing constructor signatures, just add gasLimit again at the end (after chainid) for rentGasLimit
     * then extend them to introduce new versions where rentGasLimit is an explicit argument/parameter*/
 
-    // #mish: this constructor existed earlier as the full constructor (pre storage rent)
-    // 7 elem byte array : call this C1: this is like C0 but without explicit rentGasLimit
-    public Transaction(byte[] nonce, byte[] gasPriceRaw, byte[] gasLimit, byte[] receiveAddress, byte[] valueRaw, byte[] data,
-                        byte chainId){
-        this(nonce, gasPriceRaw, gasLimit, receiveAddress, valueRaw, data, chainId, gasLimit);
-    }
-
     // #mish: this constructor present prior to rent. 6 elem byte array, Call this C2. Compared to C1 is does not have chainID.
     // We cannot have a version of this with rentGas added to arglist, cos 7 elem byte array would conflict with C1's signature
     public Transaction(byte[] nonce, byte[] gasPriceRaw, byte[] gasLimit, byte[] receiveAddress, byte[] value, byte[] data) {
-        this(nonce, gasPriceRaw, gasLimit, receiveAddress, value, data, (byte) 0, gasLimit);
+        this(nonce, gasPriceRaw, gasLimit, receiveAddress, value, data, (byte) 0);
     }
 
-    // #mish: existed prior to rent: Call this C3. a 9 elem byte array..   //rentgaslimit default set to gaslimit
+    // #mish: existed prior to rent: Call this C3. a 9 elem byte array..
     public Transaction(byte[] nonce, byte[] gasPriceRaw, byte[] gasLimit, byte[] receiveAddress, byte[] value, byte[] data, byte[] r, byte[] s, byte v) {
-        this(nonce, gasPriceRaw, gasLimit, receiveAddress, value, data, (byte) 0, gasLimit);
+        this(nonce, gasPriceRaw, gasLimit, receiveAddress, value, data, (byte) 0);
         this.signature = ECDSASignature.fromComponents(r, s, v);
     }
-    // #mish: new. call this C3Ext. Same as C3 above but with rentGasLimit in arglist. 10 elem byte array.. so no conflict with any prior 
-    public Transaction(byte[] nonce, byte[] gasPriceRaw, byte[] gasLimit, byte[] receiveAddress, byte[] value, byte[] data, 
-                byte[] rentGasLimit, byte[] r, byte[] s, byte v) {
-        this(nonce, gasPriceRaw, gasLimit, receiveAddress, value, data, (byte) 0, rentGasLimit);
-        this.signature = ECDSASignature.fromComponents(r, s, v);
-    }
-
+    
     /** #mish Moving on to different style of constructor signature */
     /** #mish: And relocating constructors with similar signatures closer */
 
     // This alt. version uses parameters "to" (instead of receiver addr) and "amount" (instead of value)
     // First extend the prior constructor to account for rentGas
     // Call this C4.
-    public Transaction(String to, BigInteger amount, BigInteger nonce, BigInteger gasPrice, BigInteger gasLimit, byte[] decodedData,
-                                                                     byte chainId, BigInteger rentGasLimit) {
+    public Transaction(String to, BigInteger amount, BigInteger nonce, BigInteger gasPrice, BigInteger gasLimit, byte[] decodedData, byte chainId){
         this(BigIntegers.asUnsignedByteArray(nonce),
                 gasPrice.toByteArray(),
                 BigIntegers.asUnsignedByteArray(gasLimit),
                 to != null ? Hex.decode(to) : null,
                 BigIntegers.asUnsignedByteArray(amount),
                 decodedData,
-                chainId,
-                BigIntegers.asUnsignedByteArray(rentGasLimit));
+                chainId);
     }
-
-    /** The version of the constructor used prior to rentGas addition (with rentGas set equal to gasLimit)
-    // call this C5. */
-    public Transaction(String to, BigInteger amount, BigInteger nonce, BigInteger gasPrice, BigInteger gasLimit, byte[] decodedData,byte chainId){
-        this(BigIntegers.asUnsignedByteArray(nonce),
-                gasPrice.toByteArray(),
-                BigIntegers.asUnsignedByteArray(gasLimit),
-                to != null ? Hex.decode(to) : null,
-                BigIntegers.asUnsignedByteArray(amount),
-                decodedData,
-                chainId,
-                BigIntegers.asUnsignedByteArray(gasLimit)); //rentgaslimit default set to gaslimit
-    }
+    
     // #mish: existed prior to rent: Similar to C5, except 'data' is String not byte[]. param types SBBBBSb
-    // call this C6:   //rentgaslimit default set to gaslimit
+    // call this C6:
     public Transaction(String to, BigInteger amount, BigInteger nonce, BigInteger gasPrice, BigInteger gasLimit, String data, byte chainId) {
-        this(to, amount, nonce, gasPrice, gasLimit, data == null ? null : Hex.decode(data), chainId, gasLimit);
-    }
-    // C6Ext: Extend C6 to explicitly add rentGasLimit to arglist: param types SBBBBSbB
-    public Transaction(String to, BigInteger amount, BigInteger nonce, BigInteger gasPrice, BigInteger gasLimit, String data, byte chainId, BigInteger rentGasLimit) {
-        this(to, amount, nonce, gasPrice, gasLimit, data == null ? null : Hex.decode(data), chainId, rentGasLimit);
+        this(to, amount, nonce, gasPrice, gasLimit, data == null ? null : Hex.decode(data), chainId);
     }
 
-    //Call this C7: existed prior to rent: param types SBBBBb no 'data'.  //rentgaslimit default set to gaslimit
+    //Call this C7: existed prior to rent: param types SBBBBb no 'data'. 
     public Transaction(String to, BigInteger amount, BigInteger nonce, BigInteger gasPrice, BigInteger gasLimit, byte chainId) {
-        this(to, amount, nonce, gasPrice, gasLimit, (byte[]) null, chainId, gasLimit);
-    }
-    //C7Ext: extend C7 to add rentGasLimit in arglist
-    public Transaction(String to, BigInteger amount, BigInteger nonce, BigInteger gasPrice, BigInteger gasLimit, byte chainId, BigInteger rentGasLimit) {
-        this(to, amount, nonce, gasPrice, gasLimit, (byte[]) null, chainId, rentGasLimit);
+        this(to, amount, nonce, gasPrice, gasLimit, (byte[]) null, chainId);
     }
 
     // #mish: existed prior to rent, param types BBBSBbb, so a reordering of C7. Plus mixed up names (value/amount).
-    // Call this C8:  //rentgaslimit default set to gaslimit
+    // Call this C8: 
     public Transaction(BigInteger nonce, BigInteger gasPrice, BigInteger gas, String to, BigInteger value, byte[] data, byte chainId) {
         this(nonce.toByteArray(), gasPrice.toByteArray(), gas.toByteArray(), Hex.decode(to), value.toByteArray(), data,
-                chainId, gas.toByteArray());
-    }
-    //C8Ext: add rentGasLimit toarglist in C8
-    public Transaction(BigInteger nonce, BigInteger gasPrice, BigInteger gas, String to, BigInteger value, byte[] data, byte chainId, BigInteger rentGasLimit) {
-        this(nonce.toByteArray(), gasPrice.toByteArray(), gas.toByteArray(), Hex.decode(to), value.toByteArray(), data,
-                chainId, rentGasLimit.toByteArray());
+                chainId);
     }
 
     // #mish: Existed prior to rentGas: different param types. lllSlbb
-    // call ths C9:  //rentgaslimit default set to gaslimit
+    // call ths C9: 
     public Transaction(long nonce, long gasPrice, long gas, String to, long value, byte[] data, byte chainId) {
         this(BigInteger.valueOf(nonce).toByteArray(), BigInteger.valueOf(gasPrice).toByteArray(),
                 BigInteger.valueOf(gas).toByteArray(), Hex.decode(to), BigInteger.valueOf(value).toByteArray(),
-                data, chainId, BigInteger.valueOf(gas).toByteArray());        
+                data, chainId);        
     }
-    //C9Ext: extend C9 to add rentGasLimit to arglist
-    public Transaction(long nonce, long gasPrice, long gas, String to, long value, byte[] data, byte chainId, long rentGasLimit) {
-        this(BigInteger.valueOf(nonce).toByteArray(), BigInteger.valueOf(gasPrice).toByteArray(),
-                BigInteger.valueOf(gas).toByteArray(), Hex.decode(to), BigInteger.valueOf(value).toByteArray(),
-                data, chainId, BigInteger.valueOf(rentGasLimit).toByteArray());        
-    }
+   
 
     // now the methods
     
@@ -325,9 +266,6 @@ public class Transaction {
         }
         if (gasLimit.length > DATAWORD_LENGTH) {
             throw new RuntimeException("Gas Limit is not valid");
-        }
-        if (rentGasLimit.length > DATAWORD_LENGTH) {
-            throw new RuntimeException("Rent Gas Limit is not valid");
         }
         if (gasPrice != null && gasPrice.getBytes().length > DATAWORD_LENGTH) {
             throw new RuntimeException("Gas Price is not valid");
@@ -390,10 +328,6 @@ public class Transaction {
 
     public byte[] getGasLimit() {
         return gasLimit;
-    }
-
-    public byte[] getRentGasLimit() {
-        return rentGasLimit;
     }
 
     public byte[] getData() {
@@ -511,7 +445,6 @@ public class Transaction {
                 "  nonce=" + ByteUtil.toHexString(nonce) +
                 ", gasPrice=" + gasPrice.toString() +
                 ", gasLimit=" + ByteUtil.toHexString(gasLimit) +
-                ", rentGasLimit=" + ByteUtil.toHexString(rentGasLimit) +
                 ", receiveAddress=" + receiveAddress.toString() +
                 ", value=" + value.toString() +
                 ", data=" + ByteUtil.toHexString(data) +
@@ -575,26 +508,21 @@ public class Transaction {
         }
         byte[] toEncodeGasPrice = RLP.encodeCoinNonNullZero(this.gasPrice);
         byte[] toEncodeGasLimit = RLP.encodeElement(this.gasLimit);
-        byte[] toEncodeRentGasLimit = RLP.encodeElement(this.rentGasLimit);
         byte[] toEncodeReceiveAddress = RLP.encodeRskAddress(this.receiveAddress);
         byte[] toEncodeValue = RLP.encodeCoinNullZero(this.value);
         byte[] toEncodeData = RLP.encodeElement(this.data);
 
         if (v == null && r == null && s == null) {
             return RLP.encodeList(toEncodeNonce, toEncodeGasPrice, toEncodeGasLimit,
-                    toEncodeReceiveAddress, toEncodeValue, toEncodeData, toEncodeRentGasLimit);
+                    toEncodeReceiveAddress, toEncodeValue, toEncodeData);
         }
 
         return RLP.encodeList(toEncodeNonce, toEncodeGasPrice, toEncodeGasLimit,
-                toEncodeReceiveAddress, toEncodeValue, toEncodeData, v, r, s, toEncodeRentGasLimit);
+                toEncodeReceiveAddress, toEncodeValue, toEncodeData, v, r, s);//, toEncodeRentGasLimit);
     }
 
     public BigInteger getGasLimitAsInteger() {
         return (this.getGasLimit() == null) ? null : BigIntegers.fromUnsignedByteArray(this.getGasLimit());
-    }
-
-    public BigInteger getRentGasLimitAsInteger() {
-        return (this.getRentGasLimit() == null) ? null : BigIntegers.fromUnsignedByteArray(this.getRentGasLimit());
     }
 
     public BigInteger getNonceAsInteger() {
