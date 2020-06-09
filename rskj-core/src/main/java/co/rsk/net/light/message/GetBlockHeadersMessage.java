@@ -75,6 +75,14 @@ public class GetBlockHeadersMessage extends LightClientMessage {
         return reverse;
     }
 
+    public int getMax() {
+        return max;
+    }
+
+    private boolean getReverse() {
+        return reverse;
+    }
+
     @Override
     public byte[] getEncoded() {
         byte[] rlpId = RLP.encodeBigInteger(BigInteger.valueOf(getId()));
@@ -97,15 +105,14 @@ public class GetBlockHeadersMessage extends LightClientMessage {
         return "GetBlockHeaderMessage{" +
                 "\nid= " + getId() +
                 "\nblockHash= " + toHexString(getBlockHash()) +
+                "\nmax= " + getMax() +
+                "\nskip= " + getSkip() +
+                "\nreverse= " + getReverse() +
                 "\n}";
     }
 
     @Override
     public void accept(LightClientMessageVisitor v) {
         v.apply(this);
-    }
-
-    public int getMax() {
-        return max;
     }
 }
