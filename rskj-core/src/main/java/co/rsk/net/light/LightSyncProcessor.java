@@ -142,7 +142,7 @@ public class LightSyncProcessor {
         }
 
         pendingMessages.remove(id, BLOCK_HEADER);
-        lightPeer.receivedBlock(blockHeaders);
+        lightPeer.receivedBlockHeaders(blockHeaders);
     }
 
     private boolean isPending(long id, LightClientMessageCodes code) {

@@ -52,8 +52,8 @@ public class LightPeer {
         msgQueue.disconnect(reasonCode);
     }
 
-    public void receivedBlock(List<BlockHeader> blockHeader) {
-        blockHeaders.addAll(blockHeader);
+    public void receivedBlockHeaders(List<BlockHeader> blockHeaders) {
+        this.blockHeaders.addAll(blockHeaders);
     }
 
     @VisibleForTesting

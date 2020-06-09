@@ -365,8 +365,7 @@ public class LightClientHandlerTest {
 
         lightClientHandler.channelRead0(ctx, blockHeadersMessage);
 
-        verify(lightPeer, times(0)).receivedBlock(any());
-
+        verify(lightPeer, times(0)).receivedBlockHeaders(any());
     }
 
     @Test
@@ -388,8 +387,7 @@ public class LightClientHandlerTest {
 
         lightClientHandler.channelRead0(ctx, blockHeadersMessage);
 
-        verify(lightPeer, times(0)).receivedBlock(any());
-
+        verify(lightPeer, times(0)).receivedBlockHeaders(any());
     }
 
     @Test
@@ -402,8 +400,7 @@ public class LightClientHandlerTest {
 
         lightClientHandler.channelRead0(ctx, blockHeadersMessage);
 
-        verify(lightPeer, times(0)).receivedBlock(any());
-
+        verify(lightPeer, times(0)).receivedBlockHeaders(any());
     }
 
     @Test
