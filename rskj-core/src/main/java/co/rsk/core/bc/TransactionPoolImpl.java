@@ -255,7 +255,7 @@ public class TransactionPoolImpl implements TransactionPool {
         }
 
         pendingTransactions.addTransaction(tx);
-
+        signatureCache.storeSender(tx);
         return TransactionPoolAddResult.ok();
     }
 
@@ -281,8 +281,6 @@ public class TransactionPoolImpl implements TransactionPool {
         added.addAll(this.addSuccesors(tx));
 
         this.emitEvents(added);
-
-        signatureCache.storeSender(tx);
 
         return result;
     }
