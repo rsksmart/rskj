@@ -18,6 +18,7 @@
 
 package co.rsk.test;
 
+import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockChainStatus;
 import co.rsk.test.dsl.DslParser;
@@ -406,5 +407,18 @@ public class DslFilesTest {
         // Gas consumed SHOULD NOT be all there is available
         Assert.assertNotEquals(200000, gasUsed);
         Assert.assertFalse("Transaction should be reverted", txinfo.getReceipt().isSuccessful());
+    }
+
+
+    @Test
+    public void onReorganizationTxGetsReaddedToTxPool() throws FileNotFoundException, DslProcessorException {
+        DslParser parser = DslParser.fromResource("dsl/reorganization.txt");
+        World world = new World();
+        WorldDslProcessor processor = new WorldDslProcessor(world);
+        processor.processCommands(parser);
+
+        Assert.assertEquals(1, world.getTransactionPool().getPendingTransactions().size());
+        Assert.assertEquals(Coin.valueOf(1000), world.getTransactionPool().getPendingTransactions().get(0).getValue());
+
     }
 }

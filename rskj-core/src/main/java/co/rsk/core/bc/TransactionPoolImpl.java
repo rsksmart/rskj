@@ -139,7 +139,7 @@ public class TransactionPoolImpl implements TransactionPool {
     }
 
     private PendingState getPendingState(RepositorySnapshot currentRepository) {
-        removeObsoleteTransactions(this.getCurrentBestBlockNumber(), this.outdatedThreshold, this.outdatedTimeout);
+        removeObsoleteTransactions(this.outdatedThreshold, this.outdatedTimeout);
         return new PendingState(
                 currentRepository,
                 new TransactionSet(pendingTransactions),
@@ -283,13 +283,16 @@ public class TransactionPoolImpl implements TransactionPool {
     }
 
     @Override
-    public synchronized void processBest(Block block) {
-        logger.trace("Processing best block {} {}", block.getNumber(), block.getShortHash());
+    public synchronized void processBest(Block newBlock) {
+        logger.trace("Processing best block {} {}", newBlock.getNumber(), newBlock.getShortHash());
 
-        if (bestBlock != null) {
-            BlockchainBranchComparator branchComparator = new BlockchainBranchComparator(blockStore);
-            BlockFork fork = branchComparator.calculateFork(bestBlock, block);
+        BlockFork fork = getFork(this.bestBlock, newBlock);
 
+        //we need to update the bestBlock before calling retractBlock
+        //or else the transactions would be validated against outdated account state.
+        this.bestBlock = newBlock;
+
+        if(fork != null) {
             for (Block blk : fork.getOldBlocks()) {
                 retractBlock(blk);
             }
@@ -299,12 +302,20 @@ public class TransactionPoolImpl implements TransactionPool {
             }
         }
 
-        removeObsoleteTransactions(block.getNumber(), this.outdatedThreshold, this.outdatedTimeout);
-
-        bestBlock = block;
+        removeObsoleteTransactions(this.outdatedThreshold, this.outdatedTimeout);
 
         if (listener != null) {
             EventDispatchThread.invokeLater(() -> listener.onTransactionPoolChanged(TransactionPoolImpl.this));
+        }
+    }
+
+    private BlockFork getFork(Block oldBestBlock, Block newBestBlock) {
+        if (oldBestBlock != null) {
+            BlockchainBranchComparator branchComparator = new BlockchainBranchComparator(blockStore);
+            return branchComparator.calculateFork(oldBestBlock, newBestBlock);
+        }
+        else {
+            return null;
         }
     }
 
@@ -319,7 +330,13 @@ public class TransactionPoolImpl implements TransactionPool {
     public void retractBlock(Block block) {
         List<Transaction> txs = block.getTransactionsList();
 
+        logger.trace("Retracting block {} {} with {} txs", block.getNumber(), block.getShortHash(), txs.size());
+
         this.addTransactions(txs);
+    }
+
+    private void removeObsoleteTransactions(int depth, int timeout) {
+        this.removeObsoleteTransactions(this.getCurrentBestBlockNumber(), depth, timeout);
     }
 
     @VisibleForTesting
@@ -387,13 +404,13 @@ public class TransactionPoolImpl implements TransactionPool {
 
     @Override
     public synchronized List<Transaction> getPendingTransactions() {
-        removeObsoleteTransactions(this.getCurrentBestBlockNumber(), this.outdatedThreshold, this.outdatedTimeout);
+        removeObsoleteTransactions(this.outdatedThreshold, this.outdatedTimeout);
         return Collections.unmodifiableList(pendingTransactions.getTransactions());
     }
 
     @Override
     public synchronized List<Transaction> getQueuedTransactions() {
-        removeObsoleteTransactions(this.getCurrentBestBlockNumber(), this.outdatedThreshold, this.outdatedTimeout);
+        removeObsoleteTransactions(this.outdatedThreshold, this.outdatedTimeout);
         List<Transaction> ret = new ArrayList<>();
         ret.addAll(queuedTransactions.getTransactions());
         return ret;
