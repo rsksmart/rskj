@@ -3,6 +3,7 @@ package co.rsk.net.light;
 import co.rsk.config.InternalService;
 import co.rsk.net.eth.LightClientHandler;
 import co.rsk.net.light.message.LightClientMessage;
+import com.google.common.annotations.VisibleForTesting;
 import io.netty.channel.ChannelHandlerContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,7 +20,7 @@ public class LightMessageHandler implements InternalService, Runnable {
 
     private final ArrayBlockingQueue<MessageTask> queue;
 
-    private boolean stopped = true;
+    private volatile boolean stopped;
 
     public LightMessageHandler(LightProcessor lightProcessor, LightSyncProcessor lightSyncProcessor) {
         this.lightProcessor = lightProcessor;
@@ -33,14 +34,14 @@ public class LightMessageHandler implements InternalService, Runnable {
         message.accept(visitor);
     }
 
-    public void postMessage(LightPeer sender, LightClientMessage message, ChannelHandlerContext ctx,
+    public void postMessage(LightPeer lightPeer, LightClientMessage message, ChannelHandlerContext ctx,
                             LightClientHandler lightClientHandler) {
-        logger.trace("Start post message (queue size {}) (message type {})", this.queue.size(), message);
+        logger.trace("Start post message (queue size {}) (message type {})", queue.size(), message);
 
-        if (!this.queue.offer(new LightMessageHandler.MessageTask(sender, message, ctx, lightClientHandler))) {
+        if (!queue.offer(new LightMessageHandler.MessageTask(lightPeer, message, ctx, lightClientHandler))) {
             logger.warn("Unexpected path. Is message queue bounded now?");
         }
-        logger.trace("End post message (queue size {})", this.queue.size());
+        logger.trace("End post message (queue size {})", queue.size());
     }
 
     public long getMessageQueueSize() {
@@ -60,29 +61,34 @@ public class LightMessageHandler implements InternalService, Runnable {
     @Override
     public void run() {
         while (!stopped) {
-            LightMessageHandler.MessageTask task = null;
-            try {
-                logger.trace("Get task");
+            handleMessage();
+        }
+    }
 
-                task = queue.poll(1, TimeUnit.SECONDS);
+    @VisibleForTesting
+    public void handleMessage() {
+        MessageTask task = null;
+        try {
+            logger.trace("Get task");
 
-                loggerMessageProcess.debug("Queued Messages: {}", queue.size());
+            task = queue.poll(1, TimeUnit.SECONDS);
 
-                if (task != null) {
-                    logger.trace("Start task");
-                    this.processMessage(task.getSender(), task.getMessage(),
-                            task.getCtx(), task.getLightClientHandler());
-                    logger.trace("End task");
-                } else {
-                    logger.trace("No task");
-                }
+            loggerMessageProcess.debug("Queued Messages: {}", queue.size());
 
-                // THIS SHOULD BE IMPLEMENTED? RELATED TO SYNC
-                //updateTimedEvents();
+            if (task != null) {
+                logger.trace("Start task");
+                this.processMessage(task.getSender(), task.getMessage(),
+                        task.getCtx(), task.getLightClientHandler());
+                logger.trace("End task");
+            } else {
+                logger.trace("No task");
             }
-            catch (Exception ex) {
-                logger.error("Unexpected error processing: {}", task, ex);
-            }
+
+            // THIS SHOULD BE IMPLEMENTED? RELATED TO SYNC
+            //updateTimedEvents();
+        }
+        catch (Exception ex) {
+            logger.error("Unexpected error processing: {}", task, ex);
         }
     }
 
