@@ -16,7 +16,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package co.rsk.net;
+package co.rsk.net.light;
 
 import co.rsk.core.BlockDifficulty;
 import co.rsk.core.bc.BlockChainStatus;
@@ -30,6 +30,7 @@ import co.rsk.validators.ProofOfWorkRule;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.embedded.EmbeddedChannel;
 import org.ethereum.config.SystemProperties;
+import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.Genesis;
@@ -61,11 +62,15 @@ public class LightSyncProcessorTest {
     private Keccak256 blockHash;
     private ProofOfWorkRule proofOfWorkRule;
     private LightPeersInformation lightPeersInformation;
+    private Keccak256 bestBlockHash;
 
     @Before
     public void setUp() {
         //Light Sync Processor
         Genesis genesis = mock(Genesis.class);
+        Keccak256 genesisHash = new Keccak256(HashUtil.randomHash());
+        when(genesis.getHash()).thenReturn(genesisHash);
+
         Blockchain blockchain = mock(Blockchain.class);
         proofOfWorkRule = mock(ProofOfWorkRule.class);
         lightPeersInformation = new LightPeersInformation();
@@ -77,22 +82,25 @@ public class LightSyncProcessorTest {
         lightPeer = spy(new LightPeer(channel, messageQueue));
 
         //Light peer status
-        long bestNumber = 0;
+        long bestNumber = 1;
         int networkId = 0;
         byte protocolVersion = (byte) 0;
         BigInteger peerStatusTotalDifficulty = BigInteger.TEN;
         BlockDifficulty blockDifficulty = new BlockDifficulty(peerStatusTotalDifficulty);
         blockHash = new Keccak256(HashUtil.randomHash());
-        Keccak256 genesisHash = new Keccak256(HashUtil.randomHash());
         lightStatus = new LightStatus(protocolVersion, networkId, blockDifficulty, blockHash.getBytes(), bestNumber, genesisHash.getBytes());
 
         //Current status
-        when(genesis.getHash()).thenReturn(genesisHash);
         BlockChainStatus blockChainStatus = mock(BlockChainStatus.class);
         when(blockchain.getStatus()).thenReturn(blockChainStatus);
         BlockDifficulty totalDifficulty = BlockDifficulty.ONE;
         when(blockChainStatus.getTotalDifficulty()).thenReturn(totalDifficulty);
         when(blockChainStatus.hasLowerDifficultyThan(lightStatus)).thenReturn(totalDifficulty.compareTo(blockDifficulty) < 0);
+        Block bestBlock = mock(Block.class);
+        bestBlockHash = new Keccak256(randomHash());
+        when(bestBlock.getHash()).thenReturn(bestBlockHash);
+        when(bestBlock.getNumber()).thenReturn(1L);
+        when(blockchain.getBestBlock()).thenReturn(bestBlock);
 
         //lastRequestId in a new LightSyncProcessor starts in zero.
         requestId = 0;
@@ -110,7 +118,10 @@ public class LightSyncProcessorTest {
         ChannelHandlerContext ctx = ch.pipeline().firstContext();
 
         //Message expected
-        GetBlockHeadersMessage expectedMessage = new GetBlockHeadersMessage(++requestId, blockHash.getBytes(), 1, 0, false);
+        final int max = 1;
+        final int skip = 0;
+        final boolean reverse = true;
+        GetBlockHeadersMessage expectedMessage = new GetBlockHeadersMessage(++requestId, bestBlockHash.getBytes(), max, skip, reverse);
 
         ArgumentCaptor<GetBlockHeadersMessage> argument = forClass(GetBlockHeadersMessage.class);
         lightSyncProcessor.processStatusMessage(statusMessage, lightPeer, ctx, lightClientHandler);
@@ -142,7 +153,6 @@ public class LightSyncProcessorTest {
         LightClientHandler lightClientHandler = mock(LightClientHandler.class);
 
         //Message sent
-        long requestId = 0; //lastRequestId in a new LightSyncProcessor starts in zero.
         StatusMessage statusMessage = new StatusMessage(requestId, lightStatus, false);
 
         LightPeer lightPeer2 = mock(LightPeer.class);
@@ -160,7 +170,6 @@ public class LightSyncProcessorTest {
         LightClientHandler lightClientHandler = mock(LightClientHandler.class);
 
         //Message sent
-        long requestId = 0; //lastRequestId in a new LightSyncProcessor starts in zero.
         StatusMessage statusMessageWithTxRelaySet = new StatusMessage(requestId, lightStatus, true);
 
         lightSyncProcessor.processStatusMessage(statusMessageWithTxRelaySet, lightPeer, ctx, lightClientHandler);
