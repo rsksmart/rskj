@@ -28,8 +28,8 @@ import java.util.Optional;
 
 public class LightPeersInformation {
 
-    private Map<LightPeer, LightStatus> peerStatuses = new HashMap<>();
-    private Map<LightPeer, Boolean> peerTxRelay = new HashMap<>();
+    private final Map<LightPeer, LightStatus> peerStatuses = new HashMap<>();
+    private final Map<LightPeer, Boolean> peerTxRelay = new HashMap<>();
 
     public int getConnectedPeersSize() {
         return peerStatuses.size();

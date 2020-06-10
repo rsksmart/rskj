@@ -47,16 +47,15 @@ public class LightSyncProcessor {
     private static final int MAX_PENDING_MESSAGES = 1;
     private static final int MAX_PEER_CONNECTIONS = 1;
     private final LightPeersInformation lightPeersInformation;
-    private SystemProperties config;
+    private final SystemProperties config;
     private final Genesis genesis;
     private final BlockStore blockStore;
-    private Blockchain blockchain;
+    private final Blockchain blockchain;
     private final byte version;
     private static final Logger loggerNet = LoggerFactory.getLogger("lightnet");
     private long lastRequestedId;
     private final Map<Long, LightClientMessageCodes> pendingMessages;
-    private ProofOfWorkRule blockHeaderValidationRule;
-
+    private final ProofOfWorkRule blockHeaderValidationRule;
 
     public LightSyncProcessor(SystemProperties config, Genesis genesis, BlockStore blockStore, Blockchain blockchain, ProofOfWorkRule blockHeaderValidationRule, LightPeersInformation lightPeersInformation) {
         this.config = config;
