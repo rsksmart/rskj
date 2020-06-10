@@ -19,12 +19,13 @@
 package co.rsk.net.light;
 
 import co.rsk.core.BlockDifficulty;
-import co.rsk.core.bc.BlockChainStatus;
 import co.rsk.crypto.Keccak256;
 import co.rsk.net.eth.LightClientHandler;
 import co.rsk.net.light.message.GetBlockHeadersMessage;
 import co.rsk.net.light.message.StatusMessage;
+import co.rsk.net.light.state.*;
 import co.rsk.validators.ProofOfWorkRule;
+import com.google.common.annotations.VisibleForTesting;
 import io.netty.channel.ChannelHandlerContext;
 import org.ethereum.config.SystemProperties;
 import org.ethereum.core.Block;
@@ -47,6 +48,7 @@ public class LightSyncProcessor {
     private static final int MAX_PENDING_MESSAGES = 1;
     private static final int MAX_PEER_CONNECTIONS = 1;
     private final LightPeersInformation lightPeersInformation;
+    private LightSyncState syncState;
     private final SystemProperties config;
     private final Genesis genesis;
     private final BlockStore blockStore;
@@ -75,6 +77,7 @@ public class LightSyncProcessor {
             }
         };
         this.lightPeersInformation = lightPeersInformation;
+        this.syncState = new IdleSyncState();
     }
 
     public void processStatusMessage(StatusMessage msg, LightPeer lightPeer, ChannelHandlerContext ctx, LightClientHandler lightClientHandler) {
@@ -95,22 +98,15 @@ public class LightSyncProcessor {
             return;
         }
 
-        if (!hasLowerDifficulty(status)) {
-            return;
-        }
-
         lightPeersInformation.registerLightPeer(lightPeer, status, msg.isTxRelay());
 
-        final Optional<LightPeer> bestPeer = lightPeersInformation.getBestPeer();
+        final Optional<LightPeer> bestPeer = lightPeersInformation.getBestPeer(blockchain);
 
         if (!bestPeer.isPresent()) {
             return;
         }
 
-        byte[] bestBlockHash = lightPeersInformation.getLightPeerStatus(bestPeer.get()).getBestHash();
-        GetBlockHeadersMessage blockHeaderMessage = new GetBlockHeadersMessage(++lastRequestedId, bestBlockHash, 1, 0, false);
-        pendingMessages.put(lastRequestedId, BLOCK_HEADER);
-        lightPeer.sendMessage(blockHeaderMessage);
+        startSync(lightPeer, blockchain.getBestBlock());
     }
 
     public void sendStatusMessage(LightPeer lightPeer) {
@@ -122,6 +118,12 @@ public class LightSyncProcessor {
 
         loggerNet.trace("Sending status best block {} to {}",
                 block.getNumber(), lightPeer.getPeerIdShort());
+    }
+
+    public void sendBlockHeadersMessage(LightPeer lightPeer, byte[] bestBlock, int max, int skip, boolean reverse) {
+        GetBlockHeadersMessage blockHeaderMessage = new GetBlockHeadersMessage(++lastRequestedId, bestBlock, max, skip, reverse);
+        pendingMessages.put(lastRequestedId, BLOCK_HEADER);
+        lightPeer.sendMessage(blockHeaderMessage);
     }
 
     public void processBlockHeadersMessage(long id, List<BlockHeader> blockHeaders, LightPeer lightPeer) {
@@ -142,19 +144,33 @@ public class LightSyncProcessor {
 
         pendingMessages.remove(id, BLOCK_HEADER);
         lightPeer.receivedBlockHeaders(blockHeaders);
+        syncState.newBlockHeaders(lightPeer, blockHeaders);
+    }
+
+    public void startAncestorSearchFrom(LightPeer lightPeer, byte[] bestBlockHash, long bestBlockNumber) {
+        setState(new CommonAncestorSearchSyncState(this, lightPeer, bestBlockHash, bestBlockNumber, blockchain));
+    }
+
+    @VisibleForTesting
+    public void startSync(LightPeer lightPeer, Block bestBlock) {
+        setState(new DecidingLightSyncState(this, lightPeer, bestBlock));
+    }
+
+    public void foundCommonAncestor() {
+        syncState = new RoundSyncState();
+    }
+
+    public LightSyncState getSyncState() {
+        return syncState;
+    }
+
+    private void setState(LightSyncState syncState) {
+        this.syncState = syncState;
+        syncState.sync();
     }
 
     private boolean isPending(long id, LightClientMessageCodes code) {
         return pendingMessages.containsKey(id) && pendingMessages.get(id).asByte() == code.asByte();
-    }
-
-    private boolean hasLowerDifficulty(LightStatus status) {
-        boolean hasTotalDifficulty = status.getTotalDifficulty() != null;
-        BlockChainStatus nodeStatus = blockchain.getStatus();
-
-        // this works only for testing purposes, real status without difficulty don't reach this far
-        return  (hasTotalDifficulty && nodeStatus.hasLowerDifficultyThan(status)) ||
-                (!hasTotalDifficulty && nodeStatus.getBestBlockNumber() < status.getBestNumber());
     }
 
     private LightStatus getCurrentStatus(Block block) {

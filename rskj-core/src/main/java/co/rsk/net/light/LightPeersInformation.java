@@ -19,7 +19,9 @@
 package co.rsk.net.light;
 
 import co.rsk.core.BlockDifficulty;
+import co.rsk.core.bc.BlockChainStatus;
 import com.google.common.annotations.VisibleForTesting;
+import org.ethereum.core.Blockchain;
 
 import java.util.Comparator;
 import java.util.HashMap;
@@ -43,11 +45,7 @@ public class LightPeersInformation {
 
         peerTxRelay.put(lightPeer, txRelay);
     }
-
-    public LightStatus getLightPeerStatus(LightPeer peer) {
-        return peerStatuses.get(peer);
-    }
-
+    
     @VisibleForTesting
     public boolean hasTxRelay(LightPeer peer) {
         if (!peerTxRelay.containsKey(peer)) {
@@ -57,9 +55,17 @@ public class LightPeersInformation {
         return peerTxRelay.get(peer);
     }
 
-    public Optional<LightPeer> getBestPeer() {
+    public Optional<LightPeer> getBestPeer(Blockchain blockchain) {
         Comparator<Map.Entry<LightPeer, LightStatus>> comparator = this::comparePeerTotalDifficulty;
-        return peerStatuses.entrySet().stream().max(comparator).map(Map.Entry::getKey);
+        return peerStatuses.entrySet().stream().filter(e -> hasLowerDifficulty(e.getValue(), blockchain)).max(comparator).map(Map.Entry::getKey);
+    }
+
+    private boolean hasLowerDifficulty(LightStatus status, Blockchain blockchain) {
+        boolean hasTotalDifficulty = status.getTotalDifficulty() != null;
+        BlockChainStatus nodeStatus = blockchain.getStatus();
+
+        return  (hasTotalDifficulty && nodeStatus.hasLowerDifficultyThan(status)) ||
+                (!hasTotalDifficulty && nodeStatus.getBestBlockNumber() < status.getBestNumber());
     }
 
     private int comparePeerTotalDifficulty(
