@@ -25,10 +25,7 @@ import co.rsk.core.bc.BlockChainStatus;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.db.RepositorySnapshot;
-import co.rsk.net.light.LightPeer;
-import co.rsk.net.light.LightProcessor;
-import co.rsk.net.light.LightStatus;
-import co.rsk.net.light.LightSyncProcessor;
+import co.rsk.net.light.*;
 import co.rsk.net.light.message.*;
 import co.rsk.vm.BytecodeCompiler;
 import co.rsk.validators.ProofOfWorkRule;
@@ -86,7 +83,8 @@ public class LightClientHandlerTest {
         genesisHash = new Keccak256(HashUtil.randomHash());
         lightProcessor = new LightProcessor(blockchain, blockStore, repositoryLocator);
         proofOfWorkRule = mock(ProofOfWorkRule.class);
-        lightSyncProcessor = new LightSyncProcessor(config, genesis, blockStore, blockchain, proofOfWorkRule);
+        LightPeersInformation lightPeersInformation = mock(LightPeersInformation.class);
+        lightSyncProcessor = new LightSyncProcessor(config, genesis, blockStore, blockchain, proofOfWorkRule, lightPeersInformation);
         lightPeer = spy(new LightPeer(mock(Channel.class), messageQueue));
         LightClientHandler.Factory factory = (lightPeer) -> new LightClientHandler(lightPeer, lightProcessor, lightSyncProcessor);
         lightClientHandler = factory.newInstance(lightPeer);
@@ -367,8 +365,7 @@ public class LightClientHandlerTest {
 
         lightClientHandler.channelRead0(ctx, blockHeadersMessage);
 
-        verify(lightPeer, times(0)).receivedBlock(any());
-
+        verify(lightPeer, times(0)).receivedBlockHeaders(any());
     }
 
     @Test
@@ -390,8 +387,7 @@ public class LightClientHandlerTest {
 
         lightClientHandler.channelRead0(ctx, blockHeadersMessage);
 
-        verify(lightPeer, times(0)).receivedBlock(any());
-
+        verify(lightPeer, times(0)).receivedBlockHeaders(any());
     }
 
     @Test
@@ -404,8 +400,7 @@ public class LightClientHandlerTest {
 
         lightClientHandler.channelRead0(ctx, blockHeadersMessage);
 
-        verify(lightPeer, times(0)).receivedBlock(any());
-
+        verify(lightPeer, times(0)).receivedBlockHeaders(any());
     }
 
     @Test

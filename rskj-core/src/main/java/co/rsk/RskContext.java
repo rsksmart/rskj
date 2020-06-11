@@ -44,6 +44,7 @@ import co.rsk.net.discovery.UDPServer;
 import co.rsk.net.discovery.table.KademliaOptions;
 import co.rsk.net.discovery.table.NodeDistanceTable;
 import co.rsk.net.eth.*;
+import co.rsk.net.light.LightPeersInformation;
 import co.rsk.net.light.LightProcessor;
 import co.rsk.net.light.LightSyncProcessor;
 import co.rsk.net.rlpx.LCMessageFactory;
@@ -241,6 +242,7 @@ public class RskContext implements NodeBootstrapper {
     private BootstrapImporter bootstrapImporter;
     private ReceivedTxSignatureCache receivedTxSignatureCache;
     private BlockTxSignatureCache blockTxSignatureCache;
+    private LightPeersInformation lightPeersInformation;
 
     public RskContext(String[] args) {
         this(new CliArgs.Parser<>(
@@ -1603,10 +1605,18 @@ public class RskContext implements NodeBootstrapper {
 
     private LightSyncProcessor getLightSyncProcessor() {
         if (lightSyncProcessor == null) {
-            lightSyncProcessor = new LightSyncProcessor(getRskSystemProperties(), getGenesis(), getBlockStore(), getBlockchain(), getProofOfWorkRule());
+            lightSyncProcessor = new LightSyncProcessor(getRskSystemProperties(), getGenesis(), getBlockStore(), getBlockchain(), getProofOfWorkRule(), getLightPeersInformation());
         }
 
         return lightSyncProcessor;
+    }
+
+    private LightPeersInformation getLightPeersInformation() {
+        if (lightPeersInformation == null) {
+            lightPeersInformation = new LightPeersInformation();
+        }
+
+        return lightPeersInformation;
     }
 
     private StatusResolver getStatusResolver() {
