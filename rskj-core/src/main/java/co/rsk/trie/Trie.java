@@ -36,6 +36,8 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
+import java.time.Instant; //#mish for storage rent
+
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
 /**
@@ -55,7 +57,7 @@ import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
  */
 public class Trie {
     private static final int ARITY = 2;
-    private static final int MAX_EMBEDDED_NODE_SIZE_IN_BYTES = 44;
+    private static final int MAX_EMBEDDED_NODE_SIZE_IN_BYTES = 52; //#mish: was 44. Increase by 8 bytes for lastRentPaidTime
 
     private static final Profiler profiler = ProfilerFactory.getInstance();
     private static final String INVALID_ARITY = "Invalid arity";
@@ -88,9 +90,8 @@ public class Trie {
     // execute much faster without the need to actually retrieve the data.
     // if valueLength>32 and value==null this means the value has not been retrieved yet.
     // if valueLength==0, then there is no value AND no node.
-    // This trie structure does not distinguish between empty arrays
-    // and nulls. Storing an empty byte array has the same effect as removing the node.
-    //
+    // This trie structure does not distinguish between empty arrays and nulls.
+    // Thus, storing an empty byte array has the same effect as removing the node.
     private final Uint24 valueLength;
 
     // For lazy retrieval and also for cache.
@@ -98,6 +99,8 @@ public class Trie {
 
     // the size of this node along with its children (in bytes)
     // note that we use a long because an int would allow only up to 4GB of state to be stored.
+    // #mish: int is 32 bits. If this limit is applied to trie root node, 
+    // then it limits state size (all children from root) to 2^32 ~ 4GB. 
     private VarInt childrenSize;
 
     // associated store, to store or retrieve nodes in the trie
@@ -105,6 +108,9 @@ public class Trie {
 
     // shared Path
     private final TrieKeySlice sharedPath;
+
+    // #mish.  (RSKIP113) 
+    private long lastRentPaidTime; // some parts of the cocde use strings for timestmaps
 
 
     // default constructor, no secure
@@ -124,8 +130,14 @@ public class Trie {
         this(store, sharedPath, value, left, right, valueLength, valueHash, null);
     }
 
-    // full constructor
-    private Trie(TrieStore store, TrieKeySlice sharedPath, byte[] value, NodeReference left, NodeReference right, Uint24 valueLength, Keccak256 valueHash, VarInt childrenSize) {
+    //  (almost) full constructor, without storage rent
+    public Trie(TrieStore store, TrieKeySlice sharedPath, byte[] value, NodeReference left, NodeReference right, Uint24 valueLength, Keccak256 valueHash, VarInt childrenSize) {
+        this(store, sharedPath, value, left, right, valueLength, valueHash, childrenSize, 0);
+        checkValueLength();
+    }
+
+    // #mish full constructor with storage rent
+    private Trie(TrieStore store, TrieKeySlice sharedPath, byte[] value, NodeReference left, NodeReference right, Uint24 valueLength, Keccak256 valueHash, VarInt childrenSize, long lastRentPaidTime) {
         this.value = value;
         this.left = left;
         this.right = right;
@@ -134,8 +146,11 @@ public class Trie {
         this.valueLength = valueLength;
         this.valueHash = valueHash;
         this.childrenSize = childrenSize;
+        this.lastRentPaidTime = lastRentPaidTime;
         checkValueLength();
     }
+
+    
 
     /**
      * Deserialize a Trie, either using the original format or RSKIP 107 format, based on version flags.
@@ -232,6 +247,8 @@ public class Trie {
         }
 
         // it doesn't need to clone value since it's retrieved from store or created from message
+        // #mish: orchid unaffected by rent at present.
+        //return new Trie(store, sharedPath, value, left, right, lvalue, valueHash, childrenSize, lastRentPaidTime)
         return new Trie(store, sharedPath, value, left, right, lvalue, valueHash);
     }
 
@@ -245,6 +262,9 @@ public class Trie {
         boolean leftNodeEmbedded = (flags & 0b00000010) == 0b00000010;
         boolean rightNodeEmbedded = (flags & 0b00000001) == 0b00000001;
 
+        //getLong (8 bytes for storage rent)
+        long lastRentPaidTime = message.getLong();
+
         TrieKeySlice sharedPath = SharedPathSerializer.deserialize(message, sharedPrefixPresent);
 
         NodeReference left = NodeReference.empty();
@@ -252,14 +272,15 @@ public class Trie {
         if (leftNodePresent) {
             if (leftNodeEmbedded) {
                 byte[] lengthBytes = new byte[Uint8.BYTES];
-                message.get(lengthBytes);
+                message.get(lengthBytes); //read get (of required length) into lengthBytes
                 Uint8 length = Uint8.decode(lengthBytes, 0);
 
                 byte[] serializedNode = new byte[length.intValue()];
-                message.get(serializedNode);
+                message.get(serializedNode); //read serialized data for embedded node into the buffer serializedNode
+                //make a recursive call. Also embedding is limited to one layer, so recursion is limited.
                 Trie node = fromMessageRskip107(ByteBuffer.wrap(serializedNode), store);
                 left = new NodeReference(store, node, null);
-            } else {
+            } else { //not embedded, grab the hash and assign to the new left pointer 
                 byte[] valueHash = new byte[Keccak256Helper.DEFAULT_SIZE_BYTES];
                 message.get(valueHash);
                 Keccak256 nodeHash = new Keccak256(valueHash);
@@ -287,7 +308,7 @@ public class Trie {
 
         VarInt childrenSize = new VarInt(0);
         if (leftNodePresent || rightNodePresent) {
-            childrenSize = readVarInt(message);
+            childrenSize = readVarInt(message);     //reads without changing buffer position
         }
 
         byte[] value;
@@ -295,8 +316,8 @@ public class Trie {
         Keccak256 valueHash;
 
         if (hasLongVal) {
-            value = null;
-            byte[] valueHashBytes = new byte[Keccak256Helper.DEFAULT_SIZE_BYTES];
+            value = null;   //bcos it's long! grab the value hash and length only
+            byte[] valueHashBytes = new byte[Keccak256Helper.DEFAULT_SIZE_BYTES]; // 256/8 = 32 (checked April 2020)
             message.get(valueHashBytes);
             valueHash = new Keccak256(valueHashBytes);
             byte[] lvalueBytes = new byte[Uint24.BYTES];
@@ -320,7 +341,7 @@ public class Trie {
             throw new IllegalArgumentException("The message had more data than expected");
         }
 
-        return new Trie(store, sharedPath, value, left, right, lvalue, valueHash, childrenSize);
+        return new Trie(store, sharedPath, value, left, right, lvalue, valueHash, childrenSize, lastRentPaidTime);// #mish added rent
     }
 
     /**
@@ -660,29 +681,29 @@ public class Trie {
 
         ByteBuffer buffer = ByteBuffer.allocate(
                 1 + // flags
+                8 + // 8 bytes (long) for lastRentPaidTime}
                         sharedPathSerializer.serializedLength() +
-                        this.left.serializedLength() +
+                        this.left.serializedLength() +  //this method is from NodeReference.java (should only be used for save)
                         this.right.serializedLength() +
                         (this.isTerminal() ? 0 : childrenSize.getSizeInBytes()) +
-                        (hasLongVal ? Keccak256Helper.DEFAULT_SIZE_BYTES + Uint24.BYTES : lvalue.intValue())
-        );
+                        (hasLongVal ? Keccak256Helper.DEFAULT_SIZE_BYTES + Uint24.BYTES : lvalue.intValue()));
 
-        // current serialization version: 01
+        // current serialization version: 01 //see RSKIP107
         byte flags = 0b01000000;
         if (hasLongVal) {
-            flags = (byte) (flags | 0b00100000);
+            flags = (byte) (flags | 0b00100000);   //bit 5 long value
         }
 
-        if (sharedPathSerializer.isPresent()) {
+        if (sharedPathSerializer.isPresent()) {     //bit 4 sharedprefix present
             flags = (byte) (flags | 0b00010000);
         }
 
         if (!this.left.isEmpty()) {
-            flags = (byte) (flags | 0b00001000);
+            flags = (byte) (flags | 0b00001000);    // bit 2,3 left/right child present
         }
 
         if (!this.right.isEmpty()) {
-            flags = (byte) (flags | 0b00000100);
+            flags = (byte) (flags | 0b00000100);    // bit 0,1 left/right embedded
         }
 
         if (this.left.isEmbeddable()) {
@@ -695,9 +716,11 @@ public class Trie {
 
         buffer.put(flags);
 
+        buffer.putLong(this.lastRentPaidTime); 
+
         sharedPathSerializer.serializeInto(buffer);
 
-        this.left.serializeInto(buffer);
+        this.left.serializeInto(buffer);    //method from NodeReference.java
 
         this.right.serializeInto(buffer);
 
@@ -705,13 +728,13 @@ public class Trie {
             buffer.put(childrenSize.encode());
         }
 
+        //if longvalue, then just put the valuehash and valuelength. Else grab the value itself.
         if (hasLongVal) {
             buffer.put(this.getValueHash().getBytes());
             buffer.put(lvalue.encode());
         } else if (lvalue.compareTo(Uint24.ZERO) > 0) {
             buffer.put(this.getValue());
         }
-
         encoded = buffer.array();
     }
 
@@ -787,7 +810,8 @@ public class Trie {
         }
 
         TrieKeySlice newSharedPath = trie.sharedPath.rebuildSharedPath(childImplicitByte, child.sharedPath);
-        return new Trie(child.store, newSharedPath, child.value, child.left, child.right, child.valueLength, child.valueHash);
+        //full constructor: new Trie(store, sharedPath, value, left, right, lvalue, valueHash, childrenSize, lastRentPaidTime)
+        return new Trie(child.store, newSharedPath, child.value, child.left, child.right, child.valueLength, child.valueHash, child.childrenSize, child.lastRentPaidTime);
     }
 
     private static Uint24 getDataLength(byte[] value) {
@@ -799,13 +823,14 @@ public class Trie {
     }
 
     private Trie internalPut(TrieKeySlice key, byte[] value, boolean isRecursiveDelete) {
+        // #mish find the common path between the given key and the current node's (top of the trie) sharedpath
         TrieKeySlice commonPath = key.commonPath(sharedPath);
+
         if (commonPath.length() < sharedPath.length()) {
             // when we are removing a key we know splitting is not necessary. the key wasn't found at this point.
             if (value == null) {
                 return this;
             }
-
             return this.split(commonPath).put(key, value, isRecursiveDelete);
         }
 
@@ -825,7 +850,7 @@ public class Trie {
             if (isEmptyTrie(getDataLength(value), this.left, this.right)) {
                 return null;
             }
-
+            //full constructor: new Trie(store, sharedPath, value, left, right, lvalue, valueHash, childrenSize, lastRentPaidTime)
             return new Trie(
                     this.store,
                     this.sharedPath,
@@ -833,7 +858,9 @@ public class Trie {
                     this.left,
                     this.right,
                     getDataLength(value),
-                    null
+                    null,
+                    null,
+                    this.lastRentPaidTime
             );
         }
 
@@ -871,14 +898,165 @@ public class Trie {
         if (isEmptyTrie(this.valueLength, newLeft, newRight)) {
             return null;
         }
-
-        return new Trie(this.store, this.sharedPath, this.value, newLeft, newRight, this.valueLength, this.valueHash);
+        //full constructor: new Trie(store, sharedPath, value, left, right, lvalue, valueHash, childrenSize, lastRentPaidTime)
+        return new Trie(this.store, this.sharedPath, this.value, newLeft, newRight, this.valueLength, this.valueHash, null, this.lastRentPaidTime);
     }
+
+    /* #mish: version of put to update rent paid time: 
+     * duplicated existing code and then track value (do the same for rent)
+     * could have used the same name 'put' with overloading. Introducing new name for emphasis.
+     * also, value must be passed explicitly, even if unchanged*/
+    public Trie putWithRent(byte[] key, byte[] value, long newLastRentPaidTime) {
+        TrieKeySlice keySlice = TrieKeySlice.fromKey(key);
+        Trie trie = putWithRent(keySlice, value, false, newLastRentPaidTime);
+
+        return trie == null ? new Trie(this.store) : trie;
+    }
+
+    private Trie putWithRent(TrieKeySlice key, byte[] value, boolean isRecursiveDelete, long newLastRentPaidTime) {
+        // First of all, setting the value as an empty byte array is equivalent
+        // to removing the key/value. This is because other parts of the trie make
+        // this equivalent. Use always null to mark a node for deletion.
+        if (value != null && value.length == 0) {
+            value = null;
+        }
+
+        Trie trie = this.internalputWithRent(key, value, isRecursiveDelete, newLastRentPaidTime);
+
+        // the following code coalesces nodes if needed for delete operation
+
+        // it's null or it is not a delete operation
+        if (trie == null || value != null) {
+            return trie;
+        }
+
+        if (trie.isEmptyTrie()) {
+            return null;
+        }
+
+        // only coalesce if node has only one child and no value
+        // suppose there is a value
+        if (trie.valueLength.compareTo(Uint24.ZERO) > 0) {
+            return trie;
+        }
+        // no value.. still need to ensure only one child.
+        Optional<Trie> leftOpt = trie.left.getNode();
+        Optional<Trie> rightOpt = trie.right.getNode();
+        // if both present, return
+        if (leftOpt.isPresent() && rightOpt.isPresent()) {
+            return trie;
+        }
+        // if both absent, return.
+        if (!leftOpt.isPresent() && !rightOpt.isPresent()) {
+            return trie;
+        }
+        // now we have a node with a value and exactly one child, proceed with combining/coalescing.
+        Trie child;
+        byte childImplicitByte;
+        
+         // leftOpt/rightOpt are optional lists of tries, so get() below is just usual list method
+        if (leftOpt.isPresent()) {
+            child = leftOpt.get();
+            childImplicitByte = (byte) 0;
+        } else { // has right node
+            child = rightOpt.get();
+            childImplicitByte = (byte) 1;
+        }
+        // reconstruct the shared path
+        TrieKeySlice newSharedPath = trie.sharedPath.rebuildSharedPath(childImplicitByte, child.sharedPath);
+        //full constructor: new Trie(store, sharedPath, value, left, right, lvalue, valueHash, childrenSize, lastRentPaidTime)
+        return new Trie(child.store, newSharedPath, child.value, child.left, child.right, child.valueLength, child.valueHash, child.childrenSize, child.lastRentPaidTime);
+    }
+
+
+    private Trie internalputWithRent(TrieKeySlice key, byte[] value, boolean isRecursiveDelete, long newLastRentPaidTime) {
+        // #mish find the common path between the given key and the current node's (top of the trie) sharedpath
+        TrieKeySlice commonPath = key.commonPath(sharedPath);
+
+        if (commonPath.length() < sharedPath.length()) {
+            // when we are removing a key we know splitting is not necessary. the key wasn't found at this point.
+            if (value == null) {
+                return this;
+            }
+            return this.split(commonPath).putWithRent(key, value, isRecursiveDelete, newLastRentPaidTime);
+        }
+
+        if (sharedPath.length() >= key.length()) {
+            // To compare values we need to retrieve the previous value
+            // if not already done so. We could also compare by hash, to avoid retrieval
+            // We do a small optimization here: if sizes are not equal, then values
+            // obviously are not.
+            if (this.valueLength.equals(getDataLength(value)) && Arrays.equals(this.getValue(), value)) {
+                //values are equal..  if rent paid time is also unchanged, then return
+                if (this.lastRentPaidTime == newLastRentPaidTime){
+                    return this;
+                }
+            }
+
+            if (isRecursiveDelete) {
+                return new Trie(this.store, this.sharedPath, null);
+            }
+
+            if (isEmptyTrie(getDataLength(value), this.left, this.right)) {
+                return null;
+            }
+            //full constructor: new Trie(store, sharedPath, value, left, right, lvalue, valueHash, childrenSize, lastRentPaidTime)
+            return new Trie(
+                    this.store,
+                    this.sharedPath,
+                    cloneArray(value),
+                    this.left,
+                    this.right,
+                    getDataLength(value),
+                    null,
+                    null,
+                    newLastRentPaidTime
+            );
+        }
+
+        if (isEmptyTrie()) {
+            return new Trie(this.store, key, cloneArray(value), NodeReference.empty(), NodeReference.empty(), getDataLength(value), null, null, newLastRentPaidTime);
+        }
+
+        // this bit will be implicit and not present in a shared path
+        byte pos = key.get(sharedPath.length());
+
+        Trie node = retrieveNode(pos);
+        if (node == null) {
+            node = new Trie(this.store);
+        }
+
+        TrieKeySlice subKey = key.slice(sharedPath.length() + 1, key.length());
+        Trie newNode = node.putWithRent(subKey, value, isRecursiveDelete, newLastRentPaidTime);
+
+        // reference equality
+        if (newNode == node) {
+            return this;
+        }
+
+        NodeReference newNodeReference = new NodeReference(this.store, newNode, null);
+        NodeReference newLeft;
+        NodeReference newRight;
+        if (pos == 0) {
+            newLeft = newNodeReference;
+            newRight = this.right;
+        } else {
+            newLeft = this.left;
+            newRight = newNodeReference;
+        }
+
+        if (isEmptyTrie(this.valueLength, newLeft, newRight)) {
+            return null;
+        }
+        //full constructor: new Trie(store, sharedPath, value, left, right, lvalue, valueHash, childrenSize, lastRentPaidTime)
+        return new Trie(this.store, this.sharedPath, this.value, newLeft, newRight, this.valueLength, this.valueHash, null, this.lastRentPaidTime);
+    } 
+
 
     private Trie split(TrieKeySlice commonPath) {
         int commonPathLength = commonPath.length();
         TrieKeySlice newChildSharedPath = sharedPath.slice(commonPathLength + 1, sharedPath.length());
-        Trie newChildTrie = new Trie(this.store, newChildSharedPath, this.value, this.left, this.right, this.valueLength, this.valueHash);
+        Trie newChildTrie = new Trie(this.store, newChildSharedPath, this.value, this.left, this.right, this.valueLength, this.valueHash, null, this.lastRentPaidTime);
         NodeReference newChildReference = new NodeReference(this.store, newChildTrie, null);
 
         // this bit will be implicit and not present in a shared path
@@ -941,8 +1119,8 @@ public class Trie {
     }
 
     public byte[] getValue() {
-        if (value == null && valueLength.compareTo(Uint24.ZERO) > 0) {
-            value = retrieveLongValue();
+        if (value == null && valueLength.compareTo(Uint24.ZERO) > 0) { // i.e. a long value
+            value = retrieveLongValue(); // see triestoreImpl.save() long values saved with own hash as key.. not part of node serialization
             checkValueLengthAfterRetrieve();
         }
 
@@ -968,7 +1146,7 @@ public class Trie {
         return childrenSize;
     }
 
-    private byte[] retrieveLongValue() {
+    private byte[] retrieveLongValue() { //long values are stored in trieStore with their own hash as the key (not part of node serialization)
         return store.retrieveValue(getValueHash().getBytes());
     }
 
@@ -1054,6 +1232,7 @@ public class Trie {
         return getHash().equals(otherTrie.getHash());
     }
 
+    //override the internal Java toString() method
     @Override
     public String toString() {
         String s = printParam("TRIE: ", "value", getValue());
@@ -1290,6 +1469,12 @@ public class Trie {
         }
     }
 
+
+    /*
+     * convert sharedPath into an object (no relation to storage rent) 
+     * fields: path itself and pathlength
+     * methods: deserialize and serialise sharedpath from/toMessage() and some helpers 
+    */
     private static class SharedPathSerializer {
         private final TrieKeySlice sharedPath;
         private final int lshared;
@@ -1422,4 +1607,19 @@ public class Trie {
 
         return subnodes;
     }
+
+    // #mish Additional method for storage rent. 
+    
+    // Time until which storage rent has been paid.
+    @Nullable
+    public long getLastRentPaidTime() {
+        return lastRentPaidTime;
+    }
+
+    // #mish  seconds since (+ve) or until (-ve) rentLastPaidTime compared to now
+    @Nullable
+    public long getRentPaidTimeDelta(){
+        return Instant.now().getEpochSecond() - lastRentPaidTime; //https://docs.oracle.com/javase/8/docs/api/java/time/Instant.html
+    }
+
 }

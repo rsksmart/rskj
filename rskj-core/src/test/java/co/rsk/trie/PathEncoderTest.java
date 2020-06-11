@@ -36,12 +36,15 @@ public class PathEncoderTest {
         }
     }
 
+    // First bit is MOST SIGNIFICANT
+    // convert binary path to 8-bit slices.. from left, padding as required
+    // len 3: 101 -> 1010_0000 -> then hex of that: 0x60
+    // len 9: 0110_1101_1 -> 0110_1101, 1000_0000  -> 0x6d 0x80    
     @Test
     public void encodeBinaryPath() {
         byte[] path = new byte[] { 0x00, 0x01, 0x01 };
 
         byte[] encoded = PathEncoder.encode(path);
-
         Assert.assertNotNull(encoded);
         Assert.assertArrayEquals(new byte[] { 0x60 }, encoded);
     }

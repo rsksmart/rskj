@@ -27,12 +27,15 @@ import co.rsk.metrics.profilers.Profiler;
 import co.rsk.metrics.profilers.ProfilerFactory;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.rpc.modules.trace.ProgramSubtrace;
+import co.rsk.core.types.ints.Uint24;
+
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.vm.*;
+import org.ethereum.vm.program.RentData;
 import org.ethereum.vm.program.Program;
 import org.ethereum.vm.program.ProgramResult;
 import org.ethereum.vm.program.invoke.ProgramInvoke;
@@ -47,6 +50,7 @@ import org.slf4j.LoggerFactory;
 import java.math.BigInteger;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.time.Instant;
 
 import static co.rsk.util.ListArrayUtil.getLength;
 import static co.rsk.util.ListArrayUtil.isEmpty;
@@ -56,6 +60,24 @@ import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 /**
  * @author Roman Mandeleil
  * @since 19.12.2014
+ */
+/** #mish notes:
+ // Overview: 
+ * 4 stages: init() -> exec() -> go() -> finalize()
+ * init(): does basic checks, addr are valid, gaslimits, sufficient balance, valid nonce
+ * exec(): * Transfer basic cost + gasLImits from sender. Then switch to call() or create()
+           * call(): either PCC or not. 
+                - If PCC execute and return the result. 
+                - If not PCC, getCode(), set up vm and prog for next stage `go()`
+           * create() : create account + storage root, but code is not saved to trie yet. 
+                        Setup vm and prog for next stage createContract() in go().
+ * go(): * if PCC.. nothing to do, commit the cache
+         * else (call to non PCC or create), then use vm and prog setup earlier to execute prog i.e. vm.Play(prog)
+         * if create, then call createContract()
+                - this computes contract size, gascost, saves the code to repository
+ * finalize(): - commit changes to repository, make refunds, execution summary and logs.. wrap things up. 
+//  Gas spending and endowment changes along the way at every step..  some permanent (track),
+//  some temporary via cacheTrack or spendgas() thru program.result. Can be committed or rolledback.
  */
 public class TransactionExecutor {
 
@@ -94,6 +116,9 @@ public class TransactionExecutor {
     private PrecompiledContracts.PrecompiledContract precompiledContract;
 
     private long mEndGas = 0;
+    private long mEndRentGas = 0;
+    private long refTimeStamp; // reference to estimate storage rent
+    private long estRentGas = 0; //#mish unlike execution gas, rent gas is only collected at EOT. Use this for tracking estimateduse
     private long basicTxCost = 0;
     private List<LogInfo> logs = null;
     private final Set<DataWord> deletedAccounts;
@@ -139,9 +164,11 @@ public class TransactionExecutor {
         }
 
         this.execute();
+        System.out.println("done execute() in Tx Exec ");
         this.go();
+        System.out.println("done with go() in Tx Exec ");
         this.finalization();
-
+        System.out.println("done with finalization() in Tx Exec ");
         return true;
     }
 
@@ -151,16 +178,20 @@ public class TransactionExecutor {
      * set readyToExecute = true
      */
     private boolean init() {
+        //e.g. 21K TX or 53K contract creation (32K for create + 21k) + 'data' cost (68 per non=0 byte) 
         basicTxCost = tx.transactionCost(constants, activations);
 
         if (localCall) {
             return true;
         }
 
+        //'GasCost defined in ethereum/vm/GasCost'
         long txGasLimit = GasCost.toGas(tx.getGasLimit());
+        //long txRentGasLimit = GasCost.toGas(tx.getRentGasLimit());
+
         long curBlockGasLimit = GasCost.toGas(executionBlock.getGasLimit());
 
-        if (!gasIsValid(txGasLimit, curBlockGasLimit)) {
+        if (!gasIsValid(txGasLimit, curBlockGasLimit)) { //rentGasLimit does not count towards block gas limits
             return false;
         }
 
@@ -168,15 +199,17 @@ public class TransactionExecutor {
             return false;
         }
 
-
         Coin totalCost = tx.getValue();
 
         if (basicTxCost > 0 ) {
             // add gas cost only for priced transactions
+            //execution cost
             Coin txGasCost = tx.getGasPrice().multiply(BigInteger.valueOf(txGasLimit));
-            totalCost = totalCost.add(txGasCost);
+            //storage rent cost
+            //Coin txRentGasCost = tx.getGasPrice().multiply(BigInteger.valueOf(txRentGasLimit));
+            totalCost = totalCost.add(txGasCost);//.add(txRentGasCost);
         }
-
+        
         Coin senderBalance = track.getBalance(tx.getSender());
 
         if (!isCovers(senderBalance, totalCost)) {
@@ -242,6 +275,7 @@ public class TransactionExecutor {
         return true;
     }
 
+    //note: storage rent gas does not count towards block gas limits 
     private boolean gasIsValid(long txGasLimit, long curBlockGasLimit) {
         // if we've passed the curBlockGas limit we must stop exec
         // cumulativeGas being equal to GasCost.MAX_GAS is a border condition
@@ -265,19 +299,29 @@ public class TransactionExecutor {
 
         return true;
     }
-
+ 
     private void execute() {
         logger.trace("Execute transaction {} {}", toBI(tx.getNonce()), tx.getHash());
 
         if (!localCall) {
-
+            // set reference timestamp for rent computations: ToDo: should this be at the block level?
+            refTimeStamp = Instant.now().getEpochSecond();
+            // #mish add sender to Map of accessed nodes (for storage rent tracking)
+            accessedNodeAdder(tx.getSender(),track, result);    
+            /* Don't add receiver address yet as it may be a pre-compiled contract (won't be in trie).
+            */
             track.increaseNonce(tx.getSender());
 
             long txGasLimit = GasCost.toGas(tx.getGasLimit());
+            //long txRentGasLimit = GasCost.toGas(tx.getRentGasLimit());
+            //execution gas limit
             Coin txGasCost = tx.getGasPrice().multiply(BigInteger.valueOf(txGasLimit));
+            //storage rent gas limit
+            //Coin txRentGasCost = tx.getGasPrice().multiply(BigInteger.valueOf(txRentGasLimit));
             track.addBalance(tx.getSender(), txGasCost.negate());
 
-            logger.trace("Paying: txGasCost: [{}], gasPrice: [{}], gasLimit: [{}]", txGasCost, tx.getGasPrice(), txGasLimit);
+            logger.trace("Paying: txGasCost: [{}],  gasPrice: [{}], gasLimit: [{}]",
+                                    txGasCost, tx.getGasPrice(), txGasLimit);
         }
 
         if (tx.isContractCreation()) {
@@ -287,11 +331,13 @@ public class TransactionExecutor {
         }
     }
 
+    // used in call()
     private boolean enoughGas(long txGasLimit, long requiredGas, long gasUsed) {
         if (!activations.isActive(ConsensusRule.RSKIP136)) {
             return txGasLimit >= requiredGas;
         }
-        return txGasLimit >= gasUsed;
+        //the following is more restrictive since gasUsed = baseTxCost (fixed) + requiredGas
+        return txGasLimit >= gasUsed;    
     }
 
     private void call() {
@@ -306,7 +352,6 @@ public class TransactionExecutor {
         precompiledContract = precompiledContracts.getContractForAddress(activations, DataWord.valueOf(targetAddress.getBytes()));
 
         this.subtraces = new ArrayList<>();
-
         if (precompiledContract != null) {
             Metric metric = profiler.start(Profiler.PROFILING_TYPE.PRECOMPILED_CONTRACT_INIT);
             precompiledContract.init(tx, executionBlock, track, blockStore, receiptStore, result.getLogInfoList());
@@ -315,6 +360,7 @@ public class TransactionExecutor {
 
             long requiredGas = precompiledContract.getGasForData(tx.getData());
             long txGasLimit = GasCost.toGas(tx.getGasLimit());
+            //long txRentGasLimit = GasCost.toGas(tx.getRentGasLimit());
             long gasUsed = GasCost.add(requiredGas, basicTxCost);
             if (!localCall && !enoughGas(txGasLimit, requiredGas, gasUsed)) {
                 // no refund no endowment
@@ -322,19 +368,34 @@ public class TransactionExecutor {
                                 "for address 0x%s. required: %s, used: %s, left: %s ",
                         executionBlock.getNumber(), targetAddress.toString(), requiredGas, gasUsed, mEndGas));
                 mEndGas = 0;
+                // #mish: if exec gas OOG, do not refund all rent Gas.. keep 25% as per RSKIP113
+                //mEndRentGas = 3*txRentGasLimit/4; //#mish: with pre compiles should all rent gas be refunded?
+                // increase estimated rentgas
+                //estRentGas += txRentGasLimit/4;
                 profiler.stop(metric);
                 return;
             }
-
+            // continue with pcc call.. update refund amount to limit minus used so far
             mEndGas = activations.isActive(ConsensusRule.RSKIP136) ?
                     GasCost.subtract(txGasLimit, gasUsed) :
                     txGasLimit - gasUsed;
+            // update refund status of rentGas
+            //mEndRentGas = txRentGasLimit; // no rentgas computed yet
 
             // FIXME: save return for vm trace
             try {
                 byte[] out = precompiledContract.execute(tx.getData());
                 this.subtraces = precompiledContract.getSubtraces();
                 result.setHReturn(out);
+                /** #mish: create dummy accounts for pre-compiled contracts 
+                 * Pre-compiled contracts to do not exist in Trie/repository (they don't have to).
+                 * In ethereum a contract calling another contract costs 700. But if that contract does not exist,
+                 * then a new account is created which costs an additional 25000 for `NEW_ACCT_CALL`
+                 * see computecallgas() in VM.java
+                 * One way to avoid this cost for pre compiled contracts is to create nodes in the trie for them
+                 * as done here, so calls to PCCs cost 700 and not 700 + 25000. 
+                 * As per SDL -> this check should ideally happen before a precompiled is executed.                 
+                */
                 if (!track.isExist(targetAddress)) {
                     track.createAccount(targetAddress);
                     track.setupContract(targetAddress);
@@ -345,10 +406,14 @@ public class TransactionExecutor {
                 result.setException(e);
             }
             result.spendGas(gasUsed);
+            // #mish no storage rent implications here.. moving on.
             profiler.stop(metric);
-        } else {
+        } else {    // #mish if not pre-compiled contract
+            // add the node to accessed nodes Map for rent tracking
+            accessedNodeAdder(tx.getReceiveAddress(),track, result);
             byte[] code = track.getCode(targetAddress);
-            // Code can be null
+            // Code can be null 
+            // #mish Aside: even for empty code, storage rent will be > 0, because of overhead (RSKIP 113) 
             if (isEmpty(code)) {
                 mEndGas = GasCost.subtract(GasCost.toGas(tx.getGasLimit()), basicTxCost);
                 result.spendGas(basicTxCost);
@@ -357,6 +422,7 @@ public class TransactionExecutor {
                         programInvokeFactory.createProgramInvoke(tx, txindex, executionBlock, cacheTrack, blockStore);
 
                 this.vm = new VM(vmConfig, precompiledContracts);
+                // #mish: same as in create(), except program arg (byte[] ops) is `code` instead of `tx.getData()`
                 this.program = new Program(vmConfig, precompiledContracts, blockFactory, activations, code, programInvoke, tx, deletedAccounts);
             }
         }
@@ -372,7 +438,8 @@ public class TransactionExecutor {
         cacheTrack.createAccount(newContractAddress); // pre-created
 
         if (isEmpty(tx.getData())) {
-            mEndGas = GasCost.subtract(GasCost.toGas(tx.getGasLimit()), basicTxCost);
+            mEndGas = GasCost.subtract(GasCost.toGas(tx.getGasLimit()), basicTxCost); //reduce refund by basicTxCost
+
             // If there is no data, then the account is created, but without code nor
             // storage. It doesn't even call setupContract() to setup a storage root
         } else {
@@ -380,8 +447,9 @@ public class TransactionExecutor {
             ProgramInvoke programInvoke = programInvokeFactory.createProgramInvoke(tx, txindex, executionBlock, cacheTrack, blockStore);
 
             this.vm = new VM(vmConfig, precompiledContracts);
+            // same as call, except using `tx.getData()`, rather than `code`
             this.program = new Program(vmConfig, precompiledContracts, blockFactory, activations, tx.getData(), programInvoke, tx, deletedAccounts);
-
+ 
             // reset storage if the contract with the same address already exists
             // TCK test case only - normally this is near-impossible situation in the real network
             /* Storage keys not available anymore in a fast way
@@ -408,11 +476,11 @@ public class TransactionExecutor {
 
     private void go() {
         // TODO: transaction call for pre-compiled  contracts
+        
         if (vm == null) {
             cacheTrack.commit();
             return;
         }
-
         logger.trace("Go transaction {} {}", toBI(tx.getNonce()), tx.getHash());
 
         //Set the deleted accounts in the block in the remote case there is a CREATE2 creating a deleted account
@@ -422,12 +490,14 @@ public class TransactionExecutor {
 
             // Charge basic cost of the transaction
             program.spendGas(tx.transactionCost(constants, activations), "TRANSACTION COST");
-
+            // #mish: program operations: `code` from repository (call to addr) or `tx.getData()` (in case of create)
             if (playVm) {
                 vm.play(program);
             }
 
+            //result.merge(program.getResult());
             result = program.getResult();
+
             mEndGas = GasCost.subtract(GasCost.toGas(tx.getGasLimit()), program.getResult().getGasUsed());
 
             if (tx.isContractCreation() && !result.isRevert()) {
@@ -452,9 +522,17 @@ public class TransactionExecutor {
             return;
         }
         cacheTrack.commit();
+        // add newly created contract nodes to createdNode Map for rent computation. After the cached repository is committed.
+        if (tx.isContractCreation() && !result.isRevert()) {
+                createdNodeAdder(tx.getContractAddress(), track, result);    
+            }
         profiler.stop(metric);
     }
 
+      
+    /**#mish  createContract() is called in go(). It estimates gas costs based on contract size, saves code to cached repository 
+     * In contrast, create() is called earlier [in execute()], where is sets up the account and storage root. 
+    */ 
     private void createContract() {
         int createdContractSize = getLength(program.getResult().getHReturn());
         long returnDataGasValue = GasCost.multiply(GasCost.CREATE_DATA, createdContractSize);
@@ -479,7 +557,7 @@ public class TransactionExecutor {
             cacheTrack.saveCode(tx.getContractAddress(), result.getHReturn());
         }
     }
-
+    // #mish todo: setStatus needs to be modified to reflect Manual revert, or rentgas OOG as per RSKIP113 
     public TransactionReceipt getReceipt() {
         if (receipt == null) {
             receipt = new TransactionReceipt();
@@ -488,7 +566,8 @@ public class TransactionExecutor {
             receipt.setTransaction(tx);
             receipt.setLogInfoList(getVMLogs());
             receipt.setGasUsed(getGasUsed());
-            receipt.setStatus(executionError.isEmpty()?TransactionReceipt.SUCCESS_STATUS:TransactionReceipt.FAILED_STATUS);
+            //receipt.setRentGasUsed(getRentGasUsed());
+            receipt.setStatus(executionError.isEmpty()?TransactionReceipt.SUCCESS_STATUS:TransactionReceipt.FAILED_STATUS); // #mish todo: RSKIP113
         }
         return receipt;
     }
@@ -512,6 +591,7 @@ public class TransactionExecutor {
                 .filter(logInfo -> !logInfo.isRejected())
                 .collect(Collectors.toList());
 
+        // #mish todo: rent mods in builder and here
         TransactionExecutionSummary.Builder summaryBuilder = TransactionExecutionSummary.builderFor(tx)
                 .gasLeftover(BigInteger.valueOf(mEndGas))
                 .logs(notRejectedLogInfos)
@@ -520,6 +600,7 @@ public class TransactionExecutor {
         // Accumulate refunds for suicides
         result.addFutureRefund(GasCost.multiply(result.getDeleteAccounts().size(), GasCost.SUICIDE_REFUND));
         long gasRefund = Math.min(result.getFutureRefund(), result.getGasUsed() / 2);
+         // #mish: update mEndGas to its final value. 
         mEndGas = activations.isActive(ConsensusRule.RSKIP136) ?
                 GasCost.add(mEndGas, gasRefund) :
                 mEndGas + gasRefund;
@@ -542,6 +623,7 @@ public class TransactionExecutor {
         track.addBalance(tx.getSender(), summary.getLeftover().add(summary.getRefund()));
         logger.trace("Pay total refund to sender: [{}], refund val: [{}]", tx.getSender(), summary.getRefund());
 
+
         // Transfer fees to miner
         Coin summaryFee = summary.getFee();
 
@@ -558,6 +640,12 @@ public class TransactionExecutor {
         logger.trace("Processing result");
         logs = notRejectedLogInfos;
 
+        // save created and accessed node with updated rent timestamps to repository. Any value modifications 
+        result.getCreatedNodes().forEach((key, rentData) -> track.updateNodeWithRent(key, rentData.getLRPTime()));        
+        
+        result.getAccessedNodes().forEach((key, rentData) -> track.updateNodeWithRent(key, rentData.getLRPTime()));
+        
+        // #mish what is this for? Github search in May 2020 doesn't reveal anything  (indexed April 2020)
         result.getCodeChanges().forEach((key, value) -> track.saveCode(new RskAddress(key), value));
         // Traverse list of suicides
         result.getDeleteAccounts().forEach(address -> track.delete(new RskAddress(address)));
@@ -570,6 +658,7 @@ public class TransactionExecutor {
     /**
      * This extracts the trace to an object in memory.
      * Refer to {@link org.ethereum.vm.VMUtils#saveProgramTraceFile} for a way to saving the trace to a file.
+     * #mish: for tracing only this is not called as part of TX execution. 
      */
     public void extractTrace(ProgramTraceProcessor programTraceProcessor) {
         if (program != null) {
@@ -606,6 +695,7 @@ public class TransactionExecutor {
         return result;
     }
 
+    // #mish: This is used only twice and that too within getReceipt(). ProgramResult.getGasUsed() is used more generally.
     public long getGasUsed() {
         if (activations.isActive(ConsensusRule.RSKIP136)) {
             return GasCost.subtract(GasCost.toGas(tx.getGasLimit()), mEndGas);
@@ -613,5 +703,132 @@ public class TransactionExecutor {
         return toBI(tx.getGasLimit()).subtract(toBI(mEndGas)).longValue();
     }
 
+    /*
+    public long getRentGasUsed() {
+        if (activations.isActive(ConsensusRule.RSKIP136)) {
+            return GasCost.subtract(GasCost.toGas(tx.getRentGasLimit()), mEndRentGas);
+        }
+        return toBI(tx.getRentGasLimit()).subtract(toBI(mEndRentGas)).longValue();
+    }*/
+
     public Coin getPaidFees() { return paidFees; }
+
+    /** #mish Helper methods for storage rent 
+    */
+    
+    public long getRefTimeStamp(){
+        return this.refTimeStamp;
+    }
+    
+    public long getEstRentGas(){
+        return this.estRentGas;
+    }
+
+    /* #mish Add nodes accessed by or created in a transaction to the maps
+    * "accessedNodes" or "createdNodes" in programResult. 
+     * Methods compute outstanding rent due for exsiting nodes and 6 months advance for new nodes.
+     * node info obtained for each provided RSK addr via methods defined in mutableRepository
+     * The method retreives nodes containing account state and for contracts: code and storage root. 
+     * This should be called the first time any RSK addr is referenced in a TX or a child process
+     * Storage nodes accessed via SLOAD or SSTORE are not included.
+     * While quite similar, for clarity, using separate adder methods for accessed nodes and created nodes 
+    */
+    public void accessedNodeAdder(RskAddress addr, Repository repository, ProgramResult progRes){
+        DataWord accKey = repository.getAccountNodeKey(addr);
+        Uint24 vLen = repository.getAccountNodeValueLength(addr);
+        long accLrpt = repository.getAccountNodeLRPTime(addr);
+        RentData accNode = new RentData(vLen, accLrpt);
+        // compute the rent due. Treat these nodes as 'modified' (since account state will be updated)
+        accNode.setRentDue(this.getRefTimeStamp(), true); // account node value length may not change much
+        long rd = accNode.getRentDue();
+        // if the node is not in the map, add the rent owed to current estimate
+        // only add rent due > 0. Prepaid rent does not matter here. 
+        if (!progRes.getAccessedNodes().containsKey(accKey) && rd >0){
+                estRentGas += rd;   //"collect" rent due
+                accNode.setLRPTime(this.getRefTimeStamp()); //update rent paid timestamp
+        }
+        // add to hashmap (internally this is a putIfAbsent)
+        progRes.addAccessedNode(accKey, accNode);
+        // if this is a contract then add info for storage root and code
+        if (repository.isContract(addr)) {
+            // code node
+            DataWord cKey = repository.getCodeNodeKey(addr);
+            Uint24 cLen = repository.getCodeNodeLength(addr);
+            long cLrpt = repository.getCodeNodeLRPTime(addr);
+            RentData codeNode = new RentData(cLen, cLrpt);
+            // compute rent and update estRent as needed
+            codeNode.setRentDue(this.getRefTimeStamp(), false); // code is unlikely to be modified
+            rd = codeNode.getRentDue();
+            if (!progRes.getAccessedNodes().containsKey(cKey) && rd >0){
+                estRentGas += rd;
+                codeNode.setLRPTime(this.getRefTimeStamp());
+            }
+
+            progRes.addAccessedNode(cKey, codeNode);
+            
+            // storage root node
+            DataWord srKey = repository.getStorageRootKey(addr);
+            Uint24 srLen = repository.getStorageRootValueLength(addr);
+            long srLrpt = repository.getStorageRootLRPTime(addr);
+            RentData srNode = new RentData(srLen, srLrpt);
+            // compute rent and update estRent as needed
+            srNode.setRentDue(this.getRefTimeStamp(), false);  // storage root value is never modified
+            rd = srNode.getRentDue();
+            if (!progRes.getAccessedNodes().containsKey(srKey) && rd >0){
+                estRentGas += rd;
+                srNode.setLRPTime(this.getRefTimeStamp());
+            }
+            progRes.addAccessedNode(srKey, srNode);
+        }
+    }
+    // Similar to accessednodes adder. Different HashMap, 6 months timestamp, rent computation, no check for prepaid rent
+    // also, its more likely that created nodes will be in a cached repository, e.g. cachetrack in Tx execution 
+    public void createdNodeAdder(RskAddress addr, Repository repository, ProgramResult progRes){
+        DataWord accKey = repository.getAccountNodeKey(addr);
+        Uint24 vLen = repository.getAccountNodeValueLength(addr);
+        long advTS = this.getRefTimeStamp() + GasCost.SIX_MONTHS; //advanced time stamp time.now + 6 months
+        long accLrpt = advTS;
+        RentData accNode = new RentData(vLen, accLrpt);
+        // compute the rent due
+        accNode.setSixMonthsRent();
+        long rd = accNode.getRentDue();
+        // if the node is not in the map, add the rent owed to current estimate
+        if (!progRes.getCreatedNodes().containsKey(accKey)){
+                estRentGas += rd;
+        }
+        // add to hashmap (internally this is a putIfAbsent)
+        progRes.addCreatedNode(accKey, accNode);
+        // if this is a contract then add info for storage root and code
+        if (repository.isContract(addr)) {
+            // code node
+            DataWord cKey = repository.getCodeNodeKey(addr);
+            Uint24 cLen = repository.getCodeNodeLength(addr);
+            long cLrpt = advTS;
+            RentData codeNode = new RentData(cLen, cLrpt);
+            // compute rent and update estRent as needed
+            codeNode.setSixMonthsRent();
+            rd = codeNode.getRentDue();
+            if (!progRes.getCreatedNodes().containsKey(cKey)){
+                estRentGas += rd;
+            }
+
+            progRes.addCreatedNode(cKey, codeNode);
+            
+            // storage root node
+            DataWord srKey = repository.getStorageRootKey(addr);
+            Uint24 srLen = repository.getStorageRootValueLength(addr);
+            long srLrpt = advTS;
+            RentData srNode = new RentData(srLen, srLrpt);
+            // compute rent and update estRent as needed
+            srNode.setSixMonthsRent();
+            rd = srNode.getRentDue();
+            if (!progRes.getCreatedNodes().containsKey(srKey)){
+                estRentGas += rd;
+            }
+            progRes.addCreatedNode(srKey, srNode);
+        }
+    }
+
+
 }
+

@@ -46,7 +46,7 @@ public class InternalTransaction extends Transaction {
         this.sender = RLP.parseRskAddress(sendAddress);
         this.note = note;
     }
-
+    // gasprice used as generic arg
     private static byte[] getData(DataWord gasPrice) {
         return (gasPrice == null) ? ByteUtil.EMPTY_BYTE_ARRAY : gasPrice.getData();
     }
@@ -100,6 +100,7 @@ public class InternalTransaction extends Transaction {
                 gasPrice, gasLimit, data, type, deep, index, rejected);
     }
 
+    // same as getencoded, there is no signing of internal transactions
     @Override
     public byte[] getEncodedRaw() {
         return getEncoded();

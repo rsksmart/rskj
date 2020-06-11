@@ -23,6 +23,8 @@ package org.ethereum.vm;
 import org.ethereum.util.ByteUtil;
 import java.math.BigInteger;
 
+import co.rsk.core.types.ints.Uint24; //#mish for value length for storage rent computation
+
 /**
  * The fundamental network cost unit. Paid for exclusively by SBTC, which is converted
  * freely to and from Gas as required. Gas does not exist outside of the internal RSK
@@ -99,6 +101,9 @@ public class GasCost {
 
     public static final long MAX_GAS = Long.MAX_VALUE;
 
+    public static final long STORAGE_RENT_DIVISOR = (1<<21); // RSKIP113: storage rent is 1/(2^21) gas units per byte per second
+    // 6 months advance rent payment for new trie nodes. About 1186 gas for 32 bytes (with 128 bytes overhead) 
+    public static final long SIX_MONTHS = 6 * 30 * 24 *3600L;
     /**
      * An exception which is thrown be methods in GasCost when
      * an operation overflows, has invalid inputs or wants to return
@@ -185,7 +190,7 @@ public class GasCost {
     }
 
     /**
-     * Multply two longs representing gas, capping at Long.MAX_VALUE.
+     * Multiply two longs representing gas, capping at Long.MAX_VALUE.
      * @param x some gas.
      * @param y another gas.
      * @return the multiplication of the two numbers, capped.
@@ -237,6 +242,53 @@ public class GasCost {
         }
         return result;
     }
+
+
+    /**
+     * calculate storage rent (RSKIP113). Rent is computed in units of has per byte stored per second
+     * @param valueLength : actual length of data stored in a trie node representing bytes stored (an overhead of 128 bytes is added)
+     * @param timeDelta : time period for computing storage rent in seconds (can be negative, future timestamp i.e. prepaid)
+     * @return valueLength*timeDelta/STORAGE_RENT_DIVISOR
+     */
+    public static long calculateStorageRent(Uint24 valueLength, long timeDelta) {
+        long valLen = new Long(valueLength.intValue()); // convert to long for mult overflow check
+        valLen += 128L ; // add storage overhead of 128 bytes (RSKIP113)
+        long mult = valLen * timeDelta;
+        if (multiplicationOverflowed(valLen, timeDelta, mult)) {
+            return Long.MAX_VALUE;
+        }
+        long result = mult/STORAGE_RENT_DIVISOR;
+        return result;
+    }
+    
+    /** If rent is prepaid in advance and value is changed, we need to recompute the residual time for which rent is considered paid.
+     * @param valueLength : actual length of data stored in a trie node representing bytes stored (an overhead of 128 bytes is added)
+     * @param rentBalance : prepaid rent balance (when lastRentPaidTime > time.now())
+     * @return rentBalance*STORAGE_RENT_DIVISOR/valueLength 
+     */
+    public static long calculateStoragePeriod(Uint24 valueLength, long rentBalance) {
+        long valLen = new Long(valueLength.intValue()); // convert to long for mult overflow check
+        valLen += 128L ; // add storage overhead of 128 bytes (RSKIP113)
+        
+        long mult = rentBalance * STORAGE_RENT_DIVISOR;;
+        if (multiplicationOverflowed(rentBalance, STORAGE_RENT_DIVISOR, mult)) {
+            return Long.MAX_VALUE;
+        }
+        long result = mult/valLen;
+        return result;
+    }
+
+    /** If rent is prepaid, we may restrict automatic resetting of rent paid time (arising from value length changes) to no more than 6 months.
+    // in such cases, we may need to refund any access storage rent (which may be subject to further restrictions on refunds more generally). 
+     * @param valueLength : actual length of data stored in a trie node representing bytes stored (an overhead of 128 bytes is added)
+     * @param rentBalance : prepaid rent balance (when lastRentPaidTime > time.now())
+     * @return excessrent = rentBalance -  storage rent for 6 months for current valueLength 
+     */
+    public static long excessRentSixMonths(Uint24 valueLength, long rentBalance) {
+        return rentBalance - calculateStorageRent(valueLength, SIX_MONTHS);
+    }
+
+
 
     /**
      * Returns whether r is overflowed in `x * y = r`

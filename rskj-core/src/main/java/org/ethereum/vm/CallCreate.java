@@ -29,13 +29,24 @@ public class CallCreate {
     final byte[] data;
     final byte[] destination;
     final long gasLimit;
+    //final long rentGasLimit; // #mish storage rent
     final byte[] value;
 
-
+    /* to be deleted to maintain a single gas field
+    public CallCreate(byte[] data, byte[] destination, long gasLimit, byte[] value, long rentGasLimit) {
+        this.data = data;
+        this.destination = destination;
+        this.gasLimit = gasLimit;
+        this.rentGasLimit = rentGasLimit;
+        this.value = value;
+    }
+    */
+    
     public CallCreate(byte[] data, byte[] destination, long gasLimit, byte[] value) {
         this.data = data;
         this.destination = destination;
         this.gasLimit = gasLimit;
+        //this.rentGasLimit = gasLimit; // #mish as per RSKIP113, if rentgaslimit is not specified, set it equal to gaslimit
         this.value = value;
     }
 
@@ -50,6 +61,12 @@ public class CallCreate {
     public long getGasLimit() {
         return gasLimit;
     }
+
+    /*
+    public long getRentGasLimit() {
+        return rentGasLimit;
+    }
+    */
 
     public byte[] getValue() {
         return value;

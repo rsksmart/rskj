@@ -47,7 +47,7 @@ public interface ProgramInvoke extends InvokeData {
 
     DataWord getDifficulty();
 
-    DataWord getGaslimit();
+    DataWord getGaslimit(); // #mish: this is Block gaslimit, not Tx gas.. see ProgramInvokeImpl
 
     boolean byTransaction();
 

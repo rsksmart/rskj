@@ -45,12 +45,16 @@ public class TransactionReceipt {
 
     private Transaction transaction;
 
+    // status codes
     protected static final byte[] FAILED_STATUS = EMPTY_BYTE_ARRAY;
     protected static final byte[] SUCCESS_STATUS = new byte[]{0x01};
+    protected static final byte[] MANUAL_REVERT_RSKIP113_STATUS = new byte[]{-1}; // #mish e.g. doREVERT() opCode in VM.java
+    protected static final byte[] RENT_OOG_RSKIP113_STATUS = new byte[]{-2};
 
     private byte[] postTxState = EMPTY_BYTE_ARRAY;
     private byte[] cumulativeGas = EMPTY_BYTE_ARRAY;
     private byte[] gasUsed = EMPTY_BYTE_ARRAY;
+    //private byte[] rentGasUsed = EMPTY_BYTE_ARRAY; // storage rent at end of TX (even if reverted, RSKIP113), not included in cumulativeGas
     private byte[] status = EMPTY_BYTE_ARRAY;
 
     private Bloom bloomFilter = new Bloom();
@@ -92,7 +96,7 @@ public class TransactionReceipt {
         rlpEncoded = rlp;
     }
 
-
+    // original constructor without storage rent
     public TransactionReceipt(byte[] postTxState, byte[] cumulativeGas, byte[] gasUsed,
                               Bloom bloomFilter, List<LogInfo> logInfoList, byte[] status) {
         this.postTxState = postTxState;
@@ -100,7 +104,8 @@ public class TransactionReceipt {
         this.gasUsed = gasUsed;
         this.bloomFilter = bloomFilter;
         this.logInfoList = logInfoList;
-        if (Arrays.equals(status, FAILED_STATUS) || Arrays.equals(status, SUCCESS_STATUS)) {
+        if (Arrays.equals(status, FAILED_STATUS) || Arrays.equals(status, SUCCESS_STATUS) ||
+                Arrays.equals(status, MANUAL_REVERT_RSKIP113_STATUS) || Arrays.equals(status, RENT_OOG_RSKIP113_STATUS)) {
             this.status = status;
         }
     }
@@ -158,16 +163,22 @@ public class TransactionReceipt {
             logInfoListRLP = RLP.encodeList();
         }
 
+        //rlpEncoded = RLP.encodeList(postTxStateRLP, cumulativeGasRLP, bloomRLP, logInfoListRLP, gasUsedRLP, statusRLP, rentGasUsedRLP);
         rlpEncoded = RLP.encodeList(postTxStateRLP, cumulativeGasRLP, bloomRLP, logInfoListRLP, gasUsedRLP, statusRLP);
 
         return rlpEncoded;
     }
 
+    // #mish todo: RSKIP113 going back to single gas field, is this change still needed?
     public void setStatus(byte[] status) {
         if (Arrays.equals(status, FAILED_STATUS)){
             this.status = FAILED_STATUS;
         } else if (Arrays.equals(status, SUCCESS_STATUS)){
             this.status = SUCCESS_STATUS;
+        } else if (Arrays.equals(status, MANUAL_REVERT_RSKIP113_STATUS)){
+            this.status = MANUAL_REVERT_RSKIP113_STATUS;
+        } else if (Arrays.equals(status, RENT_OOG_RSKIP113_STATUS)){
+            this.status = RENT_OOG_RSKIP113_STATUS;
         }
     }
 
@@ -200,6 +211,11 @@ public class TransactionReceipt {
         this.gasUsed = BigIntegers.asUnsignedByteArray(BigInteger.valueOf(gasUsed));
     }
 
+    /*
+    public void setRentGasUsed(long rentGasUsed) {
+        this.rentGasUsed = BigIntegers.asUnsignedByteArray(BigInteger.valueOf(rentGasUsed));
+    }*/
+
     public void setCumulativeGas(byte[] cumulativeGas) {
         this.cumulativeGas = cumulativeGas;
     }
@@ -207,6 +223,11 @@ public class TransactionReceipt {
     public void setGasUsed(byte[] gasUsed) {
         this.gasUsed = gasUsed;
     }
+
+    /*
+    public void setRentGasUsed(byte[] rentGasUsed) {
+        this.rentGasUsed = rentGasUsed;
+    }*/
 
     public void setLogInfoList(List<LogInfo> logInfoList) {
         if (logInfoList == null) {

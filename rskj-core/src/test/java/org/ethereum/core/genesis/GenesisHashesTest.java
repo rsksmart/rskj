@@ -30,9 +30,11 @@ import static org.junit.Assert.assertThat;
 public class GenesisHashesTest {
     @Test
     public void mainnetHashTest() {
-        RskContext rskContext = new RskTestContext(new String[0]);
+        RskContext rskContext = new RskTestContext(new String[0]); //string array size 0
         rskContext.getBlockchain(); // this triggers changes in the Genesis through the BlockChainLoader
         Genesis genesis = rskContext.getGenesis();
+        //System.out.println(genesis.getHash());
+        //System.out.println(new Keccak256("f88529d4ab262c0f4d042e9d8d3f2472848eaafe1a9b7213f57617eb40a9f9e0"));
         assertThat(genesis.getHash(), is(new Keccak256("f88529d4ab262c0f4d042e9d8d3f2472848eaafe1a9b7213f57617eb40a9f9e0")));
     }
 
@@ -41,6 +43,8 @@ public class GenesisHashesTest {
         RskContext rskContext = new RskTestContext(new String[]{ "--testnet" });
         rskContext.getBlockchain(); // this triggers changes in the Genesis through the BlockChainLoader
         Genesis genesis = rskContext.getGenesis();
-        assertThat(genesis.getHash(), is(new Keccak256("cabb7fbe88cd6d922042a32ffc08ce8b1fbb37d650b9d4e7dbfe2a7469adfa42")));
+        //System.out.println(genesis.getHash());
+        //System.out.println(new Keccak256("cabb7fbe88cd6d922042a32ffc08ce8b1fbb37d650b9d4e7dbfe2a7469adfa42"));
+        assertThat(genesis.getHash(), is(new Keccak256("cabb7fbe88cd6d922042a32ffc08ce8b1fbb37d650b9d4e7dbfe2a7469adfa42"))); // #mish failing test
     }
 }

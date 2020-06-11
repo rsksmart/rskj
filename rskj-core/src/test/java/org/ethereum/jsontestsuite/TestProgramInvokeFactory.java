@@ -59,6 +59,7 @@ public class TestProgramInvokeFactory implements ProgramInvokeFactory {
         return null;
     }
 
+
     private ProgramInvoke generalInvoke(Transaction tx, int txindex, Repository repository, BlockStore blockStore) {
 
         /***         ADDRESS op       ***/

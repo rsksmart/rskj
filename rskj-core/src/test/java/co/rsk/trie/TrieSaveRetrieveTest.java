@@ -237,11 +237,17 @@ public class TrieSaveRetrieveTest {
 
         store.save(trie);
 
-        Assert.assertNotEquals(0, trie.trieSize());
-        int embeddableNodes = 3;
+        Assert.assertEquals(5, trie.trieSize()); //3 leaf nodes => need 1 root, 1 intermediate (binary tree) 
+        int embeddableNodes = 3; //3 nodes are small, can be embedded in parent node (1 level of embedding max)). 
+        //System.out.println(trie.trieSize()); 
+        //System.out.println(map.keys().size());
         Assert.assertEquals(trie.trieSize() - embeddableNodes, map.keys().size());
     }
 
+    /* @mish: this test failed after adding storage rent. The number of embeddable nodes dropped to 0.
+    //   * increasing MAX_EMBEDDED_NODE_SIZE_IN_BYTES = 48 from 44 in Trie.java takes care of it as that accounts
+    //   * for the additional 4 bytes consumed by rentPaidUntilBN (which is an int)  
+    */
     @Test
     public void saveTrieWithKeyLongValues() {
         HashMapDB map = new HashMapDB();
@@ -253,9 +259,11 @@ public class TrieSaveRetrieveTest {
 
         store.save(trie);
 
-        Assert.assertNotEquals(0, trie.trieSize());
+        Assert.assertEquals(5, trie.trieSize());
         int embeddableNodes = 3;
         int longValues = 2;
+        //System.out.println(trie.trieSize());
+        //System.out.println(map.keys().size());
         Assert.assertEquals(trie.trieSize() - embeddableNodes + longValues, map.keys().size());
     }
 

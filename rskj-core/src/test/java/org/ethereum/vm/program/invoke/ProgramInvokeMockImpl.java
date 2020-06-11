@@ -39,6 +39,9 @@ import java.nio.charset.StandardCharsets;
  * @author Roman Mandeleil
  * @since 03.06.2014
  */
+// #mish ProgramInvoke extends InvokeData which has getGas and getRentGas methods.. also getGasLimit for block gas limit
+// ToDo: the usage here appears to use gasLimit for both TX gas limti as well as block. Perhaps it is based on type (long Vs Dataword) 
+// in particular the methods setGas() and setGasLimit() both target the same field..  
 public class ProgramInvokeMockImpl implements ProgramInvoke {
 
     private byte[] msgData;
@@ -52,6 +55,7 @@ public class ProgramInvokeMockImpl implements ProgramInvoke {
     private RskAddress contractAddress;
     // default for most tests. This can be overwritten by the test
     private long gasLimit = 1000000;
+    //private long rentGasLimit = 1000000;
 
     public ProgramInvokeMockImpl(byte[] msgDataRaw) {
         this();
@@ -136,10 +140,21 @@ public class ProgramInvokeMockImpl implements ProgramInvoke {
 
         return gasLimit;
     }
-
+    
     public void setGas(long gasLimit) {
         this.gasLimit = gasLimit;
     }
+
+    /*           RENTGAS op       
+    public long  getRentGas() {
+
+        return rentGasLimit;
+    }*/
+
+    /*
+    public void setGas(long rentGasLimit) {
+        this.rentGasLimit = rentGasLimit;
+    }*/
 
     /*          CALLVALUE op    */
     public DataWord getCallValue() {
@@ -234,6 +249,7 @@ public class ProgramInvokeMockImpl implements ProgramInvoke {
         return DataWord.valueOf(difficulty);
     }
 
+    // #mish check this is Block gas limt.. then what are we setting with setGas()?
     @Override
     public DataWord getGaslimit() {
         return DataWord.valueOf(gasLimit);

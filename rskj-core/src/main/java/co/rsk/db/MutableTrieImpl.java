@@ -33,6 +33,9 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.Set;
+import java.nio.charset.StandardCharsets;
+
+import java.time.Instant; //#mish for storage rent
 
 public class MutableTrieImpl implements MutableTrie {
 
@@ -57,12 +60,26 @@ public class MutableTrieImpl implements MutableTrie {
 
     @Override
     public byte[] get(byte[] key) {
-        return trie.get(key);
+        return trie.get(key);   //#mish get returns the value associated with a key
     }
 
     @Override
     public void put(byte[] key, byte[] value) {
         trie = trie.put(key, value);
+    }
+
+    @Override
+    public void putWithRent(byte[] key, byte[] value, long newLastRentPaidTime) {
+        trie = trie.putWithRent(key, value, newLastRentPaidTime);
+    }
+
+    public void putWithRent(ByteArrayWrapper key, byte[] value, long newLastRentPaidTime) {
+        trie = trie.putWithRent(key.getData(), value, newLastRentPaidTime);
+    }
+
+    public void putWithRent(String key, byte[] value, long newLastRentPaidTime) {
+        byte[] keybytes = key.getBytes(StandardCharsets.UTF_8);
+        trie = trie.putWithRent(keybytes, value, newLastRentPaidTime);
     }
 
     @Override
@@ -96,6 +113,24 @@ public class MutableTrieImpl implements MutableTrie {
         return atrie.getValueHash();
     }
 
+    public long getLastRentPaidTime(byte[] key) {
+        Trie atrie = trie.find(key);
+        if (atrie == null) {
+            // #mish: null?  existing methods (get hash, value) are not returning null
+            return 0L;
+        }
+        return atrie.getLastRentPaidTime();
+    }
+
+    public long getRentPaidTimeDelta(byte[] key) {
+        Trie atrie = trie.find(key);
+        if (atrie == null) {
+            // #mish: null?  existing methods (get hash, value) are not returning null
+            return Instant.now().getEpochSecond() - 0L ;
+        }
+        return atrie.getRentPaidTimeDelta();
+    }
+
     @Override
     public Iterator<DataWord> getStorageKeys(RskAddress addr) {
         byte[] accountStorageKey = trieKeyMapper.getAccountStoragePrefixKey(addr);
@@ -105,7 +140,7 @@ public class MutableTrieImpl implements MutableTrie {
         if (storageTrie != null) {
             Iterator<Trie.IterationElement> storageIterator = storageTrie.getPreOrderIterator();
             storageIterator.next(); // skip storage root
-            return new StorageKeysIterator(storageIterator, storageKeyOffset);
+            return new StorageKeysIterator(storageIterator, storageKeyOffset); //#mish, see implementation of inner class below
         }
         return Collections.emptyIterator();
     }

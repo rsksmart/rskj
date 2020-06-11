@@ -68,6 +68,15 @@ public interface MutableTrie {
     // without the need to retrieve the value itself.
     Keccak256 getValueHash(byte[] key);
 
+    // for storage rent:  //for mutableTrieImp and mutableTRieCache
+    void putWithRent(byte[] key, byte[] value, long newLastRentPaidTime);
+
+    void putWithRent(ByteArrayWrapper key, byte[] value, long newLastRentPaidTime);
+
+    long getLastRentPaidTime(byte[] key);
+
+    long getRentPaidTimeDelta(byte[] key);
+    
     // the key has to match exactly an account key
     // it won't work if it is used with an storage key or any other
     Iterator<DataWord> getStorageKeys(RskAddress addr);
