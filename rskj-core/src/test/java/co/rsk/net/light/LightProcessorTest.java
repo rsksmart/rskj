@@ -16,7 +16,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package co.rsk.net;
+package co.rsk.net.light;
 
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
