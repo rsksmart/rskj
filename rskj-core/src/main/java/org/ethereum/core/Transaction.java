@@ -115,11 +115,7 @@ public class Transaction {
         this.receiveAddress = RLP.parseRskAddress(transaction.get(3).getRLPData());
         this.value = RLP.parseCoinNullZero(transaction.get(4).getRLPData());
         this.data = transaction.get(5).getRLPData();
-        // 6, 7, 8 are related to signature
-        /*if (txSize==10){ // #mish: has storage rent data
-            this.rentGasLimit = transaction.get(9).getRLPData();
-        }*/
- 
+        // 6, 7, 8 are related to signature 
         // only parse signature in case tx is signed
         byte[] vData = transaction.get(6).getRLPData();
         if (vData != null) {
@@ -152,13 +148,8 @@ public class Transaction {
         this.data = ByteUtil.cloneBytes(data);
         this.chainId = chainId;
         this.isLocalCall = false;
-       // this.rentGasLimit = ByteUtil.cloneBytes(rentGasLimit);
-    } 
-    /*#mish: modify existing constructor signatures, just add gasLimit again at the end (after chainid) for rentGasLimit
-    * then extend them to introduce new versions where rentGasLimit is an explicit argument/parameter*/
-
+     } 
     // #mish: this constructor present prior to rent. 6 elem byte array, Call this C2. Compared to C1 is does not have chainID.
-    // We cannot have a version of this with rentGas added to arglist, cos 7 elem byte array would conflict with C1's signature
     public Transaction(byte[] nonce, byte[] gasPriceRaw, byte[] gasLimit, byte[] receiveAddress, byte[] value, byte[] data) {
         this(nonce, gasPriceRaw, gasLimit, receiveAddress, value, data, (byte) 0);
     }
@@ -169,11 +160,7 @@ public class Transaction {
         this.signature = ECDSASignature.fromComponents(r, s, v);
     }
     
-    /** #mish Moving on to different style of constructor signature */
-    /** #mish: And relocating constructors with similar signatures closer */
-
     // This alt. version uses parameters "to" (instead of receiver addr) and "amount" (instead of value)
-    // First extend the prior constructor to account for rentGas
     // Call this C4.
     public Transaction(String to, BigInteger amount, BigInteger nonce, BigInteger gasPrice, BigInteger gasLimit, byte[] decodedData, byte chainId){
         this(BigIntegers.asUnsignedByteArray(nonce),
@@ -327,8 +314,27 @@ public class Transaction {
         return gasPrice;
     }
 
+    /** #mish: There is a single field in TX for overall gas budget (execution + rent)
+      * We divide this overall gas budget of the TX by a factor to allocate to rent gas
+      * then assign all remaining budget to execution gas
+      * default value of factor is TX_GASBUDGET_DIVISOR = 2 (equal division)
+    */
+    // #mish: the conventional/legacy (EVM) execution gas limit for a Transaction
     public byte[] getGasLimit() {
-        return gasLimit;
+        return getExecGasLimit();
+    }
+    // #mish: For future, explicit reference for execution gas limit
+    public byte[] getExecGasLimit() {
+        long gasBudget = GasCost.toGas(gasLimit);
+        long rentGasBudget= gasBudget/GasCost.TX_GASBUDGET_DIVISOR;
+        long execGasBudget = gasBudget - rentGasBudget;
+        return BigInteger.valueOf(execGasBudget).toByteArray();
+    }
+    // #mish rentGas limit
+    public byte[] getRentGasLimit() {
+        long gasBudget = GasCost.toGas(gasLimit);
+        long rentGasBudget= gasBudget/GasCost.TX_GASBUDGET_DIVISOR;
+        return BigInteger.valueOf(rentGasBudget).toByteArray();
     }
 
     public byte[] getData() {
@@ -458,7 +464,7 @@ public class Transaction {
         return "TransactionData [" + "hash=" + ByteUtil.toHexString(getHash().getBytes()) +
                 "  nonce=" + ByteUtil.toHexString(nonce) +
                 ", gasPrice=" + gasPrice.toString() +
-                ", gasLimit=" + ByteUtil.toHexString(gasLimit) +
+                ", gas=" + ByteUtil.toHexString(gasLimit) +
                 ", receiveAddress=" + receiveAddress.toString() +
                 ", value=" + value.toString() +
                 ", data=" + ByteUtil.toHexString(data) +
@@ -532,7 +538,7 @@ public class Transaction {
         }
 
         return RLP.encodeList(toEncodeNonce, toEncodeGasPrice, toEncodeGasLimit,
-                toEncodeReceiveAddress, toEncodeValue, toEncodeData, v, r, s);//, toEncodeRentGasLimit);
+                toEncodeReceiveAddress, toEncodeValue, toEncodeData, v, r, s);
     }
 
     public BigInteger getGasLimitAsInteger() {

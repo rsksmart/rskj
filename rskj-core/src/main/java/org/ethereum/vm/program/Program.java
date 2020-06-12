@@ -187,7 +187,7 @@ public class Program {
     public int getCallDeep() {
         return invoke.getCallDeep();
     }
-    // #mish: previous version, prior to storage rent. Use version with storage rent explicit. Todo: Remove this later? 
+
     private InternalTransaction addInternalTx(byte[] nonce, DataWord gasLimit, RskAddress senderAddress, RskAddress receiveAddress,
                                               Coin value, byte[] data, String note) {
         if (transaction == null) {
@@ -202,7 +202,6 @@ public class Program {
                 senderNonce,
                 getGasPrice(),
                 gasLimit,
-                //gasLimit, // #mish 'gasLimit' repeated. This instance for rentGasLimit which has not been stated (as per RSKIP113, use gasLimit instead)
                 senderAddress.getBytes(),
                 receiveAddress.getBytes(),
                 value.getBytes(),
@@ -210,28 +209,6 @@ public class Program {
                 note);
     }
 
-    /*// #mish version with storage rentgaslimit in arglist
-    private InternalTransaction addInternalTx(byte[] nonce, DataWord gasLimit, DataWord rentGasLimit, RskAddress senderAddress, RskAddress receiveAddress,
-                                              Coin value, byte[] data, String note) {
-        if (transaction == null) {
-            return null;
-        }
-
-        byte[] senderNonce = isEmpty(nonce) ? getStorage().getNonce(senderAddress).toByteArray() : nonce;
-
-        return getResult().addInternalTransaction(
-                transaction.getHash().getBytes(),
-                getCallDeep(),
-                senderNonce,
-                getGasPrice(),
-                gasLimit,
-                rentGasLimit,
-                senderAddress.getBytes(),
-                receiveAddress.getBytes(),
-                value.getBytes(),
-                data,
-                note);
-    }*/
 
     private <T extends ProgramListenerAware> T setupProgramListener(T traceListenerAware) {
         if (programListener.isEmpty()) {

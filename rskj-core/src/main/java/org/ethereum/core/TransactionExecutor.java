@@ -164,11 +164,10 @@ public class TransactionExecutor {
         }
 
         this.execute();
-        System.out.println("done execute() in Tx Exec ");
+        //System.out.println("done execute() in Tx Exec ");
         this.go();
-        System.out.println("done with go() in Tx Exec ");
+        //System.out.println("done with go() in Tx Exec ");
         this.finalization();
-        System.out.println("done with finalization() in Tx Exec ");
         return true;
     }
 
@@ -185,9 +184,9 @@ public class TransactionExecutor {
             return true;
         }
 
-        //'GasCost defined in ethereum/vm/GasCost'
+        // #mish: this is only execution gas limit
         long txGasLimit = GasCost.toGas(tx.getGasLimit());
-        //long txRentGasLimit = GasCost.toGas(tx.getRentGasLimit());
+        long txRentGasLimit = GasCost.toGas(tx.getRentGasLimit());
 
         long curBlockGasLimit = GasCost.toGas(executionBlock.getGasLimit());
 
@@ -206,8 +205,8 @@ public class TransactionExecutor {
             //execution cost
             Coin txGasCost = tx.getGasPrice().multiply(BigInteger.valueOf(txGasLimit));
             //storage rent cost
-            //Coin txRentGasCost = tx.getGasPrice().multiply(BigInteger.valueOf(txRentGasLimit));
-            totalCost = totalCost.add(txGasCost);//.add(txRentGasCost);
+            Coin txRentGasCost = tx.getGasPrice().multiply(BigInteger.valueOf(txRentGasLimit));
+            totalCost = totalCost.add(txGasCost).add(txRentGasCost);
         }
         
         Coin senderBalance = track.getBalance(tx.getSender());
@@ -307,18 +306,19 @@ public class TransactionExecutor {
             // set reference timestamp for rent computations: ToDo: should this be at the block level?
             refTimeStamp = Instant.now().getEpochSecond();
             // #mish add sender to Map of accessed nodes (for storage rent tracking)
+            //but don't add receiver address yet as it may be a pre-compiled contract
             accessedNodeAdder(tx.getSender(),track, result);    
-            /* Don't add receiver address yet as it may be a pre-compiled contract (won't be in trie).
-            */
+            
             track.increaseNonce(tx.getSender());
-
+    
             long txGasLimit = GasCost.toGas(tx.getGasLimit());
-            //long txRentGasLimit = GasCost.toGas(tx.getRentGasLimit());
-            //execution gas limit
+            long txRentGasLimit = GasCost.toGas(tx.getRentGasLimit());
+            //execution gas limit  gas2Coin
             Coin txGasCost = tx.getGasPrice().multiply(BigInteger.valueOf(txGasLimit));
-            //storage rent gas limit
-            //Coin txRentGasCost = tx.getGasPrice().multiply(BigInteger.valueOf(txRentGasLimit));
-            track.addBalance(tx.getSender(), txGasCost.negate());
+            //storage rent gas limit gas2Coin
+            Coin txRentGasCost = tx.getGasPrice().multiply(BigInteger.valueOf(txRentGasLimit));
+            // reduce balance first
+            track.addBalance(tx.getSender(), txGasCost.add(txRentGasCost).negate());
 
             logger.trace("Paying: txGasCost: [{}],  gasPrice: [{}], gasLimit: [{}]",
                                     txGasCost, tx.getGasPrice(), txGasLimit);
@@ -360,7 +360,7 @@ public class TransactionExecutor {
 
             long requiredGas = precompiledContract.getGasForData(tx.getData());
             long txGasLimit = GasCost.toGas(tx.getGasLimit());
-            //long txRentGasLimit = GasCost.toGas(tx.getRentGasLimit());
+            long txRentGasLimit = GasCost.toGas(tx.getRentGasLimit());
             long gasUsed = GasCost.add(requiredGas, basicTxCost);
             if (!localCall && !enoughGas(txGasLimit, requiredGas, gasUsed)) {
                 // no refund no endowment
@@ -369,9 +369,9 @@ public class TransactionExecutor {
                         executionBlock.getNumber(), targetAddress.toString(), requiredGas, gasUsed, mEndGas));
                 mEndGas = 0;
                 // #mish: if exec gas OOG, do not refund all rent Gas.. keep 25% as per RSKIP113
-                //mEndRentGas = 3*txRentGasLimit/4; //#mish: with pre compiles should all rent gas be refunded?
+                mEndRentGas = 3*txRentGasLimit/4; //#mish: with pre compiles should all rent gas be refunded?
                 // increase estimated rentgas
-                //estRentGas += txRentGasLimit/4;
+                estRentGas += txRentGasLimit/4;
                 profiler.stop(metric);
                 return;
             }
@@ -379,15 +379,17 @@ public class TransactionExecutor {
             mEndGas = activations.isActive(ConsensusRule.RSKIP136) ?
                     GasCost.subtract(txGasLimit, gasUsed) :
                     txGasLimit - gasUsed;
-            // update refund status of rentGas
-            //mEndRentGas = txRentGasLimit; // no rentgas computed yet
+            // update refund status of rentGas, could be > 0 sender account nodes (via accessedNodeAdder)
+            mEndRentGas = activations.isActive(ConsensusRule.RSKIP136) ?
+                    GasCost.subtract(txRentGasLimit, estRentGas) :
+                    txRentGasLimit - estRentGas; 
 
             // FIXME: save return for vm trace
             try {
                 byte[] out = precompiledContract.execute(tx.getData());
                 this.subtraces = precompiledContract.getSubtraces();
                 result.setHReturn(out);
-                /** #mish: create dummy accounts for pre-compiled contracts 
+                /** #mish: creating dummy accounts for pre-compiled contracts 
                  * Pre-compiled contracts to do not exist in Trie/repository (they don't have to).
                  * In ethereum a contract calling another contract costs 700. But if that contract does not exist,
                  * then a new account is created which costs an additional 25000 for `NEW_ACCT_CALL`
@@ -703,13 +705,13 @@ public class TransactionExecutor {
         return toBI(tx.getGasLimit()).subtract(toBI(mEndGas)).longValue();
     }
 
-    /*
+    
     public long getRentGasUsed() {
         if (activations.isActive(ConsensusRule.RSKIP136)) {
             return GasCost.subtract(GasCost.toGas(tx.getRentGasLimit()), mEndRentGas);
         }
         return toBI(tx.getRentGasLimit()).subtract(toBI(mEndRentGas)).longValue();
-    }*/
+    }
 
     public Coin getPaidFees() { return paidFees; }
 
@@ -782,7 +784,7 @@ public class TransactionExecutor {
         }
     }
     // Similar to accessednodes adder. Different HashMap, 6 months timestamp, rent computation, no check for prepaid rent
-    // also, its more likely that created nodes will be in a cached repository, e.g. cachetrack in Tx execution 
+    // also, it's more likely that created nodes will be in a cached repository, e.g. cachetrack in Tx execution 
     public void createdNodeAdder(RskAddress addr, Repository repository, ProgramResult progRes){
         DataWord accKey = repository.getAccountNodeKey(addr);
         Uint24 vLen = repository.getAccountNodeValueLength(addr);

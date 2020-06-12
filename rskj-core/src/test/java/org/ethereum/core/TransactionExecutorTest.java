@@ -325,7 +325,7 @@ public class TransactionExecutorTest {
         when(transaction.getSender()).thenReturn(sender);
         when(transaction.getGasPrice()).thenReturn(gasPrice);
         when(transaction.getGasLimit()).thenReturn(gasLimit);
-        //when(transaction.getRentGasLimit()).thenReturn(gasLimit); //#mish if rentGasLimit not specified use gasLimit in its place (RSKIP113)
+        when(transaction.getRentGasLimit()).thenReturn(gasLimit); //#mish
         when(transaction.getSender(any())).thenCallRealMethod();
         when(transaction.getNonce()).thenReturn(txNonce);
         when(transaction.getReceiveAddress()).thenReturn(receiver);

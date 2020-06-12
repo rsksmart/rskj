@@ -39,7 +39,8 @@ public class ProgramResult {
     private long gasUsed;
     /** #mish rent gas is collected at end of transaction. 
      * so rentgas "used" is more like an "estimate" of eventual cost, rather than definite spending. 
-     * However, for clarity of thought, use the same terminology as for regular execution gas.  
+     * However, for clarity of thought, use the same terminology as for regular execution gas.
+     * And even though it is not collected until EOT, it cannot go over the rentGas limit.. that's a OOrentG exception  
     */
     private long rentGasUsed;
     // #mish data returned from memory, program. can be empty, can be output from func call, even contract code to be written to trie
@@ -62,7 +63,9 @@ public class ProgramResult {
     private List<InternalTransaction> internalTransactions;
     private List<LogInfo> logInfoList;
     private long futureRefund = 0;  // e.g. for contract suicide refund // "future" is really just end of transaction
-    private long futureRentGasRefund = 0; // #mish to keep track of storage rent refund on node modification/deletion (policy not decided!) 
+    
+    // #mish: There is no separate refund policy in place for pre-paid rent gas (deletions/SSTORE clear already get refund)
+    //private long futureRentGasRefund = 0;
 
     /*
      * for testing runs ,
@@ -207,8 +210,7 @@ public class ProgramResult {
             accessedNodes.clear();
         }
         resetFutureRefund();
-        resetFutureRentGasRefund();
-
+        //resetFutureRentGasRefund(); // #mish currently no policy of refund for prepaid rentGas
     }
 
 
@@ -234,12 +236,6 @@ public class ProgramResult {
         return callCreateList;
     }
 
-    /* // TODO: testing suite in program uses a version without rent
-    public void addCallCreate(byte[] data, byte[] destination, long gasLimit, byte[] value) {
-        getCallCreateList().add(new CallCreate(data, destination, gasLimit, value);
-    }*/
-
-    // #mish without storage rent
     public void addCallCreate(byte[] data, byte[] destination, long gasLimit, byte[] value) {
         getCallCreateList().add(new CallCreate(data, destination, gasLimit, value));
     }
@@ -250,11 +246,11 @@ public class ProgramResult {
         }
         return internalTransactions;
     }
-    // #mish: this version does not have rentGasLimit in the list of arguments.. legacy, remove later, internally, gasLimit is used for rentGasLImit
+  
     public InternalTransaction addInternalTransaction(byte[] parentHash, int deep, byte[] nonce, DataWord gasPrice, DataWord gasLimit,
                                                       byte[] senderAddress, byte[] receiveAddress, byte[] value, byte[] data, String note) {
         InternalTransaction transaction = new InternalTransaction(parentHash, deep, getInternalTransactions().size(),
-                                        nonce, gasPrice, gasLimit, senderAddress, receiveAddress, value, data, note); //gasLImit repeated, one is for storage rent
+                                        nonce, gasPrice, gasLimit, senderAddress, receiveAddress, value, data, note);
         getInternalTransactions().add(transaction);
         return transaction;
     } 
@@ -287,6 +283,7 @@ public class ProgramResult {
         futureRefund = 0;
     }
 
+    /* #mish: no separate refund for rent gas
     public void addFutureRentGasRefund(long rentGasValue) {
         futureRentGasRefund += rentGasValue;
     }
@@ -298,6 +295,7 @@ public class ProgramResult {
     public void resetFutureRentGasRefund() {
         futureRentGasRefund = 0;
     }
+    */
 
     public void merge(ProgramResult another) {
         addInternalTransactions(another.getInternalTransactions());
@@ -307,7 +305,7 @@ public class ProgramResult {
             addAccessedNodes(another.getAccessedNodes());
             addLogInfos(another.getLogInfoList());
             addFutureRefund(another.getFutureRefund());
-            addFutureRentGasRefund(another.getFutureRentGasRefund());
+            //addFutureRentGasRefund(another.getFutureRentGasRefund());// #mish no current policy to refund prepaid rent gas
         }
     }
     
