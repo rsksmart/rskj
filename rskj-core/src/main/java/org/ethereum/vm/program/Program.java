@@ -484,14 +484,14 @@ public class Program {
         spendGas(gasLimit, "internal call");
 
         // #mish  rentgaslimit get Remaining for internal call
-        //long rentGasLimit = getRemainingRentGas();
-        //spendRentGas(rentGasLimit, "internal call");
+        long rentGasLimit = getRemainingRentGas();
+        spendRentGas(rentGasLimit, "internal call");
 
 
         if (byTestingSuite()) {
             // This keeps track of the contracts created for a test
             getResult().addCallCreate(programCode, EMPTY_BYTE_ARRAY,
-                    gasLimit,
+                    gasLimit, rentGasLimit,
                     value.getNoLeadZeroesData());
         }
 
@@ -607,12 +607,12 @@ public class Program {
 
     private ProgramResult getProgramResult(RskAddress senderAddress, byte[] nonce, DataWord value,
                                            RskAddress contractAddress, Coin endowment, byte[] programCode,
-                                           long gasLimit, Repository track, Coin newBalance, ProgramResult programResult) {
+                                           long gasLimit, long rentGasLimit, Repository track, Coin newBalance, ProgramResult programResult) {
 
 
         InternalTransaction internalTx = addInternalTx(nonce, getGasLimit(), senderAddress, RskAddress.nullAddress(), endowment, programCode, "create");
         ProgramInvoke programInvoke = programInvokeFactory.createProgramInvoke(
-                this, DataWord.valueOf(contractAddress.getBytes()), getOwnerAddress(), value, gasLimit,
+                this, DataWord.valueOf(contractAddress.getBytes()), getOwnerAddress(), value, gasLimit, rentGasLimit,
                 newBalance, null, track, this.invoke.getBlockStore(), false, byTestingSuite());
 
         returnDataBuffer = null; // reset return buffer right before the call
@@ -687,6 +687,8 @@ public class Program {
         return programResult;
     }
 
+    // #mish arg is generic, not just for gas. 
+    // e.g. In VM.java this method is called for gas and also stack size
     public static long limitToMaxLong(DataWord gas) {
         return gas.longValueSafe();
 
@@ -768,6 +770,7 @@ public class Program {
             // This keeps track of the calls created for a test
             getResult().addCallCreate(data, contextAddress.getBytes(),
                     msg.getGas().longValueSafe(),
+                    msg.getRentGas().longValueSafe(),
                     msg.getEndowment().getNoLeadZeroesData());
             return;
         }
@@ -791,7 +794,7 @@ public class Program {
             DataWord ownerAddress = DataWord.valueOf(contextAddress.getBytes());
             DataWord transferValue = DataWord.valueOf(endowment.getBytes());
 
-            TransferInvoke invoke = new TransferInvoke(callerAddress, ownerAddress, msg.getGas().longValue(), transferValue);
+            TransferInvoke invoke = new TransferInvoke(callerAddress, ownerAddress, msg.getGas().longValue(), msg.getRentGas().longValue(), transferValue);
             ProgramResult result = new ProgramResult();
 
             ProgramSubtrace subtrace = ProgramSubtrace.newCallSubtrace(CallType.fromMsgType(msg.getType()), invoke, result, Collections.emptyList());
@@ -1435,7 +1438,7 @@ public class Program {
             // This keeps track of the calls created for a test
             this.getResult().addCallCreate(data,
                     codeAddress.getBytes(),
-                    msg.getGas().longValueSafe(),
+                    msg.getGas().longValueSafe(), msg.getRentGas().longValueSafe(),
                     msg.getEndowment().getNoLeadZeroesData());
 
             stackPushOne();

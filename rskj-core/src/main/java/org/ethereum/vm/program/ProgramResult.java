@@ -236,8 +236,8 @@ public class ProgramResult {
         return callCreateList;
     }
 
-    public void addCallCreate(byte[] data, byte[] destination, long gasLimit, byte[] value) {
-        getCallCreateList().add(new CallCreate(data, destination, gasLimit, value));
+    public void addCallCreate(byte[] data, byte[] destination, long gasLimit, long rentGasLimit, byte[] value) {
+        getCallCreateList().add(new CallCreate(data, destination, gasLimit, rentGasLimit, value));
     }
 
     public List<InternalTransaction> getInternalTransactions() {

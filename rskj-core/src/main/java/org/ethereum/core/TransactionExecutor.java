@@ -669,7 +669,8 @@ public class TransactionExecutor {
             programTraceProcessor.processProgramTrace(trace, tx.getHash());
         }
         else {
-            TransferInvoke invoke = new TransferInvoke(DataWord.valueOf(tx.getSender().getBytes()), DataWord.valueOf(tx.getReceiveAddress().getBytes()), 0L, DataWord.valueOf(tx.getValue().getBytes()));
+            // #mish: todo rentGas argument is from wire tx.. verify
+            TransferInvoke invoke = new TransferInvoke(DataWord.valueOf(tx.getSender().getBytes()), DataWord.valueOf(tx.getReceiveAddress().getBytes()), 0L, GasCost.toGas(tx.getRentGasLimit());, DataWord.valueOf(tx.getValue().getBytes()));
 
             SummarizedProgramTrace trace = new SummarizedProgramTrace(invoke);
 

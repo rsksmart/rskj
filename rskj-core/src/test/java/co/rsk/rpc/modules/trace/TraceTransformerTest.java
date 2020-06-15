@@ -31,6 +31,7 @@ public class TraceTransformerTest {
         DataWord origin = DataWord.valueOf(2);
         DataWord caller = DataWord.valueOf(3);
         long gas = 1000000;
+        long rentGas = 1000_000; //#mish where possible use same values as gas
         DataWord callValue = DataWord.valueOf(100000);
         byte[] data = new byte[]{0x01, 0x02, 0x03, 0x04};
 
@@ -41,6 +42,7 @@ public class TraceTransformerTest {
                 null,
                 null,
                 gas,
+                rentGas,
                 callValue,
                 data,
                 null, null, null, null, null, null,
@@ -55,6 +57,7 @@ public class TraceTransformerTest {
         Assert.assertEquals("0x0000000000000000000000000000000000000003", action.getFrom());
         Assert.assertEquals("0x01020304", action.getInput());
         Assert.assertEquals("0xf4240", action.getGas());
+        Assert.assertEquals("0xf4240", action.getRentGas());
         Assert.assertEquals("0x186a0", action.getValue());
     }
 
@@ -64,6 +67,7 @@ public class TraceTransformerTest {
         DataWord origin = DataWord.valueOf(2);
         DataWord caller = DataWord.valueOf(3);
         long gas = 1000000;
+        long rentGas = 1000_000;
         DataWord callValue = DataWord.valueOf(100000);
         byte[] data = new byte[]{0x01, 0x02, 0x03, 0x04};
 
@@ -74,6 +78,7 @@ public class TraceTransformerTest {
                 null,
                 null,
                 gas,
+                rentGas,
                 callValue,
                 null,
                 null, null, null, null, null, null,
@@ -88,6 +93,7 @@ public class TraceTransformerTest {
         Assert.assertEquals("0x0000000000000000000000000000000000000003", action.getFrom());
         Assert.assertEquals("0x01020304", action.getInit());
         Assert.assertEquals("0xf4240", action.getGas());
+        Assert.assertEquals("0xf4240", action.getRentGas());
         Assert.assertEquals("0x186a0", action.getValue());
     }
 }

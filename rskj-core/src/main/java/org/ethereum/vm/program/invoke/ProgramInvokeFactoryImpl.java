@@ -70,6 +70,8 @@ public class ProgramInvokeFactoryImpl implements ProgramInvokeFactory {
         /*** GAS op ***/
         byte[] gas = tx.getGasLimit();
 
+        byte[] rentGas = tx.getRentGasLimit();
+
         /***        CALLVALUE op      ***/
         Coin callValue = tx.getValue();
 
@@ -104,6 +106,7 @@ public class ProgramInvokeFactoryImpl implements ProgramInvokeFactory {
                             "balance={}\n" +
                             "gasPrice={}\n" +
                             "gas={}\n" +
+                            "rentGas={}\n" +
                             "callValue={}\n" +
                             "data={}\n" +
                             "lastHash={}\n" +
@@ -120,6 +123,7 @@ public class ProgramInvokeFactoryImpl implements ProgramInvokeFactory {
                     balance,
                     gasPrice,
                     new BigInteger(1, gas).longValue(),
+                    new BigInteger(1, rentGas).longValue(),
                     callValue,
                     Hex.toHexString(data),
                     Hex.toHexString(lastHash),
@@ -131,7 +135,7 @@ public class ProgramInvokeFactoryImpl implements ProgramInvokeFactory {
                     gaslimit);
         }
 
-        return new ProgramInvokeImpl(addr.getBytes(), origin, caller, balance.getBytes(), gasPrice.getBytes(), gas, callValue.getBytes(), data,
+        return new ProgramInvokeImpl(addr.getBytes(), origin, caller, balance.getBytes(), gasPrice.getBytes(), gas, rentGas, callValue.getBytes(), data,
                 lastHash, coinbase, timestamp, number, txindex,difficulty, gaslimit,
                 repository, blockStore);
     }
@@ -142,7 +146,7 @@ public class ProgramInvokeFactoryImpl implements ProgramInvokeFactory {
     @Override
     public ProgramInvoke createProgramInvoke(Program program, DataWord toAddress, DataWord callerAddress,
                                              DataWord inValue,
-                                             long inGas,
+                                             long inGas, long inRentGas,
                                              Coin balanceInt, byte[] dataIn,
                                              Repository repository, BlockStore blockStore,
                                              boolean isStaticCall, boolean byTestingSuite) {
@@ -154,6 +158,7 @@ public class ProgramInvokeFactoryImpl implements ProgramInvokeFactory {
         DataWord balance = DataWord.valueOf(balanceInt.getBytes());
         DataWord gasPrice = program.getGasPrice();
         long agas = inGas;
+        long aRentGas = inRentGas;
         DataWord callValue = inValue;
 
         byte[] data = dataIn;
@@ -173,6 +178,7 @@ public class ProgramInvokeFactoryImpl implements ProgramInvokeFactory {
                             "balance={}\n" +
                             "gasPrice={}\n" +
                             "gas={}\n" +
+                            "rentGas={}\n" +
                             "callValue={}\n" +
                             "data={}\n" +
                             "lastHash={}\n" +
@@ -188,6 +194,7 @@ public class ProgramInvokeFactoryImpl implements ProgramInvokeFactory {
                     balance.toString(),
                     gasPrice.longValue(),
                     agas,
+                    aRentGas,
                     Hex.toHexString(callValue.getNoLeadZeroesData()),
                     data == null ? "" : Hex.toHexString(data),
                     Hex.toHexString(lastHash.getData()),
@@ -199,7 +206,7 @@ public class ProgramInvokeFactoryImpl implements ProgramInvokeFactory {
                     gasLimit.bigIntValue());
         }
 
-        return new ProgramInvokeImpl(address, origin, caller, balance, gasPrice, agas, callValue,
+        return new ProgramInvokeImpl(address, origin, caller, balance, gasPrice, agas, aRentGas, callValue,
                 data, lastHash, coinbase, timestamp, number, transactionIndex, difficulty, gasLimit,
                 repository, program.getCallDeep() + 1, blockStore,
                 isStaticCall, byTestingSuite);
