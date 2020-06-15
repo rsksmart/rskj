@@ -254,7 +254,7 @@ public class TestRunner {
             byte[] balance = ByteUtil.bigIntegerToBytes(repository.getBalance(new RskAddress(exec.getAddress())).asBigInteger());
             byte[] gasPrice = exec.getGasPrice();
             byte[] gas = exec.getGas();
-            byte[] rentGas = exec.getRentGas(); // #mishtodo this can be tricky, mods made when program invoke class was modified
+            byte[] rentGas = exec.getRentGas();
             byte[] callValue = exec.getValue();
             byte[] msgData = exec.getData();
             byte[] lastHash = env.getPreviousHash();

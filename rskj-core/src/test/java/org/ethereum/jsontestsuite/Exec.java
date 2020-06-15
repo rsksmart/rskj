@@ -35,6 +35,7 @@ public class Exec {
     private final byte[] code;
 
     private final byte[] gas;
+    private final byte[] rentGas;
     private final byte[] gasPrice;
 
     private final byte[] origin;
@@ -50,6 +51,7 @@ public class Exec {
             "code" : [ 96,0,96,0,96,0,96,0,96,74,51,96,200,92,3,241 ],
 
             "gas" : 10000,
+            "rentGas" : 10000,
             "gasPrice" : 100000000000000,
             "origin" : "cd1722f3947def4cf144679da39c4c32bdc35681",
             "value" : 1000000000000000000
@@ -63,6 +65,7 @@ public class Exec {
         String data = exec.get("data").toString();
 
         String gas = exec.get("gas").toString();
+        String rentGas = exec.get("rentGas").toString(); // #mish shadowing gas
         String gasPrice = exec.get("gasPrice").toString();
         String origin = exec.get("origin").toString();
 
@@ -82,6 +85,7 @@ public class Exec {
             this.data = ByteUtil.EMPTY_BYTE_ARRAY;
 
         this.gas = ByteUtil.bigIntegerToBytes(TestCase.toBigInt(gas));
+        this.rentGas = ByteUtil.bigIntegerToBytes(TestCase.toBigInt(rentGas));
         this.gasPrice = ByteUtil.bigIntegerToBytes(TestCase.toBigInt(gasPrice));
 
         this.origin = Hex.decode(origin);
@@ -109,6 +113,10 @@ public class Exec {
         return gas;
     }
 
+    public byte[] getRentGas() {
+        return rentGas;
+    }
+
     public byte[] getGasPrice() {
         return gasPrice;
     }
@@ -130,6 +138,7 @@ public class Exec {
                 ", data=" + Hex.toHexString(data) +
                 ", code=" + Hex.toHexString(data) +
                 ", gas=" + Hex.toHexString(gas) +
+                ", rentGas=" + Hex.toHexString(rentGas) +
                 ", gasPrice=" + Hex.toHexString(gasPrice) +
                 ", origin=" + Hex.toHexString(origin) +
                 ", value=" + Hex.toHexString(value) +
