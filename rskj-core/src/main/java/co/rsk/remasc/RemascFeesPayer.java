@@ -64,9 +64,10 @@ class RemascFeesPayer {
         DataWord from = DataWord.valueOf(contractAddress.getBytes());
         DataWord to = DataWord.valueOf(toAddress.getBytes());
         long gas = 0L;
+        long rentGas = 0L; //#mish fix me todo
         DataWord amount = DataWord.valueOf(value.getBytes());
 
-        TransferInvoke invoke = new TransferInvoke(from, to, gas, amount);
+        TransferInvoke invoke = new TransferInvoke(from, to, gas, rentGas, amount); //#mish fix me todo, added cos constructor mod
         ProgramResult result     = new ProgramResult();
         ProgramSubtrace subtrace = ProgramSubtrace.newCallSubtrace(CallType.CALL, invoke, result, Collections.emptyList());
 

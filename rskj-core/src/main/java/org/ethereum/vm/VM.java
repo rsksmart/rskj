@@ -1476,6 +1476,9 @@ public class VM {
         program.step();
     }
 
+    /** #mish calls getMessageCall(), which handles the gas computation and spendOpCodegas(). Also logging, VM memory expansion.
+      *  The returned msg is then used to actually make a call to a PCC or a contract
+     */
     protected void doCALL(){
         DataWord gas = program.stackPop();
         DataWord codeAddress = program.stackPop();
@@ -1495,6 +1498,15 @@ public class VM {
         program.step();
     }
 
+    /** #mish set up and compute the costs of making a call, and spend the required gas  
+     * see computeCallGas(): basic cost of CALL + NEW_ACCT (if needed) + VT_CALL (value transfer) + MEMORY_EXPANSION_COST
+     * then calls minimumTransferGas(): which ensures any transfer of value involves the STIPEND_CALL fee 
+     *                                  (stipend is currently 2300, convetionally in ETH this is so receipient has enough gas to log it)
+     * CALL allows user to explicitly specify a gas to pass to callee/child. The minimum stipend is added on top on this.
+     * See calleeGas below.
+     * mishtodo: 1: need calleeRentGas, modify messagecall, and when getmsgcall is called, order of rentGas in stack!
+
+     */
     private MessageCall getMessageCall(DataWord gas, DataWord codeAddress, ActivationConfig.ForBlock activations) {
         DataWord value = calculateCallValue(activations);
 
@@ -1531,6 +1543,8 @@ public class VM {
         // the callee will receive less gas than the parent expected.
         long calleeGas = Math.min(remainingGas, specifiedGasPlusMin);
 
+        long calleeRentGas = calleeGas; // #mish todo fix me
+
         if (computeGas) {
             gasCost = GasCost.add(gasCost, calleeGas);
             spendOpCodeGas();
@@ -1551,7 +1565,7 @@ public class VM {
 
         return new MessageCall(
                 MsgType.fromOpcode(op),
-                DataWord.valueOf(calleeGas), codeAddress, value, inDataOffs, inDataSize,
+                DataWord.valueOf(calleeGas), DataWord.valueOf(calleeRentGas),  codeAddress, value, inDataOffs, inDataSize,
                 outDataOffs, outDataSize);
     }
 
@@ -1583,6 +1597,7 @@ public class VM {
         return minimumTransferGas;
     }
 
+    // #mish  basic cost of CALL + NEW_ACCT (if needed) + VT_CALL (value transfer) + MEMORY_EXPANSION_COST
     private long computeCallGas(DataWord codeAddress,
                                 DataWord value,
                                 DataWord inDataOffs,
@@ -1592,6 +1607,8 @@ public class VM {
         long callGas = GasCost.CALL;
 
         //check to see if account does not exist and is not a precompiled contract
+        // #mish: recall SDL's comment. PCC addresses do not exist in Trie. To avoid paying NEW_ACCT c
+        // when calling PCC, the TX executor creates addresses in trie for a PCC on the fly
         if (op == OpCode.CALL && !program.getStorage().isExist(new RskAddress(codeAddress))) {
             callGas = GasCost.add(callGas, GasCost.NEW_ACCT_CALL);
         }
@@ -1615,6 +1632,7 @@ public class VM {
         program.getResult().setRevert();
     }
 
+    // spendgas (OP_return + memory). Set code in memory to ProgResult.hReturn & exit
     protected void doRETURN(){
         DataWord size;
         long sizeLong;

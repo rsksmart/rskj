@@ -64,7 +64,7 @@ public class MessageCall {
     /**
      * storage rent gas to pay for the call, remaining rent gas will be refunded to the caller
      */
-    //private final DataWord rentGas;
+    private final DataWord rentGas;
     /**
      * address of account which code to call
      */
@@ -90,19 +90,7 @@ public class MessageCall {
      */
     private DataWord outDataSize;
 
-    // C1: #mish add rentgas field but not to arglist
-    public MessageCall(MsgType type, DataWord gas, DataWord codeAddress,
-                       DataWord endowment, DataWord inDataOffs, DataWord inDataSize) {
-        this.type = type;
-        this.gas = gas;
-        this.codeAddress = codeAddress;
-        this.endowment = endowment;
-        this.inDataOffs = inDataOffs;
-        this.inDataSize = inDataSize;
-    }
 
-    /*
-    // C1A: same as C1, but now rentgas is in arglist
     public MessageCall(MsgType type, DataWord gas, DataWord rentGas, DataWord codeAddress,
                        DataWord endowment, DataWord inDataOffs, DataWord inDataSize) {
         this.type = type;
@@ -112,18 +100,8 @@ public class MessageCall {
         this.endowment = endowment;
         this.inDataOffs = inDataOffs;
         this.inDataSize = inDataSize;
-    }*/
-
-    // #mish: C2 version before storage rent. Add rent field, but not to arglist. Use gas for rentgas
-    public MessageCall(MsgType type, DataWord gas, DataWord codeAddress,
-                       DataWord endowment, DataWord inDataOffs, DataWord inDataSize,
-                       DataWord outDataOffs, DataWord outDataSize) {
-        this(type, gas, codeAddress, endowment, inDataOffs, inDataSize);
-        this.outDataOffs = outDataOffs;
-        this.outDataSize = outDataSize;
     }
-
-    /*
+    
     // #mish: C2A Add rentgas to arglist.
     public MessageCall(MsgType type, DataWord gas, DataWord rentGas, DataWord codeAddress,
                        DataWord endowment, DataWord inDataOffs, DataWord inDataSize,
@@ -132,7 +110,6 @@ public class MessageCall {
         this.outDataOffs = outDataOffs;
         this.outDataSize = outDataSize;
     }
-    */
 
     public MsgType getType() {
         return type;
@@ -142,11 +119,11 @@ public class MessageCall {
         return gas;
     }
 
-    /*
+    
     public DataWord getRentGas() {
         return rentGas;
     }
-    */
+    
 
     public DataWord getCodeAddress() {
         return codeAddress;
