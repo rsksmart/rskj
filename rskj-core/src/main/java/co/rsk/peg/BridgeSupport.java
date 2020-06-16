@@ -119,7 +119,7 @@ public class BridgeSupport {
     private final FederationSupport federationSupport;
 
     private final Context btcContext;
-    private BtcBlockStoreWithCache.Factory btcBlockStoreFactory;
+    private final BtcBlockStoreWithCache.Factory btcBlockStoreFactory;
     private BtcBlockStoreWithCache btcBlockStore;
     private BtcBlockChain btcBlockChain;
     private final org.ethereum.core.Block rskExecutionBlock;
@@ -263,7 +263,7 @@ public class BridgeSupport {
         Sha256Hash btcTxHash = BtcTransactionFormatUtils.calculateBtcTxHash(btcTxSerialized);
 
         // Check the tx was not already processed
-        if (isAlreadyBtcTxHashProcessedHeight(btcTxHash)) {
+        if (isAlreadyBtcTxHashProcessed(btcTxHash)) {
             return;
         }
 
@@ -276,7 +276,7 @@ public class BridgeSupport {
         btcTx.verify();
 
         // Check again that the tx was not already processed but making sure to use the txid (no witness)
-        if (isAlreadyBtcTxHashProcessedHeight(btcTx.getHash(false))) {
+        if (isAlreadyBtcTxHashProcessed(btcTx.getHash(false))) {
             return;
         }
 
@@ -1163,7 +1163,7 @@ public class BridgeSupport {
      * @return true or false according
      * @throws  IOException
      * */
-    public boolean isAlreadyBtcTxHashProcessedHeight(Sha256Hash btcTxHash) throws IOException {
+    public boolean isAlreadyBtcTxHashProcessed(Sha256Hash btcTxHash) throws IOException {
         if (getBtcTxHashProcessedHeight(btcTxHash) > -1L) {
             logger.warn("Supplied Btc Tx {} was already processed", btcTxHash);
             return true;
@@ -2273,7 +2273,8 @@ public class BridgeSupport {
         }
 
         // Validates inputs count
-        BridgeUtils.validateInputsCount(btcTxSerialized, activations.isActive(ConsensusRule.RSKIP143), btcTxHash);
+        logger.info("Going to validate inputs for btc tx {}", btcTxHash);
+        BridgeUtils.validateInputsCount(btcTxSerialized, activations.isActive(ConsensusRule.RSKIP143));
 
         // Check the the merkle root equals merkle root of btc block at specified height in the btc best chain
         // BTC blockstore is available since we've already queried the best chain height

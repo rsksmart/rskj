@@ -34,7 +34,6 @@ import co.rsk.db.MutableTrieCache;
 import co.rsk.db.MutableTrieImpl;
 import co.rsk.peg.bitcoin.RskAllowUnconfirmedCoinSelector;
 import co.rsk.peg.btcLockSender.BtcLockSender;
-import co.rsk.peg.utils.BtcTransactionFormatUtils;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
@@ -50,10 +49,8 @@ import org.ethereum.vm.PrecompiledContracts;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import sun.nio.ch.Net;
 
 import java.math.BigInteger;
-import java.nio.ByteBuffer;
 import java.security.SecureRandom;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -84,13 +81,13 @@ public class BridgeUtilsTest {
     }
 
     @Test
-    public void testIsLock() throws Exception {
+    public void testIsLock() {
         // Lock is for the genesis federation ATM
         NetworkParameters params = RegTestParams.get();
         Context btcContext = new Context(params);
         BridgeRegTestConstants bridgeConstants = BridgeRegTestConstants.getInstance();
         Federation federation = bridgeConstants.getGenesisFederation();
-        Wallet wallet = new BridgeBtcWallet(btcContext, Arrays.asList(federation));
+        Wallet wallet = new BridgeBtcWallet(btcContext, Collections.singletonList(federation));
         Address federationAddress = federation.getAddress();
         wallet.addWatchedAddress(federationAddress, federation.getCreationTime().toEpochMilli());
 
@@ -123,23 +120,21 @@ public class BridgeUtilsTest {
     }
 
     @Test
-    public void testIsLockForTwoFederations() throws Exception {
+    public void testIsLockForTwoFederations() {
         BridgeRegTestConstants bridgeConstants = BridgeRegTestConstants.getInstance();
         NetworkParameters parameters = bridgeConstants.getBtcParams();
         Context btcContext = new Context(parameters);
 
-        List<BtcECKey> federation1Keys = Arrays.asList(new BtcECKey[]{
+        List<BtcECKey> federation1Keys = Arrays.asList(
                 BtcECKey.fromPrivate(Hex.decode("fa01")),
-                BtcECKey.fromPrivate(Hex.decode("fa02")),
-        });
+                BtcECKey.fromPrivate(Hex.decode("fa02")));
         federation1Keys.sort(BtcECKey.PUBKEY_COMPARATOR);
         Federation federation1 = new Federation(FederationTestUtils.getFederationMembersWithBtcKeys(federation1Keys), Instant.ofEpochMilli(1000L), 0L, parameters);
 
-        List<BtcECKey> federation2Keys = Arrays.asList(new BtcECKey[]{
+        List<BtcECKey> federation2Keys = Arrays.asList(
                 BtcECKey.fromPrivate(Hex.decode("fb01")),
                 BtcECKey.fromPrivate(Hex.decode("fb02")),
-                BtcECKey.fromPrivate(Hex.decode("fb03")),
-        });
+                BtcECKey.fromPrivate(Hex.decode("fb03")));
         federation2Keys.sort(BtcECKey.PUBKEY_COMPARATOR);
         Federation federation2 = new Federation(FederationTestUtils.getFederationMembersWithBtcKeys(federation2Keys), Instant.ofEpochMilli(2000L), 0L, parameters);
 
@@ -242,7 +237,7 @@ public class BridgeUtilsTest {
     }
 
     @Test
-    public void testTxIsProcessable() throws Exception {
+    public void testTxIsProcessable() {
         // Before Hardfork
         ActivationConfig.ForBlock actForBlock = mock(ActivationConfig.ForBlock.class);
         when(actForBlock.isActive(ConsensusRule.RSKIP143)).thenReturn(false);
@@ -388,10 +383,12 @@ public class BridgeUtilsTest {
     @Test
     public void getFederationNoSpendWallet() {
         NetworkParameters regTestParameters = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
-        Federation federation = new Federation(FederationTestUtils.getFederationMembersWithBtcKeys(Arrays.asList(new BtcECKey[]{
+        Federation federation = new Federation(FederationTestUtils.getFederationMembersWithBtcKeys(Arrays.asList(
                 BtcECKey.fromPublicOnly(Hex.decode("036bb9eab797eadc8b697f0e82a01d01cabbfaaca37e5bafc06fdc6fdd38af894a")),
-                BtcECKey.fromPublicOnly(Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5"))
-        })), Instant.ofEpochMilli(5005L), 0L, regTestParameters);
+                BtcECKey.fromPublicOnly(Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5")))),
+                Instant.ofEpochMilli(5005L),
+                0L,
+                regTestParameters);
         Context mockedBtcContext = mock(Context.class);
         when(mockedBtcContext.getParams()).thenReturn(regTestParameters);
 
@@ -403,10 +400,12 @@ public class BridgeUtilsTest {
     @Test
     public void getFederationSpendWallet() throws UTXOProviderException {
         NetworkParameters regTestParameters = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
-        Federation federation = new Federation(FederationTestUtils.getFederationMembersWithBtcKeys(Arrays.asList(new BtcECKey[]{
+        Federation federation = new Federation(FederationTestUtils.getFederationMembersWithBtcKeys(Arrays.asList(
                 BtcECKey.fromPublicOnly(Hex.decode("036bb9eab797eadc8b697f0e82a01d01cabbfaaca37e5bafc06fdc6fdd38af894a")),
-                BtcECKey.fromPublicOnly(Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5"))
-        })), Instant.ofEpochMilli(5005L), 0L, regTestParameters);
+                BtcECKey.fromPublicOnly(Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5")))),
+                Instant.ofEpochMilli(5005L),
+                0L,
+                regTestParameters);
         Context mockedBtcContext = mock(Context.class);
         when(mockedBtcContext.getParams()).thenReturn(regTestParameters);
 
@@ -517,7 +516,7 @@ public class BridgeUtilsTest {
 
     @Test(expected = Exception.class)
     public void validateHeightAndConfirmations_invalid_height() throws Exception {
-        BridgeUtils.validateHeightAndConfirmations(-1, 0, 0, null);
+        Assert.assertFalse(BridgeUtils.validateHeightAndConfirmations(-1, 0, 0, null));
     }
 
     @Test
@@ -532,7 +531,8 @@ public class BridgeUtilsTest {
 
     @Test(expected = Exception.class)
     public void calculateMerkleRoot_invalid_pmt() {
-        BridgeUtils.calculateMerkleRoot(mock(NetworkParameters.class), Hex.decode("ab"), null);
+        NetworkParameters networkParameters = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
+        BridgeUtils.calculateMerkleRoot(networkParameters, Hex.decode("ab"), null);
     }
 
     @Test
@@ -570,12 +570,7 @@ public class BridgeUtilsTest {
 
     @Test(expected = VerificationException.class)
     public void validateInputsCount_active_rskip() {
-        BridgeConstants bridgeConstants = BridgeRegTestConstants.getInstance();
-        NetworkParameters networkParameters = bridgeConstants.getBtcParams();
-
-        BtcTransaction tx = new BtcTransaction(networkParameters);
-
-        BridgeUtils.validateInputsCount(Hex.decode("00000000000100"), true, tx.getHash());
+        BridgeUtils.validateInputsCount(Hex.decode("00000000000100"), true);
     }
 
     @Test(expected = VerificationException.class)
@@ -585,7 +580,7 @@ public class BridgeUtilsTest {
 
         BtcTransaction tx = new BtcTransaction(networkParameters);
 
-        BridgeUtils.validateInputsCount(tx.bitcoinSerialize(), false, tx.getHash());
+        BridgeUtils.validateInputsCount(tx.bitcoinSerialize(), false);
     }
 
     private void assertIsWatching(Address address, Wallet wallet, NetworkParameters parameters) {

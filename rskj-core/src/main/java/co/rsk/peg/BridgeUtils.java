@@ -45,7 +45,7 @@ public class BridgeUtils {
     private static final Logger logger = LoggerFactory.getLogger("BridgeUtils");
 
     public static Wallet getFederationNoSpendWallet(Context btcContext, Federation federation) {
-        return getFederationsNoSpendWallet(btcContext, Arrays.asList(federation));
+        return getFederationsNoSpendWallet(btcContext, Collections.singletonList(federation));
     }
 
     public static Wallet getFederationsNoSpendWallet(Context btcContext, List<Federation> federations) {
@@ -55,7 +55,7 @@ public class BridgeUtils {
     }
 
     public static Wallet getFederationSpendWallet(Context btcContext, Federation federation, List<UTXO> utxos) {
-        return getFederationsSpendWallet(btcContext, Arrays.asList(federation), utxos);
+        return getFederationsSpendWallet(btcContext, Collections.singletonList(federation), utxos);
     }
 
     public static Wallet getFederationsSpendWallet(Context btcContext, List<Federation> federations, List<UTXO> utxos) {
@@ -63,7 +63,7 @@ public class BridgeUtils {
 
         RskUTXOProvider utxoProvider = new RskUTXOProvider(btcContext.getParams(), utxos);
         wallet.setUTXOProvider(utxoProvider);
-        federations.stream().forEach(federation -> {
+        federations.forEach(federation -> {
             wallet.addWatchedAddress(federation.getAddress(), federation.getCreationTime().toEpochMilli());
         });
         wallet.setCoinSelector(new RskAllowUnconfirmedCoinSelector());
@@ -135,7 +135,7 @@ public class BridgeUtils {
     }
 
     public static boolean isLockTx(BtcTransaction tx, Federation federation, Context btcContext, BridgeConstants bridgeConstants) {
-        return isLockTx(tx, Arrays.asList(federation), btcContext, bridgeConstants);
+        return isLockTx(tx, Collections.singletonList(federation), btcContext, bridgeConstants);
     }
 
     /**
@@ -245,7 +245,7 @@ public class BridgeUtils {
     public static boolean validateHeightAndConfirmations(int height, int btcBestChainHeight, int acceptableConfirmationsAmount, Sha256Hash btcTxHash) throws Exception {
         // Check there are at least N blocks on top of the supplied height
         if (height < 0) {
-            throw new Exception();
+            throw new Exception("Height can't be lower than 0");
         }
         int confirmations = btcBestChainHeight - height + 1;
         if (confirmations < acceptableConfirmationsAmount) {
@@ -271,16 +271,16 @@ public class BridgeUtils {
         return merkleRoot;
     }
 
-    public static void validateInputsCount(byte[] btcTxSerialized, boolean isActiveRskip, Sha256Hash btcTxHash) throws VerificationException.EmptyInputsOrOutputs {
+    public static void validateInputsCount(byte[] btcTxSerialized, boolean isActiveRskip) throws VerificationException.EmptyInputsOrOutputs {
         if (BtcTransactionFormatUtils.getInputsCount(btcTxSerialized) == 0) {
             if (isActiveRskip) {
                 if (BtcTransactionFormatUtils.getInputsCountForSegwit(btcTxSerialized) == 0) {
-                    logger.warn("Btc Segwit Tx {} has no inputs ", btcTxHash);
+                    logger.warn("Provided btc segwit tx has no inputs");
                     // this is the exception thrown by co.rsk.bitcoinj.core.BtcTransaction#verify when there are no inputs.
                     throw new VerificationException.EmptyInputsOrOutputs();
                 }
             } else {
-                logger.warn("Btc Tx {} has no inputs ", btcTxHash);
+                logger.warn("Provided btc tx has no inputs ");
                 // this is the exception thrown by co.rsk.bitcoinj.core.BtcTransaction#verify when there are no inputs.
                 throw new VerificationException.EmptyInputsOrOutputs();
             }
