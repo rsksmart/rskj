@@ -93,12 +93,12 @@ public class LightClientMessageVisitor {
 
     public void apply(GetBlockHeadersByHashMessage msg) {
         logger.debug("Read message: {} GET_BLOCK_HEADER", msg);
-        lightProcessor.processGetBlockHeadersByHashMessage(msg.getId(), msg.getBlockHash(), msg.getMax(), msg.getSkip(), msg.isReverse(), lightPeer);
+        lightProcessor.processGetBlockHeadersByHashMessage(msg.getId(), msg.getStartBlockHash(), msg.getMax(), msg.getSkip(), msg.isReverse(), lightPeer);
     }
 
     public void apply(GetBlockHeadersByNumberMessage msg) {
         logger.debug("Read message: {} GET_BLOCK_HEADER", msg);
-        lightProcessor.processGetBlockHeadersByNumberMessage(msg.getId(), msg.getBlockNumber(), msg.getMax(), msg.getSkip(), msg.isReverse(), lightPeer);
+        lightProcessor.processGetBlockHeadersByNumberMessage(msg.getId(), msg.getStartBlockNumber(), msg.getMax(), msg.getSkip(), msg.isReverse(), lightPeer);
     }
 
     public void apply(BlockHeadersMessage msg) {

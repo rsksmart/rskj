@@ -47,7 +47,7 @@ public class GetBlockHeadersByHashMessageTest {
         GetBlockHeadersByHashMessage testMessage = new GetBlockHeadersByHashMessage(id, blockHash, max, skip, true);
 
         assertEquals(id, testMessage.getId());
-        assertArrayEquals(blockHash, testMessage.getBlockHash());
+        assertArrayEquals(blockHash, testMessage.getStartBlockHash());
         assertEquals(max, testMessage.getMax());
         assertEquals(skip, testMessage.getSkip());
         assertTrue(testMessage.isReverse());
@@ -78,7 +78,7 @@ public class GetBlockHeadersByHashMessageTest {
         GetBlockHeadersByHashMessage getBlockHeadersByHashMessage = (GetBlockHeadersByHashMessage) messageFactory.create(GET_BLOCK_HEADER_BY_HASH.asByte(), encoded);
 
         assertEquals(id, getBlockHeadersByHashMessage.getId());
-        assertArrayEquals(blockHash, getBlockHeadersByHashMessage.getBlockHash());
+        assertArrayEquals(blockHash, getBlockHeadersByHashMessage.getStartBlockHash());
         assertEquals(max, getBlockHeadersByHashMessage.getMax());
         assertEquals(GET_BLOCK_HEADER_BY_HASH, getBlockHeadersByHashMessage.getCommand());
         assertEquals(testMessage.getAnswerMessage(), getBlockHeadersByHashMessage.getAnswerMessage());

@@ -46,7 +46,7 @@ public class GetBlockHeadersByNumberMessageTest {
         GetBlockHeadersByNumberMessage testMessage = new GetBlockHeadersByNumberMessage(id, blockNumber, max, skip, true);
 
         assertEquals(id, testMessage.getId());
-        assertEquals(blockNumber, testMessage.getBlockNumber());
+        assertEquals(blockNumber, testMessage.getStartBlockNumber());
         assertEquals(max, testMessage.getMax());
         assertEquals(skip, testMessage.getSkip());
         assertTrue(testMessage.isReverse());
@@ -77,7 +77,7 @@ public class GetBlockHeadersByNumberMessageTest {
         GetBlockHeadersByNumberMessage getBlockHeadersByNumberMessageMessage = (GetBlockHeadersByNumberMessage) messageFactory.create(GET_BLOCK_HEADER_BY_NUMBER.asByte(), encoded);
 
         assertEquals(id, getBlockHeadersByNumberMessageMessage.getId());
-        assertEquals(blockNumber, getBlockHeadersByNumberMessageMessage.getBlockNumber());
+        assertEquals(blockNumber, getBlockHeadersByNumberMessageMessage.getStartBlockNumber());
         assertEquals(max, getBlockHeadersByNumberMessageMessage.getMax());
         assertEquals(GET_BLOCK_HEADER_BY_NUMBER, getBlockHeadersByNumberMessageMessage.getCommand());
         assertEquals(testMessage.getAnswerMessage(), getBlockHeadersByNumberMessageMessage.getAnswerMessage());

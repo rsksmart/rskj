@@ -120,8 +120,8 @@ public class LightSyncProcessor {
                 block.getNumber(), lightPeer.getPeerIdShort());
     }
 
-    public void sendBlockHeadersMessage(LightPeer lightPeer, byte[] bestBlock, int max, int skip, boolean reverse) {
-        GetBlockHeadersByHashMessage blockHeaderMessage = new GetBlockHeadersByHashMessage(++lastRequestedId, bestBlock, max, skip, reverse);
+    public void sendBlockHeadersMessage(LightPeer lightPeer, byte[] startBlockHash, int max, int skip, boolean reverse) {
+        GetBlockHeadersByHashMessage blockHeaderMessage = new GetBlockHeadersByHashMessage(++lastRequestedId, startBlockHash, max, skip, reverse);
         pendingMessages.put(lastRequestedId, BLOCK_HEADER);
         lightPeer.sendMessage(blockHeaderMessage);
     }
