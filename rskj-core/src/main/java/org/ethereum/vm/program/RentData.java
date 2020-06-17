@@ -74,10 +74,10 @@ public class RentData {
             long timeDelta = currentTime - lrpt; //time since rent last paid
             long rd = 0; //initialize rent due to 0
             // compute rent due but only for nodes with past due rent
-            if (timeDelta >0) {
+            if (timeDelta > 0) {
                  // formula is 1/2^21 (gas/byte/second) * (node valuelength + 136 bytes overhead) * timeDelta (seconds)
                 rd = GasCost.calculateStorageRent(this.valueLength, timeDelta);
-            }
+            } // no need for else, rd initialized to 0
             
             // if rent due exceeds high threshold, does not matter if the node is modified or not            
             if (rd > notModifiedTh){

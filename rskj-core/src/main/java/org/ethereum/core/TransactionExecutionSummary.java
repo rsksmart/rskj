@@ -35,20 +35,18 @@ public class TransactionExecutionSummary {
     private Transaction tx;
     private Coin value = Coin.ZERO;
     private Coin gasPrice = Coin.ZERO;
+    // #mish: unlike TX, the gasLimit field here represents execution gas limit only
     private BigInteger gasLimit = BigInteger.ZERO;
     private BigInteger gasUsed = BigInteger.ZERO;
     private BigInteger gasLeftover = BigInteger.ZERO;
     private BigInteger gasRefund = BigInteger.ZERO;
     
-    /** #mish for storage rent gas
-     * rent gas is collected at end of transaction. 
-     * so rent gas is more like an estimate, rather than definite spending 
-    */ 
-    //private BigInteger rentGasLimit = BigInteger.ZERO;
+    /** #mish for storage rent gas*/
+    private BigInteger rentGasLimit = BigInteger.ZERO;
     private BigInteger rentGasUsed = BigInteger.ZERO;
     //private BigInteger rentGasLeftover = BigInteger.ZERO;
     //private BigInteger rentGasRefund = BigInteger.ZERO;
-
+    
     private List<DataWord> deletedAccounts = emptyList();
     private List<InternalTransaction> internalTransactions = emptyList();
     
@@ -71,14 +69,14 @@ public class TransactionExecutionSummary {
 
     public Coin getFee() {
         if (failed) {
-            BigInteger failedFee = gasLimit;  // keep 1/4=25% rentgas limit (RSKIP113)
-            return calcCost(failedFee); 
+            BigInteger failedFee = gasLimit;
+            BigInteger failedFeeRent = rentGasLimit.divide(BigInteger.valueOf(4));;  // keep 1/4=25% rentgas limit (RSKIP113)
+            return calcCost(failedFee.add(failedFeeRent)); 
         }
         // TX execution fee
+        // #mish by the time this is called in TX exec, the gasLeftOver field reflects both exec as well as rent gas left over
         BigInteger txFee = gasLimit.subtract(gasLeftover.add(gasRefund));
-        // TX storage rent fee
-        BigInteger txRentFee = rentGasUsed;
-        return calcCost(txFee.add(txRentFee));
+        return calcCost(txFee);
     }
 
     public Coin getRefund() {
@@ -104,6 +102,7 @@ public class TransactionExecutionSummary {
         return gasPrice;
     }
 
+    // #mish returns execution gas limit, same as the getGaslimit method for TX
     public BigInteger getGasLimit() {
         return gasLimit;
     }
@@ -116,10 +115,10 @@ public class TransactionExecutionSummary {
         return gasLeftover;
     }
 
-    /*
+    
     public BigInteger getRentGasLimit() {
         return rentGasLimit;
-    }*/
+    }
 
     public BigInteger getRentGasUsed() {
         return rentGasUsed;
@@ -175,8 +174,9 @@ public class TransactionExecutionSummary {
 
             summary = new TransactionExecutionSummary();
             summary.tx = transaction;
-            summary.gasLimit = toBI(transaction.getGasLimit());
-            //summary.rentGasLimit = toBI(transaction.getRentGasLimit());
+            // #mish: unlike a TX, the limit here is separate for execution gas and rent gas
+            summary.gasLimit = toBI(transaction.getGasLimit()); // this is execution gas limit
+            summary.rentGasLimit = toBI(transaction.getRentGasLimit());
             summary.gasPrice = transaction.getGasPrice();
             summary.value = transaction.getValue();
         }

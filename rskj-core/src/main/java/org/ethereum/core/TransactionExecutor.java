@@ -103,7 +103,7 @@ public class TransactionExecutor {
     private Coin paidFees;
 
     private final ProgramInvokeFactory programInvokeFactory;
-    private final RskAddress coinbase;
+    private final RskAddress coinbase; // #mish todo computing rent for coinbase account here (should do only once per block?)
 
     private TransactionReceipt receipt;
     private ProgramResult result = new ProgramResult();
@@ -303,10 +303,11 @@ public class TransactionExecutor {
         logger.trace("Execute transaction {} {}", toBI(tx.getNonce()), tx.getHash());
 
         if (!localCall) {
-            // set reference timestamp for rent computations: ToDo: should this be at the block level?
+            // set reference timestamp for rent computations: Todo: should this be at the block level?
             refTimeStamp = Instant.now().getEpochSecond();
             // #mish add sender to Map of accessed nodes (for storage rent tracking)
-            //but don't add receiver address yet as it may be a pre-compiled contract
+            // but don't add receiver address yet as it may be a pre-compiled contract
+            accessedNodeAdder(this.coinbase, track, result);
             accessedNodeAdder(tx.getSender(),track, result);    
             
             track.increaseNonce(tx.getSender());
@@ -497,8 +498,8 @@ public class TransactionExecutor {
                 vm.play(program);
             }
 
-            //result.merge(program.getResult());
-            result = program.getResult();
+            result.merge(program.getResult());
+            //result = program.getResult();
 
             mEndGas = GasCost.subtract(GasCost.toGas(tx.getGasLimit()), program.getResult().getGasUsed());
 
@@ -519,6 +520,7 @@ public class TransactionExecutor {
         } catch (Exception e) {
             cacheTrack.rollback();
             mEndGas = 0;
+            mEndRentGas = 0; // #mish todo should this be 0 or 75%?
             execError(e);
             profiler.stop(metric);
             return;
@@ -567,8 +569,7 @@ public class TransactionExecutor {
             receipt.setCumulativeGas(totalGasUsed);
             receipt.setTransaction(tx);
             receipt.setLogInfoList(getVMLogs());
-            receipt.setGasUsed(getGasUsed());
-            //receipt.setRentGasUsed(getRentGasUsed());
+            receipt.setGasUsed(getGasUsed() + getRentGasUsed()); //#mish combined gas usage (exec + rent)
             receipt.setStatus(executionError.isEmpty()?TransactionReceipt.SUCCESS_STATUS:TransactionReceipt.FAILED_STATUS); // #mish todo: RSKIP113
         }
         return receipt;
@@ -588,6 +589,9 @@ public class TransactionExecutor {
         //Transaction sender is stored in cache
         signatureCache.storeSender(tx);
 
+        // Collect rent gas before finalization
+        result.spendRentGas(estRentGas);
+
         // Should include only LogInfo's that was added during not rejected transactions
         List<LogInfo> notRejectedLogInfos = result.getLogInfoList().stream()
                 .filter(logInfo -> !logInfo.isRejected())
@@ -595,20 +599,20 @@ public class TransactionExecutor {
 
         // #mish todo: rent mods in builder and here
         TransactionExecutionSummary.Builder summaryBuilder = TransactionExecutionSummary.builderFor(tx)
-                .gasLeftover(BigInteger.valueOf(mEndGas))
+                .gasLeftover(BigInteger.valueOf(mEndGas + mEndRentGas)) // #mish combine exec and rent gas left over
                 .logs(notRejectedLogInfos)
                 .result(result.getHReturn());
 
         // Accumulate refunds for suicides
         result.addFutureRefund(GasCost.multiply(result.getDeleteAccounts().size(), GasCost.SUICIDE_REFUND));
         long gasRefund = Math.min(result.getFutureRefund(), result.getGasUsed() / 2);
-         // #mish: update mEndGas to its final value. 
+         
         mEndGas = activations.isActive(ConsensusRule.RSKIP136) ?
                 GasCost.add(mEndGas, gasRefund) :
                 mEndGas + gasRefund;
 
         summaryBuilder
-                .gasUsed(toBI(result.getGasUsed()))
+                .gasUsed(toBI(result.getGasUsed() + result.getRentGasUsed()))
                 .gasRefund(toBI(gasRefund))
                 .deletedAccounts(result.getDeleteAccounts())
                 .internalTransactions(result.getInternalTransactions());
@@ -647,7 +651,7 @@ public class TransactionExecutor {
         
         result.getAccessedNodes().forEach((key, rentData) -> track.updateNodeWithRent(key, rentData.getLRPTime()));
         
-        // #mish what is this for? Github search in May 2020 doesn't reveal anything  (indexed April 2020)
+        // #mish what is this for? Git grep doesn't reveal anything (neither does github search)
         result.getCodeChanges().forEach((key, value) -> track.saveCode(new RskAddress(key), value));
         // Traverse list of suicides
         result.getDeleteAccounts().forEach(address -> track.delete(new RskAddress(address)));
@@ -734,101 +738,95 @@ public class TransactionExecutor {
      * The method retreives nodes containing account state and for contracts: code and storage root. 
      * This should be called the first time any RSK addr is referenced in a TX or a child process
      * Storage nodes accessed via SLOAD or SSTORE are not included.
-     * While quite similar, for clarity, using separate adder methods for accessed nodes and created nodes 
     */
     public void accessedNodeAdder(RskAddress addr, Repository repository, ProgramResult progRes){
+        long rd = 0; // initalize rent due to 0
         DataWord accKey = repository.getAccountNodeKey(addr);
-        Uint24 vLen = repository.getAccountNodeValueLength(addr);
-        long accLrpt = repository.getAccountNodeLRPTime(addr);
-        RentData accNode = new RentData(vLen, accLrpt);
-        // compute the rent due. Treat these nodes as 'modified' (since account state will be updated)
-        accNode.setRentDue(this.getRefTimeStamp(), true); // account node value length may not change much
-        long rd = accNode.getRentDue();
         // if the node is not in the map, add the rent owed to current estimate
-        // only add rent due > 0. Prepaid rent does not matter here. 
-        if (!progRes.getAccessedNodes().containsKey(accKey) && rd >0){
-                estRentGas += rd;   //"collect" rent due
-                accNode.setLRPTime(this.getRefTimeStamp()); //update rent paid timestamp
+        if (!progRes.getAccessedNodes().containsKey(accKey)){
+            Uint24 vLen = repository.getAccountNodeValueLength(addr);
+            long accLrpt = repository.getAccountNodeLRPTime(addr);
+            RentData accNode = new RentData(vLen, accLrpt);
+            // compute the rent due. Treat these nodes as 'modified' (since account state will be updated)
+            accNode.setRentDue(this.getRefTimeStamp(), true); // account node value length may not change much
+            rd = accNode.getRentDue();
+            estRentGas += rd;   //"collect" rent due
+            accNode.setLRPTime(this.getRefTimeStamp()); //update rent paid timestamp
+            // add to hashmap (internally this is a putIfAbsent) 
+            progRes.addAccessedNode(accKey, accNode);
         }
-        // add to hashmap (internally this is a putIfAbsent)
-        progRes.addAccessedNode(accKey, accNode);
         // if this is a contract then add info for storage root and code
         if (repository.isContract(addr)) {
             // code node
             DataWord cKey = repository.getCodeNodeKey(addr);
-            Uint24 cLen = repository.getCodeNodeLength(addr);
-            long cLrpt = repository.getCodeNodeLRPTime(addr);
-            RentData codeNode = new RentData(cLen, cLrpt);
-            // compute rent and update estRent as needed
-            codeNode.setRentDue(this.getRefTimeStamp(), false); // code is unlikely to be modified
-            rd = codeNode.getRentDue();
-            if (!progRes.getAccessedNodes().containsKey(cKey) && rd >0){
+            if (!progRes.getAccessedNodes().containsKey(cKey)){
+                Uint24 cLen = repository.getCodeNodeLength(addr);
+                long cLrpt = repository.getCodeNodeLRPTime(addr);
+                RentData codeNode = new RentData(cLen, cLrpt);
+                // compute rent and update estRent as needed
+                codeNode.setRentDue(this.getRefTimeStamp(), false); // code is unlikely to be modified
+                rd = codeNode.getRentDue();
                 estRentGas += rd;
                 codeNode.setLRPTime(this.getRefTimeStamp());
-            }
-
-            progRes.addAccessedNode(cKey, codeNode);
-            
+                progRes.addAccessedNode(cKey, codeNode);
+            }       
             // storage root node
             DataWord srKey = repository.getStorageRootKey(addr);
-            Uint24 srLen = repository.getStorageRootValueLength(addr);
-            long srLrpt = repository.getStorageRootLRPTime(addr);
-            RentData srNode = new RentData(srLen, srLrpt);
-            // compute rent and update estRent as needed
-            srNode.setRentDue(this.getRefTimeStamp(), false);  // storage root value is never modified
-            rd = srNode.getRentDue();
-            if (!progRes.getAccessedNodes().containsKey(srKey) && rd >0){
+            if (!progRes.getAccessedNodes().containsKey(srKey)){
+                Uint24 srLen = repository.getStorageRootValueLength(addr);
+                long srLrpt = repository.getStorageRootLRPTime(addr);
+                RentData srNode = new RentData(srLen, srLrpt);
+                // compute rent and update estRent as needed
+                srNode.setRentDue(this.getRefTimeStamp(), false);  // storage root value is never modified
+                rd = srNode.getRentDue();
                 estRentGas += rd;
                 srNode.setLRPTime(this.getRefTimeStamp());
+                progRes.addAccessedNode(srKey, srNode);
             }
-            progRes.addAccessedNode(srKey, srNode);
         }
     }
+
     // Similar to accessednodes adder. Different HashMap, 6 months timestamp, rent computation, no check for prepaid rent
     // also, it's more likely that created nodes will be in a cached repository, e.g. cachetrack in Tx execution 
     public void createdNodeAdder(RskAddress addr, Repository repository, ProgramResult progRes){
-        DataWord accKey = repository.getAccountNodeKey(addr);
-        Uint24 vLen = repository.getAccountNodeValueLength(addr);
         long advTS = this.getRefTimeStamp() + GasCost.SIX_MONTHS; //advanced time stamp time.now + 6 months
-        long accLrpt = advTS;
-        RentData accNode = new RentData(vLen, accLrpt);
-        // compute the rent due
-        accNode.setSixMonthsRent();
-        long rd = accNode.getRentDue();
+        long rd = 0; // rent due init 0
+        DataWord accKey = repository.getAccountNodeKey(addr);
         // if the node is not in the map, add the rent owed to current estimate
         if (!progRes.getCreatedNodes().containsKey(accKey)){
-                estRentGas += rd;
+            Uint24 vLen = repository.getAccountNodeValueLength(addr);
+            RentData accNode = new RentData(vLen, advTS);
+            // compute the rent due
+            accNode.setSixMonthsRent();
+            rd = accNode.getRentDue();
+            estRentGas += rd;
+            // add to hashmap (internally this is a putIfAbsent)
+            progRes.addCreatedNode(accKey, accNode);
         }
-        // add to hashmap (internally this is a putIfAbsent)
-        progRes.addCreatedNode(accKey, accNode);
         // if this is a contract then add info for storage root and code
         if (repository.isContract(addr)) {
             // code node
             DataWord cKey = repository.getCodeNodeKey(addr);
-            Uint24 cLen = repository.getCodeNodeLength(addr);
-            long cLrpt = advTS;
-            RentData codeNode = new RentData(cLen, cLrpt);
-            // compute rent and update estRent as needed
-            codeNode.setSixMonthsRent();
-            rd = codeNode.getRentDue();
             if (!progRes.getCreatedNodes().containsKey(cKey)){
+                Uint24 cLen = repository.getCodeNodeLength(addr);
+                RentData codeNode = new RentData(cLen, advTS);
+                // compute rent and update estRent as needed
+                codeNode.setSixMonthsRent();
+                rd = codeNode.getRentDue();
                 estRentGas += rd;
-            }
-
-            progRes.addCreatedNode(cKey, codeNode);
-            
+                progRes.addCreatedNode(cKey, codeNode);
+            }       
             // storage root node
             DataWord srKey = repository.getStorageRootKey(addr);
-            Uint24 srLen = repository.getStorageRootValueLength(addr);
-            long srLrpt = advTS;
-            RentData srNode = new RentData(srLen, srLrpt);
-            // compute rent and update estRent as needed
-            srNode.setSixMonthsRent();
-            rd = srNode.getRentDue();
             if (!progRes.getCreatedNodes().containsKey(srKey)){
+                Uint24 srLen = repository.getStorageRootValueLength(addr);
+                RentData srNode = new RentData(srLen, advTS);
+                // compute rent and update estRent as needed
+                srNode.setSixMonthsRent();
+                rd = srNode.getRentDue();                
                 estRentGas += rd;
+                progRes.addCreatedNode(srKey, srNode);
             }
-            progRes.addCreatedNode(srKey, srNode);
         }
     }
 

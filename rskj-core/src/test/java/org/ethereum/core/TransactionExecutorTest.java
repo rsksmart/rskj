@@ -349,7 +349,6 @@ public class TransactionExecutorTest {
         RskAddress sender = new RskAddress("0000000000000000000000000000000000000001");
         RskAddress receiver = new RskAddress("0000000000000000000000000000000000000002");
         byte[] gasLimit = BigInteger.valueOf(4000000).toByteArray();
-        //byte[] rentGasLimit = BigInteger.valueOf(2_000_000).toByteArray();
         byte[] txNonce = BigInteger.valueOf(1L).toByteArray();
         Coin gasPrice = Coin.valueOf(1);
         Coin value = new Coin(BigInteger.valueOf(2));
@@ -381,8 +380,8 @@ public class TransactionExecutorTest {
         if (txExecutor.executeTransaction()){
             System.out.println("TX executed");
                         
-            // one entry for sender and one for receiver;
-            assertEquals(2,txExecutor.getResult().getAccessedNodes().size());
+            // one entry for sender and one for receiver and one for coinbase (the miner)
+            assertEquals(3,txExecutor.getResult().getAccessedNodes().size());
 
             assertEquals(new Uint24(10), txExecutor.getResult().getAccessedNodes().get(DataWord.fromString("senderKey")).getValueLength());
             assertEquals(new Uint24(128), txExecutor.getResult().getAccessedNodes().get(DataWord.fromString("receiverKey")).getValueLength());
@@ -392,14 +391,15 @@ public class TransactionExecutorTest {
 
             // Rent computation within Tx Exec uses time.now() value, so mocking is not needed    
             long rentDueSender = txExecutor.getResult().getAccessedNodes().get(DataWord.fromString("senderKey")).getRentDue();
-            long rentDueReceiver = txExecutor.getResult().getAccessedNodes().get(DataWord.fromString("receiverKey")).getRentDue();  
+            long rentDueReceiver = txExecutor.getResult().getAccessedNodes().get(DataWord.fromString("receiverKey")).getRentDue(); 
             long estimatedRentGas = txExecutor.getEstRentGas();
             //System.out.println(Instant.now().getEpochSecond());
             System.out.println("Sender rent: " + rentDueSender);
             System.out.println("Receiver rent: " + rentDueReceiver);
             //System.out.println("Estimted rent: " + estimatedRentGas);
             assertEquals(rentDueSender + rentDueReceiver, estimatedRentGas);
-            
+            System.out.println("execution gas used: " + txExecutor.getResult().getGasUsed());
+            System.out.println("rentgas used: " + txExecutor.getResult().getRentGasUsed());
         } else {
             System.out.println("TX execution failed");
         }

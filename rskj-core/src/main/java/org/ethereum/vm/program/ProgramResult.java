@@ -246,7 +246,9 @@ public class ProgramResult {
         }
         return internalTransactions;
     }
-  
+    
+    // #mish returns an internalTX and also adds it to the set of progResult.internalTx 
+    // * see program.addInternalTx references for instances of use (e.g. SUICIDE)
     public InternalTransaction addInternalTransaction(byte[] parentHash, int deep, byte[] nonce, DataWord gasPrice, DataWord gasLimit,
                                                       byte[] senderAddress, byte[] receiveAddress, byte[] value, byte[] data, String note) {
         InternalTransaction transaction = new InternalTransaction(parentHash, deep, getInternalTransactions().size(),

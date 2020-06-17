@@ -106,6 +106,7 @@ public class VM {
 
     private long memWords; // parameters for logging
     private long gasCost;
+    private long rentGasCost;
     private long gasBefore; // only for tracing
     private boolean isLogEnabled;
 
@@ -202,6 +203,14 @@ public class VM {
         }
 
         program.spendGas(gasCost, op.name());
+    }
+
+    protected void spendOpCodeRentGas() {
+        if (!computeGas) {
+            return;
+        }
+
+        program.spendRentGas(rentGasCost, op.name());
     }
 
     protected void doSTOP() {
@@ -1480,6 +1489,15 @@ public class VM {
       *  The returned msg is then used to actually make a call to a PCC or a contract
      */
     protected void doCALL(){
+        /* #mish from op_code(s).java the order of data pushed on to stack (for message call) is.. 
+         * [out_data_size] [out_data_start] [in_data_size] [in_data_start] [value] [to_addr] [gas] CALL
+         * so we reverse this order when popping things off the stack.
+         * gas and code address popped first (here), then value in calculateCallValue() which is called within getMessageCall(), 
+         * which then pops the memory (in/out) references */ 
+        
+         // #mish this is (the optional) user specified gaslimit (execution gas)
+         // there is no user specified rentGasLimit for Calls. 
+         // As per SDL all available rentgas should be made avaieble to callee/child
         DataWord gas = program.stackPop();
         DataWord codeAddress = program.stackPop();
 
@@ -1508,7 +1526,7 @@ public class VM {
 
      */
     private MessageCall getMessageCall(DataWord gas, DataWord codeAddress, ActivationConfig.ForBlock activations) {
-        DataWord value = calculateCallValue(activations);
+        DataWord value = calculateCallValue(activations); // value popped from stack within
 
         if (program.isStaticCall() && op == CALL && !value.isZero()) {
             throw Program.ExceptionHelper.modificationException();
@@ -1521,6 +1539,8 @@ public class VM {
         DataWord outDataSize = program.stackPop();
 
         if (computeGas) {
+            // #mish "value" is in arglist cos if it is not 0, then we need to add VT_CALL (9000 in Jun 2020)
+            // later (calcMinTransfer), we also add a STIPEND for the callee (to be able to log value transferred) 
             gasCost = computeCallGas(codeAddress, value, inDataOffs, inDataSize, outDataOffs, outDataSize);
         }
 
@@ -1530,6 +1550,7 @@ public class VM {
         if (requiredGas > program.getRemainingGas()) {
             throw Program.ExceptionHelper.gasOverflow(BigInteger.valueOf(program.getRemainingGas()), BigInteger.valueOf(requiredGas));
         }
+        // #mish subtract for logic of CALL, but not spendopcodegas yet.
         long remainingGas = GasCost.subtract(program.getRemainingGas(), requiredGas);
         long minimumTransferGas = calculateGetMinimumTransferGas(value, remainingGas);
 
@@ -1543,16 +1564,22 @@ public class VM {
         // the callee will receive less gas than the parent expected.
         long calleeGas = Math.min(remainingGas, specifiedGasPlusMin);
 
-        long calleeRentGas = calleeGas; // #mish todo fix me
+        // #mish as per SDL, callee should be passed all rentgas. 
+        // * Assume caller can trust callee.
+        // * No simple way to provide protection to caller via user specified rent gas 
+        long calleeRentGas = program.getRemainingRentGas();
 
         if (computeGas) {
             gasCost = GasCost.add(gasCost, calleeGas);
             spendOpCodeGas();
+            rentGasCost = calleeRentGas; // #mish we are passing all rent gas to callee, 
+            spendOpCodeRentGas();
         }
 
         if (isLogEnabled) {
             hint = "addr: " + Hex.toHexString(codeAddress.getLast20Bytes())
                     + " gas: " + calleeGas
+                    + " Rentgas: " + calleeRentGas
                     + " inOff: " + inDataOffs.shortHex()
                     + " inSize: " + inDataSize.shortHex();
             logger.info(logString, String.format("%5s", "[" + program.getPC() + "]"),

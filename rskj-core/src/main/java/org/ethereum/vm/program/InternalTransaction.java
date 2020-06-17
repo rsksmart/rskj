@@ -35,6 +35,9 @@ public class InternalTransaction extends Transaction {
     private boolean rejected = false;
     private String note;
 
+    // #mish gasLimit here refers only to execution gas. This is different from wire TX where it refers to cumulative (exec + rent)
+    // In program however.. addInternalTx (for create, call2addr and call2PCC) the gaslimit passed is BLOCKGASLIMIT! via invoke.getGasLimit()
+
     public InternalTransaction(byte[] parentHash, int deep, int index, byte[] nonce, DataWord gasPrice, DataWord gasLimit,
                                byte[] sendAddress, byte[] receiveAddress, byte[] value, byte[] data, String note) {
 
