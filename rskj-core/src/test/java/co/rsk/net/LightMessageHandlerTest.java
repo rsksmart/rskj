@@ -1,58 +1,48 @@
 package co.rsk.net;
 
-import co.rsk.db.RepositoryLocator;
 import co.rsk.net.eth.LightClientHandler;
 import co.rsk.net.light.LightMessageHandler;
 import co.rsk.net.light.LightPeer;
-import co.rsk.net.light.LightProcessor;
-import co.rsk.net.light.LightSyncProcessor;
 import co.rsk.net.light.message.GetAccountsMessage;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.embedded.EmbeddedChannel;
-import org.ethereum.config.SystemProperties;
-import org.ethereum.core.Blockchain;
-import org.ethereum.core.Genesis;
-import org.ethereum.db.BlockStore;
-import org.ethereum.net.MessageQueue;
-import org.ethereum.net.server.Channel;
 import org.junit.Before;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
 
 public class LightMessageHandlerTest {
-    LightMessageHandler lightMessageHandler;
-    private MessageQueue messageQueue;
-    private Blockchain blockchain;
-    private BlockStore blockStore;
-    private LightSyncProcessor lightSyncProcessor;
-    private LightPeer lightPeer;
-    private LightClientHandler lightClientHandler;
-    private SystemProperties config;
-    private RepositoryLocator repositoryLocator;
-    private ChannelHandlerContext ctx;
-    private LightProcessor lightProcessor;
+
+    private LightMessageHandler lightMessageHandler;
+
+    private LightPeer lightPeer1;
+    private LightPeer lightPeer2;
+    private ChannelHandlerContext ctx1;
+    private ChannelHandlerContext ctx2;
+    private LightClientHandler lightClientHandler1;
+    private LightClientHandler lightClientHandler2;
+
+    private GetAccountsMessage m1;
+    private GetAccountsMessage m2;
+
 
     @Before
     public void setUp() {
-        messageQueue = mock(MessageQueue.class);
-        blockchain = mock(Blockchain.class);
-        blockStore = mock(BlockStore.class);
-        config = mock(SystemProperties.class);
-        repositoryLocator = mock(RepositoryLocator.class);
-        Genesis genesis = mock(Genesis.class);
-        lightProcessor = mock(LightProcessor.class);
-        lightSyncProcessor = new LightSyncProcessor(config, genesis, blockStore, blockchain);
-        lightPeer = spy(new LightPeer(mock(Channel.class), messageQueue));
-        LightClientHandler.Factory factory = (lightPeer) -> new LightClientHandler(lightPeer, lightSyncProcessor, lightMessageHandler);
-        lightClientHandler = factory.newInstance(lightPeer);
-        lightMessageHandler = new LightMessageHandler(lightProcessor, lightSyncProcessor);
+        LightClientTestUtils lightClientTestUtils = new LightClientTestUtils();
 
-        EmbeddedChannel ch = new EmbeddedChannel();
-        ch.pipeline().addLast(lightClientHandler);
-        ctx = ch.pipeline().firstContext();
+        lightPeer1 = lightClientTestUtils.createPeer();
+        lightPeer2 = lightClientTestUtils.createPeer();
+
+        lightClientHandler1 = lightClientTestUtils.generateLightClientHandler(lightPeer1);
+        lightClientHandler2 = lightClientTestUtils.generateLightClientHandler(lightPeer2);
+
+        ctx1 = lightClientTestUtils.hookLightPeerToCtx(lightPeer1, lightClientHandler1);
+        ctx2 = lightClientTestUtils.hookLightPeerToCtx(lightPeer2, lightClientHandler2);
+
+        lightMessageHandler = new LightMessageHandler(lightClientTestUtils.getLightProcessor(),
+                lightClientTestUtils.getLightSyncProcessor());
+
+        m1 = new GetAccountsMessage(0, new byte[] {0x00}, new byte[] {0x00});
+        m2 = new GetAccountsMessage(0, new byte[] {0x00}, new byte[] {0x00});
     }
 
     /**
@@ -62,8 +52,7 @@ public class LightMessageHandlerTest {
 
     @Test
     public void lightMessageHandlerHandlesAMessageCorrectly() {
-        GetAccountsMessage m = new GetAccountsMessage(0, new byte[] {0x00}, new byte[] {0x00});
-        lightMessageHandler.postMessage(lightPeer, m, ctx, lightClientHandler);
+        lightMessageHandler.postMessage(lightPeer1, m1, ctx1, lightClientHandler1);
         assertEquals(1,lightMessageHandler.getMessageQueueSize());
         lightMessageHandler.handleMessage();
         assertEquals(0,lightMessageHandler.getMessageQueueSize());
@@ -71,13 +60,36 @@ public class LightMessageHandlerTest {
 
     @Test
     public void lightMessageHandlerHandlesTwoMessagesCorrectly() {
-        GetAccountsMessage m1 = new GetAccountsMessage(0, new byte[] {0x00}, new byte[] {0x00});
-        GetAccountsMessage m2 = new GetAccountsMessage(0, new byte[] {0x00}, new byte[] {0x00});
-        lightMessageHandler.postMessage(lightPeer, m1, ctx, lightClientHandler);
-        lightMessageHandler.postMessage(lightPeer, m2, ctx, lightClientHandler);
+        lightMessageHandler.postMessage(lightPeer1, m1, ctx1, lightClientHandler1);
+        lightMessageHandler.postMessage(lightPeer1, m2, ctx1, lightClientHandler1);
         assertEquals(2,lightMessageHandler.getMessageQueueSize());
         lightMessageHandler.handleMessage();
         lightMessageHandler.handleMessage();
+        assertEquals(0,lightMessageHandler.getMessageQueueSize());
+    }
+
+    @Test
+    public void lightMessageHandlerHandlesMessagesFromTwoPeersCorrectly() {
+        lightMessageHandler.postMessage(lightPeer1, m1, ctx1, lightClientHandler1);
+        lightMessageHandler.postMessage(lightPeer2, m2, ctx2, lightClientHandler2);
+
+        assertEquals(2,lightMessageHandler.getMessageQueueSize());
+
+        lightMessageHandler.handleMessage();
+        lightMessageHandler.handleMessage();
+
+        assertEquals(0,lightMessageHandler.getMessageQueueSize());
+    }
+
+    @Test
+    public void lightMessageHandlerServicesCorrectlyHandlesMessages() throws InterruptedException {
+        lightMessageHandler.start();
+        lightMessageHandler.postMessage(lightPeer1, m1, ctx1, lightClientHandler1);
+        lightMessageHandler.postMessage(lightPeer1, m2, ctx1, lightClientHandler1);
+
+        Thread.sleep(500);
+
+        lightMessageHandler.stop();
         assertEquals(0,lightMessageHandler.getMessageQueueSize());
     }
 
