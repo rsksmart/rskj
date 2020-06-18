@@ -106,7 +106,7 @@ public class LightSyncProcessor {
             return;
         }
 
-        startSync(lightPeer, blockchain.getBestBlock());
+        startSync(lightPeer, blockchain.getBestBlock().getHeader());
     }
 
     public void sendStatusMessage(LightPeer lightPeer) {
@@ -152,8 +152,8 @@ public class LightSyncProcessor {
     }
 
     @VisibleForTesting
-    public void startSync(LightPeer lightPeer, Block bestBlock) {
-        setState(new DecidingLightSyncState(this, lightPeer, bestBlock));
+    public void startSync(LightPeer lightPeer, BlockHeader bestBlockHeader) {
+        setState(new DecidingLightSyncState(this, lightPeer, bestBlockHeader));
     }
 
     public void foundCommonAncestor() {

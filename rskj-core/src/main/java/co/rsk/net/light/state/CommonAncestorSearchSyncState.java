@@ -29,7 +29,7 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 
 public class CommonAncestorSearchSyncState implements LightSyncState {
-    public static final int MAX_REQUESTED_HEADERS = 192; //Based in max_chunks, this number should be in the config file in some light section
+    private static final int MAX_REQUESTED_HEADERS = 192; //Based in max_chunks, this number should be in the config file in some light section
     private final LightSyncProcessor lightSyncProcessor;
     private final LightPeer lightPeer;
     private final byte[] bestBlockHash;
@@ -63,8 +63,8 @@ public class CommonAncestorSearchSyncState implements LightSyncState {
 
         long newStart = bestBlockNumber - blockHeaders.size();
         if (newStart != 0) {
-            final Block newStartBlock = blockchain.getBlockByNumber(newStart);
-            lightSyncProcessor.startAncestorSearchFrom(lightPeer, newStartBlock.getHash().getBytes(), newStartBlock.getNumber());
+            final BlockHeader newStartBlockHeader = blockchain.getBlockByNumber(newStart).getHeader();
+            lightSyncProcessor.startAncestorSearchFrom(lightPeer, newStartBlockHeader.getHash().getBytes(), newStartBlockHeader.getNumber());
         }
     }
 
