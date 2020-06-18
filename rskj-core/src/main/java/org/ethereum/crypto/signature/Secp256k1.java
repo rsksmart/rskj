@@ -39,7 +39,7 @@ public final class Secp256k1 {
     private static final String NATIVE_LIB = "native";
     private static final Logger logger = LoggerFactory.getLogger(Secp256k1.class);
 
-    private static Secp256k1Service instance = new Secp256k1ServiceNative();
+    private static Secp256k1Service instance = new Secp256k1ServiceBC();
     private static boolean initialized = false;
 
     private Secp256k1() {
@@ -69,10 +69,10 @@ public final class Secp256k1 {
                     instance = new Secp256k1ServiceNative();
                 } else {
                     logger.debug("Signature Service {} not available, initializing Bouncy Castle.", cryptoLibrary);
-                    instance = new Secp256k1ServiceNative();
+                    instance = new Secp256k1ServiceBC();
                 }
             } else {
-                instance = new Secp256k1ServiceNative();
+                instance = new Secp256k1ServiceBC();
             }
         } else {
             logger.warn("Empty system properties.");
@@ -90,7 +90,7 @@ public final class Secp256k1 {
 
     @VisibleForTesting
     static void reset() {
-        instance = new Secp256k1ServiceNative();
+        instance = new Secp256k1ServiceBC();
         initialized = false;
     }
 }
