@@ -100,6 +100,9 @@ public class LightClientTestUtils {
         return lightProcessor;
     }
 
+    /**
+     * Its created as a spy so we can check if the message was sent
+     **/
     public LightPeer createPeer() {
         return spy(new LightPeer(mock(Channel.class), messageQueue));
     }
@@ -108,7 +111,7 @@ public class LightClientTestUtils {
         return factory.newInstance(lightPeer);
     }
 
-    public ChannelHandlerContext hookLightPeerToCtx(LightPeer lightPeer, LightClientHandler lightClientHandler) {
+    public ChannelHandlerContext hookLightLCHandlerToCtx(LightClientHandler lightClientHandler) {
         EmbeddedChannel ch = new EmbeddedChannel();
         ch.pipeline().addLast(lightClientHandler);
         return ch.pipeline().firstContext();

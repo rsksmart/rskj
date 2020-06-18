@@ -64,8 +64,8 @@ public class LightMessageHandlerTest {
         lightClientHandler1 = lightClientTestUtils.generateLightClientHandler(lightPeer1);
         lightClientHandler2 = lightClientTestUtils.generateLightClientHandler(lightPeer2);
 
-        ctx1 = lightClientTestUtils.hookLightPeerToCtx(lightPeer1, lightClientHandler1);
-        ctx2 = lightClientTestUtils.hookLightPeerToCtx(lightPeer2, lightClientHandler2);
+        ctx1 = lightClientTestUtils.hookLightLCHandlerToCtx(lightClientHandler1);
+        ctx2 = lightClientTestUtils.hookLightLCHandlerToCtx(lightClientHandler2);
 
         lightMessageHandler = new LightMessageHandler(lightClientTestUtils.getLightProcessor(),
                 lightClientTestUtils.getLightSyncProcessor());
@@ -129,11 +129,12 @@ public class LightMessageHandlerTest {
 
     @Test
     public void lightMessageHandlerHandlesAMessageCorrectlyAndResponseIsSent() {
+        Keccak256 blockHash = new Keccak256(m1.getBlockHash());
         Keccak256 codeHash = randomHash();
         byte[] storageRoot = randomHash().getBytes();
         AccountState state = new AccountState(BigInteger.ONE, new Coin(new byte[] {0x10}));
 
-        lightClientTestUtils.includeAccount(new Keccak256(m1.getBlockHash()), m1.getAddressHash(),
+        lightClientTestUtils.includeAccount(blockHash, m1.getAddressHash(),
                 state, codeHash, storageRoot);
 
         lightMessageHandler.postMessage(lightPeer1, m1, ctx1, lightClientHandler1);
