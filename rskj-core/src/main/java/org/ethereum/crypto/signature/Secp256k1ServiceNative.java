@@ -44,7 +44,7 @@ public class Secp256k1ServiceNative extends Secp256k1ServiceBC {
         check(messageHash != null, "messageHash must not be null");
         byte[] pbKey;
         try {
-            byte[] sigBytes = concatenate(sig);
+            byte[] sigBytes = concatenate(sig, true);
             logger.trace("Recovering key from signature: comporessed[{}] - recId[{}] - sig[{}] - msgHash[{}].", compressed, recId, sigBytes, messageHash);
             pbKey = NativeSecp256k1.ecdsaRecover(sigBytes, messageHash, recId, compressed);
         } catch (Exception e) {
@@ -54,36 +54,28 @@ public class Secp256k1ServiceNative extends Secp256k1ServiceBC {
         return ECKey.fromPublicOnly(pbKey);
     }
 
-    @Override
-    public boolean verify(byte[] data, ECDSASignature signature, byte[] pub) {
-        try {
-            byte[] signatureRS = concatenate(signature);
-            logger.trace("Verifying signature: sig[{}] - pub[{}] - data[{}].", signature, pub, data);
-            return NativeSecp256k1.verify(data, signatureRS, pub);
-        } catch (Exception e) {
-            logger.error("Couldn't verify signature.", e);
-            return false;
-        }
-    }
-
     /**
      * It returns a 64 byte array long, with r + s
      * @param sig {r,s}
      * @return r + s (64 bytes array)
      */
-    byte[] concatenate(ECDSASignature sig) {
+    byte[] concatenate(ECDSASignature sig, boolean fixed) {
         byte[] rBytes = sig.getR().toByteArray();
         byte[] sBytes = sig.getS().toByteArray();
-        byte[] allByteArray = new byte[64];
+        byte[] allByteArray = new byte[fixed ? 64 : rBytes.length + sBytes.length];
         ByteBuffer buff = ByteBuffer.wrap(allByteArray);
-        for (int i = rBytes.length; i < 32; i++) {
-            buff.put((byte) 0);
+        if(fixed) {
+            for (int i = rBytes.length; i < 32; i++) {
+                buff.put((byte) 0);
+            }
         }
-        buff.put(Arrays.copyOfRange(rBytes, getStartIndex(rBytes), rBytes.length));
-        for (int i = sBytes.length; i < 32; i++) {
-            buff.put((byte) 0);
+        buff.put(Arrays.copyOfRange(rBytes, getStartIndex(rBytes, fixed), rBytes.length));
+        if(fixed) {
+            for (int i = sBytes.length; i < 32; i++) {
+                buff.put((byte) 0);
+            }
         }
-        buff.put(Arrays.copyOfRange(sBytes, getStartIndex(sBytes), sBytes.length));
+        buff.put(Arrays.copyOfRange(sBytes, getStartIndex(sBytes, fixed), sBytes.length));
         return buff.array();
     }
 
@@ -95,7 +87,7 @@ public class Secp256k1ServiceNative extends Secp256k1ServiceBC {
      * @param sBytes
      * @return
      */
-    private int getStartIndex(byte[] sBytes) {
-        return sBytes.length > 32 ? sBytes.length - 32 : 0;
+    private int getStartIndex(byte[] sBytes, boolean fixed) {
+        return sBytes.length > 32 && fixed ? sBytes.length - 32 : 0;
     }
 }

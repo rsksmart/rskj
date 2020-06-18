@@ -66,18 +66,42 @@ public abstract class Secp256k1ServiceTest {
     }
 
     @Test
-    public void test() {
+    public void test_verify() {
+        String dataHashed = "53cb8e93030183c5ba198433e8cd1f013f3d113e0f4d1756de0d1f124ead155a";
+        String rString = "8dba957877d5bdcb26d551dfa2fa509dfe3fe327caf0166130b9f467a0a0c249";
+        String sString = "dab3fdf2031515d2de1d420310c69153fcc356f22b50dfd53c6e13e74e346eee";
+        String pubKeyString = "04330037e82c177d7108077c80440821e13c1c62105f85e030214b48d7b5dff0b8e7c158b171546a71139e4de56c8535c964514033b89a669a8e87a5e8770c147c";
+
+        checkVerify(dataHashed, 1, rString, sString, pubKeyString);
+
+        String rString1 = "f0e8aab4fdd83382292a1bbc5480e2ae8084dc245f000f4bc4534d383a3a7919";
+        String sString1 = "a30891f2176bd87b4a3ac5c75167f2442453c17c6e2fbfb36c3b972ee67a4c2d";
+        String pubKeyString1 = "0473602083afe175e7cae12dbc27da54ec5ac77f99920787f3e891e7af303aaed480770c0de4c991aea1712729260175e158fa73f63c60f0f1de057139c52714de";
+
+        checkVerify(dataHashed, 0, rString1, sString1, pubKeyString1);
+    }
+
+    void checkVerify(String dataHashed, int recId, String rString, String sString, String pubKeyString) {
+        byte[] dbHash = Hex.decode(dataHashed);
+        ECDSASignature signature = ECDSASignature.fromComponents(Hex.decode(rString), Hex.decode(sString));
+        byte[] pubKey = Hex.decode(pubKeyString);
+        //assertTrue(
+        getSecp256k1().verify(dbHash, signature, pubKey)
+        ;//);
+        ECKey ecKey = getSecp256k1().recoverFromSignature(recId, signature, dbHash, false);
+        assertEquals(pubKeyString, Hex.toHexString(ecKey.getPubKey()));
+    }
+
+    @Test
+    public void test_pointAtInfinity_returnNull() {
         String messageHash = "f7cf90057f86838e5efd677f4741003ab90910e4e2736ff4d7999519d162d1ed";
         BigInteger r = new BigInteger("28824799845160661199077176548860063813328724131408018686643359460017962873020");
         BigInteger s = new BigInteger("48456094880180616145578324187715054843822774625773874469802229460318542735739");
         ECDSASignature signature = ECDSASignature.fromComponents(r.toByteArray(), s.toByteArray());
-        ECKey expected = ECKey.fromPrivate(new BigInteger("0"));
-        String pub = "00";
         ECKey k = this.getSecp256k1().recoverFromSignature((byte) 0, signature, Hex.decode(messageHash), false);
-        if (k == null || !expected.equalsPub(k)) {
+        if (k != null) {
             fail();
         }
-
     }
 
     @Test
@@ -112,8 +136,8 @@ public abstract class Secp256k1ServiceTest {
         ECKey key = ECKey.fromPrivate(privateKey);
         String message = "This is an example of a signed message.";
         byte[] messageBytes = HashUtil.keccak256(message.getBytes());
-        ECDSASignature output = ECDSASignature.fromSignature(key.doSign(messageBytes));
-        assertTrue(this.getSecp256k1().verify(messageBytes, output, key.getPubKey()));
+        ECDSASignature signature = ECDSASignature.fromSignature(key.doSign(messageBytes));
+        assertTrue(this.getSecp256k1().verify(messageBytes, signature, key.getPubKey()));
     }
 
     @Test

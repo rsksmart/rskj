@@ -162,6 +162,7 @@ jar {
     }
     from sourceSets.main.output.classesDirs
     from sourceSets.main.output.resourcesDir
+    from sourceSets.test.output.classesDirs //Just for TestSystemProperties
     from generatedResources
 }
 

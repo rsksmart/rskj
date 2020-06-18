@@ -242,7 +242,7 @@ public class TransactionTest {
                             0, 0, 100000000000000L,
                             new RskAddress("095e7baea6a6c7c4c2dfeb977efac326af552d87"), 0,
                             CallTransaction.Function.fromSignature("get"), chainId);
-                    txConst.sign(new byte[32]);
+                    txConst.sign(BigInteger.ONE.toByteArray());
 
                     Block bestBlock = block;
 

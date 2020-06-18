@@ -63,9 +63,14 @@ public final class Secp256k1 {
         }
         if (rskSystemProperties != null) {
             String cryptoLibrary = rskSystemProperties.cryptoLibrary();
-            logger.debug("Initializing Signature Service: {}.", cryptoLibrary);
-            if (NATIVE_LIB.equals(cryptoLibrary) && Secp256k1Context.isEnabled()) {
-                instance = new Secp256k1ServiceNative();
+            logger.debug("Trying to initialize Signature Service: {}.", cryptoLibrary);
+            if (NATIVE_LIB.equals(cryptoLibrary)) {
+                if(Secp256k1Context.isEnabled()){
+                    instance = new Secp256k1ServiceNative();
+                } else {
+                    logger.debug("Signature Service {} not available, initializing Bouncy Castle.", cryptoLibrary);
+                    instance = new Secp256k1ServiceNative();
+                }
             } else {
                 instance = new Secp256k1ServiceNative();
             }

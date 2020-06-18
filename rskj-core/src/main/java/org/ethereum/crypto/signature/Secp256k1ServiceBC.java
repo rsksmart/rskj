@@ -58,7 +58,8 @@ class Secp256k1ServiceBC implements Secp256k1Service {
      * Part of the Singleton Signature service.
      * {@link Secp256k1#getInstance()}
      */
-    Secp256k1ServiceBC(){}
+    Secp256k1ServiceBC() {
+    }
 
     @Nullable
     @Override
@@ -110,6 +111,9 @@ class Secp256k1ServiceBC implements Secp256k1Service {
         BigInteger srInv = rInv.multiply(sig.getS()).mod(n);
         BigInteger eInvrInv = rInv.multiply(eInv).mod(n);
         ECPoint.Fp q = (ECPoint.Fp) ECAlgorithms.sumOfTwoMultiplies(CURVE.getG(), eInvrInv, r, srInv);
+        if (q.isInfinity()) {
+            return null;
+        }
         return ECKey.fromPublicOnly(q.getEncoded(compressed));
     }
 
@@ -131,7 +135,7 @@ class Secp256k1ServiceBC implements Secp256k1Service {
     /**
      * Decompress a compressed public key (x co-ord and low-bit of y-coord).
      *
-     * @param xBN -
+     * @param xBN  -
      * @param yBit -
      * @return -
      */

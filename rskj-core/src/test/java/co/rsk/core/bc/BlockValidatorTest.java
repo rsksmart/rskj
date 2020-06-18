@@ -574,7 +574,7 @@ public class BlockValidatorTest {
 
         List<Transaction> txs = new ArrayList<>();
         Transaction tx = new Transaction("0000000000000000000000000000000000000006", BigInteger.ZERO, BigInteger.ZERO, BigInteger.valueOf(12L), BigInteger.TEN, config.getNetworkConstants().getChainId());
-        tx.sign(new byte[]{});
+        tx.sign(BigInteger.ONE.toByteArray());
         txs.add(tx);
         Block block = new BlockBuilder(null, null, null).parent(genesis).transactions(txs).build();
 
@@ -598,7 +598,8 @@ public class BlockValidatorTest {
 
         List<Transaction> txs = new ArrayList<>();
         Transaction tx = new Transaction("0000000000000000000000000000000000000006", BigInteger.ZERO, BigInteger.ZERO, BigInteger.valueOf(12L), BigInteger.TEN, config.getNetworkConstants().getChainId());
-        tx.sign(new byte[]{});
+
+        tx.sign(BigInteger.ONE.toByteArray());
         txs.add(new RemascTransaction(BigInteger.ONE.longValue()));
         txs.add(tx);
 
@@ -618,7 +619,7 @@ public class BlockValidatorTest {
 
         List<Transaction> txs = new ArrayList<>();
         Transaction tx = new Transaction("0000000000000000000000000000000000000006", BigInteger.ZERO, BigInteger.ZERO, BigInteger.valueOf(12L), BigInteger.TEN, config.getNetworkConstants().getChainId());
-        tx.sign(new byte[]{});
+        tx.sign(BigInteger.ONE.toByteArray());
         txs.add(tx);
         txs.add(new RemascTransaction(BigInteger.ONE.longValue()));
         Block block = new BlockBuilder(null, null, null).parent(genesis).transactions(txs).build();
