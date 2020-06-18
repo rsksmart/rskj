@@ -23,10 +23,8 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.db.RepositorySnapshot;
 import co.rsk.net.eth.LightClientHandler;
-import co.rsk.net.light.LightMessageHandler;
-import co.rsk.net.light.LightPeer;
-import co.rsk.net.light.LightProcessor;
-import co.rsk.net.light.LightSyncProcessor;
+import co.rsk.net.light.*;
+import co.rsk.validators.ProofOfWorkRule;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.embedded.EmbeddedChannel;
 import org.ethereum.config.SystemProperties;
@@ -62,7 +60,9 @@ public class LightClientTestUtils {
         repositorySnapshot = mock(RepositorySnapshot.class);
         Genesis genesis = mock(Genesis.class);
         lightProcessor = new LightProcessor(blockchain, blockStore, repositoryLocator);
-        lightSyncProcessor = new LightSyncProcessor(config, genesis, blockStore, blockchain);
+        ProofOfWorkRule proofOfWorkRule = mock(ProofOfWorkRule.class);
+        LightPeersInformation lightPeersInformation = mock(LightPeersInformation.class);
+        lightSyncProcessor = new LightSyncProcessor(config, genesis, blockStore, blockchain, proofOfWorkRule, lightPeersInformation);
         lightMessageHandler = new LightMessageHandler(lightProcessor, lightSyncProcessor);
         factory = (lightPeer) -> new LightClientHandler(lightPeer, lightSyncProcessor, lightMessageHandler);
     }

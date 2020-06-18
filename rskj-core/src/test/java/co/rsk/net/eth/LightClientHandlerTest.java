@@ -60,7 +60,6 @@ public class LightClientHandlerTest {
     private MessageQueue messageQueue;
     private LightClientHandler lightClientHandler;
     private ChannelHandlerContext ctx;
-    private LightProcessor lightProcessor;
     private Blockchain blockchain;
     private BlockStore blockStore;
     private RepositoryLocator repositoryLocator;
@@ -82,7 +81,6 @@ public class LightClientHandlerTest {
         repositoryLocator = mock(RepositoryLocator.class);
         genesis = mock(Genesis.class);
         genesisHash = new Keccak256(HashUtil.randomHash());
-        lightProcessor = new LightProcessor(blockchain, blockStore, repositoryLocator);
         proofOfWorkRule = mock(ProofOfWorkRule.class);
         LightPeersInformation lightPeersInformation = mock(LightPeersInformation.class);
         lightSyncProcessor = new LightSyncProcessor(config, genesis, blockStore, blockchain, proofOfWorkRule, lightPeersInformation);
@@ -387,7 +385,7 @@ public class LightClientHandlerTest {
 
         BlockHeadersMessage blockHeadersMessage = new BlockHeadersMessage(requestId, bHs);
 
-        lightClientHandler.channelRead0(ctx, blockHeadersMessage);
+        lightMessageHandler.processMessage(lightPeer, blockHeadersMessage, ctx, lightClientHandler);
 
         verify(lightPeer, times(0)).receivedBlockHeaders(any());
     }
@@ -400,7 +398,7 @@ public class LightClientHandlerTest {
 
         BlockHeadersMessage blockHeadersMessage = new BlockHeadersMessage(requestId, bHs);
 
-        lightClientHandler.channelRead0(ctx, blockHeadersMessage);
+        lightMessageHandler.processMessage(lightPeer, blockHeadersMessage, ctx, lightClientHandler);
 
         verify(lightPeer, times(0)).receivedBlockHeaders(any());
     }
