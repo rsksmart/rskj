@@ -101,9 +101,6 @@ public class LightMessageHandler implements InternalService, Runnable {
             } else {
                 logger.trace("No task");
             }
-
-            // THIS SHOULD BE IMPLEMENTED? RELATED TO SYNC
-            //updateTimedEvents();
         }
         catch (Exception ex) {
             logger.error("Unexpected error processing: {}", task, ex);

@@ -31,7 +31,9 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.math.BigInteger;
+import java.util.concurrent.TimeUnit;
 
+import static org.awaitility.Awaitility.await;
 import static org.ethereum.TestUtils.randomHash;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
@@ -116,12 +118,14 @@ public class LightMessageHandlerTest {
     }
 
     @Test
-    public void lightMessageHandlerServicesCorrectlyHandlesMessages() throws InterruptedException {
+    public void lightMessageHandlerServicesCorrectlyHandlesMessages() {
         lightMessageHandler.start();
         lightMessageHandler.postMessage(lightPeer1, m1, ctx1, lightClientHandler1);
         lightMessageHandler.postMessage(lightPeer1, m2, ctx1, lightClientHandler1);
 
-        Thread.sleep(500);
+        // Fails on TIMEOUT
+        await().atMost(1, TimeUnit.SECONDS)
+                .until(() -> lightMessageHandler.getMessageQueueSize() == 0);
 
         lightMessageHandler.stop();
         assertEquals(0,lightMessageHandler.getMessageQueueSize());
