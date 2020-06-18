@@ -26,7 +26,14 @@ assert_best b01
 
 assert_balance acc2 1000
 
-# SECOND STEP we force a reorganization
+# SECOND STEP we force a reorganization, but the second block has a tx for the same account and a different nonce
+
+transaction_build tx02
+    sender acc1
+    receiver acc2
+    value 777
+    build
+
 
 block_chain g00 u01
 block_chain g00 u02
@@ -34,14 +41,12 @@ block_chain g00 u02
 block_build newBest
     parent forkStart
     uncles u01 u02
+    transactions tx02
     build
 
 block_connect newBest
 
 assert_best newBest
 
-assert_balance acc1 10000000
-assert_balance acc2 0
-
-
+assert_balance acc2 777
 

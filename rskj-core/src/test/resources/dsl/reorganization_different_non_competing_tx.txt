@@ -1,5 +1,6 @@
 account_new acc1 10000000
-account_new acc2 0
+account_new acc2 10000000
+account_new acc3 0
 
 # create the base of our fork
 
@@ -10,7 +11,7 @@ block_connect forkStart
 
 transaction_build tx01
     sender acc1
-    receiver acc2
+    receiver acc3
     value 1000
     build
 
@@ -24,9 +25,15 @@ block_connect b01
 # Assert best block
 assert_best b01
 
-assert_balance acc2 1000
+assert_balance acc3 1000
 
-# SECOND STEP we force a reorganization
+# SECOND STEP we force a reorganization, and the second block has a tx for the same receiving account but different sender
+
+transaction_build tx02
+    sender acc2
+    receiver acc3
+    value 1000
+    build
 
 block_chain g00 u01
 block_chain g00 u02
@@ -34,6 +41,7 @@ block_chain g00 u02
 block_build newBest
     parent forkStart
     uncles u01 u02
+    transactions tx02
     build
 
 block_connect newBest
@@ -41,7 +49,8 @@ block_connect newBest
 assert_best newBest
 
 assert_balance acc1 10000000
-assert_balance acc2 0
+assert_balance acc3 1000
+
 
 
 

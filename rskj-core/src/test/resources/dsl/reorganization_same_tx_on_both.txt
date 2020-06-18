@@ -26,7 +26,7 @@ assert_best b01
 
 assert_balance acc2 1000
 
-# SECOND STEP we force a reorganization
+# SECOND STEP we force a reorganization, but the second block also has the same transaction
 
 block_chain g00 u01
 block_chain g00 u02
@@ -34,14 +34,15 @@ block_chain g00 u02
 block_build newBest
     parent forkStart
     uncles u01 u02
+    transactions tx01
     build
 
 block_connect newBest
 
 assert_best newBest
 
-assert_balance acc1 10000000
-assert_balance acc2 0
+assert_balance acc2 1000
+
 
 
 
