@@ -95,7 +95,7 @@ public class LightMessageHandler implements InternalService, Runnable {
 
             if (task != null) {
                 logger.trace("Start task");
-                this.processMessage(task.getSender(), task.getMessage(),
+                this.processMessage(task.getLightPeer(), task.getMessage(),
                         task.getCtx(), task.getLightClientHandler());
                 logger.trace("End task");
             } else {
@@ -108,21 +108,21 @@ public class LightMessageHandler implements InternalService, Runnable {
     }
 
     private static class MessageTask  {
-        private final LightPeer sender;
+        private final LightPeer lightPeer;
         private final LightClientMessage message;
         private final ChannelHandlerContext ctx;
         private final LightClientHandler lightClientHandler;
 
-        public MessageTask(LightPeer sender, LightClientMessage message,
+        public MessageTask(LightPeer lightPeer, LightClientMessage message,
                            ChannelHandlerContext ctx, LightClientHandler lightClientHandler) {
-            this.sender = sender;
+            this.lightPeer = lightPeer;
             this.message = message;
             this.ctx = ctx;
             this.lightClientHandler = lightClientHandler;
         }
 
-        public LightPeer getSender() {
-            return this.sender;
+        public LightPeer getLightPeer() {
+            return this.lightPeer;
         }
 
         public LightClientMessage getMessage() {
@@ -140,7 +140,7 @@ public class LightMessageHandler implements InternalService, Runnable {
         @Override
         public String toString() {
             return "MessageTask{" +
-                    "sender=" + sender +
+                    "lightPeer=" + lightPeer +
                     ", message=" + message +
                     ", ctx=" + ctx +
                     ", lightClientHandler=" + lightClientHandler +
