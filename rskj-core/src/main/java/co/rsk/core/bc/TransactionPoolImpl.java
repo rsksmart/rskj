@@ -158,12 +158,12 @@ public class TransactionPoolImpl implements TransactionPool {
         return repositoryLocator.snapshotAt(getBestBlock().getHeader());
     }
 
-    private List<Transaction> addSuccesors(Transaction tx) {
+    private List<Transaction> addSuccessors(Transaction tx) {
         List<Transaction> added = new ArrayList<>();
-        Optional<Transaction> succesor = this.getQueuedSuccesor(tx);
+        Optional<Transaction> successor = this.getQueuedSuccessor(tx);
 
-        while (succesor.isPresent()) {
-            Transaction found = succesor.get();
+        while (successor.isPresent()) {
+            Transaction found = successor.get();
             queuedTransactions.removeTransactionByHash(found.getHash());
 
             if (!this.internalAddTransaction(found).transactionWasAdded()) {
@@ -172,7 +172,7 @@ public class TransactionPoolImpl implements TransactionPool {
 
             added.add(found);
 
-            succesor = this.getQueuedSuccesor(found);
+            successor = this.getQueuedSuccessor(found);
         }
 
         return added;
@@ -196,7 +196,7 @@ public class TransactionPoolImpl implements TransactionPool {
 
             if (result.transactionWasAdded()) {
                 added.add(tx);
-                added.addAll(this.addSuccesors(tx));
+                added.addAll(this.addSuccessors(tx));
             }
         }
 
@@ -205,7 +205,7 @@ public class TransactionPoolImpl implements TransactionPool {
         return added;
     }
 
-    private Optional<Transaction> getQueuedSuccesor(Transaction tx) {
+    private Optional<Transaction> getQueuedSuccessor(Transaction tx) {
         BigInteger next = tx.getNonceAsInteger().add(BigInteger.ONE);
 
         List<Transaction> txsaccount = this.queuedTransactions.getTransactionsWithSender(tx.getSender());
@@ -278,7 +278,7 @@ public class TransactionPoolImpl implements TransactionPool {
         List<Transaction> added = new ArrayList<>();
 
         added.add(tx);
-        added.addAll(this.addSuccesors(tx));
+        added.addAll(this.addSuccessors(tx));
 
         this.emitEvents(added);
 

@@ -106,7 +106,7 @@ public class TransactionSet {
         List<Transaction> list = this.transactionsByAddress.get(senderAddress);
 
         if (list == null) {
-            return new ArrayList<>();
+            return Collections.emptyList();
         }
 
         return list;
