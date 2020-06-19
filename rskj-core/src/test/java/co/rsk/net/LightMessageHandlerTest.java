@@ -54,11 +54,9 @@ public class LightMessageHandlerTest {
     private GetAccountsMessage m1;
     private GetAccountsMessage m2;
 
-    private LightClientTestUtils lightClientTestUtils;
-
     @Before
     public void setUp() {
-        lightClientTestUtils = new LightClientTestUtils();
+        LightClientTestUtils lightClientTestUtils = new LightClientTestUtils();
 
         lightPeer1 = lightClientTestUtils.createPeer();
         lightPeer2 = lightClientTestUtils.createPeer();
@@ -69,8 +67,7 @@ public class LightMessageHandlerTest {
         ctx1 = lightClientTestUtils.hookLightLCHandlerToCtx(lightClientHandler1);
         ctx2 = lightClientTestUtils.hookLightLCHandlerToCtx(lightClientHandler2);
 
-        lightMessageHandler = new LightMessageHandler(lightClientTestUtils.getLightProcessor(),
-                lightClientTestUtils.getLightSyncProcessor());
+        lightMessageHandler = lightClientTestUtils.getLightMessageHandler();
 
         byte[] address1 = randomHash().getBytes();
         address1 = Arrays.copyOfRange(address1, 12, address1.length);
@@ -79,12 +76,16 @@ public class LightMessageHandlerTest {
         byte[] address2 = randomHash().getBytes();
         address2 = Arrays.copyOfRange(address2, 12, address2.length);
         m2 = new GetAccountsMessage(123, randomHash().getBytes(), address2);
-    }
 
-    /**
-     * We check that, given a random message,
-     * the processing for that message is called
-     */
+
+        Keccak256 blockHash = new Keccak256(m1.getBlockHash());
+        Keccak256 codeHash = randomHash();
+        byte[] storageRoot = randomHash().getBytes();
+        AccountState state = new AccountState(BigInteger.ONE, new Coin(new byte[] {0x10}));
+
+        lightClientTestUtils.includeAccount(blockHash, m1.getAddressHash(),
+                state, codeHash, storageRoot);
+    }
 
     @Test
     public void lightMessageHandlerHandlesAMessageCorrectly() {
@@ -133,15 +134,16 @@ public class LightMessageHandlerTest {
 
     @Test
     public void lightMessageHandlerHandlesAMessageCorrectlyAndResponseIsSent() {
-        Keccak256 blockHash = new Keccak256(m1.getBlockHash());
-        Keccak256 codeHash = randomHash();
-        byte[] storageRoot = randomHash().getBytes();
-        AccountState state = new AccountState(BigInteger.ONE, new Coin(new byte[] {0x10}));
-
-        lightClientTestUtils.includeAccount(blockHash, m1.getAddressHash(),
-                state, codeHash, storageRoot);
-
         lightMessageHandler.postMessage(lightPeer1, m1, ctx1, lightClientHandler1);
+        lightMessageHandler.handleMessage();
+
+        assertEquals(0,lightMessageHandler.getMessageQueueSize());
+        verify(lightPeer1, times(1)).sendMessage(any());
+    }
+
+    @Test
+    public void lightMessageHandlerFromLightClientHandler() {
+        lightClientHandler1.channelRead0(ctx1, m1);
         lightMessageHandler.handleMessage();
 
         assertEquals(0,lightMessageHandler.getMessageQueueSize());

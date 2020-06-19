@@ -100,6 +100,10 @@ public class LightClientTestUtils {
         return lightProcessor;
     }
 
+    public LightMessageHandler getLightMessageHandler() {
+        return lightMessageHandler;
+    }
+
     /**
      * Its created as a spy so we can check if the message was sent
      **/
