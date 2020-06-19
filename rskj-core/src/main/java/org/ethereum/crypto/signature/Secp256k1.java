@@ -21,8 +21,6 @@ package org.ethereum.crypto.signature;
 
 import co.rsk.config.RskSystemProperties;
 import com.google.common.annotations.VisibleForTesting;
-import org.bitcoin.NativeSecp256k1;
-import org.bitcoin.NativeSecp256k1Util;
 import org.bitcoin.Secp256k1Context;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -52,7 +50,7 @@ public final class Secp256k1 {
      *
      * <p> By default it initialize Bouncy Castle impl.</p>
      *
-     * @param @{@link Nullable} rskSystemProperties = Could be null in tests.
+     * @param {@link Nullable} rskSystemProperties = Could be null in tests.
      */
     public static synchronized void initialize(@Nullable RskSystemProperties rskSystemProperties) {
         // Just a warning for duplicate initialization.

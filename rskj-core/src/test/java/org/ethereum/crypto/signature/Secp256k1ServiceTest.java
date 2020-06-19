@@ -85,9 +85,7 @@ public abstract class Secp256k1ServiceTest {
         byte[] dbHash = Hex.decode(dataHashed);
         ECDSASignature signature = ECDSASignature.fromComponents(Hex.decode(rString), Hex.decode(sString));
         byte[] pubKey = Hex.decode(pubKeyString);
-        //assertTrue(
-        getSecp256k1().verify(dbHash, signature, pubKey)
-        ;//);
+        assertTrue(getSecp256k1().verify(dbHash, signature, pubKey));
         ECKey ecKey = getSecp256k1().recoverFromSignature(recId, signature, dbHash, false);
         assertEquals(pubKeyString, Hex.toHexString(ecKey.getPubKey()));
     }
