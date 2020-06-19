@@ -25,6 +25,7 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.trie.Trie;
 import co.rsk.core.types.ints.Uint24;
 
+import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Repository;
 import org.ethereum.vm.DataWord;
@@ -224,13 +225,18 @@ public class Storage implements Repository, ProgramListenerAware {
     * (i.e. put/get methods for node valuelength and rent last paid timestamps)
     * These are implemented in MutableRepository
     */
-    @Override
+    /*@Override
     public synchronized void updateNodeWithRent(DataWord key, long newlastRentPaidTime){
+        repository.updateNodeWithRent(key, newlastRentPaidTime);
+    }*/
+
+    @Override
+    public synchronized void updateNodeWithRent(ByteArrayWrapper key, long newlastRentPaidTime){
         repository.updateNodeWithRent(key, newlastRentPaidTime);
     }
 
     @Override
-    public DataWord getAccountNodeKey(RskAddress addr){
+    public ByteArrayWrapper getAccountNodeKey(RskAddress addr){
         return repository.getAccountNodeKey(addr);
     }
 
@@ -257,7 +263,7 @@ public class Storage implements Repository, ProgramListenerAware {
     // Start with key as DataWord for HashMaps. Using `getCodeNodexx` to emphasize this is about the node,
     // rather than the code, and to dinsinguish from prior methods
     @Override
-    public DataWord getCodeNodeKey(RskAddress addr){
+    public ByteArrayWrapper getCodeNodeKey(RskAddress addr){
         return repository.getCodeNodeKey(addr);
     }
 
@@ -282,7 +288,7 @@ public class Storage implements Repository, ProgramListenerAware {
 
     // start with key for stortage root
     @Override
-    public DataWord getStorageRootKey(RskAddress addr){
+    public ByteArrayWrapper getStorageRootKey(RskAddress addr){
         return repository.getStorageRootKey(addr);
     }
 

@@ -25,6 +25,8 @@ import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.db.RepositorySnapshot;
 import co.rsk.trie.Trie;
+
+import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.vm.DataWord;
 
 import java.math.BigInteger;
@@ -130,9 +132,11 @@ public interface Repository extends RepositorySnapshot {
     */
 
     // method to update a pre-existing node's rent timestamp (will copy existing value)
-    void updateNodeWithRent(DataWord key, long newlastRentPaidTime);
+    //void updateNodeWithRent(DataWord key, long newlastRentPaidTime);
 
-    DataWord getAccountNodeKey(RskAddress addr);
+    void updateNodeWithRent(ByteArrayWrapper key, long newlastRentPaidTime);
+
+    ByteArrayWrapper getAccountNodeKey(RskAddress addr);
 
     // for account state node.. both regular accounts as well as contracts
     Uint24 getAccountNodeValueLength(RskAddress addr);
@@ -146,7 +150,7 @@ public interface Repository extends RepositorySnapshot {
     
     // Start with key as DataWord for HashMaps. Using `getCodeNodexx` to emphasize this is about the node,
     // rather than the code, and to dinsinguish from prior methods
-    DataWord getCodeNodeKey(RskAddress addr);
+    ByteArrayWrapper getCodeNodeKey(RskAddress addr);
 
     // this returns an Uint24, unlike `getCodeLength()` which returns an int. Same otherwise.
     Uint24 getCodeNodeLength(RskAddress addr) ;
@@ -159,7 +163,7 @@ public interface Repository extends RepositorySnapshot {
     // For nodes containing contract storage
 
     // start with key for stortage root
-    DataWord getStorageRootKey(RskAddress addr);
+    ByteArrayWrapper getStorageRootKey(RskAddress addr);
 
     //storage root node value is always 0x01
     Uint24 getStorageRootValueLength(RskAddress addr);

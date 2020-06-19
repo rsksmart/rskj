@@ -25,6 +25,7 @@ import org.ethereum.vm.CallCreate;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.GasCost;
 import org.ethereum.vm.LogInfo;
+import org.ethereum.db.ByteArrayWrapper;
 
 import java.util.*;
 
@@ -54,8 +55,9 @@ public class ProgramResult {
     private Map<DataWord, byte[]> codeChanges; // #mish: used in TX exec finalization
 
     // #mish: sets for storage rent (RSKIP113) checks and computations (only nodes that have some value) 
-    private Map<DataWord, RentData> createdNodes; //  storage rent to be charged for 6 months in advance when nodes are created
-    private Map<DataWord, RentData> accessedNodes; // nodes accessed (value may or may not be modified by TX)
+    private Map<ByteArrayWrapper, RentData> createdNodes; //  storage rent to be charged for 6 months in advance when nodes are created
+    private Map<ByteArrayWrapper, RentData> accessedNodes; // nodes accessed (value may or may not be modified by TX)
+    //private Map<DataWord, RentData> accessedNodes; // nodes accessed (value may or may not be modified by TX)
     
     // #mish Set of selfdestruct i.e. suicide accounts, i.e. contracts (and all associated nodes)
     // todo: compute rent for deleted nodes?
@@ -160,36 +162,36 @@ public class ProgramResult {
     }
 
     // #mish tracking additions, updates and storage rent due status for trie ndoes
-    public Map<DataWord, RentData> getCreatedNodes() {
+    public Map<ByteArrayWrapper, RentData> getCreatedNodes() {
         if (createdNodes == null) {
             createdNodes = new HashMap<>();
         }
         return createdNodes;
     }
 
-    public void addCreatedNode(DataWord nodeKey, RentData rentData) {
+    public void addCreatedNode(ByteArrayWrapper nodeKey, RentData rentData) {
         getCreatedNodes().put(nodeKey, rentData);   //putifabsent not needed, just created
     }
 
     // add a set of new trie nodes 
-    public void addCreatedNodes(Map<DataWord, RentData> newNodes) {
+    public void addCreatedNodes(Map<ByteArrayWrapper, RentData> newNodes) {
         getCreatedNodes().putAll(newNodes);
     }
 
     // #mish nodes accessed (may or may not be modified)
-    public Map<DataWord, RentData> getAccessedNodes() {
+    public Map<ByteArrayWrapper, RentData> getAccessedNodes() {
         if (accessedNodes == null) {
             accessedNodes = new HashMap<>();
         }
         return accessedNodes;
     }
 
-    public void addAccessedNode(DataWord nodeKey, RentData rentData) {
+    public void addAccessedNode(ByteArrayWrapper nodeKey, RentData rentData) {
         // #mish: for accessed, keep the first read value, updates are stored in modified
         getAccessedNodes().putIfAbsent(nodeKey, rentData);
     }
 
-    public void addAccessedNodes(Map<DataWord, RentData> nodesAcc) {
+    public void addAccessedNodes(Map<ByteArrayWrapper, RentData> nodesAcc) {
         nodesAcc.forEach(getAccessedNodes()::putIfAbsent);
     }
    

@@ -33,7 +33,9 @@ import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.db.BlockStore;
+import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.db.ReceiptStore;
+import org.ethereum.db.MutableRepository; //#mish todo remove this later, added for testing
 import org.ethereum.vm.*;
 import org.ethereum.vm.program.RentData;
 import org.ethereum.vm.program.Program;
@@ -497,9 +499,10 @@ public class TransactionExecutor {
             if (playVm) {
                 vm.play(program);
             }
-
-            result.merge(program.getResult());
-            //result = program.getResult();
+            // #mish: this is the first assignment of result. Next assignemnt (overwrit) happens within createContract() 
+            result = program.getResult();
+            //result.merge(program.getResult());
+            
 
             mEndGas = GasCost.subtract(GasCost.toGas(tx.getGasLimit()), program.getResult().getGasUsed());
 
@@ -546,14 +549,19 @@ public class TransactionExecutor {
                             "No gas to return just created contract",
                             returnDataGasValue,
                             program));
-            result = program.getResult();
+            //result = program.getResult();
+            //#mish merge with existing (result may have rent information)
+            result.merge(program.getResult());
             result.setHReturn(EMPTY_BYTE_ARRAY);
         } else if (createdContractSize > Constants.getMaxContractSize()) {
             program.setRuntimeFailure(
                     Program.ExceptionHelper.tooLargeContractSize(
                             Constants.getMaxContractSize(),
                             createdContractSize));
-            result = program.getResult();
+            
+            //result = program.getResult();
+            //#mish merge with existing (result may have rent information) 
+            result.merge(program.getResult());
             result.setHReturn(EMPTY_BYTE_ARRAY);
         } else {
             mEndGas = GasCost.subtract(mEndGas,  returnDataGasValue);
@@ -591,6 +599,7 @@ public class TransactionExecutor {
 
         // Collect rent gas before finalization
         result.spendRentGas(estRentGas);
+        
 
         // Should include only LogInfo's that was added during not rejected transactions
         List<LogInfo> notRejectedLogInfos = result.getLogInfoList().stream()
@@ -643,14 +652,48 @@ public class TransactionExecutor {
 
         this.paidFees = summaryFee;
 
+        //#mish for testing
+        System.out.println("\nexec gas " + result.getGasUsed() +
+                           "\nrent gas " + estRentGas + 
+                           "\ngas refund " + (mEndGas + mEndRentGas) +
+                           "\nTx fees " + paidFees);
+
         logger.trace("Processing result");
         logs = notRejectedLogInfos;
+
+        /* #mish testing before and after rent update remove later
+        result.getAccessedNodes().forEach(
+            (key, rentData) -> {
+                    RskAddress tmpAddr = new RskAddress(Arrays.copyOfRange(key.getData(),12,32));
+                    System.out.println(track.getAccountNodeLRPTime(tmpAddr));
+            }
+        );*/
 
         // save created and accessed node with updated rent timestamps to repository. Any value modifications 
         result.getCreatedNodes().forEach((key, rentData) -> track.updateNodeWithRent(key, rentData.getLRPTime()));        
         
         result.getAccessedNodes().forEach((key, rentData) -> track.updateNodeWithRent(key, rentData.getLRPTime()));
         
+        /*
+        System.out.println(this.coinbase);
+        System.out.println(tx.getSender());
+        System.out.println(tx.getReceiveAddress()+"\n\n");
+        */
+
+        //#mish testing before and after rent update remove later
+        //System.out.println(track instanceof MutableRepository);
+        
+        result.getAccessedNodes().forEach(
+            (key, rentData) -> {
+                    //System.out.println(key.getData().length);
+                    byte[] tmpkey = Arrays.copyOfRange(key.getData(),11,31);
+                    RskAddress tmpAddr = new RskAddress(tmpkey);
+                    System.out.println(track.getAccountNodeLRPTime(tmpAddr));
+            }
+        );
+
+
+
         // #mish what is this for? Git grep doesn't reveal anything (neither does github search)
         result.getCodeChanges().forEach((key, value) -> track.saveCode(new RskAddress(key), value));
         // Traverse list of suicides
@@ -741,7 +784,7 @@ public class TransactionExecutor {
     */
     public void accessedNodeAdder(RskAddress addr, Repository repository, ProgramResult progRes){
         long rd = 0; // initalize rent due to 0
-        DataWord accKey = repository.getAccountNodeKey(addr);
+        ByteArrayWrapper accKey = repository.getAccountNodeKey(addr);
         // if the node is not in the map, add the rent owed to current estimate
         if (!progRes.getAccessedNodes().containsKey(accKey)){
             Uint24 vLen = repository.getAccountNodeValueLength(addr);
@@ -750,6 +793,7 @@ public class TransactionExecutor {
             // compute the rent due. Treat these nodes as 'modified' (since account state will be updated)
             accNode.setRentDue(this.getRefTimeStamp(), true); // account node value length may not change much
             rd = accNode.getRentDue();
+            //System.out.println("accessed node rent added: "+ rd);
             estRentGas += rd;   //"collect" rent due
             accNode.setLRPTime(this.getRefTimeStamp()); //update rent paid timestamp
             // add to hashmap (internally this is a putIfAbsent) 
@@ -758,7 +802,7 @@ public class TransactionExecutor {
         // if this is a contract then add info for storage root and code
         if (repository.isContract(addr)) {
             // code node
-            DataWord cKey = repository.getCodeNodeKey(addr);
+            ByteArrayWrapper cKey = repository.getCodeNodeKey(addr);
             if (!progRes.getAccessedNodes().containsKey(cKey)){
                 Uint24 cLen = repository.getCodeNodeLength(addr);
                 long cLrpt = repository.getCodeNodeLRPTime(addr);
@@ -771,7 +815,7 @@ public class TransactionExecutor {
                 progRes.addAccessedNode(cKey, codeNode);
             }       
             // storage root node
-            DataWord srKey = repository.getStorageRootKey(addr);
+            ByteArrayWrapper srKey = repository.getStorageRootKey(addr);
             if (!progRes.getAccessedNodes().containsKey(srKey)){
                 Uint24 srLen = repository.getStorageRootValueLength(addr);
                 long srLrpt = repository.getStorageRootLRPTime(addr);
@@ -791,7 +835,7 @@ public class TransactionExecutor {
     public void createdNodeAdder(RskAddress addr, Repository repository, ProgramResult progRes){
         long advTS = this.getRefTimeStamp() + GasCost.SIX_MONTHS; //advanced time stamp time.now + 6 months
         long rd = 0; // rent due init 0
-        DataWord accKey = repository.getAccountNodeKey(addr);
+        ByteArrayWrapper accKey = repository.getAccountNodeKey(addr);
         // if the node is not in the map, add the rent owed to current estimate
         if (!progRes.getCreatedNodes().containsKey(accKey)){
             Uint24 vLen = repository.getAccountNodeValueLength(addr);
@@ -806,7 +850,7 @@ public class TransactionExecutor {
         // if this is a contract then add info for storage root and code
         if (repository.isContract(addr)) {
             // code node
-            DataWord cKey = repository.getCodeNodeKey(addr);
+            ByteArrayWrapper cKey = repository.getCodeNodeKey(addr);
             if (!progRes.getCreatedNodes().containsKey(cKey)){
                 Uint24 cLen = repository.getCodeNodeLength(addr);
                 RentData codeNode = new RentData(cLen, advTS);
@@ -817,7 +861,7 @@ public class TransactionExecutor {
                 progRes.addCreatedNode(cKey, codeNode);
             }       
             // storage root node
-            DataWord srKey = repository.getStorageRootKey(addr);
+            ByteArrayWrapper srKey = repository.getStorageRootKey(addr);
             if (!progRes.getCreatedNodes().containsKey(srKey)){
                 Uint24 srLen = repository.getStorageRootValueLength(addr);
                 RentData srNode = new RentData(srLen, advTS);

@@ -10,6 +10,7 @@ import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.db.BlockStore;
+import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.db.MutableRepository;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.vm.DataWord;
@@ -360,12 +361,12 @@ public class TransactionExecutorTest {
         when(executionBlock.getGasLimit()).thenReturn(BigInteger.valueOf(6_800_000).toByteArray());
         
         //mock repository for accessedNodeAdder()
-        when(repository.getAccountNodeKey(sender)).thenReturn(DataWord.fromString("senderKey"));
-        when(repository.getAccountNodeValueLength(sender)).thenReturn(new Uint24(10));
+        when(repository.getAccountNodeKey(sender)).thenReturn(new ByteArrayWrapper("senderKey".getBytes()));
+        when(repository.getAccountNodeValueLength(sender)).thenReturn(new Uint24(128));
         when(repository.getAccountNodeLRPTime(sender)).thenReturn(70_000L);
 
-        when(repository.getAccountNodeKey(receiver)).thenReturn(DataWord.fromString("receiverKey"));
-        when(repository.getAccountNodeValueLength(receiver)).thenReturn(new Uint24(128));
+        when(repository.getAccountNodeKey(receiver)).thenReturn(new ByteArrayWrapper("receiverKey".getBytes()));
+        when(repository.getAccountNodeValueLength(receiver)).thenReturn(new Uint24(10));
         when(repository.getAccountNodeLRPTime(receiver)).thenReturn(130_000L);
         
         TransactionExecutor txExecutor = new TransactionExecutor(
@@ -383,15 +384,15 @@ public class TransactionExecutorTest {
             // one entry for sender and one for receiver and one for coinbase (the miner)
             assertEquals(3,txExecutor.getResult().getAccessedNodes().size());
 
-            assertEquals(new Uint24(10), txExecutor.getResult().getAccessedNodes().get(DataWord.fromString("senderKey")).getValueLength());
-            assertEquals(new Uint24(128), txExecutor.getResult().getAccessedNodes().get(DataWord.fromString("receiverKey")).getValueLength());
+            assertEquals(new Uint24(128), txExecutor.getResult().getAccessedNodes().get(new ByteArrayWrapper("senderKey".getBytes())).getValueLength());
+            assertEquals(new Uint24(10), txExecutor.getResult().getAccessedNodes().get(new ByteArrayWrapper("receiverKey".getBytes())).getValueLength());
             //these assertions (from prior test version) will fail for nodes with updated LRPT
             //assertEquals(70_000L, txExecutor.getResult().getAccessedNodes().get(DataWord.fromString("senderKey")).getLRPTime());
             //assertEquals(130_000L, txExecutor.getResult().getAccessedNodes().get(DataWord.fromString("receiverKey")).getLRPTime());
 
             // Rent computation within Tx Exec uses time.now() value, so mocking is not needed    
-            long rentDueSender = txExecutor.getResult().getAccessedNodes().get(DataWord.fromString("senderKey")).getRentDue();
-            long rentDueReceiver = txExecutor.getResult().getAccessedNodes().get(DataWord.fromString("receiverKey")).getRentDue(); 
+            long rentDueSender = txExecutor.getResult().getAccessedNodes().get(new ByteArrayWrapper("senderKey".getBytes())).getRentDue();
+            long rentDueReceiver = txExecutor.getResult().getAccessedNodes().get(new ByteArrayWrapper("receiverKey".getBytes())).getRentDue(); 
             long estimatedRentGas = txExecutor.getEstRentGas();
             //System.out.println(Instant.now().getEpochSecond());
             System.out.println("Sender rent: " + rentDueSender);

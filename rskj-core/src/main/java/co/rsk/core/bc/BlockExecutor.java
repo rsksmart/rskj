@@ -315,9 +315,11 @@ public class BlockExecutor {
 
             logger.trace("track commit");
 
-            long gasUsed = txExecutor.getGasUsed();
+            long gasUsed = txExecutor.getGasUsed(); // #mish this returns execution gas used
+            long rentGasUsed = txExecutor.getRentGasUsed(); // rent gas used 
+
             totalGasUsed += gasUsed;
-            Coin paidFees = txExecutor.getPaidFees();
+            Coin paidFees = txExecutor.getPaidFees();   //#mish this includes exec + rent gas
             if (paidFees != null) {
                 totalPaidFees = totalPaidFees.add(paidFees);
             }
@@ -325,13 +327,15 @@ public class BlockExecutor {
             deletedAccounts.addAll(txExecutor.getResult().getDeleteAccounts());
 
             TransactionReceipt receipt = new TransactionReceipt();
-            receipt.setGasUsed(gasUsed);
+            // #mish report both exec and rent gas (recall TX gaslimit "field" combines both,
+            // even though methods "tx.getGasLimit" and "txgetRentGasLimit" are dinstinct.
+            receipt.setGasUsed(gasUsed + rentGasUsed);
             receipt.setCumulativeGas(totalGasUsed);
 
             receipt.setTxStatus(txExecutor.getReceipt().isSuccessful());
             receipt.setTransaction(tx);
             receipt.setLogInfoList(txExecutor.getVMLogs());
-            receipt.setStatus(txExecutor.getReceipt().getStatus());
+            receipt.setStatus(txExecutor.getReceipt().getStatus()); // #mish todo RSKIP expands status from 2 to 4 (add Manuak revert and OOG for rentgas)
 
             logger.trace("block: [{}] executed tx: [{}]", block.getNumber(), tx.getHash());
 

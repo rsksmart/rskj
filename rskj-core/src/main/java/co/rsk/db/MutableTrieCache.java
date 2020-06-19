@@ -155,11 +155,12 @@ public class MutableTrieCache implements MutableTrie {
         return new StorageKeysIterator(storageKeys, accountItems, addr, trieKeyMapper);
     }
 
-    // This method returns a wrapper with the same content and size expected for a account key
+    // This method returns a wrapper with the same content and size expected for an account key
     // when the key is from the same size than the original wrapper, it returns the same object
     private ByteArrayWrapper getAccountWrapper(ByteArrayWrapper originalWrapper) {
         byte[] key = originalWrapper.getData();
         int size = TrieKeyMapper.domainPrefix().length + TrieKeyMapper.ACCOUNT_KEY_SIZE + TrieKeyMapper.SECURE_KEY_SIZE;
+        //System.out.println("size is " + size + "key len " + key.length);
         return key.length == size ? originalWrapper : new ByteArrayWrapper(Arrays.copyOf(key, size));
     }
 

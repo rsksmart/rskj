@@ -52,9 +52,11 @@ public class TransactionReceipt {
     protected static final byte[] RENT_OOG_RSKIP113_STATUS = new byte[]{-2};
 
     private byte[] postTxState = EMPTY_BYTE_ARRAY;
+    // cumulativeGas field (as before) represents execution gas alone (rentgas does not count towards block gas limit) 
     private byte[] cumulativeGas = EMPTY_BYTE_ARRAY;
+    // #mish Note: gasLimit field in Transaction.java represents the combined limits for execution and rent gas.
+    // likewise, the gasUsed field here includes both execution and rent gas used.
     private byte[] gasUsed = EMPTY_BYTE_ARRAY;
-    //private byte[] rentGasUsed = EMPTY_BYTE_ARRAY; // storage rent at end of TX (even if reverted, RSKIP113), not included in cumulativeGas
     private byte[] status = EMPTY_BYTE_ARRAY;
 
     private Bloom bloomFilter = new Bloom();

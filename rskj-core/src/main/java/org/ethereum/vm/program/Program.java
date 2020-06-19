@@ -34,6 +34,7 @@ import co.rsk.core.types.ints.Uint24;
 
 import com.google.common.annotations.VisibleForTesting;
 import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -187,7 +188,7 @@ public class Program {
         return invoke.getCallDeep();
     }
 
-    // #mish: the gaslimit here may not be actual execution gas limit. 
+    // #mish: the gaslimit here need not be actual execution gas limit. 
     // For create (getProgramResult) and both calls (callToAddr or calltoPCC) BLOCKGASLIMIT is used
     private InternalTransaction addInternalTx(byte[] nonce, DataWord gasLimit, RskAddress senderAddress, RskAddress receiveAddress,
                                               Coin value, byte[] data, String note) {
@@ -610,7 +611,7 @@ public class Program {
         }
     }
 
-    // #mish this is used in createContract
+    // #mish this is used in createContract and is obviously different from getResult()
     private ProgramResult getProgramResult(RskAddress senderAddress, byte[] nonce, DataWord value,
                                            RskAddress contractAddress, Coin endowment, byte[] programCode,
                                            long gasLimit, long rentGasLimit, Repository track, Coin newBalance, ProgramResult programResult) {
@@ -1685,7 +1686,7 @@ public class Program {
     */
     public void accessedNodeAdder(RskAddress addr, Repository repository, ProgramResult progRes){
         long rd = 0; // initalize rent due to 0
-        DataWord accKey = repository.getAccountNodeKey(addr);
+        ByteArrayWrapper accKey = repository.getAccountNodeKey(addr);
         // if the node is not in the map, add the rent owed to current estimate
         if (!progRes.getAccessedNodes().containsKey(accKey)){
             Uint24 vLen = repository.getAccountNodeValueLength(addr);
@@ -1702,7 +1703,7 @@ public class Program {
         // if this is a contract then add info for storage root and code
         if (repository.isContract(addr)) {
             // code node
-            DataWord cKey = repository.getCodeNodeKey(addr);
+            ByteArrayWrapper cKey = repository.getCodeNodeKey(addr);
             if (!progRes.getAccessedNodes().containsKey(cKey)){
                 Uint24 cLen = repository.getCodeNodeLength(addr);
                 long cLrpt = repository.getCodeNodeLRPTime(addr);
@@ -1715,7 +1716,7 @@ public class Program {
                 progRes.addAccessedNode(cKey, codeNode);
             }       
             // storage root node
-            DataWord srKey = repository.getStorageRootKey(addr);
+            ByteArrayWrapper srKey = repository.getStorageRootKey(addr);
             if (!progRes.getAccessedNodes().containsKey(srKey)){
                 Uint24 srLen = repository.getStorageRootValueLength(addr);
                 long srLrpt = repository.getStorageRootLRPTime(addr);
@@ -1735,7 +1736,7 @@ public class Program {
     public void createdNodeAdder(RskAddress addr, Repository repository, ProgramResult progRes){
         long advTS = getTimestamp().longValue() + GasCost.SIX_MONTHS; //advanced time stamp time.now + 6 months
         long rd = 0; // rent due init 0
-        DataWord accKey = repository.getAccountNodeKey(addr);
+        ByteArrayWrapper accKey = repository.getAccountNodeKey(addr);
         // if the node is not in the map, add the rent owed to current estimate
         if (!progRes.getCreatedNodes().containsKey(accKey)){
             Uint24 vLen = repository.getAccountNodeValueLength(addr);
@@ -1750,7 +1751,7 @@ public class Program {
         // if this is a contract then add info for storage root and code
         if (repository.isContract(addr)) {
             // code node
-            DataWord cKey = repository.getCodeNodeKey(addr);
+            ByteArrayWrapper cKey = repository.getCodeNodeKey(addr);
             if (!progRes.getCreatedNodes().containsKey(cKey)){
                 Uint24 cLen = repository.getCodeNodeLength(addr);
                 RentData codeNode = new RentData(cLen, advTS);
@@ -1761,7 +1762,7 @@ public class Program {
                 progRes.addCreatedNode(cKey, codeNode);
             }       
             // storage root node
-            DataWord srKey = repository.getStorageRootKey(addr);
+            ByteArrayWrapper srKey = repository.getStorageRootKey(addr);
             if (!progRes.getCreatedNodes().containsKey(srKey)){
                 Uint24 srLen = repository.getStorageRootValueLength(addr);
                 RentData srNode = new RentData(srLen, advTS);

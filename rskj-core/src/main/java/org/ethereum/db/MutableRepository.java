@@ -29,6 +29,8 @@ import co.rsk.trie.Trie;
 import co.rsk.trie.TrieKeySlice;
 import co.rsk.trie.TrieStore;
 import com.google.common.annotations.VisibleForTesting;
+
+import org.ethereum.db.ByteArrayWrapper; //#mish use this instead of dataword for keys (as in mutabletriecache)
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.HashUtil;
@@ -330,14 +332,13 @@ public class MutableRepository implements Repository {
         return rootHash.getBytes();
     }
 
-    // cannot update account storage rent with this method. Use updateAccountStateLRPTime()
+    // cannot update account storage rent with this method.
     @Override
     public synchronized void updateAccountState(RskAddress addr, final AccountState accountState) {
         byte[] accountKey = trieKeyMapper.getAccountKey(addr);
         mutableTrie.put(accountKey, accountState.getEncoded());
     }
 
-    // #mish is this annotation needed? public method?
     @VisibleForTesting
     public byte[] getStorageStateRoot(RskAddress addr) {
         byte[] prefix = trieKeyMapper.getAccountStoragePrefixKey(addr);
@@ -374,21 +375,31 @@ public class MutableRepository implements Repository {
      * to get a node's key, value Length, last rent paid timestamp
      * and a setter method to update node data via trie putWithRent() 
      */
-    
+
     // a generic method to update a node's last rent paid time
-    @Override
+    /*@Override
     public synchronized void updateNodeWithRent(DataWord key, long newlastRentPaidTime){
-        byte[] val = mutableTrie.get(key.getData()); // get current value
-        if (val != null){
-            mutableTrie.putWithRent(key.getData(), val, newlastRentPaidTime);
+        //RskAddress addr =  new RskAddress(Arrays.copyOfRange(key.getData(),12,32));
+        //byte[] acckey = trieKeyMapper.getAccountKey(addr);
+        byte[] value = mutableTrie.get(Arrays.copyOfRange(key.getData(),1,32)); // get current value
+        if (value != null){
+            mutableTrie.putWithRent(Arrays.copyOfRange(key.getData(),1,32), value, newlastRentPaidTime);
+        } //else {System.out.println("Handle null value error in updatenodewithrent");}
+    }*/
+
+    @Override
+    public synchronized void updateNodeWithRent(ByteArrayWrapper key, long newlastRentPaidTime){
+        byte[] value = mutableTrie.get(key.getData()); // get current value
+        if (value != null){
+            mutableTrie.putWithRent(key.getData(), value, newlastRentPaidTime);
         }
     }
  
     // Accountkey as DataWord for situations where trikeymapper is not used directly 
     // e.g. HashMaps in programResult to keep track of nodes created, deleted, modified etc  
     @Override
-    public synchronized DataWord getAccountNodeKey(RskAddress addr) {
-        return DataWord.valueOf(trieKeyMapper.getAccountKey(addr));
+    public synchronized ByteArrayWrapper getAccountNodeKey(RskAddress addr) {
+        return new ByteArrayWrapper(trieKeyMapper.getAccountKey(addr));
     }
 
     // for account state node.. both regular accounts as well as contracts
@@ -414,12 +425,12 @@ public class MutableRepository implements Repository {
     // Start with key as DataWord for HashMaps. Using `getCodeNodexx` to emphasize this is about the node,
     // rather than the code, and to dinsinguish from prior methods
     @Override
-    public synchronized DataWord getCodeNodeKey(RskAddress addr) {        
+    public synchronized ByteArrayWrapper getCodeNodeKey(RskAddress addr) {        
         AccountState account = getAccountState(addr);
         if (account == null || account.isHibernated()) {
             return null;
         }
-        return DataWord.valueOf(trieKeyMapper.getCodeKey(addr));
+        return new ByteArrayWrapper(trieKeyMapper.getCodeKey(addr));
     }
 
     // this returns an Uint24, unlike `getCodeLength()` which returns an int. Same otherwise.
@@ -461,8 +472,8 @@ public class MutableRepository implements Repository {
 
     // start with key for stortage root (value is always '0x01' i.e ONE_BYTE_ARRAY, but rent timestamp varies) 
     @Override
-    public synchronized DataWord getStorageRootKey(RskAddress addr) {        
-        return DataWord.valueOf(trieKeyMapper.getAccountStoragePrefixKey(addr));
+    public synchronized ByteArrayWrapper getStorageRootKey(RskAddress addr) {        
+        return new ByteArrayWrapper(trieKeyMapper.getAccountStoragePrefixKey(addr));
     }
 
     //storage root node value is always 0x01
