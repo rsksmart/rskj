@@ -35,17 +35,16 @@ public class TransactionExecutionSummary {
     private Transaction tx;
     private Coin value = Coin.ZERO;
     private Coin gasPrice = Coin.ZERO;
-    // #mish: unlike TX, the gasLimit field here represents execution gas limit only
+   
     private BigInteger gasLimit = BigInteger.ZERO;
     private BigInteger gasUsed = BigInteger.ZERO;
     private BigInteger gasLeftover = BigInteger.ZERO;
     private BigInteger gasRefund = BigInteger.ZERO;
     
     /** #mish for storage rent gas*/
-    private BigInteger rentGasLimit = BigInteger.ZERO;
-    private BigInteger rentGasUsed = BigInteger.ZERO;
-    //private BigInteger rentGasLeftover = BigInteger.ZERO;
-    //private BigInteger rentGasRefund = BigInteger.ZERO;
+    // June2020: Post single gaslitmi field in TX, 
+    // remove rent gas separation. Just report everything together
+    // if separation needed, can be done later.
     
     private List<DataWord> deletedAccounts = emptyList();
     private List<InternalTransaction> internalTransactions = emptyList();
@@ -70,23 +69,15 @@ public class TransactionExecutionSummary {
     public Coin getFee() {
         if (failed) {
             BigInteger failedFee = gasLimit;
-            BigInteger failedFeeRent = rentGasLimit.divide(BigInteger.valueOf(4));;  // keep 1/4=25% rentgas limit (RSKIP113)
-            return calcCost(failedFee.add(failedFeeRent)); 
+            //BigInteger failedFeeRent = rentGasLimit.divide(BigInteger.valueOf(4));;  // keep 1/4=25% rentgas limit (RSKIP113)
+            return calcCost(failedFee);// .add(failedFeeRent)); 
         }
-        // TX execution fee
-        // #mish by the time this is called in TX exec, the gasLeftOver field reflects both exec as well as rent gas left over
-        BigInteger txFee = gasLimit.subtract(gasLeftover.add(gasRefund));
+        // TX execution fee (rent + execution combined)
+        BigInteger txFee = gasLimit.subtract(gasLeftover).subtract(gasRefund);
         return calcCost(txFee);
     }
 
     public Coin getRefund() {
-        /*if (failed) {
-            // #mish even if failed, refund 3/4 of rentgaslimit as per RSKIP113
-            //return Coin.ZERO;
-            BigInteger rentGasRefund = rentGasLimit.multiply(BigInteger.valueOf(3)).divide(BigInteger.valueOf(4));
-            return calcCost(rentGasRefund);
-        }*/
-
         return calcCost(gasRefund);
     }
 
@@ -102,7 +93,8 @@ public class TransactionExecutionSummary {
         return gasPrice;
     }
 
-    // #mish returns execution gas limit, same as the getGaslimit method for TX
+    // #mish returns combined gas limit
+    // DIFFEERENT FROM getGaslimit method for TX which returns execution gas limit
     public BigInteger getGasLimit() {
         return gasLimit;
     }
@@ -115,16 +107,15 @@ public class TransactionExecutionSummary {
         return gasLeftover;
     }
 
-    
+    /*
     public BigInteger getRentGasLimit() {
-        return rentGasLimit;
+        return tx.getRentGasLimit();
     }
 
     public BigInteger getRentGasUsed() {
         return rentGasUsed;
     }
 
-    /*
     public BigInteger getRentGasLeftover() {
         return rentGasLeftover;
     }*/
@@ -174,9 +165,7 @@ public class TransactionExecutionSummary {
 
             summary = new TransactionExecutionSummary();
             summary.tx = transaction;
-            // #mish: unlike a TX, the limit here is separate for execution gas and rent gas
-            summary.gasLimit = toBI(transaction.getGasLimit()); // this is execution gas limit
-            summary.rentGasLimit = toBI(transaction.getRentGasLimit());
+            summary.gasLimit = toBI(transaction.getGasLimit()).add(toBI(transaction.getRentGasLimit())); // combined gas limit
             summary.gasPrice = transaction.getGasPrice();
             summary.value = transaction.getValue();
         }
@@ -195,11 +184,12 @@ public class TransactionExecutionSummary {
             summary.gasRefund = gasRefund;
             return this;
         }
-
+        
+        /* //remove rent gas distinctions (June 2020)    
         public Builder rentGasUsed(BigInteger rentGasUsed) {
             summary.rentGasUsed = rentGasUsed;
             return this;
-        }
+        }*/
 
         /*public Builder rentGasLeftover(BigInteger rentGasLeftover) {
             summary.rentGasLeftover = rentGasLeftover;

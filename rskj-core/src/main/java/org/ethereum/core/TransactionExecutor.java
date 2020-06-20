@@ -309,6 +309,7 @@ public class TransactionExecutor {
             refTimeStamp = Instant.now().getEpochSecond();
             // #mish add sender to Map of accessed nodes (for storage rent tracking)
             // but don't add receiver address yet as it may be a pre-compiled contract
+            track.createAccount(this.coinbase);
             accessedNodeAdder(this.coinbase, track, result);
             accessedNodeAdder(tx.getSender(),track, result);    
             
@@ -326,6 +327,8 @@ public class TransactionExecutor {
             logger.trace("Paying: txGasCost: [{}],  gasPrice: [{}], gasLimit: [{}]",
                                     txGasCost, tx.getGasPrice(), txGasLimit);
         }
+        
+        
 
         if (tx.isContractCreation()) {
             create();
@@ -597,8 +600,13 @@ public class TransactionExecutor {
         //Transaction sender is stored in cache
         signatureCache.storeSender(tx);
 
-        // Collect rent gas before finalization
+        // Collect rent gas computed here (but not internal TX) before finalization
         result.spendRentGas(estRentGas);
+        
+        long txRentGasLimit = GasCost.toGas(tx.getRentGasLimit());
+        mEndRentGas = activations.isActive(ConsensusRule.RSKIP136) ?
+                    GasCost.subtract(txRentGasLimit, result.getRentGasUsed()) :
+                    txRentGasLimit - result.getRentGasUsed();
         
 
         // Should include only LogInfo's that was added during not rejected transactions
@@ -622,7 +630,7 @@ public class TransactionExecutor {
 
         summaryBuilder
                 .gasUsed(toBI(result.getGasUsed() + result.getRentGasUsed()))
-                .gasRefund(toBI(gasRefund))
+                .gasRefund(toBI(gasRefund)) // #mish this is not gas left over.. that's separate
                 .deletedAccounts(result.getDeleteAccounts())
                 .internalTransactions(result.getInternalTransactions());
 
@@ -647,37 +655,30 @@ public class TransactionExecutor {
             logger.trace("Adding fee to remasc contract account");
             track.addBalance(PrecompiledContracts.REMASC_ADDR, summaryFee);
         } else {
-            track.addBalance(coinbase, summaryFee);
+            track.addBalance(this.coinbase, summaryFee);
         }
 
         this.paidFees = summaryFee;
 
         //#mish for testing
-        System.out.println("\nexec gas " + result.getGasUsed() +
-                           "\nrent gas " + estRentGas + 
-                           "\ngas refund " + (mEndGas + mEndRentGas) +
-                           "\nTx fees " + paidFees);
+        System.out.println( "\nExec GasLimit " + GasCost.toGas(tx.getGasLimit()) +
+                            "\nExec gas used " + result.getGasUsed() +
+                            "\nExec gas refund " + mEndGas +
+                            "\n\nRent GasLimit " + GasCost.toGas(tx.getRentGasLimit()) +
+                            "\nRent gas used " + result.getRentGasUsed()+ 
+                            "\nRent gas refund " + mEndRentGas +
+                            "\n\nTx fees " + paidFees);
 
         logger.trace("Processing result");
         logs = notRejectedLogInfos;
 
-        /* #mish testing before and after rent update remove later
-        result.getAccessedNodes().forEach(
-            (key, rentData) -> {
-                    RskAddress tmpAddr = new RskAddress(Arrays.copyOfRange(key.getData(),12,32));
-                    System.out.println(track.getAccountNodeLRPTime(tmpAddr));
-            }
-        );*/
-
         // save created and accessed node with updated rent timestamps to repository. Any value modifications 
         result.getCreatedNodes().forEach((key, rentData) -> track.updateNodeWithRent(key, rentData.getLRPTime()));        
-        
-        result.getAccessedNodes().forEach((key, rentData) -> track.updateNodeWithRent(key, rentData.getLRPTime()));
-        
+                
         /*
-        System.out.println(this.coinbase);
-        System.out.println(tx.getSender());
-        System.out.println(tx.getReceiveAddress()+"\n\n");
+        System.out.println("Coinbase balance: " + track.getBalance(this.coinbase));
+        System.out.println("Sender " + track.getBalance(tx.getSender()));
+        System.out.println("Receiver " + track.getBalance(tx.getReceiveAddress()) +"\n\n");
         */
 
         //#mish testing before and after rent update remove later
@@ -685,10 +686,11 @@ public class TransactionExecutor {
         
         result.getAccessedNodes().forEach(
             (key, rentData) -> {
-                    //System.out.println(key.getData().length);
-                    byte[] tmpkey = Arrays.copyOfRange(key.getData(),11,31);
-                    RskAddress tmpAddr = new RskAddress(tmpkey);
-                    System.out.println(track.getAccountNodeLRPTime(tmpAddr));
+                    track.updateNodeWithRent(key, rentData.getLRPTime());
+                    //byte[] tmpkey = Arrays.copyOfRange(key.getData(),11,31);
+                    //RskAddress tmpAddr = new RskAddress(tmpkey);
+                    //System.out.println(track.getAccountNodeLRPTime(tmpAddr));
+                    //System.out.println(track.getBalance(tmpAddr));
             }
         );
 
@@ -755,10 +757,7 @@ public class TransactionExecutor {
 
     
     public long getRentGasUsed() {
-        if (activations.isActive(ConsensusRule.RSKIP136)) {
-            return GasCost.subtract(GasCost.toGas(tx.getRentGasLimit()), mEndRentGas);
-        }
-        return toBI(tx.getRentGasLimit()).subtract(toBI(mEndRentGas)).longValue();
+        return result.getRentGasUsed(); //#mish the log here is different from 
     }
 
     public Coin getPaidFees() { return paidFees; }

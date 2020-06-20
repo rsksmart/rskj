@@ -1,10 +1,37 @@
 ## Storage Rent Project
 
-**NOTE:** This branch was updated very recently (**JUNE 8th, 2020**). Please see note below. 
-
 **Code:** [branch 'mish'](https://github.com/optimalbrew/rskj/tree/mish) and [comparison with rskj master](https://github.com/rsksmart/rskj/compare/master...optimalbrew:mish) (for overview).
 
 The goal of this project is to implement storage rent as described in [RSKIP113](https://github.com/rsksmart/RSKIPs/blob/master/IPs/RSKIP113.md). Storage rent is intended to lead to more efficient resource utilization by charging users for the size as well as duration for which data is stored in blockchain state. The project may reveal new issues (computational, economic, usability etc) to be addressed prior to eventual adoption decisions and/or future RSKIPs.
+
+### Current implementation status updated June 19th.
+Initial tests bringing together all code modifications thus far via executing blocks with simple transfer transaction. To run the test (in the `mish` branch), from the `rskj` directory
+
+```
+root@5429dcd447b9:~/code/rskj# ./gradlew test --tests BlockExecRentTest.executeBlockWithOneTransaction
+
+co.rsk.core.bc.BlockExecRentTest > executeBlockWithOneTransaction STANDARD_OUT
+    2020-06-20-05:34:09.0419 WARN [o.e.c.s.Secp256k1]  Empty system properties.
+    2020-06-20-05:34:09.0722 INFO [general]  DB is empty - adding Genesis
+    2020-06-20-05:34:09.0730 INFO [general]  Genesis block loaded
+
+    Exec GasLimit 22000
+    Exec gas used 21000
+    Exec gas refund 1000
+
+    Rent GasLimit 22000
+    Rent gas used 14897
+    Rent gas refund 7103
+
+    Tx fees 35897
+
+```
+
+
+
+Testing with more complex transactions to follow.
+
+
 
 ### Implementation highligths
 

@@ -121,39 +121,9 @@ public class BlockExecRentTest {
                 trieStore.retrieve(result.getFinalState().getHash().getBytes()).get());
 
         AccountState accountState = finalRepository.getAccountState(account);
-        System.out.println(accountState.getBalance());
-        System.out.println(finalRepository.getAccountNodeLRPTime(account));
+        //System.out.println(accountState.getBalance());
+        //System.out.println(finalRepository.getAccountNodeLRPTime(account));
 
-        //System.out.println(repository.getAccountNodeLRPTime(account));
-        //System.out.println( ByteUtil.byteArrayToLong(receipt.getGasUsed()));
-
-        /*Assert.assertEquals(21000, new BigInteger(1, receipt.getGasUsed()).longValue());
-        Assert.assertEquals(21000, new BigInteger(1, receipt.getCumulativeGas()).longValue());
-        Assert.assertTrue(receipt.hasTxStatus() && receipt.isTxStatusOK() && receipt.isSuccessful());
-
-        Assert.assertEquals(21000, result.getGasUsed());
-        Assert.assertEquals(21000, result.getPaidFees().asBigInteger().intValueExact());
-
-        Assert.assertFalse(Arrays.equals(repository.getRoot(), result.getFinalState().getHash().getBytes()));
-
-        byte[] calculatedLogsBloom = BlockExecutor.calculateLogsBloom(result.getTransactionReceipts());
-        Assert.assertEquals(256, calculatedLogsBloom.length);
-        Assert.assertArrayEquals(new byte[256], calculatedLogsBloom);
-            
-        AccountState accountState = repository.getAccountState(account);
-        
-        Assert.assertNotNull(accountState);
-        Assert.assertEquals(BigInteger.valueOf(30000), accountState.getBalance().asBigInteger());
-        */    
-        /*Repository finalRepository = new MutableRepository(trieStore,
-                trieStore.retrieve(result.getFinalState().getHash().getBytes()).get());
-
-        accountState = finalRepository.getAccountState(account);
-
-        Assert.assertNotNull(accountState);
-        
-        Assert.assertEquals(BigInteger.valueOf(30000 - 21000 - 10), accountState.getBalance().asBigInteger());
-        */
     }
 
     @Test
@@ -243,8 +213,6 @@ public class BlockExecRentTest {
 
         Repository track = repository.startTracking();
 
-        //e94aef644e428941ee0a3741f28d80255fddba7f
-        Account coinbase = createAccount("coinbase", track, Coin.valueOf(1234L)); // # for miner fees
         Account account = createAccount("acctest1", track, Coin.valueOf(30000));
         Account account2 = createAccount("acctest2", track, Coin.valueOf(10L));
 
@@ -288,6 +256,7 @@ public class BlockExecRentTest {
         Repository track = repository.startTracking();
 
          // #mish #increased sender balance from 30_000 to 44K (cover both gas fees) + BigInteger.TEN for tansfer TX value
+        //e94aef644e428941ee0a3741f28d80255fddba7f
         Account account = createAccount("acctest1", track, Coin.valueOf(44010));
         Account account2 = createAccount("acctest2", track, Coin.valueOf(10L));
 
