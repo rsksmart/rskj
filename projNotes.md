@@ -63,19 +63,9 @@ Testing with more complex transactions to follow.
 - [**June 8th 2020**] The following changes HAVE BEEN REVERTED to use a **single gas field** for both execution as well as rent gas.  
     - `Transactions` family: `Transaction Receipts`, `InternalTransaction`, `MessageCall`, `CreateCall` etc. 
     - `ProgramInvoke` family e.g. `ProgramInvokeImpl`, `ProgramInvokeFactoryImpl` etc.
-    - There are *no fundamental* changes in these files. Mostly adding a field for *rentGas* and minor changes to constructor signatures, and getters/setter methods to account for the new storage rent field.
 
-### Current focus
-- As mentioned above, the first set of changes were primarily about supporting infrastructure e.g. Trie, repository, transaction, program invoke families. 
-- Current emphasis is on actually computing and "collecting" storage rent -that is- `TransactionExecutor`, `Program`, `ProgramResult`.
-- The primary interest here is
-    - Using Maps to keep track of ndoes touched by (accessed/modified) or created during transaction execution.
-    - these Maps are added as fields to `ProgramResult`
-    - There are `nodeAdder` methods in `TransactionExecution` which add new account, storage root or code nodes to these maps.
-    - These methods also compute storage rent due for existing nodes as well as advance rent for new nodes.
-    - *storage cells* are created, or modified via `Program` (repository methods accessed via `getStorage()`). The accounting of rent for storage nodes will be associated with these calls and again linked with the accessed/modified nodeMaps in ProgramResult (that's the idea, anyway). 
-
-- Unit tests directly connected with parts of the code modified are passing, with some predictable errors. Given the nature of changes being made, obviously not all 4000 tests in the rskj master will pass!
+### Next steps
+- Extend rent computations to `Program.java`. The basic cache methods for account, storage root and code nodes (very similar to `TransactionExecutor`) are already in the class. They have to be associated with the individual op_code methods. Following that, add node caches to compute and track rent for **storage cells** (i.e. for `SLOAD`, `SSTORE` ops).
 
 ### Misc
 - There are extensive remarks within the code. Many of these comments start with a `#mish` tag. This is simply a way for me to distinguish my own notes from pre-existing ones.
