@@ -38,11 +38,12 @@ public class LightMessageHandler implements InternalService, Runnable {
 
     private final ArrayBlockingQueue<MessageTask> queue;
 
-    private volatile boolean stopped;
+    private volatile boolean stopped = false;
 
     public LightMessageHandler(LightProcessor lightProcessor, LightSyncProcessor lightSyncProcessor) {
         this.lightProcessor = lightProcessor;
         this.lightSyncProcessor = lightSyncProcessor;
+        // Queue capacity is the same as in the NodeMessageHanlder, but it can be changed without any problem
         this.queue = new ArrayBlockingQueue<>(11);
     }
 
@@ -52,8 +53,8 @@ public class LightMessageHandler implements InternalService, Runnable {
         message.accept(visitor);
     }
 
-    public void postMessage(LightPeer lightPeer, LightClientMessage message, ChannelHandlerContext ctx,
-                            LightClientHandler lightClientHandler) {
+    public void enqueueMessage(LightPeer lightPeer, LightClientMessage message, ChannelHandlerContext ctx,
+                               LightClientHandler lightClientHandler) {
         logger.trace("Start post message (queue size {}) (message type {})", queue.size(), message);
 
         if (!queue.offer(new LightMessageHandler.MessageTask(lightPeer, message, ctx, lightClientHandler))) {

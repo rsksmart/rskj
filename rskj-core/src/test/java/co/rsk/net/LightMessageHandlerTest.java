@@ -89,7 +89,7 @@ public class LightMessageHandlerTest {
 
     @Test
     public void lightMessageHandlerHandlesAMessageCorrectly() {
-        lightMessageHandler.postMessage(lightPeer1, m1, ctx1, lightClientHandler1);
+        lightMessageHandler.enqueueMessage(lightPeer1, m1, ctx1, lightClientHandler1);
         assertEquals(1,lightMessageHandler.getMessageQueueSize());
         lightMessageHandler.handleMessage();
         assertEquals(0,lightMessageHandler.getMessageQueueSize());
@@ -97,8 +97,8 @@ public class LightMessageHandlerTest {
 
     @Test
     public void lightMessageHandlerHandlesTwoMessagesCorrectly() {
-        lightMessageHandler.postMessage(lightPeer1, m1, ctx1, lightClientHandler1);
-        lightMessageHandler.postMessage(lightPeer1, m2, ctx1, lightClientHandler1);
+        lightMessageHandler.enqueueMessage(lightPeer1, m1, ctx1, lightClientHandler1);
+        lightMessageHandler.enqueueMessage(lightPeer1, m2, ctx1, lightClientHandler1);
         assertEquals(2,lightMessageHandler.getMessageQueueSize());
         lightMessageHandler.handleMessage();
         lightMessageHandler.handleMessage();
@@ -107,8 +107,8 @@ public class LightMessageHandlerTest {
 
     @Test
     public void lightMessageHandlerHandlesMessagesFromTwoPeersCorrectly() {
-        lightMessageHandler.postMessage(lightPeer1, m1, ctx1, lightClientHandler1);
-        lightMessageHandler.postMessage(lightPeer2, m2, ctx2, lightClientHandler2);
+        lightMessageHandler.enqueueMessage(lightPeer1, m1, ctx1, lightClientHandler1);
+        lightMessageHandler.enqueueMessage(lightPeer2, m2, ctx2, lightClientHandler2);
 
         assertEquals(2,lightMessageHandler.getMessageQueueSize());
 
@@ -121,8 +121,8 @@ public class LightMessageHandlerTest {
     @Test
     public void lightMessageHandlerServicesCorrectlyHandlesMessages() {
         lightMessageHandler.start();
-        lightMessageHandler.postMessage(lightPeer1, m1, ctx1, lightClientHandler1);
-        lightMessageHandler.postMessage(lightPeer1, m2, ctx1, lightClientHandler1);
+        lightMessageHandler.enqueueMessage(lightPeer1, m1, ctx1, lightClientHandler1);
+        lightMessageHandler.enqueueMessage(lightPeer1, m2, ctx1, lightClientHandler1);
 
         // Fails on TIMEOUT
         await().atMost(1, TimeUnit.SECONDS)
@@ -134,7 +134,7 @@ public class LightMessageHandlerTest {
 
     @Test
     public void lightMessageHandlerHandlesAMessageCorrectlyAndResponseIsSent() {
-        lightMessageHandler.postMessage(lightPeer1, m1, ctx1, lightClientHandler1);
+        lightMessageHandler.enqueueMessage(lightPeer1, m1, ctx1, lightClientHandler1);
         lightMessageHandler.handleMessage();
 
         assertEquals(0,lightMessageHandler.getMessageQueueSize());

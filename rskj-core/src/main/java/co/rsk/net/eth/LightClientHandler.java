@@ -43,7 +43,7 @@ public class LightClientHandler extends SimpleChannelInboundHandler<LightClientM
 
     @Override
     public void channelRead0(ChannelHandlerContext ctx, LightClientMessage msg) {
-        lightMessageHandler.postMessage(lightPeer, msg, ctx, this);
+        lightMessageHandler.enqueueMessage(lightPeer, msg, ctx, this);
     }
 
     public void activate() {

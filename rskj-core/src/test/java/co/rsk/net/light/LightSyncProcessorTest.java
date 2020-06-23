@@ -148,6 +148,23 @@ public class LightSyncProcessorTest {
     }
 
     @Test
+    public void morePeersThanAllowedTryToConnectToMeAndShouldBeDiscarded() {
+        ChannelHandlerContext ctx = mock(ChannelHandlerContext.class);
+        LightClientHandler lightClientHandler = mock(LightClientHandler.class);
+
+        //Message sent
+        StatusMessage statusMessage = new StatusMessage(requestId, lightStatus, false);
+
+        LightPeer lightPeer2 = mock(LightPeer.class);
+        lightSyncProcessor.processStatusMessage(statusMessage, lightPeer, ctx, lightClientHandler);
+        lightSyncProcessor.processStatusMessage(statusMessage, lightPeer2, ctx, lightClientHandler);
+
+        verify(lightPeer, times(1)).sendMessage(any());
+        verify(lightPeer2, times(0)).sendMessage(any());
+        assertFalse(lightPeersInformation.hasTxRelay(lightPeer));
+    }
+
+    @Test
     public void peerWithTxRelayActivatedConnectCorrectly() {
         ChannelHandlerContext ctx = mock(ChannelHandlerContext.class);
         LightClientHandler lightClientHandler = mock(LightClientHandler.class);
