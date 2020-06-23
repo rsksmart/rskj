@@ -1,11 +1,17 @@
 package co.rsk.core.bc;
 
+import co.rsk.crypto.Keccak256;
 import co.rsk.trie.Trie;
+import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionReceipt;
+import org.ethereum.db.ReceiptStore;
+import org.ethereum.db.TransactionInfo;
 import org.ethereum.util.RLP;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 public class BlockHashesHelper {
 
@@ -29,6 +35,42 @@ public class BlockHashesHelper {
         }
 
         return receiptsTrie;
+    }
+
+    public static List<Trie> calculateReceiptsTrieRootFor(Block block, ReceiptStore receiptStore, Keccak256 txHash)
+            throws BlockHashesHelperException {
+        Keccak256 bhash = block.getHash();
+
+        List<Transaction> transactions = block.getTransactionsList();
+        List<TransactionReceipt> receipts = new ArrayList<>();
+
+        int ntxs = transactions.size();
+        int ntx = -1;
+
+        for (int k = 0; k < ntxs; k++) {
+            Transaction transaction = transactions.get(k);
+            Keccak256 txh = transaction.getHash();
+
+            Optional<TransactionInfo> txinfoOpt = receiptStore.get(txh, bhash);
+            if (!txinfoOpt.isPresent()) {
+                throw new BlockHashesHelperException(String.format("Missing receipt for transaction %s in block %s", txh, bhash));
+            }
+
+            TransactionInfo txinfo = txinfoOpt.get();
+            receipts.add(txinfo.getReceipt());
+
+            if (txh.equals(txHash)) {
+                ntx = k;
+            }
+        }
+
+        if (ntx == -1) {
+            return null;
+        }
+        Trie trie = calculateReceiptsTrieRootFor(receipts);
+        List<Trie> nodes = trie.getNodes(RLP.encodeInt(ntx));
+
+        return nodes;
     }
 
     public static byte[] getTxTrieRoot(List<Transaction> transactions, boolean isRskip126Enabled) {
