@@ -45,7 +45,7 @@ import static co.rsk.net.light.LightClientMessageCodes.*;
 
 public class LightSyncProcessor {
 
-    private static final int MAX_PENDING_MESSAGES = 1;
+    private static final int MAX_PENDING_MESSAGES = 10;
     private static final int MAX_PEER_CONNECTIONS = 1;
     private final LightPeersInformation lightPeersInformation;
     private LightSyncState syncState;
