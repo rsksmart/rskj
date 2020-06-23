@@ -60,7 +60,6 @@ public class LightClientHandlerTest {
     private MessageQueue messageQueue;
     private LightClientHandler lightClientHandler;
     private ChannelHandlerContext ctx;
-    private LightProcessor lightProcessor;
     private Blockchain blockchain;
     private BlockStore blockStore;
     private RepositoryLocator repositoryLocator;
@@ -71,6 +70,7 @@ public class LightClientHandlerTest {
     private Keccak256 blockHash;
     private LightPeer lightPeer;
     private ProofOfWorkRule proofOfWorkRule;
+    private LightMessageHandler lightMessageHandler;
 
     @Before
     public void setup() {
@@ -81,14 +81,15 @@ public class LightClientHandlerTest {
         repositoryLocator = mock(RepositoryLocator.class);
         genesis = mock(Genesis.class);
         genesisHash = new Keccak256(HashUtil.randomHash());
-        lightProcessor = new LightProcessor(blockchain, blockStore, repositoryLocator);
         proofOfWorkRule = mock(ProofOfWorkRule.class);
         LightPeersInformation lightPeersInformation = mock(LightPeersInformation.class);
         lightSyncProcessor = new LightSyncProcessor(config, genesis, blockStore, blockchain, proofOfWorkRule, lightPeersInformation);
+        LightProcessor lightProcessor = new LightProcessor(blockchain, blockStore, repositoryLocator);
         lightPeer = spy(new LightPeer(mock(Channel.class), messageQueue));
-        LightClientHandler.Factory factory = (lightPeer) -> new LightClientHandler(lightPeer, lightProcessor, lightSyncProcessor);
+        LightClientHandler.Factory factory = (lightPeer) -> new LightClientHandler(lightPeer, lightSyncProcessor, lightMessageHandler);
         lightClientHandler = factory.newInstance(lightPeer);
         blockHash = new Keccak256(HashUtil.randomHash());
+        lightMessageHandler = new LightMessageHandler(lightProcessor, lightSyncProcessor);
 
 
         when(genesis.getHash()).thenReturn(genesisHash);
@@ -136,7 +137,7 @@ public class LightClientHandlerTest {
         LightStatus status = new LightStatus((byte) 1, 0, blockDifficulty, blockHash.getBytes(), bestNumber, genesisHash.getBytes());
         StatusMessage m = new StatusMessage(0L, status, false);
 
-        lightClientHandler.channelRead0(ctx, m);
+        lightMessageHandler.processMessage(lightPeer, m, ctx, lightClientHandler);
 
         verify(messageQueue).disconnect(eq(ReasonCode.INCOMPATIBLE_PROTOCOL));
     }
@@ -151,8 +152,7 @@ public class LightClientHandlerTest {
         LightStatus status = new LightStatus((byte) 0, 55, blockDifficulty, blockHash.getBytes(), bestNumber, genesisHash.getBytes());
         StatusMessage m = new StatusMessage(0L, status, false);
 
-
-        lightClientHandler.channelRead0(ctx, m);
+        lightMessageHandler.processMessage(lightPeer, m, ctx, lightClientHandler);
 
         verify(messageQueue).disconnect(eq(ReasonCode.NULL_IDENTITY));
     }
@@ -165,7 +165,7 @@ public class LightClientHandlerTest {
 
         LightStatus status = new LightStatus((byte) 0, 0, blockDifficulty, blockHash.getBytes(), bestNumber, invalidHash);
         StatusMessage m = new StatusMessage(0L, status, false);
-        lightClientHandler.channelRead0(ctx, m);
+        lightMessageHandler.processMessage(lightPeer, m, ctx, lightClientHandler);
 
         verify(messageQueue).disconnect(eq(ReasonCode.UNEXPECTED_GENESIS));
     }
@@ -183,7 +183,7 @@ public class LightClientHandlerTest {
         LightStatus status = new LightStatus((byte) 0, 0, blockDifficulty, blockHash.getBytes(), bestNumber, genesisHash.getBytes());
 
         StatusMessage m = new StatusMessage(0L, status, false);
-        lightClientHandler.channelRead0(ctx, m);
+        lightMessageHandler.processMessage(lightPeer, m, ctx, lightClientHandler);
 
         verify(messageQueue, times(0)).sendMessage(any());
     }
@@ -196,7 +196,7 @@ public class LightClientHandlerTest {
         when(blockStore.getBlockByHash(blockHash.getBytes())).thenReturn(block);
         BlockReceiptsMessage response = new BlockReceiptsMessage(0, receipts);
 
-        lightClientHandler.channelRead0(ctx, m);
+        lightMessageHandler.processMessage(lightPeer, m, ctx, lightClientHandler);
 
         ArgumentCaptor<BlockReceiptsMessage> argument = forClass(BlockReceiptsMessage.class);
         verify(messageQueue).sendMessage(argument.capture());
@@ -207,7 +207,7 @@ public class LightClientHandlerTest {
     public void lightClientHandlerSendsBlockReceiptsToQueueAndShouldThrowAnException() throws Exception {
         List<TransactionReceipt> receipts = new LinkedList<>();
         BlockReceiptsMessage m = new BlockReceiptsMessage(0, receipts);
-        lightClientHandler.channelRead0(ctx, m);
+        lightMessageHandler.processMessage(lightPeer, m, ctx, lightClientHandler);
     }
 
     @Test
@@ -234,7 +234,7 @@ public class LightClientHandlerTest {
         GetTransactionIndexMessage m = new GetTransactionIndexMessage(id, txHash.getBytes());
         TransactionIndexMessage response = new TransactionIndexMessage(id, blockNumber, blockHash.getBytes(), txIndex);
 
-        lightClientHandler.channelRead0(ctx, m);
+        lightMessageHandler.processMessage(lightPeer, m, ctx, lightClientHandler);
 
         ArgumentCaptor<TransactionIndexMessage> argument = forClass(TransactionIndexMessage.class);
         verify(messageQueue).sendMessage(argument.capture());
@@ -244,7 +244,7 @@ public class LightClientHandlerTest {
     @Test(expected = UnsupportedOperationException.class)
     public void lightClientHandlerSendsTransactionIndexMessageToQueueAndShouldThrowAnException() throws Exception {
         TransactionIndexMessage m = new TransactionIndexMessage(2, 42, new byte[] {0x23}, 23);
-        lightClientHandler.channelRead0(ctx, m);
+        lightMessageHandler.processMessage(lightPeer, m, ctx, lightClientHandler);
     }
 
     @Test
@@ -265,7 +265,7 @@ public class LightClientHandlerTest {
 
         CodeMessage response = new CodeMessage(0, bytecode);
 
-        lightClientHandler.channelRead0(ctx, m);
+        lightMessageHandler.processMessage(lightPeer, m, ctx, lightClientHandler);
 
         ArgumentCaptor<CodeMessage> argument = forClass(CodeMessage.class);
         verify(messageQueue).sendMessage(argument.capture());
@@ -277,7 +277,7 @@ public class LightClientHandlerTest {
         byte[] codeHash = HashUtil.randomHash();
         CodeMessage m = new CodeMessage(0, codeHash);
 
-        lightClientHandler.channelRead0(ctx, m);
+        lightMessageHandler.processMessage(lightPeer, m, ctx, lightClientHandler);
     }
 
     @Test
@@ -308,7 +308,7 @@ public class LightClientHandlerTest {
         AccountsMessage response = new AccountsMessage(id, new byte[] {0x00}, nonce,
                 balance.asBigInteger().longValue(), codeHash.getBytes(), storageRoot);
 
-        lightClientHandler.channelRead0(ctx, m);
+        lightMessageHandler.processMessage(lightPeer, m, ctx, lightClientHandler);
 
         ArgumentCaptor<AccountsMessage> argument = forClass(AccountsMessage.class);
         verify(messageQueue).sendMessage(argument.capture());
@@ -325,7 +325,7 @@ public class LightClientHandlerTest {
         byte[] storageRoot = HashUtil.randomHash();
         AccountsMessage m = new AccountsMessage(id, merkleInclusionProof, nonce, balance, codeHash, storageRoot);
 
-        lightClientHandler.channelRead0(ctx, m);
+        lightMessageHandler.processMessage(lightPeer, m, ctx, lightClientHandler);
     }
 
     @Test
@@ -340,7 +340,7 @@ public class LightClientHandlerTest {
 
         GetBlockHeadersMessage m = new GetBlockHeadersMessage(1, blockHash.getBytes(), 1, 0, false);
 
-        lightClientHandler.channelRead0(ctx, m);
+        lightMessageHandler.processMessage(lightPeer, m, ctx, lightClientHandler);
 
         BlockHeadersMessage response = new BlockHeadersMessage(1, bHs);
 
@@ -363,7 +363,7 @@ public class LightClientHandlerTest {
 
         BlockHeadersMessage blockHeadersMessage = new BlockHeadersMessage(requestId, bHs);
 
-        lightClientHandler.channelRead0(ctx, blockHeadersMessage);
+        lightMessageHandler.processMessage(lightPeer, blockHeadersMessage, ctx, lightClientHandler);
 
         verify(lightPeer, times(0)).receivedBlockHeaders(any());
     }
@@ -385,7 +385,7 @@ public class LightClientHandlerTest {
 
         BlockHeadersMessage blockHeadersMessage = new BlockHeadersMessage(requestId, bHs);
 
-        lightClientHandler.channelRead0(ctx, blockHeadersMessage);
+        lightMessageHandler.processMessage(lightPeer, blockHeadersMessage, ctx, lightClientHandler);
 
         verify(lightPeer, times(0)).receivedBlockHeaders(any());
     }
@@ -398,7 +398,7 @@ public class LightClientHandlerTest {
 
         BlockHeadersMessage blockHeadersMessage = new BlockHeadersMessage(requestId, bHs);
 
-        lightClientHandler.channelRead0(ctx, blockHeadersMessage);
+        lightMessageHandler.processMessage(lightPeer, blockHeadersMessage, ctx, lightClientHandler);
 
         verify(lightPeer, times(0)).receivedBlockHeaders(any());
     }
@@ -429,7 +429,7 @@ public class LightClientHandlerTest {
         GetBlockBodyMessage m = new GetBlockBodyMessage(requestId, blockHash.getBytes());
         BlockBodyMessage response = new BlockBodyMessage(requestId, transactionList, uncleList);
 
-        lightClientHandler.channelRead0(ctx, m);
+        lightMessageHandler.processMessage(lightPeer, m, ctx, lightClientHandler);
 
         ArgumentCaptor<BlockBodyMessage> argument = forClass(BlockBodyMessage.class);
         verify(messageQueue).sendMessage(argument.capture());
@@ -443,7 +443,7 @@ public class LightClientHandlerTest {
         LinkedList<BlockHeader> uncleList = new LinkedList<>();
         BlockBodyMessage m = new BlockBodyMessage(id, transactionList, uncleList);
 
-        lightClientHandler.channelRead0(ctx, m);
+        lightMessageHandler.processMessage(lightPeer, m, ctx, lightClientHandler);
     }
 
     @Test
@@ -464,7 +464,7 @@ public class LightClientHandlerTest {
         GetStorageMessage m = new GetStorageMessage(id, blockHash.getBytes(), address.getBytes(), storageKey.getData());
         StorageMessage response = new StorageMessage(id, new byte[] {0x00}, storageValue);
 
-        lightClientHandler.channelRead0(ctx, m);
+        lightMessageHandler.processMessage(lightPeer, m, ctx, lightClientHandler);
 
         ArgumentCaptor<StorageMessage> argument = forClass(StorageMessage.class);
         verify(messageQueue).sendMessage(argument.capture());
@@ -478,7 +478,7 @@ public class LightClientHandlerTest {
 
         StorageMessage m = new StorageMessage(id, new byte[] {0x00},storageValue);
 
-        lightClientHandler.channelRead0(ctx, m);
+        lightMessageHandler.processMessage(lightPeer, m, ctx, lightClientHandler);
     }
 
 }
