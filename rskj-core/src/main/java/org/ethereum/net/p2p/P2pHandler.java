@@ -98,22 +98,18 @@ public class P2pHandler extends SimpleChannelInboundHandler<P2pMessage> {
         switch (msg.getCommand()) {
             case HELLO:
                 logger.trace("Received unexpected HELLO message, channel {}", channel);
-                msgQueue.receivedMessage(msg);
                 sendDisconnect();
                 break;
             case DISCONNECT:
-                msgQueue.receivedMessage(msg);
                 channel.getNodeStatistics().nodeDisconnectedRemote(((DisconnectMessage) msg).getReason());
                 processDisconnect((DisconnectMessage) msg);
                 break;
             case PING:
                 logger.trace("Receive PING message, channel {}", channel);
-                msgQueue.receivedMessage(msg);
                 ctx.writeAndFlush(PONG_MESSAGE);
                 break;
             case PONG:
                 logger.trace("Receive PONG message, channel {}", channel);
-                msgQueue.receivedMessage(msg);
                 break;
             default:
                 ctx.fireChannelRead(msg);

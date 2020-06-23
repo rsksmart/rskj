@@ -110,8 +110,6 @@ public class RskWireProtocol extends SimpleChannelInboundHandler<EthMessage> imp
 
         channel.getNodeStatistics().getEthInbound().add();
 
-        msgQueue.receivedMessage(msg);
-
         if (this.messageRecorder != null) {
             this.messageRecorder.recordMessage(channel.getPeerNodeID(), msg);
         }

@@ -113,7 +113,6 @@ public class EthereumChannelInitializer extends ChannelInitializer<NioSocketChan
 
             handshakeHandler.setRemoteId(remoteId, channel);
             messageCodec.setChannel(channel);
-            messageQueue.setChannel(channel);
             messageCodec.setP2pMessageFactory(new P2pMessageFactory());
 
             channelManager.add(channel);
