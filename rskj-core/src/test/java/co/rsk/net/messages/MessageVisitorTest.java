@@ -381,8 +381,6 @@ public class MessageVisitorTest {
         when(blockProcessor.hasBetterBlockToSync()).thenReturn(true);
 
         target.apply(message);
-
-        verify(transactionGateway, never()).receiveTransactionsFrom(any(), any());
     }
 
     @Test
@@ -417,8 +415,6 @@ public class MessageVisitorTest {
 
         target.apply(message);
 
-        verify(transactionGateway, times(1))
-                .receiveTransactionsFrom(eq(validTransactions), any());
         verify(peerScoringManager, times(3))
                 .recordEvent(eq(peer), eq(peerAddress), eq(EventType.VALID_TRANSACTION));
         verify(peerScoringManager, times(1))

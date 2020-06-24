@@ -655,11 +655,7 @@ public class NodeMessageHandlerTest {
 
         handler.processMessage(sender, message);
 
-        Mockito.verify(transactionGateway, times(1)).receiveTransactionsFrom(txs, sender.getPeerNodeID());
-
         handler.processMessage(sender2, message);
-
-        Mockito.verify(transactionGateway, times(1)).receiveTransactionsFrom(txs, sender2.getPeerNodeID());
 
         Assert.assertFalse(scoring.isEmpty());
 
@@ -764,11 +760,7 @@ public class NodeMessageHandlerTest {
 
         handler.processMessage(sender, message);
 
-        Mockito.verify(transactionGateway, times(1)).receiveTransactionsFrom(txs, sender.getPeerNodeID());
-
         handler.processMessage(sender2, message);
-
-        Mockito.verify(transactionGateway, times(1)).receiveTransactionsFrom(txs, sender2.getPeerNodeID());
     }
 
     @Test

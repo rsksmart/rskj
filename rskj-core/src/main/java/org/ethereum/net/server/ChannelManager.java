@@ -69,6 +69,9 @@ public interface ChannelManager extends InternalService {
     @Nonnull
     Set<NodeID> broadcastTransaction(@Nonnull final Transaction transaction, @Nullable final Set<NodeID> skip);
 
+    @Nonnull
+    Set<NodeID> broadcastTransactions(@Nonnull final List<Transaction> transactions, @Nullable final Set<NodeID> skip);
+
     int broadcastStatus(@Nonnull final Status status);
 
     void add(Channel peer);

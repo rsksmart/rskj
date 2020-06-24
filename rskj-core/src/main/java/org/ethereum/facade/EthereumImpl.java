@@ -27,6 +27,8 @@ import org.ethereum.listener.GasPriceTracker;
 import org.ethereum.net.server.ChannelManager;
 
 import javax.annotation.Nonnull;
+import java.util.Collections;
+import java.util.List;
 
 public class EthereumImpl implements Ethereum {
 
@@ -73,7 +75,13 @@ public class EthereumImpl implements Ethereum {
 
     @Override
     public void submitTransaction(Transaction transaction) {
-        transactionPool.addTransaction(transaction);
+        List<Transaction> transactions = transactionPool.addTransactions(Collections.singletonList(transaction));
+
+        if (transactions.isEmpty()) {
+            return;
+        }
+
+        this.channelManager.broadcastTransactions(transactions, Collections.EMPTY_SET);
     }
 
     @Override

@@ -36,48 +36,26 @@ import java.util.Set;
  * have it.
  */
 public class TransactionGateway implements InternalService {
-    private final ChannelManager channelManager;
-    private final CompositeEthereumListener emitter;
     private final TransactionPool transactionPool;
-
-    private final TransactionNodeInformation transactionNodeInformation = new TransactionNodeInformation();
-    private final OnPendingTransactionsReceivedListener listener = new OnPendingTransactionsReceivedListener();
 
     public TransactionGateway(
             ChannelManager channelManager,
             TransactionPool transactionPool,
             CompositeEthereumListener emitter) {
-        this.channelManager = Objects.requireNonNull(channelManager);
         this.transactionPool = Objects.requireNonNull(transactionPool);
-        this.emitter = Objects.requireNonNull(emitter);
     }
 
     @Override
     public void start() {
-        emitter.addListener(listener);
     }
 
     @Override
     public void stop() {
-        emitter.removeListener(listener);
+
     }
 
-    public void receiveTransactionsFrom(List<Transaction> txs, NodeID nodeID) {
-        txs.forEach(tx -> transactionNodeInformation.addTransactionToNode(tx.getHash(), nodeID));
-        transactionPool.addTransactions(txs);
-    }
-
-    private class OnPendingTransactionsReceivedListener extends EthereumListenerAdapter {
-        @Override
-        public void onPendingTransactionsReceived(List<Transaction> txs) {
-            for (Transaction tx : txs) {
-                Keccak256 txHash = tx.getHash();
-                Set<NodeID> nodesToSkip = new HashSet<>(transactionNodeInformation.getNodesByTransaction(txHash));
-                Set<NodeID> newNodes = channelManager.broadcastTransaction(tx, nodesToSkip);
-
-                newNodes.forEach(nodeID -> transactionNodeInformation.addTransactionToNode(txHash, nodeID));
-            }
-        }
+    public TransactionPool getTransactionPool() {
+        return this.transactionPool;
     }
 }
 

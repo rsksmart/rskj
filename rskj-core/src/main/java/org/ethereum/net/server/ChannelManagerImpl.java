@@ -255,6 +255,21 @@ public class ChannelManagerImpl implements ChannelManager {
         return nodesIdsBroadcastedTo;
     }
 
+    @Nonnull
+    public Set<NodeID> broadcastTransactions(@Nonnull final List<Transaction> transactions, final Set<NodeID> skip) {
+        final Set<NodeID> nodesIdsBroadcastedTo = new HashSet<>();
+        final Message newTransactions = new TransactionsMessage(transactions);
+
+        activePeers.values().stream()
+                .filter(p -> !skip.contains(p.getNodeId()))
+                .forEach(peer -> {
+                    peer.sendMessage(newTransactions);
+                    nodesIdsBroadcastedTo.add(peer.getNodeId());
+                });
+
+        return nodesIdsBroadcastedTo;
+    }
+
     @Override
     public int broadcastStatus(Status status) {
         final Message message = new StatusMessage(status);

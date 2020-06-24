@@ -77,6 +77,13 @@ public class SimpleChannelManager implements ChannelManager {
         return new HashSet<>();
     }
 
+    @Nonnull
+    @Override
+    public Set<NodeID> broadcastTransactions(@Nonnull List<Transaction> transactions, @Nullable Set<NodeID> skip) {
+        this.transactions.addAll(transactions);
+        return new HashSet<>();
+    }
+
     @Override
     public int broadcastStatus(Status status) {
         return 0;
