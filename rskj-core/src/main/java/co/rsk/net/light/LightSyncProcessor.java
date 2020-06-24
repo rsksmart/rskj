@@ -21,7 +21,7 @@ package co.rsk.net.light;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.crypto.Keccak256;
 import co.rsk.net.eth.LightClientHandler;
-import co.rsk.net.light.message.GetBlockHeadersMessage;
+import co.rsk.net.light.message.GetBlockHeadersByHashMessage;
 import co.rsk.net.light.message.StatusMessage;
 import co.rsk.net.light.state.*;
 import co.rsk.validators.ProofOfWorkRule;
@@ -121,7 +121,7 @@ public class LightSyncProcessor {
     }
 
     public void sendBlockHeadersMessage(LightPeer lightPeer, byte[] bestBlock, int max, int skip, boolean reverse) {
-        GetBlockHeadersMessage blockHeaderMessage = new GetBlockHeadersMessage(++lastRequestedId, bestBlock, max, skip, reverse);
+        GetBlockHeadersByHashMessage blockHeaderMessage = new GetBlockHeadersByHashMessage(++lastRequestedId, bestBlock, max, skip, reverse);
         pendingMessages.put(lastRequestedId, BLOCK_HEADER);
         lightPeer.sendMessage(blockHeaderMessage);
     }
