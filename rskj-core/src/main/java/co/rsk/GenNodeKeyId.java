@@ -31,31 +31,36 @@ import java.nio.charset.StandardCharsets;
  */
 public class GenNodeKeyId {
     public static void main(String[] args) {
-        String generator = "";
+        String[] generatorValues = new String[] {};
 
-        if (args.length > 0) {
-            generator = args[0];
+        if (args.length > 0 && args[0] != "") {
+            generatorValues = args;
         }
 
-        ECKey key;
-        if (generator.equals("")) {
-            key = new ECKey();
-        } else {
-            key = ECKey.fromPrivate(HashUtil.keccak256(generator.getBytes(StandardCharsets.UTF_8)));
+        for (int i = 0; i< generatorValues.length; i++) {
+            String generator = generatorValues[i];
+            ECKey key;
+            if (generator.equals("")) {
+                key = new ECKey();
+            } else {
+                key = ECKey.fromPrivate(HashUtil.keccak256(generator.getBytes(StandardCharsets.UTF_8)));
+            }
+
+            String keybytes = Hex.toHexString(key.getPrivKeyBytes());
+            String pubkeybytes = Hex.toHexString(key.getPubKey());
+            String compressedpubkeybytes = Hex.toHexString(key.getPubKey(true));
+            String address = Hex.toHexString(key.getAddress());
+            String nodeid = Hex.toHexString(key.getNodeId());
+
+            System.out.println('{');
+            System.out.println("   \"seed\": \"" + generator + "\",");
+            System.out.println("   \"privateKey\": \"" + keybytes + "\",");
+            System.out.println("   \"publicKey\": \"" + pubkeybytes + "\",");
+            System.out.println("   \"publicKeyCompressed\": \"" + compressedpubkeybytes + "\",");
+            System.out.println("   \"address\": \"" + address + "\",");
+            System.out.println("   \"nodeId\": \"" + nodeid + "\"");
+            System.out.println('}');
         }
 
-        String keybytes = Hex.toHexString(key.getPrivKeyBytes());
-        String pubkeybytes = Hex.toHexString(key.getPubKey());
-        String compressedpubkeybytes = Hex.toHexString(key.getPubKey(true));
-        String address = Hex.toHexString(key.getAddress());
-        String nodeid = Hex.toHexString(key.getNodeId());
-
-        System.out.println('{');
-        System.out.println("   \"privateKey\": \"" + keybytes + "\",");
-        System.out.println("   \"publicKey\": \"" + pubkeybytes + "\",");
-        System.out.println("   \"publicKeyCompressed\": \"" + compressedpubkeybytes + "\",");
-        System.out.println("   \"address\": \"" + address + "\",");
-        System.out.println("   \"nodeId\": \"" + nodeid + "\"");
-        System.out.println('}');
     }
 }
