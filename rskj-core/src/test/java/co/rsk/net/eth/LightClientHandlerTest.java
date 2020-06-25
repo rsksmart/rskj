@@ -329,7 +329,7 @@ public class LightClientHandlerTest {
     }
 
     @Test
-    public void lightClientHandlerSendsGetBlockHeaderToQueue() throws Exception {
+    public void lightClientHandlerSendsGetBlockHeaderByHashToQueue() {
         Keccak256 blockHash = new Keccak256(HashUtil.randomHash());
         Block block = mock(Block.class);
         BlockHeader blockHeader = mock(BlockHeader.class);
@@ -338,7 +338,28 @@ public class LightClientHandlerTest {
         when(blockStore.getBlockByHash(blockHash.getBytes())).thenReturn(block);
         when(block.getHeader()).thenReturn(blockHeader);
 
-        GetBlockHeadersMessage m = new GetBlockHeadersMessage(1, blockHash.getBytes(), 1, 0, false);
+        GetBlockHeadersByHashMessage m = new GetBlockHeadersByHashMessage(1, blockHash.getBytes(), 1, 0, false);
+
+        lightMessageHandler.processMessage(lightPeer, m, ctx, lightClientHandler);
+
+        BlockHeadersMessage response = new BlockHeadersMessage(1, bHs);
+
+        ArgumentCaptor<BlockHeadersMessage> argument = forClass(BlockHeadersMessage.class);
+        verify(messageQueue).sendMessage(argument.capture());
+        assertArrayEquals(response.getEncoded(), argument.getValue().getEncoded());
+    }
+
+    @Test
+    public void lightClientHandlerSendsGetBlockHeaderByNumberToQueue() {
+        long blockNumber = 10L;
+        Block block = mock(Block.class);
+        BlockHeader blockHeader = mock(BlockHeader.class);
+        List<BlockHeader> bHs = new ArrayList<>();
+        bHs.add(blockHeader);
+        when(blockStore.getChainBlockByNumber(10L)).thenReturn(block);
+        when(block.getHeader()).thenReturn(blockHeader);
+
+        GetBlockHeadersByNumberMessage m = new GetBlockHeadersByNumberMessage(1, blockNumber, 1, 0, false);
 
         lightMessageHandler.processMessage(lightPeer, m, ctx, lightClientHandler);
 

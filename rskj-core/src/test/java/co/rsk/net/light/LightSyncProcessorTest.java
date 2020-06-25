@@ -23,7 +23,7 @@ import co.rsk.core.bc.BlockChainStatus;
 import co.rsk.crypto.Keccak256;
 import co.rsk.net.eth.LightClientHandler;
 import co.rsk.net.light.message.BlockHeadersMessage;
-import co.rsk.net.light.message.GetBlockHeadersMessage;
+import co.rsk.net.light.message.GetBlockHeadersByHashMessage;
 import co.rsk.net.light.message.StatusMessage;
 import co.rsk.validators.ProofOfWorkRule;
 import io.netty.channel.ChannelHandlerContext;
@@ -121,9 +121,9 @@ public class LightSyncProcessorTest {
         final int max = 1;
         final int skip = 0;
         final boolean reverse = true;
-        GetBlockHeadersMessage expectedMessage = new GetBlockHeadersMessage(++requestId, bestBlockHash.getBytes(), max, skip, reverse);
+        GetBlockHeadersByHashMessage expectedMessage = new GetBlockHeadersByHashMessage(++requestId, bestBlockHash.getBytes(), max, skip, reverse);
 
-        ArgumentCaptor<GetBlockHeadersMessage> argument = forClass(GetBlockHeadersMessage.class);
+        ArgumentCaptor<GetBlockHeadersByHashMessage> argument = forClass(GetBlockHeadersByHashMessage.class);
         lightSyncProcessor.processStatusMessage(statusMessage, lightPeer, ctx, lightClientHandler);
         verify(lightPeer).sendMessage(argument.capture());
         assertArrayEquals(expectedMessage.getEncoded(), argument.getValue().getEncoded());
