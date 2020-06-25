@@ -23,19 +23,18 @@ import org.ethereum.core.BlockFactory;
 import org.junit.Before;
 import org.junit.Test;
 
-import static co.rsk.net.light.LightClientMessageCodes.GET_BLOCK_HEADER;
-import static org.ethereum.crypto.HashUtil.randomHash;
+import static co.rsk.net.light.LightClientMessageCodes.GET_BLOCK_HEADER_BY_NUMBER;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
-public class GetBlockHeadersMessageTest {
+public class GetBlockHeadersByNumberMessageTest {
 
-    private byte[] blockHash;
+    private long blockNumber;
     private LCMessageFactory messageFactory;
 
     @Before
     public void setUp() {
-        blockHash = randomHash();
+        blockNumber = 5L;
         messageFactory = new LCMessageFactory(mock(BlockFactory.class));
     }
 
@@ -44,15 +43,15 @@ public class GetBlockHeadersMessageTest {
         long id = 1;
         int max = 2;
         int skip = 5;
-        GetBlockHeadersMessage testMessage = new GetBlockHeadersMessage(id, blockHash, max, skip, true);
+        GetBlockHeadersByNumberMessage testMessage = new GetBlockHeadersByNumberMessage(id, blockNumber, max, skip, true);
 
         assertEquals(id, testMessage.getId());
-        assertArrayEquals(blockHash, testMessage.getBlockHash());
+        assertEquals(blockNumber, testMessage.getBlockNumber());
         assertEquals(max, testMessage.getMax());
         assertEquals(skip, testMessage.getSkip());
         assertTrue(testMessage.isReverse());
         assertEquals(BlockHeadersMessage.class, testMessage.getAnswerMessage());
-        assertEquals(GET_BLOCK_HEADER, testMessage.getCommand());
+        assertEquals(GET_BLOCK_HEADER_BY_NUMBER, testMessage.getCommand());
     }
 
     @Test
@@ -61,7 +60,7 @@ public class GetBlockHeadersMessageTest {
         int max = 2;
         int skip = 3;
 
-        createMessageAndAssertEncodeDecode(id, max, skip, true);
+        createMessageAndAssertEncodeDecode(id, max, skip, true, blockNumber);
     }
 
     @Test
@@ -69,19 +68,19 @@ public class GetBlockHeadersMessageTest {
         long id = 0;
         int max = 0;
         int skip = 0;
-        createMessageAndAssertEncodeDecode(id, max, skip, false);
+        createMessageAndAssertEncodeDecode(id, max, skip, false, 0);
     }
 
-    private void createMessageAndAssertEncodeDecode(long id, int max, int skip, boolean reverse) {
-        GetBlockHeadersMessage testMessage = new GetBlockHeadersMessage(id, blockHash, max, skip, reverse);
+    private void createMessageAndAssertEncodeDecode(long id, int max, int skip, boolean reverse, long blockNumber) {
+        GetBlockHeadersByNumberMessage testMessage = new GetBlockHeadersByNumberMessage(id, blockNumber, max, skip, reverse);
         byte[] encoded = testMessage.getEncoded();
-        GetBlockHeadersMessage getBlockHeadersMessage = (GetBlockHeadersMessage) messageFactory.create(GET_BLOCK_HEADER.asByte(), encoded);
+        GetBlockHeadersByNumberMessage getBlockHeadersByNumberMessageMessage = (GetBlockHeadersByNumberMessage) messageFactory.create(GET_BLOCK_HEADER_BY_NUMBER.asByte(), encoded);
 
-        assertEquals(id, getBlockHeadersMessage.getId());
-        assertArrayEquals(blockHash, getBlockHeadersMessage.getBlockHash());
-        assertEquals(max, getBlockHeadersMessage.getMax());
-        assertEquals(GET_BLOCK_HEADER, getBlockHeadersMessage.getCommand());
-        assertEquals(testMessage.getAnswerMessage(), getBlockHeadersMessage.getAnswerMessage());
-        assertArrayEquals(encoded, getBlockHeadersMessage.getEncoded());
+        assertEquals(id, getBlockHeadersByNumberMessageMessage.getId());
+        assertEquals(blockNumber, getBlockHeadersByNumberMessageMessage.getBlockNumber());
+        assertEquals(max, getBlockHeadersByNumberMessageMessage.getMax());
+        assertEquals(GET_BLOCK_HEADER_BY_NUMBER, getBlockHeadersByNumberMessageMessage.getCommand());
+        assertEquals(testMessage.getAnswerMessage(), getBlockHeadersByNumberMessageMessage.getAnswerMessage());
+        assertArrayEquals(encoded, getBlockHeadersByNumberMessageMessage.getEncoded());
     }
 }

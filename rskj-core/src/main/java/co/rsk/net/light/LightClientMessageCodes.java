@@ -41,17 +41,19 @@ public enum LightClientMessageCodes {
 
     ACCOUNTS(0x08),
 
-    GET_BLOCK_HEADER(0x09),
+    GET_BLOCK_HEADER_BY_HASH(0x09),
 
-    BLOCK_HEADER(0x0A),
+    GET_BLOCK_HEADER_BY_NUMBER(0x0A),
 
-    GET_BLOCK_BODY(0x0B),
+    BLOCK_HEADER(0x0B),
 
-    BLOCK_BODY(0x0C),
+    GET_BLOCK_BODY(0x0C),
 
-    GET_STORAGE(0x0D),
+    BLOCK_BODY(0x0D),
 
-    STORAGE(0x0E);
+    GET_STORAGE(0x0E),
+
+    STORAGE(0x0F);
 
     private final int cmd;
 
