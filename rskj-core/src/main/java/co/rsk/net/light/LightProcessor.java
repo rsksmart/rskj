@@ -163,20 +163,31 @@ public class LightProcessor {
         throw new UnsupportedOperationException("Not supported AccountsMessage processing");
     }
 
-    public void processGetBlockHeadersMessage(long id, byte[] startBlockHash, int max, int skip, boolean reverse, LightPeer lightPeer) {
+    public void processGetBlockHeadersByHashMessage(long id, byte[] startBlockHash, int max, int skip, boolean reverse, LightPeer lightPeer) {
         String blockHashLog = Hex.toHexString(startBlockHash);
         logger.trace("Processing block header request {} block {} from {}", id, blockHashLog, lightPeer.getPeerIdShort());
 
+        Block startBlock = blockStore.getBlockByHash(startBlockHash);
+        processGetBlockHeaderMessage(id, max, skip, reverse, lightPeer, startBlock);
+    }
+
+    public void processGetBlockHeadersByNumberMessage(long id, long blockNumber, int max, int skip, boolean reverse, LightPeer lightPeer) {
+        logger.trace("Processing block header request {} block {} from {}", id, blockNumber, lightPeer.getPeerIdShort());
+
+        Block startBlock = blockStore.getChainBlockByNumber(blockNumber);
+        processGetBlockHeaderMessage(id, max, skip, reverse, lightPeer, startBlock);
+    }
+
+    private void processGetBlockHeaderMessage(long id, int max, int skip, boolean reverse, LightPeer lightPeer, Block startBlock) {
         if (max == 0) {
             return;
         }
 
-        List<BlockHeader> headers = new ArrayList<>();
-        Block startBlock = blockStore.getBlockByHash(startBlockHash);
-
         if (startBlock == null) {
             return;
         }
+
+        List<BlockHeader> headers = new ArrayList<>();
 
         if (max == 1) {
             headers.add(startBlock.getHeader());

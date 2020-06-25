@@ -1,7 +1,26 @@
+/*
+ * This file is part of RskJ
+ * Copyright (C) 2017 RSK Labs Ltd.
+ * (derived from ethereumJ library, Copyright (c) 2016 <ether.camp>)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package co.rsk.net.light;
 
 import co.rsk.crypto.Keccak256;
-import co.rsk.net.light.message.GetBlockHeadersMessage;
+import co.rsk.net.light.message.GetBlockHeadersByHashMessage;
 import co.rsk.net.light.state.*;
 import co.rsk.validators.ProofOfWorkRule;
 import org.ethereum.config.SystemProperties;
@@ -70,8 +89,8 @@ public class LightSyncStateTest {
         final CommonAncestorSearchSyncState syncState = new CommonAncestorSearchSyncState(lightSyncProcessor, lightPeer, bestBlock.getHash().getBytes(), bestBlock.getNumber(), blockchain);
         syncState.sync();
 
-        final GetBlockHeadersMessage expectedMsg = new GetBlockHeadersMessage(1, bestBlock.getHash().getBytes(), 1, 0, true);
-        ArgumentCaptor<GetBlockHeadersMessage> argument = forClass(GetBlockHeadersMessage.class);
+        final GetBlockHeadersByHashMessage expectedMsg = new GetBlockHeadersByHashMessage(1, bestBlock.getHash().getBytes(), 1, 0, true);
+        ArgumentCaptor<GetBlockHeadersByHashMessage> argument = forClass(GetBlockHeadersByHashMessage.class);
         assertSendSameMessage(expectedMsg, argument);
     }
 
@@ -100,8 +119,8 @@ public class LightSyncStateTest {
         includeBlockInBlockchain(newStartBlock);
         syncState.newBlockHeaders(lightPeer, bhs);
 
-        final GetBlockHeadersMessage expectedMsg = new GetBlockHeadersMessage(1, newStartBlock.getHash().getBytes(), 4, 0, true);
-        ArgumentCaptor<GetBlockHeadersMessage> argument = forClass(GetBlockHeadersMessage.class);
+        final GetBlockHeadersByHashMessage expectedMsg = new GetBlockHeadersByHashMessage(1, newStartBlock.getHash().getBytes(), 4, 0, true);
+        ArgumentCaptor<GetBlockHeadersByHashMessage> argument = forClass(GetBlockHeadersByHashMessage.class);
         assertSendSameMessage(expectedMsg, argument);
     }
 
@@ -111,8 +130,8 @@ public class LightSyncStateTest {
         final CommonAncestorSearchSyncState syncState = new CommonAncestorSearchSyncState(lightSyncProcessor, lightPeer, bestBlock.getHash().getBytes(), bestBlock.getNumber(), blockchain);
         syncState.sync();
 
-        final GetBlockHeadersMessage expectedMsg = new GetBlockHeadersMessage(1, bestBlock.getHash().getBytes(), MAX_REQUESTED_HEADERS, 0, true);
-        ArgumentCaptor<GetBlockHeadersMessage> argument = forClass(GetBlockHeadersMessage.class);
+        final GetBlockHeadersByHashMessage expectedMsg = new GetBlockHeadersByHashMessage(1, bestBlock.getHash().getBytes(), MAX_REQUESTED_HEADERS, 0, true);
+        ArgumentCaptor<GetBlockHeadersByHashMessage> argument = forClass(GetBlockHeadersByHashMessage.class);
         assertSendSameMessage(expectedMsg, argument);
     }
 
@@ -124,7 +143,7 @@ public class LightSyncStateTest {
 
         //Send BlockHeadersRequest
         lightSyncProcessor.startSync(lightPeer, bestBlock);
-        final GetBlockHeadersMessage expectedMsg1 = new GetBlockHeadersMessage(firstRequestId, bestBlock.getHash().getBytes(), MAX_REQUESTED_HEADERS, 0, true);
+        final GetBlockHeadersByHashMessage expectedMsg1 = new GetBlockHeadersByHashMessage(firstRequestId, bestBlock.getHash().getBytes(), MAX_REQUESTED_HEADERS, 0, true);
 
 
         //This should be the peer's response
@@ -139,7 +158,7 @@ public class LightSyncStateTest {
 
         //Process received block's headers
         lightSyncProcessor.processBlockHeadersMessage(firstRequestId, firstBlockHeaderList, lightPeer);
-        GetBlockHeadersMessage expectedMsg2 = new GetBlockHeadersMessage(secondRequestId, newBlock.getHash().getBytes(), newBlockNumber, 0, true);
+        GetBlockHeadersByHashMessage expectedMsg2 = new GetBlockHeadersByHashMessage(secondRequestId, newBlock.getHash().getBytes(), newBlockNumber, 0, true);
 
         final List<BlockHeader> secondBlockHeaderList = getBlockHeaders(newBlockNumber, newBlockNumber-2);
         secondBlockHeaderList.add(newBlock.getHeader());
@@ -150,9 +169,9 @@ public class LightSyncStateTest {
         assertMessagesWereSent(expectedMsg1, expectedMsg2);
     }
 
-    private void assertMessagesWereSent(GetBlockHeadersMessage expectedMsg1, GetBlockHeadersMessage expectedMsg2) {
-        final ArgumentCaptor<GetBlockHeadersMessage> argument = forClass(GetBlockHeadersMessage.class);
-        final List<GetBlockHeadersMessage> arguments = argument.getAllValues();
+    private void assertMessagesWereSent(GetBlockHeadersByHashMessage expectedMsg1, GetBlockHeadersByHashMessage expectedMsg2) {
+        final ArgumentCaptor<GetBlockHeadersByHashMessage> argument = forClass(GetBlockHeadersByHashMessage.class);
+        final List<GetBlockHeadersByHashMessage> arguments = argument.getAllValues();
         verify(lightPeer, times(2)).sendMessage(argument.capture());
         assertArrayEquals(expectedMsg1.getEncoded(), arguments.get(0).getEncoded());
         assertArrayEquals(expectedMsg2.getEncoded(), arguments.get(1).getEncoded());
@@ -173,7 +192,7 @@ public class LightSyncStateTest {
         when(blockchain.getBlockByHash(block.getHash().getBytes())).thenReturn(block);
     }
 
-    private void assertSendSameMessage(GetBlockHeadersMessage expectedMsg, ArgumentCaptor<GetBlockHeadersMessage> argument) {
+    private void assertSendSameMessage(GetBlockHeadersByHashMessage expectedMsg, ArgumentCaptor<GetBlockHeadersByHashMessage> argument) {
         verify(lightPeer).sendMessage(argument.capture());
         assertArrayEquals(expectedMsg.getEncoded(), argument.getValue().getEncoded());
     }
