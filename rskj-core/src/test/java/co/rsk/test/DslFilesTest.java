@@ -18,8 +18,10 @@
 
 package co.rsk.test;
 
+import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockChainStatus;
+import co.rsk.db.RepositorySnapshot;
 import co.rsk.test.dsl.DslParser;
 import co.rsk.test.dsl.DslProcessorException;
 import co.rsk.test.dsl.WorldDslProcessor;
@@ -35,6 +37,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.FileNotFoundException;
+import java.lang.reflect.Field;
 import java.math.BigInteger;
 import java.util.Arrays;
 
@@ -406,5 +409,53 @@ public class DslFilesTest {
         // Gas consumed SHOULD NOT be all there is available
         Assert.assertNotEquals(200000, gasUsed);
         Assert.assertFalse("Transaction should be reverted", txinfo.getReceipt().isSuccessful());
+    }
+
+
+    @Test
+    public void onReorganizationTxGetsReaddedToTxPool() throws FileNotFoundException, DslProcessorException {
+        DslParser parser = DslParser.fromResource("dsl/reorganization.txt");
+        World world = new World();
+        WorldDslProcessor processor = new WorldDslProcessor(world);
+        processor.processCommands(parser);
+
+        //But the tx is now on the tx pool
+        Assert.assertEquals(1, world.getTransactionPool().getPendingTransactions().size());
+        Assert.assertEquals(Coin.valueOf(1000), world.getTransactionPool().getPendingTransactions().get(0).getValue());
+    }
+
+    @Test
+    public void onReorganizationTxDoesNotGetsReaddedToTxPoolIfPresentOnBothChains() throws FileNotFoundException, DslProcessorException {
+        DslParser parser = DslParser.fromResource("dsl/reorganization_same_tx_on_both.txt");
+        World world = new World();
+        WorldDslProcessor processor = new WorldDslProcessor(world);
+        processor.processCommands(parser);
+
+        //The tx is NOT in the tx pool
+        Assert.assertEquals(0, world.getTransactionPool().getPendingTransactions().size());
+    }
+
+    @Test
+    public void onReorganizationTxDoesNotGetsReaddedIfCompetingTxIsOnBlock() throws FileNotFoundException, DslProcessorException {
+        DslParser parser = DslParser.fromResource("dsl/reorganization_different_tx_on_both_same_nonce.txt");
+        World world = new World();
+        WorldDslProcessor processor = new WorldDslProcessor(world);
+        processor.processCommands(parser);
+
+        //The tx is NOT in the tx pool
+        Assert.assertEquals(0, world.getTransactionPool().getPendingTransactions().size());
+    }
+
+    @Test
+    public void onReorganizationTxDoesGetsReaddedIfNonCompetingTxIsOnBlock() throws FileNotFoundException, DslProcessorException {
+        DslParser parser = DslParser.fromResource("dsl/reorganization_different_non_competing_tx.txt");
+        World world = new World();
+        WorldDslProcessor processor = new WorldDslProcessor(world);
+        processor.processCommands(parser);
+
+        //The transaction that was on the discarded block is on the tx pool
+        Assert.assertEquals(1, world.getTransactionPool().getPendingTransactions().size());
+        Assert.assertEquals(Coin.valueOf(1000), world.getTransactionPool().getPendingTransactions().get(0).getValue());
+        Assert.assertEquals(world.getAccountByName("acc1").getAddress(), world.getTransactionPool().getPendingTransactions().get(0).getSender());
     }
 }
