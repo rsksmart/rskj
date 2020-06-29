@@ -221,6 +221,14 @@ public class TransactionPoolImpl implements TransactionPool {
     }
 
     private TransactionPoolAddResult internalAddTransaction(final Transaction tx) {
+        if (pendingTransactions.hasTransaction(tx)) {
+            return TransactionPoolAddResult.withError("pending transaction with same hash already exists");
+        }
+
+        if (queuedTransactions.hasTransaction(tx)) {
+            return TransactionPoolAddResult.withError("queued transaction with same hash already exists");
+        }
+
         RepositorySnapshot currentRepository = getCurrentRepository();
         TransactionValidationResult validationResult = shouldAcceptTx(tx, currentRepository);
 
@@ -261,14 +269,6 @@ public class TransactionPoolImpl implements TransactionPool {
 
     @Override
     public synchronized TransactionPoolAddResult addTransaction(final Transaction tx) {
-        if (pendingTransactions.hasTransaction(tx)) {
-            return TransactionPoolAddResult.withError("pending transaction with same hash already exists");
-        }
-
-        if (queuedTransactions.hasTransaction(tx)) {
-            return TransactionPoolAddResult.withError("queued transaction with same hash already exists");
-        }
-
         TransactionPoolAddResult result = this.internalAddTransaction(tx);
 
         if (!result.transactionWasAdded()) {
