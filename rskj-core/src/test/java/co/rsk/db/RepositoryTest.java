@@ -515,38 +515,52 @@ public class RepositoryTest {
     }
 
     @Test
-    public void testGetCodeHash() {
-        RskAddress addressNotAdded = new RskAddress("13978AEE95F38490E9769C39B2773ED763D9CD5A");
+    public void testGetCodeHashGivenAContractWithCode() {
         Repository track = repository.startTracking();
-
         byte[] code = "a-great-code".getBytes();
-        byte[] emptyCode = new byte[0];
-
         Keccak256 codeKeccak = getKeccak256Hash(code);
-        Keccak256 emptyKeccak = getKeccak256Hash(emptyCode);
 
-        track.createAccount(HORSE);
-
-        //Make COW address a contract
+        track.createAccount(COW);
         track.setupContract(COW);
         track.saveCode(COW, code);
-
-        assertArrayEquals(code, track.getCode(COW));
-        assertNull(track.getCode(HORSE));
-
         track.commit();
 
-        //Non-empty code hash
         Keccak256 codeHash = repository.getCodeHash(COW);
         assertEquals(codeKeccak, codeHash);
+    }
 
-        //Empty code hash
-        Keccak256 emptyCodeHash = repository.getCodeHash(HORSE);
-        assertEquals(emptyKeccak, emptyCodeHash);
+    @Test
+    public void testGetCodeHashGivenAContractWithoutCode() {
+        Repository track = repository.startTracking();
+        byte[] code = new byte[0];
+        Keccak256 emptyKeccak = getKeccak256Hash(code);
 
-        //Code hash of non-existing account
-        Keccak256 hashOfNonExistingAccount = repository.getCodeHash(addressNotAdded);
-        assertTrue(hashOfNonExistingAccount.equals(Keccak256.ZERO_HASH));
+        track.createAccount(COW);
+        track.setupContract(COW);
+        track.saveCode(COW, code);
+        track.commit();
+
+        Keccak256 codeHash = repository.getCodeHash(COW);
+        assertEquals(emptyKeccak, codeHash);
+    }
+
+    @Test
+    public void testGetCodeHashGivenAnExternalAccount() {
+        Repository track = repository.startTracking();
+        byte[] code = new byte[0];
+        Keccak256 emptyKeccak = getKeccak256Hash(code);
+
+        track.createAccount(COW);
+        track.commit();
+
+        Keccak256 codeHash = repository.getCodeHash(COW);
+        assertEquals(emptyKeccak, codeHash);
+    }
+
+    @Test
+    public void testGetCodeHashGivenAnNonExistingAccount() {
+        Keccak256 codeHash = repository.getCodeHash(COW);
+        assertEquals(Keccak256.ZERO_HASH, codeHash);
     }
 
     private Keccak256 getKeccak256Hash(byte[] emptyCode) {

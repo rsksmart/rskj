@@ -169,8 +169,14 @@ public class MutableRepository implements Repository {
                     Keccak256Helper.keccak256(EMPTY_BYTE_ARRAY));
         }
 
-        byte[] key = trieKeyMapper.getCodeKey(addr);
-        return mutableTrie.getValueHash(key);
+        final byte[] code = this.getCode(addr);
+
+        if (code == null) {
+            return new Keccak256(
+                    Keccak256Helper.keccak256(EMPTY_BYTE_ARRAY));
+        }
+
+        return new Keccak256(Keccak256Helper.keccak256(code));
     }
 
 
