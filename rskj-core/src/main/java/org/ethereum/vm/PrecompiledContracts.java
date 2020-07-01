@@ -22,6 +22,7 @@ import co.rsk.config.RemascConfig;
 import co.rsk.config.RemascConfigFactory;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.RskAddress;
+import co.rsk.pcc.InstallCode;
 import co.rsk.pcc.altBN128.BN128Addition;
 import co.rsk.pcc.altBN128.BN128Multiplication;
 import co.rsk.pcc.altBN128.BN128Pairing;
@@ -77,7 +78,7 @@ public class PrecompiledContracts {
     public static final String REMASC_ADDR_STR = "0000000000000000000000000000000001000008";
     public static final String HD_WALLET_UTILS_ADDR_STR = "0000000000000000000000000000000001000009";
     public static final String BLOCK_HEADER_ADDR_STR = "0000000000000000000000000000000001000010";
-
+    public static final String INSTALLCODE_ADDR_STR ="0000000000000000000000000000000001000011";
     public static final DataWord ECRECOVER_ADDR_DW = DataWord.valueFromHex(ECRECOVER_ADDR_STR);
     public static final DataWord SHA256_ADDR_DW = DataWord.valueFromHex(SHA256_ADDR_STR);
     public static final DataWord RIPEMPD160_ADDR_DW = DataWord.valueFromHex(RIPEMPD160_ADDR_STR);
@@ -91,7 +92,7 @@ public class PrecompiledContracts {
     public static final DataWord REMASC_ADDR_DW = DataWord.valueFromHex(REMASC_ADDR_STR);
     public static final DataWord HD_WALLET_UTILS_ADDR_DW = DataWord.valueFromHex(HD_WALLET_UTILS_ADDR_STR);
     public static final DataWord BLOCK_HEADER_ADDR_DW = DataWord.valueFromHex(BLOCK_HEADER_ADDR_STR);
-
+    public static final DataWord INSTALLCODE_ADDR_DW = DataWord.valueFromHex(INSTALLCODE_ADDR_STR);
     public static final RskAddress ECRECOVER_ADDR = new RskAddress(ECRECOVER_ADDR_DW);
     public static final RskAddress SHA256_ADDR = new RskAddress(SHA256_ADDR_DW);
     public static final RskAddress RIPEMPD160_ADDR = new RskAddress(RIPEMPD160_ADDR_DW);
@@ -136,6 +137,7 @@ public class PrecompiledContracts {
     private final RskSystemProperties config;
     private final BridgeSupportFactory bridgeSupportFactory;
     private final SignatureCache signatureCache;
+    private static InstallCode installCode = new InstallCode();
 
     public PrecompiledContracts(RskSystemProperties config,
                                 BridgeSupportFactory bridgeSupportFactory,
@@ -202,7 +204,9 @@ public class PrecompiledContracts {
         if (activations.isActive(ConsensusRule.RSKIP153) && address.equals(BLAKE2F_ADDR_DW)) {
             return new Blake2F();
         }
-
+        if (address.equals(INSTALLCODE_ADDR_DW)) {
+            return installCode;
+        }
         return null;
     }
 
