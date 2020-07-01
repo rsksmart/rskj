@@ -4,6 +4,7 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.config.VmConfig;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import co.rsk.crypto.Keccak256;
 import co.rsk.pcc.InstallCode;
 import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
@@ -18,6 +19,7 @@ import org.ethereum.core.BlockFactory;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
+import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.crypto.signature.ECDSASignature;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
@@ -35,6 +37,7 @@ import java.math.BigInteger;
 import java.util.HashSet;
 
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP125;
+import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.*;
@@ -160,27 +163,63 @@ public class InstallCodeTest {
         /**
          */
         ExecuteCallResult ecr = new ExecuteCallResult();
-        testiInstallCode(123,false,64,ecr);
+        testiInstallCode(123,false,66,ecr);
 
         long expected = GasCost.CALL+InstallCode.BASE_COST+GasCost.NEW_ACCT_CALL+2*200;
         Assert.assertEquals(expected ,ecr.gasConsumedInCALL);
     }
+    @Test
+    public void testiInstallCode_successRemovalTest() {
+        // EXTCODESIZE check
+        Assert.assertEquals(0,invoke.getRepository().getCodeLength(targetAccountAddress));
+        // EXTCODEHASH check
 
+        Keccak256 existentHash = invoke.getRepository().getCodeHash(targetAccountAddress);
+        Assert.assertArrayEquals(Keccak256.ZERO_HASH.getBytes(), existentHash.getBytes());
+        byte[] emptyHash = Keccak256Helper.keccak256(EMPTY_BYTE_ARRAY);
+        // First make sure the account is created.
+        invoke.getRepository().addBalance(targetAccountAddress, Coin.valueOf(1));
+
+        // now the hash is the hash of an empty vector
+        // This is because isContract() == false
+        existentHash = invoke.getRepository().getCodeHash(targetAccountAddress);
+        Assert.assertArrayEquals(emptyHash, existentHash.getBytes());
+
+        // First install 2 code bytes
+        testiInstallCode(0,true,2,null);
+
+        // Now remove the code and check that EXTCODESIZE / EXTCODEHASH return the same
+        // (note that storage cells may still persist and isContract() will return true)
+        testiInstallCode(0,true,0,null);
+
+        // EXTCODESIZE check
+        Assert.assertEquals(0,invoke.getRepository().getCodeLength(targetAccountAddress));
+
+        // Because isContract is still true getCodeHash() won't return emptyHash ever again
+        // this is a consensus problem. We will need to correct it in the hard-fork
+        // When one creates a contract with CREATE/CREATE2 and zero code, EXTCODEHASH
+        // should return emptyHash, not zero.
+        // see https://eips.ethereum.org/EIPS/eip-1052.
+        // EXTCODEHASH check
+        Assert.assertArrayEquals(Keccak256.ZERO_HASH.getBytes(), invoke.getRepository().getCodeHash(targetAccountAddress).getBytes());
+
+    }
     @Test
     public void testiInstallCode_successTest() {
         /**
          */
+
         ExecuteCallResult ecr = new ExecuteCallResult();  // only one byte is returned
         // We do not add the account I have the private key for
         // dont do it: invoke.addAccount(targetAccountAddress,Coin.ZERO);
 
-        testiInstallCode(0,true,0,ecr);
+        testiInstallCode(0,true,2,ecr);
         long gasUsedCreateAccount = ecr.gasConsumedInCALL;
         long expectedGas =GasCost.NEW_ACCT_CALL+GasCost.CALL+InstallCode.BASE_COST;
         Assert.assertEquals(expectedGas,gasUsedCreateAccount);
         // now the account is created. If I call it again to install another code,
         // then it should cost NEW_ACCT_CALL less.
-         testiInstallCode(0,true,0,ecr);
+         testiInstallCode(0,true,2,ecr);
         long gasUsedExistingAccount =ecr.gasConsumedInCALL;
 
          Assert.assertEquals(gasUsedCreateAccount-gasUsedExistingAccount, GasCost.NEW_ACCT_CALL);
@@ -188,30 +227,35 @@ public class InstallCodeTest {
         // the cost shouldn't change.
         // (this is also because we're not adding more PUSH32 opcodes to setup memory);
         // This could be tested directly by calling getGasForData()
-        testiInstallCode(0,true,1,ecr);
+        testiInstallCode(0,true,3,ecr);
         long gasUsedAdditionalByte = ecr.gasConsumedInCALL;
         Assert.assertEquals(gasUsedExistingAccount,gasUsedAdditionalByte);
 
         // Now I add 64 bytes, so the total number of bytes in code is 66.
         // 2 of them pay 200 gas each.
-        testiInstallCode(0,true,64,ecr);
+        testiInstallCode(0,true,66,ecr);
         long gasUsedWithoutSubsidy  = ecr.gasConsumedInCALL;
         Assert.assertEquals(gasUsedExistingAccount+2*200,gasUsedWithoutSubsidy);
 
-    }
+       }
 
     // we don't check gas costs exactly. We check gas cost deltas, for the different
     // arguments.
     // returns gasCost
     public void testiInstallCode(int nonceAsInt,boolean expectedSuccess,
-                                 int additionalBytes,
+                                 int codeBytes,
                                  ExecuteCallResult ecr)  {
-        String codeToInstallPrefixStr ="3000";// ADDRESS STOP
-        byte[] codeToInstallPrefix = Hex.decode(codeToInstallPrefixStr);
 
-        byte[] codeToInstall = new byte[codeToInstallPrefix.length+additionalBytes];
-        System.arraycopy(codeToInstallPrefix, 0,codeToInstall,0,codeToInstallPrefix.length);
+        String codeToInstallPrefixStr = "";
+        byte[] codeToInstall = new byte[0];
 
+        if (codeBytes>0) {
+            codeToInstallPrefixStr = "30";// ADDRESS STOP
+            byte[] codeToInstallPrefix = Hex.decode(codeToInstallPrefixStr);
+
+            codeToInstall = new byte[codeToInstallPrefix.length + codeBytes-1];
+            System.arraycopy(codeToInstallPrefix, 0, codeToInstall, 0, codeToInstallPrefix.length);
+        }
         // Build the message to sign
         ECKey key = ECKey.fromPrivate(privateKey).decompress();
         RskAddress destAccount = new RskAddress(key.getAddress());
@@ -251,8 +295,12 @@ public class InstallCodeTest {
             Assert.assertNotNull(state);
             Assert.assertTrue(invoke.getRepository().isContract(targetAccountAddress));
             byte[] retCode = invoke.getRepository().getCode(targetAccountAddress);
-            Assert.assertNotNull(retCode);
-            Assert.assertArrayEquals(codeToInstall,retCode);
+            if (codeBytes==0)
+                Assert.assertNull(retCode);
+            else {
+                Assert.assertNotNull(retCode);
+                Assert.assertArrayEquals(codeToInstall, retCode);
+            }
         }
         return;
     }
