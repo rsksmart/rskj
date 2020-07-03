@@ -49,12 +49,12 @@ public class TransactionGatewayTest {
     @Test
     public void receivesTransactionsNonExistentAtTxPoolShouldAddAndShouldBroadcast() throws Exception {
         List<Transaction> transactions = Collections.singletonList(tx);
-        List<Transaction> addTransactionsResult = transactions;
+        List<Transaction> transactionPoolAddResult = transactions;
 
         receiveTransactionsFromAndVerifyCalls(
                 transactions,
                 null,
-                addTransactionsResult,
+                transactionPoolAddResult,
                 1,
                 1
         );
@@ -63,12 +63,12 @@ public class TransactionGatewayTest {
     @Test
     public void receivesTransactionsExistentAtTxPoolShouldntAddAndShouldntBroadcast() {
         List<Transaction> transactions = Collections.singletonList(tx);
-        List<Transaction> addTransactionsResult = Collections.emptyList();
+        List<Transaction> transactionPoolAddResult = Collections.emptyList();
 
         receiveTransactionsFromAndVerifyCalls(
                 transactions,
                 null,
-                addTransactionsResult,
+                transactionPoolAddResult,
                 1,
                 0
         );
@@ -76,10 +76,10 @@ public class TransactionGatewayTest {
 
     private void receiveTransactionsFromAndVerifyCalls(List<Transaction> txs,
                                                        Set<NodeID> nodeIDS,
-                                                       List<Transaction> addTransactionsResult,
+                                                       List<Transaction> transactionPoolAddResult,
                                                        int addTransactionsInvocationsCount,
                                                        int broadcastTransactionsInvocationsCount) {
-        when(transactionPool.addTransactions(txs)).thenReturn(addTransactionsResult);
+        when(transactionPool.addTransactions(txs)).thenReturn(transactionPoolAddResult);
 
         this.gateway.receiveTransactionsFrom(txs, nodeIDS);
 
