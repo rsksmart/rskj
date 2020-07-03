@@ -37,13 +37,13 @@ import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
  */
 public class ProgramResult {
 
-    private long gasUsed;
+    private long gasUsed = 0L;
     /** #mish rent gas is collected at end of transaction. 
      * so rentgas "used" is more like an "estimate" of eventual cost, rather than definite spending. 
      * However, for clarity of thought, use the same terminology as for regular execution gas.
      * And even though it is not collected until EOT, it cannot go over the rentGas limit.. that's a OOrentG exception  
     */
-    private long rentGasUsed;
+    private long rentGasUsed = 0L;
     // #mish data returned from memory, program. can be empty, can be output from func call, even contract code to be written to trie
     private byte[] hReturn = EMPTY_BYTE_ARRAY;
     private RuntimeException exception;
@@ -90,6 +90,7 @@ public class ProgramResult {
 
     public void spendRentGas(long rentGas) {
         rentGasUsed = GasCost.add(rentGasUsed, rentGas);
+        //System.out.println("\nprogresult.spendrentgas ->" + rentGasUsed);
     }
 
     public void setRevert() {

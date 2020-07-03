@@ -40,8 +40,9 @@ import java.nio.charset.StandardCharsets;
  * @since 03.06.2014
  */
 // #mish ProgramInvoke extends InvokeData which has getGas and getRentGas methods.. also getGasLimit for block gas limit
-// ToDo: the usage here appears to use gasLimit for both TX gas limti as well as block. Perhaps it is based on type (long Vs Dataword) 
+// ToDo: the usage here appears to use gasLimit for both TX gas limti as well as block gas limit. Perhaps it is based on type (long Vs Dataword) 
 // in particular the methods setGas() and setGasLimit() both target the same field..  
+
 public class ProgramInvokeMockImpl implements ProgramInvoke {
 
     private byte[] msgData;
@@ -84,6 +85,7 @@ public class ProgramInvokeMockImpl implements ProgramInvoke {
         this.repository.addBalance(accountAddress, balance);
     }
 
+    // #mish default contract code 
     public ProgramInvokeMockImpl() {
         this("385E60076000396000605f556014600054601e60"
                 + "205463abcddcba6040545b51602001600a525451"
@@ -121,7 +123,6 @@ public class ProgramInvokeMockImpl implements ProgramInvoke {
 
     /*           CALLER op         */
     public DataWord getCallerAddress() {
-
         byte[] cowPrivKey = HashUtil.keccak256("monkey".getBytes(StandardCharsets.UTF_8));
         byte[] addr = ECKey.fromPrivate(cowPrivKey).getAddress();
 

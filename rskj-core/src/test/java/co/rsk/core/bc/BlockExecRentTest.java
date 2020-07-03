@@ -20,6 +20,7 @@ package co.rsk.core.bc;
 
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.TestSystemProperties;
+import co.rsk.config.VmConfig;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.TransactionExecutorFactory;
@@ -34,9 +35,12 @@ import co.rsk.trie.Trie;
 import co.rsk.trie.TrieConverter;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
+import co.rsk.vm.BytecodeCompiler;
+
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.encoders.Hex;
 
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
@@ -55,8 +59,17 @@ import org.ethereum.util.RLP;
 import org.ethereum.util.RskTestFactory;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
+import org.ethereum.vm.DataWord;
+import org.ethereum.vm.VM;
+import org.ethereum.vm.program.Program;
+import org.ethereum.vm.program.Stack;
+import org.ethereum.vm.program.invoke.ProgramInvoke;
+import org.ethereum.vm.program.invoke.ProgramInvokeMockImpl;
+
+
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.math.BigInteger;
@@ -64,18 +77,33 @@ import java.util.*;
 
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP125;
+import static org.mockito.Mockito.*;
+
 /**
  * Derived from BlockExecutorTest class Created by ajlopez on 29/07/2016.
  * by smishra June 2020 for storage rent
  * Even the simplest block exec tests have to be modified:
      * We use a single gaslimit field in TX which is split 50:50 between execution gas and rent gas. 
-        thus gasLimist in the example/tests transaction has to be at least doubled from 21K to 42K +
-    * The increase in gaslimit, imlies sender balances have to be increased accordingly as well
-    * Several assertion tests rely on the predictability of execution gas, bas refunds, and conseuent balance changes.
-      These no longer work as rent gas relies on difference in timestamps, and collection triggers intended to avoid small 
-      transactions and too many disk writes.
+        Thus, gasLimit in the example/tests transaction has to be at least doubled from 21K to 42K+
+    * The increase in gaslimit, implies sender balances have to be increased accordingly as well
+    * Several assertion tests rely on the predictability of execution gas, gas refunds, and balance changes.
+      - These no longer work as rent gas relies on difference in timestamps (less predictable) 
+      - Furthermore RSKIP113 has collection thresholds intended to avoid small transactions (too many disk writes).
  */
 public class BlockExecRentTest {
+    private ActivationConfig.ForBlock activationConfig;
+    private BytecodeCompiler compiler = new BytecodeCompiler();
+    private ProgramInvokeMockImpl invoke = new ProgramInvokeMockImpl();
+    private final VmConfig vmConfig = config.getVmConfig();
+    private final PrecompiledContracts precompiledContracts = new PrecompiledContracts(
+            config,
+            new BridgeSupportFactory(
+                    new RepositoryBtcBlockStoreWithCache.Factory(
+                            config.getNetworkConstants().getBridgeConstants().getBtcParams()),
+                    config.getNetworkConstants().getBridgeConstants(),
+                    config.getActivationConfig()));    
+
     public static final byte[] EMPTY_TRIE_HASH = sha3(RLP.encodeElement(EMPTY_BYTE_ARRAY));
     private static final TestSystemProperties config = new TestSystemProperties();
     private static final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
@@ -93,6 +121,9 @@ public class BlockExecRentTest {
         executor = objects.getBlockExecutor();
         trieStore = objects.getTrieStore();
         repository = objects.getRepositoryLocator().snapshotAt(blockchain.getBestBlock().getHeader());
+        
+        activationConfig = mock(ActivationConfig.ForBlock.class);
+        when(activationConfig.isActive(RSKIP125)).thenReturn(true);
     }
 
     @Test
@@ -100,7 +131,6 @@ public class BlockExecRentTest {
         Block block = getBlockWithOneTransaction(); // this changes the best block
         Block parent = blockchain.getBestBlock();
 
-        
 
         Transaction tx = block.getTransactionsList().get(0);
         RskAddress account = tx.getSender();
@@ -125,7 +155,38 @@ public class BlockExecRentTest {
         //System.out.println(finalRepository.getAccountNodeLRPTime(account));
 
     }
+        
+    @Test
+    public void executeBlockWithOneCreateTransaction() {
+        //trying a different version
+        Block block = getBlockWithOneCreateTransaction(); // this changes the best block
+        Block parent = blockchain.getBestBlock();
 
+        Transaction tx = block.getTransactionsList().get(0);
+        
+        when(activationConfig.isActive(RSKIP125)).thenReturn(false);
+        BlockResult result = executor.execute(block, parent.getHeader(), false);
+
+        String code = "PUSH1 0x01 PUSH1 0x02 PUSH1 0x00 CREATE";
+
+        Program program = executeTxCode(code, tx);
+
+        Stack stack = program.getStack();
+        String address = Hex.toHexString(stack.peek().getLast20Bytes());
+        System.out.println("\ncontract addr " + address);
+        long nonce = program.getStorage().getNonce(new RskAddress(address)).longValue();
+        System.out.println("\nrec addr " + tx.getReceiveAddress());
+
+        Assert.assertEquals(0, nonce);
+        Assert.assertEquals("77045E71A7A2C50903D88E564CD72FAB11E82051", address.toUpperCase());
+        Assert.assertEquals(1, stack.size());
+
+        
+        //To do add the block executor
+    }
+
+    /*
+    @Ignore
     @Test
     public void executeBlockWithTwoTransactions() {
         Block block = getBlockWithTwoTransactions(); // this changes the best block
@@ -184,6 +245,7 @@ public class BlockExecRentTest {
         Assert.assertEquals(BigInteger.valueOf(60000 - 42000 - 20), accountState.getBalance().asBigInteger());
     }
 
+    @Ignore
     @Test
     public void executeAndFillBlockWithOneTransaction() {
         TestObjects objects = generateBlockWithOneTransaction();
@@ -203,9 +265,9 @@ public class BlockExecRentTest {
 
         Assert.assertEquals(3000000, new BigInteger(1, block.getGasLimit()).longValue());
     }
+    */
 
-
-
+    /*
     // #mish careful. This is NOT getBlockwithOneTX (that's further down)
     private static TestObjects generateBlockWithOneTransaction() {
         TrieStore trieStore = new TrieStoreImpl(new HashMapDB());
@@ -250,7 +312,9 @@ public class BlockExecRentTest {
 
         return new TestObjects(trieStore, block, genesis, tx, account, rootPriorExecution);
     }
+    */
 
+    
     private Block getBlockWithOneTransaction() {
         // first we modify the best block to have two accounts with balance
         Repository track = repository.startTracking();
@@ -273,6 +337,34 @@ public class BlockExecRentTest {
         List<BlockHeader> uncles = new ArrayList<>();
         return new BlockGenerator().createChildBlock(bestBlock, txs, uncles, 1, null);
     }
+    
+
+    private Block getBlockWithOneCreateTransaction() {
+        // first we modify the best block to have two accounts with balance
+        Repository track = repository.startTracking();
+
+        Account account = createAccount("acctest1", track, Coin.valueOf(300010)); //#mish create needs 53K, plus 1/2 for rent
+        //Account account2 = createAccount("acctest2", track, Coin.valueOf(10L));
+
+        String stringCode = "PUSH1 0x01 PUSH1 0x02 PUSH1 0x00 CREATE";
+        byte[] code = compiler.compile(stringCode);
+        String codeHex = Hex.toHexString(code);
+        System.out.println("Hex code " + codeHex);
+        track.commit();
+
+        Block bestBlock = blockchain.getBestBlock();
+        bestBlock.setStateRoot(repository.getRoot());
+
+        // then we create the new block to connect
+        List<Transaction> txs = Collections.singletonList(
+                createTxNullRec(account, BigInteger.TEN, repository.getNonce(account.getAddress()), codeHex)
+        );
+
+        List<BlockHeader> uncles = new ArrayList<>();
+        return new BlockGenerator().createChildBlock(bestBlock, txs, uncles, 1, null);
+    }
+
+
 
     private Block getBlockWithTwoTransactions() {
         // first we modify the best block to have two accounts with balance
@@ -308,6 +400,26 @@ public class BlockExecRentTest {
          * sender's balance needs to be updated as well 
         */
         Transaction tx = new Transaction(toAddress, value, nonce, BigInteger.ONE, BigInteger.valueOf(44000), config.getNetworkConstants().getChainId());
+        tx.sign(privateKeyBytes);
+        return tx;
+    }
+    
+    
+    // #mish with data in arglist
+    private static Transaction createTransaction(Account sender, Account receiver, BigInteger value, BigInteger nonce, String data) {
+        String toAddress = Hex.toHexString(receiver.getAddress().getBytes());
+        byte[] privateKeyBytes = sender.getEcKey().getPrivKeyBytes();
+        
+        Transaction tx = new Transaction(toAddress, value, nonce, BigInteger.ONE, BigInteger.valueOf(44000), data, config.getNetworkConstants().getChainId());
+        tx.sign(privateKeyBytes);
+        return tx;
+    }
+
+    // #mish with data in arglist
+    private static Transaction createTxNullRec(Account sender, BigInteger value, BigInteger nonce, String data) {
+        byte[] privateKeyBytes = sender.getEcKey().getPrivKeyBytes();
+        
+        Transaction tx = new Transaction(null, value, nonce, BigInteger.ONE, BigInteger.valueOf(300000), data, config.getNetworkConstants().getChainId());
         tx.sign(privateKeyBytes);
         return tx;
     }
@@ -368,6 +480,7 @@ public class BlockExecRentTest {
     }
 
     public static class TestObjects {
+
         private TrieStore trieStore;
         private Block block;
         private Block parent;
@@ -420,6 +533,22 @@ public class BlockExecRentTest {
         }
     }
 
+    // #mish helpers for Call/create TX
+    private Program executeTxCode(String stringCode, Transaction tx) {
+        byte[] code = compiler.compile(stringCode);
+        VM vm = new VM(vmConfig,precompiledContracts);
+        
+        Program program = new Program(vmConfig, precompiledContracts, blockFactory, activationConfig, code, invoke, tx, new HashSet<>());
+
+        while (!program.isStopped()){
+            vm.step(program);
+        }
+
+        return program;
+    }
+    
+
+    /* #mish the following class not needed
     public static class SimpleEthereumListener extends TestCompositeEthereumListener {
         private Block latestBlock;
         private Block bestBlock;
@@ -501,4 +630,5 @@ public class BlockExecRentTest {
 
         }
     }
+    */
 }

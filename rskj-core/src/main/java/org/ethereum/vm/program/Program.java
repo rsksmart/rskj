@@ -595,6 +595,7 @@ public class Program {
 
         // REFUND THE REMAIN GAS
         refundRemainingGas(gasLimit, programResult);
+        refundRemainingRentGas(rentGasLimit, programResult);
     }
 
     private void refundRemainingGas(long gasLimit, ProgramResult programResult) {
@@ -607,6 +608,20 @@ public class Program {
             gasLogger.info("The remaining gas is refunded, account: [{}], gas: [{}] ",
                     Hex.toHexString(getOwnerAddress().getLast20Bytes()),
                     refundGas
+            );
+        }
+    }
+
+    private void refundRemainingRentGas(long rentGasLimit, ProgramResult programResult) {
+        if (programResult.getRentGasUsed() >= rentGasLimit) {
+            return;
+        }
+        long refundRentGas = GasCost.subtract(rentGasLimit, programResult.getRentGasUsed());
+        refundRentGas(refundRentGas, "remaining rent gas from the internal call");
+        if (isGasLogEnabled) {
+            gasLogger.info("The remaining rent gas is refunded, account: [{}], gas: [{}] ",
+                    Hex.toHexString(getOwnerAddress().getLast20Bytes()),
+                    refundRentGas
             );
         }
     }
@@ -1696,6 +1711,7 @@ public class Program {
             accNode.setRentDue(getTimestamp().longValue(), true); // account node value length may not change much
             rd = accNode.getRentDue();
             spendRentGas(rd, " rent gas  for pre-existing");   //"collect" rent due
+            System.out.println("in program accNodeAddr" + rd);
             accNode.setLRPTime(getTimestamp().longValue()); //update rent paid timestamp
             // add to hashmap (internally this is a putIfAbsent) 
             progRes.addAccessedNode(accKey, accNode);
@@ -1745,6 +1761,7 @@ public class Program {
             accNode.setSixMonthsRent();
             rd = accNode.getRentDue();
             spendRentGas(rd, " rent gas for create");
+            System.out.println("in program created NodeAddr" + rd);
             // add to hashmap (internally this is a putIfAbsent)
             progRes.addCreatedNode(accKey, accNode);
         }

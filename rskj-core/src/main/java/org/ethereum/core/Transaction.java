@@ -545,6 +545,11 @@ public class Transaction {
         return (this.getGasLimit() == null) ? null : BigIntegers.fromUnsignedByteArray(this.getGasLimit());
     }
 
+    public BigInteger getRentGasLimitAsInteger() {
+        return (this.getRentGasLimit() == null) ? null : BigIntegers.fromUnsignedByteArray(this.getRentGasLimit());
+    }
+
+
     public BigInteger getNonceAsInteger() {
         return (this.getNonce() == null) ? null : BigIntegers.fromUnsignedByteArray(this.getNonce());
     }

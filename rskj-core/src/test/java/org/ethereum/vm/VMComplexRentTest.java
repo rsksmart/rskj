@@ -48,9 +48,13 @@ import static org.mockito.Mockito.mock;
 /**
  * @author Roman Mandeleil
  * @since 16.06.2014
+
+ * Differences betwheen this class and the ones developed by Seba + Juli for Create2, ExtCodeHash.
+    - this one uses null for transaction when instantiating a new program = in getProgram()
+
  */
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
-public class VMComplexTest {
+public class VMComplexRentTest {
 
     private static Logger logger = LoggerFactory.getLogger("TCK-Test");
     private final TestSystemProperties config = new TestSystemProperties();
@@ -76,7 +80,7 @@ public class VMComplexTest {
                      stop
          */
 
-        int expectedGas = 436; //#mish no longer works so last assertion fails  e.g. SSTORE is now much more expensive, other ops MUL/DIV too?
+        int expectedGas = 436;
 
         DataWord key1 = DataWord.valueOf(999);
         DataWord value1 = DataWord.valueOf(3);
@@ -324,7 +328,7 @@ public class VMComplexTest {
 
              a = 0x7f60c860005461012c6020540000000000000000000000000000000000000000
              b = 0x0060005460206000f20000000000000000000000000000000000000000000000
-             create(100, 0 41)
+             create(100, 0 41)              //value = 100, memstart = 0, memsize = 41
 
 
          contract B: (the contract to be created the addr will be defined to: 8e45367623a2865132d9bf875d5cfa31b9a0cd94)
@@ -339,21 +343,32 @@ public class VMComplexTest {
 
         RskAddress contractA_addr = new RskAddress("77045e71a7a2c50903d88e564cd72fab11e82051");
 
-        byte[] codeA = Hex.decode("7f7f60c860005461012c602054000000000000" +
-                "00000000000000000000000000006000547e60" +
+        byte[] codeA = Hex.decode("7f7f60c860005461012c602054000000000000" + // c8 is 200, 012c is 300  read from A:a
+                "00000000000000000000000000006000547e60" + // the 
                 "005460206000f2000000000000000000000000" +
-                "0000000000000000000000602054602960006064f0");
+                "0000000000000000000000602054602960006064f0"); // 29 = 41, 00 = 0, 64 = 100 (value)  create(100, 0,41)
 
         ProgramInvokeMockImpl pi = new ProgramInvokeMockImpl();
+        //pi.setOwnerAddress(caller_addr); // #mish
         pi.setOwnerAddress(contractA_addr);
 
         Repository repository = pi.getRepository();
+        //System.out.println(repository.getAccountsKeys()); // 2 default addresses
 
         repository.createAccount(contractA_addr);
         repository.saveCode(contractA_addr, codeA);
 
         repository.createAccount(caller_addr);
 
+        //#mish copied from createcontract in Program to see if the generated address matches what is in the example above
+        RskAddress senderAddress = new RskAddress(pi.getOwnerAddress());
+        final BigInteger value = new BigInteger("1000000");
+        repository.addBalance(senderAddress, new Coin(value));
+        byte[] nonce = repository.getNonce(senderAddress).toByteArray();
+        byte[] newAddressBytes = HashUtil.calcNewAddr(pi.getOwnerAddress().getLast20Bytes(), nonce);
+        RskAddress newAddress = new RskAddress(newAddressBytes);
+        System.out.println("\nCreated and expected\n" + newAddress +  "\n8e45367623a2865132d9bf875d5cfa31b9a0cd94");
+        System.out.println(repository.getBalance(newAddress));
         // ****************** //
         //  Play the program  //
         // ****************** //
@@ -364,334 +379,23 @@ public class VMComplexTest {
             while (!program.isStopped())
                 vm.step(program);
         } catch (RuntimeException e) {
+            System.out.println("error");
             program.setRuntimeFailure(e);
         }
 
         logger.info("============ Results ============");
-
         System.out.println("*** Used gas: " + program.getResult().getGasUsed());
-        // TODO: check that the value pushed after exec is the new address
+        System.out.println("*** Call create Size: " + program.getResult().getCallCreateList().size());
+        System.out.println(repository.getBalance(newAddress)); // value is transferred
+        System.out.println(repository.isContract(newAddress)); // returns true
+        System.out.println(repository.getCode(newAddress)); //there is no code to save
+        System.out.println(repository.getStorageKeysCount(newAddress)); //nothing stored.. strange
+        // how many accounts? should be 3, but there are 4, one from invokemock default contract address
+        System.out.println(repository.getAccountsKeys()); 
+
+
     }
 
-    @Test // CALL contract with too much gas
-    @Ignore
-    public void test5() {
-        // TODO CALL contract with gas > gasRemaining && gas > Long.MAX_VALUE
-    }
-
-    @Ignore
-    @Test // contractB call itself with code from contractA
-    public void test6() {
-        /**
-         *       #The code will run
-         *       ------------------
-
-         contract A: 945304eb96065b2a98b57a48a06ae28d285a71b5
-         ---------------
-
-         PUSH1 0 CALLDATALOAD SLOAD NOT PUSH1 9 JUMPI STOP
-         PUSH1 32 CALLDATALOAD PUSH1 0 CALLDATALOAD SSTORE
-
-         contract B: 0f572e5295c57f15886f9b263e2f6d2d6c7b5ec6
-         -----------
-             { (MSTORE 0 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff)
-               (MSTORE 32 0xaaffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffaa)
-               [[ 0 ]] (CALLSTATELESS 1000000 0x945304eb96065b2a98b57a48a06ae28d285a71b5 23 0 64 64 0)
-             }
-         */
-
-        // Set contract into Database
-        RskAddress caller_addr = new RskAddress("cd1722f3947def4cf144679da39c4c32bdc35681");
-
-        RskAddress contractA_addr = new RskAddress("945304eb96065b2a98b57a48a06ae28d285a71b5");
-        RskAddress contractB_addr = new RskAddress("0f572e5295c57f15886f9b263e2f6d2d6c7b5ec6");
-
-        byte[] codeA = Hex.decode("60003554156009570060203560003555");
-        byte[] codeB = Hex.decode("7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff6000527faaffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffaa6020526000604060406000601773945304eb96065b2a98b57a48a06ae28d285a71b5620f4240f3600055");
-
-        ProgramInvokeMockImpl pi = new ProgramInvokeMockImpl();
-        pi.setOwnerAddress(contractB_addr);
-        pi.setGasLimit(10000000000000l);
-
-        Repository repository = pi.getRepository();
-        repository.createAccount(contractA_addr);
-        repository.saveCode(contractA_addr, codeA);
-        repository.addBalance(contractA_addr, Coin.valueOf(23));
-
-        repository.createAccount(contractB_addr);
-        repository.saveCode(contractB_addr, codeB);
-        final BigInteger value = new BigInteger("1000000000000000000");
-        repository.addBalance(contractB_addr, new Coin(value));
-
-        repository.createAccount(caller_addr);
-        final BigInteger value1 = new BigInteger("100000000000000000000");
-        repository.addBalance(caller_addr, new Coin(value1));
-
-        // ****************** //
-        //  Play the program  //
-        // ****************** //
-        VM vm = getSubject();
-        Program program = getProgram(codeB, pi);
-
-        try {
-            while (!program.isStopped())
-                vm.step(program);
-        } catch (RuntimeException e) {
-            program.setRuntimeFailure(e);
-        }
-
-        System.out.println();
-        System.out.println("============ Results ============");
-        System.out.println("*** Used gas: " + program.getResult().getGasUsed());
-
-        DataWord memValue1 = program.memoryLoad(DataWord.valueOf(0));
-        DataWord memValue2 = program.memoryLoad(DataWord.valueOf(32));
-
-        DataWord storeValue1 = repository.getStorageValue(contractB_addr, DataWord.valueOf(00));
-
-        assertEquals("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", memValue1.toString());
-        assertEquals("aaffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffaa", memValue2.toString());
-
-        assertEquals("0x1", storeValue1.shortHex());
-
-        // TODO: check that the value pushed after exec is 1
-    }
-
-    //sha3_memSizeQuadraticCost33
-    @Ignore //TODO #POC9
-    @Test // contract call quadratic memory use
-    public void test7() {
-
-        int expectedGas = 357;
-
-        DataWord key1 = DataWord.valueOf(999);
-        DataWord value1 = DataWord.valueOf(3);
-
-        // Set contract into Database
-        String callerAddr = "cd1722f3947def4cf144679da39c4c32bdc35681";
-        String contractAddr = "0f572e5295c57f15886f9b263e2f6d2d6c7b5ec6";
-        String code = "600161040020600055";
-
-        RskAddress contractAddrB = new RskAddress(contractAddr);
-        RskAddress callerAddrB = new RskAddress(callerAddr);
-        byte[] codeB = Hex.decode(code);
-
-        byte[] codeKey = HashUtil.keccak256(codeB);
-        AccountState accountState = new AccountState();
-        //accountState.setCodeHash(codeKey);
-
-        ProgramInvokeMockImpl pi = new ProgramInvokeMockImpl();
-        pi.setOwnerAddress(contractAddrB);
-        Repository repository = pi.getRepository();
-
-        repository.createAccount(callerAddrB);
-        final BigInteger value = new BigInteger("115792089237316195423570985008687907853269984665640564039457584007913129639935");
-        repository.addBalance(callerAddrB, new Coin(value));
-
-        repository.createAccount(contractAddrB);
-        repository.saveCode(contractAddrB, codeB);
-        repository.addStorageRow(contractAddrB, key1, value1);
-
-        // Play the program
-        VM vm = getSubject();
-        Program program = getProgram(codeB, pi);
-
-        try {
-            while (!program.isStopped())
-                vm.step(program);
-        } catch (RuntimeException e) {
-            program.setRuntimeFailure(e);
-        }
-
-        System.out.println();
-        System.out.println("============ Results ============");
-
-        Coin balance = repository.getBalance(callerAddrB);
-
-        System.out.println("*** Used gas: " + program.getResult().getGasUsed());
-        System.out.println("*** Contract Balance: " + balance);
-
-        // todo: assert caller balance after contract exec
-
-        assertEquals(expectedGas, program.getResult().getGasUsed());
-    }
-
-    //sha3_memSizeQuadraticCost31
-    @Ignore //TODO #POC9
-    @Test // contract call quadratic memory use
-    public void test8() {
-
-        int expectedGas = 354;
-
-        DataWord key1 = DataWord.valueOf(999);
-        DataWord value1 = DataWord.valueOf(3);
-
-        // Set contract into Database
-        String callerAddr = "cd1722f3947def4cf144679da39c4c32bdc35681";
-        String contractAddr = "0f572e5295c57f15886f9b263e2f6d2d6c7b5ec6";
-        String code = "60016103c020600055";
-
-        RskAddress contractAddrB = new RskAddress(contractAddr);
-        RskAddress callerAddrB = new RskAddress(callerAddr);
-        byte[] codeB = Hex.decode(code);
-
-        byte[] codeKey = HashUtil.keccak256(codeB);
-        AccountState accountState = new AccountState();
-        //accountState.setCodeHash(codeKey);
-
-        ProgramInvokeMockImpl pi = new ProgramInvokeMockImpl();
-        pi.setOwnerAddress(contractAddrB);
-        Repository repository = pi.getRepository();
-
-        repository.createAccount(callerAddrB);
-        final BigInteger value = new BigInteger("115792089237316195423570985008687907853269984665640564039457584007913129639935");
-        repository.addBalance(callerAddrB, new Coin(value));
-
-        repository.createAccount(contractAddrB);
-        repository.saveCode(contractAddrB, codeB);
-        repository.addStorageRow(contractAddrB, key1, value1);
-
-        // Play the program
-        VM vm = getSubject();
-        Program program = getProgram(codeB, pi);
-
-        try {
-            while (!program.isStopped())
-                vm.step(program);
-        } catch (RuntimeException e) {
-            program.setRuntimeFailure(e);
-        }
-
-        System.out.println();
-        System.out.println("============ Results ============");
-
-        Coin balance = repository.getBalance(callerAddrB);
-
-        System.out.println("*** Used gas: " + program.getResult().getGasUsed());
-        System.out.println("*** Contract Balance: " + balance);
-
-        // todo: assert caller balance after contract exec
-
-        assertEquals(expectedGas, program.getResult().getGasUsed());
-    }
-
-    //sha3_memSizeQuadraticCost32
-    @Ignore //TODO #POC9
-    @Test // contract call quadratic memory use
-    public void test9() {
-
-        int expectedGas = 356;
-
-        DataWord key1 = DataWord.valueOf(9999);
-        DataWord value1 = DataWord.valueOf(3);
-
-        // Set contract into Database
-        String callerAddr = "cd1722f3947def4cf144679da39c4c32bdc35681";
-        String contractAddr = "0f572e5295c57f15886f9b263e2f6d2d6c7b5ec6";
-        String code = "60016103e020600055";
-
-        RskAddress contractAddrB = new RskAddress(contractAddr);
-        RskAddress callerAddrB = new RskAddress(callerAddr);
-        byte[] codeB = Hex.decode(code);
-
-        byte[] codeKey = HashUtil.keccak256(codeB);
-        AccountState accountState = new AccountState();
-        //accountState.setCodeHash(codeKey);
-
-        ProgramInvokeMockImpl pi = new ProgramInvokeMockImpl();
-        pi.setOwnerAddress(contractAddrB);
-        Repository repository = pi.getRepository();
-
-        repository.createAccount(callerAddrB);
-        final BigInteger value = new BigInteger("115792089237316195423570985008687907853269984665640564039457584007913129639935");
-        repository.addBalance(callerAddrB, new Coin(value));
-
-        repository.createAccount(contractAddrB);
-        repository.saveCode(contractAddrB, codeB);
-        repository.addStorageRow(contractAddrB, key1, value1);
-
-        // Play the program
-        VM vm = getSubject();
-        Program program = getProgram(codeB, pi);
-
-        try {
-            while (!program.isStopped())
-                vm.step(program);
-        } catch (RuntimeException e) {
-            program.setRuntimeFailure(e);
-        }
-
-        System.out.println();
-        System.out.println("============ Results ============");
-
-        Coin balance = repository.getBalance(callerAddrB);
-
-        System.out.println("*** Used gas: " + program.getResult().getGasUsed());
-        System.out.println("*** Contract Balance: " + balance);
-
-        // todo: assert caller balance after contract exec
-
-        assertEquals(expectedGas, program.getResult().getGasUsed());
-    }
-
-    //sha3_memSizeQuadraticCost32_zeroSize
-    @Ignore //TODO #POC9
-    @Test // contract call quadratic memory use
-    public void test10() {
-
-        int expectedGas = 313;
-
-        DataWord key1 = DataWord.valueOf(999);
-        DataWord value1 = DataWord.valueOf(3);
-
-        // Set contract into Database
-        String callerAddr = "cd1722f3947def4cf144679da39c4c32bdc35681";
-        String contractAddr = "0f572e5295c57f15886f9b263e2f6d2d6c7b5ec6";
-        String code = "600061040020600055";
-
-        RskAddress contractAddrB = new RskAddress(contractAddr);
-        RskAddress callerAddrB = new RskAddress(callerAddr);
-        byte[] codeB = Hex.decode(code);
-
-        byte[] codeKey = HashUtil.keccak256(codeB);
-        AccountState accountState = new AccountState();
-        //accountState.setCodeHash(codeKey);
-
-        ProgramInvokeMockImpl pi = new ProgramInvokeMockImpl();
-        pi.setOwnerAddress(contractAddrB);
-        Repository repository = pi.getRepository();
-
-        repository.createAccount(callerAddrB);
-        final BigInteger value = new BigInteger("115792089237316195423570985008687907853269984665640564039457584007913129639935");
-        repository.addBalance(callerAddrB, new Coin(value));
-
-        repository.createAccount(contractAddrB);
-        repository.saveCode(contractAddrB, codeB);
-        repository.addStorageRow(contractAddrB, key1, value1);
-
-        // Play the program
-        VM vm = getSubject();
-        Program program = getProgram(codeB, pi);
-
-        try {
-            while (!program.isStopped())
-                vm.step(program);
-        } catch (RuntimeException e) {
-            program.setRuntimeFailure(e);
-        }
-
-        System.out.println();
-        System.out.println("============ Results ============");
-
-        Coin balance = repository.getBalance(callerAddrB);
-
-        System.out.println("*** Used gas: " + program.getResult().getGasUsed());
-        System.out.println("*** Contract Balance: " + balance);
-
-        // todo: assert caller balance after contract exec
-
-        assertEquals(expectedGas, program.getResult().getGasUsed());
-    }
 
     private VM getSubject() {
         return new VM(vmConfig, precompiledContracts);
