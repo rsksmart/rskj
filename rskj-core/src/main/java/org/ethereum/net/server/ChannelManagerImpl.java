@@ -230,31 +230,6 @@ public class ChannelManagerImpl implements ChannelManager {
         return nodesIdsBroadcastedTo;
     }
 
-    /**
-     * broadcastTransaction Propagates a transaction message across active peers with exclusion of
-     * the peers with an id belonging to the skip set.
-     *
-     * @param transaction new Transaction to be sent
-     * @param skip  the set of peers to avoid sending the message.
-     * @return a set containing the ids of the peers that received the transaction.
-     */
-    @Nonnull
-    public Set<NodeID> broadcastTransaction(@Nonnull final Transaction transaction, final Set<NodeID> skip) {
-        List<Transaction> transactions = Collections.singletonList(transaction);
-
-        final Set<NodeID> nodesIdsBroadcastedTo = new HashSet<>();
-        final Message newTransactions = new TransactionsMessage(transactions);
-
-        activePeers.values().stream()
-            .filter(p -> !skip.contains(p.getNodeId()))
-            .forEach(peer -> {
-                peer.sendMessage(newTransactions);
-                nodesIdsBroadcastedTo.add(peer.getNodeId());
-            });
-
-        return nodesIdsBroadcastedTo;
-    }
-
     @Override
     public int broadcastStatus(Status status) {
         final Message message = new StatusMessage(status);
@@ -315,4 +290,43 @@ public class ChannelManagerImpl implements ChannelManager {
         }
     }
 
+    /**
+     * broadcastTransaction Propagates a transaction message across active peers with exclusion of
+     * the peers with an id belonging to the skip set.
+     *
+     * @param transaction new Transaction to be sent
+     * @param skip  the set of peers to avoid sending the message.
+     * @return a set containing the ids of the peers that received the transaction.
+     */
+    @Nonnull
+    public Set<NodeID> broadcastTransaction(@Nonnull final Transaction transaction, final Set<NodeID> skip) {
+        List<Transaction> transactions = Collections.singletonList(transaction);
+
+        final Set<NodeID> nodesIdsBroadcastedTo = new HashSet<>();
+        final Message newTransactions = new TransactionsMessage(transactions);
+
+        activePeers.values().stream()
+                .filter(p -> !skip.contains(p.getNodeId()))
+                .forEach(peer -> {
+                    peer.sendMessage(newTransactions);
+                    nodesIdsBroadcastedTo.add(peer.getNodeId());
+                });
+
+        return nodesIdsBroadcastedTo;
+    }
+
+    @Override
+    public Set<NodeID> broadcastTransactions(@Nonnull final List<Transaction> transactions, @Nonnull final Set<NodeID> skip) {
+        final Set<NodeID> nodesIdsBroadcastedTo = new HashSet<>();
+        final Message newTransactions = new TransactionsMessage(transactions);
+
+        activePeers.values().stream()
+                .filter(p -> !skip.contains(p.getNodeId()))
+                .forEach(peer -> {
+                    peer.sendMessage(newTransactions);
+                    nodesIdsBroadcastedTo.add(peer.getNodeId());
+                });
+
+        return nodesIdsBroadcastedTo;
+    }
 }
