@@ -20,6 +20,7 @@ package co.rsk.rpc.modules.eth;
 
 import co.rsk.core.RskAddress;
 import co.rsk.core.Wallet;
+import co.rsk.net.TransactionGateway;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
 import org.ethereum.core.*;
@@ -31,6 +32,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.math.BigInteger;
+import java.util.Arrays;
 
 import static org.ethereum.rpc.TypeConverter.stringHexToByteArray;
 import static org.ethereum.rpc.exception.RskJsonRpcRequestException.invalidParamError;
@@ -42,11 +44,13 @@ public class EthModuleTransactionBase implements EthModuleTransaction {
     private final Wallet wallet;
     private final TransactionPool transactionPool;
     private final Constants constants;
+    private final TransactionGateway transactionGateway;
 
-    public EthModuleTransactionBase(Constants constants, Wallet wallet, TransactionPool transactionPool) {
+    public EthModuleTransactionBase(Constants constants, Wallet wallet, TransactionPool transactionPool, TransactionGateway transactionGateway) {
         this.wallet = wallet;
         this.transactionPool = transactionPool;
         this.constants = constants;
+        this.transactionGateway = transactionGateway;
     }
 
     @Override
@@ -64,12 +68,13 @@ public class EthModuleTransactionBase implements EthModuleTransaction {
                 args.data = args.data.substring(2);
             }
 
-            synchronized (transactionPool) {
+            synchronized (transactionGateway) {
                 BigInteger accountNonce = args.nonce != null ? TypeConverter.stringNumberAsBigInt(args.nonce) : transactionPool.getPendingState().getNonce(account.getAddress());
                 Transaction tx = new Transaction(toAddress, value, accountNonce, gasPrice, gasLimit, args.data, constants.getChainId());
                 tx.sign(account.getEcKey().getPrivKeyBytes());
-                transactionPool.addTransaction(tx.toImmutableTransaction())
+                transactionGateway.receiveTransactionsFrom(tx.toImmutableTransaction())
                         .ifTransactionWasNotAdded(message -> { throw RskJsonRpcRequestException.transactionError(message); });
+
                 s = tx.getHash().toJsonString();
             }
 

@@ -26,6 +26,7 @@ import co.rsk.net.Status;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockIdentifier;
 import org.ethereum.core.Transaction;
+import org.ethereum.net.rlpx.Node;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -78,4 +79,6 @@ public interface ChannelManager extends InternalService {
     Collection<Peer> getActivePeers();
 
     boolean isAddressBlockAvailable(InetAddress address);
+
+    Set<NodeID> broadcastTransactions(@Nonnull List<Transaction> transactions, @Nonnull Set<NodeID> nodeID);
 }
