@@ -90,16 +90,15 @@ public class InstallCode extends PrecompiledContracts.PrecompiledContract {
     public byte[] execute(byte[] data) {
 
         byte[] account = new byte[32];
-
         byte[] v = new byte[32];
         byte[] r = new byte[32];
         byte[] s = new byte[32];
-
         DataWord out = null;
         int p = 0;
         byte[] retFail = new byte[1]; // 0 = error
         RskAddress accountAddress = null;
         byte[] code;
+        AccountState state;
 
         // fail fast if not enough arguments were passed
         if (data.length < argumentsSize) {
@@ -133,13 +132,16 @@ public class InstallCode extends PrecompiledContracts.PrecompiledContract {
 
             accountAddress = new RskAddress(Arrays.copyOfRange(account, 12, 32));
 
-            AccountState state = repository.getAccountState(accountAddress);
-            // if account doesn't exist, it may be the case the user only owns tokens.
-            // we must create it.
+            state = repository.getAccountState(accountAddress);
+            byte[] nonceFromAccount;
+
+            // Do not create the account yet.
             if (state == null) {
-                state = repository.createAccount(accountAddress);
-            }
-            byte[] nonceFromAccount = ByteUtil.copyToArray(state.getNonce());
+                nonceFromAccount = new byte[32];
+            } else
+                nonceFromAccount = ByteUtil.copyToArray(state.getNonce());
+
+
             byte[] h = getHashToSignFromCode(account, nonceFromAccount, code);
             ECDSASignature signature = ECDSASignature.fromComponents(r, s, v[31]);
 
@@ -156,12 +158,18 @@ public class InstallCode extends PrecompiledContracts.PrecompiledContract {
             return retFail;
         }
 
+        // if account doesn't exist, it may be the case the user only owns tokens.
+        // we must create it.
+        if (state == null) {
+            state = repository.createAccount(accountAddress);
+        }
+
         // Now let the user replace the code if existent.
         if (!repository.isContract(accountAddress))
             repository.setupContract(accountAddress);
 
         repository.saveCode(accountAddress, code);
-        //out = DataWord.ONE;        return out.getData();
+
         byte[] retOk = new byte[1];
         retOk[0] = 1;
         return retOk;
