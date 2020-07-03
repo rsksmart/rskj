@@ -25,6 +25,7 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.net.NodeID;
 import co.rsk.net.messages.MessageWithId;
 import org.ethereum.core.Block;
+import org.ethereum.core.Transaction;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.net.NodeManager;
 import org.ethereum.sync.SyncPool;
@@ -35,6 +36,8 @@ import org.junit.Test;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
+import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
@@ -108,4 +111,30 @@ public class ChannelManagerImplTest {
 
         assertTrue(nodeIds.isEmpty());
     }
+/*
+    @Test
+    public void relayingTwiceSkipsReceivingNodes() {
+        List<Transaction> txs = Collections.singletonList(tx);
+        Set<NodeID> receivingNodes = Collections.singleton(node);
+        when(channelManager.broadcastTransactions(txs, Collections.emptySet())).thenReturn(receivingNodes);
+        when(transactionPool.addTransactions(txs)).thenReturn(txs);
+//        listener.onPendingTransactionsReceived(txs);
+//        listener.onPendingTransactionsReceived(txs);
+
+        this.gateway.receiveTransactionsFrom(txs, null);
+        this.gateway.receiveTransactionsFrom(txs, receivingNodes);
+
+        verify(channelManager, times(2)).broadcastTransactions(txs, receivingNodes);
+    }
+
+    @Test
+    public void addsReceivedTransactionsToTransactionPool() {
+        List<Transaction> txs = Collections.singletonList(tx);
+
+        gateway.receiveTransactionsFrom(txs, Collections.singleton(node));
+
+        verify(transactionPool, times(1)).addTransactions(txs);
+    }
+
+    */
 }

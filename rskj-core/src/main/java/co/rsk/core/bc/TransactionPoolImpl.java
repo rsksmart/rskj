@@ -254,7 +254,7 @@ public class TransactionPoolImpl implements TransactionPool {
         if (txNonce.compareTo(currentNonce) > 0) {
             this.addQueuedTransaction(tx);
             signatureCache.storeSender(tx);
-            return TransactionPoolAddResult.ok();
+            return TransactionPoolAddResult.ok(tx);
         }
 
         if (!senderCanPayPendingTransactionsAndNewTx(tx, currentRepository)) {

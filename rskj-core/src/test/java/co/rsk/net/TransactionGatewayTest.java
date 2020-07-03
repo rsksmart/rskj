@@ -20,13 +20,9 @@ package co.rsk.net;
 import org.ethereum.TestUtils;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionPool;
-import org.ethereum.listener.CompositeEthereumListener;
-import org.ethereum.listener.EthereumListener;
 import org.ethereum.net.server.ChannelManager;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.ArgumentCaptor;
 
 import java.util.Collections;
 import java.util.List;
@@ -36,74 +32,58 @@ import static org.mockito.Mockito.*;
 
 public class TransactionGatewayTest {
     private ChannelManager channelManager;
-    private CompositeEthereumListener emitter;
     private TransactionPool transactionPool;
     private TransactionGateway gateway;
-
-    private EthereumListener listener;
     private Transaction tx;
-    private NodeID node;
 
     @Before
     public void setUp() {
         this.channelManager = mock(ChannelManager.class);
-        this.emitter = mock(CompositeEthereumListener.class);
         this.transactionPool = mock(TransactionPool.class);
-        this.gateway = new TransactionGateway(channelManager, transactionPool, emitter);
-        this.gateway.start();
-
-        ArgumentCaptor<EthereumListener> argument = ArgumentCaptor.forClass(EthereumListener.class);
-        verify(emitter, times(1)).addListener(argument.capture());
-        this.listener = argument.getValue();
-
         this.tx = mock(Transaction.class);
         when(this.tx.getHash()).thenReturn(TestUtils.randomHash());
-        this.node = mock(NodeID.class);
-    }
 
-    @After
-    public void tearDown() {
-        verify(emitter, times(0)).removeListener(listener);
-        gateway.stop();
-        verify(emitter, times(1)).removeListener(listener);
+        this.gateway = new TransactionGateway(channelManager, transactionPool);
     }
 
     @Test
-    public void relayTransactionsOnPending() {
-        List<Transaction> txs = Collections.singletonList(tx);
-        listener.onPendingTransactionsReceived(txs);
+    public void receivesTransactionsNonExistentAtTxPoolShouldAddAndShouldBroadcast() throws Exception {
+        List<Transaction> transactions = Collections.singletonList(tx);
+        List<Transaction> addTransactionsResult = transactions;
 
-        verify(channelManager, times(1)).broadcastTransaction(tx, Collections.emptySet());
+        receiveTransactionsFromAndVerifyCalls(
+                transactions,
+                null,
+                addTransactionsResult,
+                1,
+                1
+        );
     }
 
     @Test
-    public void relayingTwiceSkipsReceivingNodes() {
-        List<Transaction> txs = Collections.singletonList(tx);
-        Set<NodeID> receivingNodes = Collections.singleton(node);
-        when(channelManager.broadcastTransaction(tx, Collections.emptySet())).thenReturn(receivingNodes);
-        listener.onPendingTransactionsReceived(txs);
+    public void receivesTransactionsExistentAtTxPoolShouldntAddAndShouldntBroadcast() {
+        List<Transaction> transactions = Collections.singletonList(tx);
+        List<Transaction> addTransactionsResult = Collections.emptyList();
 
-        listener.onPendingTransactionsReceived(txs);
-
-        verify(channelManager, times(1)).broadcastTransaction(tx, receivingNodes);
+        receiveTransactionsFromAndVerifyCalls(
+                transactions,
+                null,
+                addTransactionsResult,
+                1,
+                0
+        );
     }
 
-    @Test
-    public void addsReceivedTransactionsToTransactionPool() {
-        List<Transaction> txs = Collections.singletonList(tx);
+    private void receiveTransactionsFromAndVerifyCalls(List<Transaction> txs,
+                                                       Set<NodeID> nodeIDS,
+                                                       List<Transaction> addTransactionsResult,
+                                                       int addTransactionsInvocationsCount,
+                                                       int broadcastTransactionsInvocationsCount) {
+        when(transactionPool.addTransactions(txs)).thenReturn(addTransactionsResult);
 
-        gateway.receiveTransactionsFrom(txs, node);
+        this.gateway.receiveTransactionsFrom(txs, nodeIDS);
 
-        verify(transactionPool, times(1)).addTransactions(txs);
-    }
-
-    @Test
-    public void relayingTransactionSkipsSenderNode() {
-        List<Transaction> txs = Collections.singletonList(tx);
-        gateway.receiveTransactionsFrom(txs, node);
-
-        listener.onPendingTransactionsReceived(txs);
-
-        verify(channelManager, times(1)).broadcastTransaction(tx, Collections.singleton(node));
+        verify(transactionPool, times(addTransactionsInvocationsCount)).addTransactions(txs);
+        verify(channelManager, times(broadcastTransactionsInvocationsCount)).broadcastTransactions(txs, null);
     }
 }

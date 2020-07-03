@@ -18,15 +18,21 @@
 
 package org.ethereum.core;
 
+import java.lang.reflect.Array;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.function.Consumer;
 
 public class TransactionPoolAddResult {
     private final boolean transactionWasAdded;
     private final String errorMessage;
+    private final List<Transaction> transactionsAdded;
 
-    private TransactionPoolAddResult(boolean transactionWasAdded, String errorMessage) {
+    private TransactionPoolAddResult(boolean transactionWasAdded, String errorMessage, List<Transaction> transactionsAdded) {
         this.transactionWasAdded = transactionWasAdded;
         this.errorMessage = errorMessage;
+        this.transactionsAdded = transactionsAdded;
     }
 
     public boolean transactionWasAdded() {
@@ -42,11 +48,15 @@ public class TransactionPoolAddResult {
         }
     }
 
-    public static TransactionPoolAddResult ok() {
-        return new TransactionPoolAddResult(true, null);
+    public static TransactionPoolAddResult ok(Transaction transaction) {
+        return new TransactionPoolAddResult(true, null, Collections.singletonList(transaction));
     }
 
     public static TransactionPoolAddResult withError(String errorMessage) {
-        return new TransactionPoolAddResult(false, errorMessage);
+        return new TransactionPoolAddResult(false, errorMessage, null);
+    }
+
+    public List<Transaction> getTransactionsAdded() {
+        return transactionsAdded;
     }
 }
