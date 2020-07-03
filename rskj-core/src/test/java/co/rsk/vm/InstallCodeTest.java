@@ -85,6 +85,20 @@ public class InstallCodeTest {
 
     }
 
+    public void assertNoChange() {
+        // Check also that the account wasn't created/
+        AccountState state = invoke.getRepository().getAccountState(targetAccountAddress);
+        Assert.assertNull(state);
+        // It's not a contract
+        Assert.assertFalse(invoke.getRepository().isContract(targetAccountAddress));
+        // Code is empty
+        byte[] retCode = invoke.getRepository().getCode(targetAccountAddress);
+        Assert.assertTrue(retCode.length==0);
+        // Code hash is all-zeros
+        Keccak256 existentHash = invoke.getRepository().getCodeHash(targetAccountAddress);
+        Assert.assertArrayEquals(Keccak256.ZERO_HASH.getBytes(),existentHash.getBytes());
+    }
+
     @Test
     public void testInstallCode_failureShortInputTest() {
         /**
@@ -107,6 +121,7 @@ public class InstallCodeTest {
                 DataWord.valueOf(1).toString(),
                 (byte)0,ecr);
         Assert.assertEquals(GasCost.CALL,ecr.gasConsumedInCALL);
+        assertNoChange();
     }
     @Test
     public void testInstallCode_invalidAddressTest() {
@@ -130,6 +145,7 @@ public class InstallCodeTest {
                 DataWord.valueOf(1).toString(),
                 (byte)0,ecr);
         Assert.assertEquals(GasCost.CALL,ecr.gasConsumedInCALL);
+        assertNoChange();
     }
     @Test
     public void testInstallCode_failureBadSignatureTest() {
@@ -153,6 +169,7 @@ public class InstallCodeTest {
                 DataWord.valueOf(1).toString(),
                 (byte)0,ecr);
         Assert.assertEquals(GasCost.CALL+InstallCode.BASE_COST,ecr.gasConsumedInCALL);
+        assertNoChange();
     }
 
     private String privString = "3ecb44df2159c26e0f995712d4f39b6f6e499b40749b1cf1246c37f9516cb6a4";
@@ -204,6 +221,8 @@ public class InstallCodeTest {
         Assert.assertArrayEquals(Keccak256.ZERO_HASH.getBytes(), invoke.getRepository().getCodeHash(targetAccountAddress).getBytes());
 
     }
+
+
     @Test
     public void testiInstallCode_successTest() {
         /**
@@ -377,7 +396,6 @@ public class InstallCodeTest {
         Assert.assertEquals(expectedInStack.toUpperCase(), result.toUpperCase());
         byte[] programMemory = program.getMemory();
         Assert.assertEquals(programMemory[outOffset],expectedInMem);
-        //Assert.assertEquals(gasExpected, program.getResult().getGasUsed());
         return program;
     }
 
