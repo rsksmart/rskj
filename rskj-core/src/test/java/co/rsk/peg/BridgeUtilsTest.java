@@ -23,6 +23,7 @@ import co.rsk.bitcoinj.crypto.TransactionSignature;
 import co.rsk.bitcoinj.params.RegTestParams;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
+import co.rsk.bitcoinj.script.ScriptChunk;
 import co.rsk.bitcoinj.wallet.CoinSelector;
 import co.rsk.bitcoinj.wallet.RedeemData;
 import co.rsk.bitcoinj.wallet.Wallet;
@@ -646,6 +647,148 @@ public class BridgeUtilsTest {
         BridgeUtils.validateInputsCount(tx.bitcoinSerialize(), false);
     }
 
+    @Test
+    public void isInputSignedByThisFederator_isSigned() {
+        NetworkParameters params = RegTestParams.get();
+
+        // Arrange
+        BtcECKey federator1Key = new BtcECKey();
+        BtcECKey federator2Key = new BtcECKey();
+        Federation federation = new Federation(
+                FederationMember.getFederationMembersFromKeys(Arrays.asList(federator1Key, federator2Key)),
+                Instant.now(),
+                0,
+                params
+        );
+
+        // Create a tx from the Fed to a random btc address
+        BtcTransaction tx = new BtcTransaction(params);
+        TransactionInput txInput = new TransactionInput(
+                params,
+                tx,
+                new byte[]{},
+                new TransactionOutPoint(params, 0, Sha256Hash.ZERO_HASH)
+        );
+
+        // Create script to be signed by federation members
+        Script inputScript = createBaseInputScriptThatSpendsFromTheFederation(federation);
+        txInput.setScriptSig(inputScript);
+
+        tx.addInput(txInput);
+
+        List<ScriptChunk> chunks = inputScript.getChunks();
+        byte[] program = chunks.get(chunks.size() - 1).data;
+        Script redeemScript = new Script(program);
+
+        Sha256Hash sighash = tx.hashForSignature(0, redeemScript, BtcTransaction.SigHash.ALL, false);
+        BtcECKey.ECDSASignature sig = federator1Key.sign(sighash);
+
+        TransactionSignature txSig = new TransactionSignature(sig, BtcTransaction.SigHash.ALL, false);
+        byte[] txSigEncoded = txSig.encodeToBitcoin();
+
+        int sigIndex = inputScript.getSigInsertionIndex(sighash, federator1Key);
+        inputScript = ScriptBuilder.updateScriptWithSignature(inputScript, txSigEncoded, sigIndex, 1, 1);
+        txInput.setScriptSig(inputScript);
+
+        // Act
+        boolean isSigned = BridgeUtils.isInputSignedByThisFederator(federator1Key, sighash, txInput);
+
+        // Assert
+        Assert.assertTrue(isSigned);
+    }
+
+    @Test
+    public void isInputSignedByThisFederator_isSignedByAnotherFederator() {
+        NetworkParameters params = RegTestParams.get();
+
+        // Arrange
+        BtcECKey federator1Key = new BtcECKey();
+        BtcECKey federator2Key = new BtcECKey();
+        Federation federation = new Federation(
+                FederationMember.getFederationMembersFromKeys(Arrays.asList(federator1Key, federator2Key)),
+                Instant.now(),
+                0,
+                params
+        );
+
+        // Create a tx from the Fed to a random btc address
+        BtcTransaction tx = new BtcTransaction(params);
+        TransactionInput txInput = new TransactionInput(
+                params,
+                tx,
+                new byte[]{},
+                new TransactionOutPoint(params, 0, Sha256Hash.ZERO_HASH)
+        );
+
+        // Create script to be signed by federation members
+        Script inputScript = createBaseInputScriptThatSpendsFromTheFederation(federation);
+        txInput.setScriptSig(inputScript);
+
+        tx.addInput(txInput);
+
+        List<ScriptChunk> chunks = inputScript.getChunks();
+        byte[] program = chunks.get(chunks.size() - 1).data;
+        Script redeemScript = new Script(program);
+
+        Sha256Hash sighash = tx.hashForSignature(0, redeemScript, BtcTransaction.SigHash.ALL, false);
+        BtcECKey.ECDSASignature sig = federator1Key.sign(sighash);
+
+        TransactionSignature txSig = new TransactionSignature(sig, BtcTransaction.SigHash.ALL, false);
+        byte[] txSigEncoded = txSig.encodeToBitcoin();
+
+        int sigIndex = inputScript.getSigInsertionIndex(sighash, federator1Key);
+        inputScript = ScriptBuilder.updateScriptWithSignature(inputScript, txSigEncoded, sigIndex, 1, 1);
+        txInput.setScriptSig(inputScript);
+
+        // Act
+        boolean isSigned = BridgeUtils.isInputSignedByThisFederator(federator2Key, sighash, txInput);
+
+        // Assert
+        Assert.assertFalse(isSigned);
+    }
+
+    @Test
+    public void isInputSignedByThisFederator_notSigned() {
+        NetworkParameters params = RegTestParams.get();
+
+        // Arrange
+        BtcECKey federator1Key = new BtcECKey();
+        BtcECKey federator2Key = new BtcECKey();
+        Federation federation = new Federation(
+                FederationMember.getFederationMembersFromKeys(Arrays.asList(federator1Key, federator2Key)),
+                Instant.now(),
+                0,
+                params
+        );
+
+        // Create a tx from the Fed to a random btc address
+        BtcTransaction tx = new BtcTransaction(params);
+        TransactionInput txInput = new TransactionInput(
+                params,
+                tx,
+                new byte[]{},
+                new TransactionOutPoint(params, 0, Sha256Hash.ZERO_HASH)
+        );
+
+        // Create script to be signed by federation members
+        Script inputScript = createBaseInputScriptThatSpendsFromTheFederation(federation);
+        txInput.setScriptSig(inputScript);
+
+        tx.addInput(txInput);
+
+        List<ScriptChunk> chunks = inputScript.getChunks();
+        byte[] program = chunks.get(chunks.size() - 1).data;
+        Script redeemScript = new Script(program);
+
+        Sha256Hash sighash = tx.hashForSignature(0, redeemScript, BtcTransaction.SigHash.ALL, false);
+
+        // Act
+        boolean isSigned = BridgeUtils.isInputSignedByThisFederator(federator1Key, sighash, txInput);
+
+        // Assert
+        Assert.assertFalse(isSigned);
+    }
+
     private void assertIsWatching(Address address, Wallet wallet, NetworkParameters parameters) {
         List<Script> watchedScripts = wallet.getWatchedScripts();
         Assert.assertEquals(1, watchedScripts.size());
@@ -679,5 +822,14 @@ public class BridgeUtilsTest {
 
     private Genesis getGenesisInstance(TrieStore trieStore) {
         return new TestGenesisLoader(trieStore, "frontier.json", constants.getInitialNonce(), false, true, true).load();
+    }
+
+    private Script createBaseInputScriptThatSpendsFromTheFederation(Federation federation) {
+        Script scriptPubKey = federation.getP2SHScript();
+        Script redeemScript = federation.getRedeemScript();
+        RedeemData redeemData = RedeemData.of(federation.getBtcPublicKeys(), redeemScript);
+        Script inputScript = scriptPubKey.createEmptyInputScript(redeemData.keys.get(0), redeemData.redeemScript);
+
+        return inputScript;
     }
 }
