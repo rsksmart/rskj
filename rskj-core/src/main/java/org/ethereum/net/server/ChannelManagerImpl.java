@@ -30,8 +30,6 @@ import org.ethereum.config.NodeFilter;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockIdentifier;
 import org.ethereum.core.Transaction;
-import org.ethereum.crypto.HashUtil;
-import org.ethereum.net.NodeManager;
 import org.ethereum.net.message.ReasonCode;
 import org.ethereum.sync.SyncPool;
 import org.slf4j.Logger;
@@ -39,11 +37,12 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
 import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * @author Roman Mandeleil
@@ -318,31 +317,35 @@ public class ChannelManagerImpl implements ChannelManager {
     public Set<NodeID> broadcastTransaction(@Nonnull final Transaction transaction, final Set<NodeID> skip) {
         List<Transaction> transactions = Collections.singletonList(transaction);
 
-        final Set<NodeID> nodesIdsBroadcastedTo = new HashSet<>();
-        final Message newTransactions = new TransactionsMessage(transactions);
-
-        activePeers.values().stream()
-                .filter(p -> !skip.contains(p.getNodeId()))
-                .forEach(peer -> {
-                    peer.sendMessage(newTransactions);
-                    nodesIdsBroadcastedTo.add(peer.getNodeId());
-                });
-
-        return nodesIdsBroadcastedTo;
+        return internalBroadcastTransactions(skip, transactions);
     }
 
+    /**
+     * broadcastTransaction Propagates a transaction message across active peers with exclusion of
+     * the peers with an id belonging to the skip set.
+     *
+     * @param transactions List of Transactions to be sent
+     * @param skip        the set of peers to avoid sending the message.
+     * @return a set containing the ids of the peers that received the transaction.
+     */
     @Override
     public Set<NodeID> broadcastTransactions(@Nonnull final List<Transaction> transactions, @Nonnull final Set<NodeID> skip) {
+        return internalBroadcastTransactions(skip, transactions);
+    }
+
+    private Set<NodeID> internalBroadcastTransactions(Set<NodeID> skip, List<Transaction> transactions) {
         final Set<NodeID> nodesIdsBroadcastedTo = new HashSet<>();
         final Message newTransactions = new TransactionsMessage(transactions);
+        final List<Channel> peersToBroadcast = activePeers.values().stream().
+                filter(p -> !skip.contains(p.getNodeId())).distinct().collect(Collectors.toList());
 
-        activePeers.values().stream()
-                .filter(p -> !skip.contains(p.getNodeId()))
-                .forEach(peer -> {
-                    peer.sendMessage(newTransactions);
-                    nodesIdsBroadcastedTo.add(peer.getNodeId());
-                });
+        peersToBroadcast.forEach(peer -> {
+            peer.sendMessage(newTransactions);
+            nodesIdsBroadcastedTo.add(peer.getNodeId());
+        });
 
         return nodesIdsBroadcastedTo;
     }
+
+
 }

@@ -119,8 +119,7 @@ public class ChannelManagerImplTest {
         final Transaction transaction = mock(Transaction.class);
         when(transaction.getHash()).thenReturn(TestUtils.randomHash());
         final List<Transaction> transactions = Collections.singletonList(transaction);
-        final Message newTransactions = new TransactionsMessage(transactions);
-        final Map<NodeID,Channel> activePeers = peersForTests(2, newTransactions);
+        final Map<NodeID,Channel> activePeers = peersForTests(2);
         final ChannelManager channelManager = new ChannelManagerImpl(mock(RskSystemProperties.class), mock(SyncPool.class), activePeers);
         final Set<NodeID> broadcastedTo = channelManager.broadcastTransactions(transactions, Collections.emptySet());
 
@@ -132,8 +131,7 @@ public class ChannelManagerImplTest {
         final Transaction transaction = mock(Transaction.class);
         when(transaction.getHash()).thenReturn(TestUtils.randomHash());
         final List<Transaction> transactions = Collections.singletonList(transaction);
-        final Message newTransactions = new TransactionsMessage(transactions);
-        final Map<NodeID,Channel> activePeers = peersForTests(2, newTransactions);
+        final Map<NodeID,Channel> activePeers = peersForTests(2);
         final Channel sender = mock(Channel.class);
         when(sender.getNodeId()).thenReturn(new NodeID(HashUtil.randomPeerId()));
         activePeers.put(sender.getNodeId(), sender);
@@ -143,16 +141,24 @@ public class ChannelManagerImplTest {
         broadcastedNodeIDS.forEach(broadcastedNodeID -> Assert.assertTrue(activePeers.keySet().contains(broadcastedNodeID) && !broadcastedNodeID.equals(sender.getNodeId())));
     }
 
-//    @Test
-//    public void broadcastTransaction() {
-//        ChannelManager channelManager = new ChannelManagerImpl(mock(RskSystemProperties.class), mock(SyncPool.class));
-//        List<Transaction> txs = Collections.singletonList(tx);
-//        Set<NodeID> receivingNodes = Collections.singleton(node);
-//
-//        verify(channelManager, times(2)).broadcastTransactions(txs, receivingNodes);
-//    }
+    @Test
+    public void broadcastTransactionsToAllActivePeersWithDuplicatedChannelsShouldReturnAllActivePeersAndBroadcastOnlyOnceToDuplicatedChannel() {
+        final Transaction transaction = mock(Transaction.class);
+        when(transaction.getHash()).thenReturn(TestUtils.randomHash());
+        final List<Transaction> transactions = Collections.singletonList(transaction);
+        final Map<NodeID,Channel> activePeers = peersForTests(2);
+        final Channel duplicatedPeer = (Channel) activePeers.values().toArray()[0];
+        when(duplicatedPeer.getNodeId()).thenReturn(new NodeID(HashUtil.randomPeerId()));
+        activePeers.put(duplicatedPeer.getNodeId(), duplicatedPeer);
+        final ChannelManager channelManager = new ChannelManagerImpl(mock(RskSystemProperties.class), mock(SyncPool.class), activePeers);
+        final Set<NodeID> broadcastedNodeIDS = channelManager.broadcastTransactions(transactions, Collections.emptySet());
 
-    public Map<NodeID,Channel> peersForTests(int count, Message newTransactions) {
+        broadcastedNodeIDS.forEach(broadcastedNodeID -> Assert.assertTrue(activePeers.keySet().contains(broadcastedNodeID)));
+        Assert.assertEquals(2, broadcastedNodeIDS.size());
+        //we don't care which is the valid NodeID, we just want to prevent duplicated broadcasts
+    }
+
+    public Map<NodeID,Channel> peersForTests(int count) {
         Map<NodeID,Channel> peers = new ConcurrentHashMap<>();
         TestSystemProperties config = mock(TestSystemProperties.class);
         when(config.maxConnectionsAllowed()).thenReturn(1);
