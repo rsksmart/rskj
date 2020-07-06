@@ -23,7 +23,10 @@ import co.rsk.config.RskSystemProperties;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.crypto.Keccak256;
 import co.rsk.net.NodeID;
+import co.rsk.net.messages.Message;
 import co.rsk.net.messages.MessageWithId;
+import co.rsk.net.messages.TransactionsMessage;
+import org.ethereum.TestUtils;
 import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.HashUtil;
@@ -36,9 +39,8 @@ import org.junit.Test;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -111,30 +113,57 @@ public class ChannelManagerImplTest {
 
         assertTrue(nodeIds.isEmpty());
     }
-/*
+
     @Test
-    public void relayingTwiceSkipsReceivingNodes() {
-        List<Transaction> txs = Collections.singletonList(tx);
-        Set<NodeID> receivingNodes = Collections.singleton(node);
-        when(channelManager.broadcastTransactions(txs, Collections.emptySet())).thenReturn(receivingNodes);
-        when(transactionPool.addTransactions(txs)).thenReturn(txs);
-//        listener.onPendingTransactionsReceived(txs);
-//        listener.onPendingTransactionsReceived(txs);
+    public void broadcastTransactionsToAllActivePeersShouldReturnBroadcastedPeers() {
+        final Transaction transaction = mock(Transaction.class);
+        when(transaction.getHash()).thenReturn(TestUtils.randomHash());
+        final List<Transaction> transactions = Collections.singletonList(transaction);
+        final Message newTransactions = new TransactionsMessage(transactions);
+        final Map<NodeID,Channel> activePeers = peersForTests(2, newTransactions);
+        final ChannelManager channelManager = new ChannelManagerImpl(mock(RskSystemProperties.class), mock(SyncPool.class), activePeers);
+        final Set<NodeID> broadcastedTo = channelManager.broadcastTransactions(transactions, Collections.emptySet());
 
-        this.gateway.receiveTransactionsFrom(txs, null);
-        this.gateway.receiveTransactionsFrom(txs, receivingNodes);
-
-        verify(channelManager, times(2)).broadcastTransactions(txs, receivingNodes);
+        broadcastedTo.forEach(nodeId -> Assert.assertTrue(activePeers.keySet().contains(nodeId)));
     }
 
     @Test
-    public void addsReceivedTransactionsToTransactionPool() {
-        List<Transaction> txs = Collections.singletonList(tx);
+    public void broadcastTransactionsToAllActivePeersButSkipSenderShouldReturnAllActivePeersButNotTheSender() {
+        final Transaction transaction = mock(Transaction.class);
+        when(transaction.getHash()).thenReturn(TestUtils.randomHash());
+        final List<Transaction> transactions = Collections.singletonList(transaction);
+        final Message newTransactions = new TransactionsMessage(transactions);
+        final Map<NodeID,Channel> activePeers = peersForTests(2, newTransactions);
+        final Channel sender = mock(Channel.class);
+        when(sender.getNodeId()).thenReturn(new NodeID(HashUtil.randomPeerId()));
+        activePeers.put(sender.getNodeId(), sender);
+        final ChannelManager channelManager = new ChannelManagerImpl(mock(RskSystemProperties.class), mock(SyncPool.class), activePeers);
+        final Set<NodeID> broadcastedNodeIDS = channelManager.broadcastTransactions(transactions, Collections.singleton(sender.getNodeId()));
 
-        gateway.receiveTransactionsFrom(txs, Collections.singleton(node));
-
-        verify(transactionPool, times(1)).addTransactions(txs);
+        broadcastedNodeIDS.forEach(broadcastedNodeID -> Assert.assertTrue(activePeers.keySet().contains(broadcastedNodeID) && !broadcastedNodeID.equals(sender.getNodeId())));
     }
 
-    */
+//    @Test
+//    public void broadcastTransaction() {
+//        ChannelManager channelManager = new ChannelManagerImpl(mock(RskSystemProperties.class), mock(SyncPool.class));
+//        List<Transaction> txs = Collections.singletonList(tx);
+//        Set<NodeID> receivingNodes = Collections.singleton(node);
+//
+//        verify(channelManager, times(2)).broadcastTransactions(txs, receivingNodes);
+//    }
+
+    public Map<NodeID,Channel> peersForTests(int count, Message newTransactions) {
+        Map<NodeID,Channel> peers = new ConcurrentHashMap<>();
+        TestSystemProperties config = mock(TestSystemProperties.class);
+        when(config.maxConnectionsAllowed()).thenReturn(1);
+        when(config.networkCIDR()).thenReturn(32);
+
+        for(int i  = 0; i < count; i++) {
+            Channel peer = mock(Channel.class);
+            when(peer.getNodeId()).thenReturn(new NodeID(HashUtil.randomPeerId()));
+            peers.put(peer.getNodeId(),peer);
+        }
+
+        return peers;
+    }
 }

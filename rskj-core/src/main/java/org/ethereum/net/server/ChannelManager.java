@@ -26,7 +26,6 @@ import co.rsk.net.Status;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockIdentifier;
 import org.ethereum.core.Transaction;
-import org.ethereum.net.rlpx.Node;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
