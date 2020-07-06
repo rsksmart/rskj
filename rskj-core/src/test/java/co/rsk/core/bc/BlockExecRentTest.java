@@ -134,6 +134,9 @@ public class BlockExecRentTest {
 
         Transaction tx = block.getTransactionsList().get(0);
         RskAddress account = tx.getSender();
+        
+        System.out.println("\nSender Bal " + repository.getBalance(account));
+        
         BlockResult result = executor.execute(block, parent.getHeader(), false);
 
         Assert.assertNotNull(result);
@@ -145,14 +148,13 @@ public class BlockExecRentTest {
         Assert.assertEquals(tx, receipt.getTransaction());
         
         //AccountState accountState = repository.getAccountState(account);
-        
-        
+            
         Repository finalRepository = new MutableRepository(trieStore,
                 trieStore.retrieve(result.getFinalState().getHash().getBytes()).get());
 
         AccountState accountState = finalRepository.getAccountState(account);
-        //System.out.println(accountState.getBalance());
-        //System.out.println(finalRepository.getAccountNodeLRPTime(account));
+        System.out.println("Sender Bal " + accountState.getBalance());
+        System.out.println("Sender LRPT " + finalRepository.getAccountNodeLRPTime(account));
 
     }
         
@@ -163,10 +165,42 @@ public class BlockExecRentTest {
         Block parent = blockchain.getBestBlock();
 
         Transaction tx = block.getTransactionsList().get(0);
-        
+        RskAddress account = tx.getSender();
+        RskAddress contractAddr = tx.getContractAddress();
+        System.out.println("Sender: " + account);
+        System.out.println("Contract: " + contractAddr);
+
+
         when(activationConfig.isActive(RSKIP125)).thenReturn(false);
         BlockResult result = executor.execute(block, parent.getHeader(), false);
 
+        Assert.assertNotNull(result);
+        Assert.assertNotNull(result.getTransactionReceipts()); 
+        Assert.assertFalse(result.getTransactionReceipts().isEmpty());
+        Assert.assertEquals(1, result.getTransactionReceipts().size());
+
+        TransactionReceipt receipt = result.getTransactionReceipts().get(0);
+        Assert.assertEquals(tx, receipt.getTransaction());
+
+
+        Repository finalRepository = new MutableRepository(trieStore,
+                trieStore.retrieve(result.getFinalState().getHash().getBytes()).get());
+
+        AccountState accountState = finalRepository.getAccountState(account);
+        System.out.println("Sender Bal " + accountState.getBalance());
+        System.out.println("Sender LRPT " + finalRepository.getAccountNodeLRPTime(account));
+
+        // Same for contract (check endowment)
+        AccountState contractState = finalRepository.getAccountState(contractAddr);
+        System.out.println("Contract Endowment " + contractState.getBalance());
+        System.out.println("Contract LRPT " + finalRepository.getAccountNodeLRPTime(contractAddr));
+
+        System.out.println("\n\nBlock tx fees: " + result.getPaidFees());
+
+
+        // After execution, just here to experiment with diff programs
+        /* //based on CREATE test in CREATE2 test of rsk.vm (Seba's)
+        System.out.println("\nDirect program run\n"); 
         String code = "PUSH1 0x01 PUSH1 0x02 PUSH1 0x00 CREATE";
 
         Program program = executeTxCode(code, tx);
@@ -180,140 +214,8 @@ public class BlockExecRentTest {
         Assert.assertEquals(0, nonce);
         Assert.assertEquals("77045E71A7A2C50903D88E564CD72FAB11E82051", address.toUpperCase());
         Assert.assertEquals(1, stack.size());
-
-        
-        //To do add the block executor
+        */
     }
-
-    /*
-    @Ignore
-    @Test
-    public void executeBlockWithTwoTransactions() {
-        Block block = getBlockWithTwoTransactions(); // this changes the best block
-        Block parent = blockchain.getBestBlock();
-
-        Transaction tx1 = block.getTransactionsList().get(0);
-        Transaction tx2 = block.getTransactionsList().get(1);
-        RskAddress account = tx1.getSender();
-
-        BlockResult result = executor.execute(block, parent.getHeader(), false);
-
-        Assert.assertNotNull(result);
-
-        Assert.assertNotNull(result.getTransactionReceipts());
-        Assert.assertFalse(result.getTransactionReceipts().isEmpty());
-        Assert.assertEquals(2, result.getTransactionReceipts().size());
-
-        TransactionReceipt receipt = result.getTransactionReceipts().get(0);
-        Assert.assertEquals(tx1, receipt.getTransaction());
-        Assert.assertEquals(21000, new BigInteger(1, receipt.getGasUsed()).longValue());
-        Assert.assertEquals(21000, BigIntegers.fromUnsignedByteArray(receipt.getCumulativeGas()).longValue());
-        Assert.assertTrue(receipt.hasTxStatus() && receipt.isTxStatusOK() && receipt.isSuccessful());
-
-        receipt = result.getTransactionReceipts().get(1);
-        Assert.assertEquals(tx2, receipt.getTransaction());
-        Assert.assertEquals(21000, new BigInteger(1, receipt.getGasUsed()).longValue());
-        Assert.assertEquals(42000, BigIntegers.fromUnsignedByteArray(receipt.getCumulativeGas()).longValue());
-        Assert.assertTrue(receipt.hasTxStatus() && receipt.isTxStatusOK() && receipt.isSuccessful());
-
-        Assert.assertEquals(42000, result.getGasUsed());
-        Assert.assertEquals(42000, result.getPaidFees().asBigInteger().intValueExact());
-
-        //here is the problem: in the prior code repository root would never be overwritten by childs
-        //while the new code does overwrite the root.
-        //Which semantic is correct ? I don't know
-
-        Assert.assertFalse(Arrays.equals(parent.getStateRoot(), result.getFinalState().getHash().getBytes()));
-
-        byte[] calculatedLogsBloom = BlockExecutor.calculateLogsBloom(result.getTransactionReceipts());
-        Assert.assertEquals(256, calculatedLogsBloom.length);
-        Assert.assertArrayEquals(new byte[256], calculatedLogsBloom);
-
-        AccountState accountState = repository.getAccountState(account);
-
-        Assert.assertNotNull(accountState);
-        Assert.assertEquals(BigInteger.valueOf(60000), accountState.getBalance().asBigInteger());
-
-        // here is the papa. my commit changes stateroot while previous commit did not.
-
-        Repository finalRepository = new MutableRepository(trieStore,
-                trieStore.retrieve(result.getFinalState().getHash().getBytes()).get());
-
-        accountState = finalRepository.getAccountState(account);
-
-        Assert.assertNotNull(accountState);
-        Assert.assertEquals(BigInteger.valueOf(60000 - 42000 - 20), accountState.getBalance().asBigInteger());
-    }
-
-    @Ignore
-    @Test
-    public void executeAndFillBlockWithOneTransaction() {
-        TestObjects objects = generateBlockWithOneTransaction();
-        Block parent = objects.getParent();
-        Block block = objects.getBlock();
-        BlockExecutor executor = buildBlockExecutor(objects.getTrieStore());
-
-        BlockResult result = executor.execute(block, parent.getHeader(), false);
-        executor.executeAndFill(block, parent.getHeader());
-
-        byte[] calculatedReceiptsRoot = BlockHashesHelper.calculateReceiptsTrieRoot(result.getTransactionReceipts(), true);
-        Assert.assertArrayEquals(calculatedReceiptsRoot, block.getReceiptsRoot());
-        Assert.assertArrayEquals(result.getFinalState().getHash().getBytes(), block.getStateRoot());
-        Assert.assertEquals(result.getGasUsed(), block.getGasUsed());
-        Assert.assertEquals(result.getPaidFees(), block.getFeesPaidToMiner());
-        Assert.assertArrayEquals(BlockExecutor.calculateLogsBloom(result.getTransactionReceipts()), block.getLogBloom());
-
-        Assert.assertEquals(3000000, new BigInteger(1, block.getGasLimit()).longValue());
-    }
-    */
-
-    /*
-    // #mish careful. This is NOT getBlockwithOneTX (that's further down)
-    private static TestObjects generateBlockWithOneTransaction() {
-        TrieStore trieStore = new TrieStoreImpl(new HashMapDB());
-        Repository repository = new MutableRepository(trieStore, new Trie(trieStore));
-
-        Repository track = repository.startTracking();
-
-        Account account = createAccount("acctest1", track, Coin.valueOf(30000));
-        Account account2 = createAccount("acctest2", track, Coin.valueOf(10L));
-
-        track.commit();
-
-        Assert.assertFalse(Arrays.equals(EMPTY_TRIE_HASH, repository.getRoot()));
-
-        BlockExecutor executor = buildBlockExecutor(trieStore);
-
-        Transaction tx = createTransaction(
-                account,
-                account2,
-                BigInteger.TEN,
-                repository.getNonce(account.getAddress())
-        );
-        List<Transaction> txs = new ArrayList<>();
-        txs.add(tx);
-
-        List<BlockHeader> uncles = new ArrayList<>();
-
-        // getGenesisBlock() modifies the repository, adding some pre-mined accounts
-        // Not nice for a getter, but it is what it is :(
-        Block genesis = BlockChainImplTest.getGenesisBlock(trieStore);
-        genesis.setStateRoot(repository.getRoot());
-
-        // Returns the root state prior block execution but after loading
-        // some sample accounts (account/account2) and the premined accounts
-        // in genesis.
-        byte[] rootPriorExecution = repository.getRoot();
-
-        Block block = new BlockGenerator().createChildBlock(genesis, txs, uncles, 1, null);
-
-        executor.executeAndFill(block, genesis.getHeader());
-        repository.save();
-
-        return new TestObjects(trieStore, block, genesis, tx, account, rootPriorExecution);
-    }
-    */
-
     
     private Block getBlockWithOneTransaction() {
         // first we modify the best block to have two accounts with balance
@@ -335,6 +237,7 @@ public class BlockExecRentTest {
         );
 
         List<BlockHeader> uncles = new ArrayList<>();
+                    //many signatures, this one is createChildBlock(parentBlock,TxList, UncleList, difficulty, mingasprice)
         return new BlockGenerator().createChildBlock(bestBlock, txs, uncles, 1, null);
     }
     
@@ -343,13 +246,14 @@ public class BlockExecRentTest {
         // first we modify the best block to have two accounts with balance
         Repository track = repository.startTracking();
 
-        Account account = createAccount("acctest1", track, Coin.valueOf(300010)); //#mish create needs 53K, plus 1/2 for rent
-        //Account account2 = createAccount("acctest2", track, Coin.valueOf(10L));
+        Account account = createAccount("acctest1", track, Coin.valueOf(2000010)); //#mish create needs 53K, plus 1/2 for rent
 
-        String stringCode = "PUSH1 0x01 PUSH1 0x02 PUSH1 0x00 CREATE";
+        // This example wastes gas. The tx data has a create opcode. Will consume 21K + 32K (empty receive => create) + 32k for CREATE opcode
+        String stringCode = "PUSH1 0x01 PUSH1 0x02 PUSH1 0x00 CREATE"; // CREATE needs 3 args value start size
         byte[] code = compiler.compile(stringCode);
         String codeHex = Hex.toHexString(code);
-        System.out.println("Hex code " + codeHex);
+
+        System.out.println("\nProgram code in TX Data: 0x" + codeHex);
         track.commit();
 
         Block bestBlock = blockchain.getBestBlock();
@@ -357,7 +261,7 @@ public class BlockExecRentTest {
 
         // then we create the new block to connect
         List<Transaction> txs = Collections.singletonList(
-                createTxNullRec(account, BigInteger.TEN, repository.getNonce(account.getAddress()), codeHex)
+                createTxNullAddr(account, BigInteger.TEN, repository.getNonce(account.getAddress()), codeHex)
         );
 
         List<BlockHeader> uncles = new ArrayList<>();
@@ -403,23 +307,21 @@ public class BlockExecRentTest {
         tx.sign(privateKeyBytes);
         return tx;
     }
-    
-    
-    // #mish with data in arglist
-    private static Transaction createTransaction(Account sender, Account receiver, BigInteger value, BigInteger nonce, String data) {
+
+    private static Transaction createTxWithData(Account sender, Account receiver, BigInteger value, BigInteger nonce, String data) {
         String toAddress = Hex.toHexString(receiver.getAddress().getBytes());
         byte[] privateKeyBytes = sender.getEcKey().getPrivKeyBytes();
-        
+    
         Transaction tx = new Transaction(toAddress, value, nonce, BigInteger.ONE, BigInteger.valueOf(44000), data, config.getNetworkConstants().getChainId());
         tx.sign(privateKeyBytes);
         return tx;
     }
 
-    // #mish with data in arglist
-    private static Transaction createTxNullRec(Account sender, BigInteger value, BigInteger nonce, String data) {
+    // #mish with no receiver (NULL for contract creation TX) data in arglist and
+    private static Transaction createTxNullAddr(Account sender, BigInteger value, BigInteger nonce, String data) {
         byte[] privateKeyBytes = sender.getEcKey().getPrivKeyBytes();
         
-        Transaction tx = new Transaction(null, value, nonce, BigInteger.ONE, BigInteger.valueOf(300000), data, config.getNetworkConstants().getChainId());
+        Transaction tx = new Transaction(null, value, nonce, BigInteger.ONE, BigInteger.valueOf(200000), data, config.getNetworkConstants().getChainId());
         tx.sign(privateKeyBytes);
         return tx;
     }

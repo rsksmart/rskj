@@ -188,7 +188,8 @@ public class ProgramResult {
     }
 
     public void addAccessedNode(ByteArrayWrapper nodeKey, RentData rentData) {
-        // #mish: for accessed, keep the first read value, updates are stored in modified
+        // #mish: for accessed, keep the FIRST read value, since outstanding rent computations 
+        // are based on that. 
         getAccessedNodes().putIfAbsent(nodeKey, rentData);
     }
 
@@ -213,7 +214,6 @@ public class ProgramResult {
             accessedNodes.clear();
         }
         resetFutureRefund();
-        //resetFutureRentGasRefund(); // #mish currently no policy of refund for prepaid rentGas
     }
 
 
@@ -288,29 +288,15 @@ public class ProgramResult {
         futureRefund = 0;
     }
 
-    /* #mish: no separate refund for rent gas
-    public void addFutureRentGasRefund(long rentGasValue) {
-        futureRentGasRefund += rentGasValue;
-    }
-
-    public long getFutureRentGasRefund() {
-        return futureRentGasRefund;
-    }
-
-    public void resetFutureRentGasRefund() {
-        futureRentGasRefund = 0;
-    }
-    */
-
     public void merge(ProgramResult another) {
         addInternalTransactions(another.getInternalTransactions());
+        //merge the following only if TX not reverted and no expections
         if (another.getException() == null && !another.isRevert()) {
             addDeleteAccounts(another.getDeleteAccounts());
             addCreatedNodes(another.getCreatedNodes());
             addAccessedNodes(another.getAccessedNodes());
             addLogInfos(another.getLogInfoList());
             addFutureRefund(another.getFutureRefund());
-            //addFutureRentGasRefund(another.getFutureRentGasRefund());// #mish no current policy to refund prepaid rent gas
         }
     }
     

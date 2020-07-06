@@ -326,17 +326,18 @@ public class Transaction {
     // #mish: For future, explicit reference for execution gas limit
     public byte[] getExecGasLimit() {
         long gasBudget = GasCost.toGas(gasLimit);
-        long rentGasBudget= gasBudget/GasCost.TX_GASBUDGET_DIVISOR;
-        long execGasBudget = gasBudget - rentGasBudget;
+        long execGasBudget= gasBudget/GasCost.TX_GASBUDGET_DIVISOR;
         return BigInteger.valueOf(execGasBudget).toByteArray();
     }
+
     // #mish rentGas limit
     public byte[] getRentGasLimit() {
         long gasBudget = GasCost.toGas(gasLimit);
-        long rentGasBudget= gasBudget/GasCost.TX_GASBUDGET_DIVISOR;
+        long execGasBudget= gasBudget/GasCost.TX_GASBUDGET_DIVISOR;
+        long rentGasBudget = gasBudget - execGasBudget;
         return BigInteger.valueOf(rentGasBudget).toByteArray();
     }
-
+    
     public byte[] getData() {
         return data;
     }

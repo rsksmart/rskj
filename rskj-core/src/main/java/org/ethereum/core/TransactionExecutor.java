@@ -182,6 +182,7 @@ public class TransactionExecutor {
     private boolean init() {
         //e.g. 21K TX or 53K contract creation (32K for create + 21k) + 'data' cost (68 per non=0 byte) 
         basicTxCost = tx.transactionCost(constants, activations);
+        //System.out.println("\nBasic cost is " + basicTxCost);
         
         if (localCall) {
             return true;
@@ -308,7 +309,9 @@ public class TransactionExecutor {
 
         if (!localCall) {
             // set reference timestamp for rent computations: Todo: should this be at the block level?
+            //refTimeStamp = this.executionBlock.getTimestamp();  // Don't use this, it returns 1 in tests
             refTimeStamp = Instant.now().getEpochSecond();
+            
             // rent computation for coinbase account 
             // #mish testfail -> co.rsk.core.TransactionTest.constantCallConflictTest fails as coinbase account increases repository size!
             //track.createAccount(this.coinbase);
@@ -316,6 +319,7 @@ public class TransactionExecutor {
             
             // #mish add sender to Map of accessed nodes (for storage rent tracking)
             // but don't add receiver address yet as it may be a pre-compiled contract
+            // Note: "result" here is still a new instance of program result
             accessedNodeAdder(tx.getSender(),track, result);    
             
             track.increaseNonce(tx.getSender());
@@ -425,7 +429,10 @@ public class TransactionExecutor {
             profiler.stop(metric);
         } else {    // #mish if not pre-compiled contract
             // add the node to accessed nodes Map for rent tracking
+            // "result" is still the init `new` instance with tx.sender in accessednodes if rent was due. 
             accessedNodeAdder(tx.getReceiveAddress(), track, result);
+            //System.out.println("\nAcNodeSize call " + result.getAccessedNodes().size());
+            
             byte[] code = track.getCode(targetAddress);
             // Code can be null 
             // #mish Aside: even for empty code, storage rent will be > 0, because of overhead (RSKIP 113) (if account is contract)
@@ -510,11 +517,12 @@ public class TransactionExecutor {
             if (playVm) {
                 vm.play(program);
             }
-            // #mish: this is the first assignment of result. Next assignemnt (overwrit) happens within createContract() 
-            result = program.getResult();
-            //result.merge(program.getResult());
-            
 
+            // local variable `this.result` contains information about accessed nodes but gas/rentGas accounting is stored in program.getResult()
+            // to preserve information from both, first merge result into programresult (which contains gas computations).
+            program.getResult().merge(this.result); // writing result as this.result for clarity
+            result = program.getResult(); //and then copy the information over
+                                 
             mEndGas = GasCost.subtract(GasCost.toGas(tx.getGasLimit()), program.getResult().getGasUsed());
 
             if (tx.isContractCreation() && !result.isRevert()) {
@@ -542,7 +550,10 @@ public class TransactionExecutor {
         cacheTrack.commit();
         // add newly created contract nodes to createdNode Map for rent computation. After the cached repository is committed.
         if (tx.isContractCreation() && !result.isRevert()) {
-                createdNodeAdder(tx.getContractAddress(), track, result);    
+                createdNodeAdder(tx.getContractAddress(), track, result);
+                // again this.reseult has diverged from program.getResult. Merge them
+                program.getResult().merge(this.result); // writing result as this.result for clarity
+                result = program.getResult(); //and then copy the information over   
             }
         profiler.stop(metric);
     }
@@ -559,20 +570,16 @@ public class TransactionExecutor {
                             "No gas to return just created contract",
                             returnDataGasValue,
                             program));
-            //result = program.getResult();
-            //#mish merge with existing (result may have rent information)
-            // todo: merging hashsets or maps has no prblems. Need to be careful about future refund though
-            result.merge(program.getResult());
+            //#mish programresult may have rent information, even though we'll revert TX
+            result = program.getResult();
             result.setHReturn(EMPTY_BYTE_ARRAY);
         } else if (createdContractSize > Constants.getMaxContractSize()) {
             program.setRuntimeFailure(
                     Program.ExceptionHelper.tooLargeContractSize(
                             Constants.getMaxContractSize(),
                             createdContractSize));
-            
-            //result = program.getResult();
-            //#mish merge with existing (result may have rent information)
-            result.merge(program.getResult());
+            //#mish programresult may have rent information, even though we'll revert TX
+            result = program.getResult();
             result.setHReturn(EMPTY_BYTE_ARRAY);
         } else {
             mEndGas = GasCost.subtract(mEndGas,  returnDataGasValue);
@@ -612,13 +619,7 @@ public class TransactionExecutor {
         result.spendRentGas(estRentGas);
         
         
-        
         long txRentGasLimit = GasCost.toGas(tx.getRentGasLimit());
-
-        System.out.println("\nin finalization rentgaslim" + txRentGasLimit +
-                            "\nrentgasused " + result.getRentGasUsed() + 
-                            "\nestimated rent gas" + estRentGas + 
-                            "\ngas used " + result.getGasUsed()); 
 
         mEndRentGas = activations.isActive(ConsensusRule.RSKIP136) ?
                     GasCost.subtract(txRentGasLimit, result.getRentGasUsed()) :
@@ -686,7 +687,10 @@ public class TransactionExecutor {
                             "\n\nRent GasLimit " + GasCost.toGas(tx.getRentGasLimit()) +
                             "\nRent gas used " + result.getRentGasUsed()+ 
                             "\nRent gas refund " + mEndRentGas +
-                            "\n\nTx fees " + paidFees);
+                            "\n\nTx fees (exec + rent): " + paidFees +
+                            "\n\nNo. trie nodes with `updated` rent timestamp: " +  result.getAccessedNodes().size() +
+                            "\nNo. new trie nodes created: " +  result.getCreatedNodes().size() + "\n\n"
+                            );
 
         logger.trace("Processing result");
         logs = notRejectedLogInfos;
@@ -808,15 +812,18 @@ public class TransactionExecutor {
             Uint24 vLen = repository.getAccountNodeValueLength(addr);
             long accLrpt = repository.getAccountNodeLRPTime(addr);
             RentData accNode = new RentData(vLen, accLrpt);
-            // compute the rent due. Treat these nodes as 'modified' (since account state will be updated)
-            accNode.setRentDue(this.getRefTimeStamp(), true); // account node value length may not change much
+            
+            // compute the rent due
+            accNode.setRentDue(this.getRefTimeStamp(), true); //treat as modified (any real TX will change something, nonce, balance)
             rd = accNode.getRentDue();
-            //System.out.println("accessed node rent added: "+ rd);
-            estRentGas += rd;   //"collect" rent due
-            System.out.println("in accNodeAddr" + estRentGas);
-            accNode.setLRPTime(this.getRefTimeStamp()); //update rent paid timestamp
-            // add to hashmap (internally this is a putIfAbsent) 
-            progRes.addAccessedNode(accKey, accNode);
+            if (rd > 0){
+                //System.out.println("accessed node rent added: "+ rd);
+                estRentGas += rd;   //"collect" rent due
+                //System.out.println("in accNodeAddr" + estRentGas);
+                accNode.setLRPTime(this.getRefTimeStamp()); //update rent paid timestamp
+                // add to hashmap (internally this is a putIfAbsent) 
+                progRes.addAccessedNode(accKey, accNode);
+            }
         }
         // if this is a contract then add info for storage root and code
         if (repository.isContract(addr)) {
@@ -829,10 +836,12 @@ public class TransactionExecutor {
                 // compute rent and update estRent as needed
                 codeNode.setRentDue(this.getRefTimeStamp(), false); // code is unlikely to be modified
                 rd = codeNode.getRentDue();
-                estRentGas += rd;
-                System.out.println("in created NodeAddr code Node" + estRentGas);
-                codeNode.setLRPTime(this.getRefTimeStamp());
-                progRes.addAccessedNode(cKey, codeNode);
+                if (rd >0) {
+                    estRentGas += rd;
+                    //System.out.println("in created NodeAddr code Node" + estRentGas);
+                    codeNode.setLRPTime(this.getRefTimeStamp());
+                    progRes.addAccessedNode(cKey, codeNode);
+                }
             }       
             // storage root node
             ByteArrayWrapper srKey = repository.getStorageRootKey(addr);
@@ -843,10 +852,12 @@ public class TransactionExecutor {
                 // compute rent and update estRent as needed
                 srNode.setRentDue(this.getRefTimeStamp(), false);  // storage root value is never modified
                 rd = srNode.getRentDue();
-                estRentGas += rd;
-                System.out.println("in accessed NodeAddr srNode" + estRentGas);
-                srNode.setLRPTime(this.getRefTimeStamp());
-                progRes.addAccessedNode(srKey, srNode);
+                if (rd > 0) {
+                    estRentGas += rd;
+                    //System.out.println("in accessed NodeAddr srNode" + estRentGas);
+                    srNode.setLRPTime(this.getRefTimeStamp());
+                    progRes.addAccessedNode(srKey, srNode);
+                }
             }
         }
     }
@@ -864,8 +875,8 @@ public class TransactionExecutor {
             // compute the rent due
             accNode.setSixMonthsRent();
             rd = accNode.getRentDue();
-            estRentGas += rd;
-            System.out.println("in created NodeAddr" + estRentGas);
+            estRentGas += rd; // will be > 0 by construction
+            //System.out.println("in created NodeAddr" + estRentGas);
             // add to hashmap (internally this is a putIfAbsent)
             progRes.addCreatedNode(accKey, accNode);
         }
@@ -880,7 +891,7 @@ public class TransactionExecutor {
                 codeNode.setSixMonthsRent();
                 rd = codeNode.getRentDue();
                 estRentGas += rd;
-                System.out.println("in created NodeAddr codeNode" + estRentGas);
+                //System.out.println("in created NodeAddr codeNode" + estRentGas);
                 progRes.addCreatedNode(cKey, codeNode);
             }       
             // storage root node
@@ -892,7 +903,7 @@ public class TransactionExecutor {
                 srNode.setSixMonthsRent();
                 rd = srNode.getRentDue();                
                 estRentGas += rd;
-                System.out.println("in created NodeAddr srNode" + estRentGas);
+                //System.out.println("in created NodeAddr srNode" + estRentGas);
                 progRes.addCreatedNode(srKey, srNode);
             }
         }

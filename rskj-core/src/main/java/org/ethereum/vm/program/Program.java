@@ -1710,11 +1710,13 @@ public class Program {
             // compute the rent due. Treat these nodes as 'modified' (since account state will be updated)
             accNode.setRentDue(getTimestamp().longValue(), true); // account node value length may not change much
             rd = accNode.getRentDue();
-            spendRentGas(rd, " rent gas  for pre-existing");   //"collect" rent due
-            System.out.println("in program accNodeAddr" + rd);
-            accNode.setLRPTime(getTimestamp().longValue()); //update rent paid timestamp
-            // add to hashmap (internally this is a putIfAbsent) 
-            progRes.addAccessedNode(accKey, accNode);
+            if (rd >0) {
+                spendRentGas(rd, " rent gas  for pre-existing");   //"collect" rent due
+                //System.out.println("in program accNodeAddr" + rd);
+                accNode.setLRPTime(getTimestamp().longValue()); //update rent paid timestamp
+                // add to hashmap (internally this is a putIfAbsent) 
+                progRes.addAccessedNode(accKey, accNode);
+            }
         }
         // if this is a contract then add info for storage root and code
         if (repository.isContract(addr)) {
@@ -1727,9 +1729,11 @@ public class Program {
                 // compute rent and update estRent as needed
                 codeNode.setRentDue(getTimestamp().longValue(), false); // code is unlikely to be modified
                 rd = codeNode.getRentDue();
-                spendRentGas(rd, " rent gas for  pre-existing");
-                codeNode.setLRPTime(getTimestamp().longValue());
-                progRes.addAccessedNode(cKey, codeNode);
+                if (rd>0) {
+                    spendRentGas(rd, " rent gas for  pre-existing");
+                    codeNode.setLRPTime(getTimestamp().longValue());
+                    progRes.addAccessedNode(cKey, codeNode);
+                }
             }       
             // storage root node
             ByteArrayWrapper srKey = repository.getStorageRootKey(addr);
@@ -1740,9 +1744,11 @@ public class Program {
                 // compute rent and update estRent as needed
                 srNode.setRentDue(getTimestamp().longValue(), false);  // storage root value is never modified
                 rd = srNode.getRentDue();
-                spendRentGas(rd, " rent gas for pre-existing");
-                srNode.setLRPTime(getTimestamp().longValue());
-                progRes.addAccessedNode(srKey, srNode);
+                if (rd>0){
+                    spendRentGas(rd, " rent gas for pre-existing");
+                    srNode.setLRPTime(getTimestamp().longValue());
+                    progRes.addAccessedNode(srKey, srNode);
+                }
             }
         }
     }
@@ -1761,7 +1767,7 @@ public class Program {
             accNode.setSixMonthsRent();
             rd = accNode.getRentDue();
             spendRentGas(rd, " rent gas for create");
-            System.out.println("in program created NodeAddr" + rd);
+            //System.out.println("in program created NodeAddr" + rd);
             // add to hashmap (internally this is a putIfAbsent)
             progRes.addCreatedNode(accKey, accNode);
         }

@@ -101,11 +101,11 @@ public class GasCost {
 
     public static final long MAX_GAS = Long.MAX_VALUE;
 
-    /** #mish Factor to divide TxGasLimit into execution gas and storage rent gas limits 
+    /** #mish Factor to divide TxGasLimit (single field) into execution gas and storage rent gas limits 
       * (see getGasLimit() method in org.eth.core.Transaction class)
-      * currently set at 2 (50:50). Increasing this to 10 would leave 10% for rentGas and 90% for exec gas
-      * The result of this division is assign to a TX's rent gas budget.
+      * currently set at 2 (50:50). The result of this division is assign to a TX's execution gas budget.
       * Residual amount (integer division) is set as execution gasLimit i.e. the conventional gasLimit in EVM
+      * Thus, setting this value to 1 will allocate entire gasLimit to execution gas and nothing to rent gas.
     */ 
     public static final long TX_GASBUDGET_DIVISOR = 2;
     public static final long STORAGE_RENT_DIVISOR = (1<<21); // RSKIP113: storage rent is 1/(2^21) gas units per byte per second
