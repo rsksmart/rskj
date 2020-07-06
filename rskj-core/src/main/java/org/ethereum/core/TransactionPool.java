@@ -29,6 +29,8 @@ public interface TransactionPool extends InternalService {
      * Adds transaction to the list of pending or queued state txs  <br>
      * Triggers an update of pending state
      *
+     * Doesn't broadcast transaction to active peers
+     *
      * @param tx transaction
      */
     TransactionPoolAddResult addTransaction(Transaction tx);
@@ -38,6 +40,8 @@ public interface TransactionPool extends InternalService {
      * queued transactions
      *
      * Triggers an update of pending state
+     *
+     * Doesn't broadcast transaction to active peers
      *
      * @param txs transaction list
      *

@@ -48,7 +48,7 @@ public class TransactionGateway {
         }
     }
 
-    public TransactionPoolAddResult receiveTransactionsFrom(Transaction transaction) {
+    public TransactionPoolAddResult receiveTransactionFrom(Transaction transaction) {
         TransactionPoolAddResult result  = transactionPool.addTransaction(transaction);
         if(!result.getTransactionsAdded().isEmpty()) {
             channelManager.broadcastTransactions(result.getTransactionsAdded(), Collections.singleton(null)); //TODO(fedejinich) should broadcast to all peers?

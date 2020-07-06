@@ -325,7 +325,7 @@ public class TransactionModuleTest {
                                 null
                         )
                 ),
-                transactionPool,
+                transactionGateway,
                 compositeEthereumListener,
                 blockchain
         );

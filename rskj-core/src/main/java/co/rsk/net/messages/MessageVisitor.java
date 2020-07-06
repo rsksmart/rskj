@@ -209,7 +209,7 @@ public class MessageVisitor {
             }
         }
 
-        transactionGateway.receiveTransactionsFrom(txs, Collections.singleton(sender.getPeerNodeID()));
+        transactionGateway.receiveTransactionsFrom(txs, Collections.singleton(sender.getPeerNodeID())); //todo(fedejinich) shouldn't be txGateway.addTransactions()?
 
         loggerMessageProcess.debug("Tx message process finished after [{}] nano.", System.nanoTime() - start);
     }

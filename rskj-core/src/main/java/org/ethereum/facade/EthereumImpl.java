@@ -20,6 +20,7 @@
 package org.ethereum.facade;
 
 import co.rsk.core.Coin;
+import co.rsk.net.TransactionGateway;
 import org.ethereum.core.*;
 import org.ethereum.listener.CompositeEthereumListener;
 import org.ethereum.listener.EthereumListener;
@@ -31,7 +32,7 @@ import javax.annotation.Nonnull;
 public class EthereumImpl implements Ethereum {
 
     private final ChannelManager channelManager;
-    private final TransactionPool transactionPool;
+    private final TransactionGateway transactionGateway;
     private final CompositeEthereumListener compositeEthereumListener;
     private final Blockchain blockchain;
 
@@ -39,11 +40,11 @@ public class EthereumImpl implements Ethereum {
 
     public EthereumImpl(
             ChannelManager channelManager,
-            TransactionPool transactionPool,
+            TransactionGateway transactionGateway,
             CompositeEthereumListener compositeEthereumListener,
             Blockchain blockchain) {
         this.channelManager = channelManager;
-        this.transactionPool = transactionPool;
+        this.transactionGateway = transactionGateway;
 
         this.compositeEthereumListener = compositeEthereumListener;
         this.blockchain = blockchain;
@@ -73,7 +74,7 @@ public class EthereumImpl implements Ethereum {
 
     @Override
     public void submitTransaction(Transaction transaction) {
-        transactionPool.addTransaction(transaction);
+        transactionGateway.receiveTransactionFrom(transaction); //todo(fedejinich) shouldn't be txGateway.addTransaction() ?
     }
 
     @Override
