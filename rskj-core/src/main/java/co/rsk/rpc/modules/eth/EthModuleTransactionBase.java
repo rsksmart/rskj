@@ -32,7 +32,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.math.BigInteger;
-import java.util.Arrays;
 
 import static org.ethereum.rpc.TypeConverter.stringHexToByteArray;
 import static org.ethereum.rpc.exception.RskJsonRpcRequestException.invalidParamError;
@@ -72,7 +71,7 @@ public class EthModuleTransactionBase implements EthModuleTransaction {
                 BigInteger accountNonce = args.nonce != null ? TypeConverter.stringNumberAsBigInt(args.nonce) : transactionPool.getPendingState().getNonce(account.getAddress());
                 Transaction tx = new Transaction(toAddress, value, accountNonce, gasPrice, gasLimit, args.data, constants.getChainId());
                 tx.sign(account.getEcKey().getPrivKeyBytes());
-                transactionGateway.receiveTransactionsFrom(tx.toImmutableTransaction())
+                transactionGateway.receiveTransaction(tx.toImmutableTransaction())
                         .ifTransactionWasNotAdded(message -> { throw RskJsonRpcRequestException.transactionError(message); });
 
                 s = tx.getHash().toJsonString();
@@ -97,7 +96,7 @@ public class EthModuleTransactionBase implements EthModuleTransaction {
                 throw invalidParamError("Missing parameter, gasPrice, gas or value");
             }
 
-            transactionPool.addTransaction(tx)
+            transactionGateway.receiveTransaction(tx)
                     .ifTransactionWasNotAdded(message -> { throw RskJsonRpcRequestException.transactionError(message); });
 
             return s = tx.getHash().toJsonString();

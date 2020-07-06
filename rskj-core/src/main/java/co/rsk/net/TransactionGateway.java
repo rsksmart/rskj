@@ -48,10 +48,10 @@ public class TransactionGateway {
         }
     }
 
-    public TransactionPoolAddResult receiveTransactionsFrom(Transaction transaction) {
+    public TransactionPoolAddResult receiveTransaction(Transaction transaction) {
         TransactionPoolAddResult result  = transactionPool.addTransaction(transaction);
-        if(!result.getTransactionsAdded().isEmpty()) {
-            channelManager.broadcastTransactions(result.getTransactionsAdded(), Collections.singleton(null)); //todo should broadcast to all peers?
+        if(result.transactionsWereAdded()) {
+            channelManager.broadcastTransactions(result.getTransactionsAdded(), Collections.emptySet());
         }
         return result;
     }

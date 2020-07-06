@@ -87,7 +87,6 @@ public class SimpleChannelManager implements ChannelManager {
 
     @Override
     public void add(Channel peer) {
-
     }
 
     public Peer getMessageChannel(SimpleNode sender, SimpleNode receiver) {
@@ -119,6 +118,10 @@ public class SimpleChannelManager implements ChannelManager {
     public Set<NodeID> broadcastTransactions(List<Transaction> transactions, Set<NodeID> nodeID) {
         transactions.forEach(tx -> broadcastTransaction(tx, nodeID));
         return new HashSet<>();
+    }
+
+    @Override
+    public void setActivePeers(Map<NodeID, Channel> newActivePeers) {
     }
 
     public List<Transaction> getTransactions() {

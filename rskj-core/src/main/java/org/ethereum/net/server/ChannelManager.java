@@ -23,16 +23,17 @@ import co.rsk.config.InternalService;
 import co.rsk.net.Peer;
 import co.rsk.net.NodeID;
 import co.rsk.net.Status;
+import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockIdentifier;
 import org.ethereum.core.Transaction;
-import org.ethereum.net.rlpx.Node;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.net.InetAddress;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -68,7 +69,7 @@ public interface ChannelManager extends InternalService {
      * @return a set containing the ids of the peers that received the transaction.
      */
     @Nonnull
-    Set<NodeID> broadcastTransaction(@Nonnull final Transaction transaction, @Nullable final Set<NodeID> skip);
+    Set<NodeID> broadcastTransaction(@Nonnull final Transaction transaction, @Nonnull final Set<NodeID> skip);
 
     int broadcastStatus(@Nonnull final Status status);
 
@@ -81,4 +82,8 @@ public interface ChannelManager extends InternalService {
     boolean isAddressBlockAvailable(InetAddress address);
 
     Set<NodeID> broadcastTransactions(@Nonnull List<Transaction> transactions, @Nonnull Set<NodeID> nodeID);
+
+    @VisibleForTesting
+    void setActivePeers(Map<NodeID, Channel> newActivePeers);
+
 }

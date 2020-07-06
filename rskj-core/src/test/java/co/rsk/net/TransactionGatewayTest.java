@@ -20,6 +20,7 @@ package co.rsk.net;
 import org.ethereum.TestUtils;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionPool;
+import org.ethereum.core.TransactionPoolAddResult;
 import org.ethereum.net.server.ChannelManager;
 import org.junit.Before;
 import org.junit.Test;
@@ -47,13 +48,13 @@ public class TransactionGatewayTest {
     }
 
     @Test
-    public void receivesTransactionsNonExistentAtTxPoolShouldAddAndShouldBroadcast() throws Exception {
+    public void receiveTranasctionsFrom_newTransactions_shouldAddAndBroadcast() {
         List<Transaction> transactions = Collections.singletonList(tx);
         List<Transaction> transactionPoolAddResult = transactions;
 
         receiveTransactionsFromAndVerifyCalls(
                 transactions,
-                null,
+                Collections.emptySet(),
                 transactionPoolAddResult,
                 1,
                 1
@@ -61,17 +62,40 @@ public class TransactionGatewayTest {
     }
 
     @Test
-    public void receivesTransactionsExistentAtTxPoolShouldntAddAndShouldntBroadcast() {
+    public void receiveTransactionsFrom_transactionsAlreadyAdded_shouldntAddAndShouldntBroadcast() {
         List<Transaction> transactions = Collections.singletonList(tx);
         List<Transaction> transactionPoolAddResult = Collections.emptyList();
 
         receiveTransactionsFromAndVerifyCalls(
                 transactions,
-                null,
+                Collections.emptySet(),
                 transactionPoolAddResult,
                 1,
                 0
         );
+    }
+
+    @Test
+    public void receiveTransaction_newTransaction_shouldAddAndBroadcast() {
+        TransactionPoolAddResult transactionPoolAddResult = TransactionPoolAddResult.ok(tx);
+        receiveTransactionAndVerifyCalls(transactionPoolAddResult, 1);
+    }
+
+    @Test
+    public void receiveTransaction_alreadyAddedTransaction_shouldntAddAndShouldntBroadcast() {
+        TransactionPoolAddResult transactionPoolAddResult = TransactionPoolAddResult.withError("Not added");
+        receiveTransactionAndVerifyCalls(transactionPoolAddResult, 0);
+    }
+
+    private void receiveTransactionAndVerifyCalls(TransactionPoolAddResult transactionPoolAddResult,
+                                                  int broadcastTransactionsCount) {
+        when(transactionPool.addTransaction(tx)).thenReturn(transactionPoolAddResult);
+
+        this.gateway.receiveTransaction(tx);
+
+        verify(transactionPool, times(1)).addTransaction(tx);
+        verify(channelManager, times(broadcastTransactionsCount)).
+                broadcastTransactions(transactionPoolAddResult.getTransactionsAdded(), Collections.emptySet());
     }
 
     private void receiveTransactionsFromAndVerifyCalls(List<Transaction> txs,
@@ -84,6 +108,6 @@ public class TransactionGatewayTest {
         this.gateway.receiveTransactionsFrom(txs, nodeIDS);
 
         verify(transactionPool, times(addTransactionsInvocationsCount)).addTransactions(txs);
-        verify(channelManager, times(broadcastTransactionsInvocationsCount)).broadcastTransactions(txs, null);
+        verify(channelManager, times(broadcastTransactionsInvocationsCount)).broadcastTransactions(txs, nodeIDS);
     }
 }

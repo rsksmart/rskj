@@ -466,7 +466,7 @@ public class RskContext implements NodeBootstrapper {
         if (rsk == null) {
             rsk = new EthereumImpl(
                     getChannelManager(),
-                    getTransactionPool(),
+                    getTransactionGateway(),
                     getCompositeEthereumListener(),
                     getBlockchain()
             );
