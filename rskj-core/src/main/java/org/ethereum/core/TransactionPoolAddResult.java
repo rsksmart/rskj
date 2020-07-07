@@ -30,7 +30,7 @@ public class TransactionPoolAddResult {
     private TransactionPoolAddResult(boolean transactionWasAdded, String errorMessage, List<Transaction> transactionsAdded) {
         this.transactionWasAdded = transactionWasAdded;
         this.errorMessage = errorMessage;
-        this.transactionsAdded = transactionsAdded;
+        this.transactionsAdded = Collections.unmodifiableList(transactionsAdded);
     }
 
     public boolean transactionWasAdded() {
