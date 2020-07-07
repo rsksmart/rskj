@@ -775,7 +775,7 @@ public class TransactionPoolImplTest {
             }
             Transaction sampleTransaction = createSampleTransaction(i+2, 2, 1, 1);
             transactionPool.addTransaction(sampleTransaction);
-            Assert.assertTrue(TransactionPoolAddResult.ok().transactionWasAdded());
+            Assert.assertTrue(TransactionPoolAddResult.ok(sampleTransaction).transactionWasAdded());
 
         }
 

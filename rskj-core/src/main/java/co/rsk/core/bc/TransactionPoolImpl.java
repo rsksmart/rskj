@@ -264,7 +264,8 @@ public class TransactionPoolImpl implements TransactionPool {
 
         pendingTransactions.addTransaction(tx);
         signatureCache.storeSender(tx);
-        return TransactionPoolAddResult.ok();
+
+        return TransactionPoolAddResult.ok(tx);
     }
 
     @Override
