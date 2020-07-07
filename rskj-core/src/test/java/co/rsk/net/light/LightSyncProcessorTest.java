@@ -22,12 +22,12 @@ import co.rsk.core.BlockDifficulty;
 import co.rsk.core.bc.BlockChainStatus;
 import co.rsk.crypto.Keccak256;
 import co.rsk.net.eth.LightClientHandler;
-import co.rsk.net.light.message.BlockHeadersMessage;
 import co.rsk.net.light.message.GetBlockHeadersByHashMessage;
+import co.rsk.net.light.message.LightClientMessage;
 import co.rsk.net.light.message.StatusMessage;
+import co.rsk.net.light.state.StartRoundSyncState;
 import co.rsk.validators.ProofOfWorkRule;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.embedded.EmbeddedChannel;
 import org.ethereum.config.SystemProperties;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
@@ -55,96 +55,76 @@ public class LightSyncProcessorTest {
 
     private LightSyncProcessor lightSyncProcessor;
     private LightPeer lightPeer;
-    private LightStatus lightStatus;
+    private LightStatus lightPeerStatus;
     private StatusMessage statusMessage;
     private long requestId;
-    private Keccak256 blockHash;
     private ProofOfWorkRule proofOfWorkRule;
     private LightPeersInformation lightPeersInformation;
-    private Keccak256 bestBlockHash;
+    private Blockchain blockchain;
 
     @Before
     public void setUp() {
         //Light Sync Processor
-        Genesis genesis = mock(Genesis.class);
-        Keccak256 genesisHash = new Keccak256(HashUtil.randomHash());
-        when(genesis.getHash()).thenReturn(genesisHash);
-
-        Blockchain blockchain = mock(Blockchain.class);
+        blockchain = mock(Blockchain.class);
         proofOfWorkRule = mock(ProofOfWorkRule.class);
         lightPeersInformation = new LightPeersInformation();
-        lightSyncProcessor = new LightSyncProcessor(mock(SystemProperties.class), genesis, mock(BlockStore.class), blockchain, proofOfWorkRule, lightPeersInformation);
+
+        Genesis genesis = getGenesis();
+        lightSyncProcessor = spy(new LightSyncProcessor(mock(SystemProperties.class), genesis, mock(BlockStore.class), blockchain, proofOfWorkRule, lightPeersInformation));
 
         //Light peer
         Channel channel = mock(Channel.class);
         MessageQueue messageQueue = mock(MessageQueue.class);
         lightPeer = spy(new LightPeer(channel, messageQueue));
 
-        //Light peer status
-        long bestNumber = 1;
-        int networkId = 0;
-        byte protocolVersion = (byte) 0;
-        BigInteger peerStatusTotalDifficulty = BigInteger.TEN;
-        BlockDifficulty blockDifficulty = new BlockDifficulty(peerStatusTotalDifficulty);
-        blockHash = new Keccak256(HashUtil.randomHash());
-        lightStatus = new LightStatus(protocolVersion, networkId, blockDifficulty, blockHash.getBytes(), bestNumber, genesisHash.getBytes());
+        //Peer status
+        final BlockDifficulty peerBlockDifficulty = new BlockDifficulty(BigInteger.TEN);
+        final long peerBestBlockNumber = 1;
+        final Keccak256 peerBestBlockHash = new Keccak256(HashUtil.randomHash());
+        this.lightPeerStatus = getLightStatus(genesis, peerBlockDifficulty, peerBestBlockNumber, peerBestBlockHash);
+
 
         //Current status
-        BlockChainStatus blockChainStatus = mock(BlockChainStatus.class);
-        when(blockchain.getStatus()).thenReturn(blockChainStatus);
-        BlockDifficulty totalDifficulty = BlockDifficulty.ONE;
-        when(blockChainStatus.getTotalDifficulty()).thenReturn(totalDifficulty);
-        when(blockChainStatus.hasLowerDifficultyThan(lightStatus)).thenReturn(totalDifficulty.compareTo(blockDifficulty) < 0);
-        Block bestBlock = mock(Block.class);
-        bestBlockHash = new Keccak256(randomHash());
-        when(bestBlock.getHash()).thenReturn(bestBlockHash);
-        when(bestBlock.getNumber()).thenReturn(1L);
-        when(blockchain.getBestBlock()).thenReturn(bestBlock);
+        final long myBestBlockNumber = 1L;
+        final Keccak256 myBestBlockHash = new Keccak256(randomHash());
+        final BlockDifficulty myTotalDifficulty = new BlockDifficulty(BigInteger.ONE);
+        final Block myBestBlock = getBlock(myBestBlockHash, myBestBlockNumber);
+        setupBlockChainStatus(blockchain, myTotalDifficulty, myBestBlock);
 
         //lastRequestId in a new LightSyncProcessor starts in zero.
         requestId = 0;
-        statusMessage = new StatusMessage(requestId, lightStatus, false);
+        statusMessage = new StatusMessage(requestId, lightPeerStatus, false);
     }
 
     @Test
-    public void processStatusMessageAndShouldAskForAndReceiveBlockHeaderCorrectly() {
+    public void receiveInvalidPoWHeaderInMessageAndShouldBeIgnored() {
+        long requestId = 0; //lastRequestId in a new LightSyncProcessor starts in zero.
 
-        LightProcessor lightProcessor = mock(LightProcessor.class);
-        LightMessageHandler lightMessageHandler = new LightMessageHandler(lightProcessor, lightSyncProcessor);
-        LightClientHandler lightClientHandler = new LightClientHandler(lightPeer, lightSyncProcessor, lightMessageHandler);
-
-        EmbeddedChannel ch = new EmbeddedChannel();
-        ch.pipeline().addLast(lightClientHandler);
-        ChannelHandlerContext ctx = ch.pipeline().firstContext();
-
-        //Message expected
-        final int max = 1;
-        final int skip = 0;
-        final boolean reverse = true;
-        GetBlockHeadersByHashMessage expectedMessage = new GetBlockHeadersByHashMessage(++requestId, bestBlockHash.getBytes(), max, skip, reverse);
-
-        ArgumentCaptor<GetBlockHeadersByHashMessage> argument = forClass(GetBlockHeadersByHashMessage.class);
-        lightSyncProcessor.processStatusMessage(statusMessage, lightPeer, ctx, lightClientHandler);
-        verify(lightPeer).sendMessage(argument.capture());
-        assertArrayEquals(expectedMessage.getEncoded(), argument.getValue().getEncoded());
-        assertFalse(lightPeersInformation.hasTxRelay(lightPeer));
-
-        //BlockHeader response
-
-        BlockHeader blockHeader = mock(BlockHeader.class);
-        when(blockHeader.getHash()).thenReturn(blockHash);
-        when(proofOfWorkRule.isValid(blockHeader)).thenReturn(true);
-        byte[] fullEncodedBlockHeader = randomHash();
-        when(blockHeader.getFullEncoded()).thenReturn(fullEncodedBlockHeader);
         List<BlockHeader> bHs = new ArrayList<>();
+        BlockHeader blockHeader = getBlockHeader(new Keccak256(HashUtil.randomHash()), 1);
         bHs.add(blockHeader);
 
-        BlockHeadersMessage blockHeadersMessage = new BlockHeadersMessage(requestId, bHs);
+        when(proofOfWorkRule.isValid(blockHeader)).thenReturn(false);
+        processBlockHeaderAndVerifyDoesntSendMessage(bHs, requestId);
+    }
 
-        lightMessageHandler.processMessage(lightPeer, blockHeadersMessage, ctx, lightClientHandler);
+    @Test
+    public void receiveNotPendingMessageAndShouldBeIgnored() {
+        long requestId = 0; //lastRequestId in a new LightSyncProcessor starts in zero.
 
-        assertEquals(1, lightPeer.getBlocks().size());
-        assertEquals(bHs, lightPeer.getBlocks());
+        List<BlockHeader> bHs = new ArrayList<>();
+        BlockHeader blockHeader = getBlockHeader(new Keccak256(HashUtil.randomHash()), 1);
+        bHs.add(blockHeader);
+
+        processBlockHeaderAndVerifyDoesntSendMessage(bHs, requestId);
+    }
+
+    @Test
+    public void receiveEmptyBlockHeadersListMessageAndShouldBeIgnored() {
+        List<BlockHeader> bHs = new ArrayList<>();
+        long requestId = 0; //lastRequestId in a new LightSyncProcessor starts in zero.
+
+        processBlockHeaderAndVerifyDoesntSendMessage(bHs, requestId);
     }
 
     @Test
@@ -152,16 +132,15 @@ public class LightSyncProcessorTest {
         ChannelHandlerContext ctx = mock(ChannelHandlerContext.class);
         LightClientHandler lightClientHandler = mock(LightClientHandler.class);
 
-        //Message sent
-        StatusMessage statusMessage = new StatusMessage(requestId, lightStatus, false);
-
-        LightPeer lightPeer2 = mock(LightPeer.class);
+        StatusMessage statusMessage = new StatusMessage(requestId, lightPeerStatus, false);
         lightSyncProcessor.processStatusMessage(statusMessage, lightPeer, ctx, lightClientHandler);
+
+        //Message sent
+        LightPeer lightPeer2 = mock(LightPeer.class);
         lightSyncProcessor.processStatusMessage(statusMessage, lightPeer2, ctx, lightClientHandler);
 
         verify(lightPeer, times(1)).sendMessage(any());
         verify(lightPeer2, times(0)).sendMessage(any());
-        assertFalse(lightPeersInformation.hasTxRelay(lightPeer));
     }
 
     @Test
@@ -170,9 +149,105 @@ public class LightSyncProcessorTest {
         LightClientHandler lightClientHandler = mock(LightClientHandler.class);
 
         //Message sent
-        StatusMessage statusMessageWithTxRelaySet = new StatusMessage(requestId, lightStatus, true);
+        StatusMessage statusMessageWithTxRelaySet = new StatusMessage(requestId, lightPeerStatus, true);
 
         lightSyncProcessor.processStatusMessage(statusMessageWithTxRelaySet, lightPeer, ctx, lightClientHandler);
         assertTrue(lightPeersInformation.hasTxRelay(lightPeer));
+    }
+
+    @Test
+    public void peerWithoutTxRelayActivatedConnectCorrectly() {
+        ChannelHandlerContext ctx = mock(ChannelHandlerContext.class);
+        LightClientHandler lightClientHandler = mock(LightClientHandler.class);
+
+        //Message sent
+        StatusMessage statusMessageWithTxRelaySet = new StatusMessage(requestId, lightPeerStatus, false);
+
+        lightSyncProcessor.processStatusMessage(statusMessageWithTxRelaySet, lightPeer, ctx, lightClientHandler);
+        assertFalse(lightPeersInformation.hasTxRelay(lightPeer));
+    }
+
+    @Test
+    public void processStatusMessageAndShouldAskForCommonAncestor() {
+
+        ChannelHandlerContext ctx = mock(ChannelHandlerContext.class);
+        LightClientHandler lightClientHandler = mock(LightClientHandler.class);
+
+        //Message expected
+        final int max = 1;
+        final int skip = 0;
+        final boolean reverse = true;
+        final byte[] myBestBlockHash = blockchain.getBestBlock().getHash().getBytes();
+        GetBlockHeadersByHashMessage expectedMessage = new GetBlockHeadersByHashMessage(++requestId, myBestBlockHash, max, skip, reverse);
+
+
+        lightSyncProcessor.processStatusMessage(statusMessage, lightPeer, ctx, lightClientHandler);
+        assertEqualMessage(expectedMessage);
+
+        //BlockHeader response
+        final Block peerBestBlock = getBlock(new Keccak256(lightPeerStatus.getBestHash()), lightPeerStatus.getBestNumber());
+        when(proofOfWorkRule.isValid(peerBestBlock.getHeader())).thenReturn(true);
+        List<BlockHeader> bHs = new ArrayList<>();
+        bHs.add(peerBestBlock.getHeader());
+        final BlockDifficulty lightPeerTotalDifficulty = lightPeerStatus.getTotalDifficulty();
+        when(peerBestBlock.getHeader().getDifficulty()).thenReturn(lightPeerTotalDifficulty);
+        when(blockchain.getBlockByHash(peerBestBlock.getHash().getBytes())).thenReturn(peerBestBlock);
+
+        //Process peer's block headers, because it's known then transits to StartSyncRound
+        lightSyncProcessor.processBlockHeadersMessage(requestId++, bHs, lightPeer);
+
+        assertEquals(1, lightPeer.getBlocks().size());
+        assertEquals(bHs, lightPeer.getBlocks());
+        assertEquals(lightSyncProcessor.getSyncState().getClass(), StartRoundSyncState.class);
+    }
+
+    private void assertEqualMessage(LightClientMessage expected) {
+        ArgumentCaptor<LightClientMessage> argument = forClass(LightClientMessage.class);
+        verify(lightPeer).sendMessage(argument.capture());
+        assertArrayEquals(expected.getEncoded(), argument.getValue().getEncoded());
+    }
+
+    private void processBlockHeaderAndVerifyDoesntSendMessage(List<BlockHeader> bHs, long requestId) {
+        lightSyncProcessor.processBlockHeadersMessage(requestId, bHs, lightPeer);
+        verify(lightPeer, times(0)).receivedBlockHeaders(any());
+    }
+
+    private void setupBlockChainStatus(Blockchain blockchain, BlockDifficulty totalDifficulty, Block bestBlock) {
+        BlockChainStatus blockChainStatus = mock(BlockChainStatus.class);
+        when(blockchain.getStatus()).thenReturn(blockChainStatus);
+        when(blockchain.getBestBlock()).thenReturn(bestBlock);
+        when(blockChainStatus.getTotalDifficulty()).thenReturn(totalDifficulty);
+        final boolean isLower = totalDifficulty.compareTo(lightPeerStatus.getTotalDifficulty()) < 0;
+        when(blockChainStatus.hasLowerDifficultyThan(lightPeerStatus)).thenReturn(isLower);
+    }
+
+    private Block getBlock(Keccak256 blockHash, long blockNumber) {
+        Block bestBlock = mock(Block.class);
+        when(bestBlock.getHash()).thenReturn(blockHash);
+        when(bestBlock.getNumber()).thenReturn(blockNumber);
+        final BlockHeader blockHeader = getBlockHeader(blockHash, blockNumber);
+        when(bestBlock.getHeader()).thenReturn(blockHeader);
+        return bestBlock;
+    }
+
+    private LightStatus getLightStatus(Genesis genesis, BlockDifficulty blockDifficulty, long bestNumber, Keccak256 bestHash) {
+        final LightStatus lightStatus = spy(new LightStatus((byte) 0, 0, blockDifficulty, bestHash.getBytes(), bestNumber, genesis.getHash().getBytes()));
+        when(lightStatus.getTotalDifficulty()).thenReturn(blockDifficulty);
+        when(lightStatus.getBestNumber()).thenReturn(bestNumber);
+        when(lightStatus.getBestHash()).thenReturn(randomHash());
+        return lightStatus;
+    }
+
+    private Genesis getGenesis() {
+        Genesis genesis = mock(Genesis.class);
+        when(genesis.getHash()).thenReturn(new Keccak256(HashUtil.randomHash()));
+        return genesis;
+    }
+
+    private BlockHeader getBlockHeader(Keccak256 blockHash, long blockNumber) {
+        BlockHeader blockHeader = mock(BlockHeader.class);
+        when(blockHeader.getHash()).thenReturn(blockHash);
+        when(blockHeader.getNumber()).thenReturn(blockNumber);
+        return blockHeader;
     }
 }

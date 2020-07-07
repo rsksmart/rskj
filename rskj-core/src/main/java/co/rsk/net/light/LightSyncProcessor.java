@@ -173,7 +173,7 @@ public class LightSyncProcessor {
     public void foundCommonAncestor(LightPeer lightPeer, BlockHeader startBlockHeader) {
         final LightStatus lightStatus = lightPeersInformation.getLightStatus(lightPeer);
 
-        if (startBlockHeader.getDifficulty().compareTo(lightStatus.getTotalDifficulty()) == 1) {
+        if (startBlockHeader.getDifficulty().compareTo(lightStatus.getTotalDifficulty()) > 0) {
             return;
         }
 

@@ -49,7 +49,7 @@ public class StartRoundSyncState implements LightSyncState {
 
     @Override
     public void sync() {
-        this.startBlockNumber = this.start.getNumber() + 1 + this.sparseHeaders.size() * this.skip ;
+        this.startBlockNumber = this.start.getNumber() + 1 + Math.multiplyExact(this.sparseHeaders.size(), this.skip);
         this.max = this.pivots - this.sparseHeaders.size();
         lightSyncProcessor.sendBlockHeadersByNumberMessage(lightPeer, this.startBlockNumber, max, skip, false);
     }
@@ -88,12 +88,7 @@ public class StartRoundSyncState implements LightSyncState {
             } else {
                 lightSyncProcessor.startFetchRound();
             }
-        } else {
-            //TODO: Abort process
-            return;
         }
-
-
     }
 
     private boolean isCorrectSkipped(List<BlockHeader> blockHeaders) {
@@ -113,8 +108,8 @@ public class StartRoundSyncState implements LightSyncState {
 
     @VisibleForTesting
     private static class RoundSyncHelper {
-        int skip;
-        int pivots;
+        private final int skip;
+        private final int pivots;
 
         //Default parameters
         private static final int ROUND_SKIP = 192; //Distance between pivots without counting pivots
@@ -126,7 +121,7 @@ public class StartRoundSyncState implements LightSyncState {
                 skip = 0;
                 pivots = remain;
             } else {
-                long pivotsToTarget = Math.floorDiv(diff, ROUND_SKIP + 1); //How many pivots peer needs to get the target
+                long pivotsToTarget = Math.floorDiv(diff, (long) ROUND_SKIP + 1); //How many pivots peer needs to get the target
                 pivotsToTarget += remain == 0? 0 : 1; //If there is a remain, one pivot else is needed.
                 skip = ROUND_SKIP;
                 pivots = (int) Math.min(pivotsToTarget, ROUND_PIVOTS);
