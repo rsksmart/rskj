@@ -27,8 +27,9 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
+import static co.rsk.net.light.LightSyncProcessor.MAX_REQUESTED_HEADERS;
+
 public class CommonAncestorSearchSyncState implements LightSyncState {
-    private static final int MAX_REQUESTED_HEADERS = 192; //Based in max_chunks, this number should be in the config file in some light section
     private final LightSyncProcessor lightSyncProcessor;
     private final LightPeer lightPeer;
     private final byte[] bestBlockHash;

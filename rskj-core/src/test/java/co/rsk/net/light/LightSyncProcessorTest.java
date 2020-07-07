@@ -45,6 +45,7 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 
+import static co.rsk.net.light.LightSyncProcessor.MAX_REQUESTED_HEADERS;
 import static org.ethereum.crypto.HashUtil.randomHash;
 import static org.junit.Assert.*;
 import static org.mockito.ArgumentCaptor.forClass;
@@ -98,33 +99,54 @@ public class LightSyncProcessorTest {
 
     @Test
     public void receiveInvalidPoWHeaderInMessageAndShouldBeIgnored() {
-        long requestId = 0; //lastRequestId in a new LightSyncProcessor starts in zero.
+        long requestId = 1;
 
         List<BlockHeader> bHs = new ArrayList<>();
         BlockHeader blockHeader = getBlockHeader(new Keccak256(HashUtil.randomHash()), 1);
         bHs.add(blockHeader);
 
+
         when(proofOfWorkRule.isValid(blockHeader)).thenReturn(false);
+        lightSyncProcessor.sendBlockHeadersByNumberMessage(lightPeer, 10L, 1, 0, false);
         processBlockHeaderAndVerifyDoesntSendMessage(bHs, requestId);
+        verify(lightSyncProcessor, times(1)).invalidPoW();
     }
 
     @Test
     public void receiveNotPendingMessageAndShouldBeIgnored() {
-        long requestId = 0; //lastRequestId in a new LightSyncProcessor starts in zero.
+        long requestId = 1;
 
         List<BlockHeader> bHs = new ArrayList<>();
         BlockHeader blockHeader = getBlockHeader(new Keccak256(HashUtil.randomHash()), 1);
         bHs.add(blockHeader);
 
         processBlockHeaderAndVerifyDoesntSendMessage(bHs, requestId);
+        verify(lightSyncProcessor, times(1)).notPendingMessage();
+    }
+
+    @Test
+    public void receiveMoreBlockHeadersThanAllowedMessageAndShouldBeIgnored() {
+        long requestId = 1;
+
+        List<BlockHeader> bHs = new ArrayList<>();
+        for (int i = 0; i <= MAX_REQUESTED_HEADERS; i++) {
+            final BlockHeader bh = mock(BlockHeader.class);
+            bHs.add(bh);
+        }
+
+        lightSyncProcessor.sendBlockHeadersByNumberMessage(lightPeer, 10L, 1, 0, false);
+        processBlockHeaderAndVerifyDoesntSendMessage(bHs, requestId);
+        verify(lightSyncProcessor, times(1)).wrongBlockHeadersSize();
     }
 
     @Test
     public void receiveEmptyBlockHeadersListMessageAndShouldBeIgnored() {
         List<BlockHeader> bHs = new ArrayList<>();
-        long requestId = 0; //lastRequestId in a new LightSyncProcessor starts in zero.
+        long requestId = 1;
 
+        lightSyncProcessor.sendBlockHeadersByNumberMessage(lightPeer, 10L, 1, 0, false);
         processBlockHeaderAndVerifyDoesntSendMessage(bHs, requestId);
+        verify(lightSyncProcessor, times(1)).wrongBlockHeadersSize();
     }
 
     @Test

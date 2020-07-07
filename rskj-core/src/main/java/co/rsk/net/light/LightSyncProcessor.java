@@ -49,6 +49,7 @@ public class LightSyncProcessor {
 
     private static final int MAX_PENDING_MESSAGES = 10;
     private static final int MAX_PEER_CONNECTIONS = 1;
+    public static final int MAX_REQUESTED_HEADERS = 192; //Based in max_chunks, this number should be in the config file in some light section
     private final LightPeersInformation lightPeersInformation;
     private LightSyncState syncState;
     private final SystemProperties config;
@@ -139,17 +140,20 @@ public class LightSyncProcessor {
 
     public void processBlockHeadersMessage(long id, List<BlockHeader> blockHeaders, LightPeer lightPeer) {
         if (!isPending(id, BLOCK_HEADER)) {
+            notPendingMessage();
             //TODO: Abort process
             return;
         }
 
-        if (blockHeaders.isEmpty()) {
+        if (blockHeaders.isEmpty() || blockHeaders.size() > MAX_REQUESTED_HEADERS) {
+            wrongBlockHeadersSize();
             //TODO: Abort process
             return;
         }
 
         for (BlockHeader h : blockHeaders) {
             if (!blockHeaderValidationRule.isValid(h)) {
+                invalidPoW();
                 //TODO: Abort process
                 return;
             }
@@ -158,6 +162,18 @@ public class LightSyncProcessor {
         pendingMessages.remove(id, BLOCK_HEADER);
         lightPeer.receivedBlockHeaders(blockHeaders);
         syncState.newBlockHeaders(lightPeer, blockHeaders);
+
+    }
+
+    public void invalidPoW() {
+
+    }
+
+    public void wrongBlockHeadersSize() {
+
+    }
+
+    public void notPendingMessage() {
 
     }
 
