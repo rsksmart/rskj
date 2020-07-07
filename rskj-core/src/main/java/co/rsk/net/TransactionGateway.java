@@ -48,7 +48,7 @@ public class TransactionGateway {
         }
     }
 
-    public TransactionPoolAddResult receiveTransactionFrom(Transaction transaction) {
+    public TransactionPoolAddResult receiveTransaction(Transaction transaction) {
         TransactionPoolAddResult result  = transactionPool.addTransaction(transaction);
         if(!result.getTransactionsAdded().isEmpty()) {
             channelManager.broadcastTransactions(result.getTransactionsAdded(), Collections.emptySet());
