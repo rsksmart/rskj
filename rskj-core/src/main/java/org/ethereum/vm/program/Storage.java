@@ -267,12 +267,6 @@ public class Storage implements Repository, ProgramListenerAware {
         return repository.getCodeNodeKey(addr);
     }
 
-    // this returns an Uint24, unlike `getCodeLength()` which returns an int. Same otherwise.
-    @Override
-    public Uint24 getCodeNodeLength(RskAddress addr){
-        return getCodeNodeLength(addr);
-    }
-
     @Override
     public long getCodeNodeLRPTime(RskAddress addr){
         return repository.getCodeNodeLRPTime(addr);
@@ -309,6 +303,11 @@ public class Storage implements Repository, ProgramListenerAware {
     }
 
     // methods for individual storage nodes: addr is not enough, also need the key
+    @Override
+    public ByteArrayWrapper getStorageNodeKey(RskAddress addr, DataWord key) {
+        return repository.getStorageNodeKey(addr, key);
+    }
+
     @Override
     public Uint24 getStorageValueLength(RskAddress addr, DataWord key){
         return repository.getStorageValueLength(addr, key);

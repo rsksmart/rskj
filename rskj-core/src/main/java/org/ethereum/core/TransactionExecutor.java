@@ -717,11 +717,10 @@ public class TransactionExecutor {
             }
         );
 
-
-
         // #mish what is this for? Git grep doesn't reveal anything (neither does github search)
         result.getCodeChanges().forEach((key, value) -> track.saveCode(new RskAddress(key), value));
-        // Traverse list of suicides
+        // Traverse list of suicides 
+        // #mish this should always happen last, in case deleted nodes show up in rent tracking Maps
         result.getDeleteAccounts().forEach(address -> track.delete(new RskAddress(address)));
 
         logger.trace("tx listener done");
@@ -830,11 +829,11 @@ public class TransactionExecutor {
             // code node
             ByteArrayWrapper cKey = repository.getCodeNodeKey(addr);
             if (!progRes.getAccessedNodes().containsKey(cKey)){
-                Uint24 cLen = repository.getCodeNodeLength(addr);
+                Uint24 cLen = new Uint24(repository.getCodeLength(addr));
                 long cLrpt = repository.getCodeNodeLRPTime(addr);
                 RentData codeNode = new RentData(cLen, cLrpt);
-                // compute rent and update estRent as needed
-                codeNode.setRentDue(this.getRefTimeStamp(), false); // code is unlikely to be modified
+                // code is unlikely to be modified, but possible with CREATE2
+                codeNode.setRentDue(this.getRefTimeStamp(), false);
                 rd = codeNode.getRentDue();
                 if (rd >0) {
                     estRentGas += rd;
@@ -885,7 +884,7 @@ public class TransactionExecutor {
             // code node
             ByteArrayWrapper cKey = repository.getCodeNodeKey(addr);
             if (!progRes.getCreatedNodes().containsKey(cKey)){
-                Uint24 cLen = repository.getCodeNodeLength(addr);
+                Uint24 cLen = new Uint24(repository.getCodeLength(addr));
                 RentData codeNode = new RentData(cLen, advTS);
                 // compute rent and update estRent as needed
                 codeNode.setSixMonthsRent();

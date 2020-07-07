@@ -152,9 +152,6 @@ public interface Repository extends RepositorySnapshot {
     // rather than the code, and to dinsinguish from prior methods
     ByteArrayWrapper getCodeNodeKey(RskAddress addr);
 
-    // this returns an Uint24, unlike `getCodeLength()` which returns an int. Same otherwise.
-    Uint24 getCodeNodeLength(RskAddress addr) ;
-
     long getCodeNodeLRPTime(RskAddress addr);
 
     // update node with rent info (and code) 
@@ -173,6 +170,8 @@ public interface Repository extends RepositorySnapshot {
     void updateStorageRootWithRent(RskAddress addr, final byte[] value, final long newlastRentPaidTime);
 
     // methods for individual storage nodes: addr is not enough, also need the key
+    ByteArrayWrapper getStorageNodeKey(RskAddress addr, DataWord key);
+
     Uint24 getStorageValueLength(RskAddress addr, DataWord key);
 
     long getStorageLRPTime(RskAddress addr, DataWord key);

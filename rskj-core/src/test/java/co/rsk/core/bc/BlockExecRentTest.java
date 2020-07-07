@@ -167,9 +167,9 @@ public class BlockExecRentTest {
         Transaction tx = block.getTransactionsList().get(0);
         RskAddress account = tx.getSender();
         RskAddress contractAddr = tx.getContractAddress();
-        System.out.println("Sender: " + account);
+        System.out.println("\nSender: " + account);
         System.out.println("Contract: " + contractAddr);
-
+        System.out.println("TX Data: 0x" + Hex.toHexString(tx.getData()));
 
         when(activationConfig.isActive(RSKIP125)).thenReturn(false);
         BlockResult result = executor.execute(block, parent.getHeader(), false);
@@ -195,7 +195,7 @@ public class BlockExecRentTest {
         System.out.println("Contract Endowment " + contractState.getBalance());
         System.out.println("Contract LRPT " + finalRepository.getAccountNodeLRPTime(contractAddr));
 
-        System.out.println("\n\nBlock tx fees: " + result.getPaidFees());
+        System.out.println("\nBlock tx fees: " + result.getPaidFees()); 
 
 
         // After execution, just here to experiment with diff programs
@@ -253,7 +253,7 @@ public class BlockExecRentTest {
         byte[] code = compiler.compile(stringCode);
         String codeHex = Hex.toHexString(code);
 
-        System.out.println("\nProgram code in TX Data: 0x" + codeHex);
+        //System.out.println("\nProgram code in TX Data: 0x" + codeHex);
         track.commit();
 
         Block bestBlock = blockchain.getBestBlock();

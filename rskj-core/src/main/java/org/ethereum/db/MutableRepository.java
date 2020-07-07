@@ -370,22 +370,11 @@ public class MutableRepository implements Repository {
      * This includes
      *  - main Account Node which contains account State info
      *  - Code for contract
-     *  - storage nodes (including root).
+     *  - storage nodes (including storage root).
      * For each type of value-containing trie node, we define helper methods
      * to get a node's key, value Length, last rent paid timestamp
      * and a setter method to update node data via trie putWithRent() 
      */
-
-    // a generic method to update a node's last rent paid time
-    /*@Override
-    public synchronized void updateNodeWithRent(DataWord key, long newlastRentPaidTime){
-        //RskAddress addr =  new RskAddress(Arrays.copyOfRange(key.getData(),12,32));
-        //byte[] acckey = trieKeyMapper.getAccountKey(addr);
-        byte[] value = mutableTrie.get(Arrays.copyOfRange(key.getData(),1,32)); // get current value
-        if (value != null){
-            mutableTrie.putWithRent(Arrays.copyOfRange(key.getData(),1,32), value, newlastRentPaidTime);
-        } //else {System.out.println("Handle null value error in updatenodewithrent");}
-    }*/
 
     @Override
     public synchronized void updateNodeWithRent(ByteArrayWrapper key, long newlastRentPaidTime){
@@ -394,9 +383,7 @@ public class MutableRepository implements Repository {
             mutableTrie.putWithRent(key.getData(), value, newlastRentPaidTime);
         }
     }
- 
-    // Accountkey as DataWord for situations where trikeymapper is not used directly 
-    // e.g. HashMaps in programResult to keep track of nodes created, deleted, modified etc  
+
     @Override
     public synchronized ByteArrayWrapper getAccountNodeKey(RskAddress addr) {
         return new ByteArrayWrapper(trieKeyMapper.getAccountKey(addr));
@@ -422,8 +409,6 @@ public class MutableRepository implements Repository {
     
     // For nodes containing contract code
     
-    // Start with key as DataWord for HashMaps. Using `getCodeNodexx` to emphasize this is about the node,
-    // rather than the code, and to dinsinguish from prior methods
     @Override
     public synchronized ByteArrayWrapper getCodeNodeKey(RskAddress addr) {        
         AccountState account = getAccountState(addr);
@@ -431,18 +416,6 @@ public class MutableRepository implements Repository {
             return null;
         }
         return new ByteArrayWrapper(trieKeyMapper.getCodeKey(addr));
-    }
-
-    // this returns an Uint24, unlike `getCodeLength()` which returns an int. Same otherwise.
-    @Override
-    public synchronized Uint24 getCodeNodeLength(RskAddress addr) {
-        AccountState account = getAccountState(addr);
-        if (account == null || account.isHibernated()) {
-            return Uint24.ZERO;
-        }
-
-        byte[] key = trieKeyMapper.getCodeKey(addr);
-        return mutableTrie.getValueLength(key);
     }
 
     @Override
@@ -493,6 +466,11 @@ public class MutableRepository implements Repository {
     }
 
     // methods for individual storage nodes: addr is not enough, also need the key
+    @Override
+    public synchronized ByteArrayWrapper getStorageNodeKey(RskAddress addr, DataWord key) {
+        return new ByteArrayWrapper(trieKeyMapper.getAccountStorageKey(addr, key));
+    }
+    
     @Override
     public synchronized Uint24 getStorageValueLength(RskAddress addr, DataWord key) {
         byte[] triekey = trieKeyMapper.getAccountStorageKey(addr, key);

@@ -84,32 +84,46 @@ public class DslRentTest {
         // According to TestRPC and geth, the gas used is 0x010c2d
         //Assert.assertEquals(BigIntegers.fromUnsignedByteArray(Hex.decode("010c2d")), gasUsed); // fails
         //Assert.assertNotEquals(BigInteger.ZERO, gasUsed);
-        System.out.println(BigIntegers.fromUnsignedByteArray(Hex.decode("010c2d")));
-        System.out.println(gasUsed);
-
-        
+        System.out.println("Execution gas expected (used in old assertion test) " + BigIntegers.fromUnsignedByteArray(Hex.decode("010c2d")));
+        //System.out.println(gasUsed);    
     }
-
 
     @Test
     public void runCreate02Resource() throws FileNotFoundException, DslProcessorException {
         //byte[] code2 =Hex.decode("608060405234801561001057600080fd5b504361001a61017b565b80828152602001915050604051809103906000f080158015610040573d6000803e3d6000fd5b506000806101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff1602179055507f80ae3ec8027d0c5d1f3e47fb4bf1d9fc28225e7f4bcb1971b36efb81fe40574d6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff1663209652556040518163ffffffff167c0100000000000000000000000000000000000000000000000000000000028152600401602060405180830381600087803b15801561012657600080fd5b505af115801561013a573d6000803e3d6000fd5b505050506040513d602081101561015057600080fd5b81019080805190602001909291905050506040518082815260200191505060405180910390a161018b565b6040516101e38061028283390190565b60e9806101996000396000f300608060405260043610603f576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806361bc221a146044575b600080fd5b348015604f57600080fd5b5060566098565b604051808273ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200191505060405180910390f35b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff16815600a165627a7a7230582091284634a2c8e5cbd0e4153a1422a41670914d8ef8b4f7dc71bd54cf80baf8f50029608060405234801561001057600080fd5b506040516020806101e383398101806040528101908080519060200190929190505050806000819055507f06acbfb32bcf8383f3b0a768b70ac9ec234ea0f2d3b9c77fa6a2de69b919aad16000546040518082815260200191505060405180910390a150610160806100836000396000f30060806040526004361061004c576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff1680632096525514610051578063d09de08a1461007c575b600080fd5b34801561005d57600080fd5b50610066610093565b6040518082815260200191505060405180910390f35b34801561008857600080fd5b506100916100d6565b005b60007f1ee041944547858a75ebef916083b6d4f5ae04bea9cd809334469dd07dbf441b6000546040518082815260200191505060405180910390a1600054905090565b600080815460010191905081905550600160026000548115156100f557fe5b061415157f6e61ef44ac2747ff8b84d353a908eb8bd5c3fb118334d57698c5cfc7041196ad6000546040518082815260200191505060405180910390a25600a165627a7a7230582041617f72986040ac8590888e68e070d9d05aeb99361c0c77d1f67540db5ff6b10029");
-        //System.out.print(Program.stringifyMultiline(code2));
 
 
-        DslParser parser = DslParser.fromResource("dsl/create02.txt");
+        // #mish: output prior to adding rent to program and VM:
+        /*  // This was repeated twice (4 times, since TX executed twice)
+            Exec GasLimit 1000000
+            Exec gas used 316050
+            Exec gas refund 683950
+
+            Rent GasLimit 1000000
+            Rent gas used 9776
+            Rent gas refund 990224
+
+            Tx fees (exec + rent): 325826
+
+            No. trie nodes with `updated` rent timestamp: 1
+            No. new trie nodes created: 3
+        */
+
+        DslParser parser = DslParser.fromResource("dsl/create02RentTest.txt");
         World world = new World();
         WorldDslProcessor processor = new WorldDslProcessor(world);
         processor.processCommands(parser);
 
+        
         Assert.assertNotNull(world.getBlockChain().getBlockByHash(world.getBlockByName("g00").getHash().getBytes()));
         Assert.assertNotNull(world.getBlockChain().getBlockByHash(world.getBlockByName("b01").getHash().getBytes()));
         Assert.assertNotNull(world.getBlockChain().getBlockByHash(world.getBlockByName("b01b").getHash().getBytes()));
         Assert.assertNotNull(world.getBlockChain().getBlockByHash(world.getBlockByName("b02b").getHash().getBytes()));
 
+        
         Block top1 = world.getBlockByName("b01");
         Block top2 = world.getBlockByName("b02b");
-
+        
         // Creates a new view of the repository, standing on top1 state
         Repository repo1 = new MutableRepository(world.getTrieStore(),
                 world.getTrieStore().retrieve(top1.getStateRoot()).get());
@@ -155,6 +169,7 @@ public class DslRentTest {
         Assert.assertTrue(repo2.isContract(addr3));
         Assert.assertNotNull(repo2.getCode(addr3));
         Assert.assertNotEquals(0, repo2.getCode(addr3).length);
+        
     }
 
     @Test

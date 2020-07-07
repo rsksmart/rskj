@@ -389,6 +389,10 @@ public class Program {
         Coin balance = getStorage().getBalance(owner);
         RskAddress obtainer = new RskAddress(obtainerAddress);
 
+        // #mish storage rent checks for owner and obtainer
+        accessedNodeAdder(owner, getStorage());
+        accessedNodeAdder(obtainer, getStorage());
+
         if (!balance.equals(Coin.ZERO)) {
             logger.info("Transfer to: [{}] heritage: [{}]", obtainer, balance);
             // #mish (nonce, gaslimit, sender, rcvr, value, data, note)
@@ -422,12 +426,16 @@ public class Program {
         if (isNotCovers(balance, amount)) {
             return; // does not do anything.
         }
-
+        
         if (isLogEnabled) {
             logger.info("Transfer to: [{}] amount: [{}]",
                     dest,
                     amount);
         }
+
+        // #mish add rent checks
+        accessedNodeAdder(owner, getStorage());
+        accessedNodeAdder(dest, getStorage());
 
         addInternalTx(null, null, owner, dest, amount, null, "send");
 
@@ -461,8 +469,10 @@ public class Program {
         createContract(senderAddress, nonce, value, memStart, memSize, newAddress);
     }
 
-    // #mish contract code is fetched from memory location memStart though memStart + memSize 
     private void createContract( RskAddress senderAddress, byte[] nonce, DataWord value, DataWord memStart, DataWord memSize, RskAddress contractAddress) {
+        // #mish rent check for sender done at the start, for new contract (new nodes) at the very end         
+        accessedNodeAdder(senderAddress, getStorage());
+        
         if (getCallDeep() == getMaxDepth()) {
             // #mish this should not happen in normal execution. No refunds unlike with CALLs
             // todo should er refund rentGas?
@@ -596,6 +606,9 @@ public class Program {
         // REFUND THE REMAIN GAS
         refundRemainingGas(gasLimit, programResult);
         refundRemainingRentGas(rentGasLimit, programResult);
+
+        //collect rent for the created contract
+        createdNodeAdder(contractAddress, getStorage());
     }
 
     private void refundRemainingGas(long gasLimit, ProgramResult programResult) {
@@ -809,6 +822,8 @@ public class Program {
         boolean callResult;
 
         if (!isEmpty(programCode)) {
+            //#mish gas refunds (including rent gas) are handled internally within executeCode()
+
             callResult = executeCode(msg, contextAddress, contextBalance, internalTx, track, programCode, senderAddress, data);
         }
         else {
@@ -829,6 +844,11 @@ public class Program {
 
             getTrace().addSubTrace(subtrace);
         }
+
+        // #mish perform the storage rent computations at the end, since all avail rentgas is passed
+        // to messageCalls. If rent OOG at this point (has not been refunded), then it doesn't matter?
+        accessedNodeAdder(senderAddress, getStorage());
+        accessedNodeAdder(codeAddress, getStorage());
 
         // 4. THE FLAG OF SUCCESS IS ONE PUSHED INTO THE STACK
         if (callResult) {
@@ -930,7 +950,7 @@ public class Program {
             }
         }
 
-        // 5.2 REFUND REMIAINING STORAGE RENT GAS
+        // 5.2 REFUND REMAINING STORAGE RENT GAS
         BigInteger refundRentGas = msg.getRentGas().value().subtract(toBI(childResult.getRentGasUsed()));
         if (isPositive(refundRentGas)) {
             // Since the original gas transferred was < Long.MAX_VALUE then the refund
@@ -1014,20 +1034,10 @@ public class Program {
         getResult().addFutureRefund(gasValue);
     }
 
-    /*public void futureRentGasRefund(long rentGasValue) {
-        if (isGasLogEnabled) { // #mish: should this be isGasLogEnabled?
-            gasLogger.info("Future refund added: [{}]", rentGasValue);
-        }
-        getResult().addFutureRentGasRefund(rentGasValue);
-    }*/
 
     public void resetFutureRefund() {
         getResult().resetFutureRefund();
     }
-
-    /*public void resetFutureRentGasRefund() {
-        getResult().resetFutureRentGasRefund();
-    }*/
 
     public void storageSave(DataWord word1, DataWord word2) {
         storageSave(word1.getData(), word2.getData());
@@ -1039,6 +1049,16 @@ public class Program {
         DataWord keyWord = DataWord.valueOf(key);
         DataWord valWord = DataWord.valueOf(val);
 
+        
+        //#mish for storage rent, only the previous value matters
+        if(getStorage().getStorageValue(getOwnerRskAddress(), keyWord)==null){
+            //System.out.println("\n\n\nSSTORE SET\n");
+            createdStorageNodeAdder(getOwnerRskAddress(), keyWord);
+        } else {
+            //System.out.println("\n\n\nSSTORE RESET\n");
+            accessedStorageNodeAdder(getOwnerRskAddress(), keyWord);
+        }
+        // and now the actual SSTORE op
         getStorage().addStorageRow(getOwnerRskAddress(), keyWord, valWord);
     }
 
@@ -1054,12 +1074,18 @@ public class Program {
         return Arrays.copyOf(ops, ops.length);
     }
 
-    // #mish: why do these getCodeAt methods use invoke.getRepository() and not getStorage()? 
-    public Keccak256 getCodeHashAt(RskAddress addr) { return invoke.getRepository().getCodeHash(addr); }
+    // #mish: why do these getCodeAt methods use invoke.getRepository() and not getStorage()?
+    // is this for "write" protection?
+    // What about pre-compiled contracts? Those addr are created in repository only when PCCs are called
+    public Keccak256 getCodeHashAt(RskAddress addr) {
+        accessedNodeAdder(addr, getStorage()); // should this be in the invoke's repository?
+        return invoke.getRepository().getCodeHash(addr); 
+    }
 
     public Keccak256 getCodeHashAt(DataWord address) { return getCodeHashAt(new RskAddress(address)); }
 
     public int getCodeLengthAt(RskAddress addr) {
+        accessedNodeAdder(addr, getStorage()); //invoke repository?
         return invoke.getRepository().getCodeLength(addr);
     }
 
@@ -1072,6 +1098,7 @@ public class Program {
     }
 
     private byte[] getCodeAt(RskAddress addr) {
+        accessedNodeAdder(addr, getStorage()); // invoke repository?
         byte[] code = invoke.getRepository().getCode(addr);
         return nullToEmpty(code);
     }
@@ -1098,6 +1125,7 @@ public class Program {
     }
 
     public DataWord getBalance(DataWord address) {
+        accessedNodeAdder(new RskAddress(address), getStorage());
         Coin balance = getStorage().getBalance(new RskAddress(address));
         return DataWord.valueOf(balance.getBytes());
     }
@@ -1141,6 +1169,8 @@ public class Program {
     }
 
     public DataWord storageLoad(DataWord key) {
+        //System.out.println("\n\nSLOAD\n");
+        accessedStorageNodeAdder(getOwnerRskAddress(), key);
         return getStorage().getStorageValue(getOwnerRskAddress(), key);
     }
 
@@ -1699,7 +1729,8 @@ public class Program {
      * This should be called the first time any RSK addr is referenced in a TX or a child process
      * Storage nodes accessed via SLOAD or SSTORE are not included.
     */
-    public void accessedNodeAdder(RskAddress addr, Repository repository, ProgramResult progRes){
+    public void accessedNodeAdder(RskAddress addr, Repository repository){
+        ProgramResult progRes = getResult();
         long rd = 0; // initalize rent due to 0
         ByteArrayWrapper accKey = repository.getAccountNodeKey(addr);
         // if the node is not in the map, add the rent owed to current estimate
@@ -1711,7 +1742,7 @@ public class Program {
             accNode.setRentDue(getTimestamp().longValue(), true); // account node value length may not change much
             rd = accNode.getRentDue();
             if (rd >0) {
-                spendRentGas(rd, " rent gas  for pre-existing");   //"collect" rent due
+                spendRentGas(rd, " rent gas for pre-existing");   //"collect" rent due
                 //System.out.println("in program accNodeAddr" + rd);
                 accNode.setLRPTime(getTimestamp().longValue()); //update rent paid timestamp
                 // add to hashmap (internally this is a putIfAbsent) 
@@ -1723,7 +1754,7 @@ public class Program {
             // code node
             ByteArrayWrapper cKey = repository.getCodeNodeKey(addr);
             if (!progRes.getAccessedNodes().containsKey(cKey)){
-                Uint24 cLen = repository.getCodeNodeLength(addr);
+                Uint24 cLen = new Uint24(repository.getCodeLength(addr));
                 long cLrpt = repository.getCodeNodeLRPTime(addr);
                 RentData codeNode = new RentData(cLen, cLrpt);
                 // compute rent and update estRent as needed
@@ -1733,7 +1764,7 @@ public class Program {
                     spendRentGas(rd, " rent gas for  pre-existing");
                     codeNode.setLRPTime(getTimestamp().longValue());
                     progRes.addAccessedNode(cKey, codeNode);
-                }
+                }            
             }       
             // storage root node
             ByteArrayWrapper srKey = repository.getStorageRootKey(addr);
@@ -1755,7 +1786,8 @@ public class Program {
 
     // Similar to accessednodes adder. Different HashMap, 6 months timestamp, rent computation, no check for prepaid rent
     // also, it's more likely that created nodes will be in a cached repository, e.g. cachetrack in Tx execution 
-    public void createdNodeAdder(RskAddress addr, Repository repository, ProgramResult progRes){
+    public void createdNodeAdder(RskAddress addr, Repository repository){
+        ProgramResult progRes = getResult();
         long advTS = getTimestamp().longValue() + GasCost.SIX_MONTHS; //advanced time stamp time.now + 6 months
         long rd = 0; // rent due init 0
         ByteArrayWrapper accKey = repository.getAccountNodeKey(addr);
@@ -1776,7 +1808,8 @@ public class Program {
             // code node
             ByteArrayWrapper cKey = repository.getCodeNodeKey(addr);
             if (!progRes.getCreatedNodes().containsKey(cKey)){
-                Uint24 cLen = repository.getCodeNodeLength(addr);
+                //System.out.println("\n\nin program created NodeAddr");
+                Uint24 cLen = new Uint24(repository.getCodeLength(addr));
                 RentData codeNode = new RentData(cLen, advTS);
                 // compute rent and update estRent as needed
                 codeNode.setSixMonthsRent();
@@ -1795,6 +1828,52 @@ public class Program {
                 spendRentGas(rd, " rent gas for create");
                 progRes.addCreatedNode(srKey, srNode);
             }
+        }
+    }
+
+    // For SLOAD, SSTORE (pre-existing, not newly created)
+    public void accessedStorageNodeAdder(RskAddress addr, DataWord key){
+        ProgramResult progRes = getResult();
+        Repository repository = getStorage();
+        long rd = 0; // initalize rent due to 0
+        ByteArrayWrapper storageKey = repository.getStorageNodeKey(addr, key);
+        // if the node is not in the map, add the rent owed to current estimate
+        if (!progRes.getAccessedNodes().containsKey(storageKey)){
+            Uint24 vLen = repository.getStorageValueLength(addr, key);
+            long storageLrpt = repository.getStorageLRPTime(addr, key);
+            RentData storageNode = new RentData(vLen, storageLrpt);
+            // compute the rent due. Treat these nodes as 'modified' (todo: not efficient for SLOAD, okay for SSTORE)
+            storageNode.setRentDue(getTimestamp().longValue(), true);
+            rd = storageNode.getRentDue();
+            if (rd >0) {
+                spendRentGas(rd, " rent gas  for pre-existing storage node");   //"collect" rent due
+                //System.out.println("in program storageNodeAddr" + rd);
+                storageNode.setLRPTime(getTimestamp().longValue()); //update rent paid timestamp
+                // add to hashmap (internally this is a putIfAbsent) 
+                progRes.addAccessedNode(storageKey, storageNode);
+            }
+        }
+    }
+    
+    //For new SSTORE, not modifications or deletions 
+    public void createdStorageNodeAdder(RskAddress addr, DataWord key){
+        ProgramResult progRes = getResult();
+        Repository repository = getStorage();
+        long advTS = getTimestamp().longValue() + GasCost.SIX_MONTHS; //advanced time stamp time.now + 6 months
+        long rd = 0; // initalize rent due to 0
+        ByteArrayWrapper storageKey = repository.getStorageNodeKey(addr, key);
+    
+        // if the node is not in the map, add the rent owed to current estimate
+        if (!progRes.getCreatedNodes().containsKey(storageKey)){
+            Uint24 vLen = repository.getStorageValueLength(addr, key);
+            RentData storageNode = new RentData(vLen, advTS);
+            // compute the rent due. Treat these nodes as 'modified' (todo: not efficient for SLOAD, okay for SSTORE)
+            storageNode.setSixMonthsRent();
+            rd = storageNode.getRentDue();
+            spendRentGas(rd, " rent gas  for new storage node");   //"collect" rent due
+            //System.out.println("in program created storageNodeAddr" + rd);
+            storageNode.setLRPTime(getTimestamp().longValue()); //update rent paid timestamp
+            progRes.addCreatedNode(storageKey, storageNode);
         }
     }
 
