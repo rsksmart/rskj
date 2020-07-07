@@ -52,7 +52,7 @@ public class GetBlockHeadersByHashMessage extends GetBlockHeadersMessage {
     public byte[] getEncoded() {
         byte[] rlpId = RLP.encodeBigInteger(BigInteger.valueOf(getId()));
         byte[] rlpHash = RLP.encodeElement(getStartBlockHash());
-        byte[] rlpMax = RLP.encodeBigInteger(BigInteger.valueOf(getMax()));
+        byte[] rlpMax = RLP.encodeBigInteger(BigInteger.valueOf(getMaxAmountOfHeaders()));
         byte[] rlpSkip = RLP.encodeBigInteger(BigInteger.valueOf(getSkip()));
         byte[] rlpReverse = RLP.encodeByte((byte)(isReverse() ? 0x01 : 0x00));
 
@@ -65,7 +65,7 @@ public class GetBlockHeadersByHashMessage extends GetBlockHeadersMessage {
         return "GetBlockHeaderMessage{" +
                 "\nid= " + getId() +
                 "\nblockHash= " + toHexString(getStartBlockHash()) +
-                "\nmax= " + getMax() +
+                "\nmax= " + getMaxAmountOfHeaders() +
                 "\nskip= " + getSkip() +
                 "\nreverse= " + isReverse() +
                 "\n}";

@@ -41,13 +41,13 @@ public class GetBlockHeadersByNumberMessageTest {
     @Test
     public void messageCreationShouldBeCorrect() {
         long id = 1;
-        int max = 2;
+        int maxAmountOfHeaders = 2;
         int skip = 5;
-        GetBlockHeadersByNumberMessage testMessage = new GetBlockHeadersByNumberMessage(id, blockNumber, max, skip, true);
+        GetBlockHeadersByNumberMessage testMessage = new GetBlockHeadersByNumberMessage(id, blockNumber, maxAmountOfHeaders, skip, true);
 
         assertEquals(id, testMessage.getId());
         assertEquals(blockNumber, testMessage.getStartBlockNumber());
-        assertEquals(max, testMessage.getMax());
+        assertEquals(maxAmountOfHeaders, testMessage.getMaxAmountOfHeaders());
         assertEquals(skip, testMessage.getSkip());
         assertTrue(testMessage.isReverse());
         assertEquals(BlockHeadersMessage.class, testMessage.getAnswerMessage());
@@ -66,19 +66,19 @@ public class GetBlockHeadersByNumberMessageTest {
     @Test
     public void messageEncodeDecodeShouldBeCorrectWithZeroParameters() {
         long id = 0;
-        int max = 0;
+        int maxAmountOfHeaders = 0;
         int skip = 0;
-        createMessageAndAssertEncodeDecode(id, max, skip, false, 0);
+        createMessageAndAssertEncodeDecode(id, maxAmountOfHeaders, skip, false, 0);
     }
 
-    private void createMessageAndAssertEncodeDecode(long id, int max, int skip, boolean reverse, long blockNumber) {
-        GetBlockHeadersByNumberMessage testMessage = new GetBlockHeadersByNumberMessage(id, blockNumber, max, skip, reverse);
+    private void createMessageAndAssertEncodeDecode(long id, int maxAmountOfHeaders, int skip, boolean reverse, long blockNumber) {
+        GetBlockHeadersByNumberMessage testMessage = new GetBlockHeadersByNumberMessage(id, blockNumber, maxAmountOfHeaders, skip, reverse);
         byte[] encoded = testMessage.getEncoded();
         GetBlockHeadersByNumberMessage getBlockHeadersByNumberMessageMessage = (GetBlockHeadersByNumberMessage) messageFactory.create(GET_BLOCK_HEADER_BY_NUMBER.asByte(), encoded);
 
         assertEquals(id, getBlockHeadersByNumberMessageMessage.getId());
         assertEquals(blockNumber, getBlockHeadersByNumberMessageMessage.getStartBlockNumber());
-        assertEquals(max, getBlockHeadersByNumberMessageMessage.getMax());
+        assertEquals(maxAmountOfHeaders, getBlockHeadersByNumberMessageMessage.getMaxAmountOfHeaders());
         assertEquals(GET_BLOCK_HEADER_BY_NUMBER, getBlockHeadersByNumberMessageMessage.getCommand());
         assertEquals(testMessage.getAnswerMessage(), getBlockHeadersByNumberMessageMessage.getAnswerMessage());
         assertArrayEquals(encoded, getBlockHeadersByNumberMessageMessage.getEncoded());

@@ -123,13 +123,13 @@ public class LightSyncProcessor {
                 block.getNumber(), lightPeer.getPeerIdShort());
     }
 
-    public void sendBlockHeadersByHashMessage(LightPeer lightPeer, byte[] startBlockHash, int max, int skip, boolean reverse) {
-        GetBlockHeadersByHashMessage blockHeaderMessage = new GetBlockHeadersByHashMessage(++lastRequestedId, startBlockHash, max, skip, reverse);
+    public void sendBlockHeadersByHashMessage(LightPeer lightPeer, byte[] startBlockHash, int maxAmountOfHeaders, int skip, boolean reverse) {
+        GetBlockHeadersByHashMessage blockHeaderMessage = new GetBlockHeadersByHashMessage(++lastRequestedId, startBlockHash, maxAmountOfHeaders, skip, reverse);
         sendMessage(lightPeer, blockHeaderMessage);
     }
 
-    public void sendBlockHeadersByNumberMessage(LightPeer lightPeer, long startBlockNumber, int max, int skip, boolean reverse) {
-        GetBlockHeadersByNumberMessage blockHeaderMessage = new GetBlockHeadersByNumberMessage(++lastRequestedId, startBlockNumber, max, skip, reverse);
+    public void sendBlockHeadersByNumberMessage(LightPeer lightPeer, long startBlockNumber, int maxAmountOfHeaders, int skip, boolean reverse) {
+        GetBlockHeadersByNumberMessage blockHeaderMessage = new GetBlockHeadersByNumberMessage(++lastRequestedId, startBlockNumber, maxAmountOfHeaders, skip, reverse);
         sendMessage(lightPeer, blockHeaderMessage);
     }
 

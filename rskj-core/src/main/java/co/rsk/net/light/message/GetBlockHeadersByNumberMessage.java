@@ -30,8 +30,8 @@ public class GetBlockHeadersByNumberMessage extends GetBlockHeadersMessage {
 
     private final long startBlockNumber;
 
-    public GetBlockHeadersByNumberMessage(long id, long startBlockNumber, int max, int skip, boolean reverse) {
-        super(id, max, skip, reverse);
+    public GetBlockHeadersByNumberMessage(long id, long startBlockNumber, int maxAmountOfheaders, int skip, boolean reverse) {
+        super(id, maxAmountOfheaders, skip, reverse);
         this.startBlockNumber = startBlockNumber;
         this.code = LightClientMessageCodes.GET_BLOCK_HEADER_BY_NUMBER.asByte();
     }
@@ -51,7 +51,7 @@ public class GetBlockHeadersByNumberMessage extends GetBlockHeadersMessage {
     @Override
     public byte[] getEncoded() {
         byte[] rlpId = RLP.encodeBigInteger(BigInteger.valueOf(getId()));
-        byte[] rlpMax = RLP.encodeBigInteger(BigInteger.valueOf(getMax()));
+        byte[] rlpMax = RLP.encodeBigInteger(BigInteger.valueOf(getMaxAmountOfHeaders()));
         byte[] rlpSkip = RLP.encodeBigInteger(BigInteger.valueOf(getSkip()));
         byte[] rlpReverse = RLP.encodeByte((byte)(isReverse() ? 0x01 : 0x00));
         byte[] rlpNumber = RLP.encodeBigInteger(BigInteger.valueOf(getStartBlockNumber()));
@@ -64,7 +64,7 @@ public class GetBlockHeadersByNumberMessage extends GetBlockHeadersMessage {
         return "GetBlockHeaderMessage{" +
                 "\nid= " + getId() +
                 "\nblockNumber= " + getStartBlockNumber() +
-                "\nmax= " + getMax() +
+                "\nmax= " + getMaxAmountOfHeaders() +
                 "\nskip= " + getSkip() +
                 "\nreverse= " + isReverse() +
                 "\n}";

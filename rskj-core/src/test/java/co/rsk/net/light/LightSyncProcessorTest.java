@@ -196,11 +196,11 @@ public class LightSyncProcessorTest {
         LightClientHandler lightClientHandler = mock(LightClientHandler.class);
 
         //Message expected
-        final int max = 1;
+        final int maxAmountOfHeaders = 1;
         final int skip = 0;
         final boolean reverse = true;
         final byte[] myBestBlockHash = blockchain.getBestBlock().getHash().getBytes();
-        GetBlockHeadersByHashMessage expectedMessage = new GetBlockHeadersByHashMessage(++requestId, myBestBlockHash, max, skip, reverse);
+        GetBlockHeadersByHashMessage expectedMessage = new GetBlockHeadersByHashMessage(++requestId, myBestBlockHash, maxAmountOfHeaders, skip, reverse);
 
 
         lightSyncProcessor.processStatusMessage(statusMessage, lightPeer, ctx, lightClientHandler);

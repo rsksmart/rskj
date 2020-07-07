@@ -265,9 +265,9 @@ public class LightSyncStateTest {
 
         //Process received pivots, get to Target Block  and transit to End Start Round
         final long thirdRequestId = secondRequestId+1;
-        final int max = Math.toIntExact(TARGET_BLOCK_NUMBER - newStartBlockNumber);
-        GetBlockHeadersByNumberMessage expectedMsg3 = new GetBlockHeadersByNumberMessage(thirdRequestId, newStartBlockNumber+1, max, 0, false);
-        final List<BlockHeader> thirdBlockHeaderList = getBlockHeaders(newStartBlockNumber+1, max, 0, false);
+        final int maxAmountOfHeaders = Math.toIntExact(TARGET_BLOCK_NUMBER - newStartBlockNumber);
+        GetBlockHeadersByNumberMessage expectedMsg3 = new GetBlockHeadersByNumberMessage(thirdRequestId, newStartBlockNumber+1, maxAmountOfHeaders, 0, false);
+        final List<BlockHeader> thirdBlockHeaderList = getBlockHeaders(newStartBlockNumber+1, maxAmountOfHeaders, 0, false);
         when(thirdBlockHeaderList.get(0).getParentHash()).thenReturn(commonAncestorHash);
         lightSyncProcessor.processBlockHeadersMessage(thirdRequestId, thirdBlockHeaderList, lightPeer);
 
