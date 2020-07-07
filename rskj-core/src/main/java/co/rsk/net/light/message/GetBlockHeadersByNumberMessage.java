@@ -26,15 +26,13 @@ import org.spongycastle.util.BigIntegers;
 
 import java.math.BigInteger;
 
-import static org.ethereum.util.ByteUtil.toHexString;
-
 public class GetBlockHeadersByNumberMessage extends GetBlockHeadersMessage {
 
-    private final long blockNumber;
+    private final long startBlockNumber;
 
-    public GetBlockHeadersByNumberMessage(long id, long blockNumber, int max, int skip, boolean reverse) {
-        super(id, max, skip, reverse);
-        this.blockNumber = blockNumber;
+    public GetBlockHeadersByNumberMessage(long id, long startBlockNumber, int maxAmountOfheaders, int skip, boolean reverse) {
+        super(id, maxAmountOfheaders, skip, reverse);
+        this.startBlockNumber = startBlockNumber;
         this.code = LightClientMessageCodes.GET_BLOCK_HEADER_BY_NUMBER.asByte();
     }
 
@@ -42,21 +40,21 @@ public class GetBlockHeadersByNumberMessage extends GetBlockHeadersMessage {
         super(encoded);
         RLPList paramsList = (RLPList) RLP.decode2(encoded).get(0);
         byte[] rlpBlockNumber = paramsList.get(1).getRLPData();
-        this.blockNumber = rlpBlockNumber == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpBlockNumber).longValue();
+        this.startBlockNumber = rlpBlockNumber == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpBlockNumber).longValue();
         this.code = LightClientMessageCodes.GET_BLOCK_HEADER_BY_NUMBER.asByte();
     }
 
-    public long getBlockNumber() {
-        return blockNumber;
+    public long getStartBlockNumber() {
+        return startBlockNumber;
     }
 
     @Override
     public byte[] getEncoded() {
         byte[] rlpId = RLP.encodeBigInteger(BigInteger.valueOf(getId()));
-        byte[] rlpMax = RLP.encodeBigInteger(BigInteger.valueOf(getMax()));
+        byte[] rlpMax = RLP.encodeBigInteger(BigInteger.valueOf(getMaxAmountOfHeaders()));
         byte[] rlpSkip = RLP.encodeBigInteger(BigInteger.valueOf(getSkip()));
         byte[] rlpReverse = RLP.encodeByte((byte)(isReverse() ? 0x01 : 0x00));
-        byte[] rlpNumber = RLP.encodeBigInteger(BigInteger.valueOf(getBlockNumber()));
+        byte[] rlpNumber = RLP.encodeBigInteger(BigInteger.valueOf(getStartBlockNumber()));
 
         return RLP.encodeList(rlpId, rlpNumber, rlpMax, rlpSkip, rlpReverse);
     }
@@ -65,8 +63,8 @@ public class GetBlockHeadersByNumberMessage extends GetBlockHeadersMessage {
     public String toString() {
         return "GetBlockHeaderMessage{" +
                 "\nid= " + getId() +
-                "\nblockNumber= " + getBlockNumber() +
-                "\nmax= " + getMax() +
+                "\nblockNumber= " + getStartBlockNumber() +
+                "\nmax= " + getMaxAmountOfHeaders() +
                 "\nskip= " + getSkip() +
                 "\nreverse= " + isReverse() +
                 "\n}";

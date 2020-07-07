@@ -29,30 +29,30 @@ import static org.ethereum.util.ByteUtil.toHexString;
 
 public class GetBlockHeadersByHashMessage extends GetBlockHeadersMessage {
 
-    private final byte[] blockHash;
+    private final byte[] startBlockHash;
 
-    public GetBlockHeadersByHashMessage(long id, byte[] blockHash, int max, int skip, boolean reverse) {
-        super(id, max, skip, reverse);
-        this.blockHash = blockHash.clone();
+    public GetBlockHeadersByHashMessage(long id, byte[] startBlockHash, int maxAmountOfHeaders, int skip, boolean reverse) {
+        super(id, maxAmountOfHeaders, skip, reverse);
+        this.startBlockHash = startBlockHash.clone();
         this.code = LightClientMessageCodes.GET_BLOCK_HEADER_BY_HASH.asByte();
     }
 
     public GetBlockHeadersByHashMessage(byte[] encoded) {
         super(encoded);
         RLPList paramsList = (RLPList) RLP.decode2(encoded).get(0);
-        this.blockHash = paramsList.get(1).getRLPData();
+        this.startBlockHash = paramsList.get(1).getRLPData();
         this.code = LightClientMessageCodes.GET_BLOCK_HEADER_BY_HASH.asByte();
     }
 
-    public byte[] getBlockHash() {
-        return blockHash.clone();
+    public byte[] getStartBlockHash() {
+        return startBlockHash.clone();
     }
 
     @Override
     public byte[] getEncoded() {
         byte[] rlpId = RLP.encodeBigInteger(BigInteger.valueOf(getId()));
-        byte[] rlpHash = RLP.encodeElement(getBlockHash());
-        byte[] rlpMax = RLP.encodeBigInteger(BigInteger.valueOf(getMax()));
+        byte[] rlpHash = RLP.encodeElement(getStartBlockHash());
+        byte[] rlpMax = RLP.encodeBigInteger(BigInteger.valueOf(getMaxAmountOfHeaders()));
         byte[] rlpSkip = RLP.encodeBigInteger(BigInteger.valueOf(getSkip()));
         byte[] rlpReverse = RLP.encodeByte((byte)(isReverse() ? 0x01 : 0x00));
 
@@ -64,8 +64,8 @@ public class GetBlockHeadersByHashMessage extends GetBlockHeadersMessage {
     public String toString() {
         return "GetBlockHeaderMessage{" +
                 "\nid= " + getId() +
-                "\nblockHash= " + toHexString(getBlockHash()) +
-                "\nmax= " + getMax() +
+                "\nblockHash= " + toHexString(getStartBlockHash()) +
+                "\nmax= " + getMaxAmountOfHeaders() +
                 "\nskip= " + getSkip() +
                 "\nreverse= " + isReverse() +
                 "\n}";
