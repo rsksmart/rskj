@@ -20,7 +20,6 @@ package co.rsk.net.light.state;
 
 import co.rsk.net.light.LightPeer;
 import co.rsk.net.light.LightSyncProcessor;
-import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Blockchain;
 import org.slf4j.Logger;
@@ -48,7 +47,7 @@ public class CommonAncestorSearchSyncState implements LightSyncState {
     @Override
     public void sync() {
         int max = bestBlockNumber < MAX_REQUESTED_HEADERS ? (int) bestBlockNumber : MAX_REQUESTED_HEADERS;
-        lightSyncProcessor.sendBlockHeadersMessage(lightPeer, bestBlockHash, max, 0, true);
+        lightSyncProcessor.sendBlockHeadersByHashMessage(lightPeer, bestBlockHash, max, 0, true);
     }
 
     @Override
@@ -56,7 +55,7 @@ public class CommonAncestorSearchSyncState implements LightSyncState {
         for (BlockHeader bh : blockHeaders) {
             if (isKnown(bh)) {
                 logger.trace("Found common ancestor with best chain");
-                lightSyncProcessor.foundCommonAncestor();
+                lightSyncProcessor.foundCommonAncestor(lightPeer, bh);
                 return;
             }
         }

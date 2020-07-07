@@ -22,6 +22,8 @@ import co.rsk.core.BlockDifficulty;
 import co.rsk.crypto.Keccak256;
 import co.rsk.net.eth.LightClientHandler;
 import co.rsk.net.light.message.GetBlockHeadersByHashMessage;
+import co.rsk.net.light.message.GetBlockHeadersByNumberMessage;
+import co.rsk.net.light.message.GetBlockHeadersMessage;
 import co.rsk.net.light.message.StatusMessage;
 import co.rsk.net.light.state.*;
 import co.rsk.validators.ProofOfWorkRule;
@@ -120,24 +122,35 @@ public class LightSyncProcessor {
                 block.getNumber(), lightPeer.getPeerIdShort());
     }
 
-    public void sendBlockHeadersMessage(LightPeer lightPeer, byte[] startBlockHash, int max, int skip, boolean reverse) {
+    public void sendBlockHeadersByHashMessage(LightPeer lightPeer, byte[] startBlockHash, int max, int skip, boolean reverse) {
         GetBlockHeadersByHashMessage blockHeaderMessage = new GetBlockHeadersByHashMessage(++lastRequestedId, startBlockHash, max, skip, reverse);
+        sendMessage(lightPeer, blockHeaderMessage);
+    }
+
+    public void sendBlockHeadersByNumberMessage(LightPeer lightPeer, long startBlockNumber, int max, int skip, boolean reverse) {
+        GetBlockHeadersByNumberMessage blockHeaderMessage = new GetBlockHeadersByNumberMessage(++lastRequestedId, startBlockNumber, max, skip, reverse);
+        sendMessage(lightPeer, blockHeaderMessage);
+    }
+
+    private void sendMessage(LightPeer lightPeer, GetBlockHeadersMessage blockHeaderMessage) {
         pendingMessages.put(lastRequestedId, BLOCK_HEADER);
         lightPeer.sendMessage(blockHeaderMessage);
     }
 
     public void processBlockHeadersMessage(long id, List<BlockHeader> blockHeaders, LightPeer lightPeer) {
         if (!isPending(id, BLOCK_HEADER)) {
+            //TODO: Abort process
             return;
         }
 
         if (blockHeaders.isEmpty()) {
+            //TODO: Abort process
             return;
         }
 
-        //TODO: Mechanism of disconnecting when peer gives bad information
         for (BlockHeader h : blockHeaders) {
             if (!blockHeaderValidationRule.isValid(h)) {
+                //TODO: Abort process
                 return;
             }
         }
@@ -145,6 +158,7 @@ public class LightSyncProcessor {
         pendingMessages.remove(id, BLOCK_HEADER);
         lightPeer.receivedBlockHeaders(blockHeaders);
         syncState.newBlockHeaders(lightPeer, blockHeaders);
+
     }
 
     public void startAncestorSearchFrom(LightPeer lightPeer, byte[] bestBlockHash, long bestBlockNumber) {
@@ -156,8 +170,14 @@ public class LightSyncProcessor {
         setState(new DecidingLightSyncState(this, lightPeer, bestBlockHeader));
     }
 
-    public void foundCommonAncestor() {
-        syncState = new RoundSyncState();
+    public void foundCommonAncestor(LightPeer lightPeer, BlockHeader startBlockHeader) {
+        final LightStatus lightStatus = lightPeersInformation.getLightStatus(lightPeer);
+
+        if (startBlockHeader.getDifficulty().compareTo(lightStatus.getTotalDifficulty()) == 1) {
+            return;
+        }
+
+        setState(new StartRoundSyncState(this, lightPeer, startBlockHeader, lightStatus.getBestNumber()));
     }
 
     public LightSyncState getSyncState() {
@@ -207,5 +227,29 @@ public class LightSyncProcessor {
             return false;
         }
         return true;
+    }
+
+    public void endStartRound() {
+        //End sync
+    }
+
+    public void startFetchRound() {
+        //Starting fetch sub chains
+    }
+
+    public void differentFirstBlocks() {
+
+    }
+
+    public void incorrectSkipped() {
+
+    }
+
+    public void moreBlocksThanAllowed() {
+
+    }
+
+    public void incorrectParentHash() {
+
     }
 }
