@@ -42,13 +42,13 @@ public class GetBlockHeadersByHashMessageTest {
     @Test
     public void messageCreationShouldBeCorrect() {
         long id = 1;
-        int max = 2;
+        int maxAmountOfHeaders = 2;
         int skip = 5;
-        GetBlockHeadersByHashMessage testMessage = new GetBlockHeadersByHashMessage(id, blockHash, max, skip, true);
+        GetBlockHeadersByHashMessage testMessage = new GetBlockHeadersByHashMessage(id, blockHash, maxAmountOfHeaders, skip, true);
 
         assertEquals(id, testMessage.getId());
-        assertArrayEquals(blockHash, testMessage.getBlockHash());
-        assertEquals(max, testMessage.getMax());
+        assertArrayEquals(blockHash, testMessage.getStartBlockHash());
+        assertEquals(maxAmountOfHeaders, testMessage.getMaxAmountOfHeaders());
         assertEquals(skip, testMessage.getSkip());
         assertTrue(testMessage.isReverse());
         assertEquals(BlockHeadersMessage.class, testMessage.getAnswerMessage());
@@ -58,28 +58,28 @@ public class GetBlockHeadersByHashMessageTest {
     @Test
     public void messageEncodeDecodeShouldBeCorrect() {
         long id = 1;
-        int max = 2;
+        int maxAmountOfHeaders = 2;
         int skip = 3;
 
-        createMessageAndAssertEncodeDecode(id, max, skip, true);
+        createMessageAndAssertEncodeDecode(id, maxAmountOfHeaders, skip, true);
     }
 
     @Test
     public void messageEncodeDecodeShouldBeCorrectWithZeroParameters() {
         long id = 0;
-        int max = 0;
+        int maxAmountOfHeaders = 0;
         int skip = 0;
-        createMessageAndAssertEncodeDecode(id, max, skip, false);
+        createMessageAndAssertEncodeDecode(id, maxAmountOfHeaders, skip, false);
     }
 
-    private void createMessageAndAssertEncodeDecode(long id, int max, int skip, boolean reverse) {
-        GetBlockHeadersByHashMessage testMessage = new GetBlockHeadersByHashMessage(id, blockHash, max, skip, reverse);
+    private void createMessageAndAssertEncodeDecode(long id, int maxAmountOfHeaders, int skip, boolean reverse) {
+        GetBlockHeadersByHashMessage testMessage = new GetBlockHeadersByHashMessage(id, blockHash, maxAmountOfHeaders, skip, reverse);
         byte[] encoded = testMessage.getEncoded();
         GetBlockHeadersByHashMessage getBlockHeadersByHashMessage = (GetBlockHeadersByHashMessage) messageFactory.create(GET_BLOCK_HEADER_BY_HASH.asByte(), encoded);
 
         assertEquals(id, getBlockHeadersByHashMessage.getId());
-        assertArrayEquals(blockHash, getBlockHeadersByHashMessage.getBlockHash());
-        assertEquals(max, getBlockHeadersByHashMessage.getMax());
+        assertArrayEquals(blockHash, getBlockHeadersByHashMessage.getStartBlockHash());
+        assertEquals(maxAmountOfHeaders, getBlockHeadersByHashMessage.getMaxAmountOfHeaders());
         assertEquals(GET_BLOCK_HEADER_BY_HASH, getBlockHeadersByHashMessage.getCommand());
         assertEquals(testMessage.getAnswerMessage(), getBlockHeadersByHashMessage.getAnswerMessage());
         assertArrayEquals(encoded, getBlockHeadersByHashMessage.getEncoded());

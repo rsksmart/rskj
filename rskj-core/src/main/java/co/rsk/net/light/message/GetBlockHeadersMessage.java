@@ -26,12 +26,12 @@ import org.spongycastle.util.BigIntegers;
 public abstract class GetBlockHeadersMessage extends LightClientMessage {
     protected final long id;
     protected final boolean reverse;
-    protected final int max;
+    protected final int maxAmountOfHeaders;
     protected final int skip;
 
-    public GetBlockHeadersMessage(long id, int max, int skip, boolean reverse) {
+    public GetBlockHeadersMessage(long id, int maxAmountOfHeaders, int skip, boolean reverse) {
         this.id = id;
-        this.max = max;
+        this.maxAmountOfHeaders = maxAmountOfHeaders;
         this.skip = skip;
         this.reverse = reverse;
     }
@@ -41,7 +41,7 @@ public abstract class GetBlockHeadersMessage extends LightClientMessage {
         byte[] rlpId = paramsList.get(0).getRLPData();
         this.id = rlpId == null ? 0 : BigIntegers.fromUnsignedByteArray(rlpId).longValue();
         byte[] rlpMax = paramsList.get(2).getRLPData();
-        this.max = rlpMax == null? 0 : BigIntegers.fromUnsignedByteArray(rlpMax).intValue();
+        this.maxAmountOfHeaders = rlpMax == null? 0 : BigIntegers.fromUnsignedByteArray(rlpMax).intValue();
         byte[] rlpSkip = paramsList.get(3).getRLPData();
         this.skip = rlpSkip == null? 0 : BigIntegers.fromUnsignedByteArray(rlpSkip).intValue();
         byte[] rlpReverse = paramsList.get(4).getRLPData();
@@ -60,8 +60,8 @@ public abstract class GetBlockHeadersMessage extends LightClientMessage {
         return reverse;
     }
 
-    public int getMax() {
-        return max;
+    public int getMaxAmountOfHeaders() {
+        return maxAmountOfHeaders;
     }
 
     public abstract byte[] getEncoded();

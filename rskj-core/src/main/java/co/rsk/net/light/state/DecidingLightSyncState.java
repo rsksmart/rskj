@@ -20,7 +20,6 @@ package co.rsk.net.light.state;
 
 import co.rsk.net.light.LightPeer;
 import co.rsk.net.light.LightSyncProcessor;
-import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 
 import java.util.List;
@@ -31,11 +30,11 @@ public class DecidingLightSyncState implements LightSyncState {
     private final byte[] bestBlockHash;
     private final long bestBlockNumber;
 
-    public DecidingLightSyncState(LightSyncProcessor lightSyncProcessor, LightPeer lightPeer, Block bestBlock) {
+    public DecidingLightSyncState(LightSyncProcessor lightSyncProcessor, LightPeer lightPeer, BlockHeader bestBlockHeader) {
         this.lightSyncProcessor = lightSyncProcessor;
         this.lightPeer = lightPeer;
-        this.bestBlockHash = bestBlock.getHash().getBytes();
-        this.bestBlockNumber = bestBlock.getNumber();
+        this.bestBlockHash = bestBlockHeader.getHash().getBytes();
+        this.bestBlockNumber = bestBlockHeader.getNumber();
     }
 
     @Override

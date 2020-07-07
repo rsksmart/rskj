@@ -37,6 +37,10 @@ public class LightPeersInformation {
         return peerStatuses.size();
     }
 
+    public LightStatus getLightStatus(LightPeer lightPeer) {
+        return peerStatuses.get(lightPeer);
+    }
+
     public void registerLightPeer(LightPeer lightPeer, LightStatus status, boolean txRelay) {
 
         if (!peerStatuses.containsKey(lightPeer)) {

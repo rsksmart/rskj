@@ -20,7 +20,6 @@ package co.rsk.net.light.state;
 
 import co.rsk.net.light.LightPeer;
 import co.rsk.net.light.LightSyncProcessor;
-import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Blockchain;
 import org.slf4j.Logger;
@@ -28,8 +27,9 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
+import static co.rsk.net.light.LightSyncProcessor.MAX_REQUESTED_HEADERS;
+
 public class CommonAncestorSearchSyncState implements LightSyncState {
-    public static final int MAX_REQUESTED_HEADERS = 192; //Based in max_chunks, this number should be in the config file in some light section
     private final LightSyncProcessor lightSyncProcessor;
     private final LightPeer lightPeer;
     private final byte[] bestBlockHash;
@@ -48,7 +48,7 @@ public class CommonAncestorSearchSyncState implements LightSyncState {
     @Override
     public void sync() {
         int max = bestBlockNumber < MAX_REQUESTED_HEADERS ? (int) bestBlockNumber : MAX_REQUESTED_HEADERS;
-        lightSyncProcessor.sendBlockHeadersMessage(lightPeer, bestBlockHash, max, 0, true);
+        lightSyncProcessor.sendBlockHeadersByHashMessage(lightPeer, bestBlockHash, max, 0, true);
     }
 
     @Override
@@ -56,15 +56,15 @@ public class CommonAncestorSearchSyncState implements LightSyncState {
         for (BlockHeader bh : blockHeaders) {
             if (isKnown(bh)) {
                 logger.trace("Found common ancestor with best chain");
-                lightSyncProcessor.foundCommonAncestor();
+                lightSyncProcessor.foundCommonAncestor(lightPeer, bh);
                 return;
             }
         }
 
         long newStart = bestBlockNumber - blockHeaders.size();
         if (newStart != 0) {
-            final Block newStartBlock = blockchain.getBlockByNumber(newStart);
-            lightSyncProcessor.startAncestorSearchFrom(lightPeer, newStartBlock.getHash().getBytes(), newStartBlock.getNumber());
+            final BlockHeader newStartBlockHeader = blockchain.getBlockByNumber(newStart).getHeader();
+            lightSyncProcessor.startAncestorSearchFrom(lightPeer, newStartBlockHeader.getHash().getBytes(), newStartBlockHeader.getNumber());
         }
     }
 
