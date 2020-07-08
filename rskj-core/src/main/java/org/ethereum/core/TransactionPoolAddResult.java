@@ -51,7 +51,7 @@ public class TransactionPoolAddResult {
     }
 
     public static TransactionPoolAddResult withError(String errorMessage) {
-        return new TransactionPoolAddResult(false, errorMessage, null);
+        return new TransactionPoolAddResult(false, errorMessage, Collections.emptyList());
     }
 
     public List<Transaction> getTransactionsAdded() {
