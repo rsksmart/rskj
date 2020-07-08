@@ -24,13 +24,11 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.net.light.message.GetBlockHeadersByHashMessage;
 import co.rsk.net.light.message.GetBlockHeadersByNumberMessage;
 import co.rsk.net.light.message.GetBlockHeadersMessage;
+import co.rsk.net.light.message.LightClientMessage;
 import co.rsk.net.light.state.*;
 import co.rsk.validators.ProofOfWorkRule;
 import org.ethereum.config.SystemProperties;
-import org.ethereum.core.Block;
-import org.ethereum.core.BlockHeader;
-import org.ethereum.core.Blockchain;
-import org.ethereum.core.Genesis;
+import org.ethereum.core.*;
 import org.ethereum.db.BlockStore;
 import org.junit.Before;
 import org.junit.Test;
@@ -55,12 +53,16 @@ public class LightSyncStateTest {
     private LightPeer longLightPeer;
     private ProofOfWorkRule powRule;
     private Blockchain blockchain;
+    private Genesis genesis;
 
     @Before
     public void setUp() {
         powRule = mock(ProofOfWorkRule.class);
         blockchain = mock(Blockchain.class);
         lightPeer = mock(LightPeer.class);
+        genesis = getGenesis();
+        when(blockchain.getBlockByNumber(0)).thenReturn(genesis);
+
         LightStatus lightStatus = mock(LightStatus.class);
         setupBestPeerStatus(lightStatus, TARGET_BLOCK_NUMBER);
 
@@ -90,54 +92,79 @@ public class LightSyncStateTest {
         assertEquals(lightSyncProcessor.getSyncState().getClass(), CommonAncestorSearchSyncState.class);
     }
 
-    //This test will be changed for transit to StartRoundSyncState with genesis as start block
     @Test
-    public void decidingLightSyncStateShouldNotTransitToSearchCommonAncestorIfBestBlockIsZero() {
+    public void decidingLightSyncStateShouldTransitToStartRoundIfBestBlockIsZero() {
         final BlockHeader bestBlockHeader = getBlockHeader(0L, new Keccak256(randomHash()), BlockDifficulty.ONE);
         final DecidingLightSyncState decidingLightSyncState = new DecidingLightSyncState(lightSyncProcessor, lightPeer, bestBlockHeader);
         decidingLightSyncState.sync();
 
-        assertNotEquals(lightSyncProcessor.getSyncState().getClass(), CommonAncestorSearchSyncState.class);
+        assertEquals(lightSyncProcessor.getSyncState().getClass(), StartRoundSyncState.class);
     }
 
     @Test
     public void commonAncestorSearchShouldRequestABlockHeaderToSync() {
-        final BlockHeader bestBlockHeader = getBlockHeader(1L, new Keccak256(randomHash()), BlockDifficulty.ONE);
-        final CommonAncestorSearchSyncState syncState = new CommonAncestorSearchSyncState(lightSyncProcessor, lightPeer, bestBlockHeader.getHash().getBytes(), bestBlockHeader.getNumber(), blockchain);
-        syncState.sync();
+        final Keccak256 bestBlockHash = new Keccak256(randomHash());
+        final int bestBlockNumber = 1;
+        final BlockHeader bestBlockHeader = getBlockHeader(bestBlockNumber, bestBlockHash, BlockDifficulty.ONE);
+        startCommonAncestorSearchFrom(bestBlockHeader);
 
         final GetBlockHeadersByHashMessage expectedMsg = new GetBlockHeadersByHashMessage(1, bestBlockHeader.getHash().getBytes(), 1, 0, true);
-        ArgumentCaptor<GetBlockHeadersMessage> argument = forClass(GetBlockHeadersByHashMessage.class);
-        assertSendSameMessage(expectedMsg, argument);
+        assertSendMessage(expectedMsg);
     }
 
     @Test
     public void commonAncestorStateReceiveNotKnownHeadersAndShouldAskForSuccessors() {
         final BlockHeader startBlockHeader = getBlockHeader(5L, new Keccak256(randomHash()), BlockDifficulty.ONE);
+        final CommonAncestorSearchSyncState syncState = startCommonAncestorSearchFrom(startBlockHeader);
 
-        final CommonAncestorSearchSyncState syncState = new CommonAncestorSearchSyncState(lightSyncProcessor, lightPeer, startBlockHeader.getHash().getBytes(), startBlockHeader.getNumber(), blockchain);
         final List<BlockHeader> bhs = new ArrayList<>();
         bhs.add(startBlockHeader);
 
         long newStartNumber = startBlockHeader.getNumber() - bhs.size();
         final BlockHeader newStartBlock = getBlockHeader(newStartNumber, new Keccak256(randomHash()), BlockDifficulty.ONE);
         includeBlockInBlockchain(newStartBlock);
+
         syncState.newBlockHeaders(lightPeer, bhs);
 
-        final GetBlockHeadersByHashMessage expectedMsg = new GetBlockHeadersByHashMessage(1, newStartBlock.getHash().getBytes(), 4, 0, true);
-        ArgumentCaptor<GetBlockHeadersMessage> argument = forClass(GetBlockHeadersByHashMessage.class);
-        assertSendSameMessage(expectedMsg, argument);
+        final GetBlockHeadersByHashMessage initialMsg = new GetBlockHeadersByHashMessage(1, startBlockHeader.getHash().getBytes(), (int) startBlockHeader.getNumber(), 0, true);
+        final GetBlockHeadersByHashMessage expectedMsg = new GetBlockHeadersByHashMessage(2, newStartBlock.getHash().getBytes(), 4, 0, true);
+        ArgumentCaptor<LightClientMessage> argument = forClass(GetBlockHeadersByHashMessage.class);
+        assertSendSameMessages(initialMsg, expectedMsg, argument);
+    }
+
+    @Test
+    public void commonAncestorStateReceiveNotKnownHeadersGetZeroAndShouldTransitToStartSyncRound() {
+        final BlockHeader startBlockHeader = getBlockHeader(5L, new Keccak256(randomHash()), BlockDifficulty.ONE);
+        final CommonAncestorSearchSyncState syncState = startCommonAncestorSearchFrom(startBlockHeader);
+        final List<BlockHeader> bhs = getBlockHeaders(startBlockHeader.getNumber(), 5, 0, true);
+
+        syncState.newBlockHeaders(lightPeer, bhs);
+
+        final GetBlockHeadersByHashMessage initialMsg = new GetBlockHeadersByHashMessage(1, startBlockHeader.getHash().getBytes(), (int) startBlockHeader.getNumber(), 0, true);
+        final GetBlockHeadersByNumberMessage secondMsg = new GetBlockHeadersByNumberMessage(2, genesis.getNumber()+1, (int) TARGET_BLOCK_NUMBER, 0, false);
+        ArgumentCaptor<LightClientMessage> argument = forClass(LightClientMessage.class);
+        assertSendSameMessages(initialMsg, secondMsg, argument);
+    }
+
+    @Test
+    public void commonAncestorStateReceivesMoreThanMaxAmountOfHeadersAndShouldDiscardIt() {
+        final long startNumber = 5L;
+        final BlockHeader startBlockHeader = getBlockHeader(startNumber, new Keccak256(randomHash()), BlockDifficulty.ONE);
+        final CommonAncestorSearchSyncState syncState = startCommonAncestorSearchFrom(startBlockHeader);
+        final long numberOfHeaders = startBlockHeader.getNumber() + 2;
+        final List<BlockHeader> bhs = getBlockHeaders(numberOfHeaders, (int) numberOfHeaders-1, 0, true);
+
+        syncState.newBlockHeaders(lightPeer, bhs);
+        verify(lightSyncProcessor).wrongBlockHeadersSize();
     }
 
     @Test
     public void startNumberIsOverMaxRequestedHeadersAndShouldRequestMaxQuantity() {
         final BlockHeader bestBlockHeader = getBlockHeader(200L, new Keccak256(randomHash()), BlockDifficulty.ONE);
-        final CommonAncestorSearchSyncState syncState = new CommonAncestorSearchSyncState(lightSyncProcessor, lightPeer, bestBlockHeader.getHash().getBytes(), bestBlockHeader.getNumber(), blockchain);
-        syncState.sync();
+        startCommonAncestorSearchFrom(bestBlockHeader);
 
         final GetBlockHeadersByHashMessage expectedMsg = new GetBlockHeadersByHashMessage(1, bestBlockHeader.getHash().getBytes(), MAX_REQUESTED_HEADERS, 0, true);
-        ArgumentCaptor<GetBlockHeadersMessage> argument = forClass(GetBlockHeadersByHashMessage.class);
-        assertSendSameMessage(expectedMsg, argument);
+        assertSendMessage(expectedMsg);
     }
 
     @Test
@@ -145,7 +172,7 @@ public class LightSyncStateTest {
         final BlockHeader startBlockHeader = getBlockHeader(5L, new Keccak256(randomHash()), new BlockDifficulty(BigInteger.valueOf(50)));
         includeBlockInBlockchain(startBlockHeader);
 
-        final CommonAncestorSearchSyncState syncState = new CommonAncestorSearchSyncState(lightSyncProcessor, lightPeer, startBlockHeader.getHash().getBytes(), startBlockHeader.getNumber(), blockchain);
+        final CommonAncestorSearchSyncState syncState = startCommonAncestorSearchFrom(startBlockHeader);
         final List<BlockHeader> bhs = new ArrayList<>();
         bhs.add(startBlockHeader);
 
@@ -157,16 +184,16 @@ public class LightSyncStateTest {
     public void commonAncestorStateReceiveKnownHeadersAndShouldTransitToStartRoundSyncState() {
         final BlockHeader startBlockHeader = getBlockHeader(1L, new Keccak256(randomHash()), BlockDifficulty.ONE);
         includeBlockInBlockchain(startBlockHeader);
-
-        final CommonAncestorSearchSyncState syncState = new CommonAncestorSearchSyncState(lightSyncProcessor, lightPeer, startBlockHeader.getHash().getBytes(), startBlockHeader.getNumber(), blockchain);
+        final CommonAncestorSearchSyncState syncState = startCommonAncestorSearchFrom(startBlockHeader);
         final List<BlockHeader> bhs = new ArrayList<>();
         bhs.add(startBlockHeader);
 
         syncState.newBlockHeaders(lightPeer, bhs);
 
-        GetBlockHeadersByNumberMessage expectedMsg = new GetBlockHeadersByNumberMessage(1, 2, 9, 0, false);
-        ArgumentCaptor<GetBlockHeadersMessage> argument = forClass(GetBlockHeadersByNumberMessage.class);
-        assertSendSameMessage(expectedMsg, argument);
+        final GetBlockHeadersByHashMessage initialMsg = new GetBlockHeadersByHashMessage(1, startBlockHeader.getHash().getBytes(), (int) startBlockHeader.getNumber(), 0, true);
+        final GetBlockHeadersByNumberMessage expectedMsg = new GetBlockHeadersByNumberMessage(2, 2, 9, 0, false);
+        ArgumentCaptor<LightClientMessage> argument = forClass(GetBlockHeadersByNumberMessage.class);
+        assertSendSameMessages(initialMsg, expectedMsg, argument);
         assertEquals(lightSyncProcessor.getSyncState().getClass(), StartRoundSyncState.class);
     }
 
@@ -270,7 +297,7 @@ public class LightSyncStateTest {
     }
 
     @Test
-    public void anEntireProcessSinceLightSyncProcessorStartsUntilItFindsACommonBlock() {
+    public void anEntireProcessSinceLightSyncProcessorStartsFromBlockHeaderUntilItEndsStartRound() {
         int requestId = 1;
         final int bestBlockNumber = 195;
         final Keccak256 bestBlockHash = new Keccak256(randomHash());
@@ -313,8 +340,77 @@ public class LightSyncStateTest {
         assertMessagesWereSent(expectedMsg1, expectedMsg2, expectedMsg3);
     }
 
+    @Test
+    public void anEntireProcessSinceLightSyncProcessorStartsFromGenesisUntilItFindsACommonBlock() {
+        int requestId = 1;
+        final int bestBlockNumber = 195;
+        final Keccak256 bestBlockHash = new Keccak256(randomHash());
+        final BlockHeader bestKnownHeader = getBlockHeader(bestBlockNumber, bestBlockHash, BlockDifficulty.ONE);
+
+        //Send BlockHeadersRequest
+        lightSyncProcessor.startSync(lightPeer, bestKnownHeader);
+        final GetBlockHeadersByHashMessage expectedMsg1 = new GetBlockHeadersByHashMessage(requestId, bestKnownHeader.getHash().getBytes(), MAX_REQUESTED_HEADERS, 0, true);
+
+        //This should be the peer's response
+        final List<BlockHeader> firstBlockHeaderList = getBlockHeaders(bestBlockNumber, MAX_REQUESTED_HEADERS, 0, true);
+
+        //Process received block's headers and request for the rest
+        int newStartBlockNumber = bestBlockNumber - MAX_REQUESTED_HEADERS;
+        final Keccak256 newStartBlockHash = new Keccak256(randomHash());
+        final BlockHeader newStartBlockHeader = getBlockHeader(newStartBlockNumber, newStartBlockHash, BlockDifficulty.ONE);
+        includeBlockInBlockchain(newStartBlockHeader);
+        lightSyncProcessor.processBlockHeadersMessage(requestId, firstBlockHeaderList, lightPeer);
+
+        //Process response and request for pivots
+        final long secondRequestId = requestId+1;
+        GetBlockHeadersByHashMessage expectedMsg2 = new GetBlockHeadersByHashMessage(secondRequestId, newStartBlockHeader.getHash().getBytes(), newStartBlockNumber, 0, true);
+        List<BlockHeader> secondBlockHeaderList = getBlockHeaders(newStartBlockNumber, newStartBlockNumber, 0, true);
+        lightSyncProcessor.processBlockHeadersMessage(secondRequestId, secondBlockHeaderList, lightPeer);
+
+        //Process received pivots, get to Target Block  and transit to End Start Round
+        final long thirdRequestId = secondRequestId+1;
+        final int maxAmountOfHeaders = (int) TARGET_BLOCK_NUMBER;
+        newStartBlockNumber = (int) (genesis.getNumber()+1);
+        GetBlockHeadersByNumberMessage expectedMsg3 = new GetBlockHeadersByNumberMessage(thirdRequestId, newStartBlockNumber, maxAmountOfHeaders, 0, false);
+        final List<BlockHeader> thirdBlockHeaderList = getBlockHeaders(newStartBlockNumber, maxAmountOfHeaders, 0, false);
+        final Keccak256 genesisHash = genesis.getHash();
+        when(thirdBlockHeaderList.get(0).getParentHash()).thenReturn(genesisHash);
+        lightSyncProcessor.processBlockHeadersMessage(thirdRequestId, thirdBlockHeaderList, lightPeer);
+
+        verify(lightSyncProcessor).endStartRound();
+        assertMessagesWereSent(expectedMsg1, expectedMsg2, expectedMsg3);
+    }
+
+    private Genesis getGenesis() {
+        Genesis genesis = mock(Genesis.class);
+        GenesisHeader genesisHeader = mock(GenesisHeader.class);
+        when(genesis.getNumber()).thenReturn(0L);
+        final Keccak256 genesisHash = new Keccak256(randomHash());
+        when(genesis.getHash()).thenReturn(genesisHash);
+        final BlockDifficulty genesisDiff = BlockDifficulty.ZERO;
+        when(genesis.getDifficulty()).thenReturn(genesisDiff);
+        when(blockchain.getBlockByNumber(0)).thenReturn(genesis);
+        when(genesis.getHeader()).thenReturn(genesisHeader);
+        when(genesisHeader.getNumber()).thenReturn(0L);
+        when(genesisHeader.getDifficulty()).thenReturn(genesisDiff);
+        when(genesisHeader.getHash()).thenReturn(genesisHash);
+        return genesis;
+    }
+
+    private void assertSendMessage(LightClientMessage expectedMsg) {
+        ArgumentCaptor<LightClientMessage> argument = forClass(LightClientMessage.class);
+        verify(lightPeer).sendMessage(argument.capture());
+        assertArrayEquals(expectedMsg.getEncoded(), argument.getAllValues().get(0).getEncoded());
+    }
+
+    private CommonAncestorSearchSyncState startCommonAncestorSearchFrom(BlockHeader bestBlockHeader) {
+        final CommonAncestorSearchSyncState syncState = new CommonAncestorSearchSyncState(lightSyncProcessor, lightPeer, bestBlockHeader.getHash().getBytes(), bestBlockHeader.getNumber(), blockchain);
+        syncState.sync();
+        return syncState;
+    }
+
     private void newBlockHeadersInStartRoundSyncState(BlockHeader startBlockHeader, List<BlockHeader> blockHeaders, LightPeer lightPeer) {
-        lightSyncProcessor.foundCommonAncestor(lightPeer, startBlockHeader);
+        lightSyncProcessor.startSyncRound(lightPeer, startBlockHeader);
         final LightSyncState syncState = lightSyncProcessor.getSyncState();
         syncState.newBlockHeaders(lightPeer, blockHeaders);
     }
@@ -350,9 +446,10 @@ public class LightSyncStateTest {
         when(powRule.isValid(blockHeader)).thenReturn(true);
     }
 
-    private void assertSendSameMessage(GetBlockHeadersMessage expectedMsg, ArgumentCaptor<GetBlockHeadersMessage> argument) {
-        verify(lightPeer).sendMessage(argument.capture());
-        assertArrayEquals(expectedMsg.getEncoded(), argument.getValue().getEncoded());
+    private void assertSendSameMessages(GetBlockHeadersByHashMessage initialMsg, GetBlockHeadersMessage expectedMsg, ArgumentCaptor<LightClientMessage> argument) {
+        verify(lightPeer, times(2)).sendMessage(argument.capture());
+        assertArrayEquals(initialMsg.getEncoded(), argument.getAllValues().get(0).getEncoded());
+        assertArrayEquals(expectedMsg.getEncoded(), argument.getAllValues().get(1).getEncoded());
     }
 
     private BlockHeader getBlockHeader(long number, Keccak256 hash, BlockDifficulty blockDifficulty) {

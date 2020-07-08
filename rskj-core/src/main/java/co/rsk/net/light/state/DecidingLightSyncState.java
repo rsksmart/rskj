@@ -27,21 +27,22 @@ import java.util.List;
 public class DecidingLightSyncState implements LightSyncState {
     private final LightSyncProcessor lightSyncProcessor;
     private final LightPeer lightPeer;
-    private final byte[] bestBlockHash;
-    private final long bestBlockNumber;
+    private final BlockHeader bestBlockHeader;
 
     public DecidingLightSyncState(LightSyncProcessor lightSyncProcessor, LightPeer lightPeer, BlockHeader bestBlockHeader) {
         this.lightSyncProcessor = lightSyncProcessor;
         this.lightPeer = lightPeer;
-        this.bestBlockHash = bestBlockHeader.getHash().getBytes();
-        this.bestBlockNumber = bestBlockHeader.getNumber();
+        this.bestBlockHeader = bestBlockHeader;
     }
 
     @Override
     public void sync() {
+        final long bestBlockNumber = bestBlockHeader.getNumber();
         if (bestBlockNumber != 0) {
             lightSyncProcessor.startAncestorSearchFrom(lightPeer,
-                    bestBlockHash, bestBlockNumber);
+                    bestBlockHeader.getHash().getBytes(), bestBlockNumber);
+        } else {
+            lightSyncProcessor.startSyncRound(lightPeer, bestBlockHeader);
         }
     }
 
