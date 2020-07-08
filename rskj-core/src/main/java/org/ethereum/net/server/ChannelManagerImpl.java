@@ -313,7 +313,7 @@ public class ChannelManagerImpl implements ChannelManager {
      * @return a set containing the ids of the peers that received the transaction.
      */
     @Nonnull
-    public Set<NodeID> broadcastTransaction(@Nonnull final Transaction transaction, final Set<NodeID> skip) {
+    public Set<NodeID> broadcastTransaction(@Nonnull final Transaction transaction, @Nonnull final Set<NodeID> skip) {
         List<Transaction> transactions = Collections.singletonList(transaction);
 
         return internalBroadcastTransactions(skip, transactions);

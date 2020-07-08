@@ -67,7 +67,7 @@ public interface ChannelManager extends InternalService {
      * @return a set containing the ids of the peers that received the transaction.
      */
     @Nonnull
-    Set<NodeID> broadcastTransaction(@Nonnull final Transaction transaction, @Nullable final Set<NodeID> skip);
+    Set<NodeID> broadcastTransaction(@Nonnull final Transaction transaction, @Nonnull final Set<NodeID> skip);
 
     int broadcastStatus(@Nonnull final Status status);
 
