@@ -166,7 +166,7 @@ public class TransactionPoolImpl implements TransactionPool {
             Transaction found = successor.get();
             queuedTransactions.removeTransactionByHash(found.getHash());
 
-            if (!this.internalAddTransaction(found).transactionWasAdded()) {
+            if (!this.internalAddTransaction(found).transactionsWereAdded()) {
                 break;
             }
 
@@ -194,7 +194,7 @@ public class TransactionPoolImpl implements TransactionPool {
         for (Transaction tx : txs) {
             TransactionPoolAddResult result = this.internalAddTransaction(tx);
 
-            if (result.transactionWasAdded()) {
+            if (result.transactionsWereAdded()) {
                 added.add(tx);
                 added.addAll(this.addSuccessors(tx));
             }
@@ -272,7 +272,7 @@ public class TransactionPoolImpl implements TransactionPool {
     public synchronized TransactionPoolAddResult addTransaction(final Transaction tx) {
         TransactionPoolAddResult result = this.internalAddTransaction(tx);
 
-        if (!result.transactionWasAdded()) {
+        if (!result.transactionsWereAdded()) {
             return result;
         }
 

@@ -50,7 +50,7 @@ public class TransactionGateway {
 
     public TransactionPoolAddResult receiveTransaction(Transaction transaction) {
         TransactionPoolAddResult result  = transactionPool.addTransaction(transaction);
-        if(!result.getTransactionsAdded().isEmpty()) {
+        if(!result.transactionsWereAdded()) {
             channelManager.broadcastTransactions(result.getTransactionsAdded(), Collections.emptySet());
         }
         return result;

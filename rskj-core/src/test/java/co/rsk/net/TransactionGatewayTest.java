@@ -47,7 +47,7 @@ public class TransactionGatewayTest {
     }
 
     @Test
-    public void receivesTransactionsNonExistentAtTxPoolShouldAddAndShouldBroadcast() throws Exception {
+    public void receivesTransactionsNonExistentAtTxPoolShouldAddAndShouldBroadcast() {
         List<Transaction> transactions = Collections.singletonList(tx);
         List<Transaction> transactionPoolAddResult = transactions;
 

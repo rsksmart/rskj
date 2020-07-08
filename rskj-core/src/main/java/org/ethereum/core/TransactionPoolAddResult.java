@@ -23,35 +23,33 @@ import java.util.List;
 import java.util.function.Consumer;
 
 public class TransactionPoolAddResult {
-    private final boolean transactionWasAdded;
     private final String errorMessage;
     private final List<Transaction> transactionsAdded;
 
-    private TransactionPoolAddResult(boolean transactionWasAdded, String errorMessage, List<Transaction> transactionsAdded) {
-        this.transactionWasAdded = transactionWasAdded;
+    private TransactionPoolAddResult(String errorMessage, List<Transaction> transactionsAdded) {
         this.errorMessage = errorMessage;
         this.transactionsAdded = Collections.unmodifiableList(transactionsAdded);
     }
 
-    public boolean transactionWasAdded() {
-        return transactionWasAdded;
+    public boolean transactionsWereAdded() {
+        return transactionsAdded != null && !transactionsAdded.isEmpty();
     }
 
     /**
      * This is mainly used to throw exceptions on the RPC avoiding the use of getters
      */
     public void ifTransactionWasNotAdded(Consumer<String> errorConsumer) {
-        if (!transactionWasAdded) {
+        if (!transactionsWereAdded()) {
             errorConsumer.accept(errorMessage);
         }
     }
 
     public static TransactionPoolAddResult ok(Transaction transaction) {
-        return new TransactionPoolAddResult(true, null, Collections.singletonList(transaction));
+        return new TransactionPoolAddResult(null, Collections.singletonList(transaction));
     }
 
     public static TransactionPoolAddResult withError(String errorMessage) {
-        return new TransactionPoolAddResult(false, errorMessage, Collections.emptyList());
+        return new TransactionPoolAddResult(errorMessage, Collections.emptyList());
     }
 
     public List<Transaction> getTransactionsAdded() {
