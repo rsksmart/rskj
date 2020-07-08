@@ -336,7 +336,7 @@ public class ChannelManagerImpl implements ChannelManager {
         final Set<NodeID> nodesIdsBroadcastedTo = new HashSet<>();
         final Message newTransactions = new TransactionsMessage(transactions);
         final List<Channel> peersToBroadcast = activePeers.values().stream().
-                filter(p -> !skip.contains(p.getNodeId())).distinct().collect(Collectors.toList());
+                filter(p -> !skip.contains(p.getNodeId())).collect(Collectors.toList());
 
         peersToBroadcast.forEach(peer -> {
             peer.sendMessage(newTransactions);
