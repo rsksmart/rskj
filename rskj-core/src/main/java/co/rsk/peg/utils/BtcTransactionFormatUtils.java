@@ -24,8 +24,8 @@ import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 
 public class BtcTransactionFormatUtils {
-    private static int MIN_BLOCK_HEADER_SIZE = 80;
-    private static int MAX_BLOCK_HEADER_SIZE = 85;
+    private static final int MIN_BLOCK_HEADER_SIZE = 80;
+    private static final int MAX_BLOCK_HEADER_SIZE = 85;
 
     public static Sha256Hash calculateBtcTxHash(byte[] btcTxSerialized) {
         return Sha256Hash.wrapReversed(Sha256Hash.hashTwice(btcTxSerialized));
