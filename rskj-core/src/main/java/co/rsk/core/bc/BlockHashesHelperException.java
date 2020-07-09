@@ -1,6 +1,6 @@
 /*
  * This file is part of RskJ
- * Copyright (C) 2018 RSK Labs Ltd.
+ * Copyright (C) 2017 RSK Labs Ltd.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -16,15 +16,21 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package co.rsk.rpc.modules.debug;
 
-import com.fasterxml.jackson.databind.JsonNode;
+package co.rsk.core.bc;
 
-import java.util.Map;
+public class BlockHashesHelperException extends RuntimeException {
 
-public interface DebugModule {
+    public BlockHashesHelperException() {
+        super();
+    }
 
-    String wireProtocolQueueSize();
+    public BlockHashesHelperException(String s) {
+        super(s);
+    }
 
-    JsonNode traceTransaction(String transactionHash, Map<String, String> traceOptions) throws Exception;
+
+    public BlockHashesHelperException(String message, Throwable cause) {
+        super(message, cause);
+    }
 }
