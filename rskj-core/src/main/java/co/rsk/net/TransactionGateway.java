@@ -22,6 +22,7 @@ import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionPool;
 import org.ethereum.core.TransactionPoolAddResult;
 import org.ethereum.net.server.ChannelManager;
+import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 
 import javax.annotation.Nonnull;
 import java.util.*;
@@ -48,11 +49,10 @@ public class TransactionGateway {
         }
     }
 
-    public TransactionPoolAddResult receiveTransaction(Transaction transaction) {
-        TransactionPoolAddResult result  = transactionPool.addTransaction(transaction);
-        if(result.transactionsWereAdded()) {
-            channelManager.broadcastTransactions(result.getTransactionsAdded(), Collections.emptySet());
+    public void receiveTransaction(Transaction transaction) throws RskJsonRpcRequestException {
+        List<Transaction> result  = transactionPool.addTransaction(transaction);
+        if(transactionPool.transactionsWereAdded(result)) {
+            channelManager.broadcastTransactions(result, Collections.emptySet());
         }
-        return result;
     }
 }

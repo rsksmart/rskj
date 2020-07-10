@@ -30,6 +30,7 @@ import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.*;
 import org.ethereum.db.BlockStore;
 import org.ethereum.listener.EthereumListener;
+import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.GasCost;
 import org.slf4j.Logger;
@@ -166,7 +167,7 @@ public class TransactionPoolImpl implements TransactionPool {
             Transaction found = successor.get();
             queuedTransactions.removeTransactionByHash(found.getHash());
 
-            if (!this.internalAddTransaction(found).transactionsWereAdded()) {
+            if (!this.transactionsWereAdded(internalAddTransaction(found))) {
                 break;
             }
 
@@ -192,9 +193,7 @@ public class TransactionPoolImpl implements TransactionPool {
         List<Transaction> added = new ArrayList<>();
 
         for (Transaction tx : txs) {
-            TransactionPoolAddResult result = this.internalAddTransaction(tx);
-
-            if (result.transactionsWereAdded()) {
+            if (this.transactionsWereAdded(internalAddTransaction(tx))) {
                 added.add(tx);
                 added.addAll(this.addSuccessors(tx));
             }
@@ -220,20 +219,20 @@ public class TransactionPoolImpl implements TransactionPool {
                 .findFirst();
     }
 
-    private TransactionPoolAddResult internalAddTransaction(final Transaction tx) {
+    private List<Transaction> internalAddTransaction(final Transaction tx) throws RskJsonRpcRequestException {
         if (pendingTransactions.hasTransaction(tx)) {
-            return TransactionPoolAddResult.withError("pending transaction with same hash already exists");
+            throw RskJsonRpcRequestException.transactionError("pending transaction with same hash already exists");
         }
 
         if (queuedTransactions.hasTransaction(tx)) {
-            return TransactionPoolAddResult.withError("queued transaction with same hash already exists");
+            throw RskJsonRpcRequestException.transactionError("queued transaction with same hash already exists");
         }
 
         RepositorySnapshot currentRepository = getCurrentRepository();
         TransactionValidationResult validationResult = shouldAcceptTx(tx, currentRepository);
 
         if (!validationResult.transactionIsValid()) {
-            return TransactionPoolAddResult.withError(validationResult.getErrorMessage());
+            throw RskJsonRpcRequestException.transactionError(validationResult.getErrorMessage());
         }
 
         Keccak256 hash = tx.getHash();
@@ -242,7 +241,7 @@ public class TransactionPoolImpl implements TransactionPool {
         Long bnumber = Long.valueOf(getCurrentBestBlockNumber());
 
         if (!isBumpingGasPriceForSameNonceTx(tx)) {
-            return TransactionPoolAddResult.withError("gas price not enough to bump transaction");
+            throw RskJsonRpcRequestException.transactionError("gas price not enough to bump transaction");
         }
 
         transactionBlocks.put(hash, bnumber);
@@ -254,25 +253,25 @@ public class TransactionPoolImpl implements TransactionPool {
         if (txNonce.compareTo(currentNonce) > 0) {
             this.addQueuedTransaction(tx);
             signatureCache.storeSender(tx);
-            return TransactionPoolAddResult.ok(tx);
+            return Collections.singletonList(tx);
         }
 
         if (!senderCanPayPendingTransactionsAndNewTx(tx, currentRepository)) {
             // discard this tx to prevent spam
-            return TransactionPoolAddResult.withError("insufficient funds to pay for pending and new transaction");
+            throw RskJsonRpcRequestException.transactionError("insufficient funds to pay for pending and new transaction");
         }
 
         pendingTransactions.addTransaction(tx);
         signatureCache.storeSender(tx);
 
-        return TransactionPoolAddResult.ok(tx);
+        return Collections.singletonList(tx);
     }
 
     @Override
-    public synchronized TransactionPoolAddResult addTransaction(final Transaction tx) {
-        TransactionPoolAddResult result = this.internalAddTransaction(tx);
+    public synchronized List<Transaction> addTransaction(final Transaction tx) throws RskJsonRpcRequestException {
+        List<Transaction> result = this.internalAddTransaction(tx);
 
-        if (!result.transactionsWereAdded()) {
+        if (!this.transactionsWereAdded(result)) {
             return result;
         }
 
@@ -510,5 +509,10 @@ public class TransactionPoolImpl implements TransactionPool {
                 config.getNetworkConstants(),
                 config.getActivationConfig().forBlock(number)
         );
+    }
+
+    @Override
+    public boolean transactionsWereAdded(List<Transaction> transactionsAdded) {
+        return transactionsAdded != null && !transactionsAdded.isEmpty();
     }
 }

@@ -43,16 +43,4 @@ public class TransactionPoolAddResult {
             errorConsumer.accept(errorMessage);
         }
     }
-
-    public static TransactionPoolAddResult ok(Transaction transaction) {
-        return new TransactionPoolAddResult(null, Collections.singletonList(transaction));
-    }
-
-    public static TransactionPoolAddResult withError(String errorMessage) {
-        return new TransactionPoolAddResult(errorMessage, Collections.emptyList());
-    }
-
-    public List<Transaction> getTransactionsAdded() {
-        return transactionsAdded;
-    }
 }

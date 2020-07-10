@@ -33,7 +33,7 @@ public interface TransactionPool extends InternalService {
      *
      * @param tx transaction
      */
-    TransactionPoolAddResult addTransaction(Transaction tx);
+    List<Transaction> addTransaction(Transaction tx);
 
     /**
      * Adds a list of transactions to the list of pending state txs or
@@ -76,4 +76,7 @@ public interface TransactionPool extends InternalService {
      * @return pending state
      */
     PendingState getPendingState();
+
+    boolean transactionsWereAdded(List<Transaction> transactionsAdded);
+
 }
