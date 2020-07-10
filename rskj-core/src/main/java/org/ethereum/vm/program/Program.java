@@ -876,7 +876,6 @@ public class Program {
         returnDataBuffer = null; // reset return buffer right before the call
         ProgramResult childResult;
 
-        // #mish fix me todo: msg.getrentgas() shadowing gas
         ProgramInvoke programInvoke = programInvokeFactory.createProgramInvoke(
                 this, DataWord.valueOf(contextAddress.getBytes()),
                 msg.getType() == MsgType.DELEGATECALL ? getCallerAddress() : getOwnerAddress(),
@@ -912,9 +911,13 @@ public class Program {
             track.rollback();
             // when there's an exception we skip applying results and refunding gas,
             // and we only do that when the call is successful or there's a REVERT operation.
+            
             // #mish todo: if there is an exception some rentgas should be refunded?
-            // Partial refund of rentgas depends on the exception type of childResult.getException()
-            // for one, we should not refnd any rent gas if the exception was a rentgas exception!  
+            // For now, refund 75% of rentgas passed to child for OOG or REVERT
+            // #mish fix: what if it is a rentgas exception? Still the same?
+            getResult().refundRentGas((getResult().getRentGasUsed()*3)/4);
+            //System.out.println("in program executecode: caller rentgas used child failed " + getResult().getRentGasUsed());
+
             if (childResult.getException() != null) {    
                 return false;
             }

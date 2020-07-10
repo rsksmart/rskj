@@ -164,13 +164,13 @@ public class TransactionExecutor {
         if (!this.init()) {
             return false;
         }
-        //System.out.println("\n\nhere in init!\n\n");
+        //System.out.println("\ndone init() in Tx Exec");
         this.execute();
-        //System.out.println("\ndone execute() in Tx Exec \n");
+        //System.out.println("\ndone execute() in Tx Exec");
         this.go();
-        //System.out.println("\ndone with go() in Tx Exec \n");
+        //System.out.println("\ndone go() in Tx Exec");
         this.finalization();
-
+        //System.out.println("\ndone finalization() in Tx Exec");
         return true;
     }
 
@@ -520,7 +520,10 @@ public class TransactionExecutor {
 
             // local variable `this.result` contains information about accessed nodes but gas/rentGas accounting is stored in program.getResult()
             // to preserve information from both, first merge result into programresult (which contains gas computations).
-            program.getResult().merge(this.result); // writing result as this.result for clarity
+            if (!program.getResult().isRevert()) {
+                program.getResult().merge(this.result); // writing result as this.result for clarity
+            }
+
             result = program.getResult(); //and then copy the information over
                                  
             mEndGas = GasCost.subtract(GasCost.toGas(tx.getGasLimit()), program.getResult().getGasUsed());
@@ -537,7 +540,8 @@ public class TransactionExecutor {
                     throw result.getException();
                 } else {
                     execError("REVERT opcode executed");
-                }
+                    //System.out.println("REVERT opcode executed");
+                 }
             }
         } catch (Exception e) {
             cacheTrack.rollback();
@@ -603,6 +607,7 @@ public class TransactionExecutor {
 
 
     private void finalization() {
+        //System.out.println("start finalization() in Tx exec");    
         // RSK if local call gas balances must not be changed
         if (localCall) {
             return;
@@ -614,10 +619,9 @@ public class TransactionExecutor {
 
         //Transaction sender is stored in cache
         signatureCache.storeSender(tx);
-
+        
         // Collect rent gas computed here (but not internal TX) before finalization
         result.spendRentGas(estRentGas);
-        
         
         long txRentGasLimit = GasCost.toGas(tx.getRentGasLimit());
 
@@ -681,7 +685,8 @@ public class TransactionExecutor {
         this.paidFees = summaryFee;
 
         //#mish for testing
-        System.out.println( "\nExec GasLimit " + GasCost.toGas(tx.getGasLimit()) +
+        System.out.println( "\nTX finalization:" + 
+                            "\nExec GasLimit " + GasCost.toGas(tx.getGasLimit()) +
                             "\nExec gas used " + result.getGasUsed() +
                             "\nExec gas refund " + mEndGas +
                             "\n\nRent GasLimit " + GasCost.toGas(tx.getRentGasLimit()) +
@@ -689,7 +694,7 @@ public class TransactionExecutor {
                             "\nRent gas refund " + mEndRentGas +
                             "\n\nTx fees (exec + rent): " + paidFees +
                             "\n\nNo. trie nodes with `updated` rent timestamp: " +  result.getAccessedNodes().size() +
-                            "\nNo. new trie nodes created: " +  result.getCreatedNodes().size() + "\n\n"
+                            "\nNo. new trie nodes created (6 months rent): " +  result.getCreatedNodes().size() + "\n"
                             );
 
         logger.trace("Processing result");
