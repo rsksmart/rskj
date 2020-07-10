@@ -20,7 +20,6 @@ package co.rsk.net;
 
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionPool;
-import org.ethereum.core.TransactionPoolAddResult;
 import org.ethereum.net.server.ChannelManager;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 

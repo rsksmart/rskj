@@ -204,6 +204,11 @@ public class TransactionPoolImpl implements TransactionPool {
         return added;
     }
 
+    @Override
+    public synchronized List<Transaction> addTransaction(final Transaction tx) {
+        return this.addTransactions(Collections.singletonList(tx));
+    }
+
     private Optional<Transaction> getQueuedSuccessor(Transaction tx) {
         BigInteger next = tx.getNonceAsInteger().add(BigInteger.ONE);
 
@@ -265,24 +270,6 @@ public class TransactionPoolImpl implements TransactionPool {
         signatureCache.storeSender(tx);
 
         return Collections.singletonList(tx);
-    }
-
-    @Override
-    public synchronized List<Transaction> addTransaction(final Transaction tx) throws RskJsonRpcRequestException {
-        List<Transaction> result = this.internalAddTransaction(tx);
-
-        if (!this.transactionsWereAdded(result)) {
-            return result;
-        }
-
-        List<Transaction> added = new ArrayList<>();
-
-        added.add(tx);
-        added.addAll(this.addSuccessors(tx));
-
-        this.emitEvents(added);
-
-        return result;
     }
 
     private boolean isBumpingGasPriceForSameNonceTx(Transaction tx) {
