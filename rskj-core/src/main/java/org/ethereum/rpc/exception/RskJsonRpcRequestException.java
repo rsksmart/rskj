@@ -1,8 +1,11 @@
 package org.ethereum.rpc.exception;
 
+import org.ethereum.core.Transaction;
+
 public class RskJsonRpcRequestException extends RuntimeException {
 
     private final Integer code;
+    private Transaction errorTransaction;
 
     protected RskJsonRpcRequestException(Integer code, String message, Exception e) {
         super(message, e);
@@ -30,8 +33,10 @@ public class RskJsonRpcRequestException extends RuntimeException {
         return new RskJsonRpcRequestException(-32015, String.format("VM execution error: %s", message));
     }
 
-    public static RskJsonRpcRequestException transactionError(String message) {
-        return new RskJsonRpcRequestException(-32010, message);
+    public static RskJsonRpcRequestException transactionError(String message, Transaction transaction) {
+        RskJsonRpcRequestException exception = new RskJsonRpcRequestException(-32010, message);
+        exception.setErrorTransaction(transaction);
+        return exception;
     }
 
     public static RskJsonRpcRequestException invalidParamError(String message) {
@@ -52,5 +57,13 @@ public class RskJsonRpcRequestException extends RuntimeException {
 
     public static RskJsonRpcRequestException stateNotFound(String message) {
         return new RskJsonRpcRequestException(-32600, message);
+    }
+
+    private void setErrorTransaction(Transaction transaction) {
+        this.errorTransaction = transaction;
+    }
+
+    public Transaction getErrorTransaction() {
+        return this.errorTransaction;
     }
 }

@@ -193,7 +193,7 @@ public class TransactionPoolImpl implements TransactionPool {
         List<Transaction> added = new ArrayList<>();
 
         for (Transaction tx : txs) {
-            if (this.transactionsWereAdded(internalAddTransaction(tx))) {
+            if (this.transactionsWereAdded(internalAddTransaction(tx))) { //todo(fedejinich) shouldnt stop the iteration
                 added.add(tx);
                 added.addAll(this.addSuccessors(tx));
             }
@@ -226,18 +226,18 @@ public class TransactionPoolImpl implements TransactionPool {
 
     private List<Transaction> internalAddTransaction(final Transaction tx) throws RskJsonRpcRequestException {
         if (pendingTransactions.hasTransaction(tx)) {
-            throw RskJsonRpcRequestException.transactionError("pending transaction with same hash already exists");
+            throw RskJsonRpcRequestException.transactionError("pending transaction with same hash already exists", tx);
         }
 
         if (queuedTransactions.hasTransaction(tx)) {
-            throw RskJsonRpcRequestException.transactionError("queued transaction with same hash already exists");
+            throw RskJsonRpcRequestException.transactionError("queued transaction with same hash already exists", tx);
         }
 
         RepositorySnapshot currentRepository = getCurrentRepository();
         TransactionValidationResult validationResult = shouldAcceptTx(tx, currentRepository);
 
         if (!validationResult.transactionIsValid()) {
-            throw RskJsonRpcRequestException.transactionError(validationResult.getErrorMessage());
+            throw RskJsonRpcRequestException.transactionError(validationResult.getErrorMessage(), tx);
         }
 
         Keccak256 hash = tx.getHash();
@@ -246,7 +246,7 @@ public class TransactionPoolImpl implements TransactionPool {
         Long bnumber = Long.valueOf(getCurrentBestBlockNumber());
 
         if (!isBumpingGasPriceForSameNonceTx(tx)) {
-            throw RskJsonRpcRequestException.transactionError("gas price not enough to bump transaction");
+            throw RskJsonRpcRequestException.transactionError("gas price not enough to bump transaction", tx);
         }
 
         transactionBlocks.put(hash, bnumber);
@@ -263,7 +263,7 @@ public class TransactionPoolImpl implements TransactionPool {
 
         if (!senderCanPayPendingTransactionsAndNewTx(tx, currentRepository)) {
             // discard this tx to prevent spam
-            throw RskJsonRpcRequestException.transactionError("insufficient funds to pay for pending and new transaction");
+            throw RskJsonRpcRequestException.transactionError("insufficient funds to pay for pending and new transaction", tx);
         }
 
         pendingTransactions.addTransaction(tx);
