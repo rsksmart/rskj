@@ -36,6 +36,7 @@ public class CommonAncestorSearchSyncState implements LightSyncState {
     private final long bestBlockNumber;
     private final Blockchain blockchain;
     private static final Logger logger = LoggerFactory.getLogger("lightprocessor");
+    private int maxAmountOfHeaders;
 
     public CommonAncestorSearchSyncState(LightSyncProcessor lightSyncProcessor, LightPeer lightPeer, byte[] bestBlockHash, long bestBlockNumber, Blockchain blockchain) {
         this.lightSyncProcessor = lightSyncProcessor;
@@ -47,16 +48,21 @@ public class CommonAncestorSearchSyncState implements LightSyncState {
 
     @Override
     public void sync() {
-        int max = bestBlockNumber < MAX_REQUESTED_HEADERS ? (int) bestBlockNumber : MAX_REQUESTED_HEADERS;
-        lightSyncProcessor.sendBlockHeadersByHashMessage(lightPeer, bestBlockHash, max, 0, true);
+        maxAmountOfHeaders = bestBlockNumber < MAX_REQUESTED_HEADERS ? (int) bestBlockNumber : MAX_REQUESTED_HEADERS;
+        lightSyncProcessor.sendBlockHeadersByHashMessage(lightPeer, bestBlockHash, maxAmountOfHeaders, 0, true);
     }
 
     @Override
     public void newBlockHeaders(LightPeer lightPeer, List<BlockHeader> blockHeaders) {
+        if (blockHeaders.size() > maxAmountOfHeaders) {
+            lightSyncProcessor.wrongBlockHeadersSize();
+            return;
+        }
+
         for (BlockHeader bh : blockHeaders) {
             if (isKnown(bh)) {
                 logger.trace("Found common ancestor with best chain");
-                lightSyncProcessor.foundCommonAncestor(lightPeer, bh);
+                lightSyncProcessor.startSyncRound(lightPeer, bh);
                 return;
             }
         }
@@ -65,6 +71,8 @@ public class CommonAncestorSearchSyncState implements LightSyncState {
         if (newStart != 0) {
             final BlockHeader newStartBlockHeader = blockchain.getBlockByNumber(newStart).getHeader();
             lightSyncProcessor.startAncestorSearchFrom(lightPeer, newStartBlockHeader.getHash().getBytes(), newStartBlockHeader.getNumber());
+        } else {
+            lightSyncProcessor.startSyncRound(lightPeer, blockchain.getBlockByNumber(0).getHeader());
         }
     }
 

@@ -27,7 +27,6 @@ import co.rsk.net.light.message.GetBlockHeadersMessage;
 import co.rsk.net.light.message.StatusMessage;
 import co.rsk.net.light.state.*;
 import co.rsk.validators.ProofOfWorkRule;
-import com.google.common.annotations.VisibleForTesting;
 import io.netty.channel.ChannelHandlerContext;
 import org.ethereum.config.SystemProperties;
 import org.ethereum.core.Block;
@@ -169,12 +168,11 @@ public class LightSyncProcessor {
         setState(new CommonAncestorSearchSyncState(this, lightPeer, bestBlockHash, bestBlockNumber, blockchain));
     }
 
-    @VisibleForTesting
     public void startSync(LightPeer lightPeer, BlockHeader bestBlockHeader) {
         setState(new DecidingLightSyncState(this, lightPeer, bestBlockHeader));
     }
 
-    public void foundCommonAncestor(LightPeer lightPeer, BlockHeader startBlockHeader) {
+    public void startSyncRound(LightPeer lightPeer, BlockHeader startBlockHeader) {
         final LightStatus lightStatus = lightPeersInformation.getLightStatus(lightPeer);
 
         if (startBlockHeader.getDifficulty().compareTo(lightStatus.getTotalDifficulty()) > 0) {
