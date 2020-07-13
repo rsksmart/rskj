@@ -18,11 +18,9 @@
 package co.rsk.net;
 
 import co.rsk.core.bc.TransactionPoolImpl;
-import co.rsk.rpc.modules.RskJsonRpcRequest;
 import org.ethereum.TestUtils;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionPool;
-import org.ethereum.core.TransactionPoolAddResult;
 import org.ethereum.net.server.ChannelManager;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.junit.Assert;
@@ -100,14 +98,10 @@ public class TransactionGatewayTest {
         when(transactionPool.addTransaction(tx)).thenReturn(transactionsAdded);
         when(transactionPool.transactionsWereAdded(transactionsAdded)).thenCallRealMethod();
 
-        try {
-            this.gateway.receiveTransaction(tx);
-        } catch (RskJsonRpcRequestException e) {
-            Assert.assertEquals("Not added", e.getMessage());
-        } finally {
-            verify(transactionPool, times(1)).addTransaction(tx);
-            verify(channelManager, times(0)).
-                    broadcastTransactions(transactionsAdded, Collections.emptySet());
-        }
+        this.gateway.receiveTransaction(tx);
+
+        verify(transactionPool, times(1)).addTransaction(tx);
+        verify(channelManager, times(0)).
+                broadcastTransactions(transactionsAdded, Collections.emptySet());
     }
 }

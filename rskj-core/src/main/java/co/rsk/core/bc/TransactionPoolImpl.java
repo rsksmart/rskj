@@ -193,9 +193,10 @@ public class TransactionPoolImpl implements TransactionPool {
         List<Transaction> added = new ArrayList<>();
 
         for (Transaction tx : txs) {
-            if (this.transactionsWereAdded(internalAddTransaction(tx))) { //todo(fedejinich) shouldnt stop the iteration
-                added.add(tx);
-                added.addAll(this.addSuccessors(tx));
+            try {
+                added.addAll(this.addTransaction(tx));
+            } catch (RskJsonRpcRequestException e) {
+                logger.warn(e.getMessage());
             }
         }
 
@@ -206,7 +207,16 @@ public class TransactionPoolImpl implements TransactionPool {
 
     @Override
     public synchronized List<Transaction> addTransaction(final Transaction tx) {
-        return this.addTransactions(Collections.singletonList(tx));
+        List<Transaction> added = new ArrayList<>();
+
+        if (this.transactionsWereAdded(internalAddTransaction(tx))) {
+            added.add(tx);
+            added.addAll(this.addSuccessors(tx));
+        }
+
+        this.emitEvents(added);
+
+        return added;
     }
 
     private Optional<Transaction> getQueuedSuccessor(Transaction tx) {
