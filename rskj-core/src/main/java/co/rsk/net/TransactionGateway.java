@@ -42,16 +42,17 @@ public class TransactionGateway {
     }
 
     public void receiveTransactionsFrom(@Nonnull List<Transaction> txs, @Nonnull Set<NodeID> nodeIDS) {
-        List<Transaction> result  = transactionPool.addTransactions(txs);
-        if(!result.isEmpty()) {
-            channelManager.broadcastTransactions(result, nodeIDS);
-        }
+        internalReceiveTransaction(nodeIDS, transactionPool.addTransactions(txs));
     }
 
-    public void receiveTransaction(Transaction transaction) throws RskJsonRpcRequestException {
-        List<Transaction> result  = transactionPool.addTransaction(transaction);
-        if(transactionPool.transactionsWereAdded(result)) {
-            channelManager.broadcastTransactions(result, Collections.emptySet());
+    public void receiveTransaction(@Nonnull Transaction transaction) throws RskJsonRpcRequestException {
+        internalReceiveTransaction(Collections.emptySet(), transactionPool.addTransaction(transaction));
+    }
+
+    private void internalReceiveTransaction(@Nonnull Set<NodeID> nodeIDS, List<Transaction> transactions) {
+        List<Transaction> result = transactions;
+        if (transactionPool.transactionsWereAdded(result)) {
+            channelManager.broadcastTransactions(result, nodeIDS);
         }
     }
 }

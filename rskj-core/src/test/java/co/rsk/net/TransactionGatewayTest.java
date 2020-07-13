@@ -17,11 +17,15 @@
  */
 package co.rsk.net;
 
+import co.rsk.core.bc.TransactionPoolImpl;
+import co.rsk.rpc.modules.RskJsonRpcRequest;
 import org.ethereum.TestUtils;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionPool;
 import org.ethereum.core.TransactionPoolAddResult;
 import org.ethereum.net.server.ChannelManager;
+import org.ethereum.rpc.exception.RskJsonRpcRequestException;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -40,7 +44,7 @@ public class TransactionGatewayTest {
     @Before
     public void setUp() {
         this.channelManager = mock(ChannelManager.class);
-        this.transactionPool = mock(TransactionPool.class);
+        this.transactionPool = mock(TransactionPoolImpl.class);
         this.tx = mock(Transaction.class);
         when(this.tx.getHash()).thenReturn(TestUtils.randomHash());
 
@@ -50,64 +54,60 @@ public class TransactionGatewayTest {
     @Test
     public void receiveTranasctionsFrom_newTransactions_shouldAddAndBroadcast() {
         List<Transaction> transactions = Collections.singletonList(tx);
-        List<Transaction> transactionPoolAddResult = transactions;
 
-        receiveTransactionsFromAndVerifyCalls(
-                transactions,
-                Collections.emptySet(),
-                transactionPoolAddResult,
-                1,
-                1
-        );
+        when(transactionPool.addTransactions(transactions)).thenReturn(transactions);
+        when(transactionPool.transactionsWereAdded(transactions)).thenCallRealMethod();
+
+        this.gateway.receiveTransactionsFrom(transactions, Collections.emptySet());
+
+        verify(transactionPool, times(1)).addTransactions(transactions);
+        verify(channelManager, times(1)).broadcastTransactions(transactions, Collections.emptySet());
     }
 
     @Test
     public void receiveTransactionsFrom_transactionsAlreadyAdded_shouldntAddAndShouldntBroadcast() {
         List<Transaction> transactions = Collections.singletonList(tx);
-        List<Transaction> transactionPoolAddResult = Collections.emptyList();
+        List<Transaction> addTransactionsResult = Collections.emptyList();
+        Set<NodeID> nodeIDS = Collections.emptySet();
 
-        receiveTransactionsFromAndVerifyCalls(
-                transactions,
-                Collections.emptySet(),
-                transactionPoolAddResult,
-                1,
-                0
-        );
+        when(transactionPool.addTransactions(transactions)).thenReturn(addTransactionsResult);
+        when(transactionPool.transactionsWereAdded(transactions)).thenCallRealMethod();
+
+        this.gateway.receiveTransactionsFrom(transactions, nodeIDS);
+
+        verify(transactionPool, times(1)).addTransactions(transactions);
+        verify(channelManager, times(0)).broadcastTransactions(transactions, nodeIDS);
     }
 
     @Test
     public void receiveTransaction_newTransaction_shouldAddAndBroadcast() {
-        TransactionPoolAddResult transactionPoolAddResult = TransactionPoolAddResult.ok(tx);
-        receiveTransactionAndVerifyCalls(transactionPoolAddResult, 1);
-    }
+        List<Transaction> transactionsAdded = Collections.singletonList(tx);
 
-    @Test
-    public void receiveTransaction_alreadyAddedTransaction_shouldntAddAndShouldntBroadcast() {
-        TransactionPoolAddResult transactionPoolAddResult = TransactionPoolAddResult.withError("Not added");
-        receiveTransactionAndVerifyCalls(transactionPoolAddResult, 0);
-    }
-
-    private void receiveTransactionAndVerifyCalls(TransactionPoolAddResult transactionPoolAddResult,
-                                                  int broadcastTransactionsCount) {
-        when(transactionPool.addTransaction(tx)).thenReturn(transactionPoolAddResult);
+        when(transactionPool.addTransaction(tx)).thenReturn(transactionsAdded);
+        when(transactionPool.transactionsWereAdded(transactionsAdded)).thenCallRealMethod();
 
         this.gateway.receiveTransaction(tx);
 
         verify(transactionPool, times(1)).addTransaction(tx);
-        verify(channelManager, times(broadcastTransactionsCount)).
-                broadcastTransactions(transactionPoolAddResult.getTransactionsAdded(), Collections.emptySet());
+        verify(channelManager, times(1)).
+                broadcastTransactions(transactionsAdded, Collections.emptySet());
     }
 
-    private void receiveTransactionsFromAndVerifyCalls(List<Transaction> txs,
-                                                       Set<NodeID> nodeIDS,
-                                                       List<Transaction> transactionPoolAddResult,
-                                                       int addTransactionsInvocationsCount,
-                                                       int broadcastTransactionsInvocationsCount) {
-        when(transactionPool.addTransactions(txs)).thenReturn(transactionPoolAddResult);
+    @Test
+    public void receiveTransaction_alreadyAddedTransaction_shouldntAddAndShouldntBroadcast() {
+        List<Transaction> transactionsAdded = null;
 
-        this.gateway.receiveTransactionsFrom(txs, nodeIDS);
+        when(transactionPool.addTransaction(tx)).thenReturn(transactionsAdded);
+        when(transactionPool.transactionsWereAdded(transactionsAdded)).thenCallRealMethod();
 
-        verify(transactionPool, times(addTransactionsInvocationsCount)).addTransactions(txs);
-        verify(channelManager, times(broadcastTransactionsInvocationsCount)).broadcastTransactions(txs, nodeIDS);
+        try {
+            this.gateway.receiveTransaction(tx);
+        } catch (RskJsonRpcRequestException e) {
+            Assert.assertEquals("Not added", e.getMessage());
+        } finally {
+            verify(transactionPool, times(1)).addTransaction(tx);
+            verify(channelManager, times(0)).
+                    broadcastTransactions(transactionsAdded, Collections.emptySet());
+        }
     }
 }
