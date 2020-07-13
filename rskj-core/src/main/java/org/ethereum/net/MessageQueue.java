@@ -32,7 +32,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Queue;
-import java.util.UUID;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -56,8 +55,6 @@ import static org.ethereum.net.message.StaticMessages.DISCONNECT_MESSAGE;
 public class MessageQueue {
 
     private static final Logger logger = LoggerFactory.getLogger("net");
-    private static final Logger mqlog = LoggerFactory.getLogger("messagequeue");
-
     private static final PanicProcessor panicProcessor = new PanicProcessor();
 
     private static final ScheduledExecutorService timer = Executors.newScheduledThreadPool(4, new ThreadFactory() {
@@ -67,7 +64,6 @@ public class MessageQueue {
             return new Thread(r, "MessageQueueTimer-" + cnt.getAndIncrement());
         }
     });
-    private final UUID id;
 
     private Queue<MessageRoundtrip> requestQueue = new LinkedBlockingQueue<>();
     private Queue<MessageRoundtrip> respondQueue = new LinkedBlockingQueue<>();
@@ -78,14 +74,9 @@ public class MessageQueue {
     private Channel channel;
 
     public MessageQueue() {
-        //this id is ONLY used for logging purposes.
-        this.id = UUID.randomUUID();
-        mqlog.trace("Created Message Queue - {}", this.id);
-
     }
 
     public void activate(ChannelHandlerContext ctx) {
-        mqlog.trace("Activating Message Queue - {} - with channel {}", this.id, this.channel.getPeerIdShort());
         this.ctx = ctx;
         timerTask = timer.scheduleAtFixedRate(new Runnable() {
             public void run() {
@@ -104,8 +95,6 @@ public class MessageQueue {
     }
 
     public void sendMessage(Message msg) {
-        mqlog.trace("Sending Message Queue - {} - with channel {} - msg {}", this.id, this.channel.getPeerIdShort(), msg.getCommand().toString());
-
         if (msg instanceof PingMessage) {
             if (hasPing) {
                 return;
@@ -116,9 +105,6 @@ public class MessageQueue {
 
         Queue<MessageRoundtrip> queue = msg.getAnswerMessage() != null ? requestQueue : respondQueue;
         queue.add(new MessageRoundtrip(msg));
-        if(queue.size() > 10) {
-            mqlog.warn("Queue size out of control! - {} - with channel {} - queue size {}", this.id, this.channel.getPeerIdShort(), queue.size());
-        }
     }
 
     public void disconnect() {
@@ -130,13 +116,11 @@ public class MessageQueue {
     }
 
     private void disconnect(DisconnectMessage msg) {
-        mqlog.trace("Disconnecting Message Queue - {} - with channel {}", this.id, this.channel.getPeerIdShort());
         ctx.writeAndFlush(msg);
         ctx.close();
     }
 
     public void receivedMessage(Message msg) throws InterruptedException {
-        mqlog.trace("Received Message Queue - {} - with channel {} - msg {}", this.id, this.channel.getPeerIdShort(), msg.getCommand().toString());
 
         MessageRoundtrip messageRoundtrip = requestQueue.peek();
         if (messageRoundtrip != null) {
@@ -189,7 +173,6 @@ public class MessageQueue {
     }
 
     public void close() {
-        mqlog.trace("Cancelling Message Queue - {} - with channel {}", this.id, this.channel.getPeerIdShort());
         if (timerTask != null) {
             timerTask.cancel(false);
         }
