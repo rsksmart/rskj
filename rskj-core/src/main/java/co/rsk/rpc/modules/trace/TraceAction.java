@@ -33,6 +33,7 @@ public class TraceAction {
     private final String address;
     private final String refundAddress;
     private final String balance;
+    private final String creationMethod;
 
     public TraceAction(
             CallType callType,
@@ -41,6 +42,7 @@ public class TraceAction {
             String gas,
             String input,
             String init,
+            String creationMethod,
             String value,
             String address,
             String refundAddress,
@@ -51,6 +53,7 @@ public class TraceAction {
         this.gas = gas;
         this.input = input;
         this.init = init;
+        this.creationMethod = creationMethod;
         this.value = value;
         this.address = address;
         this.refundAddress = refundAddress;
@@ -84,6 +87,11 @@ public class TraceAction {
     @JsonGetter("input")
     public String getInput() {
         return this.input;
+    }
+
+    @JsonGetter("creationMethod")
+    public String getCreationMethod() {
+        return this.creationMethod;
     }
 
     @JsonGetter("init")

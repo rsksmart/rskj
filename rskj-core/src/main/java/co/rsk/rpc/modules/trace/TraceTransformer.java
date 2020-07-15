@@ -70,7 +70,7 @@ public class TraceTransformer {
 
         int nsubtraces = trace.getSubtraces().size();
 
-        traces.add(toTrace(traceType, trace.getInvokeData(), programResult, txInfo, blockNumber, traceAddress, callType, creationData, trace.getError(), nsubtraces));
+        traces.add(toTrace(traceType, trace.getInvokeData(), programResult, txInfo, blockNumber, traceAddress, callType, creationData, null, trace.getError(), nsubtraces));
 
         for (int k = 0; k < nsubtraces; k++) {
             addTrace(traces, trace.getSubtraces().get(k), txInfo, blockNumber, new TraceAddress(traceAddress, k));
@@ -78,7 +78,7 @@ public class TraceTransformer {
     }
 
     private static void addTrace(List<TransactionTrace> traces, ProgramSubtrace subtrace, TransactionInfo txInfo, long blockNumber, TraceAddress traceAddress) {
-        traces.add(toTrace(subtrace.getTraceType(), subtrace.getInvokeData(), subtrace.getProgramResult(), txInfo, blockNumber, traceAddress, subtrace.getCallType(), subtrace.getCreationData(), null, subtrace.getSubtraces().size()));
+        traces.add(toTrace(subtrace.getTraceType(), subtrace.getInvokeData(), subtrace.getProgramResult(), txInfo, blockNumber, traceAddress, subtrace.getCallType(), subtrace.getCreationData(), subtrace.getCreationMethod(), null, subtrace.getSubtraces().size()));
 
         int nsubtraces = subtrace.getSubtraces().size();
 
@@ -87,8 +87,8 @@ public class TraceTransformer {
         }
     }
 
-    public static TransactionTrace toTrace(TraceType traceType, InvokeData invoke, ProgramResult programResult, TransactionInfo txInfo, long blockNumber, TraceAddress traceAddress, CallType callType, CreationData creationData, String err, int nsubtraces) {
-        TraceAction action = toAction(traceType, invoke, callType, creationData == null ? null : creationData.getCreationInput());
+    public static TransactionTrace toTrace(TraceType traceType, InvokeData invoke, ProgramResult programResult, TransactionInfo txInfo, long blockNumber, TraceAddress traceAddress, CallType callType, CreationData creationData, String creationMethod, String err, int nsubtraces) {
+        TraceAction action = toAction(traceType, invoke, callType, creationData == null ? null : creationData.getCreationInput(), creationMethod);
         TraceResult result = null;
         String error = null;
 
@@ -145,7 +145,7 @@ public class TraceTransformer {
         return new TraceResult(gasUsed, output, code, address);
     }
 
-    public static TraceAction toAction(TraceType traceType, InvokeData invoke, CallType callType, byte[] creationInput) {
+    public static TraceAction toAction(TraceType traceType, InvokeData invoke, CallType callType, byte[] creationInput, String creationMethod) {
         String from = new RskAddress(invoke.getCallerAddress().getLast20Bytes()).toJsonString();
         String to = null;
         String gas = null;
@@ -186,6 +186,7 @@ public class TraceTransformer {
                 gas,
                 input,
                 init,
+                creationMethod,
                 value,
                 address,
                 refundAddress,

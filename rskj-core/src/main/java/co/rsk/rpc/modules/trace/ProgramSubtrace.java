@@ -29,26 +29,28 @@ public class ProgramSubtrace {
     private final TraceType traceType;
     private final CallType callType;
     private final CreationData creationData;
+    private final String creationMethod;
     private final InvokeData invokeData;
     private final ProgramResult programResult;
     private final List<ProgramSubtrace> subtraces;
 
     public static ProgramSubtrace newSuicideSubtrace(InvokeData invokeData) {
-        return new ProgramSubtrace(TraceType.SUICIDE, CallType.NONE, null, invokeData, null, Collections.emptyList());
+        return new ProgramSubtrace(TraceType.SUICIDE, CallType.NONE, null, null, invokeData, null, Collections.emptyList());
     }
 
-    public static ProgramSubtrace newCreateSubtrace(CreationData creationData, InvokeData invokeData, ProgramResult programResult, List<ProgramSubtrace> subtraces) {
-        return new ProgramSubtrace(TraceType.CREATE, CallType.NONE, creationData, invokeData, programResult, subtraces);
+    public static ProgramSubtrace newCreateSubtrace(CreationData creationData, InvokeData invokeData, ProgramResult programResult, List<ProgramSubtrace> subtraces, boolean isCreate2) {
+        return new ProgramSubtrace(TraceType.CREATE, CallType.NONE, creationData, isCreate2 ? "create2" : null, invokeData, programResult, subtraces);
     }
 
     public static ProgramSubtrace newCallSubtrace(CallType callType, InvokeData invokeData, ProgramResult programResult, List<ProgramSubtrace> subtraces) {
-        return new ProgramSubtrace(TraceType.CALL, callType, null, invokeData, programResult, subtraces);
+        return new ProgramSubtrace(TraceType.CALL, callType, null, null, invokeData, programResult, subtraces);
     }
 
-    private ProgramSubtrace(TraceType traceType, CallType callType, CreationData creationData, InvokeData invokeData, ProgramResult programResult, List<ProgramSubtrace> subtraces) {
+    private ProgramSubtrace(TraceType traceType, CallType callType, CreationData creationData, String creationMethod, InvokeData invokeData, ProgramResult programResult, List<ProgramSubtrace> subtraces) {
         this.traceType = traceType;
         this.callType = callType;
         this.creationData = creationData;
+        this.creationMethod = creationMethod;
         this.invokeData = invokeData;
         this.programResult = programResult;
         this.subtraces = subtraces == null ? null : Collections.unmodifiableList(subtraces);
@@ -59,6 +61,8 @@ public class ProgramSubtrace {
     public CallType getCallType() { return this.callType; }
 
     public CreationData getCreationData() { return this.creationData; }
+
+    public String getCreationMethod() { return this.creationMethod; }
 
     public InvokeData getInvokeData() {
         return this.invokeData;

@@ -433,7 +433,7 @@ public class Program {
         byte[] newAddressBytes = HashUtil.calcNewAddr(getOwnerAddress().getLast20Bytes(), nonce);
         RskAddress newAddress = new RskAddress(newAddressBytes);
 
-        createContract(senderAddress, nonce, value, memStart, memSize, newAddress);
+        createContract(senderAddress, nonce, value, memStart, memSize, newAddress, false);
     }
 
     @SuppressWarnings("ThrowableResultOfMethodCallIgnored")
@@ -445,10 +445,10 @@ public class Program {
         byte[] nonce = getStorage().getNonce(senderAddress).toByteArray();
         RskAddress newAddress = new RskAddress(newAddressBytes);
 
-        createContract(senderAddress, nonce, value, memStart, memSize, newAddress);
+        createContract(senderAddress, nonce, value, memStart, memSize, newAddress, true);
     }
 
-    private void createContract( RskAddress senderAddress, byte[] nonce, DataWord value, DataWord memStart, DataWord memSize, RskAddress contractAddress) {
+    private void createContract( RskAddress senderAddress, byte[] nonce, DataWord value, DataWord memStart, DataWord memSize, RskAddress contractAddress, boolean isCreate2) {
         if (getCallDeep() == getMaxDepth()) {
             logger.debug("max depth reached creating a new contract inside contract run: [{}]", senderAddress);
             stackPushZero();
@@ -564,7 +564,7 @@ public class Program {
 
 
         // [5] COOK THE INVOKE AND EXECUTE
-        programResult = getProgramResult(senderAddress, nonce, value, contractAddress, endowment, programCode, gasLimit, track, newBalance, programResult);
+        programResult = getProgramResult(senderAddress, nonce, value, contractAddress, endowment, programCode, gasLimit, track, newBalance, programResult, isCreate2);
         if (programResult == null) {
             return;
         }
@@ -589,7 +589,7 @@ public class Program {
 
     private ProgramResult getProgramResult(RskAddress senderAddress, byte[] nonce, DataWord value,
                                            RskAddress contractAddress, Coin endowment, byte[] programCode,
-                                           long gasLimit, Repository track, Coin newBalance, ProgramResult programResult) {
+                                           long gasLimit, Repository track, Coin newBalance, ProgramResult programResult, boolean isCreate2) {
 
 
         InternalTransaction internalTx = addInternalTx(nonce, getGasLimit(), senderAddress, RskAddress.nullAddress(), endowment, programCode, "create");
@@ -606,7 +606,7 @@ public class Program {
             programResult = program.getResult();
 
             if (programResult.getException() == null && !programResult.isRevert()) {
-                getTrace().addSubTrace(ProgramSubtrace.newCreateSubtrace(new CreationData(programCode, programResult.getHReturn(), contractAddress), program.getProgramInvoke(), program.getResult(), program.getTrace().getSubtraces()));
+                getTrace().addSubTrace(ProgramSubtrace.newCreateSubtrace(new CreationData(programCode, programResult.getHReturn(), contractAddress), program.getProgramInvoke(), program.getResult(), program.getTrace().getSubtraces(), isCreate2));
             }
         }
 
