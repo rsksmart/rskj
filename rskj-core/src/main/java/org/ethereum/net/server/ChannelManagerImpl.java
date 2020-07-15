@@ -292,10 +292,12 @@ public class ChannelManagerImpl implements ChannelManager {
         channel.onDisconnect();
         synchronized (newPeers) {
             if(newPeers.remove(channel)) {
-                logger.info("Peer removed from active peers: {}", channel.getPeerId());
+                logger.info("Peer removed from new peers list: {}", channel.getPeerId());
             }
             synchronized (activePeersLock){
-                activePeers.values().remove(channel);
+                if(activePeers.values().remove(channel)) {
+                    logger.info("Peer removed from active peers list: {}", channel.getPeerId());
+                }
             }
             syncPool.onDisconnect(channel);
         }
