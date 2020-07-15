@@ -25,7 +25,7 @@ public enum CallType {
     NONE,
     CALL,
     CALLCODE,
-    DELEGATECODE,
+    DELEGATECALL,
     STATICCALL;
 
     public static CallType fromMsgType(MessageCall.MsgType msgType) {
@@ -35,7 +35,7 @@ public enum CallType {
             case CALLCODE:
                 return CALLCODE;
             case DELEGATECALL:
-                return DELEGATECODE;
+                return DELEGATECALL;
             case STATICCALL:
                 return STATICCALL;
             default:
