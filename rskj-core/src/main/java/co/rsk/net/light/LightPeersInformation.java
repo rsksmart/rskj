@@ -93,4 +93,9 @@ public class LightPeersInformation {
 
         return ttd.compareTo(otd);
     }
+
+    public void removeLightPeer(LightPeer lightPeer) {
+        peerStatuses.remove(lightPeer);
+        peerTxRelay.remove(lightPeer);
+    }
 }

@@ -141,20 +141,20 @@ public class LightSyncProcessor {
     public void processBlockHeadersMessage(long id, List<BlockHeader> blockHeaders, LightPeer lightPeer) {
         if (!isPending(id, BLOCK_HEADER)) {
             notPendingMessage();
-            //TODO: Abort process
+            abortProcess(lightPeer);
             return;
         }
 
         if (blockHeaders.isEmpty() || blockHeaders.size() > MAX_REQUESTED_HEADERS) {
             wrongBlockHeadersSize();
-            //TODO: Abort process
+            abortProcess(lightPeer);
             return;
         }
 
         for (BlockHeader h : blockHeaders) {
             if (!blockHeaderValidationRule.isValid(h)) {
                 invalidPoW();
-                //TODO: Abort process
+                abortProcess(lightPeer);
                 return;
             }
         }
@@ -278,11 +278,16 @@ public class LightSyncProcessor {
         if (!expectedParam.equals(msgParam)) {
             loggerNet.info("Client expected {} - but was {}", expectedParam, msgParam);
             loggerNet.info("Removing LCHandler for {} reason: {}", ctx.channel().remoteAddress(), reasonText);
-            lightPeer.disconnect(reason);
-            ctx.pipeline().remove(lightClientHandler);
+            disconnect(reason, lightPeer, ctx, lightClientHandler);
             return false;
         }
         return true;
+    }
+
+    private void disconnect(ReasonCode reason, LightPeer lightPeer,
+                            ChannelHandlerContext ctx, LightClientHandler lightClientHandler) {
+        lightPeer.disconnect(reason);
+        ctx.pipeline().remove(lightClientHandler);
     }
 
     public void invalidPoW() {
@@ -327,5 +332,10 @@ public class LightSyncProcessor {
 
     public void failedAttempt() {
 
+    }
+
+    private void abortProcess(LightPeer lightPeer) {
+        loggerNet.error("Recieved wrong Message, aborting Sync");
+        lightPeersInformation.removeLightPeer(lightPeer);
     }
 }
