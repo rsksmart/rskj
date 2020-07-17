@@ -136,7 +136,9 @@ public class LightSyncStateTest {
     public void commonAncestorStateReceiveNotKnownHeadersGetZeroAndShouldTransitToStartSyncRound() {
         final BlockHeader startBlockHeader = getBlockHeader(5L, new Keccak256(randomHash()), BlockDifficulty.ONE);
         final CommonAncestorSearchSyncState syncState = startCommonAncestorSearchFrom(startBlockHeader);
-        final List<BlockHeader> bhs = getBlockHeaders(startBlockHeader.getNumber(), 5, 0, true);
+        final List<BlockHeader> bhs = new ArrayList<>();
+        bhs.add(startBlockHeader);
+        bhs.addAll(getBlockHeaders(startBlockHeader.getNumber()-1, 4, 0, true));
 
         syncState.newBlockHeaders(lightPeer, bhs);
 
@@ -152,10 +154,12 @@ public class LightSyncStateTest {
         final BlockHeader startBlockHeader = getBlockHeader(startNumber, new Keccak256(randomHash()), BlockDifficulty.ONE);
         final CommonAncestorSearchSyncState syncState = startCommonAncestorSearchFrom(startBlockHeader);
         final long numberOfHeaders = startBlockHeader.getNumber() + 2;
-        final List<BlockHeader> bhs = getBlockHeaders(numberOfHeaders, (int) numberOfHeaders-1, 0, true);
+        final List<BlockHeader> bhs = new ArrayList<>();
+        bhs.add(startBlockHeader);
+        bhs.addAll(getBlockHeaders(numberOfHeaders, (int) numberOfHeaders-1, 0, true));
 
         syncState.newBlockHeaders(lightPeer, bhs);
-        verify(lightSyncProcessor).wrongBlockHeadersSize();
+        verify(lightSyncProcessor).moreBlocksThanAllowed();
     }
 
     @Test
@@ -308,24 +312,26 @@ public class LightSyncStateTest {
         final GetBlockHeadersByNumberMessage expectedMsg1 = new GetBlockHeadersByNumberMessage(requestId, bestKnownHeader.getNumber(), MAX_REQUESTED_HEADERS, 0, true);
 
         //This should be the peer's response
-        final List<BlockHeader> firstBlockHeaderList = getBlockHeaders(bestBlockNumber, MAX_REQUESTED_HEADERS, 0, true);
+        final List<BlockHeader> firstBlockHeaderList = new ArrayList<>();
+        when(powRule.isValid(bestKnownHeader)).thenReturn(true);
+        firstBlockHeaderList.add(bestKnownHeader);
+        firstBlockHeaderList.addAll(getBlockHeaders(bestBlockNumber-1, MAX_REQUESTED_HEADERS-1, 0, true));
 
         //Process received block's headers and request for the rest
         final int newStartBlockNumber = bestBlockNumber - MAX_REQUESTED_HEADERS;
         final Keccak256 newStartBlockHash = new Keccak256(randomHash());
         final BlockHeader newStartBlockHeader = getBlockHeader(newStartBlockNumber, newStartBlockHash, BlockDifficulty.ONE);
         includeBlockInBlockchain(newStartBlockHeader);
+        final long secondRequestId = requestId+1;
         lightSyncProcessor.processBlockHeadersMessage(requestId, firstBlockHeaderList, lightPeer);
 
         //Process response and request for pivots
-        final long secondRequestId = requestId+1;
         GetBlockHeadersByNumberMessage expectedMsg2 = new GetBlockHeadersByNumberMessage(secondRequestId, newStartBlockHeader.getNumber(), newStartBlockNumber, 0, true);
         final Keccak256 commonAncestorHash = new Keccak256(randomHash());
         final BlockHeader commonAncestor = getBlockHeader(newStartBlockNumber, commonAncestorHash, BlockDifficulty.ONE);
         List<BlockHeader> secondBlockHeaderList = new ArrayList<>();
-        secondBlockHeaderList.add(commonAncestor);
-        includeBlockInBlockchain(commonAncestor);
-        secondBlockHeaderList.addAll(getBlockHeaders(newStartBlockNumber+1, newStartBlockNumber-1, 0, true));
+        secondBlockHeaderList.add(newStartBlockHeader);
+        secondBlockHeaderList.addAll(getBlockHeaders(newStartBlockNumber-1, newStartBlockNumber-1, 0, true));
         lightSyncProcessor.processBlockHeadersMessage(secondRequestId, secondBlockHeaderList, lightPeer);
 
         //Process received pivots, get to Target Block  and transit to End Start Round
@@ -333,7 +339,7 @@ public class LightSyncStateTest {
         final int maxAmountOfHeaders = Math.toIntExact(TARGET_BLOCK_NUMBER - newStartBlockNumber);
         GetBlockHeadersByNumberMessage expectedMsg3 = new GetBlockHeadersByNumberMessage(thirdRequestId, newStartBlockNumber+1, maxAmountOfHeaders, 0, false);
         final List<BlockHeader> thirdBlockHeaderList = getBlockHeaders(newStartBlockNumber+1, maxAmountOfHeaders, 0, false);
-        when(thirdBlockHeaderList.get(0).getParentHash()).thenReturn(commonAncestorHash);
+        when(thirdBlockHeaderList.get(0).getParentHash()).thenReturn(newStartBlockHash);
         lightSyncProcessor.processBlockHeadersMessage(thirdRequestId, thirdBlockHeaderList, lightPeer);
 
         verify(lightSyncProcessor).endStartRound();
@@ -341,7 +347,7 @@ public class LightSyncStateTest {
     }
 
     @Test
-    public void anEntireProcessSinceLightSyncProcessorStartsFromGenesisUntilItFindsACommonBlock() {
+    public void anEntireProcessSinceLightSyncProcessorStartsFromGenesisUntilItGetTarget() {
         int requestId = 1;
         final int bestBlockNumber = 195;
         final Keccak256 bestBlockHash = new Keccak256(randomHash());
@@ -352,19 +358,24 @@ public class LightSyncStateTest {
         final GetBlockHeadersByNumberMessage expectedMsg1 = new GetBlockHeadersByNumberMessage(requestId, bestKnownHeader.getNumber(), MAX_REQUESTED_HEADERS, 0, true);
 
         //This should be the peer's response
-        final List<BlockHeader> firstBlockHeaderList = getBlockHeaders(bestBlockNumber, MAX_REQUESTED_HEADERS, 0, true);
+        final List<BlockHeader> firstBlockHeaderList = new ArrayList<>();
+        when(powRule.isValid(bestKnownHeader)).thenReturn(true);
+        firstBlockHeaderList.add(bestKnownHeader);
+        firstBlockHeaderList.addAll(getBlockHeaders(bestBlockNumber-1, MAX_REQUESTED_HEADERS-1, 0, true));
 
         //Process received block's headers and request for the rest
         int newStartBlockNumber = bestBlockNumber - MAX_REQUESTED_HEADERS;
         final Keccak256 newStartBlockHash = new Keccak256(randomHash());
         final BlockHeader newStartBlockHeader = getBlockHeader(newStartBlockNumber, newStartBlockHash, BlockDifficulty.ONE);
-        includeBlockInBlockchain(newStartBlockHeader);
         lightSyncProcessor.processBlockHeadersMessage(requestId, firstBlockHeaderList, lightPeer);
 
         //Process response and request for pivots
         final long secondRequestId = requestId+1;
         GetBlockHeadersByNumberMessage expectedMsg2 = new GetBlockHeadersByNumberMessage(secondRequestId, newStartBlockHeader.getNumber(), newStartBlockNumber, 0, true);
-        List<BlockHeader> secondBlockHeaderList = getBlockHeaders(newStartBlockNumber, newStartBlockNumber, 0, true);
+        List<BlockHeader> secondBlockHeaderList = new ArrayList<>();
+        secondBlockHeaderList.add(newStartBlockHeader);
+        when(powRule.isValid(newStartBlockHeader)).thenReturn(true);
+        secondBlockHeaderList.addAll(getBlockHeaders(newStartBlockNumber-1, newStartBlockNumber-1, 0, true));
         lightSyncProcessor.processBlockHeadersMessage(secondRequestId, secondBlockHeaderList, lightPeer);
 
         //Process received pivots, get to Target Block  and transit to End Start Round

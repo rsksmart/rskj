@@ -52,8 +52,7 @@ public class CommonAncestorSearchSyncState implements LightSyncState {
 
     @Override
     public void newBlockHeaders(LightPeer lightPeer, List<BlockHeader> blockHeaders) {
-        if (blockHeaders.size() > maxAmountOfHeaders) {
-            lightSyncProcessor.wrongBlockHeadersSize();
+        if (!lightSyncProcessor.isCorrect(blockHeaders, maxAmountOfHeaders, bestBlockNumber, 0, true)) {
             return;
         }
 

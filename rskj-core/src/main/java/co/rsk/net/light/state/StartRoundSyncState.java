@@ -56,21 +56,7 @@ public class StartRoundSyncState implements LightSyncState {
 
     @Override
     public void newBlockHeaders(LightPeer lightPeer, List<BlockHeader> blockHeaders) {
-        if (blockHeaders.size() > maxAmountOfHeaders) {
-            lightSyncProcessor.moreBlocksThanAllowed();
-            //TODO: Abort process
-            return;
-        }
-
-        if (blockHeaders.get(0).getNumber() != this.startBlockNumber) {
-            lightSyncProcessor.differentFirstBlocks();
-            //TODO: Abort process
-            return;
-        }
-
-        if (!isCorrectSkipped(blockHeaders)){
-            lightSyncProcessor.incorrectSkipped();
-            //TODO: Abort process
+        if (!lightSyncProcessor.isCorrect(blockHeaders, maxAmountOfHeaders, this.startBlockNumber, skip, false)){
             return;
         }
 
@@ -91,21 +77,6 @@ public class StartRoundSyncState implements LightSyncState {
         } else {
             lightSyncProcessor.failedAttempt();
         }
-    }
-
-    private boolean isCorrectSkipped(List<BlockHeader> blockHeaders) {
-        for (int i = 0; i < blockHeaders.size() - 1; i++) {
-            final long low = blockHeaders.get(i).getNumber();
-            final long high = blockHeaders.get(i+1).getNumber();
-            if (low >= high) {
-                return false;
-            } else {
-                if (high - low - 1 != skip) {
-                    return false;
-                }
-            }
-        }
-        return true;
     }
 
     @VisibleForTesting

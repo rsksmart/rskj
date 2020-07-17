@@ -36,6 +36,7 @@ import org.ethereum.core.Genesis;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.BlockStore;
 import org.ethereum.net.message.ReasonCode;
+import org.ethereum.util.ByteUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -185,6 +186,58 @@ public class LightSyncProcessor {
 
     public LightSyncState getSyncState() {
         return syncState;
+    }
+
+    public boolean isCorrect(List<BlockHeader> blockHeaders, int maxAmountOfHeaders, long startBlockNumber, int skip, boolean reverse) {
+        if (blockHeaders.get(0).getNumber() != startBlockNumber) {
+            differentFirstBlocks();
+            //TODO: Abort process
+            return false;
+        }
+
+        return hasCorrectAmountAndSkip(blockHeaders, maxAmountOfHeaders, skip, reverse);
+    }
+
+    public boolean isCorrect(List<BlockHeader> blockHeaders, int maxAmountOfHeaders, byte[] startBlockHash, int skip, boolean reverse) {
+
+        if (!ByteUtil.fastEquals(blockHeaders.get(0).getHash().getBytes(), startBlockHash)) {
+            differentFirstBlocks();
+            //TODO: Abort process
+            return false;
+        }
+
+        return hasCorrectAmountAndSkip(blockHeaders, maxAmountOfHeaders, skip, reverse);
+    }
+
+    private boolean hasCorrectAmountAndSkip(List<BlockHeader> blockHeaders, int maxAmountOfHeaders, int skip, boolean reverse) {
+        if (blockHeaders.size() > maxAmountOfHeaders) {
+            moreBlocksThanAllowed();
+            //TODO: Abort process
+            return false;
+        }
+
+
+        if (!isCorrectSkipped(blockHeaders, skip, reverse)) {
+            incorrectSkipped();
+            //TODO: Abort process
+            return false;
+        }
+        return true;
+    }
+
+    private boolean isCorrectSkipped(List<BlockHeader> blockHeaders, int skip, boolean reverse) {
+        for (int i = 0; i < blockHeaders.size() - 1; i++) {
+            final long first = blockHeaders.get(i).getNumber();
+            final long second = blockHeaders.get(i+1).getNumber();
+            if ((!reverse && first >= second) || (reverse && second >= first)) {
+                return false;
+            } else {
+                if (Math.abs(second - first) - 1 != skip) {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 
     private void setState(LightSyncState syncState) {
