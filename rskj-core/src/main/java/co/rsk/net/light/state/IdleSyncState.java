@@ -25,6 +25,7 @@ import java.util.List;
 
 public class IdleSyncState implements LightSyncState {
 
+    @Override
     public void sync() {
         //Nothing to do here
     }

@@ -164,8 +164,8 @@ public class LightSyncProcessor {
 
     }
 
-    public void startAncestorSearchFrom(LightPeer lightPeer, byte[] bestBlockHash, long bestBlockNumber) {
-        setState(new CommonAncestorSearchSyncState(this, lightPeer, bestBlockHash, bestBlockNumber, blockchain));
+    public void startAncestorSearchFrom(LightPeer lightPeer, long bestBlockNumber) {
+        setState(new CommonAncestorSearchSyncState(this, lightPeer, bestBlockNumber, blockchain));
     }
 
     public void startSync(LightPeer lightPeer, BlockHeader bestBlockHeader) {

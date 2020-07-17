@@ -23,6 +23,7 @@ import co.rsk.core.bc.BlockChainStatus;
 import co.rsk.crypto.Keccak256;
 import co.rsk.net.eth.LightClientHandler;
 import co.rsk.net.light.message.GetBlockHeadersByHashMessage;
+import co.rsk.net.light.message.GetBlockHeadersByNumberMessage;
 import co.rsk.net.light.message.LightClientMessage;
 import co.rsk.net.light.message.StatusMessage;
 import co.rsk.net.light.state.StartRoundSyncState;
@@ -199,9 +200,8 @@ public class LightSyncProcessorTest {
         final int maxAmountOfHeaders = 1;
         final int skip = 0;
         final boolean reverse = true;
-        final byte[] myBestBlockHash = blockchain.getBestBlock().getHash().getBytes();
-        GetBlockHeadersByHashMessage expectedMessage = new GetBlockHeadersByHashMessage(++requestId, myBestBlockHash, maxAmountOfHeaders, skip, reverse);
-
+        final long myBestNumber = blockchain.getBestBlock().getNumber();
+        GetBlockHeadersByNumberMessage expectedMessage = new GetBlockHeadersByNumberMessage(++requestId, myBestNumber, maxAmountOfHeaders, skip, reverse);
 
         lightSyncProcessor.processStatusMessage(statusMessage, lightPeer, ctx, lightClientHandler);
         assertEqualMessage(expectedMessage);

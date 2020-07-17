@@ -39,8 +39,7 @@ public class DecidingLightSyncState implements LightSyncState {
     public void sync() {
         final long bestBlockNumber = bestBlockHeader.getNumber();
         if (bestBlockNumber != 0) {
-            lightSyncProcessor.startAncestorSearchFrom(lightPeer,
-                    bestBlockHeader.getHash().getBytes(), bestBlockNumber);
+            lightSyncProcessor.startAncestorSearchFrom(lightPeer, bestBlockNumber);
         } else {
             lightSyncProcessor.startSyncRound(lightPeer, bestBlockHeader);
         }
