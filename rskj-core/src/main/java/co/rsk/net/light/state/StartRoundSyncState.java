@@ -33,6 +33,7 @@ public class StartRoundSyncState implements LightSyncState {
     private final LightSyncProcessor lightSyncProcessor;
     private final LightPeer lightPeer;
     private final BlockHeader start;
+    private final long targetNumber;
     private int maxAmountOfHeaders;
     private long startBlockNumber;
 
@@ -42,7 +43,8 @@ public class StartRoundSyncState implements LightSyncState {
         this.lightPeer = lightPeer;
         this.start = start;
         this.sparseHeaders = new ArrayList<>();
-        final RoundSyncHelper roundSyncHelper = new RoundSyncHelper(targetNumber - start.getNumber());
+        this.targetNumber = targetNumber;
+        final RoundSyncHelper roundSyncHelper = new RoundSyncHelper(this.targetNumber - start.getNumber());
         this.pivots = roundSyncHelper.getPivots();
         this.skip = roundSyncHelper.getSkip();
     }
@@ -72,7 +74,7 @@ public class StartRoundSyncState implements LightSyncState {
             if (skip == 0) {
                 lightSyncProcessor.endStartRound();
             } else {
-                lightSyncProcessor.startFetchRound();
+                lightSyncProcessor.startFetchRound(lightPeer, sparseHeaders, targetNumber);
             }
         } else {
             lightSyncProcessor.failedAttempt();

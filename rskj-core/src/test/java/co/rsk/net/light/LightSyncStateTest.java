@@ -107,9 +107,8 @@ public class LightSyncStateTest {
         final int bestBlockNumber = 1;
         final BlockHeader bestBlockHeader = getBlockHeader(bestBlockNumber, bestBlockHash, BlockDifficulty.ONE);
         startCommonAncestorSearchFrom(bestBlockHeader);
-
         final GetBlockHeadersByNumberMessage expectedMsg = new GetBlockHeadersByNumberMessage(1, bestBlockHeader.getNumber(), 1, 0, true);
-        assertSendMessage(expectedMsg);
+        assertSendMessage(expectedMsg, lightPeer);
     }
 
     @Test
@@ -166,9 +165,8 @@ public class LightSyncStateTest {
     public void startNumberIsOverMaxRequestedHeadersAndShouldRequestMaxQuantity() {
         final BlockHeader bestBlockHeader = getBlockHeader(200L, new Keccak256(randomHash()), BlockDifficulty.ONE);
         startCommonAncestorSearchFrom(bestBlockHeader);
-
         final GetBlockHeadersByNumberMessage expectedMsg = new GetBlockHeadersByNumberMessage(1, bestBlockHeader.getNumber(), MAX_REQUESTED_HEADERS, 0, true);
-        assertSendMessage(expectedMsg);
+        assertSendMessage(expectedMsg, lightPeer);
     }
 
     @Test
@@ -251,26 +249,13 @@ public class LightSyncStateTest {
     public void peerInStartRoundReceivesAHeaderWithIncorrectParentHashAndShouldNotProcessIt() {
         final Keccak256 startBlockHash = Keccak256.ZERO_HASH;
         final BlockHeader startBlockHeader = getBlockHeader(1L, startBlockHash, BlockDifficulty.ONE);
-        final List<BlockHeader> blockHeaders = new ArrayList<>(getBlockHeaders(2, (int) TARGET_BLOCK_NUMBER-1, 0, false));
+        final List<BlockHeader> blockHeaders = getBlockHeaders(2, (int) TARGET_BLOCK_NUMBER-1, 0, false);
         when(blockHeaders.get(0).getParentHash()).thenReturn(new Keccak256(randomHash()));
         includeBlockInBlockchain(startBlockHeader);
 
         newBlockHeadersInStartRoundSyncState(startBlockHeader, blockHeaders, lightPeer);
 
         verify(lightSyncProcessor, times(1)).incorrectParentHash();
-        assertEquals(lightSyncProcessor.getSyncState().getClass(), StartRoundSyncState.class);
-    }
-
-    @Test
-    public void peerInStartRoundReceivesHeadersCorrectlyWithZeroSkipAndShouldEnd() {
-        final Keccak256 startBlockHash = new Keccak256(randomHash());
-        final BlockHeader startBlockHeader = getBlockHeader(1L, startBlockHash, BlockDifficulty.ONE);
-        final List<BlockHeader> blockHeaders = new ArrayList<>(getBlockHeaders(2, Math.toIntExact(TARGET_BLOCK_NUMBER - 1), 0, false));
-        when(blockHeaders.get(0).getParentHash()).thenReturn(startBlockHash);
-
-        newBlockHeadersInStartRoundSyncState(startBlockHeader, blockHeaders, lightPeer);
-
-        verify(lightSyncProcessor, times(1)).endStartRound();
         assertEquals(lightSyncProcessor.getSyncState().getClass(), StartRoundSyncState.class);
     }
 
@@ -288,16 +273,44 @@ public class LightSyncStateTest {
     }
 
     @Test
-    public void peerInStartRoundDoesntGetTheTargetAndShouldAskMoreHeaders() {
+    public void peerInStartRoundReceivesHeadersCorrectlyZeroSkippedAndShouldEnd() {
         final Keccak256 startBlockHash = new Keccak256(randomHash());
         final BlockHeader startBlockHeader = getBlockHeader(1L, startBlockHash, BlockDifficulty.ONE);
-        final List<BlockHeader> blockHeaders = getBlockHeaders(2, 2, 192, false);
+        final List<BlockHeader> blockHeaders = new ArrayList<>(getBlockHeaders(2, Math.toIntExact(TARGET_BLOCK_NUMBER - 1), 0, false));
         when(blockHeaders.get(0).getParentHash()).thenReturn(startBlockHash);
 
-        newBlockHeadersInStartRoundSyncState(startBlockHeader, blockHeaders, longLightPeer);
+        newBlockHeadersInStartRoundSyncState(startBlockHeader, blockHeaders, lightPeer);
 
-        verify(lightSyncProcessor, times(1)).startFetchRound();
+        verify(lightSyncProcessor, times(1)).endStartRound();
         assertEquals(lightSyncProcessor.getSyncState().getClass(), StartRoundSyncState.class);
+    }
+
+    @Test
+    public void peerInStartRoundGetsPivotsAndShouldTransitsToFetchRound() {
+        final Keccak256 startBlockHash = new Keccak256(randomHash());
+        final Keccak256 parentHash = new Keccak256(randomHash());
+        final BlockHeader startBlockHeader = getBlockHeader(1L, startBlockHash, BlockDifficulty.ONE);
+        final List<BlockHeader> pivots = getBlockHeaders(2, 2, 192, false);
+        when(pivots.get(0).getParentHash()).thenReturn(startBlockHash);
+        when(pivots.get(1).getParentHash()).thenReturn(parentHash);
+
+        newBlockHeadersInStartRoundSyncState(startBlockHeader, pivots, longLightPeer);
+
+        verify(lightSyncProcessor, times(1)).startFetchRound(longLightPeer, pivots, LONG_TARGET_BLOCK_NUMBER);
+        assertEquals(lightSyncProcessor.getSyncState().getClass(), FetchRoundSyncState.class);
+    }
+
+    @Test
+    public void peerInFetchSyncRoundShouldAskForTheFirstSubchain() {
+        //The cases of receive wrong headers in FetchSyncRound are not going to be implemented. The method 'isCorrect' were tested in previous tests.
+        final Keccak256 parentHash = new Keccak256(randomHash());
+        final List<BlockHeader> pivots = getBlockHeaders(2, 2, 192, false);
+        final FetchRoundSyncState syncState = new FetchRoundSyncState(longLightPeer, pivots, LONG_TARGET_BLOCK_NUMBER, lightSyncProcessor);
+        when(pivots.get(1).getParentHash()).thenReturn(parentHash);
+        syncState.sync();
+
+        final GetBlockHeadersByHashMessage expectedMessage = new GetBlockHeadersByHashMessage(1L, parentHash.getBytes(), 192, 0, true);
+        assertSendMessage(expectedMessage, longLightPeer);
     }
 
     @Test
@@ -408,10 +421,10 @@ public class LightSyncStateTest {
         return genesis;
     }
 
-    private void assertSendMessage(LightClientMessage expectedMsg) {
+    private void assertSendMessage(LightClientMessage expectedMsg, LightPeer lightPeer) {
         ArgumentCaptor<LightClientMessage> argument = forClass(LightClientMessage.class);
         verify(lightPeer).sendMessage(argument.capture());
-        assertArrayEquals(expectedMsg.getEncoded(), argument.getAllValues().get(0).getEncoded());
+        assertArrayEquals(expectedMsg.getEncoded(), argument.getValue().getEncoded());
     }
 
     private CommonAncestorSearchSyncState startCommonAncestorSearchFrom(BlockHeader bestBlockHeader) {
