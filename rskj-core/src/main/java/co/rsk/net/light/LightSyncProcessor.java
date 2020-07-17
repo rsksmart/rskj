@@ -42,7 +42,8 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
-import static co.rsk.net.light.LightClientMessageCodes.*;
+import static co.rsk.net.light.LightClientMessageCodes.BLOCK_HEADER;
+import static org.ethereum.net.message.ReasonCode.*;
 
 
 public class LightSyncProcessor {
@@ -140,21 +141,18 @@ public class LightSyncProcessor {
 
     public void processBlockHeadersMessage(long id, List<BlockHeader> blockHeaders, LightPeer lightPeer) {
         if (!isPending(id, BLOCK_HEADER)) {
-            notPendingMessage();
-            abortProcess(lightPeer);
+            notPendingMessage(lightPeer);
             return;
         }
 
         if (blockHeaders.isEmpty() || blockHeaders.size() > MAX_REQUESTED_HEADERS) {
-            wrongBlockHeadersSize();
-            abortProcess(lightPeer);
+            wrongBlockHeadersSize(lightPeer);
             return;
         }
 
         for (BlockHeader h : blockHeaders) {
             if (!blockHeaderValidationRule.isValid(h)) {
-                invalidPoW();
-                abortProcess(lightPeer);
+                invalidPoW(lightPeer);
                 return;
             }
         }
@@ -177,7 +175,7 @@ public class LightSyncProcessor {
         final LightStatus lightStatus = lightPeersInformation.getLightStatus(lightPeer);
 
         if (startBlockHeader.getDifficulty().compareTo(lightStatus.getTotalDifficulty()) > 0) {
-            wrongDifficulty();
+            wrongDifficulty(lightPeer);
             return;
         }
 
@@ -290,18 +288,6 @@ public class LightSyncProcessor {
         ctx.pipeline().remove(lightClientHandler);
     }
 
-    public void invalidPoW() {
-
-    }
-
-    public void wrongBlockHeadersSize() {
-
-    }
-
-    public void notPendingMessage() {
-
-    }
-
     public void endStartRound() {
         //End sync
     }
@@ -310,32 +296,46 @@ public class LightSyncProcessor {
         //Starting fetch sub chains
     }
 
-    public void differentFirstBlocks() {
-
+    public void differentFirstBlocks(LightPeer lightPeer) {
+        abortProcess(lightPeer, "Different Firsts Blocks", DIFFERENT_FIRSTS_BLOCKS);
     }
 
-    public void incorrectSkipped() {
-
+    public void incorrectSkipped(LightPeer lightPeer) {
+        abortProcess(lightPeer, "Incorrect Skipped", INCORRECT_SKIPPED_BLOCK);
     }
 
-    public void moreBlocksThanAllowed() {
-
+    public void moreBlocksThanAllowed(LightPeer lightPeer) {
+        abortProcess(lightPeer, "More Blocks Than Allowed", MORE_BLOCKS_THAN_ALLOWED);
     }
 
-    public void incorrectParentHash() {
-
+    public void incorrectParentHash(LightPeer lightPeer) {
+        abortProcess(lightPeer, "Incorrect Parent Hash", INCORRECT_PARENT_HASH);
     }
 
-    public void wrongDifficulty() {
-
+    public void failedAttempt(LightPeer lightPeer) {
+        abortProcess(lightPeer, "Failed Sync Attempt", FAILED_ATTEMPT);
     }
 
-    public void failedAttempt() {
-
+    public void notPendingMessage(LightPeer lightPeer) {
+        abortProcess(lightPeer, "Message not pending", NOT_PENDING_MESSAGE);
     }
 
-    private void abortProcess(LightPeer lightPeer) {
-        loggerNet.error("Recieved wrong Message, aborting Sync");
+    public void wrongDifficulty(LightPeer lightPeer) {
+        abortProcess(lightPeer, "Wrong difficulty", WRONG_DIFFICULTY);
+    }
+
+    public void invalidPoW(LightPeer lightPeer) {
+        abortProcess(lightPeer, "Invalid Proof of Work", INVALID_POW);
+    }
+
+    public void wrongBlockHeadersSize(LightPeer lightPeer) {
+        abortProcess(lightPeer, "Wrong Block Headers Size", WRONG_BLOCK_HEADERS_SIZE);
+    }
+
+    private void abortProcess(LightPeer lightPeer, String errorMessage, ReasonCode reasoncode) {
+        loggerNet.error(errorMessage);
+        loggerNet.error("Received Wrong Message, aborting Sync and removing Light Peer");
+        lightPeer.disconnect(reasoncode);
         lightPeersInformation.removeLightPeer(lightPeer);
     }
 }
