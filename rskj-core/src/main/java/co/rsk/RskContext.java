@@ -29,7 +29,10 @@ import co.rsk.db.RepositoryLocator;
 import co.rsk.db.StateRootHandler;
 import co.rsk.db.importer.BootstrapImporter;
 import co.rsk.db.importer.BootstrapURLProvider;
-import co.rsk.db.importer.provider.*;
+import co.rsk.db.importer.provider.BootstrapDataProvider;
+import co.rsk.db.importer.provider.BootstrapDataVerifier;
+import co.rsk.db.importer.provider.BootstrapFileHandler;
+import co.rsk.db.importer.provider.Unzipper;
 import co.rsk.db.importer.provider.index.BootstrapIndexCandidateSelector;
 import co.rsk.db.importer.provider.index.BootstrapIndexRetriever;
 import co.rsk.logfilter.BlocksBloomStore;
@@ -44,6 +47,8 @@ import co.rsk.net.discovery.UDPServer;
 import co.rsk.net.discovery.table.KademliaOptions;
 import co.rsk.net.discovery.table.NodeDistanceTable;
 import co.rsk.net.eth.*;
+import co.rsk.net.light.LightPeersInformation;
+import co.rsk.net.light.LightMessageHandler;
 import co.rsk.net.light.LightProcessor;
 import co.rsk.net.light.LightSyncProcessor;
 import co.rsk.net.rlpx.LCMessageFactory;
@@ -132,9 +137,6 @@ import java.time.Clock;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Properties;
 
 /**
  * Creates the initial object graph without a DI framework.
@@ -222,6 +224,7 @@ public class RskContext implements NodeBootstrapper {
     private Eth62MessageFactory eth62MessageFactory;
     private LCMessageFactory lcMessageFactory;
     private LightSyncProcessor lightSyncProcessor;
+    private LightMessageHandler lightMessageHandler;
     private GasLimitCalculator gasLimitCalculator;
     private ReversibleTransactionExecutor reversibleTransactionExecutor;
     private TransactionExecutorFactory transactionExecutorFactory;
@@ -241,6 +244,7 @@ public class RskContext implements NodeBootstrapper {
     private BootstrapImporter bootstrapImporter;
     private ReceivedTxSignatureCache receivedTxSignatureCache;
     private BlockTxSignatureCache blockTxSignatureCache;
+    private LightPeersInformation lightPeersInformation;
 
     public RskContext(String[] args) {
         this(new CliArgs.Parser<>(
@@ -812,6 +816,7 @@ public class RskContext implements NodeBootstrapper {
         internalServices.add(getTransactionPool());
         internalServices.add(getChannelManager());
         internalServices.add(getNodeMessageHandler());
+        internalServices.add(getLightMessageHandler());
         internalServices.add(getPeerServer());
         boolean rpcHttpEnabled = getRskSystemProperties().isRpcHttpEnabled();
         boolean rpcWebSocketEnabled = getRskSystemProperties().isRpcWebSocketEnabled();
@@ -1595,7 +1600,7 @@ public class RskContext implements NodeBootstrapper {
 
     private LightClientHandler.Factory getLightClientHandlerFactory() {
         if (lightClientHandlerFactory == null) {
-            lightClientHandlerFactory = lightPeer -> new LightClientHandler(lightPeer, getLightProcessor(), getLightSyncProcessor());
+            lightClientHandlerFactory = lightPeer -> new LightClientHandler(lightPeer, getLightSyncProcessor(), getLightMessageHandler());
         }
 
         return lightClientHandlerFactory;
@@ -1603,10 +1608,26 @@ public class RskContext implements NodeBootstrapper {
 
     private LightSyncProcessor getLightSyncProcessor() {
         if (lightSyncProcessor == null) {
-            lightSyncProcessor = new LightSyncProcessor(getRskSystemProperties(), getGenesis(), getBlockStore(), getBlockchain());
+            lightSyncProcessor = new LightSyncProcessor(getRskSystemProperties(), getGenesis(), getBlockStore(), getBlockchain(), getProofOfWorkRule(), getLightPeersInformation());
         }
 
         return lightSyncProcessor;
+    }
+
+    private LightMessageHandler getLightMessageHandler() {
+        if (lightMessageHandler == null) {
+            lightMessageHandler = new LightMessageHandler(getLightProcessor(), getLightSyncProcessor());
+        }
+
+        return lightMessageHandler;
+    }
+
+    private LightPeersInformation getLightPeersInformation() {
+        if (lightPeersInformation == null) {
+            lightPeersInformation = new LightPeersInformation();
+        }
+
+        return lightPeersInformation;
     }
 
     private StatusResolver getStatusResolver() {

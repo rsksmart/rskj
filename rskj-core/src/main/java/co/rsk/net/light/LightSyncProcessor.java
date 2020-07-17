@@ -19,12 +19,14 @@
 package co.rsk.net.light;
 
 import co.rsk.core.BlockDifficulty;
-import co.rsk.core.bc.BlockChainStatus;
 import co.rsk.crypto.Keccak256;
 import co.rsk.net.eth.LightClientHandler;
-import co.rsk.net.light.message.GetBlockHeaderMessage;
+import co.rsk.net.light.message.GetBlockHeadersByHashMessage;
+import co.rsk.net.light.message.GetBlockHeadersByNumberMessage;
+import co.rsk.net.light.message.GetBlockHeadersMessage;
 import co.rsk.net.light.message.StatusMessage;
-import com.google.common.annotations.VisibleForTesting;
+import co.rsk.net.light.state.*;
+import co.rsk.validators.ProofOfWorkRule;
 import io.netty.channel.ChannelHandlerContext;
 import org.ethereum.config.SystemProperties;
 import org.ethereum.core.Block;
@@ -34,38 +36,38 @@ import org.ethereum.core.Genesis;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.BlockStore;
 import org.ethereum.net.message.ReasonCode;
+import org.ethereum.util.ByteUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.NoSuchElementException;
+import java.util.*;
 
 import static co.rsk.net.light.LightClientMessageCodes.*;
 
 
 public class LightSyncProcessor {
 
-    private static final int MAX_PENDING_MESSAGES = 1;
+    private static final int MAX_PENDING_MESSAGES = 10;
     private static final int MAX_PEER_CONNECTIONS = 1;
-    private SystemProperties config;
+    public static final int MAX_REQUESTED_HEADERS = 192; //Based in max_chunks, this number should be in the config file in some light section
+    private final LightPeersInformation lightPeersInformation;
+    private LightSyncState syncState;
+    private final SystemProperties config;
     private final Genesis genesis;
     private final BlockStore blockStore;
-    private Blockchain blockchain;
+    private final Blockchain blockchain;
     private final byte version;
     private static final Logger loggerNet = LoggerFactory.getLogger("lightnet");
-    private Map<LightPeer, LightStatus> peerStatuses = new HashMap<>();
-    private Map<LightPeer, Boolean> txRelay = new HashMap<>();
     private long lastRequestedId;
     private final Map<Long, LightClientMessageCodes> pendingMessages;
+    private final ProofOfWorkRule blockHeaderValidationRule;
 
-
-    public LightSyncProcessor(SystemProperties config, Genesis genesis, BlockStore blockStore, Blockchain blockchain) {
+    public LightSyncProcessor(SystemProperties config, Genesis genesis, BlockStore blockStore, Blockchain blockchain, ProofOfWorkRule blockHeaderValidationRule, LightPeersInformation lightPeersInformation) {
         this.config = config;
         this.genesis = genesis;
         this.blockStore = blockStore;
         this.blockchain = blockchain;
+        this.blockHeaderValidationRule = blockHeaderValidationRule;
         this.version = (byte) 0;
         this.pendingMessages = new LinkedHashMap<Long, LightClientMessageCodes>() {
             @Override
@@ -77,6 +79,8 @@ public class LightSyncProcessor {
                 return shouldDiscard;
             }
         };
+        this.lightPeersInformation = lightPeersInformation;
+        this.syncState = new IdleSyncState();
     }
 
     public void processStatusMessage(StatusMessage msg, LightPeer lightPeer, ChannelHandlerContext ctx, LightClientHandler lightClientHandler) {
@@ -93,24 +97,19 @@ public class LightSyncProcessor {
             loggerNet.debug("LCHandler already removed - exception: {}", e.getMessage());
         }
 
-        if (peerStatuses.size() >= MAX_PEER_CONNECTIONS) {
+        if (lightPeersInformation.getConnectedPeersSize() >= MAX_PEER_CONNECTIONS) {
             return;
         }
 
-        if (!hasLowerDifficulty(status)) {
+        lightPeersInformation.registerLightPeer(lightPeer, status, msg.isTxRelay());
+
+        final Optional<LightPeer> bestPeer = lightPeersInformation.getBestPeer(blockchain);
+
+        if (!bestPeer.isPresent()) {
             return;
         }
 
-        peerStatuses.put(lightPeer, status);
-
-        if (msg.isTxRelay()) {
-            txRelay.put(lightPeer, true);
-        }
-
-        byte[] bestBlockHash = status.getBestHash();
-        GetBlockHeaderMessage blockHeaderMessage = new GetBlockHeaderMessage(++lastRequestedId, bestBlockHash);
-        pendingMessages.put(lastRequestedId, BLOCK_HEADER);
-        lightPeer.sendMessage(blockHeaderMessage);
+        startSync(lightPeer, blockchain.getBestBlock().getHeader());
     }
 
     public void sendStatusMessage(LightPeer lightPeer) {
@@ -124,35 +123,130 @@ public class LightSyncProcessor {
                 block.getNumber(), lightPeer.getPeerIdShort());
     }
 
-    public void processBlockHeaderMessage(long id, BlockHeader blockHeader, LightPeer lightPeer) {
+    public void sendBlockHeadersByHashMessage(LightPeer lightPeer, byte[] startBlockHash, int maxAmountOfHeaders, int skip, boolean reverse) {
+        GetBlockHeadersByHashMessage blockHeaderMessage = new GetBlockHeadersByHashMessage(++lastRequestedId, startBlockHash, maxAmountOfHeaders, skip, reverse);
+        sendMessage(lightPeer, blockHeaderMessage);
+    }
+
+    public void sendBlockHeadersByNumberMessage(LightPeer lightPeer, long startBlockNumber, int maxAmountOfHeaders, int skip, boolean reverse) {
+        GetBlockHeadersByNumberMessage blockHeaderMessage = new GetBlockHeadersByNumberMessage(++lastRequestedId, startBlockNumber, maxAmountOfHeaders, skip, reverse);
+        sendMessage(lightPeer, blockHeaderMessage);
+    }
+
+    private void sendMessage(LightPeer lightPeer, GetBlockHeadersMessage blockHeaderMessage) {
+        pendingMessages.put(lastRequestedId, BLOCK_HEADER);
+        lightPeer.sendMessage(blockHeaderMessage);
+    }
+
+    public void processBlockHeadersMessage(long id, List<BlockHeader> blockHeaders, LightPeer lightPeer) {
         if (!isPending(id, BLOCK_HEADER)) {
+            notPendingMessage();
+            //TODO: Abort process
             return;
         }
 
+        if (blockHeaders.isEmpty() || blockHeaders.size() > MAX_REQUESTED_HEADERS) {
+            wrongBlockHeadersSize();
+            //TODO: Abort process
+            return;
+        }
+
+        for (BlockHeader h : blockHeaders) {
+            if (!blockHeaderValidationRule.isValid(h)) {
+                invalidPoW();
+                //TODO: Abort process
+                return;
+            }
+        }
+
         pendingMessages.remove(id, BLOCK_HEADER);
-        lightPeer.receivedBlock(blockHeader);
+        lightPeer.receivedBlockHeaders(blockHeaders);
+        syncState.newBlockHeaders(lightPeer, blockHeaders);
+
     }
 
-    @VisibleForTesting
-    public boolean hasTxRelay(LightPeer peer) {
-        if (!txRelay.containsKey(peer)) {
+    public void startAncestorSearchFrom(LightPeer lightPeer, long bestBlockNumber) {
+        setState(new CommonAncestorSearchSyncState(this, lightPeer, bestBlockNumber, blockchain));
+    }
+
+    public void startSync(LightPeer lightPeer, BlockHeader bestBlockHeader) {
+        setState(new DecidingLightSyncState(this, lightPeer, bestBlockHeader));
+    }
+
+    public void startSyncRound(LightPeer lightPeer, BlockHeader startBlockHeader) {
+        final LightStatus lightStatus = lightPeersInformation.getLightStatus(lightPeer);
+
+        if (startBlockHeader.getDifficulty().compareTo(lightStatus.getTotalDifficulty()) > 0) {
+            wrongDifficulty();
+            return;
+        }
+
+        setState(new StartRoundSyncState(this, lightPeer, startBlockHeader, lightStatus.getBestNumber()));
+    }
+
+    public LightSyncState getSyncState() {
+        return syncState;
+    }
+
+    public boolean isCorrect(List<BlockHeader> blockHeaders, int maxAmountOfHeaders, long startBlockNumber, int skip, boolean reverse) {
+        if (blockHeaders.get(0).getNumber() != startBlockNumber) {
+            differentFirstBlocks();
+            //TODO: Abort process
             return false;
         }
 
-        return txRelay.get(peer);
+        return hasCorrectAmountAndSkip(blockHeaders, maxAmountOfHeaders, skip, reverse);
+    }
+
+    public boolean isCorrect(List<BlockHeader> blockHeaders, int maxAmountOfHeaders, byte[] startBlockHash, int skip, boolean reverse) {
+
+        if (!ByteUtil.fastEquals(blockHeaders.get(0).getHash().getBytes(), startBlockHash)) {
+            differentFirstBlocks();
+            //TODO: Abort process
+            return false;
+        }
+
+        return hasCorrectAmountAndSkip(blockHeaders, maxAmountOfHeaders, skip, reverse);
+    }
+
+    private boolean hasCorrectAmountAndSkip(List<BlockHeader> blockHeaders, int maxAmountOfHeaders, int skip, boolean reverse) {
+        if (blockHeaders.size() > maxAmountOfHeaders) {
+            moreBlocksThanAllowed();
+            //TODO: Abort process
+            return false;
+        }
+
+
+        if (!isCorrectSkipped(blockHeaders, skip, reverse)) {
+            incorrectSkipped();
+            //TODO: Abort process
+            return false;
+        }
+        return true;
+    }
+
+    private boolean isCorrectSkipped(List<BlockHeader> blockHeaders, int skip, boolean reverse) {
+        for (int i = 0; i < blockHeaders.size() - 1; i++) {
+            final long first = blockHeaders.get(i).getNumber();
+            final long second = blockHeaders.get(i+1).getNumber();
+            if ((!reverse && first >= second) || (reverse && second >= first)) {
+                return false;
+            } else {
+                if (Math.abs(second - first) - 1 != skip) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    private void setState(LightSyncState syncState) {
+        this.syncState = syncState;
+        syncState.sync();
     }
 
     private boolean isPending(long id, LightClientMessageCodes code) {
         return pendingMessages.containsKey(id) && pendingMessages.get(id).asByte() == code.asByte();
-    }
-
-    private boolean hasLowerDifficulty(LightStatus status) {
-        boolean hasTotalDifficulty = status.getTotalDifficulty() != null;
-        BlockChainStatus nodeStatus = blockchain.getStatus();
-
-        // this works only for testing purposes, real status without difficulty don't reach this far
-        return  (hasTotalDifficulty && nodeStatus.hasLowerDifficultyThan(status)) ||
-                (!hasTotalDifficulty && nodeStatus.getBestBlockNumber() < status.getBestNumber());
     }
 
     private LightStatus getCurrentStatus(Block block) {
@@ -189,5 +283,49 @@ public class LightSyncProcessor {
             return false;
         }
         return true;
+    }
+
+    public void invalidPoW() {
+
+    }
+
+    public void wrongBlockHeadersSize() {
+
+    }
+
+    public void notPendingMessage() {
+
+    }
+
+    public void endStartRound() {
+        //End sync
+    }
+
+    public void startFetchRound() {
+        //Starting fetch sub chains
+    }
+
+    public void differentFirstBlocks() {
+
+    }
+
+    public void incorrectSkipped() {
+
+    }
+
+    public void moreBlocksThanAllowed() {
+
+    }
+
+    public void incorrectParentHash() {
+
+    }
+
+    public void wrongDifficulty() {
+
+    }
+
+    public void failedAttempt() {
+
     }
 }

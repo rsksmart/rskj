@@ -1,0 +1,78 @@
+/*
+ * This file is part of RskJ
+ * Copyright (C) 2020 RSK Labs Ltd.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
+
+package co.rsk.net.light.state;
+
+import co.rsk.net.light.LightPeer;
+import co.rsk.net.light.LightSyncProcessor;
+import org.ethereum.core.BlockHeader;
+import org.ethereum.core.Blockchain;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.List;
+
+import static co.rsk.net.light.LightSyncProcessor.MAX_REQUESTED_HEADERS;
+
+public class CommonAncestorSearchSyncState implements LightSyncState {
+    private final LightSyncProcessor lightSyncProcessor;
+    private final LightPeer lightPeer;
+    private final long bestBlockNumber;
+    private final Blockchain blockchain;
+    private static final Logger logger = LoggerFactory.getLogger("lightprocessor");
+    private int maxAmountOfHeaders;
+
+    public CommonAncestorSearchSyncState(LightSyncProcessor lightSyncProcessor, LightPeer lightPeer, long bestBlockNumber, Blockchain blockchain) {
+        this.lightSyncProcessor = lightSyncProcessor;
+        this.lightPeer = lightPeer;
+        this.bestBlockNumber = bestBlockNumber;
+        this.blockchain = blockchain;
+    }
+
+    @Override
+    public void sync() {
+        maxAmountOfHeaders = bestBlockNumber < MAX_REQUESTED_HEADERS ? (int) bestBlockNumber : MAX_REQUESTED_HEADERS;
+        lightSyncProcessor.sendBlockHeadersByNumberMessage(lightPeer, bestBlockNumber, maxAmountOfHeaders, 0, true);
+    }
+
+    @Override
+    public void newBlockHeaders(LightPeer lightPeer, List<BlockHeader> blockHeaders) {
+        if (!lightSyncProcessor.isCorrect(blockHeaders, maxAmountOfHeaders, bestBlockNumber, 0, true)) {
+            return;
+        }
+
+        for (BlockHeader bh : blockHeaders) {
+            if (isKnown(bh)) {
+                logger.trace("Found common ancestor with best chain");
+                lightSyncProcessor.startSyncRound(lightPeer, bh);
+                return;
+            }
+        }
+
+        long newStart = bestBlockNumber - blockHeaders.size();
+        if (newStart != 0) {
+            lightSyncProcessor.startAncestorSearchFrom(lightPeer, newStart);
+        } else {
+            lightSyncProcessor.startSyncRound(lightPeer, blockchain.getBlockByNumber(0).getHeader());
+        }
+    }
+
+    private boolean isKnown(BlockHeader bh) {
+        return blockchain.getBlockByHash(bh.getHash().getBytes()) != null;
+    }
+}

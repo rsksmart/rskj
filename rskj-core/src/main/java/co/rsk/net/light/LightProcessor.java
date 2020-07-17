@@ -22,19 +22,21 @@ import co.rsk.core.RskAddress;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.db.RepositorySnapshot;
 import co.rsk.net.light.message.*;
-import org.bouncycastle.util.encoders.Hex;
+import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.*;
+import org.ethereum.net.message.Message;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.TransactionInfo;
-import org.ethereum.net.message.Message;
 import org.ethereum.vm.DataWord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
-
+import static java.util.stream.LongStream.*;
 
 /**
  * Created by Julian Len and Sebastian Sicardi on 21/10/19.
@@ -161,19 +163,76 @@ public class LightProcessor {
         throw new UnsupportedOperationException("Not supported AccountsMessage processing");
     }
 
-    public void processGetBlockHeaderMessage(long id, byte[] blockHash, LightPeer lightPeer) {
-        String blockHashLog = Hex.toHexString(blockHash);
-        logger.trace("Processing block header request {} block {}", id, blockHashLog);
+    public void processGetBlockHeadersByHashMessage(long id, byte[] startBlockHash, int max, int skip, boolean reverse, LightPeer lightPeer) {
+        String blockHashLog = Hex.toHexString(startBlockHash);
+        logger.trace("Processing block header request {} block {} from {}", id, blockHashLog, lightPeer.getPeerIdShort());
 
-        final Block block = blockStore.getBlockByHash(blockHash);
+        Block startBlock = blockStore.getBlockByHash(startBlockHash);
+        processGetBlockHeaderMessage(id, max, skip, reverse, lightPeer, startBlock);
+    }
 
-        if (block == null) {
-            // Don't waste time sending an empty response.
+    public void processGetBlockHeadersByNumberMessage(long id, long blockNumber, int max, int skip, boolean reverse, LightPeer lightPeer) {
+        logger.trace("Processing block header request {} block {} from {}", id, blockNumber, lightPeer.getPeerIdShort());
+
+        Block startBlock = blockStore.getChainBlockByNumber(blockNumber);
+        processGetBlockHeaderMessage(id, max, skip, reverse, lightPeer, startBlock);
+    }
+
+    private void processGetBlockHeaderMessage(long id, int max, int skip, boolean reverse, LightPeer lightPeer, Block startBlock) {
+        if (max == 0) {
             return;
         }
 
-        BlockHeaderMessage response = new BlockHeaderMessage(id, block.getHeader());
+        if (startBlock == null) {
+            return;
+        }
+
+        List<BlockHeader> headers = new ArrayList<>();
+
+        if (max == 1) {
+            headers.add(startBlock.getHeader());
+            BlockHeadersMessage response = new BlockHeadersMessage(id, headers);
+            lightPeer.sendMessage(response);
+            return;
+        }
+
+        headers = getBlockNumbersToResponse(max, skip, reverse, startBlock.getNumber(), blockStore.getBestBlock());
+
+        if (headers.isEmpty()) {
+            return;
+        }
+
+        BlockHeadersMessage response = new BlockHeadersMessage(id, headers);
         lightPeer.sendMessage(response);
+    }
+
+    @VisibleForTesting
+    public List<BlockHeader> getBlockNumbersToResponse(int max, int skip, boolean reverse, long startNumber, Block bestBlock) {
+        ArrayList<BlockHeader> headers = new ArrayList<>();
+
+        long[] nums = range(0, max).map(num -> num * (skip + 1)).toArray();
+
+        for (long num : nums) {
+
+            if ((reverse && startNumber <= num) ||
+                    (!reverse && num > bestBlock.getNumber() - startNumber)) {
+                continue;
+            }
+
+            Block b;
+            if (reverse) {
+                b = blockStore.getChainBlockByNumber(startNumber - num);
+            } else {
+                b = blockStore.getChainBlockByNumber(startNumber + num);
+            }
+
+            if (b == null){
+                continue;
+            }
+            headers.add(b.getHeader());
+        }
+
+        return headers;
     }
 
     public void processGetBlockBodyMessage(long id, byte[] blockHash, LightPeer lightPeer) {
