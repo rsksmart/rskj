@@ -118,7 +118,7 @@ public class RskModuleImpl implements RskModule {
         try {
             byte[] bhash = HexUtils.stringHexToByteArray(blockHash);
             Block b = this.blockchain.getBlockByHash(bhash);
-            return s = (b == null ? null : HexUtils.toUnformattedJsonHex(b.getHeader().getEncoded()));
+            return s = (b == null ? null : HexUtils.toUnformattedJsonHex(b.getHeader().getFullEncoded()));
         } finally {
             if (logger.isDebugEnabled()) {
                 logger.debug("rsk_getRawBlockHeaderByHash({}): {}", blockHash, s);
