@@ -107,7 +107,7 @@ public class GasCost {
       * Residual amount (integer division) is set as execution gasLimit i.e. the conventional gasLimit in EVM
       * Thus, setting this value to 1 will allocate entire gasLimit to execution gas and nothing to rent gas.
     */ 
-    public static final long TX_GASBUDGET_DIVISOR = 2;
+    public static final long TX_GASBUDGET_DIVISOR = 2L;
     public static final long STORAGE_RENT_DIVISOR = (1<<21); // RSKIP113: storage rent is 1/(2^21) gas units per byte per second
     // 6 months advance rent payment for new trie nodes. About 1186 gas for 32 bytes (with 128 bytes overhead) 
     public static final long SIX_MONTHS = 6 * 30 * 24 *3600L;

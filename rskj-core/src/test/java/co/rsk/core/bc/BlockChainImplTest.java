@@ -598,7 +598,7 @@ public class BlockChainImplTest {
 
     @Test
     public void getTransactionInfo() {
-        Block block = getBlockWithOneTransaction();
+        Block block = getBlockWithOneTransactionAndRemascTX();
 
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block));
 
@@ -645,13 +645,13 @@ public class BlockChainImplTest {
         return new TestGenesisLoader(trieStore, "rsk-unittests.json", BigInteger.ZERO, true, true, true).load();
     }
 
-    private Block getBlockWithOneTransaction() {
+    private Block getBlockWithOneTransactionAndRemascTX() {
         Block bestBlock = blockChain.getBestBlock();
         RepositorySnapshot repository = objects.getRepositoryLocator().snapshotAt(bestBlock.getHeader());
 
         String toAddress = Hex.toHexString(catKey.getAddress());
         BigInteger nonce = repository.getNonce(new RskAddress(cowKey.getAddress()));
-        Transaction tx = new Transaction(toAddress, BigInteger.TEN, nonce, BigInteger.ONE, BigInteger.valueOf(21000), config.getNetworkConstants().getChainId());
+        Transaction tx = new Transaction(toAddress, BigInteger.TEN, nonce, BigInteger.ONE, BigInteger.valueOf(42000), config.getNetworkConstants().getChainId());
         tx.sign(cowKey.getPrivKeyBytes());
 
         List<Transaction> txs = java.util.Arrays.asList(tx, new RemascTransaction(bestBlock.getNumber() + 1));

@@ -103,8 +103,8 @@ public class BlockExecutor {
         boolean isRskip126Enabled = activationConfig.isActive(RSKIP126, block.getNumber());
         header.setTransactionsRoot(BlockHashesHelper.getTxTrieRoot(block.getTransactionsList(), isRskip126Enabled));
         header.setReceiptsRoot(BlockHashesHelper.calculateReceiptsTrieRoot(result.getTransactionReceipts(), isRskip126Enabled));
-        header.setGasUsed(result.getGasUsed());
-        header.setPaidFees(result.getPaidFees());
+        header.setGasUsed(result.getGasUsed()); //execution gas only
+        header.setPaidFees(result.getPaidFees()); //#mish execution and rent gas
         header.setStateRoot(stateRootHandler.convert(header, result.getFinalState()).getBytes());
         header.setLogsBloom(calculateLogsBloom(result.getTransactionReceipts()));
 
@@ -122,7 +122,7 @@ public class BlockExecutor {
     @VisibleForTesting
     public boolean executeAndValidate(Block block, BlockHeader parent) {
         BlockResult result = execute(block, parent, false, false);
-
+                    //signature is (block, parent, discardInvalidTxs, ignoreReadyToExecute)
         return this.validate(block, result);
     }
 
@@ -261,15 +261,18 @@ public class BlockExecutor {
         // to conect the block). This is because the first execution will change the state
         // of the repository to the state post execution, so it's necessary to get it to
         // the state prior execution again.
+        //#mish clarify: Block executor does not execute TX twice. 2nd execution happens when connecting blocks
+
         Metric metric = profiler.start(Profiler.PROFILING_TYPE.BLOCK_EXECUTE);
 
         Repository track = repositoryLocator.startTrackingAt(parent);
 
+        //in the tracked repository, create accounts and setup storage root for all PCC addr  
         maintainPrecompiledContractStorageRoots(track, activationConfig.forBlock(block.getNumber()));
 
         int i = 1;
-        long totalGasUsed = 0;
-        Coin totalPaidFees = Coin.ZERO;
+        long totalGasUsed = 0; //#mish should exclude rent gas
+        Coin totalPaidFees = Coin.ZERO; //#mish should include rent gas
         List<TransactionReceipt> receipts = new ArrayList<>();
         List<Transaction> executedTransactions = new ArrayList<>();
         Set<DataWord> deletedAccounts = new HashSet<>();
@@ -289,6 +292,8 @@ public class BlockExecutor {
                     vmTrace,
                     vmTraceOptions,
                     deletedAccounts);
+            
+
             boolean transactionExecuted = txExecutor.executeTransaction();
 
             if (!acceptInvalidTransactions && !transactionExecuted) {
@@ -315,10 +320,10 @@ public class BlockExecutor {
 
             logger.trace("track commit");
 
-            long gasUsed = txExecutor.getGasUsed(); // #mish this returns execution gas used
+            long execGasUsed = txExecutor.getGasUsed(); // #mish this returns execution gas used
             long rentGasUsed = txExecutor.getRentGasUsed(); // rent gas used 
 
-            totalGasUsed += gasUsed;
+            totalGasUsed += execGasUsed; //#exec gas only
             Coin paidFees = txExecutor.getPaidFees();   //#mish this includes exec + rent gas
             if (paidFees != null) {
                 totalPaidFees = totalPaidFees.add(paidFees);
@@ -326,32 +331,35 @@ public class BlockExecutor {
 
             deletedAccounts.addAll(txExecutor.getResult().getDeleteAccounts());
 
+            // #mish this is creating a new receipt, instead of using getReceipt() method of TX executor 
+            // Why?
             TransactionReceipt receipt = new TransactionReceipt();
             // #mish report both exec and rent gas (recall TX gaslimit "field" combines both,
-            // even though methods "tx.getGasLimit" and "txgetRentGasLimit" are dinstinct.
-            receipt.setGasUsed(gasUsed + rentGasUsed);
+            // even though methods "tx.getGasLimit" and "txgetRentGasLimit" are distinct.
+            receipt.setGasUsed(execGasUsed + rentGasUsed);
             receipt.setCumulativeGas(totalGasUsed);
-
+            receipt.setExecGasUsed(execGasUsed); // added for consistency with TX executor
+            receipt.setRentGasUsed(rentGasUsed); //added for consistency with TX execeutor getReceipt()
             receipt.setTxStatus(txExecutor.getReceipt().isSuccessful());
             receipt.setTransaction(tx);
             receipt.setLogInfoList(txExecutor.getVMLogs());
             receipt.setStatus(txExecutor.getReceipt().getStatus()); // #mish todo RSKIP expands status from 2 to 4 (add Manuak revert and OOG for rentgas)
-
+            
             logger.trace("block: [{}] executed tx: [{}]", block.getNumber(), tx.getHash());
-
+            
             logger.trace("tx[{}].receipt", i);
 
             i++;
-
+            
             receipts.add(receipt);
 
             logger.trace("tx done");
         }
-
+        
         if (!vmTrace) {
             track.save();
         }
-
+        
         BlockResult result = new BlockResult(
                 block,
                 executedTransactions,

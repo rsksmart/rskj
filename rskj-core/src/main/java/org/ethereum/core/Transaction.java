@@ -87,6 +87,8 @@ public class Transaction {
      * Gas is the fuel of the computational engine.
      * Every computational step taken and every byte added
      * to the state or transaction list consumes some gas. */
+     // #mish this includes the combined limit for execution and rent gas
+     // see methods getGasLimit() and getRentGasLimit()
     private byte[] gasLimit;
     
     /* An unlimited size byte array specifying
@@ -138,7 +140,7 @@ public class Transaction {
      * or SIMPLE SEND tx
      * [ nonce, gasPrice, gasLimit, receiveAddress, value, data, signature(v, r, s) ]
      */
-    // #mish the full constructor. Move this up to the top, and add rentGasLimit to the full constructor
+    // #mish the full constructor. Call this C1
     public Transaction(byte[] nonce, byte[] gasPriceRaw, byte[] gasLimit, byte[] receiveAddress, byte[] valueRaw, byte[] data, byte chainId){
         this.nonce = ByteUtil.cloneBytes(nonce);
         this.gasPrice = RLP.parseCoinNonNullZero(ByteUtil.cloneBytes(gasPriceRaw));
@@ -149,12 +151,12 @@ public class Transaction {
         this.chainId = chainId;
         this.isLocalCall = false;
      } 
-    // #mish: this constructor present prior to rent. 6 elem byte array, Call this C2. Compared to C1 is does not have chainID.
+    // #mish: Call this C2. Compared to C1 it does not have chainID.
     public Transaction(byte[] nonce, byte[] gasPriceRaw, byte[] gasLimit, byte[] receiveAddress, byte[] value, byte[] data) {
         this(nonce, gasPriceRaw, gasLimit, receiveAddress, value, data, (byte) 0);
     }
 
-    // #mish: existed prior to rent: Call this C3. a 9 elem byte array..
+    // #mish: Call this C3. a 9 elem byte array..
     public Transaction(byte[] nonce, byte[] gasPriceRaw, byte[] gasLimit, byte[] receiveAddress, byte[] value, byte[] data, byte[] r, byte[] s, byte v) {
         this(nonce, gasPriceRaw, gasLimit, receiveAddress, value, data, (byte) 0);
         this.signature = ECDSASignature.fromComponents(r, s, v);
@@ -183,14 +185,14 @@ public class Transaction {
         this(to, amount, nonce, gasPrice, gasLimit, (byte[]) null, chainId);
     }
 
-    // #mish: existed prior to rent, param types BBBSBbb, so a reordering of C7. Plus mixed up names (value/amount).
+    // #mish: param types BBBSBbb, so a reordering of C7. Plus mixed up names (value/amount).
     // Call this C8: 
     public Transaction(BigInteger nonce, BigInteger gasPrice, BigInteger gas, String to, BigInteger value, byte[] data, byte chainId) {
         this(nonce.toByteArray(), gasPrice.toByteArray(), gas.toByteArray(), Hex.decode(to), value.toByteArray(), data,
                 chainId);
     }
 
-    // #mish: Existed prior to rentGas: different param types. lllSlbb
+    // #mish: Different param types. lllSlbb
     // call ths C9: 
     public Transaction(long nonce, long gasPrice, long gas, String to, long value, byte[] data, byte chainId) {
         this(BigInteger.valueOf(nonce).toByteArray(), BigInteger.valueOf(gasPrice).toByteArray(),
@@ -325,14 +327,14 @@ public class Transaction {
     }
     // #mish: For future, explicit reference for execution gas limit
     public byte[] getExecGasLimit() {
-        long gasBudget = GasCost.toGas(gasLimit);
+        long gasBudget = GasCost.toGas(this.gasLimit); // convert byte to long
         long execGasBudget= gasBudget/GasCost.TX_GASBUDGET_DIVISOR;
         return BigInteger.valueOf(execGasBudget).toByteArray();
     }
 
     // #mish rentGas limit
     public byte[] getRentGasLimit() {
-        long gasBudget = GasCost.toGas(gasLimit);
+        long gasBudget = GasCost.toGas(this.gasLimit);
         long execGasBudget= gasBudget/GasCost.TX_GASBUDGET_DIVISOR;
         long rentGasBudget = gasBudget - execGasBudget;
         return BigInteger.valueOf(rentGasBudget).toByteArray();

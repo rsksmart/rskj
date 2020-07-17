@@ -94,7 +94,7 @@ public class TransactionExecutorTest {
         // paperwork: transaction has high gas limit, execution block has normal gas limit
         // and the nonces are okey
         when(transaction.getGasLimit()).thenReturn(BigInteger.valueOf(4000000).toByteArray());
-        //when(transaction.getRentGasLimit()).thenReturn(BigInteger.valueOf(2_000_000).toByteArray());
+        when(transaction.getRentGasLimit()).thenReturn(BigInteger.valueOf(2_000_000).toByteArray());
         when(executionBlock.getGasLimit()).thenReturn(BigInteger.valueOf(6800000).toByteArray());
         when(repository.getNonce(transaction.getSender())).thenReturn(BigInteger.valueOf(1L));
         when(transaction.getNonce()).thenReturn(BigInteger.valueOf(1L).toByteArray());
@@ -381,8 +381,8 @@ public class TransactionExecutorTest {
         if (txExecutor.executeTransaction()){
             System.out.println("TX executed");
                         
-            // one entry for sender and one for receiver and one for coinbase (the miner)
-            assertEquals(3,txExecutor.getResult().getAccessedNodes().size());
+            // one entry for sender and one for receiver
+            assertEquals(2,txExecutor.getResult().getAccessedNodes().size());
 
             assertEquals(new Uint24(128), txExecutor.getResult().getAccessedNodes().get(new ByteArrayWrapper("senderKey".getBytes())).getValueLength());
             assertEquals(new Uint24(10), txExecutor.getResult().getAccessedNodes().get(new ByteArrayWrapper("receiverKey".getBytes())).getValueLength());

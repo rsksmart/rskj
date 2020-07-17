@@ -77,7 +77,7 @@ public class BootstrapImporter {
         for (int k = 0; k < nodesData.size(); k++) {
             RLPElement element = nodesData.get(k);
             byte[] rlpData = element.getRLPData();
-            Trie trie = Trie.fromMessage(rlpData, fakeStore);
+            Trie trie = Trie.fromMessage(rlpData, fakeStore); //#mish can use frommessage(.,.,false): for tests to exclude rent?
             hashMapDB.put(trie.getHash().getBytes(), rlpData);
             nodes.add(trie);
         }

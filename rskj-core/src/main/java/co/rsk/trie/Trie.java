@@ -158,12 +158,28 @@ public class Trie {
      * recognize the old serialization format.
      */
     public static Trie fromMessage(byte[] message, TrieStore store) {
+        /*Trie trie;
+        Metric metric = profiler.start(Profiler.PROFILING_TYPE.BUILD_TRIE_FROM_MSG);
+        if (message[0] == ARITY) {
+            trie = fromMessageOrchid(message, store);
+        } else {
+            trie = fromMessageRskip107(ByteBuffer.wrap(message), store, true);
+        }
+
+        profiler.stop(metric);
+        return trie;
+        */
+        return fromMessage(message, store, true);
+    }
+    
+    // #mish for storage rent version with boolean indicator for rent implementation active
+    public static Trie fromMessage(byte[] message, TrieStore store, boolean incRent) {
         Trie trie;
         Metric metric = profiler.start(Profiler.PROFILING_TYPE.BUILD_TRIE_FROM_MSG);
         if (message[0] == ARITY) {
             trie = fromMessageOrchid(message, store);
         } else {
-            trie = fromMessageRskip107(ByteBuffer.wrap(message), store);
+            trie = fromMessageRskip107(ByteBuffer.wrap(message), store, incRent);
         }
 
         profiler.stop(metric);
@@ -252,7 +268,8 @@ public class Trie {
         return new Trie(store, sharedPath, value, left, right, lvalue, valueHash);
     }
 
-    private static Trie fromMessageRskip107(ByteBuffer message, TrieStore store) {
+    // #mish modify with an additional boolean argument to indicate whether to include rent
+    private static Trie fromMessageRskip107(ByteBuffer message, TrieStore store, boolean incRent) {
         byte flags = message.get();
         // if we reached here, we don't need to check the version flag
         boolean hasLongVal = (flags & 0b00100000) == 0b00100000;
@@ -262,8 +279,8 @@ public class Trie {
         boolean leftNodeEmbedded = (flags & 0b00000010) == 0b00000010;
         boolean rightNodeEmbedded = (flags & 0b00000001) == 0b00000001;
 
-        //getLong (8 bytes for storage rent)
-        long lastRentPaidTime = message.getLong();
+        long lastRentPaidTime = 0L;
+        if (incRent) { lastRentPaidTime = message.getLong(); }
 
         TrieKeySlice sharedPath = SharedPathSerializer.deserialize(message, sharedPrefixPresent);
 
@@ -278,7 +295,7 @@ public class Trie {
                 byte[] serializedNode = new byte[length.intValue()];
                 message.get(serializedNode); //read serialized data for embedded node into the buffer serializedNode
                 //make a recursive call. Also embedding is limited to one layer, so recursion is limited.
-                Trie node = fromMessageRskip107(ByteBuffer.wrap(serializedNode), store);
+                Trie node = fromMessageRskip107(ByteBuffer.wrap(serializedNode), store, incRent);
                 left = new NodeReference(store, node, null);
             } else { //not embedded, grab the hash and assign to the new left pointer 
                 byte[] valueHash = new byte[Keccak256Helper.DEFAULT_SIZE_BYTES];
@@ -296,7 +313,7 @@ public class Trie {
 
                 byte[] serializedNode = new byte[length.intValue()];
                 message.get(serializedNode);
-                Trie node = fromMessageRskip107(ByteBuffer.wrap(serializedNode), store);
+                Trie node = fromMessageRskip107(ByteBuffer.wrap(serializedNode), store, incRent);
                 right = new NodeReference(store, node, null);
             } else {
                 byte[] valueHash = new byte[Keccak256Helper.DEFAULT_SIZE_BYTES];
@@ -358,7 +375,8 @@ public class Trie {
      * @return  a byte array with the node serialized to bytes
      */
     public Keccak256 getHash() {
-        if (this.hash != null) {
+    // #mish created a new version with boolean arg to encode rent information  
+    /*    if (this.hash != null) {
             return this.hash.copy();
         }
 
@@ -367,6 +385,26 @@ public class Trie {
         }
 
         byte[] message = this.toMessage();
+
+        this.hash = new Keccak256(Keccak256Helper.keccak256(message));
+        
+        return this.hash.copy();
+        */
+        return this.getHash(true); //#mish default is to include rent in encoding
+    }
+
+    // #mish added this version with boolean parameter to indicate if the encoding (and thus the hash)
+    // should include rent timestamp. Otherwise, when testing, transaction or receipts trie roots won't match
+    public Keccak256 getHash(boolean incRent) {
+        if (this.hash != null) {
+            return this.hash.copy();
+        }
+
+        if (isEmptyTrie()) {
+            return emptyHash.copy();
+        }
+
+        byte[] message = this.toMessage(incRent);
 
         this.hash = new Keccak256(Keccak256Helper.keccak256(message));
 
@@ -504,6 +542,15 @@ public class Trie {
     public byte[] toMessage() {
         if (encoded == null) {
             internalToMessage();
+        }
+
+        return cloneArray(encoded);
+    }
+
+    // #mish version with boolean parameter to indicate if rent field should be included
+    public byte[] toMessage(boolean incRent) {
+        if (encoded == null) {
+            internalToMessage(incRent);
         }
 
         return cloneArray(encoded);
@@ -671,7 +718,10 @@ public class Trie {
 
         return node.find(key.slice(commonPathLength + 1, key.length()));
     }
-
+    
+    // #mish adds rent timestamp to the encoding 
+    // there is another version which makes rent encoding optional with boolean
+    // this can later be removed
     private void internalToMessage() {
         Uint24 lvalue = this.valueLength;
         boolean hasLongVal = this.hasLongValue();
@@ -717,6 +767,77 @@ public class Trie {
         buffer.put(flags);
 
         buffer.putLong(this.lastRentPaidTime); 
+
+        sharedPathSerializer.serializeInto(buffer);
+
+        this.left.serializeInto(buffer);    //method from NodeReference.java
+
+        this.right.serializeInto(buffer);
+
+        if (!this.isTerminal()) {
+            buffer.put(childrenSize.encode());
+        }
+
+        //if longvalue, then just put the valuehash and valuelength. Else grab the value itself.
+        if (hasLongVal) {
+            buffer.put(this.getValueHash().getBytes());
+            buffer.put(lvalue.encode());
+        } else if (lvalue.compareTo(Uint24.ZERO) > 0) {
+            buffer.put(this.getValue());
+        }
+        encoded = buffer.array();
+    }
+
+    // #mish internalToMessage with boolean indicator of 
+    // whether to include rent timestamp in serialization/encoding
+    // old version can be deleted later
+    private void internalToMessage(boolean incRent) {
+        Uint24 lvalue = this.valueLength;
+        boolean hasLongVal = this.hasLongValue();
+
+        SharedPathSerializer sharedPathSerializer = new SharedPathSerializer(this.sharedPath);
+        VarInt childrenSize = getChildrenSize();
+
+        int bufLength = 1 + // flags
+                        sharedPathSerializer.serializedLength() +
+                        this.left.serializedLength() +  //this method is from NodeReference.java (should only be used for save)
+                        this.right.serializedLength() +
+                        (this.isTerminal() ? 0 : childrenSize.getSizeInBytes()) +
+                        (hasLongVal ? Keccak256Helper.DEFAULT_SIZE_BYTES + Uint24.BYTES : lvalue.intValue());
+        
+        if (incRent) { bufLength += 8;} //increase length by 8 to accomodate (long) rent timestamp
+
+        ByteBuffer buffer = ByteBuffer.allocate(bufLength);
+
+        // current serialization version: 01 //see RSKIP107
+        byte flags = 0b01000000;
+        if (hasLongVal) {
+            flags = (byte) (flags | 0b00100000);   //bit 5 long value
+        }
+
+        if (sharedPathSerializer.isPresent()) {     //bit 4 sharedprefix present
+            flags = (byte) (flags | 0b00010000);
+        }
+
+        if (!this.left.isEmpty()) {
+            flags = (byte) (flags | 0b00001000);    // bit 2,3 left/right child present
+        }
+
+        if (!this.right.isEmpty()) {
+            flags = (byte) (flags | 0b00000100);    // bit 0,1 left/right embedded
+        }
+
+        if (this.left.isEmbeddable()) {
+            flags = (byte) (flags | 0b00000010);
+        }
+
+        if (this.right.isEmbeddable()) {
+            flags = (byte) (flags | 0b00000001);
+        }
+
+        buffer.put(flags);
+
+        if (incRent) { buffer.putLong(this.lastRentPaidTime); } //put rent timestamp into encoding
 
         sharedPathSerializer.serializeInto(buffer);
 

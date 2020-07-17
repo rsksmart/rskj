@@ -21,6 +21,8 @@ package co.rsk.core;
 
 import co.rsk.util.TestContract;
 import org.bouncycastle.util.encoders.Hex;
+
+import org.ethereum.util.ByteUtil; 
 import org.ethereum.TestUtils;
 import org.ethereum.core.Block;
 import org.ethereum.core.CallTransaction;
@@ -84,6 +86,9 @@ public class ReversibleTransactionExecutorTest {
         Assert.assertArrayEquals(
                 new String[]{"greet me"},
                 greeterFn.decodeResult(result.getHReturn()));
+        
+        //#mish createandrun already prints similar output from TX executor
+        //dispRes(result); 
     }
 
     @Test
@@ -111,6 +116,8 @@ public class ReversibleTransactionExecutorTest {
         );
 
         Assert.assertTrue(result.isRevert());
+
+        dispRes(result);
     }
 
     @Test
@@ -122,7 +129,8 @@ public class ReversibleTransactionExecutorTest {
         RskAddress from = new RskAddress("0000000000000000000000000000000000000023"); // someone else
         byte[] gasPrice = Hex.decode("00");
         byte[] value = Hex.decode("00");
-        byte[] gasLimit = Hex.decode("f424");
+        //#mish increase it from 62500, else it OOGs because we split gas 50:50 into exec and rent gas
+        byte[] gasLimit = ByteUtil.longToBytes(100_000L);//Hex.decode("f424"); 
 
         Block bestBlock = factory.getBlockchain().getBestBlock();
 
@@ -141,6 +149,8 @@ public class ReversibleTransactionExecutorTest {
         Assert.assertArrayEquals(
                 new String[]{"calls: 1"},
                 callsFn.decodeResult(result.getHReturn()));
+        
+        dispRes(result);        
 
         ProgramResult result2 = reversibleTransactionExecutor.executeTransaction(
                 bestBlock,
@@ -157,5 +167,16 @@ public class ReversibleTransactionExecutorTest {
         Assert.assertArrayEquals(
                 new String[]{"calls: 1"},
                 callsFn.decodeResult(result2.getHReturn()));
+        
+        dispRes(result2);
     }
+
+    // #mish just a utility. Not needed when using contract.createandrun    
+    public void dispRes(ProgramResult result){
+            System.out.println("\nExec Gas Used " + result.getGasUsed() +
+                           "\nRent Gas Used " + result.getRentGasUsed() +
+                           "\nNo. trie nodes with `updated` rent timestamp: " +  result.getAccessedNodes().size() +
+                           "\nNo. new trie nodes created (6 months rent): " +  result.getCreatedNodes().size() + "\n"
+                            );
+    } 
 }

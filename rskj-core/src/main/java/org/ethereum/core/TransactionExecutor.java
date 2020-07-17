@@ -26,6 +26,7 @@ import co.rsk.metrics.profilers.Metric;
 import co.rsk.metrics.profilers.Profiler;
 import co.rsk.metrics.profilers.ProfilerFactory;
 import co.rsk.panic.PanicProcessor;
+import co.rsk.remasc.RemascTransaction;
 import co.rsk.rpc.modules.trace.ProgramSubtrace;
 import co.rsk.core.types.ints.Uint24;
 
@@ -35,7 +36,7 @@ import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.db.ReceiptStore;
-import org.ethereum.db.MutableRepository; //#mish todo remove this later, added for testing
+import org.ethereum.db.MutableRepository;
 import org.ethereum.vm.*;
 import org.ethereum.vm.program.RentData;
 import org.ethereum.vm.program.Program;
@@ -118,6 +119,8 @@ public class TransactionExecutor {
     private PrecompiledContracts.PrecompiledContract precompiledContract;
 
     private long mEndGas = 0;
+
+    private boolean isRemascTx; //#to avoid rent related errors senderAddr == remasc addr
     private long mEndRentGas = 0;
     private long refTimeStamp; // reference to estimate storage rent
     private long estRentGas = 0; //#mish unlike execution gas, rent gas is only collected at EOT. Use this for tracking estimateduse
@@ -187,12 +190,24 @@ public class TransactionExecutor {
         if (localCall) {
             return true;
         }
+        
+        /** 
+        if (tx.getSender() == RemascTransaction.REMASC_ADDRESS) {
+            //System.out.println("\n\n\n remasc addr " + RemascTransaction.REMASC_ADDRESS);
+            this.isRemascTx = true;
+        }
+        */
+        if (tx instanceof RemascTransaction){
+            //System.out.println("\n\n\n remasc!\n\n");
+            this.isRemascTx = true;
+        }
 
         // #mish: this is only execution gas limit
         long txGasLimit = GasCost.toGas(tx.getGasLimit());
         long txRentGasLimit = GasCost.toGas(tx.getRentGasLimit());
-
+        
         long curBlockGasLimit = GasCost.toGas(executionBlock.getGasLimit());
+        
         //System.out.println("\n\n init() in Tx Exec \n\n" + txGasLimit + "\n" + curBlockGasLimit + "\n") ;    
         if (!gasIsValid(txGasLimit, curBlockGasLimit)) { //rentGasLimit does not count towards block gas limits
             return false;
@@ -321,7 +336,6 @@ public class TransactionExecutor {
             // but don't add receiver address yet as it may be a pre-compiled contract
             // Note: "result" here is still a new instance of program result
             accessedNodeAdder(tx.getSender(),track, result);    
-            
             track.increaseNonce(tx.getSender());
     
             long txGasLimit = GasCost.toGas(tx.getGasLimit());
@@ -332,7 +346,6 @@ public class TransactionExecutor {
             Coin txRentGasCost = tx.getGasPrice().multiply(BigInteger.valueOf(txRentGasLimit));
             // reduce balance first
             track.addBalance(tx.getSender(), txGasCost.add(txRentGasCost).negate());
-
             logger.trace("Paying: txGasCost: [{}],  gasPrice: [{}], gasLimit: [{}]",
                                     txGasCost, tx.getGasPrice(), txGasLimit);
         }
@@ -367,28 +380,31 @@ public class TransactionExecutor {
         // if targetAddress size is greater than 32 bytes.
         // But init() will detect this earlier
         precompiledContract = precompiledContracts.getContractForAddress(activations, DataWord.valueOf(targetAddress.getBytes()));
-
+    
         this.subtraces = new ArrayList<>();
         if (precompiledContract != null) {
             Metric metric = profiler.start(Profiler.PROFILING_TYPE.PRECOMPILED_CONTRACT_INIT);
             precompiledContract.init(tx, executionBlock, track, blockStore, receiptStore, result.getLogInfoList());
             profiler.stop(metric);
             metric = profiler.start(Profiler.PROFILING_TYPE.PRECOMPILED_CONTRACT_EXECUTE);
-
             long requiredGas = precompiledContract.getGasForData(tx.getData());
             long txGasLimit = GasCost.toGas(tx.getGasLimit());
             long txRentGasLimit = GasCost.toGas(tx.getRentGasLimit());
             long gasUsed = GasCost.add(requiredGas, basicTxCost);
+            
             if (!localCall && !enoughGas(txGasLimit, requiredGas, gasUsed)) {
                 // no refund no endowment
                 execError(String.format( "Out of Gas calling precompiled contract at block %d " +
                                 "for address 0x%s. required: %s, used: %s, left: %s ",
                         executionBlock.getNumber(), targetAddress.toString(), requiredGas, gasUsed, mEndGas));
                 mEndGas = 0;
-                // #mish: if exec gas OOG, do not refund all rent Gas.. keep 25% as per RSKIP113
-                mEndRentGas = 3*txRentGasLimit/4; //#mish: with pre compiles should all rent gas be refunded?
-                // increase estimated rentgas
-                estRentGas += txRentGasLimit/4;
+                
+                if (!isRemascTx) {
+                    // #mish: if exec gas OOG, do not refund all rent Gas.. keep 25% as per RSKIP113
+                    mEndRentGas = 3*txRentGasLimit/4; //#mish: with pre compiles should all rent gas be refunded?
+                    // increase estimated rentgas
+                    estRentGas += txRentGasLimit/4;
+                }
                 profiler.stop(metric);
                 return;
             }
@@ -396,16 +412,20 @@ public class TransactionExecutor {
             mEndGas = activations.isActive(ConsensusRule.RSKIP136) ?
                     GasCost.subtract(txGasLimit, gasUsed) :
                     txGasLimit - gasUsed;
-            // update refund status of rentGas, could be > 0 sender account nodes (via accessedNodeAdder)
-            mEndRentGas = activations.isActive(ConsensusRule.RSKIP136) ?
+            
+            if (!isRemascTx) { //System.out.println("\n\n\n remasc addr " + RemascTransaction.REMASC_ADDRESS);
+                // update refund status of rentGas, could be > 0 sender account nodes (via accessedNodeAdder)
+                mEndRentGas = activations.isActive(ConsensusRule.RSKIP136) ?
                     GasCost.subtract(txRentGasLimit, estRentGas) :
-                    txRentGasLimit - estRentGas; 
+                    txRentGasLimit - estRentGas;
+            }
 
             // FIXME: save return for vm trace
             try {
                 byte[] out = precompiledContract.execute(tx.getData());
                 this.subtraces = precompiledContract.getSubtraces();
                 result.setHReturn(out);
+
                 /** #mish: creating dummy accounts for pre-compiled contracts 
                  * Pre-compiled contracts to do not exist in Trie/repository (they don't have to).
                  * In ethereum a contract calling another contract costs 700. But if that contract does not exist,
@@ -591,15 +611,19 @@ public class TransactionExecutor {
             cacheTrack.saveCode(tx.getContractAddress(), result.getHReturn());
         }
     }
-    // #mish todo: setStatus needs to be modified to reflect Manual revert, or rentgas OOG as per RSKIP113 
+    // #mish todo: setStatus needs to be modified to reflect Manual revert, or rentgas OOG as per RSKIP113
+    // Note 1: Difference in cumulative gas b/w successive TXs can be used as execGasUsed (by nodes) for block validation 
+    // and also to infer rentGasUsed (by Wallets)  
     public TransactionReceipt getReceipt() {
         if (receipt == null) {
             receipt = new TransactionReceipt();
-            long totalGasUsed = GasCost.add(gasUsedInTheBlock, getGasUsed());
+            long totalGasUsed = GasCost.add(gasUsedInTheBlock, getGasUsed()); //execution gas only
             receipt.setCumulativeGas(totalGasUsed);
             receipt.setTransaction(tx);
             receipt.setLogInfoList(getVMLogs());
-            receipt.setGasUsed(getGasUsed() + getRentGasUsed()); //#mish combined gas usage (exec + rent)
+            receipt.setGasUsed(getGasUsed() + getRentGasUsed()); //#mish combined gas usage (exec + rent) (cos Wallets)
+            receipt.setExecGasUsed(getGasUsed()); // needed for testing
+            receipt.setRentGasUsed(getRentGasUsed()); //for testing
             receipt.setStatus(executionError.isEmpty()?TransactionReceipt.SUCCESS_STATUS:TransactionReceipt.FAILED_STATUS); // #mish todo: RSKIP113
         }
         return receipt;
@@ -685,8 +709,9 @@ public class TransactionExecutor {
         this.paidFees = summaryFee;
 
         //#mish for testing
-        System.out.println( "\nTX finalization:" + 
-                            "\nExec GasLimit " + GasCost.toGas(tx.getGasLimit()) +
+        System.out.println( "\nTX finalization " + 
+                            "(is Remasc TX: " + isRemascTx + ")"  +
+                            "\n\nExec GasLimit " + GasCost.toGas(tx.getGasLimit()) +
                             "\nExec gas used " + result.getGasUsed() +
                             "\nExec gas refund " + mEndGas +
                             "\n\nRent GasLimit " + GasCost.toGas(tx.getRentGasLimit()) +
@@ -809,6 +834,9 @@ public class TransactionExecutor {
      * Storage nodes accessed via SLOAD or SSTORE are not included.
     */
     public void accessedNodeAdder(RskAddress addr, Repository repository, ProgramResult progRes){
+        if (isRemascTx){
+            return;
+        }
         long rd = 0; // initalize rent due to 0
         ByteArrayWrapper accKey = repository.getAccountNodeKey(addr);
         // if the node is not in the map, add the rent owed to current estimate
@@ -869,6 +897,9 @@ public class TransactionExecutor {
     // Similar to accessednodes adder. Different HashMap, 6 months timestamp, rent computation, no check for prepaid rent
     // also, it's more likely that created nodes will be in a cached repository, e.g. cachetrack in Tx execution 
     public void createdNodeAdder(RskAddress addr, Repository repository, ProgramResult progRes){
+        if (isRemascTx){
+            return;
+        }
         long advTS = this.getRefTimeStamp() + GasCost.SIX_MONTHS; //advanced time stamp time.now + 6 months
         long rd = 0; // rent due init 0
         ByteArrayWrapper accKey = repository.getAccountNodeKey(addr);

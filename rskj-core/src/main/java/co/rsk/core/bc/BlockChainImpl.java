@@ -72,6 +72,16 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  *
  */
 
+
+/** #mish Storage rent notes July 2020 
+ *  TX and receipt trie root validation impact arising from
+ *  changes to Trie (new `lastRentPaidTime` field + encoding `toMessage`/`from Message()`)
+ *  changes to gasUsed in TX receipt (see TransactionExecutor). Cumulative gas used is still execution Gas only 
+        // however gasUsed in the receipt represents both execution as well as rent gas used. 
+        // to separate them, we can use difference in cumulativeGas of successive TXs (except the first one).
+*/
+
+
 public class BlockChainImpl implements Blockchain {
     private static final Profiler profiler = ProfilerFactory.getInstance();
     private static final Logger logger = LoggerFactory.getLogger("blockchain");
@@ -140,6 +150,7 @@ public class BlockChainImpl implements Blockchain {
 
             if (!block.isSealed()) {
                 panicProcessor.panic("unsealedblock", String.format("Unsealed block %s %s", block.getNumber(), block.getHash()));
+                 //#mish is unsealed, panic and then seal it
                 block.seal();
             }
 
