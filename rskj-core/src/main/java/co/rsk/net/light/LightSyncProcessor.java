@@ -186,38 +186,35 @@ public class LightSyncProcessor {
         return syncState;
     }
 
-    public boolean isCorrect(List<BlockHeader> blockHeaders, int maxAmountOfHeaders, long startBlockNumber, int skip, boolean reverse) {
+    public boolean isCorrect(LightPeer lightPeer, List<BlockHeader> blockHeaders,
+                             int maxAmountOfHeaders, long startBlockNumber, int skip, boolean reverse) {
         if (blockHeaders.get(0).getNumber() != startBlockNumber) {
-            differentFirstBlocks();
-            //TODO: Abort process
+            differentFirstBlocks(lightPeer);
             return false;
         }
 
-        return hasCorrectAmountAndSkip(blockHeaders, maxAmountOfHeaders, skip, reverse);
+        return hasCorrectAmountAndSkip(lightPeer, blockHeaders, maxAmountOfHeaders, skip, reverse);
     }
 
-    public boolean isCorrect(List<BlockHeader> blockHeaders, int maxAmountOfHeaders, byte[] startBlockHash, int skip, boolean reverse) {
-
+    public boolean isCorrect(LightPeer lightPeer, List<BlockHeader> blockHeaders, int maxAmountOfHeaders,
+                             byte[] startBlockHash, int skip, boolean reverse) {
         if (!ByteUtil.fastEquals(blockHeaders.get(0).getHash().getBytes(), startBlockHash)) {
-            differentFirstBlocks();
-            //TODO: Abort process
             return false;
         }
 
-        return hasCorrectAmountAndSkip(blockHeaders, maxAmountOfHeaders, skip, reverse);
+        return hasCorrectAmountAndSkip(lightPeer, blockHeaders, maxAmountOfHeaders, skip, reverse);
     }
 
-    private boolean hasCorrectAmountAndSkip(List<BlockHeader> blockHeaders, int maxAmountOfHeaders, int skip, boolean reverse) {
+    private boolean hasCorrectAmountAndSkip(LightPeer lightPeer, List<BlockHeader> blockHeaders,
+                                            int maxAmountOfHeaders, int skip, boolean reverse) {
         if (blockHeaders.size() > maxAmountOfHeaders) {
-            moreBlocksThanAllowed();
-            //TODO: Abort process
+            moreBlocksThanAllowed(lightPeer);
             return false;
         }
 
 
         if (!isCorrectSkipped(blockHeaders, skip, reverse)) {
-            incorrectSkipped();
-            //TODO: Abort process
+            incorrectSkipped(lightPeer);
             return false;
         }
         return true;
@@ -333,8 +330,8 @@ public class LightSyncProcessor {
     }
 
     private void abortProcess(LightPeer lightPeer, String errorMessage, ReasonCode reasoncode) {
-        loggerNet.error(errorMessage);
-        loggerNet.error("Received Wrong Message, aborting Sync and removing Light Peer");
+        loggerNet.info(errorMessage);
+        loggerNet.info("Received Wrong Message, aborting Sync and removing Light Peer");
         lightPeer.disconnect(reasoncode);
         lightPeersInformation.removeLightPeer(lightPeer);
     }
