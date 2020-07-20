@@ -283,7 +283,7 @@ public class LightSyncStateTest {
 
         newBlockHeadersInStartRoundSyncState(startBlockHeader, blockHeaders, longLightPeer);
 
-        verify(lightSyncProcessor, times(1)).failedAttempt(lightPeer);
+        verify(lightSyncProcessor, times(1)).failedAttempt(longLightPeer);
         assertEquals(lightSyncProcessor.getSyncState().getClass(), StartRoundSyncState.class);
     }
 

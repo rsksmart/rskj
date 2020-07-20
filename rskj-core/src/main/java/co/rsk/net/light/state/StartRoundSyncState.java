@@ -58,7 +58,6 @@ public class StartRoundSyncState implements LightSyncState {
     public void newBlockHeaders(LightPeer lightPeer, List<BlockHeader> blockHeaders) {
         if (!lightSyncProcessor.isCorrect(lightPeer, blockHeaders, maxAmountOfHeaders,
                 startBlockNumber, skip, false)){
-            lightSyncProcessor.incorrectSkipped(lightPeer);
             return;
         }
 
