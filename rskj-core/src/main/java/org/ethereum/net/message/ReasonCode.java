@@ -84,6 +84,10 @@ public enum ReasonCode {
 
     UNEXPECTED_GENESIS(0x11),
 
+    /**
+     * Light Client Disconnection Codes
+     */
+
     NOT_PENDING_MESSAGE(0x20),
 
     WRONG_DIFFICULTY(0x21),

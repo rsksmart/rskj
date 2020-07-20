@@ -47,6 +47,7 @@ import java.util.List;
 
 import static co.rsk.net.light.LightSyncProcessor.MAX_REQUESTED_HEADERS;
 import static org.ethereum.crypto.HashUtil.randomHash;
+import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.*;
 import static org.mockito.ArgumentCaptor.forClass;
 import static org.mockito.Mockito.*;
@@ -110,6 +111,7 @@ public class LightSyncProcessorTest {
         lightSyncProcessor.sendBlockHeadersByNumberMessage(lightPeer, 10L, 1, 0, false);
         processBlockHeaderAndVerifyDoesntSendMessage(bHs, requestId);
         verify(lightSyncProcessor, times(1)).invalidPoW(lightPeer);
+        assertThat(lightPeersInformation.getConnectedPeersSize(), is(0));
     }
 
     @Test
@@ -122,6 +124,7 @@ public class LightSyncProcessorTest {
 
         processBlockHeaderAndVerifyDoesntSendMessage(bHs, requestId);
         verify(lightSyncProcessor, times(1)).notPendingMessage(lightPeer);
+        assertThat(lightPeersInformation.getConnectedPeersSize(), is(0));
     }
 
     @Test
@@ -137,6 +140,7 @@ public class LightSyncProcessorTest {
         lightSyncProcessor.sendBlockHeadersByNumberMessage(lightPeer, 10L, 1, 0, false);
         processBlockHeaderAndVerifyDoesntSendMessage(bHs, requestId);
         verify(lightSyncProcessor, times(1)).wrongBlockHeadersSize(lightPeer);
+        assertThat(lightPeersInformation.getConnectedPeersSize(), is(0));
     }
 
     @Test
@@ -147,6 +151,7 @@ public class LightSyncProcessorTest {
         lightSyncProcessor.sendBlockHeadersByNumberMessage(lightPeer, 10L, 1, 0, false);
         processBlockHeaderAndVerifyDoesntSendMessage(bHs, requestId);
         verify(lightSyncProcessor, times(1)).wrongBlockHeadersSize(lightPeer);
+        assertThat(lightPeersInformation.getConnectedPeersSize(), is(0));
     }
 
     @Test
