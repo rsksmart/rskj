@@ -22,7 +22,6 @@ import co.rsk.core.BlockDifficulty;
 import co.rsk.core.bc.BlockChainStatus;
 import co.rsk.crypto.Keccak256;
 import co.rsk.net.eth.LightClientHandler;
-import co.rsk.net.light.message.GetBlockHeadersByHashMessage;
 import co.rsk.net.light.message.GetBlockHeadersByNumberMessage;
 import co.rsk.net.light.message.LightClientMessage;
 import co.rsk.net.light.message.StatusMessage;
@@ -110,7 +109,7 @@ public class LightSyncProcessorTest {
         when(proofOfWorkRule.isValid(blockHeader)).thenReturn(false);
         lightSyncProcessor.sendBlockHeadersByNumberMessage(lightPeer, 10L, 1, 0, false);
         processBlockHeaderAndVerifyDoesntSendMessage(bHs, requestId);
-        verify(lightSyncProcessor, times(1)).invalidPoW();
+        verify(lightSyncProcessor, times(1)).invalidPoW(lightPeer);
     }
 
     @Test
@@ -122,7 +121,7 @@ public class LightSyncProcessorTest {
         bHs.add(blockHeader);
 
         processBlockHeaderAndVerifyDoesntSendMessage(bHs, requestId);
-        verify(lightSyncProcessor, times(1)).notPendingMessage();
+        verify(lightSyncProcessor, times(1)).notPendingMessage(lightPeer);
     }
 
     @Test
@@ -137,7 +136,7 @@ public class LightSyncProcessorTest {
 
         lightSyncProcessor.sendBlockHeadersByNumberMessage(lightPeer, 10L, 1, 0, false);
         processBlockHeaderAndVerifyDoesntSendMessage(bHs, requestId);
-        verify(lightSyncProcessor, times(1)).wrongBlockHeadersSize();
+        verify(lightSyncProcessor, times(1)).wrongBlockHeadersSize(lightPeer);
     }
 
     @Test
@@ -147,7 +146,7 @@ public class LightSyncProcessorTest {
 
         lightSyncProcessor.sendBlockHeadersByNumberMessage(lightPeer, 10L, 1, 0, false);
         processBlockHeaderAndVerifyDoesntSendMessage(bHs, requestId);
-        verify(lightSyncProcessor, times(1)).wrongBlockHeadersSize();
+        verify(lightSyncProcessor, times(1)).wrongBlockHeadersSize(lightPeer);
     }
 
     @Test

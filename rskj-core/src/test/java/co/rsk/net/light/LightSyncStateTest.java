@@ -159,7 +159,7 @@ public class LightSyncStateTest {
         bhs.addAll(getBlockHeaders(numberOfHeaders, (int) numberOfHeaders-1, 0, true));
 
         syncState.newBlockHeaders(lightPeer, bhs);
-        verify(lightSyncProcessor).moreBlocksThanAllowed();
+        verify(lightSyncProcessor).moreBlocksThanAllowed(lightPeer);
     }
 
     @Test
@@ -181,7 +181,7 @@ public class LightSyncStateTest {
         bhs.add(startBlockHeader);
 
         syncState.newBlockHeaders(lightPeer, bhs);
-        verify(lightSyncProcessor, times(1)).wrongDifficulty();
+        verify(lightSyncProcessor, times(1)).wrongDifficulty(lightPeer);
     }
 
     @Test
@@ -208,7 +208,7 @@ public class LightSyncStateTest {
 
         newBlockHeadersInStartRoundSyncState(startBlockHeader, blockHeaders, lightPeer);
 
-        verify(lightSyncProcessor, times(1)).moreBlocksThanAllowed();
+        verify(lightSyncProcessor, times(1)).moreBlocksThanAllowed(lightPeer);
         assertEquals(lightSyncProcessor.getSyncState().getClass(), StartRoundSyncState.class);
     }
 
@@ -219,7 +219,7 @@ public class LightSyncStateTest {
 
         newBlockHeadersInStartRoundSyncState(startBlockHeader, blockHeaders, lightPeer);
 
-        verify(lightSyncProcessor, times(1)).differentFirstBlocks();
+        verify(lightSyncProcessor, times(1)).differentFirstBlocks(lightPeer);
         assertEquals(lightSyncProcessor.getSyncState().getClass(), StartRoundSyncState.class);
     }
 
@@ -231,7 +231,7 @@ public class LightSyncStateTest {
 
         newBlockHeadersInStartRoundSyncState(startBlockHeader, blockHeaders, lightPeer);
 
-        verify(lightSyncProcessor, times(1)).incorrectSkipped();
+        verify(lightSyncProcessor, times(1)).incorrectSkipped(lightPeer);
         assertEquals(lightSyncProcessor.getSyncState().getClass(), StartRoundSyncState.class);
     }
 
@@ -243,7 +243,7 @@ public class LightSyncStateTest {
 
         newBlockHeadersInStartRoundSyncState(startBlockHeader, blockHeaders, lightPeer);
 
-        verify(lightSyncProcessor, times(1)).incorrectSkipped();
+        verify(lightSyncProcessor, times(1)).incorrectSkipped(lightPeer);
         assertEquals(lightSyncProcessor.getSyncState().getClass(), StartRoundSyncState.class);
     }
 
@@ -257,7 +257,7 @@ public class LightSyncStateTest {
 
         newBlockHeadersInStartRoundSyncState(startBlockHeader, blockHeaders, lightPeer);
 
-        verify(lightSyncProcessor, times(1)).incorrectParentHash();
+        verify(lightSyncProcessor, times(1)).incorrectParentHash(lightPeer);
         assertEquals(lightSyncProcessor.getSyncState().getClass(), StartRoundSyncState.class);
     }
 
@@ -283,7 +283,7 @@ public class LightSyncStateTest {
 
         newBlockHeadersInStartRoundSyncState(startBlockHeader, blockHeaders, longLightPeer);
 
-        verify(lightSyncProcessor, times(1)).failedAttempt();
+        verify(lightSyncProcessor, times(1)).failedAttempt(lightPeer);
         assertEquals(lightSyncProcessor.getSyncState().getClass(), StartRoundSyncState.class);
     }
 
