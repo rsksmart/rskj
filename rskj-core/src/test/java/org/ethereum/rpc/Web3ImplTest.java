@@ -84,6 +84,7 @@ import java.util.stream.Collectors;
 
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.*;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.*;
 
 /**
@@ -1678,6 +1679,19 @@ public class Web3ImplTest {
         String expectedHash = tx.getHash().toJsonString();
 
         assertTrue("Method is not creating the expected transaction", expectedHash.compareTo(txHash) == 0);
+    }
+
+    @Test
+    public void createNewAccountWithoutDuplicates(){
+        Web3Impl web3 = createWeb3();
+        int originalAccountSize = wallet.getAccountAddresses().size();
+        String testAccountAddress = web3.personal_newAccountWithSeed("testAccount");
+
+        assertEquals("The number of accounts was not increased", originalAccountSize + 1, wallet.getAccountAddresses().size());
+
+        web3.personal_newAccountWithSeed("testAccount");
+
+        assertEquals("The number of accounts was increased", originalAccountSize + 1, wallet.getAccountAddresses().size());
     }
 
     private Web3Impl createWeb3(World world) {
