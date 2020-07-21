@@ -1482,12 +1482,12 @@ public class VM {
 
         MessageCall msg = getMessageCall(gas, codeAddress, activations);
 
-        PrecompiledContracts.PrecompiledContract contract = precompiledContracts.getContractForAddress(activations, codeAddress);
+        PrecompiledContracts.PrecompiledContract precompiledContract = precompiledContracts.getContractForAddress(activations, codeAddress);
 
-        if (contract != null) {
-            program.callToPrecompiledAddress(msg, contract);
+        if (precompiledContract != null) {
+            program.callToPrecompiledAddress(msg, precompiledContract);
         } else {
-            program.callToAddress(msg);
+            program.callToAddress(msg, activations);
         }
 
         program.step();

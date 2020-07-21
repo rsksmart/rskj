@@ -55,10 +55,8 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.util.*;
 
-import static java.lang.StrictMath.exp;
 import static java.lang.StrictMath.min;
 import static org.ethereum.util.ByteUtil.oneByteToHexString;
-import static org.ethereum.util.ByteUtil.toHexString;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -228,8 +226,9 @@ public class VMTest {
     // This test should throw an exception because we are reading from the RETURNDATABUFFER
     // in a non-existent position. This results in an error according to EIP 211
     @Test(expected = RuntimeException.class)
-    public void TestReturnDatBufferDataIsZeroAfterCallToNonExistentContract() {
-        invoke = new ProgramInvokeMockImpl(compile( "PUSH1 0x10" +
+    public void doCall_returnDataBuffer_DataIsZeroAfterCallToNonExistentContract() {
+        invoke = new ProgramInvokeMockImpl(compile(
+                "PUSH1 0x10" +
                 " PUSH1 0x05 " +
                 " ADD" +
                 " PUSH1 0x40" +
@@ -238,7 +237,8 @@ public class VMTest {
                 " PUSH1 0x40" +
                 " RETURN"
         ), null);
-        program = getProgram(compile(" PUSH1 0x20" +  // return size is 32 bytes
+        program = getProgram(compile(
+                " PUSH1 0x20" +  // return size is 32 bytes
                 " PUSH1 0x40" +       // on free memory pointer
                 " PUSH1 0x00" +       // no argument
                 " PUSH1 0x00" +       // no argument size
@@ -260,6 +260,7 @@ public class VMTest {
                 " PUSH1 0x40" +     // from the 0x40 position on memory
                 " RETURN"           // the return value of the contract should be zero (as last call failed)
         ));
+        when(program.getActivations().isActive(ConsensusRule.EIP_211_COMPATIBILITY)).thenReturn(true);
         vm.steps(program, Long.MAX_VALUE);
         byte[] expected = new byte[32];
         Arrays.fill(expected, (byte) 0);
@@ -267,17 +268,19 @@ public class VMTest {
     }
 
     @Test
-    public void TestReturnDataBufferSizeIsZeroAfterCallToNonExistent() {
-       invoke = new ProgramInvokeMockImpl(compile( "PUSH1 0x10" +
-                       " PUSH1 0x05 " +
-                       " ADD" +
-                       " PUSH1 0x40" +
-                       " MSTORE " +
-                       " PUSH1 0x20 " +
-                       " PUSH1 0x40" +
-                       " RETURN"
+    public void doCall_returnDataBuffer_SizeIsZeroAfterCallToNonExistent() {
+       invoke = new ProgramInvokeMockImpl(compile(
+                "PUSH1 0x10" +
+                " PUSH1 0x05 " +
+                " ADD" +
+                " PUSH1 0x40" +
+                " MSTORE " +
+                " PUSH1 0x20 " +
+                " PUSH1 0x40" +
+                " RETURN"
        ), null);
-       program = getProgram(compile(" PUSH1 0x20" +  // return size is 32 bytes
+       program = getProgram(compile(
+               " PUSH1 0x20" +  // return size is 32 bytes
                " PUSH1 0x40" +  // on free memory pointer
                " PUSH1 0x00" +  // no argument
                " PUSH1 0x00" +  // no argument size
@@ -293,8 +296,44 @@ public class VMTest {
                " STATICCALL" +
                " RETURNDATASIZE" // push the return data size to the stack
        ));
+       when(program.getActivations().isActive(ConsensusRule.EIP_211_COMPATIBILITY)).thenReturn(true);
        vm.steps(program, Long.MAX_VALUE);
        assertEquals(0, program.stackPop().intValue());
+    }
+
+    @Test
+    public void doCall_returnDataBuffer_DataIsZeroAfterInsufficientFunds() {
+        invoke = new ProgramInvokeMockImpl(compile(
+                "PUSH1 0x10" +
+                        " PUSH1 0x05 " +
+                        " ADD" +
+                        " PUSH1 0x40" +
+                        " MSTORE " +
+                        " PUSH1 0x20 " +
+                        " PUSH1 0x40" +
+                        " RETURN"
+        ), null);
+        program = getProgram(compile(
+                " PUSH1 0x20" +  // return size is 32 bytes
+                        " PUSH1 0x40" +       // on free memory pointer
+                        " PUSH1 0x00" +       // no argument
+                        " PUSH1 0x00" +       // no argument size
+                        " PUSH20 0x" + invoke.getContractAddress() + // in the mock contract specified above
+                        " PUSH4 0x005B8D80" + // with some gas
+                        " STATICCALL" +       // call it! result should be 0x15
+                        " PUSH1 0x20" +  // return size is 32 bytes
+                        " PUSH1 0x40" +       // on free memory pointer
+                        " PUSH1 0x00" +       // no argument
+                        " PUSH1 0x00" +       // no argument size
+                        " PUSH4 0x00002710" +       // with a high value
+                        " PUSH20 0x" + invoke.getContractAddress() + // in the mock contract specified above
+                        " PUSH4 0x005B8D80" + // with some gas
+                        " CALL" +       // call it! result should be 0x15
+                        " RETURNDATASIZE" // push the return data size to the stack
+        ));
+        when(program.getActivations().isActive(ConsensusRule.EIP_211_COMPATIBILITY)).thenReturn(true);
+        vm.steps(program, Long.MAX_VALUE);
+        assertEquals(0, program.stackPop().intValue());
     }
 
     @Test

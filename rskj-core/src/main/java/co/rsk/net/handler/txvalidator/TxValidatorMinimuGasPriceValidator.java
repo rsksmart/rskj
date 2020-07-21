@@ -39,5 +39,4 @@ public class TxValidatorMinimuGasPriceValidator implements TxValidatorStep {
 
         return TransactionValidationResult.withError("transaction's gas price lower than block's minimum");
     }
-
 }
