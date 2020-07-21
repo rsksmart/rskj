@@ -103,7 +103,7 @@ public class BlockExecutor {
         boolean isRskip126Enabled = activationConfig.isActive(RSKIP126, block.getNumber());
         header.setTransactionsRoot(BlockHashesHelper.getTxTrieRoot(block.getTransactionsList(), isRskip126Enabled));
         header.setReceiptsRoot(BlockHashesHelper.calculateReceiptsTrieRoot(result.getTransactionReceipts(), isRskip126Enabled));
-        header.setGasUsed(result.getGasUsed()); //execution gas only
+        header.setGasUsed(result.getGasUsed()); //execution gas only, consistent with block gas limit
         header.setPaidFees(result.getPaidFees()); //#mish execution and rent gas
         header.setStateRoot(stateRootHandler.convert(header, result.getFinalState()).getBytes());
         header.setLogsBloom(calculateLogsBloom(result.getTransactionReceipts()));

@@ -1502,7 +1502,7 @@ public class VM {
         DataWord codeAddress = program.stackPop();
 
         ActivationConfig.ForBlock activations = program.getActivations();
-
+        
         MessageCall msg = getMessageCall(gas, codeAddress, activations);
 
         PrecompiledContracts.PrecompiledContract contract = precompiledContracts.getContractForAddress(activations, codeAddress);
@@ -1619,6 +1619,7 @@ public class VM {
             if (remainingGas < minimumTransferGas) {
                 throw Program.ExceptionHelper.notEnoughSpendingGas(op.name(), minimumTransferGas, program);
             }
+
         }
 
         return minimumTransferGas;

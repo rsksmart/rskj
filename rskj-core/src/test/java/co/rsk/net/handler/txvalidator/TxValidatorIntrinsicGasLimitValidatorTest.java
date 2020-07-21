@@ -49,7 +49,7 @@ public class TxValidatorIntrinsicGasLimitValidatorTest {
     public void validIntrinsicGasPrice() {
         Transaction tx1 = new Transaction(BigInteger.ZERO.toByteArray(),
                             BigInteger.ZERO.toByteArray(),
-                            BigInteger.valueOf(21000).toByteArray(),
+                            BigInteger.valueOf(42000).toByteArray(), //#mish double gaslimit for rent tests
                             new ECKey().getAddress(),
                             BigInteger.ZERO.toByteArray(),
                             null,
@@ -58,7 +58,7 @@ public class TxValidatorIntrinsicGasLimitValidatorTest {
 
         Transaction tx2 = new Transaction(BigInteger.ZERO.toByteArray(),
                 BigInteger.ZERO.toByteArray(),
-                BigInteger.valueOf(30000).toByteArray(),
+                BigInteger.valueOf(60000).toByteArray(), //#mish double gaslimit for rent tests
                 new ECKey().getAddress(),
                 BigInteger.ZERO.toByteArray(),
                 Hex.decode("0001"),
@@ -67,7 +67,7 @@ public class TxValidatorIntrinsicGasLimitValidatorTest {
 
         Transaction tx3 = new Transaction(BigInteger.ZERO.toByteArray(),
                 BigInteger.ZERO.toByteArray(),
-                BigInteger.valueOf(21072).toByteArray(),
+                BigInteger.valueOf(42144).toByteArray(), //#mish double gaslimit for rent tests (from 21072)
                 new ECKey().getAddress(),
                 BigInteger.ZERO.toByteArray(),
                 Hex.decode("0001"),

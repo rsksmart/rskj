@@ -64,8 +64,13 @@ public class ProgramTest {
     @Test
     public void sendFailsAndReturnsFalseThenExecutionContinuesNormally() {
         ProgramResult result = TestContract.sendTest().executeFunction("test", BigInteger.TEN, false);
+        //System.out.println("\nshould be false: " + result.isRevert());
         Assert.assertFalse(result.isRevert());
+        //System.out.println("should be null: " + result.getException());
         Assert.assertNull(result.getException());
+        // continue
+        //System.out.println((new Object[] { BigInteger.valueOf(42) })[0].toString());
+        //System.out.println(TestContract.sendTest().functions.get("test").decodeResult(result.getHReturn())[0].toString());
         Assert.assertArrayEquals(
                 new Object[] { BigInteger.valueOf(42) },
                 TestContract.sendTest().functions.get("test").decodeResult(result.getHReturn()));

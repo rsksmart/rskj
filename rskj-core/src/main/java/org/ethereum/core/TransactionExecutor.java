@@ -323,15 +323,10 @@ public class TransactionExecutor {
         logger.trace("Execute transaction {} {}", toBI(tx.getNonce()), tx.getHash());
 
         if (!localCall) {
-            // set reference timestamp for rent computations: Todo: should this be at the block level?
+            // set reference timestamp for rent computations
             //refTimeStamp = this.executionBlock.getTimestamp();  // Don't use this, it returns 1 in tests
             refTimeStamp = Instant.now().getEpochSecond();
-            
-            // rent computation for coinbase account 
-            // #mish testfail -> co.rsk.core.TransactionTest.constantCallConflictTest fails as coinbase account increases repository size!
-            //track.createAccount(this.coinbase);
-            //accessedNodeAdder(this.coinbase, track, result); 
-            
+                        
             // #mish add sender to Map of accessed nodes (for storage rent tracking)
             // but don't add receiver address yet as it may be a pre-compiled contract
             // Note: "result" here is still a new instance of program result
@@ -346,8 +341,11 @@ public class TransactionExecutor {
             Coin txRentGasCost = tx.getGasPrice().multiply(BigInteger.valueOf(txRentGasLimit));
             // reduce balance first
             track.addBalance(tx.getSender(), txGasCost.add(txRentGasCost).negate());
-            logger.trace("Paying: txGasCost: [{}],  gasPrice: [{}], gasLimit: [{}]",
-                                    txGasCost, tx.getGasPrice(), txGasLimit);
+            //logger.trace("Paying: txGasCost: [{}],  gasPrice: [{}], gasLimit: [{}]",
+            //                        txGasCost, tx.getGasPrice(), txGasLimit);
+            
+            logger.trace("Paying: txGasCost: [{}],  gasPrice: [{}], gasLimit: [{}], txRentGasCost: [{}], rentGasLimit: [{}]",
+                                    txGasCost, tx.getGasPrice(), txGasLimit, txRentGasCost, txRentGasLimit);
         }
         
         
@@ -413,11 +411,12 @@ public class TransactionExecutor {
                     GasCost.subtract(txGasLimit, gasUsed) :
                     txGasLimit - gasUsed;
             
-            if (!isRemascTx) { //System.out.println("\n\n\n remasc addr " + RemascTransaction.REMASC_ADDRESS);
+            if (!isRemascTx) { 
+                //System.out.println("\n\n\n test rentgas subtract: " + (txRentGasLimit - estRentGas));
                 // update refund status of rentGas, could be > 0 sender account nodes (via accessedNodeAdder)
                 mEndRentGas = activations.isActive(ConsensusRule.RSKIP136) ?
                     GasCost.subtract(txRentGasLimit, estRentGas) :
-                    txRentGasLimit - estRentGas;
+                    (txRentGasLimit - estRentGas);
             }
 
             // FIXME: save return for vm trace
@@ -450,9 +449,10 @@ public class TransactionExecutor {
         } else {    // #mish if not pre-compiled contract
             // add the node to accessed nodes Map for rent tracking
             // "result" is still the init `new` instance with tx.sender in accessednodes if rent was due. 
-            accessedNodeAdder(tx.getReceiveAddress(), track, result);
-            //System.out.println("\nAcNodeSize call " + result.getAccessedNodes().size());
-            
+            if (!localCall) {
+                accessedNodeAdder(tx.getReceiveAddress(), track, result);
+                //System.out.println("\nAcNodeSize call " + result.getAccessedNodes().size());
+            }
             byte[] code = track.getCode(targetAddress);
             // Code can be null 
             // #mish Aside: even for empty code, storage rent will be > 0, because of overhead (RSKIP 113) (if account is contract)
@@ -574,7 +574,9 @@ public class TransactionExecutor {
         cacheTrack.commit();
         // add newly created contract nodes to createdNode Map for rent computation. After the cached repository is committed.
         if (tx.isContractCreation() && !result.isRevert()) {
-                createdNodeAdder(tx.getContractAddress(), track, result);
+                if (!localCall) {
+                    createdNodeAdder(tx.getContractAddress(), track, result);
+                }
                 // again this.reseult has diverged from program.getResult. Merge them
                 program.getResult().merge(this.result); // writing result as this.result for clarity
                 result = program.getResult(); //and then copy the information over   
@@ -634,6 +636,7 @@ public class TransactionExecutor {
         //System.out.println("start finalization() in Tx exec");    
         // RSK if local call gas balances must not be changed
         if (localCall) {
+            System.out.println("\n\nLocal call, finalization skipped\n");
             return;
         }
 
@@ -726,29 +729,23 @@ public class TransactionExecutor {
         logs = notRejectedLogInfos;
 
         // save created and accessed node with updated rent timestamps to repository. Any value modifications 
-        result.getCreatedNodes().forEach((key, rentData) -> track.updateNodeWithRent(key, rentData.getLRPTime()));        
-                
-        /*
-        System.out.println("Coinbase balance: " + track.getBalance(this.coinbase));
-        System.out.println("Sender " + track.getBalance(tx.getSender()));
-        System.out.println("Receiver " + track.getBalance(tx.getReceiveAddress()) +"\n\n");
-        */
+       if (!isRemascTx){
+            result.getCreatedNodes().forEach((key, rentData) -> track.updateNodeWithRent(key, rentData.getLRPTime()));        
+            result.getAccessedNodes().forEach(
+                (key, rentData) -> {
+                        track.updateNodeWithRent(key, rentData.getLRPTime());
+                        //byte[] tmpkey = Arrays.copyOfRange(key.getData(),11,31);
+                        //RskAddress tmpAddr = new RskAddress(tmpkey);
+                        //System.out.println(track.getAccountNodeLRPTime(tmpAddr));
+                        //System.out.println(track.getBalance(tmpAddr));
+                }
+            );
+        }
 
-        //#mish testing before and after rent update remove later
-        //System.out.println(track instanceof MutableRepository);
-        
-        result.getAccessedNodes().forEach(
-            (key, rentData) -> {
-                    track.updateNodeWithRent(key, rentData.getLRPTime());
-                    //byte[] tmpkey = Arrays.copyOfRange(key.getData(),11,31);
-                    //RskAddress tmpAddr = new RskAddress(tmpkey);
-                    //System.out.println(track.getAccountNodeLRPTime(tmpAddr));
-                    //System.out.println(track.getBalance(tmpAddr));
-            }
-        );
 
         // #mish what is this for? Git grep doesn't reveal anything (neither does github search)
         result.getCodeChanges().forEach((key, value) -> track.saveCode(new RskAddress(key), value));
+        
         // Traverse list of suicides 
         // #mish this should always happen last, in case deleted nodes show up in rent tracking Maps
         result.getDeleteAccounts().forEach(address -> track.delete(new RskAddress(address)));

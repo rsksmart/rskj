@@ -169,7 +169,7 @@ public class Trie {
         profiler.stop(metric);
         return trie;
         */
-        return fromMessage(message, store, true);
+        return fromMessage(message, store, true); //#mish set this to false e.g. for testing bootstrap importer
     }
     
     // #mish for storage rent version with boolean indicator for rent implementation active
@@ -541,7 +541,7 @@ public class Trie {
      */
     public byte[] toMessage() {
         if (encoded == null) {
-            internalToMessage();
+            internalToMessage(false); //#mish this version default is to not include rent field in encoding
         }
 
         return cloneArray(encoded);

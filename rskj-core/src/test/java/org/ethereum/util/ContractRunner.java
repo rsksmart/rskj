@@ -100,7 +100,7 @@ public class ContractRunner {
         BigInteger nonceExecute = repository.getNonce(sender.getAddress());
         Transaction transaction = new TransactionBuilder()
                 // a large gas limit will allow running any contract
-                .gasLimit(BigInteger.valueOf(10_000_000))
+                .gasLimit(BigInteger.valueOf(10_000_000)) 
                 .sender(sender)
                 .receiverAddress(contractAddress)
                 .data(encodedCall)

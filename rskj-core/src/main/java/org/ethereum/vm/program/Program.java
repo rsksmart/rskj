@@ -831,7 +831,7 @@ public class Program {
             callResult = true;
             //#mish code has inconsistent signature, here gas is converted using toGas(). Compare with endowment or call stack exceptions
             refundGas(GasCost.toGas(msg.getGas().longValue()), "remaining gas from the internal call");
-            refundRentGas(msg.getRentGas().longValue(), "refund rent gas from the internal call to addr");
+            refundRentGas(GasCost.toGas(msg.getRentGas().longValue()), "refund rent gas from the internal call to addr");
 
             DataWord callerAddress = DataWord.valueOf(senderAddress.getBytes());
             DataWord ownerAddress = DataWord.valueOf(contextAddress.getBytes());
@@ -845,13 +845,12 @@ public class Program {
             getTrace().addSubTrace(subtrace);
         }
 
-        // #mish perform the storage rent computations at the end, since all avail rentgas is passed
-        // to messageCalls. If rent OOG at this point (has not been refunded), then it doesn't matter?
-        accessedNodeAdder(senderAddress, getStorage());
-        accessedNodeAdder(codeAddress, getStorage());
-
         // 4. THE FLAG OF SUCCESS IS ONE PUSHED INTO THE STACK
         if (callResult) {
+            // #mish perform the storage rent computations at the end, since all avail rentgas is passed
+            // to messageCalls. If rent OOG at this point (has not been refunded), then it doesn't matter?
+            accessedNodeAdder(senderAddress, getStorage());
+            accessedNodeAdder(codeAddress, getStorage());
             stackPushOne();
         }
         else {
@@ -893,7 +892,7 @@ public class Program {
         getTrace().addSubTrace(ProgramSubtrace.newCallSubtrace(CallType.fromMsgType(msg.getType()), program.getProgramInvoke(), program.getResult(), program.getTrace().getSubtraces()));
 
         getTrace().merge(program.getTrace());
-        getResult().merge(childResult);
+        getResult().merge(childResult); //safe even if child fails
 
         boolean childCallSuccessful = true;
 
@@ -903,7 +902,6 @@ public class Program {
                         contextAddress,
                         childResult.getException());
             }
-
             internalTx.reject();
             childResult.rejectInternalTransactions();
             childResult.rejectLogInfos();
@@ -915,13 +913,32 @@ public class Program {
             // #mish todo: if there is an exception some rentgas should be refunded?
             // For now, refund 75% of rentgas passed to child for OOG or REVERT
             // #mish fix: what if it is a rentgas exception? Still the same?
-            getResult().refundRentGas((getResult().getRentGasUsed()*3)/4);
-            //System.out.println("in program executecode: caller rentgas used child failed " + getResult().getRentGasUsed());
-
-            if (childResult.getException() != null) {    
+            long penalty = limitToMaxLong(msg.getRentGas())/4L;
+            childResult.clearUsedRentGas(); //reset it and then tack on 25% penalty for IO costs
+            childResult.spendRentGas(penalty);
+            /*
+            System.out.println("\n\nIn Program::executecode() child failed" +
+                            "\nmsg (child) exec gas limit = " + limitToMaxLong(msg.getGas())+
+                            "\nmsg (child) rent gas limit = " + limitToMaxLong(msg.getRentGas())+
+                            "\n25% penalty charged = " +(limitToMaxLong(msg.getRentGas()))/4 +
+                            "\nchild rent charged = " + childResult.getRentGasUsed() +
+                            "\nparent rent charged = " + getResult().getRentGasUsed() 
+                            );
+            */ 
+            if (childResult.getException() != null) { 
+                // refund rent gas on OOG
+                BigInteger refundRentGas = msg.getRentGas().value().subtract(toBI(childResult.getRentGasUsed()));
+                if (isPositive(refundRentGas)) {
+                    // Since the original gas transferred was < Long.MAX_VALUE then the refund
+                    // also fits in a long.
+                    refundRentGas(refundRentGas.longValue(), "remaining rent gas from the internal call");
+                        if (isGasLogEnabled) {
+                            gasLogger.info("The remaining gas refunded, account: [{}], gas: [{}] ", senderAddress, refundRentGas);
+                        }
+                }
                 return false;
             }
-
+            // else on revert
             childCallSuccessful = false;
         } else {
             // 4. THE FLAG OF SUCCESS IS ONE PUSHED INTO THE STACK

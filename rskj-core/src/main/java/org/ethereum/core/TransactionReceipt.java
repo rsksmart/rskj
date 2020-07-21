@@ -142,6 +142,7 @@ public class TransactionReceipt {
     }
 
     // TODO: return gas used for this transaction instead of cumulative gas
+    //#mish gasUsed field here includes both execution and rent gas used (consistent with single gas limit field in TX)
     public byte[] getGasUsed() {
         return gasUsed;
     }

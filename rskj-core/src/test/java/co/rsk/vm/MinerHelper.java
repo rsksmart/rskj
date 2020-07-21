@@ -106,17 +106,22 @@ public class MinerHelper {
                     .newInstance(tx, txindex++, block.getCoinbase(), track, block, totalGasUsed);
 
             executor.executeTransaction();
-
-            long gasUsed = executor.getGasUsed();
+            
+            // #mish making changes similar to Block Executor
+            long execGasUsed = executor.getGasUsed();
+            long rentGasUsed = executor.getRentGasUsed(); // rent gas used
             Coin paidFees = executor.getPaidFees();
-            totalGasUsed += gasUsed;
+            totalGasUsed += execGasUsed;
             totalPaidFees = totalPaidFees.add(paidFees);
 
             track.commit();
 
             TransactionReceipt receipt = new TransactionReceipt();
-            receipt.setGasUsed(gasUsed);
+            receipt.setGasUsed(execGasUsed + rentGasUsed);
             receipt.setCumulativeGas(totalGasUsed);
+            receipt.setExecGasUsed(execGasUsed); // added for consistency with TX executor
+            receipt.setRentGasUsed(rentGasUsed); //added for consistency with TX execeutor getReceipt()
+
             latestStateRootHash = track.getRoot();
             receipt.setPostTxState(latestStateRootHash);
             receipt.setTxStatus(executor.getReceipt().isSuccessful());

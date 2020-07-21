@@ -76,7 +76,7 @@ public class BlockchainVMTest {
         // Add a single transaction paying to a new address
         byte[] dstAddress = randomAddress();
         //#mish for storage rent testing, double TX gaslimit from 21K to 42K
-        BigInteger transactionGasLimit = new BigInteger("42000");
+        BigInteger transactionGasLimit = new BigInteger("44000");
         Coin transactionGasPrice = Coin.valueOf(1);
         Transaction t = new Transaction(
                 ZERO_BYTE_ARRAY,
@@ -94,8 +94,6 @@ public class BlockchainVMTest {
         Block block2 = blockGenerator.createChildBlock(block1, txs, blockchain.getBestBlock().getStateRoot());
         
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockchain.tryToConnect(block1));
-        
-        System.out.println("\n\nBlockchainVMTest: Block 1 connect\n\n");
         
         MinerHelper mh = new MinerHelper(
                 binfo.repository, binfo.repositoryLocator, binfo.blockchain);
@@ -116,17 +114,15 @@ public class BlockchainVMTest {
         Assert.assertEquals(2, block2.getNumber());
 
         Coin srcAmount = faucetAmount.subtract(transferAmount); // -100
-        srcAmount = srcAmount.subtract(transactionGasPrice.multiply(transactionGasLimit)); //-42000
+        srcAmount = srcAmount.subtract(transactionGasPrice.multiply(transactionGasLimit)); //-44000
 
-        System.out.println("\n\n Hard coded estimate (1B - 42K -100) = " + srcAmount + "\n\n Actual cost (1B - 21K - rentgas) = " + repository.getBalance(new RskAddress(binfo.faucetKey.getAddress())));
+        System.out.println("\n\n Hard coded estimate (1B - 44K -100) = " + srcAmount + "\n\n Actual cost (1B - 21K - rentgas) = " + repository.getBalance(new RskAddress(binfo.faucetKey.getAddress())));
         // #mish Fails.. because rentgas used is unaccounted for, faucet also pays rent. Even the exec gas is hard coded
         // in this test to be the same as default gasLimit (which has been changed from 21K to 42)
         /*Assert.assertEquals(
                 repository.getBalance(new RskAddress(binfo.faucetKey.getAddress())),
                 srcAmount);
-        */
-        //System.out.println("\n\n*********" + transferAmount + "\n\n*********" + repository.getBalance(new RskAddress(dstAddress)));
-        
+        */        
         Assert.assertEquals(
                 repository.getBalance(new RskAddress(dstAddress)),
                 transferAmount); 
