@@ -134,11 +134,6 @@ public class LightSyncProcessor {
         sendMessage(lightPeer, blockHeaderMessage);
     }
 
-    private void sendMessage(LightPeer lightPeer, GetBlockHeadersMessage blockHeaderMessage) {
-        pendingMessages.put(lastRequestedId, BLOCK_HEADER);
-        lightPeer.sendMessage(blockHeaderMessage);
-    }
-
     public void processBlockHeadersMessage(long id, List<BlockHeader> blockHeaders, LightPeer lightPeer) {
         if (!isPending(id, BLOCK_HEADER)) {
             notPendingMessage(lightPeer);
@@ -205,6 +200,55 @@ public class LightSyncProcessor {
         return hasCorrectAmountAndSkip(lightPeer, blockHeaders, maxAmountOfHeaders, skip, reverse);
     }
 
+    public void endStartRound() {
+        //End sync
+    }
+
+    public void startFetchRound() {
+        //Starting fetch sub chains
+    }
+
+    public void differentFirstBlocks(LightPeer lightPeer) {
+        abortProcess(lightPeer, "Different Firsts Blocks", DIFFERENT_FIRSTS_BLOCKS);
+    }
+
+    public void incorrectSkipped(LightPeer lightPeer) {
+        abortProcess(lightPeer, "Incorrect Skipped", INCORRECT_SKIPPED_BLOCK);
+    }
+
+    public void moreBlocksThanAllowed(LightPeer lightPeer) {
+        abortProcess(lightPeer, "More Blocks Than Allowed", MORE_BLOCKS_THAN_ALLOWED);
+    }
+
+    public void incorrectParentHash(LightPeer lightPeer) {
+        abortProcess(lightPeer, "Incorrect Parent Hash", INCORRECT_PARENT_HASH);
+    }
+
+    public void failedAttempt(LightPeer lightPeer) {
+        abortProcess(lightPeer, "Failed Sync Attempt", FAILED_ATTEMPT);
+    }
+
+    public void notPendingMessage(LightPeer lightPeer) {
+        abortProcess(lightPeer, "Message not pending", NOT_PENDING_MESSAGE);
+    }
+
+    public void wrongDifficulty(LightPeer lightPeer) {
+        abortProcess(lightPeer, "Wrong difficulty", WRONG_DIFFICULTY);
+    }
+
+    public void invalidPoW(LightPeer lightPeer) {
+        abortProcess(lightPeer, "Invalid Proof of Work", INVALID_POW);
+    }
+
+    public void wrongBlockHeadersSize(LightPeer lightPeer) {
+        abortProcess(lightPeer, "Wrong Block Headers Size", WRONG_BLOCK_HEADERS_SIZE);
+    }
+
+    private void sendMessage(LightPeer lightPeer, GetBlockHeadersMessage blockHeaderMessage) {
+        pendingMessages.put(lastRequestedId, BLOCK_HEADER);
+        lightPeer.sendMessage(blockHeaderMessage);
+    }
+
     private boolean hasCorrectAmountAndSkip(LightPeer lightPeer, List<BlockHeader> blockHeaders,
                                             int maxAmountOfHeaders, int skip, boolean reverse) {
         if (blockHeaders.size() > maxAmountOfHeaders) {
@@ -259,13 +303,13 @@ public class LightSyncProcessor {
                 ReasonCode.INCOMPATIBLE_PROTOCOL, "Protocol Incompatibility",
                 lightPeer, ctx, lightClientHandler) &&
 
-        compareStatusParam(config.networkId(), msgStatus.getNetworkId(),
-                ReasonCode.NULL_IDENTITY, "Invalid Network",
-                lightPeer, ctx, lightClientHandler) &&
+                compareStatusParam(config.networkId(), msgStatus.getNetworkId(),
+                        ReasonCode.NULL_IDENTITY, "Invalid Network",
+                        lightPeer, ctx, lightClientHandler) &&
 
-        compareStatusParam(genesis.getHash(), new Keccak256(msgStatus.getGenesisHash()),
-                ReasonCode.UNEXPECTED_GENESIS, "Unexpected Genesis",
-                lightPeer, ctx, lightClientHandler);
+                compareStatusParam(genesis.getHash(), new Keccak256(msgStatus.getGenesisHash()),
+                        ReasonCode.UNEXPECTED_GENESIS, "Unexpected Genesis",
+                        lightPeer, ctx, lightClientHandler);
     }
 
     private boolean compareStatusParam(Object expectedParam, Object msgParam, ReasonCode reason, String reasonText,
@@ -283,50 +327,6 @@ public class LightSyncProcessor {
                             ChannelHandlerContext ctx, LightClientHandler lightClientHandler) {
         lightPeer.disconnect(reason);
         ctx.pipeline().remove(lightClientHandler);
-    }
-
-    public void endStartRound() {
-        //End sync
-    }
-
-    public void startFetchRound() {
-        //Starting fetch sub chains
-    }
-
-    public void differentFirstBlocks(LightPeer lightPeer) {
-        abortProcess(lightPeer, "Different Firsts Blocks", DIFFERENT_FIRSTS_BLOCKS);
-    }
-
-    public void incorrectSkipped(LightPeer lightPeer) {
-        abortProcess(lightPeer, "Incorrect Skipped", INCORRECT_SKIPPED_BLOCK);
-    }
-
-    public void moreBlocksThanAllowed(LightPeer lightPeer) {
-        abortProcess(lightPeer, "More Blocks Than Allowed", MORE_BLOCKS_THAN_ALLOWED);
-    }
-
-    public void incorrectParentHash(LightPeer lightPeer) {
-        abortProcess(lightPeer, "Incorrect Parent Hash", INCORRECT_PARENT_HASH);
-    }
-
-    public void failedAttempt(LightPeer lightPeer) {
-        abortProcess(lightPeer, "Failed Sync Attempt", FAILED_ATTEMPT);
-    }
-
-    public void notPendingMessage(LightPeer lightPeer) {
-        abortProcess(lightPeer, "Message not pending", NOT_PENDING_MESSAGE);
-    }
-
-    public void wrongDifficulty(LightPeer lightPeer) {
-        abortProcess(lightPeer, "Wrong difficulty", WRONG_DIFFICULTY);
-    }
-
-    public void invalidPoW(LightPeer lightPeer) {
-        abortProcess(lightPeer, "Invalid Proof of Work", INVALID_POW);
-    }
-
-    public void wrongBlockHeadersSize(LightPeer lightPeer) {
-        abortProcess(lightPeer, "Wrong Block Headers Size", WRONG_BLOCK_HEADERS_SIZE);
     }
 
     private void abortProcess(LightPeer lightPeer, String errorMessage, ReasonCode reasoncode) {
