@@ -85,9 +85,32 @@ public enum ReasonCode {
     UNEXPECTED_GENESIS(0x11),
 
     /**
+     * Light Client Disconnection Codes
+     */
+
+    NOT_PENDING_MESSAGE(0x20),
+
+    WRONG_DIFFICULTY(0x21),
+
+    INVALID_POW(0x22),
+
+    WRONG_BLOCK_HEADERS_SIZE(0x23),
+
+    DIFFERENT_FIRSTS_BLOCKS(0X24),
+
+    INCORRECT_SKIPPED_BLOCK(0x25),
+
+    MORE_BLOCKS_THAN_ALLOWED(0x26),
+
+    INCORRECT_PARENT_HASH(0x27),
+
+    FAILED_ATTEMPT(0x28),
+
+    /**
      * [0xFF] Reason not specified
      */
     UNKNOWN(0xFF);
+
 
     private int reason;
 

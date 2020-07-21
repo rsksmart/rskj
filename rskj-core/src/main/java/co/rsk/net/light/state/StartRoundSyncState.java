@@ -56,13 +56,13 @@ public class StartRoundSyncState implements LightSyncState {
 
     @Override
     public void newBlockHeaders(LightPeer lightPeer, List<BlockHeader> blockHeaders) {
-        if (!lightSyncProcessor.isCorrect(blockHeaders, maxAmountOfHeaders, this.startBlockNumber, skip, false)){
+        if (!lightSyncProcessor.isCorrect(lightPeer, blockHeaders, maxAmountOfHeaders,
+                startBlockNumber, skip, false)){
             return;
         }
 
         if (sparseHeaders.isEmpty() && !blockHeaders.get(0).getParentHash().equals(start.getHash())) {
-            lightSyncProcessor.incorrectParentHash();
-            //TODO: Abort process
+            lightSyncProcessor.incorrectParentHash(lightPeer);
             return;
         }
 
@@ -75,7 +75,7 @@ public class StartRoundSyncState implements LightSyncState {
                 lightSyncProcessor.startFetchRound();
             }
         } else {
-            lightSyncProcessor.failedAttempt();
+            lightSyncProcessor.failedAttempt(lightPeer);
         }
     }
 

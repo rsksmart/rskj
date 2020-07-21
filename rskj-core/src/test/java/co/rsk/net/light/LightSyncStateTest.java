@@ -39,6 +39,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.ethereum.crypto.HashUtil.randomHash;
+import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.*;
 import static org.mockito.ArgumentCaptor.forClass;
 import static org.mockito.Mockito.*;
@@ -54,6 +55,7 @@ public class LightSyncStateTest {
     private ProofOfWorkRule powRule;
     private Blockchain blockchain;
     private Genesis genesis;
+    private LightPeersInformation lightPeersInformation;
 
     @Before
     public void setUp() {
@@ -70,7 +72,7 @@ public class LightSyncStateTest {
         LightStatus longLightStatus = mock(LightStatus.class);
         setupBestPeerStatus(longLightStatus, LONG_TARGET_BLOCK_NUMBER);
 
-        LightPeersInformation lightPeersInformation = new LightPeersInformation();
+        lightPeersInformation = new LightPeersInformation();
         lightPeersInformation.registerLightPeer(lightPeer, lightStatus, false);
         lightPeersInformation.registerLightPeer(longLightPeer, longLightStatus, false);
 
@@ -159,7 +161,8 @@ public class LightSyncStateTest {
         bhs.addAll(getBlockHeaders(numberOfHeaders, (int) numberOfHeaders-1, 0, true));
 
         syncState.newBlockHeaders(lightPeer, bhs);
-        verify(lightSyncProcessor).moreBlocksThanAllowed();
+        verify(lightSyncProcessor).moreBlocksThanAllowed(lightPeer);
+        assertThat(lightPeersInformation.getConnectedPeersSize(), is(1));
     }
 
     @Test
@@ -181,7 +184,8 @@ public class LightSyncStateTest {
         bhs.add(startBlockHeader);
 
         syncState.newBlockHeaders(lightPeer, bhs);
-        verify(lightSyncProcessor, times(1)).wrongDifficulty();
+        verify(lightSyncProcessor, times(1)).wrongDifficulty(lightPeer);
+        assertThat(lightPeersInformation.getConnectedPeersSize(), is(1));
     }
 
     @Test
@@ -208,8 +212,9 @@ public class LightSyncStateTest {
 
         newBlockHeadersInStartRoundSyncState(startBlockHeader, blockHeaders, lightPeer);
 
-        verify(lightSyncProcessor, times(1)).moreBlocksThanAllowed();
+        verify(lightSyncProcessor, times(1)).moreBlocksThanAllowed(lightPeer);
         assertEquals(lightSyncProcessor.getSyncState().getClass(), StartRoundSyncState.class);
+        assertThat(lightPeersInformation.getConnectedPeersSize(), is(1));
     }
 
     @Test
@@ -219,8 +224,9 @@ public class LightSyncStateTest {
 
         newBlockHeadersInStartRoundSyncState(startBlockHeader, blockHeaders, lightPeer);
 
-        verify(lightSyncProcessor, times(1)).differentFirstBlocks();
+        verify(lightSyncProcessor, times(1)).differentFirstBlocks(lightPeer);
         assertEquals(lightSyncProcessor.getSyncState().getClass(), StartRoundSyncState.class);
+        assertThat(lightPeersInformation.getConnectedPeersSize(), is(1));
     }
 
     @Test
@@ -231,8 +237,9 @@ public class LightSyncStateTest {
 
         newBlockHeadersInStartRoundSyncState(startBlockHeader, blockHeaders, lightPeer);
 
-        verify(lightSyncProcessor, times(1)).incorrectSkipped();
+        verify(lightSyncProcessor, times(1)).incorrectSkipped(lightPeer);
         assertEquals(lightSyncProcessor.getSyncState().getClass(), StartRoundSyncState.class);
+        assertThat(lightPeersInformation.getConnectedPeersSize(), is(1));
     }
 
     @Test
@@ -243,8 +250,9 @@ public class LightSyncStateTest {
 
         newBlockHeadersInStartRoundSyncState(startBlockHeader, blockHeaders, lightPeer);
 
-        verify(lightSyncProcessor, times(1)).incorrectSkipped();
+        verify(lightSyncProcessor, times(1)).incorrectSkipped(lightPeer);
         assertEquals(lightSyncProcessor.getSyncState().getClass(), StartRoundSyncState.class);
+        assertThat(lightPeersInformation.getConnectedPeersSize(), is(1));
     }
 
     @Test
@@ -257,8 +265,9 @@ public class LightSyncStateTest {
 
         newBlockHeadersInStartRoundSyncState(startBlockHeader, blockHeaders, lightPeer);
 
-        verify(lightSyncProcessor, times(1)).incorrectParentHash();
+        verify(lightSyncProcessor, times(1)).incorrectParentHash(lightPeer);
         assertEquals(lightSyncProcessor.getSyncState().getClass(), StartRoundSyncState.class);
+        assertThat(lightPeersInformation.getConnectedPeersSize(), is(1));
     }
 
     @Test
@@ -283,8 +292,9 @@ public class LightSyncStateTest {
 
         newBlockHeadersInStartRoundSyncState(startBlockHeader, blockHeaders, longLightPeer);
 
-        verify(lightSyncProcessor, times(1)).failedAttempt();
+        verify(lightSyncProcessor, times(1)).failedAttempt(longLightPeer);
         assertEquals(lightSyncProcessor.getSyncState().getClass(), StartRoundSyncState.class);
+        assertThat(lightPeersInformation.getConnectedPeersSize(), is(1));
     }
 
     @Test

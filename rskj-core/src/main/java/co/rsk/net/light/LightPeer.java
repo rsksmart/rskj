@@ -31,8 +31,8 @@ import java.util.List;
 public class LightPeer {
 
     private final LinkedList<BlockHeader> blockHeaders;
-    private Channel channel;
-    private MessageQueue msgQueue;
+    private final Channel channel;
+    private final MessageQueue msgQueue;
 
     public LightPeer(Channel channel, MessageQueue msgQueue) {
         this.channel = channel;

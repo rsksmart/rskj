@@ -22,7 +22,6 @@ import co.rsk.core.BlockDifficulty;
 import co.rsk.core.bc.BlockChainStatus;
 import co.rsk.crypto.Keccak256;
 import co.rsk.net.eth.LightClientHandler;
-import co.rsk.net.light.message.GetBlockHeadersByHashMessage;
 import co.rsk.net.light.message.GetBlockHeadersByNumberMessage;
 import co.rsk.net.light.message.LightClientMessage;
 import co.rsk.net.light.message.StatusMessage;
@@ -48,6 +47,7 @@ import java.util.List;
 
 import static co.rsk.net.light.LightSyncProcessor.MAX_REQUESTED_HEADERS;
 import static org.ethereum.crypto.HashUtil.randomHash;
+import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.*;
 import static org.mockito.ArgumentCaptor.forClass;
 import static org.mockito.Mockito.*;
@@ -110,7 +110,8 @@ public class LightSyncProcessorTest {
         when(proofOfWorkRule.isValid(blockHeader)).thenReturn(false);
         lightSyncProcessor.sendBlockHeadersByNumberMessage(lightPeer, 10L, 1, 0, false);
         processBlockHeaderAndVerifyDoesntSendMessage(bHs, requestId);
-        verify(lightSyncProcessor, times(1)).invalidPoW();
+        verify(lightSyncProcessor, times(1)).invalidPoW(lightPeer);
+        assertThat(lightPeersInformation.getConnectedPeersSize(), is(0));
     }
 
     @Test
@@ -122,7 +123,8 @@ public class LightSyncProcessorTest {
         bHs.add(blockHeader);
 
         processBlockHeaderAndVerifyDoesntSendMessage(bHs, requestId);
-        verify(lightSyncProcessor, times(1)).notPendingMessage();
+        verify(lightSyncProcessor, times(1)).notPendingMessage(lightPeer);
+        assertThat(lightPeersInformation.getConnectedPeersSize(), is(0));
     }
 
     @Test
@@ -137,7 +139,8 @@ public class LightSyncProcessorTest {
 
         lightSyncProcessor.sendBlockHeadersByNumberMessage(lightPeer, 10L, 1, 0, false);
         processBlockHeaderAndVerifyDoesntSendMessage(bHs, requestId);
-        verify(lightSyncProcessor, times(1)).wrongBlockHeadersSize();
+        verify(lightSyncProcessor, times(1)).wrongBlockHeadersSize(lightPeer);
+        assertThat(lightPeersInformation.getConnectedPeersSize(), is(0));
     }
 
     @Test
@@ -147,7 +150,8 @@ public class LightSyncProcessorTest {
 
         lightSyncProcessor.sendBlockHeadersByNumberMessage(lightPeer, 10L, 1, 0, false);
         processBlockHeaderAndVerifyDoesntSendMessage(bHs, requestId);
-        verify(lightSyncProcessor, times(1)).wrongBlockHeadersSize();
+        verify(lightSyncProcessor, times(1)).wrongBlockHeadersSize(lightPeer);
+        assertThat(lightPeersInformation.getConnectedPeersSize(), is(0));
     }
 
     @Test
