@@ -632,8 +632,7 @@ public class Program {
             } else {
                 returnDataBuffer = result.getHReturn();
             }
-        }
-        else {
+        } else {
             // CREATE THE CONTRACT OUT OF RETURN
             byte[] code = programResult.getHReturn();
             int codeLength = getLength(code);
@@ -705,8 +704,9 @@ public class Program {
      * - Stateless calls invoke code from another contract, within the context of the caller
      *
      * @param msg is the message call object
+     * @param activations activations for hardfork
      */
-    public void callToAddress(MessageCall msg) {
+    public void callToAddress(MessageCall msg, ActivationConfig.ForBlock activations) {
 
         if (getCallDeep() == getMaxDepth()) {
             stackPushZero();
@@ -732,11 +732,12 @@ public class Program {
         Coin endowment = new Coin(msg.getEndowment().getData());
         Coin senderBalance = track.getBalance(senderAddress);
         if (isNotCovers(senderBalance, endowment)) {
-            // reset return data buffer when call did not create a new call frame
-            // *TODO*: set check to activate only after a certain release
-            returnDataBuffer = null;
             stackPushZero();
             refundGas(msg.getGas().longValue(), "refund gas from message call");
+            if(activations.isActive(ConsensusRule.EIP_211_COMPATIBILITY)) {
+                // reset return data buffer when call did not create a new call frame
+                returnDataBuffer = null;
+            }
             return;
         }
 
@@ -766,12 +767,10 @@ public class Program {
 
         if (!isEmpty(programCode)) {
             callResult = executeCode(msg, contextAddress, contextBalance, internalTx, track, programCode, senderAddress, data);
-        }
-        else {
+        } else {
             track.commit();
             callResult = true;
             refundGas(GasCost.toGas(msg.getGas().longValue()), "remaining gas from the internal call");
-            returnDataBuffer = null;            
 
             DataWord callerAddress = DataWord.valueOf(senderAddress.getBytes());
             DataWord ownerAddress = DataWord.valueOf(contextAddress.getBytes());
@@ -783,6 +782,10 @@ public class Program {
             ProgramSubtrace subtrace = ProgramSubtrace.newCallSubtrace(CallType.fromMsgType(msg.getType()), invoke, result, Collections.emptyList());
 
             getTrace().addSubTrace(subtrace);
+
+            if(activations.isActive(ConsensusRule.EIP_211_COMPATIBILITY)) {
+                returnDataBuffer = null;
+            }
         }
 
         // 4. THE FLAG OF SUCCESS IS ONE PUSHED INTO THE STACK

@@ -19,7 +19,6 @@
 
 package org.ethereum.vm;
 
-import co.rsk.asm.EVMAssembler;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.config.VmConfig;
 import co.rsk.core.RskAddress;
@@ -48,10 +47,8 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.util.*;
 
-import static java.lang.StrictMath.exp;
 import static java.lang.StrictMath.min;
 import static org.ethereum.util.ByteUtil.oneByteToHexString;
-import static org.ethereum.util.ByteUtil.toHexString;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -199,8 +196,9 @@ public class VMTest {
     // This test should throw an exception because we are reading from the RETURNDATABUFFER
     // in a non-existent position. This results in an error according to EIP 211
     @Test(expected = RuntimeException.class)
-    public void TestReturnDatBufferDataIsZeroAfterCallToNonExistentContract() {
-        invoke = new ProgramInvokeMockImpl(compile( "PUSH1 0x10" +
+    public void doCall_returnDataBuffer_DataIsZeroAfterCallToNonExistentContract() {
+        invoke = new ProgramInvokeMockImpl(compile(
+                "PUSH1 0x10" +
                 " PUSH1 0x05 " +
                 " ADD" +
                 " PUSH1 0x40" +
@@ -209,7 +207,8 @@ public class VMTest {
                 " PUSH1 0x40" +
                 " RETURN"
         ), null);
-        program = getProgram(compile(" PUSH1 0x20" +  // return size is 32 bytes
+        program = getProgram(compile(
+                " PUSH1 0x20" +  // return size is 32 bytes
                 " PUSH1 0x40" +       // on free memory pointer
                 " PUSH1 0x00" +       // no argument
                 " PUSH1 0x00" +       // no argument size
@@ -231,6 +230,7 @@ public class VMTest {
                 " PUSH1 0x40" +     // from the 0x40 position on memory
                 " RETURN"           // the return value of the contract should be zero (as last call failed)
         ));
+        when(program.getActivations().isActive(ConsensusRule.EIP_211_COMPATIBILITY)).thenReturn(true);
         vm.steps(program, Long.MAX_VALUE);
         byte[] expected = new byte[32];
         Arrays.fill(expected, (byte) 0);
@@ -238,17 +238,19 @@ public class VMTest {
     }
 
     @Test
-    public void TestReturnDataBufferSizeIsZeroAfterCallToNonExistent() {
-       invoke = new ProgramInvokeMockImpl(compile( "PUSH1 0x10" +
-                       " PUSH1 0x05 " +
-                       " ADD" +
-                       " PUSH1 0x40" +
-                       " MSTORE " +
-                       " PUSH1 0x20 " +
-                       " PUSH1 0x40" +
-                       " RETURN"
+    public void doCall_returnDataBuffer_SizeIsZeroAfterCallToNonExistent() {
+       invoke = new ProgramInvokeMockImpl(compile(
+                "PUSH1 0x10" +
+                " PUSH1 0x05 " +
+                " ADD" +
+                " PUSH1 0x40" +
+                " MSTORE " +
+                " PUSH1 0x20 " +
+                " PUSH1 0x40" +
+                " RETURN"
        ), null);
-       program = getProgram(compile(" PUSH1 0x20" +  // return size is 32 bytes
+       program = getProgram(compile(
+               " PUSH1 0x20" +  // return size is 32 bytes
                " PUSH1 0x40" +  // on free memory pointer
                " PUSH1 0x00" +  // no argument
                " PUSH1 0x00" +  // no argument size
@@ -264,6 +266,7 @@ public class VMTest {
                " STATICCALL" +
                " RETURNDATASIZE" // push the return data size to the stack
        ));
+       when(program.getActivations().isActive(ConsensusRule.EIP_211_COMPATIBILITY)).thenReturn(true);
        vm.steps(program, Long.MAX_VALUE);
        assertEquals(0, program.stackPop().intValue());
     }
