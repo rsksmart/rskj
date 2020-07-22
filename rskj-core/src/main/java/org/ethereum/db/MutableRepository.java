@@ -44,6 +44,7 @@ import java.util.*;
 public class MutableRepository implements Repository {
     private static final Logger logger = LoggerFactory.getLogger("repository");
     private static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
+    public static final Keccak256 KECCAK_256_OF_EMPTY_ARRAY = new Keccak256(Keccak256Helper.keccak256(EMPTY_BYTE_ARRAY));
     private static final byte[] ONE_BYTE_ARRAY = new byte[] { 0x01 };
 
     private final TrieKeyMapper trieKeyMapper;
@@ -158,21 +159,47 @@ public class MutableRepository implements Repository {
     }
 
     @Override
-    public synchronized Keccak256 getCodeHash(RskAddress addr) {
+    public synchronized Keccak256 getCodeHashNonStandard(RskAddress addr) {
 
         if (!isExist(addr)) {
             return Keccak256.ZERO_HASH;
         }
 
         if (!isContract(addr)) {
-            return new Keccak256(
-                    Keccak256Helper.keccak256(EMPTY_BYTE_ARRAY));
+            return KECCAK_256_OF_EMPTY_ARRAY;
         }
 
         byte[] key = trieKeyMapper.getCodeKey(addr);
-        return mutableTrie.getValueHash(key);
-    }
+        Keccak256 valueHash = mutableTrie.getValueHash(key);
 
+        if (valueHash == null) {
+            //This is the non standard implementation we had pre RSKIP169 implementation
+            //and thus me must honor it.
+            return Keccak256.ZERO_HASH;
+        }
+
+        return valueHash;    }
+
+    @Override
+    public synchronized Keccak256 getCodeHashStandard(RskAddress addr) {
+
+        if (!isExist(addr)) {
+            return Keccak256.ZERO_HASH;
+        }
+
+        if (!isContract(addr)) {
+            return KECCAK_256_OF_EMPTY_ARRAY;
+        }
+
+        byte[] key = trieKeyMapper.getCodeKey(addr);
+        Keccak256 valueHash = mutableTrie.getValueHash(key);
+
+        if (valueHash == null) {
+            return KECCAK_256_OF_EMPTY_ARRAY;
+        }
+
+        return valueHash;
+    }
 
     @Override
     public synchronized byte[] getCode(RskAddress addr) {

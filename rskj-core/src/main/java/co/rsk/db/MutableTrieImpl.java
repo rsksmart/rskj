@@ -89,9 +89,8 @@ public class MutableTrieImpl implements MutableTrie {
     @Override
     public Keccak256 getValueHash(byte[] key) {
         Trie atrie = trie.find(key);
-        //From RSKIP140 non-existing account specification.
         if (atrie == null) {
-            return Keccak256.ZERO_HASH;
+            return null;
         }
         return atrie.getValueHash();
     }

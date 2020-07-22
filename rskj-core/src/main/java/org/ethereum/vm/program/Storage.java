@@ -124,9 +124,15 @@ public class Storage implements Repository, ProgramListenerAware {
     }
 
     @Override
-    public Keccak256 getCodeHash(RskAddress addr) {
-        return repository.getCodeHash(addr);
+    public Keccak256 getCodeHashNonStandard(RskAddress addr) {
+        return repository.getCodeHashNonStandard(addr);
     }
+
+    @Override
+    public Keccak256 getCodeHashStandard(RskAddress addr) {
+        return repository.getCodeHashStandard(addr);
+    }
+
 
     @Override
     public boolean isContract(RskAddress addr) {

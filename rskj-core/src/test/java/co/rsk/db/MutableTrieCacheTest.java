@@ -421,7 +421,7 @@ public class MutableTrieCacheTest {
         baseMutableTrie.put(key, emptyValue);
         mtCache.put(keyForCache, emptyValue);
 
-        getValueHashAndAssert(baseMutableTrie, key, Keccak256.ZERO_HASH);
+        getValueHashAndAssert(baseMutableTrie, key, null);
         getValueHashAndAssert(mtCache, keyForCache, emptyHash);
     }
 
@@ -431,10 +431,9 @@ public class MutableTrieCacheTest {
         MutableTrieCache mtCache = new MutableTrieCache(baseMutableTrie);
 
         byte[] wrongKey = toBytes("BOB");
-        Keccak256 zeroHash = Keccak256.ZERO_HASH;
 
-        getValueHashAndAssert(baseMutableTrie, wrongKey, zeroHash);
-        getValueHashAndAssert(mtCache, wrongKey, zeroHash);
+        getValueHashAndAssert(baseMutableTrie, wrongKey, null);
+        getValueHashAndAssert(mtCache, wrongKey, null);
     }
 
     private void getValueHashAndAssert(MutableTrie trie, byte[] key, Keccak256 expectedHash) {

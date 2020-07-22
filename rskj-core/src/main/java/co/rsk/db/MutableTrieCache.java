@@ -235,7 +235,7 @@ public class MutableTrieCache implements MutableTrie {
 
     @Override
     public Keccak256 getValueHash(byte[] key) {
-        return internalGet(key, trie::getValueHash, cachedBytes -> new Keccak256(Keccak256Helper.keccak256(cachedBytes))).orElse(Keccak256.ZERO_HASH);
+        return internalGet(key, trie::getValueHash, cachedBytes -> new Keccak256(Keccak256Helper.keccak256(cachedBytes))).orElse(null);
     }
 
     private static class StorageKeysIterator implements Iterator<DataWord> {

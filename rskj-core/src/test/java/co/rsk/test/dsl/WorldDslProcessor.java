@@ -36,6 +36,7 @@ import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.*;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
+import org.junit.Assert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -87,6 +88,8 @@ public class WorldDslProcessor {
             processAssertBalanceCommand(cmd);
         else if (cmd.isCommand("assert_connect"))
             processAssertConnectCommand(cmd);
+        else if (cmd.isCommand("assert_tx_success"))
+            processAssertTxSuccess(cmd);
         else if (cmd.isCommand("log_info"))
             processLogInfoCommand(cmd);
         else if (cmd.isCommand("comment"))
@@ -177,6 +180,36 @@ public class WorldDslProcessor {
             return;
 
         throw new DslProcessorException(String.format("Expected account '%s' with balance '%s', but got '%s'", accountName, expected, accountBalance));
+    }
+
+    private void processAssertTxSuccess(DslCommand cmd) throws DslProcessorException {
+        String transactionName = cmd.getArgument(0);
+        Transaction tx = world.getTransactionByName(transactionName);
+        if(tx == null) {
+            throw new DslProcessorException(String.format("Expected tx '%s' not found", transactionName));
+        }
+
+        TransactionReceipt receipt = world.getTransactionReceiptByName(transactionName);
+
+        if(receipt == null) {
+            throw new DslProcessorException(String.format("Expected tx '%s' found, but not receipt found, possibly was rejected in block, check execute and blockexecutor logs", transactionName));
+        }
+
+        byte[] status = receipt.getStatus();
+        if(status == null) {
+            throw new DslProcessorException(String.format("Expected tx '%s' receipt found but status was null", transactionName));
+        }
+
+        if(status.length == 0) {
+            throw new DslProcessorException(String.format("Expected tx '%s' receipt found but status was unsuccessful, it was empty", transactionName));
+        }
+
+        if(status.length == 1) {
+            if(status[0] != 1) {
+                throw new DslProcessorException(String.format("Expected tx '%s' receipt found but status was unsuccessful, it was %d", transactionName, status[0]));
+            }
+        }
+
     }
 
     private void processAssertBestCommand(DslCommand cmd) throws DslProcessorException {
