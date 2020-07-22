@@ -19,16 +19,13 @@
 
 package org.ethereum.util;
 
+import org.bouncycastle.util.BigIntegers;
+import org.bouncycastle.util.encoders.Hex;
 import org.junit.Assert;
 import org.junit.Test;
 
-import org.bouncycastle.util.BigIntegers;
-import org.bouncycastle.util.encoders.Hex;
-
 import java.math.BigInteger;
-
 import java.nio.ByteBuffer;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -68,8 +65,19 @@ public class ByteUtilTest {
     }
 
     @Test
-    public void testToHexString() {
+    public void testToHexString_ProducedHex() {
+        byte[] data = new byte[] {(byte) 0xff, 0x0, 0x13, (byte) 0x88};
+        assertEquals(Hex.toHexString(data), ByteUtil.toHexString(data));
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testToHexString_NullPointerExceptionForNull() {
         assertEquals("", ByteUtil.toHexString(null));
+    }
+
+    @Test
+    public void testToHexStringOrEmpty_EmptyStringForNull() {
+        assertEquals("", ByteUtil.toHexStringOrEmpty(null));
     }
 
     @Test
@@ -247,7 +255,7 @@ public class ByteUtilTest {
                     break;
                 }
             }
-            System.out.println(System.currentTimeMillis() - start1 + "ms to reach: " + Hex.toHexString(counter1));
+            System.out.println(System.currentTimeMillis() - start1 + "ms to reach: " + ByteUtil.toHexString(counter1));
 
             BigInteger counter2 = BigInteger.ZERO;
             long start2 = System.currentTimeMillis();
@@ -257,7 +265,7 @@ public class ByteUtilTest {
                 }
                 counter2 = counter2.add(BigInteger.ONE);
             }
-            System.out.println(System.currentTimeMillis() - start2 + "ms to reach: " + Hex.toHexString(BigIntegers.asUnsignedByteArray(4, counter2)));
+            System.out.println(System.currentTimeMillis() - start2 + "ms to reach: " + ByteUtil.toHexString(BigIntegers.asUnsignedByteArray(4, counter2)));
         }
     }
 

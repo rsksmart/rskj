@@ -19,13 +19,12 @@
 
 package org.ethereum.net;
 
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.net.eth.message.StatusMessage;
+import org.ethereum.util.ByteUtil;
 import org.junit.Test;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import org.bouncycastle.util.encoders.Hex;
 
 import static org.junit.Assert.assertEquals;
 
@@ -44,9 +43,9 @@ public class StatusMessageTest {
 
         assertEquals(39, statusMessage.getProtocolVersion());
         assertEquals("25c60144",
-                Hex.toHexString(statusMessage.getTotalDifficulty()));
+                ByteUtil.toHexString(statusMessage.getTotalDifficulty()));
         assertEquals("832056d3c93ff2739ace7199952e5365aa29f18805be05634c4db125c5340216",
-                Hex.toHexString(statusMessage.getBestHash()));
+                ByteUtil.toHexString(statusMessage.getBestHash()));
     }
 
 }

@@ -21,7 +21,6 @@ package co.rsk.net.discovery.message;
 import co.rsk.net.NodeID;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.bouncycastle.util.BigIntegers;
-import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.crypto.signature.ECDSASignature;
@@ -171,9 +170,9 @@ public abstract class PeerDiscoveryMessage {
     @Override
     public String toString() {
         return new ToStringBuilder(this)
-                .append("mdc", Hex.toHexString(mdc))
-                .append("signature", Hex.toHexString(signature))
-                .append("type", Hex.toHexString(type))
-                .append("data", Hex.toHexString(data)).toString();
+                .append("mdc", ByteUtil.toHexString(mdc))
+                .append("signature", ByteUtil.toHexString(signature))
+                .append("type", ByteUtil.toHexString(type))
+                .append("data", ByteUtil.toHexString(data)).toString();
     }
 }

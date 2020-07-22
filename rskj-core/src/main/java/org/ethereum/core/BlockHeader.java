@@ -37,7 +37,7 @@ import java.util.List;
 
 import static java.lang.System.arraycopy;
 import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
-import static org.ethereum.util.ByteUtil.toHexString;
+import static org.ethereum.util.ByteUtil.toHexStringOrEmpty;
 
 /**
  * Block header is a value object containing
@@ -421,18 +421,18 @@ public class BlockHeader {
 
     private String toStringWithSuffix(final String suffix) {
         StringBuilder toStringBuff = new StringBuilder();
-        toStringBuff.append("  parentHash=").append(toHexString(parentHash)).append(suffix);
-        toStringBuff.append("  unclesHash=").append(toHexString(unclesHash)).append(suffix);
+        toStringBuff.append("  parentHash=").append(toHexStringOrEmpty(parentHash)).append(suffix);
+        toStringBuff.append("  unclesHash=").append(toHexStringOrEmpty(unclesHash)).append(suffix);
         toStringBuff.append("  coinbase=").append(coinbase).append(suffix);
-        toStringBuff.append("  stateRoot=").append(toHexString(stateRoot)).append(suffix);
-        toStringBuff.append("  txTrieHash=").append(toHexString(txTrieRoot)).append(suffix);
-        toStringBuff.append("  receiptsTrieHash=").append(toHexString(receiptTrieRoot)).append(suffix);
+        toStringBuff.append("  stateRoot=").append(toHexStringOrEmpty(stateRoot)).append(suffix);
+        toStringBuff.append("  txTrieHash=").append(toHexStringOrEmpty(txTrieRoot)).append(suffix);
+        toStringBuff.append("  receiptsTrieHash=").append(toHexStringOrEmpty(receiptTrieRoot)).append(suffix);
         toStringBuff.append("  difficulty=").append(difficulty).append(suffix);
         toStringBuff.append("  number=").append(number).append(suffix);
-        toStringBuff.append("  gasLimit=").append(toHexString(gasLimit)).append(suffix);
+        toStringBuff.append("  gasLimit=").append(toHexStringOrEmpty(gasLimit)).append(suffix);
         toStringBuff.append("  gasUsed=").append(gasUsed).append(suffix);
         toStringBuff.append("  timestamp=").append(timestamp).append(" (").append(Utils.longToDateTime(timestamp)).append(")").append(suffix);
-        toStringBuff.append("  extraData=").append(toHexString(extraData)).append(suffix);
+        toStringBuff.append("  extraData=").append(toHexStringOrEmpty(extraData)).append(suffix);
         toStringBuff.append("  minGasPrice=").append(minimumGasPrice).append(suffix);
 
         return toStringBuff.toString();
@@ -481,8 +481,8 @@ public class BlockHeader {
         this.bitcoinMergedMiningCoinbaseTransaction = bitcoinMergedMiningCoinbaseTransaction;
     }
 
-    public String getShortHashForMergedMining() {
-        return HashUtil.shortHash(getHashForMergedMining());
+    public String getPrintableHashForMergedMining() {
+        return HashUtil.toPrintableHash(getHashForMergedMining());
     }
 
     public boolean isUMMBlock() {
@@ -528,12 +528,12 @@ public class BlockHeader {
         return root256;
     }
 
-    public String getShortHash() {
-        return HashUtil.shortHash(getHash().getBytes());
+    public String getPrintableHash() {
+        return HashUtil.toPrintableHash(getHash().getBytes());
     }
 
-    public String getParentShortHash() {
-        return HashUtil.shortHash(getParentHash().getBytes());
+    public String getParentPrintableHash() {
+        return HashUtil.toPrintableHash(getParentHash().getBytes());
     }
 
     public byte[] getMiningForkDetectionData() {
@@ -555,7 +555,7 @@ public class BlockHeader {
                 int position = Collections.lastIndexOfSubList(coinbaseAsList, hashForMergedMiningPrefixAsList);
                 if (position == -1) {
                     throw new IllegalStateException(
-                            String.format("Mining fork detection data could not be found. Header: %s", getShortHash())
+                            String.format("Mining fork detection data could not be found. Header: %s", getPrintableHash())
                     );
                 }
 

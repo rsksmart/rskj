@@ -18,7 +18,7 @@
 
 package co.rsk.trie;
 
-import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.util.ByteUtil;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -115,7 +115,7 @@ public class MultiTrieStore implements TrieStore {
         Trie oldestTrieToKeep = retrieve(oldestTrieHashToKeep)
                 .orElseThrow(() ->
                         new IllegalArgumentException(String.format("The trie with root %s is missing from every epoch",
-                                Hex.toHexString(oldestTrieHashToKeep)
+                                ByteUtil.toHexString(oldestTrieHashToKeep)
         )));
 
         epochs.get(epochs.size() - 2).save(oldestTrieToKeep); // save into the upcoming last epoch

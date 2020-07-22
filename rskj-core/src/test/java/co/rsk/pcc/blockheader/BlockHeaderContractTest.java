@@ -36,7 +36,6 @@ import co.rsk.test.World;
 import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.util.DifficultyUtils;
 import org.bouncycastle.util.Arrays;
-import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -174,7 +173,7 @@ public class BlockHeaderContractTest {
 
         byte[] blockHash = (byte[]) decodedResult[0];
 
-        assertEquals(Hex.toHexString(expectedHash), Hex.toHexString(blockHash));
+        assertEquals(ByteUtil.toHexString(expectedHash), ByteUtil.toHexString(blockHash));
     }
 
     @Test

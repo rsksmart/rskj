@@ -23,12 +23,12 @@ import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.core.bc.BlockHashesHelper;
 import co.rsk.peg.PegTestUtils;
 import co.rsk.remasc.RemascTransaction;
-import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.TestUtils;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
+import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.Assert;
@@ -342,8 +342,8 @@ public class BlockTest {
         BlockGenerator blockGenerator = new BlockGenerator();
         Block block1 = blockGenerator.createBlock(10, 1);
         Block block2 = blockGenerator.createBlock(10, 2);
-        String trieHash1 = Hex.toHexString(block1.getTxTrieRoot());
-        String trieHash2 = Hex.toHexString(block2.getTxTrieRoot());
+        String trieHash1 = ByteUtil.toHexString(block1.getTxTrieRoot());
+        String trieHash2 = ByteUtil.toHexString(block2.getTxTrieRoot());
         Assert.assertNotEquals(trieHash1, trieHash2);
     }
 

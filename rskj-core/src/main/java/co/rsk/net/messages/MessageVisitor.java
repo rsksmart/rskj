@@ -77,34 +77,34 @@ public class MessageVisitor {
     public void apply(BlockMessage message) {
         final Block block = message.getBlock();
 
-        logger.trace("Process block {} {}", block.getNumber(), block.getShortHash());
+        logger.trace("Process block {} {}", block.getNumber(), block.getPrintableHash());
 
         if (block.isGenesis()) {
-            logger.trace("Skip block processing {} {}", block.getNumber(), block.getShortHash());
+            logger.trace("Skip block processing {} {}", block.getNumber(), block.getPrintableHash());
             return;
         }
 
         long blockNumber = block.getNumber();
 
         if (this.blockProcessor.isAdvancedBlock(blockNumber)) {
-            logger.trace("Too advanced block {} {}", blockNumber, block.getShortHash());
+            logger.trace("Too advanced block {} {}", blockNumber, block.getPrintableHash());
             return;
         }
 
         if (blockProcessor.canBeIgnoredForUnclesRewards(block.getNumber())){
-            logger.trace("Block ignored: too far from best block {} {}", blockNumber, block.getShortHash());
+            logger.trace("Block ignored: too far from best block {} {}", blockNumber, block.getPrintableHash());
             return;
         }
 
         if (blockProcessor.hasBlockInSomeBlockchain(block.getHash().getBytes())){
-            logger.trace("Block ignored: it's included in blockchain {} {}", blockNumber, block.getShortHash());
+            logger.trace("Block ignored: it's included in blockchain {} {}", blockNumber, block.getPrintableHash());
             return;
         }
 
         BlockProcessResult result = this.blockProcessor.processBlock(sender, block);
 
         if (result.isInvalidBlock()) {
-            logger.trace("Invalid block {} {}", blockNumber, block.getShortHash());
+            logger.trace("Invalid block {} {}", blockNumber, block.getPrintableHash());
             recordEvent(sender, EventType.INVALID_BLOCK);
             return;
         }

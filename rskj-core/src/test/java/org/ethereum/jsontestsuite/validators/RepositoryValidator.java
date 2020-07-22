@@ -20,7 +20,6 @@
 package org.ethereum.jsontestsuite.validators;
 
 import co.rsk.core.RskAddress;
-import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.Repository;
 import org.ethereum.util.ByteUtil;
 
@@ -62,8 +61,8 @@ public class RepositoryValidator {
 
         if (validateRootHash) {
             // Compare roots
-            String postRoot = Hex.toHexString(postRepository.getRoot());
-            String currRoot = Hex.toHexString(currentRepository.getRoot());
+            String postRoot = ByteUtil.toHexString(postRepository.getRoot());
+            String currRoot = ByteUtil.toHexString(currentRepository.getRoot());
 
             if (vStats!=null) vStats.stateChecks++;
             if (!postRoot.equals(currRoot)) {

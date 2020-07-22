@@ -23,7 +23,6 @@ import co.rsk.metrics.profilers.Metric;
 import co.rsk.metrics.profilers.Profiler;
 import co.rsk.metrics.profilers.ProfilerFactory;
 import co.rsk.panic.PanicProcessor;
-import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.util.ByteUtil;
 import org.iq80.leveldb.*;
@@ -147,13 +146,13 @@ public class LevelDbDataSource implements KeyValueDataSource {
         resetDbLock.readLock().lock();
         try {
             if (logger.isTraceEnabled()) {
-                logger.trace("~> LevelDbDataSource.get(): {}, key: {}", name,  Hex.toHexString(key));
+                logger.trace("~> LevelDbDataSource.get(): {}, key: {}", name,  ByteUtil.toHexString(key));
             }
 
             try {
                 byte[] ret = db.get(key);
                 if (logger.isTraceEnabled()) {
-                    logger.trace("<~ LevelDbDataSource.get(): {}, key: {}, return length: {}", name, Hex.toHexString(key), (ret == null ? "null" : ret.length));
+                    logger.trace("<~ LevelDbDataSource.get(): {}, key: {}, return length: {}", name, ByteUtil.toHexString(key), (ret == null ? "null" : ret.length));
                 }
 
                 return ret;
@@ -162,7 +161,7 @@ public class LevelDbDataSource implements KeyValueDataSource {
                 try {
                     byte[] ret = db.get(key);
                     if (logger.isTraceEnabled()) {
-                        logger.trace("<~ LevelDbDataSource.get(): {}, key: {}, return length: {}", name, Hex.toHexString(key), (ret == null ? "null" : ret.length));
+                        logger.trace("<~ LevelDbDataSource.get(): {}, key: {}, return length: {}", name, ByteUtil.toHexString(key), (ret == null ? "null" : ret.length));
                     }
 
                     return ret;
@@ -187,12 +186,12 @@ public class LevelDbDataSource implements KeyValueDataSource {
         resetDbLock.readLock().lock();
         try {
             if (logger.isTraceEnabled()) {
-                logger.trace("~> LevelDbDataSource.put(): {}, key: {}, return length: {}", name, Hex.toHexString(key), value.length);
+                logger.trace("~> LevelDbDataSource.put(): {}, key: {}, return length: {}", name, ByteUtil.toHexString(key), value.length);
             }
 
             db.put(key, value);
             if (logger.isTraceEnabled()) {
-                logger.trace("<~ LevelDbDataSource.put(): {}, key: {}, return length: {}", name, Hex.toHexString(key), value.length);
+                logger.trace("<~ LevelDbDataSource.put(): {}, key: {}, return length: {}", name, ByteUtil.toHexString(key), value.length);
             }
 
             return value;
@@ -208,12 +207,12 @@ public class LevelDbDataSource implements KeyValueDataSource {
         resetDbLock.readLock().lock();
         try {
             if (logger.isTraceEnabled()) {
-                logger.trace("~> LevelDbDataSource.delete(): {}, key: {}", name, Hex.toHexString(key));
+                logger.trace("~> LevelDbDataSource.delete(): {}, key: {}", name, ByteUtil.toHexString(key));
             }
 
             db.delete(key);
             if (logger.isTraceEnabled()) {
-                logger.trace("<~ LevelDbDataSource.delete(): {}, key: {}", name, Hex.toHexString(key));
+                logger.trace("<~ LevelDbDataSource.delete(): {}, key: {}", name, ByteUtil.toHexString(key));
             }
 
         } finally {

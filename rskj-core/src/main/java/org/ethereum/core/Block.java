@@ -25,10 +25,10 @@ import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockHashesHelper;
 import co.rsk.crypto.Keccak256;
 import co.rsk.panic.PanicProcessor;
-import org.bouncycastle.util.Arrays;
 import com.google.common.collect.ImmutableList;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
-import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
 
 import javax.annotation.Nonnull;
@@ -208,7 +208,7 @@ public class Block {
     @Override
     public String toString() {
         StringBuilder toStringBuff = new StringBuilder();
-        toStringBuff.append(Hex.toHexString(this.getEncoded())).append("\n");
+        toStringBuff.append(ByteUtil.toHexString(this.getEncoded())).append("\n");
         toStringBuff.append("BlockData [ ");
         toStringBuff.append("hash=").append(this.getHash()).append("\n");
         toStringBuff.append(header.toString());
@@ -305,16 +305,16 @@ public class Block {
         return body;
     }
 
-    public String getShortHash() {
-        return header.getShortHash();
+    public String getPrintableHash() {
+        return header.getPrintableHash();
     }
 
-    private String getParentShortHash() {
-        return header.getParentShortHash();
+    private String getParentPrintableHash() {
+        return header.getParentPrintableHash();
     }
 
-    public String getShortHashForMergedMining() {
-        return this.header.getShortHashForMergedMining();
+    public String getPrintableHashForMergedMining() {
+        return this.header.getPrintableHashForMergedMining();
     }
 
     public byte[] getHashForMergedMining() {
@@ -322,8 +322,8 @@ public class Block {
     }
 
     public String getShortDescr() {
-        return "#" + getNumber() + " (" + getShortHash() + " <~ "
-                + getParentShortHash() + ") Txs:" + getTransactionsList().size() +
+        return "#" + getNumber() + " (" + getPrintableHash() + " <~ "
+                + getParentPrintableHash() + ") Txs:" + getTransactionsList().size() +
                 ", Unc: " + getUncleList().size();
     }
 

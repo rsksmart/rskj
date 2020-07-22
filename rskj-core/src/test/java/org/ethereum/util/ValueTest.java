@@ -19,12 +19,10 @@
 
 package org.ethereum.util;
 
+import org.bouncycastle.util.encoders.Hex;
 import org.junit.Test;
 
-import org.bouncycastle.util.encoders.Hex;
-
 import java.math.BigInteger;
-
 import java.util.Arrays;
 import java.util.Objects;
 
@@ -78,7 +76,7 @@ public class ValueTest {
 
         Value val = Value.fromRlpEncoded(Hex.decode(testRlp));
 
-        assertEquals(testRlp, Hex.toHexString(val.encode()));
+        assertEquals(testRlp, ByteUtil.toHexString(val.encode()));
     }
 
 

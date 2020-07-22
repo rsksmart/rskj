@@ -24,8 +24,8 @@ import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.pcc.ExecutionEnvironment;
 import co.rsk.pcc.NativeContractIllegalArgumentException;
 import co.rsk.pcc.NativeMethod;
-import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.CallTransaction;
+import org.ethereum.util.ByteUtil;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -119,7 +119,7 @@ public class GetMultisigScriptHash extends NativeMethod {
                 btcPublicKeys.add(btcPublicKey);
             } catch (IllegalArgumentException e) {
                 throw new NativeContractIllegalArgumentException(String.format(
-                        "Invalid public key format: %s", Hex.toHexString(publicKey)
+                        "Invalid public key format: %s", ByteUtil.toHexString(publicKey)
                 ), e);
             }
         });

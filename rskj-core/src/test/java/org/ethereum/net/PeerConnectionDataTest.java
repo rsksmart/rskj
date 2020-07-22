@@ -21,13 +21,10 @@ package org.ethereum.net;
 
 import org.ethereum.net.client.Capability;
 import org.ethereum.net.p2p.PeerConnectionData;
-
+import org.ethereum.util.ByteUtil;
 import org.junit.Test;
 
-import org.bouncycastle.util.encoders.Hex;
-
 import java.net.InetAddress;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -63,7 +60,7 @@ public class PeerConnectionDataTest {
         assertEquals(capabilities, peer.getCapabilities());
 
         //getEncoded
-        assertEquals("CC847F0000018203F2821010C0", Hex.toHexString(peer.getEncoded()).toUpperCase());
+        assertEquals("CC847F0000018203F2821010C0", ByteUtil.toHexString(peer.getEncoded()).toUpperCase());
 
         //toString
         assertEquals("[ip=" + address.getHostAddress() + " port=" + Integer.toString(port) + " peerId=" + peerId + "]", peer.toString());

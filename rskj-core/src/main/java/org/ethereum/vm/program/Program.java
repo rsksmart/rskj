@@ -31,7 +31,6 @@ import co.rsk.rpc.modules.trace.CreationData;
 import co.rsk.rpc.modules.trace.ProgramSubtrace;
 import co.rsk.vm.BitSet;
 import com.google.common.annotations.VisibleForTesting;
-import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -581,7 +580,7 @@ public class Program {
         refundGas(refundGas, "remaining gas from the internal call");
         if (isGasLogEnabled) {
             gasLogger.info("The remaining gas is refunded, account: [{}], gas: [{}] ",
-                    Hex.toHexString(getOwnerAddress().getLast20Bytes()),
+                    ByteUtil.toHexString(getOwnerAddress().getLast20Bytes()),
                     refundGas
             );
         }
@@ -1184,14 +1183,14 @@ public class Program {
 
             if (getResult().getHReturn() != null) {
                 globalOutput.append("\n  HReturn: ").append(
-                        Hex.toHexString(getResult().getHReturn()));
+                        ByteUtil.toHexString(getResult().getHReturn()));
             }
 
             // sophisticated assumption that msg.data != codedata
             // means we are calling the contract not creating it
             byte[] txData = invoke.getDataCopy(DataWord.ZERO, getDataSize());
             if (!Arrays.equals(txData, ops)) {
-                globalOutput.append("\n  msg.data: ").append(Hex.toHexString(txData));
+                globalOutput.append("\n  msg.data: ").append(ByteUtil.toHexString(txData));
             }
             globalOutput.append("\n\n  Spent Gas: ").append(getResult().getGasUsed());
 
@@ -1492,7 +1491,7 @@ public class Program {
             return new OutOfGasException("Gas value overflow: actualGas[%d], gasLimit[%d];", actualGas, gasLimit.longValue());
         }
         public static IllegalOperationException invalidOpCode(byte... opCode) {
-            return new IllegalOperationException("Invalid operation code: opcode[%s];", Hex.toHexString(opCode, 0, 1));
+            return new IllegalOperationException("Invalid operation code: opcode[%s];", ByteUtil.toHexString(opCode, 0, 1));
         }
 
         public static BadJumpDestinationException badJumpDestination(int pc) {

@@ -38,7 +38,9 @@ import co.rsk.rpc.Web3InformationRetriever;
 import co.rsk.rpc.Web3RskImpl;
 import co.rsk.rpc.modules.debug.DebugModule;
 import co.rsk.rpc.modules.debug.DebugModuleImpl;
-import co.rsk.rpc.modules.eth.*;
+import co.rsk.rpc.modules.eth.EthModule;
+import co.rsk.rpc.modules.eth.EthModuleTransactionBase;
+import co.rsk.rpc.modules.eth.EthModuleWalletEnabled;
 import co.rsk.rpc.modules.personal.PersonalModule;
 import co.rsk.rpc.modules.personal.PersonalModuleWalletDisabled;
 import co.rsk.rpc.modules.personal.PersonalModuleWalletEnabled;
@@ -53,7 +55,6 @@ import co.rsk.test.builders.TransactionBuilder;
 import co.rsk.util.TestContract;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.TestUtils;
-import org.ethereum.config.SystemProperties;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
@@ -68,19 +69,20 @@ import org.ethereum.net.server.ChannelManager;
 import org.ethereum.net.server.PeerServer;
 import org.ethereum.rpc.Simples.*;
 import org.ethereum.rpc.dto.BlockResultDTO;
-import org.ethereum.rpc.dto.CompilationResultDTO;
 import org.ethereum.rpc.dto.TransactionReceiptDTO;
 import org.ethereum.rpc.dto.TransactionResultDTO;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
-import org.ethereum.solidity.compiler.SolidityCompiler;
 import org.ethereum.util.BuildInfo;
+import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.program.ProgramResult;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.math.BigInteger;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.hamcrest.Matchers.is;
@@ -182,7 +184,7 @@ public class Web3ImplTest {
 
         Web3Impl web3 = createWeb3(world);
 
-        org.junit.Assert.assertEquals("0x" + Hex.toHexString(BigInteger.valueOf(10000).toByteArray()), web3.eth_getBalance(Hex.toHexString(acc1.getAddress().getBytes())));
+        org.junit.Assert.assertEquals("0x" + ByteUtil.toHexString(BigInteger.valueOf(10000).toByteArray()), web3.eth_getBalance(ByteUtil.toHexString(acc1.getAddress().getBytes())));
     }
 
     @Test
@@ -192,7 +194,7 @@ public class Web3ImplTest {
 
         Web3Impl web3 = createWeb3(world);
 
-        org.junit.Assert.assertEquals("0x" + Hex.toHexString(BigInteger.valueOf(10000).toByteArray()), web3.eth_getBalance(Hex.toHexString(acc1.getAddress().getBytes()), "latest"));
+        org.junit.Assert.assertEquals("0x" + ByteUtil.toHexString(BigInteger.valueOf(10000).toByteArray()), web3.eth_getBalance(ByteUtil.toHexString(acc1.getAddress().getBytes()), "latest"));
     }
 
     @Test
@@ -202,8 +204,8 @@ public class Web3ImplTest {
 
         Web3Impl web3 = createWeb3(world);
 
-        String accountAddress = Hex.toHexString(acc1.getAddress().getBytes());
-        String balanceString = "0x" + Hex.toHexString(BigInteger.valueOf(10000).toByteArray());
+        String accountAddress = ByteUtil.toHexString(acc1.getAddress().getBytes());
+        String balanceString = "0x" + ByteUtil.toHexString(BigInteger.valueOf(10000).toByteArray());
 
         org.junit.Assert.assertEquals(balanceString, web3.eth_getBalance(accountAddress, "0x0"));
     }
@@ -219,8 +221,8 @@ public class Web3ImplTest {
 
         Web3Impl web3 = createWeb3(world);
 
-        String accountAddress = Hex.toHexString(acc1.getAddress().getBytes());
-        String balanceString = "0x" + Hex.toHexString(BigInteger.valueOf(10000).toByteArray());
+        String accountAddress = ByteUtil.toHexString(acc1.getAddress().getBytes());
+        String balanceString = "0x" + ByteUtil.toHexString(BigInteger.valueOf(10000).toByteArray());
 
         org.junit.Assert.assertEquals(balanceString, web3.eth_getBalance(accountAddress, "0x1"));
     }
@@ -243,8 +245,8 @@ public class Web3ImplTest {
 
         Web3Impl web3 = createWeb3(world, transactionPool, null);
 
-        String accountAddress = Hex.toHexString(acc2.getAddress().getBytes());
-        String balanceString = "0x" + Hex.toHexString(BigInteger.valueOf(10000).toByteArray());
+        String accountAddress = ByteUtil.toHexString(acc2.getAddress().getBytes());
+        String balanceString = "0x" + ByteUtil.toHexString(BigInteger.valueOf(10000).toByteArray());
 
         org.junit.Assert.assertEquals("0x0", web3.eth_getBalance(accountAddress, "0x0"));
         org.junit.Assert.assertEquals(balanceString, web3.eth_getBalance(accountAddress, "0x1"));
@@ -302,7 +304,7 @@ public class Web3ImplTest {
     public void getGasPrice()  {
         Web3Impl web3 = createWeb3();
         web3.eth = new SimpleEthereum();
-        String expectedValue = Hex.toHexString(new BigInteger("20000000000").toByteArray());
+        String expectedValue = ByteUtil.toHexString(new BigInteger("20000000000").toByteArray());
         expectedValue = "0x" + (expectedValue.startsWith("0") ? expectedValue.substring(1) : expectedValue);
         org.junit.Assert.assertEquals(expectedValue, web3.eth_gasPrice());
     }
@@ -425,7 +427,7 @@ public class Web3ImplTest {
         org.junit.Assert.assertEquals(blockHashString, tr.blockHash);
 
         org.junit.Assert.assertEquals("0x", tr.input);
-        org.junit.Assert.assertEquals("0x" + Hex.toHexString(tx.getReceiveAddress().getBytes()), tr.to);
+        org.junit.Assert.assertEquals("0x" + ByteUtil.toHexString(tx.getReceiveAddress().getBytes()), tr.to);
 
         Assert.assertArrayEquals(new byte[] {tx.getSignature().getV()}, TypeConverter.stringHexToByteArray(tr.v));
         Assert.assertThat(TypeConverter.stringHexToBigInteger(tr.s), is(tx.getSignature().getS()));
@@ -460,7 +462,7 @@ public class Web3ImplTest {
         org.junit.Assert.assertEquals(null, tr.blockHash);
         org.junit.Assert.assertEquals(null, tr.transactionIndex);
         org.junit.Assert.assertEquals("0x", tr.input);
-        org.junit.Assert.assertEquals("0x" + Hex.toHexString(tx.getReceiveAddress().getBytes()), tr.to);
+        org.junit.Assert.assertEquals("0x" + ByteUtil.toHexString(tx.getReceiveAddress().getBytes()), tr.to);
     }
 
     @Test
@@ -597,7 +599,7 @@ public class Web3ImplTest {
                                         world.getBlockStore()).trieStore(world.getTrieStore()).parent(genesis).transactions(txs).build();
         org.junit.Assert.assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block1));
 
-        String accountAddress = Hex.toHexString(acc1.getAddress().getBytes());
+        String accountAddress = ByteUtil.toHexString(acc1.getAddress().getBytes());
 
         String count = web3.eth_getTransactionCount(accountAddress, "0x1");
 
@@ -1117,7 +1119,7 @@ public class Web3ImplTest {
         Assert.assertEquals(blockEhash, result.getHash());
         Assert.assertEquals(0, result.getUncles().size());
         Assert.assertEquals(0, result.getTransactions().size());
-        Assert.assertEquals("0x" + Hex.toHexString(blockE.getTxTrieRoot()), result.getTransactionsRoot());
+        Assert.assertEquals("0x" + ByteUtil.toHexString(blockE.getTxTrieRoot()), result.getTransactionsRoot());
     }
 
     @Test
@@ -1245,7 +1247,7 @@ public class Web3ImplTest {
         Assert.assertEquals(blockEhash, result.getHash());
         Assert.assertEquals(0, result.getUncles().size());
         Assert.assertEquals(0, result.getTransactions().size());
-        Assert.assertEquals("0x" + Hex.toHexString(blockE.getTxTrieRoot()), result.getTransactionsRoot());
+        Assert.assertEquals("0x" + ByteUtil.toHexString(blockE.getTxTrieRoot()), result.getTransactionsRoot());
     }
 
     @Test
@@ -1265,12 +1267,12 @@ public class Web3ImplTest {
                                         world.getBlockStore()).trieStore(world.getTrieStore()).parent(genesis).build();
         org.junit.Assert.assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block1));
 
-        String accountAddress = Hex.toHexString(acc1.getAddress().getBytes());
+        String accountAddress = ByteUtil.toHexString(acc1.getAddress().getBytes());
 
         String scode = web3.eth_getCode(accountAddress, "0x1");
 
         assertNotNull(scode);
-        org.junit.Assert.assertEquals("0x" + Hex.toHexString(code), scode);
+        org.junit.Assert.assertEquals("0x" + ByteUtil.toHexString(code), scode);
     }
 
     @Test
@@ -1360,7 +1362,7 @@ public class Web3ImplTest {
         byte[] code = new byte[] { 0x01, 0x02, 0x03 };
         world.getRepository().saveCode(acc1.getAddress(), code);
 
-        String accountAddress = Hex.toHexString(acc1.getAddress().getBytes());
+        String accountAddress = ByteUtil.toHexString(acc1.getAddress().getBytes());
 
         String resultCode = web3.eth_getCode(accountAddress, "0x100");
 
@@ -1449,7 +1451,7 @@ public class Web3ImplTest {
 
         byte[] hash = Keccak256Helper.keccak256("this is the data to hash".getBytes());
 
-        String signature = web3.eth_sign(addr1, "0x" + Hex.toHexString(hash));
+        String signature = web3.eth_sign(addr1, "0x" + ByteUtil.toHexString(hash));
 
         Assert.assertThat(
                 signature,
@@ -1475,7 +1477,7 @@ public class Web3ImplTest {
         }
 
         assertNotNull(account);
-        org.junit.Assert.assertEquals(addr, "0x" + Hex.toHexString(account.getAddress().getBytes()));
+        org.junit.Assert.assertEquals(addr, "0x" + ByteUtil.toHexString(account.getAddress().getBytes()));
     }
 
     @Test
@@ -1512,14 +1514,14 @@ public class Web3ImplTest {
 
         org.junit.Assert.assertNull(account);
 
-        String address = web3.personal_importRawKey(Hex.toHexString(privKeyBytes), "passphrase1");
+        String address = web3.personal_importRawKey(ByteUtil.toHexString(privKeyBytes), "passphrase1");
 
         assertNotNull(address);
 
         account = wallet.getAccount(addr);
 
         assertNotNull(account);
-        org.junit.Assert.assertEquals(address, "0x" + Hex.toHexString(account.getAddress().getBytes()));
+        org.junit.Assert.assertEquals(address, "0x" + ByteUtil.toHexString(account.getAddress().getBytes()));
         org.junit.Assert.assertArrayEquals(privKeyBytes, account.getEcKey().getPrivKeyBytes());
     }
 
@@ -1529,7 +1531,7 @@ public class Web3ImplTest {
 
         ECKey eckey = new ECKey();
 
-        String address = web3.personal_importRawKey(Hex.toHexString(eckey.getPrivKeyBytes()), "passphrase1");
+        String address = web3.personal_importRawKey(ByteUtil.toHexString(eckey.getPrivKeyBytes()), "passphrase1");
         assertTrue(web3.personal_unlockAccount(address, "passphrase1", ""));
 
         String rawKey = web3.personal_dumpRawKey(address).substring(2);

@@ -26,8 +26,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.Blockchain;
+import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
 import org.slf4j.Logger;
@@ -82,12 +82,12 @@ public class NetworkStateExporter {
 
     private ObjectNode createContractNode(ObjectNode accountNode, AccountInformationProvider accountInformation, RskAddress addr, Iterator<DataWord> contractKeys) {
         ObjectNode contractNode = accountNode.objectNode();
-        contractNode.put("code", Hex.toHexString(accountInformation.getCode(addr)));
+        contractNode.put("code", ByteUtil.toHexString(accountInformation.getCode(addr)));
         ObjectNode dataNode = contractNode.objectNode();
         while (contractKeys.hasNext()) {
             DataWord key = contractKeys.next();
             byte[] value = accountInformation.getStorageBytes(addr, key);
-            dataNode.put(Hex.toHexString(key.getData()), Hex.toHexString(value));
+            dataNode.put(ByteUtil.toHexString(key.getData()), ByteUtil.toHexString(value));
         }
         contractNode.set("data", dataNode);
         return contractNode;

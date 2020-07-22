@@ -24,6 +24,7 @@ import co.rsk.core.RskAddress;
 import co.rsk.core.bc.AccountInformationProvider;
 import co.rsk.rpc.modules.trace.ProgramSubtrace;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.OpCode;
 import org.ethereum.vm.program.Memory;
@@ -32,12 +33,11 @@ import org.ethereum.vm.program.Storage;
 import org.ethereum.vm.program.invoke.ProgramInvoke;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.bouncycastle.util.encoders.Hex;
 
 import java.util.*;
 
 import static java.lang.String.format;
-import static org.ethereum.util.ByteUtil.toHexString;
+import static org.ethereum.util.ByteUtil.toHexStringOrEmpty;
 import static org.ethereum.vm.trace.Serializers.serializeFieldsOnly;
 
 public class DetailedProgramTrace implements ProgramTrace {
@@ -72,7 +72,7 @@ public class DetailedProgramTrace implements ProgramTrace {
         this.programInvoke = programInvoke;
 
         if (config.vmTrace() && programInvoke != null) {
-            contractAddress = Hex.toHexString(programInvoke.getOwnerAddress().getLast20Bytes());
+            contractAddress = ByteUtil.toHexString(programInvoke.getOwnerAddress().getLast20Bytes());
 
             AccountInformationProvider informationProvider = getInformationProvider(programInvoke);
             RskAddress ownerAddress = new RskAddress(programInvoke.getOwnerAddress());
@@ -84,7 +84,7 @@ public class DetailedProgramTrace implements ProgramTrace {
                 if (storageSize <= config.vmTraceInitStorageLimit()) {
                     fullStorage = true;
 
-                    String address = toHexString(programInvoke.getOwnerAddress().getLast20Bytes());
+                    String address = toHexStringOrEmpty(programInvoke.getOwnerAddress().getLast20Bytes());
                     Iterator<DataWord> keysIterator = informationProvider.getStorageKeys(ownerAddress);
                     while (keysIterator.hasNext()) {
                         // TODO: solve NULL key/value storage problem
@@ -184,7 +184,7 @@ public class DetailedProgramTrace implements ProgramTrace {
     }
 
     public ProgramTrace result(byte[] result) {
-        setResult(toHexString(result));
+        setResult(toHexStringOrEmpty(result));
         return this;
     }
 

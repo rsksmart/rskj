@@ -39,6 +39,7 @@ import org.ethereum.net.eth.EthVersion;
 import org.ethereum.net.message.Message;
 import org.ethereum.net.p2p.*;
 import org.ethereum.net.server.Channel;
+import org.ethereum.util.ByteUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -188,7 +189,7 @@ public class HandshakeHandler extends ByteToMessageDecoder {
                 this.frameCodec = new FrameCodec(secrets);
 
                 loggerNet.trace("auth exchange done");
-                channel.sendHelloMessage(ctx, frameCodec, Hex.toHexString(nodeId), null);
+                channel.sendHelloMessage(ctx, frameCodec, ByteUtil.toHexString(nodeId), null);
             } else {
                 loggerWire.debug("MessageCodec: Buffer bytes: {}", buffer.readableBytes());
                 List<Frame> frames = frameCodec.readFrames(buffer);
@@ -297,7 +298,7 @@ public class HandshakeHandler extends ByteToMessageDecoder {
                 HelloMessage inboundHelloMessage = (HelloMessage) message;
 
                 // Secret authentication finish here
-                channel.sendHelloMessage(ctx, frameCodec, Hex.toHexString(nodeId), inboundHelloMessage);
+                channel.sendHelloMessage(ctx, frameCodec, ByteUtil.toHexString(nodeId), inboundHelloMessage);
                 processHelloMessage(ctx, inboundHelloMessage);
             }
         }

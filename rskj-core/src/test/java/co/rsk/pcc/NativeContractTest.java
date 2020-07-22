@@ -29,6 +29,7 @@ import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
+import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.LogInfo;
 import org.junit.Assert;
 import org.junit.Before;
@@ -275,7 +276,7 @@ public class NativeContractTest {
         });
         when(contract.getMethods()).thenReturn(Arrays.asList(method));
 
-        Assert.assertEquals("aabbccddeeff112233", Hex.toHexString(contract.execute(Hex.decode("00112233"))));
+        Assert.assertEquals("aabbccddeeff112233", ByteUtil.toHexString(contract.execute(Hex.decode("00112233"))));
         verify(method, times(1)).execute(any());
         verify(contract, times(1)).before();
         verify(contract, times(1)).after();
@@ -380,7 +381,7 @@ public class NativeContractTest {
         });
         when(contract.getMethods()).thenReturn(Arrays.asList(method));
 
-        Assert.assertEquals("ffeeddccbb", Hex.toHexString(contract.execute(Hex.decode("00112233"))));
+        Assert.assertEquals("ffeeddccbb", ByteUtil.toHexString(contract.execute(Hex.decode("00112233"))));
         verify(method, times(1)).execute(any());
         verify(contract, times(1)).before();
         verify(contract, times(1)).after();

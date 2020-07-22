@@ -22,10 +22,10 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.config.VmConfig;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
-import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.BlockFactory;
+import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.*;
 import org.ethereum.vm.program.Program;
 import org.ethereum.vm.program.Stack;
@@ -787,7 +787,7 @@ public class VMExecutionTest {
     private void testCode(byte[] code, int nsteps, String expected) {
         Program program = executeCodeWithActivationConfig(code, nsteps, mock(ActivationConfig.ForBlock.class));
 
-        assertEquals(expected, Hex.toHexString(program.getStack().peek().getData()).toUpperCase());
+        assertEquals(expected, ByteUtil.toHexString(program.getStack().peek().getData()).toUpperCase());
     }
 
     private Program executeCodeWithActivationConfig(String code, int nsteps, ActivationConfig.ForBlock activations) {

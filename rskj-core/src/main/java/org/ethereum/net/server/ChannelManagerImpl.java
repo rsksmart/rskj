@@ -264,7 +264,7 @@ public class ChannelManagerImpl implements ChannelManager {
     }
 
     public void notifyDisconnect(Channel channel) {
-        logger.debug("Peer {}: notifies about disconnect", channel.getPeerIdShort());
+        logger.debug("Peer {}: notifies about disconnect", channel.getPeerId());
         channel.onDisconnect();
         synchronized (newPeers) {
             if(newPeers.remove(channel)) {

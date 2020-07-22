@@ -33,6 +33,7 @@ import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.net.p2p.P2pHandler;
 import org.ethereum.net.rlpx.MessageCodec;
 import org.ethereum.net.rlpx.Node;
+import org.ethereum.util.ByteUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -361,8 +362,8 @@ public abstract class SystemProperties {
                 props.load(new FileReader(file));
             } else {
                 ECKey key = new ECKey();
-                props.setProperty("nodeIdPrivateKey", Hex.toHexString(key.getPrivKeyBytes()));
-                props.setProperty("nodeId", Hex.toHexString(key.getNodeId()));
+                props.setProperty("nodeIdPrivateKey", ByteUtil.toHexString(key.getPrivKeyBytes()));
+                props.setProperty("nodeId", ByteUtil.toHexString(key.getNodeId()));
                 file.getParentFile().mkdirs();
                 props.store(new FileWriter(file), "Generated NodeID. To use your own nodeId please refer to 'peer.privateKey' config option.");
                 logger.info("New nodeID generated: {}", props.getProperty("nodeId"));

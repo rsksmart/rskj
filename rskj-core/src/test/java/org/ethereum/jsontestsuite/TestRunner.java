@@ -68,7 +68,7 @@ import java.lang.management.ThreadMXBean;
 import java.math.BigInteger;
 import java.util.*;
 
-import static org.ethereum.crypto.HashUtil.shortHash;
+import static org.ethereum.crypto.HashUtil.toPrintableHash;
 import static org.ethereum.json.Utils.parseData;
 import static org.ethereum.json.Utils.parseNumericData;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
@@ -202,16 +202,16 @@ public class TestRunner {
         for (Block block : blockTraffic) {
 
             ImportResult importResult = blockchain.tryToConnect(block);
-            logger.debug("{} ~ {} difficulty: {} ::: {}", block.getShortHash(), shortHash(block.getParentHash().getBytes()),
+            logger.debug("{} ~ {} difficulty: {} ::: {}", block.getPrintableHash(), toPrintableHash(block.getParentHash().getBytes()),
                     block.getCumulativeDifficulty(), importResult.toString());
         }
 
         //Check state root matches last valid block
         List<String> results = new ArrayList<>();
-        String currRoot = Hex.toHexString(repository.getRoot());
+        String currRoot = ByteUtil.toHexString(repository.getRoot());
 
         byte[] bestHash = Hex.decode(testCase.getLastblockhash());
-        String finalRoot = Hex.toHexString(blockStore.getBlockByHash(bestHash).getStateRoot());
+        String finalRoot = ByteUtil.toHexString(blockStore.getBlockByHash(bestHash).getStateRoot());
 
         if (validateStateRoots) {
             if (!finalRoot.equals(currRoot)) {
@@ -392,8 +392,8 @@ public class TestRunner {
                         String output =
                                 String.format("The code result is different. account: [ %s ],  expectedCode: [ %s ] is actualCode: [ %s ] ",
                                         addr,
-                                        Hex.toHexString(expectedCode),
-                                        Hex.toHexString(actualCode));
+                                        ByteUtil.toHexString(expectedCode),
+                                        ByteUtil.toHexString(actualCode));
                         logger.info(output);
                         results.add(output);
                     }
@@ -409,7 +409,7 @@ public class TestRunner {
                         if (!program.getStorage().isContract(accountAddress)) {
                             String output =
                                     String.format("Storage raw doesn't exist: key [ %s ], expectedValue: [ %s ]",
-                                            Hex.toHexString(storageKey.getData()),
+                                            ByteUtil.toHexString(storageKey.getData()),
                                             expectedStValue.toString()
                                     );
 
@@ -431,9 +431,9 @@ public class TestRunner {
 
                             String output =
                                     String.format("Storage value different: key [ %s ], expectedValue: [ %s ], actualValue: [ %s ]",
-                                            Hex.toHexString(storageKey.getData()),
+                                            ByteUtil.toHexString(storageKey.getData()),
                                             expectedStValue.toString(),
-                                            actualValue == null ? "" : Hex.toHexString(actualValue));
+                                            actualValue == null ? "" : ByteUtil.toHexString(actualValue));
                             logger.info(output);
                             results.add(output);
                         }
@@ -463,14 +463,14 @@ public class TestRunner {
                         } else {
                             if (!Arrays.equals(expectedLogInfo.getAddress(), foundLogInfo.getAddress())) {
                                 String output =
-                                        String.format("Expected address [ %s ], found [ %s ]", Hex.toHexString(expectedLogInfo.getAddress()), Hex.toHexString(foundLogInfo.getAddress()));
+                                        String.format("Expected address [ %s ], found [ %s ]", ByteUtil.toHexString(expectedLogInfo.getAddress()), ByteUtil.toHexString(foundLogInfo.getAddress()));
                                 logger.info(output);
                                 results.add(output);
                             }
 
                             if (!Arrays.equals(expectedLogInfo.getData(), foundLogInfo.getData())) {
                                 String output =
-                                        String.format("Expected data [ %s ], found [ %s ]", Hex.toHexString(expectedLogInfo.getData()), Hex.toHexString(foundLogInfo.getData()));
+                                        String.format("Expected data [ %s ], found [ %s ]", ByteUtil.toHexString(expectedLogInfo.getData()), ByteUtil.toHexString(foundLogInfo.getData()));
                                 logger.info(output);
                                 results.add(output);
                             }
@@ -478,8 +478,8 @@ public class TestRunner {
                             if (!expectedLogInfo.getBloom().equals(foundLogInfo.getBloom())) {
                                 String output =
                                         String.format("Expected bloom [ %s ], found [ %s ]",
-                                                Hex.toHexString(expectedLogInfo.getBloom().getData()),
-                                                Hex.toHexString(foundLogInfo.getBloom().getData()));
+                                                ByteUtil.toHexString(expectedLogInfo.getBloom().getData()),
+                                                ByteUtil.toHexString(foundLogInfo.getBloom().getData()));
                                 logger.info(output);
                                 results.add(output);
                             }
@@ -497,7 +497,7 @@ public class TestRunner {
 
                                     if (!Arrays.equals(topic.getData(), foundTopic)) {
                                         String output =
-                                                String.format("Expected topic [ %s ], found [ %s ]", Hex.toHexString(topic.getData()), Hex.toHexString(foundTopic));
+                                                String.format("Expected topic [ %s ], found [ %s ]", ByteUtil.toHexString(topic.getData()), ByteUtil.toHexString(foundTopic));
                                         logger.info(output);
                                         results.add(output);
                                     }
@@ -532,10 +532,10 @@ public class TestRunner {
 
                         String output =
                                 String.format("Missing call/create invoke: to: [ %s ], data: [ %s ], gas: [ %s ], value: [ %s ]",
-                                        Hex.toHexString(expectedCallCreate.getDestination()),
-                                        Hex.toHexString(expectedCallCreate.getData()),
+                                        ByteUtil.toHexString(expectedCallCreate.getDestination()),
+                                        ByteUtil.toHexString(expectedCallCreate.getData()),
                                         Long.toHexString(expectedCallCreate.getGasLimit()),
-                                        Hex.toHexString(expectedCallCreate.getValue()));
+                                        ByteUtil.toHexString(expectedCallCreate.getValue()));
                         logger.info(output);
                         results.add(output);
 
@@ -549,8 +549,8 @@ public class TestRunner {
 
                         String output =
                                 String.format("Call/Create destination is different. Expected: [ %s ], result: [ %s ]",
-                                        Hex.toHexString(expectedCallCreate.getDestination()),
-                                        Hex.toHexString(resultCallCreate.getDestination()));
+                                        ByteUtil.toHexString(expectedCallCreate.getDestination()),
+                                        ByteUtil.toHexString(resultCallCreate.getDestination()));
                         logger.info(output);
                         results.add(output);
                     }
@@ -562,8 +562,8 @@ public class TestRunner {
 
                         String output =
                                 String.format("Call/Create data is different. Expected: [ %s ], result: [ %s ]",
-                                        Hex.toHexString(expectedCallCreate.getData()),
-                                        Hex.toHexString(resultCallCreate.getData()));
+                                        ByteUtil.toHexString(expectedCallCreate.getData()),
+                                        ByteUtil.toHexString(resultCallCreate.getData()));
                         logger.info(output);
                         results.add(output);
                     }
@@ -586,8 +586,8 @@ public class TestRunner {
                     if (!assertValue) {
                         String output =
                                 String.format("Call/Create value is different. Expected: [ %s ], result: [ %s ]",
-                                        Hex.toHexString(expectedCallCreate.getValue()),
-                                        Hex.toHexString(resultCallCreate.getValue()));
+                                        ByteUtil.toHexString(expectedCallCreate.getValue()),
+                                        ByteUtil.toHexString(resultCallCreate.getValue()));
                         logger.info(output);
                         results.add(output);
                     }
@@ -604,8 +604,8 @@ public class TestRunner {
 
                     String output =
                             String.format("HReturn is different. Expected hReturn: [ %s ], actual hReturn: [ %s ]",
-                                    Hex.toHexString(expectedHReturn),
-                                    Hex.toHexString(actualHReturn));
+                                    ByteUtil.toHexString(expectedHReturn),
+                                    ByteUtil.toHexString(actualHReturn));
                     logger.info(output);
                     results.add(output);
                 }

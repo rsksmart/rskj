@@ -21,8 +21,9 @@ package co.rsk.lll;
 import co.rsk.asm.EVMDissasembler;
 import co.rsk.lll.asm.CodeBlock;
 import co.rsk.lll.asm.EVMAssemblerHelper;
-import org.junit.Test;
 import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.util.ByteUtil;
+import org.junit.Test;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -36,12 +37,12 @@ import java.nio.file.Paths;
 public class LLLTest {
 
     void showCode(byte[] code) {
-        System.out.println("code: " + Hex.toHexString(code));
+        System.out.println("code: " + ByteUtil.toHexString(code));
         System.out.println("dissasemble:");
         System.out.println(EVMDissasembler.getDissasemble(code));
     }
     void showCodeBlock(EVMAssemblerHelper helper, CodeBlock block) {
-        System.out.println("code: " + Hex.toHexString(block.getCode()));
+        System.out.println("code: " + ByteUtil.toHexString(block.getCode()));
         System.out.println("dissasemble:");
         EVMDissasembler dis = new EVMDissasembler();
         System.out.println(dis.dissasembleCodeBlock(block,helper));

@@ -21,12 +21,12 @@ package co.rsk.rpc.modules.eth;
 import co.rsk.core.RskAddress;
 import co.rsk.core.Wallet;
 import co.rsk.net.TransactionGateway;
-import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
 import org.ethereum.core.*;
 import org.ethereum.rpc.TypeConverter;
 import org.ethereum.rpc.Web3;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
+import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.GasCost;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -57,7 +57,7 @@ public class EthModuleTransactionBase implements EthModuleTransaction {
         Account account = this.wallet.getAccount(new RskAddress(args.from));
         String s = null;
         try {
-            String toAddress = args.to != null ? Hex.toHexString(stringHexToByteArray(args.to)) : null;
+            String toAddress = args.to != null ? ByteUtil.toHexString(stringHexToByteArray(args.to)) : null;
 
             BigInteger value = args.value != null ? TypeConverter.stringNumberAsBigInt(args.value) : BigInteger.ZERO;
             BigInteger gasPrice = args.gasPrice != null ? TypeConverter.stringNumberAsBigInt(args.gasPrice) : BigInteger.ZERO;

@@ -18,7 +18,7 @@
 
 package org.ethereum.rpc;
 
-import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.util.ByteUtil;
 
 import java.util.Arrays;
 
@@ -77,7 +77,7 @@ public final class Topic {
 
     @Override
     public String toString() {
-        return Hex.toHexString(bytes);
+        return ByteUtil.toHexString(bytes);
     }
 
     public String toJsonString() {

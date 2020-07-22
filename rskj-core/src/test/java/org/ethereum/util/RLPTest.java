@@ -19,14 +19,14 @@
 
 package org.ethereum.util;
 
+import org.bouncycastle.util.BigIntegers;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.net.client.Capability;
 import org.ethereum.net.p2p.HelloMessage;
 import org.junit.Ignore;
 import org.junit.Test;
-import org.bouncycastle.util.BigIntegers;
-import org.bouncycastle.util.encoders.Hex;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -309,7 +309,7 @@ public class RLPTest {
 
         String expected = "b840" + byteArr;
 
-        assertEquals(expected, Hex.toHexString(encodeElement(byteArray)));
+        assertEquals(expected, ByteUtil.toHexString(encodeElement(byteArray)));
     }
 
     @Test
@@ -371,7 +371,7 @@ public class RLPTest {
                 prevHash, uncleList, coinbase);
 
         assertEquals("f856a000000000000000000000000000000000000000000000000000000000000000001dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347940000000000000000000000000000000000000000",
-                Hex.toHexString(header));
+                ByteUtil.toHexString(header));
     }
 
     @Test
@@ -608,9 +608,9 @@ public class RLPTest {
         String test = "";
         String expected = "80";
         byte[] encoderesult = encode(test);
-        assertEquals(expected, Hex.toHexString(encoderesult));
+        assertEquals(expected, ByteUtil.toHexString(encoderesult));
 
-        String decodeResult = ByteUtil.toHexString(decode2(encoderesult).get(0).getRLPData());
+        String decodeResult = ByteUtil.toHexStringOrEmpty(decode2(encoderesult).get(0).getRLPData());
         assertEquals(test, decodeResult);
     }
 
@@ -619,7 +619,7 @@ public class RLPTest {
         String test = "dog";
         String expected = "83646f67";
         byte[] encoderesult = encode(test);
-        assertEquals(expected, Hex.toHexString(encoderesult));
+        assertEquals(expected, ByteUtil.toHexString(encoderesult));
 
         byte[] decodeResult = decode2(encoderesult).get(0).getRLPData();
         assertEquals(test, bytesToAscii(decodeResult));
@@ -630,7 +630,7 @@ public class RLPTest {
         String test = "d";
         String expected = "64";
         byte[] encoderesult = encode(test);
-        assertEquals(expected, Hex.toHexString(encoderesult));
+        assertEquals(expected, ByteUtil.toHexString(encoderesult));
 
         byte[] decodeResult = decode2(encoderesult).get(0).getRLPData();
         assertEquals(test, bytesToAscii(decodeResult));
@@ -641,7 +641,7 @@ public class RLPTest {
         String test = "Lorem ipsum dolor sit amet, consectetur adipisicing elit"; // length = 56
         String expected = "b8384c6f72656d20697073756d20646f6c6f722073697420616d65742c20636f6e7365637465747572206164697069736963696e6720656c6974";
         byte[] encoderesult = encode(test);
-        assertEquals(expected, Hex.toHexString(encoderesult));
+        assertEquals(expected, ByteUtil.toHexString(encoderesult));
 
         byte[] decodeResult = decode2(encoderesult).get(0).getRLPData();
         assertEquals(test, bytesToAscii(decodeResult));
@@ -652,9 +652,9 @@ public class RLPTest {
         Integer test = 0;
         String expected = "80";
         byte[] encoderesult = encode(test);
-        assertEquals(expected, Hex.toHexString(encoderesult));
+        assertEquals(expected, ByteUtil.toHexString(encoderesult));
 
-        String decodeResult = ByteUtil.toHexString(decode2(encoderesult).get(0).getRLPData());
+        String decodeResult = ByteUtil.toHexStringOrEmpty(decode2(encoderesult).get(0).getRLPData());
         assertEquals("", decodeResult);
     }
 
@@ -663,7 +663,7 @@ public class RLPTest {
         Integer test = 15;
         String expected = "0f";
         byte[] encoderesult = encode(test);
-        assertEquals(expected, Hex.toHexString(encoderesult));
+        assertEquals(expected, ByteUtil.toHexString(encoderesult));
 
         byte[] decodeResult = decode2(encoderesult).get(0).getRLPData();
         int result = byteArrayToInt(decodeResult);
@@ -675,7 +675,7 @@ public class RLPTest {
         Integer test = 1000;
         String expected = "8203e8";
         byte[] encoderesult = encode(test);
-        assertEquals(expected, Hex.toHexString(encoderesult));
+        assertEquals(expected, ByteUtil.toHexString(encoderesult));
 
         byte[] decodeResult = decode2(encoderesult).get(0).getRLPData();
         int result = byteArrayToInt(decodeResult);
@@ -684,7 +684,7 @@ public class RLPTest {
         test = 1024;
         expected = "820400";
         encoderesult = encode(test);
-        assertEquals(expected, Hex.toHexString(encoderesult));
+        assertEquals(expected, ByteUtil.toHexString(encoderesult));
 
         decodeResult = decode2(encoderesult).get(0).getRLPData();
         result = byteArrayToInt(decodeResult);
@@ -696,7 +696,7 @@ public class RLPTest {
         BigInteger test = new BigInteger("100102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f", 16);
         String expected = "a0100102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f";
         byte[] encoderesult = encode(test);
-        assertEquals(expected, Hex.toHexString(encoderesult));
+        assertEquals(expected, ByteUtil.toHexString(encoderesult));
 
         byte[] decodeResult = decode2(encoderesult).get(0).getRLPData();
         assertEquals(test, BigIntegers.fromUnsignedByteArray(decodeResult));
@@ -707,7 +707,7 @@ public class RLPTest {
         Object[] test = new Object[0];
         String expected = "c0";
         byte[] encoderesult = encode(test);
-        assertEquals(expected, Hex.toHexString(encoderesult));
+        assertEquals(expected, ByteUtil.toHexString(encoderesult));
 
         RLPList decodeResult = (RLPList)decode2(encoderesult).get(0);
         assertTrue(decodeResult.size() == 0);
@@ -718,7 +718,7 @@ public class RLPTest {
         String[] test = new String[]{"cat", "dog"};
         String expected = "c88363617483646f67";
         byte[] encoderesult = encode(test);
-        assertEquals(expected, Hex.toHexString(encoderesult));
+        assertEquals(expected, ByteUtil.toHexString(encoderesult));
 
         RLPList decodeResult = (RLPList) decode2(encoderesult).get(0);
         assertEquals("cat", bytesToAscii(decodeResult.get(0).getRLPData()));
@@ -727,7 +727,7 @@ public class RLPTest {
         test = new String[]{"dog", "god", "cat"};
         expected = "cc83646f6783676f6483636174";
         encoderesult = encode(test);
-        assertEquals(expected, Hex.toHexString(encoderesult));
+        assertEquals(expected, ByteUtil.toHexString(encoderesult));
 
         decodeResult = (RLPList) decode2(encoderesult).get(0);
         assertEquals("dog", bytesToAscii(decodeResult.get(0).getRLPData()));
@@ -742,7 +742,7 @@ public class RLPTest {
         String[] test = new String[]{element1, element2};
         String expected = "f83e83636174b8384c6f72656d20697073756d20646f6c6f722073697420616d65742c20636f6e7365637465747572206164697069736963696e6720656c6974";
         byte[] encoderesult = encode(test);
-        assertEquals(expected, Hex.toHexString(encoderesult));
+        assertEquals(expected, ByteUtil.toHexString(encoderesult));
 
         RLPList decodeResult = (RLPList) decode2(encoderesult).get(0);
         assertEquals(element1, bytesToAscii(decodeResult.get(0).getRLPData()));
@@ -759,7 +759,7 @@ public class RLPTest {
         Object[] test = new Object[]{1, new Object[]{"cat"}, "dog", new Object[]{2}};
         String expected = "cc01c48363617483646f67c102";
         byte[] encoderesult = encode(test);
-        assertEquals(expected, Hex.toHexString(encoderesult));
+        assertEquals(expected, ByteUtil.toHexString(encoderesult));
 
         RLPList decodeResult = (RLPList) decode2(encoderesult).get(0);
         assertEquals(1, byteArrayToInt(decodeResult.get(0).getRLPData()));
@@ -770,7 +770,7 @@ public class RLPTest {
         test = new Object[]{new Object[]{"cat", "dog"}, new Object[]{1, 2}, new Object[]{}};
         expected = "cdc88363617483646f67c20102c0";
         encoderesult = encode(test);
-        assertEquals(expected, Hex.toHexString(encoderesult));
+        assertEquals(expected, ByteUtil.toHexString(encoderesult));
 
         decodeResult = (RLPList) decode2(encoderesult).get(0);
         assertEquals("cat", bytesToAscii((((RLPList) decodeResult.get(0)).get(0).getRLPData())));
@@ -786,7 +786,7 @@ public class RLPTest {
         Object[] test = new Object[]{new Object[]{new Object[]{}, new Object[]{}}, new Object[]{}};
         String expected = "c4c2c0c0c0";
         byte[] encoderesult = encode(test);
-        assertEquals(expected, Hex.toHexString(encoderesult));
+        assertEquals(expected, ByteUtil.toHexString(encoderesult));
 
         RLPList decodeResult = (RLPList) decode2(encoderesult).get(0);
         assertTrue(decodeResult.size() == 2);
@@ -803,7 +803,7 @@ public class RLPTest {
         Object[] test = new Object[]{new Object[]{}, new Object[]{new Object[]{}}, new Object[]{new Object[]{}, new Object[]{new Object[]{}}}};
         String expected = "c7c0c1c0c3c0c1c0";
         byte[] encoderesult = encode(test);
-        assertEquals(expected, Hex.toHexString(encoderesult));
+        assertEquals(expected, ByteUtil.toHexString(encoderesult));
 
         RLPList decodeResult = (RLPList) decode2(encoderesult).get(0);
         assertTrue(decodeResult.size() == 3);
@@ -819,22 +819,22 @@ public class RLPTest {
     @Test
     public void testRlpEncode() {
 
-        assertEquals(result01, Hex.toHexString(encode(test01)));
-        assertEquals(result02, Hex.toHexString(encode(test02)));
-        assertEquals(result03, Hex.toHexString(encode(test03)));
-        assertEquals(result04, Hex.toHexString(encode(test04)));
-        assertEquals(result05, Hex.toHexString(encode(test05)));
-        assertEquals(result06, Hex.toHexString(encode(test06)));
-        assertEquals(result07, Hex.toHexString(encode(test07)));
-        assertEquals(result08, Hex.toHexString(encode(test08)));
-        assertEquals(result09, Hex.toHexString(encode(test09)));
-        assertEquals(result10, Hex.toHexString(encode(test10)));
-        assertEquals(result11, Hex.toHexString(encode(test11)));
-        assertEquals(result12, Hex.toHexString(encode(test12)));
-        assertEquals(result13, Hex.toHexString(encode(test13)));
-        assertEquals(result14, Hex.toHexString(encode(test14)));
-        assertEquals(result15, Hex.toHexString(encode(test15)));
-        assertEquals(result16, Hex.toHexString(encode(test16)));
+        assertEquals(result01, ByteUtil.toHexString(encode(test01)));
+        assertEquals(result02, ByteUtil.toHexString(encode(test02)));
+        assertEquals(result03, ByteUtil.toHexString(encode(test03)));
+        assertEquals(result04, ByteUtil.toHexString(encode(test04)));
+        assertEquals(result05, ByteUtil.toHexString(encode(test05)));
+        assertEquals(result06, ByteUtil.toHexString(encode(test06)));
+        assertEquals(result07, ByteUtil.toHexString(encode(test07)));
+        assertEquals(result08, ByteUtil.toHexString(encode(test08)));
+        assertEquals(result09, ByteUtil.toHexString(encode(test09)));
+        assertEquals(result10, ByteUtil.toHexString(encode(test10)));
+        assertEquals(result11, ByteUtil.toHexString(encode(test11)));
+        assertEquals(result12, ByteUtil.toHexString(encode(test12)));
+        assertEquals(result13, ByteUtil.toHexString(encode(test13)));
+        assertEquals(result14, ByteUtil.toHexString(encode(test14)));
+        assertEquals(result15, ByteUtil.toHexString(encode(test15)));
+        assertEquals(result16, ByteUtil.toHexString(encode(test16)));
     }
 
     @Test
@@ -844,10 +844,10 @@ public class RLPTest {
         byte[] decodedData;
         RLPList decodedList;
 
-        emptyString = ByteUtil.toHexString(decode2(Hex.decode(result01)).get(0).getRLPData());
+        emptyString = ByteUtil.toHexStringOrEmpty(decode2(Hex.decode(result01)).get(0).getRLPData());
         assertEquals("", emptyString);
 
-        emptyString = ByteUtil.toHexString(decode2(Hex.decode(result02)).get(0).getRLPData());
+        emptyString = ByteUtil.toHexStringOrEmpty(decode2(Hex.decode(result02)).get(0).getRLPData());
         assertEquals(test02, emptyString);
 
         decodedData = decode2(Hex.decode(result03)).get(0).getRLPData();
@@ -918,14 +918,14 @@ public class RLPTest {
         int offset = 128;
         byte[] encodedLength = encodeLength(length, offset);
         String expected = "81";
-        assertEquals(expected, Hex.toHexString(encodedLength));
+        assertEquals(expected, ByteUtil.toHexString(encodedLength));
 
         // 56 > length < 2^64
         length = 56;
         offset = 192;
         encodedLength = encodeLength(length, offset);
         expected = "f838";
-        assertEquals(expected, Hex.toHexString(encodedLength));
+        assertEquals(expected, ByteUtil.toHexString(encodedLength));
     }
 
     @Test
@@ -953,7 +953,7 @@ public class RLPTest {
 
     // Code from: http://stackoverflow.com/a/4785776/459349
     private String bytesToAscii(byte[] b) {
-        String hex = Hex.toHexString(b);
+        String hex = ByteUtil.toHexString(b);
         StringBuilder output = new StringBuilder();
         for (int i = 0; i < hex.length(); i += 2) {
             String str = hex.substring(i, i + 2);
@@ -981,7 +981,7 @@ public class RLPTest {
         byte[] rlpCode = Hex.decode("b4600160003556601359506301000000600035040f6018590060005660805460016080530160005760003560805760203560003557");
         byte[] output = encodeList(rlpKeysList, rlpValuesList, rlpCode);
 
-        assertEquals(expectedOutput, Hex.toHexString(output));
+        assertEquals(expectedOutput, ByteUtil.toHexString(output));
     }
 
 
@@ -990,7 +990,7 @@ public class RLPTest {
 
         BigInteger integer = new BigInteger("80", 10);
         byte[] encodedData = encodeBigInteger(integer);
-        System.out.println(Hex.toHexString(encodedData));
+        System.out.println(ByteUtil.toHexString(encodedData));
     }
 
     @Test
@@ -998,15 +998,15 @@ public class RLPTest {
 
         byte[] header = encodeListHeader(10);
         String expected_1 = "ca";
-        assertEquals(expected_1, Hex.toHexString(header));
+        assertEquals(expected_1, ByteUtil.toHexString(header));
 
         header = encodeListHeader(1000);
         String expected_2 = "f903e8";
-        assertEquals(expected_2, Hex.toHexString(header));
+        assertEquals(expected_2, ByteUtil.toHexString(header));
 
         header = encodeListHeader(1000000000);
         String expected_3 = "fb3b9aca00";
-        assertEquals(expected_3, Hex.toHexString(header));
+        assertEquals(expected_3, ByteUtil.toHexString(header));
     }
 
 
@@ -1040,19 +1040,19 @@ public class RLPTest {
 
         Set<ByteArrayWrapper> data = new HashSet<>();
         byte[] setEncoded = encodeSet(data);
-        assertEquals("c0", Hex.toHexString(setEncoded));
+        assertEquals("c0", ByteUtil.toHexString(setEncoded));
     }
 
     @Test
     public void testEncodeInt_7f(){
-        String result =  Hex.toHexString(encodeInt(0x7f));
+        String result =  ByteUtil.toHexString(encodeInt(0x7f));
         String expected = "7f";
         assertEquals(expected, result);
     }
 
     @Test
     public void testEncodeInt_80(){
-        String result =  Hex.toHexString(encodeInt(0x80));
+        String result =  ByteUtil.toHexString(encodeInt(0x80));
         String expected = "8180";
         assertEquals(expected, result);
     }
@@ -1060,7 +1060,7 @@ public class RLPTest {
 
     @Test
     public void testEncode_ED(){
-        String result =  Hex.toHexString(encode(0xED));
+        String result =  ByteUtil.toHexString(encode(0xED));
         String expected = "81ed";
         assertEquals(expected, result);
     }

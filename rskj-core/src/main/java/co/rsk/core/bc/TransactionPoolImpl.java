@@ -306,7 +306,7 @@ public class TransactionPoolImpl implements TransactionPool {
 
     @Override
     public synchronized void processBest(Block newBlock) {
-        logger.trace("Processing best block {} {}", newBlock.getNumber(), newBlock.getShortHash());
+        logger.trace("Processing best block {} {}", newBlock.getNumber(), newBlock.getPrintableHash());
 
         BlockFork fork = getFork(this.bestBlock, newBlock);
 
@@ -352,7 +352,7 @@ public class TransactionPoolImpl implements TransactionPool {
     public void retractBlock(Block block) {
         List<Transaction> txs = block.getTransactionsList();
 
-        logger.trace("Retracting block {} {} with {} txs", block.getNumber(), block.getShortHash(), txs.size());
+        logger.trace("Retracting block {} {} with {} txs", block.getNumber(), block.getPrintableHash(), txs.size());
 
         this.addTransactions(txs);
     }

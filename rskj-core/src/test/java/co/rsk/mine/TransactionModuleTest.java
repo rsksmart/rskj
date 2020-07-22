@@ -44,7 +44,6 @@ import co.rsk.trie.TrieConverter;
 import co.rsk.trie.TrieStore;
 import co.rsk.validators.BlockUnclesValidationRule;
 import co.rsk.validators.ProofOfWorkRule;
-import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.Keccak256Helper;
@@ -66,6 +65,7 @@ import org.ethereum.rpc.Web3Impl;
 import org.ethereum.rpc.Web3Mocks;
 import org.ethereum.sync.SyncPool;
 import org.ethereum.util.BuildInfo;
+import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.Assert;
 import org.junit.Test;
@@ -238,7 +238,7 @@ public class TransactionModuleTest {
                 .nonce(0)
                 .build();
 
-        String rawData = Hex.toHexString(tx.getEncoded());
+        String rawData = ByteUtil.toHexString(tx.getEncoded());
 
         return web3.eth_sendRawTransaction(rawData);
     }

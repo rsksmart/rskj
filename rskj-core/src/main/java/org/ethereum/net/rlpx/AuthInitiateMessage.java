@@ -19,13 +19,13 @@
 
 package org.ethereum.net.rlpx;
 
-import org.ethereum.crypto.ECKey;
 import org.bouncycastle.math.ec.ECPoint;
-import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.signature.ECDSASignature;
+import org.ethereum.util.ByteUtil;
 
-import static org.ethereum.util.ByteUtil.merge;
 import static org.bouncycastle.util.BigIntegers.asUnsignedByteArray;
+import static org.ethereum.util.ByteUtil.merge;
 
 /**
  * Authentication initiation message, to be wrapped inside
@@ -121,10 +121,10 @@ public class AuthInitiateMessage {
                 asUnsignedByteArray(signature.getS()), new byte[]{EncryptionHandshake.recIdFromSignatureV(signature.getV())});
 
         return "AuthInitiateMessage{" +
-                "\n  sigBytes=" + Hex.toHexString(sigBytes) +
-                "\n  ephemeralPublicHash=" + Hex.toHexString(ephemeralPublicHash) +
-                "\n  publicKey=" + Hex.toHexString(publicKey.getEncoded(false)) +
-                "\n  nonce=" + Hex.toHexString(nonce) +
+                "\n  sigBytes=" + ByteUtil.toHexString(sigBytes) +
+                "\n  ephemeralPublicHash=" + ByteUtil.toHexString(ephemeralPublicHash) +
+                "\n  publicKey=" + ByteUtil.toHexString(publicKey.getEncoded(false)) +
+                "\n  nonce=" + ByteUtil.toHexString(nonce) +
                 "\n}";
     }
 }

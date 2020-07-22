@@ -26,6 +26,7 @@ import co.rsk.core.RskAddress;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.BlockFactory;
+import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.program.Program;
 import org.ethereum.vm.program.Program.OutOfGasException;
 import org.ethereum.vm.program.Program.StackTooSmallException;
@@ -79,7 +80,7 @@ public class VMCustomTest {
         vm.step(program);
 
         DataWord item1 = program.stackPop();
-        assertEquals(s_expected_1, Hex.toHexString(item1.getData()).toUpperCase());
+        assertEquals(s_expected_1, ByteUtil.toHexString(item1.getData()).toUpperCase());
     }
 
 
@@ -94,7 +95,7 @@ public class VMCustomTest {
         vm.step(program);
 
         DataWord item1 = program.stackPop();
-        assertEquals(s_expected_1, Hex.toHexString(item1.getData()).toUpperCase());
+        assertEquals(s_expected_1, ByteUtil.toHexString(item1.getData()).toUpperCase());
     }
 
     @Test // CALLDATALOAD OP
@@ -108,7 +109,7 @@ public class VMCustomTest {
         vm.step(program);
 
         DataWord item1 = program.stackPop();
-        assertEquals(s_expected_1, Hex.toHexString(item1.getData()).toUpperCase());
+        assertEquals(s_expected_1, ByteUtil.toHexString(item1.getData()).toUpperCase());
     }
 
 
@@ -123,7 +124,7 @@ public class VMCustomTest {
         vm.step(program);
 
         DataWord item1 = program.stackPop();
-        assertEquals(s_expected_1, Hex.toHexString(item1.getData()).toUpperCase());
+        assertEquals(s_expected_1, ByteUtil.toHexString(item1.getData()).toUpperCase());
     }
 
 
@@ -138,7 +139,7 @@ public class VMCustomTest {
         vm.step(program);
 
         DataWord item1 = program.stackPop();
-        assertEquals(s_expected_1, Hex.toHexString(item1.getData()).toUpperCase());
+        assertEquals(s_expected_1, ByteUtil.toHexString(item1.getData()).toUpperCase());
     }
 
     @Test // CALLDATALOAD OP
@@ -152,7 +153,7 @@ public class VMCustomTest {
         vm.step(program);
 
         DataWord item1 = program.stackPop();
-        assertEquals(s_expected_1, Hex.toHexString(item1.getData()).toUpperCase());
+        assertEquals(s_expected_1, ByteUtil.toHexString(item1.getData()).toUpperCase());
     }
 
     @Test(expected = RuntimeException.class) // CALLDATALOAD OP mal
@@ -179,7 +180,7 @@ public class VMCustomTest {
         vm.step(program);
         vm.step(program);
 
-        assertEquals(m_expected, Hex.toHexString(program.getMemory()).toUpperCase());
+        assertEquals(m_expected, ByteUtil.toHexString(program.getMemory()).toUpperCase());
     }
 
     @Test // CALLDATACOPY OP
@@ -195,7 +196,7 @@ public class VMCustomTest {
         vm.step(program);
         vm.step(program);
 
-        assertEquals(m_expected, Hex.toHexString(program.getMemory()).toUpperCase());
+        assertEquals(m_expected, ByteUtil.toHexString(program.getMemory()).toUpperCase());
     }
 
 
@@ -212,7 +213,7 @@ public class VMCustomTest {
         vm.step(program);
         vm.step(program);
 
-        assertEquals(m_expected, Hex.toHexString(program.getMemory()).toUpperCase());
+        assertEquals(m_expected, ByteUtil.toHexString(program.getMemory()).toUpperCase());
     }
 
 
@@ -230,7 +231,7 @@ public class VMCustomTest {
         vm.step(program);
         vm.step(program);
 
-        assertEquals(m_expected, Hex.toHexString(program.getMemory()).toUpperCase());
+        assertEquals(m_expected, ByteUtil.toHexString(program.getMemory()).toUpperCase());
     }
 
     @Test // CALLDATACOPY OP
@@ -247,7 +248,7 @@ public class VMCustomTest {
         vm.step(program);
         vm.step(program);
 
-        assertEquals(m_expected, Hex.toHexString(program.getMemory()).toUpperCase());
+        assertEquals(m_expected, ByteUtil.toHexString(program.getMemory()).toUpperCase());
     }
 
 
@@ -292,7 +293,7 @@ public class VMCustomTest {
         vm.step(program);
 
         DataWord item1 = program.stackPop();
-        assertEquals(s_expected_1, Hex.toHexString(item1.getData()).toUpperCase());
+        assertEquals(s_expected_1, ByteUtil.toHexString(item1.getData()).toUpperCase());
     }
 
     @Test // BALANCE OP
@@ -306,7 +307,7 @@ public class VMCustomTest {
         vm.step(program);
 
         DataWord item1 = program.stackPop();
-        assertEquals(s_expected_1, Hex.toHexString(item1.getData()).toUpperCase());
+        assertEquals(s_expected_1, ByteUtil.toHexString(item1.getData()).toUpperCase());
     }
 
     @Test // ORIGIN OP
@@ -319,7 +320,7 @@ public class VMCustomTest {
         vm.step(program);
 
         DataWord item1 = program.stackPop();
-        assertEquals(s_expected_1, Hex.toHexString(item1.getData()).toUpperCase());
+        assertEquals(s_expected_1, ByteUtil.toHexString(item1.getData()).toUpperCase());
     }
 
     @Test // CALLER OP
@@ -332,7 +333,7 @@ public class VMCustomTest {
         vm.step(program);
 
         DataWord item1 = program.stackPop();
-        assertEquals(s_expected_1, Hex.toHexString(item1.getData()).toUpperCase());
+        assertEquals(s_expected_1, ByteUtil.toHexString(item1.getData()).toUpperCase());
     }
 
     @Test // CALLVALUE OP
@@ -345,7 +346,7 @@ public class VMCustomTest {
         vm.step(program);
 
         DataWord item1 = program.stackPop();
-        assertEquals(s_expected_1, Hex.toHexString(item1.getData()).toUpperCase());
+        assertEquals(s_expected_1, ByteUtil.toHexString(item1.getData()).toUpperCase());
     }
 
     @Test // SHA3 OP
@@ -363,7 +364,7 @@ public class VMCustomTest {
         vm.step(program);
 
         DataWord item1 = program.stackPop();
-        assertEquals(s_expected_1, Hex.toHexString(item1.getData()).toUpperCase());
+        assertEquals(s_expected_1, ByteUtil.toHexString(item1.getData()).toUpperCase());
     }
 
     @Test // SHA3 OP
@@ -381,7 +382,7 @@ public class VMCustomTest {
         vm.step(program);
 
         DataWord item1 = program.stackPop();
-        assertEquals(s_expected_1, Hex.toHexString(item1.getData()).toUpperCase());
+        assertEquals(s_expected_1, ByteUtil.toHexString(item1.getData()).toUpperCase());
     }
 
     @Test(expected = StackTooSmallException.class) // SHA3 OP mal
@@ -411,7 +412,7 @@ public class VMCustomTest {
         vm.step(program);
 
         DataWord item1 = program.stackPop();
-        assertEquals(s_expected_1, Hex.toHexString(item1.getData()).toUpperCase());
+        assertEquals(s_expected_1, ByteUtil.toHexString(item1.getData()).toUpperCase());
     }
 
     @Test // COINBASE OP
@@ -424,7 +425,7 @@ public class VMCustomTest {
         vm.step(program);
 
         DataWord item1 = program.stackPop();
-        assertEquals(s_expected_1, Hex.toHexString(item1.getData()).toUpperCase());
+        assertEquals(s_expected_1, ByteUtil.toHexString(item1.getData()).toUpperCase());
     }
 
     @Test // TIMESTAMP OP
@@ -437,7 +438,7 @@ public class VMCustomTest {
         vm.step(program);
 
         DataWord item1 = program.stackPop();
-        assertEquals(s_expected_1, Hex.toHexString(item1.getData()).toUpperCase());
+        assertEquals(s_expected_1, ByteUtil.toHexString(item1.getData()).toUpperCase());
     }
 
     @Test // NUMBER OP
@@ -450,7 +451,7 @@ public class VMCustomTest {
         vm.step(program);
 
         DataWord item1 = program.stackPop();
-        assertEquals(s_expected_1, Hex.toHexString(item1.getData()).toUpperCase());
+        assertEquals(s_expected_1, ByteUtil.toHexString(item1.getData()).toUpperCase());
     }
 
     @Test // DIFFICULTY OP
@@ -463,7 +464,7 @@ public class VMCustomTest {
         vm.step(program);
 
         DataWord item1 = program.stackPop();
-        assertEquals(s_expected_1, Hex.toHexString(item1.getData()).toUpperCase());
+        assertEquals(s_expected_1, ByteUtil.toHexString(item1.getData()).toUpperCase());
     }
 
     @Test // GASPRICE OP
@@ -476,7 +477,7 @@ public class VMCustomTest {
         vm.step(program);
 
         DataWord item1 = program.stackPop();
-        assertEquals(s_expected_1, Hex.toHexString(item1.getData()).toUpperCase());
+        assertEquals(s_expected_1, ByteUtil.toHexString(item1.getData()).toUpperCase());
     }
 
     @Ignore //TODO #POC9
@@ -490,7 +491,7 @@ public class VMCustomTest {
         vm.step(program);
 
         DataWord item1 = program.stackPop();
-        assertEquals(s_expected_1, Hex.toHexString(item1.getData()).toUpperCase());
+        assertEquals(s_expected_1, ByteUtil.toHexString(item1.getData()).toUpperCase());
     }
 
     @Test // GASLIMIT OP
@@ -503,7 +504,7 @@ public class VMCustomTest {
         vm.step(program);
 
         DataWord item1 = program.stackPop();
-        assertEquals(s_expected_1, Hex.toHexString(item1.getData()).toUpperCase());
+        assertEquals(s_expected_1, ByteUtil.toHexString(item1.getData()).toUpperCase());
     }
 
     @Test(expected = Program.IllegalOperationException.class) // INVALID OP
@@ -519,7 +520,7 @@ public class VMCustomTest {
         } finally {
             assertTrue(program.isStopped());
             DataWord item1 = program.stackPop();
-            assertEquals(s_expected_1, Hex.toHexString(item1.getData()).toUpperCase());
+            assertEquals(s_expected_1, ByteUtil.toHexString(item1.getData()).toUpperCase());
         }
     }
 

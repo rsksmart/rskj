@@ -32,7 +32,7 @@ import java.util.Collections;
 import java.util.List;
 
 import static java.lang.String.format;
-import static org.ethereum.util.ByteUtil.toHexString;
+import static org.ethereum.util.ByteUtil.toHexStringOrEmpty;
 
 public class SummarizedProgramTrace implements ProgramTrace {
     private final ProgramInvoke programInvoke;
@@ -96,7 +96,7 @@ public class SummarizedProgramTrace implements ProgramTrace {
 
     @Override
     public ProgramTrace result(byte[] result) {
-        setResult(toHexString(result));
+        setResult(toHexStringOrEmpty(result));
         return this;
     }
 

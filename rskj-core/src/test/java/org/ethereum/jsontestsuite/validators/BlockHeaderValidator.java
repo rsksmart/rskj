@@ -24,7 +24,7 @@ import org.ethereum.core.BlockHeader;
 import java.math.BigInteger;
 import java.util.ArrayList;
 
-import static org.ethereum.util.ByteUtil.toHexString;
+import static org.ethereum.util.ByteUtil.toHexStringOrEmpty;
 
 public class BlockHeaderValidator {
 
@@ -37,20 +37,20 @@ public class BlockHeaderValidator {
 
             String output =
                     String.format("wrong block.parentHash: \n expected: %s \n got: %s",
-                            toHexString(valid.getParentHash().getBytes()),
-                            toHexString(orig.getParentHash().getBytes())
+                            toHexStringOrEmpty(valid.getParentHash().getBytes()),
+                            toHexStringOrEmpty(orig.getParentHash().getBytes())
                     );
 
             outputSummary.add(output);
         }
         if (vStats!=null) vStats.blockChecks++;
-        if (!toHexString(orig.getUnclesHash())
-                .equals(toHexString(valid.getUnclesHash()))) {
+        if (!toHexStringOrEmpty(orig.getUnclesHash())
+                .equals(toHexStringOrEmpty(valid.getUnclesHash()))) {
 
             String output =
                     String.format("wrong block.unclesHash: \n expected: %s \n got: %s",
-                            toHexString(valid.getUnclesHash()),
-                            toHexString(orig.getUnclesHash())
+                            toHexStringOrEmpty(valid.getUnclesHash()),
+                            toHexStringOrEmpty(orig.getUnclesHash())
                     );
 
             outputSummary.add(output);
@@ -67,49 +67,49 @@ public class BlockHeaderValidator {
             outputSummary.add(output);
         }
         if (vStats!=null) vStats.blockChecks++;
-        if (!toHexString(orig.getStateRoot())
-                .equals(toHexString(valid.getStateRoot()))) {
+        if (!toHexStringOrEmpty(orig.getStateRoot())
+                .equals(toHexStringOrEmpty(valid.getStateRoot()))) {
 
             String output =
                     String.format("wrong block.stateRoot: \n expected: %s \n got: %s",
-                            toHexString(valid.getStateRoot()),
-                            toHexString(orig.getStateRoot())
+                            toHexStringOrEmpty(valid.getStateRoot()),
+                            toHexStringOrEmpty(orig.getStateRoot())
                     );
 
             outputSummary.add(output);
         }
         if (vStats!=null) vStats.blockChecks++;
-        if (!toHexString(orig.getTxTrieRoot())
-                .equals(toHexString(valid.getTxTrieRoot()))) {
+        if (!toHexStringOrEmpty(orig.getTxTrieRoot())
+                .equals(toHexStringOrEmpty(valid.getTxTrieRoot()))) {
 
             String output =
                     String.format("wrong block.txTrieRoot: \n expected: %s \n got: %s",
-                            toHexString(valid.getTxTrieRoot()),
-                            toHexString(orig.getTxTrieRoot())
+                            toHexStringOrEmpty(valid.getTxTrieRoot()),
+                            toHexStringOrEmpty(orig.getTxTrieRoot())
                     );
 
             outputSummary.add(output);
         }
         if (vStats!=null) vStats.blockChecks++;
-        if (!toHexString(orig.getReceiptsRoot())
-                .equals(toHexString(valid.getReceiptsRoot()))) {
+        if (!toHexStringOrEmpty(orig.getReceiptsRoot())
+                .equals(toHexStringOrEmpty(valid.getReceiptsRoot()))) {
 
             String output =
                     String.format("wrong block.receiptsRoot: \n expected: %s \n got: %s",
-                            toHexString(valid.getReceiptsRoot()),
-                            toHexString(orig.getReceiptsRoot())
+                            toHexStringOrEmpty(valid.getReceiptsRoot()),
+                            toHexStringOrEmpty(orig.getReceiptsRoot())
                     );
 
             outputSummary.add(output);
         }
         if (vStats!=null) vStats.blockChecks++;
-        if (!toHexString(orig.getLogsBloom())
-                .equals(toHexString(valid.getLogsBloom()))) {
+        if (!toHexStringOrEmpty(orig.getLogsBloom())
+                .equals(toHexStringOrEmpty(valid.getLogsBloom()))) {
 
             String output =
                     String.format("wrong block.logsBloom: \n expected: %s \n got: %s",
-                            toHexString(valid.getLogsBloom()),
-                            toHexString(orig.getLogsBloom())
+                            toHexStringOrEmpty(valid.getLogsBloom()),
+                            toHexStringOrEmpty(orig.getLogsBloom())
                     );
 
             outputSummary.add(output);
@@ -170,13 +170,13 @@ public class BlockHeaderValidator {
             outputSummary.add(output);
         }
         if (vStats!=null) vStats.blockChecks++;
-        if (!toHexString(orig.getExtraData())
-                .equals(toHexString(valid.getExtraData()))) {
+        if (!toHexStringOrEmpty(orig.getExtraData())
+                .equals(toHexStringOrEmpty(valid.getExtraData()))) {
 
             String output =
                     String.format("wrong block.extraData: \n expected: %s \n got: %s",
-                            toHexString(valid.getExtraData()),
-                            toHexString(orig.getExtraData())
+                            toHexStringOrEmpty(valid.getExtraData()),
+                            toHexStringOrEmpty(orig.getExtraData())
                     );
 
             outputSummary.add(output);

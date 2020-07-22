@@ -24,13 +24,13 @@ import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.db.StateRootHandler;
 import co.rsk.validators.BlockValidator;
-import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.Block;
 import org.ethereum.core.Genesis;
 import org.ethereum.core.TransactionPool;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.listener.EthereumListener;
+import org.ethereum.util.ByteUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -89,7 +89,7 @@ public class BlockChainLoader {
             logger.info("*** Loaded up to block [{}] totalDifficulty [{}] with stateRoot [{}]",
                     bestBlock.getNumber(),
                     totalDifficulty,
-                    Hex.toHexString(bestBlock.getStateRoot()));
+                    ByteUtil.toHexString(bestBlock.getStateRoot()));
         }
 
         BlockChainImpl blockchain = new BlockChainImpl(

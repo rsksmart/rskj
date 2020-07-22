@@ -24,9 +24,7 @@ import co.rsk.test.dsl.DslParser;
 import co.rsk.test.dsl.DslProcessorException;
 import co.rsk.test.dsl.WorldDslProcessor;
 import co.rsk.trie.Trie;
-import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
-import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.core.Blockchain;
@@ -35,6 +33,7 @@ import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.db.ReceiptStoreImpl;
+import org.ethereum.util.ByteUtil;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -72,7 +71,7 @@ public class CliToolsTest {
             Block block = blockchain.getBlockByNumber(n);
             BlockDifficulty totalDifficulty = blockStore.getTotalDifficultyForHash(block.getHash().getBytes());
 
-            String line = block.getNumber() + "," + block.getHash().toHexString() + "," + Hex.toHexString(totalDifficulty.getBytes()) + "," + Hex.toHexString(block.getEncoded());
+            String line = block.getNumber() + "," + block.getHash().toHexString() + "," + ByteUtil.toHexString(totalDifficulty.getBytes()) + "," + ByteUtil.toHexString(block.getEncoded());
 
             Assert.assertTrue(data.indexOf(line) >= 0);
         }
@@ -106,7 +105,7 @@ public class CliToolsTest {
 
         byte[] encoded = trie.toMessage();
 
-        String line = Hex.toHexString(encoded);
+        String line = ByteUtil.toHexString(encoded);
 
         Assert.assertTrue(data.indexOf(line) >= 0);
     }
@@ -131,7 +130,7 @@ public class CliToolsTest {
 
         Block block = world.getBlockByName("b02");
 
-        String blockLine = "Block hash: " + Hex.toHexString(block.getHash().getBytes());
+        String blockLine = "Block hash: " + ByteUtil.toHexString(block.getHash().getBytes());
 
         Assert.assertTrue(data.indexOf(blockLine) >= 0);
 
@@ -171,14 +170,14 @@ public class CliToolsTest {
 
         StringBuilder stringBuilder = new StringBuilder();
         stringBuilder.append("1,");
-        stringBuilder.append(Hex.toHexString(block1.getHash().getBytes()));
+        stringBuilder.append(ByteUtil.toHexString(block1.getHash().getBytes()));
         stringBuilder.append(",02,");
-        stringBuilder.append(Hex.toHexString(block1.getEncoded()));
+        stringBuilder.append(ByteUtil.toHexString(block1.getEncoded()));
         stringBuilder.append("\n");
         stringBuilder.append("1,");
-        stringBuilder.append(Hex.toHexString(block2.getHash().getBytes()));
+        stringBuilder.append(ByteUtil.toHexString(block2.getHash().getBytes()));
         stringBuilder.append(",03,");
-        stringBuilder.append(Hex.toHexString(block2.getEncoded()));
+        stringBuilder.append(ByteUtil.toHexString(block2.getEncoded()));
         stringBuilder.append("\n");
 
         BufferedReader reader = new BufferedReader(new StringReader(stringBuilder.toString()));
@@ -213,14 +212,14 @@ public class CliToolsTest {
 
         StringBuilder stringBuilder = new StringBuilder();
         stringBuilder.append("1,");
-        stringBuilder.append(Hex.toHexString(block1.getHash().getBytes()));
+        stringBuilder.append(ByteUtil.toHexString(block1.getHash().getBytes()));
         stringBuilder.append(",02,");
-        stringBuilder.append(Hex.toHexString(block1.getEncoded()));
+        stringBuilder.append(ByteUtil.toHexString(block1.getEncoded()));
         stringBuilder.append("\n");
         stringBuilder.append("1,");
-        stringBuilder.append(Hex.toHexString(block2.getHash().getBytes()));
+        stringBuilder.append(ByteUtil.toHexString(block2.getHash().getBytes()));
         stringBuilder.append(",03,");
-        stringBuilder.append(Hex.toHexString(block2.getEncoded()));
+        stringBuilder.append(ByteUtil.toHexString(block2.getEncoded()));
         stringBuilder.append("\n");
 
         BufferedReader reader = new BufferedReader(new StringReader(stringBuilder.toString()));
@@ -243,7 +242,7 @@ public class CliToolsTest {
         random.nextBytes(value);
 
         StringBuilder stringBuilder = new StringBuilder();
-        stringBuilder.append(Hex.toHexString(value));
+        stringBuilder.append(ByteUtil.toHexString(value));
         stringBuilder.append("\n");
 
         BufferedReader reader = new BufferedReader(new StringReader(stringBuilder.toString()));
