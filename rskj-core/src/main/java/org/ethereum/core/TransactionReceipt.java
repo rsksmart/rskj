@@ -176,30 +176,7 @@ public class TransactionReceipt {
         if (rlpEncoded != null) {
             return rlpEncoded;
         }
-
-        byte[] postTxStateRLP = RLP.encodeElement(this.postTxState);
-        byte[] cumulativeGasRLP = RLP.encodeElement(this.cumulativeGas);
-        byte[] gasUsedRLP = RLP.encodeElement(this.execGasUsed);
-        byte[] bloomRLP = RLP.encodeElement(this.bloomFilter.getData());
-        byte[] statusRLP = RLP.encodeElement(this.status);
-
-        final byte[] logInfoListRLP;
-        if (logInfoList != null) {
-            byte[][] logInfoListE = new byte[logInfoList.size()][];
-
-            int i = 0;
-            for (LogInfo logInfo : logInfoList) {
-                logInfoListE[i] = logInfo.getEncoded();
-                ++i;
-            }
-            logInfoListRLP = RLP.encodeList(logInfoListE);
-        } else {
-            logInfoListRLP = RLP.encodeList();
-        }
-
-        rlpEncoded = RLP.encodeList(postTxStateRLP, cumulativeGasRLP, bloomRLP, logInfoListRLP, gasUsedRLP, statusRLP);
-
-        return rlpEncoded;
+        return getEncoded(true); //includes rent in gasUsed, can be set to false for tests (old assertions)
     }
 
     // #mish for storage rent .. this version has an boolean argument for storage rent.

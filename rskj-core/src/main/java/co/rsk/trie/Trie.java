@@ -541,7 +541,7 @@ public class Trie {
      */
     public byte[] toMessage() {
         if (encoded == null) {
-            internalToMessage(false); //#mish this version default is to not include rent field in encoding
+            internalToMessage(true); //#mish this version default is to include rent field in encoding
         }
 
         return cloneArray(encoded);

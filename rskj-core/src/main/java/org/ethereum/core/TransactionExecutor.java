@@ -545,7 +545,7 @@ public class TransactionExecutor {
             }
 
             result = program.getResult(); //and then copy the information over
-                                 
+
             mEndGas = GasCost.subtract(GasCost.toGas(tx.getGasLimit()), program.getResult().getGasUsed());
 
             if (tx.isContractCreation() && !result.isRevert()) {
@@ -573,13 +573,8 @@ public class TransactionExecutor {
         }
         cacheTrack.commit();
         // add newly created contract nodes to createdNode Map for rent computation. After the cached repository is committed.
-        if (tx.isContractCreation() && !result.isRevert()) {
-                if (!localCall) {
-                    createdNodeAdder(tx.getContractAddress(), track, result);
-                }
-                // again this.reseult has diverged from program.getResult. Merge them
-                program.getResult().merge(this.result); // writing result as this.result for clarity
-                result = program.getResult(); //and then copy the information over   
+        if (tx.isContractCreation() && !result.isRevert() && !localCall) {
+                createdNodeAdder(tx.getContractAddress(), track, result);
             }
         profiler.stop(metric);
     }
@@ -597,6 +592,7 @@ public class TransactionExecutor {
                             returnDataGasValue,
                             program));
             //#mish programresult may have rent information, even though we'll revert TX
+            // that'll be taken care of by clearfieldsonexception
             result = program.getResult();
             result.setHReturn(EMPTY_BYTE_ARRAY);
         } else if (createdContractSize > Constants.getMaxContractSize()) {
@@ -796,10 +792,10 @@ public class TransactionExecutor {
         return result;
     }
 
-    // #mish: This is used only twice and that too within getReceipt(). ProgramResult.getGasUsed() is used more generally.
+    // #mish: execution has only. ProgramResult.getGasUsed() is used more than this (this one used only in receipt?).
     public long getGasUsed() {
         if (activations.isActive(ConsensusRule.RSKIP136)) {
-            return GasCost.subtract(GasCost.toGas(tx.getGasLimit()), mEndGas);
+            return GasCost.subtract(GasCost.toGas(tx.getGasLimit()), mEndGas); //recall getGasLimit() is exec only!
         }
         return toBI(tx.getGasLimit()).subtract(toBI(mEndGas)).longValue();
     }

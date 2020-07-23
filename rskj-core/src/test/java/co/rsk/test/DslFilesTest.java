@@ -226,8 +226,6 @@ public class DslFilesTest {
         // Counter constructor
         // Counter getValue
         // Creator constructor
-        System.out.println("\ninfo list size " + txinfo.getReceipt().getLogInfoList().size());
-        //this fails.. TX executes twice? doubles the number of logs? #mish fix me
         Assert.assertEquals(3, txinfo.getReceipt().getLogInfoList().size());
 
         // only one topic in each event
