@@ -62,7 +62,7 @@ public class GenesisHashesTest {
         RskContext rskContext = new RskTestContext(new String[]{ "--testnet" });
         rskContext.getBlockchain(); // this triggers changes in the Genesis through the BlockChainLoader
         Genesis genesis = rskContext.getGenesis();
-        //System.out.println(genesis);
+        System.out.println(genesis);
         assertThat(genesis.getHash(), is(new Keccak256("cabb7fbe88cd6d922042a32ffc08ce8b1fbb37d650b9d4e7dbfe2a7469adfa42"))); // #mish failing test
     }
 
@@ -71,7 +71,10 @@ public class GenesisHashesTest {
       parentHash=0000000000000000000000000000000000000000000000000000000000000000
       unclesHash=1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347
       coinbase=3333333333333333333333333333333333333333
-      stateRoot=a7d7dbe50fadd39d816c1f928a88ea5aa58bd68a75705d07fc0e12e6881e7a31
+      stateRoot=a7d7dbe50fadd39d816c1f928a88ea5aa58bd68a75705d07fc0e12e6881e7a31 // ERROR
+      // this should be
+                45bce5168430c42b3d568331753f900a32457b4f3748697cbd8375ff4da72641
+
       txTrieHash=56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421
       receiptsTrieHash=56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421
       difficulty=1048576

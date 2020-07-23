@@ -101,16 +101,21 @@ public class GasCost {
 
     public static final long MAX_GAS = Long.MAX_VALUE;
 
-    /** #mish Factor to divide TxGasLimit (single field) into execution gas and storage rent gas limits 
-      * (see getGasLimit() method in org.eth.core.Transaction class)
-      * currently set at 2 (50:50). The result of this division is assign to a TX's execution gas budget.
-      * Residual amount (integer division) is set as execution gasLimit i.e. the conventional gasLimit in EVM
-      * Thus, setting this value to 1 will allocate entire gasLimit to execution gas and nothing to rent gas.
-    */ 
+    // #mish Factor to allocate tx.gaslimit (single field) to execution gasLimit. Rest goes to rentGasLimit
+    // set to 1 to allocate entire tx.gaslimit to execution gas limit (i.e. 0 for rentgaslimit)
     public static final long TX_GASBUDGET_DIVISOR = 2L;
-    public static final long STORAGE_RENT_DIVISOR = (1<<21); // RSKIP113: storage rent is 1/(2^21) gas units per byte per second
-    // 6 months advance rent payment for new trie nodes. About 1186 gas for 32 bytes (with 128 bytes overhead) 
-    public static final long SIX_MONTHS = 6 * 30 * 24 *3600L;
+    
+    // Activator to make storage rent free for testing, MUST USE `0` value with TX_GASBUDGET_DIVISOR = 1
+    // to set rentgaslimit to 0, to avoid 25% rentgaslimit charge for TX exception or revert
+    // Note: making rent free does NOT stop rent-related computations .. this is not a kill switch
+    public static final long STORAGE_RENT_ACTIVATOR = 1L; //binary 0/1 variable stored as long
+    
+    // RSKIP113: the actual price of storage: rent is 1/(2^21) gas units per byte per second
+    public static final long STORAGE_RENT_DIVISOR = (1<<21); 
+    
+    // helper for 6 months advance rent payment for new trie nodes. 
+    public static final long SIX_MONTHS = 6 * 30 * 24 *3600L; // in seconds, using 30-day months
+    
     /**
      * An exception which is thrown be methods in GasCost when
      * an operation overflows, has invalid inputs or wants to return
@@ -253,49 +258,31 @@ public class GasCost {
 
     /**
      * calculate storage rent (RSKIP113). Rent is computed in units of has per byte stored per second
-     * @param valueLength : actual length of data stored in a trie node representing bytes stored (an overhead of 128 bytes is added)
+     * @param valueLength : actual length of data stored in a trie node representing bytes stored 
+                (an overhead of 128 bytes is added)
      * @param timeDelta : time period for computing storage rent in seconds (can be negative, future timestamp i.e. prepaid)
-     * @return valueLength*timeDelta/STORAGE_RENT_DIVISOR
+     * @return valueLength*timeDelta*STORAGE_RENT_ACTIVATOR/STORAGE_RENT_DIVISOR
      */
     public static long calculateStorageRent(Uint24 valueLength, long timeDelta) {
+        if (timeDelta < 0) {
+            throw new InvalidGasException(String.format("%d", timeDelta));
+        }
         long valLen = new Long(valueLength.intValue()); // convert to long for mult overflow check
         valLen += 128L ; // add storage overhead of 128 bytes (RSKIP113)
         long mult = valLen * timeDelta;
         if (multiplicationOverflowed(valLen, timeDelta, mult)) {
-            return Long.MAX_VALUE;
+            return MAX_GAS; //Long.MAX_VALUE
         }
-        long result = mult/STORAGE_RENT_DIVISOR;
+        
+        long result = mult*STORAGE_RENT_ACTIVATOR/STORAGE_RENT_DIVISOR;
+        
+        if (result < 0) { //rule out negative, e.g. error timedelta is negative
+            return MAX_GAS;
+        }
+
         return result;
     }
     
-    /** If rent is prepaid in advance and value is changed, we need to recompute the residual time for which rent is considered paid.
-     * @param valueLength : actual length of data stored in a trie node representing bytes stored (an overhead of 128 bytes is added)
-     * @param rentBalance : prepaid rent balance (when lastRentPaidTime > time.now())
-     * @return rentBalance*STORAGE_RENT_DIVISOR/valueLength 
-     */
-    public static long calculateStoragePeriod(Uint24 valueLength, long rentBalance) {
-        long valLen = new Long(valueLength.intValue()); // convert to long for mult overflow check
-        valLen += 128L ; // add storage overhead of 128 bytes (RSKIP113)
-        
-        long mult = rentBalance * STORAGE_RENT_DIVISOR;;
-        if (multiplicationOverflowed(rentBalance, STORAGE_RENT_DIVISOR, mult)) {
-            return Long.MAX_VALUE;
-        }
-        long result = mult/valLen;
-        return result;
-    }
-
-    /** If rent is prepaid, we may restrict automatic resetting of rent paid time (arising from value length changes) to no more than 6 months.
-    // in such cases, we may need to refund any access storage rent (which may be subject to further restrictions on refunds more generally). 
-     * @param valueLength : actual length of data stored in a trie node representing bytes stored (an overhead of 128 bytes is added)
-     * @param rentBalance : prepaid rent balance (when lastRentPaidTime > time.now())
-     * @return excessrent = rentBalance -  storage rent for 6 months for current valueLength 
-     */
-    public static long excessRentSixMonths(Uint24 valueLength, long rentBalance) {
-        return rentBalance - calculateStorageRent(valueLength, SIX_MONTHS);
-    }
-
-
 
     /**
      * Returns whether r is overflowed in `x * y = r`

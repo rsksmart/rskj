@@ -152,20 +152,10 @@ public class TrieRentTest {
         trie = trie.putWithRent("foo".getBytes(), "must pay rent or hibernate dodo!".getBytes(), 4000L);
         System.out.println("Rent due for time in seconds (negative for advance) " + trie.getRentPaidTimeDelta());
         System.out.println("Value length (in bytes) " + trie.getValueLength());
-        //System.out.println("Rent Due (in gas)  " + GasCost.calculateStorageRent(trie.getValueLength(),trie.getRentPaidTimeDelta()));
-
         //long sixMonths = 6 * 30 * 24 *3600L;
         // rent due for 6 months = (32 bytes + 128 bytes overhead)  * 6*30*24*3600 seconds / (2^21) 
-        System.out.println(GasCost.calculateStorageRent(trie.getValueLength(),-200000L)); // something large
+        //System.out.println(GasCost.calculateStorageRent(trie.getValueLength(),-200000L)); // error negative timedelta
         Assert.assertEquals(1186L, GasCost.calculateStorageRent(trie.getValueLength(), GasCost.SIX_MONTHS));
-        System.out.println(GasCost.calculateStoragePeriod(trie.getValueLength(),1186L));
-        // Compare with six months. May need to limit advance rent payments to 6 months. 
-        System.out.println( GasCost.SIX_MONTHS > GasCost.calculateStoragePeriod(trie.getValueLength(),1186L));
-        // excess rent
-        System.out.println(GasCost.excessRentSixMonths(trie.getValueLength(),4000L));
-        
-
-
     }
 
 

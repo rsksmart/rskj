@@ -225,6 +225,7 @@ public class GenesisLoaderImpl implements GenesisLoader {
         genesis.setStateRoot(stateRootHandler.convert(genesis.getHeader(), genesisTrie).getBytes());
         genesis.flushRLP();
         stateRootHandler.register(genesis.getHeader(), genesisTrie);
+        //System.out.println("\n\ngenesisloaderimpl: person man woman camera tv\n");
     }
 
     /**

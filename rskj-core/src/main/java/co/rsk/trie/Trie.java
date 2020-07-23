@@ -110,7 +110,7 @@ public class Trie {
     private final TrieKeySlice sharedPath;
 
     // #mish.  (RSKIP113) 
-    private long lastRentPaidTime; // some parts of the cocde use strings for timestmaps
+    private long lastRentPaidTime; // some parts of the code use strings for timestamps, mostly long
 
 
     // default constructor, no secure
@@ -268,7 +268,7 @@ public class Trie {
         return new Trie(store, sharedPath, value, left, right, lvalue, valueHash);
     }
 
-    // #mish modify with an additional boolean argument to indicate whether to include rent
+    // #mish modify with an additional boolean argument to indicate whether rent timestamp is included
     private static Trie fromMessageRskip107(ByteBuffer message, TrieStore store, boolean incRent) {
         byte flags = message.get();
         // if we reached here, we don't need to check the version flag
