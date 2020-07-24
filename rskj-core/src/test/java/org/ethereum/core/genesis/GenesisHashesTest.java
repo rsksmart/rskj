@@ -36,7 +36,8 @@ public class GenesisHashesTest {
         //System.out.println(genesis);
         assertThat(genesis.getHash(), is(new Keccak256("f88529d4ab262c0f4d042e9d8d3f2472848eaafe1a9b7213f57617eb40a9f9e0")));
     }
-    /**
+    /**this matches up with resources/genesis/rsk-mainnet.json
+    
     BlockData [ hash=f88529d4ab262c0f4d042e9d8d3f2472848eaafe1a9b7213f57617eb40a9f9e0
       parentHash=0000000000000000000000000000000000000000000000000000000000000000
       unclesHash=1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347
@@ -66,7 +67,8 @@ public class GenesisHashesTest {
         assertThat(genesis.getHash(), is(new Keccak256("cabb7fbe88cd6d922042a32ffc08ce8b1fbb37d650b9d4e7dbfe2a7469adfa42"))); // #mish failing test
     }
 
-    /**
+    /** matches with resources/genesis/orchid-testnet.json
+    
     BlockData [ hash=644fbef4b7b65bbc771630c5f348a268a5444aca34c57ed5cc64bbf54e365168
       parentHash=0000000000000000000000000000000000000000000000000000000000000000
       unclesHash=1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347

@@ -132,11 +132,12 @@ public class EthModule
         }
     }
 
+    // #mish modified to include rentgas in the estimate
     public String estimateGas(Web3.CallArguments args) {
         String s = null;
         try {
             ProgramResult res = callConstant(args, blockchain.getBestBlock());
-            return s = TypeConverter.toQuantityJsonHex(res.getGasUsed());
+            return s = TypeConverter.toQuantityJsonHex(res.getGasUsed() + res.getRentGasUsed());
         } finally {
             LOGGER.debug("eth_estimateGas(): {}", s);
         }

@@ -157,6 +157,37 @@ public class BlockExecRentTest {
         System.out.println("Sender LRPT " + finalRepository.getAccountNodeLRPTime(account));
 
     }
+
+    @Test
+    public void executeBlockWithOneDataTransaction() {
+        Block block = getBlockWithOneDataTransaction(); // this changes the best block
+        Block parent = blockchain.getBestBlock();
+
+        Transaction tx = block.getTransactionsList().get(0);
+        RskAddress account = tx.getSender();
+        
+        System.out.println("\nSender Bal " + repository.getBalance(account));
+        
+        BlockResult result = executor.execute(block, parent.getHeader(), false);
+
+        Assert.assertNotNull(result);
+        Assert.assertNotNull(result.getTransactionReceipts()); 
+        Assert.assertFalse(result.getTransactionReceipts().isEmpty());
+        Assert.assertEquals(1, result.getTransactionReceipts().size());
+
+        TransactionReceipt receipt = result.getTransactionReceipts().get(0);
+        Assert.assertEquals(tx, receipt.getTransaction());
+        
+        //AccountState accountState = repository.getAccountState(account);
+            
+        Repository finalRepository = new MutableRepository(trieStore,
+                trieStore.retrieve(result.getFinalState().getHash().getBytes()).get());
+
+        AccountState accountState = finalRepository.getAccountState(account);
+        System.out.println("Sender Bal " + accountState.getBalance());
+        System.out.println("Sender LRPT " + finalRepository.getAccountNodeLRPTime(account));
+
+    }
         
     @Test
     public void executeBlockWithOneCreateTransaction() {
@@ -240,6 +271,28 @@ public class BlockExecRentTest {
                     //many signatures, this one is createChildBlock(parentBlock,TxList, UncleList, difficulty, mingasprice)
         return new BlockGenerator().createChildBlock(bestBlock, txs, uncles, 1, null);
     }
+
+    private Block getBlockWithOneDataTransaction() {
+        // first we modify the best block to have two accounts with balance
+        Repository track = repository.startTracking();
+
+        Account account = createAccount("acctest1", track, Coin.valueOf(54010));
+        Account account2 = createAccount("acctest2", track, Coin.valueOf(10L));
+        String txData = "d46e8dd67c5d32be8d46e8dd67c5d32be8058bb8eb970870f072445675058bb8eb970870f072445675";         
+        track.commit();
+
+        Block bestBlock = blockchain.getBestBlock();
+        bestBlock.setStateRoot(repository.getRoot());
+
+        // then we create the new block to connect
+        List<Transaction> txs = Collections.singletonList(
+                createTxWithData(account, account2, BigInteger.TEN, repository.getNonce(account.getAddress()), txData)
+        );
+
+        List<BlockHeader> uncles = new ArrayList<>();
+                    //many signatures, this one is createChildBlock(parentBlock,TxList, UncleList, difficulty, mingasprice)
+        return new BlockGenerator().createChildBlock(bestBlock, txs, uncles, 1, null);
+    }
     
 
     private Block getBlockWithOneCreateTransaction() {
@@ -285,8 +338,9 @@ public class BlockExecRentTest {
     private static Transaction createTxWithData(Account sender, Account receiver, BigInteger value, BigInteger nonce, String data) {
         String toAddress = Hex.toHexString(receiver.getAddress().getBytes());
         byte[] privateKeyBytes = sender.getEcKey().getPrivKeyBytes();
-    
-        Transaction tx = new Transaction(toAddress, value, nonce, BigInteger.ONE, BigInteger.valueOf(44000), data, config.getNetworkConstants().getChainId());
+        //e.g. data: "0xd46e8dd67c5d32be8d46e8dd67c5d32be8058bb8eb970870f072445675058bb8eb970870f072445675"
+        // this example from web search on using eth_estimategas
+        Transaction tx = new Transaction(toAddress, value, nonce, BigInteger.ONE, BigInteger.valueOf(54000), data, config.getNetworkConstants().getChainId());
         tx.sign(privateKeyBytes);
         return tx;
     }

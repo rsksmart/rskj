@@ -321,16 +321,17 @@ public class TransactionExecutor {
  
     private void execute() {
         logger.trace("Execute transaction {} {}", toBI(tx.getNonce()), tx.getHash());
+        // set reference timestamp for rent computations
+        //refTimeStamp = this.executionBlock.getTimestamp();  // Don't use this, it returns 1 in tests
+        refTimeStamp = Instant.now().getEpochSecond();
+                        
+        // #mish add sender to Map of accessed nodes (for storage rent tracking)
+        // but don't add receiver address yet as it may be a pre-compiled contract
+        // Note: "result" here is still a new instance of program result
+        accessedNodeAdder(tx.getSender(),track, result); //read only.. and confirmed state data.. so not cacheTrack
 
         if (!localCall) {
-            // set reference timestamp for rent computations
-            //refTimeStamp = this.executionBlock.getTimestamp();  // Don't use this, it returns 1 in tests
-            refTimeStamp = Instant.now().getEpochSecond();
-                        
-            // #mish add sender to Map of accessed nodes (for storage rent tracking)
-            // but don't add receiver address yet as it may be a pre-compiled contract
-            // Note: "result" here is still a new instance of program result
-            accessedNodeAdder(tx.getSender(),track, result);    
+                
             track.increaseNonce(tx.getSender());
     
             long txGasLimit = GasCost.toGas(tx.getGasLimit());
@@ -447,16 +448,14 @@ public class TransactionExecutor {
             // #mish no storage rent implications here.. moving on.
             profiler.stop(metric);
         } else {    // #mish if not pre-compiled contract
-            // add the node to accessed nodes Map for rent tracking
-            // "result" is still the init `new` instance with tx.sender in accessednodes if rent was due. 
-            if (!localCall) {
-                accessedNodeAdder(tx.getReceiveAddress(), track, result);
-                //System.out.println("\nAcNodeSize call " + result.getAccessedNodes().size());
-            }
+            // add the receiver's nodes to accessed nodes Map for rent tracking            
+            accessedNodeAdder(tx.getReceiveAddress(), track, result);
+            //System.out.println("\nAcNodeSize call " + result.getAccessedNodes().size());
+            
             byte[] code = track.getCode(targetAddress);
             // Code can be null 
             // #mish Aside: even for empty code, storage rent will be > 0, because of overhead (RSKIP 113) (if account is contract)
-            // could alos be just a transfer/send 
+            // could also be just a transfer/send 
             if (isEmpty(code)) {
                 mEndGas = GasCost.subtract(GasCost.toGas(tx.getGasLimit()), basicTxCost);
                 result.spendGas(basicTxCost);
@@ -573,7 +572,7 @@ public class TransactionExecutor {
         }
         cacheTrack.commit();
         // add newly created contract nodes to createdNode Map for rent computation. After the cached repository is committed.
-        if (tx.isContractCreation() && !result.isRevert() && !localCall) {
+        if (tx.isContractCreation() && !result.isRevert()) {
                 createdNodeAdder(tx.getContractAddress(), track, result);
             }
         profiler.stop(metric);
@@ -629,10 +628,12 @@ public class TransactionExecutor {
 
 
     private void finalization() {
-        //System.out.println("start finalization() in Tx exec");    
+        // Collect rent gas computed here (but not internal TX) before finalization
+        result.spendRentGas(estRentGas);
+
         // RSK if local call gas balances must not be changed
         if (localCall) {
-            System.out.println("\n\nLocal call, finalization skipped\n");
+            //System.out.println("\n\nLocal call, finalization skipped\n");
             return;
         }
 
@@ -642,9 +643,6 @@ public class TransactionExecutor {
 
         //Transaction sender is stored in cache
         signatureCache.storeSender(tx);
-        
-        // Collect rent gas computed here (but not internal TX) before finalization
-        result.spendRentGas(estRentGas);
         
         long txRentGasLimit = GasCost.toGas(tx.getRentGasLimit());
 
@@ -689,7 +687,7 @@ public class TransactionExecutor {
 
         TransactionExecutionSummary summary = summaryBuilder.build();
 
-        // Refund for gas leftover
+        // Refund for gas leftover (see above builder, leftover includes rentGas as well)
         track.addBalance(tx.getSender(), summary.getLeftover().add(summary.getRefund()));
         logger.trace("Pay total refund to sender: [{}], refund val: [{}]", tx.getSender(), summary.getRefund());
 
@@ -802,7 +800,7 @@ public class TransactionExecutor {
 
     
     public long getRentGasUsed() {
-        return result.getRentGasUsed(); //#mish the log here is different from 
+        return result.getRentGasUsed(); //#mish the form is different from execgas, which is based on mEndGas. 
     }
 
     public Coin getPaidFees() { return paidFees; }

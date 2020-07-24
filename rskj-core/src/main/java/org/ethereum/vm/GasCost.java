@@ -101,13 +101,17 @@ public class GasCost {
 
     public static final long MAX_GAS = Long.MAX_VALUE;
 
-    // #mish Factor to allocate tx.gaslimit (single field) to execution gasLimit. Rest goes to rentGasLimit
-    // set to 1 to allocate entire tx.gaslimit to execution gas limit (i.e. 0 for rentgaslimit)
+    /* #mish Factor to allocate tx.gaslimit (single field) to execution gaslimit. Rest goes to rentGasLimit
+     * Current split is 50:50, hence the divisor is set to 2.
+     * Set to 1 to allocate entire tx.gaslimit to execution gas limit (i.e. 0 for rentgaslimit)
+     */
     public static final long TX_GASBUDGET_DIVISOR = 2L;
     
-    // Activator to make storage rent free for testing, MUST USE `0` value with TX_GASBUDGET_DIVISOR = 1
-    // to set rentgaslimit to 0, to avoid 25% rentgaslimit charge for TX exception or revert
-    // Note: making rent free does NOT stop rent-related computations .. this is not a kill switch
+    /* Activator to make storage **rent free** for testing. 
+     * To make rent free, MUST USE `0` value ALONG WITH  TX_GASBUDGET_DIVISOR = 1
+        (to set rentgaslimit to 0) and avoid 25% of rentgaslimit charge for TX exception or revert
+     * Note: making rent free does NOT stop rent-related computations .. this is not a kill switch
+     */
     public static final long STORAGE_RENT_ACTIVATOR = 1L; //binary 0/1 variable stored as long
     
     // RSKIP113: the actual price of storage: rent is 1/(2^21) gas units per byte per second
