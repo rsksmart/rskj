@@ -1762,7 +1762,7 @@ public class BridgeSupport {
             whitelist.put(entry.address(), entry);
             return LOCK_WHITELIST_SUCCESS_CODE;
         } catch (Exception e) {
-            logger.error("Unexpected error in addLockWhitelistAddress: {}", e);
+            logger.error("Unexpected error in addLockWhitelistAddress: {}", e.getMessage());
             panicProcessor.panic("lock-whitelist", e.getMessage());
             return LOCK_WHITELIST_UNKNOWN_ERROR_CODE;
         }
