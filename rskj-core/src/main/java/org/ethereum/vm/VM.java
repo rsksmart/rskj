@@ -116,13 +116,11 @@ public class VM {
     }
 
     private void checkSizeArgument(long size) {
-        if (size > Program.MAX_MEMORY)
-            // Force exception
-        {
-            throw Program.ExceptionHelper.notEnoughOpGas(op, Long.MAX_VALUE, program.getRemainingGas());
+        if (size > Program.MAX_MEMORY) { // Force exception
+            throw Program.ExceptionHelper.notEnoughOpGas(program, op, Long.MAX_VALUE, program.getRemainingGas());
         }
-
     }
+
     private long calcMemGas(long oldMemSize, long newMemSize, long copySize) {
         long currentGasCost = 0;
 
@@ -180,10 +178,10 @@ public class VM {
 
     protected void checkOpcode() {
         if (op == null) {
-            throw Program.ExceptionHelper.invalidOpCode(program.getCurrentOp());
+            throw Program.ExceptionHelper.invalidOpCode(program);
         }
         if (op.scriptVersion() > program.getScriptVersion()) {
-            throw Program.ExceptionHelper.invalidOpCode(program.getCurrentOp());
+            throw Program.ExceptionHelper.invalidOpCode(program);
         }
 
     }
@@ -1140,7 +1138,7 @@ public class VM {
 
     protected void doLOG(){
         if (program.isStaticCall() && program.getActivations().isActive(RSKIP91)) {
-            throw Program.ExceptionHelper.modificationException();
+            throw Program.ExceptionHelper.modificationException(program);
         }
 
         DataWord size;
@@ -1271,7 +1269,7 @@ public class VM {
 
     protected void doSSTORE() {
         if (program.isStaticCall() && program.getActivations().isActive(RSKIP91)) {
-            throw Program.ExceptionHelper.modificationException();
+            throw Program.ExceptionHelper.modificationException(program);
         }
 
         if (computeGas) {
@@ -1408,7 +1406,7 @@ public class VM {
 
     protected void doCREATE(){
         if (program.isStaticCall() && program.getActivations().isActive(RSKIP91)) {
-            throw Program.ExceptionHelper.modificationException();
+            throw Program.ExceptionHelper.modificationException(program);
         }
 
         DataWord size;
@@ -1443,7 +1441,7 @@ public class VM {
 
     protected void doCREATE2(){
         if (program.isStaticCall()) {
-            throw Program.ExceptionHelper.modificationException();
+            throw Program.ExceptionHelper.modificationException(program);
         }
 
         if (computeGas){
@@ -1499,7 +1497,7 @@ public class VM {
         DataWord value = calculateCallValue(activations);
 
         if (program.isStaticCall() && op == CALL && !value.isZero()) {
-            throw Program.ExceptionHelper.modificationException();
+            throw Program.ExceptionHelper.modificationException(program);
         }
 
         DataWord inDataOffs = program.stackPop();
@@ -1516,7 +1514,7 @@ public class VM {
         // because we want to throw gasOverflow instead of notEnoughSpendingGas
         long requiredGas = gasCost;
         if (requiredGas > program.getRemainingGas()) {
-            throw Program.ExceptionHelper.gasOverflow(BigInteger.valueOf(program.getRemainingGas()), BigInteger.valueOf(requiredGas));
+            throw Program.ExceptionHelper.gasOverflow(program, BigInteger.valueOf(program.getRemainingGas()), BigInteger.valueOf(requiredGas));
         }
         long remainingGas = GasCost.subtract(program.getRemainingGas(), requiredGas);
         long minimumTransferGas = calculateGetMinimumTransferGas(value, remainingGas);
@@ -1576,7 +1574,7 @@ public class VM {
 
             minimumTransferGas = GasCost.add(minimumTransferGas, GasCost.STIPEND_CALL);
             if (remainingGas < minimumTransferGas) {
-                throw Program.ExceptionHelper.notEnoughSpendingGas(op.name(), minimumTransferGas, program);
+                throw Program.ExceptionHelper.notEnoughSpendingGas(program, op.name(), minimumTransferGas);
             }
         }
 
@@ -1649,7 +1647,7 @@ public class VM {
 
     protected void doSUICIDE(){
         if (program.isStaticCall() && program.getActivations().isActive(RSKIP91)) {
-            throw Program.ExceptionHelper.modificationException();
+            throw Program.ExceptionHelper.modificationException(program);
         }
 
         if (computeGas) {
@@ -1729,19 +1727,19 @@ public class VM {
             break;
             case OpCodes.OP_SHL:
                 if (!activations.isActive(RSKIP120)) {
-                    throw Program.ExceptionHelper.invalidOpCode(program.getCurrentOp());
+                    throw Program.ExceptionHelper.invalidOpCode(program);
                 }
                 doSHL();
             break;
             case OpCodes.OP_SHR:
                 if (!activations.isActive(RSKIP120)) {
-                    throw Program.ExceptionHelper.invalidOpCode(program.getCurrentOp());
+                    throw Program.ExceptionHelper.invalidOpCode(program);
                 }
                 doSHR();
             break;
             case OpCodes.OP_SAR:
                 if (!activations.isActive(RSKIP120)) {
-                    throw Program.ExceptionHelper.invalidOpCode(program.getCurrentOp());
+                    throw Program.ExceptionHelper.invalidOpCode(program);
                 }
                 doSAR();
             break;
@@ -1780,7 +1778,7 @@ public class VM {
 
             case OpCodes.OP_EXTCODEHASH:
                 if (!activations.isActive(RSKIP140)) {
-                    throw Program.ExceptionHelper.invalidOpCode(program.getCurrentOp());
+                    throw Program.ExceptionHelper.invalidOpCode(program);
                 }
                 doEXTCODEHASH();
             break;
@@ -1808,13 +1806,13 @@ public class VM {
             break;
             case OpCodes.OP_CHAINID:
                 if (!activations.isActive(RSKIP152)) {
-                    throw Program.ExceptionHelper.invalidOpCode(program.getCurrentOp());
+                    throw Program.ExceptionHelper.invalidOpCode(program);
                 }
                 doCHAINID();
             break;
             case OpCodes.OP_SELFBALANCE:
                 if (!activations.isActive(RSKIP151)) {
-                    throw Program.ExceptionHelper.invalidOpCode(program.getCurrentOp());
+                    throw Program.ExceptionHelper.invalidOpCode(program);
                 }
                 doSELFBALANCE();
             break;
@@ -1924,7 +1922,7 @@ public class VM {
             break;
             case OpCodes.OP_CREATE2:
                 if (!activations.isActive(RSKIP125)) {
-                    throw Program.ExceptionHelper.invalidOpCode(program.getCurrentOp());
+                    throw Program.ExceptionHelper.invalidOpCode(program);
                 }
                 doCREATE2();
             break;
@@ -1935,7 +1933,7 @@ public class VM {
             break;
             case OpCodes.OP_STATICCALL:
                 if (!activations.isActive(RSKIP91)) {
-                    throw Program.ExceptionHelper.invalidOpCode(program.getCurrentOp());
+                    throw Program.ExceptionHelper.invalidOpCode(program);
                 }
                 doCALL();
             break;
@@ -1952,7 +1950,7 @@ public class VM {
             default:
                 // It should never execute this line.
                 // We rise an exception to prevent DoS attacks that halt the node, in case of a bug.
-                throw Program.ExceptionHelper.invalidOpCode(program.getCurrentOp());
+                throw Program.ExceptionHelper.invalidOpCode(program);
         }
     }
 
@@ -2030,8 +2028,7 @@ public class VM {
                 program.stop();
                 throw e;
         } finally {
-            if (isLogEnabled) // this must be prevented because it's slow!
-            {
+            if (isLogEnabled) { // this must be prevented because it's slow!
                 program.fullTrace();
             }
         }

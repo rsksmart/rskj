@@ -516,7 +516,7 @@ public class VMExecutionTest {
     }
 
     @Test
-    public void txindexExecution() {
+    public void txIndexExecution() {
         invoke.setTransactionIndex(DataWord.valueOf(42));
         Program program = executeCode("TXINDEX", 1);
         Stack stack = program.getStack();
@@ -530,9 +530,8 @@ public class VMExecutionTest {
         try {
             executeCode("PUSH1 0x03 JUMP", 2);
             Assert.fail();
-        }
-        catch (Program.BadJumpDestinationException ex) {
-            Assert.assertEquals("Operation with pc isn't 'JUMPDEST': PC[3];", ex.getMessage());
+        } catch (Program.BadJumpDestinationException ex) {
+            Assert.assertEquals("Operation with pc isn't 'JUMPDEST': PC[3], tx[<null>]", ex.getMessage());
         }
     }
 
@@ -541,9 +540,8 @@ public class VMExecutionTest {
         try {
             executeCode("PUSH1 0x05 JUMP", 2);
             Assert.fail();
-        }
-        catch (Program.BadJumpDestinationException ex) {
-            Assert.assertEquals("Operation with pc isn't 'JUMPDEST': PC[5];", ex.getMessage());
+        } catch (Program.BadJumpDestinationException ex) {
+            Assert.assertEquals("Operation with pc isn't 'JUMPDEST': PC[5], tx[<null>]", ex.getMessage());
         }
     }
 
@@ -552,9 +550,8 @@ public class VMExecutionTest {
         try {
             executeCode("PUSH32 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff JUMP", 2);
             Assert.fail();
-        }
-        catch (Program.BadJumpDestinationException ex) {
-            Assert.assertEquals("Operation with pc isn't 'JUMPDEST': PC[-1];", ex.getMessage());
+        } catch (Program.BadJumpDestinationException ex) {
+            Assert.assertEquals("Operation with pc isn't 'JUMPDEST': PC[-1], tx[<null>]", ex.getMessage());
         }
     }
 
@@ -563,9 +560,8 @@ public class VMExecutionTest {
         try {
             executeCode("PUSH1 0xff JUMP", 2);
             Assert.fail();
-        }
-        catch (Program.BadJumpDestinationException ex) {
-            Assert.assertEquals("Operation with pc isn't 'JUMPDEST': PC[255];", ex.getMessage());
+        } catch (Program.BadJumpDestinationException ex) {
+            Assert.assertEquals("Operation with pc isn't 'JUMPDEST': PC[255], tx[<null>]", ex.getMessage());
         }
     }
 
