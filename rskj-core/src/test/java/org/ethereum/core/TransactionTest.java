@@ -36,6 +36,8 @@ import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.ECKey.MissingPrivateKeyException;
 import org.ethereum.crypto.HashUtil;
+import org.ethereum.crypto.signature.ECDSASignature;
+import org.ethereum.crypto.signature.Secp256k1;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.BlockStoreDummy;
@@ -84,7 +86,7 @@ public class TransactionTest {
         // step 2: hash = sha3(step1)
         byte[] txHash = HashUtil.keccak256(data);
 
-        ECKey.ECDSASignature signature = key.doSign(txHash);
+        ECDSASignature signature = ECDSASignature.fromSignature(key.doSign(txHash));
         System.out.println(signature);
     }
 
@@ -112,14 +114,14 @@ public class TransactionTest {
 
         tx.sign(senderPrivKey);
 
-        System.out.println("v\t\t\t: " + Hex.toHexString(new byte[]{tx.getSignature().v}));
-        System.out.println("r\t\t\t: " + Hex.toHexString(BigIntegers.asUnsignedByteArray(tx.getSignature().r)));
-        System.out.println("s\t\t\t: " + Hex.toHexString(BigIntegers.asUnsignedByteArray(tx.getSignature().s)));
+        System.out.println("v\t\t\t: " + Hex.toHexString(new byte[]{tx.getSignature().getV()}));
+        System.out.println("r\t\t\t: " + Hex.toHexString(BigIntegers.asUnsignedByteArray(tx.getSignature().getR())));
+        System.out.println("s\t\t\t: " + Hex.toHexString(BigIntegers.asUnsignedByteArray(tx.getSignature().getS())));
 
         System.out.println("RLP encoded tx\t\t: " + Hex.toHexString(tx.getEncoded()));
 
         // retrieve the signer/sender of the transaction
-        ECKey key = ECKey.signatureToKey(tx.getHash().getBytes(), tx.getSignature());
+        ECKey key = Secp256k1.getInstance().signatureToKey(tx.getHash().getBytes(), tx.getSignature());
 
         System.out.println("Tx unsigned RLP\t\t: " + Hex.toHexString(tx.getEncodedRaw()));
         System.out.println("Tx signed   RLP\t\t: " + Hex.toHexString(tx.getEncoded()));
@@ -153,14 +155,14 @@ public class TransactionTest {
 
         tx.sign(senderPrivKey);
 
-        System.out.println("v\t\t\t: " + Hex.toHexString(new byte[]{tx.getSignature().v}));
-        System.out.println("r\t\t\t: " + Hex.toHexString(BigIntegers.asUnsignedByteArray(tx.getSignature().r)));
-        System.out.println("s\t\t\t: " + Hex.toHexString(BigIntegers.asUnsignedByteArray(tx.getSignature().s)));
+        System.out.println("v\t\t\t: " + Hex.toHexString(new byte[]{tx.getSignature().getV()}));
+        System.out.println("r\t\t\t: " + Hex.toHexString(BigIntegers.asUnsignedByteArray(tx.getSignature().getR())));
+        System.out.println("s\t\t\t: " + Hex.toHexString(BigIntegers.asUnsignedByteArray(tx.getSignature().getS())));
 
         System.out.println("RLP encoded tx\t\t: " + Hex.toHexString(tx.getEncoded()));
 
         // retrieve the signer/sender of the transaction
-        ECKey key = ECKey.signatureToKey(tx.getHash().getBytes(), tx.getSignature());
+        ECKey key = Secp256k1.getInstance().signatureToKey(tx.getHash().getBytes(), tx.getSignature());
 
         System.out.println("Tx unsigned RLP\t\t: " + Hex.toHexString(tx.getEncodedRaw()));
         System.out.println("Tx signed   RLP\t\t: " + Hex.toHexString(tx.getEncoded()));
@@ -200,9 +202,9 @@ public class TransactionTest {
         assertEquals(Hex.toHexString(testReceiveAddress), Hex.toHexString(txSigned.getReceiveAddress().getBytes()));
         assertEquals(new BigInteger(1, testValue), txSigned.getValue().asBigInteger());
         assertNull(txSigned.getData());
-        assertEquals(27, txSigned.getSignature().v);
-        assertEquals("eab47c1a49bf2fe5d40e01d313900e19ca485867d462fe06e139e3a536c6d4f4", Hex.toHexString(BigIntegers.asUnsignedByteArray(txSigned.getSignature().r)));
-        assertEquals("14a569d327dcda4b29f74f93c0e9729d2f49ad726e703f9cd90dbb0fbf6649f1", Hex.toHexString(BigIntegers.asUnsignedByteArray(txSigned.getSignature().s)));
+        assertEquals(27, txSigned.getSignature().getV());
+        assertEquals("eab47c1a49bf2fe5d40e01d313900e19ca485867d462fe06e139e3a536c6d4f4", Hex.toHexString(BigIntegers.asUnsignedByteArray(txSigned.getSignature().getR())));
+        assertEquals("14a569d327dcda4b29f74f93c0e9729d2f49ad726e703f9cd90dbb0fbf6649f1", Hex.toHexString(BigIntegers.asUnsignedByteArray(txSigned.getSignature().getS())));
     }
 
     @Ignore
@@ -221,9 +223,9 @@ public class TransactionTest {
         assertEquals(Hex.toHexString(testReceiveAddress), Hex.toHexString(txUnsigned.getReceiveAddress().getBytes()));
         assertEquals(new BigInteger(1, testValue), txUnsigned.getValue().asBigInteger());
         assertNull(txUnsigned.getData());
-        assertEquals(27, txUnsigned.getSignature().v);
-        assertEquals("eab47c1a49bf2fe5d40e01d313900e19ca485867d462fe06e139e3a536c6d4f4", Hex.toHexString(BigIntegers.asUnsignedByteArray(txUnsigned.getSignature().r)));
-        assertEquals("14a569d327dcda4b29f74f93c0e9729d2f49ad726e703f9cd90dbb0fbf6649f1", Hex.toHexString(BigIntegers.asUnsignedByteArray(txUnsigned.getSignature().s)));
+        assertEquals(27, txUnsigned.getSignature().getV());
+        assertEquals("eab47c1a49bf2fe5d40e01d313900e19ca485867d462fe06e139e3a536c6d4f4", Hex.toHexString(BigIntegers.asUnsignedByteArray(txUnsigned.getSignature().getR())));
+        assertEquals("14a569d327dcda4b29f74f93c0e9729d2f49ad726e703f9cd90dbb0fbf6649f1", Hex.toHexString(BigIntegers.asUnsignedByteArray(txUnsigned.getSignature().getS())));
     }
 
     @Ignore
@@ -245,9 +247,9 @@ public class TransactionTest {
         txNew.sign(Hex.decode(KEY));
         assertEquals(RLP_ENCODED_SIGNED_TX, Hex.toHexString(txNew.getEncoded()));
 
-        assertEquals(27, txNew.getSignature().v);
-        assertEquals("eab47c1a49bf2fe5d40e01d313900e19ca485867d462fe06e139e3a536c6d4f4", Hex.toHexString(BigIntegers.asUnsignedByteArray(txNew.getSignature().r)));
-        assertEquals("14a569d327dcda4b29f74f93c0e9729d2f49ad726e703f9cd90dbb0fbf6649f1", Hex.toHexString(BigIntegers.asUnsignedByteArray(txNew.getSignature().s)));
+        assertEquals(27, txNew.getSignature().getV());
+        assertEquals("eab47c1a49bf2fe5d40e01d313900e19ca485867d462fe06e139e3a536c6d4f4", Hex.toHexString(BigIntegers.asUnsignedByteArray(txNew.getSignature().getR())));
+        assertEquals("14a569d327dcda4b29f74f93c0e9729d2f49ad726e703f9cd90dbb0fbf6649f1", Hex.toHexString(BigIntegers.asUnsignedByteArray(txNew.getSignature().getS())));
     }
 
     @Ignore
@@ -462,7 +464,8 @@ public class TransactionTest {
                             null,
                             blockFactory,
                             invokeFactory,
-                            new PrecompiledContracts(config, bridgeSupportFactory));
+                            new PrecompiledContracts(config, bridgeSupportFactory),
+                            new BlockTxSignatureCache(new ReceivedTxSignatureCache()));
                     TransactionExecutor executor = transactionExecutorFactory
                             .newInstance(txConst, 0, bestBlock.getCoinbase(), track, bestBlock, 0)
                             .setLocalCall(true);
@@ -595,6 +598,7 @@ public class TransactionTest {
         TrieStore trieStore = new TrieStoreImpl(new HashMapDB());
         MutableRepository repository = new MutableRepository(new MutableTrieImpl(trieStore, new Trie(trieStore)));
         IndexedBlockStore blockStore = new IndexedBlockStore(blockFactory, new HashMapDB(), new HashMapBlocksIndex());
+        BlockTxSignatureCache blockTxSignatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
         Blockchain blockchain = ImportLightTest.createBlockchain(
                 new TestGenesisLoader(
                         trieStore, getClass().getResourceAsStream("/genesis/genesis-light.json"), nonce,
@@ -610,7 +614,7 @@ public class TransactionTest {
         String abi = "[{\"constant\":false,\"inputs\":[],\"name\":\"homicide\",\"outputs\":[],\"payable\":false,\"type\":\"function\"},{\"constant\":false,\"inputs\":[],\"name\":\"multipleHomicide\",\"outputs\":[],\"payable\":false,\"type\":\"function\"},{\"payable\":true,\"type\":\"fallback\"}]";
 
         Transaction tx = createTx(sender, new byte[0], Hex.decode(code), repository);
-        executeTransaction(blockchain, blockStore, tx, repository);
+        executeTransaction(blockchain, blockStore, tx, repository, blockTxSignatureCache);
 
         byte[] contractAddress = tx.getContractAddress().getBytes();
 
@@ -636,7 +640,7 @@ public class TransactionTest {
         }
 
         Transaction tx1 = createTx(sender, contractAddress, callData, repository);
-        ProgramResult programResult = executeTransaction(blockchain, blockStore, tx1, repository).getResult();
+        ProgramResult programResult = executeTransaction(blockchain, blockStore, tx1, repository, blockTxSignatureCache).getResult();
 
         // suicide of a single account should be counted only once
         Assert.assertEquals(24000, programResult.getFutureRefund());
@@ -673,6 +677,7 @@ public class TransactionTest {
         TrieStore trieStore = new TrieStoreImpl(new HashMapDB());
         MutableRepository repository = new MutableRepository(new MutableTrieImpl(trieStore, new Trie(trieStore)));
         IndexedBlockStore blockStore = new IndexedBlockStore(blockFactory, new HashMapDB(), new HashMapBlocksIndex());
+        BlockTxSignatureCache blockTxSignatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
         Blockchain blockchain = ImportLightTest.createBlockchain(
                 new TestGenesisLoader(
                         trieStore, getClass().getResourceAsStream("/genesis/genesis-light.json"), nonce,
@@ -692,16 +697,16 @@ public class TransactionTest {
         String abi2 = "[{\"constant\":false,\"inputs\":[{\"name\":\"invokedAddress\",\"type\":\"address\"}],\"name\":\"doIt\",\"outputs\":[],\"payable\":false,\"type\":\"function\"},{\"anonymous\":false,\"inputs\":[],\"name\":\"externalEvent\",\"type\":\"event\"}]";
 
         Transaction tx1 = createTx(sender, new byte[0], Hex.decode(code1), repository);
-        executeTransaction(blockchain, blockStore, tx1, repository);
+        executeTransaction(blockchain, blockStore, tx1, repository, blockTxSignatureCache);
 
         Transaction tx2 = createTx(sender, new byte[0], Hex.decode(code2), repository);
-        executeTransaction(blockchain, blockStore, tx2, repository);
+        executeTransaction(blockchain, blockStore, tx2, repository, blockTxSignatureCache);
 
         CallTransaction.Contract contract2 = new CallTransaction.Contract(abi2);
         byte[] data = contract2.getByName("doIt").encode(Hex.toHexString(tx1.getContractAddress().getBytes()));
 
         Transaction tx3 = createTx(sender, tx2.getContractAddress().getBytes(), data, repository);
-        TransactionExecutor executor = executeTransaction(blockchain, blockStore, tx3, repository);
+        TransactionExecutor executor = executeTransaction(blockchain, blockStore, tx3, repository, blockTxSignatureCache);
         Assert.assertEquals(1, executor.getResult().getLogInfoList().size());
         Assert.assertFalse(executor.getResult().getLogInfoList().get(0).isRejected());
         Assert.assertEquals(1, executor.getVMLogs().size());
@@ -728,7 +733,8 @@ public class TransactionTest {
             Blockchain blockchain,
             BlockStore blockStore,
             Transaction tx,
-            Repository repository) {
+            Repository repository,
+            BlockTxSignatureCache blockTxSignatureCache) {
         Repository track = repository.startTracking();
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
                 new RepositoryBtcBlockStoreWithCache.Factory(
@@ -742,7 +748,8 @@ public class TransactionTest {
                 null,
                 blockFactory,
                 new ProgramInvokeFactoryImpl(),
-                new PrecompiledContracts(config, bridgeSupportFactory));
+                new PrecompiledContracts(config, bridgeSupportFactory),
+                blockTxSignatureCache);
         TransactionExecutor executor = transactionExecutorFactory
                 .newInstance(tx, 0, RskAddress.nullAddress(), repository, blockchain.getBestBlock(), 0);
 

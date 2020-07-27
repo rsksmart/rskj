@@ -24,6 +24,8 @@ import co.rsk.bitcoinj.wallet.Wallet;
 import co.rsk.config.BridgeConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.peg.bitcoin.RskAllowUnconfirmedCoinSelector;
+import co.rsk.peg.btcLockSender.BtcLockSender;
+import co.rsk.peg.utils.BtcTransactionFormatUtils;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -32,10 +34,8 @@ import org.ethereum.vm.PrecompiledContracts;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import java.math.BigInteger;
+import java.util.*;
 
 /**
  * @author Oscar Guindzberg
@@ -45,7 +45,7 @@ public class BridgeUtils {
     private static final Logger logger = LoggerFactory.getLogger("BridgeUtils");
 
     public static Wallet getFederationNoSpendWallet(Context btcContext, Federation federation) {
-        return getFederationsNoSpendWallet(btcContext, Arrays.asList(federation));
+        return getFederationsNoSpendWallet(btcContext, Collections.singletonList(federation));
     }
 
     public static Wallet getFederationsNoSpendWallet(Context btcContext, List<Federation> federations) {
@@ -55,7 +55,7 @@ public class BridgeUtils {
     }
 
     public static Wallet getFederationSpendWallet(Context btcContext, Federation federation, List<UTXO> utxos) {
-        return getFederationsSpendWallet(btcContext, Arrays.asList(federation), utxos);
+        return getFederationsSpendWallet(btcContext, Collections.singletonList(federation), utxos);
     }
 
     public static Wallet getFederationsSpendWallet(Context btcContext, List<Federation> federations, List<UTXO> utxos) {
@@ -63,7 +63,7 @@ public class BridgeUtils {
 
         RskUTXOProvider utxoProvider = new RskUTXOProvider(btcContext.getParams(), utxos);
         wallet.setUTXOProvider(utxoProvider);
-        federations.stream().forEach(federation -> {
+        federations.forEach(federation -> {
             wallet.addWatchedAddress(federation.getAddress(), federation.getCreationTime().toEpochMilli());
         });
         wallet.setCoinSelector(new RskAllowUnconfirmedCoinSelector());
@@ -135,7 +135,18 @@ public class BridgeUtils {
     }
 
     public static boolean isLockTx(BtcTransaction tx, Federation federation, Context btcContext, BridgeConstants bridgeConstants) {
-        return isLockTx(tx, Arrays.asList(federation), btcContext, bridgeConstants);
+        return isLockTx(tx, Collections.singletonList(federation), btcContext, bridgeConstants);
+    }
+
+    /**
+     * It checks if the tx can be processed, if it is sent from a P2PKH address or RSKIP 143 is active
+     * @param txType type of the transaction
+     * @param activations to identify if certain hardfork is active or not.
+     * @return true if this tx can be locked
+     */
+    public static boolean txIsProcessable(BtcLockSender.TxType txType, ActivationConfig.ForBlock activations) {
+        //After RSKIP 143 activation, if a BtcLockSender object could be parsed then it's processable
+        return txType == BtcLockSender.TxType.P2PKH || activations.isActive(ConsensusRule.RSKIP143);
     }
 
     private static boolean isReleaseTx(BtcTransaction tx, Federation federation) {
@@ -205,6 +216,17 @@ public class BridgeUtils {
         return federation.hasMemberWithRskAddress(rskTx.getSender().getBytes());
     }
 
+    public static Coin getCoinFromBigInteger(BigInteger value) {
+        if (value == null) {
+            throw new BridgeIllegalArgumentException("value cannot be null");
+        }
+        try {
+            return Coin.valueOf(value.longValueExact());
+        } catch(ArithmeticException e) {
+            throw new BridgeIllegalArgumentException(e.getMessage(), e);
+        }
+    }
+
     private static boolean isFromFederationChangeAuthorizedSender(org.ethereum.core.Transaction rskTx, BridgeConstants bridgeConfiguration) {
         AddressBasedAuthorizer authorizer = bridgeConfiguration.getFederationChangeAuthorizer();
         return authorizer.isAuthorized(rskTx);
@@ -218,5 +240,50 @@ public class BridgeUtils {
     private static boolean isFromFeePerKbChangeAuthorizedSender(org.ethereum.core.Transaction rskTx, BridgeConstants bridgeConfiguration) {
         AddressBasedAuthorizer authorizer = bridgeConfiguration.getFeePerKbChangeAuthorizer();
         return authorizer.isAuthorized(rskTx);
+    }
+
+    public static boolean validateHeightAndConfirmations(int height, int btcBestChainHeight, int acceptableConfirmationsAmount, Sha256Hash btcTxHash) throws Exception {
+        // Check there are at least N blocks on top of the supplied height
+        if (height < 0) {
+            throw new Exception("Height can't be lower than 0");
+        }
+        int confirmations = btcBestChainHeight - height + 1;
+        if (confirmations < acceptableConfirmationsAmount) {
+            logger.warn(
+                    "Btc Tx {} at least {} confirmations are required, but there are only {} confirmations",
+                    btcTxHash,
+                    acceptableConfirmationsAmount,
+                    confirmations
+            );
+            return false;
+        }
+        return true;
+    }
+
+    public static Sha256Hash calculateMerkleRoot(NetworkParameters networkParameters, byte[] pmtSerialized, Sha256Hash btcTxHash) throws VerificationException{
+        PartialMerkleTree pmt = new PartialMerkleTree(networkParameters, pmtSerialized, 0);
+        List<Sha256Hash> hashesInPmt = new ArrayList<>();
+        Sha256Hash merkleRoot = pmt.getTxnHashAndMerkleRoot(hashesInPmt);
+        if (!hashesInPmt.contains(btcTxHash)) {
+            logger.warn("Supplied Btc Tx {} is not in the supplied partial merkle tree", btcTxHash);
+            return null;
+        }
+        return merkleRoot;
+    }
+
+    public static void validateInputsCount(byte[] btcTxSerialized, boolean isActiveRskip) throws VerificationException.EmptyInputsOrOutputs {
+        if (BtcTransactionFormatUtils.getInputsCount(btcTxSerialized) == 0) {
+            if (isActiveRskip) {
+                if (BtcTransactionFormatUtils.getInputsCountForSegwit(btcTxSerialized) == 0) {
+                    logger.warn("Provided btc segwit tx has no inputs");
+                    // this is the exception thrown by co.rsk.bitcoinj.core.BtcTransaction#verify when there are no inputs.
+                    throw new VerificationException.EmptyInputsOrOutputs();
+                }
+            } else {
+                logger.warn("Provided btc tx has no inputs ");
+                // this is the exception thrown by co.rsk.bitcoinj.core.BtcTransaction#verify when there are no inputs.
+                throw new VerificationException.EmptyInputsOrOutputs();
+            }
+        }
     }
 }

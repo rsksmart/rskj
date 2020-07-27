@@ -104,7 +104,9 @@ public class SyncPool implements InternalService {
         syncPoolExecutor.scheduleWithFixedDelay(
             () -> {
                 try {
-                    heartBeat();
+                    if (config.getIsHeartBeatEnabled()) {
+                        heartBeat();
+                    }
                     processConnections();
                     updateLowerUsefulDifficulty();
                     fillUp();

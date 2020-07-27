@@ -20,11 +20,13 @@ package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.Address;
 import co.rsk.bitcoinj.core.Coin;
+import co.rsk.crypto.Keccak256;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * Representation of a queue of btc release
@@ -36,10 +38,16 @@ public class ReleaseRequestQueue {
     public static class Entry {
         private Address destination;
         private Coin amount;
+        private Keccak256 rskTxHash;
 
-        public Entry(Address destination, Coin amount) {
+        public Entry(Address destination, Coin amount, Keccak256 rskTxHash) {
             this.destination = destination;
             this.amount = amount;
+            this.rskTxHash = rskTxHash;
+        }
+
+        public Entry(Address destination, Coin amount) {
+            this(destination, amount, null);
         }
 
         public Address getDestination() {
@@ -48,6 +56,10 @@ public class ReleaseRequestQueue {
 
         public Coin getAmount() {
             return amount;
+        }
+
+        public Keccak256 getRskTxHash() {
+            return rskTxHash;
         }
 
         @Override
@@ -59,7 +71,10 @@ public class ReleaseRequestQueue {
             Entry otherEntry = (Entry) o;
 
             return otherEntry.getDestination().equals(getDestination()) &&
-                    otherEntry.getAmount().equals(getAmount());
+                    otherEntry.getAmount().equals(getAmount()) &&
+                    (otherEntry.getRskTxHash() == null && getRskTxHash() == null ||
+                            otherEntry.getRskTxHash() != null && otherEntry.getRskTxHash().equals(getRskTxHash()));
+
         }
 
         @Override
@@ -78,12 +93,24 @@ public class ReleaseRequestQueue {
         this.entries = new ArrayList<>(entries);
     }
 
+    public List<Entry> getEntriesWithoutHash() {
+        return entries.stream().filter((entry) -> entry.getRskTxHash() == null).collect(Collectors.toList());
+    }
+
+    public List<Entry> getEntriesWithHash() {
+        return entries.stream().filter((entry) -> entry.getRskTxHash() != null).collect(Collectors.toList());
+    }
+
     public List<Entry> getEntries() {
         return new ArrayList<>(entries);
     }
 
+    public void add(Address destination, Coin amount, Keccak256 rskTxHash) {
+        entries.add(new Entry(destination, amount, rskTxHash));
+    }
+
     public void add(Address destination, Coin amount) {
-        entries.add(new Entry(destination, amount));
+        entries.add(new Entry(destination, amount, null));
     }
 
     /**

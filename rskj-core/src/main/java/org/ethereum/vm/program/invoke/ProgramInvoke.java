@@ -27,27 +27,13 @@ import org.ethereum.vm.DataWord;
  * @author Roman Mandeleil
  * @since 03.06.2014
  */
-public interface ProgramInvoke {
-
-    DataWord getOwnerAddress();
+public interface ProgramInvoke extends InvokeData {
 
     DataWord getBalance();
 
     DataWord getOriginAddress();
 
-    DataWord getCallerAddress();
-
     DataWord getMinGasPrice();
-
-    long getGas();
-
-    DataWord getCallValue();
-
-    DataWord getDataSize();
-
-    DataWord getDataValue(DataWord indexData);
-
-    byte[] getDataCopy(DataWord offsetData, DataWord lengthData);
 
     DataWord getPrevHash();
 

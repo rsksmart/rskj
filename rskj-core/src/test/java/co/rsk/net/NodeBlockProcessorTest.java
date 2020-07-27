@@ -533,7 +533,7 @@ public class NodeBlockProcessorTest {
 
 //        processor.processStatus(sender, status);
         Assert.assertTrue(processor.getNodeInformation().getNodesByBlock(block.getHash().getBytes()).size() == 1);
-        Assert.assertTrue(nodeInformation.getBlocksByNode(sender.getPeerNodeID()).contains(blockHash));
+        Assert.assertTrue(processor.getNodeInformation().getNodesByBlock(block.getHash().getBytes()).contains(sender.getPeerNodeID()));
 
         Assert.assertEquals(0, sender.getGetBlockMessages().size());
         Assert.assertEquals(0, store.size());
@@ -557,10 +557,11 @@ public class NodeBlockProcessorTest {
         store.saveBlock(block);
 //        final Status status = new Status(block.getNumber(), block.getHash());
 
-        Assert.assertTrue(nodeInformation.getBlocksByNode(sender.getPeerNodeID()).isEmpty());
+        Assert.assertTrue(nodeInformation.getNodesByBlock(block.getHash()).isEmpty());
+
 
 //        processor.processStatus(sender, status);
-        Assert.assertTrue(nodeInformation.getBlocksByNode(sender.getPeerNodeID()).contains(blockHash));
+        Assert.assertTrue(nodeInformation.getNodesByBlock(block.getHash()).contains(sender.getPeerNodeID()));
 
         Assert.assertEquals(0, sender.getGetBlockMessages().size());
     }
@@ -609,11 +610,11 @@ public class NodeBlockProcessorTest {
 
         final SimplePeer sender = new SimplePeer();
 
-        Assert.assertTrue(nodeInformation.getBlocksByNode(sender.getPeerNodeID()).isEmpty());
+        Assert.assertTrue(nodeInformation.getNodesByBlock(block.getHash()).isEmpty());
 
         processor.processBlockHeadersRequest(sender, 1, block.getHash().getBytes(), 1);
 
-        Assert.assertTrue(nodeInformation.getBlocksByNode(sender.getPeerNodeID()).isEmpty());
+        Assert.assertTrue(nodeInformation.getNodesByBlock(block.getHash()).isEmpty());
 
         Assert.assertTrue(sender.getMessages().isEmpty());
     }
@@ -663,11 +664,11 @@ public class NodeBlockProcessorTest {
 
         final SimplePeer sender = new SimplePeer();
 
-        Assert.assertTrue(nodeInformation.getBlocksByNode(sender.getPeerNodeID()).isEmpty());
+        Assert.assertTrue(nodeInformation.getNodesByBlock(block.getHash()).isEmpty());
 
         processor.processGetBlock(sender, block.getHash().getBytes());
 
-        Assert.assertTrue(nodeInformation.getBlocksByNode(sender.getPeerNodeID()).contains(blockHash));
+        Assert.assertTrue(nodeInformation.getNodesByBlock(block.getHash()).contains(sender.getPeerNodeID()));
 
         Assert.assertFalse(sender.getMessages().isEmpty());
         Assert.assertEquals(1, sender.getMessages().size());
@@ -695,11 +696,12 @@ public class NodeBlockProcessorTest {
 
         final SimplePeer sender = new SimplePeer();
 
-        Assert.assertTrue(nodeInformation.getBlocksByNode(sender.getPeerNodeID()).isEmpty());
+        Assert.assertTrue(nodeInformation.getNodesByBlock(block.getHash()).isEmpty());
 
         processor.processGetBlock(sender, block.getHash().getBytes());
 
-        Assert.assertTrue(nodeInformation.getBlocksByNode(sender.getPeerNodeID()).isEmpty());
+        Assert.assertTrue(nodeInformation.getNodesByBlock(block.getHash()).isEmpty());
+
 
         Assert.assertTrue(sender.getMessages().isEmpty());
     }
@@ -719,11 +721,11 @@ public class NodeBlockProcessorTest {
 
         final SimplePeer sender = new SimplePeer();
 
-        Assert.assertTrue(nodeInformation.getBlocksByNode(sender.getPeerNodeID()).isEmpty());
+        Assert.assertTrue(nodeInformation.getNodesByBlock(block.getHash()).isEmpty());
 
         processor.processGetBlock(sender, block.getHash().getBytes());
 
-        Assert.assertTrue(nodeInformation.getBlocksByNode(sender.getPeerNodeID()).contains(blockHash));
+        Assert.assertTrue(nodeInformation.getNodesByBlock(block.getHash()).contains(sender.getPeerNodeID()));
 
         Assert.assertFalse(sender.getMessages().isEmpty());
         Assert.assertEquals(1, sender.getMessages().size());
@@ -754,11 +756,11 @@ public class NodeBlockProcessorTest {
 
         final SimplePeer sender = new SimplePeer();
 
-        Assert.assertTrue(nodeInformation.getBlocksByNode(sender.getPeerNodeID()).isEmpty());
+        Assert.assertTrue(nodeInformation.getNodesByBlock(block.getHash()).isEmpty());
 
         processor.processBlockRequest(sender, 100, block.getHash().getBytes());
 
-        Assert.assertTrue(nodeInformation.getBlocksByNode(sender.getPeerNodeID()).contains(blockHash));
+        Assert.assertTrue(nodeInformation.getNodesByBlock(block.getHash()).contains(sender.getPeerNodeID()));
 
         Assert.assertFalse(sender.getMessages().isEmpty());
         Assert.assertEquals(1, sender.getMessages().size());
@@ -817,11 +819,12 @@ public class NodeBlockProcessorTest {
 
         final SimplePeer sender = new SimplePeer();
 
-        Assert.assertTrue(nodeInformation.getBlocksByNode(sender.getPeerNodeID()).isEmpty());
+        Assert.assertTrue(nodeInformation.getNodesByBlock(block.getHash()).isEmpty());
 
         processor.processBlockRequest(sender, 100, block.getHash().getBytes());
 
-        Assert.assertFalse(nodeInformation.getBlocksByNode(sender.getPeerNodeID()).contains(blockHash));
+        Assert.assertFalse(nodeInformation.getNodesByBlock(block.getHash()).contains(sender.getPeerNodeID()));
+
 
         Assert.assertTrue(sender.getMessages().isEmpty());
     }
@@ -841,11 +844,11 @@ public class NodeBlockProcessorTest {
 
         final SimplePeer sender = new SimplePeer();
 
-        Assert.assertTrue(nodeInformation.getBlocksByNode(sender.getPeerNodeID()).isEmpty());
+        Assert.assertTrue(nodeInformation.getNodesByBlock(block.getHash()).isEmpty());
 
         processor.processBlockRequest(sender, 100, block.getHash().getBytes());
 
-        Assert.assertTrue(nodeInformation.getBlocksByNode(sender.getPeerNodeID()).contains(blockHash));
+        Assert.assertTrue(nodeInformation.getNodesByBlock(block.getHash()).contains(sender.getPeerNodeID()));
 
         Assert.assertFalse(sender.getMessages().isEmpty());
         Assert.assertEquals(1, sender.getMessages().size());

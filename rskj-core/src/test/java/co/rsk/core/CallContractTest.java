@@ -81,8 +81,9 @@ public class CallContractTest {
                     null,
                     blockFactory,
                     new ProgramInvokeFactoryImpl(),
-                    new PrecompiledContracts(config, bridgeSupportFactory)
-                    );
+                    new PrecompiledContracts(config, bridgeSupportFactory),
+                    world.getBlockTxSignatureCache()
+            );
 
             org.ethereum.core.TransactionExecutor executor = transactionExecutorFactory
                     .newInstance(tx, 0, bestBlock.getCoinbase(), repository, bestBlock, 0)

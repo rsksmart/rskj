@@ -27,7 +27,6 @@ import co.rsk.blockchain.utils.BlockMiner;
 import co.rsk.config.RskMiningConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
-import co.rsk.db.BenchmarkedRepository;
 import co.rsk.mine.MinerUtils;
 import co.rsk.peg.performance.ExecutionStats;
 import co.rsk.peg.performance.PrecompiledContractPerformanceTestCase;

@@ -24,11 +24,13 @@ import co.rsk.db.StateRootHandler;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
 import org.ethereum.datasource.HashMapDB;
+import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.IndexedBlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.db.ReceiptStoreImpl;
 
+import java.nio.file.Path;
 import java.util.HashMap;
 
 /**
@@ -51,7 +53,7 @@ public class RskTestContext extends RskContext {
     }
 
     @Override
-    protected TrieStore buildTrieStore(String name) {
+    protected TrieStore buildTrieStore(Path trieStorePath) {
         return new TrieStoreImpl(new HashMapDB());
     }
 
@@ -63,5 +65,10 @@ public class RskTestContext extends RskContext {
     @Override
     protected Wallet buildWallet() {
         return new Wallet(new HashMapDB());
+    }
+
+    @Override
+    protected KeyValueDataSource buildBlocksBloomDataSource() {
+        return new HashMapDB();
     }
 }

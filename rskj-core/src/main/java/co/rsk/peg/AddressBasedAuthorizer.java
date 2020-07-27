@@ -24,6 +24,7 @@ import org.ethereum.crypto.ECKey;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Authorizes an operation based
@@ -34,17 +35,16 @@ import java.util.List;
 public class AddressBasedAuthorizer {
     public enum MinimumRequiredCalculation { ONE, MAJORITY, ALL };
 
-    private List<ECKey> authorizedKeys;
-    private MinimumRequiredCalculation requiredCalculation;
+    protected List<byte[]> authorizedAddresses;
+    protected MinimumRequiredCalculation requiredCalculation;
 
     public AddressBasedAuthorizer(List<ECKey> authorizedKeys, MinimumRequiredCalculation requiredCalculation) {
-        this.authorizedKeys = authorizedKeys;
+        this.authorizedAddresses = authorizedKeys.stream().map(key -> key.getAddress()).collect(Collectors.toList());
         this.requiredCalculation = requiredCalculation;
     }
 
     public boolean isAuthorized(RskAddress sender) {
-        return authorizedKeys.stream()
-                .map(key -> key.getAddress())
+        return authorizedAddresses.stream()
                 .anyMatch(address -> Arrays.equals(address, sender.getBytes()));
     }
 
@@ -53,7 +53,7 @@ public class AddressBasedAuthorizer {
     }
 
     public int getNumberOfAuthorizedKeys() {
-        return authorizedKeys.size();
+        return authorizedAddresses.size();
     }
 
     public int getRequiredAuthorizedKeys() {

@@ -58,8 +58,10 @@ public class ParentNumberRuleTest {
     }
 
     private static BlockHeader getHeader(long number) {
-        return blockFactory.newHeader(null, null, TestUtils.randomAddress().getBytes(),
-                null, BlockDifficulty.ZERO.getBytes(), number, null, 0,
-                0, null, null, 0);
+        return blockFactory.getBlockHeaderBuilder()
+                .setCoinbase(TestUtils.randomAddress())
+                .setDifficulty(BlockDifficulty.ZERO)
+                .setNumber(number)
+                .build();
     }
 }

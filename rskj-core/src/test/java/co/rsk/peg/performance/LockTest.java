@@ -95,16 +95,15 @@ public class LockTest extends BridgePerformanceTestCase {
             int hashesToGenerate = Helper.randomInRange(minHashes, maxHashes);
             int randomHashIndex = Helper.randomInRange(0, hashesToGenerate-1);
             Random rnd = new Random();
-            Map<Sha256Hash, Long> hashesAlreadyProcessed;
-            try {
-                hashesAlreadyProcessed = provider.getBtcTxHashesAlreadyProcessed();
-            } catch (IOException e) {
-                throw new RuntimeException("Exception trying to gather hashes already processed for benchmarking");
-            }
             for (int i = 0; i < hashesToGenerate; i++) {
                 Sha256Hash hash = Sha256Hash.of(BigInteger.valueOf(rnd.nextLong()).toByteArray());
                 long height = Helper.randomInRange(minHeight, maxHeight);
-                hashesAlreadyProcessed.put(hash, height);
+
+                try {
+                    provider.setHeightBtcTxhashAlreadyProcessed(hash, height);
+                } catch (IOException e) {
+                    throw new RuntimeException("Exception trying to gather hashes already processed for benchmarking");
+                }
                 if (i == randomHashIndex) {
                     randomHashInMap = hash;
                 }

@@ -40,6 +40,7 @@ import org.ethereum.core.*;
 import org.ethereum.facade.Ethereum;
 import org.ethereum.listener.EthereumListenerAdapter;
 import org.ethereum.rpc.TypeConverter;
+import org.ethereum.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -65,6 +66,9 @@ public class MinerServerImpl implements MinerServer {
     private static final PanicProcessor panicProcessor = new PanicProcessor();
 
     private static final int CACHE_SIZE = 20;
+
+    private static final int EXTRA_DATA_MAX_SIZE = 32;
+    private static final int EXTRA_DATA_VERSION = 1;
 
     private final Ethereum ethereum;
     private final MiningMainchainView mainchainView;
@@ -108,6 +112,7 @@ public class MinerServerImpl implements MinerServer {
             BlockToMineBuilder builder,
             MinerClock clock,
             BlockFactory blockFactory,
+            BuildInfo buildInfo,
             MiningConfig miningConfig) {
         this.ethereum = ethereum;
         this.mainchainView = mainchainView;
@@ -125,6 +130,13 @@ public class MinerServerImpl implements MinerServer {
         coinbaseAddress = miningConfig.getCoinbaseAddress();
         minFeesNotifyInDollars = BigDecimal.valueOf(miningConfig.getMinFeesNotifyInDollars());
         gasUnitInDollars = BigDecimal.valueOf(miningConfig.getGasUnitInDollars());
+
+        extraData = buildExtraData(config, buildInfo);
+    }
+
+    private byte[] buildExtraData(RskSystemProperties config, BuildInfo buildInfo) {
+        String identity = config.projectVersionModifier() + "-" + buildInfo.getBuildHash();
+        return RLP.encodeList(RLP.encodeElement(RLP.encodeInt(EXTRA_DATA_VERSION)), RLP.encodeString(identity));
     }
 
     private LinkedHashMap<Keccak256, Block> createNewBlocksWaitingList() {
@@ -376,8 +388,24 @@ public class MinerServerImpl implements MinerServer {
         return new MinerWork(blockMergedMiningHash.toJsonString(), TypeConverter.toJsonHex(targetArray), String.valueOf(block.getFeesPaidToMiner()), notify, block.getParentHashJsonString());
     }
 
-    public void setExtraData(byte[] extraData) {
-        this.extraData = extraData;
+    public void setExtraData(byte[] clientExtraData) {
+        RLPList decodedExtraData = RLP.decodeList(this.extraData);
+        byte[] version = decodedExtraData.get(0).getRLPData();
+        byte[] identity = decodedExtraData.get(1).getRLPData();
+
+        int rlpClientExtraDataEncodingOverhead = 3;
+        int clientExtraDataSize = EXTRA_DATA_MAX_SIZE
+                - (version != null ? version.length : 0)
+                - (identity != null ? identity.length : 0)
+                - rlpClientExtraDataEncodingOverhead;
+        byte[] clientExtraDataResized = Arrays.copyOf(clientExtraData, Math.min(clientExtraData.length, clientExtraDataSize));
+
+        this.extraData = RLP.encodeList(version, RLP.encode(identity), RLP.encodeElement(clientExtraDataResized));
+    }
+
+    @VisibleForTesting
+    public byte[] getExtraData() {
+        return Arrays.copyOf(extraData, extraData.length);
     }
 
     /**

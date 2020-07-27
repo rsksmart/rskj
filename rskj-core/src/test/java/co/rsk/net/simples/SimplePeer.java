@@ -103,6 +103,15 @@ public class SimplePeer implements Peer {
     public InetAddress getAddress() { return this.address; }
 
     @Override
+    public double score(long currentTime, MessageType type) {
+        return 0;
+    }
+
+    @Override
+    public void imported(boolean best) {
+    }
+
+    @Override
     public boolean equals(Object o) {
         if (this == o) {
             return true;

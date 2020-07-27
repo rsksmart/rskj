@@ -67,6 +67,8 @@ import co.rsk.rpc.modules.personal.PersonalModuleWalletDisabled;
 import co.rsk.rpc.modules.personal.PersonalModuleWalletEnabled;
 import co.rsk.rpc.modules.rsk.RskModule;
 import co.rsk.rpc.modules.rsk.RskModuleImpl;
+import co.rsk.rpc.modules.trace.TraceModule;
+import co.rsk.rpc.modules.trace.TraceModuleImpl;
 import co.rsk.rpc.modules.txpool.TxPoolModule;
 import co.rsk.rpc.modules.txpool.TxPoolModuleImpl;
 import co.rsk.rpc.netty.*;
@@ -83,14 +85,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
-import org.ethereum.core.BlockFactory;
-import org.ethereum.core.Blockchain;
-import org.ethereum.core.Genesis;
-import org.ethereum.core.TransactionPool;
+import org.ethereum.core.*;
 import org.ethereum.core.genesis.BlockChainLoader;
 import org.ethereum.core.genesis.GenesisLoader;
 import org.ethereum.core.genesis.GenesisLoaderImpl;
 import org.ethereum.crypto.ECKey;
+import org.ethereum.crypto.signature.Secp256k1;
 import org.ethereum.datasource.DataSourceWithCache;
 import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.datasource.LevelDbDataSource;
@@ -130,6 +130,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Clock;
 import java.util.*;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.HashMap;
 import java.util.List;
@@ -194,7 +195,6 @@ public class RskContext implements NodeBootstrapper {
     private PeerServer peerServer;
     private PersonalModule personalModule;
     private EthModuleWallet ethModuleWallet;
-    private EthModuleSolidity ethModuleSolidity;
     private EthModuleTransaction ethModuleTransaction;
     private MinerClient minerClient;
     private SyncConfiguration syncConfiguration;
@@ -212,6 +212,7 @@ public class RskContext implements NodeBootstrapper {
     private NodeMessageHandler nodeMessageHandler;
     private ConfigCapabilities configCapabilities;
     private DebugModule debugModule;
+    private TraceModule traceModule;
     private MnrModule mnrModule;
     private TxPoolModule txPoolModule;
     private RskModule rskModule;
@@ -224,8 +225,8 @@ public class RskContext implements NodeBootstrapper {
     private NodeManager nodeManager;
     private StaticMessages staticMessages;
     private MinerServer minerServer;
-    private SolidityCompiler solidityCompiler;
     private BlocksBloomStore blocksBloomStore;
+    private KeyValueDataSource blocksBloomDataSource;
     private BlockExecutor blockExecutor;
     private BtcBlockStoreWithCache.Factory btcBlockStoreFactory;
     private PrecompiledContracts precompiledContracts;
@@ -234,6 +235,8 @@ public class RskContext implements NodeBootstrapper {
     private StatusResolver statusResolver;
     private Web3InformationRetriever web3InformationRetriever;
     private BootstrapImporter bootstrapImporter;
+    private ReceivedTxSignatureCache receivedTxSignatureCache;
+    private BlockTxSignatureCache blockTxSignatureCache;
 
     public RskContext(String[] args) {
         this(new CliArgs.Parser<>(
@@ -244,6 +247,11 @@ public class RskContext implements NodeBootstrapper {
 
     private RskContext(CliArgs<NodeCliOptions, NodeCliFlags> cliArgs) {
         this.cliArgs = cliArgs;
+        initializeSingletons();
+    }
+
+    private void initializeSingletons() {
+        Secp256k1.initialize(getRskSystemProperties());
     }
 
     public BootstrapImporter getBootstrapImporter() {
@@ -342,12 +350,28 @@ public class RskContext implements NodeBootstrapper {
                     getBlockFactory(),
                     getCompositeEthereumListener(),
                     getTransactionExecutorFactory(),
+                    getReceivedTxSignatureCache(),
                     rskSystemProperties.txOutdatedThreshold(),
-                    rskSystemProperties.txOutdatedTimeout()
-            );
+                    rskSystemProperties.txOutdatedTimeout());
         }
 
         return transactionPool;
+    }
+
+    public ReceivedTxSignatureCache getReceivedTxSignatureCache() {
+        if (receivedTxSignatureCache == null) {
+            receivedTxSignatureCache = new ReceivedTxSignatureCache();
+        }
+
+        return receivedTxSignatureCache;
+    }
+
+    private BlockTxSignatureCache getBlockTxSignatureCache() {
+        if (blockTxSignatureCache == null) {
+            blockTxSignatureCache = new BlockTxSignatureCache(getReceivedTxSignatureCache());
+        }
+
+        return blockTxSignatureCache;
     }
 
     public RepositoryLocator getRepositoryLocator() {
@@ -384,16 +408,7 @@ public class RskContext implements NodeBootstrapper {
 
     public TrieStore getTrieStore() {
         if (trieStore == null) {
-            GarbageCollectorConfig gcConfig = getRskSystemProperties().garbageCollectorConfig();
-            if (gcConfig.enabled()) {
-                try {
-                    trieStore = buildMultiTrieStore(gcConfig.numberOfEpochs());
-                } catch (IOException e) {
-                    throw new IllegalStateException("Unable to build multi trie store", e);
-                }
-            } else {
-                trieStore = buildTrieStore("unitrie");
-            }
+            trieStore = buildAbstractTrieStore(Paths.get(getRskSystemProperties().databaseDir()));
         }
 
         return trieStore;
@@ -479,7 +494,8 @@ public class RskContext implements NodeBootstrapper {
                     getReceiptStore(),
                     getBlockFactory(),
                     getProgramInvokeFactory(),
-                    getPrecompiledContracts()
+                    getPrecompiledContracts(),
+                    getBlockTxSignatureCache()
             );
         }
 
@@ -555,7 +571,6 @@ public class RskContext implements NodeBootstrapper {
                     getReversibleTransactionExecutor(),
                     getExecutionBlockRetriever(),
                     getRepositoryLocator(),
-                    getEthModuleSolidity(),
                     getEthModuleWallet(),
                     getEthModuleTransaction(),
                     getBridgeSupportFactory()
@@ -657,6 +672,19 @@ public class RskContext implements NodeBootstrapper {
         return debugModule;
     }
 
+    public TraceModule getTraceModule() {
+        if (traceModule == null) {
+            traceModule = new TraceModuleImpl(
+                    getBlockchain(),
+                    getBlockStore(),
+                    getReceiptStore(),
+                    getBlockExecutor()
+            );
+        }
+
+        return traceModule;
+    }
+
     public MnrModule getMnrModule() {
         if (mnrModule == null) {
             mnrModule = new MnrModuleImpl(getMinerServer());
@@ -722,6 +750,7 @@ public class RskContext implements NodeBootstrapper {
                     getBlockToMineBuilder(),
                     getMinerClock(),
                     getBlockFactory(),
+                    getBuildInfo(),
                     getMiningConfig()
             );
         }
@@ -747,10 +776,22 @@ public class RskContext implements NodeBootstrapper {
 
     public BlocksBloomStore getBlocksBloomStore() {
         if (blocksBloomStore == null) {
-            blocksBloomStore = new BlocksBloomStore(64, 20);
+            blocksBloomStore = new BlocksBloomStore(64, 20, getBlocksBloomDataSource());
         }
 
         return blocksBloomStore;
+    }
+
+    private KeyValueDataSource getBlocksBloomDataSource() {
+        if (this.blocksBloomDataSource == null) {
+            this.blocksBloomDataSource = this.buildBlocksBloomDataSource();
+        }
+
+        return this.blocksBloomDataSource;
+    }
+
+    protected KeyValueDataSource buildBlocksBloomDataSource() {
+        return LevelDbDataSource.makeDataSource(Paths.get(getRskSystemProperties().databaseDir(), "blooms"));
     }
 
     protected NodeRunner buildNodeRunner() {
@@ -800,8 +841,8 @@ public class RskContext implements NodeBootstrapper {
                 getRskSystemProperties().flushNumberOfBlocks(),
                 getCompositeEthereumListener(),
                 getTrieStore(),
-                getBlockStore()
-        ));
+                getBlockStore(),
+                getReceiptStore()));
         GarbageCollectorConfig gcConfig = getRskSystemProperties().garbageCollectorConfig();
         if (gcConfig.enabled()) {
             internalServices.add(new GarbageCollector(
@@ -820,6 +861,39 @@ public class RskContext implements NodeBootstrapper {
         return new SolidityCompiler(getRskSystemProperties());
     }
 
+    private TrieStore buildAbstractTrieStore(Path databasePath) {
+        TrieStore newTrieStore;
+        GarbageCollectorConfig gcConfig = getRskSystemProperties().garbageCollectorConfig();
+        final String multiTrieStoreNamePrefix = "unitrie_";
+        if (gcConfig.enabled()) {
+            try {
+                newTrieStore = buildMultiTrieStore(databasePath, multiTrieStoreNamePrefix, gcConfig.numberOfEpochs());
+            } catch (IOException e) {
+                throw new IllegalStateException("Unable to build multi trie store", e);
+            }
+        } else {
+            Path trieStorePath = databasePath.resolve("unitrie");
+            try (Stream<Path> databasePathFilesStream = Files.list(databasePath)) {
+                List<Path> multiTrieStorePaths = databasePathFilesStream
+                        .filter(p -> p.getFileName().toString().startsWith(multiTrieStoreNamePrefix))
+                        .collect(Collectors.toList());
+
+                boolean gcWasEnabled = !multiTrieStorePaths.isEmpty();
+                if (gcWasEnabled) {
+                    LevelDbDataSource.mergeDataSources(trieStorePath, multiTrieStorePaths);
+                    // cleanup MultiTrieStore data sources
+                    multiTrieStorePaths.stream()
+                            .map(Path::toString)
+                            .forEach(FileUtil::recursiveDelete);
+                }
+            } catch (IOException e) {
+                logger.error("Unable to check if GC was ever enabled", e);
+            }
+            newTrieStore = buildTrieStore(trieStorePath);
+        }
+        return newTrieStore;
+    }
+
     protected Web3 buildWeb3() {
         return new Web3RskImpl(
                 getRsk(),
@@ -833,6 +907,7 @@ public class RskContext implements NodeBootstrapper {
                 getTxPoolModule(),
                 getMnrModule(),
                 getDebugModule(),
+                getTraceModule(),
                 getRskModule(),
                 getChannelManager(),
                 getPeerScoringManager(),
@@ -859,7 +934,13 @@ public class RskContext implements NodeBootstrapper {
     }
 
     protected ReceiptStore buildReceiptStore() {
-        KeyValueDataSource ds = makeDataSource("receipts", getRskSystemProperties().databaseDir());
+        int receiptsCacheSize = getRskSystemProperties().getReceiptsCacheSize();
+        KeyValueDataSource ds = LevelDbDataSource.makeDataSource(Paths.get(getRskSystemProperties().databaseDir(), "receipts"));
+
+        if (receiptsCacheSize != 0) {
+            ds = new DataSourceWithCache(ds, receiptsCacheSize);
+        }
+
         return new ReceiptStoreImpl(ds);
     }
 
@@ -872,25 +953,23 @@ public class RskContext implements NodeBootstrapper {
     }
 
     protected GenesisLoader buildGenesisLoader() {
-        RskSystemProperties rskSystemProperties = getRskSystemProperties();
-        ActivationConfig.ForBlock genesisActivations = rskSystemProperties.getActivationConfig().forBlock(0L);
+        RskSystemProperties systemProperties = getRskSystemProperties();
+        ActivationConfig.ForBlock genesisActivations = systemProperties.getActivationConfig().forBlock(0L);
         return new GenesisLoaderImpl(
-                rskSystemProperties.getActivationConfig(),
+                systemProperties.getActivationConfig(),
                 getStateRootHandler(),
                 getTrieStore(),
-                rskSystemProperties.genesisInfo(),
-                rskSystemProperties.getNetworkConstants().getInitialNonce(),
+                systemProperties.genesisInfo(),
+                systemProperties.getNetworkConstants().getInitialNonce(),
                 true,
                 genesisActivations.isActive(ConsensusRule.RSKIP92),
                 genesisActivations.isActive(ConsensusRule.RSKIP126)
         );
     }
 
-    protected TrieStore buildTrieStore(String name) {
-        RskSystemProperties rskSystemProperties = getRskSystemProperties();
-        String databaseDir = rskSystemProperties.databaseDir();
-        int statesCacheSize = rskSystemProperties.getStatesCacheSize();
-        KeyValueDataSource ds = makeDataSource(name, databaseDir);
+    protected TrieStore buildTrieStore(Path trieStorePath) {
+        int statesCacheSize = getRskSystemProperties().getStatesCacheSize();
+        KeyValueDataSource ds = LevelDbDataSource.makeDataSource(trieStorePath);
 
         if (statesCacheSize != 0) {
             ds = new DataSourceWithCache(ds, statesCacheSize);
@@ -899,17 +978,15 @@ public class RskContext implements NodeBootstrapper {
         return new TrieStoreImpl(ds);
     }
 
-    private TrieStore buildMultiTrieStore(int numberOfEpochs) throws IOException {
-        String multiTrieStoreNamePrefix = "unitrie_";
-        Path databasePath = Paths.get(getRskSystemProperties().databaseDir());
+    private TrieStore buildMultiTrieStore(Path databasePath, String namePrefix, int numberOfEpochs) throws IOException {
         int currentEpoch = numberOfEpochs;
         if (!getRskSystemProperties().databaseReset()) {
             try (Stream<Path> databasePaths = Files.list(databasePath)) {
                 currentEpoch = databasePaths
                         .map(Path::getFileName)
                         .map(Path::toString)
-                        .filter(fileName -> fileName.startsWith(multiTrieStoreNamePrefix))
-                        .map(multiTrieStoreName -> multiTrieStoreName.replaceFirst(multiTrieStoreNamePrefix, ""))
+                        .filter(fileName -> fileName.startsWith(namePrefix))
+                        .map(multiTrieStoreName -> multiTrieStoreName.replaceFirst(namePrefix, ""))
                         .map(Integer::valueOf)
                         .max(Comparator.naturalOrder())
                         .orElse(numberOfEpochs);
@@ -920,7 +997,7 @@ public class RskContext implements NodeBootstrapper {
                 // to assign currentEpoch - 1 as the name
                 Files.move(
                         unitriePath,
-                        databasePath.resolve(multiTrieStoreNamePrefix + (currentEpoch - 1))
+                        databasePath.resolve(namePrefix + (currentEpoch - 1))
                 );
             }
         }
@@ -928,11 +1005,10 @@ public class RskContext implements NodeBootstrapper {
         return new MultiTrieStore(
                 currentEpoch + 1,
                 numberOfEpochs,
-                name -> buildTrieStore(multiTrieStoreNamePrefix + name),
-                disposedEpoch -> FileUtil.recursiveDelete(databasePath.resolve(multiTrieStoreNamePrefix + disposedEpoch).toString())
+                name -> buildTrieStore(databasePath.resolve(namePrefix + name)),
+                disposedEpoch -> FileUtil.recursiveDelete(databasePath.resolve(namePrefix + disposedEpoch).toString())
         );
     }
-
 
     protected RepositoryLocator buildRepositoryLocator() {
         return new RepositoryLocator(getTrieStore(), getStateRootHandler());
@@ -960,7 +1036,7 @@ public class RskContext implements NodeBootstrapper {
     }
 
     protected StateRootHandler buildStateRootHandler() {
-        KeyValueDataSource stateRootsDB = makeDataSource("stateRoots", getRskSystemProperties().databaseDir());
+        KeyValueDataSource stateRootsDB = LevelDbDataSource.makeDataSource(Paths.get(getRskSystemProperties().databaseDir(), "stateRoots"));
         return new StateRootHandler(getRskSystemProperties().getActivationConfig(), getTrieConverter(), stateRootsDB, new HashMap<>());
     }
 
@@ -1006,7 +1082,7 @@ public class RskContext implements NodeBootstrapper {
             return null;
         }
 
-        KeyValueDataSource ds = makeDataSource("wallet", rskSystemProperties.databaseDir());
+        KeyValueDataSource ds = LevelDbDataSource.makeDataSource(Paths.get(rskSystemProperties.databaseDir(), "wallet"));
         return new Wallet(ds);
     }
 
@@ -1115,7 +1191,7 @@ public class RskContext implements NodeBootstrapper {
             BlockTimeStampValidationRule blockTimeStampValidationRule = new BlockTimeStampValidationRule(
                     commonConstants.getNewBlockMaxSecondsInTheFuture()
             );
-            blockValidationRule = new BlockCompositeRule(
+            blockValidationRule = new BlockValidatorRule(
                     new TxsMinGasPriceRule(),
                     new BlockUnclesValidationRule(
                             getBlockStore(),
@@ -1136,10 +1212,12 @@ public class RskContext implements NodeBootstrapper {
                             )
                     ),
                     new BlockRootValidationRule(rskSystemProperties.getActivationConfig()),
+                    getProofOfWorkRule(),
                     new RemascValidationRule(),
                     blockTimeStampValidationRule,
                     new GasLimitRule(commonConstants.getMinGasLimit()),
-                    new ExtraDataRule(commonConstants.getMaximumExtraDataSize())
+                    new ExtraDataRule(commonConstants.getMaximumExtraDataSize()),
+                    getForkDetectionDataRule()
             );
         }
 
@@ -1299,27 +1377,6 @@ public class RskContext implements NodeBootstrapper {
         return ethModuleWallet;
     }
 
-    private EthModuleSolidity getEthModuleSolidity() {
-        if (ethModuleSolidity == null) {
-            try {
-                ethModuleSolidity = new EthModuleSolidityEnabled(getSolidityCompiler());
-            } catch (RuntimeException e) {
-                logger.trace("Can't find find Solidity compiler, disabling Solidity support in Web3", e);
-                ethModuleSolidity = new EthModuleSolidityDisabled();
-            }
-        }
-
-        return ethModuleSolidity;
-    }
-
-    private SolidityCompiler getSolidityCompiler() {
-        if (solidityCompiler == null) {
-            solidityCompiler = buildSolidityCompiler();
-        }
-
-        return solidityCompiler;
-    }
-
     private EthModuleTransaction getEthModuleTransaction() {
         if (ethModuleTransaction == null) {
             RskSystemProperties rskSystemProperties = getRskSystemProperties();
@@ -1355,7 +1412,7 @@ public class RskContext implements NodeBootstrapper {
                     getSyncConfiguration(),
                     getBlockFactory(),
                     getProofOfWorkRule(),
-                    new BlockCompositeRule(
+                    new SyncBlockValidatorRule(
                             new BlockUnclesHashValidationRule(),
                             new BlockRootValidationRule(getRskSystemProperties().getActivationConfig())
                     ),
@@ -1621,14 +1678,8 @@ public class RskContext implements NodeBootstrapper {
                 .closeOnJvmShutdown()
                 .make();
 
-        KeyValueDataSource blocksDB = makeDataSource("blocks", databaseDir);
+        KeyValueDataSource blocksDB = LevelDbDataSource.makeDataSource(Paths.get(databaseDir, "blocks"));
 
         return new IndexedBlockStore(getBlockFactory(), blocksDB, new MapDBBlocksIndex(indexDB));
-    }
-
-    public static KeyValueDataSource makeDataSource(String name, String databaseDir) {
-        KeyValueDataSource ds = new LevelDbDataSource(name, databaseDir);
-        ds.init();
-        return ds;
     }
 }

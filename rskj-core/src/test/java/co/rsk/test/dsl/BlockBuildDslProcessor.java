@@ -24,6 +24,7 @@ import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Transaction;
 
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -51,6 +52,8 @@ public class BlockBuildDslProcessor {
     private void processCommand(DslCommand cmd) throws DslProcessorException {
         if (cmd.isCommand("parent"))
             this.builder.parent(this.world.getBlockByName(cmd.getArgument(0)));
+        else if (cmd.isCommand("gasLimit"))
+            this.builder.gasLimit(BigInteger.valueOf(Long.parseLong(cmd.getArgument(0))));
         else if (cmd.isCommand("build")) {
             Block block = this.builder.build();
             this.world.saveBlock(this.name, block);

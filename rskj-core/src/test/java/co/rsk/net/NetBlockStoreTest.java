@@ -19,6 +19,7 @@
 package co.rsk.net;
 
 import co.rsk.blockchain.utils.BlockGenerator;
+import co.rsk.core.Coin;
 import com.google.common.collect.Lists;
 import org.ethereum.TestUtils;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
@@ -221,23 +222,12 @@ public class NetBlockStoreTest {
     @Test
     public void saveHeader() {
         NetBlockStore store = new NetBlockStore();
-        BlockHeader blockHeader = blockFactory.newHeader(new byte[]{},
-                new byte[]{},
-                TestUtils.randomAddress().getBytes(),
-                new Bloom().getData(),
-                null,
-                1,
-                new byte[]{},
-                0,
-                0,
-                new byte[]{},
-                new byte[]{},
-                new byte[]{},
-                new byte[]{},
-                new byte[]{},
-                new byte[]{0},
-                0
-        );
+        BlockHeader blockHeader = blockFactory.getBlockHeaderBuilder()
+                .setParentHash(new byte[0])
+                .setCoinbase(TestUtils.randomAddress())
+                .setNumber(1)
+                .setMinimumGasPrice(Coin.ZERO)
+                .build();
 
         store.saveHeader(blockHeader);
         Assert.assertTrue(store.hasHeader(blockHeader.getHash()));
@@ -246,23 +236,12 @@ public class NetBlockStoreTest {
     @Test
     public void removeHeader() {
         NetBlockStore store = new NetBlockStore();
-        BlockHeader blockHeader = blockFactory.newHeader(new byte[]{},
-                new byte[]{},
-                TestUtils.randomAddress().getBytes(),
-                new Bloom().getData(),
-                null,
-                1,
-                new byte[]{},
-                0,
-                0,
-                new byte[]{},
-                new byte[]{},
-                new byte[]{},
-                new byte[]{},
-                new byte[]{},
-                new byte[]{0},
-                0
-        );
+        BlockHeader blockHeader = blockFactory.getBlockHeaderBuilder()
+                .setParentHash(new byte[0])
+                .setCoinbase(TestUtils.randomAddress())
+                .setNumber(1)
+                .setMinimumGasPrice(Coin.ZERO)
+                .build();
 
         store.saveHeader(blockHeader);
         store.removeHeader(blockHeader);

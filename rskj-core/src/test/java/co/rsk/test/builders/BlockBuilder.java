@@ -116,11 +116,18 @@ public class BlockBuilder {
                             null,
                             new BlockFactory(config.getActivationConfig()),
                             new ProgramInvokeFactoryImpl(),
-                            new PrecompiledContracts(config, bridgeSupportFactory)
+                            new PrecompiledContracts(config, bridgeSupportFactory),
+                            new BlockTxSignatureCache(new ReceivedTxSignatureCache())
                     )
             );
             executor.executeAndFill(block, parent.getHeader());
         }
+
+        return block;
+    }
+
+    public Block buildWithoutExecution() {
+        Block block = blockGenerator.createChildBlock(parent, txs, uncles, difficulty, this.minGasPrice, gasLimit);
 
         return block;
     }

@@ -19,6 +19,7 @@ package org.ethereum.vm;
  */
 
 
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.Bloom;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.RLP;
@@ -26,10 +27,10 @@ import org.ethereum.util.RLPElement;
 import org.ethereum.util.RLPItem;
 import org.ethereum.util.RLPList;
 
-import org.bouncycastle.util.encoders.Hex;
-
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * @author Roman Mandeleil
@@ -57,7 +58,8 @@ public class LogInfo {
         this.address = address.getRLPData() != null ? address.getRLPData() : new byte[]{};
         this.data = data.getRLPData() != null ? data.getRLPData() : new byte[]{};
 
-        for (RLPElement topic1 : topics) {
+        for (int k = 0; k < topics.size(); k++) {
+            RLPElement topic1 = topics.get(k);
             byte[] topic = topic1.getRLPData();
             this.topics.add(DataWord.valueOf(topic));
         }
@@ -118,6 +120,10 @@ public class LogInfo {
 
     public void reject() {
         this.rejected = true;
+    }
+
+    public static List<DataWord> byteArrayToList(byte[][] data) {
+        return Arrays.stream(data).map(DataWord::valueOf).collect(Collectors.toList());
     }
 
     @Override

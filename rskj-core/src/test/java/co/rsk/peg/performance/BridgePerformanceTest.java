@@ -40,6 +40,9 @@ import org.junit.runners.Suite;
         LockWhitelistTest.class,
         StateForBtcReleaseClientTest.class,
         GetBtcTransactionConfirmationsTest.class,
+        RegisterBtcCoinbaseTransactionTest.class,
+        HasBtcBlockCoinbaseTransactionInformationTest.class,
+        LockingCapTest.class
 })
 @Ignore
 public class BridgePerformanceTest extends PrecompiledContractPerformanceTest {

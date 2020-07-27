@@ -22,10 +22,8 @@ package org.ethereum.net.rlpx;
 import org.ethereum.net.client.Capability;
 import org.ethereum.util.*;
 
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 import static org.ethereum.util.ByteUtil.longToBytes;
@@ -57,20 +55,25 @@ public class HandshakeMessage {
     static HandshakeMessage parse(byte[] wire) {
         RLPList list = (RLPList) RLP.decode2(wire).get(0);
         HandshakeMessage message = new HandshakeMessage();
-        Iterator<RLPElement> iter = list.iterator();
-        message.version = ByteUtil.byteArrayToInt(iter.next().getRLPData()); // FIXME long
-        message.name = new String(iter.next().getRLPData(), Charset.forName("UTF-8"));
+        message.version = ByteUtil.byteArrayToInt(list.get(0).getRLPData()); // FIXME long
+        message.name = new String(list.get(1).getRLPData(), StandardCharsets.UTF_8);
         // caps
         message.caps = new ArrayList<>();
-        for (RLPElement capEl : (RLPList)iter.next()) {
+
+        RLPList capElements = (RLPList)list.get(2);
+
+        for (int k = 0; k < capElements.size(); k++) {
+            RLPElement capEl = capElements.get(k);
             RLPList capElList = (RLPList)capEl;
-            String name = new String(capElList.get(0).getRLPData(), Charset.forName("UTF-8"));
+            String name = new String(capElList.get(0).getRLPData(), StandardCharsets.UTF_8);
             long version = ByteUtil.byteArrayToInt(capElList.get(1).getRLPData());
 
             message.caps.add(new Capability(name, (byte)version)); // FIXME long
         }
-        message.listenPort = ByteUtil.byteArrayToInt(iter.next().getRLPData());
-        message.nodeId = iter.next().getRLPData();
+
+        message.listenPort = ByteUtil.byteArrayToInt(list.get(3).getRLPData());
+        message.nodeId = list.get(4).getRLPData();
+
         return message;
     }
 
