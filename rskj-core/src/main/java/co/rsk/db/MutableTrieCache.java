@@ -23,12 +23,13 @@ import co.rsk.core.types.ints.Uint24;
 import co.rsk.crypto.Keccak256;
 import co.rsk.trie.MutableTrie;
 import co.rsk.trie.Trie;
-import co.rsk.trie.TrieKeySlice;
+import co.rsk.util.StorageKeysIteratorWithCache;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.db.TrieKeyMapper;
 import org.ethereum.vm.DataWord;
 
+import javax.annotation.Nullable;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.function.Function;
@@ -36,19 +37,16 @@ import java.util.function.Function;
 public class MutableTrieCache implements MutableTrie {
 
     private final TrieKeyMapper trieKeyMapper = new TrieKeyMapper();
-
-    private MutableTrie trie;
-    // We use a single cache to mark both changed elements and removed elements.
-    // null value means the element has been removed.
-    private final Map<ByteArrayWrapper, Map<ByteArrayWrapper, byte[]>> cache;
-
-    // this logs recursive delete operations to be performed at commit time
-    private final Set<ByteArrayWrapper> deleteRecursiveLog;
+    protected MutableTrie trie;
+    protected ICache cache;
 
     public MutableTrieCache(MutableTrie parentTrie) {
+        this(parentTrie, new SingleCacheImpl());
+    }
+
+    protected MutableTrieCache(MutableTrie parentTrie, ICache _cache) {
         trie = parentTrie;
-        cache = new HashMap<>();
-        deleteRecursiveLog = new HashSet<>();
+        cache = _cache;
     }
 
     @Override
@@ -63,51 +61,51 @@ public class MutableTrieCache implements MutableTrie {
         return trie.getHash();
     }
 
+    @Nullable
     @Override
     public byte[] get(byte[] key) {
         return internalGet(key, trie::get, Function.identity()).orElse(null);
     }
 
-    private <T> Optional<T> internalGet(
+    /**
+     * apply a 'retriever method' for a given key, taking into account the cache if any, or gets from the nested mutable trie otherwise.
+     *
+     * @param key              : the key to get for
+     * @param trieRetriever    : a retriever method for a not cached key
+     * @param cacheTransformer : a retriever method for a cached key
+     * @param <T>              : variable return type of the retriever methods
+     * @return : returned value of the retriever method
+     */
+    protected <T> Optional<T> internalGet(
             byte[] key,
             Function<byte[], T> trieRetriever,
             Function<byte[], T> cacheTransformer) {
         ByteArrayWrapper wrapper = new ByteArrayWrapper(key);
-        ByteArrayWrapper accountWrapper = getAccountWrapper(wrapper);
-
-        Map<ByteArrayWrapper, byte[]> accountItems = cache.get(accountWrapper);
-        boolean isDeletedAccount = deleteRecursiveLog.contains(accountWrapper);
-        if (accountItems == null || !accountItems.containsKey(wrapper)) {
-            if (isDeletedAccount) {
-                return Optional.empty();
-            }
-            // uncached account
+        if (!cache.isInCache(wrapper)) {
             return Optional.ofNullable(trieRetriever.apply(key));
         }
-
-        byte[] cacheItem = accountItems.get(wrapper);
-        if (cacheItem == null) {
-            // deleted account key
+        ByteArrayWrapper accountWrapper = new ByteArrayWrapper(key);
+        byte[] value = cache.getNewestValue(wrapper);
+        if (cache.isAccountDeleted(wrapper) && (value == null)) {
             return Optional.empty();
         }
-
-        // cached account key
-        return Optional.ofNullable(cacheTransformer.apply(cacheItem));
+        return Optional.ofNullable(value == null ? null : cacheTransformer.apply(value));
     }
 
+    @Override
     public Iterator<DataWord> getStorageKeys(RskAddress addr) {
         byte[] accountStoragePrefixKey = trieKeyMapper.getAccountStoragePrefixKey(addr);
-        ByteArrayWrapper accountWrapper = getAccountWrapper(new ByteArrayWrapper(accountStoragePrefixKey));
+        ByteArrayWrapper accountWrapper = MutableTrieCache.getAccountWrapper(new ByteArrayWrapper(accountStoragePrefixKey));
 
-        boolean isDeletedAccount = deleteRecursiveLog.contains(accountWrapper);
-        Map<ByteArrayWrapper, byte[]> accountItems = cache.get(accountWrapper);
+        boolean isDeletedAccount = cache.isAccountDeleted(accountWrapper);
+        Map<ByteArrayWrapper, byte[]> accountItems = cache.getAccountItems(accountWrapper);
         if (accountItems == null && isDeletedAccount) {
             return Collections.emptyIterator();
         }
 
         if (isDeletedAccount) {
             // lower level is deleted, return cached items
-            return new StorageKeysIterator(Collections.emptyIterator(), accountItems, addr, trieKeyMapper);
+            return new StorageKeysIteratorWithCache(Collections.emptyIterator(), accountItems, addr, trieKeyMapper);
         }
 
         Iterator<DataWord> storageKeys = trie.getStorageKeys(addr);
@@ -116,12 +114,12 @@ public class MutableTrieCache implements MutableTrie {
             return storageKeys;
         }
 
-        return new StorageKeysIterator(storageKeys, accountItems, addr, trieKeyMapper);
+        return new StorageKeysIteratorWithCache(storageKeys, accountItems, addr, trieKeyMapper);
     }
 
     // This method returns a wrapper with the same content and size expected for a account key
     // when the key is from the same size than the original wrapper, it returns the same object
-    private ByteArrayWrapper getAccountWrapper(ByteArrayWrapper originalWrapper) {
+    public static ByteArrayWrapper getAccountWrapper(ByteArrayWrapper originalWrapper) {
         byte[] key = originalWrapper.getData();
         int size = TrieKeyMapper.domainPrefix().length + TrieKeyMapper.ACCOUNT_KEY_SIZE + TrieKeyMapper.SECURE_KEY_SIZE;
         return key.length == size ? originalWrapper : new ByteArrayWrapper(Arrays.copyOf(key, size));
@@ -132,15 +130,12 @@ public class MutableTrieCache implements MutableTrie {
         put(new ByteArrayWrapper(key), value);
     }
 
-    // This method optimizes cache-to-cache transfers
     @Override
-    public void put(ByteArrayWrapper wrapper, byte[] value) {
+    public void put(ByteArrayWrapper key, byte[] value) {
         // If value==null, do we have the choice to either store it
         // in cache with null or in deleteCache. Here we have the choice to
         // to add it to cache with null value or to deleteCache.
-        ByteArrayWrapper accountWrapper = getAccountWrapper(wrapper);
-        Map<ByteArrayWrapper, byte[]> accountMap = cache.computeIfAbsent(accountWrapper, k -> new HashMap<>());
-        accountMap.put(wrapper, value);
+        cache.put(key, value);
     }
 
     @Override
@@ -155,7 +150,9 @@ public class MutableTrieCache implements MutableTrie {
     // is called, and changes are applied last.
     ////////////////////////////////////////////////////////////////////////////////////
     @Override
-    public void deleteRecursive(byte[] key) {
+    public void deleteRecursive(byte[] account) {
+        // the key has to match exactly an account key
+        // it won't work if it is used with an storage key or any other
         // Can there be wrongly unhandled interactions interactions between put() and deleteRecurse()
         // In theory, yes. In practice, never.
         // Suppose that a contract X calls a contract S.
@@ -167,63 +164,38 @@ public class MutableTrieCache implements MutableTrie {
         // with SSTORE. This will be stored in the cache as a put(). The cache later receives a
         // deleteRecursive, BUT NEVER IN THE OTHER order.
         // See TransactionExecutor.finalization(), when it iterates the list with getDeleteAccounts().forEach()
-        ByteArrayWrapper wrap = new ByteArrayWrapper(key);
-        deleteRecursiveLog.add(wrap);
-        cache.remove(wrap);
+        ByteArrayWrapper wrap = new ByteArrayWrapper(account);
+        cache.deleteAccount(wrap);
     }
 
     @Override
     public void commit() {
-        // in case something was deleted and then put again, we first have to delete all the previous data
-        deleteRecursiveLog.forEach(item -> trie.deleteRecursive(item.getData()));
-        cache.forEach((accountKey, accountData) -> {
-            if (accountData != null) {
-                // cached account
-                accountData.forEach((realKey, value) -> this.trie.put(realKey, value));
-            }
-        });
-
-        deleteRecursiveLog.clear();
-        cache.clear();
+        cache.commit(trie);
     }
 
     @Override
     public void save() {
-        commit();
+        cache.commitAll(trie);
         trie.save();
     }
 
     @Override
     public void rollback() {
-        cache.clear();
-        deleteRecursiveLog.clear();
+        cache.rollback();
     }
 
     @Override
     public Set<ByteArrayWrapper> collectKeys(int size) {
         Set<ByteArrayWrapper> parentSet = trie.collectKeys(size);
-
-        // all cached items to be transferred to parent
-        cache.forEach((accountKey, account) ->
-              account.forEach((realKey, value) -> {
-                  if (size == Integer.MAX_VALUE || realKey.getData().length == size) {
-                      if (this.get(realKey.getData()) == null) {
-                          parentSet.remove(realKey);
-                      } else {
-                          parentSet.add(realKey);
-                      }
-                  }
-              })
-        );
+        cache.collectKeys(parentSet, size);
         return parentSet;
     }
 
-    private void assertNoCache() {
+    /**
+     * Insure that there is no changes in cache anymore (ie all changes have been committed or rolled back)
+     */
+    protected void assertNoCache() {
         if (!cache.isEmpty()) {
-            throw new IllegalStateException();
-        }
-
-        if (!deleteRecursiveLog.isEmpty()) {
             throw new IllegalStateException();
         }
     }
@@ -238,87 +210,76 @@ public class MutableTrieCache implements MutableTrie {
         return internalGet(key, trie::getValueHash, cachedBytes -> new Keccak256(Keccak256Helper.keccak256(cachedBytes))).orElse(Keccak256.ZERO_HASH);
     }
 
-    private static class StorageKeysIterator implements Iterator<DataWord> {
-        private final Iterator<DataWord> keysIterator;
-        private final Map<ByteArrayWrapper, byte[]> accountItems;
-        private final RskAddress address;
-        private final int storageKeyOffset = (
-                TrieKeyMapper.domainPrefix().length +
-                TrieKeyMapper.SECURE_ACCOUNT_KEY_SIZE +
-                TrieKeyMapper.storagePrefix().length +
-                TrieKeyMapper.SECURE_KEY_SIZE)
-                * Byte.SIZE;
-        private final TrieKeyMapper trieKeyMapper;
-        private DataWord currentStorageKey;
-        private Iterator<Map.Entry<ByteArrayWrapper, byte[]>> accountIterator;
+    /**
+     * An interface declaring methods to manage a cache
+     */
+    public interface ICache {
+        /**
+         * put in the current cache level, the given value at the given key
+         *
+         * @param key
+         * @param value
+         */
+        void put(ByteArrayWrapper key, byte[] value);
 
-        StorageKeysIterator(
-                Iterator<DataWord> keysIterator,
-                Map<ByteArrayWrapper, byte[]> accountItems,
-                RskAddress addr,
-                TrieKeyMapper trieKeyMapper) {
-            this.keysIterator = keysIterator;
-            this.accountItems = new HashMap<>(accountItems);
-            this.address = addr;
-            this.trieKeyMapper = trieKeyMapper;
-        }
+        /**
+         * get the value in cache for the given key, only if it has been updated in this cache level.
+         * To get the value in cache regardless of the level, use getNewestValue()
+         *
+         * @param key
+         * @return the value if the key has been updated in this cache level, otherwise null
+         */
+        byte[] get(ByteArrayWrapper key);
 
-        @Override
-        public boolean hasNext() {
-            if (currentStorageKey != null) {
-                return true;
-            }
+        /**
+         * get the value in cache for the given key, from the last cache level when this key has been updated
+         *
+         * @param key
+         * @return the newest value if the key has been updated in cache,
+         * or null if the key has been deleted in cache and this deletion is more recent than any updates
+         * (we assume that the caller previously checked if the key is in cache before, using isInCache(),
+         * so that a 'null' returned value means a deleted key)
+         */
+        byte[] getNewestValue(ByteArrayWrapper key);
 
-            while (keysIterator.hasNext()) {
-                DataWord item = keysIterator.next();
-                ByteArrayWrapper fullKey = getCompleteKey(item);
-                if (accountItems.containsKey(fullKey)) {
-                    byte[] value = accountItems.remove(fullKey);
-                    if (value == null){
-                        continue;
-                    }
-                }
-                currentStorageKey = item;
-                return true;
-            }
+        /**
+         * collect all the keys in cache (all levels included) with the specified size,
+         * or all keys when keySize = Integer.MAX_VALUE
+         *
+         * @param parentKeys : the set of collected keys
+         * @param keySize    : the size of the key to collect, or Integer.MAX_VALUE to collect all
+         */
+        void collectKeys(Set<ByteArrayWrapper> parentKeys, int keySize);
 
-            if (accountIterator == null) {
-                accountIterator = accountItems.entrySet().iterator();
-            }
+        /**
+         * @param key
+         */
+        void deleteAccount(ByteArrayWrapper key);
 
-            while (accountIterator.hasNext()) {
-                Map.Entry<ByteArrayWrapper, byte[]> entry = accountIterator.next();
-                byte[] key = entry.getKey().getData();
-                if (entry.getValue() != null && key.length * Byte.SIZE > storageKeyOffset) {
-                    // cached account key
-                    currentStorageKey = getPartialKey(key);
-                    return true;
-                }
-            }
+        /**
+         * Merge the latest cache level with the previous one
+         */
+        void commit(MutableTrie trie);
 
-            return false;
-        }
+        /**
+         * Merge every levels of cache into the first one.
+         */
+        void commitAll(MutableTrie trie);
 
-        private DataWord getPartialKey(byte[] key) {
-            TrieKeySlice nodeKey = TrieKeySlice.fromKey(key);
-            byte[] storageExpandedKeySuffix = nodeKey.slice(storageKeyOffset, nodeKey.length()).encode();
-            return DataWord.valueOf(storageExpandedKeySuffix);
-        }
+        /**
+         * Clear the cache data for the current cache level
+         */
+        void clear();
 
-        private ByteArrayWrapper getCompleteKey(DataWord subkey) {
-            byte[] secureKeyPrefix = trieKeyMapper.getAccountStorageKey(address, subkey);
-            return new ByteArrayWrapper(secureKeyPrefix);
-        }
+        Map<ByteArrayWrapper, byte[]> getAccountItems(ByteArrayWrapper key);
 
-        @Override
-        public DataWord next() {
-            if (currentStorageKey == null && !hasNext()) {
-                throw new NoSuchElementException();
-            }
+        boolean isAccountDeleted(ByteArrayWrapper key);
 
-            DataWord next = currentStorageKey;
-            currentStorageKey = null;
-            return next;
-        }
+        boolean isInCache(ByteArrayWrapper key);
+
+        boolean isEmpty();
+
+        void rollback();
     }
+
 }

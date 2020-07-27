@@ -31,18 +31,16 @@ import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.db.MutableRepository;
 import org.ethereum.db.TrieKeyMapper;
 import org.ethereum.vm.DataWord;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 import static org.junit.Assert.*;
-import static org.mockito.Mockito.when;
 
-/**
- * Created by SerAdmin on 9/26/2018.
- */
-public class MutableTrieCacheTest {
+public class JournalTrieCacheTest {
 
     private byte[] toBytes(String x) {
         return x.getBytes(StandardCharsets.UTF_8);
@@ -72,6 +70,14 @@ public class MutableTrieCacheTest {
         return setToString(mt.collectKeys(Integer.MAX_VALUE));
     }
 
+    @Before
+    public void setUp() throws Exception {
+    }
+
+    @After
+    public void tearDown() throws Exception {
+    }
+
     @Test
     public void testPuts() {
         MutableTrieImpl baseMutableTrie = new MutableTrieImpl(null, new Trie());
@@ -86,20 +92,21 @@ public class MutableTrieCacheTest {
 
         baseMutableTrie.put("BOB",toBytes("bob"));
 
-        MutableTrieCache mtCache = new MutableTrieCache(baseMutableTrie);
+        JournalTrieCache jtCache;
+        jtCache = new JournalTrieCache(baseMutableTrie);
 
         // Now add two more
-        mtCache.put("CAROL",toBytes("carol"));
-        mtCache.put("ROBERT",toBytes("robert"));
+        jtCache.put("CAROL",toBytes("carol"));
+        jtCache.put("ROBERT",toBytes("robert"));
 
         result = getKeysFrom(baseMutableTrie);
         assertEquals("ALICE;BOB;",result);
 
-        result = getKeysFrom(mtCache);
+        result = getKeysFrom(jtCache);
 
         assertEquals("ALICE;BOB;CAROL;ROBERT;",result);
 
-        mtCache.commit();
+        jtCache.commit();
 
         // Now the base trie must have all
         result = getKeysFrom(baseMutableTrie);
@@ -109,59 +116,59 @@ public class MutableTrieCacheTest {
     @Test
     public void testAccountBehavior(){
         MutableTrieImpl baseMutableTrie = new MutableTrieImpl(null, new Trie());
-        MutableTrieCache mtCache = new MutableTrieCache(baseMutableTrie);
+        JournalTrieCache jtCache = new JournalTrieCache(baseMutableTrie);
 
         // when account is deleted any key in that account is deleted
         StringBuilder accountLikeKey = new StringBuilder("HAL");
         int keySize = TrieKeyMapper.ACCOUNT_KEY_SIZE + TrieKeyMapper.domainPrefix().length + TrieKeyMapper.SECURE_KEY_SIZE;
         for (; accountLikeKey.length() < keySize;) accountLikeKey.append("0");
-        mtCache.put(toBytes(accountLikeKey.toString() + "123"), toBytes("HAL"));
-        mtCache.put(toBytes(accountLikeKey.toString() + "124"), toBytes("HAL"));
-        mtCache.deleteRecursive(toBytes(accountLikeKey.toString()));
-        assertNull(mtCache.get(toBytes(accountLikeKey.toString())));
-        assertNull(mtCache.get(toBytes(accountLikeKey.toString() + "123")));
-        assertNull(mtCache.get(toBytes(accountLikeKey.toString() + "124")));
+        jtCache.put(toBytes(accountLikeKey.toString() + "123"), toBytes("HAL"));
+        jtCache.put(toBytes(accountLikeKey.toString() + "124"), toBytes("HAL"));
+        jtCache.deleteRecursive(toBytes(accountLikeKey.toString()));
+        assertNull(jtCache.get(toBytes(accountLikeKey.toString())));
+        assertNull(jtCache.get(toBytes(accountLikeKey.toString() + "123")));
+        assertNull(jtCache.get(toBytes(accountLikeKey.toString() + "124")));
 
         // if a key is inserted after a recursive delete is visible
-        mtCache.put(toBytes(accountLikeKey.toString() + "125"), toBytes("HAL"));
-        assertNotNull(mtCache.get(toBytes(accountLikeKey.toString() + "125")));
-        assertNull(mtCache.get(toBytes(accountLikeKey.toString() + "123")));
-        assertNull(mtCache.get(toBytes(accountLikeKey.toString())));
+        jtCache.put(toBytes(accountLikeKey.toString() + "125"), toBytes("HAL"));
+        assertNotNull(jtCache.get(toBytes(accountLikeKey.toString() + "125")));
+        assertNull(jtCache.get(toBytes(accountLikeKey.toString() + "123")));
+        assertNull(jtCache.get(toBytes(accountLikeKey.toString())));
     }
 
     @Test
     public void testNestedCaches() {
         MutableTrieImpl baseMutableTrie = new MutableTrieImpl(null, new Trie());
-        MutableTrieCache mtCache = new MutableTrieCache(baseMutableTrie);
+        JournalTrieCache jtCache = new JournalTrieCache(baseMutableTrie);
 
         // when account is deleted any key in that account is deleted
         StringBuilder accountLikeKey = new StringBuilder("HAL");
         int keySize = TrieKeyMapper.ACCOUNT_KEY_SIZE + TrieKeyMapper.domainPrefix().length + TrieKeyMapper.SECURE_KEY_SIZE;
         for (; accountLikeKey.length() < keySize;) accountLikeKey.append("0");
-        mtCache.put(toBytes(accountLikeKey.toString() + "123"), toBytes("HAL"));
-        mtCache.put(toBytes(accountLikeKey.toString() + "124"), toBytes("HAL"));
-        mtCache.put(toBytes(accountLikeKey.toString() + "125"), toBytes("HAL"));
+        jtCache.put(toBytes(accountLikeKey.toString() + "123"), toBytes("HAL"));
+        jtCache.put(toBytes(accountLikeKey.toString() + "124"), toBytes("HAL"));
+        jtCache.put(toBytes(accountLikeKey.toString() + "125"), toBytes("HAL"));
 
         // puts on superior levels are not reflected on lower levels before commit
-        MutableTrieCache otherCache = new MutableTrieCache(mtCache);
+        JournalTrieCache otherCache = new JournalTrieCache(jtCache);
         assertNull(otherCache.get(toBytes(accountLikeKey.toString() + "126")));
         otherCache.put(toBytes(accountLikeKey.toString() + "124"), toBytes("LAH"));
         assertArrayEquals(toBytes("LAH"), otherCache.get(toBytes(accountLikeKey.toString() + "124")));
-        assertArrayEquals(toBytes("HAL"), mtCache.get(toBytes(accountLikeKey.toString() + "124")));
+        assertArrayEquals(toBytes("HAL"), jtCache.get(toBytes(accountLikeKey.toString() + "124")));
         otherCache.put(toBytes(accountLikeKey.toString() + "123"), null);
         assertNull(otherCache.get(toBytes(accountLikeKey.toString() + "123")));
-        assertArrayEquals(toBytes("HAL"), mtCache.get(toBytes(accountLikeKey.toString() + "123")));
+        assertArrayEquals(toBytes("HAL"), jtCache.get(toBytes(accountLikeKey.toString() + "123")));
 
         // after commit puts on superior levels are reflected on lower levels
         otherCache.commit();
         assertArrayEquals(toBytes("LAH"), otherCache.get(toBytes(accountLikeKey.toString() + "124")));
-        assertArrayEquals(toBytes("LAH"), mtCache.get(toBytes(accountLikeKey.toString() + "124")));
+        assertArrayEquals(toBytes("LAH"), jtCache.get(toBytes(accountLikeKey.toString() + "124")));
         assertNull(otherCache.get(toBytes(accountLikeKey.toString() + "123")));
-        assertNull(mtCache.get(toBytes(accountLikeKey.toString() + "123")));
-        assertArrayEquals(toBytes("HAL"), mtCache.get(toBytes(accountLikeKey.toString() + "125")));
+        assertNull(jtCache.get(toBytes(accountLikeKey.toString() + "123")));
+        assertArrayEquals(toBytes("HAL"), jtCache.get(toBytes(accountLikeKey.toString() + "125")));
 
-        mtCache.put(toBytes(accountLikeKey.toString() + "123"), toBytes("HAL"));
-        mtCache.put(toBytes(accountLikeKey.toString() + "124"), toBytes("HAL"));
+        jtCache.put(toBytes(accountLikeKey.toString() + "123"), toBytes("HAL"));
+        jtCache.put(toBytes(accountLikeKey.toString() + "124"), toBytes("HAL"));
         otherCache.deleteRecursive(toBytes(accountLikeKey.toString()));
         otherCache.put(toBytes(accountLikeKey.toString() + "125"), toBytes("HAL"));
         assertNull(otherCache.get(toBytes(accountLikeKey.toString() + "123")));
@@ -171,30 +178,30 @@ public class MutableTrieCacheTest {
         assertNull(otherCache.get(toBytes(accountLikeKey.toString() + "126")));
 
         // before commit lower level cache is not affected
-        assertNotNull(mtCache.get(toBytes(accountLikeKey.toString() + "123")));
-        assertNotNull(mtCache.get(toBytes(accountLikeKey.toString() + "124")));
-        assertNotNull(mtCache.get(toBytes(accountLikeKey.toString() + "125")));
-        assertNull(mtCache.get(toBytes(accountLikeKey.toString())));
+        assertNotNull(jtCache.get(toBytes(accountLikeKey.toString() + "123")));
+        assertNotNull(jtCache.get(toBytes(accountLikeKey.toString() + "124")));
+        assertNotNull(jtCache.get(toBytes(accountLikeKey.toString() + "125")));
+        assertNull(jtCache.get(toBytes(accountLikeKey.toString())));
 
         otherCache.commit();
-        assertNull(mtCache.get(toBytes(accountLikeKey.toString() + "123")));
-        assertNull(mtCache.get(toBytes(accountLikeKey.toString() + "124")));
-        assertNotNull(mtCache.get(toBytes(accountLikeKey.toString() + "125")));
-        assertNull(mtCache.get(toBytes(accountLikeKey.toString())));
+        assertNull(jtCache.get(toBytes(accountLikeKey.toString() + "123")));
+        assertNull(jtCache.get(toBytes(accountLikeKey.toString() + "124")));
+        assertNotNull(jtCache.get(toBytes(accountLikeKey.toString() + "125")));
+        assertNull(jtCache.get(toBytes(accountLikeKey.toString())));
     }
 
     @Test
     public void testStorageKeysMixOneLevel() {
         // SUTs
         MutableTrieImpl baseMutableTrie = new MutableTrieImpl(null, new Trie());
-        MutableTrieCache mtCache = new MutableTrieCache(baseMutableTrie);
-        MutableTrieCache otherCache = new MutableTrieCache(mtCache);
+        JournalTrieCache jtCache = new JournalTrieCache(baseMutableTrie);
+        JournalTrieCache otherCache = new JournalTrieCache(jtCache);
 
         // setup
 
         // helpers for interacting with the SUTs
         MutableRepository baseRepository = new MutableRepository(baseMutableTrie);
-        MutableRepository cacheRepository = new MutableRepository(mtCache);
+        MutableRepository cacheRepository = new MutableRepository(jtCache);
         MutableRepository otherCacheRepository = new MutableRepository(otherCache);
 
         RskAddress addr = new RskAddress("b86ca7db8c7ae687ac8d098789987eee12333fc7");
@@ -218,7 +225,7 @@ public class MutableTrieCacheTest {
 
         // assertions
 
-        Iterator<DataWord> storageKeys = mtCache.getStorageKeys(addr);
+        Iterator<DataWord> storageKeys = jtCache.getStorageKeys(addr);
         Set<DataWord> keys = new HashSet<>();
         storageKeys.forEachRemaining(keys::add);
         assertFalse(keys.contains(sk120));
@@ -243,7 +250,7 @@ public class MutableTrieCacheTest {
     public void testStorageKeysNoCache() {
         // SUTs
         MutableTrieImpl baseMutableTrie = new MutableTrieImpl(null, new Trie());
-        MutableTrieCache mtCache = new MutableTrieCache(baseMutableTrie);
+        JournalTrieCache jtCache = new JournalTrieCache(baseMutableTrie);
 
         // setup
 
@@ -258,7 +265,7 @@ public class MutableTrieCacheTest {
         baseRepository.addStorageBytes(addr, sk120, toBytes("HAL"));
         baseRepository.addStorageBytes(addr, sk121, toBytes("HAL"));
 
-        Iterator<DataWord> storageKeys = mtCache.getStorageKeys(addr);
+        Iterator<DataWord> storageKeys = jtCache.getStorageKeys(addr);
         Set<DataWord> keys = new HashSet<>();
         storageKeys.forEachRemaining(keys::add);
         assertTrue(keys.contains(sk120));
@@ -270,12 +277,12 @@ public class MutableTrieCacheTest {
     public void testStorageKeysNoTrie() {
         // SUTs
         MutableTrieImpl baseMutableTrie = new MutableTrieImpl(null, new Trie());
-        MutableTrieCache mtCache = new MutableTrieCache(baseMutableTrie);
+        JournalTrieCache jtCache = new JournalTrieCache(baseMutableTrie);
 
         // setup
 
         // helpers for interacting with the SUTs
-        MutableRepository cacheRepository = new MutableRepository(mtCache);
+        MutableRepository cacheRepository = new MutableRepository(jtCache);
 
         RskAddress addr = new RskAddress("b86ca7db8c7ae687ac8d098789987eee12333fc7");
 
@@ -287,7 +294,7 @@ public class MutableTrieCacheTest {
         cacheRepository.addStorageBytes(addr, sk121, toBytes("HAL"));
         cacheRepository.addStorageBytes(addr, skzero, toBytes("HAL"));
 
-        Iterator<DataWord> storageKeys = mtCache.getStorageKeys(addr);
+        Iterator<DataWord> storageKeys = jtCache.getStorageKeys(addr);
         Set<DataWord> keys = new HashSet<>();
         storageKeys.forEachRemaining(keys::add);
         assertTrue(keys.contains(sk120));
@@ -300,12 +307,12 @@ public class MutableTrieCacheTest {
     public void testStorageKeysDeletedAccount() {
         // SUTs
         MutableTrieImpl baseMutableTrie = new MutableTrieImpl(null, new Trie());
-        MutableTrieCache mtCache = new MutableTrieCache(baseMutableTrie);
+        JournalTrieCache jtCache = new JournalTrieCache(baseMutableTrie);
 
         // setup
 
         // helpers for interacting with the SUTs
-        MutableRepository cacheRepository = new MutableRepository(mtCache);
+        MutableRepository cacheRepository = new MutableRepository(jtCache);
         MutableRepository baseRepository = new MutableRepository(baseMutableTrie);
         RskAddress addr = new RskAddress("b86ca7db8c7ae687ac8d098789987eee12333fc7");
 
@@ -315,7 +322,7 @@ public class MutableTrieCacheTest {
         baseRepository.addStorageBytes(addr, sk120, toBytes("HAL"));
         cacheRepository.delete(addr);
 
-        Iterator<DataWord> storageKeys = mtCache.getStorageKeys(addr);
+        Iterator<DataWord> storageKeys = jtCache.getStorageKeys(addr);
         Set<DataWord> keys = new HashSet<>();
         storageKeys.forEachRemaining(keys::add);
         assertFalse(keys.contains(sk120));
@@ -324,7 +331,7 @@ public class MutableTrieCacheTest {
 
         cacheRepository.addStorageBytes(addr, sk121, toBytes("HAL"));
 
-        storageKeys = mtCache.getStorageKeys(addr);
+        storageKeys = jtCache.getStorageKeys(addr);
         keys = new HashSet<>();
         storageKeys.forEachRemaining(keys::add);
         assertFalse(keys.contains(sk120));
@@ -348,10 +355,10 @@ public class MutableTrieCacheTest {
 
         // Test the same in cache
 
-        MutableTrieCache mtCache = new MutableTrieCache(baseMutableTrie);
+        JournalTrieCache jtCache = new JournalTrieCache(baseMutableTrie);
 
-        mtCache.put(keyForCache, value);
-        Uint24 cacheValueLength = mtCache.getValueLength(keyForCache);
+        jtCache.put(keyForCache, value);
+        Uint24 cacheValueLength = jtCache.getValueLength(keyForCache);
         assertEquals(new Uint24(value.length), cacheValueLength);
     }
 
@@ -369,10 +376,10 @@ public class MutableTrieCacheTest {
 
         // Test the same in cache
 
-        MutableTrieCache mtCache = new MutableTrieCache(baseMutableTrie);
+        JournalTrieCache jtCache = new JournalTrieCache(baseMutableTrie);
 
-        mtCache.put(keyForCache, emptyValue);
-        Uint24 cacheValueLength = mtCache.getValueLength(keyForCache);
+        jtCache.put(keyForCache, emptyValue);
+        Uint24 cacheValueLength = jtCache.getValueLength(keyForCache);
         assertEquals(Uint24.ZERO, cacheValueLength);
     }
 
@@ -383,20 +390,20 @@ public class MutableTrieCacheTest {
         // First put some strings in the base
 
         byte[] wrongKey = toBytes("BOB");
-        
+
         Uint24 valueLength = baseMutableTrie.getValueLength(wrongKey);
         assertEquals(Uint24.ZERO, valueLength);
 
-        MutableTrieCache mtCache = new MutableTrieCache(baseMutableTrie);
+        JournalTrieCache jtCache = new JournalTrieCache(baseMutableTrie);
 
-        Uint24 cacheValueLength = mtCache.getValueLength(wrongKey);
+        Uint24 cacheValueLength = jtCache.getValueLength(wrongKey);
         assertEquals(Uint24.ZERO, cacheValueLength);
     }
 
     @Test
     public void testStoreValueOnTrieAndGetHash() {
         MutableTrieImpl baseMutableTrie = new MutableTrieImpl(null, new Trie());
-        MutableTrieCache mtCache = new MutableTrieCache(baseMutableTrie);
+        JournalTrieCache jtCache = new JournalTrieCache(baseMutableTrie);
 
         byte[] value = toBytes("11111111112222222222333333333344");
         byte[] key = toBytes("ALICE");
@@ -405,16 +412,16 @@ public class MutableTrieCacheTest {
         Keccak256 expectedHash = new Keccak256(Keccak256Helper.keccak256(value));
 
         baseMutableTrie.put(key, value);
-        mtCache.put(keyForCache, value);
+        jtCache.put(keyForCache, value);
 
         getValueHashAndAssert(baseMutableTrie, key, expectedHash);
-        getValueHashAndAssert(mtCache, keyForCache, expectedHash);
+        getValueHashAndAssert(jtCache, keyForCache, expectedHash);
     }
 
     @Test
     public void testStoreEmptyValueOnTrieAndGetHash() {
         MutableTrieImpl baseMutableTrie = new MutableTrieImpl(null, new Trie());
-        MutableTrieCache mtCache = new MutableTrieCache(baseMutableTrie);
+        JournalTrieCache jtCache = new JournalTrieCache(baseMutableTrie);
 
         byte[] emptyValue = new byte[0];
         byte[] key = toBytes("ALICE");
@@ -423,26 +430,26 @@ public class MutableTrieCacheTest {
         Keccak256 emptyHash = new Keccak256(Keccak256Helper.keccak256(emptyValue));
 
         baseMutableTrie.put(key, emptyValue);
-        mtCache.put(keyForCache, emptyValue);
+        jtCache.put(keyForCache, emptyValue);
 
         getValueHashAndAssert(baseMutableTrie, key, Keccak256.ZERO_HASH);
-        getValueHashAndAssert(mtCache, keyForCache, emptyHash);
+        getValueHashAndAssert(jtCache, keyForCache, emptyHash);
     }
 
     @Test
     public void testGetValueNotStoredAndGetHash() {
         MutableTrieImpl baseMutableTrie = new MutableTrieImpl(null, new Trie());
-        MutableTrieCache mtCache = new MutableTrieCache(baseMutableTrie);
+        JournalTrieCache jtCache = new JournalTrieCache(baseMutableTrie);
 
         byte[] wrongKey = toBytes("BOB");
         Keccak256 zeroHash = Keccak256.ZERO_HASH;
 
         getValueHashAndAssert(baseMutableTrie, wrongKey, zeroHash);
-        getValueHashAndAssert(mtCache, wrongKey, zeroHash);
+        getValueHashAndAssert(jtCache, wrongKey, zeroHash);
     }
 
     /**
-     * Check the save() method. Verify that all commits are applied before saving Trie in TrieStore
+     * Check getHash() and save() method. Verify that all commits are applied before saving Trie in TrieStore
      */
     @Test
     public void testSaveOneCacheLevel() {
@@ -451,17 +458,29 @@ public class MutableTrieCacheTest {
         // First put some strings in the base
         baseMutableTrie.put("ALICE",toBytes("alice"));
         baseMutableTrie.put("BOB",toBytes("bob"));
-        MutableTrieCache mtCache;
-        mtCache = new MutableTrieCache(baseMutableTrie);
+        JournalTrieCache jtCache;
+        jtCache = new JournalTrieCache(baseMutableTrie);
 
         // Now add two more
-        mtCache.put("ALICE",toBytes("ecila"));
-        mtCache.put("CAROL",toBytes("carol"));
-        mtCache.put("ROBERT",toBytes("robert"));
-        mtCache.deleteRecursive(toBytes("BOB"));
+        jtCache.put("ALICE",toBytes("ecila"));
+        jtCache.put("CAROL",toBytes("carol"));
+        jtCache.put("ROBERT",toBytes("robert"));
+        jtCache.deleteRecursive(toBytes("BOB"));
 
-        mtCache.save();
+        byte[] hashFromCache = null;
+        try {
+            // before save, we expect an exception is thrown when getting the hash
+            hashFromCache = jtCache.getHash().getBytes();
+            fail("An Exception was expected because of calling getHash() on a not empty cache");
+        } catch (IllegalStateException e) {
+            assertNull(hashFromCache);
+        }
+        jtCache.save();
+        hashFromCache = jtCache.getHash().getBytes();
+        assertNotNull(hashFromCache);
         byte[] hashToRetrieve = baseMutableTrie.getTrie().getHash().getBytes();
+        assertArrayEquals(hashFromCache, hashToRetrieve);
+
         Trie retrievedTrie = trieStore.retrieve(hashToRetrieve).get();
         baseMutableTrie = new MutableTrieImpl(trieStore, retrievedTrie);
         String result;
@@ -483,17 +502,133 @@ public class MutableTrieCacheTest {
         // First put some strings in the base
         baseMutableTrie.put("ALICE",toBytes("alice"));
         baseMutableTrie.put("BOB",toBytes("bob"));
-        MutableTrieCache mtCacheLvl1 = new MutableTrieCache(baseMutableTrie);
-        MutableTrieCache mtCacheLvl2 = new MutableTrieCache(mtCacheLvl1);
-        MutableTrieCache mtCacheLvl3 = new MutableTrieCache(mtCacheLvl2);
+        JournalTrieCache jtCacheLvl1 = new JournalTrieCache(baseMutableTrie);
+        JournalTrieCache jtCacheLvl2 = new JournalTrieCache(jtCacheLvl1);
+        JournalTrieCache jtCacheLvl3 = new JournalTrieCache(jtCacheLvl2);
+
+        // Now add two more
+        jtCacheLvl1.put("ALICE",toBytes("ecila"));
+        jtCacheLvl2.put("CAROL",toBytes("carol"));
+        jtCacheLvl2.deleteRecursive(toBytes("BOB"));
+        jtCacheLvl3.put("ROBERT",toBytes("robert"));
+
+        jtCacheLvl3.save();
+        byte[] hashToRetrieve = baseMutableTrie.getTrie().getHash().getBytes();
+        Trie retrievedTrie = trieStore.retrieve(hashToRetrieve).get();
+        baseMutableTrie = new MutableTrieImpl(trieStore, retrievedTrie);
+        String result;
+        result = getKeysFrom(baseMutableTrie);
+        assertEquals("ALICE;CAROL;ROBERT;",result);
+        assertArrayEquals(toBytes("ecila"), baseMutableTrie.get(toBytes("ALICE")));
+        assertNull(baseMutableTrie.get(toBytes("BOB")));
+        assertArrayEquals(toBytes("carol"), baseMutableTrie.get(toBytes("CAROL")));
+        assertArrayEquals(toBytes("robert"), baseMutableTrie.get(toBytes("ROBERT")));
+    }
+
+    /**
+     * Check collectKeys()/deleteRecursive()/commit()/rollback() with a 4 levels caching scenario
+     */
+    @Test
+    public void testMultiPutsIncludingAccountDeletion() {
+        MutableTrieImpl baseMutableTrie = new MutableTrieImpl(null, new Trie());
+
+        // First put some strings in the base
+        baseMutableTrie.put("ALICE",toBytes("alice"));
+
+        String result;
+        result = getKeysFrom(baseMutableTrie);
+        assertEquals("ALICE;",result);
+
+        baseMutableTrie.put("BOB",toBytes("bob"));
+
+        JournalTrieCache jtCacheLvl1;
+        jtCacheLvl1 = new JournalTrieCache(baseMutableTrie);
+        JournalTrieCache jtCacheLvl2;
+        jtCacheLvl2 = new JournalTrieCache(jtCacheLvl1);
+        JournalTrieCache jtCacheLvl3;
+        jtCacheLvl3 = new JournalTrieCache(jtCacheLvl2);
+        JournalTrieCache jtCacheLvl4;
+        jtCacheLvl4 = new JournalTrieCache(jtCacheLvl3);
+
+        // Now add two more at lvl1
+        jtCacheLvl1.put("CAROL",toBytes("carol"));
+        jtCacheLvl1.put("ROBERT",toBytes("robert"));
+        result = getKeysFrom(jtCacheLvl1);
+        assertEquals("ALICE;BOB;CAROL;ROBERT;",result);
+
+        // Now delete one at lvl2
+        jtCacheLvl2.deleteRecursive(toBytes("CAROL"));
+        result = getKeysFrom(jtCacheLvl2);
+        assertEquals("ALICE;BOB;ROBERT;",result);
+
+        // Now delete another one at lvl3
+        jtCacheLvl3.deleteRecursive(toBytes("BOB"));
+        result = getKeysFrom(jtCacheLvl3);
+        assertEquals("ALICE;ROBERT;",result);
+
+        // Now add two more at lvl4
+        jtCacheLvl4.put("CAROL",toBytes("carol"));
+        jtCacheLvl4.put("DENISE",toBytes("denise"));
+        result = getKeysFrom(jtCacheLvl4);
+        assertEquals("ALICE;CAROL;DENISE;ROBERT;",result);
+        // recheck lvl3 before committing
+        result = getKeysFrom(jtCacheLvl3);
+        assertEquals("ALICE;ROBERT;",result);
+        // commit lvl4
+        jtCacheLvl4.commit();
+        // recheck lvl3 after committing
+        result = getKeysFrom(jtCacheLvl3);
+        assertEquals("ALICE;CAROL;DENISE;ROBERT;",result);
+
+        // recheck lvl2 before committing
+        result = getKeysFrom(jtCacheLvl2);
+        assertEquals("ALICE;BOB;ROBERT;",result);
+        // commit lvl3
+        jtCacheLvl3.commit();
+        // recheck lvl2 after committing
+        result = getKeysFrom(jtCacheLvl2);
+        assertEquals("ALICE;CAROL;DENISE;ROBERT;",result);
+
+        // recheck base and lvl1 before rollback
+        result = getKeysFrom(baseMutableTrie);
+        assertEquals("ALICE;BOB;",result);
+        result = getKeysFrom(jtCacheLvl1);
+        assertEquals("ALICE;BOB;CAROL;ROBERT;",result);
+        // rollback lvl2
+        jtCacheLvl2.rollback();
+        // recheck base and lvl1 after rollback
+        result = getKeysFrom(baseMutableTrie);
+        assertEquals("ALICE;BOB;",result);
+        result = getKeysFrom(jtCacheLvl1);
+        assertEquals("ALICE;BOB;CAROL;ROBERT;",result);
+
+        jtCacheLvl1.commit();
+        // Now the base trie must have all
+        result = getKeysFrom(baseMutableTrie);
+        assertEquals("ALICE;BOB;CAROL;ROBERT;",result);
+    }
+
+    /**
+     * Check a JournalTrieCache with 2 caching levels over a MutableTrieCache with 1 level
+     */
+    @Test
+    public void testJournalCacheOverMutableTrieCache() {
+        TrieStore trieStore = new TrieStoreImpl(new HashMapDB());
+        MutableTrieImpl baseMutableTrie = new MutableTrieImpl(trieStore, new Trie(trieStore));
+        // First put some strings in the base
+        baseMutableTrie.put("ALICE",toBytes("alice"));
+        baseMutableTrie.put("BOB",toBytes("bob"));
+        JournalTrieCache mtCacheLvl1 = new JournalTrieCache(baseMutableTrie);
+        JournalTrieCache jtCacheLvl2 = new JournalTrieCache(mtCacheLvl1);
+        JournalTrieCache jtCacheLvl3 = new JournalTrieCache(jtCacheLvl2);
 
         // Now add two more
         mtCacheLvl1.put("ALICE",toBytes("ecila"));
-        mtCacheLvl2.put("CAROL",toBytes("carol"));
-        mtCacheLvl2.deleteRecursive(toBytes("BOB"));
-        mtCacheLvl3.put("ROBERT",toBytes("robert"));
+        jtCacheLvl2.put("CAROL",toBytes("carol"));
+        jtCacheLvl2.deleteRecursive(toBytes("BOB"));
+        jtCacheLvl3.put("ROBERT",toBytes("robert"));
 
-        mtCacheLvl3.save();
+        jtCacheLvl3.save();
         byte[] hashToRetrieve = baseMutableTrie.getTrie().getHash().getBytes();
         Trie retrievedTrie = trieStore.retrieve(hashToRetrieve).get();
         baseMutableTrie = new MutableTrieImpl(trieStore, retrievedTrie);
@@ -510,4 +645,5 @@ public class MutableTrieCacheTest {
         Keccak256 hash = trie.getValueHash(key);
         assertEquals(expectedHash, hash);
     }
+
 }
