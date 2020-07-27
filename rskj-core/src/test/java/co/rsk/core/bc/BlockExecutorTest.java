@@ -690,7 +690,8 @@ public class BlockExecutorTest {
                         null,
                         blockFactory,
                         new ProgramInvokeFactoryImpl(),
-                        new PrecompiledContracts(config, bridgeSupportFactory)
+                        new PrecompiledContracts(config, bridgeSupportFactory),
+                        new BlockTxSignatureCache(new ReceivedTxSignatureCache())
                 )
         );
     }

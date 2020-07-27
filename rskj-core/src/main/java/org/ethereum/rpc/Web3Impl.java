@@ -37,11 +37,11 @@ import co.rsk.rpc.modules.evm.EvmModule;
 import co.rsk.rpc.modules.mnr.MnrModule;
 import co.rsk.rpc.modules.personal.PersonalModule;
 import co.rsk.rpc.modules.rsk.RskModule;
+import co.rsk.rpc.modules.trace.TraceModule;
 import co.rsk.rpc.modules.txpool.TxPoolModule;
 import co.rsk.scoring.InvalidInetAddressException;
 import co.rsk.scoring.PeerScoringInformation;
 import co.rsk.scoring.PeerScoringManager;
-import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
 import org.ethereum.crypto.HashUtil;
@@ -107,6 +107,7 @@ public class Web3Impl implements Web3 {
     private final TxPoolModule txPoolModule;
     private final MnrModule mnrModule;
     private final DebugModule debugModule;
+    private final TraceModule traceModule;
     private final RskModule rskModule;
 
     protected Web3Impl(
@@ -123,6 +124,7 @@ public class Web3Impl implements Web3 {
             TxPoolModule txPoolModule,
             MnrModule mnrModule,
             DebugModule debugModule,
+            TraceModule traceModule,
             RskModule rskModule,
             ChannelManager channelManager,
             PeerScoringManager peerScoringManager,
@@ -145,6 +147,7 @@ public class Web3Impl implements Web3 {
         this.txPoolModule = txPoolModule;
         this.mnrModule = mnrModule;
         this.debugModule = debugModule;
+        this.traceModule = traceModule;
         this.rskModule = rskModule;
         this.channelManager = channelManager;
         this.peerScoringManager = peerScoringManager;
@@ -687,10 +690,10 @@ public class Web3Impl implements Web3 {
         return new TransactionReceiptDTO(block, txInfo);
     }
 
-
     @Override
     public BlockResultDTO eth_getUncleByBlockHashAndIndex(String blockHash, String uncleIdx) {
         BlockResultDTO s = null;
+
         try {
             Block block = blockchain.getBlockByHash(stringHexToByteArray(blockHash));
 
@@ -698,21 +701,9 @@ public class Web3Impl implements Web3 {
                 return null;
             }
 
-            int idx = JSonHexToInt(uncleIdx);
+            s = getUncleResultDTO(uncleIdx, block);
 
-            if (idx >= block.getUncleList().size()) {
-                return null;
-            }
-
-            BlockHeader uncleHeader = block.getUncleList().get(idx);
-            Block uncle = blockchain.getBlockByHash(uncleHeader.getHash().getBytes());
-
-            if (uncle == null) {
-                boolean isRskip126Enabled = config.getActivationConfig().isActive(ConsensusRule.RSKIP126, uncleHeader.getNumber());
-                uncle = new Block(uncleHeader, Collections.emptyList(), Collections.emptyList(), isRskip126Enabled, true);
-            }
-
-            return s = getBlockResult(uncle, false);
+            return s;
         } finally {
             if (logger.isDebugEnabled()) {
                 logger.debug("eth_getUncleByBlockHashAndIndex({}, {}): {}", blockHash, uncleIdx, s);
@@ -720,13 +711,36 @@ public class Web3Impl implements Web3 {
         }
     }
 
+    private BlockResultDTO getUncleResultDTO(String uncleIdx, Block block) {
+        int idx = JSonHexToInt(uncleIdx);
+
+        if (idx >= block.getUncleList().size()) {
+            return null;
+        }
+
+        BlockHeader uncleHeader = block.getUncleList().get(idx);
+        Block uncle = blockchain.getBlockByHash(uncleHeader.getHash().getBytes());
+
+        if (uncle == null) {
+            boolean isRskip126Enabled = config.getActivationConfig().isActive(ConsensusRule.RSKIP126, uncleHeader.getNumber());
+            uncle = Block.createBlockFromHeader(uncleHeader, isRskip126Enabled);
+        }
+
+        return getBlockResult(uncle, false);
+    }
+
     @Override
     public BlockResultDTO eth_getUncleByBlockNumberAndIndex(String blockId, String uncleIdx) {
         BlockResultDTO s = null;
         try {
-            s = web3InformationRetriever.getBlock(blockId)
-                    .map(b -> eth_getUncleByBlockHashAndIndex(Hex.toHexString(b.getHash().getBytes()), uncleIdx))
-                    .orElse(null);
+            Optional<Block> block = web3InformationRetriever.getBlock(blockId);
+
+            if (!block.isPresent()) {
+                return null;
+            }
+
+            s = getUncleResultDTO(uncleIdx, block.get());
+
             return s;
         } finally {
             if (logger.isDebugEnabled()) {
@@ -755,6 +769,11 @@ public class Web3Impl implements Web3 {
     @Override
     public Map<String, CompilationResultDTO> eth_compileSerpent(String contract) {
         throw new UnsupportedOperationException("Serpent compiler not supported");
+    }
+
+    @Override
+    public Map<String, CompilationResultDTO> eth_compileSolidity(String contract) {
+        throw new UnsupportedOperationException("Solidity compiler not supported");
     }
 
     @Override
@@ -979,6 +998,11 @@ public class Web3Impl implements Web3 {
     @Override
     public DebugModule getDebugModule() {
         return debugModule;
+    }
+
+    @Override
+    public TraceModule getTraceModule() {
+        return traceModule;
     }
 
     @Override

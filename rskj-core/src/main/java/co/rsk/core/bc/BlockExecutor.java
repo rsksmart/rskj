@@ -222,7 +222,7 @@ public class BlockExecutor {
     }
 
     public BlockResult execute(Block block, BlockHeader parent, boolean discardInvalidTxs, boolean ignoreReadyToExecute) {
-        return executeInternal(null, block, parent, discardInvalidTxs, ignoreReadyToExecute);
+        return executeInternal(null, 0, block, parent, discardInvalidTxs, ignoreReadyToExecute);
     }
 
     /**
@@ -230,17 +230,19 @@ public class BlockExecutor {
      */
     public void traceBlock(
             ProgramTraceProcessor programTraceProcessor,
+            int vmTraceOptions,
             Block block,
             BlockHeader parent,
             boolean discardInvalidTxs,
             boolean ignoreReadyToExecute) {
         executeInternal(
-                Objects.requireNonNull(programTraceProcessor), block, parent, discardInvalidTxs, ignoreReadyToExecute
+                Objects.requireNonNull(programTraceProcessor), vmTraceOptions, block, parent, discardInvalidTxs, ignoreReadyToExecute
         );
     }
 
     private BlockResult executeInternal(
             @Nullable ProgramTraceProcessor programTraceProcessor,
+            int vmTraceOptions,
             Block block,
             BlockHeader parent,
             boolean discardInvalidTxs,
@@ -285,9 +287,9 @@ public class BlockExecutor {
                     block,
                     totalGasUsed,
                     vmTrace,
+                    vmTraceOptions,
                     deletedAccounts);
             boolean transactionExecuted = txExecutor.executeTransaction();
-
 
             if (!acceptInvalidTransactions && !transactionExecuted) {
                 if (discardInvalidTxs) {
@@ -342,7 +344,9 @@ public class BlockExecutor {
             logger.trace("tx done");
         }
 
-        track.save();
+        if (!vmTrace) {
+            track.save();
+        }
 
         BlockResult result = new BlockResult(
                 block,
@@ -350,7 +354,7 @@ public class BlockExecutor {
                 receipts,
                 totalGasUsed,
                 totalPaidFees,
-                track.getTrie()
+                vmTrace ? null : track.getTrie()
         );
         profiler.stop(metric);
         return result;

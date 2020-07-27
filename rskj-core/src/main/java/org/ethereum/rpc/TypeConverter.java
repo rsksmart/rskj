@@ -44,6 +44,9 @@ public class TypeConverter {
     }
 
     public static BigInteger stringHexToBigInteger(String input) {
+        if(!input.startsWith("0x")) {
+            throw new NumberFormatException("Invalid hex number, expected 0x prefix");
+        }
         String hexa = input.substring(2);
         return new BigInteger(hexa, 16);
     }

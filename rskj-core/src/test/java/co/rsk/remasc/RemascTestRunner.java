@@ -128,7 +128,7 @@ class RemascTestRunner {
 
         BlockFactory blockFactory = new BlockFactory(builder.getConfig().getActivationConfig());
         final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
-
+        BlockTxSignatureCache blockTxSignatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
                 new RepositoryBtcBlockStoreWithCache.Factory(
                         builder.getConfig().getNetworkConstants().getBridgeConstants().getBtcParams()),
@@ -145,7 +145,8 @@ class RemascTestRunner {
                         null,
                         blockFactory,
                         programInvokeFactory,
-                        precompiledContracts
+                        precompiledContracts,
+                        blockTxSignatureCache
                 )
         );
 
@@ -293,7 +294,7 @@ class RemascTestRunner {
                     HashUtil.EMPTY_TRIE_HASH, new Bloom().getData(), finalDifficulty, parentBlock.getNumber() + 1,
                     parentBlock.getGasLimit(), parentBlock.getGasUsed(), parentBlock.getTimestamp(), new byte[0],
                     paidFees, null, null, null, new byte[0],
-                    Coin.valueOf(10), uncles.size(), false, true, false
+                    Coin.valueOf(10), uncles.size(), false, true, false, new byte[0]
             );
             this.blockHash = blockHash;
         }

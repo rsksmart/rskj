@@ -45,6 +45,17 @@ public class DslParser {
         this(new StringReader(text));
     }
 
+    public String nextLine() {
+        try {
+            String line = this.reader.readLine();
+            line = normalizeLine(line);
+
+            return line;
+        } catch (IOException e) {
+            return null;
+        }
+    }
+
     public DslCommand nextCommand() {
         String[] words;
 

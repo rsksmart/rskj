@@ -116,6 +116,29 @@ public class ByteUtil {
     }
 
     /**
+     * Parses 32-bytes word from given input.
+     * Uses {@link #parseBytes(byte[], int, int)} method,
+     * thus, result will be right-padded with zero bytes if there is not enough bytes in {@code input}
+     *
+     * @param idx an index of the word starting from {@code 0}
+     */
+    public static byte[] parseWord(byte[] input, int idx) {
+        return parseBytes(input, 32 * idx, 32);
+    }
+
+    /**
+     * Parses 32-bytes word from given input.
+     * Uses {@link #parseBytes(byte[], int, int)} method,
+     * thus, result will be right-padded with zero bytes if there is not enough bytes in {@code input}
+     *
+     * @param idx an index of the word starting from {@code 0}
+     * @param offset an offset in {@code input} array to start parsing from
+     */
+    public static byte[] parseWord(byte[] input, int offset, int idx) {
+        return parseBytes(input, offset + 32 * idx, 32);
+    }
+
+    /**
      * Returns the amount of nibbles that match each other from 0 ...
      * amount will never be larger than smallest input
      *
@@ -249,18 +272,28 @@ public class ByteUtil {
     }
 
     /**
-     * Cast hex encoded value from byte[] to int
-     *
-     * Limited to Integer.MAX_VALUE: 2^32-1 (4 bytes)
+     * Cast from byte[] to long
+     * Limited to Long.MAX_VALUE: 2^63-1 (8 bytes)
+     * Will throw IlegalArgumentException if you  pass
+     * a byte array with more than 8 bytes.
      *
      * @param b array contains the values
      * @return unsigned positive long value.
      */
     public static long byteArrayToLong(byte[] b) {
         if (b == null || b.length == 0) {
-            return 0;
+             return 0;
         }
-        return new BigInteger(1, b).longValue();
+        // avoids overflows in the result
+        if (b.length > 8) {
+            throw new IllegalArgumentException("byte array can't have more than 8 bytes if it is to be cast to long");
+        }
+        long result = 0;
+        for (int i = 0; i < b.length; i++) {
+            result <<= 8;
+            result |= (b[i] & 0xFF);
+        }
+        return result;
     }
 
 

@@ -19,6 +19,7 @@
 package co.rsk.mine;
 
 import co.rsk.config.MiningConfig;
+import co.rsk.core.BlockDifficulty;
 import co.rsk.core.Coin;
 import co.rsk.core.DifficultyCalculator;
 import co.rsk.core.RskAddress;
@@ -42,8 +43,6 @@ import org.slf4j.LoggerFactory;
 
 import java.math.BigInteger;
 import java.util.*;
-
-import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
 
 /**
  * This component helps build a new block to mine.
@@ -196,30 +195,31 @@ public class BlockToMineBuilder {
         byte[] forkDetectionData = forkDetectionDataCalculator.calculateWithBlockHeaders(mainchainHeaders);
 
         long blockNumber = newBlockParentHeader.getNumber() + 1;
-        final BlockHeader newHeader = blockFactory.newHeader(
-                newBlockParentHeader.getHash().getBytes(),
-                unclesListHash,
-                miningConfig.getCoinbaseAddress().getBytes(),
-                EMPTY_TRIE_HASH,
-                BlockHashesHelper.getTxTrieRoot(
+
+        // ummRoot can not be set to a value yet since the UMM contracts are not yet implemented
+        byte[] ummRoot = activationConfig.isActive(ConsensusRule.RSKIPUMM, blockNumber) ? new byte[0] : null;
+
+        final BlockHeader newHeader = blockFactory
+                .getBlockHeaderBuilder()
+                .setParentHash(newBlockParentHeader.getHash().getBytes())
+                .setUnclesHash(unclesListHash)
+                .setCoinbase(miningConfig.getCoinbaseAddress())
+                .setTxTrieRoot(BlockHashesHelper.getTxTrieRoot(
                         txs, activationConfig.isActive(ConsensusRule.RSKIP126, blockNumber)
-                ),
-                EMPTY_TRIE_HASH,
-                new Bloom().getData(),
-                new byte[]{1},
-                blockNumber,
-                gasLimit.toByteArray(),
-                0,
-                timestampSeconds,
-                extraData,
-                Coin.ZERO,
-                new byte[]{},
-                new byte[]{},
-                new byte[]{},
-                forkDetectionData,
-                minimumGasPrice.getBytes(),
-                uncles.size()
-        );
+                    )
+                )
+                .setDifficulty(BlockDifficulty.ONE)
+                .setNumber(blockNumber)
+                .setGasLimit(gasLimit.toByteArray())
+                .setGasUsed(0)
+                .setTimestamp(timestampSeconds)
+                .setExtraData(extraData)
+                .setMergedMiningForkDetectionData(forkDetectionData)
+                .setMinimumGasPrice(minimumGasPrice)
+                .setUncleCount(uncles.size())
+                .setUmmRoot(ummRoot)
+                .build();
+
         newHeader.setDifficulty(difficultyCalculator.calcDifficulty(newHeader, newBlockParentHeader));
         return newHeader;
     }

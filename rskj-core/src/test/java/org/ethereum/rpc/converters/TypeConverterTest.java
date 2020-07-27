@@ -101,4 +101,40 @@ public class TypeConverterTest {
     public void toJsonHexNullCoin() {
         Assert.assertEquals("", TypeConverter.toJsonHex((Coin) null));
     }
+
+
+    @Test
+    public void stringHexToBigIntegerDefaultCase() {
+        Assert.assertEquals(new BigInteger("1"), TypeConverter.stringHexToBigInteger("0x1"));
+    }
+
+    @Test
+    public void stringHexToBigIntegerDefaultCase2() {
+        Assert.assertEquals(new BigInteger("255"), TypeConverter.stringHexToBigInteger("0xff"));
+    }
+
+    @Test(expected = NumberFormatException.class)
+    public void stringHexToBigIntegerWhenThereIsNoNumber() {
+        TypeConverter.stringHexToBigInteger("0x");
+    }
+
+    @Test(expected = NumberFormatException.class)
+    public void stringHexToBigIntegerWhenItIsNotHexa() {
+        TypeConverter.stringHexToBigInteger("0xg");
+    }
+
+    @Test(expected = NumberFormatException.class)
+    public void stringHexToBigIntegerWhenItHasLessThanTwoCharacters() {
+        TypeConverter.stringHexToBigInteger("0");
+    }
+
+    @Test(expected = NumberFormatException.class)
+    public void stringHexToBigIntegerWhenItIsEmpty() {
+        TypeConverter.stringHexToBigInteger("");
+    }
+
+    @Test(expected = NumberFormatException.class)
+    public void stringHexToBigIntegerWhenItDoesNotStartWith0x() {
+        TypeConverter.stringHexToBigInteger("0d99");
+    }
 }

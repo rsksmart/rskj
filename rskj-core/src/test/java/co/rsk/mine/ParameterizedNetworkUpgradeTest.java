@@ -49,6 +49,9 @@ public abstract class ParameterizedNetworkUpgradeTest {
             public String toString() {
                 return "Bamboo";
             }
+
+            @Override
+            public String projectVersionModifier() { return "Bamboo"; }
         };
         TestSystemProperties orchidConfig = new TestSystemProperties() {
             @Override
@@ -60,6 +63,9 @@ public abstract class ParameterizedNetworkUpgradeTest {
             public String toString() {
                 return "Orchid";
             }
+
+            @Override
+            public String projectVersionModifier() { return "Orchid"; }
         };
         return new Object[] { bambooConfig, orchidConfig };
     }

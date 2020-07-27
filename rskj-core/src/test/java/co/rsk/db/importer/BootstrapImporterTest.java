@@ -38,6 +38,7 @@ public class BootstrapImporterTest {
                                                                     blockFactory,
                                                                     bootstrapDataProvider
         );
+
         bootstrapImporter.importData();
         verify(blockFactory, atLeastOnce()).decodeBlock(any());
     }

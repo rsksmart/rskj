@@ -41,7 +41,7 @@ public class BlockHeaderNotification implements EthSubscriptionNotificationDTO {
     private final String hash;
 
     public BlockHeaderNotification(Block block) {
-        difficulty = TypeConverter.toJsonHex(block.getDifficulty().getBytes());
+        difficulty = TypeConverter.toQuantityJsonHex(block.getDifficulty().getBytes());
         extraData = TypeConverter.toJsonHex(block.getExtraData());
         gasLimit = TypeConverter.toJsonHex(block.getGasLimit());
         gasUsed = TypeConverter.toQuantityJsonHex(block.getGasUsed());

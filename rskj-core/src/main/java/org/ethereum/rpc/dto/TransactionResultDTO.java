@@ -22,7 +22,7 @@ import co.rsk.core.Coin;
 import co.rsk.remasc.RemascTransaction;
 import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
-import org.ethereum.crypto.ECKey;
+import org.ethereum.crypto.signature.ECDSASignature;
 import org.ethereum.rpc.TypeConverter;
 import org.ethereum.util.ByteUtil;
 
@@ -78,10 +78,10 @@ public class TransactionResultDTO {
         input = TypeConverter.toUnformattedJsonHex(tx.getData());
 
         if (!(tx instanceof RemascTransaction)) {
-            ECKey.ECDSASignature signature = tx.getSignature();
-            v = String.format("0x%02x", signature.v);
-            r = TypeConverter.toQuantityJsonHex(signature.r);
-            s = TypeConverter.toQuantityJsonHex(signature.s);
+            ECDSASignature signature = tx.getSignature();
+            v = String.format("0x%02x", signature.getV());
+            r = TypeConverter.toQuantityJsonHex(signature.getR());
+            s = TypeConverter.toQuantityJsonHex(signature.getS());
         }
     }
 }

@@ -33,22 +33,11 @@ import java.util.*;
  * Peers will only remember the last maxBlocks blocks that were inserted.
  */
 public class BlockNodeInformation {
-    private final Map<NodeID, Set<Keccak256>> blocksByNode;
     private final LinkedHashMap<Keccak256, Set<NodeID>> nodesByBlock;
     private final int maxBlocks;
-    private final int maxPeers;
 
-    public BlockNodeInformation(final int maxBlocks, final int maxPeers) {
+    public BlockNodeInformation(final int maxBlocks) {
         this.maxBlocks = maxBlocks;
-        this.maxPeers = maxPeers;
-
-        // Nodes are evicted in Least-recently-accessed order.
-        blocksByNode = new LinkedHashMap<NodeID, Set<Keccak256>>(BlockNodeInformation.this.maxPeers, 0.75f, true) {
-            @Override
-            protected boolean removeEldestEntry(Map.Entry<NodeID, Set<Keccak256>> eldest) {
-                return size() > BlockNodeInformation.this.maxPeers;
-            }
-        };
         // Blocks are evicted in Least-recently-accessed order.
         nodesByBlock = new LinkedHashMap<Keccak256, Set<NodeID>>(BlockNodeInformation.this.maxBlocks, 0.75f, true) {
             @Override
@@ -59,7 +48,7 @@ public class BlockNodeInformation {
     }
 
     public BlockNodeInformation() {
-        this(1000, 50);
+        this(1000);
     }
 
     /**
@@ -68,21 +57,7 @@ public class BlockNodeInformation {
      * @param blockHash the block hash.
      * @param nodeID    the node to add the block to.
      */
-    public void addBlockToNode(@Nonnull final Keccak256 blockHash, @Nonnull final NodeID nodeID) {
-        Set<Keccak256> nodeBlocks = blocksByNode.get(nodeID);
-        if (nodeBlocks == null) {
-            // Create a new empty LRUCache for the blocks that a node know.
-            // NodeBlocks are evicted in reverse insertion order.
-            nodeBlocks = Collections.newSetFromMap(
-                    new LinkedHashMap<Keccak256, Boolean>() {
-                        protected boolean removeEldestEntry(Map.Entry<Keccak256, Boolean> eldest) {
-                            return size() > maxBlocks;
-                        }
-                    }
-            );
-            blocksByNode.put(nodeID, nodeBlocks);
-        }
-
+    public synchronized void addBlockToNode(@Nonnull final Keccak256 blockHash, @Nonnull final NodeID nodeID) {
         Set<NodeID> blockNodes = nodesByBlock.get(blockHash);
         if (blockNodes == null) {
             // Create a new set for the nodes that know about a block.
@@ -91,25 +66,9 @@ public class BlockNodeInformation {
             nodesByBlock.put(blockHash, blockNodes);
         }
 
-        nodeBlocks.add(blockHash);
         blockNodes.add(nodeID);
     }
-
-    /**
-     * getBlocksByNode retrieves all the blocks that a given node knows.
-     *
-     * @param nodeID the node to check.
-     * @return all the blocks known by the given nodeID.
-     */
-    @Nonnull
-    public Set<Keccak256> getBlocksByNode(@Nonnull final NodeID nodeID) {
-        Set<Keccak256> result = blocksByNode.get(nodeID);
-        if (result == null) {
-            result = new HashSet<>();
-        }
-        return Collections.unmodifiableSet(result);
-    }
-
+    
     /**
      * getNodesByBlock retrieves all the nodes that contain a given block.
      *
@@ -117,12 +76,12 @@ public class BlockNodeInformation {
      * @return A set containing all the nodes that have that block.
      */
     @Nonnull
-    public Set<NodeID> getNodesByBlock(@Nonnull final Keccak256 blockHash) {
+    public synchronized Set<NodeID> getNodesByBlock(@Nonnull final Keccak256 blockHash) {
         Set<NodeID> result = nodesByBlock.get(blockHash);
         if (result == null) {
             result = new HashSet<>();
         }
-        return Collections.unmodifiableSet(result);
+        return new HashSet<>(result);
     }
 
     /**
@@ -136,14 +95,4 @@ public class BlockNodeInformation {
         return getNodesByBlock(new Keccak256(blockHash));
     }
 
-    /**
-     * getBlocksByNode is a convenient function to avoid creating a NodeID.
-     *
-     * @param nodeID the node id.
-     * @return all the hashes of the blocks that the given node knows.
-     */
-    @Nonnull
-    public Set<Keccak256> getBlocksByNode(@Nonnull final byte[] nodeID) {
-        return getBlocksByNode(new NodeID(nodeID));
-    }
 }

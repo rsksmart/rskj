@@ -24,6 +24,7 @@ import co.rsk.net.NodeID;
 import co.rsk.net.eth.RskMessage;
 import co.rsk.net.eth.RskWireProtocol;
 import co.rsk.net.messages.Message;
+import co.rsk.net.messages.MessageType;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import org.ethereum.net.MessageQueue;
@@ -73,6 +74,8 @@ public class Channel implements Peer {
 
     private final PeerStatistics peerStats = new PeerStatistics();
 
+    private Stats stats;
+
     public Channel(MessageQueue msgQueue,
                    MessageCodec messageCodec,
                    NodeManager nodeManager,
@@ -87,6 +90,7 @@ public class Channel implements Peer {
         this.eth62MessageFactory = eth62MessageFactory;
         this.staticMessages = staticMessages;
         this.isActive = remoteId != null && !remoteId.isEmpty();
+        this.stats = new Stats();
     }
 
     public void sendHelloMessage(ChannelHandlerContext ctx, FrameCodec frameCodec, String nodeId,
@@ -226,6 +230,10 @@ public class Channel implements Peer {
         return inetSocketAddress.getAddress();
     }
 
+    public Stats getStats() {
+        return stats;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -247,6 +255,16 @@ public class Channel implements Peer {
         int result = inetSocketAddress != null ? inetSocketAddress.hashCode() : 0;
         result = 31 * result + (node != null ? node.hashCode() : 0);
         return result;
+    }
+
+    @Override
+    public double score(long currentTime, MessageType type) {
+        return stats.update(currentTime, type);
+    }
+
+    @Override
+    public void imported(boolean best) {
+        stats.imported(best);
     }
 
     @Override

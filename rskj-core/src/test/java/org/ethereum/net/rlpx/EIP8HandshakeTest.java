@@ -20,6 +20,7 @@
 package org.ethereum.net.rlpx;
 
 import org.ethereum.crypto.ECKey;
+import org.ethereum.crypto.signature.ECDSASignature;
 import org.junit.Before;
 import org.junit.Test;
 import org.bouncycastle.crypto.InvalidCipherTextException;
@@ -40,7 +41,7 @@ public class EIP8HandshakeTest {
     private ECKey ephemeralKeyB = fromPrivate(decode("e238eb8e04fee6511ab04c6dd3c89ce097b11f25d584863ac2b6d5b35b1847e4"));
     private byte[] nonceA = decode("7e968bba13b6c50e2c4cd7f241cc0d64d1ac25c7f5952df231ac6a2bda8ee5d6");
     private byte[] nonceB = decode("559aead08264d5795d3909718cdd05abd49572e84fe55590eef31a88a08fdffd");
-    private ECKey.ECDSASignature signatureA = ECKey.ECDSASignature.fromComponents(
+    private ECDSASignature signatureA = ECDSASignature.fromComponents(
             decode("299ca6acfd35e3d72d8ba3d1e2b60b5561d5af5218eb5bc182045769eb422691"),
             decode("0a301acae3b369fffc4a4899d6b02531e89fd4fe36a2cf0d93607ba470b50f78"),
             (byte) 27
@@ -75,7 +76,7 @@ public class EIP8HandshakeTest {
         // encode (on A side)
 
         AuthInitiateMessageV4 msg1 = handshakerA.createAuthInitiateV4(keyA);
-        msg1.signature = signatureA;
+        msg1.setSignature(signatureA);
         msg1.nonce = nonceA;
         msg1.version = 4;
 
@@ -87,17 +88,17 @@ public class EIP8HandshakeTest {
 
         assertEquals(4, msg2.version);
         assertArrayEquals(nonceA, msg2.nonce);
-        assertEquals(signatureA.r, msg2.signature.r);
-        assertEquals(signatureA.s, msg2.signature.s);
-        assertEquals(signatureA.v, msg2.signature.v);
+        assertEquals(signatureA.getR(), msg2.getSignature().getR());
+        assertEquals(signatureA.getS(), msg2.getSignature().getS());
+        assertEquals(signatureA.getV(), msg2.getSignature().getV());
 
         AuthInitiateMessageV4 msg3 = handshakerB.decryptAuthInitiateV4(authMessageData, keyB);
 
         assertEquals(4, msg3.version);
         assertArrayEquals(nonceA, msg3.nonce);
-        assertEquals(signatureA.r, msg3.signature.r);
-        assertEquals(signatureA.s, msg3.signature.s);
-        assertEquals(signatureA.v, msg3.signature.v);
+        assertEquals(signatureA.getR(), msg3.getSignature().getR());
+        assertEquals(signatureA.getS(), msg3.getSignature().getS());
+        assertEquals(signatureA.getV(), msg3.getSignature().getV());
     }
 
     // AuthInitiate EIP-8 format with version 56 and 3 additional list elements (sent from A to B)

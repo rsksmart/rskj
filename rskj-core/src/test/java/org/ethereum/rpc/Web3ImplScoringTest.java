@@ -26,12 +26,10 @@ import co.rsk.core.bc.MiningMainchainView;
 import co.rsk.net.NodeID;
 import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.rpc.ExecutionBlockRetriever;
-import co.rsk.rpc.Web3InformationRetriever;
 import co.rsk.rpc.Web3RskImpl;
 import co.rsk.rpc.modules.debug.DebugModule;
 import co.rsk.rpc.modules.debug.DebugModuleImpl;
 import co.rsk.rpc.modules.eth.EthModule;
-import co.rsk.rpc.modules.eth.EthModuleSolidityDisabled;
 import co.rsk.rpc.modules.eth.EthModuleWalletEnabled;
 import co.rsk.rpc.modules.personal.PersonalModule;
 import co.rsk.rpc.modules.personal.PersonalModuleWalletEnabled;
@@ -368,7 +366,7 @@ public class Web3ImplScoringTest {
         EthModule em = new EthModule(
                 config.getNetworkConstants().getBridgeConstants(), config.getNetworkConstants().getChainId(), world.getBlockChain(), null,
                 null, new ExecutionBlockRetriever(miningMainchainView, world.getBlockChain(), null, null),
-                null, new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(wallet), null,
+                null, new EthModuleWalletEnabled(wallet), null,
                 new BridgeSupportFactory(
                         null, config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig())
         );
@@ -386,7 +384,7 @@ public class Web3ImplScoringTest {
                 tpm,
                 null,
                 dm,
-                null,
+                null, null,
                 Web3Mocks.getMockChannelManager(),
                 peerScoringManager,
                 null,

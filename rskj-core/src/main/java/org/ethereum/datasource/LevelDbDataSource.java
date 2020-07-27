@@ -25,6 +25,7 @@ import co.rsk.metrics.profilers.ProfilerFactory;
 import co.rsk.panic.PanicProcessor;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.db.ByteArrayWrapper;
+import org.ethereum.util.ByteUtil;
 import org.iq80.leveldb.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,10 +34,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -66,6 +64,12 @@ public class LevelDbDataSource implements KeyValueDataSource {
         this.databaseDir = databaseDir;
         this.name = name;
         logger.debug("New LevelDbDataSource: {}", name);
+    }
+
+    public static KeyValueDataSource makeDataSource(Path datasourcePath) {
+        KeyValueDataSource ds = new LevelDbDataSource(datasourcePath.getFileName().toString(), datasourcePath.getParent().toString());
+        ds.init();
+        return ds;
     }
 
     @Override
@@ -334,5 +338,19 @@ public class LevelDbDataSource implements KeyValueDataSource {
     @Override
     public void flush(){
         // All is flushed immediately: there is no uncommittedCache to flush
+    }
+
+    public static void mergeDataSources(Path destinationPath, List<Path> originPaths) {
+        Map<ByteArrayWrapper, byte[]> mergedStores = new HashMap<>();
+        for (Path originPath : originPaths) {
+            KeyValueDataSource singleOriginDataSource = makeDataSource(originPath);
+            for (byte[] key : singleOriginDataSource.keys()) {
+                mergedStores.put(ByteUtil.wrap(key), singleOriginDataSource.get(key));
+            }
+            singleOriginDataSource.close();
+        }
+        KeyValueDataSource destinationDataSource = makeDataSource(destinationPath);
+        destinationDataSource.updateBatch(mergedStores, Collections.emptySet());
+        destinationDataSource.close();
     }
 }

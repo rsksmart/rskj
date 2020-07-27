@@ -45,9 +45,7 @@ public interface Web3EthModule {
         return getEthModule().estimateGas(args);
     }
 
-    default Map<String, CompilationResultDTO> eth_compileSolidity(String contract) throws Exception {
-        return getEthModule().compileSolidity(contract);
-    }
+
 
     default Map<String, Object> eth_bridgeState() throws Exception {
         return getEthModule().bridgeState();
@@ -122,6 +120,8 @@ public interface Web3EthModule {
     Map<String, CompilationResultDTO> eth_compileLLL(String contract);
 
     Map<String, CompilationResultDTO> eth_compileSerpent(String contract);
+
+    Map<String, CompilationResultDTO> eth_compileSolidity(String contract);
 
     String eth_newFilter(Web3.FilterRequest fr) throws Exception;
 

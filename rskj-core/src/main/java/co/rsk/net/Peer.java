@@ -19,6 +19,7 @@
 package co.rsk.net;
 
 import co.rsk.net.messages.Message;
+import co.rsk.net.messages.MessageType;
 
 import java.net.InetAddress;
 
@@ -28,4 +29,7 @@ public interface Peer {
     NodeID getPeerNodeID();
 
     InetAddress getAddress();
+
+    double score(long currentTime, MessageType type);
+    void imported(boolean best);
 }

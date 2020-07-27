@@ -141,4 +141,9 @@ public class ReceiptStoreImpl implements ReceiptStore {
             this.add(blockHash, i++, receipt);
         }
     }
+
+    @Override
+    public void flush() {
+        this.receiptsDS.flush();
+    }
 }
