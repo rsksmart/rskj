@@ -728,6 +728,7 @@ public class TransactionExecutor {
             result.getAccessedNodes().forEach(
                 (key, rentData) -> {
                         track.updateNodeWithRent(key, rentData.getLRPTime());
+                        // #mish for testing
                         //byte[] tmpkey = Arrays.copyOfRange(key.getData(),11,31);
                         //RskAddress tmpAddr = new RskAddress(tmpkey);
                         //System.out.println(track.getAccountNodeLRPTime(tmpAddr));
@@ -833,6 +834,7 @@ public class TransactionExecutor {
         // if the node is not in the map, add the rent owed to current estimate
         if (!progRes.getAccessedNodes().containsKey(accKey)){
             Uint24 vLen = repository.getAccountNodeValueLength(addr);
+            //System.out.println("\nNode valuelength is " + vLen.intValue()); //#mish for testing.. reversible TX test has 0 length
             long accLrpt = repository.getAccountNodeLRPTime(addr);
             RentData accNode = new RentData(vLen, accLrpt);
             

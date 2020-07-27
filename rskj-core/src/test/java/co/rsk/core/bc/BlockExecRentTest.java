@@ -158,6 +158,7 @@ public class BlockExecRentTest {
 
     }
 
+    //a send but TX also has data. Also used to compare results with RPC estimateGas (curl examples et end of file) 
     @Test
     public void executeBlockWithOneDataTransaction() {
         Block block = getBlockWithOneDataTransaction(); // this changes the best block
@@ -476,4 +477,37 @@ public class BlockExecRentTest {
 
         return program;
     }
+
+    /** send with data
+     curl localhost:4444
+     -X POST -H "Content-Type: application/json"
+     --data '{"jsonrpc":"2.0","method":"eth_estimateGas",
+              "params": 
+               [{"from": "e56e8dd67c5d32be8058bb8eb970870f07244567",
+                "to": "0xd46e8dd67c5d32be8058bb8eb970870f07244567",
+                "gas": "0xe000","gasPrice": "0x01","value": "0x9184e72a",
+                "data": "0xd46e8dd67c5d32be8d46e8dd67c5d32be8058bb8eb970870f072445675058bb8eb970870f072445675"}],
+             "id":1}'
+     
+     */ 
+
+     /** create
+     curl localhost:4444 
+     -X POST -H "Content-Type: application/json" 
+     --data '{"jsonrpc":"2.0","method":"eth_estimateGas",
+              "params": 
+               [{"from": "e56e8dd67c5d32be8058bb8eb970870f07244567",
+                "to": "d46e8dd67c5d32be8058bb8eb970870f07244567",
+                "gas": "0x30d40","gasPrice": "0x01","value": "0x9184e72a",
+                "data": "0x600160026000f"}],
+             "id":1}'
+     
+     One line: 
+     curl localhost:4444 -X POST -H "Content-Type: application/json" --data '{"jsonrpc":"2.0","method":"eth_estimateGas","params": [{"from": "e56e8dd67c5d32be8058bb8eb970870f07244567","to": "","gas": "0x30d40","gasPrice": "0x9184e72a000","value": "0x9184e72a","data": "0x600160026000f"}],"id":1}'
+     
+      */
+
+
+
+
 }

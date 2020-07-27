@@ -171,11 +171,51 @@ public class ReversibleTransactionExecutorTest {
         dispRes(result2);
     }
 
+    // #mish added for storage rent testing to compare results with RPC estimategas
+    // this test does not use assertions for rent gas, since rent computations are time dependent.
+    // instead used std output.
+    // the rentgas consumed also depends on repository access (the following accounts have not really been created, 
+    // so the rent will be based on node valuelength being 0 (Zero!) + 128 bytes overhead)
+    @Test
+    public void sendWithDataRentTest() {
+        //TestContract hello = TestContract.hello();
+        //CallTransaction.Function helloFn = hello.functions.get("hello");
+        //RskAddress contractAddress = contractRunner.addContract(hello.runtimeBytecode);
+
+        RskAddress from = new RskAddress("7986b3df570230288501eea3d890bd66948c9b79"); //TestUtils.randomAddress();
+        RskAddress receiver = new RskAddress("d46e8dd67c5d32be8058bb8eb970870f07244567"); //TestUtils.randomAddress();
+        byte[] gasPrice = Hex.decode("01"); //"09184e72a000"
+        byte[] value = Hex.decode("9184e72a");
+        byte[] gasLimit = Hex.decode("e000");
+        byte[] txdata = Hex.decode("d46e8dd67c5d32be8d46e8dd67c5d32be8058bb8eb970870f072445675058bb8eb970870f072445675");
+
+        Block bestBlock = factory.getBlockchain().getBestBlock();
+
+        ProgramResult result = reversibleTransactionExecutor.executeTransaction(
+                bestBlock,
+                bestBlock.getCoinbase(),
+                gasPrice,
+                gasLimit,
+                receiver.getBytes(),
+                value,
+                txdata,
+                from
+        );
+        
+        Assert.assertEquals(result.getGasUsed(), 23788L); // execution gas use should be consistent
+        
+        dispRes(result);
+    }
+
+
+
     // #mish just a utility. Not needed when using contract.createandrun    
     public void dispRes(ProgramResult result){
-            System.out.println("\nExec Gas Used " + result.getGasUsed() +
+            System.out.println("\nReversible TX summary " + 
+                           "\nExec Gas Used " + result.getGasUsed() +
                            "\nRent Gas Used " + result.getRentGasUsed() +
-                           "\nNo. trie nodes with `updated` rent timestamp: " +  result.getAccessedNodes().size() +
+                           "\n\nTx fees (exec + rent): " + (result.getGasUsed()+result.getRentGasUsed()) +
+                           "\n\nNo. trie nodes with `updated` rent timestamp: " +  result.getAccessedNodes().size() +
                            "\nNo. new trie nodes created (6 months rent): " +  result.getCreatedNodes().size() + "\n"
                             );
     } 

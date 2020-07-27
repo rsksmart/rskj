@@ -268,7 +268,7 @@ public class GasCost {
      * @return valueLength*timeDelta*STORAGE_RENT_ACTIVATOR/STORAGE_RENT_DIVISOR
      */
     public static long calculateStorageRent(Uint24 valueLength, long timeDelta) {
-        if (timeDelta < 0) {
+        if (timeDelta < 0 || valueLength == null) {
             throw new InvalidGasException(String.format("%d", timeDelta));
         }
         long valLen = new Long(valueLength.intValue()); // convert to long for mult overflow check

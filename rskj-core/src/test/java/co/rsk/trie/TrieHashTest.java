@@ -191,4 +191,79 @@ public class TrieHashTest {
     public static Keccak256 makeEmptyHash() {
         return new Keccak256(HashUtil.keccak256(RLP.encodeElement(EMPTY_BYTE_ARRAY)));
     }
+
+
+    /** #mish make simple mods to test storage rent
+        * test putWithRent()
+        * test getHash(boolean) with rent timestamp included or excluded in the hash
+        */
+    @Test
+    public void triesWithSameKeyValueRentHaveSameHashes() {
+        Trie trie1 = new Trie()
+                .putWithRent("foo".getBytes(), TrieValueTest.makeValue(100), 1595876151)
+                .putWithRent("bar".getBytes(), TrieValueTest.makeValue(200), 1595876153);
+        Trie trie2 = new Trie()
+                .putWithRent("foo".getBytes(), TrieValueTest.makeValue(100), 1595876151)
+                .putWithRent("bar".getBytes(), TrieValueTest.makeValue(200), 1595876153);
+
+        Assert.assertEquals(trie1.getHash(false), trie2.getHash(false));
+    }
+
+    @Test
+    public void triesWithSameKeyValueDifferentRentStamps() {
+        //tries with same key, value and rent timestamp
+        Trie trie1 = new Trie()
+                .putWithRent("foo".getBytes(), TrieValueTest.makeValue(100), 1595876151)
+                .putWithRent("bar".getBytes(), TrieValueTest.makeValue(200), 1595876153);
+        
+        Trie trie2 = new Trie()
+                .putWithRent("foo".getBytes(), TrieValueTest.makeValue(100), 1595876151)
+                .putWithRent("bar".getBytes(), TrieValueTest.makeValue(200), 1595876153);
+
+        //tries with same key value but different rent time stamps
+        Trie trie3 = new Trie()
+                .putWithRent("foo".getBytes(), TrieValueTest.makeValue(400), 1595876151)
+                .putWithRent("bar".getBytes(), TrieValueTest.makeValue(100), 1595876153);
+
+        Trie trie4 = new Trie()
+                .putWithRent("foo".getBytes(), TrieValueTest.makeValue(400), 0)
+                .putWithRent("bar".getBytes(), TrieValueTest.makeValue(100), 4);
+
+        // In assertion tests, note that once a trie is hashed the encoding is cached.. so be careful
+        Assert.assertNotEquals(trie1.getHash(false), trie2.getHash(true));
+        //Assert.assertNotEquals(trie1.getHash(false), trie3.getHash(false));
+        Assert.assertNotEquals(trie3.getHash(true), trie4.getHash(true));
+
+    }  
+
+    @Test
+    public void triesWithSameKeyValueDifferentRents2() {
+        //tries with same key value but different rent time stamps
+        
+        // get hash without rent when each trie has only one node
+        Trie trie1 = new Trie()
+                //.putWithRent("foo".getBytes(), TrieValueTest.makeValue(400), 1595876151)
+                .putWithRent("bar".getBytes(), TrieValueTest.makeValue(100), 1595876153);
+
+        Trie trie2 = new Trie()
+                //.putWithRent("foo".getBytes(), TrieValueTest.makeValue(400), 0)
+                .putWithRent("bar".getBytes(), TrieValueTest.makeValue(100), 4);
+        // "false" means rent is not included in encoding.. thus hashes match
+        Assert.assertEquals(trie1.getHash(false), trie2.getHash(false));
+        
+        // get hash without rent. Tries have multiple nodes, and these get encoded with rent by default getHash() 
+        // hence dropping rent when encoding root node still results in different hashes
+        Trie trie3 = new Trie()
+                .putWithRent("foo".getBytes(), TrieValueTest.makeValue(400), 1595876151)
+                .putWithRent("bar".getBytes(), TrieValueTest.makeValue(100), 1595876153);
+
+        Trie trie4 = new Trie()
+                .putWithRent("foo".getBytes(), TrieValueTest.makeValue(400), 0)
+                .putWithRent("bar".getBytes(), TrieValueTest.makeValue(100), 4);
+
+        // In assertion tests, note that once a trie is hashed the encoding is cached.. so be careful
+        Assert.assertNotEquals(trie3.getHash(false), trie4.getHash(false));
+
+    }
+
 }

@@ -58,12 +58,20 @@ public class GenesisHashesTest {
      */
 
 
+    // #mish this fails with storage rent implementation because of changes to trie structure and consequently triehash
+    /** #mish 
+    For mainnet the stateroot handler 'convert()' uses orchidtrieroothash.
+    But for testnet (at least in this storage roent implementation), it uses just the genesistrie's hash
+    Which does not match.
+    Is RSKIP126 activation different in this implementation compared to rskj master? Unlikely. So mainnet is unaffected.
+    However, testnet, the trie has a different structure and gethash in rent implementation. This creates the difference  
+    */
     @Test
     public void testnetHashTest() {
         RskContext rskContext = new RskTestContext(new String[]{ "--testnet" });
         rskContext.getBlockchain(); // this triggers changes in the Genesis through the BlockChainLoader
         Genesis genesis = rskContext.getGenesis();
-        System.out.println(genesis);
+        //System.out.println(genesis);
         assertThat(genesis.getHash(), is(new Keccak256("cabb7fbe88cd6d922042a32ffc08ce8b1fbb37d650b9d4e7dbfe2a7469adfa42"))); // #mish failing test
     }
 

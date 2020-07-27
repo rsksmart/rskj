@@ -66,7 +66,7 @@ public class RentData {
      * or not modified (e.g. code) by the transaction  
     */
     public void setRentDue(long currentTime, boolean modified){
-        if (this.valueLength != null){
+        if (this.valueLength != null){ // null is not possible (node gets deleted, 0 length is fine, empty code)
             /** #mish  what if lrpTime was never set? then it would be initialized to 0 (1970 in Unix time)
              * Use RSK start date for now as lower bound (change later to date when rent is adopted
              */
