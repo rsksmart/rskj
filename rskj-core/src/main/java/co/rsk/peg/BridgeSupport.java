@@ -857,7 +857,7 @@ public class BridgeSupport {
             TransactionInput input = btcTx.getInput(i);
             Script inputScript = input.getScriptSig();
 
-            boolean alreadySignedByThisFederator = isInputSignedByThisFederator(
+            boolean alreadySignedByThisFederator = BridgeUtils.isInputSignedByThisFederator(
                     federatorPublicKey,
                     sighash,
                     input);
@@ -899,31 +899,6 @@ public class BridgeSupport {
             int signaturesCount = neededSignatures - missingSignatures;
             logger.debug("Tx {} not yet fully signed. Requires {}/{} signatures but has {}", new Keccak256(rskTxHash), neededSignatures, getFederationSize(), signaturesCount);
         }
-    }
-
-    /**
-     * Check if the p2sh multisig scriptsig of the given input was already signed by federatorPublicKey.
-     * @param federatorPublicKey The key that may have been used to sign
-     * @param sighash the sighash that corresponds to the input
-     * @param input The input
-     * @return true if the input was already signed by the specified key, false otherwise.
-     */
-    private boolean isInputSignedByThisFederator(BtcECKey federatorPublicKey, Sha256Hash sighash, TransactionInput input) {
-        List<ScriptChunk> chunks = input.getScriptSig().getChunks();
-        for (int j = 1; j < chunks.size() - 1; j++) {
-            ScriptChunk chunk = chunks.get(j);
-
-            if (chunk.data.length == 0) {
-                continue;
-            }
-
-            TransactionSignature sig2 = TransactionSignature.decodeFromBitcoin(chunk.data, false, false);
-
-            if (federatorPublicKey.verify(sighash, sig2)) {
-                return true;
-            }
-        }
-        return false;
     }
 
     /**
@@ -1787,7 +1762,7 @@ public class BridgeSupport {
             whitelist.put(entry.address(), entry);
             return LOCK_WHITELIST_SUCCESS_CODE;
         } catch (Exception e) {
-            logger.error("Unexpected error in addLockWhitelistAddress: {}", e);
+            logger.error("Unexpected error in addLockWhitelistAddress: {}", e.getMessage());
             panicProcessor.panic("lock-whitelist", e.getMessage());
             return LOCK_WHITELIST_UNKNOWN_ERROR_CODE;
         }
