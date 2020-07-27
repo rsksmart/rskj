@@ -24,6 +24,7 @@ import co.rsk.bitcoinj.params.RegTestParams;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.wallet.CoinSelector;
+import co.rsk.bitcoinj.wallet.RedeemData;
 import co.rsk.bitcoinj.wallet.Wallet;
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.BridgeConstants;
@@ -60,6 +61,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static co.rsk.peg.PegTestUtils.createBaseRedeemScriptThatSpendsFromTheFederation;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
@@ -319,6 +321,67 @@ public class BridgeUtilsTest {
         BridgeUtils.recoverBtcAddressFromEthTransaction(tx, RegTestParams.get());
     }
 
+    @Test
+    public void countMissingSignatures_two_signatures() {
+        // Create 2 signatures
+        byte[] sign1 = new byte[]{0x79};
+        byte[] sign2 = new byte[]{0x78};
+
+        BtcTransaction btcTx = createReleaseTx(Arrays.asList(sign1, sign2));
+        Assert.assertEquals(0, BridgeUtils.countMissingSignatures(mock(Context.class), btcTx));
+    }
+
+    @Test
+    public void countMissingSignatures_one_signature() {
+        // Add 1 signature
+        byte[] sign1 = new byte[]{0x79};
+        byte[] MISSING_SIGNATURE = new byte[0];
+
+        BtcTransaction btcTx = createReleaseTx(Arrays.asList(sign1, MISSING_SIGNATURE));
+        Assert.assertEquals(1, BridgeUtils.countMissingSignatures(mock(Context.class), btcTx));
+    }
+
+    @Test
+    public void countMissingSignatures_no_signatures() {
+        // As no signature was added, missing signatures is 2
+        BtcTransaction btcTx = createReleaseTx(Collections.emptyList());
+        Assert.assertEquals(2, BridgeUtils.countMissingSignatures(mock(Context.class), btcTx));
+    }
+
+    private BtcTransaction createReleaseTx(List<byte[]> signatures) {
+        // Setup
+        BridgeRegTestConstants bridgeConstants = BridgeRegTestConstants.getInstance();
+        NetworkParameters btcParams = RegTestParams.get();
+        Federation federation = bridgeConstants.getGenesisFederation();
+
+        // Build prev btc tx
+        BtcTransaction prevTx = new BtcTransaction(btcParams);
+        TransactionOutput prevOut = new TransactionOutput(btcParams, prevTx, Coin.FIFTY_COINS, federation.getAddress());
+        prevTx.addOutput(prevOut);
+
+        // Build btc tx to be signed
+        BtcTransaction btcTx = new BtcTransaction(btcParams);
+        btcTx.addInput(prevOut);
+
+        // Create federation redeem script
+        Script redeemScript = createBaseRedeemScriptThatSpendsFromTheFederation(federation);
+        Script redeemDataScript = RedeemData.of(federation.getBtcPublicKeys(), redeemScript).redeemScript;
+        Script scriptSig;
+
+        if (signatures.isEmpty()) {
+            scriptSig = PegTestUtils.createBaseInputScriptThatSpendsFromTheFederation(federation);
+        } else {
+            scriptSig = ScriptBuilder.createMultiSigInputScriptBytes(signatures, redeemDataScript.getProgram());
+        }
+
+        btcTx.getInput(0).setScriptSig(scriptSig);
+
+        TransactionOutput output = new TransactionOutput(btcParams, btcTx, Coin.COIN, new BtcECKey().toAddress(btcParams));
+        btcTx.addOutput(output);
+
+        return btcTx;
+    }
+
     private byte[] generatePrivKey() {
         SecureRandom random = new SecureRandom();
         byte[] privKey = new byte[32];
@@ -331,7 +394,7 @@ public class BridgeUtilsTest {
     }
 
     private void signWithNKeys(Federation federation, List<BtcECKey> privateKeys, TransactionInput txIn, BtcTransaction tx, BridgeRegTestConstants bridgeConstants, int numberOfSignatures) {
-        Script redeemScript = PegTestUtils.createBaseRedeemScriptThatSpendsFromTheFederation(federation);
+        Script redeemScript = createBaseRedeemScriptThatSpendsFromTheFederation(federation);
         Script inputScript = PegTestUtils.createBaseInputScriptThatSpendsFromTheFederation(federation);
         txIn.setScriptSig(inputScript);
 

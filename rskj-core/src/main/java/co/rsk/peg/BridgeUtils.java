@@ -20,6 +20,7 @@ package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.Script;
+import co.rsk.bitcoinj.script.ScriptChunk;
 import co.rsk.bitcoinj.wallet.Wallet;
 import co.rsk.config.BridgeConstants;
 import co.rsk.core.RskAddress;
@@ -172,6 +173,29 @@ public class BridgeUtils {
         boolean moveToActive = isLockTx(btcTx, activeFederation, btcContext, bridgeConstants);
 
         return moveFromRetiring && moveToActive;
+    }
+
+    /**
+     * Return the amount of missing signatures for a tx.
+     * @param btcTx The btc tx to check
+     * @return 0 if was signed by the required number of federators, amount of missing signatures otherwise
+     */
+    public static int countMissingSignatures(Context btcContext, BtcTransaction btcTx) {
+        // When the tx is constructed OP_0 are placed where signature should go.
+        Context.propagate(btcContext);
+        int unsigned = 0;
+
+        for (TransactionInput input : btcTx.getInputs()) {
+            Script scriptSig = input.getScriptSig();
+            List<ScriptChunk> chunks = scriptSig.getChunks();
+            for (int i = 1; i < chunks.size() - 1; i++) {
+                ScriptChunk chunk = chunks.get(i);
+                if (!chunk.isOpCode() && chunk.data.length == 0) {
+                    unsigned++;
+                }
+            }
+        }
+        return unsigned;
     }
 
     public static Address recoverBtcAddressFromEthTransaction(org.ethereum.core.Transaction tx, NetworkParameters networkParameters) {
