@@ -61,6 +61,7 @@ public class LightSyncProcessor {
     private long lastRequestedId;
     private final Map<Long, LightClientMessageCodes> pendingMessages;
     private final ProofOfWorkRule blockHeaderValidationRule;
+    private final List<BlockHeader> downloadedHeaders;
 
     public LightSyncProcessor(SystemProperties config, Genesis genesis, BlockStore blockStore, Blockchain blockchain, ProofOfWorkRule blockHeaderValidationRule, LightPeersInformation lightPeersInformation) {
         this.config = config;
@@ -81,6 +82,7 @@ public class LightSyncProcessor {
         };
         this.lightPeersInformation = lightPeersInformation;
         this.syncState = new IdleSyncState();
+        this.downloadedHeaders = new ArrayList<>();
     }
 
     public void processStatusMessage(StatusMessage msg, LightPeer lightPeer, ChannelHandlerContext ctx, LightClientHandler lightClientHandler) {
@@ -209,6 +211,14 @@ public class LightSyncProcessor {
         return hasCorrectAmountAndSkip(blockHeaders, maxAmountOfHeaders, skip, reverse);
     }
 
+    public void addDownloadedHeaders(List<BlockHeader> bhs) {
+        downloadedHeaders.addAll(bhs);
+    }
+
+    public List<BlockHeader> getDownloadedHeaders() {
+        return new ArrayList<>(downloadedHeaders);
+    }
+
     private boolean hasCorrectAmountAndSkip(List<BlockHeader> blockHeaders, int maxAmountOfHeaders, int skip, boolean reverse) {
         if (blockHeaders.size() > maxAmountOfHeaders) {
             moreBlocksThanAllowed();
@@ -301,7 +311,8 @@ public class LightSyncProcessor {
         //End sync
     }
 
-    public void startFetchRound() {
+    public void startFetchRound(LightPeer lightPeer, List<BlockHeader> sparseHeaders, long targetNumber) {
+        setState(new FetchRoundSyncState(lightPeer, sparseHeaders, targetNumber, this));
         //Starting fetch sub chains
     }
 
@@ -326,6 +337,18 @@ public class LightSyncProcessor {
     }
 
     public void failedAttempt() {
+
+    }
+
+    public void badConnected() {
+
+    }
+
+    public void badSubchain() {
+
+    }
+
+    public void endSync() {
 
     }
 }

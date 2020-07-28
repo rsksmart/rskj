@@ -23,7 +23,6 @@ import co.rsk.core.BlockDifficulty;
 import co.rsk.crypto.Keccak256;
 import co.rsk.net.light.message.GetBlockHeadersByHashMessage;
 import co.rsk.net.light.message.GetBlockHeadersByNumberMessage;
-import co.rsk.net.light.message.GetBlockHeadersMessage;
 import co.rsk.net.light.message.LightClientMessage;
 import co.rsk.net.light.state.*;
 import co.rsk.validators.ProofOfWorkRule;
@@ -46,10 +45,12 @@ import static org.mockito.Mockito.*;
 public class LightSyncStateTest {
 
     private static final long TARGET_BLOCK_NUMBER = 10;
-    private static final long LONG_TARGET_BLOCK_NUMBER = 250;
+    private static final long MEDIUM_TARGET_BLOCK_NUMBER = 250;
+    private static final long LONG_TARGET_BLOCK_NUMBER = 385;
     private static final int MAX_REQUESTED_HEADERS = 192;
     private LightSyncProcessor lightSyncProcessor;
     private LightPeer lightPeer;
+    private LightPeer mediumLightPeer;
     private LightPeer longLightPeer;
     private ProofOfWorkRule powRule;
     private Blockchain blockchain;
@@ -57,22 +58,20 @@ public class LightSyncStateTest {
 
     @Before
     public void setUp() {
+        LightPeersInformation lightPeersInformation = new LightPeersInformation();
         powRule = mock(ProofOfWorkRule.class);
         blockchain = mock(Blockchain.class);
-        lightPeer = mock(LightPeer.class);
         genesis = getGenesis();
         when(blockchain.getBlockByNumber(0)).thenReturn(genesis);
 
-        LightStatus lightStatus = mock(LightStatus.class);
-        setupBestPeerStatus(lightStatus, TARGET_BLOCK_NUMBER);
+        lightPeer = mock(LightPeer.class);
+        registerANewLightPeer(lightPeersInformation, TARGET_BLOCK_NUMBER, lightPeer);
+
+        mediumLightPeer = mock(LightPeer.class);
+        registerANewLightPeer(lightPeersInformation, MEDIUM_TARGET_BLOCK_NUMBER, mediumLightPeer);
 
         longLightPeer = mock(LightPeer.class);
-        LightStatus longLightStatus = mock(LightStatus.class);
-        setupBestPeerStatus(longLightStatus, LONG_TARGET_BLOCK_NUMBER);
-
-        LightPeersInformation lightPeersInformation = new LightPeersInformation();
-        lightPeersInformation.registerLightPeer(lightPeer, lightStatus, false);
-        lightPeersInformation.registerLightPeer(longLightPeer, longLightStatus, false);
+        registerANewLightPeer(lightPeersInformation, LONG_TARGET_BLOCK_NUMBER, longLightPeer);
 
         lightSyncProcessor = spy(getLightSyncProcessor(powRule, blockchain, lightPeersInformation));
     }
@@ -107,9 +106,8 @@ public class LightSyncStateTest {
         final int bestBlockNumber = 1;
         final BlockHeader bestBlockHeader = getBlockHeader(bestBlockNumber, bestBlockHash, BlockDifficulty.ONE);
         startCommonAncestorSearchFrom(bestBlockHeader);
-
         final GetBlockHeadersByNumberMessage expectedMsg = new GetBlockHeadersByNumberMessage(1, bestBlockHeader.getNumber(), 1, 0, true);
-        assertSendMessage(expectedMsg);
+        assertSendMessage(expectedMsg, lightPeer);
     }
 
     @Test
@@ -129,7 +127,7 @@ public class LightSyncStateTest {
         final GetBlockHeadersByNumberMessage initialMsg = new GetBlockHeadersByNumberMessage(1, startBlockHeader.getNumber(), (int) startBlockHeader.getNumber(), 0, true);
         final GetBlockHeadersByNumberMessage expectedMsg = new GetBlockHeadersByNumberMessage(2, newStartBlock.getNumber(), 4, 0, true);
         ArgumentCaptor<LightClientMessage> argument = forClass(GetBlockHeadersByHashMessage.class);
-        assertSendSameMessages(initialMsg, expectedMsg, argument);
+        assertTwoMessagesWereSent(initialMsg, expectedMsg, lightPeer);
     }
 
     @Test
@@ -144,8 +142,7 @@ public class LightSyncStateTest {
 
         final GetBlockHeadersByNumberMessage initialMsg = new GetBlockHeadersByNumberMessage(1, startBlockHeader.getNumber(), (int) startBlockHeader.getNumber(), 0, true);
         final GetBlockHeadersByNumberMessage secondMsg = new GetBlockHeadersByNumberMessage(2, genesis.getNumber()+1, (int) TARGET_BLOCK_NUMBER, 0, false);
-        ArgumentCaptor<LightClientMessage> argument = forClass(LightClientMessage.class);
-        assertSendSameMessages(initialMsg, secondMsg, argument);
+        assertTwoMessagesWereSent(initialMsg, secondMsg, lightPeer);
     }
 
     @Test
@@ -166,9 +163,8 @@ public class LightSyncStateTest {
     public void startNumberIsOverMaxRequestedHeadersAndShouldRequestMaxQuantity() {
         final BlockHeader bestBlockHeader = getBlockHeader(200L, new Keccak256(randomHash()), BlockDifficulty.ONE);
         startCommonAncestorSearchFrom(bestBlockHeader);
-
         final GetBlockHeadersByNumberMessage expectedMsg = new GetBlockHeadersByNumberMessage(1, bestBlockHeader.getNumber(), MAX_REQUESTED_HEADERS, 0, true);
-        assertSendMessage(expectedMsg);
+        assertSendMessage(expectedMsg, lightPeer);
     }
 
     @Test
@@ -197,8 +193,8 @@ public class LightSyncStateTest {
         final GetBlockHeadersByNumberMessage initialMsg = new GetBlockHeadersByNumberMessage(1, startBlockHeader.getNumber(), (int) startBlockHeader.getNumber(), 0, true);
         final GetBlockHeadersByNumberMessage expectedMsg = new GetBlockHeadersByNumberMessage(2, 2, 9, 0, false);
         ArgumentCaptor<LightClientMessage> argument = forClass(GetBlockHeadersByNumberMessage.class);
-        assertSendSameMessages(initialMsg, expectedMsg, argument);
-        assertEquals(lightSyncProcessor.getSyncState().getClass(), StartRoundSyncState.class);
+        assertTwoMessagesWereSent(initialMsg, expectedMsg, lightPeer);
+        assertEquals(StartRoundSyncState.class, lightSyncProcessor.getSyncState().getClass());
     }
 
     @Test
@@ -209,7 +205,7 @@ public class LightSyncStateTest {
         newBlockHeadersInStartRoundSyncState(startBlockHeader, blockHeaders, lightPeer);
 
         verify(lightSyncProcessor, times(1)).moreBlocksThanAllowed();
-        assertEquals(lightSyncProcessor.getSyncState().getClass(), StartRoundSyncState.class);
+        assertEquals(StartRoundSyncState.class, lightSyncProcessor.getSyncState().getClass());
     }
 
     @Test
@@ -220,7 +216,7 @@ public class LightSyncStateTest {
         newBlockHeadersInStartRoundSyncState(startBlockHeader, blockHeaders, lightPeer);
 
         verify(lightSyncProcessor, times(1)).differentFirstBlocks();
-        assertEquals(lightSyncProcessor.getSyncState().getClass(), StartRoundSyncState.class);
+        assertEquals(StartRoundSyncState.class, lightSyncProcessor.getSyncState().getClass());
     }
 
     @Test
@@ -232,7 +228,7 @@ public class LightSyncStateTest {
         newBlockHeadersInStartRoundSyncState(startBlockHeader, blockHeaders, lightPeer);
 
         verify(lightSyncProcessor, times(1)).incorrectSkipped();
-        assertEquals(lightSyncProcessor.getSyncState().getClass(), StartRoundSyncState.class);
+        assertEquals(StartRoundSyncState.class, lightSyncProcessor.getSyncState().getClass());
     }
 
     @Test
@@ -244,34 +240,21 @@ public class LightSyncStateTest {
         newBlockHeadersInStartRoundSyncState(startBlockHeader, blockHeaders, lightPeer);
 
         verify(lightSyncProcessor, times(1)).incorrectSkipped();
-        assertEquals(lightSyncProcessor.getSyncState().getClass(), StartRoundSyncState.class);
+        assertEquals(StartRoundSyncState.class, lightSyncProcessor.getSyncState().getClass());
     }
 
     @Test
     public void peerInStartRoundReceivesAHeaderWithIncorrectParentHashAndShouldNotProcessIt() {
         final Keccak256 startBlockHash = Keccak256.ZERO_HASH;
         final BlockHeader startBlockHeader = getBlockHeader(1L, startBlockHash, BlockDifficulty.ONE);
-        final List<BlockHeader> blockHeaders = new ArrayList<>(getBlockHeaders(2, (int) TARGET_BLOCK_NUMBER-1, 0, false));
+        final List<BlockHeader> blockHeaders = getBlockHeaders(2, (int) TARGET_BLOCK_NUMBER-1, 0, false);
         when(blockHeaders.get(0).getParentHash()).thenReturn(new Keccak256(randomHash()));
         includeBlockInBlockchain(startBlockHeader);
 
         newBlockHeadersInStartRoundSyncState(startBlockHeader, blockHeaders, lightPeer);
 
         verify(lightSyncProcessor, times(1)).incorrectParentHash();
-        assertEquals(lightSyncProcessor.getSyncState().getClass(), StartRoundSyncState.class);
-    }
-
-    @Test
-    public void peerInStartRoundReceivesHeadersCorrectlyWithZeroSkipAndShouldEnd() {
-        final Keccak256 startBlockHash = new Keccak256(randomHash());
-        final BlockHeader startBlockHeader = getBlockHeader(1L, startBlockHash, BlockDifficulty.ONE);
-        final List<BlockHeader> blockHeaders = new ArrayList<>(getBlockHeaders(2, Math.toIntExact(TARGET_BLOCK_NUMBER - 1), 0, false));
-        when(blockHeaders.get(0).getParentHash()).thenReturn(startBlockHash);
-
-        newBlockHeadersInStartRoundSyncState(startBlockHeader, blockHeaders, lightPeer);
-
-        verify(lightSyncProcessor, times(1)).endStartRound();
-        assertEquals(lightSyncProcessor.getSyncState().getClass(), StartRoundSyncState.class);
+        assertEquals(StartRoundSyncState.class, lightSyncProcessor.getSyncState().getClass());
     }
 
     @Test
@@ -281,23 +264,130 @@ public class LightSyncStateTest {
         final List<BlockHeader> blockHeaders = getBlockHeaders(2, 1, 192, false);
         when(blockHeaders.get(0).getParentHash()).thenReturn(startBlockHash);
 
-        newBlockHeadersInStartRoundSyncState(startBlockHeader, blockHeaders, longLightPeer);
+        newBlockHeadersInStartRoundSyncState(startBlockHeader, blockHeaders, mediumLightPeer);
 
         verify(lightSyncProcessor, times(1)).failedAttempt();
-        assertEquals(lightSyncProcessor.getSyncState().getClass(), StartRoundSyncState.class);
+        assertEquals(StartRoundSyncState.class, lightSyncProcessor.getSyncState().getClass());
     }
 
     @Test
-    public void peerInStartRoundDoesntGetTheTargetAndShouldAskMoreHeaders() {
+    public void peerInStartRoundReceivesHeadersCorrectlyZeroSkippedAndShouldEnd() {
         final Keccak256 startBlockHash = new Keccak256(randomHash());
         final BlockHeader startBlockHeader = getBlockHeader(1L, startBlockHash, BlockDifficulty.ONE);
-        final List<BlockHeader> blockHeaders = getBlockHeaders(2, 2, 192, false);
+        final List<BlockHeader> blockHeaders = new ArrayList<>(getBlockHeaders(2, Math.toIntExact(TARGET_BLOCK_NUMBER - 1), 0, false));
         when(blockHeaders.get(0).getParentHash()).thenReturn(startBlockHash);
 
-        newBlockHeadersInStartRoundSyncState(startBlockHeader, blockHeaders, longLightPeer);
+        newBlockHeadersInStartRoundSyncState(startBlockHeader, blockHeaders, lightPeer);
 
-        verify(lightSyncProcessor, times(1)).startFetchRound();
-        assertEquals(lightSyncProcessor.getSyncState().getClass(), StartRoundSyncState.class);
+        verify(lightSyncProcessor, times(1)).endStartRound();
+        assertEquals(StartRoundSyncState.class, lightSyncProcessor.getSyncState().getClass());
+    }
+
+    @Test
+    public void peerInStartRoundGetsPivotsAndShouldTransitsToFetchRound() {
+        final Keccak256 startBlockHash = new Keccak256(randomHash());
+        final Keccak256 parentHash = new Keccak256(randomHash());
+        final BlockHeader startBlockHeader = getBlockHeader(1L, startBlockHash, BlockDifficulty.ONE);
+        final List<BlockHeader> pivots = getBlockHeaders(2, 2, 192, false);
+        when(pivots.get(0).getParentHash()).thenReturn(startBlockHash);
+        when(pivots.get(1).getParentHash()).thenReturn(parentHash);
+
+        newBlockHeadersInStartRoundSyncState(startBlockHeader, pivots, mediumLightPeer);
+
+        verify(lightSyncProcessor, times(1)).startFetchRound(mediumLightPeer, pivots, MEDIUM_TARGET_BLOCK_NUMBER);
+        assertEquals(FetchRoundSyncState.class, lightSyncProcessor.getSyncState().getClass());
+    }
+
+    @Test
+    public void peerInFetchSyncRoundShouldAskForTheSubchain() {
+        //The cases of receive wrong headers in FetchSyncRound are not going to be implemented. The method 'isCorrect' were tested in previous tests.
+        final Keccak256 firstBlockHash = new Keccak256(randomHash());
+        final List<BlockHeader> pivots = getBlockHeaders(2, 2, 192, false);
+        when(pivots.get(1).getParentHash()).thenReturn(firstBlockHash);
+
+        final FetchRoundSyncState syncState = new FetchRoundSyncState(mediumLightPeer, pivots, MEDIUM_TARGET_BLOCK_NUMBER, lightSyncProcessor);
+        syncState.sync();
+
+        final GetBlockHeadersByHashMessage expectedMessage = new GetBlockHeadersByHashMessage(1L, firstBlockHash.getBytes(), 192, 0, true);
+        assertSendMessage(expectedMessage, mediumLightPeer);
+    }
+
+    @Test
+    public void peerInFetchSyncRoundReceivesTheFirstSubchainWithWrongLastBlockHeader() {
+        //The cases of receive wrong headers in FetchSyncRound are not going to be implemented. The method 'isCorrect' were tested in previous tests.
+        final int subchainSize = 192;
+        final List<BlockHeader> pivots = getBlockHeaders(2, 2, subchainSize, false);
+        final List<BlockHeader> blockHeaders = new ArrayList<>(getBlockHeaders(pivots.get(1).getNumber() - 1, subchainSize, 0, true));
+        final Keccak256 incorrectParentHash = new Keccak256(randomHash());
+        connectBlockHeaders(incorrectParentHash, blockHeaders, pivots.get(1));
+
+        executeACycleOfFetchSyncState(mediumLightPeer, pivots, MEDIUM_TARGET_BLOCK_NUMBER, blockHeaders);
+        verify(lightSyncProcessor, times(1)).badSubchain();
+    }
+
+    @Test
+    public void peerInFetchSyncRoundReceivesNonConnectedHeadersAndShouldntProcessIt() {
+        //The cases of receive wrong headers in FetchSyncRound are not going to be implemented. The method 'isCorrect' were tested in previous tests.
+        final int subchainSize = 192;
+        final List<BlockHeader> pivots = getBlockHeaders(2, 2, subchainSize, false);
+        final List<BlockHeader> blockHeaders = new ArrayList<>(getBlockHeaders(pivots.get(1).getNumber() - 1, subchainSize, 0, true));
+        final Keccak256 initialBlockHeaderHash = blockHeaders.get(0).getHash();
+        when(pivots.get(1).getParentHash()).thenReturn(initialBlockHeaderHash);
+        when(blockHeaders.get(0).getParentHash()).thenReturn(new Keccak256(randomHash()));
+
+        executeACycleOfFetchSyncState(mediumLightPeer, pivots, MEDIUM_TARGET_BLOCK_NUMBER, blockHeaders);
+        verify(lightSyncProcessor, times(1)).badConnected();
+    }
+
+    @Test
+    public void peerInFetchSyncRoundAskForASubchainsAndShouldReceivesAndProcessIt() {
+        //The cases of receive wrong headers in FetchSyncRound are not going to be implemented. The method 'isCorrect' were tested in previous tests.
+        final int subchainSize = 192;
+        final List<BlockHeader> pivots = getBlockHeaders(2, 2, subchainSize, false);
+        final List<BlockHeader> blockHeaders = new ArrayList<>(getBlockHeaders(pivots.get(1).getNumber() - 1, subchainSize, 0, true));
+        connectBlockHeaders(pivots.get(0).getHash(), blockHeaders, pivots.get(1));
+
+        executeACycleOfFetchSyncState(mediumLightPeer, pivots, MEDIUM_TARGET_BLOCK_NUMBER, blockHeaders);
+        assertEquals(blockHeaders, lightSyncProcessor.getDownloadedHeaders());
+        verify(lightSyncProcessor).endSync();
+    }
+
+    @Test
+    public void peerInFetchSyncRoundReceivesACorrectSubChainButIncompleteAndShouldAskTheRest() {
+        //The cases of receive wrong headers in FetchSyncRound are not going to be implemented. The method 'isCorrect' were tested in previous tests.
+        final int subchainSize = 192;
+        final List<BlockHeader> pivots = getBlockHeaders(2, 2, subchainSize, false);
+        final List<BlockHeader> blockHeaders = new ArrayList<>(getBlockHeaders(pivots.get(1).getNumber() - 1, subchainSize, 0, true));
+        connectBlockHeaders(pivots.get(0).getHash(), blockHeaders, pivots.get(1));
+        final int remainingBlockHeaders = 5;
+        final int quantityOfArrivedHeaders = blockHeaders.size() - remainingBlockHeaders;
+
+        executeACycleOfFetchSyncState(mediumLightPeer, pivots, MEDIUM_TARGET_BLOCK_NUMBER, blockHeaders.subList(0, quantityOfArrivedHeaders));
+
+        final GetBlockHeadersByHashMessage firstExpectedMessage = new GetBlockHeadersByHashMessage(1L, pivots.get(1).getParentHash().getBytes(), Math.toIntExact(pivots.get(1).getNumber() - pivots.get(0).getNumber() - 1), 0, true);
+        final GetBlockHeadersByHashMessage secondExpectedMessage = new GetBlockHeadersByHashMessage(2L, blockHeaders.get(quantityOfArrivedHeaders-1).getParentHash().getBytes(), remainingBlockHeaders, 0, true);
+        assertTwoMessagesWereSent(firstExpectedMessage, secondExpectedMessage, mediumLightPeer);
+
+    }
+
+    @Test
+    public void peerInFetchSyncRoundShouldAskForTwoSubchains() {
+        //The cases of receive wrong headers in FetchSyncRound are not going to be implemented. The method 'isCorrect' were tested in previous tests.
+        final int subchainSize = 192;
+        final List<BlockHeader> pivots = getBlockHeaders(2, 3, subchainSize, false);
+
+        final List<BlockHeader> firstBlockHeaderResponse = new ArrayList<>(getBlockHeaders(pivots.get(2).getNumber() - 1, subchainSize, 0, true));
+        connectBlockHeaders(pivots.get(1).getHash(), firstBlockHeaderResponse, pivots.get(2));
+        final GetBlockHeadersByHashMessage firstExpectedMessage = new GetBlockHeadersByHashMessage(1L, pivots.get(2).getParentHash().getBytes(), Math.toIntExact(pivots.get(2).getNumber() - pivots.get(1).getNumber() - 1), 0, true);
+
+        final List<BlockHeader> secondBlockHeaderResponse = new ArrayList<>(getBlockHeaders(pivots.get(1).getNumber() - 1, subchainSize, 0, true));
+        connectBlockHeaders(pivots.get(0).getHash(), secondBlockHeaderResponse, pivots.get(1));
+        final GetBlockHeadersByHashMessage secondExpectedMessage = new GetBlockHeadersByHashMessage(2L, pivots.get(1).getParentHash().getBytes(), Math.toIntExact(pivots.get(1).getNumber() - pivots.get(0).getNumber() - 1), 0, true);
+
+
+        executeACycleOfFetchSyncState(longLightPeer, pivots, LONG_TARGET_BLOCK_NUMBER, firstBlockHeaderResponse);
+        assertEquals(firstBlockHeaderResponse, lightSyncProcessor.getDownloadedHeaders());
+        assertTwoMessagesWereSent(firstExpectedMessage, secondExpectedMessage, longLightPeer);
     }
 
     @Test
@@ -327,8 +417,6 @@ public class LightSyncStateTest {
 
         //Process response and request for pivots
         GetBlockHeadersByNumberMessage expectedMsg2 = new GetBlockHeadersByNumberMessage(secondRequestId, newStartBlockHeader.getNumber(), newStartBlockNumber, 0, true);
-        final Keccak256 commonAncestorHash = new Keccak256(randomHash());
-        final BlockHeader commonAncestor = getBlockHeader(newStartBlockNumber, commonAncestorHash, BlockDifficulty.ONE);
         List<BlockHeader> secondBlockHeaderList = new ArrayList<>();
         secondBlockHeaderList.add(newStartBlockHeader);
         secondBlockHeaderList.addAll(getBlockHeaders(newStartBlockNumber-1, newStartBlockNumber-1, 0, true));
@@ -343,7 +431,7 @@ public class LightSyncStateTest {
         lightSyncProcessor.processBlockHeadersMessage(thirdRequestId, thirdBlockHeaderList, lightPeer);
 
         verify(lightSyncProcessor).endStartRound();
-        assertMessagesWereSent(expectedMsg1, expectedMsg2, expectedMsg3);
+        assertThreeMessagesWereSent(expectedMsg1, expectedMsg2, expectedMsg3, lightPeer);
     }
 
     @Test
@@ -389,7 +477,19 @@ public class LightSyncStateTest {
         lightSyncProcessor.processBlockHeadersMessage(thirdRequestId, thirdBlockHeaderList, lightPeer);
 
         verify(lightSyncProcessor).endStartRound();
-        assertMessagesWereSent(expectedMsg1, expectedMsg2, expectedMsg3);
+        assertThreeMessagesWereSent(expectedMsg1, expectedMsg2, expectedMsg3, lightPeer);
+    }
+
+    private void executeACycleOfFetchSyncState(LightPeer lightPeer, List<BlockHeader> pivots, long target, List<BlockHeader> blockHeadersResponse) {
+        final FetchRoundSyncState syncState = new FetchRoundSyncState(lightPeer, pivots, target, lightSyncProcessor);
+        syncState.sync();
+        syncState.newBlockHeaders(lightPeer, blockHeadersResponse);
+    }
+
+    private void registerANewLightPeer(LightPeersInformation lightPeersInformation, long longTargetBlockNumber, LightPeer longLightPeer) {
+        LightStatus longLightStatus = mock(LightStatus.class);
+        setupBestPeerStatus(longLightStatus, longTargetBlockNumber);
+        lightPeersInformation.registerLightPeer(longLightPeer, longLightStatus, false);
     }
 
     private Genesis getGenesis() {
@@ -408,12 +508,6 @@ public class LightSyncStateTest {
         return genesis;
     }
 
-    private void assertSendMessage(LightClientMessage expectedMsg) {
-        ArgumentCaptor<LightClientMessage> argument = forClass(LightClientMessage.class);
-        verify(lightPeer).sendMessage(argument.capture());
-        assertArrayEquals(expectedMsg.getEncoded(), argument.getAllValues().get(0).getEncoded());
-    }
-
     private CommonAncestorSearchSyncState startCommonAncestorSearchFrom(BlockHeader bestBlockHeader) {
         final CommonAncestorSearchSyncState syncState = new CommonAncestorSearchSyncState(lightSyncProcessor, lightPeer, bestBlockHeader.getNumber(), blockchain);
         syncState.sync();
@@ -426,13 +520,27 @@ public class LightSyncStateTest {
         syncState.newBlockHeaders(lightPeer, blockHeaders);
     }
 
-    private void assertMessagesWereSent(GetBlockHeadersMessage expectedMsg1, GetBlockHeadersMessage expectedMsg2, GetBlockHeadersMessage expectedMsg3) {
-        final ArgumentCaptor<GetBlockHeadersMessage> argument = forClass(GetBlockHeadersMessage.class);
-        final List<GetBlockHeadersMessage> arguments = argument.getAllValues();
+    private void assertSendMessage(LightClientMessage expectedMsg, LightPeer lightPeer) {
+        ArgumentCaptor<LightClientMessage> argument = forClass(LightClientMessage.class);
+        verify(lightPeer).sendMessage(argument.capture());
+        assertArrayEquals(expectedMsg.getEncoded(), argument.getValue().getEncoded());
+    }
+
+    private void assertTwoMessagesWereSent(LightClientMessage firstExpectedMessage, LightClientMessage secondExpectedMessage, LightPeer lightPeer) {
+        ArgumentCaptor<LightClientMessage> argument = forClass(LightClientMessage.class);
+        final List<LightClientMessage> arguments = argument.getAllValues();
+        verify(lightPeer, times(2)).sendMessage(argument.capture());
+        assertArrayEquals(firstExpectedMessage.getEncoded(), arguments.get(0).getEncoded());
+        assertArrayEquals(secondExpectedMessage.getEncoded(), arguments.get(1).getEncoded());
+    }
+
+    private void assertThreeMessagesWereSent(LightClientMessage expectedMsg1, LightClientMessage expectedMsg2, LightClientMessage expectedMsg3, LightPeer lightPeer) {
+        final ArgumentCaptor<LightClientMessage> argument = forClass(LightClientMessage.class);
+        final List<LightClientMessage> arguments = argument.getAllValues();
         verify(lightPeer, times(3)).sendMessage(argument.capture());
         assertArrayEquals(expectedMsg1.getEncoded(), arguments.get(0).getEncoded());
         assertArrayEquals(expectedMsg2.getEncoded(), arguments.get(1).getEncoded());
-        assertArrayEquals(arguments.get(2).getEncoded(), expectedMsg3.getEncoded());
+        assertArrayEquals(expectedMsg3.getEncoded(), arguments.get(2).getEncoded());
     }
 
     private List<BlockHeader> getBlockHeaders(long initialNumber, int numberOfHeaders, int skip, boolean reverse) {
@@ -457,12 +565,6 @@ public class LightSyncStateTest {
         when(powRule.isValid(blockHeader)).thenReturn(true);
     }
 
-    private void assertSendSameMessages(LightClientMessage initialMsg, LightClientMessage expectedMsg, ArgumentCaptor<LightClientMessage> argument) {
-        verify(lightPeer, times(2)).sendMessage(argument.capture());
-        assertArrayEquals(initialMsg.getEncoded(), argument.getAllValues().get(0).getEncoded());
-        assertArrayEquals(expectedMsg.getEncoded(), argument.getAllValues().get(1).getEncoded());
-    }
-
     private BlockHeader getBlockHeader(long number, Keccak256 hash, BlockDifficulty blockDifficulty) {
         final BlockHeader blockHeader = mock(BlockHeader.class);
         when(blockHeader.getHash()).thenReturn(hash);
@@ -480,5 +582,20 @@ public class LightSyncStateTest {
         when(lightStatus.getTotalDifficulty()).thenReturn(new BlockDifficulty(BigInteger.TEN));
         when(lightStatus.getBestNumber()).thenReturn(targetBlockNumber);
         when(lightStatus.getBestHash()).thenReturn(randomHash());
+    }
+
+    private void connectBlockHeaders(Keccak256 lowHeaderHash, List<BlockHeader> blockHeaders, BlockHeader highHeader) {
+        final Keccak256 firstHeaderHash = blockHeaders.get(0).getHash();
+        when(highHeader.getParentHash()).thenReturn(firstHeaderHash);
+
+        for (int i=0; i < blockHeaders.size()-1;i++) {
+            final BlockHeader actualBlockHeader = blockHeaders.get(i);
+            final BlockHeader parentBlockHeader = blockHeaders.get(i+1);
+            final Keccak256 parentHash = parentBlockHeader.getHash();
+            when(actualBlockHeader.getParentHash()).thenReturn(parentHash);
+        }
+
+        final BlockHeader endBlockHeader = blockHeaders.get(blockHeaders.size()-1);
+        when(endBlockHeader.getParentHash()).thenReturn(lowHeaderHash);
     }
 }
