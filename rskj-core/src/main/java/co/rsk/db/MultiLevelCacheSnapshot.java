@@ -16,8 +16,8 @@ public class MultiLevelCacheSnapshot implements MutableTrieCache.ICache {
     /**
      * builds a new MultiLevelCacheSnapshot looking at a new instance of MultiLevelCache (one-level caching for now)
      */
-    public MultiLevelCacheSnapshot() {
-        this.cache = new MultiLevelCache();
+    public MultiLevelCacheSnapshot(MutableTrie trie) {
+        this.cache = new MultiLevelCache(trie);
         this.currentLevel = this.cache.getDepth();
     }
 

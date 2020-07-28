@@ -43,7 +43,7 @@ public class JournalTrieCache extends MutableTrieCache {
                 (parentTrie instanceof JournalTrieCache) ? new MultiLevelCacheSnapshot(
                         ((JournalTrieCache) parentTrie).getCache(),
                         ((JournalTrieCache) parentTrie).getCacheLevel() + 1) :
-                        new MultiLevelCacheSnapshot()
+                        new MultiLevelCacheSnapshot((parentTrie instanceof JournalTrieCache) ? ((JournalTrieCache) parentTrie).getMutableTrie() : parentTrie)
         );
     }
 
