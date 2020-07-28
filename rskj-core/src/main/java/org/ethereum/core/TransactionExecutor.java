@@ -64,24 +64,7 @@ import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
  * @author Roman Mandeleil
  * @since 19.12.2014
  */
-/** #mish notes:
- // Overview: 
- * 4 stages: init() -> exec() -> go() -> finalize()
- * init(): does basic checks, addr are valid, gaslimits, sufficient balance, valid nonce
- * exec(): * Transfer basic cost + gasLImits from sender. Then switch to call() or create()
-           * call(): either PCC or not. 
-                - If PCC execute and return the result. 
-                - If not PCC, getCode(), set up vm and prog for next stage `go()`
-           * create() : create account + storage root, but code is not saved to trie yet. 
-                        Setup vm and prog for next stage createContract() in go().
- * go(): * if PCC.. nothing to do, commit the cache
-         * else (call to non PCC or create), then use vm and prog setup earlier to execute prog i.e. vm.Play(prog)
-         * if create, then call createContract()
-                - this computes contract size, gascost, saves the code to repository
- * finalize(): - commit changes to repository, make refunds, execution summary and logs.. wrap things up. 
-//  Gas spending and endowment changes along the way at every step..  some permanent (track),
-//  some temporary via cacheTrack or spendgas() thru program.result. Can be committed or rolledback.
- */
+
 public class TransactionExecutor {
 
     private static final Logger logger = LoggerFactory.getLogger("execute");
@@ -518,8 +501,11 @@ public class TransactionExecutor {
 
     private void go() {
         // TODO: transaction call for pre-compiled  contracts
-        
         if (vm == null) { // e.g. pure send TX or creates with no data
+            //#mish introduced spendgas for testing and consistency check (gasused + gasrefunded = gaslimit)
+            // not needed in RSKJ master as it only uses mEndGas and "does not print" Tx ex summary in finalization()
+            result.spendGas(GasCost.subtract(GasCost.toGas(tx.getGasLimit()), mEndGas)); // e.g. in case CREATE with null tx.data
+            // this is same as in master
             cacheTrack.commit();
             return;
         }
@@ -530,7 +516,7 @@ public class TransactionExecutor {
         Metric metric = profiler.start(Profiler.PROFILING_TYPE.VM_EXECUTE);
         try {
 
-            // Charge basic cost of the transaction
+            // Charge basic cost of the transaction 
             program.spendGas(tx.transactionCost(constants, activations), "TRANSACTION COST");
             // #mish: program operations: `code` from repository (call to addr) or `tx.getData()` (in case of create)
             if (playVm) {
@@ -937,6 +923,24 @@ public class TransactionExecutor {
         }
     }
 
+/** #mish notes move to end
+ // Overview: 
+ * 4 stages: init() -> exec() -> go() -> finalize()
+ * init(): does basic checks, addr are valid, gaslimits, sufficient balance, valid nonce
+ * exec(): * Transfer basic cost + gasLImits from sender. Then switch to call() or create()
+           * call(): either PCC or not. 
+                - If PCC execute and return the result. 
+                - If not PCC, getCode(), set up vm and prog for next stage `go()`
+           * create() : create account + storage root, but code is not saved to trie yet. 
+                        Setup vm and prog for next stage createContract() in go().
+ * go(): * if PCC.. nothing to do, commit the cache
+         * else (call to non PCC or create), then use vm and prog setup earlier to execute prog i.e. vm.Play(prog)
+         * if create, then call createContract()
+                - this computes contract size, gascost, saves the code to repository
+ * finalize(): - commit changes to repository, make refunds, execution summary and logs.. wrap things up. 
+//  Gas spending and endowment changes along the way at every step..  some permanent (track),
+//  some temporary via cacheTrack or spendgas() thru program.result. Can be committed or rolledback.
+ */
 
 }
 

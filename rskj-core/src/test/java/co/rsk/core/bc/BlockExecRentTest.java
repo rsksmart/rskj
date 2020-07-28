@@ -202,6 +202,7 @@ public class BlockExecRentTest {
         System.out.println("\nSender: " + account);
         System.out.println("Contract: " + contractAddr);
         System.out.println("TX Data: 0x" + Hex.toHexString(tx.getData()));
+        System.out.println("TX value: " + tx.getValue());
 
         when(activationConfig.isActive(RSKIP125)).thenReturn(false);
         BlockResult result = executor.execute(block, parent.getHeader(), false);
@@ -303,7 +304,7 @@ public class BlockExecRentTest {
         Account account = createAccount("acctest1", track, Coin.valueOf(2000010)); //#mish create needs 53K, plus 1/2 for rent
 
         // This example wastes gas. The tx data has a create opcode. Will consume 21K + 32K (empty receive => create) + 32k for CREATE opcode
-        String stringCode = "PUSH1 0x01 PUSH1 0x02 PUSH1 0x00 CREATE"; // CREATE needs 3 args value start size
+        String stringCode = "PUSH1 0x01 PUSH1 0x02 PUSH1 0x00 PUSH1 0x01 PUSH1 0x02 PUSH1 0x00";// CREATE"; // CREATE needs 3 args value start size
         byte[] code = compiler.compile(stringCode);
         String codeHex = Hex.toHexString(code);
 
