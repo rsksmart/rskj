@@ -2,7 +2,6 @@
 
 **Code:** [branch 'mish'](https://github.com/optimalbrew/rskj/tree/mish) and [comparison with rskj master](https://github.com/rsksmart/rskj/compare/master...optimalbrew:mish) (for overview).
 
-<<<<<<< HEAD
 Storage rent is intended to lead to more efficient resource utilization by charging users for the size as well as duration for which information is stored in blockchain databases i.e. account state, contract code, and contract storage.
 
 Curently, the only direct incentive to reduce storage is through refunds for `SELF-DESTRUCT` and `SSTORE-CLEAR`. Storage rent provides additional incentives for more judicious use of state storage. Storage rent is collected in *gas* by adding accounting and collection logic to RSKJ.
@@ -15,23 +14,6 @@ The implementation is closely related to [RSKIP113](https://github.com/rsksmart/
 
 Executing a block with a single CREATE TX demonstrates many aspects of the rent implementation. This assumes the [`mish` branch ](https://github.com/optimalbrew/rskj/tree/mish) has been fetched and compiled (e.g. with `./gradlew clean build -x test`). Note that standard output is used (`showStandardStreams true`) in `rskj-core/build.gradle`
 
-=======
-The goal of this project is to implement *storage rent*, which is a system to collect fees from RSK users for storing state data. 
-
-Storage rent is intended to lead to more efficient resource utilization by charging users for the size as well as duration for which information is stored in blockchain databases i.e. account state, contract code, and contract storage.
-
-Curently, the only direct incentive to reduce storage is through refunds for `SELF-DESTRUCT` and `SSTORE-CLEAR`. Storage rent provides additional incentives for more juidicous use of state storage. Storage rent is collected in *gas* by adding accounting and collection logic to RSKJ.
-
-
-## Current implementation
-The implementation is closely related to [RSKIP113](https://github.com/rsksmart/RSKIPs/blob/master/IPs/RSKIP113.md). Work on an updated RSKIP is in process. 
-
-
-### Example
-
-Executing a block with a single CREATE TX demonstrates many aspects of the rent implementation. This assumes the [`mish` branch ](https://github.com/optimalbrew/rskj/tree/mish) has been fetched and compiled (e.g. with `./gradlew clean build -x test`). Note that standard output is used (`showStandardStreams true`) in `rskj-core/build.gradle`
-
->>>>>>> 371b3e806d71bb083f92a4fa28abec03691d3285
 Output from test
 `executeBlockWithOneCreateTransaction` in `co.rsk.core.bc.BlockExecRentTest`
 
@@ -123,7 +105,6 @@ Handling CALLs
 - Child CALLs are passed all available rentgas from parent. There is no mechanism to specifically limit rent gas to CALLs.
 
 Eth Module
-<<<<<<< HEAD
 - The `eth_estimateGas()` method has been modified to return the combined execution and rent gas consumed (via a reversible transaction, local call setting).
 
 - Example: this can be testted by running the node in regtest mode and then using RPC
@@ -149,9 +130,6 @@ root@5429dcd447b9:~/# curl localhost:4444
 
 ```
 
-=======
-- The `eth_estimateGas()` method has been modified to return the combined execution and rent gas consumed (via a reversible transaction, local call setting). 
->>>>>>> 371b3e806d71bb083f92a4fa28abec03691d3285
 - **WARNING** This method should actually return `2*max(executionGasUsed(),rentGasUsed())`. Otherwise, if a transaction consumes 24K in execution and 10k for rent and we pass it 34K based on the estimate, it will OOG. This is because the gasLimit 34 will be split equally between execution and rent gas limits (17k each, not enough for execution).
 
 
@@ -164,11 +142,7 @@ root@5429dcd447b9:~/# curl localhost:4444
 - In TX Receipt, the gasUsed field and method is for both exec and rent. But this **does not hold** for `blockresult.getGasUsed()`, because **block gasLimit** is based on execution gas only. What's the simplest way to to clear it up for all 3 classes TX, TcRcpt, and Block? That's a task for core. Changes need to be as closely alighed with Ethereum as possible.
 
 
-<<<<<<< HEAD
 ## How to 'shut down' storage rent 
-=======
-### How to 'shut down' storage rent 
->>>>>>> 371b3e806d71bb083f92a4fa28abec03691d3285
 
 - Make **rent free** by setting field `GasCost.STORAGE_RENT_MULTIPLIER = 0L`. Rent will still be *computed* (as 0).
 - Allocate 0 budget to rent by setting field `GasCost.TX_GASBUDGET_DIVISOR = 1L`. This will allocate all gasLimit in a TX (recall, there is a single gaslimit field) to execution gas. Without this change, TX exceptions or Revert will consume 25% of any `rentgaslimit` passed (as charge for IO related costs) even if rent is "free". 
