@@ -181,25 +181,50 @@ public class BridgeUtils {
 
     /**
      * Return the amount of missing signatures for a tx.
+     * @param btcContext Btc context
      * @param btcTx The btc tx to check
      * @return 0 if was signed by the required number of federators, amount of missing signatures otherwise
      */
     public static int countMissingSignatures(Context btcContext, BtcTransaction btcTx) {
-        // When the tx is constructed OP_0 are placed where signature should go.
+        // Check missing signatures for only one input as it is not
+        // possible for a federator to leave unsigned inputs in a tx
         Context.propagate(btcContext);
         int unsigned = 0;
 
-        for (TransactionInput input : btcTx.getInputs()) {
-            Script scriptSig = input.getScriptSig();
-            List<ScriptChunk> chunks = scriptSig.getChunks();
-            for (int i = 1; i < chunks.size() - 1; i++) {
-                ScriptChunk chunk = chunks.get(i);
-                if (!chunk.isOpCode() && chunk.data.length == 0) {
-                    unsigned++;
-                }
+        TransactionInput input = btcTx.getInput(0);
+        Script scriptSig = input.getScriptSig();
+        List<ScriptChunk> chunks = scriptSig.getChunks();
+
+        for (int i = 1; i < chunks.size() - 1; i++) {
+            ScriptChunk chunk = chunks.get(i);
+            if (!chunk.isOpCode() && chunk.data.length == 0) {
+                unsigned++;
             }
         }
         return unsigned;
+    }
+
+    /**
+     * Checks whether a btc tx has been signed by the required number of federators.
+     * @param btcContext Btc context
+     * @param btcTx The btc tx to check
+     * @return True if was signed by the required number of federators, false otherwise
+     */
+    public static boolean hasEnoughSignatures(Context btcContext, BtcTransaction btcTx) {
+        // When the tx is constructed OP_0 are placed where signature should go.
+        // Check all OP_0 have been replaced with actual signatures in all inputs
+        Context.propagate(btcContext);
+        for (TransactionInput input : btcTx.getInputs()) {
+            Script scriptSig = input.getScriptSig();
+            List<ScriptChunk> chunks = scriptSig.getChunks();
+            for (int i = 1; i < chunks.size(); i++) {
+                ScriptChunk chunk = chunks.get(i);
+                if (!chunk.isOpCode() && chunk.data.length == 0) {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 
     public static Address recoverBtcAddressFromEthTransaction(org.ethereum.core.Transaction tx, NetworkParameters networkParameters) {

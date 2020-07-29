@@ -323,12 +323,58 @@ public class BridgeUtilsTest {
     }
 
     @Test
+    public void hasEnoughSignatures_two_signatures() {
+        // Create 2 signatures
+        byte[] sign1 = new byte[]{0x79};
+        byte[] sign2 = new byte[]{0x78};
+
+        BtcTransaction btcTx = createReleaseTx(Arrays.asList(sign1, sign2), 1);
+        Assert.assertTrue(BridgeUtils.hasEnoughSignatures(mock(Context.class), btcTx));
+    }
+
+    @Test
+    public void hasEnoughSignatures_one_signature() {
+        // Create 2 signatures
+        byte[] sign1 = new byte[]{0x79};
+        byte[] MISSING_SIGNATURE = new byte[0];
+
+        BtcTransaction btcTx = createReleaseTx(Arrays.asList(sign1, MISSING_SIGNATURE), 1);
+        Assert.assertFalse(BridgeUtils.hasEnoughSignatures(mock(Context.class), btcTx));
+    }
+
+    @Test
+    public void hasEnoughSignatures_no_signatures() {
+        BtcTransaction btcTx = createReleaseTx(Collections.emptyList(), 1);
+        Assert.assertFalse(BridgeUtils.hasEnoughSignatures(mock(Context.class), btcTx));
+    }
+
+    @Test
+    public void hasEnoughSignatures_several_inputs_all_signed() {
+        // Create 2 signatures
+        byte[] sign1 = new byte[]{0x79};
+        byte[] sign2 = new byte[]{0x78};
+
+        BtcTransaction btcTx = createReleaseTx(Arrays.asList(sign1, sign2), 3);
+        Assert.assertTrue(BridgeUtils.hasEnoughSignatures(mock(Context.class), btcTx));
+    }
+
+    @Test
+    public void hasEnoughSignatures_several_inputs_one_missing_signature() {
+        // Create 1 signature
+        byte[] sign1 = new byte[]{0x79};
+        byte[] MISSING_SIGNATURE = new byte[0];
+
+        BtcTransaction btcTx = createReleaseTx(Arrays.asList(sign1, MISSING_SIGNATURE), 3);
+        Assert.assertFalse(BridgeUtils.hasEnoughSignatures(mock(Context.class), btcTx));
+    }
+
+    @Test
     public void countMissingSignatures_two_signatures() {
         // Create 2 signatures
         byte[] sign1 = new byte[]{0x79};
         byte[] sign2 = new byte[]{0x78};
 
-        BtcTransaction btcTx = createReleaseTx(Arrays.asList(sign1, sign2));
+        BtcTransaction btcTx = createReleaseTx(Arrays.asList(sign1, sign2), 1);
         Assert.assertEquals(0, BridgeUtils.countMissingSignatures(mock(Context.class), btcTx));
     }
 
@@ -338,18 +384,38 @@ public class BridgeUtilsTest {
         byte[] sign1 = new byte[]{0x79};
         byte[] MISSING_SIGNATURE = new byte[0];
 
-        BtcTransaction btcTx = createReleaseTx(Arrays.asList(sign1, MISSING_SIGNATURE));
+        BtcTransaction btcTx = createReleaseTx(Arrays.asList(sign1, MISSING_SIGNATURE), 1);
         Assert.assertEquals(1, BridgeUtils.countMissingSignatures(mock(Context.class), btcTx));
     }
 
     @Test
     public void countMissingSignatures_no_signatures() {
         // As no signature was added, missing signatures is 2
-        BtcTransaction btcTx = createReleaseTx(Collections.emptyList());
+        BtcTransaction btcTx = createReleaseTx(Collections.emptyList(), 1);
         Assert.assertEquals(2, BridgeUtils.countMissingSignatures(mock(Context.class), btcTx));
     }
 
-    private BtcTransaction createReleaseTx(List<byte[]> signatures) {
+    @Test
+    public void countMissingSignatures_several_inputs_all_signed() {
+        // Create 2 signatures
+        byte[] sign1 = new byte[]{0x79};
+        byte[] sign2 = new byte[]{0x78};
+
+        BtcTransaction btcTx = createReleaseTx(Arrays.asList(sign1, sign2), 3);
+        Assert.assertEquals(0, BridgeUtils.countMissingSignatures(mock(Context.class), btcTx));
+    }
+
+    @Test
+    public void countMissingSignatures_several_inputs_one_missing_signature() {
+        // Create 1 signature
+        byte[] sign1 = new byte[]{0x79};
+        byte[] MISSING_SIGNATURE = new byte[0];
+
+        BtcTransaction btcTx = createReleaseTx(Arrays.asList(sign1, MISSING_SIGNATURE), 3);
+        Assert.assertEquals(1, BridgeUtils.countMissingSignatures(mock(Context.class), btcTx));
+    }
+
+    private BtcTransaction createReleaseTx(List<byte[]> signatures, int inputsToAdd) {
         // Setup
         BridgeRegTestConstants bridgeConstants = BridgeRegTestConstants.getInstance();
         NetworkParameters btcParams = RegTestParams.get();
@@ -362,7 +428,11 @@ public class BridgeUtilsTest {
 
         // Build btc tx to be signed
         BtcTransaction btcTx = new BtcTransaction(btcParams);
-        btcTx.addInput(prevOut);
+
+        // Add inputs
+        for (int i=0; i < inputsToAdd; i++) {
+            btcTx.addInput(prevOut);
+        }
 
         // Create federation redeem script
         Script redeemScript = createBaseRedeemScriptThatSpendsFromTheFederation(federation);
@@ -375,7 +445,10 @@ public class BridgeUtilsTest {
             scriptSig = ScriptBuilder.createMultiSigInputScriptBytes(signatures, redeemDataScript.getProgram());
         }
 
-        btcTx.getInput(0).setScriptSig(scriptSig);
+        // Sign inputs
+        for (int i=0; i < inputsToAdd; i++) {
+            btcTx.getInput(i).setScriptSig(scriptSig);
+        }
 
         TransactionOutput output = new TransactionOutput(btcParams, btcTx, Coin.COIN, new BtcECKey().toAddress(btcParams));
         btcTx.addOutput(output);
