@@ -120,9 +120,11 @@ public class ChannelManagerImpl implements ChannelManager {
     }
 
     private void processNewPeers() {
-        List<Channel> processedChannels = new ArrayList<>();
-        newPeers.stream().filter(Channel::isProtocolsInitialized).forEach(c -> processNewPeer(c, processedChannels));
-        newPeers.removeAll(processedChannels);
+        synchronized (newPeers) {
+            List<Channel> processedChannels = new ArrayList<>();
+            newPeers.stream().filter(Channel::isProtocolsInitialized).forEach(c -> processNewPeer(c, processedChannels));
+            newPeers.removeAll(processedChannels);
+        }
     }
 
     private void processNewPeer(Channel channel, List<Channel> processedChannels) {
@@ -288,12 +290,16 @@ public class ChannelManagerImpl implements ChannelManager {
     public void notifyDisconnect(Channel channel) {
         logger.debug("Peer {}: notifies about disconnect", channel.getPeerIdShort());
         channel.onDisconnect();
-        syncPool.onDisconnect(channel);
-        synchronized (activePeersLock){
-            activePeers.values().remove(channel);
-        }
-        if(newPeers.remove(channel)) {
-            logger.info("Peer removed from active peers: {}", channel.getPeerId());
+        synchronized (newPeers) {
+            if(newPeers.remove(channel)) {
+                logger.info("Peer removed from new peers list: {}", channel.getPeerId());
+            }
+            synchronized (activePeersLock){
+                if(activePeers.values().remove(channel)) {
+                    logger.info("Peer removed from active peers list: {}", channel.getPeerId());
+                }
+            }
+            syncPool.onDisconnect(channel);
         }
     }
 
