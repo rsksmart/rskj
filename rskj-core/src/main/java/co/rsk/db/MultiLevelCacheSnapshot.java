@@ -95,18 +95,6 @@ public class MultiLevelCacheSnapshot implements MutableTrieCache.ICache {
     }
 
     /**
-     * get the value in cache for the given key, only if it has been updated in this cache level.
-     * To get the value in cache regardless of the level, use getNewestValue()
-     *
-     * @param key
-     * @return the value if the key has been updated in this cache level, otherwise null
-     */
-    @Override
-    public byte[] get(ByteArrayWrapper key) {
-        return this.cache.get(key, currentLevel);
-    }
-
-    /**
      * get the value in cache for the given key, from the last cache level when this key has been updated
      *
      * @param key
@@ -116,8 +104,8 @@ public class MultiLevelCacheSnapshot implements MutableTrieCache.ICache {
      * so that a 'null' returned value means a deleted key)
      */
     @Override
-    public byte[] getNewestValue(ByteArrayWrapper key) {
-        return this.cache.getNewestValue(key, currentLevel);
+    public byte[] get(ByteArrayWrapper key) {
+        return this.cache.get(key, currentLevel);
     }
 
     /**

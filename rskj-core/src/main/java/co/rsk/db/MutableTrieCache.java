@@ -85,7 +85,7 @@ public class MutableTrieCache implements MutableTrie {
             return Optional.ofNullable(trieRetriever.apply(key));
         }
         ByteArrayWrapper accountWrapper = new ByteArrayWrapper(key);
-        byte[] value = cache.getNewestValue(wrapper);
+        byte[] value = cache.get(wrapper);
         if (cache.isAccountDeleted(wrapper) && (value == null)) {
             return Optional.empty();
         }
@@ -223,15 +223,6 @@ public class MutableTrieCache implements MutableTrie {
         void put(ByteArrayWrapper key, byte[] value);
 
         /**
-         * get the value in cache for the given key, only if it has been updated in this cache level.
-         * To get the value in cache regardless of the level, use getNewestValue()
-         *
-         * @param key
-         * @return the value if the key has been updated in this cache level, otherwise null
-         */
-        byte[] get(ByteArrayWrapper key);
-
-        /**
          * get the value in cache for the given key, from the last cache level when this key has been updated
          *
          * @param key
@@ -240,7 +231,7 @@ public class MutableTrieCache implements MutableTrie {
          * (we assume that the caller previously checked if the key is in cache before, using isInCache(),
          * so that a 'null' returned value means a deleted key)
          */
-        byte[] getNewestValue(ByteArrayWrapper key);
+        byte[] get(ByteArrayWrapper key);
 
         /**
          * collect all the keys in cache (all levels included) with the specified size,

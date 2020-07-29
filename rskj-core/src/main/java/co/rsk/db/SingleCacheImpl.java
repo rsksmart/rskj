@@ -41,11 +41,6 @@ public class SingleCacheImpl implements MutableTrieCache.ICache {
     }
 
     @Override
-    public byte[] getNewestValue(ByteArrayWrapper key) {
-        return get(key);
-    }
-
-    @Override
     public void collectKeys(Set<ByteArrayWrapper> parentKeys, int keySize) {
         // all cached items to be transferred to parent
         cache.forEach((accountKey, account) ->
