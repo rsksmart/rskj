@@ -310,9 +310,7 @@ public class MultiLevelCache {
             // for each account deleted at cacheLevel, clear it
             Map<ByteArrayWrapper, Set<Integer>> cloneDeletedAccounts = new HashMap<>(this.deletedAccounts);
             cloneDeletedAccounts.forEach((account, levels) -> {
-                if (levels.contains(cacheLevel)) {
-                    levels.remove(cacheLevel);
-                }
+                levels.remove(cacheLevel);
             });
             // get the originalValues stored at that level
             Map<ByteArrayWrapper, Map<ByteArrayWrapper, byte[]>> originalValuesPerKeyPerAccount = this.originalValuesPerKeyPerAccountPerLevel.get(cacheLevel);
@@ -414,10 +412,7 @@ public class MultiLevelCache {
         if (deletedAccounts.size() > 0) {
             return false;
         }
-        if (deepestLevelPerKeyPerAccount.size() > 0) {
-            return false;
-        }
-        return true;
+        return deepestLevelPerKeyPerAccount.size() <= 0;
     }
 
     /**
