@@ -189,8 +189,7 @@ public class MultiLevelCache {
 
         Map<ByteArrayWrapper, byte[]> valuesPerKey
                 = this.valuesPerKeyPerAccount.computeIfAbsent(accountWrapper, k -> new HashMap<>());
-        // for each key in global cached map
-        // if the key has not been updated at deeper level than cacheLevel, set value = null.
+        // for each key in global cached map, set value = null.
         valuesPerKey.forEach((key, value) -> {
             this.put(key, null, cacheLevel);
         });
@@ -265,6 +264,9 @@ public class MultiLevelCache {
      * @param trie
      */
     public void commitFirstLevel(MutableTrie trie) {
+
+        // for each account deleted at level FIRST_CACHE_LEVEL, remove the keys from the trie
+        getDeletedAccounts(0, FIRST_CACHE_LEVEL).forEach(account -> trie.deleteRecursive(account.getData()));
         // only one cache level: apply changes directly in parent Trie
         if (getDepth() == FIRST_CACHE_LEVEL) {
             this.valuesPerKeyPerAccount.forEach((account, valuesPerKey) -> {
@@ -273,7 +275,6 @@ public class MultiLevelCache {
                 });
             });
         } else {
-            logger.error("WARNING committing first level of a cache with deeper levels not committed  before");
             this.valuesPerKeyPerAccount.forEach((account, valuesPerKey) -> {
                 valuesPerKey.forEach((key, value) -> {
                     int deepestLevel = getCachedKeyDeepestLevel(key, account);
@@ -444,7 +445,7 @@ public class MultiLevelCache {
      * retrieves the deepest Level where a key has been modified in cache, starting from the specified maxLevel (and going down until found)
      * @param account
      * @param key
-     * @param cacheLevel
+     * @param maxLevel
      * @return
      */
     private int findDeepestLevel(ByteArrayWrapper account, ByteArrayWrapper key, int maxLevel) {
