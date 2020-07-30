@@ -397,6 +397,36 @@ public class TraceModuleImplTest {
         Assert.assertEquals("\"delegatecall\"", oresult.get("action").get("callType").toString());
     }
 
+    @Test
+    public void executeContractWithCreate2() throws Exception {
+        DslParser parser = DslParser.fromResource("dsl/create201.txt");
+        ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
+        World world = new World(receiptStore);
+
+        WorldDslProcessor processor = new WorldDslProcessor(world);
+        processor.processCommands(parser);
+
+        Transaction transaction = world.getTransactionByName("tx01");
+
+        TraceModuleImpl traceModule = new TraceModuleImpl(world.getBlockChain(), world.getBlockStore(), receiptStore, world.getBlockExecutor());
+
+        JsonNode result = traceModule.traceTransaction(transaction.getHash().toJsonString());
+
+        Assert.assertNotNull(result);
+        Assert.assertTrue(result.isArray());
+
+        ArrayNode aresult = (ArrayNode)result;
+
+        Assert.assertEquals(2, aresult.size());
+        Assert.assertTrue(result.get(0).isObject());
+
+        ObjectNode oresult = (ObjectNode)result.get(1);
+
+        Assert.assertNotNull(oresult.get("action"));
+        Assert.assertNotNull(oresult.get("action").get("creationMethod"));
+        Assert.assertEquals("\"create2\"", oresult.get("action").get("creationMethod").toString());
+    }
+
     private static World executeMultiContract(ReceiptStore receiptStore) throws DslProcessorException, FileNotFoundException {
         DslParser parser = DslParser.fromResource("dsl/contracts08.txt");
         World world = new World(receiptStore);
