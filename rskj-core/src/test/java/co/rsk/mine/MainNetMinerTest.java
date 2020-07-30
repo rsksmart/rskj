@@ -26,6 +26,7 @@ import org.ethereum.core.TransactionPool;
 import org.ethereum.core.genesis.GenesisLoader;
 import org.ethereum.db.BlockStore;
 import org.ethereum.facade.EthereumImpl;
+import org.ethereum.util.BuildInfo;
 import org.ethereum.util.RskTestFactory;
 import org.junit.Assert;
 import org.junit.Before;
@@ -108,6 +109,7 @@ public class MainNetMinerTest {
                 blockToMineBuilder(),
                 clock,
                 blockFactory,
+                new BuildInfo("cb7f28e", "master"),
                 ConfigUtils.getDefaultMiningConfig()
         );
         try {
@@ -155,6 +157,7 @@ public class MainNetMinerTest {
                 blockToMineBuilder(),
                 clock,
                 blockFactory,
+                new BuildInfo("cb7f28e", "master"),
                 ConfigUtils.getDefaultMiningConfig()
         );
         try {

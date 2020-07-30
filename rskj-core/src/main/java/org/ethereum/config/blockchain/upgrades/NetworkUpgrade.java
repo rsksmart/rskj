@@ -25,7 +25,8 @@ public enum NetworkUpgrade {
     ORCHID("orchid"),
     ORCHID_060("orchid060"),
     WASABI_100("wasabi100"),
-    WASABI_PLUS_ONE("wasabiPlusOne");
+    PAPYRUS_200("papyrus200"),
+    TWOTOTHREE("twoToThree");
 
     private String name;
 

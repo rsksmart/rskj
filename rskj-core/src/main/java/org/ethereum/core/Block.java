@@ -26,6 +26,7 @@ import co.rsk.core.bc.BlockHashesHelper;
 import co.rsk.crypto.Keccak256;
 import co.rsk.panic.PanicProcessor;
 import org.bouncycastle.util.Arrays;
+import com.google.common.collect.ImmutableList;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.util.RLP;
@@ -62,9 +63,18 @@ public class Block {
     /* Indicates if this block can or cannot be changed */
     private volatile boolean sealed;
 
+    public static Block createBlockFromHeader(BlockHeader header, boolean isRskip126Enabled) {
+        return new Block(header, Collections.emptyList(), Collections.emptyList(), isRskip126Enabled, true, false);
+    }
+
     public Block(BlockHeader header, List<Transaction> transactionsList, List<BlockHeader> uncleList, boolean isRskip126Enabled, boolean sealed) {
+        this(header, transactionsList, uncleList, isRskip126Enabled, sealed, true);
+    }
+
+    private Block(BlockHeader header, List<Transaction> transactionsList, List<BlockHeader> uncleList, boolean isRskip126Enabled, boolean sealed, boolean checktxs) {
         byte[] calculatedRoot = BlockHashesHelper.getTxTrieRoot(transactionsList, isRskip126Enabled);
-        if (!Arrays.areEqual(header.getTxTrieRoot(), calculatedRoot)) {
+
+        if (checktxs && !Arrays.areEqual(header.getTxTrieRoot(), calculatedRoot)) {
             String message = String.format(
                     "Transactions trie root validation failed for block %d %s", header.getNumber(), header.getHash()
             );
@@ -73,8 +83,8 @@ public class Block {
         }
 
         this.header = header;
-        this.transactionsList = Collections.unmodifiableList(transactionsList);
-        this.uncleList = Collections.unmodifiableList(uncleList);
+        this.transactionsList = ImmutableList.copyOf(transactionsList);
+        this.uncleList = ImmutableList.copyOf(uncleList);
         this.sealed = sealed;
     }
 

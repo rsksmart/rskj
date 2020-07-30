@@ -53,7 +53,7 @@ public class ReleaseBtcTest extends BridgePerformanceTestCase {
 
             for (int i = 0; i < Helper.randomInRange(10, 100); i++) {
                 Coin value = Coin.CENT.multiply(Helper.randomInRange(minCentsBtc, maxCentsBtc));
-                queue.add(new BtcECKey().toAddress(parameters), value);
+                queue.add(new BtcECKey().toAddress(parameters), value, null);
             }
         };
 

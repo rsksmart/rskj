@@ -262,6 +262,10 @@ public enum OpCode {
      * (0x45) Get the block’s gas limit
      */
     GASLIMIT(0x45, 0, 1, BASE_TIER),
+    /**
+     * (0x47) Get the senders balance
+     */
+    SELFBALANCE(0x47, 0, 1, LOW_TIER),
 
     /**
      * (0x46) Get the chain id
@@ -283,7 +287,7 @@ public enum OpCode {
      */
     MSTORE(0x52, 2, 0, VERY_LOW_TIER),
     /**
-     * (0x53) Save byte to memory
+     * `(0x53) Save byte to memory
      */
     MSTORE8(0x53, 2, 0, VERY_LOW_TIER),
     /**

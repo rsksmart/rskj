@@ -92,6 +92,8 @@ public class MinerHelper {
                 config.getNetworkConstants().getBridgeConstants(),
                 config.getActivationConfig());
 
+        BlockTxSignatureCache blockTxSignatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
+
         for (Transaction tx : block.getTransactionsList()) {
             TransactionExecutorFactory transactionExecutorFactory = new TransactionExecutorFactory(
                     config,
@@ -99,7 +101,7 @@ public class MinerHelper {
                     null,
                     blockFactory,
                     null,
-                    new PrecompiledContracts(config, bridgeSupportFactory));
+                    new PrecompiledContracts(config, bridgeSupportFactory), blockTxSignatureCache);
             TransactionExecutor executor = transactionExecutorFactory
                     .newInstance(tx, txindex++, block.getCoinbase(), track, block, totalGasUsed);
 

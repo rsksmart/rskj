@@ -94,20 +94,27 @@ public class DifficultyTestCase {
     }
 
     public BlockHeader getCurrent(BlockFactory blockFactory) {
-        return blockFactory.newHeader(
-                EMPTY_BYTE_ARRAY, EMPTY_BYTE_ARRAY, TestUtils.randomAddress().getBytes(), EMPTY_BYTE_ARRAY, null,
-                org.ethereum.json.Utils.parseLong(currentBlockNumber), new byte[] {0}, 0,
-                org.ethereum.json.Utils.parseLong(currentTimestamp),
-                EMPTY_BYTE_ARRAY, null, 0);
+        return blockFactory.getBlockHeaderBuilder()
+            .setParentHash(EMPTY_BYTE_ARRAY)
+            .setUnclesHash(EMPTY_BYTE_ARRAY)
+            .setCoinbase(TestUtils.randomAddress())
+            .setLogsBloom(EMPTY_BYTE_ARRAY)
+            .setNumber(org.ethereum.json.Utils.parseLong(currentBlockNumber))
+            .setTimestamp(org.ethereum.json.Utils.parseLong(currentTimestamp))
+            .build();
     }
 
     public BlockHeader getParent(BlockFactory blockFactory) {
-        return blockFactory.newHeader(
-                EMPTY_BYTE_ARRAY, EMPTY_BYTE_ARRAY, TestUtils.randomAddress().getBytes(), EMPTY_BYTE_ARRAY,
-                parseDifficulty(parentDifficulty).toByteArray(),
-                org.ethereum.json.Utils.parseLong(currentBlockNumber) - 1, new byte[] {0}, 0,
-                org.ethereum.json.Utils.parseLong(parentTimestamp),
-                EMPTY_BYTE_ARRAY, null, 0);
+        return blockFactory.getBlockHeaderBuilder()
+                .setParentHash(EMPTY_BYTE_ARRAY)
+                .setUnclesHash(EMPTY_BYTE_ARRAY)
+                .setDifficultyFromBytes(parseDifficulty(parentDifficulty).toByteArray())
+                .setCoinbase(TestUtils.randomAddress())
+                .setLogsBloom(EMPTY_BYTE_ARRAY)
+                .setNumber(org.ethereum.json.Utils.parseLong(currentBlockNumber) - 1)
+                .setTimestamp(org.ethereum.json.Utils.parseLong(parentTimestamp))
+                .build();
+
     }
 
     public BlockDifficulty getExpectedDifficulty() {

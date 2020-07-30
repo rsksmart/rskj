@@ -272,6 +272,11 @@ public class RskSystemProperties extends SystemProperties {
     }
 
     // Sync config properties
+
+    public boolean getIsHeartBeatEnabled() {
+        return getBoolean("sync.heartBeat.enabled", false);
+    }
+
     public int getExpectedPeers() {
         return configFromFiles.getInt("sync.expectedPeers");
     }
@@ -306,7 +311,7 @@ public class RskSystemProperties extends SystemProperties {
     }
 
     public VmConfig getVmConfig() {
-        return new VmConfig(vmTrace(), vmTraceInitStorageLimit(), dumpBlock(), dumpStyle(), getNetworkConstants().getChainId());
+        return new VmConfig(vmTrace(), vmTraceOptions(), vmTraceInitStorageLimit(), dumpBlock(), dumpStyle(), getNetworkConstants().getChainId());
     }
 
     public long peerDiscoveryCleanPeriod() {
@@ -325,7 +330,13 @@ public class RskSystemProperties extends SystemProperties {
         return configFromFiles.getInt("cache.states.max-elements");
     }
 
+    public int getReceiptsCacheSize() {
+        return configFromFiles.getInt("cache.receipts.max-elements");
+    }
+
     public long getVmExecutionStackSize() {
         return configFromFiles.getBytes("vm.executionStackSize");
     }
+
+    public String cryptoLibrary() { return configFromFiles.getString("crypto.library");}
 }

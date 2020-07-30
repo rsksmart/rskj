@@ -23,6 +23,7 @@ import co.rsk.core.DifficultyCalculator;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.jsontestsuite.DifficultyTestCase;
@@ -44,13 +45,25 @@ public class LocalBasicTest {
 
     private static final Logger logger = LoggerFactory.getLogger("TCK-Test");
     private final Constants networkConstants = Constants.mainnet();
-    private final ActivationConfig activationConfig = ActivationConfigsForTest.allBut();
+    private ActivationConfig activationConfig = ActivationConfigsForTest.allBut();
+
+    @Test
+    public void runDifficultyTestBeforeRSKIP156() throws IOException {
+        activationConfig = ActivationConfigsForTest.allBut(ConsensusRule.RSKIP156);
+        String jsonName = "difficultyBeforeRSKIP156";
+        runJsonTest(jsonName);
+    }
 
     @Test
     public void runDifficultyTest() throws IOException {
+        String jsonName = "difficulty";
+        runJsonTest(jsonName);
+    }
+
+    private void runJsonTest(String jsonName) throws IOException {
         BlockFactory blockFactory = new BlockFactory(activationConfig);
 
-        String json = getJSON("difficulty");
+        String json = getJSON(jsonName);
 
         DifficultyTestSuite testSuite = new DifficultyTestSuite(json);
 
@@ -74,7 +87,6 @@ public class LocalBasicTest {
             assertEquals(testCase.getExpectedDifficulty(),calc);
         }
     }
-
 
 
     private static String getJSON(String name) {

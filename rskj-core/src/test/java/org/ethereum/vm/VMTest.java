@@ -119,6 +119,63 @@ public class VMTest {
         assertEquals(DataWord.ZERO, program.stackPop());
     }
 
+
+    @Test
+    public void testCALLWithBigUserSpecifiedGas() {
+        String maxGasValue = "7FFFFFFFFFFFFFFF";
+        RskAddress callee = createAddress("callee");
+        // purposefully broken contract so as to consume all gas
+        invoke = new ProgramInvokeMockImpl(compile("" +
+                " ADD"
+        ), callee);
+        program = getProgram(compile("" +
+                " PUSH1 0x00" +
+                " PUSH1 0x00" +
+                " PUSH1 0x00" +
+                " PUSH1 0x00" +
+                " PUSH1 0x01" +
+                " PUSH20 0x" + callee.toHexString() +
+                " PUSH8 0x" + maxGasValue +
+                " CALL"
+        ), createTransaction(0));
+        program.fullTrace();
+        vm.steps(program, Long.MAX_VALUE);
+        Assert.assertEquals(
+                "faulty program with bigger gas limit than gas available should use all the gas in a block",
+                program.getResult().getGasUsed(), invoke.getGas()
+        );
+    }
+
+    @Test(expected = Program.OutOfGasException.class)
+    public void testLOGWithDataCostBiggerThanPreviousGasSize() {
+
+        // The test wants to try to set dataCost to something between
+        // 2**62-1 (the prev gas max size) and 2**63-1 (the current gas max)
+        // to check if something is wrong with the change.
+        // doLOG() is the only place where this constant was used.
+        invoke.setGasLimit(6_800_000);
+        long previousGasMaxSize = 0x3fffffffffffffffL;
+        long sizeRequired = Math.floorDiv(previousGasMaxSize, GasCost.LOG_DATA_GAS) + 1;
+        String sizeInHex = String.format("%016X", sizeRequired);
+
+        // check it is over the previous max size but below our current max gas
+        assert(sizeRequired * GasCost.LOG_DATA_GAS > previousGasMaxSize);
+        // check it did not overflow
+        assert(sizeRequired > 0);
+
+        program = getProgram(compile("" +
+                " PUSH8 0x" + sizeInHex +
+                " PUSH1 0x00" +
+                " LOG0"
+        ));
+        program.fullTrace();
+        try {
+            vm.steps(program, Long.MAX_VALUE);
+        } finally {
+            invoke.setGasLimit(100000);
+        }
+    }
+
     @Test
     public void testSTATICCALLWithStatusOne() {
         invoke = new ProgramInvokeMockImpl(compile("PUSH1 0x01 PUSH1 0x02 SUB"), null);
@@ -136,6 +193,193 @@ public class VMTest {
         assertEquals(DataWord.ONE, program.stackPop());
         assertTrue(program.getStack().isEmpty());
     }
+
+    @Test
+    public void testReturnDataCopyChargesCorrectGas() {
+        invoke = new ProgramInvokeMockImpl(compile("" +
+                " PUSH1 0x01 PUSH1 0x02 SUB PUSH1 0x00 MSTORE" +
+                " PUSH1 0x20 PUSH1 0x00 RETURN"
+
+        ), null);
+        Program goodProgram = getProgram(compile("" +
+                " PUSH1 0x20 " + // return data len
+                " PUSH1 0x00 " + // return data position
+                " PUSH1 0x00" + // input size
+                " PUSH1 0x00" + // input position
+                " PUSH20 0x" + invoke.getContractAddress() +
+                " PUSH1 0xFF" + // with some gas
+                " STATICCALL" +
+                " PUSH1 0x20" + // return data size, honest!
+                " PUSH1 0x00 " + // return data offset
+                " PUSH1 0x20" + // memory offset
+                " RETURNDATACOPY" +
+                " PUSH1 0x20" +
+                " PUSH1 0x20" +
+                " RETURN"
+        ));
+
+        Program badProgram = getProgram(compile("" +
+                        " PUSH1 0x20 " + // return data len
+                        " PUSH1 0x00 " + // return data position
+                        " PUSH1 0x00" + // input size
+                        " PUSH1 0x00" + // input position
+                        " PUSH20 0x" + invoke.getContractAddress() +
+                        " PUSH1 0xFF" + // with some gas
+                        " STATICCALL" +
+                        " PUSH1 0x00" + // return data size, dishonest bad lying bytecode
+                        " PUSH1 0x00 " + // return data offset
+                        " PUSH1 0x20" + // memory offset
+                        " RETURNDATACOPY" +
+                        " PUSH1 0x20" +
+                        " PUSH1 0x20" +
+                        " RETURN"
+                ));
+        vm.steps(goodProgram, Long.MAX_VALUE);
+        vm.steps(badProgram, Long.MAX_VALUE);
+
+        // i should expected 32 bytes to store the value
+        // and then 32 to copy the value in return data copy.
+        assertEquals("good program has 64 mem", 64, goodProgram.getMemSize());
+        assertEquals("bad program has 64 mem", 64, badProgram.getMemSize());
+        // bad program is trying to put a word of memory on the last byte of memory,
+        // but should not be successful. we should not charge for gas that was not used!
+        assertEquals("good program uses 3 more gas than the bad one",
+                goodProgram.getResult().getGasUsed(), badProgram.getResult().getGasUsed() + 3);
+    }
+
+
+    @Test
+    public void getFreeMemoryUsingPrecompiledContractLyingAboutReturnSize() {
+        // just a first run to initialize the precompiled contract
+        // and then compare the bad and good programs
+        Program initContract = getProgram(compile(
+                " PUSH1 0x00" +
+                        " PUSH1 0x00" +
+                        " PUSH1 0x01" +
+                        " PUSH1 0x00" +
+                        " PUSH1 0x00" +
+                        " PUSH20 0x" + PrecompiledContracts.IDENTITY_ADDR_STR +
+                        " PUSH1 0xFF" +
+                        " CALL"
+        ));
+        Program bad = getProgram(compile("" +
+                " PUSH1 0x00" +
+                " PUSH1 0x00" +
+                " PUSH1 0x00" + // out size, note this is a lie, the precompiled WILL return some data
+                " PUSH1 0x20" + // out off
+                " PUSH1 0x01" + // in size
+                " PUSH1 0x00" + // in off
+                " PUSH1 0x00" +
+                " PUSH20 0x" + PrecompiledContracts.IDENTITY_ADDR_STR +
+                " PUSH4 0x005B8D80" +
+                " CALL"
+        ));
+        Program good = getProgram(compile("PUSH1 0x00" +
+                " PUSH1 0x00" +
+                " PUSH1 0x20" + //out size, this is correct
+                " PUSH1 0x20" + //out off
+                " PUSH1 0x20" + //in size
+                " PUSH1 0x00" + //in off
+                " PUSH1 0x00" +
+                " PUSH20 0x" + PrecompiledContracts.IDENTITY_ADDR_STR +
+                " PUSH4 0x005B8D80" +
+                " CALL"
+        ));
+        vm.steps(initContract, Long.MAX_VALUE);
+        vm.steps(bad, Long.MAX_VALUE);
+        vm.steps(good, Long.MAX_VALUE);
+        Assert.assertEquals("good program will asign a new word of memory, so will charge 3 more",
+                good.getResult().getGasUsed(), bad.getResult().getGasUsed() + GasCost.MEMORY);
+        Assert.assertEquals("good program will have more memory, as it paid for it", good.getMemSize(),
+                bad.getMemSize() + 32);
+    }
+
+    @Test
+    public void testCallDataCopyDoesNotExpandMemoryForFree() {
+        invoke = new ProgramInvokeMockImpl(compile(
+                " PUSH1 0x00 PUSH1 0x00 MSTORE " +
+                " PUSH1 0x20 PUSH1 0x00 RETURN"
+        ), null);
+        Program badProgram = getProgram(compile(
+                " PUSH1 0x20" + // return size
+                " PUSH1 0x00" + // return place
+                " PUSH1 0x00" + // no argument
+                " PUSH1 0x00" + // no argument size
+                " PUSH20 0x" + invoke.getContractAddress() +
+                " PUSH2 0xFFFF" +
+                " STATICCALL" +
+                " PUSH1 0x00" + // CALLDATA length
+                " PUSH1 0x00" + // CALLDATA offset
+                " PUSH1 0x01 MSIZE SUB" + // put the calldata on the last byte :)
+                " CALLDATACOPY"
+        ));
+        Program goodProgram = getProgram(compile(
+                " PUSH1 0x20" + // return size
+                " PUSH1 0x00" + // return place
+                " PUSH1 0x00" + // no argument
+                " PUSH1 0x00" + // no argument size
+                " PUSH20 0x" + invoke.getContractAddress() +
+                " PUSH2 0xFFFF" +
+                " STATICCALL" +
+                " PUSH1 0x20" + // CALLDATA length
+                " PUSH1 0x00" + // CALLDATA offset
+                " PUSH1 0x01 MSIZE SUB" + // put the calldata on the last byte :)
+                " CALLDATACOPY"
+        ));
+        vm.steps(goodProgram, Long.MAX_VALUE);
+        vm.steps(badProgram, Long.MAX_VALUE);
+
+        // make sure that the lying program memory has
+        // not been expanded at all beyond the 32 bytes
+        // need to place the return values for the STATICCALL
+        assertEquals(32, badProgram.getMemSize());
+        assertEquals(64, goodProgram.getMemSize());
+    }
+
+    @Test
+    public void getFreeMemoryUsingPrecompiledContractAndSettingFarOffOffset() {
+        // just a first run to initialize the precompiled contract
+        // and then compare the bad and good programs
+        Program initContract = getProgram(compile(
+                " PUSH1 0x00" +
+                " PUSH1 0x00" +
+                " PUSH1 0x01" +
+                " PUSH1 0x00" +
+                " PUSH1 0x00" +
+                " PUSH20 0x" + PrecompiledContracts.IDENTITY_ADDR_STR +
+                " PUSH1 0xFF" +
+                " CALL"
+        ));
+        Program bad = getProgram(compile("" +
+                " PUSH1 0x00" +
+                " PUSH1 0x00" +
+                " PUSH1 0x00" + //out size, note this is a lie, the precompiled WILL return some data
+                " PUSH4 0x01000000" + //out off, see how far off it is
+                " PUSH1 0x01" + //in size
+                " PUSH1 0x00" + //in off
+                " PUSH1 0x00" +
+                " PUSH20 0x" + PrecompiledContracts.IDENTITY_ADDR_STR +
+                " PUSH4 0x005B8D80" +
+                " CALL"
+        ));
+        Program good = getProgram(compile("PUSH1 0x00" +
+                " PUSH1 0x00" +
+                " PUSH1 0x01" + //out size
+                " PUSH1 0x00" + //out off
+                " PUSH1 0x01" + //in size
+                " PUSH1 0x00" + //in off
+                " PUSH1 0x00" +
+                " PUSH20 0x" + PrecompiledContracts.IDENTITY_ADDR_STR +
+                " PUSH4 0x005B8D80" +
+                " CALL"
+        ));
+        vm.steps(initContract, Long.MAX_VALUE);
+        vm.steps(bad, Long.MAX_VALUE);
+        vm.steps(good, Long.MAX_VALUE);
+        Assert.assertEquals(good.getResult().getGasUsed(), bad.getResult().getGasUsed());
+        Assert.assertEquals(good.getMemSize(), bad.getMemSize());
+    }
+
 
     @Test(expected = EmptyStackException.class)
     public void testSTATICCALLWithStatusOneFailsWithOldCode() {
@@ -3014,6 +3258,7 @@ public class VMTest {
 
         when(activations.isActive(ConsensusRule.RSKIP90)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP89)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP150)).thenReturn(true);
         return activations;
     }
 
@@ -3037,6 +3282,14 @@ public class VMTest {
         Account receiver = acbuilder.build();
         TransactionBuilder txbuilder = new TransactionBuilder();
         return txbuilder.sender(sender).receiver(receiver).value(BigInteger.valueOf(number * 1000 + 1000)).build();
+    }
+
+    private static RskAddress createAddress(String name) {
+        AccountBuilder accountBuilder = new AccountBuilder();
+        accountBuilder.name(name);
+        Account account = accountBuilder.build();
+        return account.getAddress();
+
     }
 
     static String formatBinData(byte[] binData, int startPC) {

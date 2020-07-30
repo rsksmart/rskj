@@ -56,6 +56,13 @@ public class BlockProcessResult {
                 && (blockResult == ImportResult.IMPORTED_BEST || blockResult == ImportResult.IMPORTED_NOT_BEST);
     }
 
+    public boolean isBest() {
+        if (result == null) {
+            return false;
+        }
+        return result.containsValue(ImportResult.IMPORTED_BEST);
+    }
+
     public boolean isInvalidBlock() {
         return result != null && this.result.containsValue(ImportResult.INVALID_BLOCK);
     }

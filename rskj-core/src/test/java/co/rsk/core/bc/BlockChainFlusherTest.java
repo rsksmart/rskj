@@ -19,6 +19,7 @@ package co.rsk.core.bc;
 
 import co.rsk.trie.TrieStore;
 import org.ethereum.db.BlockStore;
+import org.ethereum.db.ReceiptStore;
 import org.ethereum.listener.CompositeEthereumListener;
 import org.ethereum.listener.EthereumListener;
 import org.junit.After;
@@ -32,6 +33,7 @@ public class BlockChainFlusherTest {
     private CompositeEthereumListener emitter;
     private TrieStore trieStore;
     private BlockStore blockStore;
+    private ReceiptStore receiptStore;
     private BlockChainFlusher flusher;
 
     private EthereumListener listener;
@@ -41,7 +43,8 @@ public class BlockChainFlusherTest {
         this.emitter = mock(CompositeEthereumListener.class);
         this.trieStore = mock(TrieStore.class);
         this.blockStore = mock(BlockStore.class);
-        this.flusher = new BlockChainFlusher(7, emitter, trieStore, blockStore);
+        this.receiptStore = mock(ReceiptStore.class);
+        this.flusher = new BlockChainFlusher(7, emitter, trieStore, blockStore, receiptStore);
         this.flusher.start();
 
         ArgumentCaptor<EthereumListener> argument = ArgumentCaptor.forClass(EthereumListener.class);
@@ -64,10 +67,12 @@ public class BlockChainFlusherTest {
 
         verify(trieStore, never()).flush();
         verify(blockStore, never()).flush();
+        verify(receiptStore, never()).flush();
 
         listener.onBestBlock(null, null);
 
         verify(trieStore).flush();
         verify(blockStore).flush();
+        verify(receiptStore).flush();
     }
 }

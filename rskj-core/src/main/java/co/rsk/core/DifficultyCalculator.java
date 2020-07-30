@@ -45,19 +45,18 @@ public class DifficultyCalculator {
             }
         }
 
-        return getBlockDifficulty(header, parentHeader, constants);
+        return getBlockDifficulty(header, parentHeader);
     }
 
-    private static BlockDifficulty getBlockDifficulty(
+    private BlockDifficulty getBlockDifficulty(
             BlockHeader curBlockHeader,
-            BlockHeader parent,
-            Constants constants) {
+            BlockHeader parent) {
         BlockDifficulty pd = parent.getDifficulty();
         long parentBlockTS = parent.getTimestamp();
         int uncleCount = curBlockHeader.getUncleCount();
         long curBlockTS = curBlockHeader.getTimestamp();
         int duration = constants.getDurationLimit();
-        BigInteger difDivisor = constants.getDifficultyBoundDivisor();
+        BigInteger difDivisor = constants.getDifficultyBoundDivisor(activationConfig.forBlock(curBlockHeader.getNumber()));
         BlockDifficulty minDif = constants.getMinimumDifficulty();
         return calcDifficultyWithTimeStamps(curBlockTS, parentBlockTS, pd, uncleCount, duration, difDivisor, minDif);
     }

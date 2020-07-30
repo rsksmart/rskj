@@ -44,7 +44,6 @@ public class BlockSyncService {
     public static final int CHUNK_PART_LIMIT = 8;
     public static final int PROCESSED_BLOCKS_TO_CHECK_STORE = 200;
     public static final int RELEASED_RANGE = 1000;
-    private Map<Keccak256, Integer> unknownBlockHashes;
     private long processedBlocksCounter;
     private long lastKnownBlockNumber = 0;
 
@@ -67,7 +66,6 @@ public class BlockSyncService {
         this.blockchain = blockchain;
         this.syncConfiguration = syncConfiguration;
         this.nodeInformation = nodeInformation;
-        this.unknownBlockHashes = new HashMap<>();
         this.config = config;
     }
 
@@ -80,7 +78,6 @@ public class BlockSyncService {
 
         tryReleaseStore(bestBlockNumber);
         store.removeHeader(block.getHeader());
-        unknownBlockHashes.remove(blockHash);
 
         if (blockNumber > bestBlockNumber + syncMaxDistance) {
             logger.trace("Block too advanced {} {} from {} ", blockNumber, block.getShortHash(),
@@ -209,9 +206,7 @@ public class BlockSyncService {
         if (sender == null) {
             return;
         }
-
-        unknownBlockHashes.put(hash, 1);
-
+        
         logger.trace("Missing block {}", hash.toString().substring(0, 10));
 
         sender.sendMessage(new GetBlockMessage(hash.getBytes()));

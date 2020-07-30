@@ -28,10 +28,7 @@ import co.rsk.net.sync.SyncConfiguration;
 import co.rsk.scoring.PeerScoringManager;
 import co.rsk.test.World;
 import co.rsk.test.builders.BlockChainBuilder;
-import co.rsk.validators.BlockCompositeRule;
-import co.rsk.validators.BlockRootValidationRule;
-import co.rsk.validators.BlockUnclesHashValidationRule;
-import co.rsk.validators.DummyBlockValidationRule;
+import co.rsk.validators.*;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.Genesis;
@@ -139,7 +136,7 @@ public class SimpleAsyncNode extends SimpleNode {
         SyncProcessor syncProcessor = new SyncProcessor(
                 blockchain, indexedBlockStore, mock(ConsensusValidationMainchainView.class), blockSyncService, syncConfiguration, blockFactory,
                 blockValidationRule,
-                new BlockCompositeRule(new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())),
+                new SyncBlockValidatorRule(new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())),
                 new DifficultyCalculator(config.getActivationConfig(), config.getNetworkConstants()),
                 new PeersInformation(channelManager, syncConfiguration, blockchain, peerScoringManager),
                 mock(Genesis.class)

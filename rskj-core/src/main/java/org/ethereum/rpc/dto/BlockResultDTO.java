@@ -58,6 +58,7 @@ public class BlockResultDTO {
     private final String bitcoinMergedMiningMerkleProof;
     private final String hashForMergedMining;
     private final String paidFees;
+    private final String cumulativeDifficulty;
 
     public BlockResultDTO(
             Long number,
@@ -71,6 +72,7 @@ public class BlockResultDTO {
             RskAddress miner,
             BlockDifficulty difficulty,
             BlockDifficulty totalDifficulty,
+            BlockDifficulty cumulativeDifficulty,
             byte[] extraData,
             int size,
             byte[] gasLimit,
@@ -93,9 +95,11 @@ public class BlockResultDTO {
         this.stateRoot = TypeConverter.toUnformattedJsonHex(stateRoot);
         this.receiptsRoot = TypeConverter.toUnformattedJsonHex(receiptsRoot);
         this.miner = miner != null ? TypeConverter.toUnformattedJsonHex(miner.getBytes()) : null;
-        this.difficulty = TypeConverter.toQuantityJsonHex(difficulty.getBytes());
 
+        this.difficulty = TypeConverter.toQuantityJsonHex(difficulty.getBytes());
         this.totalDifficulty = TypeConverter.toQuantityJsonHex(totalDifficulty.getBytes());
+        this.cumulativeDifficulty = TypeConverter.toQuantityJsonHex(cumulativeDifficulty.getBytes());
+
         this.extraData = TypeConverter.toUnformattedJsonHex(extraData);
         this.size = TypeConverter.toQuantityJsonHex(size);
         this.gasLimit = TypeConverter.toQuantityJsonHex(gasLimit);
@@ -153,6 +157,7 @@ public class BlockResultDTO {
                 isPending ? null : b.getCoinbase(),
                 b.getDifficulty(),
                 blockStore.getTotalDifficultyForHash(b.getHash().getBytes()),
+                b.getCumulativeDifficulty(),
                 b.getExtraData(),
                 b.getEncoded().length,
                 b.getGasLimit(),
@@ -212,6 +217,8 @@ public class BlockResultDTO {
     public String getTotalDifficulty() {
         return totalDifficulty;
     }
+
+    public String getCumulativeDifficulty() { return cumulativeDifficulty; }
 
     public String getExtraData() {
         return extraData;

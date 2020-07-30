@@ -273,7 +273,7 @@ public class Web3ImplTest {
                 txPoolModule,
                 null,
                 debugModule,
-                null,
+                null, null,
                 Web3Mocks.getMockChannelManager(),
                 null,
                 null,
@@ -425,9 +425,9 @@ public class Web3ImplTest {
         org.junit.Assert.assertEquals("0x", tr.input);
         org.junit.Assert.assertEquals("0x" + Hex.toHexString(tx.getReceiveAddress().getBytes()), tr.to);
 
-        Assert.assertArrayEquals(new byte[] {tx.getSignature().v}, TypeConverter.stringHexToByteArray(tr.v));
-        Assert.assertThat(TypeConverter.stringHexToBigInteger(tr.s), is(tx.getSignature().s));
-        Assert.assertThat(TypeConverter.stringHexToBigInteger(tr.r), is(tx.getSignature().r));
+        Assert.assertArrayEquals(new byte[] {tx.getSignature().getV()}, TypeConverter.stringHexToByteArray(tr.v));
+        Assert.assertThat(TypeConverter.stringHexToBigInteger(tr.s), is(tx.getSignature().getS()));
+        Assert.assertThat(TypeConverter.stringHexToBigInteger(tr.r), is(tx.getSignature().getR()));
     }
 
     @Test
@@ -437,8 +437,8 @@ public class Web3ImplTest {
 
         BlockChainImpl blockChain = world.getBlockChain();
         BlockStore blockStore = world.getBlockStore();
-        TransactionExecutorFactory transactionExecutorFactory = buildTransactionExecutorFactory(blockStore );
-        TransactionPool transactionPool = new TransactionPoolImpl(config, world.getRepositoryLocator(), blockStore, blockFactory, null, transactionExecutorFactory, 10, 100);
+        TransactionExecutorFactory transactionExecutorFactory = buildTransactionExecutorFactory(blockStore, world.getBlockTxSignatureCache());
+        TransactionPool transactionPool = new TransactionPoolImpl(config, world.getRepositoryLocator(), blockStore, blockFactory, null, transactionExecutorFactory, world.getReceivedTxSignatureCache(), 10, 100);
         transactionPool.processBest(blockChain.getBestBlock());
         Web3Impl web3 = createWeb3(world, transactionPool, receiptStore);
 
@@ -738,6 +738,16 @@ public class Web3ImplTest {
         Assert.assertNull(hexString);
     }
 
+    @Test(expected=org.ethereum.rpc.exception.RskJsonRpcRequestException.class)
+    public void getBlockByNumberWhenNumberIsInvalidThrowsException() throws Exception {
+        World world = new World();
+
+        Web3Impl web3 = createWeb3(world);
+
+        String bnOrId = "991234";
+        web3.eth_getBlockByNumber(bnOrId, false);
+    }
+
     @Test
     public void getBlockByHash() throws Exception {
         World world = new World();
@@ -862,6 +872,378 @@ public class Web3ImplTest {
 
         String hexString = web3.rsk_getRawBlockHeaderByHash(blockHash);
         Assert.assertNull(hexString);
+    }
+
+    @Test
+    public void getBlockByHashBlockWithUncles() {
+        World world = new World();
+        Web3Impl web3 = createWeb3(world);
+
+        Block genesis = world.getBlockChain().getBestBlock();
+        Block block1 = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(), world.getBlockStore())
+                .trieStore(world.getTrieStore())
+                .difficulty(20)
+                .parent(genesis)
+                .build();
+        block1.setBitcoinMergedMiningHeader(new byte[]{0x01});
+        org.junit.Assert.assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block1));
+
+        Block block1b = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(), world.getBlockStore())
+                .trieStore(world.getTrieStore())
+                .difficulty(10)
+                .parent(genesis)
+                .build();
+        block1b.setBitcoinMergedMiningHeader(new byte[]{0x02});
+        org.junit.Assert.assertEquals(ImportResult.IMPORTED_NOT_BEST, world.getBlockChain().tryToConnect(block1b));
+
+        Block block1c = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(), world.getBlockStore())
+                .trieStore(world.getTrieStore())
+                .difficulty(10)
+                .parent(genesis)
+                .build();
+        block1c.setBitcoinMergedMiningHeader(new byte[]{0x03});
+        org.junit.Assert.assertEquals(ImportResult.IMPORTED_NOT_BEST, world.getBlockChain().tryToConnect(block1c));
+
+        ArrayList<BlockHeader> uncles = new ArrayList<>();
+        uncles.add(block1b.getHeader());
+        uncles.add(block1c.getHeader());
+
+        Block block2 = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(), world.getBlockStore())
+                .trieStore(world.getTrieStore())
+                .difficulty(10)
+                .parent(block1)
+                .uncles(uncles)
+                .build();
+        block2.setBitcoinMergedMiningHeader(new byte[]{0x04});
+        org.junit.Assert.assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block2));
+
+        String block1HashString = "0x" + block1.getHash();
+        String block1bHashString = "0x" + block1b.getHash();
+        String block1cHashString = "0x" + block1c.getHash();
+        String block2HashString = "0x" + block2.getHash();
+
+        BlockResultDTO result = web3.eth_getBlockByHash(block2HashString, false);
+
+        Assert.assertEquals(block2HashString, result.getHash());
+        Assert.assertEquals(block1HashString, result.getParentHash());
+        Assert.assertTrue(result.getUncles().contains(block1bHashString));
+        Assert.assertTrue(result.getUncles().contains(block1cHashString));
+        Assert.assertEquals(TypeConverter.toQuantityJsonHex(30), result.getCumulativeDifficulty());
+    }
+
+    @Test
+    public void getBlockByNumberBlockWithUncles() {
+        World world = new World();
+        Web3Impl web3 = createWeb3(world);
+
+        Block genesis = world.getBlockChain().getBestBlock();
+        Block block1 = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(), world.getBlockStore())
+                .trieStore(world.getTrieStore())
+                .difficulty(20)
+                .parent(genesis)
+                .build();
+        block1.setBitcoinMergedMiningHeader(new byte[]{0x01});
+        org.junit.Assert.assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block1));
+
+        Block block1b = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(), world.getBlockStore())
+                .trieStore(world.getTrieStore())
+                .difficulty(10)
+                .parent(genesis)
+                .build();
+        block1b.setBitcoinMergedMiningHeader(new byte[]{0x02});
+        org.junit.Assert.assertEquals(ImportResult.IMPORTED_NOT_BEST, world.getBlockChain().tryToConnect(block1b));
+
+        Block block1c = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(), world.getBlockStore())
+                .trieStore(world.getTrieStore())
+                .difficulty(10)
+                .parent(genesis)
+                .build();
+        block1c.setBitcoinMergedMiningHeader(new byte[]{0x03});
+        org.junit.Assert.assertEquals(ImportResult.IMPORTED_NOT_BEST, world.getBlockChain().tryToConnect(block1c));
+
+        ArrayList<BlockHeader> uncles = new ArrayList<>();
+        uncles.add(block1b.getHeader());
+        uncles.add(block1c.getHeader());
+
+        Block block2 = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(), world.getBlockStore())
+                .trieStore(world.getTrieStore())
+                .difficulty(10)
+                .parent(block1)
+                .uncles(uncles)
+                .build();
+        block2.setBitcoinMergedMiningHeader(new byte[]{0x04});
+        org.junit.Assert.assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block2));
+
+        String block1HashString = "0x" + block1.getHash();
+        String block1bHashString = "0x" + block1b.getHash();
+        String block1cHashString = "0x" + block1c.getHash();
+        String block2HashString = "0x" + block2.getHash();
+
+        BlockResultDTO result = web3.eth_getBlockByNumber("0x02", false);
+
+        Assert.assertEquals(block2HashString, result.getHash());
+        Assert.assertEquals(block1HashString, result.getParentHash());
+        Assert.assertTrue(result.getUncles().contains(block1bHashString));
+        Assert.assertTrue(result.getUncles().contains(block1cHashString));
+        Assert.assertEquals(TypeConverter.toQuantityJsonHex(30), result.getCumulativeDifficulty());
+    }
+
+    @Test
+    public void getUncleByBlockHashAndIndexBlockWithUncles() {
+        /* Structure:
+         *    Genesis
+         * |     |     |
+         * A     B     C
+         * | \  / ____/
+         * D  E
+         * | /
+         * F
+         *
+         * A-D-F mainchain
+         * B and C uncles of E
+         * E uncle of F
+         * */
+        World world = new World();
+        Web3Impl web3 = createWeb3(world);
+
+        Block genesis = world.getBlockChain().getBestBlock();
+        Block blockA = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(), world.getBlockStore())
+                .trieStore(world.getTrieStore()).difficulty(10).parent(genesis).build();
+        blockA.setBitcoinMergedMiningHeader(new byte[]{0x01});
+        org.junit.Assert.assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(blockA));
+
+        Block blockB = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(), world.getBlockStore())
+                .trieStore(world.getTrieStore()).difficulty(10).parent(genesis).build();
+        blockB.setBitcoinMergedMiningHeader(new byte[]{0x02});
+        org.junit.Assert.assertEquals(ImportResult.IMPORTED_NOT_BEST, world.getBlockChain().tryToConnect(blockB));
+
+        Block blockC = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(), world.getBlockStore())
+                .trieStore(world.getTrieStore()).difficulty(10).parent(genesis).build();
+        blockC.setBitcoinMergedMiningHeader(new byte[]{0x03});
+        org.junit.Assert.assertEquals(ImportResult.IMPORTED_NOT_BEST, world.getBlockChain().tryToConnect(blockC));
+
+        // block D must have a higher difficulty than block E and its uncles so it doesn't fall behind due to a reorg
+        Block blockD = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(), world.getBlockStore())
+                .trieStore(world.getTrieStore()).difficulty(100).parent(blockA).build();
+        blockD.setBitcoinMergedMiningHeader(new byte[]{0x04});
+        org.junit.Assert.assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(blockD));
+
+        List<BlockHeader> blockEUncles = Arrays.asList(blockB.getHeader(), blockC.getHeader());
+        Block blockE = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(), world.getBlockStore())
+                .trieStore(world.getTrieStore()).difficulty(10).parent(blockA).uncles(blockEUncles).build();
+        blockE.setBitcoinMergedMiningHeader(new byte[]{0x05});
+        org.junit.Assert.assertEquals(ImportResult.IMPORTED_NOT_BEST, world.getBlockChain().tryToConnect(blockE));
+
+        List<BlockHeader> blockFUncles = Arrays.asList(blockE.getHeader());
+        Block blockF = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(), world.getBlockStore())
+                .trieStore(world.getTrieStore()).difficulty(10).parent(blockD).uncles(blockFUncles).build();
+        blockF.setBitcoinMergedMiningHeader(new byte[]{0x06});
+        org.junit.Assert.assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(blockF));
+
+        String blockFhash = "0x" + blockF.getHash();
+        String blockEhash = "0x" + blockE.getHash();
+        String blockBhash = "0x" + blockB.getHash();
+        String blockChash = "0x" + blockC.getHash();
+
+        BlockResultDTO result = web3.eth_getUncleByBlockHashAndIndex(blockFhash, "0x00");
+
+        Assert.assertEquals(blockEhash, result.getHash());
+        Assert.assertEquals(2, result.getUncles().size());
+        Assert.assertTrue(result.getUncles().contains(blockBhash));
+        Assert.assertTrue(result.getUncles().contains(blockChash));
+        Assert.assertEquals(TypeConverter.toQuantityJsonHex(30), result.getCumulativeDifficulty());
+    }
+
+    @Test
+    public void getUncleByBlockHashAndIndexBlockWithUnclesCorrespondingToAnUnknownBlock() {
+        World world = new World();
+        Account acc1 = new AccountBuilder(world).name("acc1").balance(Coin.valueOf(10000)).build();
+
+        Web3Impl web3 = createWeb3(world);
+
+        Block genesis = world.getBlockChain().getBestBlock();
+        Block blockA = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(), world.getBlockStore())
+                .trieStore(world.getTrieStore()).difficulty(10).parent(genesis).build();
+        blockA.setBitcoinMergedMiningHeader(new byte[]{0x01});
+        org.junit.Assert.assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(blockA));
+
+        Block blockB = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(), world.getBlockStore())
+                .trieStore(world.getTrieStore()).difficulty(10).parent(genesis).build();
+        blockB.setBitcoinMergedMiningHeader(new byte[]{0x02});
+        org.junit.Assert.assertEquals(ImportResult.IMPORTED_NOT_BEST, world.getBlockChain().tryToConnect(blockB));
+
+        Block blockC = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(), world.getBlockStore())
+                .trieStore(world.getTrieStore()).difficulty(10).parent(genesis).build();
+        blockC.setBitcoinMergedMiningHeader(new byte[]{0x03});
+        org.junit.Assert.assertEquals(ImportResult.IMPORTED_NOT_BEST, world.getBlockChain().tryToConnect(blockC));
+
+        // block D must have a higher difficulty than block E and its uncles so it doesn't fall behind due to a reorg
+        Block blockD = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(), world.getBlockStore())
+                .trieStore(world.getTrieStore()).difficulty(100).parent(blockA).build();
+        blockD.setBitcoinMergedMiningHeader(new byte[]{0x04});
+        org.junit.Assert.assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(blockD));
+
+        Transaction tx = new TransactionBuilder()
+                .sender(acc1)
+                .gasLimit(BigInteger.valueOf(100000))
+                .gasPrice(BigInteger.ONE)
+                .build();
+        List<Transaction> txs = new ArrayList<>();
+        txs.add(tx);
+
+        List<BlockHeader> blockEUncles = Arrays.asList(blockB.getHeader(), blockC.getHeader());
+        Block blockE = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(), world.getBlockStore())
+                .trieStore(world.getTrieStore()).difficulty(10).parent(blockA).uncles(blockEUncles)
+                .transactions(txs).buildWithoutExecution();
+
+        blockE.setBitcoinMergedMiningHeader(new byte[]{0x05});
+
+        Assert.assertEquals(1, blockE.getTransactionsList().size());
+        Assert.assertFalse(Arrays.equals(blockC.getTxTrieRoot(), blockE.getTxTrieRoot()));
+
+        List<BlockHeader> blockFUncles = Arrays.asList(blockE.getHeader());
+        Block blockF = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(), world.getBlockStore())
+                .trieStore(world.getTrieStore()).difficulty(10).parent(blockD).uncles(blockFUncles).build();
+        blockF.setBitcoinMergedMiningHeader(new byte[]{0x06});
+        org.junit.Assert.assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(blockF));
+
+        String blockFhash = "0x" + blockF.getHash();
+        String blockEhash = "0x" + blockE.getHash();
+
+        BlockResultDTO result = web3.eth_getUncleByBlockHashAndIndex(blockFhash, "0x00");
+
+        Assert.assertEquals(blockEhash, result.getHash());
+        Assert.assertEquals(0, result.getUncles().size());
+        Assert.assertEquals(0, result.getTransactions().size());
+        Assert.assertEquals("0x" + Hex.toHexString(blockE.getTxTrieRoot()), result.getTransactionsRoot());
+    }
+
+    @Test
+    public void getUncleByBlockNumberAndIndexBlockWithUncles() {
+        /* Structure:
+         *    Genesis
+         * |     |     |
+         * A     B     C
+         * | \  / ____/
+         * D  E
+         * | /
+         * F
+         *
+         * A-D-F mainchain
+         * B and C uncles of E
+         * E uncle of F
+         * */
+        World world = new World();
+        Web3Impl web3 = createWeb3(world);
+
+        Block genesis = world.getBlockChain().getBestBlock();
+        Block blockA = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(), world.getBlockStore())
+                .trieStore(world.getTrieStore()).difficulty(10).parent(genesis).build();
+        blockA.setBitcoinMergedMiningHeader(new byte[]{0x01});
+        org.junit.Assert.assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(blockA));
+
+        Block blockB = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(), world.getBlockStore())
+                .trieStore(world.getTrieStore()).difficulty(10).parent(genesis).build();
+        blockB.setBitcoinMergedMiningHeader(new byte[]{0x02});
+        org.junit.Assert.assertEquals(ImportResult.IMPORTED_NOT_BEST, world.getBlockChain().tryToConnect(blockB));
+
+        Block blockC = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(), world.getBlockStore())
+                .trieStore(world.getTrieStore()).difficulty(10).parent(genesis).build();
+        blockC.setBitcoinMergedMiningHeader(new byte[]{0x03});
+        org.junit.Assert.assertEquals(ImportResult.IMPORTED_NOT_BEST, world.getBlockChain().tryToConnect(blockC));
+
+        // block D must have a higher difficulty than block E and its uncles so it doesn't fall behind due to a reorg
+        Block blockD = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(), world.getBlockStore())
+                .trieStore(world.getTrieStore()).difficulty(100).parent(blockA).build();
+        blockD.setBitcoinMergedMiningHeader(new byte[]{0x04});
+        org.junit.Assert.assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(blockD));
+
+        List<BlockHeader> blockEUncles = Arrays.asList(blockB.getHeader(), blockC.getHeader());
+        Block blockE = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(), world.getBlockStore())
+                .trieStore(world.getTrieStore()).difficulty(10).parent(blockA).uncles(blockEUncles).build();
+        blockE.setBitcoinMergedMiningHeader(new byte[]{0x05});
+        org.junit.Assert.assertEquals(ImportResult.IMPORTED_NOT_BEST, world.getBlockChain().tryToConnect(blockE));
+
+        List<BlockHeader> blockFUncles = Arrays.asList(blockE.getHeader());
+        Block blockF = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(), world.getBlockStore())
+                .trieStore(world.getTrieStore()).difficulty(10).parent(blockD).uncles(blockFUncles).build();
+        blockF.setBitcoinMergedMiningHeader(new byte[]{0x06});
+        org.junit.Assert.assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(blockF));
+
+        String blockEhash = "0x" + blockE.getHash();
+        String blockBhash = "0x" + blockB.getHash();
+        String blockChash = "0x" + blockC.getHash();
+
+        BlockResultDTO result = web3.eth_getUncleByBlockNumberAndIndex("0x03", "0x00");
+
+        Assert.assertEquals(blockEhash, result.getHash());
+        Assert.assertEquals(2, result.getUncles().size());
+        Assert.assertTrue(result.getUncles().contains(blockBhash));
+        Assert.assertTrue(result.getUncles().contains(blockChash));
+        Assert.assertEquals(TypeConverter.toQuantityJsonHex(30), result.getCumulativeDifficulty());
+    }
+
+    @Test
+    public void getUncleByBlockNumberAndIndexBlockWithUnclesCorrespondingToAnUnknownBlock() {
+        World world = new World();
+        Account acc1 = new AccountBuilder(world).name("acc1").balance(Coin.valueOf(10000)).build();
+
+        Web3Impl web3 = createWeb3(world);
+
+        Block genesis = world.getBlockChain().getBestBlock();
+        Block blockA = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(), world.getBlockStore())
+                .trieStore(world.getTrieStore()).difficulty(10).parent(genesis).build();
+        blockA.setBitcoinMergedMiningHeader(new byte[]{0x01});
+        org.junit.Assert.assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(blockA));
+
+        Block blockB = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(), world.getBlockStore())
+                .trieStore(world.getTrieStore()).difficulty(10).parent(genesis).build();
+        blockB.setBitcoinMergedMiningHeader(new byte[]{0x02});
+        org.junit.Assert.assertEquals(ImportResult.IMPORTED_NOT_BEST, world.getBlockChain().tryToConnect(blockB));
+
+        Block blockC = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(), world.getBlockStore())
+                .trieStore(world.getTrieStore()).difficulty(10).parent(genesis).build();
+        blockC.setBitcoinMergedMiningHeader(new byte[]{0x03});
+        org.junit.Assert.assertEquals(ImportResult.IMPORTED_NOT_BEST, world.getBlockChain().tryToConnect(blockC));
+
+        // block D must have a higher difficulty than block E and its uncles so it doesn't fall behind due to a reorg
+        Block blockD = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(), world.getBlockStore())
+                .trieStore(world.getTrieStore()).difficulty(100).parent(blockA).build();
+        blockD.setBitcoinMergedMiningHeader(new byte[]{0x04});
+        org.junit.Assert.assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(blockD));
+
+        Transaction tx = new TransactionBuilder()
+                .sender(acc1)
+                .gasLimit(BigInteger.valueOf(100000))
+                .gasPrice(BigInteger.ONE)
+                .build();
+        List<Transaction> txs = new ArrayList<>();
+        txs.add(tx);
+
+        List<BlockHeader> blockEUncles = Arrays.asList(blockB.getHeader(), blockC.getHeader());
+        Block blockE = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(), world.getBlockStore())
+                .trieStore(world.getTrieStore()).difficulty(10).parent(blockA).uncles(blockEUncles)
+                .transactions(txs).buildWithoutExecution();
+
+        blockE.setBitcoinMergedMiningHeader(new byte[]{0x05});
+
+        Assert.assertEquals(1, blockE.getTransactionsList().size());
+        Assert.assertFalse(Arrays.equals(blockC.getTxTrieRoot(), blockE.getTxTrieRoot()));
+
+        List<BlockHeader> blockFUncles = Arrays.asList(blockE.getHeader());
+        Block blockF = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(), world.getBlockStore())
+                .trieStore(world.getTrieStore()).difficulty(10).parent(blockD).uncles(blockFUncles).build();
+        blockF.setBitcoinMergedMiningHeader(new byte[]{0x06});
+        org.junit.Assert.assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(blockF));
+
+        String blockEhash = "0x" + blockE.getHash();
+
+        BlockResultDTO result = web3.eth_getUncleByBlockNumberAndIndex("0x" + blockF.getNumber(), "0x00");
+
+        Assert.assertEquals(blockEhash, result.getHash());
+        Assert.assertEquals(0, result.getUncles().size());
+        Assert.assertEquals(0, result.getTransactions().size());
+        Assert.assertEquals("0x" + Hex.toHexString(blockE.getTxTrieRoot()), result.getTransactionsRoot());
     }
 
     @Test
@@ -1024,7 +1406,7 @@ public class Web3ImplTest {
                 null,
                 null,
                 null,
-                null,
+                null, null,
                 Web3Mocks.getMockChannelManager(),
                 null,
                 null,
@@ -1261,8 +1643,8 @@ public class Web3ImplTest {
         World world = new World(receiptStore);
         BlockChainImpl blockChain = world.getBlockChain();
         BlockStore blockStore = world.getBlockStore();
-        TransactionExecutorFactory transactionExecutorFactory = buildTransactionExecutorFactory(blockStore);
-        TransactionPool transactionPool = new TransactionPoolImpl(config, world.getRepositoryLocator(), blockStore, blockFactory, null, transactionExecutorFactory, 10, 100);
+        TransactionExecutorFactory transactionExecutorFactory = buildTransactionExecutorFactory(blockStore, world.getBlockTxSignatureCache());
+        TransactionPool transactionPool = new TransactionPoolImpl(config, world.getRepositoryLocator(), blockStore, blockFactory, null, transactionExecutorFactory, world.getReceivedTxSignatureCache(), 10, 100);
         Web3Impl web3 = createWeb3(world, transactionPool, receiptStore);
 
         // **** Initializes data ******************
@@ -1325,7 +1707,7 @@ public class Web3ImplTest {
         EthModule ethModule = new EthModule(
                 config.getNetworkConstants().getBridgeConstants(), config.getNetworkConstants().getChainId(), blockchain, transactionPool,
                 null, new ExecutionBlockRetriever(mainchainView, blockchain, null, null),
-                null, new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(wallet), null,
+                null, new EthModuleWalletEnabled(wallet), null,
                 new BridgeSupportFactory(
                         null, config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig())
         );
@@ -1345,7 +1727,7 @@ public class Web3ImplTest {
                 txPoolModule,
                 null,
                 debugModule,
-                null,
+                null, null,
                 channelManager,
                 null,
                 null,
@@ -1365,9 +1747,9 @@ public class Web3ImplTest {
 
     private Web3Impl createWeb3(Ethereum eth, World world, ReceiptStore receiptStore) {
         BlockStore blockStore = world.getBlockStore();
-        TransactionExecutorFactory transactionExecutorFactory = buildTransactionExecutorFactory(blockStore);
+        TransactionExecutorFactory transactionExecutorFactory = buildTransactionExecutorFactory(blockStore, world.getBlockTxSignatureCache());
         TransactionPool transactionPool = new TransactionPoolImpl(config, world.getRepositoryLocator(), blockStore,
-                                                                  blockFactory, null, transactionExecutorFactory, 10, 100);
+                                                                  blockFactory, null, transactionExecutorFactory, world.getReceivedTxSignatureCache(), 10, 100);
         return createWeb3(eth, world, transactionPool, receiptStore);
     }
 
@@ -1382,9 +1764,9 @@ public class Web3ImplTest {
     private Web3Impl createWeb3(World world, BlockProcessor blockProcessor, ReceiptStore receiptStore) {
         BlockChainImpl blockChain = world.getBlockChain();
         BlockStore blockStore = world.getBlockStore();
-        TransactionExecutorFactory transactionExecutorFactory = buildTransactionExecutorFactory(blockStore);
+        TransactionExecutorFactory transactionExecutorFactory = buildTransactionExecutorFactory(blockStore, world.getBlockTxSignatureCache());
         TransactionPool transactionPool = new TransactionPoolImpl(config, world.getRepositoryLocator(),
-                                                                  blockStore, blockFactory, null, transactionExecutorFactory, 10, 100);
+                                                                  blockStore, blockFactory, null, transactionExecutorFactory, world.getReceivedTxSignatureCache(), 10, 100);
         RepositoryLocator repositoryLocator = new RepositoryLocator(world.getTrieStore(), world.getStateRootHandler());
         return createWeb3(
                 Web3Mocks.getMockEthereum(), blockChain, repositoryLocator, transactionPool,
@@ -1412,8 +1794,7 @@ public class Web3ImplTest {
         Web3InformationRetriever retriever = new Web3InformationRetriever(transactionPool, blockchain, repositoryLocator);
         EthModule ethModule = new EthModule(
                 config.getNetworkConstants().getBridgeConstants(), config.getNetworkConstants().getChainId(), blockchain, transactionPool, executor,
-                new ExecutionBlockRetriever(miningMainchainViewMock, blockchain, null, null), repositoryLocator,
-                new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(wallet),
+                new ExecutionBlockRetriever(miningMainchainViewMock, blockchain, null, null), repositoryLocator, new EthModuleWalletEnabled(wallet),
                 new EthModuleTransactionBase(config.getNetworkConstants(), wallet, transactionPool),
                 new BridgeSupportFactory(
                         null, config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig()));
@@ -1434,7 +1815,7 @@ public class Web3ImplTest {
                 txPoolModule,
                 null,
                 debugModule,
-                rskModule,
+                null, rskModule,
                 channelManager,
                 null,
                 null,
@@ -1449,128 +1830,15 @@ public class Web3ImplTest {
                 retriever);
     }
 
-    @Test
-    @Ignore
-    public void eth_compileSolidity() throws Exception {
-        RskSystemProperties systemProperties = mock(RskSystemProperties.class);
-        String solc = System.getProperty("solc");
-        if (solc == null || solc.isEmpty())
-            solc = "/usr/bin/solc";
-
-        when(systemProperties.customSolcPath()).thenReturn(solc);
-        Ethereum eth = mock(Ethereum.class);
-        EthModule ethModule = new EthModule(
-                config.getNetworkConstants().getBridgeConstants(), config.getNetworkConstants().getChainId(), null, null,
-                null, new ExecutionBlockRetriever(null, null, null, null), null,
-                new EthModuleSolidityEnabled(new SolidityCompiler(systemProperties)), null, null,
-                new BridgeSupportFactory(
-                        null, config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig())
-        );
-        PersonalModule personalModule = new PersonalModuleWalletDisabled();
-        TxPoolModule txPoolModule = new TxPoolModuleImpl(Web3Mocks.getMockTransactionPool());
-        DebugModule debugModule = new DebugModuleImpl(null, null, Web3Mocks.getMockMessageHandler(), null);
-        Web3Impl web3 = new Web3RskImpl(
-                eth,
-                null,
-                systemProperties,
-                null,
-                null,
-                personalModule,
-                ethModule,
-                null,
-                txPoolModule,
-                null,
-                debugModule,
-                null,
-                Web3Mocks.getMockChannelManager(),
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                mock(Web3InformationRetriever.class));
-        String contract = "pragma solidity ^0.4.1; contract rsk { function multiply(uint a) returns(uint d) {   return a * 7;   } }";
-
-        Map<String, CompilationResultDTO> result = web3.eth_compileSolidity(contract);
-
-        assertNotNull(result);
-
-        CompilationResultDTO dto = result.get("rsk");
-
-        if (dto == null)
-            dto = result.get("<stdin>:rsk");
-
-        org.junit.Assert.assertEquals(contract , dto.info.getSource());
-    }
-
-    @Test
-    public void eth_compileSolidityWithoutSolidity() throws Exception {
-        SystemProperties systemProperties = mock(SystemProperties.class);
-        String solc = System.getProperty("solc");
-        if (solc == null || solc.isEmpty())
-            solc = "/usr/bin/solc";
-
-        when(systemProperties.customSolcPath()).thenReturn(solc);
-
-        Wallet wallet = WalletFactory.createWallet();
-        Ethereum eth = Web3Mocks.getMockEthereum();
-        Blockchain blockchain = Web3Mocks.getMockBlockchain();
-        TransactionPool transactionPool = Web3Mocks.getMockTransactionPool();
-        EthModule ethModule = new EthModule(
-                config.getNetworkConstants().getBridgeConstants(), config.getNetworkConstants().getChainId(), blockchain, transactionPool,
-                null, new ExecutionBlockRetriever(null, null, null, null),
-                null, new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(wallet), null,
-                new BridgeSupportFactory(
-                        null, config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig()));
-        TxPoolModule txPoolModule = new TxPoolModuleImpl(Web3Mocks.getMockTransactionPool());
-        DebugModule debugModule = new DebugModuleImpl(null, null, Web3Mocks.getMockMessageHandler(), null);
-        Web3Impl web3 = new Web3RskImpl(
-                eth,
-                blockchain,
-                config,
-                null,
-                null,
-                new PersonalModuleWalletDisabled(),
-                ethModule,
-                null,
-                txPoolModule,
-                null,
-                debugModule,
-                null,
-                Web3Mocks.getMockChannelManager(),
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                mock(Web3InformationRetriever.class));
-
-        String contract = "pragma solidity ^0.4.1; contract rsk { function multiply(uint a) returns(uint d) {   return a * 7;   } }";
-
-        Map<String, CompilationResultDTO> result = web3.eth_compileSolidity(contract);
-
-        assertNotNull(result);
-        org.junit.Assert.assertEquals(0, result.size());
-    }
-
     private TransactionExecutorFactory buildTransactionExecutorFactory(
-            BlockStore blockStore) {
+            BlockStore blockStore, BlockTxSignatureCache blockTxSignatureCache) {
         return new TransactionExecutorFactory(
                 config,
                 blockStore,
                 null,
                 blockFactory,
                 null,
-                null);
+                null,
+                blockTxSignatureCache);
     }
 }

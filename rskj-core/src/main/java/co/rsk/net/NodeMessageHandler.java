@@ -33,7 +33,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.time.Duration;
 import java.util.*;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 public class NodeMessageHandler implements MessageHandler, InternalService, Runnable {
@@ -53,10 +53,10 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
     private volatile long lastTickSent = System.currentTimeMillis();
 
     private final StatusResolver statusResolver;
-
-    private LinkedBlockingQueue<MessageTask> queue = new LinkedBlockingQueue<>();
     private Set<Keccak256> receivedMessages = Collections.synchronizedSet(new HashSet<>());
     private long cleanMsgTimestamp = 0;
+
+    private PriorityBlockingQueue<MessageTask> queue;
 
     private volatile boolean stopped;
 
@@ -78,6 +78,7 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
         this.statusResolver = statusResolver;
         this.cleanMsgTimestamp = System.currentTimeMillis();
         this.peerScoringManager = peerScoringManager;
+        this.queue = new PriorityBlockingQueue<>(11, new MessageTask.TaskComparator());
     }
 
     /**
@@ -123,8 +124,11 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
                 }
                 this.receivedMessages.add(encodedMessage);
             }
-            if (!this.queue.offer(new MessageTask(sender, message))){
-                logger.trace("Queue full, message not added to the queue");
+
+            double score = sender.score(System.currentTimeMillis(), message.getMessageType());
+
+            if (score >= 0 && !this.queue.offer(new MessageTask(sender, message, score))) {
+                logger.warn("Unexpected path. Is message queue bounded now?");
             }
         } else {
             recordEvent(sender, EventType.REPEATED_MESSAGE);
@@ -212,13 +216,15 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
         this.peerScoringManager.recordEvent(sender.getPeerNodeID(), sender.getAddress(), event);
     }
 
-    private static class MessageTask {
+    private static class MessageTask  {
         private Peer sender;
         private Message message;
+        private double score;
 
-        public MessageTask(Peer sender, Message message) {
+        public MessageTask(Peer sender, Message message, double score) {
             this.sender = sender;
             this.message = message;
+            this.score = score;
         }
 
         public Peer getSender() {
@@ -236,6 +242,16 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
                     ", message=" + message +
                     '}';
         }
+
+        private static class TaskComparator implements Comparator<MessageTask> {
+            @Override
+            public int compare(MessageTask m1, MessageTask m2) {
+                return Double.compare(m2.score, m1.score);
+            }
+        }
+
     }
+
+
 }
 
