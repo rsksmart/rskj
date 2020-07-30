@@ -915,7 +915,7 @@ public class Program {
             // #mish fix: what if it is a rentgas exception? Still the same?
             long penalty = limitToMaxLong(msg.getRentGas())/4L;
             childResult.clearUsedRentGas(); //reset it and then tack on 25% penalty for IO costs
-            childResult.spendRentGas(penalty);
+            program.spendRentGas(penalty, "Rent gas penalty 25%"); //using program.spendRentGas so it can trigger exception 
             /*
             System.out.println("\n\nIn Program::executecode() child failed" +
                             "\nmsg (child) exec gas limit = " + limitToMaxLong(msg.getGas())+
@@ -1189,7 +1189,7 @@ public class Program {
     }
 
     public DataWord storageLoad(DataWord key) {
-        //System.out.println("\n\nSLOAD\n");
+        //#mish add this node to storage rent tracker map
         accessedStorageNodeAdder(getOwnerRskAddress(), key);
         return getStorage().getStorageValue(getOwnerRskAddress(), key);
     }
@@ -1747,11 +1747,21 @@ public class Program {
      * node info obtained for each provided RSK addr via methods defined in mutableRepository
      * The method retreives nodes containing account state and for contracts: code and storage root. 
      * This should be called the first time any RSK addr is referenced in a TX or a child process
-     * Storage nodes accessed via SLOAD or SSTORE are not included.
+     * Note: Storage nodes accessed via SLOAD or SSTORE are tracked using a different method.
     */
     public void accessedNodeAdder(RskAddress addr, Repository repository){
-        ProgramResult progRes = getResult();
         long rd = 0; // initalize rent due to 0
+        // account should already exist for this method (for new nodes use createdNodeAdder) 
+        // If not charge a penalty (same as 6 months rent for 0 value length)
+        // for IO costs of looking up non-existent node and exit (increase cost of IO attacks via wild goose chase)
+        if (!repository.isExist(addr)){
+            rd = GasCost.calculateStorageRent(new Uint24(0), GasCost.SIX_MONTHS);
+            spendRentGas(rd, "IO penalty for non-existent account lookup");
+            return; // do not add to list of nodes to update in trie
+        }
+        
+        ProgramResult progRes = getResult();
+        
         ByteArrayWrapper accKey = repository.getAccountNodeKey(addr);
         // if the node is not in the map, add the rent owed to current estimate
         if (!progRes.getAccessedNodes().containsKey(accKey)){
@@ -1856,6 +1866,13 @@ public class Program {
         ProgramResult progRes = getResult();
         Repository repository = getStorage();
         long rd = 0; // initalize rent due to 0
+        //make sure the cell exists
+        if (repository.getStorageValue(addr, key).getData()==null){
+            rd = GasCost.calculateStorageRent(new Uint24(0), GasCost.SIX_MONTHS);
+            spendRentGas(rd, "IO penalty for non-existent storage cell lookup");
+            return; // do not add to list of nodes to update in trie
+        }
+
         ByteArrayWrapper storageKey = repository.getStorageNodeKey(addr, key);
         // if the node is not in the map, add the rent owed to current estimate
         if (!progRes.getAccessedNodes().containsKey(storageKey)){
