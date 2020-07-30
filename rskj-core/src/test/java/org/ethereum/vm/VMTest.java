@@ -40,7 +40,15 @@ import org.ethereum.vm.program.Program.BadJumpDestinationException;
 import org.ethereum.vm.program.Program.StackTooSmallException;
 import org.ethereum.vm.program.invoke.ProgramInvokeMockImpl;
 import org.junit.*;
+import org.junit.runner.RunWith;
 import org.junit.runners.MethodSorters;
+import org.junit.runners.Parameterized;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
+import org.powermock.modules.junit4.PowerMockRunnerDelegate;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -52,29 +60,50 @@ import static org.ethereum.util.ByteUtil.oneByteToHexString;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static org.powermock.api.mockito.PowerMockito.spy;
 
 /**
  * @author Roman Mandeleil
  * @since 01.06.2014
  */
+@RunWith(PowerMockRunner.class)
+@PowerMockRunnerDelegate(Parameterized.class)
+@PrepareForTest(LoggerFactory.class)
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class VMTest {
+
+    private static Logger logger;
+
+    @Parameterized.Parameters
+    public static Collection<Object> params() {
+        return Arrays.asList(new Object[] { true, false });
+    }
 
     private ProgramInvokeMockImpl invoke;
     private Program program;
     private VM vm;
+    private final boolean isLogEnabled;
 
     private final TestSystemProperties config = new TestSystemProperties();
     private final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
     private final VmConfig vmConfig = config.getVmConfig();
     private final PrecompiledContracts precompiledContracts = new PrecompiledContracts(config, null);
 
-//    private final RskSystemProperties {
-//        config = new RskSystemProperties();
-//    }
+    public VMTest(boolean isLogEnabled) {
+        this.isLogEnabled = isLogEnabled;
+    }
+
+    @BeforeClass
+    public static void setupClass() {
+        spy(LoggerFactory.class);
+        logger = PowerMockito.mock(Logger.class);
+        PowerMockito.when(LoggerFactory.getLogger("VM")).thenReturn(logger);
+    }
 
     @Before
     public void setup() {
+        PowerMockito.when(logger.isInfoEnabled()).thenReturn(isLogEnabled);
+
         vm = getSubject();
         invoke = new ProgramInvokeMockImpl();
     }
@@ -2315,7 +2344,6 @@ public class VMTest {
 
     @Test // MUL OP
     public void testMUL_1() {
-
         program = getProgram("6003600202");
         String s_expected_1 = "0000000000000000000000000000000000000000000000000000000000000006";
 
@@ -2329,7 +2357,6 @@ public class VMTest {
 
     @Test // MUL OP
     public void testMUL_2() {
-
         program = getProgram("62222222600302");
         String s_expected_1 = "0000000000000000000000000000000000000000000000000000000000666666";
 

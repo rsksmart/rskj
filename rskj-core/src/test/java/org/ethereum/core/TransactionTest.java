@@ -46,6 +46,7 @@ import org.ethereum.db.MutableRepository;
 import org.ethereum.jsontestsuite.StateTestSuite;
 import org.ethereum.jsontestsuite.runners.StateTestRunner;
 import org.ethereum.util.ByteUtil;
+import org.ethereum.util.RLP;
 import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.ProgramResult;
@@ -62,8 +63,8 @@ import java.security.NoSuchProviderException;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
+import static org.junit.Assert.*;
 
 public class TransactionTest {
 
@@ -710,6 +711,54 @@ public class TransactionTest {
         Assert.assertEquals(1, executor.getResult().getLogInfoList().size());
         Assert.assertFalse(executor.getResult().getLogInfoList().get(0).isRejected());
         Assert.assertEquals(1, executor.getVMLogs().size());
+    }
+
+    @Test
+    public void verifyTx_noSignature() {
+        BigInteger value = new BigInteger("1000000000000000000000");
+        byte[] privKey = HashUtil.keccak256("cat".getBytes());
+        ECKey ecKey = ECKey.fromPrivate(privKey);
+        byte[] gasPrice = Hex.decode("09184e72a000");
+        byte[] gas = Hex.decode("4255");
+
+        Transaction tx = new Transaction(new byte[0], gasPrice, gas, ecKey.getAddress(), value.toByteArray(),null);
+        try {
+            tx.verify();
+        } catch (Exception e) {
+            fail(e.getMessage());
+        }
+    }
+
+    @Test
+    public void verifyTx_withSignature() {
+        BigInteger value = new BigInteger("1000000000000000000000");
+        byte[] senderPrivKey = HashUtil.keccak256("cow".getBytes());
+        byte[] privKey = HashUtil.keccak256("cat".getBytes());
+        ECKey ecKey = ECKey.fromPrivate(privKey);
+        byte[] gasPrice = Hex.decode("09184e72a000");
+        byte[] gas = Hex.decode("4255");
+
+        Transaction tx = new Transaction(new byte[0], gasPrice, gas, ecKey.getAddress(), value.toByteArray(),null);
+        tx.sign(senderPrivKey);
+        try {
+            tx.verify();
+        } catch (Exception e) {
+            fail(e.getMessage());
+        }
+    }
+
+    @Test
+    public void toString_nullElements() {
+        byte[] encodedNull = RLP.encodeElement(null);
+        byte[] encodedEmptyArray = RLP.encodeElement(EMPTY_BYTE_ARRAY);
+        byte[] rawData = RLP.encodeList(encodedNull, encodedNull, encodedNull, encodedNull, encodedNull, encodedNull,
+                encodedEmptyArray, encodedEmptyArray, encodedEmptyArray);
+        Transaction tx = new ImmutableTransaction(rawData);
+        try {
+            tx.toString();
+        } catch (Exception e) {
+            fail(e.getMessage());
+        }
     }
 
     private Transaction createTx(ECKey sender, byte[] receiveAddress, byte[] data, final Repository repository) throws InterruptedException {
