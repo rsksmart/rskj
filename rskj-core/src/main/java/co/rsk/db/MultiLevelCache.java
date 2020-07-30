@@ -12,8 +12,6 @@ import java.util.*;
  * object can record changes at different caching level
  */
 public class MultiLevelCache {
-    private static final Logger logger = LoggerFactory.getLogger("general");
-
     // The minimum cache level
     public static final int FIRST_CACHE_LEVEL = 1;
     // The current depth level of cache
@@ -136,16 +134,7 @@ public class MultiLevelCache {
                                     "ERROR: Unable to find the deepest level Map for account %s",
                                     account.toString()));
                 }
-                valuesPerKey.forEach((key, value) -> {
-                    if (keySize == Integer.MAX_VALUE || key.getData().length == keySize) {
-                        byte[] valueAtLevel = this.get(key, maxLevel);
-                        if (valueAtLevel != null) {
-                            parentKeys.add(key);
-                        } else {
-                            parentKeys.remove(key);
-                        }
-                    }
-                });
+                valuesPerKey.forEach((key, value) -> this.collectKey(key, parentKeys, keySize, maxLevel));
             }
         });
     }
@@ -645,4 +634,22 @@ public class MultiLevelCache {
         cloneDeletedAccounts.forEach((account, levels) -> levels.remove(cacheLevel));
     }
 
+    /**
+     * collect all the keys in cache at the given cache level, with the specified size,
+     *       or all keys when keySize = Integer.MAX_VALUE
+     * @param key
+     * @param parentKeys
+     * @param keySize
+     * @param maxLevel
+     */
+    private void collectKey(ByteArrayWrapper key, Set<ByteArrayWrapper> parentKeys, int keySize, int maxLevel) {
+        if (keySize == Integer.MAX_VALUE || key.getData().length == keySize) {
+            byte[] valueAtLevel = this.get(key, maxLevel);
+            if (valueAtLevel != null) {
+                parentKeys.add(key);
+            } else {
+                parentKeys.remove(key);
+            }
+        }
+    }
 }
