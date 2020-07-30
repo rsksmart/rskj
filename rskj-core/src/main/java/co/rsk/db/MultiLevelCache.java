@@ -5,7 +5,6 @@ import org.ethereum.db.ByteArrayWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 /**
@@ -66,32 +65,28 @@ public class MultiLevelCache {
         }
         ByteArrayWrapper accountWrapper = MutableTrieCache.getAccountWrapper(key);
         Map<ByteArrayWrapper, byte[]> originalValuesPerKey
-                = findOriginalValuesPerKey(accountWrapper, key, cacheLevel, true);
+                = findOriginalValuesPerKey(accountWrapper, cacheLevel, true);
         Map<ByteArrayWrapper, Integer> deepestLevelPerKey = this.deepestLevelPerKeyPerAccount.computeIfAbsent(accountWrapper, k -> new HashMap<>());
-        int deepestLevel = getCachedKeyDeepestLevel(key, deepestLevelPerKey);
-        if (deepestLevel <= cacheLevel) {
-            Map<ByteArrayWrapper, byte[]> valuesPerKey
-                    = this.valuesPerKeyPerAccount.computeIfAbsent(accountWrapper, k -> new HashMap<>());
-            // if the key has already been modified at this level, keep the same originalValue, otherwise get from the global map if it exists, else from the trie
-            byte[] originalValue = originalValuesPerKey.containsKey(key) ? originalValuesPerKey.get(key) :
-                    (valuesPerKey.containsKey(key) ? valuesPerKey.get(key) : this.trie.get(key.getData()));
-            // set the original value at our level
-            originalValuesPerKey.put(key, originalValue);
-            // store value into the global map valuesPerKeyPerAccount
-            valuesPerKey.put(key, value);
+        byte[] originalValue = null;
+        // operation done at the deepest cache level or check the key has not been already updated at a deeper level
+        if ((cacheLevel == getDepth()) || (getCachedKeyDeepestLevel(key, deepestLevelPerKey) <= cacheLevel)) {
+            // put value in latestValues map and return the originalValue for the key
+            originalValue = this.putLatestCachedValue(accountWrapper, key, value, originalValuesPerKey);
             // set our level as the deepest level for this key
-            deepestLevelPerKey.put(key, cacheLevel);
+            if (deepestLevelPerKey != null) { // always true after computeIfAbsent but sonar complains ...
+                deepestLevelPerKey.put(key, cacheLevel);
+            }
         } else {
             // the key has been modified at some deeper level(s) -> find the original value stored looping over the deeper levels
             Map<ByteArrayWrapper, byte[]> originalValuesPerKeyForLevel
-                    = findOriginalValuesPerKeyAtDeeperLevel(accountWrapper, key, cacheLevel, deepestLevel);
+                    = findOriginalValuesPerKeyAtDeeperLevel(accountWrapper, key, cacheLevel, getCachedKeyDeepestLevel(key, deepestLevelPerKey));
             // get the originalValue stored at deeper level
-            byte[] originalValue = originalValuesPerKeyForLevel.get(key);
+            originalValue = originalValuesPerKeyForLevel.get(key);
             // change that original value to the new value
             originalValuesPerKeyForLevel.put(key, value);
-            // set the original value at our level with the original value found deeper
-            originalValuesPerKey.put(key, originalValue);
         }
+        // set the original value at our level
+        originalValuesPerKey.put(key, originalValue);
     }
 
 
@@ -105,26 +100,15 @@ public class MultiLevelCache {
      */
     public byte[] get(ByteArrayWrapper key, int maxLevel) {
         ByteArrayWrapper accountWrapper = MutableTrieCache.getAccountWrapper(key);
+        if (maxLevel == getDepth()) {
+            return this.getLatestCachedValue(accountWrapper, key, maxLevel);
+        }
+        // else we need to find whether the key has been updated at a deeper level
         Map<ByteArrayWrapper, Integer> deepestLevelPerKey = this.deepestLevelPerKeyPerAccount.computeIfAbsent(accountWrapper, k -> new HashMap<>());
         int deepestLevel = getCachedKeyDeepestLevel(key, deepestLevelPerKey);
         if (deepestLevel <= maxLevel) {
             // key has not been modified at a deeper level
-            Map<ByteArrayWrapper, byte[]> valuesPerKey
-                    = this.valuesPerKeyPerAccount.computeIfAbsent(accountWrapper, k -> new HashMap<>());
-            if (valuesPerKey.containsKey(key)) {
-                return valuesPerKey.get(key);
-            } else {
-                // If the account has been deleted at a lower level, store and return null
-                if (isDeletedAccount(accountWrapper, maxLevel)) {
-                    valuesPerKey.put(key, null);
-                    return null;
-                } else {
-                    // else store and return trie[key]
-                    byte[] value = this.trie.get(key.getData());
-                    valuesPerKey.put(key, value);
-                    return value;
-                }
-            }
+            return this.getLatestCachedValue(accountWrapper, key, maxLevel);
         } else {
             // the key has been modified at some deeper level(s) -> find the original value stored looping over the deeper levels
             Map<ByteArrayWrapper, byte[]> originalValuesPerKeyForLevel
@@ -144,21 +128,25 @@ public class MultiLevelCache {
     public void collectKeys(Set<ByteArrayWrapper> parentKeys, int keySize, int maxLevel) {
         getDeletedAccounts(maxLevel).forEach(key -> parentKeys.remove(key));
         this.valuesPerKeyPerAccount.forEach((account, valuesPerKey) -> {
-            Map<ByteArrayWrapper, Integer> deepestLevelPerKey = this.deepestLevelPerKeyPerAccount.get(account);
-            if (deepestLevelPerKey == null) {
-                logger.error("ERROR unexpected not found deepest level maps for account");
-                return;
-            }
-            valuesPerKey.forEach((key, value) -> {
-                if (keySize == Integer.MAX_VALUE || key.getData().length == keySize) {
-                    byte[] valueAtLevel = this.get(key, maxLevel);
-                    if (valueAtLevel != null) {
-                        parentKeys.add(key);
-                    } else {
-                        parentKeys.remove(key);
-                    }
+            if (valuesPerKey.size() > 0) {
+                Map<ByteArrayWrapper, Integer> deepestLevelPerKey = this.deepestLevelPerKeyPerAccount.get(account);
+                if (deepestLevelPerKey == null) {
+                    throw new IllegalStateException(
+                            String.format(
+                                    "ERROR: Unable to find the deepest level Map for account %s",
+                                    account.toString()));
                 }
-            });
+                valuesPerKey.forEach((key, value) -> {
+                    if (keySize == Integer.MAX_VALUE || key.getData().length == keySize) {
+                        byte[] valueAtLevel = this.get(key, maxLevel);
+                        if (valueAtLevel != null) {
+                            parentKeys.add(key);
+                        } else {
+                            parentKeys.remove(key);
+                        }
+                    }
+                });
+            }
         });
     }
 
@@ -190,9 +178,7 @@ public class MultiLevelCache {
         Map<ByteArrayWrapper, byte[]> valuesPerKey
                 = this.valuesPerKeyPerAccount.computeIfAbsent(accountWrapper, k -> new HashMap<>());
         // for each key in global cached map, set value = null.
-        valuesPerKey.forEach((key, value) -> {
-            this.put(key, null, cacheLevel);
-        });
+        valuesPerKey.forEach((key, value) -> this.put(key, null, cacheLevel));
     }
 
     /**
@@ -208,46 +194,13 @@ public class MultiLevelCache {
                     "Can not merge cache. levelFrom shall be greater than levelTo. " +
                             "levelFrom=" + levelFrom + ", levelTo=" + levelTo);
         }
-        // for each account deleted between levelTo+1 and levelFrom, add them deleted at levelTo
-        Set<ByteArrayWrapper> theDeletedAccounts = getDeletedAccounts(levelTo, levelFrom);
-        theDeletedAccounts.forEach((account) -> {
-            Set<Integer> newLevels = new HashSet<>(this.deletedAccounts.get(account));
-            // remove all level between levelTo (excluded) and levelFrom (included)
-            for (int level = levelTo + 1; level <= levelFrom; level++) {
-                newLevels.remove(level);
-            }
-            // be sure levelTo is in the list
-            newLevels.add(levelTo);
-            // update the map
-            this.deletedAccounts.put(account, newLevels);
-        });
-
+        this.commitDeletedAccounts(levelFrom, levelTo);
 
         Map<ByteArrayWrapper, Map<ByteArrayWrapper, byte[]>> originalValuesPerKeyPerAccountTarget
                 = this.originalValuesPerKeyPerAccountPerLevel.computeIfAbsent(levelTo, k -> new HashMap<>());
         for (int level = levelTo + 1; level <= levelFrom; level++) {
-            // for each key updated at each level from levelTo+1 to levelFrom,
-            // set the original value from that level at levelTo only if the levelTo does not contains an original value already
-            Map<ByteArrayWrapper, Map<ByteArrayWrapper, byte[]>> originalValuesPerKeyPerAccountForLevel
-                    = this.originalValuesPerKeyPerAccountPerLevel.get(level);
-            if (originalValuesPerKeyPerAccountForLevel != null) {
-                originalValuesPerKeyPerAccountForLevel.forEach((account, originalValuesPerKeyForLevel) -> {
-                    Map<ByteArrayWrapper, byte[]> originalValuesPerKeyTarget
-                            = originalValuesPerKeyPerAccountTarget.computeIfAbsent(account, k -> new HashMap<>());
-                    Map<ByteArrayWrapper, Integer> deepestLevelPerKey = deepestLevelPerKeyPerAccount.computeIfAbsent(account, k -> new HashMap<>());
-                    originalValuesPerKeyForLevel.forEach((key, value) -> {
-                        if (!originalValuesPerKeyTarget.containsKey(key)) {
-                            originalValuesPerKeyTarget.put(key, value);
-                        }
-                        // Update the deepestLevel of the key to levelTo, except if the deepestLevel is deeper than levelFrom
-                        int deepestLevel = getCachedKeyDeepestLevel(key, deepestLevelPerKey);
-                        if (deepestLevel <= levelFrom) {
-                            deepestLevelPerKey.put(key, levelTo);
-                        }
-                    });
-                });
-            }
-            this.originalValuesPerKeyPerAccountPerLevel.remove(level);
+            // commit value of each key updated at each level from levelTo+1 to levelFrom,
+            this.commitCachedValuesAtLevel(level, levelTo, originalValuesPerKeyPerAccountTarget);
             if (shallClear) {
                 clear(level);
             }
@@ -269,14 +222,15 @@ public class MultiLevelCache {
         getDeletedAccounts(0, FIRST_CACHE_LEVEL).forEach(account -> trie.deleteRecursive(account.getData()));
         // only one cache level: apply changes directly in parent Trie
         if (getDepth() == FIRST_CACHE_LEVEL) {
-            this.valuesPerKeyPerAccount.forEach((account, valuesPerKey) -> {
-                valuesPerKey.forEach((key, value) -> {
-                    trie.put(key, value);
-                });
-            });
+            this.valuesPerKeyPerAccount.forEach(
+                    (account, valuesPerKey) -> valuesPerKey.forEach(
+                            (key, value) -> trie.put(key, value)
+                    )
+            );
         } else {
-            this.valuesPerKeyPerAccount.forEach((account, valuesPerKey) -> {
-                valuesPerKey.forEach((key, value) -> {
+            this.valuesPerKeyPerAccount.forEach(
+                    (account, valuesPerKey) -> valuesPerKey.forEach(
+                            (key, value) -> {
                     int deepestLevel = getCachedKeyDeepestLevel(key, account);
                     if (deepestLevel <= FIRST_CACHE_LEVEL) {
                         trie.put(key, value);
@@ -286,8 +240,7 @@ public class MultiLevelCache {
                                 = findOriginalValuesPerKeyAtDeeperLevel(account, key, FIRST_CACHE_LEVEL, deepestLevel);
                         trie.put(key, originalValuesPerKeyForLevel.get(key));
                     }
-                });
-            });
+                }));
         }
 
         getDeletedAccounts(FIRST_CACHE_LEVEL).forEach(account -> trie.deleteRecursive(account.getData()));
@@ -308,40 +261,8 @@ public class MultiLevelCache {
             deepestLevelPerKeyPerAccount.clear();
             valuesPerKeyPerAccount.clear();
         } else {
-            // for each account deleted at cacheLevel, clear it
-            Map<ByteArrayWrapper, Set<Integer>> cloneDeletedAccounts = new HashMap<>(this.deletedAccounts);
-            cloneDeletedAccounts.forEach((account, levels) -> {
-                levels.remove(cacheLevel);
-            });
-            // get the originalValues stored at that level
-            Map<ByteArrayWrapper, Map<ByteArrayWrapper, byte[]>> originalValuesPerKeyPerAccount = this.originalValuesPerKeyPerAccountPerLevel.get(cacheLevel);
-            if (originalValuesPerKeyPerAccount != null) {
-                originalValuesPerKeyPerAccount.forEach((account, originalValuesPerKey) -> {
-                    Map<ByteArrayWrapper, byte[]> valuesPerKey = this.valuesPerKeyPerAccount.get(account);
-                    Map<ByteArrayWrapper, Integer> deepestLevelPerKey = this.deepestLevelPerKeyPerAccount.get(account);
-                    originalValuesPerKey.forEach((key, originalValue) -> {
-                        int deepestLevel = getCachedKeyDeepestLevel(key, deepestLevelPerKey);
-                        if (deepestLevel <= cacheLevel) {
-                            // replace actual value with the original one
-                            valuesPerKey.put(key, originalValue);
-                            // remove the actual level from the deepestLevel map
-                            deepestLevelPerKey.remove(key);
-                            // in case the key has been modified at a lower level, update the deepestLevel map
-                            int newDeepestLevel = findDeepestLevel(account, key, cacheLevel - 1);
-                            if (newDeepestLevel >= FIRST_CACHE_LEVEL) {
-                                deepestLevelPerKey.put(key, newDeepestLevel);
-                            }
-                        } else {
-                            // the key has been modified at some deeper level(s) -> find the original value stored looping over the deeper levels
-                            Map<ByteArrayWrapper, byte[]> originalValuesPerKeyForLevel
-                                    = findOriginalValuesPerKeyAtDeeperLevel(account, key, cacheLevel, deepestLevel);
-                            // change that original value to the new value
-                            originalValuesPerKeyForLevel.put(key, originalValue);
-                        }
-                    });
-                });
-                originalValuesPerKeyPerAccount.clear();
-            }
+            this.clearDeletedAccounts(cacheLevel);
+            this.clearUpdatedValuesAtLevel(cacheLevel);
         }
     }
 
@@ -370,9 +291,7 @@ public class MultiLevelCache {
 
         Map<ByteArrayWrapper, byte[]> valuesPerKey = this.valuesPerKeyPerAccount.get(accountWrapper);
         if (valuesPerKey != null) {
-            valuesPerKey.forEach((key, value) -> {
-                accountItems.put(key, this.get(key, cacheLevel));
-            });
+            valuesPerKey.forEach((key, value) -> accountItems.put(key, this.get(key, cacheLevel)));
         }
         return accountItems;
     }
@@ -478,7 +397,7 @@ public class MultiLevelCache {
             int deepestLevel) {
         for (int level = cacheLevel + 1; level <= deepestLevel; level++) {
             Map<ByteArrayWrapper, byte[]> originalValuesPerKeyForLevel
-                    = findOriginalValuesPerKey(accountWrapper, key, level, false);
+                    = findOriginalValuesPerKey(accountWrapper, level, false);
             if ((originalValuesPerKeyForLevel != null) && originalValuesPerKeyForLevel.containsKey(key)) {
                 return originalValuesPerKeyForLevel;
             }
@@ -492,14 +411,12 @@ public class MultiLevelCache {
     /**
      * returns the original value map for a key at a given cacheLevel
      * @param accountWrapper
-     * @param key
      * @param cacheLevel
      * @param createIfMissing
      * @return
      */
     private Map<ByteArrayWrapper, byte[]> findOriginalValuesPerKey(
             ByteArrayWrapper accountWrapper,
-            ByteArrayWrapper key,
             int cacheLevel,
             boolean createIfMissing) {
         Map<ByteArrayWrapper, Map<ByteArrayWrapper, byte[]>> originalValuesPerKeyPerAccount
@@ -567,4 +484,165 @@ public class MultiLevelCache {
         });
         return accounts;
     }
+
+    /**
+     * put value in latestValues map and return the originalValue for the key
+     * @param accountWrapper
+     * @param key
+     * @param value
+     * @param originalValuesPerKey
+     * @return
+     */
+    private byte[] putLatestCachedValue(
+            ByteArrayWrapper accountWrapper,
+            ByteArrayWrapper key,
+            byte[] value,
+            Map<ByteArrayWrapper, byte[]> originalValuesPerKey
+    ) {
+        Map<ByteArrayWrapper, byte[]> valuesPerKey
+                = this.valuesPerKeyPerAccount.computeIfAbsent(accountWrapper, k -> new HashMap<>());
+        byte[] originalValue = null;
+        // if the key has already been modified at this level, keep the same originalValue,
+        // otherwise get from the global map if it exists, else from the trie
+        if (originalValuesPerKey.containsKey(key)) {
+            originalValue = originalValuesPerKey.get(key);
+        } else if (valuesPerKey.containsKey(key)) {
+            originalValue = valuesPerKey.get(key);
+        } else {
+            originalValue = this.trie.get(key.getData());
+        }
+        // store value into the global map valuesPerKeyPerAccount
+        valuesPerKey.put(key, value);
+        return originalValue;
+    }
+
+
+    /**
+     * returns the cached value for the key from the latest value map
+     * @param accountWrapper
+     * @param key
+     * @param maxLevel
+     * @return
+     */
+    private byte[] getLatestCachedValue(ByteArrayWrapper accountWrapper, ByteArrayWrapper key, int maxLevel) {
+        Map<ByteArrayWrapper, byte[]> valuesPerKey
+                = this.valuesPerKeyPerAccount.computeIfAbsent(accountWrapper, k -> new HashMap<>());
+        if (valuesPerKey.containsKey(key)) {
+            // there is a cached value, then return it
+            return valuesPerKey.get(key);
+        } else {
+            // If the account has been deleted at a lower level, store and return null
+            if (isDeletedAccount(accountWrapper, maxLevel)) {
+                valuesPerKey.put(key, null);
+                return null;
+            } else {
+                // else store and return value from the trie
+                byte[] value = this.trie.get(key.getData());
+                valuesPerKey.put(key, value);
+                return value;
+            }
+        }
+    }
+
+    /**
+     * commit value of each key updated at a given level into cached values form level levelTo
+     * @param cacheLevel
+     * @param levelTo
+     * @param originalValuesPerKeyPerAccountTarget
+     */
+    private void commitCachedValuesAtLevel(
+            int cacheLevel,
+            int levelTo,
+            Map<ByteArrayWrapper, Map<ByteArrayWrapper, byte[]>> originalValuesPerKeyPerAccountTarget
+    ) {
+        // set the original value from that level in the target map only if it does not contains an original value already
+        Map<ByteArrayWrapper, Map<ByteArrayWrapper, byte[]>> originalValuesPerKeyPerAccountForLevel
+                = this.originalValuesPerKeyPerAccountPerLevel.get(cacheLevel);
+        if (originalValuesPerKeyPerAccountForLevel != null) {
+            originalValuesPerKeyPerAccountForLevel.forEach((account, originalValuesPerKeyForLevel) -> {
+                Map<ByteArrayWrapper, byte[]> originalValuesPerKeyTarget
+                        = originalValuesPerKeyPerAccountTarget.computeIfAbsent(account, k -> new HashMap<>());
+                Map<ByteArrayWrapper, Integer> deepestLevelPerKey = deepestLevelPerKeyPerAccount.computeIfAbsent(account, k -> new HashMap<>());
+                originalValuesPerKeyForLevel.forEach((key, value) -> {
+                    if (!originalValuesPerKeyTarget.containsKey(key)) {
+                        originalValuesPerKeyTarget.put(key, value);
+                    }
+                    // Update the deepestLevel of the key to levelTo, except if the key is also modified at a deeper level
+                    int deepestLevel = getCachedKeyDeepestLevel(key, deepestLevelPerKey);
+                    if (deepestLevel <= cacheLevel) {
+                        deepestLevelPerKey.put(key, levelTo);
+                    }
+                });
+            });
+        }
+        this.originalValuesPerKeyPerAccountPerLevel.remove(cacheLevel);
+    }
+
+    /**
+     * commit as deleted at levelTo each account deleted between levelTo+1 and levelFrom
+     * @param levelFrom
+     * @param levelTo
+     */
+    private void commitDeletedAccounts(int levelFrom, int levelTo) {
+        // for each account deleted between levelTo+1 and levelFrom, add them deleted at levelTo
+        Set<ByteArrayWrapper> theDeletedAccounts = getDeletedAccounts(levelTo, levelFrom);
+        theDeletedAccounts.forEach((account) -> {
+            Set<Integer> newLevels = new HashSet<>(this.deletedAccounts.get(account));
+            // remove all level between levelTo (excluded) and levelFrom (included)
+            for (int level = levelTo + 1; level <= levelFrom; level++) {
+                newLevels.remove(level);
+            }
+            // be sure levelTo is in the list
+            newLevels.add(levelTo);
+            // update the map
+            this.deletedAccounts.put(account, newLevels);
+        });
+    }
+
+    /**
+     * clear/rollback the internal maps (originalValues and deepestLevel) at the given level
+     * @param cacheLevel
+     */
+    private void clearUpdatedValuesAtLevel(int cacheLevel) {
+        // get the originalValues stored at that level
+        Map<ByteArrayWrapper, Map<ByteArrayWrapper, byte[]>> originalValuesPerKeyPerAccount = this.originalValuesPerKeyPerAccountPerLevel.get(cacheLevel);
+        if (originalValuesPerKeyPerAccount != null) {
+            originalValuesPerKeyPerAccount.forEach((account, originalValuesPerKey) -> {
+                Map<ByteArrayWrapper, byte[]> valuesPerKey = this.valuesPerKeyPerAccount.get(account);
+                Map<ByteArrayWrapper, Integer> deepestLevelPerKey = this.deepestLevelPerKeyPerAccount.get(account);
+                originalValuesPerKey.forEach((key, originalValue) -> {
+                    int deepestLevel = getCachedKeyDeepestLevel(key, deepestLevelPerKey);
+                    if (deepestLevel <= cacheLevel) {
+                        // replace actual value with the original one
+                        valuesPerKey.put(key, originalValue);
+                        // remove the actual level from the deepestLevel map
+                        deepestLevelPerKey.remove(key);
+                        // in case the key has been modified at a lower level, update the deepestLevel map
+                        int newDeepestLevel = findDeepestLevel(account, key, cacheLevel - 1);
+                        if (newDeepestLevel >= FIRST_CACHE_LEVEL) {
+                            deepestLevelPerKey.put(key, newDeepestLevel);
+                        }
+                    } else {
+                        // the key has been modified at some deeper level(s) -> find the original value stored looping over the deeper levels
+                        Map<ByteArrayWrapper, byte[]> originalValuesPerKeyForLevel
+                                = findOriginalValuesPerKeyAtDeeperLevel(account, key, cacheLevel, deepestLevel);
+                        // change that original value to the new value
+                        originalValuesPerKeyForLevel.put(key, originalValue);
+                    }
+                });
+            });
+            originalValuesPerKeyPerAccount.clear();
+        }
+    }
+
+    /**
+     * clear deleted account recorded at the given cache level
+     * @param cacheLevel
+     */
+    private void clearDeletedAccounts(int cacheLevel) {
+        // for each account deleted at cacheLevel, clear it
+        Map<ByteArrayWrapper, Set<Integer>> cloneDeletedAccounts = new HashMap<>(this.deletedAccounts);
+        cloneDeletedAccounts.forEach((account, levels) -> levels.remove(cacheLevel));
+    }
+
 }
