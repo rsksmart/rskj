@@ -178,7 +178,9 @@ public class Wallet {
         Account account = new Account(ECKey.fromPrivate(privateKeyBytes));
         synchronized (accessLock) {
             RskAddress addr = addAccount(account);
-            this.initialAccounts.add(addr);
+            if (!this.initialAccounts.contains(addr)) {
+                this.initialAccounts.add(addr);
+            }
             return addr.getBytes();
         }
     }
