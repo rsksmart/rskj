@@ -77,7 +77,9 @@ public class TransactionGatewayTest {
 
     @Test
     public void receiveTransaction_newTransaction_shouldAddAndBroadcast() {
-        TransactionPoolAddResult transactionPoolAddResult = TransactionPoolAddResult.okPendingTransactions(Collections.singletonList(tx));
+        TransactionPoolAddResult transactionPoolAddResult = TransactionPoolAddResult
+                .okPendingTransactions(Collections.singletonList(tx));
+
         receiveTransactionAndVerifyCalls(transactionPoolAddResult, 1);
     }
 
@@ -95,7 +97,7 @@ public class TransactionGatewayTest {
 
         verify(transactionPool, times(1)).addTransaction(tx);
         verify(channelManager, times(broadcastTransactionsCount)).
-                broadcastTransactions(transactionPoolAddResult.getTransactionsAdded(), Collections.emptySet());
+                broadcastTransactions(transactionPoolAddResult.getPendingTransactionsAdded(), Collections.emptySet());
     }
 
     private void receiveTransactionsFromAndVerifyCalls(List<Transaction> txs,

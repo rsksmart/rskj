@@ -74,7 +74,7 @@ public class EthModuleTransactionBase implements EthModuleTransaction {
                 TransactionPoolAddResult result = transactionGateway.receiveTransaction(tx.toImmutableTransaction());
                 if(!result.transactionsWereAdded()) {
                     throw RskJsonRpcRequestException.transactionError(result.getErrorMessage());
-                };
+                }
 
                 s = tx.getHash().toJsonString();
             }

@@ -20,17 +20,14 @@ package org.ethereum.core;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.function.Consumer;
 
 public class TransactionPoolAddResult {
     private final String errorMessage;
-    private final List<Transaction> transactionsAdded;
     private final List<Transaction> queuedTransactionsAdded;
     private final List<Transaction> pendingTransactionsAdded;
 
-    private TransactionPoolAddResult(String errorMessage, List<Transaction> transactionsAdded, List<Transaction> queuedTransactionsAdded, List<Transaction> pendingTransactionsAdded) {
+    private TransactionPoolAddResult(String errorMessage, List<Transaction> queuedTransactionsAdded, List<Transaction> pendingTransactionsAdded) {
         this.errorMessage = errorMessage;
-        this.transactionsAdded = Collections.unmodifiableList(transactionsAdded);
         this.queuedTransactionsAdded = Collections.unmodifiableList(queuedTransactionsAdded);
         this.pendingTransactionsAdded = Collections.unmodifiableList(pendingTransactionsAdded);
     }
@@ -47,27 +44,27 @@ public class TransactionPoolAddResult {
         return pendingTransactionsAdded != null && !pendingTransactionsAdded.isEmpty();
     }
 
-    public List<Transaction> getTransactionsAdded() {
-        return transactionsAdded;
-    }
-
     public String getErrorMessage() {
         return errorMessage;
     }
 
     public static TransactionPoolAddResult okQueuedTransaction(Transaction tx) {
-        return new TransactionPoolAddResult(null, Collections.emptyList(), Collections.singletonList(tx), Collections.emptyList());
+        return new TransactionPoolAddResult(null, Collections.singletonList(tx), Collections.emptyList());
     }
 
     public static TransactionPoolAddResult okPendingTransaction(Transaction tx) {
-        return new TransactionPoolAddResult(null, Collections.emptyList(), Collections.emptyList(), Collections.singletonList(tx));
+        return new TransactionPoolAddResult(null, Collections.emptyList(), Collections.singletonList(tx));
     }
 
     public static TransactionPoolAddResult withError(String errorMessage) {
-        return new TransactionPoolAddResult(errorMessage, Collections.emptyList(), Collections.emptyList(), Collections.emptyList());
+        return new TransactionPoolAddResult(errorMessage, Collections.emptyList(), Collections.emptyList());
     }
 
     public static TransactionPoolAddResult okPendingTransactions(List<Transaction> pendingTransactionsAdded) {
-        return new TransactionPoolAddResult(null, Collections.emptyList(), Collections.emptyList(), pendingTransactionsAdded);
+        return new TransactionPoolAddResult(null, Collections.emptyList(), pendingTransactionsAdded);
+    }
+
+    public List<Transaction> getPendingTransactionsAdded() {
+        return pendingTransactionsAdded;
     }
 }

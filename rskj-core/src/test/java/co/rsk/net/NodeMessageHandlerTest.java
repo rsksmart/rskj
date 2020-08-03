@@ -710,6 +710,31 @@ public class NodeMessageHandlerTest {
     }
 
     @Test
+    public void processTransactionsMessageAvoidReceivedMessageCache() throws UnknownHostException {
+        final NodeMessageHandler handler = new NodeMessageHandler(
+                config,
+                mock(BlockProcessor.class),
+                mock(SyncProcessor.class),
+                mock(ChannelManager.class),
+                mock(TransactionGateway.class),
+                createPeerScoringManager(),
+                mock(StatusResolver.class)
+        );
+
+        final SimplePeer sender = new SimplePeer();
+
+        final Transaction tx = TransactionUtils.createTransaction();
+        final TransactionsMessage message = new TransactionsMessage(Collections.singletonList(tx));
+        final Keccak256 encodedMessage = new Keccak256(HashUtil.keccak256(message.getEncodedMessage()));
+
+        handler.postMessage(sender, message);
+
+        Assert.assertFalse(handler.receivedMessageContains(encodedMessage));
+        Assert.assertTrue(handler.messageQueueContains(message));
+        Assert.assertEquals(1, handler.getMessageQueueSize());
+    }
+
+    @Test
     public void processTooMuchGasTransactionMessage() throws UnknownHostException {
         PeerScoringManager scoring = createPeerScoringManager();
         final SimpleChannelManager channelManager = new SimpleChannelManager();

@@ -51,7 +51,7 @@ public class TransactionGateway {
     public TransactionPoolAddResult receiveTransaction(Transaction transaction) {
         TransactionPoolAddResult result  = transactionPool.addTransaction(transaction);
         if(result.pendingTransactionsWereAdded()) {
-            channelManager.broadcastTransactions(result.getTransactionsAdded(), Collections.emptySet());
+            channelManager.broadcastTransactions(result.getPendingTransactionsAdded(), Collections.emptySet());
         }
         return result;
     }
