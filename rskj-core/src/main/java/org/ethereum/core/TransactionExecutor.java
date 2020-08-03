@@ -430,7 +430,8 @@ public class TransactionExecutor {
             result.spendGas(gasUsed);
             // #mish no storage rent implications here.. moving on.
             profiler.stop(metric);
-        } else {    // #mish if not pre-compiled contract
+        } else {    
+            // #mish if not pre-compiled contract
             // add the receiver's nodes to accessed nodes Map for rent tracking            
             accessedNodeAdder(tx.getReceiveAddress(), track, result);
             //System.out.println("\nAcNodeSize call " + result.getAccessedNodes().size());
@@ -502,10 +503,6 @@ public class TransactionExecutor {
     private void go() {
         // TODO: transaction call for pre-compiled  contracts
         if (vm == null) { // e.g. pure send TX or creates with no data
-            //#mish introduced spendgas for testing and consistency check (gasused + gasrefunded = gaslimit)
-            // not needed in RSKJ master as it only uses mEndGas and "does not print" Tx ex summary in finalization()
-            result.spendGas(GasCost.subtract(GasCost.toGas(tx.getGasLimit()), mEndGas)); // e.g. in case CREATE with null tx.data
-            // this is same as in master
             cacheTrack.commit();
             return;
         }

@@ -132,14 +132,33 @@ public class EthModule
         }
     }
 
-    // #mish modified to include rentgas in the estimate
+    //#mish this has been modified to return both execution + rent gas used
+    // This should NOT be used to set tx gas limit.. use safe method.
+    // reason is tx.gaslimit will be divided equally between exec and rent, and since these
+    // in general will be unequal, the TX will OOG one way or the other. 
+    // the estimateSafeGas method returns twice the value of the higher of exec and rent estimates
     public String estimateGas(Web3.CallArguments args) {
         String s = null;
         try {
             ProgramResult res = callConstant(args, blockchain.getBestBlock());
+            //#mish modified to include storage rent from program result
             return s = TypeConverter.toQuantityJsonHex(res.getGasUsed() + res.getRentGasUsed());
         } finally {
             LOGGER.debug("eth_estimateGas(): {}", s);
+        }
+    }
+
+    // #mish estimate that returns 2*max(est_execGas, est_RentGas)
+    // tx gaslimit should be set even higher (for potential OOG due to refunds, as in exactimation in eth)
+    public String estimateSafeGas(Web3.CallArguments args) {
+        String s = null;
+        try {
+            ProgramResult res = callConstant(args, blockchain.getBestBlock());
+            //#mish modified to include storage rent from program result
+            long safeGas = 2 * Math.max(res.getGasUsed(), res.getRentGasUsed());
+            return s = TypeConverter.toQuantityJsonHex(safeGas);
+        } finally {
+            LOGGER.debug("eth_estimateSafeGas(): {}", s);
         }
     }
 

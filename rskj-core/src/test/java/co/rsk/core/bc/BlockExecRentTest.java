@@ -278,7 +278,7 @@ public class BlockExecRentTest {
         // first we modify the best block to have two accounts with balance
         Repository track = repository.startTracking();
 
-        Account account = createAccount("acctest1", track, Coin.valueOf(54010));
+        Account account = createAccount("acctest1", track, Coin.valueOf(200010));
         Account account2 = createAccount("acctest2", track, Coin.valueOf(10L));
         String txData = "d46e8dd67c5d32be8d46e8dd67c5d32be8058bb8eb970870f072445675058bb8eb970870f072445675";         
         track.commit();
@@ -342,7 +342,7 @@ public class BlockExecRentTest {
         byte[] privateKeyBytes = sender.getEcKey().getPrivKeyBytes();
         //e.g. data: "0xd46e8dd67c5d32be8d46e8dd67c5d32be8058bb8eb970870f072445675058bb8eb970870f072445675"
         // this example from web search on using eth_estimategas
-        Transaction tx = new Transaction(toAddress, value, nonce, BigInteger.ONE, BigInteger.valueOf(54000), data, config.getNetworkConstants().getChainId());
+        Transaction tx = new Transaction(toAddress, value, nonce, BigInteger.ONE, BigInteger.valueOf(90000), data, config.getNetworkConstants().getChainId());
         tx.sign(privateKeyBytes);
         return tx;
     }
