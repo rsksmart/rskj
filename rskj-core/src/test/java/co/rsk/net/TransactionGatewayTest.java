@@ -77,7 +77,7 @@ public class TransactionGatewayTest {
 
     @Test
     public void receiveTransaction_newTransaction_shouldAddAndBroadcast() {
-        TransactionPoolAddResult transactionPoolAddResult = TransactionPoolAddResult.ok(tx);
+        TransactionPoolAddResult transactionPoolAddResult = TransactionPoolAddResult.okPendingTransactions(Collections.singletonList(tx));
         receiveTransactionAndVerifyCalls(transactionPoolAddResult, 1);
     }
 

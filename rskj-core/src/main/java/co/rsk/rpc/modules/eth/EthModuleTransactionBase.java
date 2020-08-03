@@ -71,8 +71,10 @@ public class EthModuleTransactionBase implements EthModuleTransaction {
                 BigInteger accountNonce = args.nonce != null ? TypeConverter.stringNumberAsBigInt(args.nonce) : transactionPool.getPendingState().getNonce(account.getAddress());
                 Transaction tx = new Transaction(toAddress, value, accountNonce, gasPrice, gasLimit, args.data, constants.getChainId());
                 tx.sign(account.getEcKey().getPrivKeyBytes());
-                transactionGateway.receiveTransaction(tx.toImmutableTransaction())
-                        .ifTransactionWasNotAdded(message -> { throw RskJsonRpcRequestException.transactionError(message); });
+                TransactionPoolAddResult result = transactionGateway.receiveTransaction(tx.toImmutableTransaction());
+                if(!result.transactionsWereAdded()) {
+                    throw RskJsonRpcRequestException.transactionError(result.getErrorMessage());
+                };
 
                 s = tx.getHash().toJsonString();
             }
@@ -96,8 +98,10 @@ public class EthModuleTransactionBase implements EthModuleTransaction {
                 throw invalidParamError("Missing parameter, gasPrice, gas or value");
             }
 
-            transactionGateway.receiveTransaction(tx)
-                    .ifTransactionWasNotAdded(message -> { throw RskJsonRpcRequestException.transactionError(message); });
+            TransactionPoolAddResult result = transactionGateway.receiveTransaction(tx);
+            if(!result.transactionsWereAdded()) {
+                throw RskJsonRpcRequestException.transactionError(result.getErrorMessage());
+            }
 
             return s = tx.getHash().toJsonString();
         } finally {

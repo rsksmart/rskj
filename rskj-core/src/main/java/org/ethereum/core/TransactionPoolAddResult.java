@@ -25,34 +25,49 @@ import java.util.function.Consumer;
 public class TransactionPoolAddResult {
     private final String errorMessage;
     private final List<Transaction> transactionsAdded;
+    private final List<Transaction> queuedTransactionsAdded;
+    private final List<Transaction> pendingTransactionsAdded;
 
-    private TransactionPoolAddResult(String errorMessage, List<Transaction> transactionsAdded) {
+    private TransactionPoolAddResult(String errorMessage, List<Transaction> transactionsAdded, List<Transaction> queuedTransactionsAdded, List<Transaction> pendingTransactionsAdded) {
         this.errorMessage = errorMessage;
         this.transactionsAdded = Collections.unmodifiableList(transactionsAdded);
+        this.queuedTransactionsAdded = Collections.unmodifiableList(queuedTransactionsAdded);
+        this.pendingTransactionsAdded = Collections.unmodifiableList(pendingTransactionsAdded);
     }
 
     public boolean transactionsWereAdded() {
-        return transactionsAdded != null && !transactionsAdded.isEmpty();
+        return pendingTransactionsWereAdded() || queuedTransactionsWereAdded();
     }
 
-    /**
-     * This is mainly used to throw exceptions on the RPC avoiding the use of getters
-     */
-    public void ifTransactionWasNotAdded(Consumer<String> errorConsumer) {
-        if (!transactionsWereAdded()) {
-            errorConsumer.accept(errorMessage);
-        }
+    private boolean queuedTransactionsWereAdded() {
+        return queuedTransactionsAdded != null && !queuedTransactionsAdded.isEmpty();
     }
 
-    public static TransactionPoolAddResult ok(Transaction transaction) {
-        return new TransactionPoolAddResult(null, Collections.singletonList(transaction));
-    }
-
-    public static TransactionPoolAddResult withError(String errorMessage) {
-        return new TransactionPoolAddResult(errorMessage, Collections.emptyList());
+    public boolean pendingTransactionsWereAdded() {
+        return pendingTransactionsAdded != null && !pendingTransactionsAdded.isEmpty();
     }
 
     public List<Transaction> getTransactionsAdded() {
         return transactionsAdded;
+    }
+
+    public String getErrorMessage() {
+        return errorMessage;
+    }
+
+    public static TransactionPoolAddResult okQueuedTransaction(Transaction tx) {
+        return new TransactionPoolAddResult(null, Collections.emptyList(), Collections.singletonList(tx), Collections.emptyList());
+    }
+
+    public static TransactionPoolAddResult okPendingTransaction(Transaction tx) {
+        return new TransactionPoolAddResult(null, Collections.emptyList(), Collections.emptyList(), Collections.singletonList(tx));
+    }
+
+    public static TransactionPoolAddResult withError(String errorMessage) {
+        return new TransactionPoolAddResult(errorMessage, Collections.emptyList(), Collections.emptyList(), Collections.emptyList());
+    }
+
+    public static TransactionPoolAddResult okPendingTransactions(List<Transaction> pendingTransactionsAdded) {
+        return new TransactionPoolAddResult(null, Collections.emptyList(), Collections.emptyList(), pendingTransactionsAdded);
     }
 }

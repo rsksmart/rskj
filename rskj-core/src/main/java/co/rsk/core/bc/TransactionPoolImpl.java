@@ -159,23 +159,23 @@ public class TransactionPoolImpl implements TransactionPool {
     }
 
     private List<Transaction> addSuccessors(Transaction tx) {
-        List<Transaction> added = new ArrayList<>();
+        List<Transaction> pendingTransactionsToBeAdded = new ArrayList<>();
         Optional<Transaction> successor = this.getQueuedSuccessor(tx);
 
         while (successor.isPresent()) {
             Transaction found = successor.get();
             queuedTransactions.removeTransactionByHash(found.getHash());
 
-            if (!this.internalAddTransaction(found).transactionsWereAdded()) {
+            if (!this.internalAddTransaction(found).pendingTransactionsWereAdded()) {
                 break;
             }
 
-            added.add(found);
+            pendingTransactionsToBeAdded.add(found);
 
             successor = this.getQueuedSuccessor(found);
         }
 
-        return added;
+        return pendingTransactionsToBeAdded;
     }
 
     private void emitEvents(List<Transaction> addedPendingTransactions) {
@@ -189,20 +189,20 @@ public class TransactionPoolImpl implements TransactionPool {
 
     @Override
     public synchronized List<Transaction> addTransactions(final List<Transaction> txs) {
-        List<Transaction> added = new ArrayList<>();
+        List<Transaction> pendingTransactionsAdded = new ArrayList<>();
 
         for (Transaction tx : txs) {
             TransactionPoolAddResult result = this.internalAddTransaction(tx);
 
-            if (result.transactionsWereAdded()) {
-                added.add(tx);
-                added.addAll(this.addSuccessors(tx));
+            if (result.pendingTransactionsWereAdded()) {
+                pendingTransactionsAdded.add(tx);
+                pendingTransactionsAdded.addAll(this.addSuccessors(tx));
             }
         }
 
-        this.emitEvents(added);
+        this.emitEvents(pendingTransactionsAdded);
 
-        return added;
+        return pendingTransactionsAdded;
     }
 
     private Optional<Transaction> getQueuedSuccessor(Transaction tx) {
@@ -254,7 +254,7 @@ public class TransactionPoolImpl implements TransactionPool {
         if (txNonce.compareTo(currentNonce) > 0) {
             this.addQueuedTransaction(tx);
             signatureCache.storeSender(tx);
-            return TransactionPoolAddResult.ok(tx);
+            return TransactionPoolAddResult.okQueuedTransaction(tx);
         }
 
         if (!senderCanPayPendingTransactionsAndNewTx(tx, currentRepository)) {
@@ -265,7 +265,7 @@ public class TransactionPoolImpl implements TransactionPool {
         pendingTransactions.addTransaction(tx);
         signatureCache.storeSender(tx);
 
-        return TransactionPoolAddResult.ok(tx);
+        return TransactionPoolAddResult.okPendingTransaction(tx);
     }
 
     @Override
