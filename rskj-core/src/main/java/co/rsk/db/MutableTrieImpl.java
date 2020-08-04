@@ -29,10 +29,7 @@ import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.db.TrieKeyMapper;
 import org.ethereum.vm.DataWord;
 
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.NoSuchElementException;
-import java.util.Set;
+import java.util.*;
 
 public class MutableTrieImpl implements MutableTrie {
 
@@ -87,12 +84,12 @@ public class MutableTrieImpl implements MutableTrie {
     }
 
     @Override
-    public Keccak256 getValueHash(byte[] key) {
+    public Optional<Keccak256> getValueHash(byte[] key) {
         Trie atrie = trie.find(key);
         if (atrie == null) {
-            return null;
+            return Optional.empty();
         }
-        return atrie.getValueHash();
+        return Optional.of(atrie.getValueHash());
     }
 
     @Override

@@ -26,6 +26,7 @@ import org.ethereum.vm.DataWord;
 
 import javax.annotation.Nullable;
 import java.util.Iterator;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -66,7 +67,7 @@ public interface MutableTrie {
 
     // This is for optimizing EXTCODEHASH. It returns the hash of the value
     // without the need to retrieve the value itself.
-    Keccak256 getValueHash(byte[] key);
+    Optional<Keccak256> getValueHash(byte[] key);
 
     // the key has to match exactly an account key
     // it won't work if it is used with an storage key or any other

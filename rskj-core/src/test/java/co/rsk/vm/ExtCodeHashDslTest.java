@@ -1,6 +1,6 @@
 /*
  * This file is part of RskJ
- * Copyright (C) 2018 RSK Labs Ltd.
+ * Copyright (C) 2020 RSK Labs Ltd.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -35,7 +35,7 @@ import java.io.FileNotFoundException;
 import java.util.Iterator;
 
 /**
- * Created by ajlopez on 15/04/2020.
+ * Created by Nicolás Perez Santoro on 4/08/2020.
  */
 public class ExtCodeHashDslTest {
 

@@ -170,15 +170,12 @@ public class MutableRepository implements Repository {
         }
 
         byte[] key = trieKeyMapper.getCodeKey(addr);
-        Keccak256 valueHash = mutableTrie.getValueHash(key);
+        Optional<Keccak256> valueHash = mutableTrie.getValueHash(key);
 
-        if (valueHash == null) {
-            //This is the non standard implementation we had pre RSKIP169 implementation
-            //and thus me must honor it.
-            return Keccak256.ZERO_HASH;
-        }
-
-        return valueHash;    }
+        //Returning ZERO_HASH is the non standard implementation we had pre RSKIP169 implementation
+        //and thus me must honor it.
+        return valueHash.orElse(Keccak256.ZERO_HASH);
+    }
 
     @Override
     public synchronized Keccak256 getCodeHashStandard(RskAddress addr) {
@@ -192,13 +189,8 @@ public class MutableRepository implements Repository {
         }
 
         byte[] key = trieKeyMapper.getCodeKey(addr);
-        Keccak256 valueHash = mutableTrie.getValueHash(key);
 
-        if (valueHash == null) {
-            return KECCAK_256_OF_EMPTY_ARRAY;
-        }
-
-        return valueHash;
+        return mutableTrie.getValueHash(key).orElse(KECCAK_256_OF_EMPTY_ARRAY);
     }
 
     @Override

@@ -437,7 +437,7 @@ public class MutableTrieCacheTest {
     }
 
     private void getValueHashAndAssert(MutableTrie trie, byte[] key, Keccak256 expectedHash) {
-        Keccak256 hash = trie.getValueHash(key);
-        assertEquals(expectedHash, hash);
+        Optional<Keccak256> hash = trie.getValueHash(key);
+        assertEquals(expectedHash, hash.orElse(null));
     }
 }
