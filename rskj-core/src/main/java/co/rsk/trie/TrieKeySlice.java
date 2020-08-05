@@ -69,7 +69,6 @@ public class TrieKeySlice {
         return new TrieKeySlice(expandedKey, newOffset, newLimit);
     }
 
-    // common path (if any) between node and an'other' node
     public TrieKeySlice commonPath(TrieKeySlice other) {
         int maxCommonLengthPossible = Math.min(length(), other.length());
         for (int i = 0; i < maxCommonLengthPossible; i++) {

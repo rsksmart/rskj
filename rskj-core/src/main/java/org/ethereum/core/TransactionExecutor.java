@@ -800,13 +800,13 @@ public class TransactionExecutor {
         return this.estRentGas;
     }
 
-    /* #mish Add nodes accessed by or created in a transaction to the maps
-    * "accessedNodes" or "createdNodes" in programResult. 
+    /* #mish Add nodes accessed/modified by or created in a transaction to
+    * "accessedNodes" or "createdNodes"  (caches/hashmaps in program result) 
      * Methods compute outstanding rent due for exsiting nodes and 6 months advance for new nodes.
      * node info obtained for each provided RSK addr via methods defined in mutableRepository
-     * The method retreives nodes containing account state and for contracts: code and storage root. 
+     * The method retrieves nodes containing account state and, for contracts also code and storage root. 
      * This should be called the first time any RSK addr is referenced in a TX or a child process
-     * Storage nodes accessed via SLOAD or SSTORE are not included.
+     * Storage nodes accessed via SLOAD or SSTORE are not included (see Program.java for those methods).
     */
     public void accessedNodeAdder(RskAddress addr, Repository repository, ProgramResult progRes){
         if (isRemascTx){

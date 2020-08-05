@@ -33,13 +33,6 @@ import java.util.Map;
  *
  * It uses internally a map cache of address->key (1:1, due to the immutability of the RskAddress object)
  */
-
-/* @mish maps RSKaddr to triekeys byte[] and helper methods getCodeKey, or getStorageKey
-  * keys in the Unitrie are prefix secured (10 bytes long, longer for remasc account). 
-  * The prefix is the first 10 bytes from the SHA3(rskaddr). The key is : Domain prefix + secure_prefix + RSKaddr + prefixes for storage or code.
-  * This going from key to addr is trivial.  
-*/
-
 public class TrieKeyMapper {
 
     public static final int SECURE_KEY_SIZE = 10;

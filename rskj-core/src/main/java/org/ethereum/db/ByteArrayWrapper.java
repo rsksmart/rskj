@@ -30,12 +30,7 @@ import java.util.Arrays;
 /**
  * @author Roman Mandeleil
  * @since 11.06.2014
-
- * #mish: this class uses java.util.Arrays.hashCode() and eth.util 
- * to provide methods for fast LEXICOGRAPHIC comparison of bytearrays/bytebuffers with offsets.
- * This is useful e.g. comparison of keys
  */
-
 public class ByteArrayWrapper implements Comparable<ByteArrayWrapper>, Serializable {
 
     private final byte[] data;
@@ -62,12 +57,6 @@ public class ByteArrayWrapper implements Comparable<ByteArrayWrapper>, Serializa
         return hashCode;
     }
 
-    /*#mish: given two byte buffers.. with initial offsets and lengths to read..
-    * returns the difference between the first unequal bytes,
-    * or if all initial bytes are the same, and we hit the end of the shorter buffer,
-    * then return the difference in lengths
-    * a positive result implies "this" is lexicographically larger than "o"
-    */
     @Override
     public int compareTo(ByteArrayWrapper o) {
         return FastByteComparisons.compareTo(

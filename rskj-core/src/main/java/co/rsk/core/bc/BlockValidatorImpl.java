@@ -29,14 +29,6 @@ import org.ethereum.db.BlockStore;
  *
  * Created by ajlopez on 29/07/2016.
  */
-
-/** #mish Storage rent notes: TX and receipt trie root validation impact arising from
- *  Changes to Trie (new `lastRentPaidTime` field + encoding `toMessage`/`from Message()`)
- *  Changes to gasUsed in TX receipt (see TransactionExecutor). Cumulative gas used is still execution Gas only 
-        // however gasUsed in the receipt represents both execution as well as rent gas used. 
-        // to separate them, we can use difference in cumulativeGas of successive TXs (except the first one).
-*/
-
 public class BlockValidatorImpl implements BlockValidator {
 
     private BlockStore blockStore;
