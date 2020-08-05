@@ -67,7 +67,7 @@ public class EthModuleTransactionBase implements EthModuleTransaction {
                 args.data = args.data.substring(2);
             }
 
-            synchronized (transactionGateway) {
+            synchronized (transactionPool) {
                 BigInteger accountNonce = args.nonce != null ? TypeConverter.stringNumberAsBigInt(args.nonce) : transactionPool.getPendingState().getNonce(account.getAddress());
                 Transaction tx = new Transaction(toAddress, value, accountNonce, gasPrice, gasLimit, args.data, constants.getChainId());
                 tx.sign(account.getEcKey().getPrivKeyBytes());

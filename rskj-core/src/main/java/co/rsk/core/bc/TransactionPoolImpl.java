@@ -159,7 +159,7 @@ public class TransactionPoolImpl implements TransactionPool {
     }
 
     private List<Transaction> addSuccessors(Transaction tx) {
-        List<Transaction> pendingTransactionsToBeAdded = new ArrayList<>();
+        List<Transaction> pendingTransactionsAdded = new ArrayList<>();
         Optional<Transaction> successor = this.getQueuedSuccessor(tx);
 
         while (successor.isPresent()) {
@@ -170,12 +170,12 @@ public class TransactionPoolImpl implements TransactionPool {
                 break;
             }
 
-            pendingTransactionsToBeAdded.add(found);
+            pendingTransactionsAdded.add(found);
 
             successor = this.getQueuedSuccessor(found);
         }
 
-        return pendingTransactionsToBeAdded;
+        return pendingTransactionsAdded;
     }
 
     private void emitEvents(List<Transaction> addedPendingTransactions) {
@@ -270,20 +270,19 @@ public class TransactionPoolImpl implements TransactionPool {
 
     @Override
     public synchronized TransactionPoolAddResult addTransaction(final Transaction tx) {
-        TransactionPoolAddResult result = this.internalAddTransaction(tx);
+        TransactionPoolAddResult internalResult = this.internalAddTransaction(tx);
+        List<Transaction> pendingTransactionsAdded = new ArrayList<>();
 
-        if (!result.transactionsWereAdded()) {
-            return result;
+        if (!internalResult.transactionsWereAdded()) {
+            return internalResult;
+        } else if(internalResult.pendingTransactionsWereAdded()) {
+            pendingTransactionsAdded.add(tx);
+            pendingTransactionsAdded.addAll(this.addSuccessors(tx)); // addSuccessors only retrieves pending successors
         }
 
-        List<Transaction> added = new ArrayList<>();
+        this.emitEvents(pendingTransactionsAdded);
 
-        added.add(tx);
-        added.addAll(this.addSuccessors(tx));
-
-        this.emitEvents(added);
-
-        return result;
+        return TransactionPoolAddResult.ok(internalResult.getQueuedTransactionsAdded(), pendingTransactionsAdded);
     }
 
     private boolean isBumpingGasPriceForSameNonceTx(Transaction tx) {

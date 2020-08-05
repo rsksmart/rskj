@@ -41,6 +41,9 @@ public class TransactionGateway {
         this.transactionPool = Objects.requireNonNull(transactionPool);
     }
 
+    /**
+     * Receives transactions from other node
+     */
     public void receiveTransactionsFrom(@Nonnull List<Transaction> txs, @Nonnull Set<NodeID> nodeIDS) {
         List<Transaction> result  = transactionPool.addTransactions(txs);
         if(!result.isEmpty()) {
@@ -48,6 +51,9 @@ public class TransactionGateway {
         }
     }
 
+    /**
+    * Receives transaction via JSON RPC
+    */
     public TransactionPoolAddResult receiveTransaction(Transaction transaction) {
         TransactionPoolAddResult result  = transactionPool.addTransaction(transaction);
         if(result.pendingTransactionsWereAdded()) {

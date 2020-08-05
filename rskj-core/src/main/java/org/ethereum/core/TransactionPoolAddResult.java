@@ -18,6 +18,8 @@
 
 package org.ethereum.core;
 
+import com.google.common.annotations.VisibleForTesting;
+
 import java.util.Collections;
 import java.util.List;
 
@@ -32,11 +34,16 @@ public class TransactionPoolAddResult {
         this.pendingTransactionsAdded = Collections.unmodifiableList(pendingTransactionsAdded);
     }
 
+    public static TransactionPoolAddResult ok(List<Transaction> queuedTransactionsAdded, List<Transaction> pendingTransactionsAdded) {
+        return new TransactionPoolAddResult(null, queuedTransactionsAdded, pendingTransactionsAdded);
+    }
+
     public boolean transactionsWereAdded() {
         return pendingTransactionsWereAdded() || queuedTransactionsWereAdded();
     }
 
-    private boolean queuedTransactionsWereAdded() {
+    @VisibleForTesting
+    public boolean queuedTransactionsWereAdded() {
         return queuedTransactionsAdded != null && !queuedTransactionsAdded.isEmpty();
     }
 
@@ -66,5 +73,9 @@ public class TransactionPoolAddResult {
 
     public List<Transaction> getPendingTransactionsAdded() {
         return pendingTransactionsAdded;
+    }
+
+    public List<Transaction> getQueuedTransactionsAdded() {
+        return queuedTransactionsAdded;
     }
 }
