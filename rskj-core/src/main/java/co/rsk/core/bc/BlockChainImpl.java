@@ -144,6 +144,9 @@ public class BlockChainImpl implements Blockchain {
             }
 
             try {
+                org.slf4j.MDC.put("blockHash", block.getHash().toHexString());
+                org.slf4j.MDC.put("blockHeight", Long.toString(block.getNumber()));
+
                 logger.trace("Try connect block hash: {}, number: {}",
                              block.getShortHash(),
                              block.getNumber());
@@ -160,10 +163,16 @@ public class BlockChainImpl implements Blockchain {
                 logger.error("Unexpected error: ", t);
                 return ImportResult.INVALID_BLOCK;
             }
+            finally {
+                org.slf4j.MDC.remove("blockHash");
+                org.slf4j.MDC.remove("blockHeight");
+
+            }
         }
         finally {
             this.lock.readLock().unlock();
         }
+
     }
 
     private ImportResult internalTryToConnect(Block block) {
@@ -457,8 +466,11 @@ public class BlockChainImpl implements Blockchain {
     }
 
     private void processBest(final Block block) {
+        logger.debug("Starting to run transactionPool.processBest(block)");
         // this has to happen in the same thread so the TransactionPool is immediately aware of the new best block
         transactionPool.processBest(block);
+        logger.debug("Finished running transactionPool.processBest(block)");
+
     }
 
     private void onBlock(Block block, BlockResult result) {

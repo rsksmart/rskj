@@ -77,7 +77,7 @@ public class MinerClientImpl implements MinerClient {
     }
 
     public Thread createDoWorkThread() {
-        return new Thread() {
+        return new Thread("miner client") {
             @Override
             public void run() {
                 isMining = true;
