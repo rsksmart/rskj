@@ -24,12 +24,10 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.net.messages.*;
 import co.rsk.scoring.EventType;
 import co.rsk.scoring.PeerScoringManager;
-import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.net.server.ChannelManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.time.Duration;
@@ -119,7 +117,7 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
     private void tryAddMessage(Peer sender, Message message) {
         Keccak256 encodedMessage = new Keccak256(HashUtil.keccak256(message.getEncoded()));
         if (!receivedMessages.contains(encodedMessage)) {
-            if (message.getMessageType() == MessageType.BLOCK_MESSAGE) {
+            if (message.getMessageType() == MessageType.BLOCK_MESSAGE || message.getMessageType() == MessageType.TRANSACTIONS) {
                 if (this.receivedMessages.size() >= MAX_NUMBER_OF_MESSAGES_CACHED) {
                     this.receivedMessages.clear();
                 }
@@ -128,7 +126,8 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
 
             double score = sender.score(System.currentTimeMillis(), message.getMessageType());
 
-            if (score >= 0 && !this.queue.offer(new MessageTask(sender, message, score))) {
+            boolean notAdded = !this.queue.offer(new MessageTask(sender, message, score));
+            if (score >= 0 && notAdded) {
                 logger.warn("Unexpected path. Is message queue bounded now?");
             }
         } else {
@@ -215,16 +214,6 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
         }
 
         this.peerScoringManager.recordEvent(sender.getPeerNodeID(), sender.getAddress(), event);
-    }
-
-    @VisibleForTesting
-    public boolean receivedMessageContains(Keccak256 encodedMessage) {
-        return this.receivedMessages.contains(encodedMessage);
-    }
-
-    @VisibleForTesting
-    public boolean messageQueueContains(TransactionsMessage message) {
-        return this.queue.stream().map(messageTask -> messageTask.message).anyMatch(m -> m.equals(message));
     }
 
     private static class MessageTask  {
