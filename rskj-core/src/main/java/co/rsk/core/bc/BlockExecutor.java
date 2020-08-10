@@ -331,15 +331,16 @@ public class BlockExecutor {
 
             deletedAccounts.addAll(txExecutor.getResult().getDeleteAccounts());
 
-            // #mish this is creating a new receipt, instead of using getReceipt() method of TX executor 
-            // Why?
+            // #mish: why is this creating a new receipt, instead of using getReceipt() method of TX executor? 
             TransactionReceipt receipt = new TransactionReceipt();
+            
             // #mish report both exec and rent gas (recall TX gaslimit "field" combines both,
-            // even though methods "tx.getGasLimit" and "txgetRentGasLimit" are distinct.
+            // but "tx.getGasLimit()" and "tx.getRentGasLimit()" are used to split that single budget.
             receipt.setGasUsed(execGasUsed + rentGasUsed);
             receipt.setCumulativeGas(totalGasUsed);
             receipt.setExecGasUsed(execGasUsed); // added for consistency with TX executor
             receipt.setRentGasUsed(rentGasUsed); //added for consistency with TX execeutor getReceipt()
+            
             receipt.setTxStatus(txExecutor.getReceipt().isSuccessful());
             receipt.setTransaction(tx);
             receipt.setLogInfoList(txExecutor.getVMLogs());

@@ -1072,10 +1072,10 @@ public class Program {
         
         //#mish for storage rent, only the previous value matters
         if(getStorage().getStorageValue(getOwnerRskAddress(), keyWord)==null){
-            //System.out.println("\n\n\nSSTORE SET\n");
+            //System.out.println("\n\n\nIn program SSTORE SET\n");
             createdStorageNodeAdder(getOwnerRskAddress(), keyWord);
         } else {
-            //System.out.println("\n\n\nSSTORE RESET\n");
+            //System.out.println("\n\n\nIn program SSTORE RESET\n");
             accessedStorageNodeAdder(getOwnerRskAddress(), keyWord);
         }
         // and now the actual SSTORE op
@@ -1867,7 +1867,7 @@ public class Program {
         Repository repository = getStorage();
         long rd = 0; // initalize rent due to 0
         //make sure the cell exists
-        if (repository.getStorageValue(addr, key).getData()==null){
+        if (repository.getStorageValue(addr, key)==null){
             rd = GasCost.calculateStorageRent(new Uint24(0), GasCost.SIX_MONTHS);
             spendRentGas(rd, "IO penalty for non-existent storage cell lookup");
             return; // do not add to list of nodes to update in trie

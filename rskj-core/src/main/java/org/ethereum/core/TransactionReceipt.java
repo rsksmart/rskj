@@ -57,7 +57,7 @@ public class TransactionReceipt {
     // #mish Note: gasLimit field in Transaction.java represents the combined limits for execution and rent gas.
     // likewise, the gasUsed field here includes both execution and rent gas used.
     private byte[] gasUsed = EMPTY_BYTE_ARRAY;
-    // To help with testing (encoding, root hashes) and enable separation in future dinstinguish execution and rent gas
+    // To help with testing (encoding, root hashes) and enable separation in future distinguish b/w execution and rent gas
     private byte[] execGasUsed = EMPTY_BYTE_ARRAY;
     private byte[] rentGasUsed = EMPTY_BYTE_ARRAY;
 
@@ -107,11 +107,12 @@ public class TransactionReceipt {
                               Bloom bloomFilter, List<LogInfo> logInfoList, byte[] status) {
         this.postTxState = postTxState;
         this.cumulativeGas = cumulativeGas;
-        this.gasUsed = gasUsed; //exec only!
+        this.gasUsed = gasUsed; //#mish exec only! In case some legacy code uses this (without storage rent)
+        this.execGasUsed = gasUsed; //exe
+        this.rentGasUsed = new byte[]{0};; //rent is 0 #mish todo: is this needed?
         this.bloomFilter = bloomFilter;
         this.logInfoList = logInfoList;
-        if (Arrays.equals(status, FAILED_STATUS) || Arrays.equals(status, SUCCESS_STATUS) ||
-                Arrays.equals(status, MANUAL_REVERT_RSKIP113_STATUS) || Arrays.equals(status, RENT_OOG_RSKIP113_STATUS)) {
+        if (Arrays.equals(status, FAILED_STATUS) || Arrays.equals(status, SUCCESS_STATUS)) {
             this.status = status;
         }
     }
@@ -218,17 +219,17 @@ public class TransactionReceipt {
         return rlpEncoded;
     }
 
-    // #mish todo: RSKIP113 going back to single gas field, is this change still needed?
+    // #mish todo: RSKIP113 going back to single gas field in TX. Are these other status levels needed (compat with wallets)?
     public void setStatus(byte[] status) {
         if (Arrays.equals(status, FAILED_STATUS)){
             this.status = FAILED_STATUS;
         } else if (Arrays.equals(status, SUCCESS_STATUS)){
             this.status = SUCCESS_STATUS;
-        } else if (Arrays.equals(status, MANUAL_REVERT_RSKIP113_STATUS)){
+        }/* else if (Arrays.equals(status, MANUAL_REVERT_RSKIP113_STATUS)){
             this.status = MANUAL_REVERT_RSKIP113_STATUS;
         } else if (Arrays.equals(status, RENT_OOG_RSKIP113_STATUS)){
             this.status = RENT_OOG_RSKIP113_STATUS;
-        }
+        }*/
     }
 
     public boolean isSuccessful() {
@@ -236,7 +237,7 @@ public class TransactionReceipt {
     }
 
     public void setTxStatus(boolean success) {
-        this.postTxState = success ? new byte[]{1} : new byte[0];
+        this.postTxState = success ? new byte[]{1} : new byte[0]; //mish, recall failure is empty byte array 
         rlpEncoded = null;
     }
 
@@ -277,11 +278,6 @@ public class TransactionReceipt {
     public void setGasUsed(byte[] gasUsed) {
         this.gasUsed = gasUsed;
     }
-
-    /*
-    public void setRentGasUsed(byte[] rentGasUsed) {
-        this.rentGasUsed = rentGasUsed;
-    }*/
 
     public void setLogInfoList(List<LogInfo> logInfoList) {
         if (logInfoList == null) {

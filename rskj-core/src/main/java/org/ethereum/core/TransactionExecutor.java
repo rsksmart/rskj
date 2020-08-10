@@ -522,7 +522,7 @@ public class TransactionExecutor {
 
             // local variable `this.result` contains information about accessed nodes but gas/rentGas accounting is stored in program.getResult()
             // to preserve information from both, first merge result into programresult (which contains gas computations).
-            if (!program.getResult().isRevert()) {
+            if (!program.getResult().isRevert() && result.getException() == null) {
                 program.getResult().merge(this.result); // writing result as this.result for clarity
             }
 
@@ -550,6 +550,7 @@ public class TransactionExecutor {
             mEndGas = 0;
             mEndRentGas = 0; // #mish todo should this be 0 or 75%?
             execError(e);
+            //System.out.println("\nExecutionerror in go() (vm/program)\n" + e); //mish for testing
             profiler.stop(metric);
             return;
         }
@@ -591,20 +592,25 @@ public class TransactionExecutor {
             cacheTrack.saveCode(tx.getContractAddress(), result.getHReturn());
         }
     }
-    // #mish todo: setStatus needs to be modified to reflect Manual revert, or rentgas OOG as per RSKIP113
-    // Note 1: Difference in cumulative gas b/w successive TXs can be used as execGasUsed (by nodes) for block validation 
-    // and also to infer rentGasUsed (by Wallets)  
+    // #mish todo: setStatus needs to be modified to reflect Manual revert, or rentgas OOG as per RSKIP113  
     public TransactionReceipt getReceipt() {
         if (receipt == null) {
             receipt = new TransactionReceipt();
-            long totalGasUsed = GasCost.add(gasUsedInTheBlock, getGasUsed()); //execution gas only
+            long totalGasUsed = GasCost.add(gasUsedInTheBlock, result.getGasUsed()); //execution gas only
             receipt.setCumulativeGas(totalGasUsed);
             receipt.setTransaction(tx);
             receipt.setLogInfoList(getVMLogs());
-            receipt.setGasUsed(getGasUsed() + getRentGasUsed()); //#mish combined gas usage (exec + rent) (cos Wallets)
-            receipt.setExecGasUsed(getGasUsed()); // needed for testing
-            receipt.setRentGasUsed(getRentGasUsed()); //for testing
-            receipt.setStatus(executionError.isEmpty()?TransactionReceipt.SUCCESS_STATUS:TransactionReceipt.FAILED_STATUS); // #mish todo: RSKIP113
+            receipt.setGasUsed(result.getGasUsed() + result.getRentGasUsed()); //#mish combined gas usage (exec + rent) (cos Wallets)
+            //#mish todo modified to help isolate errors
+            receipt.setStatus(executionError.isEmpty() ? TransactionReceipt.SUCCESS_STATUS : TransactionReceipt.FAILED_STATUS ); // #mish todo: RSKIP113
+            /*if (executionError == null || !executionError.isEmpty()){ //null if there is a program or vm error without string error msg
+                receipt.setStatus(TransactionReceipt.FAILED_STATUS );
+            } else{
+                receipt.setStatus(TransactionReceipt.SUCCESS_STATUS);    
+            }*/
+            //#mish added for testing
+            receipt.setExecGasUsed(result.getGasUsed()); // for testing
+            receipt.setRentGasUsed(result.getRentGasUsed()); //for testing            
         }
         return receipt;
     }
@@ -689,7 +695,7 @@ public class TransactionExecutor {
         this.paidFees = summaryFee;
 
         //#mish for testing
-        System.out.println( "\nTX finalization " + 
+        /*System.out.println( "\nTX finalization " + 
                             "(is Remasc TX: " + isRemascTx + ")"  +
                             "\n\nExec GasLimit " + GasCost.toGas(tx.getGasLimit()) +
                             "\nExec gas used " + result.getGasUsed() +
@@ -700,7 +706,8 @@ public class TransactionExecutor {
                             "\n\nTx fees (exec + rent): " + paidFees +
                             "\n\nNo. trie nodes with `updated` rent timestamp: " +  result.getAccessedNodes().size() +
                             "\nNo. new trie nodes created (6 months rent): " +  result.getCreatedNodes().size() + "\n"
-                            );
+                            );*/
+        //System.out.println("\n\n" + tx); //#mish for testing                   
 
         logger.trace("Processing result");
         logs = notRejectedLogInfos;
@@ -774,7 +781,7 @@ public class TransactionExecutor {
         return result;
     }
 
-    // #mish: execution has only. ProgramResult.getGasUsed() is used more than this (this one used only in receipt?).
+    // #mish: execution gas only. ProgramResult.getGasUsed() is used more than this (this one used only in receipt?).
     public long getGasUsed() {
         if (activations.isActive(ConsensusRule.RSKIP136)) {
             return GasCost.subtract(GasCost.toGas(tx.getGasLimit()), mEndGas); //recall getGasLimit() is exec only!
