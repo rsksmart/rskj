@@ -46,7 +46,7 @@ public class TraceTransformerTest {
                 null, null, null, null, null, null,
                 null, null, 0, null, false, false);
 
-        TraceAction action = TraceTransformer.toAction(TraceType.CALL, invoke, CallType.CALL, null, null);
+        TraceAction action = TraceTransformer.toAction(TraceType.CALL, invoke, CallType.CALL, null, null, null);
 
         Assert.assertNotNull(action);
 
@@ -79,7 +79,7 @@ public class TraceTransformerTest {
                 null, null, null, null, null, null,
                 null, null, 0, null, false, false);
 
-        TraceAction action = TraceTransformer.toAction(TraceType.CREATE, invoke, CallType.NONE, data, null);
+        TraceAction action = TraceTransformer.toAction(TraceType.CREATE, invoke, CallType.NONE, data, null, null);
 
         Assert.assertNotNull(action);
 
@@ -113,7 +113,7 @@ public class TraceTransformerTest {
                 null, null, null, null, null, null,
                 null, null, 0, null, false, false);
 
-        TraceAction action = TraceTransformer.toAction(TraceType.CREATE, invoke, CallType.NONE, data, "create2");
+        TraceAction action = TraceTransformer.toAction(TraceType.CREATE, invoke, CallType.NONE, data, "create2", null);
 
         Assert.assertNotNull(action);
 

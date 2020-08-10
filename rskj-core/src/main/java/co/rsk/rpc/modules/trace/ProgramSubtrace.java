@@ -19,6 +19,7 @@
 
 package co.rsk.rpc.modules.trace;
 
+import org.ethereum.vm.DataWord;
 import org.ethereum.vm.program.ProgramResult;
 import org.ethereum.vm.program.invoke.InvokeData;
 
@@ -32,27 +33,29 @@ public class ProgramSubtrace {
     private final String creationMethod;
     private final InvokeData invokeData;
     private final ProgramResult programResult;
+    private final DataWord codeAddress;
     private final List<ProgramSubtrace> subtraces;
 
     public static ProgramSubtrace newSuicideSubtrace(InvokeData invokeData) {
-        return new ProgramSubtrace(TraceType.SUICIDE, CallType.NONE, null, null, invokeData, null, Collections.emptyList());
+        return new ProgramSubtrace(TraceType.SUICIDE, CallType.NONE, null, null, invokeData, null, null, Collections.emptyList());
     }
 
     public static ProgramSubtrace newCreateSubtrace(CreationData creationData, InvokeData invokeData, ProgramResult programResult, List<ProgramSubtrace> subtraces, boolean isCreate2) {
-        return new ProgramSubtrace(TraceType.CREATE, CallType.NONE, creationData, isCreate2 ? "create2" : null, invokeData, programResult, subtraces);
+        return new ProgramSubtrace(TraceType.CREATE, CallType.NONE, creationData, isCreate2 ? "create2" : null, invokeData, programResult, null, subtraces);
     }
 
-    public static ProgramSubtrace newCallSubtrace(CallType callType, InvokeData invokeData, ProgramResult programResult, List<ProgramSubtrace> subtraces) {
-        return new ProgramSubtrace(TraceType.CALL, callType, null, null, invokeData, programResult, subtraces);
+    public static ProgramSubtrace newCallSubtrace(CallType callType, InvokeData invokeData, ProgramResult programResult, DataWord codeAddress, List<ProgramSubtrace> subtraces) {
+        return new ProgramSubtrace(TraceType.CALL, callType, null, null, invokeData, programResult, codeAddress, subtraces);
     }
 
-    private ProgramSubtrace(TraceType traceType, CallType callType, CreationData creationData, String creationMethod, InvokeData invokeData, ProgramResult programResult, List<ProgramSubtrace> subtraces) {
+    private ProgramSubtrace(TraceType traceType, CallType callType, CreationData creationData, String creationMethod, InvokeData invokeData, ProgramResult programResult, DataWord codeAddress, List<ProgramSubtrace> subtraces) {
         this.traceType = traceType;
         this.callType = callType;
         this.creationData = creationData;
         this.creationMethod = creationMethod;
         this.invokeData = invokeData;
         this.programResult = programResult;
+        this.codeAddress = codeAddress;
         this.subtraces = subtraces == null ? null : Collections.unmodifiableList(subtraces);
     }
 
@@ -71,6 +74,8 @@ public class ProgramSubtrace {
     public ProgramResult getProgramResult() {
         return this.programResult;
     }
+
+    public DataWord getCodeAddress() { return this.codeAddress; }
 
     public List<ProgramSubtrace> getSubtraces() { return this.subtraces == null ? null : Collections.unmodifiableList(this.subtraces); }
 }

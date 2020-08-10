@@ -70,7 +70,7 @@ public class TraceTransformer {
 
         int nsubtraces = trace.getSubtraces().size();
 
-        traces.add(toTrace(traceType, trace.getInvokeData(), programResult, txInfo, blockNumber, traceAddress, callType, creationData, null, trace.getError(), nsubtraces));
+        traces.add(toTrace(traceType, trace.getInvokeData(), programResult, txInfo, blockNumber, traceAddress, callType, creationData, null, trace.getError(), nsubtraces, null));
 
         for (int k = 0; k < nsubtraces; k++) {
             addTrace(traces, trace.getSubtraces().get(k), txInfo, blockNumber, new TraceAddress(traceAddress, k));
@@ -78,7 +78,7 @@ public class TraceTransformer {
     }
 
     private static void addTrace(List<TransactionTrace> traces, ProgramSubtrace subtrace, TransactionInfo txInfo, long blockNumber, TraceAddress traceAddress) {
-        traces.add(toTrace(subtrace.getTraceType(), subtrace.getInvokeData(), subtrace.getProgramResult(), txInfo, blockNumber, traceAddress, subtrace.getCallType(), subtrace.getCreationData(), subtrace.getCreationMethod(), null, subtrace.getSubtraces().size()));
+        traces.add(toTrace(subtrace.getTraceType(), subtrace.getInvokeData(), subtrace.getProgramResult(), txInfo, blockNumber, traceAddress, subtrace.getCallType(), subtrace.getCreationData(), subtrace.getCreationMethod(), null, subtrace.getSubtraces().size(), subtrace.getCodeAddress()));
 
         int nsubtraces = subtrace.getSubtraces().size();
 
@@ -87,8 +87,8 @@ public class TraceTransformer {
         }
     }
 
-    public static TransactionTrace toTrace(TraceType traceType, InvokeData invoke, ProgramResult programResult, TransactionInfo txInfo, long blockNumber, TraceAddress traceAddress, CallType callType, CreationData creationData, String creationMethod, String err, int nsubtraces) {
-        TraceAction action = toAction(traceType, invoke, callType, creationData == null ? null : creationData.getCreationInput(), creationMethod);
+    public static TransactionTrace toTrace(TraceType traceType, InvokeData invoke, ProgramResult programResult, TransactionInfo txInfo, long blockNumber, TraceAddress traceAddress, CallType callType, CreationData creationData, String creationMethod, String err, int nsubtraces, DataWord codeAddress) {
+        TraceAction action = toAction(traceType, invoke, callType, creationData == null ? null : creationData.getCreationInput(), creationMethod, codeAddress);
         TraceResult result = null;
         String error = null;
 
@@ -145,8 +145,16 @@ public class TraceTransformer {
         return new TraceResult(gasUsed, output, code, address);
     }
 
-    public static TraceAction toAction(TraceType traceType, InvokeData invoke, CallType callType, byte[] creationInput, String creationMethod) {
-        String from = new RskAddress(invoke.getCallerAddress().getLast20Bytes()).toJsonString();
+    public static TraceAction toAction(TraceType traceType, InvokeData invoke, CallType callType, byte[] creationInput, String creationMethod, DataWord codeAddress) {
+        String from;
+
+        if (callType == CallType.DELEGATECALL) {
+            from = new RskAddress(invoke.getOwnerAddress().getLast20Bytes()).toJsonString();
+        }
+        else {
+            from = new RskAddress(invoke.getCallerAddress().getLast20Bytes()).toJsonString();
+        }
+
         String to = null;
         String gas = null;
 
@@ -168,7 +176,14 @@ public class TraceTransformer {
         if (traceType == TraceType.CALL) {
             input = TypeConverter.toUnformattedJsonHex(invoke.getDataCopy(DataWord.ZERO, invoke.getDataSize()));;
             value = TypeConverter.toQuantityJsonHex(callValue.getData());
-            to = new RskAddress(invoke.getOwnerAddress().getLast20Bytes()).toJsonString();
+
+            if (callType == CallType.DELEGATECALL) {
+                to = new RskAddress(codeAddress.getLast20Bytes()).toJsonString();
+            }
+            else {
+                to = new RskAddress(invoke.getOwnerAddress().getLast20Bytes()).toJsonString();
+            }
+
             gas = TypeConverter.toQuantityJsonHex(invoke.getGas());
         }
 
