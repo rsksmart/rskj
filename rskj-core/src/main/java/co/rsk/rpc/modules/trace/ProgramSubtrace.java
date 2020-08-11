@@ -41,7 +41,7 @@ public class ProgramSubtrace {
     }
 
     public static ProgramSubtrace newCreateSubtrace(CreationData creationData, InvokeData invokeData, ProgramResult programResult, List<ProgramSubtrace> subtraces, boolean isCreate2) {
-        return new ProgramSubtrace(TraceType.CREATE, CallType.NONE, creationData, isCreate2 ? "create2" : null, invokeData, programResult, null, subtraces);
+        return new ProgramSubtrace(TraceType.CREATE, CallType.NONE, creationData, isCreate2 ? "create2" : "create", invokeData, programResult, null, subtraces);
     }
 
     public static ProgramSubtrace newCallSubtrace(CallType callType, InvokeData invokeData, ProgramResult programResult, DataWord codeAddress, List<ProgramSubtrace> subtraces) {
