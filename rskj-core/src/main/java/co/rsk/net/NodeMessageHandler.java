@@ -126,13 +126,16 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
 
             double score = sender.score(System.currentTimeMillis(), message.getMessageType());
 
-            boolean notAdded = !this.queue.offer(new MessageTask(sender, message, score));
-            if (score >= 0 && notAdded) {
-                logger.warn("Unexpected path. Is message queue bounded now?");
-            }
+            this.addMessage(sender, message, score);
         } else {
             recordEvent(sender, EventType.REPEATED_MESSAGE);
             logger.trace("Received message already known, not added to the queue");
+        }
+    }
+
+    private void addMessage(Peer sender, Message message, double score) {
+        if (score >= 0 && !this.queue.offer(new MessageTask(sender, message, score))) {
+            logger.warn("Unexpected path. Is message queue bounded now?");
         }
     }
 
