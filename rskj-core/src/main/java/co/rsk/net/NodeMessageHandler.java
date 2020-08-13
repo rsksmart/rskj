@@ -150,7 +150,7 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
 
     @Override
     public void start() {
-        new Thread(this).start();
+        new Thread(this,"message handler").start();
     }
 
     @Override
