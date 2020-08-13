@@ -28,7 +28,6 @@ import org.ethereum.crypto.HashUtil;
 import org.ethereum.net.server.ChannelManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.time.Duration;
@@ -127,12 +126,16 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
 
             double score = sender.score(System.currentTimeMillis(), message.getMessageType());
 
-            if (score >= 0 && !this.queue.offer(new MessageTask(sender, message, score))) {
-                logger.warn("Unexpected path. Is message queue bounded now?");
-            }
+            this.addMessage(sender, message, score);
         } else {
             recordEvent(sender, EventType.REPEATED_MESSAGE);
             logger.trace("Received message already known, not added to the queue");
+        }
+    }
+
+    private void addMessage(Peer sender, Message message, double score) {
+        if (score >= 0 && !this.queue.offer(new MessageTask(sender, message, score))) {
+            logger.warn("Unexpected path. Is message queue bounded now?");
         }
     }
 

@@ -61,4 +61,8 @@ public class TransactionUtils {
         tx.sign(privateKey);
         return tx;
     }
+
+    public static Transaction createTransaction() {
+        return getTransactions(1).get(0);
+    }
 }

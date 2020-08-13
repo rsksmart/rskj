@@ -23,19 +23,20 @@ import co.rsk.config.RskSystemProperties;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.crypto.Keccak256;
 import co.rsk.net.NodeID;
-import co.rsk.net.messages.MessageWithId;
+import org.ethereum.TestUtils;
 import org.ethereum.core.Block;
+import org.ethereum.core.Transaction;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.net.NodeManager;
 import org.ethereum.sync.SyncPool;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
-import java.util.Set;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -45,7 +46,6 @@ import static org.mockito.Mockito.*;
  * @author Roman Mandeleil
  * @since 15.10.2014
  */
-@Ignore
 public class ChannelManagerImplTest {
 
 
@@ -107,5 +107,67 @@ public class ChannelManagerImplTest {
         Set<NodeID> nodeIds = target.broadcastBlock(block);
 
         assertTrue(nodeIds.isEmpty());
+    }
+
+    @Test
+    public void broadcastTransactions_broadcastToAllActivePeers() {
+        final Transaction transaction = mock(Transaction.class);
+        when(transaction.getHash()).thenReturn(TestUtils.randomHash());
+        final List<Transaction> transactions = Collections.singletonList(transaction);
+        final Map<NodeID,Channel> activePeers = peersForTests(2);
+        final ChannelManager channelManager = new ChannelManagerImpl(mock(RskSystemProperties.class), mock(SyncPool.class));
+        channelManager.setActivePeers(activePeers);
+
+        final Set<NodeID> broadcastedTo = channelManager.broadcastTransactions(transactions, Collections.emptySet());
+
+        Assert.assertTrue(activePeers.keySet().stream().allMatch(activePeer -> broadcastedTo.contains(activePeer)));
+        Assert.assertEquals(2, broadcastedTo.size());
+    }
+
+    @Test
+    public void broadcastTransactions_skipSender() {
+        final Transaction transaction = mock(Transaction.class);
+        when(transaction.getHash()).thenReturn(TestUtils.randomHash());
+        final List<Transaction> transactions = Collections.singletonList(transaction);
+        final Map<NodeID,Channel> activePeers = peersForTests(2);
+        final Channel sender = mock(Channel.class);
+        when(sender.getNodeId()).thenReturn(new NodeID(HashUtil.randomPeerId()));
+        activePeers.put(sender.getNodeId(), sender);
+        final ChannelManager channelManager = new ChannelManagerImpl(mock(RskSystemProperties.class), mock(SyncPool.class));
+        channelManager.setActivePeers(activePeers);
+
+        final Set<NodeID> broadcastedNodeIDS = channelManager.broadcastTransactions(transactions, Collections.singleton(sender.getNodeId()));
+
+        broadcastedNodeIDS.forEach(broadcastedNodeID -> Assert.assertTrue(activePeers.keySet().contains(broadcastedNodeID) && !broadcastedNodeID.equals(sender.getNodeId())));
+        Assert.assertEquals(2, broadcastedNodeIDS.size());
+    }
+
+    @Test
+    public void broadcastTransaction_broadcastToAllActivePeers() {
+        final Transaction transaction = mock(Transaction.class);
+        when(transaction.getHash()).thenReturn(TestUtils.randomHash());
+        final Map<NodeID,Channel> activePeers = peersForTests(2);
+        final ChannelManager channelManager = new ChannelManagerImpl(mock(RskSystemProperties.class), mock(SyncPool.class));
+        channelManager.setActivePeers(activePeers);
+
+        final Set<NodeID> broadcastedTo = channelManager.broadcastTransaction(transaction, Collections.emptySet());
+
+        Assert.assertTrue(activePeers.keySet().stream().allMatch(activePeer -> broadcastedTo.contains(activePeer)));
+        Assert.assertEquals(2, broadcastedTo.size());
+    }
+
+    public Map<NodeID,Channel> peersForTests(int count) {
+        Map<NodeID,Channel> peers = new ConcurrentHashMap<>();
+        TestSystemProperties config = mock(TestSystemProperties.class);
+        when(config.maxConnectionsAllowed()).thenReturn(1);
+        when(config.networkCIDR()).thenReturn(32);
+
+        for(int i  = 0; i < count; i++) {
+            Channel peer = mock(Channel.class);
+            when(peer.getNodeId()).thenReturn(new NodeID(HashUtil.randomPeerId()));
+            peers.put(peer.getNodeId(),peer);
+        }
+
+        return peers;
     }
 }

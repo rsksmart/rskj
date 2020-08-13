@@ -30,10 +30,7 @@ import org.ethereum.net.server.ChannelManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -212,7 +209,7 @@ public class MessageVisitor {
             }
         }
 
-        transactionGateway.receiveTransactionsFrom(txs, sender.getPeerNodeID());
+        transactionGateway.receiveTransactionsFrom(txs, Collections.singleton(sender.getPeerNodeID()));
 
         loggerMessageProcess.debug("Tx message process finished after [{}] nano.", System.nanoTime() - start);
     }
