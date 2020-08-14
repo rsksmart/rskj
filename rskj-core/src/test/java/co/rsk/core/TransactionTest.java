@@ -30,6 +30,7 @@ import org.ethereum.crypto.signature.Secp256k1;
 import org.ethereum.db.BlockStoreDummy;
 import org.ethereum.jsontestsuite.StateTestSuite;
 import org.ethereum.jsontestsuite.runners.StateTestRunner;
+import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.ProgramResult;
 import org.junit.Assert;
@@ -72,23 +73,23 @@ public class TransactionTest {
 
         tx.sign(senderPrivKey);
 
-        System.out.println("v\t\t\t: " + Hex.toHexString(new byte[]{tx.getSignature().getV()}));
-        System.out.println("r\t\t\t: " + Hex.toHexString(BigIntegers.asUnsignedByteArray(tx.getSignature().getR())));
-        System.out.println("s\t\t\t: " + Hex.toHexString(BigIntegers.asUnsignedByteArray(tx.getSignature().getS())));
+        System.out.println("v\t\t\t: " + ByteUtil.toHexString(new byte[]{tx.getSignature().getV()}));
+        System.out.println("r\t\t\t: " + ByteUtil.toHexString(BigIntegers.asUnsignedByteArray(tx.getSignature().getR())));
+        System.out.println("s\t\t\t: " + ByteUtil.toHexString(BigIntegers.asUnsignedByteArray(tx.getSignature().getS())));
 
-        System.out.println("RLP encoded tx\t\t: " + Hex.toHexString(tx.getEncoded()));
+        System.out.println("RLP encoded tx\t\t: " + ByteUtil.toHexString(tx.getEncoded()));
 
         // retrieve the signer/sender of the transaction
         ECKey key = Secp256k1.getInstance().signatureToKey(tx.getHash().getBytes(), tx.getSignature());
 
-        System.out.println("Tx unsigned RLP\t\t: " + Hex.toHexString(tx.getEncodedRaw()));
-        System.out.println("Tx signed   RLP\t\t: " + Hex.toHexString(tx.getEncoded()));
+        System.out.println("Tx unsigned RLP\t\t: " + ByteUtil.toHexString(tx.getEncodedRaw()));
+        System.out.println("Tx signed   RLP\t\t: " + ByteUtil.toHexString(tx.getEncoded()));
 
-        System.out.println("Signature public key\t: " + Hex.toHexString(key.getPubKey()));
-        System.out.println("Sender is\t\t: " + Hex.toHexString(key.getAddress()));
+        System.out.println("Signature public key\t: " + ByteUtil.toHexString(key.getPubKey()));
+        System.out.println("Sender is\t\t: " + ByteUtil.toHexString(key.getAddress()));
 
         assertEquals("cd2a3d9f938e13cd947ec05abc7fe734df8dd826",
-                Hex.toHexString(key.getAddress()));
+                ByteUtil.toHexString(key.getAddress()));
 
         System.out.println(tx.toString());
     }
@@ -112,11 +113,11 @@ public class TransactionTest {
 
         tx.sign(senderPrivateKey);
 
-        System.out.println("v\t\t\t: " + Hex.toHexString(new byte[]{tx.getSignature().getV()}));
-        System.out.println("r\t\t\t: " + Hex.toHexString(BigIntegers.asUnsignedByteArray(tx.getSignature().getR())));
-        System.out.println("s\t\t\t: " + Hex.toHexString(BigIntegers.asUnsignedByteArray(tx.getSignature().getS())));
+        System.out.println("v\t\t\t: " + ByteUtil.toHexString(new byte[]{tx.getSignature().getV()}));
+        System.out.println("r\t\t\t: " + ByteUtil.toHexString(BigIntegers.asUnsignedByteArray(tx.getSignature().getR())));
+        System.out.println("s\t\t\t: " + ByteUtil.toHexString(BigIntegers.asUnsignedByteArray(tx.getSignature().getS())));
 
-        System.out.println("RLP encoded tx\t\t: " + Hex.toHexString(tx.getEncoded()));
+        System.out.println("RLP encoded tx\t\t: " + ByteUtil.toHexString(tx.getEncoded()));
 
         // Retrieve sender from transaction
         RskAddress sender = tx.getSender();
@@ -292,9 +293,9 @@ public class TransactionTest {
         Transaction tx = new Transaction(nonce, gasPrice, gas, to, value, data, chainId);
         byte[] encoded = tx.getEncodedRaw();
         byte[] hash = tx.getRawHash().getBytes();
-        String strenc = Hex.toHexString(encoded);
+        String strenc = ByteUtil.toHexString(encoded);
         Assert.assertEquals("ec098504a817c800825208943535353535353535353535353535353535353535880de0b6b3a764000080018080", strenc);
-        String strhash = Hex.toHexString(hash);
+        String strhash = ByteUtil.toHexString(hash);
         Assert.assertEquals("daf5a779ae972f972197303d7b574746c7ef83eadac0f2791ad23db92e4c8e53", strhash);
         System.out.println(strenc);
         System.out.println(strhash);
@@ -307,9 +308,9 @@ public class TransactionTest {
 
         byte[] encoded = tx.getEncodedRaw();
         byte[] hash = tx.getRawHash().getBytes();
-        String strenc = Hex.toHexString(encoded);
+        String strenc = ByteUtil.toHexString(encoded);
         Assert.assertEquals("ec098504a817c800825208943535353535353535353535353535353535353535880de0b6b3a764000080018080", strenc);
-        String strhash = Hex.toHexString(hash);
+        String strhash = ByteUtil.toHexString(hash);
         Assert.assertEquals("daf5a779ae972f972197303d7b574746c7ef83eadac0f2791ad23db92e4c8e53", strhash);
         System.out.println(strenc);
         System.out.println(strhash);

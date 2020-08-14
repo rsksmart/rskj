@@ -45,13 +45,13 @@ import co.rsk.rpc.modules.trace.CallType;
 import co.rsk.rpc.modules.trace.ProgramSubtrace;
 import com.google.common.annotations.VisibleForTesting;
 import org.apache.commons.lang3.tuple.Pair;
-import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
+import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.Program;
@@ -832,21 +832,21 @@ public class BridgeSupport {
             try {
                 sig = BtcECKey.ECDSASignature.decodeFromDER(signatures.get(i));
             } catch (RuntimeException e) {
-                logger.warn("Malformed signature for input {} of tx {}: {}", i, new Keccak256(rskTxHash), Hex.toHexString(signatures.get(i)));
+                logger.warn("Malformed signature for input {} of tx {}: {}", i, new Keccak256(rskTxHash), ByteUtil.toHexString(signatures.get(i)));
                 return;
             }
 
             Sha256Hash sighash = sighashes.get(i);
 
             if (!federatorPublicKey.verify(sighash, sig)) {
-                logger.warn("Signature {} {} is not valid for hash {} and public key {}", i, Hex.toHexString(sig.encodeToDER()), sighash, federatorPublicKey);
+                logger.warn("Signature {} {} is not valid for hash {} and public key {}", i, ByteUtil.toHexString(sig.encodeToDER()), sighash, federatorPublicKey);
                 return;
             }
 
             TransactionSignature txSig = new TransactionSignature(sig, BtcTransaction.SigHash.ALL, false);
             txSigs.add(txSig);
             if (!txSig.isCanonical()) {
-                logger.warn("Signature {} {} is not canonical.", i, Hex.toHexString(signatures.get(i)));
+                logger.warn("Signature {} {} is not canonical.", i, ByteUtil.toHexString(signatures.get(i)));
                 return;
             }
         }
@@ -890,7 +890,7 @@ public class BridgeSupport {
 
         // If tx fully signed
         if (missingSignatures == 0) {
-            logger.info("Tx fully signed {}. Hex: {}", btcTx, Hex.toHexString(btcTx.bitcoinSerialize()));
+            logger.info("Tx fully signed {}. Hex: {}", btcTx, ByteUtil.toHexString(btcTx.bitcoinSerialize()));
             provider.getRskTxsWaitingForSignatures().remove(new Keccak256(rskTxHash));
 
             eventLogger.logReleaseBtc(btcTx, rskTxHash);
@@ -1566,7 +1566,7 @@ public class BridgeSupport {
                     publicKey = BtcECKey.fromPublicOnly(publicKeyBytes);
                     publicKeyEc = ECKey.fromPublicOnly(publicKeyBytes);
                 } catch (Exception e) {
-                    throw new BridgeIllegalArgumentException("Public key could not be parsed " + Hex.toHexString(publicKeyBytes), e);
+                    throw new BridgeIllegalArgumentException("Public key could not be parsed " + ByteUtil.toHexString(publicKeyBytes), e);
                 }
                 executionResult = addFederatorPublicKeyMultikey(dryRun, publicKey, publicKeyEc, publicKeyEc);
                 result = new ABICallVoteResult(executionResult == 1, executionResult);
@@ -1577,19 +1577,19 @@ public class BridgeSupport {
                 try {
                     btcPublicKey = BtcECKey.fromPublicOnly(callSpec.getArguments()[0]);
                 } catch (Exception e) {
-                    throw new BridgeIllegalArgumentException("BTC public key could not be parsed " + Hex.toHexString(callSpec.getArguments()[0]), e);
+                    throw new BridgeIllegalArgumentException("BTC public key could not be parsed " + ByteUtil.toHexString(callSpec.getArguments()[0]), e);
                 }
 
                 try {
                     rskPublicKey = ECKey.fromPublicOnly(callSpec.getArguments()[1]);
                 } catch (Exception e) {
-                    throw new BridgeIllegalArgumentException("RSK public key could not be parsed " + Hex.toHexString(callSpec.getArguments()[1]), e);
+                    throw new BridgeIllegalArgumentException("RSK public key could not be parsed " + ByteUtil.toHexString(callSpec.getArguments()[1]), e);
                 }
 
                 try {
                     mstPublicKey = ECKey.fromPublicOnly(callSpec.getArguments()[2]);
                 } catch (Exception e) {
-                    throw new BridgeIllegalArgumentException("MST public key could not be parsed " + Hex.toHexString(callSpec.getArguments()[2]), e);
+                    throw new BridgeIllegalArgumentException("MST public key could not be parsed " + ByteUtil.toHexString(callSpec.getArguments()[2]), e);
                 }
                 executionResult = addFederatorPublicKeyMultikey(dryRun, btcPublicKey, rskPublicKey, mstPublicKey);
                 result = new ABICallVoteResult(executionResult == 1, executionResult);
@@ -1958,7 +1958,7 @@ public class BridgeSupport {
             }
         } catch (VerificationException e) {
             logger.warn("[btcTx:{}] PartialMerkleTree could not be parsed", btcTxHash);
-            throw new BridgeIllegalArgumentException(String.format("PartialMerkleTree could not be parsed %s", Hex.toHexString(pmtSerialized)), e);
+            throw new BridgeIllegalArgumentException(String.format("PartialMerkleTree could not be parsed %s", ByteUtil.toHexString(pmtSerialized)), e);
         }
 
         // Check merkle root equals btc block merkle root at the specified height in the btc best chain

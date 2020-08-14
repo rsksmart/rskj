@@ -164,7 +164,7 @@ public class PeerExplorer {
 
         if (connectedNode != null) {
             List<Node> nodesToSend = this.distanceTable.getClosestNodes(nodeId);
-            logger.debug("About to send [{}] neighbors to ip[{}] port[{}] nodeId[{}]", nodesToSend.size(), connectedNode.getHost(), connectedNode.getPort(), connectedNode.getHexIdShort());
+            logger.debug("About to send [{}] neighbors to ip[{}] port[{}] nodeId[{}]", nodesToSend.size(), connectedNode.getHost(), connectedNode.getPort(), connectedNode.getHexId());
             this.sendNeighbors(connectedNode.getAddress(), nodesToSend, message.getMessageId());
             updateEntry(connectedNode);
         }
@@ -174,7 +174,7 @@ public class PeerExplorer {
         Node connectedNode = this.establishedConnections.get(message.getNodeId());
 
         if (connectedNode != null) {
-            logger.debug("Neighbors received from [{}]", connectedNode.getHexIdShort());
+            logger.debug("Neighbors received from [{}]", connectedNode.getHexId());
             PeerDiscoveryRequest request = this.pendingFindNodeRequests.remove(message.getMessageId());
 
             if (request != null && request.validateMessageResponse(neighborsResponseAddress, message)) {

@@ -21,8 +21,10 @@ package co.rsk.net.discovery.message;
 import co.rsk.net.discovery.PeerDiscoveryException;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.ethereum.crypto.ECKey;
-import org.ethereum.util.*;
-import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.util.ByteUtil;
+import org.ethereum.util.RLP;
+import org.ethereum.util.RLPItem;
+import org.ethereum.util.RLPList;
 
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
@@ -100,7 +102,7 @@ public class FindNodePeerMessage extends PeerDiscoveryMessage {
     @Override
     public String toString() {
         return new ToStringBuilder(this)
-                .append(Hex.toHexString(this.nodeId))
+                .append(ByteUtil.toHexString(this.nodeId))
                 .append(this.getNetworkId())
                 .append(this.messageId).toString();
     }

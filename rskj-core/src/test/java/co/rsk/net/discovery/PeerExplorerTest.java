@@ -24,15 +24,19 @@ import co.rsk.net.discovery.table.NodeDistanceTable;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import org.apache.commons.lang3.StringUtils;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.net.rlpx.Node;
+import org.ethereum.util.ByteUtil;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
-import org.bouncycastle.util.encoders.Hex;
 
 import java.net.InetSocketAddress;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
 
 /**
  * Created by mario on 15/02/17.
@@ -196,7 +200,7 @@ public class PeerExplorerTest {
         toSenderPong = (PongPeerMessage) pongEvent.getMessage();
         Assert.assertEquals(DiscoveryMessageType.PONG, toSenderPong.getMessageType());
         Assert.assertEquals(new InetSocketAddress(HOST_2, PORT_3), pongEvent.getAddress());
-        Assert.assertEquals(NODE_ID_2, Hex.toHexString(toSenderPong.getKey().getNodeId()));
+        Assert.assertEquals(NODE_ID_2, ByteUtil.toHexString(toSenderPong.getKey().getNodeId()));
     }
 
     @Test
@@ -332,8 +336,8 @@ public class PeerExplorerTest {
 
         List<Node> foundNodes = peerExplorer.getNodes();
         Assert.assertEquals(2, foundNodes.size());
-        Assert.assertEquals(NODE_ID_3, Hex.toHexString(foundNodes.get(0).getId().getID()));
-        Assert.assertEquals(NODE_ID_1, Hex.toHexString(foundNodes.get(1).getId().getID()));
+        Assert.assertEquals(NODE_ID_3, ByteUtil.toHexString(foundNodes.get(0).getId().getID()));
+        Assert.assertEquals(NODE_ID_1, ByteUtil.toHexString(foundNodes.get(1).getId().getID()));
 
         String check = UUID.randomUUID().toString();
         FindNodePeerMessage findNodePeerMessage = FindNodePeerMessage.create(key1.getNodeId(), check, key1, NETWORK_ID1);

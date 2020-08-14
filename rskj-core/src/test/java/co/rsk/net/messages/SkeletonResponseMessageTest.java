@@ -20,15 +20,15 @@
 package co.rsk.net.messages;
 
 import org.ethereum.core.BlockIdentifier;
+import org.ethereum.util.ByteUtil;
 import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
 import static org.bouncycastle.util.encoders.Hex.decode;
-import static org.bouncycastle.util.encoders.Hex.toHexString;
+import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.*;
 
 public class SkeletonResponseMessageTest {
@@ -45,7 +45,7 @@ public class SkeletonResponseMessageTest {
         SkeletonResponseMessage skeletonMessage = new SkeletonResponseMessage(someId, identifiers);
 
         String expected = "f8500db84df84b2af848f846e2a04ee6424d776b3f59affc20bc2de59e67f36e22cc07897ff8df152242c921716b01e2a07d2fe4df0dbbc9011da2b3bf177f0c6b7e71a11c509035c5d751efa5cf9b481702";
-        assertEquals(expected, toHexString(skeletonMessage.getEncoded()));
+        assertEquals(expected, ByteUtil.toHexString(skeletonMessage.getEncoded()));
 
         assertEquals(MessageType.SKELETON_RESPONSE_MESSAGE, skeletonMessage.getMessageType());
         assertEquals(42, skeletonMessage.getId());

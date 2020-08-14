@@ -163,7 +163,7 @@ public class Remasc {
             Coin minPayableFees = executionBlock.getMinimumGasPrice().multiply(minimumPayableGas);
             if (syntheticReward.compareTo(minPayableFees) < 0) {
                 logger.debug("Synthetic Reward: {} is lower than minPayableFees: {} at block: {}",
-                             syntheticReward, minPayableFees, executionBlock.getShortHash());
+                             syntheticReward, minPayableFees, executionBlock.getPrintableHash());
                 return;
             }
         }

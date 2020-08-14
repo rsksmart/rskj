@@ -27,6 +27,7 @@ import com.google.common.primitives.UnsignedBytes;
 import org.apache.commons.lang3.tuple.Pair;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.ECKey;
+import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
 import org.junit.Assert;
@@ -43,7 +44,6 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.assertEquals;
-import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.mock;
 import static org.powermock.api.mockito.PowerMockito.when;
 
@@ -58,7 +58,7 @@ public class BridgeSerializationUtilsTest {
 
         byte[] result = BridgeSerializationUtils.serializeMapOfHashesToLong(sample);
 
-        String hexResult = Hex.toHexString(result);
+        String hexResult = ByteUtil.toHexString(result);
         StringBuilder expectedBuilder = new StringBuilder();
 
         expectedBuilder.append("f888");
@@ -158,12 +158,12 @@ public class BridgeSerializationUtilsTest {
 
         federation.getBtcPublicKeys().stream().sorted(BtcECKey.PUBKEY_COMPARATOR).forEach(key -> {
             expectedBuilder.append("a1");
-            expectedBuilder.append(Hex.toHexString(key.getPubKey()));
+            expectedBuilder.append(ByteUtil.toHexString(key.getPubKey()));
         });
 
         String expected = expectedBuilder.toString();
 
-        Assert.assertEquals(expected, Hex.toHexString(result));
+        Assert.assertEquals(expected, ByteUtil.toHexString(result));
     }
 
     @Test
@@ -399,11 +399,11 @@ public class BridgeSerializationUtilsTest {
         expectedBuilder.append("f8cc");
         pendingFederation.getBtcPublicKeys().stream().sorted(BtcECKey.PUBKEY_COMPARATOR).forEach(key -> {
             expectedBuilder.append("a1");
-            expectedBuilder.append(Hex.toHexString(key.getPubKey()));
+            expectedBuilder.append(ByteUtil.toHexString(key.getPubKey()));
         });
 
         String expected = expectedBuilder.toString();
-        Assert.assertEquals(expected, Hex.toHexString(result));
+        Assert.assertEquals(expected, ByteUtil.toHexString(result));
     }
 
     @Test
@@ -451,14 +451,14 @@ public class BridgeSerializationUtilsTest {
         ABICallElection sample = new ABICallElection(authorizer, sampleVotes);
 
         byte[] result = BridgeSerializationUtils.serializeElection(sample);
-        String hexResult = Hex.toHexString(result);
+        String hexResult = ByteUtil.toHexString(result);
 
         StringBuilder expectedBuilder = new StringBuilder();
 
         expectedBuilder.append("f8d7d6");
 
         expectedBuilder.append("90");
-        expectedBuilder.append(Hex.toHexString("another-function".getBytes(StandardCharsets.UTF_8)));
+        expectedBuilder.append(ByteUtil.toHexString("another-function".getBytes(StandardCharsets.UTF_8)));
         expectedBuilder.append("c4");
         expectedBuilder.append("01");
         expectedBuilder.append("820203");
@@ -469,7 +469,7 @@ public class BridgeSerializationUtilsTest {
 
         expectedBuilder.append("ce");
         expectedBuilder.append("8c");
-        expectedBuilder.append(Hex.toHexString("one-function".getBytes(StandardCharsets.UTF_8)));
+        expectedBuilder.append(ByteUtil.toHexString("one-function".getBytes(StandardCharsets.UTF_8)));
         expectedBuilder.append("c0");
 
         expectedBuilder.append("ea");
@@ -478,7 +478,7 @@ public class BridgeSerializationUtilsTest {
 
         expectedBuilder.append("d9");
         expectedBuilder.append("94");
-        expectedBuilder.append(Hex.toHexString("yet-another-function".getBytes(StandardCharsets.UTF_8)));
+        expectedBuilder.append(ByteUtil.toHexString("yet-another-function".getBytes(StandardCharsets.UTF_8)));
         expectedBuilder.append("c3");
         expectedBuilder.append("820405");
         expectedBuilder.append("ea");
@@ -651,13 +651,13 @@ public class BridgeSerializationUtilsTest {
         expectedBuilder.append("f897");
         Arrays.stream(addressesBytes).sorted(UnsignedBytes.lexicographicalComparator()).forEach(bytes -> {
             expectedBuilder.append("94");
-            expectedBuilder.append(Hex.toHexString(bytes));
+            expectedBuilder.append(ByteUtil.toHexString(bytes));
             expectedBuilder.append("83");
-            expectedBuilder.append(Hex.toHexString(BigInteger.valueOf(maxToTransfer.value).toByteArray()));
+            expectedBuilder.append(ByteUtil.toHexString(BigInteger.valueOf(maxToTransfer.value).toByteArray()));
         });
         expectedBuilder.append("80");
         String expected = expectedBuilder.toString();
-        Assert.assertEquals(expected, Hex.toHexString(result));
+        Assert.assertEquals(expected, ByteUtil.toHexString(result));
     }
 
     @Test
@@ -776,7 +776,7 @@ public class BridgeSerializationUtilsTest {
         ReleaseRequestQueue sample = new ReleaseRequestQueue(sampleEntries);
 
         byte[] result = BridgeSerializationUtils.serializeReleaseRequestQueue(sample);
-        String hexResult = Hex.toHexString(result);
+        String hexResult = ByteUtil.toHexString(result);
         StringBuilder expectedBuilder = new StringBuilder();
         expectedBuilder.append("cd");
         expectedBuilder.append("82ccdd");
@@ -866,7 +866,7 @@ public class BridgeSerializationUtilsTest {
         ReleaseTransactionSet sample = new ReleaseTransactionSet(sampleEntries);
 
         byte[] result = BridgeSerializationUtils.serializeReleaseTransactionSet(sample);
-        String hexResult = Hex.toHexString(result);
+        String hexResult = ByteUtil.toHexString(result);
         StringBuilder expectedBuilder = new StringBuilder();
         expectedBuilder.append("cd");
         expectedBuilder.append("81aa");

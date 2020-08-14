@@ -27,13 +27,13 @@ import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.io.ByteStreams;
 import org.apache.commons.io.FileUtils;
-import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Blockchain;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.MutableRepository;
+import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.AfterClass;
@@ -174,11 +174,11 @@ public class NetworkStateExporterTest {
         Map data = (Map) contract.get("data");
         Assert.assertEquals(2, data.keySet().size());
 
-        String addrStr = Hex.toHexString(DataWord.ZERO.getData());
+        String addrStr = ByteUtil.toHexString(DataWord.ZERO.getData());
 
         // A value expanded with leading zeros requires testing in expanded form.
         Assert.assertEquals("01",data.get(addrStr));
-        Assert.assertEquals("05060708", data.get(Hex.toHexString(DataWord.ONE.getData())));
+        Assert.assertEquals("05060708", data.get(ByteUtil.toHexString(DataWord.ONE.getData())));
     }
 
     private Map writeAndReadJson() throws Exception {

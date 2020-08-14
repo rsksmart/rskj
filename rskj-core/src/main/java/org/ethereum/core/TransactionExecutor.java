@@ -461,14 +461,15 @@ public class TransactionExecutor {
         if (mEndGas < returnDataGasValue) {
             program.setRuntimeFailure(
                     Program.ExceptionHelper.notEnoughSpendingGas(
+                            program,
                             "No gas to return just created contract",
-                            returnDataGasValue,
-                            program));
+                            returnDataGasValue));
             result = program.getResult();
             result.setHReturn(EMPTY_BYTE_ARRAY);
         } else if (createdContractSize > Constants.getMaxContractSize()) {
             program.setRuntimeFailure(
                     Program.ExceptionHelper.tooLargeContractSize(
+                            program,
                             Constants.getMaxContractSize(),
                             createdContractSize));
             result = program.getResult();

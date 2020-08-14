@@ -20,11 +20,14 @@
 package org.ethereum.net.rlpx;
 
 import org.ethereum.net.p2p.P2pMessage;
+import org.ethereum.util.ByteUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.bouncycastle.util.encoders.Hex;
 
-import java.io.*;
+import java.io.DataInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 
 /**
  * Created by devrandom on 2015-04-12.
@@ -60,14 +63,14 @@ public class RlpxConnection {
             // TODO handle disconnect
             byte[] wire = new byte[frame.size];
             frame.payload.read(wire);
-            System.out.println("packet " + Hex.toHexString(wire));
+            System.out.println("packet " + ByteUtil.toHexString(wire));
             handshakeMessage = HandshakeMessage.parse(wire);
             logger.info(" ===> " + handshakeMessage);
         } else {
             System.out.println("packet type " + frame.type);
             byte[] wire = new byte[frame.size];
             frame.payload.read(wire);
-            System.out.println("packet " + Hex.toHexString(wire));
+            System.out.println("packet " + ByteUtil.toHexString(wire));
         }
     }
 

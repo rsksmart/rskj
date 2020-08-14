@@ -23,13 +23,12 @@ import co.rsk.bitcoinj.store.BtcBlockStore;
 import co.rsk.peg.Bridge;
 import co.rsk.peg.BridgeStorageProvider;
 import org.ethereum.core.Repository;
+import org.ethereum.util.ByteUtil;
 import org.junit.Ignore;
 import org.junit.Test;
-import org.bouncycastle.util.encoders.Hex;
 
 import java.io.IOException;
 import java.math.BigInteger;
-import java.util.Map;
 import java.util.Random;
 
 // Everything related to locking that is not
@@ -56,13 +55,13 @@ public class LockTest extends BridgePerformanceTestCase {
     }
 
     private void isBtcTxHashAlreadyProcessed_yes(int times, ExecutionStats stats) {
-        ABIEncoder abiEncoder = (int executionIndex) -> Bridge.IS_BTC_TX_HASH_ALREADY_PROCESSED.encode(new Object[]{Hex.toHexString(randomHashInMap.getBytes())});
+        ABIEncoder abiEncoder = (int executionIndex) -> Bridge.IS_BTC_TX_HASH_ALREADY_PROCESSED.encode(new Object[]{ByteUtil.toHexString(randomHashInMap.getBytes())});
         executeAndAverage("isBtcTxHashAlreadyProcessed-yes", times, abiEncoder, buildInitializer(), Helper.getZeroValueRandomSenderTxBuilder(), Helper.getRandomHeightProvider(10), stats);
     }
 
     private void isBtcTxHashAlreadyProcessed_no(int times, ExecutionStats stats) {
         Sha256Hash hash = Sha256Hash.of(BigInteger.valueOf(new Random().nextLong()).toByteArray());
-        ABIEncoder abiEncoder = (int executionIndex) -> Bridge.IS_BTC_TX_HASH_ALREADY_PROCESSED.encode(new Object[]{Hex.toHexString(hash.getBytes())});
+        ABIEncoder abiEncoder = (int executionIndex) -> Bridge.IS_BTC_TX_HASH_ALREADY_PROCESSED.encode(new Object[]{ByteUtil.toHexString(hash.getBytes())});
         executeAndAverage("isBtcTxHashAlreadyProcessed-no", times, abiEncoder, buildInitializer(), Helper.getZeroValueRandomSenderTxBuilder(), Helper.getRandomHeightProvider(10), stats);
     }
 
@@ -75,13 +74,13 @@ public class LockTest extends BridgePerformanceTestCase {
     }
 
     private void getBtcTxHashProcessedHeight_processed(int times, ExecutionStats stats) {
-        ABIEncoder abiEncoder = (int executionIndex) -> Bridge.GET_BTC_TX_HASH_PROCESSED_HEIGHT.encode(new Object[]{Hex.toHexString(randomHashInMap.getBytes())});
+        ABIEncoder abiEncoder = (int executionIndex) -> Bridge.GET_BTC_TX_HASH_PROCESSED_HEIGHT.encode(new Object[]{ByteUtil.toHexString(randomHashInMap.getBytes())});
         executeAndAverage("getBtcTxHashProcessedHeight-processed", times, abiEncoder, buildInitializer(), Helper.getZeroValueRandomSenderTxBuilder(), Helper.getRandomHeightProvider(10), stats);
     }
 
     private void getBtcTxHashProcessedHeight_notProcessed(int times, ExecutionStats stats) {
         Sha256Hash hash = Sha256Hash.of(BigInteger.valueOf(new Random().nextLong()).toByteArray());
-        ABIEncoder abiEncoder = (int executionIndex) -> Bridge.GET_BTC_TX_HASH_PROCESSED_HEIGHT.encode(new Object[]{Hex.toHexString(hash.getBytes())});
+        ABIEncoder abiEncoder = (int executionIndex) -> Bridge.GET_BTC_TX_HASH_PROCESSED_HEIGHT.encode(new Object[]{ByteUtil.toHexString(hash.getBytes())});
         executeAndAverage("getBtcTxHashProcessedHeight-notProcessed", times, abiEncoder, buildInitializer(), Helper.getZeroValueRandomSenderTxBuilder(), Helper.getRandomHeightProvider(10), stats);
     }
 

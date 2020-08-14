@@ -29,6 +29,7 @@ import org.ethereum.core.TransactionPool;
 import org.ethereum.facade.Ethereum;
 import org.ethereum.rpc.TypeConverter;
 import org.ethereum.rpc.Web3;
+import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.GasCost;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -172,7 +173,7 @@ public class PersonalModuleWalletEnabled implements PersonalModule {
                 throw new Exception("Address private key is locked or could not be found in this node");
             }
 
-            return s = TypeConverter.toJsonHex(Hex.toHexString(account.getEcKey().getPrivKeyBytes()));
+            return s = TypeConverter.toJsonHex(ByteUtil.toHexString(account.getEcKey().getPrivKeyBytes()));
         } finally {
             LOGGER.debug("personal_dumpRawKey(*****): {}", s);
         }
@@ -187,7 +188,7 @@ public class PersonalModuleWalletEnabled implements PersonalModule {
             throw new Exception("From address private key could not be found in this node");
         }
 
-        String toAddress = args.to != null ? Hex.toHexString(TypeConverter.stringHexToByteArray(args.to)) : null;
+        String toAddress = args.to != null ? ByteUtil.toHexString(TypeConverter.stringHexToByteArray(args.to)) : null;
 
         BigInteger accountNonce = args.nonce != null ? TypeConverter.stringNumberAsBigInt(args.nonce) : transactionPool.getPendingState().getNonce(account.getAddress());
         BigInteger value = args.value != null ? TypeConverter.stringNumberAsBigInt(args.value) : BigInteger.ZERO;

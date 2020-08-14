@@ -34,7 +34,7 @@ public class BlockHeaderCompositeRule implements BlockHeaderValidationRule {
 
     @Override
     public boolean isValid(BlockHeader header) {
-        String shortHash = header.getShortHash();
+        String shortHash = header.getPrintableHash();
         long number = header.getNumber();
         logger.debug("Validating header {} {}", shortHash, number);
         for (BlockHeaderValidationRule rule : this.rules) {

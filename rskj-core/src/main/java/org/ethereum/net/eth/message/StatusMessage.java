@@ -23,8 +23,6 @@ import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
 
-import org.bouncycastle.util.encoders.Hex;
-
 import java.math.BigInteger;
 
 /**
@@ -157,9 +155,9 @@ public class StatusMessage extends EthMessage {
         return "[" + this.getCommand().name() +
                 " protocolVersion=" + this.protocolVersion +
                 " networkId=" + this.networkId +
-                " totalDifficulty=" + ByteUtil.toHexString(this.totalDifficulty) +
-                " bestHash=" + Hex.toHexString(this.bestHash) +
-                " genesisHash=" + Hex.toHexString(this.genesisHash) +
+                " totalDifficulty=" + ByteUtil.toHexStringOrEmpty(this.totalDifficulty) +
+                " bestHash=" + ByteUtil.toHexString(this.bestHash) +
+                " genesisHash=" + ByteUtil.toHexString(this.genesisHash) +
                 "]";
     }
 }

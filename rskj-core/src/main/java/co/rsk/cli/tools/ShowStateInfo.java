@@ -21,9 +21,9 @@ import co.rsk.RskContext;
 import co.rsk.trie.NodeReference;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStore;
-import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.Block;
 import org.ethereum.db.BlockStore;
+import org.ethereum.util.ByteUtil;
 
 import java.io.PrintStream;
 import java.util.Optional;
@@ -56,9 +56,9 @@ public class ShowStateInfo {
         }
 
         writer.println("Block number: " + block.getNumber());
-        writer.println("Block hash: " + Hex.toHexString(block.getHash().getBytes()));
-        writer.println("Block parent hash: " + Hex.toHexString(block.getParentHash().getBytes()));
-        writer.println("Block root hash: " + Hex.toHexString(block.getStateRoot()));
+        writer.println("Block hash: " + ByteUtil.toHexString(block.getHash().getBytes()));
+        writer.println("Block parent hash: " + ByteUtil.toHexString(block.getParentHash().getBytes()));
+        writer.println("Block root hash: " + ByteUtil.toHexString(block.getStateRoot()));
 
         Optional<Trie> otrie = trieStore.retrieve(block.getStateRoot());
 

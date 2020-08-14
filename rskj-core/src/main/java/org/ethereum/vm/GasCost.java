@@ -21,6 +21,7 @@
 package org.ethereum.vm;
 
 import org.ethereum.util.ByteUtil;
+
 import java.math.BigInteger;
 
 /**
@@ -111,7 +112,7 @@ public class GasCost {
         }
 
         private InvalidGasException(byte[] bytes) {
-            super(String.format("Got invalid gas value as bytes array: %s", ByteUtil.toHexString(bytes)));
+            super(String.format("Got invalid gas value as bytes array: %s", ByteUtil.toHexStringOrEmpty(bytes)));
         }
 
         private InvalidGasException(String str) {

@@ -31,7 +31,6 @@ import co.rsk.rpc.modules.trace.CreationData;
 import co.rsk.rpc.modules.trace.ProgramSubtrace;
 import co.rsk.vm.BitSet;
 import com.google.common.annotations.VisibleForTesting;
-import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -52,6 +51,7 @@ import org.ethereum.vm.trace.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nonnull;
 import java.math.BigInteger;
 import java.util.*;
 
@@ -309,7 +309,7 @@ public class Program {
      */
     public void verifyStackSize(int stackSize) {
         if (stackSize < 0 || stack.size() < stackSize) {
-            throw ExceptionHelper.tooSmallStack(stackSize, stack.size());
+            throw ExceptionHelper.tooSmallStack(this, stackSize, stack.size());
         }
     }
 
@@ -494,7 +494,7 @@ public class Program {
                 deletedAccountsInBlock.contains(DataWord.valueOf(contractAddress.getBytes()))) {
             // Check if the address was previously deleted in the same block
 
-            programResult.setException(ExceptionHelper.addressCollisionException(contractAddress));
+            programResult.setException(ExceptionHelper.addressCollisionException(this, contractAddress));
             if (isLogEnabled) {
                 logger.debug("contract run halted by Exception: contract: [{}], exception: ",
                         contractAddress,
@@ -520,7 +520,7 @@ public class Program {
             if (getActivations().isActive(ConsensusRule.RSKIP125) && (hasNonEmptyCode || nonZeroNonce)) {
                 // Contract collision we fail with exactly the same behavior as would arise if
                 // the first byte in the init code were an invalid opcode
-                programResult.setException(ExceptionHelper.addressCollisionException(contractAddress));
+                programResult.setException(ExceptionHelper.addressCollisionException(this, contractAddress));
                 if (isLogEnabled) {
                     logger.debug("contract run halted by Exception: contract: [{}], exception: ",
                             contractAddress,
@@ -581,7 +581,7 @@ public class Program {
         refundGas(refundGas, "remaining gas from the internal call");
         if (isGasLogEnabled) {
             gasLogger.info("The remaining gas is refunded, account: [{}], gas: [{}] ",
-                    Hex.toHexString(getOwnerAddress().getLast20Bytes()),
+                    ByteUtil.toHexString(getOwnerAddress().getLast20Bytes()),
                     refundGas
             );
         }
@@ -644,12 +644,13 @@ public class Program {
             if (afterSpend < 0) {
                 programResult.setException(
                         ExceptionHelper.notEnoughSpendingGas(
+                                this,
                                 "No gas to return just created contract",
-                                storageCost,
-                                this));
+                                storageCost));
             } else if (codeLength > Constants.getMaxContractSize()) {
                 programResult.setException(
                         ExceptionHelper.tooLargeContractSize(
+                                this,
                                 Constants.getMaxContractSize(),
                                 codeLength));
             } else {
@@ -884,7 +885,7 @@ public class Program {
         }
 
         if (getRemainingGas()  < gasValue) {
-            throw ExceptionHelper.notEnoughSpendingGas(cause, gasValue, this);
+            throw ExceptionHelper.notEnoughSpendingGas(this, cause, gasValue);
         }
 
         getResult().spendGas(gasValue);
@@ -1184,14 +1185,14 @@ public class Program {
 
             if (getResult().getHReturn() != null) {
                 globalOutput.append("\n  HReturn: ").append(
-                        Hex.toHexString(getResult().getHReturn()));
+                        ByteUtil.toHexString(getResult().getHReturn()));
             }
 
             // sophisticated assumption that msg.data != codedata
             // means we are calling the contract not creating it
             byte[] txData = invoke.getDataCopy(DataWord.ZERO, getDataSize());
             if (!Arrays.equals(txData, ops)) {
-                globalOutput.append("\n  msg.data: ").append(Hex.toHexString(txData));
+                globalOutput.append("\n  msg.data: ").append(ByteUtil.toHexString(txData));
             }
             globalOutput.append("\n\n  Spent Gas: ").append(getResult().getGasUsed());
 
@@ -1303,11 +1304,11 @@ public class Program {
     public int verifyJumpDest(DataWord nextPC) {
         // This is painstankly slow
         if (nextPC.occupyMoreThan(4)) {
-            throw ExceptionHelper.badJumpDestination(-1);
+            throw ExceptionHelper.badJumpDestination(this, -1);
         }
         int ret = nextPC.intValue(); // could be negative
         if (ret < 0 || ret >= jumpdestSet.size() || !jumpdestSet.get(ret)) {
-            throw ExceptionHelper.badJumpDestination(ret);
+            throw ExceptionHelper.badJumpDestination(this, ret);
         }
         return ret;
     }
@@ -1449,8 +1450,8 @@ public class Program {
 
     @SuppressWarnings("serial")
     public static class StaticCallModificationException extends RuntimeException {
-        public StaticCallModificationException() {
-            super("Attempt to call a state modifying opcode inside STATICCALL");
+        public StaticCallModificationException(String message, Object... args) {
+            super(format(message, args));
         }
     }
 
@@ -1464,51 +1465,56 @@ public class Program {
 
         private ExceptionHelper() { }
 
-        public static StaticCallModificationException modificationException() {
-            return new StaticCallModificationException();
+        public static StaticCallModificationException modificationException(@Nonnull Program program) {
+            return new StaticCallModificationException("Attempt to call a state modifying opcode inside STATICCALL: tx[%s]", extractTxHash(program));
         }
 
-        public static OutOfGasException notEnoughOpGas(OpCode op, long opGas, long programGas) {
-            return new OutOfGasException("Not enough gas for '%s' operation executing: opGas[%d], programGas[%d];", op, opGas, programGas);
+        public static OutOfGasException notEnoughOpGas(@Nonnull Program program, OpCode op, long opGas, long programGas) {
+            return new OutOfGasException("Not enough gas for '%s' operation executing: opGas[%d], programGas[%d], tx[%s]", op, opGas, programGas, extractTxHash(program));
         }
 
-        public static OutOfGasException notEnoughOpGas(OpCode op, DataWord opGas, DataWord programGas) {
-            return notEnoughOpGas(op, opGas.longValue(), programGas.longValue());
+        public static OutOfGasException notEnoughOpGas(Program program, OpCode op, DataWord opGas, DataWord programGas) {
+            return notEnoughOpGas(program, op, opGas.longValue(), programGas.longValue());
         }
 
-        public static OutOfGasException notEnoughOpGas(OpCode op, BigInteger opGas, BigInteger programGas) {
-            return notEnoughOpGas(op, opGas.longValue(), programGas.longValue());
+        public static OutOfGasException notEnoughOpGas(Program program, OpCode op, BigInteger opGas, BigInteger programGas) {
+            return notEnoughOpGas(program, op, opGas.longValue(), programGas.longValue());
         }
 
-        public static OutOfGasException notEnoughSpendingGas(String cause, long gasValue, Program program) {
-            return new OutOfGasException("Not enough gas for '%s' cause spending: invokeGas[%d], gas[%d], usedGas[%d];",
-                    cause, program.invoke.getGas(), gasValue, program.getResult().getGasUsed());
+        public static OutOfGasException notEnoughSpendingGas(@Nonnull Program program, String cause, long gasValue) {
+            return new OutOfGasException("Not enough gas for '%s' cause spending: invokeGas[%d], gas[%d], usedGas[%d], tx[%s]",
+                    cause, program.invoke.getGas(), gasValue, program.getResult().getGasUsed(), extractTxHash(program));
         }
 
-        public static OutOfGasException gasOverflow(BigInteger actualGas, BigInteger gasLimit) {
-            return new OutOfGasException("Gas value overflow: actualGas[%d], gasLimit[%d];", actualGas.longValue(), gasLimit.longValue());
+        public static OutOfGasException gasOverflow(@Nonnull Program program, BigInteger actualGas, BigInteger gasLimit) {
+            return new OutOfGasException("Gas value overflow: actualGas[%d], gasLimit[%d], tx[%s]", actualGas.longValue(), gasLimit.longValue(), extractTxHash(program));
         }
-        public static OutOfGasException gasOverflow(long actualGas, BigInteger gasLimit) {
-            return new OutOfGasException("Gas value overflow: actualGas[%d], gasLimit[%d];", actualGas, gasLimit.longValue());
+        public static OutOfGasException gasOverflow(@Nonnull Program program, long actualGas, BigInteger gasLimit) {
+            return new OutOfGasException("Gas value overflow: actualGas[%d], gasLimit[%d], tx[%s]", actualGas, gasLimit.longValue(), extractTxHash(program));
         }
-        public static IllegalOperationException invalidOpCode(byte... opCode) {
-            return new IllegalOperationException("Invalid operation code: opcode[%s];", Hex.toHexString(opCode, 0, 1));
-        }
-
-        public static BadJumpDestinationException badJumpDestination(int pc) {
-            return new BadJumpDestinationException("Operation with pc isn't 'JUMPDEST': PC[%d];", pc);
+        public static IllegalOperationException invalidOpCode(@Nonnull Program program) {
+            return new IllegalOperationException("Invalid operation code: opcode[%s], tx[%s]", ByteUtil.toHexString(new byte[] {program.getCurrentOp()}, 0, 1), extractTxHash(program));
         }
 
-        public static StackTooSmallException tooSmallStack(int expectedSize, int actualSize) {
-            return new StackTooSmallException("Expected stack size %d but actual %d;", expectedSize, actualSize);
+        public static BadJumpDestinationException badJumpDestination(@Nonnull Program program, int pc) {
+            return new BadJumpDestinationException("Operation with pc isn't 'JUMPDEST': PC[%d], tx[%s]", pc, extractTxHash(program));
         }
 
-        public static RuntimeException tooLargeContractSize(int maxSize, int actualSize) {
-            return new RuntimeException(format("Maximum contract size allowed %d but actual %d;", maxSize, actualSize));
+        public static StackTooSmallException tooSmallStack(@Nonnull Program program, int expectedSize, int actualSize) {
+            return new StackTooSmallException("Expected stack size %d but actual %d, tx: %s", expectedSize, actualSize, extractTxHash(program));
         }
 
-        public static AddressCollisionException addressCollisionException(RskAddress address) {
-            return new AddressCollisionException("Trying to create a contract with existing contract address: 0x" + address.toString());
+        public static RuntimeException tooLargeContractSize(@Nonnull Program program, int maxSize, int actualSize) {
+            return new RuntimeException(format("Maximum contract size allowed %d but actual %d, tx: %s", maxSize, actualSize, extractTxHash(program)));
+        }
+
+        public static AddressCollisionException addressCollisionException(@Nonnull Program program, RskAddress address) {
+            return new AddressCollisionException("Trying to create a contract with existing contract address: 0x" + address + ", tx: " + extractTxHash(program));
+        }
+
+        @Nonnull
+        private static String extractTxHash(@Nonnull Program program) {
+            return program.transaction == null ? "<null>" : "0x" + program.transaction.getHash().toHexString();
         }
     }
 

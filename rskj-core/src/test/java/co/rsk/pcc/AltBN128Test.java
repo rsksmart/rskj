@@ -22,7 +22,9 @@ package co.rsk.pcc;
 import co.rsk.altbn128.cloudflare.Utils;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.config.VmConfig;
-import co.rsk.pcc.altBN128.*;
+import co.rsk.pcc.altBN128.BN128Addition;
+import co.rsk.pcc.altBN128.BN128Multiplication;
+import co.rsk.pcc.altBN128.BN128Pairing;
 import co.rsk.pcc.altBN128.impls.AbstractAltBN128;
 import co.rsk.pcc.altBN128.impls.JavaAltBN128;
 import co.rsk.vm.BytecodeCompiler;
@@ -30,6 +32,7 @@ import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.BlockFactory;
+import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.VM;
@@ -362,7 +365,7 @@ public class AltBN128Test {
                 is(45_000L));
 
         assertThat("Output should be empty",
-                Hex.toHexString(output),
+                ByteUtil.toHexString(output),
                 is("0000000000000000000000000000000000000000000000000000000000000001"));
     }
 
@@ -530,10 +533,10 @@ public class AltBN128Test {
         BigInteger p1x = new BigInteger("0");
         BigInteger p1y = new BigInteger("0");
 
-        String[] inputs = {Hex.toHexString(p0x.toByteArray()),
-                Hex.toHexString(p0y.toByteArray()),
-                Hex.toHexString(p1x.toByteArray()),
-                Hex.toHexString(p1y.toByteArray())};
+        String[] inputs = {ByteUtil.toHexString(p0x.toByteArray()),
+                ByteUtil.toHexString(p0y.toByteArray()),
+                ByteUtil.toHexString(p1x.toByteArray()),
+                ByteUtil.toHexString(p1y.toByteArray())};
 
         String[] expects = {"0000000000000000000000000000000000000000000000000000000000000001",
                 "0000000000000000000000000000000000000000000000000000000000000002"};
@@ -551,10 +554,10 @@ public class AltBN128Test {
         BigInteger p1x = new BigInteger("1");
         BigInteger p1y = new BigInteger("2");
 
-        String[] inputs = {Hex.toHexString(p0x.toByteArray()),
-                Hex.toHexString(p0y.toByteArray()),
-                Hex.toHexString(p1x.toByteArray()),
-                Hex.toHexString(p1y.toByteArray())};
+        String[] inputs = {ByteUtil.toHexString(p0x.toByteArray()),
+                ByteUtil.toHexString(p0y.toByteArray()),
+                ByteUtil.toHexString(p1x.toByteArray()),
+                ByteUtil.toHexString(p1y.toByteArray())};
 
 
         String[] expects = { "030644e72e131a029b85045b68181585d97816a916871ca8d3c208c16d87cfd3",
@@ -596,9 +599,9 @@ public class AltBN128Test {
         String[] expects = {"03d64e49ebb3c56c99e0769c1833879c9b86ead23945e1e7477cbd057e961c50",
                 "0d6840b39f8c2fefe0eced3e7d210b830f50831e756f1cc9039af65dc292e6d0"};
 
-        String[] inputs = {Hex.toHexString(multiplicandX.toByteArray()),
-                Hex.toHexString(multiplicandY.toByteArray()),
-                Hex.toHexString(multiplier.toByteArray())};
+        String[] inputs = {ByteUtil.toHexString(multiplicandX.toByteArray()),
+                ByteUtil.toHexString(multiplicandY.toByteArray()),
+                ByteUtil.toHexString(multiplier.toByteArray())};
 
         executeVMAltBNOperation(inputs, expects, PrecompiledContracts.ALT_BN_128_MUL_ADDR_STR);
     }
@@ -611,7 +614,7 @@ public class AltBN128Test {
         byte[] output = altBN128OperationContract.execute(input);
 
         assertThat("Incorrect gas cost", altBN128OperationContract.getGasForData(input), is(gasCost));
-        assertThat(errorMessage, Hex.toHexString(output), is(expectedOutput));
+        assertThat(errorMessage, ByteUtil.toHexString(output), is(expectedOutput));
 
         runAgainWithJavaImpl(expectedOutput, input, contractAddress);
     }
@@ -628,7 +631,7 @@ public class AltBN128Test {
             } else {
                 altBN128.pairing(input,input.length);
             }
-            assertThat(Hex.toHexString(altBN128.getOutput()), is(expectedOutput));
+            assertThat(ByteUtil.toHexString(altBN128.getOutput()), is(expectedOutput));
         }
     }
 
@@ -643,7 +646,7 @@ public class AltBN128Test {
         System.arraycopy(y1Bytes, 0, input, 64 - y1Bytes.length, y1Bytes.length);
         System.arraycopy(scalarBytes, 0, input, 96 - scalarBytes.length, scalarBytes.length);
 
-        altBN128OperationTest(Hex.toHexString(input), expectedOutput,
+        altBN128OperationTest(ByteUtil.toHexString(input), expectedOutput,
                 "Wrong result of multiplication",
                 PrecompiledContracts.ALT_BN_128_MUL_DW,
                 MUL_GAS_COST);
@@ -663,7 +666,7 @@ public class AltBN128Test {
         System.arraycopy(x2Bytes, 0, input, 96 - x2Bytes.length, x2Bytes.length);
         System.arraycopy(y2Bytes, 0, input, 128 - y2Bytes.length, y2Bytes.length);
 
-        altBN128OperationTest(Hex.toHexString(input), expectedOutput,
+        altBN128OperationTest(ByteUtil.toHexString(input), expectedOutput,
                 errorMessage, PrecompiledContracts.ALT_BN_128_ADD_DW, ADD_GAS_COST);
 
     }
@@ -684,8 +687,8 @@ public class AltBN128Test {
         }
 
         byte[] argsLengthBytes = BigInteger.valueOf(inputs.length * DataWord.BYTES).toByteArray();
-        String retLength = Hex.toHexString(BigInteger.valueOf(expect.length*DataWord.BYTES).toByteArray());
-        String argsLength = Hex.toHexString(argsLengthBytes);
+        String retLength = ByteUtil.toHexString(BigInteger.valueOf(expect.length*DataWord.BYTES).toByteArray());
+        String argsLength = ByteUtil.toHexString(argsLengthBytes);
 
         codeBuilder.append(" PUSH").append(retLength.length()/2)
                 .append(" 0x").append(retLength); // retLength

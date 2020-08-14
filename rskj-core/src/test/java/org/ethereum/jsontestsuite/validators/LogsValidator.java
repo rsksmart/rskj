@@ -19,9 +19,9 @@
 
 package org.ethereum.jsontestsuite.validators;
 
+import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.LogInfo;
-import org.bouncycastle.util.encoders.Hex;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -37,7 +37,7 @@ public class LogsValidator {
             if (vStats!=null) vStats.logChecks++;
             if (origLogs == null || origLogs.size() - 1 < i){
                 String formattedString = String.format("Log: %s: was expected but doesn't exist: address: %s",
-                        i, Hex.toHexString(postLog.getAddress()));
+                        i, ByteUtil.toHexString(postLog.getAddress()));
                 results.add(formattedString);
 
                 continue;
@@ -45,8 +45,8 @@ public class LogsValidator {
 
             LogInfo realLog = origLogs.get(i);
 
-            String postAddress = Hex.toHexString(postLog.getAddress());
-            String realAddress = Hex.toHexString(realLog.getAddress());
+            String postAddress = ByteUtil.toHexString(postLog.getAddress());
+            String realAddress = ByteUtil.toHexString(realLog.getAddress());
             if (vStats!=null) vStats.logChecks++;
             if (!postAddress.equals(realAddress)) {
 
@@ -55,8 +55,8 @@ public class LogsValidator {
                 results.add(formattedString);
             }
 
-            String postData = Hex.toHexString(postLog.getData());
-            String realData = Hex.toHexString(realLog.getData());
+            String postData = ByteUtil.toHexString(postLog.getData());
+            String realData = ByteUtil.toHexString(realLog.getData());
             if (vStats!=null) vStats.logChecks++;
             if (!postData.equals(realData)) {
 
@@ -65,8 +65,8 @@ public class LogsValidator {
                 results.add(formattedString);
             }
 
-            String postBloom = Hex.toHexString(postLog.getBloom().getData());
-            String realBloom = Hex.toHexString(realLog.getBloom().getData());
+            String postBloom = ByteUtil.toHexString(postLog.getBloom().getData());
+            String realBloom = ByteUtil.toHexString(realLog.getBloom().getData());
             if (vStats!=null) vStats.logChecks++;
             if (!postData.equals(realData)) {
 

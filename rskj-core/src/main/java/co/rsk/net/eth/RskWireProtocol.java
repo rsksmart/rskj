@@ -20,7 +20,10 @@ package co.rsk.net.eth;
 
 import co.rsk.config.RskSystemProperties;
 import co.rsk.crypto.Keccak256;
-import co.rsk.net.*;
+import co.rsk.net.MessageHandler;
+import co.rsk.net.NodeID;
+import co.rsk.net.Status;
+import co.rsk.net.StatusResolver;
 import co.rsk.net.messages.BlockMessage;
 import co.rsk.net.messages.GetBlockMessage;
 import co.rsk.net.messages.Message;
@@ -29,7 +32,7 @@ import co.rsk.scoring.EventType;
 import co.rsk.scoring.PeerScoringManager;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
-import org.ethereum.core.*;
+import org.ethereum.core.Genesis;
 import org.ethereum.listener.CompositeEthereumListener;
 import org.ethereum.net.MessageQueue;
 import org.ethereum.net.eth.EthVersion;
@@ -42,7 +45,6 @@ import org.ethereum.sync.SyncStatistics;
 import org.ethereum.util.ByteUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.bouncycastle.util.encoders.Hex;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -131,15 +133,15 @@ public class RskWireProtocol extends SimpleChannelInboundHandler<EthMessage> imp
 
                 switch (message.getMessageType()) {
                     case BLOCK_MESSAGE:
-                        loggerNet.trace("RSK Block Message: Block {} {} from {}", ((BlockMessage)message).getBlock().getNumber(), ((BlockMessage)message).getBlock().getShortHash(), channel.getPeerNodeID());
+                        loggerNet.trace("RSK Block Message: Block {} {} from {}", ((BlockMessage)message).getBlock().getNumber(), ((BlockMessage)message).getBlock().getPrintableHash(), channel.getPeerNodeID());
                         syncStats.addBlocks(1);
                         break;
                     case GET_BLOCK_MESSAGE:
-                        loggerNet.trace("RSK Get Block Message: Block {} from {}", Hex.toHexString(((GetBlockMessage)message).getBlockHash()).substring(0, 10), channel.getPeerNodeID());
+                        loggerNet.trace("RSK Get Block Message: Block {} from {}", ByteUtil.toHexString(((GetBlockMessage)message).getBlockHash()), channel.getPeerNodeID());
                         syncStats.getBlock();
                         break;
                     case STATUS_MESSAGE:
-                        loggerNet.trace("RSK Status Message: Block {} {} from {}", ((StatusMessage)message).getStatus().getBestBlockNumber(), Hex.toHexString(((StatusMessage)message).getStatus().getBestBlockHash()).substring(0, 10), channel.getPeerNodeID());
+                        loggerNet.trace("RSK Status Message: Block {} {} from {}", ((StatusMessage)message).getStatus().getBestBlockNumber(), ByteUtil.toHexString(((StatusMessage)message).getStatus().getBestBlockHash()), channel.getPeerNodeID());
                         syncStats.addStatus();
                         break;
                 }
@@ -294,7 +296,7 @@ public class RskWireProtocol extends SimpleChannelInboundHandler<EthMessage> imp
 
         // todo: reduce reputation
 
-        logger.info("Peer {}: is a bad one, drop", channel.getPeerIdShort());
+        logger.info("Peer {}: is a bad one, drop", channel.getPeerId());
         disconnect(USELESS_PEER);
     }
 

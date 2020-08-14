@@ -105,8 +105,8 @@ public class ForkDetectionDataRule implements BlockValidationRule, BlockHeaderVa
         byte[] expectedForkDetectionData = forkDetectionDataCalculator.calculateWithBlockHeaders(headersView);
         if (!Arrays.equals(expectedForkDetectionData, header.getMiningForkDetectionData())) {
             logger.warn("Fork detection data does not match. Expected {} Actual: {}",
-                    ByteUtil.toHexString(expectedForkDetectionData),
-                    ByteUtil.toHexString(header.getMiningForkDetectionData())
+                    ByteUtil.toHexStringOrEmpty(expectedForkDetectionData),
+                    ByteUtil.toHexStringOrEmpty(header.getMiningForkDetectionData())
             );
             panicProcessor.panic(
                     PANIC_LOGGING_TOPIC,
@@ -120,7 +120,7 @@ public class ForkDetectionDataRule implements BlockValidationRule, BlockHeaderVa
 
     private boolean hasEnoughBlocksToCalculateForkDetectionData(BlockHeader header, List<BlockHeader> headersView) {
         if (headersView.size() != requiredBlocksForForkDetectionDataCalculation) {
-            logger.error("Missing blocks to calculate fork detection data. Block hash {} ", header.getShortHash());
+            logger.error("Missing blocks to calculate fork detection data. Block hash {} ", header.getPrintableHash());
             panicProcessor.panic(
                     PANIC_LOGGING_TOPIC,
                     "Missing blocks to calculate fork detection data."

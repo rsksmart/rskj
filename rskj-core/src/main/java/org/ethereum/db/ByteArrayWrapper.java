@@ -22,8 +22,6 @@ package org.ethereum.db;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.FastByteComparisons;
 
-import org.bouncycastle.util.encoders.Hex;
-
 import java.io.Serializable;
 import java.util.Arrays;
 
@@ -70,7 +68,7 @@ public class ByteArrayWrapper implements Comparable<ByteArrayWrapper>, Serializa
 
     @Override
     public String toString() {
-        return Hex.toHexString(data);
+        return ByteUtil.toHexString(data);
     }
 
     public boolean equalsToByteArray(byte[] otherData) {

@@ -19,6 +19,7 @@
 
 package org.ethereum.vm.trace;
 
+import co.rsk.panic.PanicProcessor;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -27,11 +28,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.introspect.VisibilityChecker;
-import co.rsk.panic.PanicProcessor;
+import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.bouncycastle.util.encoders.Hex;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -55,7 +55,7 @@ public final class Serializers {
 
         @Override
         public void serialize(byte[] memory, JsonGenerator jgen, SerializerProvider provider) throws IOException, JsonProcessingException {
-            jgen.writeString(Hex.toHexString(memory));
+            jgen.writeString(ByteUtil.toHexString(memory));
         }
     }
 

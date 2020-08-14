@@ -120,7 +120,7 @@ public class ProofOfWorkRule implements BlockHeaderValidationRule, BlockValidati
         if (isFallbackMiningPossibleAndBlockSigned(header)) {
             boolean isValidFallbackSignature = validFallbackBlockSignature(constants, header, header.getBitcoinMergedMiningHeader());
             if (!isValidFallbackSignature) {
-                logger.warn("Fallback signature failed. Header {}", header.getShortHash());
+                logger.warn("Fallback signature failed. Header {}", header.getPrintableHash());
             }
             return isValidFallbackSignature;
         }
@@ -134,19 +134,19 @@ public class ProofOfWorkRule implements BlockHeaderValidationRule, BlockValidati
                 mpValidator = new GenesisMerkleProofValidator(bitcoinNetworkParameters, header.getBitcoinMergedMiningMerkleProof());
             }
         } catch (RuntimeException ex) {
-            logger.warn("Merkle proof can't be validated. Header {}", header.getShortHash(), ex);
+            logger.warn("Merkle proof can't be validated. Header {}", header.getPrintableHash(), ex);
             return false;
         }
 
         byte[] bitcoinMergedMiningCoinbaseTransactionCompressed = header.getBitcoinMergedMiningCoinbaseTransaction();
 
         if (bitcoinMergedMiningCoinbaseTransactionCompressed == null) {
-            logger.warn("Compressed coinbase transaction does not exist. Header {}", header.getShortHash());
+            logger.warn("Compressed coinbase transaction does not exist. Header {}", header.getPrintableHash());
             return false;
         }
 
         if (header.getBitcoinMergedMiningHeader() == null) {
-            logger.warn("Bitcoin merged mining header does not exist. Header {}", header.getShortHash());
+            logger.warn("Bitcoin merged mining header does not exist. Header {}", header.getPrintableHash());
             return false;
         }
 

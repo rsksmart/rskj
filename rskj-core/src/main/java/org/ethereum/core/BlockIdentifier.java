@@ -18,9 +18,9 @@ package org.ethereum.core;
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
-import org.bouncycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
 
@@ -74,7 +74,7 @@ public class BlockIdentifier {
     @Override
     public String toString() {
         return "BlockIdentifier {" +
-                "hash=" + Hex.toHexString(hash) +
+                "hash=" + ByteUtil.toHexString(hash) +
                 ", number=" + number +
                 '}';
     }

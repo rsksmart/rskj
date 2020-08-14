@@ -35,7 +35,6 @@ import co.rsk.trie.TrieConverter;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
 import org.bouncycastle.util.BigIntegers;
-import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
@@ -49,6 +48,7 @@ import org.ethereum.net.message.Message;
 import org.ethereum.net.p2p.HelloMessage;
 import org.ethereum.net.rlpx.Node;
 import org.ethereum.net.server.Channel;
+import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RskTestFactory;
 import org.ethereum.vm.PrecompiledContracts;
@@ -481,7 +481,7 @@ public class BlockExecutorTest {
     }
 
     private static Transaction createTransaction(Account sender, Account receiver, BigInteger value, BigInteger nonce) {
-        String toAddress = Hex.toHexString(receiver.getAddress().getBytes());
+        String toAddress = ByteUtil.toHexString(receiver.getAddress().getBytes());
         byte[] privateKeyBytes = sender.getEcKey().getPrivKeyBytes();
         Transaction tx = new Transaction(toAddress, value, nonce, BigInteger.ONE, BigInteger.valueOf(21000), config.getNetworkConstants().getChainId());
         tx.sign(privateKeyBytes);

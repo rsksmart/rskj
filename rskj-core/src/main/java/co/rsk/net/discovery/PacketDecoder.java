@@ -25,9 +25,9 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.socket.DatagramPacket;
 import io.netty.handler.codec.MessageToMessageDecoder;
+import org.ethereum.util.ByteUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.bouncycastle.util.encoders.Hex;
 
 import java.net.InetSocketAddress;
 import java.util.List;
@@ -48,7 +48,7 @@ public class PacketDecoder extends MessageToMessageDecoder<DatagramPacket> {
             PeerDiscoveryMessage msg = MessageDecoder.decode(encoded);
             return new DiscoveryEvent(msg, sender);
         } catch (Exception e) {
-            logger.error("Exception processing inbound message from {} : {}", ctx.channel().remoteAddress(), Hex.toHexString(encoded), e);
+            logger.error("Exception processing inbound message from {} : {}", ctx.channel().remoteAddress(), ByteUtil.toHexString(encoded), e);
             throw e;
         }
     }

@@ -1,6 +1,6 @@
 package co.rsk.util;
 
-import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.util.ByteUtil;
 
 import javax.annotation.Nonnull;
 import java.nio.ByteBuffer;
@@ -13,6 +13,6 @@ public class ByteBufferUtil {
     }
 
     public static String toHexString(@Nonnull ByteBuffer data) {
-        return Hex.toHexString(copyToArray(data));
+        return ByteUtil.toHexString(copyToArray(data));
     }
 }
