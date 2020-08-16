@@ -19,6 +19,7 @@
 package co.rsk.rpc;
 
 import co.rsk.rpc.modules.eth.EthModule;
+import com.fasterxml.jackson.databind.JsonNode;
 import org.ethereum.rpc.Web3;
 import org.ethereum.rpc.dto.BlockResultDTO;
 import org.ethereum.rpc.dto.CompilationResultDTO;
@@ -35,6 +36,10 @@ public interface Web3EthModule {
 
     default String eth_sign(String addr, String data) {
         return getEthModule().sign(addr, data);
+    }
+
+    default String eth_signTypedData(String addr, JsonNode data) {
+        return getEthModule().signTypedData(addr, data);
     }
 
     default String eth_call(Web3.CallArguments args, String bnOrId) {

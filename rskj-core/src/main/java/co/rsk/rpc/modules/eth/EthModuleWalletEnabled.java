@@ -20,6 +20,9 @@ package co.rsk.rpc.modules.eth;
 
 import co.rsk.core.RskAddress;
 import co.rsk.core.Wallet;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.ethereum.core.Account;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
@@ -57,6 +60,19 @@ public class EthModuleWalletEnabled implements EthModuleWallet {
         } finally {
             LOGGER.debug("eth_sign({}, {}): {}", addr, data, s);
         }
+    }
+
+    @Override
+    public String signTypedData(String addr, JsonNode data) {
+        String s;
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            s =  mapper.writerWithDefaultPrettyPrinter().writeValueAsString(data);
+        } catch (JsonProcessingException e) {
+            s =  "Invalid json data";
+        }
+        LOGGER.info("Data to sign: {}", s);
+        return "a";
     }
 
     @Override
