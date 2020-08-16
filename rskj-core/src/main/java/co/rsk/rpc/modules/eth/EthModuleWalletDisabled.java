@@ -18,6 +18,9 @@
 
 package co.rsk.rpc.modules.eth;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,5 +43,20 @@ public class EthModuleWalletDisabled implements EthModuleWallet {
     public String sign(String addr, String data) {
         LOGGER.debug("eth_sign({}, {}): {}", addr, data, null);
         throw invalidParamError("Local wallet is disabled in this node");
+    }
+
+    @Override
+    public String signTypedData(String addr, JsonNode data) {
+        LOGGER.debug("eth_signTypedData({}, {})", addr, stringify(data));
+        throw invalidParamError("Local wallet is disabled in this node");
+    }
+
+    private String stringify(JsonNode data) {
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            return mapper.writerWithDefaultPrettyPrinter().writeValueAsString(data);
+        } catch (JsonProcessingException e) {
+            return "Invalid json data";
+        }
     }
 }
