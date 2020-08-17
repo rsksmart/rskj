@@ -1,0 +1,111 @@
+{
+  "types": {
+    "EIP712Domain": [
+      {
+        "name": "name",
+        "type": "string"
+      },
+      {
+        "name": "version",
+        "type": "string"
+      },
+      {
+        "name": "chainId",
+        "type": "uint256"
+      },
+      {
+        "name": "verifyingContract",
+        "type": "address"
+      }
+    ],
+    "RelayRequest": [
+      {
+        "name": "from",
+        "type": "address"
+      },
+      {
+        "name": "to",
+        "type": "address"
+      },
+      {
+        "name": "value",
+        "type": "uint256"
+      },
+      {
+        "name": "gas",
+        "type": "uint256"
+      },
+      {
+        "name": "nonce",
+        "type": "uint256"
+      },
+      {
+        "name": "data",
+        "type": "bytes"
+      },
+      {
+        "name": "relayData",
+        "type": "RelayData"
+      }
+    ],
+    "RelayData": [
+      {
+        "name": "gasPrice",
+        "type": "uint256"
+      },
+      {
+        "name": "pctRelayFee",
+        "type": "uint256"
+      },
+      {
+        "name": "baseRelayFee",
+        "type": "uint256"
+      },
+      {
+        "name": "relayWorker",
+        "type": "address"
+      },
+      {
+        "name": "paymaster",
+        "type": "address"
+      },
+      {
+        "name": "forwarder",
+        "type": "address"
+      },
+      {
+        "name": "paymasterData",
+        "type": "bytes"
+      },
+      {
+        "name": "clientId",
+        "type": "uint256"
+      }
+    ]
+  },
+  "domain": {
+    "name": "GSN Relayed Transaction",
+    "version": "2",
+    "chainId": 1,
+    "verifyingContract": "0x7E07Ca1570Ed82bE27840813f4365070E4d25Db3"
+  },
+  "primaryType": "RelayRequest",
+  "message": {
+    "to": "0x9f51caf161fa9f64b80e3a754dee214409f185ea",
+    "data": "0x2ac0df260000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000568656c6c6f000000000000000000000000000000000000000000000000000000",
+    "from": "0xf7cf9c7db7c3c9d67b2574c401dea10d2cdd8389",
+    "value": "0",
+    "nonce": "0",
+    "gas": "27054",
+    "relayData": {
+      "pctRelayFee": "12",
+      "baseRelayFee": "70",
+      "gasPrice": "1",
+      "paymaster": "0x7C91D2525a635e2B853F0CC45B84Ff8419514001",
+      "paymasterData": "0x",
+      "clientId": "1",
+      "forwarder": "0x7E07Ca1570Ed82bE27840813f4365070E4d25Db3",
+      "relayWorker": "0x4a11a02da85adf50d7c1ecf32b767ef6ba726556"
+    }
+  }
+}

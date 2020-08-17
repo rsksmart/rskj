@@ -14,6 +14,7 @@ public class EIP712UtilsTest {
 
     private static JsonNode typedData;
     private static JsonNode recTypedData;
+    private static JsonNode relayRequest;
 
     private EIP712Utils utils;
 
@@ -22,6 +23,7 @@ public class EIP712UtilsTest {
         ObjectMapper m = new ObjectMapper();
         typedData = m.readTree(EIP712UtilsTest.class.getResourceAsStream("/eip712/typed_data.json"));
         recTypedData = m.readTree(EIP712UtilsTest.class.getResourceAsStream("/eip712/rec_typed_data.json"));
+        relayRequest = m.readTree(EIP712UtilsTest.class.getResourceAsStream("/eip712/relay_request.json"));
     }
 
     @Before
@@ -252,6 +254,13 @@ public class EIP712UtilsTest {
         assertThat(
                 Hex.toHexString(utils.epi712encode_v4(recTypedData)),
                 equalTo("807773b9faa9879d4971b43856c4d60c2da15c6f8c062bd9d33afefb756de19c"));
+    }
+
+    @Test
+    public void relayRequest_typedDataEncodesOk() {
+        assertThat(
+                Hex.toHexString(utils.epi712encode_v4(relayRequest)),
+                equalTo("eb8d009317b0c884c025eea6c4e997c8b2dd7ff919ee7b06469b631c282dbf7d"));
     }
 
     private JsonNode types(JsonNode data) {
