@@ -11,9 +11,12 @@ import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.HashUtil;
 import org.web3j.abi.DefaultFunctionEncoder;
 import org.web3j.abi.TypeDecoder;
+import org.web3j.abi.TypeReference;
+import org.web3j.abi.datatypes.NumericType;
 import org.web3j.abi.datatypes.Type;
 import org.web3j.abi.datatypes.generated.Bytes32;
 
+import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -173,10 +176,41 @@ public class EIP712Utils {
         }
 
         try {
+            // For numeric types web3j assumes that if the value is a string, it *must* be an
+            // hexadecimal number. But that's no the case when the data comes from json, where
+            // a string is assumed to be just the representation of a number, not necessarily
+            // hexadecimal. Therefore, when in json we have a property like:
+            //
+            //    "gasPrice": "12"
+            //
+            // "gasPrice" gets encoded by web3j as "0x12", when it should be "0x0c". So the fix:
+            //
+            // Check for the case where we are instantiating a numeric type from a string. Assume
+            // the value is hexadecimal *only* if it starts with "0x". That's implemented by the
+            // method numericFromString.
+            TypeReference tyRef = TypeReference.makeTypeReference(type);
+            if (NumericType.class.isAssignableFrom(tyRef.getClassType()) && value.isTextual()) {
+                return numericFromString(tyRef, value.asText());
+            }
             return TypeDecoder.instantiateType(type, value.asText());
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    /**
+     * Construct a Solidity numeric type from a string value, inferring whether
+     * the string is an hex or base 10 number.
+     *
+     * @param tyRef reference for numeric type to instantiate
+     * @param value string representation of value to associate to the numeric type
+     * @return instantiated Solidity numeric type
+     * @throws Exception if instantiation fails
+     */
+    private Type numericFromString(TypeReference tyRef, String value) throws Exception {
+        int radix = value.startsWith("0x")? 16 : 10;
+        BigInteger n = new BigInteger(value, radix);
+        return TypeDecoder.instantiateType(tyRef, n);
     }
 
     /**
@@ -237,6 +271,7 @@ public class EIP712Utils {
         ByteArrayDataOutput buf = ByteStreams.newDataOutput();
         buf.writeByte(0x19);
         buf.writeByte(0x01);
+
         buf.write(hashStruct(EIP712Domain, sanitized.get("domain"), sanitized.with("types")));
         if (!sanitized.get("primaryType").asText().equals(EIP712Domain)) {
             buf.write(hashStruct(
