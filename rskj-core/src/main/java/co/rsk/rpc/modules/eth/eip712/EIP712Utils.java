@@ -131,6 +131,7 @@ public class EIP712Utils {
                     .collect(Collectors.joining(","));
             sb.append(String.format("%s(%s)", type, tyArgs));
         }
+
         return sb.toString();
     }
 
@@ -183,14 +184,11 @@ public class EIP712Utils {
             //
             //    "gasPrice": "12"
             //
-            // "gasPrice" gets encoded by web3j as "0x12", when it should be "0x0c". So the fix:
-            //
-            // Check for the case where we are instantiating a numeric type from a string. Assume
-            // the value is hexadecimal *only* if it starts with "0x". That's implemented by the
-            // method numericFromString.
+            // "gasPrice" gets encoded by web3j as "0x12", when it should be "0x0c". So we must
+            // handle the encoding of numeric values as a special case.
             TypeReference tyRef = TypeReference.makeTypeReference(type);
-            if (NumericType.class.isAssignableFrom(tyRef.getClassType()) && value.isTextual()) {
-                return numericFromString(tyRef, value.asText());
+            if (NumericType.class.isAssignableFrom(tyRef.getClassType())) {
+                return numericFromString(tyRef, value);
             }
             return TypeDecoder.instantiateType(type, value.asText());
         } catch (Exception e) {
@@ -199,18 +197,27 @@ public class EIP712Utils {
     }
 
     /**
-     * Construct a Solidity numeric type from a string value, inferring whether
-     * the string is an hex or base 10 number.
+     * Construct a Solidity numeric type, handling correctly the case when the
+     * value is textual. In this case we don't blindly assume the strings holds
+     * the hexadecimal value. The value will be hexadecimal *only* if it the
+     * value string starts with "0x".
      *
      * @param tyRef reference for numeric type to instantiate
-     * @param value string representation of value to associate to the numeric type
+     * @param value value to associate to the numeric type
      * @return instantiated Solidity numeric type
      * @throws Exception if instantiation fails
      */
-    private Type numericFromString(TypeReference tyRef, String value) throws Exception {
-        int radix = value.startsWith("0x")? 16 : 10;
-        BigInteger n = new BigInteger(value, radix);
-        return TypeDecoder.instantiateType(tyRef, n);
+    private Type numericFromString(TypeReference tyRef, JsonNode value) throws Exception {
+        if (value.isTextual()) {
+            String txtVal = value.asText();
+            int radix = txtVal.startsWith("0x") ? 16 : 10;
+            BigInteger n = new BigInteger(txtVal, radix);
+            return TypeDecoder.instantiateType(tyRef, n);
+        } else if (value.isNumber() ){
+            return TypeDecoder.instantiateType(tyRef, value.numberValue());
+        } else {
+            throw new IllegalStateException("Invalid value for numeric type");
+        }
     }
 
     /**
@@ -235,6 +242,7 @@ public class EIP712Utils {
 
         DefaultFunctionEncoder encoder = new DefaultFunctionEncoder();
         String abiEncoded = encoder.encodeParameters(encoded);
+
         return Hex.decode(abiEncoded);
     }
 
