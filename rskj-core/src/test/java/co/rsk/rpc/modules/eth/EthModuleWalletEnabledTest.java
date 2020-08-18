@@ -57,4 +57,15 @@ public class EthModuleWalletEnabledTest {
         assertThat(signature, equalTo(
                 "0xf2ec61e636ff7bb3ac8bc2a4cc2c8b8f635dd1b2ec8094c963128b358e79c85c5ca6dd637ed7e80f0436fe8fce39c0e5f2082c9517fe677cc2917dcd6c84ba881c"));
     }
+
+    @Test
+    public void relayRequest_testSignTyped() throws Exception {
+        Account account = getAccount("dragon");
+        when(wallet.getAccount(any())).thenReturn(account);
+        JsonNode typedData = readJson("/eip712/relay_request.json");
+        String signature = new EthModuleWalletEnabled(wallet)
+                .signTypedData(account.getAddress().toHexString(), typedData);
+        assertThat(signature, equalTo(
+                "0xd54ed4b0f72c86a68729940a329342a854909d1fb91c5ccb0e8482e59921e7a9172a62243f0e0bfaffe3498c5a24e21df823f33a56b02628300e4f34addcdba11c"));
+    }
 }
