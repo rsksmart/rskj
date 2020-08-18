@@ -10,15 +10,13 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
-import org.spongycastle.util.encoders.Hex;
 
 import java.nio.charset.StandardCharsets;
 
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.when;
-
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class EthModuleWalletEnabledTest {
@@ -32,7 +30,6 @@ public class EthModuleWalletEnabledTest {
 
     private Account getAccount(String privKeyStr) {
         ECKey privKey = ECKey.fromPrivate(HashUtil.keccak256(privKeyStr.getBytes(StandardCharsets.UTF_8)));
-        System.out.println(Hex.toHexString(privKey.getPrivKeyBytes()));
         return new Account(privKey);
     }
 
