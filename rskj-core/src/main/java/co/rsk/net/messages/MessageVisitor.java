@@ -23,6 +23,7 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.net.*;
 import co.rsk.scoring.EventType;
 import co.rsk.scoring.PeerScoringManager;
+import co.rsk.util.FormatUtils;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockIdentifier;
 import org.ethereum.core.Transaction;
@@ -30,6 +31,7 @@ import org.ethereum.net.server.ChannelManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.text.Normalizer;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -211,7 +213,7 @@ public class MessageVisitor {
 
         transactionGateway.receiveTransactionsFrom(txs, Collections.singleton(sender.getPeerNodeID()));
 
-        loggerMessageProcess.debug("Tx message process finished after [{}] nano.", System.nanoTime() - start);
+        loggerMessageProcess.debug("Tx message process finished after [{}] seconds.", FormatUtils.formatNanosecondsToSeconds(System.nanoTime() - start));
     }
 
     private void recordEvent(Peer sender, EventType event) {

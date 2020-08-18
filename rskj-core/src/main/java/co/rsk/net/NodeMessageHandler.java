@@ -24,6 +24,7 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.net.messages.*;
 import co.rsk.scoring.EventType;
 import co.rsk.scoring.PeerScoringManager;
+import co.rsk.util.FormatUtils;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.net.server.ChannelManager;
 import org.slf4j.Logger;
@@ -99,7 +100,9 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
                 sender);
         message.accept(mv);
 
-        loggerMessageProcess.debug("Message[{}] processed after [{}] nano.", message.getMessageType(), System.nanoTime() - start);
+        long processTime = System.nanoTime() - start;
+        String timeInSeconds = FormatUtils.formatNanosecondsToSeconds(processTime);
+        loggerMessageProcess.debug("Message[{}] processed after [{}] seconds.", message.getMessageType(), timeInSeconds);
     }
 
     @Override

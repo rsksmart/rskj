@@ -18,6 +18,7 @@
  */
 package org.ethereum.datasource;
 
+import co.rsk.util.FormatUtils;
 import co.rsk.util.MaxSizeHashMap;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.util.ByteUtil;
@@ -219,7 +220,7 @@ public class DataSourceWithCache implements KeyValueDataSource {
 
             long totalTime = System.nanoTime() - saveTime;
 
-            logger.trace("datasource flush: [{}]nano", totalTime);
+            logger.trace("datasource flush: [{}]seconds", FormatUtils.formatNanosecondsToSeconds(totalTime));
         }
         finally {
             this.lock.writeLock().unlock();

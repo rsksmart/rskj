@@ -19,6 +19,7 @@
 package co.rsk.net;
 
 import co.rsk.crypto.Keccak256;
+import co.rsk.util.FormatUtils;
 import org.ethereum.core.Block;
 import org.ethereum.core.ImportResult;
 import org.slf4j.Logger;
@@ -69,10 +70,10 @@ public class BlockProcessResult {
 
     private void logResult(String blockHash, Duration processingTime) {
         if(result == null || result.isEmpty()) {
-            logger.debug("[MESSAGE PROCESS] Block[{}] After[{}] nano, process result. No block connections were made", processingTime.toNanos(), blockHash);
+            logger.debug("[MESSAGE PROCESS] Block[{}] After[{}] seconds, process result. No block connections were made", FormatUtils.formatNanosecondsToSeconds(processingTime.toNanos()), blockHash);
         } else {
             StringBuilder sb = new StringBuilder("[MESSAGE PROCESS] Block[")
-                    .append(blockHash).append("] After[").append(processingTime.toNanos()).append("] nano, process result. Connections attempts: ").append(result.size()).append(" | ");
+                    .append(blockHash).append("] After[").append(FormatUtils.formatNanosecondsToSeconds(processingTime.toNanos())).append("] nano, process result. Connections attempts: ").append(result.size()).append(" | ");
 
             for(Map.Entry<Keccak256, ImportResult> entry : this.result.entrySet()) {
                 sb.append(entry.getKey().toString()).append(" - ").append(entry.getValue()).append(" | ");
