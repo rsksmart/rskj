@@ -20,6 +20,10 @@
 package co.rsk.util;
 
 public class FormatUtils {
+    private FormatUtils() {
+
+    }
+
     public static String formatNanosecondsToSeconds(long nanoseconds) {
         return String.format("%.6f", nanoseconds / 1_000_000_000.0);
     }
