@@ -18,6 +18,7 @@
 
 package co.rsk.net;
 
+import co.rsk.core.bc.BlockUtils;
 import co.rsk.crypto.Keccak256;
 import co.rsk.util.FormatUtils;
 import org.ethereum.core.Block;
@@ -70,7 +71,14 @@ public class BlockProcessResult {
 
     private void logResult(String blockHash, Duration processingTime) {
         if(result == null || result.isEmpty()) {
-            logger.debug("[MESSAGE PROCESS] Block[{}] After[{}] seconds, process result. No block connections were made", FormatUtils.formatNanosecondsToSeconds(processingTime.toNanos()), blockHash);
+            long processTime =  processingTime.toNanos();
+
+            if (BlockUtils.tooMuchProcessTime(processTime)) {
+                logger.warn("[MESSAGE PROCESS] Block[{}] After[{}] seconds, process result. No block connections were made", FormatUtils.formatNanosecondsToSeconds(processTime), blockHash);
+            }
+            else {
+                logger.debug("[MESSAGE PROCESS] Block[{}] After[{}] seconds, process result. No block connections were made", FormatUtils.formatNanosecondsToSeconds(processTime), blockHash);
+            }
         } else {
             StringBuilder sb = new StringBuilder("[MESSAGE PROCESS] Block[")
                     .append(blockHash).append("] After[").append(FormatUtils.formatNanosecondsToSeconds(processingTime.toNanos())).append("] nano, process result. Connections attempts: ").append(result.size()).append(" | ");

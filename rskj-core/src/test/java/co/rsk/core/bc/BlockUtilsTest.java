@@ -166,4 +166,16 @@ public class BlockUtilsTest {
         Assert.assertTrue(hashes.contains(uncle1.getHash()));
         Assert.assertTrue(hashes.contains(uncle2.getHash()));
     }
+
+    @Test
+    public void tooMuchProcessTime() {
+        Assert.assertFalse(BlockUtils.tooMuchProcessTime(0));
+        Assert.assertFalse(BlockUtils.tooMuchProcessTime(1000));
+        Assert.assertFalse(BlockUtils.tooMuchProcessTime(1_000_000L));
+        Assert.assertFalse(BlockUtils.tooMuchProcessTime(1_000_000_000L));
+        Assert.assertFalse(BlockUtils.tooMuchProcessTime(60_000_000_000L));
+
+        Assert.assertTrue(BlockUtils.tooMuchProcessTime(60_000_000_001L));
+        Assert.assertTrue(BlockUtils.tooMuchProcessTime(1_000_000_000_000L));
+    }
 }

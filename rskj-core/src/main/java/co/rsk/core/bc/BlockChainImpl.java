@@ -158,7 +158,14 @@ public class BlockChainImpl implements Blockchain {
                     ImportResult result = internalTryToConnect(block);
                     long totalTime = System.nanoTime() - saveTime;
                     String timeInSeconds = FormatUtils.formatNanosecondsToSeconds(totalTime);
-                    logger.info("block: num: [{}] hash: [{}], processed after: [{}]seconds, result {}", block.getNumber(), block.getPrintableHash(), timeInSeconds, result);
+
+                    if (BlockUtils.tooMuchProcessTime(totalTime)) {
+                        logger.warn("block: num: [{}] hash: [{}], processed after: [{}]seconds, result {}", block.getNumber(), block.getPrintableHash(), timeInSeconds, result);
+                    }
+                    else {
+                        logger.info("block: num: [{}] hash: [{}], processed after: [{}]seconds, result {}", block.getNumber(), block.getPrintableHash(), timeInSeconds, result);
+                    }
+
                     return result;
                 }
             } catch (Throwable t) {
@@ -260,7 +267,13 @@ public class BlockChainImpl implements Blockchain {
 
             long totalTime = System.nanoTime() - saveTime;
             String timeInSeconds = FormatUtils.formatNanosecondsToSeconds(totalTime);
-            logger.trace("block: num: [{}] hash: [{}], executed after: [{}]seconds", block.getNumber(), block.getPrintableHash(), timeInSeconds);
+
+            if (BlockUtils.tooMuchProcessTime(totalTime)) {
+                logger.warn("block: num: [{}] hash: [{}], executed after: [{}]seconds", block.getNumber(), block.getPrintableHash(), timeInSeconds);
+            }
+            else {
+                logger.trace("block: num: [{}] hash: [{}], executed after: [{}]seconds", block.getNumber(), block.getPrintableHash(), timeInSeconds);
+            }
 
             // the block is valid at this point
             stateRootHandler.register(block.getHeader(), result.getFinalState());
