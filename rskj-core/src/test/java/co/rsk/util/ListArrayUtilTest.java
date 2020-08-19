@@ -72,4 +72,144 @@ public class ListArrayUtilTest {
         byte[] array = new byte[1];
         Assert.assertEquals(1, ListArrayUtil.getLength(array));
     }
+
+    @Test
+    public void testLastIndexOfSublistEmptyArrays() {
+        byte[] source = new byte[] {};
+        byte[] target = new byte[] {};
+
+        int res = ListArrayUtil.lastIndexOfSubList(source, target);
+
+        Assert.assertEquals( 0, res);
+    }
+
+    @Test
+    public void testLastIndexOfSublistSearchEmpty() {
+        byte[] source = new byte[] { 1, 2, 3, 4, 5 };
+        byte[] target = new byte[] { };
+
+        int res = ListArrayUtil.lastIndexOfSubList(source, target);
+
+        Assert.assertEquals(5, res);
+    }
+
+    @Test
+    public void testLastIndexOfSublistFindsMatch1() {
+        byte[] source = new byte[] { 1, 2, 3, 4, 5 };
+        byte[] target = new byte[] { 3, 4 };
+
+        int res = ListArrayUtil.lastIndexOfSubList(source, target);
+
+        Assert.assertEquals(2, res);
+    }
+
+    @Test
+    public void testLastIndexOfSublistFindsMatch2() {
+        byte[] source = new byte[] { 1, 2, 3, 4, 5 };
+        byte[] target = new byte[] { 4, 5 };
+
+        int res = ListArrayUtil.lastIndexOfSubList(source, target);
+
+        Assert.assertEquals(3, res);
+    }
+
+    @Test
+    public void testLastIndexOfSublistSameArray() {
+        byte[] source = new byte[] { 1, 2, 3, 4, 5 };
+        byte[] target = new byte[] { 1, 2, 3, 4, 5 };
+
+        int res = ListArrayUtil.lastIndexOfSubList(source, target);
+
+        Assert.assertEquals(0, res);
+    }
+
+    @Test
+    public void testLastIndexOfSublistTargetLongerThanSource() {
+        byte[] source = new byte[] { 1, 2, 3, 4, 5 };
+        byte[] target = new byte[] { 1, 2, 3, 4, 5, 6 };
+
+        int res = ListArrayUtil.lastIndexOfSubList(source, target);
+
+        Assert.assertEquals(-1, res);
+    }
+
+    @Test
+    public void testLastIndexOfSublistPartialOverlapOnBeginning() {
+        byte[] source = new byte[] { 1, 2, 3, 4, 5 };
+        byte[] target = new byte[] { 0, 1, 2 };
+
+        int res = ListArrayUtil.lastIndexOfSubList(source, target);
+
+        Assert.assertEquals(-1, res);
+    }
+
+    @Test
+    public void testLastIndexOfSublistPartialOverlapOnEnd() {
+        byte[] source = new byte[] { 1, 2, 3, 4, 5 };
+        byte[] target = new byte[] { 4, 5, 6 };
+
+        int res = ListArrayUtil.lastIndexOfSubList(source, target);
+
+        Assert.assertEquals(-1, res);
+    }
+
+    @Test
+    public void testLastIndexOfSublist6ArraysWithNoSharedElements() {
+        byte[] source = new byte[] { 1, 2, 3, 4, 5 };
+        byte[] target = new byte[] { 6, 7, 8, 9, 10 };
+
+        int res = ListArrayUtil.lastIndexOfSubList(source, target);
+
+        Assert.assertEquals(-1, res);
+    }
+
+    @Test
+    public void testLastIndexOfSublistNullSource() {
+        byte[] source = null;
+        byte[] target = new byte[] { 6, 7, 8, 9, 10 };
+
+        int res = ListArrayUtil.lastIndexOfSubList(source, target);
+
+        Assert.assertEquals(-1, res);
+    }
+
+    @Test
+    public void testLastIndexOfSublistNullTarget() {
+        byte[] source = new byte[] { 1, 2, 3, 4, 5 };
+        byte[] target = null;
+
+        int res = ListArrayUtil.lastIndexOfSubList(source, target);
+
+        Assert.assertEquals(-1, res);
+    }
+
+    @Test
+    public void testLastIndexOfSublistMatchesSecondOcurrence() {
+        byte[] source = new byte[] { 3, 4, 5, 3, 4, 5 };
+        byte[] target = new byte[] { 3, 4, 5 };
+
+        int res = ListArrayUtil.lastIndexOfSubList(source, target);
+
+        Assert.assertEquals(3, res);
+    }
+
+    @Test
+    public void testLastIndexOfSublistMatchesThirdOcurrence() {
+        byte[] source = new byte[] { 1, 2, 3, 1, 2, 3, 1, 2, 3 };
+        byte[] target = new byte[] { 1, 2, 3 };
+
+        int res = ListArrayUtil.lastIndexOfSubList(source, target);
+
+        Assert.assertEquals(6, res);
+    }
+
+    @Test
+    public void testLastIndexOfSublistMatchesLastOcurrence() {
+        byte[] source = new byte[] { 1, 2, 3, 3, 4, 5, 1, 2, 3 };
+        byte[] target = new byte[] { 1, 2, 3 };
+
+        int res = ListArrayUtil.lastIndexOfSubList(source, target);
+
+        Assert.assertEquals(6, res);
+    }
 }
