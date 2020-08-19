@@ -178,7 +178,11 @@ public class TraceTransformer {
             value = TypeConverter.toQuantityJsonHex(callValue.getData());
 
             if (callType == CallType.DELEGATECALL) {
-                to = new RskAddress(codeAddress.getLast20Bytes()).toJsonString();
+                // The code address should not be null in a DELEGATECALL case
+                // but handling the case here
+                if (codeAddress != null) {
+                    to = new RskAddress(codeAddress.getLast20Bytes()).toJsonString();
+                }
             }
             else {
                 to = new RskAddress(invoke.getOwnerAddress().getLast20Bytes()).toJsonString();
