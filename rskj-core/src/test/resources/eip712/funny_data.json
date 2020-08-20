@@ -1,0 +1,111 @@
+{
+  "types": {
+    "EIP712Domain": [
+      {
+        "name": "name",
+        "type": "string"
+      },
+      {
+        "name": "version",
+        "type": "string"
+      },
+      {
+        "name": "chainId",
+        "type": "uint256"
+      },
+      {
+        "name": "verifyingContract",
+        "type": "address"
+      }
+    ],
+    "RelayRequest": [
+      {
+        "name": "from",
+        "type": "address"
+      },
+      {
+        "name": "to",
+        "type": "address"
+      },
+      {
+        "name": "value",
+        "type": "uint256"
+      },
+      {
+        "name": "gas",
+        "type": "uint256"
+      },
+      {
+        "name": "nonce",
+        "type": "uint256"
+      },
+      {
+        "name": "data",
+        "type": "bytes"
+      },
+      {
+        "name": "relayData",
+        "type": "RelayData"
+      }
+    ],
+    "RelayData": [
+      {
+        "name": "gasPrice",
+        "type": "uint256"
+      },
+      {
+        "name": "pctRelayFee",
+        "type": "uint256"
+      },
+      {
+        "name": "baseRelayFee",
+        "type": "uint256"
+      },
+      {
+        "name": "relayWorker",
+        "type": "address"
+      },
+      {
+        "name": "paymaster",
+        "type": "address"
+      },
+      {
+        "name": "forwarder",
+        "type": "address"
+      },
+      {
+        "name": "paymasterData",
+        "type": "bytes"
+      },
+      {
+        "name": "clientId",
+        "type": "uint256"
+      }
+    ]
+  },
+  "domain": {
+    "name": "GSN Relayed Transaction",
+    "version": "2",
+    "chainId": 33,
+    "verifyingContract": "0x0000000000000000000000000000000000000000"
+  },
+  "primaryType": "RelayRequest",
+  "message": {
+    "to": "0x0000000000000000000000000000000000000000",
+    "data": "0x123",
+    "from": "0xCD2a3d9F938E13CD947Ec05AbC7FE734Df8DD826",
+    "nonce": "1",
+    "value": "0",
+    "gas": "1",
+    "relayData": {
+      "pctRelayFee": "1",
+      "baseRelayFee": "1",
+      "gasPrice": "1",
+      "relayWorker": "0x0000000000000000000000000000000000000000",
+      "forwarder": "0x0000000000000000000000000000000000000000",
+      "paymaster": "0x0000000000000000000000000000000000000000",
+      "paymasterData": "0x",
+      "clientId": "1"
+    }
+  }
+}

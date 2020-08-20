@@ -149,10 +149,7 @@ public class EIP712Utils {
         }
 
         if (type.equals("bytes")) {
-            String val = value.asText();
-            if (val.startsWith("0x")) {
-                val = val.substring(2);
-            }
+            String val = normHexString(value.asText());
             return new Bytes32(HashUtil.keccak256(Hex.decode(val)));
         }
 
@@ -194,6 +191,24 @@ public class EIP712Utils {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    /**
+     * Normalize string representing an hexadecimal value. Normalization amounts to:
+     *   - Remove leading "0x" if present
+     *   - Ensure even length by adding a leading zero if necessary
+     *
+     * @param value hexadecimal string value to normalize
+     * @return normalized value
+     */
+    private String normHexString(String value) {
+        if (value.startsWith("0x")) {
+            value = value.substring(2);
+        }
+        if (value.length() % 2 != 0) {
+            value = "0" + value;
+        }
+        return value;
     }
 
     /**

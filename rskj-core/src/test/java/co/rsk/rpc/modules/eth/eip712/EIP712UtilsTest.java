@@ -15,6 +15,7 @@ public class EIP712UtilsTest {
     private static JsonNode typedData;
     private static JsonNode recTypedData;
     private static JsonNode relayRequest;
+    private static JsonNode funnyRequest;
 
     private EIP712Utils utils;
 
@@ -24,6 +25,7 @@ public class EIP712UtilsTest {
         typedData = m.readTree(EIP712UtilsTest.class.getResourceAsStream("/eip712/typed_data.json"));
         recTypedData = m.readTree(EIP712UtilsTest.class.getResourceAsStream("/eip712/rec_typed_data.json"));
         relayRequest = m.readTree(EIP712UtilsTest.class.getResourceAsStream("/eip712/relay_request.json"));
+        funnyRequest = m.readTree(EIP712UtilsTest.class.getResourceAsStream("/eip712/funny_data.json"));
     }
 
     @Before
@@ -146,10 +148,6 @@ public class EIP712UtilsTest {
                 equalTo("a85c2e2b118698e88db68a8105b794a8cc7cec074e89ef991cb4f5f533819cc2"));
     }
 
-    // -------------------------------------------------------------------
-    // Tests over recursive types follow
-    // -------------------------------------------------------------------
-
     @Test
     public void rec_personEncodesOk() {
         assertThat(
@@ -261,6 +259,12 @@ public class EIP712UtilsTest {
         assertThat(
                 Hex.toHexString(utils.epi712encode_v4(relayRequest)),
                 equalTo("eb8d009317b0c884c025eea6c4e997c8b2dd7ff919ee7b06469b631c282dbf7d"));
+    }
+
+    @Test
+    public void funnyRequest_doesNotThrow() {
+        // Just test it doesn't throw
+        utils.epi712encode_v4(funnyRequest);
     }
 
     private JsonNode types(JsonNode data) {
