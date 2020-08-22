@@ -75,7 +75,7 @@ public interface MutableTrie {
 
     long getLastRentPaidTime(byte[] key);
 
-    long getRentPaidTimeDelta(byte[] key);
+    //long getRentPaidTimeDelta(byte[] key);
     
     // the key has to match exactly an account key
     // it won't work if it is used with an storage key or any other

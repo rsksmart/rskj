@@ -36,6 +36,8 @@ import org.ethereum.vm.trace.ProgramTraceProcessor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.bouncycastle.util.encoders.Hex; //#mish for testing
+
 import javax.annotation.Nullable;
 import java.util.*;
 
@@ -136,6 +138,7 @@ public class BlockExecutor {
     public boolean validate(Block block, BlockResult result) {
         Metric metric = profiler.start(Profiler.PROFILING_TYPE.BLOCK_FINAL_STATE_VALIDATION);
         if (result == BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT) {
+            System.out.println("\nIn blockexecutor invalid TX\n");
             logger.error("Block {} [{}] execution was interrupted because of an invalid transaction", block.getNumber(), block.getShortHash());
             profiler.stop(metric);
             return false;
@@ -143,6 +146,7 @@ public class BlockExecutor {
 
         boolean isValidStateRoot = validateStateRoot(block.getHeader(), result);
         if (!isValidStateRoot) {
+            System.out.println("\nIn blockexecutor invalid stateroot\n");
             logger.error("Block {} [{}] given State Root is invalid", block.getNumber(), block.getShortHash());
             profiler.stop(metric);
             return false;
@@ -150,6 +154,7 @@ public class BlockExecutor {
 
         boolean isValidReceiptsRoot = validateReceiptsRoot(block.getHeader(), result);
         if (!isValidReceiptsRoot) {
+            System.out.println("\nIn blockexecutor invalid rcpt root\n");
             logger.error("Block {} [{}] given Receipt Root is invalid", block.getNumber(), block.getShortHash());
             profiler.stop(metric);
             return false;
@@ -163,6 +168,7 @@ public class BlockExecutor {
         }
 
         if (result.getGasUsed() != block.getGasUsed()) {
+            System.out.println("\nIn blockexecutor gasUsed doesn't match\n");
             logger.error("Block {} [{}] given gasUsed doesn't match: {} != {}", block.getNumber(), block.getShortHash(), block.getGasUsed(), result.getGasUsed());
             profiler.stop(metric);
             return false;
@@ -172,6 +178,7 @@ public class BlockExecutor {
         Coin feesPaidToMiner = block.getFeesPaidToMiner();
 
         if (!paidFees.equals(feesPaidToMiner))  {
+            System.out.println("\nIn blockexecutor fees doesn't match\n");
             logger.error("Block {} [{}] given paidFees doesn't match: {} != {}", block.getNumber(), block.getShortHash(), feesPaidToMiner, paidFees);
             profiler.stop(metric);
             return false;
@@ -181,6 +188,7 @@ public class BlockExecutor {
         List<Transaction> transactionsList = block.getTransactionsList();
 
         if (!executedTransactions.equals(transactionsList))  {
+            System.out.println("\nIn blockexecutor txs list doesn't match\n");
             logger.error("Block {} [{}] given txs doesn't match: {} != {}", block.getNumber(), block.getShortHash(), transactionsList, executedTransactions);
             profiler.stop(metric);
             return false;
@@ -201,7 +209,10 @@ public class BlockExecutor {
             byte[] orchidStateRoot = stateRootHandler.convert(header, result.getFinalState()).getBytes();
             return Arrays.equals(orchidStateRoot, header.getStateRoot());
         }
-
+        // #mish for testing
+        //System.out.println("\nIn blockexecutor within validate state root");
+        //System.out.println("Given header " + Hex.toHexString(header.getStateRoot()));
+        //System.out.println("Given result " + Hex.toHexString(result.getFinalState().getHash().getBytes()));
         // we only validate state roots of blocks newer than 0.5.0 activation
         return Arrays.equals(result.getFinalState().getHash().getBytes(), header.getStateRoot());
     }
@@ -220,7 +231,7 @@ public class BlockExecutor {
     public BlockResult execute(Block block, BlockHeader parent, boolean discardInvalidTxs) {
         return execute(block, parent, discardInvalidTxs, false);
     }
-
+    // #mish acceptInvalidTx is same as ignoring readytoexecute indicator
     public BlockResult execute(Block block, BlockHeader parent, boolean discardInvalidTxs, boolean ignoreReadyToExecute) {
         return executeInternal(null, 0, block, parent, discardInvalidTxs, ignoreReadyToExecute);
     }
@@ -261,18 +272,20 @@ public class BlockExecutor {
         // to conect the block). This is because the first execution will change the state
         // of the repository to the state post execution, so it's necessary to get it to
         // the state prior execution again.
-        //#mish clarify: Block executor does not execute TX twice. 2nd execution happens when connecting blocks
 
         Metric metric = profiler.start(Profiler.PROFILING_TYPE.BLOCK_EXECUTE);
 
+        //System.out.println("\nStart tracking at parent state root " + Hex.toHexString(parent.getStateRoot()));
+        
         Repository track = repositoryLocator.startTrackingAt(parent);
+        //System.out.println("\nPRE block exec state root (trie hash) " + track.getTrie().getHash());
 
         //in the tracked repository, create accounts and setup storage root for all PCC addr  
         maintainPrecompiledContractStorageRoots(track, activationConfig.forBlock(block.getNumber()));
 
         int i = 1;
-        long totalGasUsed = 0; //#mish should exclude rent gas
-        Coin totalPaidFees = Coin.ZERO; //#mish should include rent gas
+        long totalGasUsed = 0; //#mish subject to block level gas limit -> should exclude rent gas
+        Coin totalPaidFees = Coin.ZERO; //#mish will include rent gas
         List<TransactionReceipt> receipts = new ArrayList<>();
         List<Transaction> executedTransactions = new ArrayList<>();
         Set<DataWord> deletedAccounts = new HashSet<>();
@@ -296,6 +309,12 @@ public class BlockExecutor {
 
             boolean transactionExecuted = txExecutor.executeTransaction();
 
+            //#mish for testing
+            //if (!transactionExecuted) {System.out.println("\nIn block exec: TX failed\n");} 
+            
+            // #mish these booleans accept or discard don't reveal anything about the actual validity of a TX!
+            // all this reveals is that a TX failed to execute (but not the reason) and our choices to continue 
+            // block execution or not
             if (!acceptInvalidTransactions && !transactionExecuted) {
                 if (discardInvalidTxs) {
                     logger.warn("block: [{}] discarded tx: [{}]", block.getNumber(), tx.getHash());
@@ -336,7 +355,7 @@ public class BlockExecutor {
             
             // #mish report both exec and rent gas (recall TX gaslimit "field" combines both,
             // but "tx.getGasLimit()" and "tx.getRentGasLimit()" are used to split that single budget.
-            receipt.setGasUsed(execGasUsed + rentGasUsed);
+            receipt.setGasUsed(execGasUsed + rentGasUsed); //this is for TX rcpt, not block result
             receipt.setCumulativeGas(totalGasUsed);
             receipt.setExecGasUsed(execGasUsed); // added for consistency with TX executor
             receipt.setRentGasUsed(rentGasUsed); //added for consistency with TX execeutor getReceipt()
@@ -355,12 +374,31 @@ public class BlockExecutor {
             receipts.add(receipt);
 
             logger.trace("tx done");
+            //#mish testing changes in trie hashes when working with benchmarking tool
+            /*if (block.getNumber() < 2L){
+                if (txindex == 1){
+                    track.save();
+                    System.out.println(                        
+                        "Sender "  + tx.getSender()+
+                        "\nReceiver " + tx.getReceiveAddress()+
+                        "\nContract " + tx.getContractAddress()+
+                        "\nGas price " + tx.getGasPrice()+
+                        "\nTX hash: "+ Hex.toHexString(tx.getHash().getBytes())+
+                        "\nTrie hash "+ track.getTrie().getHash());
+                }
+            }*/
         }
         
         if (!vmTrace) {
             track.save();
         }
         
+        //#mish for testing
+        /*System.out.println("\nPost block exec state root (trie hash) " + track.getTrie().getHash() +
+                            "\nwith total gas used (execution): " + totalGasUsed +
+                            " \nand fees: " + totalPaidFees);
+        */
+
         BlockResult result = new BlockResult(
                 block,
                 executedTransactions,

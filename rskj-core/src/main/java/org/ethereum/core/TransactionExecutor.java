@@ -305,8 +305,8 @@ public class TransactionExecutor {
     private void execute() {
         logger.trace("Execute transaction {} {}", toBI(tx.getNonce()), tx.getHash());
         // set reference timestamp for rent computations
-        //refTimeStamp = this.executionBlock.getTimestamp();  // Don't use this, it returns 1 in tests
-        refTimeStamp = Instant.now().getEpochSecond();
+        refTimeStamp = this.executionBlock.getTimestamp();  // Don't use this? it returns 1 in tests
+        //refTimeStamp = Instant.now().getEpochSecond();
                         
         // #mish add sender to Map of accessed nodes (for storage rent tracking)
         // but don't add receiver address yet as it may be a pre-compiled contract
@@ -703,7 +703,7 @@ public class TransactionExecutor {
                             "\n\nRent GasLimit " + GasCost.toGas(tx.getRentGasLimit()) +
                             "\nRent gas used " + result.getRentGasUsed()+ 
                             "\nRent gas refund " + mEndRentGas +
-                            "\n\nTx fees (exec + rent): " + paidFees +
+                            "\n\nTx fees (exec + rent) in Coin (using tx.gasPrice): " + paidFees +
                             "\n\nNo. trie nodes with `updated` rent timestamp: " +  result.getAccessedNodes().size() +
                             "\nNo. new trie nodes created (6 months rent): " +  result.getCreatedNodes().size() + "\n"
                             );*/

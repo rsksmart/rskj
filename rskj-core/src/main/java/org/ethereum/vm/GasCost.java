@@ -105,17 +105,17 @@ public class GasCost {
      * Current split is 50:50, hence the divisor is set to 2.
      * Set to 1 to allocate entire tx.gaslimit to execution gas limit (i.e. 0 for rentgaslimit)
      */
-    public static final long TX_GASBUDGET_DIVISOR = 2L;
+    public static final long TX_GASBUDGET_DIVISOR = 2L;//2L;
     
     /* Activator to make storage **rent free** for testing. 
      * To make rent free, MUST USE `0` value ALONG WITH  TX_GASBUDGET_DIVISOR = 1
         (to set rentgaslimit to 0) and avoid 25% of rentgaslimit charge for TX exception or revert
      * Note: making rent free does NOT stop rent-related computations .. this is not a kill switch
      */
-    public static final long STORAGE_RENT_ACTIVATOR = 1L; //binary 0/1 variable stored as long
+    public static final long STORAGE_RENT_ACTIVATOR = 1L;//1L; //binary 0/1 variable stored as long
     
     // RSKIP113: the actual price of storage: rent is 1/(2^21) gas units per byte per second
-    public static final long STORAGE_RENT_DIVISOR = (1<<21); 
+    public static final long STORAGE_RENT_DIVISOR = (1<<25);//(1<<21);
     
     // helper for 6 months advance rent payment for new trie nodes. 
     public static final long SIX_MONTHS = 6 * 30 * 24 *3600L; // in seconds, using 30-day months

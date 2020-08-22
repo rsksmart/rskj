@@ -50,6 +50,8 @@ public class StateRootHandler {
         if (isRskip126Enabled) {
             return blockStateRoot;
         }
+        //#mish for testing, is this kicking in?
+        System.out.println("\nIn SRHandler, translate kicked in");
 
         return Objects.requireNonNull(
                 stateRootTranslator.get(blockStateRoot),
@@ -62,7 +64,8 @@ public class StateRootHandler {
         if (isRskip126Enabled) {
             return executionResult.getHash();
         }
-
+        //#mish for testing, is this kicking in?
+        System.out.println("\nIn SRHandler, convert orchid kicked in");
         //we shouldn't be converting blocks before orchid in stable networks
         return new Keccak256(trieConverter.getOrchidAccountTrieRoot(executionResult));
     }
@@ -72,6 +75,8 @@ public class StateRootHandler {
         if (isRskip126Enabled) {
             return;
         }
+        //#mish for testing, is this kicking in?
+        System.out.println("\nIn SRHandler, registration kicked in");
 
         if (executedBlock.isGenesis()) {
             Keccak256 genesisStateRoot = convert(executedBlock, executionResult);

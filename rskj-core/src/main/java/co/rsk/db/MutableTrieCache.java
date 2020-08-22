@@ -347,9 +347,9 @@ public class MutableTrieCache implements MutableTrie {
         return internalGet(key,  trie::getLastRentPaidTime, cachedBytes -> ByteBuffer.wrap(cachedBytes).getLong()).orElse(0L);
     }
     
-    public long getRentPaidTimeDelta(byte[] key) {     
+    /*public long getRentPaidTimeDelta(byte[] key) {     
         return Instant.now().getEpochSecond() -  getLastRentPaidTime(key);
-    }
+    }*/
 
 
     private static class StorageKeysIterator implements Iterator<DataWord> {

@@ -122,14 +122,14 @@ public class MutableTrieImpl implements MutableTrie {
         return atrie.getLastRentPaidTime();
     }
 
-    public long getRentPaidTimeDelta(byte[] key) {
+    /*public long getRentPaidTimeDelta(byte[] key) {
         Trie atrie = trie.find(key);
         if (atrie == null) {
             // #mish: null?  existing methods (get hash, value) are not returning null
             return Instant.now().getEpochSecond() - 0L ;
         }
         return atrie.getRentPaidTimeDelta();
-    }
+    }*/
 
     @Override
     public Iterator<DataWord> getStorageKeys(RskAddress addr) {
