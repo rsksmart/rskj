@@ -53,6 +53,7 @@ import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.time.Instant;
@@ -4801,6 +4802,103 @@ public class BridgeSupportTest {
             assertTrue(Objects.requireNonNull(retrievedScriptSig.getChunks().get(1).data).length > 0);
             assertTrue(Objects.requireNonNull(retrievedScriptSig.getChunks().get(2).data).length > 0);
         }
+    }
+
+    @Test
+    public void processPegIn_no_lock_tx() throws IOException {
+        BridgeSupport bridgeSupport = getBridgeSupport(bridgeConstants, mock(BridgeStorageProvider.class));
+
+        Assert.assertFalse(bridgeSupport.processPegIn(new BtcTransaction(btcParams), mock(Transaction.class), 0,
+                mock(Sha256Hash.class)));
+    }
+
+    @Test
+    public void processPegIn_tx_no_lockable_by_invalid_sender() throws IOException {
+        assertRefundInProcessPegIn(true, false, BtcLockSender.TxType.P2SHMULTISIG,
+                ConsensusRule.RSKIP143);
+    }
+
+    @Test
+    public void processPegIn_tx_no_lockable_by_not_whitelisted_address() throws IOException {
+        assertRefundInProcessPegIn(false, false, BtcLockSender.TxType.P2PKH,
+                null);
+    }
+
+    @Test
+    public void processPegIn_tx_no_lockable_by_surpassing_locking_cap() throws IOException {
+        assertRefundInProcessPegIn(true, true, BtcLockSender.TxType.P2PKH,
+                ConsensusRule.RSKIP134);
+    }
+
+    @Test
+    public void processRelease_no_release_tx() throws IOException {
+        BridgeSupport bridgeSupport = getBridgeSupport(bridgeConstants, mock(BridgeStorageProvider.class));
+        Assert.assertFalse(bridgeSupport.processRelease(new BtcTransaction(btcParams), mock(Sha256Hash.class)));
+    }
+
+    @Test
+    public void processMigration_no_migration_tx() throws IOException {
+        BridgeSupport bridgeSupport = getBridgeSupport(bridgeConstants, mock(BridgeStorageProvider.class));
+        Assert.assertFalse(bridgeSupport.processMigration(new BtcTransaction(btcParams), mock(Sha256Hash.class)));
+    }
+
+    private void assertRefundInProcessPegIn(boolean isWhitelisted, boolean mockLockingCap,
+                                            BtcLockSender.TxType lockSender, @Nullable ConsensusRule consensusRule)
+            throws IOException {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+
+        if (consensusRule != null) {
+            when(activations.isActive(consensusRule)).thenReturn(true);
+        }
+
+        Repository repository = createRepository();
+
+        BtcTransaction btcTx = new BtcTransaction(btcParams);
+        BtcECKey srcKey1 = new BtcECKey();
+        ECKey key = ECKey.fromPublicOnly(srcKey1.getPubKey());
+        Address btcAddress = srcKey1.toAddress(btcParams);
+        RskAddress rskAddress = new RskAddress(key.getAddress());
+
+        btcTx.addOutput(Coin.COIN.multiply(10), bridgeConstants.getGenesisFederation().getAddress());
+        btcTx.addInput(PegTestUtils.createHash(1), 0, new Script(new byte[]{}));
+
+        BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
+
+        LockWhitelist lockWhitelist = mock(LockWhitelist.class);
+        when(lockWhitelist.isWhitelistedFor(eq(btcAddress), any(Coin.class), any(int.class))).thenReturn(isWhitelisted);
+        when(provider.getLockWhitelist()).thenReturn(lockWhitelist);
+
+        ReleaseTransactionSet releaseTransactionSet = new ReleaseTransactionSet(new HashSet<>());
+        when(provider.getReleaseTransactionSet()).thenReturn(releaseTransactionSet);
+
+        if (mockLockingCap) {
+            when(provider.getLockingCap()).thenReturn(Coin.COIN.multiply(1));
+        }
+
+        BridgeSupport bridgeSupport = getBridgeSupport(
+                bridgeConstants,
+                provider,
+                repository,
+                getBtcLockSenderProvider(lockSender, btcAddress, rskAddress),
+                mock(Block.class),
+                mock(BtcBlockStoreWithCache.Factory.class),
+                activations
+        );
+        bridgeSupport.processPegIn(btcTx, mock(Transaction.class), 0, mock(Sha256Hash.class));
+        Assert.assertTrue(bridgeSupport.processPegIn(btcTx, mock(Transaction.class), 0, mock(Sha256Hash.class)));
+        Assert.assertEquals(1, releaseTransactionSet.getEntries().size());
+
+        boolean successfulRejection = false;
+
+        // Check rejection tx input was created from btc tx
+        for (ReleaseTransactionSet.Entry e : releaseTransactionSet.getEntries()) {
+            if (e.getTransaction().getInput(0).getOutpoint().getHash() == btcTx.getHash()) {
+                successfulRejection = true;
+                break;
+            }
+        }
+
+        Assert.assertTrue(successfulRejection);
     }
 
     private void assertLockingCap(boolean shouldLock, boolean isLockingCapEnabled, Coin lockingCap, Coin amountSentToNewFed, Coin amountSentToOldFed,
