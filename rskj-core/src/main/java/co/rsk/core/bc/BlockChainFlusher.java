@@ -18,6 +18,9 @@
 package co.rsk.core.bc;
 
 import co.rsk.config.InternalService;
+import co.rsk.metrics.profilers.Metric;
+import co.rsk.metrics.profilers.Profiler;
+import co.rsk.metrics.profilers.ProfilerFactory;
 import co.rsk.trie.TrieStore;
 import org.ethereum.core.Block;
 import org.ethereum.core.TransactionReceipt;
@@ -35,6 +38,8 @@ import java.util.List;
  */
 public class BlockChainFlusher implements InternalService {
     private static final Logger logger = LoggerFactory.getLogger(BlockChainFlusher.class);
+
+    private static final Profiler profiler = ProfilerFactory.getInstance();
 
     private final int flushNumberOfBlocks;
     private final CompositeEthereumListener emitter;
@@ -79,6 +84,8 @@ public class BlockChainFlusher implements InternalService {
     }
 
     private void flushAll() {
+        Metric metric = profiler.start(Profiler.PROFILING_TYPE.BLOCKCHAIN_FLUSH);
+
         long saveTime = System.nanoTime();
         trieStore.flush();
         long totalTime = System.nanoTime() - saveTime;
@@ -91,6 +98,8 @@ public class BlockChainFlusher implements InternalService {
         receiptStore.flush();
         totalTime = System.nanoTime() - saveTime;
         logger.trace("receiptstore flush: [{}]nano", totalTime);
+
+        profiler.stop(metric);
     }
 
     private class OnBestBlockListener extends EthereumListenerAdapter {
