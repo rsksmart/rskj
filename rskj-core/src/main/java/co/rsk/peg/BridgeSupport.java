@@ -388,7 +388,7 @@ public class BridgeSupport {
 
         TransferInvoke invoke = new TransferInvoke(from, to, gas, value);
         ProgramResult result     = ProgramResult.empty();
-        ProgramSubtrace subtrace = ProgramSubtrace.newCallSubtrace(CallType.CALL, invoke, result, Collections.emptyList());
+        ProgramSubtrace subtrace = ProgramSubtrace.newCallSubtrace(CallType.CALL, invoke, result, null, Collections.emptyList());
 
         this.subtraces.add(subtrace);
     }

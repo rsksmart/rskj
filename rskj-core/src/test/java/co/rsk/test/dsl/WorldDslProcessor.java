@@ -32,6 +32,7 @@ import co.rsk.test.World;
 import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.BlockBuilder;
 import co.rsk.trie.TrieConverter;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.*;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
@@ -121,12 +122,33 @@ public class WorldDslProcessor {
         String name = cmd.getArgument(0);
         builder.name(name);
 
-        if (cmd.getArity() > 1)
+        if (cmd.getArity() > 1) {
             builder.balance(new Coin(new BigInteger(cmd.getArgument(1))));
+        }
+
+        if (cmd.getArity() > 2) {
+            builder.code(Hex.decode(expandAccounts(cmd.getArgument(2))));
+        }
 
         Account account = builder.build();
 
         world.saveAccount(name, account);
+    }
+
+    private String expandAccounts(String bytecodes) {
+        String result = bytecodes;
+
+        while (result.indexOf('[') >= 0) {
+            int p = result.indexOf('[');
+            int p2 = result.indexOf(']', p);
+
+            String accountName = result.substring(p + 1, p2);
+            Account account = this.world.getAccountByName(accountName);
+
+            result = result.substring(0, p) + account.getAddress().toHexString() + result.substring(p2 + 1);
+        }
+
+        return result;
     }
 
     private void processAssertBalanceCommand(DslCommand cmd) throws DslProcessorException {

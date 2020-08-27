@@ -25,6 +25,7 @@ import co.rsk.test.dsl.WorldDslProcessor;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import org.ethereum.core.Account;
 import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
 import org.ethereum.datasource.HashMapDB;
@@ -89,6 +90,7 @@ public class TraceModuleImplTest {
         Assert.assertEquals("\"create\"", oresult.get("type").toString());
 
         Assert.assertNotNull(oresult.get("action"));
+        Assert.assertNull(oresult.get("action").get("creationMethod"));
         Assert.assertNotNull(oresult.get("action").get("init"));
         Assert.assertNull(oresult.get("action").get("input"));
     }
@@ -178,6 +180,12 @@ public class TraceModuleImplTest {
             Assert.assertEquals("\"create\"", oresult.get("type").toString());
 
             Assert.assertNotNull(oresult.get("action"));
+
+            if (k > 0) {
+                Assert.assertNotNull(oresult.get("action").get("creationMethod"));
+                Assert.assertEquals("\"create\"", oresult.get("action").get("creationMethod").toString());
+            }
+
             Assert.assertNotNull(oresult.get("action").get("init"));
             Assert.assertNull(oresult.get("action").get("input"));
         }
@@ -365,6 +373,112 @@ public class TraceModuleImplTest {
 
         Assert.assertNotNull(oresult.get("type"));
         Assert.assertEquals("\"call\"", oresult.get("type").toString());
+    }
+
+    @Test
+    public void executeContractWithCall() throws Exception {
+        DslParser parser = DslParser.fromResource("dsl/call01.txt");
+        ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
+        World world = new World(receiptStore);
+
+        WorldDslProcessor processor = new WorldDslProcessor(world);
+        processor.processCommands(parser);
+
+        Account callAccount = world.getAccountByName("call");
+        Account calledAccount = world.getAccountByName("called");
+
+        Assert.assertNotNull(callAccount);
+        Assert.assertNotNull(calledAccount);
+
+        Transaction transaction = world.getTransactionByName("tx01");
+
+        TraceModuleImpl traceModule = new TraceModuleImpl(world.getBlockChain(), world.getBlockStore(), receiptStore, world.getBlockExecutor());
+
+        JsonNode result = traceModule.traceTransaction(transaction.getHash().toJsonString());
+
+        Assert.assertNotNull(result);
+        Assert.assertTrue(result.isArray());
+
+        ArrayNode aresult = (ArrayNode)result;
+
+        Assert.assertEquals(2, aresult.size());
+        Assert.assertTrue(result.get(0).isObject());
+
+        ObjectNode oresult = (ObjectNode)result.get(1);
+
+        Assert.assertNotNull(oresult.get("action"));
+        Assert.assertNotNull(oresult.get("action").get("callType"));
+        Assert.assertEquals("\"call\"", oresult.get("action").get("callType").toString());
+        Assert.assertEquals("\"" + calledAccount.getAddress().toJsonString() + "\"", oresult.get("action").get("to").toString());
+        Assert.assertEquals("\"" + callAccount.getAddress().toJsonString() + "\"", oresult.get("action").get("from").toString());
+    }
+
+    @Test
+    public void executeContractWithDelegateCall() throws Exception {
+        DslParser parser = DslParser.fromResource("dsl/delegatecall01.txt");
+        ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
+        World world = new World(receiptStore);
+
+        WorldDslProcessor processor = new WorldDslProcessor(world);
+        processor.processCommands(parser);
+
+        Account delegateCallAccount = world.getAccountByName("delegatecall");
+        Account delegatedAccount = world.getAccountByName("delegated");
+
+        Assert.assertNotNull(delegateCallAccount);
+        Assert.assertNotNull(delegatedAccount);
+
+        Transaction transaction = world.getTransactionByName("tx01");
+
+        TraceModuleImpl traceModule = new TraceModuleImpl(world.getBlockChain(), world.getBlockStore(), receiptStore, world.getBlockExecutor());
+
+        JsonNode result = traceModule.traceTransaction(transaction.getHash().toJsonString());
+
+        Assert.assertNotNull(result);
+        Assert.assertTrue(result.isArray());
+
+        ArrayNode aresult = (ArrayNode)result;
+
+        Assert.assertEquals(2, aresult.size());
+        Assert.assertTrue(result.get(0).isObject());
+
+        ObjectNode oresult = (ObjectNode)result.get(1);
+
+        Assert.assertNotNull(oresult.get("action"));
+        Assert.assertNotNull(oresult.get("action").get("callType"));
+        Assert.assertEquals("\"delegatecall\"", oresult.get("action").get("callType").toString());
+        Assert.assertEquals("\"" + delegatedAccount.getAddress().toJsonString() + "\"", oresult.get("action").get("to").toString());
+        Assert.assertEquals("\"" + delegateCallAccount.getAddress().toJsonString() + "\"", oresult.get("action").get("from").toString());
+    }
+
+    @Test
+    public void executeContractWithCreate2() throws Exception {
+        DslParser parser = DslParser.fromResource("dsl/create201.txt");
+        ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
+        World world = new World(receiptStore);
+
+        WorldDslProcessor processor = new WorldDslProcessor(world);
+        processor.processCommands(parser);
+
+        Transaction transaction = world.getTransactionByName("tx01");
+
+        TraceModuleImpl traceModule = new TraceModuleImpl(world.getBlockChain(), world.getBlockStore(), receiptStore, world.getBlockExecutor());
+
+        JsonNode result = traceModule.traceTransaction(transaction.getHash().toJsonString());
+
+        Assert.assertNotNull(result);
+        Assert.assertTrue(result.isArray());
+
+        ArrayNode aresult = (ArrayNode)result;
+
+        Assert.assertEquals(2, aresult.size());
+        Assert.assertTrue(result.get(0).isObject());
+
+        ObjectNode oresult = (ObjectNode)result.get(1);
+
+        Assert.assertNotNull(oresult.get("action"));
+        Assert.assertNotNull(oresult.get("action").get("creationMethod"));
+        Assert.assertEquals("\"create2\"", oresult.get("action").get("creationMethod").toString());
     }
 
     private static World executeMultiContract(ReceiptStore receiptStore) throws DslProcessorException, FileNotFoundException {
