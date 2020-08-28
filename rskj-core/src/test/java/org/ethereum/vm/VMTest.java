@@ -226,7 +226,21 @@ public class VMTest {
     // This test should throw an exception because we are reading from the RETURNDATABUFFER
     // in a non-existent position. This results in an error according to EIP 211
     @Test(expected = RuntimeException.class)
-    public void doCall_returnDataBuffer_DataIsZeroAfterCallToNonExistentContract() {
+    public void cleanReturnDataBufferAfterCallToNonExistentContract() {
+        byte[] expected = new byte[32];
+        Arrays.fill(expected, (byte) 0);
+        doCallAfterCallToNonExistentContract(expected, true);
+    }
+
+    @Test
+    public void beforeIrisReturnDataBufferAfterCallToNonExistentContract() {
+        byte[] expected = new byte[32];
+        Arrays.fill(expected, (byte) 0);
+        expected[31] = (byte) 21;
+        doCallAfterCallToNonExistentContract(expected, false);
+    }
+
+    private void doCallAfterCallToNonExistentContract(byte[] expected, boolean active) {
         invoke = new ProgramInvokeMockImpl(compile(
                 "PUSH1 0x10" +
                 " PUSH1 0x05 " +
@@ -260,49 +274,66 @@ public class VMTest {
                 " PUSH1 0x40" +     // from the 0x40 position on memory
                 " RETURN"           // the return value of the contract should be zero (as last call failed)
         ));
-        when(program.getActivations().isActive(ConsensusRule.EIP_211_COMPATIBILITY)).thenReturn(true);
+        when(program.getActivations().isActive(ConsensusRule.EIP_211_COMPATIBILITY)).thenReturn(active);
         vm.steps(program, Long.MAX_VALUE);
-        byte[] expected = new byte[32];
-        Arrays.fill(expected, (byte) 0);
-        assertEquals(expected, program.getResult().getHReturn());
+        byte[] result = program.getResult().getHReturn();
+        assertArrayEquals(expected, result);
     }
 
     @Test
-    public void doCall_returnDataBuffer_SizeIsZeroAfterCallToNonExistent() {
-       invoke = new ProgramInvokeMockImpl(compile(
-                "PUSH1 0x10" +
-                " PUSH1 0x05 " +
-                " ADD" +
-                " PUSH1 0x40" +
-                " MSTORE " +
-                " PUSH1 0x20 " +
-                " PUSH1 0x40" +
-                " RETURN"
-       ), null);
-       program = getProgram(compile(
-               " PUSH1 0x20" +  // return size is 32 bytes
-               " PUSH1 0x40" +  // on free memory pointer
-               " PUSH1 0x00" +  // no argument
-               " PUSH1 0x00" +  // no argument size
-               " PUSH20 0x" + invoke.getContractAddress() + // in the mock contract specified above
-               " PUSH4 0x005B8D80" + // with some gas
-               " STATICCALL" +  // call it! result should be 0x15
-               " PUSH1 0x20" +  // now do the same...
-               " PUSH1 0x40" +
-               " PUSH1 0x00" +
-               " PUSH1 0x00" +
-               " PUSH1 0x00" + // but call a non-existent contract
-               " PUSH4 0x005B8D80" +
-               " STATICCALL" +
-               " RETURNDATASIZE" // push the return data size to the stack
-       ));
-       when(program.getActivations().isActive(ConsensusRule.EIP_211_COMPATIBILITY)).thenReturn(true);
-       vm.steps(program, Long.MAX_VALUE);
-       assertEquals(0, program.stackPop().intValue());
+    public void cleanReturnDataBufferAfterCallToNonExistent() {
+        doCallToNonExistent(true, 0);
     }
 
     @Test
-    public void doCall_returnDataBuffer_DataIsZeroAfterInsufficientFunds() {
+    public void beforeIrisReturnDataBufferAfterCallToNonExistent() {
+        doCallToNonExistent(false, 32);
+    }
+
+    private void doCallToNonExistent(boolean active, int expectedReturnDataSize) {
+        invoke = new ProgramInvokeMockImpl(compile(
+                 "PUSH1 0x10" +
+                 " PUSH1 0x05 " +
+                 " ADD" +
+                 " PUSH1 0x40" +
+                 " MSTORE " +
+                 " PUSH1 0x20 " +
+                 " PUSH1 0x40" +
+                 " RETURN"
+        ), null);
+        program = getProgram(compile(
+                " PUSH1 0x20" +  // return size is 32 bytes
+                " PUSH1 0x40" +  // on free memory pointer
+                " PUSH1 0x00" +  // no argument
+                " PUSH1 0x00" +  // no argument size
+                " PUSH20 0x" + invoke.getContractAddress() + // in the mock contract specified above
+                " PUSH4 0x005B8D80" + // with some gas
+                " STATICCALL" +  // call it! result should be 0x15
+                " PUSH1 0x20" +  // now do the same...
+                " PUSH1 0x40" +
+                " PUSH1 0x00" +
+                " PUSH1 0x00" +
+                " PUSH1 0x00" + // but call a non-existent contract
+                " PUSH4 0x005B8D80" +
+                " STATICCALL" +
+                " RETURNDATASIZE" // push the return data size to the stack
+        ));
+        when(program.getActivations().isActive(ConsensusRule.EIP_211_COMPATIBILITY)).thenReturn(active);
+        vm.steps(program, Long.MAX_VALUE);
+        assertEquals(expectedReturnDataSize, program.stackPop().intValue());
+    }
+
+    @Test
+    public void cleanReturnDataBufferAfterInsufficientFunds() {
+        doCallInsufficientFunds(true, 0);
+    }
+
+    @Test
+    public void beforeIrisReturnDataBufferCallWithInsufficientFunds() {
+        doCallInsufficientFunds(false, 32);
+    }
+
+    private void doCallInsufficientFunds(boolean consensusRuleActive, int expectedReturnDataSize) {
         invoke = new ProgramInvokeMockImpl(compile(
                 "PUSH1 0x10" +
                         " PUSH1 0x05 " +
@@ -331,9 +362,9 @@ public class VMTest {
                         " CALL" +       // call it! result should be 0x15
                         " RETURNDATASIZE" // push the return data size to the stack
         ));
-        when(program.getActivations().isActive(ConsensusRule.EIP_211_COMPATIBILITY)).thenReturn(true);
+        when(program.getActivations().isActive(ConsensusRule.EIP_211_COMPATIBILITY)).thenReturn(consensusRuleActive);
         vm.steps(program, Long.MAX_VALUE);
-        assertEquals(0, program.stackPop().intValue());
+        assertEquals(expectedReturnDataSize, program.stackPop().intValue());
     }
 
     @Test
@@ -388,7 +419,6 @@ public class VMTest {
         assertEquals("good program uses 3 more gas than the bad one",
                 goodProgram.getResult().getGasUsed(), badProgram.getResult().getGasUsed() + 3);
     }
-
 
     @Test
     public void getFreeMemoryUsingPrecompiledContractLyingAboutReturnSize() {
