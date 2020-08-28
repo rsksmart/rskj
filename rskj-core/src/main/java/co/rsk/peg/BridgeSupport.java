@@ -125,6 +125,13 @@ public class BridgeSupport {
     private final org.ethereum.core.Block rskExecutionBlock;
     private final ActivationConfig.ForBlock activations;
 
+    protected enum TxType {
+        PEGIN,
+        PEGOUT,
+        MIGRATION,
+        UNKNOWN
+    }
+
     public BridgeSupport(
             BridgeConstants bridgeConstants,
             BridgeStorageProvider provider,
@@ -258,56 +265,76 @@ public class BridgeSupport {
      * @throws BlockStoreException
      * @throws IOException
      */
-    public void registerBtcTransaction(Transaction rskTx, byte[] btcTxSerialized, int height, byte[] pmtSerialized) throws IOException, BlockStoreException {
+    public void registerBtcTransaction(Transaction rskTx, byte[] btcTxSerialized, int height, byte[] pmtSerialized)
+            throws IOException, BlockStoreException {
         Context.propagate(btcContext);
         Sha256Hash btcTxHash = BtcTransactionFormatUtils.calculateBtcTxHash(btcTxSerialized);
 
-        // Check the tx was not already processed
-        if (isAlreadyBtcTxHashProcessed(btcTxHash)) {
-            return;
+        try {
+            // Check the tx was not already processed
+            if (isAlreadyBtcTxHashProcessed(btcTxHash)) {
+                throw new RegisterBtcTransactionException("Transaction already processed");
+            }
+
+            // Validations for register
+            if (!validationsForRegisterBtcTransaction(btcTxHash, height, pmtSerialized, btcTxSerialized)) {
+                throw new RegisterBtcTransactionException("Could not validate transaction");
+            }
+
+            BtcTransaction btcTx = new BtcTransaction(bridgeConstants.getBtcParams(), btcTxSerialized);
+            btcTx.verify();
+
+            // Check again that the tx was not already processed but making sure to use the txid (no witness)
+            if (isAlreadyBtcTxHashProcessed(btcTx.getHash(false))) {
+                throw new RegisterBtcTransactionException("Transaction already processed");
+            }
+
+            // Specific code for pegin/pegout/migration/none txs
+            switch (getTransactionType(btcTx)) {
+                case PEGIN:
+                    processPegIn(btcTx, rskTx, height, btcTxHash);
+                    break;
+                case PEGOUT:
+                    processRelease(btcTx, btcTxHash);
+                    break;
+                case MIGRATION:
+                    processMigration(btcTx, btcTxHash);
+                    break;
+                default:
+                    logger.warn("[registerBtcTransaction] This is not a lock, a release nor a migration tx {}", btcTx);
+                    panicProcessor.panic("btclock", "This is not a lock, a release nor a migration tx " + btcTx);
+            }
+        } catch (RegisterBtcTransactionException e) {
+            logger.warn("[registerBtcTransaction] Could not register transaction {}. Message: {}", btcTxHash,
+                    e.getMessage());
         }
-
-        // Validations for register
-        if (!validationsForRegisterBtcTransaction(btcTxHash, height, pmtSerialized, btcTxSerialized)){
-            return;
-        }
-
-        BtcTransaction btcTx = new BtcTransaction(bridgeConstants.getBtcParams(), btcTxSerialized);
-        btcTx.verify();
-
-        // Check again that the tx was not already processed but making sure to use the txid (no witness)
-        if (isAlreadyBtcTxHashProcessed(btcTx.getHash(false))) {
-            return;
-        }
-
-        // Specific code for lock/release/migration/none txs
-        if (processPegIn(btcTx, rskTx, height, btcTxHash)) {
-            return;
-        }
-
-        if (processRelease(btcTx, btcTxHash)) {
-            return;
-        }
-
-        if (processMigration(btcTx, btcTxHash)) {
-            return;
-        }
-
-        logger.warn("This is not a lock, a release nor a migration tx {}", btcTx);
-        panicProcessor.panic("btclock", "This is not a lock, a release nor a migration tx " + btcTx);
     }
 
-    protected boolean processPegIn(BtcTransaction btcTx, Transaction rskTx, int height, Sha256Hash btcTxHash)
-            throws IOException {
-        if (!BridgeUtils.isLockTx(btcTx, getLiveFederations(), btcContext, bridgeConstants)) {
-            return false;
+    protected TxType getTransactionType(BtcTransaction btcTx) {
+        if (BridgeUtils.isLockTx(btcTx, getLiveFederations(), btcContext, bridgeConstants)) {
+            return TxType.PEGIN;
         }
-        logger.debug("This is a lock tx {}", btcTx);
+
+        if (BridgeUtils.isMigrationTx(btcTx, getActiveFederation(), getRetiringFederation(), btcContext,
+                bridgeConstants)) {
+            return TxType.MIGRATION;
+        }
+
+        if (BridgeUtils.isReleaseTx(btcTx, getLiveFederations())) {
+            return TxType.PEGOUT;
+        }
+
+        return TxType.UNKNOWN;
+    }
+
+    protected void processPegIn(BtcTransaction btcTx, Transaction rskTx, int height, Sha256Hash btcTxHash)
+            throws IOException, RegisterBtcTransactionException {
+        logger.debug("[processPegIn] This is a lock tx {}", btcTx);
         Optional<BtcLockSender> btcLockSenderOptional = btcLockSenderProvider.tryGetBtcLockSender(btcTx);
         if (!btcLockSenderOptional.isPresent() ||
                 !BridgeUtils.txIsProcessable(btcLockSenderOptional.get().getType(), activations)) {
-            logger.warn("[btcTx:{}] Could not get BtcLockSender from Btc tx", btcTx.getHash());
-            return true;
+            logger.warn("[processPegIn] [btcTx:{}] Could not get BtcLockSender from Btc tx", btcTx.getHash());
+            throw new RegisterBtcTransactionException("Could not get BtcLockSender from Btc tx");
         }
         BtcLockSender btcLockSender = btcLockSenderOptional.get();
         Address senderBtcAddress = btcLockSender.getBTCAddress();
@@ -325,13 +352,13 @@ public class BridgeSupport {
 
         // Confirm we should process this lock
         if (shouldProcessPegIn(btcLockSender, btcTx, senderBtcAddress, totalAmount, height)) {
-            logger.debug("[btcTx:{}] Is a lock from a {} sender", btcTx.getHash(), btcLockSender.getType());
+            logger.debug("[processPegIn] [btcTx:{}] Is a lock from a {} sender", btcTx.getHash(), btcLockSender.getType());
 
             co.rsk.core.Coin amount = co.rsk.core.Coin.fromBitcoin(totalAmount);
 
             this.transferTo(btcLockSender.getRskAddress(), amount);
 
-            logger.info("Transferring from BTC Address {}. RSK Address: {}.", senderBtcAddress, btcLockSender.getRskAddress());
+            logger.info("[processPegIn] Transferring from BTC Address {}. RSK Address: {}.", senderBtcAddress, btcLockSender.getRskAddress());
 
             if (activations.isActive(ConsensusRule.RSKIP146)) {
                 eventLogger.logLockBtc(btcLockSender.getRskAddress(), btcTx, senderBtcAddress, totalAmount);
@@ -345,16 +372,11 @@ public class BridgeSupport {
 
         // Mark tx as processed on this block (and use the txid without the witness)
         provider.setHeightBtcTxhashAlreadyProcessed(btcTx.getHash(false), rskExecutionBlock.getNumber());
-
-        logger.info("BTC Tx {} processed in RSK", btcTxHash);
-        return true;
+        logger.info("[processPegIn] BTC Tx {} processed in RSK", btcTxHash);
     }
 
-    protected boolean processRelease(BtcTransaction btcTx, Sha256Hash btcTxHash) throws IOException {
-        if (!BridgeUtils.isReleaseTx(btcTx, getLiveFederations())) {
-            return false;
-        }
-        logger.debug("This is a release tx {}", btcTx);
+    protected void processRelease(BtcTransaction btcTx, Sha256Hash btcTxHash) throws IOException {
+        logger.debug("[processRelease] This is a release tx {}", btcTx);
             // do-nothing
             // We could call removeUsedUTXOs(btcTx) here, but we decided to not do that.
             // Used utxos should had been removed when we created the release tx.
@@ -371,16 +393,11 @@ public class BridgeSupport {
 
         // Generate new change UTXO
         saveNewUTXOs(btcTx);
-        logger.info("BTC Tx {} processed in RSK", btcTxHash);
-
-        return true;
+        logger.info("[processRelease] BTC Tx {} processed in RSK", btcTxHash);
     }
 
-    protected boolean processMigration(BtcTransaction btcTx, Sha256Hash btcTxHash) throws IOException {
-        if (!BridgeUtils.isMigrationTx(btcTx, getActiveFederation(), getRetiringFederation(), btcContext, bridgeConstants)) {
-            return false;
-        }
-        logger.debug("This is a migration tx {}", btcTx);
+    protected void processMigration(BtcTransaction btcTx, Sha256Hash btcTxHash) throws IOException {
+        logger.debug("[processMigration] This is a migration tx {}", btcTx);
 
         // Mark tx as processed on this block (and use the txid without the witness)
         provider.setHeightBtcTxhashAlreadyProcessed(btcTx.getHash(false), rskExecutionBlock.getNumber());
@@ -388,9 +405,7 @@ public class BridgeSupport {
         // Input spent on retiring federation and a new UTXO that is created on active federation.
         // It is probably merging multiple UTXOs from the retiring federation
         saveNewUTXOs(btcTx);
-        logger.info("BTC Tx {} processed in RSK", btcTxHash);
-
-        return true;
+        logger.info("[processMigration] BTC Tx {} processed in RSK", btcTxHash);
     }
 
     private boolean shouldProcessPegIn(BtcLockSender btcLockSender, BtcTransaction btcTx,
@@ -407,7 +422,7 @@ public class BridgeSupport {
                 (txType == BtcLockSender.TxType.P2SHP2WPKH && activations.isActive(ConsensusRule.RSKIP143))) {
             return true;
         } else {
-            logger.warn("[btcTx:{}] Btc tx type not supported: {}, returning funds to sender: {}",
+            logger.warn("[isTxLockable]: [btcTx:{}] Btc tx type not supported: {}, returning funds to sender: {}",
                     btcTx.getHash(), btcLockSender.getType(), senderBtcAddress);
             return false;
         }
