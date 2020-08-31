@@ -326,15 +326,15 @@ public class OpCodes {
     /**
      * (0x5c)
      */
-    static final byte OP_BEGINSUB =0x5c ;
+    public static final byte OP_BEGINSUB =0x5c ;
     /**
      * (0x5d)
      */
-    static final byte OP_RETURNSUB =0x5d ;
+    public static final byte OP_RETURNSUB =0x5d ;
     /**
      * (0x5e)
      */
-    static final byte OP_JUMPSUB =0x5e ;
+    public static final byte OP_JUMPSUB =0x5e ;
 
     /*  Push Operations */
 

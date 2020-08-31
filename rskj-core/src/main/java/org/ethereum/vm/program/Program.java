@@ -1332,6 +1332,20 @@ public class Program {
         return ret;
     }
 
+    public int verifyJumpSub(DataWord nextPC) {
+        if (nextPC.occupyMoreThan(4)) {
+            throw ExceptionHelper.badJumpDestination(this, -1);
+        }
+
+        int ret = nextPC.intValue(); // could be negative
+
+        if (ret < 0 || ret >= ops.length || ops[ret] != OpCodes.OP_BEGINSUB) {
+            throw ExceptionHelper.badJumpDestination(this, ret);
+        }
+
+        return ret;
+    }
+
     public void callToPrecompiledAddress(MessageCall msg, PrecompiledContract contract, ActivationConfig.ForBlock activations) {
 
         if (getCallDeep() == getMaxDepth()) {

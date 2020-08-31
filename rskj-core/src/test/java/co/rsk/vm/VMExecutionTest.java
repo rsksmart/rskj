@@ -776,6 +776,24 @@ public class VMExecutionTest {
         Assert.assertEquals(balance, selfBalance);
     }
 
+    @Test
+    public void executeSimpleSubroutine() {
+        Program program = executeCode("PUSH1 0x04 JUMPSUB STOP BEGINSUB RETURNSUB", 4);
+        Stack stack = program.getStack();
+
+        Assert.assertEquals(0, stack.size());
+        Assert.assertEquals(18, program.getResult().getGasUsed());
+    }
+
+    @Test
+    public void executeTwoLevelsOfSubroutine() {
+        Program program = executeCode("PUSH9 0x00000000000000000c JUMPSUB STOP BEGINSUB PUSH1 0x11 JUMPSUB RETURNSUB BEGINSUB RETURNSUB", 7);
+        Stack stack = program.getStack();
+
+        Assert.assertEquals(0, stack.size());
+        Assert.assertEquals(36, program.getResult().getGasUsed());
+    }
+
     private Program executeCode(String code, int nsteps) {
         return executeCodeWithActivationConfig(compiler.compile(code), nsteps, mock(ActivationConfig.ForBlock.class));
     }

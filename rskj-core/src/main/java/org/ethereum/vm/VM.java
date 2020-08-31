@@ -109,6 +109,9 @@ public class VM {
     private long gasBefore; // only for tracing
     private boolean isLogEnabled;
 
+    // Subroutines return stack
+    private java.util.Stack<Integer> returnStack = new java.util.Stack<>();
+
     public VM(VmConfig vmConfig, PrecompiledContracts precompiledContracts) {
         this.vmConfig = vmConfig;
         this.precompiledContracts = precompiledContracts;
@@ -1669,6 +1672,33 @@ public class VM {
         program.stop();
     }
 
+    protected void doJUMPSUB(){
+        spendOpCodeGas();
+        // EXECUTION PHASE
+        DataWord pos = program.stackPop();
+        int nextPC = program.verifyJumpSub(pos) + 1;
+
+        if (isLogEnabled) {
+            hint = "~> " + nextPC;
+        }
+
+        this.returnStack.push(program.getPC() + 1);
+
+        program.setPC(nextPC);
+    }
+
+    protected void doRETURNSUB(){
+        spendOpCodeGas();
+        // EXECUTION PHASE
+        int nextPC = this.returnStack.pop();
+
+        if (isLogEnabled) {
+            hint = "~> " + nextPC;
+        }
+
+        program.setPC(nextPC);
+    }
+
     protected void executeOpcode() {
         // Execute operation
         ActivationConfig.ForBlock activations = program.getActivations();
@@ -1945,8 +1975,21 @@ public class VM {
             break;
             case OpCodes.OP_DUPN: doDUPN();
                 break;
+
+            /**
+             * Subroutines
+             */
+            case OpCodes.OP_JUMPSUB:
+                doJUMPSUB();
+                break;
+
+            case OpCodes.OP_RETURNSUB:
+                doRETURNSUB();
+                break;
+
             case OpCodes.OP_HEADER:
                 //fallthrough to default case until implementation's ready
+
             default:
                 // It should never execute this line.
                 // We rise an exception to prevent DoS attacks that halt the node, in case of a bug.
