@@ -324,6 +324,21 @@ public enum OpCode {
      */
     JUMPDEST(0x5b, 0, 0, SPECIAL_TIER),
 
+    /*  Subroutines Operations */
+
+    /**
+     * (0x5c)
+     */
+    BEGINSUB(0x5c, 0, 0, BASE_TIER),
+    /**
+     * (0x5d)
+     */
+    RETURNSUB(0x5d, 0, 0, LOW_TIER),
+    /**
+     * (0x5e)
+     */
+    JUMPSUB(0x5e, 1, 0, HIGH_TIER),
+
     /*  Push Operations */
 
     /**
