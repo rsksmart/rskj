@@ -30,6 +30,7 @@ import co.rsk.peg.BridgeSupport;
 import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.rpc.ExecutionBlockRetriever;
 import co.rsk.trie.TrieStoreImpl;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.Repository;
@@ -44,9 +45,16 @@ import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.ProgramResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.web3j.abi.FunctionReturnDecoder;
+import org.web3j.abi.TypeReference;
+import org.web3j.abi.datatypes.AbiTypes;
+import org.web3j.abi.datatypes.Type;
 
 import java.io.IOException;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static org.ethereum.rpc.TypeConverter.stringHexToBigInteger;
 import static org.ethereum.rpc.TypeConverter.toJsonHex;
@@ -123,7 +131,12 @@ public class EthModule
             }
 
             if (res.isRevert()) {
-                throw RskJsonRpcRequestException.transactionRevertedExecutionError();
+                Optional<String> revertReason = decodeRevertReason(res);
+                if (revertReason.isPresent()) {
+                    throw RskJsonRpcRequestException.transactionRevertedExecutionError(revertReason.get());
+                } else {
+                    throw RskJsonRpcRequestException.transactionRevertedExecutionError();
+                }
             }
 
             return s = toJsonHex(res.getHReturn());
@@ -225,6 +238,25 @@ public class EthModule
                 hexArgs.getData(),
                 hexArgs.getFromAddress()
         );
+    }
+
+    @SuppressWarnings("unchecked")
+    private Optional<String> decodeRevertReason(ProgramResult res) {
+        byte[] bytes = res.getHReturn();
+        if (bytes == null || bytes.length == 0) {
+            return Optional.empty();
+        }
+
+        String value = Hex.toHexString(res.getHReturn());
+        if (!value.startsWith("08c379a0")) {
+            return Optional.empty();
+        }
+
+        List<TypeReference<Type>> revertReasonTypes =
+                Collections.singletonList(TypeReference.create((Class<Type>) AbiTypes.getType("string")));
+        String encodedRevertReason = value.substring(8);
+        List<Type> decoded = FunctionReturnDecoder.decode(encodedRevertReason, revertReasonTypes);
+        return Optional.of(decoded.get(0).getValue().toString());
     }
 
     @Deprecated
