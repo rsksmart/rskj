@@ -261,7 +261,7 @@ public class EIP712UtilsTest {
                 equalTo("eb8d009317b0c884c025eea6c4e997c8b2dd7ff919ee7b06469b631c282dbf7d"));
     }
 
-    @Test
+    @Test(expected = Test.None.class) // No exception expected
     public void funnyRequest_doesNotThrow() {
         // Just test it doesn't throw
         utils.epi712encode_v4(funnyRequest);
