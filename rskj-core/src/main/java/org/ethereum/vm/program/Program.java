@@ -1334,13 +1334,13 @@ public class Program {
 
     public int verifyJumpSub(DataWord nextPC) {
         if (nextPC.occupyMoreThan(4)) {
-            throw ExceptionHelper.badJumpDestination(this, -1);
+            throw ExceptionHelper.badJumpSubDestination(this, -1);
         }
 
         int ret = nextPC.intValue(); // could be negative
 
         if (ret < 0 || ret >= ops.length || ops[ret] != OpCodes.OP_BEGINSUB) {
-            throw ExceptionHelper.badJumpDestination(this, ret);
+            throw ExceptionHelper.badJumpSubDestination(this, ret);
         }
 
         return ret;
@@ -1477,6 +1477,22 @@ public class Program {
     }
 
     @SuppressWarnings("serial")
+    public static class InvalidReturnSubException extends RuntimeException {
+
+        public InvalidReturnSubException(String message, Object... args) {
+            super(format(message, args));
+        }
+    }
+
+    @SuppressWarnings("serial")
+    public static class InvalidBeginSubException extends RuntimeException {
+
+        public InvalidBeginSubException(String message, Object... args) {
+            super(format(message, args));
+        }
+    }
+
+    @SuppressWarnings("serial")
     public static class StackTooSmallException extends RuntimeException {
 
         public StackTooSmallException(String message, Object... args) {
@@ -1534,6 +1550,18 @@ public class Program {
 
         public static BadJumpDestinationException badJumpDestination(@Nonnull Program program, int pc) {
             return new BadJumpDestinationException("Operation with pc isn't 'JUMPDEST': PC[%d], tx[%s]", pc, extractTxHash(program));
+        }
+
+        public static BadJumpDestinationException badJumpSubDestination(@Nonnull Program program, int pc) {
+            return new BadJumpDestinationException("Operation with pc isn't 'BEGINSUB': PC[%d], tx[%s]", pc, extractTxHash(program));
+        }
+
+        public static InvalidReturnSubException invalidReturnSub(@Nonnull Program program, int pc) {
+            return new InvalidReturnSubException("Invalid 'RETURNSUB': PC[%d], tx[%s]", pc, extractTxHash(program));
+        }
+
+        public static InvalidBeginSubException invalidBeginSub(@Nonnull Program program, int pc) {
+            return new InvalidBeginSubException("Invalid 'BEGINSUB': PC[%d], tx[%s]", pc, extractTxHash(program));
         }
 
         public static StackTooSmallException tooSmallStack(@Nonnull Program program, int expectedSize, int actualSize) {

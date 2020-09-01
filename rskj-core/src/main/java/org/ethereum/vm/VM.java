@@ -1689,6 +1689,11 @@ public class VM {
 
     protected void doRETURNSUB(){
         spendOpCodeGas();
+
+        if (this.returnStack.isEmpty()) {
+            throw Program.ExceptionHelper.invalidReturnSub(program, program.getPC());
+        }
+
         // EXECUTION PHASE
         int nextPC = this.returnStack.pop();
 
@@ -1986,6 +1991,9 @@ public class VM {
             case OpCodes.OP_RETURNSUB:
                 doRETURNSUB();
                 break;
+
+            case OpCodes.OP_BEGINSUB:
+                throw Program.ExceptionHelper.invalidBeginSub(program, program.getPC());
 
             case OpCodes.OP_HEADER:
                 //fallthrough to default case until implementation's ready

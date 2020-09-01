@@ -28,6 +28,7 @@ import org.ethereum.core.BlockFactory;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.*;
 import org.ethereum.vm.program.Program;
+import org.ethereum.vm.program.ProgramResult;
 import org.ethereum.vm.program.Stack;
 import org.ethereum.vm.program.invoke.ProgramInvokeMockImpl;
 import org.junit.Assert;
@@ -96,7 +97,6 @@ public class VMExecutionTest {
         Assert.assertEquals(DataWord.valueOf(1), stack.peek());
     }
 
-
     private void executeShift(String number, String shiftAmount, String expect, String op , ActivationConfig.ForBlock activations){
         Program program = executeCodeWithActivationConfig("PUSH32 "+number+" PUSH1 "+shiftAmount+" "+op, 3, activations);
         Stack stack = program.getStack();
@@ -116,7 +116,6 @@ public class VMExecutionTest {
                 "SHL",
                 activations);
     }
-
 
     @Test
     public void testSHL2() {
@@ -310,7 +309,6 @@ public class VMExecutionTest {
                 activations);
     }
 
-
     @Test
     public void testSAR3() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
@@ -322,7 +320,6 @@ public class VMExecutionTest {
                 "SAR",
                 activations);
     }
-
 
     @Test
     public void testSAR4() {
@@ -336,7 +333,6 @@ public class VMExecutionTest {
                 activations);
     }
 
-
     @Test
     public void testSAR5() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
@@ -349,7 +345,6 @@ public class VMExecutionTest {
                 activations);
     }
 
-
     @Test
     public void testSAR6() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
@@ -361,7 +356,6 @@ public class VMExecutionTest {
                 "SAR",
                 activations);
     }
-
 
     @Test
     public void testSAR7() {
@@ -391,7 +385,6 @@ public class VMExecutionTest {
         Assert.assertEquals(1, stack.size());
         Assert.assertEquals(DataWord.valueFromHex(expect), stack.peek());
     }
-
 
 
     @Test(expected = Program.IllegalOperationException.class)
@@ -563,6 +556,17 @@ public class VMExecutionTest {
         } catch (Program.BadJumpDestinationException ex) {
             Assert.assertEquals("Operation with pc isn't 'JUMPDEST': PC[255], tx[<null>]", ex.getMessage());
         }
+    }
+
+    @Test
+    public void invalidJumpUsingPlayCode() {
+        Program program = playCode("PUSH1 0x03 JUMP");
+
+        ProgramResult programResult = program.getResult();
+
+        Assert.assertNotNull(programResult);
+        Assert.assertNotNull(programResult.getException());
+        Assert.assertEquals(invoke.getGas(), programResult.getGasUsed());
     }
 
     @Test
@@ -778,7 +782,7 @@ public class VMExecutionTest {
 
     @Test
     public void executeSimpleSubroutine() {
-        Program program = executeCode("PUSH1 0x04 JUMPSUB STOP BEGINSUB RETURNSUB", 4);
+        Program program = playCode("PUSH1 0x04 JUMPSUB STOP BEGINSUB RETURNSUB");
         Stack stack = program.getStack();
 
         Assert.assertEquals(0, stack.size());
@@ -786,12 +790,80 @@ public class VMExecutionTest {
     }
 
     @Test
+    public void executeSimpleSubroutineWithStackOperation() {
+        Program program = playCode("PUSH1 0x04 JUMPSUB STOP BEGINSUB PUSH1 0x2a RETURNSUB");
+        Stack stack = program.getStack();
+
+        Assert.assertEquals(1, stack.size());
+        Assert.assertEquals(DataWord.valueOf(42), stack.pop());
+        Assert.assertEquals(21, program.getResult().getGasUsed());
+    }
+
+    @Test
     public void executeTwoLevelsOfSubroutine() {
-        Program program = executeCode("PUSH9 0x00000000000000000c JUMPSUB STOP BEGINSUB PUSH1 0x11 JUMPSUB RETURNSUB BEGINSUB RETURNSUB", 7);
+        Program program = playCode("PUSH9 0x00000000000000000c JUMPSUB STOP BEGINSUB PUSH1 0x11 JUMPSUB RETURNSUB BEGINSUB RETURNSUB");
         Stack stack = program.getStack();
 
         Assert.assertEquals(0, stack.size());
         Assert.assertEquals(36, program.getResult().getGasUsed());
+    }
+
+    @Test
+    public void executeSubroutineAtEndOfCode() {
+        Program program = playCode("PUSH1 0x05 JUMP BEGINSUB RETURNSUB JUMPDEST PUSH1 0x03 JUMPSUB");
+        Stack stack = program.getStack();
+
+        Assert.assertEquals(0, stack.size());
+        Assert.assertEquals(30, program.getResult().getGasUsed());
+    }
+
+    @Test
+    public void executeInvalidJumpToSubroutine() {
+        Program program = playCode("PUSH9 0x01000000000000000c JUMPSUB STOP BEGINSUB RETURNSUB");
+        Stack stack = program.getStack();
+
+        Assert.assertEquals(0, stack.size());
+        Assert.assertEquals(invoke.getGas(), program.getResult().getGasUsed());
+        Assert.assertNotNull(program.getResult().getException());
+        Assert.assertTrue(program.getResult().getException() instanceof Program.BadJumpDestinationException);
+        Assert.assertEquals("Operation with pc isn't 'BEGINSUB': PC[-1], tx[<null>]", program.getResult().getException().getMessage());
+    }
+
+    @Test
+    public void executeInvalidShallowReturnStack() {
+        Program program = playCode("RETURNSUB PC PC");
+        Stack stack = program.getStack();
+
+        Assert.assertEquals(0, stack.size());
+        Assert.assertEquals(invoke.getGas(), program.getResult().getGasUsed());
+        Assert.assertNotNull(program.getResult().getException());
+        Assert.assertTrue(program.getResult().getException() instanceof Program.InvalidReturnSubException);
+        Assert.assertEquals("Invalid 'RETURNSUB': PC[0], tx[<null>]", program.getResult().getException().getMessage());
+    }
+
+    @Test
+    public void executeInvalidWalkIntoSubroutine() {
+        Program program = playCode("BEGINSUB RETURNSUB STOP");
+        Stack stack = program.getStack();
+
+        Assert.assertEquals(0, stack.size());
+        Assert.assertEquals(invoke.getGas(), program.getResult().getGasUsed());
+        Assert.assertNotNull(program.getResult().getException());
+        Assert.assertTrue(program.getResult().getException() instanceof Program.InvalidBeginSubException);
+        Assert.assertEquals("Invalid 'BEGINSUB': PC[0], tx[<null>]", program.getResult().getException().getMessage());
+    }
+
+    private Program playCode(String code) {
+        return playCodeWithActivationConfig(compiler.compile(code), mock(ActivationConfig.ForBlock.class));
+    }
+
+    private Program playCodeWithActivationConfig(byte[] code, ActivationConfig.ForBlock activations) {
+        VM vm = new VM(vmConfig, precompiledContracts);
+        Program program = new Program(vmConfig, precompiledContracts, blockFactory, activations, code, invoke,null, new HashSet<>());
+
+        vm.play(program);
+
+        return program;
     }
 
     private Program executeCode(String code, int nsteps) {
