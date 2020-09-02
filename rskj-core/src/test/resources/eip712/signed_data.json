@@ -1,0 +1,135 @@
+{
+  "types": {
+    "EIP712Domain": [
+      {
+        "name": "name",
+        "type": "string"
+      },
+      {
+        "name": "version",
+        "type": "string"
+      },
+      {
+        "name": "chainId",
+        "type": "uint256"
+      },
+      {
+        "name": "verifyingContract",
+        "type": "address"
+      }
+    ],
+    "RelayRequests": [
+        {"name":"requests","type":"RelayRequest[]"}
+    ],
+    "RelayRequest": [
+      {
+        "name": "from",
+        "type": "address"
+      },
+      {
+        "name": "to",
+        "type": "address"
+      },
+      {
+        "name": "value",
+        "type": "uint256"
+      },
+      {
+        "name": "gas",
+        "type": "uint256"
+      },
+      {
+        "name": "nonce",
+        "type": "uint256"
+      },
+      {
+        "name": "data",
+        "type": "bytes"
+      },
+      {
+        "name": "relayData",
+        "type": "RelayData"
+      }
+    ],
+    "RelayData": [
+      {
+        "name": "gasPrice",
+        "type": "uint256"
+      },
+      {
+        "name": "pctRelayFee",
+        "type": "uint256"
+      },
+      {
+        "name": "baseRelayFee",
+        "type": "uint256"
+      },
+      {
+        "name": "relayWorker",
+        "type": "address"
+      },
+      {
+        "name": "paymaster",
+        "type": "address"
+      },
+      {
+        "name": "forwarder",
+        "type": "address"
+      },
+      {
+        "name": "paymasterData",
+        "type": "bytes"
+      },
+      {
+        "name": "clientId",
+        "type": "uint256"
+      }
+    ]
+  },
+  "domain": {
+    "name": "GSN Relayed Transactions",
+    "version": "2",
+    "chainId": 33,
+    "verifyingContract": "0xdac5481925A298B95Bf5b54c35b68FC6fc2eF423"
+  },
+  "primaryType": "RelayRequests",
+  "message": {
+      "requests": [{
+            "to": "0xfd1dda8c3bc734bc1c8e71f69f25bfbee9ce9535",
+            "data": "0x2ac0df26000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000037878780000000000000000000000000000000000000000000000000000000000",
+            "from": "0xbbab7e96b7f83761f135232ddc83533998682e2b",
+            "value": "0",
+            "nonce": "4",
+            "gas": "6721975",
+            "relayData": {
+            "pctRelayFee": "12",
+            "baseRelayFee": "70",
+            "gasPrice": "1",
+            "paymaster": "0xA66939ac57893C2E65425a5D66099Bc20C76D4CD",
+            "paymasterData": "0x",
+            "clientId": "1",
+            "forwarder": "0xdac5481925A298B95Bf5b54c35b68FC6fc2eF423",
+            "relayWorker": "0xfa4ff6fafff31ca848be18eeab1961d90f6fe3ea"
+            }
+        },
+        {
+            "to": "0xfd1dda8c3bc734bc1c8e71f69f25bfbee9ce9535",
+            "data": "0x2ac0df26000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000037878780000000000000000000000000000000000000000000000000000000000",
+            "from": "0xbbab7e96b7f83761f135232ddc83533998682e2b",
+            "value": "0",
+            "nonce": "4",
+            "gas": "6721975",
+            "relayData": {
+            "pctRelayFee": "12",
+            "baseRelayFee": "70",
+            "gasPrice": "1",
+            "paymaster": "0xA66939ac57893C2E65425a5D66099Bc20C76D4CD",
+            "paymasterData": "0x",
+            "clientId": "1",
+            "forwarder": "0xdac5481925A298B95Bf5b54c35b68FC6fc2eF423",
+            "relayWorker": "0xfa4ff6fafff31ca848be18eeab1961d90f6fe3ea"
+            }
+        }
+      ]
+  }
+}
