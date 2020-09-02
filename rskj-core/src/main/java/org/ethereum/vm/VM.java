@@ -1676,7 +1676,7 @@ public class VM {
         spendOpCodeGas();
         // EXECUTION PHASE
         DataWord pos = program.stackPop();
-        int nextPC = program.verifyJumpSub(pos) + 1;
+        int nextPC = program.verifyBeginSub(pos) + 1;
 
         if (isLogEnabled) {
             hint = "~> " + nextPC;

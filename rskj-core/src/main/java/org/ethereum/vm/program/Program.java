@@ -101,6 +101,7 @@ public class Program {
     private int startAddr;
 
     private BitSet jumpdestSet;
+    private BitSet beginsubSet;
 
     private final VmConfig config;
     private final PrecompiledContracts precompiledContracts;
@@ -1265,12 +1266,16 @@ public class Program {
         startAddr = 0;
         pc = 0;
         i = processAndSkipCodeHeader(i);
-        computeJumpDests(i);
+        computeJumpDestsAndBeginSubs(i);
     }
 
-    private void computeJumpDests(int start) {
+    private void computeJumpDestsAndBeginSubs(int start) {
         if (jumpdestSet == null) {
             jumpdestSet = new BitSet(ops.length);
+        }
+
+        if (beginsubSet == null) {
+            beginsubSet = new BitSet(ops.length);
         }
 
         for (int i = start; i < ops.length; ++i) {
@@ -1282,6 +1287,9 @@ public class Program {
 
             if (op == OpCode.JUMPDEST) {
                 jumpdestSet.set(i);
+            }
+            else if (op == OpCode.BEGINSUB) {
+                beginsubSet.set(i);
             }
 
             if (op.asInt() >= OpCode.PUSH1.asInt() && op.asInt() <= OpCode.PUSH32.asInt()) {
@@ -1332,14 +1340,14 @@ public class Program {
         return ret;
     }
 
-    public int verifyJumpSub(DataWord nextPC) {
+    public int verifyBeginSub(DataWord nextPC) {
         if (nextPC.occupyMoreThan(4)) {
             throw ExceptionHelper.badJumpSubDestination(this, -1);
         }
 
         int ret = nextPC.intValue(); // could be negative
 
-        if (ret < 0 || ret >= ops.length || ops[ret] != OpCodes.OP_BEGINSUB) {
+        if (ret < 0 || ret >= beginsubSet.size() || !beginsubSet.get(ret)) {
             throw ExceptionHelper.badJumpSubDestination(this, ret);
         }
 
@@ -1615,4 +1623,7 @@ public class Program {
 
     @VisibleForTesting
     public BitSet getJumpdestSet() { return this.jumpdestSet; }
+
+    @VisibleForTesting
+    public BitSet getBeginsubSet() { return this.beginsubSet; }
 }

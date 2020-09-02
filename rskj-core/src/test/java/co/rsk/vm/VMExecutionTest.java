@@ -800,6 +800,26 @@ public class VMExecutionTest {
     }
 
     @Test
+    public void pushArgumentIsNotBeginsub() {
+        byte[] code = compiler.compile("PUSH1 0x04 JUMPSUB STOP BEGINSUB PUSH1 0x5c RETURNSUB");
+        Program program = new Program(vmConfig, precompiledContracts, blockFactory, mock(ActivationConfig.ForBlock.class), code, invoke, null, new HashSet<>());
+
+        BitSet beginsubSet = program.getBeginsubSet();
+
+        Assert.assertNotNull(beginsubSet);
+        Assert.assertEquals(8, beginsubSet.size());
+
+        for (int k = 0; k < beginsubSet.size(); k++) {
+            if (k == 4) {
+                Assert.assertTrue(beginsubSet.get(k));
+            }
+            else {
+                Assert.assertFalse(beginsubSet.get(k));
+            }
+        }
+    }
+
+    @Test
     public void executeTwoLevelsOfSubroutine() {
         Program program = playCode("PUSH9 0x00000000000000000c JUMPSUB STOP BEGINSUB PUSH1 0x11 JUMPSUB RETURNSUB BEGINSUB RETURNSUB");
         Stack stack = program.getStack();
