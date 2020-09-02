@@ -16,6 +16,7 @@ public class EIP712UtilsTest {
     private static JsonNode recTypedData;
     private static JsonNode relayRequest;
     private static JsonNode funnyRequest;
+    private static JsonNode signedRequest;
 
     private EIP712Utils utils;
 
@@ -26,6 +27,7 @@ public class EIP712UtilsTest {
         recTypedData = m.readTree(EIP712UtilsTest.class.getResourceAsStream("/eip712/rec_typed_data.json"));
         relayRequest = m.readTree(EIP712UtilsTest.class.getResourceAsStream("/eip712/relay_request.json"));
         funnyRequest = m.readTree(EIP712UtilsTest.class.getResourceAsStream("/eip712/funny_data.json"));
+        signedRequest = m.readTree(EIP712UtilsTest.class.getResourceAsStream("/eip712/signed_data.json"));
     }
 
     @Before
@@ -265,6 +267,11 @@ public class EIP712UtilsTest {
     public void funnyRequest_doesNotThrow() {
         // Just test it doesn't throw
         utils.epi712encode_v4(funnyRequest);
+    }
+
+    @Test
+    public void signedData_doesNotThrow() {
+        utils.epi712encode_v4(signedRequest);
     }
 
     private JsonNode types(JsonNode data) {
