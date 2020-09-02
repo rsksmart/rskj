@@ -1332,11 +1332,12 @@ public class Program {
         return ret;
     }
 
-    public void callToPrecompiledAddress(MessageCall msg, PrecompiledContract contract) {
+    public void callToPrecompiledAddress(MessageCall msg, PrecompiledContract contract, ActivationConfig.ForBlock activations) {
 
         if (getCallDeep() == getMaxDepth()) {
             stackPushZero();
             this.refundGas(msg.getGas().longValue(), " call deep limit reach");
+
             return;
         }
 
@@ -1351,6 +1352,8 @@ public class Program {
         if (senderBalance.compareTo(endowment) < 0) {
             stackPushZero();
             this.refundGas(msg.getGas().longValue(), "refund gas from message call");
+            this.cleanReturnDataBuffer(activations);
+
             return;
         }
 
@@ -1402,10 +1405,10 @@ public class Program {
 
         long requiredGas = contract.getGasForData(data);
         if (requiredGas > msg.getGas().longValue()) {
-
             this.refundGas(0, "call pre-compiled"); //matches cpp logic
             this.stackPushZero();
             track.rollback();
+            this.cleanReturnDataBuffer(activations);
         } else {
 
             this.refundGas(msg.getGas().longValue() - requiredGas, "call pre-compiled");
