@@ -289,7 +289,7 @@ public class EIP712Utils {
      * @param typedData type data to encode, as a Json node
      * @return encoding of the given typed data
      */
-    public byte[] epi712encode_v4(JsonNode typedData) {
+    public byte[] eip712encode_v4(JsonNode typedData) {
         JsonNode sanitized = sanitize(typedData);
         ByteArrayDataOutput buf = ByteStreams.newDataOutput();
         buf.writeByte(0x19);
