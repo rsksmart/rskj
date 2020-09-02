@@ -109,7 +109,7 @@ public class EthModuleWalletEnabled implements EthModuleWallet {
     }
 
     private String signTyped(JsonNode typedData, ECKey ecKey) {
-        byte[] toSign = utils.epi712encode_v4(typedData);
+        byte[] toSign = utils.eip712encode_v4(typedData);
         ECDSASignature signature = ECDSASignature.fromSignature(ecKey.sign(toSign));
         return TypeConverter.toJsonHex(ByteUtil.merge(
                 ByteUtil.bigIntegerToBytes(signature.getR()),

@@ -144,7 +144,7 @@ public class EIP712UtilsTest {
     @Test
     public void typedDataEncodesOk() {
         assertThat(
-                Hex.toHexString(utils.epi712encode_v4(typedData)),
+                Hex.toHexString(utils.eip712encode_v4(typedData)),
                 equalTo("a85c2e2b118698e88db68a8105b794a8cc7cec074e89ef991cb4f5f533819cc2"));
     }
 
@@ -250,21 +250,21 @@ public class EIP712UtilsTest {
     @Test
     public void rec_typedDataEncodesOk() {
         assertThat(
-                Hex.toHexString(utils.epi712encode_v4(recTypedData)),
+                Hex.toHexString(utils.eip712encode_v4(recTypedData)),
                 equalTo("807773b9faa9879d4971b43856c4d60c2da15c6f8c062bd9d33afefb756de19c"));
     }
 
     @Test
     public void relayRequest_typedDataEncodesOk() {
         assertThat(
-                Hex.toHexString(utils.epi712encode_v4(relayRequest)),
+                Hex.toHexString(utils.eip712encode_v4(relayRequest)),
                 equalTo("eb8d009317b0c884c025eea6c4e997c8b2dd7ff919ee7b06469b631c282dbf7d"));
     }
 
     @Test(expected = Test.None.class) // No exception expected
     public void funnyRequest_doesNotThrow() {
         // Just test it doesn't throw
-        utils.epi712encode_v4(funnyRequest);
+        utils.eip712encode_v4(funnyRequest);
     }
 
     private JsonNode types(JsonNode data) {
