@@ -274,6 +274,11 @@ public class EIP712UtilsTest {
         utils.epi712encode_v4(signedRequest);
     }
 
+    @Test
+    public void signedData_doesNotThrow() {
+        utils.epi712encode_v4(signedRequest);
+    }
+
     private JsonNode types(JsonNode data) {
         return data.with("types");
     }
