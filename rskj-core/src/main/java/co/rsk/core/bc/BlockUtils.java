@@ -32,7 +32,7 @@ import java.util.stream.Collectors;
  * Created by ajlopez on 19/08/2016.
  */
 public class BlockUtils {
-    private static long MAX_BLOCK_PROCESS_TIME_NANOSECONDS = 60_000_000_000L;
+    private static final long MAX_BLOCK_PROCESS_TIME_NANOSECONDS = 60_000_000_000L;
 
     private BlockUtils() { }
 
