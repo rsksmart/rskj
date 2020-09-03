@@ -62,4 +62,9 @@ public class HashMapBlocksIndex implements BlocksIndex {
     @Override
     public void flush() {
     }
+
+    @Override
+    public void close() {
+
+    }
 }

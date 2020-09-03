@@ -72,6 +72,13 @@ public class BlockChainFlusher implements InternalService {
     public void stop() {
         emitter.removeListener(listener);
         flushAll();
+        closeAll();
+    }
+
+    private void closeAll() {
+        logger.trace("closing blockStore.");
+        blockStore.close();
+        logger.trace("blockStore closed.");
     }
 
     private void flush() {
