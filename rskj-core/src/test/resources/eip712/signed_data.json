@@ -19,7 +19,10 @@
       }
     ],
     "RelayRequests": [
-        {"name":"requests","type":"RelayRequest[]"}
+      {
+        "name": "requests",
+        "type": "RelayRequest[]"
+      }
     ],
     "RelayRequest": [
       {
@@ -90,46 +93,47 @@
     "name": "GSN Relayed Transactions",
     "version": "2",
     "chainId": 33,
-    "verifyingContract": "0xdac5481925A298B95Bf5b54c35b68FC6fc2eF423"
+    "verifyingContract": "0x0C24045B556ec463aD2F7253D1843d336682fb86"
   },
   "primaryType": "RelayRequests",
   "message": {
-      "requests": [{
-            "to": "0xfd1dda8c3bc734bc1c8e71f69f25bfbee9ce9535",
-            "data": "0x2ac0df26000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000037878780000000000000000000000000000000000000000000000000000000000",
-            "from": "0xbbab7e96b7f83761f135232ddc83533998682e2b",
-            "value": "0",
-            "nonce": "4",
-            "gas": "6721975",
-            "relayData": {
-            "pctRelayFee": "12",
-            "baseRelayFee": "70",
-            "gasPrice": "1",
-            "paymaster": "0xA66939ac57893C2E65425a5D66099Bc20C76D4CD",
-            "paymasterData": "0x",
-            "clientId": "1",
-            "forwarder": "0xdac5481925A298B95Bf5b54c35b68FC6fc2eF423",
-            "relayWorker": "0xfa4ff6fafff31ca848be18eeab1961d90f6fe3ea"
-            }
-        },
-        {
-            "to": "0xfd1dda8c3bc734bc1c8e71f69f25bfbee9ce9535",
-            "data": "0x2ac0df26000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000037878780000000000000000000000000000000000000000000000000000000000",
-            "from": "0xbbab7e96b7f83761f135232ddc83533998682e2b",
-            "value": "0",
-            "nonce": "4",
-            "gas": "6721975",
-            "relayData": {
-            "pctRelayFee": "12",
-            "baseRelayFee": "70",
-            "gasPrice": "1",
-            "paymaster": "0xA66939ac57893C2E65425a5D66099Bc20C76D4CD",
-            "paymasterData": "0x",
-            "clientId": "1",
-            "forwarder": "0xdac5481925A298B95Bf5b54c35b68FC6fc2eF423",
-            "relayWorker": "0xfa4ff6fafff31ca848be18eeab1961d90f6fe3ea"
-            }
+    "requests": [
+      {
+        "to": "0xD1F0892ecce4f9f6f37D34634fF956A17BD647ed",
+        "data": "0xdeadbeef",
+        "from": "0xCD2a3d9F938E13CD947Ec05AbC7FE734Df8DD826",
+        "nonce": "0",
+        "value": "0",
+        "gas": "500000",
+        "relayData": {
+          "gasPrice": "10000000",
+          "pctRelayFee": "15",
+          "baseRelayFee": "1000",
+          "relayWorker": "0x09a1edA29F664ac8f68106F6567276dF0C65D859",
+          "forwarder": "0x0C24045B556ec463aD2F7253D1843d336682fb86",
+          "paymaster": "0x7857288e171C6159C5576d1bD9AC40c0c48a771C",
+          "paymasterData": "0x",
+          "clientId": "0"
         }
-      ]
+      },
+      {
+        "to": "0xD1F0892ecce4f9f6f37D34634fF956A17BD647ed",
+        "data": "0xcafebabe",
+        "from": "0xCD2a3d9F938E13CD947Ec05AbC7FE734Df8DD826",
+        "nonce": "1",
+        "value": "0",
+        "gas": "500000",
+        "relayData": {
+          "gasPrice": "10000000",
+          "pctRelayFee": "15",
+          "baseRelayFee": "1000",
+          "relayWorker": "0x09a1edA29F664ac8f68106F6567276dF0C65D859",
+          "forwarder": "0x0C24045B556ec463aD2F7253D1843d336682fb86",
+          "paymaster": "0x7857288e171C6159C5576d1bD9AC40c0c48a771C",
+          "paymasterData": "0x",
+          "clientId": "1"
+        }
+      }
+    ]
   }
 }

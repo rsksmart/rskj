@@ -269,9 +269,10 @@ public class EIP712UtilsTest {
         utils.eip712encode_v4(funnyRequest);
     }
 
-    @Test
+    @Test(expected = Test.None.class) // No exception expected
     public void signedData_doesNotThrow() {
-        utils.eip712encode_v4(signedRequest);
+        byte[] enc = utils.eip712encode_v4(signedRequest);
+        System.out.println(Hex.toHexString(enc));
     }
 
     private JsonNode types(JsonNode data) {
