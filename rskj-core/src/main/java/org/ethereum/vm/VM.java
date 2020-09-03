@@ -1985,14 +1985,28 @@ public class VM {
              * Subroutines
              */
             case OpCodes.OP_JUMPSUB:
+                if (!activations.isActive(EIP2315)) {
+                    throw Program.ExceptionHelper.invalidOpCode(program);
+                }
+
                 doJUMPSUB();
+
                 break;
 
             case OpCodes.OP_RETURNSUB:
+                if (!activations.isActive(EIP2315)) {
+                    throw Program.ExceptionHelper.invalidOpCode(program);
+                }
+
                 doRETURNSUB();
+
                 break;
 
             case OpCodes.OP_BEGINSUB:
+                if (!activations.isActive(EIP2315)) {
+                    throw Program.ExceptionHelper.invalidOpCode(program);
+                }
+
                 throw Program.ExceptionHelper.invalidBeginSub(program, program.getPC());
 
             case OpCodes.OP_HEADER:

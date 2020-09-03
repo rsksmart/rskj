@@ -98,7 +98,7 @@ public class VMExecutionTest {
     }
 
     private void executeShift(String number, String shiftAmount, String expect, String op , ActivationConfig.ForBlock activations){
-        Program program = executeCodeWithActivationConfig("PUSH32 "+number+" PUSH1 "+shiftAmount+" "+op, 3, activations);
+        Program program = executeCode("PUSH32 "+number+" PUSH1 "+shiftAmount+" "+op, 3, activations);
         Stack stack = program.getStack();
 
         Assert.assertEquals(1, stack.size());
@@ -151,7 +151,7 @@ public class VMExecutionTest {
         String op = "SHL";
         String expect = "0000000000000000000000000000000000000000000000000000000000000000";
 
-        Program program = executeCodeWithActivationConfig("PUSH32 "+number+" PUSH2 "+shiftAmount+" "+op, 3, activations);
+        Program program = executeCode("PUSH32 "+number+" PUSH2 "+shiftAmount+" "+op, 3, activations);
         Stack stack = program.getStack();
 
         Assert.assertEquals(1, stack.size());
@@ -277,7 +277,7 @@ public class VMExecutionTest {
         String op = "SHR";
         String expect = "0000000000000000000000000000000000000000000000000000000000000000";
 
-        Program program = executeCodeWithActivationConfig("PUSH32 "+number+" PUSH2 "+shiftAmount+" "+op, 3, activations);
+        Program program = executeCode("PUSH32 "+number+" PUSH2 "+shiftAmount+" "+op, 3, activations);
         Stack stack = program.getStack();
 
         Assert.assertEquals(1, stack.size());
@@ -379,7 +379,7 @@ public class VMExecutionTest {
         String op = "SAR";
         String expect = "0000000000000000000000000000000000000000000000000000000000000000";
 
-        Program program = executeCodeWithActivationConfig("PUSH32 "+number+" PUSH2 "+shiftAmount+" "+op, 3, activations);
+        Program program = executeCode("PUSH32 "+number+" PUSH2 "+shiftAmount+" "+op, 3, activations);
         Stack stack = program.getStack();
 
         Assert.assertEquals(1, stack.size());
@@ -391,7 +391,7 @@ public class VMExecutionTest {
     public void testSAR3ShouldFailOnOldVersion() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(RSKIP120)).thenReturn(false);
-        executeCodeWithActivationConfig("PUSH32 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff PUSH1 0xff SAR", 3, activations);
+        executeCode("PUSH32 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff PUSH1 0xff SAR", 3, activations);
     }
 
     @Test(expected = Program.IllegalOperationException.class)
@@ -399,7 +399,7 @@ public class VMExecutionTest {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(RSKIP120)).thenReturn(false);
 
-        executeCodeWithActivationConfig("PUSH32 0x0000000000000000000000000000000000000000000000000000000000000001 PUSH1 0x01 SHL", 3, activations);
+        executeCode("PUSH32 0x0000000000000000000000000000000000000000000000000000000000000001 PUSH1 0x01 SHL", 3, activations);
     }
 
     @Test(expected = Program.IllegalOperationException.class)
@@ -407,7 +407,7 @@ public class VMExecutionTest {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(RSKIP120)).thenReturn(false);
 
-        executeCodeWithActivationConfig("PUSH32 0x0000000000000000000000000000000000000000000000000000000000000001 PUSH1 0x01 SHR", 3, activations);
+        executeCode("PUSH32 0x0000000000000000000000000000000000000000000000000000000000000001 PUSH1 0x01 SHR", 3, activations);
     }
 
     @Test
@@ -713,7 +713,7 @@ public class VMExecutionTest {
         vmConfig = mock(VmConfig.class);
         when(vmConfig.getChainId()).thenReturn(chainIDExpected);
 
-        Program program = executeCodeWithActivationConfig("CHAINID", 1, activations);
+        Program program = executeCode("CHAINID", 1, activations);
 
         Stack stack = program.getStack();
 
@@ -726,7 +726,7 @@ public class VMExecutionTest {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(RSKIP151)).thenReturn(false);
 
-        executeCodeWithActivationConfig("SELFBALANCE", 1, activations);
+        executeCode("SELFBALANCE", 1, activations);
     }
 
     @Test
@@ -740,7 +740,7 @@ public class VMExecutionTest {
         invoke.setOwnerAddress(testAddress);
         invoke.getRepository().addBalance(testAddress, Coin.valueOf(balanceValue));
 
-        Program program = executeCodeWithActivationConfig("SELFBALANCE", 1, activations);
+        Program program = executeCode("SELFBALANCE", 1, activations);
         Stack stack = program.getStack();
 
         long selfBalanceGas = OpCode.SELFBALANCE.getTier().asInt();
@@ -761,10 +761,10 @@ public class VMExecutionTest {
         invoke.setOwnerAddress(testAddress);
         invoke.getRepository().addBalance(testAddress, Coin.valueOf(balanceValue));
 
-        Program programSelfBalance = executeCodeWithActivationConfig("SELFBALANCE",1, activations);
+        Program programSelfBalance = executeCode("SELFBALANCE",1, activations);
         Stack stackSelfBalance = programSelfBalance.getStack();
 
-        Program programBalance = executeCodeWithActivationConfig("PUSH20 0x" + testAddress.toHexString() +
+        Program programBalance = executeCode("PUSH20 0x" + testAddress.toHexString() +
                 " BALANCE", 2, activations);
         Stack stackBalance = programBalance.getStack();
 
@@ -781,8 +781,47 @@ public class VMExecutionTest {
     }
 
     @Test
+    public void invalidBeginsubOpcodeWhenNotActivated() {
+        Program program = playCode("BEGINSUB");
+
+        ProgramResult result = program.getResult();
+
+        Assert.assertNotNull(result);
+        Assert.assertNotNull(result.getException());
+        Assert.assertTrue(result.getException() instanceof Program.IllegalOperationException);
+        Assert.assertEquals("Invalid operation code: opcode[5c], tx[<null>]", result.getException().getMessage());
+    }
+
+    @Test
+    public void invalidReturnsubOpcodeWhenNotActivated() {
+        Program program = playCode("RETURNSUB");
+
+        ProgramResult result = program.getResult();
+
+        Assert.assertNotNull(result);
+        Assert.assertNotNull(result.getException());
+        Assert.assertTrue(result.getException() instanceof Program.IllegalOperationException);
+        Assert.assertEquals("Invalid operation code: opcode[5d], tx[<null>]", result.getException().getMessage());
+    }
+
+    @Test
+    public void invalidJumpsubOpcodeWhenNotActivated() {
+        Program program = playCode("PUSH1 0x01 JUMPSUB");
+
+        ProgramResult result = program.getResult();
+
+        Assert.assertNotNull(result);
+        Assert.assertNotNull(result.getException());
+        Assert.assertTrue(result.getException() instanceof Program.IllegalOperationException);
+        Assert.assertEquals("Invalid operation code: opcode[5e], tx[<null>]", result.getException().getMessage());
+    }
+
+    @Test
     public void executeSimpleSubroutine() {
-        Program program = playCode("PUSH1 0x04 JUMPSUB STOP BEGINSUB RETURNSUB");
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(EIP2315)).thenReturn(true);
+
+        Program program = playCode("PUSH1 0x04 JUMPSUB STOP BEGINSUB RETURNSUB", activations);
         Stack stack = program.getStack();
 
         Assert.assertEquals(0, stack.size());
@@ -791,7 +830,10 @@ public class VMExecutionTest {
 
     @Test
     public void executeSimpleSubroutineWithStackOperation() {
-        Program program = playCode("PUSH1 0x04 JUMPSUB STOP BEGINSUB PUSH1 0x2a RETURNSUB");
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(EIP2315)).thenReturn(true);
+
+        Program program = playCode("PUSH1 0x04 JUMPSUB STOP BEGINSUB PUSH1 0x2a RETURNSUB", activations);
         Stack stack = program.getStack();
 
         Assert.assertEquals(1, stack.size());
@@ -821,7 +863,10 @@ public class VMExecutionTest {
 
     @Test
     public void executeTwoLevelsOfSubroutine() {
-        Program program = playCode("PUSH9 0x00000000000000000c JUMPSUB STOP BEGINSUB PUSH1 0x11 JUMPSUB RETURNSUB BEGINSUB RETURNSUB");
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(EIP2315)).thenReturn(true);
+
+        Program program = playCode("PUSH9 0x00000000000000000c JUMPSUB STOP BEGINSUB PUSH1 0x11 JUMPSUB RETURNSUB BEGINSUB RETURNSUB", activations);
         Stack stack = program.getStack();
 
         Assert.assertEquals(0, stack.size());
@@ -830,7 +875,10 @@ public class VMExecutionTest {
 
     @Test
     public void executeSubroutineAtEndOfCode() {
-        Program program = playCode("PUSH1 0x05 JUMP BEGINSUB RETURNSUB JUMPDEST PUSH1 0x03 JUMPSUB");
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(EIP2315)).thenReturn(true);
+
+        Program program = playCode("PUSH1 0x05 JUMP BEGINSUB RETURNSUB JUMPDEST PUSH1 0x03 JUMPSUB", activations);
         Stack stack = program.getStack();
 
         Assert.assertEquals(0, stack.size());
@@ -839,7 +887,10 @@ public class VMExecutionTest {
 
     @Test
     public void executeInvalidJumpToSubroutine() {
-        Program program = playCode("PUSH9 0x01000000000000000c JUMPSUB STOP BEGINSUB RETURNSUB");
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(EIP2315)).thenReturn(true);
+
+        Program program = playCode("PUSH9 0x01000000000000000c JUMPSUB STOP BEGINSUB RETURNSUB", activations);
         Stack stack = program.getStack();
 
         Assert.assertEquals(0, stack.size());
@@ -851,7 +902,10 @@ public class VMExecutionTest {
 
     @Test
     public void executeInvalidShallowReturnStack() {
-        Program program = playCode("RETURNSUB PC PC");
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(EIP2315)).thenReturn(true);
+
+        Program program = playCode("RETURNSUB PC PC", activations);
         Stack stack = program.getStack();
 
         Assert.assertEquals(0, stack.size());
@@ -863,7 +917,10 @@ public class VMExecutionTest {
 
     @Test
     public void executeInvalidWalkIntoSubroutine() {
-        Program program = playCode("BEGINSUB RETURNSUB STOP");
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(EIP2315)).thenReturn(true);
+
+        Program program = playCode("BEGINSUB RETURNSUB STOP", activations);
         Stack stack = program.getStack();
 
         Assert.assertEquals(0, stack.size());
@@ -874,10 +931,14 @@ public class VMExecutionTest {
     }
 
     private Program playCode(String code) {
-        return playCodeWithActivationConfig(compiler.compile(code), mock(ActivationConfig.ForBlock.class));
+        return playCode(compiler.compile(code), mock(ActivationConfig.ForBlock.class));
     }
 
-    private Program playCodeWithActivationConfig(byte[] code, ActivationConfig.ForBlock activations) {
+    private Program playCode(String code, ActivationConfig.ForBlock activations) {
+        return playCode(compiler.compile(code), activations);
+    }
+
+    private Program playCode(byte[] code, ActivationConfig.ForBlock activations) {
         VM vm = new VM(vmConfig, precompiledContracts);
         Program program = new Program(vmConfig, precompiledContracts, blockFactory, activations, code, invoke,null, new HashSet<>());
 
@@ -887,20 +948,20 @@ public class VMExecutionTest {
     }
 
     private Program executeCode(String code, int nsteps) {
-        return executeCodeWithActivationConfig(compiler.compile(code), nsteps, mock(ActivationConfig.ForBlock.class));
+        return executeCode(compiler.compile(code), nsteps, mock(ActivationConfig.ForBlock.class));
     }
 
     private void testCode(byte[] code, int nsteps, String expected) {
-        Program program = executeCodeWithActivationConfig(code, nsteps, mock(ActivationConfig.ForBlock.class));
+        Program program = executeCode(code, nsteps, mock(ActivationConfig.ForBlock.class));
 
         assertEquals(expected, ByteUtil.toHexString(program.getStack().peek().getData()).toUpperCase());
     }
 
-    private Program executeCodeWithActivationConfig(String code, int nsteps, ActivationConfig.ForBlock activations) {
-        return executeCodeWithActivationConfig(compiler.compile(code), nsteps, activations);
+    private Program executeCode(String code, int nsteps, ActivationConfig.ForBlock activations) {
+        return executeCode(compiler.compile(code), nsteps, activations);
     }
 
-    private Program executeCodeWithActivationConfig(byte[] code, int nsteps, ActivationConfig.ForBlock activations) {
+    private Program executeCode(byte[] code, int nsteps, ActivationConfig.ForBlock activations) {
         VM vm = new VM(vmConfig, precompiledContracts);
         Program program = new Program(vmConfig, precompiledContracts, blockFactory, activations, code, invoke,null, new HashSet<>());
 
