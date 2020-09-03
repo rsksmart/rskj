@@ -212,7 +212,9 @@ public class MessageVisitor {
 
         transactionGateway.receiveTransactionsFrom(txs, Collections.singleton(sender.getPeerNodeID()));
 
-        loggerMessageProcess.debug("Tx message process finished after [{}] seconds.", FormatUtils.formatNanosecondsToSeconds(System.nanoTime() - start));
+        if (loggerMessageProcess.isDebugEnabled()) {
+            loggerMessageProcess.debug("Tx message process finished after [{}] seconds.", FormatUtils.formatNanosecondsToSeconds(System.nanoTime() - start));
+        }
     }
 
     private void recordEvent(Peer sender, EventType event) {

@@ -220,7 +220,9 @@ public class DataSourceWithCache implements KeyValueDataSource {
 
             long totalTime = System.nanoTime() - saveTime;
 
-            logger.trace("datasource flush: [{}]seconds", FormatUtils.formatNanosecondsToSeconds(totalTime));
+            if (logger.isTraceEnabled()) {
+                logger.trace("datasource flush: [{}]seconds", FormatUtils.formatNanosecondsToSeconds(totalTime));
+            }
         }
         finally {
             this.lock.writeLock().unlock();

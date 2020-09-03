@@ -97,15 +97,26 @@ public class BlockChainFlusher implements InternalService {
         long saveTime = System.nanoTime();
         trieStore.flush();
         long totalTime = System.nanoTime() - saveTime;
-        logger.trace("repository flush: [{}]seconds", FormatUtils.formatNanosecondsToSeconds(totalTime));
+
+        if (logger.isTraceEnabled()) {
+            logger.trace("repository flush: [{}]seconds", FormatUtils.formatNanosecondsToSeconds(totalTime));
+        }
+
         saveTime = System.nanoTime();
         blockStore.flush();
         totalTime = System.nanoTime() - saveTime;
-        logger.trace("blockstore flush: [{}]seconds", FormatUtils.formatNanosecondsToSeconds(totalTime));
+
+        if (logger.isTraceEnabled()) {
+            logger.trace("blockstore flush: [{}]seconds", FormatUtils.formatNanosecondsToSeconds(totalTime));
+        }
+
         saveTime = System.nanoTime();
         receiptStore.flush();
         totalTime = System.nanoTime() - saveTime;
-        logger.trace("receiptstore flush: [{}]seconds", FormatUtils.formatNanosecondsToSeconds(totalTime));
+
+        if (logger.isTraceEnabled()) {
+            logger.trace("receiptstore flush: [{}]seconds", FormatUtils.formatNanosecondsToSeconds(totalTime));
+        }
 
         profiler.stop(metric);
     }
