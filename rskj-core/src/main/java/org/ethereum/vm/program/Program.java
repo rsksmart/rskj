@@ -949,9 +949,16 @@ public class Program {
         return Arrays.copyOf(ops, ops.length);
     }
 
-    public Keccak256 getCodeHashAt(RskAddress addr) { return invoke.getRepository().getCodeHash(addr); }
+    public Keccak256 getCodeHashAt(RskAddress addr, boolean standard) {
+        if(standard) {
+            return invoke.getRepository().getCodeHashStandard(addr);
+        }
+        else {
+            return invoke.getRepository().getCodeHashNonStandard(addr);
+        }
+    }
 
-    public Keccak256 getCodeHashAt(DataWord address) { return getCodeHashAt(new RskAddress(address)); }
+    public Keccak256 getCodeHashAt(DataWord address, boolean standard) { return getCodeHashAt(new RskAddress(address), standard); }
 
     public int getCodeLengthAt(RskAddress addr) {
         return invoke.getRepository().getCodeLength(addr);

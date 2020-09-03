@@ -185,6 +185,9 @@ public class World {
 
         TransactionInfo transactionInfo = this.receiptStore.get(transaction.getHash().getBytes());
 
+        if(transactionInfo == null) {
+            return null;
+        }
         TransactionReceipt transactionReceipt = transactionInfo.getReceipt();
 
         transactionReceipt.setTransaction(transaction);
