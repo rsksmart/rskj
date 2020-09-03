@@ -21,6 +21,7 @@ package co.rsk.net;
 import co.rsk.core.bc.BlockUtils;
 import co.rsk.crypto.Keccak256;
 import co.rsk.util.FormatUtils;
+import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.Block;
 import org.ethereum.core.ImportResult;
 import org.slf4j.Logger;
@@ -70,23 +71,39 @@ public class BlockProcessResult {
     }
 
     private void logResult(String blockHash, Duration processingTime) {
-        if(result == null || result.isEmpty()) {
-            long processTime =  processingTime.toNanos();
+        String message = buildLogMessage(blockHash, processingTime, result);
 
-            if (BlockUtils.tooMuchProcessTime(processTime)) {
-                logger.warn("[MESSAGE PROCESS] Block[{}] After[{}] seconds, process result. No block connections were made", FormatUtils.formatNanosecondsToSeconds(processTime), blockHash);
-            }
-            else {
-                logger.debug("[MESSAGE PROCESS] Block[{}] After[{}] seconds, process result. No block connections were made", FormatUtils.formatNanosecondsToSeconds(processTime), blockHash);
-            }
-        } else {
-            StringBuilder sb = new StringBuilder("[MESSAGE PROCESS] Block[")
-                    .append(blockHash).append("] After[").append(FormatUtils.formatNanosecondsToSeconds(processingTime.toNanos())).append("] nano, process result. Connections attempts: ").append(result.size()).append(" | ");
-
-            for(Map.Entry<Keccak256, ImportResult> entry : this.result.entrySet()) {
-                sb.append(entry.getKey().toString()).append(" - ").append(entry.getValue()).append(" | ");
-            }
-            logger.debug(sb.toString());
+        if (BlockUtils.tooMuchProcessTime(processingTime.getNano())) {
+            logger.warn(message);
         }
+        else {
+            logger.debug(message);
+        }
+    }
+
+    @VisibleForTesting
+    public static String buildLogMessage(String blockHash, Duration processingTime, Map<Keccak256, ImportResult> result) {
+        StringBuilder sb = new StringBuilder("[MESSAGE PROCESS] Block[")
+                .append(blockHash)
+                .append("] After[")
+                .append(FormatUtils.formatNanosecondsToSeconds(processingTime.toNanos()))
+                .append("] seconds, process result.");
+
+        if (result == null || result.isEmpty()) {
+            sb.append(" No block connections were made");
+        } else {
+            sb.append(" Connections attempts: ")
+                    .append(result.size())
+                    .append(" | ");
+
+            for (Map.Entry<Keccak256, ImportResult> entry : result.entrySet()) {
+                sb.append(entry.getKey().toString())
+                        .append(" - ")
+                        .append(entry.getValue())
+                        .append(" | ");
+            }
+        }
+
+        return sb.toString();
     }
 }
