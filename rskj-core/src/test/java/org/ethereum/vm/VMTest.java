@@ -275,7 +275,7 @@ public class VMTest {
                 " PUSH1 0x40" +     // from the 0x40 position on memory
                 " RETURN"           // the return value of the contract should be zero (as last call failed)
         ));
-        when(program.getActivations().isActive(ConsensusRule.EIP_211_COMPATIBILITY)).thenReturn(active);
+        when(program.getActivations().isActive(ConsensusRule.RSKIP171)).thenReturn(active);
         vm.steps(program, Long.MAX_VALUE);
         byte[] result = program.getResult().getHReturn();
         assertArrayEquals(expected, result);
@@ -319,7 +319,7 @@ public class VMTest {
                 " STATICCALL" +
                 " RETURNDATASIZE" // push the return data size to the stack
         ));
-        when(program.getActivations().isActive(ConsensusRule.EIP_211_COMPATIBILITY)).thenReturn(active);
+        when(program.getActivations().isActive(ConsensusRule.RSKIP171)).thenReturn(active);
         vm.steps(program, Long.MAX_VALUE);
         assertEquals(expectedReturnDataSize, program.stackPop().intValue());
     }
@@ -377,7 +377,7 @@ public class VMTest {
                         " CALL" +       // call it! result should be 0x15
                         " RETURNDATASIZE" // push the return data size to the stack
         ));
-        when(program.getActivations().isActive(ConsensusRule.EIP_211_COMPATIBILITY)).thenReturn(irisHardForkActive);
+        when(program.getActivations().isActive(ConsensusRule.RSKIP171)).thenReturn(irisHardForkActive);
         when(program.getActivations().isActive(ConsensusRule.RSKIP119)).thenReturn(true);
         vm.steps(program, Long.MAX_VALUE);
         assertEquals(expectedReturnDataSize, program.stackPop().intValue());
@@ -422,7 +422,7 @@ public class VMTest {
                         " CALL" +
                         " RETURNDATASIZE" // push the return data size to the stack
         ), TransactionUtils.createTransaction());
-        when(program.getActivations().isActive(ConsensusRule.EIP_211_COMPATIBILITY)).thenReturn(irisHardForkActive);
+        when(program.getActivations().isActive(ConsensusRule.RSKIP171)).thenReturn(irisHardForkActive);
         when(program.getActivations().isActive(ConsensusRule.RSKIP119)).thenReturn(true);
         vm.steps(program, Long.MAX_VALUE);
         assertEquals(expectedReturnDataSize, program.stackPop().intValue());

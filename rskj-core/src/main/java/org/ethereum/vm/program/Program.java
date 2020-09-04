@@ -796,7 +796,7 @@ public class Program {
     }
 
     private void cleanReturnDataBuffer(ActivationConfig.ForBlock activations) {
-        if(activations.isActive(ConsensusRule.EIP_211_COMPATIBILITY)) {
+        if(activations.isActive(ConsensusRule.RSKIP171)) {
             // reset return data buffer when call did not create a new call frame
             returnDataBuffer = null;
         }
