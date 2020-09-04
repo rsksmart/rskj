@@ -79,4 +79,6 @@ public interface BlockStore extends RemascCache {
     List<BlockInformation> getBlocksInformationByNumber(long number);
 
     boolean isEmpty();
+
+    void close();
 }

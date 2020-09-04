@@ -183,6 +183,10 @@ public class IndexedBlockStore implements BlockStore {
         profiler.stop(metric);
     }
 
+    public void close() {
+        this.index.close();
+    }
+
     @Override
     public synchronized void saveBlock(Block block, BlockDifficulty cummDifficulty, boolean mainChain) {
         List<BlockInfo> blockInfos = index.getBlocksByNumber(block.getNumber());

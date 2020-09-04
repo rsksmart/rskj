@@ -1674,7 +1674,6 @@ public class RskContext implements NodeBootstrapper {
         }
 
         DB indexDB = DBMaker.fileDB(dbFile)
-                .closeOnJvmShutdown()
                 .make();
 
         KeyValueDataSource blocksDB = LevelDbDataSource.makeDataSource(Paths.get(databaseDir, "blocks"));
