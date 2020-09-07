@@ -366,14 +366,14 @@ public class ByteUtil {
     public static int numBytes(String val) {
 
         BigInteger bInt = new BigInteger(val);
-        int bytes = 0;
+        int bytes = 1;
 
         while (!bInt.equals(BigInteger.ZERO)) {
             bInt = bInt.shiftRight(8);
             ++bytes;
         }
-        if (bytes == 0) {
-            ++bytes;
+        if (bytes > 1) {
+            --bytes;
         }
         return bytes;
     }

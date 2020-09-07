@@ -26,7 +26,9 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
+import org.slf4j.Logger;
 
+import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
 
 public class BlockChainFlusherTest {
@@ -44,7 +46,10 @@ public class BlockChainFlusherTest {
         this.trieStore = mock(TrieStore.class);
         this.blockStore = mock(BlockStore.class);
         this.receiptStore = mock(ReceiptStore.class);
-        this.flusher = new BlockChainFlusher(7, emitter, trieStore, blockStore, receiptStore);
+        this.flusher = spy(new BlockChainFlusher(7, emitter, trieStore, blockStore, receiptStore));
+        final Logger logger = mock(Logger.class);
+        given(logger.isTraceEnabled()).willReturn(true);
+        when(this.flusher.getLogger()).thenReturn(logger);
         this.flusher.start();
 
         ArgumentCaptor<EthereumListener> argument = ArgumentCaptor.forClass(EthereumListener.class);

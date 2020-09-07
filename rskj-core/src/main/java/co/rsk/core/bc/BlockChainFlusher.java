@@ -23,6 +23,7 @@ import co.rsk.metrics.profilers.Profiler;
 import co.rsk.metrics.profilers.ProfilerFactory;
 import co.rsk.trie.TrieStore;
 import co.rsk.util.FormatUtils;
+import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.Block;
 import org.ethereum.core.TransactionReceipt;
 import org.ethereum.db.BlockStore;
@@ -77,9 +78,9 @@ public class BlockChainFlusher implements InternalService {
     }
 
     private void closeAll() {
-        logger.trace("closing blockStore.");
+        getLogger().trace("closing blockStore.");
         blockStore.close();
-        logger.trace("blockStore closed.");
+        getLogger().trace("blockStore closed.");
     }
 
     private void flush() {
@@ -98,27 +99,32 @@ public class BlockChainFlusher implements InternalService {
         trieStore.flush();
         long totalTime = System.nanoTime() - saveTime;
 
-        if (logger.isTraceEnabled()) {
-            logger.trace("repository flush: [{}]seconds", FormatUtils.formatNanosecondsToSeconds(totalTime));
+        if (getLogger().isTraceEnabled()) {
+            getLogger().trace("repository flush: [{}]seconds", FormatUtils.formatNanosecondsToSeconds(totalTime));
         }
 
         saveTime = System.nanoTime();
         blockStore.flush();
         totalTime = System.nanoTime() - saveTime;
 
-        if (logger.isTraceEnabled()) {
-            logger.trace("blockstore flush: [{}]seconds", FormatUtils.formatNanosecondsToSeconds(totalTime));
+        if (getLogger().isTraceEnabled()) {
+            getLogger().trace("blockstore flush: [{}]seconds", FormatUtils.formatNanosecondsToSeconds(totalTime));
         }
 
         saveTime = System.nanoTime();
         receiptStore.flush();
         totalTime = System.nanoTime() - saveTime;
 
-        if (logger.isTraceEnabled()) {
-            logger.trace("receiptstore flush: [{}]seconds", FormatUtils.formatNanosecondsToSeconds(totalTime));
+        if (getLogger().isTraceEnabled()) {
+            getLogger().trace("receiptstore flush: [{}]seconds", FormatUtils.formatNanosecondsToSeconds(totalTime));
         }
 
         profiler.stop(metric);
+    }
+
+    @VisibleForTesting
+    public Logger getLogger() {
+        return logger;
     }
 
     private class OnBestBlockListener extends EthereumListenerAdapter {
