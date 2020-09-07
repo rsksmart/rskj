@@ -1509,6 +1509,14 @@ public class Program {
     }
 
     @SuppressWarnings("serial")
+    public static class ReturnStackOverflowException extends RuntimeException {
+
+        public ReturnStackOverflowException(String message, Object... args) {
+            super(format(message, args));
+        }
+    }
+
+    @SuppressWarnings("serial")
     public static class StaticCallModificationException extends RuntimeException {
         public StaticCallModificationException(String message, Object... args) {
             super(format(message, args));
@@ -1574,6 +1582,10 @@ public class Program {
 
         public static StackTooSmallException tooSmallStack(@Nonnull Program program, int expectedSize, int actualSize) {
             return new StackTooSmallException("Expected stack size %d but actual %d, tx: %s", expectedSize, actualSize, extractTxHash(program));
+        }
+
+        public static ReturnStackOverflowException returnStackOverflow(@Nonnull Program program, int pc) {
+            return new ReturnStackOverflowException("Return stack overflow: PC[%d], tx[%s]", pc, extractTxHash(program));
         }
 
         public static RuntimeException tooLargeContractSize(@Nonnull Program program, int maxSize, int actualSize) {

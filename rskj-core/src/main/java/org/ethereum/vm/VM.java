@@ -88,6 +88,8 @@ public class VM {
     private static final String logString = "{}    Op: [{}]  Gas: [{}] Deep: [{}]  Hint: [{}]";
     private static final boolean computeGas = true; // for performance comp
 
+    private static final int MAX_RETURN_STACK_SIZE = 1024;
+
     /* Keeps track of the number of steps performed in this VM */
     private int vmCounter = 0;
 
@@ -1680,6 +1682,10 @@ public class VM {
 
         if (isLogEnabled) {
             hint = "~> " + nextPC;
+        }
+
+        if (this.returnStack.size() >= MAX_RETURN_STACK_SIZE) {
+            throw Program.ExceptionHelper.returnStackOverflow(program, program.getPC());
         }
 
         this.returnStack.push(program.getPC() + 1);
