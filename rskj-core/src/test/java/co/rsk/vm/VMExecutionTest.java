@@ -901,6 +901,21 @@ public class VMExecutionTest {
     }
 
     @Test
+    public void executeInvalidJumpToSubroutineWhenStackIsEmpty() {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(RSKIP172)).thenReturn(true);
+
+        Program program = playCode("JUMPSUB", activations);
+        Stack stack = program.getStack();
+
+        Assert.assertEquals(0, stack.size());
+        Assert.assertEquals(invoke.getGas(), program.getResult().getGasUsed());
+        Assert.assertNotNull(program.getResult().getException());
+        Assert.assertTrue(program.getResult().getException() instanceof Program.StackTooSmallException);
+        Assert.assertEquals("Expected stack size 1 but actual 0, tx: <null>", program.getResult().getException().getMessage());
+    }
+
+    @Test
     public void executeInvalidShallowReturnStack() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(RSKIP172)).thenReturn(true);
