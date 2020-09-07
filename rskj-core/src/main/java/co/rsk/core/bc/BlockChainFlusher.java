@@ -22,6 +22,7 @@ import co.rsk.metrics.profilers.Metric;
 import co.rsk.metrics.profilers.Profiler;
 import co.rsk.metrics.profilers.ProfilerFactory;
 import co.rsk.trie.TrieStore;
+import co.rsk.util.FormatUtils;
 import org.ethereum.core.Block;
 import org.ethereum.core.TransactionReceipt;
 import org.ethereum.db.BlockStore;
@@ -96,15 +97,26 @@ public class BlockChainFlusher implements InternalService {
         long saveTime = System.nanoTime();
         trieStore.flush();
         long totalTime = System.nanoTime() - saveTime;
-        logger.trace("repository flush: [{}]nano", totalTime);
+
+        if (logger.isTraceEnabled()) {
+            logger.trace("repository flush: [{}]seconds", FormatUtils.formatNanosecondsToSeconds(totalTime));
+        }
+
         saveTime = System.nanoTime();
         blockStore.flush();
         totalTime = System.nanoTime() - saveTime;
-        logger.trace("blockstore flush: [{}]nano", totalTime);
+
+        if (logger.isTraceEnabled()) {
+            logger.trace("blockstore flush: [{}]seconds", FormatUtils.formatNanosecondsToSeconds(totalTime));
+        }
+
         saveTime = System.nanoTime();
         receiptStore.flush();
         totalTime = System.nanoTime() - saveTime;
-        logger.trace("receiptstore flush: [{}]nano", totalTime);
+
+        if (logger.isTraceEnabled()) {
+            logger.trace("receiptstore flush: [{}]seconds", FormatUtils.formatNanosecondsToSeconds(totalTime));
+        }
 
         profiler.stop(metric);
     }

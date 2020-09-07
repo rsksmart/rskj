@@ -20,10 +20,12 @@ package co.rsk.net;
 
 import co.rsk.config.InternalService;
 import co.rsk.config.RskSystemProperties;
+import co.rsk.core.bc.BlockUtils;
 import co.rsk.crypto.Keccak256;
 import co.rsk.net.messages.*;
 import co.rsk.scoring.EventType;
 import co.rsk.scoring.PeerScoringManager;
+import co.rsk.util.FormatUtils;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.net.server.ChannelManager;
 import org.slf4j.Logger;
@@ -88,7 +90,8 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
      */
     public synchronized void processMessage(final Peer sender, @Nonnull final Message message) {
         long start = System.nanoTime();
-        logger.trace("Process message type: {}", message.getMessageType());
+        MessageType messageType = message.getMessageType();
+        logger.trace("Process message type: {}", messageType);
 
         MessageVisitor mv = new MessageVisitor(config,
                 blockProcessor,
@@ -99,7 +102,15 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
                 sender);
         message.accept(mv);
 
-        loggerMessageProcess.debug("Message[{}] processed after [{}] nano.", message.getMessageType(), System.nanoTime() - start);
+        long processTime = System.nanoTime() - start;
+        String timeInSeconds = FormatUtils.formatNanosecondsToSeconds(processTime);
+
+        if ((messageType == MessageType.BLOCK_MESSAGE || messageType == MessageType.BODY_RESPONSE_MESSAGE) && BlockUtils.tooMuchProcessTime(processTime)) {
+            loggerMessageProcess.warn("Message[{}] processed after [{}] seconds.", message.getMessageType(), timeInSeconds);
+        }
+        else {
+            loggerMessageProcess.debug("Message[{}] processed after [{}] seconds.", message.getMessageType(), timeInSeconds);
+        }
     }
 
     @Override
