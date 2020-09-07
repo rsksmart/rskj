@@ -1985,7 +1985,7 @@ public class VM {
              * Subroutines
              */
             case OpCodes.OP_JUMPSUB:
-                if (!activations.isActive(EIP2315)) {
+                if (!activations.isActive(RSKIP172)) {
                     throw Program.ExceptionHelper.invalidOpCode(program);
                 }
 
@@ -1994,7 +1994,7 @@ public class VM {
                 break;
 
             case OpCodes.OP_RETURNSUB:
-                if (!activations.isActive(EIP2315)) {
+                if (!activations.isActive(RSKIP172)) {
                     throw Program.ExceptionHelper.invalidOpCode(program);
                 }
 
@@ -2003,7 +2003,7 @@ public class VM {
                 break;
 
             case OpCodes.OP_BEGINSUB:
-                if (!activations.isActive(EIP2315)) {
+                if (!activations.isActive(RSKIP172)) {
                     throw Program.ExceptionHelper.invalidOpCode(program);
                 }
 

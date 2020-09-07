@@ -819,7 +819,7 @@ public class VMExecutionTest {
     @Test
     public void executeSimpleSubroutine() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-        when(activations.isActive(EIP2315)).thenReturn(true);
+        when(activations.isActive(RSKIP172)).thenReturn(true);
 
         Program program = playCode("PUSH1 0x04 JUMPSUB STOP BEGINSUB RETURNSUB", activations);
         Stack stack = program.getStack();
@@ -831,7 +831,7 @@ public class VMExecutionTest {
     @Test
     public void executeSimpleSubroutineWithStackOperation() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-        when(activations.isActive(EIP2315)).thenReturn(true);
+        when(activations.isActive(RSKIP172)).thenReturn(true);
 
         Program program = playCode("PUSH1 0x04 JUMPSUB STOP BEGINSUB PUSH1 0x2a RETURNSUB", activations);
         Stack stack = program.getStack();
@@ -864,7 +864,7 @@ public class VMExecutionTest {
     @Test
     public void executeTwoLevelsOfSubroutine() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-        when(activations.isActive(EIP2315)).thenReturn(true);
+        when(activations.isActive(RSKIP172)).thenReturn(true);
 
         Program program = playCode("PUSH9 0x00000000000000000c JUMPSUB STOP BEGINSUB PUSH1 0x11 JUMPSUB RETURNSUB BEGINSUB RETURNSUB", activations);
         Stack stack = program.getStack();
@@ -876,7 +876,7 @@ public class VMExecutionTest {
     @Test
     public void executeSubroutineAtEndOfCode() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-        when(activations.isActive(EIP2315)).thenReturn(true);
+        when(activations.isActive(RSKIP172)).thenReturn(true);
 
         Program program = playCode("PUSH1 0x05 JUMP BEGINSUB RETURNSUB JUMPDEST PUSH1 0x03 JUMPSUB", activations);
         Stack stack = program.getStack();
@@ -888,7 +888,7 @@ public class VMExecutionTest {
     @Test
     public void executeInvalidJumpToSubroutine() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-        when(activations.isActive(EIP2315)).thenReturn(true);
+        when(activations.isActive(RSKIP172)).thenReturn(true);
 
         Program program = playCode("PUSH9 0x01000000000000000c JUMPSUB STOP BEGINSUB RETURNSUB", activations);
         Stack stack = program.getStack();
@@ -903,7 +903,7 @@ public class VMExecutionTest {
     @Test
     public void executeInvalidShallowReturnStack() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-        when(activations.isActive(EIP2315)).thenReturn(true);
+        when(activations.isActive(RSKIP172)).thenReturn(true);
 
         Program program = playCode("RETURNSUB PC PC", activations);
         Stack stack = program.getStack();
@@ -918,7 +918,7 @@ public class VMExecutionTest {
     @Test
     public void executeInvalidWalkIntoSubroutine() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-        when(activations.isActive(EIP2315)).thenReturn(true);
+        when(activations.isActive(RSKIP172)).thenReturn(true);
 
         Program program = playCode("BEGINSUB RETURNSUB STOP", activations);
         Stack stack = program.getStack();
