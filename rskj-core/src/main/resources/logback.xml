@@ -31,6 +31,9 @@
                 %date{yyyy-MM-dd-HH:mm:ss.SSSS} %p [%c{1}] [%thread]%replace( [%mdc{}]){' \[\]', ''}  %m%n
             </Pattern>
         </encoder>
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>ON</level>
+        </filter>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
             <fileNamePattern>./logs/rskj-%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
             <maxFileSize>100MB</maxFileSize>
@@ -84,6 +87,9 @@
     <logger name="messageProcess" level="INFO"/>
     <logger name="co.rsk.db.migration.OrchidToUnitrieMigrator" level="INFO"/>
     <logger name="co.rsk.db.migration.MissingOrchidStorageKeysProvider" level="INFO"/>
+
+    <!-- Use INFO or upper levels for productive environments. -->
+    <logger name="com.googlecode.jsonrpc4j" level="INFO"></logger>
 
     <root level="DEBUG">
         <appender-ref ref="stdout"/>
