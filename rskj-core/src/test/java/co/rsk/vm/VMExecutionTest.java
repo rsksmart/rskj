@@ -874,24 +874,24 @@ public class VMExecutionTest {
     }
 
     @Test
-    public void execute1024LevelsOfSubroutine() {
+    public void execute1023LevelsOfSubroutine() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(RSKIP172)).thenReturn(true);
 
-        Program program = playCode("PUSH2 0x0400 PUSH1 0x07 JUMP BEGINSUB JUMPDEST DUP1 PUSH1 0x0d JUMPI STOP JUMPDEST PUSH1 0x01 SWAP1 SUB PUSH1 0x06 JUMPSUB", activations);
+        Program program = playCode("PUSH2 0x03ff PUSH1 0x07 JUMP BEGINSUB JUMPDEST DUP1 PUSH1 0x0d JUMPI STOP JUMPDEST PUSH1 0x01 SWAP1 SUB PUSH1 0x06 JUMPSUB", activations);
         Stack stack = program.getStack();
 
         Assert.assertEquals(1, stack.size());
         Assert.assertEquals(DataWord.ZERO, stack.pop());
-        Assert.assertFalse(program.getResult().isRevert());
+        Assert.assertNull(program.getResult().getException());
     }
 
     @Test
-    public void revertWhenExecute1025LevelsOfSubroutine() {
+    public void revertWhenExecute1024LevelsOfSubroutine() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(RSKIP172)).thenReturn(true);
 
-        Program program = playCode("PUSH2 0x0401 PUSH1 0x07 JUMP BEGINSUB JUMPDEST DUP1 PUSH1 0x0d JUMPI STOP JUMPDEST PUSH1 0x01 SWAP1 SUB PUSH1 0x06 JUMPSUB", activations);
+        Program program = playCode("PUSH2 0x0400 PUSH1 0x07 JUMP BEGINSUB JUMPDEST DUP1 PUSH1 0x0d JUMPI STOP JUMPDEST PUSH1 0x01 SWAP1 SUB PUSH1 0x06 JUMPSUB", activations);
 
         Assert.assertEquals(invoke.getGas(), program.getResult().getGasUsed());
         Assert.assertNotNull(program.getResult().getException());

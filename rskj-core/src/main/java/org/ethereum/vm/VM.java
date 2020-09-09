@@ -88,7 +88,7 @@ public class VM {
     private static final String logString = "{}    Op: [{}]  Gas: [{}] Deep: [{}]  Hint: [{}]";
     private static final boolean computeGas = true; // for performance comp
 
-    private static final int MAX_RETURN_STACK_SIZE = 1024;
+    private static final int MAX_RETURN_STACK_SIZE = 1023;
 
     /* Keeps track of the number of steps performed in this VM */
     private int vmCounter = 0;
