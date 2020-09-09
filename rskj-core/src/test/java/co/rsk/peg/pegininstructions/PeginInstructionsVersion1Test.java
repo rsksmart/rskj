@@ -3,11 +3,10 @@ package co.rsk.peg.pegininstructions;
 import co.rsk.bitcoinj.core.Address;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.config.BridgeRegTestConstants;
+import java.util.Optional;
 import org.bouncycastle.util.encoders.Hex;
 import org.junit.Assert;
 import org.junit.Test;
-
-import java.util.Optional;
 
 public class PeginInstructionsVersion1Test {
     private final NetworkParameters params = BridgeRegTestConstants.getInstance().getBtcParams();
@@ -37,65 +36,73 @@ public class PeginInstructionsVersion1Test {
     }
 
     @Test
-    public void peginInstructionsV1_getBtcRefundAddressFromData_no_refund_address() throws
-            PeginInstructionsParseException {
+    public void peginInstructionsV1_parseAdditionalData_no_refund_address() throws
+        PeginInstructionsException {
         PeginInstructionsVersion1 peginInstructionsVersion1 = new PeginInstructionsVersion1(params);
+        peginInstructionsVersion1.parseAdditionalData(
+            Hex.decode("00010e537aad84447a2c2a7590d5f2665ef5cf9b667a"));
 
-        Assert.assertEquals(Optional.empty(),
-                peginInstructionsVersion1.getBtcRefundAddressFromData(
-                        Hex.decode("00010e537aad84447a2c2a7590d5f2665ef5cf9b667a")));
+        Optional<Address> obtainedBtcAddress = peginInstructionsVersion1.getBtcRefundAddress();
+        Assert.assertEquals(Optional.empty(), obtainedBtcAddress);
     }
 
     @Test
-    public void peginInstructionsV1_getBtcRefundAddressFromData_p2pkh_address() throws
-            PeginInstructionsParseException {
+    public void peginInstructionsV1_parseAdditionalData_p2pkh_address() throws
+        PeginInstructionsException {
         PeginInstructionsVersion1 peginInstructionsVersion1 = new PeginInstructionsVersion1(params);
-
-        Address btcAddress = new Address(params, Hex.decode("4f4c767a2d308eebb3f0f1247f9163c896e0b7d2"));
-
-        String rawData = "00010e537aad84447a2c2a7590d5f2665ef5cf9b667a014f4c767a2d308eebb3f0f1247f9163c896e0b7d2";
-        Optional<Address> obtainedBtcAddress = peginInstructionsVersion1.getBtcRefundAddressFromData(Hex.decode(rawData));
-
-        Assert.assertEquals(Optional.of(btcAddress), obtainedBtcAddress);
-    }
-
-    @Test
-    public void peginInstructionsV1_getBtcRefundAddressFromData_p2sh_p2wpkh_address() throws
-            PeginInstructionsParseException {
-        PeginInstructionsVersion1 peginInstructionsVersion1 = new PeginInstructionsVersion1(params);
+        peginInstructionsVersion1.parseAdditionalData(
+            Hex.decode("00010e537aad84447a2c2a7590d5f2665ef5cf9b667a014f4c767a2d308eebb3f0f1247f9163c896e0b7d2"));
 
         Address btcAddress = new Address(params,
-                params.getP2SHHeader(),
-                Hex.decode("19d7e0ee9bf6bd70d1d046b066d1c2726e1accc1"));
+            Hex.decode("4f4c767a2d308eebb3f0f1247f9163c896e0b7d2"));
 
-        String rawData = "00010e537aad84447a2c2a7590d5f2665ef5cf9b667a0219d7e0ee9bf6bd70d1d046b066d1c2726e1accc1";
-        Optional<Address> obtainedBtcAddress = peginInstructionsVersion1.getBtcRefundAddressFromData(Hex.decode(rawData));
+        Optional<Address> obtainedBtcAddress = peginInstructionsVersion1.getBtcRefundAddress();
 
         Assert.assertEquals(Optional.of(btcAddress), obtainedBtcAddress);
+        Assert.assertFalse(obtainedBtcAddress.get().isP2SHAddress());
     }
 
     @Test
-    public void peginInstructionsV1_getBtcRefundAddressFromData_p2sh_multisig_address() throws
-            PeginInstructionsParseException {
+    public void peginInstructionsV1_parseAdditionalData_p2sh_p2wpkh_address() throws
+        PeginInstructionsException {
         PeginInstructionsVersion1 peginInstructionsVersion1 = new PeginInstructionsVersion1(params);
+        peginInstructionsVersion1.parseAdditionalData(
+            Hex.decode("00010e537aad84447a2c2a7590d5f2665ef5cf9b667a024f4c767a2d308eebb3f0f1247f9163c896e0b7d2"));
 
         Address btcAddress = new Address(params,
-                params.getP2SHHeader(),
-                Hex.decode("6c230519d0957afca4a7ffbeda9ab29c3ca233d9"));
+            params.getP2SHHeader(),
+            Hex.decode("4f4c767a2d308eebb3f0f1247f9163c896e0b7d2"));
 
-        String rawData = "00010e537aad84447a2c2a7590d5f2665ef5cf9b667a026c230519d0957afca4a7ffbeda9ab29c3ca233d9";
+        Optional<Address> obtainedBtcAddress = peginInstructionsVersion1.getBtcRefundAddress();
 
-        Optional<Address> obtainedBtcAddress = peginInstructionsVersion1.getBtcRefundAddressFromData(Hex.decode(rawData));
         Assert.assertEquals(Optional.of(btcAddress), obtainedBtcAddress);
+        Assert.assertTrue(obtainedBtcAddress.get().isP2SHAddress());
+    }
+
+    @Test
+    public void peginInstructionsV1_parseAdditionalData_p2sh_multisig_address() throws
+        PeginInstructionsException {
+        PeginInstructionsVersion1 peginInstructionsVersion1 = new PeginInstructionsVersion1(params);
+        peginInstructionsVersion1.parseAdditionalData(
+            Hex.decode("00010e537aad84447a2c2a7590d5f2665ef5cf9b667a026c230519d0957afca4a7ffbeda9ab29c3ca233d9"));
+
+        Address btcAddress = new Address(params,
+            params.getP2SHHeader(),
+            Hex.decode("6c230519d0957afca4a7ffbeda9ab29c3ca233d9"));
+
+        Optional<Address> obtainedBtcAddress = peginInstructionsVersion1.getBtcRefundAddress();
+
+        Assert.assertEquals(Optional.of(btcAddress), obtainedBtcAddress);
+        Assert.assertTrue(obtainedBtcAddress.get().isP2SHAddress());
     }
 
     @Test(expected = PeginInstructionsParseException.class)
-    public void peginInstructionsV1_getBtcRefundAddressFromData_invalid_address_type() throws
+    public void peginInstructionsV1_parseAdditionalData_invalid_address_type() throws
             PeginInstructionsParseException {
         PeginInstructionsVersion1 peginInstructionsVersion1 = new PeginInstructionsVersion1(params);
 
         String rawData = "00010e537aad84447a2c2a7590d5f2665ef5cf9b667a0019d7e0ee9bf6bd70d1d046b066d1c2726e1accc1";
-        peginInstructionsVersion1.getBtcRefundAddressFromData(Hex.decode(rawData));
+        peginInstructionsVersion1.parseAdditionalData(Hex.decode(rawData));
     }
 
     @Test(expected = PeginInstructionsParseException.class)
