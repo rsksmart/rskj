@@ -25,19 +25,17 @@ public class PeginInstructionsVersion1 extends PeginInstructionsBase {
     @Override
     protected void validateDataLength(byte[] data) throws PeginInstructionsParseException {
         if (data.length != 22 && data.length != 43) {
-            logger.debug("[validateDataLength] Invalid data length");
-            throw new PeginInstructionsParseException("[validateDataLength] Invalid data length");
+            String message = String.format("[validateDataLength] Invalid data length. Expected 22 or 43 bytes, received %d", data.length);
+            logger.debug(message);
+            throw new PeginInstructionsParseException(message);
         }
     }
 
     @Override
     protected void parseAdditionalData(byte[] data) throws PeginInstructionsParseException {
-        this.btcRefundAddress = getBtcRefundAddressFromData(data);
-    }
-
-    public Optional<Address> getBtcRefundAddressFromData(byte[] data) throws PeginInstructionsParseException {
         if (data.length == 22) {
-            return Optional.empty();
+            this.btcRefundAddress = Optional.empty();
+            return;
         }
 
         byte[] btcRefundAddressTypeBytes = Arrays.copyOfRange(data, 22, 23);
@@ -50,16 +48,23 @@ public class PeginInstructionsVersion1 extends PeginInstructionsBase {
             case P2PKH_ADDRESS_TYPE:
                 // Uses pubKeyHash
                 btcRefundAddress = new Address(this.params, hash);
+                logger.debug("[parseAdditionalData] Obtained P2PKH BTC address: {}",btcRefundAddress);
                 break;
             case P2SH_ADDRESS_TYPE:
                 // Uses scriptPubKeyHash
                 btcRefundAddress = new Address(this.params, this.params.getP2SHHeader(), hash);
+                logger.debug("[parseAdditionalData] Obtained P2SH BTC address: {}",btcRefundAddress);
                 break;
             default:
-                logger.debug("[getBtcRefundAddressFromData] Invalid btc address type");
-                throw new PeginInstructionsParseException("Invalid btc address type");
+                String message = String.format("[parseAdditionalData] Invalid btc address type: %d", btcRefundAddressType);
+                logger.debug(message);
+                throw new PeginInstructionsParseException(message);
         }
 
-        return Optional.of(btcRefundAddress);
+        this.btcRefundAddress = Optional.of(btcRefundAddress);
+    }
+
+    public Optional<Address> getBtcRefundAddress() {
+        return this.btcRefundAddress;
     }
 }
