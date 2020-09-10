@@ -68,7 +68,7 @@ class RemascFeesPayer {
 
         TransferInvoke invoke = new TransferInvoke(from, to, gas, amount);
         ProgramResult result     = new ProgramResult();
-        ProgramSubtrace subtrace = ProgramSubtrace.newCallSubtrace(CallType.CALL, invoke, result, Collections.emptyList());
+        ProgramSubtrace subtrace = ProgramSubtrace.newCallSubtrace(CallType.CALL, invoke, result, null, Collections.emptyList());
 
         this.subtraces.add(subtrace);
     }

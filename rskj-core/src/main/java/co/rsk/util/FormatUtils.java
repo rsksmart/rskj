@@ -17,29 +17,14 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package co.rsk.rpc.modules.trace;
+package co.rsk.util;
 
-import org.ethereum.vm.MessageCall;
+public class FormatUtils {
+    private FormatUtils() {
 
-public enum CallType {
-    NONE,
-    CALL,
-    CALLCODE,
-    DELEGATECALL,
-    STATICCALL;
+    }
 
-    public static CallType fromMsgType(MessageCall.MsgType msgType) {
-        switch (msgType) {
-            case CALL:
-                return CALL;
-            case CALLCODE:
-                return CALLCODE;
-            case DELEGATECALL:
-                return DELEGATECALL;
-            case STATICCALL:
-                return STATICCALL;
-            default:
-                return NONE;
-        }
+    public static String formatNanosecondsToSeconds(long nanoseconds) {
+        return String.format("%.6f", nanoseconds / 1_000_000_000.0);
     }
 }

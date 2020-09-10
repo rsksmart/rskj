@@ -813,7 +813,7 @@ public class VM {
                 hint = "hash: " + ByteUtil.toHexString(emptyHash);
             }
         } else {
-            Keccak256 codeHash = program.getCodeHashAt(address);
+            Keccak256 codeHash = program.getCodeHashAt(address,activations.isActive(RSKIP169));
             //If account does not exist, 0 is pushed in stack
             if (codeHash.equals(Keccak256.ZERO_HASH)) {
                 program.stackPush(DataWord.ZERO);

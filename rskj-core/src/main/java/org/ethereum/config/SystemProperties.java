@@ -49,11 +49,11 @@ import java.util.stream.Collectors;
 
 /**
  * Utility class to retrieve property values from the rskj.conf files
- *
+ * <p>
  * The properties are taken from different sources and merged in the following order
  * (the config option from the next source overrides option from previous):
  * - resource rskj.conf : normally used as a reference config with default values
- *          and shouldn't be changed
+ * and shouldn't be changed
  * - system property : each config entry might be altered via -D VM option
  * - [user dir]/config/rskj.conf
  * - config specified with the -Drsk.conf.file=[file.conf] VM option
@@ -319,7 +319,7 @@ public abstract class SystemProperties {
     }
 
     public List<String> peerCapabilities() {
-        return configFromFiles.hasPath("peer.capabilities") ?  configFromFiles.getStringList("peer.capabilities") : new ArrayList<>(Arrays.asList("rsk"));
+        return configFromFiles.hasPath("peer.capabilities") ? configFromFiles.getStringList("peer.capabilities") : new ArrayList<>(Arrays.asList("rsk"));
     }
 
     public boolean vmTrace() {
@@ -359,15 +359,19 @@ public abstract class SystemProperties {
             File file = new File(databaseDir(), "nodeId.properties");
             Properties props = new Properties();
             if (file.canRead()) {
-                props.load(new FileReader(file));
+                try (FileReader reader = new FileReader(file)) {
+                    props.load(reader);
+                }
             } else {
                 ECKey key = new ECKey();
                 props.setProperty("nodeIdPrivateKey", ByteUtil.toHexString(key.getPrivKeyBytes()));
                 props.setProperty("nodeId", ByteUtil.toHexString(key.getNodeId()));
                 file.getParentFile().mkdirs();
-                props.store(new FileWriter(file), "Generated NodeID. To use your own nodeId please refer to 'peer.privateKey' config option.");
-                logger.info("New nodeID generated: {}", props.getProperty("nodeId"));
-                logger.info("Generated nodeID and its private key stored in {}", file);
+                try (FileWriter writer = new FileWriter(file)) {
+                    props.store(writer, "Generated NodeID. To use your own nodeId please refer to 'peer.privateKey' config option.");
+                    logger.info("New nodeID generated: {}", props.getProperty("nodeId"));
+                    logger.info("Generated nodeID and its private key stored in {}", file);
+                }
             }
             return props.getProperty("nodeIdPrivateKey");
         } catch (IOException e) {
@@ -380,7 +384,7 @@ public abstract class SystemProperties {
     }
 
     /**
-     *  Home NodeID calculated from 'peer.privateKey' property
+     * Home NodeID calculated from 'peer.privateKey' property
      */
     public byte[] nodeId() {
         return getMyKey().getNodeId();
@@ -429,7 +433,7 @@ public abstract class SystemProperties {
 
         if (configFromFiles.hasPath(PROPERTY_PUBLIC_IP)) {
             String externalIpFromConfig = configFromFiles.getString(PROPERTY_PUBLIC_IP).trim();
-            if (!externalIpFromConfig.isEmpty()){
+            if (!externalIpFromConfig.isEmpty()) {
                 try {
                     InetAddress address = tryParseIpOrThrow(externalIpFromConfig);
                     publicIp = address.getHostAddress();
@@ -446,7 +450,7 @@ public abstract class SystemProperties {
         return publicIp;
     }
 
-    private InetAddress getMyPublicIpFromRemoteService(){
+    private InetAddress getMyPublicIpFromRemoteService() {
         try {
             URL ipCheckService = publicIpCheckService();
             logger.info("Public IP wasn't set or resolved, using {} to identify it...", ipCheckService);
@@ -471,7 +475,7 @@ public abstract class SystemProperties {
         }
 
         InetAddress bindAddress = getBindAddress();
-        if (bindAddress.isAnyLocalAddress()){
+        if (bindAddress.isAnyLocalAddress()) {
             throw new RuntimeException("Wildcard on bind address it's not allowed as fallback for public IP " + bindAddress);
         }
 
@@ -503,7 +507,7 @@ public abstract class SystemProperties {
         return configFromFiles.getInt("transaction.outdated.timeout");
     }
 
-    public void setGenesisInfo(String genesisInfo){
+    public void setGenesisInfo(String genesisInfo) {
         this.genesisInfo = genesisInfo;
     }
 
@@ -573,7 +577,7 @@ public abstract class SystemProperties {
     }
 
     public String customSolcPath() {
-        return configFromFiles.hasPath("solc.path") ? configFromFiles.getString("solc.path"): null;
+        return configFromFiles.hasPath("solc.path") ? configFromFiles.getString("solc.path") : null;
     }
 
     public String netName() {

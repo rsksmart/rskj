@@ -537,15 +537,15 @@ public class RepositoryTest {
         track.commit();
 
         //Non-empty code hash
-        Keccak256 codeHash = repository.getCodeHash(COW);
+        Keccak256 codeHash = repository.getCodeHashNonStandard(COW);
         assertEquals(codeKeccak, codeHash);
 
         //Empty code hash
-        Keccak256 emptyCodeHash = repository.getCodeHash(HORSE);
+        Keccak256 emptyCodeHash = repository.getCodeHashNonStandard(HORSE);
         assertEquals(emptyKeccak, emptyCodeHash);
 
         //Code hash of non-existing account
-        Keccak256 hashOfNonExistingAccount = repository.getCodeHash(addressNotAdded);
+        Keccak256 hashOfNonExistingAccount = repository.getCodeHashNonStandard(addressNotAdded);
         assertTrue(hashOfNonExistingAccount.equals(Keccak256.ZERO_HASH));
     }
 

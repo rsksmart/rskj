@@ -18,7 +18,11 @@
 package co.rsk.core.bc;
 
 import co.rsk.config.InternalService;
+import co.rsk.metrics.profilers.Metric;
+import co.rsk.metrics.profilers.Profiler;
+import co.rsk.metrics.profilers.ProfilerFactory;
 import co.rsk.trie.TrieStore;
+import co.rsk.util.FormatUtils;
 import org.ethereum.core.Block;
 import org.ethereum.core.TransactionReceipt;
 import org.ethereum.db.BlockStore;
@@ -35,6 +39,8 @@ import java.util.List;
  */
 public class BlockChainFlusher implements InternalService {
     private static final Logger logger = LoggerFactory.getLogger(BlockChainFlusher.class);
+
+    private static final Profiler profiler = ProfilerFactory.getInstance();
 
     private final int flushNumberOfBlocks;
     private final CompositeEthereumListener emitter;
@@ -67,6 +73,13 @@ public class BlockChainFlusher implements InternalService {
     public void stop() {
         emitter.removeListener(listener);
         flushAll();
+        closeAll();
+    }
+
+    private void closeAll() {
+        logger.trace("closing blockStore.");
+        blockStore.close();
+        logger.trace("blockStore closed.");
     }
 
     private void flush() {
@@ -79,18 +92,33 @@ public class BlockChainFlusher implements InternalService {
     }
 
     private void flushAll() {
+        Metric metric = profiler.start(Profiler.PROFILING_TYPE.BLOCKCHAIN_FLUSH);
+
         long saveTime = System.nanoTime();
         trieStore.flush();
         long totalTime = System.nanoTime() - saveTime;
-        logger.trace("repository flush: [{}]nano", totalTime);
+
+        if (logger.isTraceEnabled()) {
+            logger.trace("repository flush: [{}]seconds", FormatUtils.formatNanosecondsToSeconds(totalTime));
+        }
+
         saveTime = System.nanoTime();
         blockStore.flush();
         totalTime = System.nanoTime() - saveTime;
-        logger.trace("blockstore flush: [{}]nano", totalTime);
+
+        if (logger.isTraceEnabled()) {
+            logger.trace("blockstore flush: [{}]seconds", FormatUtils.formatNanosecondsToSeconds(totalTime));
+        }
+
         saveTime = System.nanoTime();
         receiptStore.flush();
         totalTime = System.nanoTime() - saveTime;
-        logger.trace("receiptstore flush: [{}]nano", totalTime);
+
+        if (logger.isTraceEnabled()) {
+            logger.trace("receiptstore flush: [{}]seconds", FormatUtils.formatNanosecondsToSeconds(totalTime));
+        }
+
+        profiler.stop(metric);
     }
 
     private class OnBestBlockListener extends EthereumListenerAdapter {
