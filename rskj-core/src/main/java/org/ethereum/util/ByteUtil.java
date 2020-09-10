@@ -364,18 +364,7 @@ public class ByteUtil {
      * @return number of min bytes used to encode the number
      */
     public static int numBytes(String val) {
-
-        BigInteger bInt = new BigInteger(val);
-        int bytes = 0;
-
-        while (!bInt.equals(BigInteger.ZERO)) {
-            bInt = bInt.shiftRight(8);
-            ++bytes;
-        }
-        if (bytes == 0) {
-            ++bytes;
-        }
-        return bytes;
+        return new BigInteger(val).bitLength() / 8 + 1;
     }
 
     public static int firstNonZeroByte(byte[] data) {

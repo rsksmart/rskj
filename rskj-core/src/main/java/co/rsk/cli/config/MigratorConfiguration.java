@@ -1,6 +1,7 @@
 package co.rsk.cli.config;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -23,8 +24,8 @@ class MigratorConfiguration {
             throw new IllegalArgumentException(String.format("%s is not a valid migration file", migrationConfigurationPath));
         }
         this.migrationConfiguration = new Properties();
-        try {
-            this.migrationConfiguration.load(Files.newInputStream(migrationConfigurationPath));
+        try (InputStream stream = Files.newInputStream(migrationConfigurationPath)) {
+            this.migrationConfiguration.load(stream);
         } catch (IOException e) {
             throw new IllegalArgumentException(String.format("Unable to read migration config at %s", migrationConfigurationPath));
         }

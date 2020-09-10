@@ -67,6 +67,7 @@
     <logger name="messageProcess" level="INFO"/>
     <logger name="co.rsk.db.migration.OrchidToUnitrieMigrator" level="INFO"/>
     <logger name="co.rsk.db.migration.MissingOrchidStorageKeysProvider" level="INFO"/>
+    <logger name="co.rsk.core.bc.BlockChainFlusher" level="TRACE"/>
 
     <root level="DEBUG">
         <appender-ref ref="stdout"/>
