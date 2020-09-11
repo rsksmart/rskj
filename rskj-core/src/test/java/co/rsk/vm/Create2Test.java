@@ -207,7 +207,6 @@ public class Create2Test {
                 1000000);
     }
 
-
     @Test
     public void testCREATE2_DuplicateContractCreation() {
         /**
@@ -253,6 +252,48 @@ public class Create2Test {
         Assert.assertEquals(expectedAddress1.toUpperCase(), address1.toUpperCase());
         Assert.assertEquals(expectedAddress2.toUpperCase(), address2.toUpperCase());
         Assert.assertEquals(gasExpected, program.getResult().getGasUsed());
+    }
+
+    @Test
+    public void testCREATE2_PreserveContractAddressBalance() {
+        /**
+         *  CREATE2 call with expected address that has non-zero balance
+         */
+        String address = "0x0000000000000000000000000000000000000000";
+        String salt = "0x0000000000000000000000000000000000000000000000000000000000000000";
+        String pushInitCode = "PUSH32 0x6000000000000000000000000000000000000000000000000000000000000000";
+        String expectedContractAddress = "9CC90A6BDF7A59E213CFB70958A2E1A8EA5AF1E6";
+        int size = 1;
+        int intOffset = 0;
+        int value = 10;
+        int initialContractAddressBalance = 100;
+        Coin expectedContractBalance = Coin.valueOf(initialContractAddressBalance + value);
+
+        RskAddress testAddress = new RskAddress(address);
+        RskAddress contractAddress = new RskAddress(expectedContractAddress);
+        invoke.setOwnerAddress(testAddress);
+        invoke.getRepository().addBalance(testAddress, Coin.valueOf(value + 1000));
+        invoke.getRepository().addBalance(contractAddress, Coin.valueOf(initialContractAddressBalance));
+        String inSize = "0x" + DataWord.valueOf(size);
+        String inOffset = "0x" + DataWord.valueOf(intOffset);
+
+        pushInitCode += " PUSH1 0x00 MSTORE";
+
+        String codeToExecute = pushInitCode +
+                " PUSH32 " + salt +
+                " PUSH32 " + inSize +
+                " PUSH32 " + inOffset +
+                " PUSH32 " + "0x" + DataWord.valueOf(value) +
+                " CREATE2 ";
+
+        Program program = executeCode(codeToExecute);
+        Coin actualContractBalance = invoke.getRepository().getBalance(contractAddress);
+        Stack stack = program.getStack();
+        Assert.assertEquals(1, stack.size());
+        String actualAddress = ByteUtil.toHexString(stack.pop().getLast20Bytes());
+        Assert.assertEquals(expectedContractAddress.toUpperCase(), actualAddress.toUpperCase());
+        Assert.assertEquals(expectedContractAddress.toUpperCase(), actualAddress.toUpperCase());
+        Assert.assertEquals(expectedContractBalance, actualContractBalance);
     }
 
     @Test
