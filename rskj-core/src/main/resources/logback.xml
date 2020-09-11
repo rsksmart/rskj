@@ -18,7 +18,7 @@
             </Pattern>
         </encoder>
         <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
-            <level>${log.stdout:-OFF}</level>
+            <level>${logging.stdout.level:-OFF}</level>
         </filter>
     </appender>
 
@@ -32,7 +32,7 @@
             </Pattern>
         </encoder>
         <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
-            <level>${log.file:-DEBUG}</level>
+            <level>${logging.file.level:-DEBUG}</level>
         </filter>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
             <fileNamePattern>./logs/rskj-%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
