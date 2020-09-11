@@ -111,9 +111,6 @@ class Secp256k1ServiceBC implements Secp256k1Service {
         BigInteger srInv = rInv.multiply(sig.getS()).mod(n);
         BigInteger eInvrInv = rInv.multiply(eInv).mod(n);
         ECPoint.Fp q = (ECPoint.Fp) ECAlgorithms.sumOfTwoMultiplies(CURVE.getG(), eInvrInv, r, srInv);
-        if (q.isInfinity()) {
-            return null;
-        }
         return ECKey.fromPublicOnly(q.getEncoded(compressed));
     }
 

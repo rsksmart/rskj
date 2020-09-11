@@ -466,7 +466,7 @@ public class RskForksBridgeTest {
                 PrecompiledContracts.BRIDGE_ADDR,
                 0,
                 Bridge.GET_STATE_FOR_DEBUGGING.encode(new Object[]{}), beforeBambooProperties.getNetworkConstants().getChainId());
-        rskTx.sign(BigInteger.ONE.toByteArray());
+        rskTx.sign(new byte[]{});
 
         TransactionExecutorFactory transactionExecutorFactory = new TransactionExecutorFactory(
                 beforeBambooProperties,

@@ -97,9 +97,7 @@ public abstract class Secp256k1ServiceTest {
         BigInteger s = new BigInteger("48456094880180616145578324187715054843822774625773874469802229460318542735739");
         ECDSASignature signature = ECDSASignature.fromComponents(r.toByteArray(), s.toByteArray());
         ECKey k = this.getSecp256k1().recoverFromSignature((byte) 0, signature, Hex.decode(messageHash), false);
-        if (k != null) {
-            fail();
-        }
+        assertEquals( "00", Hex.toHexString(k.getPubKey()));
     }
 
     @Test

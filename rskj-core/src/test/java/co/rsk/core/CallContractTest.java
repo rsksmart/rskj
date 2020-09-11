@@ -61,7 +61,7 @@ public class CallContractTest {
     private static ProgramResult callContract(World world, RskAddress receiveAddress, byte[] data) {
         Transaction tx = CallTransaction.createRawTransaction(0, 0, 100000000000000L,
                 receiveAddress, 0, data, config.getNetworkConstants().getChainId());
-        tx.sign(BigInteger.ONE.toByteArray());
+        tx.sign(new byte[]{});
 
         Block bestBlock = world.getBlockChain().getBestBlock();
 

@@ -55,9 +55,20 @@ public class Secp256k1ServiceNative extends Secp256k1ServiceBC {
     }
 
     /**
-     * It returns a 64 byte array long, with r + s
+     * If "fixed" returns a 64 byte array long
+     * if not "fixed" returns a (r.length + s.length) bytes array long
+     *
+     * Note: When fixed, we take 32 bytes from "r" and 32 bytes from "s".
+     *
      * @param sig {r,s}
-     * @return r + s (64 bytes array)
+     * @param fixed 64 bytes array (32 from r, 32 from s)
+     * @return r + s (bytes array)
+     */
+    /**
+     *
+     * @param sig
+     * @param fixed
+     * @return
      */
     byte[] concatenate(ECDSASignature sig, boolean fixed) {
         byte[] rBytes = sig.getR().toByteArray();
