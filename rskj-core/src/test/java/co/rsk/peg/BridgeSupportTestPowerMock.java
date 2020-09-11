@@ -1339,7 +1339,7 @@ public class BridgeSupportTestPowerMock {
 
         PowerMockito.spy(BridgeUtils.class);
         PowerMockito.doReturn(false).when(BridgeUtils.class, "isLockTx", any(BtcTransaction.class), anyList(), any(Context.class), any(BridgeConstants.class));
-        PowerMockito.doReturn(true).when(BridgeUtils.class, "isReleaseTx", any(BtcTransaction.class), anyList());
+        PowerMockito.doReturn(true).when(BridgeUtils.class, "isMigrationTx", any(BtcTransaction.class), any(Federation.class), any(Federation.class), any(Context.class), any(BridgeConstants.class));
 
         BridgeSupport bridgeSupport = new BridgeSupport(
                 bridgeConstants,
@@ -1361,13 +1361,8 @@ public class BridgeSupportTestPowerMock {
         assertThat(changeUtxo.getValue(), is(changeValue));
         assertThat(changeUtxo.getScript().getToAddress(params), is(retiringFederationAddress));
 
-        ArgumentCaptor<BtcTransaction> releasedBtcTxCaptor = ArgumentCaptor.forClass(BtcTransaction.class);
-        ArgumentCaptor<List<Federation>> fedListCaptor = ArgumentCaptor.forClass((Class) List.class);
         PowerMockito.verifyStatic();
-        BridgeUtils.isReleaseTx(releasedBtcTxCaptor.capture(), fedListCaptor.capture());
-
-        assertThat(releasedBtcTxCaptor.getValue(), is(releaseWithChangeTx));
-        assertThat(fedListCaptor.getValue(), IsIterableContainingInOrder.contains(activeFederation, retiringFederation));
+        BridgeUtils.isMigrationTx(releaseWithChangeTx, activeFederation, retiringFederation, btcContext, bridgeConstants);
     }
 
     @Test
