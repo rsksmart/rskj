@@ -156,8 +156,18 @@ public class DslFilesTest {
     }
 
     @Test
-    public void runCreate05Resource() throws FileNotFoundException, DslProcessorException {
-        DslParser parser = DslParser.fromResource("dsl/create05.txt");
+    public void runCreateContractAndPreserveBalance() throws FileNotFoundException, DslProcessorException {
+        // after rskip174 activation
+        DslParser parser = DslParser.fromResource("dsl/create_and_preserve_balance.txt");
+        World world = new World();
+        WorldDslProcessor processor = new WorldDslProcessor(world);
+        processor.processCommands(parser);
+    }
+
+    @Test
+    public void runCreateContractAndPreserveNoBalance() throws FileNotFoundException, DslProcessorException {
+        // before rskip174 activation
+        DslParser parser = DslParser.fromResource("dsl/create_and_preserve_no_balance.txt");
         World world = new World();
         WorldDslProcessor processor = new WorldDslProcessor(world);
         processor.processCommands(parser);

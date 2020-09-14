@@ -50,6 +50,7 @@ import java.util.stream.Collectors;
 
 import static co.rsk.util.ListArrayUtil.getLength;
 import static co.rsk.util.ListArrayUtil.isEmpty;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP174;
 import static org.ethereum.util.BIUtil.*;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
@@ -370,8 +371,8 @@ public class TransactionExecutor {
     private void create() {
         RskAddress newContractAddress = tx.getContractAddress();
 
-        // Keep prior balance of a contract address (if any)
-        if (cacheTrack.isExist(newContractAddress)) {
+        if (activations.isActive(RSKIP174) && cacheTrack.isExist(newContractAddress)) {
+            // Keep prior balance of a contract address (if any)
             Coin oldBalance = cacheTrack.getBalance(newContractAddress);
             cacheTrack.createAccount(newContractAddress);
             cacheTrack.addBalance(newContractAddress, oldBalance);

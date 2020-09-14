@@ -1,4 +1,4 @@
-# Verify that previous contract balance is preserved after its creation
+# Verify that previous contract balance is NOT preserved after contract creation when rskip174 is not activated
 
 account_new acc1 10000000
 account_new acc2 10000000
@@ -45,4 +45,4 @@ block_connect b02
 assert_best b02
 
 # Assert contract balance
-assert_balance 6252703f5ba322ec64d3ac45e56241b7d9e481ad 100
+assert_balance 6252703f5ba322ec64d3ac45e56241b7d9e481ad 0
