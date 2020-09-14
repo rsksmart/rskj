@@ -59,7 +59,7 @@ public class JsonRpcWeb3ServerHandler extends SimpleChannelInboundHandler<ByteBu
         int responseCode;
         try (ByteBufOutputStream os = new ByteBufOutputStream(responseContent);
              ByteBufInputStream is = new ByteBufInputStream(request.content().retain())){
-
+            
             responseCode = jsonRpcServer.handleRequest(is, os);
         } catch (Exception e) {
             String unexpectedErrorMsg = "Unexpected error";
