@@ -79,9 +79,12 @@
     <logger name="state" level="INFO"/>
     <logger name="org.bitcoinj" level="INFO"/>
     <logger name="metrics" level="INFO"/>
-    <logger name="messageProcess" level="INFO"/>
+    <logger name="messageProcess" level="TRACE"/>
     <logger name="co.rsk.db.migration.OrchidToUnitrieMigrator" level="INFO"/>
     <logger name="co.rsk.db.migration.MissingOrchidStorageKeysProvider" level="INFO"/>
+
+    <!-- Use INFO or upper levels for productive environments. -->
+    <logger name="com.googlecode.jsonrpc4j" level="INFO"></logger>
 
     <root level="DEBUG">
         <appender-ref ref="stdout"/>
