@@ -26,7 +26,21 @@ public abstract class PeginInstructionsBase implements PeginInstructions {
 
     protected abstract void parseAdditionalData(byte[] data) throws PeginInstructionsParseException;
 
-    public static int extractProtocolVersion(byte[] data) {
+    public static int extractProtocolVersion(byte[] data) throws PeginInstructionsParseException {
+        if (data == null || data.length < 2) {
+            String message;
+
+            if (data == null) {
+                message = "Provided data is null";
+            } else {
+                message = String.format("Invalid data given. Expected at least 2 bytes, " +
+                    "received %d", data.length);
+            }
+
+            logger.debug("[extractProtocolVersion] {}", message);
+            throw new PeginInstructionsParseException(message);
+        }
+
         byte[] protocolVersionBytes = Arrays.copyOfRange(data, 0, 2);
         return ByteUtil.byteArrayToInt(protocolVersionBytes);
     }
@@ -42,13 +56,6 @@ public abstract class PeginInstructionsBase implements PeginInstructions {
     }
 
     public void parse(byte[] data) throws PeginInstructionsParseException {
-        if (data.length < 22) {
-            logger.debug("[parse] Invalid data length");
-            String message = String.format("Invalid data length. Expected at least 22 bytes, "
-                + "received %d", data.length);
-            throw new PeginInstructionsParseException(message);
-        }
-
         validateDataLength(data);
         this.rskDestinationAddress = getRskDestinationAddressFromData(data);
         parseAdditionalData(data);
