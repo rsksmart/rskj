@@ -42,18 +42,18 @@ public class PeginInstructionsVersion1 extends PeginInstructionsBase {
         int btcRefundAddressType = ByteUtil.byteArrayToInt(btcRefundAddressTypeBytes);
         byte[] hash = Arrays.copyOfRange(data, 23, data.length);
 
-        Address btcRefundAddress;
+        Address parsedBtcRefundAddress;
 
         switch (btcRefundAddressType) {
             case P2PKH_ADDRESS_TYPE:
                 // Uses pubKeyHash
-                btcRefundAddress = new Address(this.params, hash);
-                logger.debug("[parseAdditionalData] Obtained P2PKH BTC address: {}",btcRefundAddress);
+                parsedBtcRefundAddress = new Address(this.params, hash);
+                logger.debug("[parseAdditionalData] Obtained P2PKH BTC address: {}",parsedBtcRefundAddress);
                 break;
             case P2SH_ADDRESS_TYPE:
                 // Uses scriptPubKeyHash
-                btcRefundAddress = new Address(this.params, this.params.getP2SHHeader(), hash);
-                logger.debug("[parseAdditionalData] Obtained P2SH BTC address: {}",btcRefundAddress);
+                parsedBtcRefundAddress = new Address(this.params, this.params.getP2SHHeader(), hash);
+                logger.debug("[parseAdditionalData] Obtained P2SH BTC address: {}",parsedBtcRefundAddress);
                 break;
             default:
                 String message = String.format("[parseAdditionalData] Invalid btc address type: %d", btcRefundAddressType);
@@ -61,7 +61,7 @@ public class PeginInstructionsVersion1 extends PeginInstructionsBase {
                 throw new PeginInstructionsParseException(message);
         }
 
-        this.btcRefundAddress = Optional.of(btcRefundAddress);
+        this.btcRefundAddress = Optional.of(parsedBtcRefundAddress);
     }
 
     public Optional<Address> getBtcRefundAddress() {

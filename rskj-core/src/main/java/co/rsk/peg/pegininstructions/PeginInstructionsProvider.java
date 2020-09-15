@@ -92,11 +92,6 @@ public class PeginInstructionsProvider {
             throw new PeginInstructionsException(message);
         }
 
-        if (data.length < 22) {
-            logger.debug("[extractOpReturnData] Data length must be at least 22 bytes. Given is {}:", data.length);
-            throw new PeginInstructionsException("Data length is invalid. Must be at least 22 bytes");
-        }
-
         return data;
     }
 }
