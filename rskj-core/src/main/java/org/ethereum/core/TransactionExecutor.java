@@ -370,15 +370,7 @@ public class TransactionExecutor {
 
     private void create() {
         RskAddress newContractAddress = tx.getContractAddress();
-
-        if (activations.isActive(RSKIP174) && cacheTrack.isExist(newContractAddress)) {
-            // Keep prior balance of a contract address (if any)
-            Coin oldBalance = cacheTrack.getBalance(newContractAddress);
-            cacheTrack.createAccount(newContractAddress);
-            cacheTrack.addBalance(newContractAddress, oldBalance);
-        } else {
-            cacheTrack.createAccount(newContractAddress);
-        }
+        cacheTrack.createAccount(newContractAddress, activations.isActive(RSKIP174) && cacheTrack.isExist(newContractAddress));
 
         if (isEmpty(tx.getData())) {
             mEndGas = GasCost.subtract(GasCost.toGas(tx.getGasLimit()), basicTxCost);
