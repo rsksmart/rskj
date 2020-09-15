@@ -30,18 +30,26 @@ import java.math.BigInteger;
  * Checks that the transaction nonce is not too higher than the account
  * nonce. This helps limiting the in memory transactions for a given address
  */
-public class TxValidatorNonceRangeValidator implements  TxValidatorStep {
+public class TxValidatorNonceRangeValidator implements TxValidatorStep {
+
+    private final BigInteger accountSlots;
+
+    public TxValidatorNonceRangeValidator(int accountSlots) {
+        if (accountSlots < 1) {
+            throw new IllegalArgumentException("accountSlots");
+        }
+        this.accountSlots = BigInteger.valueOf(accountSlots);
+    }
 
     @Override
     public TransactionValidationResult validate(Transaction tx, @Nullable AccountState state, BigInteger gasLimit, Coin minimumGasPrice, long bestBlockNumber, boolean isFreeTx) {
         BigInteger nonce = tx.getNonceAsInteger();
         BigInteger stateNonce = state == null ? BigInteger.ZERO : state.getNonce();
-        BigInteger maxNumberOfTxsPerAddress = BigInteger.valueOf(4);
 
         if (stateNonce.compareTo(nonce) > 0) {
             return TransactionValidationResult.withError("transaction nonce too low");
         }
-        if (stateNonce.add(maxNumberOfTxsPerAddress).compareTo(nonce) < 0) {
+        if (stateNonce.add(accountSlots).compareTo(nonce) <= 0) {
             return TransactionValidationResult.withError("transaction nonce too high");
         }
 
