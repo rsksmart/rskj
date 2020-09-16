@@ -22,6 +22,7 @@ package org.ethereum.vm;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.config.VmConfig;
 import co.rsk.core.RskAddress;
+import co.rsk.net.utils.TransactionUtils;
 import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.TransactionBuilder;
 import co.rsk.vm.BitSet;
@@ -213,13 +214,218 @@ public class VMTest {
                         " PUSH1 0x00" +
                         " PUSH20 0x" + invoke.getContractAddress() +
                         " PUSH4 0x005B8D80" +
-                        " STATICCALL"));
+                        " STATICCALL"
+        ));
 
         program.fullTrace();
         vm.steps(program, Long.MAX_VALUE);
 
         assertEquals(DataWord.ONE, program.stackPop());
         assertTrue(program.getStack().isEmpty());
+    }
+
+    // This test should throw an exception because we are reading from the RETURNDATABUFFER
+    // in a non-existent position. This results in an error according to EIP 211
+    @Test(expected = RuntimeException.class)
+    public void returnDataBufferAfterCallToNonExistentContract() {
+        byte[] expected = new byte[32];
+        Arrays.fill(expected, (byte) 0);
+        doCallToNonExistentContractAndReturnValue(expected, true);
+    }
+
+    @Test
+    public void beforeIrisReturnDataBufferAfterCallToNonExistentContract() {
+        byte[] expected = new byte[32];
+        Arrays.fill(expected, (byte) 0);
+        expected[31] = (byte) 21;
+        doCallToNonExistentContractAndReturnValue(expected, false);
+    }
+
+    private void doCallToNonExistentContractAndReturnValue(byte[] expected, boolean active) {
+        invoke = new ProgramInvokeMockImpl(compile(
+                "PUSH1 0x10" +
+                " PUSH1 0x05 " +
+                " ADD" +
+                " PUSH1 0x40" +
+                " MSTORE " +
+                " PUSH1 0x20 " +
+                " PUSH1 0x40" +
+                " RETURN"
+        ), null);
+        program = getProgram(compile(
+                " PUSH1 0x20" +  // return size is 32 bytes
+                " PUSH1 0x40" +       // on free memory pointer
+                " PUSH1 0x00" +       // no argument
+                " PUSH1 0x00" +       // no argument size
+                " PUSH20 0x" + invoke.getContractAddress() + // in the mock contract specified above
+                " PUSH4 0x005B8D80" + // with some gas
+                " STATICCALL" +       // call it! result should be 0x15
+                " PUSH1 0x20" +       // now do the same...
+                " PUSH1 0x40" +
+                " PUSH1 0x00" +
+                " PUSH1 0x00" +
+                " PUSH1 0x00" +     // but call a non-existent contract
+                " PUSH4 0x005B8D80" +
+                " STATICCALL" +
+                " PUSH1 0x20 " +    // now put the 32 bytes
+                " PUSH1 0x00 " +    // from the beginning of the return databuffer
+                " PUSH1 0x40" +     //  to the 0x40 position on memory
+                " RETURNDATACOPY" + // do it!
+                " PUSH1 0x20" +     // and return 32 bytes
+                " PUSH1 0x40" +     // from the 0x40 position on memory
+                " RETURN"           // the return value of the contract should be zero (as last call failed)
+        ));
+        when(program.getActivations().isActive(ConsensusRule.RSKIP171)).thenReturn(active);
+        vm.steps(program, Long.MAX_VALUE);
+        byte[] result = program.getResult().getHReturn();
+        assertArrayEquals(expected, result);
+    }
+
+    @Test
+    public void returnDataSizeAfterCallToNonExistentContract() {
+        doCallToNonExistentContractAndReturnDataSize(true, 0);
+    }
+
+    @Test
+    public void beforeIrisReturnDataSizeAfterCallToNonExistentContract() {
+        doCallToNonExistentContractAndReturnDataSize(false, 32);
+    }
+
+    private void doCallToNonExistentContractAndReturnDataSize(boolean active, int expectedReturnDataSize) {
+        invoke = new ProgramInvokeMockImpl(compile(
+                 "PUSH1 0x10" +
+                 " PUSH1 0x05 " +
+                 " ADD" +
+                 " PUSH1 0x40" +
+                 " MSTORE " +
+                 " PUSH1 0x20 " +
+                 " PUSH1 0x40" +
+                 " RETURN"
+        ), null);
+        program = getProgram(compile(
+                " PUSH1 0x20" +  // return size is 32 bytes
+                " PUSH1 0x40" +  // on free memory pointer
+                " PUSH1 0x00" +  // no argument
+                " PUSH1 0x00" +  // no argument size
+                " PUSH20 0x" + invoke.getContractAddress() + // in the mock contract specified above
+                " PUSH4 0x005B8D80" + // with some gas
+                " STATICCALL" +  // call it! result should be 0x15
+                " PUSH1 0x20" +  // now do the same...
+                " PUSH1 0x40" +
+                " PUSH1 0x00" +
+                " PUSH1 0x00" +
+                " PUSH1 0x00" + // but call a non-existent contract
+                " PUSH4 0x005B8D80" +
+                " STATICCALL" +
+                " RETURNDATASIZE" // push the return data size to the stack
+        ));
+        when(program.getActivations().isActive(ConsensusRule.RSKIP171)).thenReturn(active);
+        vm.steps(program, Long.MAX_VALUE);
+        assertEquals(expectedReturnDataSize, program.stackPop().intValue());
+    }
+
+    @Test
+    public void returnDataBufferAfterInsufficientFunds() {
+        String contract = "471fd3ad3e9eeadeec4608b92d16ce6b500704cc"; // in the mock contract specified above
+        doCallInsufficientFunds(true, 0, contract);
+    }
+
+    @Test
+    public void returnDataBufferAfterInsufficientFundsAtPrecompiled() {
+        String precompiled = "0000000000000000000000000000000001000010";
+        doCallInsufficientFunds(true, 0, precompiled);
+    }
+
+    @Test
+    public void beforeIrisReturnDataBufferWithInsufficientFunds() {
+        String contract = "471fd3ad3e9eeadeec4608b92d16ce6b500704cc"; // in the mock contract specified above
+        doCallInsufficientFunds(false, 32, contract);
+    }
+
+    @Test
+    public void beforeIrisReturnDataBufferWithInsufficientFundsAtPrecompiled() {
+        String precompiled = "0000000000000000000000000000000001000010";
+        doCallInsufficientFunds(false, 32, precompiled);
+    }
+
+    private void doCallInsufficientFunds(boolean irisHardForkActive, int expectedReturnDataSize, String contract) {
+        invoke = new ProgramInvokeMockImpl(compile(
+                "PUSH1 0x10" +
+                        " PUSH1 0x05 " +
+                        " ADD" +
+                        " PUSH1 0x40" +
+                        " MSTORE " +
+                        " PUSH1 0x20 " +
+                        " PUSH1 0x40" +
+                        " RETURN"
+        ), null);
+        program = getProgram(compile(
+                " PUSH1 0x20" +  // return size is 32 bytes
+                        " PUSH1 0x40" +       // on free memory pointer
+                        " PUSH1 0x00" +       // no argument
+                        " PUSH1 0x00" +       // no argument size
+                        " PUSH20 0x" + invoke.getContractAddress() + // in the mock contract specified above
+                        " PUSH4 0x005B8D80" + // with some gas
+                        " STATICCALL" +       // call it! result should be 0x15
+                        " PUSH1 0x20" +  // return size is 32 bytes
+                        " PUSH1 0x40" +       // on free memory pointer
+                        " PUSH1 0x00" +       // no argument
+                        " PUSH1 0x00" +       // no argument size
+                        " PUSH4 0xffffffff" +       // with a high value
+                        " PUSH20 0x" + contract +
+                        " PUSH4 0x005B8D80" + // with some gas
+                        " CALL" +       // call it! result should be 0x15
+                        " RETURNDATASIZE" // push the return data size to the stack
+        ));
+        when(program.getActivations().isActive(ConsensusRule.RSKIP171)).thenReturn(irisHardForkActive);
+        when(program.getActivations().isActive(ConsensusRule.RSKIP119)).thenReturn(true);
+        vm.steps(program, Long.MAX_VALUE);
+        assertEquals(expectedReturnDataSize, program.stackPop().intValue());
+    }
+
+    @Test
+    public void returnDataBufferAfterEnoughGasAtPrecompiled() {
+        doCallToPrecompiledEnoughGas(true, 0);
+    }
+
+    @Test
+    public void beforeIrisReturnDataBufferAfterEnoughGasAtPrecompiled() {
+        doCallToPrecompiledEnoughGas(false, 32);
+    }
+
+    private void doCallToPrecompiledEnoughGas(boolean irisHardForkActive, int expectedReturnDataSize) {
+        invoke = new ProgramInvokeMockImpl(compile(
+                "PUSH1 0x10" +
+                        " PUSH1 0x05 " +
+                        " ADD" +
+                        " PUSH1 0x40" +
+                        " MSTORE " +
+                        " PUSH1 0x20 " +
+                        " PUSH1 0x40" +
+                        " RETURN"
+        ), null);
+        program = getProgramWithTransaction(compile(
+                " PUSH1 0x20" +  // return size is 32 bytes
+                        " PUSH1 0x40" +       // on free memory pointer
+                        " PUSH1 0x00" +       // no argument
+                        " PUSH1 0x00" +       // no argument size
+                        " PUSH20 0x" + invoke.getContractAddress() + // in the mock contract specified above
+                        " PUSH4 0x005B8D80" + // with some gas
+                        " STATICCALL" +       // call it! result should be 0x15
+                        " PUSH1 0x20" + // return size is 32 bytes
+                        " PUSH1 0x40" + // on free memory pointer
+                        " PUSH1 0x00" + // no argument
+                        " PUSH1 0x00" + // no argument size
+                        " PUSH1 0x00" + // with no value
+                        " PUSH20 0x" + PrecompiledContracts.IDENTITY_ADDR_STR +
+                        " PUSH1 0x00" + // without gas!
+                        " CALL" +
+                        " RETURNDATASIZE" // push the return data size to the stack
+        ), TransactionUtils.createTransaction());
+        when(program.getActivations().isActive(ConsensusRule.RSKIP171)).thenReturn(irisHardForkActive);
+        when(program.getActivations().isActive(ConsensusRule.RSKIP119)).thenReturn(true);
+        vm.steps(program, Long.MAX_VALUE);
+        assertEquals(expectedReturnDataSize, program.stackPop().intValue());
     }
 
     @Test
@@ -274,7 +480,6 @@ public class VMTest {
         assertEquals("good program uses 3 more gas than the bad one",
                 goodProgram.getResult().getGasUsed(), badProgram.getResult().getGasUsed() + 3);
     }
-
 
     @Test
     public void getFreeMemoryUsingPrecompiledContractLyingAboutReturnSize() {
@@ -3274,6 +3479,10 @@ public class VMTest {
 
     private Program getProgram(byte[] code) {
         return getProgram(code, null);
+    }
+
+    private Program getProgramWithTransaction(byte[] code, Transaction transaction) {
+        return getProgram(code, transaction);
     }
 
     private ActivationConfig.ForBlock getBlockchainConfig(boolean preFixStaticCall) {
