@@ -48,6 +48,7 @@ import org.ethereum.core.*;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.MutableRepository;
 import org.ethereum.vm.PrecompiledContracts;
+import org.ethereum.vm.PrecompiledContracts.Ripempd160;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -787,6 +788,32 @@ public class BridgeUtilsTest {
 
         // Assert
         Assert.assertFalse(isSigned);
+    }
+
+    @Test
+    public void create_many_addresses_in_wallet() {
+        BridgeConstants constants = BridgeRegTestConstants.getInstance();
+        Context btcContext = Context.getOrCreate(constants.getBtcParams());
+        List<Address> addresses = new ArrayList<>();
+        List<UTXO> utxos = new ArrayList<>();
+        int fedAmount = 250_000;
+        for (int i = 0; i < fedAmount; i++) {
+            Address address = new Address(constants.getBtcParams(), new BtcECKey().getPubKeyHash());
+            addresses.add(address);
+            utxos.add(new UTXO(
+                PegTestUtils.createHash(i),
+                1,
+                Coin.COIN,
+                0,
+                false,
+                ScriptBuilder.createOutputScript(address)
+            ));
+        }
+        Wallet wallet = BridgeUtils.getAddressesSpendWallet(btcContext, addresses, utxos);
+        Assert.assertEquals(
+            Coin.COIN.multiply(fedAmount),
+            wallet.getBalance()
+        );
     }
 
     private void assertIsWatching(Address address, Wallet wallet, NetworkParameters parameters) {

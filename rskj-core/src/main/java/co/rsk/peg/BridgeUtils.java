@@ -75,6 +75,18 @@ public class BridgeUtils {
         return wallet;
     }
 
+    public static Wallet getAddressesSpendWallet(Context btcContext, List<Address> addresses, List<UTXO> utxos) {
+        Wallet wallet = new BridgeBtcWallet(btcContext, null);
+
+        RskUTXOProvider utxoProvider = new RskUTXOProvider(btcContext.getParams(), utxos);
+        wallet.setUTXOProvider(utxoProvider);
+        addresses.forEach(address -> {
+            wallet.addWatchedAddress(address);
+        });
+        wallet.setCoinSelector(new RskAllowUnconfirmedCoinSelector());
+        return wallet;
+    }
+
     private static boolean scriptCorrectlySpendsTx(BtcTransaction tx, int index, Script script) {
         try {
             TransactionInput txInput = tx.getInput(index);

@@ -20,6 +20,7 @@ package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.crypto.TransactionSignature;
+import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.config.BridgeConstants;
 import co.rsk.config.BridgeRegTestConstants;
@@ -2147,6 +2148,38 @@ public class BridgeStorageProviderTest {
                 DataWord.fromLongString("coinbaseInformation-" + hash.toString()),
                 BridgeSerializationUtils.serializeCoinbaseInformation(coinbaseInformation)
         );
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void utxo_limit_in_storage() throws IOException {
+        Repository repository = createRepository();
+        BridgeConstants constants = BridgeRegTestConstants.getInstance();
+
+        BridgeStorageProvider provider = new BridgeStorageProvider(
+            repository, PrecompiledContracts.BRIDGE_ADDR,
+            constants, activationsAllForks
+        );
+
+
+        List<UTXO> utxos = provider.getNewFederationBtcUTXOs();
+        int length = 215_500; // It supports up to 215k
+        for (int i = 0; i < length; i++) {
+            UTXO utxo = new UTXO(
+                PegTestUtils.createHash(i),
+                1,
+                Coin.COIN,
+                0,
+                false,
+                ScriptBuilder.createOutputScript(constants.getGenesisFederation().getAddress())
+            );
+            utxos.add(utxo);
+        }
+
+        provider.saveNewFederationBtcUTXOs();
+
+        repository.commit();
+
+        Assert.assertEquals(length, provider.getNewFederationBtcUTXOs().size());
     }
 
     private BtcTransaction createTransaction() {
