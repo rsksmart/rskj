@@ -81,7 +81,7 @@ public class P2PkhBtcLockSenderTest {
         org.ethereum.crypto.ECKey key = org.ethereum.crypto.ECKey.fromPublicOnly(Hex.decode("03efa4762ccc1358b72f597d002b7fd1cd58cd05db34fe9fa63e43634acf200927"));
         RskAddress senderAddress = new RskAddress(key.getAddress());
 
-        Assert.assertEquals("mxau4qKjj531q6zQ9pKHMSxr4KS3ifNRQJ", btcLockSender.getBTCAddress().toBase58());
+        Assert.assertEquals("mxau4qKjj531q6zQ9pKHMSxr4KS3ifNRQJ", btcLockSender.getBTCAddress().toString());
         Assert.assertEquals(senderAddress, btcLockSender.getRskAddress());
         Assert.assertEquals(BtcLockSender.TxType.P2PKH, btcLockSender.getType());
     }

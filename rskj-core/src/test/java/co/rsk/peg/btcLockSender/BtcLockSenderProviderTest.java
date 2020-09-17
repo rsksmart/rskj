@@ -3,6 +3,7 @@ package co.rsk.peg.btcLockSender;
 import co.rsk.bitcoinj.core.Address;
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.BtcTransaction;
+import co.rsk.bitcoinj.core.LegacyAddress;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.core.RskAddress;
@@ -50,7 +51,7 @@ public class BtcLockSenderProviderTest {
 
         Assert.assertEquals(BtcLockSender.TxType.P2PKH, btcLockSender.getType());
         Assert.assertEquals(senderAddress, btcLockSender.getRskAddress());
-        Assert.assertEquals("mpgJ8n2NUf23NHcJs59LgEqQ4yCv7MYGU6", btcLockSender.getBTCAddress().toBase58());
+        Assert.assertEquals("mpgJ8n2NUf23NHcJs59LgEqQ4yCv7MYGU6", btcLockSender.getBTCAddress().toString());
     }
 
     @Test
@@ -67,7 +68,7 @@ public class BtcLockSenderProviderTest {
         BtcECKey key = BtcECKey.fromPublicOnly(Hex.decode("02e87cd90f3cb0d64eeba797fbb8f8ceaadc09e0128afbaefb0ee9535875ea3954"));
         byte[] scriptHash = Hex.decode("bf79dcd97426a127d4ed39385fa58feeb7272387");
         // "2NAhf36HTnrkKAx6RddHAdgJwPsqEgngUwe"
-        Assert.assertEquals(new Address(tx.getParams(), tx.getParams().getP2SHHeader(), scriptHash), btcLockSender.getBTCAddress());
+        Assert.assertEquals(LegacyAddress.fromScriptHash(tx.getParams(), scriptHash), btcLockSender.getBTCAddress());
         Assert.assertEquals(new RskAddress(ECKey.fromPublicOnly(key.getPubKey()).getAddress()), btcLockSender.getRskAddress());
         Assert.assertEquals(BtcLockSender.TxType.P2SHP2WPKH, btcLockSender.getType());
     }

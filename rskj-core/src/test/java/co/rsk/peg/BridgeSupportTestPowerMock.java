@@ -1282,7 +1282,7 @@ public class BridgeSupportTestPowerMock {
     @Test
     public void registerBtcTransactionWithCrossFederationsChange() throws Exception {
         NetworkParameters params = RegTestParams.get();
-        Address randomAddress = new Address(params, Hex.decode("4a22c3c4cbb31e4d03b15550636762bda0baf85a"));
+        Address randomAddress = LegacyAddress.fromPubKeyHash(params, Hex.decode("4a22c3c4cbb31e4d03b15550636762bda0baf85a"));
         Context btcContext = new Context(params);
 
         List<BtcECKey> activeFederationKeys = Stream.of("fa01", "fa02")
@@ -2747,7 +2747,7 @@ public class BridgeSupportTestPowerMock {
         LockWhitelist mockedWhitelist = mock(LockWhitelist.class);
         when(mockedWhitelist.getSize()).thenReturn(4);
         List<LockWhitelistEntry> entries = Arrays.stream(new Integer[]{2, 3, 4, 5}).map(i ->
-                new UnlimitedWhiteListEntry(new Address(parameters, BtcECKey.fromPrivate(BigInteger.valueOf(i)).getPubKeyHash()))
+                new UnlimitedWhiteListEntry(LegacyAddress.fromPubKeyHash(parameters, BtcECKey.fromPrivate(BigInteger.valueOf(i)).getPubKeyHash()))
         ).collect(Collectors.toList());
         when(mockedWhitelist.getAll()).thenReturn(entries);
         for (int i = 0; i < 4; i++) {
@@ -2759,10 +2759,10 @@ public class BridgeSupportTestPowerMock {
         Assert.assertNull(bridgeSupport.getLockWhitelistEntryByIndex(-1));
         Assert.assertNull(bridgeSupport.getLockWhitelistEntryByIndex(4));
         Assert.assertNull(bridgeSupport.getLockWhitelistEntryByIndex(5));
-        Assert.assertNull(bridgeSupport.getLockWhitelistEntryByAddress(new Address(parameters, BtcECKey.fromPrivate(BigInteger.valueOf(-1)).getPubKeyHash()).toBase58()));
+        Assert.assertNull(bridgeSupport.getLockWhitelistEntryByAddress(LegacyAddress.fromPubKeyHash(parameters, BtcECKey.fromPrivate(BigInteger.valueOf(-1)).getPubKeyHash()).toString()));
         for (int i = 0; i < 4; i++) {
             Assert.assertEquals(entries.get(i), bridgeSupport.getLockWhitelistEntryByIndex(i));
-            Assert.assertEquals(entries.get(i), bridgeSupport.getLockWhitelistEntryByAddress(entries.get(i).address().toBase58()));
+            Assert.assertEquals(entries.get(i), bridgeSupport.getLockWhitelistEntryByAddress(entries.get(i).address().toString()));
         }
     }
 
@@ -2780,7 +2780,7 @@ public class BridgeSupportTestPowerMock {
 
         when(mockedWhitelist.put(any(Address.class), any(OneOffWhiteListEntry.class))).then((InvocationOnMock m) -> {
             Address address = m.<Address>getArgument(0);
-            Assert.assertEquals("mwKcYS3H8FUgrPtyGMv3xWvf4jgeZUkCYN", address.toBase58());
+            Assert.assertEquals("mwKcYS3H8FUgrPtyGMv3xWvf4jgeZUkCYN", address.toString());
             return true;
         });
 
@@ -2804,7 +2804,7 @@ public class BridgeSupportTestPowerMock {
 
         Assert.assertEquals(-1, bridgeSupport.addOneOffLockWhitelistAddress(mockedTx, "mwKcYS3H8FUgrPtyGMv3xWvf4jgeZUkCYN", BigInteger.valueOf(Coin.COIN.getValue())).intValue());
         verify(mockedWhitelist).isWhitelisted(argument.capture());
-        Assert.assertThat(argument.getValue().toBase58(), is("mwKcYS3H8FUgrPtyGMv3xWvf4jgeZUkCYN"));
+        Assert.assertThat(argument.getValue().toString(), is("mwKcYS3H8FUgrPtyGMv3xWvf4jgeZUkCYN"));
     }
 
     @Test
@@ -3014,7 +3014,7 @@ public class BridgeSupportTestPowerMock {
 
         when(mockedWhitelist.remove(any(Address.class))).then((InvocationOnMock m) -> {
             Address address = m.<Address>getArgument(0);
-            Assert.assertEquals("mwKcYS3H8FUgrPtyGMv3xWvf4jgeZUkCYN", address.toBase58());
+            Assert.assertEquals("mwKcYS3H8FUgrPtyGMv3xWvf4jgeZUkCYN", address.toString());
             return true;
         });
 
@@ -3035,7 +3035,7 @@ public class BridgeSupportTestPowerMock {
 
         when(mockedWhitelist.remove(any(Address.class))).then((InvocationOnMock m) -> {
             Address address = m.<Address>getArgument(0);
-            Assert.assertEquals("mwKcYS3H8FUgrPtyGMv3xWvf4jgeZUkCYN", address.toBase58());
+            Assert.assertEquals("mwKcYS3H8FUgrPtyGMv3xWvf4jgeZUkCYN", address.toString());
             return false;
         });
 

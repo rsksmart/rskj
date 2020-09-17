@@ -57,9 +57,9 @@ public class P2shMultisigBtcLockSenderTest {
                         "c3d7e7520dc69968253ae"
         );
         byte[] scriptPubKey = HashUtil.ripemd160(Sha256Hash.hash(redeemScript));
-        Address btcAddress = new Address(btcTx.getParams(), btcTx.getParams().getP2SHHeader(), scriptPubKey);
+        Address btcAddress = LegacyAddress.fromScriptHash(btcTx.getParams(), scriptPubKey);
 
-        Assert.assertEquals("2NCSzuju8gU5Ly5Fp9q9SZwt34dhUVEb3ZJ", btcLockSender.getBTCAddress().toBase58());
+        Assert.assertEquals("2NCSzuju8gU5Ly5Fp9q9SZwt34dhUVEb3ZJ", btcLockSender.getBTCAddress().toString());
         Assert.assertEquals(btcAddress, btcLockSender.getBTCAddress());
         Assert.assertEquals(BtcLockSender.TxType.P2SHMULTISIG, btcLockSender.getType());
         Assert.assertNull(btcLockSender.getRskAddress());

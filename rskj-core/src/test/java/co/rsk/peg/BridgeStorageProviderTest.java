@@ -1434,7 +1434,7 @@ public class BridgeStorageProviderTest {
 
         List<ReleaseRequestQueue.Entry> oldEntriesList = new ArrayList<>(Collections.singletonList(
                 new ReleaseRequestQueue.Entry(
-                        Address.fromBase58(BridgeRegTestConstants.getInstance().getBtcParams(), "mmWJhA74Pd6peL39V3AmtGHdGdJ4PyeXvL"),
+                        Address.fromString(BridgeRegTestConstants.getInstance().getBtcParams(), "mmWJhA74Pd6peL39V3AmtGHdGdJ4PyeXvL"),
                         Coin.COIN)));
 
         when(repositoryMock.getStorageBytes(any(RskAddress.class), eq(DataWord.fromString("releaseRequestQueue"))))
@@ -1455,11 +1455,11 @@ public class BridgeStorageProviderTest {
         when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
 
         ReleaseRequestQueue.Entry oldEntry = new ReleaseRequestQueue.Entry(
-                Address.fromBase58(BridgeRegTestConstants.getInstance().getBtcParams(), "mmWJhA74Pd6peL39V3AmtGHdGdJ4PyeXvL"),
+                Address.fromString(BridgeRegTestConstants.getInstance().getBtcParams(), "mmWJhA74Pd6peL39V3AmtGHdGdJ4PyeXvL"),
                 Coin.COIN);
 
         ReleaseRequestQueue.Entry newEntry = new ReleaseRequestQueue.Entry(
-                Address.fromBase58(BridgeRegTestConstants.getInstance().getBtcParams(), "mseEsMLuzaEdGbyAv9c9VRL9qGcb49qnxB"),
+                Address.fromString(BridgeRegTestConstants.getInstance().getBtcParams(), "mseEsMLuzaEdGbyAv9c9VRL9qGcb49qnxB"),
                 Coin.COIN,
                 PegTestUtils.createHash3(0)
         );
@@ -1474,7 +1474,7 @@ public class BridgeStorageProviderTest {
 
         ReleaseRequestQueue releaseRequestQueue = storageProvider.getReleaseRequestQueue();
 
-        releaseRequestQueue.add(Address.fromBase58(BridgeRegTestConstants.getInstance().getBtcParams(), "mseEsMLuzaEdGbyAv9c9VRL9qGcb49qnxB"),
+        releaseRequestQueue.add(Address.fromString(BridgeRegTestConstants.getInstance().getBtcParams(), "mseEsMLuzaEdGbyAv9c9VRL9qGcb49qnxB"),
                 Coin.COIN,
                 PegTestUtils.createHash3(0));
 
@@ -1496,11 +1496,11 @@ public class BridgeStorageProviderTest {
 
         List<ReleaseRequestQueue.Entry> oldEntriesList = new ArrayList<>(Collections.singletonList(
                 new ReleaseRequestQueue.Entry(
-                        Address.fromBase58(BridgeRegTestConstants.getInstance().getBtcParams(), "mmWJhA74Pd6peL39V3AmtGHdGdJ4PyeXvL"),
+                        Address.fromString(BridgeRegTestConstants.getInstance().getBtcParams(), "mmWJhA74Pd6peL39V3AmtGHdGdJ4PyeXvL"),
                         Coin.COIN)));
 
         ReleaseRequestQueue releaseRequestQueue = storageProvider.getReleaseRequestQueue();
-        releaseRequestQueue.add(Address.fromBase58(BridgeRegTestConstants.getInstance().getBtcParams(), "mmWJhA74Pd6peL39V3AmtGHdGdJ4PyeXvL"),
+        releaseRequestQueue.add(Address.fromString(BridgeRegTestConstants.getInstance().getBtcParams(), "mmWJhA74Pd6peL39V3AmtGHdGdJ4PyeXvL"),
                 Coin.COIN);
 
         doAnswer((i) -> {
@@ -1522,14 +1522,14 @@ public class BridgeStorageProviderTest {
 
         ReleaseRequestQueue.Entry newEntry =
                 new ReleaseRequestQueue.Entry(
-                        Address.fromBase58(BridgeRegTestConstants.getInstance().getBtcParams(), "mseEsMLuzaEdGbyAv9c9VRL9qGcb49qnxB"),
+                        Address.fromString(BridgeRegTestConstants.getInstance().getBtcParams(), "mseEsMLuzaEdGbyAv9c9VRL9qGcb49qnxB"),
                         Coin.COIN,
                         PegTestUtils.createHash3(0)
                         );
 
         ReleaseRequestQueue.Entry oldEntry =
                 new ReleaseRequestQueue.Entry(
-                        Address.fromBase58(BridgeRegTestConstants.getInstance().getBtcParams(), "mseEsMLuzaEdGbyAv9c9VRL9qGcb49qnxB"),
+                        Address.fromString(BridgeRegTestConstants.getInstance().getBtcParams(), "mseEsMLuzaEdGbyAv9c9VRL9qGcb49qnxB"),
                         Coin.COIN
                 );
 
@@ -1540,7 +1540,7 @@ public class BridgeStorageProviderTest {
         BridgeStorageProvider storageProvider = new BridgeStorageProvider(repositoryMock, mockAddress("aabbccdd"), config.getNetworkConstants().getBridgeConstants(), activations);
         ReleaseRequestQueue releaseRequestQueue = storageProvider.getReleaseRequestQueue();
 
-        releaseRequestQueue.add(Address.fromBase58(BridgeRegTestConstants.getInstance().getBtcParams(), "mseEsMLuzaEdGbyAv9c9VRL9qGcb49qnxB"),
+        releaseRequestQueue.add(Address.fromString(BridgeRegTestConstants.getInstance().getBtcParams(), "mseEsMLuzaEdGbyAv9c9VRL9qGcb49qnxB"),
                 Coin.COIN,
                 PegTestUtils.createHash3(0)
         );
@@ -2163,7 +2163,7 @@ public class BridgeStorageProviderTest {
     }
 
     private Address getBtcAddress(String addr) {
-        return new Address(config.getNetworkConstants().getBridgeConstants().getBtcParams(), Hex.decode(addr));
+        return LegacyAddress.fromPubKeyHash(config.getNetworkConstants().getBridgeConstants().getBtcParams(), Hex.decode(addr));
     }
 
     private Federation buildMockFederation(Integer... pks) {

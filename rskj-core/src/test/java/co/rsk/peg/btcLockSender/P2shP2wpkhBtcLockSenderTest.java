@@ -79,7 +79,7 @@ public class P2shP2wpkhBtcLockSenderTest {
         Assert.assertTrue(btcLockSender.tryParse(btcTx));
 
         BtcECKey key = BtcECKey.fromPublicOnly(Hex.decode("02adeef95a8ffc5d1c4b1a480fd6d68e8b6cf14a65c903b147922150fbfbad91bc"));
-        Assert.assertEquals("2NBdCxoCY6wx1NHpwGWfJThHk9K2tVdNx1A", btcLockSender.getBTCAddress().toBase58());
+        Assert.assertEquals("2NBdCxoCY6wx1NHpwGWfJThHk9K2tVdNx1A", btcLockSender.getBTCAddress().toString());
         Assert.assertEquals(new RskAddress(ECKey.fromPublicOnly(key.getPubKey()).getAddress()), btcLockSender.getRskAddress());
         Assert.assertEquals(BtcLockSender.TxType.P2SHP2WPKH, btcLockSender.getType());
     }

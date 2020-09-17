@@ -639,7 +639,7 @@ public class BridgeSerializationUtilsTest {
 
         LockWhitelist lockWhitelist = new LockWhitelist(
             Arrays.stream(addressesBytes)
-                .map(bytes -> new Address(NetworkParameters.fromID(NetworkParameters.ID_REGTEST), bytes))
+                .map(bytes -> LegacyAddress.fromPubKeyHash(NetworkParameters.fromID(NetworkParameters.ID_REGTEST), bytes))
                 .collect(Collectors.toMap(Function.identity(), k -> new OneOffWhiteListEntry(k, maxToTransfer))),
                 0);
 
@@ -685,7 +685,7 @@ public class BridgeSerializationUtilsTest {
         );
 
         Assert.assertThat(deserializedLockWhitelist.getLeft().size(), is(addressesBytes.length));
-        Assert.assertThat(deserializedLockWhitelist.getLeft().keySet().stream().map(Address::getHash160).collect(Collectors.toList()), containsInAnyOrder(addressesBytes));
+        Assert.assertThat(deserializedLockWhitelist.getLeft().keySet().stream().map(Address::getHash).collect(Collectors.toList()), containsInAnyOrder(addressesBytes));
         Set<Coin> deserializedCoins = deserializedLockWhitelist.getLeft().values().stream().map(entry -> ((OneOffWhiteListEntry)entry).maxTransferValue()).collect(Collectors.toSet());
         Assert.assertThat(deserializedCoins, hasSize(1));
         Assert.assertThat(deserializedCoins, hasItem(Coin.MILLICOIN));
@@ -800,9 +800,9 @@ public class BridgeSerializationUtilsTest {
     public void deserializeRequestQueue_nonEmpty() throws Exception {
         NetworkParameters params = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
 
-        Address a1 = Address.fromBase58(params, "mynmcQfJnVjheAqh9XL6htnxPZnaDFbqkB");
-        Address a2 = Address.fromBase58(params, "mfrfxeo5L2f5NDURS6YTtCNfVw2t5HAfty");
-        Address a3 = Address.fromBase58(params, "myw7AMh5mpKHao6MArhn7EvkeASGsGJzrZ");
+        Address a1 = Address.fromString(params, "mynmcQfJnVjheAqh9XL6htnxPZnaDFbqkB");
+        Address a2 = Address.fromString(params, "mfrfxeo5L2f5NDURS6YTtCNfVw2t5HAfty");
+        Address a3 = Address.fromString(params, "myw7AMh5mpKHao6MArhn7EvkeASGsGJzrZ");
 
         List<ReleaseRequestQueue.Entry> expectedEntries = Arrays.asList(
                 new ReleaseRequestQueue.Entry(a1, Coin.valueOf(10)),
@@ -812,11 +812,11 @@ public class BridgeSerializationUtilsTest {
 
         byte[][] rlpItems = new byte[6][];
 
-        rlpItems[0] = RLP.encodeElement(a1.getHash160());
+        rlpItems[0] = RLP.encodeElement(a1.getHash());
         rlpItems[1] = RLP.encodeBigInteger(BigInteger.valueOf(10));
-        rlpItems[2] = RLP.encodeElement(a2.getHash160());
+        rlpItems[2] = RLP.encodeElement(a2.getHash());
         rlpItems[3] = RLP.encodeBigInteger(BigInteger.valueOf(7));
-        rlpItems[4] = RLP.encodeElement(a3.getHash160());
+        rlpItems[4] = RLP.encodeElement(a3.getHash());
         rlpItems[5] = RLP.encodeBigInteger(BigInteger.valueOf(8));
 
         byte[] data = RLP.encodeList(rlpItems);
@@ -831,17 +831,17 @@ public class BridgeSerializationUtilsTest {
     public void deserializeRequestQueue_nonEmptyOddSize() throws Exception {
         NetworkParameters params = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
 
-        Address a1 = Address.fromBase58(params, "mynmcQfJnVjheAqh9XL6htnxPZnaDFbqkB");
-        Address a2 = Address.fromBase58(params, "mfrfxeo5L2f5NDURS6YTtCNfVw2t5HAfty");
-        Address a3 = Address.fromBase58(params, "myw7AMh5mpKHao6MArhn7EvkeASGsGJzrZ");
+        Address a1 = Address.fromString(params, "mynmcQfJnVjheAqh9XL6htnxPZnaDFbqkB");
+        Address a2 = Address.fromString(params, "mfrfxeo5L2f5NDURS6YTtCNfVw2t5HAfty");
+        Address a3 = Address.fromString(params, "myw7AMh5mpKHao6MArhn7EvkeASGsGJzrZ");
 
         byte[][] rlpItems = new byte[7][];
 
-        rlpItems[0] = RLP.encodeElement(a1.getHash160());
+        rlpItems[0] = RLP.encodeElement(a1.getHash());
         rlpItems[1] = RLP.encodeBigInteger(BigInteger.valueOf(10));
-        rlpItems[2] = RLP.encodeElement(a2.getHash160());
+        rlpItems[2] = RLP.encodeElement(a2.getHash());
         rlpItems[3] = RLP.encodeBigInteger(BigInteger.valueOf(7));
-        rlpItems[4] = RLP.encodeElement(a3.getHash160());
+        rlpItems[4] = RLP.encodeElement(a3.getHash());
         rlpItems[5] = RLP.encodeBigInteger(BigInteger.valueOf(8));
         rlpItems[6] = RLP.encodeBigInteger(BigInteger.valueOf(8));
 
@@ -891,20 +891,20 @@ public class BridgeSerializationUtilsTest {
         NetworkParameters params = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
 
         BtcTransaction input = new BtcTransaction(params);
-        input.addOutput(Coin.FIFTY_COINS, Address.fromBase58(params, "mvc8mwDcdLEq2jGqrL43Ub3sxTR13tB8LL"));
+        input.addOutput(Coin.FIFTY_COINS, Address.fromString(params, "mvc8mwDcdLEq2jGqrL43Ub3sxTR13tB8LL"));
 
         BtcTransaction t1 = new BtcTransaction(params);
         t1.addInput(input.getOutput(0));
-        t1.addOutput(Coin.COIN, Address.fromBase58(params, "n3CaAPu2PR7FDdGK8tFwe8thr7hV7zz599"));
+        t1.addOutput(Coin.COIN, Address.fromString(params, "n3CaAPu2PR7FDdGK8tFwe8thr7hV7zz599"));
         BtcTransaction t2 = new BtcTransaction(params);
         t2.addInput(input.getOutput(0));
-        t2.addOutput(Coin.COIN.multiply(10), Address.fromBase58(params, "n3CaAPu2PR7FDdGK8tFwe8thr7hV7zz599"));
+        t2.addOutput(Coin.COIN.multiply(10), Address.fromString(params, "n3CaAPu2PR7FDdGK8tFwe8thr7hV7zz599"));
         BtcTransaction t3 = new BtcTransaction(params);
         t3.addInput(input.getOutput(0));
-        t3.addOutput(Coin.valueOf(15), Address.fromBase58(params, "n3CaAPu2PR7FDdGK8tFwe8thr7hV7zz599"));
+        t3.addOutput(Coin.valueOf(15), Address.fromString(params, "n3CaAPu2PR7FDdGK8tFwe8thr7hV7zz599"));
         BtcTransaction t4 = new BtcTransaction(params);
         t4.addInput(input.getOutput(0));
-        t4.addOutput(Coin.MILLICOIN, Address.fromBase58(params, "n3CaAPu2PR7FDdGK8tFwe8thr7hV7zz599"));
+        t4.addOutput(Coin.MILLICOIN, Address.fromString(params, "n3CaAPu2PR7FDdGK8tFwe8thr7hV7zz599"));
 
         Set<ReleaseTransactionSet.Entry> expectedEntries = new HashSet<>(Arrays.asList(
                 new ReleaseTransactionSet.Entry(t1, 32L),
@@ -929,11 +929,11 @@ public class BridgeSerializationUtilsTest {
         NetworkParameters params = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
 
         BtcTransaction input = new BtcTransaction(params);
-        input.addOutput(Coin.FIFTY_COINS, Address.fromBase58(params, "mvc8mwDcdLEq2jGqrL43Ub3sxTR13tB8LL"));
+        input.addOutput(Coin.FIFTY_COINS, Address.fromString(params, "mvc8mwDcdLEq2jGqrL43Ub3sxTR13tB8LL"));
 
         BtcTransaction t1 = new BtcTransaction(params);
         t1.addInput(input.getOutput(0));
-        t1.addOutput(Coin.COIN, Address.fromBase58(params, "n3CaAPu2PR7FDdGK8tFwe8thr7hV7zz599"));
+        t1.addOutput(Coin.COIN, Address.fromString(params, "n3CaAPu2PR7FDdGK8tFwe8thr7hV7zz599"));
 
         Set<ReleaseTransactionSet.Entry> expectedEntries = new HashSet<>(Arrays.asList(
                 new ReleaseTransactionSet.Entry(t1, 32L, PegTestUtils.createHash3(0))
@@ -951,11 +951,11 @@ public class BridgeSerializationUtilsTest {
         NetworkParameters params = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
 
         BtcTransaction input = new BtcTransaction(params);
-        input.addOutput(Coin.FIFTY_COINS, Address.fromBase58(params, "mvc8mwDcdLEq2jGqrL43Ub3sxTR13tB8LL"));
+        input.addOutput(Coin.FIFTY_COINS, Address.fromString(params, "mvc8mwDcdLEq2jGqrL43Ub3sxTR13tB8LL"));
 
         BtcTransaction t1 = new BtcTransaction(params);
         t1.addInput(input.getOutput(0));
-        t1.addOutput(Coin.COIN, Address.fromBase58(params, "n3CaAPu2PR7FDdGK8tFwe8thr7hV7zz599"));
+        t1.addOutput(Coin.COIN, Address.fromString(params, "n3CaAPu2PR7FDdGK8tFwe8thr7hV7zz599"));
 
         Set<ReleaseTransactionSet.Entry> expectedEntries = new HashSet<>(Arrays.asList(
                 new ReleaseTransactionSet.Entry(t1, 32L)
@@ -1011,7 +1011,7 @@ public class BridgeSerializationUtilsTest {
 
     private Address mockAddressHash160(String hash160) {
         Address result = mock(Address.class);
-        when(result.getHash160()).thenReturn(Hex.decode(hash160));
+        when(result.getHash()).thenReturn(Hex.decode(hash160));
         return result;
     }
 

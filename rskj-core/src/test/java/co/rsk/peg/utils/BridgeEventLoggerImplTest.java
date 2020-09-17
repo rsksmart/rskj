@@ -113,7 +113,7 @@ public class BridgeEventLoggerImplTest {
         BridgeEventLogger eventLogger = new BridgeEventLoggerImpl(null, activations, eventLogs);
 
         BridgeConstants constants = BridgeRegTestConstants.getInstance();
-        Address senderAddress = new Address(constants.getBtcParams(), constants.getBtcParams().getP2SHHeader(), Hex.decode("c99a8f22127007255b4a9d8d57b0892ae2103f2d"));
+        Address senderAddress = LegacyAddress.fromScriptHash(constants.getBtcParams(), Hex.decode("c99a8f22127007255b4a9d8d57b0892ae2103f2d"));
 
         RskAddress rskAddress = mock(RskAddress.class);
         when(rskAddress.toString()).thenReturn("0x00000000000000000000000000000000000000");
@@ -448,7 +448,7 @@ public class BridgeEventLoggerImplTest {
         // Assert old federation data
         RLPList oldFedData = (RLPList) dataList.get(0);
         Assert.assertEquals(2, oldFedData.size());
-        Assert.assertArrayEquals(oldFederation.getAddress().getHash160(), oldFedData.get(0).getRLPData());
+        Assert.assertArrayEquals(oldFederation.getAddress().getHash(), oldFedData.get(0).getRLPData());
 
         RLPList oldFedPubKeys = (RLPList) oldFedData.get(1);
         Assert.assertEquals(4, oldFedPubKeys.size());
@@ -459,7 +459,7 @@ public class BridgeEventLoggerImplTest {
         // Assert new federation data
         RLPList newFedData = (RLPList) dataList.get(1);
         Assert.assertEquals(2, newFedData.size());
-        Assert.assertArrayEquals(newFederation.getAddress().getHash160(), newFedData.get(0).getRLPData());
+        Assert.assertArrayEquals(newFederation.getAddress().getHash(), newFedData.get(0).getRLPData());
 
         RLPList newFedPubKeys = (RLPList) newFedData.get(1);
         Assert.assertEquals(3, newFedPubKeys.size());
@@ -532,9 +532,9 @@ public class BridgeEventLoggerImplTest {
 
         // Assert log data
         byte[] oldFederationFlatPubKeys = flatKeysAsByteArray(oldFederation.getBtcPublicKeys());
-        String oldFederationBtcAddress = oldFederation.getAddress().toBase58();
+        String oldFederationBtcAddress = oldFederation.getAddress().toString();
         byte[] newFederationFlatPubKeys = flatKeysAsByteArray(newFederation.getBtcPublicKeys());
-        String newFederationBtcAddress = newFederation.getAddress().toBase58();
+        String newFederationBtcAddress = newFederation.getAddress().toString();
         long newFedActivationBlockNumber = executionBlock.getNumber() + constantsMock.getFederationActivationAge();
 
         byte[] encodedData = event.encodeEventData(

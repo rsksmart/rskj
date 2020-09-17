@@ -2,8 +2,10 @@ package co.rsk.peg.btcLockSender;
 
 import co.rsk.bitcoinj.core.Address;
 import co.rsk.bitcoinj.core.BtcTransaction;
+import co.rsk.bitcoinj.core.LegacyAddress;
 import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.bitcoinj.script.Script;
+import co.rsk.bitcoinj.script.Script.ScriptType;
 import co.rsk.core.RskAddress;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.ByteUtil;
@@ -65,7 +67,7 @@ public class P2shP2wshBtcLockSender implements BtcLockSender {
             byte[] hashedAgain = Sha256Hash.hash(merged);
             byte[] scriptPubKey = HashUtil.ripemd160(hashedAgain);
 
-            this.btcAddress = new Address(btcTx.getParams(), btcTx.getParams().getP2SHHeader(), scriptPubKey);
+            this.btcAddress = LegacyAddress.fromScriptHash(btcTx.getParams(), scriptPubKey);
         } catch (Exception e) {
             return false;
         }

@@ -441,7 +441,7 @@ public class BridgeSerializationUtils {
         byte[][] serializedLockWhitelist = new byte[serializationSize][];
         for (int i = 0; i < entries.size(); i++) {
             OneOffWhiteListEntry entry = entries.get(i);
-            serializedLockWhitelist[2 * i] = RLP.encodeElement(entry.address().getHash160());
+            serializedLockWhitelist[2 * i] = RLP.encodeElement(entry.address().getHash());
             serializedLockWhitelist[2 * i + 1] = RLP.encodeBigInteger(BigInteger.valueOf(entry.maxTransferValue().longValue()));
         }
         serializedLockWhitelist[serializationSize - 1] = RLP.encodeBigInteger(BigInteger.valueOf(disableBlockHeight));
@@ -457,7 +457,7 @@ public class BridgeSerializationUtils {
         int serializationSize = entries.size();
         byte[][] serializedLockWhitelist = new byte[serializationSize][];
         for (int i = 0; i < entries.size(); i++) {
-            serializedLockWhitelist[i] = RLP.encodeElement(entries.get(i).address().getHash160());
+            serializedLockWhitelist[i] = RLP.encodeElement(entries.get(i).address().getHash());
         }
         return RLP.encodeList(serializedLockWhitelist);
     }
@@ -478,7 +478,7 @@ public class BridgeSerializationUtils {
         for (int i = 0; i < serializedAddressesSize; i = i + 2) {
             byte[] hash160 = rlpList.get(i).getRLPData();
             byte[] maxTransferValueData = rlpList.get(i + 1).getRLPData();
-            Address address = new Address(parameters, hash160);
+            Address address = new LegacyAddress(parameters, hash160);
             entries.put(address, new OneOffWhiteListEntry(address, Coin.valueOf(safeToBigInteger(maxTransferValueData).longValueExact())));
         }
         int disableBlockHeight = safeToBigInteger(rlpList.get(serializedAddressesSize).getRLPData()).intValueExact();
@@ -497,7 +497,7 @@ public class BridgeSerializationUtils {
 
         for (int j = 0; j < unlimitedWhitelistEntriesSerializedAddressesSize; j++) {
             byte[] hash160 = unlimitedWhitelistEntriesRlpList.get(j).getRLPData();
-            Address address = new Address(parameters, hash160);
+            Address address = new LegacyAddress(parameters, hash160);
             entries.put(address, new UnlimitedWhiteListEntry(address));
         }
 
@@ -534,7 +534,7 @@ public class BridgeSerializationUtils {
         int n = 0;
 
         for (ReleaseRequestQueue.Entry entry : entries) {
-            bytes[n++] = RLP.encodeElement(entry.getDestination().getHash160());
+            bytes[n++] = RLP.encodeElement(entry.getDestination().getHash());
             bytes[n++] = RLP.encodeBigInteger(BigInteger.valueOf(entry.getAmount().getValue()));
         }
 
@@ -548,7 +548,7 @@ public class BridgeSerializationUtils {
         int n = 0;
 
         for (ReleaseRequestQueue.Entry entry : entries) {
-            bytes[n++] = RLP.encodeElement(entry.getDestination().getHash160());
+            bytes[n++] = RLP.encodeElement(entry.getDestination().getHash());
             bytes[n++] = RLP.encodeBigInteger(BigInteger.valueOf(entry.getAmount().getValue()));
             bytes[n++] = RLP.encodeElement(entry.getRskTxHash().getBytes());
         }
@@ -583,7 +583,7 @@ public class BridgeSerializationUtils {
         int n = rlpList.size() / 2;
         for (int k = 0; k < n; k++) {
             byte[] addressBytes = rlpList.get(k * 2).getRLPData();
-            Address address = new Address(networkParameters, addressBytes);
+            Address address = new LegacyAddress(networkParameters, addressBytes);
             long amount = BigIntegers.fromUnsignedByteArray(rlpList.get(k * 2 + 1).getRLPData()).longValue();
 
             entries.add(new ReleaseRequestQueue.Entry(address, Coin.valueOf(amount), null));
@@ -599,7 +599,7 @@ public class BridgeSerializationUtils {
         int n = rlpList.size() / 3;
         for (int k = 0; k < n; k++) {
             byte[] addressBytes = rlpList.get(k * 3).getRLPData();
-            Address address = new Address(networkParameters, addressBytes);
+            Address address = new LegacyAddress(networkParameters, addressBytes);
             long amount = BigIntegers.fromUnsignedByteArray(rlpList.get(k * 3 + 1).getRLPData()).longValue();
             Keccak256 txHash = new Keccak256(rlpList.get(k * 3 + 2).getRLPData());
 

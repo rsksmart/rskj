@@ -19,6 +19,7 @@
 package co.rsk.test.dsltest;
 
 import co.rsk.bitcoinj.core.Address;
+import co.rsk.bitcoinj.core.LegacyAddress;
 import co.rsk.db.RepositorySnapshot;
 import co.rsk.test.World;
 import co.rsk.test.dsl.DslParser;
@@ -346,7 +347,7 @@ public class WorldDslProcessorTest {
         byte[] expected = new byte[4 + 20];
         expected[0] = 0x01;
         expected[1] = 0x02;
-        System.arraycopy(account0.getAddress().getBytes(), 0, expected, 2, Address.LENGTH);
+        System.arraycopy(account0.getAddress().getBytes(), 0, expected, 2, LegacyAddress.LENGTH);
         expected[22] = 0x03;
         expected[23] = 0x04;
 

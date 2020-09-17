@@ -67,7 +67,7 @@ public class LockWhitelistTest extends BridgePerformanceTestCase {
         ExecutionStats stats = new ExecutionStats("addLockWhitelistAddress");
         executeTestCase(
                 (int executionIndex) -> {
-                    String address = new BtcECKey().toAddress(networkParameters).toBase58();
+                    String address = new BtcECKey().toAddress(networkParameters).toString();
                     BigInteger value = BigInteger.valueOf(Helper.randomCoin(Coin.COIN, 1, 30).getValue());
                     return Bridge.ADD_LOCK_WHITELIST_ADDRESS.encode(new Object[]{address, value});
                 },
@@ -82,7 +82,7 @@ public class LockWhitelistTest extends BridgePerformanceTestCase {
         ExecutionStats stats = new ExecutionStats("removeLockWhitelistAddress");
         executeTestCase(
                 (int executionIndex) -> {
-                    String address = lockWhitelist.getAddresses().get(Helper.randomInRange(0, lockWhitelist.getSize()-1)).toBase58();
+                    String address = lockWhitelist.getAddresses().get(Helper.randomInRange(0, lockWhitelist.getSize()-1)).toString();
                     return Bridge.REMOVE_LOCK_WHITELIST_ADDRESS.encode(new Object[]{address});
                 },
                 "removeLockWhitelistAddress",

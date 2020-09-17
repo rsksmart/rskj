@@ -2555,7 +2555,7 @@ public class BridgeSupportTest {
         TransactionWitness txWit = new TransactionWitness(1);
         txWit.setPush(0, new byte[]{});
         tx1.setWitness(0, txWit);
-        tx1.addOutput(Coin.COIN, Address.fromBase58(BridgeRegTestConstants.getInstance().getBtcParams(), "mvbnrCX3bg1cDRUu8pkecrvP6vQkSLDSou"));
+        tx1.addOutput(Coin.COIN, Address.fromString(BridgeRegTestConstants.getInstance().getBtcParams(), "mvbnrCX3bg1cDRUu8pkecrvP6vQkSLDSou"));
 
         byte[] bits = new byte[1];
         bits[0] = 0x3f;
@@ -2740,7 +2740,7 @@ public class BridgeSupportTest {
 
         Coin amountToLock = Coin.COIN.multiply(10);
 
-        tx1.addOutput(amountToLock, Address.fromBase58(BridgeRegTestConstants.getInstance().getBtcParams(), "mvbnrCX3bg1cDRUu8pkecrvP6vQkSLDSou"));
+        tx1.addOutput(amountToLock, Address.fromString(BridgeRegTestConstants.getInstance().getBtcParams(), "mvbnrCX3bg1cDRUu8pkecrvP6vQkSLDSou"));
         tx1.addInput(PegTestUtils.createHash(1), 0, new Script(new byte[]{}));
         TransactionWitness txWit = new TransactionWitness(1);
         txWit.setPush(0, new byte[]{});
@@ -2826,7 +2826,7 @@ public class BridgeSupportTest {
 
         Coin amountToLock = Coin.COIN.multiply(10);
 
-        tx1.addOutput(amountToLock, Address.fromBase58(BridgeRegTestConstants.getInstance().getBtcParams(), "mvbnrCX3bg1cDRUu8pkecrvP6vQkSLDSou"));
+        tx1.addOutput(amountToLock, Address.fromString(BridgeRegTestConstants.getInstance().getBtcParams(), "mvbnrCX3bg1cDRUu8pkecrvP6vQkSLDSou"));
         tx1.addInput(PegTestUtils.createHash(1), 0, new Script(new byte[]{}));
         TransactionWitness txWit = new TransactionWitness(1);
         txWit.setPush(0, new byte[]{});
@@ -2915,7 +2915,7 @@ public class BridgeSupportTest {
 
         Coin amountToLock = Coin.COIN.multiply(10);
 
-        tx1.addOutput(amountToLock, Address.fromBase58(BridgeRegTestConstants.getInstance().getBtcParams(), "mvbnrCX3bg1cDRUu8pkecrvP6vQkSLDSou"));
+        tx1.addOutput(amountToLock, Address.fromString(BridgeRegTestConstants.getInstance().getBtcParams(), "mvbnrCX3bg1cDRUu8pkecrvP6vQkSLDSou"));
         tx1.addInput(PegTestUtils.createHash(1), 0, new Script(new byte[]{}));
 
         byte[] bits = new byte[1];
@@ -3214,7 +3214,7 @@ public class BridgeSupportTest {
         when(activations.isActive(ConsensusRule.RSKIP143)).thenReturn(false);
 
         BtcTransaction tx1 = new BtcTransaction(btcParams);
-        tx1.addOutput(Coin.COIN.multiply(10), Address.fromBase58(BridgeRegTestConstants.getInstance().getBtcParams(), "mvbnrCX3bg1cDRUu8pkecrvP6vQkSLDSou"));
+        tx1.addOutput(Coin.COIN.multiply(10), Address.fromString(BridgeRegTestConstants.getInstance().getBtcParams(), "mvbnrCX3bg1cDRUu8pkecrvP6vQkSLDSou"));
         tx1.addInput(PegTestUtils.createHash(1), 0, new Script(new byte[]{}));
         TransactionWitness txWit = new TransactionWitness(1);
         txWit.setPush(0, new byte[]{});
@@ -3270,7 +3270,7 @@ public class BridgeSupportTest {
         Repository repository = createRepository();
 
         BtcTransaction tx1 = new BtcTransaction(btcParams);
-        tx1.addOutput(Coin.COIN.multiply(10), Address.fromBase58(BridgeRegTestConstants.getInstance().getBtcParams(), "mvbnrCX3bg1cDRUu8pkecrvP6vQkSLDSou"));
+        tx1.addOutput(Coin.COIN.multiply(10), Address.fromString(BridgeRegTestConstants.getInstance().getBtcParams(), "mvbnrCX3bg1cDRUu8pkecrvP6vQkSLDSou"));
         tx1.addInput(PegTestUtils.createHash(1), 0, new Script(new byte[]{}));
         TransactionWitness txWit = new TransactionWitness(1);
         txWit.setPush(0, new byte[]{});
@@ -3346,7 +3346,7 @@ public class BridgeSupportTest {
         Repository repository = createRepository();
 
         BtcTransaction tx1 = new BtcTransaction(btcParams);
-        tx1.addOutput(Coin.COIN.multiply(10), Address.fromBase58(BridgeRegTestConstants.getInstance().getBtcParams(), "mvbnrCX3bg1cDRUu8pkecrvP6vQkSLDSou"));
+        tx1.addOutput(Coin.COIN.multiply(10), Address.fromString(BridgeRegTestConstants.getInstance().getBtcParams(), "mvbnrCX3bg1cDRUu8pkecrvP6vQkSLDSou"));
         tx1.addInput(PegTestUtils.createHash(1), 0, new Script(new byte[]{}));
         TransactionWitness txWit = new TransactionWitness(1);
         txWit.setPush(0, new byte[]{});
@@ -3419,7 +3419,7 @@ public class BridgeSupportTest {
         Repository repository = createRepository();
 
         BtcTransaction tx1 = new BtcTransaction(btcParams);
-        tx1.addOutput(Coin.COIN.multiply(10), Address.fromBase58(BridgeRegTestConstants.getInstance().getBtcParams(), "mvbnrCX3bg1cDRUu8pkecrvP6vQkSLDSou"));
+        tx1.addOutput(Coin.COIN.multiply(10), Address.fromString(BridgeRegTestConstants.getInstance().getBtcParams(), "mvbnrCX3bg1cDRUu8pkecrvP6vQkSLDSou"));
         tx1.addInput(PegTestUtils.createHash(1), 0, new Script(new byte[]{}));
         TransactionWitness txWit = new TransactionWitness(1);
         txWit.setPush(0, new byte[]{});
@@ -4825,10 +4825,10 @@ public class BridgeSupportTest {
         BridgeSupport bridgeSupport = getBridgeSupport(bridgeConstants, mock(BridgeStorageProvider.class));
         Federation federation = bridgeConstants.getGenesisFederation();
         List<BtcECKey> federationPrivateKeys = BridgeRegTestConstants.REGTEST_FEDERATION_PRIVATE_KEYS;
-        co.rsk.bitcoinj.core.Address randomAddress =
-                new co.rsk.bitcoinj.core.Address(
-                        btcParams,
-                        org.bouncycastle.util.encoders.Hex.decode("4a22c3c4cbb31e4d03b15550636762bda0baf85a"));
+        co.rsk.bitcoinj.core.Address randomAddress = LegacyAddress.fromPubKeyHash(
+            btcParams,
+            org.bouncycastle.util.encoders.Hex.decode("4a22c3c4cbb31e4d03b15550636762bda0baf85a")
+        );
 
         // Create a tx from the Fed to a random btc address
         BtcTransaction releaseTx1 = new BtcTransaction(btcParams);

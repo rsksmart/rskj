@@ -702,7 +702,7 @@ public class BridgeSupport {
             if (!result.isPresent()) {
                 logger.warn(
                         "Couldn't build a release BTC tx for <{}, {}>",
-                        releaseRequest.getDestination().toBase58(),
+                        releaseRequest.getDestination().toString(),
                         releaseRequest.getAmount());
                 return false;
             }
@@ -2152,7 +2152,7 @@ public class BridgeSupport {
     }
 
     private Address getParsedAddress(String base58Address) throws AddressFormatException {
-        return Address.fromBase58(btcContext.getParams(), base58Address);
+        return Address.fromString(btcContext.getParams(), base58Address);
     }
 
     private void generateRejectionRelease(BtcTransaction btcTx, Address senderBtcAddress, Transaction rskTx, Coin totalAmount) throws IOException {

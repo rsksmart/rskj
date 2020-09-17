@@ -3,6 +3,7 @@ package co.rsk.peg.btcLockSender;
 import co.rsk.bitcoinj.core.Address;
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.BtcTransaction;
+import co.rsk.bitcoinj.core.LegacyAddress;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.core.RskAddress;
 
@@ -49,7 +50,7 @@ public class P2pkhBtcLockSender implements BtcLockSender {
 
             //Looking for btcAddress
             BtcECKey senderBtcKey = BtcECKey.fromPublicOnly(data);
-            this.btcAddress = new Address(btcTx.getParams(), senderBtcKey.getPubKeyHash());
+            this.btcAddress = new LegacyAddress(btcTx.getParams(), senderBtcKey.getPubKeyHash());
 
             //Looking for rskAddress
             org.ethereum.crypto.ECKey key = org.ethereum.crypto.ECKey.fromPublicOnly(data);

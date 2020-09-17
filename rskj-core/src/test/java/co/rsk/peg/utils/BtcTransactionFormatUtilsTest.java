@@ -97,7 +97,7 @@ public class BtcTransactionFormatUtilsTest {
         TransactionWitness txWit = new TransactionWitness(1);
         txWit.setPush(0, new byte[]{});
         otherTx.setWitness(0, txWit);
-        otherTx.addOutput(Coin.COIN, Address.fromBase58(BridgeRegTestConstants.getInstance().getBtcParams(), "mvbnrCX3bg1cDRUu8pkecrvP6vQkSLDSou"));
+        otherTx.addOutput(Coin.COIN, Address.fromString(BridgeRegTestConstants.getInstance().getBtcParams(), "mvbnrCX3bg1cDRUu8pkecrvP6vQkSLDSou"));
 
         BtcTransaction tx = new BtcTransaction(BridgeRegTestConstants.getInstance().getBtcParams(), Hex.decode(rawTx));
 

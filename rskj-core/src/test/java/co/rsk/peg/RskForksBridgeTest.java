@@ -408,7 +408,7 @@ public class RskForksBridgeTest {
 
     private Transaction buildReleaseTx() throws AddressFormatException {
         String btcAddressString = "mhoDGMzHHDq2ZD6cFrKV9USnMfpxEtLwGm";
-        Address btcAddress = Address.fromBase58(RegTestParams.get(), btcAddressString);
+        Address btcAddress = Address.fromString(RegTestParams.get(), btcAddressString);
         long nonce = 2;
         long value = 1000000000000000000l;
         BigInteger gasPrice = BigInteger.valueOf(0);

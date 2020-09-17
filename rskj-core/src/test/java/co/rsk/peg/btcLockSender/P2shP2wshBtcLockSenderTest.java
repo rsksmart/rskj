@@ -78,9 +78,9 @@ public class P2shP2wshBtcLockSenderTest {
         byte[] merged = ByteUtil.merge(new byte[]{0x00, 0x20}, redeemScriptHash);
         byte[] hashedAgain = Sha256Hash.hash(merged);
         byte[] scriptPubKey = HashUtil.ripemd160(hashedAgain);
-        Address btcAddress = new Address(btcTx.getParams(), btcTx.getParams().getP2SHHeader(), scriptPubKey);
+        Address btcAddress = LegacyAddress.fromScriptHash(btcTx.getParams(), scriptPubKey);
 
-        Assert.assertEquals("2MuSnTWG8zPsiGBjPCcbQVd17Ux2PVd5kGa", btcLockSender.getBTCAddress().toBase58());
+        Assert.assertEquals("2MuSnTWG8zPsiGBjPCcbQVd17Ux2PVd5kGa", btcLockSender.getBTCAddress().toString());
         Assert.assertEquals(btcAddress, btcLockSender.getBTCAddress());
         Assert.assertEquals(BtcLockSender.TxType.P2SHP2WSH, btcLockSender.getType());
         Assert.assertNull(btcLockSender.getRskAddress());

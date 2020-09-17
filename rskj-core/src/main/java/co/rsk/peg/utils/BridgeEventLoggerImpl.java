@@ -154,10 +154,10 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
         List<DataWord> topics = Collections.singletonList(Bridge.COMMIT_FEDERATION_TOPIC);
 
         byte[] oldFedFlatPubKeys = flatKeysAsRlpCollection(oldFederation.getBtcPublicKeys());
-        byte[] oldFedData = RLP.encodeList(RLP.encodeElement(oldFederation.getAddress().getHash160()), RLP.encodeList(oldFedFlatPubKeys));
+        byte[] oldFedData = RLP.encodeList(RLP.encodeElement(oldFederation.getAddress().getHash()), RLP.encodeList(oldFedFlatPubKeys));
 
         byte[] newFedFlatPubKeys = flatKeysAsRlpCollection(newFederation.getBtcPublicKeys());
-        byte[] newFedData = RLP.encodeList(RLP.encodeElement(newFederation.getAddress().getHash160()), RLP.encodeList(newFedFlatPubKeys));
+        byte[] newFedData = RLP.encodeList(RLP.encodeElement(newFederation.getAddress().getHash()), RLP.encodeList(newFedFlatPubKeys));
 
         long newFedActivationBlockNumber = executionBlock.getNumber() + this.bridgeConstants.getFederationActivationAge();
 
@@ -169,9 +169,9 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
     private void logCommitFederationInSolidityFormat(Block executionBlock, Federation oldFederation, Federation newFederation) {
         // Convert old federation public keys in bytes array
         byte[] oldFederationFlatPubKeys = flatKeysAsByteArray(oldFederation.getBtcPublicKeys());
-        String oldFederationBtcAddress = oldFederation.getAddress().toBase58();
+        String oldFederationBtcAddress = oldFederation.getAddress().toString();
         byte[] newFederationFlatPubKeys = flatKeysAsByteArray(newFederation.getBtcPublicKeys());
-        String newFederationBtcAddress = newFederation.getAddress().toBase58();
+        String newFederationBtcAddress = newFederation.getAddress().toString();
         long newFedActivationBlockNumber = executionBlock.getNumber() + this.bridgeConstants.getFederationActivationAge();
 
         CallTransaction.Function event = BridgeEvents.COMMIT_FEDERATION.getEvent();

@@ -2088,8 +2088,8 @@ public class BridgeTestPowerMock {
         when(bridgeSupportMock.getLockWhitelistEntryByIndex(10)).then((InvocationOnMock invocation) -> mockedEntry10);
         when(bridgeSupportMock.getLockWhitelistEntryByIndex(20)).then((InvocationOnMock invocation) -> mockedEntry20);
 
-        Assert.assertEquals(mockedEntry10.address().toBase58(), bridge.getLockWhitelistAddress(new Object[]{BigInteger.valueOf(10)}));
-        Assert.assertEquals(mockedEntry20.address().toBase58(), bridge.getLockWhitelistAddress(new Object[]{BigInteger.valueOf(20)}));
+        Assert.assertEquals(mockedEntry10.address().toString(), bridge.getLockWhitelistAddress(new Object[]{BigInteger.valueOf(10)}));
+        Assert.assertEquals(mockedEntry20.address().toString(), bridge.getLockWhitelistAddress(new Object[]{BigInteger.valueOf(20)}));
     }
 
     @Test
@@ -2112,7 +2112,7 @@ public class BridgeTestPowerMock {
                 bridgeSupportFactory);
         bridge.init(mockedTransaction, getGenesisBlock(), track, null, null, null);
 
-        Assert.assertNull(bridge.execute(Bridge.GET_LOCK_WHITELIST_ENTRY_BY_ADDRESS.encode(new Object[]{ address.toBase58() })));
+        Assert.assertNull(bridge.execute(Bridge.GET_LOCK_WHITELIST_ENTRY_BY_ADDRESS.encode(new Object[]{ address.toString() })));
     }
 
     @Test
@@ -2130,9 +2130,9 @@ public class BridgeTestPowerMock {
 
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        when(bridgeSupportMock.getLockWhitelistEntryByAddress(mockedAddressForUnlimited.toBase58()))
+        when(bridgeSupportMock.getLockWhitelistEntryByAddress(mockedAddressForUnlimited.toString()))
                 .then((InvocationOnMock invocation) -> new UnlimitedWhiteListEntry(mockedAddressForUnlimited));
-        when(bridgeSupportMock.getLockWhitelistEntryByAddress(mockedAddressForOneOff.toBase58()))
+        when(bridgeSupportMock.getLockWhitelistEntryByAddress(mockedAddressForOneOff.toString()))
                 .then((InvocationOnMock invocation) -> new OneOffWhiteListEntry(mockedAddressForOneOff, Coin.COIN));
 
         mockedTransaction = mock(Transaction.class);
@@ -2145,19 +2145,19 @@ public class BridgeTestPowerMock {
         bridge.init(mockedTransaction, getGenesisBlock(), track, null, null, null);
 
         // Get the unlimited whitelist address
-        result = bridge.execute(Bridge.GET_LOCK_WHITELIST_ENTRY_BY_ADDRESS.encode(new Object[]{ mockedAddressForUnlimited.toBase58() }));
+        result = bridge.execute(Bridge.GET_LOCK_WHITELIST_ENTRY_BY_ADDRESS.encode(new Object[]{ mockedAddressForUnlimited.toString() }));
         BigInteger decodedResult = (BigInteger) BridgeMethods.GET_LOCK_WHITELIST_ENTRY_BY_ADDRESS.getFunction().decodeResult(result)[0];
 
         Assert.assertEquals(0, decodedResult.longValue());
 
         // Get the one-off whitelist address
-        result = bridge.execute(Bridge.GET_LOCK_WHITELIST_ENTRY_BY_ADDRESS.encode(new Object[]{ mockedAddressForOneOff.toBase58() }));
+        result = bridge.execute(Bridge.GET_LOCK_WHITELIST_ENTRY_BY_ADDRESS.encode(new Object[]{ mockedAddressForOneOff.toString() }));
         decodedResult = (BigInteger) BridgeMethods.GET_LOCK_WHITELIST_ENTRY_BY_ADDRESS.getFunction().decodeResult(result)[0];
 
         Assert.assertEquals(Coin.COIN.value, decodedResult.longValue());
 
         // Try fetch an unexisting address
-        result = bridge.execute(Bridge.GET_LOCK_WHITELIST_ENTRY_BY_ADDRESS.encode(new Object[]{ (new BtcECKey().toAddress(networkParameters)).toBase58() }));
+        result = bridge.execute(Bridge.GET_LOCK_WHITELIST_ENTRY_BY_ADDRESS.encode(new Object[]{ (new BtcECKey().toAddress(networkParameters)).toString() }));
         decodedResult = (BigInteger) BridgeMethods.GET_LOCK_WHITELIST_ENTRY_BY_ADDRESS.getFunction().decodeResult(result)[0];
 
         Assert.assertEquals(-1, decodedResult.longValue());
@@ -2185,7 +2185,7 @@ public class BridgeTestPowerMock {
         bridge.init(mockedTransaction, getGenesisBlock(), track, null, null, null);
 
         byte[] result = bridge.execute(Bridge.ADD_LOCK_WHITELIST_ADDRESS.encode(new Object[]{
-                new BtcECKey().toAddress(networkParameters).toBase58(),
+                new BtcECKey().toAddress(networkParameters).toString(),
                 BigInteger.valueOf(Coin.COIN.getValue())
         }));
 
@@ -2264,7 +2264,7 @@ public class BridgeTestPowerMock {
         bridge.init(mockedTransaction, getGenesisBlock(), track, null, null, null);
 
         byte[] result = bridge.execute(Bridge.ADD_ONE_OFF_LOCK_WHITELIST_ADDRESS.encode(new Object[]{
-                new BtcECKey().toAddress(networkParameters).toBase58(),
+                new BtcECKey().toAddress(networkParameters).toString(),
                 BigInteger.valueOf(Coin.COIN.getValue())
         }));
 
@@ -2315,7 +2315,7 @@ public class BridgeTestPowerMock {
         bridge.init(mockedTransaction, getGenesisBlock(), track, null, null, null);
 
         byte[] result = bridge.execute(Bridge.ADD_UNLIMITED_LOCK_WHITELIST_ADDRESS.encode(new Object[]{
-                new BtcECKey().toAddress(networkParameters).toBase58()
+                new BtcECKey().toAddress(networkParameters).toString()
         }));
 
         BigInteger decodedResult = (BigInteger) BridgeMethods.ADD_UNLIMITED_LOCK_WHITELIST_ADDRESS.getFunction().decodeResult(result)[0];
@@ -2474,7 +2474,7 @@ public class BridgeTestPowerMock {
 
         byte[] data = BridgeMethods.GET_FEDERATION_ADDRESS.getFunction().encode(new Object[]{});
         String result = (String)BridgeMethods.GET_FEDERATION_ADDRESS.getFunction().decodeResult(bridge.execute(data))[0];
-        Assert.assertEquals(expectedResult.toBase58(), result);
+        Assert.assertEquals(expectedResult.toString(), result);
         bridge.execute(data);
 
         // TODO improve test
