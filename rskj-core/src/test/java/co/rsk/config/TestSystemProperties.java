@@ -22,23 +22,36 @@ import co.rsk.cli.CliArgs;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 
+import java.util.function.Function;
+
 public class TestSystemProperties extends RskSystemProperties {
 
-    private static final ConfigLoader TEST_LOADER = new ConfigLoader(CliArgs.empty()) {
-        /**
-         * Cache configurations that don't change so we don't read files multiple times.
-         */
-        private final Config TEST_CONFIG = ConfigFactory.parseResources("test-rskj.conf")
-                .withFallback(ConfigFactory.parseResources("rskj.conf"))
-                .withFallback(ConfigFactory.load("config/regtest"));
+    /**
+     * Cache configurations that don't change so we don't read files multiple times.
+     */
 
-        @Override
-        public Config getConfig() {
-            return TEST_CONFIG;
-        }
-    };
+    private static final Config BASE_TEST_CONFIG = ConfigFactory.parseResources("test-rskj.conf")
+                                                .withFallback(ConfigFactory.parseResources("rskj.conf"))
+                                                .withFallback(ConfigFactory.load("config/regtest"));
+
+    private static final ConfigLoader TEST_LOADER = makeTestLoader(config -> config);
+
+    private static ConfigLoader makeTestLoader(Function<Config, Config> decorator) {
+        Config config = decorator.apply(BASE_TEST_CONFIG);
+
+        return new ConfigLoader(CliArgs.empty()) {
+            @Override
+            public Config getConfig() {
+                return config;
+            }
+        };
+    }
 
     public TestSystemProperties() {
         super(TEST_LOADER);
+    }
+
+    public TestSystemProperties(Function<Config, Config> decorator) {
+        super(makeTestLoader(decorator));
     }
 }

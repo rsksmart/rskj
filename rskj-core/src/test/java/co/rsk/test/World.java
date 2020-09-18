@@ -18,6 +18,7 @@
 
 package co.rsk.test;
 
+import co.rsk.config.RskSystemProperties;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.bc.BlockChainImpl;
@@ -52,6 +53,7 @@ import java.util.Map;
  * Created by ajlopez on 8/7/2016.
  */
 public class World {
+    private RskSystemProperties config;
     private BlockChainImpl blockChain;
     private NodeBlockProcessor blockProcessor;
     private BlockExecutor blockExecutor;
@@ -72,12 +74,17 @@ public class World {
         this(new BlockChainBuilder());
     }
 
+    public World(RskSystemProperties config) {
+        this(new BlockChainBuilder().setConfig(config));
+    }
+
     public World(ReceiptStore receiptStore) {
         this(new BlockChainBuilder().setReceiptStore(receiptStore));
     }
 
     private World(BlockChainBuilder blockChainBuilder) {
-        this(blockChainBuilder.build(), blockChainBuilder.getBlockStore(), blockChainBuilder.getReceiptStore(), blockChainBuilder.getTrieStore(), blockChainBuilder.getRepository(), blockChainBuilder.getTransactionPool(), null);
+        this(blockChainBuilder.build(), blockChainBuilder.getBlockStore(), blockChainBuilder.getReceiptStore(), blockChainBuilder.getTrieStore(), blockChainBuilder.getRepository(), blockChainBuilder.getTransactionPool(), null,
+                blockChainBuilder.getConfig() != null ? blockChainBuilder.getConfig() : new TestSystemProperties());
     }
 
     public World(
@@ -87,13 +94,28 @@ public class World {
             TrieStore trieStore,
             Repository repository,
             TransactionPool transactionPool,
-            Genesis genesis) {
+            Genesis genesis
+            ) {
+        this(blockChain, blockStore, receiptStore, trieStore, repository, transactionPool, genesis, new TestSystemProperties());
+    }
+
+    public World(
+            BlockChainImpl blockChain,
+            BlockStore blockStore,
+            ReceiptStore receiptStore,
+            TrieStore trieStore,
+            Repository repository,
+            TransactionPool transactionPool,
+            Genesis genesis,
+            RskSystemProperties config
+            ) {
         this.blockChain = blockChain;
         this.blockStore = blockStore;
         this.receiptStore = receiptStore;
         this.trieStore = trieStore;
         this.repository = repository;
         this.transactionPool = transactionPool;
+        this.config = config;
 
         if (genesis == null) {
             genesis = (Genesis) BlockChainImplTest.getGenesisBlock(trieStore);
@@ -104,7 +126,6 @@ public class World {
         NetBlockStore store = new NetBlockStore();
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
-        TestSystemProperties config = new TestSystemProperties();
         BlockSyncService blockSyncService = new BlockSyncService(config, store, blockChain, nodeInformation, syncConfiguration);
         this.blockProcessor = new NodeBlockProcessor(store, blockChain, nodeInformation, blockSyncService, syncConfiguration);
         this.stateRootHandler = new StateRootHandler(config.getActivationConfig(), new TrieConverter(), new HashMapDB(), new HashMap<>());
@@ -122,7 +143,6 @@ public class World {
 
     public BlockExecutor getBlockExecutor() {
         final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
-        final TestSystemProperties config = new TestSystemProperties();
 
         Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(
                 config.getNetworkConstants().getBridgeConstants().getBtcParams());
