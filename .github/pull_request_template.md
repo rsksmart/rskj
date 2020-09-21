@@ -26,6 +26,7 @@
 - [ ] My change requires a change to the documentation.
 - [ ] I have updated the documentation accordingly.
 - [ ] Tests for the changes have been added (for bug fixes / features)
+- [ ] Requires Activation Code (Hard Fork)
 
 
 * **Other information**:
