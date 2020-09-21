@@ -321,6 +321,21 @@ public class OpCodes {
      */
     static final byte OP_JUMPDEST =0x5b ;
 
+    /*  Subroutines Operations */
+
+    /**
+     * (0x5c)
+     */
+    public static final byte OP_BEGINSUB =0x5c ;
+    /**
+     * (0x5d)
+     */
+    public static final byte OP_RETURNSUB =0x5d ;
+    /**
+     * (0x5e)
+     */
+    public static final byte OP_JUMPSUB =0x5e ;
+
     /*  Push Operations */
 
     /**

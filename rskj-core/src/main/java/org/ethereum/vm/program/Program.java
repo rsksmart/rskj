@@ -101,6 +101,7 @@ public class Program {
     private int startAddr;
 
     private BitSet jumpdestSet;
+    private BitSet beginsubSet;
 
     private final VmConfig config;
     private final PrecompiledContracts precompiledContracts;
@@ -632,8 +633,7 @@ public class Program {
             } else {
                 returnDataBuffer = result.getHReturn();
             }
-        }
-        else {
+        } else {
             // CREATE THE CONTRACT OUT OF RETURN
             byte[] code = programResult.getHReturn();
             int codeLength = getLength(code);
@@ -706,8 +706,9 @@ public class Program {
      * - Stateless calls invoke code from another contract, within the context of the caller
      *
      * @param msg is the message call object
+     * @param activations activations for hardfork
      */
-    public void callToAddress(MessageCall msg) {
+    public void callToAddress(MessageCall msg, ActivationConfig.ForBlock activations) {
 
         if (getCallDeep() == getMaxDepth()) {
             stackPushZero();
@@ -735,6 +736,8 @@ public class Program {
         if (isNotCovers(senderBalance, endowment)) {
             stackPushZero();
             refundGas(msg.getGas().longValue(), "refund gas from message call");
+            this.cleanReturnDataBuffer(activations);
+
             return;
         }
 
@@ -752,6 +755,7 @@ public class Program {
             getResult().addCallCreate(data, contextAddress.getBytes(),
                     msg.getGas().longValueSafe(),
                     msg.getEndowment().getNoLeadZeroesData());
+
             return;
         }
 
@@ -764,8 +768,7 @@ public class Program {
 
         if (!isEmpty(programCode)) {
             callResult = executeCode(msg, contextAddress, contextBalance, internalTx, track, programCode, senderAddress, data);
-        }
-        else {
+        } else {
             track.commit();
             callResult = true;
             refundGas(GasCost.toGas(msg.getGas().longValue()), "remaining gas from the internal call");
@@ -780,6 +783,8 @@ public class Program {
             ProgramSubtrace subtrace = ProgramSubtrace.newCallSubtrace(CallType.fromMsgType(msg.getType()), invoke, result, null, Collections.emptyList());
 
             getTrace().addSubTrace(subtrace);
+
+            this.cleanReturnDataBuffer(activations);
         }
 
         // 4. THE FLAG OF SUCCESS IS ONE PUSHED INTO THE STACK
@@ -788,6 +793,13 @@ public class Program {
         }
         else {
             stackPushZero();
+        }
+    }
+
+    private void cleanReturnDataBuffer(ActivationConfig.ForBlock activations) {
+        if(activations.isActive(ConsensusRule.RSKIP171)) {
+            // reset return data buffer when call did not create a new call frame
+            returnDataBuffer = null;
         }
     }
 
@@ -851,6 +863,7 @@ public class Program {
             // 4. THE FLAG OF SUCCESS IS ONE PUSHED INTO THE STACK
             track.commit();
         }
+
 
 
         // 3. APPLY RESULTS: childResult.getHReturn() into out_memory allocated
@@ -1253,12 +1266,16 @@ public class Program {
         startAddr = 0;
         pc = 0;
         i = processAndSkipCodeHeader(i);
-        computeJumpDests(i);
+        computeJumpDestsAndBeginSubs(i);
     }
 
-    private void computeJumpDests(int start) {
+    private void computeJumpDestsAndBeginSubs(int start) {
         if (jumpdestSet == null) {
             jumpdestSet = new BitSet(ops.length);
+        }
+
+        if (beginsubSet == null) {
+            beginsubSet = new BitSet(ops.length);
         }
 
         for (int i = start; i < ops.length; ++i) {
@@ -1270,6 +1287,9 @@ public class Program {
 
             if (op == OpCode.JUMPDEST) {
                 jumpdestSet.set(i);
+            }
+            else if (op == OpCode.BEGINSUB) {
+                beginsubSet.set(i);
             }
 
             if (op.asInt() >= OpCode.PUSH1.asInt() && op.asInt() <= OpCode.PUSH32.asInt()) {
@@ -1320,11 +1340,26 @@ public class Program {
         return ret;
     }
 
-    public void callToPrecompiledAddress(MessageCall msg, PrecompiledContract contract) {
+    public int verifyBeginSub(DataWord nextPC) {
+        if (nextPC.occupyMoreThan(4)) {
+            throw ExceptionHelper.badJumpSubDestination(this, -1);
+        }
+
+        int ret = nextPC.intValue(); // could be negative
+
+        if (ret < 0 || ret >= beginsubSet.size() || !beginsubSet.get(ret)) {
+            throw ExceptionHelper.badJumpSubDestination(this, ret);
+        }
+
+        return ret;
+    }
+
+    public void callToPrecompiledAddress(MessageCall msg, PrecompiledContract contract, ActivationConfig.ForBlock activations) {
 
         if (getCallDeep() == getMaxDepth()) {
             stackPushZero();
             this.refundGas(msg.getGas().longValue(), " call deep limit reach");
+
             return;
         }
 
@@ -1339,6 +1374,8 @@ public class Program {
         if (senderBalance.compareTo(endowment) < 0) {
             stackPushZero();
             this.refundGas(msg.getGas().longValue(), "refund gas from message call");
+            this.cleanReturnDataBuffer(activations);
+
             return;
         }
 
@@ -1390,10 +1427,10 @@ public class Program {
 
         long requiredGas = contract.getGasForData(data);
         if (requiredGas > msg.getGas().longValue()) {
-
             this.refundGas(0, "call pre-compiled"); //matches cpp logic
             this.stackPushZero();
             track.rollback();
+            this.cleanReturnDataBuffer(activations);
         } else {
 
             this.refundGas(msg.getGas().longValue() - requiredGas, "call pre-compiled");
@@ -1448,9 +1485,33 @@ public class Program {
     }
 
     @SuppressWarnings("serial")
+    public static class InvalidReturnSubException extends RuntimeException {
+
+        public InvalidReturnSubException(String message, Object... args) {
+            super(format(message, args));
+        }
+    }
+
+    @SuppressWarnings("serial")
+    public static class InvalidBeginSubException extends RuntimeException {
+
+        public InvalidBeginSubException(String message, Object... args) {
+            super(format(message, args));
+        }
+    }
+
+    @SuppressWarnings("serial")
     public static class StackTooSmallException extends RuntimeException {
 
         public StackTooSmallException(String message, Object... args) {
+            super(format(message, args));
+        }
+    }
+
+    @SuppressWarnings("serial")
+    public static class ReturnStackOverflowException extends RuntimeException {
+
+        public ReturnStackOverflowException(String message, Object... args) {
             super(format(message, args));
         }
     }
@@ -1507,8 +1568,24 @@ public class Program {
             return new BadJumpDestinationException("Operation with pc isn't 'JUMPDEST': PC[%d], tx[%s]", pc, extractTxHash(program));
         }
 
+        public static BadJumpDestinationException badJumpSubDestination(@Nonnull Program program, int pc) {
+            return new BadJumpDestinationException("Operation with pc isn't 'BEGINSUB': PC[%d], tx[%s]", pc, extractTxHash(program));
+        }
+
+        public static InvalidReturnSubException invalidReturnSub(@Nonnull Program program, int pc) {
+            return new InvalidReturnSubException("Invalid 'RETURNSUB': PC[%d], tx[%s]", pc, extractTxHash(program));
+        }
+
+        public static InvalidBeginSubException invalidBeginSub(@Nonnull Program program, int pc) {
+            return new InvalidBeginSubException("Invalid 'BEGINSUB': PC[%d], tx[%s]", pc, extractTxHash(program));
+        }
+
         public static StackTooSmallException tooSmallStack(@Nonnull Program program, int expectedSize, int actualSize) {
             return new StackTooSmallException("Expected stack size %d but actual %d, tx: %s", expectedSize, actualSize, extractTxHash(program));
+        }
+
+        public static ReturnStackOverflowException returnStackOverflow(@Nonnull Program program, int pc) {
+            return new ReturnStackOverflowException("Return stack overflow: PC[%d], tx[%s]", pc, extractTxHash(program));
         }
 
         public static RuntimeException tooLargeContractSize(@Nonnull Program program, int maxSize, int actualSize) {
@@ -1558,4 +1635,7 @@ public class Program {
 
     @VisibleForTesting
     public BitSet getJumpdestSet() { return this.jumpdestSet; }
+
+    @VisibleForTesting
+    public BitSet getBeginsubSet() { return this.beginsubSet; }
 }

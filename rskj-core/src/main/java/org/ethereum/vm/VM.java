@@ -88,6 +88,8 @@ public class VM {
     private static final String logString = "{}    Op: [{}]  Gas: [{}] Deep: [{}]  Hint: [{}]";
     private static final boolean computeGas = true; // for performance comp
 
+    private static final int MAX_RETURN_STACK_SIZE = 1023;
+
     /* Keeps track of the number of steps performed in this VM */
     private int vmCounter = 0;
 
@@ -108,6 +110,9 @@ public class VM {
     private long gasCost;
     private long gasBefore; // only for tracing
     private boolean isLogEnabled;
+
+    // Subroutines return stack
+    private java.util.Stack<Integer> returnStack = new java.util.Stack<>();
 
     public VM(VmConfig vmConfig, PrecompiledContracts precompiledContracts) {
         this.vmConfig = vmConfig;
@@ -1482,12 +1487,12 @@ public class VM {
 
         MessageCall msg = getMessageCall(gas, codeAddress, activations);
 
-        PrecompiledContracts.PrecompiledContract contract = precompiledContracts.getContractForAddress(activations, codeAddress);
+        PrecompiledContracts.PrecompiledContract precompiledContract = precompiledContracts.getContractForAddress(activations, codeAddress);
 
-        if (contract != null) {
-            program.callToPrecompiledAddress(msg, contract);
+        if (precompiledContract != null) {
+            program.callToPrecompiledAddress(msg, precompiledContract, activations);
         } else {
-            program.callToAddress(msg);
+            program.callToAddress(msg, activations);
         }
 
         program.step();
@@ -1667,6 +1672,42 @@ public class VM {
         }
 
         program.stop();
+    }
+
+    protected void doJUMPSUB(){
+        spendOpCodeGas();
+        // EXECUTION PHASE
+        DataWord pos = program.stackPop();
+        int nextPC = program.verifyBeginSub(pos) + 1;
+
+        if (isLogEnabled) {
+            hint = "~> " + nextPC;
+        }
+
+        if (this.returnStack.size() >= MAX_RETURN_STACK_SIZE) {
+            throw Program.ExceptionHelper.returnStackOverflow(program, program.getPC());
+        }
+
+        this.returnStack.push(program.getPC() + 1);
+
+        program.setPC(nextPC);
+    }
+
+    protected void doRETURNSUB(){
+        spendOpCodeGas();
+
+        if (this.returnStack.isEmpty()) {
+            throw Program.ExceptionHelper.invalidReturnSub(program, program.getPC());
+        }
+
+        // EXECUTION PHASE
+        int nextPC = this.returnStack.pop();
+
+        if (isLogEnabled) {
+            hint = "~> " + nextPC;
+        }
+
+        program.setPC(nextPC);
     }
 
     protected void executeOpcode() {
@@ -1945,8 +1986,38 @@ public class VM {
             break;
             case OpCodes.OP_DUPN: doDUPN();
                 break;
+
+            /**
+             * Subroutines
+             */
+            case OpCodes.OP_JUMPSUB:
+                if (!activations.isActive(RSKIP172)) {
+                    throw Program.ExceptionHelper.invalidOpCode(program);
+                }
+
+                doJUMPSUB();
+
+                break;
+
+            case OpCodes.OP_RETURNSUB:
+                if (!activations.isActive(RSKIP172)) {
+                    throw Program.ExceptionHelper.invalidOpCode(program);
+                }
+
+                doRETURNSUB();
+
+                break;
+
+            case OpCodes.OP_BEGINSUB:
+                if (!activations.isActive(RSKIP172)) {
+                    throw Program.ExceptionHelper.invalidOpCode(program);
+                }
+
+                throw Program.ExceptionHelper.invalidBeginSub(program, program.getPC());
+
             case OpCodes.OP_HEADER:
                 //fallthrough to default case until implementation's ready
+
             default:
                 // It should never execute this line.
                 // We rise an exception to prevent DoS attacks that halt the node, in case of a bug.
