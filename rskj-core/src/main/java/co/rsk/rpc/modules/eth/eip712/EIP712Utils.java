@@ -9,6 +9,8 @@ import com.google.common.io.ByteArrayDataOutput;
 import com.google.common.io.ByteStreams;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.HashUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.web3j.abi.DefaultFunctionEncoder;
 import org.web3j.abi.TypeDecoder;
 import org.web3j.abi.TypeReference;
@@ -38,6 +40,7 @@ import java.util.stream.StreamSupport;
  * @author ppedemon
  */
 public class EIP712Utils {
+    private static final Logger LOGGER = LoggerFactory.getLogger("web3");
 
     private static final String EIP712Domain = "EIP712Domain";
 
@@ -225,7 +228,11 @@ public class EIP712Utils {
     private Type numericFromString(TypeReference tyRef, JsonNode value) throws Exception {
         if (value.isTextual()) {
             String txtVal = value.asText();
-            int radix = txtVal.startsWith("0x") ? 16 : 10;
+            int radix = 10;
+            if (txtVal.startsWith("0x")) {
+                radix = 16;
+                txtVal = txtVal.substring(2);
+            }
             BigInteger n = new BigInteger(txtVal, radix);
             return TypeDecoder.instantiateType(tyRef, n);
         } else if (value.isNumber() ){
@@ -253,6 +260,7 @@ public class EIP712Utils {
             String type = tyDef.get("type").asText();
             JsonNode value = data.has(name)? data.get(name) : null;
             encoded.add(encodeField(type, value, types));
+            LOGGER.debug("name: {}, type: {}, value: {}", name, type, value);
         }
 
         DefaultFunctionEncoder encoder = new DefaultFunctionEncoder();
