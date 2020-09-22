@@ -141,7 +141,7 @@ public class MutableRepository implements Repository {
         return account.getNonce();
     }
 
-    // without node storage rent use saveCodeLRPT() to save code with last rent paid time
+    // #mish: without node storage rent. Use saveCodeLRPT() to save code with rent paid timestamp
     @Override
     public synchronized void saveCode(RskAddress addr, byte[] code) {
         byte[] key = trieKeyMapper.getCodeKey(addr);
@@ -302,7 +302,7 @@ public class MutableRepository implements Repository {
     }
 
     // To start tracking, a new repository is created, with a MutableTrieCache in the middle
-    // #mish: recall MTCache uses a nested HashMap [accounKey ->[nodeKey -> value]]
+    // #mish: recall MTCache uses a nested HashMap [accountKey ->[nodeKey -> value]] .. with value + rent timestamp too
     @Override
     public synchronized Repository startTracking() {
         return new MutableRepository(new MutableTrieCache(mutableTrie));
@@ -332,7 +332,7 @@ public class MutableRepository implements Repository {
         return rootHash.getBytes();
     }
 
-    // cannot update account storage rent with this method.
+    // #mish: cannot update account node storage rent with this method.
     @Override
     public synchronized void updateAccountState(RskAddress addr, final AccountState accountState) {
         byte[] accountKey = trieKeyMapper.getAccountKey(addr);
@@ -365,7 +365,7 @@ public class MutableRepository implements Repository {
         return mutableTrie.get(trieKeyMapper.getAccountKey(addr));
     }
     
-    /* #mish additional helper methods for storage rent
+    /* #mish: Additional helper methods for storage rent implementation
      * what matters for rent is a node's valueLength and lastRentPaidTime
      * This includes
      *  - main Account Node which contains account State info

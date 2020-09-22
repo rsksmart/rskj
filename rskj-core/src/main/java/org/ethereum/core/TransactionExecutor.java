@@ -65,6 +65,16 @@ import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
  * @since 19.12.2014
  */
 
+/**
+ * #mish: note for review of storage rent implementation
+ * The tracking of rent for new and pre-existing Trie nodes is initiated during 
+ * transaction execution. The tracking is based on new caches added to ProgramResult class
+ * to keep track of trie nodes created or touched by a transaction
+ * In this class, we define methods `accessedNodeAdder` and `createdNodeadder` to add nodes to these caches
+ * Similar methods are also added to Prgram class (especially for rent tracking of storage cells, which does not happen here)
+ */
+
+
 public class TransactionExecutor {
 
     private static final Logger logger = LoggerFactory.getLogger("execute");
@@ -89,7 +99,7 @@ public class TransactionExecutor {
     private Coin paidFees;
 
     private final ProgramInvokeFactory programInvokeFactory;
-    private final RskAddress coinbase; // #mish todo computing rent for coinbase account here (should do only once per block?)
+    private final RskAddress coinbase;
 
     private TransactionReceipt receipt;
     private ProgramResult result = new ProgramResult();
@@ -103,10 +113,13 @@ public class TransactionExecutor {
 
     private long mEndGas = 0;
 
-    private boolean isRemascTx; //#to avoid rent related errors senderAddr == remasc addr
+    private boolean isRemascTx; //#to avoid storage rent related errors check if senderAddr == remasc addr
     private long mEndRentGas = 0;
-    private long refTimeStamp; // reference to estimate storage rent
-    private long estRentGas = 0; //#mish unlike execution gas, rent gas is only collected at EOT. Use this for tracking estimateduse
+    private long refTimeStamp; // reference timestamp to use to estimate storage rent due
+    
+    //#mish unlike execution gas, rent gas is only collected at EOT. Use this for tracking estimated rent
+    private long estRentGas = 0;
+    
     private long basicTxCost = 0;
     private List<LogInfo> logs = null;
     private final Set<DataWord> deletedAccounts;
@@ -174,7 +187,7 @@ public class TransactionExecutor {
             return true;
         }
         
-        /** 
+        /** replace with class instance version (below)
         if (tx.getSender() == RemascTransaction.REMASC_ADDRESS) {
             //System.out.println("\n\n\n remasc addr " + RemascTransaction.REMASC_ADDRESS);
             this.isRemascTx = true;
@@ -185,10 +198,12 @@ public class TransactionExecutor {
             this.isRemascTx = true;
         }
 
-        // #mish: this is only execution gas limit
+        // #mish: In Transaction.class, these methods divide a tx gaslimit field
+        // between two approximately equal budgets: a limit for execution gas and limit for rent
         long txGasLimit = GasCost.toGas(tx.getGasLimit());
         long txRentGasLimit = GasCost.toGas(tx.getRentGasLimit());
         
+        // #mish: block level gas limit is based on execution only (rent is not included)
         long curBlockGasLimit = GasCost.toGas(executionBlock.getGasLimit());
         
         //System.out.println("\n\n init() in Tx Exec \n\n" + txGasLimit + "\n" + curBlockGasLimit + "\n") ;    
@@ -277,7 +292,7 @@ public class TransactionExecutor {
         return true;
     }
 
-    //note: storage rent gas does not count towards block gas limits 
+    //#mish: storage rent gas does not count towards block gas limits 
     private boolean gasIsValid(long txGasLimit, long curBlockGasLimit) {
         // if we've passed the curBlockGas limit we must stop exec
         // cumulativeGas being equal to GasCost.MAX_GAS is a border condition
@@ -309,8 +324,8 @@ public class TransactionExecutor {
         //refTimeStamp = Instant.now().getEpochSecond();
                         
         // #mish add sender to Map of accessed nodes (for storage rent tracking)
-        // but don't add receiver address yet as it may be a pre-compiled contract
-        // Note: "result" here is still a new instance of program result
+        // but do NOT add receiver address yet, as it may be a pre-compiled contract
+        // Note: "result" here is (still) a new instance of program result
         accessedNodeAdder(tx.getSender(),track, result); //read only.. and confirmed state data.. so not cacheTrack
 
         if (!localCall) {
@@ -575,7 +590,7 @@ public class TransactionExecutor {
                             returnDataGasValue,
                             program));
             //#mish programresult may have rent information, even though we'll revert TX
-            // that'll be taken care of by clearfieldsonexception
+            // that'll be taken care of by clearfieldsonexception()
             result = program.getResult();
             result.setHReturn(EMPTY_BYTE_ARRAY);
         } else if (createdContractSize > Constants.getMaxContractSize()) {
@@ -592,7 +607,7 @@ public class TransactionExecutor {
             cacheTrack.saveCode(tx.getContractAddress(), result.getHReturn());
         }
     }
-    // #mish todo: setStatus needs to be modified to reflect Manual revert, or rentgas OOG as per RSKIP113  
+      
     public TransactionReceipt getReceipt() {
         if (receipt == null) {
             receipt = new TransactionReceipt();
@@ -603,12 +618,7 @@ public class TransactionExecutor {
             receipt.setGasUsed(result.getGasUsed() + result.getRentGasUsed()); //#mish combined gas usage (exec + rent) (cos Wallets)
             //#mish todo modified to help isolate errors
             receipt.setStatus(executionError.isEmpty() ? TransactionReceipt.SUCCESS_STATUS : TransactionReceipt.FAILED_STATUS ); // #mish todo: RSKIP113
-            /*if (executionError == null || !executionError.isEmpty()){ //null if there is a program or vm error without string error msg
-                receipt.setStatus(TransactionReceipt.FAILED_STATUS );
-            } else{
-                receipt.setStatus(TransactionReceipt.SUCCESS_STATUS);    
-            }*/
-            //#mish added for testing
+            
             receipt.setExecGasUsed(result.getGasUsed()); // for testing
             receipt.setRentGasUsed(result.getRentGasUsed()); //for testing            
         }
@@ -646,7 +656,6 @@ public class TransactionExecutor {
                 .filter(logInfo -> !logInfo.isRejected())
                 .collect(Collectors.toList());
 
-        // #mish todo: rent mods in builder and here
         TransactionExecutionSummary.Builder summaryBuilder = TransactionExecutionSummary.builderFor(tx)
                 .gasLeftover(BigInteger.valueOf(mEndGas + mEndRentGas)) // #mish combine exec and rent gas left over
                 .logs(notRejectedLogInfos)
@@ -663,7 +672,7 @@ public class TransactionExecutor {
         
         summaryBuilder
                 .gasUsed(toBI(result.getGasUsed() + result.getRentGasUsed()))
-                .gasRefund(toBI(gasRefund)) // #mish this is not gas left over.. that's separate
+                .gasRefund(toBI(gasRefund)) // #mish this is NOT gas left over.. that's separate
                 .deletedAccounts(result.getDeleteAccounts())
                 .internalTransactions(result.getInternalTransactions());
 
@@ -712,7 +721,7 @@ public class TransactionExecutor {
         logger.trace("Processing result");
         logs = notRejectedLogInfos;
 
-        // save created and accessed node with updated rent timestamps to repository. Any value modifications 
+    // save created and accessed node with updated rent timestamps to repository. Any value modifications 
        if (!isRemascTx){
             result.getCreatedNodes().forEach((key, rentData) -> track.updateNodeWithRent(key, rentData.getLRPTime()));        
             result.getAccessedNodes().forEach(
@@ -752,7 +761,6 @@ public class TransactionExecutor {
             programTraceProcessor.processProgramTrace(trace, tx.getHash());
         }
         else {
-            // #mish: todo rentGas argument is from wire tx.. verify
             TransferInvoke invoke = new TransferInvoke(DataWord.valueOf(tx.getSender().getBytes()), DataWord.valueOf(tx.getReceiveAddress().getBytes()), 0L, GasCost.toGas(tx.getRentGasLimit()), DataWord.valueOf(tx.getValue().getBytes()));
 
             SummarizedProgramTrace trace = new SummarizedProgramTrace(invoke);
@@ -791,7 +799,7 @@ public class TransactionExecutor {
 
     
     public long getRentGasUsed() {
-        return result.getRentGasUsed(); //#mish the form is different from execgas, which is based on mEndGas. 
+        return result.getRentGasUsed(); //#mish: the form is different from execgas, which is based on mEndGas. 
     }
 
     public Coin getPaidFees() { return paidFees; }
