@@ -36,8 +36,6 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
-import java.time.Instant; //#mish for storage rent
-
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
 /**
@@ -54,6 +52,18 @@ import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
  * A node is immutable: to add/change a value or key, a new node is created
  *
  * An empty node has no subnodes and a null value
+ * 
+ * ******************
+ * #mish: Additional notes for storage rent implementation
+ * ******************
+ * Add a new field `long lastRentPaidTime` to store a node's rent paid timestamp. Since this is a long, defaults to 0
+ * Adding this new field is like adding a new type of `value`.. which means we need to modify put and getMethods
+ * - existing put() method(s) replicated putWithRent() which can be used to update rent timestamp
+ * - Trie encoding and decoding also changed to account for the additional long field
+ * - Changing the encoding changes the hash as well
+ * - In this experimental implementation, the pre-existing method are sometimes extended by adding a boolean 
+ *          1incRent` to indicate whether the method should or should not use the rent field.
+ * - This approach implies a lot of code duplication/redundancy (intended for easier code review), can be eliminated later after tests  
  */
 public class Trie {
     private static final int ARITY = 2;
@@ -109,8 +119,8 @@ public class Trie {
     // shared Path
     private final TrieKeySlice sharedPath;
 
-    // #mish.  (RSKIP113) 
-    private long lastRentPaidTime; // some parts of the code use strings for timestamps, mostly long
+    // #mish. for storage rent  (RSKIP113) 
+    private long lastRentPaidTime; // some parts of the code use strings for timestamps, but long is typical
 
 
     // default constructor, no secure
@@ -130,7 +140,7 @@ public class Trie {
         this(store, sharedPath, value, left, right, valueLength, valueHash, null);
     }
 
-    //  (almost) full constructor, without storage rent
+    //  #mish full constructor, without storage rent
     public Trie(TrieStore store, TrieKeySlice sharedPath, byte[] value, NodeReference left, NodeReference right, Uint24 valueLength, Keccak256 valueHash, VarInt childrenSize) {
         this(store, sharedPath, value, left, right, valueLength, valueHash, childrenSize, 0);
         checkValueLength();
@@ -158,6 +168,7 @@ public class Trie {
      * recognize the old serialization format.
      */
     public static Trie fromMessage(byte[] message, TrieStore store) {
+        //#mish: for storage rent imlementation, point this to a new method with boolean indicator for rent 
         /*Trie trie;
         Metric metric = profiler.start(Profiler.PROFILING_TYPE.BUILD_TRIE_FROM_MSG);
         if (message[0] == ARITY) {
@@ -264,7 +275,6 @@ public class Trie {
 
         // it doesn't need to clone value since it's retrieved from store or created from message
         // #mish: orchid unaffected by rent at present.
-        //return new Trie(store, sharedPath, value, left, right, lvalue, valueHash, childrenSize, lastRentPaidTime)
         return new Trie(store, sharedPath, value, left, right, lvalue, valueHash);
     }
 
@@ -279,6 +289,7 @@ public class Trie {
         boolean leftNodeEmbedded = (flags & 0b00000010) == 0b00000010;
         boolean rightNodeEmbedded = (flags & 0b00000001) == 0b00000001;
 
+        //#mish: modify method to get storage rent field when decoding
         long lastRentPaidTime = 0L;
         if (incRent) { lastRentPaidTime = message.getLong(); }
 
@@ -333,7 +344,7 @@ public class Trie {
         Keccak256 valueHash;
 
         if (hasLongVal) {
-            value = null;   //bcos it's long! grab the value hash and length only
+            value = null;   //bcos it's long! grab the value hash and length only, to save on IO
             byte[] valueHashBytes = new byte[Keccak256Helper.DEFAULT_SIZE_BYTES]; // 256/8 = 32 (checked April 2020)
             message.get(valueHashBytes);
             valueHash = new Keccak256(valueHashBytes);
@@ -375,7 +386,7 @@ public class Trie {
      * @return  a byte array with the node serialized to bytes
      */
     public Keccak256 getHash() {
-    // #mish created a new version with boolean arg to encode rent information  
+    // #mish: point method to a new version with boolean arg for storage rent implementation  
     /*    if (this.hash != null) {
             return this.hash.copy();
         }
@@ -541,7 +552,7 @@ public class Trie {
      */
     public byte[] toMessage() {
         if (encoded == null) {
-            internalToMessage(true); //#mish this version default is to include rent field in encoding
+            internalToMessage(true); //#mish: default is to include storagte rent field in encoding
         }
 
         return cloneArray(encoded);
@@ -721,7 +732,7 @@ public class Trie {
     
     // #mish adds rent timestamp to the encoding 
     // there is another version which makes rent encoding optional with boolean
-    // this can later be removed
+    // this can later be removed (private method, should be easier to delete)
     private void internalToMessage() {
         Uint24 lvalue = this.valueLength;
         boolean hasLongVal = this.hasLongValue();
@@ -788,7 +799,7 @@ public class Trie {
         encoded = buffer.array();
     }
 
-    // #mish internalToMessage with boolean indicator of 
+    // #mish internalToMessage with boolean indicator 
     // whether to include rent timestamp in serialization/encoding
     // old version can be deleted later
     private void internalToMessage(boolean incRent) {
@@ -944,8 +955,7 @@ public class Trie {
     }
 
     private Trie internalPut(TrieKeySlice key, byte[] value, boolean isRecursiveDelete) {
-        // #mish find the common path between the given key and the current node's (top of the trie) sharedpath
-        TrieKeySlice commonPath = key.commonPath(sharedPath);
+            TrieKeySlice commonPath = key.commonPath(sharedPath);
 
         if (commonPath.length() < sharedPath.length()) {
             // when we are removing a key we know splitting is not necessary. the key wasn't found at this point.
@@ -1024,9 +1034,9 @@ public class Trie {
     }
 
     /* #mish: version of put to update rent paid time: 
-     * duplicated existing code and then track value (do the same for rent)
+     * duplicated existing code and then track the value (do the same for rent)
      * could have used the same name 'put' with overloading. Introducing new name for emphasis.
-     * also, value must be passed explicitly, even if unchanged*/
+     * also, for security, value must be passed explicitly, even if unchanged*/
     public Trie putWithRent(byte[] key, byte[] value, long newLastRentPaidTime) {
         TrieKeySlice keySlice = TrieKeySlice.fromKey(key);
         Trie trie = putWithRent(keySlice, value, false, newLastRentPaidTime);
@@ -1089,7 +1099,7 @@ public class Trie {
         return new Trie(child.store, newSharedPath, child.value, child.left, child.right, child.valueLength, child.valueHash, child.childrenSize, child.lastRentPaidTime);
     }
 
-
+    // #mish: duplicated and extended internalPut to update a node's rent timestamp
     private Trie internalputWithRent(TrieKeySlice key, byte[] value, boolean isRecursiveDelete, long newLastRentPaidTime) {
         // #mish find the common path between the given key and the current node's (top of the trie) sharedpath
         TrieKeySlice commonPath = key.commonPath(sharedPath);
@@ -1736,11 +1746,5 @@ public class Trie {
     public long getLastRentPaidTime() {
         return lastRentPaidTime;
     }
-
-    // #mish  seconds since (+ve) or until (-ve) rentLastPaidTime compared to now
-    /*@Nullable
-    public long getRentPaidTimeDelta(){
-        return Instant.now().getEpochSecond() - lastRentPaidTime; //https://docs.oracle.com/javase/8/docs/api/java/time/Instant.html
-    }*/
 
 }

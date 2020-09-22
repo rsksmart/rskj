@@ -29,6 +29,10 @@ import org.ethereum.datasource.KeyValueDataSource;
 import java.util.Map;
 import java.util.Objects;
 
+/**#mish: in storage rent implementation getHash() uses rent timestamp by defaut.. so no changes needed here
+ * 
+ */
+
 public class StateRootHandler {
     private final ActivationConfig activationConfig;
     private final TrieConverter trieConverter;
@@ -50,9 +54,7 @@ public class StateRootHandler {
         if (isRskip126Enabled) {
             return blockStateRoot;
         }
-        //#mish for testing, is this kicking in?
-        System.out.println("\nIn SRHandler, translate kicked in");
-
+        
         return Objects.requireNonNull(
                 stateRootTranslator.get(blockStateRoot),
                 "Reset database or continue syncing with previous version"
@@ -64,8 +66,7 @@ public class StateRootHandler {
         if (isRskip126Enabled) {
             return executionResult.getHash();
         }
-        //#mish for testing, is this kicking in?
-        System.out.println("\nIn SRHandler, convert orchid kicked in");
+
         //we shouldn't be converting blocks before orchid in stable networks
         return new Keccak256(trieConverter.getOrchidAccountTrieRoot(executionResult));
     }
@@ -75,8 +76,6 @@ public class StateRootHandler {
         if (isRskip126Enabled) {
             return;
         }
-        //#mish for testing, is this kicking in?
-        System.out.println("\nIn SRHandler, registration kicked in");
 
         if (executedBlock.isGenesis()) {
             Keccak256 genesisStateRoot = convert(executedBlock, executionResult);

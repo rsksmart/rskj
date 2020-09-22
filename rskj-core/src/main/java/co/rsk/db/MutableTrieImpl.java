@@ -35,8 +35,6 @@ import java.util.NoSuchElementException;
 import java.util.Set;
 import java.nio.charset.StandardCharsets;
 
-import java.time.Instant; //#mish for storage rent
-
 public class MutableTrieImpl implements MutableTrie {
 
     private Trie trie;
@@ -60,7 +58,7 @@ public class MutableTrieImpl implements MutableTrie {
 
     @Override
     public byte[] get(byte[] key) {
-        return trie.get(key);   //#mish get returns the value associated with a key
+        return trie.get(key);
     }
 
     @Override
@@ -68,6 +66,7 @@ public class MutableTrieImpl implements MutableTrie {
         trie = trie.put(key, value);
     }
 
+    //#mish: methods to update storage rent for a node
     @Override
     public void putWithRent(byte[] key, byte[] value, long newLastRentPaidTime) {
         trie = trie.putWithRent(key, value, newLastRentPaidTime);
@@ -113,6 +112,7 @@ public class MutableTrieImpl implements MutableTrie {
         return atrie.getValueHash();
     }
 
+    //#mish: storage rent implementation, read a node's rent timestamp
     public long getLastRentPaidTime(byte[] key) {
         Trie atrie = trie.find(key);
         if (atrie == null) {
@@ -121,15 +121,6 @@ public class MutableTrieImpl implements MutableTrie {
         }
         return atrie.getLastRentPaidTime();
     }
-
-    /*public long getRentPaidTimeDelta(byte[] key) {
-        Trie atrie = trie.find(key);
-        if (atrie == null) {
-            // #mish: null?  existing methods (get hash, value) are not returning null
-            return Instant.now().getEpochSecond() - 0L ;
-        }
-        return atrie.getRentPaidTimeDelta();
-    }*/
 
     @Override
     public Iterator<DataWord> getStorageKeys(RskAddress addr) {

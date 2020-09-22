@@ -33,7 +33,6 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.function.Function;
-import java.time.Instant; //#mish for storage rent
 
 public class MutableTrieCache implements MutableTrie {
 
@@ -44,17 +43,20 @@ public class MutableTrieCache implements MutableTrie {
     // We use a single cache to mark both changed elements (new node value or rent paid time) and removed elements.
     // null value means the element has been removed.
     
-    // /* #mish:  ByteArrayWrapper converts byte[] to an object with size and lexicographic comparison methods
-    // The cache is implemented as a nested hashmap. 
-    // * 1st/outer layer key is AccountKeyWrapper: extracts "account key" component (not storage, not code) as a bytearraywrapper
-    //      see getAccountKeyWrapper
-    // * 2nd or inner map has just the key wrapper (as byteArraywrapper object)
-    //      if the given key is a regular account key (unique size), then both wrappers are the same
-    // * Instead of base accountKey, the first key could also be the base for the storageRoot  */
-    // private final Map<ByteArrayWrapper, Map<ByteArrayWrapper, byte[]>> cache; //this is no longer used. remove references after review
+    /* #mish:  ByteArrayWrapper converts byte[] to an object with size and lexicographic comparison methods
+     The cache is implemented as a nested hashmap. 
+     * 1st/outer layer key is AccountKeyWrapper: extracts "account key" component (not storage, not code) as a bytearraywrapper
+          see getAccountKeyWrapper
+     * 2nd or inner map has just the key wrapper (as byteArraywrapper object)
+          if the given key is a regular account key (unique size), then both wrappers are the same
+     * Instead of base accountKey, the first key could also be the base for the storageRoot  
+    */
+    
+    //#mish: this cache for node values is not used in implementation with rent. remove references after review    
+    // private final Map<ByteArrayWrapper, Map<ByteArrayWrapper, byte[]>> cache;
 
-    // #mish: add a similar combo cache to track storage rent as well as value 
-    // use a ByteBuffer with node rent (8 bytes) + value (whatever).
+    // #mish: Use a combo-cache to track both value and storage rent timestamp 
+    // use a ByteBuffer with node rent (8 bytes) + value
     private final Map<ByteArrayWrapper, Map<ByteArrayWrapper, byte[]>> comboCache; 
 
     // this logs recursive delete operations to be performed at commit time
@@ -82,13 +84,14 @@ public class MutableTrieCache implements MutableTrie {
     // for value.. similar methods for getvaluehash and valuelength later
     @Override
     public byte[] get(byte[] key) {
-        // prior to storage rent, the value stored in cache (nested hashmap) could be returned directly ie.e identity
-        // with storage rent paid time included in data, the node's cached value needs to be separated
+        //#mish: prior to storage rent, the value stored in 'cache' (nested hashmap) was returned directly i.e. "identity()"
+        // with storage rent paid. the node's cached value needs to be separated from rent timestamp
+        
         //return  internalGet(key, trie::get, Function.identity()).orElse(null);
         return internalGet(key, trie::get, cachedBytes -> extractValue(cachedBytes)).orElse(null);  
     }
 
-    // extract node value stored together with node rentLastPaidTime in nested hashmap
+    // #mis: extract node value when stored together with node's rentLastPaidTime in nested hashmap
     private byte[] extractValue(byte[] data){
         ByteBuffer currData = ByteBuffer.wrap(data);
         long currLastRentPaidTime = currData.getLong(); // this is stored first
@@ -179,7 +182,7 @@ public class MutableTrieCache implements MutableTrie {
         byte[] currentCachedData = comboCache.get(accountWrapper).get(wrapper);
         if (currentCachedData != null){
             // something already in cache for that wrapper/node.. grab that first. Since value is explicitly passed as argument,
-            //  only cached rentPaidTime needs to be preserved. The cached value is not relevant
+            //  only cached rentPaidTime needs to be preserved. The cached (previous) value will be overwritten
             newLastRentPaidTime = ByteBuffer.wrap(currentCachedData).getLong();
         }    
         // now for the actual put (into the cache)
@@ -347,11 +350,6 @@ public class MutableTrieCache implements MutableTrie {
         return internalGet(key,  trie::getLastRentPaidTime, cachedBytes -> ByteBuffer.wrap(cachedBytes).getLong()).orElse(0L);
     }
     
-    /*public long getRentPaidTimeDelta(byte[] key) {     
-        return Instant.now().getEpochSecond() -  getLastRentPaidTime(key);
-    }*/
-
-
     private static class StorageKeysIterator implements Iterator<DataWord> {
         private final Iterator<DataWord> keysIterator;
         private final Map<ByteArrayWrapper, byte[]> accountItems;
