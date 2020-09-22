@@ -126,7 +126,8 @@ public interface Repository extends RepositorySnapshot {
         addBalance(toAddr, value);
     }
 
-    /* #mish extend repository for methods related to storage rent
+    /* #mish: for sorage rent 
+    * extend repository by adding methods related to storage rent
     * (i.e. put/get methods for node (accountState, code, storage) value length and last rent paid timestamp
     * These are implemented in MutableRepository
     */

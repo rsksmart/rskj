@@ -40,12 +40,7 @@ public class TransactionExecutionSummary {
     private BigInteger gasUsed = BigInteger.ZERO;
     private BigInteger gasLeftover = BigInteger.ZERO;
     private BigInteger gasRefund = BigInteger.ZERO;
-    
-    /** #mish for storage rent gas*/
-    // June2020: Post single gaslitmi field in TX, 
-    // remove rent gas separation. Just report everything together
-    // if separation needed, can be done later.
-    
+        
     private List<DataWord> deletedAccounts = emptyList();
     private List<InternalTransaction> internalTransactions = emptyList();
     
@@ -69,10 +64,9 @@ public class TransactionExecutionSummary {
     public Coin getFee() {
         if (failed) {
             BigInteger failedFee = gasLimit;
-            //BigInteger failedFeeRent = rentGasLimit.divide(BigInteger.valueOf(4));;  // keep 1/4=25% rentgas limit (RSKIP113)
-            return calcCost(failedFee);// .add(failedFeeRent)); 
+            return calcCost(failedFee); 
         }
-        // TX execution fee (rent + execution combined)
+        // TX  fee (#mish storage rent + execution fee combined)
         BigInteger txFee = gasLimit.subtract(gasLeftover).subtract(gasRefund);
         return calcCost(txFee);
     }
@@ -93,8 +87,8 @@ public class TransactionExecutionSummary {
         return gasPrice;
     }
 
-    // #mish returns combined gas limit
-    // DIFFEERENT FROM getGaslimit method for TX which returns execution gas limit
+    // #mish: returns combined gas limit (consistent with Transaction Class gaslimit "field")
+    // NOTE: This is DIFFERENT FROM getGaslimit() "method" from Transaction class which returns execution gas limit ONLY
     public BigInteger getGasLimit() {
         return gasLimit;
     }
@@ -106,19 +100,6 @@ public class TransactionExecutionSummary {
     public BigInteger getGasLeftover() {
         return gasLeftover;
     }
-
-    /*
-    public BigInteger getRentGasLimit() {
-        return tx.getRentGasLimit();
-    }
-
-    public BigInteger getRentGasUsed() {
-        return rentGasUsed;
-    }
-
-    public BigInteger getRentGasLeftover() {
-        return rentGasLeftover;
-    }*/
 
     public Coin getValue() {
         return value;
@@ -135,10 +116,6 @@ public class TransactionExecutionSummary {
     public BigInteger getGasRefund() {
         return gasRefund;
     }
-
-    /*public BigInteger getRentGasRefund() {
-        return rentGasRefund;
-    }*/
 
     public boolean isFailed() {
         return failed;
@@ -185,22 +162,6 @@ public class TransactionExecutionSummary {
             return this;
         }
         
-        /* //remove rent gas distinctions (June 2020)    
-        public Builder rentGasUsed(BigInteger rentGasUsed) {
-            summary.rentGasUsed = rentGasUsed;
-            return this;
-        }*/
-
-        /*public Builder rentGasLeftover(BigInteger rentGasLeftover) {
-            summary.rentGasLeftover = rentGasLeftover;
-            return this;
-        }*/
-
-        /*public Builder rentGasRefund(BigInteger rentGasRefund) {
-            summary.rentGasRefund = rentGasRefund;
-            return this;
-        }*/
-
         public Builder internalTransactions(List<InternalTransaction> internalTransactions) {
             summary.internalTransactions = unmodifiableList(internalTransactions);
             return this;

@@ -48,8 +48,10 @@ public class TransactionReceipt {
     // status codes
     protected static final byte[] FAILED_STATUS = EMPTY_BYTE_ARRAY;
     protected static final byte[] SUCCESS_STATUS = new byte[]{0x01};
-    protected static final byte[] MANUAL_REVERT_RSKIP113_STATUS = new byte[]{-1}; // #mish e.g. doREVERT() opCode in VM.java
-    protected static final byte[] RENT_OOG_RSKIP113_STATUS = new byte[]{-2};
+    // #mish: storage rent implementation. RSKIP113 has these additional status types
+    // these changes have been reverted.. (along with separate rentGasLimit "field" in Transaction class) 
+    //protected static final byte[] MANUAL_REVERT_RSKIP113_STATUS = new byte[]{-1}; // #mish e.g. doREVERT() opCode in VM.java
+    //protected static final byte[] RENT_OOG_RSKIP113_STATUS = new byte[]{-2};
 
     private byte[] postTxState = EMPTY_BYTE_ARRAY;
     // cumulativeGas field (as before) represents execution gas alone (rentgas does not count towards block gas limit) 
@@ -128,8 +130,12 @@ public class TransactionReceipt {
         this.rentGasUsed = rentGasUsed; //rent
         this.bloomFilter = bloomFilter;
         this.logInfoList = logInfoList;
-        if (Arrays.equals(status, FAILED_STATUS) || Arrays.equals(status, SUCCESS_STATUS) ||
+        // revert changes made for RSKIP113.. for wallet compatibility
+        /*if (Arrays.equals(status, FAILED_STATUS) || Arrays.equals(status, SUCCESS_STATUS) ||
                 Arrays.equals(status, MANUAL_REVERT_RSKIP113_STATUS) || Arrays.equals(status, RENT_OOG_RSKIP113_STATUS)) {
+            this.status = status;
+        }*/
+        if (Arrays.equals(status, FAILED_STATUS) || Arrays.equals(status, SUCCESS_STATUS)) {
             this.status = status;
         }
     }
@@ -219,13 +225,13 @@ public class TransactionReceipt {
         return rlpEncoded;
     }
 
-    // #mish todo: RSKIP113 going back to single gas field in TX. Are these other status levels needed (compat with wallets)?
     public void setStatus(byte[] status) {
         if (Arrays.equals(status, FAILED_STATUS)){
             this.status = FAILED_STATUS;
         } else if (Arrays.equals(status, SUCCESS_STATUS)){
             this.status = SUCCESS_STATUS;
-        }/* else if (Arrays.equals(status, MANUAL_REVERT_RSKIP113_STATUS)){
+        }/* revert/comment out changes introduced for RSKIP113
+        else if (Arrays.equals(status, MANUAL_REVERT_RSKIP113_STATUS)){
             this.status = MANUAL_REVERT_RSKIP113_STATUS;
         } else if (Arrays.equals(status, RENT_OOG_RSKIP113_STATUS)){
             this.status = RENT_OOG_RSKIP113_STATUS;

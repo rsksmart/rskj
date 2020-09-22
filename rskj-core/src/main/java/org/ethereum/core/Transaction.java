@@ -59,6 +59,11 @@ import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
  * or could be from a piece of automated software running on a server.
  * There are two types of transactions: those which result in message calls
  * and those which result in the creation of new contracts.
+ * 
+ * #mish: for storage rent implementation review
+ * - treat transaction gaslimit as a combined limit for gas used for execution and to pay rent 
+ *          (if rent is due) for all trie nodes touched by a TX (sender pays for all nodes when rent is due)
+ * - internally, divide the gas limit equally between to separate budgets for execution and rent
  */
 public class Transaction {
     public static final int DATAWORD_LENGTH = 32;
@@ -83,12 +88,18 @@ public class Transaction {
      * In creation transaction the receive address is - 0 */
     private final RskAddress receiveAddress;
     private final Coin gasPrice;
+    
     /* the amount of "gas" to allow for the computation.
      * Gas is the fuel of the computational engine.
      * Every computational step taken and every byte added
-     * to the state or transaction list consumes some gas. */
-     // #mish this includes the combined limit for execution and rent gas
-     // see methods getGasLimit() and getRentGasLimit()
+     * to the state or transaction list consumes some gas. 
+     * ***********************************
+     * #mish: Storage rent implementation
+     * Gas is also used to pay for storage rent. To work with existing wallets,
+     * the same gaslimit field acts as a combined limit for execution and rent gas
+     * this is divided equally to two separate execution and rent gaslimits
+     * see methods getGasLimit() and getRentGasLimit()
+     * */
     private byte[] gasLimit;
     
     /* An unlimited size byte array specifying
@@ -135,9 +146,9 @@ public class Transaction {
         }
     }
 
-    /* CONTRACT CREATION tx #mish: no receive Addr 
+    /* CONTRACT CREATION tx #mish: no receiver Addr 
      * [ nonce, gasPrice, gasLimit, "", endowment, init, signature(v, r, s) ]
-     * or SIMPLE SEND tx
+     * or SIMPLE SEND tx (need not have data)
      * [ nonce, gasPrice, gasLimit, receiveAddress, value, data, signature(v, r, s) ]
      */
     // #mish the full constructor. Call this C1
@@ -316,12 +327,13 @@ public class Transaction {
         return gasPrice;
     }
 
-    /** #mish: There is a single field in TX for overall gas budget (execution + rent)
+    /** #mish: Storage rent implementation
+     * There is a single field in TX for overall gas budget (execution + rent)
       * We divide this overall gas budget of the TX by a factor to allocate to rent gas
       * then assign all remaining budget to execution gas
       * default value of factor is TX_GASBUDGET_DIVISOR = 2 (equal division)
     */
-    // #mish: the conventional/legacy (EVM) execution gas limit for a Transaction
+    // #mish: the conventional (EVM) execution gas limit for a Transaction
     public byte[] getGasLimit() {
         return getExecGasLimit();
     }
