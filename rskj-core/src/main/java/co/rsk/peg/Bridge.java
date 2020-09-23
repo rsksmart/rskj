@@ -189,6 +189,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     public static final CallTransaction.Function GET_LOCKING_CAP = BridgeMethods.GET_LOCKING_CAP.getFunction();
     public static final CallTransaction.Function REGISTER_BTC_COINBASE_TRANSACTION = BridgeMethods.REGISTER_BTC_COINBASE_TRANSACTION.getFunction();
     public static final CallTransaction.Function HAS_BTC_BLOCK_COINBASE_TRANSACTION_INFORMATION = BridgeMethods.HAS_BTC_BLOCK_COINBASE_TRANSACTION_INFORMATION.getFunction();
+    public static final CallTransaction.Function REGISTER_BTC_TRANSFER = BridgeMethods.REGISTER_BTC_TRANSFER.getFunction();
 
     public static final int LOCK_WHITELIST_UNLIMITED_MODE_CODE = 0;
     public static final int LOCK_WHITELIST_ENTRY_NOT_FOUND_CODE = -1;
@@ -1064,6 +1065,31 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         Sha256Hash blockHash = Sha256Hash.wrap((byte[]) args[0]);
 
         return bridgeSupport.hasBtcBlockCoinbaseTransactionInformation(blockHash);
+    }
+
+    public int registerBtcTransfer(Object[] args)
+    {
+        logger.trace("registerBtcTransfer");
+
+        byte[] btcTxSerialized = (byte[]) args[0];
+        int height = ((BigInteger) args[1]).intValue();
+        byte[] pmtSerialized = (byte[]) args[2];
+        Sha256Hash derivationArgumentsHash = Sha256Hash.wrap((byte[]) args[3]);
+        Address userRefundAddress = Address.fromBase58(bridgeConstants.getBtcParams(), (String) args[4]);
+        RskAddress lbcAddress = new RskAddress((String) args[5]);
+        Address lpbtcAddress = Address.fromBase58(bridgeConstants.getBtcParams(), (String) args[6]);
+        boolean executionStatus = ((Boolean) args[7]).booleanValue();
+
+        return bridgeSupport.registerBtcTransfer(
+            rskTx,
+            btcTxSerialized,
+            height,
+            pmtSerialized,
+            derivationArgumentsHash,
+            userRefundAddress,
+            lbcAddress,
+            lpbtcAddress,
+            executionStatus);
     }
 
     public static BridgeMethods.BridgeMethodExecutor activeAndRetiringFederationOnly(BridgeMethods.BridgeMethodExecutor decoratee, String funcName) {

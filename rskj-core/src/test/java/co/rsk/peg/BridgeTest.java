@@ -1,10 +1,12 @@
 package co.rsk.peg;
 
+import co.rsk.bitcoinj.core.Address;
 import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.TestSystemProperties;
+import co.rsk.core.RskAddress;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -21,8 +23,7 @@ import org.junit.Test;
 import java.io.IOException;
 import java.math.BigInteger;
 
-import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP134;
-import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP143;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
@@ -191,6 +192,83 @@ public class BridgeTest {
         data = ByteUtil.merge(Bridge.REGISTER_BTC_COINBASE_TRANSACTION.encodeSignature(), Hex.decode("0000000000000000000000000000000000000000000000080000000000000000"));
         result = bridge.execute(data);
         Assert.assertNull(result);
+    }
+
+    @Test
+    public void registerBtcTransfer_before_RSKIP176_activation() {
+        doReturn(false).when(activationConfig).isActive(eq(RSKIP176), anyLong());
+
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        Bridge bridge = getBridgeInstance(bridgeSupportMock);
+
+        byte[] value = Sha256Hash.ZERO_HASH.getBytes();
+
+        byte[] data = BridgeMethods.REGISTER_BTC_TRANSFER.getFunction().encode(
+                new Object[]{
+                    value,
+                    1,
+                    value,
+                    value,
+                    (String) "n3PLxDiwWqa5uH7fSbHCxS6VAjD9Y7Rwkj",
+                    (String)"2e12a7e43926ccd228a2587896e53c3d1a51dacb",
+                        (String)"n3PLxDiwWqa5uH7fSbHCxS6VAjD9Y7Rwkj",
+                    true
+                }
+        );
+
+        //Assert
+        Assert.assertNull(bridge.execute(data));
+    }
+
+    @Test
+    public void registerBtcTransfer_after_RSKIP176_activation() throws Exception {
+        doReturn(true).when(activationConfig).isActive(eq(RSKIP176), anyLong());
+
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        Bridge bridge = getBridgeInstance(bridgeSupportMock);
+
+        when(bridgeSupportMock.registerBtcTransfer(
+                any(Transaction.class),
+                any(byte[].class),
+                anyInt(),
+                any(byte[].class),
+                any(Sha256Hash.class),
+                any(Address.class),
+                any(RskAddress.class),
+                any(Address.class),
+                anyBoolean()
+        )).thenReturn(2);
+
+        byte[] value = Sha256Hash.ZERO_HASH.getBytes();
+
+        byte[] data = Bridge.REGISTER_BTC_TRANSFER.encode(
+                new Object[]{
+                        value,
+                        1,
+                        value,
+                        value,
+                        "n3PLxDiwWqa5uH7fSbHCxS6VAjD9Y7Rwkj",
+                        "2e12a7e43926ccd228a2587896e53c3d1a51dacb",
+                        "n3PLxDiwWqa5uH7fSbHCxS6VAjD9Y7Rwkj",
+                        true
+                }
+        );
+
+        byte[] result = bridge.execute(data);
+
+        //Assert
+        Assert.assertEquals(BigInteger.valueOf(2), Bridge.REGISTER_BTC_TRANSFER.decodeResult(result)[0]);
+        verify(bridgeSupportMock, times(1)).registerBtcTransfer(
+                any(Transaction.class),
+                eq(value),
+                eq(1),
+                eq(value),
+                eq(Sha256Hash.wrap(value)),
+                eq(Address.fromBase58(constants.getBridgeConstants().getBtcParams(), "n3PLxDiwWqa5uH7fSbHCxS6VAjD9Y7Rwkj")),
+                eq(new RskAddress("2e12a7e43926ccd228a2587896e53c3d1a51dacb")),
+                eq(Address.fromBase58(constants.getBridgeConstants().getBtcParams(), "n3PLxDiwWqa5uH7fSbHCxS6VAjD9Y7Rwkj")),
+                eq(true)
+        );
     }
 
     /**
