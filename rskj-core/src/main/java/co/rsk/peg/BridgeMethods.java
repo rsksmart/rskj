@@ -576,6 +576,17 @@ public enum BridgeMethods {
             (BridgeMethodExecutorTyped) Bridge::hasBtcBlockCoinbaseTransactionInformation,
             activations -> activations.isActive(RSKIP143),
             false
+    ),
+    REGISTER_BTC_TRANSFER(
+            CallTransaction.Function.fromSignature(
+                    "registerBtcTransfer",
+                    new String[]{"bytes", "uint256", "bytes", "bytes32", "string", "string", "string", "bool"},
+                    new String[]{"int256"}
+            ),
+            fixedCost(10000L),  // TODO: Define a cost
+            (BridgeMethodExecutorTyped) Bridge::registerBtcTransfer,
+            activations -> activations.isActive(RSKIP176),
+            false
     );
 
     private final CallTransaction.Function function;
