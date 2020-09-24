@@ -19,12 +19,11 @@
 
 package org.ethereum.net.rlpx;
 
+import org.bouncycastle.math.ec.ECPoint;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
-import org.bouncycastle.math.ec.ECPoint;
-import org.bouncycastle.util.encoders.Hex;
 
 /**
  * Auth Response message defined by EIP-8
@@ -75,7 +74,7 @@ public class AuthResponseMessageV4 {
     public String toString() {
         return "AuthResponseMessage{" +
                 "\n  ephemeralPublicKey=" + ephemeralPublicKey +
-                "\n  nonce=" + Hex.toHexString(nonce) +
+                "\n  nonce=" + ByteUtil.toHexString(nonce) +
                 "\n  version=" + version +
                 '}';
     }

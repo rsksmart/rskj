@@ -83,7 +83,7 @@ public class DownloadingHeadersSyncState extends BaseSyncState {
                 syncEventsHandler.onErrorSyncing(
                         selectedPeer.getPeerNodeID(),
                         "Invalid header received from node {} {} {}", EventType.INVALID_HEADER,
-                        header.getNumber(), header.getShortHash());
+                        header.getNumber(), header.getPrintableHash());
                 return;
             }
 

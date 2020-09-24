@@ -20,7 +20,6 @@
 package org.ethereum.util;
 
 import org.ethereum.crypto.HashUtil;
-import org.bouncycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
@@ -118,7 +117,7 @@ public class Value {
     }
 
     public String getHex(){
-        return Hex.toHexString(this.encode());
+        return ByteUtil.toHexString(this.encode());
     }
 
     public byte[] getData(){
@@ -312,7 +311,7 @@ public class Value {
 
             StringBuilder output = new StringBuilder();
             if (isHashCode()) {
-                output.append(Hex.toHexString(asBytes()));
+                output.append(ByteUtil.toHexString(asBytes()));
             } else if (isReadableString()) {
                 output.append("'");
                 for (byte oneByte : asBytes()) {
@@ -325,7 +324,7 @@ public class Value {
                 output.append("'");
                 return output.toString();
             }
-            return Hex.toHexString(this.asBytes());
+            return ByteUtil.toHexString(this.asBytes());
         } else if (isString()) {
             return asString();
         }

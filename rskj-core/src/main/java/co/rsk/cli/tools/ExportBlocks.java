@@ -19,9 +19,9 @@ package co.rsk.cli.tools;
 
 import co.rsk.RskContext;
 import co.rsk.core.BlockDifficulty;
-import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.Block;
 import org.ethereum.db.BlockStore;
+import org.ethereum.util.ByteUtil;
 
 import java.io.PrintStream;
 
@@ -47,9 +47,9 @@ public class ExportBlocks {
 
             writer.println(
                 block.getNumber() + "," +
-                Hex.toHexString(block.getHash().getBytes()) + "," +
-                Hex.toHexString(totalDifficulty.getBytes()) + "," +
-                Hex.toHexString(block.getEncoded())
+                ByteUtil.toHexString(block.getHash().getBytes()) + "," +
+                ByteUtil.toHexString(totalDifficulty.getBytes()) + "," +
+                ByteUtil.toHexString(block.getEncoded())
             );
         }
     }

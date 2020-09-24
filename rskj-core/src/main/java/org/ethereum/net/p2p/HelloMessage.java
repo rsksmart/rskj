@@ -106,7 +106,7 @@ public class HelloMessage extends P2pMessage {
         this.listenPort = ByteUtil.byteArrayToInt(peerPortBytes);
 
         byte[] peerIdBytes = paramsList.get(4).getRLPData();
-        this.peerId = Hex.toHexString(peerIdBytes);
+        this.peerId = ByteUtil.toHexString(peerIdBytes);
         this.parsed = true;
     }
 

@@ -21,11 +21,11 @@ package org.ethereum.net.rlpx;
 
 import org.apache.commons.lang3.StringUtils;
 import org.ethereum.crypto.HashUtil;
+import org.ethereum.util.ByteUtil;
 import org.junit.Assert;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.bouncycastle.util.encoders.Hex;
 
 import java.nio.charset.Charset;
 import java.util.regex.Matcher;
@@ -65,7 +65,7 @@ public class NodeTest {
         String host_2 = node_2.getHost();
         int port_2 = node_2.getPort();
 
-        assertEquals(Hex.toHexString(NODE_ID_1), Hex.toHexString(id_2));
+        assertEquals(ByteUtil.toHexString(NODE_ID_1), ByteUtil.toHexString(id_2));
         assertEquals(NODE_HOST_1, host_2);
         assertTrue(NODE_PORT_1 == port_2);
     }

@@ -466,7 +466,7 @@ public class RskContext implements NodeBootstrapper {
         if (rsk == null) {
             rsk = new EthereumImpl(
                     getChannelManager(),
-                    getTransactionPool(),
+                    getTransactionGateway(),
                     getCompositeEthereumListener(),
                     getBlockchain()
             );
@@ -804,7 +804,6 @@ public class RskContext implements NodeBootstrapper {
 
     public List<InternalService> buildInternalServices() {
         List<InternalService> internalServices = new ArrayList<>();
-        internalServices.add(getTransactionGateway());
         internalServices.add(getTransactionPool());
         internalServices.add(getChannelManager());
         internalServices.add(getNodeMessageHandler());
@@ -1384,7 +1383,7 @@ public class RskContext implements NodeBootstrapper {
             Wallet wallet = getWallet();
             TransactionPool transactionPool = getTransactionPool();
             if (wallet == null) {
-                ethModuleTransaction = new EthModuleTransactionDisabled(constants, transactionPool);
+                ethModuleTransaction = new EthModuleTransactionDisabled(constants, transactionPool, getTransactionGateway());
             } else if (rskSystemProperties.minerClientAutoMine()) {
                 ethModuleTransaction = new EthModuleTransactionInstant(
                         constants,
@@ -1392,10 +1391,11 @@ public class RskContext implements NodeBootstrapper {
                         transactionPool,
                         getMinerServer(),
                         getMinerClient(),
-                        getBlockchain()
+                        getBlockchain(),
+                        getTransactionGateway()
                 );
             } else {
-                ethModuleTransaction = new EthModuleTransactionBase(constants, wallet, transactionPool);
+                ethModuleTransaction = new EthModuleTransactionBase(constants, wallet, transactionPool, getTransactionGateway());
             }
         }
 
@@ -1549,8 +1549,7 @@ public class RskContext implements NodeBootstrapper {
         if (transactionGateway == null) {
             transactionGateway = new TransactionGateway(
                     getChannelManager(),
-                    getTransactionPool(),
-                    getCompositeEthereumListener()
+                    getTransactionPool()
             );
         }
 

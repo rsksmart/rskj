@@ -26,12 +26,12 @@ import co.rsk.peg.performance.ExecutionStats;
 import co.rsk.peg.performance.PrecompiledContractPerformanceTestCase;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.crypto.ECKey;
+import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
-import org.spongycastle.util.encoders.Hex;
 
 import java.util.Arrays;
 import java.util.Random;
@@ -99,7 +99,7 @@ public class GetMultisigScriptHashPerformanceTestCase extends PrecompiledContrac
             publicKeys[i] = new ECKey().getPubKey(true);
         }
 
-        String expectedHashHex = Hex.toHexString(ScriptBuilder.createP2SHOutputScript(
+        String expectedHashHex = ByteUtil.toHexString(ScriptBuilder.createP2SHOutputScript(
                 minimumSignatures,
                 Arrays.stream(publicKeys).map(BtcECKey::fromPublicOnly).collect(Collectors.toList())
         ).getPubKeyHash());
@@ -119,7 +119,7 @@ public class GetMultisigScriptHashPerformanceTestCase extends PrecompiledContrac
                 (EnvironmentBuilder.Environment environment, byte[] result) -> {
                     Object[] decodedResult = function.decodeResult(result);
                     Assert.assertEquals(byte[].class, decodedResult[0].getClass());
-                    String hexHash = Hex.toHexString((byte[]) decodedResult[0]);
+                    String hexHash = ByteUtil.toHexString((byte[]) decodedResult[0]);
                     Assert.assertEquals(expectedHashHex, hexHash);
                 }
         );

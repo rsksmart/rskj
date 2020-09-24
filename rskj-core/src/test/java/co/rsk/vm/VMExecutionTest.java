@@ -22,10 +22,10 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.config.VmConfig;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
-import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.BlockFactory;
+import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.*;
 import org.ethereum.vm.program.Program;
 import org.ethereum.vm.program.Stack;
@@ -516,7 +516,7 @@ public class VMExecutionTest {
     }
 
     @Test
-    public void txindexExecution() {
+    public void txIndexExecution() {
         invoke.setTransactionIndex(DataWord.valueOf(42));
         Program program = executeCode("TXINDEX", 1);
         Stack stack = program.getStack();
@@ -530,9 +530,8 @@ public class VMExecutionTest {
         try {
             executeCode("PUSH1 0x03 JUMP", 2);
             Assert.fail();
-        }
-        catch (Program.BadJumpDestinationException ex) {
-            Assert.assertEquals("Operation with pc isn't 'JUMPDEST': PC[3];", ex.getMessage());
+        } catch (Program.BadJumpDestinationException ex) {
+            Assert.assertEquals("Operation with pc isn't 'JUMPDEST': PC[3], tx[<null>]", ex.getMessage());
         }
     }
 
@@ -541,9 +540,8 @@ public class VMExecutionTest {
         try {
             executeCode("PUSH1 0x05 JUMP", 2);
             Assert.fail();
-        }
-        catch (Program.BadJumpDestinationException ex) {
-            Assert.assertEquals("Operation with pc isn't 'JUMPDEST': PC[5];", ex.getMessage());
+        } catch (Program.BadJumpDestinationException ex) {
+            Assert.assertEquals("Operation with pc isn't 'JUMPDEST': PC[5], tx[<null>]", ex.getMessage());
         }
     }
 
@@ -552,9 +550,8 @@ public class VMExecutionTest {
         try {
             executeCode("PUSH32 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff 0xff JUMP", 2);
             Assert.fail();
-        }
-        catch (Program.BadJumpDestinationException ex) {
-            Assert.assertEquals("Operation with pc isn't 'JUMPDEST': PC[-1];", ex.getMessage());
+        } catch (Program.BadJumpDestinationException ex) {
+            Assert.assertEquals("Operation with pc isn't 'JUMPDEST': PC[-1], tx[<null>]", ex.getMessage());
         }
     }
 
@@ -563,9 +560,8 @@ public class VMExecutionTest {
         try {
             executeCode("PUSH1 0xff JUMP", 2);
             Assert.fail();
-        }
-        catch (Program.BadJumpDestinationException ex) {
-            Assert.assertEquals("Operation with pc isn't 'JUMPDEST': PC[255];", ex.getMessage());
+        } catch (Program.BadJumpDestinationException ex) {
+            Assert.assertEquals("Operation with pc isn't 'JUMPDEST': PC[255], tx[<null>]", ex.getMessage());
         }
     }
 
@@ -787,7 +783,7 @@ public class VMExecutionTest {
     private void testCode(byte[] code, int nsteps, String expected) {
         Program program = executeCodeWithActivationConfig(code, nsteps, mock(ActivationConfig.ForBlock.class));
 
-        assertEquals(expected, Hex.toHexString(program.getStack().peek().getData()).toUpperCase());
+        assertEquals(expected, ByteUtil.toHexString(program.getStack().peek().getData()).toUpperCase());
     }
 
     private Program executeCodeWithActivationConfig(String code, int nsteps, ActivationConfig.ForBlock activations) {

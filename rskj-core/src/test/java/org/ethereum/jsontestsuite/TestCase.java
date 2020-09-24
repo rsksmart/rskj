@@ -20,12 +20,12 @@
 package org.ethereum.jsontestsuite;
 
 import co.rsk.core.RskAddress;
+import org.bouncycastle.util.BigIntegers;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.util.ByteUtil;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.ParseException;
-import org.bouncycastle.util.BigIntegers;
-import org.bouncycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -202,9 +202,9 @@ public class TestCase {
         return "TestCase{" +
                 "" + env +
                 ", " + exec +
-                ", gas=" + Hex.toHexString(gas) +
-                ", rentGas=" + Hex.toHexString(rentGas) +
-                ", out=" + Hex.toHexString(out) +
+                ", gas=" + ByteUtil.toHexString(gas) +
+                ", rentGas=" + ByteUtil.toHexString(rentGas) +
+                ", out=" + ByteUtil.toHexString(out) +
                 ", pre=" + pre +
                 ", post=" + post +
                 ", callcreates=" + callCreateList +

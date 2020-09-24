@@ -2,8 +2,8 @@ package co.rsk.net.sync;
 
 import co.rsk.crypto.Keccak256;
 import co.rsk.net.BlockSyncService;
-import co.rsk.net.Peer;
 import co.rsk.net.NodeID;
+import co.rsk.net.Peer;
 import co.rsk.net.messages.BodyResponseMessage;
 import co.rsk.scoring.EventType;
 import co.rsk.validators.SyncBlockValidatorRule;
@@ -145,7 +145,7 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
         peersInformation.reportEventWithLog(
                 "Invalid block received from node {} {} {}",
                 peer.getPeerNodeID(), EventType.INVALID_BLOCK,
-                peer.getPeerNodeID(), header.getNumber(), header.getShortHash());
+                peer.getPeerNodeID(), header.getNumber(), header.getPrintableHash());
 
         clearPeerInfo(peer);
         if (suitablePeers.isEmpty()){
@@ -161,7 +161,7 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
         peersInformation.reportEventWithLog(
                 "Invalid body received from node {} {} {}",
                 peer.getPeerNodeID(), EventType.INVALID_MESSAGE,
-                peer.getPeerNodeID(), header.getNumber(), header.getShortHash());
+                peer.getPeerNodeID(), header.getNumber(), header.getPrintableHash());
 
         clearPeerInfo(peer);
         if (suitablePeers.isEmpty()){

@@ -586,9 +586,9 @@ public class TransactionExecutor {
         if (mEndGas < returnDataGasValue) {
             program.setRuntimeFailure(
                     Program.ExceptionHelper.notEnoughSpendingGas(
+                            program,
                             "No gas to return just created contract",
-                            returnDataGasValue,
-                            program));
+                            returnDataGasValue));
             //#mish programresult may have rent information, even though we'll revert TX
             // that'll be taken care of by clearfieldsonexception()
             result = program.getResult();
@@ -596,6 +596,7 @@ public class TransactionExecutor {
         } else if (createdContractSize > Constants.getMaxContractSize()) {
             program.setRuntimeFailure(
                     Program.ExceptionHelper.tooLargeContractSize(
+                            program,
                             Constants.getMaxContractSize(),
                             createdContractSize));
             //#mish programresult may have rent information, even though we'll revert TX

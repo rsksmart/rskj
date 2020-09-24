@@ -22,9 +22,9 @@ package org.ethereum.vm.trace;
 import co.rsk.config.VmConfig;
 import co.rsk.crypto.Keccak256;
 import com.fasterxml.jackson.databind.JsonNode;
-import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.TestUtils;
 import org.ethereum.core.Repository;
+import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.program.invoke.ProgramInvoke;
 import org.junit.Assert;
@@ -74,7 +74,7 @@ public class DetailedProgramTraceProcessorTest {
         JsonNode jnode = processor.getProgramTraceAsJsonNode(hash);
 
         Assert.assertNotNull(jnode);
-        Assert.assertEquals(Hex.toHexString(ownerDW.getLast20Bytes()), jnode.get("contractAddress").asText());
+        Assert.assertEquals(ByteUtil.toHexString(ownerDW.getLast20Bytes()), jnode.get("contractAddress").asText());
 
         String jsonText = jnode.toString();
         Assert.assertNotNull(jsonText);

@@ -159,23 +159,23 @@ public class TransactionPoolImpl implements TransactionPool {
     }
 
     private List<Transaction> addSuccessors(Transaction tx) {
-        List<Transaction> added = new ArrayList<>();
+        List<Transaction> pendingTransactionsAdded = new ArrayList<>();
         Optional<Transaction> successor = this.getQueuedSuccessor(tx);
 
         while (successor.isPresent()) {
             Transaction found = successor.get();
             queuedTransactions.removeTransactionByHash(found.getHash());
 
-            if (!this.internalAddTransaction(found).transactionWasAdded()) {
+            if (!this.internalAddTransaction(found).pendingTransactionsWereAdded()) {
                 break;
             }
 
-            added.add(found);
+            pendingTransactionsAdded.add(found);
 
             successor = this.getQueuedSuccessor(found);
         }
 
-        return added;
+        return pendingTransactionsAdded;
     }
 
     private void emitEvents(List<Transaction> addedPendingTransactions) {
@@ -189,20 +189,20 @@ public class TransactionPoolImpl implements TransactionPool {
 
     @Override
     public synchronized List<Transaction> addTransactions(final List<Transaction> txs) {
-        List<Transaction> added = new ArrayList<>();
+        List<Transaction> pendingTransactionsAdded = new ArrayList<>();
 
         for (Transaction tx : txs) {
             TransactionPoolAddResult result = this.internalAddTransaction(tx);
 
-            if (result.transactionWasAdded()) {
-                added.add(tx);
-                added.addAll(this.addSuccessors(tx));
+            if (result.pendingTransactionsWereAdded()) {
+                pendingTransactionsAdded.add(tx);
+                pendingTransactionsAdded.addAll(this.addSuccessors(tx));
             }
         }
 
-        this.emitEvents(added);
+        this.emitEvents(pendingTransactionsAdded);
 
-        return added;
+        return pendingTransactionsAdded;
     }
 
     private Optional<Transaction> getQueuedSuccessor(Transaction tx) {
@@ -254,7 +254,7 @@ public class TransactionPoolImpl implements TransactionPool {
         if (txNonce.compareTo(currentNonce) > 0) {
             this.addQueuedTransaction(tx);
             signatureCache.storeSender(tx);
-            return TransactionPoolAddResult.ok();
+            return TransactionPoolAddResult.okQueuedTransaction(tx);
         }
 
         if (!senderCanPayPendingTransactionsAndNewTx(tx, currentRepository)) {
@@ -264,25 +264,25 @@ public class TransactionPoolImpl implements TransactionPool {
 
         pendingTransactions.addTransaction(tx);
         signatureCache.storeSender(tx);
-        return TransactionPoolAddResult.ok();
+
+        return TransactionPoolAddResult.okPendingTransaction(tx);
     }
 
     @Override
     public synchronized TransactionPoolAddResult addTransaction(final Transaction tx) {
-        TransactionPoolAddResult result = this.internalAddTransaction(tx);
+        TransactionPoolAddResult internalResult = this.internalAddTransaction(tx);
+        List<Transaction> pendingTransactionsAdded = new ArrayList<>();
 
-        if (!result.transactionWasAdded()) {
-            return result;
+        if (!internalResult.transactionsWereAdded()) {
+            return internalResult;
+        } else if(internalResult.pendingTransactionsWereAdded()) {
+            pendingTransactionsAdded.add(tx);
+            pendingTransactionsAdded.addAll(this.addSuccessors(tx)); // addSuccessors only retrieves pending successors
         }
 
-        List<Transaction> added = new ArrayList<>();
+        this.emitEvents(pendingTransactionsAdded);
 
-        added.add(tx);
-        added.addAll(this.addSuccessors(tx));
-
-        this.emitEvents(added);
-
-        return result;
+        return TransactionPoolAddResult.ok(internalResult.getQueuedTransactionsAdded(), pendingTransactionsAdded);
     }
 
     private boolean isBumpingGasPriceForSameNonceTx(Transaction tx) {
@@ -306,7 +306,7 @@ public class TransactionPoolImpl implements TransactionPool {
 
     @Override
     public synchronized void processBest(Block newBlock) {
-        logger.trace("Processing best block {} {}", newBlock.getNumber(), newBlock.getShortHash());
+        logger.trace("Processing best block {} {}", newBlock.getNumber(), newBlock.getPrintableHash());
 
         BlockFork fork = getFork(this.bestBlock, newBlock);
 
@@ -352,7 +352,7 @@ public class TransactionPoolImpl implements TransactionPool {
     public void retractBlock(Block block) {
         List<Transaction> txs = block.getTransactionsList();
 
-        logger.trace("Retracting block {} {} with {} txs", block.getNumber(), block.getShortHash(), txs.size());
+        logger.trace("Retracting block {} {} with {} txs", block.getNumber(), block.getPrintableHash(), txs.size());
 
         this.addTransactions(txs);
     }

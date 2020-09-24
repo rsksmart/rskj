@@ -33,9 +33,9 @@ import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.crypto.ECKey;
-import org.ethereum.crypto.signature.ECDSASignature;
 import org.ethereum.crypto.ECKey.MissingPrivateKeyException;
 import org.ethereum.crypto.HashUtil;
+import org.ethereum.crypto.signature.ECDSASignature;
 import org.ethereum.crypto.signature.Secp256k1;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
@@ -476,16 +476,16 @@ public class Transaction {
 
     @Override
     public String toString() {
-        return "TransactionData [" + "hash=" + ByteUtil.toHexString(getHash().getBytes()) +
-                "  nonce=" + ByteUtil.toHexString(nonce) +
-                ", gasPrice=" + gasPrice.toString() +
-                ", gas=" + ByteUtil.toHexString(gasLimit) +
-                ", receiveAddress=" + receiveAddress.toString() +
-                ", value=" + value.toString() +
-                ", data=" + ByteUtil.toHexString(data) +
+        return "TransactionData [" + "hash=" + ByteUtil.toHexStringOrEmpty(getHash().getBytes()) +
+                "  nonce=" + ByteUtil.toHexStringOrEmpty(nonce) +
+                ", gasPrice=" + gasPrice +
+                ", gas=" + ByteUtil.toHexStringOrEmpty(gasLimit) +
+                ", receiveAddress=" + receiveAddress +
+                ", value=" + value +
+                ", data=" + ByteUtil.toHexStringOrEmpty(data) +
                 ", signatureV=" + (signature == null ? "" : signature.getV()) +
-                ", signatureR=" + (signature == null ? "" : ByteUtil.toHexString(BigIntegers.asUnsignedByteArray(signature.getR()))) +
-                ", signatureS=" + (signature == null ? "" : ByteUtil.toHexString(BigIntegers.asUnsignedByteArray(signature.getS()))) +
+                ", signatureR=" + (signature == null ? "" : ByteUtil.toHexStringOrEmpty(BigIntegers.asUnsignedByteArray(signature.getR()))) +
+                ", signatureS=" + (signature == null ? "" : ByteUtil.toHexStringOrEmpty(BigIntegers.asUnsignedByteArray(signature.getS()))) +
                 "]";
 
     }

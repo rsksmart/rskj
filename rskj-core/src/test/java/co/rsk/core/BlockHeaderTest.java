@@ -43,15 +43,16 @@ public class BlockHeaderTest {
         BlockHeader header = createBlockHeaderWithMergedMiningFields(new byte[0], true, new byte[0]);
 
         byte[] encodedBlock = header.getEncoded(false, false);
-        byte[] hashForMergedMining = Arrays.copyOfRange(HashUtil.keccak256(encodedBlock), 0, 20);
+        byte[] hashForMergedMiningPrefix = Arrays.copyOfRange(HashUtil.keccak256(encodedBlock), 0, 20);
         byte[] forkDetectionData = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 };
-        byte[] coinbase = concatenate(hashForMergedMining, forkDetectionData);
+        byte[] hashForMergedMining = concatenate(hashForMergedMiningPrefix, forkDetectionData);
+        byte[] coinbase = concatenate(RskMiningConstants.RSK_TAG, hashForMergedMining);
         header.setBitcoinMergedMiningCoinbaseTransaction(coinbase);
         header.seal();
 
         byte[] hashForMergedMiningResult = header.getHashForMergedMining();
 
-        assertThat(coinbase, is(hashForMergedMiningResult));
+        assertThat(hashForMergedMining, is(hashForMergedMiningResult));
     }
 
     @Test

@@ -31,6 +31,7 @@ import org.ethereum.core.Block;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
+import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPElement;
 import org.ethereum.util.RLPList;
@@ -295,7 +296,7 @@ public class BridgeEventLoggerImplTest {
         // Assert log topics
         Assert.assertEquals(3, logResult.getTopics().size());
         ECKey key = ECKey.fromPublicOnly(federatorPubKey.getPubKey());
-        String federatorRskAddress = Hex.toHexString(key.getAddress());
+        String federatorRskAddress = ByteUtil.toHexString(key.getAddress());
         byte[][] topics = event.encodeEventTopics(rskTxHash.getBytes(), federatorRskAddress);
         for (int i=0; i<topics.length; i++) {
             Assert.assertArrayEquals(topics[i], logResult.getTopics().get(i).getData());

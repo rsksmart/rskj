@@ -19,13 +19,9 @@ package org.ethereum.vm;
  */
 
 
-import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.Bloom;
 import org.ethereum.crypto.HashUtil;
-import org.ethereum.util.RLP;
-import org.ethereum.util.RLPElement;
-import org.ethereum.util.RLPItem;
-import org.ethereum.util.RLPList;
+import org.ethereum.util.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -133,16 +129,16 @@ public class LogInfo {
         topicsStr.append("[");
 
         for (DataWord topic : topics) {
-            String topicStr = Hex.toHexString(topic.getData());
+            String topicStr = ByteUtil.toHexString(topic.getData());
             topicsStr.append(topicStr).append(" ");
         }
         topicsStr.append("]");
 
 
         return "LogInfo{" +
-                "address=" + Hex.toHexString(address) +
+                "address=" + ByteUtil.toHexString(address) +
                 ", topics=" + topicsStr +
-                ", data=" + Hex.toHexString(data) +
+                ", data=" + ByteUtil.toHexString(data) +
                 '}';
     }
 

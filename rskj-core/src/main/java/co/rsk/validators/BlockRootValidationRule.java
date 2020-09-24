@@ -23,9 +23,9 @@ import co.rsk.panic.PanicProcessor;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Block;
+import org.ethereum.util.ByteUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.bouncycastle.util.encoders.Hex;
 
 import java.util.Arrays;
 
@@ -55,7 +55,7 @@ public class BlockRootValidationRule implements BlockValidationRule {
 
         if (!Arrays.equals(blockTxRootHash, txListRootHash)) {
             String message = String.format("Block's given Trie Hash doesn't match: %s != %s",
-                      Hex.toHexString(blockTxRootHash), Hex.toHexString(txListRootHash));
+                      ByteUtil.toHexString(blockTxRootHash), ByteUtil.toHexString(txListRootHash));
 
             logger.warn(message);
             panicProcessor.panic("invalidtrie", message);

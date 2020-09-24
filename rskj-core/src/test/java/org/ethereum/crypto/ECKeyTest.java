@@ -24,25 +24,20 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
-import org.ethereum.core.ImmutableTransaction;
-import org.ethereum.core.Transaction;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.signature.ECDSASignature;
 import org.ethereum.util.ByteUtil;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.bouncycastle.util.encoders.Hex;
 
 import java.io.IOException;
 import java.math.BigInteger;
-import java.security.SignatureException;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executors;
 
-import static com.google.common.base.Preconditions.checkNotNull;
 import static org.junit.Assert.*;
 
 public class ECKeyTest {
@@ -75,8 +70,8 @@ public class ECKeyTest {
         assertTrue(key.isPubKeyCanonical());
         assertNotNull(key.getPubKey());
         assertNotNull(key.getPrivKeyBytes());
-        log.debug(Hex.toHexString(key.getPrivKeyBytes()) + " :Generated privkey");
-        log.debug(Hex.toHexString(key.getPubKey()) + " :Generated pubkey");
+        log.debug(ByteUtil.toHexString(key.getPrivKeyBytes()) + " :Generated privkey");
+        log.debug(ByteUtil.toHexString(key.getPubKey()) + " :Generated pubkey");
     }
 
     @Test
@@ -130,8 +125,8 @@ public class ECKeyTest {
     public void testEthereumSign() throws IOException {
         // TODO: Understand why key must be decompressed for this to work
         ECKey key = ECKey.fromPrivate(privateKey).decompress();
-        System.out.println("Secret\t: " + Hex.toHexString(key.getPrivKeyBytes()));
-        System.out.println("Pubkey\t: " + Hex.toHexString(key.getPubKey()));
+        System.out.println("Secret\t: " + ByteUtil.toHexString(key.getPrivKeyBytes()));
+        System.out.println("Pubkey\t: " + ByteUtil.toHexString(key.getPubKey()));
         System.out.println("Data\t: " + exampleMessage);
         byte[] messageHash = HashUtil.keccak256(exampleMessage.getBytes());
         ECDSASignature signature = ECDSASignature.fromSignature(key.sign(messageHash));
@@ -234,7 +229,7 @@ public class ECKeyTest {
     public void decryptAECSIC(){
         ECKey key = ECKey.fromPrivate(Hex.decode("abb51256c1324a1350598653f46aa3ad693ac3cf5d05f36eba3f495a1f51590f"));
         byte[] payload = key.decryptAES(Hex.decode("84a727bc81fa4b13947dc9728b88fd08"));
-        System.out.println(Hex.toHexString(payload));
+        System.out.println(ByteUtil.toHexString(payload));
     }
 
 }

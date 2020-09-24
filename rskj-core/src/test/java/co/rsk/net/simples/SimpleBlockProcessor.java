@@ -50,7 +50,7 @@ public class SimpleBlockProcessor implements BlockProcessor {
         Map<Keccak256, ImportResult> connectionsResult = new HashMap<>();
         this.blocks.add(block);
         connectionsResult.put(block.getHash(), ImportResult.IMPORTED_BEST);
-        return new BlockProcessResult(false, connectionsResult, block.getShortHash(), Duration.ZERO);
+        return new BlockProcessResult(false, connectionsResult, block.getPrintableHash(), Duration.ZERO);
     }
 
     @Override

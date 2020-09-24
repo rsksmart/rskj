@@ -21,8 +21,8 @@ package org.ethereum.rpc;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Wallet;
 import co.rsk.core.WalletFactory;
-import co.rsk.core.bc.MiningMainchainViewImpl;
 import co.rsk.core.bc.MiningMainchainView;
+import co.rsk.core.bc.MiningMainchainViewImpl;
 import co.rsk.net.NodeID;
 import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.rpc.ExecutionBlockRetriever;
@@ -37,18 +37,16 @@ import co.rsk.rpc.modules.txpool.TxPoolModule;
 import co.rsk.rpc.modules.txpool.TxPoolModuleImpl;
 import co.rsk.scoring.*;
 import co.rsk.test.World;
-import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.TestUtils;
 import org.ethereum.rpc.Simples.SimpleEthereum;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
+import org.ethereum.util.ByteUtil;
 import org.junit.Assert;
 import org.junit.Test;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Random;
-
-import static org.mockito.Mockito.mock;
 
 /**
  * Created by ajlopez on 12/07/2017.
@@ -258,7 +256,7 @@ public class Web3ImplScoringTest {
         Assert.assertEquals(2, result.length);
 
         PeerScoringInformation info = result[0];
-        Assert.assertEquals(Hex.toHexString(node.getID()).substring(0, 8), info.getId());
+        Assert.assertEquals(ByteUtil.toHexString(node.getID()).substring(0, 8), info.getId());
         Assert.assertEquals(2, info.getValidBlocks());
         Assert.assertEquals(0, info.getInvalidBlocks());
         Assert.assertEquals(1, info.getValidTransactions());

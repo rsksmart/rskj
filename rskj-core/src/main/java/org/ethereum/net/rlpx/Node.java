@@ -20,10 +20,10 @@
 package org.ethereum.net.rlpx;
 
 import co.rsk.net.NodeID;
+import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
-import org.ethereum.util.Utils;
-import org.bouncycastle.util.encoders.Hex;
 
 import java.io.Serializable;
 import java.net.InetAddress;
@@ -92,11 +92,7 @@ public class Node implements Serializable {
     }
 
     public String getHexId() {
-        return Hex.toHexString(id);
-    }
-
-    public String getHexIdShort() {
-        return Utils.getNodeIdShort(getHexId());
+        return ByteUtil.toHexString(id);
     }
 
     public String getHost() {

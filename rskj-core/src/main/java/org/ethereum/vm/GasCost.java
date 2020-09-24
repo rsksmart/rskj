@@ -21,6 +21,7 @@
 package org.ethereum.vm;
 
 import org.ethereum.util.ByteUtil;
+
 import java.math.BigInteger;
 
 import co.rsk.core.types.ints.Uint24; //#mish for value length for storage rent computation
@@ -132,7 +133,7 @@ public class GasCost {
         }
 
         private InvalidGasException(byte[] bytes) {
-            super(String.format("Got invalid gas value as bytes array: %s", ByteUtil.toHexString(bytes)));
+            super(String.format("Got invalid gas value as bytes array: %s", ByteUtil.toHexStringOrEmpty(bytes)));
         }
 
         private InvalidGasException(String str) {

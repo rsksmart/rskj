@@ -22,7 +22,6 @@ import co.rsk.bitcoinj.core.Utils;
 import com.google.common.primitives.Ints;
 import org.ethereum.rpc.TypeConverter;
 import org.ethereum.util.ByteUtil;
-import org.bouncycastle.util.encoders.Hex;
 
 import java.io.Serializable;
 import java.util.Arrays;
@@ -52,7 +51,7 @@ public class Keccak256 implements Serializable, Comparable<Keccak256> {
     }
 
     public String toHexString() {
-        return Hex.toHexString(bytes);
+        return ByteUtil.toHexString(bytes);
     }
 
     @Override

@@ -7,7 +7,6 @@ import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.ByteUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.bouncycastle.util.encoders.Hex;
 
 public class BlockUnclesHashValidationRule implements BlockValidationRule {
 
@@ -21,7 +20,7 @@ public class BlockUnclesHashValidationRule implements BlockValidationRule {
 
         if (!ByteUtil.fastEquals(unclesHeader, unclesBlock)) {
             String message = String.format("Block's given Uncle Hash doesn't match: %s != %s",
-                    Hex.toHexString(unclesHeader), Hex.toHexString(unclesBlock));
+                    ByteUtil.toHexString(unclesHeader), ByteUtil.toHexString(unclesBlock));
             logger.warn(message);
             panicProcessor.panic("invaliduncle", message);
             return false;

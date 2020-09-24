@@ -19,14 +19,16 @@
 
 package org.ethereum.util;
 
-import org.ethereum.db.ByteArrayWrapper;
 import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.db.ByteArrayWrapper;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 
 public class ByteUtil {
@@ -225,11 +227,9 @@ public class ByteUtil {
         return result;
     }
 
-
     /**
-     * Convert a byte-array into a hex String.<br>
-     * Works similar to {@link Hex#toHexString}
-     * but allows for <code>null</code>
+     * Converts a byte-array into a hex String.<br>
+     * Works similar to {@link Hex#toHexString}, but allows for {@code null}.
      *
      * @param data - byte-array to convert to a hex-string
      * @return hex representation of the data.<br>
@@ -237,8 +237,41 @@ public class ByteUtil {
      *
      * @see Hex#toHexString
      */
-    public static String toHexString(byte[] data) {
-        return data == null ? "" : Hex.toHexString(data);
+    @Nonnull
+    public static String toHexStringOrEmpty(@Nullable byte[] data) {
+        return data == null ? "" : toHexString(data);
+    }
+
+    /**
+     * Converts a byte-array into a hex String.<br>
+     * Works similar to {@link Hex#toHexString}. {@code data} cannot be {@code null}.
+     *
+     * @param data - byte-array to convert to a hex-string
+     * @return hex representation of the data.<br>
+     * @throws NullPointerException if {@code data} is {@code null}
+     *
+     * @see Hex#toHexString
+     */
+    @Nonnull
+    public static String toHexString(@Nonnull byte[] data) {
+        return Hex.toHexString(Objects.requireNonNull(data));
+    }
+
+    /**
+     * Converts a byte-array into a hex String.<br>
+     * Works similar to {@link Hex#toHexString}. {@code data} cannot be {@code null}.
+     *
+     * @param data - byte-array to convert to a hex-string
+     * @param off - initial offset of the subarray
+     * @param length - length of the subarray
+     * @return hex representation of the data.<br>
+     * @throws NullPointerException if {@code data} is {@code null}
+     *
+     * @see Hex#toHexString
+     */
+    @Nonnull
+    public static String toHexString(@Nonnull byte[] data, int off, int length) {
+        return Hex.toHexString(Objects.requireNonNull(data), off, length);
     }
 
     /**

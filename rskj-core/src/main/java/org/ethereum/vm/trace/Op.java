@@ -19,7 +19,7 @@
 
 package org.ethereum.vm.trace;
 
-import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.OpCode;
 import org.ethereum.vm.program.Memory;
 import org.ethereum.vm.program.Stack;
@@ -72,7 +72,7 @@ public class Op {
 
         for (int k = 0; k < size; k += 32) {
             byte[] bytes = memory.read(k, Math.min(32, size - k));
-            this.memory.add(Hex.toHexString(bytes));
+            this.memory.add(ByteUtil.toHexString(bytes));
         }
     }
 
@@ -84,7 +84,7 @@ public class Op {
         int size = stack.size();
 
         for (int k = 0; k < size; k++) {
-            this.stack.add(Hex.toHexString(stack.get(k).getData()));
+            this.stack.add(ByteUtil.toHexString(stack.get(k).getData()));
         }
     }
 }

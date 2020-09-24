@@ -19,9 +19,9 @@
 
 package org.ethereum.net.rlpx;
 
-import org.ethereum.crypto.ECKey;
 import org.bouncycastle.math.ec.ECPoint;
-import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.crypto.ECKey;
+import org.ethereum.util.ByteUtil;
 
 /**
  * Authentication response message, to be wrapped inside
@@ -74,7 +74,7 @@ public class AuthResponseMessage {
     public String toString() {
         return "AuthResponseMessage{" +
                 "\n  ephemeralPublicKey=" + ephemeralPublicKey +
-                "\n  nonce=" + Hex.toHexString(nonce) +
+                "\n  nonce=" + ByteUtil.toHexString(nonce) +
                 "\n  isTokenUsed=" + isTokenUsed +
                 '}';
     }

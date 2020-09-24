@@ -22,7 +22,8 @@ import co.rsk.config.RskSystemProperties;
 import co.rsk.core.NetworkStateExporter;
 import co.rsk.logfilter.BlocksBloomStore;
 import co.rsk.metrics.HashRateCalculator;
-import co.rsk.mine.*;
+import co.rsk.mine.MinerClient;
+import co.rsk.mine.MinerServer;
 import co.rsk.net.BlockProcessor;
 import co.rsk.rpc.modules.debug.DebugModule;
 import co.rsk.rpc.modules.eth.EthModule;
@@ -33,7 +34,10 @@ import co.rsk.rpc.modules.rsk.RskModule;
 import co.rsk.rpc.modules.trace.TraceModule;
 import co.rsk.rpc.modules.txpool.TxPoolModule;
 import co.rsk.scoring.PeerScoringManager;
-import org.ethereum.core.*;
+import org.ethereum.core.Block;
+import org.ethereum.core.BlockHeader;
+import org.ethereum.core.Blockchain;
+import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.facade.Ethereum;
@@ -44,13 +48,13 @@ import org.ethereum.rpc.Web3Impl;
 import org.ethereum.util.BuildInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.bouncycastle.util.encoders.Hex;
 
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.util.*;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * Handles requests for work and block submission.
@@ -125,24 +129,20 @@ public class Web3RskImpl extends Web3Impl {
                 result.addAll(blockStore.getChainBlocksByNumber(i));
             }
             for (Block block : result) {
-                writer.println(toSmallHash(block.getHash().getBytes()) + " " + block.getNumber() + "-" + toSmallHash(
+                writer.println(HashUtil.toPrintableHash(block.getHash().getBytes()) + " " + block.getNumber() + "-" + HashUtil.toPrintableHash(
                         block.getHash().getBytes()));
             }
             writer.println("#");
             for (Block block : result) {
-                writer.println(toSmallHash(block.getHash().getBytes()) + " " + toSmallHash(block.getParentHash().getBytes()) + " P");
+                writer.println(HashUtil.toPrintableHash(block.getHash().getBytes()) + " " + HashUtil.toPrintableHash(block.getParentHash().getBytes()) + " P");
                 if (includeUncles) {
                     for (BlockHeader uncleHeader : block.getUncleList()) {
-                        writer.println(toSmallHash(block.getHash().getBytes()) + " " + toSmallHash(uncleHeader.getHash().getBytes()) + " U");
+                        writer.println(HashUtil.toPrintableHash(block.getHash().getBytes()) + " " + HashUtil.toPrintableHash(uncleHeader.getHash().getBytes()) + " U");
                     }
                 }
             }
         } catch (IOException e) {
             logger.error("Could nos save node graph to file", e);
         }
-    }
-
-    private String toSmallHash(byte[] input) {
-        return Hex.toHexString(input).substring(56, 64);
     }
 }

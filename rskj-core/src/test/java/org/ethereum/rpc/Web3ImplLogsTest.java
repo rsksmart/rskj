@@ -41,13 +41,13 @@ import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.BlockBuilder;
 import co.rsk.test.builders.TransactionBuilder;
 import co.rsk.trie.TrieStore;
-import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.*;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.facade.Ethereum;
 import org.ethereum.rpc.Simples.SimpleConfigCapabilities;
 import org.ethereum.rpc.dto.TransactionReceiptDTO;
+import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RskTestFactory;
 import org.junit.Assert;
 import org.junit.Before;
@@ -192,7 +192,7 @@ public class Web3ImplLogsTest {
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block1));
 
         Web3.FilterRequest fr = new Web3.FilterRequest();
-        fr.address = Hex.toHexString(tx.getContractAddress().getBytes());
+        fr.address = ByteUtil.toHexString(tx.getContractAddress().getBytes());
         fr.topics = new Object[] { "06acbfb32bcf8383f3b0a768b70ac9ec234ea0f2d3b9c77fa6a2de69b919aad1" };
         String id = web3.eth_newFilter(fr);
 
@@ -447,7 +447,7 @@ public class Web3ImplLogsTest {
         Block block1 = blockChain.getBlockByNumber(1l);
         Web3.FilterRequest fr = new Web3.FilterRequest();
         fr.fromBlock = "earliest";
-        fr.address = Hex.toHexString(block1.getTransactionsList().get(0).getContractAddress().getBytes());
+        fr.address = ByteUtil.toHexString(block1.getTransactionsList().get(0).getContractAddress().getBytes());
         Object[] logs = web3.eth_getLogs(fr);
 
         Assert.assertNotNull(logs);
@@ -466,7 +466,7 @@ public class Web3ImplLogsTest {
         Block block1 = blockChain.getBlockByNumber(1l);
         Web3.FilterRequest fr = new Web3.FilterRequest();
         fr.fromBlock = "earliest";
-        fr.address = Hex.toHexString(block1.getTransactionsList().get(0).getContractAddress().getBytes());
+        fr.address = ByteUtil.toHexString(block1.getTransactionsList().get(0).getContractAddress().getBytes());
         web3.eth_getLogs(fr);
         Object[] logs = web3.eth_getLogs(fr);
 
@@ -487,7 +487,7 @@ public class Web3ImplLogsTest {
         Web3.FilterRequest fr = new Web3.FilterRequest();
         fr.fromBlock = "earliest";
         List<String> addresses = new ArrayList<>();
-        addresses.add(Hex.toHexString(new byte[20]));
+        addresses.add(ByteUtil.toHexString(new byte[20]));
         fr.address = addresses;
         Object[] logs = web3.eth_getLogs(fr);
 
@@ -502,7 +502,7 @@ public class Web3ImplLogsTest {
         Web3.FilterRequest fr = new Web3.FilterRequest();
         fr.fromBlock = "earliest";
         List<String> addresses = new ArrayList<>();
-        addresses.add(Hex.toHexString(new byte[20]));
+        addresses.add(ByteUtil.toHexString(new byte[20]));
         fr.address = addresses;
         web3.eth_getLogs(fr);
         Object[] logs = web3.eth_getLogs(fr);
@@ -552,7 +552,7 @@ public class Web3ImplLogsTest {
         Object[] logs = web3.eth_getLogs(fr);
 
         Assert.assertNotNull(logs);
-        String address = "0x" + Hex.toHexString(block1.getTransactionsList().get(0).getContractAddress().getBytes());
+        String address = "0x" + ByteUtil.toHexString(block1.getTransactionsList().get(0).getContractAddress().getBytes());
         Assert.assertEquals(1, logs.length);
         Assert.assertEquals(address,((LogFilterElement)logs[0]).address);
     }
@@ -570,7 +570,7 @@ public class Web3ImplLogsTest {
         Object[] logs = web3.eth_getLogs(fr);
 
         Assert.assertNotNull(logs);
-        String address = "0x" + Hex.toHexString(block1.getTransactionsList().get(0).getContractAddress().getBytes());
+        String address = "0x" + ByteUtil.toHexString(block1.getTransactionsList().get(0).getContractAddress().getBytes());
         Assert.assertEquals(1, logs.length);
         Assert.assertEquals(address,((LogFilterElement)logs[0]).address);
     }
@@ -588,7 +588,7 @@ public class Web3ImplLogsTest {
         Object[] logs = web3.eth_getLogs(fr);
 
         Assert.assertNotNull(logs);
-        String address = "0x" + Hex.toHexString(block1.getTransactionsList().get(0).getContractAddress().getBytes());
+        String address = "0x" + ByteUtil.toHexString(block1.getTransactionsList().get(0).getContractAddress().getBytes());
         Assert.assertEquals(1, logs.length);
         Assert.assertEquals(address,((LogFilterElement)logs[0]).address);
     }
@@ -607,7 +607,7 @@ public class Web3ImplLogsTest {
         Object[] logs = web3.eth_getLogs(fr);
 
         Assert.assertNotNull(logs);
-        String address = "0x" + Hex.toHexString(block1.getTransactionsList().get(0).getContractAddress().getBytes());
+        String address = "0x" + ByteUtil.toHexString(block1.getTransactionsList().get(0).getContractAddress().getBytes());
         Assert.assertEquals(1, logs.length);
         Assert.assertEquals(address,((LogFilterElement)logs[0]).address);
     }
@@ -626,7 +626,7 @@ public class Web3ImplLogsTest {
         Object[] logs = web3.eth_getLogs(fr);
 
         Assert.assertNotNull(logs);
-        String address = "0x" + Hex.toHexString(block1.getTransactionsList().get(0).getContractAddress().getBytes());
+        String address = "0x" + ByteUtil.toHexString(block1.getTransactionsList().get(0).getContractAddress().getBytes());
         Assert.assertEquals(2, logs.length);
 
         for (int k = 0; k < logs.length; k++) {
@@ -649,7 +649,7 @@ public class Web3ImplLogsTest {
         Object[] logs = web3.eth_getLogs(fr);
 
         Assert.assertNotNull(logs);
-        String address = "0x" + Hex.toHexString(block1.getTransactionsList().get(0).getContractAddress().getBytes());
+        String address = "0x" + ByteUtil.toHexString(block1.getTransactionsList().get(0).getContractAddress().getBytes());
         Assert.assertEquals(2, logs.length);
 
         for (int k = 0; k < logs.length; k++) {
@@ -669,7 +669,7 @@ public class Web3ImplLogsTest {
         Object[] logs = web3.eth_getLogs(fr);
 
         Assert.assertNotNull(logs);
-        String address = "0x" + Hex.toHexString(block1.getTransactionsList().get(0).getContractAddress().getBytes());
+        String address = "0x" + ByteUtil.toHexString(block1.getTransactionsList().get(0).getContractAddress().getBytes());
         Assert.assertEquals(1, logs.length);
         Assert.assertEquals(address,((LogFilterElement)logs[0]).address);
     }
@@ -687,7 +687,7 @@ public class Web3ImplLogsTest {
         Object[] logs = web3.eth_getLogs(fr);
 
         Assert.assertNotNull(logs);
-        String address = "0x" + Hex.toHexString(block1.getTransactionsList().get(0).getContractAddress().getBytes());
+        String address = "0x" + ByteUtil.toHexString(block1.getTransactionsList().get(0).getContractAddress().getBytes());
         Assert.assertEquals(1, logs.length);
         Assert.assertEquals(address,((LogFilterElement)logs[0]).address);
     }
@@ -703,7 +703,7 @@ public class Web3ImplLogsTest {
         Object[] logs = web3.eth_getLogs(fr);
 
         Assert.assertNotNull(logs);
-        String address = "0x" + Hex.toHexString(block1.getTransactionsList().get(0).getContractAddress().getBytes());
+        String address = "0x" + ByteUtil.toHexString(block1.getTransactionsList().get(0).getContractAddress().getBytes());
         Assert.assertEquals(3, logs.length);
 
         for (int k = 0; k < logs.length; k++) {
@@ -723,7 +723,7 @@ public class Web3ImplLogsTest {
         Object[] logs = web3.eth_getLogs(fr);
 
         Assert.assertNotNull(logs);
-        String address = "0x" + Hex.toHexString(block1.getTransactionsList().get(0).getContractAddress().getBytes());
+        String address = "0x" + ByteUtil.toHexString(block1.getTransactionsList().get(0).getContractAddress().getBytes());
         Assert.assertEquals(3, logs.length);
 
         for (int k = 0; k < logs.length; k++) {
@@ -743,7 +743,7 @@ public class Web3ImplLogsTest {
         Object[] logs = web3.eth_getLogs(fr);
 
         Assert.assertNotNull(logs);
-        String address = "0x" + Hex.toHexString(block1.getTransactionsList().get(0).getContractAddress().getBytes());
+        String address = "0x" + ByteUtil.toHexString(block1.getTransactionsList().get(0).getContractAddress().getBytes());
         Assert.assertEquals(1, logs.length);
 
         Assert.assertEquals(address, ((LogFilterElement) logs[0]).address);
@@ -764,7 +764,7 @@ public class Web3ImplLogsTest {
         Object[] logs = web3.eth_getLogs(fr);
 
         Assert.assertNotNull(logs);
-        String address = "0x" + Hex.toHexString(block1.getTransactionsList().get(0).getContractAddress().getBytes());
+        String address = "0x" + ByteUtil.toHexString(block1.getTransactionsList().get(0).getContractAddress().getBytes());
         Assert.assertEquals(1, logs.length);
 
         Assert.assertEquals(address, ((LogFilterElement) logs[0]).address);
@@ -784,7 +784,7 @@ public class Web3ImplLogsTest {
         Object[] logs = web3.eth_getLogs(fr);
 
         Assert.assertNotNull(logs);
-        String address = "0x" + Hex.toHexString(block1.getTransactionsList().get(0).getContractAddress().getBytes());
+        String address = "0x" + ByteUtil.toHexString(block1.getTransactionsList().get(0).getContractAddress().getBytes());
         Assert.assertEquals(1, logs.length);
 
         Assert.assertEquals(address, ((LogFilterElement) logs[0]).address);
@@ -805,7 +805,7 @@ public class Web3ImplLogsTest {
         Object[] logs = web3.eth_getLogs(fr);
 
         Assert.assertNotNull(logs);
-        String address = "0x" + Hex.toHexString(block1.getTransactionsList().get(0).getContractAddress().getBytes());
+        String address = "0x" + ByteUtil.toHexString(block1.getTransactionsList().get(0).getContractAddress().getBytes());
         Assert.assertEquals(1, logs.length);
 
         Assert.assertEquals(address, ((LogFilterElement) logs[0]).address);
@@ -868,7 +868,7 @@ public class Web3ImplLogsTest {
 
         Transaction tx2;
         tx2 = getCallerContractTransaction(acc1, mainAddress);
-        String callerAddress = Hex.toHexString(tx2.getContractAddress().getBytes());
+        String callerAddress = ByteUtil.toHexString(tx2.getContractAddress().getBytes());
 
         List<Transaction> txs2 = new ArrayList<>();
         txs2.add(tx2);
@@ -913,7 +913,7 @@ public class Web3ImplLogsTest {
 
         Transaction tx2;
         tx2 = getCallerContractTransaction(acc1, mainAddress);
-        String callerAddress = Hex.toHexString(tx2.getContractAddress().getBytes());
+        String callerAddress = ByteUtil.toHexString(tx2.getContractAddress().getBytes());
 
         List<Transaction> txs2 = new ArrayList<>();
         txs2.add(tx2);
@@ -1302,7 +1302,7 @@ contract caller {
                 .receiverAddress(receiverAddress)
                 .gasLimit(BigInteger.valueOf(1000000))
                 .gasPrice(BigInteger.ONE)
-                .data(Hex.toHexString(func.encode("0x" + address)))
+                .data(ByteUtil.toHexString(func.encode("0x" + address)))
                 .nonce(2)
                 .build();
     }

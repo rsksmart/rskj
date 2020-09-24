@@ -22,13 +22,68 @@ package org.ethereum.vm;
 import co.rsk.util.TestContract;
 import org.ethereum.vm.program.ProgramResult;
 import org.junit.Assert;
+import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
+import org.powermock.modules.junit4.PowerMockRunnerDelegate;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.math.BigInteger;
+import java.util.Arrays;
+import java.util.Collection;
 
+import static org.powermock.api.mockito.PowerMockito.*;
+
+@RunWith(PowerMockRunner.class)
+@PowerMockRunnerDelegate(Parameterized.class)
+@PrepareForTest(LoggerFactory.class)
 public class ProgramTest {
 
+    private static Logger logger;
+    private static Logger gasLogger;
+
     private static final String LOREM_IPSUM = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.";
+
+    @Parameterized.Parameters
+    public static Collection<Object[]> params() {
+        return Arrays.asList(new Object[][] {
+                { true, true },
+                { true, false },
+                { false, true },
+                { false, false }
+        });
+    }
+
+    private final boolean isLogEnabled;
+    private final boolean isGasLogEnabled;
+
+    public ProgramTest(boolean isLogEnabled, boolean isGasLogEnabled) {
+        this.isLogEnabled = isLogEnabled;
+        this.isGasLogEnabled = isGasLogEnabled;
+    }
+
+    @BeforeClass
+    public static void setUpClass() {
+        spy(LoggerFactory.class);
+
+        logger = mock(Logger.class);
+        when(LoggerFactory.getLogger("VM")).thenReturn(logger);
+
+        gasLogger = mock(Logger.class);
+        when(LoggerFactory.getLogger("gas")).thenReturn(gasLogger);
+    }
+
+    @Before
+    public void setUp() {
+        when(logger.isInfoEnabled()).thenReturn(isLogEnabled);
+        when(logger.isTraceEnabled()).thenReturn(isLogEnabled);
+        when(gasLogger.isInfoEnabled()).thenReturn(isGasLogEnabled);
+    }
 
     @Test
     public void helloContract() {

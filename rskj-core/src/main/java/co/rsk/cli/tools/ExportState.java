@@ -21,9 +21,9 @@ import co.rsk.RskContext;
 import co.rsk.trie.NodeReference;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStore;
-import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.Block;
 import org.ethereum.db.BlockStore;
+import org.ethereum.util.ByteUtil;
 
 import java.io.PrintStream;
 import java.util.Optional;
@@ -58,7 +58,7 @@ public class ExportState {
     }
 
     private static void processTrie(Trie trie, PrintStream writer) {
-        writer.println(Hex.toHexString(trie.toMessage()));
+        writer.println(ByteUtil.toHexString(trie.toMessage()));
 
         NodeReference leftReference = trie.getLeft();
 
@@ -73,7 +73,7 @@ public class ExportState {
                 }
 
                 if (leftTrie.hasLongValue()) {
-                    writer.println(Hex.toHexString(leftTrie.getValue()));
+                    writer.println(ByteUtil.toHexString(leftTrie.getValue()));
                 }
             }
         }
@@ -91,13 +91,13 @@ public class ExportState {
                 }
 
                 if (rightTrie.hasLongValue()) {
-                    writer.println(Hex.toHexString(rightTrie.getValue()));
+                    writer.println(ByteUtil.toHexString(rightTrie.getValue()));
                 }
             }
         }
 
         if (trie.hasLongValue()) {
-            writer.println(Hex.toHexString(trie.getValue()));
+            writer.println(ByteUtil.toHexString(trie.getValue()));
         }
     }
 }

@@ -23,6 +23,7 @@ import org.ethereum.config.Constants;
 import org.ethereum.core.Account;
 import org.ethereum.core.ImmutableTransaction;
 import org.ethereum.core.Transaction;
+import org.ethereum.util.ByteUtil;
 
 import java.math.BigInteger;
 
@@ -92,7 +93,7 @@ public class TransactionBuilder {
 
     public Transaction build() {
         Transaction tx = new Transaction(
-                receiver != null ? Hex.toHexString(receiver.getAddress().getBytes()) : (receiverAddress != null ? Hex.toHexString(receiverAddress) : null),
+                receiver != null ? ByteUtil.toHexString(receiver.getAddress().getBytes()) : (receiverAddress != null ? ByteUtil.toHexString(receiverAddress) : null),
                 value, nonce, gasPrice, gasLimit, data, Constants.REGTEST_CHAIN_ID);
         tx.sign(sender.getEcKey().getPrivKeyBytes());
 

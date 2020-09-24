@@ -26,6 +26,7 @@ import co.rsk.core.bc.*;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.db.RepositorySnapshot;
 import co.rsk.db.StateRootHandler;
+import co.rsk.net.TransactionGateway;
 import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
 import co.rsk.rpc.ExecutionBlockRetriever;
@@ -43,7 +44,6 @@ import co.rsk.trie.TrieConverter;
 import co.rsk.trie.TrieStore;
 import co.rsk.validators.BlockUnclesValidationRule;
 import co.rsk.validators.ProofOfWorkRule;
-import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.Keccak256Helper;
@@ -65,6 +65,7 @@ import org.ethereum.rpc.Web3Impl;
 import org.ethereum.rpc.Web3Mocks;
 import org.ethereum.sync.SyncPool;
 import org.ethereum.util.BuildInfo;
+import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.Assert;
 import org.junit.Test;
@@ -92,8 +93,9 @@ public class TransactionModuleTest {
 
         TransactionPool transactionPool = new TransactionPoolImpl(config, repositoryLocator, blockStore, blockFactory, null, buildTransactionExecutorFactory(blockStore, null, world.getBlockTxSignatureCache()),
                 world.getReceivedTxSignatureCache(), 10, 100);
+        TransactionGateway transactionGateway = new TransactionGateway(new SimpleChannelManager(), transactionPool);
 
-        Web3Impl web3 = createEnvironment(blockchain, null, trieStore, transactionPool, blockStore, false, world.getBlockTxSignatureCache());
+        Web3Impl web3 = createEnvironment(blockchain, null, trieStore, transactionPool, blockStore, false, world.getBlockTxSignatureCache(), transactionGateway);
 
         String tx = sendTransaction(web3, repository);
 
@@ -118,8 +120,10 @@ public class TransactionModuleTest {
 
         TransactionPool transactionPool = new TransactionPoolImpl(config, repositoryLocator, blockStore, blockFactory, null, buildTransactionExecutorFactory(blockStore, null, world.getBlockTxSignatureCache()),
                 world.getReceivedTxSignatureCache(), 10, 100);
+        TransactionGateway transactionGateway = new TransactionGateway(new SimpleChannelManager(), transactionPool);
 
-        Web3Impl web3 = createEnvironment(blockchain, null, trieStore, transactionPool, blockStore, true, world.getBlockTxSignatureCache());
+
+        Web3Impl web3 = createEnvironment(blockchain, null, trieStore, transactionPool, blockStore, true, world.getBlockTxSignatureCache(), transactionGateway);
 
         String tx = sendTransaction(web3, repository);
 
@@ -150,8 +154,9 @@ public class TransactionModuleTest {
         BlockStore blockStore = world.getBlockStore();
 
         TransactionPool transactionPool = world.getTransactionPool();
+        TransactionGateway transactionGateway = new TransactionGateway(new SimpleChannelManager(), transactionPool);
 
-        Web3Impl web3 = createEnvironment(blockchain, mainchainView, receiptStore, transactionPool, blockStore, true, stateRootHandler, repositoryLocator, world.getBlockTxSignatureCache());
+        Web3Impl web3 = createEnvironment(blockchain, mainchainView, receiptStore, transactionPool, blockStore, true, stateRootHandler, repositoryLocator, world.getBlockTxSignatureCache(), transactionGateway);
 
         for (int i = 1; i < 100; i++) {
             String tx = sendTransaction(web3, repositoryLocator.snapshotAt(blockchain.getBestBlock().getHeader()));
@@ -180,8 +185,9 @@ public class TransactionModuleTest {
 
         TransactionPool transactionPool = new TransactionPoolImpl(config, repositoryLocator, blockStore, blockFactory, null, buildTransactionExecutorFactory(blockStore, receiptStore, world.getBlockTxSignatureCache()),
                 world.getReceivedTxSignatureCache(), 10, 100);
+        TransactionGateway transactionGateway = new TransactionGateway(new SimpleChannelManager(), transactionPool);
 
-        Web3Impl web3 = createEnvironment(blockchain, receiptStore, trieStore, transactionPool, blockStore, true, world.getBlockTxSignatureCache());
+        Web3Impl web3 = createEnvironment(blockchain, receiptStore, trieStore, transactionPool, blockStore, true, world.getBlockTxSignatureCache(), transactionGateway);
 
         String txHash = sendRawTransaction(web3);
 
@@ -208,8 +214,9 @@ public class TransactionModuleTest {
 
         TransactionPool transactionPool = new TransactionPoolImpl(config, repositoryLocator, blockStore, blockFactory, null, buildTransactionExecutorFactory(blockStore, receiptStore, world.getBlockTxSignatureCache()),
                 world.getReceivedTxSignatureCache(), 10, 100);
+        TransactionGateway transactionGateway = new TransactionGateway(new SimpleChannelManager(), transactionPool);
 
-        Web3Impl web3 = createEnvironment(blockchain, receiptStore, trieStore, transactionPool, blockStore, false, world.getBlockTxSignatureCache());
+        Web3Impl web3 = createEnvironment(blockchain, receiptStore, trieStore, transactionPool, blockStore, false, world.getBlockTxSignatureCache(), transactionGateway);
 
         String txHash = sendRawTransaction(web3);
 
@@ -231,7 +238,7 @@ public class TransactionModuleTest {
                 .nonce(0)
                 .build();
 
-        String rawData = Hex.toHexString(tx.getEncoded());
+        String rawData = ByteUtil.toHexString(tx.getEncoded());
 
         return web3.eth_sendRawTransaction(rawData);
     }
@@ -281,7 +288,8 @@ public class TransactionModuleTest {
                                        TransactionPool transactionPool,
                                        BlockStore blockStore,
                                        boolean mineInstant,
-                                       BlockTxSignatureCache signatureCache) {
+                                       BlockTxSignatureCache signatureCache,
+                                       TransactionGateway transactionGateway) {
         StateRootHandler stateRootHandler = new StateRootHandler(
                 config.getActivationConfig(),
                 new TrieConverter(),
@@ -296,10 +304,11 @@ public class TransactionModuleTest {
                 mineInstant,
                 stateRootHandler,
                 new RepositoryLocator(store, stateRootHandler),
-                signatureCache);
+                signatureCache,
+                transactionGateway);
     }
 
-    private Web3Impl createEnvironment(Blockchain blockchain, MiningMainchainView mainchainView, ReceiptStore receiptStore, TransactionPool transactionPool, BlockStore blockStore, boolean mineInstant, StateRootHandler stateRootHandler, RepositoryLocator repositoryLocator, BlockTxSignatureCache signatureCache) {
+    private Web3Impl createEnvironment(Blockchain blockchain, MiningMainchainView mainchainView, ReceiptStore receiptStore, TransactionPool transactionPool, BlockStore blockStore, boolean mineInstant, StateRootHandler stateRootHandler, RepositoryLocator repositoryLocator, BlockTxSignatureCache signatureCache, TransactionGateway transactionGateway) {
         transactionPool.processBest(blockchain.getBestBlock());
 
         ConfigCapabilities configCapabilities = new SimpleConfigCapabilities();
@@ -316,7 +325,7 @@ public class TransactionModuleTest {
                                 null
                         )
                 ),
-                transactionPool,
+                transactionGateway,
                 compositeEthereumListener,
                 blockchain
         );
@@ -367,9 +376,9 @@ public class TransactionModuleTest {
         );
 
         if (mineInstant) {
-            transactionModule = new EthModuleTransactionInstant(config.getNetworkConstants(), wallet, transactionPool, minerServer, minerClient, blockchain);
+            transactionModule = new EthModuleTransactionInstant(config.getNetworkConstants(), wallet, transactionPool, minerServer, minerClient, blockchain, transactionGateway);
         } else {
-            transactionModule = new EthModuleTransactionBase(config.getNetworkConstants(), wallet, transactionPool);
+            transactionModule = new EthModuleTransactionBase(config.getNetworkConstants(), wallet, transactionPool, transactionGateway);
         }
 
         final RepositoryBtcBlockStoreWithCache.Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(

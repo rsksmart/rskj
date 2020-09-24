@@ -26,9 +26,9 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.metrics.profilers.Metric;
 import co.rsk.metrics.profilers.Profiler;
 import co.rsk.metrics.profilers.ProfilerFactory;
-import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.db.ByteArrayWrapper;
+import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
 
 import javax.annotation.Nullable;
@@ -1378,7 +1378,7 @@ public class Trie {
 
     private String printParam(String s, String name, byte[] param) {
         if (param != null) {
-            s += name + ": " + Hex.toHexString(param) + "\n";
+            s += name + ": " + ByteUtil.toHexString(param) + "\n";
         }
         return s;
     }

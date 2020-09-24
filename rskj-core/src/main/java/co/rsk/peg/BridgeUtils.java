@@ -19,7 +19,9 @@
 package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.*;
+import co.rsk.bitcoinj.crypto.TransactionSignature;
 import co.rsk.bitcoinj.script.Script;
+import co.rsk.bitcoinj.script.ScriptChunk;
 import co.rsk.bitcoinj.wallet.Wallet;
 import co.rsk.config.BridgeConstants;
 import co.rsk.core.RskAddress;
@@ -35,7 +37,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.math.BigInteger;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
 
 /**
  * @author Oscar Guindzberg
@@ -174,6 +179,29 @@ public class BridgeUtils {
         return moveFromRetiring && moveToActive;
     }
 
+    /**
+     * Return the amount of missing signatures for a tx.
+     * @param btcTx The btc tx to check
+     * @return 0 if was signed by the required number of federators, amount of missing signatures otherwise
+     */
+    public static int countMissingSignatures(Context btcContext, BtcTransaction btcTx) {
+        // When the tx is constructed OP_0 are placed where signature should go.
+        Context.propagate(btcContext);
+        int unsigned = 0;
+
+        for (TransactionInput input : btcTx.getInputs()) {
+            Script scriptSig = input.getScriptSig();
+            List<ScriptChunk> chunks = scriptSig.getChunks();
+            for (int i = 1; i < chunks.size() - 1; i++) {
+                ScriptChunk chunk = chunks.get(i);
+                if (!chunk.isOpCode() && chunk.data.length == 0) {
+                    unsigned++;
+                }
+            }
+        }
+        return unsigned;
+    }
+
     public static Address recoverBtcAddressFromEthTransaction(org.ethereum.core.Transaction tx, NetworkParameters networkParameters) {
         org.ethereum.crypto.ECKey key = tx.getKey();
         byte[] pubKey = key.getPubKey(true);
@@ -285,5 +313,30 @@ public class BridgeUtils {
                 throw new VerificationException.EmptyInputsOrOutputs();
             }
         }
+    }
+
+    /**
+     * Check if the p2sh multisig scriptsig of the given input was already signed by federatorPublicKey.
+     * @param federatorPublicKey The key that may have been used to sign
+     * @param sighash the sighash that corresponds to the input
+     * @param input The input
+     * @return true if the input was already signed by the specified key, false otherwise.
+     */
+    public static boolean isInputSignedByThisFederator(BtcECKey federatorPublicKey, Sha256Hash sighash, TransactionInput input) {
+        List<ScriptChunk> chunks = input.getScriptSig().getChunks();
+        for (int j = 1; j < chunks.size() - 1; j++) {
+            ScriptChunk chunk = chunks.get(j);
+
+            if (chunk.data.length == 0) {
+                continue;
+            }
+
+            TransactionSignature sig2 = TransactionSignature.decodeFromBitcoin(chunk.data, false, false);
+
+            if (federatorPublicKey.verify(sighash, sig2)) {
+                return true;
+            }
+        }
+        return false;
     }
 }

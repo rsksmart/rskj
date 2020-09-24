@@ -19,19 +19,17 @@
 
 package org.ethereum.core;
 
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.rpc.TypeConverter;
-
+import org.ethereum.util.ByteUtil;
 import org.junit.Test;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.bouncycastle.util.encoders.Hex;
-
 import java.util.Arrays;
 
-import static org.junit.Assert.assertEquals;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 
@@ -68,16 +66,16 @@ public class TransactionReceiptTest {
         assertEquals(1, txReceipt.getLogInfoList().size());
 
         assertEquals("966265cc49fa1f10f0445f035258d116563931022a3570a640af5d73a214a8da",
-                Hex.toHexString(txReceipt.getPostTxState()));
+                ByteUtil.toHexString(txReceipt.getPostTxState()));
 
         assertEquals("2b6f",
-                Hex.toHexString(txReceipt.getCumulativeGas()));
+                ByteUtil.toHexString(txReceipt.getCumulativeGas()));
 
         assertEquals("02",
-                Hex.toHexString(txReceipt.getGasUsed()));
+                ByteUtil.toHexString(txReceipt.getGasUsed()));
 
         assertEquals("00000010000000010000000000008000000000000000000000000000000000000000000000000000000000020000000000000014000000000400000000000440",
-                Hex.toHexString(txReceipt.getBloomFilter().getData()));
+                ByteUtil.toHexString(txReceipt.getBloomFilter().getData()));
 
         logger.info("{}", txReceipt);
     }

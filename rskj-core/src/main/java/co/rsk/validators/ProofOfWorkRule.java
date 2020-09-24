@@ -45,7 +45,6 @@ import org.slf4j.LoggerFactory;
 
 import java.math.BigInteger;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -120,7 +119,7 @@ public class ProofOfWorkRule implements BlockHeaderValidationRule, BlockValidati
         if (isFallbackMiningPossibleAndBlockSigned(header)) {
             boolean isValidFallbackSignature = validFallbackBlockSignature(constants, header, header.getBitcoinMergedMiningHeader());
             if (!isValidFallbackSignature) {
-                logger.warn("Fallback signature failed. Header {}", header.getShortHash());
+                logger.warn("Fallback signature failed. Header {}", header.getPrintableHash());
             }
             return isValidFallbackSignature;
         }
@@ -134,19 +133,19 @@ public class ProofOfWorkRule implements BlockHeaderValidationRule, BlockValidati
                 mpValidator = new GenesisMerkleProofValidator(bitcoinNetworkParameters, header.getBitcoinMergedMiningMerkleProof());
             }
         } catch (RuntimeException ex) {
-            logger.warn("Merkle proof can't be validated. Header {}", header.getShortHash(), ex);
+            logger.warn("Merkle proof can't be validated. Header {}", header.getPrintableHash(), ex);
             return false;
         }
 
         byte[] bitcoinMergedMiningCoinbaseTransactionCompressed = header.getBitcoinMergedMiningCoinbaseTransaction();
 
         if (bitcoinMergedMiningCoinbaseTransactionCompressed == null) {
-            logger.warn("Compressed coinbase transaction does not exist. Header {}", header.getShortHash());
+            logger.warn("Compressed coinbase transaction does not exist. Header {}", header.getPrintableHash());
             return false;
         }
 
         if (header.getBitcoinMergedMiningHeader() == null) {
-            logger.warn("Bitcoin merged mining header does not exist. Header {}", header.getShortHash());
+            logger.warn("Bitcoin merged mining header does not exist. Header {}", header.getPrintableHash());
             return false;
         }
 
@@ -170,10 +169,7 @@ public class ProofOfWorkRule implements BlockHeaderValidationRule, BlockValidati
 
         byte[] expectedCoinbaseMessageBytes = org.bouncycastle.util.Arrays.concatenate(RskMiningConstants.RSK_TAG, header.getHashForMergedMining());
 
-        List<Byte> bitcoinMergedMiningCoinbaseTransactionTailAsList = ListArrayUtil.asByteList(bitcoinMergedMiningCoinbaseTransactionTail);
-        List<Byte> expectedCoinbaseMessageBytesAsList = ListArrayUtil.asByteList(expectedCoinbaseMessageBytes);
-
-        int rskTagPosition = Collections.lastIndexOfSubList(bitcoinMergedMiningCoinbaseTransactionTailAsList, expectedCoinbaseMessageBytesAsList);
+        int rskTagPosition = ListArrayUtil.lastIndexOfSubList(bitcoinMergedMiningCoinbaseTransactionTail, expectedCoinbaseMessageBytes);
         if (rskTagPosition == -1) {
             logger.warn("bitcoin coinbase transaction tail message does not contain expected" +
                     " RSKBLOCK:RskBlockHeaderHash. Expected: {} . Actual: {} .",
@@ -192,8 +188,7 @@ public class ProofOfWorkRule implements BlockHeaderValidationRule, BlockValidati
             return false;
         }
 
-        List<Byte> rskTagAsList = ListArrayUtil.asByteList(RskMiningConstants.RSK_TAG);
-        int lastTag = Collections.lastIndexOfSubList(bitcoinMergedMiningCoinbaseTransactionTailAsList, rskTagAsList);
+        int lastTag = ListArrayUtil.lastIndexOfSubList(bitcoinMergedMiningCoinbaseTransactionTail, RskMiningConstants.RSK_TAG);
         if (rskTagPosition !=lastTag) {
             logger.warn("The valid RSK tag is not the last RSK tag. Tail: {}.", Arrays.toString(bitcoinMergedMiningCoinbaseTransactionTail));
             return false;

@@ -46,8 +46,8 @@ import org.bouncycastle.crypto.signers.ECDSASigner;
 import org.bouncycastle.crypto.signers.HMacDSAKCalculator;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.util.BigIntegers;
-import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.signature.Secp256k1;
+import org.ethereum.util.ByteUtil;
 
 import javax.annotation.Nullable;
 import java.math.BigInteger;
@@ -332,7 +332,7 @@ public class ECKey {
 
     public String toString() {
         StringBuilder b = new StringBuilder();
-        b.append("pub:").append(Hex.toHexString(pub.getEncoded(false)));
+        b.append("pub:").append(ByteUtil.toHexString(pub.getEncoded(false)));
         return b.toString();
     }
 

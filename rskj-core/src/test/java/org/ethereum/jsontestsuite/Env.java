@@ -19,9 +19,10 @@
 
 package org.ethereum.jsontestsuite;
 
-import org.json.simple.JSONObject;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.util.ByteUtil;
+import org.json.simple.JSONObject;
 
 /**
  * @author Roman Mandeleil
@@ -103,12 +104,12 @@ public class Env {
     @Override
     public String toString() {
         return "Env{" +
-                "currentCoinbase=" + Hex.toHexString(currentCoinbase) +
-                ", currentDifficulty=" + Hex.toHexString(currentDifficulty) +
-                ", currentGasLimit=" + Hex.toHexString(currentGasLimit) +
-                ", currentNumber=" + Hex.toHexString(currentNumber) +
-                ", currentTimestamp=" + Hex.toHexString(currentTimestamp) +
-                ", previousHash=" + Hex.toHexString(previousHash) +
+                "currentCoinbase=" + ByteUtil.toHexString(currentCoinbase) +
+                ", currentDifficulty=" + ByteUtil.toHexString(currentDifficulty) +
+                ", currentGasLimit=" + ByteUtil.toHexString(currentGasLimit) +
+                ", currentNumber=" + ByteUtil.toHexString(currentNumber) +
+                ", currentTimestamp=" + ByteUtil.toHexString(currentTimestamp) +
+                ", previousHash=" + ByteUtil.toHexString(previousHash) +
                 '}';
     }
 }

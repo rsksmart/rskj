@@ -20,7 +20,6 @@ import co.rsk.scoring.PeerScoringManager;
 import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.trie.TrieConverter;
 import co.rsk.validators.*;
-import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
@@ -28,6 +27,7 @@ import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.BlockStore;
 import org.ethereum.net.server.ChannelManager;
 import org.ethereum.rpc.Simples.SimpleChannelManager;
+import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RskMockFactory;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
@@ -38,8 +38,6 @@ import java.math.BigInteger;
 import java.time.Duration;
 import java.util.*;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -1115,7 +1113,7 @@ public class SyncProcessorTest {
     }
 
     private static Transaction createTransaction(Account sender, Account receiver, BigInteger value, BigInteger nonce) {
-        String toAddress = Hex.toHexString(receiver.getAddress().getBytes());
+        String toAddress = ByteUtil.toHexString(receiver.getAddress().getBytes());
         byte[] privateKeyBytes = sender.getEcKey().getPrivKeyBytes();
         //#mish double gaslimit for storage rent testing
         Transaction tx = new Transaction(toAddress, value, nonce, BigInteger.ONE, BigInteger.valueOf(42000), config.getNetworkConstants().getChainId());

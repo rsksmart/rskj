@@ -20,9 +20,9 @@
 package org.ethereum.core;
 
 import co.rsk.core.RskAddress;
-import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
 import org.ethereum.crypto.Keccak256Helper;
+import org.ethereum.util.ByteUtil;
 import org.junit.Assert;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -61,16 +61,16 @@ public class ABITest {
         CallTransaction.Function function = CallTransaction.Function.fromJsonInterface(funcJson1);
 
         Assert.assertEquals("5c19a95c0000000000000000000000001234567890abcdef1234567890abcdef12345678",
-                Hex.toHexString(function.encode("1234567890abcdef1234567890abcdef12345678")));
+                ByteUtil.toHexString(function.encode("1234567890abcdef1234567890abcdef12345678")));
         Assert.assertEquals("5c19a95c0000000000000000000000001234567890abcdef1234567890abcdef12345678",
-                Hex.toHexString(function.encode("0x1234567890abcdef1234567890abcdef12345678")));
+                ByteUtil.toHexString(function.encode("0x1234567890abcdef1234567890abcdef12345678")));
         try {
-            Hex.toHexString(function.encode("0xa1234567890abcdef1234567890abcdef12345678"));
+            ByteUtil.toHexString(function.encode("0xa1234567890abcdef1234567890abcdef12345678"));
             Assert.assertTrue(false);
         } catch (Exception e) {}
 
         try {
-            Hex.toHexString(function.encode("blabla"));
+            ByteUtil.toHexString(function.encode("blabla"));
             Assert.assertTrue(false);
         } catch (Exception e) {}
     }
@@ -94,7 +94,7 @@ public class ABITest {
                 new RskAddress("86e0497e32a8e1d79fe38ab87dc80140df5470d9"), 0, function, Constants.REGTEST_CHAIN_ID);
         ctx.sign(Keccak256Helper.keccak256("974f963ee4571e86e5f9bc3b493e453db9c15e5bd19829a4ef9a790de0da0015".getBytes()));
 
-        Assert.assertEquals("91888f2e", Hex.toHexString(ctx.getData()));
+        Assert.assertEquals("91888f2e", ByteUtil.toHexString(ctx.getData()));
     }
 
     static String funcJson3 = "{\n" +
@@ -125,7 +125,7 @@ public class ABITest {
                 "000000000000000000000000000000000000000000000000000000000000007b61" +
                 "000000000000000000000000000000000000000000000000000000000000007468" +
                 "6520737472696e6700000000000000000000000000000000000000000000",
-                Hex.toHexString(function.encode(-1234, 1234, 123, "a", "the string")));
+                ByteUtil.toHexString(function.encode(-1234, 1234, 123, "a", "the string")));
     }
 
     static String funcJson4 = "{\n" +
@@ -148,7 +148,7 @@ public class ABITest {
                         "0000000000000000000000000000000000000000000000000000000000000001" +
                         "0000000000000000000000000000000000000000000000000000000000000002" +
                         "0000000000000000000000000000000000000000000000000000000000000003",
-                Hex.toHexString(function.encode(new int[] {1,2,3})));
+                ByteUtil.toHexString(function.encode(new int[] {1,2,3})));
 
         Assert.assertEquals(
                 "d383b9f60000000000000000000000000000000000000000000000000000000000000001" +
@@ -158,7 +158,7 @@ public class ABITest {
                         "0000000000000000000000000000000000000000000000000000000000000002" +
                         "0000000000000000000000000000000000000000000000000000000000000004" +
                         "0000000000000000000000000000000000000000000000000000000000000005",
-                Hex.toHexString(function.encode(new int[]{1, 2, 3}, new int[]{4, 5})));
+                ByteUtil.toHexString(function.encode(new int[]{1, 2, 3}, new int[]{4, 5})));
 
     }
 
@@ -186,7 +186,7 @@ public class ABITest {
                         "00000000000000000000000000000000000000000000000000000000000000de" +
                         "0000000000000000000000000000000000000000000000000000000000000003" +
                         "abcdef0000000000000000000000000000000000000000000000000000000000",
-            Hex.toHexString(function.encode(111, new byte[] {(byte) 0xab, (byte) 0xcd, (byte) 0xef}, 222)));
+            ByteUtil.toHexString(function.encode(111, new byte[] {(byte) 0xab, (byte) 0xcd, (byte) 0xef}, 222)));
 
     }
 

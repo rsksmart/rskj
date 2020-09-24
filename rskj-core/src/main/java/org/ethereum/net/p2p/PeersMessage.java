@@ -23,11 +23,8 @@ import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
 
-import org.bouncycastle.util.encoders.Hex;
-
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -67,7 +64,7 @@ public class PeersMessage extends P2pMessage {
                 int peerPort = ByteUtil.byteArrayToInt(portBytes);
                 InetAddress address = InetAddress.getByAddress(ipBytes);
 
-                String peerId = peerIdRaw == null ? "" : Hex.toHexString(peerIdRaw);
+                String peerId = peerIdRaw == null ? "" : ByteUtil.toHexString(peerIdRaw);
                 PeerConnectionData peer = new PeerConnectionData(address, peerPort, peerId);
                 peers.add(peer);
             } catch (UnknownHostException e) {

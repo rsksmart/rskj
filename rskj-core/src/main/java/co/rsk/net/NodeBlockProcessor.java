@@ -25,9 +25,9 @@ import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.BlockIdentifier;
 import org.ethereum.core.Blockchain;
+import org.ethereum.util.ByteUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.bouncycastle.util.encoders.Hex;
 
 import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
@@ -137,7 +137,7 @@ public class NodeBlockProcessor implements BlockProcessor {
      */
     @Override
     public void processGetBlock(@Nonnull final Peer sender, @Nonnull final byte[] hash) {
-        logger.trace("Processing get block {} from {}", Hex.toHexString(hash).substring(0, 10), sender.getPeerNodeID());
+        logger.trace("Processing get block {} from {}", ByteUtil.toHexString(hash), sender.getPeerNodeID());
         final Block block = blockSyncService.getBlockFromStoreOrBlockchain(hash);
 
         if (block == null) {
@@ -157,7 +157,7 @@ public class NodeBlockProcessor implements BlockProcessor {
      */
     @Override
     public void processBlockRequest(@Nonnull final Peer sender, long requestId, @Nonnull final byte[] hash) {
-        logger.trace("Processing get block by hash {} {} from {}", requestId, Hex.toHexString(hash).substring(0, 10), sender.getPeerNodeID());
+        logger.trace("Processing get block by hash {} {} from {}", requestId, ByteUtil.toHexString(hash), sender.getPeerNodeID());
         final Block block = blockSyncService.getBlockFromStoreOrBlockchain(hash);
 
         if (block == null) {
@@ -178,7 +178,7 @@ public class NodeBlockProcessor implements BlockProcessor {
      */
     @Override
     public void processBlockHeadersRequest(@Nonnull final Peer sender, long requestId, @Nonnull final byte[] hash, int count) {
-        logger.trace("Processing headers request {} {} from {}", requestId, Hex.toHexString(hash).substring(0, 10), sender.getPeerNodeID());
+        logger.trace("Processing headers request {} {} from {}", requestId, ByteUtil.toHexString(hash), sender.getPeerNodeID());
 
         if (count > syncConfiguration.getChunkSize()) {
             logger.trace("Headers request from {} failed because size {}", sender.getPeerNodeID(), count);
@@ -218,7 +218,7 @@ public class NodeBlockProcessor implements BlockProcessor {
      */
     @Override
     public void processBodyRequest(@Nonnull final Peer sender, long requestId, @Nonnull final byte[] hash) {
-        logger.trace("Processing body request {} {} from {}", requestId, Hex.toHexString(hash).substring(0, 10), sender.getPeerNodeID());
+        logger.trace("Processing body request {} {} from {}", requestId, ByteUtil.toHexString(hash), sender.getPeerNodeID());
         final Block block = blockSyncService.getBlockFromStoreOrBlockchain(hash);
 
         if (block == null) {
