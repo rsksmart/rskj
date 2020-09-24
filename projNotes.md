@@ -107,7 +107,7 @@ Handling CALLs
 Eth Module
 - The `eth_estimateGas()` method has been modified to return the combined execution and rent gas consumed (via a reversible transaction, local call setting).
 
-- Example: this can be testted by running the node in regtest mode and then using RPC
+- Example: this can be tested by running the node in regtest mode and then using RPC
 
 ```
 root@5429dcd447b9:~/# curl localhost:4444
@@ -130,7 +130,9 @@ root@5429dcd447b9:~/# curl localhost:4444
 
 ```
 
-- **WARNING** This method should actually return `2*max(executionGasUsed(),rentGasUsed())`. Otherwise, if a transaction consumes 24K in execution and 10k for rent and we pass it 34K based on the estimate, it will OOG. This is because the gasLimit 34 will be split equally between execution and rent gas limits (17k each, not enough for execution).
+- **Safer estimate** The value obtained from `eth_estimateGas()` cannot actually be used to set the gas limit for a transaction. This is because the gaslimit of a wire transaction is divided internally (and equally) between separate *execution gas* and *rentgas* limits. A more reliable estimate should actually return `2*max(executionGasUsed(),rentGasUsed())`. Otherwise, if a transaction consumes 24K in execution and 10k for rent and we pass it 34K based on the estimate, it will OOG. This is because the gasLimit 34 will be split equally between execution and rent gas limits (17k each, not enough for execution). For this purpose, use the new RPC method `eth_estimateSafeGas()`.
+
+
 
 
 ### In source documentation

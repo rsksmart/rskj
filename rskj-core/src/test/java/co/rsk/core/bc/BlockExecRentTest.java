@@ -131,7 +131,6 @@ public class BlockExecRentTest {
         Block block = getBlockWithOneTransaction(); // this changes the best block
         Block parent = blockchain.getBestBlock();
 
-
         Transaction tx = block.getTransactionsList().get(0);
         RskAddress account = tx.getSender();
         
@@ -201,7 +200,7 @@ public class BlockExecRentTest {
         RskAddress contractAddr = tx.getContractAddress();
         System.out.println("\nSender: " + account);
         System.out.println("Contract: " + contractAddr);
-        //System.out.println("TX Data: 0x" + Hex.toHexString(tx.getData()));
+        System.out.println("TX Data: 0x" + Hex.toHexString(tx.getData()));
         System.out.println("TX value: " + tx.getValue());
 
         when(activationConfig.isActive(RSKIP125)).thenReturn(false);

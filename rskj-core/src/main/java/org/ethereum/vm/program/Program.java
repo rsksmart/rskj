@@ -1754,17 +1754,19 @@ public class Program {
 
     /* #mish Add nodes accessed by or created in a transaction to the maps
     * "accessedNodes" or "createdNodes" in programResult. 
-     * Methods compute outstanding rent due for exsiting nodes and 6 months advance for new nodes.
-     * node info obtained for each provided RSK addr via methods defined in mutableRepository
-     * The method retreives nodes containing account state and for contracts: code and storage root. 
+     * Methods compute outstanding rent due for existing trie nodes and 6 months advance for new nodes.
+     * For each RSK addr provided, node info is obtained via methods defined in mutableRepository
+     * 
+     * The method retrieves nodes containing account state. For contracts it also collects info on code and storage root. 
      * This should be called the first time any RSK addr is referenced in a TX or a child process
-     * Note: Storage nodes accessed via SLOAD or SSTORE are tracked using a different method.
+     * Note: Storage nodes accessed via SLOAD or SSTORE are tracked using a different method (`accessedStorageNodeAdder`)
     */
     public void accessedNodeAdder(RskAddress addr, Repository repository){
         long rd = 0; // initalize rent due to 0
         // account should already exist for this method (for new nodes use createdNodeAdder) 
-        // If not charge a penalty (same as 6 months rent for 0 value length)
-        // for IO costs of looking up non-existent node and exit (increase cost of IO attacks via wild goose chase)
+        // If not charge a penalty (same as 6 months rent, computed for 0 value length, which still has overhead of 128 bytes)
+        // for IO costs of looking up non-existent node and exit (ToDo: should this be cached, the non-existent addr?)
+        // This penalty increases cost of IO attacks, without affecting block level gas usage (which is execution gas only)
         if (!repository.isExist(addr)){
             rd = GasCost.calculateStorageRent(new Uint24(0), GasCost.SIX_MONTHS);
             spendRentGas(rd, "IO penalty for non-existent account lookup");
