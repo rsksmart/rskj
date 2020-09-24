@@ -19,9 +19,9 @@
 
 package org.ethereum.jsontestsuite;
 
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.util.ByteUtil;
 import org.json.simple.JSONObject;
-import org.bouncycastle.util.encoders.Hex;
 
 /**
  * @author Roman Mandeleil
@@ -133,15 +133,15 @@ public class Exec {
     @Override
     public String toString() {
         return "Exec{" +
-                "address=" + Hex.toHexString(address) +
-                ", caller=" + Hex.toHexString(caller) +
-                ", data=" + Hex.toHexString(data) +
-                ", code=" + Hex.toHexString(data) +
-                ", gas=" + Hex.toHexString(gas) +
-                ", rentGas=" + Hex.toHexString(rentGas) +
-                ", gasPrice=" + Hex.toHexString(gasPrice) +
-                ", origin=" + Hex.toHexString(origin) +
-                ", value=" + Hex.toHexString(value) +
+                "address=" + ByteUtil.toHexString(address) +
+                ", caller=" + ByteUtil.toHexString(caller) +
+                ", data=" + ByteUtil.toHexString(data) +
+                ", code=" + ByteUtil.toHexString(data) +
+                ", gas=" + ByteUtil.toHexString(gas) +
+                ", rentGas=" + ByteUtil.toHexString(rentGas) +
+                ", gasPrice=" + ByteUtil.toHexString(gasPrice) +
+                ", origin=" + ByteUtil.toHexString(origin) +
+                ", value=" + ByteUtil.toHexString(value) +
                 '}';
     }
 }

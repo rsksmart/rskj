@@ -24,7 +24,6 @@ import com.fasterxml.jackson.annotation.JsonValue;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.Utils;
 import org.ethereum.vm.DataWord;
-import org.bouncycastle.util.encoders.Hex;
 
 import java.lang.reflect.Array;
 import java.math.BigInteger;
@@ -365,7 +364,7 @@ public abstract class SolidityType {
             byte[] addr = super.encode(value);
             for (int i = 0; i < 12; i++) {
                 if (addr[i] != 0) {
-                    throw new RuntimeException("Invalid address (should be 20 bytes length): " + Hex.toHexString(addr));
+                    throw new RuntimeException("Invalid address (should be 20 bytes length): " + ByteUtil.toHexString(addr));
                 }
             }
             return addr;

@@ -27,11 +27,12 @@ public class Start {
     private static Logger logger = LoggerFactory.getLogger("start");
 
     public static void main(String[] args) {
+        Thread.currentThread().setName("main");
         RskContext ctx = new RskContext(args);
         NodeRunner runner = ctx.getNodeRunner();
         try {
             runner.run();
-            Runtime.getRuntime().addShutdownHook(new Thread(runner::stop));
+            Runtime.getRuntime().addShutdownHook(new Thread(runner::stop, "stopper"));
         } catch (Exception e) {
             logger.error("The RSK node main thread failed, closing program", e);
             runner.stop();

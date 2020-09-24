@@ -2,7 +2,7 @@ package co.rsk.scoring;
 
 import co.rsk.net.NodeID;
 import com.google.common.annotations.VisibleForTesting;
-import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.util.ByteUtil;
 
 import javax.annotation.concurrent.GuardedBy;
 import java.net.InetAddress;
@@ -189,7 +189,7 @@ public class PeerScoringManager {
         synchronized (accessLock) {
             List<PeerScoringInformation> list = new ArrayList<>(this.peersByNodeID.size() + this.peersByAddress.size());
 
-            list.addAll(this.peersByNodeID.entrySet().stream().map(entry -> new PeerScoringInformation(entry.getValue(), Hex.toHexString(entry.getKey().getID()).substring(0, 8), "node")).collect(Collectors.toList()));
+            list.addAll(this.peersByNodeID.entrySet().stream().map(entry -> new PeerScoringInformation(entry.getValue(), ByteUtil.toHexString(entry.getKey().getID()).substring(0, 8), "node")).collect(Collectors.toList()));
             list.addAll(this.peersByAddress.entrySet().stream().map(entry -> new PeerScoringInformation(entry.getValue(), entry.getKey().getHostAddress(), "address")).collect(Collectors.toList()));
 
             return list;

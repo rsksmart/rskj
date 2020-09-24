@@ -52,7 +52,7 @@ import org.ethereum.crypto.HashUtil;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.MutableRepository;
 import org.ethereum.rpc.TypeConverter;
-import org.ethereum.solidity.SolidityType;
+import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.VM;
 import org.ethereum.vm.program.Program;
@@ -2842,7 +2842,7 @@ public class BridgeTestPowerMock {
         // Encode a call to the bridge's getMinimumLockTxValue function
         // That means first pushing the corresponding encoded ABI storage to memory (MSTORE)
         // and then doing a DELEGATECALL to the corresponding address with the correct parameters
-        String bridgeFunctionHex = Hex.toHexString(Bridge.GET_MINIMUM_LOCK_TX_VALUE.encode());
+        String bridgeFunctionHex = ByteUtil.toHexString(Bridge.GET_MINIMUM_LOCK_TX_VALUE.encode());
         bridgeFunctionHex = String.format("0x%s%s", bridgeFunctionHex, String.join("", Collections.nCopies(32 * 2 - bridgeFunctionHex.length(), "0")));
         String asm = String.format("%s 0x00 MSTORE 0x20 0x30 0x20 0x00 0x0000000000000000000000000000000001000006 0x6000 DELEGATECALL", bridgeFunctionHex);
         int numOps = asm.split(" ").length;
@@ -2890,7 +2890,7 @@ public class BridgeTestPowerMock {
         // Encode a call to the bridge's getMinimumLockTxValue function
         // That means first pushing the corresponding encoded ABI storage to memory (MSTORE)
         // and then doing a DELEGATECALL to the corresponding address with the correct parameters
-        String bridgeFunctionHex = Hex.toHexString(Bridge.GET_MINIMUM_LOCK_TX_VALUE.encode());
+        String bridgeFunctionHex = ByteUtil.toHexString(Bridge.GET_MINIMUM_LOCK_TX_VALUE.encode());
         bridgeFunctionHex = String.format("0x%s%s", bridgeFunctionHex, String.join("", Collections.nCopies(32 * 2 - bridgeFunctionHex.length(), "0")));
         String asm = String.format("%s 0x00 MSTORE 0x20 0x30 0x20 0x00 0x0000000000000000000000000000000001000006 0x6000 DELEGATECALL", bridgeFunctionHex);
         int numOps = asm.split(" ").length;

@@ -27,9 +27,9 @@ import java.util.*;
 
 
 /**
- * @author smishra, May 2020
+ * @author s mishra, May 2020
  * object to keep track of storage rent for nodes created, 
- * accessed or modified during transaction execution 
+ * accessed or modified during transaction execution (see Program and TransactionExecutor Classes )
  */
 public class RentData {
     private Uint24 valueLength;

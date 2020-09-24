@@ -21,7 +21,6 @@ package org.ethereum.jsontestsuite.runners;
 
 import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.config.TestSystemProperties;
-import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.bc.BlockChainImpl;
@@ -33,7 +32,6 @@ import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
 import co.rsk.trie.TrieConverter;
 import co.rsk.trie.TrieStoreImpl;
-import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.*;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.BlockStore;
@@ -64,7 +62,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 
-import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
 import static org.ethereum.util.ByteUtil.byteArrayToLong;
 
 public class StateTestRunner {
@@ -192,7 +189,7 @@ public class StateTestRunner {
 
         logger.info("--------- POST Validation---------");
         List<String> outputResults =
-                OutputValidator.valid(Hex.toHexString(programResult.getHReturn()), stateTestCase.getOut(),vStats);
+                OutputValidator.valid(ByteUtil.toHexString(programResult.getHReturn()), stateTestCase.getOut(),vStats);
 
         List<String> results = new ArrayList<>();
         results.addAll(repoResults);

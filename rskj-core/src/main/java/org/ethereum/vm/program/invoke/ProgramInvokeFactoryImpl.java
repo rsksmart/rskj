@@ -30,7 +30,6 @@ import org.ethereum.vm.DataWord;
 import org.ethereum.vm.program.Program;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.bouncycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
 
@@ -118,20 +117,20 @@ public class ProgramInvokeFactoryImpl implements ProgramInvokeFactory {
                             "gaslimit={}\n",
 
                     addr,
-                    Hex.toHexString(origin),
-                    Hex.toHexString(caller),
+                    ByteUtil.toHexString(origin),
+                    ByteUtil.toHexString(caller),
                     balance,
                     gasPrice,
                     new BigInteger(1, gas).longValue(),
                     new BigInteger(1, rentGas).longValue(),
                     callValue,
-                    Hex.toHexString(data),
-                    Hex.toHexString(lastHash),
-                    Hex.toHexString(coinbase),
+                    ByteUtil.toHexString(data),
+                    ByteUtil.toHexString(lastHash),
+                    ByteUtil.toHexString(coinbase),
                     timestamp,
                     number,
                     txindex,
-                    Hex.toHexString(difficulty),
+                    ByteUtil.toHexString(difficulty),
                     gaslimit);
         }
 
@@ -188,21 +187,21 @@ public class ProgramInvokeFactoryImpl implements ProgramInvokeFactory {
                             "transactionIndex={}\n" +
                             "difficulty={}\n" +
                             "gaslimit={}\n",
-                    Hex.toHexString(address.getLast20Bytes()),
-                    Hex.toHexString(origin.getLast20Bytes()),
-                    Hex.toHexString(caller.getLast20Bytes()),
+                    ByteUtil.toHexString(address.getLast20Bytes()),
+                    ByteUtil.toHexString(origin.getLast20Bytes()),
+                    ByteUtil.toHexString(caller.getLast20Bytes()),
                     balance.toString(),
                     gasPrice.longValue(),
                     agas,
                     aRentGas,
-                    Hex.toHexString(callValue.getNoLeadZeroesData()),
-                    data == null ? "" : Hex.toHexString(data),
-                    Hex.toHexString(lastHash.getData()),
-                    Hex.toHexString(coinbase.getLast20Bytes()),
+                    ByteUtil.toHexString(callValue.getNoLeadZeroesData()),
+                    data == null ? "" : ByteUtil.toHexString(data),
+                    ByteUtil.toHexString(lastHash.getData()),
+                    ByteUtil.toHexString(coinbase.getLast20Bytes()),
                     timestamp.longValue(),
                     number.longValue(),
                     transactionIndex.intValue(),
-                    Hex.toHexString(difficulty.getNoLeadZeroesData()),
+                    ByteUtil.toHexString(difficulty.getNoLeadZeroesData()),
                     gasLimit.bigIntValue());
         }
 

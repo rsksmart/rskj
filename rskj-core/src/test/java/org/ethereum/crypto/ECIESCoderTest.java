@@ -19,10 +19,11 @@
 
 package org.ethereum.crypto;
 
-import org.junit.Assert;
-import org.junit.Test;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.util.ByteUtil;
+import org.junit.Assert;
+import org.junit.Test;
 
 import java.math.BigInteger;
 
@@ -40,7 +41,7 @@ public class ECIESCoderTest {
         } catch (Throwable e) {e.printStackTrace();}
 
         Assert.assertEquals("802b052f8b066640bba94a4fc39d63815c377fced6fcb84d27f791c9921ddf3e9bf0108e298f490812847109cbd778fae393e80323fd643209841a3b7f110397f37ec61d84cea03dcc5e8385db93248584e8af4b4d1c832d8c7453c0089687a700",
-                Hex.toHexString(payload));
+                ByteUtil.toHexString(payload));
     }
 
 
@@ -59,14 +60,14 @@ public class ECIESCoderTest {
             cipher = ECIESCoder.encrypt(pubKeyPoint, payload);
         } catch (Throwable e) {e.printStackTrace();}
 
-        System.out.println(Hex.toHexString(cipher));
+        System.out.println(ByteUtil.toHexString(cipher));
 
         byte[] decrypted_payload = new byte[0];
         try {
             decrypted_payload = ECIESCoder.decrypt(privKey, cipher);
         } catch (Throwable e) {e.printStackTrace();}
 
-        System.out.println(Hex.toHexString(decrypted_payload));
+        System.out.println(ByteUtil.toHexString(decrypted_payload));
     }
 
 }

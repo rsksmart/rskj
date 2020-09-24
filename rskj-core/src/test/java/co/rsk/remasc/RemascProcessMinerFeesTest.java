@@ -51,6 +51,7 @@ import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.BlockStore;
+import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 import org.junit.Before;
@@ -997,7 +998,7 @@ public class RemascProcessMinerFeesTest {
 
         for(Map.Entry<byte[], Coin> entry : otherAccountsBalance.entrySet()) {
             Coin actualBalance = RemascTestRunner.getAccountBalance(repository, entry.getKey());
-            assertEquals("Failed for: " + Hex.toHexString(entry.getKey()), entry.getValue(), actualBalance);
+            assertEquals("Failed for: " + ByteUtil.toHexString(entry.getKey()), entry.getValue(), actualBalance);
         }
     }
 

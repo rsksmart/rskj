@@ -46,7 +46,6 @@ import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.Mockito;
-import org.mockito.invocation.InvocationOnMock;
 
 import javax.annotation.Nonnull;
 import java.math.BigDecimal;
@@ -656,11 +655,11 @@ public class NodeMessageHandlerTest {
 
         handler.processMessage(sender, message);
 
-        Mockito.verify(transactionGateway, times(1)).receiveTransactionsFrom(txs, sender.getPeerNodeID());
+        Mockito.verify(transactionGateway, times(1)).receiveTransactionsFrom(txs, Collections.singleton(sender.getPeerNodeID()));
 
         handler.processMessage(sender2, message);
 
-        Mockito.verify(transactionGateway, times(1)).receiveTransactionsFrom(txs, sender2.getPeerNodeID());
+        Mockito.verify(transactionGateway, times(1)).receiveTransactionsFrom(txs, Collections.singleton(sender2.getPeerNodeID()));
 
         Assert.assertFalse(scoring.isEmpty());
 
@@ -765,11 +764,11 @@ public class NodeMessageHandlerTest {
 
         handler.processMessage(sender, message);
 
-        Mockito.verify(transactionGateway, times(1)).receiveTransactionsFrom(txs, sender.getPeerNodeID());
+        Mockito.verify(transactionGateway, times(1)).receiveTransactionsFrom(txs, Collections.singleton(sender.getPeerNodeID()));
 
         handler.processMessage(sender2, message);
 
-        Mockito.verify(transactionGateway, times(1)).receiveTransactionsFrom(txs, sender2.getPeerNodeID());
+        Mockito.verify(transactionGateway, times(1)).receiveTransactionsFrom(txs, Collections.singleton(sender2.getPeerNodeID()));
     }
 
     @Test

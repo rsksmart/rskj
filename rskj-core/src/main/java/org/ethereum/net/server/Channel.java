@@ -126,7 +126,7 @@ public class Channel implements Peer {
         messageCodec.setEthMessageFactory(eth62MessageFactory);
 
         RskWireProtocol handler = rskWireProtocolFactory.newInstance(msgQueue, this);
-        logger.info("Eth{} [ address = {} | id = {} ]", handler.getVersion(), inetSocketAddress, getPeerIdShort());
+        logger.info("Eth{} [ address = {} | id = {} ]", handler.getVersion(), inetSocketAddress, getPeerId());
 
         ctx.pipeline().addLast(Capability.RSK, handler);
 
@@ -169,10 +169,6 @@ public class Channel implements Peer {
 
     public String getPeerId() {
         return node == null ? "<null>" : node.getHexId();
-    }
-
-    public String getPeerIdShort() {
-        return node == null ? "<null>" : node.getHexIdShort();
     }
 
     /**
@@ -269,6 +265,6 @@ public class Channel implements Peer {
 
     @Override
     public String toString() {
-        return String.format("%s | %s", getPeerIdShort(), inetSocketAddress);
+        return String.format("%s | %s", getPeerId(), inetSocketAddress);
     }
 }

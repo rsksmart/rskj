@@ -18,7 +18,7 @@
 
 package co.rsk.net;
 
-import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.util.ByteUtil;
 
 import javax.annotation.Nonnull;
 import java.util.Arrays;
@@ -59,6 +59,6 @@ public class NodeID {
 
     @Override
     public String toString() {
-        return "NodeID{" + Hex.toHexString(nodeID) + '}';
+        return "NodeID{" + ByteUtil.toHexString(nodeID) + '}';
     }
 }

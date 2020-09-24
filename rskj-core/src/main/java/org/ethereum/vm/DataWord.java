@@ -399,7 +399,7 @@ public final class DataWord implements Comparable<DataWord> {
     @JsonValue
     @Override
     public String toString() {
-        return Hex.toHexString(data);
+        return ByteUtil.toHexString(data);
     }
 
     public String toPrefixString() {
@@ -410,14 +410,14 @@ public final class DataWord implements Comparable<DataWord> {
         }
 
         if (pref.length < 7) {
-            return Hex.toHexString(pref);
+            return ByteUtil.toHexString(pref);
         }
 
-        return Hex.toHexString(pref).substring(0, 6);
+        return ByteUtil.toHexString(pref).substring(0, 6);
     }
 
     public String shortHex() {
-        String hexValue = Hex.toHexString(getNoLeadZeroesData()).toUpperCase();
+        String hexValue = ByteUtil.toHexString(getNoLeadZeroesData()).toUpperCase();
         return "0x" + hexValue.replaceFirst("^0+(?!$)", "");
     }
 
@@ -530,7 +530,7 @@ public final class DataWord implements Comparable<DataWord> {
     }
 
     public boolean isHex(String hex) {
-        return Hex.toHexString(data).equals(hex);
+        return ByteUtil.toHexString(data).equals(hex);
     }
 
     /**

@@ -18,12 +18,12 @@
 
 package co.rsk.net.utils;
 
-import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
 import org.ethereum.core.Account;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
+import org.ethereum.util.ByteUtil;
 import org.ethereum.util.Utils;
 
 import java.math.BigInteger;
@@ -45,7 +45,7 @@ public class TransactionUtils {
 
     public static String getAddress() {
         Account targetAcc = new Account(new ECKey(Utils.getRandom()));
-        return Hex.toHexString(targetAcc.getAddress().getBytes());
+        return ByteUtil.toHexString(targetAcc.getAddress().getBytes());
     }
 
     public static byte[] getPrivateKeyBytes() {
@@ -60,5 +60,9 @@ public class TransactionUtils {
         Transaction tx = new Transaction(toAddress, value, nonce, gasPrice, gasLimit, Constants.REGTEST_CHAIN_ID);
         tx.sign(privateKey);
         return tx;
+    }
+
+    public static Transaction createTransaction() {
+        return getTransactions(1).get(0);
     }
 }

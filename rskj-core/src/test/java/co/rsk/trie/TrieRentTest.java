@@ -56,9 +56,7 @@ public class TrieRentTest {
     public void putKeyGetRentTimeDelta() {
         Trie trie = new Trie();        
         trie = trie.put("foo", "abc".getBytes());
-        long timeDelta = trie.getRentPaidTimeDelta();
-        System.out.println("Time delta between now and rent last paid (fully) "+ timeDelta + " sec, or about "+ timeDelta/(365.25*24*3600) + " years");
-        
+         
         // replace with findNode?
         List<Trie> nodes = trie.getNodes("foo"); 
         Assert.assertArrayEquals("abc".getBytes(StandardCharsets.UTF_8), nodes.get(0).getValue());
@@ -150,7 +148,6 @@ public class TrieRentTest {
     public void computeRentGas() {
         Trie trie = new Trie();
         trie = trie.putWithRent("foo".getBytes(), "must pay rent or hibernate dodo!".getBytes(), 4000L);
-        System.out.println("Rent due for time in seconds (negative for advance) " + trie.getRentPaidTimeDelta());
         System.out.println("Value length (in bytes) " + trie.getValueLength());
         //long sixMonths = 6 * 30 * 24 *3600L;
         // rent due for 6 months = (32 bytes + 128 bytes overhead)  * 6*30*24*3600 seconds / (2^21) 

@@ -20,7 +20,6 @@
 package org.ethereum.core;
 
 import org.ethereum.util.ByteUtil;
-import org.bouncycastle.util.encoders.Hex;
 
 import java.util.Arrays;
 
@@ -85,7 +84,7 @@ public class Bloom {
 
     @Override
     public String toString() {
-        return Hex.toHexString(data);
+        return ByteUtil.toHexString(data);
     }
 
     @Override

@@ -20,9 +20,8 @@
 package org.ethereum.core;
 
 import co.rsk.core.Coin;
+import org.ethereum.util.ByteUtil;
 import org.junit.Test;
-
-import org.bouncycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
 
@@ -34,7 +33,7 @@ public class AccountStateTest {
     public void testGetEncoded() {
         String expected = "dc809a0100000000000000000000000000000000000000000000000000";
         AccountState acct = new AccountState(BigInteger.ZERO, new Coin(BigInteger.valueOf(2).pow(200)));
-        assertEquals(expected, Hex.toHexString(acct.getEncoded()));
+        assertEquals(expected, ByteUtil.toHexString(acct.getEncoded()));
     }
 
     @Test

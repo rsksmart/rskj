@@ -29,7 +29,6 @@ import co.rsk.peg.whitelist.LockWhitelistEntry;
 import co.rsk.peg.whitelist.OneOffWhiteListEntry;
 import co.rsk.rpc.modules.trace.ProgramSubtrace;
 import com.google.common.annotations.VisibleForTesting;
-import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -39,6 +38,7 @@ import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
+import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.PrecompiledContracts;
@@ -49,7 +49,10 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.time.Instant;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -248,7 +251,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         BridgeParsedData bridgeParsedData = new BridgeParsedData();
 
         if (data != null && (data.length >= 1 && data.length <= 3)) {
-            logger.warn("Invalid function signature {}.", Hex.toHexString(data));
+            logger.warn("Invalid function signature {}.", ByteUtil.toHexString(data));
             return null;
         }
 
@@ -259,14 +262,14 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             byte[] functionSignature = Arrays.copyOfRange(data, 0, 4);
             Optional<BridgeMethods> invokedMethod = BridgeMethods.findBySignature(functionSignature);
             if (!invokedMethod.isPresent()) {
-                logger.warn("Invalid function signature {}.", Hex.toHexString(functionSignature));
+                logger.warn("Invalid function signature {}.", ByteUtil.toHexString(functionSignature));
                 return null;
             }
             bridgeParsedData.bridgeMethod = invokedMethod.get();
             try {
                 bridgeParsedData.args = bridgeParsedData.bridgeMethod.getFunction().decode(data);
             } catch (Exception e) {
-                logger.warn("Invalid function arguments {} for function {}.", Hex.toHexString(data), Hex.toHexString(functionSignature));
+                logger.warn("Invalid function arguments {} for function {}.", ByteUtil.toHexString(data), ByteUtil.toHexString(functionSignature));
                 return null;
             }
         }
@@ -315,7 +318,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
 
             // Function parsing from data returned null => invalid function selected, halt!
             if (bridgeParsedData == null) {
-                String errorMessage = String.format("Invalid data given: %s.", Hex.toHexString(data));
+                String errorMessage = String.format("Invalid data given: %s.", ByteUtil.toHexString(data));
                 logger.info(errorMessage);
                 if (activations.isActive(ConsensusRule.RSKIP88)) {
                     throw new BridgeIllegalArgumentException(errorMessage);
@@ -423,7 +426,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
                 BtcBlock header = bridgeConstants.getBtcParams().getDefaultSerializer().makeBlock(btcBlockSerialized);
                 btcBlockArray[i] = header;
             } catch (ProtocolException e) {
-                throw new BridgeIllegalArgumentException("Block " + i + " could not be parsed " + Hex.toHexString(btcBlockSerialized), e);
+                throw new BridgeIllegalArgumentException("Block " + i + " could not be parsed " + ByteUtil.toHexString(btcBlockSerialized), e);
             }
         }
         try {
@@ -472,7 +475,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         try {
             federatorPublicKey = BtcECKey.fromPublicOnly(federatorPublicKeySerialized);
         } catch (Exception e) {
-            throw new BridgeIllegalArgumentException("Public key could not be parsed " + Hex.toHexString(federatorPublicKeySerialized), e);
+            throw new BridgeIllegalArgumentException("Public key could not be parsed " + ByteUtil.toHexString(federatorPublicKeySerialized), e);
         }
         Object[] signaturesObjectArray = (Object[]) args[1];
         if (signaturesObjectArray.length == 0) {
@@ -484,13 +487,13 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             try {
                 BtcECKey.ECDSASignature.decodeFromDER((byte[])signatureObject);
             } catch (Exception e) {
-                throw new BridgeIllegalArgumentException("Signature could not be parsed " + Hex.toHexString(signatureByteArray), e);
+                throw new BridgeIllegalArgumentException("Signature could not be parsed " + ByteUtil.toHexString(signatureByteArray), e);
             }
             signatures.add(signatureByteArray);
         }
         byte[] rskTxHash = (byte[]) args[2];
         if (rskTxHash.length!=32) {
-            throw new BridgeIllegalArgumentException("Invalid rsk tx hash " + Hex.toHexString(rskTxHash));
+            throw new BridgeIllegalArgumentException("Invalid rsk tx hash " + ByteUtil.toHexString(rskTxHash));
         }
         try {
             bridgeSupport.addSignature(federatorPublicKey, signatures, rskTxHash);

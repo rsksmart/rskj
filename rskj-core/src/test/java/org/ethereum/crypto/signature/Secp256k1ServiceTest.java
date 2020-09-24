@@ -73,9 +73,9 @@ public abstract class Secp256k1ServiceTest {
         byte[] rawtx = Hex.decode("f82804881bc16d674ec8000094cd2a3d9f938e13cd947ec05abc7fe734df8dd8268609184e72a0006480");
         try {
             ECKey key = this.getSecp256k1().signatureToKey(HashUtil.keccak256(rawtx), sig);
-            logger.debug("Signature public key\t: {}", Hex.toHexString(key.getPubKey()));
-            logger.debug("Sender is\t\t: {}", Hex.toHexString(key.getAddress()));
-            assertEquals("cd2a3d9f938e13cd947ec05abc7fe734df8dd826", Hex.toHexString(key.getAddress()));
+            logger.debug("Signature public key\t: {}", ByteUtil.toHexString(key.getPubKey()));
+            logger.debug("Sender is\t\t: {}", ByteUtil.toHexString(key.getAddress()));
+            assertEquals("cd2a3d9f938e13cd947ec05abc7fe734df8dd826", ByteUtil.toHexString(key.getAddress()));
             assertTrue(this.getSecp256k1().verify(HashUtil.keccak256(rawtx), sig, key.getPubKey()));
         } catch (SignatureException e) {
             fail();
@@ -127,8 +127,8 @@ public abstract class Secp256k1ServiceTest {
         String receiver = "CD2A3D9F938E13CD947EC05ABC7FE734DF8DD826";
         ECKey fromPrivate = ECKey.fromPrivate(pk);
         ECKey fromPrivateDecompress = fromPrivate.decompress();
-        String pubKeyExpected = Hex.toHexString(fromPrivateDecompress.getPubKey());
-        String addressExpected = Hex.toHexString(fromPrivateDecompress.getAddress());
+        String pubKeyExpected = ByteUtil.toHexString(fromPrivateDecompress.getPubKey());
+        String addressExpected = ByteUtil.toHexString(fromPrivateDecompress.getAddress());
 
         // Create tx and sign, then recover from serialized.
         Transaction newTx = new Transaction(2l, 2l, 2l, receiver, 2l, messageHash, (byte) 0);
@@ -140,13 +140,13 @@ public abstract class Secp256k1ServiceTest {
 
         // Recover PK and Address.
 
-        String pubKeyActual = Hex.toHexString(actualKey.getPubKey());
+        String pubKeyActual = ByteUtil.toHexString(actualKey.getPubKey());
         logger.debug("Signature public key\t: {}", pubKeyActual);
         assertEquals(pubKeyExpected, pubKeyActual);
         assertEquals(pubString, pubKeyActual);
         assertArrayEquals(pubKey, actualKey.getPubKey());
 
-        String addressActual = Hex.toHexString(actualKey.getAddress());
+        String addressActual = ByteUtil.toHexString(actualKey.getAddress());
         logger.debug("Sender is\t\t: {}", addressActual);
         assertEquals(addressExpected, addressActual);
     }

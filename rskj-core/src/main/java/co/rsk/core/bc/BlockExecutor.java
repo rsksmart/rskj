@@ -138,38 +138,34 @@ public class BlockExecutor {
     public boolean validate(Block block, BlockResult result) {
         Metric metric = profiler.start(Profiler.PROFILING_TYPE.BLOCK_FINAL_STATE_VALIDATION);
         if (result == BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT) {
-            System.out.println("\nIn blockexecutor invalid TX\n");
-            logger.error("Block {} [{}] execution was interrupted because of an invalid transaction", block.getNumber(), block.getShortHash());
+            logger.error("Block {} [{}] execution was interrupted because of an invalid transaction", block.getNumber(), block.getPrintableHash());
             profiler.stop(metric);
             return false;
         }
 
         boolean isValidStateRoot = validateStateRoot(block.getHeader(), result);
         if (!isValidStateRoot) {
-            System.out.println("\nIn blockexecutor invalid stateroot\n");
-            logger.error("Block {} [{}] given State Root is invalid", block.getNumber(), block.getShortHash());
+            logger.error("Block {} [{}] given State Root is invalid", block.getNumber(), block.getPrintableHash());
             profiler.stop(metric);
             return false;
         }
 
         boolean isValidReceiptsRoot = validateReceiptsRoot(block.getHeader(), result);
         if (!isValidReceiptsRoot) {
-            System.out.println("\nIn blockexecutor invalid rcpt root\n");
-            logger.error("Block {} [{}] given Receipt Root is invalid", block.getNumber(), block.getShortHash());
+            logger.error("Block {} [{}] given Receipt Root is invalid", block.getNumber(), block.getPrintableHash());
             profiler.stop(metric);
             return false;
         }
 
         boolean isValidLogsBloom = validateLogsBloom(block.getHeader(), result);
         if (!isValidLogsBloom) {
-            logger.error("Block {} [{}] given Logs Bloom is invalid", block.getNumber(), block.getShortHash());
+            logger.error("Block {} [{}] given Logs Bloom is invalid", block.getNumber(), block.getPrintableHash());
             profiler.stop(metric);
             return false;
         }
 
         if (result.getGasUsed() != block.getGasUsed()) {
-            System.out.println("\nIn blockexecutor gasUsed doesn't match\n");
-            logger.error("Block {} [{}] given gasUsed doesn't match: {} != {}", block.getNumber(), block.getShortHash(), block.getGasUsed(), result.getGasUsed());
+            logger.error("Block {} [{}] given gasUsed doesn't match: {} != {}", block.getNumber(), block.getPrintableHash(), block.getGasUsed(), result.getGasUsed());
             profiler.stop(metric);
             return false;
         }
@@ -178,8 +174,7 @@ public class BlockExecutor {
         Coin feesPaidToMiner = block.getFeesPaidToMiner();
 
         if (!paidFees.equals(feesPaidToMiner))  {
-            System.out.println("\nIn blockexecutor fees doesn't match\n");
-            logger.error("Block {} [{}] given paidFees doesn't match: {} != {}", block.getNumber(), block.getShortHash(), feesPaidToMiner, paidFees);
+            logger.error("Block {} [{}] given paidFees doesn't match: {} != {}", block.getNumber(), block.getPrintableHash(), feesPaidToMiner, paidFees);
             profiler.stop(metric);
             return false;
         }
@@ -188,8 +183,7 @@ public class BlockExecutor {
         List<Transaction> transactionsList = block.getTransactionsList();
 
         if (!executedTransactions.equals(transactionsList))  {
-            System.out.println("\nIn blockexecutor txs list doesn't match\n");
-            logger.error("Block {} [{}] given txs doesn't match: {} != {}", block.getNumber(), block.getShortHash(), transactionsList, executedTransactions);
+            logger.error("Block {} [{}] given txs doesn't match: {} != {}", block.getNumber(), block.getPrintableHash(), transactionsList, executedTransactions);
             profiler.stop(metric);
             return false;
         }

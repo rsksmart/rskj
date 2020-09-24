@@ -5,17 +5,17 @@ package co.rsk.core;
  */
 
 import com.google.common.collect.Lists;
+import org.bouncycastle.pqc.math.linearalgebra.ByteUtils;
+import org.bouncycastle.util.BigIntegers;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
-import org.bouncycastle.pqc.math.linearalgebra.ByteUtils;
-import org.bouncycastle.util.BigIntegers;
 
 import java.math.BigInteger;
 import java.util.List;
 
 import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
-import static org.ethereum.util.ByteUtil.toHexString;
+import static org.ethereum.util.ByteUtil.toHexStringOrEmpty;
 
 /**
  * Block header is a value object containing
@@ -439,19 +439,19 @@ public class FreeBlockHeader {
 
     private String toStringWithSuffix(final String suffix) {
         StringBuilder toStringBuff = new StringBuilder();
-        toStringBuff.append("  parentHash=").append(toHexString(parentHash)).append(suffix);
-        toStringBuff.append("  unclesHash=").append(toHexString(unclesHash)).append(suffix);
-        toStringBuff.append("  coinbase=").append(toHexString(coinbase)).append(suffix);
-        toStringBuff.append("  stateRoot=").append(toHexString(stateRoot)).append(suffix);
-        toStringBuff.append("  txTrieHash=").append(toHexString(txTrieRoot)).append(suffix);
-        toStringBuff.append("  receiptsTrieHash=").append(toHexString(receiptTrieRoot)).append(suffix);
-        toStringBuff.append("  difficulty=").append(toHexString(difficulty)).append(suffix);
-        toStringBuff.append("  number=").append(toHexString(number)).append(suffix);
-        toStringBuff.append("  gasLimit=").append(toHexString(gasLimit)).append(suffix);
-        toStringBuff.append("  gasUsed=").append(toHexString(gasUsed)).append(suffix);
-        toStringBuff.append("  timestamp=").append(toHexString(timestamp)).append(")").append(suffix);
-        toStringBuff.append("  extraData=").append(toHexString(extraData)).append(suffix);
-        toStringBuff.append("  minGasPrice=").append(toHexString(minimumGasPrice)).append(suffix);
+        toStringBuff.append("  parentHash=").append(toHexStringOrEmpty(parentHash)).append(suffix);
+        toStringBuff.append("  unclesHash=").append(toHexStringOrEmpty(unclesHash)).append(suffix);
+        toStringBuff.append("  coinbase=").append(toHexStringOrEmpty(coinbase)).append(suffix);
+        toStringBuff.append("  stateRoot=").append(toHexStringOrEmpty(stateRoot)).append(suffix);
+        toStringBuff.append("  txTrieHash=").append(toHexStringOrEmpty(txTrieRoot)).append(suffix);
+        toStringBuff.append("  receiptsTrieHash=").append(toHexStringOrEmpty(receiptTrieRoot)).append(suffix);
+        toStringBuff.append("  difficulty=").append(toHexStringOrEmpty(difficulty)).append(suffix);
+        toStringBuff.append("  number=").append(toHexStringOrEmpty(number)).append(suffix);
+        toStringBuff.append("  gasLimit=").append(toHexStringOrEmpty(gasLimit)).append(suffix);
+        toStringBuff.append("  gasUsed=").append(toHexStringOrEmpty(gasUsed)).append(suffix);
+        toStringBuff.append("  timestamp=").append(toHexStringOrEmpty(timestamp)).append(")").append(suffix);
+        toStringBuff.append("  extraData=").append(toHexStringOrEmpty(extraData)).append(suffix);
+        toStringBuff.append("  minGasPrice=").append(toHexStringOrEmpty(minimumGasPrice)).append(suffix);
 
         return toStringBuff.toString();
     }
@@ -492,15 +492,15 @@ public class FreeBlockHeader {
         this.bitcoinMergedMiningCoinbaseTransaction = bitcoinMergedMiningCoinbaseTransaction;
     }
 
-    public String getShortHashForMergedMining() {
-        return HashUtil.shortHash(getHashForMergedMining());
+    public String getPrintableHashForMergedMining() {
+        return HashUtil.toPrintableHash(getHashForMergedMining());
     }
 
     public byte[] getHashForMergedMining() {
         return HashUtil.keccak256(getEncoded(false));
     }
 
-    public String getShortHash() {
-        return HashUtil.shortHash(getHash());
+    public String getPrintableHash() {
+        return HashUtil.toPrintableHash(getHash());
     }
 }

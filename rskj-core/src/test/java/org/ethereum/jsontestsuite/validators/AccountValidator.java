@@ -21,10 +21,10 @@ package org.ethereum.jsontestsuite.validators;
 
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
-import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.HashUtil;
+import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
 
 import java.math.BigInteger;
@@ -85,7 +85,7 @@ public class AccountValidator {
         if (vStats!=null) vStats.accountChecks++;
         if (!Arrays.equals(expectedRepository.getCode(addr), currentRepository.getCode(addr))) {
             String formattedString = String.format("Account: %s: has unexpected code, expected code: %s found code: %s",
-                    addr, Hex.toHexString(expectedRepository.getCode(addr)), Hex.toHexString(currentRepository.getCode(addr)));
+                    addr, ByteUtil.toHexString(expectedRepository.getCode(addr)), ByteUtil.toHexString(currentRepository.getCode(addr)));
             results.add(formattedString);
         }
 

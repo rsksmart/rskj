@@ -80,9 +80,9 @@ public class BlockSyncService {
         store.removeHeader(block.getHeader());
 
         if (blockNumber > bestBlockNumber + syncMaxDistance) {
-            logger.trace("Block too advanced {} {} from {} ", blockNumber, block.getShortHash(),
+            logger.trace("Block too advanced {} {} from {} ", blockNumber, block.getPrintableHash(),
                     sender != null ? sender.getPeerNodeID().toString() : "N/A");
-            return new BlockProcessResult(false, null, block.getShortHash(),
+            return new BlockProcessResult(false, null, block.getPrintableHash(),
                     Duration.between(start, Instant.now()));
         }
 
@@ -92,8 +92,8 @@ public class BlockSyncService {
 
         // already in a blockchain
         if (BlockUtils.blockInSomeBlockChain(block, blockchain)) {
-            logger.trace("Block already in a chain {} {}", blockNumber, block.getShortHash());
-            return new BlockProcessResult(false, null, block.getShortHash(),
+            logger.trace("Block already in a chain {} {}", blockNumber, block.getPrintableHash());
+            return new BlockProcessResult(false, null, block.getPrintableHash(),
                     Duration.between(start, Instant.now()));
         }
         trySaveStore(block);
@@ -102,10 +102,10 @@ public class BlockSyncService {
         // We can't add the block if there are missing ancestors or uncles. Request the missing blocks to the sender.
         if (!unknownHashes.isEmpty()) {
             if (!ignoreMissingHashes){
-                logger.trace("Missing hashes for block in process {} {}", blockNumber, block.getShortHash());
+                logger.trace("Missing hashes for block in process {} {}", blockNumber, block.getPrintableHash());
                 requestMissingHashes(sender, unknownHashes);
             }
-            return new BlockProcessResult(false, null, block.getShortHash(),
+            return new BlockProcessResult(false, null, block.getPrintableHash(),
                     Duration.between(start, Instant.now()));
         }
 
@@ -114,7 +114,7 @@ public class BlockSyncService {
         Map<Keccak256, ImportResult> connectResult = connectBlocksAndDescendants(sender,
                 BlockUtils.sortBlocksByNumber(this.getParentsNotInBlockchain(block)), ignoreMissingHashes);
 
-        return new BlockProcessResult(true, connectResult, block.getShortHash(),
+        return new BlockProcessResult(true, connectResult, block.getPrintableHash(),
                 Duration.between(start, Instant.now()));
     }
 
@@ -172,13 +172,13 @@ public class BlockSyncService {
         Set<Block> connected = new HashSet<>();
 
         for (Block block : remainingBlocks) {
-            logger.trace("Trying to add block {} {}", block.getNumber(), block.getShortHash());
+            logger.trace("Trying to add block {} {}", block.getNumber(), block.getPrintableHash());
 
             Set<Keccak256> missingHashes = BlockUtils.unknownDirectAncestorsHashes(block, blockchain, store);
 
             if (!missingHashes.isEmpty()) {
                 if (!ignoreMissingHashes){
-                    logger.trace("Missing hashes for block in process {} {}", block.getNumber(), block.getShortHash());
+                    logger.trace("Missing hashes for block in process {} {}", block.getNumber(), block.getPrintableHash());
                     requestMissingHashes(sender, missingHashes);
                 }
                 continue;
@@ -207,7 +207,7 @@ public class BlockSyncService {
             return;
         }
         
-        logger.trace("Missing block {}", hash.toString().substring(0, 10));
+        logger.trace("Missing block {}", hash.toHexString());
 
         sender.sendMessage(new GetBlockMessage(hash.getBytes()));
     }

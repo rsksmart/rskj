@@ -20,9 +20,9 @@ package co.rsk.net.eth;
 
 import co.rsk.net.NodeID;
 import org.ethereum.net.message.Message;
+import org.ethereum.util.ByteUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.bouncycastle.util.encoders.Hex;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -64,12 +64,12 @@ public class WriterMessageRecorder implements MessageRecorder {
 
             writer.write(",");
 
-            writer.write(Hex.toHexString(message.getEncoded()));
+            writer.write(ByteUtil.toHexString(message.getEncoded()));
 
             writer.write(",");
 
             if (sender != null) {
-                writer.write(Hex.toHexString(sender.getID()));
+                writer.write(ByteUtil.toHexString(sender.getID()));
             }
 
             writer.newLine();

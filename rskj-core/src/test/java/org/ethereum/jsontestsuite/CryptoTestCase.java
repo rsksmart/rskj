@@ -19,11 +19,12 @@
 
 package org.ethereum.jsontestsuite;
 
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.ECIESCoder;
 import org.ethereum.crypto.ECKey;
+import org.ethereum.util.ByteUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.bouncycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
 
@@ -58,12 +59,12 @@ public class CryptoTestCase {
 
         if (decryption_type.equals("ecies_sec1_altered"))
             try {
-                resultPayload = ECIESCoder.decrypt(new BigInteger(Hex.toHexString(key), 16), cipher);
+                resultPayload = ECIESCoder.decrypt(new BigInteger(ByteUtil.toHexString(key), 16), cipher);
             } catch (Throwable e) {e.printStackTrace();}
 
-        if (!Hex.toHexString(resultPayload).equals(payload)){
+        if (!ByteUtil.toHexString(resultPayload).equals(payload)){
             String error = String.format("payload should be: %s, but got that result: %s  ",
-                    payload, Hex.toHexString(resultPayload));
+                    payload, ByteUtil.toHexString(resultPayload));
             logger.info(error);
 
             System.exit(-1);

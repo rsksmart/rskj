@@ -66,7 +66,7 @@ import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
  */
 
 /**
- * #mish: note for review of storage rent implementation
+ * #mish: notes for review of storage rent implementation
  * The tracking of rent for new and pre-existing Trie nodes is initiated during 
  * transaction execution. The tracking is based on new caches added to ProgramResult class
  * to keep track of trie nodes created or touched by a transaction
@@ -320,8 +320,8 @@ public class TransactionExecutor {
     private void execute() {
         logger.trace("Execute transaction {} {}", toBI(tx.getNonce()), tx.getHash());
         // set reference timestamp for rent computations
-        refTimeStamp = this.executionBlock.getTimestamp();  // Don't use this? it returns 1 in tests
-        //refTimeStamp = Instant.now().getEpochSecond();
+        //refTimeStamp = this.executionBlock.getTimestamp();  // Don't use this? it returns 1 in tests
+        refTimeStamp = Instant.now().getEpochSecond();
                         
         // #mish add sender to Map of accessed nodes (for storage rent tracking)
         // but do NOT add receiver address yet, as it may be a pre-compiled contract
@@ -586,9 +586,9 @@ public class TransactionExecutor {
         if (mEndGas < returnDataGasValue) {
             program.setRuntimeFailure(
                     Program.ExceptionHelper.notEnoughSpendingGas(
+                            program,
                             "No gas to return just created contract",
-                            returnDataGasValue,
-                            program));
+                            returnDataGasValue));                            
             //#mish programresult may have rent information, even though we'll revert TX
             // that'll be taken care of by clearfieldsonexception()
             result = program.getResult();
@@ -596,6 +596,7 @@ public class TransactionExecutor {
         } else if (createdContractSize > Constants.getMaxContractSize()) {
             program.setRuntimeFailure(
                     Program.ExceptionHelper.tooLargeContractSize(
+                            program,
                             Constants.getMaxContractSize(),
                             createdContractSize));
             //#mish programresult may have rent information, even though we'll revert TX
@@ -704,7 +705,7 @@ public class TransactionExecutor {
         this.paidFees = summaryFee;
 
         //#mish for testing
-        /*System.out.println( "\nTX finalization " + 
+        System.out.println( "\nTX finalization " + 
                             "(is Remasc TX: " + isRemascTx + ")"  +
                             "\n\nExec GasLimit " + GasCost.toGas(tx.getGasLimit()) +
                             "\nExec gas used " + result.getGasUsed() +
@@ -715,7 +716,7 @@ public class TransactionExecutor {
                             "\n\nTx fees (exec + rent) in Coin (using tx.gasPrice): " + paidFees +
                             "\n\nNo. trie nodes with `updated` rent timestamp: " +  result.getAccessedNodes().size() +
                             "\nNo. new trie nodes created (6 months rent): " +  result.getCreatedNodes().size() + "\n"
-                            );*/
+                            );
         //System.out.println("\n\n" + tx); //#mish for testing                   
 
         logger.trace("Processing result");

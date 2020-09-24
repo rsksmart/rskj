@@ -20,7 +20,7 @@
 package org.ethereum.net;
 
 import org.ethereum.net.rlpx.Node;
-import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.util.ByteUtil;
 
 /**
  * The instance of this class responsible for discovery messages exchange with the specified Node
@@ -51,7 +51,7 @@ public class NodeHandler {
     @Override
     public String toString() {
         return "NodeHandler[node: " + node.getHost() + ":" + node.getPort() + ", id="
-                + (node.getId().getID().length > 0 ? Hex.toHexString(node.getId().getID(), 0, 4) : "empty") + "]";
+                + (node.getId().getID().length > 0 ? ByteUtil.toHexString(node.getId().getID(), 0, 4) : "empty") + "]";
     }
 
 

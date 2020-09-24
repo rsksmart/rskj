@@ -148,7 +148,7 @@ public class NodeStatistics {
                 ", rlpx: " + rlpxHandshake + "/" + rlpxAuthMessagesSent + "/" + rlpxConnectionAttempts + " " +
                 rlpxInMessages + "/" + rlpxOutMessages +
                 ", eth: " + ethHandshake + "/" + getEthInbound() + "/" + getEthOutbound() + " " +
-                (ethLastInboundStatusMsg != null ? ByteUtil.toHexString(ethLastInboundStatusMsg.getTotalDifficulty()) : "-") + " " +
+                (ethLastInboundStatusMsg != null ? ByteUtil.toHexStringOrEmpty(ethLastInboundStatusMsg.getTotalDifficulty()) : "-") + " " +
                 (disconnected ? "X " : "") +
                 (rlpxLastLocalDisconnectReason != null ? ("<=" + rlpxLastLocalDisconnectReason) : " ") +
                 (rlpxLastRemoteDisconnectReason != null ? ("=>" + rlpxLastRemoteDisconnectReason) : " ")  +

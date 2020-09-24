@@ -24,7 +24,6 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.embedded.EmbeddedChannel;
-import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.net.NodeStatistics;
@@ -34,6 +33,7 @@ import org.ethereum.net.eth.EthVersion;
 import org.ethereum.net.p2p.HelloMessage;
 import org.ethereum.net.p2p.P2pHandler;
 import org.ethereum.net.server.Channel;
+import org.ethereum.util.ByteUtil;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -113,7 +113,7 @@ public class HandshakeHandlerTest {
         responsePacketByteBuf.readBytes(responsePacket);
         handshake.handleAuthResponseV4(remoteKey, initiatePacket, responsePacket);
 
-        HelloMessage helloMessage = new HelloMessage(P2pHandler.VERSION, "", capabilities, 4321, Hex.toHexString(HashUtil.randomPeerId()));
+        HelloMessage helloMessage = new HelloMessage(P2pHandler.VERSION, "", capabilities, 4321, ByteUtil.toHexString(HashUtil.randomPeerId()));
         byte[] payload = helloMessage.getEncoded();
         FrameCodec frameCodec = new FrameCodec(handshake.getSecrets());
         ByteBuf byteBufMsg = ch.alloc().buffer();

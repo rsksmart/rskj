@@ -20,11 +20,11 @@
 package org.ethereum.vm;
 
 import co.rsk.config.TestSystemProperties;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.util.BIUtil;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.PrecompiledContracts.PrecompiledContract;
 import org.junit.Test;
-import org.bouncycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
 
@@ -64,7 +64,7 @@ public class PrecompiledContractTest {
 
         byte[] result = contract.execute(data);
 
-        assertEquals(expected, Hex.toHexString(result));
+        assertEquals(expected, ByteUtil.toHexString(result));
     }
 
     @Test
@@ -77,7 +77,7 @@ public class PrecompiledContractTest {
 
         byte[] result = contract.execute(data);
 
-        assertEquals(expected, Hex.toHexString(result));
+        assertEquals(expected, ByteUtil.toHexString(result));
     }
 
     @Test
@@ -90,7 +90,7 @@ public class PrecompiledContractTest {
 
         byte[] result = contract.execute(data);
 
-        assertEquals(expected, Hex.toHexString(result));
+        assertEquals(expected, ByteUtil.toHexString(result));
     }
 
     @Test
@@ -103,7 +103,7 @@ public class PrecompiledContractTest {
 
         byte[] result = contract.execute(data);
 
-        assertEquals(expected, Hex.toHexString(result));
+        assertEquals(expected, ByteUtil.toHexString(result));
     }
 
     @Test
@@ -116,7 +116,7 @@ public class PrecompiledContractTest {
 
         byte[] result = contract.execute(data);
 
-        System.out.println(Hex.toHexString(result));
+        System.out.println(ByteUtil.toHexString(result));
 
     }
     @Test

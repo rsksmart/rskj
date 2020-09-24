@@ -18,6 +18,7 @@
 
 package org.ethereum.rpc.Simples;
 
+import co.rsk.config.RskSystemProperties;
 import co.rsk.net.Peer;
 import co.rsk.net.NodeID;
 import co.rsk.net.Status;
@@ -29,6 +30,8 @@ import org.ethereum.core.BlockIdentifier;
 import org.ethereum.core.Transaction;
 import org.ethereum.net.server.Channel;
 import org.ethereum.net.server.ChannelManager;
+import org.ethereum.net.server.ChannelManagerImpl;
+import org.ethereum.sync.SyncPool;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -84,7 +87,6 @@ public class SimpleChannelManager implements ChannelManager {
 
     @Override
     public void add(Channel peer) {
-
     }
 
     public Peer getMessageChannel(SimpleNode sender, SimpleNode receiver) {
@@ -110,6 +112,16 @@ public class SimpleChannelManager implements ChannelManager {
     @Override
     public boolean isAddressBlockAvailable(InetAddress address) {
         return true;
+    }
+
+    @Override
+    public Set<NodeID> broadcastTransactions(List<Transaction> transactions, Set<NodeID> nodeID) {
+        transactions.forEach(tx -> broadcastTransaction(tx, nodeID));
+        return new HashSet<>();
+    }
+
+    @Override
+    public void setActivePeers(Map<NodeID, Channel> newActivePeers) {
     }
 
     public List<Transaction> getTransactions() {

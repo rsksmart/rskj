@@ -21,6 +21,7 @@ package co.rsk.rpc.modules.eth;
 import co.rsk.core.Wallet;
 import co.rsk.mine.MinerClient;
 import co.rsk.mine.MinerServer;
+import co.rsk.net.TransactionGateway;
 import org.ethereum.config.Constants;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.TransactionPool;
@@ -43,8 +44,9 @@ public class EthModuleTransactionInstant extends EthModuleTransactionBase {
             TransactionPool transactionPool,
             MinerServer minerServer,
             MinerClient minerClient,
-            Blockchain blockchain) {
-        super(constants, wallet, transactionPool);
+            Blockchain blockchain,
+            TransactionGateway transactionGateway) {
+        super(constants, wallet, transactionPool, transactionGateway);
 
         this.minerServer = minerServer;
         this.minerClient = minerClient;

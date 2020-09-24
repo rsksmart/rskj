@@ -29,13 +29,13 @@ import co.rsk.test.builders.BlockBuilder;
 import co.rsk.trie.TrieStore;
 import co.rsk.validators.BlockValidator;
 import org.bouncycastle.util.Arrays;
-import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.*;
 import org.ethereum.core.genesis.GenesisLoader;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.db.BlockStore;
 import org.ethereum.listener.CompositeEthereumListener;
+import org.ethereum.util.ByteUtil;
 import org.ethereum.util.FastByteComparisons;
 import org.ethereum.util.RskTestFactory;
 import org.junit.Assert;
@@ -649,7 +649,7 @@ public class BlockChainImplTest {
         Block bestBlock = blockChain.getBestBlock();
         RepositorySnapshot repository = objects.getRepositoryLocator().snapshotAt(bestBlock.getHeader());
 
-        String toAddress = Hex.toHexString(catKey.getAddress());
+        String toAddress = ByteUtil.toHexString(catKey.getAddress());
         BigInteger nonce = repository.getNonce(new RskAddress(cowKey.getAddress()));
         Transaction tx = new Transaction(toAddress, BigInteger.TEN, nonce, BigInteger.ONE, BigInteger.valueOf(42000), config.getNetworkConstants().getChainId());
         tx.sign(cowKey.getPrivKeyBytes());

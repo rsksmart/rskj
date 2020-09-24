@@ -30,6 +30,7 @@ import org.ethereum.core.BlockFactory;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.datasource.LevelDbDataSource;
+import org.ethereum.util.ByteUtil;
 import org.ethereum.util.FileUtil;
 import org.ethereum.util.RskTestFactory;
 import org.junit.Assert;
@@ -52,7 +53,8 @@ import static co.rsk.core.BlockDifficulty.ZERO;
 import static org.ethereum.TestUtils.*;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 
 public class IndexedBlockStoreTest {
@@ -84,7 +86,7 @@ public class IndexedBlockStoreTest {
 
             if (block.getNumber() % 1000 == 0)
                 logger.info("adding block.hash: [{}] block.number: [{}]",
-                        block.getShortHash(),
+                        block.getPrintableHash(),
                         block.getNumber());
 
             blocks.add(block);
@@ -184,8 +186,8 @@ public class IndexedBlockStoreTest {
         List<byte[]> hashList =  indexedBlockStore.getListHashesEndWith(block.getHash().getBytes(), 100);
         for (int i = 0; i < 100; ++i){
             block  = blocks.get(8003 - i);
-            String hash  = Hex.toHexString(hashList.get(i));
-            String hash_ = Hex.toHexString( block.getHash().getBytes() );
+            String hash  = ByteUtil.toHexString(hashList.get(i));
+            String hash_ = ByteUtil.toHexString( block.getHash().getBytes() );
             assertEquals(hash_, hash);
         }
 
@@ -195,8 +197,8 @@ public class IndexedBlockStoreTest {
         hashList =  indexedBlockStore.getListHashesStartWith(block.getNumber(), 100);
         for (int i = 0; i < 100; ++i){
             block  = blocks.get(7003 + i);
-            String hash  = Hex.toHexString(hashList.get(i));
-            String hash_ = Hex.toHexString( block.getHash().getBytes() );
+            String hash  = ByteUtil.toHexString(hashList.get(i));
+            String hash_ = ByteUtil.toHexString( block.getHash().getBytes() );
             assertEquals(hash_, hash);
         }
 
@@ -292,8 +294,8 @@ public class IndexedBlockStoreTest {
         List<byte[]> hashList =  indexedBlockStore.getListHashesEndWith(block.getHash().getBytes(), 100);
         for (int i = 0; i < 100; ++i){
             block  = blocks.get(8003 - i);
-            String hash  = Hex.toHexString(hashList.get(i));
-            String hash_ = Hex.toHexString( block.getHash().getBytes() );
+            String hash  = ByteUtil.toHexString(hashList.get(i));
+            String hash_ = ByteUtil.toHexString( block.getHash().getBytes() );
             assertEquals(hash_, hash);
         }
 
@@ -303,8 +305,8 @@ public class IndexedBlockStoreTest {
         hashList =  indexedBlockStore.getListHashesStartWith(block.getNumber(), 100);
         for (int i = 0; i < 100; ++i){
             block  = blocks.get(7003 + i);
-            String hash  = Hex.toHexString(hashList.get(i));
-            String hash_ = Hex.toHexString( block.getHash().getBytes() );
+            String hash  = ByteUtil.toHexString(hashList.get(i));
+            String hash_ = ByteUtil.toHexString( block.getHash().getBytes() );
             assertEquals(hash_, hash);
         }
 
@@ -402,8 +404,8 @@ public class IndexedBlockStoreTest {
         List<byte[]> hashList =  indexedBlockStore.getListHashesEndWith(block.getHash().getBytes(), 100);
         for (int i = 0; i < 100; ++i){
             block  = blocks.get(8003 - i);
-            String hash  = Hex.toHexString(hashList.get(i));
-            String hash_ = Hex.toHexString( block.getHash().getBytes() );
+            String hash  = ByteUtil.toHexString(hashList.get(i));
+            String hash_ = ByteUtil.toHexString( block.getHash().getBytes() );
             assertEquals(hash_, hash);
         }
 
@@ -413,8 +415,8 @@ public class IndexedBlockStoreTest {
         hashList =  indexedBlockStore.getListHashesStartWith(block.getNumber(), 100);
         for (int i = 0; i < 100; ++i){
             block  = blocks.get(7003 + i);
-            String hash  = Hex.toHexString(hashList.get(i));
-            String hash_ = Hex.toHexString( block.getHash().getBytes() );
+            String hash  = ByteUtil.toHexString(hashList.get(i));
+            String hash_ = ByteUtil.toHexString( block.getHash().getBytes() );
             assertEquals(hash_, hash);
         }
     }
@@ -519,8 +521,8 @@ public class IndexedBlockStoreTest {
         List<byte[]> hashList =  indexedBlockStore.getListHashesEndWith(block.getHash().getBytes(), 100);
         for (int i = 0; i < 100; ++i){
             block  = blocks.get(8003 - i);
-            String hash  = Hex.toHexString(hashList.get(i));
-            String hash_ = Hex.toHexString( block.getHash().getBytes() );
+            String hash  = ByteUtil.toHexString(hashList.get(i));
+            String hash_ = ByteUtil.toHexString( block.getHash().getBytes() );
             assertEquals(hash_, hash);
         }
 
@@ -530,8 +532,8 @@ public class IndexedBlockStoreTest {
         hashList =  indexedBlockStore.getListHashesStartWith(block.getNumber(), 100);
         for (int i = 0; i < 100; ++i){
             block  = blocks.get(7003 + i);
-            String hash  = Hex.toHexString(hashList.get(i));
-            String hash_ = Hex.toHexString( block.getHash().getBytes() );
+            String hash  = ByteUtil.toHexString(hashList.get(i));
+            String hash_ = ByteUtil.toHexString( block.getHash().getBytes() );
             assertEquals(hash_, hash);
         }
 
@@ -553,8 +555,8 @@ public class IndexedBlockStoreTest {
         hashList =  indexedBlockStore.getListHashesStartWith(block.getNumber(), 100);
         for (int i = 0; i < 100; ++i){
             block  = blocks.get(7003 + i);
-            String hash  = Hex.toHexString(hashList.get(i));
-            String hash_ = Hex.toHexString( block.getHash().getBytes() );
+            String hash  = ByteUtil.toHexString(hashList.get(i));
+            String hash_ = ByteUtil.toHexString( block.getHash().getBytes() );
             assertEquals(hash_, hash);
         }
 
@@ -674,8 +676,8 @@ public class IndexedBlockStoreTest {
             List<byte[]> hashList =  indexedBlockStore.getListHashesEndWith(block.getHash().getBytes(), 100);
             for (int i = 0; i < 100; ++i){
                 block  = blocks.get(8003 - i);
-                String hash  = Hex.toHexString(hashList.get(i));
-                String hash_ = Hex.toHexString( block.getHash().getBytes() );
+                String hash  = ByteUtil.toHexString(hashList.get(i));
+                String hash_ = ByteUtil.toHexString( block.getHash().getBytes() );
                 assertEquals(hash_, hash);
             }
 
@@ -685,8 +687,8 @@ public class IndexedBlockStoreTest {
             hashList =  indexedBlockStore.getListHashesStartWith(block.getNumber(), 100);
             for (int i = 0; i < 100; ++i){
                 block  = blocks.get(7003 + i);
-                String hash  = Hex.toHexString(hashList.get(i));
-                String hash_ = Hex.toHexString( block.getHash().getBytes() );
+                String hash  = ByteUtil.toHexString(hashList.get(i));
+                String hash_ = ByteUtil.toHexString( block.getHash().getBytes() );
                 assertEquals(hash_, hash);
             }
 
@@ -710,8 +712,8 @@ public class IndexedBlockStoreTest {
             hashList =  indexedBlockStore.getListHashesStartWith(block.getNumber(), 100);
             for (int i = 0; i < 100; ++i){
                 block  = blocks.get(7003 + i);
-                String hash  = Hex.toHexString(hashList.get(i));
-                String hash_ = Hex.toHexString( block.getHash().getBytes() );
+                String hash  = ByteUtil.toHexString(hashList.get(i));
+                String hash_ = ByteUtil.toHexString( block.getHash().getBytes() );
                 assertEquals(hash_, hash);
             }
         } finally {
@@ -933,7 +935,7 @@ public class IndexedBlockStoreTest {
             for (Block currBlock : forkLine) {
                 Long number = currBlock.getNumber();
                 Block chainBlock = indexedBlockStore.getChainBlockByNumber(number);
-                assertEquals(currBlock.getShortHash(), chainBlock.getShortHash());
+                assertEquals(currBlock.getPrintableHash(), chainBlock.getPrintableHash());
             }
 
             // Assert that all fork moved to the main line
@@ -944,7 +946,7 @@ public class IndexedBlockStoreTest {
             for (Block currBlock : bestLine) {
                 Long number = currBlock.getNumber();
                 Block chainBlock = indexedBlockStore.getChainBlockByNumber(number);
-                assertEquals(currBlock.getShortHash(), chainBlock.getShortHash());
+                assertEquals(currBlock.getPrintableHash(), chainBlock.getPrintableHash());
             }
         } finally {
             blocksDB.close();

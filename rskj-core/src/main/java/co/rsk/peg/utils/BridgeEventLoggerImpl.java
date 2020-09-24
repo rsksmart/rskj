@@ -27,13 +27,13 @@ import co.rsk.core.RskAddress;
 import co.rsk.peg.Bridge;
 import co.rsk.peg.BridgeEvents;
 import co.rsk.peg.Federation;
-import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Block;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
+import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.LogInfo;
@@ -93,7 +93,7 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
     public void logAddSignature(BtcECKey federatorPublicKey, BtcTransaction btcTx, byte[] rskTxHash) {
         if (activations.isActive(ConsensusRule.RSKIP146)) {
             ECKey key = ECKey.fromPublicOnly(federatorPublicKey.getPubKey());
-            String federatorRskAddress = Hex.toHexString(key.getAddress());
+            String federatorRskAddress = ByteUtil.toHexString(key.getAddress());
             logAddSignatureInSolidityFormat(rskTxHash, federatorRskAddress, federatorPublicKey);
         } else {
             logAddSignatureInRLPFormat(federatorPublicKey, btcTx, rskTxHash);
