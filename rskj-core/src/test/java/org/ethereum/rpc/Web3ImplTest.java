@@ -333,7 +333,9 @@ public class Web3ImplTest {
 
         Account acc1 = new AccountBuilder(world).name("acc1").balance(Coin.valueOf(2000000)).build();
         Account acc2 = new AccountBuilder().name("acc2").build();
-        Transaction tx = new TransactionBuilder().sender(acc1).receiver(acc2).value(BigInteger.valueOf(1000000)).build();
+        Transaction tx = new TransactionBuilder().sender(acc1).receiver(acc2).
+                                gasLimit(BigInteger.valueOf(100000)).
+                                value(BigInteger.valueOf(1000000)).build();
         List<Transaction> txs = new ArrayList<>();
         txs.add(tx);
         Block genesis = world.getBlockChain().getBestBlock();
@@ -360,12 +362,16 @@ public class Web3ImplTest {
 
         String rawTransactionReceipt = web3.rsk_getRawTransactionReceiptByHash(hashString);
         String expectedRawTxReceipt = "0xf9010c01825208b9010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000c082520801";
+        // #mish fails because the old encoding of TX receipt is based on usedGas being execution gas alone.
+        // for tests, the change has to be made in block executor in receipt.setGasUsed(execGasUsed + rentGasUsed);
         Assert.assertEquals(expectedRawTxReceipt, rawTransactionReceipt);
 
         String[] transactionReceiptNodes = web3.rsk_getTransactionReceiptNodesByHash(blockHashString, hashString);
         ArrayList<String> expectedRawTxReceiptNodes = new ArrayList<>();
         expectedRawTxReceiptNodes.add("0x70078048ee76b19fc451dba9dbee8b3e73084f79ea540d3940b3b36b128e8024e9302500010f");
         Assert.assertEquals(1, transactionReceiptNodes.length);
+        System.out.println("\n\nexp\n"+ expectedRawTxReceiptNodes.get(0));
+        System.out.println("got  \n"+  transactionReceiptNodes[0]);
         Assert.assertEquals(expectedRawTxReceiptNodes.get(0), transactionReceiptNodes[0]);
     }
 

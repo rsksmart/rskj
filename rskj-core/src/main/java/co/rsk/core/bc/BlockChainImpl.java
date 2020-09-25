@@ -36,6 +36,8 @@ import org.ethereum.listener.EthereumListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.bouncycastle.util.encoders.Hex; //#mish for testing
+
 import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -127,7 +129,7 @@ public class BlockChainImpl implements Blockchain {
      * @return IMPORTED_BEST if the block is the new best block
      *      IMPORTED_NOT_BEST if it was added to alternative chain
      *      NO_PARENT  the block parent is unknown yet
-     *      INVALID_BLOCK   the block has invalida data/state
+     *      INVALID_BLOCK   the block has invalid data/state
      *      EXISTS  the block was already processed
      */
     @Override
@@ -155,6 +157,7 @@ public class BlockChainImpl implements Blockchain {
                 synchronized (connectLock) {
                     logger.trace("Start try connect");
                     long saveTime = System.nanoTime();
+                    logger.info("Start internal try to connect block: num: [{}] ", block.getNumber());
                     ImportResult result = internalTryToConnect(block);
                     long totalTime = System.nanoTime() - saveTime;
                     String timeInSeconds = FormatUtils.formatNanosecondsToSeconds(totalTime);
@@ -170,6 +173,7 @@ public class BlockChainImpl implements Blockchain {
                 }
             } catch (Throwable t) {
                 logger.error("Unexpected error: ", t);
+                System.out.println("\nIn blockchainimpl internalconnect failed with \n" + t);
                 return ImportResult.INVALID_BLOCK;
             }
             finally {
@@ -239,6 +243,7 @@ public class BlockChainImpl implements Blockchain {
             logger.warn("Invalid block with number: {}", blockNumber);
             panicProcessor.panic("invalidblock", String.format("Invalid block %s %s", blockNumber, block.getHash()));
             profiler.stop(metric);
+            System.out.println("in blockchainimpl pre validation failed");
             return ImportResult.INVALID_BLOCK;
         }
 
@@ -248,7 +253,7 @@ public class BlockChainImpl implements Blockchain {
         if (parent != null) {
             long saveTime = System.nanoTime();
             logger.trace("execute start");
-
+            
             result = blockExecutor.execute(block, parent.getHeader(), false, noValidation);
 
             logger.trace("execute done");
@@ -260,6 +265,7 @@ public class BlockChainImpl implements Blockchain {
 
             if (!isValid) {
                 profiler.stop(metric);
+                System.out.println("in blockchainimpl post validation failed");
                 return ImportResult.INVALID_BLOCK;
             }
             // Now that we know it's valid, we can commit the changes made by the block

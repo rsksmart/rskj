@@ -326,6 +326,10 @@ public class RskSystemProperties extends SystemProperties {
         return configFromFiles.getInt("transaction.gasPriceBump");
     }
 
+    public Integer getNumOfAccountSlots() {
+        return configFromFiles.getInt("transaction.accountSlots");
+    }
+
     public int getStatesCacheSize() {
         return configFromFiles.getInt("cache.states.max-elements");
     }

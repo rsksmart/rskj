@@ -53,6 +53,9 @@ public class TestCase {
     //            "gas": { ... },
     private byte[] gas;
 
+    //            "rentGas": { ... },
+    private byte[] rentGas;     // #mish: mods made via shadowing of "gas", copied over basically
+
     //            "out": { ... },
     private byte[] out;
 
@@ -95,6 +98,11 @@ public class TestCase {
             if (testCaseJSONObj.containsKey("gas"))
                 gasString = testCaseJSONObj.get("gas").toString();
             this.gas = BigIntegers.asUnsignedByteArray(toBigInt(gasString));
+
+            String rentGasString = "0";
+            if (testCaseJSONObj.containsKey("rentGas"))
+                rentGasString = testCaseJSONObj.get("rentGas").toString();
+            this.rentGas = BigIntegers.asUnsignedByteArray(toBigInt(rentGasString));
 
             String outString = null;
             if (testCaseJSONObj.containsKey("out"))
@@ -165,6 +173,10 @@ public class TestCase {
         return gas;
     }
 
+        public byte[] getRentGas() {
+        return rentGas;
+    }
+
     public byte[] getOut() {
         return out;
     }
@@ -191,6 +203,7 @@ public class TestCase {
                 "" + env +
                 ", " + exec +
                 ", gas=" + ByteUtil.toHexString(gas) +
+                ", rentGas=" + ByteUtil.toHexString(rentGas) +
                 ", out=" + ByteUtil.toHexString(out) +
                 ", pre=" + pre +
                 ", post=" + post +

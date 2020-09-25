@@ -62,6 +62,10 @@ public class MessageCall {
      */
     private final DataWord gas;
     /**
+     * storage rent gas to pay for the call, remaining rent gas will be refunded to the caller
+     */
+    private final DataWord rentGas;
+    /**
      * address of account which code to call
      */
     private final DataWord codeAddress;
@@ -86,20 +90,23 @@ public class MessageCall {
      */
     private DataWord outDataSize;
 
-    public MessageCall(MsgType type, DataWord gas, DataWord codeAddress,
+
+    public MessageCall(MsgType type, DataWord gas, DataWord rentGas, DataWord codeAddress,
                        DataWord endowment, DataWord inDataOffs, DataWord inDataSize) {
         this.type = type;
         this.gas = gas;
+        this.rentGas = rentGas;
         this.codeAddress = codeAddress;
         this.endowment = endowment;
         this.inDataOffs = inDataOffs;
         this.inDataSize = inDataSize;
     }
-
-    public MessageCall(MsgType type, DataWord gas, DataWord codeAddress,
+    
+    // #mish: C2A Add rentgas to arglist.
+    public MessageCall(MsgType type, DataWord gas, DataWord rentGas, DataWord codeAddress,
                        DataWord endowment, DataWord inDataOffs, DataWord inDataSize,
                        DataWord outDataOffs, DataWord outDataSize) {
-        this(type, gas, codeAddress, endowment, inDataOffs, inDataSize);
+        this(type, gas, rentGas, codeAddress, endowment, inDataOffs, inDataSize);
         this.outDataOffs = outDataOffs;
         this.outDataSize = outDataSize;
     }
@@ -111,6 +118,12 @@ public class MessageCall {
     public DataWord getGas() {
         return gas;
     }
+
+    
+    public DataWord getRentGas() {
+        return rentGas;
+    }
+    
 
     public DataWord getCodeAddress() {
         return codeAddress;

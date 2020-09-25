@@ -462,8 +462,8 @@ public class WorldDslProcessorTest {
         World world = new World();
 
         WorldDslProcessor processor = new WorldDslProcessor(world);
-
-        DslParser parser = new DslParser("account_new acc1\naccount_new acc2\ntransaction_build tx01\nsender acc1\nreceiver acc2\nvalue 1000\ngas 1200000\ngasPrice 2\nbuild");
+        //#mish increase gaslimit from 12 to 2400000 for rent test
+        DslParser parser = new DslParser("account_new acc1\naccount_new acc2\ntransaction_build tx01\nsender acc1\nreceiver acc2\nvalue 1000\ngas 2400000\ngasPrice 2\nbuild");
 
         processor.processCommands(parser);
 

@@ -32,13 +32,15 @@ public class CallCreate {
     private final byte[] data;
     private final byte[] destination;
     private final long  gasLimit;
+    private final long  rentGasLimit;
     private final byte[] value;
 
-/* e.g.
+/* e.g. // mish: copied info from gas for rentGas
         "data" : [
                 ],
         "destination" : "cd1722f3947def4cf144679da39c4c32bdc35681",
         "gasLimit" : 9792,
+        "rentGasLimit" : 9792,
         "value" : 74
 */
 
@@ -47,6 +49,7 @@ public class CallCreate {
         String data = callCreateJSON.get("data").toString();
         String destination = callCreateJSON.get("destination").toString();
         String gasLimit = callCreateJSON.get("gasLimit").toString();
+        String rentGasLimit = callCreateJSON.get("rentGasLimit").toString();
         String value = callCreateJSON.get("value").toString();
 
         if (data != null && data.length() > 2)
@@ -56,6 +59,7 @@ public class CallCreate {
 
         this.destination = Hex.decode(destination);
         this.gasLimit = TestCase.toBigInt(gasLimit).longValueExact();
+        this.rentGasLimit = TestCase.toBigInt(rentGasLimit).longValueExact();
         this.value = ByteUtil.bigIntegerToBytes(TestCase.toBigInt(value));
     }
 
@@ -71,6 +75,10 @@ public class CallCreate {
         return gasLimit;
     }
 
+    public long  getRentGasLimit() {
+        return rentGasLimit;
+    }
+
     public byte[] getValue() {
         return value;
     }
@@ -81,6 +89,7 @@ public class CallCreate {
                 "data=" + ByteUtil.toHexString(data) +
                 ", destination=" + ByteUtil.toHexString(destination) +
                 ", gasLimit=" + Long.toHexString(gasLimit) +
+                ", rentGasLimit=" + Long.toHexString(rentGasLimit) +
                 ", value=" + ByteUtil.toHexString(value) +
                 '}';
     }

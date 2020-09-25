@@ -48,9 +48,9 @@ public class TrieValueTest {
         Assert.assertArrayEquals(value, trie.getValue());
     }
 
-    @Test
+    @Test //should pass only with value length <= 32
     public void noValueInTrieWith32BytesValue() {
-        byte[] value = makeValue(32);
+        byte[] value = new byte[32]; //makeValue(32); why bother with makevalue here?
 
         for (int k = 0; k < value.length; k++)
             value[k] = (byte)(k + 1);

@@ -52,12 +52,13 @@ public class TestProgramInvokeFactory implements ProgramInvokeFactory {
 
     @Override
     public ProgramInvoke createProgramInvoke(Program program, DataWord toAddress, DataWord callerAddress,
-                                             DataWord inValue, long inGas,
+                                             DataWord inValue, long inGas, long inRentGas,
                                              Coin balanceInt, byte[] dataIn,
                                              Repository repository, BlockStore blockStore,
                                              boolean isStaticCall, boolean byTestingSuite) {
         return null;
     }
+
 
     private ProgramInvoke generalInvoke(Transaction tx, int txindex, Repository repository, BlockStore blockStore) {
 
@@ -81,6 +82,9 @@ public class TestProgramInvokeFactory implements ProgramInvokeFactory {
 
         /*** GAS op ***/
         byte[] gas = tx.getGasLimit();
+
+        byte[] rentGas = tx.getRentGasLimit();
+
 
         /***        CALLVALUE op      ***/
         Coin callValue = tx.getValue() == null ? Coin.ZERO : tx.getValue();
@@ -110,7 +114,7 @@ public class TestProgramInvokeFactory implements ProgramInvokeFactory {
         byte[] gaslimit = env.getCurrentGasLimit();
 
         return new ProgramInvokeImpl(addr.getBytes(), origin.getBytes(), caller.getBytes(), balance.getBytes(),
-                gasPrice.getBytes(), gas, callValue.getBytes(), data, lastHash, coinbase,
+                gasPrice.getBytes(), gas, rentGas, callValue.getBytes(), data, lastHash, coinbase,
                 timestamp, number, txindex, difficulty, gaslimit, repository, blockStore);
     }
 

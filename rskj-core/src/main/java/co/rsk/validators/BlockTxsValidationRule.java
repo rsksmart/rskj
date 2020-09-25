@@ -32,6 +32,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+//import org.bouncycastle.util.encoders.Hex; //#mish for testing
+
 import static java.math.BigInteger.ONE;
 
 /**
@@ -65,6 +67,7 @@ public class BlockTxsValidationRule implements BlockParentDependantValidationRul
             return true;
         }
 
+        //System.out.println("\nIn blockTXs valid rule. Repo snapshot parent state root " + Hex.toHexString(parent.getHeader().getStateRoot()));
         RepositorySnapshot parentRepo = repositoryLocator.snapshotAt(parent.getHeader());
 
         Map<RskAddress, BigInteger> curNonce = new HashMap<>();

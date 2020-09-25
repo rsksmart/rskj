@@ -16,6 +16,13 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+
+ /**
+  #mish For storage rent testing:
+    * changing minerfee from 21000 to 42000 gets the TXs running
+    * Assertions still fail beacuse they are hardcoded for execution gas only. Fees are higher with storage rent.
+  */
+
 package co.rsk.remasc;
 
 import co.rsk.blockchain.utils.BlockGenerator;
@@ -66,7 +73,9 @@ public class RemascStorageProviderTest {
     private Genesis genesisBlock = (Genesis) (new BlockGenerator()).getNewGenesisBlock(initialGasLimit, preMineMap);
 
     private void validateRemascsStorageIsCorrect(RemascStorageProvider provider, Coin expectedRewardBalance, Coin expectedBurnedBalance, long expectedSiblingsSize) {
+        System.out.println("\n\nIn RemascStorProvTest reward bal " +expectedRewardBalance +" " + provider.getRewardBalance());
         assertEquals(expectedRewardBalance, provider.getRewardBalance());
+        System.out.println("\n\nIn RemascStorProvTest burned " +expectedBurnedBalance +" " + provider.getBurnedBalance());
         assertEquals(expectedBurnedBalance, provider.getBurnedBalance());
     }
 
@@ -193,6 +202,7 @@ public class RemascStorageProviderTest {
         Assert.assertEquals(Boolean.TRUE, provider.getBrokenSelectionRule());
     }
 
+    //fine
     @Test
     public void setSaveRetrieveAndGetBrokenSelectionRule() throws IOException {
         RskAddress accountAddress = randomAddress();
@@ -208,7 +218,8 @@ public class RemascStorageProviderTest {
 
         Assert.assertEquals(Boolean.TRUE, newProvider.getBrokenSelectionRule());
     }
-
+    
+    // fine
     @Test
     public void setSaveRetrieveAndGetSiblingsBeforeRFS() throws IOException {
         RskSystemProperties config = spy(new TestSystemProperties());
@@ -231,6 +242,7 @@ public class RemascStorageProviderTest {
         this.validateRemascsStorageIsCorrect(this.getRemascStorageProvider(repository), Coin.valueOf(0), Coin.valueOf(0L), 1L);
     }
 
+    //
     @Test
     public void setSaveRetrieveAndGetSiblingsAfterRFS() throws IOException {
         long minerFee = 21000;
@@ -256,6 +268,7 @@ public class RemascStorageProviderTest {
         );
     }
 
+    //
     @Test
     public void alwaysPaysBeforeRFS() throws IOException {
         RskSystemProperties config = spy(new TestSystemProperties());
@@ -277,7 +290,8 @@ public class RemascStorageProviderTest {
         RepositorySnapshot repository = repositoryLocator.snapshotAt(blockchain.getBestBlock().getHeader());
         this.validateRemascsStorageIsCorrect(this.getRemascStorageProvider(repository), Coin.valueOf(84000), Coin.valueOf(0L), 0L);
     }
-
+    
+    //
     @Test
     public void alwaysPaysFedBeforeRFS() throws IOException {
         RskSystemProperties config = spy(new TestSystemProperties());
@@ -303,6 +317,7 @@ public class RemascStorageProviderTest {
         assertEquals(Coin.valueOf(federatorBalance), RemascTestRunner.getAccountBalance(repository, federationProvider.getFederatorAddress(0)));
     }
 
+    //
     @Test
     public void doesntPayFedBelowMinimumRewardAfterRFS() throws IOException {
         Constants constants = spy(Constants.testnet());
@@ -329,6 +344,7 @@ public class RemascStorageProviderTest {
         assertEquals(null, RemascTestRunner.getAccountBalance(repository, federationProvider.getFederatorAddress(0)));
     }
 
+    //
     @Test
     public void doesntPayBelowMinimumRewardAfterRFS() throws IOException {
         Constants constants = spy(Constants.testnet());
@@ -352,6 +368,7 @@ public class RemascStorageProviderTest {
         this.validateRemascsStorageIsCorrect(this.getRemascStorageProvider(repository), Coin.valueOf(126000), Coin.valueOf(0L), 0L);
     }
 
+    //
     @Test
     public void paysFedWhenHigherThanMinimumRewardAfterRFS() throws IOException {
         Constants constants = spy(Constants.testnet());
@@ -380,6 +397,7 @@ public class RemascStorageProviderTest {
         assertEquals(Coin.valueOf(federatorBalance), RemascTestRunner.getAccountBalance(repository, federationProvider.getFederatorAddress(0)));
     }
 
+    //
     @Test
     public void paysWhenHigherThanMinimumRewardAfterRFS() throws IOException {
         Constants constants = spy(Constants.testnet());
@@ -405,6 +423,7 @@ public class RemascStorageProviderTest {
         this.validateRemascsStorageIsCorrect(this.getRemascStorageProvider(repository), Coin.valueOf(840000L), Coin.valueOf(0L), 0L);
     }
 
+    //
     @Test
     public void paysOnlyBlocksWithEnoughBalanceAccumulatedAfterRFS() throws IOException {
         Constants constants = spy(Constants.testnet());
@@ -417,7 +436,7 @@ public class RemascStorageProviderTest {
         long gasLimit = 100000L;
         long gasPrice = 10L;
         long lowGasPrice = 1L;
-        long minerFee = 21000;
+        long minerFee =42000;
 
         RskAddress coinbase = randomAddress();
         BlockChainBuilder builder = new BlockChainBuilder().setTesting(true).setGenesis(genesisBlock).setConfig(config);
@@ -470,6 +489,8 @@ public class RemascStorageProviderTest {
 
             long blockNumber = blockchain.getBestBlock().getNumber();
             if (blockNumber == 24){ // before first special block
+                System.out.println("\n\nIn RemascStorageProv test assertequal " + 
+                                    Coin.valueOf(1663200L).compareTo(RemascTestRunner.getAccountBalance(repository, coinbase)));
                 assertEquals(Coin.valueOf(1663200L), RemascTestRunner.getAccountBalance(repository, coinbase));
             } else if (blockNumber == 25 || blockNumber == 26){ // after first and second special block
                 assertEquals(Coin.valueOf(1829520L), RemascTestRunner.getAccountBalance(repository, coinbase));

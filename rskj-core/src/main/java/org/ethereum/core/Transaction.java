@@ -59,6 +59,11 @@ import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
  * or could be from a piece of automated software running on a server.
  * There are two types of transactions: those which result in message calls
  * and those which result in the creation of new contracts.
+ * 
+ * #mish: for storage rent implementation review
+ * - treat transaction gaslimit as a combined limit for gas used for execution and to pay rent 
+ *          (if rent is due) for all trie nodes touched by a TX (sender pays for all nodes when rent is due)
+ * - internally, divide the gas limit equally between to separate budgets for execution and rent
  */
 public class Transaction {
     public static final int DATAWORD_LENGTH = 32;
@@ -74,8 +79,8 @@ public class Transaction {
 
     private static final byte LOWER_REAL_V = 27;
     protected RskAddress sender;
-    /* whether this is a local call transaction */
-    private boolean isLocalCall;
+    /* whether this is a local call transaction, just local node is involved in the call */
+    private boolean isLocalCall; 
     /* a counter used to make sure each transaction can only be processed once */
     private final byte[] nonce;
     private final Coin value;
@@ -83,11 +88,20 @@ public class Transaction {
      * In creation transaction the receive address is - 0 */
     private final RskAddress receiveAddress;
     private final Coin gasPrice;
+    
     /* the amount of "gas" to allow for the computation.
      * Gas is the fuel of the computational engine.
      * Every computational step taken and every byte added
-     * to the state or transaction list consumes some gas. */
+     * to the state or transaction list consumes some gas. 
+     * ***********************************
+     * #mish: Storage rent implementation
+     * Gas is also used to pay for storage rent. To work with existing wallets,
+     * the same gaslimit field acts as a combined limit for execution and rent gas
+     * this is divided equally to two separate execution and rent gaslimits
+     * see methods getGasLimit() and getRentGasLimit()
+     * */
     private byte[] gasLimit;
+    
     /* An unlimited size byte array specifying
      * input [data] of the message call or
      * Initialization code for a new contract */
@@ -97,14 +111,14 @@ public class Transaction {
      * (including public key recovery bits) */
     private ECDSASignature signature;
     private byte[] rlpEncoding;
-    private byte[] rawRlpEncoding;
+    private byte[] rawRlpEncoding; //raw is without signature data
     private Keccak256 hash;
     private Keccak256 rawHash;
 
     protected Transaction(byte[] rawData) {
         RLPList transaction = RLP.decodeList(rawData);
-
-        if (transaction.size() != 9) {
+        int txSize = transaction.size(); 
+        if (txSize != 9) {
             throw new IllegalArgumentException("A transaction must have exactly 9 elements");
         }
 
@@ -114,7 +128,7 @@ public class Transaction {
         this.receiveAddress = RLP.parseRskAddress(transaction.get(3).getRLPData());
         this.value = RLP.parseCoinNullZero(transaction.get(4).getRLPData());
         this.data = transaction.get(5).getRLPData();
-
+        // 6, 7, 8 are related to signature 
         // only parse signature in case tx is signed
         byte[] vData = transaction.get(6).getRLPData();
         if (vData != null) {
@@ -132,53 +146,13 @@ public class Transaction {
         }
     }
 
-    /* creation contract tx
+    /* CONTRACT CREATION tx #mish: no receiver Addr 
      * [ nonce, gasPrice, gasLimit, "", endowment, init, signature(v, r, s) ]
-     * or simple send tx
+     * or SIMPLE SEND tx (need not have data)
      * [ nonce, gasPrice, gasLimit, receiveAddress, value, data, signature(v, r, s) ]
      */
-    public Transaction(byte[] nonce, byte[] gasPriceRaw, byte[] gasLimit, byte[] receiveAddress, byte[] value, byte[] data) {
-        this(nonce, gasPriceRaw, gasLimit, receiveAddress, value, data, (byte) 0);
-    }
-
-    public Transaction(byte[] nonce, byte[] gasPriceRaw, byte[] gasLimit, byte[] receiveAddress, byte[] value, byte[] data, byte[] r, byte[] s, byte v) {
-        this(nonce, gasPriceRaw, gasLimit, receiveAddress, value, data, (byte) 0);
-
-        this.signature = ECDSASignature.fromComponents(r, s, v);
-    }
-
-    public Transaction(long nonce, long gasPrice, long gas, String to, long value, byte[] data, byte chainId) {
-        this(BigInteger.valueOf(nonce).toByteArray(), BigInteger.valueOf(gasPrice).toByteArray(),
-                BigInteger.valueOf(gas).toByteArray(), Hex.decode(to), BigInteger.valueOf(value).toByteArray(),
-                data, chainId);
-    }
-
-    public Transaction(BigInteger nonce, BigInteger gasPrice, BigInteger gas, String to, BigInteger value, byte[] data,
-                       byte chainId) {
-        this(nonce.toByteArray(), gasPrice.toByteArray(), gas.toByteArray(), Hex.decode(to), value.toByteArray(), data,
-                chainId);
-    }
-
-    public Transaction(String to, BigInteger amount, BigInteger nonce, BigInteger gasPrice, BigInteger gasLimit, byte chainId) {
-        this(to, amount, nonce, gasPrice, gasLimit, (byte[]) null, chainId);
-    }
-
-    public Transaction(String to, BigInteger amount, BigInteger nonce, BigInteger gasPrice, BigInteger gasLimit, String data, byte chainId) {
-        this(to, amount, nonce, gasPrice, gasLimit, data == null ? null : Hex.decode(data), chainId);
-    }
-
-    public Transaction(String to, BigInteger amount, BigInteger nonce, BigInteger gasPrice, BigInteger gasLimit, byte[] decodedData, byte chainId) {
-        this(BigIntegers.asUnsignedByteArray(nonce),
-                gasPrice.toByteArray(),
-                BigIntegers.asUnsignedByteArray(gasLimit),
-                to != null ? Hex.decode(to) : null,
-                BigIntegers.asUnsignedByteArray(amount),
-                decodedData,
-                chainId);
-    }
-
-    public Transaction(byte[] nonce, byte[] gasPriceRaw, byte[] gasLimit, byte[] receiveAddress, byte[] valueRaw, byte[] data,
-                       byte chainId) {
+    // #mish the full constructor. Call this C1
+    public Transaction(byte[] nonce, byte[] gasPriceRaw, byte[] gasLimit, byte[] receiveAddress, byte[] valueRaw, byte[] data, byte chainId){
         this.nonce = ByteUtil.cloneBytes(nonce);
         this.gasPrice = RLP.parseCoinNonNullZero(ByteUtil.cloneBytes(gasPriceRaw));
         this.gasLimit = ByteUtil.cloneBytes(gasLimit);
@@ -187,8 +161,60 @@ public class Transaction {
         this.data = ByteUtil.cloneBytes(data);
         this.chainId = chainId;
         this.isLocalCall = false;
+     } 
+    // #mish: Call this C2. Compared to C1 it does not have chainID.
+    public Transaction(byte[] nonce, byte[] gasPriceRaw, byte[] gasLimit, byte[] receiveAddress, byte[] value, byte[] data) {
+        this(nonce, gasPriceRaw, gasLimit, receiveAddress, value, data, (byte) 0);
     }
 
+    // #mish: Call this C3. a 9 elem byte array..
+    public Transaction(byte[] nonce, byte[] gasPriceRaw, byte[] gasLimit, byte[] receiveAddress, byte[] value, byte[] data, byte[] r, byte[] s, byte v) {
+        this(nonce, gasPriceRaw, gasLimit, receiveAddress, value, data, (byte) 0);
+        this.signature = ECDSASignature.fromComponents(r, s, v);
+    }
+    
+    // This alt. version uses parameters "to" (instead of receiver addr) and "amount" (instead of value)
+    // Call this C4.
+    public Transaction(String to, BigInteger amount, BigInteger nonce, BigInteger gasPrice, BigInteger gasLimit, byte[] decodedData, byte chainId){
+        this(BigIntegers.asUnsignedByteArray(nonce),
+                gasPrice.toByteArray(),
+                BigIntegers.asUnsignedByteArray(gasLimit),
+                to != null ? Hex.decode(to) : null,
+                BigIntegers.asUnsignedByteArray(amount),
+                decodedData,
+                chainId);
+    }
+    
+    // #mish: existed prior to rent: Similar to C5, except 'data' is String not byte[]. param types SBBBBSb
+    // call this C6:
+    public Transaction(String to, BigInteger amount, BigInteger nonce, BigInteger gasPrice, BigInteger gasLimit, String data, byte chainId) {
+        this(to, amount, nonce, gasPrice, gasLimit, data == null ? null : Hex.decode(data), chainId);
+    }
+
+    //Call this C7: existed prior to rent: param types SBBBBb no 'data'. 
+    public Transaction(String to, BigInteger amount, BigInteger nonce, BigInteger gasPrice, BigInteger gasLimit, byte chainId) {
+        this(to, amount, nonce, gasPrice, gasLimit, (byte[]) null, chainId);
+    }
+
+    // #mish: param types BBBSBbb, so a reordering of C7. Plus mixed up names (value/amount).
+    // Call this C8: 
+    public Transaction(BigInteger nonce, BigInteger gasPrice, BigInteger gas, String to, BigInteger value, byte[] data, byte chainId) {
+        this(nonce.toByteArray(), gasPrice.toByteArray(), gas.toByteArray(), Hex.decode(to), value.toByteArray(), data,
+                chainId);
+    }
+
+    // #mish: Different param types. lllSlbb
+    // call ths C9: 
+    public Transaction(long nonce, long gasPrice, long gas, String to, long value, byte[] data, byte chainId) {
+        this(BigInteger.valueOf(nonce).toByteArray(), BigInteger.valueOf(gasPrice).toByteArray(),
+                BigInteger.valueOf(gas).toByteArray(), Hex.decode(to), BigInteger.valueOf(value).toByteArray(),
+                data, chainId);        
+    }
+   
+
+    // now the methods
+    
+    //just what it says..
     public Transaction toImmutableTransaction() {
         return new ImmutableTransaction(this.getEncoded());
     }
@@ -223,10 +249,11 @@ public class Transaction {
 
         long nonZeroes = this.nonZeroDataBytes();
         long zeroVals = ListArrayUtil.getLength(this.getData()) - nonZeroes;
-
+        // Base cost (e.g. 53K contract creation, 21K reg) + data cost (e.g. 68 per non-0 data byte, 4 for 0)
         return (this.isContractCreation() ? GasCost.TRANSACTION_CREATE_CONTRACT : GasCost.TRANSACTION) + zeroVals * GasCost.TX_ZERO_DATA + nonZeroes * GasCost.TX_NO_ZERO_DATA;
     }
 
+    // alias for validate
     public void verify() {
         validate();
     }
@@ -300,10 +327,31 @@ public class Transaction {
         return gasPrice;
     }
 
+    /** #mish: Storage rent implementation
+     * There is a single field in TX for overall gas budget (execution + rent)
+      * We divide this overall gas budget of the TX by a factor to allocate to rent gas
+      * then assign all remaining budget to execution gas
+      * default value of factor is TX_GASBUDGET_DIVISOR = 2 (equal division)
+    */
+    // #mish: the conventional (EVM) execution gas limit for a Transaction
     public byte[] getGasLimit() {
-        return gasLimit;
+        return getExecGasLimit();
+    }
+    // #mish: For future, explicit reference for execution gas limit
+    public byte[] getExecGasLimit() {
+        long gasBudget = GasCost.toGas(this.gasLimit); // convert byte to long
+        long execGasBudget= gasBudget/GasCost.TX_GASBUDGET_DIVISOR;
+        return BigInteger.valueOf(execGasBudget).toByteArray();
     }
 
+    // #mish rentGas limit
+    public byte[] getRentGasLimit() {
+        long gasBudget = GasCost.toGas(this.gasLimit);
+        long execGasBudget= gasBudget/GasCost.TX_GASBUDGET_DIVISOR;
+        long rentGasBudget = gasBudget - execGasBudget;
+        return BigInteger.valueOf(rentGasBudget).toByteArray();
+    }
+    
     public byte[] getData() {
         return data;
     }
@@ -462,7 +510,7 @@ public class Transaction {
 
         return ByteUtil.cloneBytes(this.rawRlpEncoding);
     }
-
+    // with signature data
     public byte[] getEncoded() {
         if (this.rlpEncoding == null) {
             byte[] v;
@@ -511,6 +559,11 @@ public class Transaction {
     public BigInteger getGasLimitAsInteger() {
         return (this.getGasLimit() == null) ? null : BigIntegers.fromUnsignedByteArray(this.getGasLimit());
     }
+
+    public BigInteger getRentGasLimitAsInteger() {
+        return (this.getRentGasLimit() == null) ? null : BigIntegers.fromUnsignedByteArray(this.getRentGasLimit());
+    }
+
 
     public BigInteger getNonceAsInteger() {
         return (this.getNonce() == null) ? null : BigIntegers.fromUnsignedByteArray(this.getNonce());

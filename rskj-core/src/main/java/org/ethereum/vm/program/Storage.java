@@ -23,6 +23,9 @@ import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.trie.Trie;
+import co.rsk.core.types.ints.Uint24;
+
+import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Repository;
 import org.ethereum.vm.DataWord;
@@ -223,4 +226,107 @@ public class Storage implements Repository, ProgramListenerAware {
     public void updateAccountState(RskAddress addr, AccountState accountState) {
         throw new UnsupportedOperationException();
     }
+
+    /**  #mish add methods for storage rent
+    * (i.e. put/get methods for node valuelength and rent last paid timestamps)
+    * These are implemented in MutableRepository
+    */
+    /*@Override
+    public synchronized void updateNodeWithRent(DataWord key, long newlastRentPaidTime){
+        repository.updateNodeWithRent(key, newlastRentPaidTime);
+    }*/
+
+    @Override
+    public synchronized void updateNodeWithRent(ByteArrayWrapper key, long newlastRentPaidTime){
+        repository.updateNodeWithRent(key, newlastRentPaidTime);
+    }
+
+    @Override
+    public ByteArrayWrapper getAccountNodeKey(RskAddress addr){
+        return repository.getAccountNodeKey(addr);
+    }
+
+    // for account state node.. both regular accounts as well as contracts
+    @Override
+    public Uint24 getAccountNodeValueLength(RskAddress addr){
+        return repository.getAccountNodeValueLength(addr);
+    }
+    
+    @Override
+    public long getAccountNodeLRPTime(RskAddress addr){
+
+        return repository.getAccountNodeLRPTime(addr);
+    }
+
+    // update with lastRentPaidTime. This is an extension of updateAccountState(addr, State)
+    @Override
+    public void updateAccountNodeWithRent(RskAddress addr, final AccountState accountState, final long newlastRentPaidTime){
+        repository.updateAccountNodeWithRent(addr, accountState, newlastRentPaidTime);
+    }
+    
+    // For nodes containing contract code
+    
+    // Start with key as DataWord for HashMaps. Using `getCodeNodexx` to emphasize this is about the node,
+    // rather than the code, and to dinsinguish from prior methods
+    @Override
+    public ByteArrayWrapper getCodeNodeKey(RskAddress addr){
+        return repository.getCodeNodeKey(addr);
+    }
+
+    @Override
+    public long getCodeNodeLRPTime(RskAddress addr){
+        return repository.getCodeNodeLRPTime(addr);
+    }
+
+    // update node with rent info (and code) 
+    @Override
+    public void saveCodeWithRent(RskAddress addr, final byte[] code, final long newlastRentPaidTime){
+       repository.saveCodeWithRent(addr, code, newlastRentPaidTime); 
+    }
+    
+    // For nodes containing contract storage
+
+    // start with key for stortage root
+    @Override
+    public ByteArrayWrapper getStorageRootKey(RskAddress addr){
+        return repository.getStorageRootKey(addr);
+    }
+
+    //storage root node value is always 0x01
+    @Override
+    public Uint24 getStorageRootValueLength(RskAddress addr){
+        return repository.getStorageRootValueLength(addr);
+    }
+
+    @Override
+    public long getStorageRootLRPTime(RskAddress addr){
+        return repository.getStorageRootLRPTime(addr);
+    }
+
+    @Override
+    public void updateStorageRootWithRent(RskAddress addr, final byte[] value, final long newlastRentPaidTime){
+        repository.updateStorageRootWithRent(addr, value, newlastRentPaidTime);
+    }
+
+    // methods for individual storage nodes: addr is not enough, also need the key
+    @Override
+    public ByteArrayWrapper getStorageNodeKey(RskAddress addr, DataWord key) {
+        return repository.getStorageNodeKey(addr, key);
+    }
+
+    @Override
+    public Uint24 getStorageValueLength(RskAddress addr, DataWord key){
+        return repository.getStorageValueLength(addr, key);
+    }
+
+    @Override
+    public long getStorageLRPTime(RskAddress addr, DataWord key){
+        return repository.getStorageLRPTime(addr, key);
+    }
+
+    @Override
+    public void updateStorageWithRent(RskAddress addr,  DataWord key, final byte[] value, final long newlastRentPaidTime){
+        repository.updateStorageWithRent(addr, key, value, newlastRentPaidTime);
+    }
+
 }

@@ -41,11 +41,19 @@ public interface Web3EthModule {
         return getEthModule().call(args, bnOrId);
     }
 
+    //#mish this has been modified to return both execution + rent gas used
+    // This should NOT be used to set tx gas limit.. use safe method.
+    // reason:  tx.gaslimit will be divided equally between exec and rent, and since these
+    // in general will be unequal, the TX will OOG one way or the other. 
+    // the estimateSafeGas method returns twice the value of the higher of exec and rent estimates 
     default String eth_estimateGas(Web3.CallArguments args) {
         return getEthModule().estimateGas(args);
     }
 
-
+    //#mish add RPC method for rent gas, 2*max(execGasUsed, rentGasUsed)
+    default String eth_estimateSafeGas(Web3.CallArguments args) {
+        return getEthModule().estimateSafeGas(args);
+    }
 
     default Map<String, Object> eth_bridgeState() throws Exception {
         return getEthModule().bridgeState();

@@ -182,10 +182,11 @@ public class TransactionTest {
     String RLP_ENCODED_SIGNED_TX = "f86b8085e8d4a510008227109413978aee95f38490e9769c39b2773ed763d9cd5f872386f26fc10000801ba0eab47c1a49bf2fe5d40e01d313900e19ca485867d462fe06e139e3a536c6d4f4a014a569d327dcda4b29f74f93c0e9729d2f49ad726e703f9cd90dbb0fbf6649f1";
     String KEY = "c85ef7d79691fe79573b1a7064c19c1a9819ebdbd1faaab1a8ec92344438aaf4";
     byte[] testNonce = Hex.decode("");
-    byte[] testGasPrice = BigIntegers.asUnsignedByteArray(BigInteger.valueOf(1000000000000L));
+    byte[] testGasPrice = BigIntegers.asUnsignedByteArray(BigInteger.valueOf(1_000_000_000_000L));
     byte[] testGasLimit = BigIntegers.asUnsignedByteArray(BigInteger.valueOf(10000));
+    byte[] testRentGasLimit = BigIntegers.asUnsignedByteArray(BigInteger.valueOf(2000));
     byte[] testReceiveAddress = Hex.decode("13978aee95f38490e9769c39b2773ed763d9cd5f");
-    byte[] testValue = BigIntegers.asUnsignedByteArray(BigInteger.valueOf(10000000000000000L));
+    byte[] testValue = BigIntegers.asUnsignedByteArray(BigInteger.valueOf(10_000_000_000_000_000L));
     byte[] testData = Hex.decode("");
     byte[] testInit = Hex.decode("");
 
@@ -285,7 +286,6 @@ public class TransactionTest {
 
     @Test
     public void testTransactionCreateContract() {
-
 //        String rlp =
 // "f89f808609184e72a0008203e8808203e8b84b4560005444602054600f60056002600a02010b0d630000001d596002602054630000003b5860066000530860056006600202010a0d6300000036596004604054630000003b5860056060541ca0ddc901d83110ea50bc40803f42083afea1bbd420548f6392a679af8e24b21345a06620b3b512bea5f0a272703e8d6933177c23afc79516fd0ca4a204aa6e34c7e9";
 
@@ -490,7 +490,6 @@ public class TransactionTest {
     public void contractCreationTest() throws Exception {
         // Checks Homestead updates (1) & (3) from
         // https://github.com/ethereum/EIPs/blob/master/EIPS/eip-2.mediawiki
-
         /*
           trying to create a contract with the following Solidity code:
 

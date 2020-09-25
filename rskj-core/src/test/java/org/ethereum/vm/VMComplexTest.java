@@ -76,7 +76,7 @@ public class VMComplexTest {
                      stop
          */
 
-        int expectedGas = 436;
+        int expectedGas = 436; //#mish no longer works so last assertion fails  e.g. SSTORE is now much more expensive, other ops MUL/DIV too?
 
         DataWord key1 = DataWord.valueOf(999);
         DataWord value1 = DataWord.valueOf(3);
@@ -130,7 +130,8 @@ public class VMComplexTest {
 
         assertEquals(expectedGas, program.getResult().getGasUsed());
     }
-
+    
+    
     @Ignore //TODO #POC9
     @Test // contractB call contractA with data to storage
     public void test2() {

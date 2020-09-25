@@ -18,6 +18,7 @@
 
 package co.rsk.db;
 
+import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.trie.Trie;
@@ -97,7 +98,6 @@ public class RepositoryTest {
 
         byte[] stateRoot5 = repository.getStorageStateRoot(COW);
         assertArrayEquals(stateRoot1, stateRoot5);
-
     }
 
     @Test
@@ -549,9 +549,38 @@ public class RepositoryTest {
         assertTrue(hashOfNonExistingAccount.equals(Keccak256.ZERO_HASH));
     }
 
-    private Keccak256 getKeccak256Hash(byte[] emptyCode) {
-        return new Keccak256(Keccak256Helper.keccak256(emptyCode));
+    @Test
+    public void testCreateAccount_IgnoreExistingBalance() {
+        Repository track = repository.startTracking();
+        Coin tenCoins = Coin.valueOf(10L);
+
+        track.addBalance(COW, tenCoins);
+
+        track.createAccount(COW);
+        Coin newBalance = track.getBalance(COW);
+        assertEquals(Coin.ZERO, newBalance);
+
+        track.addBalance(HORSE, tenCoins);
+
+        track.createAccount(HORSE, false);
+        newBalance = track.getBalance(HORSE);
+        assertEquals(Coin.ZERO, newBalance);
     }
 
+    @Test
+    public void testCreateAccount_PreserveExistingBalance() {
+        Repository track = repository.startTracking();
+        Coin tenCoins = Coin.valueOf(10L);
+
+        track.addBalance(COW, tenCoins);
+
+        track.createAccount(COW, true);
+        Coin newBalance = track.getBalance(COW);
+        assertEquals(tenCoins, newBalance);
+    }
+
+    private static Keccak256 getKeccak256Hash(byte[] emptyCode) {
+        return new Keccak256(Keccak256Helper.keccak256(emptyCode));
+    }
 
 }

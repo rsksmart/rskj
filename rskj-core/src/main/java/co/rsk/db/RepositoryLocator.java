@@ -28,6 +28,8 @@ import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.db.MutableRepository;
 import org.ethereum.util.RLP;
 
+import org.bouncycastle.util.encoders.Hex; //#mish for testing
+
 import java.util.Optional;
 
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
@@ -79,13 +81,15 @@ public class RepositoryLocator {
 
     private IllegalArgumentException trieNotFoundException(BlockHeader header) {
         return new IllegalArgumentException(String.format(
-                "The trie with root %s is missing in this store", header.getHash()
+                "\nThe trie with root "  +
+                Hex.toHexString(header.getStateRoot()) +
+                "\nand blockheader %s  \nis missing in this store", header.getHash()
         ));
     }
 
     private Optional<MutableTrie> mutableTrieSnapshotAt(BlockHeader header) {
         Keccak256 stateRoot = stateRootHandler.translate(header);
-
+        
         if (EMPTY_HASH.equals(stateRoot)) {
             return Optional.of(new MutableTrieImpl(trieStore, new Trie(trieStore)));
         }

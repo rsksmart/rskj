@@ -32,7 +32,10 @@ import java.util.Random;
 
 import static org.mockito.Mockito.any;
 
-
+/** #mish todo: Storage rent changed gaslimit interpretation
+  * here, gaslimit split between execution and rent gas
+  * only computes TX.data gas cost
+*/
 public class Tx {
 
     public static Transaction create(
@@ -46,8 +49,10 @@ public class Tx {
         Random r = new Random(sender);
         Transaction transaction = Mockito.mock(Transaction.class);
         Mockito.when(transaction.getValue()).thenReturn(new Coin(BigInteger.valueOf(value)));
-        Mockito.when(transaction.getGasLimit()).thenReturn(BigInteger.valueOf(gaslimit).toByteArray());
-        Mockito.when(transaction.getGasLimitAsInteger()).thenReturn(BigInteger.valueOf(gaslimit));
+        Mockito.when(transaction.getGasLimit()).thenReturn(BigInteger.valueOf(gaslimit - (gaslimit/2L)).toByteArray()); //#mish execution gaslimit
+        Mockito.when(transaction.getGasLimitAsInteger()).thenReturn(BigInteger.valueOf(gaslimit - (gaslimit/2L)));
+        Mockito.when(transaction.getRentGasLimit()).thenReturn(BigInteger.valueOf(gaslimit/2L).toByteArray()); // #mish rent gas limi = 1/2 gaslimit
+        Mockito.when(transaction.getRentGasLimitAsInteger()).thenReturn(BigInteger.valueOf(gaslimit/2L));
         Mockito.when(transaction.getGasPrice()).thenReturn(Coin.valueOf(gasprice));
         Mockito.when(transaction.getNonce()).thenReturn(BigInteger.valueOf(nonce).toByteArray());
         Mockito.when(transaction.getNonceAsInteger()).thenReturn(BigInteger.valueOf(nonce));
@@ -67,7 +72,7 @@ public class Tx {
         ArrayList<Byte> bytes = new ArrayList();
         long amount = 21000;
         if (data != 0) {
-            data /= 2;
+            data /= 2; //#mish hex to byte
             for (int i = 0; i < data / 4; i++) {
                 bytes.add((byte)0);
                 amount += 4;

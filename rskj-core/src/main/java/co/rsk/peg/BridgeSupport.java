@@ -196,7 +196,7 @@ public class BridgeSupport {
             try {
                 btcBlockChain.add(headers[i]);
             } catch (Exception e) {
-                // If we tray to add an orphan header bitcoinj throws an exception
+                // If we try to add an orphan header bitcoinj throws an exception
                 // This catches that case and any other exception that may be thrown
                 logger.warn("Exception adding btc header {}", headers[i].getHash(), e);
             }
@@ -446,9 +446,10 @@ public class BridgeSupport {
         DataWord from = DataWord.valueOf(PrecompiledContracts.BRIDGE_ADDR.getBytes());
         DataWord to = DataWord.valueOf(receiver.getBytes());
         long gas = 0L;
+        long rentGas = 0L; //#mish todo fix me
         DataWord value = DataWord.valueOf(amount.getBytes());
 
-        TransferInvoke invoke = new TransferInvoke(from, to, gas, value);
+        TransferInvoke invoke = new TransferInvoke(from, to, gas, rentGas, value); // #mish todo fix me, added for constructor error
         ProgramResult result     = ProgramResult.empty();
         ProgramSubtrace subtrace = ProgramSubtrace.newCallSubtrace(CallType.CALL, invoke, result, null, Collections.emptyList());
 

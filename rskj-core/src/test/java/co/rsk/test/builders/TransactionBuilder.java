@@ -37,7 +37,7 @@ public class TransactionBuilder {
     private byte[] data;
     private BigInteger value = BigInteger.ZERO;
     private BigInteger gasPrice = BigInteger.ONE;
-    private BigInteger gasLimit = BigInteger.valueOf(21000);
+    private BigInteger gasLimit = BigInteger.valueOf(42000); // #mish doubled from 21000 for storage rent
     private BigInteger nonce = BigInteger.ZERO;
     private boolean immutable;
 

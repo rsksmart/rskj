@@ -35,14 +35,15 @@ public class TransactionExecutionSummary {
     private Transaction tx;
     private Coin value = Coin.ZERO;
     private Coin gasPrice = Coin.ZERO;
+   
     private BigInteger gasLimit = BigInteger.ZERO;
     private BigInteger gasUsed = BigInteger.ZERO;
     private BigInteger gasLeftover = BigInteger.ZERO;
     private BigInteger gasRefund = BigInteger.ZERO;
-
+        
     private List<DataWord> deletedAccounts = emptyList();
     private List<InternalTransaction> internalTransactions = emptyList();
-
+    
     private byte[] result;
     private List<LogInfo> logs;
 
@@ -62,17 +63,15 @@ public class TransactionExecutionSummary {
 
     public Coin getFee() {
         if (failed) {
-            return calcCost(gasLimit);
+            BigInteger failedFee = gasLimit;
+            return calcCost(failedFee); 
         }
-
-        return calcCost(gasLimit.subtract(gasLeftover.add(gasRefund)));
+        // TX  fee (#mish storage rent + execution fee combined)
+        BigInteger txFee = gasLimit.subtract(gasLeftover).subtract(gasRefund);
+        return calcCost(txFee);
     }
 
     public Coin getRefund() {
-        if (failed) {
-            return Coin.ZERO;
-        }
-
         return calcCost(gasRefund);
     }
 
@@ -88,6 +87,8 @@ public class TransactionExecutionSummary {
         return gasPrice;
     }
 
+    // #mish: returns combined gas limit (consistent with Transaction Class gaslimit "field")
+    // NOTE: This is DIFFERENT FROM getGaslimit() "method" from Transaction class which returns execution gas limit ONLY
     public BigInteger getGasLimit() {
         return gasLimit;
     }
@@ -141,7 +142,7 @@ public class TransactionExecutionSummary {
 
             summary = new TransactionExecutionSummary();
             summary.tx = transaction;
-            summary.gasLimit = toBI(transaction.getGasLimit());
+            summary.gasLimit = toBI(transaction.getGasLimit()).add(toBI(transaction.getRentGasLimit())); // combined gas limit
             summary.gasPrice = transaction.getGasPrice();
             summary.value = transaction.getValue();
         }
@@ -160,7 +161,7 @@ public class TransactionExecutionSummary {
             summary.gasRefund = gasRefund;
             return this;
         }
-
+        
         public Builder internalTransactions(List<InternalTransaction> internalTransactions) {
             summary.internalTransactions = unmodifiableList(internalTransactions);
             return this;

@@ -29,6 +29,10 @@ import org.ethereum.datasource.KeyValueDataSource;
 import java.util.Map;
 import java.util.Objects;
 
+/**#mish: in storage rent implementation getHash() uses rent timestamp by defaut.. so no changes needed here
+ * 
+ */
+
 public class StateRootHandler {
     private final ActivationConfig activationConfig;
     private final TrieConverter trieConverter;
@@ -50,7 +54,7 @@ public class StateRootHandler {
         if (isRskip126Enabled) {
             return blockStateRoot;
         }
-
+        
         return Objects.requireNonNull(
                 stateRootTranslator.get(blockStateRoot),
                 "Reset database or continue syncing with previous version"

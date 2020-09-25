@@ -30,6 +30,7 @@ import org.ethereum.db.TrieKeyMapper;
 import org.ethereum.vm.DataWord;
 
 import java.util.*;
+import java.nio.charset.StandardCharsets;
 
 public class MutableTrieImpl implements MutableTrie {
 
@@ -62,6 +63,21 @@ public class MutableTrieImpl implements MutableTrie {
         trie = trie.put(key, value);
     }
 
+    //#mish: methods to update storage rent for a node
+    @Override
+    public void putWithRent(byte[] key, byte[] value, long newLastRentPaidTime) {
+        trie = trie.putWithRent(key, value, newLastRentPaidTime);
+    }
+
+    public void putWithRent(ByteArrayWrapper key, byte[] value, long newLastRentPaidTime) {
+        trie = trie.putWithRent(key.getData(), value, newLastRentPaidTime);
+    }
+
+    public void putWithRent(String key, byte[] value, long newLastRentPaidTime) {
+        byte[] keybytes = key.getBytes(StandardCharsets.UTF_8);
+        trie = trie.putWithRent(keybytes, value, newLastRentPaidTime);
+    }
+
     @Override
     public void put(ByteArrayWrapper key, byte[] value) {
         trie = trie.put(key, value);
@@ -92,6 +108,16 @@ public class MutableTrieImpl implements MutableTrie {
         return Optional.of(atrie.getValueHash());
     }
 
+    //#mish: storage rent implementation, read a node's rent timestamp
+    public long getLastRentPaidTime(byte[] key) {
+        Trie atrie = trie.find(key);
+        if (atrie == null) {
+            // #mish: null?  existing methods (get hash, value) are not returning null
+            return 0L;
+        }
+        return atrie.getLastRentPaidTime();
+    }
+
     @Override
     public Iterator<DataWord> getStorageKeys(RskAddress addr) {
         byte[] accountStorageKey = trieKeyMapper.getAccountStoragePrefixKey(addr);
@@ -101,7 +127,7 @@ public class MutableTrieImpl implements MutableTrie {
         if (storageTrie != null) {
             Iterator<Trie.IterationElement> storageIterator = storageTrie.getPreOrderIterator();
             storageIterator.next(); // skip storage root
-            return new StorageKeysIterator(storageIterator, storageKeyOffset);
+            return new StorageKeysIterator(storageIterator, storageKeyOffset); //#mish, see implementation of inner class below
         }
         return Collections.emptyIterator();
     }

@@ -267,7 +267,7 @@ public class TransactionModuleTest {
         String addr2 = web3.personal_newAccountWithSeed("addr2");
         BigInteger value = BigInteger.valueOf(7);
         BigInteger gasPrice = BigInteger.valueOf(8);
-        BigInteger gasLimit = BigInteger.valueOf(50000);
+        BigInteger gasLimit = BigInteger.valueOf(200000); //#mish increased from 50K for rent testing
         String data = "0xff";
 
         Web3.CallArguments args = new Web3.CallArguments();

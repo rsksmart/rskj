@@ -22,16 +22,18 @@ public class BlockHashesHelper {
     public static byte[] calculateReceiptsTrieRoot(List<TransactionReceipt> receipts, boolean isRskip126Enabled) {
         Trie trie = calculateReceiptsTrieRootFor(receipts);
         if (isRskip126Enabled) {
-            return trie.getHash().getBytes();
+            // #mish "false" indicates trie encoding does not include rent field (as if rent was not implemented)
+            return trie.getHash(true).getBytes(); 
         }
 
-        return trie.getHashOrchid(false).getBytes();
+        return trie.getHashOrchid(false).getBytes(); //#mish this boolean has nothing to do with storage rent
     }
 
     public static Trie calculateReceiptsTrieRootFor(List<TransactionReceipt> receipts) {
         Trie receiptsTrie = new Trie();
         for (int i = 0; i < receipts.size(); i++) {
-            receiptsTrie = receiptsTrie.put(RLP.encodeInt(i), receipts.get(i).getEncoded());
+            //#mish "false" in getEncoded() will only use execution gas (as if rent is not implemented)
+            receiptsTrie = receiptsTrie.put(RLP.encodeInt(i), receipts.get(i).getEncoded(true));
         }
 
         return receiptsTrie;
@@ -45,7 +47,7 @@ public class BlockHashesHelper {
         List<TransactionReceipt> receipts = new ArrayList<>();
 
         int ntxs = transactions.size();
-        int ntx = -1;
+        int ntx = -1; //will change only if we step into for loop
 
         for (int k = 0; k < ntxs; k++) {
             Transaction transaction = transactions.get(k);
@@ -76,7 +78,7 @@ public class BlockHashesHelper {
     public static byte[] getTxTrieRoot(List<Transaction> transactions, boolean isRskip126Enabled) {
         Trie trie = getTxTrieRootFor(transactions);
         if (isRskip126Enabled) {
-            return trie.getHash().getBytes();
+            return trie.getHash(true).getBytes(); // false indicates do not include rent in encoding
         }
 
         return trie.getHashOrchid(false).getBytes();

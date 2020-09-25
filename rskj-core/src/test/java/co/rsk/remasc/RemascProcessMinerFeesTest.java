@@ -16,6 +16,12 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+/**
+  #mish For storage rent testing:
+    * changing minerfee from 21000 to 42000 gets the TXs running
+    * Assertions still fail beacuse they are hardcoded for execution gas only. Fees are higher with storage rent.
+  */
+
 package co.rsk.remasc;
 
 import co.rsk.blockchain.utils.BlockGenerator;
@@ -66,7 +72,7 @@ public class RemascProcessMinerFeesTest {
 
     private Coin cowInitialBalance = new Coin(new BigInteger("1000000000000000000"));
     private long initialGasLimit = 10000000L;
-    private long minerFee = 21000;
+    private long minerFee = 42000; //#mish double this from 21000
     private long txValue = 10000;
     private ECKey cowKey = ECKey.fromPrivate(Keccak256Helper.keccak256("cow".getBytes()));
     private byte[] cowAddress = cowKey.getAddress();
@@ -838,6 +844,9 @@ public class RemascProcessMinerFeesTest {
         RepositorySnapshot repository = repositoryLocator.snapshotAt(blockchain.getBestBlock().getHeader());
 
         Block blockAtHeightTwelve = blockchain.getBlockByNumber(13);
+        System.out.println("\n\nRemascProcMinerFeesTest assertion " +
+            testRunner.getAccountBalance(blockAtHeightTwelve.getCoinbase()) +
+            " " + Coin.valueOf(1680L - 17) );
         assertEquals(Coin.valueOf(1680L - 17), testRunner.getAccountBalance(blockAtHeightTwelve.getCoinbase()));
 
         Block blockAtHeightFiveMainchain = blockchain.getBlockByNumber(6);

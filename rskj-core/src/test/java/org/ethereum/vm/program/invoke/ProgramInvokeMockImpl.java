@@ -39,6 +39,10 @@ import java.nio.charset.StandardCharsets;
  * @author Roman Mandeleil
  * @since 03.06.2014
  */
+// #mish ProgramInvoke extends InvokeData which has getGas and getRentGas methods.. also getGasLimit for block gas limit
+// ToDo: the usage here appears to use gasLimit for both TX gas limti as well as block gas limit. Perhaps it is based on type (long Vs Dataword) 
+// in particular the methods setGas() and setGasLimit() both target the same field..  
+
 public class ProgramInvokeMockImpl implements ProgramInvoke {
 
     private byte[] msgData;
@@ -52,6 +56,7 @@ public class ProgramInvokeMockImpl implements ProgramInvoke {
     private RskAddress contractAddress;
     // default for most tests. This can be overwritten by the test
     private long gasLimit = 1000000;
+    private long rentGasLimit = 1000_000;
 
     public ProgramInvokeMockImpl(byte[] msgDataRaw) {
         this();
@@ -80,6 +85,7 @@ public class ProgramInvokeMockImpl implements ProgramInvoke {
         this.repository.addBalance(accountAddress, balance);
     }
 
+    // #mish default contract code 
     public ProgramInvokeMockImpl() {
         this("385E60076000396000605f556014600054601e60"
                 + "205463abcddcba6040545b51602001600a525451"
@@ -117,7 +123,6 @@ public class ProgramInvokeMockImpl implements ProgramInvoke {
 
     /*           CALLER op         */
     public DataWord getCallerAddress() {
-
         byte[] cowPrivKey = HashUtil.keccak256("monkey".getBytes(StandardCharsets.UTF_8));
         byte[] addr = ECKey.fromPrivate(cowPrivKey).getAddress();
 
@@ -136,9 +141,20 @@ public class ProgramInvokeMockImpl implements ProgramInvoke {
 
         return gasLimit;
     }
-
+    
     public void setGas(long gasLimit) {
         this.gasLimit = gasLimit;
+    }
+
+    /*           RENTGAS op     */  
+    public long  getRentGas() {
+
+        return rentGasLimit;
+    }
+
+    
+    public void setRentGas(long rentGasLimit) {
+        this.rentGasLimit = rentGasLimit;
     }
 
     /*          CALLVALUE op    */
@@ -234,6 +250,7 @@ public class ProgramInvokeMockImpl implements ProgramInvoke {
         return DataWord.valueOf(difficulty);
     }
 
+    // #mish check this is Block gas limt.. then what are we setting with setGas()?
     @Override
     public DataWord getGaslimit() {
         return DataWord.valueOf(gasLimit);

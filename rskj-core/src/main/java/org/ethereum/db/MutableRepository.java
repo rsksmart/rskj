@@ -29,6 +29,8 @@ import co.rsk.trie.Trie;
 import co.rsk.trie.TrieKeySlice;
 import co.rsk.trie.TrieStore;
 import com.google.common.annotations.VisibleForTesting;
+
+import org.ethereum.db.ByteArrayWrapper; //#mish use this instead of dataword for keys (as in mutabletriecache)
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.HashUtil;
@@ -48,7 +50,7 @@ public class MutableRepository implements Repository {
     private static final byte[] ONE_BYTE_ARRAY = new byte[] { 0x01 };
 
     private final TrieKeyMapper trieKeyMapper;
-    private final MutableTrie mutableTrie;
+    private final MutableTrie mutableTrie; // #mish: this can be a mutableTrieImpl or a mutableTrieCache (for tracking)
 
     public MutableRepository(TrieStore trieStore, Trie trie) {
         this(new MutableTrieImpl(trieStore, trie));
@@ -64,6 +66,7 @@ public class MutableRepository implements Repository {
         return mutableTrie.getTrie();
     }
 
+    // #mish this is the same for regular accounts and contracts (e.g. see addstoragebytes)
     @Override
     public synchronized AccountState createAccount(RskAddress addr) {
         AccountState accountState = new AccountState();
@@ -71,9 +74,11 @@ public class MutableRepository implements Repository {
         return accountState;
     }
 
+    // setup storage root node with value 0x01 i.e. ONE_BYTE_ARRAY
     @Override
     public synchronized void setupContract(RskAddress addr) {
         byte[] prefix = trieKeyMapper.getAccountStoragePrefixKey(addr);
+         // #mish: 0x01 value for storage root. See state size reduction in Unitrie post
         mutableTrie.put(prefix, ONE_BYTE_ARRAY);
     }
 
@@ -137,6 +142,7 @@ public class MutableRepository implements Repository {
         return account.getNonce();
     }
 
+    // #mish: without node storage rent. Use saveCodeLRPT() to save code with rent paid timestamp
     @Override
     public synchronized void saveCode(RskAddress addr, byte[] code) {
         byte[] key = trieKeyMapper.getCodeKey(addr);
@@ -208,6 +214,7 @@ public class MutableRepository implements Repository {
         return mutableTrie.get(key);
     }
 
+    // Only contract has storage, and storage root node is marked with value 0x01), so check  storage root node value ? null  
     @Override
     public boolean isContract(RskAddress addr) {
         byte[] prefix = trieKeyMapper.getAccountStoragePrefixKey(addr);
@@ -216,7 +223,7 @@ public class MutableRepository implements Repository {
 
     @Override
     public synchronized void addStorageRow(RskAddress addr, DataWord key, DataWord value) {
-        // DataWords are stored stripping leading zeros.
+        // DataWords are stored stripping leading zeros. That's what Dataword.getByteArrayForStorage() does
         addStorageBytes(addr, key, value.getByteArrayForStorage());
     }
 
@@ -292,12 +299,14 @@ public class MutableRepository implements Repository {
 
         return result;
     }
-
+    // #mish: despite the name this returns as hashset of account addresses in the trie/repository.. not accoount keys
+    // account addresses isolated via keys of length = 1+10_20, via pre-order traversal
     @Override
     public synchronized Set<RskAddress> getAccountsKeys() {
         Set<RskAddress> result = new HashSet<>();
         //TODO(diegoll): this is needed when trie is a MutableTrieCache, check if makes sense to commit here
         mutableTrie.commit();
+        //for MTCache it's not "really" implemented, just ParentTrie.getTrie() method, hence 'commit' above?
         Trie trie = mutableTrie.getTrie();
         Iterator<Trie.IterationElement> preOrderIterator = trie.getPreOrderIterator();
         while (preOrderIterator.hasNext()) {
@@ -312,6 +321,7 @@ public class MutableRepository implements Repository {
     }
 
     // To start tracking, a new repository is created, with a MutableTrieCache in the middle
+    // #mish: recall MTCache uses a nested HashMap [accountKey ->[nodeKey -> value]] .. with value + rent timestamp too
     @Override
     public synchronized Repository startTracking() {
         return new MutableRepository(new MutableTrieCache(mutableTrie));
@@ -341,6 +351,7 @@ public class MutableRepository implements Repository {
         return rootHash.getBytes();
     }
 
+    // #mish: cannot update account node storage rent with this method.
     @Override
     public synchronized void updateAccountState(RskAddress addr, final AccountState accountState) {
         byte[] accountKey = trieKeyMapper.getAccountKey(addr);
@@ -372,4 +383,129 @@ public class MutableRepository implements Repository {
     private byte[] getAccountData(RskAddress addr) {
         return mutableTrie.get(trieKeyMapper.getAccountKey(addr));
     }
+    
+    /* #mish: Additional helper methods for storage rent implementation
+     * what matters for rent is a node's valueLength and lastRentPaidTime
+     * This includes
+     *  - main Account Node which contains account State info
+     *  - Code for contract
+     *  - storage nodes (including storage root).
+     * For each type of value-containing trie node, we define helper methods
+     * to get a node's key, value Length, last rent paid timestamp
+     * and a setter method to update node data via trie putWithRent() 
+     */
+
+    @Override
+    public synchronized void updateNodeWithRent(ByteArrayWrapper key, long newlastRentPaidTime){
+        byte[] value = mutableTrie.get(key.getData()); // get current value
+        if (value != null){
+            mutableTrie.putWithRent(key.getData(), value, newlastRentPaidTime);
+        }
+    }
+
+    @Override
+    public synchronized ByteArrayWrapper getAccountNodeKey(RskAddress addr) {
+        return new ByteArrayWrapper(trieKeyMapper.getAccountKey(addr));
+    }
+
+    // for account state node.. both regular accounts as well as contracts
+    @Override
+    public synchronized Uint24 getAccountNodeValueLength(RskAddress addr) {
+        return mutableTrie.getValueLength(trieKeyMapper.getAccountKey(addr));
+    }
+    
+    @Override
+    public synchronized long getAccountNodeLRPTime(RskAddress addr) {
+        return mutableTrie.getLastRentPaidTime(trieKeyMapper.getAccountKey(addr));
+    }
+
+    // update with lastRentPaidTime. This is an extension of updateAccountState(addr, State)
+    @Override
+    public synchronized void updateAccountNodeWithRent(RskAddress addr, final AccountState accountState, final long newlastRentPaidTime) {
+        byte[] accountKey = trieKeyMapper.getAccountKey(addr);
+        mutableTrie.putWithRent(accountKey, accountState.getEncoded(), newlastRentPaidTime);
+    }
+    
+    // For nodes containing contract code
+    
+    @Override
+    public synchronized ByteArrayWrapper getCodeNodeKey(RskAddress addr) {        
+        AccountState account = getAccountState(addr);
+        if (account == null || account.isHibernated()) {
+            return null;
+        }
+        return new ByteArrayWrapper(trieKeyMapper.getCodeKey(addr));
+    }
+
+    @Override
+    public synchronized long getCodeNodeLRPTime(RskAddress addr) {
+        AccountState account = getAccountState(addr);
+        if (account == null || account.isHibernated()) {
+            return 0L;
+        }
+
+        byte[] key = trieKeyMapper.getCodeKey(addr);
+        return mutableTrie.getLastRentPaidTime(key);
+    }
+
+    // update node with rent info (and code) 
+    @Override
+    public synchronized void saveCodeWithRent(RskAddress addr, final byte[] code, final long newlastRentPaidTime) {
+        byte[] codeKey = trieKeyMapper.getCodeKey(addr);
+        mutableTrie.putWithRent(codeKey, code, newlastRentPaidTime);
+
+        if (code != null && code.length != 0 && !isExist(addr)) {
+            createAccount(addr);
+        }
+
+    }
+    
+    // For nodes containing contract storage
+
+    // start with key for stortage root (value is always '0x01' i.e ONE_BYTE_ARRAY, but rent timestamp varies) 
+    @Override
+    public synchronized ByteArrayWrapper getStorageRootKey(RskAddress addr) {        
+        return new ByteArrayWrapper(trieKeyMapper.getAccountStoragePrefixKey(addr));
+    }
+
+    //storage root node value is always 0x01
+    @Override
+    public synchronized Uint24 getStorageRootValueLength(RskAddress addr) {        
+        return new Uint24(1);
+    }
+    
+    @Override
+    public synchronized long getStorageRootLRPTime(RskAddress addr) {        
+        return mutableTrie.getLastRentPaidTime(trieKeyMapper.getAccountStoragePrefixKey(addr));
+    }
+
+    @Override
+    public synchronized void updateStorageRootWithRent(RskAddress addr, final byte[] value, final long newlastRentPaidTime) {        
+        mutableTrie.putWithRent(trieKeyMapper.getAccountStoragePrefixKey(addr), ONE_BYTE_ARRAY, newlastRentPaidTime);
+    }
+
+    // methods for individual storage nodes: addr is not enough, also need the key
+    @Override
+    public synchronized ByteArrayWrapper getStorageNodeKey(RskAddress addr, DataWord key) {
+        return new ByteArrayWrapper(trieKeyMapper.getAccountStorageKey(addr, key));
+    }
+    
+    @Override
+    public synchronized Uint24 getStorageValueLength(RskAddress addr, DataWord key) {
+        byte[] triekey = trieKeyMapper.getAccountStorageKey(addr, key);
+        return mutableTrie.getValueLength(triekey);
+    }
+    
+    @Override
+    public synchronized long getStorageLRPTime(RskAddress addr, DataWord key) {
+        byte[] triekey = trieKeyMapper.getAccountStorageKey(addr, key);
+        return mutableTrie.getLastRentPaidTime(triekey);
+    }
+
+    @Override
+    public synchronized void updateStorageWithRent(RskAddress addr,  DataWord key, final byte[] value, final long newlastRentPaidTime) {        
+        byte[] triekey = trieKeyMapper.getAccountStorageKey(addr, key);
+        mutableTrie.putWithRent(triekey, value, newlastRentPaidTime);
+    }
+
 }

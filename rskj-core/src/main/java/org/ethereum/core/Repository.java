@@ -4,25 +4,29 @@
  * (derived from ethereumJ library, Copyright (c) 2016 <ether.camp>)
  *
  * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
+ * it under the terms of the GNU Lesser General License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU Lesser General Public License for more details.
+ * GNU Lesser General License for more details.
  *
- * You should have received a copy of the GNU Lesser General Public License
+ * You should have received a copy of the GNU Lesser General License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
 package org.ethereum.core;
 
+
+import co.rsk.core.types.ints.Uint24;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.db.RepositorySnapshot;
 import co.rsk.trie.Trie;
+
+import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.vm.DataWord;
 
 import java.math.BigInteger;
@@ -46,6 +50,28 @@ public interface Repository extends RepositorySnapshot {
      *
      */
     AccountState createAccount(RskAddress addr);
+
+    /**
+     * Create a new account in the database, and optionally carry over any existing balance
+     *
+     * @param addr of the contract
+     * @param carryOverBalance if true, then carry over any existing balance
+     * @return newly created account state
+     *
+     * @see #createAccount(RskAddress)
+     */
+    default AccountState createAccount(RskAddress addr, boolean carryOverBalance) {
+        AccountState newAccount;
+        if (carryOverBalance) { // carry over existing balance
+            Coin oldBalance = getBalance(addr);
+            newAccount = createAccount(addr);
+            addBalance(addr, oldBalance);
+        } else {
+            newAccount = createAccount(addr);
+        }
+
+        return newAccount;
+    }
 
     void setupContract(RskAddress addr);
 
@@ -121,4 +147,58 @@ public interface Repository extends RepositorySnapshot {
         addBalance(fromAddr, value.negate());
         addBalance(toAddr, value);
     }
+
+    /* #mish: for sorage rent 
+    * extend repository by adding methods related to storage rent
+    * (i.e. put/get methods for node (accountState, code, storage) value length and last rent paid timestamp
+    * These are implemented in MutableRepository
+    */
+
+    // method to update a pre-existing node's rent timestamp (will copy existing value)
+    //void updateNodeWithRent(DataWord key, long newlastRentPaidTime);
+
+    void updateNodeWithRent(ByteArrayWrapper key, long newlastRentPaidTime);
+
+    ByteArrayWrapper getAccountNodeKey(RskAddress addr);
+
+    // for account state node.. both regular accounts as well as contracts
+    Uint24 getAccountNodeValueLength(RskAddress addr);
+    
+    long getAccountNodeLRPTime(RskAddress addr);
+
+    // update with lastRentPaidTime. This is an extension of updateAccountState(addr, State)
+    void updateAccountNodeWithRent(RskAddress addr, final AccountState accountState, final long newlastRentPaidTime);
+    
+    // For nodes containing contract code
+    
+    // Start with key as DataWord for HashMaps. Using `getCodeNodexx` to emphasize this is about the node,
+    // rather than the code, and to dinsinguish from prior methods
+    ByteArrayWrapper getCodeNodeKey(RskAddress addr);
+
+    long getCodeNodeLRPTime(RskAddress addr);
+
+    // update node with rent info (and code) 
+    void saveCodeWithRent(RskAddress addr, final byte[] code, final long newlastRentPaidTime);
+    
+    // For nodes containing contract storage
+
+    // start with key for stortage root
+    ByteArrayWrapper getStorageRootKey(RskAddress addr);
+
+    //storage root node value is always 0x01
+    Uint24 getStorageRootValueLength(RskAddress addr);
+
+    long getStorageRootLRPTime(RskAddress addr);
+
+    void updateStorageRootWithRent(RskAddress addr, final byte[] value, final long newlastRentPaidTime);
+
+    // methods for individual storage nodes: addr is not enough, also need the key
+    ByteArrayWrapper getStorageNodeKey(RskAddress addr, DataWord key);
+
+    Uint24 getStorageValueLength(RskAddress addr, DataWord key);
+
+    long getStorageLRPTime(RskAddress addr, DataWord key);
+
+    void updateStorageWithRent(RskAddress addr,  DataWord key, final byte[] value, final long newlastRentPaidTime);
+
 }
