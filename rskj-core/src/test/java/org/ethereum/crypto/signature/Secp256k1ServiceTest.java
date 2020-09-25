@@ -168,19 +168,12 @@ public abstract class Secp256k1ServiceTest {
 
         // Create tx and sign, then recover from serialized.
         Transaction newTx = new Transaction(2l, 2l, 2l, receiver, 2l, messageHash, (byte) 0);
-
-        logger.debug("1");
         newTx.sign(pk);
-        logger.debug("1.1");
         ImmutableTransaction recoveredTx = new ImmutableTransaction(newTx.getEncoded());
-
-        logger.debug("2");
         // Recover Pub Key from recovered tx
         ECKey actualKey = this.getSecp256k1().signatureToKey(HashUtil.keccak256(recoveredTx.getEncodedRaw()), recoveredTx.getSignature());
-        logger.debug("3");
 
         // Recover PK and Address.
-
         String pubKeyActual = Hex.toHexString(actualKey.getPubKey());
         logger.debug("Signature public key\t: {}", pubKeyActual);
         assertEquals(pubKeyExpected, pubKeyActual);

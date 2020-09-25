@@ -20,12 +20,14 @@
 package org.ethereum.crypto.signature;
 
 import org.bitcoin.NativeSecp256k1;
+import org.bitcoin.NativeSecp256k1Exception;
 import org.bouncycastle.util.Arrays;
 import org.ethereum.crypto.ECKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
+import java.math.BigInteger;
 import java.nio.ByteBuffer;
 
 /**
@@ -46,7 +48,14 @@ public class Secp256k1ServiceNative extends Secp256k1ServiceBC {
         try {
             byte[] sigBytes = concatenate(sig, true);
             logger.trace("Recovering key from signature: comporessed[{}] - recId[{}] - sig[{}] - msgHash[{}].", compressed, recId, sigBytes, messageHash);
-            pbKey = NativeSecp256k1.ecdsaRecover(sigBytes, messageHash, recId, compressed);
+            try {
+                pbKey = NativeSecp256k1.ecdsaRecover(sigBytes, messageHash, recId, compressed);
+            } catch (NativeSecp256k1Exception e) {
+                if (NativeSecp256k1.isInfinity(sigBytes, messageHash, recId)) {
+                    return ECKey.fromPublicOnly(BigInteger.ZERO.toByteArray());
+                }
+                throw e;
+            }
         } catch (Exception e) {
             logger.error("Couldnt recover key from signature.", e);
             return null;
@@ -65,7 +74,6 @@ public class Secp256k1ServiceNative extends Secp256k1ServiceBC {
      * @return r + s (bytes array)
      */
     /**
-     *
      * @param sig
      * @param fixed
      * @return
@@ -75,13 +83,13 @@ public class Secp256k1ServiceNative extends Secp256k1ServiceBC {
         byte[] sBytes = sig.getS().toByteArray();
         byte[] allByteArray = new byte[fixed ? 64 : rBytes.length + sBytes.length];
         ByteBuffer buff = ByteBuffer.wrap(allByteArray);
-        if(fixed) {
+        if (fixed) {
             for (int i = rBytes.length; i < 32; i++) {
                 buff.put((byte) 0);
             }
         }
         buff.put(Arrays.copyOfRange(rBytes, getStartIndex(rBytes, fixed), rBytes.length));
-        if(fixed) {
+        if (fixed) {
             for (int i = sBytes.length; i < 32; i++) {
                 buff.put((byte) 0);
             }
@@ -91,10 +99,11 @@ public class Secp256k1ServiceNative extends Secp256k1ServiceBC {
     }
 
     /**
-     *  If bytes length  is greater than 32, we keep the last 32 bytes at the right.
-     *          - So starting byte index will be = length - 32.
-     *  If not
-     *          -  Starting byte index = 0.
+     * If bytes length  is greater than 32, we keep the last 32 bytes at the right.
+     * - So starting byte index will be = length - 32.
+     * If not
+     * -  Starting byte index = 0.
+     *
      * @param sBytes
      * @return
      */

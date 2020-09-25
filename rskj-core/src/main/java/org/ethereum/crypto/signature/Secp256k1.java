@@ -65,9 +65,10 @@ public final class Secp256k1 {
             if (NATIVE_LIB.equals(cryptoLibrary)) {
                 if(Secp256k1Context.isEnabled()){
                     instance = new Secp256k1ServiceNative();
+                    logger.debug("Native Service initialized.");
                 } else {
-                    logger.debug("Signature Service {} not available, initializing Bouncy Castle.", cryptoLibrary);
                     instance = new Secp256k1ServiceBC();
+                    logger.debug("Signature Service {} not available, initialized Bouncy Castle.", cryptoLibrary);
                 }
             } else {
                 instance = new Secp256k1ServiceBC();
