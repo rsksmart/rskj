@@ -508,8 +508,10 @@ public class Program {
             return;
         }
 
+        boolean existingAccount = track.isExist(contractAddress);
+
         //In case of hashing collisions, check for any balance before createAccount()
-        if (track.isExist(contractAddress)) {
+        if (existingAccount) {
             // Hashing collisions in CREATE are rare, but in CREATE2 are possible
             // We check for the nonce to non zero and that the code to be not empty
             // if any of this conditions is true, the contract creation fails
@@ -542,14 +544,9 @@ public class Program {
 
                 return;
             }
-
-            Coin oldBalance = track.getBalance(contractAddress);
-            track.createAccount(contractAddress);
-            track.addBalance(contractAddress, oldBalance);
-        } else {
-            track.createAccount(contractAddress);
         }
 
+        track.createAccount(contractAddress, existingAccount);
         track.setupContract(contractAddress);
 
         if (getActivations().isActive(ConsensusRule.RSKIP125)) {
