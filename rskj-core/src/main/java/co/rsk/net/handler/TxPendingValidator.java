@@ -46,7 +46,7 @@ public class TxPendingValidator {
     private final Constants constants;
     private final ActivationConfig activationConfig;
 
-    public TxPendingValidator(Constants constants, ActivationConfig activationConfig) {
+    public TxPendingValidator(Constants constants, ActivationConfig activationConfig, int accountSlots) {
         this.constants = constants;
         this.activationConfig = activationConfig;
 
@@ -54,7 +54,7 @@ public class TxPendingValidator {
         validatorSteps.add(new TxValidatorNotRemascTxValidator());
         validatorSteps.add(new TxValidatorGasLimitValidator());
         validatorSteps.add(new TxValidatorAccountStateValidator());
-        validatorSteps.add(new TxValidatorNonceRangeValidator());
+        validatorSteps.add(new TxValidatorNonceRangeValidator(accountSlots));
         validatorSteps.add(new TxValidatorAccountBalanceValidator());
         validatorSteps.add(new TxValidatorMinimuGasPriceValidator());
         validatorSteps.add(new TxValidatorIntrinsicGasLimitValidator(constants, activationConfig));

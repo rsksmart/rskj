@@ -21,7 +21,6 @@ package co.rsk.test;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockChainStatus;
-import co.rsk.db.RepositorySnapshot;
 import co.rsk.test.dsl.DslParser;
 import co.rsk.test.dsl.DslProcessorException;
 import co.rsk.test.dsl.WorldDslProcessor;
@@ -37,7 +36,6 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.FileNotFoundException;
-import java.lang.reflect.Field;
 import java.math.BigInteger;
 import java.util.Arrays;
 
@@ -89,7 +87,6 @@ public class DslFilesTest {
         // will fail.. rent not accounted for
         //Assert.assertEquals(BigIntegers.fromUnsignedByteArray(Hex.decode("010c2d")), gasUsed);
     }
-
 
     @Test
     public void runCreate02Resource() throws FileNotFoundException, DslProcessorException {
@@ -155,6 +152,28 @@ public class DslFilesTest {
         Assert.assertTrue(repo2.isContract(addr3));
         Assert.assertNotNull(repo2.getCode(addr3));
         Assert.assertNotEquals(0, repo2.getCode(addr3).length);
+    }
+
+    @Test
+    public void runCreateContractAndPreserveBalance() throws FileNotFoundException, DslProcessorException {
+        // after rskip174 activation
+        DslParser parser = DslParser.fromResource("dsl/create_and_preserve_balance.txt");
+        World world = new World();
+        WorldDslProcessor processor = new WorldDslProcessor(world);
+        processor.processCommands(parser);
+
+        Assert.assertEquals(Coin.valueOf(100L), getBalance(world, "6252703f5ba322ec64d3ac45e56241b7d9e481ad"));
+    }
+
+    @Test
+    public void runCreateContractAndPreserveNoBalance() throws FileNotFoundException, DslProcessorException {
+        // before rskip174 activation
+        DslParser parser = DslParser.fromResource("dsl/create_and_preserve_no_balance.txt");
+        World world = new World();
+        WorldDslProcessor processor = new WorldDslProcessor(world);
+        processor.processCommands(parser);
+
+        Assert.assertEquals(Coin.valueOf(0L), getBalance(world, "6252703f5ba322ec64d3ac45e56241b7d9e481ad"));
     }
 
     @Test
@@ -458,5 +477,13 @@ public class DslFilesTest {
         Assert.assertEquals(1, world.getTransactionPool().getPendingTransactions().size());
         Assert.assertEquals(Coin.valueOf(1000), world.getTransactionPool().getPendingTransactions().get(0).getValue());
         Assert.assertEquals(world.getAccountByName("acc1").getAddress(), world.getTransactionPool().getPendingTransactions().get(0).getSender());
+    }
+
+    private static Coin getBalance(World world, String address) {
+        Block bestBlock = world.getBlockChain().getBestBlock();
+        Repository repo = new MutableRepository(world.getTrieStore(), world.getTrieStore().retrieve(bestBlock.getStateRoot()).get());
+        RskAddress rskAddress = new RskAddress(address);
+
+        return repo.getBalance(rskAddress);
     }
 }

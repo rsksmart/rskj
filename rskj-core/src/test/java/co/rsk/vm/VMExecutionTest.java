@@ -25,6 +25,7 @@ import co.rsk.core.RskAddress;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.BlockFactory;
+import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.*;
 import org.ethereum.vm.program.Program;
@@ -969,6 +970,46 @@ public class VMExecutionTest {
         Assert.assertNotNull(program.getResult().getException());
         Assert.assertTrue(program.getResult().getException() instanceof Program.InvalidBeginSubException);
         Assert.assertEquals("Invalid 'BEGINSUB': PC[0], tx[<null>]", program.getResult().getException().getMessage());
+    }
+
+    @Test
+    public void createContractAndPreserveContractAddressBalance() {
+        /**
+         *  CREATE call with expected address that has non-zero balance
+         */
+        String address = "0x0000000000000000000000000000000000000000";
+        RskAddress testAddress = new RskAddress(address);
+        String pushInitCode = "PUSH32 0x6000000000000000000000000000000000000000000000000000000000000000";
+        String expectedContractAddress = new RskAddress(HashUtil.calcNewAddr(testAddress.getBytes(), ByteUtil.longToBytesNoLeadZeroes(0))).toHexString();
+        int size = 1;
+        int intOffset = 0;
+        int value = 10;
+        int initialContractAddressBalance = 100;
+        Coin expectedContractBalance = Coin.valueOf(initialContractAddressBalance + value);
+
+        RskAddress contractAddress = new RskAddress(expectedContractAddress);
+        invoke.setOwnerAddress(testAddress);
+        invoke.getRepository().addBalance(testAddress, Coin.valueOf(value + 1000));
+        invoke.getRepository().addBalance(contractAddress, Coin.valueOf(initialContractAddressBalance));
+        String inSize = "0x" + DataWord.valueOf(size);
+        String inOffset = "0x" + DataWord.valueOf(intOffset);
+
+        pushInitCode += " PUSH1 0x00 MSTORE";
+
+        String codeToExecute = pushInitCode +
+                " PUSH32 " + inSize +
+                " PUSH32 " + inOffset +
+                " PUSH32 " + "0x" + DataWord.valueOf(value) +
+                " CREATE ";
+
+        Program program = executeCode(codeToExecute, 7);
+        Coin actualContractBalance = invoke.getRepository().getBalance(contractAddress);
+        Stack stack = program.getStack();
+        Assert.assertEquals(1, stack.size());
+        String actualAddress = ByteUtil.toHexString(stack.pop().getLast20Bytes());
+        Assert.assertEquals(expectedContractAddress.toUpperCase(), actualAddress.toUpperCase());
+        Assert.assertEquals(expectedContractAddress.toUpperCase(), actualAddress.toUpperCase());
+        Assert.assertEquals(expectedContractBalance, actualContractBalance);
     }
 
     private Program playCode(String code) {
