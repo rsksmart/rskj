@@ -345,7 +345,7 @@ public class MutableTrieCache implements MutableTrie {
     public Optional<Keccak256> getValueHash(byte[] key) {
         return internalGet(key,
                 keyB -> trie.getValueHash(keyB).orElse(null),
-                cachedBytes -> new Keccak256(Keccak256Helper.keccak256(extractValue(cachedBytes)))).orElse(Keccak256.ZERO_HASH);
+                cachedBytes -> new Keccak256(Keccak256Helper.keccak256(extractValue(cachedBytes))));
     }
 
     public long getLastRentPaidTime(byte[] key) {

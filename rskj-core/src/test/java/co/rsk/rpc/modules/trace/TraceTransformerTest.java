@@ -103,6 +103,7 @@ public class TraceTransformerTest {
         DataWord origin = DataWord.valueOf(2);
         DataWord caller = DataWord.valueOf(3);
         long gas = 1000000;
+        long rentGas = 1000_000;
         DataWord callValue = DataWord.valueOf(100000);
         byte[] data = new byte[]{0x01, 0x02, 0x03, 0x04};
 
@@ -113,6 +114,7 @@ public class TraceTransformerTest {
                 null,
                 null,
                 gas,
+                rentGas,
                 callValue,
                 null,
                 null, null, null, null, null, null,
