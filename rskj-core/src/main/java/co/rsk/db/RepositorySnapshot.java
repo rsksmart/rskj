@@ -50,10 +50,21 @@ public interface RepositorySnapshot extends AccountInformationProvider {
     /**
      * This method can retrieve the hash code without actually retrieving the code
      * in some cases.
+     * This is the PRE RSKIP169 implementation, which has a bug we need to preserve
+     * before the implementation
      * @param addr of the account
      * @return hash of the contract code
      */
-    Keccak256 getCodeHash(RskAddress addr);
+    Keccak256 getCodeHashNonStandard(RskAddress addr);
+
+    /**
+     * This method can retrieve the hash code without actually retrieving the code
+     * in some cases.
+     * This is the POST RSKIP169 implementation which fixes the bug
+     * @param addr of the account
+     * @return hash of the contract code
+     */
+    Keccak256 getCodeHashStandard(RskAddress addr);
 
     /**
      * @param addr - account to check

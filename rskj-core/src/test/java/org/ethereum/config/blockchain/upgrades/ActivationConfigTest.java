@@ -37,6 +37,7 @@ public class ActivationConfigTest {
             "    wasabi100: 0",
             "    papyrus200: 0",
             "    twoToThree: 0",
+            "    iris300: 0",
             "},",
             "consensusRules: {",
             "    areBridgeTxsPaid: afterBridgeSync,",
@@ -71,6 +72,9 @@ public class ActivationConfigTest {
             "    rskip152: papyrus200",
             "    rskip156: papyrus200",
             "    rskipUMM: papyrus200",
+            "    rskip169: iris300",
+            "    rskip171: iris300",
+            "    rskip172: iris300",
             "}"
     ));
 

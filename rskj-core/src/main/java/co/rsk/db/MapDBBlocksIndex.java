@@ -135,4 +135,9 @@ public class MapDBBlocksIndex implements BlocksIndex {
     public void flush() {
         indexDB.commit();
     }
+
+    @Override
+    public void close() {
+        indexDB.close();
+    }
 }

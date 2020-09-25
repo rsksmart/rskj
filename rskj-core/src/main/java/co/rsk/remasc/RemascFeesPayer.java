@@ -69,7 +69,7 @@ class RemascFeesPayer {
 
         TransferInvoke invoke = new TransferInvoke(from, to, gas, rentGas, amount); //#mish fix me todo, added cos constructor mod
         ProgramResult result     = new ProgramResult();
-        ProgramSubtrace subtrace = ProgramSubtrace.newCallSubtrace(CallType.CALL, invoke, result, Collections.emptyList());
+        ProgramSubtrace subtrace = ProgramSubtrace.newCallSubtrace(CallType.CALL, invoke, result, null, Collections.emptyList());
 
         this.subtraces.add(subtrace);
     }

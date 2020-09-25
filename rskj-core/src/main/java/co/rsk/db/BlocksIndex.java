@@ -84,4 +84,6 @@ public interface BlocksIndex {
      * Commits the changes to the underlying permanent storage.
      */
     void flush();
+
+    void close();
 }
