@@ -66,7 +66,8 @@ public enum ConsensusRule {
     RSKIP197("rskip197"), //Handle error in Precompile Contracts execution.
     RSKIP199("rskip199"),
     RSKIP200("rskip200"),
-    RSKIP201("rskip201");
+    RSKIP201("rskip201"),
+    RSKIPXYZ("rskipXYZ");
 
     private String configKey;
 
