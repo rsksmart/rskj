@@ -55,15 +55,22 @@ public class MinerUtils {
     }
 
     public static co.rsk.bitcoinj.core.BtcTransaction getBitcoinMergedMiningCoinbaseTransaction(co.rsk.bitcoinj.core.NetworkParameters params, byte[] blockHashForMergedMining) {
-        co.rsk.bitcoinj.core.BtcTransaction coinbaseTransaction = new co.rsk.bitcoinj.core.BtcTransaction(params);
-        //Add a random number of random bytes before the RSK tag
         SecureRandom random = new SecureRandom();
         byte[] prefix = new byte[random.nextInt(1000)];
         random.nextBytes(prefix);
         byte[] bytes = Arrays.concatenate(prefix, RskMiningConstants.RSK_TAG, blockHashForMergedMining);
-        // Add the Tag to the scriptSig of first input
-        co.rsk.bitcoinj.core.TransactionInput ti = new co.rsk.bitcoinj.core.TransactionInput(params, coinbaseTransaction, bytes);
+
+        return getBitcoinCoinbaseTransaction(params, bytes);
+    }
+
+    public static co.rsk.bitcoinj.core.BtcTransaction getBitcoinCoinbaseTransaction(co.rsk.bitcoinj.core.NetworkParameters params, byte[] additionalData) {
+
+        co.rsk.bitcoinj.core.BtcTransaction coinbaseTransaction = new co.rsk.bitcoinj.core.BtcTransaction(params);
+
+        // Add the data to the scriptSig of first input
+        co.rsk.bitcoinj.core.TransactionInput ti = new co.rsk.bitcoinj.core.TransactionInput(params, coinbaseTransaction, new byte[0]);
         coinbaseTransaction.addInput(ti);
+
         ByteArrayOutputStream scriptPubKeyBytes = new ByteArrayOutputStream();
         co.rsk.bitcoinj.core.BtcECKey key = new co.rsk.bitcoinj.core.BtcECKey();
         try {
@@ -73,6 +80,9 @@ public class MinerUtils {
         }
         scriptPubKeyBytes.write(co.rsk.bitcoinj.script.ScriptOpCodes.OP_CHECKSIG);
         coinbaseTransaction.addOutput(new co.rsk.bitcoinj.core.TransactionOutput(params, coinbaseTransaction, co.rsk.bitcoinj.core.Coin.valueOf(50, 0), scriptPubKeyBytes.toByteArray()));
+
+        coinbaseTransaction.addOutput(new co.rsk.bitcoinj.core.TransactionOutput(params, coinbaseTransaction, co.rsk.bitcoinj.core.Coin.valueOf(0), additionalData));
+
         return coinbaseTransaction;
     }
 

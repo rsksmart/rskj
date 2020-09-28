@@ -1,8 +1,10 @@
 package co.rsk.blockchain.utils;
 
+import co.rsk.config.RskMiningConstants;
 import co.rsk.crypto.Keccak256;
 import co.rsk.mine.MinerUtils;
 import co.rsk.util.DifficultyUtils;
+import org.bouncycastle.util.Arrays;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockFactory;
@@ -26,12 +28,13 @@ public class BlockMiner {
     }
 
     public Block mineBlock(Block block) {
-        Keccak256 blockMergedMiningHash = new Keccak256(block.getHashForMergedMining());
+        byte[] mergedMiningLink = Arrays.concatenate(RskMiningConstants.RSK_TAG, block.getHashForMergedMining());
+        co.rsk.bitcoinj.core.BtcTransaction bitcoinMergedMiningCoinbaseTransaction = MinerUtils.getBitcoinCoinbaseTransaction(co.rsk.bitcoinj.params.RegTestParams.get(), mergedMiningLink);
+        return mineBlock(block, bitcoinMergedMiningCoinbaseTransaction);
+    }
 
-        co.rsk.bitcoinj.core.NetworkParameters bitcoinNetworkParameters = co.rsk.bitcoinj.params.RegTestParams.get();
-        co.rsk.bitcoinj.core.BtcTransaction bitcoinMergedMiningCoinbaseTransaction = MinerUtils.getBitcoinMergedMiningCoinbaseTransaction(bitcoinNetworkParameters, blockMergedMiningHash.getBytes());
-        co.rsk.bitcoinj.core.BtcBlock bitcoinMergedMiningBlock = MinerUtils.getBitcoinMergedMiningBlock(bitcoinNetworkParameters, bitcoinMergedMiningCoinbaseTransaction);
-
+    public Block mineBlock(Block block, co.rsk.bitcoinj.core.BtcTransaction bitcoinMergedMiningCoinbaseTransaction) {
+        co.rsk.bitcoinj.core.BtcBlock bitcoinMergedMiningBlock = MinerUtils.getBitcoinMergedMiningBlock( co.rsk.bitcoinj.params.RegTestParams.get(), bitcoinMergedMiningCoinbaseTransaction);
         BigInteger targetBI = DifficultyUtils.difficultyToTarget(block.getDifficulty());
 
         findNonce(bitcoinMergedMiningBlock, targetBI);
