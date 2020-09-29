@@ -1,18 +1,22 @@
 ## Storage Rent Project: Overview of changes to RSKJ
 
-**Code:** [branch 'mish'](https://github.com/optimalbrew/rskj/tree/mish) and [comparison with rskj master](https://github.com/rsksmart/rskj/compare/master...optimalbrew:mish) (for overview).
-
 Storage rent is intended to lead to more efficient resource utilization by charging users for the size as well as duration for which information is stored in blockchain databases i.e. account state, contract code, and contract storage.
 
 Curently, the only direct incentive to reduce storage is through refunds for `SELF-DESTRUCT` and `SSTORE-CLEAR`. Storage rent provides additional incentives for more judicious use of state storage. Storage rent is collected in *gas* by adding accounting and collection logic to RSKJ.
 
 ## Current implementation
+**Source code and building:** [link to branch](https://github.com/rsksmart/rskj/tree/storageRent2020_RSKIP113).
+
+Build as usual with `./gradlew clean build -x test`
+
+Most of the existing test apparatus has been modified to account for the changes. However, there are some breaking changes, and these lead to some expected failures. See below for a discussion of isolated (expected) and fixed tests.
+
 The implementation is closely related to [RSKIP113](https://github.com/rsksmart/RSKIPs/blob/master/IPs/RSKIP113.md). Work on an updated RSKIP is in process. 
 
 
 ### Example
 
-Executing a block with a single CREATE TX demonstrates many aspects of the rent implementation. This assumes the [`mish` branch ](https://github.com/optimalbrew/rskj/tree/mish) has been fetched and compiled (e.g. with `./gradlew clean build -x test`). Note that standard output is used (`showStandardStreams true`) in `rskj-core/build.gradle`
+Executing a block with a single CREATE TX demonstrates many aspects of the rent implementation. Note that standard output is used (`showStandardStreams true`) in `rskj-core/build.gradle`
 
 Output from test
 `executeBlockWithOneCreateTransaction` in `co.rsk.core.bc.BlockExecRentTest`
@@ -156,10 +160,10 @@ root@5429dcd447b9:~/# curl localhost:4444
 - No changes needed in logic of rent collection (in `vm.program.RentData`). Zero cost will never trigger any rent collection or tracking.
 
 
-## Isolated or Fixed test families:
+## Tests Failures/Fixes:
 This list may be useful for review/audit. For one, it will help explain why some a given test file was modified, or touched at all. The list also provides some insight into how the changes are affecting various parts of the code.
 
-FIxed means the test should now pass. `Isolated` means the test will fail, but we know exactly which changes are causing the tests to fail.  
+`Fixed` means the test should pass (has been modified). `Isolated` means the test will fail, but we know exactly which changes are causing the tests to fail (reproducible and expected to fail because of breaking changes).  
 
 The list is **not exhaustive**
 
