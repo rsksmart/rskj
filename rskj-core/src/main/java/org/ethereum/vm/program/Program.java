@@ -1413,7 +1413,20 @@ public class Program {
 
             this.refundGas(msg.getGas().longValue() - requiredGas, "call pre-compiled");
 
-            byte[] out = contract.execute(data);
+            byte[] out;
+
+            try {
+                 out = contract.execute(data);
+            }
+            //
+            //IS THIS CORRECT? does this create a HF?
+            //
+            catch (Exception e) {
+                this.stackPushZero();
+                track.rollback();
+                this.cleanReturnDataBuffer(activations);
+                return;
+            }
             if (getActivations().isActive(ConsensusRule.RSKIP90)) {
                 this.returnDataBuffer = out;
             }

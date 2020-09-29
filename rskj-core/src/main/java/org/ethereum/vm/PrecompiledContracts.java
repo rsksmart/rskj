@@ -27,6 +27,7 @@ import co.rsk.pcc.altBN128.BN128Addition;
 import co.rsk.pcc.altBN128.BN128Multiplication;
 import co.rsk.pcc.altBN128.BN128Pairing;
 import co.rsk.pcc.blockheader.BlockHeaderContract;
+import co.rsk.pcc.bls12dot381.*;
 import co.rsk.pcc.bto.HDWalletUtils;
 import co.rsk.peg.Bridge;
 import co.rsk.peg.BridgeSupportFactory;
@@ -76,6 +77,17 @@ public class PrecompiledContracts {
     public static final String HD_WALLET_UTILS_ADDR_STR = "0000000000000000000000000000000001000009";
     public static final String BLOCK_HEADER_ADDR_STR = "0000000000000000000000000000000001000010";
 
+    private static final String BLS12_G1ADD_ADDR_STR = "000000000000000000000000000000000000000A";
+    private static final String BLS12_G1MUL_ADDR_STR = "000000000000000000000000000000000000000B";
+    private static final String BLS12_G1MULTIEXP_ADDR_STR = "000000000000000000000000000000000000000C";
+    private static final String BLS12_G2ADD_ADDR_STR = "000000000000000000000000000000000000000D";
+    private static final String BLS12_G2MUL_ADDR_STR = "000000000000000000000000000000000000000E";
+    private static final String BLS12_G2MULTIEXP_ADDR_STR = "000000000000000000000000000000000000000F";
+    private static final String BLS12_PAIRING_ADDR_STR = "0000000000000000000000000000000000000010";
+    private static final String BLS12_MAP_FP_TO_G1_ADDR_STR = "0000000000000000000000000000000000000011";
+    private static final String BLS12_MAP_FP2_TO_G2_ADDR_STR = "0000000000000000000000000000000000000012";
+
+
     public static final DataWord ECRECOVER_ADDR_DW = DataWord.valueFromHex(ECRECOVER_ADDR_STR);
     public static final DataWord SHA256_ADDR_DW = DataWord.valueFromHex(SHA256_ADDR_STR);
     public static final DataWord RIPEMPD160_ADDR_DW = DataWord.valueFromHex(RIPEMPD160_ADDR_STR);
@@ -90,6 +102,16 @@ public class PrecompiledContracts {
     public static final DataWord REMASC_ADDR_DW = DataWord.valueFromHex(REMASC_ADDR_STR);
     public static final DataWord HD_WALLET_UTILS_ADDR_DW = DataWord.valueFromHex(HD_WALLET_UTILS_ADDR_STR);
     public static final DataWord BLOCK_HEADER_ADDR_DW = DataWord.valueFromHex(BLOCK_HEADER_ADDR_STR);
+
+    public static final DataWord BLS12_G1ADD_ADDR_DW = DataWord.valueFromHex(BLS12_G1ADD_ADDR_STR);
+    public static final DataWord BLS12_G1MUL_ADDR_DW = DataWord.valueFromHex(BLS12_G1MUL_ADDR_STR);
+    public static final DataWord BLS12_G1MULTIEXP_ADDR_DW = DataWord.valueFromHex(BLS12_G1MULTIEXP_ADDR_STR);
+    public static final DataWord BLS12_G2ADD_ADDR_DW = DataWord.valueFromHex(BLS12_G2ADD_ADDR_STR);
+    public static final DataWord BLS12_G2MUL_ADDR_DW = DataWord.valueFromHex(BLS12_G2MUL_ADDR_STR);
+    public static final DataWord BLS12_G2MULTIEXP_ADDR_DW = DataWord.valueFromHex(BLS12_G2MULTIEXP_ADDR_STR);
+    public static final DataWord BLS12_PAIRING_ADDR_DW = DataWord.valueFromHex(BLS12_PAIRING_ADDR_STR);
+    public static final DataWord BLS12_MAP_FP_TO_G1_ADDR_DW = DataWord.valueFromHex(BLS12_MAP_FP_TO_G1_ADDR_STR);
+    public static final DataWord BLS12_MAP_FP2_TO_G2_ADDR_DW = DataWord.valueFromHex(BLS12_MAP_FP2_TO_G2_ADDR_STR);
 
     public static final RskAddress ECRECOVER_ADDR = new RskAddress(ECRECOVER_ADDR_DW);
     public static final RskAddress SHA256_ADDR = new RskAddress(SHA256_ADDR_DW);
@@ -106,6 +128,16 @@ public class PrecompiledContracts {
     public static final RskAddress HD_WALLET_UTILS_ADDR = new RskAddress(HD_WALLET_UTILS_ADDR_STR);
     public static final RskAddress BLOCK_HEADER_ADDR = new RskAddress(BLOCK_HEADER_ADDR_STR);
 
+    public static final RskAddress BLS12_G1ADD_ADDR = new RskAddress(BLS12_G1ADD_ADDR_STR);
+    public static final RskAddress BLS12_G1MUL_ADDR = new RskAddress(BLS12_G1MUL_ADDR_STR);
+    public static final RskAddress BLS12_G1MULTIEXP_ADDR = new RskAddress(BLS12_G1MULTIEXP_ADDR_STR);
+    public static final RskAddress BLS12_G2ADD_ADDR = new RskAddress(BLS12_G2ADD_ADDR_STR);
+    public static final RskAddress BLS12_G2MUL_ADDR = new RskAddress(BLS12_G2MUL_ADDR_STR);
+    public static final RskAddress BLS12_G2MULTIEXP_ADDR = new RskAddress(BLS12_G2MULTIEXP_ADDR_STR);
+    public static final RskAddress BLS12_PAIRING_ADDR = new RskAddress(BLS12_PAIRING_ADDR_DW);
+    public static final RskAddress BLS12_MAP_FP_TO_G1_ADDR = new RskAddress(BLS12_MAP_FP_TO_G1_ADDR_STR);
+    public static final RskAddress BLS12_MAP_FP2_TO_G2_ADDR = new RskAddress(BLS12_MAP_FP2_TO_G2_ADDR_STR);
+
     public static final List<RskAddress> GENESIS_ADDRESSES = Collections.unmodifiableList(Arrays.asList(
             ECRECOVER_ADDR,
             SHA256_ADDR,
@@ -121,6 +153,15 @@ public class PrecompiledContracts {
         Stream.of(
             new AbstractMap.SimpleEntry<>(HD_WALLET_UTILS_ADDR, ConsensusRule.RSKIP106),
             new AbstractMap.SimpleEntry<>(BLOCK_HEADER_ADDR, ConsensusRule.RSKIP119),
+            new AbstractMap.SimpleEntry<>(BLS12_G1ADD_ADDR, ConsensusRule.RSKIP_BLS12),
+            new AbstractMap.SimpleEntry<>(BLS12_G1MUL_ADDR, ConsensusRule.RSKIP_BLS12),
+            new AbstractMap.SimpleEntry<>(BLS12_G1MULTIEXP_ADDR, ConsensusRule.RSKIP_BLS12),
+            new AbstractMap.SimpleEntry<>(BLS12_G2ADD_ADDR, ConsensusRule.RSKIP_BLS12),
+            new AbstractMap.SimpleEntry<>(BLS12_G2MUL_ADDR, ConsensusRule.RSKIP_BLS12),
+            new AbstractMap.SimpleEntry<>(BLS12_G2MULTIEXP_ADDR, ConsensusRule.RSKIP_BLS12),
+            new AbstractMap.SimpleEntry<>(BLS12_PAIRING_ADDR, ConsensusRule.RSKIP_BLS12),
+            new AbstractMap.SimpleEntry<>(BLS12_MAP_FP_TO_G1_ADDR, ConsensusRule.RSKIP_BLS12),
+            new AbstractMap.SimpleEntry<>(BLS12_MAP_FP2_TO_G2_ADDR, ConsensusRule.RSKIP_BLS12),
             new AbstractMap.SimpleEntry<>(ALT_BN_128_ADD_ADDR, ConsensusRule.RSKIP137),
             new AbstractMap.SimpleEntry<>(ALT_BN_128_MUL_ADDR, ConsensusRule.RSKIP137),
             new AbstractMap.SimpleEntry<>(ALT_BN_128_PAIRING_ADDR, ConsensusRule.RSKIP137)
@@ -191,6 +232,37 @@ public class PrecompiledContracts {
             return new BN128Pairing();
         }
 
+        if (activations.isActive(ConsensusRule.RSKIP_BLS12)) {
+            if(address.equals(BLS12_G1ADD_ADDR_DW)) {
+                return new BLS12G1AddPrecompiledContract();
+            }
+            if(address.equals(BLS12_G1MUL_ADDR_DW)) {
+                return new BLS12G1MulPrecompiledContract();
+            }
+            if(address.equals(BLS12_G1MULTIEXP_ADDR_DW)) {
+                return new BLS12G1MultiExpPrecompiledContract();
+            }
+            if(address.equals(BLS12_G2ADD_ADDR_DW)) {
+                return new BLS12G2AddPrecompiledContract();
+            }
+            if(address.equals(BLS12_G2MUL_ADDR_DW)) {
+                return new BLS12G2MulPrecompiledContract();
+            }
+            if(address.equals(BLS12_G2MULTIEXP_ADDR_DW)) {
+                return new BLS12G2MultiExpPrecompiledContract();
+            }
+
+
+            if(address.equals(BLS12_PAIRING_ADDR_DW)) {
+                return new BLS12PairingPrecompiledContract();
+            }
+            if(address.equals(BLS12_MAP_FP_TO_G1_ADDR_DW)) {
+                return new BLS12MapFpToG1PrecompiledContract();
+            }
+            if(address.equals(BLS12_MAP_FP2_TO_G2_ADDR_DW)) {
+                return new BLS12MapFp2ToG2PrecompiledContract();
+            }
+        }
         return null;
     }
 

@@ -74,6 +74,7 @@ public class ActivationConfigTest {
             "    rskipUMM: papyrus200",
             "    rskip169: iris300",
             "    rskip171: iris300",
+            "    RSKIP_BLS12: iris300",
             "}"
     ));
 

@@ -43,6 +43,7 @@ tasks.withType(Javadoc) {
 repositories {
     mavenCentral()
     jcenter()
+    mavenLocal()
     maven {
         url "https://deps.rsklabs.io"
     }
@@ -91,6 +92,7 @@ dependencies {
     compile "co.rsk.bitcoinj:bitcoinj-thin:${bitcoinjVersion}"
     compile 'com.github.briandilley.jsonrpc4j:jsonrpc4j:1.5.1'
     compile 'co.rsk:native:1.0.1'
+    compile 'org.hyperledger.besu:bls12-381:0.2.1-SNAPSHOT'
 
     runtime "org.slf4j:log4j-over-slf4j:${slf4jVersion}"
     runtime "ch.qos.logback:logback-classic:${logbackVersion}"
