@@ -27,13 +27,13 @@ public abstract class PeginInstructionsBase implements PeginInstructions {
     protected abstract void parseAdditionalData(byte[] data) throws PeginInstructionsParseException;
 
     public static int extractProtocolVersion(byte[] data) throws PeginInstructionsParseException {
-        if (data == null || data.length < 2) {
+        if (data == null || data.length < 5) {
             String message;
 
             if (data == null) {
                 message = "Provided data is null";
             } else {
-                message = String.format("Invalid data given. Expected at least 2 bytes, " +
+                message = String.format("Invalid data given. Expected at least 5 bytes, " +
                     "received %d", data.length);
             }
 
@@ -41,7 +41,7 @@ public abstract class PeginInstructionsBase implements PeginInstructions {
             throw new PeginInstructionsParseException(message);
         }
 
-        byte[] protocolVersionBytes = Arrays.copyOfRange(data, 0, 2);
+        byte[] protocolVersionBytes = Arrays.copyOfRange(data, 4, 5);
         return ByteUtil.byteArrayToInt(protocolVersionBytes);
     }
 
