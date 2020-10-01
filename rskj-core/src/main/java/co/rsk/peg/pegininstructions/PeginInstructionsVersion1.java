@@ -2,12 +2,11 @@ package co.rsk.peg.pegininstructions;
 
 import co.rsk.bitcoinj.core.Address;
 import co.rsk.bitcoinj.core.NetworkParameters;
+import java.util.Arrays;
+import java.util.Optional;
 import org.ethereum.util.ByteUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.Arrays;
-import java.util.Optional;
 
 public class PeginInstructionsVersion1 extends PeginInstructionsBase {
     private static final Logger logger = LoggerFactory.getLogger(PeginInstructionsVersion1.class);
@@ -24,7 +23,7 @@ public class PeginInstructionsVersion1 extends PeginInstructionsBase {
 
     @Override
     protected void validateDataLength(byte[] data) throws PeginInstructionsParseException {
-        if (data.length != 22 && data.length != 43) {
+        if (data.length != 25 && data.length != 46) {
             String message = String.format("[validateDataLength] Invalid data length. Expected 22 or 43 bytes, received %d", data.length);
             logger.debug(message);
             throw new PeginInstructionsParseException(message);
@@ -33,14 +32,14 @@ public class PeginInstructionsVersion1 extends PeginInstructionsBase {
 
     @Override
     protected void parseAdditionalData(byte[] data) throws PeginInstructionsParseException {
-        if (data.length == 22) {
+        if (data.length == 25) {
             this.btcRefundAddress = Optional.empty();
             return;
         }
 
-        byte[] btcRefundAddressTypeBytes = Arrays.copyOfRange(data, 22, 23);
+        byte[] btcRefundAddressTypeBytes = Arrays.copyOfRange(data, 25, 26);
         int btcRefundAddressType = ByteUtil.byteArrayToInt(btcRefundAddressTypeBytes);
-        byte[] hash = Arrays.copyOfRange(data, 23, data.length);
+        byte[] hash = Arrays.copyOfRange(data, 26, data.length);
 
         Address parsedBtcRefundAddress;
 

@@ -1,11 +1,10 @@
 package co.rsk.peg.pegininstructions;
 
 import co.rsk.core.RskAddress;
+import java.util.Arrays;
 import org.ethereum.util.ByteUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.Arrays;
 
 public abstract class PeginInstructionsBase implements PeginInstructions {
 
@@ -18,7 +17,7 @@ public abstract class PeginInstructionsBase implements PeginInstructions {
     }
 
     private RskAddress getRskDestinationAddressFromData(byte[] data) {
-        byte[] rskDestinationAddressBytes = Arrays.copyOfRange(data, 2, 22);
+        byte[] rskDestinationAddressBytes = Arrays.copyOfRange(data, 5, 25);
         return new RskAddress(rskDestinationAddressBytes);
     }
 
