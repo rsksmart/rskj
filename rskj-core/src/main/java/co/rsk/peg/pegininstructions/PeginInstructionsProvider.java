@@ -1,8 +1,9 @@
 package co.rsk.peg.pegininstructions;
 
 import co.rsk.bitcoinj.core.BtcTransaction;
+import co.rsk.bitcoinj.core.TransactionOutput;
 import co.rsk.bitcoinj.script.ScriptChunk;
-import co.rsk.bitcoinj.script.ScriptOpCodes;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import org.bouncycastle.util.encoders.Hex;
@@ -12,6 +13,7 @@ import org.slf4j.LoggerFactory;
 public class PeginInstructionsProvider {
 
     private static final Logger logger = LoggerFactory.getLogger(PeginInstructionsProvider.class);
+    private static final byte[] RSKT_HEX = Hex.decode("52534b54");
 
     public Optional<PeginInstructions> buildPeginInstructions(BtcTransaction btcTx) throws
         PeginInstructionsException {
@@ -53,45 +55,49 @@ public class PeginInstructionsProvider {
         return Optional.of(peginInstructions);
     }
 
-    protected static byte[] extractOpReturnData(BtcTransaction btcTx)
-        throws PeginInstructionsException {
-        byte[] data = new byte[]{};
-        int opReturnOccurrences = 0;
-
+    protected static byte[] extractOpReturnData(BtcTransaction btcTx) throws PeginInstructionsException {
         logger.trace("[extractOpReturnData] Getting OP_RETURN data for btc tx: {}", btcTx.getHash());
 
-        for (int i=0; i<btcTx.getOutputs().size(); i++) {
-            List<ScriptChunk> chunksByOutput = btcTx.getOutput(i).getScriptPubKey().getChunks();
-            if (chunksByOutput.get(0).opcode == ScriptOpCodes.OP_RETURN) {
-                if (chunksByOutput.size() > 1) {
-                    data = btcTx.getOutput(i).getScriptPubKey().getChunks().get(1).data;
-                    opReturnOccurrences++;
-                } else {
-                    // OP_RETURN exist but data is empty
-                    opReturnOccurrences++;
-                    data = null;
-                }
+        byte[] data = new byte[]{};
+        int opReturnForRskOccurrences = 0;
+
+        for (int i = 0; i < btcTx.getOutputs().size(); i++) {
+            TransactionOutput txOutput = btcTx.getOutput(i);
+            if(hasOpReturnForRsk(txOutput)) {
+                data = txOutput.getScriptPubKey().getChunks().get(1).data;
+                opReturnForRskOccurrences++;
             }
         }
 
-        if (opReturnOccurrences == 0) {
+        if (opReturnForRskOccurrences == 0) {
             String message = String.format("No OP_RETURN output found for tx %s", btcTx.getHash());
             throw new NoOpReturnException(message);
         }
 
-        if (opReturnOccurrences > 1) {
-            String message = String.format("Only one output with OP_RETURN is allowed. Found %d",
-                opReturnOccurrences);
-            logger.debug("[extractOpReturnData] {}", message);
-            throw new PeginInstructionsException(message);
-        }
-
-        if (data == null) {
-            String message = "Empty OP_RETURN data found";
+        if (opReturnForRskOccurrences > 1) {
+            String message = String.format("Only one output with OP_RETURN for RSK is allowed. Found %d",
+                opReturnForRskOccurrences);
             logger.debug("[extractOpReturnData] {}", message);
             throw new PeginInstructionsException(message);
         }
 
         return data;
+    }
+
+    private static boolean hasOpReturnForRsk(TransactionOutput txOutput) {
+        if(txOutput.getScriptPubKey().isOpReturn()) {
+            // Check if it has data with `RSKT` prefix
+            List<ScriptChunk> chunksByOutput = txOutput.getScriptPubKey().getChunks();
+            if (chunksByOutput.size() > 1 &&
+                chunksByOutput.get(1).data != null &&
+                chunksByOutput.get(1).data.length >= 4) {
+                byte[] prefix = Arrays.copyOfRange(chunksByOutput.get(1).data, 0, 4);
+                if (Arrays.equals(prefix, RSKT_HEX)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 }
