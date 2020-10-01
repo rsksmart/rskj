@@ -19,7 +19,6 @@
 
 package co.rsk.logfilter;
 
-import org.ethereum.core.Block;
 import org.ethereum.core.Bloom;
 import org.ethereum.db.BlockStore;
 
@@ -44,10 +43,10 @@ public class BlocksBloomBuilder {
     public void processNewBlockNumber(long newBlockNumber) {
         long blockNumber = newBlockNumber - this.blocksBloomStore.getNoConfirmations();
 
-        addBlockNumber(blockNumber);
+        addBlocksUpToNumber(blockNumber);
     }
 
-    private void addBlockNumber(long blockNumber) {
+    private void addBlocksUpToNumber(long blockNumber) {
         if (this.blocksBloomStore.hasBlockNumber(blockNumber)) {
             return;
         }
@@ -67,16 +66,29 @@ public class BlocksBloomBuilder {
         }
 
         for (long nb = fromBlock; nb <= blockNumber; nb++) {
-            Bloom bloom;
+            this.addBlock(nb);
+        }
+    }
 
-            if (nb > 0) {
-                bloom = new Bloom(this.blockStore.getChainBlockByNumber(nb).getLogBloom());
-            }
-            else {
-                bloom = new Bloom();
-            }
+    private void addBlock(long blockNumber) {
+        Bloom bloom;
 
-            this.blocksBloomInProcess.addBlockBloom(nb, bloom);
+        if (blockNumber > 0) {
+            bloom = new Bloom(this.blockStore.getChainBlockByNumber(blockNumber).getLogBloom());
+        }
+        else {
+            bloom = new Bloom();
+        }
+
+        if (this.blocksBloomInProcess == null) {
+            this.blocksBloomInProcess = new BlocksBloom();
+        }
+
+        this.blocksBloomInProcess.addBlockBloom(blockNumber, bloom);
+
+        if (blockNumber == this.blocksBloomStore.lastNumberInRange(blockNumber)) {
+            this.blocksBloomStore.setBlocksBloom(this.blocksBloomInProcess);
+            this.blocksBloomInProcess = null;
         }
     }
 }
