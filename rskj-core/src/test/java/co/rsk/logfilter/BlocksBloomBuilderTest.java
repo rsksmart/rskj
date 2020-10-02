@@ -9,7 +9,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 /**
- * Created by ajlopez on 29/09/2019.
+ * Created by ajlopez on 29/09/2020.
  */
 public class BlocksBloomBuilderTest {
     @Test

@@ -32,6 +32,7 @@ import co.rsk.db.importer.BootstrapURLProvider;
 import co.rsk.db.importer.provider.*;
 import co.rsk.db.importer.provider.index.BootstrapIndexCandidateSelector;
 import co.rsk.db.importer.provider.index.BootstrapIndexRetriever;
+import co.rsk.logfilter.BlocksBloomService;
 import co.rsk.logfilter.BlocksBloomStore;
 import co.rsk.metrics.BlockHeaderElement;
 import co.rsk.metrics.HashRateCalculator;
@@ -777,7 +778,7 @@ public class RskContext implements NodeBootstrapper {
 
     public BlocksBloomStore getBlocksBloomStore() {
         if (blocksBloomStore == null) {
-            blocksBloomStore = new BlocksBloomStore(64, 20, getBlocksBloomDataSource());
+            blocksBloomStore = new BlocksBloomStore(getRskSystemProperties().bloomNumberOfBlocks(), getRskSystemProperties().bloomNumberOfConfirmations(), getBlocksBloomDataSource());
         }
 
         return blocksBloomStore;
@@ -811,15 +812,24 @@ public class RskContext implements NodeBootstrapper {
         internalServices.add(getPeerServer());
         boolean rpcHttpEnabled = getRskSystemProperties().isRpcHttpEnabled();
         boolean rpcWebSocketEnabled = getRskSystemProperties().isRpcWebSocketEnabled();
+        boolean bloomServiceEnabled = getRskSystemProperties().bloomServiceEnabled();
+
+        if (bloomServiceEnabled) {
+            internalServices.add(new BlocksBloomService(getCompositeEthereumListener(), getBlocksBloomStore(), getBlockStore()));
+        }
+
         if (rpcHttpEnabled || rpcWebSocketEnabled) {
             internalServices.add(getWeb3());
         }
+
         if (rpcHttpEnabled) {
             internalServices.add(getWeb3HttpServer());
         }
+
         if (rpcWebSocketEnabled) {
             internalServices.add(getWeb3WebSocketServer());
         }
+
         if (getRskSystemProperties().isPeerDiscoveryEnabled()) {
             internalServices.add(new UDPServer(
                     getRskSystemProperties().getBindAddress().getHostAddress(),
@@ -830,6 +840,7 @@ public class RskContext implements NodeBootstrapper {
         if (getRskSystemProperties().isSyncEnabled()) {
             internalServices.add(getSyncPool());
         }
+
         if (getRskSystemProperties().isMinerServerEnabled()) {
             internalServices.add(getMinerServer());
 
@@ -837,13 +848,17 @@ public class RskContext implements NodeBootstrapper {
                 internalServices.add(getMinerClient());
             }
         }
+
         internalServices.add(new BlockChainFlusher(
                 getRskSystemProperties().flushNumberOfBlocks(),
                 getCompositeEthereumListener(),
                 getTrieStore(),
                 getBlockStore(),
-                getReceiptStore()));
+                getReceiptStore(),
+                getBlocksBloomStore()));
+
         GarbageCollectorConfig gcConfig = getRskSystemProperties().garbageCollectorConfig();
+
         if (gcConfig.enabled()) {
             internalServices.add(new GarbageCollector(
                     getCompositeEthereumListener(),
@@ -854,6 +869,7 @@ public class RskContext implements NodeBootstrapper {
                     getRepositoryLocator()
             ));
         }
+
         return Collections.unmodifiableList(internalServices);
     }
 

@@ -23,7 +23,7 @@ import org.ethereum.core.Bloom;
 import org.ethereum.db.BlockStore;
 
 /**
- * Created by ajlopez on 29/09/2019.
+ * Created by ajlopez on 29/09/2020.
  */
 public class BlocksBloomBuilder {
     private final BlocksBloomStore blocksBloomStore;

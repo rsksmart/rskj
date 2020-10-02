@@ -40,7 +40,7 @@ public class BlocksBloomStore {
         this.dataSource = dataSource;
     }
 
-    public boolean hasBlockNumber(long blockNumber) {
+    public synchronized boolean hasBlockNumber(long blockNumber) {
         if (this.blocksBloom.containsKey(this.firstNumberInRange(blockNumber))) {
             return true;
         }
@@ -52,7 +52,7 @@ public class BlocksBloomStore {
         return false;
     }
 
-    public BlocksBloom getBlocksBloomByNumber(long number) {
+    public synchronized BlocksBloom getBlocksBloomByNumber(long number) {
         long key = firstNumberInRange(number);
 
         BlocksBloom blocksBloom = this.blocksBloom.get(key);
@@ -78,7 +78,7 @@ public class BlocksBloomStore {
         return blocksBloom;
     }
 
-    public void setBlocksBloom(BlocksBloom blocksBloom) {
+    public synchronized void setBlocksBloom(BlocksBloom blocksBloom) {
         this.blocksBloom.put(blocksBloom.fromBlock(), blocksBloom);
 
         if (this.dataSource != null) {
@@ -106,5 +106,13 @@ public class BlocksBloomStore {
         }
 
         return DataWord.valueOf(value).getByteArrayForStorage();
+    }
+
+    public void flush() {
+        this.dataSource.flush();
+    }
+
+    public void close() {
+        this.dataSource.close();
     }
 }
