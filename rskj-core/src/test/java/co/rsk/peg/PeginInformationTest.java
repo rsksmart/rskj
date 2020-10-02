@@ -11,6 +11,7 @@ import co.rsk.config.BridgeConstants;
 import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.peg.btcLockSender.BtcLockSender;
+import co.rsk.peg.btcLockSender.BtcLockSender.TxType;
 import co.rsk.peg.btcLockSender.BtcLockSenderProvider;
 import co.rsk.peg.btcLockSender.P2pkhBtcLockSender;
 import co.rsk.peg.pegininstructions.PeginInstructionsException;
@@ -39,11 +40,13 @@ public class PeginInformationTest {
         BtcECKey key = new BtcECKey();
         RskAddress rskDestinationAddressFromBtcLockSender = new RskAddress(ECKey.fromPublicOnly(key.getPubKey()).getAddress());
         Address btcRefundAddressFromBtcLockSender = key.toAddress(networkParameters);
+        TxType senderBtcAddressType = TxType.P2PKH;
         BtcTransaction btcTx = new BtcTransaction(networkParameters);
 
         BtcLockSender btcLockSenderMock = mock(P2pkhBtcLockSender.class);
         when(btcLockSenderMock.getRskAddress()).thenReturn(rskDestinationAddressFromBtcLockSender);
         when(btcLockSenderMock.getBTCAddress()).thenReturn(btcRefundAddressFromBtcLockSender);
+        when(btcLockSenderMock.getType()).thenReturn(senderBtcAddressType);
 
         BtcLockSenderProvider btcLockSenderProviderMock = mock(BtcLockSenderProvider.class);
         when(btcLockSenderProviderMock.tryGetBtcLockSender(btcTx))
@@ -63,6 +66,8 @@ public class PeginInformationTest {
         Assert.assertEquals(0, peginInformation.getProtocolVersion());
         Assert.assertEquals(rskDestinationAddressFromBtcLockSender, peginInformation.getRskDestinationAddress());
         Assert.assertEquals(btcRefundAddressFromBtcLockSender, peginInformation.getBtcRefundAddress());
+        Assert.assertEquals(btcRefundAddressFromBtcLockSender, peginInformation.getSenderBtcAddress());
+        Assert.assertEquals(senderBtcAddressType, peginInformation.getSenderBtcAddressType());
     }
 
     @Test
@@ -71,11 +76,13 @@ public class PeginInformationTest {
         BtcECKey address1Key = new BtcECKey();
         RskAddress rskDestinationAddressFromBtcLockSender = new RskAddress(ECKey.fromPublicOnly(address1Key.getPubKey()).getAddress());
         Address btcRefundAddressFromBtcLockSender = address1Key.toAddress(networkParameters);
+        TxType senderBtcAddressType = TxType.P2PKH;
         BtcTransaction btcTx = new BtcTransaction(networkParameters);
 
         BtcLockSender btcLockSenderMock = mock(P2pkhBtcLockSender.class);
         when(btcLockSenderMock.getRskAddress()).thenReturn(rskDestinationAddressFromBtcLockSender);
         when(btcLockSenderMock.getBTCAddress()).thenReturn(btcRefundAddressFromBtcLockSender);
+        when(btcLockSenderMock.getType()).thenReturn(senderBtcAddressType);
 
         BtcLockSenderProvider btcLockSenderProviderMock = mock(BtcLockSenderProvider.class);
         when(btcLockSenderProviderMock.tryGetBtcLockSender(btcTx))
@@ -107,6 +114,8 @@ public class PeginInformationTest {
         Assert.assertEquals(1, peginInformation.getProtocolVersion());
         Assert.assertEquals(rskDestinationAddressFromPeginInstructions, peginInformation.getRskDestinationAddress());
         Assert.assertEquals(btcRefundAddressFromPeginInstructions, peginInformation.getBtcRefundAddress());
+        Assert.assertEquals(btcRefundAddressFromBtcLockSender, peginInformation.getSenderBtcAddress());
+        Assert.assertEquals(senderBtcAddressType, peginInformation.getSenderBtcAddressType());
         Assert.assertNotEquals(rskDestinationAddressFromBtcLockSender, peginInformation.getRskDestinationAddress());
         Assert.assertNotEquals(btcRefundAddressFromBtcLockSender, peginInformation.getBtcRefundAddress());
     }
@@ -116,8 +125,7 @@ public class PeginInformationTest {
         // Arrange
         BtcTransaction btcTx = new BtcTransaction(networkParameters);
         BtcLockSenderProvider btcLockSenderProviderMock = mock(BtcLockSenderProvider.class);
-        when(btcLockSenderProviderMock.tryGetBtcLockSender(btcTx))
-            .thenReturn(Optional.empty());
+        when(btcLockSenderProviderMock.tryGetBtcLockSender(btcTx)).thenReturn(Optional.empty());
 
         BtcECKey address2Key = new BtcECKey();
         RskAddress rskDestinationAddressFromPeginInstructions = new RskAddress(ECKey.fromPublicOnly(address2Key.getPubKey()).getAddress());
@@ -145,6 +153,8 @@ public class PeginInformationTest {
         Assert.assertEquals(1, peginInformation.getProtocolVersion());
         Assert.assertEquals(rskDestinationAddressFromPeginInstructions, peginInformation.getRskDestinationAddress());
         Assert.assertEquals(btcRefundAddressFromPeginInstructions, peginInformation.getBtcRefundAddress());
+        Assert.assertNull(peginInformation.getSenderBtcAddress());
+        Assert.assertEquals(TxType.UNKNOWN, peginInformation.getSenderBtcAddressType());
     }
 
     @Test
@@ -153,11 +163,13 @@ public class PeginInformationTest {
         BtcECKey address1Key = new BtcECKey();
         RskAddress rskDestinationAddressFromBtcLockSender = new RskAddress(ECKey.fromPublicOnly(address1Key.getPubKey()).getAddress());
         Address btcRefundAddressFromBtcLockSender = address1Key.toAddress(networkParameters);
+        TxType senderBtcAddressType = TxType.P2PKH;
         BtcTransaction btcTx = new BtcTransaction(networkParameters);
 
         BtcLockSender btcLockSenderMock = mock(P2pkhBtcLockSender.class);
         when(btcLockSenderMock.getRskAddress()).thenReturn(rskDestinationAddressFromBtcLockSender);
         when(btcLockSenderMock.getBTCAddress()).thenReturn(btcRefundAddressFromBtcLockSender);
+        when(btcLockSenderMock.getType()).thenReturn(senderBtcAddressType);
 
         BtcLockSenderProvider btcLockSenderProviderMock = mock(BtcLockSenderProvider.class);
         when(btcLockSenderProviderMock.tryGetBtcLockSender(btcTx))
@@ -188,6 +200,8 @@ public class PeginInformationTest {
         Assert.assertEquals(1, peginInformation.getProtocolVersion());
         Assert.assertEquals(rskDestinationAddressFromPeginInstructions, peginInformation.getRskDestinationAddress());
         Assert.assertEquals(btcRefundAddressFromBtcLockSender, peginInformation.getBtcRefundAddress());
+        Assert.assertEquals(btcRefundAddressFromBtcLockSender, peginInformation.getSenderBtcAddress());
+        Assert.assertEquals(senderBtcAddressType, peginInformation.getSenderBtcAddressType());
         Assert.assertNotEquals(rskDestinationAddressFromBtcLockSender, peginInformation.getRskDestinationAddress());
     }
 
@@ -224,6 +238,8 @@ public class PeginInformationTest {
         Assert.assertEquals(1, peginInformation.getProtocolVersion());
         Assert.assertEquals(rskDestinationAddressFromPeginInstructions, peginInformation.getRskDestinationAddress());
         Assert.assertNull(peginInformation.getBtcRefundAddress());
+        Assert.assertNull(peginInformation.getSenderBtcAddress());
+        Assert.assertEquals(TxType.UNKNOWN, peginInformation.getSenderBtcAddressType());
     }
 
     @Test(expected = PeginInstructionsException.class)

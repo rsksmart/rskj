@@ -23,10 +23,10 @@ import co.rsk.config.BridgeConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.peg.BtcBlockStoreWithCache.Factory;
 import co.rsk.peg.btcLockSender.BtcLockSenderProvider;
+import co.rsk.peg.pegininstructions.PeginInstructionsProvider;
 import co.rsk.peg.utils.BridgeEventLogger;
 import co.rsk.peg.utils.BridgeEventLoggerImpl;
 import java.util.List;
-
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
@@ -48,7 +48,6 @@ public class BridgeSupportFactory {
         this.bridgeConstants = bridgeConstants;
         this.activationConfig = activationConfig;
     }
-
 
     public BridgeSupport newInstance(Repository repository, Block executionBlock,
             RskAddress contractAddress, List<LogInfo> logs) {
@@ -72,12 +71,14 @@ public class BridgeSupportFactory {
         }
 
         BtcLockSenderProvider btcLockSenderProvider = new BtcLockSenderProvider();
+        PeginInstructionsProvider peginInstructionsProvider = new PeginInstructionsProvider();
 
         return new BridgeSupport(
                 bridgeConstants,
                 provider,
                 eventLogger,
                 btcLockSenderProvider,
+                peginInstructionsProvider,
                 repository,
                 executionBlock,
                 btcContext,
