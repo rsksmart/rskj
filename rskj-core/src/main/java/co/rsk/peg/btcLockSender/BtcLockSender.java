@@ -10,7 +10,8 @@ public interface BtcLockSender {
         P2PKH,
         P2SHP2WPKH,
         P2SHMULTISIG,
-        P2SHP2WSH
+        P2SHP2WSH,
+        UNKNOWN
     }
 
     boolean tryParse(BtcTransaction btcTx);

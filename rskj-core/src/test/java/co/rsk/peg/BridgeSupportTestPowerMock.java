@@ -38,6 +38,7 @@ import co.rsk.db.MutableTrieImpl;
 import co.rsk.peg.bitcoin.MerkleBranch;
 import co.rsk.peg.btcLockSender.BtcLockSender;
 import co.rsk.peg.btcLockSender.BtcLockSenderProvider;
+import co.rsk.peg.pegininstructions.PeginInstructionsProvider;
 import co.rsk.peg.simples.SimpleBlockChain;
 import co.rsk.peg.simples.SimpleWallet;
 import co.rsk.peg.utils.BridgeEventLogger;
@@ -221,6 +222,7 @@ public class BridgeSupportTestPowerMock {
                 provider,
                 mock(BridgeEventLogger.class),
                 mock(BtcLockSenderProvider.class),
+                mock(PeginInstructionsProvider.class),
                 track,
                 null,
                 new Context(bridgeConstants.getBtcParams()),
@@ -1426,6 +1428,7 @@ public class BridgeSupportTestPowerMock {
                 mockBridgeStorageProvider,
                 mock(BridgeEventLogger.class),
                 mock(BtcLockSenderProvider.class),
+                mock(PeginInstructionsProvider.class),
                 mock(Repository.class),
                 mock(Block.class),
                 btcContext,
@@ -3583,6 +3586,7 @@ public class BridgeSupportTestPowerMock {
                 mockBridgeStorageProvider,
                 mockedEventLogger,
                 new BtcLockSenderProvider(),
+                new PeginInstructionsProvider(),
                 mock(Repository.class),
                 executionBlock,
                 btcContext,
@@ -3647,6 +3651,7 @@ public class BridgeSupportTestPowerMock {
                 mockBridgeStorageProvider,
                 mockedEventLogger,
                 new BtcLockSenderProvider(),
+                new PeginInstructionsProvider(),
                 mock(Repository.class),
                 executionBlock,
                 btcContext,
@@ -3862,6 +3867,7 @@ public class BridgeSupportTestPowerMock {
                 provider,
                 eventLogger,
                 btcLockSenderProvider,
+                new PeginInstructionsProvider(),
                 track,
                 executionBlock,
                 new Context(constants.getBtcParams()),
