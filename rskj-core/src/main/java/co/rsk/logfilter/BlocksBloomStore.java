@@ -21,6 +21,8 @@ package co.rsk.logfilter;
 
 import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.vm.DataWord;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -29,6 +31,8 @@ import java.util.concurrent.ConcurrentHashMap;
  * Created by ajlopez on 05/02/2019.
  */
 public class BlocksBloomStore {
+    private static final Logger logger = LoggerFactory.getLogger("blooms");
+
     private final int noBlocks;
     private final int noConfirmations;
     private final Map<Long, BlocksBloom> blocksBloom = new ConcurrentHashMap<>();
@@ -79,6 +83,8 @@ public class BlocksBloomStore {
     }
 
     public synchronized void setBlocksBloom(BlocksBloom blocksBloom) {
+        logger.trace("set blocks bloom: height {}", blocksBloom.fromBlock());
+
         this.blocksBloom.put(blocksBloom.fromBlock(), blocksBloom);
 
         if (this.dataSource != null) {

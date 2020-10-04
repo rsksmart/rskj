@@ -84,6 +84,7 @@
     <logger name="messageProcess" level="INFO"/>
     <logger name="co.rsk.db.migration.OrchidToUnitrieMigrator" level="INFO"/>
     <logger name="co.rsk.db.migration.MissingOrchidStorageKeysProvider" level="INFO"/>
+    <logger name="blooms" level="INFO"/>
 
     <!-- Use INFO or upper levels for productive environments. -->
     <logger name="com.googlecode.jsonrpc4j" level="INFO"></logger>
