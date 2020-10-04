@@ -25,6 +25,8 @@ import org.ethereum.core.TransactionReceipt;
 import org.ethereum.db.BlockStore;
 import org.ethereum.listener.CompositeEthereumListener;
 import org.ethereum.listener.EthereumListenerAdapter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
@@ -32,6 +34,8 @@ import java.util.List;
  * Created by ajlopez on 01/10/2020.
  */
 public class BlocksBloomService implements InternalService {
+    private static final Logger logger = LoggerFactory.getLogger("blooms");
+
     private final CompositeEthereumListener emitter;
     private final BlocksBloomBuilder blocksBloomBuilder;
 
@@ -44,11 +48,15 @@ public class BlocksBloomService implements InternalService {
 
     @Override
     public void start() {
+        logger.info("blocks bloom service started");
+
         emitter.addListener(listener);
     }
 
     @Override
     public void stop() {
+        logger.info("blocks bloom service stopped");
+
         emitter.removeListener(listener);
     }
 
