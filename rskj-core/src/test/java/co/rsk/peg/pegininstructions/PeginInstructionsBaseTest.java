@@ -9,7 +9,7 @@ public class PeginInstructionsBaseTest {
     @Test
     public void extractProtocolVersion() throws PeginInstructionsParseException {
         int protocolVersion = PeginInstructionsBase.extractProtocolVersion(
-                Hex.decode("00010e537aad84447a2c2a7590d5f2665ef5cf9b667a"));
+                Hex.decode("52534b54010e537aad84447a2c2a7590d5f2665ef5cf9b667a"));
 
         Assert.assertEquals(1, protocolVersion);
     }
@@ -17,7 +17,7 @@ public class PeginInstructionsBaseTest {
     @Test
     public void extractProtocolVersion_version_bigger_than_9() throws PeginInstructionsParseException {
         int protocolVersion = PeginInstructionsBase.extractProtocolVersion(
-            Hex.decode("000a0e537aad84447a2c2a7590d5f2665ef5cf9b667a"));
+            Hex.decode("52534b540a0e537aad84447a2c2a7590d5f2665ef5cf9b667a"));
 
         Assert.assertEquals(10, protocolVersion);
     }
@@ -28,7 +28,7 @@ public class PeginInstructionsBaseTest {
     }
 
     @Test(expected = PeginInstructionsParseException.class)
-    public void extractProtocolVersion_one_byte_data() throws PeginInstructionsParseException {
-        PeginInstructionsBase.extractProtocolVersion(new byte[]{1});
+    public void extractProtocolVersion_empty_data() throws PeginInstructionsParseException {
+        PeginInstructionsBase.extractProtocolVersion(new byte[]{});
     }
 }

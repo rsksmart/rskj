@@ -1,11 +1,10 @@
 package co.rsk.peg.pegininstructions;
 
 import co.rsk.core.RskAddress;
+import java.util.Arrays;
 import org.ethereum.util.ByteUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.Arrays;
 
 public abstract class PeginInstructionsBase implements PeginInstructions {
 
@@ -18,7 +17,7 @@ public abstract class PeginInstructionsBase implements PeginInstructions {
     }
 
     private RskAddress getRskDestinationAddressFromData(byte[] data) {
-        byte[] rskDestinationAddressBytes = Arrays.copyOfRange(data, 2, 22);
+        byte[] rskDestinationAddressBytes = Arrays.copyOfRange(data, 5, 25);
         return new RskAddress(rskDestinationAddressBytes);
     }
 
@@ -27,13 +26,13 @@ public abstract class PeginInstructionsBase implements PeginInstructions {
     protected abstract void parseAdditionalData(byte[] data) throws PeginInstructionsParseException;
 
     public static int extractProtocolVersion(byte[] data) throws PeginInstructionsParseException {
-        if (data == null || data.length < 2) {
+        if (data == null || data.length < 5) {
             String message;
 
             if (data == null) {
                 message = "Provided data is null";
             } else {
-                message = String.format("Invalid data given. Expected at least 2 bytes, " +
+                message = String.format("Invalid data given. Expected at least 5 bytes, " +
                     "received %d", data.length);
             }
 
@@ -41,7 +40,7 @@ public abstract class PeginInstructionsBase implements PeginInstructions {
             throw new PeginInstructionsParseException(message);
         }
 
-        byte[] protocolVersionBytes = Arrays.copyOfRange(data, 0, 2);
+        byte[] protocolVersionBytes = Arrays.copyOfRange(data, 4, 5);
         return ByteUtil.byteArrayToInt(protocolVersionBytes);
     }
 
