@@ -40,8 +40,9 @@ import java.util.concurrent.TimeUnit;
 public class NodeMessageHandler implements MessageHandler, InternalService, Runnable {
     private static final Logger logger = LoggerFactory.getLogger("messagehandler");
     private static final Logger loggerMessageProcess = LoggerFactory.getLogger("messageProcess");
-    public static final int MAX_NUMBER_OF_MESSAGES_CACHED = 5000;
-    public static final long RECEIVED_MESSAGES_CACHE_DURATION = TimeUnit.MINUTES.toMillis(2);
+
+    private static final int MAX_NUMBER_OF_MESSAGES_CACHED = 5000;
+    private static final long RECEIVED_MESSAGES_CACHE_DURATION = TimeUnit.MINUTES.toMillis(2);
 
     private final RskSystemProperties config;
     private final BlockProcessor blockProcessor;

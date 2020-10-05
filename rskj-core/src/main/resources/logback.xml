@@ -78,6 +78,7 @@
     <logger name="wallet" level="INFO"/>
     <logger name="blockchain" level="INFO"/>
     <logger name="blockprocessor" level="INFO"/>
+    <logger name="asyncblockprocessor" level="INFO"/>
     <logger name="state" level="INFO"/>
     <logger name="org.bitcoinj" level="INFO"/>
     <logger name="metrics" level="INFO"/>

@@ -115,7 +115,7 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
 
         // handle block
         // this is a controled place where we ask for blocks, we never should look for missing hashes
-        if (blockSyncService.processBlock(block, peer, true).isInvalidBlock()){
+        if (blockSyncService.processBlock(block, peer, true, true).isInvalidBlock()){
             handleInvalidBlock(peer, header);
             return;
         }

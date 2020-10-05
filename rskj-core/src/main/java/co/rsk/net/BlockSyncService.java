@@ -40,13 +40,14 @@ import java.util.*;
  * If a block is not ready to be added to the blockchain, it will be on hold in a BlockStore.
  */
 public class BlockSyncService {
-    public static final int CHUNK_PART_LIMIT = 8;
-    public static final int PROCESSED_BLOCKS_TO_CHECK_STORE = 200;
-    public static final int RELEASED_RANGE = 1000;
+    private static final Logger logger = LoggerFactory.getLogger("blocksyncservice");
+
+    private static final int PROCESSED_BLOCKS_TO_CHECK_STORE = 200;
+    private static final int RELEASED_RANGE = 1000;
+
     private long processedBlocksCounter;
     private long lastKnownBlockNumber = 0;
 
-    private static final Logger logger = LoggerFactory.getLogger("blocksyncservice");
     private final NetBlockStore store;
     private final Blockchain blockchain;
     private final SyncConfiguration syncConfiguration;
@@ -68,12 +69,12 @@ public class BlockSyncService {
         this.config = config;
     }
 
-    public BlockProcessResult processBlock(@Nonnull Block block, Peer sender, boolean ignoreMissingHashes) {
-        Instant start = Instant.now();
-        long bestBlockNumber = this.getBestBlockNumber();
-        long blockNumber = block.getNumber();
+    public BlockProcessResult processBlock(@Nonnull Block block, Peer sender, boolean ignoreMissingHashes, boolean connectBlock) {
+        final Instant start = Instant.now();
+        final long bestBlockNumber = this.getBestBlockNumber();
+        final long blockNumber = block.getNumber();
         final Keccak256 blockHash = block.getHash();
-        int syncMaxDistance = syncConfiguration.getChunkSize() * syncConfiguration.getMaxSkeletonChunks();
+        final int syncMaxDistance = syncConfiguration.getChunkSize() * syncConfiguration.getMaxSkeletonChunks();
 
         tryReleaseStore(bestBlockNumber);
         store.removeHeader(block.getHeader());
@@ -105,12 +106,16 @@ public class BlockSyncService {
             return BlockProcessResult.invalidBlock(block, start);
         }
 
-        logger.trace("Trying to add to blockchain");
+        if (connectBlock) {
+            logger.trace("Trying to add to blockchain");
 
-        Map<Keccak256, ImportResult> connectResult = connectBlocksAndDescendants(sender,
-                BlockUtils.sortBlocksByNumber(this.getParentsNotInBlockchain(block)), ignoreMissingHashes);
+            Map<Keccak256, ImportResult> connectResult = connectBlocksAndDescendants(sender,
+                    BlockUtils.sortBlocksByNumber(this.getParentsNotInBlockchain(block)), ignoreMissingHashes);
 
-        return BlockProcessResult.validResult(block, start, connectResult);
+            return BlockProcessResult.validResult(block, start, connectResult);
+        }
+
+        return BlockProcessResult.validResult(block, start, null);
     }
 
 

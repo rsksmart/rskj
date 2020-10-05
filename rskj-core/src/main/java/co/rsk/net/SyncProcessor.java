@@ -163,7 +163,7 @@ public class SyncProcessor implements SyncEventsHandler {
         MessageType messageType = message.getMessageType();
         if (isPending(messageId, messageType)) {
             removePendingMessage(messageId, messageType);
-            blockSyncService.processBlock(message.getBlock(), peer, false);
+            blockSyncService.processBlock(message.getBlock(), peer, false, true);
         } else {
             peersInformation.reportEvent(peer.getPeerNodeID(), EventType.UNEXPECTED_MESSAGE);
         }

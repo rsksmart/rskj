@@ -46,11 +46,12 @@ public class NodeBlockProcessor implements BlockProcessor {
     private final NetBlockStore store;
     private final Blockchain blockchain;
     private final BlockNodeInformation nodeInformation;
-    // keep tabs on which nodes know which blocks.
-    private final BlockSyncService blockSyncService;
     private final SyncConfiguration syncConfiguration;
     // keeps on a map the hashes that belongs to the skeleton
     private final Map <Long, byte[]> skeletonCache = new HashMap<>();
+
+    // keep tabs on which nodes know which blocks.
+    protected final BlockSyncService blockSyncService;
 
     /**
      * Creates a new NodeBlockProcessor using the given BlockStore and Blockchain.
@@ -66,7 +67,6 @@ public class NodeBlockProcessor implements BlockProcessor {
             @Nonnull final BlockNodeInformation nodeInformation,
             @Nonnull final BlockSyncService blockSyncService,
             @Nonnull final SyncConfiguration syncConfiguration) {
-
         this.store = store;
         this.blockchain = blockchain;
         this.nodeInformation = nodeInformation;
@@ -377,7 +377,7 @@ public class NodeBlockProcessor implements BlockProcessor {
      */
     @Override
     public BlockProcessResult processBlock(@Nullable final Peer sender, @Nonnull final Block block) {
-        return blockSyncService.processBlock(block, sender, false);
+        return blockSyncService.processBlock(block, sender, false, true);
     }
 
     @Override
