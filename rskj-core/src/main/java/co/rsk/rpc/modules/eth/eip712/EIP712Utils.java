@@ -14,6 +14,7 @@ import org.slf4j.LoggerFactory;
 import org.web3j.abi.DefaultFunctionEncoder;
 import org.web3j.abi.TypeDecoder;
 import org.web3j.abi.TypeReference;
+import org.web3j.abi.datatypes.Bool;
 import org.web3j.abi.datatypes.NumericType;
 import org.web3j.abi.datatypes.Type;
 import org.web3j.abi.datatypes.generated.Bytes32;
@@ -158,6 +159,16 @@ public class EIP712Utils {
 
         if (type.equals("string")) {
             return new Bytes32(HashUtil.keccak256(value.asText().getBytes(StandardCharsets.UTF_8)));
+        }
+
+        if (type.equals("bool")) {//bool is a string with true or false
+
+            if("1".equals(value.asText()) || "0".equals(value.asText()) || "true".equals(value.asText()) || "false".equals(value.asText())){
+                return new Bool(value.asBoolean());
+            }
+            else{
+                throw new RuntimeException("Incorrect boolean value when encoding");
+            }
         }
 
         if (type.lastIndexOf(']') == type.length() - 1) {
