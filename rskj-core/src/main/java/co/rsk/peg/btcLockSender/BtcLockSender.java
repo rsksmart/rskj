@@ -6,7 +6,7 @@ import co.rsk.core.RskAddress;
 
 public interface BtcLockSender {
 
-    enum TxType {
+    enum TxSenderAddressType {
         P2PKH,
         P2SHP2WPKH,
         P2SHMULTISIG,
@@ -16,7 +16,7 @@ public interface BtcLockSender {
 
     boolean tryParse(BtcTransaction btcTx);
 
-    BtcLockSender.TxType getType();
+    TxSenderAddressType getTxSenderAddressType();
 
     Address getBTCAddress();
 

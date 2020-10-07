@@ -6,6 +6,7 @@ import co.rsk.bitcoinj.core.BtcTransaction;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.core.RskAddress;
+import co.rsk.peg.btcLockSender.BtcLockSender.TxSenderAddressType;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.ECKey;
 import org.junit.Assert;
@@ -48,7 +49,7 @@ public class BtcLockSenderProviderTest {
         assertTrue(result.isPresent());
         BtcLockSender btcLockSender = result.get();
 
-        Assert.assertEquals(BtcLockSender.TxType.P2PKH, btcLockSender.getType());
+        Assert.assertEquals(TxSenderAddressType.P2PKH, btcLockSender.getTxSenderAddressType());
         Assert.assertEquals(senderAddress, btcLockSender.getRskAddress());
         Assert.assertEquals("mpgJ8n2NUf23NHcJs59LgEqQ4yCv7MYGU6", btcLockSender.getBTCAddress().toBase58());
     }
@@ -69,6 +70,6 @@ public class BtcLockSenderProviderTest {
         // "2NAhf36HTnrkKAx6RddHAdgJwPsqEgngUwe"
         Assert.assertEquals(new Address(tx.getParams(), tx.getParams().getP2SHHeader(), scriptHash), btcLockSender.getBTCAddress());
         Assert.assertEquals(new RskAddress(ECKey.fromPublicOnly(key.getPubKey()).getAddress()), btcLockSender.getRskAddress());
-        Assert.assertEquals(BtcLockSender.TxType.P2SHP2WPKH, btcLockSender.getType());
+        Assert.assertEquals(TxSenderAddressType.P2SHP2WPKH, btcLockSender.getTxSenderAddressType());
     }
 }
