@@ -46,6 +46,9 @@ public class RemascConfigFactory {
         try (InputStream is = RemascConfigFactory.class.getClassLoader().getResourceAsStream(this.configPath)){
             JsonNode node = mapper.readTree(is);
             remascConfig = mapper.treeToValue(node.get(config), RemascConfig.class);
+            if (remascConfig == null) {
+               throw new IllegalArgumentException("Invalid config:" + config);
+            }
         } catch (Exception ex) {
             logger.error("Error reading REMASC configuration[{}]: {}", config, ex);
             throw new RemascException("Error reading REMASC configuration[" + config +"]: ", ex);

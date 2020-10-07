@@ -102,7 +102,6 @@ public class TypeConverterTest {
         Assert.assertEquals("", TypeConverter.toJsonHex((Coin) null));
     }
 
-
     @Test
     public void stringHexToBigIntegerDefaultCase() {
         Assert.assertEquals(new BigInteger("1"), TypeConverter.stringHexToBigInteger("0x1"));
@@ -136,5 +135,32 @@ public class TypeConverterTest {
     @Test(expected = NumberFormatException.class)
     public void stringHexToBigIntegerWhenItDoesNotStartWith0x() {
         TypeConverter.stringHexToBigInteger("0d99");
+    }
+
+    @Test
+    public void test_stringNumberAsBigInt() {
+        Assert.assertEquals(new BigInteger("1234"), TypeConverter.stringNumberAsBigInt("1234"));
+        Assert.assertEquals(new BigInteger("0"), TypeConverter.stringNumberAsBigInt("0"));
+        Assert.assertEquals(new BigInteger("1"), TypeConverter.stringNumberAsBigInt("1"));
+        Assert.assertEquals(new BigInteger("255"), TypeConverter.stringNumberAsBigInt("0xff"));
+        Assert.assertEquals(new BigInteger("1"), TypeConverter.stringNumberAsBigInt("0x1"));
+        Assert.assertEquals(new BigInteger("0"), TypeConverter.stringNumberAsBigInt("0x0"));
+        Assert.assertEquals(new BigInteger("1"), TypeConverter.stringNumberAsBigInt("0x00000001"));
+    }
+
+    @Test
+    public void test_stringNumberAsBigInt_fail() {
+        assertFailStringNumberAsBigInt("0x");
+        assertFailStringNumberAsBigInt("0xg");
+        assertFailStringNumberAsBigInt("");
+        assertFailStringNumberAsBigInt("0d99");
+    }
+
+    private void assertFailStringNumberAsBigInt(String val) {
+        try {
+            TypeConverter.stringNumberAsBigInt(val);
+            Assert.fail("Should fail, by number format: " + val);
+        }catch (NumberFormatException e) {
+        }
     }
 }

@@ -57,14 +57,26 @@ public class TypeConverter {
     }
 
     public static byte[] stringHexToByteArray(String x) {
-        String result = x;
-        if (x.startsWith("0x")) {
-            result = x.substring(2);
-        }
-        if (result.length() % 2 != 0) {
-            result = "0" + result;
-        }
+        String result = normalizeHexString(x);
         return Hex.decode(result);
+    }
+
+    /**
+     * Normalize string representing an hexadecimal value. Normalization amounts to:
+     *   - Remove leading "0x" if present
+     *   - Ensure even length by adding a leading zero if necessary
+     *
+     * @param value hexadecimal string value to normalize
+     * @return normalized value
+     */
+    public static String normalizeHexString(String value) {
+        if (value.startsWith("0x")) {
+            value = value.substring(2);
+        }
+        if (value.length() % 2 != 0) {
+            value = "0" + value;
+        }
+        return value;
     }
 
     public static byte[] stringToByteArray(String input) {

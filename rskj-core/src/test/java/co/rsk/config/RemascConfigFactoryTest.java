@@ -94,4 +94,11 @@ public class RemascConfigFactoryTest {
         factory.createRemascConfig("fakeNet");
         Assert.fail("This should FAIL");
     }
+
+    @Test
+    public void createRemascConfigValidConfig() {
+        RemascConfigFactory factory = new RemascConfigFactory(REMASC_FILE);
+        final RemascConfig regtest = factory.createRemascConfig("regtest");
+        Assert.assertNotNull(regtest);
+    }
 }

@@ -30,24 +30,25 @@ import static org.ethereum.rpc.exception.RskJsonRpcRequestException.invalidParam
 
 public class EthModuleWalletDisabled implements EthModuleWallet {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger("web3");
+    private static final Logger logger = LoggerFactory.getLogger("web3");
 
     @Override
     public String[] accounts() {
         String[] accounts = {};
-        LOGGER.debug("eth_accounts(): {}", Arrays.toString(accounts));
+        logger.debug("eth_accounts(): {}", Arrays.toString(accounts));
         return accounts;
     }
 
     @Override
     public String sign(String addr, String data) {
-        LOGGER.debug("eth_sign({}, {}): {}", addr, data, null);
+        logger.debug("eth_sign({}, {}): {}", addr, data, null);
         throw invalidParamError("Local wallet is disabled in this node");
     }
 
     @Override
     public String signTypedData(String addr, JsonNode data) {
-        LOGGER.debug("eth_signTypedData({}, {})", addr, stringify(data));
+        final String stringify = stringify(data);
+        logger.debug("eth_signTypedData({}, {})", addr, stringify);
         throw invalidParamError("Local wallet is disabled in this node");
     }
 
@@ -56,6 +57,7 @@ public class EthModuleWalletDisabled implements EthModuleWallet {
             ObjectMapper mapper = new ObjectMapper();
             return mapper.writerWithDefaultPrettyPrinter().writeValueAsString(data);
         } catch (JsonProcessingException e) {
+            logger.trace("Invalid json data", e);
             return "Invalid json data";
         }
     }

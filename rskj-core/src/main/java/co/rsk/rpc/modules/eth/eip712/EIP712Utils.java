@@ -9,9 +9,13 @@ import com.google.common.io.ByteArrayDataOutput;
 import com.google.common.io.ByteStreams;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.HashUtil;
+import org.ethereum.rpc.TypeConverter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.web3j.abi.DefaultFunctionEncoder;
 import org.web3j.abi.TypeDecoder;
 import org.web3j.abi.TypeReference;
+import org.web3j.abi.datatypes.Bool;
 import org.web3j.abi.datatypes.NumericType;
 import org.web3j.abi.datatypes.Type;
 import org.web3j.abi.datatypes.generated.Bytes32;
@@ -38,11 +42,19 @@ import java.util.stream.StreamSupport;
  * @author ppedemon
  */
 public class EIP712Utils {
+    private static final Logger logger = LoggerFactory.getLogger("web3");
 
-    private static final String EIP712Domain = "EIP712Domain";
+    private static final String EIP712_DOMAIN = "EIP712Domain";
+
+    private static final String FIELD_DOMAIN = "domain";
+    private static final String FIELD_PRIMARY_TYPE = "primaryType";
+    private static final String FIELD_MSG = "message";
+    private static final String FIELD_TYPES = "types";
+    private static final String FIELD_NAME = "name";
+    private static final String FIELD_TYPE = "type";
 
     private static final List<String> SCHEMA_KEYS = ImmutableList.of(
-            "types", "primaryType", "domain", "message"
+            FIELD_TYPES, FIELD_PRIMARY_TYPE, FIELD_DOMAIN, FIELD_MSG
     );
 
     private static final Pattern PRIMARY_TYPE_RE = Pattern.compile("^(\\w*).*");
@@ -63,10 +75,10 @@ public class EIP712Utils {
                 sanitized.set(key, data.get(key));
             }
         }
-        if (sanitized.has("types")) {
-            ObjectNode types = sanitized.with("types");
-            if (!types.has(EIP712Domain)) {
-                types.set(EIP712Domain, m.createArrayNode());
+        if (sanitized.has(FIELD_TYPES)) {
+            ObjectNode types = sanitized.with(FIELD_TYPES);
+            if (!types.has(EIP712_DOMAIN)) {
+                types.set(EIP712_DOMAIN, m.createArrayNode());
             }
         }
         return sanitized;
@@ -82,7 +94,7 @@ public class EIP712Utils {
      */
     private List<String> findTyDeps(String primaryType, JsonNode types, List<String> results) {
         Matcher m = PRIMARY_TYPE_RE.matcher(primaryType);
-        if (!m.matches()) {
+        if (!m.matches() || m.groupCount() < 1) {
             return results;
         }
 
@@ -94,7 +106,7 @@ public class EIP712Utils {
 
         results.add(primaryType);
         for (JsonNode tyItem: types.withArray(primaryType)) {
-            for (String tyDep: findTyDeps(tyItem.get("type").asText(), types, results)) {
+            for (String tyDep: findTyDeps(tyItem.get(FIELD_TYPE).asText(), types, results)) {
                 if (!results.contains(tyDep)) {
                     results.add(tyDep);
                 }
@@ -127,7 +139,7 @@ public class EIP712Utils {
             }
 
             String tyArgs = StreamSupport.stream(types.withArray(type).spliterator(), false)
-                    .map(tyDef -> tyDef.get("type").asText() + " " + tyDef.get("name").asText())
+                    .map(tyDef -> tyDef.get(FIELD_TYPE).asText() + " " + tyDef.get(FIELD_NAME).asText())
                     .collect(Collectors.joining(","));
             sb.append(String.format("%s(%s)", type, tyArgs));
         }
@@ -148,13 +160,21 @@ public class EIP712Utils {
             return new Bytes32(value == null? BYTE32_ZERO : HashUtil.keccak256(encodeData(type, value, types)));
         }
 
-        if (type.equals("bytes")) {
-            String val = normHexString(value.asText());
+        if ("bytes".equals(type)) {
+            String val = TypeConverter.normalizeHexString(value.asText());
             return new Bytes32(HashUtil.keccak256(Hex.decode(val)));
         }
 
-        if (type.equals("string")) {
+        if ("string".equals(type)) {
             return new Bytes32(HashUtil.keccak256(value.asText().getBytes(StandardCharsets.UTF_8)));
+        }
+
+        if ("bool".equals(type)) {//bool is a string with true or false or 1 or 0
+            if(value.asText() != null && value.asText().matches("0|1|true|false")){
+                return new Bool(value.asBoolean());
+            } else {
+                throw new RuntimeException("Incorrect boolean value when encoding");
+            }
         }
 
         if (type.lastIndexOf(']') == type.length() - 1) {
@@ -194,24 +214,6 @@ public class EIP712Utils {
     }
 
     /**
-     * Normalize string representing an hexadecimal value. Normalization amounts to:
-     *   - Remove leading "0x" if present
-     *   - Ensure even length by adding a leading zero if necessary
-     *
-     * @param value hexadecimal string value to normalize
-     * @return normalized value
-     */
-    private String normHexString(String value) {
-        if (value.startsWith("0x")) {
-            value = value.substring(2);
-        }
-        if (value.length() % 2 != 0) {
-            value = "0" + value;
-        }
-        return value;
-    }
-
-    /**
      * Construct a Solidity numeric type, handling correctly the case when the
      * value is textual. In this case we don't blindly assume the strings holds
      * the hexadecimal value. The value will be hexadecimal *only* if it the
@@ -225,9 +227,8 @@ public class EIP712Utils {
     private Type numericFromString(TypeReference tyRef, JsonNode value) throws Exception {
         if (value.isTextual()) {
             String txtVal = value.asText();
-            int radix = txtVal.startsWith("0x") ? 16 : 10;
-            BigInteger n = new BigInteger(txtVal, radix);
-            return TypeDecoder.instantiateType(tyRef, n);
+            BigInteger numberVal = TypeConverter.stringNumberAsBigInt(txtVal);
+            return TypeDecoder.instantiateType(tyRef, numberVal);
         } else if (value.isNumber() ){
             return TypeDecoder.instantiateType(tyRef, value.numberValue());
         } else {
@@ -249,10 +250,11 @@ public class EIP712Utils {
         encoded.add(new Bytes32(hashType(primaryType, types)));
 
         for (JsonNode tyDef: types.withArray(primaryType)) {
-            String name = tyDef.get("name").asText();
-            String type = tyDef.get("type").asText();
+            String name = tyDef.get(FIELD_NAME).asText();
+            String type = tyDef.get(FIELD_TYPE).asText();
             JsonNode value = data.has(name)? data.get(name) : null;
             encoded.add(encodeField(type, value, types));
+            logger.debug("name: {}, type: {}, value: {}", name, type, value);
         }
 
         DefaultFunctionEncoder encoder = new DefaultFunctionEncoder();
@@ -289,18 +291,18 @@ public class EIP712Utils {
      * @param typedData type data to encode, as a Json node
      * @return encoding of the given typed data
      */
-    public byte[] eip712encode_v4(JsonNode typedData) {
+    public byte[] eip712EncodeV4(JsonNode typedData) {
         JsonNode sanitized = sanitize(typedData);
         ByteArrayDataOutput buf = ByteStreams.newDataOutput();
         buf.writeByte(0x19);
         buf.writeByte(0x01);
 
-        buf.write(hashStruct(EIP712Domain, sanitized.get("domain"), sanitized.with("types")));
-        if (!sanitized.get("primaryType").asText().equals(EIP712Domain)) {
+        buf.write(hashStruct(EIP712_DOMAIN, sanitized.get(FIELD_DOMAIN), sanitized.with(FIELD_TYPES)));
+        if (!sanitized.get(FIELD_PRIMARY_TYPE).asText().equals(EIP712_DOMAIN)) {
             buf.write(hashStruct(
-                    sanitized.get("primaryType").asText(),
-                    sanitized.get("message"),
-                    sanitized.with("types")));
+                    sanitized.get(FIELD_PRIMARY_TYPE).asText(),
+                    sanitized.get(FIELD_MSG),
+                    sanitized.with(FIELD_TYPES)));
         }
         return HashUtil.keccak256(buf.toByteArray());
     }
