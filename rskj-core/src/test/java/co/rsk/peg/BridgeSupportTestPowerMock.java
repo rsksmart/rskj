@@ -37,6 +37,7 @@ import co.rsk.db.MutableTrieCache;
 import co.rsk.db.MutableTrieImpl;
 import co.rsk.peg.bitcoin.MerkleBranch;
 import co.rsk.peg.btcLockSender.BtcLockSender;
+import co.rsk.peg.btcLockSender.BtcLockSender.TxSenderAddressType;
 import co.rsk.peg.btcLockSender.BtcLockSenderProvider;
 import co.rsk.peg.pegininstructions.PeginInstructionsProvider;
 import co.rsk.peg.simples.SimpleBlockChain;
@@ -64,7 +65,6 @@ import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.InternalTransaction;
 import org.ethereum.vm.program.Program;
-import org.hamcrest.collection.IsIterableContainingInOrder;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -3797,9 +3797,9 @@ public class BridgeSupportTestPowerMock {
         );
     }
 
-    private BtcLockSenderProvider getBtcLockSenderProvider(BtcLockSender.TxType txType, Address btcAddress, RskAddress rskAddress) {
+    private BtcLockSenderProvider getBtcLockSenderProvider(TxSenderAddressType txSenderAddressType, Address btcAddress, RskAddress rskAddress) {
         BtcLockSender btcLockSender = mock(BtcLockSender.class);
-        when(btcLockSender.getType()).thenReturn(txType);
+        when(btcLockSender.getTxSenderAddressType()).thenReturn(txSenderAddressType);
         when(btcLockSender.getBTCAddress()).thenReturn(btcAddress);
         when(btcLockSender.getRskAddress()).thenReturn(rskAddress);
 

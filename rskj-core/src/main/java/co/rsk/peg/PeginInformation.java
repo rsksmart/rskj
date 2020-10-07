@@ -4,7 +4,7 @@ import co.rsk.bitcoinj.core.Address;
 import co.rsk.bitcoinj.core.BtcTransaction;
 import co.rsk.core.RskAddress;
 import co.rsk.peg.btcLockSender.BtcLockSender;
-import co.rsk.peg.btcLockSender.BtcLockSender.TxType;
+import co.rsk.peg.btcLockSender.BtcLockSender.TxSenderAddressType;
 import co.rsk.peg.btcLockSender.BtcLockSenderProvider;
 import co.rsk.peg.pegininstructions.PeginInstructions;
 import co.rsk.peg.pegininstructions.PeginInstructionsException;
@@ -25,7 +25,7 @@ public class PeginInformation {
     private RskAddress rskDestinationAddress;
     private Address btcRefundAddress;
     private Address senderBtcAddress;
-    private BtcLockSender.TxType senderBtcAddressType;
+    private TxSenderAddressType senderBtcAddressType;
 
     public PeginInformation(
         BtcLockSenderProvider btcLockSenderProvider,
@@ -33,7 +33,7 @@ public class PeginInformation {
         this.btcLockSenderProvider = btcLockSenderProvider;
         this.peginInstructionsProvider = peginInstructionsProvider;
         this.protocolVersion = -1; // Set an invalid value by default
-        this.senderBtcAddressType = TxType.UNKNOWN;
+        this.senderBtcAddressType = TxSenderAddressType.UNKNOWN;
     }
 
     public int getProtocolVersion() {
@@ -52,7 +52,7 @@ public class PeginInformation {
         return this.senderBtcAddress;
     }
 
-    public BtcLockSender.TxType getSenderBtcAddressType() {
+    public TxSenderAddressType getSenderBtcAddressType() {
         return this.senderBtcAddressType;
     }
 
@@ -86,13 +86,13 @@ public class PeginInformation {
         this.rskDestinationAddress = btcLockSender.getRskAddress();
         this.btcRefundAddress = btcLockSender.getBTCAddress();
         this.senderBtcAddress = btcLockSender.getBTCAddress();
-        this.senderBtcAddressType = btcLockSender.getType();
+        this.senderBtcAddressType = btcLockSender.getTxSenderAddressType();
 
         logger.trace("[parseFromBtcLockSender] Protocol version: {}", this.protocolVersion);
         logger.trace("[parseFromBtcLockSender] RSK destination address: {}", btcLockSender.getRskAddress());
         logger.trace("[parseFromBtcLockSender] BTC refund address: {}", btcLockSender.getBTCAddress());
         logger.trace("[parseFromBtcLockSender] Sender BTC address: {}", btcLockSender.getBTCAddress());
-        logger.trace("[parseFromBtcLockSender] Sender BTC address type: {}", btcLockSender.getType());
+        logger.trace("[parseFromBtcLockSender] Sender BTC address type: {}", btcLockSender.getTxSenderAddressType());
     }
 
     private void parseFromPeginInstructions(PeginInstructions peginInstructions)  throws PeginInstructionsException {
