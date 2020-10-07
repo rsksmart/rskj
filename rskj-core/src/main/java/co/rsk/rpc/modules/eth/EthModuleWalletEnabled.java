@@ -102,8 +102,8 @@ public class EthModuleWalletEnabled implements EthModuleWallet {
         ECDSASignature signature = ECDSASignature.fromSignature(ecKey.sign(messageHash));
 
         return TypeConverter.toJsonHex(ByteUtil.merge(
-                ByteUtil.bigIntegerToBytes(signature.getR()),
-                ByteUtil.bigIntegerToBytes(signature.getS()),
+                ByteUtil.bigIntegerToBytes(signature.getR(), 32),
+                ByteUtil.bigIntegerToBytes(signature.getS(), 32),
                 new byte[] {signature.getV()}
         ));
     }
@@ -111,11 +111,13 @@ public class EthModuleWalletEnabled implements EthModuleWallet {
     private String signTyped(JsonNode typedData, ECKey ecKey) {
         byte[] toSign = utils.eip712encode_v4(typedData);
         ECDSASignature signature = ECDSASignature.fromSignature(ecKey.sign(toSign));
-        return TypeConverter.toJsonHex(ByteUtil.merge(
-                ByteUtil.bigIntegerToBytes(signature.getR()),
-                ByteUtil.bigIntegerToBytes(signature.getS()),
+
+        return  TypeConverter.toJsonHex(ByteUtil.merge(
+                ByteUtil.bigIntegerToBytes(signature.getR(),32),
+                ByteUtil.bigIntegerToBytes(signature.getS(),32),
                 new byte[] {signature.getV()}
         ));
+
     }
 
     private String prettyPrintJson(JsonNode node) {
