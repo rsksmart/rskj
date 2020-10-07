@@ -26,8 +26,7 @@ import co.rsk.bitcoinj.wallet.Wallet;
 import co.rsk.config.BridgeConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.peg.bitcoin.RskAllowUnconfirmedCoinSelector;
-import co.rsk.peg.btcLockSender.BtcLockSender;
-import co.rsk.peg.btcLockSender.BtcLockSender.TxType;
+import co.rsk.peg.btcLockSender.BtcLockSender.TxSenderAddressType;
 import co.rsk.peg.utils.BtcTransactionFormatUtils;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -151,10 +150,10 @@ public class BridgeUtils {
      * @param activations to identify if certain hardfork is active or not.
      * @return true if this tx can be locked
      */
-    public static boolean txIsProcessable(BtcLockSender.TxType txSenderAddressType, ActivationConfig.ForBlock activations) {
+    public static boolean txIsProcessable(TxSenderAddressType txSenderAddressType, ActivationConfig.ForBlock activations) {
         //After RSKIP 143 activation, check if the tx sender could be obtained to process the tx
-        return txSenderAddressType == BtcLockSender.TxType.P2PKH ||
-            (activations.isActive(ConsensusRule.RSKIP143) && txSenderAddressType != TxType.UNKNOWN);
+        return txSenderAddressType == TxSenderAddressType.P2PKH ||
+            (activations.isActive(ConsensusRule.RSKIP143) && txSenderAddressType != TxSenderAddressType.UNKNOWN);
     }
 
     private static boolean isReleaseTx(BtcTransaction tx, Federation federation) {
