@@ -9,25 +9,29 @@ import org.ethereum.crypto.HashUtil;
 
 public class P2shMultisigBtcLockSender implements BtcLockSender {
 
-    private BtcLockSender.TxType transactionType;
+    private TxSenderAddressType txSenderAddressType;
     private Address btcAddress;
 
     public P2shMultisigBtcLockSender() {
-        this.transactionType = TxType.P2SHMULTISIG;
+        this.txSenderAddressType = TxSenderAddressType.P2SHMULTISIG;
     }
 
-    public BtcLockSender.TxType getType() {
-        return transactionType;
+    @Override
+    public TxSenderAddressType getTxSenderAddressType() {
+        return txSenderAddressType;
     }
 
+    @Override
     public Address getBTCAddress() {
         return this.btcAddress;
     }
 
+    @Override
     public RskAddress getRskAddress() {
         return null;
     }
 
+    @Override
     public boolean tryParse(BtcTransaction btcTx) {
         if (btcTx == null) {
             return false;
