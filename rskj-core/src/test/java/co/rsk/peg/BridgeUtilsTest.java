@@ -264,25 +264,25 @@ public class BridgeUtilsTest {
     }
 
     @Test
-    public void testTxIsProcessable() {
+    public void testTxIsProcessableInLegacyVersion() {
         // Before hard fork
         ActivationConfig.ForBlock actForBlock = mock(ActivationConfig.ForBlock.class);
         when(actForBlock.isActive(ConsensusRule.RSKIP143)).thenReturn(false);
 
-        assertTrue(BridgeUtils.txIsProcessable(TxSenderAddressType.P2PKH, actForBlock));
-        assertFalse(BridgeUtils.txIsProcessable(TxSenderAddressType.P2SHP2WPKH, actForBlock));
-        assertFalse(BridgeUtils.txIsProcessable(TxSenderAddressType.P2SHMULTISIG, actForBlock));
-        assertFalse(BridgeUtils.txIsProcessable(TxSenderAddressType.P2SHP2WSH, actForBlock));
-        assertFalse(BridgeUtils.txIsProcessable(TxSenderAddressType.UNKNOWN, actForBlock));
+        assertTrue(BridgeUtils.txIsProcessableInLegacyVersion(TxSenderAddressType.P2PKH, actForBlock));
+        assertFalse(BridgeUtils.txIsProcessableInLegacyVersion(TxSenderAddressType.P2SHP2WPKH, actForBlock));
+        assertFalse(BridgeUtils.txIsProcessableInLegacyVersion(TxSenderAddressType.P2SHMULTISIG, actForBlock));
+        assertFalse(BridgeUtils.txIsProcessableInLegacyVersion(TxSenderAddressType.P2SHP2WSH, actForBlock));
+        assertFalse(BridgeUtils.txIsProcessableInLegacyVersion(TxSenderAddressType.UNKNOWN, actForBlock));
 
         // After hard fork
         when(actForBlock.isActive(ConsensusRule.RSKIP143)).thenReturn(true);
 
-        assertTrue(BridgeUtils.txIsProcessable(TxSenderAddressType.P2PKH, actForBlock));
-        assertTrue(BridgeUtils.txIsProcessable(TxSenderAddressType.P2SHP2WPKH, actForBlock));
-        assertTrue(BridgeUtils.txIsProcessable(TxSenderAddressType.P2SHMULTISIG, actForBlock));
-        assertTrue(BridgeUtils.txIsProcessable(TxSenderAddressType.P2SHP2WSH, actForBlock));
-        assertFalse(BridgeUtils.txIsProcessable(TxSenderAddressType.UNKNOWN, actForBlock));
+        assertTrue(BridgeUtils.txIsProcessableInLegacyVersion(TxSenderAddressType.P2PKH, actForBlock));
+        assertTrue(BridgeUtils.txIsProcessableInLegacyVersion(TxSenderAddressType.P2SHP2WPKH, actForBlock));
+        assertTrue(BridgeUtils.txIsProcessableInLegacyVersion(TxSenderAddressType.P2SHMULTISIG, actForBlock));
+        assertTrue(BridgeUtils.txIsProcessableInLegacyVersion(TxSenderAddressType.P2SHP2WSH, actForBlock));
+        assertFalse(BridgeUtils.txIsProcessableInLegacyVersion(TxSenderAddressType.UNKNOWN, actForBlock));
     }
 
     @Test

@@ -381,7 +381,7 @@ public class BridgeSupport {
         Address senderBtcAddress = peginInformation.getSenderBtcAddress();
         TxSenderAddressType senderBtcAddressType = peginInformation.getSenderBtcAddressType();
 
-        if (!BridgeUtils.txIsProcessable(senderBtcAddressType, activations)) {
+        if (!BridgeUtils.txIsProcessableInLegacyVersion(senderBtcAddressType, activations)) {
             logger.warn("[processPeginVersionLegacy] [btcTx:{}] Could not get BtcLockSender from Btc tx", btcTx.getHash());
             throw new RegisterBtcTransactionException("Could not get BtcLockSender from Btc tx");
         }
