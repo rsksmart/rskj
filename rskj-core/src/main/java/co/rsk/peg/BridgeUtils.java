@@ -150,7 +150,7 @@ public class BridgeUtils {
      * @param activations to identify if certain hardfork is active or not.
      * @return true if this tx can be locked
      */
-    public static boolean txIsProcessable(TxSenderAddressType txSenderAddressType, ActivationConfig.ForBlock activations) {
+    public static boolean txIsProcessableInLegacyVersion(TxSenderAddressType txSenderAddressType, ActivationConfig.ForBlock activations) {
         //After RSKIP 143 activation, check if the tx sender could be obtained to process the tx
         return txSenderAddressType == TxSenderAddressType.P2PKH ||
             (activations.isActive(ConsensusRule.RSKIP143) && txSenderAddressType != TxSenderAddressType.UNKNOWN);
