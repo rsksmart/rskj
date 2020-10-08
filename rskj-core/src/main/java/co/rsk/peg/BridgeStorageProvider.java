@@ -120,12 +120,13 @@ public class BridgeStorageProvider {
     private Long nextFederationCreationBlockHeight; // if -1, then clear value
     private Script lastRetiredFederationP2SHScript;
 
+    private Map<Sha256Hash, byte[]> fastBridgeDerivationArgumentsScriptHashToSave;
+
     public BridgeStorageProvider(
         Repository repository,
         RskAddress contractAddress,
         BridgeConstants bridgeConstants,
         ActivationConfig.ForBlock activations) {
-
         this.repository = repository;
         this.contractAddress = contractAddress;
         this.networkParameters = bridgeConstants.getBtcParams();
@@ -725,6 +726,39 @@ public class BridgeStorageProvider {
         safeSaveToRepository(LAST_RETIRED_FEDERATION_P2SH_SCRIPT_KEY, lastRetiredFederationP2SHScript, BridgeSerializationUtils::serializeScript);
     }
 
+    public Optional<byte[]> getFastBridgeFederationScriptHash(Sha256Hash derivationArgsHash) {
+        if (!activations.isActive(RSKIP176)) {
+            return Optional.empty();
+        }
+
+        byte[] fastBridgeFedP2SH = repository.getStorageBytes(contractAddress, getStorageKeyForDerivationP2SHByHash(derivationArgsHash));
+
+        if (fastBridgeFedP2SH == null ) {
+            return Optional.empty();
+        }
+
+        return Optional.of(fastBridgeFedP2SH);
+    }
+
+    public void setDerivationArgumentsScriptHash(Sha256Hash derivationArgsHash, byte[] fastBridgeFedP2SH) {
+        if (activations.isActive(RSKIP176)) {
+            if (fastBridgeDerivationArgumentsScriptHashToSave == null) {
+                fastBridgeDerivationArgumentsScriptHashToSave = new HashMap<>();
+            }
+            fastBridgeDerivationArgumentsScriptHashToSave.put(derivationArgsHash, fastBridgeFedP2SH);
+        }
+    }
+
+    private void saveDerivationArgumentsScriptHash() {
+        if (fastBridgeDerivationArgumentsScriptHashToSave == null) {
+            return;
+        }
+
+        fastBridgeDerivationArgumentsScriptHashToSave.forEach((derivationArgsHash, fastBridgeFedP2SH) ->
+                repository.addStorageBytes(contractAddress, getStorageKeyForDerivationP2SHByHash(derivationArgsHash), fastBridgeFedP2SH)
+        );
+    }
+
     public void save() throws IOException {
         saveBtcTxHashesAlreadyProcessed();
 
@@ -758,6 +792,8 @@ public class BridgeStorageProvider {
         saveLastRetiredFederationP2SHScript();
 
         saveBtcBlocksIndex();
+
+        saveDerivationArgumentsScriptHash();
     }
 
     private DataWord getStorageKeyForBtcTxHashAlreadyProcessed(Sha256Hash btcTxHash) {
@@ -770,6 +806,10 @@ public class BridgeStorageProvider {
 
     private DataWord getStorageKeyForBtcBlockIndex(Integer height) {
         return DataWord.fromLongString("btcBlockHeight-" + height);
+    }
+
+    private DataWord getStorageKeyForDerivationP2SHByHash(Sha256Hash derivationHash) {
+        return DataWord.fromLongString("fastBridgeP2SH-" + derivationHash.toString());
     }
 
     private Optional<Integer> getStorageVersion(DataWord versionKey) {
