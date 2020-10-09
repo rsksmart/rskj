@@ -149,6 +149,46 @@ public class BridgeEventLoggerImplTest {
     }
 
     @Test
+    public void logLockBtc_with_null_sender() {
+        // Setup event logger
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        List<LogInfo> eventLogs = new LinkedList<>();
+        BridgeEventLogger eventLogger = new BridgeEventLoggerImpl(null, activations, eventLogs);
+
+        RskAddress rskAddress = mock(RskAddress.class);
+        when(rskAddress.toString()).thenReturn("0x00000000000000000000000000000000000000");
+
+        // Mock btc transaction
+        BtcTransaction mockedTx = mock(BtcTransaction.class);
+        when(mockedTx.getHash()).thenReturn(PegTestUtils.createHash(0));
+
+        Coin amount = Coin.SATOSHI;
+
+        // Act
+        eventLogger.logLockBtc(rskAddress, mockedTx, null, amount);
+
+        // Assert log size
+        Assert.assertEquals(1, eventLogs.size());
+
+        LogInfo logResult = eventLogs.get(0);
+        CallTransaction.Function event = BridgeEvents.LOCK_BTC.getEvent();
+
+        // Assert address that made the log
+        Assert.assertEquals(PrecompiledContracts.BRIDGE_ADDR, new RskAddress(logResult.getAddress()));
+
+        // Assert log topics
+        Assert.assertEquals(2, logResult.getTopics().size());
+        byte[][] topics = event.encodeEventTopics(rskAddress.toString());
+        for (int i=0; i<topics.length; i++) {
+            Assert.assertArrayEquals(topics[i], logResult.getTopics().get(i).getData());
+        }
+
+        // Assert log data
+        byte[] encodedData = event.encodeEventData(mockedTx.getHash().getBytes(), "Undetermined", amount.getValue());
+        Assert.assertArrayEquals(encodedData, logResult.getData());
+    }
+
+    @Test
     public void logUpdateCollectionsBeforeRskip146HardFork() {
         // Setup event logger
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
