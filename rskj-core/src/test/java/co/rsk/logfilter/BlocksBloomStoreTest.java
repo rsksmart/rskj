@@ -53,7 +53,7 @@ public class BlocksBloomStoreTest {
         blocksBloom.addBlockBloom(0, bloom1);
         blocksBloom.addBlockBloom(1, bloom2);
 
-        blocksBloomStore.setBlocksBloom(blocksBloom);
+        blocksBloomStore.addBlocksBloomCache(blocksBloom);
 
         Assert.assertTrue(blocksBloomStore.hasBlockNumber(0));
     }
@@ -74,7 +74,7 @@ public class BlocksBloomStoreTest {
         blocksBloom.addBlockBloom(blocksBloomStore.getNoBlocks(), bloom1);
         blocksBloom.addBlockBloom(blocksBloomStore.getNoBlocks() + 1, bloom2);
 
-        blocksBloomStore.setBlocksBloom(blocksBloom);
+        blocksBloomStore.addBlocksBloomCache(blocksBloom);
 
         Assert.assertSame(blocksBloom, blocksBloomStore.getBlocksBloomByNumber(blocksBloomStore.getNoBlocks()));
     }
@@ -96,7 +96,7 @@ public class BlocksBloomStoreTest {
         blocksBloom.addBlockBloom(blocksBloomStore.getNoBlocks(), bloom1);
         blocksBloom.addBlockBloom(blocksBloomStore.getNoBlocks() + 1, bloom2);
 
-        blocksBloomStore.setBlocksBloom(blocksBloom);
+        blocksBloomStore.addBlocksBloomCache(blocksBloom);
 
         Assert.assertSame(blocksBloom, blocksBloomStore.getBlocksBloomByNumber(blocksBloomStore.getNoBlocks()));
 
