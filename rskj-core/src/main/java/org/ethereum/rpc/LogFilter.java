@@ -229,7 +229,7 @@ public class LogFilter extends Filter {
                 }
 
                 if (auxiliaryBlocksBloom != null && blocksBloomStore.lastNumberInRange(blockNum) == blockNum) {
-                    blocksBloomStore.setBlocksBloom(auxiliaryBlocksBloom);
+                    blocksBloomStore.addBlocksBloomCache(auxiliaryBlocksBloom);
                 }
 
                 filter.onBlock(block);

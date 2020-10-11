@@ -35,7 +35,7 @@ public class BlocksBloomStore {
 
     private final int noBlocks;
     private final int noConfirmations;
-    private final Map<Long, BlocksBloom> blocksBloom = new ConcurrentHashMap<>();
+    private final Map<Long, BlocksBloom> blocksBloomCache = new ConcurrentHashMap<>();
     private final KeyValueDataSource dataSource;
 
     public BlocksBloomStore(int noBlocks, int noConfirmations, KeyValueDataSource dataSource) {
@@ -45,7 +45,7 @@ public class BlocksBloomStore {
     }
 
     public synchronized boolean hasBlockNumber(long blockNumber) {
-        if (this.blocksBloom.containsKey(this.firstNumberInRange(blockNumber))) {
+        if (this.blocksBloomCache.containsKey(this.firstNumberInRange(blockNumber))) {
             return true;
         }
 
@@ -59,7 +59,7 @@ public class BlocksBloomStore {
     public synchronized BlocksBloom getBlocksBloomByNumber(long number) {
         long key = firstNumberInRange(number);
 
-        BlocksBloom blocksBloom = this.blocksBloom.get(key);
+        BlocksBloom blocksBloom = this.blocksBloomCache.get(key);
 
         if (blocksBloom != null) {
             return blocksBloom;
@@ -77,18 +77,18 @@ public class BlocksBloomStore {
 
         blocksBloom = BlocksBloomEncoder.decode(data);
 
-        this.blocksBloom.put(key, blocksBloom);
+        this.blocksBloomCache.put(key, blocksBloom);
 
         return blocksBloom;
     }
 
-    public synchronized void setBlocksBloom(BlocksBloom blocksBloom) {
-        logger.trace("set blocks bloom: height {}", blocksBloom.fromBlock());
+    public synchronized void addBlocksBloomCache(BlocksBloom blocksBloomCache) {
+        logger.trace("set blocks bloom: height {}", blocksBloomCache.fromBlock());
 
-        this.blocksBloom.put(blocksBloom.fromBlock(), blocksBloom);
+        this.blocksBloomCache.put(blocksBloomCache.fromBlock(), blocksBloomCache);
 
         if (this.dataSource != null) {
-            this.dataSource.put(longToKey(blocksBloom.fromBlock()), BlocksBloomEncoder.encode(blocksBloom));
+            this.dataSource.put(longToKey(blocksBloomCache.fromBlock()), BlocksBloomEncoder.encode(blocksBloomCache));
         }
     }
 

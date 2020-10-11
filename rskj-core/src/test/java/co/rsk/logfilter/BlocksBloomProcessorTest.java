@@ -11,14 +11,14 @@ import org.junit.Test;
 /**
  * Created by ajlopez on 29/09/2020.
  */
-public class BlocksBloomBuilderTest {
+public class BlocksBloomProcessorTest {
     @Test
     public void noBlocksBloomInProcessAtTheBeginning() {
         KeyValueDataSource dataSource = new HashMapDB();
         BlocksBloomStore blocksBloomStore = new BlocksBloomStore(64, 0, dataSource);
-        BlocksBloomBuilder blocksBloomBuilder = new BlocksBloomBuilder(blocksBloomStore, null);
+        BlocksBloomProcessor blocksBloomProcessor = new BlocksBloomProcessor(blocksBloomStore, null);
 
-        Assert.assertNull(blocksBloomBuilder.getBlocksBloomInProcess());
+        Assert.assertNull(blocksBloomProcessor.getBlocksBloomInProcess());
     }
 
     @Test
@@ -29,11 +29,11 @@ public class BlocksBloomBuilderTest {
 
         KeyValueDataSource dataSource = new HashMapDB();
         BlocksBloomStore blocksBloomStore = new BlocksBloomStore(4, 2, dataSource);
-        BlocksBloomBuilder blocksBloomBuilder = new BlocksBloomBuilder(blocksBloomStore, world.getBlockStore());
+        BlocksBloomProcessor blocksBloomProcessor = new BlocksBloomProcessor(blocksBloomStore, world.getBlockStore());
 
-        blocksBloomBuilder.processNewBlockNumber(4);
+        blocksBloomProcessor.processNewBlockNumber(4);
 
-        BlocksBloom result = blocksBloomBuilder.getBlocksBloomInProcess();
+        BlocksBloom result = blocksBloomProcessor.getBlocksBloomInProcess();
 
         Assert.assertNotNull(result);
         Assert.assertEquals(0, result.fromBlock());
@@ -50,11 +50,11 @@ public class BlocksBloomBuilderTest {
 
         KeyValueDataSource dataSource = new HashMapDB();
         BlocksBloomStore blocksBloomStore = new BlocksBloomStore(4, 2, dataSource);
-        BlocksBloomBuilder blocksBloomBuilder = new BlocksBloomBuilder(blocksBloomStore, world.getBlockStore());
+        BlocksBloomProcessor blocksBloomProcessor = new BlocksBloomProcessor(blocksBloomStore, world.getBlockStore());
 
-        blocksBloomBuilder.processNewBlockNumber(7);
+        blocksBloomProcessor.processNewBlockNumber(7);
 
-        BlocksBloom result = blocksBloomBuilder.getBlocksBloomInProcess();
+        BlocksBloom result = blocksBloomProcessor.getBlocksBloomInProcess();
 
         Assert.assertNotNull(result);
         Assert.assertEquals(4, result.fromBlock());
@@ -71,11 +71,11 @@ public class BlocksBloomBuilderTest {
 
         KeyValueDataSource dataSource = new HashMapDB();
         BlocksBloomStore blocksBloomStore = new BlocksBloomStore(4, 2, dataSource);
-        BlocksBloomBuilder blocksBloomBuilder = new BlocksBloomBuilder(blocksBloomStore, world.getBlockStore());
+        BlocksBloomProcessor blocksBloomProcessor = new BlocksBloomProcessor(blocksBloomStore, world.getBlockStore());
 
-        blocksBloomBuilder.processNewBlockNumber(6);
+        blocksBloomProcessor.processNewBlockNumber(6);
 
-        BlocksBloom result = blocksBloomBuilder.getBlocksBloomInProcess();
+        BlocksBloom result = blocksBloomProcessor.getBlocksBloomInProcess();
 
         Assert.assertNotNull(result);
         Assert.assertEquals(4, result.fromBlock());
@@ -92,12 +92,12 @@ public class BlocksBloomBuilderTest {
 
         KeyValueDataSource dataSource = new HashMapDB();
         BlocksBloomStore blocksBloomStore = new BlocksBloomStore(4, 2, dataSource);
-        BlocksBloomBuilder blocksBloomBuilder = new BlocksBloomBuilder(blocksBloomStore, world.getBlockStore());
+        BlocksBloomProcessor blocksBloomProcessor = new BlocksBloomProcessor(blocksBloomStore, world.getBlockStore());
 
-        blocksBloomBuilder.processNewBlockNumber(6);
-        blocksBloomBuilder.processNewBlockNumber(4);
+        blocksBloomProcessor.processNewBlockNumber(6);
+        blocksBloomProcessor.processNewBlockNumber(4);
 
-        BlocksBloom result = blocksBloomBuilder.getBlocksBloomInProcess();
+        BlocksBloom result = blocksBloomProcessor.getBlocksBloomInProcess();
 
         Assert.assertNotNull(result);
         Assert.assertEquals(4, result.fromBlock());
@@ -114,12 +114,12 @@ public class BlocksBloomBuilderTest {
 
         KeyValueDataSource dataSource = new HashMapDB();
         BlocksBloomStore blocksBloomStore = new BlocksBloomStore(4, 2, dataSource);
-        BlocksBloomBuilder blocksBloomBuilder = new BlocksBloomBuilder(blocksBloomStore, world.getBlockStore());
+        BlocksBloomProcessor blocksBloomProcessor = new BlocksBloomProcessor(blocksBloomStore, world.getBlockStore());
 
-        blocksBloomBuilder.processNewBlockNumber(4);
-        blocksBloomBuilder.processNewBlockNumber(4);
+        blocksBloomProcessor.processNewBlockNumber(4);
+        blocksBloomProcessor.processNewBlockNumber(4);
 
-        BlocksBloom result = blocksBloomBuilder.getBlocksBloomInProcess();
+        BlocksBloom result = blocksBloomProcessor.getBlocksBloomInProcess();
 
         Assert.assertNotNull(result);
         Assert.assertEquals(0, result.fromBlock());
@@ -136,12 +136,12 @@ public class BlocksBloomBuilderTest {
 
         KeyValueDataSource dataSource = new HashMapDB();
         BlocksBloomStore blocksBloomStore = new BlocksBloomStore(4, 2, dataSource);
-        BlocksBloomBuilder blocksBloomBuilder = new BlocksBloomBuilder(blocksBloomStore, world.getBlockStore());
+        BlocksBloomProcessor blocksBloomProcessor = new BlocksBloomProcessor(blocksBloomStore, world.getBlockStore());
 
-        blocksBloomBuilder.processNewBlockNumber(4);
-        blocksBloomBuilder.processNewBlockNumber(5);
+        blocksBloomProcessor.processNewBlockNumber(4);
+        blocksBloomProcessor.processNewBlockNumber(5);
 
-        BlocksBloom result = blocksBloomBuilder.getBlocksBloomInProcess();
+        BlocksBloom result = blocksBloomProcessor.getBlocksBloomInProcess();
 
         Assert.assertNull(result);
 
@@ -157,12 +157,12 @@ public class BlocksBloomBuilderTest {
 
         KeyValueDataSource dataSource = new HashMapDB();
         BlocksBloomStore blocksBloomStore = new BlocksBloomStore(4, 2, dataSource);
-        BlocksBloomBuilder blocksBloomBuilder = new BlocksBloomBuilder(blocksBloomStore, world.getBlockStore());
+        BlocksBloomProcessor blocksBloomProcessor = new BlocksBloomProcessor(blocksBloomStore, world.getBlockStore());
 
-        blocksBloomBuilder.processNewBlockNumber(4);
-        blocksBloomBuilder.processNewBlockNumber(6);
+        blocksBloomProcessor.processNewBlockNumber(4);
+        blocksBloomProcessor.processNewBlockNumber(6);
 
-        BlocksBloom result = blocksBloomBuilder.getBlocksBloomInProcess();
+        BlocksBloom result = blocksBloomProcessor.getBlocksBloomInProcess();
 
         Assert.assertNotNull(result);
         Assert.assertEquals(4, result.fromBlock());

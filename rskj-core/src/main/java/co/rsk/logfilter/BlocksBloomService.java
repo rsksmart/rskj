@@ -37,13 +37,13 @@ public class BlocksBloomService implements InternalService {
     private static final Logger logger = LoggerFactory.getLogger("blooms");
 
     private final CompositeEthereumListener emitter;
-    private final BlocksBloomBuilder blocksBloomBuilder;
+    private final BlocksBloomProcessor blocksBloomProcessor;
 
     private final BlocksBloomService.OnBlockListener listener = new BlocksBloomService.OnBlockListener();
 
     public BlocksBloomService(CompositeEthereumListener emitter, BlocksBloomStore blocksBloomStore, BlockStore blockStore) {
         this.emitter = emitter;
-        this.blocksBloomBuilder = new BlocksBloomBuilder(blocksBloomStore, blockStore);
+        this.blocksBloomProcessor = new BlocksBloomProcessor(blocksBloomStore, blockStore);
     }
 
     @Override
@@ -61,7 +61,7 @@ public class BlocksBloomService implements InternalService {
     }
 
     public void processNewBlock(long blockNumber) {
-        this.blocksBloomBuilder.processNewBlockNumber(blockNumber);
+        this.blocksBloomProcessor.processNewBlockNumber(blockNumber);
     }
 
     private class OnBlockListener extends EthereumListenerAdapter {

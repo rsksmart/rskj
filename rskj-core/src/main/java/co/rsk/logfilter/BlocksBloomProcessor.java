@@ -25,13 +25,13 @@ import org.ethereum.db.BlockStore;
 /**
  * Created by ajlopez on 29/09/2020.
  */
-public class BlocksBloomBuilder {
+public class BlocksBloomProcessor {
     private final BlocksBloomStore blocksBloomStore;
     private final BlockStore blockStore;
 
     private BlocksBloom blocksBloomInProcess = null;
 
-    public BlocksBloomBuilder(BlocksBloomStore blocksBloomStore, BlockStore blockStore) {
+    public BlocksBloomProcessor(BlocksBloomStore blocksBloomStore, BlockStore blockStore) {
         this.blocksBloomStore = blocksBloomStore;
         this.blockStore = blockStore;
     }
@@ -55,7 +55,8 @@ public class BlocksBloomBuilder {
 
         if (this.blocksBloomInProcess == null) {
             this.blocksBloomInProcess = new BlocksBloom();
-            fromBlock = this.blocksBloomStore.firstNumberInRange(blockNumber);
+            fromBlock = this.blocksBloomStore.
+                    firstNumberInRange(blockNumber);
         }
         else {
             fromBlock = this.blocksBloomInProcess.toBlock() + 1;
@@ -87,7 +88,7 @@ public class BlocksBloomBuilder {
         this.blocksBloomInProcess.addBlockBloom(blockNumber, bloom);
 
         if (blockNumber == this.blocksBloomStore.lastNumberInRange(blockNumber)) {
-            this.blocksBloomStore.setBlocksBloom(this.blocksBloomInProcess);
+            this.blocksBloomStore.addBlocksBloomCache(this.blocksBloomInProcess);
             this.blocksBloomInProcess = null;
         }
     }
