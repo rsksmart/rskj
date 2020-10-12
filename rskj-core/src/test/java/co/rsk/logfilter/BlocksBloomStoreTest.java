@@ -53,13 +53,30 @@ public class BlocksBloomStoreTest {
         blocksBloom.addBlockBloom(0, bloom1);
         blocksBloom.addBlockBloom(1, bloom2);
 
-        blocksBloomStore.addBlocksBloomCache(blocksBloom);
+        blocksBloomStore.addBlocksBloom(blocksBloom);
 
         Assert.assertTrue(blocksBloomStore.hasBlockNumber(0));
     }
 
     @Test
-    public void setBlocksBloom() {
+    public void hasBlockNumberInStore() {
+        KeyValueDataSource internalStore = new HashMapDB();
+        Bloom bloom = new Bloom();
+        BlocksBloom blocksBloom = new BlocksBloom();
+        blocksBloom.addBlockBloom(64, bloom);
+        blocksBloom.addBlockBloom(65, bloom);
+
+        internalStore.put(BlocksBloomStore.longToKey(64), BlocksBloomEncoder.encode(blocksBloom));
+
+        BlocksBloomStore blocksBloomStore = new BlocksBloomStore(64, 0, internalStore);
+
+        Assert.assertFalse(blocksBloomStore.hasBlockNumber(0));
+        Assert.assertTrue(blocksBloomStore.hasBlockNumber(64));
+        Assert.assertTrue(blocksBloomStore.hasBlockNumber(65));
+    }
+
+    @Test
+    public void addBlocksBloom() {
         BlocksBloom blocksBloom = new BlocksBloom();
         byte[] bytes1 = new byte[Bloom.BLOOM_BYTES];
         bytes1[0] = 0x01;
@@ -74,13 +91,13 @@ public class BlocksBloomStoreTest {
         blocksBloom.addBlockBloom(blocksBloomStore.getNoBlocks(), bloom1);
         blocksBloom.addBlockBloom(blocksBloomStore.getNoBlocks() + 1, bloom2);
 
-        blocksBloomStore.addBlocksBloomCache(blocksBloom);
+        blocksBloomStore.addBlocksBloom(blocksBloom);
 
         Assert.assertSame(blocksBloom, blocksBloomStore.getBlocksBloomByNumber(blocksBloomStore.getNoBlocks()));
     }
 
     @Test
-    public void setBlocksBloomUsingDataSource() {
+    public void addBlocksBloomUsingDataSource() {
         KeyValueDataSource dataSource = new HashMapDB();
         BlocksBloom blocksBloom = new BlocksBloom();
         byte[] bytes1 = new byte[Bloom.BLOOM_BYTES];
@@ -96,7 +113,7 @@ public class BlocksBloomStoreTest {
         blocksBloom.addBlockBloom(blocksBloomStore.getNoBlocks(), bloom1);
         blocksBloom.addBlockBloom(blocksBloomStore.getNoBlocks() + 1, bloom2);
 
-        blocksBloomStore.addBlocksBloomCache(blocksBloom);
+        blocksBloomStore.addBlocksBloom(blocksBloom);
 
         Assert.assertSame(blocksBloom, blocksBloomStore.getBlocksBloomByNumber(blocksBloomStore.getNoBlocks()));
 
