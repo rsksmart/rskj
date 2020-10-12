@@ -45,15 +45,18 @@ public class BlocksBloomStore {
     }
 
     public synchronized boolean hasBlockNumber(long blockNumber) {
-        if (this.blocksBloomCache.containsKey(this.firstNumberInRange(blockNumber))) {
-            return true;
-        }
+        long key = this.firstNumberInRange(blockNumber);
 
-        if (this.dataSource != null && this.dataSource.get(longToKey(blockNumber)) != null) {
-            return true;
-        }
+        return hasBlockNumberInCache(key)
+            || hasBlockNumberInStore(key);
+    }
 
-        return false;
+    private boolean hasBlockNumberInStore(long key) {
+        return this.dataSource != null && this.dataSource.get(longToKey(key)) != null;
+    }
+
+    private boolean hasBlockNumberInCache(long key) {
+        return this.blocksBloomCache.containsKey(key);
     }
 
     public synchronized BlocksBloom getBlocksBloomByNumber(long number) {
@@ -82,13 +85,13 @@ public class BlocksBloomStore {
         return blocksBloom;
     }
 
-    public synchronized void addBlocksBloomCache(BlocksBloom blocksBloomCache) {
-        logger.trace("set blocks bloom: height {}", blocksBloomCache.fromBlock());
+    public synchronized void addBlocksBloom(BlocksBloom blocksBloom) {
+        logger.trace("set blocks bloom: height {}", blocksBloom.fromBlock());
 
-        this.blocksBloomCache.put(blocksBloomCache.fromBlock(), blocksBloomCache);
+        this.blocksBloomCache.put(blocksBloom.fromBlock(), blocksBloom);
 
         if (this.dataSource != null) {
-            this.dataSource.put(longToKey(blocksBloomCache.fromBlock()), BlocksBloomEncoder.encode(blocksBloomCache));
+            this.dataSource.put(longToKey(blocksBloom.fromBlock()), BlocksBloomEncoder.encode(blocksBloom));
         }
     }
 

@@ -88,7 +88,7 @@ public class BlocksBloomProcessor {
         this.blocksBloomInProcess.addBlockBloom(blockNumber, bloom);
 
         if (blockNumber == this.blocksBloomStore.lastNumberInRange(blockNumber)) {
-            this.blocksBloomStore.addBlocksBloomCache(this.blocksBloomInProcess);
+            this.blocksBloomStore.addBlocksBloom(this.blocksBloomInProcess);
             this.blocksBloomInProcess = null;
         }
     }
