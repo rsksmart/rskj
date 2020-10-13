@@ -59,7 +59,7 @@ import co.rsk.db.MutableTrieImpl;
 import co.rsk.peg.bitcoin.CoinbaseInformation;
 import co.rsk.peg.bitcoin.MerkleBranch;
 import co.rsk.peg.btcLockSender.BtcLockSender;
-import co.rsk.peg.btcLockSender.BtcLockSender.TxType;
+import co.rsk.peg.btcLockSender.BtcLockSender.TxSenderAddressType;
 import co.rsk.peg.btcLockSender.BtcLockSenderProvider;
 import co.rsk.peg.pegininstructions.PeginInstructions;
 import co.rsk.peg.pegininstructions.PeginInstructionsException;
@@ -112,7 +112,6 @@ import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
 import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.PrecompiledContracts;
-import org.hamcrest.Factory;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -1761,7 +1760,7 @@ public class BridgeSupportTest {
         BtcBlockStoreWithCache.Factory mockFactory = mock(BtcBlockStoreWithCache.Factory.class);
         when(mockFactory.newInstance(repository)).thenReturn(btcBlockStore);
 
-        BtcLockSenderProvider btcLockSenderProvider = getBtcLockSenderProvider(BtcLockSender.TxType.P2PKH, btcAddress, rskAddress);
+        BtcLockSenderProvider btcLockSenderProvider = getBtcLockSenderProvider(TxSenderAddressType.P2PKH, btcAddress, rskAddress);
 
         BridgeSupport bridgeSupport = getBridgeSupport(
                 bridgeConstants,
@@ -1848,7 +1847,7 @@ public class BridgeSupportTest {
         BtcBlockStoreWithCache.Factory mockFactory = mock(BtcBlockStoreWithCache.Factory.class);
         when(mockFactory.newInstance(repository)).thenReturn(btcBlockStore);
 
-        BtcLockSenderProvider btcLockSenderProvider = getBtcLockSenderProvider(BtcLockSender.TxType.P2PKH, btcAddress, rskAddress);
+        BtcLockSenderProvider btcLockSenderProvider = getBtcLockSenderProvider(TxSenderAddressType.P2PKH, btcAddress, rskAddress);
 
         BridgeSupport bridgeSupport = getBridgeSupport(
                 bridgeConstants,
@@ -1944,7 +1943,7 @@ public class BridgeSupportTest {
         BtcBlockStoreWithCache.Factory mockFactory = mock(BtcBlockStoreWithCache.Factory.class);
         when(mockFactory.newInstance(repository)).thenReturn(btcBlockStore);
 
-        BtcLockSenderProvider btcLockSenderProvider = getBtcLockSenderProvider(BtcLockSender.TxType.P2PKH, btcAddress, rskAddress);
+        BtcLockSenderProvider btcLockSenderProvider = getBtcLockSenderProvider(TxSenderAddressType.P2PKH, btcAddress, rskAddress);
 
         BridgeSupport bridgeSupport = getBridgeSupport(
                 bridgeConstants,
@@ -2025,7 +2024,7 @@ public class BridgeSupportTest {
         BtcBlockStoreWithCache.Factory mockFactory = mock(BtcBlockStoreWithCache.Factory.class);
         when(mockFactory.newInstance(repository)).thenReturn(btcBlockStore);
 
-        BtcLockSenderProvider btcLockSenderProvider = getBtcLockSenderProvider(BtcLockSender.TxType.P2SHP2WPKH, btcAddress, rskAddress);
+        BtcLockSenderProvider btcLockSenderProvider = getBtcLockSenderProvider(TxSenderAddressType.P2SHP2WPKH, btcAddress, rskAddress);
 
         BridgeSupport bridgeSupport = getBridgeSupport(
                 bridgeConstants,
@@ -2107,7 +2106,7 @@ public class BridgeSupportTest {
         BtcBlockStoreWithCache.Factory mockFactory = mock(BtcBlockStoreWithCache.Factory.class);
         when(mockFactory.newInstance(repository)).thenReturn(btcBlockStore);
 
-        BtcLockSenderProvider btcLockSenderProvider = getBtcLockSenderProvider(BtcLockSender.TxType.P2SHP2WPKH, btcAddress, rskAddress);
+        BtcLockSenderProvider btcLockSenderProvider = getBtcLockSenderProvider(TxSenderAddressType.P2SHP2WPKH, btcAddress, rskAddress);
 
         BridgeSupport bridgeSupport = getBridgeSupport(
                 bridgeConstants,
@@ -2193,7 +2192,7 @@ public class BridgeSupportTest {
                 bridgeConstants,
                 provider,
                 repository,
-                getBtcLockSenderProvider(BtcLockSender.TxType.P2SHP2WPKH, btcAddress, rskAddress),
+                getBtcLockSenderProvider(TxSenderAddressType.P2SHP2WPKH, btcAddress, rskAddress),
                 new PeginInstructionsProvider(),
                 executionBlock,
                 mockFactory,
@@ -2278,7 +2277,7 @@ public class BridgeSupportTest {
         BtcBlockStoreWithCache.Factory mockFactory = mock(BtcBlockStoreWithCache.Factory.class);
         when(mockFactory.newInstance(repository)).thenReturn(btcBlockStore);
 
-        BtcLockSenderProvider btcLockSenderProvider = getBtcLockSenderProvider(BtcLockSender.TxType.P2SHMULTISIG, btcAddress, rskAddress);
+        BtcLockSenderProvider btcLockSenderProvider = getBtcLockSenderProvider(TxSenderAddressType.P2SHMULTISIG, btcAddress, rskAddress);
 
         BridgeSupport bridgeSupport = getBridgeSupport(
                 bridgeConstants,
@@ -2354,7 +2353,7 @@ public class BridgeSupportTest {
         BtcBlockStoreWithCache.Factory mockFactory = mock(BtcBlockStoreWithCache.Factory.class);
         when(mockFactory.newInstance(repository)).thenReturn(btcBlockStore);
 
-        BtcLockSenderProvider btcLockSenderProvider = getBtcLockSenderProvider(BtcLockSender.TxType.P2SHMULTISIG, btcAddress, null);
+        BtcLockSenderProvider btcLockSenderProvider = getBtcLockSenderProvider(TxSenderAddressType.P2SHMULTISIG, btcAddress, null);
 
         BridgeSupport bridgeSupport = getBridgeSupport(
                 bridgeConstants,
@@ -2445,7 +2444,7 @@ public class BridgeSupportTest {
         BtcBlockStoreWithCache.Factory mockFactory = mock(BtcBlockStoreWithCache.Factory.class);
         when(mockFactory.newInstance(repository)).thenReturn(btcBlockStore);
 
-        BtcLockSenderProvider btcLockSenderProvider = getBtcLockSenderProvider(BtcLockSender.TxType.P2SHP2WSH, btcAddress, rskAddress);
+        BtcLockSenderProvider btcLockSenderProvider = getBtcLockSenderProvider(TxSenderAddressType.P2SHP2WSH, btcAddress, rskAddress);
 
         BridgeSupport bridgeSupport = getBridgeSupport(
                 bridgeConstants,
@@ -2521,7 +2520,7 @@ public class BridgeSupportTest {
         BtcBlockStoreWithCache.Factory mockFactory = mock(BtcBlockStoreWithCache.Factory.class);
         when(mockFactory.newInstance(repository)).thenReturn(btcBlockStore);
 
-        BtcLockSenderProvider btcLockSenderProvider = getBtcLockSenderProvider(BtcLockSender.TxType.P2SHP2WSH, btcAddress, null);
+        BtcLockSenderProvider btcLockSenderProvider = getBtcLockSenderProvider(TxSenderAddressType.P2SHP2WSH, btcAddress, null);
 
         BridgeSupport bridgeSupport = getBridgeSupport(
                 bridgeConstants,
@@ -2728,7 +2727,7 @@ public class BridgeSupportTest {
                 bridgeConstants,
                 provider,
                 repository,
-                getBtcLockSenderProvider(BtcLockSender.TxType.P2SHP2WPKH, btcAddress, rskAddress),
+                getBtcLockSenderProvider(TxSenderAddressType.P2SHP2WPKH, btcAddress, rskAddress),
                 new PeginInstructionsProvider(),
                 mock(Block.class),
                 mockFactory,
@@ -2826,7 +2825,7 @@ public class BridgeSupportTest {
                 bridgeConstants,
                 provider,
                 repository,
-                getBtcLockSenderProvider(BtcLockSender.TxType.P2SHP2WPKH, btcAddress, rskAddress),
+                getBtcLockSenderProvider(TxSenderAddressType.P2SHP2WPKH, btcAddress, rskAddress),
                 new PeginInstructionsProvider(),
                 mock(Block.class),
                 mockFactory,
@@ -2913,7 +2912,7 @@ public class BridgeSupportTest {
                 bridgeConstants,
                 provider,
                 repository,
-                getBtcLockSenderProvider(BtcLockSender.TxType.P2SHP2WPKH, btcAddress, rskAddress),
+                getBtcLockSenderProvider(TxSenderAddressType.P2SHP2WPKH, btcAddress, rskAddress),
                 new PeginInstructionsProvider(),
                 mock(Block.class),
                 mockFactory,
@@ -2996,7 +2995,7 @@ public class BridgeSupportTest {
                 bridgeConstants,
                 provider,
                 repository,
-                getBtcLockSenderProvider(BtcLockSender.TxType.P2PKH, btcAddress, rskAddress),
+                getBtcLockSenderProvider(TxSenderAddressType.P2PKH, btcAddress, rskAddress),
                 new PeginInstructionsProvider(),
                 mock(Block.class),
                 mockFactory,
@@ -3082,7 +3081,7 @@ public class BridgeSupportTest {
                 bridgeConstants,
                 provider,
                 repository,
-                getBtcLockSenderProvider(BtcLockSender.TxType.P2PKH, btcAddress, rskAddress),
+                getBtcLockSenderProvider(TxSenderAddressType.P2PKH, btcAddress, rskAddress),
                 new PeginInstructionsProvider(),
                 mock(Block.class),
                 mockFactory,
@@ -3170,7 +3169,7 @@ public class BridgeSupportTest {
         BridgeStorageProvider provider = new BridgeStorageProvider(repository, contractAddress, bridgeConstants, activations);
         provider.setNewFederation(federation1);
 
-        BtcLockSenderProvider btcLockSenderProvider = getBtcLockSenderProvider(BtcLockSender.TxType.P2PKH, btcAddressFromBtcLockSender, rskAddress);
+        BtcLockSenderProvider btcLockSenderProvider = getBtcLockSenderProvider(TxSenderAddressType.P2PKH, btcAddressFromBtcLockSender, rskAddress);
         PeginInstructionsProvider peginInstructionsProvider = getPeginInstructionsProviderForVersion1(rskDestinationAddress, Optional.empty());
 
         BridgeSupport bridgeSupport = getBridgeSupport(
@@ -3268,7 +3267,7 @@ public class BridgeSupportTest {
         BridgeStorageProvider provider = new BridgeStorageProvider(repository, contractAddress, bridgeConstants, activations);
         provider.setNewFederation(federation1);
 
-        BtcLockSenderProvider btcLockSenderProvider = getBtcLockSenderProvider(BtcLockSender.TxType.P2PKH, btcAddressFromBtcLockSender, rskAddress);
+        BtcLockSenderProvider btcLockSenderProvider = getBtcLockSenderProvider(TxSenderAddressType.P2PKH, btcAddressFromBtcLockSender, rskAddress);
         PeginInstructionsProvider peginInstructionsProvider = getPeginInstructionsProviderForVersion1(rskDestinationAddress, Optional.empty());
 
         BridgeSupport bridgeSupport = getBridgeSupport(
@@ -3362,7 +3361,7 @@ public class BridgeSupportTest {
         BridgeStorageProvider provider = new BridgeStorageProvider(repository, contractAddress, bridgeConstants, activations);
         provider.setNewFederation(federation1);
 
-        BtcLockSenderProvider btcLockSenderProvider = getBtcLockSenderProvider(BtcLockSender.TxType.P2PKH, btcAddressFromBtcLockSender, rskAddress);
+        BtcLockSenderProvider btcLockSenderProvider = getBtcLockSenderProvider(TxSenderAddressType.P2PKH, btcAddressFromBtcLockSender, rskAddress);
 
         PeginInstructions peginInstructions = mock(PeginInstructions.class);
         when(peginInstructions.getProtocolVersion()).thenReturn(99);
@@ -5296,52 +5295,68 @@ public class BridgeSupportTest {
     }
 
     @Test
-    public void processPegIn_tx_no_lockable_by_invalid_sender() throws IOException, RegisterBtcTransactionException {
-        assertRefundInProcessPegIn(
-                true,
-                false,
-                BtcLockSender.TxType.P2SHMULTISIG,
-                Arrays.asList(ConsensusRule.RSKIP143),
-                new PeginInstructionsProvider()
+    public void processPegIn_version0_tx_no_lockable_by_invalid_sender() throws IOException, RegisterBtcTransactionException {
+        assertRefundInProcessPegInVersionLegacy(
+            true,
+            false,
+            TxSenderAddressType.P2SHMULTISIG,
+            ConsensusRule.RSKIP143
         );
     }
 
     @Test
-    public void processPegIn_tx_no_lockable_by_not_whitelisted_address() throws IOException,
-            RegisterBtcTransactionException {
-        assertRefundInProcessPegIn(
-                false,
-                false,
-                BtcLockSender.TxType.P2PKH,
-                Collections.EMPTY_LIST,
-                new PeginInstructionsProvider()
+    public void processPegIn_version0_tx_no_lockable_by_not_whitelisted_address() throws IOException, RegisterBtcTransactionException {
+        assertRefundInProcessPegInVersionLegacy(
+            false,
+            false,
+            TxSenderAddressType.P2PKH,
+            null
         );
     }
 
     @Test
-    public void processPegIn_tx_no_lockable_by_surpassing_locking_cap() throws IOException,
-            RegisterBtcTransactionException {
-        assertRefundInProcessPegIn(
-                true,
-                true,
-                BtcLockSender.TxType.P2PKH,
-                Arrays.asList(ConsensusRule.RSKIP134),
-                new PeginInstructionsProvider()
+    public void processPegIn_version0_tx_no_lockable_by_surpassing_locking_cap() throws IOException, RegisterBtcTransactionException {
+        assertRefundInProcessPegInVersionLegacy(
+            true,
+            true,
+            TxSenderAddressType.P2PKH,
+            ConsensusRule.RSKIP134
         );
     }
 
     @Test
     public void processPegIn_version1_tx_no_lockable_by_surpassing_locking_cap() throws IOException,
         RegisterBtcTransactionException, PeginInstructionsException {
-        RskAddress rskDestinationAddress = new RskAddress(new byte[20]);
-        PeginInstructionsProvider peginInstructionsProvider = getPeginInstructionsProviderForVersion1(rskDestinationAddress, Optional.empty());
 
-        assertRefundInProcessPegIn(
-            true,
-            true,
-            BtcLockSender.TxType.P2PKH,
-            Arrays.asList(ConsensusRule.RSKIP134, ConsensusRule.RSKIP170),
-            peginInstructionsProvider
+        assertRefundInProcessPegInVersion1(
+            TxSenderAddressType.P2PKH,
+            Optional.empty(),
+            Arrays.asList(ConsensusRule.RSKIP134, ConsensusRule.RSKIP170)
+        );
+    }
+
+    @Test
+    public void processPegIn_version1_tx_no_lockable_by_surpassing_locking_cap_unknown_sender_with_refund_address() throws IOException,
+        RegisterBtcTransactionException, PeginInstructionsException {
+
+        BtcECKey key = new BtcECKey();
+        Address btcRefundAddress = key.toAddress(btcParams);
+
+        assertRefundInProcessPegInVersion1(
+            TxSenderAddressType.UNKNOWN,
+            Optional.of(btcRefundAddress),
+            Arrays.asList(ConsensusRule.RSKIP134, ConsensusRule.RSKIP170)
+        );
+    }
+
+    @Test
+    public void processPegIn_version1_tx_no_lockable_by_surpassing_locking_cap_unknown_sender_without_refund_address() throws IOException,
+        RegisterBtcTransactionException, PeginInstructionsException {
+
+        assertRefundInProcessPegInVersion1(
+            TxSenderAddressType.UNKNOWN,
+            Optional.empty(),
+            Arrays.asList(ConsensusRule.RSKIP134, ConsensusRule.RSKIP170)
         );
     }
 
@@ -5360,16 +5375,15 @@ public class BridgeSupportTest {
         );
     }
 
-    private void assertRefundInProcessPegIn(
+    private void assertRefundInProcessPegInVersionLegacy(
         boolean isWhitelisted,
         boolean mockLockingCap,
-        BtcLockSender.TxType lockSender,
-        List<ConsensusRule> consensusRules,
-        PeginInstructionsProvider peginInstructionsProvider) throws IOException, RegisterBtcTransactionException {
+        TxSenderAddressType lockSenderAddressType,
+        @Nullable ConsensusRule consensusRule) throws IOException, RegisterBtcTransactionException {
 
         // Arrange
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-        for (ConsensusRule consensusRule : consensusRules) {
+        if (consensusRule != null) {
             when(activations.isActive(consensusRule)).thenReturn(true);
         }
 
@@ -5397,12 +5411,14 @@ public class BridgeSupportTest {
             when(provider.getLockingCap()).thenReturn(Coin.COIN.multiply(1));
         }
 
+        BtcLockSenderProvider btcLockSenderProvider = getBtcLockSenderProvider(lockSenderAddressType, btcAddress, rskAddress);
+
         BridgeSupport bridgeSupport = getBridgeSupport(
                 bridgeConstants,
                 provider,
                 repository,
-                getBtcLockSenderProvider(lockSender, btcAddress, rskAddress),
-                peginInstructionsProvider,
+                btcLockSenderProvider,
+                new PeginInstructionsProvider(),
                 mock(Block.class),
                 mock(BtcBlockStoreWithCache.Factory.class),
                 activations
@@ -5426,8 +5442,94 @@ public class BridgeSupportTest {
         Assert.assertTrue(successfulRejection);
     }
 
-    private void assertLockingCap(boolean shouldLock, boolean isLockingCapEnabled, Coin lockingCap, Coin amountSentToNewFed, Coin amountSentToOldFed,
-                                  Coin amountInNewFed, Coin amountInOldFed) throws BlockStoreException, IOException {
+    private void assertRefundInProcessPegInVersion1(
+        TxSenderAddressType lockSenderAddressType,
+        Optional<Address> btcRefundAddress,
+        List<ConsensusRule> consensusRules)
+        throws IOException, RegisterBtcTransactionException, PeginInstructionsException {
+
+        // Arrange
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        for (ConsensusRule consensusRule : consensusRules) {
+            when(activations.isActive(consensusRule)).thenReturn(true);
+        }
+
+        Repository repository = createRepository();
+
+        BtcECKey srcKey1 = new BtcECKey();
+        ECKey key = ECKey.fromPublicOnly(srcKey1.getPubKey());
+        RskAddress rskAddress = new RskAddress(key.getAddress());
+        Address btcSenderAddress = null;
+        if (lockSenderAddressType != TxSenderAddressType.UNKNOWN) {
+            btcSenderAddress = srcKey1.toAddress(btcParams);
+        }
+
+        BtcTransaction btcTx = new BtcTransaction(btcParams);
+        btcTx.addOutput(Coin.COIN.multiply(10), bridgeConstants.getGenesisFederation().getAddress());
+        btcTx.addInput(PegTestUtils.createHash(1), 0, new Script(new byte[]{}));
+
+        BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
+
+        ReleaseTransactionSet releaseTransactionSet = new ReleaseTransactionSet(new HashSet<>());
+        when(provider.getReleaseTransactionSet()).thenReturn(releaseTransactionSet);
+
+        when(provider.getLockingCap()).thenReturn(Coin.COIN.multiply(1));
+
+        BtcLockSenderProvider btcLockSenderProvider = getBtcLockSenderProvider(lockSenderAddressType, btcSenderAddress, rskAddress);
+
+        if (!btcRefundAddress.isPresent()  && btcSenderAddress != null) {
+            btcRefundAddress = Optional.of(btcSenderAddress);
+        }
+        PeginInstructionsProvider peginInstructionsProvider = getPeginInstructionsProviderForVersion1(
+            rskAddress,
+            btcRefundAddress
+        );
+
+        BridgeSupport bridgeSupport = getBridgeSupport(
+            bridgeConstants,
+            provider,
+            repository,
+            btcLockSenderProvider,
+            peginInstructionsProvider,
+            mock(Block.class),
+            mock(BtcBlockStoreWithCache.Factory.class),
+            activations
+        );
+
+        // Act
+        bridgeSupport.processPegIn(btcTx, mock(Transaction.class), 0, mock(Sha256Hash.class));
+
+        // Assert
+        if (lockSenderAddressType == TxSenderAddressType.UNKNOWN && !btcRefundAddress.isPresent()) {
+            // Unknown sender and no refund address. Can't refund
+            Assert.assertEquals(0, releaseTransactionSet.getEntries().size());
+        } else {
+            Assert.assertEquals(1, releaseTransactionSet.getEntries().size());
+
+            // Check rejection tx input was created from btc tx and sent to the btc refund address indicated by the user
+            boolean successfulRejection = false;
+            for (ReleaseTransactionSet.Entry e : releaseTransactionSet.getEntries()) {
+                BtcTransaction refundTx = e.getTransaction();
+                if (refundTx.getInput(0).getOutpoint().getHash() == btcTx.getHash() &&
+                    refundTx.getOutput(0).getScriptPubKey().getToAddress(btcParams).equals(btcRefundAddress.get())) {
+                    successfulRejection = true;
+                    break;
+                }
+            }
+
+            Assert.assertTrue(successfulRejection);
+        }
+    }
+
+    private void assertLockingCap(
+        boolean shouldLock,
+        boolean isLockingCapEnabled,
+        Coin lockingCap,
+        Coin amountSentToNewFed,
+        Coin amountSentToOldFed,
+        Coin amountInNewFed,
+        Coin amountInOldFed) throws BlockStoreException, IOException {
+
         // Configure if locking cap should be evaluated
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP134)).thenReturn(isLockingCapEnabled);
@@ -5444,31 +5546,50 @@ public class BridgeSupportTest {
 
         Repository repository = createRepository();
 
-        Federation federation = this.getFederation(bridgeConstants);
+        Federation oldFederation = this.getFederation(bridgeConstants);
 
-        BridgeStorageProvider provider =
-                new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activations);
+        BridgeStorageProvider provider = new BridgeStorageProvider(
+            repository,
+            PrecompiledContracts.BRIDGE_ADDR,
+            bridgeConstants,
+            activations
+        );
         // We need a random new fed
-        provider.setNewFederation(this.getFederation(bridgeConstants,
-                Arrays.asList(
-                        BtcECKey.fromPrivate(Hex.decode("fb01")),
-                        BtcECKey.fromPrivate(Hex.decode("fb02")),
-                        BtcECKey.fromPrivate(Hex.decode("fb03"))
-                )
+        provider.setNewFederation(this.getFederation(
+            bridgeConstants,
+            Arrays.asList(
+                BtcECKey.fromPrivate(Hex.decode("fb01")),
+                BtcECKey.fromPrivate(Hex.decode("fb02")),
+                BtcECKey.fromPrivate(Hex.decode("fb03"))
+            )
         ));
         // Use genesis fed as old
-        provider.setOldFederation(federation);
+        provider.setOldFederation(oldFederation);
 
         Coin currentFunds = Coin.ZERO;
 
         // Configure existing utxos in both federations
         if (amountInOldFed != null) {
-            UTXO utxo = new UTXO(Sha256Hash.wrap(HashUtil.randomHash()), 0, amountInOldFed, 1, false, new Script(new byte[]{}));
+            UTXO utxo = new UTXO(
+                Sha256Hash.wrap(HashUtil.randomHash()),
+                0,
+                amountInOldFed,
+                1,
+                false,
+                new Script(new byte[]{})
+            );
             provider.getOldFederationBtcUTXOs().add(utxo);
             currentFunds = currentFunds.add(amountInOldFed);
         }
         if (amountInNewFed != null) {
-            UTXO utxo = new UTXO(Sha256Hash.wrap(HashUtil.randomHash()), 0, amountInNewFed, 1, false, new Script(new byte[]{}));
+            UTXO utxo = new UTXO(
+                Sha256Hash.wrap(HashUtil.randomHash()),
+                0,
+                amountInNewFed,
+                1,
+                false,
+                new Script(new byte[]{})
+            );
             provider.getNewFederationBtcUTXOs().add(utxo);
             currentFunds = currentFunds.add(amountInNewFed);
         }
@@ -5495,8 +5616,11 @@ public class BridgeSupportTest {
             newUtxos++;
         }
         BtcECKey srcKey = new BtcECKey();
-        tx.addInput(PegTestUtils.createHash(1), 0, ScriptBuilder.createInputScript(null, srcKey));
-
+        tx.addInput(
+            PegTestUtils.createHash(1),
+            0,
+            ScriptBuilder.createInputScript(null, srcKey)
+        );
 
         // Create header and PMT
         byte[] bits = new byte[1];
@@ -5505,9 +5629,16 @@ public class BridgeSupportTest {
         hashes.add(tx.getHash());
         PartialMerkleTree pmt = new PartialMerkleTree(bridgeConstants.getBtcParams(), bits, hashes, 1);
         Sha256Hash merkleRoot = pmt.getTxnHashAndMerkleRoot(new ArrayList<>());
-        co.rsk.bitcoinj.core.BtcBlock registerHeader =
-                new co.rsk.bitcoinj.core.BtcBlock(bridgeConstants.getBtcParams(), 1, PegTestUtils.createHash(), merkleRoot,
-                        1, 1, 1, new ArrayList<BtcTransaction>());
+        co.rsk.bitcoinj.core.BtcBlock registerHeader = new co.rsk.bitcoinj.core.BtcBlock(
+            bridgeConstants.getBtcParams(),
+            1,
+            PegTestUtils.createHash(1),
+            merkleRoot,
+            1,
+            1,
+            1,
+            new ArrayList<BtcTransaction>()
+        );
 
         BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
         BtcBlockStoreWithCache.Factory mockFactory = mock(BtcBlockStoreWithCache.Factory.class);
@@ -5540,7 +5671,12 @@ public class BridgeSupportTest {
 
         // Simulate blockchain
         int height = 1;
-        mockChainOfStoredBlocks(btcBlockStore, registerHeader, height + bridgeConstants.getBtc2RskMinimumAcceptableConfirmations(), height);
+        mockChainOfStoredBlocks(
+            btcBlockStore,
+            registerHeader,
+            height + bridgeConstants.getBtc2RskMinimumAcceptableConfirmations(),
+            height
+        );
 
         Transaction rskTx = mock(Transaction.class);
         Keccak256 hash = new Keccak256(HashUtil.keccak256(new byte[]{}));
@@ -5864,9 +6000,9 @@ public class BridgeSupportTest {
         );
     }
 
-    private BtcLockSenderProvider getBtcLockSenderProvider(BtcLockSender.TxType txType, Address btcAddress, RskAddress rskAddress) {
+    private BtcLockSenderProvider getBtcLockSenderProvider(TxSenderAddressType txSenderAddressType, Address btcAddress, RskAddress rskAddress) {
         BtcLockSender btcLockSender = mock(BtcLockSender.class);
-        when(btcLockSender.getType()).thenReturn(txType);
+        when(btcLockSender.getTxSenderAddressType()).thenReturn(txSenderAddressType);
         when(btcLockSender.getBTCAddress()).thenReturn(btcAddress);
         when(btcLockSender.getRskAddress()).thenReturn(rskAddress);
 

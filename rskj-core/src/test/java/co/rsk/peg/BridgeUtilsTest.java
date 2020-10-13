@@ -59,7 +59,7 @@ import co.rsk.core.genesis.TestGenesisLoader;
 import co.rsk.db.MutableTrieCache;
 import co.rsk.db.MutableTrieImpl;
 import co.rsk.peg.bitcoin.RskAllowUnconfirmedCoinSelector;
-import co.rsk.peg.btcLockSender.BtcLockSender.TxType;
+import co.rsk.peg.btcLockSender.BtcLockSender.TxSenderAddressType;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
@@ -263,25 +263,25 @@ public class BridgeUtilsTest {
     }
 
     @Test
-    public void testTxIsProcessable() {
+    public void testTxIsProcessableInLegacyVersion() {
         // Before hard fork
         ActivationConfig.ForBlock actForBlock = mock(ActivationConfig.ForBlock.class);
         when(actForBlock.isActive(ConsensusRule.RSKIP143)).thenReturn(false);
 
-        assertTrue(BridgeUtils.txIsProcessable(TxType.P2PKH, actForBlock));
-        assertFalse(BridgeUtils.txIsProcessable(TxType.P2SHP2WPKH, actForBlock));
-        assertFalse(BridgeUtils.txIsProcessable(TxType.P2SHMULTISIG, actForBlock));
-        assertFalse(BridgeUtils.txIsProcessable(TxType.P2SHP2WSH, actForBlock));
-        assertFalse(BridgeUtils.txIsProcessable(TxType.UNKNOWN, actForBlock));
+        assertTrue(BridgeUtils.txIsProcessableInLegacyVersion(TxSenderAddressType.P2PKH, actForBlock));
+        assertFalse(BridgeUtils.txIsProcessableInLegacyVersion(TxSenderAddressType.P2SHP2WPKH, actForBlock));
+        assertFalse(BridgeUtils.txIsProcessableInLegacyVersion(TxSenderAddressType.P2SHMULTISIG, actForBlock));
+        assertFalse(BridgeUtils.txIsProcessableInLegacyVersion(TxSenderAddressType.P2SHP2WSH, actForBlock));
+        assertFalse(BridgeUtils.txIsProcessableInLegacyVersion(TxSenderAddressType.UNKNOWN, actForBlock));
 
         // After hard fork
         when(actForBlock.isActive(ConsensusRule.RSKIP143)).thenReturn(true);
 
-        assertTrue(BridgeUtils.txIsProcessable(TxType.P2PKH, actForBlock));
-        assertTrue(BridgeUtils.txIsProcessable(TxType.P2SHP2WPKH, actForBlock));
-        assertTrue(BridgeUtils.txIsProcessable(TxType.P2SHMULTISIG, actForBlock));
-        assertTrue(BridgeUtils.txIsProcessable(TxType.P2SHP2WSH, actForBlock));
-        assertFalse(BridgeUtils.txIsProcessable(TxType.UNKNOWN, actForBlock));
+        assertTrue(BridgeUtils.txIsProcessableInLegacyVersion(TxSenderAddressType.P2PKH, actForBlock));
+        assertTrue(BridgeUtils.txIsProcessableInLegacyVersion(TxSenderAddressType.P2SHP2WPKH, actForBlock));
+        assertTrue(BridgeUtils.txIsProcessableInLegacyVersion(TxSenderAddressType.P2SHMULTISIG, actForBlock));
+        assertTrue(BridgeUtils.txIsProcessableInLegacyVersion(TxSenderAddressType.P2SHP2WSH, actForBlock));
+        assertFalse(BridgeUtils.txIsProcessableInLegacyVersion(TxSenderAddressType.UNKNOWN, actForBlock));
     }
 
     @Test
