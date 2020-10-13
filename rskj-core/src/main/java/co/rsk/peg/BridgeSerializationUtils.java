@@ -22,6 +22,7 @@ import co.rsk.bitcoinj.core.*;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.bitcoin.CoinbaseInformation;
+import co.rsk.peg.fastbridge.FastBridgeFederationInformation;
 import co.rsk.peg.whitelist.OneOffWhiteListEntry;
 import co.rsk.peg.whitelist.UnlimitedWhiteListEntry;
 import org.apache.commons.lang3.tuple.Pair;
@@ -726,7 +727,7 @@ public class BridgeSerializationUtils {
         RLPList rlpList = (RLPList)RLP.decode2(data).get(0);
 
         if (rlpList.size() != 1) {
-            throw new RuntimeException(String.format("Invalid serialized coinbase information, expected 1 value but got %n", rlpList.size()));
+            throw new RuntimeException(String.format("Invalid serialized coinbase information, expected 1 value but got %d", rlpList.size()));
         }
 
         Sha256Hash witnessMerkleRoot = Sha256Hash.wrap(rlpList.get(0).getRLPData());
@@ -740,6 +741,33 @@ public class BridgeSerializationUtils {
         }
         byte[][] rlpElements = new byte[1][];
         rlpElements[0] = RLP.encodeElement(coinbaseInformation.getWitnessMerkleRoot().getBytes());
+        return RLP.encodeList(rlpElements);
+    }
+
+    public static FastBridgeFederationInformation deserializeFastBridgeInformation(byte[] data) {
+        if ((data == null) || (data.length == 0)) {
+            throw new RuntimeException("Invalid serialized Fast Bridge Federation: null data or no data to deserialize");
+        }
+
+        RLPList rlpList = (RLPList)RLP.decode2(data).get(0);
+
+        if (rlpList.size() != 2) {
+            throw new RuntimeException(String.format("Invalid serialized Fast Bridge Federation: expected 2 value but got %d", rlpList.size()));
+        }
+        Sha256Hash derivationHash = Sha256Hash.wrap(rlpList.get(0).getRLPData());
+        byte[] federationP2SH = rlpList.get(1).getRLPData();
+
+        return new FastBridgeFederationInformation(derivationHash, federationP2SH);
+    }
+
+    public static byte[] serializeFastBridgeInformation(FastBridgeFederationInformation fastBridgeFederationP2SH) {
+        if (fastBridgeFederationP2SH == null) {
+            return new byte[]{};
+        }
+        byte[][] rlpElements = new byte[2][];
+        rlpElements[0] = RLP.encodeElement(fastBridgeFederationP2SH.getDerivationHash().getBytes());
+        rlpElements[1] = RLP.encodeElement(fastBridgeFederationP2SH.getFederationScriptHash());
+
         return RLP.encodeList(rlpElements);
     }
 
