@@ -43,6 +43,36 @@ public class BlocksBloomProcessorTest {
     }
 
     @Test
+    public void avoidProcessWithNoEnoughConfirmations() {
+        World world = new World();
+        Blockchain blockchain = world.getBlockChain();
+        BlockChainBuilder.extend(blockchain, 8, false, false);
+
+        KeyValueDataSource dataSource = new HashMapDB();
+        BlocksBloomStore blocksBloomStore = new BlocksBloomStore(4, 100, dataSource);
+        BlocksBloomProcessor blocksBloomProcessor = new BlocksBloomProcessor(blocksBloomStore, world.getBlockStore());
+
+        blocksBloomProcessor.processNewBlockNumber(4);
+
+        Assert.assertNull(blocksBloomProcessor.getBlocksBloomInProcess());
+    }
+
+    @Test
+    public void avoidProcessNegativeBlockNumber() {
+        World world = new World();
+        Blockchain blockchain = world.getBlockChain();
+        BlockChainBuilder.extend(blockchain, 8, false, false);
+
+        KeyValueDataSource dataSource = new HashMapDB();
+        BlocksBloomStore blocksBloomStore = new BlocksBloomStore(4, 4, dataSource);
+        BlocksBloomProcessor blocksBloomProcessor = new BlocksBloomProcessor(blocksBloomStore, world.getBlockStore());
+
+        blocksBloomProcessor.processNewBlockNumber(-2);
+
+        Assert.assertNull(blocksBloomProcessor.getBlocksBloomInProcess());
+    }
+
+    @Test
     public void processFirstNewBlockInSecondRange() {
         World world = new World();
         Blockchain blockchain = world.getBlockChain();
