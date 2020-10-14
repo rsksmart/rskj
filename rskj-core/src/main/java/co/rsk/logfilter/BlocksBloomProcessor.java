@@ -19,6 +19,7 @@
 
 package co.rsk.logfilter;
 
+import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.Bloom;
 import org.ethereum.db.BlockStore;
 
@@ -36,11 +37,16 @@ public class BlocksBloomProcessor {
         this.blockStore = blockStore;
     }
 
+    @VisibleForTesting
     public BlocksBloom getBlocksBloomInProcess() {
         return this.blocksBloomInProcess;
     }
 
-    public void processNewBlockNumber(long newBlockNumber) {
+    public synchronized void processNewBlockNumber(long newBlockNumber) {
+        if (newBlockNumber < this.blocksBloomStore.getNoConfirmations()) {
+            return;
+        }
+
         long blockNumber = newBlockNumber - this.blocksBloomStore.getNoConfirmations();
 
         addBlocksUpToNumber(blockNumber);

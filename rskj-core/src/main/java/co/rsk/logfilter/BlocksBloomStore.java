@@ -24,8 +24,8 @@ import org.ethereum.vm.DataWord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Created by ajlopez on 05/02/2019.
@@ -35,7 +35,7 @@ public class BlocksBloomStore {
 
     private final int noBlocks;
     private final int noConfirmations;
-    private final Map<Long, BlocksBloom> blocksBloomCache = new ConcurrentHashMap<>();
+    private final Map<Long, BlocksBloom> blocksBloomCache = new HashMap<>();
     private final KeyValueDataSource dataSource;
 
     public BlocksBloomStore(int noBlocks, int noConfirmations, KeyValueDataSource dataSource) {
