@@ -18,12 +18,16 @@
 
 package co.rsk;
 
-import co.rsk.config.GarbageCollectorConfig;
-import co.rsk.config.NodeCliFlags;
-import co.rsk.config.RskSystemProperties;
+import co.rsk.blockchain.utils.BlockGenerator;
+import co.rsk.config.*;
+import co.rsk.net.AsyncNodeBlockProcessor;
+import co.rsk.net.NodeBlockProcessor;
 import co.rsk.trie.MultiTrieStore;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
+import org.ethereum.config.Constants;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.core.Genesis;
 import org.ethereum.util.RskTestContext;
 import org.junit.*;
 import org.junit.rules.TemporaryFolder;
@@ -170,5 +174,40 @@ public class RskContextTest {
 
         Assert.assertNotNull(rskContext.getPeerScoringReporterService());
         Assert.assertTrue(rskContext.getPeerScoringReporterService().initialized());
+    }
+
+    @Test
+    public void shouldBuildAsyncNodeBlockProcessor() {
+        rskContext = new RskContext(new String[0]) {
+            @Override
+            public RskSystemProperties getRskSystemProperties() {
+                return testProperties;
+            }
+
+            @Override
+            public Genesis getGenesis() {
+                return new BlockGenerator().getGenesisBlock();
+            }
+        };
+
+        Path testDatabasesDirectory = databaseDir.getRoot().toPath();
+        doReturn(new GarbageCollectorConfig(false, 1000, 3)).when(testProperties).garbageCollectorConfig();
+        doReturn(testDatabasesDirectory.toString()).when(testProperties).databaseDir();
+
+        doReturn(1).when(testProperties).getNumOfAccountSlots();
+
+        ActivationConfig config = mock(ActivationConfig.class);
+        doReturn(config).when(testProperties).getActivationConfig();
+
+        Constants constants = mock(Constants.class);
+        doReturn(constants).when(testProperties).getNetworkConstants();
+
+        BridgeConstants bridgeConstants = mock(BridgeConstants.class);
+        doReturn(bridgeConstants).when(constants).getBridgeConstants();
+        doReturn(1024).when(constants).getGasLimitBoundDivisor();
+
+        AsyncNodeBlockProcessor asyncNodeBlockProcessor = rskContext.getAsyncNodeBlockProcessor();
+        Assert.assertThat(asyncNodeBlockProcessor, is(instanceOf(NodeBlockProcessor.class)));
+        Assert.assertThat(asyncNodeBlockProcessor, is(instanceOf(InternalService.class)));
     }
 }

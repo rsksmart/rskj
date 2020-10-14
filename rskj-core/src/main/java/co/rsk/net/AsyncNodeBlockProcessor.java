@@ -19,14 +19,21 @@
 package co.rsk.net;
 
 import co.rsk.config.InternalService;
+import co.rsk.crypto.Keccak256;
 import co.rsk.net.sync.SyncConfiguration;
+import co.rsk.validators.BlockValidator;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
+import org.ethereum.core.ImportResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.Collections;
+import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -44,6 +51,8 @@ public class AsyncNodeBlockProcessor extends NodeBlockProcessor implements Inter
 
     private final BlockingQueue<PeerBlockPair> blocksToProcess = new LinkedBlockingQueue<>();
 
+    private final BlockValidator blockRelayValidator;
+
     private final Thread thread = new Thread(this,"async block processor");
 
     private final Listener listener;
@@ -52,21 +61,37 @@ public class AsyncNodeBlockProcessor extends NodeBlockProcessor implements Inter
 
     public AsyncNodeBlockProcessor(@Nonnull NetBlockStore store, @Nonnull Blockchain blockchain, @Nonnull BlockNodeInformation nodeInformation,
                                    @Nonnull BlockSyncService blockSyncService, @Nonnull SyncConfiguration syncConfiguration,
-                                   @Nullable Listener listener) {
+                                   @Nonnull BlockValidator blockRelayValidator, @Nullable Listener listener) {
         super(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
         this.listener = listener;
+        this.blockRelayValidator = blockRelayValidator;
     }
 
     @Override
     public BlockProcessResult processBlock(@Nullable Peer sender, @Nonnull Block block) {
-        // TODO: add block validation
+        final Instant start = Instant.now();
 
-        BlockProcessResult blockProcessResult = blockSyncService.processBlock(block, sender, false, false);
-        if (blockProcessResult.isScheduledForProcessing()) {
-            blocksToProcess.offer(new PeerBlockPair(sender, block));
+        boolean looksGood = blockSyncService.preprocessBlock(block, sender, false);
+        if (looksGood) {
+            if (isValid(block)) {
+                boolean offer = blocksToProcess.offer(new PeerBlockPair(sender, block));
+                if (!offer) {
+                    logger.warn("Cannot add a block for processing into the queue");
+                }
+
+                return new BlockProcessResult(true, null, block.getPrintableHash(),
+                        Duration.between(start, Instant.now()));
+            }
+
+            logger.warn("Invalid block with number {} {} from {} ", block.getNumber(), block.getPrintableHash(),
+                    sender != null ? sender.getPeerNodeID().toString() : "N/A");
+            Map<Keccak256, ImportResult> result = Collections.singletonMap(block.getHash(), ImportResult.INVALID_BLOCK);
+            return new BlockProcessResult(false, result, block.getPrintableHash(),
+                    Duration.between(start, Instant.now()));
         }
 
-        return blockProcessResult;
+        return new BlockProcessResult(false, null, block.getPrintableHash(),
+                Duration.between(start, Instant.now()));
     }
 
     @Override
@@ -76,24 +101,24 @@ public class AsyncNodeBlockProcessor extends NodeBlockProcessor implements Inter
 
     @Override
     public void stop() {
-        stop(0L);
+        stopThread();
     }
 
     /**
      * Stop the service and wait until a working thread is stopped for {@code waitMillis} milliseconds,
      * if {@code waitMillis} greater than zero. If {@code waitMillis} is zero, then immediately returns.
      */
-    public void stop(long waitMillis) {
-        stopped = true;
+    public void stopAndWait(long waitMillis) throws InterruptedException {
+        stopThread();
 
-        try {
-            thread.interrupt();
-            if (waitMillis > 0L) {
-                thread.join(waitMillis);
-            }
-        } catch (InterruptedException e) {
-            logger.error("Failed to join the thread", e);
+        if (waitMillis > 0L) {
+            thread.join(waitMillis);
         }
+    }
+
+    private void stopThread() {
+        stopped = true;
+        thread.interrupt();
     }
 
     @Override
@@ -111,7 +136,7 @@ public class AsyncNodeBlockProcessor extends NodeBlockProcessor implements Inter
                 block = pair.block;
 
                 logger.trace("Start block processing");
-                BlockProcessResult blockProcessResult = blockSyncService.processBlock(block, sender, false, true);
+                BlockProcessResult blockProcessResult = blockSyncService.processBlock(block, sender, false);
                 logger.trace("Finished block processing");
 
                 if (listener != null) {
@@ -120,11 +145,15 @@ public class AsyncNodeBlockProcessor extends NodeBlockProcessor implements Inter
             } catch (InterruptedException e) {
                 logger.trace("Thread has been interrupted");
 
-                return;
+                Thread.currentThread().interrupt();
             } catch (Exception e) {
                 logger.error("Unexpected error processing block {} from peer {}", block, sender, e);
             }
         }
+    }
+
+    private boolean isValid(Block block) {
+        return blockRelayValidator.isValid(block);
     }
 
     public interface Listener {
@@ -141,8 +170,8 @@ public class AsyncNodeBlockProcessor extends NodeBlockProcessor implements Inter
     }
 
     private static class PeerBlockPair {
-        final Peer peer;
-        final Block block;
+        private final Peer peer;
+        private final Block block;
 
         PeerBlockPair(@Nullable Peer peer, @Nonnull Block block) {
             this.peer = peer;

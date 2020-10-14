@@ -25,6 +25,8 @@ import co.rsk.net.sync.SyncConfiguration;
 import co.rsk.net.utils.AsyncNodeBlockProcessorListener;
 import co.rsk.test.builders.BlockBuilder;
 import co.rsk.test.builders.BlockChainBuilder;
+import co.rsk.validators.BlockValidator;
+import co.rsk.validators.DummyBlockValidator;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.junit.After;
@@ -54,8 +56,8 @@ public class AsyncNodeBlockProcessorUnclesTest {
     }
 
     @After
-    public void tearDown() {
-        processor.stop(WAIT_TIME);
+    public void tearDown() throws InterruptedException {
+        processor.stopAndWait(WAIT_TIME);
     }
 
     @Test
@@ -167,7 +169,8 @@ public class AsyncNodeBlockProcessorUnclesTest {
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         TestSystemProperties config = new TestSystemProperties();
         BlockSyncService blockSyncService = new BlockSyncService(config, store, blockChain, nodeInformation, syncConfiguration);
+        BlockValidator blockRelayValidator = new DummyBlockValidator();
 
-        return new AsyncNodeBlockProcessor(store, blockChain, nodeInformation, blockSyncService, syncConfiguration, listener);
+        return new AsyncNodeBlockProcessor(store, blockChain, nodeInformation, blockSyncService, syncConfiguration, blockRelayValidator, listener);
     }
 }

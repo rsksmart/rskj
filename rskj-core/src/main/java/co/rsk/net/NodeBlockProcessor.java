@@ -377,7 +377,7 @@ public class NodeBlockProcessor implements BlockProcessor {
      */
     @Override
     public BlockProcessResult processBlock(@Nullable final Peer sender, @Nonnull final Block block) {
-        return blockSyncService.processBlock(block, sender, false, true);
+        return blockSyncService.processBlock(block, sender, false);
     }
 
     @Override

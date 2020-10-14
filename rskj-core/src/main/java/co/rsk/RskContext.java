@@ -171,6 +171,7 @@ public class RskContext implements NodeBootstrapper {
     private BlockValidationRule blockValidationRule;
     private BlockValidationRule minerServerBlockValidationRule;
     private BlockValidator blockValidator;
+    private BlockValidator blockRelayValidator;
     private ReceiptStore receiptStore;
     private ProgramInvokeFactory programInvokeFactory;
     private TransactionPool transactionPool;
@@ -528,6 +529,7 @@ public class RskContext implements NodeBootstrapper {
                     getBlockNodeInformation(),
                     getBlockSyncService(),
                     getSyncConfiguration(),
+                    getBlockRelayValidator(),
                     null
             );
         }
@@ -1194,6 +1196,41 @@ public class RskContext implements NodeBootstrapper {
         }
 
         return blockValidator;
+    }
+
+    private BlockValidator getBlockRelayValidator() {
+        if (blockRelayValidator == null) {
+            final RskSystemProperties rskSystemProperties = getRskSystemProperties();
+            final Constants commonConstants = rskSystemProperties.getNetworkConstants();
+            BlockTimeStampValidationRule blockTimeStampValidationRule = new BlockTimeStampValidationRule(
+                    commonConstants.getNewBlockMaxSecondsInTheFuture(),
+                    rskSystemProperties.getActivationConfig()
+            );
+
+            final BlockHeaderValidationRule blockHeaderValidator = new BlockHeaderCompositeRule(
+                    getProofOfWorkRule(),
+                    blockTimeStampValidationRule
+            );
+
+            final BlockHeaderParentDependantValidationRule blockParentValidator = new BlockHeaderParentCompositeRule(
+                    new PrevMinGasPriceRule(),
+                    new BlockParentGasLimitRule(commonConstants.getGasLimitBoundDivisor()),
+                    new BlockDifficultyRule(getDifficultyCalculator()),
+                    new BlockParentNumberRule(),
+                    blockTimeStampValidationRule
+            );
+
+            final BlockValidationRule blockValidator = new ExtraDataRule(commonConstants.getMaximumExtraDataSize());
+
+            blockRelayValidator = new BlockRelayValidatorImpl(
+                    getBlockStore(),
+                    blockHeaderValidator,
+                    blockParentValidator,
+                    blockValidator
+            );
+        }
+
+        return blockRelayValidator;
     }
 
     private EthereumChannelInitializerFactory getEthereumChannelInitializerFactory() {
