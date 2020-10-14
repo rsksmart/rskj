@@ -102,7 +102,7 @@ public class BridgeSupportTest {
     }
 
     @Test
-    public void validateCustomScript() {
+    public void validateFastBridgeRedeemScript() {
         BtcECKey ecKey1 = BtcECKey.fromPrivate(BigInteger.valueOf(100));
         BtcECKey ecKey2 = BtcECKey.fromPrivate(BigInteger.valueOf(200));
         BtcECKey ecKey3 = BtcECKey.fromPrivate(BigInteger.valueOf(300));
@@ -110,10 +110,10 @@ public class BridgeSupportTest {
         FederationMember fed2 = new FederationMember(ecKey2, new ECKey(), new ECKey());
         FederationMember fed3 = new FederationMember(ecKey3, new ECKey(), new ECKey());
         Federation federation = new Federation(
-                Arrays.asList(fed1, fed2, fed3),
-                Instant.now(),
-                0L,
-                NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
+            Arrays.asList(fed1, fed2, fed3),
+            Instant.now(),
+            0L,
+            NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
         );
 
         Script redeem = federation.getRedeemScript();
@@ -132,6 +132,9 @@ public class BridgeSupportTest {
         c[prefix.length] = 0x75;
         System.arraycopy(reed, 0, c, prefix.length + 1, reed.length);
         Script redeemScript = new Script(c);
+
+        Assert.assertEquals(2, redeemScript.getNumberOfSignaturesRequiredToSpend());
+
         byte[] scriptPubKey = HashUtil.ripemd160(Sha256Hash.hash(redeemScript.getProgram()));
         NetworkParameters networkParameters = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
         Address btcAddress = new Address(networkParameters, networkParameters.getP2SHHeader(), scriptPubKey);
@@ -144,30 +147,28 @@ public class BridgeSupportTest {
         BtcTransaction spendTx = new BtcTransaction(networkParameters);
 
         Script spk = ScriptBuilder.createP2SHOutputScript(2, Arrays.asList(ecKey1, ecKey2, ecKey3));
-        RedeemData redeemData = RedeemData.of(federation.getBtcPublicKeys(), redeemScript);
 
-        Script redeemScriptSpy = spy(redeemData.redeemScript);
-        doReturn(2).when(redeemScriptSpy).getNumberOfSignaturesRequiredToSpend();
-
-        Script inputScript = spy(spk.createEmptyInputScript(redeemData.keys.get(0), redeemScriptSpy));
+        Script inputScript = spk.createEmptyInputScript(redeem.getPubKeys().get(0), redeem);
         spendTx.addInput(fundTx.getOutput(0));
         spendTx.addOutput(Coin.valueOf(190_000_000), federation.getAddress());
 
-        Sha256Hash sigHash = spendTx.hashForSignature(0, redeemScript, BtcTransaction.SigHash.ALL, false);
+        Sha256Hash sigHash = spendTx.hashForSignature(0, redeem, BtcTransaction.SigHash.ALL, false);
         BtcECKey.ECDSASignature sign1 = ecKey1.sign(sigHash);
         BtcECKey.ECDSASignature sign2 = ecKey2.sign(sigHash);
         TransactionSignature txSig = new TransactionSignature(sign1, BtcTransaction.SigHash.ALL, false);
         byte[] txSigEncoded = txSig.encodeToBitcoin();
 
-        doReturn(0).when(inputScript).getSigInsertionIndex(sigHash, ecKey1);
         int sigIndex = inputScript.getSigInsertionIndex(sigHash, ecKey1);
+        Assert.assertEquals(0, sigIndex);
 
-        inputScript = spy(ScriptBuilder.updateScriptWithSignature(inputScript, txSigEncoded, sigIndex, 1, 1));
-        doReturn(1).when(inputScript).getSigInsertionIndex(sigHash, ecKey2);
+        inputScript = ScriptBuilder.updateScriptWithSignature(inputScript, txSigEncoded, sigIndex, 1, 1);
 
         txSig = new TransactionSignature(sign2, BtcTransaction.SigHash.ALL, false);
         txSigEncoded = txSig.encodeToBitcoin();
+
         sigIndex = inputScript.getSigInsertionIndex(sigHash, ecKey2);
+        Assert.assertEquals(1, sigIndex);
+
         inputScript = ScriptBuilder.updateScriptWithSignature(inputScript, txSigEncoded, sigIndex, 1, 1);
 
         spendTx.getInput(0).setScriptSig(inputScript);
