@@ -91,7 +91,7 @@ public abstract class Secp256k1ServiceTest {
     }
 
     @Test
-    public void test_pointAtInfinity_returnNull() {
+    public void test_recoveryFromSignature_pointAtInfinity_returnZeroPK() {
         String messageHash = "f7cf90057f86838e5efd677f4741003ab90910e4e2736ff4d7999519d162d1ed";
         BigInteger r = new BigInteger("28824799845160661199077176548860063813328724131408018686643359460017962873020");
         BigInteger s = new BigInteger("48456094880180616145578324187715054843822774625773874469802229460318542735739");
@@ -240,6 +240,43 @@ public abstract class Secp256k1ServiceTest {
             ECKey key2 = this.getSecp256k1().recoverFromSignature(i, sig, hash, true);
             checkNotNull(key2);
             if (key.equals(key2)) {
+                found = true;
+                break;
+            }
+        }
+        assertTrue(found);
+    }
+
+    @Test
+    public void test_sign_signatureToKey_pk1() {
+        ECKey privateKey = ECKey.fromPrivate(BigInteger.ONE);
+        ECKey publicKey = ECKey.fromPublicOnly(privateKey.getPubKeyPoint());
+        sign_signatureToKey_assert(privateKey, publicKey);
+    }
+
+    @Test
+    public void test_sign_signatureToKey_pk10() {
+        ECKey privateKey = ECKey.fromPrivate(BigInteger.TEN);
+        ECKey publicKey = ECKey.fromPublicOnly(privateKey.getPubKeyPoint());
+        sign_signatureToKey_assert(privateKey, publicKey);
+    }
+
+    @Test
+    public void test_sign_signatureToKey_pk1M() {
+        ECKey privateKey = ECKey.fromPrivate(BigInteger.valueOf(1_000_000_000));
+        ECKey publicKey = ECKey.fromPublicOnly(privateKey.getPubKeyPoint());
+        sign_signatureToKey_assert(privateKey, publicKey);
+    }
+
+    private void sign_signatureToKey_assert(ECKey privateKey, ECKey publicKey) {
+        String message = "Hello World!";
+        byte[] hash = HashUtil.sha256(message.getBytes());
+        ECDSASignature sig = ECDSASignature.fromSignature(privateKey.doSign(hash));
+        boolean found = false;
+        for (int i = 0; i < 4; i++) {
+            ECKey key2 = this.getSecp256k1().recoverFromSignature(i, sig, hash, true);
+            checkNotNull(key2);
+            if (publicKey.equals(key2)) {
                 found = true;
                 break;
             }
