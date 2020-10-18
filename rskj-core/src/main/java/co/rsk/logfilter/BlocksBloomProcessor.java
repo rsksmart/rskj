@@ -24,6 +24,18 @@ import org.ethereum.core.Bloom;
 import org.ethereum.db.BlockStore;
 
 /**
+ * Process bloom filters from blocks
+ *
+ * It collects bloom filter from flocks with enough confirmations
+ * grouping then in a BlocksBloom instance
+ *
+ * When a new height should be processed, the
+ * BlocksBloom instance is feeded with the block blooms
+ * up to that height
+ *
+ * When the BlocksBloom instance is filled, it is saved into the BlocksBloomStore
+ * and a new instance starts to be processed
+ *
  * Created by ajlopez on 29/09/2020.
  */
 public class BlocksBloomProcessor {
@@ -42,6 +54,12 @@ public class BlocksBloomProcessor {
         return this.blocksBloomInProcess;
     }
 
+    /**
+     * Receives the new height to process.
+     * Processes the block blooms up to that height minus the number of needed confirmations
+     *
+     * @param newBlockNumber    the new height to process
+     */
     public synchronized void processNewBlockNumber(long newBlockNumber) {
         if (newBlockNumber < this.blocksBloomStore.getNoConfirmations()) {
             return;
@@ -52,6 +70,11 @@ public class BlocksBloomProcessor {
         addBlocksUpToNumber(blockNumber);
     }
 
+    /**
+     * Reads and collect block blooms up the the provided block number
+     *
+     * @param blockNumber top block number to process
+     */
     private void addBlocksUpToNumber(long blockNumber) {
         if (this.blocksBloomStore.hasBlockNumber(blockNumber)) {
             return;
@@ -77,6 +100,14 @@ public class BlocksBloomProcessor {
         }
     }
 
+    /**
+     * Reads and collect the bloom from the block that corresponds to the provided block number
+     *
+     * If the BlocksBloom instance is fulfilled, it is saved into the store
+     * and a new instance will be created at the process of the next block number
+     *
+     * @param blockNumber block number to process
+     */
     private void addBlock(long blockNumber) {
         Bloom bloom;
 
