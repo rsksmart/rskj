@@ -31,6 +31,10 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 
 /**
+ * A wrapper to use a BlocksBloomProcessor as an internal service
+ *
+ * The block heights to be processed are obtained from block events
+ *
  * Created by ajlopez on 01/10/2020.
  */
 public class BlocksBloomService implements InternalService {
