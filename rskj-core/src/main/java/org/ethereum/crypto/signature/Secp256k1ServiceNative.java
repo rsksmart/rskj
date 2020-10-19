@@ -21,14 +21,13 @@ package org.ethereum.crypto.signature;
 
 import org.bitcoin.NativeSecp256k1;
 import org.bitcoin.NativeSecp256k1Exception;
-import org.bouncycastle.util.Arrays;
 import org.ethereum.crypto.ECKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
-import java.math.BigInteger;
-import java.nio.ByteBuffer;
+
+import static java.lang.System.arraycopy;
 
 /**
  * Implementation of SignatureService with Native library.
@@ -36,6 +35,7 @@ import java.nio.ByteBuffer;
 public class Secp256k1ServiceNative extends Secp256k1ServiceBC {
 
     private static final Logger logger = LoggerFactory.getLogger(Secp256k1ServiceNative.class);
+    private static final byte[] ZERO_PUB = {0};
 
     @Nullable
     @Override
@@ -46,13 +46,13 @@ public class Secp256k1ServiceNative extends Secp256k1ServiceBC {
         check(messageHash != null, "messageHash must not be null");
         byte[] pbKey;
         try {
-            byte[] sigBytes = concatenate(sig, true);
+            byte[] sigBytes = concatenate(sig);
             logger.trace("Recovering key from signature: comporessed[{}] - recId[{}] - sig[{}] - msgHash[{}].", compressed, recId, sigBytes, messageHash);
             try {
                 pbKey = NativeSecp256k1.ecdsaRecover(sigBytes, messageHash, recId, compressed);
             } catch (NativeSecp256k1Exception e) {
                 if (NativeSecp256k1.isInfinity(sigBytes, messageHash, recId)) {
-                    return ECKey.fromPublicOnly(BigInteger.ZERO.toByteArray());
+                    return ECKey.fromPublicOnly(ZERO_PUB);
                 }
                 throw e;
             }
@@ -64,38 +64,31 @@ public class Secp256k1ServiceNative extends Secp256k1ServiceBC {
     }
 
     /**
-     * If "fixed" returns a 64 byte array long
-     * if not "fixed" returns a (r.length + s.length) bytes array long
+     * Returns a (r.length + s.length) bytes array long
      *
-     * Note: When fixed, we take 32 bytes from "r" and 32 bytes from "s".
+     * Note: we take 32 bytes from "r" and 32 bytes from "s".
      *
      * @param sig {r,s}
-     * @param fixed 64 bytes array (32 from r, 32 from s)
-     * @return r + s (bytes array)
+     * @return r + s (64 length byte array)
      */
-    /**
-     * @param sig
-     * @param fixed
-     * @return
-     */
-    byte[] concatenate(ECDSASignature sig, boolean fixed) {
+    byte[] concatenate(ECDSASignature sig) {
         byte[] rBytes = sig.getR().toByteArray();
         byte[] sBytes = sig.getS().toByteArray();
-        byte[] allByteArray = new byte[fixed ? 64 : rBytes.length + sBytes.length];
-        ByteBuffer buff = ByteBuffer.wrap(allByteArray);
-        if (fixed) {
-            for (int i = rBytes.length; i < 32; i++) {
-                buff.put((byte) 0);
-            }
-        }
-        buff.put(Arrays.copyOfRange(rBytes, getStartIndex(rBytes, fixed), rBytes.length));
-        if (fixed) {
-            for (int i = sBytes.length; i < 32; i++) {
-                buff.put((byte) 0);
-            }
-        }
-        buff.put(Arrays.copyOfRange(sBytes, getStartIndex(sBytes, fixed), sBytes.length));
-        return buff.array();
+        byte[] result = new byte[64];
+        int rLength = getLength(rBytes);
+        int sLength = getLength(sBytes);
+        arraycopy(rBytes, getStartIndex(rBytes), result, 32 - rLength, rLength);
+        arraycopy(sBytes, getStartIndex(sBytes), result, 64 - sLength, sLength);
+        return result;
+    }
+
+    /**
+     * Get the length of valid data to copy from the array, with a max of 32 bytes.
+     * @param rs
+     * @return
+     */
+    private int getLength(byte[] rs) {
+        return Math.min(rs.length, 32);
     }
 
     /**
@@ -104,10 +97,10 @@ public class Secp256k1ServiceNative extends Secp256k1ServiceBC {
      * If not
      * -  Starting byte index = 0.
      *
-     * @param sBytes
+     * @param rs
      * @return
      */
-    private int getStartIndex(byte[] sBytes, boolean fixed) {
-        return sBytes.length > 32 && fixed ? sBytes.length - 32 : 0;
+    private int getStartIndex(byte[] rs) {
+        return Math.max(rs.length - 32, 0);
     }
 }
