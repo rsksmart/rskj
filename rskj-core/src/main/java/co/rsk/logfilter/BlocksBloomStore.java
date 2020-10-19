@@ -163,10 +163,14 @@ public class BlocksBloomStore {
     }
 
     public void flush() {
-        this.dataSource.flush();
+        if (this.dataSource != null) {
+            this.dataSource.flush();
+        }
     }
 
     public void close() {
-        this.dataSource.close();
+        if (this.dataSource != null) {
+            this.dataSource.close();
+        }
     }
 }
