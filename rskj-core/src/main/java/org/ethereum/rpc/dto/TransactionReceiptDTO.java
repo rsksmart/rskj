@@ -19,19 +19,22 @@
 package org.ethereum.rpc.dto;
 
 import co.rsk.core.RskAddress;
+import co.rsk.crypto.Keccak256;
 import org.ethereum.core.Block;
 import org.ethereum.core.TransactionReceipt;
 import org.ethereum.db.TransactionInfo;
 import org.ethereum.rpc.LogFilterElement;
+import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.LogInfo;
 
 import static org.ethereum.rpc.TypeConverter.*;
-
 
 /**
  * Created by Ruben on 5/1/2016.
  */
 public class TransactionReceiptDTO {
+
+    private static final int ROOT_HASH_LEN = Keccak256.HASH_LEN;
 
     private String transactionHash;      // hash of the transaction.
     private String transactionIndex;     // integer of the transactions index position in the block.
@@ -46,7 +49,6 @@ public class TransactionReceiptDTO {
     private String root;                 // post-transaction stateroot
     private String status;               // either 1 (success) or 0 (failure)
     private String logsBloom;            // Bloom filter for light clients to quickly retrieve related logs.
-
 
     public  TransactionReceiptDTO(Block block, TransactionInfo txInfo) {
 
@@ -72,7 +74,7 @@ public class TransactionReceiptDTO {
                     txInfo.getReceipt().getTransaction(), i);
         }
 
-        root = toUnformattedJsonHex(receipt.getPostTxState());
+        root = toUnformattedJsonHex(ByteUtil.toBytesWithLeadingZeros(receipt.getPostTxState(), ROOT_HASH_LEN));
         to = receipt.getTransaction().getReceiveAddress().toJsonString();
         transactionHash = receipt.getTransaction().getHash().toJsonString();
         transactionIndex = toQuantityJsonHex(txInfo.getIndex());
