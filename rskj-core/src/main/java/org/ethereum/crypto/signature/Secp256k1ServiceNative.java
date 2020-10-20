@@ -87,7 +87,7 @@ public class Secp256k1ServiceNative extends Secp256k1ServiceBC {
      * @param rs
      * @return
      */
-    private int getLength(byte[] rs) {
+    private static final int getLength(byte[] rs) {
         return Math.min(rs.length, 32);
     }
 
@@ -100,7 +100,7 @@ public class Secp256k1ServiceNative extends Secp256k1ServiceBC {
      * @param rs
      * @return
      */
-    private int getStartIndex(byte[] rs) {
+    private static final int getStartIndex(byte[] rs) {
         return Math.max(rs.length - 32, 0);
     }
 }
