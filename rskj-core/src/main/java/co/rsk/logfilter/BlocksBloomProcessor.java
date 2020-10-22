@@ -67,37 +67,28 @@ public class BlocksBloomProcessor {
 
         long blockNumber = newBlockNumber - this.blocksBloomStore.getNoConfirmations();
 
-        addBlocksUpToNumber(blockNumber);
+        if (!alreadyAdded(blockNumber)) {
+            for (long aBlockNumber = fromBlock(blockNumber); aBlockNumber <= blockNumber; aBlockNumber++) {
+                this.addBlock(aBlockNumber);
+            }
+        }
     }
 
-    /**
-     * Reads and collect block blooms up the the provided block number
-     *
-     * @param blockNumber top block number to process
-     */
-    private void addBlocksUpToNumber(long blockNumber) {
-        if (this.blocksBloomStore.hasBlockNumber(blockNumber)) {
-            return;
-        }
+    private boolean alreadyAdded(long blockNumber) {
+        return this.blocksBloomStore.hasBlockNumber(blockNumber) ||
+                (this.blocksBloomInProcess != null && this.blocksBloomInProcess.hasBlockBloom(blockNumber));
+    }
 
+    private long fromBlock(long blockNumber) {
         long fromBlock;
-
         if (this.blocksBloomInProcess == null) {
             this.blocksBloomInProcess = new BlocksBloom();
-            fromBlock = this.blocksBloomStore.
-                    firstNumberInRange(blockNumber);
+            fromBlock = this.blocksBloomStore.firstNumberInRange(blockNumber);
         }
         else {
             fromBlock = this.blocksBloomInProcess.toBlock() + 1;
         }
-
-        if (this.blocksBloomInProcess.hasBlockBloom(blockNumber)) {
-            return;
-        }
-
-        for (long nb = fromBlock; nb <= blockNumber; nb++) {
-            this.addBlock(nb);
-        }
+        return fromBlock;
     }
 
     /**
@@ -109,14 +100,7 @@ public class BlocksBloomProcessor {
      * @param blockNumber block number to process
      */
     private void addBlock(long blockNumber) {
-        Bloom bloom;
-
-        if (blockNumber > 0) {
-            bloom = new Bloom(this.blockStore.getChainBlockByNumber(blockNumber).getLogBloom());
-        }
-        else {
-            bloom = new Bloom();
-        }
+        Bloom bloom = bloomByBlockNumber(blockNumber);
 
         if (this.blocksBloomInProcess == null) {
             this.blocksBloomInProcess = new BlocksBloom();
@@ -128,5 +112,16 @@ public class BlocksBloomProcessor {
             this.blocksBloomStore.addBlocksBloom(this.blocksBloomInProcess);
             this.blocksBloomInProcess = null;
         }
+    }
+
+    private Bloom bloomByBlockNumber(long blockNumber) {
+        Bloom bloom;
+        if (blockNumber > 0) {
+            bloom = this.blockStore.bloomByBlockNumber(blockNumber);
+        }
+        else {
+            bloom = new Bloom();
+        }
+        return bloom;
     }
 }
