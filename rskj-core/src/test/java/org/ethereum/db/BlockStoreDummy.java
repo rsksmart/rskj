@@ -23,6 +23,7 @@ import co.rsk.core.BlockDifficulty;
 import co.rsk.crypto.Keccak256;
 import co.rsk.remasc.Sibling;
 import org.ethereum.core.Block;
+import org.ethereum.core.Bloom;
 import org.ethereum.crypto.HashUtil;
 
 import java.nio.charset.StandardCharsets;
@@ -124,6 +125,11 @@ public class BlockStoreDummy implements BlockStore {
     @Override
     public void close() {
 
+    }
+
+    @Override
+    public Bloom bloomByBlockNumber(long blockNumber) {
+        throw new UnsupportedOperationException();
     }
 
     @Override
