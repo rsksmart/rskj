@@ -47,6 +47,28 @@ public interface Repository extends RepositorySnapshot {
      */
     AccountState createAccount(RskAddress addr);
 
+    /**
+     * Create a new account in the database, and optionally carry over any existing balance
+     *
+     * @param addr of the contract
+     * @param carryOverBalance if true, then carry over any existing balance
+     * @return newly created account state
+     *
+     * @see #createAccount(RskAddress)
+     */
+    default AccountState createAccount(RskAddress addr, boolean carryOverBalance) {
+        AccountState newAccount;
+        if (carryOverBalance) { // carry over existing balance
+            Coin oldBalance = getBalance(addr);
+            newAccount = createAccount(addr);
+            addBalance(addr, oldBalance);
+        } else {
+            newAccount = createAccount(addr);
+        }
+
+        return newAccount;
+    }
+
     void setupContract(RskAddress addr);
 
     /**
