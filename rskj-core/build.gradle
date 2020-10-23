@@ -34,6 +34,7 @@ tasks.withType(Javadoc) {
 }
 
 repositories {
+    mavenLocal()
     mavenCentral()
     jcenter()
     maven {
@@ -157,7 +158,7 @@ jar {
     def currentBranch = gitCurrentBranch()
     manifest {
         attributes  'Git-Commit': commitHash,
-                    'Git-Branch': currentBranch
+                'Git-Branch': currentBranch
     }
     from sourceSets.main.output.classesDirs
     from sourceSets.main.output.resourcesDir
