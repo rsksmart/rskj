@@ -519,46 +519,22 @@ public class BridgeUtilsTest {
 
     @Test
     public void getFederationNoSpendWallet() {
-        NetworkParameters regTestParameters = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
-        Federation federation = new Federation(FederationTestUtils.getFederationMembersWithBtcKeys(Arrays.asList(
-                BtcECKey.fromPublicOnly(Hex.decode("036bb9eab797eadc8b697f0e82a01d01cabbfaaca37e5bafc06fdc6fdd38af894a")),
-                BtcECKey.fromPublicOnly(Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5")))),
-                Instant.ofEpochMilli(5005L),
-                0L,
-                regTestParameters);
-        Context mockedBtcContext = mock(Context.class);
-        when(mockedBtcContext.getParams()).thenReturn(regTestParameters);
+        test_getNoSpendWallet(false);
+    }
 
-        Wallet wallet = BridgeUtils.getFederationNoSpendWallet(mockedBtcContext, federation);
-        Assert.assertEquals(BridgeBtcWallet.class, wallet.getClass());
-        assertIsWatching(federation.getAddress(), wallet, regTestParameters);
+    @Test
+    public void getFederationNoSpendWallet_fastBridgeCompatible() {
+        test_getNoSpendWallet(true);
     }
 
     @Test
     public void getFederationSpendWallet() throws UTXOProviderException {
-        NetworkParameters regTestParameters = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
-        Federation federation = new Federation(FederationTestUtils.getFederationMembersWithBtcKeys(Arrays.asList(
-                BtcECKey.fromPublicOnly(Hex.decode("036bb9eab797eadc8b697f0e82a01d01cabbfaaca37e5bafc06fdc6fdd38af894a")),
-                BtcECKey.fromPublicOnly(Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5")))),
-                Instant.ofEpochMilli(5005L),
-                0L,
-                regTestParameters);
-        Context mockedBtcContext = mock(Context.class);
-        when(mockedBtcContext.getParams()).thenReturn(regTestParameters);
+        test_getSpendWallet(false);
+    }
 
-        List<UTXO> mockedUtxos = new ArrayList<>();
-        mockedUtxos.add(mock(UTXO.class));
-        mockedUtxos.add(mock(UTXO.class));
-        mockedUtxos.add(mock(UTXO.class));
-
-        Wallet wallet = BridgeUtils.getFederationSpendWallet(mockedBtcContext, federation, mockedUtxos);
-        Assert.assertEquals(BridgeBtcWallet.class, wallet.getClass());
-        assertIsWatching(federation.getAddress(), wallet, regTestParameters);
-        CoinSelector selector = wallet.getCoinSelector();
-        Assert.assertEquals(RskAllowUnconfirmedCoinSelector.class, selector.getClass());
-        UTXOProvider utxoProvider = wallet.getUTXOProvider();
-        Assert.assertEquals(RskUTXOProvider.class, utxoProvider.getClass());
-        Assert.assertEquals(mockedUtxos, utxoProvider.getOpenTransactionOutputs(Collections.emptyList()));
+    @Test
+    public void getFederationSpendWallet_fastBridgeCompatible() throws UTXOProviderException {
+        test_getSpendWallet(true);
     }
 
     @Test
@@ -861,6 +837,61 @@ public class BridgeUtilsTest {
         // Assert
         Assert.assertFalse(isSigned);
     }
+
+    public void test_getSpendWallet(boolean isFastBridgeCompatible) throws UTXOProviderException {
+        NetworkParameters regTestParameters = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
+        Federation federation = new Federation(FederationTestUtils.getFederationMembersWithBtcKeys(Arrays.asList(
+            BtcECKey.fromPublicOnly(Hex.decode("036bb9eab797eadc8b697f0e82a01d01cabbfaaca37e5bafc06fdc6fdd38af894a")),
+            BtcECKey.fromPublicOnly(Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5")))),
+            Instant.ofEpochMilli(5005L),
+            0L,
+            regTestParameters);
+        Context mockedBtcContext = mock(Context.class);
+        when(mockedBtcContext.getParams()).thenReturn(regTestParameters);
+
+        List<UTXO> mockedUtxos = new ArrayList<>();
+        mockedUtxos.add(mock(UTXO.class));
+        mockedUtxos.add(mock(UTXO.class));
+        mockedUtxos.add(mock(UTXO.class));
+
+        Wallet wallet = BridgeUtils.getFederationSpendWallet(mockedBtcContext, federation, mockedUtxos, isFastBridgeCompatible, null);
+
+        if (isFastBridgeCompatible) {
+            Assert.assertEquals(FastBridgeCompatibleBtcWalletTest.class, wallet.getClass());
+        } else {
+            Assert.assertEquals(BridgeBtcWallet.class, wallet.getClass());
+        }
+
+        assertIsWatching(federation.getAddress(), wallet, regTestParameters);
+        CoinSelector selector = wallet.getCoinSelector();
+        Assert.assertEquals(RskAllowUnconfirmedCoinSelector.class, selector.getClass());
+        UTXOProvider utxoProvider = wallet.getUTXOProvider();
+        Assert.assertEquals(RskUTXOProvider.class, utxoProvider.getClass());
+        Assert.assertEquals(mockedUtxos, utxoProvider.getOpenTransactionOutputs(Collections.emptyList()));
+    }
+
+    private void test_getNoSpendWallet(boolean isFastBridgeCompatible) {
+        NetworkParameters regTestParameters = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
+        Federation federation = new Federation(FederationTestUtils.getFederationMembersWithBtcKeys(Arrays.asList(
+            BtcECKey.fromPublicOnly(Hex.decode("036bb9eab797eadc8b697f0e82a01d01cabbfaaca37e5bafc06fdc6fdd38af894a")),
+            BtcECKey.fromPublicOnly(Hex.decode("031da807c71c2f303b7f409dd2605b297ac494a563be3b9ca5f52d95a43d183cc5")))),
+            Instant.ofEpochMilli(5005L),
+            0L,
+            regTestParameters);
+        Context mockedBtcContext = mock(Context.class);
+        when(mockedBtcContext.getParams()).thenReturn(regTestParameters);
+
+        Wallet wallet = BridgeUtils.getFederationNoSpendWallet(mockedBtcContext, federation, isFastBridgeCompatible, null);
+
+        if (isFastBridgeCompatible) {
+            Assert.assertEquals(FastBridgeCompatibleBtcWalletTest.class, wallet.getClass());
+        } else {
+            Assert.assertEquals(BridgeBtcWallet.class, wallet.getClass());
+        }
+
+        assertIsWatching(federation.getAddress(), wallet, regTestParameters);
+    }
+
 
     private void assertIsWatching(Address address, Wallet wallet, NetworkParameters parameters) {
         List<Script> watchedScripts = wallet.getWatchedScripts();
