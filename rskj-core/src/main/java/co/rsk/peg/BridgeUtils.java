@@ -49,22 +49,37 @@ public class BridgeUtils {
 
     private static final Logger logger = LoggerFactory.getLogger("BridgeUtils");
 
-    public static Wallet getFederationNoSpendWallet(Context btcContext, Federation federation) {
-        return getFederationsNoSpendWallet(btcContext, Collections.singletonList(federation));
+    public static Wallet getFederationNoSpendWallet(Context btcContext, Federation federation, boolean isFastBridgeCompatible, BridgeStorageProvider storageProvider) {
+        return getFederationsNoSpendWallet(btcContext, Collections.singletonList(federation), isFastBridgeCompatible, storageProvider);
     }
 
-    public static Wallet getFederationsNoSpendWallet(Context btcContext, List<Federation> federations) {
-        Wallet wallet = new BridgeBtcWallet(btcContext, federations);
+    public static Wallet getFederationsNoSpendWallet(Context btcContext, List<Federation> federations,
+        boolean isFastBridgeCompatible, BridgeStorageProvider storageProvider) {
+        Wallet wallet;
+        if (isFastBridgeCompatible) {
+            wallet = new FastBridgeCompatibleBtcWallet(btcContext, federations, storageProvider);
+        } else {
+            wallet = new BridgeBtcWallet(btcContext, federations);
+        }
+
         federations.forEach(federation -> wallet.addWatchedAddress(federation.getAddress(), federation.getCreationTime().toEpochMilli()));
         return wallet;
     }
 
-    public static Wallet getFederationSpendWallet(Context btcContext, Federation federation, List<UTXO> utxos) {
-        return getFederationsSpendWallet(btcContext, Collections.singletonList(federation), utxos);
+    public static Wallet getFederationSpendWallet(Context btcContext, Federation federation, List<UTXO> utxos,
+        boolean isFastBridgeCompatible, BridgeStorageProvider storageProvider) {
+        return getFederationsSpendWallet(btcContext, Collections.singletonList(federation), utxos,
+            isFastBridgeCompatible, storageProvider);
     }
 
-    public static Wallet getFederationsSpendWallet(Context btcContext, List<Federation> federations, List<UTXO> utxos) {
-        Wallet wallet = new BridgeBtcWallet(btcContext, federations);
+    public static Wallet getFederationsSpendWallet(Context btcContext, List<Federation> federations,
+        List<UTXO> utxos, boolean isFastBridgeCompatible, BridgeStorageProvider storageProvider) {
+        Wallet wallet;
+        if (isFastBridgeCompatible) {
+            wallet = new FastBridgeCompatibleBtcWallet(btcContext, federations, storageProvider);
+        } else {
+            wallet = new BridgeBtcWallet(btcContext, federations);
+        }
 
         RskUTXOProvider utxoProvider = new RskUTXOProvider(btcContext.getParams(), utxos);
         wallet.setUTXOProvider(utxoProvider);
@@ -129,7 +144,7 @@ public class BridgeUtils {
             }
         }
 
-        Wallet federationsWallet = BridgeUtils.getFederationsNoSpendWallet(btcContext, federations);
+        Wallet federationsWallet = BridgeUtils.getFederationsNoSpendWallet(btcContext, federations, false, null);
         Coin valueSentToMe = tx.getValueSentToMe(federationsWallet);
 
         int valueSentToMeSignum = valueSentToMe.signum();

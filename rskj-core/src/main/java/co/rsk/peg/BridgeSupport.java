@@ -212,7 +212,7 @@ public class BridgeSupport {
         Federation federation = getActiveFederation();
         List<UTXO> utxos = getActiveFederationBtcUTXOs();
 
-        return BridgeUtils.getFederationSpendWallet(btcContext, federation, utxos);
+        return BridgeUtils.getFederationSpendWallet(btcContext, federation, utxos,false, null);
     }
 
     /**
@@ -230,7 +230,7 @@ public class BridgeSupport {
 
         List<UTXO> utxos = getRetiringFederationBtcUTXOs();
 
-        return BridgeUtils.getFederationSpendWallet(btcContext, federation, utxos);
+        return BridgeUtils.getFederationSpendWallet(btcContext, federation, utxos, false, null);
     }
 
     /**
@@ -241,8 +241,8 @@ public class BridgeSupport {
      *
      * @throws IOException
      */
-    public Wallet getUTXOBasedWalletForLiveFederations(List<UTXO> utxos) throws IOException {
-        return BridgeUtils.getFederationsSpendWallet(btcContext, getLiveFederations(), utxos);
+    public Wallet getUTXOBasedWalletForLiveFederations(List<UTXO> utxos, boolean isFastBridgeCompatible) throws IOException {
+        return BridgeUtils.getFederationsSpendWallet(btcContext, getLiveFederations(), utxos, isFastBridgeCompatible, provider);
     }
 
     /**
@@ -251,8 +251,8 @@ public class BridgeSupport {
      *
      * @throws IOException
      */
-    public Wallet getNoSpendWalletForLiveFederations() throws IOException {
-        return BridgeUtils.getFederationsNoSpendWallet(btcContext, getLiveFederations());
+    public Wallet getNoSpendWalletForLiveFederations(boolean isFastBridgeCompatible) throws IOException {
+        return BridgeUtils.getFederationsNoSpendWallet(btcContext, getLiveFederations(), isFastBridgeCompatible, provider);
     }
 
     /**
@@ -367,7 +367,7 @@ public class BridgeSupport {
             // Save UTXOs from the federation(s) only if we actually locked the funds
             saveNewUTXOs(btcTx);
         } else {
-            generateRejectionRelease(btcTx, senderBtcAddress, rskTx, totalAmount);
+            generateRejectionRelease(btcTx, senderBtcAddress, rskTx, totalAmount, false);
         }
 
         // Mark tx as processed on this block (and use the txid without the witness)
@@ -2169,8 +2169,8 @@ public class BridgeSupport {
         return Address.fromBase58(btcContext.getParams(), base58Address);
     }
 
-    private void generateRejectionRelease(BtcTransaction btcTx, Address senderBtcAddress, Transaction rskTx, Coin totalAmount) throws IOException {
-        Optional<ReleaseTransactionBuilder.BuildResult> buildReturnResult = this.getRefundingTransaction(btcTx, senderBtcAddress);
+    private void generateRejectionRelease(BtcTransaction btcTx, Address senderBtcAddress, Transaction rskTx, Coin totalAmount, boolean isFastBridgeCompatible) throws IOException {
+        Optional<ReleaseTransactionBuilder.BuildResult> buildReturnResult = this.getRefundingTransaction(btcTx, senderBtcAddress, isFastBridgeCompatible);
         if (buildReturnResult.isPresent()) {
             if (activations.isActive(ConsensusRule.RSKIP146)) {
                 provider.getReleaseTransactionSet().add(buildReturnResult.get().getBtcTx(), rskExecutionBlock.getNumber(), rskTx.getHash());
@@ -2221,11 +2221,11 @@ public class BridgeSupport {
         return false;
     }
 
-    private Optional<ReleaseTransactionBuilder.BuildResult> getRefundingTransaction(BtcTransaction btcTx, Address senderBtcAddress) throws IOException {
+    private Optional<ReleaseTransactionBuilder.BuildResult> getRefundingTransaction(BtcTransaction btcTx, Address senderBtcAddress, boolean isFastBridgeCompatible) throws IOException {
 
         // Build the list of UTXOs in the BTC transaction sent to either the active
         // or retiring federation
-        List<UTXO> utxosToUs = btcTx.getWalletOutputs(getNoSpendWalletForLiveFederations()).stream()
+        List<UTXO> utxosToUs = btcTx.getWalletOutputs(getNoSpendWalletForLiveFederations(isFastBridgeCompatible)).stream()
                 .map(output ->
                         new UTXO(
                                 btcTx.getHash(),
@@ -2240,7 +2240,7 @@ public class BridgeSupport {
         // for the return btc transaction generation
         ReleaseTransactionBuilder txBuilder = new ReleaseTransactionBuilder(
                 btcContext.getParams(),
-                getUTXOBasedWalletForLiveFederations(utxosToUs),
+                getUTXOBasedWalletForLiveFederations(utxosToUs, isFastBridgeCompatible),
                 senderBtcAddress,
                 getFeePerKb()
         );
