@@ -500,13 +500,18 @@ public class ByteUtilTest {
 
     @Test
     public void testToBytesWithLeadingZeros_WithLeadingZeros() {
-        byte[] src = new byte[]{1};
+        byte[] src = new byte[]{1, 2};
 
         byte[] actualResult = ByteUtil.toBytesWithLeadingZeros(src, 10);
 
         assertEquals(10, actualResult.length);
-        for (int i = 0; i < actualResult.length - src.length; i++) {
+
+        int srcStart = actualResult.length - src.length;
+        for (int i = 0; i < srcStart; i++) {
             assertEquals(0, actualResult[i]);
+        }
+        for (int i = srcStart; i < actualResult.length; i++) {
+            assertEquals(src[i - srcStart], actualResult[i]);
         }
     }
 }
