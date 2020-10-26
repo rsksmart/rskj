@@ -222,7 +222,7 @@ public abstract class Secp256k1ServiceTest {
 
         BigInteger validBigInt = BigInteger.valueOf(0l);
         byte[] validBytes = validBigInt.toByteArray();
-        BigInteger invalidBigInt = new BigInteger(new byte[]{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0});
+        BigInteger invalidBigInt = BigInteger.valueOf(-1l);
         byte[] invalidNullBytes = null;
         boolean validBoolean = false;
         int validRecId = 0;
