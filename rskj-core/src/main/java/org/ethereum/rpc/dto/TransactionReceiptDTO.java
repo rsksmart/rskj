@@ -50,8 +50,7 @@ public class TransactionReceiptDTO {
     private String status;               // either 1 (success) or 0 (failure)
     private String logsBloom;            // Bloom filter for light clients to quickly retrieve related logs.
 
-    public  TransactionReceiptDTO(Block block, TransactionInfo txInfo) {
-
+    public TransactionReceiptDTO(Block block, TransactionInfo txInfo) {
         TransactionReceipt receipt = txInfo.getReceipt();
 
         status = toQuantityJsonHex(txInfo.getReceipt().getStatus());
