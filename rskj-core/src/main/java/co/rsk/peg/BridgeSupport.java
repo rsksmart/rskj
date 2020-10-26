@@ -347,7 +347,11 @@ public class BridgeSupport {
 
         logger.debug("[processPegIn] This is a lock tx {}", btcTx);
 
-        PeginInformation peginInformation = new PeginInformation(btcLockSenderProvider, peginInstructionsProvider);
+        PeginInformation peginInformation = new PeginInformation(
+            btcLockSenderProvider,
+            peginInstructionsProvider,
+            activations
+        );
         try {
             peginInformation.parse(btcTx);
         } catch (PeginInstructionsException e) {

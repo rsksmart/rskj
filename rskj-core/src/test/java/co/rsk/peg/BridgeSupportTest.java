@@ -3289,7 +3289,7 @@ public class BridgeSupportTest {
         BtcECKey srcKey1 = new BtcECKey();
         ECKey key = ECKey.fromPublicOnly(srcKey1.getPubKey());
         Address btcAddressFromBtcLockSender = srcKey1.toAddress(btcParams);
-        RskAddress rskAddress = new RskAddress(key.getAddress());
+        RskAddress rskDerivedAddress = new RskAddress(key.getAddress());
         RskAddress rskDestinationAddress = new RskAddress(new byte[20]);
 
         Coin amountToLock = Coin.COIN.multiply(10);
@@ -3344,8 +3344,15 @@ public class BridgeSupportTest {
         BridgeStorageProvider provider = new BridgeStorageProvider(repository, contractAddress, bridgeConstants, activations);
         provider.setNewFederation(federation1);
 
-        BtcLockSenderProvider btcLockSenderProvider = getBtcLockSenderProvider(TxSenderAddressType.P2PKH, btcAddressFromBtcLockSender, rskAddress);
-        PeginInstructionsProvider peginInstructionsProvider = getPeginInstructionsProviderForVersion1(rskDestinationAddress, Optional.empty());
+        BtcLockSenderProvider btcLockSenderProvider = getBtcLockSenderProvider(
+            TxSenderAddressType.P2PKH,
+            btcAddressFromBtcLockSender,
+            rskAddress
+        );
+        PeginInstructionsProvider peginInstructionsProvider = getPeginInstructionsProviderForVersion1(
+            rskDestinationAddress,
+            Optional.empty()
+        );
 
         BridgeSupport bridgeSupport = getBridgeSupport(
             bridgeConstants,
@@ -3375,7 +3382,7 @@ public class BridgeSupportTest {
     }
 
     @Test
-    public void registerBtcTransaction_rejects_lock_tx_version1_before_rskip_170_activation()
+    public void registerBtcTransaction_ignores_pegin_instructions_before_rskip_170_activation()
         throws BlockStoreException, IOException, PeginInstructionsException {
         // Arrange
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
@@ -3439,11 +3446,27 @@ public class BridgeSupportTest {
         BtcBlockStoreWithCache.Factory mockFactory = mock(BtcBlockStoreWithCache.Factory.class);
         when(mockFactory.newInstance(any())).thenReturn(btcBlockStore);
 
-        BridgeStorageProvider provider = new BridgeStorageProvider(repository, contractAddress, bridgeConstants, activations);
+        BridgeStorageProvider provider = new BridgeStorageProvider(
+            repository,
+            contractAddress,
+            bridgeConstants,
+            activations
+        );
         provider.setNewFederation(federation1);
 
-        BtcLockSenderProvider btcLockSenderProvider = getBtcLockSenderProvider(TxSenderAddressType.P2PKH, btcAddressFromBtcLockSender, rskAddress);
-        PeginInstructionsProvider peginInstructionsProvider = getPeginInstructionsProviderForVersion1(rskDestinationAddress, Optional.empty());
+        // Whitelist the addresses
+        LockWhitelist whitelist = provider.getLockWhitelist();
+        whitelist.put(btcAddressFromBtcLockSender, new OneOffWhiteListEntry(btcAddressFromBtcLockSender, amountToLock));
+
+        BtcLockSenderProvider btcLockSenderProvider = getBtcLockSenderProvider(
+            TxSenderAddressType.P2PKH,
+            btcAddressFromBtcLockSender,
+            rskDerivedAddress
+        );
+        PeginInstructionsProvider peginInstructionsProvider = getPeginInstructionsProviderForVersion1(
+            rskDestinationAddress,
+            Optional.empty()
+        );
 
         BridgeSupport bridgeSupport = getBridgeSupport(
             bridgeConstants,
@@ -3460,12 +3483,16 @@ public class BridgeSupportTest {
         bridgeSupport.registerBtcTransaction(mock(Transaction.class), tx1.bitcoinSerialize(), height, pmtWithoutWitness.bitcoinSerialize());
 
         // Assert
+        co.rsk.core.Coin totalAmountExpectedToHaveBeenLocked = co.rsk.core.Coin.fromBitcoin(amountToLock);
+
         Assert.assertEquals(co.rsk.core.Coin.ZERO, repository.getBalance(rskDestinationAddress));
-        Assert.assertEquals(0, provider.getNewFederationBtcUTXOs().size());
+        Assert.assertEquals(totalAmountExpectedToHaveBeenLocked, repository.getBalance(rskDerivedAddress));
+        Assert.assertEquals(1, provider.getNewFederationBtcUTXOs().size());
+        Assert.assertEquals(amountToLock, provider.getNewFederationBtcUTXOs().get(0).getValue());
         Assert.assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
         Assert.assertEquals(0, provider.getReleaseTransactionSet().getEntries().size());
         Assert.assertTrue(provider.getRskTxsWaitingForSignatures().isEmpty());
-        Assert.assertFalse(provider.getHeightIfBtcTxhashIsAlreadyProcessed(tx1.getHash()).isPresent());
+        Assert.assertTrue(provider.getHeightIfBtcTxhashIsAlreadyProcessed(tx1.getHash(true)).isPresent());
     }
 
     @Test
@@ -5537,9 +5564,12 @@ public class BridgeSupportTest {
 
     @Test(expected = RegisterBtcTransactionException.class)
     public void processPegIn_noPeginInstructions() throws IOException, RegisterBtcTransactionException {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+
         BridgeSupport bridgeSupport = getBridgeSupport(
             bridgeConstants,
-            mock(BridgeStorageProvider.class)
+            mock(BridgeStorageProvider.class),
+            activations
         );
 
         bridgeSupport.processPegIn(
