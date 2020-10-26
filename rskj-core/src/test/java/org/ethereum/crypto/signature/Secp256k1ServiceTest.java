@@ -19,6 +19,7 @@
 
 package org.ethereum.crypto.signature;
 
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.ImmutableTransaction;
 import org.ethereum.core.Transaction;
@@ -196,12 +197,32 @@ public abstract class Secp256k1ServiceTest {
         assertArrayEquals(pubKey, key.getPubKey());
     }
 
+    @Test(expected = SignatureException.class)
+    public void testSignatureToKey_fixed_values_garbage() throws SignatureException {
+        byte[] messageHash = HashUtil.keccak256(exampleMessage.getBytes());
+        byte[] s = Arrays.concatenate(new byte[]{1}, ByteUtil.bigIntegerToBytes(this.s, 64));
+        byte[] r = Arrays.concatenate(new byte[]{1}, ByteUtil.bigIntegerToBytes(this.r, 64));
+        ECDSASignature signature = ECDSASignature.fromComponents(r, s, v);
+        ECKey key = this.getSecp256k1().signatureToKey(messageHash, signature);
+        assertNull(key);
+    }
+
+    @Test
+    public void testRecoverFromSignature_fixed_values_garbage() throws SignatureException {
+        byte[] messageHash = HashUtil.keccak256(exampleMessage.getBytes());
+        byte[] s = Arrays.concatenate(new byte[]{1}, ByteUtil.bigIntegerToBytes(this.s, 64));
+        byte[] r = Arrays.concatenate(new byte[]{1}, ByteUtil.bigIntegerToBytes(this.r, 64));
+        ECDSASignature signature = ECDSASignature.fromComponents(r, s, v);
+        ECKey key = this.getSecp256k1().recoverFromSignature(v, signature, messageHash, true);
+        assertNull(key);
+    }
+
     @Test
     public void testRecoverFromSignature_invalid_params() {
 
         BigInteger validBigInt = BigInteger.valueOf(0l);
         byte[] validBytes = validBigInt.toByteArray();
-        BigInteger invalidBigInt = BigInteger.valueOf(-1l);
+        BigInteger invalidBigInt = new BigInteger(new byte[]{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0});
         byte[] invalidNullBytes = null;
         boolean validBoolean = false;
         int validRecId = 0;

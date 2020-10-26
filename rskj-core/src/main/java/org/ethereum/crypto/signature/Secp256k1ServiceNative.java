@@ -44,6 +44,12 @@ public class Secp256k1ServiceNative extends Secp256k1ServiceBC {
         check(sig.getR().signum() >= 0, "r must be positive");
         check(sig.getS().signum() >= 0, "s must be positive");
         check(messageHash != null, "messageHash must not be null");
+
+        // to be compatible with BC implementation. and to prevent garbage in signature truncation when concatenate.
+        if (!sig.validateComponentsWithoutV()) {
+            return null;
+        }
+
         byte[] pbKey;
         try {
             byte[] sigBytes = concatenate(sig);
@@ -65,7 +71,7 @@ public class Secp256k1ServiceNative extends Secp256k1ServiceBC {
 
     /**
      * Returns a (r.length + s.length) bytes array long
-     *
+     * <p>
      * Note: we take 32 bytes from "r" and 32 bytes from "s".
      *
      * @param sig {r,s}
@@ -84,6 +90,7 @@ public class Secp256k1ServiceNative extends Secp256k1ServiceBC {
 
     /**
      * Get the length of valid data to copy from the array, with a max of 32 bytes.
+     *
      * @param rs
      * @return
      */
