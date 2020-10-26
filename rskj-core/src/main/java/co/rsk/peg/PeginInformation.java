@@ -11,6 +11,8 @@ import co.rsk.peg.pegininstructions.PeginInstructionsException;
 import co.rsk.peg.pegininstructions.PeginInstructionsProvider;
 import co.rsk.peg.pegininstructions.PeginInstructionsVersion1;
 import java.util.Optional;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,6 +22,7 @@ public class PeginInformation {
 
     private final BtcLockSenderProvider btcLockSenderProvider;
     private final PeginInstructionsProvider peginInstructionsProvider;
+    private final ActivationConfig.ForBlock activations;
 
     private int protocolVersion;
     private RskAddress rskDestinationAddress;
@@ -29,9 +32,11 @@ public class PeginInformation {
 
     public PeginInformation(
         BtcLockSenderProvider btcLockSenderProvider,
-        PeginInstructionsProvider peginInstructionsProvider) {
+        PeginInstructionsProvider peginInstructionsProvider,
+        ActivationConfig.ForBlock activations) {
         this.btcLockSenderProvider = btcLockSenderProvider;
         this.peginInstructionsProvider = peginInstructionsProvider;
+        this.activations = activations;
         this.protocolVersion = -1; // Set an invalid value by default
         this.senderBtcAddressType = TxSenderAddressType.UNKNOWN;
     }
@@ -66,11 +71,14 @@ public class PeginInformation {
             parseFromBtcLockSender(btcLockSender);
         }
 
-        // If peg-in instructions were provided then override the info obtained from BtcLockSender
-        Optional<PeginInstructions> peginInstructionsOptional = peginInstructionsProvider.buildPeginInstructions(btcTx);
-        if (peginInstructionsOptional.isPresent()) {
-            PeginInstructions peginInstructions = peginInstructionsOptional.get();
-            parseFromPeginInstructions(peginInstructions);
+        // If HF is active and peg-in instructions were provided then override the info obtained from BtcLockSender
+        Optional<PeginInstructions> peginInstructionsOptional = Optional.empty();
+        if (activations.isActive(ConsensusRule.RSKIP170)) {
+            peginInstructionsOptional = peginInstructionsProvider.buildPeginInstructions(btcTx);
+            if (peginInstructionsOptional.isPresent()) {
+                PeginInstructions peginInstructions = peginInstructionsOptional.get();
+                parseFromPeginInstructions(peginInstructions);
+            }
         }
 
         // If BtcLockSender could not be parsed and peg-in instructions were not provided, then this tx can't be processed
