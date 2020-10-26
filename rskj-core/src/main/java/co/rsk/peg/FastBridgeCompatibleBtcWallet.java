@@ -12,8 +12,11 @@ import javax.annotation.Nullable;
 public class FastBridgeCompatibleBtcWallet extends BridgeBtcWallet {
     private final BridgeStorageProvider bridgeStorageProvider;
 
-    public FastBridgeCompatibleBtcWallet(Context btcContext, List<Federation> federations,
-        BridgeStorageProvider bridgeStorageProvider) {
+    public FastBridgeCompatibleBtcWallet(
+        Context btcContext,
+        List<Federation> federations,
+        BridgeStorageProvider bridgeStorageProvider
+    ) {
         super(btcContext, federations);
         this.bridgeStorageProvider = bridgeStorageProvider;
     }
@@ -25,18 +28,24 @@ public class FastBridgeCompatibleBtcWallet extends BridgeBtcWallet {
             this.bridgeStorageProvider.getFastBridgeFederationInformation(payToScriptHash);
 
         if (fastBridgeFederationInformation.isPresent()) {
-            Optional<Federation> destinationFederation = getDestinationFederation(payToScriptHash);
+            FastBridgeFederationInformation fastBridgeFederationInformationInstance =
+                fastBridgeFederationInformation.get();
+
+            Optional<Federation> destinationFederation = getDestinationFederation(
+                fastBridgeFederationInformationInstance.getFederationScriptHash()
+            );
 
             if (!destinationFederation.isPresent()) {
                 return null;
             }
 
-            Script fedRedeemScript = destinationFederation.get().getRedeemScript();
+            Federation destinationFederationInstance = destinationFederation.get();
+            Script fedRedeemScript = destinationFederationInstance.getRedeemScript();
             Script fastBridgeRedeemScript = RedeemScriptParser
                 .createMultiSigFastBridgeRedeemScript(fedRedeemScript,
-                    fastBridgeFederationInformation.get().getDerivationHash());
+                    fastBridgeFederationInformationInstance.getDerivationHash());
 
-            return RedeemData.of(destinationFederation.get().getBtcPublicKeys(), fastBridgeRedeemScript);
+            return RedeemData.of(destinationFederationInstance.getBtcPublicKeys(), fastBridgeRedeemScript);
         }
 
         return super.findRedeemDataFromScriptHash(payToScriptHash);
