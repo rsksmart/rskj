@@ -60,7 +60,7 @@ public class AsyncNodeBlockProcessorUnclesTest {
         processor.stopAndWait(WAIT_TIME);
     }
 
-    @Test
+    @Test(timeout = WAIT_TIME)
     public void addBlockWithoutUncles() throws InterruptedException {
         Block genesis = blockChain.getBestBlock();
 
@@ -73,7 +73,7 @@ public class AsyncNodeBlockProcessorUnclesTest {
         Assert.assertArrayEquals(block1.getHash().getBytes(), blockChain.getBestBlockHash());
     }
 
-    @Test
+    @Test(timeout = WAIT_TIME)
     public void addBlockWithTwoKnownUncles() throws InterruptedException {
         org.ethereum.db.BlockStore blockStore = blockChainBuilder.getBlockStore();
 
@@ -106,7 +106,7 @@ public class AsyncNodeBlockProcessorUnclesTest {
         Assert.assertTrue(sender.getGetBlockMessages().isEmpty());
     }
 
-    @Test
+    @Test(timeout = WAIT_TIME)
     public void addBlockWithTwoUnknownUncles() throws InterruptedException {
         org.ethereum.db.BlockStore blockStore = blockChainBuilder.getBlockStore();
 

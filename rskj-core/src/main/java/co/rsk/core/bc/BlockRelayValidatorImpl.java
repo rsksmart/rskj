@@ -27,6 +27,11 @@ import javax.annotation.Nonnull;
 
 /**
  * Validates a block if it is good enough to be propagated.
+ *
+ * The validation includes:
+ * - validation of the header data of the block
+ * - validation of the block
+ * - validation of the header data of the parent block
  */
 public class BlockRelayValidatorImpl implements BlockValidator {
 
@@ -49,11 +54,7 @@ public class BlockRelayValidatorImpl implements BlockValidator {
     }
 
     /**
-     * Validate a block.
-     * The validation includes:
-     * - validation of the header data of the block
-     * - validation of the block
-     * - validation of the header data of the parent block
+     * Checks if a block is valid.
      *
      * @param block Block to validate
      * @return true if the block is valid, otherwise - false.

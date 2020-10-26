@@ -529,8 +529,7 @@ public class RskContext implements NodeBootstrapper {
                     getBlockNodeInformation(),
                     getBlockSyncService(),
                     getSyncConfiguration(),
-                    getBlockRelayValidator(),
-                    null
+                    getBlockRelayValidator()
             );
         }
 

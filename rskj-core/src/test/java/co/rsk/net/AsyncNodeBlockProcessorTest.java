@@ -41,8 +41,8 @@ import static org.mockito.Mockito.*;
 
 public class AsyncNodeBlockProcessorTest {
 
-    private static final long WAIT_TIME = Long.MAX_VALUE;
-    
+    private static final long WAIT_TIME = 60_000L;
+
     @Test
     public void processBlockSavingInStore() {
         final NetBlockStore store = new NetBlockStore();
@@ -57,7 +57,7 @@ public class AsyncNodeBlockProcessorTest {
         final SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         final TestSystemProperties config = new TestSystemProperties();
         final BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
-        final AsyncNodeBlockProcessor processor = new AsyncNodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration, makeBlockValidator(), null);
+        final AsyncNodeBlockProcessor processor = new AsyncNodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration, makeBlockValidator());
 
         processor.processBlock(sender, orphan);
 
@@ -79,7 +79,7 @@ public class AsyncNodeBlockProcessorTest {
         final SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         final TestSystemProperties config = new TestSystemProperties();
         final BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
-        final AsyncNodeBlockProcessor processor = new AsyncNodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration, makeBlockValidator(), null);
+        final AsyncNodeBlockProcessor processor = new AsyncNodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration, makeBlockValidator());
 
         processor.processBlock(sender, orphan);
 
@@ -100,7 +100,7 @@ public class AsyncNodeBlockProcessorTest {
 
         final TestSystemProperties config = new TestSystemProperties();
         final BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
-        final AsyncNodeBlockProcessor processor = new AsyncNodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration, makeBlockValidator(), null);
+        final AsyncNodeBlockProcessor processor = new AsyncNodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration, makeBlockValidator());
 
         Assert.assertTrue(processor.isAdvancedBlock(advancedBlockNumber));
         Assert.assertFalse(processor.isAdvancedBlock(advancedBlockNumber - 1));
@@ -119,13 +119,13 @@ public class AsyncNodeBlockProcessorTest {
         final long blockNumberThatCanBeIgnored = blockchain.getBestBlock().getNumber() - 1 - uncleGenerationLimit;
 
         final BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
-        final AsyncNodeBlockProcessor processor = new AsyncNodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration, makeBlockValidator(), null);
+        final AsyncNodeBlockProcessor processor = new AsyncNodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration, makeBlockValidator());
 
         Assert.assertTrue(processor.canBeIgnoredForUnclesRewards(blockNumberThatCanBeIgnored));
         Assert.assertFalse(processor.canBeIgnoredForUnclesRewards(blockNumberThatCanBeIgnored + 1));
     }
 
-    @Test
+    @Test(timeout = WAIT_TIME)
     public void processBlockAddingToBlockchain() throws InterruptedException {
         final Blockchain blockchain = new BlockChainBuilder().ofSize(10);
 
@@ -161,7 +161,7 @@ public class AsyncNodeBlockProcessorTest {
         processor.stopAndWait(WAIT_TIME);
     }
 
-    @Test
+    @Test(timeout = WAIT_TIME)
     public void processTenBlocksAddingToBlockchain() throws InterruptedException {
         final Blockchain blockchain = new BlockChainBuilder().ofSize(0);
         final NetBlockStore store = new NetBlockStore();
@@ -202,7 +202,7 @@ public class AsyncNodeBlockProcessorTest {
         processor.stopAndWait(WAIT_TIME);
     }
 
-    @Test
+    @Test(timeout = WAIT_TIME)
     public void processTwoBlockListsAddingToBlockchain() throws InterruptedException {
         final Blockchain blockchain = new BlockChainBuilder().ofSize(0);
         final NetBlockStore store = new NetBlockStore();
@@ -250,7 +250,7 @@ public class AsyncNodeBlockProcessorTest {
         processor.stopAndWait(WAIT_TIME);
     }
 
-    @Test
+    @Test(timeout = WAIT_TIME)
     public void processTwoBlockListsAddingToBlockchainWithFork() throws InterruptedException {
         final NetBlockStore store = new NetBlockStore();
         final Blockchain blockchain = new BlockChainBuilder().ofSize(0);
@@ -308,12 +308,12 @@ public class AsyncNodeBlockProcessorTest {
         final SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         final TestSystemProperties config = new TestSystemProperties();
         final BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
-        final AsyncNodeBlockProcessor processor = new AsyncNodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration, makeBlockValidator(), null);
+        final AsyncNodeBlockProcessor processor = new AsyncNodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration, makeBlockValidator());
 
         Assert.assertFalse(processor.hasBetterBlockToSync());
     }
 
-    @Test
+    @Test(timeout = WAIT_TIME)
     public void processTenBlocksGenesisAtLastAddingToBlockchain() throws InterruptedException {
         final NetBlockStore store = new NetBlockStore();
         final Blockchain blockchain = new BlockChainBuilder().ofSize(0);
@@ -351,7 +351,7 @@ public class AsyncNodeBlockProcessorTest {
         processor.stopAndWait(WAIT_TIME);
     }
 
-    @Test
+    @Test(timeout = WAIT_TIME)
     public void processTenBlocksInverseOrderAddingToBlockchain() throws InterruptedException {
         final Blockchain blockchain = new BlockChainBuilder().ofSize(0);
         final NetBlockStore store = new NetBlockStore();
@@ -391,7 +391,7 @@ public class AsyncNodeBlockProcessorTest {
         processor.stopAndWait(WAIT_TIME);
     }
 
-    @Test
+    @Test(timeout = WAIT_TIME)
     public void processTenBlocksWithHoleAddingToBlockchain() throws InterruptedException {
         final Blockchain blockchain = new BlockChainBuilder().ofSize(0);
         final NetBlockStore store = new NetBlockStore();
@@ -437,7 +437,7 @@ public class AsyncNodeBlockProcessorTest {
         processor.stopAndWait(WAIT_TIME);
     }
 
-    @Test
+    @Test(timeout = WAIT_TIME)
     public void processBlockAddingToBlockchainUsingItsParent() throws InterruptedException {
         final NetBlockStore store = new NetBlockStore();
         final BlockGenerator blockGenerator = new BlockGenerator();
@@ -493,7 +493,7 @@ public class AsyncNodeBlockProcessorTest {
         final SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         final TestSystemProperties config = new TestSystemProperties();
         final BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
-        final AsyncNodeBlockProcessor processor = new AsyncNodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration, makeBlockValidator(), null);
+        final AsyncNodeBlockProcessor processor = new AsyncNodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration, makeBlockValidator());
         final SimplePeer sender = new SimplePeer();
 
         final BlockGenerator blockGenerator = new BlockGenerator();
@@ -530,7 +530,7 @@ public class AsyncNodeBlockProcessorTest {
         final SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         final TestSystemProperties config = new TestSystemProperties();
         final BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
-        final AsyncNodeBlockProcessor processor = new AsyncNodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration, makeBlockValidator(), null);
+        final AsyncNodeBlockProcessor processor = new AsyncNodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration, makeBlockValidator());
 
         final SimplePeer sender = new SimplePeer();
 
@@ -558,7 +558,7 @@ public class AsyncNodeBlockProcessorTest {
         final SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         final TestSystemProperties config = new TestSystemProperties();
         final BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
-        final AsyncNodeBlockProcessor processor = new AsyncNodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration, makeBlockValidator(), null);
+        final AsyncNodeBlockProcessor processor = new AsyncNodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration, makeBlockValidator());
 
         final SimplePeer sender = new SimplePeer();
 
@@ -581,7 +581,7 @@ public class AsyncNodeBlockProcessorTest {
         final SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         final TestSystemProperties config = new TestSystemProperties();
         final BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
-        final AsyncNodeBlockProcessor processor = new AsyncNodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration, makeBlockValidator(), null);
+        final AsyncNodeBlockProcessor processor = new AsyncNodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration, makeBlockValidator());
 
         final SimplePeer sender = new SimplePeer();
 
@@ -612,7 +612,7 @@ public class AsyncNodeBlockProcessorTest {
         final SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         final TestSystemProperties config = new TestSystemProperties();
         final BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
-        final AsyncNodeBlockProcessor processor = new AsyncNodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration, makeBlockValidator(), null);
+        final AsyncNodeBlockProcessor processor = new AsyncNodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration, makeBlockValidator());
 
         final SimplePeer sender = new SimplePeer();
 
@@ -644,7 +644,7 @@ public class AsyncNodeBlockProcessorTest {
         final SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         final TestSystemProperties config = new TestSystemProperties();
         final BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
-        final AsyncNodeBlockProcessor processor = new AsyncNodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration, makeBlockValidator(), null);
+        final AsyncNodeBlockProcessor processor = new AsyncNodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration, makeBlockValidator());
 
         final SimplePeer sender = new SimplePeer();
 
@@ -668,7 +668,7 @@ public class AsyncNodeBlockProcessorTest {
         final SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         final TestSystemProperties config = new TestSystemProperties();
         final BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
-        final AsyncNodeBlockProcessor processor = new AsyncNodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration, makeBlockValidator(), null);
+        final AsyncNodeBlockProcessor processor = new AsyncNodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration, makeBlockValidator());
 
         final SimplePeer sender = new SimplePeer();
 
@@ -703,7 +703,7 @@ public class AsyncNodeBlockProcessorTest {
         final SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         final TestSystemProperties config = new TestSystemProperties();
         final BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
-        final AsyncNodeBlockProcessor processor = new AsyncNodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration, makeBlockValidator(), null);
+        final AsyncNodeBlockProcessor processor = new AsyncNodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration, makeBlockValidator());
 
         final SimplePeer sender = new SimplePeer();
 
@@ -735,7 +735,7 @@ public class AsyncNodeBlockProcessorTest {
         final SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         final TestSystemProperties config = new TestSystemProperties();
         final BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
-        final AsyncNodeBlockProcessor processor = new AsyncNodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration, makeBlockValidator(), null);
+        final AsyncNodeBlockProcessor processor = new AsyncNodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration, makeBlockValidator());
 
         final SimplePeer sender = new SimplePeer();
 
@@ -765,7 +765,7 @@ public class AsyncNodeBlockProcessorTest {
         final SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         final TestSystemProperties config = new TestSystemProperties();
         final BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
-        final AsyncNodeBlockProcessor processor = new AsyncNodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration, makeBlockValidator(), null);
+        final AsyncNodeBlockProcessor processor = new AsyncNodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration, makeBlockValidator());
 
         final SimplePeer sender = new SimplePeer();
 
@@ -789,7 +789,7 @@ public class AsyncNodeBlockProcessorTest {
         final SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         final TestSystemProperties config = new TestSystemProperties();
         final BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
-        final AsyncNodeBlockProcessor processor = new AsyncNodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration, makeBlockValidator(), null);
+        final AsyncNodeBlockProcessor processor = new AsyncNodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration, makeBlockValidator());
 
         final SimplePeer sender = new SimplePeer();
 
@@ -820,7 +820,7 @@ public class AsyncNodeBlockProcessorTest {
         final SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         final TestSystemProperties config = new TestSystemProperties();
         final BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
-        final AsyncNodeBlockProcessor processor = new AsyncNodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration, makeBlockValidator(), null);
+        final AsyncNodeBlockProcessor processor = new AsyncNodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration, makeBlockValidator());
 
         final SimplePeer sender = new SimplePeer();
 
@@ -839,7 +839,7 @@ public class AsyncNodeBlockProcessorTest {
         final SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         final TestSystemProperties config = new TestSystemProperties();
         final BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
-        final AsyncNodeBlockProcessor processor = new AsyncNodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration, makeBlockValidator(), null);
+        final AsyncNodeBlockProcessor processor = new AsyncNodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration, makeBlockValidator());
 
         final SimplePeer sender = new SimplePeer();
 
@@ -872,7 +872,7 @@ public class AsyncNodeBlockProcessorTest {
         final SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         final TestSystemProperties config = new TestSystemProperties();
         final BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
-        final AsyncNodeBlockProcessor processor = new AsyncNodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration, makeBlockValidator(), null);
+        final AsyncNodeBlockProcessor processor = new AsyncNodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration, makeBlockValidator());
 
         final SimplePeer sender = new SimplePeer();
 
@@ -891,7 +891,7 @@ public class AsyncNodeBlockProcessorTest {
         final SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         final TestSystemProperties config = new TestSystemProperties();
         final BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
-        final AsyncNodeBlockProcessor processor = new AsyncNodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration, makeBlockValidator(), null);
+        final AsyncNodeBlockProcessor processor = new AsyncNodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration, makeBlockValidator());
 
         final SimplePeer sender = new SimplePeer();
 
@@ -927,7 +927,7 @@ public class AsyncNodeBlockProcessorTest {
         final SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         final TestSystemProperties config = new TestSystemProperties();
         final BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
-        final AsyncNodeBlockProcessor processor = new AsyncNodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration, makeBlockValidator(), null);
+        final AsyncNodeBlockProcessor processor = new AsyncNodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration, makeBlockValidator());
 
         final SimplePeer sender = new SimplePeer();
 
@@ -965,7 +965,7 @@ public class AsyncNodeBlockProcessorTest {
         final SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         final TestSystemProperties config = new TestSystemProperties();
         final BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
-        final AsyncNodeBlockProcessor processor = new AsyncNodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration, makeBlockValidator(), null);
+        final AsyncNodeBlockProcessor processor = new AsyncNodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration, makeBlockValidator());
 
         final SimplePeer sender = new SimplePeer();
 
@@ -1016,7 +1016,7 @@ public class AsyncNodeBlockProcessorTest {
         final SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         final TestSystemProperties config = new TestSystemProperties();
         final BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
-        final AsyncNodeBlockProcessor processor = new AsyncNodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration, makeBlockValidator(), null);
+        final AsyncNodeBlockProcessor processor = new AsyncNodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration, makeBlockValidator());
 
         final int size = syncConfiguration.getChunkSize() + 1;
         processor.processBlockHeadersRequest(sender, 1, block.getHash().getBytes(), size);

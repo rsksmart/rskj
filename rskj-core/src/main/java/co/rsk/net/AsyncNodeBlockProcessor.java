@@ -49,7 +49,7 @@ public class AsyncNodeBlockProcessor extends NodeBlockProcessor implements Inter
 
     private static final Logger logger = LoggerFactory.getLogger("asyncblockprocessor");
 
-    private final BlockingQueue<PeerBlockPair> blocksToProcess = new LinkedBlockingQueue<>();
+    private final BlockingQueue<BlockInfo> blocksToProcess = new LinkedBlockingQueue<>();
 
     private final BlockValidator blockRelayValidator;
 
@@ -67,31 +67,45 @@ public class AsyncNodeBlockProcessor extends NodeBlockProcessor implements Inter
         this.blockRelayValidator = blockRelayValidator;
     }
 
+    public AsyncNodeBlockProcessor(@Nonnull NetBlockStore store, @Nonnull Blockchain blockchain, @Nonnull BlockNodeInformation nodeInformation,
+                                   @Nonnull BlockSyncService blockSyncService, @Nonnull SyncConfiguration syncConfiguration,
+                                   @Nonnull BlockValidator blockRelayValidator) {
+        this(store, blockchain, nodeInformation, blockSyncService, syncConfiguration, blockRelayValidator, null);
+    }
+
     @Override
     public BlockProcessResult processBlock(@Nullable Peer sender, @Nonnull Block block) {
         final Instant start = Instant.now();
 
+        final long blockNumber = block.getNumber();
+        final String blockHash = block.getPrintableHash();
+        final String peer = sender != null ? sender.getPeerNodeID().toString() : "N/A";
+
+        if (store.hasBlock(block)) {
+            logger.trace("Ignored block with number {} and hash {} from {} as it's already in the queue", blockNumber, blockHash, peer);
+            return ignoredResult(start, blockHash, null);
+        }
+
         boolean looksGood = blockSyncService.preprocessBlock(block, sender, false);
         if (looksGood) {
             if (isValid(block)) {
-                boolean offer = blocksToProcess.offer(new PeerBlockPair(sender, block));
-                if (!offer) {
-                    logger.warn("Cannot add a block for processing into the queue");
+                boolean offer = blocksToProcess.offer(new BlockInfo(sender, block));
+                if (offer) {
+                    logger.trace("Added block with number {} and hash {} from {} to the queue", blockNumber, blockHash, peer);
+                } else {
+                    // This should not happen as the queue is unbounded
+                    logger.warn("Cannot add block for processing into the queue with number {} {} from {}", blockNumber, blockHash, peer);
                 }
 
-                return new BlockProcessResult(true, null, block.getPrintableHash(),
-                        Duration.between(start, Instant.now()));
+                return scheduledForProcessingResult(start, blockHash);
             }
 
-            logger.warn("Invalid block with number {} {} from {} ", block.getNumber(), block.getPrintableHash(),
-                    sender != null ? sender.getPeerNodeID().toString() : "N/A");
+            logger.warn("Invalid block with number {} {} from {} ", blockNumber, blockHash, peer);
             Map<Keccak256, ImportResult> result = Collections.singletonMap(block.getHash(), ImportResult.INVALID_BLOCK);
-            return new BlockProcessResult(false, result, block.getPrintableHash(),
-                    Duration.between(start, Instant.now()));
+            return ignoredResult(start, blockHash, result);
         }
 
-        return new BlockProcessResult(false, null, block.getPrintableHash(),
-                Duration.between(start, Instant.now()));
+        return ignoredResult(start, blockHash, null);
     }
 
     @Override
@@ -128,14 +142,17 @@ public class AsyncNodeBlockProcessor extends NodeBlockProcessor implements Inter
             Block block = null;
 
             try {
-                logger.trace("Get peer/block pair");
+                logger.trace("Awaiting block for processing from the queue...");
 
-                PeerBlockPair pair = blocksToProcess.take();
+                BlockInfo blockInfo = blocksToProcess.take();
 
-                sender = pair.peer;
-                block = pair.block;
+                sender = blockInfo.peer;
+                block = blockInfo.block;
 
-                logger.trace("Start block processing");
+                if (logger.isTraceEnabled()) {
+                    logger.trace("Start block processing with number {} and hash {} from {}", block.getNumber(), block.getPrintableHash(), sender);
+                }
+
                 BlockProcessResult blockProcessResult = blockSyncService.processBlock(block, sender, false);
                 logger.trace("Finished block processing");
 
@@ -156,6 +173,14 @@ public class AsyncNodeBlockProcessor extends NodeBlockProcessor implements Inter
         return blockRelayValidator.isValid(block);
     }
 
+    private static BlockProcessResult scheduledForProcessingResult(@Nonnull Instant start, @Nonnull String blockHash) {
+        return new BlockProcessResult(true, null, blockHash, Duration.between(start, Instant.now()));
+    }
+
+    private static BlockProcessResult ignoredResult(@Nonnull Instant start, @Nonnull String blockHash, @Nullable Map<Keccak256, ImportResult> result) {
+        return new BlockProcessResult(false, result, blockHash, Duration.between(start, Instant.now()));
+    }
+
     public interface Listener {
 
         /**
@@ -169,11 +194,11 @@ public class AsyncNodeBlockProcessor extends NodeBlockProcessor implements Inter
 
     }
 
-    private static class PeerBlockPair {
+    private static class BlockInfo {
         private final Peer peer;
         private final Block block;
 
-        PeerBlockPair(@Nullable Peer peer, @Nonnull Block block) {
+        BlockInfo(@Nullable Peer peer, @Nonnull Block block) {
             this.peer = peer;
             this.block = block;
         }
