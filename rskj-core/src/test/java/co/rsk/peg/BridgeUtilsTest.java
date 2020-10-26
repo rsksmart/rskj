@@ -922,7 +922,7 @@ public class BridgeUtilsTest {
         Wallet wallet = BridgeUtils.getFederationSpendWallet(mockedBtcContext, federation, mockedUtxos, isFastBridgeCompatible, null);
 
         if (isFastBridgeCompatible) {
-            Assert.assertEquals(FastBridgeCompatibleBtcWalletTest.class, wallet.getClass());
+            Assert.assertEquals(FastBridgeCompatibleBtcWallet.class, wallet.getClass());
         } else {
             Assert.assertEquals(BridgeBtcWallet.class, wallet.getClass());
         }
@@ -949,7 +949,7 @@ public class BridgeUtilsTest {
         Wallet wallet = BridgeUtils.getFederationNoSpendWallet(mockedBtcContext, federation, isFastBridgeCompatible, null);
 
         if (isFastBridgeCompatible) {
-            Assert.assertEquals(FastBridgeCompatibleBtcWalletTest.class, wallet.getClass());
+            Assert.assertEquals(FastBridgeCompatibleBtcWallet.class, wallet.getClass());
         } else {
             Assert.assertEquals(BridgeBtcWallet.class, wallet.getClass());
         }
