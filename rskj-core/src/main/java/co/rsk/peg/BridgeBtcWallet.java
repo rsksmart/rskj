@@ -18,27 +18,32 @@
 
 package co.rsk.peg;
 
-import co.rsk.bitcoinj.core.*;
+import co.rsk.bitcoinj.core.Context;
 import co.rsk.bitcoinj.wallet.RedeemData;
 import co.rsk.bitcoinj.wallet.Wallet;
-
-import javax.annotation.Nullable;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import javax.annotation.Nullable;
 
 /**
  * @author ajlopez
  * @author Oscar Guindzberg
  */
 public class BridgeBtcWallet extends Wallet {
-    private List<Federation> federations;
-    private Context btcContext;
+    private final List<Federation> federations;
+    private final Context btcContext;
 
     public BridgeBtcWallet(Context btcContext, List<Federation> federations) {
         super(btcContext);
         this.federations = federations;
         this.btcContext = btcContext;
+    }
+
+    protected Optional<Federation> getDestinationFederation(byte[] payToScriptHash) {
+        Context.propagate(this.btcContext);
+        return federations.stream().filter(federation ->
+            Arrays.equals(federation.getP2SHScript().getPubKeyHash(), payToScriptHash)).findFirst();
     }
 
     /*
@@ -47,11 +52,9 @@ public class BridgeBtcWallet extends Wallet {
     @Nullable
     @Override
     public RedeemData findRedeemDataFromScriptHash(byte[] payToScriptHash) {
-        Context.propagate(this.btcContext);
-        Optional<Federation> destinationFederation = federations.stream().filter(federation -> Arrays.equals(federation.getP2SHScript().getPubKeyHash(), payToScriptHash)).findFirst();
-        if (!destinationFederation.isPresent()) {
-            return null;
-        }
-        return RedeemData.of(destinationFederation.get().getBtcPublicKeys(), destinationFederation.get().getRedeemScript());
+        Optional<Federation> destinationFederation = getDestinationFederation(payToScriptHash);
+
+        return destinationFederation.map(federation -> RedeemData
+            .of(federation.getBtcPublicKeys(), federation.getRedeemScript())).orElse(null);
     }
 }
