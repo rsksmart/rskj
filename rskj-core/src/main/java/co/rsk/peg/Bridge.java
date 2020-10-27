@@ -1067,18 +1067,18 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         return bridgeSupport.hasBtcBlockCoinbaseTransactionInformation(blockHash);
     }
 
-    public int registerBtcTransfer(Object[] args) throws BlockStoreException, RegisterBtcTransferException, IOException, BridgeIllegalArgumentException
-    {
+    public int registerBtcTransfer(Object[] args)
+        throws RegisterBtcTransferException, BlockStoreException, IOException, BridgeIllegalArgumentException {
         logger.trace("registerBtcTransfer");
 
         byte[] btcTxSerialized = (byte[]) args[0];
         int height = ((BigInteger) args[1]).intValue();
         byte[] pmtSerialized = (byte[]) args[2];
         Sha256Hash derivationArgumentsHash = Sha256Hash.wrap((byte[]) args[3]);
-        Address userRefundAddress = Address.fromBase58(bridgeConstants.getBtcParams(), (String) args[4]);
+        Address userRefundAddress = new Address(bridgeConstants.getBtcParams(), (byte[]) args[4]);
         RskAddress lbcAddress = new RskAddress((String) args[5]);
-        Address lpbtcAddress = Address.fromBase58(bridgeConstants.getBtcParams(), (String) args[6]);
-        boolean executionStatus = ((Boolean) args[7]).booleanValue();
+        Address lpBtcAddress = new Address(bridgeConstants.getBtcParams(), (byte[]) args[6]);
+        boolean executionStatus = (Boolean) args[7];
 
         return bridgeSupport.registerBtcTransfer(
             rskTx,
@@ -1088,7 +1088,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             derivationArgumentsHash,
             userRefundAddress,
             lbcAddress,
-            lpbtcAddress,
+            lpBtcAddress,
             executionStatus);
     }
 
