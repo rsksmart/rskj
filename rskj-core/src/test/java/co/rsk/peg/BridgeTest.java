@@ -2,6 +2,7 @@ package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.Address;
+import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.bitcoinj.core.Sha256Hash;
@@ -345,18 +346,17 @@ public class BridgeTest {
         Bridge bridge = getBridgeInstance(bridgeSupportMock);
 
         byte[] value = Sha256Hash.ZERO_HASH.getBytes();
+        byte[] pubKeyHash = new BtcECKey().getPubKeyHash();
 
         byte[] data = BridgeMethods.REGISTER_BTC_TRANSFER.getFunction().encode(
-                new Object[]{
-                    value,
-                    1,
-                    value,
-                    value,
-                    (String) "n3PLxDiwWqa5uH7fSbHCxS6VAjD9Y7Rwkj",
-                    (String)"2e12a7e43926ccd228a2587896e53c3d1a51dacb",
-                        (String)"n3PLxDiwWqa5uH7fSbHCxS6VAjD9Y7Rwkj",
-                    true
-                }
+            value,
+            1,
+            value,
+            value,
+            pubKeyHash,
+            "2e12a7e43926ccd228a2587896e53c3d1a51dacb",
+            pubKeyHash,
+            true
         );
 
         //Assert
@@ -364,7 +364,9 @@ public class BridgeTest {
     }
 
     @Test
-    public void registerBtcTransfer_after_RSKIP176_activation() throws Exception {
+    public void registerBtcTransfer_after_RSKIP176_activation()
+        throws RegisterBtcTransferException, BlockStoreException, IOException, VMException {
+        NetworkParameters networkParameters = constants.getBridgeConstants().getBtcParams();
         doReturn(true).when(activationConfig).isActive(eq(RSKIP176), anyLong());
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
@@ -384,17 +386,26 @@ public class BridgeTest {
 
         byte[] value = Sha256Hash.ZERO_HASH.getBytes();
 
+        BtcECKey btcECKeyRefund = new BtcECKey();
+        Address refundBtcAddress = btcECKeyRefund.toAddress(networkParameters);
+        byte[] pubKeyHashRefund = btcECKeyRefund.getPubKeyHash();
+
+        BtcECKey btcECKeyLp = new BtcECKey();
+        Address lpBtcAddress = btcECKeyLp.toAddress(networkParameters);
+        byte[] pubKeyHashLp = btcECKeyLp.getPubKeyHash();
+
+        ECKey ecKey = new ECKey();
+        RskAddress rskAddress = new RskAddress(ecKey.getAddress());
+
         byte[] data = Bridge.REGISTER_BTC_TRANSFER.encode(
-                new Object[]{
-                        value,
-                        1,
-                        value,
-                        value,
-                        "n3PLxDiwWqa5uH7fSbHCxS6VAjD9Y7Rwkj",
-                        "2e12a7e43926ccd228a2587896e53c3d1a51dacb",
-                        "n3PLxDiwWqa5uH7fSbHCxS6VAjD9Y7Rwkj",
-                        true
-                }
+            value,
+            1,
+            value,
+            value,
+            pubKeyHashRefund,
+            rskAddress.toString(),
+            pubKeyHashLp,
+            true
         );
 
         byte[] result = bridge.execute(data);
@@ -407,9 +418,9 @@ public class BridgeTest {
                 eq(1),
                 eq(value),
                 eq(Sha256Hash.wrap(value)),
-                eq(Address.fromBase58(constants.getBridgeConstants().getBtcParams(), "n3PLxDiwWqa5uH7fSbHCxS6VAjD9Y7Rwkj")),
-                eq(new RskAddress("2e12a7e43926ccd228a2587896e53c3d1a51dacb")),
-                eq(Address.fromBase58(constants.getBridgeConstants().getBtcParams(), "n3PLxDiwWqa5uH7fSbHCxS6VAjD9Y7Rwkj")),
+                eq(refundBtcAddress),
+                eq(rskAddress),
+                eq(lpBtcAddress),
                 eq(true)
         );
     }
