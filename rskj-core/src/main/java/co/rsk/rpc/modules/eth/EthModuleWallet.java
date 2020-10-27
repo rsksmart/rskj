@@ -18,9 +18,13 @@
 
 package co.rsk.rpc.modules.eth;
 
+import com.fasterxml.jackson.databind.JsonNode;
+
 public interface EthModuleWallet {
 
     String[] accounts();
 
     String sign(String addr, String data);
+
+    String signTypedData(String addr, JsonNode data);
 }

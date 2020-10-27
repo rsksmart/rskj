@@ -1,0 +1,27 @@
+{
+  "types":{
+    "EIP712Domain":[
+      {"name":"name","type":"string"},
+      {"name":"version","type":"string"},
+      {"name":"chainId","type":"uint256"},
+      {"name":"verifyingContract","type":"address"}
+    ],
+    "Person":[
+      {"name":"name","type":"string"},
+      {"name":"mother","type":"Person"},
+      {"name":"father","type":"Person"}
+    ]
+  },
+  "domain":{
+    "name":"Family Tree",
+    "version":"1",
+    "chainId":1,
+    "verifyingContract":"0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC"
+  },
+  "primaryType":"Person",
+  "message":{
+    "name":"Jon",
+    "mother":{"name":"Lyanna","father":{"name":"Rickard"}},
+    "father":{"name":"Rhaegar","father":{"name":"Aeris II"}}
+  }
+}

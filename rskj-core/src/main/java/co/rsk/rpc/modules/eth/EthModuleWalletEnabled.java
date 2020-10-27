@@ -20,6 +20,10 @@ package co.rsk.rpc.modules.eth;
 
 import co.rsk.core.RskAddress;
 import co.rsk.core.Wallet;
+import co.rsk.rpc.modules.eth.eip712.EIP712Utils;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.ethereum.core.Account;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
@@ -40,6 +44,8 @@ public class EthModuleWalletEnabled implements EthModuleWallet {
 
     private final Wallet wallet;
 
+    private final EIP712Utils utils = new EIP712Utils();
+
     public EthModuleWalletEnabled(Wallet wallet) {
         this.wallet = wallet;
     }
@@ -56,6 +62,21 @@ public class EthModuleWalletEnabled implements EthModuleWallet {
             return s = this.sign(data, account.getEcKey());
         } finally {
             LOGGER.debug("eth_sign({}, {}): {}", addr, data, s);
+        }
+    }
+
+    @Override
+    public String signTypedData(String addr, JsonNode data) {
+        String s = null;
+        try {
+            Account account = this.wallet.getAccount(new RskAddress(addr));
+            if (account == null) {
+                throw invalidParamError("Account not found");
+            }
+
+            return s = this.signTyped(data, account.getEcKey());
+        } finally {
+            LOGGER.debug("eth_signTypedData({}, {}): {}", addr, prettyPrintJson(data), s);
         }
     }
 
@@ -81,9 +102,29 @@ public class EthModuleWalletEnabled implements EthModuleWallet {
         ECDSASignature signature = ECDSASignature.fromSignature(ecKey.sign(messageHash));
 
         return TypeConverter.toJsonHex(ByteUtil.merge(
-                ByteUtil.bigIntegerToBytes(signature.getR()),
-                ByteUtil.bigIntegerToBytes(signature.getS()),
+                ByteUtil.bigIntegerToBytes(signature.getR(), 32),
+                ByteUtil.bigIntegerToBytes(signature.getS(), 32),
                 new byte[] {signature.getV()}
         ));
+    }
+
+    private String signTyped(JsonNode typedData, ECKey ecKey) {
+        byte[] toSign = utils.eip712EncodeV4(typedData);
+        ECDSASignature signature = ECDSASignature.fromSignature(ecKey.sign(toSign));
+
+        return  TypeConverter.toJsonHex(ByteUtil.merge(
+                ByteUtil.bigIntegerToBytes(signature.getR(),32),
+                ByteUtil.bigIntegerToBytes(signature.getS(),32),
+                new byte[] {signature.getV()}
+        ));
+
+    }
+
+    private String prettyPrintJson(JsonNode node) {
+        try {
+            return new ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(node);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

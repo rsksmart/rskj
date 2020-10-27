@@ -30,6 +30,7 @@ import co.rsk.peg.BridgeSupport;
 import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.rpc.ExecutionBlockRetriever;
 import co.rsk.trie.TrieStoreImpl;
+import com.fasterxml.jackson.databind.JsonNode;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.Repository;
@@ -155,6 +156,11 @@ public class EthModule
     @Override
     public String sign(String addr, String data) {
         return ethModuleWallet.sign(addr, data);
+    }
+
+    @Override
+    public String signTypedData(String addr, JsonNode data) {
+        return ethModuleWallet.signTypedData(addr, data);
     }
 
     public String chainId() {
