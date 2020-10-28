@@ -47,7 +47,6 @@ import static org.mockito.ArgumentMatchers.anyByte;
 public class EthModuleDLSTest {
     @Test
     public void testCall_getRevertReason() throws FileNotFoundException, DslProcessorException {
-        System.gc();
         DslParser parser = DslParser.fromResource("dsl/eth_module/revert_reason.txt");
         World world = new World();
 
