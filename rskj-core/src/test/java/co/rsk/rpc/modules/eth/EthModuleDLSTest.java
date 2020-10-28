@@ -26,6 +26,7 @@ import co.rsk.test.World;
 import co.rsk.test.dsl.DslParser;
 import co.rsk.test.dsl.DslProcessorException;
 import co.rsk.test.dsl.WorldDslProcessor;
+import org.ethereum.config.Constants;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionReceipt;
 import org.ethereum.rpc.Web3;
@@ -93,7 +94,7 @@ public class EthModuleDLSTest {
 
         return new EthModule(
                 null,
-                anyByte(),
+                Constants.REGTEST_CHAIN_ID,
                 world.getBlockChain(),
                 null,
                 new ReversibleTransactionExecutor(world.getRepositoryLocator(), executor),
