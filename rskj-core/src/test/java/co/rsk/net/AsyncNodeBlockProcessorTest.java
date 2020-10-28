@@ -1023,8 +1023,57 @@ public class AsyncNodeBlockProcessorTest {
 
         verify(sender, never()).sendMessage(any());
     }
+
+    @Test
+    public void duplicatedBlock() {
+        final NetBlockStore store = new NetBlockStore();
+        final Peer sender = new SimplePeer();
+
+        final Blockchain blockchain = new BlockChainBuilder().ofSize(0);
+        final BlockGenerator blockGenerator = new BlockGenerator();
+        final Block block = blockGenerator.createChildBlock(blockGenerator.getGenesisBlock());
+        final Block sameBlock = new Block(block.getHeader(), block.getTransactionsList(), block.getUncleList(), true, true);
+
+        final BlockNodeInformation nodeInformation = new BlockNodeInformation();
+        final SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
+        final TestSystemProperties config = new TestSystemProperties();
+        final BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
+        final AsyncNodeBlockProcessor processor = new AsyncNodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration, makeBlockValidator());
+
+        processor.processBlock(sender, block);
+        BlockProcessResult blockProcessResult = processor.processBlock(sender, sameBlock);
+
+        Assert.assertFalse(blockProcessResult.isScheduledForProcessing());
+        Assert.assertFalse(blockProcessResult.wasBlockAdded(block));
+    }
+
+    @Test
+    public void invalidBlock() {
+        final NetBlockStore store = new NetBlockStore();
+        final Peer sender = new SimplePeer();
+
+        final Blockchain blockchain = new BlockChainBuilder().ofSize(0);
+        final BlockGenerator blockGenerator = new BlockGenerator();
+        final Block block = blockGenerator.createChildBlock(blockGenerator.getGenesisBlock());
+
+        final BlockNodeInformation nodeInformation = new BlockNodeInformation();
+        final SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
+        final TestSystemProperties config = new TestSystemProperties();
+        final BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
+        final AsyncNodeBlockProcessor processor = new AsyncNodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration, makeInvalidBlockValidator());
+
+        BlockProcessResult blockProcessResult = processor.processBlock(sender, block);
+
+        Assert.assertFalse(blockProcessResult.isScheduledForProcessing());
+        Assert.assertFalse(blockProcessResult.wasBlockAdded(block));
+        Assert.assertTrue(blockProcessResult.isInvalidBlock());
+    }
     
     private static BlockValidator makeBlockValidator() {
         return new DummyBlockValidator();
+    }
+
+    private static BlockValidator makeInvalidBlockValidator() {
+        return new DummyBlockValidator(false);
     }
 }
