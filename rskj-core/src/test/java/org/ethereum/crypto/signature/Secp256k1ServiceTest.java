@@ -99,6 +99,7 @@ public abstract class Secp256k1ServiceTest {
         ECDSASignature signature = ECDSASignature.fromComponents(r.toByteArray(), s.toByteArray());
         ECKey k = this.getSecp256k1().recoverFromSignature((byte) 0, signature, Hex.decode(messageHash), false);
         assertEquals( "00", Hex.toHexString(k.getPubKey()));
+        assertEquals( "dcc703c0e500b653ca82273b7bfad8045d85a470", Hex.toHexString(k.getAddress()));
     }
 
     @Test
