@@ -2106,26 +2106,21 @@ public class BridgeSupport {
             throw new RegisterBtcTransactionException("Transaction already processed");
         }
 
-        Sha256Hash fastBridgeDerivationHash = getFastBridgeDerivationHash(
-            derivationArgumentsHash,
-            userRefundAddress,
-            lpBtcAddress,
-            lbcAddress
+        FastBridgeFederationData fastBridgeFederationData = createFastBridgeFederationData(
+                derivationArgumentsHash,
+                userRefundAddress,
+                lpBtcAddress,
+                lbcAddress
         );
 
-        Script fastBridgeRedeemScript = RedeemScriptParser.createMultiSigFastBridgeRedeemScript(
-            getActiveFederation().getRedeemScript(),
-            fastBridgeDerivationHash
+        Address fastBridgeFedAddress = Address.fromP2SHScript(
+                bridgeConstants.getBtcParams(),
+                fastBridgeFederationData.getFastBridgeScriptHash()
         );
-
-        Script fastBridgeP2SH = ScriptBuilder.createP2SHOutputScript(fastBridgeRedeemScript);
-
-        Address fastBridgeFedAddress =
-            Address.fromP2SHScript(bridgeConstants.getBtcParams(), fastBridgeP2SH);
 
         Coin totalAmount = getAmountSentToAddress(btcTx, fastBridgeFedAddress);
 
-        if (provider.isFastBridgeFederationDerivationHashUsed(fastBridgeDerivationHash)) {
+        if (provider.isFastBridgeFederationDerivationHashUsed(fastBridgeFederationData.getDerivationArgumentsHash())) {
             logger.warn("[registerBtcTransfer] [btcTxHash:{}] derivationArgumentsHash is already "
                 + "saved in BridgeStorageProvider",
                 btcTxHash
@@ -2186,6 +2181,28 @@ public class BridgeSupport {
         wallet.setUTXOProvider(utxoProvider);
         wallet.setCoinSelector(new RskAllowUnconfirmedCoinSelector());
         return wallet;
+    }
+
+    protected FastBridgeFederationData createFastBridgeFederationData(
+            Sha256Hash derivationArgumentsHash,
+            Address userRefundAddress,
+            Address lpBtcAddress,
+            RskAddress lbcAddress
+    ) {
+        Sha256Hash fastBridgeDerivationHash = getFastBridgeDerivationHash(
+                derivationArgumentsHash,
+                userRefundAddress,
+                lpBtcAddress,
+                lbcAddress
+        );
+
+        Script fastBridgeScript = RedeemScriptParser.createMultiSigFastBridgeRedeemScript(
+                getActiveFederation().getRedeemScript(),
+                fastBridgeDerivationHash
+        );
+        Script fastBridgeScriptHash = ScriptBuilder.createP2SHOutputScript(fastBridgeScript);
+
+        return new FastBridgeFederationData(fastBridgeScriptHash, fastBridgeDerivationHash);
     }
 
     protected Sha256Hash getFastBridgeDerivationHash(
