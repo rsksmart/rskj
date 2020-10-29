@@ -32,6 +32,7 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.peg.bitcoin.CoinbaseInformation;
 import co.rsk.peg.bitcoin.MerkleBranch;
+import co.rsk.peg.btcLockSender.BtcLockSender;
 import co.rsk.peg.btcLockSender.BtcLockSender.TxSenderAddressType;
 import co.rsk.peg.btcLockSender.BtcLockSenderProvider;
 import co.rsk.peg.pegininstructions.PeginInstructionsException;
@@ -2242,9 +2243,67 @@ public class BridgeSupport {
             Address userRefundAddress,
             RskAddress lbcAddress,
             Address lpbtcAddress,
-            boolean executionStatus
-    ) {
+            boolean shouldTransferToContract
+    ) throws BlockStoreException, RegisterBtcTransferException, IOException, BridgeIllegalArgumentException {
+        if (!BridgeUtils.isContractTx(rskTx)) {
+            String errorMesage = String.format("[registerBtcTransfer] [rskTx:%s] Transaction not a contract", ByteUtil.toHexString(rskTx.getHash().getBytes()));
+            logger.warn(errorMesage);
+            throw new RegisterBtcTransferContractValidationException(errorMesage);
+        }
+
+        BtcTransaction btcTx = new BtcTransaction(bridgeConstants.getBtcParams(), btcTxSerialized);
+        Coin totalAmount = this.getAmountToActiveFederation(btcTx);
+
+        Sha256Hash btcTxHash = BtcTransactionFormatUtils.calculateBtcTxHash(btcTxSerialized);
+
+        if (!validationsForRegisterBtcTransaction(btcTxHash, height, pmtSerialized, btcTxSerialized)) {
+            String errorMesage = String.format("[registerBtcTransfer] [rskTx:%s] error during validationsForRegisterBtcTransaction", ByteUtil.toHexString(btcTxHash.getBytes()));
+            logger.warn(errorMesage);
+            throw new RegisterBtcTransferRegisterBtcTransValidationException(errorMesage);
+        }
+
+        if (!provider.isFastBridgeFederationDerivationHashUsed(derivationArgumentsHash)) {
+            logger.warn("[registerBtcTransfer] [btcTxHash:{}] derivationArgumentsHash is already saved in BridgeStorageProvider ", btcTxHash);
+            generateRejectionRelease(btcTx, userRefundAddress, rskTx, totalAmount, true);
+            return -1;
+        }
+
+        if (!shouldTransferToContract){
+            logger.warn("[registerBtcTransfer] [btcTxHash:{}] shouldTransferToContract is set as False ", btcTxHash);
+            generateRejectionRelease(btcTx, userRefundAddress, rskTx, totalAmount, true);
+            return -1;
+        }
+
+        if (!verifyLockDoesNotSurpassLockingCap(
+                btcTx,
+                this.getSenderBtcAddress(btcTx),
+                totalAmount
+        )) {
+            generateRejectionRelease(btcTx, lpbtcAddress, rskTx, totalAmount, true);
+            return -2;
+        }
+
         return 1;  //TODO: Includes logic
+    }
+
+    private Address getSenderBtcAddress(BtcTransaction btcTx) throws GetSenderBtcAddressSenderNotPresentException {
+        Optional<BtcLockSender> btcLockSenderOptional = btcLockSenderProvider.tryGetBtcLockSender(btcTx);
+        if (!btcLockSenderOptional.isPresent() ||
+                !BridgeUtils.txIsProcessableInLegacyVersion(btcLockSenderOptional.get().getTxSenderAddressType(), activations)) {
+            logger.warn("[getSenderBtcAddress] [btcTx:{}] Could not get BtcLockSender from Btc tx", btcTx.getHash());
+            throw new GetSenderBtcAddressSenderNotPresentException(String.format("[registerBtcTransfer] [btcTx:{}] Could not get BtcLockSender from Btc tx", btcTx.getHash()));
+        }
+        return btcLockSenderOptional.get().getBTCAddress();
+    }
+
+    protected Coin getAmountToActiveFederation(BtcTransaction btcTx) throws IOException{
+        Coin amountToActive = btcTx.getValueSentToMe(getActiveFederationWallet());
+        Coin amountToRetiring = Coin.ZERO;
+        Wallet retiringFederationWallet = getRetiringFederationWallet();
+        if (retiringFederationWallet != null) {
+            amountToRetiring = btcTx.getValueSentToMe(retiringFederationWallet);
+        }
+        return amountToActive.add(amountToRetiring);
     }
 
     private StoredBlock getBtcBlockchainChainHead() throws IOException, BlockStoreException {

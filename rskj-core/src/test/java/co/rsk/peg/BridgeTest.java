@@ -195,7 +195,7 @@ public class BridgeTest {
     }
 
     @Test
-    public void registerBtcTransfer_before_RSKIP176_activation() {
+    public void registerBtcTransfer_before_RSKIP176_activation() throws VMException {
         doReturn(false).when(activationConfig).isActive(eq(RSKIP176), anyLong());
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
