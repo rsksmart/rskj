@@ -2,17 +2,10 @@ import java.util.jar.JarEntry
 import java.util.jar.JarFile
 import java.util.jar.JarOutputStream
 
-buildscript {
-    dependencies {
-        classpath files('libs/rsk-gradle-witness.jar')
-    }
-}
-
 plugins {
     id 'application'
 }
 
-apply plugin: 'witness'
 apply plugin: 'maven'
 apply plugin: 'jacoco'
 
@@ -68,8 +61,8 @@ ext {
     slf4jVersion = '1.7.25'
     leveldbVersion = '0.9'
     junitVersion = '4.12'
-    mockitoVersion = '2.8.9'
-    powermockitoVersion = '1.7.4'
+    mockitoVersion = '2.23.4'
+    powermockitoVersion = '2.0.2'
     rskLllVersion = '0.0.2'
     logbackVersion = '1.2.2'
     bitcoinjVersion = '0.14.4-rsk-9'
@@ -77,88 +70,36 @@ ext {
 }
 
 dependencies {
-    compile "com.madgag.spongycastle:core:1.52.0.0"
-    compile "io.netty:netty-codec-http:$nettyVersion"
-    compile "org.bouncycastle:bclcrypto-jdk15on:1.59"
-    compile "org.iq80.leveldb:leveldb:${leveldbVersion}"
-    compile "org.fusesource.leveldbjni:leveldbjni:1.8"
-    compile "org.ethereum:leveldbjni-all:1.18.3"
-    compile "org.slf4j:slf4j-api:${slf4jVersion}"
-    compile "com.fasterxml.jackson.core:jackson-databind:2.8.7"
-    compile "org.apache.commons:commons-lang3:3.5"
-    compile "com.typesafe:config:1.3.3"
-    compile "org.mapdb:mapdb:2.0-beta13"
-    compile "co.rsk.bitcoinj:bitcoinj-thin:${bitcoinjVersion}"
-    compile 'com.github.briandilley.jsonrpc4j:jsonrpc4j:1.5.1'
-    compile 'co.rsk:native:1.0.1'
+    implementation "com.madgag.spongycastle:core:1.52.0.0"
+    implementation "io.netty:netty-codec-http:$nettyVersion"
+    implementation "org.bouncycastle:bclcrypto-jdk15on:1.59"
+    implementation "org.iq80.leveldb:leveldb:${leveldbVersion}"
+    implementation "org.fusesource.leveldbjni:leveldbjni:1.8"
+    implementation "org.ethereum:leveldbjni-all:1.18.3"
+    implementation "org.slf4j:slf4j-api:${slf4jVersion}"
+    implementation "com.fasterxml.jackson.core:jackson-databind:2.8.7"
+    implementation "org.apache.commons:commons-lang3:3.5"
+    implementation "com.typesafe:config:1.3.3"
+    implementation "org.mapdb:mapdb:2.0-beta13"
+    implementation "co.rsk.bitcoinj:bitcoinj-thin:${bitcoinjVersion}"
+    implementation 'com.github.briandilley.jsonrpc4j:jsonrpc4j:1.5.1'
+    implementation 'co.rsk:native:1.0.1'
+    implementation 'com.sun.xml.ws:jaxws-rt:2.3.3'
 
-    runtime "org.slf4j:log4j-over-slf4j:${slf4jVersion}"
-    runtime "ch.qos.logback:logback-classic:${logbackVersion}"
-    runtime "ch.qos.logback:logback-core:${logbackVersion}"
+    runtimeOnly "org.slf4j:log4j-over-slf4j:${slf4jVersion}"
+    runtimeOnly "ch.qos.logback:logback-classic:${logbackVersion}"
+    runtimeOnly "ch.qos.logback:logback-core:${logbackVersion}"
 
-    testCompile "com.googlecode.json-simple:json-simple:1.1.1"
-    testCompile "junit:junit:${junitVersion}"
-    testCompile "org.mockito:mockito-core:${mockitoVersion}"
-    testCompile "org.powermock:powermock-module-junit4:${powermockitoVersion}"
-    testCompile "org.powermock:powermock-api-mockito2:${powermockitoVersion}"
-    testCompile "co.rsk:lll-compiler:${rskLllVersion}"
-    testCompile "org.awaitility:awaitility:3.0.0"
-    testCompile 'commons-io:commons-io:2.5'
-    testCompile 'commons-codec:commons-codec:1.10'
-    testCompile 'com.squareup.okhttp:okhttp-ws:2.7.2'
-}
-
-dependencyVerification {
-    verify = [
-        'ch.qos.logback:logback-classic:48ade385bbae0222b2934b65738892117d8cb8366b3a3df442d3826c11cedff1',
-        'ch.qos.logback:logback-core:280be7a9327e7434d214d6b9eb881c083c3e057a22d0ed7663a7ce81a718a494',
-        'co.rsk.bitcoinj:bitcoinj-thin:77f2cbf36f4661530160184f48460d4f81b228e39f58fbc2735ad4b511eb5ec2',
-        'co.rsk:lll-compiler:a645fdb272f56721761f65dd32caa952453efc07d98d292259d99353b6f647d0',
-        'com.fasterxml.jackson.core:jackson-annotations:4caf3936315439b509b8c3ef494d4e47eaa6d25c3b5299aadb0eafb3944ed32f',
-        'com.fasterxml.jackson.core:jackson-core:256ff34118ab292d1b4f3ee4d2c3e5e5f0f609d8e07c57e8ad1f51c46d4fbb46',
-        'com.fasterxml.jackson.core:jackson-databind:4f74337b6d18664be0f5b15c6664b17aa3972c9c175092328b139b894ff66f19',
-	    'com.github.briandilley.jsonrpc4j:jsonrpc4j:bb2cde1f554e152e69741353c6630e02e69f217abbd6703f8c038e6ed637c105',
-        'com.google.code.findbugs:jsr305:1e7f53fa5b8b5c807e986ba335665da03f18d660802d8bf061823089d1bee468',
-        'com.google.guava:guava:d664fbfc03d2e5ce9cab2a44fb01f1d0bf9dfebeccc1a473b1f9ea31f79f6f99',
-        'com.google.protobuf:protobuf-java:55aa554843983f431df5616112cf688d38aa17c132357afd1c109435bfdac4e6',
-        'com.googlecode.json-simple:json-simple:4e69696892b88b41c55d49ab2fdcc21eead92bf54acc588c0050596c3b75199c',
-        'com.lambdaworks:scrypt:9a82d218099fb14c10c0e86e7eefeebd8c104de920acdc47b8b4b7a686fb73b4',
-        'com.madgag.spongycastle:core:07a401edbe26e1028e2324754557b741cc57306008df7b71a9e12ec32d65be8f',
-        'com.squareup.okhttp:okhttp:b4c943138fcef2bcc9d2006b2250c4aabbedeafc5947ed7c0af7fd103ceb2707',
-        'com.squareup.okio:okio:114bdc1f47338a68bcbc95abf2f5cdc72beeec91812f2fcd7b521c1937876266',
-        'com.typesafe:config:b5f1d6071f1548d05be82f59f9039c7d37a1787bd8e3c677e31ee275af4a4621',
-        'commons-codec:commons-codec:4241dfa94e711d435f29a4604a3e2de5c4aa3c165e23bd066be6fc1fc4309569',
-        'commons-io:commons-io:a10418348d234968600ccb1d988efcbbd08716e1d96936ccc1880e7d22513474',
-        'io.netty:netty-buffer:055f5ccfd7f9683c5d961fbf4466778d5b91ebf8b1f2ddd2eed539a82352b695',
-        'io.netty:netty-codec-http:73e735f8d73946f860c667bd148be0d25b3e23a85ed62c6178c8bf74c17f9048',
-        'io.netty:netty-common:5d50a53f063c6544433951a04099b0eec17ddd5a1c7f5b0c63f38912daef1677',
-        'io.netty:netty-handler:b1a634a593bb9d1c3e881817991aa5e5fe34b338295ccc1f464511d0af809c61',
-        'io.netty:netty-transport:adec23f7790a138014a15eff4c85939cddec63d49f9ef0810725cb4aa5518199',
-        'net.iharder:base64:f1a0e359eee29a5939c35e5fdedc574dd7e8ca065b056fc14b2b29e3ed3cd54d',
-        'net.jcip:jcip-annotations:be5805392060c71474bf6c9a67a099471274d30b83eef84bfc4e0889a4f1dcc0',
-        'org.apache.commons:commons-lang3:8ac96fc686512d777fca85e144f196cd7cfe0c0aec23127229497d1a38ff651c',
-        'org.awaitility:awaitility:a02982e89585a52c1c84296a895bfeb86ea250cca1a53bcfc8a14092fffa87c4',
-        'org.bouncycastle:bclcrypto-jdk15on:7d03ba37df4d0ddc4ea40d56554324c6f18062a930edadb0a1b3acbbbea28efc',
-        'org.ethereum:leveldbjni-all:18da00444c77080d4422b16c9d4750c4addabda350b702b4a6d628b86658e585',
-        'org.fusesource.hawtjni:hawtjni-runtime:74fe9764e1fb1ef20b159dbca2d29abd6de292082ce3fcf538f81ac912390416',
-        'org.fusesource.leveldbjni:leveldbjni:05fe3a006d030aaf8d1e43f6c640a85f9f6b967c4499ce1ad5055ac236c3b944',
-        'org.hamcrest:hamcrest-library:711d64522f9ec410983bd310934296da134be4254a125080a0416ec178dfad1c',
-        'org.iq80.leveldb:leveldb-api:279e3a5649cde0bf0d4e09fd1369ec0e9ee80344ec06527c37148c9a58684140',
-        'org.iq80.leveldb:leveldb:0dcc623fcb8450e736b9d2b1b8d91b980e44920d6a22cec8c00f703548b3747f',
-        'org.javassist:javassist:7aa59e031f941984af07dacc6ca85e6dc9bd3a485e9aa2494cbc034efa1225d0',
-        'org.mapdb:mapdb:1268e9ec22ff770ef7e63d7cc72563406ad239422c791acc8b9ee4fdfba0bb1e',
-        'org.mockito:mockito-core:a2bb9b8b40d81bb02ccb84259524c0f4911f73c6577bfc7ddd940b8fc729b6e6',
-        'org.objenesis:objenesis:b043f03e466752f7f03e2326a3b13a49b7c649f8f2a2dc87715827e24f73d9c6',
-        'org.powermock:powermock-api-mockito2:ee560b1562c25242e9a445d5d877c5489fedf4d2d0d9bc672131244716343109',
-        'org.powermock:powermock-api-mockito-common:9b216ae6583ae2b073a30677307c661a5548d3bdf5b5999daae080a735894bb3',
-        'org.powermock:powermock-api-support:faa0ef7f926dc1e27764dfb0d3da34dd8b37ed6d870cabcca9c3ca808dc2d278',
-        'org.powermock:powermock-core:72d96da61d697f1834f05912d4d73f3697ee33e86716244b22902f251f19232f',
-        'org.powermock:powermock-module-junit4:8271bc70cc8d396360d600396c795825c0121f72a537f25b23e0e86c0278fccc',
-        'org.powermock:powermock-module-junit4-common:af14d42765e1d09fe0aa362a5470e100aecb0274e0c2fa8d32c99035b2771039',
-        'org.powermock:powermock-reflect:01970886cf822f44fc0815c46b7fcf6d67efcc21d5dc2f8985ff1dbbfe3f24c6',
-        'org.slf4j:log4j-over-slf4j:c84c5ce4bbb661369ccd4c7b99682027598a0fb2e3d63a84259dbe5c0bf1f949',
-        'org.slf4j:slf4j-api:18c4a0095d5c1da6b817592e767bb23d29dd2f560ad74df75ff3961dbde25b79',
-    ]
+    testImplementation "com.googlecode.json-simple:json-simple:1.1.1"
+    testImplementation "junit:junit:${junitVersion}"
+    testImplementation "org.mockito:mockito-core:${mockitoVersion}"
+    testImplementation "org.powermock:powermock-module-junit4:${powermockitoVersion}"
+    testImplementation "org.powermock:powermock-api-mockito2:${powermockitoVersion}"
+    testImplementation "co.rsk:lll-compiler:${rskLllVersion}"
+    testImplementation "org.awaitility:awaitility:3.0.0"
+    testImplementation 'commons-io:commons-io:2.5'
+    testImplementation 'commons-codec:commons-codec:1.10'
+    testImplementation 'com.squareup.okhttp:okhttp-ws:2.7.2'
 }
 
 javadoc {
@@ -177,15 +118,17 @@ sourceSets {
     }
 }
 
-task generateResources << {
-    mkdir generatedResources
-    def generated = new File(generatedResources, 'build-info.properties')
-    def commitHash = gitCommitHash()
-    def currentBranch = gitCurrentBranch()
-    generated.text = """
+task generateResources {
+    doLast {
+        mkdir generatedResources
+        def generated = new File(generatedResources, 'build-info.properties')
+        def commitHash = gitCommitHash()
+        def currentBranch = gitCurrentBranch()
+        generated.text = """
 build.hash=$commitHash
 build.branch=$currentBranch
 """
+    }
 }
 
 tasks.withType(Jar) {
@@ -208,7 +151,7 @@ task javadocJar(type: Jar) {
     from javadoc
 }
 
-task jar(type:Jar, overwrite: true, dependsOn: generateResources) {
+jar {
     def commitHash = gitCommitHash()
     def currentBranch = gitCurrentBranch()
     manifest {
@@ -249,7 +192,7 @@ task fatJar(type: Jar, dependsOn: jar) {
     }
     exclude "META-INF/*.SF", "META-INF/*.DSA", "META-INF/*.RSA"
     classifier = 'all'
-    from { configurations.runtime.collect { it.isDirectory() ? it : zipTree(it) } }
+    from { configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) } }
     with jar
 }
 
