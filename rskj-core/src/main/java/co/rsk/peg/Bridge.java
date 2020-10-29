@@ -1077,7 +1077,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         return bridgeSupport.getActiveFederationCreationBlockHeight();
     }
 
-    public int registerBtcTransfer(Object[] args)
+    public int registerBtcTransfer(Object[] args) throws BlockStoreException, RegisterBtcTransferException, IOException, BridgeIllegalArgumentException
     {
         logger.trace("registerBtcTransfer");
 
