@@ -6115,29 +6115,29 @@ public class BridgeSupportTest {
         doReturn(bridgeConstants.getGenesisFederation()).when(bridgeSupport).getActiveFederation();
         doReturn(true).when(bridgeSupport).validationsForRegisterBtcTransaction(any(), anyInt(), any(), any());
         doReturn(Sha256Hash.of(new byte [1])).when(bridgeSupport).getFastBridgeDerivationHash(
-            any(Sha256Hash.class),
-            any(Address.class),
-            any(Address.class),
-            any(RskAddress.class)
+                any(Sha256Hash.class),
+                any(Address.class),
+                any(Address.class),
+                any(RskAddress.class)
         );
 
         Address btcAddress = Address.fromBase58(
-            btcParams,
-            "n3PLxDiwWqa5uH7fSbHCxS6VAjD9Y7Rwkj"
+                btcParams,
+                "n3PLxDiwWqa5uH7fSbHCxS6VAjD9Y7Rwkj"
         );
 
         ECKey key = ECKey.fromPublicOnly(new BtcECKey().getPubKey());
         RskAddress lbcAddress = new RskAddress(key.getAddress());
 
         Script fastBridgeRedeemScript = RedeemScriptParser.createMultiSigFastBridgeRedeemScript(
-            bridgeConstants.getGenesisFederation().getRedeemScript(),
-            Sha256Hash.of(new byte[1])
+                bridgeConstants.getGenesisFederation().getRedeemScript(),
+                Sha256Hash.of(new byte[1])
         );
 
         Script fastBridgeP2SH = ScriptBuilder.createP2SHOutputScript(fastBridgeRedeemScript);
 
         Address fastBridgeFedAddress =
-            Address.fromP2SHScript(bridgeConstants.getBtcParams(), fastBridgeP2SH);
+                Address.fromP2SHScript(bridgeConstants.getBtcParams(), fastBridgeP2SH);
 
         BtcTransaction tx = new BtcTransaction(bridgeConstants.getBtcParams());
         tx.addOutput(Coin.COIN, fastBridgeFedAddress);
@@ -6496,6 +6496,59 @@ public class BridgeSupportTest {
         Wallet obtainedWallet = bridgeSupport.getFastBridgeWallet(btcContext, utxoList);
 
         assertEquals(obtainedWallet.getBalance(), Coin.COIN);
+    }
+
+    @Test
+    public void createFastBridgeFederationData_Ok() {
+        BridgeSupport bridgeSupport = spy(getBridgeSupport(bridgeConstants, mock(BridgeStorageProvider.class)));
+
+        Sha256Hash derivationArgumentsHash = Sha256Hash.wrap(HashUtil.randomHash());
+        Address userRefundAddress = mock(Address.class);
+        Address lpBtcAddress = mock(Address.class);
+        RskAddress lbcAddress = mock(RskAddress.class);
+
+        Sha256Hash resultDerivationHash = Sha256Hash.wrap(HashUtil.randomHash());
+        doReturn(resultDerivationHash).when(bridgeSupport).getFastBridgeDerivationHash(
+            derivationArgumentsHash,
+            userRefundAddress,
+            lpBtcAddress,
+            lbcAddress
+        );
+
+        FastBridgeFederationData fastBridgeFederationData = bridgeSupport.createFastBridgeFederationData(
+            derivationArgumentsHash,
+            userRefundAddress,
+            lpBtcAddress,
+            lbcAddress
+        );
+        Script resultRedeemScript = RedeemScriptParser.createMultiSigFastBridgeRedeemScript(
+            bridgeSupport.getActiveFederation().getRedeemScript(),
+            resultDerivationHash
+        );
+
+        Assert.assertEquals(resultDerivationHash, fastBridgeFederationData.getDerivationArgumentsHash());
+        Assert.assertEquals(ScriptBuilder.createP2SHOutputScript(resultRedeemScript), fastBridgeFederationData.getFastBridgeScriptHash());
+    }
+
+    @Test
+    public void getFastBridgeDerivationHash_Ok() {
+        BridgeSupport bridgeSupport = getBridgeSupport(bridgeConstants, mock(BridgeStorageProvider.class));
+
+        byte[] derivationArgumentsHash = ByteUtil.leftPadBytes(new byte[]{0x01}, 32);
+        byte[] userRefundAddress = ByteUtil.leftPadBytes(new byte[]{0x02}, 20);
+        byte[] lbcAddress = ByteUtil.leftPadBytes(new byte[]{0x03}, 20);
+        byte[] lpBtcAddress = ByteUtil.leftPadBytes(new byte[]{0x04}, 20);
+
+        byte[] result = ByteUtil.merge(derivationArgumentsHash, userRefundAddress, lbcAddress, lpBtcAddress);
+
+        Sha256Hash fastBridgeDerivationHash = bridgeSupport.getFastBridgeDerivationHash(
+            Sha256Hash.wrap(derivationArgumentsHash),
+            new Address(btcParams, userRefundAddress),
+            new Address(btcParams, lpBtcAddress),
+            new RskAddress(lbcAddress)
+        );
+
+        Assert.assertEquals(Sha256Hash.of(result), fastBridgeDerivationHash);
     }
 
     private void assertRefundInProcessPegInVersion1(
