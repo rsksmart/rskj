@@ -21,10 +21,6 @@ public class PeerScoringLogger {
         logger.debug("{}", new PeerScoringInformation(peerScoring, nodeIdForDebug(id), ""));
     }
 
-    public static void goodReputation(NodeID id) {
-        logger.debug("{} has good reputation", nodeIdForDebug(id));
-    }
-
     private static String nodeIdForDebug(NodeID id) {
         if(id == null) {
             return "NO_NODE_ID";

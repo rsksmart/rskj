@@ -260,8 +260,6 @@ public class PeerScoringManager {
             long punishmentTime = punishmentCalculator.calculate(peerScoring.getPunishmentCounter(), peerScoring.getScore());
             peerScoring.startPunishment(punishmentTime);
             PeerScoringLogger.startPunishment(nodeID, peerScoring, punishmentTime, event);
-        } else {
-            PeerScoringLogger.goodReputation(nodeID);
         }
     }
 }
