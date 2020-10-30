@@ -71,15 +71,16 @@ public class PeerScoringManager {
      * @param event     event type (@see EventType)
      */
     public void recordEvent(NodeID id, InetAddress address, EventType event) {
+        //todo(techdebt) this method encourages null params, this is not desirable
         synchronized (accessLock) {
             if (id != null) { //todo(techdebt) it seems this is always true
                 PeerScoring scoring = peersByNodeID.computeIfAbsent(id, k -> peerScoringFactory.newInstance());
-                recordEvent(scoring, event, this.nodePunishmentCalculator);
+                recordEventAndStartPunishment(scoring, event, this.nodePunishmentCalculator, id);
             }
 
             if (address != null) {
                 PeerScoring scoring = peersByAddress.computeIfAbsent(address, k -> peerScoringFactory.newInstance());
-                recordEvent(scoring, event, this.ipPunishmentCalculator);
+                recordEventAndStartPunishment(scoring, event, this.ipPunishmentCalculator, id);
             }
 
             PeerScoringLogger.recordEvent(id, event);
@@ -245,19 +246,20 @@ public class PeerScoringManager {
     }
 
     /**
-     * Calculates the reputation for a peer
-     * Starts punishment if needed
-     *
-     * @param scoring       the peer scoring
-     * @param calculator    the calculator to use
+     * Records an event and starts punishment if needed
+     * @param peerScoring the peer scoring
+     * @param event an event type
+     * @param punishmentCalculator calculator to use
+     * @param nodeID a node id
      */
-    private void recordEvent(PeerScoring scoring, EventType event, PunishmentCalculator calculator) {
-        scoring.recordEvent(event);
-        boolean reputation = scoringCalculator.hasGoodReputation(scoring);
+    private void recordEventAndStartPunishment(PeerScoring peerScoring, EventType event, PunishmentCalculator punishmentCalculator, NodeID nodeID) {
+        peerScoring.recordEvent(event);
 
-        if (!reputation && scoring.hasGoodReputation()) {
-            scoring.startPunishment(calculator.calculate(scoring.getPunishmentCounter(), scoring.getScore()));
-            PeerScoringLogger.punish(nodeID, peerScoring, punishmentTime, event);
+        boolean shouldStartPunishment = !scoringCalculator.hasGoodReputation(peerScoring) && peerScoring.hasGoodReputation();
+        if (shouldStartPunishment) {
+            long punishmentTime = punishmentCalculator.calculate(peerScoring.getPunishmentCounter(), peerScoring.getScore());
+            peerScoring.startPunishment(punishmentTime);
+            PeerScoringLogger.startPunishment(nodeID, peerScoring, punishmentTime, event);
         } else {
             PeerScoringLogger.goodReputation(nodeID);
         }

@@ -1,7 +1,9 @@
 package co.rsk.scoring;
 
+import com.google.common.annotations.VisibleForTesting;
+
 /**
- * PeerScoringInformation is a simple class to exposte
+ * PeerScoringInformation is a simple class to expose
  * the recorded scoring information for a peer
  * <p>
  * Created by ajlopez on 12/07/2017.
@@ -23,7 +25,7 @@ public class PeerScoringInformation {
     private final int punishments;
     private final boolean goodReputation;
     private final String id;
-    private final String type;
+    private final String type; //todo(techdebt) use an enum or constants
 
     public PeerScoringInformation(PeerScoring scoring, String id, String type) {
         this.type = type;
@@ -49,6 +51,7 @@ public class PeerScoringInformation {
         return this.id;
     }
 
+    @VisibleForTesting
     public String getType() { return this.type; }
 
     public boolean getGoodReputation() {

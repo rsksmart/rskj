@@ -106,7 +106,7 @@ public class MessageVisitor {
 
         if (result.isInvalidBlock()) {
             logger.trace("Invalid block {} {}", blockNumber, block.getPrintableHash());
-            recordEvent(sender, EventType.INVALID_BLOCK);
+            recordEventForPeerScoring(sender, EventType.INVALID_BLOCK);
             return;
         }
 
@@ -118,7 +118,7 @@ public class MessageVisitor {
             sender.imported(false);
         }
 
-        recordEvent(sender, EventType.VALID_BLOCK);
+        recordEventForPeerScoring(sender, EventType.VALID_BLOCK);
     }
 
     public void apply(StatusMessage message) {
@@ -203,10 +203,10 @@ public class MessageVisitor {
 
         for (Transaction tx : messageTxs) {
             if (!tx.acceptTransactionSignature(config.getNetworkConstants().getChainId())) {
-                recordEvent(sender, EventType.INVALID_TRANSACTION);
+                recordEventForPeerScoring(sender, EventType.INVALID_TRANSACTION);
             } else {
                 txs.add(tx);
-                recordEvent(sender, EventType.VALID_TRANSACTION);
+                recordEventForPeerScoring(sender, EventType.VALID_TRANSACTION);
             }
         }
 
@@ -217,7 +217,7 @@ public class MessageVisitor {
         }
     }
 
-    private void recordEvent(Peer sender, EventType event) {
+    private void recordEventForPeerScoring(Peer sender, EventType event) {
         if (sender == null) {
             return;
         }
