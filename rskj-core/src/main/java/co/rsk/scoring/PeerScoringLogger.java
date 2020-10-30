@@ -9,16 +9,20 @@ import org.slf4j.LoggerFactory;
  * */
 public class PeerScoringLogger {
 
+    private PeerScoringLogger() {}
+
     private static final Logger logger = LoggerFactory.getLogger("peerScoring");
 
-    public static void recordEvent(NodeID id, EventType event) {
-        String peersBy = "peers by " + (id != null? "NodeID" : "Address");
-        logger.debug("Recorded event {}, {}, Event {}", nodeIdForDebug(id), peersBy, event.toString());
+    public static void recordEvent(NodeID nodeID, EventType event) {
+        String peersBy = "peers by " + (nodeID != null? "NodeID" : "Address");
+        String nodeIDFormated = nodeIdForDebug(nodeID);
+        logger.debug("Recorded event {}, {}, Event {}", nodeIDFormated, peersBy, event);
     }
 
-    public static void startPunishment(NodeID id, PeerScoring peerScoring, long punishmentTime, EventType event) {
-        logger.debug("{} has been punished for {} milliseconds. Reason ", nodeIdForDebug(id), punishmentTime, event.toString());
-        logger.debug("{}", new PeerScoringInformation(peerScoring, nodeIdForDebug(id), ""));
+    public static void startPunishment(NodeID nodeID, PeerScoring peerScoring, long punishmentTime, EventType event) {
+        String nodeIDFormated = nodeIdForDebug(nodeID);
+        logger.debug("{} has been punished for {} milliseconds. Reason {}", nodeIDFormated, punishmentTime, event);
+        logger.debug("{}", new PeerScoringInformation(peerScoring, nodeIDFormated, ""));
     }
 
     private static String nodeIdForDebug(NodeID id) {
