@@ -72,7 +72,7 @@ public class PeerScoringManager {
      */
     public void recordEvent(NodeID id, InetAddress address, EventType event) {
         synchronized (accessLock) {
-            if (id != null) {
+            if (id != null) { //todo(techdebt) it seems this is always true
                 PeerScoring scoring = peersByNodeID.computeIfAbsent(id, k -> peerScoringFactory.newInstance());
                 recordEvent(scoring, event, this.nodePunishmentCalculator);
             }
@@ -81,6 +81,8 @@ public class PeerScoringManager {
                 PeerScoring scoring = peersByAddress.computeIfAbsent(address, k -> peerScoringFactory.newInstance());
                 recordEvent(scoring, event, this.ipPunishmentCalculator);
             }
+
+            PeerScoringLogger.recordEvent(id, event);
         }
     }
 
@@ -135,6 +137,7 @@ public class PeerScoringManager {
         } else {
             this.banAddress(InetAddressUtils.getAddressForBan(address));
         }
+        PeerScoringLogger.bannedAddress(address);
     }
 
     /**
@@ -159,6 +162,7 @@ public class PeerScoringManager {
         } else {
             this.unbanAddress(InetAddressUtils.getAddressForBan(address));
         }
+        PeerScoringLogger.unbannedAddress(address);
     }
 
     /**
@@ -253,6 +257,9 @@ public class PeerScoringManager {
 
         if (!reputation && scoring.hasGoodReputation()) {
             scoring.startPunishment(calculator.calculate(scoring.getPunishmentCounter(), scoring.getScore()));
+            PeerScoringLogger.punish(nodeID, peerScoring, punishmentTime, event);
+        } else {
+            PeerScoringLogger.goodReputation(nodeID);
         }
     }
 }
