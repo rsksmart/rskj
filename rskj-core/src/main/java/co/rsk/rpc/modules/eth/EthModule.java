@@ -49,7 +49,7 @@ import java.util.Optional;
 
 import static java.util.Arrays.copyOfRange;
 import static org.ethereum.rpc.TypeConverter.stringHexToBigInteger;
-import static org.ethereum.rpc.TypeConverter.toJsonHex;
+import static org.ethereum.rpc.TypeConverter.toUnformattedJsonHex;
 import static org.ethereum.rpc.exception.RskJsonRpcRequestException.invalidParamError;
 
 // TODO add all RPC methods
@@ -135,7 +135,7 @@ public class EthModule
                 }
             }
 
-            return s = toJsonHex(res.getHReturn());
+            return s = toUnformattedJsonHex(res.getHReturn());
         } finally {
             LOGGER.debug("eth_call(): {}", s);
         }

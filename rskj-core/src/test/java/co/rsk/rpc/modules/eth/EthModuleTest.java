@@ -44,6 +44,7 @@ import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.*;
 
 public class EthModuleTest {
+
     @Test
     public void callSmokeTest() {
         Web3.CallArguments args = new Web3.CallArguments();
@@ -54,10 +55,10 @@ public class EthModuleTest {
                 .thenReturn(blockResult);
         when(blockResult.getBlock()).thenReturn(block);
 
-        byte[] hreturn = TypeConverter.stringToByteArray("hello");
+        byte[] hReturn = TypeConverter.stringToByteArray("hello");
         ProgramResult executorResult = mock(ProgramResult.class);
         when(executorResult.getHReturn())
-                .thenReturn(hreturn);
+                .thenReturn(hReturn);
 
         ReversibleTransactionExecutor executor = mock(ReversibleTransactionExecutor.class);
         when(executor.executeTransaction(eq(blockResult.getBlock()), any(), any(), any(), any(), any(), any(), any()))
@@ -77,7 +78,43 @@ public class EthModuleTest {
                         null, null, null));
 
         String result = eth.call(args, "latest");
-        assertThat(result, is(TypeConverter.toJsonHex(hreturn)));
+        assertThat(result, is(TypeConverter.toUnformattedJsonHex(hReturn)));
+    }
+
+    @Test
+    public void callWithoutReturn() {
+        Web3.CallArguments args = new Web3.CallArguments();
+        BlockResult blockResult = mock(BlockResult.class);
+        Block block = mock(Block.class);
+        ExecutionBlockRetriever retriever = mock(ExecutionBlockRetriever.class);
+        when(retriever.getExecutionBlock_workaround("latest"))
+                .thenReturn(blockResult);
+        when(blockResult.getBlock()).thenReturn(block);
+
+        byte[] hReturn = new byte[0];
+        ProgramResult executorResult = mock(ProgramResult.class);
+        when(executorResult.getHReturn())
+                .thenReturn(hReturn);
+
+        ReversibleTransactionExecutor executor = mock(ReversibleTransactionExecutor.class);
+        when(executor.executeTransaction(eq(blockResult.getBlock()), any(), any(), any(), any(), any(), any(), any()))
+                .thenReturn(executorResult);
+
+        EthModule eth = new EthModule(
+                null,
+                anyByte(),
+                null,
+                null,
+                executor,
+                retriever,
+                null,
+                null,
+                null,
+                new BridgeSupportFactory(
+                        null, null, null));
+
+        String result = eth.call(args, "latest");
+        assertThat(result, is(TypeConverter.toUnformattedJsonHex(hReturn)));
     }
 
     @Test
