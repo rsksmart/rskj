@@ -116,7 +116,7 @@ public class EthModule
     }
 
     public String call(Web3.CallArguments args, String bnOrId) {
-        String s = null;
+        String hReturn = null;
         try {
             BlockResult blockResult = executionBlockRetriever.getExecutionBlock_workaround(bnOrId);
             ProgramResult res;
@@ -135,9 +135,11 @@ public class EthModule
                 }
             }
 
-            return s = toUnformattedJsonHex(res.getHReturn());
+            hReturn = toUnformattedJsonHex(res.getHReturn());
+
+            return hReturn;
         } finally {
-            LOGGER.debug("eth_call(): {}", s);
+            LOGGER.debug("eth_call(): {}", hReturn);
         }
     }
 
