@@ -3,6 +3,8 @@ package co.rsk.scoring;
 import co.rsk.net.NodeID;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.util.ByteUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.concurrent.GuardedBy;
 import java.net.InetAddress;
@@ -27,6 +29,8 @@ public class PeerScoringManager {
     private final Object accessLock = new Object();
 
     private final InetAddressTable addressTable = new InetAddressTable();
+
+    private static final Logger logger = LoggerFactory.getLogger("peerScoring");
 
     @GuardedBy("accessLock")
     private final Map<NodeID, PeerScoring> peersByNodeID;
@@ -64,7 +68,7 @@ public class PeerScoringManager {
     }
 
     /**
-     * Record the event, givent the node id and/or the network address
+     * Record the event, given the node id and/or the network address
      *
      * @param id        node id or null
      * @param address   address or null
@@ -83,7 +87,9 @@ public class PeerScoringManager {
                 recordEventAndStartPunishment(scoring, event, this.ipPunishmentCalculator, id);
             }
 
-            PeerScoringLogger.recordEvent(id, event);
+            String peersBy = id != null ? "NodeID" : "Address";
+            String source = id != null ? nodeIdForLog(id) : addressForLog(address);
+            logger.debug("Recorded {} by {}: {}", event, peersBy, source);
         }
     }
 
@@ -133,12 +139,15 @@ public class PeerScoringManager {
      * @param address   the address or address block to be banned
      */
     public void banAddress(String address) throws InvalidInetAddressException {
-        if (InetAddressUtils.hasMask(address)) {
+        boolean isAddressBlock = InetAddressUtils.hasMask(address);
+        if (isAddressBlock) {
             this.banAddressBlock(InetAddressUtils.parse(address));
         } else {
             this.banAddress(InetAddressUtils.getAddressForBan(address));
         }
-        PeerScoringLogger.bannedAddress(address);
+
+        String addressOrAddressBlock = isAddressBlock ? "block" : "";
+        logger.debug("Banned address {} {}", addressOrAddressBlock ,address);
     }
 
     /**
@@ -158,12 +167,15 @@ public class PeerScoringManager {
      * @param address   the address or address block to be removed
      */
     public void unbanAddress(String address) throws InvalidInetAddressException {
-        if (InetAddressUtils.hasMask(address)) {
+        boolean isAddressBlock = InetAddressUtils.hasMask(address);
+        if (isAddressBlock) {
             this.unbanAddressBlock(InetAddressUtils.parse(address));
         } else {
             this.unbanAddress(InetAddressUtils.getAddressForBan(address));
         }
-        PeerScoringLogger.unbannedAddress(address);
+
+        String addressOrAddressBlock = isAddressBlock ? "block" : "";
+        logger.debug("Unbanned address {} {}", addressOrAddressBlock ,address);
     }
 
     /**
@@ -259,7 +271,24 @@ public class PeerScoringManager {
         if (shouldStartPunishment) {
             long punishmentTime = punishmentCalculator.calculate(peerScoring.getPunishmentCounter(), peerScoring.getScore());
             peerScoring.startPunishment(punishmentTime);
-            PeerScoringLogger.startPunishment(nodeID, peerScoring, punishmentTime, event);
+
+            String nodeIDFormated = nodeIdForLog(nodeID);
+            logger.debug("NodeID {} has been punished for {} milliseconds. Reason {}", nodeIDFormated, punishmentTime, event);
+            logger.debug("{}", new PeerScoringInformation(peerScoring, nodeIDFormated, ""));
         }
+    }
+
+    private String nodeIdForLog(NodeID id) {
+        if(id == null) {
+            return "NO_NODE_ID";
+        }
+        return id.toString().substring(id.toString().length() - 7, id.toString().length() - 1);
+    }
+
+    private String addressForLog(InetAddress address) {
+        if(address == null) {
+            return "NO_ADDRESS";
+        }
+        return address.getHostAddress();
     }
 }
