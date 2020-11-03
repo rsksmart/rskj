@@ -162,4 +162,13 @@ public class RskContextTest {
 
         rskContext.getTrieStore();
     }
+
+    @Test
+    public void buildInternalServicesWithPeerScoringSummaryService() {
+        RskContext rskContext = new RskContext(new String[0]);
+        rskContext.buildInternalServices();
+
+        Assert.assertTrue(rskContext.getPeerScoringReporterService() != null);
+        Assert.assertTrue(rskContext.getPeerScoringReporterService().initialized());
+    }
 }

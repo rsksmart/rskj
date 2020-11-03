@@ -1078,5 +1078,6 @@ public class Web3Impl implements Web3 {
     public String[] sco_bannedAddresses() {
         return this.peerScoringManager.getBannedAddresses().toArray(new String[0]);
     }
-    
+
+
 }

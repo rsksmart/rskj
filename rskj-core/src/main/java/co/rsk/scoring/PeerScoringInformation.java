@@ -47,6 +47,33 @@ public class PeerScoringInformation {
         this.id = id;
     }
 
+    @VisibleForTesting
+    public PeerScoringInformation(String type, boolean goodReputation,
+                                  int successfulHandshakes, int failedHandshakes,
+                                  int invalidNetworks, int repeatedMessages,
+                                  int validBlocks, int invalidBlocks, int validTransactions,
+                                  int invalidTransactions, int invalidMessages,
+                                  int timeoutMessages, int unexpectedMessages,
+                                  int invalidHeader, int score, int punishments, String id) {
+        this.type = type;
+        this.goodReputation = goodReputation;
+        this.successfulHandshakes = successfulHandshakes;
+        this.failedHandshakes = failedHandshakes;
+        this.invalidNetworks = invalidNetworks;
+        this.repeatedMessages = repeatedMessages;
+        this.validBlocks = validBlocks;
+        this.invalidBlocks = invalidBlocks;
+        this.validTransactions = validTransactions;
+        this.invalidTransactions = invalidTransactions;
+        this.invalidMessages = invalidMessages;
+        this.timeoutMessages = timeoutMessages;
+        this.unexpectedMessages = unexpectedMessages;
+        this.invalidHeader = invalidHeader;
+        this.score = score;
+        this.punishments = punishments;
+        this.id = id;
+    }
+
     public String getId() {
         return this.id;
     }
@@ -104,3 +131,5 @@ public class PeerScoringInformation {
 
     public int getPunishments() { return this.punishments; }
 }
+
+
