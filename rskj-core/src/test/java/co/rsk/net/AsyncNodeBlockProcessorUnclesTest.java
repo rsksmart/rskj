@@ -25,7 +25,6 @@ import co.rsk.net.sync.SyncConfiguration;
 import co.rsk.net.utils.AsyncNodeBlockProcessorListener;
 import co.rsk.test.builders.BlockBuilder;
 import co.rsk.test.builders.BlockChainBuilder;
-import co.rsk.validators.BlockValidator;
 import co.rsk.validators.DummyBlockValidator;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
@@ -169,8 +168,8 @@ public class AsyncNodeBlockProcessorUnclesTest {
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         TestSystemProperties config = new TestSystemProperties();
         BlockSyncService blockSyncService = new BlockSyncService(config, store, blockChain, nodeInformation, syncConfiguration);
-        BlockValidator blockRelayValidator = new DummyBlockValidator();
 
-        return new AsyncNodeBlockProcessor(store, blockChain, nodeInformation, blockSyncService, syncConfiguration, blockRelayValidator, listener);
+        return new AsyncNodeBlockProcessor(store, blockChain, nodeInformation, blockSyncService, syncConfiguration,
+                DummyBlockValidator.VALID_RESULT_INSTANCE, DummyBlockValidator.VALID_RESULT_INSTANCE, listener);
     }
 }

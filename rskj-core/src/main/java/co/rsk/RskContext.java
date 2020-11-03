@@ -171,6 +171,7 @@ public class RskContext implements NodeBootstrapper {
     private BlockValidationRule blockValidationRule;
     private BlockValidationRule minerServerBlockValidationRule;
     private BlockValidator blockValidator;
+    private BlockValidator blockHeaderRelayValidator;
     private BlockValidator blockRelayValidator;
     private ReceiptStore receiptStore;
     private ProgramInvokeFactory programInvokeFactory;
@@ -529,6 +530,7 @@ public class RskContext implements NodeBootstrapper {
                     getBlockNodeInformation(),
                     getBlockSyncService(),
                     getSyncConfiguration(),
+                    getBlockHeaderRelayValidator(),
                     getBlockRelayValidator()
             );
         }
@@ -1201,14 +1203,9 @@ public class RskContext implements NodeBootstrapper {
         if (blockRelayValidator == null) {
             final RskSystemProperties rskSystemProperties = getRskSystemProperties();
             final Constants commonConstants = rskSystemProperties.getNetworkConstants();
-            BlockTimeStampValidationRule blockTimeStampValidationRule = new BlockTimeStampValidationRule(
+            final BlockTimeStampValidationRule blockTimeStampValidationRule = new BlockTimeStampValidationRule(
                     commonConstants.getNewBlockMaxSecondsInTheFuture(),
                     rskSystemProperties.getActivationConfig()
-            );
-
-            final BlockHeaderValidationRule blockHeaderValidator = new BlockHeaderCompositeRule(
-                    getProofOfWorkRule(),
-                    blockTimeStampValidationRule
             );
 
             final BlockHeaderParentDependantValidationRule blockParentValidator = new BlockHeaderParentCompositeRule(
@@ -1223,13 +1220,32 @@ public class RskContext implements NodeBootstrapper {
 
             blockRelayValidator = new BlockRelayValidatorImpl(
                     getBlockStore(),
-                    blockHeaderValidator,
                     blockParentValidator,
                     blockValidator
             );
         }
 
         return blockRelayValidator;
+    }
+
+    private BlockValidator getBlockHeaderRelayValidator() {
+        if (blockHeaderRelayValidator == null) {
+            final RskSystemProperties rskSystemProperties = getRskSystemProperties();
+            final Constants commonConstants = rskSystemProperties.getNetworkConstants();
+            final BlockTimeStampValidationRule blockTimeStampValidationRule = new BlockTimeStampValidationRule(
+                    commonConstants.getNewBlockMaxSecondsInTheFuture(),
+                    rskSystemProperties.getActivationConfig()
+            );
+
+            final BlockHeaderValidationRule blockHeaderValidator = new BlockHeaderCompositeRule(
+                    getProofOfWorkRule(),
+                    blockTimeStampValidationRule
+            );
+
+            blockHeaderRelayValidator = new BlockHeaderRelayValidatorImpl(blockHeaderValidator);
+        }
+
+        return blockHeaderRelayValidator;
     }
 
     private EthereumChannelInitializerFactory getEthereumChannelInitializerFactory() {
@@ -1261,9 +1277,9 @@ public class RskContext implements NodeBootstrapper {
 
     public BlockValidationRule getBlockValidationRule() {
         if (blockValidationRule == null) {
-            RskSystemProperties rskSystemProperties = getRskSystemProperties();
-            Constants commonConstants = rskSystemProperties.getNetworkConstants();
-            BlockTimeStampValidationRule blockTimeStampValidationRule = new BlockTimeStampValidationRule(
+            final RskSystemProperties rskSystemProperties = getRskSystemProperties();
+            final Constants commonConstants = rskSystemProperties.getNetworkConstants();
+            final BlockTimeStampValidationRule blockTimeStampValidationRule = new BlockTimeStampValidationRule(
                     commonConstants.getNewBlockMaxSecondsInTheFuture(),
                     rskSystemProperties.getActivationConfig()
             );

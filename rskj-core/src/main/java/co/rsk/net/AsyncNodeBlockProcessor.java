@@ -51,7 +51,9 @@ public class AsyncNodeBlockProcessor extends NodeBlockProcessor implements Inter
 
     private final BlockingQueue<BlockInfo> blocksToProcess = new LinkedBlockingQueue<>();
 
-    private final BlockValidator blockRelayValidator;
+    private final BlockValidator blockHeaderValidator;
+
+    private final BlockValidator blockValidator;
 
     private final Thread thread = new Thread(this,"async block processor");
 
@@ -61,16 +63,18 @@ public class AsyncNodeBlockProcessor extends NodeBlockProcessor implements Inter
 
     public AsyncNodeBlockProcessor(@Nonnull NetBlockStore store, @Nonnull Blockchain blockchain, @Nonnull BlockNodeInformation nodeInformation,
                                    @Nonnull BlockSyncService blockSyncService, @Nonnull SyncConfiguration syncConfiguration,
-                                   @Nonnull BlockValidator blockRelayValidator, @Nullable Listener listener) {
+                                   @Nonnull BlockValidator blockHeaderValidator, @Nonnull BlockValidator blockValidator,
+                                   @Nullable Listener listener) {
         super(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
+        this.blockHeaderValidator = blockHeaderValidator;
+        this.blockValidator = blockValidator;
         this.listener = listener;
-        this.blockRelayValidator = blockRelayValidator;
     }
 
     public AsyncNodeBlockProcessor(@Nonnull NetBlockStore store, @Nonnull Blockchain blockchain, @Nonnull BlockNodeInformation nodeInformation,
                                    @Nonnull BlockSyncService blockSyncService, @Nonnull SyncConfiguration syncConfiguration,
-                                   @Nonnull BlockValidator blockRelayValidator) {
-        this(store, blockchain, nodeInformation, blockSyncService, syncConfiguration, blockRelayValidator, null);
+                                   @Nonnull BlockValidator blockHeaderValidator, @Nonnull BlockValidator blockValidator) {
+        this(store, blockchain, nodeInformation, blockSyncService, syncConfiguration, blockHeaderValidator, blockValidator, null);
     }
 
     @Override
@@ -81,14 +85,19 @@ public class AsyncNodeBlockProcessor extends NodeBlockProcessor implements Inter
         final String blockHash = block.getPrintableHash();
         final String peer = sender != null ? sender.getPeerNodeID().toString() : "N/A";
 
+        if (!isBlockHeaderValid(block)) {
+            logger.warn("Invalid block with number {} {} from {} ", blockNumber, blockHash, peer);
+            return invalidBlockResult(start, block, blockHash);
+        }
+
         if (store.hasBlock(block)) {
             logger.trace("Ignored block with number {} and hash {} from {} as it's already in the queue", blockNumber, blockHash, peer);
-            return ignoredResult(start, blockHash, null);
+            return ignoredResult(start, blockHash);
         }
 
         boolean looksGood = blockSyncService.preprocessBlock(block, sender, false);
         if (looksGood) {
-            if (isValid(block)) {
+            if (isBlockValid(block)) {
                 boolean offer = blocksToProcess.offer(new BlockInfo(sender, block));
                 if (offer) {
                     logger.trace("Added block with number {} and hash {} from {} to the queue", blockNumber, blockHash, peer);
@@ -101,11 +110,11 @@ public class AsyncNodeBlockProcessor extends NodeBlockProcessor implements Inter
             }
 
             logger.warn("Invalid block with number {} {} from {} ", blockNumber, blockHash, peer);
-            Map<Keccak256, ImportResult> result = Collections.singletonMap(block.getHash(), ImportResult.INVALID_BLOCK);
-            return ignoredResult(start, blockHash, result);
+            return invalidBlockResult(start, block, blockHash);
         }
 
-        return ignoredResult(start, blockHash, null);
+        logger.trace("Ignored block with number {} and hash {} from {} as it's already in the queue", blockNumber, blockHash, peer);
+        return ignoredResult(start, blockHash);
     }
 
     @Override
@@ -169,16 +178,25 @@ public class AsyncNodeBlockProcessor extends NodeBlockProcessor implements Inter
         }
     }
 
-    private boolean isValid(Block block) {
-        return blockRelayValidator.isValid(block);
+    private boolean isBlockHeaderValid(Block block) {
+        return blockHeaderValidator.isValid(block);
+    }
+
+    private boolean isBlockValid(Block block) {
+        return blockValidator.isValid(block);
     }
 
     private static BlockProcessResult scheduledForProcessingResult(@Nonnull Instant start, @Nonnull String blockHash) {
         return new BlockProcessResult(true, null, blockHash, Duration.between(start, Instant.now()));
     }
 
-    private static BlockProcessResult ignoredResult(@Nonnull Instant start, @Nonnull String blockHash, @Nullable Map<Keccak256, ImportResult> result) {
+    private static BlockProcessResult invalidBlockResult(@Nonnull Instant start, @Nonnull Block block, @Nonnull String blockHash) {
+        Map<Keccak256, ImportResult> result = Collections.singletonMap(block.getHash(), ImportResult.INVALID_BLOCK);
         return new BlockProcessResult(false, result, blockHash, Duration.between(start, Instant.now()));
+    }
+
+    private static BlockProcessResult ignoredResult(@Nonnull Instant start, @Nonnull String blockHash) {
+        return new BlockProcessResult(false, null, blockHash, Duration.between(start, Instant.now()));
     }
 
     public interface Listener {

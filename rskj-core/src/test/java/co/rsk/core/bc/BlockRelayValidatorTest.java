@@ -20,7 +20,6 @@ package co.rsk.core.bc;
 
 import co.rsk.crypto.Keccak256;
 import co.rsk.validators.BlockHeaderParentDependantValidationRule;
-import co.rsk.validators.BlockHeaderValidationRule;
 import co.rsk.validators.BlockValidationRule;
 import org.ethereum.core.Block;
 import org.ethereum.db.BlockStore;
@@ -32,11 +31,10 @@ import static org.mockito.Mockito.*;
 public class BlockRelayValidatorTest {
 
     private final BlockStore blockStore = mock(BlockStore.class);
-    private final BlockHeaderValidationRule blockHeaderValidator = mock(BlockHeaderValidationRule.class);
     private final BlockHeaderParentDependantValidationRule blockParentValidator = mock(BlockHeaderParentDependantValidationRule.class);
     private final BlockValidationRule blockValidator = mock(BlockValidationRule.class);
 
-    private final BlockRelayValidatorImpl blockRelayValidator = new BlockRelayValidatorImpl(blockStore, blockHeaderValidator, blockParentValidator, blockValidator);
+    private final BlockRelayValidatorImpl blockRelayValidator = new BlockRelayValidatorImpl(blockStore, blockParentValidator, blockValidator);
 
     @Test
     public void genesisCheck() {
@@ -48,23 +46,6 @@ public class BlockRelayValidatorTest {
         Assert.assertTrue(actualResult);
 
         verify(block).isGenesis();
-        verify(blockHeaderValidator, never()).isValid(any());
-        verify(blockValidator, never()).isValid(any());
-        verify(blockParentValidator, never()).isValid(any(), any());
-    }
-
-    @Test
-    public void blockHeaderValidatorCheck() {
-        Block block = mock(Block.class);
-
-        when(blockHeaderValidator.isValid(any())).thenReturn(false);
-
-        boolean actualResult = blockRelayValidator.isValid(block);
-
-        Assert.assertFalse(actualResult);
-
-        verify(block).isGenesis();
-        verify(blockHeaderValidator).isValid(any());
         verify(blockValidator, never()).isValid(any());
         verify(blockParentValidator, never()).isValid(any(), any());
     }
@@ -73,7 +54,6 @@ public class BlockRelayValidatorTest {
     public void blockValidatorCheck() {
         Block block = mock(Block.class);
 
-        when(blockHeaderValidator.isValid(any())).thenReturn(true);
         when(blockValidator.isValid(any())).thenReturn(false);
 
         boolean actualResult = blockRelayValidator.isValid(block);
@@ -81,7 +61,6 @@ public class BlockRelayValidatorTest {
         Assert.assertFalse(actualResult);
 
         verify(block).isGenesis();
-        verify(blockHeaderValidator).isValid(any());
         verify(blockValidator).isValid(any());
         verify(blockParentValidator, never()).isValid(any(), any());
     }
@@ -94,7 +73,6 @@ public class BlockRelayValidatorTest {
 
         when(block.getParentHash()).thenReturn(parentHash);
         when(blockStore.getBlockByHash(any())).thenReturn(parentBlock);
-        when(blockHeaderValidator.isValid(any())).thenReturn(true);
         when(blockValidator.isValid(any())).thenReturn(true);
         when(blockParentValidator.isValid(any(), any())).thenReturn(false);
 
@@ -103,7 +81,6 @@ public class BlockRelayValidatorTest {
         Assert.assertFalse(actualResult);
 
         verify(block).isGenesis();
-        verify(blockHeaderValidator).isValid(any());
         verify(blockValidator).isValid(any());
         verify(blockParentValidator).isValid(any(), any());
     }
@@ -116,7 +93,6 @@ public class BlockRelayValidatorTest {
 
         when(block.getParentHash()).thenReturn(parentHash);
         when(blockStore.getBlockByHash(any())).thenReturn(parentBlock);
-        when(blockHeaderValidator.isValid(any())).thenReturn(true);
         when(blockValidator.isValid(any())).thenReturn(true);
         when(blockParentValidator.isValid(any(), any())).thenReturn(true);
 
@@ -125,7 +101,6 @@ public class BlockRelayValidatorTest {
         Assert.assertTrue(actualResult);
 
         verify(block).isGenesis();
-        verify(blockHeaderValidator).isValid(any());
         verify(blockValidator).isValid(any());
         verify(blockParentValidator).isValid(any(), any());
     }

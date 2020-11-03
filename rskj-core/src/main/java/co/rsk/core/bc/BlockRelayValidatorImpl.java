@@ -18,9 +18,10 @@
 
 package co.rsk.core.bc;
 
-import co.rsk.validators.*;
+import co.rsk.validators.BlockHeaderParentDependantValidationRule;
+import co.rsk.validators.BlockValidationRule;
+import co.rsk.validators.BlockValidator;
 import org.ethereum.core.Block;
-import org.ethereum.core.BlockHeader;
 import org.ethereum.db.BlockStore;
 
 import javax.annotation.Nonnull;
@@ -29,7 +30,6 @@ import javax.annotation.Nonnull;
  * Validates a block if it is good enough to be propagated.
  *
  * The validation includes:
- * - validation of the header data of the block
  * - validation of the block
  * - validation of the header data of the parent block
  */
@@ -37,18 +37,14 @@ public class BlockRelayValidatorImpl implements BlockValidator {
 
     private final BlockStore blockStore;
 
-    private final BlockHeaderValidationRule blockHeaderValidator;
-
     private final BlockHeaderParentDependantValidationRule blockParentValidator;
 
     private final BlockValidationRule blockValidator;
 
     public BlockRelayValidatorImpl(@Nonnull BlockStore blockStore,
-                                   @Nonnull BlockHeaderValidationRule blockHeaderValidator,
                                    @Nonnull BlockHeaderParentDependantValidationRule blockParentValidator,
                                    @Nonnull BlockValidationRule blockValidator) {
         this.blockStore = blockStore;
-        this.blockHeaderValidator = blockHeaderValidator;
         this.blockParentValidator = blockParentValidator;
         this.blockValidator = blockValidator;
     }
@@ -65,17 +61,12 @@ public class BlockRelayValidatorImpl implements BlockValidator {
             return true;
         }
 
-        BlockHeader header = block.getHeader();
-        if (!blockHeaderValidator.isValid(header)) {
-            return false;
-        }
-
         if (!blockValidator.isValid(block)) {
             return false;
         }
 
         Block parent = getParent(block);
-        return parent != null && blockParentValidator.isValid(header, parent);
+        return parent != null && blockParentValidator.isValid(block.getHeader(), parent);
     }
 
     private Block getParent(Block block) {
