@@ -224,7 +224,7 @@ public class BridgeTest {
 
     @Test
     public void registerBtcTransfer_after_RSKIP176_activation()
-        throws RegisterBtcTransferException, BlockStoreException, IOException, VMException {
+        throws RegisterBtcTransferException, BlockStoreException, IOException, VMException, RegisterBtcTransactionException {
         NetworkParameters networkParameters = constants.getBridgeConstants().getBtcParams();
         doReturn(true).when(activationConfig).isActive(eq(RSKIP176), anyLong());
 
