@@ -1094,8 +1094,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         return bridgeSupport.hasBtcBlockCoinbaseTransactionInformation(blockHash);
     }
 
-    public int registerBtcTransfer(Object[] args)
-        throws RegisterBtcTransferException, BlockStoreException, IOException, RegisterBtcTransactionException {
+    public int registerBtcTransfer(Object[] args) {
         logger.trace("registerBtcTransfer");
 
         byte[] btcTxSerialized = (byte[]) args[0];
@@ -1107,16 +1106,21 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         Address lpBtcAddress = new Address(bridgeConstants.getBtcParams(), (byte[]) args[6]);
         boolean executionStatus = (Boolean) args[7];
 
-        return bridgeSupport.registerBtcTransfer(
-            rskTx,
-            btcTxSerialized,
-            height,
-            pmtSerialized,
-            derivationArgumentsHash,
-            userRefundAddress,
-            lbcAddress,
-            lpBtcAddress,
-            executionStatus);
+        try {
+            return bridgeSupport.registerBtcTransfer(
+                rskTx,
+                btcTxSerialized,
+                height,
+                pmtSerialized,
+                derivationArgumentsHash,
+                userRefundAddress,
+                lbcAddress,
+                lpBtcAddress,
+                executionStatus);
+        } catch (BlockStoreException | RegisterBtcTransferException | IOException | RegisterBtcTransactionException e) {
+            logger.warn("Exception in registerBtcTransfer", e);
+            throw new RuntimeException("Exception in registerBtcTransfer", e);
+        }
     }
 
     public static BridgeMethods.BridgeMethodExecutor activeAndRetiringFederationOnly(BridgeMethods.BridgeMethodExecutor decoratee, String funcName) {
