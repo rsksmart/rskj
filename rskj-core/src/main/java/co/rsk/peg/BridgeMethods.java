@@ -580,7 +580,7 @@ public enum BridgeMethods {
     REGISTER_BTC_TRANSFER(
             CallTransaction.Function.fromSignature(
                     "registerBtcTransfer",
-                    new String[]{"bytes", "uint256", "bytes", "bytes32", "string", "string", "string", "bool"},
+                    new String[]{"bytes", "uint256", "bytes", "bytes32", "bytes", "string", "bytes", "bool"},
                     new String[]{"int256"}
             ),
             fixedCost(10000L),  // TODO: Define a cost
