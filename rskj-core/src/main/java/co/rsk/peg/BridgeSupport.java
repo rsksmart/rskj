@@ -347,6 +347,8 @@ public class BridgeSupport {
 
         logger.debug("[processPegIn] This is a lock tx {}", btcTx);
 
+        Coin totalAmount = computeTotalAmountSent(btcTx);
+
         PeginInformation peginInformation = new PeginInformation(
             btcLockSenderProvider,
             peginInstructionsProvider,
@@ -355,6 +357,12 @@ public class BridgeSupport {
         try {
             peginInformation.parse(btcTx);
         } catch (PeginInstructionsException e) {
+            if (activations.isActive(ConsensusRule.RSKIP170)) {
+                // If possible to get the sender address, refund
+                refundTxSender(btcTx, rskTx, peginInformation, totalAmount);
+                markTxAsProcessed(btcTx);
+            }
+
             String message = String.format(
                 "Error while trying to parse peg-in information for tx %s. %s",
                 btcTx.getHash(),
@@ -364,7 +372,6 @@ public class BridgeSupport {
             throw new RegisterBtcTransactionException(message);
         }
 
-        Coin totalAmount = computeTotalAmountSent(btcTx);
         int protocolVersion = peginInformation.getProtocolVersion();
         logger.debug("[processPegIn] Protocol version: {}", protocolVersion);
         switch (protocolVersion) {
@@ -375,16 +382,14 @@ public class BridgeSupport {
                 processPegInVersion1(btcTx, rskTx, peginInformation, totalAmount);
                 break;
             default:
-                // Mark tx as processed on this block (and use the txid without the witness)
-                provider.setHeightBtcTxhashAlreadyProcessed(btcTx.getHash(false), rskExecutionBlock.getNumber());
+                markTxAsProcessed(btcTx);
 
                 String message = String.format("Invalid peg-in protocol version: %d", protocolVersion);
                 logger.warn("[processPegIn] {}", message);
                 throw new RegisterBtcTransactionException(message);
         }
 
-        // Mark tx as processed on this block (and use the txid without the witness)
-        provider.setHeightBtcTxhashAlreadyProcessed(btcTx.getHash(false), rskExecutionBlock.getNumber());
+        markTxAsProcessed(btcTx);
         logger.info("[processPegIn] BTC Tx {} processed in RSK", btcTxHash);
     }
 
@@ -427,12 +432,7 @@ public class BridgeSupport {
             executePegIn(btcTx, peginInformation, totalAmount);
         } else {
             logger.debug("[processPegInVersion1] Peg-in attempt surpasses locking cap. Amount attempted to lock: {}", totalAmount);
-            Address btcRefundAddress = peginInformation.getBtcRefundAddress();
-            if (btcRefundAddress != null) {
-                generateRejectionRelease(btcTx, btcRefundAddress, rskTx, totalAmount);
-            } else {
-                logger.debug("[processPegInVersion1] No btc refund address provided, couldn't get sender address either. Can't refund");
-            }
+            refundTxSender(btcTx, rskTx, peginInformation, totalAmount);
         }
     }
 
@@ -459,6 +459,25 @@ public class BridgeSupport {
         saveNewUTXOs(btcTx);
     }
 
+    private void refundTxSender(
+        BtcTransaction btcTx,
+        Transaction rskTx,
+        PeginInformation peginInformation,
+        Coin amount) throws IOException {
+
+        Address btcRefundAddress = peginInformation.getBtcRefundAddress();
+        if (btcRefundAddress != null) {
+            generateRejectionRelease(btcTx, btcRefundAddress, rskTx, amount);
+        } else {
+            logger.debug("[refundTxSender] No btc refund address provided, couldn't get sender address either. Can't refund");
+        }
+    }
+
+    private void markTxAsProcessed(BtcTransaction btcTx) throws IOException {
+        // Mark tx as processed on this block (and use the txid without the witness)
+        provider.setHeightBtcTxhashAlreadyProcessed(btcTx.getHash(false), rskExecutionBlock.getNumber());
+    }
+
     protected void processRelease(BtcTransaction btcTx, Sha256Hash btcTxHash) throws IOException {
         logger.debug("[processRelease] This is a release tx {}", btcTx);
             // do-nothing
@@ -472,8 +491,7 @@ public class BridgeSupport {
             // b) In prod: Federator created a tx manually or the federation was compromised and some utxos were spent. Better not try to spend them.
             // Open problem: For performance removeUsedUTXOs() just removes 1 utxo
 
-        // Mark tx as processed on this block (and use the txid without the witness)
-        provider.setHeightBtcTxhashAlreadyProcessed(btcTx.getHash(false), rskExecutionBlock.getNumber());
+        markTxAsProcessed(btcTx);
 
         // Generate new change UTXO
         saveNewUTXOs(btcTx);
@@ -483,8 +501,7 @@ public class BridgeSupport {
     protected void processMigration(BtcTransaction btcTx, Sha256Hash btcTxHash) throws IOException {
         logger.debug("[processMigration] This is a migration tx {}", btcTx);
 
-        // Mark tx as processed on this block (and use the txid without the witness)
-        provider.setHeightBtcTxhashAlreadyProcessed(btcTx.getHash(false), rskExecutionBlock.getNumber());
+        markTxAsProcessed(btcTx);
 
         // Input spent on retiring federation and a new UTXO that is created on active federation.
         // It is probably merging multiple UTXOs from the retiring federation
@@ -1364,7 +1381,6 @@ public class BridgeSupport {
     public Instant getFederationCreationTime() {
         return getActiveFederation().getCreationTime();
     }
-
 
     /**
      * Returns the federation's creation block number

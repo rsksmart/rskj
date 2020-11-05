@@ -3285,6 +3285,7 @@ public class BridgeSupportTest {
 
         Federation federation1 = getFederation(bridgeConstants);
         Repository repository = createRepository();
+        repository.addBalance(PrecompiledContracts.BRIDGE_ADDR, LIMIT_MONETARY_BASE);
 
         BtcECKey srcKey1 = new BtcECKey();
         ECKey key = ECKey.fromPublicOnly(srcKey1.getPubKey());
@@ -3496,7 +3497,7 @@ public class BridgeSupportTest {
     }
 
     @Test
-    public void registerBtcTransaction_rejects_lock_tx_version_invalid_after_rskip_170_activation()
+    public void when_registerBtcTransaction_invalidPeginProtocolVersion_afterFork_no_lock_and_refund()
         throws BlockStoreException, IOException, PeginInstructionsException {
         // Arrange
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
@@ -3567,6 +3568,7 @@ public class BridgeSupportTest {
 
         PeginInstructions peginInstructions = mock(PeginInstructions.class);
         when(peginInstructions.getProtocolVersion()).thenReturn(99);
+        when(peginInstructions.getRskDestinationAddress()).thenReturn(rskDestinationAddress);
         PeginInstructionsProvider peginInstructionsProvider = mock(PeginInstructionsProvider.class);
         when(peginInstructionsProvider.buildPeginInstructions(any())).thenReturn(Optional.of(peginInstructions));
 
@@ -3585,12 +3587,26 @@ public class BridgeSupportTest {
         bridgeSupport.registerBtcTransaction(mock(Transaction.class), tx1.bitcoinSerialize(), height, pmtWithoutWitness.bitcoinSerialize());
 
         // Assert
-        Assert.assertEquals(co.rsk.core.Coin.ZERO, repository.getBalance(rskDestinationAddress));
+        Assert.assertEquals(LIMIT_MONETARY_BASE, repository.getBalance(PrecompiledContracts.BRIDGE_ADDR));
         Assert.assertEquals(0, provider.getNewFederationBtcUTXOs().size());
         Assert.assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
-        Assert.assertEquals(0, provider.getReleaseTransactionSet().getEntries().size());
+        Assert.assertEquals(1, provider.getReleaseTransactionSet().getEntries().size());
+
+        List<BtcTransaction> releaseTxs = provider.getReleaseTransactionSet().getEntries()
+            .stream()
+            .map(ReleaseTransactionSet.Entry::getTransaction)
+            .collect(Collectors.toList());
+
+        // First release tx should correspond to the 5 BTC lock tx
+        BtcTransaction releaseTx = releaseTxs.get(0);
+        Assert.assertEquals(1, releaseTx.getOutputs().size());
+        Assert.assertThat(amountToLock.subtract(releaseTx.getOutput(0).getValue()), is(lessThanOrEqualTo(Coin.MILLICOIN)));
+        Assert.assertEquals(btcAddressFromBtcLockSender, releaseTx.getOutput(0).getScriptPubKey().getToAddress(btcParams));
+        Assert.assertEquals(1, releaseTx.getInputs().size());
+        Assert.assertEquals(tx1.getHash(), releaseTx.getInput(0).getOutpoint().getHash());
+        Assert.assertEquals(0, releaseTx.getInput(0).getOutpoint().getIndex());
         Assert.assertTrue(provider.getRskTxsWaitingForSignatures().isEmpty());
-        Assert.assertFalse(provider.getHeightIfBtcTxhashIsAlreadyProcessed(tx1.getHash()).isPresent());
+        Assert.assertTrue(provider.getHeightIfBtcTxhashIsAlreadyProcessed(tx1.getHash()).isPresent());
     }
 
     @Test
@@ -5538,8 +5554,8 @@ public class BridgeSupportTest {
     }
 
     @Test
-    public void processPegIn_version1_tx_no_lockable_by_surpassing_locking_cap_unknown_sender_with_refund_address() throws IOException,
-        RegisterBtcTransactionException, PeginInstructionsException {
+    public void processPegIn_version1_tx_no_lockable_by_surpassing_locking_cap_unknown_sender_with_refund_address()
+        throws IOException, RegisterBtcTransactionException, PeginInstructionsException {
 
         BtcECKey key = new BtcECKey();
         Address btcRefundAddress = key.toAddress(btcParams);
@@ -5552,8 +5568,8 @@ public class BridgeSupportTest {
     }
 
     @Test
-    public void processPegIn_version1_tx_no_lockable_by_surpassing_locking_cap_unknown_sender_without_refund_address() throws IOException,
-        RegisterBtcTransactionException, PeginInstructionsException {
+    public void processPegIn_version1_tx_no_lockable_by_surpassing_locking_cap_unknown_sender_without_refund_address()
+        throws IOException, RegisterBtcTransactionException, PeginInstructionsException {
 
         assertRefundInProcessPegInVersion1(
             TxSenderAddressType.UNKNOWN,
@@ -5572,12 +5588,126 @@ public class BridgeSupportTest {
             activations
         );
 
+        BtcTransaction btcTx = mock(BtcTransaction.class);
+        when(btcTx.getValueSentToMe(any())).thenReturn(Coin.valueOf(1));
+
         bridgeSupport.processPegIn(
-            mock(BtcTransaction.class),
+            btcTx,
             mock(Transaction.class),
             0,
             mock(Sha256Hash.class)
         );
+    }
+
+    @Test
+    public void processPegIn_errorParsingPeginInstructions_beforeRskip170_dontRefundSender() throws IOException {
+
+        // Arrange
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP170)).thenReturn(false);
+
+        Repository repository = createRepository();
+
+        BtcTransaction btcTx = new BtcTransaction(btcParams);
+        btcTx.addOutput(Coin.COIN.multiply(10), bridgeConstants.getGenesisFederation().getAddress());
+        btcTx.addInput(PegTestUtils.createHash(1), 0, new Script(new byte[]{}));
+
+        BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
+
+        ReleaseTransactionSet releaseTransactionSet = new ReleaseTransactionSet(new HashSet<>());
+        when(provider.getReleaseTransactionSet()).thenReturn(releaseTransactionSet);
+
+        BtcLockSenderProvider btcLockSenderProvider = mock(BtcLockSenderProvider.class);
+        when(btcLockSenderProvider.tryGetBtcLockSender(btcTx)).thenReturn(Optional.empty());
+
+        BridgeSupport bridgeSupport = getBridgeSupport(
+            bridgeConstants,
+            provider,
+            repository,
+            btcLockSenderProvider,
+            mock(PeginInstructionsProvider.class),
+            mock(Block.class),
+            mock(BtcBlockStoreWithCache.Factory.class),
+            activations
+        );
+
+        // Act
+        try {
+            bridgeSupport.processPegIn(btcTx, mock(Transaction.class), 0, mock(Sha256Hash.class));
+            Assert.fail(); // Should have thrown a RegisterBtcTransactionException
+        } catch (Exception e) {
+            // Assert
+            Assert.assertTrue(e instanceof RegisterBtcTransactionException);
+            Assert.assertEquals(0, releaseTransactionSet.getEntries().size());
+        }
+    }
+
+    @Test
+    public void processPegIn_errorParsingPeginInstructions_afterRskip170_refundSender()
+        throws IOException, PeginInstructionsException {
+
+        // Arrange
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP170)).thenReturn(true);
+
+        Repository repository = createRepository();
+
+        BtcECKey srcKey1 = new BtcECKey();
+        ECKey key = ECKey.fromPublicOnly(srcKey1.getPubKey());
+        RskAddress rskAddress = new RskAddress(key.getAddress());
+        Address btcSenderAddress = srcKey1.toAddress(btcParams);
+
+        BtcTransaction btcTx = new BtcTransaction(btcParams);
+        btcTx.addOutput(Coin.COIN.multiply(10), bridgeConstants.getGenesisFederation().getAddress());
+        btcTx.addInput(PegTestUtils.createHash(1), 0, new Script(new byte[]{}));
+
+        BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
+
+        ReleaseTransactionSet releaseTransactionSet = new ReleaseTransactionSet(new HashSet<>());
+        when(provider.getReleaseTransactionSet()).thenReturn(releaseTransactionSet);
+
+        BtcLockSenderProvider btcLockSenderProvider = getBtcLockSenderProvider(
+            TxSenderAddressType.P2PKH,
+            btcSenderAddress,
+            rskAddress
+        );
+
+        PeginInstructionsProvider peginInstructionsProvider = mock(PeginInstructionsProvider.class);
+        when(peginInstructionsProvider.buildPeginInstructions(btcTx)).thenThrow(PeginInstructionsException.class);
+
+        BridgeSupport bridgeSupport = getBridgeSupport(
+            bridgeConstants,
+            provider,
+            repository,
+            btcLockSenderProvider,
+            peginInstructionsProvider,
+            mock(Block.class),
+            mock(BtcBlockStoreWithCache.Factory.class),
+            activations
+        );
+
+        // Act
+        try {
+            bridgeSupport.processPegIn(btcTx, mock(Transaction.class), 0, mock(Sha256Hash.class));
+            Assert.fail(); // Should have thrown a RegisterBtcTransactionException
+        } catch (Exception ex) {
+            // Assert
+            Assert.assertTrue(ex instanceof RegisterBtcTransactionException);
+            Assert.assertEquals(1, releaseTransactionSet.getEntries().size());
+
+            // Check rejection tx input was created from btc tx and sent to the btc refund address indicated by the user
+            boolean successfulRejection = false;
+            for (ReleaseTransactionSet.Entry e : releaseTransactionSet.getEntries()) {
+                BtcTransaction refundTx = e.getTransaction();
+                if (refundTx.getInput(0).getOutpoint().getHash() == btcTx.getHash() &&
+                    refundTx.getOutput(0).getScriptPubKey().getToAddress(btcParams).equals(btcSenderAddress)) {
+                    successfulRejection = true;
+                    break;
+                }
+            }
+
+            Assert.assertTrue(successfulRejection);
+        }
     }
 
     private void assertRefundInProcessPegInVersionLegacy(
@@ -5645,6 +5775,9 @@ public class BridgeSupportTest {
         }
 
         Assert.assertTrue(successfulRejection);
+
+        // Check tx was not marked as processed
+        Assert.assertFalse(provider.getHeightIfBtcTxhashIsAlreadyProcessed(btcTx.getHash()).isPresent());
     }
 
     private void assertRefundInProcessPegInVersion1(
@@ -6186,6 +6319,9 @@ public class BridgeSupportTest {
         }
         if (btcLockSenderProvider == null) {
             btcLockSenderProvider = mock(BtcLockSenderProvider.class);
+        }
+        if (executionBlock == null) {
+            executionBlock = mock(Block.class);
         }
         if (blockStoreFactory == null) {
             blockStoreFactory = mock(BtcBlockStoreWithCache.Factory.class);
