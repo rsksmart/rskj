@@ -248,6 +248,7 @@ public class BlockExecutor {
             boolean discardInvalidTxs,
             boolean acceptInvalidTransactions) {
         boolean vmTrace = programTraceProcessor != null;
+        logger.trace("Start executeInternal.");
         logger.trace("applyBlock: block: [{}] tx.list: [{}]", block.getNumber(), block.getTransactionsList().size());
 
         // Forks the repo, does not change "repository". It will have a completely different
@@ -344,10 +345,14 @@ public class BlockExecutor {
             logger.trace("tx done");
         }
 
+        logger.trace("End txs executions.");
         if (!vmTrace) {
+            logger.trace("Saving track.");
             track.save();
+            logger.trace("End saving track.");
         }
 
+        logger.trace("Building execution results.");
         BlockResult result = new BlockResult(
                 block,
                 executedTransactions,
@@ -357,6 +362,7 @@ public class BlockExecutor {
                 vmTrace ? null : track.getTrie()
         );
         profiler.stop(metric);
+        logger.trace("End executeInternal.");
         return result;
     }
 

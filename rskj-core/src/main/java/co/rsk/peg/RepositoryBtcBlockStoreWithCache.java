@@ -28,6 +28,8 @@ import co.rsk.util.MaxSizeHashMap;
 import org.ethereum.core.Repository;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
 import java.util.Map;
@@ -38,12 +40,15 @@ import java.util.Map;
  * @author Oscar Guindzberg
  */
 public class RepositoryBtcBlockStoreWithCache implements BtcBlockStoreWithCache {
+
+    private static final Logger logger = LoggerFactory.getLogger("btcBlockStore");
+
     public static final String BLOCK_STORE_CHAIN_HEAD_KEY = "blockStoreChainHead";
     private final Repository repository;
     private final RskAddress contractAddress;
     private final NetworkParameters btcNetworkParams;
-    public static final int MAX_DEPTH_STORED_BLOCKS = 5_000;
-    public static final int MAX_SIZE_MAP_STORED_BLOCKS = 10_000;
+    public static final int MAX_DEPTH_STORED_BLOCKS = 50_000;
+    public static final int MAX_SIZE_MAP_STORED_BLOCKS = 100_000;
     private final Map<Sha256Hash, StoredBlock> cacheBlocks;
 
     public RepositoryBtcBlockStoreWithCache(NetworkParameters btcNetworkParams, Repository repository, Map<Sha256Hash, StoredBlock> cacheBlocks, RskAddress contractAddress) {
@@ -116,8 +121,29 @@ public class RepositoryBtcBlockStoreWithCache implements BtcBlockStoreWithCache 
     public StoredBlock getStoredBlockAtMainChainHeight(int height) throws BlockStoreException {
         StoredBlock chainHead =  getChainHead();
         int depth = chainHead.getHeight() - height;
-
+        logger.trace("Getting btc block at depth: {}", depth);
         return getStoredBlockAtMainChainDepth(depth);
+    }
+
+    private synchronized void populateCache(StoredBlock chainHead) {
+        if(this.btcNetworkParams.getGenesisBlock().equals(chainHead.getHeader())) {
+            return;
+        }
+        cacheBlocks.put(chainHead.getHeader().getHash(), chainHead);
+        Sha256Hash blockHash = chainHead.getHeader().getPrevBlockHash();
+        int depth = MAX_DEPTH_STORED_BLOCKS-1;
+        while (blockHash != null && depth > 0) {
+            if(cacheBlocks.get(blockHash) != null) {
+                break;
+            }
+            StoredBlock currentBlock = get(blockHash);
+            if (currentBlock == null) {
+                break;
+            }
+            cacheBlocks.put(currentBlock.getHeader().getHash(), currentBlock);
+            depth--;
+            blockHash = currentBlock.getHeader().getPrevBlockHash();
+        }
     }
 
     @Override
@@ -129,6 +155,7 @@ public class RepositoryBtcBlockStoreWithCache implements BtcBlockStoreWithCache 
             //If its older than cache go to disk
             StoredBlock currentBlock = getFromCache(blockHash);
             if(currentBlock == null) {
+                logger.trace("Missing cache (depth={}/{}), getting from store.", i, depth);
                 currentBlock = get(blockHash);
                 if (currentBlock == null) {
                     return null;
@@ -155,27 +182,6 @@ public class RepositoryBtcBlockStoreWithCache implements BtcBlockStoreWithCache 
 
 
         return block;
-    }
-
-    private synchronized void populateCache(StoredBlock chainHead) {
-        if(this.btcNetworkParams.getGenesisBlock().equals(chainHead.getHeader())) {
-            return;
-        }
-        cacheBlocks.put(chainHead.getHeader().getHash(), chainHead);
-        Sha256Hash blockHash = chainHead.getHeader().getPrevBlockHash();
-        int depth = MAX_DEPTH_STORED_BLOCKS-1;
-        while (blockHash != null && depth > 0) {
-            if(cacheBlocks.get(blockHash) != null) {
-                break;
-            }
-            StoredBlock currentBlock = get(blockHash);
-            if (currentBlock == null) {
-                break;
-            }
-            cacheBlocks.put(currentBlock.getHeader().getHash(), currentBlock);
-            depth--;
-            blockHash = currentBlock.getHeader().getPrevBlockHash();
-        }
     }
 
     private byte[] storedBlockToByteArray(StoredBlock block) {

@@ -2424,7 +2424,9 @@ public class BridgeSupport {
 
         // Check the the merkle root equals merkle root of btc block at specified height in the btc best chain
         // BTC blockstore is available since we've already queried the best chain height
+        logger.trace("Getting btc block at height: {}", height);
         BtcBlock blockHeader = btcBlockStore.getStoredBlockAtMainChainHeight(height).getHeader();
+        logger.trace("Validating block merkle root at height: {}", height);
         if (!isBlockMerkleRootValid(merkleRoot, blockHeader)){
             String panicMessage = String.format(
                     "Btc Tx %s Supplied merkle root %s does not match block's merkle root %s",
