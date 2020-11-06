@@ -180,6 +180,10 @@ public class Constants {
         return 20;
     }
 
+    public static int getMaxBitcoinMergedMiningMerkleProofLength() {
+        return 480;
+    }
+
     public static Constants mainnet() {
         return new Constants(
                 MAINNET_CHAIN_ID,

@@ -19,6 +19,7 @@ package co.rsk.validators;
 
 import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.peg.utils.MerkleTreeUtils;
+import org.ethereum.config.Constants;
 
 import java.util.Arrays;
 import java.util.stream.IntStream;
@@ -31,7 +32,18 @@ public class Rskip92MerkleProofValidator implements MerkleProofValidator {
 
     private final byte[] pmtSerialized;
 
-    public Rskip92MerkleProofValidator(byte[] pmtSerialized) {
+    public Rskip92MerkleProofValidator(byte[] pmtSerialized, boolean isRskip180Enabled) {
+        if (isRskip180Enabled) {
+            if (pmtSerialized == null) {
+                throw new IllegalArgumentException("Partial merkle tree is <null>");
+            }
+
+            int maxMerkleProofLength = Constants.getMaxBitcoinMergedMiningMerkleProofLength();
+            if (pmtSerialized.length > maxMerkleProofLength) {
+                throw new IllegalArgumentException("Partial merkle tree's size is greater than " + maxMerkleProofLength);
+            }
+        }
+
         if ((pmtSerialized.length % Sha256Hash.LENGTH) != 0) {
             throw new IllegalArgumentException("Partial merkle tree does not have the expected format");
         }
