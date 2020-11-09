@@ -39,8 +39,7 @@ public class PeerScoringReporterService implements InternalService {
             );
             running = true;
         } catch (Exception e) {
-            logger.warn("peer scoring reporter failed");
-            logger.warn(e.getMessage());
+            logger.warn("peer scoring reporter failed", e);
             stop();
         }
     }
@@ -60,8 +59,7 @@ public class PeerScoringReporterService implements InternalService {
             String peersInformationDetailed = PeerScoringReporterUtil.detailedBadReputationStatusString(peerScoringInformationList);
             logger.debug("detailed bad reputation status {}", peersInformationDetailed);
         } catch (Exception e) {
-            logger.warn("failed to print report");
-            logger.warn(e.getMessage());
+            logger.warn("failed to print report", e);
 
             return false;
         }
