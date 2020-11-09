@@ -273,7 +273,7 @@ public class PeerScoringManager {
             peerScoring.startPunishment(punishmentTime);
 
             String nodeIDFormated = nodeIdForLog(nodeID);
-            logger.debug("NodeID {} has been punished for {} milliseconds. Reason {}", nodeIDFormated, punishmentTime, event);
+            logger.debug("NodeID {} has been punished for {} milliseconds. Last event {}", nodeIDFormated, punishmentTime, event);
             logger.debug("{}", new PeerScoringInformation(peerScoring, nodeIDFormated, ""));
         }
     }
@@ -282,7 +282,7 @@ public class PeerScoringManager {
         if(id == null) {
             return "NO_NODE_ID";
         }
-        return id.toString().substring(id.toString().length() - 7, id.toString().length() - 1);
+        return ByteUtil.toHexString(id.getID());
     }
 
     private String addressForLog(InetAddress address) {

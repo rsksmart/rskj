@@ -20,6 +20,7 @@ public class PeerScoringReporterService implements InternalService {
     private final PeerScoringManager peerScoringManager;
     private final long time;
     private ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
+    private boolean running = false;
 
     public PeerScoringReporterService(long time, PeerScoringManager peerScoringManager) {
         this.time = time;
@@ -28,13 +29,15 @@ public class PeerScoringReporterService implements InternalService {
 
     @Override
     public void start() {
-        logger.debug("starting peer scoring summary service");
+        logger.debug("starting peer scoring reporter service");
         try {
-            scheduledExecutorService.scheduleAtFixedRate(() -> printReport(peerScoringManager.getPeersInformation()),
+            List<PeerScoringInformation> peerScoringInformationList = peerScoringManager.getPeersInformation();
+            scheduledExecutorService.scheduleAtFixedRate(() -> printReport(peerScoringInformationList),
                     0,
                     time,
                     TimeUnit.MILLISECONDS
             );
+            running = true;
         } catch (Exception e) {
             logger.warn("peer scoring reporter failed");
             logger.warn(e.getMessage());
@@ -45,7 +48,8 @@ public class PeerScoringReporterService implements InternalService {
     @Override
     public void stop() {
         scheduledExecutorService.shutdown();
-        logger.warn("peer scoring summary service has been stopped");
+        logger.warn("peer scoring reporter service has been stopped");
+        running = false;
     }
 
     public boolean printReport(List<PeerScoringInformation> peerScoringInformationList) {
@@ -58,18 +62,20 @@ public class PeerScoringReporterService implements InternalService {
         } catch (Exception e) {
             logger.warn("failed to print report");
             logger.warn(e.getMessage());
+
+            return false;
         }
 
         return true;
     }
 
     @VisibleForTesting
-    public boolean isSchedulerStopped() {
-        return scheduledExecutorService.isShutdown();
+    public boolean initialized() {
+        return scheduledExecutorService != null && peerScoringManager != null && time > 0;
     }
 
     @VisibleForTesting
-    public boolean initialized() {
-        return scheduledExecutorService != null && peerScoringManager != null && time > 0;
+    public boolean isRunning() {
+        return running && !scheduledExecutorService.isShutdown();
     }
 }

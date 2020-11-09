@@ -2,6 +2,7 @@ package co.rsk.scoring;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.annotations.VisibleForTesting;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -10,6 +11,10 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class PeerScoringReporterUtil {
+
+    private PeerScoringReporterUtil() {
+    }
+
     public static PeerScoringBadReputationSummary buildBadReputationSummary(List<PeerScoringInformation> peerScoringInformationList) {
         List<PeerScoringInformation> badReputationList = badReputationList(peerScoringInformationList);
 
@@ -32,7 +37,8 @@ public class PeerScoringReporterUtil {
         );
     }
 
-    private static List<PeerScoringInformation> badReputationList(List<PeerScoringInformation> peerScoringInformationList) {
+    @VisibleForTesting
+    public static List<PeerScoringInformation> badReputationList(List<PeerScoringInformation> peerScoringInformationList) {
         if(peerScoringInformationList == null) {
             return new ArrayList<>();
         }

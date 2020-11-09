@@ -1,7 +1,10 @@
 package co.rsk.scoring;
 
+import java.util.Arrays;
+
 /**
- * This is a DTO of peers with bad reputation
+ * This is a presentational object of peers with bad reputation
+ * It's used to expose a json rpc message (sco_badReputationSummary())
  */
 public class PeerScoringBadReputationSummary {
     private int count;
@@ -114,8 +117,9 @@ public class PeerScoringBadReputationSummary {
 
     @Override
     public boolean equals(Object object) {
-        if(object == null || !(object instanceof PeerScoringBadReputationSummary))
+        if(!(object instanceof PeerScoringBadReputationSummary)) {
             return false;
+        }
         PeerScoringBadReputationSummary p = (PeerScoringBadReputationSummary) object;
 
         return getCount() == p.getCount() &&
@@ -133,5 +137,13 @@ public class PeerScoringBadReputationSummary {
                 getTimeoutMessages() == p.getTimeoutMessages() &&
                 getRepeatedMessages() == p.getRepeatedMessages() &&
                 getValidBlocks() == p.getValidBlocks();
+    }
+
+    @Override
+    public int hashCode() {
+        return Arrays.asList(count, failedHandshakes, invalidMessages, invalidNetworks,
+                invalidHeader, invalidBlocks, invalidTransactions, successfulHandshakes,
+                validTransactions, punishments, peersTotalScore, unexpectedMessages, timeoutMessages,
+                repeatedMessages, validBlocks).hashCode();
     }
 }

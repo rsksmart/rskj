@@ -43,6 +43,11 @@ public class PeerScoringReporterUtilTest {
         Assert.assertEquals("[]", detailedStatusResult);
     }
 
+    @Test
+    public void badReputationListByNull() {
+        Assert.assertEquals(new ArrayList(), PeerScoringReporterUtil.badReputationList(null));
+    }
+
     private List<PeerScoringInformation> badReputationPeers() {
         return Arrays.asList(buildPeerScoringInformation("4", false)
                 , buildPeerScoringInformation("5", false));

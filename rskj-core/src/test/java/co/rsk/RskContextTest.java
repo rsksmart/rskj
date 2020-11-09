@@ -168,7 +168,7 @@ public class RskContextTest {
         RskContext rskContext = new RskContext(new String[0]);
         rskContext.buildInternalServices();
 
-        Assert.assertTrue(rskContext.getPeerScoringReporterService() != null);
+        Assert.assertNotNull(rskContext.getPeerScoringReporterService());
         Assert.assertTrue(rskContext.getPeerScoringReporterService().initialized());
     }
 }
