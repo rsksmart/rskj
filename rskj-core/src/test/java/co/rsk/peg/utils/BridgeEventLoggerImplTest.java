@@ -53,17 +53,15 @@ import java.util.stream.Collectors;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-
 /**
  * Test class for BridgeEventLoggerImpl.
  *
  * @author martin.medina
  */
-
 public class BridgeEventLoggerImplTest {
 
     @Test
-    public void logLockBtc() {
+    public void logLockBtc_preRskip170() {
         // Setup event logger
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         List<LogInfo> eventLogs = new LinkedList<>();
@@ -80,15 +78,16 @@ public class BridgeEventLoggerImplTest {
         when(mockedTx.getHash()).thenReturn(PegTestUtils.createHash(0));
 
         Coin amount = Coin.SATOSHI;
+        int protocolVersion = 0;
 
         // Act
-        eventLogger.logLockBtc(rskAddress, mockedTx, senderAddress, amount);
+        eventLogger.logLockBtc(rskAddress, mockedTx, senderAddress, amount, protocolVersion);
 
         // Assert log size
         Assert.assertEquals(1, eventLogs.size());
 
         LogInfo logResult = eventLogs.get(0);
-        CallTransaction.Function event = BridgeEvents.LOCK_BTC.getEvent();
+        CallTransaction.Function event = BridgeEvents.LOCK_BTC_PRE_IRIS.getEvent();
 
         // Assert address that made the log
         Assert.assertEquals(PrecompiledContracts.BRIDGE_ADDR, new RskAddress(logResult.getAddress()));
@@ -106,7 +105,7 @@ public class BridgeEventLoggerImplTest {
     }
 
     @Test
-    public void logLockBtc_with_segwit_address() {
+    public void logLockBtc_withSegwitAddress_preRskip170() {
         // Setup event logger
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         List<LogInfo> eventLogs = new LinkedList<>();
@@ -123,15 +122,16 @@ public class BridgeEventLoggerImplTest {
         when(mockedTx.getHash()).thenReturn(PegTestUtils.createHash(0));
 
         Coin amount = Coin.SATOSHI;
+        int protocolVersion = 0;
 
         // Act
-        eventLogger.logLockBtc(rskAddress, mockedTx, senderAddress, amount);
+        eventLogger.logLockBtc(rskAddress, mockedTx, senderAddress, amount, protocolVersion);
 
         // Assert log size
         Assert.assertEquals(1, eventLogs.size());
 
         LogInfo logResult = eventLogs.get(0);
-        CallTransaction.Function event = BridgeEvents.LOCK_BTC.getEvent();
+        CallTransaction.Function event = BridgeEvents.LOCK_BTC_PRE_IRIS.getEvent();
 
         // Assert address that made the log
         Assert.assertEquals(PrecompiledContracts.BRIDGE_ADDR, new RskAddress(logResult.getAddress()));
@@ -149,11 +149,15 @@ public class BridgeEventLoggerImplTest {
     }
 
     @Test
-    public void logLockBtc_with_null_sender() {
+    public void logLockBtc_postRskip170() {
         // Setup event logger
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP170)).thenReturn(true);
+
         List<LogInfo> eventLogs = new LinkedList<>();
         BridgeEventLogger eventLogger = new BridgeEventLoggerImpl(null, activations, eventLogs);
+
+        Address senderAddress = mock(Address.class);
 
         RskAddress rskAddress = mock(RskAddress.class);
         when(rskAddress.toString()).thenReturn("0x00000000000000000000000000000000000000");
@@ -163,33 +167,34 @@ public class BridgeEventLoggerImplTest {
         when(mockedTx.getHash()).thenReturn(PegTestUtils.createHash(0));
 
         Coin amount = Coin.SATOSHI;
+        int protocolVersion = 1;
 
         // Act
-        eventLogger.logLockBtc(rskAddress, mockedTx, null, amount);
+        eventLogger.logLockBtc(rskAddress, mockedTx, senderAddress, amount, protocolVersion);
 
         // Assert log size
         Assert.assertEquals(1, eventLogs.size());
 
         LogInfo logResult = eventLogs.get(0);
-        CallTransaction.Function event = BridgeEvents.LOCK_BTC.getEvent();
+        CallTransaction.Function event = BridgeEvents.LOCK_BTC_POST_IRIS.getEvent();
 
         // Assert address that made the log
         Assert.assertEquals(PrecompiledContracts.BRIDGE_ADDR, new RskAddress(logResult.getAddress()));
 
         // Assert log topics
-        Assert.assertEquals(2, logResult.getTopics().size());
-        byte[][] topics = event.encodeEventTopics(rskAddress.toString());
+        Assert.assertEquals(3, logResult.getTopics().size());
+        byte[][] topics = event.encodeEventTopics(rskAddress.toString(), mockedTx.getHash().getBytes());
         for (int i=0; i<topics.length; i++) {
             Assert.assertArrayEquals(topics[i], logResult.getTopics().get(i).getData());
         }
 
         // Assert log data
-        byte[] encodedData = event.encodeEventData(mockedTx.getHash().getBytes(), "Undetermined", amount.getValue());
+        byte[] encodedData = event.encodeEventData(amount.getValue(), protocolVersion);
         Assert.assertArrayEquals(encodedData, logResult.getData());
     }
 
     @Test
-    public void logUpdateCollectionsBeforeRskip146HardFork() {
+    public void logUpdateCollections_preRskip146() {
         // Setup event logger
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         List<LogInfo> eventLogs = new LinkedList<>();
@@ -227,7 +232,7 @@ public class BridgeEventLoggerImplTest {
     }
 
     @Test
-    public void logUpdateCollectionsAfterRskip146HardFork() {
+    public void logUpdateCollections_postRskip146() {
         // Setup event logger
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         List<LogInfo> eventLogs = new LinkedList<>();
@@ -266,7 +271,7 @@ public class BridgeEventLoggerImplTest {
     }
 
     @Test
-    public void logAddSignatureBeforeRskip146HardFork() {
+    public void logAddSignature_preRskip146() {
         // Setup event logger
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         List<LogInfo> eventLogs = new LinkedList<>();
@@ -307,7 +312,7 @@ public class BridgeEventLoggerImplTest {
     }
 
     @Test
-    public void logAddSignatureAfterRskip146HardFork() {
+    public void logAddSignature_postRskip146() {
         // Setup event logger
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         List<LogInfo> eventLogs = new LinkedList<>();
@@ -348,7 +353,7 @@ public class BridgeEventLoggerImplTest {
     }
 
     @Test
-    public void logReleaseBtcBeforeRskip146() {
+    public void logReleaseBtc_preRskip146() {
         // Setup event logger
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         List<LogInfo> eventLogs = new LinkedList<>();
@@ -384,7 +389,7 @@ public class BridgeEventLoggerImplTest {
     }
 
     @Test
-    public void logReleaseBtcAfterRskip146() {
+    public void logReleaseBtc_postRskip146() {
         // Setup event logger
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         List<LogInfo> eventLogs = new LinkedList<>();
@@ -421,7 +426,7 @@ public class BridgeEventLoggerImplTest {
     }
 
     @Test
-    public void logCommitFederationBeforeRskip146() {
+    public void logCommitFederation_preRskip146() {
         // Setup event logger
         BridgeConstants constantsMock = mock(BridgeConstants.class);
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
@@ -512,7 +517,7 @@ public class BridgeEventLoggerImplTest {
     }
 
     @Test
-    public void logCommitFederationAfterRskip146() {
+    public void logCommitFederation_postRskip146() {
         // Setup event logger
         BridgeConstants constantsMock = mock(BridgeConstants.class);
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
@@ -587,22 +592,6 @@ public class BridgeEventLoggerImplTest {
         Assert.assertArrayEquals(encodedData, logResult.getData());
     }
 
-    private byte[] flatKeysAsByteArray(List<BtcECKey> keys) {
-        List<byte[]> pubKeys = keys.stream()
-                .map(BtcECKey::getPubKey)
-                .collect(Collectors.toList());
-        int pubKeysLength = pubKeys.stream().mapToInt(key -> key.length).sum();
-
-        byte[] flatPubKeys = new byte[pubKeysLength];
-        int copyPos = 0;
-        for(byte[] key : pubKeys) {
-            System.arraycopy(key, 0, flatPubKeys, copyPos, key.length);
-            copyPos += key.length;
-        }
-
-        return flatPubKeys;
-    }
-
     @Test
     public void logReleaseBtcRequested() {
         // Setup event logger
@@ -639,5 +628,21 @@ public class BridgeEventLoggerImplTest {
 
         // Assert log data
         Assert.assertArrayEquals(event.encodeEventData(amount.getValue()), result.getData());
+    }
+
+    private byte[] flatKeysAsByteArray(List<BtcECKey> keys) {
+        List<byte[]> pubKeys = keys.stream()
+            .map(BtcECKey::getPubKey)
+            .collect(Collectors.toList());
+        int pubKeysLength = pubKeys.stream().mapToInt(key -> key.length).sum();
+
+        byte[] flatPubKeys = new byte[pubKeysLength];
+        int copyPos = 0;
+        for(byte[] key : pubKeys) {
+            System.arraycopy(key, 0, flatPubKeys, copyPos, key.length);
+            copyPos += key.length;
+        }
+
+        return flatPubKeys;
     }
 }

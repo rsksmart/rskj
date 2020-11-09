@@ -5,13 +5,22 @@ import org.ethereum.solidity.SolidityType;
 
 public enum BridgeEvents {
 
-    LOCK_BTC("lock_btc",
+    LOCK_BTC_PRE_IRIS("lock_btc",
             new CallTransaction.Param[]{
                     new CallTransaction.Param(true, "receiver", SolidityType.getType("address")),
                     new CallTransaction.Param(false, "btcTxHash", SolidityType.getType("bytes32")),
                     new CallTransaction.Param(false, "senderBtcAddress", SolidityType.getType("string")),
                     new CallTransaction.Param(false, "amount", SolidityType.getType("int"))
-            }),
+            }
+    ),
+    LOCK_BTC_POST_IRIS("lock_btc",
+        new CallTransaction.Param[]{
+            new CallTransaction.Param(true, "receiver", SolidityType.getType("address")),
+            new CallTransaction.Param(true, "btcTxHash", SolidityType.getType("bytes32")),
+            new CallTransaction.Param(false, "amount", SolidityType.getType("int")),
+            new CallTransaction.Param(false, "peginProtocolVersion", SolidityType.getType("int"))
+        }
+    ),
     UPDATE_COLLECTIONS("update_collections",
             new CallTransaction.Param[]{
                     new CallTransaction.Param(false, "sender", SolidityType.getType("address"))

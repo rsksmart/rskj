@@ -189,16 +189,30 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
         this.logs.add(new LogInfo(BRIDGE_CONTRACT_ADDRESS, encodedTopics, encodedData));
     }
 
-    public void logLockBtc(RskAddress receiver, BtcTransaction btcTx, Address senderBtcAddress, Coin amount) {
-        CallTransaction.Function event = BridgeEvents.LOCK_BTC.getEvent();
+    public void logLockBtc(RskAddress receiver, BtcTransaction btcTx, Address senderBtcAddress, Coin amount, int protocolVersion) {
+        if (activations.isActive(ConsensusRule.RSKIP170)) {
+            this.logLockBtcPostIris(receiver, btcTx, amount, protocolVersion);
+        } else {
+            this.logLockBtcPreIris(receiver, btcTx, senderBtcAddress, amount);
+        }
+    }
+
+    public void logLockBtcPreIris(RskAddress receiver, BtcTransaction btcTx, Address senderBtcAddress, Coin amount) {
+        CallTransaction.Function event = BridgeEvents.LOCK_BTC_PRE_IRIS.getEvent();
         byte[][] encodedTopicsInBytes = event.encodeEventTopics(receiver.toString());
         List<DataWord> encodedTopics = LogInfo.byteArrayToList(encodedTopicsInBytes);
 
-        String sender = "Undetermined";
-        if (senderBtcAddress != null) {
-            sender = senderBtcAddress.toString();
-        }
-        byte[] encodedData = event.encodeEventData(btcTx.getHash().getBytes(), sender, amount.getValue());
+        byte[] encodedData = event.encodeEventData(btcTx.getHash().getBytes(), senderBtcAddress.toString(), amount.getValue());
+
+        this.logs.add(new LogInfo(BRIDGE_CONTRACT_ADDRESS, encodedTopics, encodedData));
+    }
+
+    public void logLockBtcPostIris(RskAddress receiver, BtcTransaction btcTx, Coin amount, int protocolVersion) {
+        CallTransaction.Function event = BridgeEvents.LOCK_BTC_POST_IRIS.getEvent();
+        byte[][] encodedTopicsInBytes = event.encodeEventTopics(receiver.toString(), btcTx.getHash().getBytes());
+        List<DataWord> encodedTopics = LogInfo.byteArrayToList(encodedTopicsInBytes);
+
+        byte[] encodedData = event.encodeEventData(amount.getValue(), protocolVersion);
 
         this.logs.add(new LogInfo(BRIDGE_CONTRACT_ADDRESS, encodedTopics, encodedData));
     }
