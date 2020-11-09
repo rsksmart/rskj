@@ -20,6 +20,7 @@ package org.ethereum.rpc;
 
 import co.rsk.config.InternalService;
 import co.rsk.rpc.*;
+import co.rsk.scoring.PeerScoringBadReputationSummary;
 import co.rsk.scoring.PeerScoringInformation;
 
 import java.util.Arrays;
@@ -108,4 +109,5 @@ public interface Web3 extends InternalService, Web3TxPoolModule, Web3EthModule, 
     void sco_unbanAddress(String address);
     PeerScoringInformation[] sco_peerList();
     String[] sco_bannedAddresses();
+    PeerScoringBadReputationSummary sco_badReputationSummary();
 }
