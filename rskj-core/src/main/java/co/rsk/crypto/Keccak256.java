@@ -33,16 +33,18 @@ import static com.google.common.base.Preconditions.checkArgument;
  * map. It also checks that the length is correct and provides a bit more type safety.
  */
 public class Keccak256 implements Serializable, Comparable<Keccak256> {
+    public static final int HASH_LEN = 32;
+    public static final Keccak256 ZERO_HASH = new Keccak256(new byte[HASH_LEN]);
+
     private final byte[] bytes;
-    public static final Keccak256 ZERO_HASH = new Keccak256(new byte[32]);
 
     public Keccak256(byte[] rawHashBytes) {
-        checkArgument(rawHashBytes.length == 32);
+        checkArgument(rawHashBytes.length == HASH_LEN);
         this.bytes = rawHashBytes;
     }
 
     public Keccak256(String hexString) {
-        checkArgument(hexString.length() == 64);
+        checkArgument(hexString.length() == 2*HASH_LEN);
         this.bytes = Utils.HEX.decode(hexString);
     }
 
@@ -94,7 +96,7 @@ public class Keccak256 implements Serializable, Comparable<Keccak256> {
 
     @Override
     public int compareTo(Keccak256 o) {
-        for (int i = 32 - 1; i >= 0; i--) {
+        for (int i = HASH_LEN - 1; i >= 0; i--) {
             final int thisByte = this.bytes[i] & 0xff;
             final int otherByte = o.bytes[i] & 0xff;
             if (thisByte > otherByte) {
