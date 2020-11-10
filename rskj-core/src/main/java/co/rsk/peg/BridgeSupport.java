@@ -440,6 +440,7 @@ public class BridgeSupport {
         RskAddress rskDestinationAddress = peginInformation.getRskDestinationAddress();
         Address senderBtcAddress = peginInformation.getSenderBtcAddress();
         TxSenderAddressType senderBtcAddressType = peginInformation.getSenderBtcAddressType();
+        int protocolVersion = peginInformation.getProtocolVersion();
         co.rsk.core.Coin amountInWeis = co.rsk.core.Coin.fromBitcoin(amount);
 
         logger.debug("[executePegIn] [btcTx:{}] Is a lock from a {} sender", btcTx.getHash(), senderBtcAddressType);
@@ -452,7 +453,11 @@ public class BridgeSupport {
         );
 
         if (activations.isActive(ConsensusRule.RSKIP146)) {
-            eventLogger.logLockBtc(rskDestinationAddress, btcTx, senderBtcAddress, amount);
+            if (activations.isActive(ConsensusRule.RSKIP170)) {
+                eventLogger.logPeginBtc(rskDestinationAddress, btcTx, amount, protocolVersion);
+            } else {
+                eventLogger.logLockBtc(rskDestinationAddress, btcTx, senderBtcAddress, amount);
+            }
         }
 
         // Save UTXOs from the federation(s) only if we actually locked the funds
