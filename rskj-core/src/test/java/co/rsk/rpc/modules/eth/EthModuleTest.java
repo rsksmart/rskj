@@ -40,6 +40,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.*;
 
@@ -77,8 +78,10 @@ public class EthModuleTest {
                 new BridgeSupportFactory(
                         null, null, null));
 
-        String result = eth.call(args, "latest");
-        assertThat(result, is(TypeConverter.toUnformattedJsonHex(hReturn)));
+        String expectedResult = TypeConverter.toUnformattedJsonHex(hReturn);
+        String actualResult = eth.call(args, "latest");
+
+        assertEquals(expectedResult, actualResult);
     }
 
     @Test
@@ -113,8 +116,10 @@ public class EthModuleTest {
                 new BridgeSupportFactory(
                         null, null, null));
 
-        String result = eth.call(args, "latest");
-        assertThat(result, is(TypeConverter.toUnformattedJsonHex(hReturn)));
+        String expectedResult = TypeConverter.toUnformattedJsonHex(hReturn);
+        String actualResult = eth.call(args, "latest");
+
+        assertEquals(expectedResult, actualResult);
     }
 
     @Test
