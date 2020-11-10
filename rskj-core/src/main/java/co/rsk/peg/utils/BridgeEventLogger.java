@@ -44,5 +44,7 @@ public interface BridgeEventLogger {
 
     void logLockBtc(RskAddress rskReceiver, BtcTransaction btcTx, Address senderBtcAddress, Coin amount);
 
+    void logPeginBtc(RskAddress rskReceiver, BtcTransaction btcTx, Coin amount, int protocolVersion);
+
     void logReleaseBtcRequested(byte[] rskTxHash, BtcTransaction btcTx, Coin amount);
 }
