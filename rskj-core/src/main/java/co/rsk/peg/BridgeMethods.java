@@ -577,14 +577,14 @@ public enum BridgeMethods {
             activations -> activations.isActive(RSKIP143),
             false
     ),
-    REGISTER_BTC_TRANSFER(
+    REGISTER_FAST_BRIDGE_BTC_TRANSACTION(
             CallTransaction.Function.fromSignature(
                     "registerBtcTransfer",
-                    new String[]{"bytes", "uint256", "bytes", "bytes32", "bytes", "string", "bytes", "bool"},
-                    new String[]{"int256"}
+                    new String[]{"bytes", "uint256", "bytes", "bytes32", "bytes", "address", "bytes", "int256"},
+                    new String[]{"uint256"}
             ),
             fixedCost(10000L),  // TODO: Define a cost
-            (BridgeMethodExecutorTyped) Bridge::registerBtcTransfer,
+            (BridgeMethodExecutorTyped) Bridge::registerFastBridgeBtcTransaction,
             activations -> activations.isActive(RSKIP176),
             false
     );
