@@ -38,6 +38,7 @@ import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
+import org.ethereum.solidity.SolidityType;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.LogInfo;
@@ -189,7 +190,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     public static final CallTransaction.Function GET_LOCKING_CAP = BridgeMethods.GET_LOCKING_CAP.getFunction();
     public static final CallTransaction.Function REGISTER_BTC_COINBASE_TRANSACTION = BridgeMethods.REGISTER_BTC_COINBASE_TRANSACTION.getFunction();
     public static final CallTransaction.Function HAS_BTC_BLOCK_COINBASE_TRANSACTION_INFORMATION = BridgeMethods.HAS_BTC_BLOCK_COINBASE_TRANSACTION_INFORMATION.getFunction();
-    public static final CallTransaction.Function REGISTER_BTC_TRANSFER = BridgeMethods.REGISTER_BTC_TRANSFER.getFunction();
+    public static final CallTransaction.Function REGISTER_FAST_BRIDGE_BTC_TRANSACTION = BridgeMethods.REGISTER_FAST_BRIDGE_BTC_TRANSACTION.getFunction();
 
     public static final int LOCK_WHITELIST_UNLIMITED_MODE_CODE = 0;
     public static final int LOCK_WHITELIST_ENTRY_NOT_FOUND_CODE = -1;
@@ -1067,20 +1068,21 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         return bridgeSupport.hasBtcBlockCoinbaseTransactionInformation(blockHash);
     }
 
-    public int registerBtcTransfer(Object[] args) {
-        logger.trace("registerBtcTransfer");
-
-        byte[] btcTxSerialized = (byte[]) args[0];
-        int height = ((BigInteger) args[1]).intValue();
-        byte[] pmtSerialized = (byte[]) args[2];
-        Sha256Hash derivationArgumentsHash = Sha256Hash.wrap((byte[]) args[3]);
-        Address userRefundAddress = new Address(bridgeConstants.getBtcParams(), (byte[]) args[4]);
-        RskAddress lbcAddress = new RskAddress((String) args[5]);
-        Address lpBtcAddress = new Address(bridgeConstants.getBtcParams(), (byte[]) args[6]);
-        boolean executionStatus = (Boolean) args[7];
+    public int registerFastBridgeBtcTransaction(Object[] args) {
+        logger.trace("registerFastBridgeBtcTransaction");
 
         try {
-            return bridgeSupport.registerBtcTransfer(
+            byte[] btcTxSerialized = (byte[]) args[0];
+            int height = ((BigInteger) args[1]).intValue();
+            byte[] pmtSerialized = (byte[]) args[2];
+            Sha256Hash derivationArgumentsHash = Sha256Hash.wrap((byte[]) args[3]);
+            Address userRefundAddress = new Address(bridgeConstants.getBtcParams(), (byte[]) args[4]);
+            // A DataWord cast is used because a SolidityType "address" is decoded using this specific type.
+            RskAddress lbcAddress = new RskAddress((DataWord) args[5]);
+            Address lpBtcAddress = new Address(bridgeConstants.getBtcParams(), (byte[]) args[6]);
+            Coin valueToTransfer = BridgeUtils.getCoinFromBigInteger((BigInteger) args[7]);
+
+            return bridgeSupport.registerFastBridgeBtcTransaction(
                 rskTx,
                 btcTxSerialized,
                 height,
@@ -1089,10 +1091,11 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
                 userRefundAddress,
                 lbcAddress,
                 lpBtcAddress,
-                executionStatus);
-        } catch (BlockStoreException | RegisterBtcTransferException | IOException | RegisterBtcTransactionException | BridgeIllegalArgumentException e) {
-            logger.warn("Exception in registerBtcTransfer", e);
-            throw new RuntimeException("Exception in registerBtcTransfer", e);
+                valueToTransfer
+            );
+        } catch (BlockStoreException | RegisterFastBridgeBtcTransactionException | IOException | BridgeIllegalArgumentException e) {
+            logger.warn("Exception in registerFastBridgeBtcTransaction", e);
+            throw new RuntimeException("Exception in registerFastBridgeBtcTransaction", e);
         }
     }
 
@@ -1123,7 +1126,6 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             }
         };
     }
-
 
     private boolean isLocalCall() {
         return rskTx.isLocalCallTransaction();

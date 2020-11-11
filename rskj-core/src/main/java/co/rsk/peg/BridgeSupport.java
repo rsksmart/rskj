@@ -2259,7 +2259,7 @@ public class BridgeSupport {
         return coinbaseInformation != null;
     }
 
-    public int registerBtcTransfer(
+    public int registerFastBridgeBtcTransaction(
             Transaction rskTx,
             byte[] btcTxSerialized,
             int height,
@@ -2268,16 +2268,16 @@ public class BridgeSupport {
             Address userRefundAddress,
             RskAddress lbcAddress,
             Address lpBtcAddress,
-            boolean shouldTransferToContract
+            Coin valueToTransfer
     )
-        throws BlockStoreException, RegisterBtcTransferException, IOException, RegisterBtcTransactionException, BridgeIllegalArgumentException {
+        throws BlockStoreException, RegisterFastBridgeBtcTransactionException, IOException, BridgeIllegalArgumentException {
         if (!BridgeUtils.isContractTx(rskTx)) {
             String errorMessage = String.format(
-                "[registerBtcTransfer] [rskTx:%s] Transaction not a contract",
+                "[registerFastBridgeBtcTransaction] [rskTx:%s] Transaction not a contract",
                 ByteUtil.toHexString(rskTx.getHash().getBytes())
             );
             logger.debug(errorMessage);
-            throw new RegisterBtcTransferContractValidationException(errorMessage);
+            throw new RegisterFastBridgeBtcTransactionContractValidationException(errorMessage);
         }
 
         // TODO: validateTxSender: tx sender should be equal to lbcAddress
@@ -2290,16 +2290,16 @@ public class BridgeSupport {
         //TODO : this validation is no longer needed. In stead,
         // check in storage FastBridgeHashUsedInBtcTx
         if (isAlreadyBtcTxHashProcessed(btcTxHash)) {
-            throw new RegisterBtcTransactionException("Transaction already processed");
+            throw new RegisterFastBridgeBtcTransactionException("Transaction already processed");
         }
 
         if (!validationsForRegisterBtcTransaction(btcTxHash, height, pmtSerialized, btcTxSerialized)) {
             String errorMessage = String.format(
-                "[registerBtcTransfer] [rskTx:%s] error during validationsForRegisterBtcTransaction",
+                "[registerFastBridgeBtcTransaction] [rskTx:%s] error during validationsForRegisterBtcTransaction",
                 ByteUtil.toHexString(btcTxHash.getBytes())
             );
             logger.debug(errorMessage);
-            throw new RegisterBtcTransferValidationException(errorMessage);
+            throw new RegisterFastBridgeFastBridgeBtcTransactionValidationException(errorMessage);
         }
 
         BtcTransaction btcTx = new BtcTransaction(bridgeConstants.getBtcParams(), btcTxSerialized);
@@ -2309,7 +2309,7 @@ public class BridgeSupport {
         // check again in storage FastBridgeHashUsedInBtcTx, only if btcTx.getHash(false) != btcTxHash
         // Check again that the tx was not already processed but making sure to use the txid (no witness)
         if (isAlreadyBtcTxHashProcessed(btcTx.getHash(false))) {
-            throw new RegisterBtcTransactionException("Transaction already processed");
+            throw new RegisterFastBridgeBtcTransactionException("Transaction already processed");
         }
 
         //TODO: remove createFastBridgeFederationData. Will be replaced by fastBridgeFederationInformation
@@ -2341,21 +2341,12 @@ public class BridgeSupport {
         }
 
         if (provider.isFastBridgeFederationDerivationHashUsed(fastBridgeFederationData.getDerivationArgumentsHash())) {
-            logger.warn("[registerBtcTransfer] [btcTxHash:{}] derivationArgumentsHash is already "
+            logger.warn("[registerFastBridgeBtcTransaction] [btcTxHash:{}] derivationArgumentsHash is already "
                 + "saved in BridgeStorageProvider",
                 btcTxHash
             );
             WalletProvider walletProvider = createFastBridgeWalletProvider(fastBridgeFederationInformation);
             generateRejectionRelease(btcTx, userRefundAddress, fastBridgeFedAddress, rskTx,  totalAmount, walletProvider);
-            return -1;
-        }
-
-        if (!shouldTransferToContract) {
-            logger.warn("[registerBtcTransfer] [btcTxHash:{}] shouldTransferToContract is set as False",
-                btcTxHash
-            );
-            WalletProvider walletProvider = createFastBridgeWalletProvider(fastBridgeFederationInformation);
-            generateRejectionRelease(btcTx, userRefundAddress, fastBridgeFedAddress, rskTx, totalAmount, walletProvider);
             return -1;
         }
 
