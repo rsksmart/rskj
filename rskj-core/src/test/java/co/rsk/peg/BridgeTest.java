@@ -16,6 +16,8 @@ import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
+import org.ethereum.solidity.SolidityType;
+import org.ethereum.solidity.SolidityTypeTest;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.exception.VMException;
@@ -198,7 +200,7 @@ public class BridgeTest {
     }
 
     @Test
-    public void registerBtcTransfer_before_RSKIP176_activation() throws VMException {
+    public void registerFastBridgeBtcTransaction_before_RSKIP176_activation() throws VMException {
         doReturn(false).when(activationConfig).isActive(eq(RSKIP176), anyLong());
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
@@ -207,7 +209,7 @@ public class BridgeTest {
         byte[] value = Sha256Hash.ZERO_HASH.getBytes();
         byte[] pubKeyHash = new BtcECKey().getPubKeyHash();
 
-        byte[] data = BridgeMethods.REGISTER_BTC_TRANSFER.getFunction().encode(
+        byte[] data = BridgeMethods.REGISTER_FAST_BRIDGE_BTC_TRANSACTION.getFunction().encode(
             value,
             1,
             value,
@@ -215,7 +217,7 @@ public class BridgeTest {
             pubKeyHash,
             "2e12a7e43926ccd228a2587896e53c3d1a51dacb",
             pubKeyHash,
-            true
+            1
         );
 
         //Assert
@@ -223,15 +225,15 @@ public class BridgeTest {
     }
 
     @Test
-    public void registerBtcTransfer_after_RSKIP176_activation()
-        throws RegisterBtcTransferException, BlockStoreException, IOException, VMException, RegisterBtcTransactionException {
+    public void registerFastBridgeBtcTransaction_after_RSKIP176_activation()
+        throws RegisterFastBridgeBtcTransactionException, BlockStoreException, IOException, VMException {
         NetworkParameters networkParameters = constants.getBridgeConstants().getBtcParams();
         doReturn(true).when(activationConfig).isActive(eq(RSKIP176), anyLong());
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         Bridge bridge = getBridgeInstance(bridgeSupportMock);
 
-        when(bridgeSupportMock.registerBtcTransfer(
+        when(bridgeSupportMock.registerFastBridgeBtcTransaction(
                 any(Transaction.class),
                 any(byte[].class),
                 anyInt(),
@@ -240,7 +242,7 @@ public class BridgeTest {
                 any(Address.class),
                 any(RskAddress.class),
                 any(Address.class),
-                anyBoolean()
+                any(Coin.class)
         )).thenReturn(2);
 
         byte[] value = Sha256Hash.ZERO_HASH.getBytes();
@@ -256,22 +258,22 @@ public class BridgeTest {
         ECKey ecKey = new ECKey();
         RskAddress rskAddress = new RskAddress(ecKey.getAddress());
 
-        byte[] data = Bridge.REGISTER_BTC_TRANSFER.encode(
+        byte[] data = Bridge.REGISTER_FAST_BRIDGE_BTC_TRANSACTION.encode(
             value,
             1,
             value,
             value,
             pubKeyHashRefund,
-            rskAddress.toString(),
+            rskAddress.toHexString(),
             pubKeyHashLp,
-            true
+            1
         );
 
         byte[] result = bridge.execute(data);
 
         //Assert
-        Assert.assertEquals(BigInteger.valueOf(2), Bridge.REGISTER_BTC_TRANSFER.decodeResult(result)[0]);
-        verify(bridgeSupportMock, times(1)).registerBtcTransfer(
+        Assert.assertEquals(BigInteger.valueOf(2), Bridge.REGISTER_FAST_BRIDGE_BTC_TRANSACTION.decodeResult(result)[0]);
+        verify(bridgeSupportMock, times(1)).registerFastBridgeBtcTransaction(
                 any(Transaction.class),
                 eq(value),
                 eq(1),
@@ -280,8 +282,61 @@ public class BridgeTest {
                 eq(refundBtcAddress),
                 eq(rskAddress),
                 eq(lpBtcAddress),
-                eq(true)
+                eq(Coin.valueOf(1))
         );
+    }
+
+    @Test(expected = RuntimeException.class)
+    public void registerFastBridgeBtcTransaction_after_RSKIP176_activation_exception()
+            throws RegisterFastBridgeBtcTransactionException, BlockStoreException, IOException, VMException {
+        doReturn(true).when(activationConfig).isActive(eq(RSKIP176), anyLong());
+
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        Bridge bridge = getBridgeInstance(bridgeSupportMock);
+
+        when(bridgeSupportMock.registerFastBridgeBtcTransaction(
+                any(Transaction.class),
+                any(byte[].class),
+                anyInt(),
+                any(byte[].class),
+                any(Sha256Hash.class),
+                any(Address.class),
+                any(RskAddress.class),
+                any(Address.class),
+                any(Coin.class)
+        )).thenThrow(new RegisterFastBridgeBtcTransactionException(""));
+
+        byte[] value = Sha256Hash.ZERO_HASH.getBytes();
+
+        byte[] data = Bridge.REGISTER_FAST_BRIDGE_BTC_TRANSACTION.encode(
+                value,
+                1,
+                value,
+                value,
+                mock(Address.class),
+                mock(RskAddress.class),
+                mock(Address.class),
+                1
+        );
+        bridge.execute(data);
+    }
+
+    @Test
+    public void registerFastBridgeBtcTransaction_after_RSKIP176_null_parameter() throws VMException {
+        doReturn(true).when(activationConfig).isActive(eq(RSKIP176), anyLong());
+
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        Bridge bridge = getBridgeInstance(bridgeSupportMock);
+
+        byte[] value = Sha256Hash.ZERO_HASH.getBytes();
+
+        byte[] data = Bridge.REGISTER_FAST_BRIDGE_BTC_TRANSACTION.encodeSignature();
+        byte[] result = bridge.execute(data);
+        Assert.assertNull(result);
+
+        data = ByteUtil.merge(Bridge.REGISTER_FAST_BRIDGE_BTC_TRANSACTION.encodeSignature(), value);
+        result = bridge.execute(data);
+        Assert.assertNull(result);
     }
 
     /**
