@@ -350,6 +350,14 @@ public class RskSystemProperties extends SystemProperties {
         return configFromFiles.getInt("cache.receipts.max-elements");
     }
 
+    public int getBtcBlockStoreCacheSize() {
+        return configFromFiles.getInt("cache.btcBlockStore.size");
+    }
+
+    public int getBtcBlockStoreCacheDepth() {
+        return configFromFiles.getInt("cache.btcBlockStore.depth");
+    }
+
     public long getVmExecutionStackSize() {
         return configFromFiles.getBytes("vm.executionStackSize");
     }

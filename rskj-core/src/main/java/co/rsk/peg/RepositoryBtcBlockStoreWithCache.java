@@ -25,6 +25,7 @@ import co.rsk.bitcoinj.core.StoredBlock;
 import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.core.RskAddress;
 import co.rsk.util.MaxSizeHashMap;
+import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.Repository;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
@@ -37,25 +38,33 @@ import java.util.Map;
 
 /**
  * Implementation of a bitcoinj blockstore that persists to RSK's Repository
+ *
  * @author Oscar Guindzberg
  */
 public class RepositoryBtcBlockStoreWithCache implements BtcBlockStoreWithCache {
 
     private static final Logger logger = LoggerFactory.getLogger("btcBlockStore");
 
-    public static final String BLOCK_STORE_CHAIN_HEAD_KEY = "blockStoreChainHead";
+    private static final String BLOCK_STORE_CHAIN_HEAD_KEY = "blockStoreChainHead";
+    private static final int DEFAULT_MAX_DEPTH_BLOCK_CACHE = 5_000;
+    private static final int DEFAULT_MAX_SIZE_BLOCK_CACHE = 10_000;
+
     private final Repository repository;
     private final RskAddress contractAddress;
     private final NetworkParameters btcNetworkParams;
-    public static final int MAX_DEPTH_STORED_BLOCKS = 50_000;
-    public static final int MAX_SIZE_MAP_STORED_BLOCKS = 100_000;
+    private final int maxDepthBlockCache;
     private final Map<Sha256Hash, StoredBlock> cacheBlocks;
 
     public RepositoryBtcBlockStoreWithCache(NetworkParameters btcNetworkParams, Repository repository, Map<Sha256Hash, StoredBlock> cacheBlocks, RskAddress contractAddress) {
+        this(btcNetworkParams, repository, cacheBlocks, contractAddress, DEFAULT_MAX_DEPTH_BLOCK_CACHE);
+    }
+
+    public RepositoryBtcBlockStoreWithCache(NetworkParameters btcNetworkParams, Repository repository, Map<Sha256Hash, StoredBlock> cacheBlocks, RskAddress contractAddress, int maxDepthBlockCache) {
         this.cacheBlocks = cacheBlocks;
         this.repository = repository;
         this.contractAddress = contractAddress;
         this.btcNetworkParams = btcNetworkParams;
+        this.maxDepthBlockCache = maxDepthBlockCache;
         checkIfInitialized();
     }
 
@@ -66,7 +75,7 @@ public class RepositoryBtcBlockStoreWithCache implements BtcBlockStoreWithCache 
         repository.addStorageBytes(contractAddress, DataWord.valueFromHex(hash.toString()), ba);
         if (cacheBlocks != null) {
             StoredBlock chainHead = getChainHead();
-            if (chainHead == null || chainHead.getHeight() - storedBlock.getHeight() < MAX_DEPTH_STORED_BLOCKS) {
+            if (chainHead == null || chainHead.getHeight() - storedBlock.getHeight() < this.maxDepthBlockCache) {
                 cacheBlocks.put(storedBlock.getHeader().getHash(), storedBlock);
             }
         }
@@ -79,14 +88,14 @@ public class RepositoryBtcBlockStoreWithCache implements BtcBlockStoreWithCache 
             return null;
         }
         StoredBlock storedBlock = byteArrayToStoredBlock(ba);
-        return  storedBlock;
+        return storedBlock;
     }
 
     @Override
     public synchronized StoredBlock getChainHead() {
         byte[] ba = repository.getStorageBytes(contractAddress, DataWord.fromString(BLOCK_STORE_CHAIN_HEAD_KEY));
         if (ba == null) {
-           return null;
+            return null;
         }
         return byteArrayToStoredBlock(ba);
     }
@@ -95,8 +104,10 @@ public class RepositoryBtcBlockStoreWithCache implements BtcBlockStoreWithCache 
     public synchronized void setChainHead(StoredBlock newChainHead) {
         byte[] ba = storedBlockToByteArray(newChainHead);
         repository.addStorageBytes(contractAddress, DataWord.fromString(BLOCK_STORE_CHAIN_HEAD_KEY), ba);
-        if(cacheBlocks != null) {
+        if (cacheBlocks != null) {
+            logger.info("Populating BTC Block Store Cache.");
             populateCache(newChainHead);
+            logger.info("END Populating BTC Block Store Cache.");
         }
     }
 
@@ -111,7 +122,7 @@ public class RepositoryBtcBlockStoreWithCache implements BtcBlockStoreWithCache 
 
     @Override
     public StoredBlock getFromCache(Sha256Hash branchBlockHash) {
-        if(cacheBlocks == null) {
+        if (cacheBlocks == null) {
             return null;
         }
         return cacheBlocks.get(branchBlockHash);
@@ -119,21 +130,21 @@ public class RepositoryBtcBlockStoreWithCache implements BtcBlockStoreWithCache 
 
     @Override
     public StoredBlock getStoredBlockAtMainChainHeight(int height) throws BlockStoreException {
-        StoredBlock chainHead =  getChainHead();
+        StoredBlock chainHead = getChainHead();
         int depth = chainHead.getHeight() - height;
         logger.trace("Getting btc block at depth: {}", depth);
         return getStoredBlockAtMainChainDepth(depth);
     }
 
     private synchronized void populateCache(StoredBlock chainHead) {
-        if(this.btcNetworkParams.getGenesisBlock().equals(chainHead.getHeader())) {
+        if (this.btcNetworkParams.getGenesisBlock().equals(chainHead.getHeader())) {
             return;
         }
         cacheBlocks.put(chainHead.getHeader().getHash(), chainHead);
         Sha256Hash blockHash = chainHead.getHeader().getPrevBlockHash();
-        int depth = MAX_DEPTH_STORED_BLOCKS-1;
+        int depth = this.maxDepthBlockCache - 1;
         while (blockHash != null && depth > 0) {
-            if(cacheBlocks.get(blockHash) != null) {
+            if (cacheBlocks.get(blockHash) != null) {
                 break;
             }
             StoredBlock currentBlock = get(blockHash);
@@ -148,13 +159,13 @@ public class RepositoryBtcBlockStoreWithCache implements BtcBlockStoreWithCache 
 
     @Override
     public StoredBlock getStoredBlockAtMainChainDepth(int depth) throws BlockStoreException {
-        StoredBlock chainHead =  getChainHead();
+        StoredBlock chainHead = getChainHead();
         Sha256Hash blockHash = chainHead.getHeader().getHash();
 
         for (int i = 0; i < depth && blockHash != null; i++) {
             //If its older than cache go to disk
             StoredBlock currentBlock = getFromCache(blockHash);
-            if(currentBlock == null) {
+            if (currentBlock == null) {
                 logger.trace("Missing cache (depth={}/{}), getting from store.", i, depth);
                 currentBlock = get(blockHash);
                 if (currentBlock == null) {
@@ -168,7 +179,7 @@ public class RepositoryBtcBlockStoreWithCache implements BtcBlockStoreWithCache 
             return null;
         }
         StoredBlock block = getFromCache(blockHash);
-        if(block == null) {
+        if (block == null) {
             block = get(blockHash);
         }
         int expectedHeight = chainHead.getHeight() - depth;
@@ -208,19 +219,31 @@ public class RepositoryBtcBlockStoreWithCache implements BtcBlockStoreWithCache 
     }
 
     public static class Factory implements BtcBlockStoreWithCache.Factory {
+
+        private final int maxSizeBlockCache;
         //This is ok as we don't have parallel execution, in the feature we should move to a concurrentHashMap
-        private final Map<Sha256Hash, StoredBlock> cacheBlocks = new MaxSizeHashMap<>(MAX_SIZE_MAP_STORED_BLOCKS, true);
+        private final Map<Sha256Hash, StoredBlock> cacheBlocks;
         private final RskAddress contractAddress;
         private final NetworkParameters btcNetworkParams;
+        private final int maxDepthBlockCache;
 
+        @Deprecated
+        @VisibleForTesting
         public Factory(NetworkParameters btcNetworkParams) {
+            this(btcNetworkParams, DEFAULT_MAX_DEPTH_BLOCK_CACHE, DEFAULT_MAX_SIZE_BLOCK_CACHE);
+        }
+
+        public Factory(NetworkParameters btcNetworkParams, int maxDepthBlockCache, int maxSizeBlockCache) {
             this.contractAddress = PrecompiledContracts.BRIDGE_ADDR;
             this.btcNetworkParams = btcNetworkParams;
+            this.maxDepthBlockCache = maxDepthBlockCache;
+            this.maxSizeBlockCache = maxSizeBlockCache;
+            this.cacheBlocks = new MaxSizeHashMap<>(this.maxSizeBlockCache, true);
         }
 
         @Override
         public BtcBlockStoreWithCache newInstance(Repository track) {
-            return new RepositoryBtcBlockStoreWithCache(btcNetworkParams, track, cacheBlocks, contractAddress);
+            return new RepositoryBtcBlockStoreWithCache(btcNetworkParams, track, cacheBlocks, contractAddress, this.maxDepthBlockCache);
         }
     }
 

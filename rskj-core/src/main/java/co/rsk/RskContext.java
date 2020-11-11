@@ -29,7 +29,10 @@ import co.rsk.db.RepositoryLocator;
 import co.rsk.db.StateRootHandler;
 import co.rsk.db.importer.BootstrapImporter;
 import co.rsk.db.importer.BootstrapURLProvider;
-import co.rsk.db.importer.provider.*;
+import co.rsk.db.importer.provider.BootstrapDataProvider;
+import co.rsk.db.importer.provider.BootstrapDataVerifier;
+import co.rsk.db.importer.provider.BootstrapFileHandler;
+import co.rsk.db.importer.provider.Unzipper;
 import co.rsk.db.importer.provider.index.BootstrapIndexCandidateSelector;
 import co.rsk.db.importer.provider.index.BootstrapIndexRetriever;
 import co.rsk.logfilter.BlocksBloomService;
@@ -134,16 +137,13 @@ import java.time.Clock;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Properties;
 
 /**
  * Creates the initial object graph without a DI framework.
- *
+ * <p>
  * When an object construction has to be tweaked, create a buildXXX method and call it from getXXX.
  * This way derived classes don't have to store their own instances.
- *
+ * <p>
  * Note that many methods are public to allow the fed node overriding.
  */
 public class RskContext implements NodeBootstrapper {
@@ -453,7 +453,11 @@ public class RskContext implements NodeBootstrapper {
     public BtcBlockStoreWithCache.Factory getBtcBlockStoreFactory() {
         if (btcBlockStoreFactory == null) {
             NetworkParameters btcParams = getRskSystemProperties().getNetworkConstants().getBridgeConstants().getBtcParams();
-            btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(btcParams);
+            btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(
+                    btcParams,
+                    getRskSystemProperties().getBtcBlockStoreCacheDepth(),
+                    getRskSystemProperties().getBtcBlockStoreCacheSize()
+            );
         }
 
         return btcBlockStoreFactory;
@@ -1031,7 +1035,7 @@ public class RskContext implements NodeBootstrapper {
                         .orElse(numberOfEpochs);
             }
             Path unitriePath = databasePath.resolve("unitrie");
-            if(Files.exists(unitriePath)) {
+            if (Files.exists(unitriePath)) {
                 // moves the unitrie directory as the currentEpoch. It "knows" the internals of the MultiTrieStore constructor
                 // to assign currentEpoch - 1 as the name
                 Files.move(
