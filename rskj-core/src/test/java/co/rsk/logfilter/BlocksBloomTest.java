@@ -33,6 +33,8 @@ public class BlocksBloomTest {
 
         blocksBloom.addBlockBloom(1, bloom);
 
+        Assert.assertTrue(blocksBloom.hasBlockBloom(1));
+        Assert.assertFalse(blocksBloom.hasBlockBloom(2));
         Assert.assertEquals(1, blocksBloom.size());
         Assert.assertEquals(1, blocksBloom.fromBlock());
         Assert.assertEquals(1, blocksBloom.toBlock());

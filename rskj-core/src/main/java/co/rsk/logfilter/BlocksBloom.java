@@ -58,6 +58,14 @@ public class BlocksBloom {
         return this.toBlock - this.fromBlock + 1;
     }
 
+    public boolean hasBlockBloom(long blockNumber) {
+        if (this.empty) {
+            return false;
+        }
+
+        return this.fromBlock <= blockNumber && blockNumber <= this.toBlock;
+    }
+
     public void addBlockBloom(long blockNumber, Bloom blockBloom) {
         if (this.empty) {
             this.fromBlock = blockNumber;

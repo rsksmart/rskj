@@ -21,17 +21,31 @@ package co.rsk.logfilter;
 
 import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.vm.DataWord;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
+ * Block blooms store
+ *
+ * It saves and retrieves coalesced bloom filters
+ *
+ * Each record represents a range of blocks
+ *
+ * The key is the block number of the first block in the range
+ *
+ * It keeps also an in-memory cache of those records
+ *
  * Created by ajlopez on 05/02/2019.
  */
 public class BlocksBloomStore {
+    private static final Logger logger = LoggerFactory.getLogger("blooms");
+
     private final int noBlocks;
     private final int noConfirmations;
-    private final Map<Long, BlocksBloom> blocksBloom = new ConcurrentHashMap<>();
+    private final Map<Long, BlocksBloom> blocksBloomCache = new HashMap<>();
     private final KeyValueDataSource dataSource;
 
     public BlocksBloomStore(int noBlocks, int noConfirmations, KeyValueDataSource dataSource) {
@@ -40,22 +54,44 @@ public class BlocksBloomStore {
         this.dataSource = dataSource;
     }
 
-    public boolean hasBlockNumber(long blockNumber) {
-        if (this.blocksBloom.containsKey(this.firstNumberInRange(blockNumber))) {
-            return true;
-        }
+    /**
+     * Returns if a block number is included in one of the
+     * group records (in persistence store or in cache)
+     *
+     * @param blockNumber block number to query
+     * @return true if the block number is in some record, false if not
+     */
+    public synchronized boolean hasBlockNumber(long blockNumber) {
+        long key = this.firstNumberInRange(blockNumber);
 
-        if (this.dataSource != null && this.dataSource.get(longToKey(blockNumber)) != null) {
-            return true;
-        }
-
-        return false;
+        return hasBlockNumberInCache(key)
+            || hasBlockNumberInStore(key);
     }
 
-    public BlocksBloom getBlocksBloomByNumber(long number) {
+    private boolean hasBlockNumberInStore(long key) {
+        return this.dataSource != null && this.dataSource.get(longToKey(key)) != null;
+    }
+
+    private boolean hasBlockNumberInCache(long key) {
+        return this.blocksBloomCache.containsKey(key);
+    }
+
+    /**
+     * Retrieves the coalesced blooms record that contains
+     * the bloom filter associated with the block corresponding
+     * to the provided block number
+     *
+     * It retrieves the record from cache or from store
+     *
+     * If it is found in the store, it is added to the cache
+     *
+     * @param number
+     * @return the BlocksBloom that contains that block number, null if absent
+     */
+    public synchronized BlocksBloom getBlocksBloomByNumber(long number) {
         long key = firstNumberInRange(number);
 
-        BlocksBloom blocksBloom = this.blocksBloom.get(key);
+        BlocksBloom blocksBloom = this.blocksBloomCache.get(key);
 
         if (blocksBloom != null) {
             return blocksBloom;
@@ -73,13 +109,21 @@ public class BlocksBloomStore {
 
         blocksBloom = BlocksBloomEncoder.decode(data);
 
-        this.blocksBloom.put(key, blocksBloom);
+        this.blocksBloomCache.put(key, blocksBloom);
 
         return blocksBloom;
     }
 
-    public void setBlocksBloom(BlocksBloom blocksBloom) {
-        this.blocksBloom.put(blocksBloom.fromBlock(), blocksBloom);
+    /**
+     * Save the group bloom filter that contains the block blooms
+     * in a range. The first block number in that range is used as the key
+     *
+     * @param blocksBloom the record to add
+     */
+    public synchronized void addBlocksBloom(BlocksBloom blocksBloom) {
+        logger.trace("set blocks bloom: height {}", blocksBloom.fromBlock());
+
+        this.blocksBloomCache.put(blocksBloom.fromBlock(), blocksBloom);
 
         if (this.dataSource != null) {
             this.dataSource.put(longToKey(blocksBloom.fromBlock()), BlocksBloomEncoder.encode(blocksBloom));
@@ -100,11 +144,33 @@ public class BlocksBloomStore {
 
     public int getNoConfirmations() { return this.noConfirmations; }
 
+    /**
+     * Converts a long number to its byte array representation
+     *
+     * The byte array is normalized to remove the leading zeroes
+     *
+     * If zero value is provided, a zero-length byte array is returned
+     *
+     * @param value  number to convert
+     * @return bytes representing the value (0 == empty array)
+     */
     public static byte[] longToKey(long value) {
         if (value == 0) {
             return new byte[0];
         }
 
         return DataWord.valueOf(value).getByteArrayForStorage();
+    }
+
+    public void flush() {
+        if (this.dataSource != null) {
+            this.dataSource.flush();
+        }
+    }
+
+    public void close() {
+        if (this.dataSource != null) {
+            this.dataSource.close();
+        }
     }
 }
