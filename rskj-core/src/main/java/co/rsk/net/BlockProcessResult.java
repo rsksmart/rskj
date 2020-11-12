@@ -43,7 +43,7 @@ public class BlockProcessResult {
 
     private final Map<Keccak256, ImportResult> result;
 
-    public BlockProcessResult(boolean additionalValidations, Map<Keccak256, ImportResult> result, String blockHash, Duration processingTime) {
+    protected BlockProcessResult(boolean additionalValidations, Map<Keccak256, ImportResult> result, String blockHash, Duration processingTime) {
         this.additionalValidationsOk = additionalValidations;
         this.result = result;
         if (processingTime.compareTo(LOG_TIME_LIMIT) >= 0) {
