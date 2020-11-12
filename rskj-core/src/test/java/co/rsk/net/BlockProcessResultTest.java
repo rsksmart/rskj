@@ -19,7 +19,11 @@
 package co.rsk.net;
 
 import co.rsk.crypto.Keccak256;
+import java.time.Instant;
+import org.ethereum.core.Block;
 import org.ethereum.core.ImportResult;
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -27,6 +31,7 @@ import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
+import org.mockito.Mockito;
 
 public class BlockProcessResultTest {
     @Test
@@ -59,4 +64,25 @@ public class BlockProcessResultTest {
         Assert.assertNotNull(result);
         Assert.assertEquals("[MESSAGE PROCESS] Block[0x01020304] After[0.123000] seconds, process result. Connections attempts: 1 | " + hash.toHexString() + " - IMPORTED_BEST | ", result);
     }
+
+    @Test
+    public void factoryMethodForInvalidBlock() {
+        Block mock = Mockito.mock(Block.class);
+        BlockProcessResult result = BlockProcessResult.invalidBlock(
+                mock, Instant.now()
+        );
+        MatcherAssert.assertThat(result.wasBlockAdded(mock), Matchers.is(false));
+    }
+
+    @Test
+    public void factoryMethodForValidBlock() {
+        Block mock = Mockito.mock(Block.class);
+        Map<Keccak256, ImportResult> connectionsResult = new HashMap<>();
+        connectionsResult.put(mock.getHash(), ImportResult.IMPORTED_BEST);
+        BlockProcessResult result = BlockProcessResult.validResult(
+                mock, Instant.now(), connectionsResult
+        );
+        MatcherAssert.assertThat(result.wasBlockAdded(mock), Matchers.is(true));
+    }
 }
+

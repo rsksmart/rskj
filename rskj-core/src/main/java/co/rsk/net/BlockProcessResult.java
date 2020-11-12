@@ -22,6 +22,7 @@ import co.rsk.core.bc.BlockUtils;
 import co.rsk.crypto.Keccak256;
 import co.rsk.util.FormatUtils;
 import com.google.common.annotations.VisibleForTesting;
+import java.time.Instant;
 import org.ethereum.core.Block;
 import org.ethereum.core.ImportResult;
 import org.slf4j.Logger;
@@ -40,7 +41,7 @@ public class BlockProcessResult {
 
     private boolean additionalValidationsOk = false;
 
-    private Map<Keccak256, ImportResult> result;
+    private final Map<Keccak256, ImportResult> result;
 
     public BlockProcessResult(boolean additionalValidations, Map<Keccak256, ImportResult> result, String blockHash, Duration processingTime) {
         this.additionalValidationsOk = additionalValidations;
@@ -48,6 +49,14 @@ public class BlockProcessResult {
         if (processingTime.compareTo(LOG_TIME_LIMIT) >= 0) {
             logResult(blockHash, processingTime);
         }
+    }
+
+    public static BlockProcessResult invalidBlock(Block block, Instant start) {
+        return new BlockProcessResult(false, null, block.getPrintableHash(), Duration.between(start, Instant.now()));
+    }
+
+    public static BlockProcessResult validResult(Block block, Instant start, Map<Keccak256, ImportResult> connectResult) {
+        return new BlockProcessResult(true, connectResult, block.getPrintableHash(), Duration.between(start, Instant.now()));
     }
 
     public boolean wasBlockAdded(Block block) {
