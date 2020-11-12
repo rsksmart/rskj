@@ -32,7 +32,6 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
 
@@ -82,8 +81,7 @@ public class BlockSyncService {
         if (blockNumber > bestBlockNumber + syncMaxDistance) {
             logger.trace("Block too advanced {} {} from {} ", blockNumber, block.getPrintableHash(),
                     sender != null ? sender.getPeerNodeID().toString() : "N/A");
-            return new BlockProcessResult(false, null, block.getPrintableHash(),
-                    Duration.between(start, Instant.now()));
+            return BlockProcessResult.invalidBlock(block, start);
         }
 
         if (sender != null) {
@@ -93,20 +91,18 @@ public class BlockSyncService {
         // already in a blockchain
         if (BlockUtils.blockInSomeBlockChain(block, blockchain)) {
             logger.trace("Block already in a chain {} {}", blockNumber, block.getPrintableHash());
-            return new BlockProcessResult(false, null, block.getPrintableHash(),
-                    Duration.between(start, Instant.now()));
+            return BlockProcessResult.invalidBlock(block, start);
         }
         trySaveStore(block);
 
         Set<Keccak256> unknownHashes = BlockUtils.unknownDirectAncestorsHashes(block, blockchain, store);
         // We can't add the block if there are missing ancestors or uncles. Request the missing blocks to the sender.
         if (!unknownHashes.isEmpty()) {
-            if (!ignoreMissingHashes){
+            if (!ignoreMissingHashes) {
                 logger.trace("Missing hashes for block in process {} {}", blockNumber, block.getPrintableHash());
                 requestMissingHashes(sender, unknownHashes);
             }
-            return new BlockProcessResult(false, null, block.getPrintableHash(),
-                    Duration.between(start, Instant.now()));
+            return BlockProcessResult.invalidBlock(block, start);
         }
 
         logger.trace("Trying to add to blockchain");
@@ -114,9 +110,9 @@ public class BlockSyncService {
         Map<Keccak256, ImportResult> connectResult = connectBlocksAndDescendants(sender,
                 BlockUtils.sortBlocksByNumber(this.getParentsNotInBlockchain(block)), ignoreMissingHashes);
 
-        return new BlockProcessResult(true, connectResult, block.getPrintableHash(),
-                Duration.between(start, Instant.now()));
+        return BlockProcessResult.validResult(block, start, connectResult);
     }
+
 
     private void tryReleaseStore(long bestBlockNumber) {
         if ((++processedBlocksCounter % PROCESSED_BLOCKS_TO_CHECK_STORE) == 0) {
