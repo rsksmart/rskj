@@ -102,12 +102,11 @@ public class RepositoryBtcBlockStoreWithCache implements BtcBlockStoreWithCache 
 
     @Override
     public synchronized void setChainHead(StoredBlock newChainHead) {
+        logger.trace("Set new chain head with height: {}.", newChainHead.getHeight());
         byte[] ba = storedBlockToByteArray(newChainHead);
         repository.addStorageBytes(contractAddress, DataWord.fromString(BLOCK_STORE_CHAIN_HEAD_KEY), ba);
         if (cacheBlocks != null) {
-            logger.info("Populating BTC Block Store Cache.");
             populateCache(newChainHead);
-            logger.info("END Populating BTC Block Store Cache.");
         }
     }
 
@@ -137,6 +136,7 @@ public class RepositoryBtcBlockStoreWithCache implements BtcBlockStoreWithCache 
     }
 
     private synchronized void populateCache(StoredBlock chainHead) {
+        logger.trace("Populating BTC Block Store Cache.");
         if (this.btcNetworkParams.getGenesisBlock().equals(chainHead.getHeader())) {
             return;
         }
@@ -155,6 +155,7 @@ public class RepositoryBtcBlockStoreWithCache implements BtcBlockStoreWithCache 
             depth--;
             blockHash = currentBlock.getHeader().getPrevBlockHash();
         }
+        logger.trace("END Populating BTC Block Store Cache.");
     }
 
     @Override
@@ -227,7 +228,6 @@ public class RepositoryBtcBlockStoreWithCache implements BtcBlockStoreWithCache 
         private final NetworkParameters btcNetworkParams;
         private final int maxDepthBlockCache;
 
-        @Deprecated
         @VisibleForTesting
         public Factory(NetworkParameters btcNetworkParams) {
             this(btcNetworkParams, DEFAULT_MAX_DEPTH_BLOCK_CACHE, DEFAULT_MAX_SIZE_BLOCK_CACHE);
@@ -239,6 +239,14 @@ public class RepositoryBtcBlockStoreWithCache implements BtcBlockStoreWithCache 
             this.maxDepthBlockCache = maxDepthBlockCache;
             this.maxSizeBlockCache = maxSizeBlockCache;
             this.cacheBlocks = new MaxSizeHashMap<>(this.maxSizeBlockCache, true);
+
+            if (this.maxDepthBlockCache > this.maxSizeBlockCache) {
+                logger.warn("Max depth ({}) is greater than Max Size ({}). This could lead to a misbehaviour.", this.maxDepthBlockCache, this.maxSizeBlockCache);
+            }
+
+            if (this.maxDepthBlockCache < DEFAULT_MAX_DEPTH_BLOCK_CACHE) {
+                logger.warn("Max depth ({}) is lower than the default ({}). This could lead to a misbehaviour.", this.maxDepthBlockCache, DEFAULT_MAX_DEPTH_BLOCK_CACHE);
+            }
         }
 
         @Override
