@@ -21,6 +21,7 @@ package org.ethereum.crypto.signature;
 
 import co.rsk.config.RskSystemProperties;
 import com.google.common.annotations.VisibleForTesting;
+import org.bitcoin.Secp256k1Context;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,7 +50,7 @@ public final class Secp256k1 {
      *
      * <p> By default it initialize Bouncy Castle impl.</p>
      *
-     * @param @{@link Nullable} rskSystemProperties = Could be null in tests.
+     * @param {@link Nullable} rskSystemProperties = Could be null in tests.
      */
     public static synchronized void initialize(@Nullable RskSystemProperties rskSystemProperties) {
         // Just a warning for duplicate initialization.
@@ -60,9 +61,15 @@ public final class Secp256k1 {
         }
         if (rskSystemProperties != null) {
             String cryptoLibrary = rskSystemProperties.cryptoLibrary();
-            logger.debug("Initializing Signature Service: {}.", cryptoLibrary);
-            if (NATIVE_LIB.equals(cryptoLibrary)) {//TODO: Check if Native library is loaded.
-                instance = new Secp256k1ServiceNative();
+            logger.debug("Trying to initialize Signature Service: {}.", cryptoLibrary);
+            if (NATIVE_LIB.equals(cryptoLibrary)) {
+                if(Secp256k1Context.isEnabled()){
+                    instance = new Secp256k1ServiceNative();
+                    logger.debug("Native Service initialized.");
+                } else {
+                    instance = new Secp256k1ServiceBC();
+                    logger.debug("Signature Service {} not available, initialized Bouncy Castle.", cryptoLibrary);
+                }
             } else {
                 instance = new Secp256k1ServiceBC();
             }

@@ -19,6 +19,7 @@
 
 package org.ethereum.crypto.signature;
 
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.ImmutableTransaction;
 import org.ethereum.core.Transaction;
@@ -66,6 +67,42 @@ public abstract class Secp256k1ServiceTest {
     }
 
     @Test
+    public void test_verify() {
+        String dataHashed = "53cb8e93030183c5ba198433e8cd1f013f3d113e0f4d1756de0d1f124ead155a";
+        String rString = "8dba957877d5bdcb26d551dfa2fa509dfe3fe327caf0166130b9f467a0a0c249";
+        String sString = "dab3fdf2031515d2de1d420310c69153fcc356f22b50dfd53c6e13e74e346eee";
+        String pubKeyString = "04330037e82c177d7108077c80440821e13c1c62105f85e030214b48d7b5dff0b8e7c158b171546a71139e4de56c8535c964514033b89a669a8e87a5e8770c147c";
+
+        checkVerify(dataHashed, 1, rString, sString, pubKeyString);
+
+        String rString1 = "f0e8aab4fdd83382292a1bbc5480e2ae8084dc245f000f4bc4534d383a3a7919";
+        String sString1 = "a30891f2176bd87b4a3ac5c75167f2442453c17c6e2fbfb36c3b972ee67a4c2d";
+        String pubKeyString1 = "0473602083afe175e7cae12dbc27da54ec5ac77f99920787f3e891e7af303aaed480770c0de4c991aea1712729260175e158fa73f63c60f0f1de057139c52714de";
+
+        checkVerify(dataHashed, 0, rString1, sString1, pubKeyString1);
+    }
+
+    void checkVerify(String dataHashed, int recId, String rString, String sString, String pubKeyString) {
+        byte[] dbHash = Hex.decode(dataHashed);
+        ECDSASignature signature = ECDSASignature.fromComponents(Hex.decode(rString), Hex.decode(sString));
+        byte[] pubKey = Hex.decode(pubKeyString);
+        assertTrue(getSecp256k1().verify(dbHash, signature, pubKey));
+        ECKey ecKey = getSecp256k1().recoverFromSignature(recId, signature, dbHash, false);
+        assertEquals(pubKeyString, Hex.toHexString(ecKey.getPubKey()));
+    }
+
+    @Test
+    public void test_recoveryFromSignature_pointAtInfinity_returnZeroPK() {
+        String messageHash = "f7cf90057f86838e5efd677f4741003ab90910e4e2736ff4d7999519d162d1ed";
+        BigInteger r = new BigInteger("28824799845160661199077176548860063813328724131408018686643359460017962873020");
+        BigInteger s = new BigInteger("48456094880180616145578324187715054843822774625773874469802229460318542735739");
+        ECDSASignature signature = ECDSASignature.fromComponents(r.toByteArray(), s.toByteArray());
+        ECKey k = this.getSecp256k1().recoverFromSignature((byte) 0, signature, Hex.decode(messageHash), false);
+        assertEquals( "00", Hex.toHexString(k.getPubKey()));
+        assertEquals( "dcc703c0e500b653ca82273b7bfad8045d85a470", Hex.toHexString(k.getAddress()));
+    }
+
+    @Test
     public void testVerify_from_signatureToKey() {
         BigInteger r = new BigInteger("c52c114d4f5a3ba904a9b3036e5e118fe0dbb987fe3955da20f2cd8f6c21ab9c", 16);
         BigInteger s = new BigInteger("6ba4c2874299a55ad947dbc98a25ee895aabf6b625c26c435e84bfd70edf2f69", 16);
@@ -96,8 +133,9 @@ public abstract class Secp256k1ServiceTest {
     public void testVerify_after_doSign() {
         ECKey key = ECKey.fromPrivate(privateKey);
         String message = "This is an example of a signed message.";
-        ECDSASignature output = ECDSASignature.fromSignature(key.doSign(message.getBytes()));
-        assertTrue(this.getSecp256k1().verify(message.getBytes(), output, key.getPubKey()));
+        byte[] messageBytes = HashUtil.keccak256(message.getBytes());
+        ECDSASignature signature = ECDSASignature.fromSignature(key.doSign(messageBytes));
+        assertTrue(this.getSecp256k1().verify(messageBytes, signature, key.getPubKey()));
     }
 
     @Test
@@ -127,26 +165,24 @@ public abstract class Secp256k1ServiceTest {
         String receiver = "CD2A3D9F938E13CD947EC05ABC7FE734DF8DD826";
         ECKey fromPrivate = ECKey.fromPrivate(pk);
         ECKey fromPrivateDecompress = fromPrivate.decompress();
-        String pubKeyExpected = ByteUtil.toHexString(fromPrivateDecompress.getPubKey());
-        String addressExpected = ByteUtil.toHexString(fromPrivateDecompress.getAddress());
+        String pubKeyExpected = Hex.toHexString(fromPrivateDecompress.getPubKey());
+        String addressExpected = Hex.toHexString(fromPrivateDecompress.getAddress());
 
         // Create tx and sign, then recover from serialized.
         Transaction newTx = new Transaction(2l, 2l, 2l, receiver, 2l, messageHash, (byte) 0);
         newTx.sign(pk);
         ImmutableTransaction recoveredTx = new ImmutableTransaction(newTx.getEncoded());
-
         // Recover Pub Key from recovered tx
         ECKey actualKey = this.getSecp256k1().signatureToKey(HashUtil.keccak256(recoveredTx.getEncodedRaw()), recoveredTx.getSignature());
 
         // Recover PK and Address.
-
-        String pubKeyActual = ByteUtil.toHexString(actualKey.getPubKey());
+        String pubKeyActual = Hex.toHexString(actualKey.getPubKey());
         logger.debug("Signature public key\t: {}", pubKeyActual);
         assertEquals(pubKeyExpected, pubKeyActual);
         assertEquals(pubString, pubKeyActual);
         assertArrayEquals(pubKey, actualKey.getPubKey());
 
-        String addressActual = ByteUtil.toHexString(actualKey.getAddress());
+        String addressActual = Hex.toHexString(actualKey.getAddress());
         logger.debug("Sender is\t\t: {}", addressActual);
         assertEquals(addressExpected, addressActual);
     }
@@ -160,6 +196,26 @@ public abstract class Secp256k1ServiceTest {
         ECKey key = this.getSecp256k1().signatureToKey(messageHash, signature);
         assertNotNull(key);
         assertArrayEquals(pubKey, key.getPubKey());
+    }
+
+    @Test(expected = SignatureException.class)
+    public void testSignatureToKey_fixed_values_garbage() throws SignatureException {
+        byte[] messageHash = HashUtil.keccak256(exampleMessage.getBytes());
+        byte[] s = Arrays.concatenate(new byte[]{1}, ByteUtil.bigIntegerToBytes(this.s, 64));
+        byte[] r = Arrays.concatenate(new byte[]{1}, ByteUtil.bigIntegerToBytes(this.r, 64));
+        ECDSASignature signature = ECDSASignature.fromComponents(r, s, v);
+        ECKey key = this.getSecp256k1().signatureToKey(messageHash, signature);
+        assertNull(key);
+    }
+
+    @Test
+    public void testRecoverFromSignature_fixed_values_garbage() throws SignatureException {
+        byte[] messageHash = HashUtil.keccak256(exampleMessage.getBytes());
+        byte[] s = Arrays.concatenate(new byte[]{1}, ByteUtil.bigIntegerToBytes(this.s, 64));
+        byte[] r = Arrays.concatenate(new byte[]{1}, ByteUtil.bigIntegerToBytes(this.r, 64));
+        ECDSASignature signature = ECDSASignature.fromComponents(r, s, v);
+        ECKey key = this.getSecp256k1().recoverFromSignature(v, signature, messageHash, true);
+        assertNull(key);
     }
 
     @Test
@@ -206,6 +262,43 @@ public abstract class Secp256k1ServiceTest {
             ECKey key2 = this.getSecp256k1().recoverFromSignature(i, sig, hash, true);
             checkNotNull(key2);
             if (key.equals(key2)) {
+                found = true;
+                break;
+            }
+        }
+        assertTrue(found);
+    }
+
+    @Test
+    public void test_sign_signatureToKey_pk1() {
+        ECKey privateKey = ECKey.fromPrivate(BigInteger.ONE);
+        ECKey publicKey = ECKey.fromPublicOnly(privateKey.getPubKeyPoint());
+        sign_signatureToKey_assert(privateKey, publicKey);
+    }
+
+    @Test
+    public void test_sign_signatureToKey_pk10() {
+        ECKey privateKey = ECKey.fromPrivate(BigInteger.TEN);
+        ECKey publicKey = ECKey.fromPublicOnly(privateKey.getPubKeyPoint());
+        sign_signatureToKey_assert(privateKey, publicKey);
+    }
+
+    @Test
+    public void test_sign_signatureToKey_pk1M() {
+        ECKey privateKey = ECKey.fromPrivate(BigInteger.valueOf(1_000_000_000));
+        ECKey publicKey = ECKey.fromPublicOnly(privateKey.getPubKeyPoint());
+        sign_signatureToKey_assert(privateKey, publicKey);
+    }
+
+    private void sign_signatureToKey_assert(ECKey privateKey, ECKey publicKey) {
+        String message = "Hello World!";
+        byte[] hash = HashUtil.sha256(message.getBytes());
+        ECDSASignature sig = ECDSASignature.fromSignature(privateKey.doSign(hash));
+        boolean found = false;
+        for (int i = 0; i < 4; i++) {
+            ECKey key2 = this.getSecp256k1().recoverFromSignature(i, sig, hash, true);
+            checkNotNull(key2);
+            if (publicKey.equals(key2)) {
                 found = true;
                 break;
             }

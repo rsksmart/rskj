@@ -67,6 +67,7 @@ ext {
     logbackVersion = '1.2.2'
     bitcoinjVersion = '0.14.4-rsk-9'
     nettyVersion = '4.0.56.Final'
+    nativeLibrary = '1.2.0'
 }
 
 dependencies {
@@ -85,6 +86,7 @@ dependencies {
     implementation 'com.github.briandilley.jsonrpc4j:jsonrpc4j:1.5.1'
     implementation 'co.rsk:native:1.0.1'
     implementation 'com.sun.xml.ws:jaxws-rt:2.3.3'
+    implementation "co.rsk:native:${nativeLibrary}"
 
     runtimeOnly "org.slf4j:log4j-over-slf4j:${slf4jVersion}"
     runtimeOnly "ch.qos.logback:logback-classic:${logbackVersion}"
@@ -160,6 +162,7 @@ jar {
     }
     from sourceSets.main.output.classesDirs
     from sourceSets.main.output.resourcesDir
+    from sourceSets.test.output.classesDirs //Just for TestSystemProperties
     from generatedResources
 }
 
