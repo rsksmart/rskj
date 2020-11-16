@@ -203,7 +203,6 @@ public class BridgeTest {
     }
 
     @Test
-<<<<<<< HEAD
     public void registerBtcTransaction_beforeRskip199_rejectsExternalCalls()
         throws VMException, IOException, BlockStoreException {
 
@@ -340,10 +339,7 @@ public class BridgeTest {
     }
 
     @Test
-    public void registerBtcTransfer_before_RSKIP176_activation() throws VMException {
-=======
     public void registerFastBridgeBtcTransaction_before_RSKIP176_activation() throws VMException {
->>>>>>> Changes in signature of the function of FastBridgeTransaction
         doReturn(false).when(activationConfig).isActive(eq(RSKIP176), anyLong());
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);

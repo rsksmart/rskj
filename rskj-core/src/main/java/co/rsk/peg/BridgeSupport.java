@@ -38,6 +38,7 @@ import co.rsk.bitcoinj.core.UTXO;
 import co.rsk.bitcoinj.core.UTXOProviderException;
 import co.rsk.bitcoinj.core.VerificationException;
 import co.rsk.bitcoinj.crypto.TransactionSignature;
+import co.rsk.bitcoinj.script.FastBridgeRedeemScriptParser;
 import co.rsk.bitcoinj.script.RedeemScriptParser;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
@@ -2417,7 +2418,7 @@ public class BridgeSupport {
 
     protected FastBridgeFederationInformation createFastBridgeFederationInformation(
         Sha256Hash fastBridgeDerivationHash) {
-        Script fastBridgeScript = RedeemScriptParser.createMultiSigFastBridgeRedeemScript(
+        Script fastBridgeScript = FastBridgeRedeemScriptParser.createMultiSigFastBridgeRedeemScript(
             getActiveFederation().getRedeemScript(),
             fastBridgeDerivationHash
         );

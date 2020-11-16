@@ -2591,13 +2591,16 @@ public class BridgeStorageProviderTest {
     public void isFastBridgeFederationDerivationHashUsed_afterRSKIP176_returnTrue() {
         Repository repository = mock(Repository.class);
 
-        Sha256Hash hash = Sha256Hash.ZERO_HASH;
+        Sha256Hash derivationHash = PegTestUtils.createHash(1);
+        Sha256Hash btcTxHash = PegTestUtils.createHash(2);
 
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(true);
 
-        when(repository.getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromLongString("fastBridgeScriptHash-" + hash.toString())))
-                .thenReturn(new byte[]{FAST_BRIDGE_FEDERATION_SCRIPT_HASH_TRUE_VALUE_TEST});
+        when(repository.getStorageBytes(
+                PrecompiledContracts.BRIDGE_ADDR,
+                DataWord.fromLongString("fastBridgeHashUsedInBtcTx-" + btcTxHash.toString() + derivationHash.toString()))
+        ).thenReturn(new byte[]{FAST_BRIDGE_FEDERATION_SCRIPT_HASH_TRUE_VALUE_TEST});
 
         BridgeStorageProvider provider = new BridgeStorageProvider(
                 repository,
@@ -2606,7 +2609,7 @@ public class BridgeStorageProviderTest {
                 activations
         );
 
-        boolean result = provider.isFastBridgeFederationDerivationHashUsed(hash);
+        boolean result = provider.isFastBridgeFederationDerivationHashUsed(btcTxHash, derivationHash);
         Assert.assertTrue(result);
     }
 
@@ -2614,13 +2617,16 @@ public class BridgeStorageProviderTest {
     public void isFastBridgeFederationDerivationHashUsed_beforeRSKIP176_returnFalse() {
         Repository repository = mock(Repository.class);
 
-        Sha256Hash hash = Sha256Hash.ZERO_HASH;
+        Sha256Hash derivationHash = PegTestUtils.createHash(1);
+        Sha256Hash btcTxHash = PegTestUtils.createHash(2);
 
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(false);
 
-        when(repository.getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromLongString("fastBridgeScriptHash-" + hash.toString())))
-                .thenReturn(new byte[]{FAST_BRIDGE_FEDERATION_SCRIPT_HASH_TRUE_VALUE_TEST});
+        when(repository.getStorageBytes(
+                PrecompiledContracts.BRIDGE_ADDR,
+                DataWord.fromLongString("fastBridgeHashUsedInBtcTx-" + btcTxHash.toString() + derivationHash.toString()))
+        ).thenReturn(new byte[]{FAST_BRIDGE_FEDERATION_SCRIPT_HASH_TRUE_VALUE_TEST});
 
         BridgeStorageProvider provider = new BridgeStorageProvider(
                 repository,
@@ -2629,7 +2635,7 @@ public class BridgeStorageProviderTest {
                 activations
         );
 
-        boolean result = provider.isFastBridgeFederationDerivationHashUsed(hash);
+        boolean result = provider.isFastBridgeFederationDerivationHashUsed(btcTxHash, derivationHash);
         Assert.assertFalse(result);
     }
 
@@ -2637,10 +2643,13 @@ public class BridgeStorageProviderTest {
     public void isFastBridgeFederationDerivationHashUsed_storageReturnsNull_returnFalse() {
         Repository repository = mock(Repository.class);
 
-        Sha256Hash hash = Sha256Hash.ZERO_HASH;
+        Sha256Hash derivationHash = PegTestUtils.createHash(1);
+        Sha256Hash btcTxHash = PegTestUtils.createHash(2);
 
-        when(repository.getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromLongString("fastBridgeScriptHash-" + hash.toString())))
-                .thenReturn(null);
+        when(repository.getStorageBytes(
+                PrecompiledContracts.BRIDGE_ADDR,
+                DataWord.fromLongString("fastBridgeHashUsedInBtcTx-" + btcTxHash.toString() + derivationHash.toString()))
+        ).thenReturn(null);
 
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(true);
@@ -2652,7 +2661,7 @@ public class BridgeStorageProviderTest {
                 activations
         );
 
-        boolean result = provider.isFastBridgeFederationDerivationHashUsed(hash);
+        boolean result = provider.isFastBridgeFederationDerivationHashUsed(btcTxHash, derivationHash);
         Assert.assertFalse(result);
     }
 
@@ -2660,10 +2669,13 @@ public class BridgeStorageProviderTest {
     public void isFastBridgeFederationDerivationHashUsed_storageReturnsEmpty_returnFalse() {
         Repository repository = mock(Repository.class);
 
-        Sha256Hash hash = Sha256Hash.ZERO_HASH;
+        Sha256Hash derivationHash = PegTestUtils.createHash(1);
+        Sha256Hash btcTxHash = PegTestUtils.createHash(2);
 
-        when(repository.getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromLongString("fastBridgeScriptHash-" + hash.toString())))
-                .thenReturn(new byte[]{});
+        when(repository.getStorageBytes(
+                PrecompiledContracts.BRIDGE_ADDR,
+                DataWord.fromLongString("fastBridgeHashUsedInBtcTx-" + btcTxHash.toString() + derivationHash.toString()))
+        ).thenReturn(new byte[]{});
 
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(true);
@@ -2675,7 +2687,7 @@ public class BridgeStorageProviderTest {
                 activations
         );
 
-        boolean result = provider.isFastBridgeFederationDerivationHashUsed(hash);
+        boolean result = provider.isFastBridgeFederationDerivationHashUsed(btcTxHash, derivationHash);
         Assert.assertFalse(result);
     }
 
@@ -2683,10 +2695,13 @@ public class BridgeStorageProviderTest {
     public void isFastBridgeFederationDerivationHashUsed_storageReturnsWrongValue_returnFalse() {
         Repository repository = mock(Repository.class);
 
-        Sha256Hash hash = Sha256Hash.ZERO_HASH;
+        Sha256Hash derivationHash = PegTestUtils.createHash(1);
+        Sha256Hash btcTxHash = PegTestUtils.createHash(2);
 
-        when(repository.getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromLongString("fastBridgeScriptHash-" + hash.toString())))
-                .thenReturn(new byte[]{(byte) 0});
+        when(repository.getStorageBytes(
+                PrecompiledContracts.BRIDGE_ADDR,
+                DataWord.fromLongString("fastBridgeHashUsedInBtcTx-" + btcTxHash.toString() + derivationHash.toString()))
+        ).thenReturn(new byte[]{(byte) 0});
 
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(true);
@@ -2698,7 +2713,7 @@ public class BridgeStorageProviderTest {
                 activations
         );
 
-        boolean result = provider.isFastBridgeFederationDerivationHashUsed(hash);
+        boolean result = provider.isFastBridgeFederationDerivationHashUsed(btcTxHash, derivationHash);
         Assert.assertFalse(result);
     }
 
@@ -2852,7 +2867,8 @@ public class BridgeStorageProviderTest {
     public void saveDerivationArgumentsScriptHash_afterRSKIP176_Ok() throws IOException {
         Repository repository = mock(Repository.class);
 
-        Sha256Hash hash = Sha256Hash.ZERO_HASH;
+        Sha256Hash derivationHash = PegTestUtils.createHash(1);
+        Sha256Hash btcTxHash = PegTestUtils.createHash(2);
 
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(true);
@@ -2864,24 +2880,72 @@ public class BridgeStorageProviderTest {
                 activations
         );
 
-        provider.markFastBridgeFederationDerivationHashAsUsed(hash);
+        provider.markFastBridgeFederationDerivationHashAsUsed(btcTxHash, derivationHash);
 
         provider.save();
 
         verify(repository, times(1)).addStorageBytes(
                 PrecompiledContracts.BRIDGE_ADDR,
-                DataWord.fromLongString("fastBridgeScriptHash-" + hash.toString()),
+                DataWord.fromLongString("fastBridgeHashUsedInBtcTx-" + btcTxHash.toString() + derivationHash.toString()),
                 new byte[]{FAST_BRIDGE_FEDERATION_SCRIPT_HASH_TRUE_VALUE_TEST}
         );
         verifyNoMoreInteractions(repository);
     }
 
     @Test
+    public void saveDerivationArgumentsScriptHash_afterRSKIP176_nullBtcTxHash_notSaved() throws IOException {
+        Repository repository = mock(Repository.class);
+
+        Sha256Hash derivationHash = PegTestUtils.createHash(1);
+        Sha256Hash btcTxHash = null;
+
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(true);
+
+        BridgeStorageProvider provider = new BridgeStorageProvider(
+                repository,
+                PrecompiledContracts.BRIDGE_ADDR,
+                config.getNetworkConstants().getBridgeConstants(),
+                activations
+        );
+
+        provider.markFastBridgeFederationDerivationHashAsUsed(btcTxHash, derivationHash);
+
+        provider.save();
+
+        verifyZeroInteractions(repository);
+    }
+
+    @Test
+    public void saveDerivationArgumentsScriptHash_afterRSKIP176_nullDerivationHash_notSaved() throws IOException {
+        Repository repository = mock(Repository.class);
+
+        Sha256Hash derivationHash = null;
+        Sha256Hash btcTxHash = PegTestUtils.createHash(1);
+
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(true);
+
+        BridgeStorageProvider provider = new BridgeStorageProvider(
+                repository,
+                PrecompiledContracts.BRIDGE_ADDR,
+                config.getNetworkConstants().getBridgeConstants(),
+                activations
+        );
+
+        provider.markFastBridgeFederationDerivationHashAsUsed(btcTxHash, derivationHash);
+
+        provider.save();
+
+        verifyZeroInteractions(repository);
+    }
+
+    @Test
     public void saveDerivationArgumentsScriptHash_beforeRSKIP176_Ok() throws IOException {
         Repository repository = mock(Repository.class);
 
-        Sha256Hash hash = Sha256Hash.ZERO_HASH;
-        byte[] fastBridgeFedP2SH = new byte[]{(byte) 0xaa};
+        Sha256Hash derivationHash = PegTestUtils.createHash(1);
+        Sha256Hash btcTxHash = PegTestUtils.createHash(2);
 
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(false);
@@ -2893,13 +2957,13 @@ public class BridgeStorageProviderTest {
                 activations
         );
 
-        provider.markFastBridgeFederationDerivationHashAsUsed(hash);
+        provider.markFastBridgeFederationDerivationHashAsUsed(btcTxHash, derivationHash);
 
         provider.save();
 
         verify(repository, never()).addStorageBytes(
                 PrecompiledContracts.BRIDGE_ADDR,
-                DataWord.fromLongString("fastBridgeScriptHash-" + hash.toString()),
+                DataWord.fromLongString("fastBridgeHashUsedInBtcTx-" + btcTxHash.toString() + derivationHash.toString()),
                 new byte[]{FAST_BRIDGE_FEDERATION_SCRIPT_HASH_TRUE_VALUE_TEST}
         );
     }
