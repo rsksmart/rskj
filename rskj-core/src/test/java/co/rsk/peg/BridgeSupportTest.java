@@ -6000,6 +6000,8 @@ public class BridgeSupportTest {
         when(activations.isActive(ConsensusRule.RSKIP134)).thenReturn(true);
 
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
+        when(provider.isFastBridgeFederationDerivationHashUsed(any(Sha256Hash.class), any(Sha256Hash.class))).thenReturn(true);
+
         ReleaseTransactionSet releaseTransactionSet = new ReleaseTransactionSet(new HashSet<>());
         when(provider.getReleaseTransactionSet()).thenReturn(releaseTransactionSet);
 
