@@ -36,6 +36,7 @@ import co.rsk.peg.bitcoin.MerkleBranch;
 import co.rsk.peg.bitcoin.RskAllowUnconfirmedCoinSelector;
 import co.rsk.peg.btcLockSender.BtcLockSender;
 import co.rsk.peg.btcLockSender.BtcLockSenderProvider;
+import co.rsk.peg.fastbridge.FastBridgeFederationInformation;
 import co.rsk.peg.utils.BridgeEventLogger;
 import co.rsk.peg.utils.BtcTransactionFormatUtils;
 import co.rsk.peg.utils.PartialMerkleTreeFormatUtils;
@@ -2113,20 +2114,31 @@ public class BridgeSupport {
                 lbcAddress
         );
 
-        Address fastBridgeFedAddress = Address.fromP2SHScript(
-                bridgeConstants.getBtcParams(),
-                fastBridgeFederationData.getFastBridgeScriptHash()
-        );
+        FastBridgeFederationInformation fastBridgeFederationInformation =
+            new FastBridgeFederationInformation(
+                fastBridgeFederationData.getDerivationArgumentsHash(),
+                getActiveFederation().getP2SHScript().getPubKeyHash(),
+                fastBridgeFederationData.getFastBridgeScriptHash().getPubKeyHash()
+            );
+
+        Address fastBridgeFedAddress =
+            fastBridgeFederationInformation.getFastBridgeFederationAddress(bridgeConstants.getBtcParams());
 
         Coin totalAmount = getAmountSentToAddress(btcTx, fastBridgeFedAddress);
+
+        if (totalAmount == Coin.ZERO) {
+            logger.warn("Amount sent can't be 0");
+            // TODO: return proper error code
+            return -10;
+        }
 
         if (provider.isFastBridgeFederationDerivationHashUsed(fastBridgeFederationData.getDerivationArgumentsHash())) {
             logger.warn("[registerBtcTransfer] [btcTxHash:{}] derivationArgumentsHash is already "
                 + "saved in BridgeStorageProvider",
                 btcTxHash
             );
-            WalletProvider walletProvider = createFastBridgeWalletProvider();
-            generateRejectionRelease(btcTx, userRefundAddress, rskTx, totalAmount, walletProvider);
+            WalletProvider walletProvider = createFastBridgeWalletProvider(fastBridgeFederationInformation);
+            generateRejectionRelease(btcTx, userRefundAddress, fastBridgeFedAddress, rskTx,  totalAmount, walletProvider);
             return -1;
         }
 
@@ -2134,24 +2146,57 @@ public class BridgeSupport {
             logger.warn("[registerBtcTransfer] [btcTxHash:{}] shouldTransferToContract is set as False",
                 btcTxHash
             );
-            WalletProvider walletProvider = createFastBridgeWalletProvider();
-            generateRejectionRelease(btcTx, userRefundAddress, rskTx, totalAmount, walletProvider);
+            WalletProvider walletProvider = createFastBridgeWalletProvider(fastBridgeFederationInformation);
+            generateRejectionRelease(btcTx, userRefundAddress, fastBridgeFedAddress, rskTx, totalAmount, walletProvider);
             return -1;
         }
 
         if (!verifyLockDoesNotSurpassLockingCap(btcTx, null, totalAmount)) {
-            WalletProvider walletProvider = createFastBridgeWalletProvider();
-            generateRejectionRelease(btcTx, lpBtcAddress, rskTx, totalAmount, walletProvider);
+            WalletProvider walletProvider = createFastBridgeWalletProvider(fastBridgeFederationInformation);
+            generateRejectionRelease(btcTx, lpBtcAddress, fastBridgeFedAddress, rskTx, totalAmount, walletProvider);
             return -2;
         }
 
         return 1;  //TODO: Includes logic
     }
 
-    private WalletProvider createFastBridgeWalletProvider() {
+    protected void validateAmountAndTransfer(
+        Coin valueToTransfer,
+        Coin amountSent,
+        BtcTransaction btcTx,
+        Address userRefundAddress,
+        Address fastBridgeFedAddress,
+        RskAddress lbcAddress,
+        Transaction rskTx,
+        FastBridgeFederationInformation fastBridgeFederationInformation
+    ) throws IOException {
+        //TODO: This validation goes on top of registerBtcTransfer
+        if (valueToTransfer.value < 0) {
+            String message = "Value to transfer can't be negative";
+            logger.warn(message);
+            throw new BridgeIllegalArgumentException(message);
+        }
+
+        if (valueToTransfer == amountSent) {
+            transferTo(lbcAddress, co.rsk.core.Coin.fromBitcoin(valueToTransfer));
+        } else {
+            WalletProvider walletProvider = createFastBridgeWalletProvider(fastBridgeFederationInformation);
+            generateRejectionRelease(
+                btcTx,
+                userRefundAddress,
+                fastBridgeFedAddress,
+                rskTx,
+                amountSent,
+                walletProvider
+            );
+        }
+    }
+
+    private WalletProvider createFastBridgeWalletProvider(
+        FastBridgeFederationInformation fastBridgeFederationInformation) {
         return (BtcTransaction a, Address b) -> {
             List<UTXO> utxosList = getUTXOsForAddress(a, b);
-            return getFastBridgeWallet(btcContext, utxosList);
+            return getFastBridgeWallet(btcContext, utxosList, fastBridgeFederationInformation);
         };
     }
 
@@ -2175,8 +2220,8 @@ public class BridgeSupport {
         return utxosList;
     }
 
-    protected Wallet getFastBridgeWallet(Context btcContext, List<UTXO> utxos) {
-        Wallet wallet = new Wallet(btcContext);
+    protected Wallet getFastBridgeWallet(Context btcContext, List<UTXO> utxos, FastBridgeFederationInformation fb) {
+        Wallet wallet = new FastBridgeCompatibleBtcWalletWithSingleScript(btcContext, getLiveFederations(), fb);
         RskUTXOProvider utxoProvider = new RskUTXOProvider(btcContext.getParams(), utxos);
         wallet.setUTXOProvider(utxoProvider);
         wallet.setCoinSelector(new RskAllowUnconfirmedCoinSelector());
@@ -2275,7 +2320,7 @@ public class BridgeSupport {
     protected Coin getAmountSentToAddress(BtcTransaction btcTx, Address btcAddress) {
         Coin v = Coin.ZERO;
         for (TransactionOutput o : btcTx.getOutputs()) {
-            if (o.getScriptPubKey().getToAddress(bridgeConstants.getBtcParams()) == btcAddress) {
+            if (o.getScriptPubKey().getToAddress(bridgeConstants.getBtcParams()).equals(btcAddress)) {
                 v = v.add(o.getValue());
             }
         }
@@ -2377,16 +2422,17 @@ public class BridgeSupport {
     private void generateRejectionRelease(
         BtcTransaction btcTx,
         Address refundingBtcAddress,
+        Address spendingAddress,
         Transaction rskTx,
         Coin totalAmount,
         WalletProvider walletProvider
     ) throws IOException {
-            ReleaseTransactionBuilder txBuilder = new ReleaseTransactionBuilder(
-                btcContext.getParams(),
-                walletProvider.provide(btcTx, refundingBtcAddress),
-                refundingBtcAddress,
-                getFeePerKb()
-            );
+        ReleaseTransactionBuilder txBuilder = new ReleaseTransactionBuilder(
+            btcContext.getParams(),
+            walletProvider.provide(btcTx, spendingAddress),
+            refundingBtcAddress,
+            getFeePerKb()
+        );
 
         Optional<ReleaseTransactionBuilder.BuildResult> buildReturnResult = txBuilder.buildEmptyWalletTo(refundingBtcAddress);
 
@@ -2427,7 +2473,7 @@ public class BridgeSupport {
             return getUTXOBasedWalletForLiveFederations(utxosToUs, false);
         };
 
-        generateRejectionRelease(btcTx, senderBtcAddress, rskTx, totalAmount, createWallet);
+        generateRejectionRelease(btcTx, senderBtcAddress, null, rskTx, totalAmount, createWallet);
     }
 
     private boolean verifyLockSenderIsWhitelisted(Address senderBtcAddress, Coin totalAmount, int height) {
