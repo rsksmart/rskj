@@ -59,12 +59,12 @@ import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.MutableTrieCache;
 import co.rsk.db.MutableTrieImpl;
-import co.rsk.peg.BtcBlockStoreWithCache.Factory;
 import co.rsk.peg.bitcoin.CoinbaseInformation;
 import co.rsk.peg.bitcoin.MerkleBranch;
 import co.rsk.peg.btcLockSender.BtcLockSender;
 import co.rsk.peg.btcLockSender.BtcLockSender.TxSenderAddressType;
 import co.rsk.peg.btcLockSender.BtcLockSenderProvider;
+import co.rsk.peg.fastbridge.FastBridgeFederationInformation;
 import co.rsk.peg.pegininstructions.PeginInstructions;
 import co.rsk.peg.pegininstructions.PeginInstructionsException;
 import co.rsk.peg.pegininstructions.PeginInstructionsProvider;
@@ -100,7 +100,6 @@ import org.bouncycastle.crypto.signers.ECDSASigner;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
-import org.ethereum.config.blockchain.upgrades.ActivationConfig.ForBlock;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Block;
@@ -122,6 +121,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
+import org.powermock.api.mockito.PowerMockito;
 
 public class BridgeSupportTest {
     private static final String TO_ADDRESS = "0000000000000000000000000000000000000006";
@@ -5824,6 +5824,56 @@ public class BridgeSupportTest {
     }
 
     @Test
+    public void registerBtcTransfer_amount_sent_is_0()
+        throws BlockStoreException, RegisterBtcTransferException, IOException, RegisterBtcTransactionException, BridgeIllegalArgumentException {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(true);
+
+        Context btcContext = mock(Context.class);
+        when(btcContext.getParams()).thenReturn(bridgeConstants.getBtcParams());
+
+        BridgeSupport bridgeSupport = spy(new BridgeSupport(
+            bridgeConstants,
+            mock(BridgeStorageProvider.class),
+            mock(BridgeEventLogger.class),
+            new BtcLockSenderProvider(),
+            new PeginInstructionsProvider(),
+            mock(Repository.class),
+            mock(Block.class),
+            btcContext,
+            mock(FederationSupport.class),
+            mock(BtcBlockStoreWithCache.Factory.class),
+            activations
+        ));
+
+        doReturn(bridgeConstants.getGenesisFederation()).when(bridgeSupport).getActiveFederation();
+        doReturn(true).when(bridgeSupport).validationsForRegisterBtcTransaction(any(), anyInt(), any(), any());
+        doReturn(Sha256Hash.of(new byte [1])).when(bridgeSupport).getFastBridgeDerivationHash(
+            any(Sha256Hash.class),
+            any(Address.class),
+            any(Address.class),
+            any(RskAddress.class)
+        );
+
+        BtcTransaction tx = createBtcTransactionWithOutputToAddress(Coin.COIN, new BtcECKey().toAddress(btcParams));
+        InternalTransaction rskTx = new InternalTransaction(null, 0, 0, null, null, null, null, null, null, null, null);
+
+        int result = bridgeSupport.registerBtcTransfer(
+            rskTx,
+            tx.bitcoinSerialize(),
+            100,
+            Hex.decode("ab"),
+            Sha256Hash.ZERO_HASH,
+            mock(Address.class),
+            mock(RskAddress.class),
+            mock(Address.class),
+            true
+        );
+
+        Assert.assertEquals(-10, result);
+    }
+
+    @Test
     public void registerBtcTransfer_derivation_arguments_hash_already_used()
         throws RegisterBtcTransferException, IOException, BlockStoreException, RegisterBtcTransactionException, BridgeIllegalArgumentException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
@@ -5831,6 +5881,9 @@ public class BridgeSupportTest {
 
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
         when(provider.isFastBridgeFederationDerivationHashUsed(any(Sha256Hash.class))).thenReturn(true);
+
+        ReleaseTransactionSet releaseTransactionSet = new ReleaseTransactionSet(new HashSet<>());
+        when(provider.getReleaseTransactionSet()).thenReturn(releaseTransactionSet);
 
         Context btcContext = mock(Context.class);
         when(btcContext.getParams()).thenReturn(bridgeConstants.getBtcParams());
@@ -5863,24 +5916,8 @@ public class BridgeSupportTest {
             "n3PLxDiwWqa5uH7fSbHCxS6VAjD9Y7Rwkj"
         );
 
-        ECKey key = ECKey.fromPublicOnly(new BtcECKey().getPubKey());
-        RskAddress lbcAddress = new RskAddress(key.getAddress());
 
-        Script fastBridgeRedeemScript = RedeemScriptParser.createMultiSigFastBridgeRedeemScript(
-            bridgeConstants.getGenesisFederation().getRedeemScript(),
-            Sha256Hash.of(new byte[1])
-        );
-
-        Script fastBridgeP2SH = ScriptBuilder.createP2SHOutputScript(fastBridgeRedeemScript);
-
-        Address fastBridgeFedAddress =
-            Address.fromP2SHScript(bridgeConstants.getBtcParams(), fastBridgeP2SH);
-
-        BtcTransaction tx = new BtcTransaction(bridgeConstants.getBtcParams());
-        tx.addOutput(Coin.COIN, fastBridgeFedAddress);
-        BtcECKey srcKey = new BtcECKey();
-        tx.addInput(PegTestUtils.createHash(1), 0, ScriptBuilder.createInputScript(null, srcKey));
-
+        BtcTransaction tx = createBtcTransactionWithOutputToAddress(Coin.COIN, getFastBridgeFederationAddress());
         byte[] pmtSerialized = Hex.decode("ab");
         InternalTransaction rskTx = new InternalTransaction(null, 0, 0, null, null, null, null, null, null, null, null);
 
@@ -5891,7 +5928,7 @@ public class BridgeSupportTest {
                 pmtSerialized,
                 Sha256Hash.ZERO_HASH,
                 btcAddress,
-                lbcAddress,
+                mock(RskAddress.class),
                 btcAddress,
                 true
         );
@@ -5908,9 +5945,13 @@ public class BridgeSupportTest {
         Context btcContext = mock(Context.class);
         when(btcContext.getParams()).thenReturn(bridgeConstants.getBtcParams());
 
+        BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
+        ReleaseTransactionSet releaseTransactionSet = new ReleaseTransactionSet(new HashSet<>());
+        when(provider.getReleaseTransactionSet()).thenReturn(releaseTransactionSet);
+
         BridgeSupport bridgeSupport = spy(new BridgeSupport(
             bridgeConstants,
-            mock(BridgeStorageProvider.class),
+            provider,
             mock(BridgeEventLogger.class),
             new BtcLockSenderProvider(),
             new PeginInstructionsProvider(),
@@ -5930,6 +5971,7 @@ public class BridgeSupportTest {
                 any(Address.class),
                 any(RskAddress.class)
         );
+        doReturn(Coin.COIN).when(bridgeSupport).getAmountSentToAddress(any(BtcTransaction.class), any(Address.class));
 
         Address btcAddress = Address.fromBase58(
                 btcParams,
@@ -5939,21 +5981,7 @@ public class BridgeSupportTest {
         ECKey key = ECKey.fromPublicOnly(new BtcECKey().getPubKey());
         RskAddress lbcAddress = new RskAddress(key.getAddress());
 
-        Script fastBridgeRedeemScript = RedeemScriptParser.createMultiSigFastBridgeRedeemScript(
-                bridgeConstants.getGenesisFederation().getRedeemScript(),
-                Sha256Hash.of(new byte[1])
-        );
-
-        Script fastBridgeP2SH = ScriptBuilder.createP2SHOutputScript(fastBridgeRedeemScript);
-
-        Address fastBridgeFedAddress =
-                Address.fromP2SHScript(bridgeConstants.getBtcParams(), fastBridgeP2SH);
-
-        BtcTransaction tx = new BtcTransaction(bridgeConstants.getBtcParams());
-        tx.addOutput(Coin.COIN, fastBridgeFedAddress);
-        BtcECKey srcKey = new BtcECKey();
-        tx.addInput(PegTestUtils.createHash(1), 0, ScriptBuilder.createInputScript(null, srcKey));
-
+        BtcTransaction tx = createBtcTransactionWithOutputToAddress(Coin.COIN, getFastBridgeFederationAddress());
         byte[] pmtSerialized = Hex.decode("ab");
         InternalTransaction rskTx = new InternalTransaction(null, 0, 0, null, null, null, null, null, null, null, null);
 
@@ -5979,6 +6007,10 @@ public class BridgeSupportTest {
         when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP134)).thenReturn(true);
 
+        BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
+        ReleaseTransactionSet releaseTransactionSet = new ReleaseTransactionSet(new HashSet<>());
+        when(provider.getReleaseTransactionSet()).thenReturn(releaseTransactionSet);
+
         BtcLockSender btcLockSender = mock(BtcLockSender.class);
         BtcLockSenderProvider btcLockSenderProvider = mock(BtcLockSenderProvider.class);
         when(btcLockSenderProvider.tryGetBtcLockSender(any())).thenReturn(Optional.of(btcLockSender));
@@ -5991,7 +6023,7 @@ public class BridgeSupportTest {
 
         BridgeSupport bridgeSupport = spy(new BridgeSupport(
             bridgeConstants,
-            mock(BridgeStorageProvider.class),
+            provider,
             mock(BridgeEventLogger.class),
             btcLockSenderProvider,
             new PeginInstructionsProvider(),
@@ -6021,21 +6053,7 @@ public class BridgeSupportTest {
         ECKey key = ECKey.fromPublicOnly(new BtcECKey().getPubKey());
         RskAddress lbcAddress = new RskAddress(key.getAddress());
 
-        Script fastBridgeRedeemScript = RedeemScriptParser.createMultiSigFastBridgeRedeemScript(
-            bridgeConstants.getGenesisFederation().getRedeemScript(),
-            Sha256Hash.of(new byte[1])
-        );
-
-        Script fastBridgeP2SH = ScriptBuilder.createP2SHOutputScript(fastBridgeRedeemScript);
-
-        Address fastBridgeFedAddress =
-            Address.fromP2SHScript(bridgeConstants.getBtcParams(), fastBridgeP2SH);
-
-        BtcTransaction tx = new BtcTransaction(bridgeConstants.getBtcParams());
-        tx.addOutput(Coin.COIN, fastBridgeFedAddress);
-        BtcECKey srcKey = new BtcECKey();
-        tx.addInput(PegTestUtils.createHash(1), 0, ScriptBuilder.createInputScript(null, srcKey));
-
+        BtcTransaction tx = createBtcTransactionWithOutputToAddress(Coin.COIN, getFastBridgeFederationAddress());
         byte[] pmtSerialized = Hex.decode("ab");
         InternalTransaction rskTx = new InternalTransaction(null, 0, 0, null, null, null, null, null, null, null, null);
 
@@ -6063,9 +6081,13 @@ public class BridgeSupportTest {
         Context btcContext = mock(Context.class);
         when(btcContext.getParams()).thenReturn(bridgeConstants.getBtcParams());
 
+        BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
+        ReleaseTransactionSet releaseTransactionSet = new ReleaseTransactionSet(new HashSet<>());
+        when(provider.getReleaseTransactionSet()).thenReturn(releaseTransactionSet);
+
         BridgeSupport bridgeSupport = spy(new BridgeSupport(
             bridgeConstants,
-            mock(BridgeStorageProvider.class),
+            provider,
             mock(BridgeEventLogger.class),
             new BtcLockSenderProvider(),
             new PeginInstructionsProvider(),
@@ -6094,21 +6116,7 @@ public class BridgeSupportTest {
         ECKey key = ECKey.fromPublicOnly(new BtcECKey().getPubKey());
         RskAddress lbcAddress = new RskAddress(key.getAddress());
 
-        Script fastBridgeRedeemScript = RedeemScriptParser.createMultiSigFastBridgeRedeemScript(
-            bridgeConstants.getGenesisFederation().getRedeemScript(),
-            Sha256Hash.of(new byte[1])
-        );
-
-        Script fastBridgeP2SH = ScriptBuilder.createP2SHOutputScript(fastBridgeRedeemScript);
-
-        Address fastBridgeFedAddress =
-            Address.fromP2SHScript(bridgeConstants.getBtcParams(), fastBridgeP2SH);
-
-        BtcTransaction tx = new BtcTransaction(bridgeConstants.getBtcParams());
-        tx.addOutput(Coin.COIN, fastBridgeFedAddress);
-        BtcECKey srcKey = new BtcECKey();
-        tx.addInput(PegTestUtils.createHash(1), 0, ScriptBuilder.createInputScript(null, srcKey));
-
+        BtcTransaction tx = createBtcTransactionWithOutputToAddress(Coin.COIN, getFastBridgeFederationAddress());
         byte[] pmtSerialized = Hex.decode("ab");
         InternalTransaction rskTx = new InternalTransaction(null, 0, 0, null, null, null, null, null, null, null, null);
 
@@ -6152,10 +6160,7 @@ public class BridgeSupportTest {
         Address fastBridgeFedAddress =
             Address.fromP2SHScript(bridgeConstants.getBtcParams(), fastBridgeP2SH);
 
-        BtcTransaction tx = new BtcTransaction(bridgeConstants.getBtcParams());
-        tx.addOutput(Coin.COIN, fastBridgeFedAddress);
-        BtcECKey srcKey = new BtcECKey();
-        tx.addInput(PegTestUtils.createHash(1), 0, ScriptBuilder.createInputScript(null, srcKey));
+        BtcTransaction tx = createBtcTransactionWithOutputToAddress(Coin.COIN, fastBridgeFedAddress);
 
         List<UTXO> utxoList = new ArrayList<>();
         UTXO utxo = new UTXO(tx.getHash(), 0, Coin.COIN, 0, false, fastBridgeP2SH);
@@ -6190,13 +6195,13 @@ public class BridgeSupportTest {
 
     @Test
     public void getFastBridgeWallet_OK() {
-        ForBlock activations = mock(ForBlock.class);
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(true);
 
         Context btcContext = mock(Context.class);
         when(btcContext.getParams()).thenReturn(bridgeConstants.getBtcParams());
 
-        BridgeSupport bridgeSupport = spy(new BridgeSupport(
+        BridgeSupport bridgeSupport = new BridgeSupport(
             bridgeConstants,
             mock(BridgeStorageProvider.class),
             mock(BridgeEventLogger.class),
@@ -6206,33 +6211,40 @@ public class BridgeSupportTest {
             mock(Block.class),
             btcContext,
             mock(FederationSupport.class),
-            mock(Factory.class),
+            mock(BtcBlockStoreWithCache.Factory.class),
             activations
-        ));
+        );
+
+        Federation fed = bridgeConstants.getGenesisFederation();
+        Sha256Hash derivationHash = Sha256Hash.of(new byte[1]);
 
         Script fastBridgeRedeemScript = RedeemScriptParser.createMultiSigFastBridgeRedeemScript(
-            bridgeConstants.getGenesisFederation().getRedeemScript(),
-            Sha256Hash.of(new byte[1])
+            fed.getRedeemScript(),
+            derivationHash
         );
 
         Script fastBridgeP2SH = ScriptBuilder.createP2SHOutputScript(fastBridgeRedeemScript);
 
-        Address fastBridgeFedAddress =
-            Address.fromP2SHScript(bridgeConstants.getBtcParams(), fastBridgeP2SH);
+        FastBridgeFederationInformation fastBridgeFederationInformation =
+            new FastBridgeFederationInformation(
+                derivationHash,
+                fed.getP2SHScript().getPubKeyHash(),
+                fastBridgeP2SH.getPubKeyHash()
+            );
 
         BtcTransaction tx = new BtcTransaction(bridgeConstants.getBtcParams());
-        tx.addOutput(Coin.COIN, fastBridgeFedAddress);
-        tx.addInput(PegTestUtils.createHash(1), 0,
-            ScriptBuilder.createInputScript(null, new BtcECKey())
+        tx.addOutput(Coin.COIN,
+            fastBridgeFederationInformation.getFastBridgeFederationAddress(
+                bridgeConstants.getBtcParams()
+            )
         );
 
         List<UTXO> utxoList = new ArrayList<>();
         UTXO utxo = new UTXO(tx.getHash(), 0, Coin.COIN, 0, false, fastBridgeP2SH);
         utxoList.add(utxo);
 
-        Wallet obtainedWallet = bridgeSupport.getFastBridgeWallet(btcContext, utxoList);
-
-        assertEquals(obtainedWallet.getBalance(), Coin.COIN);
+        Wallet obtainedWallet = bridgeSupport.getFastBridgeWallet(btcContext, utxoList, fastBridgeFederationInformation);
+        Assert.assertEquals(obtainedWallet.getBalance(), Coin.COIN);
     }
 
     @Test
@@ -6264,7 +6276,10 @@ public class BridgeSupportTest {
         );
 
         Assert.assertEquals(resultDerivationHash, fastBridgeFederationData.getDerivationArgumentsHash());
-        Assert.assertEquals(ScriptBuilder.createP2SHOutputScript(resultRedeemScript), fastBridgeFederationData.getFastBridgeScriptHash());
+        Assert.assertEquals(
+            ScriptBuilder.createP2SHOutputScript(resultRedeemScript),
+            fastBridgeFederationData.getFastBridgeScriptHash()
+        );
     }
 
     @Test
@@ -6286,6 +6301,249 @@ public class BridgeSupportTest {
         );
 
         Assert.assertEquals(Sha256Hash.of(result), fastBridgeDerivationHash);
+    }
+
+    @Test(expected = BridgeIllegalArgumentException.class)
+    public void validateAmountAndTransfer_negative_value_to_transfer()
+        throws IOException, BridgeIllegalArgumentException {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        PowerMockito.when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(true);
+
+        BridgeSupport bridgeSupport = getBridgeSupport(
+            bridgeConstants,
+            mock(BridgeStorageProvider.class),
+            mock(Repository.class),
+            mock(BridgeEventLogger.class),
+            null,
+            mock(BtcBlockStoreWithCache.Factory.class),
+            activations
+        );
+
+        Coin valueToTransfer = Coin.NEGATIVE_SATOSHI;
+        Coin amountSent = Coin.COIN;
+
+        bridgeSupport.validateAmountAndTransfer(
+            valueToTransfer,
+            amountSent,
+            mock(BtcTransaction.class),
+            mock(Address.class),
+            mock(Address.class),
+            mock(RskAddress.class),
+            mock(Transaction.class),
+            mock(FastBridgeFederationInformation.class)
+        );
+    }
+
+    @Test
+    public void validateAmountAndTransfer_value_to_transfer_and_value_sent_are_equal()
+        throws IOException, BridgeIllegalArgumentException {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        PowerMockito.when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(true);
+
+        Federation federation = bridgeConstants.getGenesisFederation();
+        FederationSupport federationSupport = mock(FederationSupport.class);
+        PowerMockito.when(federationSupport.getActiveFederation()).thenReturn(federation);
+
+        Repository repository = spy(createRepository());
+        BridgeStorageProvider provider = new BridgeStorageProvider(
+            repository,
+            PrecompiledContracts.BRIDGE_ADDR,
+            bridgeConstants,
+            activations
+        );
+
+        BridgeSupport bridgeSupport = new BridgeSupport(
+            bridgeConstants,
+            provider,
+            mock(BridgeEventLogger.class),
+            new BtcLockSenderProvider(),
+            new PeginInstructionsProvider(),
+            repository,
+            mock(Block.class),
+            mock(Context.class),
+            federationSupport,
+            mock(BtcBlockStoreWithCache.Factory.class),
+            activations
+        );
+
+        Coin valueToTransfer = Coin.COIN;
+        Coin amountSent = Coin.COIN;
+
+        ECKey key = ECKey.fromPublicOnly(new BtcECKey().getPubKey());
+        RskAddress lbcAddress = new RskAddress(key.getAddress());
+        co.rsk.core.Coin preCallLbcAddressBalance = repository.getBalance(lbcAddress);
+
+        Sha256Hash derivationHash = Sha256Hash.of(new byte[]{1});
+
+        Script fastBridgeRedeemScript = RedeemScriptParser.createMultiSigFastBridgeRedeemScript(
+            federation.getRedeemScript(),
+            derivationHash
+        );
+
+        Script fastBridgeP2SH = ScriptBuilder.createP2SHOutputScript(fastBridgeRedeemScript);
+        FastBridgeFederationInformation fastBridgeFederationInformation =
+            new FastBridgeFederationInformation(
+                derivationHash,
+                federation.getP2SHScript().getPubKeyHash(),
+                fastBridgeP2SH.getPubKeyHash()
+            );
+
+        bridgeSupport.validateAmountAndTransfer(
+            valueToTransfer,
+            amountSent,
+            mock(BtcTransaction.class),
+            mock(Address.class),
+            mock(Address.class),
+            lbcAddress,
+            mock(Transaction.class),
+            fastBridgeFederationInformation
+        );
+
+        co.rsk.core.Coin postCallLbcAddressBalance = repository.getBalance(lbcAddress);
+        Assert.assertEquals(
+            postCallLbcAddressBalance,
+            preCallLbcAddressBalance.add(co.rsk.core.Coin.fromBitcoin(Coin.COIN))
+        );
+
+        Assert.assertEquals(0, provider.getReleaseTransactionSet().getEntries().size());
+
+        verify(repository, times(1)).transfer(
+            PrecompiledContracts.BRIDGE_ADDR,
+            lbcAddress,
+            co.rsk.core.Coin.fromBitcoin(valueToTransfer)
+        );
+    }
+
+    @Test
+    public void validateAmountAndTransfer_value_to_transfer_different_to_value_sent()
+        throws IOException, BridgeIllegalArgumentException {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        PowerMockito.when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(true);
+
+        Federation federation = bridgeConstants.getGenesisFederation();
+        FederationSupport federationSupport = mock(FederationSupport.class);
+        PowerMockito.when(federationSupport.getActiveFederation()).thenReturn(federation);
+
+        Repository repository = mock(Repository.class);
+        NetworkParameters networkParameters = bridgeConstants.getBtcParams();
+        Context context = new Context(networkParameters);
+        BridgeStorageProvider provider = new BridgeStorageProvider(repository,
+            PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activations);
+
+        Coin valueToTransfer = Coin.COIN;
+        Coin amountSent = Coin.FIFTY_COINS;
+
+        ECKey key = ECKey.fromPublicOnly(new BtcECKey().getPubKey());
+        RskAddress lbcAddress = new RskAddress(key.getAddress());
+        Address userRefundAddress = Address.fromBase58(networkParameters, "mvbnrCX3bg1cDRUu8pkecrvP6vQkSLDSou");
+        Sha256Hash derivationHash = Sha256Hash.of(new byte[]{1});
+
+        Script fastBridgeRedeemScript = RedeemScriptParser.createMultiSigFastBridgeRedeemScript(
+            federation.getRedeemScript(),
+            derivationHash
+        );
+
+        Script fastBridgeP2SH = ScriptBuilder.createP2SHOutputScript(fastBridgeRedeemScript);
+        FastBridgeFederationInformation fastBridgeFederationInformation =
+            new FastBridgeFederationInformation(
+                derivationHash,
+                federation.getP2SHScript().getPubKeyHash(),
+                fastBridgeP2SH.getPubKeyHash()
+            );
+        Address fastBridgeFedAddress =
+            fastBridgeFederationInformation.getFastBridgeFederationAddress(networkParameters);
+
+        BtcTransaction btcTx = new BtcTransaction(networkParameters);
+        btcTx.addOutput(valueToTransfer, fastBridgeFedAddress);
+
+        BridgeSupport bridgeSupport = new BridgeSupport(
+            bridgeConstants,
+            provider,
+            mock(BridgeEventLogger.class),
+            new BtcLockSenderProvider(),
+            new PeginInstructionsProvider(),
+            repository,
+            mock(Block.class),
+            context,
+            federationSupport,
+            mock(BtcBlockStoreWithCache.Factory.class),
+            activations
+        );
+
+        ReleaseTransactionSet release_tx_set_before = provider.getReleaseTransactionSet();
+        Assert.assertEquals(0, release_tx_set_before.getEntries().size());
+
+        bridgeSupport.validateAmountAndTransfer(
+            valueToTransfer,
+            amountSent,
+            btcTx,
+            userRefundAddress,
+            fastBridgeFedAddress,
+            lbcAddress,
+            mock(Transaction.class),
+            fastBridgeFederationInformation
+        );
+
+        ReleaseTransactionSet release_tx_set_after = provider.getReleaseTransactionSet();
+
+        verify(repository, never()).transfer(PrecompiledContracts.BRIDGE_ADDR, lbcAddress,
+            co.rsk.core.Coin.fromBitcoin(valueToTransfer));
+
+        Assert.assertEquals(1, release_tx_set_after.getEntries().size());
+    }
+
+    @Test
+    public void getAmountSentToAddress_coin() {
+        BridgeSupport bridgeSupport = getBridgeSupport(bridgeConstants, mock(BridgeStorageProvider.class));
+
+        Coin valueToTransfer = Coin.COIN;
+        Address receiver = bridgeConstants.getGenesisFederation().getAddress();
+
+        BtcTransaction btcTx = new BtcTransaction(bridgeConstants.getBtcParams());
+        btcTx.addOutput(valueToTransfer, receiver);
+
+        Assert.assertEquals(Coin.COIN, bridgeSupport.getAmountSentToAddress(btcTx, receiver));
+    }
+
+    @Test
+    public void getAmountSentToAddress_no_output_for_address() {
+        BridgeSupport bridgeSupport = getBridgeSupport(bridgeConstants, mock(BridgeStorageProvider.class));
+        Address receiver = bridgeConstants.getGenesisFederation().getAddress();
+        BtcTransaction btcTx = new BtcTransaction(bridgeConstants.getBtcParams());
+
+        Assert.assertEquals(Coin.ZERO, bridgeSupport.getAmountSentToAddress(btcTx, receiver));
+    }
+
+    @Test
+    public void getAmountSentToAddress_output_value_is_0() {
+        BridgeSupport bridgeSupport = getBridgeSupport(bridgeConstants, mock(BridgeStorageProvider.class));
+
+        Coin valueToTransfer = Coin.ZERO;
+        Address receiver = bridgeConstants.getGenesisFederation().getAddress();
+
+        BtcTransaction btcTx = new BtcTransaction(bridgeConstants.getBtcParams());
+        btcTx.addOutput(valueToTransfer, receiver);
+
+        Assert.assertEquals(Coin.ZERO, bridgeSupport.getAmountSentToAddress(btcTx, receiver));
+    }
+
+    private Address getFastBridgeFederationAddress() {
+        Script fastBridgeRedeemScript = RedeemScriptParser.createMultiSigFastBridgeRedeemScript(
+            bridgeConstants.getGenesisFederation().getRedeemScript(),
+            Sha256Hash.of(new byte[1])
+        );
+
+        Script fastBridgeP2SH = ScriptBuilder.createP2SHOutputScript(fastBridgeRedeemScript);
+        return Address.fromP2SHScript(bridgeConstants.getBtcParams(), fastBridgeP2SH);
+    }
+
+    private BtcTransaction createBtcTransactionWithOutputToAddress(Coin amount, Address btcAddress) {
+        BtcTransaction tx = new BtcTransaction(bridgeConstants.getBtcParams());
+        tx.addOutput(amount, btcAddress);
+        BtcECKey srcKey = new BtcECKey();
+        tx.addInput(PegTestUtils.createHash(1),
+            0, ScriptBuilder.createInputScript(null, srcKey));
+        return tx;
     }
 
     private void assertRefundInProcessPegInVersion1(
