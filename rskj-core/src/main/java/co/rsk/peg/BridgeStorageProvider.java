@@ -635,7 +635,7 @@ public class BridgeStorageProvider {
 
         FastBridgeFederationInformation fastBridgeFederationInformation = this.safeGetFromRepository(
                 getStorageKeyForfastBridgeFederationInformation(fastBridgeScriptHash),
-                BridgeSerializationUtils::deserializeFastBridgeInformation
+            (data) -> BridgeSerializationUtils.deserializeFastBridgeInformation(data, fastBridgeScriptHash)
         );
         if (fastBridgeFederationInformation == null) {
             return Optional.empty();
