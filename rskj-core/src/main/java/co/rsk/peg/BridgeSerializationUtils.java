@@ -774,7 +774,7 @@ public class BridgeSerializationUtils {
         return new Script(rlpList.get(0).getRLPRawData());
     }
 
-    public static FastBridgeFederationInformation deserializeFastBridgeInformation(byte[] data) {
+    public static FastBridgeFederationInformation deserializeFastBridgeInformation(byte[] data, byte[] fastBridgeScriptHash) {
         if ((data == null) || (data.length == 0)) {
             throw new RuntimeException("Invalid serialized Fast Bridge Federation: null data or no data to deserialize");
         }
@@ -787,7 +787,7 @@ public class BridgeSerializationUtils {
         Sha256Hash derivationHash = Sha256Hash.wrap(rlpList.get(0).getRLPData());
         byte[] federationP2SH = rlpList.get(1).getRLPData();
 
-        return new FastBridgeFederationInformation(derivationHash, federationP2SH);
+        return new FastBridgeFederationInformation(derivationHash, federationP2SH, fastBridgeScriptHash);
     }
 
     public static byte[] serializeFastBridgeInformation(FastBridgeFederationInformation fastBridgeFederationP2SH) {
