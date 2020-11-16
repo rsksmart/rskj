@@ -19,7 +19,7 @@ import java.util.Optional;
 import org.junit.Assert;
 import org.junit.Test;
 
-public class FastBridgeCompatibleBtcWalletTest {
+public class FastBridgeCompatibleBtcWalletWithStorageTest {
     private final Federation federation = new Federation(
         FederationTestUtils.getFederationMembers(3),
         Instant.ofEpochMilli(1000),
@@ -34,10 +34,10 @@ public class FastBridgeCompatibleBtcWalletTest {
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
         when(provider.getFastBridgeFederationInformation(any(byte[].class))).thenReturn(Optional.empty());
 
-        FastBridgeCompatibleBtcWallet fastBridgeCompatibleBtcWallet = new FastBridgeCompatibleBtcWallet(
+        FastBridgeCompatibleBtcWalletWithStorage fastBridgeCompatibleBtcWalletWithStorage = new FastBridgeCompatibleBtcWalletWithStorage(
             mock(Context.class), federationList, provider);
 
-        RedeemData redeemData = fastBridgeCompatibleBtcWallet.findRedeemDataFromScriptHash(
+        RedeemData redeemData = fastBridgeCompatibleBtcWalletWithStorage.findRedeemDataFromScriptHash(
             federation.getP2SHScript().getPubKeyHash());
 
         Assert.assertNotNull(redeemData);
@@ -56,17 +56,19 @@ public class FastBridgeCompatibleBtcWalletTest {
         byte[] fastBridgeFederationP2SH = p2SHOutputScript.getPubKeyHash();
 
         FastBridgeFederationInformation fastBridgeFederationInformation =
-            new FastBridgeFederationInformation(derivationArgumentsHash,
-                federation.getP2SHScript().getPubKeyHash());
+            new FastBridgeFederationInformation(
+                derivationArgumentsHash,
+                federation.getP2SHScript().getPubKeyHash(),
+                fastBridgeFederationP2SH);
 
         when(provider.getFastBridgeFederationInformation(fastBridgeFederationP2SH))
             .thenReturn(Optional.of(fastBridgeFederationInformation));
 
-        FastBridgeCompatibleBtcWallet fastBridgeCompatibleBtcWallet = new FastBridgeCompatibleBtcWallet(
+        FastBridgeCompatibleBtcWalletWithStorage fastBridgeCompatibleBtcWalletWithStorage = new FastBridgeCompatibleBtcWalletWithStorage(
             mock(Context.class), federationList, provider
         );
 
-        RedeemData redeemData = fastBridgeCompatibleBtcWallet.findRedeemDataFromScriptHash(fastBridgeFederationP2SH);
+        RedeemData redeemData = fastBridgeCompatibleBtcWalletWithStorage.findRedeemDataFromScriptHash(fastBridgeFederationP2SH);
 
         Assert.assertNotNull(redeemData);
         Assert.assertEquals(fastBridgeRedeemScript, redeemData.redeemScript);
@@ -76,17 +78,19 @@ public class FastBridgeCompatibleBtcWalletTest {
     public void findRedeemDataFromScriptHash_null_destination_federation() {
         Sha256Hash derivationArgumentsHash = Sha256Hash.of(new byte[]{2});
         FastBridgeFederationInformation fastBridgeFederationInformation =
-            new FastBridgeFederationInformation(derivationArgumentsHash,
-                new byte[0]);
+            new FastBridgeFederationInformation(
+                derivationArgumentsHash,
+                new byte[0],
+                new byte[1]);
 
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
         when(provider.getFastBridgeFederationInformation(any(byte[].class))).thenReturn(
             Optional.of(fastBridgeFederationInformation)
         );
 
-        FastBridgeCompatibleBtcWallet fastBridgeCompatibleBtcWallet =
-            new FastBridgeCompatibleBtcWallet(mock(Context.class), federationList, provider);
+        FastBridgeCompatibleBtcWalletWithStorage fastBridgeCompatibleBtcWalletWithStorage =
+            new FastBridgeCompatibleBtcWalletWithStorage(mock(Context.class), federationList, provider);
 
-        Assert.assertNull(fastBridgeCompatibleBtcWallet.findRedeemDataFromScriptHash(new byte[]{1}));
+        Assert.assertNull(fastBridgeCompatibleBtcWalletWithStorage.findRedeemDataFromScriptHash(new byte[]{1}));
     }
 }
