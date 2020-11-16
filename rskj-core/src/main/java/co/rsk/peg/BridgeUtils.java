@@ -69,7 +69,7 @@ public class BridgeUtils {
     ) {
         Wallet wallet;
         if (isFastBridgeCompatible) {
-            wallet = new FastBridgeCompatibleBtcWallet(btcContext, federations, storageProvider);
+            wallet = new FastBridgeCompatibleBtcWalletWithStorage(btcContext, federations, storageProvider);
         } else {
             wallet = new BridgeBtcWallet(btcContext, federations);
         }
@@ -109,7 +109,7 @@ public class BridgeUtils {
     ) {
         Wallet wallet;
         if (isFastBridgeCompatible) {
-            wallet = new FastBridgeCompatibleBtcWallet(btcContext, federations, storageProvider);
+            wallet = new FastBridgeCompatibleBtcWalletWithStorage(btcContext, federations, storageProvider);
         } else {
             wallet = new BridgeBtcWallet(btcContext, federations);
         }
