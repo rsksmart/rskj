@@ -71,7 +71,7 @@ public class BridgeStorageProvider {
     private static final Integer FEDERATION_FORMAT_VERSION_MULTIKEY = 1000;
 
     // Dummy value to use when saved Fast Bridge Derivation Argument Hash
-    private static final byte FAST_BRIDGE_FEDERATION_SCRIPT_HASH_TRUE_VALUE = (byte) 1;
+    private static final byte FAST_BRIDGE_FEDERATION_DERIVATION_ARGUMENTS_HASH_TRUE_VALUE = (byte) 1;
 
     private final Repository repository;
     private final RskAddress contractAddress;
@@ -114,7 +114,8 @@ public class BridgeStorageProvider {
 
     private Map<Sha256Hash, CoinbaseInformation> coinbaseInformationMap;
 
-    private Sha256Hash fastBridgeDerivationArgumentsScriptHashToSave = null;
+    private Sha256Hash fastBridgeDerivationArgumentsHashToSave = null;
+    private Sha256Hash fastBridgeBtcTxHashToSave = null;
 
     private FastBridgeFederationInformation fastBridgeFederationInformationsToSave = null;
 
@@ -600,26 +601,39 @@ public class BridgeStorageProvider {
             safeSaveToRepository(getStorageKeyForCoinbaseInformation(blockHash), data, BridgeSerializationUtils::serializeCoinbaseInformation));
     }
 
-    public boolean isFastBridgeFederationDerivationHashUsed(Sha256Hash derivationArgsHash) {
+    public boolean isFastBridgeFederationDerivationHashUsed(Sha256Hash btcTxHash, Sha256Hash derivationArgsHash) {
         if (!activations.isActive(RSKIP176)) {
             return false;
         }
-        byte[] data = repository.getStorageBytes(contractAddress, getStorageKeyForDerivationArguments(derivationArgsHash));
 
-        return ((data != null) && (data.length == 1) && (data[0] == FAST_BRIDGE_FEDERATION_SCRIPT_HASH_TRUE_VALUE));
+        if (btcTxHash == null || derivationArgsHash == null) {
+            return false;
+        }
+
+        byte[] data = repository.getStorageBytes(
+                contractAddress,
+                getStorageKeyForDerivationArgumentsHash(btcTxHash, derivationArgsHash)
+        );
+
+        return ((data != null) && (data.length == 1) && (data[0] == FAST_BRIDGE_FEDERATION_DERIVATION_ARGUMENTS_HASH_TRUE_VALUE));
     }
 
-    public void markFastBridgeFederationDerivationHashAsUsed(Sha256Hash derivationArgsHash) {
+    public void markFastBridgeFederationDerivationHashAsUsed(Sha256Hash btcTxHashToSave, Sha256Hash derivationArgsHash) {
         if (activations.isActive(RSKIP176)) {
-            fastBridgeDerivationArgumentsScriptHashToSave = derivationArgsHash;
+            fastBridgeBtcTxHashToSave = btcTxHashToSave;
+            fastBridgeDerivationArgumentsHashToSave = derivationArgsHash;
         }
     }
 
-    private void saveDerivationArgumentsScriptHash() {
-        if (fastBridgeDerivationArgumentsScriptHashToSave == null) {
+    private void saveDerivationArgumentsHash() {
+        if (fastBridgeDerivationArgumentsHashToSave == null || fastBridgeBtcTxHashToSave == null) {
             return;
         }
-        repository.addStorageBytes(contractAddress, getStorageKeyForDerivationArguments(fastBridgeDerivationArgumentsScriptHashToSave), new byte[]{FAST_BRIDGE_FEDERATION_SCRIPT_HASH_TRUE_VALUE});
+        repository.addStorageBytes(
+                contractAddress,
+                getStorageKeyForDerivationArgumentsHash(fastBridgeBtcTxHashToSave, fastBridgeDerivationArgumentsHashToSave),
+                new byte[]{FAST_BRIDGE_FEDERATION_DERIVATION_ARGUMENTS_HASH_TRUE_VALUE}
+        );
     }
 
     public Optional<FastBridgeFederationInformation> getFastBridgeFederationInformation(byte[] fastBridgeScriptHash) {
@@ -690,7 +704,7 @@ public class BridgeStorageProvider {
 
         saveCoinbaseInformations();
 
-        saveDerivationArgumentsScriptHash();
+        saveDerivationArgumentsHash();
 
         saveFastBridgeFederationInformation();
     }
@@ -703,8 +717,8 @@ public class BridgeStorageProvider {
         return DataWord.fromLongString("coinbaseInformation-" + btcTxHash.toString());
     }
 
-    private DataWord getStorageKeyForDerivationArguments(Sha256Hash derivationHash) {
-        return DataWord.fromLongString("fastBridgeScriptHash-" + derivationHash.toString());
+    private DataWord getStorageKeyForDerivationArgumentsHash(Sha256Hash btcTxHash, Sha256Hash derivationHash) {
+        return DataWord.fromLongString("fastBridgeHashUsedInBtcTx-" + btcTxHash.toString() + derivationHash.toString());
     }
 
     private DataWord getStorageKeyForfastBridgeFederationInformation(byte[] fastBridgeScriptHash) {
