@@ -2328,7 +2328,8 @@ public class BridgeStorageProviderTest {
         byte[] fastBridgeScriptHash = new byte[]{(byte) 0xbb};
         Sha256Hash derivationHash = Sha256Hash.wrap("0000000000000000000000000000000000000000000000000000000000000001");
         byte[] federationScriptHash = new byte[]{(byte) 0xaa};
-        FastBridgeFederationInformation fastBridgeValue = new FastBridgeFederationInformation(derivationHash, federationScriptHash);
+        FastBridgeFederationInformation fastBridgeValue =
+            new FastBridgeFederationInformation(derivationHash, federationScriptHash, fastBridgeScriptHash);
 
         when(repository.getStorageBytes(
                 PrecompiledContracts.BRIDGE_ADDR,
@@ -2350,6 +2351,7 @@ public class BridgeStorageProviderTest {
         Assert.assertTrue((result.isPresent()));
         Assert.assertArrayEquals(federationScriptHash, result.get().getFederationScriptHash());
         Assert.assertArrayEquals(derivationHash.getBytes(), result.get().getDerivationHash().getBytes());
+        Assert.assertArrayEquals(fastBridgeScriptHash, result.get().getFastBridgeScriptHash());
     }
 
     @Test
@@ -2359,7 +2361,9 @@ public class BridgeStorageProviderTest {
         Sha256Hash derivationHash = Sha256Hash.wrap("0000000000000000000000000000000000000000000000000000000000000002");
         byte[] federationP2SH = new byte[]{(byte) 0xaa};
         byte[] fastBridgeFederationP2SH = new byte[]{(byte) 0xaa};
-        FastBridgeFederationInformation fastBridgeValue = new FastBridgeFederationInformation(derivationHash, federationP2SH);
+        byte[] fastBridgeScriptHash = new byte[]{(byte)0x22};
+        FastBridgeFederationInformation fastBridgeValue =
+            new FastBridgeFederationInformation(derivationHash, federationP2SH, fastBridgeScriptHash);
 
         when(repository.getStorageBytes(
                 PrecompiledContracts.BRIDGE_ADDR,
@@ -2447,7 +2451,9 @@ public class BridgeStorageProviderTest {
         Sha256Hash derivationHash = Sha256Hash.wrap("0000000000000000000000000000000000000000000000000000000000000002");
         byte[] federationP2SH = new byte[]{(byte) 0xaa};
         byte[] fastBridgeFederationP2SH = new byte[]{(byte) 0xbb};
-        FastBridgeFederationInformation fastBridgeValue = new FastBridgeFederationInformation(derivationHash, federationP2SH);
+        byte[] fastBridgeScriptHash = new byte[]{(byte)0x22};
+        FastBridgeFederationInformation fastBridgeValue =
+            new FastBridgeFederationInformation(derivationHash, federationP2SH, fastBridgeScriptHash);
 
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(true);
@@ -2477,7 +2483,9 @@ public class BridgeStorageProviderTest {
         Sha256Hash derivationHash = Sha256Hash.wrap("0000000000000000000000000000000000000000000000000000000000000002");
         byte[] federationP2SH = new byte[]{(byte) 0xaa};
         byte[] fastBridgeFederationP2SH = new byte[]{(byte) 0xbb};
-        FastBridgeFederationInformation fastBridgeValue = new FastBridgeFederationInformation(derivationHash, federationP2SH);
+        byte[] fastBridgeScriptHash = new byte[]{(byte)0x22};
+        FastBridgeFederationInformation fastBridgeValue =
+            new FastBridgeFederationInformation(derivationHash, federationP2SH, fastBridgeScriptHash);
 
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(false);
@@ -2507,7 +2515,9 @@ public class BridgeStorageProviderTest {
         Sha256Hash derivationHash = Sha256Hash.wrap("0000000000000000000000000000000000000000000000000000000000000002");
         byte[] federationP2SH = new byte[]{(byte) 0xaa};
         byte[] fastBridgeFederationP2SH = new byte[]{(byte) 0xbb};
-        FastBridgeFederationInformation fastBridgeValue = new FastBridgeFederationInformation(derivationHash, federationP2SH);
+        byte[] fastBridgeScriptHash = new byte[]{(byte)0x22};
+        FastBridgeFederationInformation fastBridgeValue =
+            new FastBridgeFederationInformation(derivationHash, federationP2SH, fastBridgeScriptHash);
 
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(true);
