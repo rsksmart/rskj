@@ -116,8 +116,6 @@ public class BridgeStorageProvider {
 
     private Sha256Hash fastBridgeDerivationArgumentsScriptHashToSave = null;
 
-    private byte[] fastBridgeScriptHash = new byte[]{};
-
     private FastBridgeFederationInformation fastBridgeFederationInformationsToSave = null;
 
     public BridgeStorageProvider(Repository repository, RskAddress contractAddress, BridgeConstants bridgeConstants, ActivationConfig.ForBlock activations) {
@@ -644,20 +642,21 @@ public class BridgeStorageProvider {
         return Optional.of(fastBridgeFederationInformation);
     }
 
-    public void setFastBridgeFederationInformation(byte[] fastBridgeScriptHash, FastBridgeFederationInformation fastBridgeFederationInformation) {
+    public void setFastBridgeFederationInformation(FastBridgeFederationInformation fastBridgeFederationInformation) {
         if (activations.isActive(RSKIP176)) {
-            this.fastBridgeScriptHash = fastBridgeScriptHash.clone();
             this.fastBridgeFederationInformationsToSave = fastBridgeFederationInformation;
         }
     }
 
     private void saveFastBridgeFederationInformation() {
-        if (fastBridgeFederationInformationsToSave == null || fastBridgeScriptHash.length == 0) {
+        if (fastBridgeFederationInformationsToSave == null) {
             return;
         }
 
         safeSaveToRepository(
-                getStorageKeyForfastBridgeFederationInformation(fastBridgeScriptHash),
+                getStorageKeyForfastBridgeFederationInformation(
+                    fastBridgeFederationInformationsToSave.getFastBridgeScriptHash()
+                ),
                 fastBridgeFederationInformationsToSave,
                 BridgeSerializationUtils::serializeFastBridgeInformation
         );

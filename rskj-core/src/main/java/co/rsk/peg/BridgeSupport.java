@@ -2280,10 +2280,15 @@ public class BridgeSupport {
             throw new RegisterBtcTransferContractValidationException(errorMessage);
         }
 
+        // TODO: validateTxSender: tx sender should be equal to lbcAddress
+        // TODO: get fastBridgeFedAddress (to do this need instantiate fastBridgeFederationInformation)
+        //  & getAmountSentToAddress. Validate if (totalAmount == Coin.ZERO)
+
         Context.propagate(btcContext);
         Sha256Hash btcTxHash = BtcTransactionFormatUtils.calculateBtcTxHash(btcTxSerialized);
 
-        // Check the tx was not already processed
+        //TODO : this validation is no longer needed. In stead,
+        // check in storage FastBridgeHashUsedInBtcTx
         if (isAlreadyBtcTxHashProcessed(btcTxHash)) {
             throw new RegisterBtcTransactionException("Transaction already processed");
         }
@@ -2300,11 +2305,14 @@ public class BridgeSupport {
         BtcTransaction btcTx = new BtcTransaction(bridgeConstants.getBtcParams(), btcTxSerialized);
         btcTx.verify();
 
+        //TODO : this validation is no longer needed. In stead,
+        // check again in storage FastBridgeHashUsedInBtcTx, only if btcTx.getHash(false) != btcTxHash
         // Check again that the tx was not already processed but making sure to use the txid (no witness)
         if (isAlreadyBtcTxHashProcessed(btcTx.getHash(false))) {
             throw new RegisterBtcTransactionException("Transaction already processed");
         }
 
+        //TODO: remove createFastBridgeFederationData. Will be replaced by fastBridgeFederationInformation
         FastBridgeFederationData fastBridgeFederationData = createFastBridgeFederationData(
                 derivationArgumentsHash,
                 userRefundAddress,
@@ -2319,11 +2327,13 @@ public class BridgeSupport {
                 fastBridgeFederationData.getFastBridgeScriptHash().getPubKeyHash()
             );
 
+        // TODO: this will be obtained upwards
         Address fastBridgeFedAddress =
             fastBridgeFederationInformation.getFastBridgeFederationAddress(bridgeConstants.getBtcParams());
 
         Coin totalAmount = getAmountSentToAddress(btcTx, fastBridgeFedAddress);
 
+        // TODO: move upwards
         if (totalAmount == Coin.ZERO) {
             logger.warn("Amount sent can't be 0");
             // TODO: return proper error code
@@ -2372,6 +2382,7 @@ public class BridgeSupport {
         if (valueToTransfer.value < 0) {
             String message = "Value to transfer can't be negative";
             logger.warn(message);
+            // TODO: return proper error code not exception
             throw new BridgeIllegalArgumentException(message);
         }
 
