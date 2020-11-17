@@ -9,23 +9,21 @@ import java.util.List;
 import java.util.Optional;
 import javax.annotation.Nullable;
 
-public class FastBridgeCompatibleBtcWallet extends BridgeBtcWallet {
-    private final BridgeStorageProvider bridgeStorageProvider;
-
+public abstract class FastBridgeCompatibleBtcWallet extends BridgeBtcWallet {
     public FastBridgeCompatibleBtcWallet(
         Context btcContext,
-        List<Federation> federations,
-        BridgeStorageProvider bridgeStorageProvider
+        List<Federation> federations
     ) {
         super(btcContext, federations);
-        this.bridgeStorageProvider = bridgeStorageProvider;
     }
+
+    protected abstract Optional<FastBridgeFederationInformation> getFastBridgeFederationInformation(byte[] payToScriptHash);
 
     @Nullable
     @Override
     public RedeemData findRedeemDataFromScriptHash(byte[] payToScriptHash) {
         Optional<FastBridgeFederationInformation> fastBridgeFederationInformation =
-            this.bridgeStorageProvider.getFastBridgeFederationInformation(payToScriptHash);
+            this.getFastBridgeFederationInformation(payToScriptHash);
 
         if (fastBridgeFederationInformation.isPresent()) {
             FastBridgeFederationInformation fastBridgeFederationInformationInstance =
