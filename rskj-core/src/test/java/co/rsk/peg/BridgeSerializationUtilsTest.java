@@ -1072,7 +1072,8 @@ public class BridgeSerializationUtilsTest {
         byte[][] rlpElements = new byte[1][];
         rlpElements[0] = RLP.encodeElement(new byte[]{(byte)0x11});
 
-        BridgeSerializationUtils.deserializeFastBridgeInformation(RLP.encodeList(rlpElements), RLP.encodeElement(new byte[]{(byte)0x23}));
+        BridgeSerializationUtils.deserializeFastBridgeInformation(
+            RLP.encodeList(rlpElements), new byte[]{(byte)0x23});
     }
 
     @Test
@@ -1084,7 +1085,7 @@ public class BridgeSerializationUtilsTest {
         FastBridgeFederationInformation result =
             BridgeSerializationUtils.deserializeFastBridgeInformation(
                 RLP.encodeList(rlpElements),
-                RLP.encodeElement(new byte[]{(byte)0x23})
+                new byte[]{(byte)0x23}
             );
 
         Assert.assertNotNull(result);

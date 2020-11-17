@@ -3033,7 +3033,6 @@ public class BridgeStorageProviderTest {
 
         Sha256Hash derivationHash = Sha256Hash.wrap("0000000000000000000000000000000000000000000000000000000000000002");
         byte[] federationP2SH = new byte[]{(byte) 0xaa};
-        byte[] fastBridgeFederationP2SH = new byte[]{(byte) 0xbb};
         byte[] fastBridgeScriptHash = new byte[]{(byte)0x22};
         FastBridgeFederationInformation fastBridgeValue =
             new FastBridgeFederationInformation(derivationHash, federationP2SH, fastBridgeScriptHash);
@@ -3048,13 +3047,12 @@ public class BridgeStorageProviderTest {
                 activations
         );
 
-        provider.setFastBridgeFederationInformation(fastBridgeFederationP2SH, fastBridgeValue);
-
+        provider.setFastBridgeFederationInformation(fastBridgeValue);
         provider.save();
 
         verify(repository, times(1)).addStorageBytes(
                 PrecompiledContracts.BRIDGE_ADDR,
-                DataWord.fromLongString("fastBridgeFederationInformation-" + Hex.toHexString(fastBridgeFederationP2SH)),
+                DataWord.fromLongString("fastBridgeFederationInformation-" + Hex.toHexString(fastBridgeScriptHash)),
                 BridgeSerializationUtils.serializeFastBridgeInformation(fastBridgeValue)
         );
     }
@@ -3065,7 +3063,6 @@ public class BridgeStorageProviderTest {
 
         Sha256Hash derivationHash = Sha256Hash.wrap("0000000000000000000000000000000000000000000000000000000000000002");
         byte[] federationP2SH = new byte[]{(byte) 0xaa};
-        byte[] fastBridgeFederationP2SH = new byte[]{(byte) 0xbb};
         byte[] fastBridgeScriptHash = new byte[]{(byte)0x22};
         FastBridgeFederationInformation fastBridgeValue =
             new FastBridgeFederationInformation(derivationHash, federationP2SH, fastBridgeScriptHash);
@@ -3080,24 +3077,23 @@ public class BridgeStorageProviderTest {
                 activations
         );
 
-        provider.setFastBridgeFederationInformation(fastBridgeFederationP2SH, fastBridgeValue);
-
+        provider.setFastBridgeFederationInformation(fastBridgeValue);
         provider.save();
 
         verify(repository, never()).addStorageBytes(
                 PrecompiledContracts.BRIDGE_ADDR,
-                DataWord.fromLongString("fastBridgeFederationInformation-" + fastBridgeFederationP2SH.toString()),
+                DataWord.fromLongString("fastBridgeFederationInformation-" + Arrays
+                    .toString(fastBridgeScriptHash)),
                 BridgeSerializationUtils.serializeFastBridgeInformation(fastBridgeValue)
         );
     }
 
     @Test
-    public void saveFastBridgeFederationInformation_alreadySet_dontSetAgain() throws IOException {
+    public void saveFastBridgeFederationInformation_alreadySet_dont_set_again() throws IOException {
         Repository repository = mock(Repository.class);
 
         Sha256Hash derivationHash = Sha256Hash.wrap("0000000000000000000000000000000000000000000000000000000000000002");
         byte[] federationP2SH = new byte[]{(byte) 0xaa};
-        byte[] fastBridgeFederationP2SH = new byte[]{(byte) 0xbb};
         byte[] fastBridgeScriptHash = new byte[]{(byte)0x22};
         FastBridgeFederationInformation fastBridgeValue =
             new FastBridgeFederationInformation(derivationHash, federationP2SH, fastBridgeScriptHash);
@@ -3106,21 +3102,22 @@ public class BridgeStorageProviderTest {
         when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(true);
 
         BridgeStorageProvider provider = new BridgeStorageProvider(
-                repository,
-                PrecompiledContracts.BRIDGE_ADDR,
-                config.getNetworkConstants().getBridgeConstants(),
-                activations
+            repository,
+            PrecompiledContracts.BRIDGE_ADDR,
+            config.getNetworkConstants().getBridgeConstants(),
+            activations
         );
 
-        provider.setFastBridgeFederationInformation(fastBridgeFederationP2SH, fastBridgeValue);
+        provider.setFastBridgeFederationInformation(fastBridgeValue);
 
         //Set again
-        provider.setFastBridgeFederationInformation(fastBridgeFederationP2SH, fastBridgeValue);
+        provider.setFastBridgeFederationInformation(fastBridgeValue);
         provider.save();
+
         verify(repository, times(1)).addStorageBytes(
-                PrecompiledContracts.BRIDGE_ADDR,
-                DataWord.fromLongString("fastBridgeFederationInformation-" + Hex.toHexString(fastBridgeFederationP2SH)),
-                BridgeSerializationUtils.serializeFastBridgeInformation(fastBridgeValue)
+            PrecompiledContracts.BRIDGE_ADDR,
+            DataWord.fromLongString("fastBridgeFederationInformation-" + Hex.toHexString(fastBridgeScriptHash)),
+            BridgeSerializationUtils.serializeFastBridgeInformation(fastBridgeValue)
         );
     }
 
