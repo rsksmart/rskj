@@ -93,4 +93,44 @@ public class FastBridgeCompatibleBtcWalletWithStorageTest {
 
         Assert.assertNull(fastBridgeCompatibleBtcWalletWithStorage.findRedeemDataFromScriptHash(new byte[]{1}));
     }
+
+    @Test
+    public void getFastBridgeFederationInformation_data_on_storage() {
+        byte[] fastBridgeScriptHash = new byte[1];
+        FastBridgeFederationInformation fastBridgeFederationInformation =
+            new FastBridgeFederationInformation(
+                Sha256Hash.of(new byte[]{2}),
+                new byte[0],
+                fastBridgeScriptHash);
+
+        BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
+        when(provider.getFastBridgeFederationInformation(any(byte[].class))).thenReturn(
+            Optional.of(fastBridgeFederationInformation)
+        );
+
+        FastBridgeCompatibleBtcWalletWithStorage fastBridgeCompatibleBtcWalletWithStorage =
+            new FastBridgeCompatibleBtcWalletWithStorage(mock(Context.class), federationList, provider);
+
+        Optional<FastBridgeFederationInformation> result = fastBridgeCompatibleBtcWalletWithStorage.
+            getFastBridgeFederationInformation(fastBridgeScriptHash);
+
+        Assert.assertTrue(result.isPresent());
+        Assert.assertEquals(fastBridgeFederationInformation, result.get());
+    }
+
+    @Test
+    public void getFastBridgeFederationInformation_no_data_on_storage() {
+        BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
+        when(provider.getFastBridgeFederationInformation(any(byte[].class))).thenReturn(
+            Optional.empty()
+        );
+
+        FastBridgeCompatibleBtcWalletWithStorage fastBridgeCompatibleBtcWalletWithStorage =
+            new FastBridgeCompatibleBtcWalletWithStorage(mock(Context.class), federationList, provider);
+
+        Optional<FastBridgeFederationInformation> result = fastBridgeCompatibleBtcWalletWithStorage.
+            getFastBridgeFederationInformation(new byte[1]);
+
+        Assert.assertEquals(Optional.empty(), result);
+    }
 }

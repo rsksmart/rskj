@@ -77,7 +77,6 @@ import static org.hamcrest.core.IsNot.not;
 import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
-import static org.powermock.api.mockito.PowerMockito.when;
 
 public class BridgeSupportTest {
     private static final String TO_ADDRESS = "0000000000000000000000000000000000000006";
