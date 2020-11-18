@@ -33,7 +33,9 @@ import org.ethereum.core.Blockchain;
 import org.ethereum.core.TransactionPool;
 import org.ethereum.rpc.TypeConverter;
 import org.ethereum.rpc.Web3;
+import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.vm.program.ProgramResult;
+import org.hamcrest.Matchers;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -76,6 +78,50 @@ public class EthModuleTest {
 
         String result = eth.call(args, "latest");
         assertThat(result, is(TypeConverter.toJsonHex(hreturn)));
+    }
+
+    @Test
+    public void test_revertedTransaction() {
+        Web3.CallArguments args = new Web3.CallArguments();
+        BlockResult blockResult = mock(BlockResult.class);
+        Block block = mock(Block.class);
+        ExecutionBlockRetriever retriever = mock(ExecutionBlockRetriever.class);
+        when(retriever.getExecutionBlock_workaround("latest"))
+                .thenReturn(blockResult);
+        when(blockResult.getBlock()).thenReturn(block);
+
+        byte[] hreturn = Hex.decode(
+                "08c379a000000000000000000000000000000000000000000000000000000000" +
+                        "0000002000000000000000000000000000000000000000000000000000000000" +
+                        "0000000f6465706f73697420746f6f2062696700000000000000000000000000" +
+                        "00000000");
+        ProgramResult executorResult = mock(ProgramResult.class);
+        when(executorResult.isRevert()).thenReturn(true);
+        when(executorResult.getHReturn())
+                .thenReturn(hreturn);
+
+        ReversibleTransactionExecutor executor = mock(ReversibleTransactionExecutor.class);
+        when(executor.executeTransaction(eq(blockResult.getBlock()), any(), any(), any(), any(), any(), any(), any()))
+                .thenReturn(executorResult);
+
+        EthModule eth = new EthModule(
+                null,
+                anyByte(),
+                null,
+                null,
+                executor,
+                retriever,
+                null,
+                null,
+                null,
+                new BridgeSupportFactory(
+                        null, null, null));
+
+        try {
+            eth.call(args, "latest");
+        } catch (RskJsonRpcRequestException e) {
+            assertThat(e.getMessage(), Matchers.containsString("deposit too big"));
+        }
     }
 
     @Test
