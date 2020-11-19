@@ -2166,6 +2166,14 @@ public class BridgeSupport {
         }
 
         transferTo(lbcAddress, co.rsk.core.Coin.fromBitcoin(totalAmount));
+
+        saveFastBridgeDataInStorage(
+                btcTxHash,
+                derivationArgumentsHash,
+                fastBridgeFederationInformation,
+                getUTXOsForAddress(btcTx, fastBridgeFedAddress)
+        );
+
         return totalAmount.getValue();
     }
 
@@ -2296,6 +2304,20 @@ public class BridgeSupport {
             }
         }
         return v;
+    }
+
+   // This method will be used by registerBtcTransfer to save all the data required on storage (utxos, btcTxHash-derivationHash),
+   // and will look like.
+    protected void saveFastBridgeDataInStorage(
+            Sha256Hash btcTxHash,
+            Sha256Hash derivationHash,
+            FastBridgeFederationInformation fastBridgeFederationInformation,
+            List<UTXO> utxosList) throws IOException {
+        provider.markFastBridgeFederationDerivationHashAsUsed(btcTxHash, derivationHash);
+        provider.setFastBridgeFederationInformation(fastBridgeFederationInformation);
+        for (UTXO utxo : utxosList) {
+            getActiveFederationBtcUTXOs().add(utxo);
+        }
     }
 
     private StoredBlock getBtcBlockchainChainHead() throws IOException, BlockStoreException {
