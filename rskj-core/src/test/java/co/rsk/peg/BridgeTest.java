@@ -16,8 +16,6 @@ import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
-import org.ethereum.solidity.SolidityType;
-import org.ethereum.solidity.SolidityTypeTest;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.Assert;
@@ -216,7 +214,7 @@ public class BridgeTest {
             pubKeyHash,
             "2e12a7e43926ccd228a2587896e53c3d1a51dacb",
             pubKeyHash,
-            1
+            true
         );
 
         //Assert
@@ -241,8 +239,8 @@ public class BridgeTest {
                 any(Address.class),
                 any(RskAddress.class),
                 any(Address.class),
-                any(Coin.class)
-        )).thenReturn(2);
+                anyBoolean()
+        )).thenReturn(Long.valueOf(2));
 
         byte[] value = Sha256Hash.ZERO_HASH.getBytes();
 
@@ -265,7 +263,7 @@ public class BridgeTest {
             pubKeyHashRefund,
             rskAddress.toHexString(),
             pubKeyHashLp,
-            1
+            true
         );
 
         byte[] result = bridge.execute(data);
@@ -281,7 +279,7 @@ public class BridgeTest {
                 eq(refundBtcAddress),
                 eq(rskAddress),
                 eq(lpBtcAddress),
-                eq(Coin.valueOf(1))
+                eq(true)
         );
     }
 
@@ -302,7 +300,7 @@ public class BridgeTest {
                 any(Address.class),
                 any(RskAddress.class),
                 any(Address.class),
-                any(Coin.class)
+                anyBoolean()
         )).thenThrow(new RegisterFastBridgeBtcTransactionException(""));
 
         byte[] value = Sha256Hash.ZERO_HASH.getBytes();
@@ -315,7 +313,7 @@ public class BridgeTest {
                 mock(Address.class),
                 mock(RskAddress.class),
                 mock(Address.class),
-                1
+                true
         );
         bridge.execute(data);
     }
