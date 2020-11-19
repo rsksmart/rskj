@@ -579,9 +579,9 @@ public enum BridgeMethods {
     ),
     REGISTER_FAST_BRIDGE_BTC_TRANSACTION(
             CallTransaction.Function.fromSignature(
-                    "registerBtcTransfer",
-                    new String[]{"bytes", "uint256", "bytes", "bytes32", "bytes", "address", "bytes", "int256"},
-                    new String[]{"uint256"}
+                    "registerFastBridgeBtcTransaction",
+                    new String[]{"bytes", "uint256", "bytes", "bytes32", "bytes", "address", "bytes", "bool"},
+                    new String[]{"int256"}
             ),
             fixedCost(10000L),  // TODO: Define a cost
             (BridgeMethodExecutorTyped) Bridge::registerFastBridgeBtcTransaction,

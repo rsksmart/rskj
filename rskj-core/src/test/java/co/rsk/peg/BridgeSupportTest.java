@@ -5155,10 +5155,11 @@ public class BridgeSupportTest {
                 mock(Address.class),
                 mock(RskAddress.class),
                 mock(Address.class),
-                Coin.valueOf(1));
+                false
+        );
     }
 
-    @Test(expected = RegisterFastBridgeFastBridgeBtcTransactionValidationException.class)
+    @Test(expected = RegisterFastBridgeBtcTransactionException.class)
     public void registerFastBridgeBtcTransaction_validationsForRegisterBtcTransaction_returns_false()
         throws RegisterFastBridgeBtcTransactionException, IOException, BlockStoreException, BridgeIllegalArgumentException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
@@ -5189,12 +5190,13 @@ public class BridgeSupportTest {
             mock(Address.class),
             mock(RskAddress.class),
             mock(Address.class),
-            Coin.valueOf(1));
+            false
+        );
     }
 
     @Test
-    public void registerBtcTransfer_amount_sent_is_0()
-        throws BlockStoreException, RegisterFastBridgeBtcTransactionException, IOException, BridgeIllegalArgumentException, BridgeIllegalArgumentException {
+    public void registerFastBtcTransaction_amount_sent_is_0()
+        throws BlockStoreException, RegisterFastBridgeBtcTransactionException, IOException, BridgeIllegalArgumentException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(true);
 
@@ -5226,7 +5228,7 @@ public class BridgeSupportTest {
         BtcTransaction tx = createBtcTransactionWithOutputToAddress(Coin.COIN, new BtcECKey().toAddress(btcParams));
         InternalTransaction rskTx = new InternalTransaction(null, 0, 0, null, null, null, null, null, null, null, null);
 
-        int result = bridgeSupport.registerFastBridgeBtcTransaction(
+        long result = bridgeSupport.registerFastBridgeBtcTransaction(
             rskTx,
             tx.bitcoinSerialize(),
             100,
@@ -5235,7 +5237,7 @@ public class BridgeSupportTest {
             mock(Address.class),
             mock(RskAddress.class),
             mock(Address.class),
-            Coin.valueOf(1)
+            false
         );
 
         Assert.assertEquals(-10, result);
@@ -5287,7 +5289,7 @@ public class BridgeSupportTest {
         byte[] pmtSerialized = Hex.decode("ab");
         InternalTransaction rskTx = new InternalTransaction(null, 0, 0, null, null, null, null, null, null, null, null);
 
-        int result = bridgeSupport.registerFastBridgeBtcTransaction(
+        long result = bridgeSupport.registerFastBridgeBtcTransaction(
                 rskTx,
                 tx.bitcoinSerialize(),
                 100,
@@ -5296,7 +5298,7 @@ public class BridgeSupportTest {
                 btcAddress,
                 mock(RskAddress.class),
                 btcAddress,
-                Coin.valueOf(1)
+                false
         );
 
         Assert.assertEquals(-1, result);
@@ -5358,7 +5360,7 @@ public class BridgeSupportTest {
         byte[] pmtSerialized = Hex.decode("ab");
         InternalTransaction rskTx = new InternalTransaction(null, 0, 0, null, null, null, null, null, null, null, null);
 
-        int result = bridgeSupport.registerFastBridgeBtcTransaction(
+        long result = bridgeSupport.registerFastBridgeBtcTransaction(
             rskTx,
             tx.bitcoinSerialize(),
             100,
@@ -5367,7 +5369,7 @@ public class BridgeSupportTest {
             btcAddress,
             lbcAddress,
             btcAddress,
-            Coin.valueOf(1)
+            false
         );
 
         Assert.assertEquals(-2, result);
@@ -5420,7 +5422,7 @@ public class BridgeSupportTest {
         byte[] pmtSerialized = Hex.decode("ab");
         InternalTransaction rskTx = new InternalTransaction(null, 0, 0, null, null, null, null, null, null, null, null);
 
-        int result = bridgeSupport.registerFastBridgeBtcTransaction(
+        long result = bridgeSupport.registerFastBridgeBtcTransaction(
             rskTx,
             tx.bitcoinSerialize(),
             100,
@@ -5429,7 +5431,7 @@ public class BridgeSupportTest {
             btcAddress,
             lbcAddress,
             btcAddress,
-            Coin.valueOf(1)
+            false
         );
 
         Assert.assertEquals(1, result);
