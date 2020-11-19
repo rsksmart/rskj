@@ -1095,7 +1095,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         return bridgeSupport.hasBtcBlockCoinbaseTransactionInformation(blockHash);
     }
 
-    public int registerFastBridgeBtcTransaction(Object[] args) {
+    public long registerFastBridgeBtcTransaction(Object[] args) {
         logger.trace("registerFastBridgeBtcTransaction");
 
         try {
@@ -1107,7 +1107,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             // A DataWord cast is used because a SolidityType "address" is decoded using this specific type.
             RskAddress lbcAddress = new RskAddress((DataWord) args[5]);
             Address lpBtcAddress = new Address(bridgeConstants.getBtcParams(), (byte[]) args[6]);
-            Coin valueToTransfer = BridgeUtils.getCoinFromBigInteger((BigInteger) args[7]);
+            boolean shouldTransferToContract = ((boolean) args[7]);
 
             return bridgeSupport.registerFastBridgeBtcTransaction(
                 rskTx,
@@ -1118,7 +1118,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
                 userRefundAddress,
                 lbcAddress,
                 lpBtcAddress,
-                valueToTransfer
+                shouldTransferToContract
             );
         } catch (BlockStoreException | RegisterFastBridgeBtcTransactionException | IOException e) {
             logger.warn("Exception in registerFastBridgeBtcTransaction", e);
