@@ -30,7 +30,6 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.time.Duration;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.Map;
@@ -85,18 +84,22 @@ public class AsyncNodeBlockProcessor extends NodeBlockProcessor implements Inter
         final String blockHash = block.getPrintableHash();
         final String peer = sender != null ? sender.getPeerNodeID().toString() : "N/A";
 
+        // Validate block header first to see if its PoW is valid at all
         if (!isBlockHeaderValid(block)) {
             logger.warn("Invalid block with number {} {} from {} ", blockNumber, blockHash, peer);
-            return invalidBlockResult(start, block, blockHash);
+            return invalidBlockResult(block, start);
         }
 
+        // Check if block is already in the queue
         if (store.hasBlock(block)) {
             logger.trace("Ignored block with number {} and hash {} from {} as it's already in the queue", blockNumber, blockHash, peer);
-            return ignoredResult(start, blockHash);
+            return ignoreBlockResult(block, start);
         }
 
-        boolean looksGood = blockSyncService.preprocessBlock(block, sender, false);
-        if (looksGood) {
+        // Check if block is ready for processing - if the block is not too advanced, its parent block is in place etc.
+        boolean readyForProcessing = blockSyncService.preprocessBlock(block, sender, false);
+        if (readyForProcessing) {
+            // Validate block if it can be added to the queue for processing
             if (isBlockValid(block)) {
                 boolean offer = blocksToProcess.offer(new BlockInfo(sender, block));
                 if (offer) {
@@ -106,15 +109,15 @@ public class AsyncNodeBlockProcessor extends NodeBlockProcessor implements Inter
                     logger.warn("Cannot add block for processing into the queue with number {} {} from {}", blockNumber, blockHash, peer);
                 }
 
-                return scheduledForProcessingResult(start, blockHash);
+                return scheduledForProcessingResult(block, start);
             }
 
             logger.warn("Invalid block with number {} {} from {} ", blockNumber, blockHash, peer);
-            return invalidBlockResult(start, block, blockHash);
+            return invalidBlockResult(block, start);
         }
 
-        logger.trace("Ignored block with number {} and hash {} from {} as it's already in the queue", blockNumber, blockHash, peer);
-        return ignoredResult(start, blockHash);
+        logger.trace("Ignored block with number {} and hash {} from {} as it's not ready for processing yet", blockNumber, blockHash, peer);
+        return ignoreBlockResult(block, start);
     }
 
     @Override
@@ -186,17 +189,17 @@ public class AsyncNodeBlockProcessor extends NodeBlockProcessor implements Inter
         return blockValidator.isValid(block);
     }
 
-    private static BlockProcessResult scheduledForProcessingResult(@Nonnull Instant start, @Nonnull String blockHash) {
-        return new BlockProcessResult(true, null, blockHash, Duration.between(start, Instant.now()));
+    private static BlockProcessResult scheduledForProcessingResult(@Nonnull Block block, @Nonnull Instant start) {
+        return BlockProcessResult.connectResult(block, start, null);
     }
 
-    private static BlockProcessResult invalidBlockResult(@Nonnull Instant start, @Nonnull Block block, @Nonnull String blockHash) {
+    private static BlockProcessResult invalidBlockResult(@Nonnull Block block, @Nonnull Instant start) {
         Map<Keccak256, ImportResult> result = Collections.singletonMap(block.getHash(), ImportResult.INVALID_BLOCK);
-        return new BlockProcessResult(false, result, blockHash, Duration.between(start, Instant.now()));
+        return BlockProcessResult.connectResult(block, start, result);
     }
 
-    private static BlockProcessResult ignoredResult(@Nonnull Instant start, @Nonnull String blockHash) {
-        return new BlockProcessResult(false, null, blockHash, Duration.between(start, Instant.now()));
+    private static BlockProcessResult ignoreBlockResult(@Nonnull Block block, @Nonnull Instant start) {
+        return BlockProcessResult.ignoreBlockResult(block, start);
     }
 
     public interface Listener {

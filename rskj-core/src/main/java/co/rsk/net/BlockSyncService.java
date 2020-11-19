@@ -111,9 +111,9 @@ public class BlockSyncService {
     public BlockProcessResult processBlock(@Nonnull Block block, Peer sender, boolean ignoreMissingHashes) {
         final Instant start = Instant.now();
 
-        boolean looksGood = preprocessBlock(block, sender, ignoreMissingHashes);
-        if (!looksGood) {
-            return BlockProcessResult.invalidBlock(block, start);
+        boolean readyForProcessing = preprocessBlock(block, sender, ignoreMissingHashes);
+        if (!readyForProcessing) {
+            return BlockProcessResult.ignoreBlockResult(block, start);
         }
 
         logger.trace("Trying to add to blockchain");
@@ -121,9 +121,8 @@ public class BlockSyncService {
         Map<Keccak256, ImportResult> connectResult = connectBlocksAndDescendants(sender,
                 BlockUtils.sortBlocksByNumber(this.getParentsNotInBlockchain(block)), ignoreMissingHashes);
 
-        return BlockProcessResult.validResult(block, start, connectResult);
+        return BlockProcessResult.connectResult(block, start, connectResult);
     }
-
 
     private void tryReleaseStore(long bestBlockNumber) {
         if ((++processedBlocksCounter % PROCESSED_BLOCKS_TO_CHECK_STORE) == 0) {

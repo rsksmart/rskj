@@ -52,11 +52,11 @@ public class BlockProcessResult {
         }
     }
 
-    public static BlockProcessResult invalidBlock(Block block, Instant start) {
+    public static BlockProcessResult ignoreBlockResult(Block block, Instant start) {
         return new BlockProcessResult(false, null, block.getPrintableHash(), Duration.between(start, Instant.now()));
     }
 
-    public static BlockProcessResult validResult(Block block, Instant start, Map<Keccak256, ImportResult> connectResult) {
+    public static BlockProcessResult connectResult(Block block, Instant start, Map<Keccak256, ImportResult> connectResult) {
         return new BlockProcessResult(true, connectResult, block.getPrintableHash(), Duration.between(start, Instant.now()));
     }
 
