@@ -70,6 +70,10 @@ public class PeerScoringManager {
     /**
      * Record the event, given the node id and/or the network address
      *
+     * Usually we collected the events TWICE, if possible: by node id and by address.
+     * In some events we don't have the node id, yet. The rationale to have both, is to collect events for the
+     * same node_id, but maybe with different address along the time. Or same address with different node id.
+     *
      * @param id        node id or null
      * @param address   address or null
      * @param event     event type (@see EventType)
@@ -77,7 +81,7 @@ public class PeerScoringManager {
     public void recordEvent(NodeID id, InetAddress address, EventType event) {
         //todo(techdebt) this method encourages null params, this is not desirable
         synchronized (accessLock) {
-            if (id != null) { //todo(techdebt) it seems this is always true
+            if (id != null) {
                 PeerScoring scoring = peersByNodeID.computeIfAbsent(id, k -> peerScoringFactory.newInstance());
                 recordEventAndStartPunishment(scoring, event, this.nodePunishmentCalculator, id);
             }
@@ -87,9 +91,7 @@ public class PeerScoringManager {
                 recordEventAndStartPunishment(scoring, event, this.ipPunishmentCalculator, id);
             }
 
-            String peersBy = id != null ? "NodeID" : "Address";
-            String source = id != null ? nodeIdForLog(id) : addressForLog(address);
-            logger.debug("Recorded {} by {}: {}", event, peersBy, source);
+            logger.debug("Recorded {}. NodeID: {}, Address: {}", event, nodeIdForLog(id),  addressForLog(address));
         }
     }
 
