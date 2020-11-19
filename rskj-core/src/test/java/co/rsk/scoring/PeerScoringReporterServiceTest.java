@@ -60,10 +60,9 @@ public class PeerScoringReporterServiceTest {
     }
 
     private PeerScoringInformation buildPeerScoringInformation(String id, boolean goodReputation) {
-        return new PeerScoringInformation("node", goodReputation,
-                4, 0, 0,
+        return new PeerScoringInformation(4, 0, 0,
                 5, 3, 9, 1,
                 0, 0, 0, 0,
-                4, 0, 0, id);
+                4, 0, 0, goodReputation, id, "node");
     }
 }

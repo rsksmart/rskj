@@ -206,8 +206,8 @@ public class PeerScoringManager {
         synchronized (accessLock) {
             List<PeerScoringInformation> list = new ArrayList<>(this.peersByNodeID.size() + this.peersByAddress.size());
 
-            list.addAll(this.peersByNodeID.entrySet().stream().map(entry -> new PeerScoringInformation(entry.getValue(), ByteUtil.toHexString(entry.getKey().getID()).substring(0, 8), "node")).collect(Collectors.toList()));
-            list.addAll(this.peersByAddress.entrySet().stream().map(entry -> new PeerScoringInformation(entry.getValue(), entry.getKey().getHostAddress(), "address")).collect(Collectors.toList()));
+            list.addAll(this.peersByNodeID.entrySet().stream().map(entry -> PeerScoringInformation.buildByScoring(entry.getValue(), ByteUtil.toHexString(entry.getKey().getID()).substring(0, 8), "node")).collect(Collectors.toList()));
+            list.addAll(this.peersByAddress.entrySet().stream().map(entry -> PeerScoringInformation.buildByScoring(entry.getValue(), entry.getKey().getHostAddress(), "address")).collect(Collectors.toList()));
 
             return list;
         }
@@ -274,7 +274,7 @@ public class PeerScoringManager {
 
             String nodeIDFormated = nodeIdForLog(nodeID);
             logger.debug("NodeID {} has been punished for {} milliseconds. Last event {}", nodeIDFormated, punishmentTime, event);
-            logger.debug("{}", new PeerScoringInformation(peerScoring, nodeIDFormated, ""));
+            logger.debug("{}", PeerScoringInformation.buildByScoring(peerScoring, nodeIDFormated, ""));
         }
     }
 

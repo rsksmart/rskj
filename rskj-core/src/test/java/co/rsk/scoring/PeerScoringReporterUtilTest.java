@@ -21,7 +21,7 @@ public class PeerScoringReporterUtilTest {
 
         Assert.assertEquals(new PeerScoringReputationSummary(8, 32, 0,
                 0, 40, 24,
-                8, 72, 0,
+                72, 8, 0,
                 0, 0, 0,
                 32, 0, 0,6,2), peerScoringReputationSummary);
     }
@@ -55,10 +55,9 @@ public class PeerScoringReporterUtilTest {
     }
 
     private PeerScoringInformation buildPeerScoringInformation(String id, boolean goodReputation) {
-        return new PeerScoringInformation("node", goodReputation,
-                4, 0, 0,
+        return new PeerScoringInformation(4, 0, 0,
                 5, 3, 9, 1,
                 0, 0, 0, 0,
-                4, 0, 0, id);
+                4, 0, 0, goodReputation, id, "node");
     }
 }

@@ -27,43 +27,18 @@ public class PeerScoringInformation {
     private final String id;
     private final String type; //todo(techdebt) use an enum or constants
 
-    public PeerScoringInformation(PeerScoring scoring, String id, String type) {
-        this.type = type;
-        this.goodReputation = scoring.hasGoodReputation();
-        this.successfulHandshakes = scoring.getEventCounter(EventType.SUCCESSFUL_HANDSHAKE);
-        this.failedHandshakes = scoring.getEventCounter(EventType.FAILED_HANDSHAKE);
-        this.invalidNetworks = scoring.getEventCounter(EventType.INVALID_NETWORK);
-        this.repeatedMessages = scoring.getEventCounter(EventType.REPEATED_MESSAGE);
-        this.validBlocks = scoring.getEventCounter(EventType.VALID_BLOCK);
-        this.invalidBlocks = scoring.getEventCounter(EventType.INVALID_BLOCK);
-        this.validTransactions = scoring.getEventCounter(EventType.VALID_TRANSACTION);
-        this.invalidTransactions = scoring.getEventCounter(EventType.INVALID_TRANSACTION);
-        this.invalidMessages = scoring.getEventCounter(EventType.INVALID_MESSAGE);
-        this.timeoutMessages = scoring.getEventCounter(EventType.TIMEOUT_MESSAGE);
-        this.unexpectedMessages = scoring.getEventCounter(EventType.UNEXPECTED_MESSAGE);
-        this.invalidHeader = scoring.getEventCounter(EventType.INVALID_HEADER);
-        this.score = scoring.getScore();
-        this.punishments = scoring.getPunishmentCounter();
-        this.id = id;
-    }
-
-    @VisibleForTesting
-    public PeerScoringInformation(String type, boolean goodReputation,
-                                  int successfulHandshakes, int failedHandshakes,
-                                  int invalidNetworks, int repeatedMessages,
-                                  int validBlocks, int invalidBlocks, int validTransactions,
-                                  int invalidTransactions, int invalidMessages,
-                                  int timeoutMessages, int unexpectedMessages,
-                                  int invalidHeader, int score, int punishments, String id) {
-        this.type = type;
-        this.goodReputation = goodReputation;
+    public PeerScoringInformation(int successfulHandshakes, int failedHandshakes, int invalidNetworks,
+                                  int repeatedMessages, int validBlocks, int validTransactions, int invalidBlocks,
+                                  int invalidTransactions, int invalidMessages, int timeoutMessages,
+                                  int unexpectedMessages, int invalidHeader, int score, int punishments,
+                                  boolean goodReputation, String id, String type) {
         this.successfulHandshakes = successfulHandshakes;
         this.failedHandshakes = failedHandshakes;
         this.invalidNetworks = invalidNetworks;
         this.repeatedMessages = repeatedMessages;
         this.validBlocks = validBlocks;
-        this.invalidBlocks = invalidBlocks;
         this.validTransactions = validTransactions;
+        this.invalidBlocks = invalidBlocks;
         this.invalidTransactions = invalidTransactions;
         this.invalidMessages = invalidMessages;
         this.timeoutMessages = timeoutMessages;
@@ -71,7 +46,32 @@ public class PeerScoringInformation {
         this.invalidHeader = invalidHeader;
         this.score = score;
         this.punishments = punishments;
+        this.goodReputation = goodReputation;
         this.id = id;
+        this.type = type;
+    }
+
+    public static PeerScoringInformation buildByScoring(PeerScoring scoring, String id, String type) {
+        int successfulHandshakes = scoring.getEventCounter(EventType.SUCCESSFUL_HANDSHAKE);
+        int failedHandshakes = scoring.getEventCounter(EventType.FAILED_HANDSHAKE);
+        int invalidNetworks = scoring.getEventCounter(EventType.INVALID_NETWORK);
+        int repeatedMessages = scoring.getEventCounter(EventType.REPEATED_MESSAGE);
+        int validBlocks = scoring.getEventCounter(EventType.VALID_BLOCK);
+        int validTransactions = scoring.getEventCounter(EventType.VALID_TRANSACTION);
+        int invalidBlocks = scoring.getEventCounter(EventType.INVALID_BLOCK);
+        int invalidTransactions = scoring.getEventCounter(EventType.INVALID_TRANSACTION);
+        int invalidMessages = scoring.getEventCounter(EventType.INVALID_MESSAGE);
+        int timeoutMessages = scoring.getEventCounter(EventType.TIMEOUT_MESSAGE);
+        int unexpectedMessages = scoring.getEventCounter(EventType.UNEXPECTED_MESSAGE);
+        int invalidHeader = scoring.getEventCounter(EventType.INVALID_HEADER);
+        int score = scoring.getScore();
+        int punishments = scoring.getPunishmentCounter();
+        boolean goodReputation = scoring.hasGoodReputation();
+
+        return new PeerScoringInformation(successfulHandshakes, failedHandshakes, invalidNetworks,
+                repeatedMessages, validBlocks, validTransactions, invalidBlocks, invalidTransactions,
+                invalidMessages, timeoutMessages, unexpectedMessages, invalidHeader, score, punishments,
+                goodReputation, id, type);
     }
 
     public String getId() {
