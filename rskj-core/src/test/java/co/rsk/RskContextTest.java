@@ -195,6 +195,7 @@ public class RskContextTest {
         doReturn(testDatabasesDirectory.toString()).when(testProperties).databaseDir();
 
         doReturn(1).when(testProperties).getNumOfAccountSlots();
+        doReturn(true).when(testProperties).fastBlockPropagation();
 
         ActivationConfig config = mock(ActivationConfig.class);
         doReturn(config).when(testProperties).getActivationConfig();
@@ -206,8 +207,7 @@ public class RskContextTest {
         doReturn(bridgeConstants).when(constants).getBridgeConstants();
         doReturn(1024).when(constants).getGasLimitBoundDivisor();
 
-        AsyncNodeBlockProcessor asyncNodeBlockProcessor = rskContext.getAsyncNodeBlockProcessor();
-        Assert.assertThat(asyncNodeBlockProcessor, is(instanceOf(NodeBlockProcessor.class)));
-        Assert.assertThat(asyncNodeBlockProcessor, is(instanceOf(InternalService.class)));
+        NodeBlockProcessor nodeBlockProcessor = rskContext.getNodeBlockProcessor();
+        Assert.assertThat(nodeBlockProcessor, is(instanceOf(AsyncNodeBlockProcessor.class)));
     }
 }

@@ -185,7 +185,6 @@ public class RskContext implements NodeBootstrapper {
     private Ethereum rsk;
     private PeerScoringManager peerScoringManager;
     private NodeBlockProcessor nodeBlockProcessor;
-    private AsyncNodeBlockProcessor asyncNodeBlockProcessor;
     private SyncProcessor syncProcessor;
     private BlockSyncService blockSyncService;
     private SyncPool syncPool;
@@ -510,32 +509,29 @@ public class RskContext implements NodeBootstrapper {
 
     public NodeBlockProcessor getNodeBlockProcessor() {
         if (nodeBlockProcessor == null) {
-            nodeBlockProcessor = new NodeBlockProcessor(
-                    getNetBlockStore(),
-                    getBlockchain(),
-                    getBlockNodeInformation(),
-                    getBlockSyncService(),
-                    getSyncConfiguration()
-            );
+            RskSystemProperties rskSystemProperties = getRskSystemProperties();
+            if (rskSystemProperties.fastBlockPropagation()) {
+                nodeBlockProcessor = new AsyncNodeBlockProcessor(
+                        getNetBlockStore(),
+                        getBlockchain(),
+                        getBlockNodeInformation(),
+                        getBlockSyncService(),
+                        getSyncConfiguration(),
+                        getBlockHeaderRelayValidator(),
+                        getBlockRelayValidator()
+                );
+            } else {
+                nodeBlockProcessor = new NodeBlockProcessor(
+                        getNetBlockStore(),
+                        getBlockchain(),
+                        getBlockNodeInformation(),
+                        getBlockSyncService(),
+                        getSyncConfiguration()
+                );
+            }
         }
 
         return nodeBlockProcessor;
-    }
-
-    public AsyncNodeBlockProcessor getAsyncNodeBlockProcessor() {
-        if (asyncNodeBlockProcessor == null) {
-            asyncNodeBlockProcessor = new AsyncNodeBlockProcessor(
-                    getNetBlockStore(),
-                    getBlockchain(),
-                    getBlockNodeInformation(),
-                    getBlockSyncService(),
-                    getSyncConfiguration(),
-                    getBlockHeaderRelayValidator(),
-                    getBlockRelayValidator()
-            );
-        }
-
-        return asyncNodeBlockProcessor;
     }
 
     public RskSystemProperties getRskSystemProperties() {
@@ -877,8 +873,9 @@ public class RskContext implements NodeBootstrapper {
                 getReceiptStore(),
                 getBlocksBloomStore()));
 
-        if (getRskSystemProperties().fastBlockPropagation()) {
-            internalServices.add(getAsyncNodeBlockProcessor());
+        NodeBlockProcessor nodeBlockProcessor = getNodeBlockProcessor();
+        if (nodeBlockProcessor instanceof InternalService) {
+            internalServices.add((InternalService) nodeBlockProcessor);
         }
 
         GarbageCollectorConfig gcConfig = getRskSystemProperties().garbageCollectorConfig();
@@ -1651,14 +1648,9 @@ public class RskContext implements NodeBootstrapper {
 
     private NodeMessageHandler getNodeMessageHandler() {
         if (nodeMessageHandler == null) {
-            RskSystemProperties rskSystemProperties = getRskSystemProperties();
-            BlockProcessor blockProcessor = rskSystemProperties.fastBlockPropagation()
-                    ? getAsyncNodeBlockProcessor()
-                    : getNodeBlockProcessor();
-
             nodeMessageHandler = new NodeMessageHandler(
-                    rskSystemProperties,
-                    blockProcessor,
+                    getRskSystemProperties(),
+                    getNodeBlockProcessor(),
                     getSyncProcessor(),
                     getChannelManager(),
                     getTransactionGateway(),
