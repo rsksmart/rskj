@@ -77,7 +77,7 @@ public class EthModuleDLSTest {
 
         args.data = "d96a094a0000000000000000000000000000000000000000000000000000000000000001"; // call to contract with param value = 1
         final String call = eth.call(args, "0x2");
-        assertEquals("0x00", call);
+        assertEquals("0x", call);
     }
 
     private EthModule buildEthModule(World world) {
