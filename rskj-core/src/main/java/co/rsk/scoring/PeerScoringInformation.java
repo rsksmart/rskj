@@ -130,6 +130,14 @@ public class PeerScoringInformation {
     }
 
     public int getPunishments() { return this.punishments; }
+
+    public int goodReputationCount() {
+        return getGoodReputation() ? 1 : 0;
+    }
+
+    public int badReputationCount() {
+        return !getGoodReputation() ? 1 : 0;
+    }
 }
 
 

@@ -3,56 +3,62 @@ package co.rsk.scoring;
 import java.util.Arrays;
 
 /**
- * This is a presentational object of peers with bad reputation
+ * This is a presentational object
  * It's used to expose a json rpc message (sco_badReputationSummary())
  */
-public class PeerScoringBadReputationSummary {
+public class PeerScoringReputationSummary {
     private int count;
     private int successfulHandshakes;
     private int failedHandshakes;
-    private int invalidNetworks;
-    private int repeatedMessages;
+    private int invalidHeader;
     private int validBlocks;
-    private int validTransactions;
     private int invalidBlocks;
+    private int validTransactions;
     private int invalidTransactions;
+    private int invalidNetworks;
     private int invalidMessages;
+    private int repeatedMessages;
     private int timeoutMessages;
     private int unexpectedMessages;
-    private int invalidHeader;
     private int peersTotalScore;
     private int punishments;
+    private int goodReputationCount;
+    private int badReputationCount;
 
-    public PeerScoringBadReputationSummary(int count,
-                                           int successfulHandshakes,
-                                           int failedHandshakes,
-                                           int invalidNetworks,
-                                           int repeatedMessages,
-                                           int validBlocks,
-                                           int validTransactions,
-                                           int invalidBlocks,
-                                           int invalidTransactions,
-                                           int invalidMessages,
-                                           int timeoutMessages,
-                                           int unexpectedMessages,
-                                           int invalidHeader,
-                                           int peersTotalScore,
-                                           int punishments) {
+    public PeerScoringReputationSummary(int count,
+                                        int successfulHandshakes,
+                                        int failedHandshakes,
+                                        int invalidNetworks,
+                                        int repeatedMessages,
+                                        int validBlocks,
+                                        int validTransactions,
+                                        int invalidBlocks,
+                                        int invalidTransactions,
+                                        int invalidMessages,
+                                        int timeoutMessages,
+                                        int unexpectedMessages,
+                                        int invalidHeader,
+                                        int peersTotalScore,
+                                        int punishments,
+                                        int goodReputationCount,
+                                        int badReputationCount) {
         this.count = count;
         this.successfulHandshakes = successfulHandshakes;
         this.failedHandshakes = failedHandshakes;
-        this.invalidNetworks = invalidNetworks;
-        this.repeatedMessages = repeatedMessages;
+        this.invalidHeader = invalidHeader;
         this.validBlocks = validBlocks;
-        this.validTransactions = validTransactions;
         this.invalidBlocks = invalidBlocks;
+        this.validTransactions = validTransactions;
         this.invalidTransactions = invalidTransactions;
+        this.invalidNetworks = invalidNetworks;
         this.invalidMessages = invalidMessages;
+        this.repeatedMessages = repeatedMessages;
         this.timeoutMessages = timeoutMessages;
         this.unexpectedMessages = unexpectedMessages;
-        this.invalidHeader = invalidHeader;
         this.peersTotalScore = peersTotalScore;
         this.punishments = punishments;
+        this.goodReputationCount = goodReputationCount;
+        this.badReputationCount = badReputationCount;
     }
 
     public int getCount() {
@@ -115,12 +121,20 @@ public class PeerScoringBadReputationSummary {
         return punishments;
     }
 
+    public int getGoodReputationCount() {
+        return goodReputationCount;
+    }
+
+    public int getBadReputationCount() {
+        return badReputationCount;
+    }
+
     @Override
     public boolean equals(Object object) {
-        if(!(object instanceof PeerScoringBadReputationSummary)) {
+        if(!(object instanceof PeerScoringReputationSummary)) {
             return false;
         }
-        PeerScoringBadReputationSummary p = (PeerScoringBadReputationSummary) object;
+        PeerScoringReputationSummary p = (PeerScoringReputationSummary) object;
 
         return getCount() == p.getCount() &&
                 getFailedHandshakes() == p.getFailedHandshakes() &&
@@ -144,6 +158,6 @@ public class PeerScoringBadReputationSummary {
         return Arrays.asList(count, failedHandshakes, invalidMessages, invalidNetworks,
                 invalidHeader, invalidBlocks, invalidTransactions, successfulHandshakes,
                 validTransactions, punishments, peersTotalScore, unexpectedMessages, timeoutMessages,
-                repeatedMessages, validBlocks).hashCode();
+                repeatedMessages, validBlocks, goodReputationCount, badReputationCount).hashCode();
     }
 }

@@ -2,50 +2,37 @@ package co.rsk.scoring;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.annotations.VisibleForTesting;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 public class PeerScoringReporterUtil {
 
     private PeerScoringReporterUtil() {
     }
 
-    public static PeerScoringBadReputationSummary buildBadReputationSummary(List<PeerScoringInformation> peerScoringInformationList) {
-        List<PeerScoringInformation> badReputationList = badReputationList(peerScoringInformationList);
+    public static PeerScoringReputationSummary buildReputationSummary(List<PeerScoringInformation> peerScoringInformationList) {
 
-        return new PeerScoringBadReputationSummary(
-                badReputationList.size(),
-                sumBy(badReputationList, PeerScoringInformation::getSuccessfulHandshakes),
-                sumBy(badReputationList, PeerScoringInformation::getFailedHandshakes),
-                sumBy(badReputationList, PeerScoringInformation::getInvalidNetworks),
-                sumBy(badReputationList, PeerScoringInformation::getRepeatedMessages),
-                sumBy(badReputationList, PeerScoringInformation::getValidBlocks),
-                sumBy(badReputationList, PeerScoringInformation::getValidTransactions),
-                sumBy(badReputationList, PeerScoringInformation::getInvalidBlocks),
-                sumBy(badReputationList, PeerScoringInformation::getInvalidTransactions),
-                sumBy(badReputationList, PeerScoringInformation::getInvalidMessages),
-                sumBy(badReputationList, PeerScoringInformation::getTimeoutMessages),
-                sumBy(badReputationList, PeerScoringInformation::getUnexpectedMessages),
-                sumBy(badReputationList, PeerScoringInformation::getInvalidHeader),
-                sumBy(badReputationList, PeerScoringInformation::getScore),
-                sumBy(badReputationList, PeerScoringInformation::getPunishments)
+        return new PeerScoringReputationSummary(
+                peerScoringInformationList.size(),
+                sumBy(peerScoringInformationList, PeerScoringInformation::getSuccessfulHandshakes),
+                sumBy(peerScoringInformationList, PeerScoringInformation::getFailedHandshakes),
+                sumBy(peerScoringInformationList, PeerScoringInformation::getInvalidNetworks),
+                sumBy(peerScoringInformationList, PeerScoringInformation::getRepeatedMessages),
+                sumBy(peerScoringInformationList, PeerScoringInformation::getValidBlocks),
+                sumBy(peerScoringInformationList, PeerScoringInformation::getValidTransactions),
+                sumBy(peerScoringInformationList, PeerScoringInformation::getInvalidBlocks),
+                sumBy(peerScoringInformationList, PeerScoringInformation::getInvalidTransactions),
+                sumBy(peerScoringInformationList, PeerScoringInformation::getInvalidMessages),
+                sumBy(peerScoringInformationList, PeerScoringInformation::getTimeoutMessages),
+                sumBy(peerScoringInformationList, PeerScoringInformation::getUnexpectedMessages),
+                sumBy(peerScoringInformationList, PeerScoringInformation::getInvalidHeader),
+                sumBy(peerScoringInformationList, PeerScoringInformation::getScore),
+                sumBy(peerScoringInformationList, PeerScoringInformation::getPunishments),
+                sumBy(peerScoringInformationList, PeerScoringInformation::goodReputationCount),
+                sumBy(peerScoringInformationList, PeerScoringInformation::badReputationCount)
         );
-    }
-
-    @VisibleForTesting
-    public static List<PeerScoringInformation> badReputationList(List<PeerScoringInformation> peerScoringInformationList) {
-        if(peerScoringInformationList == null) {
-            return new ArrayList<>();
-        }
-        
-        return peerScoringInformationList.stream()
-                .filter(p -> !p.getGoodReputation())
-                .collect(Collectors.toList());
     }
 
     private static int sumBy(List<PeerScoringInformation> peerScoringInformationList, Function<PeerScoringInformation, Integer> mapper) {
@@ -59,11 +46,11 @@ public class PeerScoringReporterUtil {
         return result.isPresent() ? result.get() : 0;
     }
 
-    public static String detailedBadReputationStatusString(List<PeerScoringInformation> peerScoringInformationList) throws JsonProcessingException {
-        return new ObjectMapper().writeValueAsString(badReputationList(peerScoringInformationList));
+    public static String detailedReputationString(List<PeerScoringInformation> peerScoringInformationList) throws JsonProcessingException {
+        return new ObjectMapper().writeValueAsString(peerScoringInformationList);
     }
 
-    public static String badReputationSummaryString(List<PeerScoringInformation> peerScoringInformationList) throws JsonProcessingException {
-        return new ObjectMapper().writeValueAsString(buildBadReputationSummary(peerScoringInformationList));
+    public static String reputationSummaryString(List<PeerScoringInformation> peerScoringInformationList) throws JsonProcessingException {
+        return new ObjectMapper().writeValueAsString(buildReputationSummary(peerScoringInformationList));
     }
 }

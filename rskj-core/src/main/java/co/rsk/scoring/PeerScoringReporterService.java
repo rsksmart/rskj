@@ -53,10 +53,10 @@ public class PeerScoringReporterService implements InternalService {
 
     public boolean printReport(List<PeerScoringInformation> peerScoringInformationList) {
         try {
-            String badReputationSummary = PeerScoringReporterUtil.badReputationSummaryString(peerScoringInformationList);
+            String badReputationSummary = PeerScoringReporterUtil.reputationSummaryString(peerScoringInformationList);
             logger.debug("bad reputation summary {}", badReputationSummary);
 
-            String peersInformationDetailed = PeerScoringReporterUtil.detailedBadReputationStatusString(peerScoringInformationList);
+            String peersInformationDetailed = PeerScoringReporterUtil.detailedReputationString(peerScoringInformationList);
             logger.debug("detailed bad reputation status {}", peersInformationDetailed);
         } catch (Exception e) {
             logger.warn("failed to print report", e);

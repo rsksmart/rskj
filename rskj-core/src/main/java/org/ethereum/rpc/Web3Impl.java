@@ -1082,7 +1082,7 @@ public class Web3Impl implements Web3 {
      *
      * @return the actual summary
      */
-    public PeerScoringBadReputationSummary sco_badReputationSummary() {
-        return PeerScoringReporterUtil.buildBadReputationSummary(peerScoringManager.getPeersInformation());
+    public PeerScoringReputationSummary sco_badReputationSummary() {
+        return PeerScoringReporterUtil.buildReputationSummary(peerScoringManager.getPeersInformation());
     }
 }

@@ -11,41 +11,35 @@ import java.util.List;
 public class PeerScoringReporterUtilTest {
 
     @Test
-    public void buildsBadReputationSummary() {
+    public void buildsReputationSummary() {
         List<PeerScoringInformation> peerScoringInformationList = new ArrayList<>(goodReputationPeers());
         peerScoringInformationList.addAll(badReputationPeers());
         peerScoringInformationList.addAll(goodReputationPeers());
 
-        PeerScoringBadReputationSummary peerScoringBadReputationSummary =
-                PeerScoringReporterUtil.buildBadReputationSummary(peerScoringInformationList);
+        PeerScoringReputationSummary peerScoringReputationSummary =
+                PeerScoringReporterUtil.buildReputationSummary(peerScoringInformationList);
 
-        Assert.assertEquals(new PeerScoringBadReputationSummary(2, 8, 0,
-                0, 10, 6,
-                2, 18, 0,
+        Assert.assertEquals(new PeerScoringReputationSummary(8, 32, 0,
+                0, 40, 24,
+                8, 72, 0,
                 0, 0, 0,
-                8, 0, 0), peerScoringBadReputationSummary);
+                32, 0, 0,6,2), peerScoringReputationSummary);
     }
 
     @Test
     public void emptyDetailedStatusShouldMatchToEmptySummary() throws JsonProcessingException {
-        List<PeerScoringInformation> peerScoringInformationList = goodReputationPeers();
+        List<PeerScoringInformation> peerScoringInformationList = new ArrayList<>();
 
-        String detailedStatusResult = PeerScoringReporterUtil.detailedBadReputationStatusString(peerScoringInformationList);
-        String summaryResultString =  PeerScoringReporterUtil.badReputationSummaryString(peerScoringInformationList);
+        String detailedStatusResult = PeerScoringReporterUtil.detailedReputationString(peerScoringInformationList);
+        String summaryResultString =  PeerScoringReporterUtil.reputationSummaryString(peerScoringInformationList);
 
         Assert.assertEquals("{\"count\":0,\"successfulHandshakes\":0,\"failedHandshakes\":0," +
-                "\"invalidNetworks\":0,\"repeatedMessages\":0,\"validBlocks\":0," +
-                "\"validTransactions\":0,\"invalidBlocks\":0," +
-                "\"invalidTransactions\":0,\"invalidMessages\":0," +
-                "\"timeoutMessages\":0,\"unexpectedMessages\":0," +
-                "\"invalidHeader\":0,\"peersTotalScore\":0," +
-                "\"punishments\":0}", summaryResultString);
+                "\"invalidHeader\":0,\"validBlocks\":0,\"invalidBlocks\":0,\"validTransactions\":0," +
+                "\"invalidTransactions\":0,\"invalidNetworks\":0,\"invalidMessages\":0," +
+                "\"repeatedMessages\":0,\"timeoutMessages\":0,\"unexpectedMessages\":0," +
+                "\"peersTotalScore\":0,\"punishments\":0,\"goodReputationCount\":0," +
+                "\"badReputationCount\":0}", summaryResultString);
         Assert.assertEquals("[]", detailedStatusResult);
-    }
-
-    @Test
-    public void badReputationListByNull() {
-        Assert.assertEquals(new ArrayList(), PeerScoringReporterUtil.badReputationList(null));
     }
 
     private List<PeerScoringInformation> badReputationPeers() {
