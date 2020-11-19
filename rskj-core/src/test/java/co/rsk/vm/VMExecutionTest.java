@@ -465,6 +465,20 @@ public class VMExecutionTest {
     }
 
     @Test
+    public void dupnAsInvalidOpcodeWhenDeactivated() {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(RSKIPREMOPCODES)).thenReturn(true);
+
+        Program program = playCode("PUSH1 0x01 PUSH1 0x00 DUPN", activations);
+        ProgramResult result = program.getResult();
+
+        Assert.assertNotNull(result);
+        Assert.assertNotNull(result.getException());
+        Assert.assertTrue(result.getException() instanceof Program.IllegalOperationException);
+        Assert.assertEquals("Invalid operation code: opcode[a8], tx[<null>]", result.getException().getMessage());
+    }
+
+    @Test
     public void swapnSecondItem() {
         Program program = executeCode("PUSH1 0x01 PUSH1 0x02 PUSH1 0x00 SWAPN", 4);
         Stack stack = program.getStack();
@@ -509,6 +523,21 @@ public class VMExecutionTest {
         executeCode("PUSH1 0x01 PUSH1 0x02 PUSH1 0x03 PUSH1 0x04 PUSH1 0x05 PUSH1 0x06 PUSH1 0x07 PUSH1 0x08 PUSH1 0x09 PUSH1 0x0a PUSH1 0x0b PUSH1 0x0c PUSH1 0x0d PUSH1 0x0e PUSH1 0x0f PUSH1 0x10 PUSH1 0x11 PUSH1 0x12 PUSH1 0x13 PUSH1 0x12 SWAPN", 22);
     }
 
+
+    @Test
+    public void swapnAsInvalidOpcodeWhenDeactivated() {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(RSKIPREMOPCODES)).thenReturn(true);
+
+        Program program = playCode("PUSH1 0x01 PUSH1 0x02 PUSH1 0x00 SWAPN", activations);
+        ProgramResult result = program.getResult();
+
+        Assert.assertNotNull(result);
+        Assert.assertNotNull(result.getException());
+        Assert.assertTrue(result.getException() instanceof Program.IllegalOperationException);
+        Assert.assertEquals("Invalid operation code: opcode[a9], tx[<null>]", result.getException().getMessage());
+    }
+
     @Test
     public void txIndexExecution() {
         invoke.setTransactionIndex(DataWord.valueOf(42));
@@ -517,6 +546,21 @@ public class VMExecutionTest {
 
         Assert.assertEquals(1, stack.size());
         Assert.assertEquals(DataWord.valueOf(42), stack.peek());
+    }
+
+    @Test
+    public void txIndexAsInvalidOpcodeWhenDeactivated() {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(RSKIPREMOPCODES)).thenReturn(true);
+
+        invoke.setTransactionIndex(DataWord.valueOf(42));
+        Program program = playCode("TXINDEX", activations);
+        ProgramResult result = program.getResult();
+
+        Assert.assertNotNull(result);
+        Assert.assertNotNull(result.getException());
+        Assert.assertTrue(result.getException() instanceof Program.IllegalOperationException);
+        Assert.assertEquals("Invalid operation code: opcode[aa], tx[<null>]", result.getException().getMessage());
     }
 
     @Test

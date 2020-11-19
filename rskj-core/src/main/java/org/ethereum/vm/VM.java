@@ -1857,8 +1857,15 @@ public class VM {
                 }
                 doSELFBALANCE();
             break;
-            case OpCodes.OP_TXINDEX: doTXINDEX();
-            break;
+            case OpCodes.OP_TXINDEX:
+                if (activations.isActive(RSKIPREMOPCODES)) {
+                    throw Program.ExceptionHelper.invalidOpCode(program);
+                }
+
+                doTXINDEX();
+
+                break;
+
             case OpCodes.OP_POP: doPOP();
             break;
             case OpCodes.OP_DUP_1:
@@ -1895,8 +1902,15 @@ public class VM {
             case OpCodes.OP_SWAP_15:
             case OpCodes.OP_SWAP_16: doSWAP();
             break;
-            case OpCodes.OP_SWAPN: doSWAPN();
+            case OpCodes.OP_SWAPN:
+                if (activations.isActive(RSKIPREMOPCODES)) {
+                    throw Program.ExceptionHelper.invalidOpCode(program);
+                }
+
+                doSWAPN();
+
                 break;
+
             case OpCodes.OP_LOG_0:
             case OpCodes.OP_LOG_1:
             case OpCodes.OP_LOG_2:
@@ -1984,7 +1998,13 @@ public class VM {
             break;
             case OpCodes.OP_SUICIDE: doSUICIDE();
             break;
-            case OpCodes.OP_DUPN: doDUPN();
+            case OpCodes.OP_DUPN:
+                if (activations.isActive(RSKIPREMOPCODES)) {
+                    throw Program.ExceptionHelper.invalidOpCode(program);
+                }
+
+                doDUPN();
+
                 break;
 
             /**
