@@ -74,7 +74,13 @@ import org.ethereum.rpc.dto.TransactionResultDTO;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.util.BuildInfo;
 import org.ethereum.util.ByteUtil;
+import org.ethereum.vm.DataWord;
+import org.ethereum.vm.PrecompiledContracts;
+import org.ethereum.vm.program.Program;
 import org.ethereum.vm.program.ProgramResult;
+import org.ethereum.vm.program.invoke.ProgramInvoke;
+import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
+import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -1281,28 +1287,42 @@ public class Web3ImplTest {
         Account acc1 = new AccountBuilder(world).name("default").balance(Coin.valueOf(10000000)).build();
 
         Block genesis = world.getBlockByName("g00");
-        TestContract greeter = TestContract.greeter();
+
+        /* contract compiled in data attribute of tx
+        contract Greeter {
+            address owner;
+
+            function greeter() public {
+                owner = msg.sender;
+            }
+
+            function greet(string memory param) public pure returns (string memory) {
+                return param;
+            }
+        }
+        */
+
         Transaction tx = new TransactionBuilder()
                 .sender(acc1)
-                .gasLimit(BigInteger.valueOf(100000))
+                .gasLimit(BigInteger.valueOf(500000))
                 .gasPrice(BigInteger.ONE)
-                .data(greeter.runtimeBytecode)
+                .data("608060405234801561001057600080fd5b506101fa806100206000396000f3fe608060405234801561001057600080fd5b50600436106100365760003560e01c80631c8499e51461003b578063ead710c414610045575b600080fd5b610043610179565b005b6100fe6004803603602081101561005b57600080fd5b810190808035906020019064010000000081111561007857600080fd5b82018360208201111561008a57600080fd5b803590602001918460018302840111640100000000831117156100ac57600080fd5b91908080601f016020809104026020016040519081016040528093929190818152602001838380828437600081840152601f19601f8201169050808301925050505050505091929192905050506101bb565b6040518080602001828103825283818151815260200191508051906020019080838360005b8381101561013e578082015181840152602081019050610123565b50505050905090810190601f16801561016b5780820380516001836020036101000a031916815260200191505b509250505060405180910390f35b336000806101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff160217905550565b606081905091905056fea265627a7a723158207cbf5ab8312143442836de7909c83aec5160dae50224ecc7c16d7f35a306901e64736f6c63430005100032")
                 .build();
         List<Transaction> txs = new ArrayList<>();
         txs.add(tx);
         Block block1 = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(),
-                                        world.getBlockStore()).trieStore(world.getTrieStore()).parent(genesis).transactions(txs).build();
-        world.getBlockChain().tryToConnect(block1);
+                world.getBlockStore()).trieStore(world.getTrieStore()).parent(genesis).transactions(txs).build();
+        Assert.assertTrue(world.getBlockChain().tryToConnect(block1).isSuccessful());
 
         Web3Impl web3 = createWeb3Mocked(world);
 
         Web3.CallArguments argsForCall = new Web3.CallArguments();
         argsForCall.to = TypeConverter.toJsonHex(tx.getContractAddress().getBytes());
-        argsForCall.data = TypeConverter.toJsonHex(greeter.functions.get("greet").encodeSignature());
+        argsForCall.data = "ead710c40000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000568656c6c6f000000000000000000000000000000000000000000000000000000";
 
         String result = web3.eth_call(argsForCall, "latest");
 
-        org.junit.Assert.assertEquals("0x0000000000000000000000000000000000000000000000000000000064617665", result);
+        org.junit.Assert.assertEquals("0x0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000568656c6c6f000000000000000000000000000000000000000000000000000000", result);
     }
 
     @Test
@@ -1313,29 +1333,29 @@ public class Web3ImplTest {
         Block genesis = world.getBlockByName("g00");
 
         /* contract compiled in data attribute of tx
-        contract greeter {
-
+        contract Greeter {
             address owner;
-            modifier onlyOwner { if (msg.sender != owner) throw; _ ; }
 
             function greeter() public {
                 owner = msg.sender;
             }
-            function greet(string param) onlyOwner constant returns (string) {
+
+            function greet(string memory param) public pure returns (string memory) {
                 return param;
             }
-        } */
+        }
+        */
         Transaction tx = new TransactionBuilder()
                 .sender(acc1)
-                .gasLimit(BigInteger.valueOf(100000))
+                .gasLimit(BigInteger.valueOf(500000))
                 .gasPrice(BigInteger.ONE)
-                .data("60606040525b33600060006101000a81548173ffffffffffffffffffffffffffffffffffffffff02191690836c010000000000000000000000009081020402179055505b610181806100516000396000f360606040526000357c010000000000000000000000000000000000000000000000000000000090048063ead710c41461003c57610037565b610002565b34610002576100956004808035906020019082018035906020019191908080601f016020809104026020016040519081016040528093929190818152602001838380828437820191505050505050909091905050610103565b60405180806020018281038252838181518152602001915080519060200190808383829060006004602084601f0104600302600f01f150905090810190601f1680156100f55780820380516001836020036101000a031916815260200191505b509250505060405180910390f35b6020604051908101604052806000815260200150600060009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff1614151561017357610002565b81905061017b565b5b91905056")
+                .data("608060405234801561001057600080fd5b506101fa806100206000396000f3fe608060405234801561001057600080fd5b50600436106100365760003560e01c80631c8499e51461003b578063ead710c414610045575b600080fd5b610043610179565b005b6100fe6004803603602081101561005b57600080fd5b810190808035906020019064010000000081111561007857600080fd5b82018360208201111561008a57600080fd5b803590602001918460018302840111640100000000831117156100ac57600080fd5b91908080601f016020809104026020016040519081016040528093929190818152602001838380828437600081840152601f19601f8201169050808301925050505050505091929192905050506101bb565b6040518080602001828103825283818151815260200191508051906020019080838360005b8381101561013e578082015181840152602081019050610123565b50505050905090810190601f16801561016b5780820380516001836020036101000a031916815260200191505b509250505060405180910390f35b336000806101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff160217905550565b606081905091905056fea265627a7a723158207cbf5ab8312143442836de7909c83aec5160dae50224ecc7c16d7f35a306901e64736f6c63430005100032")
                 .build();
         List<Transaction> txs = new ArrayList<>();
         txs.add(tx);
         Block block1 = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(),
                                         world.getBlockStore()).trieStore(world.getTrieStore()).parent(genesis).transactions(txs).build();
-        world.getBlockChain().tryToConnect(block1);
+        Assert.assertTrue(world.getBlockChain().tryToConnect(block1).isSuccessful());
 
         Web3Impl web3 = createWeb3Mocked(world);
 
@@ -1345,11 +1365,11 @@ public class Web3ImplTest {
         Web3.CallArguments argsForCall = new Web3.CallArguments();
         argsForCall.from = TypeConverter.toJsonHex(acc1.getAddress().getBytes());
         argsForCall.to = TypeConverter.toJsonHex(tx.getContractAddress().getBytes());
-        argsForCall.data = "0xead710c40000000000000000000000000000000000000000000000000000000064617665";
+        argsForCall.data = "ead710c40000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000568656c6c6f000000000000000000000000000000000000000000000000000000";
 
         String result = web3.eth_call(argsForCall, "latest");
 
-        org.junit.Assert.assertEquals("0x0000000000000000000000000000000000000000000000000000000064617665", result);
+        org.junit.Assert.assertEquals("0x0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000568656c6c6f000000000000000000000000000000000000000000000000000000", result);
     }
 
     @Test
@@ -1804,10 +1824,12 @@ public class Web3ImplTest {
         MiningMainchainView miningMainchainViewMock = mock(MiningMainchainView.class);
         wallet = WalletFactory.createWallet();
         PersonalModuleWalletEnabled personalModule = new PersonalModuleWalletEnabled(config, eth, wallet, transactionPool);
-        ReversibleTransactionExecutor executor = mock(ReversibleTransactionExecutor.class);
-        ProgramResult res = new ProgramResult();
-        res.setHReturn(TypeConverter.stringHexToByteArray("0x0000000000000000000000000000000000000000000000000000000064617665"));
-        when(executor.executeTransaction(any(), any(), any(), any(), any(), any(), any(), any())).thenReturn(res);
+
+        ReversibleTransactionExecutor executor = new ReversibleTransactionExecutor(
+            repositoryLocator,
+            buildTransactionExecutorFactory(blockStore, null)
+        );
+
         Web3InformationRetriever retriever = new Web3InformationRetriever(transactionPool, blockchain, repositoryLocator);
         TransactionGateway transactionGateway = new TransactionGateway(new SimpleChannelManager(), transactionPool);
         EthModule ethModule = new EthModule(
@@ -1855,8 +1877,8 @@ public class Web3ImplTest {
                 blockStore,
                 null,
                 blockFactory,
-                null,
-                null,
+                new ProgramInvokeFactoryImpl(),
+                new PrecompiledContracts(config, null),
                 blockTxSignatureCache);
     }
 }
