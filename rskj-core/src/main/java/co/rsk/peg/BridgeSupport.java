@@ -2310,7 +2310,7 @@ public class BridgeSupport {
         return activeFederationCreationBlockHeightOpt.orElse(0L);
     }
 
-    public int registerFastBridgeBtcTransaction(
+    public long registerFastBridgeBtcTransaction(
             Transaction rskTx,
             byte[] btcTxSerialized,
             int height,
@@ -2319,7 +2319,7 @@ public class BridgeSupport {
             Address userRefundAddress,
             RskAddress lbcAddress,
             Address lpBtcAddress,
-            Coin valueToTransfer
+            boolean shouldTransferToContract
     )
         throws BlockStoreException, RegisterFastBridgeBtcTransactionException, IOException, BridgeIllegalArgumentException {
         if (!BridgeUtils.isContractTx(rskTx)) {
@@ -2350,7 +2350,7 @@ public class BridgeSupport {
                 ByteUtil.toHexString(btcTxHash.getBytes())
             );
             logger.debug(errorMessage);
-            throw new RegisterFastBridgeFastBridgeBtcTransactionValidationException(errorMessage);
+            throw new RegisterFastBridgeBtcTransactionValidationException(errorMessage);
         }
 
         BtcTransaction btcTx = new BtcTransaction(bridgeConstants.getBtcParams(), btcTxSerialized);
