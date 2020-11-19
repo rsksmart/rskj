@@ -2260,29 +2260,37 @@ public class BridgeSupport {
     }
 
     public long registerFastBridgeBtcTransaction(
-            Transaction rskTx,
-            byte[] btcTxSerialized,
-            int height,
-            byte[] pmtSerialized,
-            Sha256Hash derivationArgumentsHash,
-            Address userRefundAddress,
-            RskAddress lbcAddress,
-            Address lpBtcAddress,
-            boolean shouldTransferToContract
+        Transaction rskTx,
+        byte[] btcTxSerialized,
+        int height,
+        byte[] pmtSerialized,
+        Sha256Hash derivationArgumentsHash,
+        Address userRefundAddress,
+        RskAddress lbcAddress,
+        Address lpBtcAddress,
+        boolean shouldTransferToContract
     )
-        throws BlockStoreException, RegisterFastBridgeBtcTransactionException, IOException, BridgeIllegalArgumentException {
+        throws BlockStoreException, IOException, BridgeIllegalArgumentException {
+        // Error codes unprocessable
         if (!BridgeUtils.isContractTx(rskTx)) {
             String errorMessage = String.format(
                 "[registerFastBridgeBtcTransaction] [rskTx:%s] Transaction not a contract",
                 ByteUtil.toHexString(rskTx.getHash().getBytes())
             );
             logger.debug(errorMessage);
-            throw new RegisterFastBridgeBtcTransactionContractValidationException(errorMessage);
+            // TODO: return proper error code
+            return -13;
         }
 
-        // TODO: validateTxSender: tx sender should be equal to lbcAddress
-        // TODO: get fastBridgeFedAddress (to do this need instantiate fastBridgeFederationInformation)
-        //  & getAmountSentToAddress. Validate if (totalAmount == Coin.ZERO)
+        // Error codes unprocessable
+        if (!rskTx.getSender().equals(lbcAddress)) {
+            logger.warn("Expected sender to be the same as lbcAddress. (sender: {}) (lbcAddress:{})",
+                rskTx.getSender(),
+                lbcAddress
+            );
+            // TODO: return proper error code
+            return -11;
+        }
 
         Context.propagate(btcContext);
         Sha256Hash btcTxHash = BtcTransactionFormatUtils.calculateBtcTxHash(btcTxSerialized);
@@ -2290,106 +2298,86 @@ public class BridgeSupport {
         //TODO : this validation is no longer needed. In stead,
         // check in storage FastBridgeHashUsedInBtcTx
         if (isAlreadyBtcTxHashProcessed(btcTxHash)) {
-            throw new RegisterFastBridgeBtcTransactionException("Transaction already processed");
+            // TODO: return proper error code for alreadyProcessed
+            return -111;
         }
 
+        // Error codes unprocessable
         if (!validationsForRegisterBtcTransaction(btcTxHash, height, pmtSerialized, btcTxSerialized)) {
             String errorMessage = String.format(
                 "[registerFastBridgeBtcTransaction] [rskTx:%s] error during validationsForRegisterBtcTransaction",
                 ByteUtil.toHexString(btcTxHash.getBytes())
             );
             logger.debug(errorMessage);
-            throw new RegisterFastBridgeBtcTransactionValidationException(errorMessage);
+            // TODO: return proper error code for alreadyProcessed
+            return -112;
         }
 
         BtcTransaction btcTx = new BtcTransaction(bridgeConstants.getBtcParams(), btcTxSerialized);
         btcTx.verify();
 
-        //TODO : this validation is no longer needed. In stead,
-        // check again in storage FastBridgeHashUsedInBtcTx, only if btcTx.getHash(false) != btcTxHash
-        // Check again that the tx was not already processed but making sure to use the txid (no witness)
-        if (isAlreadyBtcTxHashProcessed(btcTx.getHash(false))) {
-            throw new RegisterFastBridgeBtcTransactionException("Transaction already processed");
+        //TODO: check again in storage FastBridgeHashUsedInBtcTx
+        Sha256Hash btcTxHashWithoutWitness = btcTx.getHash(false);
+        if (!btcTxHashWithoutWitness.equals(btcTxHash)) {
+            if (isAlreadyBtcTxHashProcessed(btcTxHashWithoutWitness)) {
+                // TODO: return proper error code for alreadyProcessed
+                return -113;
+            }
         }
 
-        //TODO: remove createFastBridgeFederationData. Will be replaced by fastBridgeFederationInformation
-        FastBridgeFederationData fastBridgeFederationData = createFastBridgeFederationData(
-                derivationArgumentsHash,
-                userRefundAddress,
-                lpBtcAddress,
-                lbcAddress
+        Sha256Hash fastBridgeDerivationHash = getFastBridgeDerivationHash(
+            derivationArgumentsHash,
+            userRefundAddress,
+            lpBtcAddress,
+            lbcAddress
         );
 
         FastBridgeFederationInformation fastBridgeFederationInformation =
-            new FastBridgeFederationInformation(
-                fastBridgeFederationData.getDerivationArgumentsHash(),
-                getActiveFederation().getP2SHScript().getPubKeyHash(),
-                fastBridgeFederationData.getFastBridgeScriptHash().getPubKeyHash()
-            );
+            createFastBridgeFederationInformation(fastBridgeDerivationHash);
 
-        // TODO: this will be obtained upwards
         Address fastBridgeFedAddress =
             fastBridgeFederationInformation.getFastBridgeFederationAddress(bridgeConstants.getBtcParams());
 
         Coin totalAmount = getAmountSentToAddress(btcTx, fastBridgeFedAddress);
 
-        // TODO: move upwards
+        // Error code unprocessable
         if (totalAmount == Coin.ZERO) {
             logger.warn("Amount sent can't be 0");
             // TODO: return proper error code
             return -10;
         }
 
-        if (provider.isFastBridgeFederationDerivationHashUsed(fastBridgeFederationData.getDerivationArgumentsHash())) {
-            logger.warn("[registerFastBridgeBtcTransaction] [btcTxHash:{}] derivationArgumentsHash is already "
-                + "saved in BridgeStorageProvider",
-                btcTxHash
-            );
-            WalletProvider walletProvider = createFastBridgeWalletProvider(fastBridgeFederationInformation);
-            generateRejectionRelease(btcTx, userRefundAddress, fastBridgeFedAddress, rskTx,  totalAmount, walletProvider);
-            return -1;
-        }
-
         if (!verifyLockDoesNotSurpassLockingCap(btcTx, null, totalAmount)) {
             WalletProvider walletProvider = createFastBridgeWalletProvider(fastBridgeFederationInformation);
-            generateRejectionRelease(btcTx, lpBtcAddress, fastBridgeFedAddress, rskTx, totalAmount, walletProvider);
-            return -2;
+            if (shouldTransferToContract) {
+                generateRejectionRelease(btcTx, lpBtcAddress, fastBridgeFedAddress, rskTx, totalAmount, walletProvider);
+                // TODO: return proper error code
+                return -2;
+            } else {
+                generateRejectionRelease(btcTx, userRefundAddress, fastBridgeFedAddress, rskTx, totalAmount, walletProvider);
+                // TODO: return proper error code
+                return -3;
+            }
         }
 
-        return 1;  //TODO: Includes logic
+        transferTo(lbcAddress, co.rsk.core.Coin.fromBitcoin(totalAmount));
+        return totalAmount.getValue();
     }
 
-    protected void validateAmountAndTransfer(
-        Coin valueToTransfer,
-        Coin amountSent,
-        BtcTransaction btcTx,
-        Address userRefundAddress,
-        Address fastBridgeFedAddress,
-        RskAddress lbcAddress,
-        Transaction rskTx,
-        FastBridgeFederationInformation fastBridgeFederationInformation
-    ) throws IOException, BridgeIllegalArgumentException {
-        //TODO: This validation goes on top of registerBtcTransfer
-        if (valueToTransfer.value < 0) {
-            String message = "Value to transfer can't be negative";
-            logger.warn(message);
-            // TODO: return proper error code not exception
-            throw new BridgeIllegalArgumentException(message);
-        }
+    protected FastBridgeFederationInformation createFastBridgeFederationInformation(
+        Sha256Hash fastBridgeDerivationHash) {
+        Script fastBridgeScript = RedeemScriptParser.createMultiSigFastBridgeRedeemScript(
+            getActiveFederation().getRedeemScript(),
+            fastBridgeDerivationHash
+        );
 
-        if (valueToTransfer == amountSent) {
-            transferTo(lbcAddress, co.rsk.core.Coin.fromBitcoin(valueToTransfer));
-        } else {
-            WalletProvider walletProvider = createFastBridgeWalletProvider(fastBridgeFederationInformation);
-            generateRejectionRelease(
-                btcTx,
-                userRefundAddress,
-                fastBridgeFedAddress,
-                rskTx,
-                amountSent,
-                walletProvider
-            );
-        }
+        Script fastBridgeScriptHash = ScriptBuilder.createP2SHOutputScript(fastBridgeScript);
+
+        return new FastBridgeFederationInformation(
+            fastBridgeDerivationHash,
+            getActiveFederation().getP2SHScript().getPubKeyHash(),
+            fastBridgeScriptHash.getPubKeyHash()
+        );
     }
 
     private WalletProvider createFastBridgeWalletProvider(
@@ -2426,28 +2414,6 @@ public class BridgeSupport {
         wallet.setUTXOProvider(utxoProvider);
         wallet.setCoinSelector(new RskAllowUnconfirmedCoinSelector());
         return wallet;
-    }
-
-    protected FastBridgeFederationData createFastBridgeFederationData(
-            Sha256Hash derivationArgumentsHash,
-            Address userRefundAddress,
-            Address lpBtcAddress,
-            RskAddress lbcAddress
-    ) {
-        Sha256Hash fastBridgeDerivationHash = getFastBridgeDerivationHash(
-                derivationArgumentsHash,
-                userRefundAddress,
-                lpBtcAddress,
-                lbcAddress
-        );
-
-        Script fastBridgeScript = RedeemScriptParser.createMultiSigFastBridgeRedeemScript(
-                getActiveFederation().getRedeemScript(),
-                fastBridgeDerivationHash
-        );
-        Script fastBridgeScriptHash = ScriptBuilder.createP2SHOutputScript(fastBridgeScript);
-
-        return new FastBridgeFederationData(fastBridgeScriptHash, fastBridgeDerivationHash);
     }
 
     protected Sha256Hash getFastBridgeDerivationHash(
