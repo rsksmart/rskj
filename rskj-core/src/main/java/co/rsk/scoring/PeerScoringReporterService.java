@@ -16,15 +16,18 @@ import java.util.concurrent.TimeUnit;
 public class PeerScoringReporterService implements InternalService {
 
     private static final Logger logger = LoggerFactory.getLogger("peerScoring");
-
     private final PeerScoringManager peerScoringManager;
     private final long time;
-    private ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
-    private boolean running = false;
+    protected final ScheduledExecutorService scheduledExecutorService;
 
-    public PeerScoringReporterService(long time, PeerScoringManager peerScoringManager) {
-        this.time = time;
+    public PeerScoringReporterService(long time, PeerScoringManager peerScoringManager, ScheduledExecutorService scheduledExecutorService) {
         this.peerScoringManager = peerScoringManager;
+        this.time = time;
+        this.scheduledExecutorService = scheduledExecutorService;
+    }
+
+    public static PeerScoringReporterService withScheduler(long peerScoringReportTime, PeerScoringManager peerScoringManager) {
+        return new PeerScoringReporterService(peerScoringReportTime, peerScoringManager, Executors.newSingleThreadScheduledExecutor());
     }
 
     @Override
@@ -32,12 +35,12 @@ public class PeerScoringReporterService implements InternalService {
         logger.debug("starting peer scoring reporter service");
         try {
             List<PeerScoringInformation> peerScoringInformationList = peerScoringManager.getPeersInformation();
-            scheduledExecutorService.scheduleAtFixedRate(() -> printReport(peerScoringInformationList),
+            scheduledExecutorService.scheduleAtFixedRate(() -> printReports(peerScoringInformationList),
                     0,
                     time,
                     TimeUnit.MILLISECONDS
             );
-            running = true;
+            running();
         } catch (Exception e) {
             logger.warn("peer scoring reporter failed", e);
             stop();
@@ -48,32 +51,30 @@ public class PeerScoringReporterService implements InternalService {
     public void stop() {
         scheduledExecutorService.shutdown();
         logger.warn("peer scoring reporter service has been stopped");
-        running = false;
+        stopped();
     }
 
-    public boolean printReport(List<PeerScoringInformation> peerScoringInformationList) {
+    public void printReports(List<PeerScoringInformation> peerScoringInformationList) {
         try {
             String badReputationSummary = PeerScoringReporterUtil.reputationSummaryString(peerScoringInformationList);
-            logger.debug("bad reputation summary {}", badReputationSummary);
+            logger.debug("reputation summary {}", badReputationSummary);
 
             String peersInformationDetailed = PeerScoringReporterUtil.detailedReputationString(peerScoringInformationList);
-            logger.debug("detailed bad reputation status {}", peersInformationDetailed);
+            logger.debug("detailed reputation status {}", peersInformationDetailed);
         } catch (Exception e) {
-            logger.warn("failed to print report", e);
-
-            return false;
+            logger.warn("failed to print reports", e);
         }
-
-        return true;
     }
 
     @VisibleForTesting
     public boolean initialized() {
+        // todo(techdebt) this should be only at TestPeerScoringReporterService class and inject that into a TestRSKContext
         return scheduledExecutorService != null && peerScoringManager != null && time > 0;
     }
 
-    @VisibleForTesting
-    public boolean isRunning() {
-        return running && !scheduledExecutorService.isShutdown();
+    protected void running() {
+    }
+
+    protected void stopped() {
     }
 }

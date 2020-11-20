@@ -4,29 +4,24 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import static org.mockito.Mockito.*;
 
 public class PeerScoringReporterServiceTest {
 
-    private PeerScoringReporterService peerScoringReporterService;
+    private TestPeerScoringReporterService peerScoringReporterService;
     private PeerScoringManager peerScoringManager;
 
     @Before
     public void setup() {
         peerScoringManager = mock(PeerScoringManager.class);
-        peerScoringReporterService = new PeerScoringReporterService(3000L, peerScoringManager);
+        peerScoringReporterService = TestPeerScoringReporterService.withScheduler(3000L, peerScoringManager);
     }
 
     @Test
-    public void shouldStopThreadOnStop() {
-        when(peerScoringManager.getPeersInformation()).thenReturn(mock(List.class));
-        peerScoringReporterService.start();
-
-        Assert.assertTrue(peerScoringReporterService.isRunning());
+    public void shouldStopOnStop() {
+        testStart();
 
         peerScoringReporterService.stop();
 
@@ -34,35 +29,24 @@ public class PeerScoringReporterServiceTest {
     }
 
     @Test
-    public void shouldStopOnException() {
-        //todo(techdebt) should assert that it's actually running
-        when(peerScoringManager.getPeersInformation()).thenThrow(new RuntimeException());
+    public void shouldStartOnStart() {
+        testStart();
+    }
+
+    public void testStart() {
+        when(peerScoringManager.getPeersInformation()).thenReturn(mock(List.class));
+
         peerScoringReporterService.start();
+
+        Assert.assertTrue(peerScoringReporterService.isRunning());
+    }
+
+    @Test
+    public void shouldStopOnException() {
+        when(peerScoringManager.getPeersInformation()).thenThrow(new RuntimeException());
+
+        peerScoringReporterService.start();
+
         Assert.assertFalse(peerScoringReporterService.isRunning());
-    }
-
-    @Test
-    public void shouldPrintReport() {
-        Assert.assertTrue(peerScoringReporterService.printReport(badReputationPeers()));
-    }
-
-    @Test
-    public void shouldntPrintReportOnError() {
-        List<PeerScoringInformation> peerScoringInformationList = new ArrayList<>();
-        peerScoringInformationList.add(null);
-
-        Assert.assertFalse(peerScoringReporterService.printReport(peerScoringInformationList));
-    }
-
-    private List<PeerScoringInformation> badReputationPeers() {
-        return Arrays.asList(buildPeerScoringInformation("4", false)
-                , buildPeerScoringInformation("5", false));
-    }
-
-    private PeerScoringInformation buildPeerScoringInformation(String id, boolean goodReputation) {
-        return new PeerScoringInformation(4, 0, 0,
-                5, 3, 9, 1,
-                0, 0, 0, 0,
-                4, 0, 0, goodReputation, id, "node");
     }
 }
