@@ -4,7 +4,7 @@ import java.util.Arrays;
 
 /**
  * This is a presentational object
- * It's used to expose a json rpc message (sco_badReputationSummary())
+ * It's used to expose a json rpc message (sco_reputationSummary())
  */
 public class PeerScoringReputationSummary {
     private int count;

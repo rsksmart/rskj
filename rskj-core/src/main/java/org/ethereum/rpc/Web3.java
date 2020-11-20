@@ -109,5 +109,5 @@ public interface Web3 extends InternalService, Web3TxPoolModule, Web3EthModule, 
     void sco_unbanAddress(String address);
     PeerScoringInformation[] sco_peerList();
     String[] sco_bannedAddresses();
-    PeerScoringReputationSummary sco_badReputationSummary();
+    PeerScoringReputationSummary sco_reputationSummary();
 }

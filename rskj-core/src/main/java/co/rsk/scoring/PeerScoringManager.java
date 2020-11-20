@@ -91,7 +91,7 @@ public class PeerScoringManager {
                 recordEventAndStartPunishment(scoring, event, this.ipPunishmentCalculator, id);
             }
 
-            logger.debug("Recorded {}. NodeID: {}, Address: {}", event, nodeIdForLog(id),  addressForLog(address));
+            logger.debug("Recorded {}. {}, Address: {}", event, nodeIdForLog(id),  addressForLog(address));
         }
     }
 
@@ -284,7 +284,7 @@ public class PeerScoringManager {
         if(id == null) {
             return "NO_NODE_ID";
         }
-        return ByteUtil.toHexString(id.getID());
+        return id.toString();
     }
 
     private String addressForLog(InetAddress address) {

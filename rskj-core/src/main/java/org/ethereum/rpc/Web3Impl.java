@@ -1078,11 +1078,11 @@ public class Web3Impl implements Web3 {
     }
 
     /**
-     * Returns a summary of all the peers with bad reputation
+     * Returns a reputation summary of all the peers connected to this node
      *
      * @return the actual summary
      */
-    public PeerScoringReputationSummary sco_badReputationSummary() {
+    public PeerScoringReputationSummary sco_reputationSummary() {
         return PeerScoringReporterUtil.buildReputationSummary(peerScoringManager.getPeersInformation());
     }
 }
