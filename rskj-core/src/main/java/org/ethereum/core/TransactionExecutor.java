@@ -75,7 +75,6 @@ public class TransactionExecutor {
     private final BlockFactory blockFactory;
     private final VmConfig vmConfig;
     private final PrecompiledContracts precompiledContracts;
-    private final boolean playVm;
     private final boolean enableRemasc;
     private String executionError = "";
     private final long gasUsedInTheBlock;
@@ -106,7 +105,7 @@ public class TransactionExecutor {
             Constants constants, ActivationConfig activationConfig, Transaction tx, int txindex, RskAddress coinbase,
             Repository track, BlockStore blockStore, ReceiptStore receiptStore, BlockFactory blockFactory,
             ProgramInvokeFactory programInvokeFactory, Block executionBlock, long gasUsedInTheBlock, VmConfig vmConfig,
-            boolean playVm, boolean remascEnabled, PrecompiledContracts precompiledContracts, Set<DataWord> deletedAccounts,
+            boolean remascEnabled, PrecompiledContracts precompiledContracts, Set<DataWord> deletedAccounts,
             SignatureCache signatureCache) {
         this.constants = constants;
         this.signatureCache = signatureCache;
@@ -124,7 +123,6 @@ public class TransactionExecutor {
         this.gasUsedInTheBlock = gasUsedInTheBlock;
         this.vmConfig = vmConfig;
         this.precompiledContracts = precompiledContracts;
-        this.playVm = playVm;
         this.enableRemasc = remascEnabled;
         this.deletedAccounts = new HashSet<>(deletedAccounts);
     }
@@ -424,9 +422,7 @@ public class TransactionExecutor {
             // Charge basic cost of the transaction
             program.spendGas(tx.transactionCost(constants, activations), "TRANSACTION COST");
 
-            if (playVm) {
-                vm.play(program);
-            }
+            vm.play(program);
 
             result = program.getResult();
             mEndGas = GasCost.subtract(GasCost.toGas(tx.getGasLimit()), program.getResult().getGasUsed());
