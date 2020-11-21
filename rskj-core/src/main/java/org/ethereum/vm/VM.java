@@ -84,7 +84,6 @@ import static org.ethereum.vm.OpCode.CALL;
 public class VM {
 
     private static final Logger logger = LoggerFactory.getLogger("VM");
-    private static final Logger dumpLogger = LoggerFactory.getLogger("dump");
     private static final String logString = "{}    Op: [{}]  Gas: [{}] Deep: [{}]  Hint: [{}]";
     private static final boolean computeGas = true; // for performance comp
 
@@ -2020,16 +2019,6 @@ public class VM {
 
                 gasCost = op.getTier().asInt();
 
-                if (vmConfig.dumpBlock() >= 0) {
-                    gasBefore = program.getRemainingGas();
-                    memWords = 0; // parameters for logging
-                }
-
-                // Log debugging line for VM
-                if (vmConfig.dumpBlock() >= 0 && program.getNumber().intValue() == vmConfig.dumpBlock()) {
-                    this.dumpLine(op, gasBefore, gasCost , memWords, program);
-                }
-
                 if (vmHook != null) {
                     vmHook.step(program, op);
                 }
@@ -2093,68 +2082,5 @@ public class VM {
 
     private static long memNeeded(DataWord offset, long size) {
         return (size==0)? 0 : limitedAddToMaxLong(Program.limitToMaxLong(offset.value()),size);
-    }
-
-    /*
-     * Dumping the VM state at the current operation in various styles
-     *  - standard  Not Yet Implemented
-     *  - standard+ (owner address, program counter, operation, gas left)
-     *  - pretty (stack, memory, storage, level, contract,
-     *              vmCounter, internalSteps, operation
-                    gasBefore, gasCost, memWords)
-     */
-    private void dumpLine(OpCode op, long gasBefore, long gasCost, long memWords, Program program) {
-        Repository storage = program.getStorage();
-        RskAddress ownerAddress = new RskAddress(program.getOwnerAddress());
-        if ("standard+".equals(vmConfig.dumpStyle())) {
-            switch (op) {
-                case STOP:
-                case RETURN:
-                case SUICIDE:
-                    Iterator<DataWord> keysIterator = storage.getStorageKeys(ownerAddress);
-                    while (keysIterator.hasNext()) {
-                        DataWord key = keysIterator.next();
-                        DataWord value = storage.getStorageValue(ownerAddress, key);
-                        dumpLogger.trace("{} {}",
-                                ByteUtil.toHexString(key.getNoLeadZeroesData()),
-                                ByteUtil.toHexString(value.getNoLeadZeroesData()));
-                    }
-                    break;
-                default:
-                    break;
-            }
-            String addressString = ByteUtil.toHexString(program.getOwnerAddress().getLast20Bytes());
-            String pcString = ByteUtil.toHexString(DataWord.valueOf(program.getPC()).getNoLeadZeroesData());
-            String opString = ByteUtil.toHexString(new byte[]{op.val()});
-            String gasString = Long.toHexString(program.getRemainingGas());
-
-            dumpLogger.trace("{} {} {} {}", addressString, pcString, opString, gasString);
-        } else if ("pretty".equals(vmConfig.dumpStyle())) {
-            dumpLogger.trace("-------------------------------------------------------------------------");
-            dumpLogger.trace("    STACK");
-            program.getStack().forEach(item -> dumpLogger.trace("{}", item));
-            dumpLogger.trace("    MEMORY");
-            String memoryString = program.memoryToString();
-            if (!"".equals(memoryString)) {
-                dumpLogger.trace("{}", memoryString);
-            }
-
-            dumpLogger.trace("    STORAGE");
-            Iterator<DataWord> keysIterator = storage.getStorageKeys(ownerAddress);
-            while (keysIterator.hasNext()) {
-                DataWord key = keysIterator.next();
-                DataWord value = storage.getStorageValue(ownerAddress, key);
-                dumpLogger.trace("{}: {}",
-                        key.shortHex(),
-                        value.shortHex());
-            }
-
-            int level = program.getCallDeep();
-            String contract = ByteUtil.toHexString(program.getOwnerAddress().getLast20Bytes());
-            String internalSteps = String.format("%4s", Integer.toHexString(program.getPC())).replace(' ', '0').toUpperCase();
-            dumpLogger.trace("{} | {} | #{} | {} : {} | {} | -{} | {}x32",
-                    level, contract, vmCounter, internalSteps, op,
-                    gasBefore, gasCost, memWords);
-        }
     }
 }

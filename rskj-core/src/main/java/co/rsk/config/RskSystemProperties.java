@@ -323,7 +323,7 @@ public class RskSystemProperties extends SystemProperties {
     }
 
     public VmConfig getVmConfig() {
-        return new VmConfig(vmTrace(), vmTraceOptions(), vmTraceInitStorageLimit(), dumpBlock(), dumpStyle(), getNetworkConstants().getChainId());
+        return new VmConfig(vmTrace(), vmTraceOptions(), vmTraceInitStorageLimit(), getNetworkConstants().getChainId());
     }
 
     public long peerDiscoveryCleanPeriod() {
