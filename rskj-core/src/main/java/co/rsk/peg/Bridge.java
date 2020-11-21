@@ -156,6 +156,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     public static final CallTransaction.Function ROLLBACK_FEDERATION = BridgeMethods.ROLLBACK_FEDERATION.getFunction();
 
     // Returns the current pending federation's hash
+    // Returns the current pending federation's hash
     public static final CallTransaction.Function GET_PENDING_FEDERATION_HASH = BridgeMethods.GET_PENDING_FEDERATION_HASH.getFunction();
     // Returns the number of federates in the current pending federation
     public static final CallTransaction.Function GET_PENDING_FEDERATION_SIZE = BridgeMethods.GET_PENDING_FEDERATION_SIZE.getFunction();
