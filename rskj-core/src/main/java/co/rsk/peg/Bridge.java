@@ -1093,9 +1093,9 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
                 lpBtcAddress,
                 shouldTransferToContract
             );
-        } catch (BlockStoreException | IOException | BridgeIllegalArgumentException e) {
+        } catch (Exception e) {
             logger.warn("Exception in registerFastBridgeBtcTransaction", e);
-            throw new RuntimeException("Exception in registerFastBridgeBtcTransaction", e);
+            return BridgeSupport.FAST_BRIDGE_GENERIC_ERROR;
         }
     }
 
