@@ -98,6 +98,15 @@ public class BridgeSupport {
     public static final Integer BTC_TRANSACTION_CONFIRMATION_BLOCK_TOO_OLD_ERROR_CODE = -4;
     public static final Integer BTC_TRANSACTION_CONFIRMATION_INVALID_MERKLE_BRANCH_ERROR_CODE = -5;
 
+    public static final long FAST_BRIDGE_REFUNDED_USER_ERROR_CODE = -100;
+    public static final long FAST_BRIDGE_REFUNDED_LP_ERROR_CODE = -200;
+    public static final long FAST_BRIDGE_UNPROCESSABLE_TX_NOT_CONTRACT_ERROR_CODE = -300;
+    public static final long FAST_BRIDGE_UNPROCESSABLE_TX_INVALID_SENDER_ERROR_CODE = -301;
+    public static final long FAST_BRIDGE_UNPROCESSABLE_TX_ALREADY_PROCESSED_ERROR_CODE = -302;
+    public static final long FAST_BRIDGE_UNPROCESSABLE_TX_VALIDATIONS_ERROR = -303;
+    public static final long FAST_BRIDGE_UNPROCESSABLE_TX_VALUE_ZERO_ERROR = -304;
+    public static final long FAST_BRIDGE_GENERIC_ERROR = -900;
+
     // Enough depth to be able to search backwards one month worth of blocks
     // (6 blocks/hour, 24 hours/day, 30 days/month)
     public static final Integer BTC_TRANSACTION_CONFIRMATION_MAX_DEPTH = 4320;
@@ -2079,25 +2088,21 @@ public class BridgeSupport {
         boolean shouldTransferToContract
     )
         throws BlockStoreException, IOException, BridgeIllegalArgumentException {
-        // Error codes unprocessable
         if (!BridgeUtils.isContractTx(rskTx)) {
             String errorMessage = String.format(
                 "[registerFastBridgeBtcTransaction] [rskTx:%s] Transaction not a contract",
                 ByteUtil.toHexString(rskTx.getHash().getBytes())
             );
             logger.debug(errorMessage);
-            // TODO: return proper error code
-            return -13;
+            return FAST_BRIDGE_UNPROCESSABLE_TX_NOT_CONTRACT_ERROR_CODE;
         }
 
-        // Error codes unprocessable
         if (!rskTx.getSender().equals(lbcAddress)) {
             logger.warn("Expected sender to be the same as lbcAddress. (sender: {}) (lbcAddress:{})",
                 rskTx.getSender(),
                 lbcAddress
             );
-            // TODO: return proper error code
-            return -11;
+            return FAST_BRIDGE_UNPROCESSABLE_TX_INVALID_SENDER_ERROR_CODE;
         }
 
         Context.propagate(btcContext);
@@ -2106,19 +2111,16 @@ public class BridgeSupport {
         //TODO : this validation is no longer needed. In stead,
         // check in storage FastBridgeHashUsedInBtcTx
         if (isAlreadyBtcTxHashProcessed(btcTxHash)) {
-            // TODO: return proper error code for alreadyProcessed
-            return -111;
+            return FAST_BRIDGE_UNPROCESSABLE_TX_ALREADY_PROCESSED_ERROR_CODE;
         }
 
-        // Error codes unprocessable
         if (!validationsForRegisterBtcTransaction(btcTxHash, height, pmtSerialized, btcTxSerialized)) {
             String errorMessage = String.format(
                 "[registerFastBridgeBtcTransaction] [rskTx:%s] error during validationsForRegisterBtcTransaction",
                 ByteUtil.toHexString(btcTxHash.getBytes())
             );
             logger.debug(errorMessage);
-            // TODO: return proper error code for alreadyProcessed
-            return -112;
+            return FAST_BRIDGE_UNPROCESSABLE_TX_VALIDATIONS_ERROR;
         }
 
         BtcTransaction btcTx = new BtcTransaction(bridgeConstants.getBtcParams(), btcTxSerialized);
@@ -2128,8 +2130,7 @@ public class BridgeSupport {
         Sha256Hash btcTxHashWithoutWitness = btcTx.getHash(false);
         if (!btcTxHashWithoutWitness.equals(btcTxHash)) {
             if (isAlreadyBtcTxHashProcessed(btcTxHashWithoutWitness)) {
-                // TODO: return proper error code for alreadyProcessed
-                return -113;
+                return FAST_BRIDGE_UNPROCESSABLE_TX_ALREADY_PROCESSED_ERROR_CODE;
             }
         }
 
@@ -2148,23 +2149,19 @@ public class BridgeSupport {
 
         Coin totalAmount = getAmountSentToAddress(btcTx, fastBridgeFedAddress);
 
-        // Error code unprocessable
         if (totalAmount == Coin.ZERO) {
             logger.warn("Amount sent can't be 0");
-            // TODO: return proper error code
-            return -10;
+            return FAST_BRIDGE_UNPROCESSABLE_TX_VALUE_ZERO_ERROR;
         }
 
         if (!verifyLockDoesNotSurpassLockingCap(btcTx, null, totalAmount)) {
             WalletProvider walletProvider = createFastBridgeWalletProvider(fastBridgeFederationInformation);
             if (shouldTransferToContract) {
                 generateRejectionRelease(btcTx, lpBtcAddress, fastBridgeFedAddress, rskTx, totalAmount, walletProvider);
-                // TODO: return proper error code
-                return -2;
+                return FAST_BRIDGE_REFUNDED_LP_ERROR_CODE;
             } else {
                 generateRejectionRelease(btcTx, userRefundAddress, fastBridgeFedAddress, rskTx, totalAmount, walletProvider);
-                // TODO: return proper error code
-                return -3;
+                return FAST_BRIDGE_REFUNDED_USER_ERROR_CODE;
             }
         }
 
