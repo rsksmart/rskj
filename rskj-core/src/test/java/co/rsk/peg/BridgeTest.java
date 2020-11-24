@@ -223,7 +223,7 @@ public class BridgeTest {
 
     @Test
     public void registerFastBridgeBtcTransaction_after_RSKIP176_activation()
-        throws RegisterFastBridgeBtcTransactionException, BlockStoreException, IOException {
+        throws BlockStoreException, IOException {
         NetworkParameters networkParameters = constants.getBridgeConstants().getBtcParams();
         doReturn(true).when(activationConfig).isActive(eq(RSKIP176), anyLong());
 
@@ -283,9 +283,9 @@ public class BridgeTest {
         );
     }
 
-    @Test(expected = RuntimeException.class)
-    public void registerFastBridgeBtcTransaction_after_RSKIP176_activation_exception()
-            throws RegisterFastBridgeBtcTransactionException, BlockStoreException, IOException {
+    @Test
+    public void registerFastBridgeBtcTransaction_after_RSKIP176_activation_generic_error()
+            throws BlockStoreException, IOException {
         doReturn(true).when(activationConfig).isActive(eq(RSKIP176), anyLong());
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
@@ -301,21 +301,30 @@ public class BridgeTest {
                 any(RskAddress.class),
                 any(Address.class),
                 anyBoolean()
-        )).thenThrow(new RegisterFastBridgeBtcTransactionException(""));
+        )).thenReturn(BridgeSupport.FAST_BRIDGE_GENERIC_ERROR);
 
         byte[] value = Sha256Hash.ZERO_HASH.getBytes();
+        BtcECKey btcECKeyRefund = new BtcECKey();
+        byte[] pubKeyHashRefund = btcECKeyRefund.getPubKeyHash();
+        BtcECKey btcECKeyLp = new BtcECKey();
+        byte[] pubKeyHashLp = btcECKeyLp.getPubKeyHash();
 
+        ECKey ecKey = new ECKey();
+        RskAddress rskAddress = new RskAddress(ecKey.getAddress());
         byte[] data = Bridge.REGISTER_FAST_BRIDGE_BTC_TRANSACTION.encode(
-                value,
-                1,
-                value,
-                value,
-                mock(Address.class),
-                mock(RskAddress.class),
-                mock(Address.class),
-                true
+            value,
+            1,
+            value,
+            value,
+            pubKeyHashRefund,
+            rskAddress.toHexString(),
+            pubKeyHashLp,
+            true
         );
-        bridge.execute(data);
+        byte[] result = bridge.execute(data);
+        
+        Assert.assertEquals(BridgeSupport.FAST_BRIDGE_GENERIC_ERROR, 
+            ((BigInteger)Bridge.REGISTER_FAST_BRIDGE_BTC_TRANSACTION.decodeResult(result)[0]).longValue());
     }
 
     @Test
