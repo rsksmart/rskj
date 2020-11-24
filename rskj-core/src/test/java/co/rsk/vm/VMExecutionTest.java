@@ -467,7 +467,7 @@ public class VMExecutionTest {
     @Test
     public void dupnAsInvalidOpcodeWhenDeactivated() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-        when(activations.isActive(RSKIPREMOPCODES)).thenReturn(true);
+        when(activations.isActive(RSKIP191)).thenReturn(true);
 
         Program program = playCode("PUSH1 0x01 PUSH1 0x00 DUPN", activations);
         ProgramResult result = program.getResult();
@@ -527,7 +527,7 @@ public class VMExecutionTest {
     @Test
     public void swapnAsInvalidOpcodeWhenDeactivated() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-        when(activations.isActive(RSKIPREMOPCODES)).thenReturn(true);
+        when(activations.isActive(RSKIP191)).thenReturn(true);
 
         Program program = playCode("PUSH1 0x01 PUSH1 0x02 PUSH1 0x00 SWAPN", activations);
         ProgramResult result = program.getResult();
@@ -551,7 +551,7 @@ public class VMExecutionTest {
     @Test
     public void txIndexAsInvalidOpcodeWhenDeactivated() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-        when(activations.isActive(RSKIPREMOPCODES)).thenReturn(true);
+        when(activations.isActive(RSKIP191)).thenReturn(true);
 
         invoke.setTransactionIndex(DataWord.valueOf(42));
         Program program = playCode("TXINDEX", activations);
