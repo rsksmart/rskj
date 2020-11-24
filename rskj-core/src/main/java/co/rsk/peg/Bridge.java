@@ -1120,7 +1120,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
                 lpBtcAddress,
                 shouldTransferToContract
             );
-        } catch (BlockStoreException | RegisterFastBridgeBtcTransactionException | IOException e) {
+        } catch (BlockStoreException | IOException e) {
             logger.warn("Exception in registerFastBridgeBtcTransaction", e);
             throw new RuntimeException("Exception in registerFastBridgeBtcTransaction", e);
         }
