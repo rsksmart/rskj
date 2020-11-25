@@ -4986,7 +4986,7 @@ public class BridgeSupportTest {
 
     @Test
     public void registerFastBridgeBtcTransaction_is_not_contract()
-        throws RegisterFastBridgeBtcTransactionException, IOException, BlockStoreException {
+        throws IOException, BlockStoreException {
         BridgeSupport bridgeSupport = getBridgeSupport(bridgeConstants, mock(BridgeStorageProvider.class));
         Transaction rskTxMock = mock(Transaction.class);
         Keccak256 hash = new Keccak256(HashUtil.keccak256(new byte[]{}));
@@ -5004,7 +5004,7 @@ public class BridgeSupportTest {
                 false
         );
 
-        Assert.assertEquals(-13, result);
+        Assert.assertEquals(BridgeSupport.FAST_BRIDGE_UNPROCESSABLE_TX_NOT_CONTRACT_ERROR_CODE, result);
     }
 
     @Test
@@ -5040,7 +5040,7 @@ public class BridgeSupportTest {
             false
         );
 
-        Assert.assertEquals(-11, result);
+        Assert.assertEquals(BridgeSupport.FAST_BRIDGE_UNPROCESSABLE_TX_INVALID_SENDER_ERROR_CODE, result);
     }
 
     @Test
@@ -5079,11 +5079,11 @@ public class BridgeSupportTest {
             false
         );
 
-        Assert.assertEquals(-112, result);
+        Assert.assertEquals(BridgeSupport.FAST_BRIDGE_UNPROCESSABLE_TX_VALIDATIONS_ERROR, result);
     }
 
     @Test
-    public void registerFastBtcTransaction_amount_sent_is_0()
+    public void registerFastBridgeBtcTransaction_amount_sent_is_0()
         throws BlockStoreException, IOException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(true);
@@ -5131,7 +5131,7 @@ public class BridgeSupportTest {
             false
         );
 
-        Assert.assertEquals(-10, result);
+        Assert.assertEquals(BridgeSupport.FAST_BRIDGE_UNPROCESSABLE_TX_VALUE_ZERO_ERROR, result);
     }
 
     @Test
@@ -5204,7 +5204,7 @@ public class BridgeSupportTest {
             true
         );
 
-        Assert.assertEquals(-2, result);
+        Assert.assertEquals(BridgeSupport.FAST_BRIDGE_REFUNDED_LP_ERROR_CODE, result);
     }
 
     @Test
@@ -5275,7 +5275,7 @@ public class BridgeSupportTest {
             false
         );
 
-        Assert.assertEquals(-3, result);
+        Assert.assertEquals(BridgeSupport.FAST_BRIDGE_REFUNDED_USER_ERROR_CODE, result);
     }
 
     @Test
