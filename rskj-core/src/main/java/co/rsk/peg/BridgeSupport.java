@@ -2352,9 +2352,14 @@ public class BridgeSupport {
         Context.propagate(btcContext);
         Sha256Hash btcTxHash = BtcTransactionFormatUtils.calculateBtcTxHash(btcTxSerialized);
 
-        //TODO : this validation is no longer needed. In stead,
-        // check in storage FastBridgeHashUsedInBtcTx
-        if (isAlreadyBtcTxHashProcessed(btcTxHash)) {
+        Sha256Hash fastBridgeDerivationHash = getFastBridgeDerivationHash(
+                derivationArgumentsHash,
+                userRefundAddress,
+                lpBtcAddress,
+                lbcAddress
+        );
+
+        if (provider.isFastBridgeFederationDerivationHashUsed(btcTxHash, fastBridgeDerivationHash)) {
             return FAST_BRIDGE_UNPROCESSABLE_TX_ALREADY_PROCESSED_ERROR_CODE;
         }
 
@@ -2370,20 +2375,10 @@ public class BridgeSupport {
         BtcTransaction btcTx = new BtcTransaction(bridgeConstants.getBtcParams(), btcTxSerialized);
         btcTx.verify();
 
-        //TODO: check again in storage FastBridgeHashUsedInBtcTx
         Sha256Hash btcTxHashWithoutWitness = btcTx.getHash(false);
-        if (!btcTxHashWithoutWitness.equals(btcTxHash)) {
-            if (isAlreadyBtcTxHashProcessed(btcTxHashWithoutWitness)) {
-                return FAST_BRIDGE_UNPROCESSABLE_TX_ALREADY_PROCESSED_ERROR_CODE;
-            }
+        if (!btcTxHashWithoutWitness.equals(btcTxHash) && (provider.isFastBridgeFederationDerivationHashUsed(btcTxHashWithoutWitness, derivationArgumentsHash))) {
+            return FAST_BRIDGE_UNPROCESSABLE_TX_ALREADY_PROCESSED_ERROR_CODE;
         }
-
-        Sha256Hash fastBridgeDerivationHash = getFastBridgeDerivationHash(
-            derivationArgumentsHash,
-            userRefundAddress,
-            lpBtcAddress,
-            lbcAddress
-        );
 
         FastBridgeFederationInformation fastBridgeFederationInformation =
             createFastBridgeFederationInformation(fastBridgeDerivationHash);
