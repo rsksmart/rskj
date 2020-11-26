@@ -58,7 +58,7 @@ public class BlockRelayValidatorImpl implements BlockValidator {
     @Override
     public boolean isValid(@Nonnull Block block) {
         if (block.isGenesis()) {
-            return true;
+            return false;
         }
 
         if (!blockValidator.isValid(block)) {

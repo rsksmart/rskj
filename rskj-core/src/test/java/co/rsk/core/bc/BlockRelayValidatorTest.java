@@ -43,7 +43,7 @@ public class BlockRelayValidatorTest {
 
         boolean actualResult = blockRelayValidator.isValid(block);
 
-        Assert.assertTrue(actualResult);
+        Assert.assertFalse(actualResult);
 
         verify(block).isGenesis();
         verify(blockValidator, never()).isValid(any());

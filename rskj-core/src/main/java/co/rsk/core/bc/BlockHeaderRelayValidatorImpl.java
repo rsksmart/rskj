@@ -48,7 +48,7 @@ public class BlockHeaderRelayValidatorImpl implements BlockValidator {
     @Override
     public boolean isValid(@Nonnull Block block) {
         if (block.isGenesis()) {
-            return true;
+            return false;
         }
 
         BlockHeader header = block.getHeader();
