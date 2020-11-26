@@ -24,6 +24,7 @@ import co.rsk.net.simples.SimplePeer;
 import co.rsk.net.sync.SyncConfiguration;
 import co.rsk.test.builders.BlockBuilder;
 import co.rsk.test.builders.BlockChainBuilder;
+import co.rsk.validators.DummyBlockValidator;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.junit.Assert;
@@ -153,7 +154,7 @@ public class NodeBlockProcessorUnclesTest {
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         TestSystemProperties config = new TestSystemProperties();
-        BlockSyncService blockSyncService = new BlockSyncService(config, store, blockChain, nodeInformation, syncConfiguration);
+        BlockSyncService blockSyncService = new BlockSyncService(config, store, blockChain, nodeInformation, syncConfiguration, DummyBlockValidator.VALID_RESULT_INSTANCE);
 
         return new NodeBlockProcessor(store, blockChain, nodeInformation, blockSyncService, syncConfiguration);
     }

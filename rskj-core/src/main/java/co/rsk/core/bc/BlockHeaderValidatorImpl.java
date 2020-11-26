@@ -31,11 +31,11 @@ import javax.annotation.Nonnull;
  * The validation includes:
  * - validation of the header data of the block
  */
-public class BlockHeaderRelayValidatorImpl implements BlockValidator {
+public class BlockHeaderValidatorImpl implements BlockValidator {
 
     private final BlockHeaderValidationRule blockHeaderValidator;
 
-    public BlockHeaderRelayValidatorImpl(@Nonnull BlockHeaderValidationRule blockHeaderValidator) {
+    public BlockHeaderValidatorImpl(@Nonnull BlockHeaderValidationRule blockHeaderValidator) {
         this.blockHeaderValidator = blockHeaderValidator;
     }
 

@@ -23,6 +23,7 @@ import co.rsk.core.bc.BlockUtils;
 import co.rsk.crypto.Keccak256;
 import co.rsk.net.messages.GetBlockMessage;
 import co.rsk.net.sync.SyncConfiguration;
+import co.rsk.validators.BlockValidator;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.ImportResult;
@@ -53,6 +54,7 @@ public class BlockSyncService {
     private final SyncConfiguration syncConfiguration;
     private final BlockNodeInformation nodeInformation; // keep tabs on which nodes know which blocks.
     private final RskSystemProperties config;
+    private final BlockValidator blockHeaderValidator;
 
     // this is tightly coupled with NodeProcessorService and SyncProcessor,
     // and we should use the same objects everywhere to ensure consistency
@@ -61,12 +63,14 @@ public class BlockSyncService {
             @Nonnull final NetBlockStore store,
             @Nonnull final Blockchain blockchain,
             @Nonnull final BlockNodeInformation nodeInformation,
-            @Nonnull final SyncConfiguration syncConfiguration) {
+            @Nonnull final SyncConfiguration syncConfiguration,
+            @Nonnull final BlockValidator blockHeaderValidator) {
         this.store = store;
         this.blockchain = blockchain;
         this.syncConfiguration = syncConfiguration;
         this.nodeInformation = nodeInformation;
         this.config = config;
+        this.blockHeaderValidator = blockHeaderValidator;
     }
 
     protected boolean preprocessBlock(@Nonnull Block block, Peer sender, boolean ignoreMissingHashes) {
@@ -110,6 +114,13 @@ public class BlockSyncService {
 
     public BlockProcessResult processBlock(@Nonnull Block block, Peer sender, boolean ignoreMissingHashes) {
         final Instant start = Instant.now();
+
+        // Should be refactored later to prevent block header validation in a few places.
+        // Validate block header first to see if its PoW is valid at all
+        if (!isBlockHeaderValid(block)) {
+            logger.warn("Invalid block with number {} {} from {} ", block.getNumber(), block.getHash(), sender);
+            return invalidBlockResult(block, start);
+        }
 
         boolean readyForProcessing = preprocessBlock(block, sender, ignoreMissingHashes);
         if (!readyForProcessing) {
@@ -253,5 +264,14 @@ public class BlockSyncService {
         }
 
         return blockchain.getBlockByHash(hash);
+    }
+
+    private boolean isBlockHeaderValid(Block block) {
+        return blockHeaderValidator.isValid(block);
+    }
+
+    private static BlockProcessResult invalidBlockResult(@Nonnull Block block, @Nonnull Instant start) {
+        Map<Keccak256, ImportResult> result = Collections.singletonMap(block.getHash(), ImportResult.INVALID_BLOCK);
+        return BlockProcessResult.connectResult(block, start, result);
     }
 }

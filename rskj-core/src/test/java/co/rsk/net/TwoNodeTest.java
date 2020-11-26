@@ -24,7 +24,7 @@ import co.rsk.net.messages.BlockMessage;
 import co.rsk.net.simples.SimpleNode;
 import co.rsk.net.sync.SyncConfiguration;
 import co.rsk.test.World;
-import co.rsk.validators.DummyBlockValidationRule;
+import co.rsk.validators.DummyBlockValidator;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
 import org.junit.Assert;
@@ -52,7 +52,7 @@ public class TwoNodeTest {
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         TestSystemProperties config = new TestSystemProperties();
-        BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
+        BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration, DummyBlockValidator.VALID_RESULT_INSTANCE);
         NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
         NodeMessageHandler handler = new NodeMessageHandler(new TestSystemProperties(), processor, null, null, null, null, mock(StatusResolver.class));
 

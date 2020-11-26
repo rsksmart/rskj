@@ -26,11 +26,11 @@ import org.junit.Test;
 
 import static org.mockito.Mockito.*;
 
-public class BlockHeaderRelayValidatorTest {
+public class BlockHeaderValidatorTest {
 
     private final BlockHeaderValidationRule blockHeaderValidator = mock(BlockHeaderValidationRule.class);
 
-    private final BlockHeaderRelayValidatorImpl blockRelayValidator = new BlockHeaderRelayValidatorImpl(blockHeaderValidator);
+    private final BlockHeaderValidatorImpl blockRelayValidator = new BlockHeaderValidatorImpl(blockHeaderValidator);
 
     @Test
     public void genesisCheck() {

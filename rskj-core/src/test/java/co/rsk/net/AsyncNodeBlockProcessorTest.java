@@ -55,7 +55,7 @@ public class AsyncNodeBlockProcessorTest {
         final BlockNodeInformation nodeInformation = new BlockNodeInformation();
         final SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         final TestSystemProperties config = new TestSystemProperties();
-        final BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
+        final BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration, DummyBlockValidator.VALID_RESULT_INSTANCE);
         final AsyncNodeBlockProcessor processor = new AsyncNodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration,
                 DummyBlockValidator.VALID_RESULT_INSTANCE, DummyBlockValidator.VALID_RESULT_INSTANCE);
 
@@ -78,7 +78,7 @@ public class AsyncNodeBlockProcessorTest {
         final BlockNodeInformation nodeInformation = new BlockNodeInformation();
         final SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         final TestSystemProperties config = new TestSystemProperties();
-        final BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
+        final BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration, DummyBlockValidator.VALID_RESULT_INSTANCE);
         final AsyncNodeBlockProcessor processor = new AsyncNodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration,
                 DummyBlockValidator.VALID_RESULT_INSTANCE, DummyBlockValidator.VALID_RESULT_INSTANCE);
 
@@ -100,7 +100,7 @@ public class AsyncNodeBlockProcessorTest {
         final long advancedBlockNumber = syncConfiguration.getChunkSize() * syncConfiguration.getMaxSkeletonChunks() + blockchain.getBestBlock().getNumber() + 1;
 
         final TestSystemProperties config = new TestSystemProperties();
-        final BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
+        final BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration, DummyBlockValidator.VALID_RESULT_INSTANCE);
         final AsyncNodeBlockProcessor processor = new AsyncNodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration,
                 DummyBlockValidator.VALID_RESULT_INSTANCE, DummyBlockValidator.VALID_RESULT_INSTANCE);
 
@@ -120,7 +120,7 @@ public class AsyncNodeBlockProcessorTest {
         final int uncleGenerationLimit = config.getNetworkConstants().getUncleGenerationLimit();
         final long blockNumberThatCanBeIgnored = blockchain.getBestBlock().getNumber() - 1 - uncleGenerationLimit;
 
-        final BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
+        final BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration, DummyBlockValidator.VALID_RESULT_INSTANCE);
         final AsyncNodeBlockProcessor processor = new AsyncNodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration,
                 DummyBlockValidator.VALID_RESULT_INSTANCE, DummyBlockValidator.VALID_RESULT_INSTANCE);
 
@@ -146,7 +146,7 @@ public class AsyncNodeBlockProcessorTest {
         final BlockNodeInformation nodeInformation = new BlockNodeInformation();
         final SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         final TestSystemProperties config = new TestSystemProperties();
-        final BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
+        final BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration, DummyBlockValidator.VALID_RESULT_INSTANCE);
         final AsyncNodeBlockProcessorListener listener = new AsyncNodeBlockProcessorListener();
         final AsyncNodeBlockProcessor processor = new AsyncNodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration,
                 DummyBlockValidator.VALID_RESULT_INSTANCE, DummyBlockValidator.VALID_RESULT_INSTANCE, listener);
@@ -176,7 +176,7 @@ public class AsyncNodeBlockProcessorTest {
         final BlockNodeInformation nodeInformation = new BlockNodeInformation();
         final SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         final TestSystemProperties config = new TestSystemProperties();
-        final BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
+        final BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration, DummyBlockValidator.VALID_RESULT_INSTANCE);
         final AsyncNodeBlockProcessorListener listener = new AsyncNodeBlockProcessorListener();
         final AsyncNodeBlockProcessor processor = new AsyncNodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration,
                 DummyBlockValidator.VALID_RESULT_INSTANCE, DummyBlockValidator.VALID_RESULT_INSTANCE, listener);
@@ -219,7 +219,7 @@ public class AsyncNodeBlockProcessorTest {
         final BlockNodeInformation nodeInformation = new BlockNodeInformation();
         final SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         final TestSystemProperties config = new TestSystemProperties();
-        final BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
+        final BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration, DummyBlockValidator.VALID_RESULT_INSTANCE);
         final AsyncNodeBlockProcessorListener listener = new AsyncNodeBlockProcessorListener();
         final AsyncNodeBlockProcessor processor = new AsyncNodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration,
                 DummyBlockValidator.VALID_RESULT_INSTANCE, DummyBlockValidator.VALID_RESULT_INSTANCE, listener);
@@ -269,7 +269,7 @@ public class AsyncNodeBlockProcessorTest {
         final BlockNodeInformation nodeInformation = new BlockNodeInformation();
         final SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         final TestSystemProperties config = new TestSystemProperties();
-        final BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
+        final BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration, DummyBlockValidator.VALID_RESULT_INSTANCE);
         final AsyncNodeBlockProcessorListener listener = new AsyncNodeBlockProcessorListener();
         final AsyncNodeBlockProcessor processor = new AsyncNodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration,
                 DummyBlockValidator.VALID_RESULT_INSTANCE, DummyBlockValidator.VALID_RESULT_INSTANCE, listener);
@@ -314,7 +314,7 @@ public class AsyncNodeBlockProcessorTest {
         final BlockNodeInformation nodeInformation = new BlockNodeInformation();
         final SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         final TestSystemProperties config = new TestSystemProperties();
-        final BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
+        final BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration, DummyBlockValidator.VALID_RESULT_INSTANCE);
         final AsyncNodeBlockProcessor processor = new AsyncNodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration,
                 DummyBlockValidator.VALID_RESULT_INSTANCE, DummyBlockValidator.VALID_RESULT_INSTANCE);
 
@@ -331,7 +331,7 @@ public class AsyncNodeBlockProcessorTest {
         final BlockNodeInformation nodeInformation = new BlockNodeInformation();
         final SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         final TestSystemProperties config = new TestSystemProperties();
-        final BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
+        final BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration, DummyBlockValidator.VALID_RESULT_INSTANCE);
         final AsyncNodeBlockProcessorListener listener = new AsyncNodeBlockProcessorListener();
         final AsyncNodeBlockProcessor processor = new AsyncNodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration,
                 DummyBlockValidator.VALID_RESULT_INSTANCE, DummyBlockValidator.VALID_RESULT_INSTANCE, listener);
@@ -370,7 +370,7 @@ public class AsyncNodeBlockProcessorTest {
         final BlockNodeInformation nodeInformation = new BlockNodeInformation();
         final SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         final TestSystemProperties config = new TestSystemProperties();
-        final BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
+        final BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration, DummyBlockValidator.VALID_RESULT_INSTANCE);
         final AsyncNodeBlockProcessorListener listener = new AsyncNodeBlockProcessorListener();
         final AsyncNodeBlockProcessor processor = new AsyncNodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration,
                 DummyBlockValidator.VALID_RESULT_INSTANCE, DummyBlockValidator.VALID_RESULT_INSTANCE, listener);
@@ -411,7 +411,7 @@ public class AsyncNodeBlockProcessorTest {
         final BlockNodeInformation nodeInformation = new BlockNodeInformation();
         final SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         final TestSystemProperties config = new TestSystemProperties();
-        final BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
+        final BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration, DummyBlockValidator.VALID_RESULT_INSTANCE);
         final AsyncNodeBlockProcessorListener listener = new AsyncNodeBlockProcessorListener();
         final AsyncNodeBlockProcessor processor = new AsyncNodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration,
                 DummyBlockValidator.VALID_RESULT_INSTANCE, DummyBlockValidator.VALID_RESULT_INSTANCE, listener);
@@ -467,7 +467,7 @@ public class AsyncNodeBlockProcessorTest {
         final BlockNodeInformation nodeInformation = new BlockNodeInformation();
         final SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         final TestSystemProperties config = new TestSystemProperties();
-        final BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
+        final BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration, DummyBlockValidator.VALID_RESULT_INSTANCE);
         final AsyncNodeBlockProcessorListener listener = new AsyncNodeBlockProcessorListener();
         final AsyncNodeBlockProcessor processor = new AsyncNodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration,
                 DummyBlockValidator.VALID_RESULT_INSTANCE, DummyBlockValidator.VALID_RESULT_INSTANCE, listener);
@@ -504,7 +504,7 @@ public class AsyncNodeBlockProcessorTest {
         final BlockNodeInformation nodeInformation = new BlockNodeInformation();
         final SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         final TestSystemProperties config = new TestSystemProperties();
-        final BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
+        final BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration, DummyBlockValidator.VALID_RESULT_INSTANCE);
         final AsyncNodeBlockProcessor processor = new AsyncNodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration,
                 DummyBlockValidator.VALID_RESULT_INSTANCE, DummyBlockValidator.VALID_RESULT_INSTANCE);
         final SimplePeer sender = new SimplePeer();
@@ -542,7 +542,7 @@ public class AsyncNodeBlockProcessorTest {
         final BlockNodeInformation nodeInformation = new BlockNodeInformation();
         final SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         final TestSystemProperties config = new TestSystemProperties();
-        final BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
+        final BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration, DummyBlockValidator.VALID_RESULT_INSTANCE);
         final AsyncNodeBlockProcessor processor = new AsyncNodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration,
                 DummyBlockValidator.VALID_RESULT_INSTANCE, DummyBlockValidator.VALID_RESULT_INSTANCE);
 
@@ -571,7 +571,7 @@ public class AsyncNodeBlockProcessorTest {
         final BlockNodeInformation nodeInformation = new BlockNodeInformation();
         final SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         final TestSystemProperties config = new TestSystemProperties();
-        final BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
+        final BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration, DummyBlockValidator.VALID_RESULT_INSTANCE);
         final AsyncNodeBlockProcessor processor = new AsyncNodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration,
                 DummyBlockValidator.VALID_RESULT_INSTANCE, DummyBlockValidator.VALID_RESULT_INSTANCE);
 
@@ -595,7 +595,7 @@ public class AsyncNodeBlockProcessorTest {
         final BlockNodeInformation nodeInformation = new BlockNodeInformation();
         final SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         final TestSystemProperties config = new TestSystemProperties();
-        final BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
+        final BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration, DummyBlockValidator.VALID_RESULT_INSTANCE);
         final AsyncNodeBlockProcessor processor = new AsyncNodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration,
                 DummyBlockValidator.VALID_RESULT_INSTANCE, DummyBlockValidator.VALID_RESULT_INSTANCE);
 
@@ -627,7 +627,7 @@ public class AsyncNodeBlockProcessorTest {
         final BlockNodeInformation nodeInformation = new BlockNodeInformation();
         final SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         final TestSystemProperties config = new TestSystemProperties();
-        final BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
+        final BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration, DummyBlockValidator.VALID_RESULT_INSTANCE);
         final AsyncNodeBlockProcessor processor = new AsyncNodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration,
                 DummyBlockValidator.VALID_RESULT_INSTANCE, DummyBlockValidator.VALID_RESULT_INSTANCE);
 
@@ -660,7 +660,7 @@ public class AsyncNodeBlockProcessorTest {
         final BlockNodeInformation nodeInformation = new BlockNodeInformation();
         final SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         final TestSystemProperties config = new TestSystemProperties();
-        final BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
+        final BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration, DummyBlockValidator.VALID_RESULT_INSTANCE);
         final AsyncNodeBlockProcessor processor = new AsyncNodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration,
                 DummyBlockValidator.VALID_RESULT_INSTANCE, DummyBlockValidator.VALID_RESULT_INSTANCE);
 
@@ -685,7 +685,7 @@ public class AsyncNodeBlockProcessorTest {
         final BlockNodeInformation nodeInformation = new BlockNodeInformation();
         final SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         final TestSystemProperties config = new TestSystemProperties();
-        final BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
+        final BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration, DummyBlockValidator.VALID_RESULT_INSTANCE);
         final AsyncNodeBlockProcessor processor = new AsyncNodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration,
                 DummyBlockValidator.VALID_RESULT_INSTANCE, DummyBlockValidator.VALID_RESULT_INSTANCE);
 
@@ -721,7 +721,7 @@ public class AsyncNodeBlockProcessorTest {
         final BlockNodeInformation nodeInformation = new BlockNodeInformation();
         final SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         final TestSystemProperties config = new TestSystemProperties();
-        final BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
+        final BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration, DummyBlockValidator.VALID_RESULT_INSTANCE);
         final AsyncNodeBlockProcessor processor = new AsyncNodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration,
                 DummyBlockValidator.VALID_RESULT_INSTANCE, DummyBlockValidator.VALID_RESULT_INSTANCE);
 
@@ -754,7 +754,7 @@ public class AsyncNodeBlockProcessorTest {
         final BlockNodeInformation nodeInformation = new BlockNodeInformation();
         final SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         final TestSystemProperties config = new TestSystemProperties();
-        final BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
+        final BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration, DummyBlockValidator.VALID_RESULT_INSTANCE);
         final AsyncNodeBlockProcessor processor = new AsyncNodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration,
                 DummyBlockValidator.VALID_RESULT_INSTANCE, DummyBlockValidator.VALID_RESULT_INSTANCE);
 
@@ -785,7 +785,7 @@ public class AsyncNodeBlockProcessorTest {
         final BlockNodeInformation nodeInformation = new BlockNodeInformation();
         final SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         final TestSystemProperties config = new TestSystemProperties();
-        final BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
+        final BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration, DummyBlockValidator.VALID_RESULT_INSTANCE);
         final AsyncNodeBlockProcessor processor = new AsyncNodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration,
                 DummyBlockValidator.VALID_RESULT_INSTANCE, DummyBlockValidator.VALID_RESULT_INSTANCE);
 
@@ -810,7 +810,7 @@ public class AsyncNodeBlockProcessorTest {
         final BlockNodeInformation nodeInformation = new BlockNodeInformation();
         final SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         final TestSystemProperties config = new TestSystemProperties();
-        final BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
+        final BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration, DummyBlockValidator.VALID_RESULT_INSTANCE);
         final AsyncNodeBlockProcessor processor = new AsyncNodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration,
                 DummyBlockValidator.VALID_RESULT_INSTANCE, DummyBlockValidator.VALID_RESULT_INSTANCE);
 
@@ -842,7 +842,7 @@ public class AsyncNodeBlockProcessorTest {
         final BlockNodeInformation nodeInformation = new BlockNodeInformation();
         final SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         final TestSystemProperties config = new TestSystemProperties();
-        final BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
+        final BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration, DummyBlockValidator.VALID_RESULT_INSTANCE);
         final AsyncNodeBlockProcessor processor = new AsyncNodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration,
                 DummyBlockValidator.VALID_RESULT_INSTANCE, DummyBlockValidator.VALID_RESULT_INSTANCE);
 
@@ -862,7 +862,7 @@ public class AsyncNodeBlockProcessorTest {
         final BlockNodeInformation nodeInformation = new BlockNodeInformation();
         final SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         final TestSystemProperties config = new TestSystemProperties();
-        final BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
+        final BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration, DummyBlockValidator.VALID_RESULT_INSTANCE);
         final AsyncNodeBlockProcessor processor = new AsyncNodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration,
                 DummyBlockValidator.VALID_RESULT_INSTANCE, DummyBlockValidator.VALID_RESULT_INSTANCE);
 
@@ -896,7 +896,7 @@ public class AsyncNodeBlockProcessorTest {
         final BlockNodeInformation nodeInformation = new BlockNodeInformation();
         final SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         final TestSystemProperties config = new TestSystemProperties();
-        final BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
+        final BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration, DummyBlockValidator.VALID_RESULT_INSTANCE);
         final AsyncNodeBlockProcessor processor = new AsyncNodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration,
                 DummyBlockValidator.VALID_RESULT_INSTANCE, DummyBlockValidator.VALID_RESULT_INSTANCE);
 
@@ -916,7 +916,7 @@ public class AsyncNodeBlockProcessorTest {
         final BlockNodeInformation nodeInformation = new BlockNodeInformation();
         final SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         final TestSystemProperties config = new TestSystemProperties();
-        final BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
+        final BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration, DummyBlockValidator.VALID_RESULT_INSTANCE);
         final AsyncNodeBlockProcessor processor = new AsyncNodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration,
                 DummyBlockValidator.VALID_RESULT_INSTANCE, DummyBlockValidator.VALID_RESULT_INSTANCE);
 
@@ -953,7 +953,7 @@ public class AsyncNodeBlockProcessorTest {
         final BlockNodeInformation nodeInformation = new BlockNodeInformation();
         final SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         final TestSystemProperties config = new TestSystemProperties();
-        final BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
+        final BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration, DummyBlockValidator.VALID_RESULT_INSTANCE);
         final AsyncNodeBlockProcessor processor = new AsyncNodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration,
                 DummyBlockValidator.VALID_RESULT_INSTANCE, DummyBlockValidator.VALID_RESULT_INSTANCE);
 
@@ -992,7 +992,7 @@ public class AsyncNodeBlockProcessorTest {
         final BlockNodeInformation nodeInformation = new BlockNodeInformation();
         final SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         final TestSystemProperties config = new TestSystemProperties();
-        final BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
+        final BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration, DummyBlockValidator.VALID_RESULT_INSTANCE);
         final AsyncNodeBlockProcessor processor = new AsyncNodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration,
                 DummyBlockValidator.VALID_RESULT_INSTANCE, DummyBlockValidator.VALID_RESULT_INSTANCE);
 
@@ -1044,7 +1044,7 @@ public class AsyncNodeBlockProcessorTest {
         final BlockNodeInformation nodeInformation = new BlockNodeInformation();
         final SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         final TestSystemProperties config = new TestSystemProperties();
-        final BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
+        final BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration, DummyBlockValidator.VALID_RESULT_INSTANCE);
         final AsyncNodeBlockProcessor processor = new AsyncNodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration,
                 DummyBlockValidator.VALID_RESULT_INSTANCE, DummyBlockValidator.VALID_RESULT_INSTANCE);
 
@@ -1067,7 +1067,7 @@ public class AsyncNodeBlockProcessorTest {
         final BlockNodeInformation nodeInformation = new BlockNodeInformation();
         final SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         final TestSystemProperties config = new TestSystemProperties();
-        final BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
+        final BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration, DummyBlockValidator.VALID_RESULT_INSTANCE);
         final AsyncNodeBlockProcessor processor = new AsyncNodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration,
                 DummyBlockValidator.VALID_RESULT_INSTANCE, DummyBlockValidator.VALID_RESULT_INSTANCE);
 
@@ -1090,7 +1090,7 @@ public class AsyncNodeBlockProcessorTest {
         final BlockNodeInformation nodeInformation = new BlockNodeInformation();
         final SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         final TestSystemProperties config = new TestSystemProperties();
-        final BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
+        final BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration, DummyBlockValidator.VALID_RESULT_INSTANCE);
         final AsyncNodeBlockProcessor processor = new AsyncNodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration,
                 DummyBlockValidator.INVALID_RESULT_INSTANCE, DummyBlockValidator.INVALID_RESULT_INSTANCE);
 

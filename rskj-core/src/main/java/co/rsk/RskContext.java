@@ -171,7 +171,7 @@ public class RskContext implements NodeBootstrapper {
     private BlockValidationRule blockValidationRule;
     private BlockValidationRule minerServerBlockValidationRule;
     private BlockValidator blockValidator;
-    private BlockValidator blockHeaderRelayValidator;
+    private BlockValidator blockHeaderValidator;
     private BlockValidator blockRelayValidator;
     private ReceiptStore receiptStore;
     private ProgramInvokeFactory programInvokeFactory;
@@ -517,7 +517,7 @@ public class RskContext implements NodeBootstrapper {
                         getBlockNodeInformation(),
                         getBlockSyncService(),
                         getSyncConfiguration(),
-                        getBlockHeaderRelayValidator(),
+                        getBlockHeaderValidator(),
                         getBlockRelayValidator()
                 );
             } else {
@@ -1181,8 +1181,8 @@ public class RskContext implements NodeBootstrapper {
                     getNetBlockStore(),
                     getBlockchain(),
                     getBlockNodeInformation(),
-                    getSyncConfiguration()
-            );
+                    getSyncConfiguration(),
+                    getBlockHeaderValidator());
         }
 
         return blockSyncService;
@@ -1225,8 +1225,8 @@ public class RskContext implements NodeBootstrapper {
         return blockRelayValidator;
     }
 
-    private BlockValidator getBlockHeaderRelayValidator() {
-        if (blockHeaderRelayValidator == null) {
+    private BlockValidator getBlockHeaderValidator() {
+        if (blockHeaderValidator == null) {
             final RskSystemProperties rskSystemProperties = getRskSystemProperties();
             final Constants commonConstants = rskSystemProperties.getNetworkConstants();
             final BlockTimeStampValidationRule blockTimeStampValidationRule = new BlockTimeStampValidationRule(
@@ -1234,15 +1234,15 @@ public class RskContext implements NodeBootstrapper {
                     rskSystemProperties.getActivationConfig()
             );
 
-            final BlockHeaderValidationRule blockHeaderValidator = new BlockHeaderCompositeRule(
+            final BlockHeaderValidationRule blockHeaderValidationRule = new BlockHeaderCompositeRule(
                     getProofOfWorkRule(),
                     blockTimeStampValidationRule
             );
 
-            blockHeaderRelayValidator = new BlockHeaderRelayValidatorImpl(blockHeaderValidator);
+            blockHeaderValidator = new BlockHeaderValidatorImpl(blockHeaderValidationRule);
         }
 
-        return blockHeaderRelayValidator;
+        return blockHeaderValidator;
     }
 
     private EthereumChannelInitializerFactory getEthereumChannelInitializerFactory() {
