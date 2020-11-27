@@ -5044,6 +5044,51 @@ public class BridgeSupportTest {
     }
 
     @Test
+    public void registerFastBridgeBtcTransaction_TxAlreadySavedInStorage_returnsError()
+            throws IOException, BlockStoreException {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(true);
+
+        BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
+        when(provider.isFastBridgeFederationDerivationHashUsed(any(), any())).thenReturn(true);
+        BtcTransaction tx = new BtcTransaction(bridgeConstants.getBtcParams());
+
+        ECKey key = ECKey.fromPublicOnly(new BtcECKey().getPubKey());
+        RskAddress lbcAddress = new RskAddress(key.getAddress());
+
+        BridgeSupport bridgeSupport = spy(getBridgeSupport(
+                bridgeConstants,
+                provider,
+                mock(Repository.class),
+                mock(BridgeEventLogger.class),
+                null,
+                mock(BtcBlockStoreWithCache.Factory.class),
+                activations
+        ));
+
+        doReturn(PegTestUtils.createHash(5))
+                .when(bridgeSupport)
+                .getFastBridgeDerivationHash(any(), any(), any(), any());
+
+        InternalTransaction rskTx = new InternalTransaction(null, 0, 0, null, null, null, lbcAddress.getBytes(), null, null, null, null);
+
+        long result = bridgeSupport.registerFastBridgeBtcTransaction(
+                rskTx,
+                tx.bitcoinSerialize(),
+                100,
+                Hex.decode("ab"),
+                Sha256Hash.ZERO_HASH,
+                mock(Address.class),
+                lbcAddress,
+                mock(Address.class),
+                false
+        );
+
+        Assert.assertEquals(BridgeSupport.FAST_BRIDGE_UNPROCESSABLE_TX_ALREADY_PROCESSED_ERROR_CODE, result);
+    }
+
+
+    @Test
     public void registerFastBridgeBtcTransaction_validationsForRegisterBtcTransaction_returns_false()
         throws IOException, BlockStoreException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
@@ -5055,7 +5100,7 @@ public class BridgeSupportTest {
         ECKey key = ECKey.fromPublicOnly(new BtcECKey().getPubKey());
         RskAddress lbcAddress = new RskAddress(key.getAddress());
 
-        BridgeSupport bridgeSupport = getBridgeSupport(
+        BridgeSupport bridgeSupport = spy(getBridgeSupport(
             bridgeConstants,
             provider,
             mock(Repository.class),
@@ -5063,7 +5108,11 @@ public class BridgeSupportTest {
             null,
             mock(BtcBlockStoreWithCache.Factory.class),
             activations
-        );
+        ));
+
+        doReturn(PegTestUtils.createHash(5))
+                .when(bridgeSupport)
+                .getFastBridgeDerivationHash(any(), any(), any(), any());
 
         InternalTransaction rskTx = new InternalTransaction(null, 0, 0, null, null, null, lbcAddress.getBytes(), null, null, null, null);
 
@@ -5135,6 +5184,65 @@ public class BridgeSupportTest {
     }
 
     @Test
+    public void registerFastBridgeBtcTransaction_TxWitnessAlreadySavedInStorage_returnsError()
+            throws BlockStoreException, IOException {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(true);
+
+        Context btcContext = mock(Context.class);
+        when(btcContext.getParams()).thenReturn(bridgeConstants.getBtcParams());
+
+        BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
+        when(provider.isFastBridgeFederationDerivationHashUsed(any(), any())).thenReturn(false).thenReturn(true);
+
+        ECKey key = ECKey.fromPublicOnly(new BtcECKey().getPubKey());
+        RskAddress lbcAddress = new RskAddress(key.getAddress());
+
+        BridgeSupport bridgeSupport = spy(new BridgeSupport(
+                bridgeConstants,
+                provider,
+                mock(BridgeEventLogger.class),
+                new BtcLockSenderProvider(),
+                mock(Repository.class),
+                mock(Block.class),
+                btcContext,
+                mock(FederationSupport.class),
+                mock(BtcBlockStoreWithCache.Factory.class),
+                activations
+        ));
+
+        doReturn(bridgeConstants.getGenesisFederation()).when(bridgeSupport).getActiveFederation();
+        doReturn(true).when(bridgeSupport).validationsForRegisterBtcTransaction(any(), anyInt(), any(), any());
+        doReturn(Sha256Hash.of(new byte [1])).when(bridgeSupport).getFastBridgeDerivationHash(
+                any(Sha256Hash.class),
+                any(Address.class),
+                any(Address.class),
+                any(RskAddress.class)
+        );
+
+        BtcTransaction tx = createBtcTransactionWithOutputToAddress(Coin.COIN, new BtcECKey().toAddress(btcParams));
+        InternalTransaction rskTx = new InternalTransaction(null, 0, 0, null, null, null, lbcAddress.getBytes(), null, null, null, null);
+
+        TransactionWitness txWit = new TransactionWitness(1);
+        txWit.setPush(0, new byte[]{});
+        tx.setWitness(0, txWit);
+
+        long result = bridgeSupport.registerFastBridgeBtcTransaction(
+                rskTx,
+                tx.bitcoinSerialize(),
+                100,
+                Hex.decode("ab"),
+                Sha256Hash.ZERO_HASH,
+                mock(Address.class),
+                lbcAddress,
+                mock(Address.class),
+                false
+        );
+
+        Assert.assertEquals(BridgeSupport.FAST_BRIDGE_UNPROCESSABLE_TX_ALREADY_PROCESSED_ERROR_CODE, result);
+    }
+
+    @Test
     public void registerFastBridgeBtcTransaction_surpasses_locking_cap_and_shouldTransfer_is_true()
         throws IOException, BlockStoreException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
@@ -5146,6 +5254,7 @@ public class BridgeSupportTest {
 
         ReleaseTransactionSet releaseTransactionSet = new ReleaseTransactionSet(new HashSet<>());
         when(provider.getReleaseTransactionSet()).thenReturn(releaseTransactionSet);
+        when(provider.isFastBridgeFederationDerivationHashUsed(any(), any())).thenReturn(false);
 
         BtcLockSender btcLockSender = mock(BtcLockSender.class);
         BtcLockSenderProvider btcLockSenderProvider = mock(BtcLockSenderProvider.class);
@@ -5295,6 +5404,9 @@ public class BridgeSupportTest {
             activations
         );
 
+        FederationSupport federationSupportMock = mock(FederationSupport.class);
+        doReturn(provider.getNewFederationBtcUTXOs()).when(federationSupportMock).getActiveFederationBtcUTXOs();
+
         BridgeSupport bridgeSupport = spy(new BridgeSupport(
             bridgeConstants,
             provider,
@@ -5303,7 +5415,7 @@ public class BridgeSupportTest {
             repository,
             mock(Block.class),
             btcContext,
-            mock(FederationSupport.class),
+            federationSupportMock,
             mock(BtcBlockStoreWithCache.Factory.class),
             activations
         ));
@@ -5350,6 +5462,10 @@ public class BridgeSupportTest {
             preCallLbcAddressBalance.add(co.rsk.core.Coin.fromBitcoin(Coin.COIN)),
             postCallLbcAddressBalance
         );
+
+        bridgeSupport.save();
+        Assert.assertTrue(provider.isFastBridgeFederationDerivationHashUsed(tx.getHash(), Sha256Hash.ZERO_HASH));
+        Assert.assertEquals(1, provider.getNewFederationBtcUTXOs().size());
     }
 
     @Test
@@ -5580,8 +5696,48 @@ public class BridgeSupportTest {
         tx.addOutput(amount, btcAddress);
         BtcECKey srcKey = new BtcECKey();
         tx.addInput(PegTestUtils.createHash(1),
-            0, ScriptBuilder.createInputScript(null, srcKey));
+                0, ScriptBuilder.createInputScript(null, srcKey));
         return tx;
+    }
+
+    @Test
+    public void saveFastBridgeDataInStorage_Ok() throws IOException {
+        Repository repository = createRepository();
+        BridgeStorageProvider provider = new BridgeStorageProvider(
+                repository,
+                PrecompiledContracts.BRIDGE_ADDR,
+                bridgeConstants,
+                activationsAfterForks);
+        BridgeSupport bridgeSupport = getBridgeSupport(bridgeConstants, provider, activationsAfterForks);
+
+        Sha256Hash btcTxHash = PegTestUtils.createHash(1);
+        Sha256Hash derivationHash = PegTestUtils.createHash(1);
+
+        byte[] fastBridgeScriptHash = new byte[]{0x1};
+        FastBridgeFederationInformation fastBridgeFederationInformation = new FastBridgeFederationInformation(
+                PegTestUtils.createHash(2),
+                new byte[]{0x1},
+                fastBridgeScriptHash
+        );
+
+        List<UTXO> utxos = new ArrayList<>();
+        Sha256Hash utxoHash = PegTestUtils.createHash(1);
+        UTXO utxo = new UTXO(utxoHash, 0, Coin.COIN.multiply(2), 0, false, new Script(new byte[]{}));
+        utxos.add(utxo);
+
+        Assert.assertEquals(0, provider.getNewFederationBtcUTXOs().size());
+        bridgeSupport.saveFastBridgeDataInStorage(btcTxHash, derivationHash, fastBridgeFederationInformation,  utxos);
+
+        bridgeSupport.save();
+
+        Assert.assertEquals(1, provider.getNewFederationBtcUTXOs().size());
+        assertEquals(utxo, provider.getNewFederationBtcUTXOs().get(0));
+        Assert.assertTrue(provider.isFastBridgeFederationDerivationHashUsed(btcTxHash, derivationHash));
+        Optional<FastBridgeFederationInformation> optionalFastBridgeFederationInformation = provider.getFastBridgeFederationInformation(fastBridgeScriptHash);
+        Assert.assertTrue(optionalFastBridgeFederationInformation.isPresent());
+        FastBridgeFederationInformation obtainedFastBridgeFederationInformation = optionalFastBridgeFederationInformation.get();
+        Assert.assertEquals(fastBridgeFederationInformation.getDerivationHash(), obtainedFastBridgeFederationInformation.getDerivationHash() );
+        Assert.assertArrayEquals(fastBridgeFederationInformation.getFederationScriptHash(), obtainedFastBridgeFederationInformation.getFederationScriptHash() );
     }
 
     private void assertRefundInProcessPegIn(boolean isWhitelisted, boolean mockLockingCap,
