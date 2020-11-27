@@ -24,6 +24,8 @@ import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.DefaultFullHttpResponse;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpVersion;
+import static io.netty.handler.codec.http.HttpHeaders.Names.CONTENT_TYPE;
+import static io.netty.handler.codec.http.HttpHeaders.Values.APPLICATION_JSON;
 
 public class Web3ResultHttpResponseHandler extends SimpleChannelInboundHandler<Web3Result> {
 
@@ -35,7 +37,7 @@ public class Web3ResultHttpResponseHandler extends SimpleChannelInboundHandler<W
                 msg.getContent()
         );
 
-        response.headers().add("Content-Type", "application/json");
+        response.headers().add(CONTENT_TYPE, APPLICATION_JSON);
 
         ctx.write(response).addListener(ChannelFutureListener.CLOSE);
     }
