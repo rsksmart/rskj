@@ -179,14 +179,28 @@ public class Transaction {
 
     public Transaction(byte[] nonce, byte[] gasPriceRaw, byte[] gasLimit, byte[] receiveAddress, byte[] valueRaw, byte[] data,
                        byte chainId) {
-        this.nonce = ByteUtil.cloneBytes(nonce);
-        this.gasPrice = RLP.parseCoinNonNullZero(ByteUtil.cloneBytes(gasPriceRaw));
-        this.gasLimit = ByteUtil.cloneBytes(gasLimit);
-        this.receiveAddress = RLP.parseRskAddress(ByteUtil.cloneBytes(receiveAddress));
-        this.value = RLP.parseCoinNullZero(ByteUtil.cloneBytes(valueRaw));
-        this.data = ByteUtil.cloneBytes(data);
+        this(
+                ByteUtil.cloneBytes(nonce),
+                RLP.parseCoinNonNullZero(ByteUtil.cloneBytes(gasPriceRaw)),
+                ByteUtil.cloneBytes(gasLimit),
+                RLP.parseRskAddress(ByteUtil.cloneBytes(receiveAddress)),
+                RLP.parseCoinNullZero(ByteUtil.cloneBytes(valueRaw)),
+                ByteUtil.cloneBytes(data),
+                chainId,
+                false
+        );
+    }
+
+    public Transaction(byte[] nonce, Coin gasPriceRaw, byte[] gasLimit, RskAddress receiveAddress, Coin valueRaw, byte[] data,
+                       byte chainId, final boolean localCall) {
+        this.nonce = nonce;
+        this.gasPrice = gasPriceRaw;
+        this.gasLimit = gasLimit;
+        this.receiveAddress = receiveAddress;
+        this.value = valueRaw;
+        this.data = data;
         this.chainId = chainId;
-        this.isLocalCall = false;
+        this.isLocalCall = localCall;
     }
 
     public Transaction toImmutableTransaction() {
@@ -404,8 +418,7 @@ public class Transaction {
             logger.error(e.getMessage(), e);
             panicProcessor.panic("transaction", e.getMessage());
             sender = RskAddress.nullAddress();
-        }
-        finally {
+        } finally {
             profiler.stop(metric);
         }
 
