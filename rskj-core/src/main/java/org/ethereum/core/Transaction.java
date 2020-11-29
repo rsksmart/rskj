@@ -87,7 +87,7 @@ public class Transaction {
      * Gas is the fuel of the computational engine.
      * Every computational step taken and every byte added
      * to the state or transaction list consumes some gas. */
-    private byte[] gasLimit;
+    private final byte[] gasLimit;
     /* An unlimited size byte array specifying
      * input [data] of the message call or
      * Initialization code for a new contract */
