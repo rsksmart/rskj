@@ -125,7 +125,7 @@ public class BridgeStorageProvider {
     private Long nextFederationCreationBlockHeight; // if -1, then clear value
     private Script lastRetiredFederationP2SHScript;
 
-    private Sha256Hash fastBridgeDerivationArgumentsHashToSave = null;
+    private Keccak256 fastBridgeDerivationArgumentsHashToSave = null;
     private Sha256Hash fastBridgeBtcTxHashToSave = null;
 
     private FastBridgeFederationInformation fastBridgeFederationInformationsToSave = null;
@@ -734,7 +734,7 @@ public class BridgeStorageProvider {
         safeSaveToRepository(LAST_RETIRED_FEDERATION_P2SH_SCRIPT_KEY, lastRetiredFederationP2SHScript, BridgeSerializationUtils::serializeScript);
     }
 
-    public boolean isFastBridgeFederationDerivationHashUsed(Sha256Hash btcTxHash, Sha256Hash derivationArgsHash) {
+    public boolean isFastBridgeFederationDerivationHashUsed(Sha256Hash btcTxHash, Keccak256 derivationArgsHash) {
         if (!activations.isActive(RSKIP176)) {
             return false;
         }
@@ -751,7 +751,7 @@ public class BridgeStorageProvider {
         return ((data != null) && (data.length == 1) && (data[0] == FAST_BRIDGE_FEDERATION_DERIVATION_ARGUMENTS_HASH_TRUE_VALUE));
     }
 
-    public void markFastBridgeFederationDerivationHashAsUsed(Sha256Hash btcTxHashToSave, Sha256Hash derivationArgsHash) {
+    public void markFastBridgeFederationDerivationHashAsUsed(Sha256Hash btcTxHashToSave, Keccak256 derivationArgsHash) {
         if (activations.isActive(RSKIP176)) {
             fastBridgeBtcTxHashToSave = btcTxHashToSave;
             fastBridgeDerivationArgumentsHashToSave = derivationArgsHash;
@@ -863,7 +863,7 @@ public class BridgeStorageProvider {
         return DataWord.fromLongString("fastBridgeP2SH-" + derivationHash.toString());
     }
 
-    private DataWord getStorageKeyForDerivationArgumentsHash(Sha256Hash btcTxHash, Sha256Hash derivationHash) {
+    private DataWord getStorageKeyForDerivationArgumentsHash(Sha256Hash btcTxHash, Keccak256 derivationHash) {
         return DataWord.fromLongString("fastBridgeHashUsedInBtcTx-" + btcTxHash.toString() + derivationHash.toString());
     }
 
