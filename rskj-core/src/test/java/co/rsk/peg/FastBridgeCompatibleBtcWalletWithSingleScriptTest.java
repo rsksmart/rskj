@@ -8,6 +8,7 @@ import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.bitcoinj.script.RedeemScriptParser;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.wallet.RedeemData;
+import co.rsk.crypto.Keccak256;
 import co.rsk.peg.fastbridge.FastBridgeFederationInformation;
 import java.time.Instant;
 import java.util.Collections;
@@ -44,7 +45,7 @@ public class FastBridgeCompatibleBtcWalletWithSingleScriptTest {
         byte[] fastBridgeScriptHash = new byte[]{(byte)0x22};
         FastBridgeFederationInformation fastBridgeFederationInformation =
             new FastBridgeFederationInformation(
-                Sha256Hash.of(new byte[]{2}),
+                PegTestUtils.createHash3(2),
                 federation.getP2SHScript().getPubKeyHash(),
                 fastBridgeScriptHash);
 
@@ -58,7 +59,7 @@ public class FastBridgeCompatibleBtcWalletWithSingleScriptTest {
             federation.getP2SHScript().getPubKeyHash());
 
         Script fastBridgeRedeemScript = RedeemScriptParser.createMultiSigFastBridgeRedeemScript(
-            federation.getRedeemScript(), fastBridgeFederationInformation.getDerivationHash()
+            federation.getRedeemScript(), Sha256Hash.wrap(fastBridgeFederationInformation.getDerivationHash().getBytes())
         );
 
         Assert.assertNotNull(redeemData);
