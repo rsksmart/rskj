@@ -28,6 +28,7 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.peg.*;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.HashUtil;
+import org.ethereum.vm.exception.PrecompiledContractException;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -51,7 +52,7 @@ public class AddSignatureTest extends BridgePerformanceTestCase {
     );
 
     @Test
-    public void addSignature() {
+    public void addSignature() throws PrecompiledContractException {
         ExecutionStats stats = new ExecutionStats("addSignature");
 
         addSignature_nonFullySigned(100, stats);
@@ -60,7 +61,7 @@ public class AddSignatureTest extends BridgePerformanceTestCase {
         BridgePerformanceTest.addStats(stats);
     }
 
-    private void addSignature_nonFullySigned(int times, ExecutionStats stats) {
+    private void addSignature_nonFullySigned(int times, ExecutionStats stats) throws PrecompiledContractException {
         executeAndAverage(
                 "addSignature-nonFullySigned",
                 times,
@@ -72,7 +73,7 @@ public class AddSignatureTest extends BridgePerformanceTestCase {
         );
     }
 
-    private void addSignature_fullySigned(int times, ExecutionStats stats) {
+    private void addSignature_fullySigned(int times, ExecutionStats stats) throws PrecompiledContractException {
         executeAndAverage(
                 "addSignature-fullySigned",
                 times,

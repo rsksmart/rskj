@@ -56,8 +56,9 @@ public enum ConsensusRule {
     RSKIP174("rskip174"),
     RSKIP179("rskip179"), // BTC-RSK timestamp linking
     RSKIP180("rskip180"),
+    RSKIPUMM("rskipUMM"),
     RSKIP191("rskip191"),
-    RSKIPUMM("rskipUMM");
+    RSKIPNEW("rskipNEW"); //Handle error in Precompile Contracts execution.
 
     private String configKey;
 

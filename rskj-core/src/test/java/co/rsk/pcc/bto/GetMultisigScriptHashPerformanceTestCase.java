@@ -28,6 +28,7 @@ import org.ethereum.core.CallTransaction;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.PrecompiledContracts;
+import org.ethereum.vm.exception.PrecompiledContractException;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -54,7 +55,7 @@ public class GetMultisigScriptHashPerformanceTestCase extends PrecompiledContrac
     }
 
     @Test
-    public void getMultisigScriptHash_Weighed() {
+    public void getMultisigScriptHash_Weighed() throws PrecompiledContractException {
         warmUp();
 
         CombinedExecutionStats stats = new CombinedExecutionStats(String.format("%s-weighed", function.name));
@@ -67,7 +68,7 @@ public class GetMultisigScriptHashPerformanceTestCase extends PrecompiledContrac
     }
 
     @Test
-    public void getMultisigScriptHash_Even() {
+    public void getMultisigScriptHash_Even() throws PrecompiledContractException {
         warmUp();
 
         CombinedExecutionStats stats = new CombinedExecutionStats(String.format("%s-even", function.name));
@@ -79,7 +80,7 @@ public class GetMultisigScriptHashPerformanceTestCase extends PrecompiledContrac
         HDWalletUtilsPerformanceTest.addStats(stats);
     }
 
-    private void warmUp() {
+    private void warmUp() throws PrecompiledContractException {
         // Get rid of outliers by executing some cases beforehand
         setQuietMode(true);
         System.out.print("Doing an initial pass... ");
@@ -88,7 +89,7 @@ public class GetMultisigScriptHashPerformanceTestCase extends PrecompiledContrac
         setQuietMode(false);
     }
 
-    private ExecutionStats estimateGetMultisigScriptHash(int times, int numberOfKeys, EnvironmentBuilder environmentBuilder) {
+    private ExecutionStats estimateGetMultisigScriptHash(int times, int numberOfKeys, EnvironmentBuilder environmentBuilder) throws PrecompiledContractException {
         String name = String.format("%s-%d", function.name, numberOfKeys);
         ExecutionStats stats = new ExecutionStats(name);
         Random rnd = new Random();

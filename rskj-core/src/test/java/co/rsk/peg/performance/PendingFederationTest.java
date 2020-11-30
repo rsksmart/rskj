@@ -24,6 +24,7 @@ import co.rsk.peg.BridgeStorageProvider;
 import co.rsk.peg.PendingFederation;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.core.Repository;
+import org.ethereum.vm.exception.PrecompiledContractException;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -34,17 +35,17 @@ public class PendingFederationTest extends BridgePerformanceTestCase {
     private PendingFederation pendingFederation;
 
     @Test
-    public void getPendingFederationHash() throws IOException {
+    public void getPendingFederationHash() throws PrecompiledContractException {
         executeTestCase(Bridge.GET_PENDING_FEDERATION_HASH);
     }
 
     @Test
-    public void getPendingFederationSize() throws IOException {
+    public void getPendingFederationSize() throws PrecompiledContractException {
         executeTestCase(Bridge.GET_PENDING_FEDERATION_SIZE);
     }
 
     @Test
-    public void getPendingFederatorPublicKey() throws IOException {
+    public void getPendingFederatorPublicKey() throws PrecompiledContractException {
         ExecutionStats stats = new ExecutionStats("getPendingFederatorPublicKey");
         ABIEncoder abiEncoder;
         abiEncoder = (int executionIndex) -> Bridge.GET_PENDING_FEDERATOR_PUBLIC_KEY.encode(new Object[]{Helper.randomInRange(0, pendingFederation.getBtcPublicKeys().size()-1)});
@@ -54,18 +55,18 @@ public class PendingFederationTest extends BridgePerformanceTestCase {
         BridgePerformanceTest.addStats(stats);
     }
 
-    private void executeTestCase(CallTransaction.Function fn) {
+    private void executeTestCase(CallTransaction.Function fn) throws PrecompiledContractException {
         ExecutionStats stats = new ExecutionStats(fn.name);
         executeTestCaseSection(fn,true,200, stats);
         executeTestCaseSection(fn,false,200, stats);
         BridgePerformanceTest.addStats(stats);
     }
 
-    private void executeTestCaseSection(CallTransaction.Function fn, boolean genesis, int times, ExecutionStats stats) {
+    private void executeTestCaseSection(CallTransaction.Function fn, boolean genesis, int times, ExecutionStats stats) throws PrecompiledContractException {
         executeTestCaseSection((int executionIndex) -> fn.encode(), fn.name, genesis, times, stats);
     }
 
-    private void executeTestCaseSection(ABIEncoder abiEncoder, String name, boolean present, int times, ExecutionStats stats) {
+    private void executeTestCaseSection(ABIEncoder abiEncoder, String name, boolean present, int times, ExecutionStats stats) throws PrecompiledContractException {
         executeAndAverage(
                 String.format("%s-%s", name, present ? "present" : "not-present"),
                 times, abiEncoder,

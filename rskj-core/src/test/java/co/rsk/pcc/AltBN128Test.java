@@ -36,6 +36,7 @@ import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.VM;
+import org.ethereum.vm.exception.PrecompiledContractException;
 import org.ethereum.vm.program.Program;
 import org.ethereum.vm.program.Stack;
 import org.ethereum.vm.program.invoke.ProgramInvokeMockImpl;
@@ -113,7 +114,7 @@ public class AltBN128Test {
     }
 
     @Test
-    public void testALTBN128AddTwoPoints() {
+    public void testALTBN128AddTwoPoints() throws PrecompiledContractException {
         /*
          Test should return correct result (taken from parity impl)
          */
@@ -131,7 +132,7 @@ public class AltBN128Test {
     }
 
     @Test
-    public void testALTBN128AddZeroPointsShouldBeZero() {
+    public void testALTBN128AddZeroPointsShouldBeZero() throws PrecompiledContractException {
         /*
          Test should return zero
          */
@@ -151,7 +152,7 @@ public class AltBN128Test {
     }
 
     @Test
-    public void testALTBN128AddEmptyInputShouldBeZero() {
+    public void testALTBN128AddEmptyInputShouldBeZero() throws PrecompiledContractException {
         /*
          Test should return zero
          */
@@ -168,7 +169,7 @@ public class AltBN128Test {
     }
 
     @Test
-    public void testALTBN128AddPointPlusInfinityIsPoint() {
+    public void testALTBN128AddPointPlusInfinityIsPoint() throws PrecompiledContractException {
         /*
          Test should return same point
          */
@@ -186,7 +187,7 @@ public class AltBN128Test {
     }
 
     @Test
-    public void testALTBN128AddInfinityPlusPointIsPoint() {
+    public void testALTBN128AddInfinityPlusPointIsPoint() throws PrecompiledContractException {
         /*
          Test should return same point
          */
@@ -204,7 +205,7 @@ public class AltBN128Test {
     }
 
     @Test
-    public void testALTBN128AddPointNotOnCurveShouldFail() {
+    public void testALTBN128AddPointNotOnCurveShouldFail() throws PrecompiledContractException {
         /*
          Test should return empty byte array because point is not on curve
          */
@@ -224,7 +225,7 @@ public class AltBN128Test {
     }
 
     @Test
-    public void shouldReturnInfinityOnIdenticalInputPointValuesOfX() {
+    public void shouldReturnInfinityOnIdenticalInputPointValuesOfX() throws PrecompiledContractException {
         BigInteger p0x = new BigInteger(
                 "10744596414106452074759370245733544594153395043370666422502510773307029471145");
         BigInteger p0y = new BigInteger(
@@ -241,7 +242,7 @@ public class AltBN128Test {
     }
 
     @Test
-    public void shouldReturnTrueAddAndComputeSlope() {
+    public void shouldReturnTrueAddAndComputeSlope() throws PrecompiledContractException {
         BigInteger p0x = new BigInteger(
                 "10744596414106452074759370245733544594153395043370666422502510773307029471145");
         BigInteger p0y = new BigInteger(
@@ -260,7 +261,7 @@ public class AltBN128Test {
     }
 
     @Test
-    public void shouldReturnTrueMultiplyScalarAndPoint() {
+    public void shouldReturnTrueMultiplyScalarAndPoint() throws PrecompiledContractException {
         BigInteger x = BigInteger.valueOf(1);
         BigInteger y = BigInteger.valueOf(2);
 
@@ -274,7 +275,7 @@ public class AltBN128Test {
     }
 
     @Test
-    public void shouldReturnIdentityWhenMultipliedByScalarValueOne() {
+    public void shouldReturnIdentityWhenMultipliedByScalarValueOne() throws PrecompiledContractException {
         BigInteger x = new BigInteger("11999875504842010600789954262886096740416429265635183817701593963271973497827");
         BigInteger y = new BigInteger("11843594000332171325303933275547366297934113019079887694534126289021216356598");
 
@@ -287,7 +288,7 @@ public class AltBN128Test {
     }
 
     @Test
-    public void shouldReturnTrueMultiplyPointByScalar() {
+    public void shouldReturnTrueMultiplyPointByScalar() throws PrecompiledContractException {
         BigInteger x = BigInteger.valueOf(1);
         BigInteger y = BigInteger.valueOf(2);
 
@@ -300,7 +301,7 @@ public class AltBN128Test {
     }
 
     @Test
-    public void shouldReturnSumMultiplyPointByScalar() {
+    public void shouldReturnSumMultiplyPointByScalar() throws PrecompiledContractException {
         BigInteger x = new BigInteger("11999875504842010600789954262886096740416429265635183817701593963271973497827");
         BigInteger y = new BigInteger("11843594000332171325303933275547366297934113019079887694534126289021216356598");
 
@@ -312,7 +313,7 @@ public class AltBN128Test {
     }
 
     @Test
-    public void shouldFailForPointNotOnCurve() {
+    public void shouldFailForPointNotOnCurve() throws PrecompiledContractException {
         String input = "1111111111111111111111111111111111111111111111111111111111111111"+
                 "1111111111111111111111111111111111111111111111111111111111111111"+
                 "1111111111111111111111111111111111111111111111111111111111111111";
@@ -325,7 +326,7 @@ public class AltBN128Test {
     }
 
     @Test
-    public void mulShouldFailForNotEnoughParams() {
+    public void mulShouldFailForNotEnoughParams() throws PrecompiledContractException {
         String input = "1111111111111111111111111111111111111111111111111111111111111111"+
                 "1111111111111111111111111111111111111111111111111111111111111111";
 
@@ -337,7 +338,7 @@ public class AltBN128Test {
     }
 
     @Test
-    public void mulShouldFailEmptyParams() {
+    public void mulShouldFailEmptyParams() throws PrecompiledContractException {
         /*
         * Behaviour on empty params establishes that correct output is zero byte array
         */
@@ -351,7 +352,7 @@ public class AltBN128Test {
     }
 
     @Test
-    public void shouldReturnTrueForNullInput() {
+    public void shouldReturnTrueForNullInput() throws PrecompiledContractException {
         /*
         Null acts as empty input so it should return true
          */
@@ -370,7 +371,7 @@ public class AltBN128Test {
     }
 
     @Test
-    public void shouldReturnTrueForValidPointsPairing() {
+    public void shouldReturnTrueForValidPointsPairing() throws PrecompiledContractException {
         final String g1Point0 = "0000000000000000000000000000000000000000000000000000000000000001"+
                 "0000000000000000000000000000000000000000000000000000000000000002";
 
@@ -394,7 +395,7 @@ public class AltBN128Test {
     }
 
     @Test
-    public void parityBenchmarkTenPointMatchValidInput() {
+    public void parityBenchmarkTenPointMatchValidInput() throws PrecompiledContractException {
         final String input = "0000000000000000000000000000000000000000000000000000000000000001"+
                 "0000000000000000000000000000000000000000000000000000000000000002"+
                 "198e9393920d483a7260bfb731fb5d25f1aa493335a9e71297e485b7aef312c2"+
@@ -462,7 +463,7 @@ public class AltBN128Test {
     }
 
     @Test
-    public void invalidInputForPairing() {
+    public void invalidInputForPairing() throws PrecompiledContractException {
         String input = "11";
 
         String expectedOutput = "";
@@ -472,7 +473,7 @@ public class AltBN128Test {
     }
 
     @Test
-    public void emptyInputForPairing() {
+    public void emptyInputForPairing() throws PrecompiledContractException {
         String input = "";
 
         String expectedOutput = "0000000000000000000000000000000000000000000000000000000000000001";
@@ -482,7 +483,7 @@ public class AltBN128Test {
     }
 
     @Test
-    public void shouldReturnEmptyForPairingPointsNotOnCurve() {
+    public void shouldReturnEmptyForPairingPointsNotOnCurve() throws PrecompiledContractException {
         String g1Point0 = "0000000000000000000000000000000000000000000000000000000000000001"+
                 "0000000000000000000000000000000000000000000000000000000000000002";
         String g2Point0 = "1382cd45e5674247f9c900b5c6f6cabbc189c2fabe2df0bf5acd84c97818f508"+
@@ -505,7 +506,7 @@ public class AltBN128Test {
     }
 
     @Test
-    public void shouldReturnFalseForValidPointsPairing() {
+    public void shouldReturnFalseForValidPointsPairing() throws PrecompiledContractException {
         String inputString = "1c76476f4def4bb94541d57ebba1193381ffa7aa76ada664dd31c16024c43f59"+
                 "3034dd2920f673e204fee2811c678745fc819b55d3e9d294e45c9b03a76aef41"+
                 "209dd15ebff5d46c4bd888e51a93cf99a7329636c63514396b4a452003a35bf7"+
@@ -607,7 +608,7 @@ public class AltBN128Test {
     }
 
     private void altBN128OperationTest(String inputString, String expectedOutput, String errorMessage,
-                                       DataWord contractAddress, long gasCost) {
+                                       DataWord contractAddress, long gasCost) throws PrecompiledContractException {
         PrecompiledContracts.PrecompiledContract altBN128OperationContract = precompiledContracts.getContractForAddress(activations, contractAddress);
 
         byte[] input = Hex.decode(inputString);
@@ -635,7 +636,7 @@ public class AltBN128Test {
         }
     }
 
-    private void altBN128MulTest(BigInteger x1, BigInteger y1, BigInteger scalar, String expectedOutput) {
+    private void altBN128MulTest(BigInteger x1, BigInteger y1, BigInteger scalar, String expectedOutput) throws PrecompiledContractException {
         byte[] input = new byte[96];
 
         byte[] x1Bytes = stripLeadingZeroes(x1.toByteArray());
@@ -653,7 +654,7 @@ public class AltBN128Test {
 
     }
 
-    private void altBN128AddTest(BigInteger x1, BigInteger y1, BigInteger x2, BigInteger y2, String expectedOutput, String errorMessage) {
+    private void altBN128AddTest(BigInteger x1, BigInteger y1, BigInteger x2, BigInteger y2, String expectedOutput, String errorMessage) throws PrecompiledContractException {
         byte[] input = new byte[128];
 
         byte[] x1Bytes = stripLeadingZeroes(x1.toByteArray());

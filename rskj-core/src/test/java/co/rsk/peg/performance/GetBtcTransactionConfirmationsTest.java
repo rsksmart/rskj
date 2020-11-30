@@ -12,6 +12,7 @@ import org.ethereum.core.CallTransaction;
 import org.ethereum.core.Repository;
 import org.ethereum.solidity.SolidityType;
 import org.ethereum.vm.PrecompiledContracts;
+import org.ethereum.vm.exception.PrecompiledContractException;
 import org.junit.*;
 import org.mockito.invocation.InvocationOnMock;
 import org.powermock.reflect.Whitebox;
@@ -52,11 +53,11 @@ public class GetBtcTransactionConfirmationsTest extends BridgePerformanceTestCas
     }
 
     @Before
-    public void setRskipToTrue() {
+    public void setRskipToTrue() throws PrecompiledContractException {
         warmUp();
     }
 
-    private void warmUp() {
+    private void warmUp() throws PrecompiledContractException {
         // Doing an initial estimation gets some things cached and speeds up the rest,
         // so that we get even numbers at the end
         System.out.print("Doing an initial pass... ");
@@ -68,7 +69,7 @@ public class GetBtcTransactionConfirmationsTest extends BridgePerformanceTestCas
     }
 
     @Test
-    public void getBtcTransactionConfirmations_Weighed_Cache() {
+    public void getBtcTransactionConfirmations_Weighed_Cache() throws PrecompiledContractException {
         final String CASE_NAME = "getBtcTransactionConfirmations-weighed";
         CombinedExecutionStats stats = new CombinedExecutionStats(CASE_NAME);
 
@@ -85,7 +86,7 @@ public class GetBtcTransactionConfirmationsTest extends BridgePerformanceTestCas
     }
 
     @Test
-    public void getBtcTransactionConfirmations_Weighed_Disk() {
+    public void getBtcTransactionConfirmations_Weighed_Disk() throws PrecompiledContractException {
         final String CASE_NAME = "getBtcTransactionConfirmations-weighed";
         CombinedExecutionStats stats = new CombinedExecutionStats(CASE_NAME);
 
@@ -102,7 +103,7 @@ public class GetBtcTransactionConfirmationsTest extends BridgePerformanceTestCas
     }
 
     @Test
-    public void getBtcTransactionConfirmations_Even_Cache() {
+    public void getBtcTransactionConfirmations_Even_Cache() throws PrecompiledContractException {
         final String CASE_NAME = "getBtcTransactionConfirmations-even";
         CombinedExecutionStats stats = new CombinedExecutionStats(CASE_NAME);
 
@@ -117,7 +118,7 @@ public class GetBtcTransactionConfirmationsTest extends BridgePerformanceTestCas
     }
 
     @Test
-    public void getBtcTransactionConfirmations_Even_Disk() {
+    public void getBtcTransactionConfirmations_Even_Disk() throws PrecompiledContractException {
         final String CASE_NAME = "getBtcTransactionConfirmations-even";
         CombinedExecutionStats stats = new CombinedExecutionStats(CASE_NAME);
 
@@ -132,7 +133,7 @@ public class GetBtcTransactionConfirmationsTest extends BridgePerformanceTestCas
     }
 
     @Test
-    public void getBtcTransactionConfirmations_Zero() {
+    public void getBtcTransactionConfirmations_Zero() throws PrecompiledContractException {
         BridgePerformanceTest.addStats(estimateGetBtcTransactionConfirmations(
                 "getBtcTransactionConfirmations-zero",
                 2000, 0, 750, 3000, true
@@ -145,7 +146,7 @@ public class GetBtcTransactionConfirmationsTest extends BridgePerformanceTestCas
     }
 
     @Test
-    public void getBtcTransactionConfirmations_Hundred() {
+    public void getBtcTransactionConfirmations_Hundred() throws PrecompiledContractException {
         BridgePerformanceTest.addStats(estimateGetBtcTransactionConfirmations(
                 "getBtcTransactionConfirmations-hundred",
                 2000, 100, 750, 3000, true
@@ -160,7 +161,7 @@ public class GetBtcTransactionConfirmationsTest extends BridgePerformanceTestCas
     private ExecutionStats estimateGetBtcTransactionConfirmations(
             String caseName,
             int times, int confirmations, int  minTransactions,
-            int maxTransactions, boolean useCache) {
+            int maxTransactions, boolean useCache) throws PrecompiledContractException {
 
         BridgeStorageProviderInitializer storageInitializer = generateBlockChainInitializer(
                 1000,

@@ -28,6 +28,7 @@ import co.rsk.peg.BridgeStorageProvider;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
 import org.ethereum.core.Repository;
 import org.ethereum.vm.PrecompiledContracts;
+import org.ethereum.vm.exception.PrecompiledContractException;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -38,7 +39,7 @@ import java.util.HashMap;
 @Ignore
 public class BtcBlockchainTest extends BridgePerformanceTestCase {
     @Test
-    public void getBtcBlockchainBestChainHeight() throws IOException {
+    public void getBtcBlockchainBestChainHeight() throws IOException, PrecompiledContractException {
         ABIEncoder abiEncoder = (int executionIndex) -> Bridge.GET_BTC_BLOCKCHAIN_BEST_CHAIN_HEIGHT.encode();
         ExecutionStats stats = new ExecutionStats("getBtcBlockchainBestChainHeight");
         executeAndAverage("getBtcBlockchainBestChainHeight", 200, abiEncoder, buildInitializer(), Helper.getZeroValueRandomSenderTxBuilder(), Helper.getRandomHeightProvider(10), stats);
@@ -46,7 +47,7 @@ public class BtcBlockchainTest extends BridgePerformanceTestCase {
     }
 
     @Test
-    public void getBtcBlockchainInitialBlockHeight() throws IOException {
+    public void getBtcBlockchainInitialBlockHeight() throws IOException, PrecompiledContractException {
         ABIEncoder abiEncoder = (int executionIndex) -> Bridge.GET_BTC_BLOCKCHAIN_INITIAL_BLOCK_HEIGHT.encode();
         ExecutionStats stats = new ExecutionStats("getBtcBlockchainInitialBlockHeight");
         executeAndAverage("getBtcBlockchainInitialBlockHeight", 200, abiEncoder, buildInitializer(), Helper.getZeroValueRandomSenderTxBuilder(), Helper.getRandomHeightProvider(10), stats);
@@ -54,7 +55,7 @@ public class BtcBlockchainTest extends BridgePerformanceTestCase {
     }
 
     @Test
-    public void getBtcBlockchainBlockHashAtDepth() throws IOException {
+    public void getBtcBlockchainBlockHashAtDepth() throws IOException, PrecompiledContractException {
         ABIEncoder abiEncoder = (int executionIndex) -> Bridge.GET_BTC_BLOCKCHAIN_BLOCK_HASH_AT_DEPTH.encode(new Object[]{BigInteger.ZERO});
         ExecutionStats stats = new ExecutionStats("getBtcBlockchainBlockHashAtDepth");
         executeAndAverage("getBtcBlockchainBlockHashAtDepth", 200, abiEncoder, buildInitializer(), Helper.getZeroValueRandomSenderTxBuilder(), Helper.getRandomHeightProvider(10), stats);
@@ -62,7 +63,7 @@ public class BtcBlockchainTest extends BridgePerformanceTestCase {
     }
 
     @Test
-    public void getBtcBlockchainBlockLocator() throws IOException {
+    public void getBtcBlockchainBlockLocator() throws IOException, PrecompiledContractException {
         ABIEncoder abiEncoder = (int executionIndex) -> Bridge.GET_BTC_BLOCKCHAIN_BLOCK_LOCATOR.encode();
         ExecutionStats stats = new ExecutionStats("getBtcBlockchainBlockLocator");
         executeAndAverage("getBtcBlockchainBlockLocator", 200, abiEncoder, buildInitializer(), Helper.getZeroValueRandomSenderTxBuilder(), Helper.getRandomHeightProvider(10), stats);

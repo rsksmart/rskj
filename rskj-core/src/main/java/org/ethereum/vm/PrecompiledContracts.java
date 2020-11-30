@@ -45,6 +45,7 @@ import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.util.BIUtil;
 import org.ethereum.util.ByteUtil;
+import org.ethereum.vm.exception.PrecompiledContractException;
 
 import java.math.BigInteger;
 import java.util.*;
@@ -203,7 +204,7 @@ public class PrecompiledContracts {
 
         public List<ProgramSubtrace> getSubtraces() { return Collections.emptyList(); }
 
-        public abstract byte[] execute(byte[] data);
+        public abstract byte[] execute(byte[] data) throws PrecompiledContractException;
     }
 
     public static class Identity extends PrecompiledContract {

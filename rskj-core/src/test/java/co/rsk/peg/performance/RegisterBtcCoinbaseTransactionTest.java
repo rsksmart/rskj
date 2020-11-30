@@ -29,6 +29,7 @@ import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.Repository;
 import org.ethereum.vm.PrecompiledContracts;
+import org.ethereum.vm.exception.PrecompiledContractException;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
@@ -53,13 +54,13 @@ public class RegisterBtcCoinbaseTransactionTest extends BridgePerformanceTestCas
     }
 
     @Test
-    public void registerBtcCoinbaseTransaction() {
+    public void registerBtcCoinbaseTransaction() throws PrecompiledContractException {
         ExecutionStats stats = new ExecutionStats("registerBtcCoinbaseTransaction");
         registerBtcCoinbaseTransaction_success(5000, stats);
         BridgePerformanceTest.addStats(stats);
     }
 
-    private void registerBtcCoinbaseTransaction_success(int times, ExecutionStats stats) {
+    private void registerBtcCoinbaseTransaction_success(int times, ExecutionStats stats) throws PrecompiledContractException {
         BridgeStorageProviderInitializer storageInitializer = generateInitializerForTest(
                 1000,
                 2000

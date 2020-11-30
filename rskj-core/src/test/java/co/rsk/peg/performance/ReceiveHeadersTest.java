@@ -32,6 +32,7 @@ import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.Repository;
 import org.ethereum.vm.PrecompiledContracts;
+import org.ethereum.vm.exception.PrecompiledContractException;
 import org.junit.*;
 
 import java.io.IOException;
@@ -67,7 +68,7 @@ public class ReceiveHeadersTest extends BridgePerformanceTestCase {
     }
 
     @Before
-    public void warmup() {
+    public void warmup() throws PrecompiledContractException {
         setQuietMode(true);
         System.out.print("Doing a few initial passes... ");
         doReceiveHeaders("warmup", 100, 1, 0);
@@ -76,12 +77,12 @@ public class ReceiveHeadersTest extends BridgePerformanceTestCase {
     }
 
     @Test
-    public void receiveHeadersSingleBlock() {
+    public void receiveHeadersSingleBlock() throws PrecompiledContractException {
         BridgePerformanceTest.addStats(doReceiveHeaders("receiveHeaders-singleBlock", 2000, 1, 0));
     }
 
     @Test
-    public void receiveHeadersInterpolation() {
+    public void receiveHeadersInterpolation() throws PrecompiledContractException {
         CombinedExecutionStats stats = new CombinedExecutionStats("receiveHeaders-interpolation");
 
         stats.add(doReceiveHeaders("receiveHeaders-interpolation",1000, 1, 0));
@@ -91,7 +92,7 @@ public class ReceiveHeadersTest extends BridgePerformanceTestCase {
     }
 
     @Test
-    public void receiveHeadersIncremental() {
+    public void receiveHeadersIncremental() throws PrecompiledContractException {
         CombinedExecutionStats stats = new CombinedExecutionStats("receiveHeaders-incremental");
 
         for (int i = 1; i <= 500; i++) {
@@ -102,7 +103,7 @@ public class ReceiveHeadersTest extends BridgePerformanceTestCase {
     }
 
     @Test
-    public void receiveHeadersWithForking() {
+    public void receiveHeadersWithForking() throws PrecompiledContractException {
         CombinedExecutionStats stats = new CombinedExecutionStats("receiveHeaders-withForking");
 
         for (int numHeaders = 1; numHeaders < 10; numHeaders++) {
@@ -114,7 +115,7 @@ public class ReceiveHeadersTest extends BridgePerformanceTestCase {
         BridgePerformanceTest.addStats(stats);
     }
 
-    private ExecutionStats doReceiveHeaders(String caseName, int times, int numHeaders, int forkDepth) {
+    private ExecutionStats doReceiveHeaders(String caseName, int times, int numHeaders, int forkDepth) throws PrecompiledContractException {
         String name = String.format("%s-forkdepth-%d-headers-%d", caseName, forkDepth, numHeaders);
         ExecutionStats stats = new ExecutionStats(name);
         int totalHeaders = numHeaders + forkDepth;

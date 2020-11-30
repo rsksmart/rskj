@@ -28,6 +28,7 @@ import org.ethereum.core.CallTransaction;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.PrecompiledContracts;
+import org.ethereum.vm.exception.PrecompiledContractException;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -39,7 +40,7 @@ public class ExtractPublicKeyFromExtendedPublicKeyPerformanceTestCase extends Pr
     private CallTransaction.Function function;
 
     @Test
-    public void extractPublicKeyFromExtendedPublicKey() {
+    public void extractPublicKeyFromExtendedPublicKey() throws PrecompiledContractException {
         function = new ExtractPublicKeyFromExtendedPublicKey(null, null).getFunction();
 
         EnvironmentBuilder environmentBuilder = (int executionIndex, TxBuilder txBuilder, int height) -> {
@@ -52,7 +53,7 @@ public class ExtractPublicKeyFromExtendedPublicKeyPerformanceTestCase extends Pr
         HDWalletUtilsPerformanceTest.addStats(estimateExtractPublicKeyFromExtendedPublicKey(500, environmentBuilder));
     }
 
-    private ExecutionStats estimateExtractPublicKeyFromExtendedPublicKey(int times, EnvironmentBuilder environmentBuilder) {
+    private ExecutionStats estimateExtractPublicKeyFromExtendedPublicKey(int times, EnvironmentBuilder environmentBuilder) throws PrecompiledContractException {
         ExecutionStats stats = new ExecutionStats(function.name);
         Random rnd = new Random();
         byte[] chainCode = new byte[32];

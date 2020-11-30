@@ -28,6 +28,7 @@ import co.rsk.peg.ReleaseRequestQueue;
 import org.ethereum.core.Denomination;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.ECKey;
+import org.ethereum.vm.exception.PrecompiledContractException;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -37,7 +38,7 @@ import java.math.BigInteger;
 @Ignore
 public class ReleaseBtcTest extends BridgePerformanceTestCase {
     @Test
-    public void releaseBtc() throws IOException {
+    public void releaseBtc() throws PrecompiledContractException {
         int minCentsBtc = 5;
         int maxCentsBtc = 100;
 

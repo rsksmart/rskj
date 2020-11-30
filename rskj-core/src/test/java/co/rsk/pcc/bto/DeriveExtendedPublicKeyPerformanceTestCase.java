@@ -28,6 +28,7 @@ import co.rsk.peg.performance.PrecompiledContractPerformanceTestCase;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.vm.PrecompiledContracts;
+import org.ethereum.vm.exception.PrecompiledContractException;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -43,7 +44,7 @@ public class DeriveExtendedPublicKeyPerformanceTestCase extends PrecompiledContr
     private CallTransaction.Function function;
 
     @Test
-    public void deriveExtendedPublicKey() {
+    public void deriveExtendedPublicKey() throws PrecompiledContractException {
         function = new DeriveExtendedPublicKey(null, null).getFunction();
 
         EnvironmentBuilder environmentBuilder = (int executionIndex, TxBuilder txBuilder, int height) -> {
@@ -70,7 +71,7 @@ public class DeriveExtendedPublicKeyPerformanceTestCase extends PrecompiledContr
         HDWalletUtilsPerformanceTest.addStats(stats);
     }
 
-    private ExecutionStats estimateDeriveExtendedPublicKey(int times, int pathLength, EnvironmentBuilder environmentBuilder) {
+    private ExecutionStats estimateDeriveExtendedPublicKey(int times, int pathLength, EnvironmentBuilder environmentBuilder) throws PrecompiledContractException {
         String name = String.format("%s-%d", function.name, pathLength);
         ExecutionStats stats = new ExecutionStats(name);
         Random rnd = new Random();

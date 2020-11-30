@@ -20,6 +20,7 @@ package co.rsk.peg.performance;
 
 import org.ethereum.crypto.ECKey;
 import org.ethereum.vm.PrecompiledContracts;
+import org.ethereum.vm.exception.PrecompiledContractException;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -28,7 +29,7 @@ import java.io.IOException;
 @Ignore
 public class IdentityPerformanceTestCase extends PrecompiledContractPerformanceTestCase {
     @Test
-    public void identity() throws IOException {
+    public void identity() throws IOException, PrecompiledContractException {
         ExecutionStats stats = new ExecutionStats("identity");
 
         EnvironmentBuilder environmentBuilder = (int executionIndex, TxBuilder txBuilder, int height) ->
@@ -39,7 +40,7 @@ public class IdentityPerformanceTestCase extends PrecompiledContractPerformanceT
         IdentityPerformanceTest.addStats(stats);
     }
 
-    private void doIdentity(EnvironmentBuilder environmentBuilder, ExecutionStats stats, int numCases) throws IOException {
+    private void doIdentity(EnvironmentBuilder environmentBuilder, ExecutionStats stats, int numCases) throws IOException, PrecompiledContractException {
         ABIEncoder abiEncoder = (int executionIndex) -> new byte[]{};
 
         executeAndAverage(

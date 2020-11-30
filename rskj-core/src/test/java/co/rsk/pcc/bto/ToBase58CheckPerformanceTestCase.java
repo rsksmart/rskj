@@ -24,6 +24,7 @@ import co.rsk.peg.performance.PrecompiledContractPerformanceTestCase;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.vm.PrecompiledContracts;
+import org.ethereum.vm.exception.PrecompiledContractException;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -38,7 +39,7 @@ public class ToBase58CheckPerformanceTestCase extends PrecompiledContractPerform
     private CallTransaction.Function function;
 
     @Test
-    public void toBase58Check() {
+    public void toBase58Check() throws PrecompiledContractException {
         function = new ToBase58Check(null).getFunction();
 
         EnvironmentBuilder environmentBuilder = (int executionIndex, TxBuilder txBuilder, int height) -> {
@@ -51,7 +52,7 @@ public class ToBase58CheckPerformanceTestCase extends PrecompiledContractPerform
         HDWalletUtilsPerformanceTest.addStats(estimateToBase58Check(2000, environmentBuilder));
     }
 
-    private ExecutionStats estimateToBase58Check(int times, EnvironmentBuilder environmentBuilder) {
+    private ExecutionStats estimateToBase58Check(int times, EnvironmentBuilder environmentBuilder) throws PrecompiledContractException {
         String name = function.name;
         ExecutionStats stats = new ExecutionStats(name);
         Random rnd = new Random();

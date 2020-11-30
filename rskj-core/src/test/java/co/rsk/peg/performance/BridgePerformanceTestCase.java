@@ -37,6 +37,7 @@ import org.ethereum.crypto.HashUtil;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.PrecompiledContracts;
+import org.ethereum.vm.exception.PrecompiledContractException;
 import org.junit.BeforeClass;
 
 import java.math.BigInteger;
@@ -147,7 +148,7 @@ public abstract class BridgePerformanceTestCase extends PrecompiledContractPerfo
             BridgeStorageProviderInitializer storageInitializer,
             TxBuilder txBuilder,
             HeightProvider heightProvider,
-            ExecutionStats stats) {
+            ExecutionStats stats) throws PrecompiledContractException {
 
         return executeAndAverage(
                 name, times, abiEncoder, storageInitializer,
@@ -163,7 +164,7 @@ public abstract class BridgePerformanceTestCase extends PrecompiledContractPerfo
             TxBuilder txBuilder,
             HeightProvider heightProvider,
             ExecutionStats stats,
-            ResultCallback resultCallback) {
+            ResultCallback resultCallback) throws PrecompiledContractException {
 
         return executeAndAverage(
                 name, times, abiEncoder, storageInitializer,
@@ -180,7 +181,7 @@ public abstract class BridgePerformanceTestCase extends PrecompiledContractPerfo
             HeightProvider heightProvider,
             ExecutionStats stats,
             ResultCallback resultCallback,
-            PostInitCallback postInitCallback) {
+            PostInitCallback postInitCallback) throws PrecompiledContractException {
 
         EnvironmentBuilder environmentBuilder = new EnvironmentBuilder() {
             private Bridge bridge;

@@ -24,6 +24,7 @@ import co.rsk.peg.Bridge;
 import co.rsk.peg.BridgeStorageProvider;
 import co.rsk.peg.Federation;
 import org.ethereum.core.Repository;
+import org.ethereum.vm.exception.PrecompiledContractException;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -34,7 +35,7 @@ public class GetFeePerKbTest extends BridgePerformanceTestCase {
     private Federation federation;
 
     @Test
-    public void getFeePerKb() throws IOException {
+    public void getFeePerKb() throws PrecompiledContractException {
         ExecutionStats stats = new ExecutionStats("getFeePerKb");
         ABIEncoder abiEncoder = (int executionIndex) -> Bridge.GET_FEE_PER_KB.encode();
         executeTestCaseSection(abiEncoder, "getFeePerKb", true,50, stats);
@@ -42,7 +43,7 @@ public class GetFeePerKbTest extends BridgePerformanceTestCase {
         BridgePerformanceTest.addStats(stats);
     }
 
-    private void executeTestCaseSection(ABIEncoder abiEncoder, String name, boolean genesis, int times, ExecutionStats stats) {
+    private void executeTestCaseSection(ABIEncoder abiEncoder, String name, boolean genesis, int times, ExecutionStats stats) throws PrecompiledContractException {
         executeAndAverage(
                 String.format("%s-%s", name, genesis ? "genesis" : "non-genesis"),
                 times, abiEncoder,

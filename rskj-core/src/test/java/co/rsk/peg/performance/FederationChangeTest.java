@@ -25,6 +25,7 @@ import co.rsk.peg.*;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
+import org.ethereum.vm.exception.PrecompiledContractException;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -52,14 +53,14 @@ public class FederationChangeTest extends BridgePerformanceTestCase {
     private BtcECKey votedFederatorPublicKey;
 
     @Test
-    public void createFederation() {
+    public void createFederation() throws PrecompiledContractException {
         ExecutionStats stats = new ExecutionStats("createFederation");
         createFederation_noWinner(200, stats);
         createFederation_winner(200, stats);
         BridgePerformanceTest.addStats(stats);
     }
 
-    private void createFederation_noWinner(int times, ExecutionStats stats) {
+    private void createFederation_noWinner(int times, ExecutionStats stats) throws PrecompiledContractException {
         executeAndAverage(
                 "createFederation-noWinner",
                 times,
@@ -71,7 +72,7 @@ public class FederationChangeTest extends BridgePerformanceTestCase {
         );
     }
 
-    private void createFederation_winner(int times, ExecutionStats stats) {
+    private void createFederation_winner(int times, ExecutionStats stats) throws PrecompiledContractException {
         executeAndAverage(
                 "createFederation-winner",
                 times,
@@ -84,14 +85,14 @@ public class FederationChangeTest extends BridgePerformanceTestCase {
     }
 
     @Test
-    public void addFederatorPublicKey() {
+    public void addFederatorPublicKey() throws PrecompiledContractException {
         ExecutionStats stats = new ExecutionStats("addFederatorPublicKey");
         addFederatorPublicKey_noWinner(200, stats);
         addFederatorPublicKey_winner(200, stats);
         BridgePerformanceTest.addStats(stats);
     }
 
-    private void addFederatorPublicKey_noWinner(int times, ExecutionStats stats) {
+    private void addFederatorPublicKey_noWinner(int times, ExecutionStats stats) throws PrecompiledContractException {
         executeAndAverage(
                 "addFederatorPublicKey-noWinner",
                 times,
@@ -103,7 +104,7 @@ public class FederationChangeTest extends BridgePerformanceTestCase {
         );
     }
 
-    private void addFederatorPublicKey_winner(int times, ExecutionStats stats) {
+    private void addFederatorPublicKey_winner(int times, ExecutionStats stats) throws PrecompiledContractException {
         executeAndAverage(
                 "addFederatorPublicKey-winner",
                 times,
@@ -119,14 +120,14 @@ public class FederationChangeTest extends BridgePerformanceTestCase {
     }
 
     @Test
-    public void commitFederation() {
+    public void commitFederation() throws PrecompiledContractException {
         ExecutionStats stats = new ExecutionStats("commitFederation");
         commitFederation_noWinner(200, stats);
         commitFederation_winner(200, stats);
         BridgePerformanceTest.addStats(stats);
     }
 
-    private void commitFederation_noWinner(int times, ExecutionStats stats) {
+    private void commitFederation_noWinner(int times, ExecutionStats stats) throws PrecompiledContractException {
         executeAndAverage(
                 "commitFederation-noWinner",
                 times,
@@ -138,7 +139,7 @@ public class FederationChangeTest extends BridgePerformanceTestCase {
         );
     }
 
-    private void commitFederation_winner(int times, ExecutionStats stats) {
+    private void commitFederation_winner(int times, ExecutionStats stats) throws PrecompiledContractException {
         executeAndAverage(
                 "commitFederation-winner",
                 times,
@@ -151,14 +152,14 @@ public class FederationChangeTest extends BridgePerformanceTestCase {
     }
 
     @Test
-    public void rollbackFederation() {
+    public void rollbackFederation() throws PrecompiledContractException {
         ExecutionStats stats = new ExecutionStats("rollbackFederation");
         rollbackFederation_noWinner(200, stats);
         rollbackFederation_winner(200, stats);
         BridgePerformanceTest.addStats(stats);
     }
 
-    private void rollbackFederation_noWinner(int times, ExecutionStats stats) {
+    private void rollbackFederation_noWinner(int times, ExecutionStats stats) throws PrecompiledContractException {
         executeAndAverage(
                 "rollbackFederation-noWinner",
                 times,
@@ -170,7 +171,7 @@ public class FederationChangeTest extends BridgePerformanceTestCase {
         );
     }
 
-    private void rollbackFederation_winner(int times, ExecutionStats stats) {
+    private void rollbackFederation_winner(int times, ExecutionStats stats) throws PrecompiledContractException {
         executeAndAverage(
                 "rollbackFederation-winner",
                 times,
