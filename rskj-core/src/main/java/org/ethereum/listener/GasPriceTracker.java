@@ -102,12 +102,8 @@ public class GasPriceTracker extends EthereumListenerAdapter {
             if (bestBlockPrice == null) {
                 return lastVal;
             } else {
-                return max(lastVal, bestBlockPrice.multiply(BI_11).divide(BI_10));
+                return Coin.max(lastVal, bestBlockPrice.multiply(BI_11).divide(BI_10));
             }
         }
-    }
-
-    private static Coin max(Coin a, Coin b) {
-        return a.compareTo(b) > 0 ? a : b;
     }
 }
