@@ -9,6 +9,7 @@ import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;
+import co.rsk.crypto.Keccak256;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -236,7 +237,7 @@ public class BridgeTest {
                 any(byte[].class),
                 anyInt(),
                 any(byte[].class),
-                any(Sha256Hash.class),
+                any(Keccak256.class),
                 any(Address.class),
                 any(RskAddress.class),
                 any(Address.class),
@@ -276,7 +277,7 @@ public class BridgeTest {
                 eq(value),
                 eq(1),
                 eq(value),
-                eq(Sha256Hash.wrap(value)),
+                eq(new Keccak256(value)),
                 eq(refundBtcAddress),
                 eq(rskAddress),
                 eq(lpBtcAddress),
@@ -297,7 +298,7 @@ public class BridgeTest {
                 any(byte[].class),
                 anyInt(),
                 any(byte[].class),
-                any(Sha256Hash.class),
+                any(Keccak256.class),
                 any(Address.class),
                 any(RskAddress.class),
                 any(Address.class),

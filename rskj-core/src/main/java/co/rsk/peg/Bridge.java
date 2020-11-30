@@ -22,6 +22,7 @@ import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.config.BridgeConstants;
 import co.rsk.core.RskAddress;
+import co.rsk.crypto.Keccak256;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.peg.bitcoin.MerkleBranch;
 import co.rsk.peg.utils.BtcTransactionFormatUtils;
@@ -1075,7 +1076,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             byte[] btcTxSerialized = (byte[]) args[0];
             int height = ((BigInteger) args[1]).intValue();
             byte[] pmtSerialized = (byte[]) args[2];
-            Sha256Hash derivationArgumentsHash = Sha256Hash.wrap((byte[]) args[3]);
+            Keccak256 derivationArgumentsHash = new Keccak256((byte[]) args[3]);
             Address userRefundAddress = new Address(bridgeConstants.getBtcParams(), (byte[]) args[4]);
             // A DataWord cast is used because a SolidityType "address" is decoded using this specific type.
             RskAddress lbcAddress = new RskAddress((DataWord) args[5]);

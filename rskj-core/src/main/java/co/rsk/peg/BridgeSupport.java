@@ -86,6 +86,8 @@ import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
+import org.ethereum.crypto.HashUtil;
+import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
@@ -2273,7 +2275,7 @@ public class BridgeSupport {
         byte[] btcTxSerialized,
         int height,
         byte[] pmtSerialized,
-        Sha256Hash derivationArgumentsHash,
+        Keccak256 derivationArgumentsHash,
         Address userRefundAddress,
         RskAddress lbcAddress,
         Address lpBtcAddress,
@@ -2300,7 +2302,7 @@ public class BridgeSupport {
         Context.propagate(btcContext);
         Sha256Hash btcTxHash = BtcTransactionFormatUtils.calculateBtcTxHash(btcTxSerialized);
 
-        Sha256Hash fastBridgeDerivationHash = getFastBridgeDerivationHash(
+        Keccak256 fastBridgeDerivationHash = getFastBridgeDerivationHash(
                 derivationArgumentsHash,
                 userRefundAddress,
                 lpBtcAddress,
@@ -2364,11 +2366,10 @@ public class BridgeSupport {
         return totalAmount.getValue();
     }
 
-    protected FastBridgeFederationInformation createFastBridgeFederationInformation(
-        Sha256Hash fastBridgeDerivationHash) {
+    protected FastBridgeFederationInformation createFastBridgeFederationInformation(Keccak256 fastBridgeDerivationHash) {
         Script fastBridgeScript = RedeemScriptParser.createMultiSigFastBridgeRedeemScript(
             getActiveFederation().getRedeemScript(),
-            fastBridgeDerivationHash
+            Sha256Hash.wrap(fastBridgeDerivationHash.getBytes())
         );
 
         Script fastBridgeScriptHash = ScriptBuilder.createP2SHOutputScript(fastBridgeScript);
@@ -2416,8 +2417,8 @@ public class BridgeSupport {
         return wallet;
     }
 
-    protected Sha256Hash getFastBridgeDerivationHash(
-        Sha256Hash derivationArgumentsHash,
+    protected Keccak256 getFastBridgeDerivationHash(
+        Keccak256 derivationArgumentsHash,
         Address userRefundAddress,
         Address lpBtcAddress,
         RskAddress lbcAddress
@@ -2469,8 +2470,7 @@ public class BridgeSupport {
             dstPosition,
             lpBtcAddressBytes.length
         );
-
-        return Sha256Hash.of(result);
+        return new Keccak256(HashUtil.keccak256(result));
     }
 
     protected Coin getAmountToLiveFederations(BtcTransaction btcTx) throws IOException{
@@ -2497,7 +2497,7 @@ public class BridgeSupport {
    // and will look like.
     protected void saveFastBridgeDataInStorage(
             Sha256Hash btcTxHash,
-            Sha256Hash derivationHash,
+            Keccak256 derivationHash,
             FastBridgeFederationInformation fastBridgeFederationInformation,
             List<UTXO> utxosList) throws IOException {
         provider.markFastBridgeFederationDerivationHashAsUsed(btcTxHash, derivationHash);

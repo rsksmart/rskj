@@ -1059,7 +1059,7 @@ public class BridgeSerializationUtilsTest {
     public void serializeFastBridgeInformation_Ok() {
         byte[] fastBridgeScriptHash = new byte[]{(byte)0x23};
         FastBridgeFederationInformation fastBridge = new FastBridgeFederationInformation(
-                Sha256Hash.wrap("0000000000000000000000000000000000000000000000000000000000000002"),
+                PegTestUtils.createHash3(2),
                 new byte[]{(byte)0x22},
                 fastBridgeScriptHash
         );
