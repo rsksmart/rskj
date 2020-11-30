@@ -11,6 +11,7 @@ import co.rsk.bitcoinj.script.RedeemScriptParser;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.wallet.RedeemData;
+import co.rsk.crypto.Keccak256;
 import co.rsk.peg.fastbridge.FastBridgeFederationInformation;
 import java.time.Instant;
 import java.util.Collections;
@@ -47,10 +48,10 @@ public class FastBridgeCompatibleBtcWalletWithStorageTest {
     @Test
     public void findRedeemDataFromScriptHash_with_fastBridgeInformation_in_storage() {
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
-        Sha256Hash derivationArgumentsHash = Sha256Hash.of(new byte[]{1});
+        Keccak256 derivationArgumentsHash = PegTestUtils.createHash3(1);
 
         Script fastBridgeRedeemScript = RedeemScriptParser.createMultiSigFastBridgeRedeemScript(
-            federation.getRedeemScript(), derivationArgumentsHash);
+            federation.getRedeemScript(), Sha256Hash.wrap(derivationArgumentsHash.getBytes()));
 
         Script p2SHOutputScript = ScriptBuilder.createP2SHOutputScript(fastBridgeRedeemScript);
         byte[] fastBridgeFederationP2SH = p2SHOutputScript.getPubKeyHash();
@@ -76,7 +77,7 @@ public class FastBridgeCompatibleBtcWalletWithStorageTest {
 
     @Test
     public void findRedeemDataFromScriptHash_null_destination_federation() {
-        Sha256Hash derivationArgumentsHash = Sha256Hash.of(new byte[]{2});
+        Keccak256 derivationArgumentsHash = PegTestUtils.createHash3(2);
         FastBridgeFederationInformation fastBridgeFederationInformation =
             new FastBridgeFederationInformation(
                 derivationArgumentsHash,
@@ -99,7 +100,7 @@ public class FastBridgeCompatibleBtcWalletWithStorageTest {
         byte[] fastBridgeScriptHash = new byte[1];
         FastBridgeFederationInformation fastBridgeFederationInformation =
             new FastBridgeFederationInformation(
-                Sha256Hash.of(new byte[]{2}),
+                PegTestUtils.createHash3(2),
                 new byte[0],
                 fastBridgeScriptHash);
 

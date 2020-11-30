@@ -754,7 +754,7 @@ public class BridgeSerializationUtils {
         if (rlpList.size() != 2) {
             throw new RuntimeException(String.format("Invalid serialized Fast Bridge Federation: expected 2 value but got %d", rlpList.size()));
         }
-        Sha256Hash derivationHash = Sha256Hash.wrap(rlpList.get(0).getRLPData());
+        Keccak256 derivationHash = new Keccak256(rlpList.get(0).getRLPData());
         byte[] federationP2SH = rlpList.get(1).getRLPData();
 
         return new FastBridgeFederationInformation(derivationHash, federationP2SH, fastBridgeScriptHash);

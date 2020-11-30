@@ -114,7 +114,7 @@ public class BridgeStorageProvider {
 
     private Map<Sha256Hash, CoinbaseInformation> coinbaseInformationMap;
 
-    private Sha256Hash fastBridgeDerivationArgumentsHashToSave = null;
+    private Keccak256 fastBridgeDerivationArgumentsHashToSave = null;
     private Sha256Hash fastBridgeBtcTxHashToSave = null;
 
     private FastBridgeFederationInformation fastBridgeFederationInformationsToSave = null;
@@ -601,7 +601,7 @@ public class BridgeStorageProvider {
             safeSaveToRepository(getStorageKeyForCoinbaseInformation(blockHash), data, BridgeSerializationUtils::serializeCoinbaseInformation));
     }
 
-    public boolean isFastBridgeFederationDerivationHashUsed(Sha256Hash btcTxHash, Sha256Hash derivationArgsHash) {
+    public boolean isFastBridgeFederationDerivationHashUsed(Sha256Hash btcTxHash, Keccak256 derivationArgsHash) {
         if (!activations.isActive(RSKIP176)) {
             return false;
         }
@@ -618,7 +618,7 @@ public class BridgeStorageProvider {
         return ((data != null) && (data.length == 1) && (data[0] == FAST_BRIDGE_FEDERATION_DERIVATION_ARGUMENTS_HASH_TRUE_VALUE));
     }
 
-    public void markFastBridgeFederationDerivationHashAsUsed(Sha256Hash btcTxHashToSave, Sha256Hash derivationArgsHash) {
+    public void markFastBridgeFederationDerivationHashAsUsed(Sha256Hash btcTxHashToSave, Keccak256 derivationArgsHash) {
         if (activations.isActive(RSKIP176)) {
             fastBridgeBtcTxHashToSave = btcTxHashToSave;
             fastBridgeDerivationArgumentsHashToSave = derivationArgsHash;
@@ -717,7 +717,7 @@ public class BridgeStorageProvider {
         return DataWord.fromLongString("coinbaseInformation-" + btcTxHash.toString());
     }
 
-    private DataWord getStorageKeyForDerivationArgumentsHash(Sha256Hash btcTxHash, Sha256Hash derivationHash) {
+    private DataWord getStorageKeyForDerivationArgumentsHash(Sha256Hash btcTxHash, Keccak256 derivationHash) {
         return DataWord.fromLongString("fastBridgeHashUsedInBtcTx-" + btcTxHash.toString() + derivationHash.toString());
     }
 

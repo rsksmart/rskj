@@ -2154,7 +2154,7 @@ public class BridgeStorageProviderTest {
     public void isFastBridgeFederationDerivationHashUsed_afterRSKIP176_returnTrue() {
         Repository repository = mock(Repository.class);
 
-        Sha256Hash derivationHash = PegTestUtils.createHash(1);
+        Keccak256 derivationHash = PegTestUtils.createHash3(1);
         Sha256Hash btcTxHash = PegTestUtils.createHash(2);
 
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
@@ -2180,7 +2180,7 @@ public class BridgeStorageProviderTest {
     public void isFastBridgeFederationDerivationHashUsed_beforeRSKIP176_returnFalse() {
         Repository repository = mock(Repository.class);
 
-        Sha256Hash derivationHash = PegTestUtils.createHash(1);
+        Keccak256 derivationHash = PegTestUtils.createHash3(1);
         Sha256Hash btcTxHash = PegTestUtils.createHash(2);
 
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
@@ -2206,7 +2206,7 @@ public class BridgeStorageProviderTest {
     public void isFastBridgeFederationDerivationHashUsed_storageReturnsNull_returnFalse() {
         Repository repository = mock(Repository.class);
 
-        Sha256Hash derivationHash = PegTestUtils.createHash(1);
+        Keccak256 derivationHash = PegTestUtils.createHash3(1);
         Sha256Hash btcTxHash = PegTestUtils.createHash(2);
 
         when(repository.getStorageBytes(
@@ -2232,7 +2232,7 @@ public class BridgeStorageProviderTest {
     public void isFastBridgeFederationDerivationHashUsed_storageReturnsEmpty_returnFalse() {
         Repository repository = mock(Repository.class);
 
-        Sha256Hash derivationHash = PegTestUtils.createHash(1);
+        Keccak256 derivationHash = PegTestUtils.createHash3(1);
         Sha256Hash btcTxHash = PegTestUtils.createHash(2);
 
         when(repository.getStorageBytes(
@@ -2258,7 +2258,7 @@ public class BridgeStorageProviderTest {
     public void isFastBridgeFederationDerivationHashUsed_storageReturnsWrongValue_returnFalse() {
         Repository repository = mock(Repository.class);
 
-        Sha256Hash derivationHash = PegTestUtils.createHash(1);
+        Keccak256 derivationHash = PegTestUtils.createHash3(1);
         Sha256Hash btcTxHash = PegTestUtils.createHash(2);
 
         when(repository.getStorageBytes(
@@ -2284,7 +2284,7 @@ public class BridgeStorageProviderTest {
     public void saveDerivationArgumentsScriptHash_afterRSKIP176_Ok() throws IOException {
         Repository repository = mock(Repository.class);
 
-        Sha256Hash derivationHash = PegTestUtils.createHash(1);
+        Keccak256 derivationHash = PegTestUtils.createHash3(1);
         Sha256Hash btcTxHash = PegTestUtils.createHash(2);
 
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
@@ -2313,7 +2313,7 @@ public class BridgeStorageProviderTest {
     public void saveDerivationArgumentsScriptHash_afterRSKIP176_nullBtcTxHash_notSaved() throws IOException {
         Repository repository = mock(Repository.class);
 
-        Sha256Hash derivationHash = PegTestUtils.createHash(1);
+        Keccak256 derivationHash = PegTestUtils.createHash3(1);
         Sha256Hash btcTxHash = null;
 
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
@@ -2337,7 +2337,7 @@ public class BridgeStorageProviderTest {
     public void saveDerivationArgumentsScriptHash_afterRSKIP176_nullDerivationHash_notSaved() throws IOException {
         Repository repository = mock(Repository.class);
 
-        Sha256Hash derivationHash = null;
+        Keccak256 derivationHash = null;
         Sha256Hash btcTxHash = PegTestUtils.createHash(1);
 
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
@@ -2361,7 +2361,7 @@ public class BridgeStorageProviderTest {
     public void saveDerivationArgumentsScriptHash_beforeRSKIP176_Ok() throws IOException {
         Repository repository = mock(Repository.class);
 
-        Sha256Hash derivationHash = PegTestUtils.createHash(1);
+        Keccak256 derivationHash = PegTestUtils.createHash3(1);
         Sha256Hash btcTxHash = PegTestUtils.createHash(2);
 
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
@@ -2390,7 +2390,7 @@ public class BridgeStorageProviderTest {
         Repository repository = mock(Repository.class);
 
         byte[] fastBridgeScriptHash = new byte[]{(byte) 0xbb};
-        Sha256Hash derivationHash = Sha256Hash.wrap("0000000000000000000000000000000000000000000000000000000000000001");
+        Keccak256 derivationHash = PegTestUtils.createHash3(1);
         byte[] federationScriptHash = new byte[]{(byte) 0xaa};
         FastBridgeFederationInformation fastBridgeValue =
             new FastBridgeFederationInformation(derivationHash, federationScriptHash, fastBridgeScriptHash);
@@ -2422,7 +2422,7 @@ public class BridgeStorageProviderTest {
     public void getFastBridgeFederationInformation_beforeRSKIP176_Ok() {
         Repository repository = mock(Repository.class);
 
-        Sha256Hash derivationHash = Sha256Hash.wrap("0000000000000000000000000000000000000000000000000000000000000002");
+        Keccak256 derivationHash = PegTestUtils.createHash3(2);
         byte[] federationP2SH = new byte[]{(byte) 0xaa};
         byte[] fastBridgeFederationP2SH = new byte[]{(byte) 0xaa};
         byte[] fastBridgeScriptHash = new byte[]{(byte)0x22};
@@ -2512,7 +2512,7 @@ public class BridgeStorageProviderTest {
     public void saveFastBridgeFederationInformation_afterRSKIP176_Ok() throws IOException {
         Repository repository = mock(Repository.class);
 
-        Sha256Hash derivationHash = Sha256Hash.wrap("0000000000000000000000000000000000000000000000000000000000000002");
+        Keccak256 derivationHash = PegTestUtils.createHash3(2);
         byte[] federationP2SH = new byte[]{(byte) 0xaa};
         byte[] fastBridgeScriptHash = new byte[]{(byte)0x22};
         FastBridgeFederationInformation fastBridgeValue =
@@ -2542,7 +2542,7 @@ public class BridgeStorageProviderTest {
     public void saveFastBridgeFederationInformation_beforeRSKIP176_Ok() throws IOException {
         Repository repository = mock(Repository.class);
 
-        Sha256Hash derivationHash = Sha256Hash.wrap("0000000000000000000000000000000000000000000000000000000000000002");
+        Keccak256 derivationHash = PegTestUtils.createHash3(2);
         byte[] federationP2SH = new byte[]{(byte) 0xaa};
         byte[] fastBridgeScriptHash = new byte[]{(byte)0x22};
         FastBridgeFederationInformation fastBridgeValue =
@@ -2573,7 +2573,7 @@ public class BridgeStorageProviderTest {
     public void saveFastBridgeFederationInformation_alreadySet_dont_set_again() throws IOException {
         Repository repository = mock(Repository.class);
 
-        Sha256Hash derivationHash = Sha256Hash.wrap("0000000000000000000000000000000000000000000000000000000000000002");
+        Keccak256 derivationHash = PegTestUtils.createHash3(2);
         byte[] federationP2SH = new byte[]{(byte) 0xaa};
         byte[] fastBridgeScriptHash = new byte[]{(byte)0x22};
         FastBridgeFederationInformation fastBridgeValue =

@@ -69,8 +69,7 @@ import java.util.stream.Stream;
 
 import static co.rsk.peg.PegTestUtils.createBaseInputScriptThatSpendsFromTheFederation;
 import static co.rsk.peg.PegTestUtils.createBaseRedeemScriptThatSpendsFromTheFederation;
-import static org.hamcrest.Matchers.hasItem;
-import static org.hamcrest.Matchers.lessThanOrEqualTo;
+import static org.hamcrest.Matchers.*;
 import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
 import static org.hamcrest.collection.IsEmptyCollection.empty;
 import static org.hamcrest.core.Is.is;
@@ -4364,6 +4363,46 @@ public class BridgeSupportTest {
         Assert.assertFalse(bridgeSupport.validationsForRegisterBtcTransaction(btcTx.getHash(), 0, pmt.bitcoinSerialize(), btcTx.bitcoinSerialize()));
     }
 
+    @Test(expected = BridgeIllegalArgumentException.class)
+    public void validationsForRegisterBtcTransaction_exception_in_getTxnHashAndMerkleRoot() throws BlockStoreException, AddressFormatException, IOException {
+        BtcTransaction btcTx = new BtcTransaction(btcParams);
+        BridgeConstants bridgeConstants = mock(BridgeConstants.class);
+
+        byte[] bits = new byte[1];
+        bits[0] = 0x01;
+        List<Sha256Hash> hashes = new ArrayList<>();
+        hashes.add(PegTestUtils.createHash(0));
+
+        PartialMerkleTree pmt = mock(PartialMerkleTree.class);
+        when(pmt.getTxnHashAndMerkleRoot(anyList())).thenReturn(Sha256Hash.ZERO_HASH).thenThrow(VerificationException.class);
+
+        int btcTxHeight = 2;
+
+        doReturn(btcParams).when(bridgeConstants).getBtcParams();
+        doReturn(0).when(bridgeConstants).getBtc2RskMinimumAcceptableConfirmations();
+        StoredBlock storedBlock = mock(StoredBlock.class);
+        doReturn(btcTxHeight - 1).when(storedBlock).getHeight();
+        BtcBlock btcBlock = mock(BtcBlock.class);
+        doReturn(Sha256Hash.of(Hex.decode("aa"))).when(btcBlock).getHash();
+        doReturn(btcBlock).when(storedBlock).getHeader();
+        BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
+        doReturn(storedBlock).when(btcBlockStore).getChainHead();
+        BtcBlockStoreWithCache.Factory mockFactory = mock(BtcBlockStoreWithCache.Factory.class);
+        when(mockFactory.newInstance(any())).thenReturn(btcBlockStore);
+
+        BridgeSupport bridgeSupport = getBridgeSupport(
+                bridgeConstants,
+                mock(BridgeStorageProvider.class),
+                mock(Repository.class),
+                mock(BridgeEventLogger.class),
+                null,
+                mockFactory
+        );
+
+        Assert.assertFalse(bridgeSupport.validationsForRegisterBtcTransaction(btcTx.getHash(), 0, pmt.bitcoinSerialize(), btcTx.bitcoinSerialize()));
+    }
+
+
     @Test(expected = VerificationException.class)
     public void validationsForRegisterBtcTransaction_tx_without_inputs_before_rskip_143() throws BlockStoreException, BridgeIllegalArgumentException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
@@ -5151,7 +5190,7 @@ public class BridgeSupportTest {
                 new byte[]{},
                 0,
                 new byte[]{},
-                Sha256Hash.ZERO_HASH,
+                PegTestUtils.createHash3(0),
                 mock(Address.class),
                 mock(RskAddress.class),
                 mock(Address.class),
@@ -5187,7 +5226,7 @@ public class BridgeSupportTest {
             tx.bitcoinSerialize(),
             100,
             Hex.decode("ab"),
-            Sha256Hash.ZERO_HASH,
+            PegTestUtils.createHash3(0),
             mock(Address.class),
             mock(RskAddress.class),
             mock(Address.class),
@@ -5220,7 +5259,7 @@ public class BridgeSupportTest {
                 activations
         ));
 
-        doReturn(PegTestUtils.createHash(5))
+        doReturn(PegTestUtils.createHash3(5))
                 .when(bridgeSupport)
                 .getFastBridgeDerivationHash(any(), any(), any(), any());
 
@@ -5231,7 +5270,7 @@ public class BridgeSupportTest {
                 tx.bitcoinSerialize(),
                 100,
                 Hex.decode("ab"),
-                Sha256Hash.ZERO_HASH,
+                PegTestUtils.createHash3(0),
                 mock(Address.class),
                 lbcAddress,
                 mock(Address.class),
@@ -5264,7 +5303,7 @@ public class BridgeSupportTest {
             activations
         ));
 
-        doReturn(PegTestUtils.createHash(5))
+        doReturn(PegTestUtils.createHash3(5))
                 .when(bridgeSupport)
                 .getFastBridgeDerivationHash(any(), any(), any(), any());
 
@@ -5275,7 +5314,7 @@ public class BridgeSupportTest {
             tx.bitcoinSerialize(),
             100,
             Hex.decode("ab"),
-            Sha256Hash.ZERO_HASH,
+            PegTestUtils.createHash3(0),
             mock(Address.class),
             lbcAddress,
             mock(Address.class),
@@ -5312,8 +5351,8 @@ public class BridgeSupportTest {
 
         doReturn(bridgeConstants.getGenesisFederation()).when(bridgeSupport).getActiveFederation();
         doReturn(true).when(bridgeSupport).validationsForRegisterBtcTransaction(any(), anyInt(), any(), any());
-        doReturn(Sha256Hash.of(new byte [1])).when(bridgeSupport).getFastBridgeDerivationHash(
-            any(Sha256Hash.class),
+        doReturn(PegTestUtils.createHash3(1)).when(bridgeSupport).getFastBridgeDerivationHash(
+            any(Keccak256.class),
             any(Address.class),
             any(Address.class),
             any(RskAddress.class)
@@ -5327,7 +5366,7 @@ public class BridgeSupportTest {
             tx.bitcoinSerialize(),
             100,
             Hex.decode("ab"),
-            Sha256Hash.ZERO_HASH,
+            PegTestUtils.createHash3(0),
             mock(Address.class),
             lbcAddress,
             mock(Address.class),
@@ -5367,8 +5406,8 @@ public class BridgeSupportTest {
 
         doReturn(bridgeConstants.getGenesisFederation()).when(bridgeSupport).getActiveFederation();
         doReturn(true).when(bridgeSupport).validationsForRegisterBtcTransaction(any(), anyInt(), any(), any());
-        doReturn(Sha256Hash.of(new byte [1])).when(bridgeSupport).getFastBridgeDerivationHash(
-                any(Sha256Hash.class),
+        doReturn(PegTestUtils.createHash3(1)).when(bridgeSupport).getFastBridgeDerivationHash(
+                any(Keccak256.class),
                 any(Address.class),
                 any(Address.class),
                 any(RskAddress.class)
@@ -5386,7 +5425,7 @@ public class BridgeSupportTest {
                 tx.bitcoinSerialize(),
                 100,
                 Hex.decode("ab"),
-                Sha256Hash.ZERO_HASH,
+                PegTestUtils.createHash3(0),
                 mock(Address.class),
                 lbcAddress,
                 mock(Address.class),
@@ -5404,7 +5443,7 @@ public class BridgeSupportTest {
         when(activations.isActive(ConsensusRule.RSKIP134)).thenReturn(true);
 
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
-        when(provider.isFastBridgeFederationDerivationHashUsed(any(Sha256Hash.class), any(Sha256Hash.class))).thenReturn(true);
+        when(provider.isFastBridgeFederationDerivationHashUsed(any(Sha256Hash.class), any(Keccak256.class))).thenReturn(true);
 
         ReleaseTransactionSet releaseTransactionSet = new ReleaseTransactionSet(new HashSet<>());
         when(provider.getReleaseTransactionSet()).thenReturn(releaseTransactionSet);
@@ -5436,8 +5475,8 @@ public class BridgeSupportTest {
         doReturn(bridgeConstants.getGenesisFederation()).when(bridgeSupport).getActiveFederation();
         doReturn(true).when(bridgeSupport).validationsForRegisterBtcTransaction(any(), anyInt(), any(), any());
         doReturn(Coin.COIN).when(bridgeSupport).getLockingCap();
-        doReturn(Sha256Hash.of(new byte [1])).when(bridgeSupport).getFastBridgeDerivationHash(
-            any(Sha256Hash.class),
+        doReturn(PegTestUtils.createHash3(1)).when(bridgeSupport).getFastBridgeDerivationHash(
+            any(Keccak256.class),
             any(Address.class),
             any(Address.class),
             any(RskAddress.class)
@@ -5460,7 +5499,7 @@ public class BridgeSupportTest {
             tx.bitcoinSerialize(),
             100,
             pmtSerialized,
-            Sha256Hash.ZERO_HASH,
+            PegTestUtils.createHash3(0),
             btcAddress,
             lbcAddress,
             btcAddress,
@@ -5507,8 +5546,8 @@ public class BridgeSupportTest {
         doReturn(bridgeConstants.getGenesisFederation()).when(bridgeSupport).getActiveFederation();
         doReturn(true).when(bridgeSupport).validationsForRegisterBtcTransaction(any(), anyInt(), any(), any());
         doReturn(Coin.COIN).when(bridgeSupport).getLockingCap();
-        doReturn(Sha256Hash.of(new byte [1])).when(bridgeSupport).getFastBridgeDerivationHash(
-            any(Sha256Hash.class),
+        doReturn(PegTestUtils.createHash3(1)).when(bridgeSupport).getFastBridgeDerivationHash(
+            any(Keccak256.class),
             any(Address.class),
             any(Address.class),
             any(RskAddress.class)
@@ -5531,7 +5570,7 @@ public class BridgeSupportTest {
             tx.bitcoinSerialize(),
             100,
             pmtSerialized,
-            Sha256Hash.ZERO_HASH,
+            PegTestUtils.createHash3(0),
             btcAddress,
             lbcAddress,
             btcAddress,
@@ -5576,8 +5615,8 @@ public class BridgeSupportTest {
 
         doReturn(bridgeConstants.getGenesisFederation()).when(bridgeSupport).getActiveFederation();
         doReturn(true).when(bridgeSupport).validationsForRegisterBtcTransaction(any(), anyInt(), any(), any());
-        doReturn(Sha256Hash.of(new byte [1])).when(bridgeSupport).getFastBridgeDerivationHash(
-            any(Sha256Hash.class),
+        doReturn(PegTestUtils.createHash3(1)).when(bridgeSupport).getFastBridgeDerivationHash(
+            any(Keccak256.class),
             any(Address.class),
             any(Address.class),
             any(RskAddress.class)
@@ -5602,7 +5641,7 @@ public class BridgeSupportTest {
             tx.bitcoinSerialize(),
             100,
             Hex.decode("ab"),
-            Sha256Hash.ZERO_HASH,
+            PegTestUtils.createHash3(0),
             btcAddress,
             lbcAddress,
             btcAddress,
@@ -5618,12 +5657,12 @@ public class BridgeSupportTest {
         );
 
         bridgeSupport.save();
-        Assert.assertTrue(provider.isFastBridgeFederationDerivationHashUsed(tx.getHash(), Sha256Hash.ZERO_HASH));
+        Assert.assertTrue(provider.isFastBridgeFederationDerivationHashUsed(tx.getHash(), PegTestUtils.createHash3(0)));
         Assert.assertEquals(1, provider.getNewFederationBtcUTXOs().size());
     }
 
     @Test
-    public void createFastBridgeFederationInformation() {
+    public void createFastBridgeFederationInformation_OK() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(true);
 
@@ -5646,11 +5685,11 @@ public class BridgeSupportTest {
 
         Script fastBridgeRedeemScript = RedeemScriptParser.createMultiSigFastBridgeRedeemScript(
             bridgeConstants.getGenesisFederation().getRedeemScript(),
-            Sha256Hash.of(new byte[1])
+            PegTestUtils.createHash(1)
         );
 
         Script fastBridgeP2SH = ScriptBuilder.createP2SHOutputScript(fastBridgeRedeemScript);
-        Sha256Hash derivationHash = Sha256Hash.of(new byte[1]);
+        Keccak256 derivationHash = PegTestUtils.createHash3(1);
 
         FastBridgeFederationInformation expectedFastBridgeFederationInformation =
             new FastBridgeFederationInformation(derivationHash,
@@ -5747,11 +5786,11 @@ public class BridgeSupportTest {
         );
 
         Federation fed = bridgeConstants.getGenesisFederation();
-        Sha256Hash derivationHash = Sha256Hash.of(new byte[1]);
+        Keccak256 derivationHash = PegTestUtils.createHash3(1);
 
         Script fastBridgeRedeemScript = RedeemScriptParser.createMultiSigFastBridgeRedeemScript(
             fed.getRedeemScript(),
-            derivationHash
+            Sha256Hash.wrap(derivationHash.getBytes())
         );
 
         Script fastBridgeP2SH = ScriptBuilder.createP2SHOutputScript(fastBridgeRedeemScript);
@@ -5790,14 +5829,14 @@ public class BridgeSupportTest {
 
         byte[] result = ByteUtil.merge(derivationArgumentsHash, userRefundAddress, lbcAddress, lpBtcAddress);
 
-        Sha256Hash fastBridgeDerivationHash = bridgeSupport.getFastBridgeDerivationHash(
-                Sha256Hash.wrap(derivationArgumentsHash),
+        Keccak256 fastBridgeDerivationHash = bridgeSupport.getFastBridgeDerivationHash(
+                new Keccak256(derivationArgumentsHash),
                 new Address(btcParams, userRefundAddress),
                 new Address(btcParams, lpBtcAddress),
                 new RskAddress(lbcAddress)
         );
 
-        Assert.assertEquals(Sha256Hash.of(result), fastBridgeDerivationHash);
+        Assert.assertArrayEquals(HashUtil.keccak256(result), fastBridgeDerivationHash.getBytes());
     }
 
     @Test
@@ -5838,7 +5877,7 @@ public class BridgeSupportTest {
     private Address getFastBridgeFederationAddress() {
         Script fastBridgeRedeemScript = RedeemScriptParser.createMultiSigFastBridgeRedeemScript(
             bridgeConstants.getGenesisFederation().getRedeemScript(),
-            Sha256Hash.of(new byte[1])
+            PegTestUtils.createHash(1)
         );
 
         Script fastBridgeP2SH = ScriptBuilder.createP2SHOutputScript(fastBridgeRedeemScript);
@@ -5865,11 +5904,11 @@ public class BridgeSupportTest {
         BridgeSupport bridgeSupport = getBridgeSupport(bridgeConstants, provider, activationsAfterForks);
 
         Sha256Hash btcTxHash = PegTestUtils.createHash(1);
-        Sha256Hash derivationHash = PegTestUtils.createHash(1);
+        Keccak256 derivationHash = PegTestUtils.createHash3(1);
 
         byte[] fastBridgeScriptHash = new byte[]{0x1};
         FastBridgeFederationInformation fastBridgeFederationInformation = new FastBridgeFederationInformation(
-                PegTestUtils.createHash(2),
+                PegTestUtils.createHash3(2),
                 new byte[]{0x1},
                 fastBridgeScriptHash
         );

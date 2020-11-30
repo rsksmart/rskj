@@ -1,6 +1,7 @@
 package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.Context;
+import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.bitcoinj.script.RedeemScriptParser;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.wallet.RedeemData;
@@ -41,7 +42,7 @@ public abstract class FastBridgeCompatibleBtcWallet extends BridgeBtcWallet {
             Script fedRedeemScript = destinationFederationInstance.getRedeemScript();
             Script fastBridgeRedeemScript = RedeemScriptParser
                 .createMultiSigFastBridgeRedeemScript(fedRedeemScript,
-                    fastBridgeFederationInformationInstance.getDerivationHash());
+                    Sha256Hash.wrap(fastBridgeFederationInformationInstance.getDerivationHash().getBytes()));
 
             return RedeemData.of(destinationFederationInstance.getBtcPublicKeys(), fastBridgeRedeemScript);
         }
