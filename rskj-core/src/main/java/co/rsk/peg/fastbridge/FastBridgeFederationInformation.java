@@ -2,15 +2,15 @@ package co.rsk.peg.fastbridge;
 
 import co.rsk.bitcoinj.core.Address;
 import co.rsk.bitcoinj.core.NetworkParameters;
-import co.rsk.bitcoinj.core.Sha256Hash;
+import co.rsk.crypto.Keccak256;
 
 public class FastBridgeFederationInformation {
-    private final Sha256Hash derivationHash;
+    private final Keccak256 derivationHash;
     private final byte[] federationScriptHash;
     private final byte[] fastBridgeScriptHash;
 
     public FastBridgeFederationInformation(
-        Sha256Hash derivationHash,
+        Keccak256 derivationHash,
         byte[] federationScriptHash,
         byte[] fastBridgeScriptHash
     ) {
@@ -19,7 +19,7 @@ public class FastBridgeFederationInformation {
         this.fastBridgeScriptHash = fastBridgeScriptHash;
     }
 
-    public Sha256Hash getDerivationHash() {
+    public Keccak256 getDerivationHash() {
         return derivationHash;
     }
 
