@@ -106,7 +106,6 @@ public class TransactionExecutorFactory {
                 block,
                 totalGasUsed,
                 vmConfig,
-                config.playVM(),
                 config.isRemascEnabled(),
                 precompiledContracts,
                 deletedAccounts,
