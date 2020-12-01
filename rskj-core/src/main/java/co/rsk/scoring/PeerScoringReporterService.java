@@ -11,7 +11,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 /**
- * This service prints a summary of nodes with bad reputation, every 5 minutes (configurable)
+ * This internal service prints a summary of peer scoring information, every 5 minutes (configurable)
  * */
 public class PeerScoringReporterService implements InternalService {
 
@@ -56,11 +56,11 @@ public class PeerScoringReporterService implements InternalService {
 
     public void printReports(List<PeerScoringInformation> peerScoringInformationList) {
         try {
-            String badReputationSummary = PeerScoringReporterUtil.reputationSummaryString(peerScoringInformationList);
-            logger.debug("reputation summary {}", badReputationSummary);
+            String reputationSummaryString = PeerScoringReporterUtil.reputationSummaryString(peerScoringInformationList);
+            logger.debug("reputation summary {}", reputationSummaryString);
 
-            String peersInformationDetailed = PeerScoringReporterUtil.detailedReputationString(peerScoringInformationList);
-            logger.debug("detailed reputation status {}", peersInformationDetailed);
+            String detailedReputationString = PeerScoringReporterUtil.detailedReputationString(peerScoringInformationList);
+            logger.debug("detailed reputation status {}", detailedReputationString);
         } catch (Exception e) {
             logger.warn("failed to print reports", e);
         }
