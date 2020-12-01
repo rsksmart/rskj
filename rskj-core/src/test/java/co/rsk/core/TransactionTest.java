@@ -351,4 +351,20 @@ public class TransactionTest {
         Assert.assertFalse(tx.isContractCreation());
     }
 
+    @Test
+    public void createEncodeAndDecodeTransactionWithChainId() {
+        Transaction originalTransaction = CallTransaction.createCallTransaction(
+                0, 0, 100000000000000L,
+                new RskAddress("095e7baea6a6c7c4c2dfeb977efac326af552d87"), 0,
+                CallTransaction.Function.fromSignature("get"), chainId);
+
+        originalTransaction.sign(new byte[]{});
+
+        byte[] encoded = originalTransaction.getEncoded();
+
+        Transaction transaction = new ImmutableTransaction(encoded);
+
+        Assert.assertEquals(chainId, transaction.getChainId());
+        Assert.assertEquals(27, transaction.getSignature().getV());
+    }
 }
