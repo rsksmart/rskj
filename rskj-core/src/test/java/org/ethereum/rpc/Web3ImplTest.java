@@ -429,7 +429,10 @@ public class Web3ImplTest {
         assertEquals("0x", tr.input);
         assertEquals("0x" + ByteUtil.toHexString(tx.getReceiveAddress().getBytes()), tr.to);
 
-        assertArrayEquals(new byte[] {tx.getSignature().getV()}, TypeConverter.stringHexToByteArray(tr.v));
+        // Check the v value used to encode the transaction
+        // NOT the v value used in signature
+        // the encoded value includes chain id
+        Assert.assertArrayEquals(new byte[] {tx.getEncodedV()}, TypeConverter.stringHexToByteArray(tr.v));
         Assert.assertThat(TypeConverter.stringHexToBigInteger(tr.s), is(tx.getSignature().getS()));
         Assert.assertThat(TypeConverter.stringHexToBigInteger(tr.r), is(tx.getSignature().getR()));
     }
