@@ -147,6 +147,8 @@ public class BlockExecutor {
         if (!isValidStateRoot) {
             logger.error("Block {} [{}] given State Root is invalid", block.getNumber(), block.getPrintableHash());
             profiler.stop(metric);
+            // #mish for testing
+            System.out.println("\nIn blockexecutor INVALID state root");
             return false;
         }
 
@@ -154,6 +156,8 @@ public class BlockExecutor {
         if (!isValidReceiptsRoot) {
             logger.error("Block {} [{}] given Receipt Root is invalid", block.getNumber(), block.getPrintableHash());
             profiler.stop(metric);
+            // #mish for testing
+            // System.out.println("\nIn blockexecutor INVALID receipts root");
             return false;
         }
 
@@ -161,12 +165,16 @@ public class BlockExecutor {
         if (!isValidLogsBloom) {
             logger.error("Block {} [{}] given Logs Bloom is invalid", block.getNumber(), block.getPrintableHash());
             profiler.stop(metric);
+            // #mish for testing
+            System.out.println("\nIn blockexecutor INVALID logs Bloom");
             return false;
         }
 
         if (result.getGasUsed() != block.getGasUsed()) {
             logger.error("Block {} [{}] given gasUsed doesn't match: {} != {}", block.getNumber(), block.getPrintableHash(), block.getGasUsed(), result.getGasUsed());
             profiler.stop(metric);
+            // #mish for testing
+            // System.out.println("\nIn blockexecutor INVALID. gasUsed MISMATCH");
             return false;
         }
 
@@ -185,6 +193,8 @@ public class BlockExecutor {
         if (!executedTransactions.equals(transactionsList))  {
             logger.error("Block {} [{}] given txs doesn't match: {} != {}", block.getNumber(), block.getPrintableHash(), transactionsList, executedTransactions);
             profiler.stop(metric);
+            // #mish for testing
+            // System.out.println("\nIn blockexecutor exec TXs mismatch");
             return false;
         }
 
@@ -291,7 +301,7 @@ public class BlockExecutor {
 
             TransactionExecutor txExecutor = transactionExecutorFactory.newInstance(
                     tx,
-                    txindex++,
+                    txindex++,  //#mish: will reset to 0 at top of each run if for loop
                     block.getCoinbase(),
                     track,
                     block,
@@ -368,17 +378,17 @@ public class BlockExecutor {
             receipts.add(receipt);
 
             logger.trace("tx done");
-            //#mish testing changes in trie hashes when working with benchmarking tool
+            //#mish testing changes in trie hashes when working with rauls benchmarking tool
             /*if (block.getNumber() < 2L){
-                if (txindex == 1){
-                    track.save();
+                if (txindex < 6){
+                   track.save();
                     System.out.println(                        
-                        "Sender "  + tx.getSender()+
+                      "Sender "  + tx.getSender()+
                         "\nReceiver " + tx.getReceiveAddress()+
                         "\nContract " + tx.getContractAddress()+
                         "\nGas price " + tx.getGasPrice()+
                         "\nTX hash: "+ Hex.toHexString(tx.getHash().getBytes())+
-                        "\nTrie hash "+ track.getTrie().getHash());
+                        "Trie hash "+ track.getTrie().getHash());
                 }
             }*/
         }
@@ -390,7 +400,7 @@ public class BlockExecutor {
         //#mish for testing
         /*System.out.println("\nPost block exec state root (trie hash) " + track.getTrie().getHash() +
                             "\nwith total gas used (execution): " + totalGasUsed +
-                            " \nand fees: " + totalPaidFees);
+                            " \nand fees: " + totalPaidFees + "\n>>>>>\n");
         */
 
         BlockResult result = new BlockResult(
