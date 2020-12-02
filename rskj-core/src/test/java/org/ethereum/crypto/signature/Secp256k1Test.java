@@ -20,17 +20,34 @@
 package org.ethereum.crypto.signature;
 
 import co.rsk.config.RskSystemProperties;
+import org.bitcoin.Secp256k1Context;
+import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.mockito.Mockito;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+@RunWith(PowerMockRunner.class)
+@PrepareForTest(Secp256k1Context.class)
 public class Secp256k1Test {
+
+    @Before
+    public void init() {
+        // Lets assume we have the ability to run Native Library.
+        PowerMockito.mockStatic(Secp256k1Context.class);
+        PowerMockito.when(Secp256k1Context.isEnabled()).thenReturn(Boolean.TRUE);
+    }
 
     @Test
     public void testInitialization_notInitialized() {
         Secp256k1.reset();
         assertTrue(Secp256k1.getInstance() instanceof Secp256k1ServiceBC);
+        assertFalse(Secp256k1.getInstance() instanceof Secp256k1ServiceNative);
     }
 
     @Test
@@ -41,6 +58,7 @@ public class Secp256k1Test {
         Mockito.when(properties.cryptoLibrary()).thenReturn("bc");
         Secp256k1.initialize(properties);
         assertTrue(Secp256k1.getInstance() instanceof Secp256k1ServiceBC);
+        assertFalse(Secp256k1.getInstance() instanceof Secp256k1ServiceNative);
     }
 
     @Test
@@ -60,6 +78,7 @@ public class Secp256k1Test {
         Secp256k1.reset();
         Secp256k1.initialize(null);
         assertTrue(Secp256k1.getInstance() instanceof Secp256k1ServiceBC);
+        assertFalse(Secp256k1.getInstance() instanceof Secp256k1ServiceNative);
 
         RskSystemProperties properties = Mockito.mock(RskSystemProperties.class);
         Mockito.when(properties.cryptoLibrary()).thenReturn("native");
@@ -81,6 +100,7 @@ public class Secp256k1Test {
         Mockito.when(properties.cryptoLibrary()).thenReturn("bc");
         Secp256k1.initialize(properties);
         assertTrue(Secp256k1.getInstance() instanceof Secp256k1ServiceBC);
+        assertFalse(Secp256k1.getInstance() instanceof Secp256k1ServiceNative);
     }
 
 }

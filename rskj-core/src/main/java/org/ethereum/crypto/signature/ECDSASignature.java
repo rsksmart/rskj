@@ -151,12 +151,19 @@ public class ECDSASignature {
         return validateComponents(r, s, v);
     }
 
+    public boolean validateComponentsWithoutV() {
+        return validateComponents(r, s);
+    }
+
     public static boolean validateComponents(BigInteger r, BigInteger s, byte v) {
 
         if (v != 27 && v != 28) {
             return false;
         }
+        return validateComponents(r, s);
+    }
 
+    private static boolean validateComponents(BigInteger r, BigInteger s) {
         if (isLessThan(r, BigInteger.ONE)) {
             return false;
         }

@@ -150,6 +150,18 @@ public class RskSystemProperties extends SystemProperties {
         return getDouble("miner.minFeesNotifyInDollars", 0);
     }
 
+    public boolean bloomServiceEnabled() {
+        return getBoolean("bloom.service", false);
+    }
+
+    public int bloomNumberOfBlocks() {
+        return getInt("bloom.blocks", 64);
+    }
+
+    public int bloomNumberOfConfirmations() {
+        return getInt("bloom.confirmations", 400);
+    }
+
     public boolean waitForSync() {
         return getBoolean("sync.waitForSync", false);
     }

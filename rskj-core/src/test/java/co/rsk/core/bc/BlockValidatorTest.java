@@ -598,6 +598,7 @@ public class BlockValidatorTest {
 
         List<Transaction> txs = new ArrayList<>();
         Transaction tx = new Transaction("0000000000000000000000000000000000000006", BigInteger.ZERO, BigInteger.ZERO, BigInteger.valueOf(12L), BigInteger.TEN, config.getNetworkConstants().getChainId());
+
         tx.sign(new byte[]{});
         txs.add(new RemascTransaction(BigInteger.ONE.longValue()));
         txs.add(tx);

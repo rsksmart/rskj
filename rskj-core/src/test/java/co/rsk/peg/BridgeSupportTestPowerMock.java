@@ -1361,7 +1361,7 @@ public class BridgeSupportTestPowerMock {
         assertThat(changeUtxo.getValue(), is(changeValue));
         assertThat(changeUtxo.getScript().getToAddress(params), is(retiringFederationAddress));
 
-        PowerMockito.verifyStatic();
+        PowerMockito.verifyStatic(BridgeUtils.class);
         BridgeUtils.isMigrationTx(releaseWithChangeTx, activeFederation, retiringFederation, btcContext, bridgeConstants);
     }
 

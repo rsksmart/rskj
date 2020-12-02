@@ -22,6 +22,7 @@ package org.ethereum.validator;
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.blockchain.utils.BlockMiner;
 import co.rsk.config.RskMiningConstants;
+import co.rsk.config.RskSystemProperties;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.crypto.Keccak256;
 import co.rsk.mine.MinerUtils;
@@ -30,11 +31,14 @@ import co.rsk.util.DifficultyUtils;
 import co.rsk.validators.ProofOfWorkRule;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockFactory;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.ethereum.util.ByteUtil;
+import org.bouncycastle.util.encoders.Hex;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -139,7 +143,78 @@ public class ProofOfWorkRuleTest extends ParameterizedNetworkUpgradeTest {
         Assert.assertFalse(rule.isValid(b));
     }
 
+    @Test
+    public void bytesAfterMergedMiningHashAreLessThan128() {
+        RskSystemProperties props = new TestSystemProperties() {
+            @Override
+            public ActivationConfig getActivationConfig() {
+                return ActivationConfigsForTest.all();
+            }
+        };
+        ActivationConfig config = props.getActivationConfig();
+        Constants networkConstants = props.getNetworkConstants();
+
+        BlockGenerator blockGenerator = new BlockGenerator(networkConstants, config);
+
+        Block newBlock = blockGenerator.getBlock(1);
+        while (newBlock.getNumber() < 455)
+            newBlock = blockGenerator.createChildBlock(newBlock);
+
+        String output1 = "6a24b9e11b6de9aa87561948d72e494fed2fb56bf8fd4193425f9350037f34dec5b13be7a86e";
+        String output2 = "aa21a9ed90a5e7d6d8093d20aa54fb01f57da374e016d4a01ddec0210088675e5e3fee4e";
+
+        byte[] mergedMiningLink = org.bouncycastle.util.Arrays.concatenate(RskMiningConstants.RSK_TAG, newBlock.getHashForMergedMining());
+        co.rsk.bitcoinj.core.NetworkParameters params = co.rsk.bitcoinj.params.RegTestParams.get();
+        co.rsk.bitcoinj.core.BtcTransaction bitcoinMergedMiningCoinbaseTransaction = MinerUtils.getBitcoinCoinbaseTransaction(params, mergedMiningLink);
+        bitcoinMergedMiningCoinbaseTransaction.addOutput(new co.rsk.bitcoinj.core.TransactionOutput(params, bitcoinMergedMiningCoinbaseTransaction, co.rsk.bitcoinj.core.Coin.valueOf(0), Hex.decode(output1)));
+        bitcoinMergedMiningCoinbaseTransaction.addOutput(new co.rsk.bitcoinj.core.TransactionOutput(params, bitcoinMergedMiningCoinbaseTransaction, co.rsk.bitcoinj.core.Coin.valueOf(0), Hex.decode(output2)));
+
+        Block newBlock1 = new BlockMiner(config).mineBlock(newBlock, bitcoinMergedMiningCoinbaseTransaction);
+        ProofOfWorkRule rule = new ProofOfWorkRule(props);
+        assertTrue(rule.isValid(newBlock1));
+    }
+
+    @Test
+    public void bytesAfterMergedMiningHashAreMoreThan128() {
+        // This test shows that a Mining Pools can not add more than 2 outputs with 36 bytes each,
+        // otherwise solutions will not be taken as valid.
+
+        RskSystemProperties props = new TestSystemProperties() {
+            @Override
+            public ActivationConfig getActivationConfig() {
+                return ActivationConfigsForTest.all();
+            }
+        };
+        ActivationConfig config = props.getActivationConfig();
+        Constants networkConstants = props.getNetworkConstants();
+
+        BlockGenerator blockGenerator = new BlockGenerator(networkConstants, config);
+
+        Block newBlock = blockGenerator.getBlock(1);
+        // fork detection data is for heights > 449
+        while (newBlock.getNumber() < 455)
+            newBlock = blockGenerator.createChildBlock(newBlock);
+
+        String output1 = "6a24b9e11b6de9aa87561948d72e494fed2fb56bf8fd4193425f9350037f34dec5b13be7";
+        String output2 = "aa21a9ed90a5e7d6d8093d20aa54fb01f57da374e016d4a01ddec0210088675e5e3fee4e";
+        String output3 = "1111a9ed90a5e7d6d8093d20aa54fb01f57da374e016d4a01ddec0210088675e5e3fee4e";
+        byte[] mergedMiningLink = org.bouncycastle.util.Arrays.concatenate(RskMiningConstants.RSK_TAG, newBlock.getHashForMergedMining());
+        co.rsk.bitcoinj.core.NetworkParameters params = co.rsk.bitcoinj.params.RegTestParams.get();
+        co.rsk.bitcoinj.core.BtcTransaction coinbaseTransaction = MinerUtils.getBitcoinCoinbaseTransaction(params, mergedMiningLink);
+        coinbaseTransaction.addOutput(new co.rsk.bitcoinj.core.TransactionOutput(params, coinbaseTransaction, co.rsk.bitcoinj.core.Coin.valueOf(0), Hex.decode(output1)));
+        coinbaseTransaction.addOutput(new co.rsk.bitcoinj.core.TransactionOutput(params, coinbaseTransaction, co.rsk.bitcoinj.core.Coin.valueOf(0), Hex.decode(output2)));
+        coinbaseTransaction.addOutput(new co.rsk.bitcoinj.core.TransactionOutput(params, coinbaseTransaction, co.rsk.bitcoinj.core.Coin.valueOf(0), Hex.decode(output3)));
+
+        Block block = new BlockMiner(config).mineBlock(newBlock, coinbaseTransaction);
+        ProofOfWorkRule rule = new ProofOfWorkRule(props);
+        assertFalse(rule.isValid(block));
+    }
+
     private Block mineBlockWithCoinbaseTransactionWithCompressedCoinbaseTransactionPrefix(Block block, byte[] compressed) {
+        return mineBlockWithCoinbaseTransactionWithCompressedCoinbaseTransactionPrefix(block, compressed, this.activationConfig);
+    }
+
+    private Block mineBlockWithCoinbaseTransactionWithCompressedCoinbaseTransactionPrefix(Block block, byte[] compressed, ActivationConfig activationConfig) {
         Keccak256 blockMergedMiningHash = new Keccak256(block.getHashForMergedMining());
 
         co.rsk.bitcoinj.core.NetworkParameters bitcoinNetworkParameters = co.rsk.bitcoinj.params.RegTestParams.get();

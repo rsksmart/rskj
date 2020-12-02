@@ -128,6 +128,21 @@ public class ConfigLoaderTest {
         assertThat(config.getBoolean(SystemProperties.PROPERTY_BC_VERIFY), is(true));
     }
 
+    @Test
+    public void printSystemInfoSettingIsOffByDefault() {
+        Config config = loader.getConfig();
+
+        assertThat(config.getBoolean(SystemProperties.PROPERTY_PRINT_SYSTEM_INFO), is(false));
+    }
+
+    @Test
+    public void setPrintSystemInfoSetting() {
+        when(cliArgs.getFlags()).thenReturn(Collections.singleton(NodeCliFlags.PRINT_SYSTEM_INFO));
+        Config config = loader.getConfig();
+
+        assertThat(config.getBoolean(SystemProperties.PROPERTY_PRINT_SYSTEM_INFO), is(true));
+    }
+
     @Test(expected = RskConfigurationException.class)
     public void detectUnexpectedKeyProblem() {
         Config defaultConfig = EMPTY_CONFIG

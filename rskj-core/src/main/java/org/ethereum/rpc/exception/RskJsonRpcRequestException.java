@@ -22,6 +22,10 @@ public class RskJsonRpcRequestException extends RuntimeException {
         return executionError("transaction reverted");
     }
 
+    public static RskJsonRpcRequestException transactionRevertedExecutionError(String revertReason) {
+        return executionError(revertReason);
+    }
+
     public static RskJsonRpcRequestException unknownError(String message) {
         return new RskJsonRpcRequestException(-32009, message);
     }

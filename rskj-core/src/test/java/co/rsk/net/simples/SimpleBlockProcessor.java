@@ -24,6 +24,7 @@ import co.rsk.net.BlockProcessResult;
 import co.rsk.net.BlockProcessor;
 import co.rsk.net.Peer;
 import co.rsk.net.messages.NewBlockHashesMessage;
+import java.time.Instant;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.ImportResult;
@@ -39,7 +40,7 @@ import java.util.Map;
  */
 public class SimpleBlockProcessor implements BlockProcessor {
     public long lastKnownBlockNumber = 0;
-    private List<Block> blocks = new ArrayList<Block>();
+    private final List<Block> blocks = new ArrayList<Block>();
     private long requestId;
     private byte[] hash;
     private int count;
@@ -47,10 +48,8 @@ public class SimpleBlockProcessor implements BlockProcessor {
 
     @Override
     public BlockProcessResult processBlock(Peer sender, Block block) {
-        Map<Keccak256, ImportResult> connectionsResult = new HashMap<>();
         this.blocks.add(block);
-        connectionsResult.put(block.getHash(), ImportResult.IMPORTED_BEST);
-        return new BlockProcessResult(false, connectionsResult, block.getPrintableHash(), Duration.ZERO);
+        return BlockProcessResult.invalidBlock(block, Instant.now());
     }
 
     @Override
@@ -71,7 +70,6 @@ public class SimpleBlockProcessor implements BlockProcessor {
     public void processBlockRequest(Peer sender, long requestId, byte[] hash) {
         this.requestId = requestId;
         this.hash = hash;
-        this.count = count;
     }
 
     @Override

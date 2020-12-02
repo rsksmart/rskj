@@ -30,10 +30,7 @@ import co.rsk.peg.BridgeSupport;
 import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.rpc.ExecutionBlockRetriever;
 import co.rsk.trie.TrieStoreImpl;
-import org.ethereum.core.Block;
-import org.ethereum.core.Blockchain;
-import org.ethereum.core.Repository;
-import org.ethereum.core.TransactionPool;
+import org.ethereum.core.*;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.MutableRepository;
 import org.ethereum.rpc.TypeConverter;
@@ -46,8 +43,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Map;
+import java.util.Optional;
 
+import static java.util.Arrays.copyOfRange;
 import static org.ethereum.rpc.TypeConverter.stringHexToBigInteger;
 import static org.ethereum.rpc.TypeConverter.toJsonHex;
 import static org.ethereum.rpc.exception.RskJsonRpcRequestException.invalidParamError;
@@ -57,6 +57,9 @@ public class EthModule
     implements EthModuleWallet, EthModuleTransaction {
 
     private static final Logger LOGGER = LoggerFactory.getLogger("web3");
+
+    private static final CallTransaction.Function ERROR_ABI_FUNCTION = CallTransaction.Function.fromSignature("Error", "string");
+    private static final byte[] ERROR_ABI_FUNCTION_SIGNATURE = ERROR_ABI_FUNCTION.encodeSignature(); //08c379a0
 
     private final Blockchain blockchain;
     private final TransactionPool transactionPool;
@@ -68,6 +71,7 @@ public class EthModule
     private final BridgeConstants bridgeConstants;
     private final BridgeSupportFactory bridgeSupportFactory;
     private final byte chainId;
+
 
     public EthModule(
             BridgeConstants bridgeConstants,
@@ -123,7 +127,12 @@ public class EthModule
             }
 
             if (res.isRevert()) {
-                throw RskJsonRpcRequestException.transactionRevertedExecutionError();
+                Optional<String> revertReason = decodeRevertReason(res);
+                if (revertReason.isPresent()) {
+                    throw RskJsonRpcRequestException.transactionRevertedExecutionError(revertReason.get());
+                } else {
+                    throw RskJsonRpcRequestException.transactionRevertedExecutionError();
+                }
             }
 
             return s = toJsonHex(res.getHReturn());
@@ -245,6 +254,28 @@ public class EthModule
                 hexArgs.getData(),
                 hexArgs.getFromAddress()
         );
+    }
+
+    /**
+     * Look for { Error("msg") } function, if it matches decode the "msg" param.
+     * The 4 first bytes are the function signature.
+     *
+     * @param res
+     * @return revert reason, empty if didnt match.
+     */
+    private Optional<String> decodeRevertReason(ProgramResult res) {
+        byte[] bytes = res.getHReturn();
+        if (bytes == null || bytes.length < 4) {
+            return Optional.empty();
+        }
+
+        final byte[] signature = copyOfRange(res.getHReturn(), 0, 4);
+        if (!Arrays.equals(signature, ERROR_ABI_FUNCTION_SIGNATURE)) {
+            return Optional.empty();
+        }
+
+        final Object[] decode = ERROR_ABI_FUNCTION.decode(res.getHReturn());
+        return decode != null && decode.length > 0 ? Optional.of((String) decode[0]) : Optional.empty();
     }
 
     @Deprecated

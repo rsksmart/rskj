@@ -57,6 +57,29 @@ public class ByteUtil {
     }
 
     /**
+     * Adds leading zeros to a {@code src} byte array to have at least {@code len} length.
+     *
+     * @param src a source byte array
+     * @param len the minimum length of the final byte array with leading zeros.
+     * @return byte array with leading zeros.
+     */
+    public static byte[] toBytesWithLeadingZeros(byte[] src, int len) {
+        if (len < 0) {
+            throw new IllegalArgumentException("len");
+        }
+
+        if (src == null || len <= src.length) {
+            return src;
+        }
+
+        byte[] dest = new byte[len];
+        int start = len - src.length;
+        System.arraycopy(src, 0, dest, start, src.length);
+
+        return dest;
+    }
+
+    /**
      * The regular {@link java.math.BigInteger#toByteArray()} method isn't quite what we often need:
      * it appends a leading zero to indicate that the number is positive and may need padding.
      *

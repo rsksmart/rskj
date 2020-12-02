@@ -466,7 +466,52 @@ public class ByteUtilTest {
         for (int i=0; i < b3.length; i++) {
             assertEquals(b3[i],normalByteArrayOffset3LeadingZeroes[i]);
         }
-
     }
 
+    @Test(expected = IllegalArgumentException.class)
+    public void testToBytesWithLeadingZeros_InvalidLen() {
+        ByteUtil.toBytesWithLeadingZeros(new byte[0], -1);
+    }
+
+    @Test
+    public void testToBytesWithLeadingZeros_NullSource() {
+        byte[] actualResult = ByteUtil.toBytesWithLeadingZeros(null, 1);
+
+        assertNull(actualResult);
+    }
+
+    @Test
+    public void testToBytesWithLeadingZeros_EmptySource() {
+        byte[] src = new byte[0];
+
+        byte[] actualResult = ByteUtil.toBytesWithLeadingZeros(src, 0);
+
+        assertEquals(src, actualResult);
+    }
+
+    @Test
+    public void testToBytesWithLeadingZeros_SameSource() {
+        byte[] src = new byte[]{0};
+
+        byte[] actualResult = ByteUtil.toBytesWithLeadingZeros(src, 0);
+
+        assertEquals(src, actualResult);
+    }
+
+    @Test
+    public void testToBytesWithLeadingZeros_WithLeadingZeros() {
+        byte[] src = new byte[]{1, 2};
+
+        byte[] actualResult = ByteUtil.toBytesWithLeadingZeros(src, 10);
+
+        assertEquals(10, actualResult.length);
+
+        int srcStart = actualResult.length - src.length;
+        for (int i = 0; i < srcStart; i++) {
+            assertEquals(0, actualResult[i]);
+        }
+        for (int i = srcStart; i < actualResult.length; i++) {
+            assertEquals(src[i - srcStart], actualResult[i]);
+        }
+    }
 }
