@@ -117,4 +117,12 @@ public final class TransactionBuilder {
     public TransactionBuilder destination(String to) {
         return this.destination(Hex.decode(to));
     }
+
+    public TransactionBuilder gasLimit(Coin value) {
+        return this.gasLimit(value.getBytes());
+    }
+
+    public TransactionBuilder nonce(Coin value) {
+        return this.nonce(value.getBytes());
+    }
 }
