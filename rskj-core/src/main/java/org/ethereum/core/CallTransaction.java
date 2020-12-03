@@ -43,7 +43,7 @@ import static org.ethereum.util.ByteUtil.longToBytesNoLeadZeroes;
 /**
  * Creates a contract function call transaction.
  * Serializes arguments according to the function ABI .
- *
+ * <p>
  * Created by Anton Nashatyrev on 25.08.2015.
  */
 public class CallTransaction {
@@ -54,14 +54,16 @@ public class CallTransaction {
 
     public static Transaction createRawTransaction(long nonce, long gasPrice, long gasLimit, RskAddress toAddress,
                                                    long value, byte[] data, byte chainId) {
-        return new Transaction(
-                longToBytesNoLeadZeroes(nonce),
-                longToBytesNoLeadZeroes(gasPrice),
-                longToBytesNoLeadZeroes(gasLimit),
-                toAddress.equals(RskAddress.nullAddress()) ? null : toAddress.getBytes(),
-                longToBytesNoLeadZeroes(value),
-                data,
-                chainId);
+        return Transaction
+                .builder()
+                .nonce(longToBytesNoLeadZeroes(nonce))
+                .gasPrice(longToBytesNoLeadZeroes(gasPrice))
+                .gasLimit(longToBytesNoLeadZeroes(gasLimit))
+                .destination(toAddress.equals(RskAddress.nullAddress()) ? null : toAddress.getBytes())
+                .value(longToBytesNoLeadZeroes(value))
+                .data(data)
+                .chainId(chainId)
+                .build();
     }
 
 
