@@ -20,6 +20,7 @@ import co.rsk.scoring.PeerScoringManager;
 import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.trie.TrieConverter;
 import co.rsk.validators.*;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
@@ -1114,7 +1115,15 @@ public class SyncProcessorTest {
     private static Transaction createTransaction(Account sender, Account receiver, BigInteger value, BigInteger nonce) {
         String toAddress = ByteUtil.toHexString(receiver.getAddress().getBytes());
         byte[] privateKeyBytes = sender.getEcKey().getPrivKeyBytes();
-        Transaction tx = new Transaction(toAddress, value, nonce, BigInteger.ONE, BigInteger.valueOf(21000), config.getNetworkConstants().getChainId());
+        Transaction tx = Transaction
+                .builder()
+                .nonce(nonce)
+                .gasPrice(BigInteger.ONE)
+                .gasLimit(BigInteger.valueOf(21000))
+                .destination(Hex.decode(toAddress))
+                .chainId(config.getNetworkConstants().getChainId())
+                .value(value)
+                .build();
         tx.sign(privateKeyBytes);
         return tx;
     }
