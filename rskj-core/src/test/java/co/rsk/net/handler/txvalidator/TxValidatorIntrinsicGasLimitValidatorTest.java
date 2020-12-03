@@ -47,40 +47,52 @@ public class TxValidatorIntrinsicGasLimitValidatorTest {
 
     @Test
     public void validIntrinsicGasPrice() {
-        Transaction tx1 = new Transaction(BigInteger.ZERO.toByteArray(),
-                            BigInteger.ZERO.toByteArray(),
-                            BigInteger.valueOf(21000).toByteArray(),
-                            new ECKey().getAddress(),
-                            BigInteger.ZERO.toByteArray(),
-                            null,
-                Constants.REGTEST_CHAIN_ID);
+        Transaction tx1 = Transaction
+                .builder()
+                .nonce(BigInteger.ZERO)
+                .gasPrice(BigInteger.ZERO)
+                .gasLimit(BigInteger.valueOf(21000))
+                .destination(new ECKey().getAddress())
+                .data(null)
+                .chainId(Constants.REGTEST_CHAIN_ID)
+                .value(BigInteger.ZERO)
+                .build();
         tx1.sign(new ECKey().getPrivKeyBytes());
 
-        Transaction tx2 = new Transaction(BigInteger.ZERO.toByteArray(),
-                BigInteger.ZERO.toByteArray(),
-                BigInteger.valueOf(30000).toByteArray(),
-                new ECKey().getAddress(),
-                BigInteger.ZERO.toByteArray(),
-                Hex.decode("0001"),
-                Constants.REGTEST_CHAIN_ID);
+        Transaction tx2 = Transaction
+                .builder()
+                .nonce(BigInteger.ZERO)
+                .gasPrice(BigInteger.ZERO)
+                .gasLimit(BigInteger.valueOf(30000))
+                .destination(new ECKey().getAddress())
+                .data(Hex.decode("0001"))
+                .chainId(Constants.REGTEST_CHAIN_ID)
+                .value(BigInteger.ZERO)
+                .build();
         tx2.sign(new ECKey().getPrivKeyBytes());
 
-        Transaction tx3 = new Transaction(BigInteger.ZERO.toByteArray(),
-                BigInteger.ZERO.toByteArray(),
-                BigInteger.valueOf(21072).toByteArray(),
-                new ECKey().getAddress(),
-                BigInteger.ZERO.toByteArray(),
-                Hex.decode("0001"),
-                Constants.REGTEST_CHAIN_ID);
+        Transaction tx3 = Transaction
+                .builder()
+                .nonce(BigInteger.ZERO)
+                .gasPrice(BigInteger.ZERO)
+                .gasLimit(BigInteger.valueOf(21072))
+                .destination(new ECKey().getAddress())
+                .data(Hex.decode("0001"))
+                .chainId(Constants.REGTEST_CHAIN_ID)
+                .value(BigInteger.ZERO)
+                .build();
         tx3.sign(new ECKey().getPrivKeyBytes());
 
-        Transaction tx4 = new Transaction(BigInteger.ZERO.toByteArray(),
-                BigInteger.ZERO.toByteArray(),
-                BigInteger.ZERO.toByteArray(),
-                PrecompiledContracts.BRIDGE_ADDR.getBytes(),
-                BigInteger.ZERO.toByteArray(),
-                null,
-                Constants.REGTEST_CHAIN_ID);
+        Transaction tx4 = Transaction
+                .builder()
+                .nonce(BigInteger.ZERO)
+                .gasPrice(BigInteger.ZERO)
+                .gasLimit(BigInteger.ZERO)
+                .destination(PrecompiledContracts.BRIDGE_ADDR.getBytes())
+                .data(null)
+                .chainId(Constants.REGTEST_CHAIN_ID)
+                .value(BigInteger.ZERO)
+                .build();
         BridgeRegTestConstants bridgeRegTestConstants = BridgeRegTestConstants.getInstance();
         tx4.sign(BridgeRegTestConstants.REGTEST_FEDERATION_PRIVATE_KEYS.get(0).getPrivKeyBytes());
 
@@ -92,44 +104,54 @@ public class TxValidatorIntrinsicGasLimitValidatorTest {
         Assert.assertTrue(tvigpv.validate(tx4, new AccountState(), null, null, Long.MAX_VALUE, false).transactionIsValid());
     }
 
-
-
     @Test
     public void invalidIntrinsicGasPrice() {
-        Transaction tx1 = new Transaction(BigInteger.ZERO.toByteArray(),
-                BigInteger.ZERO.toByteArray(),
-                BigInteger.valueOf(21071).toByteArray(),
-                new ECKey().getAddress(),
-                BigInteger.ZERO.toByteArray(),
-                Hex.decode("0001"),
-                Constants.REGTEST_CHAIN_ID);
+        Transaction tx1 = Transaction
+                .builder()
+                .nonce(BigInteger.ZERO)
+                .gasPrice(BigInteger.ZERO)
+                .gasLimit(BigInteger.valueOf(21071))
+                .destination(new ECKey().getAddress())
+                .data(Hex.decode("0001"))
+                .chainId(Constants.REGTEST_CHAIN_ID)
+                .value(BigInteger.ZERO)
+                .build();
         tx1.sign(new ECKey().getPrivKeyBytes());
 
-        Transaction tx2 = new Transaction(BigInteger.ZERO.toByteArray(),
-                BigInteger.ZERO.toByteArray(),
-                BigInteger.valueOf(20999).toByteArray(),
-                new ECKey().getAddress(),
-                BigInteger.ZERO.toByteArray(),
-                null,
-                Constants.REGTEST_CHAIN_ID);
+        Transaction tx2 = Transaction
+                .builder()
+                .nonce(BigInteger.ZERO)
+                .gasPrice(BigInteger.ZERO)
+                .gasLimit(BigInteger.valueOf(20999))
+                .destination(new ECKey().getAddress())
+                .data(null)
+                .chainId(Constants.REGTEST_CHAIN_ID)
+                .value(BigInteger.ZERO)
+                .build();
         tx2.sign(new ECKey().getPrivKeyBytes());
 
-        Transaction tx3 = new Transaction(BigInteger.ZERO.toByteArray(),
-                BigInteger.ZERO.toByteArray(),
-                BigInteger.ZERO.toByteArray(),
-                new ECKey().getAddress(),
-                BigInteger.ZERO.toByteArray(),
-                Hex.decode("0001"),
-                Constants.REGTEST_CHAIN_ID);
+        Transaction tx3 = Transaction
+                .builder()
+                .nonce(BigInteger.ZERO)
+                .gasPrice(BigInteger.ZERO)
+                .gasLimit(BigInteger.ZERO)
+                .destination(new ECKey().getAddress())
+                .data(Hex.decode("0001"))
+                .chainId(Constants.REGTEST_CHAIN_ID)
+                .value(BigInteger.ZERO)
+                .build();
         tx3.sign(new ECKey().getPrivKeyBytes());
 
-        Transaction tx4 = new Transaction(BigInteger.ZERO.toByteArray(),
-                BigInteger.ZERO.toByteArray(),
-                BigInteger.ZERO.toByteArray(),
-                new ECKey().getAddress(),
-                BigInteger.ZERO.toByteArray(),
-                null,
-                Constants.REGTEST_CHAIN_ID);
+        Transaction tx4 = Transaction
+                .builder()
+                .nonce(BigInteger.ZERO)
+                .gasPrice(BigInteger.ZERO)
+                .gasLimit(BigInteger.ZERO)
+                .destination(new ECKey().getAddress())
+                .data(null)
+                .chainId(Constants.REGTEST_CHAIN_ID)
+                .value(BigInteger.ZERO)
+                .build();
         tx4.sign(new ECKey().getPrivKeyBytes());
 
         TxValidatorIntrinsicGasLimitValidator tvigpv = new TxValidatorIntrinsicGasLimitValidator(constants, activationConfig);
@@ -139,4 +161,5 @@ public class TxValidatorIntrinsicGasLimitValidatorTest {
         Assert.assertFalse(tvigpv.validate(tx3, new AccountState(), null, null, Long.MAX_VALUE, false).transactionIsValid());
         Assert.assertFalse(tvigpv.validate(tx4, new AccountState(), null, null, Long.MAX_VALUE, false).transactionIsValid());
     }
+
 }
