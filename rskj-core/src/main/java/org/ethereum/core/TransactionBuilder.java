@@ -21,6 +21,7 @@ package org.ethereum.core;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import org.bouncycastle.util.BigIntegers;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
 
@@ -30,7 +31,7 @@ public final class TransactionBuilder {
     private boolean isLocalCall = false;
     private byte[] nonce = ByteUtil.cloneBytes(null);
     private Coin value;
-    private RskAddress receiveAddress;
+    private RskAddress receiveAddress = RskAddress.nullAddress();
     private Coin gasPrice;
     private byte[] gasLimit;
     private byte[] data = ByteUtil.cloneBytes(null);
@@ -61,7 +62,7 @@ public final class TransactionBuilder {
     }
 
     public TransactionBuilder nonce(byte[] nonce) {
-        this.nonce = nonce;
+        this.nonce = ByteUtil.cloneBytes(nonce);
         return this;
     }
 
@@ -95,12 +96,12 @@ public final class TransactionBuilder {
     }
 
     public TransactionBuilder gasLimit(byte[] gasLimit) {
-        this.gasLimit = gasLimit;
+        this.gasLimit = ByteUtil.cloneBytes(gasLimit);
         return this;
     }
 
     public TransactionBuilder data(byte[] data) {
-        this.data = data;
+        this.data = ByteUtil.cloneBytes(data);
         return this;
     }
 
@@ -111,5 +112,9 @@ public final class TransactionBuilder {
 
     public Transaction build() {
         return new Transaction(this.nonce, this.gasPrice, this.gasLimit, this.receiveAddress, this.value, this.data, this.chainId, this.isLocalCall);
+    }
+
+    public TransactionBuilder destination(String to) {
+        return this.destination(Hex.decode(to));
     }
 }
