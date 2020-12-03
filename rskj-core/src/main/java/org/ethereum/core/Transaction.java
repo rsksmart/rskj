@@ -203,6 +203,10 @@ public class Transaction {
         this.isLocalCall = localCall;
     }
 
+    public static TransactionBuilder builder() {
+        return new TransactionBuilder();
+    }
+
     public Transaction toImmutableTransaction() {
         return new ImmutableTransaction(this.getEncoded());
     }
