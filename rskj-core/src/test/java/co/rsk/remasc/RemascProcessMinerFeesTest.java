@@ -631,14 +631,15 @@ public class RemascProcessMinerFeesTest {
         assertEquals(Coin.ZERO, remasceStorageProvider.getBurnedBalance());
 
         // A hacker trying to screw the system creates a tx to remasc and a fool/accomplice miner includes that tx in a block
-        Transaction tx = new Transaction(
-                Coin.valueOf(1).getBytes(),
-                Coin.valueOf(1).getBytes(),
-                Coin.valueOf(minerFee).getBytes(),
-                PrecompiledContracts.REMASC_ADDR.getBytes() ,
-                Coin.valueOf(txValue*2).getBytes(),
-                null,
-                config.getNetworkConstants().getChainId());
+        Transaction tx = Transaction
+                .builder()
+                .nonce(Coin.valueOf(1))
+                .gasPrice(Coin.valueOf(1))
+                .gasLimit(Coin.valueOf(minerFee))
+                .destination(PrecompiledContracts.REMASC_ADDR)
+                .chainId(config.getNetworkConstants().getChainId())
+                .value(Coin.valueOf(txValue * 2))
+                .build();
         tx.sign(cowKey.getPrivKeyBytes());
         Block newblock = RemascTestRunner.createBlock(this.genesisBlock, blocks.get(blocks.size()-1),
                 PegTestUtils.createHash3(), TestUtils.randomAddress(), Collections.emptyList(), null, tx);
@@ -707,24 +708,27 @@ public class RemascProcessMinerFeesTest {
 //            }
 //        }
         long txCreateContractGasLimit = 53755 + 32000;
-        Transaction txCreateContract = new Transaction(
-                Coin.valueOf(1).getBytes(),
-                Coin.valueOf(1).getBytes(),
-                Coin.valueOf(txCreateContractGasLimit).getBytes(),
-                null ,
-                Coin.ZERO.getBytes(),
-                Hex.decode("6060604052346000575b6077806100176000396000f30060606040525b3460005760495b6000600890508073ffffffffffffffffffffffffffffffffffffffff166040518090506000604051808303816000866161da5a03f1915050505b50565b0000a165627a7a7230582036692fbb1395da1688af0189be5b0ac18df3d93a2402f4fc8f927b31c1baa2460029"),
-                config.getNetworkConstants().getChainId());
+        Transaction txCreateContract = Transaction
+                .builder()
+                .nonce(Coin.valueOf(1))
+                .gasPrice(Coin.valueOf(1))
+                .gasLimit(Coin.valueOf(txCreateContractGasLimit))
+                .data(Hex.decode("6060604052346000575b6077806100176000396000f30060606040525b3460005760495b6000600890508073ffffffffffffffffffffffffffffffffffffffff166040518090506000604051808303816000866161da5a03f1915050505b50565b0000a165627a7a7230582036692fbb1395da1688af0189be5b0ac18df3d93a2402f4fc8f927b31c1baa2460029"))
+                .chainId(config.getNetworkConstants().getChainId())
+                .value(Coin.ZERO)
+                .build();
         txCreateContract.sign(cowKey.getPrivKeyBytes());
         long txCallRemascGasLimit = 21828;
-        Transaction txCallRemasc = new Transaction(
-                Coin.valueOf(2).getBytes(),
-                Coin.valueOf(1).getBytes(),
-                Coin.valueOf(txCallRemascGasLimit).getBytes(),
-                Hex.decode("da7ce79725418f4f6e13bf5f520c89cec5f6a974") ,
-                Coin.ZERO.getBytes(),
-                null,
-                config.getNetworkConstants().getChainId());
+        Transaction txCallRemasc = Transaction
+                .builder()
+                .nonce(Coin.valueOf(2))
+                .gasPrice(Coin.valueOf(1))
+                .gasLimit(Coin.valueOf(txCallRemascGasLimit))
+                .destination(Hex.decode("da7ce79725418f4f6e13bf5f520c89cec5f6a974"))
+                .data(null)
+                .chainId(config.getNetworkConstants().getChainId())
+                .value(Coin.ZERO)
+                .build();
         txCallRemasc.sign(cowKey.getPrivKeyBytes());
 
         Block newblock = RemascTestRunner.createBlock(this.genesisBlock, blocks.get(blocks.size()-1),
