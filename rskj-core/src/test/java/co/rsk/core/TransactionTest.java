@@ -67,9 +67,12 @@ public class TransactionTest {
         byte[] gas = Hex.decode("4255");
 
         // Tn (nonce); Tp(pgas); Tg(gaslimi); Tt(value); Tv(value); Ti(sender);  Tw; Tr; Ts
-        Transaction tx = new Transaction(null, gasPrice, gas, ecKey.getAddress(),
-                value.toByteArray(),
-                null);
+        Transaction tx = Transaction.builder()
+                .gasPrice(gasPrice)
+                .gasLimit(gas)
+                .destination(ecKey.getAddress())
+                .value(value)
+                .build();
 
         tx.sign(senderPrivKey);
 
@@ -107,9 +110,12 @@ public class TransactionTest {
         byte[] gas = Hex.decode("4255");
 
         // Tn(nonce); Tp(pgas); Tg(gaslimit); Tt(value); Tv(value); Ti(sender);  Tw; Tr; Ts
-        Transaction tx = new Transaction(null, gasPrice, gas, ecKey.getAddress(),
-                value.toByteArray(),
-                null);
+        Transaction tx = Transaction.builder()
+                .gasPrice(gasPrice)
+                .gasLimit(gas)
+                .destination(ecKey.getAddress())
+                .value(value)
+                .build();
 
         tx.sign(senderPrivateKey);
 
@@ -283,14 +289,15 @@ public class TransactionTest {
     public void testEip155() {
         // Test to match the example provided in https://github.com/ethereum/eips/issues/155
         // Note that vitalik's tx encoded raw hash is wrong and kvhnuke fixes that in a comment
-        byte[] nonce = BigInteger.valueOf(9).toByteArray();
-        byte[] gasPrice = BigInteger.valueOf(20000000000L).toByteArray();
-        byte[] gas = BigInteger.valueOf(21000).toByteArray();
-        byte[] to = Hex.decode("3535353535353535353535353535353535353535");
-        byte[] value = BigInteger.valueOf(1000000000000000000L).toByteArray();
-        byte[] data = new byte[0];
-        byte chainId = 1;
-        Transaction tx = new Transaction(nonce, gasPrice, gas, to, value, data, chainId);
+        Transaction tx = Transaction
+                .builder()
+                .nonce(BigInteger.valueOf(9))
+                .gasPrice(BigInteger.valueOf(20000000000L))
+                .gasLimit(BigInteger.valueOf(21000))
+                .destination(Hex.decode("3535353535353535353535353535353535353535"))
+                .chainId((byte) 1)
+                .value(BigInteger.valueOf(1000000000000000000L))
+                .build();
         byte[] encoded = tx.getEncodedRaw();
         byte[] hash = tx.getRawHash().getBytes();
         String strenc = ByteUtil.toHexString(encoded);
@@ -303,9 +310,15 @@ public class TransactionTest {
 
     @Test
     public void testTransaction() {
-        Transaction tx = new Transaction(9L, 20000000000L, 21000L,
-                "3535353535353535353535353535353535353535", 1000000000000000000L, new byte[0], (byte) 1);
-
+        Transaction tx = Transaction
+                .builder()
+                .nonce(BigInteger.valueOf(9L))
+                .gasPrice(BigInteger.valueOf(20000000000L))
+                .gasLimit(BigInteger.valueOf(21000L))
+                .destination(Hex.decode("3535353535353535353535353535353535353535"))
+                .chainId((byte) 1)
+                .value(BigInteger.valueOf(1000000000000000000L))
+                .build();
         byte[] encoded = tx.getEncodedRaw();
         byte[] hash = tx.getRawHash().getBytes();
         String strenc = ByteUtil.toHexString(encoded);
@@ -318,36 +331,78 @@ public class TransactionTest {
 
     @Test
     public void isContractCreationWhenReceiveAddressIsNull() {
-        Transaction tx = new Transaction(null, BigInteger.ONE, BigInteger.TEN, BigInteger.ONE, BigInteger.valueOf(21000L), chainId);
+        Transaction tx = Transaction
+                .builder()
+                .destination(RskAddress.nullAddress())
+                .build();
         Assert.assertTrue(tx.isContractCreation());
     }
 
     @Test
     public void isContractCreationWhenReceiveAddressIsEmptyString() {
-        Transaction tx = new Transaction("", BigInteger.ONE, BigInteger.TEN, BigInteger.ONE, BigInteger.valueOf(21000L), chainId);
+        Transaction tx = Transaction
+                .builder()
+                .nonce(BigInteger.TEN)
+                .gasPrice(BigInteger.ONE)
+                .gasLimit(BigInteger.valueOf(21000L))
+                .destination(Hex.decode(""))
+                .chainId(chainId)
+                .value(BigInteger.ONE)
+                .build();
         Assert.assertTrue(tx.isContractCreation());
     }
 
     @Test(expected = RuntimeException.class)
     public void isContractCreationWhenReceiveAddressIs00() {
-        new Transaction("00", BigInteger.ONE, BigInteger.TEN, BigInteger.ONE, BigInteger.valueOf(21000L), chainId);
+        Transaction
+                .builder()
+                .nonce(BigInteger.TEN)
+                .gasPrice(BigInteger.ONE)
+                .gasLimit(BigInteger.valueOf(21000L))
+                .destination(Hex.decode("00"))
+                .chainId(chainId)
+                .value(BigInteger.ONE);
     }
 
     @Test
     public void isContractCreationWhenReceiveAddressIsFortyZeroes() {
-        Transaction tx = new Transaction("0000000000000000000000000000000000000000", BigInteger.ONE, BigInteger.TEN, BigInteger.ONE, BigInteger.valueOf(21000L), chainId);
+        Transaction tx = Transaction
+                .builder()
+                .nonce(BigInteger.TEN)
+                .gasPrice(BigInteger.ONE)
+                .gasLimit(BigInteger.valueOf(21000L))
+                .destination(Hex.decode("0000000000000000000000000000000000000000"))
+                .chainId(chainId)
+                .value(BigInteger.ONE)
+                .build();
         Assert.assertFalse(tx.isContractCreation());
     }
 
     @Test
     public void isNotContractCreationWhenReceiveAddressIsCowAddress() {
-        Transaction tx = new Transaction("cd2a3d9f938e13cd947ec05abc7fe734df8dd826", BigInteger.ONE, BigInteger.TEN, BigInteger.ONE, BigInteger.valueOf(21000L), chainId);
+        Transaction tx = Transaction
+                .builder()
+                .nonce(BigInteger.TEN)
+                .gasPrice(BigInteger.ONE)
+                .gasLimit(BigInteger.valueOf(21000L))
+                .destination(Hex.decode("cd2a3d9f938e13cd947ec05abc7fe734df8dd826"))
+                .chainId(chainId)
+                .value(BigInteger.ONE)
+                .build();
         Assert.assertFalse(tx.isContractCreation());
     }
 
     @Test
     public void isNotContractCreationWhenReceiveAddressIsBridgeAddress() {
-        Transaction tx = new Transaction(PrecompiledContracts.BRIDGE_ADDR_STR, BigInteger.ONE, BigInteger.TEN, BigInteger.ONE, BigInteger.valueOf(21000L), chainId);
+        Transaction tx = Transaction
+                .builder()
+                .nonce(BigInteger.TEN)
+                .gasPrice(BigInteger.ONE)
+                .gasLimit(BigInteger.valueOf(21000L))
+                .destination(Hex.decode(PrecompiledContracts.BRIDGE_ADDR_STR))
+                .chainId(chainId)
+                .value(BigInteger.ONE)
+                .build();
         Assert.assertFalse(tx.isContractCreation());
     }
 
