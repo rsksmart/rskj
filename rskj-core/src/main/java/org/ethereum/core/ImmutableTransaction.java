@@ -1,11 +1,13 @@
 package org.ethereum.core;
 
+import org.ethereum.util.RLP;
+
 /**
  * Created by ajlopez on 02/08/2017.
  */
 public class ImmutableTransaction extends Transaction {
     public ImmutableTransaction(byte[] rawData) {
-        super(rawData);
+        super(RLP.decodeList(rawData));
     }
 
     @Override

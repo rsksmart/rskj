@@ -29,7 +29,6 @@ import co.rsk.panic.PanicProcessor;
 import co.rsk.peg.BridgeUtils;
 import co.rsk.util.ListArrayUtil;
 import org.bouncycastle.util.BigIntegers;
-import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.crypto.ECKey;
@@ -101,20 +100,16 @@ public class Transaction {
     private Keccak256 hash;
     private Keccak256 rawHash;
 
-    protected Transaction(byte[] rawData) {
-        RLPList transaction = RLP.decodeList(rawData);
-
+    protected Transaction(RLPList transaction) {
         if (transaction.size() != 9) {
             throw new IllegalArgumentException("A transaction must have exactly 9 elements");
         }
-
         this.nonce = transaction.get(0).getRLPData();
         this.gasPrice = RLP.parseCoinNonNullZero(transaction.get(1).getRLPData());
         this.gasLimit = transaction.get(2).getRLPData();
         this.receiveAddress = RLP.parseRskAddress(transaction.get(3).getRLPData());
         this.value = RLP.parseCoinNullZero(transaction.get(4).getRLPData());
         this.data = transaction.get(5).getRLPData();
-
         // only parse signature in case tx is signed
         byte[] vData = transaction.get(6).getRLPData();
         if (vData != null) {
@@ -137,47 +132,11 @@ public class Transaction {
      * or simple send tx
      * [ nonce, gasPrice, gasLimit, receiveAddress, value, data, signature(v, r, s) ]
      */
-    public Transaction(byte[] nonce, byte[] gasPriceRaw, byte[] gasLimit, byte[] receiveAddress, byte[] value, byte[] data) {
+    protected Transaction(byte[] nonce, byte[] gasPriceRaw, byte[] gasLimit, byte[] receiveAddress, byte[] value, byte[] data) {
         this(nonce, gasPriceRaw, gasLimit, receiveAddress, value, data, (byte) 0);
     }
 
-    public Transaction(byte[] nonce, byte[] gasPriceRaw, byte[] gasLimit, byte[] receiveAddress, byte[] value, byte[] data, byte[] r, byte[] s, byte v) {
-        this(nonce, gasPriceRaw, gasLimit, receiveAddress, value, data, (byte) 0);
-
-        this.signature = ECDSASignature.fromComponents(r, s, v);
-    }
-
-    public Transaction(long nonce, long gasPrice, long gas, String to, long value, byte[] data, byte chainId) {
-        this(BigInteger.valueOf(nonce).toByteArray(), BigInteger.valueOf(gasPrice).toByteArray(),
-                BigInteger.valueOf(gas).toByteArray(), Hex.decode(to), BigInteger.valueOf(value).toByteArray(),
-                data, chainId);
-    }
-
-    public Transaction(BigInteger nonce, BigInteger gasPrice, BigInteger gas, String to, BigInteger value, byte[] data,
-                       byte chainId) {
-        this(nonce.toByteArray(), gasPrice.toByteArray(), gas.toByteArray(), Hex.decode(to), value.toByteArray(), data,
-                chainId);
-    }
-
-    public Transaction(String to, BigInteger amount, BigInteger nonce, BigInteger gasPrice, BigInteger gasLimit, byte chainId) {
-        this(to, amount, nonce, gasPrice, gasLimit, (byte[]) null, chainId);
-    }
-
-    public Transaction(String to, BigInteger amount, BigInteger nonce, BigInteger gasPrice, BigInteger gasLimit, String data, byte chainId) {
-        this(to, amount, nonce, gasPrice, gasLimit, data == null ? null : Hex.decode(data), chainId);
-    }
-
-    public Transaction(String to, BigInteger amount, BigInteger nonce, BigInteger gasPrice, BigInteger gasLimit, byte[] decodedData, byte chainId) {
-        this(BigIntegers.asUnsignedByteArray(nonce),
-                gasPrice.toByteArray(),
-                BigIntegers.asUnsignedByteArray(gasLimit),
-                to != null ? Hex.decode(to) : null,
-                BigIntegers.asUnsignedByteArray(amount),
-                decodedData,
-                chainId);
-    }
-
-    public Transaction(byte[] nonce, byte[] gasPriceRaw, byte[] gasLimit, byte[] receiveAddress, byte[] valueRaw, byte[] data,
+    protected Transaction(byte[] nonce, byte[] gasPriceRaw, byte[] gasLimit, byte[] receiveAddress, byte[] valueRaw, byte[] data,
                        byte chainId) {
         this(
                 ByteUtil.cloneBytes(nonce),
@@ -191,8 +150,8 @@ public class Transaction {
         );
     }
 
-    public Transaction(byte[] nonce, Coin gasPriceRaw, byte[] gasLimit, RskAddress receiveAddress, Coin valueRaw, byte[] data,
-                       byte chainId, final boolean localCall) {
+    Transaction(byte[] nonce, Coin gasPriceRaw, byte[] gasLimit, RskAddress receiveAddress, Coin valueRaw, byte[] data,
+                byte chainId, final boolean localCall) {
         this.nonce = nonce;
         this.gasPrice = gasPriceRaw;
         this.gasLimit = gasLimit;

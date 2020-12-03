@@ -23,6 +23,7 @@ import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.Transaction;
 import org.ethereum.util.ByteUtil;
+import org.ethereum.util.RLP;
 import org.ethereum.vm.PrecompiledContracts;
 
 import static org.ethereum.rpc.TypeConverter.toUnformattedJsonHex;
@@ -53,7 +54,7 @@ public class RemascTransaction extends Transaction {
     };
 
     public RemascTransaction(byte[] rawData) {
-        super(rawData);
+        super(RLP.decodeList(rawData));
     }
 
     public RemascTransaction(long blockNumber) {
