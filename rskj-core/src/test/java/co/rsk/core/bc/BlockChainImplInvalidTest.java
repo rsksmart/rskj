@@ -24,6 +24,7 @@ import co.rsk.core.genesis.TestGenesisLoader;
 import co.rsk.test.builders.BlockBuilder;
 import co.rsk.trie.TrieStore;
 import co.rsk.validators.BlockValidator;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
 import org.ethereum.core.*;
 import org.ethereum.core.genesis.GenesisLoader;
@@ -102,7 +103,15 @@ public class BlockChainImplInvalidTest {
         Assert.assertEquals(ImportResult.INVALID_BLOCK, blockChain.tryToConnect(block));
 
         List<Transaction> txs = new ArrayList<>();
-        Transaction tx = new Transaction("0000000000000000000000000000000000000006", BigInteger.ZERO, BigInteger.ZERO, BigInteger.valueOf(1L), BigInteger.TEN, Constants.REGTEST_CHAIN_ID);
+        Transaction tx = Transaction
+                .builder()
+                .nonce(BigInteger.ZERO)
+                .gasPrice(BigInteger.valueOf(1L))
+                .gasLimit(BigInteger.TEN)
+                .destination(Hex.decode("0000000000000000000000000000000000000006"))
+                .chainId(Constants.REGTEST_CHAIN_ID)
+                .value(BigInteger.ZERO)
+                .build();
         tx.sign(new byte[]{22, 11, 00});
         txs.add(tx);
 
@@ -111,4 +120,5 @@ public class BlockChainImplInvalidTest {
 
         Assert.assertEquals(ImportResult.INVALID_BLOCK, blockChain.tryToConnect(block));
     }
+
 }
