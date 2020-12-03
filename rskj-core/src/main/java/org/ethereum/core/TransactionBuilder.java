@@ -20,6 +20,7 @@ package org.ethereum.core;
 
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import co.rsk.rpc.modules.eth.EthModule;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.util.ByteUtil;
@@ -124,5 +125,9 @@ public final class TransactionBuilder {
 
     public Transaction build() {
         return new Transaction(this.nonce, this.gasPrice, this.gasLimit, this.receiveAddress, this.value, this.data, this.chainId, this.isLocalCall);
+    }
+
+    public TransactionBuilder data(String data) {
+        return this.data(data == null ? null: Hex.decode(data));
     }
 }
