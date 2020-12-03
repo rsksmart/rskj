@@ -110,10 +110,6 @@ public final class TransactionBuilder {
         return this;
     }
 
-    public Transaction build() {
-        return new Transaction(this.nonce, this.gasPrice, this.gasLimit, this.receiveAddress, this.value, this.data, this.chainId, this.isLocalCall);
-    }
-
     public TransactionBuilder destination(String to) {
         return this.destination(to == null ? null : Hex.decode(to));
     }
@@ -124,5 +120,9 @@ public final class TransactionBuilder {
 
     public TransactionBuilder nonce(Coin value) {
         return this.nonce(value.getBytes());
+    }
+
+    public Transaction build() {
+        return new Transaction(this.nonce, this.gasPrice, this.gasLimit, this.receiveAddress, this.value, this.data, this.chainId, this.isLocalCall);
     }
 }
