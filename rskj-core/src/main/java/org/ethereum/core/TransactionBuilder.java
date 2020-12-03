@@ -30,10 +30,10 @@ import java.math.BigInteger;
 public final class TransactionBuilder {
     private boolean isLocalCall = false;
     private byte[] nonce = ByteUtil.cloneBytes(null);
-    private Coin value;
+    private Coin value = Coin.ZERO;
     private RskAddress receiveAddress = RskAddress.nullAddress();
-    private Coin gasPrice;
-    private byte[] gasLimit;
+    private Coin gasPrice = Coin.ZERO;
+    private byte[] gasLimit = ByteUtil.cloneBytes(null);
     private byte[] data = ByteUtil.cloneBytes(null);
     private byte chainId = 0;
 
