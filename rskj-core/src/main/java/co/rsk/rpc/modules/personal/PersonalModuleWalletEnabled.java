@@ -22,7 +22,6 @@ import co.rsk.config.RskSystemProperties;
 import co.rsk.config.WalletAccount;
 import co.rsk.core.RskAddress;
 import co.rsk.core.Wallet;
-import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.Account;
 import org.ethereum.core.Transaction;

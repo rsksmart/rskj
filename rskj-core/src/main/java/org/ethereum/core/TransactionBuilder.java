@@ -20,7 +20,6 @@ package org.ethereum.core;
 
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
-import co.rsk.rpc.modules.eth.EthModule;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.util.ByteUtil;
