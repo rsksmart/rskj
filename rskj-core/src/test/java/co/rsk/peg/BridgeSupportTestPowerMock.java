@@ -63,7 +63,6 @@ import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.InternalTransaction;
 import org.ethereum.vm.program.Program;
-import org.hamcrest.collection.IsIterableContainingInOrder;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -316,7 +315,16 @@ public class BridgeSupportTestPowerMock {
         );
         BridgeSupport bridgeSupport = getBridgeSupport(bridgeConstants, provider, track, eventLogger, rskCurrentBlock, null);
 
-        Transaction tx = new Transaction(TO_ADDRESS, DUST_AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA, Constants.REGTEST_CHAIN_ID);
+        Transaction tx = Transaction
+                .builder()
+                .nonce(NONCE)
+                .gasPrice(GAS_PRICE)
+                .gasLimit(GAS_LIMIT)
+                .destination(Hex.decode(TO_ADDRESS))
+                .data(Hex.decode(DATA))
+                .chainId(Constants.REGTEST_CHAIN_ID)
+                .value(BigIntegers.asUnsignedByteArray(DUST_AMOUNT))
+                .build();
         ECKey key = new ECKey();
         tx.sign(key.getPrivKeyBytes());
 
@@ -358,7 +366,16 @@ public class BridgeSupportTestPowerMock {
         List<Block> blocks = blockGenerator.getSimpleBlockChain(blockGenerator.getGenesisBlock(), 10);
 
         org.ethereum.core.Block rskCurrentBlock = blocks.get(9);
-        Transaction tx = new Transaction(TO_ADDRESS, DUST_AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA, Constants.REGTEST_CHAIN_ID);
+        Transaction tx = Transaction
+                .builder()
+                .nonce(NONCE)
+                .gasPrice(GAS_PRICE)
+                .gasLimit(GAS_LIMIT)
+                .destination(Hex.decode(TO_ADDRESS))
+                .data(Hex.decode(DATA))
+                .chainId(Constants.REGTEST_CHAIN_ID)
+                .value(DUST_AMOUNT)
+                .build();
         tx.sign(new ECKey().getPrivKeyBytes());
 
         BridgeStorageProvider providerForSupport = new BridgeStorageProvider(
@@ -424,7 +441,16 @@ public class BridgeSupportTestPowerMock {
             builder.getBlockStore().saveBlock(block, TEST_DIFFICULTY, true);
 
         org.ethereum.core.Block rskCurrentBlock = blocks.get(9);
-        Transaction tx = new Transaction(TO_ADDRESS, DUST_AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA, Constants.REGTEST_CHAIN_ID);
+        Transaction tx = Transaction
+                .builder()
+                .nonce(NONCE)
+                .gasPrice(GAS_PRICE)
+                .gasLimit(GAS_LIMIT)
+                .destination(Hex.decode(TO_ADDRESS))
+                .data(Hex.decode(DATA))
+                .chainId(Constants.REGTEST_CHAIN_ID)
+                .value(DUST_AMOUNT)
+                .build();
         tx.sign(new ECKey().getPrivKeyBytes());
 
         BridgeStorageProvider providerForSupport = new BridgeStorageProvider(
@@ -498,7 +524,16 @@ public class BridgeSupportTestPowerMock {
         org.ethereum.core.Block rskCurrentBlock = blocks.get(9);
         ReceiptStore rskReceiptStore = null;
         org.ethereum.db.BlockStore rskBlockStore = builder.getBlockStore();
-        Transaction tx = new Transaction(TO_ADDRESS, DUST_AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA, Constants.REGTEST_CHAIN_ID);
+        Transaction tx = Transaction
+                .builder()
+                .nonce(NONCE)
+                .gasPrice(GAS_PRICE)
+                .gasLimit(GAS_LIMIT)
+                .destination(Hex.decode(TO_ADDRESS))
+                .data(Hex.decode(DATA))
+                .chainId(Constants.REGTEST_CHAIN_ID)
+                .value(DUST_AMOUNT)
+                .build();
         tx.sign(new ECKey().getPrivKeyBytes());
 
         BridgeStorageProvider providerForSupport = new BridgeStorageProvider(
@@ -559,7 +594,16 @@ public class BridgeSupportTestPowerMock {
         BlockGenerator blockGenerator = new BlockGenerator();
         // Old federation will be in migration age at block 35
         org.ethereum.core.Block rskCurrentBlock = blockGenerator.createBlock(35, 1);
-        Transaction tx = new Transaction(TO_ADDRESS, DUST_AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA, Constants.REGTEST_CHAIN_ID);
+        Transaction tx = Transaction
+                .builder()
+                .nonce(NONCE)
+                .gasPrice(GAS_PRICE)
+                .gasLimit(GAS_LIMIT)
+                .destination(Hex.decode(TO_ADDRESS))
+                .data(Hex.decode(DATA))
+                .chainId(Constants.REGTEST_CHAIN_ID)
+                .value(DUST_AMOUNT)
+                .build();
 
         Repository repository = createRepository();
         Repository track = repository.startTracking();
@@ -648,7 +692,16 @@ public class BridgeSupportTestPowerMock {
         track.commit();
 
         track = repository.startTracking();
-        Transaction tx = new Transaction(TO_ADDRESS, DUST_AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA, Constants.REGTEST_CHAIN_ID);
+        Transaction tx = Transaction
+                .builder()
+                .nonce(NONCE)
+                .gasPrice(GAS_PRICE)
+                .gasLimit(GAS_LIMIT)
+                .destination(Hex.decode(TO_ADDRESS))
+                .data(Hex.decode(DATA))
+                .chainId(Constants.REGTEST_CHAIN_ID)
+                .value(DUST_AMOUNT)
+                .build();
         tx.sign(new ECKey().getPrivKeyBytes());
 
         BridgeStorageProvider providerForSupport = new BridgeStorageProvider(
@@ -734,7 +787,16 @@ public class BridgeSupportTestPowerMock {
             builder.getBlockStore().saveBlock(block, TEST_DIFFICULTY, true);
 
         org.ethereum.core.Block rskCurrentBlock = blocks.get(9);
-        Transaction rskTx = new Transaction(TO_ADDRESS, DUST_AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA, Constants.REGTEST_CHAIN_ID);
+        Transaction rskTx = Transaction
+                .builder()
+                .nonce(NONCE)
+                .gasPrice(GAS_PRICE)
+                .gasLimit(GAS_LIMIT)
+                .destination(Hex.decode(TO_ADDRESS))
+                .data(Hex.decode(DATA))
+                .chainId(Constants.REGTEST_CHAIN_ID)
+                .value(DUST_AMOUNT)
+                .build();
         rskTx.sign(new ECKey().getPrivKeyBytes());
 
         BridgeSupport bridgeSupport = getBridgeSupport(
@@ -817,7 +879,16 @@ public class BridgeSupportTestPowerMock {
         Repository repository = createRepository();
         Repository track = repository.startTracking();
 
-        org.ethereum.core.Transaction tx = new org.ethereum.core.Transaction(TO_ADDRESS, DUST_AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA, Constants.REGTEST_CHAIN_ID);
+        Transaction tx = Transaction
+                .builder()
+                .nonce(NONCE)
+                .gasPrice(GAS_PRICE)
+                .gasLimit(GAS_LIMIT)
+                .destination(Hex.decode(TO_ADDRESS))
+                .data(Hex.decode(DATA))
+                .chainId(Constants.REGTEST_CHAIN_ID)
+                .value(DUST_AMOUNT)
+                .build();
 
         tx.sign(new org.ethereum.crypto.ECKey().getPrivKeyBytes());
 
@@ -841,7 +912,16 @@ public class BridgeSupportTestPowerMock {
         Repository repository = createRepository();
         Repository track = repository.startTracking();
 
-        org.ethereum.core.Transaction tx = new org.ethereum.core.Transaction(TO_ADDRESS, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA, Constants.REGTEST_CHAIN_ID);
+        Transaction tx = Transaction
+                .builder()
+                .nonce(NONCE)
+                .gasPrice(GAS_PRICE)
+                .gasLimit(GAS_LIMIT)
+                .destination(Hex.decode(TO_ADDRESS))
+                .data(Hex.decode(DATA))
+                .chainId(Constants.REGTEST_CHAIN_ID)
+                .value(AMOUNT)
+                .build();
 
         tx.sign(new org.ethereum.crypto.ECKey().getPrivKeyBytes());
 

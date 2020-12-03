@@ -42,6 +42,7 @@ import co.rsk.test.World;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
+import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -149,7 +150,16 @@ public class BridgeTestPowerMock {
 
         track = repository.startTracking();
 
-        Transaction rskTx = new Transaction(PrecompiledContracts.BRIDGE_ADDR_STR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA, Constants.REGTEST_CHAIN_ID);
+        Transaction rskTx = Transaction
+                .builder()
+                .nonce(BigIntegers.asUnsignedByteArray(NONCE))
+                .gasPrice(GAS_PRICE.toByteArray())
+                .gasLimit(BigIntegers.asUnsignedByteArray(GAS_LIMIT))
+                .destination(PrecompiledContracts.BRIDGE_ADDR_STR == null ? null : Hex.decode(PrecompiledContracts.BRIDGE_ADDR_STR))
+                .data(DATA == null ? null : Hex.decode(DATA))
+                .chainId(Constants.REGTEST_CHAIN_ID)
+                .value(BigIntegers.asUnsignedByteArray(AMOUNT))
+                .build();
         rskTx.sign(new ECKey().getPrivKeyBytes());
 
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
@@ -188,7 +198,16 @@ public class BridgeTestPowerMock {
         track.commit();
 
         track = repository.startTracking();
-        Transaction rskTx = new Transaction(PrecompiledContracts.BRIDGE_ADDR_STR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA, Constants.REGTEST_CHAIN_ID);
+        Transaction rskTx = Transaction
+                .builder()
+                .nonce(BigIntegers.asUnsignedByteArray(NONCE))
+                .gasPrice(GAS_PRICE.toByteArray())
+                .gasLimit(BigIntegers.asUnsignedByteArray(GAS_LIMIT))
+                .destination(PrecompiledContracts.BRIDGE_ADDR_STR == null ? null : Hex.decode(PrecompiledContracts.BRIDGE_ADDR_STR))
+                .data(DATA == null ? null : Hex.decode(DATA))
+                .chainId(Constants.REGTEST_CHAIN_ID)
+                .value(BigIntegers.asUnsignedByteArray(AMOUNT))
+                .build();
         rskTx.sign(fedECPrivateKey.getPrivKeyBytes());
 
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
@@ -237,7 +256,16 @@ public class BridgeTestPowerMock {
         World world = new World();
         List<Block> blocks = new BlockGenerator().getSimpleBlockChain(world.getBlockChain().getBestBlock(), 10);
 
-        Transaction rskTx = new Transaction(PrecompiledContracts.BRIDGE_ADDR_STR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA, Constants.REGTEST_CHAIN_ID);
+        Transaction rskTx = Transaction
+                .builder()
+                .nonce(BigIntegers.asUnsignedByteArray(NONCE))
+                .gasPrice(GAS_PRICE.toByteArray())
+                .gasLimit(BigIntegers.asUnsignedByteArray(GAS_LIMIT))
+                .destination(PrecompiledContracts.BRIDGE_ADDR_STR == null ? null : Hex.decode(PrecompiledContracts.BRIDGE_ADDR_STR))
+                .data(DATA == null ? null : Hex.decode(DATA))
+                .chainId(Constants.REGTEST_CHAIN_ID)
+                .value(BigIntegers.asUnsignedByteArray(AMOUNT))
+                .build();
         rskTx.sign(fedECPrivateKey.getPrivKeyBytes());
 
         world.getBlockStore().saveBlock(blocks.get(1), new BlockDifficulty(BigInteger.ONE), true);
@@ -288,7 +316,16 @@ public class BridgeTestPowerMock {
         Repository repository = createRepository();
         Repository track = repository.startTracking();
 
-        Transaction rskTx = new Transaction(PrecompiledContracts.BRIDGE_ADDR_STR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA, Constants.REGTEST_CHAIN_ID);
+        Transaction rskTx = Transaction
+                .builder()
+                .nonce(BigIntegers.asUnsignedByteArray(NONCE))
+                .gasPrice(GAS_PRICE.toByteArray())
+                .gasLimit(BigIntegers.asUnsignedByteArray(GAS_LIMIT))
+                .destination(PrecompiledContracts.BRIDGE_ADDR_STR == null ? null : Hex.decode(PrecompiledContracts.BRIDGE_ADDR_STR))
+                .data(DATA == null ? null : Hex.decode(DATA))
+                .chainId(Constants.REGTEST_CHAIN_ID)
+                .value(BigIntegers.asUnsignedByteArray(AMOUNT))
+                .build();
         rskTx.sign(fedECPrivateKey.getPrivKeyBytes());
 
         BridgeSupportFactory bridgeSupportFactory = mock(BridgeSupportFactory.class);
@@ -313,7 +350,16 @@ public class BridgeTestPowerMock {
         Repository repository = createRepository();
         Repository track = repository.startTracking();
 
-        Transaction rskTx = new Transaction(PrecompiledContracts.BRIDGE_ADDR_STR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA, Constants.REGTEST_CHAIN_ID);
+        Transaction rskTx = Transaction
+                .builder()
+                .nonce(BigIntegers.asUnsignedByteArray(NONCE))
+                .gasPrice(GAS_PRICE.toByteArray())
+                .gasLimit(BigIntegers.asUnsignedByteArray(GAS_LIMIT))
+                .destination(PrecompiledContracts.BRIDGE_ADDR_STR == null ? null : Hex.decode(PrecompiledContracts.BRIDGE_ADDR_STR))
+                .data(DATA == null ? null : Hex.decode(DATA))
+                .chainId(Constants.REGTEST_CHAIN_ID)
+                .value(BigIntegers.asUnsignedByteArray(AMOUNT))
+                .build();
         rskTx.sign(fedECPrivateKey.getPrivKeyBytes());
 
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
@@ -418,7 +464,16 @@ public class BridgeTestPowerMock {
 
     @Test
     public void receiveHeadersNotFromTheFederation() {
-        Transaction rskTx = new Transaction(PrecompiledContracts.BRIDGE_ADDR_STR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA, Constants.REGTEST_CHAIN_ID);
+        Transaction rskTx = Transaction
+                .builder()
+                .nonce(BigIntegers.asUnsignedByteArray(NONCE))
+                .gasPrice(GAS_PRICE.toByteArray())
+                .gasLimit(BigIntegers.asUnsignedByteArray(GAS_LIMIT))
+                .destination(PrecompiledContracts.BRIDGE_ADDR_STR == null ? null : Hex.decode(PrecompiledContracts.BRIDGE_ADDR_STR))
+                .data(DATA == null ? null : Hex.decode(DATA))
+                .chainId(Constants.REGTEST_CHAIN_ID)
+                .value(BigIntegers.asUnsignedByteArray(AMOUNT))
+                .build();
         rskTx.sign(new ECKey().getPrivKeyBytes());
 
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
@@ -443,7 +498,16 @@ public class BridgeTestPowerMock {
         Repository repository = createRepository();
         Repository track = repository.startTracking();
 
-        Transaction rskTx = new Transaction(PrecompiledContracts.BRIDGE_ADDR_STR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA, Constants.REGTEST_CHAIN_ID);
+        Transaction rskTx = Transaction
+                .builder()
+                .nonce(BigIntegers.asUnsignedByteArray(NONCE))
+                .gasPrice(GAS_PRICE.toByteArray())
+                .gasLimit(BigIntegers.asUnsignedByteArray(GAS_LIMIT))
+                .destination(PrecompiledContracts.BRIDGE_ADDR_STR == null ? null : Hex.decode(PrecompiledContracts.BRIDGE_ADDR_STR))
+                .data(DATA == null ? null : Hex.decode(DATA))
+                .chainId(Constants.REGTEST_CHAIN_ID)
+                .value(BigIntegers.asUnsignedByteArray(AMOUNT))
+                .build();
         rskTx.sign(fedECPrivateKey.getPrivKeyBytes());
 
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
@@ -468,7 +532,16 @@ public class BridgeTestPowerMock {
         Repository repository = createRepository();
         Repository track = repository.startTracking();
 
-        Transaction rskTx = new Transaction(PrecompiledContracts.BRIDGE_ADDR_STR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA, Constants.REGTEST_CHAIN_ID);
+        Transaction rskTx = Transaction
+                .builder()
+                .nonce(BigIntegers.asUnsignedByteArray(NONCE))
+                .gasPrice(GAS_PRICE.toByteArray())
+                .gasLimit(BigIntegers.asUnsignedByteArray(GAS_LIMIT))
+                .destination(PrecompiledContracts.BRIDGE_ADDR_STR == null ? null : Hex.decode(PrecompiledContracts.BRIDGE_ADDR_STR))
+                .data(DATA == null ? null : Hex.decode(DATA))
+                .chainId(Constants.REGTEST_CHAIN_ID)
+                .value(BigIntegers.asUnsignedByteArray(AMOUNT))
+                .build();
         rskTx.sign(fedECPrivateKey.getPrivKeyBytes());
 
         BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
@@ -525,7 +598,16 @@ public class BridgeTestPowerMock {
         Repository repository = createRepository();
         Repository track = repository.startTracking();
 
-        Transaction rskTx = new Transaction(PrecompiledContracts.BRIDGE_ADDR_STR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA, Constants.REGTEST_CHAIN_ID);
+        Transaction rskTx = Transaction
+                .builder()
+                .nonce(BigIntegers.asUnsignedByteArray(NONCE))
+                .gasPrice(GAS_PRICE.toByteArray())
+                .gasLimit(BigIntegers.asUnsignedByteArray(GAS_LIMIT))
+                .destination(PrecompiledContracts.BRIDGE_ADDR_STR == null ? null : Hex.decode(PrecompiledContracts.BRIDGE_ADDR_STR))
+                .data(DATA == null ? null : Hex.decode(DATA))
+                .chainId(Constants.REGTEST_CHAIN_ID)
+                .value(BigIntegers.asUnsignedByteArray(AMOUNT))
+                .build();
         rskTx.sign(new ECKey().getPrivKeyBytes());
 
 
@@ -604,7 +686,16 @@ public class BridgeTestPowerMock {
         Repository repository = createRepository();
         Repository track = repository.startTracking();
 
-        Transaction rskTx = new Transaction(PrecompiledContracts.BRIDGE_ADDR_STR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA, Constants.REGTEST_CHAIN_ID);
+        Transaction rskTx = Transaction
+                .builder()
+                .nonce(BigIntegers.asUnsignedByteArray(NONCE))
+                .gasPrice(GAS_PRICE.toByteArray())
+                .gasLimit(BigIntegers.asUnsignedByteArray(GAS_LIMIT))
+                .destination(PrecompiledContracts.BRIDGE_ADDR_STR == null ? null : Hex.decode(PrecompiledContracts.BRIDGE_ADDR_STR))
+                .data(DATA == null ? null : Hex.decode(DATA))
+                .chainId(Constants.REGTEST_CHAIN_ID)
+                .value(BigIntegers.asUnsignedByteArray(AMOUNT))
+                .build();
         rskTx.sign(new ECKey().getPrivKeyBytes());
 
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
@@ -631,7 +722,16 @@ public class BridgeTestPowerMock {
         Repository repository = createRepository();
         Repository track = repository.startTracking();
 
-        Transaction rskTx = new Transaction(PrecompiledContracts.BRIDGE_ADDR_STR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA, Constants.REGTEST_CHAIN_ID);
+        Transaction rskTx = Transaction
+                .builder()
+                .nonce(BigIntegers.asUnsignedByteArray(NONCE))
+                .gasPrice(GAS_PRICE.toByteArray())
+                .gasLimit(BigIntegers.asUnsignedByteArray(GAS_LIMIT))
+                .destination(PrecompiledContracts.BRIDGE_ADDR_STR == null ? null : Hex.decode(PrecompiledContracts.BRIDGE_ADDR_STR))
+                .data(DATA == null ? null : Hex.decode(DATA))
+                .chainId(Constants.REGTEST_CHAIN_ID)
+                .value(BigIntegers.asUnsignedByteArray(AMOUNT))
+                .build();
         rskTx.sign(fedECPrivateKey.getPrivKeyBytes());
 
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
@@ -682,7 +782,16 @@ public class BridgeTestPowerMock {
         Repository repository = createRepository();
         Repository track = repository.startTracking();
 
-        Transaction rskTx = new Transaction(PrecompiledContracts.BRIDGE_ADDR_STR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA, Constants.REGTEST_CHAIN_ID);
+        Transaction rskTx = Transaction
+                .builder()
+                .nonce(BigIntegers.asUnsignedByteArray(NONCE))
+                .gasPrice(GAS_PRICE.toByteArray())
+                .gasLimit(BigIntegers.asUnsignedByteArray(GAS_LIMIT))
+                .destination(PrecompiledContracts.BRIDGE_ADDR_STR == null ? null : Hex.decode(PrecompiledContracts.BRIDGE_ADDR_STR))
+                .data(DATA == null ? null : Hex.decode(DATA))
+                .chainId(Constants.REGTEST_CHAIN_ID)
+                .value(BigIntegers.asUnsignedByteArray(AMOUNT))
+                .build();
         rskTx.sign(fedECPrivateKey.getPrivKeyBytes());
 
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
@@ -731,7 +840,16 @@ public class BridgeTestPowerMock {
         Repository repository = createRepository();
         Repository track = repository.startTracking();
 
-        Transaction rskTx = new Transaction(PrecompiledContracts.BRIDGE_ADDR_STR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA, Constants.REGTEST_CHAIN_ID);
+        Transaction rskTx = Transaction
+                .builder()
+                .nonce(BigIntegers.asUnsignedByteArray(NONCE))
+                .gasPrice(GAS_PRICE.toByteArray())
+                .gasLimit(BigIntegers.asUnsignedByteArray(GAS_LIMIT))
+                .destination(PrecompiledContracts.BRIDGE_ADDR_STR == null ? null : Hex.decode(PrecompiledContracts.BRIDGE_ADDR_STR))
+                .data(DATA == null ? null : Hex.decode(DATA))
+                .chainId(Constants.REGTEST_CHAIN_ID)
+                .value(BigIntegers.asUnsignedByteArray(AMOUNT))
+                .build();
         rskTx.sign(fedECPrivateKey.getPrivKeyBytes());
 
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
@@ -811,7 +929,16 @@ public class BridgeTestPowerMock {
         Repository repository = createRepository();
         Repository track = repository.startTracking();
 
-        Transaction rskTx = new Transaction(PrecompiledContracts.BRIDGE_ADDR_STR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA, Constants.REGTEST_CHAIN_ID);
+        Transaction rskTx = Transaction
+                .builder()
+                .nonce(BigIntegers.asUnsignedByteArray(NONCE))
+                .gasPrice(GAS_PRICE.toByteArray())
+                .gasLimit(BigIntegers.asUnsignedByteArray(GAS_LIMIT))
+                .destination(PrecompiledContracts.BRIDGE_ADDR_STR == null ? null : Hex.decode(PrecompiledContracts.BRIDGE_ADDR_STR))
+                .data(DATA == null ? null : Hex.decode(DATA))
+                .chainId(Constants.REGTEST_CHAIN_ID)
+                .value(BigIntegers.asUnsignedByteArray(AMOUNT))
+                .build();
         rskTx.sign(fedECPrivateKey.getPrivKeyBytes());
 
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
@@ -837,7 +964,16 @@ public class BridgeTestPowerMock {
         Repository repository = createRepository();
         Repository track = repository.startTracking();
 
-        Transaction rskTx = new Transaction(PrecompiledContracts.BRIDGE_ADDR_STR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA, Constants.REGTEST_CHAIN_ID);
+        Transaction rskTx = Transaction
+                .builder()
+                .nonce(BigIntegers.asUnsignedByteArray(NONCE))
+                .gasPrice(GAS_PRICE.toByteArray())
+                .gasLimit(BigIntegers.asUnsignedByteArray(GAS_LIMIT))
+                .destination(PrecompiledContracts.BRIDGE_ADDR_STR == null ? null : Hex.decode(PrecompiledContracts.BRIDGE_ADDR_STR))
+                .data(DATA == null ? null : Hex.decode(DATA))
+                .chainId(Constants.REGTEST_CHAIN_ID)
+                .value(BigIntegers.asUnsignedByteArray(AMOUNT))
+                .build();
         rskTx.sign(fedECPrivateKey.getPrivKeyBytes());
 
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
@@ -863,7 +999,16 @@ public class BridgeTestPowerMock {
         Repository repository = createRepository();
         Repository track = repository.startTracking();
 
-        Transaction rskTx = new Transaction(PrecompiledContracts.BRIDGE_ADDR_STR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA, Constants.REGTEST_CHAIN_ID);
+        Transaction rskTx = Transaction
+                .builder()
+                .nonce(BigIntegers.asUnsignedByteArray(NONCE))
+                .gasPrice(GAS_PRICE.toByteArray())
+                .gasLimit(BigIntegers.asUnsignedByteArray(GAS_LIMIT))
+                .destination(PrecompiledContracts.BRIDGE_ADDR_STR == null ? null : Hex.decode(PrecompiledContracts.BRIDGE_ADDR_STR))
+                .data(DATA == null ? null : Hex.decode(DATA))
+                .chainId(Constants.REGTEST_CHAIN_ID)
+                .value(BigIntegers.asUnsignedByteArray(AMOUNT))
+                .build();
         rskTx.sign(fedECPrivateKey.getPrivKeyBytes());
 
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
@@ -953,7 +1098,16 @@ public class BridgeTestPowerMock {
         Repository repository = createRepository();
         Repository track = repository.startTracking();
 
-        Transaction rskTx = new Transaction(PrecompiledContracts.BRIDGE_ADDR_STR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA, Constants.REGTEST_CHAIN_ID);
+        Transaction rskTx = Transaction
+                .builder()
+                .nonce(BigIntegers.asUnsignedByteArray(NONCE))
+                .gasPrice(GAS_PRICE.toByteArray())
+                .gasLimit(BigIntegers.asUnsignedByteArray(GAS_LIMIT))
+                .destination(PrecompiledContracts.BRIDGE_ADDR_STR == null ? null : Hex.decode(PrecompiledContracts.BRIDGE_ADDR_STR))
+                .data(DATA == null ? null : Hex.decode(DATA))
+                .chainId(Constants.REGTEST_CHAIN_ID)
+                .value(BigIntegers.asUnsignedByteArray(AMOUNT))
+                .build();
         rskTx.sign(new ECKey().getPrivKeyBytes());
 
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
@@ -982,7 +1136,16 @@ public class BridgeTestPowerMock {
         Repository repository = createRepository();
         Repository track = repository.startTracking();
 
-        Transaction rskTx = new Transaction(PrecompiledContracts.BRIDGE_ADDR_STR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA, Constants.REGTEST_CHAIN_ID);
+        Transaction rskTx = Transaction
+                .builder()
+                .nonce(BigIntegers.asUnsignedByteArray(NONCE))
+                .gasPrice(GAS_PRICE.toByteArray())
+                .gasLimit(BigIntegers.asUnsignedByteArray(GAS_LIMIT))
+                .destination(PrecompiledContracts.BRIDGE_ADDR_STR == null ? null : Hex.decode(PrecompiledContracts.BRIDGE_ADDR_STR))
+                .data(DATA == null ? null : Hex.decode(DATA))
+                .chainId(Constants.REGTEST_CHAIN_ID)
+                .value(BigIntegers.asUnsignedByteArray(AMOUNT))
+                .build();
         rskTx.sign(fedECPrivateKey.getPrivKeyBytes());
 
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
@@ -1006,7 +1169,16 @@ public class BridgeTestPowerMock {
         Repository repository = createRepository();
         Repository track = repository.startTracking();
 
-        Transaction rskTx = new Transaction(PrecompiledContracts.BRIDGE_ADDR_STR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA, Constants.REGTEST_CHAIN_ID);
+        Transaction rskTx = Transaction
+                .builder()
+                .nonce(BigIntegers.asUnsignedByteArray(NONCE))
+                .gasPrice(GAS_PRICE.toByteArray())
+                .gasLimit(BigIntegers.asUnsignedByteArray(GAS_LIMIT))
+                .destination(PrecompiledContracts.BRIDGE_ADDR_STR == null ? null : Hex.decode(PrecompiledContracts.BRIDGE_ADDR_STR))
+                .data(DATA == null ? null : Hex.decode(DATA))
+                .chainId(Constants.REGTEST_CHAIN_ID)
+                .value(BigIntegers.asUnsignedByteArray(AMOUNT))
+                .build();
         rskTx.sign(fedECPrivateKey.getPrivKeyBytes());
 
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
@@ -1030,7 +1202,16 @@ public class BridgeTestPowerMock {
         Repository repository = createRepository();
         Repository track = repository.startTracking();
 
-        Transaction rskTx = new Transaction(PrecompiledContracts.BRIDGE_ADDR_STR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA, Constants.REGTEST_CHAIN_ID);
+        Transaction rskTx = Transaction
+                .builder()
+                .nonce(BigIntegers.asUnsignedByteArray(NONCE))
+                .gasPrice(GAS_PRICE.toByteArray())
+                .gasLimit(BigIntegers.asUnsignedByteArray(GAS_LIMIT))
+                .destination(PrecompiledContracts.BRIDGE_ADDR_STR == null ? null : Hex.decode(PrecompiledContracts.BRIDGE_ADDR_STR))
+                .data(DATA == null ? null : Hex.decode(DATA))
+                .chainId(Constants.REGTEST_CHAIN_ID)
+                .value(BigIntegers.asUnsignedByteArray(AMOUNT))
+                .build();
         rskTx.sign(fedECPrivateKey.getPrivKeyBytes());
 
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
@@ -1054,7 +1235,16 @@ public class BridgeTestPowerMock {
         Repository repository = createRepository();
         Repository track = repository.startTracking();
 
-        Transaction rskTx = new Transaction(PrecompiledContracts.BRIDGE_ADDR_STR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA, Constants.REGTEST_CHAIN_ID);
+        Transaction rskTx = Transaction
+                .builder()
+                .nonce(BigIntegers.asUnsignedByteArray(NONCE))
+                .gasPrice(GAS_PRICE.toByteArray())
+                .gasLimit(BigIntegers.asUnsignedByteArray(GAS_LIMIT))
+                .destination(PrecompiledContracts.BRIDGE_ADDR_STR == null ? null : Hex.decode(PrecompiledContracts.BRIDGE_ADDR_STR))
+                .data(DATA == null ? null : Hex.decode(DATA))
+                .chainId(Constants.REGTEST_CHAIN_ID)
+                .value(BigIntegers.asUnsignedByteArray(AMOUNT))
+                .build();
         rskTx.sign(fedECPrivateKey.getPrivKeyBytes());
 
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
@@ -2410,7 +2600,16 @@ public class BridgeTestPowerMock {
         Repository repository = createRepository();
         Repository track = repository.startTracking();
 
-        Transaction rskTx = new Transaction(PrecompiledContracts.BRIDGE_ADDR_STR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA, Constants.REGTEST_CHAIN_ID);
+        Transaction rskTx = Transaction
+                .builder()
+                .nonce(BigIntegers.asUnsignedByteArray(NONCE))
+                .gasPrice(GAS_PRICE.toByteArray())
+                .gasLimit(BigIntegers.asUnsignedByteArray(GAS_LIMIT))
+                .destination(PrecompiledContracts.BRIDGE_ADDR_STR == null ? null : Hex.decode(PrecompiledContracts.BRIDGE_ADDR_STR))
+                .data(DATA == null ? null : Hex.decode(DATA))
+                .chainId(Constants.REGTEST_CHAIN_ID)
+                .value(BigIntegers.asUnsignedByteArray(AMOUNT))
+                .build();
         rskTx.sign(fedECPrivateKey.getPrivKeyBytes());
 
         // Setup bridge
