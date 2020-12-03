@@ -19,6 +19,8 @@
 package co.rsk.validators;
 
 import co.rsk.remasc.RemascTransaction;
+import org.bouncycastle.util.BigIntegers;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
 import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
@@ -48,7 +50,17 @@ public class RemascValidationRuleTest {
         Block b = Mockito.mock(Block.class);
 
         List<Transaction> tx = new ArrayList<>();
-        tx.add(new Transaction("0000000000000000000000000000000000000001", BigInteger.ZERO, BigInteger.ZERO, BigInteger.ONE, BigInteger.TEN, Constants.REGTEST_CHAIN_ID));
+        tx.add(
+                Transaction
+                        .builder()
+                        .nonce(BigInteger.ZERO)
+                        .gasPrice(BigInteger.ONE)
+                        .gasLimit(BigInteger.TEN)
+                        .destination(Hex.decode("0000000000000000000000000000000000000001"))
+                        .chainId(Constants.REGTEST_CHAIN_ID)
+                        .value(BigInteger.ZERO)
+                        .build()
+        );
 
         Mockito.when(b.getTransactionsList()).thenReturn(tx);
 
@@ -63,7 +75,18 @@ public class RemascValidationRuleTest {
 
         List<Transaction> tx = new ArrayList<>();
         tx.add(new RemascTransaction(1L));
-        tx.add(new Transaction("0000000000000000000000000000000000000001", BigInteger.ZERO, BigInteger.ZERO, BigInteger.ONE, BigInteger.TEN, Constants.REGTEST_CHAIN_ID));
+        tx.add(
+                Transaction
+                        .builder()
+                        .nonce(BigInteger.ZERO)
+                        .gasPrice(BigInteger.ONE)
+                        .gasLimit(BigInteger.TEN)
+                        .destination(Hex.decode("0000000000000000000000000000000000000001"))
+                        .data((byte[]) null)
+                        .chainId(Constants.REGTEST_CHAIN_ID)
+                        .value(BigIntegers.asUnsignedByteArray(BigInteger.ZERO))
+                        .build()
+        );
 
         Mockito.when(b.getTransactionsList()).thenReturn(tx);
 
@@ -77,7 +100,18 @@ public class RemascValidationRuleTest {
         Block b = Mockito.mock(Block.class);
 
         List<Transaction> tx = new ArrayList<>();
-        tx.add(new Transaction("0000000000000000000000000000000000000001", BigInteger.ZERO, BigInteger.ZERO, BigInteger.ONE, BigInteger.TEN, Constants.REGTEST_CHAIN_ID));
+        tx.add(
+                Transaction
+                        .builder()
+                        .nonce(BigInteger.ZERO)
+                        .gasPrice(BigInteger.ONE)
+                        .gasLimit(BigInteger.TEN)
+                        .destination(Hex.decode("0000000000000000000000000000000000000001"))
+                        .data((byte[]) null)
+                        .chainId(Constants.REGTEST_CHAIN_ID)
+                        .value(BigIntegers.asUnsignedByteArray(BigInteger.ZERO))
+                        .build()
+        );
         tx.add(new RemascTransaction(1L));
 
         Mockito.when(b.getTransactionsList()).thenReturn(tx);

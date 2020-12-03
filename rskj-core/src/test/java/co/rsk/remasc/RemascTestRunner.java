@@ -228,16 +228,17 @@ class RemascTestRunner {
                                     List<BlockHeader> uncles, long gasLimit, long gasPrice, long txNonce, long txValue,
                                     ECKey txSigningKey, Long difficulty) {
         if (gasLimit == 0) throw new IllegalArgumentException();
-        Transaction tx = new Transaction(
-                BigInteger.valueOf(txNonce).toByteArray(),
-                BigInteger.valueOf(gasPrice).toByteArray(),
-                BigInteger.valueOf(gasLimit).toByteArray(),
-                new ECKey().getAddress() ,
-                BigInteger.valueOf(txValue).toByteArray(),
-                null,
-                //TODO(mc): inject network chain id
-                Constants.REGTEST_CHAIN_ID
-        );
+        //TODO(mc): inject network chain id
+        Transaction tx = Transaction
+                .builder()
+                .nonce(BigInteger.valueOf(txNonce))
+                .gasPrice(BigInteger.valueOf(gasPrice))
+                .gasLimit(BigInteger.valueOf(gasLimit))
+                .destination(new ECKey().getAddress())
+                .data(null)
+                .chainId(Constants.REGTEST_CHAIN_ID)
+                .value(BigInteger.valueOf(txValue))
+                .build();
 
         tx.sign(txSigningKey.getPrivKeyBytes());
         //createBlook 1
