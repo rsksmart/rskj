@@ -296,7 +296,7 @@ public class PrecompiledContracts {
         }
 
         @Override
-        public byte[] execute(byte[] data) {
+        public byte[] execute(byte[] data) throws PrecompiledContractException {
 
             byte[] h = new byte[32];
             byte[] v = new byte[32];

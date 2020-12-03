@@ -704,9 +704,8 @@ public class Program {
      * - Stateless calls invoke code from another contract, within the context of the caller
      *
      * @param msg         is the message call object
-     * @param activations activations for hardfork
      */
-    public void callToAddress(MessageCall msg, ActivationConfig.ForBlock activations) {
+    public void callToAddress(MessageCall msg) {
 
         if (getCallDeep() == getMaxDepth()) {
             stackPushZero();
@@ -1349,7 +1348,7 @@ public class Program {
         return ret;
     }
 
-    public void callToPrecompiledAddress(MessageCall msg, PrecompiledContract contract, ActivationConfig.ForBlock activations) {
+    public void callToPrecompiledAddress(MessageCall msg, PrecompiledContract contract) {
 
         if (getCallDeep() == getMaxDepth()) {
             stackPushZero();
@@ -1428,7 +1427,7 @@ public class Program {
             this.cleanReturnDataBuffer();
         } else {
             // TODO: change activation code.
-            if (activations.isActive(ConsensusRule.RSKIPNEW)) {
+            if (getActivations().isActive(ConsensusRule.RSKIPNEW)) {
                 executeAndHandleError(contract, msg, requiredGas, track, data);
             } else {
                 execute(contract, msg, requiredGas, track, data);
@@ -1453,27 +1452,34 @@ public class Program {
 
     private void executeAndHandleError(PrecompiledContract contract, MessageCall msg, long requiredGas, Repository track, byte[] data) {
         try {
+            logger.trace("Executing Precompiled contract...");
             byte[] out = contract.execute(data);
             if (getActivations().isActive(ConsensusRule.RSKIP90)) {
+                logger.trace("Executing Precompiled setting output.");
                 this.returnDataBuffer = out;
             }
             saveOutAfterExecution(msg, out);
             this.stackPushOne();
             track.commit();
         } catch (PrecompiledContractException e) {
+            logger.trace("Precompiled execution error. Pushing Zero to stack and performing rollback.", e);
             this.stackPushZero();
             track.rollback();
+            saveOutAfterExecution(msg, e.getMessage().getBytes());
             this.cleanReturnDataBuffer();
         } catch (RuntimeException e) {
+            logger.trace("Unexpected Precompiled execution error. Pushing Zero to stack and performing rollback.", e);
             this.stackPushZero();
             track.rollback();
             this.cleanReturnDataBuffer();
         } finally {
-            this.refundGas(msg.getGas().longValue() - requiredGas, "call pre-compiled");
+            final long refundingGas = msg.getGas().longValue() - requiredGas;
+            this.refundGas(refundingGas, "call pre-compiled");
         }
     }
 
     private void saveOutAfterExecution(MessageCall msg, byte[] out) {
+        logger.trace("Executing Precompiled saving memory.");
         // Avoid saving null returns to memory and limit the memory it can use.
         // If we're behind RSK150 activation, don't care about the null return, just save.
         if (getActivations().isActive(ConsensusRule.RSKIP150) && out != null) {

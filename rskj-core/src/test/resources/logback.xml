@@ -18,7 +18,7 @@
             </Pattern>
         </encoder>
         <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
-            <level>ON</level>
+            <level>TRACE</level>
         </filter>
     </appender>
 
@@ -29,7 +29,7 @@
     <logger name="gaspricetracker" level="INFO"/>
     <logger name="web3" level="INFO"/>
     <logger name="repository" level="INFO"/>
-    <logger name="VM" level="ERROR"/>
+    <logger name="VM" level="TRACE"/>
     <logger name="blockqueue" level="INFO"/>
     <logger name="io.netty" level="INFO"/>
     <logger name="block" level="INFO"/>
@@ -43,7 +43,7 @@
     <logger name="start" level="INFO"/>
     <logger name="cli" level="INFO"/>
     <logger name="txs" level="INFO"/>
-    <logger name="gas" level="ERROR"/>
+    <logger name="gas" level="TRACE"/>
     <logger name="main" level="INFO"/>
     <logger name="trie" level="INFO"/>
     <logger name="peermonitor" level="INFO"/>
