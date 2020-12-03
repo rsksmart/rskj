@@ -39,7 +39,6 @@ import java.util.List;
  * Created by ajlopez on 4/20/2016.
  */
 public class BlockchainVMTest {
-    private static final byte[] ZERO_BYTE_ARRAY = new byte[]{0};
 
     @Test
     public void genesisTest() {
@@ -47,7 +46,7 @@ public class BlockchainVMTest {
         Assert.assertEquals(0, genesis.getNumber());
     }
 
-    private static Coin faucetAmount = Coin.valueOf(1000000000L);
+    private static final Coin faucetAmount = Coin.valueOf(1000000000L);
 
     public static class NewBlockChainInfo {
         public Blockchain blockchain;
@@ -76,7 +75,6 @@ public class BlockchainVMTest {
         Coin transactionGasPrice = Coin.valueOf(1);
         Transaction t = Transaction
                 .builder()
-                .nonce(ZERO_BYTE_ARRAY)
                 .gasPrice(transactionGasPrice)
                 .gasLimit(transactionGasLimit)
                 .destination(dstAddress)
