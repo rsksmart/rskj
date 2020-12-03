@@ -1689,14 +1689,24 @@ public class Web3ImplTest {
         args.to = addr2;
         args.data = data;
         args.gas = TypeConverter.toQuantityJsonHex(gasLimit);
-        args.gasPrice= TypeConverter.toQuantityJsonHex(gasPrice);
+        args.gasPrice = TypeConverter.toQuantityJsonHex(gasPrice);
         args.value = value.toString();
         args.nonce = nonce.toString();
 
         String txHash = web3.eth_sendTransaction(args);
 
         // ***** Verifies tx hash
-        Transaction tx = new Transaction(toAddress.substring(2), value, nonce, gasPrice, gasLimit, args.data, config.getNetworkConstants().getChainId());
+        String to = toAddress.substring(2);
+        Transaction tx = Transaction
+                .builder()
+                .nonce(nonce)
+                .gasPrice(gasPrice)
+                .gasLimit(gasLimit)
+                .destination(Hex.decode(to))
+                .data(args.data == null ? null : Hex.decode(args.data))
+                .chainId(config.getNetworkConstants().getChainId())
+                .value(value)
+                .build();
         tx.sign(wallet.getAccount(new RskAddress(addr1)).getEcKey().getPrivKeyBytes());
 
         String expectedHash = tx.getHash().toJsonString();
