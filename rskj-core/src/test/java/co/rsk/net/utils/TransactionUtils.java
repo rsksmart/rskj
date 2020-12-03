@@ -64,7 +64,6 @@ public class TransactionUtils {
                 .gasPrice(gasPrice)
                 .gasLimit(gasLimit)
                 .destination(toAddress != null ? Hex.decode(toAddress) : null)
-                .data((byte[]) null)
                 .chainId(Constants.REGTEST_CHAIN_ID)
                 .value(value)
                 .build();

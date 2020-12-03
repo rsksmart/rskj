@@ -235,7 +235,6 @@ class RemascTestRunner {
                 .gasPrice(BigInteger.valueOf(gasPrice))
                 .gasLimit(BigInteger.valueOf(gasLimit))
                 .destination(new ECKey().getAddress())
-                .data(null)
                 .chainId(Constants.REGTEST_CHAIN_ID)
                 .value(BigInteger.valueOf(txValue))
                 .build();

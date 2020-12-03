@@ -328,7 +328,6 @@ public class TransactionTest {
                 .gasLimit(gas)
                 .destination(recieveAddress)
                 .value(endowment)
-                .data(init)
                 .build();
         tx1.sign(senderPrivKey);
 

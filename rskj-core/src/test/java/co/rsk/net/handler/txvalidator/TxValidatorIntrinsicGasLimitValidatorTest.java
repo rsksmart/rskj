@@ -53,7 +53,6 @@ public class TxValidatorIntrinsicGasLimitValidatorTest {
                 .gasPrice(BigInteger.ZERO)
                 .gasLimit(BigInteger.valueOf(21000))
                 .destination(new ECKey().getAddress())
-                .data(null)
                 .chainId(Constants.REGTEST_CHAIN_ID)
                 .value(BigInteger.ZERO)
                 .build();
@@ -89,7 +88,6 @@ public class TxValidatorIntrinsicGasLimitValidatorTest {
                 .gasPrice(BigInteger.ZERO)
                 .gasLimit(BigInteger.ZERO)
                 .destination(PrecompiledContracts.BRIDGE_ADDR.getBytes())
-                .data(null)
                 .chainId(Constants.REGTEST_CHAIN_ID)
                 .value(BigInteger.ZERO)
                 .build();
@@ -124,7 +122,6 @@ public class TxValidatorIntrinsicGasLimitValidatorTest {
                 .gasPrice(BigInteger.ZERO)
                 .gasLimit(BigInteger.valueOf(20999))
                 .destination(new ECKey().getAddress())
-                .data(null)
                 .chainId(Constants.REGTEST_CHAIN_ID)
                 .value(BigInteger.ZERO)
                 .build();
@@ -148,7 +145,6 @@ public class TxValidatorIntrinsicGasLimitValidatorTest {
                 .gasPrice(BigInteger.ZERO)
                 .gasLimit(BigInteger.ZERO)
                 .destination(new ECKey().getAddress())
-                .data(null)
                 .chainId(Constants.REGTEST_CHAIN_ID)
                 .value(BigInteger.ZERO)
                 .build();

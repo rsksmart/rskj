@@ -725,7 +725,6 @@ public class RemascProcessMinerFeesTest {
                 .gasPrice(Coin.valueOf(1))
                 .gasLimit(Coin.valueOf(txCallRemascGasLimit))
                 .destination(Hex.decode("da7ce79725418f4f6e13bf5f520c89cec5f6a974"))
-                .data(null)
                 .chainId(config.getNetworkConstants().getChainId())
                 .value(Coin.ZERO)
                 .build();

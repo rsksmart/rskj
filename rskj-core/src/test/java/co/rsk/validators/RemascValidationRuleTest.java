@@ -82,9 +82,8 @@ public class RemascValidationRuleTest {
                         .gasPrice(BigInteger.ONE)
                         .gasLimit(BigInteger.TEN)
                         .destination(Hex.decode("0000000000000000000000000000000000000001"))
-                        .data((byte[]) null)
                         .chainId(Constants.REGTEST_CHAIN_ID)
-                        .value(BigIntegers.asUnsignedByteArray(BigInteger.ZERO))
+                        .value(BigInteger.ZERO)
                         .build()
         );
 
@@ -107,9 +106,8 @@ public class RemascValidationRuleTest {
                         .gasPrice(BigInteger.ONE)
                         .gasLimit(BigInteger.TEN)
                         .destination(Hex.decode("0000000000000000000000000000000000000001"))
-                        .data((byte[]) null)
                         .chainId(Constants.REGTEST_CHAIN_ID)
-                        .value(BigIntegers.asUnsignedByteArray(BigInteger.ZERO))
+                        .value(BigInteger.ZERO)
                         .build()
         );
         tx.add(new RemascTransaction(1L));
