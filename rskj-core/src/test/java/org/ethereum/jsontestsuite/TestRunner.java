@@ -89,14 +89,14 @@ public class TestRunner {
     private ProgramTrace trace = null;
     private boolean validateGasUsed = false; // until EIP150 test cases are ready.
     private boolean validateBalances = true;
-    private boolean validateStateRoots =false;
+    private boolean validateStateRoots = false;
 
-    public TestRunner setValidateGasUsed( boolean v) {
-        validateGasUsed= v;
+    public TestRunner setValidateGasUsed(boolean v) {
+        validateGasUsed = v;
         return this;
     }
 
-    public TestRunner setValidateStateRoots ( boolean v) {
+    public TestRunner setValidateStateRoots(boolean v) {
         validateStateRoots = v;
         return this;
     }
@@ -153,7 +153,7 @@ public class TestRunner {
         StateRootHandler stateRootHandler = new StateRootHandler(config.getActivationConfig(), new TrieConverter(), new HashMapDB(), new HashMap<>());
         RepositoryLocator repositoryLocator = new RepositoryLocator(trieStore, stateRootHandler);
 
-        TransactionPoolImpl transactionPool = new TransactionPoolImpl(config, repositoryLocator, null, blockFactory, listener, transactionExecutorFactory,  new ReceivedTxSignatureCache(), 10, 100);
+        TransactionPoolImpl transactionPool = new TransactionPoolImpl(config, repositoryLocator, null, blockFactory, listener, transactionExecutorFactory, new ReceivedTxSignatureCache(), 10, 100);
 
         BlockChainImpl blockchain = new BlockChainImpl(
                 blockStore,
@@ -185,11 +185,11 @@ public class TestRunner {
                 tBlock = blockFactory.decodeBlock(rlp);
 
                 ArrayList<String> outputSummary =
-                        BlockHeaderValidator.valid(tBlock.getHeader(), block.getHeader(),null);
+                        BlockHeaderValidator.valid(tBlock.getHeader(), block.getHeader(), null);
 
-                if (!outputSummary.isEmpty()){
+                if (!outputSummary.isEmpty()) {
                     for (String output : outputSummary)
-                        logger.error("at block {}: {}", Integer.toString(blockTraffic.size()),output);
+                        logger.error("at block {}: {}", Integer.toString(blockTraffic.size()), output);
                 }
 
                 blockTraffic.add(tBlock);
@@ -222,7 +222,7 @@ public class TestRunner {
         }
 
         Repository postRepository = RepositoryBuilder.build(testCase.getPostState());
-        List<String> repoResults = RepositoryValidator.valid(repository, postRepository, validateStateRoots,validateBalances,null);
+        List<String> repoResults = RepositoryValidator.valid(repository, postRepository, validateStateRoots, validateBalances, null);
         results.addAll(repoResults);
 
         return results;
@@ -285,7 +285,7 @@ public class TestRunner {
             Exception e = null;
             ThreadMXBean thread;
             Boolean oldMode;
-            long startTime =0;
+            long startTime = 0;
             thread = ManagementFactory.getThreadMXBean();
             if (thread.isThreadCpuTimeSupported()) {
                 oldMode = thread.isThreadCpuTimeEnabled();
@@ -293,12 +293,13 @@ public class TestRunner {
                 startTime = thread.getCurrentThreadCpuTime(); // in nanoseconds.
             }
             try {
-                vm.steps(program,Long.MAX_VALUE);;
+                vm.steps(program, Long.MAX_VALUE);
+                ;
             } catch (RuntimeException ex) {
                 vmDidThrowAnEception = true;
                 e = ex;
             }
-            if (startTime!=0) {
+            if (startTime != 0) {
                 long endTime = thread.getCurrentThreadCpuTime();
                 long deltaTime = (endTime - startTime) / 1000; // de nano a micro.
                 logger.info("Time elapsed [uS]: " + Long.toString(deltaTime));
@@ -569,7 +570,7 @@ public class TestRunner {
                     }
 
                     boolean assertGasLimit =
-                            expectedCallCreate.getGasLimit()==resultCallCreate.getGasLimit();
+                            expectedCallCreate.getGasLimit() == resultCallCreate.getGasLimit();
 
                     if (!assertGasLimit) {
                         String output =
@@ -614,15 +615,15 @@ public class TestRunner {
                 BigInteger expectedGas = new BigInteger(1, testCase.getGas());
                 BigInteger actualGas = new BigInteger(1, gas).subtract(BigInteger.valueOf(program.getResult().getGasUsed()));
                 if (validateGasUsed)
-                if (!expectedGas.equals(actualGas)) {
+                    if (!expectedGas.equals(actualGas)) {
 
-                    String output =
-                            String.format("Gas remaining is different. Expected gas remaining: [ %s ], actual gas remaining: [ %s ]",
-                                    expectedGas.toString(),
-                                    actualGas.toString());
-                    logger.info(output);
-                    results.add(output);
-                }
+                        String output =
+                                String.format("Gas remaining is different. Expected gas remaining: [ %s ], actual gas remaining: [ %s ]",
+                                        expectedGas.toString(),
+                                        actualGas.toString());
+                        logger.info(output);
+                        results.add(output);
+                    }
                 /*
                  * end of if(testCase.getPost().size() == 0)
                  */
@@ -636,24 +637,20 @@ public class TestRunner {
 
     public org.ethereum.core.Transaction createTransaction(Transaction tx) {
 
-        byte[] nonceBytes = ByteUtil.longToBytes(tx.nonce);
-        byte[] gasPriceBytes = ByteUtil.longToBytes(tx.gasPrice);
-        byte[] gasBytes = tx.gasLimit;
-        byte[] valueBytes = ByteUtil.longToBytes(tx.value);
-        byte[] toAddr = tx.getTo();
-        byte[] data = tx.getData();
-
-        org.ethereum.core.Transaction transaction = new org.ethereum.core.Transaction(
-                nonceBytes, gasPriceBytes, gasBytes,
-                toAddr, valueBytes, data);
-
-        return transaction;
+        return org.ethereum.core.Transaction.builder()
+                .nonce(BigInteger.valueOf(tx.nonce))
+                .gasPrice(BigInteger.valueOf(tx.gasPrice))
+                .gasLimit(tx.gasLimit)
+                .destination(tx.getTo())
+                .value(BigInteger.valueOf(tx.value))
+                .data(tx.getData())
+                .build();
     }
 
     public Repository loadRepository(Repository track, Map<RskAddress, AccountState> pre) {
 
 
-            /* 1. Store pre-exist accounts - Pre */
+        /* 1. Store pre-exist accounts - Pre */
         for (RskAddress addr : pre.keySet()) {
 
             AccountState accountState = pre.get(addr);
@@ -704,7 +701,7 @@ public class TestRunner {
             a = a.substring(2);
         }
 
-        return Long.parseLong(a,16);
+        return Long.parseLong(a, 16);
     }
 
     private static BlockHeader buildHeader(BlockFactory blockFactory, BlockHeaderTck headerTck) {

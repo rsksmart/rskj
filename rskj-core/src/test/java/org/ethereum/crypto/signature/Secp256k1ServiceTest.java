@@ -169,7 +169,15 @@ public abstract class Secp256k1ServiceTest {
         String addressExpected = Hex.toHexString(fromPrivateDecompress.getAddress());
 
         // Create tx and sign, then recover from serialized.
-        Transaction newTx = new Transaction(2l, 2l, 2l, receiver, 2l, messageHash, (byte) 0);
+        Transaction newTx = Transaction
+                .builder()
+                .nonce(BigInteger.valueOf(2L))
+                .gasPrice(BigInteger.valueOf(2L))
+                .gasLimit(BigInteger.valueOf(2L))
+                .destination(Hex.decode(receiver))
+                .data(messageHash)
+                .value(BigInteger.valueOf(2L))
+                .build();
         newTx.sign(pk);
         ImmutableTransaction recoveredTx = new ImmutableTransaction(newTx.getEncoded());
         // Recover Pub Key from recovered tx

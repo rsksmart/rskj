@@ -42,7 +42,6 @@ import co.rsk.test.World;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
-import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -152,13 +151,13 @@ public class BridgeTestPowerMock {
 
         Transaction rskTx = Transaction
                 .builder()
-                .nonce(BigIntegers.asUnsignedByteArray(NONCE))
-                .gasPrice(GAS_PRICE.toByteArray())
-                .gasLimit(BigIntegers.asUnsignedByteArray(GAS_LIMIT))
+                .nonce(NONCE)
+                .gasPrice(GAS_PRICE)
+                .gasLimit(GAS_LIMIT)
                 .destination(PrecompiledContracts.BRIDGE_ADDR_STR == null ? null : Hex.decode(PrecompiledContracts.BRIDGE_ADDR_STR))
                 .data(DATA == null ? null : Hex.decode(DATA))
                 .chainId(Constants.REGTEST_CHAIN_ID)
-                .value(BigIntegers.asUnsignedByteArray(AMOUNT))
+                .value(AMOUNT)
                 .build();
         rskTx.sign(new ECKey().getPrivKeyBytes());
 
@@ -200,13 +199,13 @@ public class BridgeTestPowerMock {
         track = repository.startTracking();
         Transaction rskTx = Transaction
                 .builder()
-                .nonce(BigIntegers.asUnsignedByteArray(NONCE))
-                .gasPrice(GAS_PRICE.toByteArray())
-                .gasLimit(BigIntegers.asUnsignedByteArray(GAS_LIMIT))
+                .nonce(NONCE)
+                .gasPrice(GAS_PRICE)
+                .gasLimit(GAS_LIMIT)
                 .destination(PrecompiledContracts.BRIDGE_ADDR_STR == null ? null : Hex.decode(PrecompiledContracts.BRIDGE_ADDR_STR))
                 .data(DATA == null ? null : Hex.decode(DATA))
                 .chainId(Constants.REGTEST_CHAIN_ID)
-                .value(BigIntegers.asUnsignedByteArray(AMOUNT))
+                .value(AMOUNT)
                 .build();
         rskTx.sign(fedECPrivateKey.getPrivKeyBytes());
 
@@ -258,13 +257,13 @@ public class BridgeTestPowerMock {
 
         Transaction rskTx = Transaction
                 .builder()
-                .nonce(BigIntegers.asUnsignedByteArray(NONCE))
-                .gasPrice(GAS_PRICE.toByteArray())
-                .gasLimit(BigIntegers.asUnsignedByteArray(GAS_LIMIT))
+                .nonce(NONCE)
+                .gasPrice(GAS_PRICE)
+                .gasLimit(GAS_LIMIT)
                 .destination(PrecompiledContracts.BRIDGE_ADDR_STR == null ? null : Hex.decode(PrecompiledContracts.BRIDGE_ADDR_STR))
                 .data(DATA == null ? null : Hex.decode(DATA))
                 .chainId(Constants.REGTEST_CHAIN_ID)
-                .value(BigIntegers.asUnsignedByteArray(AMOUNT))
+                .value(AMOUNT)
                 .build();
         rskTx.sign(fedECPrivateKey.getPrivKeyBytes());
 
@@ -318,13 +317,13 @@ public class BridgeTestPowerMock {
 
         Transaction rskTx = Transaction
                 .builder()
-                .nonce(BigIntegers.asUnsignedByteArray(NONCE))
-                .gasPrice(GAS_PRICE.toByteArray())
-                .gasLimit(BigIntegers.asUnsignedByteArray(GAS_LIMIT))
+                .nonce(NONCE)
+                .gasPrice(GAS_PRICE)
+                .gasLimit(GAS_LIMIT)
                 .destination(PrecompiledContracts.BRIDGE_ADDR_STR == null ? null : Hex.decode(PrecompiledContracts.BRIDGE_ADDR_STR))
                 .data(DATA == null ? null : Hex.decode(DATA))
                 .chainId(Constants.REGTEST_CHAIN_ID)
-                .value(BigIntegers.asUnsignedByteArray(AMOUNT))
+                .value(AMOUNT)
                 .build();
         rskTx.sign(fedECPrivateKey.getPrivKeyBytes());
 
@@ -352,13 +351,13 @@ public class BridgeTestPowerMock {
 
         Transaction rskTx = Transaction
                 .builder()
-                .nonce(BigIntegers.asUnsignedByteArray(NONCE))
-                .gasPrice(GAS_PRICE.toByteArray())
-                .gasLimit(BigIntegers.asUnsignedByteArray(GAS_LIMIT))
+                .nonce(NONCE)
+                .gasPrice(GAS_PRICE)
+                .gasLimit(GAS_LIMIT)
                 .destination(PrecompiledContracts.BRIDGE_ADDR_STR == null ? null : Hex.decode(PrecompiledContracts.BRIDGE_ADDR_STR))
                 .data(DATA == null ? null : Hex.decode(DATA))
                 .chainId(Constants.REGTEST_CHAIN_ID)
-                .value(BigIntegers.asUnsignedByteArray(AMOUNT))
+                .value(AMOUNT)
                 .build();
         rskTx.sign(fedECPrivateKey.getPrivKeyBytes());
 
@@ -466,13 +465,13 @@ public class BridgeTestPowerMock {
     public void receiveHeadersNotFromTheFederation() {
         Transaction rskTx = Transaction
                 .builder()
-                .nonce(BigIntegers.asUnsignedByteArray(NONCE))
-                .gasPrice(GAS_PRICE.toByteArray())
-                .gasLimit(BigIntegers.asUnsignedByteArray(GAS_LIMIT))
+                .nonce(NONCE)
+                .gasPrice(GAS_PRICE)
+                .gasLimit(GAS_LIMIT)
                 .destination(PrecompiledContracts.BRIDGE_ADDR_STR == null ? null : Hex.decode(PrecompiledContracts.BRIDGE_ADDR_STR))
                 .data(DATA == null ? null : Hex.decode(DATA))
                 .chainId(Constants.REGTEST_CHAIN_ID)
-                .value(BigIntegers.asUnsignedByteArray(AMOUNT))
+                .value(AMOUNT)
                 .build();
         rskTx.sign(new ECKey().getPrivKeyBytes());
 
@@ -500,13 +499,13 @@ public class BridgeTestPowerMock {
 
         Transaction rskTx = Transaction
                 .builder()
-                .nonce(BigIntegers.asUnsignedByteArray(NONCE))
-                .gasPrice(GAS_PRICE.toByteArray())
-                .gasLimit(BigIntegers.asUnsignedByteArray(GAS_LIMIT))
+                .nonce(NONCE)
+                .gasPrice(GAS_PRICE)
+                .gasLimit(GAS_LIMIT)
                 .destination(PrecompiledContracts.BRIDGE_ADDR_STR == null ? null : Hex.decode(PrecompiledContracts.BRIDGE_ADDR_STR))
                 .data(DATA == null ? null : Hex.decode(DATA))
                 .chainId(Constants.REGTEST_CHAIN_ID)
-                .value(BigIntegers.asUnsignedByteArray(AMOUNT))
+                .value(AMOUNT)
                 .build();
         rskTx.sign(fedECPrivateKey.getPrivKeyBytes());
 
@@ -534,13 +533,13 @@ public class BridgeTestPowerMock {
 
         Transaction rskTx = Transaction
                 .builder()
-                .nonce(BigIntegers.asUnsignedByteArray(NONCE))
-                .gasPrice(GAS_PRICE.toByteArray())
-                .gasLimit(BigIntegers.asUnsignedByteArray(GAS_LIMIT))
+                .nonce(NONCE)
+                .gasPrice(GAS_PRICE)
+                .gasLimit(GAS_LIMIT)
                 .destination(PrecompiledContracts.BRIDGE_ADDR_STR == null ? null : Hex.decode(PrecompiledContracts.BRIDGE_ADDR_STR))
                 .data(DATA == null ? null : Hex.decode(DATA))
                 .chainId(Constants.REGTEST_CHAIN_ID)
-                .value(BigIntegers.asUnsignedByteArray(AMOUNT))
+                .value(AMOUNT)
                 .build();
         rskTx.sign(fedECPrivateKey.getPrivKeyBytes());
 
@@ -600,13 +599,13 @@ public class BridgeTestPowerMock {
 
         Transaction rskTx = Transaction
                 .builder()
-                .nonce(BigIntegers.asUnsignedByteArray(NONCE))
-                .gasPrice(GAS_PRICE.toByteArray())
-                .gasLimit(BigIntegers.asUnsignedByteArray(GAS_LIMIT))
+                .nonce(NONCE)
+                .gasPrice(GAS_PRICE)
+                .gasLimit(GAS_LIMIT)
                 .destination(PrecompiledContracts.BRIDGE_ADDR_STR == null ? null : Hex.decode(PrecompiledContracts.BRIDGE_ADDR_STR))
                 .data(DATA == null ? null : Hex.decode(DATA))
                 .chainId(Constants.REGTEST_CHAIN_ID)
-                .value(BigIntegers.asUnsignedByteArray(AMOUNT))
+                .value(AMOUNT)
                 .build();
         rskTx.sign(new ECKey().getPrivKeyBytes());
 
@@ -688,13 +687,13 @@ public class BridgeTestPowerMock {
 
         Transaction rskTx = Transaction
                 .builder()
-                .nonce(BigIntegers.asUnsignedByteArray(NONCE))
-                .gasPrice(GAS_PRICE.toByteArray())
-                .gasLimit(BigIntegers.asUnsignedByteArray(GAS_LIMIT))
+                .nonce(NONCE)
+                .gasPrice(GAS_PRICE)
+                .gasLimit(GAS_LIMIT)
                 .destination(PrecompiledContracts.BRIDGE_ADDR_STR == null ? null : Hex.decode(PrecompiledContracts.BRIDGE_ADDR_STR))
                 .data(DATA == null ? null : Hex.decode(DATA))
                 .chainId(Constants.REGTEST_CHAIN_ID)
-                .value(BigIntegers.asUnsignedByteArray(AMOUNT))
+                .value(AMOUNT)
                 .build();
         rskTx.sign(new ECKey().getPrivKeyBytes());
 
@@ -724,13 +723,13 @@ public class BridgeTestPowerMock {
 
         Transaction rskTx = Transaction
                 .builder()
-                .nonce(BigIntegers.asUnsignedByteArray(NONCE))
-                .gasPrice(GAS_PRICE.toByteArray())
-                .gasLimit(BigIntegers.asUnsignedByteArray(GAS_LIMIT))
+                .nonce(NONCE)
+                .gasPrice(GAS_PRICE)
+                .gasLimit(GAS_LIMIT)
                 .destination(PrecompiledContracts.BRIDGE_ADDR_STR == null ? null : Hex.decode(PrecompiledContracts.BRIDGE_ADDR_STR))
                 .data(DATA == null ? null : Hex.decode(DATA))
                 .chainId(Constants.REGTEST_CHAIN_ID)
-                .value(BigIntegers.asUnsignedByteArray(AMOUNT))
+                .value(AMOUNT)
                 .build();
         rskTx.sign(fedECPrivateKey.getPrivKeyBytes());
 
@@ -784,13 +783,13 @@ public class BridgeTestPowerMock {
 
         Transaction rskTx = Transaction
                 .builder()
-                .nonce(BigIntegers.asUnsignedByteArray(NONCE))
-                .gasPrice(GAS_PRICE.toByteArray())
-                .gasLimit(BigIntegers.asUnsignedByteArray(GAS_LIMIT))
+                .nonce(NONCE)
+                .gasPrice(GAS_PRICE)
+                .gasLimit(GAS_LIMIT)
                 .destination(PrecompiledContracts.BRIDGE_ADDR_STR == null ? null : Hex.decode(PrecompiledContracts.BRIDGE_ADDR_STR))
                 .data(DATA == null ? null : Hex.decode(DATA))
                 .chainId(Constants.REGTEST_CHAIN_ID)
-                .value(BigIntegers.asUnsignedByteArray(AMOUNT))
+                .value(AMOUNT)
                 .build();
         rskTx.sign(fedECPrivateKey.getPrivKeyBytes());
 
@@ -842,13 +841,13 @@ public class BridgeTestPowerMock {
 
         Transaction rskTx = Transaction
                 .builder()
-                .nonce(BigIntegers.asUnsignedByteArray(NONCE))
-                .gasPrice(GAS_PRICE.toByteArray())
-                .gasLimit(BigIntegers.asUnsignedByteArray(GAS_LIMIT))
+                .nonce(NONCE)
+                .gasPrice(GAS_PRICE)
+                .gasLimit(GAS_LIMIT)
                 .destination(PrecompiledContracts.BRIDGE_ADDR_STR == null ? null : Hex.decode(PrecompiledContracts.BRIDGE_ADDR_STR))
                 .data(DATA == null ? null : Hex.decode(DATA))
                 .chainId(Constants.REGTEST_CHAIN_ID)
-                .value(BigIntegers.asUnsignedByteArray(AMOUNT))
+                .value(AMOUNT)
                 .build();
         rskTx.sign(fedECPrivateKey.getPrivKeyBytes());
 
@@ -931,13 +930,13 @@ public class BridgeTestPowerMock {
 
         Transaction rskTx = Transaction
                 .builder()
-                .nonce(BigIntegers.asUnsignedByteArray(NONCE))
-                .gasPrice(GAS_PRICE.toByteArray())
-                .gasLimit(BigIntegers.asUnsignedByteArray(GAS_LIMIT))
+                .nonce(NONCE)
+                .gasPrice(GAS_PRICE)
+                .gasLimit(GAS_LIMIT)
                 .destination(PrecompiledContracts.BRIDGE_ADDR_STR == null ? null : Hex.decode(PrecompiledContracts.BRIDGE_ADDR_STR))
                 .data(DATA == null ? null : Hex.decode(DATA))
                 .chainId(Constants.REGTEST_CHAIN_ID)
-                .value(BigIntegers.asUnsignedByteArray(AMOUNT))
+                .value(AMOUNT)
                 .build();
         rskTx.sign(fedECPrivateKey.getPrivKeyBytes());
 
@@ -966,13 +965,13 @@ public class BridgeTestPowerMock {
 
         Transaction rskTx = Transaction
                 .builder()
-                .nonce(BigIntegers.asUnsignedByteArray(NONCE))
-                .gasPrice(GAS_PRICE.toByteArray())
-                .gasLimit(BigIntegers.asUnsignedByteArray(GAS_LIMIT))
+                .nonce(NONCE)
+                .gasPrice(GAS_PRICE)
+                .gasLimit(GAS_LIMIT)
                 .destination(PrecompiledContracts.BRIDGE_ADDR_STR == null ? null : Hex.decode(PrecompiledContracts.BRIDGE_ADDR_STR))
                 .data(DATA == null ? null : Hex.decode(DATA))
                 .chainId(Constants.REGTEST_CHAIN_ID)
-                .value(BigIntegers.asUnsignedByteArray(AMOUNT))
+                .value(AMOUNT)
                 .build();
         rskTx.sign(fedECPrivateKey.getPrivKeyBytes());
 
@@ -1001,13 +1000,13 @@ public class BridgeTestPowerMock {
 
         Transaction rskTx = Transaction
                 .builder()
-                .nonce(BigIntegers.asUnsignedByteArray(NONCE))
-                .gasPrice(GAS_PRICE.toByteArray())
-                .gasLimit(BigIntegers.asUnsignedByteArray(GAS_LIMIT))
+                .nonce(NONCE)
+                .gasPrice(GAS_PRICE)
+                .gasLimit(GAS_LIMIT)
                 .destination(PrecompiledContracts.BRIDGE_ADDR_STR == null ? null : Hex.decode(PrecompiledContracts.BRIDGE_ADDR_STR))
                 .data(DATA == null ? null : Hex.decode(DATA))
                 .chainId(Constants.REGTEST_CHAIN_ID)
-                .value(BigIntegers.asUnsignedByteArray(AMOUNT))
+                .value(AMOUNT)
                 .build();
         rskTx.sign(fedECPrivateKey.getPrivKeyBytes());
 
@@ -1100,13 +1099,13 @@ public class BridgeTestPowerMock {
 
         Transaction rskTx = Transaction
                 .builder()
-                .nonce(BigIntegers.asUnsignedByteArray(NONCE))
-                .gasPrice(GAS_PRICE.toByteArray())
-                .gasLimit(BigIntegers.asUnsignedByteArray(GAS_LIMIT))
+                .nonce(NONCE)
+                .gasPrice(GAS_PRICE)
+                .gasLimit(GAS_LIMIT)
                 .destination(PrecompiledContracts.BRIDGE_ADDR_STR == null ? null : Hex.decode(PrecompiledContracts.BRIDGE_ADDR_STR))
                 .data(DATA == null ? null : Hex.decode(DATA))
                 .chainId(Constants.REGTEST_CHAIN_ID)
-                .value(BigIntegers.asUnsignedByteArray(AMOUNT))
+                .value(AMOUNT)
                 .build();
         rskTx.sign(new ECKey().getPrivKeyBytes());
 
@@ -1138,13 +1137,13 @@ public class BridgeTestPowerMock {
 
         Transaction rskTx = Transaction
                 .builder()
-                .nonce(BigIntegers.asUnsignedByteArray(NONCE))
-                .gasPrice(GAS_PRICE.toByteArray())
-                .gasLimit(BigIntegers.asUnsignedByteArray(GAS_LIMIT))
+                .nonce(NONCE)
+                .gasPrice(GAS_PRICE)
+                .gasLimit(GAS_LIMIT)
                 .destination(PrecompiledContracts.BRIDGE_ADDR_STR == null ? null : Hex.decode(PrecompiledContracts.BRIDGE_ADDR_STR))
                 .data(DATA == null ? null : Hex.decode(DATA))
                 .chainId(Constants.REGTEST_CHAIN_ID)
-                .value(BigIntegers.asUnsignedByteArray(AMOUNT))
+                .value(AMOUNT)
                 .build();
         rskTx.sign(fedECPrivateKey.getPrivKeyBytes());
 
@@ -1171,13 +1170,13 @@ public class BridgeTestPowerMock {
 
         Transaction rskTx = Transaction
                 .builder()
-                .nonce(BigIntegers.asUnsignedByteArray(NONCE))
-                .gasPrice(GAS_PRICE.toByteArray())
-                .gasLimit(BigIntegers.asUnsignedByteArray(GAS_LIMIT))
+                .nonce(NONCE)
+                .gasPrice(GAS_PRICE)
+                .gasLimit(GAS_LIMIT)
                 .destination(PrecompiledContracts.BRIDGE_ADDR_STR == null ? null : Hex.decode(PrecompiledContracts.BRIDGE_ADDR_STR))
                 .data(DATA == null ? null : Hex.decode(DATA))
                 .chainId(Constants.REGTEST_CHAIN_ID)
-                .value(BigIntegers.asUnsignedByteArray(AMOUNT))
+                .value(AMOUNT)
                 .build();
         rskTx.sign(fedECPrivateKey.getPrivKeyBytes());
 
@@ -1204,13 +1203,13 @@ public class BridgeTestPowerMock {
 
         Transaction rskTx = Transaction
                 .builder()
-                .nonce(BigIntegers.asUnsignedByteArray(NONCE))
-                .gasPrice(GAS_PRICE.toByteArray())
-                .gasLimit(BigIntegers.asUnsignedByteArray(GAS_LIMIT))
+                .nonce(NONCE)
+                .gasPrice(GAS_PRICE)
+                .gasLimit(GAS_LIMIT)
                 .destination(PrecompiledContracts.BRIDGE_ADDR_STR == null ? null : Hex.decode(PrecompiledContracts.BRIDGE_ADDR_STR))
                 .data(DATA == null ? null : Hex.decode(DATA))
                 .chainId(Constants.REGTEST_CHAIN_ID)
-                .value(BigIntegers.asUnsignedByteArray(AMOUNT))
+                .value(AMOUNT)
                 .build();
         rskTx.sign(fedECPrivateKey.getPrivKeyBytes());
 
@@ -1237,13 +1236,13 @@ public class BridgeTestPowerMock {
 
         Transaction rskTx = Transaction
                 .builder()
-                .nonce(BigIntegers.asUnsignedByteArray(NONCE))
-                .gasPrice(GAS_PRICE.toByteArray())
-                .gasLimit(BigIntegers.asUnsignedByteArray(GAS_LIMIT))
+                .nonce(NONCE)
+                .gasPrice(GAS_PRICE)
+                .gasLimit(GAS_LIMIT)
                 .destination(PrecompiledContracts.BRIDGE_ADDR_STR == null ? null : Hex.decode(PrecompiledContracts.BRIDGE_ADDR_STR))
                 .data(DATA == null ? null : Hex.decode(DATA))
                 .chainId(Constants.REGTEST_CHAIN_ID)
-                .value(BigIntegers.asUnsignedByteArray(AMOUNT))
+                .value(AMOUNT)
                 .build();
         rskTx.sign(fedECPrivateKey.getPrivKeyBytes());
 
@@ -2602,13 +2601,13 @@ public class BridgeTestPowerMock {
 
         Transaction rskTx = Transaction
                 .builder()
-                .nonce(BigIntegers.asUnsignedByteArray(NONCE))
-                .gasPrice(GAS_PRICE.toByteArray())
-                .gasLimit(BigIntegers.asUnsignedByteArray(GAS_LIMIT))
+                .nonce(NONCE)
+                .gasPrice(GAS_PRICE)
+                .gasLimit(GAS_LIMIT)
                 .destination(PrecompiledContracts.BRIDGE_ADDR_STR == null ? null : Hex.decode(PrecompiledContracts.BRIDGE_ADDR_STR))
                 .data(DATA == null ? null : Hex.decode(DATA))
                 .chainId(Constants.REGTEST_CHAIN_ID)
-                .value(BigIntegers.asUnsignedByteArray(AMOUNT))
+                .value(AMOUNT)
                 .build();
         rskTx.sign(fedECPrivateKey.getPrivKeyBytes());
 
