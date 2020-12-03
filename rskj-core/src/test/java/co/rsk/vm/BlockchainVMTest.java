@@ -74,15 +74,15 @@ public class BlockchainVMTest {
         byte[] dstAddress = randomAddress();
         BigInteger transactionGasLimit = new BigInteger("21000");
         Coin transactionGasPrice = Coin.valueOf(1);
-        Transaction t = new Transaction(
-                ZERO_BYTE_ARRAY,
-                transactionGasPrice.getBytes(),
-                transactionGasLimit.toByteArray(),
-                dstAddress ,
-                transferAmount.getBytes(),
-                null,
-                Constants.REGTEST_CHAIN_ID);
-
+        Transaction t = Transaction
+                .builder()
+                .nonce(ZERO_BYTE_ARRAY)
+                .gasPrice(transactionGasPrice)
+                .gasLimit(transactionGasLimit)
+                .destination(dstAddress)
+                .chainId(Constants.REGTEST_CHAIN_ID)
+                .value(transferAmount)
+                .build();
         t.sign(binfo.faucetKey.getPrivKeyBytes());
         List<Transaction> txs = Collections.singletonList(t);
 
