@@ -3,6 +3,8 @@ package co.rsk.scoring;
 import co.rsk.net.NodeID;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.util.ByteUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.concurrent.GuardedBy;
 import java.net.InetAddress;
@@ -27,6 +29,8 @@ public class PeerScoringManager {
     private final Object accessLock = new Object();
 
     private final InetAddressTable addressTable = new InetAddressTable();
+
+    private static final Logger logger = LoggerFactory.getLogger("peerScoring");
 
     @GuardedBy("accessLock")
     private final Map<NodeID, PeerScoring> peersByNodeID;
@@ -64,23 +68,30 @@ public class PeerScoringManager {
     }
 
     /**
-     * Record the event, givent the node id and/or the network address
+     * Record the event, given the node id and/or the network address
+     *
+     * Usually we collected the events TWICE, if possible: by node id and by address.
+     * In some events we don't have the node id, yet. The rationale to have both, is to collect events for the
+     * same node_id, but maybe with different address along the time. Or same address with different node id.
      *
      * @param id        node id or null
      * @param address   address or null
      * @param event     event type (@see EventType)
      */
     public void recordEvent(NodeID id, InetAddress address, EventType event) {
+        //todo(techdebt) this method encourages null params, this is not desirable
         synchronized (accessLock) {
             if (id != null) {
                 PeerScoring scoring = peersByNodeID.computeIfAbsent(id, k -> peerScoringFactory.newInstance());
-                recordEvent(scoring, event, this.nodePunishmentCalculator);
+                recordEventAndStartPunishment(scoring, event, this.nodePunishmentCalculator, id);
             }
 
             if (address != null) {
                 PeerScoring scoring = peersByAddress.computeIfAbsent(address, k -> peerScoringFactory.newInstance());
-                recordEvent(scoring, event, this.ipPunishmentCalculator);
+                recordEventAndStartPunishment(scoring, event, this.ipPunishmentCalculator, id);
             }
+
+            logger.debug("Recorded {}. {}, Address: {}", event, nodeIdForLog(id),  addressForLog(address));
         }
     }
 
@@ -130,11 +141,15 @@ public class PeerScoringManager {
      * @param address   the address or address block to be banned
      */
     public void banAddress(String address) throws InvalidInetAddressException {
-        if (InetAddressUtils.hasMask(address)) {
+        boolean isAddressBlock = InetAddressUtils.hasMask(address);
+        if (isAddressBlock) {
             this.banAddressBlock(InetAddressUtils.parse(address));
         } else {
             this.banAddress(InetAddressUtils.getAddressForBan(address));
         }
+
+        String addressOrAddressBlock = isAddressBlock ? "block" : "";
+        logger.debug("Banned address {} {}", addressOrAddressBlock ,address);
     }
 
     /**
@@ -154,11 +169,15 @@ public class PeerScoringManager {
      * @param address   the address or address block to be removed
      */
     public void unbanAddress(String address) throws InvalidInetAddressException {
-        if (InetAddressUtils.hasMask(address)) {
+        boolean isAddressBlock = InetAddressUtils.hasMask(address);
+        if (isAddressBlock) {
             this.unbanAddressBlock(InetAddressUtils.parse(address));
         } else {
             this.unbanAddress(InetAddressUtils.getAddressForBan(address));
         }
+
+        String addressOrAddressBlock = isAddressBlock ? "block" : "";
+        logger.debug("Unbanned address {} {}", addressOrAddressBlock ,address);
     }
 
     /**
@@ -189,8 +208,8 @@ public class PeerScoringManager {
         synchronized (accessLock) {
             List<PeerScoringInformation> list = new ArrayList<>(this.peersByNodeID.size() + this.peersByAddress.size());
 
-            list.addAll(this.peersByNodeID.entrySet().stream().map(entry -> new PeerScoringInformation(entry.getValue(), ByteUtil.toHexString(entry.getKey().getID()).substring(0, 8), "node")).collect(Collectors.toList()));
-            list.addAll(this.peersByAddress.entrySet().stream().map(entry -> new PeerScoringInformation(entry.getValue(), entry.getKey().getHostAddress(), "address")).collect(Collectors.toList()));
+            list.addAll(this.peersByNodeID.entrySet().stream().map(entry -> PeerScoringInformation.buildByScoring(entry.getValue(), ByteUtil.toHexString(entry.getKey().getID()).substring(0, 8), "node")).collect(Collectors.toList()));
+            list.addAll(this.peersByAddress.entrySet().stream().map(entry -> PeerScoringInformation.buildByScoring(entry.getValue(), entry.getKey().getHostAddress(), "address")).collect(Collectors.toList()));
 
             return list;
         }
@@ -241,18 +260,37 @@ public class PeerScoringManager {
     }
 
     /**
-     * Calculates the reputation for a peer
-     * Starts punishment if needed
-     *
-     * @param scoring       the peer scoring
-     * @param calculator    the calculator to use
+     * Records an event and starts punishment if needed
+     * @param peerScoring the peer scoring
+     * @param event an event type
+     * @param punishmentCalculator calculator to use
+     * @param nodeID a node id
      */
-    private void recordEvent(PeerScoring scoring, EventType event, PunishmentCalculator calculator) {
-        scoring.recordEvent(event);
-        boolean reputation = scoringCalculator.hasGoodReputation(scoring);
+    private void recordEventAndStartPunishment(PeerScoring peerScoring, EventType event, PunishmentCalculator punishmentCalculator, NodeID nodeID) {
+        peerScoring.recordEvent(event);
 
-        if (!reputation && scoring.hasGoodReputation()) {
-            scoring.startPunishment(calculator.calculate(scoring.getPunishmentCounter(), scoring.getScore()));
+        boolean shouldStartPunishment = !scoringCalculator.hasGoodReputation(peerScoring) && peerScoring.hasGoodReputation();
+        if (shouldStartPunishment) {
+            long punishmentTime = punishmentCalculator.calculate(peerScoring.getPunishmentCounter(), peerScoring.getScore());
+            peerScoring.startPunishment(punishmentTime);
+
+            String nodeIDFormated = nodeIdForLog(nodeID);
+            logger.debug("NodeID {} has been punished for {} milliseconds. Last event {}", nodeIDFormated, punishmentTime, event);
+            logger.debug("{}", PeerScoringInformation.buildByScoring(peerScoring, nodeIDFormated, ""));
         }
+    }
+
+    private String nodeIdForLog(NodeID id) {
+        if(id == null) {
+            return "NO_NODE_ID";
+        }
+        return id.toString();
+    }
+
+    private String addressForLog(InetAddress address) {
+        if(address == null) {
+            return "NO_ADDRESS";
+        }
+        return address.getHostAddress();
     }
 }

@@ -355,4 +355,12 @@ public class RskSystemProperties extends SystemProperties {
     }
 
     public String cryptoLibrary() { return configFromFiles.getString("crypto.library");}
+
+    public boolean isPeerScoringStatsReportEnabled() {
+        return configFromFiles.getBoolean("scoring.summary.enabled");
+    }
+
+    public long getPeerScoringSummaryTime() {
+        return configFromFiles.getLong("scoring.summary.time");
+    }
 }

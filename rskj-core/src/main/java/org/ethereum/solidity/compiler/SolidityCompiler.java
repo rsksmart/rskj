@@ -30,6 +30,7 @@ import java.util.stream.Collectors;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
+// TODO(techdebt) this class is not used in production, should be removed
 public class SolidityCompiler {
     private static final org.slf4j.Logger logger = LoggerFactory.getLogger("soliditycompiler");
 

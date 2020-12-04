@@ -39,9 +39,7 @@ import co.rsk.rpc.modules.personal.PersonalModule;
 import co.rsk.rpc.modules.rsk.RskModule;
 import co.rsk.rpc.modules.trace.TraceModule;
 import co.rsk.rpc.modules.txpool.TxPoolModule;
-import co.rsk.scoring.InvalidInetAddressException;
-import co.rsk.scoring.PeerScoringInformation;
-import co.rsk.scoring.PeerScoringManager;
+import co.rsk.scoring.*;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
 import org.ethereum.crypto.HashUtil;
@@ -1078,5 +1076,13 @@ public class Web3Impl implements Web3 {
     public String[] sco_bannedAddresses() {
         return this.peerScoringManager.getBannedAddresses().toArray(new String[0]);
     }
-    
+
+    /**
+     * Returns a reputation summary of all the peers connected to this node
+     *
+     * @return the actual summary
+     */
+    public PeerScoringReputationSummary sco_reputationSummary() {
+        return PeerScoringReporterUtil.buildReputationSummary(peerScoringManager.getPeersInformation());
+    }
 }
