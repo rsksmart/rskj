@@ -3,13 +3,15 @@ package co.rsk.peg;
 import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.bitcoinj.core.StoredBlock;
 import co.rsk.bitcoinj.store.BlockStoreException;
-import co.rsk.bitcoinj.store.BtcBlockStore;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import org.apache.commons.lang3.tuple.Pair;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class BlockHashByHeightIndex {
+    private static final Logger logger = LoggerFactory.getLogger(BlockHashByHeightIndex.class);
 
     private final BtcBlockStoreWithCache btcBlockStore;
     private final long maxDepthForInitialization;
@@ -47,7 +49,11 @@ public class BlockHashByHeightIndex {
 
     private void generateIndex() {
         try {
+            logger.debug("[generateIndex] starting");
             StoredBlock storedBlock = btcBlockStore.getChainHead();
+            if (this.getIndex().containsKey(storedBlock.getHeight())) {
+                return;
+            }
             setMaxHeight(storedBlock.getHeight());
             while(storedBlock != null && this.getIndex().size() < maxDepthForInitialization) {
                 this.getIndex().put(
@@ -60,6 +66,7 @@ public class BlockHashByHeightIndex {
                 this.minHeight = storedBlock.getHeight();
                 storedBlock = storedBlock.getPrev(btcBlockStore);
             }
+            logger.debug("[generateIndex] finished");
         } catch (BlockStoreException e) {
             // TODO: esto es solo para poder testear ahora
         }
@@ -67,6 +74,7 @@ public class BlockHashByHeightIndex {
 
     public void processNewBlocks() {
         try {
+            logger.debug("[processNewBlocks] starting");
             Sha256Hash latestBlockHash = this.getIndex().get(this.maxHeight).getLeft();
             StoredBlock storedBlock = btcBlockStore.getChainHead();
             setMaxHeight(storedBlock.getHeight());
@@ -80,19 +88,23 @@ public class BlockHashByHeightIndex {
                 );
                 storedBlock = storedBlock.getPrev(btcBlockStore);
             }
+            logger.debug("[processNewBlocks] finished");
         } catch (BlockStoreException e) {
             // TODO: esto es solo para poder testear ahora
         }
     }
 
     public Optional<Pair<Sha256Hash, Optional<Sha256Hash>>> get(Integer height) {
+        logger.debug("[get] requested {}", height);
         if (height > this.maxHeight ||
             height < this.minHeight ||
             height > this.maxHeight - this.confirmationsRequired ||
             !this.index.containsKey(height)
         ) {
+            logger.debug("[get] not found!");
             return Optional.empty();
         }
+        logger.debug("[get] found!");
         return Optional.of(this.index.get(height));
     }
 

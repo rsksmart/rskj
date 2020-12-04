@@ -133,6 +133,8 @@ public class BridgeSupport {
         UNKNOWN
     }
 
+    private BlockHashByHeightIndex blockIndex;
+
     public BridgeSupport(
             BridgeConstants bridgeConstants,
             BridgeStorageProvider provider,
@@ -201,6 +203,8 @@ public class BridgeSupport {
                 logger.warn("Exception adding btc header {}", headers[i].getHash(), e);
             }
         }
+
+        blockIndex.processNewBlocks();
     }
 
     /**
@@ -2139,6 +2143,7 @@ public class BridgeSupport {
     private void ensureBtcBlockStore() throws IOException, BlockStoreException {
         if(btcBlockStore == null) {
             btcBlockStore = btcBlockStoreFactory.newInstance(rskRepository);
+            blockIndex = new BlockHashByHeightIndex(btcBlockStore, 50_000, 100);
             NetworkParameters btcParams = this.bridgeConstants.getBtcParams();
 
             if (this.btcBlockStore.getChainHead().getHeader().getHash().equals(btcParams.getGenesisBlock().getHash())) {
@@ -2304,7 +2309,13 @@ public class BridgeSupport {
 
         // Check the the merkle root equals merkle root of btc block at specified height in the btc best chain
         // BTC blockstore is available since we've already queried the best chain height
-        BtcBlock blockHeader = btcBlockStore.getStoredBlockAtMainChainHeight(height).getHeader();
+        Optional<Pair<Sha256Hash, Optional<Sha256Hash>>> cachedBlockHash = blockIndex.get(height);
+        BtcBlock blockHeader;
+        if (cachedBlockHash.isPresent()) {
+            blockHeader = btcBlockStore.get(cachedBlockHash.get().getLeft()).getHeader();
+        } else {
+            blockHeader = btcBlockStore.getStoredBlockAtMainChainHeight(height).getHeader();
+        }
         if (!isBlockMerkleRootValid(merkleRoot, blockHeader)){
             String panicMessage = String.format(
                     "Btc Tx %s Supplied merkle root %s does not match block's merkle root %s",
