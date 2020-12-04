@@ -25,12 +25,15 @@ import co.rsk.bitcoinj.core.StoredBlock;
 import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.core.RskAddress;
 import co.rsk.util.MaxSizeHashMap;
+import java.util.Date;
 import org.ethereum.core.Repository;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
 
 import java.nio.ByteBuffer;
 import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 /**
@@ -38,6 +41,7 @@ import java.util.Map;
  * @author Oscar Guindzberg
  */
 public class RepositoryBtcBlockStoreWithCache implements BtcBlockStoreWithCache {
+    private static final Logger logger = LoggerFactory.getLogger(RepositoryBtcBlockStoreWithCache.class);
     public static final String BLOCK_STORE_CHAIN_HEAD_KEY = "blockStoreChainHead";
     private final Repository repository;
     private final RskAddress contractAddress;
@@ -67,13 +71,39 @@ public class RepositoryBtcBlockStoreWithCache implements BtcBlockStoreWithCache 
         }
     }
 
+    private long start = 0;
+    private void startTimer() {
+        start = new Date().getTime();
+    }
+
+    private long start2 = 0;
+    private void startMethodTimer() {
+        start2 = new Date().getTime();
+    }
+
+    private void stopMethodTimer(String message) {
+        long stop = new Date().getTime();
+        logger.debug(message, stop - start2);
+    }
+
+    private void stopTimer(String message, boolean restart) {
+        long stop = new Date().getTime();
+        logger.trace(message, stop - start);
+        if (restart) {
+            startTimer();
+        }
+    }
+
     @Override
     public synchronized StoredBlock get(Sha256Hash hash) {
+        startTimer();
         byte[] ba = repository.getStorageBytes(contractAddress, DataWord.valueFromHex(hash.toString()));
+        stopTimer("[get] - fetched from disk. {}", true);
         if (ba == null) {
             return null;
         }
         StoredBlock storedBlock = byteArrayToStoredBlock(ba);
+        stopTimer("[get] - deserialized. {}", false);
         return  storedBlock;
     }
 
@@ -114,22 +144,32 @@ public class RepositoryBtcBlockStoreWithCache implements BtcBlockStoreWithCache 
 
     @Override
     public StoredBlock getStoredBlockAtMainChainHeight(int height) throws BlockStoreException {
+        startTimer();
         StoredBlock chainHead =  getChainHead();
+        stopTimer("[getStoredBlockAtMainChainHeight] - got chain head. {}", true);
         int depth = chainHead.getHeight() - height;
 
-        return getStoredBlockAtMainChainDepth(depth);
+        StoredBlock ret = getStoredBlockAtMainChainDepth(depth);
+        stopTimer("[getStoredBlockAtMainChainHeight] - get block. {}", false);
+        return ret;
     }
 
     @Override
     public StoredBlock getStoredBlockAtMainChainDepth(int depth) throws BlockStoreException {
+        logger.debug("[getStoredBlockAtMainChainDepth] need to go {} blocks deep", depth);
+        startMethodTimer();
+        startTimer();
         StoredBlock chainHead =  getChainHead();
+//        stopTimer("[getStoredBlockAtMainChainDepth] - got chain head. {}", true);
         Sha256Hash blockHash = chainHead.getHeader().getHash();
 
         for (int i = 0; i < depth && blockHash != null; i++) {
             //If its older than cache go to disk
             StoredBlock currentBlock = getFromCache(blockHash);
+//            stopTimer("[getStoredBlockAtMainChainDepth] - got from cache. {}", true);
             if(currentBlock == null) {
                 currentBlock = get(blockHash);
+                stopTimer("[getStoredBlockAtMainChainDepth] - got from disk. {}", true);
                 if (currentBlock == null) {
                     return null;
                 }
@@ -141,8 +181,10 @@ public class RepositoryBtcBlockStoreWithCache implements BtcBlockStoreWithCache 
             return null;
         }
         StoredBlock block = getFromCache(blockHash);
+//        stopTimer("[getStoredBlockAtMainChainDepth] - got from cache. {}", true);
         if(block == null) {
             block = get(blockHash);
+            stopTimer("[getStoredBlockAtMainChainDepth] - got from disk. {}", true);
         }
         int expectedHeight = chainHead.getHeight() - depth;
         if (block != null && block.getHeight() != expectedHeight) {
@@ -153,7 +195,8 @@ public class RepositoryBtcBlockStoreWithCache implements BtcBlockStoreWithCache 
                     expectedHeight));
         }
 
-
+        stopTimer("[getStoredBlockAtMainChainDepth] - finished. {}", false);
+        stopMethodTimer("[getStoredBlockAtMainChainDepth] took {}ms");
         return block;
     }
 
