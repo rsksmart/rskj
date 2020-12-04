@@ -128,7 +128,8 @@ public class ProofOfWorkRule implements BlockHeaderValidationRule, BlockValidati
         MerkleProofValidator mpValidator;
         try {
             if (activationConfig.isActive(ConsensusRule.RSKIP92, header.getNumber())) {
-                mpValidator = new Rskip92MerkleProofValidator(header.getBitcoinMergedMiningMerkleProof());
+                boolean isRskip180Enabled = activationConfig.isActive(ConsensusRule.RSKIP180, header.getNumber());
+                mpValidator = new Rskip92MerkleProofValidator(header.getBitcoinMergedMiningMerkleProof(), isRskip180Enabled);
             } else {
                 mpValidator = new GenesisMerkleProofValidator(bitcoinNetworkParameters, header.getBitcoinMergedMiningMerkleProof());
             }
