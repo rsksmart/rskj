@@ -57,7 +57,7 @@ public class BlockValidatorImpl implements BlockValidator {
     @Override
     public boolean isValid(Block block) {
         if (block.isGenesis()) {
-            return true;
+            return false;
         }
 
         Block parent = getParent(block);

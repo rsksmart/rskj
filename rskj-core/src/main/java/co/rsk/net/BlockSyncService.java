@@ -23,6 +23,9 @@ import co.rsk.core.bc.BlockUtils;
 import co.rsk.crypto.Keccak256;
 import co.rsk.net.messages.GetBlockMessage;
 import co.rsk.net.sync.SyncConfiguration;
+import co.rsk.validators.BlockValidator;
+import co.rsk.validators.DummyBlockValidator;
+import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.ImportResult;
@@ -41,18 +44,20 @@ import java.util.*;
  * If a block is not ready to be added to the blockchain, it will be on hold in a BlockStore.
  */
 public class BlockSyncService {
-    public static final int CHUNK_PART_LIMIT = 8;
-    public static final int PROCESSED_BLOCKS_TO_CHECK_STORE = 200;
-    public static final int RELEASED_RANGE = 1000;
+    private static final Logger logger = LoggerFactory.getLogger("blocksyncservice");
+
+    private static final int PROCESSED_BLOCKS_TO_CHECK_STORE = 200;
+    private static final int RELEASED_RANGE = 1000;
+
     private long processedBlocksCounter;
     private long lastKnownBlockNumber = 0;
 
-    private static final Logger logger = LoggerFactory.getLogger("blocksyncservice");
     private final NetBlockStore store;
     private final Blockchain blockchain;
     private final SyncConfiguration syncConfiguration;
     private final BlockNodeInformation nodeInformation; // keep tabs on which nodes know which blocks.
     private final RskSystemProperties config;
+    private final BlockValidator blockHeaderValidator;
 
     // this is tightly coupled with NodeProcessorService and SyncProcessor,
     // and we should use the same objects everywhere to ensure consistency
@@ -61,20 +66,39 @@ public class BlockSyncService {
             @Nonnull final NetBlockStore store,
             @Nonnull final Blockchain blockchain,
             @Nonnull final BlockNodeInformation nodeInformation,
-            @Nonnull final SyncConfiguration syncConfiguration) {
+            @Nonnull final SyncConfiguration syncConfiguration,
+            @Nonnull final BlockValidator blockHeaderValidator) {
         this.store = store;
         this.blockchain = blockchain;
         this.syncConfiguration = syncConfiguration;
         this.nodeInformation = nodeInformation;
         this.config = config;
+        this.blockHeaderValidator = blockHeaderValidator;
+    }
+
+    @VisibleForTesting
+    protected BlockSyncService(
+            @Nonnull final RskSystemProperties config,
+            @Nonnull final NetBlockStore store,
+            @Nonnull final Blockchain blockchain,
+            @Nonnull final BlockNodeInformation nodeInformation,
+            @Nonnull final SyncConfiguration syncConfiguration) {
+        this(config, store, blockchain, nodeInformation, syncConfiguration, new DummyBlockValidator());
     }
 
     public BlockProcessResult processBlock(@Nonnull Block block, Peer sender, boolean ignoreMissingHashes) {
-        Instant start = Instant.now();
-        long bestBlockNumber = this.getBestBlockNumber();
-        long blockNumber = block.getNumber();
+        final Instant start = Instant.now();
+        final long bestBlockNumber = this.getBestBlockNumber();
+        final long blockNumber = block.getNumber();
         final Keccak256 blockHash = block.getHash();
-        int syncMaxDistance = syncConfiguration.getChunkSize() * syncConfiguration.getMaxSkeletonChunks();
+        final int syncMaxDistance = syncConfiguration.getChunkSize() * syncConfiguration.getMaxSkeletonChunks();
+
+        // Should be refactored later to prevent block header validation in a few places.
+        // Validate block header first to see if its PoW is valid at all
+        if (!isBlockHeaderValid(block)) {
+            logger.warn("Invalid block with number {} {} from {} ", block.getNumber(), block.getHash(), sender);
+            return invalidBlockResult(block, start);
+        }
 
         tryReleaseStore(bestBlockNumber);
         store.removeHeader(block.getHeader());
@@ -247,5 +271,14 @@ public class BlockSyncService {
         }
 
         return blockchain.getBlockByHash(hash);
+    }
+
+    private boolean isBlockHeaderValid(Block block) {
+        return blockHeaderValidator.isValid(block);
+    }
+
+    private static BlockProcessResult invalidBlockResult(@Nonnull Block block, @Nonnull Instant start) {
+        Map<Keccak256, ImportResult> result = Collections.singletonMap(block.getHash(), ImportResult.INVALID_BLOCK);
+        return new BlockProcessResult(true, result, block.getPrintableHash(), Duration.between(start, Instant.now()));
     }
 }

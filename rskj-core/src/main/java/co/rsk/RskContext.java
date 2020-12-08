@@ -169,6 +169,7 @@ public class RskContext implements NodeBootstrapper {
     private BlockValidationRule blockValidationRule;
     private BlockValidationRule minerServerBlockValidationRule;
     private BlockValidator blockValidator;
+    private BlockValidator blockHeaderValidator;
     private ReceiptStore receiptStore;
     private ProgramInvokeFactory programInvokeFactory;
     private TransactionPool transactionPool;
@@ -1141,8 +1142,8 @@ public class RskContext implements NodeBootstrapper {
                     getNetBlockStore(),
                     getBlockchain(),
                     getBlockNodeInformation(),
-                    getSyncConfiguration()
-            );
+                    getSyncConfiguration(),
+                    getBlockHeaderValidator());
         }
 
         return blockSyncService;
@@ -1154,6 +1155,24 @@ public class RskContext implements NodeBootstrapper {
         }
 
         return blockValidator;
+    }
+
+    private BlockValidator getBlockHeaderValidator() {
+        if (blockHeaderValidator == null) {
+            final Constants commonConstants = getRskSystemProperties().getNetworkConstants();
+            BlockTimeStampValidationRule blockTimeStampValidationRule = new BlockTimeStampValidationRule(
+                    commonConstants.getNewBlockMaxSecondsInTheFuture()
+            );
+
+            final BlockHeaderValidationRule blockHeaderValidationRule = new BlockHeaderCompositeRule(
+                    getProofOfWorkRule(),
+                    blockTimeStampValidationRule
+            );
+
+            blockHeaderValidator = new BlockHeaderValidatorImpl(blockHeaderValidationRule);
+        }
+
+        return blockHeaderValidator;
     }
 
     private EthereumChannelInitializerFactory getEthereumChannelInitializerFactory() {
