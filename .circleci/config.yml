@@ -1,20 +1,24 @@
 version: 2.1 # needed for executors
 
 executors:
-  jvm-executor:
+  rskj-executor:
     docker:
       - image: openjdk:8-jdk
     environment:
       _JAVA_OPTIONS: "-Xmx3G -Xms2G"
     working_directory: /app
     resource_class: medium+
+  sonarqube-executor:
+    docker:
+      - image: openjdk:11-jdk
+    working_directory: /app
   mit-executor:
     docker:
       - image: alpine:3.10
 
 jobs:
   build:
-    executor: jvm-executor
+    executor: rskj-executor
     steps:
       - checkout
       - run:
@@ -36,7 +40,7 @@ jobs:
           paths:
             - .
   sonarqube:
-    executor: jvm-executor
+    executor: sonarqube-executor
     steps:
       - attach_workspace:
           at: /app
@@ -62,7 +66,7 @@ jobs:
                 -Dsonar.host.url="$SONAR_URL" \
                 -Dsonar.login="$SONAR_TOKEN"
   rskj-tests:
-    executor: jvm-executor
+    executor: rskj-executor
     steps:
       - attach_workspace:
           at: /app
