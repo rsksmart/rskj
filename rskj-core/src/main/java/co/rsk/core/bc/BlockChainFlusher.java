@@ -100,7 +100,7 @@ public class BlockChainFlusher implements InternalService {
         totalTime = System.nanoTime() - saveTime;
 
         if (logger.isTraceEnabled()) {
-            logger.trace("receiptstore flush: [{}]seconds", FormatUtils.formatNanosecondsToSeconds(totalTime));
+            logger.trace("receiptstore flush: [{}]nano", totalTime);
         }
 
         saveTime = System.nanoTime();
@@ -108,7 +108,7 @@ public class BlockChainFlusher implements InternalService {
         totalTime = System.nanoTime() - saveTime;
 
         if (logger.isTraceEnabled()) {
-            logger.trace("bloomBlocksStore flush: [{}]seconds", FormatUtils.formatNanosecondsToSeconds(totalTime));
+            logger.trace("bloomBlocksStore flush: [{}]nano", totalTime);
         }
     }
 
