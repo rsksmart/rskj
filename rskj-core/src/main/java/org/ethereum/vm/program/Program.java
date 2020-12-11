@@ -1426,16 +1426,18 @@ public class Program {
             track.rollback();
             this.cleanReturnDataBuffer();
         } else {
-            // TODO: change activation code.
             if (getActivations().isActive(ConsensusRule.RSKIPNEW)) {
-                executeAndHandleError(contract, msg, requiredGas, track, data);
+                executePrecompiledAndHandleError(contract, msg, requiredGas, track, data);
             } else {
-                execute(contract, msg, requiredGas, track, data);
+                executePrecompiled(contract, msg, requiredGas, track, data);
             }
         }
     }
 
-    private void execute(PrecompiledContract contract, MessageCall msg, long requiredGas, Repository track, byte[] data) {
+    /**
+     * This is for compatibility before RSKIPNEW, that no error handling were implemented when calling to precompiled contracts.
+     */
+    private void executePrecompiled(PrecompiledContract contract, MessageCall msg, long requiredGas, Repository track, byte[] data) {
         try {
             this.refundGas(msg.getGas().longValue() - requiredGas, "call pre-compiled");
             byte[] out = contract.execute(data);
@@ -1450,7 +1452,10 @@ public class Program {
         }
     }
 
-    private void executeAndHandleError(PrecompiledContract contract, MessageCall msg, long requiredGas, Repository track, byte[] data) {
+    /**
+     * This is after RSKIPNEW, where we fix the way in which error is handled after a precompiled execution.
+     */
+    private void executePrecompiledAndHandleError(PrecompiledContract contract, MessageCall msg, long requiredGas, Repository track, byte[] data) {
         try {
             logger.trace("Executing Precompiled contract...");
             byte[] out = contract.execute(data);
