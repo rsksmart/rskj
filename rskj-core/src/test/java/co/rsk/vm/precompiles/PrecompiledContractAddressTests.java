@@ -1,4 +1,4 @@
-package co.rsk.vm;
+package co.rsk.vm.precompiles;
 /*
  * This file is part of RskJ
  * Copyright (C) 2017 RSK Labs Ltd.

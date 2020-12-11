@@ -16,7 +16,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package co.rsk.vm;
+package co.rsk.vm.precompiles;
 
 import co.rsk.config.TestSystemProperties;
 import co.rsk.pcc.blockheader.BlockHeaderContract;
