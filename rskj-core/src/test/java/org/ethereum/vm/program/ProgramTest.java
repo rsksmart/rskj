@@ -16,6 +16,7 @@ package org.ethereum.vm.program;
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
+
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import com.google.common.collect.Sets;
