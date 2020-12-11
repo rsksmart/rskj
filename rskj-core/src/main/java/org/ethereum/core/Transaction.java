@@ -100,6 +100,10 @@ public class Transaction {
     private Keccak256 hash;
     private Keccak256 rawHash;
 
+    protected Transaction(byte[] rawData) {
+        this(RLP.decodeList(rawData));
+    }
+
     protected Transaction(RLPList transaction) {
         if (transaction.size() != 9) {
             throw new IllegalArgumentException("A transaction must have exactly 9 elements");
