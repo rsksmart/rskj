@@ -143,25 +143,25 @@ public class Transaction {
     protected Transaction(byte[] nonce, byte[] gasPriceRaw, byte[] gasLimit, byte[] receiveAddress, byte[] valueRaw, byte[] data,
                        byte chainId) {
         this(
-                ByteUtil.cloneBytes(nonce),
+                nonce,
                 RLP.parseCoinNonNullZero(ByteUtil.cloneBytes(gasPriceRaw)),
-                ByteUtil.cloneBytes(gasLimit),
+                gasLimit,
                 RLP.parseRskAddress(ByteUtil.cloneBytes(receiveAddress)),
                 RLP.parseCoinNullZero(ByteUtil.cloneBytes(valueRaw)),
-                ByteUtil.cloneBytes(data),
+                data,
                 chainId,
                 false
         );
     }
 
-    Transaction(byte[] nonce, Coin gasPriceRaw, byte[] gasLimit, RskAddress receiveAddress, Coin valueRaw, byte[] data,
+    protected Transaction(byte[] nonce, Coin gasPriceRaw, byte[] gasLimit, RskAddress receiveAddress, Coin valueRaw, byte[] data,
                 byte chainId, final boolean localCall) {
-        this.nonce = nonce;
+        this.nonce = ByteUtil.cloneBytes(nonce);
         this.gasPrice = gasPriceRaw;
-        this.gasLimit = gasLimit;
+        this.gasLimit = ByteUtil.cloneBytes(gasLimit);
         this.receiveAddress = receiveAddress;
         this.value = valueRaw;
-        this.data = data;
+        this.data = ByteUtil.cloneBytes(data);
         this.chainId = chainId;
         this.isLocalCall = localCall;
     }
