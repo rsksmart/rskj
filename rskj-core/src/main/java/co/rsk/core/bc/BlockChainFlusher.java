@@ -19,9 +19,6 @@ package co.rsk.core.bc;
 
 import co.rsk.config.InternalService;
 import co.rsk.logfilter.BlocksBloomStore;
-import co.rsk.metrics.profilers.Metric;
-import co.rsk.metrics.profilers.Profiler;
-import co.rsk.metrics.profilers.ProfilerFactory;
 import co.rsk.trie.TrieStore;
 import org.ethereum.core.Block;
 import org.ethereum.core.TransactionReceipt;
