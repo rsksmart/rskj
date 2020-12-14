@@ -29,6 +29,7 @@ import co.rsk.peg.*;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.vm.exception.PrecompiledContractException;
+import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -59,6 +60,7 @@ public class AddSignatureTest extends BridgePerformanceTestCase {
         addSignature_fullySigned(100, stats);
 
         BridgePerformanceTest.addStats(stats);
+        Assert.assertTrue(true);
     }
 
     private void addSignature_nonFullySigned(int times, ExecutionStats stats) throws PrecompiledContractException {

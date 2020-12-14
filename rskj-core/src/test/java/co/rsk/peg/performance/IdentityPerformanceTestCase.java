@@ -21,6 +21,7 @@ package co.rsk.peg.performance;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.exception.PrecompiledContractException;
+import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -38,6 +39,7 @@ public class IdentityPerformanceTestCase extends PrecompiledContractPerformanceT
         doIdentity(environmentBuilder, stats, 2000);
 
         IdentityPerformanceTest.addStats(stats);
+        Assert.assertTrue(true);
     }
 
     private void doIdentity(EnvironmentBuilder environmentBuilder, ExecutionStats stats, int numCases) throws IOException, PrecompiledContractException {

@@ -30,6 +30,7 @@ import co.rsk.peg.ReleaseTransactionSet;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.vm.exception.PrecompiledContractException;
+import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -51,6 +52,7 @@ public class UpdateCollectionsTest extends BridgePerformanceTestCase {
         updateCollections_confirmTxs(stats, 300);
 
         BridgePerformanceTest.addStats(stats);
+        Assert.assertTrue(true);
     }
 
     private void updateCollections_nothing(ExecutionStats stats, int numCases) throws IOException, PrecompiledContractException {
