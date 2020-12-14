@@ -74,6 +74,7 @@ public class Program {
 
     //Max size for stack checks
     private static final int MAX_STACKSIZE = 1024;
+    public static final String CALL_PRECOMPILED_CAUSE = "call pre-compiled";
 
     private final ActivationConfig.ForBlock activations;
     private final Transaction transaction;
@@ -1421,7 +1422,7 @@ public class Program {
 
         long requiredGas = contract.getGasForData(data);
         if (requiredGas > msg.getGas().longValue()) {
-            this.refundGas(0, "call pre-compiled"); //matches cpp logic
+            this.refundGas(0, CALL_PRECOMPILED_CAUSE); //matches cpp logic
             this.stackPushZero();
             track.rollback();
             this.cleanReturnDataBuffer();
@@ -1439,7 +1440,7 @@ public class Program {
      */
     private void executePrecompiled(PrecompiledContract contract, MessageCall msg, long requiredGas, Repository track, byte[] data) {
         try {
-            this.refundGas(msg.getGas().longValue() - requiredGas, "call pre-compiled");
+            this.refundGas(msg.getGas().longValue() - requiredGas, CALL_PRECOMPILED_CAUSE);
             byte[] out = contract.execute(data);
             if (getActivations().isActive(ConsensusRule.RSKIP90)) {
                 this.returnDataBuffer = out;
@@ -1479,7 +1480,7 @@ public class Program {
             this.cleanReturnDataBuffer();
         } finally {
             final long refundingGas = msg.getGas().longValue() - requiredGas;
-            this.refundGas(refundingGas, "call pre-compiled");
+            this.refundGas(refundingGas, CALL_PRECOMPILED_CAUSE);
         }
     }
 
