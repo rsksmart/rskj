@@ -50,8 +50,7 @@ public class PrecompiledContractsCallErrorHandlingTests {
         checkEvents(rskPrecompiles, 0 ,0);
         checkEvents(ethPrecompiles, 8, 0);
 
-        //check all gas consumed
-
+        // todo(fedejinich) check all gas consumed
 
         Assert.assertFalse(rskPrecompiles.isSuccessful()); // before iris should fail
         Assert.assertTrue(ethPrecompiles.isSuccessful()); // it succeeds because there are no failings for eth precompiles
@@ -84,9 +83,9 @@ public class PrecompiledContractsCallErrorHandlingTests {
         List<Transaction> transactionsBlock2 = world.getBlockByName("b02").getTransactionsList();
         List<Transaction> transactionsBlock5 =  world.getBlockByName("b05").getTransactionsList();
 
-        Assert.assertEquals(1, transactionsBlock1.size());
-        Assert.assertEquals(2, transactionsBlock2.size());
-        Assert.assertEquals(2, transactionsBlock5.size());
+        Assert.assertEquals(1, transactionsBlock1.size()); // contract the creation
+        Assert.assertEquals(2, transactionsBlock2.size()); // tx02, tx03
+        Assert.assertEquals(2, transactionsBlock5.size()); // tx04, tx05
         Assert.assertTrue(containsTransactions(transactionsBlock5, receiptEth.getTransaction(), receiptRsk.getTransaction()));
     }
 
@@ -109,14 +108,6 @@ public class PrecompiledContractsCallErrorHandlingTests {
         List<String> eventsSignature = invokedEventsSignatures(receipt, eventSignature, (String[]) eventTypeParams.toArray());
 
         Assert.assertEquals(times, eventsSignature.size());
-    }
-
-    /**
-     * Same but for events without any parameter
-     * */
-    public void containsEvents(TransactionReceipt receipt, String eventSignature, int times) {
-        // For events without any parameter
-        containsEvents(receipt, eventSignature, Arrays.asList(), times);
     }
 
     /**
