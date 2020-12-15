@@ -70,15 +70,16 @@ public class RetiringFederationTest extends BridgePerformanceTestCase {
         executeTestCaseSection(abiEncoder, "getRetiringFederatorPublicKey", true,50, stats);
         abiEncoder = (int executionIndex) -> Bridge.GET_RETIRING_FEDERATOR_PUBLIC_KEY.encode(new Object[]{Helper.randomInRange(0, 10)});
         executeTestCaseSection(abiEncoder, "getRetiringFederatorPublicKey", false,500, stats);
-        BridgePerformanceTest.addStats(stats);
+
+        Assert.assertTrue(BridgePerformanceTest.addStats(stats));
     }
 
     private void executeTestCase(CallTransaction.Function fn) throws PrecompiledContractException {
         ExecutionStats stats = new ExecutionStats(fn.name);
         executeTestCaseSection(fn,true,50, stats);
         executeTestCaseSection(fn,false,500, stats);
-        BridgePerformanceTest.addStats(stats);
-        Assert.assertTrue(true);
+
+        Assert.assertTrue(BridgePerformanceTest.addStats(stats));
     }
 
     private void executeTestCaseSection(CallTransaction.Function fn, boolean genesis, int times, ExecutionStats stats) throws PrecompiledContractException {

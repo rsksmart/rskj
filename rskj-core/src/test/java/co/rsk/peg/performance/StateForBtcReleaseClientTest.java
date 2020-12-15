@@ -28,6 +28,7 @@ import co.rsk.peg.PegTestUtils;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.vm.exception.PrecompiledContractException;
+import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -51,7 +52,7 @@ public class StateForBtcReleaseClientTest extends BridgePerformanceTestCase {
                 stats
         );
 
-        BridgePerformanceTest.addStats(stats);
+        Assert.assertTrue(BridgePerformanceTest.addStats(stats));
     }
 
     private BridgeStorageProviderInitializer getInitializer() {

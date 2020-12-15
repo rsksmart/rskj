@@ -40,6 +40,11 @@ public class BlockHeaderContract extends NativeContract {
 
     private final BlockAccessor blockAccessor;
 
+    public BlockHeaderContract(ActivationConfig activationConfig, RskAddress contractAddress) {
+        super(activationConfig, contractAddress);
+        this.blockAccessor = new BlockAccessor(MAX_DEPTH);
+    }
+
     @Override
     public List<NativeMethod> getMethods() {
         return Arrays.asList(
@@ -53,11 +58,6 @@ public class BlockHeaderContract extends NativeContract {
                 new GetBitcoinHeader(getExecutionEnvironment(), this.blockAccessor),
                 new GetUncleCoinbaseAddress(getExecutionEnvironment(), this.blockAccessor)
         );
-    }
-
-    public BlockHeaderContract(ActivationConfig activationConfig, RskAddress contractAddress) {
-        super(activationConfig, contractAddress);
-        this.blockAccessor = new BlockAccessor(MAX_DEPTH);
     }
 
     @Override

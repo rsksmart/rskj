@@ -25,6 +25,7 @@ import co.rsk.peg.BridgeStorageProvider;
 import org.ethereum.core.Repository;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.exception.PrecompiledContractException;
+import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -43,8 +44,10 @@ public class LockTest extends BridgePerformanceTestCase {
     public void getMinimumLockTxValue() throws IOException, PrecompiledContractException {
         ABIEncoder abiEncoder = (int executionIndex) -> Bridge.GET_MINIMUM_LOCK_TX_VALUE.encode();
         ExecutionStats stats = new ExecutionStats("getMinimumLockTxValue");
-        executeAndAverage("getMinimumLockTxValue", 1000, abiEncoder, Helper.buildNoopInitializer(), Helper.getZeroValueRandomSenderTxBuilder(), Helper.getRandomHeightProvider(10), stats);
-        BridgePerformanceTest.addStats(stats);
+        executeAndAverage("getMinimumLockTxValue", 1000, abiEncoder, Helper.buildNoopInitializer(), Helper.getZeroValueRandomSenderTxBuilder(),
+                Helper.getRandomHeightProvider(10), stats);
+
+        Assert.assertTrue(BridgePerformanceTest.addStats(stats));
     }
 
     @Test
@@ -52,18 +55,21 @@ public class LockTest extends BridgePerformanceTestCase {
         ExecutionStats stats = new ExecutionStats("isBtcTxHashAlreadyProcessed");
         isBtcTxHashAlreadyProcessed_yes(100, stats);
         isBtcTxHashAlreadyProcessed_no(100, stats);
-        BridgePerformanceTest.addStats(stats);
+
+        Assert.assertTrue(BridgePerformanceTest.addStats(stats));
     }
 
     private void isBtcTxHashAlreadyProcessed_yes(int times, ExecutionStats stats) throws PrecompiledContractException {
         ABIEncoder abiEncoder = (int executionIndex) -> Bridge.IS_BTC_TX_HASH_ALREADY_PROCESSED.encode(new Object[]{ByteUtil.toHexString(randomHashInMap.getBytes())});
-        executeAndAverage("isBtcTxHashAlreadyProcessed-yes", times, abiEncoder, buildInitializer(), Helper.getZeroValueRandomSenderTxBuilder(), Helper.getRandomHeightProvider(10), stats);
+        executeAndAverage("isBtcTxHashAlreadyProcessed-yes", times, abiEncoder, buildInitializer(),
+                Helper.getZeroValueRandomSenderTxBuilder(), Helper.getRandomHeightProvider(10), stats);
     }
 
     private void isBtcTxHashAlreadyProcessed_no(int times, ExecutionStats stats) throws PrecompiledContractException {
         Sha256Hash hash = Sha256Hash.of(BigInteger.valueOf(new Random().nextLong()).toByteArray());
         ABIEncoder abiEncoder = (int executionIndex) -> Bridge.IS_BTC_TX_HASH_ALREADY_PROCESSED.encode(new Object[]{ByteUtil.toHexString(hash.getBytes())});
-        executeAndAverage("isBtcTxHashAlreadyProcessed-no", times, abiEncoder, buildInitializer(), Helper.getZeroValueRandomSenderTxBuilder(), Helper.getRandomHeightProvider(10), stats);
+        executeAndAverage("isBtcTxHashAlreadyProcessed-no", times, abiEncoder, buildInitializer(),
+                Helper.getZeroValueRandomSenderTxBuilder(), Helper.getRandomHeightProvider(10), stats);
     }
 
     @Test
@@ -71,18 +77,21 @@ public class LockTest extends BridgePerformanceTestCase {
         ExecutionStats stats = new ExecutionStats("getBtcTxHashProcessedHeight");
         getBtcTxHashProcessedHeight_processed(100, stats);
         getBtcTxHashProcessedHeight_notProcessed(100, stats);
-        BridgePerformanceTest.addStats(stats);
+
+        Assert.assertTrue(BridgePerformanceTest.addStats(stats));
     }
 
     private void getBtcTxHashProcessedHeight_processed(int times, ExecutionStats stats) throws PrecompiledContractException {
         ABIEncoder abiEncoder = (int executionIndex) -> Bridge.GET_BTC_TX_HASH_PROCESSED_HEIGHT.encode(new Object[]{ByteUtil.toHexString(randomHashInMap.getBytes())});
-        executeAndAverage("getBtcTxHashProcessedHeight-processed", times, abiEncoder, buildInitializer(), Helper.getZeroValueRandomSenderTxBuilder(), Helper.getRandomHeightProvider(10), stats);
+        executeAndAverage("getBtcTxHashProcessedHeight-processed", times, abiEncoder, buildInitializer(), Helper.getZeroValueRandomSenderTxBuilder(),
+                Helper.getRandomHeightProvider(10), stats);
     }
 
     private void getBtcTxHashProcessedHeight_notProcessed(int times, ExecutionStats stats) throws PrecompiledContractException {
         Sha256Hash hash = Sha256Hash.of(BigInteger.valueOf(new Random().nextLong()).toByteArray());
         ABIEncoder abiEncoder = (int executionIndex) -> Bridge.GET_BTC_TX_HASH_PROCESSED_HEIGHT.encode(new Object[]{ByteUtil.toHexString(hash.getBytes())});
-        executeAndAverage("getBtcTxHashProcessedHeight-notProcessed", times, abiEncoder, buildInitializer(), Helper.getZeroValueRandomSenderTxBuilder(), Helper.getRandomHeightProvider(10), stats);
+        executeAndAverage("getBtcTxHashProcessedHeight-notProcessed", times, abiEncoder, buildInitializer(), Helper.getZeroValueRandomSenderTxBuilder(),
+                Helper.getRandomHeightProvider(10), stats);
     }
 
     private BridgeStorageProviderInitializer buildInitializer() {

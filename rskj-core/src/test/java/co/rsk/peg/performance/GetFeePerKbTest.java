@@ -25,6 +25,7 @@ import co.rsk.peg.BridgeStorageProvider;
 import co.rsk.peg.Federation;
 import org.ethereum.core.Repository;
 import org.ethereum.vm.exception.PrecompiledContractException;
+import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -40,7 +41,8 @@ public class GetFeePerKbTest extends BridgePerformanceTestCase {
         ABIEncoder abiEncoder = (int executionIndex) -> Bridge.GET_FEE_PER_KB.encode();
         executeTestCaseSection(abiEncoder, "getFeePerKb", true,50, stats);
         executeTestCaseSection(abiEncoder, "getFeePerKb", false,500, stats);
-        BridgePerformanceTest.addStats(stats);
+
+        Assert.assertTrue(BridgePerformanceTest.addStats(stats));
     }
 
     private void executeTestCaseSection(ABIEncoder abiEncoder, String name, boolean genesis, int times, ExecutionStats stats) throws PrecompiledContractException {

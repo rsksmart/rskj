@@ -29,6 +29,7 @@ import org.ethereum.core.Denomination;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.vm.exception.PrecompiledContractException;
+import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -72,6 +73,6 @@ public class ReleaseBtcTest extends BridgePerformanceTestCase {
         ExecutionStats stats = new ExecutionStats("releaseBtc");
         executeAndAverage("releaseBtc", 1000, abiEncoder, storageInitializer, txBuilder, Helper.getRandomHeightProvider(10), stats);
 
-        BridgePerformanceTest.addStats(stats);
+        Assert.assertTrue(BridgePerformanceTest.addStats(stats));
     }
 }
