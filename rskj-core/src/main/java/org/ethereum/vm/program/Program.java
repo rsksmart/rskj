@@ -74,7 +74,7 @@ public class Program {
 
     //Max size for stack checks
     private static final int MAX_STACKSIZE = 1024;
-    public static final String CALL_PRECOMPILED_CAUSE = "call pre-compiled";
+    private static final String CALL_PRECOMPILED_CAUSE = "call pre-compiled";
 
     private final ActivationConfig.ForBlock activations;
     private final Transaction transaction;
@@ -1474,7 +1474,6 @@ public class Program {
             logger.trace("Precompiled execution error. Pushing Zero to stack and performing rollback.", e);
             this.stackPushZero();
             track.rollback();
-            saveOutAfterExecution(msg, e.getMessage().getBytes());
             this.cleanReturnDataBuffer();
         } finally {
             final long refundingGas = msg.getGas().longValue() - requiredGas;
