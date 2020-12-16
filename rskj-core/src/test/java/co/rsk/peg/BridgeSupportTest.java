@@ -48,6 +48,7 @@ import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
 import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.PrecompiledContracts;
+import org.ethereum.vm.exception.VMException;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -3759,7 +3760,7 @@ public class BridgeSupportTest {
     }
 
     @Test(expected = BridgeIllegalArgumentException.class)
-    public void when_RegisterBtcCoinbaseTransaction_wrong_witnessReservedValue_noSent() throws BlockStoreException, AddressFormatException, IOException, BridgeIllegalArgumentException {
+    public void when_RegisterBtcCoinbaseTransaction_wrong_witnessReservedValue_noSent() throws BlockStoreException, AddressFormatException, IOException, VMException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP143)).thenReturn(true);
 
@@ -3805,7 +3806,7 @@ public class BridgeSupportTest {
     }
 
     @Test(expected = BridgeIllegalArgumentException.class)
-    public void when_RegisterBtcCoinbaseTransaction_MerkleTreeWrongFormat_noSent() throws BlockStoreException, AddressFormatException, IOException, BridgeIllegalArgumentException {
+    public void when_RegisterBtcCoinbaseTransaction_MerkleTreeWrongFormat_noSent() throws BlockStoreException, AddressFormatException, IOException, VMException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP143)).thenReturn(true);
 
@@ -3847,7 +3848,7 @@ public class BridgeSupportTest {
     }
 
     @Test
-    public void when_RegisterBtcCoinbaseTransaction_HashNotInPmt_noSent() throws BlockStoreException, AddressFormatException, IOException, BridgeIllegalArgumentException {
+    public void when_RegisterBtcCoinbaseTransaction_HashNotInPmt_noSent() throws BlockStoreException, AddressFormatException, VMException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP143)).thenReturn(true);
 
@@ -3910,7 +3911,7 @@ public class BridgeSupportTest {
     }
 
     @Test(expected = VerificationException.class)
-    public void when_RegisterBtcCoinbaseTransaction_notVerify_noSent() throws BlockStoreException, AddressFormatException, IOException, BridgeIllegalArgumentException {
+    public void when_RegisterBtcCoinbaseTransaction_notVerify_noSent() throws BlockStoreException, AddressFormatException, VMException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP143)).thenReturn(true);
 
@@ -3964,7 +3965,7 @@ public class BridgeSupportTest {
     }
 
     @Test
-    public void when_RegisterBtcCoinbaseTransaction_not_equal_merkle_root_noSent() throws BlockStoreException, AddressFormatException, IOException, BridgeIllegalArgumentException {
+    public void when_RegisterBtcCoinbaseTransaction_not_equal_merkle_root_noSent() throws BlockStoreException, AddressFormatException, IOException, VMException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP143)).thenReturn(true);
 
@@ -4030,7 +4031,7 @@ public class BridgeSupportTest {
     }
 
     @Test(expected = BridgeIllegalArgumentException.class)
-    public void when_RegisterBtcCoinbaseTransaction_null_stored_block_noSent() throws BlockStoreException, AddressFormatException, IOException, BridgeIllegalArgumentException {
+    public void when_RegisterBtcCoinbaseTransaction_null_stored_block_noSent() throws BlockStoreException, AddressFormatException, IOException, VMException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP143)).thenReturn(true);
 
@@ -4096,7 +4097,7 @@ public class BridgeSupportTest {
     }
 
     @Test
-    public void registerBtcCoinbaseTransaction() throws BlockStoreException, AddressFormatException, IOException, BridgeIllegalArgumentException {
+    public void registerBtcCoinbaseTransaction() throws BlockStoreException, AddressFormatException, IOException, VMException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP143)).thenReturn(true);
 

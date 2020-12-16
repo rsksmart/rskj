@@ -55,6 +55,7 @@ import org.ethereum.crypto.ECKey;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
+import org.ethereum.vm.exception.VMException;
 import org.ethereum.vm.program.Program;
 import org.ethereum.vm.program.ProgramResult;
 import org.ethereum.vm.program.invoke.TransferInvoke;
@@ -1992,9 +1993,14 @@ public class BridgeSupport {
         return true;
     }
 
-    public void registerBtcCoinbaseTransaction(byte[] btcTxSerialized, Sha256Hash blockHash, byte[] pmtSerialized, Sha256Hash witnessMerkleRoot, byte[] witnessReservedValue) throws IOException, BlockStoreException, BridgeIllegalArgumentException {
+    public void registerBtcCoinbaseTransaction(byte[] btcTxSerialized, Sha256Hash blockHash, byte[] pmtSerialized, Sha256Hash witnessMerkleRoot, byte[] witnessReservedValue) throws VMException {
         Context.propagate(btcContext);
-        this.ensureBtcBlockStore();
+        try{
+            this.ensureBtcBlockStore();
+        }catch (BlockStoreException | IOException e) {
+            logger.warn("Exception in registerBtcCoinbaseTransaction", e);
+            throw new VMException("Exception in registerBtcCoinbaseTransaction", e);
+        }
 
         Sha256Hash btcTxHash = BtcTransactionFormatUtils.calculateBtcTxHash(btcTxSerialized);
 
