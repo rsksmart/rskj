@@ -27,7 +27,7 @@ import co.rsk.peg.FederationMember;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.ECKey;
-import org.ethereum.vm.exception.PrecompiledContractException;
+import org.ethereum.vm.exception.VMException;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -51,32 +51,32 @@ public class ActiveFederationTest extends BridgePerformanceTestCase {
     private Federation federation;
 
     @Test
-    public void getFederationAddress() throws PrecompiledContractException {
+    public void getFederationAddress() throws IOException, VMException {
         executeTestCase(Bridge.GET_FEDERATION_ADDRESS);
     }
 
     @Test
-    public void getFederationSize() throws PrecompiledContractException {
+    public void getFederationSize() throws IOException, VMException {
         executeTestCase(Bridge.GET_FEDERATION_SIZE);
     }
 
     @Test
-    public void getFederationThreshold() throws PrecompiledContractException {
+    public void getFederationThreshold() throws IOException, VMException {
         executeTestCase(Bridge.GET_FEDERATION_THRESHOLD);
     }
 
     @Test
-    public void getFederationCreationTime() throws PrecompiledContractException {
+    public void getFederationCreationTime() throws IOException, VMException {
         executeTestCase(Bridge.GET_FEDERATION_CREATION_TIME);
     }
 
     @Test
-    public void getFederationCreationBlockNumber() throws PrecompiledContractException {
+    public void getFederationCreationBlockNumber() throws IOException, VMException {
         executeTestCase(Bridge.GET_FEDERATION_CREATION_BLOCK_NUMBER);
     }
 
     @Test
-    public void getFederatorPublicKey() throws PrecompiledContractException {
+    public void getFederatorPublicKey() throws IOException, VMException {
         ExecutionStats stats = new ExecutionStats("getFederatorPublicKey");
         ABIEncoder abiEncoder = (int executionIndex) -> Bridge.GET_FEDERATOR_PUBLIC_KEY.encode(new Object[]{Helper.randomInRange(0, federation.getBtcPublicKeys().size()-1)});
         executeTestCaseSection(abiEncoder, "getFederatorPublicKey", true,50, stats);
@@ -85,7 +85,7 @@ public class ActiveFederationTest extends BridgePerformanceTestCase {
         Assert.assertTrue(BridgePerformanceTest.addStats(stats));
     }
 
-    private void executeTestCase(CallTransaction.Function fn) throws PrecompiledContractException {
+    private void executeTestCase(CallTransaction.Function fn) throws VMException {
         ExecutionStats stats = new ExecutionStats(fn.name);
         executeTestCaseSection(fn,true,50, stats);
         executeTestCaseSection(fn,false,500, stats);
@@ -93,11 +93,11 @@ public class ActiveFederationTest extends BridgePerformanceTestCase {
         Assert.assertTrue(BridgePerformanceTest.addStats(stats));
     }
 
-    private void executeTestCaseSection(CallTransaction.Function fn, boolean genesis, int times, ExecutionStats stats) throws PrecompiledContractException {
+    private void executeTestCaseSection(CallTransaction.Function fn, boolean genesis, int times, ExecutionStats stats) throws VMException {
         executeTestCaseSection((int executionIndex) -> fn.encode(), fn.name, genesis, times, stats);
     }
 
-    private void executeTestCaseSection(ABIEncoder abiEncoder, String name, boolean genesis, int times, ExecutionStats stats) throws PrecompiledContractException {
+    private void executeTestCaseSection(ABIEncoder abiEncoder, String name, boolean genesis, int times, ExecutionStats stats) throws VMException {
         executeAndAverage(
                 String.format("%s-%s", name, genesis ? "genesis" : "non-genesis"),
                 times, abiEncoder,

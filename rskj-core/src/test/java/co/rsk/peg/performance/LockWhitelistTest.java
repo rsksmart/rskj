@@ -32,7 +32,7 @@ import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.vm.PrecompiledContracts;
-import org.ethereum.vm.exception.PrecompiledContractException;
+import org.ethereum.vm.exception.VMException;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -47,7 +47,7 @@ public class LockWhitelistTest extends BridgePerformanceTestCase {
     private static final ECKey authorizedWhitelistChanger = ECKey.fromPrivate(Hex.decode("3890187a3071327cee08467ba1b44ed4c13adb2da0d5ffcc0563c371fa88259c"));
 
     @Test
-    public void getLockWhitelistSize() throws IOException, PrecompiledContractException {
+    public void getLockWhitelistSize() throws IOException, VMException {
         ExecutionStats stats = new ExecutionStats("getLockWhitelistSize");
         executeTestCase((int executionIndex) -> Bridge.GET_LOCK_WHITELIST_SIZE.encode(), "getLockWhitelistSize", 200, stats);
         BridgePerformanceTest.addStats(stats);
@@ -55,7 +55,7 @@ public class LockWhitelistTest extends BridgePerformanceTestCase {
     }
 
     @Test
-    public void getLockWhitelistAddress() throws IOException, PrecompiledContractException {
+    public void getLockWhitelistAddress() throws IOException, VMException {
         ExecutionStats stats = new ExecutionStats("getLockWhitelistAddress");
         executeTestCase(
                 (int executionIndex) -> Bridge.GET_LOCK_WHITELIST_ADDRESS.encode(new Object[]{Helper.randomInRange(0, lockWhitelist.getSize()-1)}),
@@ -67,7 +67,7 @@ public class LockWhitelistTest extends BridgePerformanceTestCase {
     }
 
     @Test
-    public void addLockWhitelistAddress() throws IOException, PrecompiledContractException {
+    public void addLockWhitelistAddress() throws IOException, VMException {
         ExecutionStats stats = new ExecutionStats("addLockWhitelistAddress");
         executeTestCase(
                 (int executionIndex) -> {
@@ -83,7 +83,7 @@ public class LockWhitelistTest extends BridgePerformanceTestCase {
     }
 
     @Test
-    public void removeLockWhitelistAddress() throws IOException, PrecompiledContractException {
+    public void removeLockWhitelistAddress() throws IOException, VMException {
         ExecutionStats stats = new ExecutionStats("removeLockWhitelistAddress");
         executeTestCase(
                 (int executionIndex) -> {
@@ -98,7 +98,7 @@ public class LockWhitelistTest extends BridgePerformanceTestCase {
     }
 
     @Test
-    public void setLockWhitelistDisableBlockDelay() throws IOException, PrecompiledContractException {
+    public void setLockWhitelistDisableBlockDelay() throws IOException, VMException {
         ExecutionStats stats = new ExecutionStats("setLockWhitelistDisableBlockDelay");
         executeTestCase(
                 (int executionIndex) -> {
@@ -112,7 +112,7 @@ public class LockWhitelistTest extends BridgePerformanceTestCase {
         Assert.assertTrue(true);
     }
 
-    private void executeTestCase(ABIEncoder abiEncoder, String name, int times, ExecutionStats stats) throws PrecompiledContractException {
+    private void executeTestCase(ABIEncoder abiEncoder, String name, int times, ExecutionStats stats) throws VMException {
         executeAndAverage(
                 name,
                 times,

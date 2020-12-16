@@ -18,7 +18,7 @@ package org.ethereum.vm.program;
  */
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
-import org.ethereum.vm.exception.PrecompiledContractException;
+import org.ethereum.vm.exception.VMException;
 import org.junit.Test;
 
 import static org.junit.Assert.assertTrue;
@@ -31,7 +31,7 @@ public class ProgramBeforeRSKIP197Test extends ProgramTest {
 
     @Override()
     @Test
-    public void testCallToPrecompiledAddress_throwRuntimeException() throws PrecompiledContractException {
+    public void testCallToPrecompiledAddress_throwRuntimeException() throws VMException {
         try {
             super.testCallToPrecompiledAddress_throwRuntimeException();
             fail();
@@ -42,7 +42,7 @@ public class ProgramBeforeRSKIP197Test extends ProgramTest {
 
     @Override
     @Test
-    public void testCallToPrecompiledAddress_throwPrecompiledConstractException() throws PrecompiledContractException {
+    public void testCallToPrecompiledAddress_throwPrecompiledConstractException() throws VMException {
         try {
             super.testCallToPrecompiledAddress_throwPrecompiledConstractException();
             fail();

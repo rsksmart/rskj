@@ -19,6 +19,7 @@
 
 package co.rsk.pcc;
 
+import co.rsk.pcc.exception.NativeContractIllegalArgumentException;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.CallTransaction;
 import org.junit.Assert;
@@ -94,7 +95,7 @@ public class NativeMethodTest {
     }
 
     @Test
-    public void withArgumentsExecutesMethod() {
+    public void withArgumentsExecutesMethod() throws NativeContractIllegalArgumentException {
         Assert.assertEquals("execution-result", withArguments.execute());
     }
 }

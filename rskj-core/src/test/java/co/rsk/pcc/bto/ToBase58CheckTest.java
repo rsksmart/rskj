@@ -20,7 +20,7 @@
 package co.rsk.pcc.bto;
 
 import co.rsk.pcc.ExecutionEnvironment;
-import co.rsk.pcc.NativeContractIllegalArgumentException;
+import co.rsk.pcc.exception.NativeContractIllegalArgumentException;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.solidity.SolidityType;
@@ -65,7 +65,7 @@ public class ToBase58CheckTest {
     }
 
     @Test
-    public void executes() {
+    public void executes() throws NativeContractIllegalArgumentException {
         Assert.assertEquals(
                 "mgivuh9jErcGdRr81cJ3A7YfgbJV7WNyZV",
                 method.execute(new Object[]{

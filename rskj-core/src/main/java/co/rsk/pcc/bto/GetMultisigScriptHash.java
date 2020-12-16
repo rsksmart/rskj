@@ -22,14 +22,13 @@ import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.pcc.ExecutionEnvironment;
-import co.rsk.pcc.NativeContractIllegalArgumentException;
 import co.rsk.pcc.NativeMethod;
+import co.rsk.pcc.exception.NativeContractIllegalArgumentException;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.util.ByteUtil;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -72,7 +71,7 @@ public class GetMultisigScriptHash extends NativeMethod {
     }
 
     @Override
-    public Object execute(Object[] arguments) {
+    public Object execute(Object[] arguments) throws NativeContractIllegalArgumentException {
         if (arguments == null || arguments[0] == null) {
             throw new NativeContractIllegalArgumentException(REQUIRED_SIGNATURE_NULL_OR_ZERO);
         }
@@ -102,7 +101,7 @@ public class GetMultisigScriptHash extends NativeMethod {
         }
 
         List<BtcECKey> btcPublicKeys = new ArrayList<>();
-        Arrays.stream(publicKeys).forEach(o -> {
+        for (Object o: publicKeys) {
             byte[] publicKey = (byte[]) o;
             if (publicKey.length != COMPRESSED_PUBLIC_KEY_LENGTH && publicKey.length != UNCOMPRESSED_PUBLIC_KEY_LENGTH) {
                 throw new NativeContractIllegalArgumentException(String.format(
@@ -122,7 +121,7 @@ public class GetMultisigScriptHash extends NativeMethod {
                         "Invalid public key format: %s", ByteUtil.toHexString(publicKey)
                 ), e);
             }
-        });
+        }
 
         Script multisigScript = ScriptBuilder.createP2SHOutputScript(minimumSignatures, btcPublicKeys);
 

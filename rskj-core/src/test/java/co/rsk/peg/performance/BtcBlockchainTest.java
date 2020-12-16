@@ -29,7 +29,7 @@ import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.core.Repository;
 import org.ethereum.vm.PrecompiledContracts;
-import org.ethereum.vm.exception.PrecompiledContractException;
+import org.ethereum.vm.exception.VMException;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -40,21 +40,21 @@ import java.util.HashMap;
 @Ignore
 public class BtcBlockchainTest extends BridgePerformanceTestCase {
     @Test
-    public void getBtcBlockchainBestChainHeight() throws PrecompiledContractException {
+    public void getBtcBlockchainBestChainHeight() throws VMException {
         executeTest(Bridge.GET_BTC_BLOCKCHAIN_BEST_CHAIN_HEIGHT, "getBtcBlockchainBestChainHeight");
     }
 
     @Test
-    public void getBtcBlockchainInitialBlockHeight() throws PrecompiledContractException {
+    public void getBtcBlockchainInitialBlockHeight() throws VMException {
         executeTest(Bridge.GET_BTC_BLOCKCHAIN_INITIAL_BLOCK_HEIGHT, "getBtcBlockchainInitialBlockHeight");
     }
 
     @Test
-    public void getBtcBlockchainBlockLocator() throws PrecompiledContractException {
+    public void getBtcBlockchainBlockLocator() throws VMException {
         executeTest(Bridge.GET_BTC_BLOCKCHAIN_BLOCK_LOCATOR, "getBtcBlockchainBlockLocator");
     }
 
-    private void executeTest(CallTransaction.Function contractMethod, String methodName) throws PrecompiledContractException {
+    private void executeTest(CallTransaction.Function contractMethod, String methodName) throws VMException {
         ABIEncoder abiEncoder = (int executionIndex) -> contractMethod.encode();
         ExecutionStats stats = new ExecutionStats(methodName);
         executeAndAverage(methodName, 200, abiEncoder, buildInitializer(), Helper.getZeroValueRandomSenderTxBuilder(), Helper.getRandomHeightProvider(10), stats);
@@ -63,7 +63,7 @@ public class BtcBlockchainTest extends BridgePerformanceTestCase {
     }
 
     @Test
-    public void getBtcBlockchainBlockHashAtDepth() throws PrecompiledContractException {
+    public void getBtcBlockchainBlockHashAtDepth() throws VMException {
         ABIEncoder abiEncoder = (int executionIndex) -> Bridge.GET_BTC_BLOCKCHAIN_BLOCK_HASH_AT_DEPTH.encode(new Object[]{BigInteger.ZERO});
         String methodName = "getBtcBlockchainBlockHashAtDepth";
         ExecutionStats stats = new ExecutionStats(methodName);

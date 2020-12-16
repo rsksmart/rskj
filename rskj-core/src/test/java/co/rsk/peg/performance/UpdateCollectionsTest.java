@@ -29,7 +29,7 @@ import co.rsk.peg.ReleaseRequestQueue;
 import co.rsk.peg.ReleaseTransactionSet;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.HashUtil;
-import org.ethereum.vm.exception.PrecompiledContractException;
+import org.ethereum.vm.exception.VMException;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -44,7 +44,7 @@ import java.util.SortedMap;
 public class UpdateCollectionsTest extends BridgePerformanceTestCase {
 
     @Test
-    public void updateCollections() throws IOException, PrecompiledContractException {
+    public void updateCollections() throws IOException, VMException {
         ExecutionStats stats = new ExecutionStats("updateCollections");
 
         updateCollections_nothing(stats, 1000);
@@ -55,7 +55,7 @@ public class UpdateCollectionsTest extends BridgePerformanceTestCase {
         Assert.assertTrue(true);
     }
 
-    private void updateCollections_nothing(ExecutionStats stats, int numCases) throws IOException, PrecompiledContractException {
+    private void updateCollections_nothing(ExecutionStats stats, int numCases) throws IOException, VMException {
         final NetworkParameters parameters = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
         BridgeStorageProviderInitializer storageInitializer = (BridgeStorageProvider provider, Repository repository, int executionIndex, BtcBlockStore blockStore) -> {};
         final byte[] updateCollectionsEncoded = Bridge.UPDATE_COLLECTIONS.encode();
@@ -71,7 +71,7 @@ public class UpdateCollectionsTest extends BridgePerformanceTestCase {
         );
     }
 
-    private void updateCollections_buildReleaseTxs(ExecutionStats stats, int numCases) throws IOException, PrecompiledContractException {
+    private void updateCollections_buildReleaseTxs(ExecutionStats stats, int numCases) throws IOException, VMException {
         final int minUTXOs = 1;
         final int maxUTXOs = 1000;
         final int minMilliBtc = 1;
@@ -131,7 +131,7 @@ public class UpdateCollectionsTest extends BridgePerformanceTestCase {
         );
     }
 
-    private void updateCollections_confirmTxs(ExecutionStats stats, int numCases) throws IOException, PrecompiledContractException {
+    private void updateCollections_confirmTxs(ExecutionStats stats, int numCases) throws IOException, VMException {
         final int minTxsWaitingForSigs = 0;
         final int maxTxsWaitingForSigs = 10;
         final int minReleaseTxs = 1;

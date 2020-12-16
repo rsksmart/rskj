@@ -13,6 +13,7 @@ import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.PrecompiledContracts;
+import org.ethereum.vm.exception.VMException;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -44,7 +45,7 @@ public class BridgeTest {
     }
 
     @Test
-    public void getLockingCap_before_RSKIP134_activation() {
+    public void getLockingCap_before_RSKIP134_activation() throws VMException {
         doReturn(false).when(activationConfig).isActive(eq(RSKIP134), anyLong());
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
@@ -56,7 +57,7 @@ public class BridgeTest {
     }
 
     @Test
-    public void getLockingCap_after_RSKIP134_activation() {
+    public void getLockingCap_after_RSKIP134_activation() throws VMException {
         doReturn(true).when(activationConfig).isActive(eq(RSKIP134), anyLong());
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
@@ -73,7 +74,7 @@ public class BridgeTest {
     }
 
     @Test
-    public void increaseLockingCap_before_RSKIP134_activation() {
+    public void increaseLockingCap_before_RSKIP134_activation() throws VMException {
         doReturn(false).when(activationConfig).isActive(eq(RSKIP134), anyLong());
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
@@ -85,7 +86,7 @@ public class BridgeTest {
     }
 
     @Test
-    public void increaseLockingCap_after_RSKIP134_activation() {
+    public void increaseLockingCap_after_RSKIP134_activation() throws VMException {
         doReturn(true).when(activationConfig).isActive(eq(RSKIP134), anyLong());
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
@@ -108,7 +109,7 @@ public class BridgeTest {
     }
 
     @Test
-    public void increaseLockingCap_invalidParameter() {
+    public void increaseLockingCap_invalidParameter() throws VMException {
         doReturn(true).when(activationConfig).isActive(eq(RSKIP134), anyLong());
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
@@ -139,7 +140,7 @@ public class BridgeTest {
     }
 
     @Test
-    public void registerBtcCoinbaseTransaction_before_RSKIP143_activation() {
+    public void registerBtcCoinbaseTransaction_before_RSKIP143_activation() throws VMException {
         ActivationConfig activations = spy(ActivationConfigsForTest.genesis());
         doReturn(false).when(activations).isActive(eq(RSKIP143), anyLong());
 
@@ -155,7 +156,7 @@ public class BridgeTest {
     }
 
     @Test
-    public void registerBtcCoinbaseTransaction_after_RSKIP143_activation() throws BlockStoreException, IOException {
+    public void registerBtcCoinbaseTransaction_after_RSKIP143_activation() throws BlockStoreException, IOException, VMException {
         ActivationConfig activations = spy(ActivationConfigsForTest.genesis());
         doReturn(true).when(activations).isActive(eq(RSKIP143), anyLong());
 
@@ -172,7 +173,7 @@ public class BridgeTest {
     }
 
     @Test
-    public void registerBtcCoinbaseTransaction_after_RSKIP143_activation_null_data() {
+    public void registerBtcCoinbaseTransaction_after_RSKIP143_activation_null_data() throws VMException {
         ActivationConfig activations = spy(ActivationConfigsForTest.genesis());
         doReturn(true).when(activations).isActive(eq(RSKIP143), anyLong());
 

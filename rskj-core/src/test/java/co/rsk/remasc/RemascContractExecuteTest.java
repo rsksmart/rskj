@@ -23,7 +23,7 @@ import co.rsk.config.RemascConfigFactory;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.vm.PrecompiledContracts;
-import org.ethereum.vm.program.Program;
+import org.ethereum.vm.exception.VMException;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -45,19 +45,19 @@ public class RemascContractExecuteTest {
         );
     }
 
-    @Test(expected = Program.OutOfGasException.class)
+    @Test(expected = VMException.class)
     public void executeWithFunctionSignatureLengthTooShort() throws Exception{
         remasc.execute(new byte[3]);
         fail("Expected OutOfGasException");
     }
 
-    @Test(expected = Program.OutOfGasException.class)
+    @Test(expected = VMException.class)
     public void executeWithInexistentFunction() throws Exception{
         remasc.execute(new byte[4]);
         fail("Expected OutOfGasException");
     }
 
-    @Test(expected = Program.OutOfGasException.class)
+    @Test(expected = VMException.class)
     public void executeWithDataLengthTooLong() throws Exception{
         remasc.execute(new byte[6]);
         fail("Expected OutOfGasException");

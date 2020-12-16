@@ -20,6 +20,7 @@
 package co.rsk.pcc;
 
 import co.rsk.core.RskAddress;
+import co.rsk.pcc.exception.NativeContractIllegalArgumentException;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
@@ -31,6 +32,7 @@ import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.LogInfo;
+import org.ethereum.vm.exception.VMException;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -257,7 +259,7 @@ public class NativeContractTest {
     }
 
     @Test
-    public void executeRunsWhenMethodMatchesAndArgumentsValid() {
+    public void executeRunsWhenMethodMatchesAndArgumentsValid() throws VMException {
         doInit();
 
         NativeMethod method = mock(NativeMethod.class);
@@ -283,7 +285,7 @@ public class NativeContractTest {
     }
 
     @Test
-    public void executeRunsWhenMethodMatchesAndArgumentsValidExecutionThrows() {
+    public void executeRunsWhenMethodMatchesAndArgumentsValidExecutionThrows() throws NativeContractIllegalArgumentException {
         doInit();
 
         NativeMethod method = mock(NativeMethod.class);
@@ -310,7 +312,7 @@ public class NativeContractTest {
     }
 
     @Test
-    public void executeWithNullResult() {
+    public void executeWithNullResult() throws VMException {
         doInit();
 
         NativeMethod method = mock(NativeMethod.class);
@@ -336,7 +338,7 @@ public class NativeContractTest {
     }
 
     @Test
-    public void executeWithEmptyOptionalResult() {
+    public void executeWithEmptyOptionalResult() throws VMException {
         doInit();
 
         NativeMethod method = mock(NativeMethod.class);
@@ -362,7 +364,7 @@ public class NativeContractTest {
     }
 
     @Test
-    public void executeWithNonEmptyOptionalResult() {
+    public void executeWithNonEmptyOptionalResult() throws VMException {
         doInit();
 
         NativeMethod method = mock(NativeMethod.class);
@@ -411,8 +413,18 @@ public class NativeContractTest {
         Assert.assertTrue(failed);
     }
 
+    private void assertFailsExecution(RunnableExecution statement) {
+        boolean failed = false;
+        try {
+            statement.run();
+        } catch (VMException e) {
+            failed = true;
+        }
+        Assert.assertTrue(failed);
+    }
+
     private void assertContractExecutionFails(String hexData) {
-        assertFails(() -> contract.execute(Hex.decode(hexData)));
+        assertFailsExecution(() -> contract.execute(Hex.decode(hexData)));
     }
 
     static class EmptyNativeContract extends NativeContract {
@@ -431,4 +443,9 @@ public class NativeContractTest {
             return Optional.empty();
         }
     };
+
+
+    public interface RunnableExecution {
+        void run() throws VMException;
+    }
 }

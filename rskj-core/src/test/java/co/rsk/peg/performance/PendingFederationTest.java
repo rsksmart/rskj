@@ -24,29 +24,27 @@ import co.rsk.peg.BridgeStorageProvider;
 import co.rsk.peg.PendingFederation;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.core.Repository;
-import org.ethereum.vm.exception.PrecompiledContractException;
+import org.ethereum.vm.exception.VMException;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
-
-import java.io.IOException;
 
 @Ignore
 public class PendingFederationTest extends BridgePerformanceTestCase {
     private PendingFederation pendingFederation;
 
     @Test
-    public void getPendingFederationHash() throws PrecompiledContractException {
+    public void getPendingFederationHash() throws VMException {
         executeTestCase(Bridge.GET_PENDING_FEDERATION_HASH);
     }
 
     @Test
-    public void getPendingFederationSize() throws PrecompiledContractException {
+    public void getPendingFederationSize() throws VMException {
         executeTestCase(Bridge.GET_PENDING_FEDERATION_SIZE);
     }
 
     @Test
-    public void getPendingFederatorPublicKey() throws PrecompiledContractException {
+    public void getPendingFederatorPublicKey() throws VMException {
         ExecutionStats stats = new ExecutionStats("getPendingFederatorPublicKey");
         ABIEncoder abiEncoder;
         abiEncoder = (int executionIndex) -> Bridge.GET_PENDING_FEDERATOR_PUBLIC_KEY.encode(new Object[]{Helper.randomInRange(0, pendingFederation.getBtcPublicKeys().size()-1)});
@@ -57,7 +55,7 @@ public class PendingFederationTest extends BridgePerformanceTestCase {
         Assert.assertTrue(BridgePerformanceTest.addStats(stats));
     }
 
-    private void executeTestCase(CallTransaction.Function fn) throws PrecompiledContractException {
+    private void executeTestCase(CallTransaction.Function fn) throws VMException {
         ExecutionStats stats = new ExecutionStats(fn.name);
         executeTestCaseSection(fn,true,200, stats);
         executeTestCaseSection(fn,false,200, stats);
@@ -65,11 +63,11 @@ public class PendingFederationTest extends BridgePerformanceTestCase {
         Assert.assertTrue(BridgePerformanceTest.addStats(stats));
     }
 
-    private void executeTestCaseSection(CallTransaction.Function fn, boolean genesis, int times, ExecutionStats stats) throws PrecompiledContractException {
+    private void executeTestCaseSection(CallTransaction.Function fn, boolean genesis, int times, ExecutionStats stats) throws VMException {
         executeTestCaseSection((int executionIndex) -> fn.encode(), fn.name, genesis, times, stats);
     }
 
-    private void executeTestCaseSection(ABIEncoder abiEncoder, String name, boolean present, int times, ExecutionStats stats) throws PrecompiledContractException {
+    private void executeTestCaseSection(ABIEncoder abiEncoder, String name, boolean present, int times, ExecutionStats stats) throws VMException {
         executeAndAverage(
                 String.format("%s-%s", name, present ? "present" : "not-present"),
                 times, abiEncoder,

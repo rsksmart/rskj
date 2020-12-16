@@ -20,7 +20,7 @@
 package co.rsk.pcc.bto;
 
 import co.rsk.bitcoinj.core.NetworkParameters;
-import co.rsk.pcc.NativeContractIllegalArgumentException;
+import co.rsk.pcc.exception.NativeContractIllegalArgumentException;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -34,7 +34,7 @@ public class HDWalletUtilsHelperTest {
     }
 
     @Test
-    public void validateAndExtractNetworkFromExtendedPublicKeyMainnet() {
+    public void validateAndExtractNetworkFromExtendedPublicKeyMainnet() throws NativeContractIllegalArgumentException {
         Assert.assertEquals(
                 NetworkParameters.fromID(NetworkParameters.ID_MAINNET),
                 helper.validateAndExtractNetworkFromExtendedPublicKey("xpubSomethingSomething")
@@ -42,7 +42,7 @@ public class HDWalletUtilsHelperTest {
     }
 
     @Test
-    public void validateAndExtractNetworkFromExtendedPublicKeyTestnet() {
+    public void validateAndExtractNetworkFromExtendedPublicKeyTestnet() throws NativeContractIllegalArgumentException {
         Assert.assertEquals(
                 NetworkParameters.fromID(NetworkParameters.ID_TESTNET),
                 helper.validateAndExtractNetworkFromExtendedPublicKey("tpubSomethingSomething")
@@ -50,7 +50,7 @@ public class HDWalletUtilsHelperTest {
     }
 
     @Test(expected = NativeContractIllegalArgumentException.class)
-    public void validateAndExtractNetworkFromExtendedPublicKeyInvalid() {
+    public void validateAndExtractNetworkFromExtendedPublicKeyInvalid() throws NativeContractIllegalArgumentException {
         helper.validateAndExtractNetworkFromExtendedPublicKey("completelyInvalidStuff");
     }
 }

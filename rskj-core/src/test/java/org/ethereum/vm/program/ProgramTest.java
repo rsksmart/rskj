@@ -25,15 +25,14 @@ import org.ethereum.core.Repository;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.MessageCall;
 import org.ethereum.vm.PrecompiledContracts;
-import org.ethereum.vm.exception.PrecompiledContractException;
+import org.ethereum.vm.exception.VMException;
 import org.ethereum.vm.program.invoke.ProgramInvoke;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.junit.MockitoJUnitRunner;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -80,7 +79,7 @@ public class ProgramTest {
     }
 
     @Test
-    public void testCallToPrecompiledAddress_success() throws PrecompiledContractException {
+    public void testCallToPrecompiledAddress_success() throws VMException {
         when(precompiledContract.execute(any())).thenReturn(new byte[]{1});
 
         program.callToPrecompiledAddress(msg, precompiledContract);
@@ -92,19 +91,18 @@ public class ProgramTest {
     }
 
 
-    @Test
-    public void testCallToPrecompiledAddress_throwRuntimeException() throws PrecompiledContractException {
+    @Test(expected = RuntimeException.class)
+    public void testCallToPrecompiledAddress_throwRuntimeException() throws VMException {
         when(precompiledContract.execute(any())).thenThrow(new RuntimeException());
 
         program.callToPrecompiledAddress(msg, precompiledContract);
 
-        assertStack(STACK_STATE_ERROR);
-        assertEquals(gasCost, program.getResult().getGasUsed());
+        fail("It should throw a RE.");
     }
 
     @Test
-    public void testCallToPrecompiledAddress_throwPrecompiledConstractException() throws PrecompiledContractException {
-        when(precompiledContract.execute(any())).thenThrow(new PrecompiledContractException("Revert exception"));
+    public void testCallToPrecompiledAddress_throwPrecompiledConstractException() throws VMException {
+        when(precompiledContract.execute(any())).thenThrow(new VMException("Revert exception"));
 
         program.callToPrecompiledAddress(msg, precompiledContract);
 

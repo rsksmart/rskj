@@ -660,17 +660,17 @@ public class BridgeUtilsTest {
     }
 
     @Test(expected = BridgeIllegalArgumentException.class)
-    public void getCoinFromBigInteger_bigger_than_long_value() {
+    public void getCoinFromBigInteger_bigger_than_long_value() throws BridgeIllegalArgumentException {
         BridgeUtils.getCoinFromBigInteger(new BigInteger("9223372036854775808"));
     }
 
     @Test(expected = BridgeIllegalArgumentException.class)
-    public void getCoinFromBigInteger_null_value() {
+    public void getCoinFromBigInteger_null_value() throws BridgeIllegalArgumentException {
         BridgeUtils.getCoinFromBigInteger(null);
     }
 
     @Test
-    public void getCoinFromBigInteger() {
+    public void getCoinFromBigInteger() throws BridgeIllegalArgumentException {
         Assert.assertEquals(Coin.COIN, BridgeUtils.getCoinFromBigInteger(BigInteger.valueOf(Coin.COIN.getValue())));
     }
 

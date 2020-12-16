@@ -35,6 +35,7 @@ import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.PrecompiledContracts;
+import org.ethereum.vm.exception.VMException;
 import org.ethereum.vm.program.Program;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -97,7 +98,7 @@ public class RemascContract extends PrecompiledContracts.PrecompiledContract {
     }
 
     @Override
-    public byte[] execute(byte[] data) {
+    public byte[] execute(byte[] data) throws VMException {
         try {
             CallTransaction.Function function = this.getFunction(data);
             Method m = this.getClass().getMethod(function.name);
@@ -105,14 +106,14 @@ public class RemascContract extends PrecompiledContracts.PrecompiledContract {
             remasc.save();
             return this.encodeResult(function, result);
         } catch(RemascInvalidInvocationException ex) {
-            // Remasc contract was invoked with invalid parameters / out of place, throw OutOfGasException to avoid funds being transferred
+            // Remasc contract was invoked with invalid parameters / out of place, throw VMException to avoid funds being transferred
             logger.warn(ex.getMessage(), ex);
-            throw new Program.OutOfGasException(ex.getMessage());
+            throw new VMException(ex.getMessage());
         } catch(Exception ex) {
             logger.error(ex.getMessage(), ex);
             panicProcessor.panic("remascExecute", ex.getMessage());
 
-            throw new RemascException("Exception executing remasc", ex);
+            throw new VMException("Exception executing remasc", ex);
         }
     }
 

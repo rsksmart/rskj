@@ -24,12 +24,11 @@ import co.rsk.peg.BridgeStorageProvider;
 import co.rsk.peg.Federation;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.core.Repository;
-import org.ethereum.vm.exception.PrecompiledContractException;
+import org.ethereum.vm.exception.VMException;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import java.io.IOException;
 import java.time.Instant;
 import java.util.Random;
 
@@ -38,32 +37,32 @@ public class RetiringFederationTest extends BridgePerformanceTestCase {
     private Federation retiringFederation;
 
     @Test
-    public void getRetiringFederationAddress() throws PrecompiledContractException {
+    public void getRetiringFederationAddress() throws VMException {
         executeTestCase(Bridge.GET_RETIRING_FEDERATION_ADDRESS);
     }
 
     @Test
-    public void getRetiringFederationSize() throws PrecompiledContractException {
+    public void getRetiringFederationSize() throws VMException {
         executeTestCase(Bridge.GET_RETIRING_FEDERATION_SIZE);
     }
 
     @Test
-    public void getRetiringFederationThreshold() throws PrecompiledContractException {
+    public void getRetiringFederationThreshold() throws VMException {
         executeTestCase(Bridge.GET_RETIRING_FEDERATION_THRESHOLD);
     }
 
     @Test
-    public void getRetiringFederationCreationTime() throws PrecompiledContractException {
+    public void getRetiringFederationCreationTime() throws VMException {
         executeTestCase(Bridge.GET_RETIRING_FEDERATION_CREATION_TIME);
     }
 
     @Test
-    public void getRetiringFederationCreationBlockNumber() throws PrecompiledContractException {
+    public void getRetiringFederationCreationBlockNumber() throws VMException {
         executeTestCase(Bridge.GET_RETIRING_FEDERATION_CREATION_BLOCK_NUMBER);
     }
 
     @Test
-    public void getRetiringFederatorPublicKey() throws PrecompiledContractException {
+    public void getRetiringFederatorPublicKey() throws VMException {
         ExecutionStats stats = new ExecutionStats("getRetiringFederatorPublicKey");
         ABIEncoder abiEncoder;
         abiEncoder = (int executionIndex) -> Bridge.GET_RETIRING_FEDERATOR_PUBLIC_KEY.encode(new Object[]{Helper.randomInRange(0, retiringFederation.getBtcPublicKeys().size()-1)});
@@ -74,7 +73,7 @@ public class RetiringFederationTest extends BridgePerformanceTestCase {
         Assert.assertTrue(BridgePerformanceTest.addStats(stats));
     }
 
-    private void executeTestCase(CallTransaction.Function fn) throws PrecompiledContractException {
+    private void executeTestCase(CallTransaction.Function fn) throws VMException {
         ExecutionStats stats = new ExecutionStats(fn.name);
         executeTestCaseSection(fn,true,50, stats);
         executeTestCaseSection(fn,false,500, stats);
@@ -82,11 +81,11 @@ public class RetiringFederationTest extends BridgePerformanceTestCase {
         Assert.assertTrue(BridgePerformanceTest.addStats(stats));
     }
 
-    private void executeTestCaseSection(CallTransaction.Function fn, boolean genesis, int times, ExecutionStats stats) throws PrecompiledContractException {
+    private void executeTestCaseSection(CallTransaction.Function fn, boolean genesis, int times, ExecutionStats stats) throws VMException {
         executeTestCaseSection((int executionIndex) -> fn.encode(), fn.name, genesis, times, stats);
     }
 
-    private void executeTestCaseSection(ABIEncoder abiEncoder, String name, boolean present, int times, ExecutionStats stats) throws PrecompiledContractException {
+    private void executeTestCaseSection(ABIEncoder abiEncoder, String name, boolean present, int times, ExecutionStats stats) throws VMException {
         executeAndAverage(
                 String.format("%s-%s", name, present ? "present" : "not-present"),
                 times, abiEncoder,

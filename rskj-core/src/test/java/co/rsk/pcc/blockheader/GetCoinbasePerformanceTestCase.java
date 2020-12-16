@@ -37,7 +37,7 @@ import org.ethereum.core.Block;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.crypto.ECKey;
-import org.ethereum.vm.exception.PrecompiledContractException;
+import org.ethereum.vm.exception.VMException;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -50,7 +50,7 @@ import java.util.LinkedList;
 public class GetCoinbasePerformanceTestCase extends PrecompiledContractPerformanceTestCase {
 
     @Test
-    public void getCoinbase() throws IOException, PrecompiledContractException {
+    public void getCoinbase() throws IOException, VMException {
         ExecutionStats stats = new ExecutionStats("getCoinbase");
 
         EnvironmentBuilder environmentBuilder = (int executionIndex, TxBuilder txBuilder, int height) -> {
@@ -66,7 +66,7 @@ public class GetCoinbasePerformanceTestCase extends PrecompiledContractPerforman
         BlockHeaderPerformanceTest.addStats(stats);
     }
 
-    private void doGetCoinbase(EnvironmentBuilder environmentBuilder, ExecutionStats stats, int numCases) throws IOException, PrecompiledContractException {
+    private void doGetCoinbase(EnvironmentBuilder environmentBuilder, ExecutionStats stats, int numCases) throws IOException, VMException {
         CallTransaction.Function function = CallTransaction.Function.fromSignature(
                 "getCoinbaseAddress",
                 new String[]{"int256"},

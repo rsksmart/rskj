@@ -24,8 +24,7 @@ import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.util.BIUtil;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.PrecompiledContracts.PrecompiledContract;
-import org.ethereum.vm.exception.PrecompiledContractException;
-import org.junit.Assert;
+import org.ethereum.vm.exception.VMException;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -44,7 +43,7 @@ public class PrecompiledContractTest {
     private final PrecompiledContracts precompiledContracts = new PrecompiledContracts(config, null);
 
     @Test
-    public void identityTest1() throws PrecompiledContractException {
+    public void identityTest1() throws VMException {
 
         DataWord addr = DataWord.valueFromHex("0000000000000000000000000000000000000000000000000000000000000004");
         PrecompiledContract contract = precompiledContracts.getContractForAddress(null, addr);
@@ -58,7 +57,7 @@ public class PrecompiledContractTest {
 
 
     @Test
-    public void sha256Test1() throws PrecompiledContractException {
+    public void sha256Test1() throws VMException {
 
         DataWord addr = DataWord.valueFromHex("0000000000000000000000000000000000000000000000000000000000000002");
         PrecompiledContract contract = precompiledContracts.getContractForAddress(null, addr);
@@ -71,7 +70,7 @@ public class PrecompiledContractTest {
     }
 
     @Test
-    public void sha256Test2() throws PrecompiledContractException {
+    public void sha256Test2() throws VMException {
 
         DataWord addr = DataWord.valueFromHex("0000000000000000000000000000000000000000000000000000000000000002");
         PrecompiledContract contract = precompiledContracts.getContractForAddress(null, addr);
@@ -84,7 +83,7 @@ public class PrecompiledContractTest {
     }
 
     @Test
-    public void sha256Test3() throws PrecompiledContractException {
+    public void sha256Test3() throws VMException {
 
         DataWord addr = DataWord.valueFromHex("0000000000000000000000000000000000000000000000000000000000000002");
         PrecompiledContract contract = precompiledContracts.getContractForAddress(null, addr);
@@ -97,7 +96,7 @@ public class PrecompiledContractTest {
     }
 
     @Test
-    public void Ripempd160Test1() throws PrecompiledContractException {
+    public void Ripempd160Test1() throws VMException {
 
         DataWord addr = DataWord.valueFromHex("0000000000000000000000000000000000000000000000000000000000000003");
         PrecompiledContract contract = precompiledContracts.getContractForAddress(null, addr);
@@ -110,7 +109,7 @@ public class PrecompiledContractTest {
     }
 
     @Test @Ignore("expected != result, inherited test")
-    public void ecRecoverTest1() throws PrecompiledContractException {
+    public void ecRecoverTest1() throws VMException {
 
         byte[] data = Hex.decode("18c547e4f7b0f325ad1e56f57e26c745b09a3e503d86e00e5255ff7f715d3d1c000000000000000000000000000000000000000000000000000000000000001c73b1693892219d736caba55bdb67216e485557ea6b6af75f37096c9aa6a5a75feeb940b1d03b21e36b0e47e79769f095fe2ab855bd91e3a38756b7d75a9c4549");
         DataWord addr = DataWord.valueFromHex("0000000000000000000000000000000000000000000000000000000000000001");
@@ -125,7 +124,7 @@ public class PrecompiledContractTest {
         assertEquals(expected, ByteUtil.toHexString(result));
     }
     @Test
-    public void modExpTest() throws PrecompiledContractException {
+    public void modExpTest() throws VMException {
 
         DataWord addr = DataWord.valueFromHex("0000000000000000000000000000000000000000000000000000000000000005");
 

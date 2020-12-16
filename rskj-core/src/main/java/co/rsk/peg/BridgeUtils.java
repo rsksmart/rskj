@@ -269,7 +269,7 @@ public class BridgeUtils {
         return federation.hasMemberWithRskAddress(rskTx.getSender().getBytes());
     }
 
-    public static Coin getCoinFromBigInteger(BigInteger value) {
+    public static Coin getCoinFromBigInteger(BigInteger value) throws BridgeIllegalArgumentException {
         if (value == null) {
             throw new BridgeIllegalArgumentException("value cannot be null");
         }

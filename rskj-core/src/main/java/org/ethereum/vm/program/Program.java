@@ -44,7 +44,7 @@ import org.ethereum.util.FastByteComparisons;
 import org.ethereum.vm.*;
 import org.ethereum.vm.MessageCall.MsgType;
 import org.ethereum.vm.PrecompiledContracts.PrecompiledContract;
-import org.ethereum.vm.exception.PrecompiledContractException;
+import org.ethereum.vm.exception.VMException;
 import org.ethereum.vm.program.invoke.*;
 import org.ethereum.vm.program.listener.CompositeProgramListener;
 import org.ethereum.vm.program.listener.ProgramListenerAware;
@@ -1448,7 +1448,7 @@ public class Program {
             saveOutAfterExecution(msg, out);
             this.stackPushOne();
             track.commit();
-        } catch (PrecompiledContractException e) {
+        } catch (VMException e) {
             throw new RuntimeException(e);
         }
     }
@@ -1467,16 +1467,11 @@ public class Program {
             saveOutAfterExecution(msg, out);
             this.stackPushOne();
             track.commit();
-        } catch (PrecompiledContractException e) {
+        } catch (VMException e) {
             logger.trace("Precompiled execution error. Pushing Zero to stack and performing rollback.", e);
             this.stackPushZero();
             track.rollback();
             saveOutAfterExecution(msg, e.getMessage().getBytes());
-            this.cleanReturnDataBuffer();
-        } catch (RuntimeException e) {
-            logger.trace("Unexpected Precompiled execution error. Pushing Zero to stack and performing rollback.", e);
-            this.stackPushZero();
-            track.rollback();
             this.cleanReturnDataBuffer();
         } finally {
             final long refundingGas = msg.getGas().longValue() - requiredGas;

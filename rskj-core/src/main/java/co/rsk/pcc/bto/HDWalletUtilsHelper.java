@@ -1,10 +1,10 @@
 package co.rsk.pcc.bto;
 
 import co.rsk.bitcoinj.core.NetworkParameters;
-import co.rsk.pcc.NativeContractIllegalArgumentException;
+import co.rsk.pcc.exception.NativeContractIllegalArgumentException;
 
 public class HDWalletUtilsHelper {
-    public NetworkParameters validateAndExtractNetworkFromExtendedPublicKey(String xpub) {
+    public NetworkParameters validateAndExtractNetworkFromExtendedPublicKey(String xpub) throws NativeContractIllegalArgumentException {
         // Network determination is done by starting character
         // Extended public key must start with a "xpub" (mainnet) or "tpub" (testnet)
         if (xpub == null) {
