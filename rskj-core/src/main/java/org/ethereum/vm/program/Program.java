@@ -70,7 +70,7 @@ public class Program {
     private static final Logger logger = LoggerFactory.getLogger("VM");
     private static final Logger gasLogger = LoggerFactory.getLogger("gas");
 
-    public static final long MAX_MEMORY = (1 << 30);
+    public static final long MAX_MEMORY = (1<<30);
 
     //Max size for stack checks
     private static final int MAX_STACKSIZE = 1024;
@@ -133,7 +133,7 @@ public class Program {
         isLogEnabled = logger.isInfoEnabled();
         isGasLogEnabled = gasLogger.isInfoEnabled();
 
-        if (isLogEnabled) {
+        if (isLogEnabled ) {
             logger.warn("WARNING! VM logging is enabled. This will make the VM 200 times slower. Do not use in production.");
         }
 
@@ -237,7 +237,7 @@ public class Program {
         stackPush(DataWord.ONE);
     }
 
-    private void stackClear() {
+    private void stackClear(){
         stack.clear();
     }
 
@@ -451,7 +451,7 @@ public class Program {
         createContract(senderAddress, nonce, value, memStart, memSize, newAddress, true);
     }
 
-    private void createContract(RskAddress senderAddress, byte[] nonce, DataWord value, DataWord memStart, DataWord memSize, RskAddress contractAddress, boolean isCreate2) {
+    private void createContract( RskAddress senderAddress, byte[] nonce, DataWord value, DataWord memStart, DataWord memSize, RskAddress contractAddress, boolean isCreate2) {
         if (getCallDeep() == getMaxDepth()) {
             logger.debug("max depth reached creating a new contract inside contract run: [{}]", senderAddress);
             stackPushZero();
@@ -677,7 +677,7 @@ public class Program {
     public static long limitToMaxLong(BigInteger gas) {
         try {
             long r = gas.longValueExact();
-            if (r < 0)  // check if this can happen
+            if (r<0)  // check if this can happen
             {
                 return Long.MAX_VALUE;
             }
@@ -687,7 +687,7 @@ public class Program {
         }
     }
 
-    public static long multiplyLimitToMaxLong(long a, long b) {
+    public static long multiplyLimitToMaxLong(long a,long b) {
         long d;
 
         try {
@@ -788,7 +788,8 @@ public class Program {
         // 4. THE FLAG OF SUCCESS IS ONE PUSHED INTO THE STACK
         if (callResult) {
             stackPushOne();
-        } else {
+        }
+        else {
             stackPushZero();
         }
     }
@@ -828,7 +829,7 @@ public class Program {
         Program program = new Program(config, precompiledContracts, blockFactory, activations, programCode, programInvoke, internalTx, deletedAccountsInBlock);
 
         vm.play(program);
-        childResult = program.getResult();
+        childResult  = program.getResult();
 
         getTrace().addSubTrace(ProgramSubtrace.newCallSubtrace(CallType.fromMsgType(msg.getType()), program.getProgramInvoke(), program.getResult(), msg.getCodeAddress(), program.getTrace().getSubtraces()));
 
@@ -841,7 +842,7 @@ public class Program {
             if (isGasLogEnabled) {
                 gasLogger.debug("contract run halted by Exception: contract: [{}], exception: ",
                         contextAddress,
-                        childResult.getException());
+                        childResult .getException());
             }
 
             internalTx.reject();
@@ -860,6 +861,7 @@ public class Program {
             // 4. THE FLAG OF SUCCESS IS ONE PUSHED INTO THE STACK
             track.commit();
         }
+
 
 
         // 3. APPLY RESULTS: childResult.getHReturn() into out_memory allocated
@@ -893,7 +895,7 @@ public class Program {
             gasLogger.info("[{}] Spent for cause: [{}], gas: [{}]", invoke.hashCode(), cause, gasValue);
         }
 
-        if (getRemainingGas() < gasValue) {
+        if (getRemainingGas()  < gasValue) {
             throw ExceptionHelper.notEnoughSpendingGas(this, cause, gasValue);
         }
 
@@ -904,7 +906,7 @@ public class Program {
         setPC(startAddr);
         stackClear();
         clearUsedGas();
-        stopped = false;
+        stopped=false;
     }
 
     private void clearUsedGas() {
@@ -959,16 +961,15 @@ public class Program {
     }
 
     public Keccak256 getCodeHashAt(RskAddress addr, boolean standard) {
-        if (standard) {
+        if(standard) {
             return invoke.getRepository().getCodeHashStandard(addr);
-        } else {
+        }
+        else {
             return invoke.getRepository().getCodeHashNonStandard(addr);
         }
     }
 
-    public Keccak256 getCodeHashAt(DataWord address, boolean standard) {
-        return getCodeHashAt(new RskAddress(address), standard);
-    }
+    public Keccak256 getCodeHashAt(DataWord address, boolean standard) { return getCodeHashAt(new RskAddress(address), standard); }
 
     public int getCodeLengthAt(RskAddress addr) {
         return invoke.getRepository().getCodeLength(addr);
@@ -1001,7 +1002,7 @@ public class Program {
 
     public DataWord getBlockHash(long index) {
         long bn = this.getNumber().longValue();
-        if ((index < bn) && (index >= Math.max(0, bn - 256))) {
+        if ((index <  bn) && (index >= Math.max(0, bn - 256))) {
             return DataWord.valueOf(this.invoke.getBlockStore().getBlockHashByNumber(index, getPrevHash().getData()));
         } else {
             return DataWord.ZERO;
@@ -1026,7 +1027,7 @@ public class Program {
     }
 
     public long getRemainingGas() {
-        return invoke.getGas() - getResult().getGasUsed();
+        return invoke.getGas()- getResult().getGasUsed();
     }
 
     public DataWord getCallValue() {
@@ -1090,7 +1091,7 @@ public class Program {
     }
 
     public String memoryToString() {
-        if (memory.size() > 100000) {
+        if (memory.size()>100000) {
             return "<Memory too long to show>";
         } else {
             return memory.toString();
@@ -1134,7 +1135,8 @@ public class Program {
                         .append("(")
                         .append(memory.size())
                         .append(") bytes");
-            } else {
+            }
+            else {
                 for (int i = 0; i < memory.size(); ++i) {
 
                     byte value = memory.readByte(i);
@@ -1283,7 +1285,8 @@ public class Program {
 
             if (op == OpCode.JUMPDEST) {
                 jumpdestSet.set(i);
-            } else if (op == OpCode.BEGINSUB) {
+            }
+            else if (op == OpCode.BEGINSUB) {
                 beginsubSet.set(i);
             }
 
@@ -1406,13 +1409,13 @@ public class Program {
 
             Block executionBlock = blockFactory.newBlock(
                     blockFactory.getBlockHeaderBuilder()
-                            .setParentHash(getPrevHash().getData())
-                            .setCoinbase(new RskAddress(getCoinbase().getLast20Bytes()))
-                            .setDifficultyFromBytes(getDifficulty().getData())
-                            .setNumber(getNumber().longValue())
-                            .setGasLimit(getGasLimit().getData())
-                            .setTimestamp(getTimestamp().longValue())
-                            .build(),
+                        .setParentHash(getPrevHash().getData())
+                        .setCoinbase(new RskAddress(getCoinbase().getLast20Bytes()))
+                        .setDifficultyFromBytes(getDifficulty().getData())
+                        .setNumber(getNumber().longValue())
+                        .setGasLimit(getGasLimit().getData())
+                        .setTimestamp(getTimestamp().longValue())
+                        .build(),
                     Collections.emptyList(),
                     Collections.emptyList()
             );
@@ -1569,8 +1572,7 @@ public class Program {
 
     public static class ExceptionHelper {
 
-        private ExceptionHelper() {
-        }
+        private ExceptionHelper() { }
 
         public static StaticCallModificationException modificationException(@Nonnull Program program) {
             return new StaticCallModificationException("Attempt to call a state modifying opcode inside STATICCALL: tx[%s]", extractTxHash(program));
@@ -1596,13 +1598,11 @@ public class Program {
         public static OutOfGasException gasOverflow(@Nonnull Program program, BigInteger actualGas, BigInteger gasLimit) {
             return new OutOfGasException("Gas value overflow: actualGas[%d], gasLimit[%d], tx[%s]", actualGas.longValue(), gasLimit.longValue(), extractTxHash(program));
         }
-
         public static OutOfGasException gasOverflow(@Nonnull Program program, long actualGas, BigInteger gasLimit) {
             return new OutOfGasException("Gas value overflow: actualGas[%d], gasLimit[%d], tx[%s]", actualGas, gasLimit.longValue(), extractTxHash(program));
         }
-
         public static IllegalOperationException invalidOpCode(@Nonnull Program program) {
-            return new IllegalOperationException("Invalid operation code: opcode[%s], tx[%s]", ByteUtil.toHexString(new byte[]{program.getCurrentOp()}, 0, 1), extractTxHash(program));
+            return new IllegalOperationException("Invalid operation code: opcode[%s], tx[%s]", ByteUtil.toHexString(new byte[] {program.getCurrentOp()}, 0, 1), extractTxHash(program));
         }
 
         public static BadJumpDestinationException badJumpDestination(@Nonnull Program program, int pc) {
@@ -1667,22 +1667,16 @@ public class Program {
     public byte getExeVersion() {
         return exeVersion;
     }
-
     public byte getScriptVersion() {
         return scriptVersion;
     }
-
-    public int getStartAddr() {
+    public int getStartAddr(){
         return startAddr;
     }
 
     @VisibleForTesting
-    public BitSet getJumpdestSet() {
-        return this.jumpdestSet;
-    }
+    public BitSet getJumpdestSet() { return this.jumpdestSet; }
 
     @VisibleForTesting
-    public BitSet getBeginsubSet() {
-        return this.beginsubSet;
-    }
+    public BitSet getBeginsubSet() { return this.beginsubSet; }
 }

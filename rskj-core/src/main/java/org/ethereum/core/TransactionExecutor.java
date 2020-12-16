@@ -171,7 +171,7 @@ public class TransactionExecutor {
 
         Coin totalCost = tx.getValue();
 
-        if (basicTxCost > 0) {
+        if (basicTxCost > 0 ) {
             // add gas cost only for priced transactions
             Coin txGasCost = tx.getGasPrice().multiply(BigInteger.valueOf(txGasLimit));
             totalCost = totalCost.add(txGasCost);
@@ -214,8 +214,8 @@ public class TransactionExecutor {
             logger.warn("Tx Included in the following block: {}", this.executionBlock);
 
             panicProcessor.panic("invalidsignature",
-                    String.format("Transaction %s signature not accepted: %s",
-                            tx.getHash(), tx.getSignature()));
+                                 String.format("Transaction %s signature not accepted: %s",
+                                               tx.getHash(), tx.getSignature()));
             execError(String.format("Transaction signature not accepted: %s", tx.getSignature()));
 
             return false;
@@ -318,7 +318,7 @@ public class TransactionExecutor {
             long gasUsed = GasCost.add(requiredGas, basicTxCost);
             if (!localCall && !enoughGas(txGasLimit, requiredGas, gasUsed)) {
                 // no refund no endowment
-                execError(String.format("Out of Gas calling precompiled contract at block %d " +
+                execError(String.format( "Out of Gas calling precompiled contract at block %d " +
                                 "for address 0x%s. required: %s, used: %s, left: %s ",
                         executionBlock.getNumber(), targetAddress.toString(), requiredGas, gasUsed, mEndGas));
                 mEndGas = 0;
@@ -473,7 +473,7 @@ public class TransactionExecutor {
             result = program.getResult();
             result.setHReturn(EMPTY_BYTE_ARRAY);
         } else {
-            mEndGas = GasCost.subtract(mEndGas, returnDataGasValue);
+            mEndGas = GasCost.subtract(mEndGas,  returnDataGasValue);
             program.spendGas(returnDataGasValue, "CONTRACT DATA COST");
             cacheTrack.saveCode(tx.getContractAddress(), result.getHReturn());
         }
@@ -487,7 +487,7 @@ public class TransactionExecutor {
             receipt.setTransaction(tx);
             receipt.setLogInfoList(getVMLogs());
             receipt.setGasUsed(getGasUsed());
-            receipt.setStatus(executionError.isEmpty() ? TransactionReceipt.SUCCESS_STATUS : TransactionReceipt.FAILED_STATUS);
+            receipt.setStatus(executionError.isEmpty()?TransactionReceipt.SUCCESS_STATUS:TransactionReceipt.FAILED_STATUS);
         }
         return receipt;
     }
@@ -545,7 +545,7 @@ public class TransactionExecutor {
         Coin summaryFee = summary.getFee();
 
         //TODO: REMOVE THIS WHEN THE LocalBLockTests starts working with REMASC
-        if (enableRemasc) {
+        if(enableRemasc) {
             logger.trace("Adding fee to remasc contract account");
             track.addBalance(PrecompiledContracts.REMASC_ADDR, summaryFee);
         } else {
@@ -575,7 +575,8 @@ public class TransactionExecutor {
             // TODO improve this settings; the trace should already have the values
             ProgramTrace trace = program.getTrace().result(result.getHReturn()).error(result.getException()).revert(result.isRevert());
             programTraceProcessor.processProgramTrace(trace, tx.getHash());
-        } else {
+        }
+        else {
             TransferInvoke invoke = new TransferInvoke(DataWord.valueOf(tx.getSender().getBytes()), DataWord.valueOf(tx.getReceiveAddress().getBytes()), 0L, DataWord.valueOf(tx.getValue().getBytes()));
 
             SummarizedProgramTrace trace = new SummarizedProgramTrace(invoke);
@@ -611,7 +612,5 @@ public class TransactionExecutor {
         return toBI(tx.getGasLimit()).subtract(toBI(mEndGas)).longValue();
     }
 
-    public Coin getPaidFees() {
-        return paidFees;
-    }
+    public Coin getPaidFees() { return paidFees; }
 }
