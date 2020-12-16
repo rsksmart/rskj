@@ -778,17 +778,15 @@ public class BridgeUtilsTest {
     public void calculateMerkleRoot_hashes_in_pmt() {
         BridgeConstants bridgeConstants = BridgeRegTestConstants.getInstance();
         NetworkParameters networkParameters = bridgeConstants.getBtcParams();
-
         BtcTransaction tx = new BtcTransaction(networkParameters);
-
         byte[] bits = new byte[1];
-        bits[0] = 0x01;
+        bits[0] = 0x5;
         List<Sha256Hash> hashes = new ArrayList<>();
+        hashes.add(Sha256Hash.ZERO_HASH);
         hashes.add(tx.getHash());
-
-        PartialMerkleTree pmt = new PartialMerkleTree(networkParameters, bits, hashes, 1);
-
-        Assert.assertEquals(Sha256Hash.wrap("d21633ba23f70118185227be58a63527675641ad37967e2aa461559f577aec43"), BridgeUtils.calculateMerkleRoot(networkParameters, pmt.bitcoinSerialize(), tx.getHash()));
+        PartialMerkleTree pmt = new PartialMerkleTree(networkParameters, bits, hashes, 2);
+        Sha256Hash merkleRoot = BridgeUtils.calculateMerkleRoot(networkParameters, pmt.bitcoinSerialize(), tx.getHash());
+        Assert.assertNotNull(merkleRoot);
     }
 
     @Test(expected = VerificationException.class)
@@ -946,6 +944,21 @@ public class BridgeUtilsTest {
 
         // Assert
         Assert.assertFalse(isSigned);
+    }
+
+    @Test
+    public void extractAddressVersionFromBytes() {
+        byte[] addressBytes = Hex.decode("006f0febdbf4739e9fe6724370a7e99cb25d7be5ca99");
+        int obtainedVersion = BridgeUtils.extractAddressVersionFromBytes(addressBytes);
+        Assert.assertEquals(111, obtainedVersion);
+    }
+
+    @Test
+    public void extractHash160FromBytes() {
+        byte[] addressBytes = Hex.decode("006f0febdbf4739e9fe6724370a7e99cb25d7be5ca99");
+        byte[] hash160 = Hex.decode("0febdbf4739e9fe6724370a7e99cb25d7be5ca99");
+        byte[] obtainedHash160 = BridgeUtils.extractHash160FromBytes(addressBytes);
+        Assert.assertArrayEquals(hash160, obtainedHash160);
     }
 
     public void test_getSpendWallet(boolean isFastBridgeCompatible) throws UTXOProviderException {
