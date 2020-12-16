@@ -1439,7 +1439,7 @@ public class Program {
     }
 
     /**
-     * This is for compatibility before RSKIPNEW, that no error handling were implemented when calling to precompiled contracts.
+     * This is for compatibility before RSKIP197, that no error handling were implemented when calling to precompiled contracts.
      */
     private void executePrecompiled(PrecompiledContract contract, MessageCall msg, long requiredGas, Repository track, byte[] data) {
         try {
@@ -1457,7 +1457,7 @@ public class Program {
     }
 
     /**
-     * This is after RSKIPNEW, where we fix the way in which error is handled after a precompiled execution.
+     * This is after RSKIP197, where we fix the way in which error is handled after a precompiled execution.
      */
     private void executePrecompiledAndHandleError(PrecompiledContract contract, MessageCall msg, long requiredGas, Repository track, byte[] data) {
         try {
