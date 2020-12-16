@@ -55,7 +55,7 @@ public class ProgramBeforeRSKIP197Test extends ProgramTest {
     protected ActivationConfig.ForBlock getBlockchainConfig() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(any())).thenReturn(true);
-        when(activations.isActive(ConsensusRule.RSKIPNEW)).thenReturn(false);
+        when(activations.isActive(ConsensusRule.RSKIP197)).thenReturn(false);
         return activations;
     }
 }

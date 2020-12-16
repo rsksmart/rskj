@@ -1430,7 +1430,7 @@ public class Program {
             track.rollback();
             this.cleanReturnDataBuffer();
         } else {
-            if (getActivations().isActive(ConsensusRule.RSKIPNEW)) {
+            if (getActivations().isActive(ConsensusRule.RSKIP197)) {
                 executePrecompiledAndHandleError(contract, msg, requiredGas, track, data);
             } else {
                 executePrecompiled(contract, msg, requiredGas, track, data);
