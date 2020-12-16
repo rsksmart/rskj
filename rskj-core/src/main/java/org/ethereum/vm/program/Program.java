@@ -1439,8 +1439,11 @@ public class Program {
     }
 
     /**
-     * This is for compatibility before RSKIP197, that no error handling were implemented when calling to precompiled contracts.
+     * This is for compatibility before RSKIP197, no error handling was implemented when calling to precompiled contracts.
+     *
+     * This method shouldn't be modified, all new changes should go to executePrecompiledAndHandleError() method
      */
+    @Deprecated
     private void executePrecompiled(PrecompiledContract contract, MessageCall msg, long requiredGas, Repository track, byte[] data) {
         try {
             this.refundGas(msg.getGas().longValue() - requiredGas, CALL_PRECOMPILED_CAUSE);
