@@ -39,7 +39,6 @@ import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
-import org.ethereum.solidity.SolidityType;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.LogInfo;
@@ -1077,10 +1076,22 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             int height = ((BigInteger) args[1]).intValue();
             byte[] pmtSerialized = (byte[]) args[2];
             Keccak256 derivationArgumentsHash = new Keccak256((byte[]) args[3]);
-            Address userRefundAddress = new Address(bridgeConstants.getBtcParams(), (byte[]) args[4]);
+            // Parse data to create BTC user refund address with version and hash
+            byte[] refundAddressInfo = (byte[]) args[4];
+            Address userRefundAddress = new Address(
+                bridgeConstants.getBtcParams(),
+                BridgeUtils.extractAddressVersionFromBytes(refundAddressInfo),
+                BridgeUtils.extractHash160FromBytes(refundAddressInfo)
+            );
             // A DataWord cast is used because a SolidityType "address" is decoded using this specific type.
             RskAddress lbcAddress = new RskAddress((DataWord) args[5]);
-            Address lpBtcAddress = new Address(bridgeConstants.getBtcParams(), (byte[]) args[6]);
+            // Parse data to create BTC liquidity provider address with version and hash
+            byte[] lpAddressInfo = (byte[]) args[6];
+            Address lpBtcAddress = new Address(
+                bridgeConstants.getBtcParams(),
+                BridgeUtils.extractAddressVersionFromBytes(lpAddressInfo),
+                BridgeUtils.extractHash160FromBytes(lpAddressInfo)
+            );
             boolean shouldTransferToContract = ((boolean) args[7]);
 
             return bridgeSupport.registerFastBridgeBtcTransaction(

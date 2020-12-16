@@ -421,4 +421,16 @@ public class BridgeUtils {
         }
         return false;
     }
+
+    public static int extractAddressVersionFromBytes(byte[] addressBytes) {
+        byte[] versionBytes = new byte[2];
+        System.arraycopy(addressBytes, 0, versionBytes, 0, 2);
+        return new BigInteger(versionBytes).intValue();
+    }
+
+    public static byte[] extractHash160FromBytes(byte[] addressBytes) {
+        byte[] hashBytes = new byte[20];
+        System.arraycopy(addressBytes, 2, hashBytes, 0, 20);
+        return hashBytes;
+    }
 }

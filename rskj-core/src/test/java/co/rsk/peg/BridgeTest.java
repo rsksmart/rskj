@@ -248,11 +248,11 @@ public class BridgeTest {
 
         BtcECKey btcECKeyRefund = new BtcECKey();
         Address refundBtcAddress = btcECKeyRefund.toAddress(networkParameters);
-        byte[] pubKeyHashRefund = btcECKeyRefund.getPubKeyHash();
+        byte[] refundBtcAddressBytes = addressToByteArray(refundBtcAddress);
 
         BtcECKey btcECKeyLp = new BtcECKey();
         Address lpBtcAddress = btcECKeyLp.toAddress(networkParameters);
-        byte[] pubKeyHashLp = btcECKeyLp.getPubKeyHash();
+        byte[] lpBtcAddressBytes = addressToByteArray(lpBtcAddress);
 
         ECKey ecKey = new ECKey();
         RskAddress rskAddress = new RskAddress(ecKey.getAddress());
@@ -262,9 +262,9 @@ public class BridgeTest {
             1,
             value,
             value,
-            pubKeyHashRefund,
+            refundBtcAddressBytes,
             rskAddress.toHexString(),
-            pubKeyHashLp,
+            lpBtcAddressBytes,
             true
         );
 
@@ -373,4 +373,17 @@ public class BridgeTest {
         return new BlockGenerator().getGenesisBlock();
     }
 
+    private byte[] addressToByteArray(Address address) {
+        byte[] versionWithoutZeros = BigInteger.valueOf(address.getVersion()).toByteArray();
+        byte[] version = new byte[2];
+        System.arraycopy(new byte[2], 0, version, 0, 2);
+        System.arraycopy(versionWithoutZeros, 0, version, versionWithoutZeros.length, versionWithoutZeros.length);
+
+        byte[] hash = address.getHash160();
+        byte[] addressBytes = new byte[version.length + hash.length];
+        System.arraycopy(version, 0, addressBytes, 0, version.length);
+        System.arraycopy(hash, 0, addressBytes, version.length, hash.length);
+
+        return addressBytes;
+    }
 }
