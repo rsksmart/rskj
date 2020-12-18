@@ -25,7 +25,10 @@ import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.script.ScriptChunk;
 import co.rsk.bitcoinj.store.BtcBlockStore;
 import co.rsk.crypto.Keccak256;
-import co.rsk.peg.*;
+import co.rsk.peg.Bridge;
+import co.rsk.peg.BridgeStorageProvider;
+import co.rsk.peg.Federation;
+import co.rsk.peg.PegTestUtils;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.vm.exception.VMException;
@@ -59,8 +62,7 @@ public class AddSignatureTest extends BridgePerformanceTestCase {
         addSignature_nonFullySigned(100, stats);
         addSignature_fullySigned(100, stats);
 
-        BridgePerformanceTest.addStats(stats);
-        Assert.assertTrue(true);
+        Assert.assertTrue(BridgePerformanceTest.addStats(stats));
     }
 
     private void addSignature_nonFullySigned(int times, ExecutionStats stats) throws VMException {

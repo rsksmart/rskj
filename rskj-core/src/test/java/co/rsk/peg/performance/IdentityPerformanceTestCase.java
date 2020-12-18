@@ -38,8 +38,7 @@ public class IdentityPerformanceTestCase extends PrecompiledContractPerformanceT
 
         doIdentity(environmentBuilder, stats, 2000);
 
-        IdentityPerformanceTest.addStats(stats);
-        Assert.assertTrue(true);
+        Assert.assertTrue(IdentityPerformanceTest.addStats(stats));
     }
 
     private void doIdentity(EnvironmentBuilder environmentBuilder, ExecutionStats stats, int numCases) throws IOException, VMException {

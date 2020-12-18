@@ -48,8 +48,7 @@ public class RegisterBtcTransactionTest extends BridgePerformanceTestCase {
         registerBtcTransaction_lockSuccess(100, stats);
         registerBtcTransaction_alreadyProcessed(100, stats);
         registerBtcTransaction_notEnoughConfirmations(100, stats);
-        BridgePerformanceTest.addStats(stats);
-        Assert.assertTrue(true);
+        Assert.assertTrue(BridgePerformanceTest.addStats(stats));
     }
 
     private void registerBtcTransaction_lockSuccess(int times, ExecutionStats stats) throws VMException {

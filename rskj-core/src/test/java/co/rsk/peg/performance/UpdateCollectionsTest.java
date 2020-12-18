@@ -51,8 +51,7 @@ public class UpdateCollectionsTest extends BridgePerformanceTestCase {
         updateCollections_buildReleaseTxs(stats, 100);
         updateCollections_confirmTxs(stats, 300);
 
-        BridgePerformanceTest.addStats(stats);
-        Assert.assertTrue(true);
+        Assert.assertTrue(BridgePerformanceTest.addStats(stats));
     }
 
     private void updateCollections_nothing(ExecutionStats stats, int numCases) throws IOException, VMException {

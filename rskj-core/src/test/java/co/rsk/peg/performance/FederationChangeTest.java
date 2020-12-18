@@ -58,8 +58,7 @@ public class FederationChangeTest extends BridgePerformanceTestCase {
         ExecutionStats stats = new ExecutionStats("createFederation");
         createFederation_noWinner(200, stats);
         createFederation_winner(200, stats);
-        BridgePerformanceTest.addStats(stats);
-        Assert.assertTrue(true);
+        Assert.assertTrue(BridgePerformanceTest.addStats(stats));
     }
 
     private void createFederation_noWinner(int times, ExecutionStats stats) throws VMException {
@@ -91,8 +90,7 @@ public class FederationChangeTest extends BridgePerformanceTestCase {
         ExecutionStats stats = new ExecutionStats("addFederatorPublicKey");
         addFederatorPublicKey_noWinner(200, stats);
         addFederatorPublicKey_winner(200, stats);
-        BridgePerformanceTest.addStats(stats);
-        Assert.assertTrue(true);
+        Assert.assertTrue(BridgePerformanceTest.addStats(stats));
     }
 
     private void addFederatorPublicKey_noWinner(int times, ExecutionStats stats) throws VMException {
@@ -127,8 +125,7 @@ public class FederationChangeTest extends BridgePerformanceTestCase {
         ExecutionStats stats = new ExecutionStats("commitFederation");
         commitFederation_noWinner(200, stats);
         commitFederation_winner(200, stats);
-        BridgePerformanceTest.addStats(stats);
-        Assert.assertTrue(true);
+        Assert.assertTrue(BridgePerformanceTest.addStats(stats));
     }
 
     private void commitFederation_noWinner(int times, ExecutionStats stats) throws VMException {
@@ -160,8 +157,7 @@ public class FederationChangeTest extends BridgePerformanceTestCase {
         ExecutionStats stats = new ExecutionStats("rollbackFederation");
         rollbackFederation_noWinner(200, stats);
         rollbackFederation_winner(200, stats);
-        BridgePerformanceTest.addStats(stats);
-        Assert.assertTrue(true);
+        Assert.assertTrue(BridgePerformanceTest.addStats(stats));
     }
 
     private void rollbackFederation_noWinner(int times, ExecutionStats stats) throws VMException {
