@@ -86,6 +86,8 @@ public abstract class SystemProperties {
     public static final String PROPERTY_PUBLIC_IP = "public.ip";
     public static final String PROPERTY_BIND_ADDRESS = "bind_address";
 
+    public static final String PROPERTY_PRINT_SYSTEM_INFO = "system.printInfo";
+
     /* Testing */
     private static final Boolean DEFAULT_VMTEST_LOAD_LOCAL = false;
 
@@ -540,6 +542,10 @@ public abstract class SystemProperties {
     public long scoringAddressesPunishmentMaximumDuration() {
         // default value: 1 week
         return TimeUnit.MINUTES.toMillis(getLong("scoring.addresses.maximum", TimeUnit.DAYS.toMinutes(7)));
+    }
+
+    public boolean shouldPrintSystemInfo() {
+        return getBoolean(PROPERTY_PRINT_SYSTEM_INFO, false);
     }
 
     protected int getInt(String path, int val) {
