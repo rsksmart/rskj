@@ -1465,25 +1465,26 @@ public class Program {
     private void executePrecompiledAndHandleError(PrecompiledContract contract, MessageCall msg, long requiredGas, Repository track, byte[] data) {
         try {
             logger.trace("Executing Precompiled contract...");
-            byte[] out = contract.execute(data);
-            if (getActivations().isActive(ConsensusRule.RSKIP90)) {
-                logger.trace("Executing Precompiled setting output.");
-                this.returnDataBuffer = out;
-            }
-            saveOutAfterExecution(msg, out);
+            this.returnDataBuffer = contract.execute(data);
+            logger.trace("Executing Precompiled setting output.");
+            this.memorySaveLimited(msg.getOutDataOffs().intValue(), this.returnDataBuffer, msg.getOutDataSize().intValue());
             this.stackPushOne();
             track.commit();
         } catch (VMException e) {
             logger.trace("Precompiled execution error. Pushing Zero to stack and performing rollback.", e);
             this.stackPushZero();
             track.rollback();
-            this.cleanReturnDataBuffer();
+            this.returnDataBuffer = null;
         } finally {
             final long refundingGas = msg.getGas().longValue() - requiredGas;
             this.refundGas(refundingGas, CALL_PRECOMPILED_CAUSE);
         }
     }
 
+    /**
+     * This is for compatibility before RSKIP197. {@code memorySaveLimited()} should be called directly instead.
+     */
+    @Deprecated
     private void saveOutAfterExecution(MessageCall msg, byte[] out) {
         logger.trace("Executing Precompiled saving memory.");
         // Avoid saving null returns to memory and limit the memory it can use.
