@@ -101,13 +101,7 @@ public class AsyncNodeBlockProcessor extends NodeBlockProcessor implements Inter
         if (readyForProcessing) {
             // Validate block if it can be added to the queue for processing
             if (isBlockValid(block)) {
-                boolean offer = blocksToProcess.offer(new BlockInfo(sender, block));
-                if (offer) {
-                    logger.trace("Added block with number {} and hash {} from {} to the queue", blockNumber, blockHash, peer);
-                } else {
-                    // This should not happen as the queue is unbounded
-                    logger.warn("Cannot add block for processing into the queue with number {} {} from {}", blockNumber, blockHash, peer);
-                }
+                scheduleForProcessing(new BlockInfo(sender, block), blockNumber, blockHash, peer);
 
                 return scheduledForProcessingResult(block, start);
             }
@@ -187,6 +181,21 @@ public class AsyncNodeBlockProcessor extends NodeBlockProcessor implements Inter
 
     private boolean isBlockValid(Block block) {
         return blockValidator.isValid(block);
+    }
+
+    private void scheduleForProcessing(BlockInfo blockInfo, long blockNumber, String blockHash, String peer) {
+        if (stopped) {
+            logger.warn("{} is stopped. Block with number {} and hash {} from {} may not be processed",
+                    AsyncNodeBlockProcessor.class.getSimpleName(), blockNumber, blockHash, peer);
+        }
+
+        boolean offer = blocksToProcess.offer(blockInfo);
+        if (offer) {
+            logger.trace("Added block with number {} and hash {} from {} to the queue", blockNumber, blockHash, peer);
+        } else {
+            // This should not happen as the queue is unbounded
+            logger.warn("Cannot add block for processing into the queue with number {} {} from {}", blockNumber, blockHash, peer);
+        }
     }
 
     private static BlockProcessResult scheduledForProcessingResult(@Nonnull Block block, @Nonnull Instant start) {
