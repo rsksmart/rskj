@@ -319,8 +319,8 @@ public class TransactionExecutor {
     private void execute() {
         logger.trace("Execute transaction {} {}", toBI(tx.getNonce()), tx.getHash());
         // set reference timestamp for rent computations
-        refTimeStamp = this.executionBlock.getTimestamp();  //used with Rauls benchmarking tool
-        //refTimeStamp = Instant.now().getEpochSecond(); // this can change when block executed twice (connection)
+        refTimeStamp = this.executionBlock.getTimestamp();  //mock with 50L*365*24*3600 (2 years after RSK start)
+        //refTimeStamp = Instant.now().getEpochSecond(); // AVOID!! this can change when block executed twice (connection)
                         
         // #mish add sender to Map of accessed nodes (for storage rent tracking)
         // but do NOT add receiver address yet, as it may be a pre-compiled contract

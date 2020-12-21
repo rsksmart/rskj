@@ -320,13 +320,13 @@ public class TransactionExecutorTest {
 
         return txExecutor.executeTransaction();
     }
-
+    // mock a TX (for storage rent, gaslimit is repeated, not actually split)
     private Transaction getTransaction(RskAddress sender, RskAddress receiver, byte[] gasLimit, byte[] txNonce, Coin gasPrice, Coin value) {
         Transaction transaction = mock(Transaction.class);
         when(transaction.getSender()).thenReturn(sender);
         when(transaction.getGasPrice()).thenReturn(gasPrice);
         when(transaction.getGasLimit()).thenReturn(gasLimit);
-        when(transaction.getRentGasLimit()).thenReturn(gasLimit); //#mish
+        when(transaction.getRentGasLimit()).thenReturn(gasLimit); //#mish, this is mocked, so budget is not actually split
         when(transaction.getSender(any())).thenCallRealMethod();
         when(transaction.getNonce()).thenReturn(txNonce);
         when(transaction.getReceiveAddress()).thenReturn(receiver);
@@ -335,7 +335,7 @@ public class TransactionExecutorTest {
         return transaction;
     }
 
-    // #mish: May 2020 Storage rent related tests
+    // #mish: Storage rent related tests
     
     
     // #mish: modified from txInBlockIsExecutedAndShouldBeAddedInCache()
@@ -359,7 +359,8 @@ public class TransactionExecutorTest {
         Transaction transaction = getTransaction(sender, receiver, gasLimit, txNonce, gasPrice, value);
 
         when(executionBlock.getGasLimit()).thenReturn(BigInteger.valueOf(6_800_000).toByteArray());
-        
+        when(executionBlock.getTimestamp()).thenReturn(50L*365*24*3600); //#mish 2 years after RSK start date
+
         //mock repository for accessedNodeAdder()
         when(repository.getAccountNodeKey(sender)).thenReturn(new ByteArrayWrapper("senderKey".getBytes()));
         when(repository.getAccountNodeValueLength(sender)).thenReturn(new Uint24(128));
@@ -390,16 +391,15 @@ public class TransactionExecutorTest {
             //assertEquals(70_000L, txExecutor.getResult().getAccessedNodes().get(DataWord.fromString("senderKey")).getLRPTime());
             //assertEquals(130_000L, txExecutor.getResult().getAccessedNodes().get(DataWord.fromString("receiverKey")).getLRPTime());
 
-            // Rent computation within Tx Exec uses time.now() value, so mocking is not needed    
             long rentDueSender = txExecutor.getResult().getAccessedNodes().get(new ByteArrayWrapper("senderKey".getBytes())).getRentDue();
             long rentDueReceiver = txExecutor.getResult().getAccessedNodes().get(new ByteArrayWrapper("receiverKey".getBytes())).getRentDue(); 
             long estimatedRentGas = txExecutor.getEstRentGas();
-            //System.out.println(Instant.now().getEpochSecond());
             System.out.println("Sender rent: " + rentDueSender);
             System.out.println("Receiver rent: " + rentDueReceiver);
             //System.out.println("Estimted rent: " + estimatedRentGas);
             assertEquals(rentDueSender + rentDueReceiver, estimatedRentGas);
-            System.out.println("execution gas used: " + txExecutor.getResult().getGasUsed());
+
+            System.out.println("execution gas used (0 expected, basicTxCost=0): " + txExecutor.getResult().getGasUsed());
             System.out.println("rentgas used: " + txExecutor.getResult().getRentGasUsed());
         } else {
             System.out.println("TX execution failed");
