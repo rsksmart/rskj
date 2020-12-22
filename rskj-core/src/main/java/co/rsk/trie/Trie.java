@@ -154,13 +154,13 @@ public class Trie {
         this(store, sharedPath, value, left, right, valueLength, valueHash, null);
     }
 
-    //  #mish full constructor, without storage rent
+    //  #mish full constructor, without storage rent, default to node version 1
     public Trie(TrieStore store, TrieKeySlice sharedPath, byte[] value, NodeReference left, NodeReference right, Uint24 valueLength, Keccak256 valueHash, VarInt childrenSize) {
-        this(store, sharedPath, value, left, right, valueLength, valueHash, childrenSize, 0);
+        this(store, sharedPath, value, left, right, valueLength, valueHash, childrenSize, 0, (byte)1);
         checkValueLength();
     }
     
-    // #mish full constructor with storage rent and node version implicit
+    // #mish full constructor with storage rent and node version implicit. If rent timestamp is passed, should be version 2
     private Trie(TrieStore store, TrieKeySlice sharedPath, byte[] value, NodeReference left, NodeReference right, Uint24 valueLength, Keccak256 valueHash, VarInt childrenSize, long lastRentPaidTime) {
         this.value = value;
         this.left = left;
@@ -171,7 +171,7 @@ public class Trie {
         this.valueHash = valueHash;
         this.childrenSize = childrenSize;
         this.lastRentPaidTime = lastRentPaidTime;
-        this.nodeVersion = (byte)2;
+        this.nodeVersion = (byte)2; //#mish default to rskip107 version
         checkValueLength();
     }
 
@@ -298,7 +298,7 @@ public class Trie {
         byte flags = message.get();
         // #mish if we reached here, then it cannot be Orchid node. Either version 1 (no rent) or 2 (rent)
         // #flag for version "2" "0b10" in bit position 6,7 of flags
-        boolean containsRent = (flags & 0b10000000) == 0b10000000;
+        boolean containsRent = (flags & 0b10000000) == (byte) 0b10000000;
 
         boolean hasLongVal = (flags & 0b00100000) == 0b00100000;
         boolean sharedPrefixPresent = (flags & 0b00010000) == 0b00010000;
@@ -732,7 +732,8 @@ public class Trie {
     
     private void internalToMessage() {
         //#mish node version
-        boolean containsRent = this.nodeVersion == (byte)2;
+        boolean containsRent = this.nodeVersion == (byte) 2;
+
         Uint24 lvalue = this.valueLength;
         boolean hasLongVal = this.hasLongValue();
 
@@ -880,7 +881,8 @@ public class Trie {
 
         TrieKeySlice newSharedPath = trie.sharedPath.rebuildSharedPath(childImplicitByte, child.sharedPath);
         
-        return new Trie(child.store, newSharedPath, child.value, child.left, child.right, child.valueLength, child.valueHash, child.childrenSize, child.lastRentPaidTime);
+        return new Trie(child.store, newSharedPath, child.value, child.left, child.right, child.valueLength, 
+            child.valueHash, child.childrenSize, child.lastRentPaidTime, child.nodeVersion);
     }
 
     private static Uint24 getDataLength(byte[] value) {
@@ -928,7 +930,8 @@ public class Trie {
                     getDataLength(value),
                     null,
                     null,
-                    this.lastRentPaidTime
+                    this.lastRentPaidTime,
+                    this.nodeVersion
             );
         }
 
@@ -967,7 +970,8 @@ public class Trie {
             return null;
         }
     
-        return new Trie(this.store, this.sharedPath, this.value, newLeft, newRight, this.valueLength, this.valueHash, null, this.lastRentPaidTime);
+        return new Trie(this.store, this.sharedPath, this.value, newLeft, newRight, this.valueLength, this.valueHash,
+                         null, this.lastRentPaidTime, this.nodeVersion);
     }
 
     /* #mish: version of put to update rent paid time: 
@@ -1033,7 +1037,7 @@ public class Trie {
         // reconstruct the shared path
         TrieKeySlice newSharedPath = trie.sharedPath.rebuildSharedPath(childImplicitByte, child.sharedPath);
         return new Trie(child.store, newSharedPath, child.value, child.left, child.right, child.valueLength,
-         child.valueHash, child.childrenSize, child.lastRentPaidTime, child.nodeVersion);
+                            child.valueHash, child.childrenSize, child.lastRentPaidTime, child.nodeVersion);
     }
 
     // #mish: duplicated and extended internalPut to update a node's rent timestamp
@@ -1084,7 +1088,8 @@ public class Trie {
         }
 
         if (isEmptyTrie()) {
-            return new Trie(this.store, key, cloneArray(value), NodeReference.empty(), NodeReference.empty(), getDataLength(value), null, null, newLastRentPaidTime, (byte)2);
+            return new Trie(this.store, key, cloneArray(value), NodeReference.empty(), NodeReference.empty(),
+                             getDataLength(value), null, null, newLastRentPaidTime, (byte)2);
         }
 
         // this bit will be implicit and not present in a shared path
@@ -1118,7 +1123,7 @@ public class Trie {
             return null;
         }
         return new Trie(this.store, this.sharedPath, this.value, newLeft, newRight, this.valueLength, this.valueHash, null,
-                 this.lastRentPaidTime, this.nodeVersion);
+                                this.lastRentPaidTime, this.nodeVersion);
     } 
 
     //#mish maintain node version and rent paid timestamp for internal nodes
@@ -1142,7 +1147,8 @@ public class Trie {
             newRight = newChildReference;
         }
             //#mish internal node, keep rent timestamp and node version same as original node 
-        return new Trie(this.store, commonPath, null, newLeft, newRight, Uint24.ZERO, null,  null, this.lastRentPaidTime, this.nodeVersion);
+        return new Trie(this.store, commonPath, null, newLeft, newRight, Uint24.ZERO, null,  null,
+                                                             this.lastRentPaidTime, this.nodeVersion);
     }
 
     public boolean isTerminal() {
