@@ -123,15 +123,15 @@ public class Trie {
     // shared Path
     private final TrieKeySlice sharedPath;
 
-    // #mish. for storage rent  (RSKIP113): default to "-1"
+    // #mish. for storage rent  (RSKIP113): default to "0"
     // included in encoding for version 2 nodes
-    private long lastRentPaidTime = -1L; // some parts of the code use strings for timestamps, but long is typical
+    private long lastRentPaidTime = 0; // some parts of the code use strings for timestamps, but long is typical
     
     /*node version is include in flags (bit position 6,7)
     * Default "-1" to avoid automatic 0 as default. 
     * Intended use: "1" for rskip107 without rent, "2" with storage rent and "0" for Orchid
     */
-    private byte nodeVersion =  (byte) -1 ; 
+    private byte nodeVersion =  (byte) -1; 
 
     // default constructor, no secure
     /* #mish in main sources this is used (only?) in blockHasheshelper 
@@ -156,7 +156,7 @@ public class Trie {
 
     //  #mish full constructor, without storage rent, default to node version 1
     public Trie(TrieStore store, TrieKeySlice sharedPath, byte[] value, NodeReference left, NodeReference right, Uint24 valueLength, Keccak256 valueHash, VarInt childrenSize) {
-        this(store, sharedPath, value, left, right, valueLength, valueHash, childrenSize, 0, (byte)1);
+        this(store, sharedPath, value, left, right, valueLength, valueHash, childrenSize, 0, (byte) 1);
         checkValueLength();
     }
     
@@ -171,7 +171,7 @@ public class Trie {
         this.valueHash = valueHash;
         this.childrenSize = childrenSize;
         this.lastRentPaidTime = lastRentPaidTime;
-        this.nodeVersion = (byte)2; //#mish default to rskip107 version
+        this.nodeVersion = (byte) 2;
         checkValueLength();
     }
 
@@ -298,7 +298,8 @@ public class Trie {
         byte flags = message.get();
         // #mish if we reached here, then it cannot be Orchid node. Either version 1 (no rent) or 2 (rent)
         // #flag for version "2" "0b10" in bit position 6,7 of flags
-        boolean containsRent = (flags & 0b10000000) == (byte) 0b10000000;
+        // also use (byte) on both sides or in neither.
+        boolean containsRent = (byte) (flags & 0b10000000) == (byte) 0b10000000; 
 
         boolean hasLongVal = (flags & 0b00100000) == 0b00100000;
         boolean sharedPrefixPresent = (flags & 0b00010000) == 0b00010000;
@@ -1083,13 +1084,13 @@ public class Trie {
                     null,
                     null,
                     newLastRentPaidTime,
-                    (byte)2
+                    (byte) 2
             );
         }
 
         if (isEmptyTrie()) {
             return new Trie(this.store, key, cloneArray(value), NodeReference.empty(), NodeReference.empty(),
-                             getDataLength(value), null, null, newLastRentPaidTime, (byte)2);
+                             getDataLength(value), null, null, newLastRentPaidTime, (byte) 2);
         }
 
         // this bit will be implicit and not present in a shared path
@@ -1238,7 +1239,7 @@ public class Trie {
 
     private void checkValueLength() {
         if (value != null && value.length != valueLength.intValue()) {
-            // Serious DB inconsistency here
+            // Serious DB inconsistency here200010
             throw new IllegalArgumentException(INVALID_VALUE_LENGTH);
         }
 

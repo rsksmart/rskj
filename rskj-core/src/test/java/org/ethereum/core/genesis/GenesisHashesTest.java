@@ -57,14 +57,9 @@ public class GenesisHashesTest {
     ] 
      */
 
-
-    // #mish this fails with storage rent implementation because of changes to trie structure and consequently triehash
-    /** #mish 
-    For mainnet the stateroot handler 'convert()' uses orchidtrieroothash.
-    But for testnet (at least in this storage roent implementation), it uses just the genesistrie's hash
-    Which does not match.
-    Is RSKIP126 activation different in this implementation compared to rskj master? Unlikely. So mainnet is unaffected.
-    However, testnet, the trie has a different structure and gethash in rent implementation. This creates the difference  
+    /** 
+     * #mish was initially failing with storage rent implementation. But works fine with node versioning. 
+     * Genesis on Testnet uses node version 1. Storage rent is node version 2 
     */
     @Test
     public void testnetHashTest() {
@@ -81,10 +76,10 @@ public class GenesisHashesTest {
       parentHash=0000000000000000000000000000000000000000000000000000000000000000
       unclesHash=1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347
       coinbase=3333333333333333333333333333333333333333
+      
+      // #mish before node versioning fix, this was failing. 
       stateRoot=a7d7dbe50fadd39d816c1f928a88ea5aa58bd68a75705d07fc0e12e6881e7a31 // ERROR
-      // this should be
-                45bce5168430c42b3d568331753f900a32457b4f3748697cbd8375ff4da72641
-
+      
       txTrieHash=56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421
       receiptsTrieHash=56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421
       difficulty=1048576
