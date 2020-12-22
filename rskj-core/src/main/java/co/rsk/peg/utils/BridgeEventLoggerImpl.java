@@ -216,7 +216,26 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
         byte[] encodedData = event.encodeEventData(amount.getValue());
 
         this.logs.add(new LogInfo(BRIDGE_CONTRACT_ADDRESS, encodedTopics, encodedData));
+    }
 
+    public void logRejectedPegin(BtcTransaction btcTx, RejectedPeginReason reason) {
+        CallTransaction.Function event = BridgeEvents.REJECTED_PEGIN.getEvent();
+        byte[][] encodedTopicsInBytes = event.encodeEventTopics(btcTx.getHash().getBytes());
+        List<DataWord> encodedTopics = LogInfo.byteArrayToList(encodedTopicsInBytes);
+
+        byte[] encodedData = event.encodeEventData(reason.getValue());
+
+        this.logs.add(new LogInfo(BRIDGE_CONTRACT_ADDRESS, encodedTopics, encodedData));
+    }
+
+    public void logUnrefundablePegin(BtcTransaction btcTx, UnrefundablePeginReason reason) {
+        CallTransaction.Function event = BridgeEvents.UNREFUNDABLE_PEGIN.getEvent();
+        byte[][] encodedTopicsInBytes = event.encodeEventTopics(btcTx.getHash().getBytes());
+        List<DataWord> encodedTopics = LogInfo.byteArrayToList(encodedTopicsInBytes);
+
+        byte[] encodedData = event.encodeEventData(reason.getValue());
+
+        this.logs.add(new LogInfo(BRIDGE_CONTRACT_ADDRESS, encodedTopics, encodedData));
     }
 
     private byte[] flatKeys(List<BtcECKey> keys, Function<BtcECKey, byte[]> parser) {
