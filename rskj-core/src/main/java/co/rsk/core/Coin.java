@@ -120,4 +120,8 @@ public class Coin implements Comparable<Coin> {
     public static Coin fromBitcoin(co.rsk.bitcoinj.core.Coin val) {
         return new Coin(Denomination.satoshisToWeis(val.getValue()));
     }
+
+    public static Coin max(Coin a, Coin b) {
+        return a.compareTo(b) > 0 ? a : b;
+    }
 }
