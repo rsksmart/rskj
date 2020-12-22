@@ -13,6 +13,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * #mish storage rent changes Transaction RECEIPTS Trie root hash
+ * transaction receipt encoding `getEncoded(true)` includes rentGas
+ * `false` will exclude rentGas 
+ */
+
+
 public class BlockHashesHelper {
 
     private BlockHashesHelper() {
@@ -22,17 +29,16 @@ public class BlockHashesHelper {
     public static byte[] calculateReceiptsTrieRoot(List<TransactionReceipt> receipts, boolean isRskip126Enabled) {
         Trie trie = calculateReceiptsTrieRootFor(receipts);
         if (isRskip126Enabled) {
-            // #mish "false" indicates trie encoding does not include rent field (as if rent was not implemented)
-            return trie.getHash(true).getBytes(); 
+            return trie.getHash().getBytes(); 
         }
 
-        return trie.getHashOrchid(false).getBytes(); //#mish this boolean has nothing to do with storage rent
+        return trie.getHashOrchid(false).getBytes();
     }
 
     public static Trie calculateReceiptsTrieRootFor(List<TransactionReceipt> receipts) {
         Trie receiptsTrie = new Trie();
         for (int i = 0; i < receipts.size(); i++) {
-            //#mish "false" in getEncoded() will only use execution gas (as if rent is not implemented)
+            //#mish "false" in getEncoded() will only use execution gas (as if storage rent is not implemented)
             receiptsTrie = receiptsTrie.put(RLP.encodeInt(i), receipts.get(i).getEncoded(true));
         }
 
@@ -78,7 +84,7 @@ public class BlockHashesHelper {
     public static byte[] getTxTrieRoot(List<Transaction> transactions, boolean isRskip126Enabled) {
         Trie trie = getTxTrieRootFor(transactions);
         if (isRskip126Enabled) {
-            return trie.getHash(true).getBytes(); // false indicates do not include rent in encoding
+            return trie.getHash().getBytes();
         }
 
         return trie.getHashOrchid(false).getBytes();

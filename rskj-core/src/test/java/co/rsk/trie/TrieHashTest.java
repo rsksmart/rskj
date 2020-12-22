@@ -193,7 +193,7 @@ public class TrieHashTest {
     }
 
 
-    /** #mish make simple mods to test storage rent
+    /** #mish make simple mods to test storage rent renttest
         * test putWithRent()
         * test getHash(boolean) with rent timestamp included or excluded in the hash
         */
@@ -206,7 +206,7 @@ public class TrieHashTest {
                 .putWithRent("foo".getBytes(), TrieValueTest.makeValue(100), 1595876151)
                 .putWithRent("bar".getBytes(), TrieValueTest.makeValue(200), 1595876153);
 
-        Assert.assertEquals(trie1.getHash(false), trie2.getHash(false));
+        Assert.assertEquals(trie1.getHash(), trie2.getHash());
     }
 
     @Test
@@ -230,9 +230,11 @@ public class TrieHashTest {
                 .putWithRent("bar".getBytes(), TrieValueTest.makeValue(100), 4);
 
         // In assertion tests, note that once a trie is hashed the encoding is cached.. so be careful
-        Assert.assertNotEquals(trie1.getHash(false), trie2.getHash(true));
-        //Assert.assertNotEquals(trie1.getHash(false), trie3.getHash(false));
-        Assert.assertNotEquals(trie3.getHash(true), trie4.getHash(true));
+        Assert.assertEquals(trie1.getHash(), trie2.getHash());
+        //with node versioning, if version is NOT 2, then rent is not included
+        //this happens becos of default new Trie() gets version -1
+        Assert.assertNotEquals(trie3.getHash(), trie4.getHash()); //#mish fails with node versioning.. 
+                                                                //
 
     }  
 
@@ -240,7 +242,6 @@ public class TrieHashTest {
     public void triesWithSameKeyValueDifferentRents2() {
         //tries with same key value but different rent time stamps
         
-        // get hash without rent when each trie has only one node
         Trie trie1 = new Trie()
                 //.putWithRent("foo".getBytes(), TrieValueTest.makeValue(400), 1595876151)
                 .putWithRent("bar".getBytes(), TrieValueTest.makeValue(100), 1595876153);
@@ -248,8 +249,10 @@ public class TrieHashTest {
         Trie trie2 = new Trie()
                 //.putWithRent("foo".getBytes(), TrieValueTest.makeValue(400), 0)
                 .putWithRent("bar".getBytes(), TrieValueTest.makeValue(100), 4);
-        // "false" means rent is not included in encoding.. thus hashes match
-        Assert.assertEquals(trie1.getHash(false), trie2.getHash(false));
+        
+        // new Trie() no args.. node version defaults to -1 
+        // So despite the different LRTPs the hashes WILL match!!
+        Assert.assertNotEquals(trie1.getHash(), trie2.getHash());
         
         // get hash without rent. Tries have multiple nodes, and these get encoded with rent by default getHash() 
         // hence dropping rent when encoding root node still results in different hashes
@@ -262,7 +265,7 @@ public class TrieHashTest {
                 .putWithRent("bar".getBytes(), TrieValueTest.makeValue(100), 4);
 
         // In assertion tests, note that once a trie is hashed the encoding is cached.. so be careful
-        Assert.assertNotEquals(trie3.getHash(false), trie4.getHash(false));
+        Assert.assertNotEquals(trie3.getHash(), trie4.getHash());
 
     }
 

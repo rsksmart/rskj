@@ -123,7 +123,7 @@ public class MultiTrieStoreTest {
 
         Trie testTrie = new Trie();
         byte[] hashToRetrieve = testTrie.getHash().getBytes();
-        when(store2.retrieveValue(hashToRetrieve)).thenReturn(testTrie.toMessage(true));
+        when(store2.retrieveValue(hashToRetrieve)).thenReturn(testTrie.toMessage());
 
         Trie retrievedTrie = store.retrieve(hashToRetrieve).get();
         assertEquals(testTrie, retrievedTrie);
@@ -171,7 +171,7 @@ public class MultiTrieStoreTest {
 
         Trie testTrie = new Trie();
         byte[] hashToRetrieve = testTrie.getHash().getBytes();
-        when(store1.retrieveValue(hashToRetrieve)).thenReturn(testTrie.toMessage(true));
+        when(store1.retrieveValue(hashToRetrieve)).thenReturn(testTrie.toMessage());
 
         store.collect(hashToRetrieve);
 
@@ -195,7 +195,7 @@ public class MultiTrieStoreTest {
 
         Trie testTrie = new Trie();
         byte[] testTrieHash = testTrie.getHash().getBytes();
-        when(store1.retrieveValue(testTrieHash)).thenReturn(testTrie.toMessage(true)); //#mish use rent to encode
+        when(store1.retrieveValue(testTrieHash)).thenReturn(testTrie.toMessage()); //#mish use rent to encode
 
         store.collect(testTrieHash);
 

@@ -56,18 +56,22 @@ import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
  * ******************
  * #mish: Additional notes for storage rent implementation
  * ******************
- * Add a new field `long lastRentPaidTime` to store a node's rent paid timestamp. Since this is a long, defaults to 0
+ * Add a new field `long lastRentPaidTime` to store a node's rent paid timestamp. Defaults to -1 (not 0!)
+ * Also added a field for node version: default "-1". "0" is Orchid, "1" is RSKIP107, "2" is node with rent
  * Adding this new field is like adding a new type of `value`.. which means we need to modify put and getMethods
  * - existing put() method(s) replicated putWithRent() which can be used to update rent timestamp
+ * 
+ * Node version and encoding/hashes
  * - Trie encoding and decoding also changed to account for the additional long field
  * - Changing the encoding changes the hash as well
  * - In this experimental implementation, the pre-existing method are sometimes extended by adding a boolean 
- *          1incRent` to indicate whether the method should or should not use the rent field.
+ *          `containsRent` to indicate whether the method should or should not use the rent field.
  * - This approach implies a lot of code duplication/redundancy (intended for easier code review), can be eliminated later after tests  
  */
 public class Trie {
     private static final int ARITY = 2;
-    private static final int MAX_EMBEDDED_NODE_SIZE_IN_BYTES = 52; //#mish: was 44. Increase by 8 bytes for lastRentPaidTime
+    //#mish: was 44. Increase by 8 bytes for lastRentPaidTime (node version is part of flags so no increase)
+    private static final int MAX_EMBEDDED_NODE_SIZE_IN_BYTES = 52;
 
     private static final Profiler profiler = ProfilerFactory.getInstance();
     private static final String INVALID_ARITY = "Invalid arity";
@@ -119,11 +123,21 @@ public class Trie {
     // shared Path
     private final TrieKeySlice sharedPath;
 
-    // #mish. for storage rent  (RSKIP113) 
-    private long lastRentPaidTime; // some parts of the code use strings for timestamps, but long is typical
-
+    // #mish. for storage rent  (RSKIP113): default to "-1"
+    // included in encoding for version 2 nodes
+    private long lastRentPaidTime = -1L; // some parts of the code use strings for timestamps, but long is typical
+    
+    /*node version is include in flags (bit position 6,7)
+    * Default "-1" to avoid automatic 0 as default. 
+    * Intended use: "1" for rskip107 without rent, "2" with storage rent and "0" for Orchid
+    */
+    private byte nodeVersion =  (byte) -1 ; 
 
     // default constructor, no secure
+    /* #mish in main sources this is used (only?) in blockHasheshelper 
+     * Used in several tests though. Objects instantiated in this manner
+     * will have node-version "-1", storage rent will not be encoded
+     * */
     public Trie() {
         this(null);
     }
@@ -145,8 +159,8 @@ public class Trie {
         this(store, sharedPath, value, left, right, valueLength, valueHash, childrenSize, 0);
         checkValueLength();
     }
-
-    // #mish full constructor with storage rent
+    
+    // #mish full constructor with storage rent and node version implicit
     private Trie(TrieStore store, TrieKeySlice sharedPath, byte[] value, NodeReference left, NodeReference right, Uint24 valueLength, Keccak256 valueHash, VarInt childrenSize, long lastRentPaidTime) {
         this.value = value;
         this.left = left;
@@ -157,10 +171,24 @@ public class Trie {
         this.valueHash = valueHash;
         this.childrenSize = childrenSize;
         this.lastRentPaidTime = lastRentPaidTime;
+        this.nodeVersion = (byte)2;
         checkValueLength();
     }
 
-    
+    // #mish full constructor with storage rent and node version explicit
+    private Trie(TrieStore store, TrieKeySlice sharedPath, byte[] value, NodeReference left, NodeReference right, Uint24 valueLength, Keccak256 valueHash, VarInt childrenSize, long lastRentPaidTime, byte nodeVersion) {
+        this.value = value;
+        this.left = left;
+        this.right = right;
+        this.store = store;
+        this.sharedPath = sharedPath;
+        this.valueLength = valueLength;
+        this.valueHash = valueHash;
+        this.childrenSize = childrenSize;
+        this.lastRentPaidTime = lastRentPaidTime;
+        this.nodeVersion = nodeVersion;
+        checkValueLength();
+    }
 
     /**
      * Deserialize a Trie, either using the original format or RSKIP 107 format, based on version flags.
@@ -168,35 +196,21 @@ public class Trie {
      * recognize the old serialization format.
      */
     public static Trie fromMessage(byte[] message, TrieStore store) {
-        //#mish: for storage rent imlementation, point this to a new method with boolean indicator for rent 
-        /*Trie trie;
-        Metric metric = profiler.start(Profiler.PROFILING_TYPE.BUILD_TRIE_FROM_MSG);
-        if (message[0] == ARITY) {
-            trie = fromMessageOrchid(message, store);
-        } else {
-            trie = fromMessageRskip107(ByteBuffer.wrap(message), store, true);
-        }
-
-        profiler.stop(metric);
-        return trie;
-        */
-        return fromMessage(message, store, true); //#mish set this to false e.g. for testing bootstrap importer
-    }
-    
-    // #mish for storage rent version with boolean indicator for rent implementation active
-    public static Trie fromMessage(byte[] message, TrieStore store, boolean incRent) {
         Trie trie;
         Metric metric = profiler.start(Profiler.PROFILING_TYPE.BUILD_TRIE_FROM_MSG);
         if (message[0] == ARITY) {
             trie = fromMessageOrchid(message, store);
         } else {
-            trie = fromMessageRskip107(ByteBuffer.wrap(message), store, incRent);
+            trie = fromMessageRskip107(ByteBuffer.wrap(message), store);//, true);
         }
 
         profiler.stop(metric);
         return trie;
     }
 
+    /** #mish for future reference (node versioning) modify the return to get a Trie with a rent timestamp of "-1"
+     * and a node version "0" for orchid. This does not change the encoding or hash for Orchid
+     */
     private static Trie fromMessageOrchid(byte[] message, TrieStore store) {
         int current = 0;
         int arity = message[current];
@@ -272,16 +286,20 @@ public class Trie {
                 lvalue = Uint24.ZERO;
             }
         }
-
         // it doesn't need to clone value since it's retrieved from store or created from message
-        // #mish: orchid unaffected by rent at present.
-        return new Trie(store, sharedPath, value, left, right, lvalue, valueHash);
+        // #mish: orchid unaffected by rent but add rent timestamp -1 and node version 0.
+        return new Trie(store, sharedPath, value, left, right, lvalue, valueHash, null, -1L, (byte) 0);
     }
 
-    // #mish modify with an additional boolean argument to indicate whether rent timestamp is included
-    private static Trie fromMessageRskip107(ByteBuffer message, TrieStore store, boolean incRent) {
+    /** #mish modify previous implementation with a boolean `containsRent`
+     * to indicate whether rent timestamp is included and node version (from flags)
+    */
+    private static Trie fromMessageRskip107(ByteBuffer message, TrieStore store) {
         byte flags = message.get();
-        // if we reached here, we don't need to check the version flag
+        // #mish if we reached here, then it cannot be Orchid node. Either version 1 (no rent) or 2 (rent)
+        // #flag for version "2" "0b10" in bit position 6,7 of flags
+        boolean containsRent = (flags & 0b10000000) == 0b10000000;
+
         boolean hasLongVal = (flags & 0b00100000) == 0b00100000;
         boolean sharedPrefixPresent = (flags & 0b00010000) == 0b00010000;
         boolean leftNodePresent = (flags & 0b00001000) == 0b00001000;
@@ -289,9 +307,9 @@ public class Trie {
         boolean leftNodeEmbedded = (flags & 0b00000010) == 0b00000010;
         boolean rightNodeEmbedded = (flags & 0b00000001) == 0b00000001;
 
-        //#mish: modify method to get storage rent field when decoding
+        //#mish if rent timestamp present
         long lastRentPaidTime = 0L;
-        if (incRent) { lastRentPaidTime = message.getLong(); }
+        if (containsRent) { lastRentPaidTime = message.getLong(); }
 
         TrieKeySlice sharedPath = SharedPathSerializer.deserialize(message, sharedPrefixPresent);
 
@@ -306,7 +324,7 @@ public class Trie {
                 byte[] serializedNode = new byte[length.intValue()];
                 message.get(serializedNode); //read serialized data for embedded node into the buffer serializedNode
                 //make a recursive call. Also embedding is limited to one layer, so recursion is limited.
-                Trie node = fromMessageRskip107(ByteBuffer.wrap(serializedNode), store, incRent);
+                Trie node = fromMessageRskip107(ByteBuffer.wrap(serializedNode), store);
                 left = new NodeReference(store, node, null);
             } else { //not embedded, grab the hash and assign to the new left pointer 
                 byte[] valueHash = new byte[Keccak256Helper.DEFAULT_SIZE_BYTES];
@@ -324,7 +342,7 @@ public class Trie {
 
                 byte[] serializedNode = new byte[length.intValue()];
                 message.get(serializedNode);
-                Trie node = fromMessageRskip107(ByteBuffer.wrap(serializedNode), store, incRent);
+                Trie node = fromMessageRskip107(ByteBuffer.wrap(serializedNode), store);
                 right = new NodeReference(store, node, null);
             } else {
                 byte[] valueHash = new byte[Keccak256Helper.DEFAULT_SIZE_BYTES];
@@ -368,8 +386,12 @@ public class Trie {
         if (message.hasRemaining()) {
             throw new IllegalArgumentException("The message had more data than expected");
         }
+        if (containsRent) { 
+            return new Trie(store, sharedPath, value, left, right, lvalue, valueHash, childrenSize, lastRentPaidTime, (byte) 2);
+        } else { // rskip107 without rent timestamp, node version 1, lrpt -1
+            return new Trie(store, sharedPath, value, left, right, lvalue, valueHash, childrenSize, -1L,(byte) 1);
+        }
 
-        return new Trie(store, sharedPath, value, left, right, lvalue, valueHash, childrenSize, lastRentPaidTime);// #mish added rent
     }
 
     /**
@@ -386,8 +408,7 @@ public class Trie {
      * @return  a byte array with the node serialized to bytes
      */
     public Keccak256 getHash() {
-    // #mish: point method to a new version with boolean arg for storage rent implementation  
-    /*    if (this.hash != null) {
+        if (this.hash != null) {
             return this.hash.copy();
         }
 
@@ -398,29 +419,17 @@ public class Trie {
         byte[] message = this.toMessage();
 
         this.hash = new Keccak256(Keccak256Helper.keccak256(message));
-        
+
         return this.hash.copy();
-        */
-        return this.getHash(true); //#mish default is to include rent in encoding
     }
 
     // #mish added this version with boolean parameter to indicate if the encoding (and thus the hash)
     // should include rent timestamp. Otherwise, when testing, transaction or receipts trie roots won't match
-    public Keccak256 getHash(boolean incRent) {
-        if (this.hash != null) {
-            return this.hash.copy();
-        }
-
-        if (isEmptyTrie()) {
-            return emptyHash.copy();
-        }
-
-        byte[] message = this.toMessage(incRent);
-
-        this.hash = new Keccak256(Keccak256Helper.keccak256(message));
-
-        return this.hash.copy();
+    /*
+    public Keccak256 getHash(boolean containsRent) {
+        return this.getHash(); //#mish default is to include rent in encoding
     }
+    */
 
     /**
      * The hash based on pre-RSKIP 107 serialization
@@ -552,16 +561,7 @@ public class Trie {
      */
     public byte[] toMessage() {
         if (encoded == null) {
-            internalToMessage(true); //#mish: default is to include storagte rent field in encoding
-        }
-
-        return cloneArray(encoded);
-    }
-
-    // #mish version with boolean parameter to indicate if rent field should be included
-    public byte[] toMessage(boolean incRent) {
-        if (encoded == null) {
-            internalToMessage(incRent);
+            internalToMessage(); //#mish: default is to include storage rent field in encoding
         }
 
         return cloneArray(encoded);
@@ -730,79 +730,9 @@ public class Trie {
         return node.find(key.slice(commonPathLength + 1, key.length()));
     }
     
-    // #mish adds rent timestamp to the encoding 
-    // there is another version which makes rent encoding optional with boolean
-    // this can later be removed (private method, should be easier to delete)
     private void internalToMessage() {
-        Uint24 lvalue = this.valueLength;
-        boolean hasLongVal = this.hasLongValue();
-
-        SharedPathSerializer sharedPathSerializer = new SharedPathSerializer(this.sharedPath);
-        VarInt childrenSize = getChildrenSize();
-
-        ByteBuffer buffer = ByteBuffer.allocate(
-                1 + // flags
-                8 + // 8 bytes (long) for lastRentPaidTime}
-                        sharedPathSerializer.serializedLength() +
-                        this.left.serializedLength() +  //this method is from NodeReference.java (should only be used for save)
-                        this.right.serializedLength() +
-                        (this.isTerminal() ? 0 : childrenSize.getSizeInBytes()) +
-                        (hasLongVal ? Keccak256Helper.DEFAULT_SIZE_BYTES + Uint24.BYTES : lvalue.intValue()));
-
-        // current serialization version: 01 //see RSKIP107
-        byte flags = 0b01000000;
-        if (hasLongVal) {
-            flags = (byte) (flags | 0b00100000);   //bit 5 long value
-        }
-
-        if (sharedPathSerializer.isPresent()) {     //bit 4 sharedprefix present
-            flags = (byte) (flags | 0b00010000);
-        }
-
-        if (!this.left.isEmpty()) {
-            flags = (byte) (flags | 0b00001000);    // bit 2,3 left/right child present
-        }
-
-        if (!this.right.isEmpty()) {
-            flags = (byte) (flags | 0b00000100);    // bit 0,1 left/right embedded
-        }
-
-        if (this.left.isEmbeddable()) {
-            flags = (byte) (flags | 0b00000010);
-        }
-
-        if (this.right.isEmbeddable()) {
-            flags = (byte) (flags | 0b00000001);
-        }
-
-        buffer.put(flags);
-
-        buffer.putLong(this.lastRentPaidTime); 
-
-        sharedPathSerializer.serializeInto(buffer);
-
-        this.left.serializeInto(buffer);    //method from NodeReference.java
-
-        this.right.serializeInto(buffer);
-
-        if (!this.isTerminal()) {
-            buffer.put(childrenSize.encode());
-        }
-
-        //if longvalue, then just put the valuehash and valuelength. Else grab the value itself.
-        if (hasLongVal) {
-            buffer.put(this.getValueHash().getBytes());
-            buffer.put(lvalue.encode());
-        } else if (lvalue.compareTo(Uint24.ZERO) > 0) {
-            buffer.put(this.getValue());
-        }
-        encoded = buffer.array();
-    }
-
-    // #mish internalToMessage with boolean indicator 
-    // whether to include rent timestamp in serialization/encoding
-    // old version can be deleted later
-    private void internalToMessage(boolean incRent) {
+        //#mish node version
+        boolean containsRent = this.nodeVersion == (byte)2;
         Uint24 lvalue = this.valueLength;
         boolean hasLongVal = this.hasLongValue();
 
@@ -816,12 +746,18 @@ public class Trie {
                         (this.isTerminal() ? 0 : childrenSize.getSizeInBytes()) +
                         (hasLongVal ? Keccak256Helper.DEFAULT_SIZE_BYTES + Uint24.BYTES : lvalue.intValue());
         
-        if (incRent) { bufLength += 8;} //increase length by 8 to accomodate (long) rent timestamp
+        if (containsRent) { bufLength += 8;} //increase length by 8 to accomodate (long) rent timestamp
 
         ByteBuffer buffer = ByteBuffer.allocate(bufLength);
 
-        // current serialization version: 01 //see RSKIP107
-        byte flags = 0b01000000;
+        // node serialization version: 01 //see RSKIP107
+        byte flags;
+        if (containsRent) {
+            flags = (byte) 0b10000000; //version 2 (with storage rent timestamp)
+        } else {
+            flags = (byte) 0b01000000; //version 1 (RSKIP107)
+        }
+        
         if (hasLongVal) {
             flags = (byte) (flags | 0b00100000);   //bit 5 long value
         }
@@ -848,7 +784,7 @@ public class Trie {
 
         buffer.put(flags);
 
-        if (incRent) { buffer.putLong(this.lastRentPaidTime); } //put rent timestamp into encoding
+        if (containsRent) { buffer.putLong(this.lastRentPaidTime); } //put rent timestamp into encoding
 
         sharedPathSerializer.serializeInto(buffer);
 
@@ -869,6 +805,7 @@ public class Trie {
         }
         encoded = buffer.array();
     }
+
 
     private Trie retrieveNode(byte implicitByte) {
         return getNodeReference(implicitByte).getNode().orElse(null);
@@ -942,7 +879,7 @@ public class Trie {
         }
 
         TrieKeySlice newSharedPath = trie.sharedPath.rebuildSharedPath(childImplicitByte, child.sharedPath);
-        //full constructor: new Trie(store, sharedPath, value, left, right, lvalue, valueHash, childrenSize, lastRentPaidTime)
+        
         return new Trie(child.store, newSharedPath, child.value, child.left, child.right, child.valueLength, child.valueHash, child.childrenSize, child.lastRentPaidTime);
     }
 
@@ -981,7 +918,7 @@ public class Trie {
             if (isEmptyTrie(getDataLength(value), this.left, this.right)) {
                 return null;
             }
-            //full constructor: new Trie(store, sharedPath, value, left, right, lvalue, valueHash, childrenSize, lastRentPaidTime)
+            
             return new Trie(
                     this.store,
                     this.sharedPath,
@@ -1029,7 +966,7 @@ public class Trie {
         if (isEmptyTrie(this.valueLength, newLeft, newRight)) {
             return null;
         }
-        //full constructor: new Trie(store, sharedPath, value, left, right, lvalue, valueHash, childrenSize, lastRentPaidTime)
+    
         return new Trie(this.store, this.sharedPath, this.value, newLeft, newRight, this.valueLength, this.valueHash, null, this.lastRentPaidTime);
     }
 
@@ -1095,8 +1032,8 @@ public class Trie {
         }
         // reconstruct the shared path
         TrieKeySlice newSharedPath = trie.sharedPath.rebuildSharedPath(childImplicitByte, child.sharedPath);
-        //full constructor: new Trie(store, sharedPath, value, left, right, lvalue, valueHash, childrenSize, lastRentPaidTime)
-        return new Trie(child.store, newSharedPath, child.value, child.left, child.right, child.valueLength, child.valueHash, child.childrenSize, child.lastRentPaidTime);
+        return new Trie(child.store, newSharedPath, child.value, child.left, child.right, child.valueLength,
+         child.valueHash, child.childrenSize, child.lastRentPaidTime, child.nodeVersion);
     }
 
     // #mish: duplicated and extended internalPut to update a node's rent timestamp
@@ -1131,7 +1068,7 @@ public class Trie {
             if (isEmptyTrie(getDataLength(value), this.left, this.right)) {
                 return null;
             }
-            //full constructor: new Trie(store, sharedPath, value, left, right, lvalue, valueHash, childrenSize, lastRentPaidTime)
+        
             return new Trie(
                     this.store,
                     this.sharedPath,
@@ -1141,12 +1078,13 @@ public class Trie {
                     getDataLength(value),
                     null,
                     null,
-                    newLastRentPaidTime
+                    newLastRentPaidTime,
+                    (byte)2
             );
         }
 
         if (isEmptyTrie()) {
-            return new Trie(this.store, key, cloneArray(value), NodeReference.empty(), NodeReference.empty(), getDataLength(value), null, null, newLastRentPaidTime);
+            return new Trie(this.store, key, cloneArray(value), NodeReference.empty(), NodeReference.empty(), getDataLength(value), null, null, newLastRentPaidTime, (byte)2);
         }
 
         // this bit will be implicit and not present in a shared path
@@ -1179,15 +1117,16 @@ public class Trie {
         if (isEmptyTrie(this.valueLength, newLeft, newRight)) {
             return null;
         }
-        //full constructor: new Trie(store, sharedPath, value, left, right, lvalue, valueHash, childrenSize, lastRentPaidTime)
-        return new Trie(this.store, this.sharedPath, this.value, newLeft, newRight, this.valueLength, this.valueHash, null, this.lastRentPaidTime);
+        return new Trie(this.store, this.sharedPath, this.value, newLeft, newRight, this.valueLength, this.valueHash, null,
+                 this.lastRentPaidTime, this.nodeVersion);
     } 
 
-
+    //#mish maintain node version and rent paid timestamp for internal nodes
     private Trie split(TrieKeySlice commonPath) {
         int commonPathLength = commonPath.length();
         TrieKeySlice newChildSharedPath = sharedPath.slice(commonPathLength + 1, sharedPath.length());
-        Trie newChildTrie = new Trie(this.store, newChildSharedPath, this.value, this.left, this.right, this.valueLength, this.valueHash, null, this.lastRentPaidTime);
+        Trie newChildTrie = new Trie(this.store, newChildSharedPath, this.value, this.left, this.right, this.valueLength,
+         this.valueHash, null, this.lastRentPaidTime, this.nodeVersion);
         NodeReference newChildReference = new NodeReference(this.store, newChildTrie, null);
 
         // this bit will be implicit and not present in a shared path
@@ -1202,8 +1141,8 @@ public class Trie {
             newLeft = NodeReference.empty();
             newRight = newChildReference;
         }
-
-        return new Trie(this.store, commonPath, null, newLeft, newRight, Uint24.ZERO, null);
+            //#mish internal node, keep rent timestamp and node version same as original node 
+        return new Trie(this.store, commonPath, null, newLeft, newRight, Uint24.ZERO, null,  null, this.lastRentPaidTime, this.nodeVersion);
     }
 
     public boolean isTerminal() {
