@@ -70,9 +70,9 @@ public class Transaction {
     /**
      * Since EIP-155, we could encode chainId in V
      */
-    private static final byte CHAIN_ID_INC = 35;
+    public static final byte CHAIN_ID_INC = 35;
+    public static final byte LOWER_REAL_V = 27;
 
-    private static final byte LOWER_REAL_V = 27;
     protected RskAddress sender;
     /* whether this is a local call transaction */
     private boolean isLocalCall;
@@ -424,6 +424,12 @@ public class Transaction {
 
     public byte getChainId() {
         return chainId;
+    }
+
+    public byte getEncodedV() {
+        return this.chainId == 0
+            ? this.signature.getV()
+            : (byte)(this.signature.getV() - LOWER_REAL_V + CHAIN_ID_INC + this.chainId * 2);
     }
 
     @Override

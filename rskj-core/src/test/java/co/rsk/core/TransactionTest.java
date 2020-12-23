@@ -31,6 +31,8 @@ import org.ethereum.db.BlockStoreDummy;
 import org.ethereum.jsontestsuite.StateTestSuite;
 import org.ethereum.jsontestsuite.runners.StateTestRunner;
 import org.ethereum.util.ByteUtil;
+import org.ethereum.util.RLP;
+import org.ethereum.util.RLPList;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.ProgramResult;
 import org.junit.Assert;
@@ -351,4 +353,29 @@ public class TransactionTest {
         Assert.assertFalse(tx.isContractCreation());
     }
 
+    @Test
+    public void createEncodeAndDecodeTransactionWithChainId() {
+        Transaction originalTransaction = CallTransaction.createCallTransaction(
+                0, 0, 100000000000000L,
+                new RskAddress("095e7baea6a6c7c4c2dfeb977efac326af552d87"), 0,
+                CallTransaction.Function.fromSignature("get"), chainId);
+
+        originalTransaction.sign(new byte[]{});
+
+        byte[] encoded = originalTransaction.getEncoded();
+
+        RLPList rlpList = RLP.decodeList(encoded);
+
+        byte[] vData = rlpList.get(6).getRLPData();
+
+        Assert.assertEquals (Transaction.CHAIN_ID_INC + chainId * 2, vData[0]);
+        Assert.assertEquals (Transaction.CHAIN_ID_INC + chainId * 2, originalTransaction.getEncodedV());
+
+        Transaction transaction = new ImmutableTransaction(encoded);
+
+        Assert.assertEquals(chainId, transaction.getChainId());
+        Assert.assertEquals(Transaction.LOWER_REAL_V, transaction.getSignature().getV());
+        Assert.assertEquals (Transaction.CHAIN_ID_INC + chainId * 2, transaction.getEncodedV());
+    }
 }
+
