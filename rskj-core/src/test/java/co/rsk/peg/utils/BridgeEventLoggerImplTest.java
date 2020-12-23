@@ -625,6 +625,76 @@ public class BridgeEventLoggerImplTest {
         Assert.assertArrayEquals(event.encodeEventData(amount.getValue()), result.getData());
     }
 
+    @Test
+    public void logRejectedPegin() {
+        // Setup event logger
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        List<LogInfo> eventLogs = new LinkedList<>();
+
+        BridgeEventLogger eventLogger = new BridgeEventLoggerImpl(null, activations, eventLogs);
+
+        BtcTransaction btcTx = new BtcTransaction(BridgeRegTestConstants.getInstance().getBtcParams());
+
+        eventLogger.logRejectedPegin(btcTx, RejectedPeginReason.PEGIN_CAP_SURPASSED);
+
+        Assert.assertEquals(1, eventLogs.size());
+        LogInfo entry = eventLogs.get(0);
+
+        Assert.assertEquals(PrecompiledContracts.BRIDGE_ADDR, new RskAddress(entry.getAddress()));
+
+        // Assert address that made the log
+        LogInfo result = eventLogs.get(0);
+        Assert.assertArrayEquals(PrecompiledContracts.BRIDGE_ADDR.getBytes(), result.getAddress());
+
+        // Assert log topics
+        Assert.assertEquals(2, result.getTopics().size());
+        CallTransaction.Function event = BridgeEvents.REJECTED_PEGIN.getEvent();
+
+        byte[][] topics = event.encodeEventTopics(btcTx.getHash().getBytes());
+
+        for (int i=0; i<topics.length; i++) {
+            Assert.assertArrayEquals(topics[i], result.getTopics().get(i).getData());
+        }
+
+        // Assert log data
+        Assert.assertArrayEquals(event.encodeEventData(RejectedPeginReason.PEGIN_CAP_SURPASSED.getValue()), result.getData());
+    }
+
+    @Test
+    public void logUnrefundablePegin() {
+        // Setup event logger
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        List<LogInfo> eventLogs = new LinkedList<>();
+
+        BridgeEventLogger eventLogger = new BridgeEventLoggerImpl(null, activations, eventLogs);
+
+        BtcTransaction btcTx = new BtcTransaction(BridgeRegTestConstants.getInstance().getBtcParams());
+
+        eventLogger.logUnrefundablePegin(btcTx, UnrefundablePeginReason.LEGACY_PEGIN_UNDETERMINED_SENDER);
+
+        Assert.assertEquals(1, eventLogs.size());
+        LogInfo entry = eventLogs.get(0);
+
+        Assert.assertEquals(PrecompiledContracts.BRIDGE_ADDR, new RskAddress(entry.getAddress()));
+
+        // Assert address that made the log
+        LogInfo result = eventLogs.get(0);
+        Assert.assertArrayEquals(PrecompiledContracts.BRIDGE_ADDR.getBytes(), result.getAddress());
+
+        // Assert log topics
+        Assert.assertEquals(2, result.getTopics().size());
+        CallTransaction.Function event = BridgeEvents.UNREFUNDABLE_PEGIN.getEvent();
+
+        byte[][] topics = event.encodeEventTopics(btcTx.getHash().getBytes());
+
+        for (int i=0; i<topics.length; i++) {
+            Assert.assertArrayEquals(topics[i], result.getTopics().get(i).getData());
+        }
+
+        // Assert log data
+        Assert.assertArrayEquals(event.encodeEventData(UnrefundablePeginReason.LEGACY_PEGIN_UNDETERMINED_SENDER.getValue()), result.getData());
+    }
+
     private byte[] flatKeysAsByteArray(List<BtcECKey> keys) {
         List<byte[]> pubKeys = keys.stream()
             .map(BtcECKey::getPubKey)
