@@ -18,6 +18,7 @@
 package co.rsk.core.bc;
 
 import co.rsk.config.InternalService;
+import co.rsk.logfilter.BlocksBloomStore;
 import co.rsk.trie.TrieStore;
 import org.ethereum.core.Block;
 import org.ethereum.core.TransactionReceipt;
@@ -41,6 +42,7 @@ public class BlockChainFlusher implements InternalService {
     private final TrieStore trieStore;
     private final BlockStore blockStore;
     private final ReceiptStore receiptStore;
+    private final BlocksBloomStore blocksBloomStore;
 
     private final OnBestBlockListener listener = new OnBestBlockListener();
 
@@ -50,12 +52,15 @@ public class BlockChainFlusher implements InternalService {
             int flushNumberOfBlocks,
             CompositeEthereumListener emitter,
             TrieStore trieStore,
-            BlockStore blockStore, ReceiptStore receiptStore) {
+            BlockStore blockStore,
+            ReceiptStore receiptStore,
+            BlocksBloomStore blocksBloomStore) {
         this.flushNumberOfBlocks = flushNumberOfBlocks;
         this.emitter = emitter;
         this.trieStore = trieStore;
         this.blockStore = blockStore;
         this.receiptStore = receiptStore;
+        this.blocksBloomStore = blocksBloomStore;
     }
 
     @Override
@@ -90,7 +95,18 @@ public class BlockChainFlusher implements InternalService {
         saveTime = System.nanoTime();
         receiptStore.flush();
         totalTime = System.nanoTime() - saveTime;
-        logger.trace("receiptstore flush: [{}]nano", totalTime);
+
+        if (logger.isTraceEnabled()) {
+            logger.trace("receiptstore flush: [{}]nano", totalTime);
+        }
+
+        saveTime = System.nanoTime();
+        blocksBloomStore.flush();
+        totalTime = System.nanoTime() - saveTime;
+
+        if (logger.isTraceEnabled()) {
+            logger.trace("bloomBlocksStore flush: [{}]nano", totalTime);
+        }
     }
 
     private class OnBestBlockListener extends EthereumListenerAdapter {

@@ -32,6 +32,7 @@ import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.core.BlockHeader;
+import org.ethereum.core.Bloom;
 import org.ethereum.datasource.KeyValueDataSource;
 import org.mapdb.DataIO;
 import org.mapdb.Serializer;
@@ -181,6 +182,11 @@ public class IndexedBlockStore implements BlockStore {
         Metric metric = profiler.start(Profiler.PROFILING_TYPE.DB_WRITE);
         index.flush();
         profiler.stop(metric);
+    }
+
+    @Override
+    public Bloom bloomByBlockNumber(long blockNumber) {
+        return new Bloom(getChainBlockByNumber(blockNumber).getLogBloom());
     }
 
     @Override

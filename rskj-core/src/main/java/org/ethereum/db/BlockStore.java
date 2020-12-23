@@ -22,6 +22,7 @@ package org.ethereum.db;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.db.RemascCache;
 import org.ethereum.core.Block;
+import org.ethereum.core.Bloom;
 
 import javax.annotation.Nonnull;
 import java.util.List;
@@ -79,4 +80,6 @@ public interface BlockStore extends RemascCache {
     List<BlockInformation> getBlocksInformationByNumber(long number);
 
     boolean isEmpty();
+
+    Bloom bloomByBlockNumber(long blockNumber);
 }
