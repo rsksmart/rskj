@@ -154,13 +154,19 @@ public class Trie {
         this(store, sharedPath, value, left, right, valueLength, valueHash, null);
     }
 
-    //  #mish full constructor, without storage rent, default to node version 1
+    //  #mish constructor, without storage rent, default to node version 1
     public Trie(TrieStore store, TrieKeySlice sharedPath, byte[] value, NodeReference left, NodeReference right, Uint24 valueLength, Keccak256 valueHash, VarInt childrenSize) {
         this(store, sharedPath, value, left, right, valueLength, valueHash, childrenSize, 0, (byte) 1);
         checkValueLength();
     }
     
-    // #mish full constructor with storage rent and node version implicit. If rent timestamp is passed, should be version 2
+    /** #mish constructor with storage rent and node version implicitly set to 1. 
+     * If rent timestamp is passed, should be version 2. However, to resuse the 
+     * same put method with or without rent, 
+     *      - we allow timestamp to be 0L, and 
+     *      - default to node version 1 (without rent)
+     *  To mark a node as version 2, we must do so explicitly with the full constructor
+     */
     private Trie(TrieStore store, TrieKeySlice sharedPath, byte[] value, NodeReference left, NodeReference right, Uint24 valueLength, Keccak256 valueHash, VarInt childrenSize, long lastRentPaidTime) {
         this.value = value;
         this.left = left;
@@ -171,7 +177,7 @@ public class Trie {
         this.valueHash = valueHash;
         this.childrenSize = childrenSize;
         this.lastRentPaidTime = lastRentPaidTime;
-        this.nodeVersion = (byte) 2;
+        this.nodeVersion = (byte) 1;
         checkValueLength();
     }
 
@@ -494,7 +500,10 @@ public class Trie {
      */
     public Trie put(byte[] key, byte[] value) {
         TrieKeySlice keySlice = TrieKeySlice.fromKey(key);
-        Trie trie = put(keySlice, value, false);
+        //Trie trie = put(keySlice, value, false);
+        //#mish use the same method for put with or without rent timestamp
+        // calling with timestamp set to -1L will indicate nodeVersion 1 (no rent)
+        Trie trie = putWithRent(keySlice, value, false, -1L);
 
         return trie == null ? new Trie(this.store) : trie;
     }
@@ -531,7 +540,10 @@ public class Trie {
     // This is O(1). The node with exact key "key" MUST exists.
     public Trie deleteRecursive(byte[] key) {
         TrieKeySlice keySlice = TrieKeySlice.fromKey(key);
-        Trie trie = put(keySlice, null, true);
+        //Trie trie = put(keySlice, null, true);
+        //#mish use same method as for put with rent timestamp, 
+        // but use timestamp = -1L to indicare version 1 node 
+        Trie trie = putWithRent(keySlice, null, true, -1L);
 
         return trie == null ? new Trie(this.store) : trie;
     }
@@ -834,58 +846,8 @@ public class Trie {
      * @return the new NewTrie containing the tree with the new key value association
      *
      */
-    private Trie put(TrieKeySlice key, byte[] value, boolean isRecursiveDelete) {
-        // First of all, setting the value as an empty byte array is equivalent
-        // to removing the key/value. This is because other parts of the trie make
-        // this equivalent. Use always null to mark a node for deletion.
-        if (value != null && value.length == 0) {
-            value = null;
-        }
 
-        Trie trie = this.internalPut(key, value, isRecursiveDelete);
-
-        // the following code coalesces nodes if needed for delete operation
-
-        // it's null or it is not a delete operation
-        if (trie == null || value != null) {
-            return trie;
-        }
-
-        if (trie.isEmptyTrie()) {
-            return null;
-        }
-
-        // only coalesce if node has only one child and no value
-        if (trie.valueLength.compareTo(Uint24.ZERO) > 0) {
-            return trie;
-        }
-
-        Optional<Trie> leftOpt = trie.left.getNode();
-        Optional<Trie> rightOpt = trie.right.getNode();
-        if (leftOpt.isPresent() && rightOpt.isPresent()) {
-            return trie;
-        }
-
-        if (!leftOpt.isPresent() && !rightOpt.isPresent()) {
-            return trie;
-        }
-
-        Trie child;
-        byte childImplicitByte;
-        if (leftOpt.isPresent()) {
-            child = leftOpt.get();
-            childImplicitByte = (byte) 0;
-        } else { // has right node
-            child = rightOpt.get();
-            childImplicitByte = (byte) 1;
-        }
-
-        TrieKeySlice newSharedPath = trie.sharedPath.rebuildSharedPath(childImplicitByte, child.sharedPath);
-        
-        return new Trie(child.store, newSharedPath, child.value, child.left, child.right, child.valueLength, 
-            child.valueHash, child.childrenSize, child.lastRentPaidTime, child.nodeVersion);
-    }
-
+    
     private static Uint24 getDataLength(byte[] value) {
         if (value == null) {
             return Uint24.ZERO;
@@ -894,86 +856,7 @@ public class Trie {
         return new Uint24(value.length);
     }
 
-    private Trie internalPut(TrieKeySlice key, byte[] value, boolean isRecursiveDelete) {
-            TrieKeySlice commonPath = key.commonPath(sharedPath);
 
-        if (commonPath.length() < sharedPath.length()) {
-            // when we are removing a key we know splitting is not necessary. the key wasn't found at this point.
-            if (value == null) {
-                return this;
-            }
-            return this.split(commonPath).put(key, value, isRecursiveDelete);
-        }
-
-        if (sharedPath.length() >= key.length()) {
-            // To compare values we need to retrieve the previous value
-            // if not already done so. We could also compare by hash, to avoid retrieval
-            // We do a small optimization here: if sizes are not equal, then values
-            // obviously are not.
-            if (this.valueLength.equals(getDataLength(value)) && Arrays.equals(this.getValue(), value)) {
-                return this;
-            }
-
-            if (isRecursiveDelete) {
-                return new Trie(this.store, this.sharedPath, null);
-            }
-
-            if (isEmptyTrie(getDataLength(value), this.left, this.right)) {
-                return null;
-            }
-            
-            return new Trie(
-                    this.store,
-                    this.sharedPath,
-                    cloneArray(value),
-                    this.left,
-                    this.right,
-                    getDataLength(value),
-                    null,
-                    null,
-                    this.lastRentPaidTime,
-                    this.nodeVersion
-            );
-        }
-
-        if (isEmptyTrie()) {
-            return new Trie(this.store, key, cloneArray(value));
-        }
-
-        // this bit will be implicit and not present in a shared path
-        byte pos = key.get(sharedPath.length());
-
-        Trie node = retrieveNode(pos);
-        if (node == null) {
-            node = new Trie(this.store);
-        }
-
-        TrieKeySlice subKey = key.slice(sharedPath.length() + 1, key.length());
-        Trie newNode = node.put(subKey, value, isRecursiveDelete);
-
-        // reference equality
-        if (newNode == node) {
-            return this;
-        }
-
-        NodeReference newNodeReference = new NodeReference(this.store, newNode, null);
-        NodeReference newLeft;
-        NodeReference newRight;
-        if (pos == 0) {
-            newLeft = newNodeReference;
-            newRight = this.right;
-        } else {
-            newLeft = this.left;
-            newRight = newNodeReference;
-        }
-
-        if (isEmptyTrie(this.valueLength, newLeft, newRight)) {
-            return null;
-        }
-    
-        return new Trie(this.store, this.sharedPath, this.value, newLeft, newRight, this.valueLength, this.valueHash,
-                         null, this.lastRentPaidTime, this.nodeVersion);
-    }
 
     /* #mish: version of put to update rent paid time: 
      * duplicated existing code and then track the value (do the same for rent)
@@ -993,8 +876,14 @@ public class Trie {
         if (value != null && value.length == 0) {
             value = null;
         }
+        byte nodeVer;
+        if (newLastRentPaidTime == -1L){ //#mish this is how it will be called from put() 
+            nodeVer = (byte) 1; //node Version 1
+        } else {
+            nodeVer = (byte) 2; //node Version 2
+        }
 
-        Trie trie = this.internalputWithRent(key, value, isRecursiveDelete, newLastRentPaidTime);
+        Trie trie = this.internalputWithRent(key, value, isRecursiveDelete, newLastRentPaidTime, nodeVer);
 
         // the following code coalesces nodes if needed for delete operation
 
@@ -1041,8 +930,8 @@ public class Trie {
                             child.valueHash, child.childrenSize, child.lastRentPaidTime, child.nodeVersion);
     }
 
-    // #mish: duplicated and extended internalPut to update a node's rent timestamp
-    private Trie internalputWithRent(TrieKeySlice key, byte[] value, boolean isRecursiveDelete, long newLastRentPaidTime) {
+    // #mish: duplicated and extended internalPut to update a node's rent timestamp and explicit nodeVersion
+    private Trie internalputWithRent(TrieKeySlice key, byte[] value, boolean isRecursiveDelete, long newLastRentPaidTime, byte nodeVer) {
         // #mish find the common path between the given key and the current node's (top of the trie) sharedpath
         TrieKeySlice commonPath = key.commonPath(sharedPath);
 
@@ -1084,13 +973,13 @@ public class Trie {
                     null,
                     null,
                     newLastRentPaidTime,
-                    (byte) 2
+                    nodeVer
             );
         }
 
         if (isEmptyTrie()) {
             return new Trie(this.store, key, cloneArray(value), NodeReference.empty(), NodeReference.empty(),
-                             getDataLength(value), null, null, newLastRentPaidTime, (byte) 2);
+                             getDataLength(value), null, null, newLastRentPaidTime, nodeVer);
         }
 
         // this bit will be implicit and not present in a shared path

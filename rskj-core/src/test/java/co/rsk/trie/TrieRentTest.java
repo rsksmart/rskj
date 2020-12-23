@@ -48,7 +48,7 @@ public class TrieRentTest {
         List<Trie> nodes = trie.getNodes("foo");
 
         Assert.assertArrayEquals("abc".getBytes(StandardCharsets.UTF_8), nodes.get(0).getValue());
-        Assert.assertEquals(0,trie.getLastRentPaidTime()); // 0 (long cannot be null)
+        Assert.assertEquals(-1,trie.getLastRentPaidTime()); // 0 (long cannot be null)
     }
 
     // rent time delta
@@ -91,11 +91,11 @@ public class TrieRentTest {
         System.out.println("Rent fully paid until time (same key with rentupdate): " + trie.getLastRentPaidTime() +
                         " value:  " + new String( trie.get("foo".getBytes())));
           
-        //back to initial value, same key. RentpadDatewill be retained
+        //back to initial value, same key. RentpaidDatewill be not be retained
         trie = trie.put("foo".getBytes(), "bar2".getBytes());
         System.out.println("Rent fully paid until time (still the same key, no rent info): "+ trie.getLastRentPaidTime() +
                         " value:  " + new String( trie.get("foo".getBytes())));
-        Assert.assertEquals(1000_000, trie.getLastRentPaidTime());       
+        Assert.assertEquals(-1, trie.getLastRentPaidTime());       
 
     }
     
@@ -111,7 +111,7 @@ public class TrieRentTest {
         trie = trie.put("foo".getBytes(), "bar2".getBytes());
         System.out.println("Rent fully paid until time (still the same key, no rent info): "+ trie.getLastRentPaidTime() +
                         " value:  " + new String( trie.get("foo".getBytes())));
-        Assert.assertEquals(1000_000, trie.getLastRentPaidTime());       
+        Assert.assertEquals(-1, trie.getLastRentPaidTime());       
 
     }
 
@@ -138,10 +138,10 @@ public class TrieRentTest {
             //System.out.println("Rent last paid through block: " + nodes.get(n).getLastRentPaidTime());
             System.out.println("Rent last paid time: "+ nodes.get(n).getLastRentPaidTime() + " value: " + new String(nodes.get(n).getValue()));
         }
-        Assert.assertEquals(0, nodes.get(0).getLastRentPaidTime()); // foo renttime not added
+        Assert.assertEquals(-1, nodes.get(0).getLastRentPaidTime()); // foo renttime not added
         Assert.assertEquals(3000, nodes.get(1).getLastRentPaidTime()); // fo 
         Assert.assertEquals("newInfo",new String(nodes.get(2).getValue())); // f updated value
-        Assert.assertEquals(200, nodes.get(2).getLastRentPaidTime()); // even though value updated, last rent paid status unchanged    
+        Assert.assertEquals(-1, nodes.get(2).getLastRentPaidTime()); // even though value updated, last rent paid status unchanged    
     }
 
     @Test

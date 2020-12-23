@@ -224,7 +224,9 @@ public class TrieStoreImplTest {
 
         Assert.assertEquals(size, trie2.trieSize());
 
-        verify(map, times(size + 1)).get(any());
+        verify(map, times(2)).get(any()); //#Mish same value as above
+        //#mish failed with storage rent implementation as MAX_EMBEDDED_NODE_SIZE_IN_BYTES = 52 up from 44;
+        //verify(map, times(size + 1)).get(any());
     }
 
     @Test
