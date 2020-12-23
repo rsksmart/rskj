@@ -40,7 +40,6 @@ import java.util.Collections;
 import java.util.List;
 
 public class BlockTest {
-    private static final byte[] EMPTY_LIST_HASH = HashUtil.keccak256(RLP.encodeList());
 
     private final BlockFactory blockFactory = new BlockFactory(ActivationConfigsForTest.all());
 
@@ -48,23 +47,23 @@ public class BlockTest {
     public void testParseRemascTransaction() {
         List<Transaction> txs = new ArrayList<>();
 
-        Transaction txNotToRemasc = new Transaction(
-                BigInteger.ZERO.toByteArray(),
-                BigInteger.ONE.toByteArray(),
-                BigInteger.valueOf(21000).toByteArray(),
-                new ECKey().getAddress() ,
-                BigInteger.valueOf(1000).toByteArray(),
-                null);
+        Transaction txNotToRemasc = Transaction.builder()
+                .nonce(BigInteger.ZERO)
+                .gasPrice(BigInteger.ONE)
+                .gasLimit(BigInteger.valueOf(21000))
+                .destination(new ECKey().getAddress())
+                .value(BigInteger.valueOf(1000))
+                .build();
         txNotToRemasc.sign(new ECKey().getPrivKeyBytes());
         txs.add(txNotToRemasc);
 
-        Transaction txToRemascThatIsNotTheLatestTx = new Transaction(
-                BigInteger.ZERO.toByteArray(),
-                BigInteger.ONE.toByteArray(),
-                BigInteger.valueOf(21000).toByteArray(),
-                PrecompiledContracts.REMASC_ADDR.getBytes(),
-                BigInteger.valueOf(1000).toByteArray(),
-                null);
+        Transaction txToRemascThatIsNotTheLatestTx = Transaction.builder()
+                .nonce(BigInteger.ZERO)
+                .gasPrice(BigInteger.ONE)
+                .gasLimit(BigInteger.valueOf(21000))
+                .destination(PrecompiledContracts.REMASC_ADDR)
+                .value(BigInteger.valueOf(1000))
+                .build();
         txToRemascThatIsNotTheLatestTx.sign(new ECKey().getPrivKeyBytes());
         txs.add(txToRemascThatIsNotTheLatestTx);
 

@@ -28,6 +28,7 @@ import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
+import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -122,7 +123,8 @@ public abstract class PrecompiledContractPerformanceTestCase {
         thread = ManagementFactory.getThreadMXBean();
         if (!thread.isThreadCpuTimeSupported()) {
             throw new RuntimeException("Thread CPU time not supported");
-        };
+        }
+        ;
 
         oldCpuTimeEnabled = thread.isThreadCpuTimeEnabled();
         thread.setThreadCpuTimeEnabled(true);
@@ -154,13 +156,12 @@ public abstract class PrecompiledContractPerformanceTestCase {
             byte[] gasPrice = Hex.decode("00");
             byte[] gasLimit = Hex.decode("00");
 
-            Transaction tx = new Transaction(
-                    null,
-                    gasPrice,
-                    gasLimit,
-                    sender.getAddress(),
-                    value.toByteArray(),
-                    null);
+            Transaction tx = Transaction.builder()
+                    .gasPrice(gasPrice)
+                    .gasLimit(gasLimit)
+                    .destination(sender.getAddress())
+                    .value(value)
+                    .build();
             tx.sign(sender.getPrivKeyBytes());
             tx.setLocalCallTransaction(true);
             // Force caching the sender to avoid outliers in the gas estimation
@@ -203,7 +204,9 @@ public abstract class PrecompiledContractPerformanceTestCase {
     protected interface EnvironmentBuilder {
         interface Environment {
             PrecompiledContracts.PrecompiledContract getContract();
+
             BenchmarkedRepository getBenchmarkedRepository();
+
             void finalise();
 
             static Environment withContract(PrecompiledContracts.PrecompiledContract contract) {

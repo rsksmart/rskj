@@ -18,6 +18,7 @@
 
 package co.rsk.net.utils;
 
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
 import org.ethereum.core.Account;
 import org.ethereum.core.Transaction;
@@ -57,7 +58,15 @@ public class TransactionUtils {
     }
 
     public static Transaction createTransaction(byte[] privateKey, String toAddress, BigInteger value, BigInteger nonce, BigInteger gasPrice, BigInteger gasLimit) {
-        Transaction tx = new Transaction(toAddress, value, nonce, gasPrice, gasLimit, Constants.REGTEST_CHAIN_ID);
+        Transaction tx = Transaction
+                .builder()
+                .nonce(nonce)
+                .gasPrice(gasPrice)
+                .gasLimit(gasLimit)
+                .destination(toAddress != null ? Hex.decode(toAddress) : null)
+                .chainId(Constants.REGTEST_CHAIN_ID)
+                .value(value)
+                .build();
         tx.sign(privateKey);
         return tx;
     }

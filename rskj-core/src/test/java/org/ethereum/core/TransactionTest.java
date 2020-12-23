@@ -68,7 +68,7 @@ import static org.junit.Assert.*;
 
 public class TransactionTest {
 
-    private TestSystemProperties config = new TestSystemProperties();
+    private final TestSystemProperties config = new TestSystemProperties();
     private final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
 
     @Test /* sign transaction  https://tools.ietf.org/html/rfc6979 */
@@ -109,9 +109,12 @@ public class TransactionTest {
         byte[] gas = Hex.decode("4255");
 
         // Tn (nonce); Tp(pgas); Tg(gaslimi); Tt(value); Tv(value); Ti(sender);  Tw; Tr; Ts
-        Transaction tx = new Transaction(null, gasPrice, gas, ecKey.getAddress(),
-                value.toByteArray(),
-                null);
+        Transaction tx = Transaction.builder()
+                .gasPrice(gasPrice)
+                .gasLimit(gas)
+                .destination(ecKey.getAddress())
+                .value(value.toByteArray())
+                .build();
 
         tx.sign(senderPrivKey);
 
@@ -151,8 +154,13 @@ public class TransactionTest {
         byte[] gasLimit = Hex.decode("4255");
         BigInteger value = new BigInteger("1000000000000000000000000");
 
-        Transaction tx = new Transaction(nonce, gasPrice, gasLimit,
-                ecKey.getAddress(), value.toByteArray(), null);
+        Transaction tx = Transaction.builder()
+                .nonce(nonce)
+                .gasPrice(gasPrice)
+                .gasLimit(gasLimit)
+                .destination(ecKey.getAddress())
+                .value(value)
+                .build();
 
         tx.sign(senderPrivKey);
 
@@ -232,7 +240,14 @@ public class TransactionTest {
     @Ignore
     @Test
     public void testTransactionFromNew1() throws MissingPrivateKeyException {
-        Transaction txNew = new Transaction(testNonce, testGasPrice, testGasLimit, testReceiveAddress, testValue, testData);
+        Transaction txNew = Transaction.builder()
+                .nonce(testNonce)
+                .gasPrice(testGasPrice)
+                .gasLimit(testGasLimit)
+                .destination(testReceiveAddress)
+                .value(testValue)
+                .data(testData)
+                .build();
 
         assertEquals("", ByteUtil.toHexString(txNew.getNonce()));
         assertEquals(new BigInteger(1, testGasPrice), txNew.getGasPrice().asBigInteger());
@@ -269,7 +284,14 @@ public class TransactionTest {
         byte[] value = Hex.decode("2386f26fc10000"); //10000000000000000"
         byte[] data = new byte[0];
 
-        Transaction tx = new Transaction(nonce, gasPrice, gas, recieveAddress, value, data);
+        Transaction tx = Transaction.builder()
+                .nonce(nonce)
+                .gasPrice(gasPrice)
+                .gasLimit(gas)
+                .destination(recieveAddress)
+                .value(value)
+                .data(data)
+                .build();
 
         // Testing unsigned
         String encodedUnsigned = ByteUtil.toHexString(tx.getEncoded());
@@ -300,8 +322,13 @@ public class TransactionTest {
                 ("4560005444602054600f60056002600a02010b0d630000001d596002602054630000003b5860066000530860056006600202010a0d6300000036596004604054630000003b586005606054");
 
 
-        Transaction tx1 = new Transaction(nonce, gasPrice, gas,
-                recieveAddress, endowment, init);
+        Transaction tx1 = Transaction.builder()
+                .nonce(nonce)
+                .gasPrice(gasPrice)
+                .gasLimit(gas)
+                .destination(recieveAddress)
+                .value(endowment)
+                .build();
         tx1.sign(senderPrivKey);
 
         byte[] payload = tx1.getEncoded();
@@ -721,7 +748,12 @@ public class TransactionTest {
         byte[] gasPrice = Hex.decode("09184e72a000");
         byte[] gas = Hex.decode("4255");
 
-        Transaction tx = new Transaction(new byte[0], gasPrice, gas, ecKey.getAddress(), value.toByteArray(),null);
+        Transaction tx = Transaction.builder()
+                .gasPrice(gasPrice)
+                .gasLimit(gas)
+                .destination(ecKey.getAddress())
+                .value(value)
+                .build();
         try {
             tx.verify();
         } catch (Exception e) {
@@ -738,7 +770,12 @@ public class TransactionTest {
         byte[] gasPrice = Hex.decode("09184e72a000");
         byte[] gas = Hex.decode("4255");
 
-        Transaction tx = new Transaction(new byte[0], gasPrice, gas, ecKey.getAddress(), value.toByteArray(),null);
+        Transaction tx = Transaction.builder()
+                .gasPrice(gasPrice)
+                .gasLimit(gas)
+                .destination(ecKey.getAddress())
+                .value(value)
+                .build();
         tx.sign(senderPrivKey);
         try {
             tx.verify();
@@ -767,13 +804,14 @@ public class TransactionTest {
 
     private Transaction createTx(ECKey sender, byte[] receiveAddress,
                                  byte[] data, long value, BigInteger nonce) throws InterruptedException {
-        Transaction tx = new Transaction(
-                ByteUtil.bigIntegerToBytes(nonce),
-                ByteUtil.longToBytesNoLeadZeroes(1),
-                ByteUtil.longToBytesNoLeadZeroes(3_000_000),
-                receiveAddress,
-                ByteUtil.longToBytesNoLeadZeroes(value),
-                data);
+        Transaction tx = Transaction.builder()
+                .nonce(nonce)
+                .gasPrice(ByteUtil.longToBytesNoLeadZeroes(1))
+                .gasLimit(ByteUtil.longToBytesNoLeadZeroes(3_000_000))
+                .destination(receiveAddress)
+                .value(ByteUtil.longToBytesNoLeadZeroes(value))
+                .data(data)
+                .build();
         tx.sign(sender.getPrivKeyBytes());
         return tx;
     }

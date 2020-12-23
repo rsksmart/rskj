@@ -21,6 +21,7 @@ package co.rsk.rpc.modules.eth;
 import co.rsk.core.RskAddress;
 import co.rsk.core.Wallet;
 import co.rsk.net.TransactionGateway;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
 import org.ethereum.core.*;
 import org.ethereum.rpc.TypeConverter;
@@ -69,7 +70,16 @@ public class EthModuleTransactionBase implements EthModuleTransaction {
 
             synchronized (transactionPool) {
                 BigInteger accountNonce = args.nonce != null ? TypeConverter.stringNumberAsBigInt(args.nonce) : transactionPool.getPendingState().getNonce(account.getAddress());
-                Transaction tx = new Transaction(toAddress, value, accountNonce, gasPrice, gasLimit, args.data, constants.getChainId());
+                Transaction tx = Transaction
+                        .builder()
+                        .nonce(accountNonce)
+                        .gasPrice(gasPrice)
+                        .gasLimit(gasLimit)
+                        .destination(toAddress == null ? null : Hex.decode(toAddress))
+                        .data(args.data == null ? null : Hex.decode(args.data))
+                        .chainId(constants.getChainId())
+                        .value(value)
+                        .build();
                 tx.sign(account.getEcKey().getPrivKeyBytes());
                 TransactionPoolAddResult result = transactionGateway.receiveTransaction(tx.toImmutableTransaction());
                 if(!result.transactionsWereAdded()) {

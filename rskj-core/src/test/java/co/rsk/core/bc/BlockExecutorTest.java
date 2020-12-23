@@ -237,18 +237,28 @@ public class BlockExecutorTest {
 
         BlockExecutor executor = buildBlockExecutor(trieStore);
 
-        Transaction tx = createTransaction(
-                account,
-                account2,
-                BigInteger.TEN,
-                repository.getNonce(account.getAddress())
-        );
-        Transaction tx2 = createTransaction(
-                account3,
-                account2,
-                BigInteger.TEN,
-                repository.getNonce(account3.getAddress())
-        );
+        Transaction tx3 = Transaction
+                .builder()
+                .nonce(repository.getNonce(account.getAddress()))
+                .gasPrice(BigInteger.ONE)
+                .gasLimit(BigInteger.valueOf(21000))
+                .destination(account2.getAddress())
+                .chainId(config.getNetworkConstants().getChainId())
+                .value(BigInteger.TEN)
+                .build();
+        tx3.sign(account.getEcKey().getPrivKeyBytes());
+        Transaction tx = tx3;
+        Transaction tx1 = Transaction
+                .builder()
+                .nonce(repository.getNonce(account3.getAddress()))
+                .gasPrice(BigInteger.ONE)
+                .gasLimit(BigInteger.valueOf(21000))
+                .destination(account2.getAddress())
+                .chainId(config.getNetworkConstants().getChainId())
+                .value(BigInteger.TEN)
+                .build();
+        tx1.sign(account3.getEcKey().getPrivKeyBytes());
+        Transaction tx2 = tx1;
         List<Transaction> txs = new ArrayList<>();
         txs.add(tx);
         txs.add(tx2);
@@ -290,18 +300,28 @@ public class BlockExecutorTest {
 
         BlockExecutor executor = buildBlockExecutor(trieStore);
 
-        Transaction tx = createTransaction(
-                account,
-                account2,
-                BigInteger.TEN,
-                repository.getNonce(account.getAddress())
-        );
-        Transaction tx2 = createTransaction(
-                account3,
-                account2,
-                BigInteger.TEN,
-                repository.getNonce(account3.getAddress())
-        );
+        Transaction tx3 = Transaction
+                .builder()
+                .nonce(repository.getNonce(account.getAddress()))
+                .gasPrice(BigInteger.ONE)
+                .gasLimit(BigInteger.valueOf(21000))
+                .destination(account2.getAddress())
+                .chainId(config.getNetworkConstants().getChainId())
+                .value(BigInteger.TEN)
+                .build();
+        tx3.sign(account.getEcKey().getPrivKeyBytes());
+        Transaction tx = tx3;
+        Transaction tx1 = Transaction
+                .builder()
+                .nonce(repository.getNonce(account3.getAddress()))
+                .gasPrice(BigInteger.ONE)
+                .gasLimit(BigInteger.valueOf(21000))
+                .destination(account2.getAddress())
+                .chainId(config.getNetworkConstants().getChainId())
+                .value(BigInteger.TEN)
+                .build();
+        tx1.sign(account3.getEcKey().getPrivKeyBytes());
+        Transaction tx2 = tx1;
         List<Transaction> txs = new ArrayList<>();
         txs.add(tx);
         txs.add(tx2);
@@ -406,12 +426,17 @@ public class BlockExecutorTest {
 
         BlockExecutor executor = buildBlockExecutor(trieStore);
 
-        Transaction tx = createTransaction(
-                account,
-                account2,
-                BigInteger.TEN,
-                repository.getNonce(account.getAddress())
-        );
+        Transaction tx1 = Transaction
+                .builder()
+                .nonce(repository.getNonce(account.getAddress()))
+                .gasPrice(BigInteger.ONE)
+                .gasLimit(BigInteger.valueOf(21000))
+                .destination(account2.getAddress())
+                .chainId(config.getNetworkConstants().getChainId())
+                .value(BigInteger.TEN)
+                .build();
+        tx1.sign(account.getEcKey().getPrivKeyBytes());
+        Transaction tx = tx1;
         List<Transaction> txs = new ArrayList<>();
         txs.add(tx);
 
@@ -448,8 +473,18 @@ public class BlockExecutorTest {
         bestBlock.setStateRoot(repository.getRoot());
 
         // then we create the new block to connect
+        Transaction tx = Transaction
+                .builder()
+                .nonce(repository.getNonce(account.getAddress()))
+                .gasPrice(BigInteger.ONE)
+                .gasLimit(BigInteger.valueOf(21000))
+                .destination(account2.getAddress())
+                .chainId(config.getNetworkConstants().getChainId())
+                .value(BigInteger.TEN)
+                .build();
+        tx.sign(account.getEcKey().getPrivKeyBytes());
         List<Transaction> txs = Collections.singletonList(
-                createTransaction(account, account2, BigInteger.TEN, repository.getNonce(account.getAddress()))
+                tx
         );
 
         List<BlockHeader> uncles = new ArrayList<>();
@@ -471,21 +506,33 @@ public class BlockExecutorTest {
         bestBlock.setStateRoot(repository.getRoot());
 
         // then we create the new block to connect
+        Transaction tx = Transaction
+                .builder()
+                .nonce(repository.getNonce(account.getAddress()).add(BigInteger.ONE))
+                .gasPrice(BigInteger.ONE)
+                .gasLimit(BigInteger.valueOf(21000))
+                .destination(account2.getAddress())
+                .chainId(config.getNetworkConstants().getChainId())
+                .value(BigInteger.TEN)
+                .build();
+        tx.sign(account.getEcKey().getPrivKeyBytes());
+        Transaction tx1 = Transaction
+                .builder()
+                .nonce(repository.getNonce(account.getAddress()))
+                .gasPrice(BigInteger.ONE)
+                .gasLimit(BigInteger.valueOf(21000))
+                .destination(account2.getAddress())
+                .chainId(config.getNetworkConstants().getChainId())
+                .value(BigInteger.TEN)
+                .build();
+        tx1.sign(account.getEcKey().getPrivKeyBytes());
         List<Transaction> txs = Arrays.asList(
-                createTransaction(account, account2, BigInteger.TEN, repository.getNonce(account.getAddress())),
-                createTransaction(account, account2, BigInteger.TEN, repository.getNonce(account.getAddress()).add(BigInteger.ONE))
+                tx1,
+                tx
         );
 
         List<BlockHeader> uncles = new ArrayList<>();
         return new BlockGenerator().createChildBlock(bestBlock, txs, uncles, 1, null);
-    }
-
-    private static Transaction createTransaction(Account sender, Account receiver, BigInteger value, BigInteger nonce) {
-        String toAddress = ByteUtil.toHexString(receiver.getAddress().getBytes());
-        byte[] privateKeyBytes = sender.getEcKey().getPrivKeyBytes();
-        Transaction tx = new Transaction(toAddress, value, nonce, BigInteger.ONE, BigInteger.valueOf(21000), config.getNetworkConstants().getChainId());
-        tx.sign(privateKeyBytes);
-        return tx;
     }
 
     public static Account createAccount(String seed, Repository repository, Coin balance) {
@@ -652,14 +699,13 @@ public class BlockExecutorTest {
             valueData = newValueData;
         }
 
-        Transaction tx = new Transaction(
-                BigIntegers.asUnsignedByteArray(nonce),
-                BigIntegers.asUnsignedByteArray(BigInteger.ONE), //gasPrice
-                gasLimitData, // gasLimit
-                to,
-                valueData,
-                null
-        ); // no data
+        Transaction tx = Transaction.builder()
+                .nonce(nonce)
+                .gasPrice(BigInteger.ONE)
+                .gasLimit(gasLimitData)
+                .destination(to)
+                .value(valueData)
+                .build(); // no data
         tx.sign(privateKeyBytes);
         return tx;
     }

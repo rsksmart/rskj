@@ -41,7 +41,7 @@ public class ReceiptStoreImplTest {
     @Test
     public void getUnknownKey() {
         ReceiptStore store = new ReceiptStoreImpl(new HashMapDB());
-        byte[] key = new byte[] { 0x01, 0x02 };
+        byte[] key = new byte[]{0x01, 0x02};
 
         TransactionInfo result = store.get(key);
 
@@ -245,9 +245,7 @@ public class ReceiptStoreImplTest {
 
         // TODO calculate cumulative gas
         TransactionReceipt receipt = new TransactionReceipt(stateRoot, gasUsed, gasUsed, bloom, logs, new byte[]{0x01});
-
-        receipt.setTransaction(new Transaction((byte[]) null, null, null, null, null, null));
-
+        receipt.setTransaction(Transaction.builder().build());
         return receipt;
     }
 }

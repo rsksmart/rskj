@@ -39,6 +39,7 @@ import co.rsk.peg.btcLockSender.BtcLockSender;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
+import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -78,7 +79,7 @@ public class BridgeUtilsTest {
     private ActivationConfig activationConfig;
 
     @Before
-    public void setupConfig(){
+    public void setupConfig() {
         constants = Constants.regtest();
         activationConfig = spy(ActivationConfigsForTest.all());
     }
@@ -264,8 +265,8 @@ public class BridgeUtilsTest {
         Context btcContext = new Context(parameters);
 
         List<BtcECKey> activeFederationKeys = Stream.of(
-            BtcECKey.fromPrivate(Hex.decode("fa01")),
-            BtcECKey.fromPrivate(Hex.decode("fa02"))
+                BtcECKey.fromPrivate(Hex.decode("fa01")),
+                BtcECKey.fromPrivate(Hex.decode("fa02"))
         ).sorted(BtcECKey.PUBKEY_COMPARATOR).collect(Collectors.toList());
         Federation activeFederation = new Federation(FederationTestUtils.getFederationMembersWithBtcKeys(activeFederationKeys), Instant.ofEpochMilli(2000L), 2L, parameters);
 
@@ -291,8 +292,8 @@ public class BridgeUtilsTest {
         assertThat(BridgeUtils.isMigrationTx(toActiveFederationTx, activeFederation, retiringFederation, btcContext, bridgeConstants), is(false));
 
         Address randomAddress = Address.fromBase58(
-            NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
-            "n3PLxDiwWqa5uH7fSbHCxS6VAjD9Y7Rwkj"
+                NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
+                "n3PLxDiwWqa5uH7fSbHCxS6VAjD9Y7Rwkj"
         );
         BtcTransaction fromRetiringFederationTx = new BtcTransaction(parameters);
         fromRetiringFederationTx.addOutput(Coin.COIN, randomAddress);
@@ -306,7 +307,16 @@ public class BridgeUtilsTest {
 
     @Test
     public void getAddressFromEthTransaction() {
-        org.ethereum.core.Transaction tx = new org.ethereum.core.Transaction(TO_ADDRESS, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA, constants.getChainId());
+        org.ethereum.core.Transaction tx = Transaction
+                .builder()
+                .nonce(NONCE)
+                .gasPrice(GAS_PRICE)
+                .gasLimit(GAS_LIMIT)
+                .destination(Hex.decode(TO_ADDRESS))
+                .data(Hex.decode(DATA))
+                .chainId(constants.getChainId())
+                .value(AMOUNT)
+                .build();
         byte[] privKey = generatePrivKey();
         tx.sign(privKey);
 
@@ -318,7 +328,16 @@ public class BridgeUtilsTest {
 
     @Test(expected = Exception.class)
     public void getAddressFromEthNotSignTransaction() {
-        org.ethereum.core.Transaction tx = new org.ethereum.core.Transaction(TO_ADDRESS, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA, constants.getChainId());
+        org.ethereum.core.Transaction tx = Transaction
+                .builder()
+                .nonce(NONCE)
+                .gasPrice(GAS_PRICE)
+                .gasLimit(BigIntegers.asUnsignedByteArray(GAS_LIMIT))
+                .destination(Hex.decode(TO_ADDRESS))
+                .data(Hex.decode(DATA))
+                .chainId(constants.getChainId())
+                .value(AMOUNT)
+                .build();
         BridgeUtils.recoverBtcAddressFromEthTransaction(tx, RegTestParams.get());
     }
 
@@ -430,7 +449,7 @@ public class BridgeUtilsTest {
         BtcTransaction btcTx = new BtcTransaction(btcParams);
 
         // Add inputs
-        for (int i=0; i < inputsToAdd; i++) {
+        for (int i = 0; i < inputsToAdd; i++) {
             btcTx.addInput(prevOut);
         }
 
@@ -446,7 +465,7 @@ public class BridgeUtilsTest {
         }
 
         // Sign inputs
-        for (int i=0; i < inputsToAdd; i++) {
+        for (int i = 0; i < inputsToAdd; i++) {
             btcTx.getInput(i).setScriptSig(scriptSig);
         }
 
@@ -627,7 +646,11 @@ public class BridgeUtilsTest {
 
     @Test
     public void testIsContractTx() {
-        Assert.assertFalse(BridgeUtils.isContractTx(new Transaction((byte[]) null, null, null, null, null, null)));
+        Assert.assertFalse(
+                BridgeUtils.isContractTx(
+                        Transaction.builder().build()
+                )
+        );
         Assert.assertTrue(BridgeUtils.isContractTx(new org.ethereum.vm.program.InternalTransaction(null, 0, 0, null, null, null, null, null, null, null, null)));
     }
 

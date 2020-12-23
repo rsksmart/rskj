@@ -49,19 +49,20 @@ public class BlockEncodingTest {
 
         List<Transaction> txs = new ArrayList<>();
 
-        Transaction tx = new Transaction(
-                BigInteger.ZERO.toByteArray(),
-                BigInteger.ONE.toByteArray(),
-                BigInteger.valueOf(21000).toByteArray(),
-                new ECKey().getAddress(),
-                BigInteger.valueOf(1000).toByteArray(),
-                null);
+        Transaction tx = Transaction
+                .builder()
+                .nonce(BigInteger.ZERO)
+                .gasPrice(BigInteger.ONE)
+                .gasLimit(BigInteger.valueOf(21000))
+                .destination(new ECKey().getAddress())
+                .value(BigInteger.valueOf(1000))
+                .build();
 
         txs.add(tx);
 
         byte[] bigBadByteArray = new byte[10000];
 
-        Arrays.fill(bigBadByteArray , (byte) -1);
+        Arrays.fill(bigBadByteArray, (byte) -1);
 
         FreeBlock fblock = new FreeBlock(
                 PegTestUtils.createHash3().getBytes(),          // parent hash
@@ -69,10 +70,10 @@ public class BlockEncodingTest {
                 TestUtils.randomAddress().getBytes(),            // coinbase
                 new Bloom().getData(),          // logs bloom
                 BigInteger.ONE.toByteArray(),    // difficulty
-                bigBadByteArray ,
-                bigBadByteArray , // gasLimit
-                bigBadByteArray ,// gasUsed
-                bigBadByteArray , //timestamp
+                bigBadByteArray,
+                bigBadByteArray, // gasLimit
+                bigBadByteArray,// gasUsed
+                bigBadByteArray, //timestamp
                 new byte[0],                    // extraData
                 new byte[0],                    // mixHash
                 new byte[]{0},         // provisory nonce
@@ -91,4 +92,5 @@ public class BlockEncodingTest {
         parsedBlock.getGasLimit(); // forced parse
 
     }
+
 }

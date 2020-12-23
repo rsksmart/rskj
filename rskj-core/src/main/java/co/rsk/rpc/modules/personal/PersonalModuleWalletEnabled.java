@@ -199,7 +199,16 @@ public class PersonalModuleWalletEnabled implements PersonalModule {
             args.data = args.data.substring(2);
         }
 
-        Transaction tx = new Transaction(toAddress, value, accountNonce, gasPrice, gasLimit, args.data, config.getNetworkConstants().getChainId());
+        Transaction tx = Transaction
+                .builder()
+                .nonce(accountNonce)
+                .gasPrice(gasPrice)
+                .gasLimit(gasLimit)
+                .destination(toAddress == null ? null : Hex.decode(toAddress))
+                .data(args.data == null ? null : Hex.decode(args.data))
+                .chainId(config.getNetworkConstants().getChainId())
+                .value(value)
+                .build();
 
         tx.sign(account.getEcKey().getPrivKeyBytes());
 
