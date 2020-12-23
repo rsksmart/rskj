@@ -6462,17 +6462,32 @@ public class BridgeSupportTest {
     public void getFastBridgeDerivationHash_Ok() {
         BridgeSupport bridgeSupport = getBridgeSupport(bridgeConstants, mock(BridgeStorageProvider.class));
 
-        byte[] derivationArgumentsHash = ByteUtil.leftPadBytes(new byte[]{0x01}, 32);
-        byte[] userRefundAddress = ByteUtil.leftPadBytes(new byte[]{0x02}, 20);
-        byte[] lbcAddress = ByteUtil.leftPadBytes(new byte[]{0x03}, 20);
-        byte[] lpBtcAddress = ByteUtil.leftPadBytes(new byte[]{0x04}, 20);
+        Address userRefundBtcAddress = Address.fromBase58(
+            bridgeConstants.getBtcParams(),
+            "mgy8yiUZYB7o9vvCu2Yi8GB3Vr32MQsyQJ"
+        );
 
-        byte[] result = ByteUtil.merge(derivationArgumentsHash, userRefundAddress, lbcAddress, lpBtcAddress);
+        byte[] userRefundBtcAddressBytes = bridgeSupport.getBytesFromBtcAddress(userRefundBtcAddress);
+        int refundVersion = BridgeUtils.extractAddressVersionFromBytes(userRefundBtcAddressBytes);
+        byte[] refundHash160 = BridgeUtils.extractHash160FromBytes(userRefundBtcAddressBytes);
+
+        Address lpBtcAddress = Address.fromBase58(
+            bridgeConstants.getBtcParams(),
+            "mhoDGMzHHDq2ZD6cFrKV9USnMfpxEtLwGm"
+        );
+
+        byte[] lpBtcAddressBytes = bridgeSupport.getBytesFromBtcAddress(lpBtcAddress);
+        int lpVersion = BridgeUtils.extractAddressVersionFromBytes(lpBtcAddressBytes);
+        byte[] lpHash160 = BridgeUtils.extractHash160FromBytes(lpBtcAddressBytes);
+
+        byte[] derivationArgumentsHash = ByteUtil.leftPadBytes(new byte[]{0x01}, 32);
+        byte[] lbcAddress = ByteUtil.leftPadBytes(new byte[]{0x03}, 20);
+        byte[] result = ByteUtil.merge(derivationArgumentsHash, userRefundBtcAddressBytes, lbcAddress, lpBtcAddressBytes);
 
         Keccak256 fastBridgeDerivationHash = bridgeSupport.getFastBridgeDerivationHash(
                 new Keccak256(derivationArgumentsHash),
-                new Address(btcParams, userRefundAddress),
-                new Address(btcParams, lpBtcAddress),
+                new Address(btcParams, refundVersion, refundHash160),
+                new Address(btcParams, lpVersion, lpHash160),
                 new RskAddress(lbcAddress)
         );
 
@@ -6514,27 +6529,8 @@ public class BridgeSupportTest {
         Assert.assertEquals(Coin.ZERO, bridgeSupport.getAmountSentToAddress(btcTx, receiver));
     }
 
-    private Address getFastBridgeFederationAddress() {
-        Script fastBridgeRedeemScript = RedeemScriptParser.createMultiSigFastBridgeRedeemScript(
-            bridgeConstants.getGenesisFederation().getRedeemScript(),
-            PegTestUtils.createHash(1)
-        );
-
-        Script fastBridgeP2SH = ScriptBuilder.createP2SHOutputScript(fastBridgeRedeemScript);
-        return Address.fromP2SHScript(bridgeConstants.getBtcParams(), fastBridgeP2SH);
-    }
-
-    private BtcTransaction createBtcTransactionWithOutputToAddress(Coin amount, Address btcAddress) {
-        BtcTransaction tx = new BtcTransaction(bridgeConstants.getBtcParams());
-        tx.addOutput(amount, btcAddress);
-        BtcECKey srcKey = new BtcECKey();
-        tx.addInput(PegTestUtils.createHash(1),
-                0, ScriptBuilder.createInputScript(null, srcKey));
-        return tx;
-    }
-
     @Test
-    public void saveFastBridgeDataInStorage_Ok() throws IOException {
+    public void saveFastBridgeDataInStorage_OK() throws IOException {
         Repository repository = createRepository();
         BridgeStorageProvider provider = new BridgeStorageProvider(
             repository,
@@ -6571,6 +6567,40 @@ public class BridgeSupportTest {
         FastBridgeFederationInformation obtainedFastBridgeFederationInformation = optionalFastBridgeFederationInformation.get();
         Assert.assertEquals(fastBridgeFederationInformation.getDerivationHash(), obtainedFastBridgeFederationInformation.getDerivationHash() );
         Assert.assertArrayEquals(fastBridgeFederationInformation.getFederationScriptHash(), obtainedFastBridgeFederationInformation.getFederationScriptHash() );
+    }
+
+    @Test
+    public void getBytesFromBtcAddress() {
+        BridgeSupport bridgeSupport = getBridgeSupport(bridgeConstants, mock(BridgeStorageProvider.class));
+
+        Address btcAddress = Address.fromBase58(
+            bridgeConstants.getBtcParams(),
+            "mgy8yiUZYB7o9vvCu2Yi8GB3Vr32MQsyQJ"
+        );
+
+        byte[] expectedBytes = Hex.decode("006f0febdbf4739e9fe6724370a7e99cb25d7be5ca99");
+        byte[] obtainedBytes = bridgeSupport.getBytesFromBtcAddress(btcAddress);
+
+        Assert.assertArrayEquals(expectedBytes, obtainedBytes);
+    }
+
+    private Address getFastBridgeFederationAddress() {
+        Script fastBridgeRedeemScript = RedeemScriptParser.createMultiSigFastBridgeRedeemScript(
+            bridgeConstants.getGenesisFederation().getRedeemScript(),
+            PegTestUtils.createHash(1)
+        );
+
+        Script fastBridgeP2SH = ScriptBuilder.createP2SHOutputScript(fastBridgeRedeemScript);
+        return Address.fromP2SHScript(bridgeConstants.getBtcParams(), fastBridgeP2SH);
+    }
+
+    private BtcTransaction createBtcTransactionWithOutputToAddress(Coin amount, Address btcAddress) {
+        BtcTransaction tx = new BtcTransaction(bridgeConstants.getBtcParams());
+        tx.addOutput(amount, btcAddress);
+        BtcECKey srcKey = new BtcECKey();
+        tx.addInput(PegTestUtils.createHash(1),
+            0, ScriptBuilder.createInputScript(null, srcKey));
+        return tx;
     }
 
     private void assertRefundInProcessPegInVersion1(
