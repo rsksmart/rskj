@@ -356,7 +356,9 @@ public class BridgeSupport {
             peginInformation.parse(btcTx);
         } catch (PeginInstructionsException e) {
             if (activations.isActive(ConsensusRule.RSKIP170)) {
-                eventLogger.logRejectedPegin(btcTx, RejectedPeginReason.PEGIN_V1_INVALID_PAYLOAD);
+                if (activations.isActive(ConsensusRule.RSKIP181)) {
+                    eventLogger.logRejectedPegin(btcTx, RejectedPeginReason.PEGIN_V1_INVALID_PAYLOAD);
+                }
 
                 // If possible to get the sender address, refund
                 refundTxSender(btcTx, rskTx, peginInformation, totalAmount);
@@ -406,7 +408,9 @@ public class BridgeSupport {
         if (!BridgeUtils.txIsProcessableInLegacyVersion(senderBtcAddressType, activations)) {
             logger.warn("[processPeginVersionLegacy] [btcTx:{}] Could not get BtcLockSender from Btc tx", btcTx.getHash());
 
-            eventLogger.logRejectedPegin(btcTx, RejectedPeginReason.LEGACY_PEGIN_UNDETERMINED_SENDER);
+            if (activations.isActive(ConsensusRule.RSKIP181)) {
+                eventLogger.logRejectedPegin(btcTx, RejectedPeginReason.LEGACY_PEGIN_UNDETERMINED_SENDER);
+            }
 
             throw new RegisterBtcTransactionException("Could not get BtcLockSender from Btc tx");
         }
@@ -415,10 +419,12 @@ public class BridgeSupport {
         if (shouldProcessPegInVersionLegacy(senderBtcAddressType, btcTx, senderBtcAddress, totalAmount, height)) {
             executePegIn(btcTx, peginInformation, totalAmount);
         } else {
-            if (!isTxLockableForLegacyVersion(senderBtcAddressType, btcTx, senderBtcAddress)) {
-                eventLogger.logRejectedPegin(btcTx, RejectedPeginReason.LEGACY_PEGIN_MULTISIG_SENDER);
-            } else if (!verifyLockDoesNotSurpassLockingCap(btcTx, senderBtcAddress, totalAmount)) {
-                eventLogger.logRejectedPegin(btcTx, RejectedPeginReason.PEGIN_CAP_SURPASSED);
+            if (activations.isActive(ConsensusRule.RSKIP181)) {
+                if (!isTxLockableForLegacyVersion(senderBtcAddressType, btcTx, senderBtcAddress)) {
+                    eventLogger.logRejectedPegin(btcTx, RejectedPeginReason.LEGACY_PEGIN_MULTISIG_SENDER);
+                } else if (!verifyLockDoesNotSurpassLockingCap(btcTx, senderBtcAddress, totalAmount)) {
+                    eventLogger.logRejectedPegin(btcTx, RejectedPeginReason.PEGIN_CAP_SURPASSED);
+                }
             }
 
             generateRejectionRelease(btcTx, senderBtcAddress, rskTx, totalAmount);
@@ -442,7 +448,9 @@ public class BridgeSupport {
         } else {
             logger.debug("[processPegInVersion1] Peg-in attempt surpasses locking cap. Amount attempted to lock: {}", totalAmount);
 
-            eventLogger.logRejectedPegin(btcTx, RejectedPeginReason.PEGIN_CAP_SURPASSED);
+            if (activations.isActive(ConsensusRule.RSKIP181)) {
+                eventLogger.logRejectedPegin(btcTx, RejectedPeginReason.PEGIN_CAP_SURPASSED);
+            }
 
             refundTxSender(btcTx, rskTx, peginInformation, totalAmount);
         }
@@ -488,10 +496,12 @@ public class BridgeSupport {
         } else {
             logger.debug("[refundTxSender] No btc refund address provided, couldn't get sender address either. Can't refund");
 
-            if (activations.isActive(ConsensusRule.RSKIP170)) {
-                eventLogger.logUnrefundablePegin(btcTx, UnrefundablePeginReason.PEGIN_V1_REFUND_ADDRESS_NOT_SET);
-            } else {
-                eventLogger.logUnrefundablePegin(btcTx, UnrefundablePeginReason.LEGACY_PEGIN_UNDETERMINED_SENDER);
+            if (activations.isActive(ConsensusRule.RSKIP181)) {
+                if (activations.isActive(ConsensusRule.RSKIP170)) {
+                    eventLogger.logUnrefundablePegin(btcTx, UnrefundablePeginReason.PEGIN_V1_REFUND_ADDRESS_NOT_SET);
+                } else {
+                    eventLogger.logUnrefundablePegin(btcTx, UnrefundablePeginReason.LEGACY_PEGIN_UNDETERMINED_SENDER);
+                }
             }
         }
     }
