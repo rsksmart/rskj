@@ -56,7 +56,6 @@ import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
-import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
@@ -2232,10 +2231,9 @@ public class BridgeSupport {
         RskAddress lbcAddress
     ) {
         byte[] fastBridgeDerivationHashData = derivationArgumentsHash.getBytes();
-        byte[] userRefundAddressBytes = userRefundAddress.getHash160();
+        byte[] userRefundAddressBytes = getBytesFromBtcAddress(userRefundAddress);
+        byte[] lpBtcAddressBytes = getBytesFromBtcAddress(lpBtcAddress);
         byte[] lbcAddressBytes = lbcAddress.getBytes();
-        byte[] lpBtcAddressBytes = lpBtcAddress.getHash160();
-
         byte[] result = new byte[fastBridgeDerivationHashData.length +
             userRefundAddressBytes.length + lpBtcAddressBytes.length + lbcAddressBytes.length];
 
@@ -2279,6 +2277,18 @@ public class BridgeSupport {
             lpBtcAddressBytes.length
         );
         return new Keccak256(HashUtil.keccak256(result));
+    }
+
+    protected byte[] getBytesFromBtcAddress(Address btcAddress) {
+        byte[] hash160 = btcAddress.getHash160();
+        byte[] versionWithZeroes = ByteUtil.intToBytes(btcAddress.getVersion());
+        byte[] version = new byte[versionWithZeroes.length - 2];
+        System.arraycopy(versionWithZeroes, 2, version, 0, versionWithZeroes.length - 2);
+        byte[] btcAddressBytes = new byte[hash160.length + version.length];
+        System.arraycopy(version, 0, btcAddressBytes, 0, version.length);
+        System.arraycopy(hash160, 0, btcAddressBytes, version.length, hash160.length);
+
+        return btcAddressBytes;
     }
 
     protected Coin getAmountToLiveFederations(BtcTransaction btcTx) throws IOException{
