@@ -241,13 +241,13 @@ public class BlockExecutorTest {
                 account,
                 account2,
                 BigInteger.TEN,
-                repository.getNonce(account.getAddress())
+                repository.getNonce(account.getAddress(),false)
         );
         Transaction tx2 = createTransaction(
                 account3,
                 account2,
                 BigInteger.TEN,
-                repository.getNonce(account3.getAddress())
+                repository.getNonce(account3.getAddress(),false)
         );
         List<Transaction> txs = new ArrayList<>();
         txs.add(tx);
@@ -294,13 +294,13 @@ public class BlockExecutorTest {
                 account,
                 account2,
                 BigInteger.TEN,
-                repository.getNonce(account.getAddress())
+                repository.getNonce(account.getAddress(),false)
         );
         Transaction tx2 = createTransaction(
                 account3,
                 account2,
                 BigInteger.TEN,
-                repository.getNonce(account3.getAddress())
+                repository.getNonce(account3.getAddress(),false)
         );
         List<Transaction> txs = new ArrayList<>();
         txs.add(tx);
@@ -410,7 +410,7 @@ public class BlockExecutorTest {
                 account,
                 account2,
                 BigInteger.TEN,
-                repository.getNonce(account.getAddress())
+                repository.getNonce(account.getAddress(),false)
         );
         List<Transaction> txs = new ArrayList<>();
         txs.add(tx);
@@ -449,7 +449,7 @@ public class BlockExecutorTest {
 
         // then we create the new block to connect
         List<Transaction> txs = Collections.singletonList(
-                createTransaction(account, account2, BigInteger.TEN, repository.getNonce(account.getAddress()))
+                createTransaction(account, account2, BigInteger.TEN, repository.getNonce(account.getAddress(),false))
         );
 
         List<BlockHeader> uncles = new ArrayList<>();
@@ -472,8 +472,8 @@ public class BlockExecutorTest {
 
         // then we create the new block to connect
         List<Transaction> txs = Arrays.asList(
-                createTransaction(account, account2, BigInteger.TEN, repository.getNonce(account.getAddress())),
-                createTransaction(account, account2, BigInteger.TEN, repository.getNonce(account.getAddress()).add(BigInteger.ONE))
+                createTransaction(account, account2, BigInteger.TEN, repository.getNonce(account.getAddress(),false)),
+                createTransaction(account, account2, BigInteger.TEN, repository.getNonce(account.getAddress(),false).add(BigInteger.ONE))
         );
 
         List<BlockHeader> uncles = new ArrayList<>();

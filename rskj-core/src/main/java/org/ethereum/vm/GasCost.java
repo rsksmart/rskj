@@ -24,6 +24,8 @@ import org.ethereum.util.ByteUtil;
 
 import java.math.BigInteger;
 
+import co.rsk.core.types.ints.Uint24; //#mish for value length for storage rent computation
+
 /**
  * The fundamental network cost unit. Paid for exclusively by SBTC, which is converted
  * freely to and from Gas as required. Gas does not exist outside of the internal RSK
@@ -100,6 +102,25 @@ public class GasCost {
 
     public static final long MAX_GAS = Long.MAX_VALUE;
 
+    /* #mish Factor to allocate tx.gaslimit (single field) to execution gaslimit. Rest goes to rentGasLimit
+     * Current split is 50:50, hence the divisor is set to 2.
+     * Set to 1 to allocate entire tx.gaslimit to execution gas limit (i.e. 0 for rentgaslimit)
+     */
+    public static final long TX_GASBUDGET_DIVISOR = 2L;
+    
+    /* Activator to make storage "free" (for testing). 
+     * To make rent free, MUST USE `0` for activator value ALONG WITH  TX_GASBUDGET_DIVISOR = 1
+        (to set rentgaslimit to 0) and avoid 25% of rentgaslimit charge for TX exception or revert
+     * Note: making rent free does NOT stop rent-related computations .. this is not a kill switch
+     */
+    public static final long STORAGE_RENT_ACTIVATOR = 1L; //binary 0/1 variable stored as long
+    
+    // RSKIP113: the actual price of storage: rent is 1/(2^21) gas units per byte per second
+    public static final long STORAGE_RENT_DIVISOR = (1<<21);
+    
+    // helper for 6 months advance rent payment for new trie nodes. 
+    public static final long SIX_MONTHS = 6 * 30 * 24 *3600L; // in seconds, using 30-day months
+    
     /**
      * An exception which is thrown be methods in GasCost when
      * an operation overflows, has invalid inputs or wants to return
@@ -238,6 +259,35 @@ public class GasCost {
         }
         return result;
     }
+
+
+    /**
+     * calculate storage rent (RSKIP113). Rent is computed in units of has per byte stored per second
+     * @param valueLength : actual length of data stored in a trie node representing bytes stored 
+                (an overhead of 128 bytes is added)
+     * @param timeDelta : time period for computing storage rent in seconds (can be negative, future timestamp i.e. prepaid)
+     * @return valueLength*timeDelta*STORAGE_RENT_ACTIVATOR/STORAGE_RENT_DIVISOR
+     */
+    public static long calculateStorageRent(int valueLength, long timeDelta) {
+        if (timeDelta < 0) {
+            throw new InvalidGasException(String.format("%d", timeDelta));
+        }
+        long valLen = valueLength;
+        valLen += 128L ; // add storage overhead of 128 bytes (RSKIP113)
+        long mult = valLen * timeDelta;
+        if (multiplicationOverflowed(valLen, timeDelta, mult)) {
+            return MAX_GAS; //Long.MAX_VALUE
+        }
+        
+        long result = mult*STORAGE_RENT_ACTIVATOR/STORAGE_RENT_DIVISOR;
+        
+        if (result < 0) { //rule out negative, e.g. error timedelta is negative
+            return MAX_GAS;
+        }
+
+        return result;
+    }
+    
 
     /**
      * Returns whether r is overflowed in `x * y = r`

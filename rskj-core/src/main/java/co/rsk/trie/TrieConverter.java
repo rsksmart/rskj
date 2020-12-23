@@ -135,7 +135,7 @@ public class TrieConverter {
 
         return new Trie(
                 null, sharedPath, src.getValue(), left, right,
-                src.getValueLength(), src.getValueHash()
+                src.getValueLengthForEncoding(), src.getValueHash()
         );
     }
 
@@ -166,7 +166,7 @@ public class TrieConverter {
 
         TrieKeySlice sharedPath = unitrieStorageRoot.getSharedPath();
         byte[] value = unitrieStorageRoot.getValue();
-        Uint24 valueLength = unitrieStorageRoot.getValueLength();
+        Uint24 valueLength = unitrieStorageRoot.getValueLengthForEncoding();
         Keccak256 valueHash = unitrieStorageRoot.getValueHash();
 
         if (removeFirstNodePrefix) {

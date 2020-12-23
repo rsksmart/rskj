@@ -31,6 +31,7 @@ import co.rsk.rpc.modules.trace.CreationData;
 import co.rsk.rpc.modules.trace.ProgramSubtrace;
 import co.rsk.vm.BitSet;
 import com.google.common.annotations.VisibleForTesting;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -68,6 +69,8 @@ public class Program {
     // These logs should never be in Info mode in production
     private static final Logger logger = LoggerFactory.getLogger("VM");
     private static final Logger gasLogger = LoggerFactory.getLogger("gas");
+    //#mish remove rentgas logger, use just one
+    //private static final Logger rentGasLogger = LoggerFactory.getLogger("rentGas");
 
     public static final long MAX_MEMORY = (1<<30);
 
@@ -109,6 +112,7 @@ public class Program {
 
     private boolean isLogEnabled;
     private boolean isGasLogEnabled;
+    private boolean isRentGasLogEnabled;
 
     private RskAddress rskOwnerAddress;
 
@@ -188,7 +192,7 @@ public class Program {
             return null;
         }
 
-        byte[] senderNonce = isEmpty(nonce) ? getStorage().getNonce(senderAddress).toByteArray() : nonce;
+        byte[] senderNonce = isEmpty(nonce) ? getStorage().getNonce(senderAddress,true).toByteArray() : nonce;
 
         return getResult().addInternalTransaction(
                 transaction.getHash().getBytes(),
@@ -377,7 +381,7 @@ public class Program {
     public void suicide(DataWord obtainerAddress) {
 
         RskAddress owner = getOwnerRskAddress();
-        Coin balance = getStorage().getBalance(owner);
+        Coin balance = getStorage().getBalance(owner,true);
         RskAddress obtainer = new RskAddress(obtainerAddress);
 
         if (!balance.equals(Coin.ZERO)) {
@@ -405,7 +409,7 @@ public class Program {
 
         RskAddress owner = getOwnerRskAddress();
         RskAddress dest = new RskAddress(destAddress);
-        Coin balance = getStorage().getBalance(owner);
+        Coin balance = getStorage().getBalance(owner,true);
 
         if (isNotCovers(balance, amount)) {
             return; // does not do anything.
@@ -430,7 +434,7 @@ public class Program {
     public void createContract(DataWord value, DataWord memStart, DataWord memSize) {
         RskAddress senderAddress = new RskAddress(getOwnerAddress());
 
-        byte[] nonce = getStorage().getNonce(senderAddress).toByteArray();
+        byte[] nonce = getStorage().getNonce(senderAddress,true).toByteArray();
         byte[] newAddressBytes = HashUtil.calcNewAddr(getOwnerAddress().getLast20Bytes(), nonce);
         RskAddress newAddress = new RskAddress(newAddressBytes);
 
@@ -443,7 +447,7 @@ public class Program {
         byte[] programCode = memoryChunk(memStart.intValue(), memSize.intValue());
 
         byte[] newAddressBytes = HashUtil.calcSaltAddr(senderAddress, programCode, salt.getData());
-        byte[] nonce = getStorage().getNonce(senderAddress).toByteArray();
+        byte[] nonce = getStorage().getNonce(senderAddress,true).toByteArray();
         RskAddress newAddress = new RskAddress(newAddressBytes);
 
         createContract(senderAddress, nonce, value, memStart, memSize, newAddress, true);
@@ -457,7 +461,7 @@ public class Program {
         }
 
         Coin endowment = new Coin(value.getData());
-        if (isNotCovers(getStorage().getBalance(senderAddress), endowment)) {
+        if (isNotCovers(getStorage().getBalance(senderAddress,true), endowment)) {
             stackPushZero();
             return;
         }
@@ -473,11 +477,15 @@ public class Program {
         long gasLimit = getRemainingGas();
         spendGas(gasLimit, "internal call");
 
+        // #mish  rentgaslimit get Remaining for internal call
+        long rentGasLimit = getRemainingRentGas();
+        spendRentGas(rentGasLimit, "internal call");
+
 
         if (byTestingSuite()) {
             // This keeps track of the contracts created for a test
             getResult().addCallCreate(programCode, EMPTY_BYTE_ARRAY,
-                    gasLimit,
+                    gasLimit, rentGasLimit,
                     value.getNoLeadZeroesData());
         }
 
@@ -508,7 +516,7 @@ public class Program {
             return;
         }
 
-        boolean existingAccount = track.isExist(contractAddress);
+        boolean existingAccount = track.isExist(contractAddress,true );
 
         //In case of hashing collisions, check for any balance before createAccount()
         if (existingAccount) {
@@ -516,9 +524,9 @@ public class Program {
             // We check for the nonce to non zero and that the code to be not empty
             // if any of this conditions is true, the contract creation fails
 
-            byte[] code = track.getCode(contractAddress);
+            byte[] code = track.getCode(contractAddress,true);
             boolean hasNonEmptyCode = (code != null && code.length != 0);
-            boolean nonZeroNonce = track.getNonce(contractAddress).longValue() != 0;
+            boolean nonZeroNonce = track.getNonce(contractAddress,true).longValue() != 0;
 
             if (getActivations().isActive(ConsensusRule.RSKIP125) && (hasNonEmptyCode || nonZeroNonce)) {
                 // Contract collision we fail with exactly the same behavior as would arise if
@@ -562,13 +570,14 @@ public class Program {
 
 
         // [5] COOK THE INVOKE AND EXECUTE
-        programResult = getProgramResult(senderAddress, nonce, value, contractAddress, endowment, programCode, gasLimit, track, newBalance, programResult, isCreate2);
+        programResult = getProgramResult(senderAddress, nonce, value, contractAddress, endowment, programCode, gasLimit, rentGasLimit, track, newBalance, programResult, isCreate2);
         if (programResult == null) {
             return;
         }
 
         // REFUND THE REMAIN GAS
         refundRemainingGas(gasLimit, programResult);
+        refundRemainingRentGas(rentGasLimit, programResult);
     }
 
     private void refundRemainingGas(long gasLimit, ProgramResult programResult) {
@@ -585,14 +594,29 @@ public class Program {
         }
     }
 
+    private void refundRemainingRentGas(long rentGasLimit, ProgramResult programResult) {
+        if (programResult.getRentGasUsed() >= rentGasLimit) {
+            return;
+        }
+        long refundRentGas = GasCost.subtract(rentGasLimit, programResult.getRentGasUsed());
+        refundRentGas(refundRentGas, "remaining rent gas from the internal call");
+        if (isGasLogEnabled) {
+            gasLogger.info("The remaining rent gas is refunded, account: [{}], gas: [{}] ",
+                    Hex.toHexString(getOwnerAddress().getLast20Bytes()),
+                    refundRentGas
+            );
+        }
+    }
+
+    // #mish this is used in createContract and is obviously different from getResult()
     private ProgramResult getProgramResult(RskAddress senderAddress, byte[] nonce, DataWord value,
                                            RskAddress contractAddress, Coin endowment, byte[] programCode,
-                                           long gasLimit, Repository track, Coin newBalance, ProgramResult programResult, boolean isCreate2) {
+                                           long gasLimit, long rentGasLimit, Repository track, Coin newBalance, ProgramResult programResult, boolean isCreate2) {
 
 
         InternalTransaction internalTx = addInternalTx(nonce, getGasLimit(), senderAddress, RskAddress.nullAddress(), endowment, programCode, "create");
         ProgramInvoke programInvoke = programInvokeFactory.createProgramInvoke(
-                this, DataWord.valueOf(contractAddress.getBytes()), getOwnerAddress(), value, gasLimit,
+                this, DataWord.valueOf(contractAddress.getBytes()), getOwnerAddress(), value, gasLimit, rentGasLimit,
                 newBalance, null, track, this.invoke.getBlockStore(), false, byTestingSuite());
 
         returnDataBuffer = null; // reset return buffer right before the call
@@ -710,6 +734,7 @@ public class Program {
         if (getCallDeep() == getMaxDepth()) {
             stackPushZero();
             refundGas(msg.getGas().longValue(), " call deep limit reach");
+            refundRentGas(msg.getRentGas().longValue(), " call deep limit reach, refund rent gas");
             return;
         }
 
@@ -729,17 +754,18 @@ public class Program {
 
         // 2.1 PERFORM THE VALUE (endowment) PART
         Coin endowment = new Coin(msg.getEndowment().getData());
-        Coin senderBalance = track.getBalance(senderAddress);
+        Coin senderBalance = track.getBalance(senderAddress,true);
         if (isNotCovers(senderBalance, endowment)) {
             stackPushZero();
             refundGas(msg.getGas().longValue(), "refund gas from message call");
+            refundRentGas(msg.getRentGas().longValue(), "refund rent gas from message call to addr");
             this.cleanReturnDataBuffer(activations);
 
             return;
         }
 
         // FETCH THE CODE
-        byte[] programCode = getStorage().isExist(codeAddress) ? getStorage().getCode(codeAddress) : EMPTY_BYTE_ARRAY;
+        byte[] programCode = getStorage().isExist(codeAddress,true ) ? getStorage().getCode(codeAddress,true) : EMPTY_BYTE_ARRAY;
         // programCode  can be null
 
         // Always first remove funds from sender
@@ -751,6 +777,7 @@ public class Program {
             // This keeps track of the calls created for a test
             getResult().addCallCreate(data, contextAddress.getBytes(),
                     msg.getGas().longValueSafe(),
+                    msg.getRentGas().longValueSafe(),
                     msg.getEndowment().getNoLeadZeroesData());
 
             return;
@@ -769,12 +796,13 @@ public class Program {
             track.commit();
             callResult = true;
             refundGas(GasCost.toGas(msg.getGas().longValue()), "remaining gas from the internal call");
+            refundRentGas(GasCost.toGas(msg.getRentGas().longValue()), "refund rent gas from the internal call to addr");
 
             DataWord callerAddress = DataWord.valueOf(senderAddress.getBytes());
             DataWord ownerAddress = DataWord.valueOf(contextAddress.getBytes());
             DataWord transferValue = DataWord.valueOf(endowment.getBytes());
 
-            TransferInvoke invoke = new TransferInvoke(callerAddress, ownerAddress, msg.getGas().longValue(), transferValue);
+            TransferInvoke invoke = new TransferInvoke(callerAddress, ownerAddress, msg.getGas().longValue(), msg.getRentGas().longValue(), transferValue);
             ProgramResult result = new ProgramResult();
 
             ProgramSubtrace subtrace = ProgramSubtrace.newCallSubtrace(CallType.fromMsgType(msg.getType()), invoke, result, null, Collections.emptyList());
@@ -821,7 +849,8 @@ public class Program {
                 this, DataWord.valueOf(contextAddress.getBytes()),
                 msg.getType() == MsgType.DELEGATECALL ? getCallerAddress() : getOwnerAddress(),
                 msg.getType() == MsgType.DELEGATECALL ? getCallValue() : msg.getEndowment(),
-                limitToMaxLong(msg.getGas()), contextBalance, data, track, this.invoke.getBlockStore(),
+                limitToMaxLong(msg.getGas()), limitToMaxLong(msg.getRentGas()), 
+                contextBalance, data, track, this.invoke.getBlockStore(),
                 msg.getType() == MsgType.STATICCALL || isStaticCall(), byTestingSuite());
 
         VM vm = new VM(config, precompiledContracts);
@@ -851,7 +880,33 @@ public class Program {
             track.rollback();
             // when there's an exception we skip applying results and refunding gas,
             // and we only do that when the call is successful or there's a REVERT operation.
+            
+            // #mish todo: if there is an exception some rentgas should be refunded?
+            // For now, refund 75% of rentgas passed to child for OOG or REVERT
+            // #mish fix: what if it is a rentgas exception? Still the same?
+            long penalty = limitToMaxLong(msg.getRentGas())/4L;
+            childResult.clearUsedRentGas(); //reset it and then tack on 25% penalty for IO costs
+            program.spendRentGas(penalty, "Rent gas penalty 25%"); //using program.spendRentGas so it can trigger exception 
+            /*
+            System.out.println("\n\nIn Program::executecode() child failed" +
+                            "\nmsg (child) exec gas limit = " + limitToMaxLong(msg.getGas())+
+                            "\nmsg (child) rent gas limit = " + limitToMaxLong(msg.getRentGas())+
+                            "\n25% penalty charged = " +(limitToMaxLong(msg.getRentGas()))/4 +
+                            "\nchild rent charged = " + childResult.getRentGasUsed() +
+                            "\nparent rent charged = " + getResult().getRentGasUsed() 
+                            );
+            */ 
             if (childResult.getException() != null) {
+                // refund rent gas on OOG
+                BigInteger refundRentGas = msg.getRentGas().value().subtract(toBI(childResult.getRentGasUsed()));
+                if (isPositive(refundRentGas)) {
+                    // Since the original gas transferred was < Long.MAX_VALUE then the refund
+                    // also fits in a long.
+                    refundRentGas(refundRentGas.longValue(), "remaining rent gas from the internal call");
+                        if (isGasLogEnabled) {
+                            gasLogger.info("The remaining gas refunded, account: [{}], gas: [{}] ", senderAddress, refundRentGas);
+                        }
+                }
                 return false;
             }
 
@@ -886,6 +941,18 @@ public class Program {
                 gasLogger.info("The remaining gas refunded, account: [{}], gas: [{}] ", senderAddress, refundGas);
             }
         }
+
+        // 5.2 REFUND REMAINING STORAGE RENT GAS
+        BigInteger refundRentGas = msg.getRentGas().value().subtract(toBI(childResult.getRentGasUsed()));
+        if (isPositive(refundRentGas)) {
+            // Since the original gas transferred was < Long.MAX_VALUE then the refund
+            // also fits in a long.
+            refundRentGas(refundRentGas.longValue(), "remaining rent gas from the internal call");
+            if (isGasLogEnabled) {
+                gasLogger.info("The remaining gas refunded, account: [{}], gas: [{}] ", senderAddress, refundRentGas);
+            }
+        }
+
         return childCallSuccessful;
     }
 
@@ -901,10 +968,23 @@ public class Program {
         getResult().spendGas(gasValue);
     }
 
+    public void spendRentGas(long rentGasValue, String cause) {
+        if (isGasLogEnabled) {
+            gasLogger.info("[{}] Spent for cause: [{}], rentgas: [{}]", invoke.hashCode(), cause, rentGasValue);
+        }
+
+        if (getRemainingRentGas()  < rentGasValue) {
+            throw ExceptionHelper.notEnoughRentGas(cause, rentGasValue, this);
+        }
+
+        getResult().spendRentGas(rentGasValue);
+    }
+
     public void restart() {
         setPC(startAddr);
         stackClear();
         clearUsedGas();
+        clearUsedRentGas();
         stopped=false;
     }
 
@@ -912,15 +992,31 @@ public class Program {
         getResult().clearUsedGas();
     }
 
+    private void clearUsedRentGas() {
+        getResult().clearUsedRentGas();
+    }
+
     public void spendAllGas() {
         spendGas(getRemainingGas(), "Spending all remaining");
     }
+
+    // needed?
+    /*public void spendAllRentGas() {
+        spendRentGas(getRemainingRentGas(), "Spending all remaining rentgas");
+    }*/
 
     private void refundGas(long gasValue, String cause) {
         if (isGasLogEnabled) {
             gasLogger.info("[{}] Refund for cause: [{}], gas: [{}]", invoke.hashCode(), cause, gasValue);
         }
         getResult().refundGas(gasValue);
+    }
+
+    private void refundRentGas(long rentGasValue, String cause) {
+        if (isGasLogEnabled) {
+            gasLogger.info("[{}] Refund for cause: [{}], rent gas: [{}]", invoke.hashCode(), cause, rentGasValue);
+        }
+        getResult().refundRentGas(rentGasValue);
     }
 
     public void futureRefundGas(long gasValue) {
@@ -961,29 +1057,30 @@ public class Program {
 
     public Keccak256 getCodeHashAt(RskAddress addr, boolean standard) {
         if(standard) {
-            return invoke.getRepository().getCodeHashStandard(addr);
+            return invoke.getRepository().getCodeHashStandard(addr,true );
         }
         else {
-            return invoke.getRepository().getCodeHashNonStandard(addr);
+            return invoke.getRepository().getCodeHashNonStandard(addr,true );
         }
     }
 
     public Keccak256 getCodeHashAt(DataWord address, boolean standard) { return getCodeHashAt(new RskAddress(address), standard); }
 
     public int getCodeLengthAt(RskAddress addr) {
-        return invoke.getRepository().getCodeLength(addr);
+        return invoke.getRepository().getCodeLength(addr, true);
     }
 
     public int getCodeLengthAt(DataWord address) {
         return getCodeLengthAt(new RskAddress(address));
     }
 
+    // this method tracks rent, do not use for testing
     public byte[] getCodeAt(DataWord address) {
         return getCodeAt(new RskAddress(address));
     }
-
+    // this method tracks rent, do not use for testing
     private byte[] getCodeAt(RskAddress addr) {
-        byte[] code = invoke.getRepository().getCode(addr);
+        byte[] code = invoke.getRepository().getCode(addr,true);
         return nullToEmpty(code);
     }
 
@@ -1009,7 +1106,7 @@ public class Program {
     }
 
     public DataWord getBalance(DataWord address) {
-        Coin balance = getStorage().getBalance(new RskAddress(address));
+        Coin balance = getStorage().getBalance(new RskAddress(address),true);
         return DataWord.valueOf(balance.getBytes());
     }
 
@@ -1029,6 +1126,10 @@ public class Program {
         return invoke.getGas()- getResult().getGasUsed();
     }
 
+    public long getRemainingRentGas() {
+        return invoke.getRentGas() - getResult().getRentGasUsed();
+    }
+
     public DataWord getCallValue() {
         return invoke.getCallValue();
     }
@@ -1046,7 +1147,7 @@ public class Program {
     }
 
     public DataWord storageLoad(DataWord key) {
-        return getStorage().getStorageValue(getOwnerRskAddress(), key);
+        return getStorage().getStorageValue(getOwnerRskAddress(), key,true);
     }
 
     public DataWord getPrevHash() {
@@ -1115,12 +1216,12 @@ public class Program {
 
             RskAddress ownerAddress = new RskAddress(getOwnerAddress());
             StringBuilder storageData = new StringBuilder();
-            if (getStorage().isContract(ownerAddress)) {
+            if (getStorage().isContract(ownerAddress,false)) {
                 Iterator<DataWord> it = getStorage().getStorageKeys(ownerAddress);
                 while (it.hasNext()) {
                     DataWord key = it.next();
                     storageData.append(" ").append(key).append(" -> ").
-                            append(getStorage().getStorageValue(ownerAddress, key)).append('\n');
+                            append(getStorage().getStorageValue(ownerAddress, key,false)).append('\n');
                 }
                 if (storageData.length() > 0) {
                     storageData.insert(0, "\n");
@@ -1185,6 +1286,10 @@ public class Program {
                     getResult().getGasUsed(),
                     invoke.getGas(),
                     getRemainingGas());
+            logger.trace("\n  Spent Rent Gas: [{}]/[{}]\n  Left Rent Gas:  [{}]\n",
+                    getResult().getRentGasUsed(),
+                    invoke.getRentGas(),
+                    getRemainingRentGas());
 
             StringBuilder globalOutput = new StringBuilder("\n");
             if (stackData.length() > 0) {
@@ -1212,6 +1317,7 @@ public class Program {
                 globalOutput.append("\n  msg.data: ").append(ByteUtil.toHexString(txData));
             }
             globalOutput.append("\n\n  Spent Gas: ").append(getResult().getGasUsed());
+            globalOutput.append("\n\n  Spent Rent Gas: ").append(getResult().getRentGasUsed());
 
             if (listener != null) {
                 listener.output(globalOutput.toString());
@@ -1351,11 +1457,15 @@ public class Program {
         return ret;
     }
 
+    // #mish: for pre-compiled there are no direct storage rent implications. 
+    // However, as per RSKIP113, if there is insufficient execution gas,
+    // then we keep 25% rent gas (see below, exec gas is not refunded at all
     public void callToPrecompiledAddress(MessageCall msg, PrecompiledContract contract, ActivationConfig.ForBlock activations) {
 
         if (getCallDeep() == getMaxDepth()) {
             stackPushZero();
             this.refundGas(msg.getGas().longValue(), " call deep limit reach");
+            this.refundRentGas(msg.getRentGas().longValue(), " call deep limit reach, refund rent gas");
 
             return;
         }
@@ -1367,10 +1477,11 @@ public class Program {
         RskAddress contextAddress = msg.getType().isStateless() ? senderAddress : codeAddress;
 
         Coin endowment = new Coin(msg.getEndowment().getData());
-        Coin senderBalance = track.getBalance(senderAddress);
+        Coin senderBalance = track.getBalance(senderAddress,true);
         if (senderBalance.compareTo(endowment) < 0) {
             stackPushZero();
             this.refundGas(msg.getGas().longValue(), "refund gas from message call");
+            this.refundRentGas(msg.getRentGas().longValue(), "refund rent gas from message call to PCC");
             this.cleanReturnDataBuffer(activations);
 
             return;
@@ -1383,7 +1494,7 @@ public class Program {
         track.transfer(senderAddress, contextAddress, new Coin(msg.getEndowment().getData()));
 
         // we are assuming that transfer is already creating destination account even if the amount is zero
-        if (!track.isContract(codeAddress)) {
+        if (!track.isContract(codeAddress,true)) {
             track.setupContract(codeAddress);
         }
 
@@ -1391,7 +1502,7 @@ public class Program {
             // This keeps track of the calls created for a test
             this.getResult().addCallCreate(data,
                     codeAddress.getBytes(),
-                    msg.getGas().longValueSafe(),
+                    msg.getGas().longValueSafe(), msg.getRentGas().longValueSafe(),
                     msg.getEndowment().getNoLeadZeroesData());
 
             stackPushOne();
@@ -1425,12 +1536,16 @@ public class Program {
         long requiredGas = contract.getGasForData(data);
         if (requiredGas > msg.getGas().longValue()) {
             this.refundGas(0, "call pre-compiled"); //matches cpp logic
+            // per RSKIP113, if exec gas OOG, then charge 25% of rent gas 
+            this.refundRentGas((3*msg.getRentGas().longValue())/4, "75 percent refund of rent gas, call pre-compiled");
             this.stackPushZero();
             track.rollback();
             this.cleanReturnDataBuffer(activations);
         } else {
 
             this.refundGas(msg.getGas().longValue() - requiredGas, "call pre-compiled");
+            // refund all rent gas
+            this.refundRentGas(msg.getRentGas().longValue(), "refund rent gas, call pre-compiled");
 
             byte[] out = contract.execute(data);
             if (getActivations().isActive(ConsensusRule.RSKIP90)) {
@@ -1461,6 +1576,15 @@ public class Program {
     public static class OutOfGasException extends RuntimeException {
 
         public OutOfGasException(String message, Object... args) {
+            super(format(message, args));
+        }
+    }
+
+    // #mish to be explicit about exceptions rising from rent gas
+    @SuppressWarnings("serial")
+    public static class OutOfRentGasException extends RuntimeException {
+
+        public OutOfRentGasException(String message, Object... args) {
             super(format(message, args));
         }
     }
@@ -1560,6 +1684,16 @@ public class Program {
         public static IllegalOperationException invalidOpCode(@Nonnull Program program) {
             return new IllegalOperationException("Invalid operation code: opcode[%s], tx[%s]", ByteUtil.toHexString(new byte[] {program.getCurrentOp()}, 0, 1), extractTxHash(program));
         }
+
+        public static OutOfRentGasException notEnoughRentGas(String cause, long rentGasValue, Program program) {
+            return new OutOfRentGasException("Not enough rent gas for '%s' cause spending: invokeGas[%d], rentGas[%d], usedRentGas[%d];",
+                    cause, program.invoke.getRentGas(), rentGasValue, program.getResult().getRentGasUsed());
+        }
+        
+        //#mish: looks like this was deprecated in Papy210 logging updates
+        /*public static IllegalOperationException invalidOpCode(byte... opCode) {
+            return new IllegalOperationException("Invalid operation code: opcode[%s];", Hex.toHexString(opCode, 0, 1));
+        */
 
         public static BadJumpDestinationException badJumpDestination(@Nonnull Program program, int pc) {
             return new BadJumpDestinationException("Operation with pc isn't 'JUMPDEST': PC[%d], tx[%s]", pc, extractTxHash(program));

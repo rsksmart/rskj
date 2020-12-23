@@ -20,6 +20,7 @@ package co.rsk.db;
 
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.AccountInformationProvider;
+import co.rsk.core.bc.AccountInformationTracker;
 import co.rsk.crypto.Keccak256;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Repository;
@@ -30,7 +31,7 @@ import java.util.Set;
  * The readonly methods of a Repository.
  * This interface DOES NOT represent an immutable value, since we have startTracking/commit to apply changes.
  */
-public interface RepositorySnapshot extends AccountInformationProvider {
+public interface RepositorySnapshot extends AccountInformationTracker,AccountInformationProvider {
     /**
      * @return the storage root of this repository
      */
@@ -45,16 +46,20 @@ public interface RepositorySnapshot extends AccountInformationProvider {
      * This method can retrieve the code size without actually retrieving the code
      * in some cases.
      */
-    int getCodeLength(RskAddress addr);
+    int getCodeLength(RskAddress addr, boolean trackRent);
 
+    int getCodeLength(RskAddress addr);
     /**
      * This method can retrieve the hash code without actually retrieving the code
      * in some cases.
      * This is the PRE RSKIP169 implementation, which has a bug we need to preserve
      * before the implementation
      * @param addr of the account
+     * @param trackRent
      * @return hash of the contract code
      */
+    Keccak256 getCodeHashNonStandard(RskAddress addr, boolean trackRent);
+
     Keccak256 getCodeHashNonStandard(RskAddress addr);
 
     /**
@@ -62,16 +67,29 @@ public interface RepositorySnapshot extends AccountInformationProvider {
      * in some cases.
      * This is the POST RSKIP169 implementation which fixes the bug
      * @param addr of the account
+     * @param trackRent
      * @return hash of the contract code
      */
+    Keccak256 getCodeHashStandard(RskAddress addr, boolean trackRent);
     Keccak256 getCodeHashStandard(RskAddress addr);
 
     /**
      * @param addr - account to check
+     * @param trackRent
      * @return - true if account exist,
      *           false otherwise
      */
+    boolean isExist(RskAddress addr, boolean trackRent);
+
     boolean isExist(RskAddress addr);
+    /**
+     * Retrieve an account
+     *
+     * @param addr of the account
+     * @param trackRent
+     * @return account state as stored in the database
+     */
+    AccountState getAccountState(RskAddress addr, boolean trackRent);
 
     /**
      * Retrieve an account
@@ -80,6 +98,9 @@ public interface RepositorySnapshot extends AccountInformationProvider {
      * @return account state as stored in the database
      */
     AccountState getAccountState(RskAddress addr);
+    // This method is ONLY for debugging at this point. It should not be called in rent computations
+    // because rent is computed in other classes.
+    long getAccountNodeLRPTime(RskAddress addr);
 
     /**
      * This method creates a new child repository for change tracking purposes.

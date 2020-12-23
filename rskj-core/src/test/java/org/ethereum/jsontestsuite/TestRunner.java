@@ -254,6 +254,7 @@ public class TestRunner {
             byte[] balance = ByteUtil.bigIntegerToBytes(repository.getBalance(new RskAddress(exec.getAddress())).asBigInteger());
             byte[] gasPrice = exec.getGasPrice();
             byte[] gas = exec.getGas();
+            byte[] rentGas = exec.getRentGas();
             byte[] callValue = exec.getValue();
             byte[] msgData = exec.getData();
             byte[] lastHash = env.getPreviousHash();
@@ -274,7 +275,7 @@ public class TestRunner {
             }
 
             ProgramInvoke programInvoke = new ProgramInvokeImpl(address, origin, caller, balance,
-                    gasPrice, gas, callValue, msgData, lastHash, coinbase,
+                    gasPrice, gas, rentGas, callValue, msgData, lastHash, coinbase,
                     timestamp, number, 0, difficulty, gaslimit, repository, new BlockStoreDummy(), true);
 
             /* 3. Create Program - exec.code */

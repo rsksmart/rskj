@@ -300,8 +300,29 @@ public class Transaction {
         return gasPrice;
     }
 
+    /** #mish: Storage rent implementation
+     * There is a single field in TX for overall gas budget (execution + rent)
+      * We divide this overall gas budget of the TX by a factor to allocate to rent gas
+      * then assign all remaining budget to execution gas
+      * default value of factor is TX_GASBUDGET_DIVISOR = 2 (equal division)
+    */
+    // #mish: the conventional (EVM) execution gas limit for a Transaction
     public byte[] getGasLimit() {
-        return gasLimit;
+        return getExecGasLimit();
+    }
+    // #mish: For future, explicit reference for execution gas limit
+    public byte[] getExecGasLimit() {
+        long gasBudget = GasCost.toGas(this.gasLimit); // convert byte to long
+        long execGasBudget= gasBudget/GasCost.TX_GASBUDGET_DIVISOR;
+        return BigInteger.valueOf(execGasBudget).toByteArray();
+    }
+
+    // #mish rentGas limit
+    public byte[] getRentGasLimit() {
+        long gasBudget = GasCost.toGas(this.gasLimit);
+        long execGasBudget= gasBudget/GasCost.TX_GASBUDGET_DIVISOR;
+        long rentGasBudget = gasBudget - execGasBudget;
+        return BigInteger.valueOf(rentGasBudget).toByteArray();
     }
 
     public byte[] getData() {
@@ -511,6 +532,11 @@ public class Transaction {
     public BigInteger getGasLimitAsInteger() {
         return (this.getGasLimit() == null) ? null : BigIntegers.fromUnsignedByteArray(this.getGasLimit());
     }
+
+    public BigInteger getRentGasLimitAsInteger() {
+        return (this.getRentGasLimit() == null) ? null : BigIntegers.fromUnsignedByteArray(this.getRentGasLimit());
+    }
+
 
     public BigInteger getNonceAsInteger() {
         return (this.getNonce() == null) ? null : BigIntegers.fromUnsignedByteArray(this.getNonce());

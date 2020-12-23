@@ -21,8 +21,10 @@ package org.ethereum.vm.program;
 
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import co.rsk.core.bc.AccountInformationProvider;
 import co.rsk.crypto.Keccak256;
 import co.rsk.trie.Trie;
+import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Repository;
 import org.ethereum.vm.DataWord;
@@ -30,6 +32,7 @@ import org.ethereum.vm.program.invoke.ProgramInvoke;
 import org.ethereum.vm.program.listener.ProgramListener;
 import org.ethereum.vm.program.listener.ProgramListenerAware;
 
+import javax.annotation.Nullable;
 import java.math.BigInteger;
 import java.util.Iterator;
 import java.util.Set;
@@ -71,13 +74,29 @@ public class Storage implements Repository, ProgramListenerAware {
     }
 
     @Override
+    public boolean isExist(RskAddress addr, boolean trackRent) {
+        return repository.isExist(addr, trackRent);
+    }
+
+    @Override
     public boolean isExist(RskAddress addr) {
         return repository.isExist(addr);
     }
 
     @Override
+    public AccountState getAccountState(RskAddress addr, boolean trackRent) {
+        return repository.getAccountState(addr,trackRent );
+    }
+
+    @Override
     public AccountState getAccountState(RskAddress addr) {
         return repository.getAccountState(addr);
+    }
+
+    @Override
+    @VisibleForTesting
+    public long getAccountNodeLRPTime(RskAddress addr) {
+        return repository.getAccountNodeLRPTime(addr);
     }
 
     @Override
@@ -104,8 +123,8 @@ public class Storage implements Repository, ProgramListenerAware {
     }
 
     @Override
-    public BigInteger getNonce(RskAddress addr) {
-        return repository.getNonce(addr);
+    public BigInteger getNonce(RskAddress addr,boolean trackRent) {
+        return repository.getNonce(addr,trackRent);
     }
 
     @Override
@@ -114,8 +133,13 @@ public class Storage implements Repository, ProgramListenerAware {
     }
 
     @Override
-    public byte[] getCode(RskAddress addr) {
-        return repository.getCode(addr);
+    public byte[] getCode(RskAddress addr, boolean trackRent) {
+        return repository.getCode(addr,trackRent);
+    }
+
+    @Override
+    public int getCodeLength(RskAddress addr, boolean trackRent) {
+        return repository.getCodeLength(addr, trackRent);
     }
 
     @Override
@@ -124,19 +148,29 @@ public class Storage implements Repository, ProgramListenerAware {
     }
 
     @Override
+    public Keccak256 getCodeHashNonStandard(RskAddress addr, boolean trackRent) {
+        return repository.getCodeHashNonStandard(addr, trackRent);
+    }
+
+    @Override
     public Keccak256 getCodeHashNonStandard(RskAddress addr) {
         return repository.getCodeHashNonStandard(addr);
     }
 
     @Override
+    public Keccak256 getCodeHashStandard(RskAddress addr, boolean trackRent) {
+        return repository.getCodeHashStandard(addr,trackRent );
+    }
+
+    @Override
     public Keccak256 getCodeHashStandard(RskAddress addr) {
-        return repository.getCodeHashStandard(addr);
+        return repository.getCodeHashNonStandard(addr);
     }
 
 
     @Override
-    public boolean isContract(RskAddress addr) {
-        return repository.isContract(addr);
+    public boolean isContract(RskAddress addr,boolean trackRent) {
+        return repository.isContract(addr,trackRent);
     }
 
     @Override
@@ -160,8 +194,25 @@ public class Storage implements Repository, ProgramListenerAware {
     }
 
     @Override
+    public DataWord getStorageValue(RskAddress addr, DataWord key,boolean trackRent) {
+        return repository.getStorageValue(addr, key,trackRent);
+    }
+
+    @Override
+    public Coin getBalance(RskAddress addr) {
+        return repository.getBalance(addr);
+    }
+
+    @Nullable
+    @Override
     public DataWord getStorageValue(RskAddress addr, DataWord key) {
-        return repository.getStorageValue(addr, key);
+        return repository.getStorageValue(addr,key);
+    }
+
+    @Nullable
+    @Override
+    public byte[] getStorageBytes(RskAddress addr, DataWord key) {
+        return repository.getStorageBytes(addr,key);
     }
 
     @Override
@@ -174,14 +225,30 @@ public class Storage implements Repository, ProgramListenerAware {
         return repository.getStorageKeysCount(addr);
     }
 
+    @Nullable
     @Override
-    public byte[] getStorageBytes(RskAddress addr, DataWord key) {
-        return repository.getStorageBytes(addr, key);
+    public byte[] getCode(RskAddress addr) {
+        return repository.getCode(addr);
     }
 
     @Override
-    public Coin getBalance(RskAddress addr) {
-        return repository.getBalance(addr);
+    public boolean isContract(RskAddress addr) {
+        return repository.isContract(addr);
+    }
+
+    @Override
+    public BigInteger getNonce(RskAddress addr) {
+        return repository.getNonce(addr);
+    }
+
+    @Override
+    public byte[] getStorageBytes(RskAddress addr, DataWord key,boolean trackRent) {
+        return repository.getStorageBytes(addr, key,trackRent);
+    }
+
+    @Override
+    public Coin getBalance(RskAddress addr,boolean trackRent) {
+        return repository.getBalance(addr,trackRent);
     }
 
     @Override

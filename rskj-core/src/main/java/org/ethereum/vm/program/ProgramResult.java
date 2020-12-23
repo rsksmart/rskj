@@ -19,6 +19,7 @@
 
 package org.ethereum.vm.program;
 
+import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.vm.CallCreate;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.GasCost;
@@ -34,7 +35,14 @@ import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
  */
 public class ProgramResult {
 
-    private long gasUsed;
+    private long gasUsed = 0L;
+    /** #mish rent gas is collected at end of transaction. 
+     * so rentgas "used" is more like an "estimate" of eventual cost, rather than definite spending. 
+     * However, for clarity of thought, use the same terminology as for regular execution gas.
+     * And even though it is not collected until EOT, it cannot go over the rentGas limit.. that's a OOrentG exception  
+    */
+    private long rentGasUsed = 0L;
+    // #mish data returned from memory, program. can be empty, can be output from func call, even contract code to be written to trie
     private byte[] hReturn = EMPTY_BYTE_ARRAY;
     private RuntimeException exception;
     private boolean revert;
@@ -43,6 +51,7 @@ public class ProgramResult {
     // DataWord is used as a ByteArrayWrapper, because Java data Maps/Sets cannot distiguish duplicate
     // keys if the key is of type byte[].
     private Map<DataWord, byte[]> codeChanges;
+    private Set<ByteArrayWrapper> accessedNodes;
 
     private Set<DataWord> deleteAccounts;
     private List<InternalTransaction> internalTransactions;
@@ -60,8 +69,17 @@ public class ProgramResult {
         gasUsed = 0;
     }
 
+    public void clearUsedRentGas() {
+        rentGasUsed = 0;
+    }
+  
     public void spendGas(long gas) {
         gasUsed = GasCost.add(gasUsed, gas);
+    }
+
+    public void spendRentGas(long rentGas) {
+        rentGasUsed = GasCost.add(rentGasUsed, rentGas);
+        //System.out.println("\nprogresult.spendrentgas ->" + rentGasUsed);
     }
 
     public void setRevert() {
@@ -74,6 +92,10 @@ public class ProgramResult {
 
     public void refundGas(long gas) {
         gasUsed = GasCost.subtract(gasUsed, gas);
+    }
+
+    public void refundRentGas(long rentGas) {
+        rentGasUsed = GasCost.subtract(rentGasUsed, rentGas);
     }
 
     public void setHReturn(byte[] hReturn) {
@@ -91,6 +113,10 @@ public class ProgramResult {
 
     public long getGasUsed() {
         return gasUsed;
+    }
+
+    public long getRentGasUsed() {
+        return rentGasUsed;
     }
 
     public void setException(RuntimeException exception) {
@@ -125,6 +151,23 @@ public class ProgramResult {
         getDeleteAccounts().addAll(accounts);
     }
 
+
+
+   public Set<ByteArrayWrapper> getAccessedNodes() {
+        if (accessedNodes == null) {
+            accessedNodes = new HashSet<>();
+        }
+        return accessedNodes;
+    }
+        // #mish: for accessed, keep the FIRST read value, since outstanding rent computations 
+        // are based on that.
+        public void addAccessedNode(ByteArrayWrapper nodeKey) {
+        getAccessedNodes().add(nodeKey);
+    }
+
+    public void addAccessedNodes(Set<ByteArrayWrapper> nodesAcc) {
+        getAccessedNodes().addAll(nodesAcc);
+    }
     public void clearFieldsOnException() {
         if (deleteAccounts!=null) {
             deleteAccounts.clear();
@@ -134,6 +177,9 @@ public class ProgramResult {
         }
         if (codeChanges!=null) {
             codeChanges.clear();
+        }
+    if (accessedNodes!=null) {
+            accessedNodes.clear();
         }
         resetFutureRefund();
     }
@@ -161,8 +207,8 @@ public class ProgramResult {
         return callCreateList;
     }
 
-    public void addCallCreate(byte[] data, byte[] destination, long gasLimit, byte[] value) {
-        getCallCreateList().add(new CallCreate(data, destination, gasLimit, value));
+    public void addCallCreate(byte[] data, byte[] destination, long gasLimit, long rentGasLimit, byte[] value) {
+        getCallCreateList().add(new CallCreate(data, destination, gasLimit, rentGasLimit, value));
     }
 
     public List<InternalTransaction> getInternalTransactions() {
@@ -212,6 +258,7 @@ public class ProgramResult {
         addInternalTransactions(another.getInternalTransactions());
         if (another.getException() == null && !another.isRevert()) {
             addDeleteAccounts(another.getDeleteAccounts());
+            addAccessedNodes(another.getAccessedNodes());
             addLogInfos(another.getLogInfoList());
             addFutureRefund(another.getFutureRefund());
         }

@@ -144,8 +144,8 @@ public class NodeReference {
     }
 
     private long nodeSize(Trie trie) {
-        long externalValueLength = trie.hasLongValue() ? trie.getValueLength().intValue() : 0L;
-        return trie.getChildrenSize().value + externalValueLength + trie.getMessageLength();
+        long externalValueLength = trie.hasLongValue() ? trie.getValueLength() : 0L;
+        return trie.getChildrenSize() + externalValueLength + trie.getMessageLength();
     }
 
     public static NodeReference empty() {

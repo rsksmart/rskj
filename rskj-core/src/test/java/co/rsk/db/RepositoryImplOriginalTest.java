@@ -68,7 +68,7 @@ public class RepositoryImplOriginalTest {
         repository.increaseNonce(COW);
         repository.increaseNonce(HORSE);
 
-        assertEquals(BigInteger.ONE, repository.getNonce(COW));
+        assertEquals(BigInteger.ONE, getNonce(repository,COW));
 
         repository.increaseNonce(COW);
     }
@@ -80,8 +80,8 @@ public class RepositoryImplOriginalTest {
         repository.addBalance(COW, Coin.valueOf(10L));
         repository.addBalance(HORSE, Coin.valueOf(1L));
 
-        assertEquals(BigInteger.TEN, repository.getBalance(COW).asBigInteger());
-        assertEquals(BigInteger.ONE, repository.getBalance(HORSE).asBigInteger());
+        assertEquals(BigInteger.TEN, balanceAsBI(repository,COW));
+        assertEquals(BigInteger.ONE, balanceAsBI(repository,HORSE));
     }
 
     @Test
@@ -94,10 +94,12 @@ public class RepositoryImplOriginalTest {
         repository.saveCode(COW, cowCode);
         repository.saveCode(HORSE, horseCode);
 
-        assertArrayEquals(cowCode, repository.getCode(COW));
-        assertArrayEquals(horseCode, repository.getCode(HORSE));
+        assertArrayEquals(cowCode, getCode(repository,COW));
+        assertArrayEquals(horseCode, getCode(repository,HORSE));
     }
-
+    private byte[] getCode(Repository repository, RskAddress addr) {
+        return repository.getCode(addr,false);
+    } 
     @Test
     public void test4() {
         Repository repository = createRepository();
@@ -113,8 +115,8 @@ public class RepositoryImplOriginalTest {
         track.addStorageRow(HORSE, DataWord.valueOf(horseKey), DataWord.valueOf(horseValue));
         track.commit();
 
-        assertEquals(DataWord.valueOf(cowValue), repository.getStorageValue(COW, DataWord.valueOf(cowKey)));
-        assertEquals(DataWord.valueOf(horseValue), repository.getStorageValue(HORSE, DataWord.valueOf(horseKey)));
+        assertEquals(DataWord.valueOf(cowValue), getStorageValue(repository,COW, DataWord.valueOf(cowKey)));
+        assertEquals(DataWord.valueOf(horseValue), getStorageValue(repository,HORSE, DataWord.valueOf(horseKey)));
     }
 
     @Test
@@ -138,8 +140,8 @@ public class RepositoryImplOriginalTest {
 
         track.commit();
 
-        assertEquals(BigInteger.TEN, repository.getNonce(COW));
-        assertEquals(BigInteger.ONE, repository.getNonce(HORSE));
+        assertEquals(BigInteger.TEN, getNonce(repository,COW));
+        assertEquals(BigInteger.ONE, getNonce(repository,HORSE));
     }
 
     @Test
@@ -160,13 +162,13 @@ public class RepositoryImplOriginalTest {
 
         track.increaseNonce(HORSE);
 
-        assertEquals(BigInteger.TEN, track.getNonce(COW));
-        assertEquals(BigInteger.ONE, track.getNonce(HORSE));
+        assertEquals(BigInteger.TEN, getNonce(track,COW));
+        assertEquals(BigInteger.ONE, getNonce(track,HORSE));
 
         track.rollback();
 
-        assertEquals(BigInteger.ZERO, repository.getNonce(COW));
-        assertEquals(BigInteger.ZERO, repository.getNonce(HORSE));
+        assertEquals(BigInteger.ZERO, getNonce(repository,COW));
+        assertEquals(BigInteger.ZERO, getNonce(repository,HORSE));
     }
 
     @Test
@@ -177,13 +179,13 @@ public class RepositoryImplOriginalTest {
         track.addBalance(COW, Coin.valueOf(10L));
         track.addBalance(HORSE, Coin.valueOf(1L));
 
-        assertEquals(BigInteger.TEN, track.getBalance(COW).asBigInteger());
-        assertEquals(BigInteger.ONE, track.getBalance(HORSE).asBigInteger());
+        assertEquals(BigInteger.TEN, balanceAsBI(track,COW));
+        assertEquals(BigInteger.ONE, balanceAsBI(track,HORSE));
 
         track.commit();
 
-        assertEquals(BigInteger.TEN, repository.getBalance(COW).asBigInteger());
-        assertEquals(BigInteger.ONE, repository.getBalance(HORSE).asBigInteger());
+        assertEquals(BigInteger.TEN, balanceAsBI(repository,COW));
+        assertEquals(BigInteger.ONE, balanceAsBI(repository,HORSE));
     }
 
     @Test
@@ -194,15 +196,23 @@ public class RepositoryImplOriginalTest {
         track.addBalance(COW, Coin.valueOf(10L));
         track.addBalance(HORSE, Coin.valueOf(1L));
 
-        assertEquals(BigInteger.TEN, track.getBalance(COW).asBigInteger());
-        assertEquals(BigInteger.ONE, track.getBalance(HORSE).asBigInteger());
+        assertEquals(BigInteger.TEN, balanceAsBI(track,COW));
+        assertEquals(BigInteger.ONE, balanceAsBI(track,HORSE));
 
         track.rollback();
 
-        assertEquals(BigInteger.ZERO, repository.getBalance(COW).asBigInteger());
-        assertEquals(BigInteger.ZERO, repository.getBalance(HORSE).asBigInteger());
+        assertEquals(BigInteger.ZERO, balanceAsBI(repository,COW));
+        assertEquals(BigInteger.ZERO, balanceAsBI(repository,HORSE));
     }
 
+    private BigInteger getNonce(Repository repository, RskAddress addr) {
+        return repository.getNonce(addr,false);
+    }
+    
+    private BigInteger balanceAsBI(Repository repository, RskAddress addr) {
+        return repository.getBalance(addr,false).asBigInteger();
+    }
+    
     @Test
     public void test7_1() {
         Repository repository = createRepository();
@@ -211,13 +221,13 @@ public class RepositoryImplOriginalTest {
         track1.addBalance(COW, Coin.valueOf(10L));
         track1.addBalance(HORSE, Coin.valueOf(1L));
 
-        assertEquals(BigInteger.TEN, track1.getBalance(COW).asBigInteger());
-        assertEquals(BigInteger.ONE, track1.getBalance(HORSE).asBigInteger());
+        assertEquals(BigInteger.TEN, balanceAsBI(track1,COW));
+        assertEquals(BigInteger.ONE, balanceAsBI(track1,HORSE));
 
         Repository track2 = track1.startTracking();
 
-        assertEquals(BigInteger.TEN, track2.getBalance(COW).asBigInteger());
-        assertEquals(BigInteger.ONE, track2.getBalance(HORSE).asBigInteger());
+        assertEquals(BigInteger.TEN, balanceAsBI(track2,COW));
+        assertEquals(BigInteger.ONE, balanceAsBI(track2,HORSE));
 
         track2.addBalance(COW, Coin.valueOf(10L));
         track2.addBalance(COW, Coin.valueOf(10L));
@@ -227,8 +237,8 @@ public class RepositoryImplOriginalTest {
 
         track1.commit();
 
-        assertEquals(new BigInteger("40"), repository.getBalance(COW).asBigInteger());
-        assertEquals(BigInteger.ONE, repository.getBalance(HORSE).asBigInteger());
+        assertEquals(new BigInteger("40"), balanceAsBI(repository,COW));
+        assertEquals(BigInteger.ONE, balanceAsBI(repository,HORSE));
     }
 
     @Test
@@ -239,13 +249,13 @@ public class RepositoryImplOriginalTest {
         track1.addBalance(COW, Coin.valueOf(10L));
         track1.addBalance(HORSE, Coin.valueOf(1L));
 
-        assertEquals(BigInteger.TEN, track1.getBalance(COW).asBigInteger());
-        assertEquals(BigInteger.ONE, track1.getBalance(HORSE).asBigInteger());
+        assertEquals(BigInteger.TEN, balanceAsBI(track1,COW));
+        assertEquals(BigInteger.ONE, balanceAsBI(track1,HORSE));
 
         Repository track2 = track1.startTracking();
 
-        assertEquals(BigInteger.TEN, track2.getBalance(COW).asBigInteger());
-        assertEquals(BigInteger.ONE, track2.getBalance(HORSE).asBigInteger());
+        assertEquals(BigInteger.TEN, balanceAsBI(track2,COW));
+        assertEquals(BigInteger.ONE, balanceAsBI(track2,HORSE));
 
         track2.addBalance(COW, Coin.valueOf(10L));
         track2.addBalance(COW, Coin.valueOf(10L));
@@ -255,8 +265,8 @@ public class RepositoryImplOriginalTest {
 
         track1.rollback();
 
-        assertEquals(BigInteger.ZERO, repository.getBalance(COW).asBigInteger());
-        assertEquals(BigInteger.ZERO, repository.getBalance(HORSE).asBigInteger());
+        assertEquals(BigInteger.ZERO, balanceAsBI(repository,COW));
+        assertEquals(BigInteger.ZERO, balanceAsBI(repository,HORSE));
     }
 
     @Test
@@ -273,13 +283,13 @@ public class RepositoryImplOriginalTest {
         track.addStorageRow(COW, cowKey, cowValue);
         track.addStorageRow(HORSE, horseKey, horseValue);
 
-        assertEquals(cowValue, track.getStorageValue(COW, cowKey));
-        assertEquals(horseValue, track.getStorageValue(HORSE, horseKey));
+        assertEquals(cowValue, getStorageValue(track,COW, cowKey));
+        assertEquals(horseValue, getStorageValue(track,HORSE, horseKey));
 
         track.commit();
 
-        assertEquals(cowValue, repository.getStorageValue(COW, cowKey));
-        assertEquals(horseValue, repository.getStorageValue(HORSE, horseKey));
+        assertEquals(cowValue, getStorageValue(repository,COW, cowKey));
+        assertEquals(horseValue, getStorageValue(repository,HORSE, horseKey));
     }
 
     @Test
@@ -296,13 +306,13 @@ public class RepositoryImplOriginalTest {
         track.addStorageRow(COW, cowKey, cowValue);
         track.addStorageRow(HORSE, horseKey, horseValue);
 
-        assertEquals(cowValue, track.getStorageValue(COW, cowKey));
-        assertEquals(horseValue, track.getStorageValue(HORSE, horseKey));
+        assertEquals(cowValue, getStorageValue(track,COW, cowKey));
+        assertEquals(horseValue, getStorageValue(track,HORSE, horseKey));
 
         track.rollback();
         // getStorageValue() returns always a DataWord, not null anymore
-        assertEquals(null, repository.getStorageValue(COW, cowKey));
-        assertEquals(null, repository.getStorageValue(HORSE, horseKey));
+        assertEquals(null, getStorageValue(repository,COW, cowKey));
+        assertEquals(null, getStorageValue(repository,HORSE, horseKey));
     }
 
 
@@ -317,13 +327,13 @@ public class RepositoryImplOriginalTest {
         track.saveCode(COW, cowCode);
         track.saveCode(HORSE, horseCode);
 
-        assertArrayEquals(cowCode, track.getCode(COW));
-        assertArrayEquals(horseCode, track.getCode(HORSE));
+        assertArrayEquals(cowCode, getCode(track,COW));
+        assertArrayEquals(horseCode, getCode(track,HORSE));
 
         track.commit();
 
-        assertArrayEquals(cowCode, repository.getCode(COW));
-        assertArrayEquals(horseCode, repository.getCode(HORSE));
+        assertArrayEquals(cowCode, getCode(repository,COW));
+        assertArrayEquals(horseCode, getCode(repository,HORSE));
     }
 
     @Test
@@ -337,13 +347,13 @@ public class RepositoryImplOriginalTest {
         track.saveCode(COW, cowCode);
         track.saveCode(HORSE, horseCode);
 
-        assertArrayEquals(cowCode, track.getCode(COW));
-        assertArrayEquals(horseCode, track.getCode(HORSE));
+        assertArrayEquals(cowCode, getCode(track,COW));
+        assertArrayEquals(horseCode, getCode(track,HORSE));
 
         track.rollback();
 
-        assertArrayEquals(EMPTY_BYTE_ARRAY, repository.getCode(COW));
-        assertArrayEquals(EMPTY_BYTE_ARRAY, repository.getCode(HORSE));
+        assertArrayEquals(EMPTY_BYTE_ARRAY, getCode(repository,COW));
+        assertArrayEquals(EMPTY_BYTE_ARRAY, getCode(repository,HORSE));
     }
 
     @Test  // Let's upload genesis pre-mine just like in the real world
@@ -376,8 +386,8 @@ public class RepositoryImplOriginalTest {
         track1.addBalance(COW, Coin.valueOf(10L));
         track1.addBalance(HORSE, Coin.valueOf(1L));
 
-        assertEquals(BigInteger.TEN, track1.getBalance(COW).asBigInteger());
-        assertEquals(BigInteger.ONE, track1.getBalance(HORSE).asBigInteger());
+        assertEquals(BigInteger.TEN, balanceAsBI(track1,COW));
+        assertEquals(BigInteger.ONE, balanceAsBI(track1,HORSE));
 
 
         // changes level_2
@@ -385,14 +395,14 @@ public class RepositoryImplOriginalTest {
         track2.addBalance(COW, Coin.valueOf(1L));
         track2.addBalance(HORSE, Coin.valueOf(10L));
 
-        assertEquals(ELEVEN, track2.getBalance(COW).asBigInteger());
-        assertEquals(ELEVEN, track2.getBalance(HORSE).asBigInteger());
+        assertEquals(ELEVEN, balanceAsBI(track2,COW));
+        assertEquals(ELEVEN, balanceAsBI(track2,HORSE));
 
         track2.commit();
         track1.commit();
 
-        assertEquals(ELEVEN, repository.getBalance(COW).asBigInteger());
-        assertEquals(ELEVEN, repository.getBalance(HORSE).asBigInteger());
+        assertEquals(ELEVEN, balanceAsBI(repository,COW));
+        assertEquals(ELEVEN, balanceAsBI(repository,HORSE));
     }
 
     @Test
@@ -407,24 +417,26 @@ public class RepositoryImplOriginalTest {
         track1.addBalance(COW, Coin.valueOf(10L));
         track1.addBalance(HORSE, Coin.valueOf(1L));
 
-        assertEquals(BigInteger.TEN, track1.getBalance(COW).asBigInteger());
-        assertEquals(BigInteger.ONE, track1.getBalance(HORSE).asBigInteger());
+        assertEquals(BigInteger.TEN, balanceAsBI(track1,COW));
+        assertEquals(BigInteger.ONE, balanceAsBI(track1,HORSE));
 
         // changes level_2
         Repository track2 = track1.startTracking();
         track2.addBalance(COW, Coin.valueOf(1L));
         track2.addBalance(HORSE, Coin.valueOf(10L));
 
-        assertEquals(ELEVEN, track2.getBalance(COW).asBigInteger());
-        assertEquals(ELEVEN, track2.getBalance(HORSE).asBigInteger());
+        assertEquals(ELEVEN, balanceAsBI(track2,COW));
+        assertEquals(ELEVEN, balanceAsBI(track2,HORSE));
 
         track2.rollback();
         track1.commit();
 
-        assertEquals(BigInteger.TEN, repository.getBalance(COW).asBigInteger());
-        assertEquals(BigInteger.ONE, repository.getBalance(HORSE).asBigInteger());
+        assertEquals(BigInteger.TEN, balanceAsBI(repository,COW));
+        assertEquals(BigInteger.ONE, balanceAsBI(repository,HORSE));
     }
-
+    private DataWord getStorageValue(Repository repository, RskAddress addr, DataWord key) {
+        return repository.getStorageValue(addr,key,false);
+    }
     @Test
     public void test16() {
         Repository repository = createRepository();
@@ -446,37 +458,37 @@ public class RepositoryImplOriginalTest {
         track1.addStorageRow(COW, DataWord.valueOf(cowKey1), DataWord.valueOf(cowValue1));
         track1.addStorageRow(HORSE, DataWord.valueOf(horseKey1), DataWord.valueOf(horseValue1));
 
-        assertEquals(DataWord.valueOf(cowValue1), track1.getStorageValue(COW, DataWord.valueOf(cowKey1)));
-        assertEquals(DataWord.valueOf(horseValue1), track1.getStorageValue(HORSE, DataWord.valueOf(horseKey1)));
+        assertEquals(DataWord.valueOf(cowValue1), getStorageValue(track1,COW, DataWord.valueOf(cowKey1)));
+        assertEquals(DataWord.valueOf(horseValue1), getStorageValue(track1,HORSE, DataWord.valueOf(horseKey1)));
 
         // changes level_2
         Repository track2 = track1.startTracking();
         track2.addStorageRow(COW, DataWord.valueOf(cowKey2), DataWord.valueOf(cowValue2));
         track2.addStorageRow(HORSE, DataWord.valueOf(horseKey2), DataWord.valueOf(horseValue2));
 
-        assertEquals(DataWord.valueOf(cowValue1), track2.getStorageValue(COW, DataWord.valueOf(cowKey1)));
-        assertEquals(DataWord.valueOf(horseValue1), track2.getStorageValue(HORSE, DataWord.valueOf(horseKey1)));
+        assertEquals(DataWord.valueOf(cowValue1), getStorageValue(track2,COW, DataWord.valueOf(cowKey1)));
+        assertEquals(DataWord.valueOf(horseValue1), getStorageValue(track2,HORSE, DataWord.valueOf(horseKey1)));
 
-        assertEquals(DataWord.valueOf(cowValue2), track2.getStorageValue(COW, DataWord.valueOf(cowKey2)));
-        assertEquals(DataWord.valueOf(horseValue2), track2.getStorageValue(HORSE, DataWord.valueOf(horseKey2)));
+        assertEquals(DataWord.valueOf(cowValue2), getStorageValue(track2,COW, DataWord.valueOf(cowKey2)));
+        assertEquals(DataWord.valueOf(horseValue2), getStorageValue(track2,HORSE, DataWord.valueOf(horseKey2)));
 
         track2.commit();
         // leaving level_2
 
-        assertEquals(DataWord.valueOf(cowValue1), track1.getStorageValue(COW, DataWord.valueOf(cowKey1)));
-        assertEquals(DataWord.valueOf(horseValue1), track1.getStorageValue(HORSE, DataWord.valueOf(horseKey1)));
+        assertEquals(DataWord.valueOf(cowValue1), getStorageValue(track1,COW, DataWord.valueOf(cowKey1)));
+        assertEquals(DataWord.valueOf(horseValue1), getStorageValue(track1,HORSE, DataWord.valueOf(horseKey1)));
 
-        assertEquals(DataWord.valueOf(cowValue2), track1.getStorageValue(COW, DataWord.valueOf(cowKey2)));
-        assertEquals(DataWord.valueOf(horseValue2), track1.getStorageValue(HORSE, DataWord.valueOf(horseKey2)));
+        assertEquals(DataWord.valueOf(cowValue2), getStorageValue(track1,COW, DataWord.valueOf(cowKey2)));
+        assertEquals(DataWord.valueOf(horseValue2), getStorageValue(track1,HORSE, DataWord.valueOf(horseKey2)));
 
         track1.commit();
         // leaving level_1
 
-        assertEquals(DataWord.valueOf(cowValue1), repository.getStorageValue(COW, DataWord.valueOf(cowKey1)));
-        assertEquals(DataWord.valueOf(horseValue1), repository.getStorageValue(HORSE, DataWord.valueOf(horseKey1)));
+        assertEquals(DataWord.valueOf(cowValue1), getStorageValue(repository,COW, DataWord.valueOf(cowKey1)));
+        assertEquals(DataWord.valueOf(horseValue1), getStorageValue(repository,HORSE, DataWord.valueOf(horseKey1)));
 
-        assertEquals(DataWord.valueOf(cowValue2), repository.getStorageValue(COW, DataWord.valueOf(cowKey2)));
-        assertEquals(DataWord.valueOf(horseValue2), repository.getStorageValue(HORSE, DataWord.valueOf(horseKey2)));
+        assertEquals(DataWord.valueOf(cowValue2), getStorageValue(repository,COW, DataWord.valueOf(cowKey2)));
+        assertEquals(DataWord.valueOf(horseValue2), getStorageValue(repository,HORSE, DataWord.valueOf(horseKey2)));
     }
 
     @Test
@@ -503,29 +515,29 @@ public class RepositoryImplOriginalTest {
         track2.addStorageRow(COW, DataWord.valueOf(cowKey2), DataWord.valueOf(cowValue2));
         track2.addStorageRow(HORSE, DataWord.valueOf(horseKey2), DataWord.valueOf(horseValue2));
 
-        assertNull(track2.getStorageValue(COW, DataWord.valueOf(cowKey1)));
-        assertNull(track2.getStorageValue(HORSE, DataWord.valueOf(horseKey1)));
+        assertNull(getStorageValue(track2,COW, DataWord.valueOf(cowKey1)));
+        assertNull(getStorageValue(track2,HORSE, DataWord.valueOf(horseKey1)));
 
-        assertEquals(DataWord.valueOf(cowValue2), track2.getStorageValue(COW, DataWord.valueOf(cowKey2)));
-        assertEquals(DataWord.valueOf(horseValue2), track2.getStorageValue(HORSE, DataWord.valueOf(horseKey2)));
+        assertEquals(DataWord.valueOf(cowValue2), getStorageValue(track2,COW, DataWord.valueOf(cowKey2)));
+        assertEquals(DataWord.valueOf(horseValue2), getStorageValue(track2,HORSE, DataWord.valueOf(horseKey2)));
 
         track2.commit();
         // leaving level_2
 
-        assertNull(track1.getStorageValue(COW, DataWord.valueOf(cowKey1)));
-        assertNull(track1.getStorageValue(HORSE, DataWord.valueOf(horseKey1)));
+        assertNull(getStorageValue(track1,COW, DataWord.valueOf(cowKey1)));
+        assertNull(getStorageValue(track1,HORSE, DataWord.valueOf(horseKey1)));
 
-        assertEquals(DataWord.valueOf(cowValue2), track1.getStorageValue(COW, DataWord.valueOf(cowKey2)));
-        assertEquals(DataWord.valueOf(horseValue2), track1.getStorageValue(HORSE, DataWord.valueOf(horseKey2)));
+        assertEquals(DataWord.valueOf(cowValue2), getStorageValue(track1,COW, DataWord.valueOf(cowKey2)));
+        assertEquals(DataWord.valueOf(horseValue2), getStorageValue(track1,HORSE, DataWord.valueOf(horseKey2)));
 
         track1.commit();
         // leaving level_1
 
-        assertEquals(null, repository.getStorageValue(COW, DataWord.valueOf(cowKey1)));
-        assertEquals(null, repository.getStorageValue(HORSE, DataWord.valueOf(horseKey1)));
+        assertEquals(null, getStorageValue(repository,COW, DataWord.valueOf(cowKey1)));
+        assertEquals(null, getStorageValue(repository,HORSE, DataWord.valueOf(horseKey1)));
 
-        assertEquals(DataWord.valueOf(cowValue2), repository.getStorageValue(COW, DataWord.valueOf(cowKey2)));
-        assertEquals(DataWord.valueOf(horseValue2), repository.getStorageValue(HORSE, DataWord.valueOf(horseKey2)));
+        assertEquals(DataWord.valueOf(cowValue2), getStorageValue(repository,COW, DataWord.valueOf(cowKey2)));
+        assertEquals(DataWord.valueOf(horseValue2), getStorageValue(repository,HORSE, DataWord.valueOf(horseKey2)));
     }
 
     @Test
@@ -552,29 +564,29 @@ public class RepositoryImplOriginalTest {
         track2.addStorageRow(COW, DataWord.valueOf(cowKey2), DataWord.valueOf(cowValue2));
         track2.addStorageRow(HORSE, DataWord.valueOf(horseKey2), DataWord.valueOf(horseValue2));
 
-        assertNull(track2.getStorageValue(COW, DataWord.valueOf(cowKey1)));
-        assertNull(track2.getStorageValue(HORSE, DataWord.valueOf(horseKey1)));
+        assertNull(getStorageValue(track2,COW, DataWord.valueOf(cowKey1)));
+        assertNull(getStorageValue(track2,HORSE, DataWord.valueOf(horseKey1)));
 
-        assertEquals(DataWord.valueOf(cowValue2), track2.getStorageValue(COW, DataWord.valueOf(cowKey2)));
-        assertEquals(DataWord.valueOf(horseValue2), track2.getStorageValue(HORSE, DataWord.valueOf(horseKey2)));
+        assertEquals(DataWord.valueOf(cowValue2), getStorageValue(track2,COW, DataWord.valueOf(cowKey2)));
+        assertEquals(DataWord.valueOf(horseValue2), getStorageValue(track2,HORSE, DataWord.valueOf(horseKey2)));
 
         track2.commit();
         // leaving level_2
 
-        assertNull(track1.getStorageValue(COW, DataWord.valueOf(cowKey1)));
-        assertNull(track1.getStorageValue(HORSE, DataWord.valueOf(horseKey1)));
+        assertNull(getStorageValue(track1,COW, DataWord.valueOf(cowKey1)));
+        assertNull(getStorageValue(track1,HORSE, DataWord.valueOf(horseKey1)));
 
-        assertEquals(DataWord.valueOf(cowValue2), track1.getStorageValue(COW, DataWord.valueOf(cowKey2)));
-        assertEquals(DataWord.valueOf(horseValue2), track1.getStorageValue(HORSE, DataWord.valueOf(horseKey2)));
+        assertEquals(DataWord.valueOf(cowValue2), getStorageValue(track1,COW, DataWord.valueOf(cowKey2)));
+        assertEquals(DataWord.valueOf(horseValue2), getStorageValue(track1,HORSE, DataWord.valueOf(horseKey2)));
 
         track1.rollback();
         // leaving level_1
 
-        assertNull(track1.getStorageValue(COW, DataWord.valueOf(cowKey1)));
-        assertNull(track1.getStorageValue(HORSE, DataWord.valueOf(horseKey1)));
+        assertNull(getStorageValue(track1,COW, DataWord.valueOf(cowKey1)));
+        assertNull(getStorageValue(track1,HORSE, DataWord.valueOf(horseKey1)));
 
-        assertNull(track1.getStorageValue(COW, DataWord.valueOf(cowKey2)));
-        assertNull(track1.getStorageValue(HORSE, DataWord.valueOf(horseKey2)));
+        assertNull(getStorageValue(track1,COW, DataWord.valueOf(cowKey2)));
+        assertNull(getStorageValue(track1,HORSE, DataWord.valueOf(horseKey2)));
     }
 
     @Test
@@ -610,8 +622,8 @@ public class RepositoryImplOriginalTest {
         track1.commit();
         // leaving level_1
 
-        assertEquals(DataWord.valueOf(cowValue1), track1.getStorageValue(COW, DataWord.valueOf(cowKey1)));
-        assertEquals(DataWord.valueOf(cowValue2), track1.getStorageValue(COW, DataWord.valueOf(cowKey2)));
+        assertEquals(DataWord.valueOf(cowValue1), getStorageValue(track1,COW, DataWord.valueOf(cowKey1)));
+        assertEquals(DataWord.valueOf(cowValue2), getStorageValue(track1,COW, DataWord.valueOf(cowKey2)));
     }
 
 
@@ -637,8 +649,8 @@ public class RepositoryImplOriginalTest {
 
         // changes level_2
         Repository track2 = track1.startTracking();
-        assertEquals(DataWord.valueOf(cowValue2), track1.getStorageValue(COW, DataWord.valueOf(cowKey2)));
-        assertNull(track1.getStorageValue(COW, DataWord.valueOf(cowKey1)));
+        assertEquals(DataWord.valueOf(cowValue2), getStorageValue(track1,COW, DataWord.valueOf(cowKey2)));
+        assertNull(getStorageValue(track1,COW, DataWord.valueOf(cowKey1)));
 
         track2.commit();
         // leaving level_2
@@ -646,8 +658,8 @@ public class RepositoryImplOriginalTest {
         track1.commit();
         // leaving level_1
 
-        assertEquals(DataWord.valueOf(cowValue2), track1.getStorageValue(COW, DataWord.valueOf(cowKey2)));
-        assertNull(track1.getStorageValue(COW, DataWord.valueOf(cowKey1)));
+        assertEquals(DataWord.valueOf(cowValue2), getStorageValue(track1,COW, DataWord.valueOf(cowKey2)));
+        assertNull(getStorageValue(track1,COW, DataWord.valueOf(cowKey1)));
     }
 
     @Test
@@ -663,7 +675,7 @@ public class RepositoryImplOriginalTest {
         // changes level_2
         Repository track2 = track1.startTracking();
         track2.addStorageRow(COW, DataWord.valueOf(cowKey1), DataWord.valueOf(cowValue1));
-        assertEquals(DataWord.valueOf(cowValue1), track2.getStorageValue(COW, DataWord.valueOf(cowKey1)));
+        assertEquals(DataWord.valueOf(cowValue1), getStorageValue(track2,COW, DataWord.valueOf(cowKey1)));
         track2.rollback();
         // leaving level_2
 
@@ -689,10 +701,13 @@ public class RepositoryImplOriginalTest {
 
         repository.delete(HORSE);
 
-        assertEquals(true, repoTrack2.isExist(COW));
-        assertEquals(false, repoTrack2.isExist(HORSE));
-        assertEquals(false, repoTrack2.isExist(pig));
-        assertEquals(false, repoTrack2.isExist(precompiled));
+        assertEquals(true, isExist(repoTrack2,COW));
+        assertEquals(false, isExist(repoTrack2,HORSE));
+        assertEquals(false, isExist(repoTrack2,pig));
+        assertEquals(false, isExist(repoTrack2,precompiled));
+    }
+    private boolean isExist(Repository repository, RskAddress addr) {
+        return repository.isExist(addr,false);
     }
     @Test
     public void test19() {
@@ -716,7 +731,7 @@ public class RepositoryImplOriginalTest {
         track.commit();
 
 
-        DataWord horseValAfter = repository.getStorageValue(HORSE,horseKey1);
+        DataWord horseValAfter = getStorageValue(repository,HORSE,horseKey1);
         assertEquals(horseVal0, horseValAfter);
 
         // The repository is modified at this time.
@@ -739,8 +754,8 @@ public class RepositoryImplOriginalTest {
         // Since track2 is rolled back, nothing changes in repo
         track2.rollback();
 
-        assertThat(repository.getStorageValue(COW, cowKey1), is(cowVal0));
-        assertThat(repository.getStorageValue(HORSE, horseKey1), is(horseVal0));
+        assertThat(getStorageValue(repository,COW, cowKey1), is(cowVal0));
+        assertThat(getStorageValue(repository,HORSE, horseKey1), is(horseVal0));
     }
 
     private boolean running = true;
@@ -760,7 +775,7 @@ public class RepositoryImplOriginalTest {
         track2.commit();
         // Changes commited to repository
 
-        assertThat(repository.getStorageValue(COW, cowKey2), is(cowVal0));
+        assertThat(getStorageValue(repository,COW, cowKey2), is(cowVal0));
 
         final CountDownLatch failSema = new CountDownLatch(1);
         // First create the 10 snapshots. The snapshots should not be created while the
@@ -799,9 +814,9 @@ public class RepositoryImplOriginalTest {
                     track21.addBalance(COW, Coin.valueOf(1L));
                     track21.commit();
 
-                    assertEquals(BigInteger.valueOf(cnt), repository.getBalance(COW).asBigInteger());
-                    assertEquals(cVal, repository.getStorageValue(COW, cowKey1));
-                    assertEquals(cowVal0, repository.getStorageValue(COW, cowKey2));
+                    assertEquals(BigInteger.valueOf(cnt), balanceAsBI(repository,COW));
+                    assertEquals(cVal, getStorageValue(repository,COW, cowKey1));
+                    assertEquals(cowVal0, getStorageValue(repository,COW, cowKey2));
                     cnt++;
                 }
             } catch (Throwable e) {

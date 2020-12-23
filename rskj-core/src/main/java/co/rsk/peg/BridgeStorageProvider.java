@@ -68,6 +68,7 @@ public class BridgeStorageProvider {
     private static final DataWord PENDING_FEDERATION_FORMAT_VERSION = DataWord.fromString("pendingFederationFormatVersion");
     private static final Integer FEDERATION_FORMAT_VERSION_MULTIKEY = 1000;
 
+    private final boolean bridgeTracksRent = false; // TODO SDL: decide
     private final Repository repository;
     private final RskAddress contractAddress;
     private final NetworkParameters networkParameters;
@@ -678,7 +679,7 @@ public class BridgeStorageProvider {
     }
 
     private <T> T getFromRepository(DataWord keyAddress, RepositoryDeserializer<T> deserializer) throws IOException {
-        byte[] data = repository.getStorageBytes(contractAddress, keyAddress);
+        byte[] data = repository.getStorageBytes(contractAddress, keyAddress, bridgeTracksRent);
         return deserializer.deserialize(data);
     }
 

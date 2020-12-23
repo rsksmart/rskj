@@ -52,6 +52,7 @@ public class ProgramInvokeMockImpl implements ProgramInvoke {
     private RskAddress contractAddress;
     // default for most tests. This can be overwritten by the test
     private long gasLimit = 1000000;
+    private long rentGasLimit = 1000_000;
 
     public ProgramInvokeMockImpl(byte[] msgDataRaw) {
         this();
@@ -139,6 +140,17 @@ public class ProgramInvokeMockImpl implements ProgramInvoke {
 
     public void setGas(long gasLimit) {
         this.gasLimit = gasLimit;
+    }
+
+    /*           RENTGAS op     */  
+    public long  getRentGas() {
+
+        return rentGasLimit;
+    }
+
+    
+    public void setRentGas(long rentGasLimit) {
+        this.rentGasLimit = rentGasLimit;
     }
 
     /*          CALLVALUE op    */

@@ -339,7 +339,7 @@ public class MutableTrieCacheTest {
         byte[] keyForCache = toBytes("ALICE2");
 
         baseMutableTrie.put(key, value);
-        Uint24 valueLength = baseMutableTrie.getValueLength(key);
+        Uint24 valueLength = baseMutableTrie.getValueLengthForOptionalUse(key);
         assertEquals(new Uint24(value.length), valueLength);
 
         // Test the same in cache
@@ -347,7 +347,7 @@ public class MutableTrieCacheTest {
         MutableTrieCache mtCache = new MutableTrieCache(baseMutableTrie);
 
         mtCache.put(keyForCache, value);
-        Uint24 cacheValueLength = mtCache.getValueLength(keyForCache);
+        Uint24 cacheValueLength = mtCache.getValueLengthForOptionalUse(keyForCache);
         assertEquals(new Uint24(value.length), cacheValueLength);
     }
 
@@ -360,7 +360,7 @@ public class MutableTrieCacheTest {
         byte[] keyForCache = toBytes("ALICE2");
 
         baseMutableTrie.put(key, emptyValue);
-        Uint24 valueLength = baseMutableTrie.getValueLength(key);
+        Uint24 valueLength = baseMutableTrie.getValueLengthForOptionalUse(key);
         assertEquals(Uint24.ZERO, valueLength);
 
         // Test the same in cache
@@ -368,7 +368,7 @@ public class MutableTrieCacheTest {
         MutableTrieCache mtCache = new MutableTrieCache(baseMutableTrie);
 
         mtCache.put(keyForCache, emptyValue);
-        Uint24 cacheValueLength = mtCache.getValueLength(keyForCache);
+        Uint24 cacheValueLength = mtCache.getValueLengthForOptionalUse(keyForCache);
         assertEquals(Uint24.ZERO, cacheValueLength);
     }
 
@@ -380,12 +380,12 @@ public class MutableTrieCacheTest {
 
         byte[] wrongKey = toBytes("BOB");
         
-        Uint24 valueLength = baseMutableTrie.getValueLength(wrongKey);
+        Uint24 valueLength = baseMutableTrie.getValueLengthForOptionalUse(wrongKey);
         assertEquals(Uint24.ZERO, valueLength);
 
         MutableTrieCache mtCache = new MutableTrieCache(baseMutableTrie);
 
-        Uint24 cacheValueLength = mtCache.getValueLength(wrongKey);
+        Uint24 cacheValueLength = mtCache.getValueLengthForOptionalUse(wrongKey);
         assertEquals(Uint24.ZERO, cacheValueLength);
     }
 

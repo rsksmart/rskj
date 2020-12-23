@@ -55,17 +55,17 @@ public class PendingState implements AccountInformationProvider {
 
     @Override
     public Coin getBalance(RskAddress addr) {
-        return postExecutionReturn(executedRepository -> executedRepository.getBalance(addr));
+        return postExecutionReturn(executedRepository -> executedRepository.getBalance(addr,false));
     }
 
     @Override
     public DataWord getStorageValue(RskAddress addr, DataWord key) {
-        return postExecutionReturn(executedRepository -> executedRepository.getStorageValue(addr, key));
+        return postExecutionReturn(executedRepository -> executedRepository.getStorageValue(addr, key,false));
     }
 
     @Override
     public byte[] getStorageBytes(RskAddress addr, DataWord key) {
-        return postExecutionReturn(executedRepository -> executedRepository.getStorageBytes(addr, key));
+        return postExecutionReturn(executedRepository -> executedRepository.getStorageBytes(addr, key,false));
     }
 
     @Override
@@ -90,7 +90,7 @@ public class PendingState implements AccountInformationProvider {
 
     @Override
     public BigInteger getNonce(RskAddress addr) {
-        BigInteger nextNonce = pendingRepository.getNonce(addr);
+        BigInteger nextNonce = pendingRepository.getNonce(addr,false);
         Optional<BigInteger> maxNonce = this.pendingTransactions.getTransactionsWithSender(addr).stream()
                 .map(Transaction::getNonceAsInteger)
                 .max(BigInteger::compareTo)

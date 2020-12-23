@@ -108,6 +108,7 @@ public class VM {
 
     private long memWords; // parameters for logging
     private long gasCost;
+    private long rentGasCost;
     private long gasBefore; // only for tracing
     private boolean isLogEnabled;
 
@@ -205,6 +206,14 @@ public class VM {
         }
 
         program.spendGas(gasCost, op.name());
+    }
+
+    protected void spendOpCodeRentGas() {
+        if (!computeGas) {
+            return;
+        }
+
+        program.spendRentGas(rentGasCost, op.name());
     }
 
     protected void doSTOP() {
@@ -1534,14 +1543,22 @@ public class VM {
         // the callee will receive less gas than the parent expected.
         long calleeGas = Math.min(remainingGas, specifiedGasPlusMin);
 
+        // #mish as per SDL, callee should be passed all rentgas. 
+        // * Assume caller can trust callee.
+        // * No simple way to provide protection to caller via user specified rent gas 
+        long calleeRentGas = program.getRemainingRentGas();
+
         if (computeGas) {
             gasCost = GasCost.add(gasCost, calleeGas);
             spendOpCodeGas();
+            rentGasCost = calleeRentGas; // #mish we are passing all rent gas to callee, 
+            spendOpCodeRentGas();
         }
 
         if (isLogEnabled) {
             hint = "addr: " + ByteUtil.toHexString(codeAddress.getLast20Bytes())
                     + " gas: " + calleeGas
+                    + " Rentgas: " + calleeRentGas
                     + " inOff: " + inDataOffs.shortHex()
                     + " inSize: " + inDataSize.shortHex();
             logger.info(logString, String.format("%5s", "[" + program.getPC() + "]"),
@@ -1554,7 +1571,7 @@ public class VM {
 
         return new MessageCall(
                 MsgType.fromOpcode(op),
-                DataWord.valueOf(calleeGas), codeAddress, value, inDataOffs, inDataSize,
+                DataWord.valueOf(calleeGas), DataWord.valueOf(calleeRentGas),  codeAddress, value, inDataOffs, inDataSize,
                 outDataOffs, outDataSize);
     }
 
@@ -1595,7 +1612,7 @@ public class VM {
         long callGas = GasCost.CALL;
 
         //check to see if account does not exist and is not a precompiled contract
-        if (op == OpCode.CALL && !program.getStorage().isExist(new RskAddress(codeAddress))) {
+        if (op == OpCode.CALL && !program.getStorage().isExist(new RskAddress(codeAddress),true )) {
             callGas = GasCost.add(callGas, GasCost.NEW_ACCT_CALL);
         }
         // RSKIP103: we don't need to check static call nor delegate call since value will always be zero
@@ -1658,7 +1675,7 @@ public class VM {
         if (computeGas) {
             gasCost = GasCost.SUICIDE;
             DataWord suicideAddressWord = stack.get(stack.size() - 1);
-            if (!program.getStorage().isExist(new RskAddress(suicideAddressWord))) {
+            if (!program.getStorage().isExist(new RskAddress(suicideAddressWord),true )) {
                 gasCost = GasCost.add(gasCost, GasCost.NEW_ACCT_SUICIDE);
             }
             spendOpCodeGas();
@@ -2164,7 +2181,7 @@ public class VM {
                     Iterator<DataWord> keysIterator = storage.getStorageKeys(ownerAddress);
                     while (keysIterator.hasNext()) {
                         DataWord key = keysIterator.next();
-                        DataWord value = storage.getStorageValue(ownerAddress, key);
+                        DataWord value = storage.getStorageValue(ownerAddress, key,false);
                         dumpLogger.trace("{} {}",
                                 ByteUtil.toHexString(key.getNoLeadZeroesData()),
                                 ByteUtil.toHexString(value.getNoLeadZeroesData()));
@@ -2193,7 +2210,7 @@ public class VM {
             Iterator<DataWord> keysIterator = storage.getStorageKeys(ownerAddress);
             while (keysIterator.hasNext()) {
                 DataWord key = keysIterator.next();
-                DataWord value = storage.getStorageValue(ownerAddress, key);
+                DataWord value = storage.getStorageValue(ownerAddress, key,false);
                 dumpLogger.trace("{}: {}",
                         key.shortHex(),
                         value.shortHex());

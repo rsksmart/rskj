@@ -45,6 +45,7 @@ public class RepositoryBtcBlockStoreWithCache implements BtcBlockStoreWithCache 
     public static final int MAX_DEPTH_STORED_BLOCKS = 5_000;
     public static final int MAX_SIZE_MAP_STORED_BLOCKS = 10_000;
     private final Map<Sha256Hash, StoredBlock> cacheBlocks;
+    private final boolean trackRent = false; // TODO SDL
 
     public RepositoryBtcBlockStoreWithCache(NetworkParameters btcNetworkParams, Repository repository, Map<Sha256Hash, StoredBlock> cacheBlocks, RskAddress contractAddress) {
         this.cacheBlocks = cacheBlocks;
@@ -69,7 +70,7 @@ public class RepositoryBtcBlockStoreWithCache implements BtcBlockStoreWithCache 
 
     @Override
     public synchronized StoredBlock get(Sha256Hash hash) {
-        byte[] ba = repository.getStorageBytes(contractAddress, DataWord.valueFromHex(hash.toString()));
+        byte[] ba = repository.getStorageBytes(contractAddress, DataWord.valueFromHex(hash.toString()),trackRent);
         if (ba == null) {
             return null;
         }
@@ -79,7 +80,7 @@ public class RepositoryBtcBlockStoreWithCache implements BtcBlockStoreWithCache 
 
     @Override
     public synchronized StoredBlock getChainHead() {
-        byte[] ba = repository.getStorageBytes(contractAddress, DataWord.fromString(BLOCK_STORE_CHAIN_HEAD_KEY));
+        byte[] ba = repository.getStorageBytes(contractAddress, DataWord.fromString(BLOCK_STORE_CHAIN_HEAD_KEY),trackRent);
         if (ba == null) {
            return null;
         }

@@ -24,11 +24,13 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.trie.MutableTrie;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieKeySlice;
+import co.rsk.trie.TrieNodeData;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.db.TrieKeyMapper;
 import org.ethereum.vm.DataWord;
 
+import javax.annotation.Nullable;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.function.Function;
@@ -66,6 +68,17 @@ public class MutableTrieCache implements MutableTrie {
     @Override
     public byte[] get(byte[] key) {
         return internalGet(key, trie::get, Function.identity()).orElse(null);
+    }
+
+    @Nullable
+    @Override
+    public TrieNodeData getNodeData(byte[] key) {
+        byte[] cachedData = internalGet(key, trie::get, Function.identity()).orElse(null);
+        if (cachedData!=null) {// present in cache
+            // We create a node whose timestamp is the current block's timestamp
+            return new TrieNodeDataFromCache(cachedData);
+        }
+        return trie.getNodeData(key);
     }
 
     private <T> Optional<T> internalGet(
@@ -229,8 +242,15 @@ public class MutableTrieCache implements MutableTrie {
     }
 
     @Override
-    public Uint24 getValueLength(byte[] key) {
-        return internalGet(key, trie::getValueLength, cachedBytes -> new Uint24(cachedBytes.length)).orElse(Uint24.ZERO);
+    public long getValueLength(byte[] key) {
+       return getValueLengthForOptionalUse(key).intValue();
+    }
+
+    @Override
+    public Uint24 getValueLengthForOptionalUse(byte[] key) {
+        // Why is this code so clumsy?
+        // Babies learn if/then/else before they learn cascading calls, streams or lambda expressions
+        return internalGet(key, trie::getValueLengthForOptionalUse, cachedBytes -> new Uint24(cachedBytes.length)).orElse(Uint24.ZERO);
     }
 
     @Override

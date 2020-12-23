@@ -650,7 +650,7 @@ public class BlockChainImplTest {
         RepositorySnapshot repository = objects.getRepositoryLocator().snapshotAt(bestBlock.getHeader());
 
         String toAddress = ByteUtil.toHexString(catKey.getAddress());
-        BigInteger nonce = repository.getNonce(new RskAddress(cowKey.getAddress()));
+        BigInteger nonce = repository.getNonce(new RskAddress(cowKey.getAddress()),false);
         Transaction tx = new Transaction(toAddress, BigInteger.TEN, nonce, BigInteger.ONE, BigInteger.valueOf(21000), config.getNetworkConstants().getChainId());
         tx.sign(cowKey.getPrivKeyBytes());
 

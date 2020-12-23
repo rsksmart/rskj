@@ -26,7 +26,9 @@ import co.rsk.metrics.profilers.Metric;
 import co.rsk.metrics.profilers.Profiler;
 import co.rsk.metrics.profilers.ProfilerFactory;
 import co.rsk.panic.PanicProcessor;
+import co.rsk.remasc.RemascTransaction;
 import co.rsk.rpc.modules.trace.ProgramSubtrace;
+
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -94,6 +96,14 @@ public class TransactionExecutor {
     private PrecompiledContracts.PrecompiledContract precompiledContract;
 
     private long mEndGas = 0;
+
+    private boolean isRemascTx; //#to avoid storage rent related errors check if senderAddr == remasc addr
+    private long mEndRentGas = 0;
+    private long refTimeStamp; // reference timestamp to use to estimate storage rent due
+
+    //#mish unlike execution gas, rent gas is only collected at EOT. Use this for tracking estimated rent
+    private long estRentGas = 0;
+
     private long basicTxCost = 0;
     private List<LogInfo> logs = null;
     private final Set<DataWord> deletedAccounts;
@@ -156,7 +166,23 @@ public class TransactionExecutor {
             return true;
         }
 
+        /** replace with class instance version (below)
+         if (tx.getSender() == RemascTransaction.REMASC_ADDRESS) {
+         //System.out.println("\n\n\n remasc addr " + RemascTransaction.REMASC_ADDRESS);
+         this.isRemascTx = true;
+         }
+         */
+        if (tx instanceof RemascTransaction) {
+            //System.out.println("\n\n\n remasc!\n\n");
+            this.isRemascTx = true;
+        }
+
+        // #mish: In Transaction.class, these methods divide a tx gaslimit field
+        // between two approximately equal budgets: a limit for execution gas and limit for rent
         long txGasLimit = GasCost.toGas(tx.getGasLimit());
+        long txRentGasLimit = GasCost.toGas(tx.getRentGasLimit());
+
+        // #mish: block level gas limit is based on execution only (rent is not included)
         long curBlockGasLimit = GasCost.toGas(executionBlock.getGasLimit());
 
         if (!gasIsValid(txGasLimit, curBlockGasLimit)) {
@@ -170,13 +196,15 @@ public class TransactionExecutor {
 
         Coin totalCost = tx.getValue();
 
-        if (basicTxCost > 0 ) {
+        if (basicTxCost > 0) {
             // add gas cost only for priced transactions
             Coin txGasCost = tx.getGasPrice().multiply(BigInteger.valueOf(txGasLimit));
-            totalCost = totalCost.add(txGasCost);
+            //storage rent cost
+            Coin txRentGasCost = tx.getGasPrice().multiply(BigInteger.valueOf(txRentGasLimit));
+            totalCost = totalCost.add(txGasCost).add(txRentGasCost);
         }
 
-        Coin senderBalance = track.getBalance(tx.getSender());
+        Coin senderBalance = track.getBalance(tx.getSender(),true);
 
         if (!isCovers(senderBalance, totalCost)) {
 
@@ -213,8 +241,8 @@ public class TransactionExecutor {
             logger.warn("Tx Included in the following block: {}", this.executionBlock);
 
             panicProcessor.panic("invalidsignature",
-                                 String.format("Transaction %s signature not accepted: %s",
-                                               tx.getHash(), tx.getSignature()));
+                    String.format("Transaction %s signature not accepted: %s",
+                            tx.getHash(), tx.getSignature()));
             execError(String.format("Transaction signature not accepted: %s", tx.getSignature()));
 
             return false;
@@ -224,7 +252,7 @@ public class TransactionExecutor {
     }
 
     private boolean nonceIsValid() {
-        BigInteger reqNonce = track.getNonce(tx.getSender(signatureCache));
+        BigInteger reqNonce = track.getNonce(tx.getSender(signatureCache),true);
         BigInteger txNonce = toBI(tx.getNonce());
 
         if (isNotEqual(reqNonce, txNonce)) {
@@ -273,10 +301,15 @@ public class TransactionExecutor {
             track.increaseNonce(tx.getSender());
 
             long txGasLimit = GasCost.toGas(tx.getGasLimit());
+            long txRentGasLimit = GasCost.toGas(tx.getRentGasLimit());
+            //execution gas limit  gas2Coin
             Coin txGasCost = tx.getGasPrice().multiply(BigInteger.valueOf(txGasLimit));
-            track.addBalance(tx.getSender(), txGasCost.negate());
+            Coin txRentGasCost = tx.getGasPrice().multiply(BigInteger.valueOf(txRentGasLimit));
 
-            logger.trace("Paying: txGasCost: [{}], gasPrice: [{}], gasLimit: [{}]", txGasCost, tx.getGasPrice(), txGasLimit);
+            track.addBalance(tx.getSender(), txGasCost.add(txRentGasCost).negate());
+
+            logger.trace("Paying: txGasCost: [{}],  gasPrice: [{}], gasLimit: [{}], txRentGasCost: [{}], rentGasLimit: [{}]",
+                    txGasCost, tx.getGasPrice(), txGasLimit, txRentGasCost, txRentGasLimit);
         }
 
         if (tx.isContractCreation()) {
@@ -314,13 +347,21 @@ public class TransactionExecutor {
 
             long requiredGas = precompiledContract.getGasForData(tx.getData());
             long txGasLimit = GasCost.toGas(tx.getGasLimit());
+            long txRentGasLimit = GasCost.toGas(tx.getRentGasLimit());
             long gasUsed = GasCost.add(requiredGas, basicTxCost);
             if (!localCall && !enoughGas(txGasLimit, requiredGas, gasUsed)) {
                 // no refund no endowment
-                execError(String.format( "Out of Gas calling precompiled contract at block %d " +
+                execError(String.format("Out of Gas calling precompiled contract at block %d " +
                                 "for address 0x%s. required: %s, used: %s, left: %s ",
                         executionBlock.getNumber(), targetAddress.toString(), requiredGas, gasUsed, mEndGas));
                 mEndGas = 0;
+
+                if (!isRemascTx) {
+                    // #mish: if exec gas OOG, do not refund all rent Gas.. keep 25% as per RSKIP113
+                    mEndRentGas = 3 * txRentGasLimit / 4; //#mish: with pre compiles should all rent gas be refunded?
+                    // increase estimated rentgas
+                    estRentGas += txRentGasLimit / 4;
+                }
                 profiler.stop(metric);
                 return;
             }
@@ -334,10 +375,10 @@ public class TransactionExecutor {
                 byte[] out = precompiledContract.execute(tx.getData());
                 this.subtraces = precompiledContract.getSubtraces();
                 result.setHReturn(out);
-                if (!track.isExist(targetAddress)) {
+                if (!track.isExist(targetAddress,true )) {
                     track.createAccount(targetAddress);
                     track.setupContract(targetAddress);
-                } else if (!track.isContract(targetAddress)) {
+                } else if (!track.isContract(targetAddress,true)) {
                     track.setupContract(targetAddress);
                 }
             } catch (RuntimeException e) {
@@ -346,7 +387,7 @@ public class TransactionExecutor {
             result.spendGas(gasUsed);
             profiler.stop(metric);
         } else {
-            byte[] code = track.getCode(targetAddress);
+            byte[] code = track.getCode(targetAddress,true);
             // Code can be null
             if (isEmpty(code)) {
                 mEndGas = GasCost.subtract(GasCost.toGas(tx.getGasLimit()), basicTxCost);
@@ -368,7 +409,7 @@ public class TransactionExecutor {
 
     private void create() {
         RskAddress newContractAddress = tx.getContractAddress();
-        cacheTrack.createAccount(newContractAddress, activations.isActive(RSKIP174) && cacheTrack.isExist(newContractAddress));
+        cacheTrack.createAccount(newContractAddress, activations.isActive(RSKIP174) && cacheTrack.isExist(newContractAddress,true ));
 
         if (isEmpty(tx.getData())) {
             mEndGas = GasCost.subtract(GasCost.toGas(tx.getGasLimit()), basicTxCost);
@@ -444,6 +485,7 @@ public class TransactionExecutor {
         } catch (Exception e) {
             cacheTrack.rollback();
             mEndGas = 0;
+            mEndRentGas = 0; // #mish todo should this be 0 or 75%?
             execError(e);
             profiler.stop(metric);
             return;
@@ -472,7 +514,7 @@ public class TransactionExecutor {
             result = program.getResult();
             result.setHReturn(EMPTY_BYTE_ARRAY);
         } else {
-            mEndGas = GasCost.subtract(mEndGas,  returnDataGasValue);
+            mEndGas = GasCost.subtract(mEndGas, returnDataGasValue);
             program.spendGas(returnDataGasValue, "CONTRACT DATA COST");
             cacheTrack.saveCode(tx.getContractAddress(), result.getHReturn());
         }
@@ -485,14 +527,18 @@ public class TransactionExecutor {
             receipt.setCumulativeGas(totalGasUsed);
             receipt.setTransaction(tx);
             receipt.setLogInfoList(getVMLogs());
-            receipt.setGasUsed(getGasUsed());
-            receipt.setStatus(executionError.isEmpty()?TransactionReceipt.SUCCESS_STATUS:TransactionReceipt.FAILED_STATUS);
+            receipt.setGasUsed(result.getGasUsed() + result.getRentGasUsed()); //#mish combined gas usage (exec + rent) (cos Wallets)
+            receipt.setStatus(executionError.isEmpty() ? TransactionReceipt.SUCCESS_STATUS : TransactionReceipt.FAILED_STATUS);
+            receipt.setExecGasUsed(result.getGasUsed()); // for testing
+            receipt.setRentGasUsed(result.getRentGasUsed()); //for testing   
         }
         return receipt;
     }
 
 
     private void finalization() {
+        // Collect rent gas computed here (but not internal TX) before finalization
+        result.spendRentGas(estRentGas);
         // RSK if local call gas balances must not be changed
         if (localCall) {
             return;
@@ -505,26 +551,34 @@ public class TransactionExecutor {
         //Transaction sender is stored in cache
         signatureCache.storeSender(tx);
 
+        long txRentGasLimit = GasCost.toGas(tx.getRentGasLimit());
+
+        mEndRentGas = activations.isActive(ConsensusRule.RSKIP136) ?
+                GasCost.subtract(txRentGasLimit, result.getRentGasUsed()) :
+                txRentGasLimit - result.getRentGasUsed();
+
+
         // Should include only LogInfo's that was added during not rejected transactions
         List<LogInfo> notRejectedLogInfos = result.getLogInfoList().stream()
                 .filter(logInfo -> !logInfo.isRejected())
                 .collect(Collectors.toList());
 
         TransactionExecutionSummary.Builder summaryBuilder = TransactionExecutionSummary.builderFor(tx)
-                .gasLeftover(BigInteger.valueOf(mEndGas))
+                .gasLeftover(BigInteger.valueOf(mEndGas + mEndRentGas)) // #mish combine exec and rent gas left over
                 .logs(notRejectedLogInfos)
                 .result(result.getHReturn());
 
         // Accumulate refunds for suicides
         result.addFutureRefund(GasCost.multiply(result.getDeleteAccounts().size(), GasCost.SUICIDE_REFUND));
         long gasRefund = Math.min(result.getFutureRefund(), result.getGasUsed() / 2);
+
         mEndGas = activations.isActive(ConsensusRule.RSKIP136) ?
                 GasCost.add(mEndGas, gasRefund) :
                 mEndGas + gasRefund;
 
         summaryBuilder
-                .gasUsed(toBI(result.getGasUsed()))
-                .gasRefund(toBI(gasRefund))
+                .gasUsed(toBI(result.getGasUsed() + result.getRentGasUsed()))
+                .gasRefund(toBI(gasRefund)) // #mish this is NOT gas left over.. that's separate
                 .deletedAccounts(result.getDeleteAccounts())
                 .internalTransactions(result.getInternalTransactions());
 
@@ -536,7 +590,7 @@ public class TransactionExecutor {
 
         TransactionExecutionSummary summary = summaryBuilder.build();
 
-        // Refund for gas leftover
+        // Refund for gas leftover (see above builder, leftover includes rentGas as well)
         track.addBalance(tx.getSender(), summary.getLeftover().add(summary.getRefund()));
         logger.trace("Pay total refund to sender: [{}], refund val: [{}]", tx.getSender(), summary.getRefund());
 
@@ -544,7 +598,7 @@ public class TransactionExecutor {
         Coin summaryFee = summary.getFee();
 
         //TODO: REMOVE THIS WHEN THE LocalBLockTests starts working with REMASC
-        if(enableRemasc) {
+        if (enableRemasc) {
             logger.trace("Adding fee to remasc contract account");
             track.addBalance(PrecompiledContracts.REMASC_ADDR, summaryFee);
         } else {
@@ -552,6 +606,20 @@ public class TransactionExecutor {
         }
 
         this.paidFees = summaryFee;
+
+        //#mish for testing
+        System.out.println("\nTX finalization " +
+                "(is Remasc TX: " + isRemascTx + ")" +
+                "\n\nExec GasLimit " + GasCost.toGas(tx.getGasLimit()) +
+                "\nExec gas used " + result.getGasUsed() +
+                "\nExec gas refund " + mEndGas +
+                "\n\nRent GasLimit " + GasCost.toGas(tx.getRentGasLimit()) +
+                "\nRent gas used " + result.getRentGasUsed() +
+                "\nRent gas refund " + mEndRentGas +
+                "\n\nTx fees (exec + rent) in Coin (using tx.gasPrice): " + paidFees +
+                "\n\nNo. trie nodes with `read` rent timestamp: " + result.getAccessedNodes().size()+ "\n"
+        );
+        //System.out.println("\n\n" + tx); //#mish for testing                   
 
         logger.trace("Processing result");
         logs = notRejectedLogInfos;
@@ -574,9 +642,8 @@ public class TransactionExecutor {
             // TODO improve this settings; the trace should already have the values
             ProgramTrace trace = program.getTrace().result(result.getHReturn()).error(result.getException()).revert(result.isRevert());
             programTraceProcessor.processProgramTrace(trace, tx.getHash());
-        }
-        else {
-            TransferInvoke invoke = new TransferInvoke(DataWord.valueOf(tx.getSender().getBytes()), DataWord.valueOf(tx.getReceiveAddress().getBytes()), 0L, DataWord.valueOf(tx.getValue().getBytes()));
+        } else {
+            TransferInvoke invoke = new TransferInvoke(DataWord.valueOf(tx.getSender().getBytes()), DataWord.valueOf(tx.getReceiveAddress().getBytes()), 0L, GasCost.toGas(tx.getRentGasLimit()), DataWord.valueOf(tx.getValue().getBytes()));
 
             SummarizedProgramTrace trace = new SummarizedProgramTrace(invoke);
 
@@ -611,5 +678,24 @@ public class TransactionExecutor {
         return toBI(tx.getGasLimit()).subtract(toBI(mEndGas)).longValue();
     }
 
-    public Coin getPaidFees() { return paidFees; }
+
+    public long getRentGasUsed() {
+        return result.getRentGasUsed(); //#mish: the form is different from execgas, which is based on mEndGas. 
+    }
+
+    public Coin getPaidFees() {
+        return paidFees;
+    }
+
+    /**
+     * #mish Helper methods for storage rent
+     */
+
+    public long getRefTimeStamp() {
+        return this.refTimeStamp;
+    }
+
+    public long getEstRentGas() {
+        return this.estRentGas;
+    }
 }

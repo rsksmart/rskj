@@ -38,6 +38,9 @@ public interface MutableTrie {
     @Nullable
     byte[] get(byte[] key);
 
+    @Nullable
+    TrieNodeData getNodeData(byte[] key);
+
     void put(byte[] key, byte[] value);
 
     void put(String key, byte[] value);
@@ -63,7 +66,16 @@ public interface MutableTrie {
     // This is for optimizing EXTCODESIZE. It returns the size of the value
     // without the need to retrieve the value itself. Implementors can fallback to
     // getting the value and then returning its size.
-    Uint24 getValueLength(byte[] key);
+    long getValueLength(byte[] key);
+
+    // This method only existed so a programmer could be happy that he is using the Optional<T> language
+    // construction. The right return type is "long". UInt24 is just exposing the internal
+    // representation of of the data in a particular encoding version.
+    // Now we're forced to keep this method because internalGet is the only getter method
+    // that we have.
+    // I miss you Linus Torvals.
+    //
+    Uint24 getValueLengthForOptionalUse(byte[] key);
 
     // This is for optimizing EXTCODEHASH. It returns the hash of the value
     // without the need to retrieve the value itself.

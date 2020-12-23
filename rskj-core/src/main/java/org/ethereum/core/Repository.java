@@ -21,6 +21,7 @@ package org.ethereum.core;
 
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import co.rsk.core.bc.AccountInformationProvider;
 import co.rsk.db.RepositorySnapshot;
 import co.rsk.trie.Trie;
 import org.ethereum.vm.DataWord;
@@ -59,7 +60,7 @@ public interface Repository extends RepositorySnapshot {
     default AccountState createAccount(RskAddress addr, boolean carryOverBalance) {
         AccountState newAccount;
         if (carryOverBalance) { // carry over existing balance
-            Coin oldBalance = getBalance(addr);
+            Coin oldBalance = getBalance(addr,true);
             newAccount = createAccount(addr);
             addBalance(addr, oldBalance);
         } else {

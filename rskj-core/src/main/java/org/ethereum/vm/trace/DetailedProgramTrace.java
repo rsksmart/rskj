@@ -218,7 +218,7 @@ public class DetailedProgramTrace implements ProgramTrace {
 
         if (this.storageKey != null) {
             RskAddress currentAddress = new RskAddress(this.contractAddress);
-            DataWord value = storage.getStorageValue(currentAddress, this.storageKey);
+            DataWord value = storage.getStorageValue(currentAddress, this.storageKey,false);
 
             if (value != null) {
                 this.currentStorage = new HashMap<>(this.currentStorage);

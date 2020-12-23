@@ -446,9 +446,10 @@ public class BridgeSupport {
         DataWord from = DataWord.valueOf(PrecompiledContracts.BRIDGE_ADDR.getBytes());
         DataWord to = DataWord.valueOf(receiver.getBytes());
         long gas = 0L;
+        long rentGas = 0L; //#mish todo fix me
         DataWord value = DataWord.valueOf(amount.getBytes());
 
-        TransferInvoke invoke = new TransferInvoke(from, to, gas, value);
+        TransferInvoke invoke = new TransferInvoke(from, to, gas, rentGas, value); // #mish todo fix me, added for constructor error
         ProgramResult result     = ProgramResult.empty();
         ProgramSubtrace subtrace = ProgramSubtrace.newCallSubtrace(CallType.CALL, invoke, result, null, Collections.emptyList());
 
@@ -2236,7 +2237,7 @@ public class BridgeSupport {
 
     private Coin getBtcLockedInFederation() {
         Coin maxRbtc = this.bridgeConstants.getMaxRbtc();
-        Coin currentBridgeBalance = rskRepository.getBalance(PrecompiledContracts.BRIDGE_ADDR).toBitcoin();
+        Coin currentBridgeBalance = rskRepository.getBalance(PrecompiledContracts.BRIDGE_ADDR,false).toBitcoin();
 
         return maxRbtc.subtract(currentBridgeBalance);
     }

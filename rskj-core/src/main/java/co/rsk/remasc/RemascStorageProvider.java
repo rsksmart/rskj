@@ -36,7 +36,7 @@ class RemascStorageProvider {
     private static final String SIBLINGS_KEY = "siblings";
     private static final String BROKEN_SELECTION_RULE_KEY = "brokenSelectionRule";
     private static final String FEDERATION_BALANCE_KEY = "federationBalance";
-
+    private static final boolean trackRent = false; // TODO SDL
     private Repository repository;
     private RskAddress contractAddress;
 
@@ -58,7 +58,7 @@ class RemascStorageProvider {
 
         DataWord address = DataWord.fromString(FEDERATION_BALANCE_KEY);
 
-        DataWord value = this.repository.getStorageValue(this.contractAddress, address);
+        DataWord value = this.repository.getStorageValue(this.contractAddress, address,trackRent);
 
         if (value == null) {
             return Coin.ZERO;
@@ -75,7 +75,7 @@ class RemascStorageProvider {
 
         DataWord address = DataWord.fromString(REWARD_BALANCE_KEY);
 
-        DataWord value = this.repository.getStorageValue(this.contractAddress, address);
+        DataWord value = this.repository.getStorageValue(this.contractAddress, address,trackRent);
 
         if (value == null) {
             return Coin.ZERO;
@@ -120,7 +120,7 @@ class RemascStorageProvider {
 
         DataWord address = DataWord.fromString(BURNED_BALANCE_KEY);
 
-        DataWord value = this.repository.getStorageValue(this.contractAddress, address);
+        DataWord value = this.repository.getStorageValue(this.contractAddress, address,trackRent);
 
         if (value == null) {
             return Coin.ZERO;
@@ -161,7 +161,7 @@ class RemascStorageProvider {
 
         DataWord address = DataWord.fromString(BROKEN_SELECTION_RULE_KEY);
 
-        byte[] bytes = this.repository.getStorageBytes(this.contractAddress, address);
+        byte[] bytes = this.repository.getStorageBytes(this.contractAddress, address,trackRent);
 
         if (bytes == null || bytes.length == 0) {
             return Boolean.FALSE;

@@ -20,16 +20,15 @@ package org.ethereum.db;
 
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import co.rsk.core.bc.AccountInformationProvider;
 import co.rsk.core.types.ints.Uint24;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.MutableTrieCache;
 import co.rsk.db.MutableTrieImpl;
-import co.rsk.trie.MutableTrie;
-import co.rsk.trie.Trie;
-import co.rsk.trie.TrieKeySlice;
-import co.rsk.trie.TrieStore;
+import co.rsk.trie.*;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.AccountState;
+import org.ethereum.core.RentTracker;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.crypto.Keccak256Helper;
@@ -38,6 +37,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.math.BigInteger;
 import java.util.*;
 
@@ -49,14 +49,38 @@ public class MutableRepository implements Repository {
 
     private final TrieKeyMapper trieKeyMapper;
     private final MutableTrie mutableTrie;
+    private final RentTracker rentTracker;
+    private AccountInformationProvider infoProvider;
 
-    public MutableRepository(TrieStore trieStore, Trie trie) {
-        this(new MutableTrieImpl(trieStore, trie));
+    public MutableRepository(TrieStore trieStore, Trie trie, RentTracker rentTracker) {
+        this(new MutableTrieImpl(trieStore, trie),rentTracker);
     }
 
+    public MutableRepository(TrieStore trieStore, Trie trie) {
+        this(new MutableTrieImpl(trieStore, trie),null);
+    }
+
+    public MutableRepository(MutableTrie mutableTrie, RentTracker rentTracker) {
+        this.trieKeyMapper = new TrieKeyMapper();
+        this.mutableTrie = mutableTrie;
+        this.rentTracker = rentTracker;
+    }
     public MutableRepository(MutableTrie mutableTrie) {
         this.trieKeyMapper = new TrieKeyMapper();
         this.mutableTrie = mutableTrie;
+        this.rentTracker = null;
+    }
+
+
+    public AccountInformationProvider getInfoProvider() {
+        if (infoProvider==null)
+            infoProvider = new AccountInformationProviderProxy(this);
+
+        return infoProvider;
+    }
+
+    public RentTracker getRentTracker() {
+        return rentTracker;
     }
 
     @Override
@@ -75,18 +99,27 @@ public class MutableRepository implements Repository {
     public synchronized void setupContract(RskAddress addr) {
         byte[] prefix = trieKeyMapper.getAccountStoragePrefixKey(addr);
         mutableTrie.put(prefix, ONE_BYTE_ARRAY);
+        rentTracker.trackWriteRent(prefix,ONE_BYTE_ARRAY.length);
     }
 
     @Override
-    public synchronized boolean isExist(RskAddress addr) {
+    public synchronized boolean isExist(RskAddress addr, boolean trackRent) {
         // Here we assume size != 0 means the account exists
-        return mutableTrie.getValueLength(trieKeyMapper.getAccountKey(addr)).compareTo(Uint24.ZERO) > 0;
+        TrieNodeData nodedata = mutableTrie.getNodeData(trieKeyMapper.getAccountKey(addr));
+        if (trackRent)
+            rentTracker.trackReadRent(nodedata);
+        return nodedata.getValueLength() > 0;
     }
 
     @Override
-    public synchronized AccountState getAccountState(RskAddress addr) {
+    public boolean isExist(RskAddress addr) {
+        return isExist(addr,false);
+    }
+
+    @Override
+    public synchronized AccountState getAccountState(RskAddress addr, boolean trackRent) {
         AccountState result = null;
-        byte[] accountData = getAccountData(addr);
+        byte[] accountData = getAccountData(addr,trackRent);
 
         // If there is no account it returns null
         if (accountData != null && accountData.length != 0) {
@@ -96,7 +129,21 @@ public class MutableRepository implements Repository {
     }
 
     @Override
+    public AccountState getAccountState(RskAddress addr) {
+        return getAccountState(addr,false);
+    }
+
+    @Override
+    public long getAccountNodeLRPTime(RskAddress addr) {
+        TrieNodeData nodedata = mutableTrie.getNodeData(trieKeyMapper.getAccountKey(addr));
+        if (nodedata==null)
+            return 0;
+        return nodedata.getLastRentPaidTime();
+    }
+
+    @Override
     public synchronized void delete(RskAddress addr) {
+        // TODO: No rent tracker on recursive deletes (should it?)
         mutableTrie.deleteRecursive(trieKeyMapper.getAccountKey(addr));
     }
 
@@ -126,10 +173,10 @@ public class MutableRepository implements Repository {
     }
 
     @Override
-    public synchronized BigInteger getNonce(RskAddress addr) {
+    public synchronized BigInteger getNonce(RskAddress addr,boolean trackRent) {
         // Why would getNonce create an Account in the repository? The semantic of a get()
         // is clear: do not change anything!
-        AccountState account = getAccountState(addr);
+        AccountState account = getAccountState(addr,trackRent );
         if (account == null) {
             return BigInteger.ZERO;
         }
@@ -141,77 +188,119 @@ public class MutableRepository implements Repository {
     public synchronized void saveCode(RskAddress addr, byte[] code) {
         byte[] key = trieKeyMapper.getCodeKey(addr);
         mutableTrie.put(key, code);
+        rentTracker.trackWriteRent(key,code.length);
 
-        if (code != null && code.length != 0 && !isExist(addr)) {
+        if (code != null && code.length != 0 && !isExist(addr,true )) {
             createAccount(addr);
         }
     }
 
     @Override
-    public synchronized int getCodeLength(RskAddress addr) {
-        AccountState account = getAccountState(addr);
+    public synchronized int getCodeLength(RskAddress addr, boolean trackRent) {
+        AccountState account = getAccountState(addr,trackRent );
         if (account == null || account.isHibernated()) {
             return 0;
         }
 
         byte[] key = trieKeyMapper.getCodeKey(addr);
-        return mutableTrie.getValueLength(key).intValue();
+        TrieNodeData nodedata = mutableTrie.getNodeData(key);
+        if (trackRent)
+            rentTracker.trackReadRent(nodedata);
+        return nodedata.getValueLength();
     }
 
     @Override
-    public synchronized Keccak256 getCodeHashNonStandard(RskAddress addr) {
+    public int getCodeLength(RskAddress addr) {
+        return getCodeLength(addr,false);
+    }
 
-        if (!isExist(addr)) {
+    @Override
+    public synchronized Keccak256 getCodeHashNonStandard(RskAddress addr, boolean trackRent) {
+
+        if (!isExist(addr,trackRent )) {
             return Keccak256.ZERO_HASH;
         }
 
-        if (!isContract(addr)) {
+        if (!isContract(addr,trackRent)) {
             return KECCAK_256_OF_EMPTY_ARRAY;
         }
 
         byte[] key = trieKeyMapper.getCodeKey(addr);
-        Optional<Keccak256> valueHash = mutableTrie.getValueHash(key);
-
+        TrieNodeData nodedata = mutableTrie.getNodeData(key);
+        if (trackRent)
+            rentTracker.trackReadRent(nodedata);
         //Returning ZERO_HASH is the non standard implementation we had pre RSKIP169 implementation
         //and thus me must honor it.
-        return valueHash.orElse(Keccak256.ZERO_HASH);
+        if (nodedata==null)
+            return Keccak256.ZERO_HASH;
+
+        Keccak256 valueHash = nodedata.getValueHash();
+
+        return valueHash;
     }
 
     @Override
-    public synchronized Keccak256 getCodeHashStandard(RskAddress addr) {
+    public Keccak256 getCodeHashNonStandard(RskAddress addr) {
+        return getCodeHashNonStandard(addr,false);
+    }
 
-        if (!isExist(addr)) {
+    @Override
+    public synchronized Keccak256 getCodeHashStandard(RskAddress addr, boolean trackRent) {
+
+        if (!isExist(addr,trackRent )) {
             return Keccak256.ZERO_HASH;
         }
 
-        if (!isContract(addr)) {
+        if (!isContract(addr,trackRent)) {
             return KECCAK_256_OF_EMPTY_ARRAY;
         }
 
         byte[] key = trieKeyMapper.getCodeKey(addr);
+        TrieNodeData nodedata = mutableTrie.getNodeData(key);
 
-        return mutableTrie.getValueHash(key).orElse(KECCAK_256_OF_EMPTY_ARRAY);
+        if (trackRent)
+            rentTracker.trackReadRent(nodedata);
+
+        if (nodedata==null)
+            return KECCAK_256_OF_EMPTY_ARRAY;
+
+        Keccak256 valueHash = nodedata.getValueHash();
+
+        return valueHash;
     }
 
     @Override
-    public synchronized byte[] getCode(RskAddress addr) {
-        if (!isExist(addr)) {
+    public Keccak256 getCodeHashStandard(RskAddress addr) {
+        return getCodeHashNonStandard(addr,false);
+    }
+
+    @Override
+    public synchronized byte[] getCode(RskAddress addr,boolean trackRent) {
+        if (!isExist(addr,trackRent )) {
             return EMPTY_BYTE_ARRAY;
         }
 
-        AccountState account = getAccountState(addr);
+        AccountState account = getAccountState(addr,trackRent );
         if (account.isHibernated()) {
             return EMPTY_BYTE_ARRAY;
         }
 
         byte[] key = trieKeyMapper.getCodeKey(addr);
-        return mutableTrie.get(key);
+        TrieNodeData nodedata = mutableTrie.getNodeData(key);
+        if (trackRent)
+            rentTracker.trackReadRent(nodedata);
+        return nodedata.getValue();
     }
 
     @Override
-    public boolean isContract(RskAddress addr) {
+    public boolean isContract(RskAddress addr,boolean trackRent) {
         byte[] prefix = trieKeyMapper.getAccountStoragePrefixKey(addr);
-        return mutableTrie.get(prefix) != null;
+        TrieNodeData nodedata = mutableTrie.getNodeData(prefix);
+        if (trackRent)
+            rentTracker.trackReadRent(nodedata);
+
+        // if nodedata != null, then nodedata.getValue() should never be null.
+        return (nodedata!=null);
     }
 
     @Override
@@ -224,7 +313,7 @@ public class MutableRepository implements Repository {
     public synchronized void addStorageBytes(RskAddress addr, DataWord key, byte[] value) {
         // This should not happen in production because contracts are created before storage cells are added to them.
         // But it happens in Repository tests, that create only storage row cells.
-        if (!isExist(addr)) {
+        if (!isExist(addr,true )) {
             createAccount(addr);
             setupContract(addr);
         }
@@ -243,20 +332,45 @@ public class MutableRepository implements Repository {
     }
 
     @Override
-    public synchronized DataWord getStorageValue(RskAddress addr, DataWord key) {
+    public synchronized DataWord getStorageValue(RskAddress addr, DataWord key,boolean trackRent) {
         byte[] triekey = trieKeyMapper.getAccountStorageKey(addr, key);
-        byte[] value = mutableTrie.get(triekey);
-        if (value == null) {
+        TrieNodeData nodedata = mutableTrie.getNodeData(triekey);
+        if (trackRent)
+            rentTracker.trackReadRent(nodedata);
+
+        if (nodedata == null) {
             return null;
         }
-
+        byte[] value = nodedata.getValue();
         return DataWord.valueOf(value);
     }
 
     @Override
-    public synchronized byte[] getStorageBytes(RskAddress addr, DataWord key) {
+    public synchronized byte[] getStorageBytes(RskAddress addr, DataWord key,boolean trackRent) {
         byte[] triekey = trieKeyMapper.getAccountStorageKey(addr, key);
-        return mutableTrie.get(triekey);
+        TrieNodeData nodedata = mutableTrie.getNodeData(triekey);
+        if (trackRent)
+            rentTracker.trackReadRent(nodedata);
+        if (nodedata==null)
+            return null;
+        return nodedata.getValue();
+    }
+
+    @Override
+    public Coin getBalance(RskAddress addr) {
+        return getBalance(addr,false);
+    }
+
+    @Nullable
+    @Override
+    public DataWord getStorageValue(RskAddress addr, DataWord key) {
+        return getStorageValue(addr,key,false);
+    }
+
+    @Nullable
+    @Override
+    public byte[] getStorageBytes(RskAddress addr, DataWord key) {
+        return getStorageBytes(addr,key,false);
     }
 
     @Override
@@ -277,9 +391,25 @@ public class MutableRepository implements Repository {
         return storageKeysCount;
     }
 
+    @Nullable
     @Override
-    public synchronized Coin getBalance(RskAddress addr) {
-        AccountState account = getAccountState(addr);
+    public byte[] getCode(RskAddress addr) {
+        return getCode(addr,false);
+    }
+
+    @Override
+    public boolean isContract(RskAddress addr) {
+        return isContract(addr,false);
+    }
+
+    @Override
+    public BigInteger getNonce(RskAddress addr) {
+        return getNonce(addr,false);
+    }
+
+    @Override
+    public synchronized Coin getBalance(RskAddress addr,boolean trackRent) {
+        AccountState account = getAccountState(addr,trackRent );
         return (account == null) ? Coin.ZERO: account.getBalance();
     }
 
@@ -312,11 +442,16 @@ public class MutableRepository implements Repository {
     }
 
     // To start tracking, a new repository is created, with a MutableTrieCache in the middle
-    @Override
-    public synchronized Repository startTracking() {
-        return new MutableRepository(new MutableTrieCache(mutableTrie));
+    public synchronized Repository startTracking(RentTracker newRentTracker) {
+        // TODO: SDL Check if I need a child rentTracker or do something else here
+        return new MutableRepository(new MutableTrieCache(mutableTrie),newRentTracker);
     }
 
+    @Override
+    public synchronized Repository startTracking() {
+        // TODO: SDL Check if I need a child rentTracker or do something else here
+        return new MutableRepository(new MutableTrieCache(mutableTrie),rentTracker);
+    }
     @Override
     public void save() {
         mutableTrie.save();
@@ -344,7 +479,9 @@ public class MutableRepository implements Repository {
     @Override
     public synchronized void updateAccountState(RskAddress addr, final AccountState accountState) {
         byte[] accountKey = trieKeyMapper.getAccountKey(addr);
-        mutableTrie.put(accountKey, accountState.getEncoded());
+        byte[] value = accountState.getEncoded();
+        mutableTrie.put(accountKey, value);
+        rentTracker.trackWriteRent(accountKey,value.length);
     }
 
     @VisibleForTesting
@@ -365,11 +502,21 @@ public class MutableRepository implements Repository {
 
     @Nonnull
     private synchronized AccountState getAccountStateOrCreateNew(RskAddress addr) {
-        AccountState account = getAccountState(addr);
-        return (account == null) ? createAccount(addr) : account;
+        AccountState account = getAccountState(addr,true );
+        if (account == null)
+            return createAccount(addr);
+        else
+            return account;
+            //return (account == null) ? createAccount(addr) : account;
     }
 
-    private byte[] getAccountData(RskAddress addr) {
-        return mutableTrie.get(trieKeyMapper.getAccountKey(addr));
+    private byte[] getAccountData(RskAddress addr, boolean trackRent) {
+
+        TrieNodeData nodedata = mutableTrie.getNodeData(trieKeyMapper.getAccountKey(addr));
+        if (trackRent)
+            rentTracker.trackReadRent(nodedata);
+        if (nodedata==null)
+            return null;
+        return nodedata.getValue();
     }
 }

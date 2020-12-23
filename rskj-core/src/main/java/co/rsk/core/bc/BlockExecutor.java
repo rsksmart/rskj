@@ -366,9 +366,12 @@ public class BlockExecutor {
      * This method is called automatically for every block except for the Genesis (which makes an explicit call).
      */
     public static void maintainPrecompiledContractStorageRoots(Repository track, ActivationConfig.ForBlock activations) {
+        // TO DO: This is interesting. While rent should be tracked for new precompiles,
+        // in Iris hard-forkwe should stop checking this for all contracts that have already
+        // have their root nodes created.
         if (activations.isActivating(RSKIP126)) {
             for (RskAddress addr : PrecompiledContracts.GENESIS_ADDRESSES) {
-                if (!track.isExist(addr)) {
+                if (!track.isExist(addr,false )) {
                     track.createAccount(addr);
                 }
                 track.setupContract(addr);

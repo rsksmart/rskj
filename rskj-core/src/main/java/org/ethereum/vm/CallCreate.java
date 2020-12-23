@@ -29,13 +29,15 @@ public class CallCreate {
     final byte[] data;
     final byte[] destination;
     final long gasLimit;
+    final long rentGasLimit; // #mish storage rent
     final byte[] value;
 
 
-    public CallCreate(byte[] data, byte[] destination, long gasLimit, byte[] value) {
+    public CallCreate(byte[] data, byte[] destination, long gasLimit, long rentGasLimit, byte[] value) {
         this.data = data;
         this.destination = destination;
         this.gasLimit = gasLimit;
+        this.rentGasLimit = rentGasLimit;
         this.value = value;
     }
 
@@ -49,6 +51,9 @@ public class CallCreate {
 
     public long getGasLimit() {
         return gasLimit;
+    }
+    public long getRentGasLimit() {
+        return rentGasLimit;
     }
 
     public byte[] getValue() {

@@ -21,14 +21,12 @@ package co.rsk.db;
 import co.rsk.core.RskAddress;
 import co.rsk.core.types.ints.Uint24;
 import co.rsk.crypto.Keccak256;
-import co.rsk.trie.MutableTrie;
-import co.rsk.trie.Trie;
-import co.rsk.trie.TrieKeySlice;
-import co.rsk.trie.TrieStore;
+import co.rsk.trie.*;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.db.TrieKeyMapper;
 import org.ethereum.vm.DataWord;
 
+import javax.annotation.Nullable;
 import java.util.*;
 
 public class MutableTrieImpl implements MutableTrie {
@@ -47,9 +45,29 @@ public class MutableTrieImpl implements MutableTrie {
         return trie;
     }
 
+
     @Override
     public Keccak256 getHash() {
         return trie.getHash();
+    }
+
+    @Override
+    public TrieNodeData getNodeData(byte[] key) {
+        Trie node = trie.find(key);
+        if (node == null) {
+            return null;
+        }
+        return (TrieNodeData) node;
+        /*
+        TrieNodeData nodeData = new TrieNodeData(
+                value,
+                node.getChildrenSize().value,node.getLastRentPaidTime(),
+                node.getValueLength().intValue()
+        );
+        return nodeData;
+        */
+
+
     }
 
     @Override
@@ -73,14 +91,29 @@ public class MutableTrieImpl implements MutableTrie {
     }
 
     @Override
-    public Uint24 getValueLength(byte[] key) {
+    public long getValueLength(byte[] key) {
+        Trie atrie = trie.find(key);
+        if (atrie == null) {
+            return 0;
+        }
+
+        return atrie.getValueLength();
+    }
+
+    @Override
+    public Uint24 getValueLengthForOptionalUse(byte[] key) {
+        return getValueLengthForEncoding(key);
+    }
+
+    //@Override
+    public Uint24 getValueLengthForEncoding(byte[] key) {
         Trie atrie = trie.find(key);
         if (atrie == null) {
             // TODO(mc) should be null?
             return Uint24.ZERO;
         }
 
-        return atrie.getValueLength();
+        return atrie.getValueLengthForEncoding();
     }
 
     @Override

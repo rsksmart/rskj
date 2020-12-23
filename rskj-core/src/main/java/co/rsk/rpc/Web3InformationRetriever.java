@@ -20,6 +20,7 @@ package co.rsk.rpc;
 
 import co.rsk.core.bc.AccountInformationProvider;
 import co.rsk.db.RepositoryLocator;
+import co.rsk.db.RepositorySnapshot;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.Transaction;
@@ -98,8 +99,11 @@ public class Web3InformationRetriever {
         }
 
         Block block = optBlock.get();
-        return locator.findSnapshotAt(block.getHeader()).orElseThrow(() -> RskJsonRpcRequestException
+
+        RepositorySnapshot snapshot = locator.findSnapshotAt(block.getHeader()).orElseThrow(() -> RskJsonRpcRequestException
                 .stateNotFound(String.format("State not found for block with hash %s", block.getHash())));
+
+        return snapshot;
     }
 
     /**
