@@ -18,6 +18,8 @@
 
 package co.rsk.trie;
 
+import co.rsk.bitcoinj.core.VarInt; //#mish for testing nodeSize contains internal nodes
+
 import co.rsk.crypto.Keccak256;
 import org.ethereum.crypto.Keccak256Helper;
 import org.junit.Assert;
@@ -96,6 +98,7 @@ public class TrieGetNodesTest {
         // nodes with subkeys are added to the list first, along with their values.
         // startign with the given key, and walking up the keypath to shorter and shorter subkeys
         // nodes with different keypaths are added as well, but their values are not (null)
+        // probably picking up the internal nodes there, rather than the actual unrelated nodes
         // nodes that are further down the given keypath (subtrees) are neglected entirely. 
         List<Trie> nodes = trie.getNodes("foo"); //foo, then fo, then f
 
@@ -108,6 +111,61 @@ public class TrieGetNodesTest {
         //Assert.assertNotNull(nodes.get(1).getValue()); //subkey's value is getable
         Assert.assertNotNull(nodes.get(2).getValue()); // subkey values are getable
         Assert.assertNull(nodes.get(3).getValue()); //not a subkey value is null
+
+    }
+
+    //#mish rent timestamp for internal nodes
+    @Test
+    public void rentTimestampForInternalNodesTest() {
+        Trie trie = new Trie();
+        // no internal nodes
+        trie = trie.putWithRent("foo", "foo".getBytes(),2L);
+        trie = trie.putWithRent("food", "food".getBytes(),2L);
+
+        //this will cause a split, and create an internal node 
+        trie = trie.putWithRent("fad", "fad".getBytes(),10L);        
+        trie = trie.putWithRent("fado", "fado".getBytes(),10L);
+        /* trie
+                f 
+           foo      fad
+        food            fado 
+        */
+        String str = "food";
+        List<Trie> nodes = trie.getNodes(str);
+        System.out.format("%ngetNodes(\"%s\"): No. nodes is %d and Trie size is %d",str,nodes.size(), trie.trieSize());
+        Assert.assertNotNull(nodes.get(1).getValue());
+        Assert.assertFalse(nodes.get(1).isInternalTrieNode());   
+        
+        System.out.format("%nRent timestamps  %nnode searched: %d  %nroot node: %d%n",
+             nodes.get(0).getLastRentPaidTime(), nodes.get(nodes.size()-1).getLastRentPaidTime());
+        Assert.assertEquals(10L,nodes.get(nodes.size()-1).getLastRentPaidTime()); //internal node (root) should have timestamp of newly inserted node
+        Assert.assertNotEquals(nodes.get(0).getLastRentPaidTime(),nodes.get(nodes.size()-1).getLastRentPaidTime());
+
+        // Another split
+        trie = trie.putWithRent("baz", "baz".getBytes(),30L);
+        str = "baz"; //example
+        nodes = trie.getNodes(str);
+        
+        System.out.format("%ngetNodes(\"%s\"): No. nodes is %d and Trie size is %d",str,nodes.size(), trie.trieSize());
+        Assert.assertNull(nodes.get(1).getValue());
+        Assert.assertTrue(nodes.get(1).isInternalTrieNode());
+        
+        System.out.format("%nRent timestamps  %nnode searched: %d  %nroot node: %d%n",
+             nodes.get(0).getLastRentPaidTime(), nodes.get(nodes.size()-1).getLastRentPaidTime());
+
+        // This node will cause yet another split
+        trie = trie.putWithRent("diff", "diff".getBytes(),40L);       
+
+
+        str = "diff"; //example
+        nodes = trie.getNodes(str);
+        
+        System.out.format("%ngetNodes(\"%s\"): No. nodes is %d and Trie size is %d",str,nodes.size(), trie.trieSize());
+        Assert.assertNull(nodes.get(1).getValue());
+        Assert.assertTrue(nodes.get(1).isInternalTrieNode()); //internal node index depends on example
+
+        System.out.format("%nRent timestamps  %nnode searched: %d  %nimmediate (non-root) internal node: %d %nroot node: %d%n",
+             nodes.get(0).getLastRentPaidTime(), nodes.get(nodes.size()-2).getLastRentPaidTime(), nodes.get(nodes.size()-1).getLastRentPaidTime());
 
     }
 

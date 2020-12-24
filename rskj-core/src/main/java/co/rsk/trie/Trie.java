@@ -56,8 +56,11 @@ import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
  * ******************
  * #mish: Additional notes for storage rent implementation
  * ******************
- * Add a new field `long lastRentPaidTime` to store a node's rent paid timestamp. Defaults to -1 (not 0!)
- * Also added a field for node version: default "-1". "0" is Orchid, "1" is RSKIP107, "2" is node with rent
+ * Add a new field `long lastRentPaidTime` to store a node's rent paid timestamp. 
+ * Defaults to "-1" for orchid or node version1, TX trie, receipts trie.. 
+ * Also see public method put(k,v) -> putWithRent(k,v,-1)
+ * 
+ * Added a field for node version: default "-1". "0" is Orchid, "1" is RSKIP107, "2" is node with rent
  * Adding this new field is like adding a new type of `value`.. which means we need to modify put and getMethods
  * - existing put() method(s) replicated putWithRent() which can be used to update rent timestamp
  * 
@@ -123,11 +126,11 @@ public class Trie {
     // shared Path
     private final TrieKeySlice sharedPath;
 
-    // #mish. for storage rent  (RSKIP113): default to "0"
-    // included in encoding for version 2 nodes
-    private long lastRentPaidTime = 0; // some parts of the code use strings for timestamps, but long is typical
+    // #mish. for storage rent  (RSKIP113): unix seconds since epoch Jan 1970
+    // this field included in encoding for version 2 nodes
+    private long lastRentPaidTime = -1L; // to avoid default value 0, also used for encoding, and flags
     
-    /*node version is include in flags (bit position 6,7)
+    /*node version is included in flags (bit position 6,7)
     * Default "-1" to avoid automatic 0 as default. 
     * Intended use: "1" for rskip107 without rent, "2" with storage rent and "0" for Orchid
     */
@@ -708,13 +711,7 @@ public class Trie {
                 + this.right.getNode().map(Trie::trieSize).orElse(0);
     }
 
-    /**
-     * get retrieves the associated value given the key
-     *
-     * @param key   full key
-     * @return the associated value, null if the key is not found
-     *
-     */
+    
     @Nullable
     public Trie find(byte[] key) {
         return find(TrieKeySlice.fromKey(key));
@@ -869,6 +866,11 @@ public class Trie {
         return trie == null ? new Trie(this.store) : trie;
     }
 
+    //some tests use strings for keys
+    public Trie putWithRent(String key, byte[] value, long newLastRentPaidTime) {
+        return putWithRent(key.getBytes(StandardCharsets.UTF_8), value, newLastRentPaidTime);
+    }
+
     private Trie putWithRent(TrieKeySlice key, byte[] value, boolean isRecursiveDelete, long newLastRentPaidTime) {
         // First of all, setting the value as an empty byte array is equivalent
         // to removing the key/value. This is because other parts of the trie make
@@ -880,7 +882,7 @@ public class Trie {
         if (newLastRentPaidTime == -1L){ //#mish this is how it will be called from put() 
             nodeVer = (byte) 1; //node Version 1
         } else {
-            nodeVer = (byte) 2; //node Version 2
+            nodeVer = (byte) 2; //node Version 2 // this can update node version (e.g. Orchid or version 1)
         }
 
         Trie trie = this.internalputWithRent(key, value, isRecursiveDelete, newLastRentPaidTime, nodeVer);
@@ -940,7 +942,14 @@ public class Trie {
             if (value == null) {
                 return this;
             }
-            return this.split(commonPath).putWithRent(key, value, isRecursiveDelete, newLastRentPaidTime);
+            // #mish Add rent paid timestamp for internal nodes 
+            // first split the trie
+            Trie splitTrie = this.split(commonPath);
+            // then mark the timestamp of the node whose creation (put) is causing the split
+            splitTrie.lastRentPaidTime = newLastRentPaidTime;
+            //do not bother to change node version    
+            // then carry on with the put
+            return splitTrie.putWithRent(key, value, isRecursiveDelete, newLastRentPaidTime);
         }
 
         if (sharedPath.length() >= key.length()) {
@@ -1016,7 +1025,6 @@ public class Trie {
                                 this.lastRentPaidTime, this.nodeVersion);
     } 
 
-    //#mish maintain node version and rent paid timestamp for internal nodes
     private Trie split(TrieKeySlice commonPath) {
         int commonPathLength = commonPath.length();
         TrieKeySlice newChildSharedPath = sharedPath.slice(commonPathLength + 1, sharedPath.length());
@@ -1036,9 +1044,11 @@ public class Trie {
             newLeft = NodeReference.empty();
             newRight = newChildReference;
         }
-            //#mish internal node, keep rent timestamp and node version same as original node 
+        //#mish internal node (value is "null"), temporarily assign the rent timestamp and
+        // node version of the node being split.. replace LATER with (after split is called) 
+        // with timestamp of the node whose creation (i.e. put) caused this split
         return new Trie(this.store, commonPath, null, newLeft, newRight, Uint24.ZERO, null,  null,
-                                                             this.lastRentPaidTime, this.nodeVersion);
+                                                             this.lastRentPaidTime, this.nodeVersion);//TEMPORARY timestamp
     }
 
     public boolean isTerminal() {
@@ -1047,6 +1057,22 @@ public class Trie {
 
     public boolean isEmptyTrie() {
         return isEmptyTrie(this.valueLength, this.left, this.right);
+    }
+
+    /** CHeck if a node is internal (not terminal, and no value) 
+     * #mish introduced for storage rent. SDL wants timestamps for internal nodes. 
+     * These can be used as a reference timestamp for trie misses 
+     * (e.g. computing IO penality for non-existent node). 
+     * Tracking rent for internal nodes increases storage. 
+     * Later, a varInt can be used along with delta compression algorithm
+     * */ 
+    public boolean isInternalTrieNode(){
+        if (this.isTerminal()) {return false;} //by definition
+         // value-containing nodes do not count as internal, e.g. storage root has value 0x01
+        if (this.valueLength.compareTo(Uint24.ZERO) > 0) {
+            return false;
+        }
+        return true;
     }
 
     /**
@@ -1128,7 +1154,7 @@ public class Trie {
 
     private void checkValueLength() {
         if (value != null && value.length != valueLength.intValue()) {
-            // Serious DB inconsistency here200010
+            // Serious DB inconsistency here
             throw new IllegalArgumentException(INVALID_VALUE_LENGTH);
         }
 
@@ -1159,7 +1185,7 @@ public class Trie {
     }
 
     /**
-     * makeEmpyHash creates the hash associated to empty nodes
+     * makeEmptyHash creates the hash associated to empty nodes
      *
      * @return a hash with zeroed bytes
      */
@@ -1556,13 +1582,13 @@ public class Trie {
             nodes.add(this);
             return nodes;
         }
-
+        // if commonPathLength < key.length
         Trie node = this.retrieveNode(key.get(commonPathLength));
 
         if (node == null) {
             return null;
         }
-
+        // recursion with smaller slice (starts at cPL+1) 
         List<Trie> subnodes = node.findNodes(key.slice(commonPathLength + 1, key.length()));
 
         if (subnodes == null) {
@@ -1576,7 +1602,8 @@ public class Trie {
 
     // #mish Additional method for storage rent. 
     
-    // Time until which storage rent has been paid.
+    // Time until which storage rent has been paid in Unix seconds since epoch Jan 1970
+    // Make sense only after RSK start date. "-1" value used for pure trie::put(k,v) to avoid 0 default
     @Nullable
     public long getLastRentPaidTime() {
         return lastRentPaidTime;
