@@ -30,8 +30,7 @@ import java.util.List;
 
 
 /**
-  * Created by #mish on April 21, 2020.
-  * for testing gradle build modified to permit standard system streams 
+  * Created by #mish on April 21, 2020. 
  */
 public class TrieRentTest {
     
@@ -51,15 +50,35 @@ public class TrieRentTest {
         Assert.assertEquals(-1,trie.getLastRentPaidTime()); // 0 (long cannot be null)
     }
 
-    // rent time delta
+    // Different node versions with put and putwithRent.
+    // Also checks node version for internal node created by split 
     @Test
-    public void putKeyGetRentTimeDelta() {
+    public void nodeVersionTest() {
         Trie trie = new Trie();        
-        trie = trie.put("foo", "abc".getBytes());
-         
-        // replace with findNode?
+        trie = trie.put("foo", "leaf".getBytes()); // node version 1
+        trie = trie.putWithRent("fo", "1stepUp".getBytes(), 2020L); // nodeversion 2
+        trie = trie.put("f", "2stepsUp".getBytes()); // nodeversion 1 again
+        trie = trie.putWithRent("bar", "createsplit".getBytes(), 2021L); // nodeversion 2
+   
+        // walk up the tree
         List<Trie> nodes = trie.getNodes("foo"); 
-        Assert.assertArrayEquals("abc".getBytes(StandardCharsets.UTF_8), nodes.get(0).getValue());
+        /*
+        System.out.println("Node version number: "+ nodes.get(0).getNodeVersionNumber() + " LRPT: " + nodes.get(0).getLastRentPaidTime());
+        System.out.println("Node version number: "+ nodes.get(1).getNodeVersionNumber() + " LRPT: " + nodes.get(1).getLastRentPaidTime());
+        System.out.println("Node version number: "+ nodes.get(2).getNodeVersionNumber() + " LRPT: " + nodes.get(2).getLastRentPaidTime());
+        System.out.println("Node version number: "+ nodes.get(3).getNodeVersionNumber() + " LRPT: " + nodes.get(3).getLastRentPaidTime());
+        */
+        // check nodeVersions
+        Assert.assertEquals(nodes.get(0).getNodeVersionNumber(),1);
+        Assert.assertEquals(nodes.get(1).getNodeVersionNumber(),2);
+        Assert.assertEquals(nodes.get(2).getNodeVersionNumber(),1);
+        Assert.assertEquals(nodes.get(3).getNodeVersionNumber(),2); // internal root node
+        
+        //check rent timestamps
+        Assert.assertEquals(nodes.get(0).getLastRentPaidTime(),-1);
+        Assert.assertEquals(nodes.get(1).getLastRentPaidTime(),2020);
+        Assert.assertEquals(nodes.get(2).getLastRentPaidTime(),-1);
+        Assert.assertEquals(nodes.get(3).getLastRentPaidTime(),2021); //internal root node timestamp
     }
 
     // base: a test modified from TrieKeyValueTest -> save, retrieve, check rent status

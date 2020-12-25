@@ -947,7 +947,11 @@ public class Trie {
             Trie splitTrie = this.split(commonPath);
             // then mark the timestamp of the node whose creation (put) is causing the split
             splitTrie.lastRentPaidTime = newLastRentPaidTime;
-            //do not bother to change node version    
+            if (newLastRentPaidTime == -1L){ //was a put
+                splitTrie.nodeVersion = (byte)1;
+            }else{
+                splitTrie.nodeVersion = (byte)2;
+            }    
             // then carry on with the put
             return splitTrie.putWithRent(key, value, isRecursiveDelete, newLastRentPaidTime);
         }
@@ -1607,6 +1611,11 @@ public class Trie {
     @Nullable
     public long getLastRentPaidTime() {
         return lastRentPaidTime;
+    }
+
+    // return node version number as integer
+    public int getNodeVersionNumber() {
+        return (int) this.nodeVersion;
     }
 
 }
