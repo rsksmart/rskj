@@ -43,49 +43,33 @@ import org.slf4j.LoggerFactory;
 public class RentTracker {
     private static final Logger logger = LoggerFactory.getLogger("rentTracker");
 
-    // current place holder for rent system. Needs to be in the past for computations.     
+    // Place holder for rent activation date. Needs to be in the past (long enough) for rent > 0.     
     public static final long RENT_START_DATE = 48L*365*24*3600; // Jan 2018, approx 48 years since 1970 unix time epoch seconds
     // as per RSKIP113 there are cutoffs/thresholds to avoid collecting very small amount of rent
     public static final long modifiedTh = 1_000L; // threshold if a node is modified (smaller cutoff)
     public static final long notModifiedTh = 10_000L; //threshold if a node is not modified (larger cutoff)
     
-    /**logic for rent computation follows RSKIP113 for pre-existing nodes.
-     * There are separate thresholds for nodes that are modified (account state, SSTORE) 
-     * or not modified (e.g. code) by the transaction  
-    */
-    public static long computeRent(Uint24 valueLength, long lastRentPaidTime, long currentTime, boolean modified){
-        if (valueLength != null){ // null is not possible (node gets deleted, 0 length is fine, empty code)
-            /** #mish  what if lrpTime was never set? (node version 1, or orchid)
-             * those will be initialized to -1 (trie::put(k,v) -> trie::putWithRent(k,v,-1))
-             * but we should not be in that situation with node version 2
-             * if version 1 nodes are modified, i.e. putWithRent(k,v,newtimestamp), version will get updated to 2
-             */
-            long lrpt = Math.max(lastRentPaidTime, RENT_START_DATE);
-            long timeDelta = currentTime - lrpt; //time since rent last paid
-            long rd = 0; //initialize rent due to 0
-            // compute rent due but only for nodes with past due rent
-            if (timeDelta > 0) {
-                 // formula is 1/2^21 (gas/byte/second) * (node valuelength + 136 bytes overhead) * timeDelta (seconds)
-                rd = GasCost.calculateStorageRent(valueLength, timeDelta);
-            } // no need for else, rd initialized to 0
-            
-            // if rent due exceeds high threshold, does not matter if the node is modified or not            
-            if (rd > notModifiedTh){
+    //Rent computation for pre-existing nodes
+    public static long computeRent(Uint24 valueLength, long lastRentPaidTime, long currentTime, boolean modified){   
+        long lrpt = Math.max(lastRentPaidTime, RENT_START_DATE);
+        long timeDelta = currentTime - lrpt; //time since rent last paid in seconds
+        // compute rent only for nodes with rent timestamps more than 6 months old
+        if (timeDelta < GasCost.SIX_MONTHS) {
+            return 0L; // don't bother computing    
+        }    
+        // formula is 1/2^21 (gas/byte/second) * (node valuelength + 136 bytes overhead) * timeDelta (seconds)
+        long rd = GasCost.calculateStorageRent(valueLength, timeDelta);        
+        // if rent exceeds UN-modifed (high) threshold, does not matter if node was modified or not            
+        if (rd > notModifiedTh){
+            return rd;
+        } else { 
+            // IF node was modified, check lower threshold  
+            if (modified && rd > modifiedTh){
                 return rd;
             } else {
-                /* rent due is less than high threshold. 
-                 * Check if amount due exceeds lower threshold but only if the node is marked modified
-                 */ 
-                if (modified && rd > modifiedTh){
-                return rd;
-                } else {
-                    // not worth collecting rent for this node at this time
-                    return 0L;
-                }            
-            }
-        } else {
-            return 0L;
-        }
+                return 0L; // not worth collecting rent for this node at this time
+            }            
+        }    
     }
 
     //For new trie ndodes, compute 6 months rent, for the node's valuelength
@@ -139,7 +123,7 @@ public class RentTracker {
             if (!nodeTrackingMap.containsKey(storageKey)){
                 Uint24 vLen = repository.getStorageValueLength(addr, storageCellKey);
                 //check for existence
-                if(vLen.intValue() == 0){ //does not exist
+                if(vLen.intValue() <= 0){ //does not exist
                     rd = GasCost.calculateStorageRent(new Uint24(0), GasCost.SIX_MONTHS);//penalty
                     comboRent += rd;
                     logger.warn("Storage Penalty for addr: {} ", addr);
@@ -168,7 +152,7 @@ public class RentTracker {
         if (!nodeTrackingMap.containsKey(accKey)){
             Uint24 vLen = repository.getAccountNodeValueLength(addr);
             //check for existence
-            if(vLen.intValue() == 0){ //does not exist
+            if(vLen.intValue() <= 0){ //does not exist
                 rd = GasCost.calculateStorageRent(new Uint24(0), GasCost.SIX_MONTHS);//penalty
                 comboRent += rd;
                 logger.warn("Account Penalty for addr: {} ",addr);
@@ -190,15 +174,38 @@ public class RentTracker {
             }
         }
         // if this is a contract then add info for storage root and code
-        if (repository.isContract(addr)) {
+        if (repository.isContract(addr)) {            
+            // storage root node
+            ByteArrayWrapper srKey = repository.getStorageRootKey(addr);
+            // if the node is not in the map, compute and add rent owed to map
+            if (!nodeTrackingMap.containsKey(srKey)){
+                Uint24 srLen = new Uint24(1); // always 1. repository.getStorageRootValueLength(addr);
+                // compute the rent due
+                // No penalty code: if we reached here, then we know this node exists (isContract()).. 
+                if (newNode){
+                    rd = getSixMonthsRent(srLen);
+                } else {
+                    long srLrpt = repository.getStorageRootLRPTime(addr);
+                    rd = RentTracker.computeRent(srLen, srLrpt, refTimeStamp, false);
+                }
+                //if rent is due now, then add it to the map
+                if (rd > 0){
+                    comboRent += rd;
+                    nodeTrackingMap.put(srKey, rd); //add only rent for specific nodes
+                    logger.info("Tracking rent for storage root"); 
+                }
+            }
+
             // code containing node
             ByteArrayWrapper cKey = repository.getCodeNodeKey(addr);
             // if the node is not in the map, compute and add rent owed to map
             if (!nodeTrackingMap.containsKey(cKey)){
                 Uint24 cLen = new Uint24(repository.getCodeLength(addr)); //WARN: codeLen is int NOT uint24() by default! 
-                // code CAN be empty.. so no penalty?
-                if(cLen.intValue() == 0){ //does not exist
-                    logger.warn("Code penalty warning (not collected) for addr: {} ",addr);
+                if(cLen.intValue() <= 0){ // code CAN be empty.. so no penalty?
+                    logger.warn("Empty code penalty for addr: {} ",addr);
+                    rd = GasCost.calculateStorageRent(new Uint24(0), GasCost.SIX_MONTHS);//penalty
+                    comboRent += rd;
+                    return comboRent; 
                 }
                 // compute the rent due
                 if (newNode){
@@ -212,26 +219,7 @@ public class RentTracker {
                     comboRent += rd;
                     nodeTrackingMap.put(cKey, rd); //add only rent for specific nodes 
                 }
-            }
-            // storage root node
-            ByteArrayWrapper srKey = repository.getStorageRootKey(addr);
-            // if the node is not in the map, compute and add rent owed to map
-            if (!nodeTrackingMap.containsKey(srKey)){
-                Uint24 srLen = repository.getStorageRootValueLength(addr);
-                // compute the rent due
-                // No penalty code: if we reached here, then we know this node exists (isContract()).. 
-                if (newNode){
-                    rd = getSixMonthsRent(srLen);
-                } else {
-                    long srLrpt = repository.getStorageRootLRPTime(addr);
-                    rd = RentTracker.computeRent(srLen, srLrpt, refTimeStamp, false);
-                }
-                //if rent is due now, then add it to the map
-                if (rd > 0){
-                    comboRent += rd;
-                    nodeTrackingMap.put(srKey, rd); //add only rent for specific nodes 
-                }
-            }
+            }        
         }
         return comboRent;
     }    
