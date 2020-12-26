@@ -75,6 +75,26 @@ public class TransactionExecutorTest {
         deletedAccounts = new HashSet<>();
         vmExecution = mock(ExecutorService.class);
         when(executionBlock.getNumber()).thenReturn(10L);
+        //additional setup for rent tracking
+        when(executionBlock.getTimestamp()).thenReturn(50L*365*24*3600); //#mish 2 years after RSK start date
+
+        //mock repository for accessedNodeAdder()
+        when(repository.getAccountNodeKey(any())).thenReturn(new ByteArrayWrapper("accKey".getBytes()));
+        when(repository.getAccountNodeValueLength(any())).thenReturn(new Uint24(128));
+        when(repository.getAccountNodeLRPTime(any())).thenReturn(150_000L);
+
+        when(repository.getCodeNodeKey(any())).thenReturn(new ByteArrayWrapper("codeKey".getBytes()));
+        when(repository.getCodeLength(any())).thenReturn(2000); //codeLen is int not uint24
+        when(repository.getCodeNodeLRPTime(any())).thenReturn(130_000L);
+
+        when(repository.getStorageRootKey(any())).thenReturn(new ByteArrayWrapper("storageRootKey".getBytes()));
+        when(repository.getStorageRootValueLength(any())).thenReturn(new Uint24(1));
+        when(repository.getStorageRootLRPTime(any())).thenReturn(70_000L);
+
+        when(repository.getStorageNodeKey(any(),any())).thenReturn(new ByteArrayWrapper("storageCellKey".getBytes()));
+        when(repository.getStorageValueLength(any(),any())).thenReturn(new Uint24(10));
+        when(repository.getStorageLRPTime(any(),any())).thenReturn(130_000L);
+
     }
 
     @Test

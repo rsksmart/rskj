@@ -119,21 +119,19 @@ public class RentTracker {
      */     
     public static long nodeRentTracker(RskAddress addr, DataWord storageCellKey, Repository repository, ProgramResult progRes,
              boolean newNode, long refTimeStamp){
-        //if (isRemascTx){ //move this out
-        //    return 0L;
-        //}    
+        //logger.info("Tracking rent for address {}", addr);   
         // set things up
         long rd = 0; // rent due indiv node
         long comboRent = 0; // rent due account + code + storage root   
 
-        //Tracker map of keys of updated nodes (value is rent due for this update)
+        //Tracker map <trieKey, rentCollected>
         Map<ByteArrayWrapper, Long> nodeTrackingMap;
         if (newNode){
             nodeTrackingMap = progRes.getCreatedNodes(); //for newly created trei nodes
         } else{
             nodeTrackingMap = progRes.getAccessedNodes(); //for pre-existing trie nodes
         }
-
+        //logger.info("Rent tracking map size is {}", nodeTrackingMap.size());
         //Start with the case of storage cell
         if (storageCellKey != null){
             // get storage cell trie key which depends on both addr and cell key
@@ -165,6 +163,7 @@ public class RentTracker {
 
         // Accounts, Code, and Storage Root
         ByteArrayWrapper accKey = repository.getAccountNodeKey(addr);
+        //logger.info("Tracking rent for account with trie key {}", accKey);
         // if the node is not in the map, compute and add rent owed to map
         if (!nodeTrackingMap.containsKey(accKey)){
             Uint24 vLen = repository.getAccountNodeValueLength(addr);
@@ -177,8 +176,10 @@ public class RentTracker {
             }
             // compute the rent due
             if (newNode){
+                //logger.info("Tracking rent for new node");
                 rd = getSixMonthsRent(vLen);
             } else {
+                //logger.info("Tracking rent for pre-existing node");
                 long accLrpt = repository.getAccountNodeLRPTime(addr);
                 rd = computeRent(vLen, accLrpt, refTimeStamp, true); //treat as modified (any real TX will change something, nonce, balance)
             }
@@ -194,7 +195,7 @@ public class RentTracker {
             ByteArrayWrapper cKey = repository.getCodeNodeKey(addr);
             // if the node is not in the map, compute and add rent owed to map
             if (!nodeTrackingMap.containsKey(cKey)){
-                Uint24 cLen = new Uint24(repository.getCodeLength(addr));
+                Uint24 cLen = new Uint24(repository.getCodeLength(addr)); //WARN: codeLen is int NOT uint24() by default! 
                 // code CAN be empty.. so no penalty?
                 if(cLen.intValue() == 0){ //does not exist
                     logger.warn("Code penalty warning (not collected) for addr: {} ",addr);
