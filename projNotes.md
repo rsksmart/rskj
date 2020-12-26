@@ -1,11 +1,32 @@
 ## Storage Rent Project: Overview of changes to RSKJ
 
-Storage rent is intended to lead to more efficient resource utilization by charging users for the size as well as duration for which information is stored in blockchain databases i.e. account state, contract code, and contract storage.
+Updated: December 25, 2020
 
-Curently, the only direct incentive to reduce storage is through refunds for `SELF-DESTRUCT` and `SSTORE-CLEAR`. Storage rent provides additional incentives for more judicious use of state storage. Storage rent is collected in *gas* by adding accounting and collection logic to RSKJ.
+Storage Rent is a mechanism to compute and collect state data access fees to execute transactions. It can help protect the network from IO based DoS attacks. It can help us reduce some opcode costs and thus increase the number of transactions in a block. It can also help improve state caching and enable node hibernation.
 
 ## Current implementation
-**Source code and building:** [link to branch](https://github.com/rsksmart/rskj/tree/storageRent2020_RSKIP113).
+**Source code and building:** [link to branch](https://github.com/rsksmart/rskj/tree/storageRent2021).
+
+### Differences from previous implementation
+- Trie 
+    - Implement **node versioning**. Nodes with rent timestamp are version 2. 
+    - Older nodes are marked with version 1, so their encoding and hashes remain unchanged. Orchid serilization is also unaffected. However, when these nodes are touched by a transaction, then rent tracking is activated and they are saved using version 2. 
+    - *Transaction tries* and *receipts tries* continue to use version 1 encoding. 
+    - Implement *timestamps for internal nodes* (nodes that do not contain value). An internal node is assigned the timestamp (and version) of the node that triggers a `split` in the trie. 
+    - A **unified put method** with `put(k,v)` now pointing to `putWithRent(k,v,-1)`. The negative 1 helps with node versioning.
+
+- Deleted `RentData` class from `vm.Program`. This data structure, with its internal fields, was not achieving much. This has been replaced with a simpler class.
+- The rent node tracking maps in `ProgramResult` are now just a map of keys and rent collected i.e. `<ByteArrayWrapper, Long>`, rather than maps of keys and `RentData` objects.
+- A new `RentTracker` class (in `vm.Program`) handles rent tracking more cleanly. 
+    - It contains all rent computation logic. 
+    - It also has a single method to handle *rent tracking* for all types of nodes. This method is called from `Transaction Executor` and `Program` to compute rent for every **value-containing** node touched by a transaction (new/pre-existing, account, code, or storage cells).
+    - As a consequence, the individual tracking methods (various "nodeAdder" methods) in `TransactionExecutor` and `Program` have all been removed.
+    - This tracking methods also computes a **penalty for trie misses**. As before, this penalty does not distinguish between different types of nodes. 
+
+***
+The rest of this document is mostly unchanged. 
+
+### Previous notes
 
 Build as usual with `./gradlew clean build -x test`
 
@@ -18,11 +39,13 @@ The implementation is closely related to [RSKIP113](https://github.com/rsksmart/
 
 Executing a block with a single CREATE TX demonstrates many aspects of the rent implementation. Note that standard output is used (`showStandardStreams true`) in `rskj-core/build.gradle`
 
-Output from test
-`executeBlockWithOneCreateTransaction` in `co.rsk.core.bc.BlockExecRentTest`
+
+
+
+Sample output from test (*annotations added*)
 
 ```
-    root@5429dcd447b9:~/code/rskj# ./gradlew test --tests BlockExecRentTest.executeBlockWithOneCreateTransaction
+    ~/code/rskj# ./gradlew test --tests BlockExecRentTest.executeBlockWithOneCreateTransaction
     ...
     ...
     
@@ -97,7 +120,7 @@ Transaction Receipt
 
 New fields and methods in `vm.GasCost`
 - This includes the constants e.g. the price to charge for storage, parameters to split transaction gaslimit to separate execution and rent gas limits, and a method to compute storage rent.
-- There is a new class `RentData` in `org.ethereum.vm.program` to handle rent computation logic e.g. distinct rent collection *triggers* for modified, unmodified and new nodes (to reduce disk IO  costs). 
+- There is a new class `RentTracker` in `org.ethereum.vm.program` to handle rent computation logic e.g. distinct rent collection *triggers* for modified, unmodified and new nodes (to reduce disk IO  costs). 
 
 Changes in `program`, `programResult`, `VM`, and `TransactionExecutor` 
 - add rent field to `program invoke` and these are used in `Program` to keep track of *remaining rent gas*.
@@ -153,45 +176,11 @@ root@5429dcd447b9:~/# curl localhost:4444
 - Make **rent free** by setting field `GasCost.STORAGE_RENT_MULTIPLIER = 0L`. Rent will still be *computed* (as 0).
 - Allocate 0 budget to rent by setting field `GasCost.TX_GASBUDGET_DIVISOR = 1L`. This will allocate all gasLimit in a TX (recall, there is a single gaslimit field) to execution gas. Without this change, TX exceptions or Revert will consume 25% of any `rentgaslimit` passed (as charge for IO related costs) even if rent is "free". 
 
-- In `Trie.fromMessage()`, change the boolean rent argument in the return to false, `return fromMessage(message, store, false);` (current defalut is `true`, rent is expected in encoding).
-- `Trie.toMessage()` currently does not encode rent by default. The version with a boolean `Trie.toMessage(boolean incRent)` provides the option to encode rent. This can be set to turn off rent using `internalToMessage(false)`.
-- `BlockHashesHelper`, set the boolean rent arguments to `false`.
-- Changes made to mutableTrie, MutableRepository -- should not really matter... but this needs to be tested.
-- No changes needed in logic of rent collection (in `vm.program.RentData`). Zero cost will never trigger any rent collection or tracking.
 
 
 ## Tests Failures/Fixes:
-This list may be useful for review/audit. For one, it will help explain why some a given test file was modified, or touched at all. The list also provides some insight into how the changes are affecting various parts of the code.
-
-`Fixed` means the test should pass (has been modified). `Isolated` means the test will fail, but we know exactly which changes are causing the tests to fail (reproducible and expected to fail because of breaking changes).  
-
-The list is **not exhaustive**
-
-- FIXED: `co.rsk.trie.MultiTrieStoreTest` use encoding with rent `Trie::toMessage(true)`.
-- FIXED: `co.rsk.net.SyncProcessorTest ` doubled txgaslimit. Also had  "txroot: Transactions trie root validation errors. Gone after mods to `BlockHashHelper`.
-- FIXED: `co.rsk.net.handler.txvalidator.TxValidatorIntrinsicGasLimitValidatorTest`. Just double the gasLimits
-- FIXED: `co.rsk.core.bc.BlockExecutorTest` low limits and balances causing TX not to execute. Fixed by increasing TX gaslimit from 21K to 44K (not just 42, to check correct exec gas refunds). Also increased sender initial balances from 30K to 88K. Remaining failures are assertions (not commented out) about sender balances and block fees that no longer match the hard-coded values since they disregard rent gas. 
-- FIXED: `org.ethereum.vm.ProgramTest.shouldRevertIfLessThanStipendGasAvailable`: The child contract was passed all the rent gas, but it was not being refunded on revert/exception. Patched it so child CALL OOG or Revert only eats up 25% of the rent gas passed, not all of it.
 - ISOLATED: `RemascStorageProviderTest` and `RemascProcessMinerFeesTest`. In these tests,  `minerFee = 21000` is being used as TX limit. Which is why the TX don't run initially. Raising this to 42000 makes them work. Still leads to expected assertion errors as the amount collected in fees is larger (because of rent) than the hard coded values for execution.
 Working through these however revealed an error in TX executor. RentGas computations should not performed for Remasc TXs. So that was a bug fix. 
 
-- ISOLATED: `co.rsk.core.bc.BlockChainImplTest` has helper method called *getblockwithoneTX* .. .. which actually has a second TX which,  a remasc one. Causing errors. Added checks to handle remasc TX in TX executor. 
-
-- FIXED/ISOLATED: `co.rsk.db.importer.BootstrapImporterTest > importData` This goes away if we set the storage rent boolean in the return of `Trie::fromMessage` to false.
-- FIXED: `co.rsk.core.ReversibleTransactionExecutorTest` (1 test was failing, increasing gas limit fixed it.)
-This is used for estimateGas. Even if the RPC doesn't work, we can get it closer. 
-
-- FIXED: `TransactionExecutorTest` (had 2 failing Mocking errors .. simple fixes).
-- FIXED: `co.rsk.core.bc.TransactionPoolImplTest`
-- FIXED: `co.rsk.vm.BlockchainVMTest` had receipt tree validation failure. Changed encoding of receipt, added new constructor and modified getEncoded() to accept boolean argument for rent implementation. But also had to make changes to block processing in `MinerHelper` (make TX execution receipts match that in Block Executor, that is correct accounting for execution and rent gas).
-- FIXED `co.rsk.mine.TransactionModuleTest` double gaslimit from 50K for 1 test and quarduple for another (100 blocks mined).
-- FIXED `co.rsk.mine.MinerServerTest` simple gaslimit doubling
-
-- FIXED `co.rsk.rpc.modules.trace.TraceModuleImplTest > retrieveMultiContractTraces`.. double balances and all TX gaslimits
-- FIXED `co.rsk.test.DslFilesTest`. And also `co.rsk.test.dsltest.WorldDslProcessorTest`. Mostly just about increasing sender balances and gaslimits
-- FIXED: `org.ethereum.vm.opcodes.RevertOpCodeTest`, pretty much the same as DSL test fixes.. just increase sender balance and gaslimist. And balance assertions commented out since the hard coded values do not include rent.
-
 - ISOLATED: `org.ethereum.rpc.Web3ImplTest > getTransactionReceipt` this one fails because of assertions related to encoding. TX receipt encoding includes rentgas in gasUsed field, while the hard coded version in the assertion does not. 
 This mismatch also causes another hard-coded assertation error. These failures have not been commented out.
-
-- FIXED co-incidentally with some other fix. Reason for initial failure unclear as the errors went away while addressing other test failures: `co.rsk.core.SnapshotManagerTest`, `co.rsk.peg.RskForksBridgeTest`, `co.rsk.mine.MinerManagerTest`, `co.rsk.mine.MainNetMinerTest`, `org.ethereum.core.TransactionTest`, - `org.ethereum.rpc.Web3ImplLogsTest`, `org.ethereum.rpc.LogFilterTest`

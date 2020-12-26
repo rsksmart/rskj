@@ -16,7 +16,7 @@ import org.ethereum.db.ReceiptStore;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
-import org.ethereum.vm.program.RentData;
+
 import org.ethereum.vm.GasCost;
 
 import org.junit.Before;
@@ -359,6 +359,7 @@ public class TransactionExecutorTest {
         Transaction transaction = getTransaction(sender, receiver, gasLimit, txNonce, gasPrice, value);
 
         when(executionBlock.getGasLimit()).thenReturn(BigInteger.valueOf(6_800_000).toByteArray());
+        
         when(executionBlock.getTimestamp()).thenReturn(50L*365*24*3600); //#mish 2 years after RSK start date
 
         //mock repository for accessedNodeAdder()
@@ -381,24 +382,18 @@ public class TransactionExecutorTest {
                 
         if (txExecutor.executeTransaction()){
             System.out.println("TX executed");
-                        
+
             // one entry for sender and one for receiver
             assertEquals(2,txExecutor.getResult().getAccessedNodes().size());
-
-            assertEquals(new Uint24(128), txExecutor.getResult().getAccessedNodes().get(new ByteArrayWrapper("senderKey".getBytes())).getValueLength());
-            assertEquals(new Uint24(10), txExecutor.getResult().getAccessedNodes().get(new ByteArrayWrapper("receiverKey".getBytes())).getValueLength());
-            //these assertions (from prior test version) will fail for nodes with updated LRPT
-            //assertEquals(70_000L, txExecutor.getResult().getAccessedNodes().get(DataWord.fromString("senderKey")).getLRPTime());
-            //assertEquals(130_000L, txExecutor.getResult().getAccessedNodes().get(DataWord.fromString("receiverKey")).getLRPTime());
-
-            long rentDueSender = txExecutor.getResult().getAccessedNodes().get(new ByteArrayWrapper("senderKey".getBytes())).getRentDue();
-            long rentDueReceiver = txExecutor.getResult().getAccessedNodes().get(new ByteArrayWrapper("receiverKey".getBytes())).getRentDue(); 
-            long estimatedRentGas = txExecutor.getEstRentGas();
-            System.out.println("Sender rent: " + rentDueSender);
-            System.out.println("Receiver rent: " + rentDueReceiver);
-            //System.out.println("Estimted rent: " + estimatedRentGas);
-            assertEquals(rentDueSender + rentDueReceiver, estimatedRentGas);
-
+            // These assertions depend on the time passed to mock current time (above).
+            // They also depend on the RENT_Start date in RentTracker
+            assertEquals(4150L,txExecutor.getResult().getAccessedNodes().get(new ByteArrayWrapper("receiverKey".getBytes())).longValue());
+            assertEquals(7699L,txExecutor.getResult().getAccessedNodes().get(new ByteArrayWrapper("senderKey".getBytes())).longValue());
+            /*
+            System.out.println(txExecutor.getResult().getAccessedNodes());
+            System.out.println(txExecutor.getResult().getAccessedNodes().get(new ByteArrayWrapper("senderKey".getBytes())) + " for sender");
+            System.out.println(txExecutor.getResult().getAccessedNodes().get(new ByteArrayWrapper("receiverKey".getBytes())) + " for recipient");
+            */
             System.out.println("execution gas used (0 expected, basicTxCost=0): " + txExecutor.getResult().getGasUsed());
             System.out.println("rentgas used: " + txExecutor.getResult().getRentGasUsed());
         } else {

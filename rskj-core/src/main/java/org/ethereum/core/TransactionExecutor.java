@@ -38,7 +38,7 @@ import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.db.MutableRepository;
 import org.ethereum.vm.*;
-import org.ethereum.vm.program.RentData;
+import org.ethereum.vm.program.RentTracker;
 import org.ethereum.vm.program.Program;
 import org.ethereum.vm.program.ProgramResult;
 import org.ethereum.vm.program.invoke.ProgramInvoke;
@@ -320,12 +320,16 @@ public class TransactionExecutor {
         logger.trace("Execute transaction {} {}", toBI(tx.getNonce()), tx.getHash());
         // set reference timestamp for rent computations
         refTimeStamp = this.executionBlock.getTimestamp();  //mock with 50L*365*24*3600 (2 years after RSK start)
-        //refTimeStamp = Instant.now().getEpochSecond(); // AVOID!! this can change when block executed twice (connection)
+        logger.info("In Tx Exec reference time stamp is {} in Unix seconds", refTimeStamp);
+        //refTimeStamp = Instant.now().getEpochSecond(); // AVOID in production!! this can change when block executed twice (connection)
                         
         // #mish add sender to Map of accessed nodes (for storage rent tracking)
         // but do NOT add receiver address yet, as it may be a pre-compiled contract
         // Note: "result" here is (still) a new instance of program result
-        accessedNodeAdder(tx.getSender(),track, result); //read only.. and confirmed state data.. so not cacheTrack
+        //accessedNodeAdder(tx.getSender(),track, result); //read only.. and confirmed state data.. so not cacheTrack
+        if (!isRemascTx){
+            estRentGas += RentTracker.nodeRentTracker(tx.getSender(), null, track, result,false, refTimeStamp);
+        }
 
         if (!localCall) {
                 
@@ -447,7 +451,10 @@ public class TransactionExecutor {
         } else {    
             // #mish if not pre-compiled contract
             // add the receiver's nodes to accessed nodes Map for rent tracking            
-            accessedNodeAdder(tx.getReceiveAddress(), track, result);
+            //accessedNodeAdder(tx.getReceiveAddress(), track, result);
+            if (!isRemascTx){
+                estRentGas += RentTracker.nodeRentTracker(tx.getReceiveAddress(), null, track, result,false, refTimeStamp);
+            }
             //System.out.println("\nAcNodeSize call " + result.getAccessedNodes().size());
             
             byte[] code = track.getCode(targetAddress);
@@ -569,7 +576,10 @@ public class TransactionExecutor {
         cacheTrack.commit();
         // add newly created contract nodes to createdNode Map for rent computation. After the cached repository is committed.
         if (tx.isContractCreation() && !result.isRevert()) {
-                createdNodeAdder(tx.getContractAddress(), track, result);
+                //createdNodeAdder(tx.getContractAddress(), track, result);
+                if (!isRemascTx){
+                    estRentGas += RentTracker.nodeRentTracker(tx.getContractAddress(), null, track, result,true, refTimeStamp); 
+                }
             }
         profiler.stop(metric);
     }
@@ -702,7 +712,7 @@ public class TransactionExecutor {
         this.paidFees = summaryFee;
 
         //#mish for testing
-        /*System.out.println( "\nTX finalization " + 
+        System.out.println( "\nTX finalization " + 
                             "(is Remasc TX: " + isRemascTx + ")"  +
                             "\n\nExec GasLimit " + GasCost.toGas(tx.getGasLimit()) +
                             "\nExec gas used " + result.getGasUsed() +
@@ -714,27 +724,17 @@ public class TransactionExecutor {
                             "\n\nNo. trie nodes with `updated` rent timestamp: " +  result.getAccessedNodes().size() +
                             "\nNo. new trie nodes created (6 months rent): " +  result.getCreatedNodes().size() + "\n"
                             );
-        */
+        
         //System.out.println("\n\n" + tx); //#mish for testing                   
 
         logger.trace("Processing result");
         logs = notRejectedLogInfos;
-
-    // save created and accessed node with updated rent timestamps to repository. Any value modifications 
-       if (!isRemascTx){
-            result.getCreatedNodes().forEach((key, rentData) -> track.updateNodeWithRent(key, rentData.getLRPTime()));        
-            result.getAccessedNodes().forEach(
-                (key, rentData) -> {
-                        track.updateNodeWithRent(key, rentData.getLRPTime());
-                        // #mish for testing
-                        //byte[] tmpkey = Arrays.copyOfRange(key.getData(),11,31);
-                        //RskAddress tmpAddr = new RskAddress(tmpkey);
-                        //System.out.println(track.getAccountNodeLRPTime(tmpAddr));
-                        //System.out.println(track.getBalance(tmpAddr));
-                }
-            );
+        
+        // save created and accessed node with updated rent timestamps to repository. 
+        if (!isRemascTx){
+            result.getCreatedNodes().forEach((key, rentDone) -> track.updateNodeWithRent(key, this.getRefTimeStamp() + GasCost.SIX_MONTHS));        
+            result.getAccessedNodes().forEach((key, rentDone) -> track.updateNodeWithRent(key, this.getRefTimeStamp()));
         }
-
 
         // #mish what is this for? Git grep doesn't reveal anything (neither does github search)
         result.getCodeChanges().forEach((key, value) -> track.saveCode(new RskAddress(key), value));
@@ -814,125 +814,6 @@ public class TransactionExecutor {
         return this.estRentGas;
     }
 
-    /* #mish Add nodes accessed/modified by or created in a transaction to
-    * "accessedNodes" or "createdNodes"  (caches/hashmaps in program result) 
-     * Methods compute outstanding rent due for exsiting nodes and 6 months advance for new nodes.
-     * node info obtained for each provided RSK addr via methods defined in mutableRepository
-     * The method retrieves nodes containing account state and, for contracts also code and storage root. 
-     * This should be called the first time any RSK addr is referenced in a TX or a child process
-     * Storage nodes accessed via SLOAD or SSTORE are not included (see Program.java for those methods).
-    */
-    public void accessedNodeAdder(RskAddress addr, Repository repository, ProgramResult progRes){
-        if (isRemascTx){
-            return;
-        }
-        long rd = 0; // initalize rent due to 0
-        ByteArrayWrapper accKey = repository.getAccountNodeKey(addr);
-        // if the node is not in the map, add the rent owed to current estimate
-        if (!progRes.getAccessedNodes().containsKey(accKey)){
-            Uint24 vLen = repository.getAccountNodeValueLength(addr);
-            //System.out.println("\nNode valuelength is " + vLen.intValue()); //#mish for testing.. reversible TX test has 0 length
-            long accLrpt = repository.getAccountNodeLRPTime(addr);
-            RentData accNode = new RentData(vLen, accLrpt);
-            
-            // compute the rent due
-            accNode.setRentDue(this.getRefTimeStamp(), true); //treat as modified (any real TX will change something, nonce, balance)
-            rd = accNode.getRentDue();
-            if (rd > 0){
-                //System.out.println("accessed node rent added: "+ rd);
-                estRentGas += rd;   //"collect" rent due
-                //System.out.println("in accNodeAddr" + estRentGas);
-                accNode.setLRPTime(this.getRefTimeStamp()); //update rent paid timestamp
-                // add to hashmap (internally this is a putIfAbsent) 
-                progRes.addAccessedNode(accKey, accNode);
-            }
-        }
-        // if this is a contract then add info for storage root and code
-        if (repository.isContract(addr)) {
-            // code node
-            ByteArrayWrapper cKey = repository.getCodeNodeKey(addr);
-            if (!progRes.getAccessedNodes().containsKey(cKey)){
-                Uint24 cLen = new Uint24(repository.getCodeLength(addr));
-                long cLrpt = repository.getCodeNodeLRPTime(addr);
-                RentData codeNode = new RentData(cLen, cLrpt);
-                // code is unlikely to be modified, but possible with CREATE2
-                codeNode.setRentDue(this.getRefTimeStamp(), false);
-                rd = codeNode.getRentDue();
-                if (rd >0) {
-                    estRentGas += rd;
-                    //System.out.println("in created NodeAddr code Node" + estRentGas);
-                    codeNode.setLRPTime(this.getRefTimeStamp());
-                    progRes.addAccessedNode(cKey, codeNode);
-                }
-            }       
-            // storage root node
-            ByteArrayWrapper srKey = repository.getStorageRootKey(addr);
-            if (!progRes.getAccessedNodes().containsKey(srKey)){
-                Uint24 srLen = repository.getStorageRootValueLength(addr);
-                long srLrpt = repository.getStorageRootLRPTime(addr);
-                RentData srNode = new RentData(srLen, srLrpt);
-                // compute rent and update estRent as needed
-                srNode.setRentDue(this.getRefTimeStamp(), false);  // storage root value is never modified
-                rd = srNode.getRentDue();
-                if (rd > 0) {
-                    estRentGas += rd;
-                    //System.out.println("in accessed NodeAddr srNode" + estRentGas);
-                    srNode.setLRPTime(this.getRefTimeStamp());
-                    progRes.addAccessedNode(srKey, srNode);
-                }
-            }
-        }
-    }
-
-    // Similar to accessednodes adder. Different HashMap, 6 months timestamp, rent computation, no check for prepaid rent
-    // also, it's more likely that created nodes will be in a cached repository, e.g. cachetrack in Tx execution 
-    public void createdNodeAdder(RskAddress addr, Repository repository, ProgramResult progRes){
-        if (isRemascTx){
-            return;
-        }
-        long advTS = this.getRefTimeStamp() + GasCost.SIX_MONTHS; //advanced time stamp time.now + 6 months
-        long rd = 0; // rent due init 0
-        ByteArrayWrapper accKey = repository.getAccountNodeKey(addr);
-        // if the node is not in the map, add the rent owed to current estimate
-        if (!progRes.getCreatedNodes().containsKey(accKey)){
-            Uint24 vLen = repository.getAccountNodeValueLength(addr);
-            RentData accNode = new RentData(vLen, advTS);
-            // compute the rent due
-            accNode.setSixMonthsRent();
-            rd = accNode.getRentDue();
-            estRentGas += rd; // will be > 0 by construction
-            //System.out.println("in created NodeAddr" + estRentGas);
-            // add to hashmap (internally this is a putIfAbsent)
-            progRes.addCreatedNode(accKey, accNode);
-        }
-        // if this is a contract then add info for storage root and code
-        if (repository.isContract(addr)) {
-            // code node
-            ByteArrayWrapper cKey = repository.getCodeNodeKey(addr);
-            if (!progRes.getCreatedNodes().containsKey(cKey)){
-                Uint24 cLen = new Uint24(repository.getCodeLength(addr));
-                RentData codeNode = new RentData(cLen, advTS);
-                // compute rent and update estRent as needed
-                codeNode.setSixMonthsRent();
-                rd = codeNode.getRentDue();
-                estRentGas += rd;
-                //System.out.println("in created NodeAddr codeNode" + estRentGas);
-                progRes.addCreatedNode(cKey, codeNode);
-            }       
-            // storage root node
-            ByteArrayWrapper srKey = repository.getStorageRootKey(addr);
-            if (!progRes.getCreatedNodes().containsKey(srKey)){
-                Uint24 srLen = repository.getStorageRootValueLength(addr);
-                RentData srNode = new RentData(srLen, advTS);
-                // compute rent and update estRent as needed
-                srNode.setSixMonthsRent();
-                rd = srNode.getRentDue();                
-                estRentGas += rd;
-                //System.out.println("in created NodeAddr srNode" + estRentGas);
-                progRes.addCreatedNode(srKey, srNode);
-            }
-        }
-    }
 
 /** #mish notes move to end
  // Overview: 

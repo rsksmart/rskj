@@ -134,7 +134,7 @@ public class Trie {
     * Default "-1" to avoid automatic 0 as default. 
     * Intended use: "1" for rskip107 without rent, "2" with storage rent and "0" for Orchid
     */
-    private byte nodeVersion =  (byte) -1; 
+    private byte nodeVersion =  (byte) -1; //this does not correspond to any version
 
     // default constructor, no secure
     /* #mish in main sources this is used (only?) in blockHasheshelper 

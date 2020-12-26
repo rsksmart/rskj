@@ -54,11 +54,15 @@ public class ProgramResult {
     // keys if the key is of type byte[].
     private Map<DataWord, byte[]> codeChanges; // #mish: used in TX exec finalization
 
-    // #mish: sets for storage rent (RSKIP113) checks and computations (only nodes that have some value) 
-    private Map<ByteArrayWrapper, RentData> createdNodes; //  storage rent to be charged for 6 months in advance when nodes are created
-    private Map<ByteArrayWrapper, RentData> accessedNodes; // nodes accessed (value may or may not be modified by TX)
-    //private Map<DataWord, RentData> accessedNodes; // nodes accessed (value may or may not be modified by TX)
-    
+    // Map of NEW trie node keys to the amount of rent collected.
+    // For New nodes accounts, contract, storage cell (SET_SSTORE). 
+    // rent paid timestamp for this group (end of TX) will be block execution timestamp + 6 months (advance)
+    private Map<ByteArrayWrapper, Long> createdNodes;
+
+    // map of trie node key to the amount of rent collected for nodes accessed 
+    // by the transaction (value may or may not be modified by TX, e.g. SLOAD, RESET_SSTORE)
+    // rent paid timestamp for this group (end of TX) will be block execution timestamp
+    private Map<ByteArrayWrapper, Long> accessedNodes;     
     // #mish Set of selfdestruct i.e. suicide accounts, i.e. contracts (and all associated nodes)
     // todo: compute rent for deleted nodes?
     private Set<DataWord> deleteAccounts;
@@ -66,7 +70,7 @@ public class ProgramResult {
     private List<LogInfo> logInfoList;
     private long futureRefund = 0;  // e.g. for contract suicide refund // "future" is really just end of transaction
     
-    // #mish: There is no separate refund policy in place for pre-paid rent gas (deletions/SSTORE clear already get refund)
+    // #mish: There is no "refund" policy in place for pre-paid rent gas (deletions/SSTORE clear already get refund)
     //private long futureRentGasRefund = 0;
 
     /*
@@ -163,37 +167,37 @@ public class ProgramResult {
     }
 
     // #mish tracking additions, updates and storage rent due status for trie ndoes
-    public Map<ByteArrayWrapper, RentData> getCreatedNodes() {
+    public Map<ByteArrayWrapper, Long> getCreatedNodes() {
         if (createdNodes == null) {
             createdNodes = new HashMap<>();
         }
         return createdNodes;
     }
 
-    public void addCreatedNode(ByteArrayWrapper nodeKey, RentData rentData) {
-        getCreatedNodes().put(nodeKey, rentData);   //putifabsent not needed, just created
+    public void addCreatedNode(ByteArrayWrapper nodeKey, long rentDue) {
+        getCreatedNodes().put(nodeKey, rentDue);   //putifabsent not needed, just created
     }
 
     // add a set of new trie nodes 
-    public void addCreatedNodes(Map<ByteArrayWrapper, RentData> newNodes) {
+    public void addCreatedNodes(Map<ByteArrayWrapper, Long> newNodes) {
         getCreatedNodes().putAll(newNodes);
     }
 
     // #mish nodes accessed (may or may not be modified)
-    public Map<ByteArrayWrapper, RentData> getAccessedNodes() {
+    public Map<ByteArrayWrapper, Long> getAccessedNodes() {
         if (accessedNodes == null) {
             accessedNodes = new HashMap<>();
         }
         return accessedNodes;
     }
 
-    public void addAccessedNode(ByteArrayWrapper nodeKey, RentData rentData) {
+    public void addAccessedNode(ByteArrayWrapper nodeKey, long rentDue) {
         // #mish: for accessed, keep the FIRST read value, since outstanding rent computations 
         // are based on that. 
-        getAccessedNodes().putIfAbsent(nodeKey, rentData);
+        getAccessedNodes().putIfAbsent(nodeKey, rentDue); //the if absent should not be needed, we should check beforehand
     }
 
-    public void addAccessedNodes(Map<ByteArrayWrapper, RentData> nodesAcc) {
+    public void addAccessedNodes(Map<ByteArrayWrapper, Long> nodesAcc) {
         nodesAcc.forEach(getAccessedNodes()::putIfAbsent);
     }
    
