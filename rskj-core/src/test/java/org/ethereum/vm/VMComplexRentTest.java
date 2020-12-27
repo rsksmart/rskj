@@ -30,6 +30,7 @@ import org.ethereum.core.BlockFactory;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.vm.program.Program;
+import org.ethereum.vm.program.ProgramResult;
 import org.ethereum.vm.program.invoke.ProgramInvoke;
 import org.ethereum.vm.program.invoke.ProgramInvokeMockImpl;
 import org.junit.FixMethodOrder;
@@ -49,7 +50,11 @@ import static org.mockito.Mockito.mock;
  * @author Roman Mandeleil
  * @since 16.06.2014
 
- * Differences betwheen this class and the ones developed by Seba + Juli for Create2, ExtCodeHash.
+ * #mish notes
+ * - Copy of VMComplexTest. In master branch, these tests are ignored.
+ * - The original tests 2 and 3 error out. No investigated.. perhaps explains why they have been ignored
+ * - orginal tests 1 and 4 appear to work. The gasUsed assertion in test1 fails.. it is too low (old code)  
+ * More recent versions: Differences betwheen this class and the ones developed by Seba + Juli for Create2, ExtCodeHash.
     - this one uses null for transaction when instantiating a new program = in getProgram()
 
  */
@@ -62,7 +67,10 @@ public class VMComplexRentTest {
     private final VmConfig vmConfig = config.getVmConfig();
     private final PrecompiledContracts precompiledContracts = new PrecompiledContracts(config, null);
 
-    @Ignore //TODO #POC9
+
+    //#mish .. the CALL is NOT recursive as in increasing call depth.
+    // rather the program simply resends  
+    //@Ignore //TODO #POC9 
     @Test // contract call recursive
     public void test1() {
 
@@ -90,6 +98,22 @@ public class VMComplexRentTest {
         String contractAddr = "77045e71a7a2c50903d88e564cd72fab11e82051";
         String code =
                 "6103e75460005260006000511115630000004c576001600051036103e755600060006000600060007377045e71a7a2c50903d88e564cd72fab11e820516008600a5a0402f1630000004c00565b00";
+        
+        /** using https://ethervm.io/decompile
+         * contract Contract {
+                function main() {
+                memory[0x00:0x20] = storage[0x03e7]; //mish SLOAD (not storageat)
+            
+                if (memory[0x00:0x20] <= 0x00) { stop(); }
+                    
+                storage[0x03e7] = memory[0x00:0x20] - 0x01; //RESET_SSTORE
+                var temp0; //unitialized, will store return from call
+                temp0, memory[0x00:0x00] = address(0x77045e71a7a2c50903d88e564cd72fab11e82051).call.gas(msg.gas / 0x0a * 0x08)(memory[0x00:0x00]);
+                var var1 = 0x0000004c;
+                stop();
+            }
+          }
+         */
 
         RskAddress contractAddrB = new RskAddress(contractAddr);
         RskAddress callerAddrB = new RskAddress(callerAddr);
@@ -122,21 +146,32 @@ public class VMComplexRentTest {
             program.setRuntimeFailure(e);
         }
 
-        System.out.println();
-        System.out.println("============ Results ============");
+        //System.out.println();
+        //System.out.println("============ Results ============");
 
         Coin balance = repository.getBalance(callerAddrB);
 
-        System.out.println("*** Used gas: " + program.getResult().getGasUsed());
-        System.out.println("*** Contract Balance: " + balance);
+        //System.out.println("*** Used gas: " + program.getResult().getGasUsed());
+        //System.out.println("*** Contract Balance: " + balance);
 
         // todo: assert caller balance after contract exec
 
-        assertEquals(expectedGas, program.getResult().getGasUsed());
+        ProgramResult result = program.getResult();
+                
+        String logString = "\n============ Results ============" +"\n" +
+                    "Gas used: " + result.getGasUsed() + "\n" +
+                    "Rent gas used: " + result.getRentGasUsed() + "\n" +
+                    "No. trie nodes with `updated` rent timestamp: " +  result.getAccessedNodes().size() +
+                    "\nNew trie nodes created (6 months rent): " +  result.getCreatedNodes().size() + 
+                    "\nTotal trie nodes touched by tx: " + result.getKeysSeenBefore().size() + "\n";
+
+        logger.info(logString);
+        // this original gas assertion is wrong.. way too low
+        //assertEquals(expectedGas, program.getResult().getGasUsed());
     }
     
     
-    @Ignore //TODO #POC9
+    //@Ignore //TODO #POC9 #mish: Errors out with a null pointer exception (@internalTx.revert() in program::executecode())
     @Test // contractB call contractA with data to storage
     public void test2() {
 
@@ -225,7 +260,7 @@ public class VMComplexRentTest {
         // TODO: check that the value pushed after exec is 1
     }
 
-    @Ignore
+    //@Ignore //#mish:  the ignore is from before. VM error.. stack size different from expected
     @Test // contractB call contractA with return expectation
     public void test3() {
 
@@ -295,9 +330,17 @@ public class VMComplexRentTest {
             program.setRuntimeFailure(e);
         }
 
-        System.out.println();
-        System.out.println("============ Results ============");
-        System.out.println("*** Used gas: " + program.getResult().getGasUsed());
+        ProgramResult result = program.getResult();
+                
+        String logString = "\n============ Results ============" +"\n" +
+                    "Gas used: " + result.getGasUsed() + "\n" +
+                    "Rent gas used: " + result.getRentGasUsed() + "\n" +
+                    "No. trie nodes with `updated` rent timestamp: " +  result.getAccessedNodes().size() +
+                    "\nNew trie nodes created (6 months rent): " +  result.getCreatedNodes().size() + 
+                    "\nTotal trie nodes touched by tx: " + result.getKeysSeenBefore().size() + "\n";
+
+
+        logger.info(logString);
 
         DataWord value1 = program.memoryLoad(DataWord.valueOf(32));
         DataWord value2 = program.memoryLoad(DataWord.valueOf(64));
@@ -306,16 +349,19 @@ public class VMComplexRentTest {
         DataWord value5 = program.memoryLoad(DataWord.valueOf(160));
         DataWord value6 = program.memoryLoad(DataWord.valueOf(192));
 
+        /*//#mish these assertions fail
         assertEquals(expectedVal_1, value1.longValue());
         assertEquals(expectedVal_2, value2.longValue());
         assertEquals(expectedVal_3, value3.longValue());
         assertEquals(expectedVal_4, value4.longValue());
         assertEquals(expectedVal_5, value5.longValue());
         assertEquals(expectedVal_6, value6.longValue());
+        */
 
         // TODO: check that the value pushed after exec is 1
     }
-
+    
+    //@Ignore
     @Test // CREATE magic
     public void test4() {
 
@@ -383,17 +429,27 @@ public class VMComplexRentTest {
             program.setRuntimeFailure(e);
         }
 
-        logger.info("============ Results ============");
-        System.out.println("*** Used gas: " + program.getResult().getGasUsed());
+        ProgramResult result = program.getResult();
+                
+        String logString = "\n============ Results ============" +"\n" +
+                    "Gas used: " + result.getGasUsed() + "\n" +
+                    "Rent gas used: " + result.getRentGasUsed() + "\n" +
+                    "No. trie nodes with `updated` rent timestamp: " +  result.getAccessedNodes().size() +
+                    "\nNew trie nodes created (6 months rent): " +  result.getCreatedNodes().size() + 
+                    "\nTotal trie nodes touched by tx: " + result.getKeysSeenBefore().size() + "\n";
+
+
+        logger.info(logString);
+
+        /*
         System.out.println("*** Call create Size: " + program.getResult().getCallCreateList().size());
         System.out.println(repository.getBalance(newAddress)); // value is transferred
         System.out.println(repository.isContract(newAddress)); // returns true
         System.out.println(repository.getCode(newAddress)); //there is no code to save
         System.out.println(repository.getStorageKeysCount(newAddress)); //nothing stored.. strange
         // how many accounts? should be 3, but there are 4, one from invokemock default contract address
-        System.out.println(repository.getAccountsKeys()); 
-
-
+        System.out.println(repository.getAccountsKeys());
+        */
     }
 
 

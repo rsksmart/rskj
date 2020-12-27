@@ -62,7 +62,9 @@ public class ProgramResult {
     // map of trie node key to the amount of rent collected for nodes accessed 
     // by the transaction (value may or may not be modified by TX, e.g. SLOAD, RESET_SSTORE)
     // rent paid timestamp for this group (end of TX) will be block execution timestamp
-    private Map<ByteArrayWrapper, Long> accessedNodes;     
+    private Map<ByteArrayWrapper, Long> accessedNodes;
+    //trie keys seen before at any call depth for this transaction, so we don't have to track rent for them again. 
+    private Set<ByteArrayWrapper> keysSeenBefore;
     // #mish Set of selfdestruct i.e. suicide accounts, i.e. contracts (and all associated nodes)
     // todo: compute rent for deleted nodes?
     private Set<DataWord> deleteAccounts;
@@ -167,6 +169,31 @@ public class ProgramResult {
     }
 
     // #mish tracking additions, updates and storage rent due status for trie ndoes
+
+
+    // This documentation may be repeated in RentTracker Class and ProgramResult Class
+    //Set of ALL trie keys seen (so far) in this transaction.
+    // - this includes keys for which no rent was collected (amount too small)
+    // - it obviously includes keys in the created and accessed nodes Maps 
+    // - it does NOT include trie misses! We want those misses to PAY penalty **for each** trie miss!!
+    // - this set is passed to child CALLS through new Program()
+    // - The set from child CALLs is merged with that of the parents (just like with `createdNodes` and `AccessedNodes` Maps)
+    // - thus, we can avoid computing rent for the same node more than once in a transaction (irrespective of call depth) 
+    public Set<ByteArrayWrapper> getKeysSeenBefore() {
+        if (keysSeenBefore == null) {
+            keysSeenBefore = new HashSet<>();
+        }
+        return keysSeenBefore;
+    }
+    public void addKeySeenBefore(ByteArrayWrapper key) {
+        getKeysSeenBefore().add(key);
+    }
+
+    public void addKeysSeenBefore(Set<ByteArrayWrapper> keys) {
+        getKeysSeenBefore().addAll(keys);
+    }
+    
+    // newly created nodes (6 months rent)
     public Map<ByteArrayWrapper, Long> getCreatedNodes() {
         if (createdNodes == null) {
             createdNodes = new HashMap<>();
@@ -183,7 +210,10 @@ public class ProgramResult {
         getCreatedNodes().putAll(newNodes);
     }
 
-    // #mish nodes accessed (may or may not be modified)
+    // #mish pre-existing trie nodes accessed (read or write or both) by a Transaction
+    // WE do not include every node touched by the transaction.. this is because
+    // storage rent is collected only if it exceeds some thresold.
+    // Note: `keysSeenBefore` is set of all keys touched or created by a transaction
     public Map<ByteArrayWrapper, Long> getAccessedNodes() {
         if (accessedNodes == null) {
             accessedNodes = new HashMap<>();
@@ -216,6 +246,9 @@ public class ProgramResult {
         }
         if (accessedNodes!=null) {
             accessedNodes.clear();
+        }
+        if (keysSeenBefore!=null) {
+            keysSeenBefore.clear();
         }
         resetFutureRefund();
     }
@@ -292,6 +325,8 @@ public class ProgramResult {
         futureRefund = 0;
     }
 
+    //#mish for storage rent. Th order of merging prog results can lead to loss of info about rent gasUsed
+    //That should be handled explicity. Only hash sets/maps merged in this method, order does not matter
     public void merge(ProgramResult another) {
         addInternalTransactions(another.getInternalTransactions());
         //merge the following only if TX not reverted and no expections
@@ -299,6 +334,7 @@ public class ProgramResult {
             addDeleteAccounts(another.getDeleteAccounts());
             addCreatedNodes(another.getCreatedNodes());
             addAccessedNodes(another.getAccessedNodes());
+            addKeysSeenBefore(another.getKeysSeenBefore());
             addLogInfos(another.getLogInfoList());
             addFutureRefund(another.getFutureRefund());
         }

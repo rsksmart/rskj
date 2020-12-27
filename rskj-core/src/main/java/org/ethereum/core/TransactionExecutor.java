@@ -319,10 +319,13 @@ public class TransactionExecutor {
     private void execute() {
         logger.trace("Execute transaction {} {}", toBI(tx.getNonce()), tx.getHash());
         // set reference timestamp for rent computations
-        refTimeStamp = this.executionBlock.getTimestamp();  //mock with 50L*365*24*3600 (2 years after RSK start)
-        logger.info("In Tx Exec reference time stamp is {} in Unix seconds", refTimeStamp);
-        //refTimeStamp = Instant.now().getEpochSecond(); // AVOID in production!! this can change when block executed twice (connection)
-                        
+        refTimeStamp = this.executionBlock.getTimestamp();  //e.g.mock with 50L*365*24*3600 (2 years after RSK start)
+        if (refTimeStamp <=1){ //#mish this happens in some tests
+            logger.warn("Block time stamp is {} in Unix seconds! Using Fallback", refTimeStamp);
+            refTimeStamp = Instant.now().getEpochSecond(); // AVOID in production!! this can change when block executed twice (connection)
+            logger.info("Fallback (system) time stamp is {} in Unix seconds", refTimeStamp);
+        }         
+
         // #mish add sender to Map of accessed nodes (for storage rent tracking)
         // but do NOT add receiver address yet, as it may be a pre-compiled contract
         // Note: "result" here is (still) a new instance of program result
@@ -470,7 +473,7 @@ public class TransactionExecutor {
 
                 this.vm = new VM(vmConfig, precompiledContracts);
                 // #mish: same as in create(), except program arg (byte[] ops) is `code` instead of `tx.getData()`
-                this.program = new Program(vmConfig, precompiledContracts, blockFactory, activations, code, programInvoke, tx, deletedAccounts);
+                this.program = new Program(vmConfig, precompiledContracts, blockFactory, activations, code, programInvoke, tx, deletedAccounts, result.getKeysSeenBefore());
             }
         }
 
@@ -495,7 +498,7 @@ public class TransactionExecutor {
 
             this.vm = new VM(vmConfig, precompiledContracts);
             // same as call, except using `tx.getData()`, rather than `code`
-            this.program = new Program(vmConfig, precompiledContracts, blockFactory, activations, tx.getData(), programInvoke, tx, deletedAccounts);
+            this.program = new Program(vmConfig, precompiledContracts, blockFactory, activations, tx.getData(), programInvoke, tx, deletedAccounts, result.getKeysSeenBefore());
  
             // reset storage if the contract with the same address already exists
             // TCK test case only - normally this is near-impossible situation in the real network
@@ -722,7 +725,8 @@ public class TransactionExecutor {
                             "\nRent gas refund " + mEndRentGas +
                             "\n\nTx fees (exec + rent) in Coin (using tx.gasPrice): " + paidFees +
                             "\n\nNo. trie nodes with `updated` rent timestamp: " +  result.getAccessedNodes().size() +
-                            "\nNo. new trie nodes created (6 months rent): " +  result.getCreatedNodes().size() + "\n"
+                            "\nNew trie nodes created (6 months rent): " +  result.getCreatedNodes().size() + 
+                            "\nTotal trie nodes touched by tx: " + result.getKeysSeenBefore().size() + "\n"
                             );
         
         //System.out.println("\n\n" + tx); //#mish for testing                   

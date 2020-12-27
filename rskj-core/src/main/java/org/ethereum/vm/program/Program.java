@@ -162,6 +162,52 @@ public class Program {
         traceListener = new ProgramTraceListener(config);
     }
 
+    //#mish new constructor for storage rent. Sets ProgramResult.keysSeenBefore field
+    // this allows us to pass a list of trie keys already seen so far this transaction and avoid
+    // repeating rent computations for those nodes, irrespective of call depth 
+    public Program(
+        VmConfig config,
+        PrecompiledContracts precompiledContracts,
+        BlockFactory blockFactory,
+        ActivationConfig.ForBlock activations,
+        byte[] ops,
+        ProgramInvoke programInvoke,
+        Transaction transaction,
+        Set<DataWord> deletedAccounts,
+        Set<ByteArrayWrapper> keysSeenThisTx) {
+    this.config = config;
+    this.precompiledContracts = precompiledContracts;
+    this.blockFactory = blockFactory;
+    this.activations = activations;
+    this.transaction = transaction;
+    isLogEnabled = logger.isInfoEnabled();
+    isGasLogEnabled = gasLogger.isInfoEnabled();
+
+    if (isLogEnabled ) {
+        logger.warn("WARNING! VM logging is enabled. This will make the VM 200 times slower. Do not use in production.");
+    }
+
+    // #mish the impact of adding rent gas to logging is unknown. The 200 times figure predates storage rent implementation
+    if (isGasLogEnabled) {
+        gasLogger.warn("WARNING! Gas logging is enabled. This will the make VM 200 times slower. Do not use in production.");
+    }
+
+    this.invoke = programInvoke;
+
+    this.ops = nullToEmpty(ops);
+
+    this.trace = createProgramTrace(config, programInvoke);
+    this.memory = setupProgramListener(new Memory());
+    this.stack = setupProgramListener(new Stack());
+    this.stack.ensureCapacity(1024); // faster?
+    this.storage = setupProgramListener(new Storage(programInvoke));
+    this.deletedAccountsInBlock = new HashSet<>(deletedAccounts);
+    
+    this.result.addKeysSeenBefore(keysSeenThisTx); //#mish added for storage rent
+    precompile();
+    traceListener = new ProgramTraceListener(config);
+}
+
     private static ProgramTrace createProgramTrace(VmConfig config, ProgramInvoke programInvoke) {
         if (!config.vmTrace()) {
             return new EmptyProgramTrace();
@@ -664,7 +710,7 @@ public class Program {
 
         if (!isEmpty(programCode)) {
             VM vm = new VM(config, precompiledContracts);
-            Program program = new Program(config, precompiledContracts, blockFactory, activations, programCode, programInvoke, internalTx, deletedAccountsInBlock);
+            Program program = new Program(config, precompiledContracts, blockFactory, activations, programCode, programInvoke, internalTx, deletedAccountsInBlock,  getResult().getKeysSeenBefore());
             vm.play(program);
             programResult = program.getResult();
 
@@ -910,7 +956,7 @@ public class Program {
                 msg.getType() == MsgType.STATICCALL || isStaticCall(), byTestingSuite());
 
         VM vm = new VM(config, precompiledContracts);
-        Program program = new Program(config, precompiledContracts, blockFactory, activations, programCode, programInvoke, internalTx, deletedAccountsInBlock);
+        Program program = new Program(config, precompiledContracts, blockFactory, activations, programCode, programInvoke, internalTx, deletedAccountsInBlock, getResult().getKeysSeenBefore());
 
         vm.play(program);
         childResult  = program.getResult();

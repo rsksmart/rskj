@@ -173,6 +173,12 @@ public class MutableTrieCache implements MutableTrie {
     }
 
     // This method optimizes cache-to-cache transfers
+    /** #mish: Once a node is in the cache, then its rent timestamp is preserved when calling this put(k,v)
+    * - This is important, since the original trie::put(k,v) now points to trie::putwithrent(k,v,-1)
+          so that would overwrite the rent timestamp with -1
+    * - An important concern with this approach is that put(k,v) now require a get (to read and preserve timestamp) 
+    * - Rent timestamps get updated only at the very end of transaction execution 
+    * */ 
     @Override
     public void put(ByteArrayWrapper wrapper, byte[] value) {
         long newLastRentPaidTime = 0L; // initialized to 0.. we'll check for prior value in cache

@@ -395,6 +395,9 @@ public class MutableRepository implements Repository {
      * and a setter method to update node data via trie putWithRent() 
      */
 
+    //**************** */
+    // methods using trie keys directly, instead of address (for rent tracking) .. 
+    
     @Override
     public synchronized void updateNodeWithRent(ByteArrayWrapper key, long newlastRentPaidTime){
         byte[] value = mutableTrie.get(key.getData()); // get current value
@@ -402,6 +405,7 @@ public class MutableRepository implements Repository {
             mutableTrie.putWithRent(key.getData(), value, newlastRentPaidTime);
         }
     }
+    /***************** */
 
     @Override
     public synchronized ByteArrayWrapper getAccountNodeKey(RskAddress addr) {

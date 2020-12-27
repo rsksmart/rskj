@@ -111,24 +111,38 @@ public class RentTracker {
         //Tracker map <trieKey, rentCollected>
         Map<ByteArrayWrapper, Long> nodeTrackingMap;
         if (newNode){
-            nodeTrackingMap = progRes.getCreatedNodes(); //for newly created trei nodes
+             //trie nodes created (so far) in this transaction (6 months advace rent)
+            nodeTrackingMap = progRes.getCreatedNodes();
         } else{
-            nodeTrackingMap = progRes.getAccessedNodes(); //for pre-existing trie nodes
+             //pre-existing trie nodes for which rent already "collected" in this transaction
+            nodeTrackingMap = progRes.getAccessedNodes();
         }
-        //logger.info("Rent tracking map size is {}", nodeTrackingMap.size());
+
+        // This documentation may be repeated in RentTracker Class and ProgramResult Class
+        //Set of ALL trie keys seen so far in this transaction.
+        // - this includes keys for which no rent was collected (amount too small)
+        // - it obviously includes keys in the created and accessed nodes Maps 
+        // - it does NOT include trie misses! We want those misses to PAY penalty **for each** trie miss!!
+        // - this set is passed to child CALLS through new Program()
+        // - The set from child CALLs is merged with that of the parents (just like with `createdNodes` and `AccessedNodes` Maps)
+        // - thus, we can avoid computing rent for the same node more than once in a transaction (irrespective of call depth) 
+        Set<ByteArrayWrapper> keysSeenBefore = progRes.getKeysSeenBefore();//
+    
+        //logger.info("Trie keys evaluated for rent tracking so far: {}", keysSeenBefore.size());
         //Start with the case of storage cell
         if (storageCellKey != null){
             // get storage cell trie key which depends on both addr and cell key
             ByteArrayWrapper storageKey = repository.getStorageNodeKey(addr, storageCellKey);
-            if (!nodeTrackingMap.containsKey(storageKey)){
+            if (!keysSeenBefore.contains(storageKey)){
                 Uint24 vLen = repository.getStorageValueLength(addr, storageCellKey);
                 //check for existence
                 if(vLen.intValue() <= 0){ //does not exist
                     rd = GasCost.calculateStorageRent(new Uint24(0), GasCost.SIX_MONTHS);//penalty
                     comboRent += rd;
-                    logger.warn("Storage Penalty for addr: {} ", addr);
+                    logger.warn("Storage Penalty for addr: {} and key: {}", addr, storageCellKey.longValue());
                     return comboRent; //collect penalty and exit
                 }
+                keysSeenBefore.add(storageKey); //add this to seen list (but only if node exists)
                 // compute the rent due
                 if (newNode){
                     rd = getSixMonthsRent(vLen);
@@ -148,8 +162,8 @@ public class RentTracker {
         // Accounts, Code, and Storage Root
         ByteArrayWrapper accKey = repository.getAccountNodeKey(addr);
         //logger.info("Tracking rent for account with trie key {}", accKey);
-        // if the node is not in the map, compute and add rent owed to map
-        if (!nodeTrackingMap.containsKey(accKey)){
+        // if the node is not in seen set, compute and add rent owed to map
+        if (!keysSeenBefore.contains(accKey)){
             Uint24 vLen = repository.getAccountNodeValueLength(addr);
             //check for existence
             if(vLen.intValue() <= 0){ //does not exist
@@ -158,6 +172,7 @@ public class RentTracker {
                 logger.warn("Account Penalty for addr: {} ",addr);
                 return comboRent; //collect the rentGas and exit            
             }
+            keysSeenBefore.add(accKey); //node exists in trie, add to seen set
             // compute the rent due
             if (newNode){
                 //logger.info("Tracking rent for new node");
@@ -177,8 +192,9 @@ public class RentTracker {
         if (repository.isContract(addr)) {            
             // storage root node
             ByteArrayWrapper srKey = repository.getStorageRootKey(addr);
-            // if the node is not in the map, compute and add rent owed to map
-            if (!nodeTrackingMap.containsKey(srKey)){
+            // if the node is not in seen set, compute and add rent owed to map
+            if (!keysSeenBefore.contains(srKey)){
+                keysSeenBefore.add(srKey);
                 Uint24 srLen = new Uint24(1); // always 1. repository.getStorageRootValueLength(addr);
                 // compute the rent due
                 // No penalty code: if we reached here, then we know this node exists (isContract()).. 
@@ -191,15 +207,13 @@ public class RentTracker {
                 //if rent is due now, then add it to the map
                 if (rd > 0){
                     comboRent += rd;
-                    nodeTrackingMap.put(srKey, rd); //add only rent for specific nodes
-                    logger.info("Tracking rent for storage root"); 
+                    nodeTrackingMap.put(srKey, rd); //add only rent for specific nodes 
                 }
             }
-
-            // code containing node
+            // now the code containing node
             ByteArrayWrapper cKey = repository.getCodeNodeKey(addr);
-            // if the node is not in the map, compute and add rent owed to map
-            if (!nodeTrackingMap.containsKey(cKey)){
+            // if the node is not in seen set, compute and add rent owed to map
+            if (!keysSeenBefore.contains(cKey)){
                 Uint24 cLen = new Uint24(repository.getCodeLength(addr)); //WARN: codeLen is int NOT uint24() by default! 
                 if(cLen.intValue() <= 0){ // code CAN be empty.. so no penalty?
                     logger.warn("Empty code penalty for addr: {} ",addr);
@@ -207,6 +221,7 @@ public class RentTracker {
                     comboRent += rd;
                     return comboRent; 
                 }
+                keysSeenBefore.add(cKey);
                 // compute the rent due
                 if (newNode){
                     rd = getSixMonthsRent(cLen);
@@ -222,6 +237,5 @@ public class RentTracker {
             }        
         }
         return comboRent;
-    }    
-    
+    }
 }
