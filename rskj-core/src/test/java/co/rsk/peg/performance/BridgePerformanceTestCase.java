@@ -39,6 +39,7 @@ import org.ethereum.datasource.HashMapDB;
 import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.exception.VMException;
+
 import org.ethereum.vm.program.InternalTransaction;
 import org.junit.BeforeClass;
 
