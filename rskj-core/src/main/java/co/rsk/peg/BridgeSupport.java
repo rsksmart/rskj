@@ -623,23 +623,52 @@ public class BridgeSupport {
      */
     public void releaseBtc(Transaction rskTx) throws IOException {
 
-        //as we can't send btc from contracts we want to send them back to the sender
+        Coin value = rskTx.getValue().toBitcoin();
+        final RskAddress senderAddress = rskTx.getSender();
+        //as we can't send btc from contracts we want to send them back to the senderAddressStr
         if (BridgeUtils.isContractTx(rskTx)) {
             logger.trace("Contract {} tried to release funds. Release is just allowed from standard accounts.", rskTx);
-            throw new Program.OutOfGasException("Contract calling releaseBTC");
+            if (activations.isActive(ConsensusRule.RSKIP185)) {
+                emitRejectEvent(value, senderAddress.toHexString(), RejectedPegoutReason.CALLER_CONTRACT);
+                return;
+            } else {
+                throw new Program.OutOfGasException("Contract calling releaseBTC");
+            }
         }
 
         Context.propagate(btcContext);
         NetworkParameters btcParams = bridgeConstants.getBtcParams();
         Address btcDestinationAddress = BridgeUtils.recoverBtcAddressFromEthTransaction(rskTx, btcParams);
-        Coin value = rskTx.getValue().toBitcoin();
         boolean addResult = requestRelease(btcDestinationAddress, value, rskTx);
 
         if (addResult) {
+
+            if (activations.isActive(ConsensusRule.RSKIP185)) {
+                eventLogger.logReleaseBtcRequestReceived(senderAddress.toHexString(), btcDestinationAddress.getHash160(), value);
+            }
             logger.info("releaseBtc succesful to {}. Tx {}. Value {}.", btcDestinationAddress, rskTx, value);
         } else {
+
+            if (activations.isActive(ConsensusRule.RSKIP185)) {
+                refundAndEmitRejectEvent(value, senderAddress, RejectedPegoutReason.LOW_AMOUNT);
+            }
             logger.warn("releaseBtc ignored because value is considered dust. To {}. Tx {}. Value {}.", btcDestinationAddress, rskTx, value);
         }
+    }
+
+    private void refundAndEmitRejectEvent(Coin value, RskAddress senderAddress, RejectedPegoutReason reason) {
+        String senderAddressStr = senderAddress.toHexString();
+        logger.trace("Executing a refund of {} to {}. Reason: {}", value, senderAddressStr, reason);
+        rskRepository.transfer(
+                PrecompiledContracts.BRIDGE_ADDR,
+                senderAddress,
+                co.rsk.core.Coin.fromBitcoin(value)
+        );
+        emitRejectEvent(value, senderAddressStr, reason);
+    }
+
+    private void emitRejectEvent(Coin value, String senderAddressStr, RejectedPegoutReason reason) {
+        eventLogger.logReleaseBtcRequestRejected(senderAddressStr, value, reason);
     }
 
     /**
