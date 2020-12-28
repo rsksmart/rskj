@@ -459,6 +459,8 @@ public class BridgeSupport {
         ProgramResult result     = ProgramResult.empty();
         ProgramSubtrace subtrace = ProgramSubtrace.newCallSubtrace(CallType.CALL, invoke, result, null, Collections.emptyList());
 
+        logger.info("Transferred {} weis to {}", amount, receiver);
+
         this.subtraces.add(subtrace);
     }
 
@@ -2084,16 +2086,13 @@ public class BridgeSupport {
     )
         throws BlockStoreException, IOException {
         if (!BridgeUtils.isContractTx(rskTx)) {
-            String errorMessage = String.format(
-                "[registerFastBridgeBtcTransaction] [rskTx:%s] Transaction not a contract",
-                ByteUtil.toHexString(rskTx.getHash().getBytes())
-            );
-            logger.debug(errorMessage);
+            logger.debug("[registerFastBridgeBtcTransaction] (rskTx:{}) Sender not a contract", rskTx.getHash());
             return FAST_BRIDGE_UNPROCESSABLE_TX_NOT_CONTRACT_ERROR_CODE;
         }
 
         if (!rskTx.getSender().equals(lbcAddress)) {
-            logger.warn("Expected sender to be the same as lbcAddress. (sender: {}) (lbcAddress:{})",
+            logger.debug(
+                "[registerFastBridgeBtcTransaction] Expected sender to be the same as lbcAddress. (sender: {}) (lbcAddress:{})",
                 rskTx.getSender(),
                 lbcAddress
             );
@@ -2111,15 +2110,15 @@ public class BridgeSupport {
         );
 
         if (provider.isFastBridgeFederationDerivationHashUsed(btcTxHash, fastBridgeDerivationHash)) {
+            logger.debug("[registerFastBridgeBtcTransaction] Transaction and derivation hash already used");
             return FAST_BRIDGE_UNPROCESSABLE_TX_ALREADY_PROCESSED_ERROR_CODE;
         }
 
         if (!validationsForRegisterBtcTransaction(btcTxHash, height, pmtSerialized, btcTxSerialized)) {
-            String errorMessage = String.format(
-                "[registerFastBridgeBtcTransaction] [rskTx:%s] error during validationsForRegisterBtcTransaction",
-                ByteUtil.toHexString(btcTxHash.getBytes())
+            logger.debug(
+                "[registerFastBridgeBtcTransaction] (btcTx:{}) error during validationsForRegisterBtcTransaction",
+                btcTxHash
             );
-            logger.debug(errorMessage);
             return FAST_BRIDGE_UNPROCESSABLE_TX_VALIDATIONS_ERROR;
         }
 
@@ -2127,7 +2126,9 @@ public class BridgeSupport {
         btcTx.verify();
 
         Sha256Hash btcTxHashWithoutWitness = btcTx.getHash(false);
-        if (!btcTxHashWithoutWitness.equals(btcTxHash) && (provider.isFastBridgeFederationDerivationHashUsed(btcTxHashWithoutWitness, derivationArgumentsHash))) {
+        if (!btcTxHashWithoutWitness.equals(btcTxHash) &&
+            (provider.isFastBridgeFederationDerivationHashUsed(btcTxHashWithoutWitness, derivationArgumentsHash))) {
+            logger.debug("[registerFastBridgeBtcTransaction] Transaction and derivation hash already used");
             return FAST_BRIDGE_UNPROCESSABLE_TX_ALREADY_PROCESSED_ERROR_CODE;
         }
 
@@ -2140,16 +2141,19 @@ public class BridgeSupport {
         Coin totalAmount = getAmountSentToAddress(btcTx, fastBridgeFedAddress);
 
         if (totalAmount == Coin.ZERO) {
-            logger.warn("Amount sent can't be 0");
+            logger.debug("[registerFastBridgeBtcTransaction] Amount sent can't be 0");
             return FAST_BRIDGE_UNPROCESSABLE_TX_VALUE_ZERO_ERROR;
         }
 
         if (!verifyLockDoesNotSurpassLockingCap(btcTx, null, totalAmount)) {
+            logger.info("[registerFastBridgeBtcTransaction] Locking cap surpassed, going to return funds!");
             WalletProvider walletProvider = createFastBridgeWalletProvider(fastBridgeFederationInformation);
             if (shouldTransferToContract) {
+                logger.debug("[registerFastBridgeBtcTransaction] Returning to liquidity provider");
                 generateRejectionRelease(btcTx, lpBtcAddress, fastBridgeFedAddress, rskTx, totalAmount, walletProvider);
                 return FAST_BRIDGE_REFUNDED_LP_ERROR_CODE;
             } else {
+                logger.debug("[registerFastBridgeBtcTransaction] Returning to user");
                 generateRejectionRelease(btcTx, userRefundAddress, fastBridgeFedAddress, rskTx, totalAmount, walletProvider);
                 return FAST_BRIDGE_REFUNDED_USER_ERROR_CODE;
             }
@@ -2158,11 +2162,13 @@ public class BridgeSupport {
         transferTo(lbcAddress, co.rsk.core.Coin.fromBitcoin(totalAmount));
 
         saveFastBridgeDataInStorage(
-                btcTxHash,
-                derivationArgumentsHash,
-                fastBridgeFederationInformation,
-                getUTXOsForAddress(btcTx, fastBridgeFedAddress)
+            btcTxHashWithoutWitness,
+            derivationArgumentsHash,
+            fastBridgeFederationInformation,
+            getUTXOsForAddress(btcTx, fastBridgeFedAddress)
         );
+
+        logger.info("[registerFastBridgeBtcTransaction] (btcTx:{}) transaction registered successfully", btcTxHashWithoutWitness);
 
         return totalAmount.getValue();
     }
@@ -2275,9 +2281,7 @@ public class BridgeSupport {
 
     protected byte[] getBytesFromBtcAddress(Address btcAddress) {
         byte[] hash160 = btcAddress.getHash160();
-        byte[] versionWithZeroes = ByteUtil.intToBytes(btcAddress.getVersion());
-        byte[] version = new byte[versionWithZeroes.length - 2];
-        System.arraycopy(versionWithZeroes, 2, version, 0, versionWithZeroes.length - 2);
+        byte[] version = BigInteger.valueOf(btcAddress.getVersion()).toByteArray();
         byte[] btcAddressBytes = new byte[hash160.length + version.length];
         System.arraycopy(version, 0, btcAddressBytes, 0, version.length);
         System.arraycopy(hash160, 0, btcAddressBytes, version.length, hash160.length);

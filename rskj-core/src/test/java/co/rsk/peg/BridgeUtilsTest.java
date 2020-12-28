@@ -838,14 +838,14 @@ public class BridgeUtilsTest {
 
     @Test
     public void extractAddressVersionFromBytes() {
-        byte[] addressBytes = Hex.decode("006f0febdbf4739e9fe6724370a7e99cb25d7be5ca99");
+        byte[] addressBytes = Hex.decode("6f0febdbf4739e9fe6724370a7e99cb25d7be5ca99");
         int obtainedVersion = BridgeUtils.extractAddressVersionFromBytes(addressBytes);
         Assert.assertEquals(111, obtainedVersion);
     }
 
     @Test
     public void extractHash160FromBytes() {
-        byte[] addressBytes = Hex.decode("006f0febdbf4739e9fe6724370a7e99cb25d7be5ca99");
+        byte[] addressBytes = Hex.decode("6f0febdbf4739e9fe6724370a7e99cb25d7be5ca99");
         byte[] hash160 = Hex.decode("0febdbf4739e9fe6724370a7e99cb25d7be5ca99");
         byte[] obtainedHash160 = BridgeUtils.extractHash160FromBytes(addressBytes);
         Assert.assertArrayEquals(hash160, obtainedHash160);
