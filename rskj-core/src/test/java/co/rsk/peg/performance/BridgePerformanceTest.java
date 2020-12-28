@@ -44,6 +44,8 @@ import org.junit.runners.Suite;
         HasBtcBlockCoinbaseTransactionInformationTest.class,
         LockingCapTest.class
 })
+
+//-------------- COMMENT THIS TO RUN THE TEST AND EACH CLASS --------------
 @Ignore
 public class BridgePerformanceTest extends PrecompiledContractPerformanceTest {
 }
