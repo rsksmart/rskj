@@ -374,10 +374,7 @@ public class BridgeTest {
     }
 
     private byte[] addressToByteArray(Address address) {
-        byte[] versionWithoutZeros = BigInteger.valueOf(address.getVersion()).toByteArray();
-        byte[] version = new byte[2];
-        System.arraycopy(new byte[2], 0, version, 0, 2);
-        System.arraycopy(versionWithoutZeros, 0, version, versionWithoutZeros.length, versionWithoutZeros.length);
+        byte[] version = BigInteger.valueOf(address.getVersion()).toByteArray();
 
         byte[] hash = address.getHash160();
         byte[] addressBytes = new byte[version.length + hash.length];
