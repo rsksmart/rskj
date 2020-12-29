@@ -49,14 +49,16 @@ import static org.mockito.Mockito.mock;
 /**
  * @author Roman Mandeleil
  * @since 16.06.2014
+ * duplicated and modified by s mishra for storage rent.. December 2020
 
  * #mish notes
- * - Copy of VMComplexTest. In master branch, these tests are ignored.
- * - The original tests 2 and 3 error out. No investigated.. perhaps explains why they have been ignored
- * - orginal tests 1 and 4 appear to work. The gasUsed assertion in test1 fails.. it is too low (old code)  
+ * - Derived from VMComplexTest. In master branch, these tests are ignored. Couple were failing (gas passed 1K < 20K needed for sstore)
+ * - Gas used assertions will fail (set too low)
+ * - Added repository.setupContract(); for all contracts.. without these, isContract() returns false.. needed for rent tracker  
  * More recent versions: Differences betwheen this class and the ones developed by Seba + Juli for Create2, ExtCodeHash.
     - this one uses null for transaction when instantiating a new program = in getProgram()
-
+* - https://ethervm.io/decompile was useful in helping fix.. and also just printing out the gasused for each VM step 
+    - in Program spendGas to isolate (should have guessed SSTORE was triggering the errors.. oh well)
  */
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class VMComplexRentTest {
@@ -88,21 +90,31 @@ public class VMComplexRentTest {
                      stop
          */
 
-        int expectedGas = 436;
+        int expectedGas = 436; //#mish way too low. This is an old example
 
         DataWord key1 = DataWord.valueOf(999);
-        DataWord value1 = DataWord.valueOf(3);
+        DataWord value1 = DataWord.valueOf(3); // orig is 3. works up to 17.. then OOGs 
+
+        DataWord key2 = DataWord.valueOf(998);
+        DataWord value2 = DataWord.valueOf(1);
 
         // Set contract into Database
         String callerAddr = "cd2a3d9f938e13cd947ec05abc7fe734df8dd826";
         String contractAddr = "77045e71a7a2c50903d88e564cd72fab11e82051";
-        String code =
-                "6103e75460005260006000511115630000004c576001600051036103e755600060006000600060007377045e71a7a2c50903d88e564cd72fab11e820516008600a5a0402f1630000004c00565b00";
+        String code = //"6103e75460005260006000511115630000004c576001600051036103e755600060006000600060007377045e71a7a2c50903d88e564cd72fab11e820516008600a5a0402f1630000004c00565b00";
+            "61" + "03e7" + "5460005260006000511115630000004c5760016000510361"+"03e7"+"556000600060006000600073"+
+                "77045e71a7a2c50903d88e564cd72fab11e82051" + // contractB address
+                "60"+"08" +"60" +"0a" + //push1 8 and then push1 10
+                "5a" + // GAS
+                "04" + "02" + //divide and multiply (i.e. gas/10 * 8/) // pass 80% avail gas?
+                "f1" + // CALL 
+                "63" + "0000004c" + //push4 .. this is a jump dest
+                "00565b00";
         
         /** using https://ethervm.io/decompile
          * contract Contract {
                 function main() {
-                memory[0x00:0x20] = storage[0x03e7]; //mish SLOAD (not storageat)
+                memory[0x00:0x20] = storage[0x03e7];
             
                 if (memory[0x00:0x20] <= 0x00) { stop(); }
                     
@@ -132,8 +144,10 @@ public class VMComplexRentTest {
         repository.addBalance(callerAddrB, new Coin(value));
 
         repository.createAccount(contractAddrB);
+        repository.setupContract(contractAddrB); //#mish: add this.. else isContract() returns false!!
         repository.saveCode(contractAddrB, codeB);
         repository.addStorageRow(contractAddrB, key1, value1);
+        repository.addStorageRow(contractAddrB, key2, value2);
 
         // Play the program
         VM vm = getSubject();
@@ -171,7 +185,7 @@ public class VMComplexRentTest {
     }
     
     
-    //@Ignore //TODO #POC9 #mish: Errors out with a null pointer exception (@internalTx.revert() in program::executecode())
+    //@Ignore //TODO #POC9 #mish: Documentation was wrong.
     @Test // contractB call contractA with data to storage
     public void test2() {
 
@@ -191,6 +205,8 @@ public class VMComplexRentTest {
                  contract B: 83c5541a6c8d2dbad642f385d8d06ca9b6c731ee
                  -----------
                      a = msg((tx.gas / 10 * 8), 0x77045e71a7a2c50903d88e564cd72fab11e82051, 0, [11, 22, 33], 3, 6)
+                     //#mish: this is 10/8 stuff WRONG.. the code actually passes specific gas to CALl.. was 1000
+                     // and test was failing.. need to increase > 20000 for SSTORE
 
          */
 
@@ -204,7 +220,9 @@ public class VMComplexRentTest {
         String contractB_addr_str = "83c5541a6c8d2dbad642f385d8d06ca9b6c731ee";
 
         String code_a = "60006020023560005260016020023560205260005160005560205160015500";
-        String code_b = "6000601f5360e05960e05952600060c05901536060596020015980602001600b9052806040016016905280606001602190526080905260007377045e71a7a2c50903d88e564cd72fab11e820516103e8f1602060000260a00160200151600052";
+        String code_b = "6000601f5360e05960e05952600060c05901536060596020015980602001600b9052806040016016905280606001602190526080905260007377045e71a7a2c50903d88e564cd72fab11e82051"+
+        "6203e800f1"+ //#mish the orig was 61 03e8 i.e. push2, 0308=1000gas.. not enough for SSTORE=20000, made it 256K:)
+        "602060000260a00160200151600052";
 
         RskAddress caller_addr = new RskAddress(caller_addr_str);
 
@@ -219,9 +237,11 @@ public class VMComplexRentTest {
         Repository repository = pi.getRepository();
 
         repository.createAccount(contractA_addr);
+        repository.setupContract(contractA_addr); 
         repository.saveCode(contractA_addr, codeA);
 
         repository.createAccount(contractB_addr);
+        repository.setupContract(contractB_addr);
         repository.saveCode(contractB_addr, codeB);
 
         repository.createAccount(caller_addr);
@@ -260,7 +280,7 @@ public class VMComplexRentTest {
         // TODO: check that the value pushed after exec is 1
     }
 
-    //@Ignore //#mish:  the ignore is from before. VM error.. stack size different from expected
+    @Ignore //#mish:  the ignore is from before. VM error.. stack size different from expected
     @Test // contractB call contractA with return expectation
     public void test3() {
 
@@ -302,15 +322,19 @@ public class VMComplexRentTest {
         RskAddress contractB_addr = new RskAddress("83c5541a6c8d2dbad642f385d8d06ca9b6c731ee");
 
         byte[] codeA = Hex.decode("600b60005260166020526021604052602c6060526037608052604260a05260c06000f2");
-        byte[] codeB = Hex.decode("6000601f5360e05960e05952600060c05901536060596020015980602001600b9052806040016016905280606001602190526080905260007377045e71a7a2c50903d88e564cd72fab11e820516103e8f1602060000260a00160200151600052");
+        byte[] codeB = Hex.decode("6000601f5360e05960e05952600060c05901536060596020015980602001600b9052806040016016905280606001602190526080905260007377045e71a7a2c50903d88e564cd72fab11e82051"+
+        "6203e800f1" + //#mish  was 61  PUSH2 0x03e8 (1000), changed to 62, 03e800 (256K, overkill :))
+        "602060000260a00160200151600052");
 
         ProgramInvokeMockImpl pi = new ProgramInvokeMockImpl();
         pi.setOwnerAddress(contractB_addr);
         Repository repository = pi.getRepository();
         repository.createAccount(contractA_addr);
+        repository.setupContract(contractA_addr);
         repository.saveCode(contractA_addr, codeA);
 
         repository.createAccount(contractB_addr);
+        repository.setupContract(contractB_addr);
         repository.saveCode(contractB_addr, codeB);
 
         repository.createAccount(caller_addr);
@@ -402,6 +426,7 @@ public class VMComplexRentTest {
         //System.out.println(repository.getAccountsKeys()); // 2 default addresses
 
         repository.createAccount(contractA_addr);
+        repository.setupContract(contractA_addr);
         repository.saveCode(contractA_addr, codeA);
 
         repository.createAccount(caller_addr);

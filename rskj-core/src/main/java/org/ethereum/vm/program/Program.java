@@ -1061,6 +1061,8 @@ public class Program {
         if (isGasLogEnabled) {
             gasLogger.info("[{}] Spent for cause: [{}], gas: [{}]", invoke.hashCode(), cause, gasValue);
         }
+        //#mish exploring failure of VMComplexTest.test2() .. orig was passing 1000 gas to CALL for sstore :)
+        //System.out.println("cause: "+ cause + "gas: " + gasValue + " remaining: " + getRemainingGas());
 
         if (getRemainingGas()  < gasValue) {
             throw ExceptionHelper.notEnoughSpendingGas(this, cause, gasValue);

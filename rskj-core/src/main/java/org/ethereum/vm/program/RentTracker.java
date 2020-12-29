@@ -143,6 +143,7 @@ public class RentTracker {
                     return comboRent; //collect penalty and exit
                 }
                 keysSeenBefore.add(storageKey); //add this to seen list (but only if node exists)
+                logger.info("Saw storage key {}", storageKey);
                 // compute the rent due
                 if (newNode){
                     rd = getSixMonthsRent(vLen);
@@ -156,7 +157,8 @@ public class RentTracker {
                     nodeTrackingMap.put(storageKey, rd); //add seperately for each node 
                 }
             }
-            return comboRent; //exit after updating tracker map with storage cell
+            // Don't return.. storage cell implies contract account
+            // So, continue and examine rent status for contract account node, code and storage root
         }
 
         // Accounts, Code, and Storage Root
@@ -173,6 +175,7 @@ public class RentTracker {
                 return comboRent; //collect the rentGas and exit            
             }
             keysSeenBefore.add(accKey); //node exists in trie, add to seen set
+            logger.info("Saw account key {}", accKey);
             // compute the rent due
             if (newNode){
                 //logger.info("Tracking rent for new node");
@@ -189,12 +192,13 @@ public class RentTracker {
             }
         }
         // if this is a contract then add info for storage root and code
-        if (repository.isContract(addr)) {            
+        if (repository.isContract(addr)) {//isContract() returns false in some VM tests (cos setupcontract() skipped)     
             // storage root node
             ByteArrayWrapper srKey = repository.getStorageRootKey(addr);
             // if the node is not in seen set, compute and add rent owed to map
             if (!keysSeenBefore.contains(srKey)){
                 keysSeenBefore.add(srKey);
+                logger.info("Saw storage root key {}", srKey);
                 Uint24 srLen = new Uint24(1); // always 1. repository.getStorageRootValueLength(addr);
                 // compute the rent due
                 // No penalty code: if we reached here, then we know this node exists (isContract()).. 
@@ -222,6 +226,7 @@ public class RentTracker {
                     return comboRent; 
                 }
                 keysSeenBefore.add(cKey);
+                logger.info("Saw code key {}", cKey);
                 // compute the rent due
                 if (newNode){
                     rd = getSixMonthsRent(cLen);
