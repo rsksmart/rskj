@@ -225,7 +225,7 @@ public class ProgramInvokeMockImpl implements ProgramInvoke {
 
     @Override
     public DataWord getTimestamp() {
-        long timestamp = 1401421348;
+        long timestamp = 51*365*24*3600L; //#mish approx Jan 2021 1401421348;
         return DataWord.valueOf(timestamp);
     }
 
@@ -250,7 +250,7 @@ public class ProgramInvokeMockImpl implements ProgramInvoke {
         return DataWord.valueOf(difficulty);
     }
 
-    // #mish check this is Block gas limt.. then what are we setting with setGas()?
+    // #mish check this is Block gas limt.. then what are we setting with setGas()? execution gas limit
     @Override
     public DataWord getGaslimit() {
         return DataWord.valueOf(gasLimit);

@@ -1061,8 +1061,6 @@ public class Program {
         if (isGasLogEnabled) {
             gasLogger.info("[{}] Spent for cause: [{}], gas: [{}]", invoke.hashCode(), cause, gasValue);
         }
-        //#mish exploring failure of VMComplexTest.test2() .. orig was passing 1000 gas to CALL for sstore :)
-        //System.out.println("cause: "+ cause + "gas: " + gasValue + " remaining: " + getRemainingGas());
 
         if (getRemainingGas()  < gasValue) {
             throw ExceptionHelper.notEnoughSpendingGas(this, cause, gasValue);
@@ -1145,10 +1143,12 @@ public class Program {
         long rd =0;//rentdue
         if(getStorage().getStorageValue(getOwnerRskAddress(), keyWord)==null){
             rd = RentTracker.nodeRentTracker(getOwnerRskAddress(), keyWord, getStorage(), getResult(),true, getTimestamp().longValue());
-            spendRentGas(rd, "Rent gas for SSTORE SET (new)");            
+            spendRentGas(rd, "Rent gas for SSTORE SET (new)");
+            //System.out.println("\n\nspend rent SSTORE SET" + rd);            
         } else {
             rd = RentTracker.nodeRentTracker(getOwnerRskAddress(), keyWord, getStorage(), getResult(),false, getTimestamp().longValue());
             spendRentGas(rd, "Rent gas for SSTORE RESET (pre-existing)");
+            //System.out.println("\n\nspend rent SSTORE RESET" + rd);
         }
         // and now the actual SSTORE op
         getStorage().addStorageRow(getOwnerRskAddress(), keyWord, valWord);
@@ -1278,6 +1278,7 @@ public class Program {
         long rd=0;//rent due
         rd = RentTracker.nodeRentTracker(getOwnerRskAddress(), key, getStorage(), getResult(),false, getTimestamp().longValue());
         spendRentGas(rd, "Rent gas for SLOAD");
+        //System.out.println("\n\nspend rent SLOAD:" +rd);
         return getStorage().getStorageValue(getOwnerRskAddress(), key);
     }
 

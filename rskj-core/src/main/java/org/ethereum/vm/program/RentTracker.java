@@ -136,29 +136,29 @@ public class RentTracker {
             if (!keysSeenBefore.contains(storageKey)){
                 Uint24 vLen = repository.getStorageValueLength(addr, storageCellKey);
                 //check for existence
-                if(vLen.intValue() <= 0){ //does not exist
+                if(!newNode && vLen.intValue() <= 0){ //does not exist
                     rd = GasCost.calculateStorageRent(new Uint24(0), GasCost.SIX_MONTHS);//penalty
                     comboRent += rd;
-                    logger.warn("Storage Penalty for addr: {} and key: {}", addr, storageCellKey.longValue());
+                    logger.warn("Storage Penalty: {} for addr: {} and key: {}", rd, addr, storageCellKey.longValue());
                     return comboRent; //collect penalty and exit
                 }
-                keysSeenBefore.add(storageKey); //add this to seen list (but only if node exists)
-                logger.info("Saw storage key {}", storageKey);
                 // compute the rent due
                 if (newNode){
                     rd = getSixMonthsRent(vLen);
                 } else {
+                    logger.info("Check rent for storage key {}", storageKey);
                     long storageLrpt = repository.getStorageLRPTime(addr, storageCellKey);
                     rd = computeRent(vLen, storageLrpt, refTimeStamp, true); //treat as modified (any real TX will change something, nonce, balance)
                 }
+                keysSeenBefore.add(storageKey); //add this to seen list (but only if node exists)
                 //if rent is due now, then add it to the map
                 if (rd > 0){
                     comboRent += rd;
                     nodeTrackingMap.put(storageKey, rd); //add seperately for each node 
                 }
-            }
+            } else {logger.info("node already checked");}
             // Don't return.. storage cell implies contract account
-            // So, continue and examine rent status for contract account node, code and storage root
+            // So, continue and Check rent status for contract account node, code and storage root
         }
 
         // Accounts, Code, and Storage Root
@@ -168,23 +168,22 @@ public class RentTracker {
         if (!keysSeenBefore.contains(accKey)){
             Uint24 vLen = repository.getAccountNodeValueLength(addr);
             //check for existence
-            if(vLen.intValue() <= 0){ //does not exist
+            if(!newNode && vLen.intValue() <= 0){ //does not exist
                 rd = GasCost.calculateStorageRent(new Uint24(0), GasCost.SIX_MONTHS);//penalty
                 comboRent += rd;
                 logger.warn("Account Penalty for addr: {} ",addr);
                 return comboRent; //collect the rentGas and exit            
             }
-            keysSeenBefore.add(accKey); //node exists in trie, add to seen set
-            logger.info("Saw account key {}", accKey);
             // compute the rent due
             if (newNode){
                 //logger.info("Tracking rent for new node");
                 rd = getSixMonthsRent(vLen);
             } else {
-                //logger.info("Tracking rent for pre-existing node");
+                logger.info("Check rent for account key {}", accKey);
                 long accLrpt = repository.getAccountNodeLRPTime(addr);
                 rd = computeRent(vLen, accLrpt, refTimeStamp, true); //treat as modified (any real TX will change something, nonce, balance)
             }
+            keysSeenBefore.add(accKey); //node exists in trie, add to seen set
             //if rent is due now, then add it to the map
             if (rd > 0){
                 comboRent += rd;
@@ -197,8 +196,7 @@ public class RentTracker {
             ByteArrayWrapper srKey = repository.getStorageRootKey(addr);
             // if the node is not in seen set, compute and add rent owed to map
             if (!keysSeenBefore.contains(srKey)){
-                keysSeenBefore.add(srKey);
-                logger.info("Saw storage root key {}", srKey);
+                logger.info("Check rent for storage root key {}", srKey);
                 Uint24 srLen = new Uint24(1); // always 1. repository.getStorageRootValueLength(addr);
                 // compute the rent due
                 // No penalty code: if we reached here, then we know this node exists (isContract()).. 
@@ -208,6 +206,7 @@ public class RentTracker {
                     long srLrpt = repository.getStorageRootLRPTime(addr);
                     rd = RentTracker.computeRent(srLen, srLrpt, refTimeStamp, false);
                 }
+                keysSeenBefore.add(srKey);
                 //if rent is due now, then add it to the map
                 if (rd > 0){
                     comboRent += rd;
@@ -225,15 +224,15 @@ public class RentTracker {
                     comboRent += rd;
                     return comboRent; 
                 }
-                keysSeenBefore.add(cKey);
-                logger.info("Saw code key {}", cKey);
                 // compute the rent due
                 if (newNode){
                     rd = getSixMonthsRent(cLen);
                 } else {
+                    logger.info("Check rent for code key {}", cKey);
                     long cLrpt = repository.getCodeNodeLRPTime(addr);
                     rd = RentTracker.computeRent(cLen, cLrpt, refTimeStamp, false);
                 }
+                keysSeenBefore.add(cKey);
                 //if rent is due now, then add it to the map
                 if (rd > 0){
                     comboRent += rd;
