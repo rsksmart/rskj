@@ -11,20 +11,17 @@ import org.ethereum.core.Account;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.Keccak256Helper;
-import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.VM;
 import org.ethereum.vm.program.Program;
 import org.ethereum.vm.program.invoke.ProgramInvokeMockImpl;
-import org.ethereum.util.ByteUtil;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.math.BigInteger;
 import java.util.HashSet;
-import java.time.Instant;
 
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP140;
 import static org.mockito.Mockito.mock;
@@ -93,7 +90,7 @@ public class RentModExtCodeHashTest {
 
         DataWord dataWordResult = program.stackPop();
         Assert.assertEquals(DataWord.valueOf(codeHashExpected), dataWordResult);
-        Assert.assertEquals(gasExpected, program.getResult().getGasUsed());
+        Assert.assertEquals(gasExpected, program.getResult().getExecGasUsed());
     }
 
     

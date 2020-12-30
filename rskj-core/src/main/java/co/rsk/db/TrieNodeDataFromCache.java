@@ -6,8 +6,14 @@ import org.ethereum.crypto.Keccak256Helper;
 
 public class TrieNodeDataFromCache implements TrieNodeData {
     byte[] cacheData;
+    long timestamp;
+    
     public TrieNodeDataFromCache(byte[] cacheData) {
         this.cacheData = cacheData;
+    }
+    public TrieNodeDataFromCache(byte[] cacheData,long timestamp) {
+        this.cacheData = cacheData;
+        this.timestamp = timestamp;
     }
 
     @Override
@@ -29,9 +35,10 @@ public class TrieNodeDataFromCache implements TrieNodeData {
     public boolean isNew() {
         return true;
     }
+
     @Override
     public long getLastRentPaidTime() {
-        return -1; // TODO: SDL raise an exception here
+        return timestamp;
     }
 
     @Override

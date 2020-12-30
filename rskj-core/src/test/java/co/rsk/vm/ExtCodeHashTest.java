@@ -100,7 +100,7 @@ public class ExtCodeHashTest {
             }
         } catch(Program.StackTooSmallException e) {
              Assert.assertEquals(0, program.getStack().size());
-             Assert.assertEquals(gasExpected, program.getResult().getGasUsed());
+             Assert.assertEquals(gasExpected, program.getResult().getExecGasUsed());
          }
     }
 
@@ -121,7 +121,7 @@ public class ExtCodeHashTest {
 
         DataWord dataWordResult = program.stackPop();
         Assert.assertEquals(DataWord.valueOf(codeHashExpected), dataWordResult);
-        Assert.assertEquals(gasExpected, program.getResult().getGasUsed());
+        Assert.assertEquals(gasExpected, program.getResult().getExecGasUsed());
     }
 
     

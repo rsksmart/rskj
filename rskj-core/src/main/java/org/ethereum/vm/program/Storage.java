@@ -26,6 +26,7 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.trie.Trie;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.AccountState;
+import org.ethereum.core.RentTracker;
 import org.ethereum.core.Repository;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.program.invoke.ProgramInvoke;
@@ -267,6 +268,21 @@ public class Storage implements Repository, ProgramListenerAware {
     }
 
     @Override
+    public Repository startTracking(RentTracker rentTracker) {
+        return repository.startTracking(rentTracker);
+    }
+
+    @Override
+    public void setRentTracker(RentTracker rentTracker) {
+        repository.setRentTracker(rentTracker);
+    }
+
+    @Override
+    public void removeRentTracker() {
+    repository.removeRentTracker();
+    }
+
+    @Override
     public void commit() {
         repository.commit();
     }
@@ -289,5 +305,10 @@ public class Storage implements Repository, ProgramListenerAware {
     @Override
     public void updateAccountState(RskAddress addr, AccountState accountState) {
         throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void trackAccountUpdate(RskAddress addr) {
+        repository.trackAccountUpdate(addr);
     }
 }

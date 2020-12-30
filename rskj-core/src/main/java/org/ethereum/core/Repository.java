@@ -140,6 +140,8 @@ public interface Repository extends RepositorySnapshot {
 
     void updateAccountState(RskAddress addr, AccountState accountState);
 
+    void trackAccountUpdate(RskAddress addr);
+
     default void transfer(RskAddress fromAddr, RskAddress toAddr, Coin value) {
         addBalance(fromAddr, value.negate());
         addBalance(toAddr, value);

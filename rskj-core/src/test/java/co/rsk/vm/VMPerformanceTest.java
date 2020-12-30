@@ -277,7 +277,7 @@ public class VMPerformanceTest {
             long startUsedMemory = (rt.totalMemory() - rt.freeMemory());
             long startRealTime = System.currentTimeMillis();
             long startTime = thread.getCurrentThreadCpuTime(); // in nanoseconds.
-            long startGas = program.getResult().getGasUsed();
+            long startGas = program.getResult().getExecGasUsed();
             long startGCTime = getGarbageCollectorTimeMillis();
 
             // Al parecer el gc puede interrumpir en cualquier momento y hacer estragos
@@ -291,7 +291,7 @@ public class VMPerformanceTest {
                 if (loops == 0) {
                     //  endGas is the gas used BOTH for the reference code
                     // (push/pops) and the cod itself.
-                    long endGas = program.getResult().getGasUsed();
+                    long endGas = program.getResult().getExecGasUsed();
 
                     // Store the gas per inner loop, not vm.steps()
                     pr.gas = (endGas - startGas) / cloneCount;
@@ -609,8 +609,8 @@ public class VMPerformanceTest {
         vm.steps(program, Long.MAX_VALUE);
         endMeasure();
         System.out.println("Instructions executed: : " + Integer.toString(vm.getVmCounter()));
-        System.out.println("Gas consumed: " + Long.toString(program.getResult().getGasUsed()));
-        System.out.println("Average Gas per instruction: " + Long.toString(program.getResult().getGasUsed()/vm.getVmCounter()));
+        System.out.println("Gas consumed: " + Long.toString(program.getResult().getExecGasUsed()));
+        System.out.println("Average Gas per instruction: " + Long.toString(program.getResult().getExecGasUsed()/vm.getVmCounter()));
 
         long M = 1000 * 1000;
         long insPerSecond = vm.getVmCounter() * M / deltaTime;

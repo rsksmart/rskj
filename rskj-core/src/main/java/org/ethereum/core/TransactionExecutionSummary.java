@@ -35,8 +35,8 @@ public class TransactionExecutionSummary {
     private Transaction tx;
     private Coin value = Coin.ZERO;
     private Coin gasPrice = Coin.ZERO;
-    private BigInteger gasLimit = BigInteger.ZERO;
-    private BigInteger gasUsed = BigInteger.ZERO;
+    private BigInteger combinedGasLimit = BigInteger.ZERO;
+    private BigInteger combinedGasUsed = BigInteger.ZERO;
     private BigInteger gasLeftover = BigInteger.ZERO;
     private BigInteger gasRefund = BigInteger.ZERO;
 
@@ -62,10 +62,10 @@ public class TransactionExecutionSummary {
 
     public Coin getFee() {
         if (failed) {
-            return calcCost(gasLimit);
+            return calcCost(combinedGasLimit);
         }
 
-        return calcCost(gasLimit.subtract(gasLeftover.add(gasRefund)));
+        return calcCost(combinedGasLimit.subtract(gasLeftover.add(gasRefund)));
     }
 
     public Coin getRefund() {
@@ -88,12 +88,12 @@ public class TransactionExecutionSummary {
         return gasPrice;
     }
 
-    public BigInteger getGasLimit() {
-        return gasLimit;
+    public BigInteger getCombinedGasLimit() {
+        return combinedGasLimit;
     }
 
-    public BigInteger getGasUsed() {
-        return gasUsed;
+    public BigInteger getCombinedGasUsed() {
+        return combinedGasUsed;
     }
 
     public BigInteger getGasLeftover() {
@@ -141,13 +141,13 @@ public class TransactionExecutionSummary {
 
             summary = new TransactionExecutionSummary();
             summary.tx = transaction;
-            summary.gasLimit = toBI(transaction.getGasLimit());
+            summary.combinedGasLimit = toBI(transaction.getGasLimit()).add(toBI(transaction.getRentGasLimit())); // combined gas limit
             summary.gasPrice = transaction.getGasPrice();
             summary.value = transaction.getValue();
         }
 
-        public Builder gasUsed(BigInteger gasUsed) {
-            summary.gasUsed = gasUsed;
+        public Builder combinedGasUsed(BigInteger gasUsed) {
+            summary.combinedGasUsed = gasUsed;
             return this;
         }
 

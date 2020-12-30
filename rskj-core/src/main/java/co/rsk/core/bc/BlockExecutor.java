@@ -289,7 +289,7 @@ public class BlockExecutor {
                     vmTrace,
                     vmTraceOptions,
                     deletedAccounts);
-            boolean transactionExecuted = txExecutor.executeTransaction();
+                boolean transactionExecuted = txExecutor.executeTransaction();
 
             if (!acceptInvalidTransactions && !transactionExecuted) {
                 if (discardInvalidTxs) {
@@ -315,9 +315,11 @@ public class BlockExecutor {
 
             logger.trace("track commit");
 
-            long gasUsed = txExecutor.getGasUsed();
-            totalGasUsed += gasUsed;
-            Coin paidFees = txExecutor.getPaidFees();
+            long execGasUsed = txExecutor.getGasUsed(); // #mish this returns execution gas used
+            long rentGasUsed = txExecutor.getRentGasUsed(); // rent gas used 
+
+            totalGasUsed += execGasUsed; //#exec gas only
+            Coin paidFees = txExecutor.getPaidFees();   //#mish this includes exec + rent gas
             if (paidFees != null) {
                 totalPaidFees = totalPaidFees.add(paidFees);
             }
@@ -325,8 +327,13 @@ public class BlockExecutor {
             deletedAccounts.addAll(txExecutor.getResult().getDeleteAccounts());
 
             TransactionReceipt receipt = new TransactionReceipt();
-            receipt.setGasUsed(gasUsed);
+            
+            // #mish report both exec and rent gas (recall TX gaslimit "field" combines both,
+            // but "tx.getGasLimit()" and "tx.getRentGasLimit()" are used to split that single budget.
+            receipt.setGasUsed(execGasUsed + rentGasUsed); //this is for TX rcpt, not block result
             receipt.setCumulativeGas(totalGasUsed);
+            receipt.setExecGasUsed(execGasUsed); // added for consistency with TX executor
+            receipt.setRentGasUsed(rentGasUsed); //added for consistency with TX execeutor getReceipt()
 
             receipt.setTxStatus(txExecutor.getReceipt().isSuccessful());
             receipt.setTransaction(tx);

@@ -96,7 +96,7 @@ public class VMSpecificOpcodesPerformanceTest {
         vm.steps(program, Long.MAX_VALUE);
         stopWatch.endMeasure("program execution");
         //
-        long gasUsed =program.getResult().getGasUsed();
+        long gasUsed =program.getResult().getExecGasUsed();
         long computedGasCostPerCALLLoop =gasUsed / loopCount; // number of loops
         Assert.assertEquals(computedGasCostPerCALLLoop ,gasCostPerCALLLoop);
 
@@ -158,7 +158,7 @@ public class VMSpecificOpcodesPerformanceTest {
         vm.steps(program, Long.MAX_VALUE);
         stopWatch.endMeasure("program execution");
         //
-        long gasUsed =program.getResult().getGasUsed();
+        long gasUsed =program.getResult().getExecGasUsed();
         long computedGasCostPerCALLLoop =gasUsed / loopCount; // number of loops
         Assert.assertEquals(computedGasCostPerCALLLoop ,gasCostPerCALLLoop);
 

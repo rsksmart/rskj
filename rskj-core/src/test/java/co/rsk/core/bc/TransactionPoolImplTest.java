@@ -473,6 +473,7 @@ public class TransactionPoolImplTest {
     public void updateTransactionPool() {
         Coin balance = Coin.valueOf(1000000);
         createTestAccounts(2, balance);
+        // First transaction pays 1000, seond pays 3000. Total paid 4000.
         Transaction tx1 = createSampleTransaction(1, 2, 1000, 0);
         Transaction tx2 = createSampleTransaction(1, 2, 3000, 1);
         Account receiver = createAccount(2);
@@ -481,7 +482,8 @@ public class TransactionPoolImplTest {
         transactionPool.addTransaction(tx2);
 
         PendingState pendingState = transactionPool.getPendingState();
-        Assert.assertEquals(BigInteger.valueOf(1004000), pendingState.getBalance(receiver.getAddress()).asBigInteger());
+        long finalBalance = 1004000;
+        Assert.assertEquals(BigInteger.valueOf(finalBalance), pendingState.getBalance(receiver.getAddress()).asBigInteger());
     }
 
     @Test

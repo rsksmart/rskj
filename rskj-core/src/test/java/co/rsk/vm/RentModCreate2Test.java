@@ -37,7 +37,6 @@ import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.VM;
 import org.ethereum.vm.program.Program;
 import org.ethereum.vm.program.Stack;
-import org.ethereum.vm.program.invoke.ProgramInvoke;
 import org.ethereum.vm.program.invoke.ProgramInvokeMockImpl;
 import org.junit.Assert;
 import org.junit.Before;
@@ -239,7 +238,7 @@ public class RentModCreate2Test {
 
         Assert.assertEquals(1, stack.size());
         Assert.assertEquals(expected.toUpperCase(), result.toUpperCase());
-        Assert.assertEquals(gasExpected, program.getResult().getGasUsed());
+        Assert.assertEquals(gasExpected, program.getResult().getExecGasUsed());
     }
 
     // for program, in VMComplex test, just `null` is used

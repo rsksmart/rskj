@@ -35,7 +35,7 @@ import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
  */
 public class ProgramResult {
 
-    private long gasUsed = 0L;
+    private long execGasUsed = 0L;
     /** #mish rent gas is collected at end of transaction. 
      * so rentgas "used" is more like an "estimate" of eventual cost, rather than definite spending. 
      * However, for clarity of thought, use the same terminology as for regular execution gas.
@@ -66,7 +66,7 @@ public class ProgramResult {
     private List<CallCreate> callCreateList;
 
     public void clearUsedGas() {
-        gasUsed = 0;
+        execGasUsed = 0;
     }
 
     public void clearUsedRentGas() {
@@ -74,7 +74,7 @@ public class ProgramResult {
     }
   
     public void spendGas(long gas) {
-        gasUsed = GasCost.add(gasUsed, gas);
+        execGasUsed = GasCost.add(execGasUsed, gas);
     }
 
     public void spendRentGas(long rentGas) {
@@ -91,7 +91,7 @@ public class ProgramResult {
     }
 
     public void refundGas(long gas) {
-        gasUsed = GasCost.subtract(gasUsed, gas);
+        execGasUsed = GasCost.subtract(execGasUsed, gas);
     }
 
     public void refundRentGas(long rentGas) {
@@ -111,8 +111,8 @@ public class ProgramResult {
         return exception;
     }
 
-    public long getGasUsed() {
-        return gasUsed;
+    public long getExecGasUsed() {
+        return execGasUsed;
     }
 
     public long getRentGasUsed() {

@@ -21,6 +21,7 @@ package co.rsk.trie;
 import co.rsk.core.RskAddress;
 import co.rsk.core.types.ints.Uint24;
 import co.rsk.crypto.Keccak256;
+import co.rsk.db.TrieNodeDataFromCache;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.vm.DataWord;
 
@@ -43,10 +44,18 @@ public interface MutableTrie {
 
     void put(byte[] key, byte[] value);
 
+    // Returns previous data contained in that key
+    @Nullable
+    TrieNodeData  putWithTimestamp(byte[] key, byte[] value,long timestamp);
+
+    @Nullable
+    TrieNodeData put(ByteArrayWrapper keyWrapper, TrieNodeDataFromCache value);
+
     void put(String key, byte[] value);
 
     // This method optimizes cache-to-cache transfers
-    void put(ByteArrayWrapper key, byte[] value);
+    // deptecated: use put(keyWrapper,TrieNodeDataFromCache)
+    //void put(ByteArrayWrapper key, byte[] value);
 
     // the key has to match exactly an account key
     // it won't work if it is used with an storage key or any other

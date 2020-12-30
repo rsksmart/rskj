@@ -613,7 +613,7 @@ public class TestRunner {
 
                 // assert gas
                 BigInteger expectedGas = new BigInteger(1, testCase.getGas());
-                BigInteger actualGas = new BigInteger(1, gas).subtract(BigInteger.valueOf(program.getResult().getGasUsed()));
+                BigInteger actualGas = new BigInteger(1, gas).subtract(BigInteger.valueOf(program.getResult().getExecGasUsed()));
                 if (validateGasUsed)
                 if (!expectedGas.equals(actualGas)) {
 

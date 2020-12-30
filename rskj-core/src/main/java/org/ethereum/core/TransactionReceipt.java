@@ -67,6 +67,7 @@ public class TransactionReceipt {
     private byte[] rlpEncoded;
 
     public TransactionReceipt() {
+        this.rlpEncoded =null;
     }
 
     public TransactionReceipt(byte[] rlp) {

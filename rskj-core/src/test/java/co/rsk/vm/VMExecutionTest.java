@@ -567,7 +567,7 @@ public class VMExecutionTest {
 
         Assert.assertNotNull(programResult);
         Assert.assertNotNull(programResult.getException());
-        Assert.assertEquals(invoke.getGas(), programResult.getGasUsed());
+        Assert.assertEquals(invoke.getGas(), programResult.getExecGasUsed());
     }
 
     @Test
@@ -641,7 +641,7 @@ public class VMExecutionTest {
         Assert.assertNotNull(program);
         Assert.assertNotNull(program.getResult());
         Assert.assertNull(program.getResult().getException());
-        Assert.assertEquals(2, program.getResult().getGasUsed());
+        Assert.assertEquals(2, program.getResult().getExecGasUsed());
     }
 
     @Test
@@ -656,7 +656,7 @@ public class VMExecutionTest {
         Assert.assertNotNull(program);
         Assert.assertNotNull(program.getResult());
         Assert.assertNull(program.getResult().getException());
-        Assert.assertEquals(12, program.getResult().getGasUsed());
+        Assert.assertEquals(12, program.getResult().getExecGasUsed());
     }
 
     @Test
@@ -671,7 +671,7 @@ public class VMExecutionTest {
         Assert.assertNotNull(program);
         Assert.assertNotNull(program.getResult());
         Assert.assertNull(program.getResult().getException());
-        Assert.assertEquals(12, program.getResult().getGasUsed());
+        Assert.assertEquals(12, program.getResult().getExecGasUsed());
     }
 
     @Test
@@ -746,7 +746,7 @@ public class VMExecutionTest {
 
         long selfBalanceGas = OpCode.SELFBALANCE.getTier().asInt();
 
-        Assert.assertEquals(selfBalanceGas, program.getResult().getGasUsed());
+        Assert.assertEquals(selfBalanceGas, program.getResult().getExecGasUsed());
         Assert.assertEquals(1, stack.size());
         Assert.assertEquals(DataWord.valueOf(balanceValue), stack.peek());
     }
@@ -776,7 +776,7 @@ public class VMExecutionTest {
 
         long selfBalanceGas = OpCode.SELFBALANCE.getTier().asInt();
 
-        Assert.assertEquals(selfBalanceGas, programSelfBalance.getResult().getGasUsed());
+        Assert.assertEquals(selfBalanceGas, programSelfBalance.getResult().getExecGasUsed());
         Assert.assertEquals(selfBalance, DataWord.valueOf(balanceValue));
         Assert.assertEquals(balance, selfBalance);
     }
@@ -826,7 +826,7 @@ public class VMExecutionTest {
         Stack stack = program.getStack();
 
         Assert.assertEquals(0, stack.size());
-        Assert.assertEquals(18, program.getResult().getGasUsed());
+        Assert.assertEquals(18, program.getResult().getExecGasUsed());
     }
 
     @Test
@@ -839,7 +839,7 @@ public class VMExecutionTest {
 
         Assert.assertEquals(1, stack.size());
         Assert.assertEquals(DataWord.valueOf(42), stack.pop());
-        Assert.assertEquals(21, program.getResult().getGasUsed());
+        Assert.assertEquals(21, program.getResult().getExecGasUsed());
     }
 
     @Test
@@ -871,7 +871,7 @@ public class VMExecutionTest {
         Stack stack = program.getStack();
 
         Assert.assertEquals(0, stack.size());
-        Assert.assertEquals(36, program.getResult().getGasUsed());
+        Assert.assertEquals(36, program.getResult().getExecGasUsed());
     }
 
     @Test
@@ -894,7 +894,7 @@ public class VMExecutionTest {
 
         Program program = playCode("PUSH2 0x0400 PUSH1 0x07 JUMP BEGINSUB JUMPDEST DUP1 PUSH1 0x0d JUMPI STOP JUMPDEST PUSH1 0x01 SWAP1 SUB PUSH1 0x06 JUMPSUB", activations);
 
-        Assert.assertEquals(invoke.getGas(), program.getResult().getGasUsed());
+        Assert.assertEquals(invoke.getGas(), program.getResult().getExecGasUsed());
         Assert.assertNotNull(program.getResult().getException());
         Assert.assertTrue(program.getResult().getException() instanceof Program.ReturnStackOverflowException);
         Assert.assertEquals("Return stack overflow: PC[20], tx[<null>]", program.getResult().getException().getMessage());
@@ -909,7 +909,7 @@ public class VMExecutionTest {
         Stack stack = program.getStack();
 
         Assert.assertEquals(0, stack.size());
-        Assert.assertEquals(30, program.getResult().getGasUsed());
+        Assert.assertEquals(30, program.getResult().getExecGasUsed());
     }
 
     @Test
@@ -921,7 +921,7 @@ public class VMExecutionTest {
         Stack stack = program.getStack();
 
         Assert.assertEquals(0, stack.size());
-        Assert.assertEquals(invoke.getGas(), program.getResult().getGasUsed());
+        Assert.assertEquals(invoke.getGas(), program.getResult().getExecGasUsed());
         Assert.assertNotNull(program.getResult().getException());
         Assert.assertTrue(program.getResult().getException() instanceof Program.BadJumpDestinationException);
         Assert.assertEquals("Operation with pc isn't 'BEGINSUB': PC[-1], tx[<null>]", program.getResult().getException().getMessage());
@@ -936,7 +936,7 @@ public class VMExecutionTest {
         Stack stack = program.getStack();
 
         Assert.assertEquals(0, stack.size());
-        Assert.assertEquals(invoke.getGas(), program.getResult().getGasUsed());
+        Assert.assertEquals(invoke.getGas(), program.getResult().getExecGasUsed());
         Assert.assertNotNull(program.getResult().getException());
         Assert.assertTrue(program.getResult().getException() instanceof Program.StackTooSmallException);
         Assert.assertEquals("Expected stack size 1 but actual 0, tx: <null>", program.getResult().getException().getMessage());
@@ -951,7 +951,7 @@ public class VMExecutionTest {
         Stack stack = program.getStack();
 
         Assert.assertEquals(0, stack.size());
-        Assert.assertEquals(invoke.getGas(), program.getResult().getGasUsed());
+        Assert.assertEquals(invoke.getGas(), program.getResult().getExecGasUsed());
         Assert.assertNotNull(program.getResult().getException());
         Assert.assertTrue(program.getResult().getException() instanceof Program.InvalidReturnSubException);
         Assert.assertEquals("Invalid 'RETURNSUB': PC[0], tx[<null>]", program.getResult().getException().getMessage());
@@ -966,7 +966,7 @@ public class VMExecutionTest {
         Stack stack = program.getStack();
 
         Assert.assertEquals(0, stack.size());
-        Assert.assertEquals(invoke.getGas(), program.getResult().getGasUsed());
+        Assert.assertEquals(invoke.getGas(), program.getResult().getExecGasUsed());
         Assert.assertNotNull(program.getResult().getException());
         Assert.assertTrue(program.getResult().getException() instanceof Program.InvalidBeginSubException);
         Assert.assertEquals("Invalid 'BEGINSUB': PC[0], tx[<null>]", program.getResult().getException().getMessage());

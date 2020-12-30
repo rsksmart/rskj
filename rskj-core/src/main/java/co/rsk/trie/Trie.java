@@ -432,7 +432,7 @@ public class Trie implements TrieNodeData {
      * is build, adding some new nodes
      */
     public Trie put(byte[] key, byte[] value) {
-        return putWithRent(key,value,0);
+        return putWithTimestamp(key,value,-1);
     }
 
     public Trie put(ByteArrayWrapper key, byte[] value) {
@@ -769,7 +769,7 @@ public class Trie implements TrieNodeData {
      *
      */
     private Trie put(TrieKeySlice key, byte[] value, boolean isRecursiveDelete) {
-        return putWithRent(key,value,isRecursiveDelete,0);
+        return putWithTimestamp(key,value,isRecursiveDelete,0);
     }
 
     private static Uint24 getDataLength(byte[] value) {
@@ -784,14 +784,14 @@ public class Trie implements TrieNodeData {
      * duplicated existing code and then track the value (do the same for rent)
      * could have used the same name 'put' with overloading. Introducing new name for emphasis.
      * also, for security, value must be passed explicitly, even if unchanged*/
-    public Trie putWithRent(byte[] key, byte[] value, long newLastRentPaidTime) {
+    public Trie putWithTimestamp(byte[] key, byte[] value, long newLastRentPaidTime) {
         TrieKeySlice keySlice = TrieKeySlice.fromKey(key);
-        Trie trie = putWithRent(keySlice, value, false, newLastRentPaidTime);
+        Trie trie = putWithTimestamp(keySlice, value, false, newLastRentPaidTime);
 
         return trie == null ? new Trie(this.store) : trie;
     }
 
-    private Trie putWithRent(TrieKeySlice key, byte[] value, boolean isRecursiveDelete, long newLastRentPaidTime) {
+    private Trie putWithTimestamp(TrieKeySlice key, byte[] value, boolean isRecursiveDelete, long newLastRentPaidTime) {
         // First of all, setting the value as an empty byte array is equivalent
         // to removing the key/value. This is because other parts of the trie make
         // this equivalent. Use always null to mark a node for deletion.
@@ -856,7 +856,7 @@ public class Trie implements TrieNodeData {
             if (value == null) {
                 return this;
             }
-            return this.split(commonPath).putWithRent(key, value, isRecursiveDelete, newLastRentPaidTime);
+            return this.split(commonPath).putWithTimestamp(key, value, isRecursiveDelete, newLastRentPaidTime);
         }
 
         if (sharedPath.length() >= key.length()) {
@@ -905,7 +905,7 @@ public class Trie implements TrieNodeData {
         }
 
         TrieKeySlice subKey = key.slice(sharedPath.length() + 1, key.length());
-        Trie newNode = node.putWithRent(subKey, value, isRecursiveDelete, newLastRentPaidTime);
+        Trie newNode = node.putWithTimestamp(subKey, value, isRecursiveDelete, newLastRentPaidTime);
 
         // reference equality
         if (newNode == node) {

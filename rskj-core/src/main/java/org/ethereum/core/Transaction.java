@@ -310,18 +310,21 @@ public class Transaction {
     public byte[] getGasLimit() {
         return getExecGasLimit();
     }
+
+    private long getExecGasbudget() {
+        long gasBudget = GasCost.toGas(this.gasLimit); // convert byte to long
+        return gasBudget*GasCost.TX_GASBUDGET_PERCENT/100;
+    }
     // #mish: For future, explicit reference for execution gas limit
     public byte[] getExecGasLimit() {
-        long gasBudget = GasCost.toGas(this.gasLimit); // convert byte to long
-        long execGasBudget= gasBudget/GasCost.TX_GASBUDGET_DIVISOR;
+        long execGasBudget= getExecGasbudget();
         return BigInteger.valueOf(execGasBudget).toByteArray();
     }
 
     // #mish rentGas limit
     public byte[] getRentGasLimit() {
         long gasBudget = GasCost.toGas(this.gasLimit);
-        long execGasBudget= gasBudget/GasCost.TX_GASBUDGET_DIVISOR;
-        long rentGasBudget = gasBudget - execGasBudget;
+        long rentGasBudget = gasBudget -getExecGasbudget();
         return BigInteger.valueOf(rentGasBudget).toByteArray();
     }
 

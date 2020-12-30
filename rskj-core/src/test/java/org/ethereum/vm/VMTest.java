@@ -171,7 +171,7 @@ public class VMTest {
         vm.steps(program, Long.MAX_VALUE);
         Assert.assertEquals(
                 "faulty program with bigger gas limit than gas available should use all the gas in a block",
-                program.getResult().getGasUsed(), invoke.getGas()
+                program.getResult().getExecGasUsed(), invoke.getGas()
         );
     }
 
@@ -478,7 +478,7 @@ public class VMTest {
         // bad program is trying to put a word of memory on the last byte of memory,
         // but should not be successful. we should not charge for gas that was not used!
         assertEquals("good program uses 3 more gas than the bad one",
-                goodProgram.getResult().getGasUsed(), badProgram.getResult().getGasUsed() + 3);
+                goodProgram.getResult().getExecGasUsed(), badProgram.getResult().getExecGasUsed() + 3);
     }
 
     @Test
@@ -522,7 +522,7 @@ public class VMTest {
         vm.steps(bad, Long.MAX_VALUE);
         vm.steps(good, Long.MAX_VALUE);
         Assert.assertEquals("good program will asign a new word of memory, so will charge 3 more",
-                good.getResult().getGasUsed(), bad.getResult().getGasUsed() + GasCost.MEMORY);
+                good.getResult().getExecGasUsed(), bad.getResult().getExecGasUsed() + GasCost.MEMORY);
         Assert.assertEquals("good program will have more memory, as it paid for it", good.getMemSize(),
                 bad.getMemSize() + 32);
     }
@@ -609,7 +609,7 @@ public class VMTest {
         vm.steps(initContract, Long.MAX_VALUE);
         vm.steps(bad, Long.MAX_VALUE);
         vm.steps(good, Long.MAX_VALUE);
-        Assert.assertEquals(good.getResult().getGasUsed(), bad.getResult().getGasUsed());
+        Assert.assertEquals(good.getResult().getExecGasUsed(), bad.getResult().getExecGasUsed());
         Assert.assertEquals(good.getMemSize(), bad.getMemSize());
     }
 
@@ -2905,7 +2905,7 @@ public class VMTest {
         vm.step(program);
 
         DataWord item1 = program.stackPop();
-        long gas = program.getResult().getGasUsed();
+        long gas = program.getResult().getExecGasUsed();
 
         assertEquals(s_expected_1, ByteUtil.toHexString(item1.getData()).toUpperCase());
         assertEquals(66, gas);
@@ -2923,7 +2923,7 @@ public class VMTest {
         vm.step(program);
 
         DataWord item1 = program.stackPop();
-        long gas = program.getResult().getGasUsed();
+        long gas = program.getResult().getExecGasUsed();
 
         assertEquals(s_expected_1, ByteUtil.toHexString(item1.getData()).toUpperCase());
         assertEquals(16, gas);
@@ -2941,7 +2941,7 @@ public class VMTest {
         vm.step(program);
 
         DataWord item1 = program.stackPop();
-        long gas = program.getResult().getGasUsed();
+        long gas = program.getResult().getExecGasUsed();
 
         assertEquals(s_expected_1, ByteUtil.toHexString(item1.getData()).toUpperCase());
         assertEquals(116, gas);
@@ -3046,7 +3046,7 @@ public class VMTest {
         vm.step(program);
         vm.step(program);
 
-        long gas = program.getResult().getGasUsed();
+        long gas = program.getResult().getExecGasUsed();
         assertEquals(m_expected_1, ByteUtil.toHexString(program.getMemory()).toUpperCase());
         assertEquals(6, gas);
     }
@@ -3067,7 +3067,7 @@ public class VMTest {
         vm.step(program);
         vm.step(program);
 
-        long gas = program.getResult().getGasUsed();
+        long gas = program.getResult().getExecGasUsed();
         assertEquals(m_expected_1, ByteUtil.toHexString(program.getMemory()).toUpperCase());
         assertEquals(10, gas);
     }
@@ -3089,7 +3089,7 @@ public class VMTest {
         vm.step(program);
         vm.step(program);
 
-        assertEquals(10, program.getResult().getGasUsed());
+        assertEquals(10, program.getResult().getExecGasUsed());
     }
 
     @Ignore //TODO #POC9
@@ -3104,7 +3104,7 @@ public class VMTest {
         vm.step(program);
         vm.step(program);
 
-        assertEquals(10, program.getResult().getGasUsed());
+        assertEquals(10, program.getResult().getExecGasUsed());
     }
 
 

@@ -123,12 +123,12 @@ public class VMComplexTest {
 
         Coin balance = repository.getBalance(callerAddrB);
 
-        System.out.println("*** Used gas: " + program.getResult().getGasUsed());
+        System.out.println("*** Used gas: " + program.getResult().getExecGasUsed());
         System.out.println("*** Contract Balance: " + balance);
 
         // todo: assert caller balance after contract exec
 
-        assertEquals(expectedGas, program.getResult().getGasUsed());
+        assertEquals(expectedGas, program.getResult().getExecGasUsed());
     }
 
     @Ignore //TODO #POC9
@@ -207,7 +207,7 @@ public class VMComplexTest {
         System.out.println("============ Results ============");
 
 
-        System.out.println("*** Used gas: " + program.getResult().getGasUsed());
+        System.out.println("*** Used gas: " + program.getResult().getExecGasUsed());
 
 
         DataWord value_1 = repository.getStorageValue(contractA_addr, DataWord.valueOf(00));
@@ -292,7 +292,7 @@ public class VMComplexTest {
 
         System.out.println();
         System.out.println("============ Results ============");
-        System.out.println("*** Used gas: " + program.getResult().getGasUsed());
+        System.out.println("*** Used gas: " + program.getResult().getExecGasUsed());
 
         DataWord value1 = program.memoryLoad(DataWord.valueOf(32));
         DataWord value2 = program.memoryLoad(DataWord.valueOf(64));
@@ -368,7 +368,7 @@ public class VMComplexTest {
 
         logger.info("============ Results ============");
 
-        System.out.println("*** Used gas: " + program.getResult().getGasUsed());
+        System.out.println("*** Used gas: " + program.getResult().getExecGasUsed());
         // TODO: check that the value pushed after exec is the new address
     }
 
@@ -441,7 +441,7 @@ public class VMComplexTest {
 
         System.out.println();
         System.out.println("============ Results ============");
-        System.out.println("*** Used gas: " + program.getResult().getGasUsed());
+        System.out.println("*** Used gas: " + program.getResult().getExecGasUsed());
 
         DataWord memValue1 = program.memoryLoad(DataWord.valueOf(0));
         DataWord memValue2 = program.memoryLoad(DataWord.valueOf(32));
@@ -507,12 +507,12 @@ public class VMComplexTest {
 
         Coin balance = repository.getBalance(callerAddrB);
 
-        System.out.println("*** Used gas: " + program.getResult().getGasUsed());
+        System.out.println("*** Used gas: " + program.getResult().getExecGasUsed());
         System.out.println("*** Contract Balance: " + balance);
 
         // todo: assert caller balance after contract exec
 
-        assertEquals(expectedGas, program.getResult().getGasUsed());
+        assertEquals(expectedGas, program.getResult().getExecGasUsed());
     }
 
     //sha3_memSizeQuadraticCost31
@@ -566,12 +566,12 @@ public class VMComplexTest {
 
         Coin balance = repository.getBalance(callerAddrB);
 
-        System.out.println("*** Used gas: " + program.getResult().getGasUsed());
+        System.out.println("*** Used gas: " + program.getResult().getExecGasUsed());
         System.out.println("*** Contract Balance: " + balance);
 
         // todo: assert caller balance after contract exec
 
-        assertEquals(expectedGas, program.getResult().getGasUsed());
+        assertEquals(expectedGas, program.getResult().getExecGasUsed());
     }
 
     //sha3_memSizeQuadraticCost32
@@ -625,12 +625,12 @@ public class VMComplexTest {
 
         Coin balance = repository.getBalance(callerAddrB);
 
-        System.out.println("*** Used gas: " + program.getResult().getGasUsed());
+        System.out.println("*** Used gas: " + program.getResult().getExecGasUsed());
         System.out.println("*** Contract Balance: " + balance);
 
         // todo: assert caller balance after contract exec
 
-        assertEquals(expectedGas, program.getResult().getGasUsed());
+        assertEquals(expectedGas, program.getResult().getExecGasUsed());
     }
 
     //sha3_memSizeQuadraticCost32_zeroSize
@@ -684,12 +684,12 @@ public class VMComplexTest {
 
         Coin balance = repository.getBalance(callerAddrB);
 
-        System.out.println("*** Used gas: " + program.getResult().getGasUsed());
+        System.out.println("*** Used gas: " + program.getResult().getExecGasUsed());
         System.out.println("*** Contract Balance: " + balance);
 
         // todo: assert caller balance after contract exec
 
-        assertEquals(expectedGas, program.getResult().getGasUsed());
+        assertEquals(expectedGas, program.getResult().getExecGasUsed());
     }
 
     private VM getSubject() {

@@ -581,10 +581,10 @@ public class Program {
     }
 
     private void refundRemainingGas(long gasLimit, ProgramResult programResult) {
-        if (programResult.getGasUsed() >= gasLimit) {
+        if (programResult.getExecGasUsed() >= gasLimit) {
             return;
         }
-        long refundGas = GasCost.subtract(gasLimit, programResult.getGasUsed());
+        long refundGas = GasCost.subtract(gasLimit, programResult.getExecGasUsed());
         refundGas(refundGas, "remaining gas from the internal call");
         if (isGasLogEnabled) {
             gasLogger.info("The remaining gas is refunded, account: [{}], gas: [{}] ",
@@ -660,7 +660,7 @@ public class Program {
             int codeLength = getLength(code);
 
             long storageCost = GasCost.multiply(GasCost.CREATE_DATA, codeLength);
-            long afterSpend = programInvoke.getGas() - storageCost - programResult.getGasUsed();
+            long afterSpend = programInvoke.getGas() - storageCost - programResult.getExecGasUsed();
 
             if (afterSpend < 0) {
                 programResult.setException(
@@ -928,7 +928,7 @@ public class Program {
         returnDataBuffer = buffer;
 
         // 5. REFUND THE REMAIN GAS
-        BigInteger refundGas = msg.getGas().value().subtract(toBI(childResult.getGasUsed()));
+        BigInteger refundGas = msg.getGas().value().subtract(toBI(childResult.getExecGasUsed()));
         if (isPositive(refundGas)) {
             // Since the original gas transferred was < Long.MAX_VALUE then the refund
             // also fits in a long.
@@ -1123,7 +1123,7 @@ public class Program {
     }
 
     public long getRemainingGas() {
-        return invoke.getGas()- getResult().getGasUsed();
+        return invoke.getGas()- getResult().getExecGasUsed();
     }
 
     public long getRemainingRentGas() {
@@ -1283,7 +1283,7 @@ public class Program {
             logger.trace(" -- MEMORY --  {}", memoryData);
             logger.trace(" -- STORAGE -- {}\n", storageData);
             logger.trace("\n  Spent Gas: [{}]/[{}]\n  Left Gas:  [{}]\n",
-                    getResult().getGasUsed(),
+                    getResult().getExecGasUsed(),
                     invoke.getGas(),
                     getRemainingGas());
             logger.trace("\n  Spent Rent Gas: [{}]/[{}]\n  Left Rent Gas:  [{}]\n",
@@ -1316,7 +1316,7 @@ public class Program {
             if (!Arrays.equals(txData, ops)) {
                 globalOutput.append("\n  msg.data: ").append(ByteUtil.toHexString(txData));
             }
-            globalOutput.append("\n\n  Spent Gas: ").append(getResult().getGasUsed());
+            globalOutput.append("\n\n  Spent Gas: ").append(getResult().getExecGasUsed());
             globalOutput.append("\n\n  Spent Rent Gas: ").append(getResult().getRentGasUsed());
 
             if (listener != null) {
@@ -1672,7 +1672,7 @@ public class Program {
 
         public static OutOfGasException notEnoughSpendingGas(@Nonnull Program program, String cause, long gasValue) {
             return new OutOfGasException("Not enough gas for '%s' cause spending: invokeGas[%d], gas[%d], usedGas[%d], tx[%s]",
-                    cause, program.invoke.getGas(), gasValue, program.getResult().getGasUsed(), extractTxHash(program));
+                    cause, program.invoke.getGas(), gasValue, program.getResult().getExecGasUsed(), extractTxHash(program));
         }
 
         public static OutOfGasException gasOverflow(@Nonnull Program program, BigInteger actualGas, BigInteger gasLimit) {

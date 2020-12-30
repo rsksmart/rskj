@@ -251,7 +251,7 @@ public class Create2Test {
         String address1 = ByteUtil.toHexString(stack.pop().getLast20Bytes());
         Assert.assertEquals(expectedAddress1.toUpperCase(), address1.toUpperCase());
         Assert.assertEquals(expectedAddress2.toUpperCase(), address2.toUpperCase());
-        Assert.assertEquals(gasExpected, program.getResult().getGasUsed());
+        Assert.assertEquals(gasExpected, program.getResult().getExecGasUsed());
     }
 
     @Test
@@ -393,7 +393,7 @@ public class Create2Test {
 
         Assert.assertEquals(1, stack.size());
         Assert.assertEquals(expected.toUpperCase(), result.toUpperCase());
-        Assert.assertEquals(gasExpected, program.getResult().getGasUsed());
+        Assert.assertEquals(gasExpected, program.getResult().getExecGasUsed());
     }
 
     private static Transaction createTransaction() {

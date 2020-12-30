@@ -23,6 +23,7 @@ import co.rsk.core.bc.AccountInformationProvider;
 import co.rsk.core.bc.AccountInformationTracker;
 import co.rsk.crypto.Keccak256;
 import org.ethereum.core.AccountState;
+import org.ethereum.core.RentTracker;
 import org.ethereum.core.Repository;
 
 import java.util.Set;
@@ -108,4 +109,10 @@ public interface RepositorySnapshot extends AccountInformationTracker,AccountInf
      * NOT represent an immutable value.
      */
     Repository startTracking();
+
+    // Start tracking with a new rent tracker
+    Repository startTracking(RentTracker rentTracker);
+
+    void setRentTracker(RentTracker rentTracker);
+    void removeRentTracker();
 }

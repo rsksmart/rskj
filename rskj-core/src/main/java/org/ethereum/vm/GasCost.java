@@ -77,7 +77,12 @@ public class GasCost {
     public static final long REPLACE_DATA = 50; // paid for each byte of code replaced
     public static final long TX_NO_ZERO_DATA = 68;
     public static final long TX_ZERO_DATA = 4;
-    public static final long TRANSACTION = 21000;
+
+    // The transaction cost decreases from 21000 to 16800 do that
+    // 80% of 21000 is basic transaction cost. It is expected that
+    // the cost of creation of a new account is less or equal to 4200 (21K*0.2)
+    public static final long TRANSACTION = 16800;
+    public static final long TRANSACTION_PLUS_SOME_RENT = 21000;
     public static final long TRANSACTION_DEFAULT = 90000; //compatibility with ethereum (mmarquez)
     public static final long TRANSACTION_CREATE_CONTRACT = 53000;
     public static final long LOG_GAS = 375;
@@ -102,11 +107,12 @@ public class GasCost {
 
     public static final long MAX_GAS = Long.MAX_VALUE;
 
-    /* #mish Factor to allocate tx.gaslimit (single field) to execution gaslimit. Rest goes to rentGasLimit
-     * Current split is 50:50, hence the divisor is set to 2.
+    /* #mish Factor to allocate tx.gaslimit (single field) to execution gaslimit, expressed
+     * in percentage. Rest goes to rentGasLimit
+     * Current split is 50:50, hence value is set to 50.
      * Set to 1 to allocate entire tx.gaslimit to execution gas limit (i.e. 0 for rentgaslimit)
      */
-    public static final long TX_GASBUDGET_DIVISOR = 2L;
+    public static final int TX_GASBUDGET_PERCENT = 80;
     
     /* Activator to make storage "free" (for testing). 
      * To make rent free, MUST USE `0` for activator value ALONG WITH  TX_GASBUDGET_DIVISOR = 1

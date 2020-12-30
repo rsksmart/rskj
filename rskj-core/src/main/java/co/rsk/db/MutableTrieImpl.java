@@ -80,10 +80,26 @@ public class MutableTrieImpl implements MutableTrie {
         trie = trie.put(key, value);
     }
 
+    @Nullable
     @Override
-    public void put(ByteArrayWrapper key, byte[] value) {
-        trie = trie.put(key, value);
+    public TrieNodeData putWithTimestamp(byte[] key, byte[] value, long timestamp) {
+        TrieNodeData oldTrie = trie;
+        trie = trie.putWithTimestamp(key,value,timestamp);
+        return oldTrie;
     }
+
+    @Nullable
+    @Override
+    public TrieNodeData put(ByteArrayWrapper keyWrapper, TrieNodeDataFromCache value) {
+        TrieNodeData oldTrie = trie;
+        trie =  trie.put(keyWrapper,value.getValue());
+        return oldTrie;
+    }
+
+    //@Override
+    //public void put(ByteArrayWrapper key, byte[] value) {
+    //    trie = trie.put(key, value);
+    //}
 
     @Override
     public void put(String key, byte[] value) {

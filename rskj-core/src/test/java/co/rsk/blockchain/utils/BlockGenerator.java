@@ -61,6 +61,7 @@ public class BlockGenerator {
     private final DifficultyCalculator difficultyCalculator;
     private final BlockFactory blockFactory;
     private int count = 0;
+    private static long initialTimestamp =RentTracker.RSK_START_DATE+1;
     private ActivationConfig activationConfig;
 
     public BlockGenerator() {
@@ -74,11 +75,11 @@ public class BlockGenerator {
     }
 
     public Genesis getGenesisBlock() {
-        return getNewGenesisBlock(3141592, Collections.emptyMap(), new byte[] { 2, 0, 0});
+        return getNewGenesisBlock(3141592, Collections.emptyMap(), new byte[]{2, 0, 0});
     }
 
     public Genesis getGenesisBlock(Map<RskAddress, AccountState> accounts) {
-        return getNewGenesisBlock(3141592, accounts, new byte[] {2, 0, 0});
+        return getNewGenesisBlock(3141592, accounts, new byte[]{2, 0, 0});
     }
 
     private Genesis getNewGenesisBlock(long initialGasLimit, Map<RskAddress, AccountState> accounts, byte[] difficulty) {
@@ -89,14 +90,14 @@ public class BlockGenerator {
         ecKey = new ECKey(rand);
         address = ecKey.getAddress();
         */
-        byte[] coinbase    = Hex.decode("e94aef644e428941ee0a3741f28d80255fddba7f");
+        byte[] coinbase = Hex.decode("e94aef644e428941ee0a3741f28d80255fddba7f");
 
-        long   timestamp         = 0; // predictable timeStamp
+        long timestamp = 0; // predictable timeStamp
 
-        byte[] parentHash  = Keccak256.ZERO_HASH.getBytes();
-        byte[] extraData   = EMPTY_BYTE_ARRAY;
+        byte[] parentHash = Keccak256.ZERO_HASH.getBytes();
+        byte[] extraData = EMPTY_BYTE_ARRAY;
 
-        long   gasLimit         = initialGasLimit;
+        long gasLimit = initialGasLimit;
 
         boolean isRskip126Enabled = activationConfig.isActive(ConsensusRule.RSKIP126, 0);
         boolean useRskip92Encoding = activationConfig.isActive(ConsensusRule.RSKIP92, 0);
@@ -107,7 +108,7 @@ public class BlockGenerator {
                 getZeroHash(),
                 difficulty,
                 0,
-                        ByteUtil.longToBytes(gasLimit),
+                ByteUtil.longToBytes(gasLimit),
                 0,
                 timestamp,
                 extraData,
@@ -130,8 +131,7 @@ public class BlockGenerator {
                 if (blockCache[k] == null) {
                     if (k == 0) {
                         blockCache[0] = this.getGenesisBlock();
-                    }
-                    else {
+                    } else {
                         blockCache[k] = this.createChildBlock(blockCache[k - 1]);
                     }
                 }
@@ -159,10 +159,10 @@ public class BlockGenerator {
                 .setEmptyLogsBloom()
                 .setEmptyReceiptTrieRoot()
                 .setDifficultyFromBytes(difficulty)
-                .setNumber(parent.getNumber()+1)
+                .setNumber(parent.getNumber() + 1)
                 .setGasLimit(parent.getGasLimit())
-                .setGasUsed( parent.getGasUsed()) // why ? I just copied the value before
-                .setTimestamp(parent.getTimestamp() + ++count)
+                .setGasUsed(parent.getGasUsed()) // why ? I just copied the value before
+                .setTimestamp(getTimestampFromParent(parent))
                 .setPaidFees(Coin.valueOf(fees))
                 .setEmptyMergedMiningForkDetectionData()
                 .setUncleCount(uncles.size())
@@ -197,10 +197,10 @@ public class BlockGenerator {
                 .setEmptyLogsBloom()
                 .setEmptyReceiptTrieRoot()
                 .setDifficulty(parent.getDifficulty())
-                .setNumber(parent.getNumber()+1)
+                .setNumber(parent.getNumber() + 1)
                 .setGasLimit(parent.getGasLimit())
-                .setGasUsed( parent.getGasUsed()) // why ? I just copied the value before
-                .setTimestamp(parent.getTimestamp() + ++count)
+                .setGasUsed(parent.getGasUsed()) // why ? I just copied the value before
+                .setTimestamp(getTimestampFromParent(parent))
                 .setEmptyMergedMiningForkDetectionData()
                 .setUmmRoot(ummRoot)
                 .build();
@@ -260,16 +260,18 @@ public class BlockGenerator {
         byte[] ummRoot = activationConfig.isActive(ConsensusRule.RSKIPUMM, blockNumber) ? new byte[0] : null;
 
         Coin coinMinGasPrice = (minGasPrice != null) ? new Coin(minGasPrice) : null;
+
+
         BlockHeader newHeader = blockFactory.getBlockHeaderBuilder()
                 .setParentHash(parent.getHash().getBytes())
                 .setUnclesHash(unclesListHash)
                 .setCoinbase(coinbase)
                 .setLogsBloom(ByteUtils.clone(new Bloom().getData()))
                 .setDifficulty(BlockDifficulty.ONE)
-                .setNumber(parent.getNumber()+1)
+                .setNumber(parent.getNumber() + 1)
                 .setGasLimit(gasLimit)
                 .setGasUsed(0)
-                .setTimestamp(parent.getTimestamp() + ++count)
+                .setTimestamp(getTimestampFromParent(parent))
                 .setMergedMiningForkDetectionData(miningForkDetectionData)
                 .setMinimumGasPrice(coinMinGasPrice)
                 .setUncleCount(uncles.size())
@@ -278,8 +280,7 @@ public class BlockGenerator {
 
         if (difficulty == 0) {
             newHeader.setDifficulty(difficultyCalculator.calcDifficulty(newHeader, parent.getHeader()));
-        }
-        else {
+        } else {
             newHeader.setDifficulty(new BlockDifficulty(BigInteger.valueOf(difficulty)));
         }
 
@@ -289,6 +290,13 @@ public class BlockGenerator {
         newHeader.setStateRoot(ByteUtils.clone(parent.getStateRoot()));
 
         return blockFactory.newBlock(newHeader, txs, uncles, false);
+    }
+
+    public long getTimestampFromParent(Block parent) {
+        long myTimestamp = parent.getTimestamp() + 1;
+        if(myTimestamp<initialTimestamp)
+            myTimestamp =initialTimestamp;
+        return myTimestamp;
     }
 
     public Block createChildBlock(Block parent, List<Transaction> txs, List<BlockHeader> uncles,
@@ -324,7 +332,7 @@ public class BlockGenerator {
                 .setNumber(number)
                 .setGasLimit(parent.getGasLimit())
                 .setGasUsed( parent.getGasUsed()) // why ? I just copied the value before
-                .setTimestamp(parent.getTimestamp() + ++count)
+                .setTimestamp(getTimestampFromParent(parent))
                 .setEmptyMergedMiningForkDetectionData()
                 .setMinimumGasPrice(minimumGasPrice)
                 .setUmmRoot(ummRoot)
@@ -361,7 +369,7 @@ public class BlockGenerator {
                 .setNumber(parent.getNumber() + 1)
                 .setGasLimit(parent.getGasLimit())
                 .setGasUsed( parent.getGasUsed()) // why ? I just copied the value before
-                .setTimestamp(parent.getTimestamp() + ++count)
+                .setTimestamp(getTimestampFromParent(parent))
                 .setEmptyMergedMiningForkDetectionData()
                 .setMinimumGasPrice(Coin.valueOf(10))
                 .setUmmRoot(ummRoot)

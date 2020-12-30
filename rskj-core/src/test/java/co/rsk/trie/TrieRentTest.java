@@ -18,8 +18,6 @@
 
 package co.rsk.trie;
 
-import co.rsk.crypto.Keccak256;
-import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.vm.GasCost;
 
 import org.junit.Assert;
@@ -48,7 +46,7 @@ public class TrieRentTest {
         List<Trie> nodes = trie.getNodes("foo");
 
         Assert.assertArrayEquals("abc".getBytes(StandardCharsets.UTF_8), nodes.get(0).getValue());
-        Assert.assertEquals(0,trie.getLastRentPaidTime()); // 0 (long cannot be null)
+        Assert.assertEquals(-1,trie.getLastRentPaidTime()); // 0 (long cannot be null)
     }
 
     // rent time delta
@@ -72,7 +70,7 @@ public class TrieRentTest {
         Assert.assertNotNull(trie1.get("foo"));
         Assert.assertArrayEquals("bar".getBytes(), trie1.get("foo".getBytes()));
 
-        Trie trie2 = trie1.putWithRent("foo".getBytes(), "zip".getBytes(), 1000_000); 
+        Trie trie2 = trie1.putWithTimestamp("foo".getBytes(), "zip".getBytes(), 1000_000);
         Assert.assertNotNull(trie2.get("foo"));
         Assert.assertArrayEquals("zip".getBytes(), trie2.get("foo".getBytes()));
         System.out.println("Rent fully paid until time Trie 2: "+ trie2.getLastRentPaidTime());
@@ -85,17 +83,20 @@ public class TrieRentTest {
         trie = trie.put("foo".getBytes(), "bar".getBytes());
         System.out.println("Rent fully paid until time Trie : " + trie.getLastRentPaidTime() +
                         " value:  " + new String(trie.get("foo".getBytes())) );
+        Assert.assertEquals(-1, trie.getLastRentPaidTime());
+
          //System.out.println(new String("bar".getBytes()));
         //add same key with rent update
-        trie = trie.putWithRent("foo".getBytes(), "zip".getBytes(), 1000_000); 
+        trie = trie.putWithTimestamp("foo".getBytes(), "zip".getBytes(), 1000_000);
         System.out.println("Rent fully paid until time (same key with rentupdate): " + trie.getLastRentPaidTime() +
                         " value:  " + new String( trie.get("foo".getBytes())));
-          
-        //back to initial value, same key. RentpadDatewill be retained
+        Assert.assertEquals(1000_000, trie.getLastRentPaidTime());
+
+        //back to initial value, same key. RentpadDatewill SHOULD NOT be retained
         trie = trie.put("foo".getBytes(), "bar2".getBytes());
         System.out.println("Rent fully paid until time (still the same key, no rent info): "+ trie.getLastRentPaidTime() +
                         " value:  " + new String( trie.get("foo".getBytes())));
-        Assert.assertEquals(1000_000, trie.getLastRentPaidTime());       
+        Assert.assertEquals(-1, trie.getLastRentPaidTime());
 
     }
     
@@ -103,15 +104,16 @@ public class TrieRentTest {
     @Test
     public void putLRPTAndGetKeyValueSameKey() {
         Trie trie = new Trie();
-        trie = trie.putWithRent("foo".getBytes(), "zip".getBytes(), 1000_000); 
+        trie = trie.putWithTimestamp("foo".getBytes(), "zip".getBytes(), 1000_000);
         System.out.println("Rent fully paid until time (same key with rentupdate): " + trie.getLastRentPaidTime() +
                         " value:  " + new String( trie.get("foo".getBytes())));
-          
+        Assert.assertEquals(1000_000, trie.getLastRentPaidTime());
         //back to initial value, same key. RentpadDatewill be retained
         trie = trie.put("foo".getBytes(), "bar2".getBytes());
         System.out.println("Rent fully paid until time (still the same key, no rent info): "+ trie.getLastRentPaidTime() +
                         " value:  " + new String( trie.get("foo".getBytes())));
-        Assert.assertEquals(1000_000, trie.getLastRentPaidTime());       
+        //SDL
+        Assert.assertEquals(-1, trie.getLastRentPaidTime());
 
     }
 
@@ -123,14 +125,14 @@ public class TrieRentTest {
         //order of trie puts() does not matter for getNodes()
         trie = trie.put("foo".getBytes(), "abc".getBytes()); // "foo": main key of interest
 
-        trie = trie.putWithRent("fo".getBytes(), "longSubKeyVal".getBytes(), 4000); //a longer subkey
-        trie = trie.putWithRent("fo".getBytes(), "longSubKeyVal".getBytes(), 3000); // value unchanged, rent changed
+        trie = trie.putWithTimestamp("fo".getBytes(), "longSubKeyVal".getBytes(), 4000); //a longer subkey
+        trie = trie.putWithTimestamp("fo".getBytes(), "longSubKeyVal".getBytes(), 3000); // value unchanged, rent changed
         //trie = trie.putWithRent("fo".getBytes(), "newlongSubKeyVal".getBytes(), 3000); //value and changed, rent unchanged 
         
-        trie = trie.putWithRent("f".getBytes(), "shortSubKeyVal".getBytes(), 100); //short subkey "f", even empty "" works
-        trie = trie.putWithRent("f".getBytes(), "newshortSubKeyVal".getBytes(), 200); //value and rent both changed
+        trie = trie.putWithTimestamp("f".getBytes(), "shortSubKeyVal".getBytes(), 100); //short subkey "f", even empty "" works
+        trie = trie.putWithTimestamp("f".getBytes(), "newshortSubKeyVal".getBytes(), 200); //value and rent both changed
         //regular put, this will not alter last rent paid time
-        trie = trie.put("f".getBytes(), "newInfo".getBytes()); //value changed, but this should not change last rent paid time
+        trie = trie.put("f".getBytes(), "newInfo".getBytes()); //value changed,  this change last rent paid time to zero
         
         List<Trie> nodes = trie.getNodes("foo"); //foo, then fo, then f
 
@@ -138,16 +140,16 @@ public class TrieRentTest {
             //System.out.println("Rent last paid through block: " + nodes.get(n).getLastRentPaidTime());
             System.out.println("Rent last paid time: "+ nodes.get(n).getLastRentPaidTime() + " value: " + new String(nodes.get(n).getValue()));
         }
-        Assert.assertEquals(0, nodes.get(0).getLastRentPaidTime()); // foo renttime not added
+        Assert.assertEquals(-1, nodes.get(0).getLastRentPaidTime()); // foo renttime not added
         Assert.assertEquals(3000, nodes.get(1).getLastRentPaidTime()); // fo 
         Assert.assertEquals("newInfo",new String(nodes.get(2).getValue())); // f updated value
-        Assert.assertEquals(200, nodes.get(2).getLastRentPaidTime()); // even though value updated, last rent paid status unchanged    
+        Assert.assertEquals(-1, nodes.get(2).getLastRentPaidTime()); //  last rent paid status changed to zero by put()
     }
 
     @Test
     public void computeRentGas() {
         Trie trie = new Trie();
-        trie = trie.putWithRent("foo".getBytes(), "must pay rent or hibernate dodo!".getBytes(), 4000L);
+        trie = trie.putWithTimestamp("foo".getBytes(), "must pay rent or hibernate dodo!".getBytes(), 4000L);
         System.out.println("Value length (in bytes) " + trie.getValueLength());
         //long sixMonths = 6 * 30 * 24 *3600L;
         // rent due for 6 months = (32 bytes + 128 bytes overhead)  * 6*30*24*3600 seconds / (2^21) 

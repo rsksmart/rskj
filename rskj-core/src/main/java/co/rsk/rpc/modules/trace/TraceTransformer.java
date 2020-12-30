@@ -129,7 +129,7 @@ public class TraceTransformer {
     }
 
     public static TraceResult toResult(ProgramResult programResult, byte[] createdCode, RskAddress createdAddress) {
-        String gasUsed = TypeConverter.toQuantityJsonHex(programResult.getGasUsed());
+        String gasUsed = TypeConverter.toQuantityJsonHex(programResult.getExecGasUsed());
         String output = null;
         String address = null;
         String code = null;
