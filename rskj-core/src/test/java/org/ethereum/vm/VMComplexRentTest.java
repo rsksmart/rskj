@@ -392,31 +392,23 @@ public class VMComplexRentTest {
 
     }
 
-
+    //#created december 2020
     @Test 
-    public void test5() { //based on test2
-
-        /**
-         *       #The code will run
-         *       ------------------
-
-                 contract A: 77045e71a7a2c50903d88e564cd72fab11e82051
-                 ---------------
-                     a = msg.data[0]
-                     b = msg.data[1]
-
-                     contract.storage[a]
-                     contract.storage[b]
-
-
-                 contract B: 83c5541a6c8d2dbad642f385d8d06ca9b6c731ee
-                 -----------
-                     a = msg((tx.gas / 10 * 8), 0x77045e71a7a2c50903d88e564cd72fab11e82051, 0, [11, 22, 33], 3, 6)
-                     //#mish: this is 10/8 stuff WRONG.. the code actually passes specific gas to CALl.. was 1000
-                     // and test was failing.. need to increase > 20000 for SSTORE
-
+    public void test5Call() { //based on test2
+        /**This test: B -> Call(C), C -> Call(A) .. test2 has B -> Call(A) directly
+         * Contract A: As in test2, it stores the first 2 values of calldata in msg received in storage
+         * Contract B: In test2, it stores 3 values (hardcoded to 11, 22, 33) in memory. 
+         *  - Then makes a call to contract A with those values. The first 2 get stored.
+         *  - the only change we make here (from test2), is the address of A is replaced with that of C's.
+         * Contract C: Different from test 2. 
+         *  - This combines contract A and contract B.. 
+         *  - It stores the first 2 values (11 and 22) received from contract B in its own storage. 
+         *  - and it calls contract A with 3 values of its own (44,55,66), i.e. (0x2c,0x37, 0x42)
+         * -  the first 2 values (44,55) will get stored
+         * To check that rent tracking/collection does not happen more than once in a tx, we run the
+         * program a second time.. but this time, we pass a set of trie keys that were seen in the first run.
+         * 
          */
-
         // Set contract into Database
         String contractA_addr_str = "77045e71a7a2c50903d88e564cd72fab11e82051";
         String contractB_addr_str = "83c5541a6c8d2dbad642f385d8d06ca9b6c731ee";
@@ -451,9 +443,10 @@ public class VMComplexRentTest {
             }
          */
         
-         //orig
+         //the original from test2
         //String code_b =  "6000601f5360e05960e05952600060c05901536060596020015980602001600b9052806040016016905280606001602190526080905260007377045e71a7a2c50903d88e564cd72fab11e820516203e800f1602060000260a0016020015160005200";
-         
+        
+        //Can be commented out. This is not used in this test.. but variations are
         String code_b = "6000" +"601f" + "53" + //push1 0 (value), push1 31 (offset) to MSTORE8 
         "60e0"+ "59" + //push1 224 (value)  MSIZE (offset)
         "60e0" +"59" + //and again
@@ -478,13 +471,13 @@ public class VMComplexRentTest {
             "5a"+ //change specific Gas to all available gas
             //"6203e800" + //push3, 03e800 (256K). orig 61 03e8 (1000gas).. but SSTORE=20000! Was OOG 
             "f1"+ // CALL
-        /* do stuff with call return*/
+        // do stuff with call return
         "6020" + "6000" + "02" +// multiply 0x20 and 0
         "60a0" + // Push1 10*16 = 160
         "01" + // add
         "6020" + "01" + //ADD 0x20
         "51" + //MLOAD
-        "6000" + "52" + //MSTORE starting pos 0  
+        "6000" + "52" + //MSTORE starting pos 0 
         "00"; //STOP
         
         /**
@@ -506,10 +499,7 @@ public class VMComplexRentTest {
             }
          */
         
-        //started by duplicating code from "a", stores 2 values from calldata
-        //String code_c = "60006020023560005260016020023560205260005160005560205160015500";
-        
-        //new code for B.. it should call C
+         //new code for B.. it should call C
         //The only change is the address it calls (replace A's with C's)
         String code_B2C = "6000601f5360e05960e05952600060c05901536060596020015980602001600b905280604001601690528060600160219052608090526000"+
         "73"+"cd2a3d9f938e13cd947ec05abc7fe734df8dd826"+ // replace addr A with C 
@@ -520,12 +510,15 @@ public class VMComplexRentTest {
         // C will call A.
         // C has the same code as A (stores 2 values from calldata). But it also has all the code from B (including A's address)
         // So, it does both.. this is more like a chain, or a cascade
-        String code_C2A = "6000602002356000526001602002356020526000516000556020516001556000601f5360e05960e05952600060c05901536060596020015980602001600b90528060400160169052806060016021905260809052"+
+        String code_C2A = "6000602002356000526001602002356020526000516000556020516001556000601f5360e05960e05952600060c059015360605960200159"+
+            "80602001"+ "602c" + //"600b" + replace 11 with 44
+        "905280604001"+ "6037" + //"6016" + replace 22 with 55
+        "905280606001"+ "6042" + //"6021" + replace 33 with 66
+        "905260809052"+
         "6000"+ //value needed with call, even if 0. Not needed with delegate call (f4).
-        "73"+ "77045e71a7a2c50903d88e564cd72fab11e82051"+
+        "73"+ "77045e71a7a2c50903d88e564cd72fab11e82051"+ // contract A's address
         "5a" + //"6203e800"+ //GAS was specific value
         "f1" + //CALL OR, to keep storage of caller use delegatecall
-        //"f4"+ //DELEGATECALL .. retain context of caller
         "602060000260a0016020015160005200";
 
         RskAddress contractA_addr = new RskAddress(contractA_addr_str);
@@ -549,20 +542,6 @@ public class VMComplexRentTest {
         repository.setupContract(contractA_addr); 
         repository.saveCode(contractA_addr, codeA);
         
-        //Before the call, check the values stored in contract storage
-        repository.addStorageRow(contractA_addr, DataWord.valueOf(00), DataWord.valueOf(1));
-        repository.addStorageRow(contractA_addr, DataWord.valueOf(01), DataWord.valueOf(2));
-        
-        //Set previous values before call
-        DataWord value_1a = repository.getStorageValue(contractA_addr, DataWord.valueOf(00));
-        DataWord value_2a = repository.getStorageValue(contractA_addr, DataWord.valueOf(01));
-        assertEquals(1L, value_1a.longValue());
-        assertEquals(2L, value_2a.longValue());    
-
-        // 2 values that we expect to be stored
-        long expectedVal_1 = 11;
-        long expectedVal_2 = 22;
-
         repository.createAccount(contractB_addr);
         repository.setupContract(contractB_addr);
         repository.saveCode(contractB_addr, codeB);
@@ -571,6 +550,30 @@ public class VMComplexRentTest {
         repository.setupContract(contractC_addr);
         repository.saveCode(contractC_addr, codeC);
 
+        //Before the call, check the values stored in contract storage
+        repository.addStorageRow(contractA_addr, DataWord.valueOf(00), DataWord.valueOf(10L));
+        repository.addStorageRow(contractA_addr, DataWord.valueOf(01), DataWord.valueOf(20L));
+        repository.addStorageRow(contractC_addr, DataWord.valueOf(00), DataWord.valueOf(30L));
+        repository.addStorageRow(contractC_addr, DataWord.valueOf(01), DataWord.valueOf(40L));
+        
+        //Set previous values before call
+        DataWord value_1a = repository.getStorageValue(contractA_addr, DataWord.valueOf(00));
+        DataWord value_2a = repository.getStorageValue(contractA_addr, DataWord.valueOf(01));
+        assertEquals(10L, value_1a.longValue());
+        assertEquals(20L, value_2a.longValue());
+        //for C
+        DataWord value_1c = repository.getStorageValue(contractC_addr, DataWord.valueOf(00));
+        DataWord value_2c = repository.getStorageValue(contractC_addr, DataWord.valueOf(01));
+        assertEquals(30L, value_1c.longValue());
+        assertEquals(40L, value_2c.longValue());    
+
+        //values we expect to be stored
+        long expectedVal_1c = 11;
+        long expectedVal_2c = 22;
+        
+        long expectedVal_1a = 44;
+        long expectedVal_2a = 55;
+        
 
         // ****************** //
         //  Play the program  //
@@ -585,18 +588,22 @@ public class VMComplexRentTest {
             program.setRuntimeFailure(e);
         }
         //after the call, check the values stored in contract storage
-        DataWord value_1 = repository.getStorageValue(contractA_addr, DataWord.valueOf(00));
-        DataWord value_2 = repository.getStorageValue(contractA_addr, DataWord.valueOf(01));
+        value_1a = repository.getStorageValue(contractA_addr, DataWord.valueOf(00));
+        value_2a = repository.getStorageValue(contractA_addr, DataWord.valueOf(01));
+        value_1c = repository.getStorageValue(contractC_addr, DataWord.valueOf(00));
+        value_2c = repository.getStorageValue(contractC_addr, DataWord.valueOf(01));
 
 
-        //assertEquals(expectedVal_1, value_1.longValue());
-        //assertEquals(expectedVal_2, value_2.longValue());
+        assertEquals(expectedVal_1a, value_1a.longValue());
+        assertEquals(expectedVal_2a, value_2a.longValue());
+        assertEquals(expectedVal_1c, value_1c.longValue());
+        assertEquals(expectedVal_2c, value_2c.longValue());
 
         // TODO: check that the value pushed after exec is 1
 
         ProgramResult result = program.getResult();
                 
-        String logString = "\n============ Results ============\n" +
+        String logString = "\n\n============ Results ============\n" +
                     "\nGas used: " + result.getGasUsed() +             
                     "\nGas remaining: " + (pi.getGas()-result.getGasUsed()) + "\n" + 
                     "\nRent gas used: " + result.getRentGasUsed() + 
@@ -619,7 +626,7 @@ public class VMComplexRentTest {
         }
         ProgramResult result2 = program2.getResult();
                 
-         logString = "\n============ Results 2=============\n" +
+        logString = "\n\n============ Results 2=============\n" +
                     "\nGas used: " + result2.getGasUsed() + 
                     "\nGas remaining: " + (pi.getGas()-result.getGasUsed()- result2.getGasUsed()) + "\n" +
                     "\nRent gas used: " + result2.getRentGasUsed() + 
@@ -627,8 +634,212 @@ public class VMComplexRentTest {
                     "\nNo. trie nodes with `updated` rent timestamp: " +  result2.getAccessedNodes().size() +
                     "\nNew trie nodes created (6 months rent): " +  result2.getCreatedNodes().size() + 
                     "\nTotal trie nodes touched by tx: " + result2.getKeysSeenBefore().size()+"\n";
-                    //"\nKeys:\n" + result.getKeysSeenBefore();
         logger.info(logString);
+
+        assertEquals(result.getGasUsed(),result2.getGasUsed());
+        assertEquals(0L,result2.getRentGasUsed());
+        assertEquals(result.getKeysSeenBefore().size(),result2.getKeysSeenBefore().size());
+        //2 Less with delegate call as contract A's storage cells are not touched by the transaction
+        assertEquals(13L,result2.getKeysSeenBefore().size());
+
+        // REPEAT: but this time pass an empty set.. should be the same as the very first run
+        // rent will get tracked again
+        program2 = getProgramV2(codeB, pi, new HashSet<>());
+
+        try {
+            while (!program2.isStopped())
+                vm.step(program2);
+        } catch (RuntimeException e) {
+            program2.setRuntimeFailure(e);
+        }
+        result2 = program2.getResult();
+
+        logString = "\n\n============ Results 2 (mod)=============\n" +
+                    "\nGas used: " + result2.getGasUsed() + 
+                    "\nGas remaining: " + (pi.getGas()-result.getGasUsed()- result2.getGasUsed()) + "\n" +
+                    "\nRent gas used: " + result2.getRentGasUsed() + 
+                    "\nRentGas remaining: " + (pi.getRentGas()- result.getRentGasUsed() - result2.getRentGasUsed()) +"\n" +
+                    "\nNo. trie nodes with `updated` rent timestamp: " +  result2.getAccessedNodes().size() +
+                    "\nNew trie nodes created (6 months rent): " +  result2.getCreatedNodes().size() + 
+                    "\nTotal trie nodes touched by tx: " + result2.getKeysSeenBefore().size()+"\n";
+        logger.info(logString);
+
+
+        assertEquals(result.getGasUsed(),result2.getGasUsed());
+        assertEquals(result.getRentGasUsed(),result2.getRentGasUsed());
+        assertEquals(result.getKeysSeenBefore().size(),result2.getKeysSeenBefore().size());
+        //2 Less with delegate call as contract A's storage cells are not touched by the transaction
+        assertEquals(13L,result2.getKeysSeenBefore().size());    
+    }
+
+
+    @Test
+    public void test5DelegateCall() {
+        /**same as test5Call() but uses delegate call
+         * This test: B -> CALL(C), C->DelegateCall(A) .. test2 has B->Call(A) directly
+         * Contract A: As in test2, it stores the first 2 values of calldata in msg received in storage
+         * Contract B: In test2, it stores 3 values (hardcoded to 11, 22, 33) in memory. 
+         *  - Then makes a call to contract A with those values. The first 2 get stored.
+         *  - the only change we make here (from test2), is the address of A is replaced with that of C's.
+         * Contract C: Different from test 2. 
+         *  - This combines contract A and contract B.. 
+         *  - It stores the first 2 values (11 and 22) received from contract B in its own storage. 
+         *  - and it DELEGATE calls contract A with 3 values of its own (44,55,66), i.e. (0x2c,0x37, 0x42)
+         * -  the first 2 values (44,55) will get stored in contract C's OWN storage (DELEGATE CALL)
+         * To check that rent tracking/collection does not happen more than once in a tx, we run the
+         * program a second time.. but this time, we pass a set of trie keys that were seen in the first run.
+         */
+        // Set contract into Database
+        String contractA_addr_str = "77045e71a7a2c50903d88e564cd72fab11e82051";
+        String contractB_addr_str = "83c5541a6c8d2dbad642f385d8d06ca9b6c731ee";
+        String contractC_addr_str = "cd2a3d9f938e13cd947ec05abc7fe734df8dd826";
+
+        // Contract A will be called by C, which in turn will be called by B
+        String code_a = "60006020023560005260016020023560205260005160005560205160015500";
+         
+        //For contract B which will call Contract C
+        //The only change from test2() is the address it calls (replace A's with C's)
+        String code_B2C = "6000601f5360e05960e05952600060c05901536060596020015980602001600b905280604001601690528060600160219052608090526000"+
+        "73"+"cd2a3d9f938e13cd947ec05abc7fe734df8dd826"+ // replace addr A with C 
+        "5a" + //"6203e800
+        "f1" +
+        "602060000260a0016020015160005200";
+        
+        // contract C will call contract A.
+        // C has the same code as A (stores 2 values from calldata). 
+        // C also has all the code from B (including A's address)
+        // So, it does both.. this is more like a chain, or a cascade
+        String code_C2A = "6000602002356000526001602002356020526000516000556020516001556000601f5360e05960e05952600060c059015360605960200159"+
+            "80602001"+ "602c" + //"600b" + replace 11 with 44
+        "905280604001"+ "6037" + //"6016" + replace 22 with 55
+        "905280606001"+ "6042" + //"6021" + replace 33 with 66
+        "905260809052"+
+        //"6000"+ //value needed with call, even if 0. Not needed with delegate call (f4).
+        "73"+ "77045e71a7a2c50903d88e564cd72fab11e82051"+ // contract A's address
+        "5a" + //"6203e800"+ //GAS was specific value
+        //"f1" + //CALL OR, to keep storage of caller use delegatecall
+        "f4"+ //DELEGATECALL .. retain context of caller
+        "602060000260a0016020015160005200";
+
+        RskAddress contractA_addr = new RskAddress(contractA_addr_str);
+        byte[] codeA = Hex.decode(code_a);
+
+        RskAddress contractB_addr = new RskAddress(contractB_addr_str);
+        //byte[] codeB = Hex.decode(code_b);
+        byte[] codeB = Hex.decode(code_B2C);
+
+        RskAddress contractC_addr = new RskAddress(contractC_addr_str);
+        //byte[] codeC = Hex.decode(code_c);
+        byte[] codeC = Hex.decode(code_C2A);
+
+        ProgramInvokeMockImpl pi = new ProgramInvokeMockImpl();
+        pi.setOwnerAddress(contractB_addr);
+        pi.setGas(100_000L); 
+        pi.setRentGas(100_000L);
+        Repository repository = pi.getRepository();
+
+        repository.createAccount(contractA_addr);
+        repository.setupContract(contractA_addr); 
+        repository.saveCode(contractA_addr, codeA);
+        
+        repository.createAccount(contractB_addr);
+        repository.setupContract(contractB_addr);
+        repository.saveCode(contractB_addr, codeB);
+
+        repository.createAccount(contractC_addr);
+        repository.setupContract(contractC_addr);
+        repository.saveCode(contractC_addr, codeC);
+
+        //Before the call, check the values stored in contract storage
+        repository.addStorageRow(contractA_addr, DataWord.valueOf(00), DataWord.valueOf(10L));
+        repository.addStorageRow(contractA_addr, DataWord.valueOf(01), DataWord.valueOf(20L));
+        repository.addStorageRow(contractC_addr, DataWord.valueOf(00), DataWord.valueOf(30L));
+        repository.addStorageRow(contractC_addr, DataWord.valueOf(01), DataWord.valueOf(40L));
+        
+        //Set previous values before call
+        DataWord value_1a = repository.getStorageValue(contractA_addr, DataWord.valueOf(00));
+        DataWord value_2a = repository.getStorageValue(contractA_addr, DataWord.valueOf(01));
+        assertEquals(10L, value_1a.longValue());
+        assertEquals(20L, value_2a.longValue());
+        //for C
+        DataWord value_1c = repository.getStorageValue(contractC_addr, DataWord.valueOf(00));
+        DataWord value_2c = repository.getStorageValue(contractC_addr, DataWord.valueOf(01));
+        assertEquals(30L, value_1c.longValue());
+        assertEquals(40L, value_2c.longValue());    
+
+        //values we expect to be stored
+        long expectedVal_1c = 44; // 11 stored initially will be overwritten DELEGATECALL;
+        long expectedVal_2c = 55; //22 stored initially will be overwritten DELEGATECALL;
+        
+        // because of delegate call, these nodes will NOT be touched by the program
+        // they will NOT be added to rent tracker
+        long expectedVal_1a = 10; //no change since C will call A with DelegateCall
+        long expectedVal_2a = 20; //  -same-
+        
+
+        // ****************** //
+        //  Play the program  //
+        // ****************** //
+        VM vm = getSubject();
+        Program program = getProgram(codeB, pi);
+
+        try {
+            while (!program.isStopped())
+                vm.step(program);
+        } catch (RuntimeException e) {
+            program.setRuntimeFailure(e);
+        }
+        //after the call, check the values stored in contract storage
+        value_1a = repository.getStorageValue(contractA_addr, DataWord.valueOf(00));
+        value_2a = repository.getStorageValue(contractA_addr, DataWord.valueOf(01));
+        value_1c = repository.getStorageValue(contractC_addr, DataWord.valueOf(00));
+        value_2c = repository.getStorageValue(contractC_addr, DataWord.valueOf(01));
+
+
+        assertEquals(expectedVal_1a, value_1a.longValue());
+        assertEquals(expectedVal_2a, value_2a.longValue());
+        assertEquals(expectedVal_1c, value_1c.longValue());
+        assertEquals(expectedVal_2c, value_2c.longValue());
+
+        // TODO: check that the value pushed after exec is 1
+
+        ProgramResult result = program.getResult();
+                
+        String logString = "\n\n============ Results ============\n" +
+                    "\nGas used: " + result.getGasUsed() +             
+                    "\nGas remaining: " + (pi.getGas()-result.getGasUsed()) + "\n" + 
+                    "\nRent gas used: " + result.getRentGasUsed() + 
+                    "\nRentGas remaining: " + (pi.getRentGas()- result.getRentGasUsed()) + "\n" +             
+                    "\nNo. trie nodes with `updated` rent timestamp: " +  result.getAccessedNodes().size() +
+                    "\nNew trie nodes created (6 months rent): " +  result.getCreatedNodes().size() + 
+                    "\nTotal trie nodes touched by tx: " + result.getKeysSeenBefore().size()+"\n";
+
+        logger.info(logString);
+        //once keys are added at some depth,rent computations will not be triggerred again (will exit)
+        Program program2 = getProgramV2(codeB, pi, result.getKeysSeenBefore());
+
+        try {
+            while (!program2.isStopped())
+                vm.step(program2);
+        } catch (RuntimeException e) {
+            program2.setRuntimeFailure(e);
+        }
+        ProgramResult result2 = program2.getResult();
+                
+        logString = "\n\n============ Results 2=============\n" +
+                    "\nGas used: " + result2.getGasUsed() + 
+                    "\nGas remaining: " + (pi.getGas()-result.getGasUsed()- result2.getGasUsed()) + "\n" +
+                    "\nRent gas used: " + result2.getRentGasUsed() + 
+                    "\nRentGas remaining: " + (pi.getRentGas()- result.getRentGasUsed() - result2.getRentGasUsed()) +"\n" +
+                    "\nNo. trie nodes with `updated` rent timestamp: " +  result2.getAccessedNodes().size() +
+                    "\nNew trie nodes created (6 months rent): " +  result2.getCreatedNodes().size() + 
+                    "\nTotal trie nodes touched by tx: " + result2.getKeysSeenBefore().size()+"\n";
+        logger.info(logString);
+        assertEquals(result.getGasUsed(),result2.getGasUsed());
+        assertEquals(0L,result2.getRentGasUsed());
+        assertEquals(result.getKeysSeenBefore().size(),result2.getKeysSeenBefore().size());
+        //2 Less with delegate call as contract A's storage cells are not touched by the transaction
+        assertEquals(11L,result2.getKeysSeenBefore().size());
 
     }
 

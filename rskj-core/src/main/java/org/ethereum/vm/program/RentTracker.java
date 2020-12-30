@@ -146,7 +146,7 @@ public class RentTracker {
                 if (newNode){
                     rd = getSixMonthsRent(vLen);
                 } else {
-                    logger.info("Check rent for storage key {}", storageKey);
+                    logger.info("Check rent for storage cell addr: {} and key: {}", addr, storageCellKey.longValue());
                     long storageLrpt = repository.getStorageLRPTime(addr, storageCellKey);
                     rd = computeRent(vLen, storageLrpt, refTimeStamp, true); //treat as modified (any real TX will change something, nonce, balance)
                 }
@@ -179,7 +179,7 @@ public class RentTracker {
                 //logger.info("Tracking rent for new node");
                 rd = getSixMonthsRent(vLen);
             } else {
-                logger.info("Check rent for account key {}", accKey);
+                logger.info("Check rent for account addr: {} ",addr);
                 long accLrpt = repository.getAccountNodeLRPTime(addr);
                 rd = computeRent(vLen, accLrpt, refTimeStamp, true); //treat as modified (any real TX will change something, nonce, balance)
             }
@@ -196,7 +196,7 @@ public class RentTracker {
             ByteArrayWrapper srKey = repository.getStorageRootKey(addr);
             // if the node is not in seen set, compute and add rent owed to map
             if (!keysSeenBefore.contains(srKey)){
-                logger.info("Check rent for storage root key {}", srKey);
+                logger.info("Check rent (storage root) for addr: {} ",addr);
                 Uint24 srLen = new Uint24(1); // always 1. repository.getStorageRootValueLength(addr);
                 // compute the rent due
                 // No penalty code: if we reached here, then we know this node exists (isContract()).. 
@@ -228,7 +228,7 @@ public class RentTracker {
                 if (newNode){
                     rd = getSixMonthsRent(cLen);
                 } else {
-                    logger.info("Check rent for code key {}", cKey);
+                    logger.info("Check rent for code addr: {} ",addr);
                     long cLrpt = repository.getCodeNodeLRPTime(addr);
                     rd = RentTracker.computeRent(cLen, cLrpt, refTimeStamp, false);
                 }
