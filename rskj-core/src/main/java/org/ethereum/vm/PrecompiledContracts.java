@@ -45,6 +45,7 @@ import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.util.BIUtil;
 import org.ethereum.util.ByteUtil;
+import org.ethereum.vm.exception.VMException;
 
 import java.math.BigInteger;
 import java.util.*;
@@ -203,7 +204,7 @@ public class PrecompiledContracts {
 
         public List<ProgramSubtrace> getSubtraces() { return Collections.emptyList(); }
 
-        public abstract byte[] execute(byte[] data);
+        public abstract byte[] execute(byte[] data) throws VMException;
     }
 
     public static class Identity extends PrecompiledContract {
@@ -295,7 +296,7 @@ public class PrecompiledContracts {
         }
 
         @Override
-        public byte[] execute(byte[] data) {
+        public byte[] execute(byte[] data) throws VMException {
 
             byte[] h = new byte[32];
             byte[] v = new byte[32];

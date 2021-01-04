@@ -33,6 +33,7 @@ import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.vm.*;
+import org.ethereum.vm.exception.VMException;
 import org.ethereum.vm.program.Program;
 import org.ethereum.vm.program.ProgramResult;
 import org.ethereum.vm.program.invoke.ProgramInvoke;
@@ -340,7 +341,7 @@ public class TransactionExecutor {
                 } else if (!track.isContract(targetAddress)) {
                     track.setupContract(targetAddress);
                 }
-            } catch (RuntimeException e) {
+            } catch (VMException | RuntimeException e) {
                 result.setException(e);
             }
             result.spendGas(gasUsed);

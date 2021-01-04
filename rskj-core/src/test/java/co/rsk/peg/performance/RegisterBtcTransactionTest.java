@@ -25,6 +25,8 @@ import co.rsk.bitcoinj.store.BtcBlockStore;
 import co.rsk.peg.*;
 import co.rsk.peg.whitelist.OneOffWhiteListEntry;
 import org.ethereum.core.Repository;
+import org.ethereum.vm.exception.VMException;
+import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -41,15 +43,15 @@ public class RegisterBtcTransactionTest extends BridgePerformanceTestCase {
     private PartialMerkleTree pmtOfLockTx;
 
     @Test
-    public void registerBtcTransaction() {
+    public void registerBtcTransaction() throws VMException {
         ExecutionStats stats = new ExecutionStats("registerBtcTransaction");
         registerBtcTransaction_lockSuccess(100, stats);
         registerBtcTransaction_alreadyProcessed(100, stats);
         registerBtcTransaction_notEnoughConfirmations(100, stats);
-        BridgePerformanceTest.addStats(stats);
+        Assert.assertTrue(BridgePerformanceTest.addStats(stats));
     }
 
-    private void registerBtcTransaction_lockSuccess(int times, ExecutionStats stats) {
+    private void registerBtcTransaction_lockSuccess(int times, ExecutionStats stats) throws VMException {
         BridgeStorageProviderInitializer storageInitializer = generateInitializerForLock(
                 1000,
                 2000,
@@ -61,7 +63,7 @@ public class RegisterBtcTransactionTest extends BridgePerformanceTestCase {
 
     }
 
-    private void registerBtcTransaction_alreadyProcessed(int times, ExecutionStats stats) {
+    private void registerBtcTransaction_alreadyProcessed(int times, ExecutionStats stats) throws VMException {
         BridgeStorageProviderInitializer storageInitializer = generateInitializerForLock(
                 1000,
                 2000,
@@ -72,7 +74,7 @@ public class RegisterBtcTransactionTest extends BridgePerformanceTestCase {
         executeAndAverage("registerBtcTransaction-alreadyProcessed", times, getABIEncoder(), storageInitializer, Helper.getZeroValueValueTxBuilderFromFedMember(), Helper.getRandomHeightProvider(10), stats);
     }
 
-    private void registerBtcTransaction_notEnoughConfirmations(int times, ExecutionStats stats) {
+    private void registerBtcTransaction_notEnoughConfirmations(int times, ExecutionStats stats) throws VMException {
         BridgeStorageProviderInitializer storageInitializer = generateInitializerForLock(
                 1000,
                 2000,

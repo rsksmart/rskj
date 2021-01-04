@@ -1490,9 +1490,9 @@ public class VM {
         PrecompiledContracts.PrecompiledContract precompiledContract = precompiledContracts.getContractForAddress(activations, codeAddress);
 
         if (precompiledContract != null) {
-            program.callToPrecompiledAddress(msg, precompiledContract, activations);
+            program.callToPrecompiledAddress(msg, precompiledContract);
         } else {
-            program.callToAddress(msg, activations);
+            program.callToAddress(msg);
         }
 
         program.step();

@@ -25,6 +25,8 @@ import co.rsk.peg.*;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
+import org.ethereum.vm.exception.VMException;
+import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -52,14 +54,14 @@ public class FederationChangeTest extends BridgePerformanceTestCase {
     private BtcECKey votedFederatorPublicKey;
 
     @Test
-    public void createFederation() {
+    public void createFederation() throws VMException {
         ExecutionStats stats = new ExecutionStats("createFederation");
         createFederation_noWinner(200, stats);
         createFederation_winner(200, stats);
-        BridgePerformanceTest.addStats(stats);
+        Assert.assertTrue(BridgePerformanceTest.addStats(stats));
     }
 
-    private void createFederation_noWinner(int times, ExecutionStats stats) {
+    private void createFederation_noWinner(int times, ExecutionStats stats) throws VMException {
         executeAndAverage(
                 "createFederation-noWinner",
                 times,
@@ -71,7 +73,7 @@ public class FederationChangeTest extends BridgePerformanceTestCase {
         );
     }
 
-    private void createFederation_winner(int times, ExecutionStats stats) {
+    private void createFederation_winner(int times, ExecutionStats stats) throws VMException {
         executeAndAverage(
                 "createFederation-winner",
                 times,
@@ -84,14 +86,14 @@ public class FederationChangeTest extends BridgePerformanceTestCase {
     }
 
     @Test
-    public void addFederatorPublicKey() {
+    public void addFederatorPublicKey() throws VMException {
         ExecutionStats stats = new ExecutionStats("addFederatorPublicKey");
         addFederatorPublicKey_noWinner(200, stats);
         addFederatorPublicKey_winner(200, stats);
-        BridgePerformanceTest.addStats(stats);
+        Assert.assertTrue(BridgePerformanceTest.addStats(stats));
     }
 
-    private void addFederatorPublicKey_noWinner(int times, ExecutionStats stats) {
+    private void addFederatorPublicKey_noWinner(int times, ExecutionStats stats) throws VMException {
         executeAndAverage(
                 "addFederatorPublicKey-noWinner",
                 times,
@@ -103,7 +105,7 @@ public class FederationChangeTest extends BridgePerformanceTestCase {
         );
     }
 
-    private void addFederatorPublicKey_winner(int times, ExecutionStats stats) {
+    private void addFederatorPublicKey_winner(int times, ExecutionStats stats) throws VMException {
         executeAndAverage(
                 "addFederatorPublicKey-winner",
                 times,
@@ -119,14 +121,14 @@ public class FederationChangeTest extends BridgePerformanceTestCase {
     }
 
     @Test
-    public void commitFederation() {
+    public void commitFederation() throws VMException {
         ExecutionStats stats = new ExecutionStats("commitFederation");
         commitFederation_noWinner(200, stats);
         commitFederation_winner(200, stats);
-        BridgePerformanceTest.addStats(stats);
+        Assert.assertTrue(BridgePerformanceTest.addStats(stats));
     }
 
-    private void commitFederation_noWinner(int times, ExecutionStats stats) {
+    private void commitFederation_noWinner(int times, ExecutionStats stats) throws VMException {
         executeAndAverage(
                 "commitFederation-noWinner",
                 times,
@@ -138,7 +140,7 @@ public class FederationChangeTest extends BridgePerformanceTestCase {
         );
     }
 
-    private void commitFederation_winner(int times, ExecutionStats stats) {
+    private void commitFederation_winner(int times, ExecutionStats stats) throws VMException {
         executeAndAverage(
                 "commitFederation-winner",
                 times,
@@ -151,14 +153,14 @@ public class FederationChangeTest extends BridgePerformanceTestCase {
     }
 
     @Test
-    public void rollbackFederation() {
+    public void rollbackFederation() throws VMException {
         ExecutionStats stats = new ExecutionStats("rollbackFederation");
         rollbackFederation_noWinner(200, stats);
         rollbackFederation_winner(200, stats);
-        BridgePerformanceTest.addStats(stats);
+        Assert.assertTrue(BridgePerformanceTest.addStats(stats));
     }
 
-    private void rollbackFederation_noWinner(int times, ExecutionStats stats) {
+    private void rollbackFederation_noWinner(int times, ExecutionStats stats) throws VMException {
         executeAndAverage(
                 "rollbackFederation-noWinner",
                 times,
@@ -170,7 +172,7 @@ public class FederationChangeTest extends BridgePerformanceTestCase {
         );
     }
 
-    private void rollbackFederation_winner(int times, ExecutionStats stats) {
+    private void rollbackFederation_winner(int times, ExecutionStats stats) throws VMException {
         executeAndAverage(
                 "rollbackFederation-winner",
                 times,

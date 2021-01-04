@@ -18,6 +18,7 @@
 
 package co.rsk.pcc;
 
+import co.rsk.pcc.exception.NativeContractIllegalArgumentException;
 import org.ethereum.core.CallTransaction;
 
 /**
@@ -51,7 +52,7 @@ public abstract class NativeMethod {
             return originalData;
         }
 
-        public Object execute() {
+        public Object execute() throws NativeContractIllegalArgumentException {
             return NativeMethod.this.execute(arguments);
         }
     }
@@ -68,7 +69,7 @@ public abstract class NativeMethod {
 
     public abstract CallTransaction.Function getFunction();
 
-    public abstract Object execute(Object[] arguments);
+    public abstract Object execute(Object[] arguments) throws NativeContractIllegalArgumentException;
 
     public long getGas(Object[] parsedArguments, byte[] originalData) {
         // By default, gas is twice the length of the original data passed in

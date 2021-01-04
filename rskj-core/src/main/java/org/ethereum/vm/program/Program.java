@@ -44,6 +44,7 @@ import org.ethereum.util.FastByteComparisons;
 import org.ethereum.vm.*;
 import org.ethereum.vm.MessageCall.MsgType;
 import org.ethereum.vm.PrecompiledContracts.PrecompiledContract;
+import org.ethereum.vm.exception.VMException;
 import org.ethereum.vm.program.invoke.*;
 import org.ethereum.vm.program.listener.CompositeProgramListener;
 import org.ethereum.vm.program.listener.ProgramListenerAware;
@@ -73,6 +74,7 @@ public class Program {
 
     //Max size for stack checks
     private static final int MAX_STACKSIZE = 1024;
+    private static final String CALL_PRECOMPILED_CAUSE = "call pre-compiled";
 
     private final ActivationConfig.ForBlock activations;
     private final Transaction transaction;
@@ -702,10 +704,9 @@ public class Program {
      * - Normal calls invoke a specified contract which updates itself
      * - Stateless calls invoke code from another contract, within the context of the caller
      *
-     * @param msg is the message call object
-     * @param activations activations for hardfork
+     * @param msg         is the message call object
      */
-    public void callToAddress(MessageCall msg, ActivationConfig.ForBlock activations) {
+    public void callToAddress(MessageCall msg) {
 
         if (getCallDeep() == getMaxDepth()) {
             stackPushZero();
@@ -733,7 +734,7 @@ public class Program {
         if (isNotCovers(senderBalance, endowment)) {
             stackPushZero();
             refundGas(msg.getGas().longValue(), "refund gas from message call");
-            this.cleanReturnDataBuffer(activations);
+            this.cleanReturnDataBuffer();
 
             return;
         }
@@ -781,7 +782,7 @@ public class Program {
 
             getTrace().addSubTrace(subtrace);
 
-            this.cleanReturnDataBuffer(activations);
+            this.cleanReturnDataBuffer();
         }
 
         // 4. THE FLAG OF SUCCESS IS ONE PUSHED INTO THE STACK
@@ -793,8 +794,8 @@ public class Program {
         }
     }
 
-    private void cleanReturnDataBuffer(ActivationConfig.ForBlock activations) {
-        if(activations.isActive(ConsensusRule.RSKIP171)) {
+    private void cleanReturnDataBuffer() {
+        if (getActivations().isActive(ConsensusRule.RSKIP171)) {
             // reset return data buffer when call did not create a new call frame
             returnDataBuffer = null;
         }
@@ -1351,7 +1352,7 @@ public class Program {
         return ret;
     }
 
-    public void callToPrecompiledAddress(MessageCall msg, PrecompiledContract contract, ActivationConfig.ForBlock activations) {
+    public void callToPrecompiledAddress(MessageCall msg, PrecompiledContract contract) {
 
         if (getCallDeep() == getMaxDepth()) {
             stackPushZero();
@@ -1371,7 +1372,7 @@ public class Program {
         if (senderBalance.compareTo(endowment) < 0) {
             stackPushZero();
             this.refundGas(msg.getGas().longValue(), "refund gas from message call");
-            this.cleanReturnDataBuffer(activations);
+            this.cleanReturnDataBuffer();
 
             return;
         }
@@ -1424,28 +1425,74 @@ public class Program {
 
         long requiredGas = contract.getGasForData(data);
         if (requiredGas > msg.getGas().longValue()) {
-            this.refundGas(0, "call pre-compiled"); //matches cpp logic
+            this.refundGas(0, CALL_PRECOMPILED_CAUSE); //matches cpp logic
             this.stackPushZero();
             track.rollback();
-            this.cleanReturnDataBuffer(activations);
+            this.cleanReturnDataBuffer();
         } else {
+            if (getActivations().isActive(ConsensusRule.RSKIP197)) {
+                executePrecompiledAndHandleError(contract, msg, requiredGas, track, data);
+            } else {
+                executePrecompiled(contract, msg, requiredGas, track, data);
+            }
+        }
+    }
 
-            this.refundGas(msg.getGas().longValue() - requiredGas, "call pre-compiled");
-
+    /**
+     * This is for compatibility before RSKIP197, no error handling was implemented when calling to precompiled contracts.
+     *
+     * This method shouldn't be modified, all new changes should go to executePrecompiledAndHandleError() method
+     */
+    @Deprecated
+    private void executePrecompiled(PrecompiledContract contract, MessageCall msg, long requiredGas, Repository track, byte[] data) {
+        try {
+            this.refundGas(msg.getGas().longValue() - requiredGas, CALL_PRECOMPILED_CAUSE);
             byte[] out = contract.execute(data);
             if (getActivations().isActive(ConsensusRule.RSKIP90)) {
                 this.returnDataBuffer = out;
             }
-
-            // Avoid saving null returns to memory and limit the memory it can use.
-            // If we're behind RSK150 activation, don't care about the null return, just save.
-            if (getActivations().isActive(ConsensusRule.RSKIP150) && out != null) {
-                this.memorySaveLimited(msg.getOutDataOffs().intValue(), out, msg.getOutDataSize().intValue());
-            } else if (!getActivations().isActive(ConsensusRule.RSKIP150)) {
-                this.memorySave(msg.getOutDataOffs().intValue(), out);
-            }
+            saveOutAfterExecution(msg, out);
             this.stackPushOne();
             track.commit();
+        } catch (VMException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * This is after RSKIP197, where we fix the way in which error is handled after a precompiled execution.
+     */
+    private void executePrecompiledAndHandleError(PrecompiledContract contract, MessageCall msg, long requiredGas, Repository track, byte[] data) {
+        try {
+            logger.trace("Executing Precompiled contract...");
+            this.returnDataBuffer = contract.execute(data);
+            logger.trace("Executing Precompiled setting output.");
+            this.memorySaveLimited(msg.getOutDataOffs().intValue(), this.returnDataBuffer, msg.getOutDataSize().intValue());
+            this.stackPushOne();
+            track.commit();
+        } catch (VMException e) {
+            logger.trace("Precompiled execution error. Pushing Zero to stack and performing rollback.", e);
+            this.stackPushZero();
+            track.rollback();
+            this.returnDataBuffer = null;
+        } finally {
+            final long refundingGas = msg.getGas().longValue() - requiredGas;
+            this.refundGas(refundingGas, CALL_PRECOMPILED_CAUSE);
+        }
+    }
+
+    /**
+     * This is for compatibility before RSKIP197. {@code memorySaveLimited()} should be called directly instead.
+     */
+    @Deprecated
+    private void saveOutAfterExecution(MessageCall msg, byte[] out) {
+        logger.trace("Executing Precompiled saving memory.");
+        // Avoid saving null returns to memory and limit the memory it can use.
+        // If we're behind RSK150 activation, don't care about the null return, just save.
+        if (getActivations().isActive(ConsensusRule.RSKIP150) && out != null) {
+            this.memorySaveLimited(msg.getOutDataOffs().intValue(), out, msg.getOutDataSize().intValue());
+        } else if (!getActivations().isActive(ConsensusRule.RSKIP150)) {
+            this.memorySave(msg.getOutDataOffs().intValue(), out);
         }
     }
 

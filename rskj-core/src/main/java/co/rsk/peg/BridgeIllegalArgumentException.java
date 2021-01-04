@@ -18,10 +18,12 @@
 
 package co.rsk.peg;
 
+import org.ethereum.vm.exception.VMException;
+
 /**
  * Created by oscar on 08/11/2016.
  */
-public class BridgeIllegalArgumentException extends IllegalArgumentException {
+public class BridgeIllegalArgumentException extends VMException {
 
     public BridgeIllegalArgumentException() {
         super();

@@ -19,7 +19,7 @@
 package co.rsk.pcc.bto;
 
 import co.rsk.pcc.ExecutionEnvironment;
-import co.rsk.pcc.NativeContractIllegalArgumentException;
+import co.rsk.pcc.exception.NativeContractIllegalArgumentException;
 import co.rsk.pcc.NativeMethod;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.util.ByteUtil;
@@ -66,7 +66,7 @@ public class ToBase58Check extends NativeMethod {
     }
 
     @Override
-    public Object execute(Object[] arguments) {
+    public Object execute(Object[] arguments) throws NativeContractIllegalArgumentException {
         if (arguments == null) {
             throw new NativeContractIllegalArgumentException(HASH_NOT_PRESENT);
         }

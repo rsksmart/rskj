@@ -20,6 +20,7 @@ package co.rsk.pcc;
 
 import co.rsk.core.RskAddress;
 import co.rsk.panic.PanicProcessor;
+import co.rsk.pcc.exception.NativeContractIllegalArgumentException;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
@@ -29,6 +30,7 @@ import org.ethereum.db.ReceiptStore;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.PrecompiledContracts;
+import org.ethereum.vm.exception.VMException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -105,17 +107,17 @@ public abstract class NativeContract extends PrecompiledContracts.PrecompiledCon
     }
 
     @Override
-    public byte[] execute(byte[] data) {
+    public byte[] execute(byte[] data) throws VMException {
         try
         {
             // Preliminary validation: we need an execution environment
             if (executionEnvironment == null) {
-                throw new RuntimeException("Execution environment is null");
+                throw new VMException("Execution environment is null");
             }
 
             // Preliminary validation: the transaction on which we execute cannot be null
             if (executionEnvironment.getTransaction() == null) {
-                throw new RuntimeException("RSK Transaction is null");
+                throw new VMException("RSK Transaction is null");
             }
 
             Optional<NativeMethod.WithArguments> methodWithArguments = parseData(data);
@@ -171,7 +173,7 @@ public abstract class NativeContract extends PrecompiledContracts.PrecompiledCon
         } catch (Exception ex) {
             logger.error(ex.getMessage(), ex);
             panicProcessor.panic("nativecontractexecute", ex.getMessage());
-            throw new RuntimeException(String.format("Exception executing native contract: %s", ex.getMessage()), ex);
+            throw new VMException(String.format("Exception executing native contract: %s", ex.getMessage()), ex);
         }
     }
 

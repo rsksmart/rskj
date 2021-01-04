@@ -36,7 +36,7 @@ public class ProgramResult {
 
     private long gasUsed;
     private byte[] hReturn = EMPTY_BYTE_ARRAY;
-    private RuntimeException exception;
+    private Exception exception;
     private boolean revert;
 
     // Important:
@@ -85,7 +85,7 @@ public class ProgramResult {
         return hReturn;
     }
 
-    public RuntimeException getException() {
+    public Exception getException() {
         return exception;
     }
 
@@ -93,7 +93,7 @@ public class ProgramResult {
         return gasUsed;
     }
 
-    public void setException(RuntimeException exception) {
+    public void setException(Exception exception) {
         this.exception = exception;
     }
 

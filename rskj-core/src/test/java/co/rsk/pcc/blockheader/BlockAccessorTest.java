@@ -20,7 +20,7 @@
 package co.rsk.pcc.blockheader;
 
 import co.rsk.pcc.ExecutionEnvironment;
-import co.rsk.pcc.NativeContractIllegalArgumentException;
+import co.rsk.pcc.exception.NativeContractIllegalArgumentException;
 import org.ethereum.core.Block;
 import org.ethereum.db.BlockStore;
 import org.junit.Assert;
@@ -47,7 +47,7 @@ public class BlockAccessorTest {
     }
 
     @Test
-    public void getBlockBeyondMaximumBlockDepth() {
+    public void getBlockBeyondMaximumBlockDepth() throws NativeContractIllegalArgumentException {
         executionEnvironment = mock(ExecutionEnvironment.class);
 
         Assert.assertFalse(blockAccessor.getBlock(MAXIMUM_BLOCK_DEPTH, executionEnvironment).isPresent());
@@ -55,14 +55,14 @@ public class BlockAccessorTest {
     }
 
     @Test(expected = NativeContractIllegalArgumentException.class)
-    public void getBlockWithNegativeDepth() {
+    public void getBlockWithNegativeDepth() throws NativeContractIllegalArgumentException {
         executionEnvironment = mock(ExecutionEnvironment.class);
 
         blockAccessor.getBlock(NEGATIVE_BLOCK_DEPTH, executionEnvironment);
     }
 
     @Test
-    public void getGenesisBlock() {
+    public void getGenesisBlock() throws NativeContractIllegalArgumentException {
         ExecutionEnvironment executionEnvironment = EnvironmentUtils.getEnvironmentWithBlockchainOfLength(1);
 
         Optional<Block> genesis = blockAccessor.getBlock(ZERO_BLOCK_DEPTH, executionEnvironment);
@@ -75,7 +75,7 @@ public class BlockAccessorTest {
     }
 
     @Test
-    public void getTenBlocksFromTheTip() {
+    public void getTenBlocksFromTheTip() throws NativeContractIllegalArgumentException {
         ExecutionEnvironment executionEnvironment = EnvironmentUtils.getEnvironmentWithBlockchainOfLength(100);
 
         for(short i = 0; i < 10; i++) {

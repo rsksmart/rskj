@@ -16,14 +16,16 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package co.rsk.pcc;
+package co.rsk.pcc.exception;
+
+import org.ethereum.vm.exception.VMException;
 
 /**
  * Any native contract illegal argument exceptions should be an instance of this class.
  *
  * @author Ariel Mendelzon
  */
-public class NativeContractIllegalArgumentException extends IllegalArgumentException {
+public class NativeContractIllegalArgumentException extends VMException {
     public NativeContractIllegalArgumentException(String s) {
         super(s);
     }

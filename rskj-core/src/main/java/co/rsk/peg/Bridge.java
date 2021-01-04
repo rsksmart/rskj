@@ -42,6 +42,7 @@ import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.PrecompiledContracts;
+import org.ethereum.vm.exception.VMException;
 import org.ethereum.vm.program.Program;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -306,12 +307,12 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     }
 
     @Override
-    public byte[] execute(byte[] data) {
+    public byte[] execute(byte[] data) throws VMException {
         try
         {
             // Preliminary validation: the transaction on which we execute cannot be null
             if (rskTx == null) {
-                throw new RuntimeException("Rsk Transaction is null");
+                throw new VMException("Rsk Transaction is null");
             }
 
             BridgeParsedData bridgeParsedData = parseData(data);
@@ -357,7 +358,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         catch(Exception ex) {
             logger.error(ex.getMessage(), ex);
             panicProcessor.panic("bridgeexecute", ex.getMessage());
-            throw new RuntimeException(String.format("Exception executing bridge: %s", ex.getMessage()), ex);
+            throw new VMException(String.format("Exception executing bridge: %s", ex.getMessage()), ex);
         }
     }
 
@@ -365,15 +366,14 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         bridgeSupport.save();
     }
 
-    public void updateCollections(Object[] args)
-    {
+    public void updateCollections(Object[] args) throws VMException {
         logger.trace("updateCollections");
 
         try {
             bridgeSupport.updateCollections(rskTx);
         } catch (Exception e) {
             logger.warn("Exception onBlock", e);
-            throw new RuntimeException("Exception onBlock", e);
+            throw new VMException("Exception onBlock", e);
         }
     }
 
@@ -403,8 +403,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         return BASE_COST + (numberOfHeaders - 1) * COST_PER_ADDITIONAL_HEADER;
     }
 
-    public void receiveHeaders(Object[] args)
-    {
+    public void receiveHeaders(Object[] args) throws VMException {
         logger.trace("receiveHeaders");
 
         Object[] btcBlockSerializedArray = (Object[]) args[0];
@@ -433,11 +432,11 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             bridgeSupport.receiveHeaders(btcBlockArray);
         } catch (Exception e) {
             logger.warn("Exception adding header", e);
-            throw new RuntimeException("Exception adding header", e);
+            throw new VMException("Exception adding header", e);
         }
     }
 
-    public void registerBtcTransaction(Object[] args) {
+    public void registerBtcTransaction(Object[] args) throws VMException {
         logger.trace("registerBtcTransaction");
 
         byte[] btcTxSerialized = (byte[]) args[0];
@@ -448,12 +447,11 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             bridgeSupport.registerBtcTransaction(rskTx, btcTxSerialized, height, pmtSerialized);
         } catch (IOException | BlockStoreException e) {
             logger.warn("Exception in registerBtcTransaction", e);
-            throw new RuntimeException("Exception in registerBtcTransaction", e);
+            throw new VMException("Exception in registerBtcTransaction", e);
         }
     }
 
-    public void releaseBtc(Object[] args)
-    {
+    public void releaseBtc(Object[] args) throws VMException {
         logger.trace("releaseBtc");
 
         try {
@@ -462,12 +460,11 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             throw e;
         } catch (Exception e) {
             logger.warn("Exception in releaseBtc", e);
-            throw new RuntimeException("Exception in releaseBtc", e);
+            throw new VMException("Exception in releaseBtc", e);
         }
     }
 
-    public void addSignature(Object[] args)
-    {
+    public void addSignature(Object[] args) throws VMException {
         logger.trace("addSignature");
 
         byte[] federatorPublicKeySerialized = (byte[]) args[0];
@@ -501,55 +498,51 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             throw e;
         } catch (Exception e) {
             logger.warn("Exception in addSignature", e);
-            throw new RuntimeException("Exception in addSignature", e);
+            throw new VMException("Exception in addSignature", e);
         }
     }
 
-    public byte[] getStateForBtcReleaseClient(Object[] args)
-    {
+    public byte[] getStateForBtcReleaseClient(Object[] args) throws VMException {
         logger.trace("getStateForBtcReleaseClient");
 
         try {
             return bridgeSupport.getStateForBtcReleaseClient();
         } catch (Exception e) {
             logger.warn("Exception in getStateForBtcReleaseClient", e);
-            throw new RuntimeException("Exception in getStateForBtcReleaseClient", e);
+            throw new VMException("Exception in getStateForBtcReleaseClient", e);
         }
     }
 
-    public byte[] getStateForDebugging(Object[] args)
-    {
+    public byte[] getStateForDebugging(Object[] args) throws VMException {
         logger.trace("getStateForDebugging");
 
         try {
             return bridgeSupport.getStateForDebugging();
         } catch (Exception e) {
             logger.warn("Exception in getStateForDebugging", e);
-            throw new RuntimeException("Exception in getStateForDebugging", e);
+            throw new VMException("Exception in getStateForDebugging", e);
         }
     }
 
-    public Integer getBtcBlockchainBestChainHeight(Object[] args)
-    {
+    public Integer getBtcBlockchainBestChainHeight(Object[] args) throws VMException {
         logger.trace("getBtcBlockchainBestChainHeight");
 
         try {
             return bridgeSupport.getBtcBlockchainBestChainHeight();
         } catch (Exception e) {
             logger.warn("Exception in getBtcBlockchainBestChainHeight", e);
-            throw new RuntimeException("Exception in getBtcBlockchainBestChainHeight", e);
+            throw new VMException("Exception in getBtcBlockchainBestChainHeight", e);
         }
     }
 
-    public Integer getBtcBlockchainInitialBlockHeight(Object[] args)
-    {
+    public Integer getBtcBlockchainInitialBlockHeight(Object[] args) throws VMException {
         logger.trace("getBtcBlockchainInitialBlockHeight");
 
         try {
             return bridgeSupport.getBtcBlockchainInitialBlockHeight();
         } catch (Exception e) {
             logger.warn("Exception in getBtcBlockchainInitialBlockHeight", e);
-            throw new RuntimeException("Exception in getBtcBlockchainInitialBlockHeight", e);
+            throw new VMException("Exception in getBtcBlockchainInitialBlockHeight", e);
         }
     }
 
@@ -559,8 +552,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
      * @return
      */
     @Deprecated
-    public Object[] getBtcBlockchainBlockLocator(Object[] args)
-    {
+    public Object[] getBtcBlockchainBlockLocator(Object[] args) throws VMException {
         logger.trace("getBtcBlockchainBlockLocator");
 
         try {
@@ -574,12 +566,11 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             return blockLocatorArray;
         } catch (Exception e) {
             logger.warn("Exception in getBtcBlockchainBlockLocator", e);
-            throw new RuntimeException("Exception in getBtcBlockchainBlockLocator", e);
+            throw new VMException("Exception in getBtcBlockchainBlockLocator", e);
         }
     }
 
-    public byte[] getBtcBlockchainBlockHashAtDepth(Object[] args)
-    {
+    public byte[] getBtcBlockchainBlockHashAtDepth(Object[] args) throws VMException {
         logger.trace("getBtcBlockchainBlockHashAtDepth");
 
         int depth = ((BigInteger) args[0]).intValue();
@@ -588,7 +579,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             blockHash = bridgeSupport.getBtcBlockchainBlockHashAtDepth(depth);
         } catch (Exception e) {
             logger.warn("Exception in getBtcBlockchainBlockHashAtDepth", e);
-            throw new RuntimeException("Exception in getBtcBlockchainBlockHashAtDepth", e);
+            throw new VMException("Exception in getBtcBlockchainBlockHashAtDepth", e);
         }
 
         return blockHash.getBytes();
@@ -598,8 +589,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         return bridgeSupport.getBtcTransactionConfirmationsGetCost(args);
     }
 
-    public int getBtcTransactionConfirmations(Object[] args)
-    {
+    public int getBtcTransactionConfirmations(Object[] args) throws VMException {
         logger.trace("getBtcTransactionConfirmations");
         try {
             Sha256Hash btcTxHash = Sha256Hash.wrap((byte[]) args[0]);
@@ -616,7 +606,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             return bridgeSupport.getBtcTransactionConfirmations(btcTxHash, btcBlockHash, merkleBranch);
         } catch (Exception e) {
             logger.warn("Exception in getBtcTransactionConfirmations", e);
-            throw new RuntimeException("Exception in getBtcTransactionConfirmations", e);
+            throw new VMException("Exception in getBtcTransactionConfirmations", e);
         }
     }
 
@@ -626,8 +616,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         return bridgeSupport.getMinimumLockTxValue().getValue();
     }
 
-    public Boolean isBtcTxHashAlreadyProcessed(Object[] args)
-    {
+    public Boolean isBtcTxHashAlreadyProcessed(Object[] args) throws VMException {
         logger.trace("isBtcTxHashAlreadyProcessed");
 
         try {
@@ -635,12 +624,11 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             return bridgeSupport.isBtcTxHashAlreadyProcessed(btcTxHash);
         } catch (Exception e) {
             logger.warn("Exception in isBtcTxHashAlreadyProcessed", e);
-            throw new RuntimeException("Exception in isBtcTxHashAlreadyProcessed", e);
+            throw new VMException("Exception in isBtcTxHashAlreadyProcessed", e);
         }
     }
 
-    public Long getBtcTxHashProcessedHeight(Object[] args)
-    {
+    public Long getBtcTxHashProcessedHeight(Object[] args) throws VMException {
         logger.trace("getBtcTxHashProcessedHeight");
 
         try {
@@ -648,7 +636,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             return bridgeSupport.getBtcTxHashProcessedHeight(btcTxHash);
         } catch (Exception e) {
             logger.warn("Exception in getBtcTxHashProcessedHeight", e);
-            throw new RuntimeException("Exception in getBtcTxHashProcessedHeight", e);
+            throw new VMException("Exception in getBtcTxHashProcessedHeight", e);
         }
     }
 
@@ -681,8 +669,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         return bridgeSupport.getFederatorPublicKey(index);
     }
 
-    public byte[] getFederatorPublicKeyOfType(Object[] args)
-    {
+    public byte[] getFederatorPublicKeyOfType(Object[] args) throws VMException {
         logger.trace("getFederatorPublicKeyOfType");
 
         int index = ((BigInteger) args[0]).intValue();
@@ -692,7 +679,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             keyType = FederationMember.KeyType.byValue((String) args[1]);
         } catch (Exception e) {
             logger.warn("Exception in getFederatorPublicKeyOfType", e);
-            throw new RuntimeException("Exception in getFederatorPublicKeyOfType", e);
+            throw new VMException("Exception in getFederatorPublicKeyOfType", e);
         }
 
         return bridgeSupport.getFederatorPublicKeyOfType(index, keyType);
@@ -754,8 +741,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         return publicKey;
     }
 
-    public byte[] getRetiringFederatorPublicKeyOfType(Object[] args)
-    {
+    public byte[] getRetiringFederatorPublicKeyOfType(Object[] args) throws VMException {
         logger.trace("getRetiringFederatorPublicKeyOfType");
 
         int index = ((BigInteger) args[0]).intValue();
@@ -765,7 +751,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             keyType = FederationMember.KeyType.byValue((String) args[1]);
         } catch (Exception e) {
             logger.warn("Exception in getRetiringFederatorPublicKeyOfType", e);
-            throw new RuntimeException("Exception in getRetiringFederatorPublicKeyOfType", e);
+            throw new VMException("Exception in getRetiringFederatorPublicKeyOfType", e);
         }
 
         byte[] publicKey = bridgeSupport.getRetiringFederatorPublicKeyOfType(index, keyType);
@@ -798,8 +784,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         return bridgeSupport.getRetiringFederationCreationBlockNumber();
     }
 
-    public Integer createFederation(Object[] args)
-    {
+    public Integer createFederation(Object[] args) throws BridgeIllegalArgumentException {
         logger.trace("createFederation");
 
         return bridgeSupport.voteFederationChange(
@@ -808,8 +793,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         );
     }
 
-    public Integer addFederatorPublicKey(Object[] args)
-    {
+    public Integer addFederatorPublicKey(Object[] args) throws BridgeIllegalArgumentException {
         logger.trace("addFederatorPublicKey");
 
         byte[] publicKeyBytes;
@@ -826,8 +810,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         );
     }
 
-    public Integer addFederatorPublicKeyMultikey(Object[] args)
-    {
+    public Integer addFederatorPublicKeyMultikey(Object[] args) throws BridgeIllegalArgumentException {
         logger.trace("addFederatorPublicKeyMultikey");
 
         byte[] btcPublicKeyBytes = (byte[]) args[0];
@@ -840,8 +823,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         );
     }
 
-    public Integer commitFederation(Object[] args)
-    {
+    public Integer commitFederation(Object[] args) throws BridgeIllegalArgumentException {
         logger.trace("commitFederation");
 
         byte[] hash;
@@ -858,8 +840,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         );
     }
 
-    public Integer rollbackFederation(Object[] args)
-    {
+    public Integer rollbackFederation(Object[] args) throws BridgeIllegalArgumentException {
         logger.trace("rollbackFederation");
 
         return bridgeSupport.voteFederationChange(
@@ -904,8 +885,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         return publicKey;
     }
 
-    public byte[] getPendingFederatorPublicKeyOfType(Object[] args)
-    {
+    public byte[] getPendingFederatorPublicKeyOfType(Object[] args) throws VMException {
         logger.trace("getPendingFederatorPublicKeyOfType");
 
         int index = ((BigInteger) args[0]).intValue();
@@ -915,7 +895,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             keyType = FederationMember.KeyType.byValue((String) args[1]);
         } catch (Exception e) {
             logger.warn("Exception in getPendingFederatorPublicKeyOfType", e);
-            throw new RuntimeException("Exception in getPendingFederatorPublicKeyOfType", e);
+            throw new VMException("Exception in getPendingFederatorPublicKeyOfType", e);
         }
 
         byte[] publicKey = bridgeSupport.getPendingFederatorPublicKeyOfType(index, keyType);
@@ -1057,7 +1037,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         return lockingCap.getValue();
     }
 
-    public boolean increaseLockingCap(Object[] args) {
+    public boolean increaseLockingCap(Object[] args) throws BridgeIllegalArgumentException {
         logger.trace("increaseLockingCap");
 
         Coin newLockingCap = BridgeUtils.getCoinFromBigInteger((BigInteger) args[0]);
@@ -1068,8 +1048,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         return bridgeSupport.increaseLockingCap(rskTx, newLockingCap);
     }
 
-    public void registerBtcCoinbaseTransaction(Object[] args)
-    {
+    public void registerBtcCoinbaseTransaction(Object[] args) throws VMException {
         logger.trace("registerBtcCoinbaseTransaction");
 
         byte[] btcTxSerialized = (byte[]) args[0];
@@ -1077,13 +1056,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         byte[] pmtSerialized = (byte[]) args[2];
         Sha256Hash witnessMerkleRoot = Sha256Hash.wrap((byte[]) args[3]);
         byte[] witnessReservedValue = (byte[]) args[4];
-
-        try {
-            bridgeSupport.registerBtcCoinbaseTransaction(btcTxSerialized, blockHash, pmtSerialized, witnessMerkleRoot, witnessReservedValue);
-        } catch (IOException | BlockStoreException e) {
-            logger.warn("Exception in registerBtcCoinbaseTransaction", e);
-            throw new RuntimeException("Exception in registerBtcCoinbaseTransaction", e);
-        }
+        bridgeSupport.registerBtcCoinbaseTransaction(btcTxSerialized, blockHash, pmtSerialized, witnessMerkleRoot, witnessReservedValue);
     }
 
     public boolean hasBtcBlockCoinbaseTransactionInformation(Object[] args) {
@@ -1101,7 +1074,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
                     && ( retiringFederation == null || (retiringFederation != null && !BridgeUtils.isFromFederateMember(self.rskTx, retiringFederation)))) {
                 String errorMessage = String.format("Sender is not part of the active or retiring federations, so he is not enabled to call the function '%s'",funcName);
                 logger.warn(errorMessage);
-                throw new RuntimeException(errorMessage);
+                throw new VMException(errorMessage);
             }
             return decoratee.execute(self, args);
         };

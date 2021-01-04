@@ -14,6 +14,7 @@ import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.vm.PrecompiledContracts;
+import org.ethereum.vm.exception.VMException;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
@@ -39,7 +40,7 @@ public class LockingCapTest extends BridgePerformanceTestCase {
     }
 
     @Test
-    public void getLockingCap() {
+    public void getLockingCap() throws VMException {
         sender = authorizedLockingCapChanger;
         ExecutionStats stats = new ExecutionStats("getLockingCap");
         executeTestCase(
@@ -53,7 +54,7 @@ public class LockingCapTest extends BridgePerformanceTestCase {
     }
 
     @Test
-    public void increaseLockingCap() {
+    public void increaseLockingCap() throws VMException {
         sender = authorizedLockingCapChanger;
         ExecutionStats stats = new ExecutionStats("increaseLockingCap");
         AtomicReference<Long> newValue = new AtomicReference<>();
@@ -74,7 +75,7 @@ public class LockingCapTest extends BridgePerformanceTestCase {
     }
 
     @Test
-    public void increaseLockingCap_unauthorized() {
+    public void increaseLockingCap_unauthorized() throws VMException {
         sender = unauthorizedLockingCapChanger;
         ExecutionStats stats = new ExecutionStats("increaseLockingCap_unauthorized");
         executeTestCase(
@@ -93,7 +94,7 @@ public class LockingCapTest extends BridgePerformanceTestCase {
         BridgePerformanceTest.addStats(stats);
     }
 
-    private void executeTestCase(ABIEncoder abiEncoder, String name, int times, ExecutionStats stats, ResultCallback resultCallback) {
+    private void executeTestCase(ABIEncoder abiEncoder, String name, int times, ExecutionStats stats, ResultCallback resultCallback) throws VMException {
         executeAndAverage(
                 name,
                 times,

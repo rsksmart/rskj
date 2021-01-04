@@ -23,11 +23,11 @@ import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.peg.Bridge;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
+import org.ethereum.vm.exception.VMException;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import java.io.IOException;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.atomic.AtomicReference;
@@ -36,7 +36,7 @@ import java.util.concurrent.atomic.AtomicReference;
 public class VoteFeePerKbChangeTest extends BridgePerformanceTestCase {
 
     @Test
-    public void voteFeePerKbChange() {
+    public void voteFeePerKbChange() throws VMException {
         BridgeStorageProviderInitializer storageInitializer = Helper.buildNoopInitializer();
 
         AtomicReference<Long> newValue = new AtomicReference<>();
@@ -69,7 +69,7 @@ public class VoteFeePerKbChangeTest extends BridgePerformanceTestCase {
     }
 
     @Test
-    public void voteFeePerKbChange_unauthorized() {
+    public void voteFeePerKbChange_unauthorized() throws VMException {
         BridgeStorageProviderInitializer storageInitializer = Helper.buildNoopInitializer();
 
         Coin genesisFeePerKB = BridgeRegTestConstants.getInstance().getGenesisFeePerKb();

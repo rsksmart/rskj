@@ -55,6 +55,7 @@ import org.ethereum.crypto.ECKey;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
+import org.ethereum.vm.exception.VMException;
 import org.ethereum.vm.program.Program;
 import org.ethereum.vm.program.ProgramResult;
 import org.ethereum.vm.program.invoke.TransferInvoke;
@@ -267,7 +268,7 @@ public class BridgeSupport {
      * @throws IOException
      */
     public void registerBtcTransaction(Transaction rskTx, byte[] btcTxSerialized, int height, byte[] pmtSerialized)
-            throws IOException, BlockStoreException {
+            throws IOException, BlockStoreException, BridgeIllegalArgumentException {
         Context.propagate(btcContext);
         Sha256Hash btcTxHash = BtcTransactionFormatUtils.calculateBtcTxHash(btcTxSerialized);
 
@@ -1559,7 +1560,7 @@ public class BridgeSupport {
         return 1;
     }
 
-    public Integer voteFederationChange(Transaction tx, ABICallSpec callSpec) {
+    public Integer voteFederationChange(Transaction tx, ABICallSpec callSpec) throws BridgeIllegalArgumentException {
         // Must be on one of the allowed functions
         if (!FEDERATION_CHANGE_FUNCTIONS.contains(callSpec.getFunction())) {
             return FEDERATION_CHANGE_GENERIC_ERROR_CODE;
@@ -1610,7 +1611,7 @@ public class BridgeSupport {
         return (Integer) result.getResult();
     }
 
-    private ABICallVoteResult executeVoteFederationChangeFunction(boolean dryRun, ABICallSpec callSpec) throws IOException {
+    private ABICallVoteResult executeVoteFederationChangeFunction(boolean dryRun, ABICallSpec callSpec) throws IOException, BridgeIllegalArgumentException {
         // Try to do a dry-run and only register the vote if the
         // call would be successful
         ABICallVoteResult result;
@@ -1992,9 +1993,14 @@ public class BridgeSupport {
         return true;
     }
 
-    public void registerBtcCoinbaseTransaction(byte[] btcTxSerialized, Sha256Hash blockHash, byte[] pmtSerialized, Sha256Hash witnessMerkleRoot, byte[] witnessReservedValue) throws IOException, BlockStoreException {
+    public void registerBtcCoinbaseTransaction(byte[] btcTxSerialized, Sha256Hash blockHash, byte[] pmtSerialized, Sha256Hash witnessMerkleRoot, byte[] witnessReservedValue) throws VMException {
         Context.propagate(btcContext);
-        this.ensureBtcBlockStore();
+        try{
+            this.ensureBtcBlockStore();
+        }catch (BlockStoreException | IOException e) {
+            logger.warn("Exception in registerBtcCoinbaseTransaction", e);
+            throw new VMException("Exception in registerBtcCoinbaseTransaction", e);
+        }
 
         Sha256Hash btcTxHash = BtcTransactionFormatUtils.calculateBtcTxHash(btcTxSerialized);
 

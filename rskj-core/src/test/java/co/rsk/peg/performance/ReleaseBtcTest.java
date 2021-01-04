@@ -28,16 +28,17 @@ import co.rsk.peg.ReleaseRequestQueue;
 import org.ethereum.core.Denomination;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.ECKey;
+import org.ethereum.vm.exception.VMException;
+import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import java.io.IOException;
 import java.math.BigInteger;
 
 @Ignore
 public class ReleaseBtcTest extends BridgePerformanceTestCase {
     @Test
-    public void releaseBtc() throws IOException {
+    public void releaseBtc() throws VMException {
         int minCentsBtc = 5;
         int maxCentsBtc = 100;
 
@@ -71,6 +72,6 @@ public class ReleaseBtcTest extends BridgePerformanceTestCase {
         ExecutionStats stats = new ExecutionStats("releaseBtc");
         executeAndAverage("releaseBtc", 1000, abiEncoder, storageInitializer, txBuilder, Helper.getRandomHeightProvider(10), stats);
 
-        BridgePerformanceTest.addStats(stats);
+        Assert.assertTrue(BridgePerformanceTest.addStats(stats));
     }
 }

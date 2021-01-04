@@ -21,7 +21,7 @@ package co.rsk.pcc.bto;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.bitcoinj.crypto.DeterministicKey;
 import co.rsk.pcc.ExecutionEnvironment;
-import co.rsk.pcc.NativeContractIllegalArgumentException;
+import co.rsk.pcc.exception.NativeContractIllegalArgumentException;
 import co.rsk.pcc.NativeMethod;
 import org.ethereum.core.CallTransaction;
 
@@ -53,7 +53,7 @@ public class ExtractPublicKeyFromExtendedPublicKey extends NativeMethod {
     }
 
     @Override
-    public Object execute(Object[] arguments) {
+    public Object execute(Object[] arguments) throws NativeContractIllegalArgumentException {
         if (arguments == null) {
             throw new NativeContractIllegalArgumentException(String.format(INVALID_EXTENDED_PUBLIC_KEY, null));
         }

@@ -21,7 +21,7 @@ package co.rsk.pcc.bto;
 
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.pcc.ExecutionEnvironment;
-import co.rsk.pcc.NativeContractIllegalArgumentException;
+import co.rsk.pcc.exception.NativeContractIllegalArgumentException;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.solidity.SolidityType;
@@ -32,6 +32,7 @@ import org.junit.Test;
 
 import java.math.BigInteger;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 import static org.mockito.Mockito.mock;
 
@@ -68,7 +69,7 @@ public class GetMultisigScriptHashTest {
     }
 
     @Test
-    public void executesWithAllCompressed() {
+    public void executesWithAllCompressed() throws NativeContractIllegalArgumentException {
         Assert.assertEquals(
                 "51f103320b435b5fe417b3f3e0f18972ccc710a0",
                 ByteUtil.toHexString((byte[]) method.execute(new Object[]{
@@ -94,7 +95,7 @@ public class GetMultisigScriptHashTest {
     }
 
     @Test
-    public void executesWithMixed() {
+    public void executesWithMixed() throws NativeContractIllegalArgumentException {
         Assert.assertEquals(
                 "51f103320b435b5fe417b3f3e0f18972ccc710a0",
                 ByteUtil.toHexString((byte[]) method.execute(new Object[]{
@@ -266,5 +267,9 @@ public class GetMultisigScriptHashTest {
             Assert.assertEquals(NativeContractIllegalArgumentException.class, ex.getClass());
             Assert.assertTrue(ex.getMessage().contains(expectedMessage));
         });
+    }
+
+    public interface Runnable {
+        void run() throws Exception;
     }
 }
