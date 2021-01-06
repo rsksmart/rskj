@@ -37,6 +37,7 @@ public interface Web3 extends InternalService, Web3TxPoolModule, Web3EthModule, 
         public String from;
         public String to;
         public String gas;
+        public String gasLimit; // gasLimit is a non-standard name kept for backwards compatibility
         public String gasPrice;
         public String value;
         public String data; // compiledCode
@@ -47,7 +48,8 @@ public interface Web3 extends InternalService, Web3TxPoolModule, Web3EthModule, 
             return "CallArguments{" +
                     "from='" + from + '\'' +
                     ", to='" + to + '\'' +
-                    ", gasLimit='" + gas + '\'' +
+                    ", gas='" + gas + '\'' +
+                    ", gasLimit='" + gasLimit + '\'' +
                     ", gasPrice='" + gasPrice + '\'' +
                     ", value='" + value + '\'' +
                     ", data='" + data + '\'' +

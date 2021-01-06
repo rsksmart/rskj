@@ -62,7 +62,11 @@ public class EthModuleTransactionBase implements EthModuleTransaction {
 
             BigInteger value = args.value != null ? TypeConverter.stringNumberAsBigInt(args.value) : BigInteger.ZERO;
             BigInteger gasPrice = args.gasPrice != null ? TypeConverter.stringNumberAsBigInt(args.gasPrice) : BigInteger.ZERO;
-            BigInteger gasLimit = args.gas != null ? TypeConverter.stringNumberAsBigInt(args.gas) : BigInteger.valueOf(GasCost.TRANSACTION_DEFAULT);
+            BigInteger gasLimit = args.gas != null
+                                    ? TypeConverter.stringNumberAsBigInt(args.gas)
+                                    : args.gasLimit != null
+                                        ? TypeConverter.stringNumberAsBigInt(args.gasLimit)
+                                        : BigInteger.valueOf(GasCost.TRANSACTION_DEFAULT);
 
             if (args.data != null && args.data.startsWith("0x")) {
                 args.data = args.data.substring(2);
