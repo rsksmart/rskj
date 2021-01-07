@@ -4278,7 +4278,7 @@ public class BridgeSupportTest {
     }
 
     @Test
-    public void validationsForRegisterBtcTransaction_insufficient_confirmations() throws IOException, BlockStoreException, BridgeIllegalArgumentException {
+    public void validationsForRegisterBtcTransaction_insufficient_confirmations() throws BlockStoreException, BridgeIllegalArgumentException {
         BtcTransaction tx = new BtcTransaction(btcParams);
         BtcBlockStoreWithCache.Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(bridgeConstants.getBtcParams());
         Repository repository = createRepository();
@@ -4291,7 +4291,7 @@ public class BridgeSupportTest {
     }
 
     @Test(expected = BridgeIllegalArgumentException.class)
-    public void validationsForRegisterBtcTransaction_invalid_pmt() throws IOException, BlockStoreException, BridgeIllegalArgumentException {
+    public void validationsForRegisterBtcTransaction_invalid_pmt() throws BlockStoreException, BridgeIllegalArgumentException {
         BtcTransaction btcTx = new BtcTransaction(btcParams);
         BridgeConstants bridgeConstants = mock(BridgeConstants.class);
 
@@ -4326,7 +4326,7 @@ public class BridgeSupportTest {
     }
 
     @Test
-    public void validationsForRegisterBtcTransaction_hash_not_in_pmt() throws BlockStoreException, AddressFormatException, IOException, BridgeIllegalArgumentException {
+    public void validationsForRegisterBtcTransaction_hash_not_in_pmt() throws BlockStoreException, AddressFormatException, BridgeIllegalArgumentException {
         BtcTransaction btcTx = new BtcTransaction(btcParams);
         BridgeConstants bridgeConstants = mock(BridgeConstants.class);
 
@@ -4364,7 +4364,8 @@ public class BridgeSupportTest {
     }
 
     @Test(expected = BridgeIllegalArgumentException.class)
-    public void validationsForRegisterBtcTransaction_exception_in_getTxnHashAndMerkleRoot() throws BlockStoreException, AddressFormatException, IOException {
+    public void validationsForRegisterBtcTransaction_exception_in_getTxnHashAndMerkleRoot()
+        throws BlockStoreException, AddressFormatException, BridgeIllegalArgumentException {
         BtcTransaction btcTx = new BtcTransaction(btcParams);
         BridgeConstants bridgeConstants = mock(BridgeConstants.class);
 
@@ -5219,7 +5220,19 @@ public class BridgeSupportTest {
             activations
         );
 
-        InternalTransaction rskTx = new InternalTransaction(null, 0, 0, null, null, null, null, null, null, null, null);
+        InternalTransaction rskTx = new InternalTransaction(
+            Keccak256.ZERO_HASH.getBytes(),
+            0,
+            0,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+        );
 
         long result = bridgeSupport.registerFastBridgeBtcTransaction(
             rskTx,
@@ -5238,7 +5251,7 @@ public class BridgeSupportTest {
 
     @Test
     public void registerFastBridgeBtcTransaction_TxAlreadySavedInStorage_returnsError()
-            throws IOException, BlockStoreException {
+        throws IOException, BlockStoreException, BridgeIllegalArgumentException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(true);
 
@@ -5263,7 +5276,19 @@ public class BridgeSupportTest {
                 .when(bridgeSupport)
                 .getFastBridgeDerivationHash(any(), any(), any(), any());
 
-        InternalTransaction rskTx = new InternalTransaction(null, 0, 0, null, null, null, lbcAddress.getBytes(), null, null, null, null);
+        InternalTransaction rskTx = new InternalTransaction(
+            Keccak256.ZERO_HASH.getBytes(),
+            0,
+            0,
+            null,
+            null,
+            null,
+            lbcAddress.getBytes(),
+            null,
+            null,
+            null,
+            null
+        );
 
         long result = bridgeSupport.registerFastBridgeBtcTransaction(
                 rskTx,
@@ -5307,7 +5332,19 @@ public class BridgeSupportTest {
                 .when(bridgeSupport)
                 .getFastBridgeDerivationHash(any(), any(), any(), any());
 
-        InternalTransaction rskTx = new InternalTransaction(null, 0, 0, null, null, null, lbcAddress.getBytes(), null, null, null, null);
+        InternalTransaction rskTx = new InternalTransaction(
+            Keccak256.ZERO_HASH.getBytes(),
+            0,
+            0,
+            null,
+            null,
+            null,
+            lbcAddress.getBytes(),
+            null,
+            null,
+            null,
+            null
+        );
 
         long result = bridgeSupport.registerFastBridgeBtcTransaction(
             rskTx,
@@ -5359,7 +5396,19 @@ public class BridgeSupportTest {
         );
 
         BtcTransaction tx = createBtcTransactionWithOutputToAddress(Coin.COIN, new BtcECKey().toAddress(btcParams));
-        InternalTransaction rskTx = new InternalTransaction(null, 0, 0, null, null, null, lbcAddress.getBytes(), null, null, null, null);
+        InternalTransaction rskTx = new InternalTransaction(
+            Keccak256.ZERO_HASH.getBytes(),
+            0,
+            0,
+            null,
+            null,
+            null,
+            lbcAddress.getBytes(),
+            null,
+            null,
+            null,
+            null
+        );
 
         long result = bridgeSupport.registerFastBridgeBtcTransaction(
             rskTx,
@@ -5378,7 +5427,7 @@ public class BridgeSupportTest {
 
     @Test
     public void registerFastBridgeBtcTransaction_TxWitnessAlreadySavedInStorage_returnsError()
-            throws BlockStoreException, IOException {
+        throws BlockStoreException, IOException, BridgeIllegalArgumentException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(true);
 
@@ -5414,7 +5463,19 @@ public class BridgeSupportTest {
         );
 
         BtcTransaction tx = createBtcTransactionWithOutputToAddress(Coin.COIN, new BtcECKey().toAddress(btcParams));
-        InternalTransaction rskTx = new InternalTransaction(null, 0, 0, null, null, null, lbcAddress.getBytes(), null, null, null, null);
+        InternalTransaction rskTx = new InternalTransaction(
+            Keccak256.ZERO_HASH.getBytes(),
+            0,
+            0,
+            null,
+            null,
+            null,
+            lbcAddress.getBytes(),
+            null,
+            null,
+            null,
+            null
+        );
 
         TransactionWitness txWit = new TransactionWitness(1);
         txWit.setPush(0, new byte[]{});
@@ -5467,7 +5528,7 @@ public class BridgeSupportTest {
             repository,
             mock(Block.class),
             btcContext,
-            federationSupportMock,
+            mock(FederationSupport.class),
             mock(BtcBlockStoreWithCache.Factory.class),
             activations
         ));
@@ -5492,7 +5553,19 @@ public class BridgeSupportTest {
 
         BtcTransaction tx = createBtcTransactionWithOutputToAddress(Coin.COIN, getFastBridgeFederationAddress());
         byte[] pmtSerialized = Hex.decode("ab");
-        InternalTransaction rskTx = new InternalTransaction(null, 0, 0, null, null, null, lbcAddress.getBytes(), null, null, null, null);
+        InternalTransaction rskTx = new InternalTransaction(
+            Keccak256.ZERO_HASH.getBytes(),
+            0,
+            0,
+            null,
+            null,
+            null,
+            lbcAddress.getBytes(),
+            null,
+            null,
+            null,
+            null
+        );
 
         long result = bridgeSupport.registerFastBridgeBtcTransaction(
             rskTx,
@@ -5563,7 +5636,19 @@ public class BridgeSupportTest {
 
         BtcTransaction tx = createBtcTransactionWithOutputToAddress(Coin.COIN, getFastBridgeFederationAddress());
         byte[] pmtSerialized = Hex.decode("ab");
-        InternalTransaction rskTx = new InternalTransaction(null, 0, 0, null, null, null, lbcAddress.getBytes(), null, null, null, null);
+        InternalTransaction rskTx = new InternalTransaction(
+            Keccak256.ZERO_HASH.getBytes(),
+            0,
+            0,
+            null,
+            null,
+            null,
+            lbcAddress.getBytes(),
+            null,
+            null,
+            null,
+            null
+        );
 
         long result = bridgeSupport.registerFastBridgeBtcTransaction(
             rskTx,
@@ -5608,7 +5693,7 @@ public class BridgeSupportTest {
             repository,
             mock(Block.class),
             btcContext,
-            mock(FederationSupport.class),
+            federationSupportMock,
             mock(BtcBlockStoreWithCache.Factory.class),
             activations
         ));
@@ -5632,7 +5717,19 @@ public class BridgeSupportTest {
 
         Coin valueToSend = Coin.COIN;
         BtcTransaction tx = createBtcTransactionWithOutputToAddress(valueToSend, getFastBridgeFederationAddress());
-        InternalTransaction rskTx = new InternalTransaction(null, 0, 0, null, null, null, lbcAddress.getBytes(), null, null, null, null);
+        InternalTransaction rskTx = new InternalTransaction(
+            Keccak256.ZERO_HASH.getBytes(),
+            0,
+            0,
+            null,
+            null,
+            null,
+            lbcAddress.getBytes(),
+            null,
+            null,
+            null,
+            null
+        );
 
         co.rsk.core.Coin preCallLbcAddressBalance = repository.getBalance(lbcAddress);
 
@@ -5819,7 +5916,7 @@ public class BridgeSupportTest {
 
 
     @Test
-    public void getFastBridgeDerivationHash_Ok() {
+    public void getFastBridgeDerivationHash_Ok() throws BridgeIllegalArgumentException {
         BridgeSupport bridgeSupport = getBridgeSupport(bridgeConstants, mock(BridgeStorageProvider.class));
 
         Address userRefundBtcAddress = Address.fromBase58(
@@ -5938,7 +6035,7 @@ public class BridgeSupportTest {
             "mgy8yiUZYB7o9vvCu2Yi8GB3Vr32MQsyQJ"
         );
 
-        byte[] expectedBytes = Hex.decode("006f0febdbf4739e9fe6724370a7e99cb25d7be5ca99");
+        byte[] expectedBytes = Hex.decode("6f0febdbf4739e9fe6724370a7e99cb25d7be5ca99");
         byte[] obtainedBytes = bridgeSupport.getBytesFromBtcAddress(btcAddress);
 
         Assert.assertArrayEquals(expectedBytes, obtainedBytes);
