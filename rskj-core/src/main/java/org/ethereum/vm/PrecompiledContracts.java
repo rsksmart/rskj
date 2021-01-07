@@ -182,15 +182,15 @@ public class PrecompiledContracts {
         }
 
         if (activations.isActive(ConsensusRule.RSKIP137) && address.equals(ALT_BN_128_ADD_DW)) {
-            return new BN128Addition();
+            return new BN128Addition(activations);
         }
 
         if (activations.isActive(ConsensusRule.RSKIP137) && address.equals(ALT_BN_128_MUL_DW)) {
-            return new BN128Multiplication();
+            return new BN128Multiplication(activations);
         }
 
         if (activations.isActive(ConsensusRule.RSKIP137) && address.equals(ALT_BN_128_PAIRING_DW)) {
-            return new BN128Pairing();
+            return new BN128Pairing(activations);
         }
 
         if (activations.isActive(ConsensusRule.RSKIP153) && address.equals(BLAKE2F_ADDR_DW)) {
