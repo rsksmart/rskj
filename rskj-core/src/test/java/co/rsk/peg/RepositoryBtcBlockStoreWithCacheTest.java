@@ -110,8 +110,13 @@ public class RepositoryBtcBlockStoreWithCacheTest {
     @Test
     public void ifCacheNullAlwaysGoToDisk_Test() throws BlockStoreException {
         Repository repository =  createRepository();
-        BtcBlockStoreWithCache btcBlockStore = new RepositoryBtcBlockStoreWithCache(networkParameters, repository.startTracking(), null, PrecompiledContracts.BRIDGE_ADDR);
-
+        BtcBlockStoreWithCache btcBlockStore = new RepositoryBtcBlockStoreWithCache(
+            networkParameters,
+            repository.startTracking(),
+            null,
+            PrecompiledContracts.BRIDGE_ADDR,
+            null
+        );
 
         BtcBlock genesis = networkParameters.getGenesisBlock();
 
