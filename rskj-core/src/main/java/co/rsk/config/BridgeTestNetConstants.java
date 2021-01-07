@@ -126,6 +126,9 @@ public class BridgeTestNetConstants extends BridgeConstants {
 
         lockingCapIncrementsMultiplier = 2;
         initialLockingCap = Coin.COIN.multiply(200); // 200 BTC
+
+        btcHeightWhenBlockIndexActivates = 700_000; //TODO define this value when Iris activation height in RSK is determined
+        maxDepthToSearchBlocksBelowIndexActivation = 1_000; //TODO define this value with Sergio
     }
 
     public static BridgeTestNetConstants getInstance() {
