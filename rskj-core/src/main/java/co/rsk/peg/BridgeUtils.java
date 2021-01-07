@@ -429,7 +429,8 @@ public class BridgeUtils {
         return addressBytes[0];
     }
 
-    public static byte[] extractHash160FromBytes(byte[] addressBytes) {
+    public static byte[] extractHash160FromBytes(byte[] addressBytes)
+        throws BridgeIllegalArgumentException {
         if (addressBytes == null || addressBytes.length == 0) {
             throw new BridgeIllegalArgumentException("Can't get an address hash160 if the bytes are empty");
         }
