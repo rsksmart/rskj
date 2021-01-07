@@ -84,7 +84,9 @@ public class ActivationConfigTest {
             "    rskip185: iris300",
             "    rskip191: iris300",
             "    rskip197: iris300",
-            "}"));
+            "    rskip199: iris300",
+            "}"
+    ));
 
     @Test
     public void readBaseConfig() {
