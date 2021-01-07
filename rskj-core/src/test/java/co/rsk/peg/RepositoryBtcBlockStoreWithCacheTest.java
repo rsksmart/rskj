@@ -103,15 +103,20 @@ public class RepositoryBtcBlockStoreWithCacheTest {
     }
 
     private StoredBlock createStoredBlock(BtcBlock parent, int height, int nonce) {
-        BtcBlock firstBlockHeader = new BtcBlock(networkParameters, 2l, parent.getHash(), Sha256Hash.ZERO_HASH, parent.getTimeSeconds()+1, parent.getDifficultyTarget(), nonce, new ArrayList<>());
+        BtcBlock firstBlockHeader = new BtcBlock(networkParameters, 2L, parent.getHash(), Sha256Hash.ZERO_HASH, parent.getTimeSeconds()+1, parent.getDifficultyTarget(), nonce, new ArrayList<>());
         return new StoredBlock(firstBlockHeader, new BigInteger("0"), height);
     }
 
     @Test
     public void ifCacheNullAlwaysGoToDisk_Test() throws BlockStoreException {
         Repository repository =  createRepository();
-        BtcBlockStoreWithCache btcBlockStore = new RepositoryBtcBlockStoreWithCache(networkParameters, repository.startTracking(), null, PrecompiledContracts.BRIDGE_ADDR);
-
+        BtcBlockStoreWithCache btcBlockStore = new RepositoryBtcBlockStoreWithCache(
+            networkParameters,
+            repository.startTracking(),
+            null,
+            PrecompiledContracts.BRIDGE_ADDR,
+            null
+        );
 
         BtcBlock genesis = networkParameters.getGenesisBlock();
 
@@ -222,15 +227,14 @@ public class RepositoryBtcBlockStoreWithCacheTest {
     @Test
     public void getStoredBlockAtMainChainDepth_Error_Test() throws BlockStoreException {
         BtcBlockStoreWithCache btcBlockStore = createBlockStore();
-        BtcBlock genesis = networkParameters.getGenesisBlock();
 
-        BtcBlock parent = genesis;
-        BtcBlock blockHeader1 = new BtcBlock(networkParameters, 2l, parent.getHash(), Sha256Hash.ZERO_HASH, parent.getTimeSeconds()+1, parent.getDifficultyTarget(), 0, new ArrayList<>());
+        BtcBlock parent = networkParameters.getGenesisBlock();;
+        BtcBlock blockHeader1 = new BtcBlock(networkParameters, 2L, parent.getHash(), Sha256Hash.ZERO_HASH, parent.getTimeSeconds()+1, parent.getDifficultyTarget(), 0, new ArrayList<>());
         StoredBlock storedBlock1 = new StoredBlock(blockHeader1, new BigInteger("0"), 2);
         btcBlockStore.put(storedBlock1);
 
         parent = blockHeader1;
-        BtcBlock blockHeader2 = new BtcBlock(networkParameters, 2l, parent.getHash(), Sha256Hash.ZERO_HASH, parent.getTimeSeconds()+1, parent.getDifficultyTarget(), 0, new ArrayList<>());
+        BtcBlock blockHeader2 = new BtcBlock(networkParameters, 2L, parent.getHash(), Sha256Hash.ZERO_HASH, parent.getTimeSeconds()+1, parent.getDifficultyTarget(), 0, new ArrayList<>());
         StoredBlock storedBlock2 = new StoredBlock(blockHeader2, new BigInteger("0"), 2);
         btcBlockStore.put(storedBlock2);
 
@@ -238,14 +242,14 @@ public class RepositoryBtcBlockStoreWithCacheTest {
         //getStoredBlockAtMainChainDepth should fail as the block is at a inconsistent height
         try {
             btcBlockStore.getStoredBlockAtMainChainDepth(1);
-            assertTrue(false);
+            fail();
         } catch(BlockStoreException e) {
             assertTrue(true);
         }
         //getStoredBlockAtMainChainHeight should fail as the block is at a inconsistent height
         try {
             btcBlockStore.getStoredBlockAtMainChainHeight(1);
-            assertTrue(false);
+            fail();
         } catch(BlockStoreException e) {
             assertTrue(true);
         }
