@@ -42,7 +42,7 @@ public class GetBtcTransactionConfirmationsTest extends BridgePerformanceTestCas
 
     private class DiskAccessRepositoryBlockStore extends RepositoryBtcBlockStoreWithCache {
         public DiskAccessRepositoryBlockStore(Repository repository, RskAddress contractAddress) {
-            super(bridgeConstants.getBtcParams(), repository, null, contractAddress);
+            super(bridgeConstants.getBtcParams(), repository, null, contractAddress, null);
         }
 
         @Override
@@ -182,7 +182,6 @@ public class GetBtcTransactionConfirmationsTest extends BridgePerformanceTestCas
                 Helper.getRandomHeightProvider(10),
                 stats,
                 (environment, executionResult) -> {
-                    byte[] res = executionResult;
                     int numberOfConfirmations = new BigInteger(executionResult).intValueExact();
                     Assert.assertEquals(expectedConfirmations, numberOfConfirmations);
                 },

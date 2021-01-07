@@ -119,14 +119,21 @@ public class ReceiveHeadersTest extends BridgePerformanceTestCase {
         ExecutionStats stats = new ExecutionStats(name);
         int totalHeaders = numHeaders + forkDepth;
         return executeAndAverage(
-                name, times,
+                name,
+                times,
                 generateABIEncoder(totalHeaders, totalHeaders, forkDepth),
                 buildInitializer(1000, 2000),
                 Helper.getZeroValueTxBuilder(Helper.getRandomFederatorECKey()),
                 Helper.getRandomHeightProvider(10),
                 stats,
                 (EnvironmentBuilder.Environment environment, byte[] result) -> {
-                    btcBlockStore = new RepositoryBtcBlockStoreWithCache(BridgeRegTestConstants.getInstance().getBtcParams(), (Repository) environment.getBenchmarkedRepository(), new HashMap<>(),PrecompiledContracts.BRIDGE_ADDR);
+                    btcBlockStore = new RepositoryBtcBlockStoreWithCache(
+                        BridgeRegTestConstants.getInstance().getBtcParams(),
+                        (Repository) environment.getBenchmarkedRepository(),
+                        new HashMap<>(),
+                        PrecompiledContracts.BRIDGE_ADDR,
+                        null
+                    );
                     Sha256Hash bestBlockHash = null;
                     try {
                         bestBlockHash = btcBlockStore.getChainHead().getHeader().getHash();
