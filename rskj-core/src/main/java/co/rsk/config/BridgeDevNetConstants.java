@@ -128,5 +128,8 @@ public class BridgeDevNetConstants extends BridgeConstants {
         initialLockingCap = Coin.COIN.multiply(1_000L); // 1_000 BTC
 
         lockingCapIncrementsMultiplier = 2;
+
+        btcHeightWhenBlockIndexActivates = 700_000; //TODO define this value when Iris activation height in RSK is determined
+        maxDepthToSearchBlocksBelowIndexActivation = 1_000; //TODO define this value with Sergio
     }
 }
