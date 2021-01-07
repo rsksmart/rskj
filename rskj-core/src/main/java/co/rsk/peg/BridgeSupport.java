@@ -92,6 +92,7 @@ import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.exception.VMException;
+import org.ethereum.vm.program.InternalTransaction;
 import org.ethereum.vm.program.Program;
 import org.ethereum.vm.program.ProgramResult;
 import org.ethereum.vm.program.invoke.TransferInvoke;
@@ -1129,7 +1130,13 @@ public class BridgeSupport {
             Sha256Hash sighash = sighashes.get(i);
 
             if (!federatorPublicKey.verify(sighash, sig)) {
-                logger.warn("Signature {} {} is not valid for hash {} and public key {}", i, ByteUtil.toHexString(sig.encodeToDER()), sighash, federatorPublicKey);
+                logger.warn(
+                    "Signature {} {} is not valid for hash {} and public key {}",
+                    i,
+                    ByteUtil.toHexString(sig.encodeToDER()),
+                    sighash,
+                    federatorPublicKey
+                );
                 return;
             }
 
@@ -2396,15 +2403,16 @@ public class BridgeSupport {
         }
 
         if (!verifyLockDoesNotSurpassLockingCap(btcTx, null, totalAmount)) {
+            InternalTransaction internalTx = (InternalTransaction)rskTx;
             logger.info("[registerFastBridgeBtcTransaction] Locking cap surpassed, going to return funds!");
             WalletProvider walletProvider = createFastBridgeWalletProvider(fastBridgeFederationInformation);
             if (shouldTransferToContract) {
                 logger.debug("[registerFastBridgeBtcTransaction] Returning to liquidity provider");
-                generateRejectionRelease(btcTx, lpBtcAddress, fastBridgeFedAddress, rskTx, totalAmount, walletProvider);
+                generateRejectionRelease(btcTx, lpBtcAddress, fastBridgeFedAddress, new Keccak256(internalTx.getOriginHash()), totalAmount, walletProvider);
                 return FAST_BRIDGE_REFUNDED_LP_ERROR_CODE;
             } else {
                 logger.debug("[registerFastBridgeBtcTransaction] Returning to user");
-                generateRejectionRelease(btcTx, userRefundAddress, fastBridgeFedAddress, rskTx, totalAmount, walletProvider);
+                generateRejectionRelease(btcTx, userRefundAddress, fastBridgeFedAddress, new Keccak256(internalTx.getOriginHash()), totalAmount, walletProvider);
                 return FAST_BRIDGE_REFUNDED_USER_ERROR_CODE;
             }
         }
@@ -2674,7 +2682,7 @@ public class BridgeSupport {
         BtcTransaction btcTx,
         Address btcRefundAddress,
         Address spendingAddress,
-        Transaction rskTx,
+        Keccak256 rskTxHash,
         Coin totalAmount,
         WalletProvider walletProvider) throws IOException {
 
@@ -2688,20 +2696,24 @@ public class BridgeSupport {
         Optional<ReleaseTransactionBuilder.BuildResult> buildReturnResult = txBuilder.buildEmptyWalletTo(btcRefundAddress);
         if (buildReturnResult.isPresent()) {
             if (activations.isActive(ConsensusRule.RSKIP146)) {
-                provider.getReleaseTransactionSet().add(buildReturnResult.get().getBtcTx(), rskExecutionBlock.getNumber(), rskTx.getHash());
-                eventLogger.logReleaseBtcRequested(rskTx.getHash().getBytes(), buildReturnResult.get().getBtcTx(), totalAmount);
+                provider.getReleaseTransactionSet().add(buildReturnResult.get().getBtcTx(), rskExecutionBlock.getNumber(), rskTxHash);
+                eventLogger.logReleaseBtcRequested(rskTxHash.getBytes(), buildReturnResult.get().getBtcTx(), totalAmount);
             } else {
                 provider.getReleaseTransactionSet().add(buildReturnResult.get().getBtcTx(), rskExecutionBlock.getNumber());
             }
-            logger.info("Rejecting peg-in: return tx build successful to {}. Tx {}. Value {}.", btcRefundAddress, rskTx, totalAmount);
+            logger.info("Rejecting peg-in: return tx build successful to {}. Tx {}. Value {}.", btcRefundAddress, rskTxHash, totalAmount);
         } else {
-            logger.warn("Rejecting peg-in: return tx build for btc tx {} error. Return was to {}. Tx {}. Value {}", btcTx.getHash(), btcRefundAddress, rskTx, totalAmount);
-            panicProcessor.panic("peg-in-refund", String.format("peg-in money return tx build for btc tx %s error. Return was to %s. Tx %s. Value %s", btcTx.getHash(), btcRefundAddress, rskTx, totalAmount));
+            logger.warn("Rejecting peg-in: return tx build for btc tx {} error. Return was to {}. Tx {}. Value {}", btcTx.getHash(), btcRefundAddress, rskTxHash, totalAmount);
+            panicProcessor.panic("peg-in-refund", String.format("peg-in money return tx build for btc tx %s error. Return was to %s. Tx %s. Value %s", btcTx.getHash(), btcRefundAddress, rskTxHash, totalAmount));
         }
     }
 
-    private void generateRejectionRelease(BtcTransaction btcTx, Address senderBtcAddress,
-        Transaction rskTx, Coin totalAmount) throws IOException {
+    private void generateRejectionRelease(
+        BtcTransaction btcTx,
+        Address senderBtcAddress,
+        Transaction rskTx,
+        Coin totalAmount
+    ) throws IOException {
         WalletProvider createWallet = (BtcTransaction a, Address b) -> {
             // Build the list of UTXOs in the BTC transaction sent to either the active
             // or retiring federation
@@ -2724,7 +2736,7 @@ public class BridgeSupport {
             return getUTXOBasedWalletForLiveFederations(utxosToUs, false);
         };
 
-        generateRejectionRelease(btcTx, senderBtcAddress, null, rskTx, totalAmount, createWallet);
+        generateRejectionRelease(btcTx, senderBtcAddress, null, rskTx.getHash(), totalAmount, createWallet);
     }
 
     private boolean verifyLockSenderIsWhitelisted(Address senderBtcAddress, Coin totalAmount, int height) {
