@@ -34,7 +34,6 @@ import org.ethereum.vm.PrecompiledContracts;
 import java.nio.ByteBuffer;
 import java.util.Map;
 
-
 /**
  * Implementation of a bitcoinj blockstore that persists to RSK's Repository
  * @author Oscar Guindzberg
@@ -223,13 +222,13 @@ public class RepositoryBtcBlockStoreWithCache implements BtcBlockStoreWithCache 
         }
 
         @Override
-        public BtcBlockStoreWithCache newInstance(Repository track) {
+        public BtcBlockStoreWithCache newInstance(Repository track, ActivationConfig.ForBlock activations) {
             return new RepositoryBtcBlockStoreWithCache(
                 btcNetworkParams,
                 track,
                 cacheBlocks,
                 contractAddress,
-                null
+                activations
             );
         }
     }
