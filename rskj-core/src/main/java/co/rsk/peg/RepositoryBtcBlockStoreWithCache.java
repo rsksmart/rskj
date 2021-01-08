@@ -25,6 +25,8 @@ import co.rsk.bitcoinj.core.StoredBlock;
 import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.core.RskAddress;
 import co.rsk.util.MaxSizeHashMap;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig.ForBlock;
 import org.ethereum.core.Repository;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
@@ -45,12 +47,20 @@ public class RepositoryBtcBlockStoreWithCache implements BtcBlockStoreWithCache 
     public static final int MAX_DEPTH_STORED_BLOCKS = 5_000;
     public static final int MAX_SIZE_MAP_STORED_BLOCKS = 10_000;
     private final Map<Sha256Hash, StoredBlock> cacheBlocks;
+    private final ActivationConfig.ForBlock activations;
 
-    public RepositoryBtcBlockStoreWithCache(NetworkParameters btcNetworkParams, Repository repository, Map<Sha256Hash, StoredBlock> cacheBlocks, RskAddress contractAddress) {
+    public RepositoryBtcBlockStoreWithCache(
+        NetworkParameters btcNetworkParams,
+        Repository repository,
+        Map<Sha256Hash, StoredBlock> cacheBlocks,
+        RskAddress contractAddress,
+        ForBlock activations) {
         this.cacheBlocks = cacheBlocks;
         this.repository = repository;
         this.contractAddress = contractAddress;
         this.btcNetworkParams = btcNetworkParams;
+        this.activations = activations;
+
         checkIfInitialized();
     }
 
@@ -214,7 +224,13 @@ public class RepositoryBtcBlockStoreWithCache implements BtcBlockStoreWithCache 
 
         @Override
         public BtcBlockStoreWithCache newInstance(Repository track) {
-            return new RepositoryBtcBlockStoreWithCache(btcNetworkParams, track, cacheBlocks, contractAddress);
+            return new RepositoryBtcBlockStoreWithCache(
+                btcNetworkParams,
+                track,
+                cacheBlocks,
+                contractAddress,
+                null
+            );
         }
     }
 

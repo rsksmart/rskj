@@ -42,7 +42,7 @@ public class GetBtcTransactionConfirmationsTest extends BridgePerformanceTestCas
 
     private class DiskAccessRepositoryBlockStore extends RepositoryBtcBlockStoreWithCache {
         public DiskAccessRepositoryBlockStore(Repository repository, RskAddress contractAddress) {
-            super(bridgeConstants.getBtcParams(), repository, null, contractAddress);
+            super(bridgeConstants.getBtcParams(), repository, null, contractAddress, null);
         }
 
         @Override
