@@ -98,7 +98,7 @@ public class RegisterBtcTransactionTest extends BridgePerformanceTestCase {
         return (BridgeStorageProvider provider, Repository repository, int executionIndex, BtcBlockStore blockStore) -> {
             BtcBlockStoreWithCache.Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(bridgeConstants.getBtcParams());
             BtcBlockStore btcBlockStore = btcBlockStoreFactory.newInstance(repository.startTracking(),
-                null);
+                null, null);
             Context btcContext = new Context(networkParameters);
             BtcBlockChain btcBlockChain;
             try {

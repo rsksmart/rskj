@@ -110,7 +110,7 @@ public class LockingCapTest extends BridgePerformanceTestCase {
         final int maxBtcBlocks = 1000;
 
         return (BridgeStorageProvider provider, Repository repository, int executionIndex, BtcBlockStore blockStore) -> {
-            BtcBlockStore btcBlockStore = new RepositoryBtcBlockStoreWithCache.Factory(BridgeRegTestConstants.getInstance().getBtcParams()).newInstance(repository.startTracking());
+            BtcBlockStore btcBlockStore = new RepositoryBtcBlockStoreWithCache.Factory(networkParameters).newInstance(repository.startTracking(), provider, null);
             Context btcContext = new Context(networkParameters);
             BtcBlockChain btcBlockChain;
             try {
