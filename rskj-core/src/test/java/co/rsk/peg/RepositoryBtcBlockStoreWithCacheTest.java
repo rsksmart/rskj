@@ -53,7 +53,7 @@ public class RepositoryBtcBlockStoreWithCacheTest {
     }
 
     private BtcBlockStoreWithCache createBlockStoreWithTrack(RepositoryBtcBlockStoreWithCache.Factory factory, Repository track) {
-        return factory.newInstance(track, null);
+        return factory.newInstance(track, null, null);
     }
 
     private RepositoryBtcBlockStoreWithCache.Factory createBlockStoreFactory() {
@@ -115,6 +115,7 @@ public class RepositoryBtcBlockStoreWithCacheTest {
             repository.startTracking(),
             null,
             PrecompiledContracts.BRIDGE_ADDR,
+            null,
             null
         );
 
@@ -228,7 +229,7 @@ public class RepositoryBtcBlockStoreWithCacheTest {
     public void getStoredBlockAtMainChainDepth_Error_Test() throws BlockStoreException {
         BtcBlockStoreWithCache btcBlockStore = createBlockStore();
 
-        BtcBlock parent = networkParameters.getGenesisBlock();;
+        BtcBlock parent = networkParameters.getGenesisBlock();
         BtcBlock blockHeader1 = new BtcBlock(networkParameters, 2L, parent.getHash(), Sha256Hash.ZERO_HASH, parent.getTimeSeconds()+1, parent.getDifficultyTarget(), 0, new ArrayList<>());
         StoredBlock storedBlock1 = new StoredBlock(blockHeader1, new BigInteger("0"), 2);
         btcBlockStore.put(storedBlock1);
@@ -285,7 +286,7 @@ public class RepositoryBtcBlockStoreWithCacheTest {
         Repository repository = new MutableRepository(new MutableTrieCache(new MutableTrieImpl(null, new Trie())));
         BridgeConstants bridgeConstants = BridgeRegTestConstants.getInstance();
         BtcBlockStoreWithCache.Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(bridgeConstants.getBtcParams());
-        BtcBlockStoreWithCache store = btcBlockStoreFactory.newInstance(repository, null);
+        BtcBlockStoreWithCache store = btcBlockStoreFactory.newInstance(repository, null, null);
         for (int i = 0; i < 614; i++) {
             Triple<byte[], BigInteger , Integer> tripleStoredBlock = (Triple<byte[], BigInteger , Integer>) objectInputStream.readObject();
             BtcBlock header = RegTestParams.get().getDefaultSerializer().makeBlock(tripleStoredBlock.getLeft());
@@ -297,7 +298,7 @@ public class RepositoryBtcBlockStoreWithCacheTest {
         }
 
         // Create a new instance of the store
-        BtcBlockStoreWithCache store2 =btcBlockStoreFactory.newInstance(repository, null);
+        BtcBlockStoreWithCache store2 =btcBlockStoreFactory.newInstance(repository, null, null);
 
         // Check a specific block that used to fail when we had a bug
         assertEquals(store.get(Sha256Hash.wrap("373941fe83961cf70e181e468abc5f9f7cc440c711c3d06948fa66f3912ed27a")),

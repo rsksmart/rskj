@@ -53,15 +53,17 @@ public class RepositoryBtcBlockStoreWithCache implements BtcBlockStoreWithCache 
     private final Repository repository;
     private final RskAddress contractAddress;
     private final NetworkParameters btcNetworkParams;
+    private final BridgeStorageProvider bridgeStorageProvider;
+    private final ActivationConfig.ForBlock activations;
     private final int maxDepthBlockCache;
     private final Map<Sha256Hash, StoredBlock> cacheBlocks;
-    private final ActivationConfig.ForBlock activations;
 
     public RepositoryBtcBlockStoreWithCache(
         NetworkParameters btcNetworkParams,
         Repository repository,
         Map<Sha256Hash, StoredBlock> cacheBlocks,
         RskAddress contractAddress,
+        BridgeStorageProvider bridgeStorageProvider,
         ForBlock activations) {
 
         this(
@@ -69,8 +71,9 @@ public class RepositoryBtcBlockStoreWithCache implements BtcBlockStoreWithCache 
             repository,
             cacheBlocks,
             contractAddress,
-            DEFAULT_MAX_DEPTH_BLOCK_CACHE,
-            activations
+            bridgeStorageProvider,
+            activations,
+            DEFAULT_MAX_DEPTH_BLOCK_CACHE
         );
     }
 
@@ -79,15 +82,17 @@ public class RepositoryBtcBlockStoreWithCache implements BtcBlockStoreWithCache 
         Repository repository,
         Map<Sha256Hash, StoredBlock> cacheBlocks,
         RskAddress contractAddress,
-        int maxDepthBlockCache,
-        ForBlock activations) {
+        BridgeStorageProvider bridgeStorageProvider,
+        ForBlock activations,
+        int maxDepthBlockCache) {
 
         this.cacheBlocks = cacheBlocks;
         this.repository = repository;
         this.contractAddress = contractAddress;
         this.btcNetworkParams = btcNetworkParams;
-        this.maxDepthBlockCache = maxDepthBlockCache;
+        this.bridgeStorageProvider = bridgeStorageProvider;
         this.activations = activations;
+        this.maxDepthBlockCache = maxDepthBlockCache;
 
         checkIfInitialized();
     }
@@ -274,16 +279,20 @@ public class RepositoryBtcBlockStoreWithCache implements BtcBlockStoreWithCache 
         }
 
         @Override
-        public BtcBlockStoreWithCache newInstance(Repository track, ActivationConfig.ForBlock activations) {
+        public BtcBlockStoreWithCache newInstance(
+            Repository track,
+            BridgeStorageProvider bridgeStorageProvider,
+            ActivationConfig.ForBlock activations) {
+
             return new RepositoryBtcBlockStoreWithCache(
                 btcNetworkParams,
                 track,
                 cacheBlocks,
                 contractAddress,
-                this.maxDepthBlockCache,
-                activations
+                bridgeStorageProvider,
+                activations,
+                this.maxDepthBlockCache
             );
         }
     }
-
 }
