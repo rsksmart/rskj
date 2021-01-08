@@ -26,6 +26,7 @@ import co.rsk.pcc.altBN128.BN128Addition;
 import co.rsk.pcc.altBN128.BN128Multiplication;
 import co.rsk.pcc.altBN128.BN128Pairing;
 import co.rsk.pcc.altBN128.impls.AbstractAltBN128;
+import co.rsk.pcc.altBN128.impls.GoAltBN128;
 import co.rsk.pcc.altBN128.impls.JavaAltBN128;
 import co.rsk.pcc.altBN128.impls.JavaRSKIP197AltBN128;
 import co.rsk.vm.BytecodeCompiler;
@@ -48,8 +49,7 @@ import java.util.HashSet;
 
 import static org.ethereum.util.ByteUtil.stripLeadingZeroes;
 import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -130,7 +130,7 @@ public class AltBN128Test {
 
         altBN128OperationTest(input, output, "Sum is incorrect",
                 PrecompiledContracts.ALT_BN_128_ADD_DW,
-                ADD_GAS_COST);
+                ADD_GAS_COST, 1);
     }
 
     @Test
@@ -150,7 +150,7 @@ public class AltBN128Test {
                 output,
                 "Output of sum should be zero",
                 PrecompiledContracts.ALT_BN_128_ADD_DW,
-                ADD_GAS_COST);
+                ADD_GAS_COST, 1);
     }
 
     @Test
@@ -167,7 +167,7 @@ public class AltBN128Test {
                 output,
                 "Output of sum should be zero",
                 PrecompiledContracts.ALT_BN_128_ADD_DW,
-                ADD_GAS_COST);
+                ADD_GAS_COST, 1);
     }
 
     @Test
@@ -185,7 +185,7 @@ public class AltBN128Test {
                 point,
                 "Output should be the same as input",
                 PrecompiledContracts.ALT_BN_128_ADD_DW,
-                ADD_GAS_COST);
+                ADD_GAS_COST, 1);
     }
 
     @Test
@@ -203,7 +203,7 @@ public class AltBN128Test {
                 point,
                 "Output should be the same as input",
                 PrecompiledContracts.ALT_BN_128_ADD_DW,
-                ADD_GAS_COST);
+                ADD_GAS_COST, 1);
     }
 
     @Test
@@ -222,7 +222,14 @@ public class AltBN128Test {
                 output,
                 "Error: Point is not on curve, should return zero",
                 PrecompiledContracts.ALT_BN_128_ADD_DW,
-                ADD_GAS_COST);
+                ADD_GAS_COST, 1);
+
+        altBN128OperationTestAfterRSKIP197(input,
+                "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+                "Error: Point is not on curve, should return zero",
+                PrecompiledContracts.ALT_BN_128_ADD_DW,
+                ADD_GAS_COST,
+                -1);
 
     }
 
@@ -240,7 +247,7 @@ public class AltBN128Test {
         String output = "0000000000000000000000000000000000000000000000000000000000000000" +
                 "0000000000000000000000000000000000000000000000000000000000000000";
 
-        altBN128AddTest(p0x, p0y, p1x, p1y, output, "Output should be infinity point");
+        altBN128AddTest(p0x, p0y, p1x, p1y, output, "Output should be infinity point", 1);
     }
 
     @Test
@@ -258,7 +265,7 @@ public class AltBN128Test {
         String output = "15bf2bb17880144b5d1cd2b1f46eff9d617bffd1ca57c37fb5a49bd84e53cf66" +
                 "049c797f9ce0d17083deb32b5e36f2ea2a212ee036598dd7624c168993d1355f";
 
-        altBN128AddTest(p0x, p0y, p1x, p1y, output, "Output is incorrect");
+        altBN128AddTest(p0x, p0y, p1x, p1y, output, "Output is incorrect", 1);
 
     }
 
@@ -273,7 +280,7 @@ public class AltBN128Test {
         String output = "2f588cffe99db877a4434b598ab28f81e0522910ea52b45f0adaa772b2d5d352" +
                 "12f42fa8fd34fb1b33d8c6a718b6590198389b26fc9d8808d971f8b009777a97";
 
-        altBN128MulTest(x, y, multiplier, output);
+        altBN128MulTest(x, y, multiplier, output, 1);
     }
 
     @Test
@@ -286,7 +293,7 @@ public class AltBN128Test {
         String output = "1a87b0584ce92f4593d161480614f2989035225609f08058ccfa3d0f940febe3" +
                 "1a2f3c951f6dadcc7ee9007dff81504b0fcd6d7cf59996efdc33d92bf7f9f8f6";
 
-        altBN128MulTest(x, y, multiplier, output);
+        altBN128MulTest(x, y, multiplier, output, 1);
     }
 
     @Test
@@ -299,7 +306,7 @@ public class AltBN128Test {
         String output = "039730ea8dff1254c0fee9c0ea777d29a9c710b7e616683f194f18c43b43b869" +
                 "073a5ffcc6fc7a28c30723d6e58ce577356982d65b833a5a5c15bf9024b43d98";
 
-        altBN128MulTest(x, y, multiplier, output);
+        altBN128MulTest(x, y, multiplier, output, 1);
     }
 
     @Test
@@ -311,7 +318,7 @@ public class AltBN128Test {
         String output = "03d64e49ebb3c56c99e0769c1833879c9b86ead23945e1e7477cbd057e961c50" +
                 "0d6840b39f8c2fefe0eced3e7d210b830f50831e756f1cc9039af65dc292e6d0";
 
-        altBN128MulTest(x, y, multiplier, output);
+        altBN128MulTest(x, y, multiplier, output, 1);
     }
 
     @Test
@@ -321,10 +328,15 @@ public class AltBN128Test {
                 "1111111111111111111111111111111111111111111111111111111111111111";
 
         String output = "";
+        String expectedOutputRSKIP197 = "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000";
 
         altBN128OperationTest(input, output, "Output should be empty",
                 PrecompiledContracts.ALT_BN_128_MUL_DW,
-                MUL_GAS_COST);
+                MUL_GAS_COST, 1);
+
+        altBN128OperationTestAfterRSKIP197(input, expectedOutputRSKIP197, "Output should be empty",
+                PrecompiledContracts.ALT_BN_128_MUL_DW,
+                MUL_GAS_COST, -1);
     }
 
     @Test
@@ -333,10 +345,14 @@ public class AltBN128Test {
                 "1111111111111111111111111111111111111111111111111111111111111111";
 
         String output = "";
+        String expectedOutputRSKIP197 = "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000";
 
         altBN128OperationTest(input, output, "Output should be empty",
                 PrecompiledContracts.ALT_BN_128_MUL_DW,
-                MUL_GAS_COST);
+                MUL_GAS_COST, 1);
+        altBN128OperationTestAfterRSKIP197(input, expectedOutputRSKIP197, "Output should be empty",
+                PrecompiledContracts.ALT_BN_128_MUL_DW,
+                MUL_GAS_COST, -1);
     }
 
     @Test
@@ -350,7 +366,7 @@ public class AltBN128Test {
                 "0000000000000000000000000000000000000000000000000000000000000000";
         altBN128OperationTest(input, output, "Output should be empty",
                 PrecompiledContracts.ALT_BN_128_MUL_DW,
-                MUL_GAS_COST);
+                MUL_GAS_COST, 1);
     }
 
     @Test
@@ -411,7 +427,7 @@ public class AltBN128Test {
         String input = g1Point0 + g2Point0 + g1Point1 + g2Point1;
         String expectedOutput = "0000000000000000000000000000000000000000000000000000000000000001";
         altBN128OperationTest(input, expectedOutput, "Invalid output of paring of valid point",
-                PrecompiledContracts.ALT_BN_128_PAIRING_DW, 113_000);
+                PrecompiledContracts.ALT_BN_128_PAIRING_DW, 113_000, 1);
     }
 
     @Test
@@ -479,7 +495,7 @@ public class AltBN128Test {
 
         String expectedOutput = "0000000000000000000000000000000000000000000000000000000000000001";
         altBN128OperationTest(input, expectedOutput, "Invalid output of paring of valid point",
-                PrecompiledContracts.ALT_BN_128_PAIRING_DW, 385_000);
+                PrecompiledContracts.ALT_BN_128_PAIRING_DW, 385_000, 1);
     }
 
     @Test
@@ -487,9 +503,12 @@ public class AltBN128Test {
         String input = "11";
 
         String expectedOutput = "";
+        String expectedOutputRSKIP197 = "0000000000000000000000000000000000000000000000000000000000000000";
 
         altBN128OperationTest(input, expectedOutput, "Output should be empty",
-                PrecompiledContracts.ALT_BN_128_PAIRING_DW, 45_000);
+                PrecompiledContracts.ALT_BN_128_PAIRING_DW, 45_000, 1);
+        altBN128OperationTestAfterRSKIP197(input, expectedOutputRSKIP197, "Output should be empty",
+                PrecompiledContracts.ALT_BN_128_PAIRING_DW, 45_000, -1);
     }
 
     @Test
@@ -499,7 +518,7 @@ public class AltBN128Test {
         String expectedOutput = "0000000000000000000000000000000000000000000000000000000000000001";
 
         altBN128OperationTest(input, expectedOutput, "Output should be valid",
-                PrecompiledContracts.ALT_BN_128_PAIRING_DW, 45_000);
+                PrecompiledContracts.ALT_BN_128_PAIRING_DW, 45_000, 1);
     }
 
     @Test
@@ -520,9 +539,12 @@ public class AltBN128Test {
         String input = g1Point0 + g2Point0 + g1Point1 + g2Point1;
 
         String expectedOutput = "";
+        String expectedOutputRSKIP197 = "0000000000000000000000000000000000000000000000000000000000000000";
 
         altBN128OperationTest(input, expectedOutput, "Invalid output of paring of valid point",
-                PrecompiledContracts.ALT_BN_128_PAIRING_DW, 113_000);
+                PrecompiledContracts.ALT_BN_128_PAIRING_DW, 113_000, 1);
+        altBN128OperationTestAfterRSKIP197(input, expectedOutputRSKIP197, "Invalid output of paring of valid point",
+                PrecompiledContracts.ALT_BN_128_PAIRING_DW, 113_000, -1);
     }
 
     @Test
@@ -543,7 +565,7 @@ public class AltBN128Test {
         String expectedOutput = "0000000000000000000000000000000000000000000000000000000000000000";
 
         altBN128OperationTest(inputString, expectedOutput, "Invalid output of paring of valid point",
-                PrecompiledContracts.ALT_BN_128_PAIRING_DW, 113_000);
+                PrecompiledContracts.ALT_BN_128_PAIRING_DW, 113_000, 1);
 
     }
 
@@ -628,7 +650,7 @@ public class AltBN128Test {
     }
 
     private void altBN128OperationTest(String inputString, String expectedOutput, String errorMessage,
-                                       DataWord contractAddress, long gasCost) throws VMException {
+                                       DataWord contractAddress, long gasCost, int expectedRes) throws VMException {
         PrecompiledContracts.PrecompiledContract altBN128OperationContract = precompiledContracts.getContractForAddress(activations, contractAddress);
 
         byte[] input = Hex.decode(inputString);
@@ -637,43 +659,66 @@ public class AltBN128Test {
         assertThat("Incorrect gas cost", altBN128OperationContract.getGasForData(input), is(gasCost));
         assertThat(errorMessage, ByteUtil.toHexString(output), is(expectedOutput));
 
-        runAgainWithJavaImpl(expectedOutput, input, contractAddress);
-        runAgainWithJavaRSKIP197Impl(expectedOutput, input, contractAddress);
+        runAgainWithJavaImpl(expectedOutput, input, contractAddress, expectedRes);
     }
 
-    private void runAgainWithJavaImpl(String expectedOutput, byte[] input, DataWord contractAddress) {
-        if (Utils.isLinux()) {
-            // If we are in Linux, we test the Java Implementation
-            AbstractAltBN128 altBN128 = new JavaAltBN128();
+    private void altBN128OperationTestAfterRSKIP197(String inputString, String expectedOutput, String errorMessage,
+                                       DataWord contractAddress, long gasCost, int expectedRes) throws VMException {
+        byte[] input = Hex.decode(inputString);
+        runAgainWithJavaRSKIP197Impl(expectedOutput, input, contractAddress, expectedRes);
+        runAgainWithGoImpl(expectedOutput, input, contractAddress, expectedRes);
+    }
+
+    private void runAgainWithGoImpl(String expectedOutput, byte[] input, DataWord contractAddress, int expectedRes) {
+        if(Utils.isLinux()) {
+            int result;
+            AbstractAltBN128 altBN128 = new GoAltBN128();
 
             if (contractAddress.equals(PrecompiledContracts.ALT_BN_128_ADD_DW)) {
-                altBN128.add(input, input.length);
+                result = altBN128.add(input, input.length);
             } else if (contractAddress.equals(PrecompiledContracts.ALT_BN_128_MUL_DW)) {
-                altBN128.mul(input, input.length);
+                result = altBN128.mul(input, input.length);
             } else {
-                altBN128.pairing(input, input.length);
+                result = altBN128.pairing(input, input.length);
             }
             assertThat(ByteUtil.toHexString(altBN128.getOutput()), is(expectedOutput));
+            assertEquals(expectedRes, result);
         }
     }
 
-    private void runAgainWithJavaRSKIP197Impl(String expectedOutput, byte[] input, DataWord contractAddress) {
-        if (Utils.isLinux()) {
-            // If we are in Linux, we test the Java Implementation
-            AbstractAltBN128 altBN128 = new JavaRSKIP197AltBN128();
+    private void runAgainWithJavaImpl(String expectedOutput, byte[] input, DataWord contractAddress, int expectedRes) {
+        // If we are in Linux, we test the Java Implementation
+        AbstractAltBN128 altBN128 = new JavaAltBN128();
 
-            if (contractAddress.equals(PrecompiledContracts.ALT_BN_128_ADD_DW)) {
-                altBN128.add(input, input.length);
-            } else if (contractAddress.equals(PrecompiledContracts.ALT_BN_128_MUL_DW)) {
-                altBN128.mul(input, input.length);
-            } else {
-                altBN128.pairing(input, input.length);
-            }
-            assertThat(ByteUtil.toHexString(altBN128.getOutput()), is(expectedOutput));
+        int result;
+        if (contractAddress.equals(PrecompiledContracts.ALT_BN_128_ADD_DW)) {
+            result = altBN128.add(input, input.length);
+        } else if (contractAddress.equals(PrecompiledContracts.ALT_BN_128_MUL_DW)) {
+            result = altBN128.mul(input, input.length);
+        } else {
+            result = altBN128.pairing(input, input.length);
         }
+        assertThat(ByteUtil.toHexString(altBN128.getOutput()), is(expectedOutput));
+        assertEquals(expectedRes, result);
     }
 
-    private void altBN128MulTest(BigInteger x1, BigInteger y1, BigInteger scalar, String expectedOutput) throws VMException {
+    private void runAgainWithJavaRSKIP197Impl(String expectedOutput, byte[] input, DataWord contractAddress, int expectedRes) {
+        // If we are in Linux, we test the Java Implementation
+        AbstractAltBN128 altBN128 = new JavaRSKIP197AltBN128();
+
+        int result;
+        if (contractAddress.equals(PrecompiledContracts.ALT_BN_128_ADD_DW)) {
+            result = altBN128.add(input, input.length);
+        } else if (contractAddress.equals(PrecompiledContracts.ALT_BN_128_MUL_DW)) {
+            result = altBN128.mul(input, input.length);
+        } else {
+            result = altBN128.pairing(input, input.length);
+        }
+        assertThat(ByteUtil.toHexString(altBN128.getOutput()), is(expectedOutput));
+        assertEquals(expectedRes, result);
+    }
+
+    private void altBN128MulTest(BigInteger x1, BigInteger y1, BigInteger scalar, String expectedOutput, int expectedRes) throws VMException {
         byte[] input = new byte[96];
 
         byte[] x1Bytes = stripLeadingZeroes(x1.toByteArray());
@@ -687,11 +732,15 @@ public class AltBN128Test {
         altBN128OperationTest(ByteUtil.toHexString(input), expectedOutput,
                 "Wrong result of multiplication",
                 PrecompiledContracts.ALT_BN_128_MUL_DW,
-                MUL_GAS_COST);
+                MUL_GAS_COST, expectedRes);
+        altBN128OperationTestAfterRSKIP197(ByteUtil.toHexString(input), expectedOutput,
+                "Wrong result of multiplication",
+                PrecompiledContracts.ALT_BN_128_MUL_DW,
+                MUL_GAS_COST, expectedRes);
 
     }
 
-    private void altBN128AddTest(BigInteger x1, BigInteger y1, BigInteger x2, BigInteger y2, String expectedOutput, String errorMessage) throws VMException {
+    private void altBN128AddTest(BigInteger x1, BigInteger y1, BigInteger x2, BigInteger y2, String expectedOutput, String errorMessage, int expectedRes) throws VMException {
         byte[] input = new byte[128];
 
         byte[] x1Bytes = stripLeadingZeroes(x1.toByteArray());
@@ -705,7 +754,9 @@ public class AltBN128Test {
         System.arraycopy(y2Bytes, 0, input, 128 - y2Bytes.length, y2Bytes.length);
 
         altBN128OperationTest(ByteUtil.toHexString(input), expectedOutput,
-                errorMessage, PrecompiledContracts.ALT_BN_128_ADD_DW, ADD_GAS_COST);
+                errorMessage, PrecompiledContracts.ALT_BN_128_ADD_DW, ADD_GAS_COST, expectedRes);
+        altBN128OperationTestAfterRSKIP197(ByteUtil.toHexString(input), expectedOutput,
+                errorMessage, PrecompiledContracts.ALT_BN_128_ADD_DW, ADD_GAS_COST, expectedRes);
 
     }
 
