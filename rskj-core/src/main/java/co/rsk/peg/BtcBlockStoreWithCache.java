@@ -22,7 +22,7 @@ import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.bitcoinj.core.StoredBlock;
 import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.bitcoinj.store.BtcBlockStore;
-import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig.ForBlock;
 import org.ethereum.core.Repository;
 
 /**
@@ -38,6 +38,8 @@ public interface BtcBlockStoreWithCache extends BtcBlockStore {
     StoredBlock getStoredBlockAtMainChainDepth(int depth) throws BlockStoreException;
 
     interface Factory {
-        BtcBlockStoreWithCache newInstance(Repository track, ActivationConfig.ForBlock activations);
+        BtcBlockStoreWithCache newInstance(Repository track,
+            BridgeStorageProvider bridgeStorageProvider,
+            ForBlock activations);
     }
 }

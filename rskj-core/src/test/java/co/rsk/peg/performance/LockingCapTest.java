@@ -117,6 +117,7 @@ public class LockingCapTest extends BridgePerformanceTestCase {
                 repository.startTracking(),
                 new MaxSizeHashMap<>(RepositoryBtcBlockStoreWithCache.MAX_SIZE_MAP_STORED_BLOCKS, true),
                 PrecompiledContracts.BRIDGE_ADDR,
+                null,
                 null
             );
             Context btcContext = new Context(networkParameters);
