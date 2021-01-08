@@ -27,6 +27,7 @@ import co.rsk.pcc.altBN128.BN128Multiplication;
 import co.rsk.pcc.altBN128.BN128Pairing;
 import co.rsk.pcc.altBN128.impls.AbstractAltBN128;
 import co.rsk.pcc.altBN128.impls.JavaAltBN128;
+import co.rsk.pcc.altBN128.impls.JavaRSKIP197AltBN128;
 import co.rsk.vm.BytecodeCompiler;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -637,12 +638,29 @@ public class AltBN128Test {
         assertThat(errorMessage, ByteUtil.toHexString(output), is(expectedOutput));
 
         runAgainWithJavaImpl(expectedOutput, input, contractAddress);
+        runAgainWithJavaRSKIP197Impl(expectedOutput, input, contractAddress);
     }
 
     private void runAgainWithJavaImpl(String expectedOutput, byte[] input, DataWord contractAddress) {
         if (Utils.isLinux()) {
             // If we are in Linux, we test the Java Implementation
             AbstractAltBN128 altBN128 = new JavaAltBN128();
+
+            if (contractAddress.equals(PrecompiledContracts.ALT_BN_128_ADD_DW)) {
+                altBN128.add(input, input.length);
+            } else if (contractAddress.equals(PrecompiledContracts.ALT_BN_128_MUL_DW)) {
+                altBN128.mul(input, input.length);
+            } else {
+                altBN128.pairing(input, input.length);
+            }
+            assertThat(ByteUtil.toHexString(altBN128.getOutput()), is(expectedOutput));
+        }
+    }
+
+    private void runAgainWithJavaRSKIP197Impl(String expectedOutput, byte[] input, DataWord contractAddress) {
+        if (Utils.isLinux()) {
+            // If we are in Linux, we test the Java Implementation
+            AbstractAltBN128 altBN128 = new JavaRSKIP197AltBN128();
 
             if (contractAddress.equals(PrecompiledContracts.ALT_BN_128_ADD_DW)) {
                 altBN128.add(input, input.length);

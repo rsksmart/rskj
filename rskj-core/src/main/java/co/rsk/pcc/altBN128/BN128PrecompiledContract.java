@@ -56,7 +56,7 @@ public abstract class BN128PrecompiledContract extends PrecompiledContracts.Prec
         if (data == null) {
             throw new VMException("Invalid input.");
         }
-        AltBN128 altBN128 = new AltBN128();
+        AltBN128 altBN128 = new AltBN128(true);
         int rs = concreteExecute(data, altBN128);
         if (rs < 0) {
             throw new VMException("Invalid result.");
@@ -71,7 +71,7 @@ public abstract class BN128PrecompiledContract extends PrecompiledContracts.Prec
         if (data == null) {
             data = EMPTY_BYTE_ARRAY;
         }
-        AltBN128 altBN128 = new AltBN128();
+        AltBN128 altBN128 = new AltBN128(false);
         int rs = concreteExecute(data, altBN128);
         if (rs < 0) {
             return EMPTY_BYTE_ARRAY;
