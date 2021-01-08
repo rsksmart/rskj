@@ -60,6 +60,9 @@ public class BridgeConstants {
 
     protected int lockingCapIncrementsMultiplier;
 
+    protected int btcHeightWhenBlockIndexActivates;
+    protected int maxDepthToSearchBlocksBelowIndexActivation;
+
     public NetworkParameters getBtcParams() {
         return NetworkParameters.fromID(btcParamsString);
     }
@@ -117,4 +120,8 @@ public class BridgeConstants {
     public Coin getMaxFeePerKb() { return maxFeePerKb; }
 
     public Coin getMaxRbtc() { return Coin.valueOf(21_000_000, 0); }
+
+    public int getBtcHeightWhenBlockIndexActivates() { return btcHeightWhenBlockIndexActivates; }
+
+    public int getMaxDepthToSearchBlocksBelowIndexActivation() { return maxDepthToSearchBlocksBelowIndexActivation; }
 }
