@@ -54,12 +54,12 @@ public abstract class BN128PrecompiledContract extends PrecompiledContracts.Prec
      */
     private byte[] unsafeExecute(byte[] data) throws VMException {
         if (data == null) {
-            throw new VMException("Data param is null.");
+            throw new VMException("Invalid input.");
         }
         AltBN128 altBN128 = new AltBN128();
         int rs = concreteExecute(data, altBN128);
         if (rs < 0) {
-            throw new VMException("Execution result is invalid.");
+            throw new VMException("Invalid result.");
         }
         return altBN128.getOutput();
     }
