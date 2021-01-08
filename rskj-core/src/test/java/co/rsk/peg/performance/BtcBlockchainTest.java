@@ -82,6 +82,7 @@ public class BtcBlockchainTest extends BridgePerformanceTestCase {
                 repository,
                 new HashMap<>(),
                 PrecompiledContracts.BRIDGE_ADDR,
+                null,
                 null
             );
             Context btcContext = new Context(networkParameters);
