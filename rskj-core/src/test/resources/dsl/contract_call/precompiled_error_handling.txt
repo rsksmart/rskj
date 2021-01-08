@@ -1,6 +1,7 @@
 account_new acc1 20000000
 
 # Deploy ErrorHandlingTest.sol
+
 transaction_build tx01
     sender acc1
     nonce 0
