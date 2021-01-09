@@ -66,14 +66,12 @@ public class JavaAltBN128 extends AbstractAltBN128 {
         BN128<Fp> p1 = BN128Fp.create(x1, y1);
 
         if (p1 == null) {
-            output = EMPTY_BYTE_ARRAY;
-            return 1;
+            return returnError();
         }
 
         BN128<Fp> p2 = BN128Fp.create(x2, y2);
         if (p2 == null) {
-            output = EMPTY_BYTE_ARRAY;
-            return 1;
+            return returnError();
         }
 
         BN128<Fp> res = p1.add(p2).toEthNotation();
@@ -94,8 +92,7 @@ public class JavaAltBN128 extends AbstractAltBN128 {
         BN128<Fp> p = BN128Fp.create(x, y);
 
         if (p == null) {
-            output = EMPTY_BYTE_ARRAY;
-            return 1;
+            return returnError();
         }
 
         BN128<Fp> res = p.mul(BIUtil.toBI(s)).toEthNotation();
@@ -111,8 +108,7 @@ public class JavaAltBN128 extends AbstractAltBN128 {
 
         // fail if input len is not a multiple of PAIR_SIZE
         if (data.length % PAIR_SIZE > 0) {
-            output = EMPTY_BYTE_ARRAY;
-            return 1;
+            return returnError();
         }
 
         PairingCheck check = PairingCheck.create();
@@ -124,8 +120,7 @@ public class JavaAltBN128 extends AbstractAltBN128 {
 
             // fail if decoding has failed
             if (pair == null) {
-                output = EMPTY_BYTE_ARRAY;
-                return 1;
+                return returnError();
             }
 
             check.addPair(pair.getG1(), pair.getG2());
@@ -135,6 +130,11 @@ public class JavaAltBN128 extends AbstractAltBN128 {
         int result = check.result();
 
         output = DataWord.valueOf(result).getData();
+        return 1;
+    }
+
+    protected int returnError() {
+        output = EMPTY_BYTE_ARRAY;
         return 1;
     }
 }
