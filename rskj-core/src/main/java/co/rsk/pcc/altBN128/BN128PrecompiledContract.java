@@ -33,7 +33,7 @@ public abstract class BN128PrecompiledContract extends PrecompiledContracts.Prec
 
     private final ActivationConfig.ForBlock activations;
 
-    public BN128PrecompiledContract(ActivationConfig.ForBlock activations) {
+    protected BN128PrecompiledContract(ActivationConfig.ForBlock activations) {
         this.activations = activations;
     }
 
