@@ -61,6 +61,7 @@ public class BridgeStorageProvider {
     private static final DataWord LOCKING_CAP_KEY = DataWord.fromString("lockingCap");
     private static final DataWord RELEASE_REQUEST_QUEUE_WITH_TXHASH = DataWord.fromString("releaseRequestQueueWithTxHash");
     private static final DataWord RELEASE_TX_SET_WITH_TXHASH = DataWord.fromString("releaseTransactionSetWithTxHash");
+    private static final DataWord RECEIVE_HEADERS_TIMESTAMP = DataWord.fromString("receiveHeadersLastTimestamp");
 
     // Version keys and versions
     private static final DataWord NEW_FEDERATION_FORMAT_VERSION = DataWord.fromString("newFederationFormatVersion");
@@ -108,6 +109,8 @@ public class BridgeStorageProvider {
     private HashMap<Sha256Hash, Long> btcTxHashesToSave;
 
     private Map<Sha256Hash, CoinbaseInformation> coinbaseInformationMap;
+
+    private long receiveHeadersLastTimestamp = 0;
 
     public BridgeStorageProvider(Repository repository, RskAddress contractAddress, BridgeConstants bridgeConstants, ActivationConfig.ForBlock activations) {
         this.repository = repository;
@@ -592,6 +595,28 @@ public class BridgeStorageProvider {
             safeSaveToRepository(getStorageKeyForCoinbaseInformation(blockHash), data, BridgeSerializationUtils::serializeCoinbaseInformation));
     }
 
+    public Optional<Long> getReceiveHeadersLastTimestamp() {
+        if (activations.isActive(RSKIP200)) {
+            return safeGetFromRepository(
+                    RECEIVE_HEADERS_TIMESTAMP,
+                    BridgeSerializationUtils::deserializeOptionalLong
+            );
+        }
+        return Optional.empty();
+    }
+
+    public void setReceiveHeadersLastTimestamp(Long timeInMillis) {
+        if (activations.isActive(RSKIP200)) {
+            receiveHeadersLastTimestamp = timeInMillis;
+        }
+    }
+
+    public void saveReceiveHeadersLastTimestamp() {
+        if (activations.isActive(RSKIP200) && this.receiveHeadersLastTimestamp > 0) {
+            safeSaveToRepository(RECEIVE_HEADERS_TIMESTAMP, this.receiveHeadersLastTimestamp, BridgeSerializationUtils::serializeLong);
+        }
+    }
+
     public void save() throws IOException {
         saveBtcTxHashesAlreadyProcessed();
 
@@ -619,6 +644,8 @@ public class BridgeStorageProvider {
         saveHeightBtcTxHashAlreadyProcessed();
 
         saveCoinbaseInformations();
+
+        saveReceiveHeadersLastTimestamp();
     }
 
     private DataWord getStorageKeyForBtcTxHashAlreadyProcessed(Sha256Hash btcTxHash) {

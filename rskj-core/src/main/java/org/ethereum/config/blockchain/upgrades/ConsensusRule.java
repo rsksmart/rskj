@@ -61,7 +61,8 @@ public enum ConsensusRule {
     RSKIPUMM("rskipUMM"),
     RSKIP185("rskip185"), //Peg-out refund and events
     RSKIP191("rskip191"),
-    RSKIP197("rskip197"); //Handle error in Precompile Contracts execution.
+    RSKIP197("rskip197"), //Handle error in Precompile Contracts execution.
+    RSKIP200("rskip200");
 
 
     private String configKey;
