@@ -2782,7 +2782,7 @@ public class BridgeSupportTestPowerMock {
             return expectedWallet;
         });
 
-        Assert.assertSame(expectedWallet, bridgeSupport.getActiveFederationWallet());
+        Assert.assertSame(expectedWallet, bridgeSupport.getActiveFederationWallet(false));
     }
 
     @Test
@@ -2825,7 +2825,7 @@ public class BridgeSupportTestPowerMock {
             return expectedWallet;
         });
 
-        Assert.assertSame(expectedWallet, bridgeSupport.getRetiringFederationWallet());
+        Assert.assertSame(expectedWallet, bridgeSupport.getRetiringFederationWallet(false));
     }
 
     @Test
