@@ -1058,17 +1058,17 @@ public class BridgeSerializationUtilsTest {
     }
 
     @Test(expected = RuntimeException.class)
-    public void deserializeFederationBridge_no_data() {
+    public void deserializeFastBridge_no_data() {
         Assert.assertNull(BridgeSerializationUtils.deserializeFastBridgeInformation(new byte[]{}, new byte[]{}));
     }
 
-    @Test(expected = RuntimeException.class)
-    public void deserializeFederationBridge_null_data() {
+    @Test
+    public void deserializeFastBridge_null_data() {
         Assert.assertNull(BridgeSerializationUtils.deserializeFastBridgeInformation(null, null));
     }
 
     @Test(expected = RuntimeException.class)
-    public void deserializeFederationBridge_one_data() {
+    public void deserializeFastBridge_one_data() {
         byte[][] rlpElements = new byte[1][];
         rlpElements[0] = RLP.encodeElement(new byte[]{(byte)0x11});
 
@@ -1077,7 +1077,7 @@ public class BridgeSerializationUtilsTest {
     }
 
     @Test
-    public void deserializeFederationBridge_Ok() {
+    public void deserializeFastBridge_Ok() {
         byte[][] rlpElements = new byte[2][];
         rlpElements[0] = RLP.encodeElement(Sha256Hash.wrap("0000000000000000000000000000000000000000000000000000000000000002").getBytes());
         rlpElements[1] = RLP.encodeElement(new byte[]{(byte)0x22});

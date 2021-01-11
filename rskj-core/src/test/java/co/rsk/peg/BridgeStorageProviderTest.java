@@ -3031,7 +3031,7 @@ public class BridgeStorageProviderTest {
         Assert.assertFalse(result.isPresent());
     }
 
-    @Test(expected = RuntimeException.class)
+    @Test
     public void getFastBridgeFederationInformation_NotFound() {
         Repository repository = mock(Repository.class);
 
@@ -3052,7 +3052,7 @@ public class BridgeStorageProviderTest {
                 activations
         );
 
-        Optional<FastBridgeFederationInformation> result = provider.getFastBridgeFederationInformation(fastBridgeFederationScriptHash);
+        assertFalse(provider.getFastBridgeFederationInformation(fastBridgeFederationScriptHash).isPresent());
     }
 
     @Test
