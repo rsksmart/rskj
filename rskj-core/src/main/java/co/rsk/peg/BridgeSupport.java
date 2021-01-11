@@ -223,12 +223,19 @@ public class BridgeSupport {
      * @return A BTC wallet for the currently active federation
      *
      * @throws IOException
+     * @param shouldConsiderFastBridgeUTXOs
      */
-    public Wallet getActiveFederationWallet() throws IOException {
+    public Wallet getActiveFederationWallet(boolean shouldConsiderFastBridgeUTXOs) throws IOException {
         Federation federation = getActiveFederation();
         List<UTXO> utxos = getActiveFederationBtcUTXOs();
 
-        return BridgeUtils.getFederationSpendWallet(btcContext, federation, utxos,false, null);
+        return BridgeUtils.getFederationSpendWallet(
+            btcContext,
+            federation,
+            utxos,
+            shouldConsiderFastBridgeUTXOs,
+            provider
+        );
     }
 
     /**
@@ -237,8 +244,9 @@ public class BridgeSupport {
      * @return A BTC wallet for the currently active federation
      *
      * @throws IOException
+     * @param shouldConsiderFastBridgeUTXOs
      */
-    public Wallet getRetiringFederationWallet() throws IOException {
+    public Wallet getRetiringFederationWallet(boolean shouldConsiderFastBridgeUTXOs) throws IOException {
         Federation federation = getRetiringFederation();
         if (federation == null) {
             return null;
@@ -246,7 +254,13 @@ public class BridgeSupport {
 
         List<UTXO> utxos = getRetiringFederationBtcUTXOs();
 
-        return BridgeUtils.getFederationSpendWallet(btcContext, federation, utxos, false, null);
+        return BridgeUtils.getFederationSpendWallet(
+            btcContext,
+            federation,
+            utxos,
+            shouldConsiderFastBridgeUTXOs,
+            provider
+        );
     }
 
     /**
@@ -471,14 +485,15 @@ public class BridgeSupport {
      */
     private void saveNewUTXOs(BtcTransaction btcTx) throws IOException {
         // Outputs to the active federation
-        List<TransactionOutput> outputsToTheActiveFederation = btcTx.getWalletOutputs(getActiveFederationWallet());
+        List<TransactionOutput> outputsToTheActiveFederation = btcTx.getWalletOutputs(getActiveFederationWallet(
+            false));
         for (TransactionOutput output : outputsToTheActiveFederation) {
             UTXO utxo = new UTXO(btcTx.getHash(), output.getIndex(), output.getValue(), 0, btcTx.isCoinBase(), output.getScriptPubKey());
             getActiveFederationBtcUTXOs().add(utxo);
         }
 
         // Outputs to the retiring federation (if any)
-        Wallet retiringFederationWallet = getRetiringFederationWallet();
+        Wallet retiringFederationWallet = getRetiringFederationWallet(false);
         if (retiringFederationWallet != null) {
             List<TransactionOutput> outputsToTheRetiringFederation = btcTx.getWalletOutputs(retiringFederationWallet);
             for (TransactionOutput output : outputsToTheRetiringFederation) {
@@ -599,7 +614,7 @@ public class BridgeSupport {
     }
 
     private void processFundsMigration(Transaction rskTx) throws IOException {
-        Wallet retiringFederationWallet = getRetiringFederationWallet();
+        Wallet retiringFederationWallet = getRetiringFederationWallet(true);
         List<UTXO> availableUTXOs = getRetiringFederationBtcUTXOs();
         ReleaseTransactionSet releaseTransactionSet = provider.getReleaseTransactionSet();
         Federation activeFederation = getActiveFederation();
@@ -685,7 +700,7 @@ public class BridgeSupport {
         final ReleaseRequestQueue releaseRequestQueue;
 
         try {
-            activeFederationWallet = getActiveFederationWallet();
+            activeFederationWallet = getActiveFederationWallet(true);
             releaseRequestQueue = provider.getReleaseRequestQueue();
         } catch (IOException e) {
             logger.error("Unexpected error accessing storage while attempting to process release requests", e);
@@ -1546,6 +1561,7 @@ public class BridgeSupport {
         // Clear votes on election
         provider.getFederationElection(bridgeConstants.getFederationChangeAuthorizer()).clear();
 
+        logger.debug("[commitFederation] New Federation committed: {}", provider.getNewFederation().getAddress());
         eventLogger.logCommitFederation(rskExecutionBlock, provider.getOldFederation(), provider.getNewFederation());
 
         return 1;
@@ -2304,9 +2320,9 @@ public class BridgeSupport {
     }
 
     protected Coin getAmountToLiveFederations(BtcTransaction btcTx) throws IOException{
-        Coin amountToActive = btcTx.getValueSentToMe(getActiveFederationWallet());
+        Coin amountToActive = btcTx.getValueSentToMe(getActiveFederationWallet(false));
         Coin amountToRetiring = Coin.ZERO;
-        Wallet retiringFederationWallet = getRetiringFederationWallet();
+        Wallet retiringFederationWallet = getRetiringFederationWallet(false);
         if (retiringFederationWallet != null) {
             amountToRetiring = btcTx.getValueSentToMe(retiringFederationWallet);
         }
@@ -2363,6 +2379,7 @@ public class BridgeSupport {
 
     private Pair<BtcTransaction, List<UTXO>> createMigrationTransaction(Wallet originWallet, Address destinationAddress) {
         Coin expectedMigrationValue = originWallet.getBalance();
+        logger.debug("[createMigrationTransaction] Balance to migrate: {}", expectedMigrationValue);
         for(;;) {
             BtcTransaction migrationBtcTx = new BtcTransaction(originWallet.getParams());
             migrationBtcTx.addOutput(expectedMigrationValue, destinationAddress);
