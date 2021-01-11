@@ -38,8 +38,10 @@ public interface BtcBlockStoreWithCache extends BtcBlockStore {
     StoredBlock getStoredBlockAtMainChainDepth(int depth) throws BlockStoreException;
 
     interface Factory {
-        BtcBlockStoreWithCache newInstance(Repository track,
+        BtcBlockStoreWithCache newInstance(
+            Repository track,
             BridgeStorageProvider bridgeStorageProvider,
-            ForBlock activations);
+            ForBlock activations
+        );
     }
 }
