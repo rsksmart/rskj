@@ -32,6 +32,7 @@ import co.rsk.config.BridgeConstants;
 import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.core.genesis.TestGenesisLoader;
+import co.rsk.crypto.Keccak256;
 import co.rsk.db.MutableTrieCache;
 import co.rsk.db.MutableTrieImpl;
 import co.rsk.peg.bitcoin.RskAllowUnconfirmedCoinSelector;
@@ -627,7 +628,21 @@ public class BridgeUtilsTest {
                         Transaction.builder().build()
                 )
         );
-        Assert.assertTrue(BridgeUtils.isContractTx(new org.ethereum.vm.program.InternalTransaction(null, 0, 0, null, null, null, null, null, null, null, null)));
+        Assert.assertTrue(
+            BridgeUtils.isContractTx(new org.ethereum.vm.program.InternalTransaction(
+                Keccak256.ZERO_HASH.getBytes(),
+                0,
+                0,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null
+            ))
+        );
     }
 
     @Test(expected = IllegalArgumentException.class)
