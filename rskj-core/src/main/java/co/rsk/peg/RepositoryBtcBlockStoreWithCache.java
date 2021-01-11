@@ -29,6 +29,7 @@ import co.rsk.util.MaxSizeHashMap;
 import java.util.Optional;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig.ForBlock;
 import org.ethereum.core.Repository;
 import org.ethereum.vm.DataWord;
@@ -38,7 +39,6 @@ import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
 import java.util.Map;
-import org.ethereum.vm.trace.Op;
 
 /**
  * Implementation of a bitcoinj blockstore that persists to RSK's Repository
@@ -145,16 +145,23 @@ public class RepositoryBtcBlockStoreWithCache implements BtcBlockStoreWithCache 
         if (cacheBlocks != null) {
             populateCache(newChainHead);
         }
+        setMainChainBlock(newChainHead.getHeight(), newChainHead.getHeader().getHash());
     }
 
     @Override
     public Optional<StoredBlock> getInMainchain(int height) {
-        return Optional.empty();
+        Optional<Sha256Hash> bestBlockHash = bridgeStorageProvider.getBtcBestBlockHashByHeight(height);
+        if (!bestBlockHash.isPresent()) {
+            return Optional.empty();
+        }
+
+        StoredBlock block = get(bestBlockHash.get());
+        return Optional.of(block);
     }
 
     @Override
-    public void setMainChainBlock(int height, Sha256Hash blockHash) throws BlockStoreException {
-
+    public void setMainChainBlock(int height, Sha256Hash blockHash) {
+        bridgeStorageProvider.setBtcBestBlockHashByHeight(height, blockHash);
     }
 
     @Override
@@ -179,7 +186,47 @@ public class RepositoryBtcBlockStoreWithCache implements BtcBlockStoreWithCache 
         StoredBlock chainHead = getChainHead();
         int depth = chainHead.getHeight() - height;
         logger.trace("Getting btc block at depth: {}", depth);
-        return getStoredBlockAtMainChainDepth(depth);
+
+        if (depth < 0) {
+            throw new BlockStoreException(
+                String.format(
+                    "Height provided is higher than chain head. provided: %n. chain head: %n",
+                    height,
+                    chainHead.getHeight()
+                )
+            );
+        }
+
+        if (activations.isActive(ConsensusRule.RSKIP199)) {
+            int btcHeightWhenBlockIndexActivates = this.bridgeConstants.getBtcHeightWhenBlockIndexActivates();
+            int maxDepthToSearch = this.bridgeConstants.getMaxDepthToSearchBlocksBelowIndexActivation();
+            int limit;
+            if (chainHead.getHeight() - btcHeightWhenBlockIndexActivates > maxDepthToSearch) {
+                limit = btcHeightWhenBlockIndexActivates;
+            } else {
+                limit = chainHead.getHeight() - maxDepthToSearch;
+            }
+
+            if (height < limit) {
+                throw new BlockStoreException(
+                    String.format(
+                        "Height provided is lower than the depth limit defined to search for blocks. Provided: %n, limit: %n",
+                        height,
+                        limit
+                    )
+                );
+            }
+        }
+
+        StoredBlock block;
+        Optional<StoredBlock> blockOptional = getInMainchain(height);
+        if (blockOptional.isPresent()) {
+            block = blockOptional.get();
+        } else {
+            block = getStoredBlockAtMainChainDepth(depth);
+        }
+
+        return block;
     }
 
     private synchronized void populateCache(StoredBlock chainHead) {
@@ -206,6 +253,7 @@ public class RepositoryBtcBlockStoreWithCache implements BtcBlockStoreWithCache 
     }
 
     @Override
+    @Deprecated
     public StoredBlock getStoredBlockAtMainChainDepth(int depth) throws BlockStoreException {
         StoredBlock chainHead = getChainHead();
         Sha256Hash blockHash = chainHead.getHeader().getHash();
