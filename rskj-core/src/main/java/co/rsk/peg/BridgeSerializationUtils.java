@@ -743,6 +743,14 @@ public class BridgeSerializationUtils {
         return RLP.encodeList(rlpElements);
     }
 
+    public static byte[] serializeSha256Hash(Sha256Hash hash) {
+        return RLP.encodeElement(hash.getBytes());
+    }
+
+    public static Sha256Hash deserializeSha256Hash(byte[] data) {
+        return Sha256Hash.wrap(RLP.decodeBigInteger(data, 0).toByteArray());
+    }
+
     // An ABI call spec is serialized as:
     // function name encoded in UTF-8
     // arg_1, ..., arg_n
