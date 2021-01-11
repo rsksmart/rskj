@@ -193,7 +193,7 @@ public class Program {
         byte[] senderNonce = isEmpty(nonce) ? getStorage().getNonce(senderAddress).toByteArray() : nonce;
 
         return getResult().addInternalTransaction(
-                transaction.getHash().getBytes(),
+                transaction,
                 getCallDeep(),
                 senderNonce,
                 getGasPrice(),
