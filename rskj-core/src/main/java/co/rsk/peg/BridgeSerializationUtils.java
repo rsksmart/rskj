@@ -746,7 +746,7 @@ public class BridgeSerializationUtils {
 
     public static FastBridgeFederationInformation deserializeFastBridgeInformation(byte[] data, byte[] fastBridgeScriptHash) {
         if ((data == null) || (data.length == 0)) {
-            throw new RuntimeException("Invalid serialized Fast Bridge Federation: null data or no data to deserialize");
+            return null;
         }
 
         RLPList rlpList = (RLPList)RLP.decode2(data).get(0);
