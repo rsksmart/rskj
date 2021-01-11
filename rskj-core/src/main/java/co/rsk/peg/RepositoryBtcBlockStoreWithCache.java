@@ -25,6 +25,7 @@ import co.rsk.bitcoinj.core.StoredBlock;
 import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.core.RskAddress;
 import co.rsk.util.MaxSizeHashMap;
+import java.util.Optional;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.Repository;
 import org.ethereum.vm.DataWord;
@@ -105,6 +106,16 @@ public class RepositoryBtcBlockStoreWithCache implements BtcBlockStoreWithCache 
         if(cacheBlocks != null) {
             populateCache(newChainHead);
         }
+    }
+
+    @Override
+    public Optional<StoredBlock> getInMainchain(int height) {
+        return Optional.empty();
+    }
+
+    @Override
+    public void setMainChainBlock(int height, Sha256Hash blockHash) throws BlockStoreException {
+
     }
 
     @Override
