@@ -80,6 +80,7 @@ public class ActivationConfigTest {
             "    rskip180: iris300",
             "    rskip191: iris300",
             "    rskip197: iris300",
+            "    rskip200: iris300",
             "}"
     ));
 
