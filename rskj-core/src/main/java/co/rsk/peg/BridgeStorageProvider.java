@@ -114,6 +114,7 @@ public class BridgeStorageProvider {
     private HashMap<Sha256Hash, Long> btcTxHashesToSave;
 
     private Map<Sha256Hash, CoinbaseInformation> coinbaseInformationMap;
+    private Map<Integer, Sha256Hash> btcBlocksIndex;
 
     private Long activeFederationCreationBlockHeight;
     private Long nextFederationCreationBlockHeight; // if -1, then clear value
@@ -528,7 +529,6 @@ public class BridgeStorageProvider {
         safeSaveToRepository(FEE_PER_KB_ELECTION_KEY, feePerKbElection, BridgeSerializationUtils::serializeElection);
     }
 
-
     public ABICallElection getFeePerKbElection(AddressBasedAuthorizer authorizer) {
         if (feePerKbElection != null) {
             return feePerKbElection;
@@ -588,6 +588,41 @@ public class BridgeStorageProvider {
         }
 
         coinbaseInformationMap.put(blockHash, data);
+    }
+
+    public Optional<Sha256Hash> getBtcBestBlockHashByHeight(int height) {
+        if (!activations.isActive(RSKIP199)) {
+            return Optional.empty();
+        }
+
+        DataWord storageKey = getStorageKeyForBtcBlockIndex(height);
+        Sha256Hash blockHash = safeGetFromRepository(storageKey, BridgeSerializationUtils::deserializeSha256Hash);
+        if (blockHash != null) {
+            return Optional.of(blockHash);
+        }
+
+        return Optional.empty();
+    }
+
+    public void setBtcBestBlockHashByHeight(int height, Sha256Hash blockHash) {
+        if (!activations.isActive(RSKIP199)) {
+            return;
+        }
+
+        if (btcBlocksIndex == null) {
+            btcBlocksIndex = new HashMap<>();
+        }
+
+        btcBlocksIndex.put(height, blockHash);
+    }
+
+    private void saveBtcBlocksIndex() {
+        if (btcBlocksIndex != null) {
+            btcBlocksIndex.forEach((Integer height, Sha256Hash blockHash) -> {
+                DataWord storageKey = getStorageKeyForBtcBlockIndex(height);
+                safeSaveToRepository(storageKey, blockHash, BridgeSerializationUtils::serializeSha256Hash);
+            });
+        }
     }
 
     private void saveCoinbaseInformations() {
@@ -716,6 +751,8 @@ public class BridgeStorageProvider {
         saveActiveFederationCreationBlockHeight();
         saveNextFederationCreationBlockHeight();
         saveLastRetiredFederationP2SHScript();
+
+        saveBtcBlocksIndex();
     }
 
     private DataWord getStorageKeyForBtcTxHashAlreadyProcessed(Sha256Hash btcTxHash) {
@@ -724,6 +761,10 @@ public class BridgeStorageProvider {
 
     private DataWord getStorageKeyForCoinbaseInformation(Sha256Hash btcTxHash) {
         return DataWord.fromLongString("coinbaseInformation-" + btcTxHash.toString());
+    }
+
+    private DataWord getStorageKeyForBtcBlockIndex(Integer height) {
+        return DataWord.fromLongString("btcBlockHeight-" + height);
     }
 
     private Optional<Integer> getStorageVersion(DataWord versionKey) {

@@ -744,6 +744,14 @@ public class BridgeSerializationUtils {
         return RLP.encodeList(rlpElements);
     }
 
+    public static byte[] serializeSha256Hash(Sha256Hash hash) {
+        return RLP.encodeElement(hash.getBytes());
+    }
+
+    public static Sha256Hash deserializeSha256Hash(byte[] data) {
+        return Sha256Hash.wrap(RLP.decodeBigInteger(data, 0).toByteArray());
+    }
+
     public static byte[] serializeScript(Script script) {
         return RLP.encodeList(RLP.encodeElement(script.getProgram()));
     }
