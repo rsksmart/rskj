@@ -37,6 +37,7 @@ import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
 import java.util.Map;
+import org.ethereum.vm.trace.Op;
 
 /**
  * Implementation of a bitcoinj blockstore that persists to RSK's Repository
