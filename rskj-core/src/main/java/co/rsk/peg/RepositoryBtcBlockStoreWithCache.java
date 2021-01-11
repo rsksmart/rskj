@@ -23,6 +23,7 @@ import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.bitcoinj.core.StoredBlock;
 import co.rsk.bitcoinj.store.BlockStoreException;
+import co.rsk.config.BridgeConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.util.MaxSizeHashMap;
 import java.util.Optional;
@@ -33,7 +34,6 @@ import org.ethereum.vm.PrecompiledContracts;
 
 import java.nio.ByteBuffer;
 import java.util.Map;
-import org.ethereum.vm.trace.Op;
 
 /**
  * Implementation of a bitcoinj blockstore that persists to RSK's Repository
@@ -44,6 +44,7 @@ public class RepositoryBtcBlockStoreWithCache implements BtcBlockStoreWithCache 
     private final Repository repository;
     private final RskAddress contractAddress;
     private final NetworkParameters btcNetworkParams;
+    private final BridgeConstants bridgeConstants;
     private final BridgeStorageProvider bridgeStorageProvider;
     private final ActivationConfig.ForBlock activations;
     public static final int MAX_DEPTH_STORED_BLOCKS = 5_000;
@@ -55,6 +56,7 @@ public class RepositoryBtcBlockStoreWithCache implements BtcBlockStoreWithCache 
         Repository repository,
         Map<Sha256Hash, StoredBlock> cacheBlocks,
         RskAddress contractAddress,
+        BridgeConstants bridgeConstants,
         BridgeStorageProvider bridgeStorageProvider,
         ActivationConfig.ForBlock activations) {
 
@@ -62,6 +64,7 @@ public class RepositoryBtcBlockStoreWithCache implements BtcBlockStoreWithCache 
         this.repository = repository;
         this.contractAddress = contractAddress;
         this.btcNetworkParams = btcNetworkParams;
+        this.bridgeConstants = bridgeConstants;
         this.bridgeStorageProvider = bridgeStorageProvider;
         this.activations = activations;
 
@@ -239,6 +242,7 @@ public class RepositoryBtcBlockStoreWithCache implements BtcBlockStoreWithCache 
         @Override
         public BtcBlockStoreWithCache newInstance(
             Repository track,
+            BridgeConstants bridgeConstants,
             BridgeStorageProvider bridgeStorageProvider,
             ActivationConfig.ForBlock activations) {
 
@@ -247,6 +251,7 @@ public class RepositoryBtcBlockStoreWithCache implements BtcBlockStoreWithCache 
                 track,
                 cacheBlocks,
                 contractAddress,
+                bridgeConstants,
                 bridgeStorageProvider,
                 activations
             );
