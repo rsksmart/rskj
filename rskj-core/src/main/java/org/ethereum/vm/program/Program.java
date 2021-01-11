@@ -1420,7 +1420,7 @@ public class Program {
                     Collections.emptyList()
             );
 
-            contract.init(internalTx, executionBlock, track, this.invoke.getBlockStore(), null, null);
+            contract.init(internalTx, executionBlock, track, this.invoke.getBlockStore(), null, result.getLogInfoList());
         }
 
         long requiredGas = contract.getGasForData(data);
