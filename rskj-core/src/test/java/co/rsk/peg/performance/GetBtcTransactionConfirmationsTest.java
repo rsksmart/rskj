@@ -48,6 +48,7 @@ public class GetBtcTransactionConfirmationsTest extends BridgePerformanceTestCas
                 null,
                 contractAddress,
                 null,
+                null,
                 null
             );
         }

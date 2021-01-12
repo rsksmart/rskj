@@ -133,6 +133,7 @@ public class ReceiveHeadersTest extends BridgePerformanceTestCase {
                         new HashMap<>(),
                         PrecompiledContracts.BRIDGE_ADDR,
                         null,
+                        null,
                         null
                     );
                     Sha256Hash bestBlockHash = null;
