@@ -20,6 +20,7 @@ package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.crypto.TransactionSignature;
+import co.rsk.bitcoinj.script.FastBridgeRedeemScriptParser;
 import co.rsk.bitcoinj.script.RedeemScriptParser;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
@@ -2204,7 +2205,7 @@ public class BridgeSupport {
     }
 
     protected FastBridgeFederationInformation createFastBridgeFederationInformation(Keccak256 fastBridgeDerivationHash) {
-        Script fastBridgeScript = RedeemScriptParser.createMultiSigFastBridgeRedeemScript(
+        Script fastBridgeScript = FastBridgeRedeemScriptParser.createMultiSigFastBridgeRedeemScript(
             getActiveFederation().getRedeemScript(),
             Sha256Hash.wrap(fastBridgeDerivationHash.getBytes())
         );

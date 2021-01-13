@@ -7,6 +7,7 @@ import static org.mockito.Mockito.when;
 import co.rsk.bitcoinj.core.Context;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.bitcoinj.core.Sha256Hash;
+import co.rsk.bitcoinj.script.FastBridgeRedeemScriptParser;
 import co.rsk.bitcoinj.script.RedeemScriptParser;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
@@ -50,7 +51,7 @@ public class FastBridgeCompatibleBtcWalletWithStorageTest {
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
         Keccak256 derivationArgumentsHash = PegTestUtils.createHash3(1);
 
-        Script fastBridgeRedeemScript = RedeemScriptParser.createMultiSigFastBridgeRedeemScript(
+        Script fastBridgeRedeemScript = FastBridgeRedeemScriptParser.createMultiSigFastBridgeRedeemScript(
             federation.getRedeemScript(), Sha256Hash.wrap(derivationArgumentsHash.getBytes()));
 
         Script p2SHOutputScript = ScriptBuilder.createP2SHOutputScript(fastBridgeRedeemScript);
