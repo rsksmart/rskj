@@ -1009,6 +1009,31 @@ public class BridgeSerializationUtilsTest {
         Assert.assertEquals(1200, BridgeSerializationUtils.deserializeInteger(RLP.encodeBigInteger(BigInteger.valueOf(1200))).intValue());
     }
 
+    @Test
+    public void serializeSha256Hash() {
+        Sha256Hash originalHash = PegTestUtils.createHash(2);
+        byte[] encodedHash = RLP.encodeElement(originalHash.getBytes());
+
+        byte[] result = BridgeSerializationUtils.serializeSha256Hash(originalHash);
+
+        Assert.assertArrayEquals(encodedHash, result);
+    }
+
+    @Test
+    public void deserializeSha256Hash() {
+        Sha256Hash originalHash = PegTestUtils.createHash(2);
+        byte[] encodedHash = RLP.encodeElement(originalHash.getBytes());
+
+        Sha256Hash result = BridgeSerializationUtils.deserializeSha256Hash(encodedHash);
+        Assert.assertEquals(originalHash, result);
+    }
+
+    @Test
+    public void deserializeSha256Hash_nullValue() {
+        Sha256Hash result = BridgeSerializationUtils.deserializeSha256Hash(null);
+        Assert.assertNull(result);
+    }
+
     private Address mockAddressHash160(String hash160) {
         Address result = mock(Address.class);
         when(result.getHash160()).thenReturn(Hex.decode(hash160));
