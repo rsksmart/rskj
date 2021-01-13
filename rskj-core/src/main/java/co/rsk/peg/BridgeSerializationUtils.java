@@ -749,6 +749,9 @@ public class BridgeSerializationUtils {
     }
 
     public static Sha256Hash deserializeSha256Hash(byte[] data) {
+        if (data == null) {
+            return null;
+        }
         return Sha256Hash.wrap(RLP.decodeBigInteger(data, 0).toByteArray());
     }
 
