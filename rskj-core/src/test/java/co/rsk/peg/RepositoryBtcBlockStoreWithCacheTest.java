@@ -30,6 +30,7 @@ import co.rsk.db.MutableTrieCache;
 import co.rsk.db.MutableTrieImpl;
 import co.rsk.trie.Trie;
 import org.apache.commons.lang3.tuple.Triple;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.Repository;
 import org.ethereum.db.MutableRepository;
 import org.ethereum.vm.PrecompiledContracts;
@@ -41,28 +42,12 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 
 import static org.junit.Assert.*;
+import static org.mockito.Mockito.mock;
 
 public class RepositoryBtcBlockStoreWithCacheTest {
 
-    NetworkParameters networkParameters = BridgeRegTestConstants.getInstance().getBtcParams();
-
-    private BtcBlockStoreWithCache createBlockStore() {
-        Repository repository =  createRepository();
-        RepositoryBtcBlockStoreWithCache.Factory factory = createBlockStoreFactory();
-        return createBlockStoreWithTrack(factory, repository.startTracking());
-    }
-
-    private BtcBlockStoreWithCache createBlockStoreWithTrack(RepositoryBtcBlockStoreWithCache.Factory factory, Repository track) {
-        return factory.newInstance(track, null, null, null);
-    }
-
-    private RepositoryBtcBlockStoreWithCache.Factory createBlockStoreFactory() {
-        return new RepositoryBtcBlockStoreWithCache.Factory(networkParameters);
-    }
-
-    private Repository createRepository() {
-        return new MutableRepository(new MutableTrieCache(new MutableTrieImpl(null, new Trie())));
-    }
+    private BridgeConstants bridgeConstants = BridgeRegTestConstants.getInstance();
+    private NetworkParameters networkParameters = bridgeConstants.getBtcParams();
 
     @Test
     public void getChainHead_Test() throws BlockStoreException {
@@ -115,9 +100,9 @@ public class RepositoryBtcBlockStoreWithCacheTest {
             repository.startTracking(),
             null,
             PrecompiledContracts.BRIDGE_ADDR,
-            null,
-            null,
-            null
+            bridgeConstants,
+            mock(BridgeStorageProvider.class),
+            mock(ActivationConfig.ForBlock.class)
         );
 
         BtcBlock genesis = networkParameters.getGenesisBlock();
@@ -231,12 +216,29 @@ public class RepositoryBtcBlockStoreWithCacheTest {
         BtcBlockStoreWithCache btcBlockStore = createBlockStore();
 
         BtcBlock parent = networkParameters.getGenesisBlock();
-        BtcBlock blockHeader1 = new BtcBlock(networkParameters, 2L, parent.getHash(), Sha256Hash.ZERO_HASH, parent.getTimeSeconds()+1, parent.getDifficultyTarget(), 0, new ArrayList<>());
+        BtcBlock blockHeader1 = new BtcBlock(
+            networkParameters,
+            2L,
+            parent.getHash(),
+            Sha256Hash.ZERO_HASH,
+            parent.getTimeSeconds() + 1,
+            parent.getDifficultyTarget(),
+            0,
+            new ArrayList<>()
+        );
         StoredBlock storedBlock1 = new StoredBlock(blockHeader1, new BigInteger("0"), 2);
         btcBlockStore.put(storedBlock1);
 
         parent = blockHeader1;
-        BtcBlock blockHeader2 = new BtcBlock(networkParameters, 2L, parent.getHash(), Sha256Hash.ZERO_HASH, parent.getTimeSeconds()+1, parent.getDifficultyTarget(), 0, new ArrayList<>());
+        BtcBlock blockHeader2 = new BtcBlock(
+            networkParameters,
+            2L,
+            parent.getHash(),
+            Sha256Hash.ZERO_HASH,
+            parent.getTimeSeconds() + 1,
+            parent.getDifficultyTarget(),
+            0, new ArrayList<>()
+        );
         StoredBlock storedBlock2 = new StoredBlock(blockHeader2, new BigInteger("0"), 2);
         btcBlockStore.put(storedBlock2);
 
@@ -289,9 +291,9 @@ public class RepositoryBtcBlockStoreWithCacheTest {
         BtcBlockStoreWithCache.Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(bridgeConstants.getBtcParams());
         BtcBlockStoreWithCache store = btcBlockStoreFactory.newInstance(
             repository,
-            null,
-            null,
-            null
+            bridgeConstants,
+            mock(BridgeStorageProvider.class),
+            mock(ActivationConfig.ForBlock.class)
         );
         for (int i = 0; i < 614; i++) {
             Triple<byte[], BigInteger , Integer> tripleStoredBlock = (Triple<byte[], BigInteger , Integer>) objectInputStream.readObject();
@@ -306,9 +308,9 @@ public class RepositoryBtcBlockStoreWithCacheTest {
         // Create a new instance of the store
         BtcBlockStoreWithCache store2 =btcBlockStoreFactory.newInstance(
             repository,
-            null,
-            null,
-            null
+            bridgeConstants,
+            mock(BridgeStorageProvider.class),
+            mock(ActivationConfig.ForBlock.class)
         );
 
         // Check a specific block that used to fail when we had a bug
@@ -326,5 +328,28 @@ public class RepositoryBtcBlockStoreWithCacheTest {
             storedBlock = store.get(prevBlockHash);
             storedBlock2 = store2.get(prevBlockHash);
         }
+    }
+
+    private BtcBlockStoreWithCache createBlockStore() {
+        Repository repository =  createRepository();
+        RepositoryBtcBlockStoreWithCache.Factory factory = createBlockStoreFactory();
+        return createBlockStoreWithTrack(factory, repository.startTracking());
+    }
+
+    private BtcBlockStoreWithCache createBlockStoreWithTrack(RepositoryBtcBlockStoreWithCache.Factory factory, Repository track) {
+        return factory.newInstance(
+            track,
+            bridgeConstants,
+            mock(BridgeStorageProvider.class),
+            mock(ActivationConfig.ForBlock.class)
+        );
+    }
+
+    private RepositoryBtcBlockStoreWithCache.Factory createBlockStoreFactory() {
+        return new RepositoryBtcBlockStoreWithCache.Factory(networkParameters);
+    }
+
+    private Repository createRepository() {
+        return new MutableRepository(new MutableTrieCache(new MutableTrieImpl(null, new Trie())));
     }
 }
