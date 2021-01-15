@@ -120,7 +120,12 @@ public class BridgeStorageProvider {
     private Long nextFederationCreationBlockHeight; // if -1, then clear value
     private Script lastRetiredFederationP2SHScript;
 
-    public BridgeStorageProvider(Repository repository, RskAddress contractAddress, BridgeConstants bridgeConstants, ActivationConfig.ForBlock activations) {
+    public BridgeStorageProvider(
+        Repository repository,
+        RskAddress contractAddress,
+        BridgeConstants bridgeConstants,
+        ActivationConfig.ForBlock activations) {
+
         this.repository = repository;
         this.contractAddress = contractAddress;
         this.networkParameters = bridgeConstants.getBtcParams();

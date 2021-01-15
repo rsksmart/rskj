@@ -29,11 +29,14 @@ import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.db.MutableTrieCache;
 import co.rsk.db.MutableTrieImpl;
 import co.rsk.trie.Trie;
+import java.util.Optional;
 import org.apache.commons.lang3.tuple.Triple;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Repository;
 import org.ethereum.db.MutableRepository;
 import org.ethereum.vm.PrecompiledContracts;
+import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.InputStream;
@@ -43,6 +46,7 @@ import java.util.ArrayList;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class RepositoryBtcBlockStoreWithCacheTest {
 
@@ -174,32 +178,82 @@ public class RepositoryBtcBlockStoreWithCacheTest {
     }
 
     @Test
-    public void getStoredBlockAtMainChainDepth() throws BlockStoreException {
-        BtcBlockStoreWithCache btcBlockStore = createBlockStore();
+    public void getInMainchain() throws BlockStoreException {
+        Repository repository =  createRepository();
+        BtcBlockStoreWithCache.Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(bridgeConstants.getBtcParams());
+
+        int blockHeight = 100;
         BtcBlock genesis = networkParameters.getGenesisBlock();
+        StoredBlock storedBlock1 = createStoredBlock(genesis,  blockHeight, 0);
 
-        StoredBlock storedBlock1 = createStoredBlock(genesis, 1, 0);
+        BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
+        when(provider.getBtcBestBlockHashByHeight(blockHeight)).thenReturn(Optional.of(storedBlock1.getHeader().getHash()));
+
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+
+        BtcBlockStoreWithCache btcBlockStore = btcBlockStoreFactory.newInstance(
+            repository,
+            bridgeConstants,
+            provider,
+            activations
+        );
+
         btcBlockStore.put(storedBlock1);
-        StoredBlock storedBlock2 = createStoredBlock(storedBlock1.getHeader(), 2, 0);
-        btcBlockStore.put(storedBlock2);
-        StoredBlock storedBlock3 = createStoredBlock(storedBlock2.getHeader(), 3, 0);
-        btcBlockStore.put(storedBlock3);
-        StoredBlock storedBlock4 = createStoredBlock(storedBlock3.getHeader(), 4, 0);
-        btcBlockStore.put(storedBlock4);
+        Optional<StoredBlock> blockOptional = btcBlockStore.getInMainchain(blockHeight);
 
-        btcBlockStore.setChainHead(storedBlock4);
-        assertEquals(storedBlock4, btcBlockStore.getChainHead());
-        int maxHeight = storedBlock4.getHeight();
-
-        //Check getStoredBlockAtMainChainDepth
-        assertEquals(storedBlock3, btcBlockStore.getStoredBlockAtMainChainDepth(maxHeight - storedBlock3.getHeight()));
-        assertEquals(storedBlock2, btcBlockStore.getStoredBlockAtMainChainDepth(maxHeight - storedBlock2.getHeight()));
-        assertEquals(storedBlock1, btcBlockStore.getStoredBlockAtMainChainDepth(maxHeight - storedBlock1.getHeight()));
-        assertEquals(genesis, btcBlockStore.getStoredBlockAtMainChainDepth(maxHeight).getHeader());
+        Assert.assertTrue(blockOptional.isPresent());
+        Assert.assertEquals(storedBlock1, blockOptional.get());
     }
 
     @Test
-    public void getStoredBlockAtMainChainDepth_And_Height_preIris() throws BlockStoreException {
+    public void getInMainchain_hashNotFound() {
+        Repository repository =  createRepository();
+        BtcBlockStoreWithCache.Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(bridgeConstants.getBtcParams());
+
+        int blockHeight = 100;
+        Sha256Hash blockHash = PegTestUtils.createHash(2);
+        BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
+        when(provider.getBtcBestBlockHashByHeight(blockHeight)).thenReturn(Optional.of(blockHash));
+
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+
+        BtcBlockStoreWithCache btcBlockStore = btcBlockStoreFactory.newInstance(
+            repository,
+            bridgeConstants,
+            provider,
+            activations
+        );
+
+        Optional<StoredBlock> blockOptional = btcBlockStore.getInMainchain(blockHeight);
+
+        Assert.assertFalse(blockOptional.isPresent());
+    }
+
+    @Test
+    public void getInMainchain_notInIndex() {
+        Repository repository =  createRepository();
+        BtcBlockStoreWithCache.Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(bridgeConstants.getBtcParams());
+
+        int blockHeight = 100;
+        BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
+        when(provider.getBtcBestBlockHashByHeight(blockHeight)).thenReturn(Optional.empty());
+
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+
+        BtcBlockStoreWithCache btcBlockStore = btcBlockStoreFactory.newInstance(
+            repository,
+            bridgeConstants,
+            provider,
+            activations
+        );
+
+        Optional<StoredBlock> blockOptional = btcBlockStore.getInMainchain(blockHeight);
+
+        Assert.assertFalse(blockOptional.isPresent());
+    }
+
+    @Test
+    public void getStoredBlockAtMainChainHeight_preIris() throws BlockStoreException {
         BtcBlockStoreWithCache btcBlockStore = createBlockStore();
         BtcBlock genesis = networkParameters.getGenesisBlock();
 
@@ -220,6 +274,110 @@ public class RepositoryBtcBlockStoreWithCacheTest {
         assertEquals(storedBlock3, btcBlockStore.getStoredBlockAtMainChainHeight(3));
         assertEquals(storedBlock2, btcBlockStore.getStoredBlockAtMainChainHeight(2));
         assertEquals(storedBlock1, btcBlockStore.getStoredBlockAtMainChainHeight(1));
+    }
+
+    @Test(expected = BlockStoreException.class)
+    public void getStoredBlockAtMainChainHeight_heightGreaterThanChainHead() throws BlockStoreException {
+        BtcBlockStoreWithCache btcBlockStore = createBlockStore();
+        BtcBlock genesis = networkParameters.getGenesisBlock();
+
+        StoredBlock storedBlock1 = createStoredBlock(genesis, 1, 0);
+        btcBlockStore.put(storedBlock1);
+        btcBlockStore.setChainHead(storedBlock1);
+        assertEquals(storedBlock1, btcBlockStore.getChainHead());
+
+        // Search for a block in a height higher than current chain head, should fail
+        btcBlockStore.getStoredBlockAtMainChainHeight(3);
+    }
+
+    @Test(expected = BlockStoreException.class)
+    public void getStoredBlockAtMainChainHeight_postIris_heightLowerThanMaxDepth_limitInBtcHeightWhenBlockIndexActivates() throws BlockStoreException {
+        Repository repository =  createRepository();
+        BtcBlockStoreWithCache.Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(bridgeConstants.getBtcParams());
+
+        BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
+
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP199)).thenReturn(true);
+
+        BtcBlockStoreWithCache btcBlockStore = btcBlockStoreFactory.newInstance(
+            repository,
+            bridgeConstants,
+            provider,
+            activations
+        );
+        BtcBlock genesis = networkParameters.getGenesisBlock();
+
+        int btcHeightWhenBlockIndexActivates = bridgeConstants.getBtcHeightWhenBlockIndexActivates();
+        int maxDepthToSearchBlocksBelowIndexActivation = bridgeConstants.getMaxDepthToSearchBlocksBelowIndexActivation();
+        int blockHeight = btcHeightWhenBlockIndexActivates + maxDepthToSearchBlocksBelowIndexActivation + 1;
+
+        StoredBlock storedBlock1 = createStoredBlock(genesis,  blockHeight, 0);
+        btcBlockStore.put(storedBlock1);
+
+        btcBlockStore.setChainHead(storedBlock1);
+        assertEquals(storedBlock1, btcBlockStore.getChainHead());
+
+        // Search for a block in a height lower than the max depth, should fail
+        int maxDepth = btcHeightWhenBlockIndexActivates; // Since the chain height is above btcHeightWhenBlockIndexActivates + maxDepthToSearchBlocksBelowIndexActivation
+        btcBlockStore.getStoredBlockAtMainChainHeight(maxDepth - 1);
+    }
+
+    @Test(expected = BlockStoreException.class)
+    public void getStoredBlockAtMainChainHeight_postIris_heightLowerThanMaxDepth_limitInChainHeadMinusMaxDepthToSearch() throws BlockStoreException {
+        Repository repository =  createRepository();
+        BtcBlockStoreWithCache.Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(bridgeConstants.getBtcParams());
+
+        BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
+
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP199)).thenReturn(true);
+
+        BtcBlockStoreWithCache btcBlockStore = btcBlockStoreFactory.newInstance(
+            repository,
+            bridgeConstants,
+            provider,
+            activations
+        );
+        BtcBlock genesis = networkParameters.getGenesisBlock();
+
+        int btcHeightWhenBlockIndexActivates = bridgeConstants.getBtcHeightWhenBlockIndexActivates();
+        int maxDepthToSearchBlocksBelowIndexActivation = bridgeConstants.getMaxDepthToSearchBlocksBelowIndexActivation();
+        int blockHeight = btcHeightWhenBlockIndexActivates + maxDepthToSearchBlocksBelowIndexActivation - 1;
+
+        StoredBlock storedBlock1 = createStoredBlock(genesis,  blockHeight, 0);
+        btcBlockStore.put(storedBlock1);
+
+        btcBlockStore.setChainHead(storedBlock1);
+        assertEquals(storedBlock1, btcBlockStore.getChainHead());
+
+        // Search for a block in a height lower than the max depth, should fail
+        int maxDepth = blockHeight - maxDepthToSearchBlocksBelowIndexActivation; // Since the chain height is below btcHeightWhenBlockIndexActivates + maxDepthToSearchBlocksBelowIndexActivation
+        btcBlockStore.getStoredBlockAtMainChainHeight(maxDepth - 1);
+    }
+
+    @Test
+    public void getStoredBlockAtMainChainDepth() throws BlockStoreException {
+        BtcBlockStoreWithCache btcBlockStore = createBlockStore();
+        BtcBlock genesis = networkParameters.getGenesisBlock();
+
+        StoredBlock storedBlock1 = createStoredBlock(genesis, 1, 0);
+        btcBlockStore.put(storedBlock1);
+        StoredBlock storedBlock2 = createStoredBlock(storedBlock1.getHeader(), 2, 0);
+        btcBlockStore.put(storedBlock2);
+        StoredBlock storedBlock3 = createStoredBlock(storedBlock2.getHeader(), 3, 0);
+        btcBlockStore.put(storedBlock3);
+        StoredBlock storedBlock4 = createStoredBlock(storedBlock3.getHeader(), 4, 0);
+        btcBlockStore.put(storedBlock4);
+
+        btcBlockStore.setChainHead(storedBlock4);
+        assertEquals(storedBlock4, btcBlockStore.getChainHead());
+
+        //Check getStoredBlockAtMainChainDepth
+        assertEquals(storedBlock3, btcBlockStore.getStoredBlockAtMainChainDepth(maxHeight - storedBlock3.getHeight()));
+        assertEquals(storedBlock2, btcBlockStore.getStoredBlockAtMainChainDepth(maxHeight - storedBlock2.getHeight()));
+        assertEquals(storedBlock1, btcBlockStore.getStoredBlockAtMainChainDepth(maxHeight - storedBlock1.getHeight()));
+        assertEquals(genesis, btcBlockStore.getStoredBlockAtMainChainDepth(maxHeight).getHeader());
     }
 
     @Test
@@ -297,8 +455,7 @@ public class RepositoryBtcBlockStoreWithCacheTest {
         // Read original store
         InputStream fileInputStream = ClassLoader.getSystemResourceAsStream("peg/RepositoryBlockStore_data.ser");
         ObjectInputStream objectInputStream = new ObjectInputStream(fileInputStream);
-        Repository repository = new MutableRepository(new MutableTrieCache(new MutableTrieImpl(null, new Trie())));
-        BridgeConstants bridgeConstants = BridgeRegTestConstants.getInstance();
+        Repository repository = createRepository();
         BtcBlockStoreWithCache.Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(bridgeConstants.getBtcParams());
         BtcBlockStoreWithCache store = btcBlockStoreFactory.newInstance(
             repository,

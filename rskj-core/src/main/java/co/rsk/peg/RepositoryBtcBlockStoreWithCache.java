@@ -156,6 +156,10 @@ public class RepositoryBtcBlockStoreWithCache implements BtcBlockStoreWithCache 
         }
 
         StoredBlock block = get(bestBlockHash.get());
+        if (block == null) {
+            return Optional.empty();
+        }
+
         return Optional.of(block);
     }
 
