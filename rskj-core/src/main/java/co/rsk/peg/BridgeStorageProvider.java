@@ -29,7 +29,6 @@ import co.rsk.peg.whitelist.OneOffWhiteListEntry;
 import co.rsk.peg.whitelist.UnlimitedWhiteListEntry;
 import org.apache.commons.lang3.tuple.Pair;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
-import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Repository;
 import org.ethereum.vm.DataWord;
 
@@ -111,7 +110,12 @@ public class BridgeStorageProvider {
     private Map<Sha256Hash, CoinbaseInformation> coinbaseInformationMap;
     private Map<Integer, Sha256Hash> btcBlocksIndex;
 
-    public BridgeStorageProvider(Repository repository, RskAddress contractAddress, BridgeConstants bridgeConstants, ActivationConfig.ForBlock activations) {
+    public BridgeStorageProvider(
+        Repository repository,
+        RskAddress contractAddress,
+        BridgeConstants bridgeConstants,
+        ActivationConfig.ForBlock activations) {
+
         this.repository = repository;
         this.contractAddress = contractAddress;
         this.networkParameters = bridgeConstants.getBtcParams();

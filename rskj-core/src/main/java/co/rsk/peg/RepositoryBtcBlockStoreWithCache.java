@@ -92,7 +92,7 @@ public class RepositoryBtcBlockStoreWithCache implements BtcBlockStoreWithCache 
             return null;
         }
         StoredBlock storedBlock = byteArrayToStoredBlock(ba);
-        return  storedBlock;
+        return storedBlock;
     }
 
     @Override
@@ -122,6 +122,10 @@ public class RepositoryBtcBlockStoreWithCache implements BtcBlockStoreWithCache 
         }
 
         StoredBlock block = get(bestBlockHash.get());
+        if (block == null) {
+            return Optional.empty();
+        }
+
         return Optional.of(block);
     }
 
