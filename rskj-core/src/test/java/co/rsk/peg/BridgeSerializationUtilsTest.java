@@ -19,10 +19,13 @@
 package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.*;
+import co.rsk.bitcoinj.script.Script;
+import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.core.RskAddress;
 import co.rsk.peg.whitelist.LockWhitelist;
 import co.rsk.peg.whitelist.LockWhitelistEntry;
 import co.rsk.peg.whitelist.OneOffWhiteListEntry;
+import com.google.common.collect.Lists;
 import com.google.common.primitives.UnsignedBytes;
 import org.apache.commons.lang3.tuple.Pair;
 import org.bouncycastle.util.encoders.Hex;
@@ -1007,6 +1010,27 @@ public class BridgeSerializationUtilsTest {
     public void deserializeInteger() {
         Assert.assertEquals(123, BridgeSerializationUtils.deserializeInteger(RLP.encodeBigInteger(BigInteger.valueOf(123))).intValue());
         Assert.assertEquals(1200, BridgeSerializationUtils.deserializeInteger(RLP.encodeBigInteger(BigInteger.valueOf(1200))).intValue());
+    }
+
+    @Test
+    public void serializeScript() {
+        Script expectedScript = ScriptBuilder.createP2SHOutputScript(2, Lists.newArrayList(new BtcECKey(), new BtcECKey(), new BtcECKey()));
+
+        byte[] actualData = BridgeSerializationUtils.serializeScript(expectedScript);
+
+        Assert.assertEquals(expectedScript, new Script(((RLPList) RLP.decode2(actualData).get(0)).get(0).getRLPData()));
+    }
+
+    @Test
+    public void deserializeScript() {
+        Script expectedScript = ScriptBuilder.createP2SHOutputScript(2, Lists.newArrayList(new BtcECKey(), new BtcECKey(), new BtcECKey()));
+        byte[][] rlpElements = new byte[1][];
+        rlpElements[0] = RLP.encodeElement(expectedScript.getProgram());
+        byte[] data = RLP.encodeList(rlpElements);
+
+        Script actualScript = BridgeSerializationUtils.deserializeScript(data);
+
+        Assert.assertEquals(expectedScript, actualScript);
     }
 
     private Address mockAddressHash160(String hash160) {

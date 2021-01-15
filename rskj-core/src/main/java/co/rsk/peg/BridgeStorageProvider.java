@@ -19,6 +19,7 @@
 package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.*;
+import co.rsk.bitcoinj.script.Script;
 import co.rsk.config.BridgeConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
@@ -61,6 +62,11 @@ public class BridgeStorageProvider {
     private static final DataWord LOCKING_CAP_KEY = DataWord.fromString("lockingCap");
     private static final DataWord RELEASE_REQUEST_QUEUE_WITH_TXHASH = DataWord.fromString("releaseRequestQueueWithTxHash");
     private static final DataWord RELEASE_TX_SET_WITH_TXHASH = DataWord.fromString("releaseTransactionSetWithTxHash");
+
+    // Federation creation keys
+    private static final DataWord ACTIVE_FEDERATION_CREATION_BLOCK_HEIGHT_KEY = DataWord.fromString("activeFedCreationBlockHeight");
+    private static final DataWord NEXT_FEDERATION_CREATION_BLOCK_HEIGHT_KEY = DataWord.fromString("nextFedCreationBlockHeight");
+    private static final DataWord LAST_RETIRED_FEDERATION_P2SH_SCRIPT_KEY = DataWord.fromString("lastRetiredFedP2SHScript");
 
     // Version keys and versions
     private static final DataWord NEW_FEDERATION_FORMAT_VERSION = DataWord.fromString("newFederationFormatVersion");
@@ -108,6 +114,10 @@ public class BridgeStorageProvider {
     private HashMap<Sha256Hash, Long> btcTxHashesToSave;
 
     private Map<Sha256Hash, CoinbaseInformation> coinbaseInformationMap;
+
+    private Long activeFederationCreationBlockHeight;
+    private Long nextFederationCreationBlockHeight; // if -1, then clear value
+    private Script lastRetiredFederationP2SHScript;
 
     public BridgeStorageProvider(Repository repository, RskAddress contractAddress, BridgeConstants bridgeConstants, ActivationConfig.ForBlock activations) {
         this.repository = repository;
@@ -592,6 +602,89 @@ public class BridgeStorageProvider {
             safeSaveToRepository(getStorageKeyForCoinbaseInformation(blockHash), data, BridgeSerializationUtils::serializeCoinbaseInformation));
     }
 
+    public Long getActiveFederationCreationBlockHeight() {
+        if (!activations.isActive(RSKIP186)) {
+            return null;
+        }
+
+        if (activeFederationCreationBlockHeight != null) {
+            return activeFederationCreationBlockHeight;
+        }
+
+        activeFederationCreationBlockHeight = safeGetFromRepository(ACTIVE_FEDERATION_CREATION_BLOCK_HEIGHT_KEY, BridgeSerializationUtils::deserializeOptionalLong).orElse(null);
+        return activeFederationCreationBlockHeight;
+    }
+
+    public void setActiveFederationCreationBlockHeight(long activeFederationCreationBlockHeight) {
+        this.activeFederationCreationBlockHeight = activeFederationCreationBlockHeight;
+    }
+
+    protected void saveActiveFederationCreationBlockHeight() {
+        if (activeFederationCreationBlockHeight == null || !activations.isActive(RSKIP186)) {
+            return;
+        }
+
+        safeSaveToRepository(ACTIVE_FEDERATION_CREATION_BLOCK_HEIGHT_KEY, activeFederationCreationBlockHeight, BridgeSerializationUtils::serializeLong);
+    }
+
+    public Long getNextFederationCreationBlockHeight() {
+        if (!activations.isActive(RSKIP186)) {
+            return null;
+        }
+
+        if (nextFederationCreationBlockHeight != null) {
+            return nextFederationCreationBlockHeight;
+        }
+
+        nextFederationCreationBlockHeight = safeGetFromRepository(NEXT_FEDERATION_CREATION_BLOCK_HEIGHT_KEY, BridgeSerializationUtils::deserializeOptionalLong).orElse(null);
+        return nextFederationCreationBlockHeight;
+    }
+
+    public void setNextFederationCreationBlockHeight(long nextFederationCreationBlockHeight) {
+        this.nextFederationCreationBlockHeight = nextFederationCreationBlockHeight;
+    }
+
+    public void clearNextFederationCreationBlockHeight() {
+        this.nextFederationCreationBlockHeight = -1L;
+    }
+
+    protected void saveNextFederationCreationBlockHeight() {
+        if (nextFederationCreationBlockHeight == null || !activations.isActive(RSKIP186)) {
+            return;
+        }
+
+        if (nextFederationCreationBlockHeight == -1L) {
+            safeSaveToRepository(NEXT_FEDERATION_CREATION_BLOCK_HEIGHT_KEY, null, BridgeSerializationUtils::serializeLong);
+        } else {
+            safeSaveToRepository(NEXT_FEDERATION_CREATION_BLOCK_HEIGHT_KEY, nextFederationCreationBlockHeight, BridgeSerializationUtils::serializeLong);
+        }
+    }
+
+    public Script getLastRetiredFederationP2SHScript() {
+        if (!activations.isActive(RSKIP186)) {
+            return null;
+        }
+
+        if (lastRetiredFederationP2SHScript != null) {
+            return lastRetiredFederationP2SHScript;
+        }
+
+        lastRetiredFederationP2SHScript = safeGetFromRepository(LAST_RETIRED_FEDERATION_P2SH_SCRIPT_KEY, BridgeSerializationUtils::deserializeScript);
+        return lastRetiredFederationP2SHScript;
+    }
+
+    public void setLastRetiredFederationP2SHScript(Script lastRetiredFederationP2SHScript) {
+        this.lastRetiredFederationP2SHScript = lastRetiredFederationP2SHScript;
+    }
+
+    protected void saveLastRetiredFederationP2SHScript() {
+        if (lastRetiredFederationP2SHScript == null || !activations.isActive(RSKIP186)) {
+            return;
+        }
+
+        safeSaveToRepository(LAST_RETIRED_FEDERATION_P2SH_SCRIPT_KEY, lastRetiredFederationP2SHScript, BridgeSerializationUtils::serializeScript);
+    }
+
     public void save() throws IOException {
         saveBtcTxHashesAlreadyProcessed();
 
@@ -619,6 +712,10 @@ public class BridgeStorageProvider {
         saveHeightBtcTxHashAlreadyProcessed();
 
         saveCoinbaseInformations();
+
+        saveActiveFederationCreationBlockHeight();
+        saveNextFederationCreationBlockHeight();
+        saveLastRetiredFederationP2SHScript();
     }
 
     private DataWord getStorageKeyForBtcTxHashAlreadyProcessed(Sha256Hash btcTxHash) {

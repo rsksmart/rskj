@@ -19,6 +19,7 @@
 package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.*;
+import co.rsk.bitcoinj.script.Script;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.bitcoin.CoinbaseInformation;
@@ -741,6 +742,27 @@ public class BridgeSerializationUtils {
         byte[][] rlpElements = new byte[1][];
         rlpElements[0] = RLP.encodeElement(coinbaseInformation.getWitnessMerkleRoot().getBytes());
         return RLP.encodeList(rlpElements);
+    }
+
+    public static byte[] serializeScript(Script script) {
+        byte[][] rlpElements = new byte[1][];
+        rlpElements[0] = RLP.encodeElement(script.getProgram());
+
+        return RLP.encodeList(rlpElements);
+    }
+
+    @Nullable
+    public static Script deserializeScript(byte[] data) {
+        if (data == null) {
+            return null;
+        }
+
+        RLPList rlpList = (RLPList) RLP.decode2(data).get(0);
+        if (rlpList.size() != 1) {
+            throw new RuntimeException(String.format("Invalid serialized script. Expected 1 element, but got %d", rlpList.size()));
+        }
+
+        return new Script(rlpList.get(0).getRLPData());
     }
 
     // An ABI call spec is serialized as:

@@ -450,6 +450,17 @@ public enum BridgeMethods {
             activations -> activations.isActive(RSKIP134),
             true
     ),
+    GET_ACTIVE_FEDERATION_CREATION_BLOCK_HEIGHT(
+            CallTransaction.Function.fromSignature(
+                    "getActiveFederationCreationBlockHeight",
+                    new String[]{},
+                    new String[]{"uint256"}
+            ),
+            fixedCost(3_000L),
+            (BridgeMethodExecutorTyped) Bridge::getActiveFederationCreationBlockHeight,
+            activations -> activations.isActive(RSKIP186),
+            true
+    ),
     INCREASE_LOCKING_CAP(
             CallTransaction.Function.fromSignature(
                     "increaseLockingCap",

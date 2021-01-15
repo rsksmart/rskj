@@ -59,6 +59,7 @@ public enum ConsensusRule {
     RSKIP179("rskip179"), // BTC-RSK timestamp linking
     RSKIP180("rskip180"), // Limit RSK merged mining merkle proof
     RSKIP181("rskip181"), // Peg-in rejection events
+    RSKIP186("rskip186"), // Active Federation creation block height registration
     RSKIPUMM("rskipUMM"),
     RSKIP185("rskip185"), // Peg-out refund and events
     RSKIP191("rskip191"),

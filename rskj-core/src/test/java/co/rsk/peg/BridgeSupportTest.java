@@ -5363,7 +5363,7 @@ public class BridgeSupportTest {
 
     @Test
     public void getTransactionType_release_tx() {
-        BridgeSupport bridgeSupport = getBridgeSupport(bridgeConstants, mock(BridgeStorageProvider.class));
+        BridgeSupport bridgeSupport = getBridgeSupport(bridgeConstants, mock(BridgeStorageProvider.class), mock(ActivationConfig.ForBlock.class));
         Federation federation = bridgeConstants.getGenesisFederation();
         List<BtcECKey> federationPrivateKeys = BridgeRegTestConstants.REGTEST_FEDERATION_PRIVATE_KEYS;
         co.rsk.bitcoinj.core.Address randomAddress =
@@ -5430,7 +5430,7 @@ public class BridgeSupportTest {
                 new Context(bridgeConstants.getBtcParams()),
                 mockFederationSupport,
                 null,
-                null
+                mock(ActivationConfig.ForBlock.class)
         );
 
         Federation retiringFederation = bridgeConstants.getGenesisFederation();
@@ -5487,11 +5487,15 @@ public class BridgeSupportTest {
         }
         migrationTxInput.setScriptSig(inputScript);
         Assert.assertEquals(BridgeSupport.TxType.MIGRATION, bridgeSupport.getTransactionType(migrationTx));
+
+        when(mockFederationSupport.getRetiringFederation()).thenReturn(null);
+        when(provider.getLastRetiredFederationP2SHScript()).thenReturn(retiringFederation.getP2SHScript());
+        Assert.assertEquals(BridgeSupport.TxType.MIGRATION, bridgeSupport.getTransactionType(migrationTx));
     }
 
     @Test
     public void getTransactionType_unknown_tx() {
-        BridgeSupport bridgeSupport = getBridgeSupport(bridgeConstants, mock(BridgeStorageProvider.class));
+        BridgeSupport bridgeSupport = getBridgeSupport(bridgeConstants, mock(BridgeStorageProvider.class), mock(ActivationConfig.ForBlock.class));
         BtcTransaction btcTx = new BtcTransaction(btcParams);
         Assert.assertEquals(BridgeSupport.TxType.UNKNOWN, bridgeSupport.getTransactionType(btcTx));
     }

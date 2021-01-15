@@ -3145,6 +3145,7 @@ public class BridgeTestPowerMock {
                 BridgeMethods.GET_RETIRING_FEDERATOR_PUBLIC_KEY,
                 BridgeMethods.GET_STATE_FOR_BTC_RELEASE_CLIENT,
                 BridgeMethods.GET_STATE_FOR_DEBUGGING,
+                BridgeMethods.GET_ACTIVE_FEDERATION_CREATION_BLOCK_HEIGHT,
                 BridgeMethods.IS_BTC_TX_HASH_ALREADY_PROCESSED
         ).stream().forEach(m -> {
             Assert.assertTrue(m.onlyAllowsLocalCalls());
