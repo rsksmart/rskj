@@ -22,7 +22,7 @@ public class JavaAltBN128 extends AbstractAltBN128 {
         return res;
     }
 
-    private BN128Pair decodePair(byte[] in, int offset) {
+    private static BN128Pair decodePair(byte[] in, int offset) {
 
         byte[] x = parseWord(in, offset, 0);
         byte[] y = parseWord(in, offset, 1);
