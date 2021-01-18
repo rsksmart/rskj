@@ -125,7 +125,7 @@ public class PersonalModuleWalletEnabled implements PersonalModule {
     public String importRawKey(String key, String passphrase) {
         String s = null;
         try {
-            if (key.startsWith("0x")) {
+            if (key != null && key.startsWith("0x")) {
                 key = key.substring(2);
             }
             RskAddress address = this.wallet.addAccountWithPrivateKey(Hex.decode(key), passphrase);
