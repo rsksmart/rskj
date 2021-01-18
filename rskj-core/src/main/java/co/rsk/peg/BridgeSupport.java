@@ -134,6 +134,9 @@ public class BridgeSupport {
     public static final long FAST_BRIDGE_UNPROCESSABLE_TX_VALUE_ZERO_ERROR = -304;
     public static final long FAST_BRIDGE_GENERIC_ERROR = -900;
 
+    public static final Integer RECEIVE_HEADER_CALLED_TOO_SOON = -1;
+    public static final Integer RECEIVE_HEADER_UNEXPECTED_EXCEPTION = -99;
+
     // Enough depth to be able to search backwards one month worth of blocks
     // (6 blocks/hour, 24 hours/day, 30 days/month)
     public static final Integer BTC_TRANSACTION_CONFIRMATION_MAX_DEPTH = 4320;
@@ -250,7 +253,28 @@ public class BridgeSupport {
      * Receives only one header of serialized Bitcoin block headers and adds them to the internal BlockChain structure.
      * @param header The bitcoin headers
      */
-    public Integer receiveHeader(BtcBlock header) throws IOException {
+    public Integer receiveHeader(BtcBlock header) throws IOException, BlockStoreException {
+
+        long diffTimeStamp = bridgeConstants.getMinSecondsBetweenCallsToReceiveHeader();
+
+        long currentTimeStamp = rskExecutionBlock.getTimestamp(); //in seconds
+        Optional<Long> optionalLastTimeStamp = provider.getReceiveHeadersLastTimestamp();
+        if (optionalLastTimeStamp.isPresent() && (currentTimeStamp - optionalLastTimeStamp.get().longValue() < diffTimeStamp)) {
+            logger.warn("Receive header last TimeStamp less than {} milliseconds", diffTimeStamp);
+            return RECEIVE_HEADER_CALLED_TOO_SOON;
+        }
+
+        Context.propagate(btcContext);
+        this.ensureBtcBlockChain();
+        try {
+            btcBlockChain.add(header);
+        } catch (Exception e) {
+            // If we tray to add an orphan header bitcoinj throws an exception
+            // This catches that case and any other exception that may be thrown
+            logger.warn("Exception adding btc header {}", header.getHash(), e);
+            return RECEIVE_HEADER_UNEXPECTED_EXCEPTION;
+        }
+        provider.setReceiveHeadersLastTimestamp(currentTimeStamp);
         return 0;
     }
 

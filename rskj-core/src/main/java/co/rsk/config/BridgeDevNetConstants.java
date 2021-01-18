@@ -130,6 +130,9 @@ public class BridgeDevNetConstants extends BridgeConstants {
         lockingCapIncrementsMultiplier = 2;
 
         btcHeightWhenBlockIndexActivates = 700_000; //TODO define this value when Iris activation height in RSK is determined
+
         maxDepthToSearchBlocksBelowIndexActivation = 1_000; //TODO define this value with Sergio
+        minSecondsBetweenCallsReceiveHeader = 600;  // 10 minutes in Seconds
+
     }
 }
