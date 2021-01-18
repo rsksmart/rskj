@@ -5134,6 +5134,167 @@ public class BridgeSupportTest {
                 ConsensusRule.RSKIP134);
     }
 
+    @Test
+    public void receiveHeader_time_not_present_in_storage() throws IOException, BlockStoreException {
+
+        Repository repository = mock(Repository.class);
+        StoredBlock storedBlock = mock(StoredBlock.class);
+        BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
+
+        BtcBlock btcBlock2 = mock(BtcBlock.class);
+        when(btcBlock2.getPrevBlockHash()).thenReturn(Sha256Hash.ZERO_HASH);
+        when(btcBlockStore.get(Sha256Hash.ZERO_HASH)).thenReturn(storedBlock);
+
+        BridgeStorageProvider provider = spy(new BridgeStorageProvider(
+                        repository,
+                        contractAddress,
+                        bridgeConstants,
+                        activationsAfterForks
+                )
+        );
+
+        BridgeSupport bridgeSupport = getBridgeSupportConfiguredToTestReceiveHeader(
+                btcBlock2,
+                btcBlockStore,
+                provider,
+                storedBlock,
+                activationsBeforeForks
+        );
+
+        StoredBlock storedBlock2 = mock(StoredBlock.class);
+        when(storedBlock.build(btcBlock2)).thenReturn(storedBlock2);
+
+        bridgeSupport.receiveHeader(btcBlock2);
+
+        // Calls put when is adding the block header. (Saves his storedBlock)
+        verify(btcBlockStore, times(1)).put(storedBlock2);
+        verify(provider, times(1)).getReceiveHeadersLastTimestamp();
+        verify(provider, times(1)).setReceiveHeadersLastTimestamp(anyLong());
+    }
+
+    @Test
+    public void receiveHeader_time_exceed_X() throws IOException, BlockStoreException {
+
+        Repository repository = mock(Repository.class);
+        StoredBlock storedBlock = mock(StoredBlock.class);
+        BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
+
+        BtcBlock btcBlock2 = mock(BtcBlock.class);
+        when(btcBlock2.getPrevBlockHash()).thenReturn(Sha256Hash.ZERO_HASH);
+        when(btcBlockStore.get(Sha256Hash.ZERO_HASH)).thenReturn(storedBlock);
+
+        Block executionBlockMock = mock(Block.class);
+
+        BridgeStorageProvider provider = spy(new BridgeStorageProvider(
+                repository,
+                contractAddress,
+                bridgeConstants,
+                activationsAfterForks
+                )
+        );
+
+        BridgeSupport bridgeSupport = getBridgeSupportConfiguredToTestReceiveHeader(
+                btcBlock2,
+                btcBlockStore,
+                provider,
+                storedBlock,
+                executionBlockMock,
+                activationsAfterForks
+        );
+
+        long timeStamp_old = executionBlockMock.getTimestamp() - (bridgeConstants.getMinSecondsBetweenCallsToReceiveHeader() * 2L);
+        doReturn(Optional.of(timeStamp_old)).when(provider).getReceiveHeadersLastTimestamp();
+
+        StoredBlock storedBlock2 = mock(StoredBlock.class);
+        when(storedBlock.build(btcBlock2)).thenReturn(storedBlock2);
+
+        bridgeSupport.receiveHeader(btcBlock2);
+
+        // Calls put when is adding the block header. (Saves his storedBlock)
+        verify(btcBlockStore, times(1)).put(storedBlock2);
+        verify(provider, times(1)).setReceiveHeadersLastTimestamp(anyLong());
+    }
+
+    @Test
+    public void receiveHeader_time_less_than_X() throws IOException, BlockStoreException {
+
+        Repository repository = mock(Repository.class);
+        StoredBlock storedBlock = mock(StoredBlock.class);
+        BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
+
+        BtcBlock btcBlock2 = mock(BtcBlock.class);
+        when(btcBlock2.getPrevBlockHash()).thenReturn(Sha256Hash.ZERO_HASH);
+        when(btcBlockStore.get(Sha256Hash.ZERO_HASH)).thenReturn(storedBlock);
+
+        Block executionBlockMock = mock(Block.class);
+
+        BridgeStorageProvider provider = spy(new BridgeStorageProvider(
+                        repository,
+                        contractAddress,
+                        bridgeConstants,
+                        activationsAfterForks
+                )
+        );
+
+        BridgeSupport bridgeSupport = getBridgeSupportConfiguredToTestReceiveHeader(
+                btcBlock2,
+                btcBlockStore,
+                provider,
+                storedBlock,
+                executionBlockMock,
+                activationsAfterForks
+        );
+
+        long timeStamp_old = executionBlockMock.getTimestamp() - (bridgeConstants.getMinSecondsBetweenCallsToReceiveHeader() / 2L);
+        doReturn(Optional.of(timeStamp_old)).when(provider).getReceiveHeadersLastTimestamp();
+
+        int result = bridgeSupport.receiveHeader(btcBlock2);
+
+        StoredBlock storedBlock2 = storedBlock.build(btcBlock2);
+
+        // Calls put when is adding the block header. (Saves his storedBlock)
+        verify(btcBlockStore, never()).put(storedBlock2);
+        verify(provider, never()).setReceiveHeadersLastTimestamp(anyLong());
+        Assert.assertEquals(-1, result);
+    }
+
+    @Test
+    public void receiveHeader_unexpected_exception() throws IOException, BlockStoreException {
+
+        Repository repository = mock(Repository.class);
+        StoredBlock storedBlock = mock(StoredBlock.class);
+        BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
+
+        BtcBlock btcBlock2 = mock(BtcBlock.class);
+        when(btcBlock2.getPrevBlockHash()).thenReturn(Sha256Hash.ZERO_HASH);
+        when(btcBlockStore.get(Sha256Hash.ZERO_HASH)).thenReturn(storedBlock);
+
+        BridgeStorageProvider provider = spy(new BridgeStorageProvider(
+                        repository,
+                        contractAddress,
+                        bridgeConstants,
+                        activationsAfterForks
+                )
+        );
+
+        BridgeSupport bridgeSupport = getBridgeSupportConfiguredToTestReceiveHeader(
+                btcBlock2,
+                btcBlockStore,
+                provider,
+                storedBlock,
+                activationsAfterForks
+        );
+        // Returns NullPointerException
+        doReturn(null).when(btcBlock2).getHash();
+
+        int result = bridgeSupport.receiveHeader(btcBlock2);
+
+        // Calls put when is adding the block header. (Saves his storedBlock)
+        verify(provider, times(1)).getReceiveHeadersLastTimestamp();
+        verify(provider, never()).setReceiveHeadersLastTimestamp(anyLong());
+        Assert.assertEquals(-99, result);
+    }
+
     private void assertRefundInProcessPegIn(boolean isWhitelisted, boolean mockLockingCap,
                                             BtcLockSender.TxType lockSender, @Nullable ConsensusRule consensusRule)
             throws IOException, RegisterBtcTransactionException {
@@ -5625,4 +5786,60 @@ public class BridgeSupportTest {
         byte[] hash = Keccak256Helper.keccak256(s);
         return new SimpleRskTransaction(hash);
     }
+
+    private BridgeSupport getBridgeSupportConfiguredToTestReceiveHeader(
+            BtcBlock btcBlock,
+            BtcBlockStoreWithCache btcBlockStore,
+            BridgeStorageProvider provider,
+            StoredBlock storedBlock,
+            ActivationConfig.ForBlock activation
+    ) throws BlockStoreException {
+        return getBridgeSupportConfiguredToTestReceiveHeader(
+                btcBlock,
+                btcBlockStore,
+                provider,
+                storedBlock,
+                mock(Block.class),
+                activation
+        );
+    }
+
+    private BridgeSupport getBridgeSupportConfiguredToTestReceiveHeader(
+            BtcBlock btcBlock,
+            BtcBlockStoreWithCache btcBlockStore,
+            BridgeStorageProvider provider,
+            StoredBlock storedBlock,
+            Block rskBlock,
+            ActivationConfig.ForBlock activation
+    ) throws BlockStoreException {
+
+        Repository repository = mock(Repository.class);
+
+        doReturn(1).when(storedBlock).getHeight();
+
+        BtcBlock btcBlock2 = mock(BtcBlock.class);
+        doReturn(PegTestUtils.createHash(1)).when(btcBlock2).getHash();
+        doReturn(btcBlock2).when(storedBlock).getHeader();
+
+        doReturn(storedBlock).when(btcBlockStore).getChainHead();
+
+        BtcBlockStoreWithCache.Factory mockFactory = mock(BtcBlockStoreWithCache.Factory.class);
+        when(mockFactory.newInstance(any())).thenReturn(btcBlockStore);
+
+        when(btcBlock.getPrevBlockHash()).thenReturn(Sha256Hash.ZERO_HASH);
+        when(btcBlockStore.get(Sha256Hash.ZERO_HASH)).thenReturn(storedBlock);
+
+        when(rskBlock.getTimestamp()).thenReturn(1611169584L);
+
+        return getBridgeSupport(
+                bridgeConstants,
+                provider,
+                repository,
+                mock(BridgeEventLogger.class),
+                rskBlock,
+                mockFactory,
+                activation
+        );
+    }
+
 }

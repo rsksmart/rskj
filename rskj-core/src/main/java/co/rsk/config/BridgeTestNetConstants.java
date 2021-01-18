@@ -126,6 +126,8 @@ public class BridgeTestNetConstants extends BridgeConstants {
 
         lockingCapIncrementsMultiplier = 2;
         initialLockingCap = Coin.COIN.multiply(200); // 200 BTC
+
+        minSecondsBetweenCallsReceiveHeader = 600;  // 10 minutes in Seconds
     }
 
     public static BridgeTestNetConstants getInstance() {

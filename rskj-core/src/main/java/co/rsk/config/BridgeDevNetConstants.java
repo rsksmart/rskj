@@ -128,5 +128,7 @@ public class BridgeDevNetConstants extends BridgeConstants {
         initialLockingCap = Coin.COIN.multiply(1_000L); // 1_000 BTC
 
         lockingCapIncrementsMultiplier = 2;
+
+        minSecondsBetweenCallsReceiveHeader = 600;  // 10 minutes in Seconds
     }
 }
