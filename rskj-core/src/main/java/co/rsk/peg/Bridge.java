@@ -71,6 +71,8 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     public static final CallTransaction.Function UPDATE_COLLECTIONS = BridgeMethods.UPDATE_COLLECTIONS.getFunction();
     // Parameters: an array of bitcoin blocks serialized with the bitcoin wire protocol format
     public static final CallTransaction.Function RECEIVE_HEADERS = BridgeMethods.RECEIVE_HEADERS.getFunction();
+    // Parameters: a header of bitcoin blocks serialized with the bitcoin wire protocol format
+    public static final CallTransaction.Function RECEIVE_HEADER = BridgeMethods.RECEIVE_HEADER.getFunction();
     // Parameters:
     // - A bitcoin tx, serialized with the bitcoin wire protocol format
     // - The bitcoin block height that contains the tx
@@ -201,6 +203,8 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     public static final DataWord UPDATE_COLLECTIONS_TOPIC = DataWord.fromString("update_collections_topic");
     public static final DataWord ADD_SIGNATURE_TOPIC = DataWord.fromString("add_signature_topic");
     public static final DataWord COMMIT_FEDERATION_TOPIC = DataWord.fromString("commit_federation_topic");
+    
+    private static final Integer RECEIVE_HEADER_ERROR_SIZE_MISTMATCH = -20;
 
     private final Constants constants;
     private final BridgeConstants bridgeConstants;
@@ -213,7 +217,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     private BridgeSupportFactory bridgeSupportFactory;
 
     public Bridge(RskAddress contractAddress, Constants constants, ActivationConfig activationConfig,
-            BridgeSupportFactory bridgeSupportFactory) {
+                  BridgeSupportFactory bridgeSupportFactory) {
         this.bridgeSupportFactory = bridgeSupportFactory;
         this.contractAddress = contractAddress;
         this.constants = constants;
@@ -278,7 +282,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         }
 
         if (!bridgeParsedData.bridgeMethod.isEnabled(activations)) {
-            logger.warn("'{}' is not enabled to run",bridgeParsedData.bridgeMethod.name());
+            logger.warn("'{}' is not enabled to run", bridgeParsedData.bridgeMethod.name());
             return null;
         }
 
@@ -310,8 +314,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
 
     @Override
     public byte[] execute(byte[] data) throws VMException {
-        try
-        {
+        try {
             // Preliminary validation: the transaction on which we execute cannot be null
             if (rskTx == null) {
                 throw new VMException("Rsk Transaction is null");
@@ -356,8 +359,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             teardown();
 
             return result.map(bridgeParsedData.bridgeMethod.getFunction()::encodeOutputs).orElse(null);
-        }
-        catch(Exception ex) {
+        } catch (Exception ex) {
             logger.error(ex.getMessage(), ex);
             panicProcessor.panic("bridgeexecute", ex.getMessage());
             throw new VMException(String.format("Exception executing bridge: %s", ex.getMessage()), ex);
@@ -380,7 +382,8 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     }
 
     public boolean receiveHeadersIsPublic() {
-        return activations.isActive(ConsensusRule.RSKIP124);
+        return (activations.isActive(ConsensusRule.RSKIP124)
+                && (!activations.isActive(ConsensusRule.RSKIP200)));
     }
 
     public long receiveHeadersGetCost(Object[] args) {
@@ -413,7 +416,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         // Before going and actually deserializing and calling the underlying function,
         // check that all block headers passed in are actually block headers doing
         // a simple size check. If this check fails, just fail.
-        if (Arrays.stream(btcBlockSerializedArray).anyMatch(bytes -> !BtcTransactionFormatUtils.isBlockHeaderSize(((byte[])bytes).length, activations))) {
+        if (Arrays.stream(btcBlockSerializedArray).anyMatch(bytes -> !BtcTransactionFormatUtils.isBlockHeaderSize(((byte[]) bytes).length, activations))) {
             // This exception type bypasses bridge teardown, signalling no work done
             // and preventing the overhead of saving bridge storage
             logger.warn("Unexpected BTC header(s) received (size mismatch). Aborting processing.");
@@ -440,6 +443,27 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
 
     public boolean registerBtcTransactionIsPublic() {
         return activations.isActive(ConsensusRule.RSKIP199);
+    }
+
+    public int receiveHeader(Object[] args) throws VMException {
+        logger.trace("receiveHeader");
+
+        byte[] headerArg = (byte[]) args[0];
+
+        if (!BtcTransactionFormatUtils.isBlockHeaderSize(headerArg.length, activations)) {
+            logger.warn("Unexpected BTC header received (size mismatch). Aborting processing.");
+            return RECEIVE_HEADER_ERROR_SIZE_MISTMATCH;
+        }
+
+        BtcBlock header = bridgeConstants.getBtcParams().getDefaultSerializer().makeBlock(headerArg);
+
+        try {
+            return bridgeSupport.receiveHeader(header);
+        } catch (Exception e) {
+            String errorMessage = "Exception adding header in receiveHeader";
+            logger.warn(errorMessage, e);
+            throw new VMException(errorMessage, e);
+        }
     }
 
     public void registerBtcTransaction(Object[] args) throws VMException {
