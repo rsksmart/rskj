@@ -60,6 +60,8 @@ public class BridgeConstants {
 
     protected int lockingCapIncrementsMultiplier;
 
+    protected long minSecondsBetweenCallsReceiveHeader;  // (seconds)
+
     public NetworkParameters getBtcParams() {
         return NetworkParameters.fromID(btcParamsString);
     }
@@ -117,4 +119,6 @@ public class BridgeConstants {
     public Coin getMaxFeePerKb() { return maxFeePerKb; }
 
     public Coin getMaxRbtc() { return Coin.valueOf(21_000_000, 0); }
+
+    public long getMinSecondsBetweenCallsToReceiveHeader() { return minSecondsBetweenCallsReceiveHeader; }
 }
