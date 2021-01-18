@@ -485,6 +485,17 @@ public enum BridgeMethods {
             ),
             false
     ),
+    RECEIVE_HEADER(
+            CallTransaction.Function.fromSignature(
+                    "receiveHeader",
+                    new String[]{"bytes"},
+                    new String[]{"int256"}
+            ),
+            fixedCost(22_000L),  // TODO: calculate gas cost.
+            (BridgeMethodExecutorTyped) Bridge::receiveHeader,
+            activations -> activations.isActive(RSKIP200),
+            false
+    ),
     REGISTER_BTC_TRANSACTION(
             CallTransaction.Function.fromSignature(
                     "registerBtcTransaction",
