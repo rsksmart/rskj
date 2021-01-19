@@ -118,8 +118,8 @@ public class BridgeUtils {
      * @param bridgeConstants the Bridge constants
      * @return true if this is a valid lock transaction
      */
-    public static boolean isLockTx(BtcTransaction tx, List<Federation> activeFederations, Script retiredFederationP2SHScript,
-                                   Context btcContext, BridgeConstants bridgeConstants) {
+    public static boolean isPegInTx(BtcTransaction tx, List<Federation> activeFederations, Script retiredFederationP2SHScript,
+                                    Context btcContext, BridgeConstants bridgeConstants) {
         // First, check tx is not a typical release tx (tx spending from the any of the federation addresses and
         // optionally sending some change to any of the federation addresses)
         for (int i = 0; i < tx.getInputs().size(); i++) {
@@ -143,8 +143,8 @@ public class BridgeUtils {
         return (valueSentToMeSignum > 0 && !valueSentToMe.isLessThan(bridgeConstants.getMinimumLockTxValue()));
     }
 
-    public static boolean isLockTx(BtcTransaction tx, Federation federation, Context btcContext, BridgeConstants bridgeConstants) {
-        return isLockTx(tx, Collections.singletonList(federation), null, btcContext, bridgeConstants);
+    public static boolean isPegInTx(BtcTransaction tx, Federation federation, Context btcContext, BridgeConstants bridgeConstants) {
+        return isPegInTx(tx, Collections.singletonList(federation), null, btcContext, bridgeConstants);
     }
 
     /**
@@ -187,7 +187,7 @@ public class BridgeUtils {
         }
         boolean moveFromRetired = retiredFederationP2SHScript != null && isReleaseTx(btcTx, retiredFederationP2SHScript);
         boolean moveFromRetiring = retiringFederation != null && isReleaseTx(btcTx, retiringFederation);
-        boolean moveToActive = isLockTx(btcTx, activeFederation, btcContext, bridgeConstants);
+        boolean moveToActive = isPegInTx(btcTx, activeFederation, btcContext, bridgeConstants);
 
         return (moveFromRetired || moveFromRetiring) && moveToActive;
     }

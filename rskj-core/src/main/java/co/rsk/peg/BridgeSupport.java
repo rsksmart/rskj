@@ -320,7 +320,7 @@ public class BridgeSupport {
     protected TxType getTransactionType(BtcTransaction btcTx) {
         Script retiredFederationP2SHScript = provider.getLastRetiredFederationP2SHScript();
 
-        if (BridgeUtils.isLockTx(btcTx, getLiveFederations(), retiredFederationP2SHScript, btcContext, bridgeConstants)) {
+        if (BridgeUtils.isPegInTx(btcTx, getLiveFederations(), retiredFederationP2SHScript, btcContext, bridgeConstants)) {
             return TxType.PEGIN;
         }
 

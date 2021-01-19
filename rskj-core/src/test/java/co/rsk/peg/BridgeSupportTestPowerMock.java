@@ -1425,7 +1425,7 @@ public class BridgeSupportTestPowerMock {
         when(mockFactory.newInstance(any())).thenReturn(mockBtcBlockStore);
 
         PowerMockito.spy(BridgeUtils.class);
-        PowerMockito.doReturn(false).when(BridgeUtils.class, "isLockTx", any(BtcTransaction.class), anyList(), nullable(Script.class), any(Context.class), any(BridgeConstants.class));
+        PowerMockito.doReturn(false).when(BridgeUtils.class, "isPegInTx", any(BtcTransaction.class), anyList(), nullable(Script.class), any(Context.class), any(BridgeConstants.class));
         PowerMockito.doReturn(true).when(BridgeUtils.class, "isMigrationTx", any(BtcTransaction.class), any(Federation.class), any(Federation.class), isNull(), any(Context.class), any(BridgeConstants.class));
 
         BridgeSupport bridgeSupport = new BridgeSupport(
