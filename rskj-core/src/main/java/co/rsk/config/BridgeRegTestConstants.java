@@ -123,6 +123,8 @@ public class BridgeRegTestConstants extends BridgeConstants {
 
         minSecondsBetweenCallsReceiveHeader = 600;  // 10 minutes in Seconds
 
+        maxDepthBlockchainAccepted = 4000;
+
         // Key generated with GenNodeKey using generator 'auth-increase_locking_cap'
         List<ECKey> increaseLockingCapAuthorizedKeys = Arrays.stream(new String[]{
                 "04450bbaab83ec48b3cb8fbb077c950ee079733041c039a8c4f1539e5181ca1a27589eeaf0fbf430e49d2909f14c767bf6909ad6845831f683416ee12b832e36ed"

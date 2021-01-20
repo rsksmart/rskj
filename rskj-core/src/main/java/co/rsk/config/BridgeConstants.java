@@ -64,6 +64,8 @@ public class BridgeConstants {
     protected int maxDepthToSearchBlocksBelowIndexActivation;
     protected long minSecondsBetweenCallsReceiveHeader;  // (seconds)
 
+    protected int maxDepthBlockchainAccepted;
+
     public NetworkParameters getBtcParams() {
         return NetworkParameters.fromID(btcParamsString);
     }
@@ -127,4 +129,6 @@ public class BridgeConstants {
     public int getMaxDepthToSearchBlocksBelowIndexActivation() { return maxDepthToSearchBlocksBelowIndexActivation; }
 
     public long getMinSecondsBetweenCallsToReceiveHeader() { return minSecondsBetweenCallsReceiveHeader; }
+
+    public int getMaxDepthBlockchainAccepted() { return maxDepthBlockchainAccepted; }
 }
