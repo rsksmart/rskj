@@ -92,15 +92,15 @@ public class NodeStatistics {
         if (disconnected) {
             if (rlpxLastLocalDisconnectReason == null && rlpxLastRemoteDisconnectReason == null) {
                 // means connection was dropped without reporting any reason - bad
-                rlpxReput *= 0.3;
+                rlpxReput = (int)(rlpxReput * 0.3);
             } else if (rlpxLastLocalDisconnectReason != ReasonCode.REQUESTED) {
                 // the disconnect was not initiated by discover mode
                 if (rlpxLastRemoteDisconnectReason == ReasonCode.TOO_MANY_PEERS) {
                     // The peer is popular, but we were unlucky
-                    rlpxReput *= 0.8;
+                    rlpxReput = (int)(rlpxReput * 0.8);
                 } else {
                     // other disconnect reasons
-                    rlpxReput *= 0.5;
+                    rlpxReput = (int)(rlpxReput * 0.5);
                 }
             }
         }
