@@ -24,8 +24,22 @@ import org.ethereum.core.Block;
  * Created by ajlopez on 4/20/2016.
  */
 public class DummyBlockValidator implements BlockValidator {
+
+    public static final BlockValidator VALID_RESULT_INSTANCE = new DummyBlockValidator(true);
+    public static final BlockValidator INVALID_RESULT_INSTANCE = new DummyBlockValidator(false);
+
+    private final boolean validationResult;
+
+    public DummyBlockValidator(boolean validationResult) {
+        this.validationResult = validationResult;
+    }
+
+    public DummyBlockValidator() {
+        this(true);
+    }
+
     @Override
     public boolean isValid(Block block) {
-        return true;
+        return validationResult;
     }
 }

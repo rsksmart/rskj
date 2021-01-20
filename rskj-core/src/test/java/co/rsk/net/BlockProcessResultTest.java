@@ -66,9 +66,9 @@ public class BlockProcessResultTest {
     }
 
     @Test
-    public void factoryMethodForInvalidBlock() {
+    public void factoryMethodForIgnoredBlock() {
         Block mock = Mockito.mock(Block.class);
-        BlockProcessResult result = BlockProcessResult.invalidBlock(
+        BlockProcessResult result = BlockProcessResult.ignoreBlockResult(
                 mock, Instant.now()
         );
         MatcherAssert.assertThat(result.wasBlockAdded(mock), Matchers.is(false));
@@ -79,7 +79,7 @@ public class BlockProcessResultTest {
         Block mock = Mockito.mock(Block.class);
         Map<Keccak256, ImportResult> connectionsResult = new HashMap<>();
         connectionsResult.put(mock.getHash(), ImportResult.IMPORTED_BEST);
-        BlockProcessResult result = BlockProcessResult.validResult(
+        BlockProcessResult result = BlockProcessResult.connectResult(
                 mock, Instant.now(), connectionsResult
         );
         MatcherAssert.assertThat(result.wasBlockAdded(mock), Matchers.is(true));

@@ -18,7 +18,6 @@
 
 package co.rsk.net.simples;
 
-import co.rsk.crypto.Keccak256;
 import co.rsk.net.BlockNodeInformation;
 import co.rsk.net.BlockProcessResult;
 import co.rsk.net.BlockProcessor;
@@ -27,13 +26,9 @@ import co.rsk.net.messages.NewBlockHashesMessage;
 import java.time.Instant;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
-import org.ethereum.core.ImportResult;
 
-import java.time.Duration;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Created by ajlopez on 5/11/2016.
@@ -49,7 +44,7 @@ public class SimpleBlockProcessor implements BlockProcessor {
     @Override
     public BlockProcessResult processBlock(Peer sender, Block block) {
         this.blocks.add(block);
-        return BlockProcessResult.invalidBlock(block, Instant.now());
+        return BlockProcessResult.ignoreBlockResult(block, Instant.now());
     }
 
     @Override

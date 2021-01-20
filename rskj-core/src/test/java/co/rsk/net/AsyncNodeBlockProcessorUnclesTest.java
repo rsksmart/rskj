@@ -22,42 +22,59 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.net.simples.SimplePeer;
 import co.rsk.net.sync.SyncConfiguration;
+import co.rsk.net.utils.AsyncNodeBlockProcessorListener;
 import co.rsk.test.builders.BlockBuilder;
 import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.validators.DummyBlockValidator;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Created by ajlopez on 16/08/2016.
- */
-public class NodeBlockProcessorUnclesTest {
-    @Test
-    public void addBlockWithoutUncles() {
-        BlockChainImpl blockChain = new BlockChainBuilder().build();
-        NodeBlockProcessor processor = createNodeBlockProcessor(blockChain);
+public class AsyncNodeBlockProcessorUnclesTest {
 
+    private static final long WAIT_TIME = Long.MAX_VALUE;
+
+    private BlockChainBuilder blockChainBuilder;
+    private BlockChainImpl blockChain;
+    private AsyncNodeBlockProcessor processor;
+    private AsyncNodeBlockProcessorListener listener;
+
+    @Before
+    public void setUp() {
+        blockChainBuilder = new BlockChainBuilder();
+        blockChain = blockChainBuilder.build();
+        listener = new AsyncNodeBlockProcessorListener();
+        processor = createAsyncNodeBlockProcessor(blockChain, listener);
+        processor.start();
+    }
+
+    @After
+    public void tearDown() throws InterruptedException {
+        processor.stopAndWait(WAIT_TIME);
+    }
+
+    @Test(timeout = WAIT_TIME)
+    public void addBlockWithoutUncles() throws InterruptedException {
         Block genesis = blockChain.getBestBlock();
 
         Block block1 = new BlockBuilder(null, null, null).parent(genesis).build();
 
         processor.processBlock(null, block1);
+        listener.waitForBlock(block1.getHash());
 
         Assert.assertEquals(1, blockChain.getBestBlock().getNumber());
         Assert.assertArrayEquals(block1.getHash().getBytes(), blockChain.getBestBlockHash());
     }
 
-    @Test
-    public void addBlockWithTwoKnownUncles() {
-        BlockChainBuilder blockChainBuilder = new BlockChainBuilder();
-        BlockChainImpl blockChain = blockChainBuilder.build();
+    @Test(timeout = WAIT_TIME)
+    public void addBlockWithTwoKnownUncles() throws InterruptedException {
         org.ethereum.db.BlockStore blockStore = blockChainBuilder.getBlockStore();
-        NodeBlockProcessor processor = createNodeBlockProcessor(blockChain);
 
         Block genesis = blockChain.getBestBlock();
 
@@ -81,18 +98,16 @@ public class NodeBlockProcessorUnclesTest {
         SimplePeer sender = new SimplePeer();
 
         processor.processBlock(sender, block2);
+        listener.waitForBlock(block2.getHash());
 
         Assert.assertEquals(2, blockChain.getBestBlock().getNumber());
         Assert.assertArrayEquals(block2.getHash().getBytes(), blockChain.getBestBlockHash());
         Assert.assertTrue(sender.getGetBlockMessages().isEmpty());
     }
 
-    @Test
-    public void addBlockWithTwoUnknownUncles() {
-        BlockChainBuilder blockChainBuilder = new BlockChainBuilder();
-        BlockChainImpl blockChain = blockChainBuilder.build();
+    @Test(timeout = WAIT_TIME)
+    public void addBlockWithTwoUnknownUncles() throws InterruptedException {
         org.ethereum.db.BlockStore blockStore = blockChainBuilder.getBlockStore();
-        NodeBlockProcessor processor = createNodeBlockProcessor(blockChain);
 
         Block genesis = blockChain.getBestBlock();
 
@@ -114,6 +129,7 @@ public class NodeBlockProcessorUnclesTest {
         SimplePeer sender = new SimplePeer();
 
         processor.processBlock(sender, block2);
+        listener.waitForBlock(block2.getHash());
 
         Assert.assertEquals(2, blockChain.getBestBlock().getNumber());
         Assert.assertArrayEquals(block2.getHash().getBytes(), blockChain.getBestBlockHash());
@@ -122,10 +138,7 @@ public class NodeBlockProcessorUnclesTest {
     }
 
     @Test
-    public void rejectBlockWithTwoUnknownUnclesAndUnknownParent() {
-        BlockChainImpl blockChain = new BlockChainBuilder().build();
-        NodeBlockProcessor processor = createNodeBlockProcessor(blockChain);
-
+    public void rejectBlockWithTwoUnknownUnclesAndUnknownParent() throws InterruptedException {
         Block genesis = blockChain.getBestBlock();
 
         Block block1 = new BlockBuilder(null, null, null).parent(genesis).build();
@@ -149,13 +162,14 @@ public class NodeBlockProcessorUnclesTest {
         Assert.assertTrue(sender.getGetBlockMessagesHashes().contains(block1.getHash()));
     }
 
-    private static NodeBlockProcessor createNodeBlockProcessor(BlockChainImpl blockChain) {
+    private static AsyncNodeBlockProcessor createAsyncNodeBlockProcessor(BlockChainImpl blockChain, AsyncNodeBlockProcessorListener listener) {
         NetBlockStore store = new NetBlockStore();
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         TestSystemProperties config = new TestSystemProperties();
         BlockSyncService blockSyncService = new BlockSyncService(config, store, blockChain, nodeInformation, syncConfiguration, DummyBlockValidator.VALID_RESULT_INSTANCE);
 
-        return new NodeBlockProcessor(store, blockChain, nodeInformation, blockSyncService, syncConfiguration);
+        return new AsyncNodeBlockProcessor(store, blockChain, nodeInformation, blockSyncService, syncConfiguration,
+                DummyBlockValidator.VALID_RESULT_INSTANCE, DummyBlockValidator.VALID_RESULT_INSTANCE, listener);
     }
 }

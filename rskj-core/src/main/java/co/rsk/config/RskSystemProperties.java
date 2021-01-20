@@ -354,7 +354,9 @@ public class RskSystemProperties extends SystemProperties {
         return configFromFiles.getBytes("vm.executionStackSize");
     }
 
-    public String cryptoLibrary() { return configFromFiles.getString("crypto.library");}
+    public String cryptoLibrary() {
+        return configFromFiles.getString("crypto.library");
+    }
 
     public boolean isPeerScoringStatsReportEnabled() {
         return configFromFiles.getBoolean("scoring.summary.enabled");
@@ -362,5 +364,9 @@ public class RskSystemProperties extends SystemProperties {
 
     public long getPeerScoringSummaryTime() {
         return configFromFiles.getLong("scoring.summary.time");
+    }
+
+    public boolean fastBlockPropagation() {
+        return configFromFiles.getBoolean("peer.fastBlockPropagation");
     }
 }

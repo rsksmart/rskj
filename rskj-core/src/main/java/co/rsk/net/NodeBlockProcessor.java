@@ -43,14 +43,15 @@ import java.util.*;
 public class NodeBlockProcessor implements BlockProcessor {
     private static final Logger logger = LoggerFactory.getLogger("blockprocessor");
 
-    private final NetBlockStore store;
     private final Blockchain blockchain;
     private final BlockNodeInformation nodeInformation;
-    // keep tabs on which nodes know which blocks.
-    private final BlockSyncService blockSyncService;
     private final SyncConfiguration syncConfiguration;
     // keeps on a map the hashes that belongs to the skeleton
     private final Map <Long, byte[]> skeletonCache = new HashMap<>();
+
+    protected final NetBlockStore store;
+    // keep tabs on which nodes know which blocks.
+    protected final BlockSyncService blockSyncService;
 
     /**
      * Creates a new NodeBlockProcessor using the given BlockStore and Blockchain.
@@ -66,7 +67,6 @@ public class NodeBlockProcessor implements BlockProcessor {
             @Nonnull final BlockNodeInformation nodeInformation,
             @Nonnull final BlockSyncService blockSyncService,
             @Nonnull final SyncConfiguration syncConfiguration) {
-
         this.store = store;
         this.blockchain = blockchain;
         this.nodeInformation = nodeInformation;
