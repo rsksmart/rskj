@@ -128,6 +128,7 @@ public class BridgeMainNetConstants extends BridgeConstants {
         initialLockingCap = Coin.COIN.multiply(300); // 300 BTC
 
         minSecondsBetweenCallsReceiveHeader = 600;  // 10 minutes in Seconds
+        maxDepthBlockchainAccepted = 4000;
     }
 
     public static BridgeMainNetConstants getInstance() {
