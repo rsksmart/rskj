@@ -265,6 +265,12 @@ public class ECKey {
     /**
      * Gets the hash160 form of the public key (as seen in addresses).
      *
+     * When we hash the PK to get the address -> Keccak256(PK),
+     * Some things are important:
+     *  - 12 bytes are omitted, to get 20bytes for the address.
+     *  - first byte of the public key is omitted (generally that byte is the format of the PK - 2/3/4)
+     *  - In case of PoI when PK = [0], as the first byte is omitted, we hash an empty byte array.
+     *
      * @return -
      */
     public byte[] getAddress() {

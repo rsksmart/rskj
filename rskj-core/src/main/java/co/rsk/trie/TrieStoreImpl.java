@@ -19,6 +19,8 @@
 package co.rsk.trie;
 
 import org.ethereum.datasource.KeyValueDataSource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
 import java.util.Optional;
@@ -36,6 +38,8 @@ import java.util.WeakHashMap;
  */
 public class TrieStoreImpl implements TrieStore {
 
+    private static final Logger logger = LoggerFactory.getLogger("triestore");
+
     private KeyValueDataSource store;
 
     /** Weak references are removed once the tries are garbage collected */
@@ -51,13 +55,16 @@ public class TrieStoreImpl implements TrieStore {
      */
     @Override
     public void save(Trie trie) {
-        save(trie, true);
+        logger.trace("Start saving trie root.");
+        save(trie, true, 0);
+        logger.trace("End saving trie root.");
     }
 
     /**
      * @param forceSaveRoot allows saving the root node even if it's embeddable
      */
-    private void save(Trie trie, boolean forceSaveRoot) {
+    private void save(Trie trie, boolean forceSaveRoot, int level) {
+        logger.trace("Start saving trie, level : {}", level);
         if (savedTries.contains(trie)) {
             // it is guaranteed that the children of a saved node are also saved
             return;
@@ -67,11 +74,14 @@ public class TrieStoreImpl implements TrieStore {
 
         if (forceSaveRoot && this.store.get(trieKeyBytes) != null) {
             // the full trie is already saved
+            logger.trace("End saving trie, level : {}, already saved.", level);
             return;
         }
 
-        trie.getLeft().getNode().ifPresent(t -> save(t, false));
-        trie.getRight().getNode().ifPresent(t -> save(t, false));
+        logger.trace("Start left trie. Level: {}", level);
+        trie.getLeft().getNode().ifPresent(t -> save(t, false, level + 1));
+        logger.trace("Start right trie. Level: {}", level);
+        trie.getRight().getNode().ifPresent(t -> save(t, false, level + 1));
 
         if (trie.hasLongValue()) {
             // Note that there is no distinction in keys between node data and value data. This could bring problems in
@@ -83,15 +93,21 @@ public class TrieStoreImpl implements TrieStore {
             // In particular our levelDB driver has not method to test for the existence of a key without retrieving the
             // value also, so manually checking pre-existence here seems it will add overhead on the average case,
             // instead of reducing it.
+            logger.trace("Putting in store, hasLongValue. Level: {}", level);
             this.store.put(trie.getValueHash().getBytes(), trie.getValue());
+            logger.trace("End Putting in store, hasLongValue. Level: {}", level);
         }
 
         if (trie.isEmbeddable() && !forceSaveRoot) {
+            logger.trace("End Saving. Level: {}", level);
             return;
         }
 
+        logger.trace("Putting in store trie root.");
         this.store.put(trieKeyBytes, trie.toMessage());
+        logger.trace("End putting in store trie root.");
         savedTries.add(trie);
+        logger.trace("End Saving trie, level: {}.", level);
     }
 
     @Override
