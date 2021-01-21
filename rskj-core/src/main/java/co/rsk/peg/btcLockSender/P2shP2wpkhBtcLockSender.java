@@ -10,26 +10,30 @@ import org.ethereum.util.ByteUtil;
 
 public class P2shP2wpkhBtcLockSender implements BtcLockSender {
 
-    private BtcLockSender.TxType transactionType;
+    private TxSenderAddressType txSenderAddressType;
     private Address btcAddress;
     private RskAddress rskAddress;
 
     public P2shP2wpkhBtcLockSender() {
-        this.transactionType = TxType.P2SHP2WPKH;
+        this.txSenderAddressType = TxSenderAddressType.P2SHP2WPKH;
     }
 
-    public BtcLockSender.TxType getType() {
-        return transactionType;
+    @Override
+    public TxSenderAddressType getTxSenderAddressType() {
+        return txSenderAddressType;
     }
 
+    @Override
     public Address getBTCAddress() {
         return this.btcAddress;
     }
 
+    @Override
     public RskAddress getRskAddress() {
         return this.rskAddress;
     }
 
+    @Override
     public boolean tryParse(BtcTransaction btcTx) {
         if (btcTx == null) {
             return false;

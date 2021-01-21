@@ -11,7 +11,16 @@ public enum BridgeEvents {
                     new CallTransaction.Param(false, "btcTxHash", SolidityType.getType("bytes32")),
                     new CallTransaction.Param(false, "senderBtcAddress", SolidityType.getType("string")),
                     new CallTransaction.Param(false, "amount", SolidityType.getType("int"))
-            }),
+            }
+    ),
+    PEGIN_BTC("pegin_btc",
+        new CallTransaction.Param[]{
+            new CallTransaction.Param(true, "receiver", SolidityType.getType("address")),
+            new CallTransaction.Param(true, "btcTxHash", SolidityType.getType("bytes32")),
+            new CallTransaction.Param(false, "amount", SolidityType.getType("int")),
+            new CallTransaction.Param(false, "protocolVersion", SolidityType.getType("int"))
+        }
+    ),
     UPDATE_COLLECTIONS("update_collections",
             new CallTransaction.Param[]{
                     new CallTransaction.Param(false, "sender", SolidityType.getType("address"))
