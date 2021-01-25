@@ -48,6 +48,13 @@ public class SystemUtils {
         logger.info("System info:\r  {}", sysInfo);
     }
 
+    public static String getPropertyValue(String propertyName) {
+        if (SYSTEM_PROPERTIES.contains(propertyName)) {
+            return System.getProperty(propertyName);
+        }
+        return null;
+    }
+
     private static Stream<Pair<String, String>> systemPropsStream() {
         return SYSTEM_PROPERTIES.stream().map(sp -> Pair.of(sp, System.getProperty(sp)));
     }

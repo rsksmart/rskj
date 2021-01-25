@@ -17,6 +17,7 @@
  */
 package co.rsk;
 
+import co.rsk.util.PreflightChecksUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,6 +30,7 @@ public class Start {
     public static void main(String[] args) {
         Thread.currentThread().setName("main");
         RskContext ctx = new RskContext(args);
+        PreflightChecksUtils.runChecks(ctx);
         NodeRunner runner = ctx.getNodeRunner();
         try {
             runner.run();
