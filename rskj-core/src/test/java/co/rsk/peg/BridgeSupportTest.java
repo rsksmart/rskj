@@ -1601,6 +1601,133 @@ public class BridgeSupportTest {
     }
 
     @Test
+    public void updateFederationCreationBlockHeights_before_rskip_186_activation() throws IOException {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP186)).thenReturn(false);
+
+        BridgeEventLogger bridgeEventLogger = mock(BridgeEventLogger.class);
+
+        Federation oldFederation = bridgeConstants.getGenesisFederation();
+
+        Federation newFederation = new Federation(
+                FederationTestUtils.getFederationMembers(1),
+                Instant.EPOCH,
+                5L,
+                bridgeConstants.getBtcParams()
+        );
+
+        BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
+        when(provider.getFeePerKb())
+                .thenReturn(Coin.MILLICOIN);
+        when(provider.getReleaseRequestQueue())
+                .thenReturn(new ReleaseRequestQueue(Collections.emptyList()));
+        when(provider.getReleaseTransactionSet())
+                .thenReturn(new ReleaseTransactionSet(Collections.emptySet()));
+        when(provider.getOldFederation())
+                .thenReturn(oldFederation);
+        when(provider.getNewFederation())
+                .thenReturn(newFederation);
+
+        BlockGenerator blockGenerator = new BlockGenerator();
+        // Old federation will be in migration age at block 35
+        org.ethereum.core.Block rskCurrentBlock = blockGenerator.createBlock(180, 1);
+        Transaction tx = Transaction
+                .builder()
+                .nonce(NONCE)
+                .gasPrice(GAS_PRICE)
+                .gasLimit(GAS_LIMIT)
+                .destination(Hex.decode(TO_ADDRESS))
+                .data(Hex.decode(DATA))
+                .chainId(Constants.REGTEST_CHAIN_ID)
+                .value(DUST_AMOUNT)
+                .build();
+
+        BridgeSupport bridgeSupport = getBridgeSupport(
+                bridgeConstants, provider, mock(Repository.class), bridgeEventLogger, rskCurrentBlock, null, activations
+        );
+
+        List<UTXO> sufficientUTXOsForMigration1 = new ArrayList<>();
+        sufficientUTXOsForMigration1.add(createUTXO(Coin.COIN, oldFederation.getAddress()));
+        when(provider.getOldFederationBtcUTXOs()).thenReturn(sufficientUTXOsForMigration1);
+
+        when(provider.getNextFederationCreationBlockHeight()).thenReturn(1L);
+
+        bridgeSupport.updateCollections(tx);
+
+        verify(provider, never()).getNextFederationCreationBlockHeight();
+        verify(provider, never()).setActiveFederationCreationBlockHeight(any(Long.class));
+        verify(provider, never()).clearNextFederationCreationBlockHeight();
+    }
+
+    @Test
+    public void updateFederationCreationBlockHeights_after_rskip_186_activation() throws IOException {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP186)).thenReturn(true);
+
+        BridgeEventLogger bridgeEventLogger = mock(BridgeEventLogger.class);
+
+        Federation oldFederation = bridgeConstants.getGenesisFederation();
+
+        Federation newFederation = new Federation(
+                FederationTestUtils.getFederationMembers(1),
+                Instant.EPOCH,
+                5L,
+                bridgeConstants.getBtcParams()
+        );
+
+        BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
+        when(provider.getFeePerKb())
+                .thenReturn(Coin.MILLICOIN);
+        when(provider.getReleaseRequestQueue())
+                .thenReturn(new ReleaseRequestQueue(Collections.emptyList()));
+        when(provider.getReleaseTransactionSet())
+                .thenReturn(new ReleaseTransactionSet(Collections.emptySet()));
+        when(provider.getOldFederation())
+                .thenReturn(oldFederation);
+        when(provider.getNewFederation())
+                .thenReturn(newFederation);
+
+        BlockGenerator blockGenerator = new BlockGenerator();
+        // Old federation will be in migration age at block 35
+        org.ethereum.core.Block rskCurrentBlock = blockGenerator.createBlock(180, 1);
+        Transaction tx = Transaction
+                .builder()
+                .nonce(NONCE)
+                .gasPrice(GAS_PRICE)
+                .gasLimit(GAS_LIMIT)
+                .destination(Hex.decode(TO_ADDRESS))
+                .data(Hex.decode(DATA))
+                .chainId(Constants.REGTEST_CHAIN_ID)
+                .value(DUST_AMOUNT)
+                .build();
+
+        BridgeSupport bridgeSupport = getBridgeSupport(
+                bridgeConstants, provider, mock(Repository.class), bridgeEventLogger, rskCurrentBlock, null, activations
+        );
+
+        List<UTXO> sufficientUTXOsForMigration1 = new ArrayList<>();
+        sufficientUTXOsForMigration1.add(createUTXO(Coin.COIN, oldFederation.getAddress()));
+        when(provider.getOldFederationBtcUTXOs())
+                .thenReturn(sufficientUTXOsForMigration1);
+
+        when(provider.getNextFederationCreationBlockHeight()).thenReturn(null);
+
+        bridgeSupport.updateCollections(tx);
+
+        verify(provider, times(1)).getNextFederationCreationBlockHeight();
+        verify(provider, never()).setActiveFederationCreationBlockHeight(any(Long.class));
+        verify(provider, never()).clearNextFederationCreationBlockHeight();
+
+        when(provider.getNextFederationCreationBlockHeight()).thenReturn(1L);
+
+        bridgeSupport.updateCollections(tx);
+
+        verify(provider, times(2)).getNextFederationCreationBlockHeight();
+        verify(provider, times(1)).setActiveFederationCreationBlockHeight(1L);
+        verify(provider, times(1)).clearNextFederationCreationBlockHeight();
+    }
+
+    @Test
     public void rskTxWaitingForSignature_uses_updateCollection_rskTxHash_before_rskip_146_activation() throws IOException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP146)).thenReturn(false);

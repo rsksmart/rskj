@@ -2151,6 +2151,102 @@ public class BridgeStorageProviderTest {
     }
 
     @Test
+    public void setActiveFederationCreationBlockHeight_before_fork() {
+        Repository repository = mock(Repository.class);
+
+        BridgeStorageProvider provider0 = new BridgeStorageProvider(
+                repository, PrecompiledContracts.BRIDGE_ADDR,
+                config.getNetworkConstants().getBridgeConstants(), activationsBeforeFork
+        );
+
+        provider0.setActiveFederationCreationBlockHeight(1L);
+        provider0.saveActiveFederationCreationBlockHeight();
+
+        // If the network upgrade is not enabled we shouldn't be writing in the repository
+        verify(repository, never()).addStorageBytes(any(), any(), any());
+    }
+
+    @Test
+    public void setActiveFederationCreationBlockHeight_after_fork() {
+        Repository repository = mock(Repository.class);
+
+        BridgeStorageProvider provider0 = new BridgeStorageProvider(
+                repository, PrecompiledContracts.BRIDGE_ADDR,
+                config.getNetworkConstants().getBridgeConstants(), activationsAllForks
+        );
+
+        provider0.setActiveFederationCreationBlockHeight(1L);
+        provider0.saveActiveFederationCreationBlockHeight();;
+
+        // Once the network upgrade is active, we will store the value in the repository
+        verify(repository, times(1)).addStorageBytes(
+                PrecompiledContracts.BRIDGE_ADDR,
+                DataWord.fromString("activeFedCreationBlockHeight"),
+                BridgeSerializationUtils.serializeLong(1L)
+        );
+    }
+
+    @Test
+    public void getActiveFederationCreationBlockHeight_before_fork() {
+        Repository repository = mock(Repository.class);
+        // If by chance the repository is called I want to force the tests to fail
+        when(repository.getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromString("activeFedCreationBlockHeight"))).thenReturn(new byte[] { 1 });
+
+        BridgeStorageProvider provider0 = new BridgeStorageProvider(
+                repository, PrecompiledContracts.BRIDGE_ADDR,
+                config.getNetworkConstants().getBridgeConstants(), activationsBeforeFork
+        );
+
+        assertNull(provider0.getActiveFederationCreationBlockHeight());
+
+        // If the network upgrade is not enabled we shouldn't be reading the repository
+        verify(repository, never()).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromString("activeFedCreationBlockHeight"));
+    }
+
+    @Test
+    public void getActiveFederationCreationBlockHeight_after_fork() {
+        Repository repository = mock(Repository.class);
+        // If by chance the repository is called I want to force the tests to fail
+        when(repository.getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromString("activeFedCreationBlockHeight"))).thenReturn(new byte[] { 1 });
+
+        BridgeStorageProvider provider0 = new BridgeStorageProvider(
+                repository, PrecompiledContracts.BRIDGE_ADDR,
+                config.getNetworkConstants().getBridgeConstants(), activationsAllForks
+        );
+
+        assertEquals(Long.valueOf(1L), provider0.getActiveFederationCreationBlockHeight());
+
+        // If the network upgrade is not enabled we shouldn't be reading the repository
+        verify(repository, atLeastOnce()).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromString("activeFedCreationBlockHeight"));
+    }
+
+    @Test
+    public void setActiveFederationCreationBlockHeightAndGetActiveFederationCreationBlockHeight() {
+        Repository repository = createRepository();
+        Repository track = repository.startTracking();
+
+        BridgeStorageProvider provider0 = new BridgeStorageProvider(
+                track, PrecompiledContracts.BRIDGE_ADDR,
+                config.getNetworkConstants().getBridgeConstants(), activationsAllForks
+        );
+
+        // We store the value
+        provider0.setActiveFederationCreationBlockHeight(1L);
+        provider0.saveActiveFederationCreationBlockHeight();
+        track.commit();
+
+        track = repository.startTracking();
+
+        BridgeStorageProvider provider = new BridgeStorageProvider(
+                track, PrecompiledContracts.BRIDGE_ADDR,
+                config.getNetworkConstants().getBridgeConstants(), activationsAllForks
+        );
+
+        // And then we get it back
+        assertThat(provider.getActiveFederationCreationBlockHeight(), is(1L));
+    }
+
+    @Test
     public void saveActiveFederationCreationBlockHeight_after_RSKIP186() {
         Repository repository = mock(Repository.class);
 
@@ -2185,6 +2281,102 @@ public class BridgeStorageProviderTest {
 
         // If the network upgrade is not enabled we shouldn't be reading the repository
         verify(repository, never()).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromString("activeFedCreationBlockHeight"));
+    }
+
+    @Test
+    public void setNextFederationCreationBlockHeight_before_fork() {
+        Repository repository = mock(Repository.class);
+
+        BridgeStorageProvider provider0 = new BridgeStorageProvider(
+                repository, PrecompiledContracts.BRIDGE_ADDR,
+                config.getNetworkConstants().getBridgeConstants(), activationsBeforeFork
+        );
+
+        provider0.setNextFederationCreationBlockHeight(1L);
+        provider0.saveNextFederationCreationBlockHeight();
+
+        // If the network upgrade is not enabled we shouldn't be writing in the repository
+        verify(repository, never()).addStorageBytes(any(), any(), any());
+    }
+
+    @Test
+    public void setNextFederationCreationBlockHeight_after_fork() {
+        Repository repository = mock(Repository.class);
+
+        BridgeStorageProvider provider0 = new BridgeStorageProvider(
+                repository, PrecompiledContracts.BRIDGE_ADDR,
+                config.getNetworkConstants().getBridgeConstants(), activationsAllForks
+        );
+
+        provider0.setNextFederationCreationBlockHeight(1L);
+        provider0.saveNextFederationCreationBlockHeight();
+
+        // Once the network upgrade is active, we will store the value in the repository
+        verify(repository, times(1)).addStorageBytes(
+                PrecompiledContracts.BRIDGE_ADDR,
+                DataWord.fromString("nextFedCreationBlockHeight"),
+                BridgeSerializationUtils.serializeLong(1L)
+        );
+    }
+
+    @Test
+    public void getNextFederationCreationBlockHeight_before_fork() {
+        Repository repository = mock(Repository.class);
+        // If by chance the repository is called I want to force the tests to fail
+        when(repository.getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromString("nextFedCreationBlockHeight"))).thenReturn(new byte[] { 1 });
+
+        BridgeStorageProvider provider0 = new BridgeStorageProvider(
+                repository, PrecompiledContracts.BRIDGE_ADDR,
+                config.getNetworkConstants().getBridgeConstants(), activationsBeforeFork
+        );
+
+        assertNull(provider0.getNextFederationCreationBlockHeight());
+
+        // If the network upgrade is not enabled we shouldn't be reading the repository
+        verify(repository, never()).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromString("nextFedCreationBlockHeight"));
+    }
+
+    @Test
+    public void getNextFederationCreationBlockHeight_after_fork() {
+        Repository repository = mock(Repository.class);
+        // If by chance the repository is called I want to force the tests to fail
+        when(repository.getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromString("nextFedCreationBlockHeight"))).thenReturn(new byte[] { 1 });
+
+        BridgeStorageProvider provider0 = new BridgeStorageProvider(
+                repository, PrecompiledContracts.BRIDGE_ADDR,
+                config.getNetworkConstants().getBridgeConstants(), activationsAllForks
+        );
+
+        assertEquals(Long.valueOf(1L), provider0.getNextFederationCreationBlockHeight());
+
+        // If the network upgrade is not enabled we shouldn't be reading the repository
+        verify(repository, atLeastOnce()).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromString("nextFedCreationBlockHeight"));
+    }
+
+    @Test
+    public void setNextFederationCreationBlockHeightAndGetNextFederationCreationBlockHeight() {
+        Repository repository = createRepository();
+        Repository track = repository.startTracking();
+
+        BridgeStorageProvider provider0 = new BridgeStorageProvider(
+                track, PrecompiledContracts.BRIDGE_ADDR,
+                config.getNetworkConstants().getBridgeConstants(), activationsAllForks
+        );
+
+        // We store the value
+        provider0.setNextFederationCreationBlockHeight(1L);
+        provider0.saveNextFederationCreationBlockHeight();
+        track.commit();
+
+        track = repository.startTracking();
+
+        BridgeStorageProvider provider = new BridgeStorageProvider(
+                track, PrecompiledContracts.BRIDGE_ADDR,
+                config.getNetworkConstants().getBridgeConstants(), activationsAllForks
+        );
+
+        // And then we get it back
+        assertThat(provider.getNextFederationCreationBlockHeight(), is(1L));
     }
 
     @Test
@@ -2239,6 +2431,111 @@ public class BridgeStorageProviderTest {
 
         // If the network upgrade is not enabled we shouldn't be reading the repository
         verify(repository, never()).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromString("nextFedCreationBlockHeight"));
+    }
+
+    //
+
+    @Test
+    public void setLastRetiredFederationP2SHScript_before_fork() {
+        Repository repository = mock(Repository.class);
+        Script script = new Script(new byte[] {});
+
+        BridgeStorageProvider provider0 = new BridgeStorageProvider(
+                repository, PrecompiledContracts.BRIDGE_ADDR,
+                config.getNetworkConstants().getBridgeConstants(), activationsBeforeFork
+        );
+
+        provider0.setLastRetiredFederationP2SHScript(script);
+        provider0.saveLastRetiredFederationP2SHScript();
+
+        // If the network upgrade is not enabled we shouldn't be writing in the repository
+        verify(repository, never()).addStorageBytes(any(), any(), any());
+    }
+
+    @Test
+    public void setLastRetiredFederationP2SHScript_after_fork() {
+        Repository repository = mock(Repository.class);
+        Script script = new Script(new byte[] {});
+
+        BridgeStorageProvider provider0 = new BridgeStorageProvider(
+                repository, PrecompiledContracts.BRIDGE_ADDR,
+                config.getNetworkConstants().getBridgeConstants(), activationsAllForks
+        );
+
+        provider0.setLastRetiredFederationP2SHScript(script);
+        provider0.saveLastRetiredFederationP2SHScript();
+
+        // Once the network upgrade is active, we will store the value in the repository
+        verify(repository, times(1)).addStorageBytes(
+                PrecompiledContracts.BRIDGE_ADDR,
+                DataWord.fromString("lastRetiredFedP2SHScript"),
+                BridgeSerializationUtils.serializeScript(script)
+        );
+    }
+
+    @Test
+    public void getLastRetiredFederationP2SHScript_before_fork() {
+        Repository repository = mock(Repository.class);
+        Script script = new Script(new byte[] {});
+        // If by chance the repository is called I want to force the tests to fail
+        when(repository.getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromString("lastRetiredFedP2SHScript")))
+                .thenReturn(BridgeSerializationUtils.serializeScript(script));
+
+        BridgeStorageProvider provider0 = new BridgeStorageProvider(
+                repository, PrecompiledContracts.BRIDGE_ADDR,
+                config.getNetworkConstants().getBridgeConstants(), activationsBeforeFork
+        );
+
+        assertNull(provider0.getLastRetiredFederationP2SHScript());
+
+        // If the network upgrade is not enabled we shouldn't be reading the repository
+        verify(repository, never()).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromString("lastRetiredFedP2SHScript"));
+    }
+
+    @Test
+    public void getLastRetiredFederationP2SHScript_after_fork() {
+        Repository repository = mock(Repository.class);
+        Script script = new Script(new byte[] {});
+        // If by chance the repository is called I want to force the tests to fail
+        when(repository.getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromString("lastRetiredFedP2SHScript")))
+                .thenReturn(BridgeSerializationUtils.serializeScript(script));
+
+        BridgeStorageProvider provider0 = new BridgeStorageProvider(
+                repository, PrecompiledContracts.BRIDGE_ADDR,
+                config.getNetworkConstants().getBridgeConstants(), activationsAllForks
+        );
+
+        assertEquals(script, provider0.getLastRetiredFederationP2SHScript());
+
+        // If the network upgrade is not enabled we shouldn't be reading the repository
+        verify(repository, atLeastOnce()).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromString("lastRetiredFedP2SHScript"));
+    }
+
+    @Test
+    public void setLastRetiredFederationP2SHScriptAndGetLastRetiredFederationP2SHScript() {
+        Repository repository = createRepository();
+        Repository track = repository.startTracking();
+        Script script = new Script(new byte[] {});
+
+        BridgeStorageProvider provider0 = new BridgeStorageProvider(
+                track, PrecompiledContracts.BRIDGE_ADDR,
+                config.getNetworkConstants().getBridgeConstants(), activationsAllForks
+        );
+
+        // We store the value
+        provider0.setLastRetiredFederationP2SHScript(script);
+        provider0.saveLastRetiredFederationP2SHScript();
+        track.commit();
+
+        track = repository.startTracking();
+
+        BridgeStorageProvider provider = new BridgeStorageProvider(
+                track, PrecompiledContracts.BRIDGE_ADDR,
+                config.getNetworkConstants().getBridgeConstants(), activationsAllForks
+        );
+
+        // And then we get it back
+        assertThat(provider.getLastRetiredFederationP2SHScript(), is(script));
     }
 
     //

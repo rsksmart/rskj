@@ -745,10 +745,7 @@ public class BridgeSerializationUtils {
     }
 
     public static byte[] serializeScript(Script script) {
-        byte[][] rlpElements = new byte[1][];
-        rlpElements[0] = RLP.encodeElement(script.getProgram());
-
-        return RLP.encodeList(rlpElements);
+        return RLP.encodeList(RLP.encodeElement(script.getProgram()));
     }
 
     @Nullable
@@ -762,7 +759,7 @@ public class BridgeSerializationUtils {
             throw new RuntimeException(String.format("Invalid serialized script. Expected 1 element, but got %d", rlpList.size()));
         }
 
-        return new Script(rlpList.get(0).getRLPData());
+        return new Script(rlpList.get(0).getRLPRawData());
     }
 
     // An ABI call spec is serialized as:

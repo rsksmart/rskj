@@ -1024,9 +1024,7 @@ public class BridgeSerializationUtilsTest {
     @Test
     public void deserializeScript() {
         Script expectedScript = ScriptBuilder.createP2SHOutputScript(2, Lists.newArrayList(new BtcECKey(), new BtcECKey(), new BtcECKey()));
-        byte[][] rlpElements = new byte[1][];
-        rlpElements[0] = RLP.encodeElement(expectedScript.getProgram());
-        byte[] data = RLP.encodeList(rlpElements);
+        byte[] data = RLP.encodeList(RLP.encodeElement(expectedScript.getProgram()));
 
         Script actualScript = BridgeSerializationUtils.deserializeScript(data);
 

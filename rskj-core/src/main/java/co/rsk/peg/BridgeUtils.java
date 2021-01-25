@@ -160,15 +160,15 @@ public class BridgeUtils {
             (activations.isActive(ConsensusRule.RSKIP143) && txSenderAddressType != TxSenderAddressType.UNKNOWN);
     }
 
-    private static boolean isReleaseTx(BtcTransaction tx, Federation federation) {
-        return isReleaseTx(tx, Collections.singletonList(federation));
+    private static boolean isPegOutTx(BtcTransaction tx, Federation federation) {
+        return isPegOutTx(tx, Collections.singletonList(federation));
     }
 
-    public static boolean isReleaseTx(BtcTransaction tx, List<Federation> federations) {
-        return isReleaseTx(tx, federations.stream().filter(Objects::nonNull).map(Federation::getP2SHScript).toArray(Script[]::new));
+    public static boolean isPegOutTx(BtcTransaction tx, List<Federation> federations) {
+        return isPegOutTx(tx, federations.stream().filter(Objects::nonNull).map(Federation::getP2SHScript).toArray(Script[]::new));
     }
 
-    public static boolean isReleaseTx(BtcTransaction tx, Script... p2shScript) {
+    public static boolean isPegOutTx(BtcTransaction tx, Script... p2shScript) {
         int inputsSize = tx.getInputs().size();
         for (int i = 0; i < inputsSize; i++) {
             final int inputIndex = i;
@@ -185,8 +185,8 @@ public class BridgeUtils {
         if (retiredFederationP2SHScript == null && retiringFederation == null) {
             return false;
         }
-        boolean moveFromRetired = retiredFederationP2SHScript != null && isReleaseTx(btcTx, retiredFederationP2SHScript);
-        boolean moveFromRetiring = retiringFederation != null && isReleaseTx(btcTx, retiringFederation);
+        boolean moveFromRetired = retiredFederationP2SHScript != null && isPegOutTx(btcTx, retiredFederationP2SHScript);
+        boolean moveFromRetiring = retiringFederation != null && isPegOutTx(btcTx, retiringFederation);
         boolean moveToActive = isPegInTx(btcTx, activeFederation, btcContext, bridgeConstants);
 
         return (moveFromRetired || moveFromRetiring) && moveToActive;

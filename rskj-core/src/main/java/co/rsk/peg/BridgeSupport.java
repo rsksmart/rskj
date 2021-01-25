@@ -335,7 +335,7 @@ public class BridgeSupport {
             return TxType.MIGRATION;
         }
 
-        if (BridgeUtils.isReleaseTx(btcTx, getLiveFederations())) {
+        if (BridgeUtils.isPegOutTx(btcTx, getLiveFederations())) {
             return TxType.PEGOUT;
         }
 

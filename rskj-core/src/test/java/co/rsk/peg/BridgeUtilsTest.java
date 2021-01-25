@@ -660,20 +660,20 @@ public class BridgeUtilsTest {
         releaseTx1.addInput(releaseInput1);
         signWithNecessaryKeys(federation, federationPrivateKeys, releaseInput1, releaseTx1, bridgeConstants);
 
-        assertThat(BridgeUtils.isReleaseTx(releaseTx1, Collections.singletonList(federation)), is(true));
-        assertThat(BridgeUtils.isReleaseTx(releaseTx1, Arrays.asList(federation, federation2)), is(true));
-        assertThat(BridgeUtils.isReleaseTx(releaseTx1, Collections.singletonList(federation2)), is(false));
+        assertThat(BridgeUtils.isPegOutTx(releaseTx1, Collections.singletonList(federation)), is(true));
+        assertThat(BridgeUtils.isPegOutTx(releaseTx1, Arrays.asList(federation, federation2)), is(true));
+        assertThat(BridgeUtils.isPegOutTx(releaseTx1, Collections.singletonList(federation2)), is(false));
 
-        assertThat(BridgeUtils.isReleaseTx(releaseTx1, federation.getP2SHScript()), is(true));
-        assertThat(BridgeUtils.isReleaseTx(releaseTx1, federation.getP2SHScript(), federation2.getP2SHScript()), is(true));
-        assertThat(BridgeUtils.isReleaseTx(releaseTx1, federation2.getP2SHScript()), is(false));
+        assertThat(BridgeUtils.isPegOutTx(releaseTx1, federation.getP2SHScript()), is(true));
+        assertThat(BridgeUtils.isPegOutTx(releaseTx1, federation.getP2SHScript(), federation2.getP2SHScript()), is(true));
+        assertThat(BridgeUtils.isPegOutTx(releaseTx1, federation2.getP2SHScript()), is(false));
 
         BtcTransaction releaseTx2 = new BtcTransaction(params);
         releaseTx2.addOutput(Coin.COIN, randomAddress);
         TransactionInput releaseInput2 = new TransactionInput(params, releaseTx2, new byte[]{}, new TransactionOutPoint(params, 0, Sha256Hash.ZERO_HASH));
         releaseTx2.addInput(releaseInput2);
         signWithNKeys(federation, federationPrivateKeys, releaseInput2, releaseTx2, bridgeConstants, 1);
-        assertThat(BridgeUtils.isReleaseTx(releaseTx2, Collections.singletonList(federation)), is(false));
+        assertThat(BridgeUtils.isPegOutTx(releaseTx2, Collections.singletonList(federation)), is(false));
     }
 
     @Test
@@ -714,7 +714,7 @@ public class BridgeUtilsTest {
         releaseWithChange.addInput(releaseFromFederation2);
         signWithNecessaryKeys(federation2, federation2Keys, releaseFromFederation2, releaseWithChange, bridgeConstants);
         assertThat(BridgeUtils.isPegInTx(releaseWithChange, federations, null, btcContext, bridgeConstants), is(false));
-        assertThat(BridgeUtils.isReleaseTx(releaseWithChange, federations), is(true));
+        assertThat(BridgeUtils.isPegOutTx(releaseWithChange, federations), is(true));
     }
 
     @Test
