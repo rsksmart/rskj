@@ -39,6 +39,8 @@ import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
 import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Implementation of a bitcoinj blockstore that persists to RSK's Repository
@@ -47,7 +49,7 @@ import java.util.Map;
  */
 public class RepositoryBtcBlockStoreWithCache implements BtcBlockStoreWithCache {
 
-    private static final Logger logger = LoggerFactory.getLogger("btcBlockStore");
+    private static final Logger logger = LoggerFactory.getLogger(RepositoryBtcBlockStoreWithCache.class);
 
     private static final String BLOCK_STORE_CHAIN_HEAD_KEY = "blockStoreChainHead";
     private static final int DEFAULT_MAX_DEPTH_BLOCK_CACHE = 5_000;
@@ -120,8 +122,10 @@ public class RepositoryBtcBlockStoreWithCache implements BtcBlockStoreWithCache 
 
     @Override
     public synchronized StoredBlock get(Sha256Hash hash) {
+        logger.trace("[get] Looking in storage for block with hash {}", hash);
         byte[] ba = repository.getStorageBytes(contractAddress, DataWord.valueFromHex(hash.toString()));
         if (ba == null) {
+            logger.trace("[get] Block with hash {} not found in storage", hash);
             return null;
         }
         StoredBlock storedBlock = byteArrayToStoredBlock(ba);
@@ -152,19 +156,23 @@ public class RepositoryBtcBlockStoreWithCache implements BtcBlockStoreWithCache 
     public Optional<StoredBlock> getInMainchain(int height) {
         Optional<Sha256Hash> bestBlockHash = bridgeStorageProvider.getBtcBestBlockHashByHeight(height);
         if (!bestBlockHash.isPresent()) {
+            logger.trace("[getInMainchain] Block at height {} not present in storage", height);
             return Optional.empty();
         }
 
         StoredBlock block = get(bestBlockHash.get());
         if (block == null) {
+            logger.trace("[getInMainchain] Block with hash {} not found in storage", bestBlockHash.get());
             return Optional.empty();
         }
 
+        logger.trace("[getInMainchain] Found block with hash {} at height {}", bestBlockHash.get(), height);
         return Optional.of(block);
     }
 
     @Override
     public void setMainChainBlock(int height, Sha256Hash blockHash) {
+        logger.trace("[setMainChainBlock] Set block with hash {} at height {}", blockHash, height);
         bridgeStorageProvider.setBtcBestBlockHashByHeight(height, blockHash);
     }
 
@@ -180,6 +188,7 @@ public class RepositoryBtcBlockStoreWithCache implements BtcBlockStoreWithCache 
     @Override
     public StoredBlock getFromCache(Sha256Hash branchBlockHash) {
         if (cacheBlocks == null) {
+            logger.trace("[getFromCache] Block with hash {} not found in cache", branchBlockHash);
             return null;
         }
         return cacheBlocks.get(branchBlockHash);
@@ -192,13 +201,13 @@ public class RepositoryBtcBlockStoreWithCache implements BtcBlockStoreWithCache 
         logger.trace("Getting btc block at depth: {}", depth);
 
         if (depth < 0) {
-            throw new BlockStoreException(
-                String.format(
-                    "Height provided is higher than chain head. provided: %n. chain head: %n",
-                    height,
-                    chainHead.getHeight()
-                )
+            String message = String.format(
+                "Height provided is higher than chain head. provided: %n. chain head: %n",
+                height,
+                chainHead.getHeight()
             );
+            logger.trace("[getStoredBlockAtMainChainHeight] {}", message);
+            throw new BlockStoreException(message);
         }
 
         if (activations.isActive(ConsensusRule.RSKIP199)) {
@@ -210,15 +219,16 @@ public class RepositoryBtcBlockStoreWithCache implements BtcBlockStoreWithCache 
             } else {
                 limit = chainHead.getHeight() - maxDepthToSearch;
             }
+            logger.trace("[getStoredBlockAtMainChainHeight] Chain head height is {} and the depth limit {}", chainHead.getHeight(), limit);
 
             if (height < limit) {
-                throw new BlockStoreException(
-                    String.format(
-                        "Height provided is lower than the depth limit defined to search for blocks. Provided: %n, limit: %n",
-                        height,
-                        limit
-                    )
+                String message = String.format(
+                    "Height provided is lower than the depth limit defined to search for blocks. Provided: %n, limit: %n",
+                    height,
+                    limit
                 );
+                logger.trace("[getStoredBlockAtMainChainHeight] {}", message);
+                throw new BlockStoreException(message);
             }
         }
 
@@ -259,6 +269,7 @@ public class RepositoryBtcBlockStoreWithCache implements BtcBlockStoreWithCache 
     @Override
     @Deprecated
     public StoredBlock getStoredBlockAtMainChainDepth(int depth) throws BlockStoreException {
+        logger.trace("[getStoredBlockAtMainChainDepth] Looking for block at depth {}", depth);
         StoredBlock chainHead = getChainHead();
         Sha256Hash blockHash = chainHead.getHeader().getHash();
 
@@ -266,7 +277,7 @@ public class RepositoryBtcBlockStoreWithCache implements BtcBlockStoreWithCache 
             //If its older than cache go to disk
             StoredBlock currentBlock = getFromCache(blockHash);
             if (currentBlock == null) {
-                logger.trace("Missing cache (depth={}/{}), getting from store.", i, depth);
+                logger.trace("[getStoredBlockAtMainChainDepth] Block with hash {} not in cache, getting from disk", blockHash);
                 currentBlock = get(blockHash);
                 if (currentBlock == null) {
                     return null;
@@ -276,6 +287,7 @@ public class RepositoryBtcBlockStoreWithCache implements BtcBlockStoreWithCache 
         }
 
         if (blockHash == null) {
+            logger.trace("[getStoredBlockAtMainChainDepth] Block not found");
             return null;
         }
         StoredBlock block = getFromCache(blockHash);
@@ -284,13 +296,15 @@ public class RepositoryBtcBlockStoreWithCache implements BtcBlockStoreWithCache 
         }
         int expectedHeight = chainHead.getHeight() - depth;
         if (block != null && block.getHeight() != expectedHeight) {
-            throw new BlockStoreException(String.format("Block %s at depth %d Height is %d but should be %d",
-                    block.getHeader().getHash(),
-                    depth,
-                    block.getHeight(),
-                    expectedHeight));
+            String message = String.format("Block %s at depth %d Height is %d but should be %d",
+                block.getHeader().getHash(),
+                depth,
+                block.getHeight(),
+                expectedHeight
+            );
+            logger.trace("[getStoredBlockAtMainChainDepth] {}", message);
+            throw new BlockStoreException(message);
         }
-
 
         return block;
     }
