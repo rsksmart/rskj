@@ -1,6 +1,5 @@
 package co.rsk.util.preflight;
 
-import co.rsk.util.PreflightChecksUtils;
 import co.rsk.util.SystemUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -13,7 +12,7 @@ import java.util.Arrays;
  */
 
 public class JavaVersionPreflightCheck {
-    private static final Logger logger = LoggerFactory.getLogger(PreflightChecksUtils.class);
+    private static final Logger logger = LoggerFactory.getLogger(JavaVersionPreflightCheck.class);
 
     private static final int[] SUPPORTED_JAVA_VERSIONS = {8, 11};
 
@@ -45,7 +44,7 @@ public class JavaVersionPreflightCheck {
      */
     private int getIntJavaVersion(String version) {
         String[] splitVersion = version.replace(".", " ").replace("-", " ").replace("_", " ").split(" ");
-        if (splitVersion[0].equals("1")) {
+        if ("1".equals(splitVersion[0])) {
             if (splitVersion.length > 1) {
                 return Integer.parseInt(splitVersion[1]);
             }
