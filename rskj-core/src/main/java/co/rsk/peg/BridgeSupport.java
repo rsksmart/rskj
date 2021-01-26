@@ -497,7 +497,7 @@ public class BridgeSupport {
             logger.debug("[refundTxSender] No btc refund address provided, couldn't get sender address either. Can't refund");
 
             if (activations.isActive(ConsensusRule.RSKIP181)) {
-                if (activations.isActive(ConsensusRule.RSKIP170)) {
+                if (peginInformation.getProtocolVersion() == 1) {
                     eventLogger.logUnrefundablePegin(btcTx, UnrefundablePeginReason.PEGIN_V1_REFUND_ADDRESS_NOT_SET);
                 } else {
                     eventLogger.logUnrefundablePegin(btcTx, UnrefundablePeginReason.LEGACY_PEGIN_UNDETERMINED_SENDER);
