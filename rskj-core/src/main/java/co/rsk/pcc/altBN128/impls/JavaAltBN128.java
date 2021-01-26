@@ -5,7 +5,8 @@ import org.ethereum.util.BIUtil;
 import org.ethereum.vm.DataWord;
 
 import static co.rsk.pcc.altBN128.BN128Pairing.PAIR_SIZE;
-import static org.ethereum.util.ByteUtil.*;
+import static org.ethereum.util.ByteUtil.parseWord;
+import static org.ethereum.util.ByteUtil.stripLeadingZeroes;
 
 public class JavaAltBN128 extends AbstractAltBN128 {
 
@@ -134,7 +135,6 @@ public class JavaAltBN128 extends AbstractAltBN128 {
     }
 
     protected int returnError() {
-        output = EMPTY_BYTE_ARRAY;
-        return 1;
+        return -1;
     }
 }
