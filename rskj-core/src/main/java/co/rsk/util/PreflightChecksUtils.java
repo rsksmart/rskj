@@ -2,26 +2,66 @@ package co.rsk.util;
 
 import co.rsk.RskContext;
 import co.rsk.config.NodeCliFlags;
-import co.rsk.util.preflight.JavaVersionPreflightCheck;
-import co.rsk.util.preflight.PreflightCheckException;
+import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.Arrays;
 
 /**
  * Created by Nazaret García on 21/01/2021
  */
 
 public class PreflightChecksUtils {
+    private static final Logger logger = LoggerFactory.getLogger(PreflightChecksUtils.class);
+
+    private static final int[] SUPPORTED_JAVA_VERSIONS = {8, 11};
 
     private final RskContext rskContext;
-    private final JavaVersionPreflightCheck javaVersionPreflightCheck;
 
     public PreflightChecksUtils(RskContext rskContext) {
         this.rskContext = rskContext;
-        this.javaVersionPreflightCheck = new JavaVersionPreflightCheck();
+    }
+
+    private void checkSupportedJavaVersion() throws PreflightCheckException {
+        String javaVersion = getJavaVersion();
+
+        if (javaVersion == null) {
+            throw new PreflightCheckException("Unable to detect Java version");
+        }
+
+        int intJavaVersion = getIntJavaVersion(javaVersion);
+
+        if (Arrays.stream(SUPPORTED_JAVA_VERSIONS).noneMatch(v -> intJavaVersion == v)) {
+            String errorMessage = String.format("Invalid Java Version '%s'. Supported versions: %s", intJavaVersion, StringUtils.join(SUPPORTED_JAVA_VERSIONS, ' '));
+            logger.error(errorMessage);
+            throw new PreflightCheckException(errorMessage);
+        }
+    }
+
+    private String getJavaVersion() {
+        return System.getProperty("java.version");
+    }
+
+    /**
+     * Returns the Java version as an int value.
+     * Formats allowed: 1.8.0_72-ea, 9-ea, 9, 9.0.1, 11, 11.0, etc.
+     * @return the Java version as an int value (8, 9, etc.)
+     * @link https://stackoverflow.com/a/49512420
+     */
+    public int getIntJavaVersion(String version) {
+        if (version.startsWith("1.")) {
+            version = version.substring(2);
+        }
+        int dotPos = version.indexOf('.');
+        int dashPos = version.indexOf('-');
+        return Integer.parseInt(version.substring(0,
+                dotPos > -1 ? dotPos : dashPos > -1 ? dashPos : version.length()));
     }
 
     public void runChecks() throws PreflightCheckException {
         if (!rskContext.getCliArgs().getFlags().contains(NodeCliFlags.SKIP_JAVA_CHECK)) {
-            javaVersionPreflightCheck.checkSupportedJavaVersion();
+            checkSupportedJavaVersion();
         }
     }
 

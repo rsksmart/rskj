@@ -1,4 +1,4 @@
-package co.rsk.util.preflight;
+package co.rsk.util;
 
 /**
  * Created by Nazaret García on 25/01/2021
