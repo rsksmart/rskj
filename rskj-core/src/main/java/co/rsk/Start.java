@@ -31,9 +31,9 @@ public class Start {
         Thread.currentThread().setName("main");
         RskContext ctx = new RskContext(args);
         PreflightChecksUtils preflightChecks = new PreflightChecksUtils(ctx);
-        preflightChecks.runChecks();
         NodeRunner runner = ctx.getNodeRunner();
         try {
+            preflightChecks.runChecks();
             runner.run();
             Runtime.getRuntime().addShutdownHook(new Thread(runner::stop, "stopper"));
         } catch (Exception e) {

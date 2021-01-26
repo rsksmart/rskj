@@ -3,6 +3,7 @@ package co.rsk.util;
 import co.rsk.RskContext;
 import co.rsk.config.NodeCliFlags;
 import co.rsk.util.preflight.JavaVersionPreflightCheck;
+import co.rsk.util.preflight.PreflightCheckException;
 
 /**
  * Created by Nazaret García on 21/01/2021
@@ -18,7 +19,7 @@ public class PreflightChecksUtils {
         this.javaVersionPreflightCheck = new JavaVersionPreflightCheck();
     }
 
-    public void runChecks() {
+    public void runChecks() throws PreflightCheckException {
         if (!rskContext.getCliArgs().getFlags().contains(NodeCliFlags.SKIP_JAVA_CHECK)) {
             javaVersionPreflightCheck.checkSupportedJavaVersion();
         }

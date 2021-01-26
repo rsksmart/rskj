@@ -2,6 +2,7 @@ package co.rsk.util;
 
 import co.rsk.RskContext;
 import co.rsk.util.preflight.JavaVersionPreflightCheck;
+import co.rsk.util.preflight.PreflightCheckException;
 import org.ethereum.util.RskTestContext;
 import org.junit.Test;
 import org.powermock.reflect.Whitebox;
@@ -15,7 +16,7 @@ import static org.mockito.Mockito.*;
 public class PreflightChecksUtilsTest {
 
     @Test
-    public void runChecks_receivesSkipJavaCheck_skipsJavaChecks() {
+    public void runChecks_receivesSkipJavaCheck_skipsJavaChecks() throws PreflightCheckException {
         String[] args = {"--skip-java-check"};
 
         RskContext rskContext = new RskTestContext(args);
@@ -32,7 +33,7 @@ public class PreflightChecksUtilsTest {
     }
 
     @Test
-    public void runChecks_noSkipFlags_OK() {
+    public void runChecks_noSkipFlags_OK() throws PreflightCheckException {
         RskContext rskContext = new RskTestContext(new String[0]);
         PreflightChecksUtils preflightChecksUtils = new PreflightChecksUtils(rskContext);
 

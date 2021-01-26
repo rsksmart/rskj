@@ -16,23 +16,23 @@ public class JavaVersionPreflightCheck {
 
     private static final int[] SUPPORTED_JAVA_VERSIONS = {8, 11};
 
-    public void checkSupportedJavaVersion() {
+    public void checkSupportedJavaVersion() throws PreflightCheckException {
         String javaVersion = SystemUtils.getPropertyValue("java.version");
 
         if (javaVersion == null) {
-            throw new RuntimeException("Unable to detect Java version");
+            throw new PreflightCheckException("Unable to detect Java version");
         }
 
         int intJavaVersion = getIntJavaVersion(javaVersion);
 
         if (intJavaVersion == -1) {
-            throw new RuntimeException("Invalid Java version number");
+            throw new PreflightCheckException("Invalid Java version number");
         }
 
         if (Arrays.stream(SUPPORTED_JAVA_VERSIONS).noneMatch(v -> intJavaVersion == v)) {
             String errorMessage = String.format("Invalid Java Version '%s'. Supported versions: %s", intJavaVersion, StringUtils.join(SUPPORTED_JAVA_VERSIONS, ' '));
             logger.error(errorMessage);
-            throw new RuntimeException(errorMessage);
+            throw new PreflightCheckException(errorMessage);
         }
     }
 

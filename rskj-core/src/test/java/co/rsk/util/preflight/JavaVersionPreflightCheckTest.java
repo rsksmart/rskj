@@ -23,8 +23,8 @@ public class JavaVersionPreflightCheckTest {
     public ExpectedException expectedException = ExpectedException.none();
 
     @Test
-    public void runChecks_nullJavaVersionReceived_exceptionIsThrown() {
-        expectedException.expect(RuntimeException.class);
+    public void runChecks_nullJavaVersionReceived_exceptionIsThrown() throws PreflightCheckException {
+        expectedException.expect(PreflightCheckException.class);
         expectedException.expectMessage("Unable to detect Java version");
 
         JavaVersionPreflightCheck javaVersionPreflightCheck = new JavaVersionPreflightCheck();
@@ -36,8 +36,8 @@ public class JavaVersionPreflightCheckTest {
     }
 
     @Test
-    public void runChecks_invalidJavaVersion_exceptionIsThrown() {
-        expectedException.expect(RuntimeException.class);
+    public void runChecks_invalidJavaVersion_exceptionIsThrown() throws PreflightCheckException {
+        expectedException.expect(PreflightCheckException.class);
         expectedException.expectMessage("Invalid Java Version '16'. Supported versions: 8 11");
 
         JavaVersionPreflightCheck javaVersionPreflightCheck = new JavaVersionPreflightCheck();
@@ -49,7 +49,7 @@ public class JavaVersionPreflightCheckTest {
     }
 
     @Test
-    public void runChecks_currentJavaVersionIs1dot8_OK() {
+    public void runChecks_currentJavaVersionIs1dot8_OK() throws PreflightCheckException {
         JavaVersionPreflightCheck javaVersionPreflightCheck = new JavaVersionPreflightCheck();
 
         mockStatic(SystemUtils.class);
@@ -59,7 +59,7 @@ public class JavaVersionPreflightCheckTest {
     }
 
     @Test
-    public void runChecks_currentJavaVersionIs11_OK() {
+    public void runChecks_currentJavaVersionIs11_OK() throws PreflightCheckException {
         JavaVersionPreflightCheck javaVersionPreflightCheck = new JavaVersionPreflightCheck();
 
         mockStatic(SystemUtils.class);
@@ -69,7 +69,7 @@ public class JavaVersionPreflightCheckTest {
     }
 
     @Test
-    public void runChecks_currentJavaVersionIsValidMajorVersion_OK() {
+    public void runChecks_currentJavaVersionIsValidMajorVersion_OK() throws PreflightCheckException {
         JavaVersionPreflightCheck javaVersionPreflightCheck = new JavaVersionPreflightCheck();
 
         mockStatic(SystemUtils.class);
@@ -79,8 +79,8 @@ public class JavaVersionPreflightCheckTest {
     }
 
     @Test
-    public void runChecks_borderCase_I_exceptionIsThrown() {
-        expectedException.expect(RuntimeException.class);
+    public void runChecks_borderCase_I_exceptionIsThrown() throws PreflightCheckException {
+        expectedException.expect(PreflightCheckException.class);
         expectedException.expectMessage("Invalid Java Version '111'. Supported versions: 8 11");
 
         JavaVersionPreflightCheck javaVersionPreflightCheck = new JavaVersionPreflightCheck();
@@ -92,8 +92,8 @@ public class JavaVersionPreflightCheckTest {
     }
 
     @Test
-    public void runChecks_borderCase_II_exceptionIsThrown() {
-        expectedException.expect(RuntimeException.class);
+    public void runChecks_borderCase_II_exceptionIsThrown() throws PreflightCheckException {
+        expectedException.expect(PreflightCheckException.class);
         expectedException.expectMessage("Invalid Java version number");
 
         JavaVersionPreflightCheck javaVersionPreflightCheck = new JavaVersionPreflightCheck();
