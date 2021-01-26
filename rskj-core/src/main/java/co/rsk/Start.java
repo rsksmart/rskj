@@ -30,7 +30,8 @@ public class Start {
     public static void main(String[] args) {
         Thread.currentThread().setName("main");
         RskContext ctx = new RskContext(args);
-        PreflightChecksUtils.runChecks(ctx);
+        PreflightChecksUtils preflightChecks = new PreflightChecksUtils(ctx);
+        preflightChecks.runChecks();
         NodeRunner runner = ctx.getNodeRunner();
         try {
             runner.run();
