@@ -1,102 +1,49 @@
 package co.rsk.util;
 
+import co.rsk.RskContext;
+import co.rsk.util.preflight.JavaVersionPreflightCheck;
 import org.ethereum.util.RskTestContext;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
-import org.junit.runner.RunWith;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.powermock.reflect.Whitebox;
 
-import static org.powermock.api.mockito.PowerMockito.*;
+import static org.mockito.Mockito.*;
 
 /**
  * Created by Nazaret García on 22/01/2021
  */
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({SystemUtils.class})
 public class PreflightChecksUtilsTest {
-
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
 
     @Test
     public void runChecks_receivesSkipJavaCheck_skipsJavaChecks() {
         String[] args = {"--skip-java-check"};
 
-        RskTestContext rskContext = new RskTestContext(args);
+        RskContext rskContext = new RskTestContext(args);
+        PreflightChecksUtils preflightChecksUtils = new PreflightChecksUtils(rskContext);
 
-        PreflightChecksUtils.runChecks(rskContext);
+        JavaVersionPreflightCheck javaVersionPreflightCheckMock = mock(JavaVersionPreflightCheck.class);
+        doNothing().when(javaVersionPreflightCheckMock).checkSupportedJavaVersion();
+
+        Whitebox.setInternalState(preflightChecksUtils, "javaVersionPreflightCheck", javaVersionPreflightCheckMock);
+
+        preflightChecksUtils.runChecks();
+
+        verify(javaVersionPreflightCheckMock, times(0)).checkSupportedJavaVersion();
     }
 
     @Test
-    public void runChecks_nullJavaVersionReceived_exceptionIsThrown() {
-        expectedException.expect(RuntimeException.class);
-        expectedException.expectMessage("Unable to detect Java version");
+    public void runChecks_noSkipFlags_OK() {
+        RskContext rskContext = new RskTestContext(new String[0]);
+        PreflightChecksUtils preflightChecksUtils = new PreflightChecksUtils(rskContext);
 
-        RskTestContext rskContext = new RskTestContext(new String[0]);
+        JavaVersionPreflightCheck javaVersionPreflightCheckMock = mock(JavaVersionPreflightCheck.class);
+        doNothing().when(javaVersionPreflightCheckMock).checkSupportedJavaVersion();
 
-        mockStatic(SystemUtils.class);
-        when(SystemUtils.getPropertyValue("java.version")).thenReturn(null);
+        Whitebox.setInternalState(preflightChecksUtils, "javaVersionPreflightCheck", javaVersionPreflightCheckMock);
 
-        PreflightChecksUtils.runChecks(rskContext);
-    }
+        preflightChecksUtils.runChecks();
 
-    @Test
-    public void runChecks_invalidJavaVersion_exceptionIsThrown() {
-        expectedException.expect(RuntimeException.class);
-        expectedException.expectMessage("Invalid Java Version '16'. Supported versions: 1.8, 11");
-
-        RskTestContext rskContext = new RskTestContext(new String[0]);
-
-        mockStatic(SystemUtils.class);
-        when(SystemUtils.getPropertyValue("java.version")).thenReturn("16");
-
-        PreflightChecksUtils.runChecks(rskContext);
-    }
-
-    @Test
-    public void runChecks_currentJavaVersionIs1dot8_OK() {
-        RskTestContext rskContext = new RskTestContext(new String[0]);
-
-        mockStatic(SystemUtils.class);
-        when(SystemUtils.getPropertyValue("java.version")).thenReturn("1.8");
-
-        PreflightChecksUtils.runChecks(rskContext);
-    }
-
-    @Test
-    public void runChecks_currentJavaVersionIs11_OK() {
-        RskTestContext rskContext = new RskTestContext(new String[0]);
-
-        mockStatic(SystemUtils.class);
-        when(SystemUtils.getPropertyValue("java.version")).thenReturn("11");
-
-        PreflightChecksUtils.runChecks(rskContext);
-    }
-
-    @Test
-    public void runChecks_currentJavaVersionIsValidMajorVersion_OK() {
-        RskTestContext rskContext = new RskTestContext(new String[0]);
-
-        mockStatic(SystemUtils.class);
-        when(SystemUtils.getPropertyValue("java.version")).thenReturn("11.0.9.1");
-
-        PreflightChecksUtils.runChecks(rskContext);
-    }
-
-    @Test
-    public void runChecks_borderCase_supportedMajorVersionContainedInCurrentVersion_exceptionIsThrown() {
-        expectedException.expect(RuntimeException.class);
-        expectedException.expectMessage("Invalid Java Version '111'. Supported versions: 1.8, 11");
-
-        RskTestContext rskContext = new RskTestContext(new String[0]);
-
-        mockStatic(SystemUtils.class);
-        when(SystemUtils.getPropertyValue("java.version")).thenReturn("111");
-
-        PreflightChecksUtils.runChecks(rskContext);
+        verify(javaVersionPreflightCheckMock, times(1)).checkSupportedJavaVersion();
     }
 
 }
