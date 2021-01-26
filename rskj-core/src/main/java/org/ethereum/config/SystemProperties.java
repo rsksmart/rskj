@@ -88,7 +88,7 @@ public abstract class SystemProperties {
 
     public static final String PROPERTY_PRINT_SYSTEM_INFO = "system.printInfo";
 
-    public static final String PROPERTY_PREFLIGHT_CHECKS_SKIP_JAVA_VERSION_CHECK = "preflight.checks.skip.java.version.check";
+    public static final String PROPERTY_PREFLIGHT_CHECKS_SKIP_JAVA_VERSION_CHECK = "system.checkJavaVersion";
 
     /* Testing */
     private static final Boolean DEFAULT_VMTEST_LOAD_LOCAL = false;
