@@ -5,21 +5,14 @@ import org.ethereum.util.RskTestContext;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
-import org.junit.runner.RunWith;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 import static junit.framework.TestCase.assertEquals;
 import static org.mockito.Mockito.*;
-import static org.powermock.api.mockito.PowerMockito.verifyPrivate;
 
 /**
  * Created by Nazaret García on 22/01/2021
  */
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({PreflightChecksUtils.class})
 public class PreflightChecksUtilsTest {
 
     @Rule
@@ -30,13 +23,13 @@ public class PreflightChecksUtilsTest {
         String[] args = {"--skip-java-check"};
 
         RskContext rskContext = new RskTestContext(args);
-        PreflightChecksUtils preflightChecksUtilsSpy = PowerMockito.spy(new PreflightChecksUtils(rskContext));
+        PreflightChecksUtils preflightChecksUtilsSpy = spy(new PreflightChecksUtils(rskContext));
 
-        PowerMockito.when(preflightChecksUtilsSpy, "getJavaVersion").thenReturn(null);
+        when(preflightChecksUtilsSpy.getJavaVersion()).thenReturn(null);
 
         preflightChecksUtilsSpy.runChecks();
 
-        verifyPrivate(preflightChecksUtilsSpy, times(0)).invoke("getJavaVersion");
+        verify(preflightChecksUtilsSpy, times(0)).getJavaVersion();
     }
 
     @Test
@@ -60,13 +53,13 @@ public class PreflightChecksUtilsTest {
         expectedException.expectMessage("Unable to detect Java version");
 
         RskContext rskContext = new RskTestContext(new String[0]);
-        PreflightChecksUtils preflightChecksUtilsSpy = PowerMockito.spy(new PreflightChecksUtils(rskContext));
+        PreflightChecksUtils preflightChecksUtilsSpy = spy(new PreflightChecksUtils(rskContext));
 
-        PowerMockito.when(preflightChecksUtilsSpy, "getJavaVersion").thenReturn(null);
+        when(preflightChecksUtilsSpy.getJavaVersion()).thenReturn(null);
 
         preflightChecksUtilsSpy.runChecks();
 
-        verifyPrivate(preflightChecksUtilsSpy, times(0)).invoke("getJavaVersion");
+        verify(preflightChecksUtilsSpy, times(0)).getJavaVersion();
     }
 
     @Test
@@ -75,9 +68,9 @@ public class PreflightChecksUtilsTest {
         expectedException.expectMessage("Invalid Java Version '16'. Supported versions: 8 11");
 
         RskContext rskContext = new RskTestContext(new String[0]);
-        PreflightChecksUtils preflightChecksUtilsSpy = PowerMockito.spy(new PreflightChecksUtils(rskContext));
+        PreflightChecksUtils preflightChecksUtilsSpy = spy(new PreflightChecksUtils(rskContext));
 
-        PowerMockito.when(preflightChecksUtilsSpy, "getJavaVersion").thenReturn("16");
+        when(preflightChecksUtilsSpy.getJavaVersion()).thenReturn("16");
 
         preflightChecksUtilsSpy.runChecks();
     }
@@ -85,54 +78,41 @@ public class PreflightChecksUtilsTest {
     @Test
     public void runChecks_currentJavaVersionIs1dot8_OK() throws Exception {
         RskContext rskContext = new RskTestContext(new String[0]);
-        PreflightChecksUtils preflightChecksUtilsSpy = PowerMockito.spy(new PreflightChecksUtils(rskContext));
+        PreflightChecksUtils preflightChecksUtilsSpy = spy(new PreflightChecksUtils(rskContext));
 
-        PowerMockito.when(preflightChecksUtilsSpy, "getJavaVersion").thenReturn("1.8");
+        when(preflightChecksUtilsSpy.getJavaVersion()).thenReturn("1.8");
 
         preflightChecksUtilsSpy.runChecks();
 
-        verifyPrivate(preflightChecksUtilsSpy, times(1)).invoke("getJavaVersion");
-        verifyPrivate(preflightChecksUtilsSpy, times(1)).invoke("getIntJavaVersion", "1.8");
+        verify(preflightChecksUtilsSpy, times(1)).getJavaVersion();
+        verify(preflightChecksUtilsSpy, times(1)).getIntJavaVersion("1.8");
     }
 
     @Test
     public void runChecks_currentJavaVersionIs11_OK() throws Exception {
         RskContext rskContext = new RskTestContext(new String[0]);
-        PreflightChecksUtils preflightChecksUtilsSpy = PowerMockito.spy(new PreflightChecksUtils(rskContext));
+        PreflightChecksUtils preflightChecksUtilsSpy = spy(new PreflightChecksUtils(rskContext));
 
-        PowerMockito.when(preflightChecksUtilsSpy, "getJavaVersion").thenReturn("11");
-
-        preflightChecksUtilsSpy.runChecks();
-
-        verifyPrivate(preflightChecksUtilsSpy, times(1)).invoke("getJavaVersion");
-        verifyPrivate(preflightChecksUtilsSpy, times(1)).invoke("getIntJavaVersion", "11");
-    }
-
-    @Test
-    public void runChecks_currentJavaVersionIsValidMajorVersion_OK() throws Exception {
-        RskContext rskContext = new RskTestContext(new String[0]);
-        PreflightChecksUtils preflightChecksUtilsSpy = PowerMockito.spy(new PreflightChecksUtils(rskContext));
-
-        PowerMockito.when(preflightChecksUtilsSpy, "getJavaVersion").thenReturn("11.0.9.1");
+        when(preflightChecksUtilsSpy.getJavaVersion()).thenReturn("11");
 
         preflightChecksUtilsSpy.runChecks();
 
-        verifyPrivate(preflightChecksUtilsSpy, times(1)).invoke("getJavaVersion");
-        verifyPrivate(preflightChecksUtilsSpy, times(1)).invoke("getIntJavaVersion", "11.0.9.1");
+        verify(preflightChecksUtilsSpy, times(1)).getJavaVersion();
+        verify(preflightChecksUtilsSpy, times(1)).getIntJavaVersion("11");
     }
 
     @Test
     public void runChecks_runAllChecks_OK() throws Exception {
         RskContext rskContext = new RskTestContext(new String[0]);
-        PreflightChecksUtils preflightChecksUtilsSpy = PowerMockito.spy(new PreflightChecksUtils(rskContext));
+        PreflightChecksUtils preflightChecksUtilsSpy = spy(new PreflightChecksUtils(rskContext));
 
-        PowerMockito.when(preflightChecksUtilsSpy, "getJavaVersion").thenReturn("1.8.0_275");
+        when(preflightChecksUtilsSpy.getJavaVersion()).thenReturn("1.8.0_275");
 
         preflightChecksUtilsSpy.runChecks();
 
-        verifyPrivate(preflightChecksUtilsSpy, times(1)).invoke("getJavaVersion");
+        verify(preflightChecksUtilsSpy, times(1)).getJavaVersion();
         verify(preflightChecksUtilsSpy, times(1)).getIntJavaVersion("1.8.0_275");
-        verifyPrivate(preflightChecksUtilsSpy, times(1)).invoke("checkSupportedJavaVersion");
+        verify(preflightChecksUtilsSpy, times(1)).checkSupportedJavaVersion();
     }
 
 }

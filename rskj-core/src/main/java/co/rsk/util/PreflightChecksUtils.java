@@ -2,6 +2,7 @@ package co.rsk.util;
 
 import co.rsk.RskContext;
 import co.rsk.config.NodeCliFlags;
+import com.google.common.annotations.VisibleForTesting;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,7 +24,8 @@ public class PreflightChecksUtils {
         this.rskContext = rskContext;
     }
 
-    private void checkSupportedJavaVersion() throws PreflightCheckException {
+    @VisibleForTesting
+    void checkSupportedJavaVersion() throws PreflightCheckException {
         String javaVersion = getJavaVersion();
 
         if (javaVersion == null) {
@@ -39,7 +41,8 @@ public class PreflightChecksUtils {
         }
     }
 
-    private String getJavaVersion() {
+    @VisibleForTesting
+    String getJavaVersion() {
         return System.getProperty("java.version");
     }
 
@@ -49,7 +52,8 @@ public class PreflightChecksUtils {
      * @return the Java version as an int value (8, 9, etc.)
      * @link https://stackoverflow.com/a/49512420
      */
-    public int getIntJavaVersion(String version) {
+    @VisibleForTesting
+    int getIntJavaVersion(String version) {
         if (version.startsWith("1.")) {
             version = version.substring(2);
         }
