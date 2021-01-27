@@ -19,12 +19,13 @@ package co.rsk.pcc;
  */
 
 
-import co.rsk.altbn128.cloudflare.Utils;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.config.VmConfig;
 import co.rsk.pcc.altBN128.BN128Addition;
 import co.rsk.pcc.altBN128.BN128Multiplication;
 import co.rsk.pcc.altBN128.BN128Pairing;
+import co.rsk.pcc.altBN128.BN128PrecompiledContract;
+import co.rsk.pcc.altBN128.impls.JavaAltBN128;
 import co.rsk.vm.BytecodeCompiler;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -41,9 +42,7 @@ import org.ethereum.vm.program.invoke.ProgramInvokeMockImpl;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import java.math.BigInteger;
 import java.util.HashSet;
@@ -51,19 +50,16 @@ import java.util.HashSet;
 import static org.ethereum.util.ByteUtil.stripLeadingZeroes;
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.*;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 /**
  * @author Sebastian Sicardi
  * @since 10.09.2019
  */
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(Utils.class)
+@RunWith(MockitoJUnitRunner.class)
 public class AltBN128Test {
     private final TestSystemProperties config;
     private final PrecompiledContracts precompiledContracts;
-    private final boolean isLinux;
     private ActivationConfig.ForBlock activations;
 
     private static final int ADD_GAS_COST = 150;
@@ -73,17 +69,12 @@ public class AltBN128Test {
         this.config = new TestSystemProperties();
         this.precompiledContracts = new PrecompiledContracts(config, null);
         this.activations = mock(ActivationConfig.ForBlock.class);
-
-        this.isLinux = Utils.isLinux();
     }
 
     @Before
     public void init() {
         when(activations.isActive(ConsensusRule.RSKIP137)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP197)).thenReturn(false);
-        PowerMockito.mockStatic(Utils.class);
-        PowerMockito.when(Utils.isLinux()).thenReturn(isLinux);
-
     }
 
     @Test
@@ -670,39 +661,37 @@ public class AltBN128Test {
 
     private void executePrecompileAndAssertError(String inputString, String errorMessage,
                                                  DataWord contractAddress, long gasCost) {
-        runAndAssertError(inputString, errorMessage, contractAddress, gasCost);
-        PowerMockito.when(Utils.isLinux()).thenReturn(false);
-        runAndAssertError(inputString, errorMessage, contractAddress, gasCost);
+        BN128PrecompiledContract contract = (BN128PrecompiledContract) spy(precompiledContracts.getContractForAddress(activations, contractAddress));
+        runAndAssertError(inputString, errorMessage, contract, gasCost);
+        when(contract.getAltBN128()).thenReturn(new JavaAltBN128());
+        runAndAssertError(inputString, errorMessage, contract, gasCost);
     }
 
     private void executePrecompileAndAssert(String inputString, String expectedOutput, String errorMessage,
                                             DataWord contractAddress, long gasCost) throws VMException {
-        runAndAssert(inputString, expectedOutput, errorMessage, contractAddress, gasCost);
-        PowerMockito.when(Utils.isLinux()).thenReturn(false);
-        runAndAssert(inputString, expectedOutput, errorMessage, contractAddress, gasCost);
+        BN128PrecompiledContract contract = (BN128PrecompiledContract) spy(precompiledContracts.getContractForAddress(activations, contractAddress));
+        runAndAssert(inputString, expectedOutput, errorMessage, contract, gasCost);
+        when(contract.getAltBN128()).thenReturn(new JavaAltBN128());
+        runAndAssert(inputString, expectedOutput, errorMessage, contract, gasCost);
     }
 
-    private void runAndAssert(String inputString, String expectedOutput, String errorMessage, DataWord contractAddress, long gasCost) throws VMException {
-        PrecompiledContracts.PrecompiledContract altBN128OperationContract = precompiledContracts.getContractForAddress(activations, contractAddress);
-
+    private void runAndAssert(String inputString, String expectedOutput, String errorMessage, BN128PrecompiledContract contract, long gasCost) throws VMException {
         byte[] input = inputString == null ? null : Hex.decode(inputString);
-        byte[] output = altBN128OperationContract.execute(input);
+        byte[] output = contract.execute(input);
 
-        assertThat("Incorrect gas cost", altBN128OperationContract.getGasForData(input), is(gasCost));
+        assertThat("Incorrect gas cost", contract.getGasForData(input), is(gasCost));
         assertThat(errorMessage, ByteUtil.toHexString(output), is(expectedOutput));
     }
 
-    private void runAndAssertError(String inputString, String errorMessage, DataWord contractAddress, long gasCost) {
-        PrecompiledContracts.PrecompiledContract altBN128OperationContract = precompiledContracts.getContractForAddress(activations, contractAddress);
-
+    private void runAndAssertError(String inputString, String errorMessage, BN128PrecompiledContract contract, long gasCost) {
         byte[] input = inputString == null ? null : Hex.decode(inputString);
         try {
-            altBN128OperationContract.execute(input);
+            contract.execute(input);
             fail();
         } catch (VMException e) {
             assertEquals(errorMessage, e.getMessage());
         }
-        assertThat("Incorrect gas cost", altBN128OperationContract.getGasForData(input), is(gasCost));
+        assertThat("Incorrect gas cost", contract.getGasForData(input), is(gasCost));
     }
 
     private void altBN128MulTest(BigInteger x1, BigInteger y1, BigInteger scalar, String expectedOutput) throws VMException {

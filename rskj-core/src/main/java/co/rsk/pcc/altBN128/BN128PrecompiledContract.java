@@ -18,6 +18,11 @@
 
 package co.rsk.pcc.altBN128;
 
+import co.rsk.altbn128.cloudflare.Utils;
+import co.rsk.pcc.altBN128.impls.AbstractAltBN128;
+import co.rsk.pcc.altBN128.impls.GoAltBN128;
+import co.rsk.pcc.altBN128.impls.JavaAltBN128;
+import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.vm.PrecompiledContracts;
@@ -56,7 +61,7 @@ public abstract class BN128PrecompiledContract extends PrecompiledContracts.Prec
         if (data == null) {
             data = EMPTY_BYTE_ARRAY;
         }
-        AltBN128 altBN128 = new AltBN128();
+        AbstractAltBN128 altBN128 = getAltBN128();
         int rs = concreteExecute(data, altBN128);
         if (rs < 0) {
             throw new VMException("Invalid result.");
@@ -71,7 +76,7 @@ public abstract class BN128PrecompiledContract extends PrecompiledContracts.Prec
         if (data == null) {
             data = EMPTY_BYTE_ARRAY;
         }
-        AltBN128 altBN128 = new AltBN128();
+        AbstractAltBN128 altBN128 = getAltBN128();
         int rs = concreteExecute(data, altBN128);
         if (rs < 0) {
             return EMPTY_BYTE_ARRAY;
@@ -79,5 +84,14 @@ public abstract class BN128PrecompiledContract extends PrecompiledContracts.Prec
         return altBN128.getOutput();
     }
 
-    protected abstract int concreteExecute(byte[] data, AltBN128 altBN128);
+    @VisibleForTesting
+    public AbstractAltBN128 getAltBN128() {
+        if (Utils.isLinux()) {
+            return new GoAltBN128();
+        } else {
+            return new JavaAltBN128();
+        }
+    }
+
+    protected abstract int concreteExecute(byte[] data, AbstractAltBN128 altBN128);
 }

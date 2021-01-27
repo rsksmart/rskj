@@ -18,6 +18,7 @@
 
 package co.rsk.pcc.altBN128;
 
+import co.rsk.pcc.altBN128.impls.AbstractAltBN128;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.vm.GasCost;
 
@@ -66,7 +67,7 @@ public class BN128Pairing extends BN128PrecompiledContract {
     }
 
     @Override
-    protected int concreteExecute(byte[] data, AltBN128 altBN128) {
+    protected int concreteExecute(byte[] data, AbstractAltBN128 altBN128) {
         return altBN128.pairing(data, data.length);
     }
 }
