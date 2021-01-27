@@ -205,6 +205,14 @@ public class BridgeSupport {
     }
 
     /**
+     * Receives only one header of serialized Bitcoin block headers and adds them to the internal BlockChain structure.
+     * @param header The bitcoin headers
+     */
+    public Integer receiveHeader(BtcBlock header) throws IOException {
+        return 0;
+    }
+
+    /**
      * Get the wallet for the currently active federation
      * @return A BTC wallet for the currently active federation
      *
