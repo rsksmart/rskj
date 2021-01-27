@@ -48,7 +48,6 @@ import co.rsk.bitcoinj.core.VerificationException;
 import co.rsk.bitcoinj.crypto.TransactionSignature;
 import co.rsk.bitcoinj.params.RegTestParams;
 import co.rsk.bitcoinj.script.FastBridgeRedeemScriptParser;
-import co.rsk.bitcoinj.script.RedeemScriptParser;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.script.ScriptChunk;
@@ -123,7 +122,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
-import org.powermock.api.mockito.PowerMockito;
 
 public class BridgeSupportTest {
     private static final String TO_ADDRESS = "0000000000000000000000000000000000000006";
@@ -507,13 +505,13 @@ public class BridgeSupportTest {
     @Test
     public void isBtcTxHashAlreadyProcessed() throws IOException {
         BridgeConstants bridgeConstants = BridgeRegTestConstants.getInstance();
-        ActivationConfig.ForBlock activations = ActivationConfigsForTest.all().forBlock(0l);
+        ActivationConfig.ForBlock activations = ActivationConfigsForTest.all().forBlock(0L);
 
         Sha256Hash hash1 = Sha256Hash.ZERO_HASH;
         Sha256Hash hash2 = Sha256Hash.wrap("0000000000000000000000000000000000000000000000000000000000000001");
 
         BridgeStorageProvider bridgeStorageProvider = mock(BridgeStorageProvider.class);
-        when(bridgeStorageProvider.getHeightIfBtcTxhashIsAlreadyProcessed(hash1)).thenReturn(Optional.of(1l));
+        when(bridgeStorageProvider.getHeightIfBtcTxhashIsAlreadyProcessed(hash1)).thenReturn(Optional.of(1L));
 
         BridgeSupport bridgeSupport = getBridgeSupport(bridgeConstants, bridgeStorageProvider, activations);
 
@@ -524,13 +522,13 @@ public class BridgeSupportTest {
     @Test
     public void getBtcTxHashProcessedHeight() throws IOException {
         BridgeConstants bridgeConstants = BridgeRegTestConstants.getInstance();
-        ActivationConfig.ForBlock activations = ActivationConfigsForTest.all().forBlock(0l);
+        ActivationConfig.ForBlock activations = ActivationConfigsForTest.all().forBlock(0L);
 
         Sha256Hash hash1 = Sha256Hash.ZERO_HASH;
         Sha256Hash hash2 = Sha256Hash.wrap("0000000000000000000000000000000000000000000000000000000000000001");
 
         BridgeStorageProvider bridgeStorageProvider = mock(BridgeStorageProvider.class);
-        when(bridgeStorageProvider.getHeightIfBtcTxhashIsAlreadyProcessed(hash1)).thenReturn(Optional.of(1l));
+        when(bridgeStorageProvider.getHeightIfBtcTxhashIsAlreadyProcessed(hash1)).thenReturn(Optional.of(1L));
 
         BridgeSupport bridgeSupport = getBridgeSupport(bridgeConstants, bridgeStorageProvider, activations);
 
@@ -4134,7 +4132,7 @@ public class BridgeSupportTest {
     }
 
     @Test(expected = BridgeIllegalArgumentException.class)
-    public void when_RegisterBtcCoinbaseTransaction_wrong_witnessReservedValue_noSent() throws BlockStoreException, AddressFormatException, IOException, VMException {
+    public void when_RegisterBtcCoinbaseTransaction_wrong_witnessReservedValue_noSent() throws BlockStoreException, AddressFormatException, VMException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP143)).thenReturn(true);
 
@@ -4181,7 +4179,7 @@ public class BridgeSupportTest {
     }
 
     @Test(expected = BridgeIllegalArgumentException.class)
-    public void when_RegisterBtcCoinbaseTransaction_MerkleTreeWrongFormat_noSent() throws BlockStoreException, AddressFormatException, IOException, VMException {
+    public void when_RegisterBtcCoinbaseTransaction_MerkleTreeWrongFormat_noSent() throws BlockStoreException, AddressFormatException, VMException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP143)).thenReturn(true);
 
@@ -4343,7 +4341,7 @@ public class BridgeSupportTest {
     }
 
     @Test
-    public void when_RegisterBtcCoinbaseTransaction_not_equal_merkle_root_noSent() throws BlockStoreException, AddressFormatException, IOException, VMException {
+    public void when_RegisterBtcCoinbaseTransaction_not_equal_merkle_root_noSent() throws BlockStoreException, AddressFormatException, VMException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP143)).thenReturn(true);
 
@@ -4410,7 +4408,7 @@ public class BridgeSupportTest {
     }
 
     @Test(expected = BridgeIllegalArgumentException.class)
-    public void when_RegisterBtcCoinbaseTransaction_null_stored_block_noSent() throws BlockStoreException, AddressFormatException, IOException, VMException {
+    public void when_RegisterBtcCoinbaseTransaction_null_stored_block_noSent() throws BlockStoreException, AddressFormatException, VMException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP143)).thenReturn(true);
 
@@ -4477,7 +4475,7 @@ public class BridgeSupportTest {
     }
 
     @Test
-    public void registerBtcCoinbaseTransaction() throws BlockStoreException, AddressFormatException, IOException, VMException {
+    public void registerBtcCoinbaseTransaction() throws BlockStoreException, AddressFormatException, VMException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP143)).thenReturn(true);
 
