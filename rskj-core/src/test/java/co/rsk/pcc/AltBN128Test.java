@@ -541,7 +541,6 @@ public class AltBN128Test {
         String input = g1Point0 + g2Point0 + g1Point1 + g2Point1;
 
         String expectedOutput = "";
-        String expectedOutputRSKIP197 = "0000000000000000000000000000000000000000000000000000000000000000";
 
         executePrecompileAndAssert(input, expectedOutput, "Invalid output of paring of valid point",
                 PrecompiledContracts.ALT_BN_128_PAIRING_DW, 113_000);
@@ -663,6 +662,7 @@ public class AltBN128Test {
                                                  DataWord contractAddress, long gasCost) {
         BN128PrecompiledContract contract = (BN128PrecompiledContract) spy(precompiledContracts.getContractForAddress(activations, contractAddress));
         runAndAssertError(inputString, errorMessage, contract, gasCost);
+        //force Java execution.
         when(contract.getAltBN128()).thenReturn(new JavaAltBN128());
         runAndAssertError(inputString, errorMessage, contract, gasCost);
     }
@@ -671,6 +671,7 @@ public class AltBN128Test {
                                             DataWord contractAddress, long gasCost) throws VMException {
         BN128PrecompiledContract contract = (BN128PrecompiledContract) spy(precompiledContracts.getContractForAddress(activations, contractAddress));
         runAndAssert(inputString, expectedOutput, errorMessage, contract, gasCost);
+        //force Java execution.
         when(contract.getAltBN128()).thenReturn(new JavaAltBN128());
         runAndAssert(inputString, expectedOutput, errorMessage, contract, gasCost);
     }
