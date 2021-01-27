@@ -24,6 +24,7 @@ import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 
 public class BtcTransactionFormatUtils {
+
     private static final int MIN_BLOCK_HEADER_SIZE = 80;
     private static final int MAX_BLOCK_HEADER_SIZE = 85;
 
@@ -55,6 +56,7 @@ public class BtcTransactionFormatUtils {
 
     public static boolean isBlockHeaderSize(int size, ActivationConfig.ForBlock activations) {
         return (activations.isActive(ConsensusRule.RSKIP124) && size == MIN_BLOCK_HEADER_SIZE) ||
-                (!activations.isActive(ConsensusRule.RSKIP124) && size >= MIN_BLOCK_HEADER_SIZE && size <= MAX_BLOCK_HEADER_SIZE);
+            (!activations.isActive(ConsensusRule.RSKIP124) && size >= MIN_BLOCK_HEADER_SIZE
+                && size <= MAX_BLOCK_HEADER_SIZE);
     }
 }

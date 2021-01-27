@@ -28,6 +28,7 @@ import org.ethereum.core.ImportResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
 import java.time.Duration;
 import java.util.Map;
 
@@ -37,35 +38,38 @@ import java.util.Map;
 public class BlockProcessResult {
 
     private static final Logger logger = LoggerFactory.getLogger("messagehandler");
-    public static final Duration LOG_TIME_LIMIT = Duration.ofSeconds(1);
+    private static final Duration LOG_TIME_LIMIT = Duration.ofSeconds(1);
 
-    private boolean additionalValidationsOk = false;
-
+    private final boolean additionalValidationsOk;
     private final Map<Keccak256, ImportResult> result;
 
     protected BlockProcessResult(boolean additionalValidations, Map<Keccak256, ImportResult> result, String blockHash, Duration processingTime) {
         this.additionalValidationsOk = additionalValidations;
         this.result = result;
+
         if (processingTime.compareTo(LOG_TIME_LIMIT) >= 0) {
             logResult(blockHash, processingTime);
         }
     }
 
-    public static BlockProcessResult invalidBlock(Block block, Instant start) {
+    public static BlockProcessResult ignoreBlockResult(Block block, Instant start) {
         return new BlockProcessResult(false, null, block.getPrintableHash(), Duration.between(start, Instant.now()));
     }
 
-    public static BlockProcessResult validResult(Block block, Instant start, Map<Keccak256, ImportResult> connectResult) {
+    public static BlockProcessResult connectResult(Block block, Instant start, Map<Keccak256, ImportResult> connectResult) {
         return new BlockProcessResult(true, connectResult, block.getPrintableHash(), Duration.between(start, Instant.now()));
     }
 
-    public boolean wasBlockAdded(Block block) {
-        return additionalValidationsOk && !result.isEmpty() && importOk(result.get(block.getHash()));
+    public boolean isScheduledForProcessing() {
+        return additionalValidationsOk && result == null;
     }
 
-    public static boolean importOk(ImportResult blockResult) {
-        return blockResult != null
-                && (blockResult == ImportResult.IMPORTED_BEST || blockResult == ImportResult.IMPORTED_NOT_BEST);
+    public boolean wasBlockAdded(Block block) {
+        return additionalValidationsOk && result != null && !result.isEmpty() && importOk(result.get(block.getHash()));
+    }
+
+    public static boolean importOk(@Nullable ImportResult blockResult) {
+        return blockResult == ImportResult.IMPORTED_BEST || blockResult == ImportResult.IMPORTED_NOT_BEST;
     }
 
     public boolean isBest() {

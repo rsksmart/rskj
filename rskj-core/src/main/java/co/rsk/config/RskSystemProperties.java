@@ -350,11 +350,21 @@ public class RskSystemProperties extends SystemProperties {
         return configFromFiles.getInt("cache.receipts.max-elements");
     }
 
+    public int getBtcBlockStoreCacheSize() {
+        return configFromFiles.getInt("cache.btcBlockStore.size");
+    }
+
+    public int getBtcBlockStoreCacheDepth() {
+        return configFromFiles.getInt("cache.btcBlockStore.depth");
+    }
+
     public long getVmExecutionStackSize() {
         return configFromFiles.getBytes("vm.executionStackSize");
     }
 
-    public String cryptoLibrary() { return configFromFiles.getString("crypto.library");}
+    public String cryptoLibrary() {
+        return configFromFiles.getString("crypto.library");
+    }
 
     public boolean isPeerScoringStatsReportEnabled() {
         return configFromFiles.getBoolean("scoring.summary.enabled");
@@ -362,5 +372,9 @@ public class RskSystemProperties extends SystemProperties {
 
     public long getPeerScoringSummaryTime() {
         return configFromFiles.getLong("scoring.summary.time");
+    }
+
+    public boolean fastBlockPropagation() {
+        return configFromFiles.getBoolean("peer.fastBlockPropagation");
     }
 }

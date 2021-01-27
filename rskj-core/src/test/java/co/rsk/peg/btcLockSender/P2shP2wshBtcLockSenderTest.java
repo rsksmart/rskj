@@ -5,6 +5,7 @@ import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.config.BridgeConstants;
 import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.peg.PegTestUtils;
+import co.rsk.peg.btcLockSender.BtcLockSender.TxSenderAddressType;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.ByteUtil;
@@ -63,7 +64,7 @@ public class P2shP2wshBtcLockSenderTest {
 
     @Test
     public void gets_p2sh_p2wsh_btc_lock_sender_from_raw_transaction() {
-        String rawTx = RawTransactions.txs.get(BtcLockSender.TxType.P2SHP2WSH);
+        String rawTx = RawTransactions.txs.get(TxSenderAddressType.P2SHP2WSH);
         BtcTransaction btcTx = new BtcTransaction(networkParameters, Hex.decode(rawTx));
 
         BtcLockSender btcLockSender = new P2shP2wshBtcLockSender();
@@ -82,13 +83,13 @@ public class P2shP2wshBtcLockSenderTest {
 
         Assert.assertEquals("2MuSnTWG8zPsiGBjPCcbQVd17Ux2PVd5kGa", btcLockSender.getBTCAddress().toBase58());
         Assert.assertEquals(btcAddress, btcLockSender.getBTCAddress());
-        Assert.assertEquals(BtcLockSender.TxType.P2SHP2WSH, btcLockSender.getType());
+        Assert.assertEquals(TxSenderAddressType.P2SHP2WSH, btcLockSender.getTxSenderAddressType());
         Assert.assertNull(btcLockSender.getRskAddress());
     }
 
     @Test
     public void rejects_p2pkh_transaction() {
-        String rawTx = RawTransactions.txs.get(BtcLockSender.TxType.P2PKH);
+        String rawTx = RawTransactions.txs.get(TxSenderAddressType.P2PKH);
         BtcTransaction btcTx = new BtcTransaction(networkParameters, Hex.decode(rawTx));
 
         BtcLockSender btcLockSender = new P2shP2wshBtcLockSender();
@@ -97,7 +98,7 @@ public class P2shP2wshBtcLockSenderTest {
 
     @Test
     public void rejects_p2sh_p2wpkh_transaction() {
-        String rawTx = RawTransactions.txs.get(BtcLockSender.TxType.P2SHP2WPKH);
+        String rawTx = RawTransactions.txs.get(TxSenderAddressType.P2SHP2WPKH);
         BtcTransaction btcTx = new BtcTransaction(networkParameters, Hex.decode(rawTx));
 
         BtcLockSender btcLockSender = new P2shP2wshBtcLockSender();
@@ -106,7 +107,7 @@ public class P2shP2wshBtcLockSenderTest {
 
     @Test
     public void rejects_p2sh_multisig_transaction() {
-        String rawTx = RawTransactions.txs.get(BtcLockSender.TxType.P2SHMULTISIG);
+        String rawTx = RawTransactions.txs.get(TxSenderAddressType.P2SHMULTISIG);
         BtcTransaction btcTx = new BtcTransaction(networkParameters, Hex.decode(rawTx));
 
         BtcLockSender btcLockSender = new P2shP2wshBtcLockSender();

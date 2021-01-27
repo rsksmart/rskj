@@ -112,11 +112,7 @@ public class MessageVisitor {
 
         tryRelayBlock(block, result);
 
-        if (result.isBest()) {
-            sender.imported(true);
-        } else {
-            sender.imported(false);
-        }
+        sender.imported(result.isBest());
 
         recordEventForPeerScoring(sender, EventType.VALID_BLOCK);
     }
@@ -227,7 +223,7 @@ public class MessageVisitor {
 
     private void  tryRelayBlock(Block block, BlockProcessResult result) {
         // is new block and it is not orphan, it is in some blockchain
-        if (result.wasBlockAdded(block) && !this.blockProcessor.hasBetterBlockToSync()) {
+        if ((result.isScheduledForProcessing() || result.wasBlockAdded(block)) && !this.blockProcessor.hasBetterBlockToSync()) {
             relayBlock(block);
         }
     }
@@ -239,7 +235,6 @@ public class MessageVisitor {
         final Set<NodeID> newNodes = this.syncProcessor.getKnownPeersNodeIDs().stream()
                 .filter(p -> !nodesWithBlock.contains(p))
                 .collect(Collectors.toSet());
-
 
         List<BlockIdentifier> identifiers = new ArrayList<>();
         identifiers.add(new BlockIdentifier(blockHash.getBytes(), block.getNumber()));

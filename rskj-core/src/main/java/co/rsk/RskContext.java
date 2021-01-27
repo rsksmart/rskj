@@ -29,7 +29,10 @@ import co.rsk.db.RepositoryLocator;
 import co.rsk.db.StateRootHandler;
 import co.rsk.db.importer.BootstrapImporter;
 import co.rsk.db.importer.BootstrapURLProvider;
-import co.rsk.db.importer.provider.*;
+import co.rsk.db.importer.provider.BootstrapDataProvider;
+import co.rsk.db.importer.provider.BootstrapDataVerifier;
+import co.rsk.db.importer.provider.BootstrapFileHandler;
+import co.rsk.db.importer.provider.Unzipper;
 import co.rsk.db.importer.provider.index.BootstrapIndexCandidateSelector;
 import co.rsk.db.importer.provider.index.BootstrapIndexRetriever;
 import co.rsk.logfilter.BlocksBloomService;
@@ -134,16 +137,13 @@ import java.time.Clock;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Properties;
 
 /**
  * Creates the initial object graph without a DI framework.
- *
+ * <p>
  * When an object construction has to be tweaked, create a buildXXX method and call it from getXXX.
  * This way derived classes don't have to store their own instances.
- *
+ * <p>
  * Note that many methods are public to allow the fed node overriding.
  */
 public class RskContext implements NodeBootstrapper {
@@ -171,6 +171,8 @@ public class RskContext implements NodeBootstrapper {
     private BlockValidationRule blockValidationRule;
     private BlockValidationRule minerServerBlockValidationRule;
     private BlockValidator blockValidator;
+    private BlockValidator blockHeaderValidator;
+    private BlockValidator blockRelayValidator;
     private ReceiptStore receiptStore;
     private ProgramInvokeFactory programInvokeFactory;
     private TransactionPool transactionPool;
@@ -451,7 +453,11 @@ public class RskContext implements NodeBootstrapper {
     public BtcBlockStoreWithCache.Factory getBtcBlockStoreFactory() {
         if (btcBlockStoreFactory == null) {
             NetworkParameters btcParams = getRskSystemProperties().getNetworkConstants().getBridgeConstants().getBtcParams();
-            btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(btcParams);
+            btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(
+                    btcParams,
+                    getRskSystemProperties().getBtcBlockStoreCacheDepth(),
+                    getRskSystemProperties().getBtcBlockStoreCacheSize()
+            );
         }
 
         return btcBlockStoreFactory;
@@ -507,13 +513,26 @@ public class RskContext implements NodeBootstrapper {
 
     public NodeBlockProcessor getNodeBlockProcessor() {
         if (nodeBlockProcessor == null) {
-            nodeBlockProcessor = new NodeBlockProcessor(
-                    getNetBlockStore(),
-                    getBlockchain(),
-                    getBlockNodeInformation(),
-                    getBlockSyncService(),
-                    getSyncConfiguration()
-            );
+            RskSystemProperties rskSystemProperties = getRskSystemProperties();
+            if (rskSystemProperties.fastBlockPropagation()) {
+                nodeBlockProcessor = new AsyncNodeBlockProcessor(
+                        getNetBlockStore(),
+                        getBlockchain(),
+                        getBlockNodeInformation(),
+                        getBlockSyncService(),
+                        getSyncConfiguration(),
+                        getBlockHeaderValidator(),
+                        getBlockRelayValidator()
+                );
+            } else {
+                nodeBlockProcessor = new NodeBlockProcessor(
+                        getNetBlockStore(),
+                        getBlockchain(),
+                        getBlockNodeInformation(),
+                        getBlockSyncService(),
+                        getSyncConfiguration()
+                );
+            }
         }
 
         return nodeBlockProcessor;
@@ -858,6 +877,11 @@ public class RskContext implements NodeBootstrapper {
                 getReceiptStore(),
                 getBlocksBloomStore()));
 
+        NodeBlockProcessor nodeBlockProcessor = getNodeBlockProcessor();
+        if (nodeBlockProcessor instanceof InternalService) {
+            internalServices.add((InternalService) nodeBlockProcessor);
+        }
+
         GarbageCollectorConfig gcConfig = getRskSystemProperties().garbageCollectorConfig();
 
         if (gcConfig.enabled()) {
@@ -1011,7 +1035,7 @@ public class RskContext implements NodeBootstrapper {
                         .orElse(numberOfEpochs);
             }
             Path unitriePath = databasePath.resolve("unitrie");
-            if(Files.exists(unitriePath)) {
+            if (Files.exists(unitriePath)) {
                 // moves the unitrie directory as the currentEpoch. It "knows" the internals of the MultiTrieStore constructor
                 // to assign currentEpoch - 1 as the name
                 Files.move(
@@ -1161,8 +1185,8 @@ public class RskContext implements NodeBootstrapper {
                     getNetBlockStore(),
                     getBlockchain(),
                     getBlockNodeInformation(),
-                    getSyncConfiguration()
-            );
+                    getSyncConfiguration(),
+                    getBlockHeaderValidator());
         }
 
         return blockSyncService;
@@ -1174,6 +1198,55 @@ public class RskContext implements NodeBootstrapper {
         }
 
         return blockValidator;
+    }
+
+    private BlockValidator getBlockRelayValidator() {
+        if (blockRelayValidator == null) {
+            final RskSystemProperties rskSystemProperties = getRskSystemProperties();
+            final Constants commonConstants = rskSystemProperties.getNetworkConstants();
+            final BlockTimeStampValidationRule blockTimeStampValidationRule = new BlockTimeStampValidationRule(
+                    commonConstants.getNewBlockMaxSecondsInTheFuture(),
+                    rskSystemProperties.getActivationConfig()
+            );
+
+            final BlockHeaderParentDependantValidationRule blockParentValidator = new BlockHeaderParentCompositeRule(
+                    new PrevMinGasPriceRule(),
+                    new BlockParentGasLimitRule(commonConstants.getGasLimitBoundDivisor()),
+                    new BlockDifficultyRule(getDifficultyCalculator()),
+                    new BlockParentNumberRule(),
+                    blockTimeStampValidationRule
+            );
+
+            final BlockValidationRule blockValidator = new ExtraDataRule(commonConstants.getMaximumExtraDataSize());
+
+            blockRelayValidator = new BlockRelayValidatorImpl(
+                    getBlockStore(),
+                    blockParentValidator,
+                    blockValidator
+            );
+        }
+
+        return blockRelayValidator;
+    }
+
+    private BlockValidator getBlockHeaderValidator() {
+        if (blockHeaderValidator == null) {
+            final RskSystemProperties rskSystemProperties = getRskSystemProperties();
+            final Constants commonConstants = rskSystemProperties.getNetworkConstants();
+            final BlockTimeStampValidationRule blockTimeStampValidationRule = new BlockTimeStampValidationRule(
+                    commonConstants.getNewBlockMaxSecondsInTheFuture(),
+                    rskSystemProperties.getActivationConfig()
+            );
+
+            final BlockHeaderValidationRule blockHeaderValidationRule = new BlockHeaderCompositeRule(
+                    getProofOfWorkRule(),
+                    blockTimeStampValidationRule
+            );
+
+            blockHeaderValidator = new BlockHeaderValidatorImpl(blockHeaderValidationRule);
+        }
+
+        return blockHeaderValidator;
     }
 
     private EthereumChannelInitializerFactory getEthereumChannelInitializerFactory() {
@@ -1205,9 +1278,9 @@ public class RskContext implements NodeBootstrapper {
 
     public BlockValidationRule getBlockValidationRule() {
         if (blockValidationRule == null) {
-            RskSystemProperties rskSystemProperties = getRskSystemProperties();
-            Constants commonConstants = rskSystemProperties.getNetworkConstants();
-            BlockTimeStampValidationRule blockTimeStampValidationRule = new BlockTimeStampValidationRule(
+            final RskSystemProperties rskSystemProperties = getRskSystemProperties();
+            final Constants commonConstants = rskSystemProperties.getNetworkConstants();
+            final BlockTimeStampValidationRule blockTimeStampValidationRule = new BlockTimeStampValidationRule(
                     commonConstants.getNewBlockMaxSecondsInTheFuture(),
                     rskSystemProperties.getActivationConfig()
             );
