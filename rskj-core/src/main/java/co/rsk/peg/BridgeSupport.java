@@ -39,7 +39,6 @@ import co.rsk.bitcoinj.core.UTXOProviderException;
 import co.rsk.bitcoinj.core.VerificationException;
 import co.rsk.bitcoinj.crypto.TransactionSignature;
 import co.rsk.bitcoinj.script.FastBridgeRedeemScriptParser;
-import co.rsk.bitcoinj.script.RedeemScriptParser;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.script.ScriptChunk;
@@ -298,9 +297,8 @@ public class BridgeSupport {
      * @return A BTC wallet for the currently live federation(s)
      * limited to the given list of UTXOs
      *
-     * @throws IOException
      */
-    public Wallet getUTXOBasedWalletForLiveFederations(List<UTXO> utxos, boolean isFastBridgeCompatible) throws IOException {
+    public Wallet getUTXOBasedWalletForLiveFederations(List<UTXO> utxos, boolean isFastBridgeCompatible) {
         return BridgeUtils.getFederationsSpendWallet(btcContext, getLiveFederations(), utxos, isFastBridgeCompatible, provider);
     }
 
@@ -308,9 +306,8 @@ public class BridgeSupport {
      * Get a no spend wallet for the currently live federations
      * @return A no spend BTC wallet for the currently live federation(s)
      *
-     * @throws IOException
      */
-    public Wallet getNoSpendWalletForLiveFederations(boolean isFastBridgeCompatible) throws IOException {
+    public Wallet getNoSpendWalletForLiveFederations(boolean isFastBridgeCompatible) {
         return BridgeUtils.getFederationsNoSpendWallet(btcContext, getLiveFederations(), isFastBridgeCompatible, provider);
     }
 
@@ -479,7 +476,7 @@ public class BridgeSupport {
             if (activations.isActive(ConsensusRule.RSKIP181)) {
                 if (!isTxLockableForLegacyVersion(senderBtcAddressType, btcTx, senderBtcAddress)) {
                     eventLogger.logRejectedPegin(btcTx, RejectedPeginReason.LEGACY_PEGIN_MULTISIG_SENDER);
-                } else if (!verifyLockDoesNotSurpassLockingCap(btcTx, senderBtcAddress, totalAmount)) {
+                } else if (!verifyLockDoesNotSurpassLockingCap(btcTx, totalAmount)) {
                     eventLogger.logRejectedPegin(btcTx, RejectedPeginReason.PEGIN_CAP_SURPASSED);
                 }
             }
@@ -499,8 +496,7 @@ public class BridgeSupport {
         }
 
         // Confirm we should process this lock
-        Address senderBtcAddress = peginInformation.getSenderBtcAddress();
-        if (verifyLockDoesNotSurpassLockingCap(btcTx, senderBtcAddress, totalAmount)) {
+        if (verifyLockDoesNotSurpassLockingCap(btcTx, totalAmount)) {
             executePegIn(btcTx, peginInformation, totalAmount);
         } else {
             logger.debug("[processPegInVersion1] Peg-in attempt surpasses locking cap. Amount attempted to lock: {}", totalAmount);
@@ -603,7 +599,7 @@ public class BridgeSupport {
                                        Address senderBtcAddress, Coin totalAmount, int height) {
         return isTxLockableForLegacyVersion(txSenderAddressType, btcTx, senderBtcAddress) &&
                 verifyLockSenderIsWhitelisted(senderBtcAddress, totalAmount, height) &&
-                verifyLockDoesNotSurpassLockingCap(btcTx, senderBtcAddress, totalAmount);
+                verifyLockDoesNotSurpassLockingCap(btcTx, totalAmount);
     }
 
     protected boolean isTxLockableForLegacyVersion(TxSenderAddressType txSenderAddressType, BtcTransaction btcTx, Address senderBtcAddress) {
@@ -1665,7 +1661,7 @@ public class BridgeSupport {
      * -2 when a federation is to be activated,
      * and if -3 funds are still to be moved between federations.
      */
-    private Integer createFederation(boolean dryRun) throws IOException {
+    private Integer createFederation(boolean dryRun) {
         PendingFederation currentPendingFederation = provider.getPendingFederation();
 
         if (currentPendingFederation != null) {
@@ -2418,7 +2414,7 @@ public class BridgeSupport {
             return FAST_BRIDGE_UNPROCESSABLE_TX_VALUE_ZERO_ERROR;
         }
 
-        if (!verifyLockDoesNotSurpassLockingCap(btcTx, null, totalAmount)) {
+        if (!verifyLockDoesNotSurpassLockingCap(btcTx, totalAmount)) {
             InternalTransaction internalTx = (InternalTransaction)rskTx;
             logger.info("[registerFastBridgeBtcTransaction] Locking cap surpassed, going to return funds!");
             WalletProvider walletProvider = createFastBridgeWalletProvider(fastBridgeFederationInformation);
@@ -2561,16 +2557,6 @@ public class BridgeSupport {
         System.arraycopy(hash160, 0, btcAddressBytes, version.length, hash160.length);
 
         return btcAddressBytes;
-    }
-
-    protected Coin getAmountToLiveFederations(BtcTransaction btcTx) throws IOException{
-        Coin amountToActive = btcTx.getValueSentToMe(getActiveFederationWallet(false));
-        Coin amountToRetiring = Coin.ZERO;
-        Wallet retiringFederationWallet = getRetiringFederationWallet(false);
-        if (retiringFederationWallet != null) {
-            amountToRetiring = btcTx.getValueSentToMe(retiringFederationWallet);
-        }
-        return amountToActive.add(amountToRetiring);
     }
 
     protected Coin getAmountSentToAddress(BtcTransaction btcTx, Address btcAddress) {
@@ -2774,7 +2760,7 @@ public class BridgeSupport {
         return true;
     }
 
-    private boolean verifyLockDoesNotSurpassLockingCap(BtcTransaction btcTx, Address senderBtcAddress, Coin totalAmount) {
+    private boolean verifyLockDoesNotSurpassLockingCap(BtcTransaction btcTx, Coin totalAmount) {
         if (!activations.isActive(ConsensusRule.RSKIP134)) {
             return true;
         }
@@ -2890,8 +2876,6 @@ public class BridgeSupport {
         if (retiringFederationWallet != null) {
             amountToRetiring = btcTx.getValueSentToMe(retiringFederationWallet);
         }
-        Coin totalAmount = amountToActive.add(amountToRetiring);
-
-        return totalAmount;
+        return amountToActive.add(amountToRetiring);
     }
 }
