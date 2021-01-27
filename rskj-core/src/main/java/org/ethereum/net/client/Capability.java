@@ -19,6 +19,8 @@
 
 package org.ethereum.net.client;
 
+import java.util.Objects;
+
 /**
  * The protocols and versions of those protocols that this peer support
  */
@@ -63,6 +65,11 @@ public class Capability implements Comparable<Capability> {
         } else {
             return this.name.equals(other.name) && this.version == other.version;
         }
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(name, version);
     }
 
     @Override
