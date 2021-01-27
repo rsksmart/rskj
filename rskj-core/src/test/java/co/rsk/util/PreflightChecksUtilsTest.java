@@ -48,21 +48,6 @@ public class PreflightChecksUtilsTest {
     }
 
     @Test
-    public void runChecks_nullJavaVersionReceived_exceptionIsThrown() throws Exception {
-        expectedException.expect(PreflightCheckException.class);
-        expectedException.expectMessage("Unable to detect Java version");
-
-        RskContext rskContext = new RskTestContext(new String[0]);
-        PreflightChecksUtils preflightChecksUtilsSpy = spy(new PreflightChecksUtils(rskContext));
-
-        when(preflightChecksUtilsSpy.getJavaVersion()).thenReturn(null);
-
-        preflightChecksUtilsSpy.runChecks();
-
-        verify(preflightChecksUtilsSpy, times(0)).getJavaVersion();
-    }
-
-    @Test
     public void runChecks_invalidJavaVersion_exceptionIsThrown() throws Exception {
         expectedException.expect(PreflightCheckException.class);
         expectedException.expectMessage("Invalid Java Version '16'. Supported versions: 8 11");

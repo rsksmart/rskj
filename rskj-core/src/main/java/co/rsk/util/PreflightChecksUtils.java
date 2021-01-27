@@ -28,10 +28,6 @@ public class PreflightChecksUtils {
     void checkSupportedJavaVersion() throws PreflightCheckException {
         String javaVersion = getJavaVersion();
 
-        if (javaVersion == null) {
-            throw new PreflightCheckException("Unable to detect Java version");
-        }
-
         int intJavaVersion = getIntJavaVersion(javaVersion);
 
         if (Arrays.stream(SUPPORTED_JAVA_VERSIONS).noneMatch(v -> intJavaVersion == v)) {
