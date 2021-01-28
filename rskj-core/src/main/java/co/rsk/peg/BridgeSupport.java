@@ -318,7 +318,7 @@ public class BridgeSupport {
     }
 
     protected TxType getTransactionType(BtcTransaction btcTx) {
-        Script retiredFederationP2SHScript = provider.getLastRetiredFederationP2SHScript();
+        Script retiredFederationP2SHScript = provider.getLastRetiredFederationP2SHScript().orElse(null);
 
         if (BridgeUtils.isPegInTx(btcTx, getLiveFederations(), retiredFederationP2SHScript, btcContext, bridgeConstants)) {
             return TxType.PEGIN;
@@ -987,10 +987,15 @@ public class BridgeSupport {
             return;
         }
 
-        Long nextFederationCreationBlockHeight = provider.getNextFederationCreationBlockHeight();
-        if (nextFederationCreationBlockHeight != null) {
-            provider.setActiveFederationCreationBlockHeight(nextFederationCreationBlockHeight);
-            provider.clearNextFederationCreationBlockHeight();
+        Optional<Long> nextFederationCreationBlockHeightOpt = provider.getNextFederationCreationBlockHeight();
+        if (nextFederationCreationBlockHeightOpt.isPresent()) {
+            long nextFederationCreationBlockHeight = nextFederationCreationBlockHeightOpt.get();
+            long curBlockHeight = rskExecutionBlock.getNumber();
+
+            if (curBlockHeight >= nextFederationCreationBlockHeight + bridgeConstants.getFederationActivationAge()) {
+                provider.setActiveFederationCreationBlockHeight(nextFederationCreationBlockHeight);
+                provider.clearNextFederationCreationBlockHeight();
+            }
         }
     }
 
@@ -2266,20 +2271,17 @@ public class BridgeSupport {
             return 0L;
         }
 
-        Long nextFederationCreationBlockHeight = provider.getNextFederationCreationBlockHeight();
-        if (nextFederationCreationBlockHeight != null) {
+        Optional<Long> nextFederationCreationBlockHeightOpt = provider.getNextFederationCreationBlockHeight();
+        if (nextFederationCreationBlockHeightOpt.isPresent()) {
+            long nextFederationCreationBlockHeight = nextFederationCreationBlockHeightOpt.get();
             long curBlockHeight = rskExecutionBlock.getNumber();
             if (curBlockHeight >= nextFederationCreationBlockHeight + bridgeConstants.getFederationActivationAge()) {
                 return nextFederationCreationBlockHeight;
             }
         }
 
-        Long activeFederationCreationBlockHeight = provider.getActiveFederationCreationBlockHeight();
-        if (activeFederationCreationBlockHeight != null) {
-            return activeFederationCreationBlockHeight;
-        }
-
-        return 0L;
+        Optional<Long> activeFederationCreationBlockHeightOpt = provider.getActiveFederationCreationBlockHeight();
+        return activeFederationCreationBlockHeightOpt.orElse(0L);
     }
 
     private StoredBlock getBtcBlockchainChainHead() throws IOException, BlockStoreException {

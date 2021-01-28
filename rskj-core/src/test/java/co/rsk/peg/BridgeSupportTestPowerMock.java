@@ -1393,7 +1393,7 @@ public class BridgeSupportTestPowerMock {
 
         BridgeStorageProvider mockBridgeStorageProvider = mock(BridgeStorageProvider.class, Mockito.RETURNS_DEEP_STUBS);
         when(mockBridgeStorageProvider.getHeightIfBtcTxhashIsAlreadyProcessed(any(Sha256Hash.class))).thenReturn(Optional.empty());
-        when(mockBridgeStorageProvider.getLastRetiredFederationP2SHScript()).thenReturn(null);
+        when(mockBridgeStorageProvider.getLastRetiredFederationP2SHScript()).thenReturn(Optional.empty());
 
         List<UTXO> retiringFederationUtxos = new ArrayList<>();
         FederationSupport mockFederationSupport = mock(FederationSupport.class);

@@ -602,17 +602,17 @@ public class BridgeStorageProvider {
             safeSaveToRepository(getStorageKeyForCoinbaseInformation(blockHash), data, BridgeSerializationUtils::serializeCoinbaseInformation));
     }
 
-    public Long getActiveFederationCreationBlockHeight() {
+    public Optional<Long> getActiveFederationCreationBlockHeight() {
         if (!activations.isActive(RSKIP186)) {
-            return null;
+            return Optional.empty();
         }
 
         if (activeFederationCreationBlockHeight != null) {
-            return activeFederationCreationBlockHeight;
+            return Optional.of(activeFederationCreationBlockHeight);
         }
 
         activeFederationCreationBlockHeight = safeGetFromRepository(ACTIVE_FEDERATION_CREATION_BLOCK_HEIGHT_KEY, BridgeSerializationUtils::deserializeOptionalLong).orElse(null);
-        return activeFederationCreationBlockHeight;
+        return Optional.ofNullable(activeFederationCreationBlockHeight);
     }
 
     public void setActiveFederationCreationBlockHeight(long activeFederationCreationBlockHeight) {
@@ -627,17 +627,17 @@ public class BridgeStorageProvider {
         safeSaveToRepository(ACTIVE_FEDERATION_CREATION_BLOCK_HEIGHT_KEY, activeFederationCreationBlockHeight, BridgeSerializationUtils::serializeLong);
     }
 
-    public Long getNextFederationCreationBlockHeight() {
+    public Optional<Long> getNextFederationCreationBlockHeight() {
         if (!activations.isActive(RSKIP186)) {
-            return null;
+            return Optional.empty();
         }
 
         if (nextFederationCreationBlockHeight != null) {
-            return nextFederationCreationBlockHeight;
+            return Optional.of(nextFederationCreationBlockHeight);
         }
 
         nextFederationCreationBlockHeight = safeGetFromRepository(NEXT_FEDERATION_CREATION_BLOCK_HEIGHT_KEY, BridgeSerializationUtils::deserializeOptionalLong).orElse(null);
-        return nextFederationCreationBlockHeight;
+        return Optional.ofNullable(nextFederationCreationBlockHeight);
     }
 
     public void setNextFederationCreationBlockHeight(long nextFederationCreationBlockHeight) {
@@ -660,17 +660,17 @@ public class BridgeStorageProvider {
         }
     }
 
-    public Script getLastRetiredFederationP2SHScript() {
+    public Optional<Script> getLastRetiredFederationP2SHScript() {
         if (!activations.isActive(RSKIP186)) {
-            return null;
+            return Optional.empty();
         }
 
         if (lastRetiredFederationP2SHScript != null) {
-            return lastRetiredFederationP2SHScript;
+            return Optional.of(lastRetiredFederationP2SHScript);
         }
 
         lastRetiredFederationP2SHScript = safeGetFromRepository(LAST_RETIRED_FEDERATION_P2SH_SCRIPT_KEY, BridgeSerializationUtils::deserializeScript);
-        return lastRetiredFederationP2SHScript;
+        return Optional.ofNullable(lastRetiredFederationP2SHScript);
     }
 
     public void setLastRetiredFederationP2SHScript(Script lastRetiredFederationP2SHScript) {

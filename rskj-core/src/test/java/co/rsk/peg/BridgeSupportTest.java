@@ -1650,7 +1650,7 @@ public class BridgeSupportTest {
         sufficientUTXOsForMigration1.add(createUTXO(Coin.COIN, oldFederation.getAddress()));
         when(provider.getOldFederationBtcUTXOs()).thenReturn(sufficientUTXOsForMigration1);
 
-        when(provider.getNextFederationCreationBlockHeight()).thenReturn(1L);
+        when(provider.getNextFederationCreationBlockHeight()).thenReturn(Optional.of(1L));
 
         bridgeSupport.updateCollections(tx);
 
@@ -1710,7 +1710,7 @@ public class BridgeSupportTest {
         when(provider.getOldFederationBtcUTXOs())
                 .thenReturn(sufficientUTXOsForMigration1);
 
-        when(provider.getNextFederationCreationBlockHeight()).thenReturn(null);
+        when(provider.getNextFederationCreationBlockHeight()).thenReturn(Optional.empty());
 
         bridgeSupport.updateCollections(tx);
 
@@ -1718,7 +1718,7 @@ public class BridgeSupportTest {
         verify(provider, never()).setActiveFederationCreationBlockHeight(any(Long.class));
         verify(provider, never()).clearNextFederationCreationBlockHeight();
 
-        when(provider.getNextFederationCreationBlockHeight()).thenReturn(1L);
+        when(provider.getNextFederationCreationBlockHeight()).thenReturn(Optional.of(1L));
 
         bridgeSupport.updateCollections(tx);
 
@@ -5616,7 +5616,7 @@ public class BridgeSupportTest {
         Assert.assertEquals(BridgeSupport.TxType.MIGRATION, bridgeSupport.getTransactionType(migrationTx));
 
         when(mockFederationSupport.getRetiringFederation()).thenReturn(null);
-        when(provider.getLastRetiredFederationP2SHScript()).thenReturn(retiringFederation.getP2SHScript());
+        when(provider.getLastRetiredFederationP2SHScript()).thenReturn(Optional.of(retiringFederation.getP2SHScript()));
         Assert.assertEquals(BridgeSupport.TxType.MIGRATION, bridgeSupport.getTransactionType(migrationTx));
     }
 
