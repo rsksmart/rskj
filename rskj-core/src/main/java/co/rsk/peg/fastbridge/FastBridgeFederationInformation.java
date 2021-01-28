@@ -17,7 +17,7 @@ public class FastBridgeFederationInformation {
     ) {
         this.derivationHash = derivationHash;
         this.federationScriptHash = federationScriptHash.clone();
-        this.fastBridgeScriptHash = fastBridgeScriptHash;
+        this.fastBridgeScriptHash = fastBridgeScriptHash.clone();
     }
 
     public Keccak256 getDerivationHash() {
@@ -29,7 +29,7 @@ public class FastBridgeFederationInformation {
     }
 
     public byte[] getFastBridgeScriptHash() {
-        return this.fastBridgeScriptHash;
+        return this.fastBridgeScriptHash.clone();
     }
 
     public Address getFastBridgeFederationAddress(NetworkParameters networkParameters) {
