@@ -11,7 +11,7 @@ import java.util.Optional;
 import javax.annotation.Nullable;
 
 public abstract class FastBridgeCompatibleBtcWallet extends BridgeBtcWallet {
-    public FastBridgeCompatibleBtcWallet(
+    protected FastBridgeCompatibleBtcWallet(
         Context btcContext,
         List<Federation> federations
     ) {

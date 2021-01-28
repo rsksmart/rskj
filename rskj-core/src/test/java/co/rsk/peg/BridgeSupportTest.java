@@ -6813,7 +6813,7 @@ public class BridgeSupportTest {
         utxoList.add(utxo);
 
         Wallet obtainedWallet = bridgeSupport.getFastBridgeWallet(btcContext, utxoList, fastBridgeFederationInformation);
-        Assert.assertEquals(obtainedWallet.getBalance(), Coin.COIN);
+        Assert.assertEquals(Coin.COIN, obtainedWallet.getBalance());
     }
 
     @Test
