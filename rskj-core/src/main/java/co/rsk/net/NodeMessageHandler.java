@@ -203,7 +203,7 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
     }
 
     private void updateTimedEvents() {
-        Long now = System.currentTimeMillis();
+        long now = System.currentTimeMillis();
         Duration timeTick = Duration.ofMillis(now - lastTickSent);
         // TODO(lsebrie): handle timeouts properly
         lastTickSent = now;
