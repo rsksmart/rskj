@@ -161,7 +161,7 @@ public class MiningMainchainViewImpl implements MiningMainchainView {
 
             Block nextBlock = blockStore.getBlockByHash(currentHeader.getParentHash().getBytes());
             if (nextBlock == null) {
-                logger.error("Missing parent for block %s, number %d", currentHeader.getPrintableHash(), currentHeader.getNumber());
+                logger.error("Missing parent for block {}, number {}", currentHeader.getPrintableHash(), currentHeader.getNumber());
                 break;
             }
             currentHeader = nextBlock.getHeader();

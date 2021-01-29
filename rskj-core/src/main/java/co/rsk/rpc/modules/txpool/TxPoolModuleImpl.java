@@ -102,11 +102,10 @@ public class TxPoolModuleImpl implements TxPoolModule {
     }
 
     private JsonNode summarySerializer(Transaction tx) {
-        String summary = "{}: {} wei + {} x {} gas";
-        String summaryFormatted = String.format(summary,
+        String summaryFormatted = String.format("%s: %s wei + %d x %s gas",
                 tx.getReceiveAddress().toString(),
                 tx.getValue().toString(),
-                tx.getGasLimitAsInteger().toString(),
+                tx.getGasLimitAsInteger(),
                 tx.getGasPrice().toString());
         return jsonNodeFactory.textNode(summaryFormatted);
     }
