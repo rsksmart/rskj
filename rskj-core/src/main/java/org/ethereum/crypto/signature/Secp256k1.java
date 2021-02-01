@@ -50,7 +50,7 @@ public final class Secp256k1 {
      *
      * <p> By default it initialize Bouncy Castle impl.</p>
      *
-     * @param {@link Nullable} rskSystemProperties = Could be null in tests.
+     * @param rskSystemProperties {@link Nullable} = Could be null in tests.
      */
     public static synchronized void initialize(@Nullable RskSystemProperties rskSystemProperties) {
         // Just a warning for duplicate initialization.
