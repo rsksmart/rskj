@@ -131,7 +131,7 @@ public class BridgeTestNetConstants extends BridgeConstants {
         maxDepthToSearchBlocksBelowIndexActivation = 1_000; //TODO define this value with Sergio
 
         minSecondsBetweenCallsReceiveHeader = 600;  // 10 minutes in Seconds
-        maxDepthBlockchainAccepted = 4000;
+        maxDepthBlockchainAccepted = 25;
     }
 
     public static BridgeTestNetConstants getInstance() {
