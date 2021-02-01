@@ -5136,7 +5136,6 @@ public class BridgeSupportTest {
 
     @Test
     public void receiveHeader_time_not_present_in_storage() throws IOException, BlockStoreException {
-
         Repository repository = mock(Repository.class);
         StoredBlock storedBlock = mock(StoredBlock.class);
         BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
@@ -5173,7 +5172,6 @@ public class BridgeSupportTest {
 
     @Test
     public void receiveHeader_time_exceed_X() throws IOException, BlockStoreException {
-
         Repository repository = mock(Repository.class);
         StoredBlock storedBlock = mock(StoredBlock.class);
         BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
@@ -5215,7 +5213,6 @@ public class BridgeSupportTest {
 
     @Test
     public void receiveHeader_time_less_than_X() throws IOException, BlockStoreException {
-
         Repository repository = mock(Repository.class);
         StoredBlock storedBlock = mock(StoredBlock.class);
         BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
@@ -5257,14 +5254,12 @@ public class BridgeSupportTest {
 
     @Test
     public void receiveHeader_unexpected_exception() throws IOException, BlockStoreException {
-
         Repository repository = mock(Repository.class);
         StoredBlock storedBlock = mock(StoredBlock.class);
         BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
 
         BtcBlock btcBlock2 = mock(BtcBlock.class);
-        when(btcBlock2.getPrevBlockHash()).thenReturn(Sha256Hash.ZERO_HASH);
-        when(btcBlockStore.get(Sha256Hash.ZERO_HASH)).thenReturn(storedBlock);
+        when(btcBlock2.getPrevBlockHash()).thenReturn(Sha256Hash.of(new byte[]{}));
 
         BridgeStorageProvider provider = spy(new BridgeStorageProvider(
                         repository,
@@ -5281,19 +5276,17 @@ public class BridgeSupportTest {
                 storedBlock,
                 activationsAfterForks
         );
-        // Returns NullPointerException
-        doReturn(null).when(btcBlock2).getHash();
 
         int result = bridgeSupport.receiveHeader(btcBlock2);
 
+        verify(btcBlockStore, never()).put(storedBlock);
         verify(provider, times(1)).getReceiveHeadersLastTimestamp();
         verify(provider, never()).setReceiveHeadersLastTimestamp(anyLong());
         Assert.assertEquals(-99, result);
     }
 
     @Test
-    public void receiveHeader_previus_block_not_in_storage() throws IOException, BlockStoreException {
-
+    public void receiveHeader_previous_block_not_in_storage() throws IOException, BlockStoreException {
         Repository repository = mock(Repository.class);
         StoredBlock storedBlock = mock(StoredBlock.class);
         BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
@@ -5331,7 +5324,6 @@ public class BridgeSupportTest {
 
     @Test
     public void receiveHeader_block_too_old() throws IOException, BlockStoreException {
-
         Repository repository = mock(Repository.class);
         StoredBlock storedBlock = mock(StoredBlock.class);
         BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);

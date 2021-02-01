@@ -221,7 +221,7 @@ public class BridgeSupport {
 
         long currentTimeStamp = rskExecutionBlock.getTimestamp(); //in seconds
         Optional<Long> optionalLastTimeStamp = provider.getReceiveHeadersLastTimestamp();
-        if (optionalLastTimeStamp.isPresent() && (currentTimeStamp - optionalLastTimeStamp.get().longValue() < diffTimeStamp)) {
+        if (optionalLastTimeStamp.isPresent() && (currentTimeStamp - optionalLastTimeStamp.get() < diffTimeStamp)) {
             logger.warn("Receive header last TimeStamp less than {} milliseconds", diffTimeStamp);
             return RECEIVE_HEADER_CALLED_TOO_SOON;
         }
