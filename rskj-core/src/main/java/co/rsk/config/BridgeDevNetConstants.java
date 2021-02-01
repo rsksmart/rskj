@@ -130,6 +130,6 @@ public class BridgeDevNetConstants extends BridgeConstants {
         lockingCapIncrementsMultiplier = 2;
 
         minSecondsBetweenCallsReceiveHeader = 600;  // 10 minutes in Seconds
-        maxDepthBlockchainAccepted = 4000;
+        maxDepthBlockchainAccepted = 25;
     }
 }
