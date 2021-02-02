@@ -31,7 +31,7 @@ public enum NodeCliFlags implements CliArg {
     DB_IMPORT("import", SystemProperties.PROPERTY_DB_IMPORT, true),
     VERIFY_CONFIG("verify-config", SystemProperties.PROPERTY_BC_VERIFY, true),
     PRINT_SYSTEM_INFO("print-system-info", SystemProperties.PROPERTY_PRINT_SYSTEM_INFO, true),
-    SKIP_JAVA_CHECK("skip-java-check", SystemProperties.PROPERTY_PREFLIGHT_CHECKS_SKIP_JAVA_VERSION_CHECK, false),
+    SKIP_JAVA_CHECK("skip-java-check", SystemProperties.PROPERTY_SKIP_JAVA_VERSION_CHECK, false),
     NETWORK_TESTNET("testnet", SystemProperties.PROPERTY_BC_CONFIG_NAME, "testnet"),
     NETWORK_REGTEST("regtest", SystemProperties.PROPERTY_BC_CONFIG_NAME, "regtest"),
     NETWORK_DEVNET("devnet", SystemProperties.PROPERTY_BC_CONFIG_NAME, "devnet"),
