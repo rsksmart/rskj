@@ -12,8 +12,8 @@ import java.util.Arrays;
 /**
  * Created by Nazaret García on 21/01/2021
  *
- * This class exposes a method to run preflight checks before the node starts.
- * If any given check fails, then an exception is thrown and the node stops.
+ * This class exposes a method to run a variety of checks.
+ * If any given check fails, then a PreflightCheckException exception is thrown.
  *
  * Flags, as command-line arguments, can be used to skip or configure any available check.
  *
