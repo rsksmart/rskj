@@ -502,13 +502,13 @@ public class BridgeSupportTest {
     @Test
     public void isBtcTxHashAlreadyProcessed() throws IOException {
         BridgeConstants bridgeConstants = BridgeRegTestConstants.getInstance();
-        ActivationConfig.ForBlock activations = ActivationConfigsForTest.all().forBlock(0l);
+        ActivationConfig.ForBlock activations = ActivationConfigsForTest.all().forBlock(0L);
 
         Sha256Hash hash1 = Sha256Hash.ZERO_HASH;
         Sha256Hash hash2 = Sha256Hash.wrap("0000000000000000000000000000000000000000000000000000000000000001");
 
         BridgeStorageProvider bridgeStorageProvider = mock(BridgeStorageProvider.class);
-        when(bridgeStorageProvider.getHeightIfBtcTxhashIsAlreadyProcessed(hash1)).thenReturn(Optional.of(1l));
+        when(bridgeStorageProvider.getHeightIfBtcTxhashIsAlreadyProcessed(hash1)).thenReturn(Optional.of(1L));
 
         BridgeSupport bridgeSupport = getBridgeSupport(bridgeConstants, bridgeStorageProvider, activations);
 
@@ -519,13 +519,13 @@ public class BridgeSupportTest {
     @Test
     public void getBtcTxHashProcessedHeight() throws IOException {
         BridgeConstants bridgeConstants = BridgeRegTestConstants.getInstance();
-        ActivationConfig.ForBlock activations = ActivationConfigsForTest.all().forBlock(0l);
+        ActivationConfig.ForBlock activations = ActivationConfigsForTest.all().forBlock(0L);
 
         Sha256Hash hash1 = Sha256Hash.ZERO_HASH;
         Sha256Hash hash2 = Sha256Hash.wrap("0000000000000000000000000000000000000000000000000000000000000001");
 
         BridgeStorageProvider bridgeStorageProvider = mock(BridgeStorageProvider.class);
-        when(bridgeStorageProvider.getHeightIfBtcTxhashIsAlreadyProcessed(hash1)).thenReturn(Optional.of(1l));
+        when(bridgeStorageProvider.getHeightIfBtcTxhashIsAlreadyProcessed(hash1)).thenReturn(Optional.of(1L));
 
         BridgeSupport bridgeSupport = getBridgeSupport(bridgeConstants, bridgeStorageProvider, activations);
 
@@ -697,7 +697,7 @@ public class BridgeSupportTest {
         BtcBlockStoreWithCache.Factory btcBlockStoreFactory = mock(BtcBlockStoreWithCache.Factory.class);
 
         BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
-        when(btcBlockStoreFactory.newInstance(any(Repository.class))).thenReturn(btcBlockStore);
+        when(btcBlockStoreFactory.newInstance(any(Repository.class), any(), any(), any())).thenReturn(btcBlockStore);
 
         // Create transaction
         Coin lockValue = Coin.COIN;
@@ -764,7 +764,7 @@ public class BridgeSupportTest {
         BtcBlockStoreWithCache.Factory btcBlockStoreFactory = mock(BtcBlockStoreWithCache.Factory.class);
 
         BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
-        when(btcBlockStoreFactory.newInstance(any(Repository.class))).thenReturn(btcBlockStore);
+        when(btcBlockStoreFactory.newInstance(any(Repository.class), any(), any(), any())).thenReturn(btcBlockStore);
 
         // Create transaction
         Coin lockValue = Coin.COIN;
@@ -1179,7 +1179,7 @@ public class BridgeSupportTest {
             1,
             1,
             1,
-            new ArrayList<BtcTransaction>()
+            new ArrayList<>()
         );
 
         int height = 30;
@@ -1349,7 +1349,7 @@ public class BridgeSupportTest {
             1,
             1,
             1,
-            new ArrayList<BtcTransaction>()
+            new ArrayList<>()
         );
 
         int height = 30;
@@ -2013,7 +2013,7 @@ public class BridgeSupportTest {
         PeginInstructionsProvider peginInstructionsProvider = getPeginInstructionsProviderForVersion1(rskDestinationAddress, Optional.empty());
 
         BtcBlockStoreWithCache.Factory mockFactory = mock(BtcBlockStoreWithCache.Factory.class);
-        when(mockFactory.newInstance(repository)).thenReturn(btcBlockStore);
+        when(mockFactory.newInstance(repository, bridgeConstants, provider, activations)).thenReturn(btcBlockStore);
 
         BridgeSupport bridgeSupport = getBridgeSupport(
             bridgeConstants,
@@ -3537,7 +3537,7 @@ public class BridgeSupportTest {
         when(btcBlockStore.getStoredBlockAtMainChainHeight(block.getHeight())).thenReturn(block);
 
         BtcBlockStoreWithCache.Factory mockFactory = mock(BtcBlockStoreWithCache.Factory.class);
-        when(mockFactory.newInstance(any())).thenReturn(btcBlockStore);
+        when(mockFactory.newInstance(any(), any(), any(), any())).thenReturn(btcBlockStore);
 
         BridgeStorageProvider provider = new BridgeStorageProvider(repository, contractAddress, bridgeConstants, activations);
         provider.setNewFederation(federation1);
@@ -3642,7 +3642,7 @@ public class BridgeSupportTest {
         when(btcBlockStore.getStoredBlockAtMainChainHeight(block.getHeight())).thenReturn(block);
 
         BtcBlockStoreWithCache.Factory mockFactory = mock(BtcBlockStoreWithCache.Factory.class);
-        when(mockFactory.newInstance(any())).thenReturn(btcBlockStore);
+        when(mockFactory.newInstance(any(), any(), any(), any())).thenReturn(btcBlockStore);
 
         BridgeStorageProvider provider = new BridgeStorageProvider(
             repository,
@@ -3757,7 +3757,7 @@ public class BridgeSupportTest {
         when(btcBlockStore.getStoredBlockAtMainChainHeight(block.getHeight())).thenReturn(block);
 
         BtcBlockStoreWithCache.Factory mockFactory = mock(BtcBlockStoreWithCache.Factory.class);
-        when(mockFactory.newInstance(any())).thenReturn(btcBlockStore);
+        when(mockFactory.newInstance(any(), any(), any(), any())).thenReturn(btcBlockStore);
 
         BridgeStorageProvider provider = new BridgeStorageProvider(repository, contractAddress, bridgeConstants, activations);
         provider.setNewFederation(federation1);
@@ -4357,7 +4357,7 @@ public class BridgeSupportTest {
     }
 
     @Test(expected = BridgeIllegalArgumentException.class)
-    public void when_RegisterBtcCoinbaseTransaction_wrong_witnessReservedValue_noSent() throws BlockStoreException, AddressFormatException, IOException, VMException {
+    public void when_RegisterBtcCoinbaseTransaction_wrong_witnessReservedValue_noSent() throws BlockStoreException, AddressFormatException, VMException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP143)).thenReturn(true);
 
@@ -4409,7 +4409,7 @@ public class BridgeSupportTest {
     }
 
     @Test(expected = BridgeIllegalArgumentException.class)
-    public void when_RegisterBtcCoinbaseTransaction_MerkleTreeWrongFormat_noSent() throws BlockStoreException, AddressFormatException, IOException, VMException {
+    public void when_RegisterBtcCoinbaseTransaction_MerkleTreeWrongFormat_noSent() throws BlockStoreException, AddressFormatException, VMException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP143)).thenReturn(true);
 
@@ -4580,7 +4580,7 @@ public class BridgeSupportTest {
     }
 
     @Test
-    public void when_RegisterBtcCoinbaseTransaction_not_equal_merkle_root_noSent() throws BlockStoreException, AddressFormatException, IOException, VMException {
+    public void when_RegisterBtcCoinbaseTransaction_not_equal_merkle_root_noSent() throws BlockStoreException, AddressFormatException, VMException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP143)).thenReturn(true);
 
@@ -4652,7 +4652,7 @@ public class BridgeSupportTest {
     }
 
     @Test(expected = BridgeIllegalArgumentException.class)
-    public void when_RegisterBtcCoinbaseTransaction_null_stored_block_noSent() throws BlockStoreException, AddressFormatException, IOException, VMException {
+    public void when_RegisterBtcCoinbaseTransaction_null_stored_block_noSent() throws BlockStoreException, AddressFormatException, VMException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP143)).thenReturn(true);
 
@@ -4724,7 +4724,7 @@ public class BridgeSupportTest {
     }
 
     @Test
-    public void registerBtcCoinbaseTransaction() throws BlockStoreException, AddressFormatException, IOException, VMException {
+    public void registerBtcCoinbaseTransaction() throws BlockStoreException, AddressFormatException, VMException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP143)).thenReturn(true);
 

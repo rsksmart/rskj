@@ -372,6 +372,7 @@ public class RepositoryBtcBlockStoreWithCacheTest {
 
         btcBlockStore.setChainHead(storedBlock4);
         assertEquals(storedBlock4, btcBlockStore.getChainHead());
+        int maxHeight = storedBlock4.getHeight();
 
         //Check getStoredBlockAtMainChainDepth
         assertEquals(storedBlock3, btcBlockStore.getStoredBlockAtMainChainDepth(maxHeight - storedBlock3.getHeight()));
