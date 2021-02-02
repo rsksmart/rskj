@@ -88,6 +88,8 @@ public abstract class SystemProperties {
 
     public static final String PROPERTY_PRINT_SYSTEM_INFO = "system.printInfo";
 
+    public static final String PROPERTY_SKIP_JAVA_VERSION_CHECK = "system.checkJavaVersion";
+
     /* Testing */
     private static final Boolean DEFAULT_VMTEST_LOAD_LOCAL = false;
 
@@ -550,6 +552,10 @@ public abstract class SystemProperties {
 
     public boolean shouldPrintSystemInfo() {
         return getBoolean(PROPERTY_PRINT_SYSTEM_INFO, false);
+    }
+
+    public boolean shouldSkipJavaVersionCheck() {
+        return getBoolean(PROPERTY_SKIP_JAVA_VERSION_CHECK, false);
     }
 
     protected int getInt(String path, int val) {
