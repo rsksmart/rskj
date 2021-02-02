@@ -2233,18 +2233,21 @@ public class BridgeStorageProviderTest {
     @Test
     public void saveActiveFederationCreationBlockHeight_before_RSKIP186() {
         Repository repository = mock(Repository.class);
-        // If by chance the repository is called I want to force the tests to fail
-        when(repository.getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromString("activeFedCreationBlockHeight"))).thenReturn(new byte[] { 1 });
 
         BridgeStorageProvider provider0 = new BridgeStorageProvider(
                 repository, PrecompiledContracts.BRIDGE_ADDR,
                 config.getNetworkConstants().getBridgeConstants(), activationsBeforeFork
         );
 
-        assertEquals(Optional.empty(), provider0.getActiveFederationCreationBlockHeight());
+        provider0.setActiveFederationCreationBlockHeight(10L);
+        provider0.saveActiveFederationCreationBlockHeight();
 
-        // If the network upgrade is not enabled we shouldn't be reading the repository
-        verify(repository, never()).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromString("activeFedCreationBlockHeight"));
+        // If the network upgrade is not enabled we shouldn't be saving to the repository
+        verify(repository, never()).addStorageBytes(
+                eq(PrecompiledContracts.BRIDGE_ADDR),
+                eq(DataWord.fromString("activeFedCreationBlockHeight")),
+                any()
+        );
     }
 
     @Test
@@ -2346,19 +2349,39 @@ public class BridgeStorageProviderTest {
 
     @Test
     public void saveNextFederationCreationBlockHeight_before_RSKIP186() {
-        Repository repository = mock(Repository.class);
-        // If by chance the repository is called I want to force the tests to fail
-        when(repository.getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromString("nextFedCreationBlockHeight"))).thenReturn(new byte[] { 1 });
+        Repository repository1 = mock(Repository.class);
 
-        BridgeStorageProvider provider0 = new BridgeStorageProvider(
-                repository, PrecompiledContracts.BRIDGE_ADDR,
+        BridgeStorageProvider provider1 = new BridgeStorageProvider(
+                repository1, PrecompiledContracts.BRIDGE_ADDR,
                 config.getNetworkConstants().getBridgeConstants(), activationsBeforeFork
         );
 
-        assertEquals(Optional.empty(), provider0.getNextFederationCreationBlockHeight());
+        provider1.setNextFederationCreationBlockHeight(10L);
+        provider1.saveNextFederationCreationBlockHeight();
 
-        // If the network upgrade is not enabled we shouldn't be reading the repository
-        verify(repository, never()).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromString("nextFedCreationBlockHeight"));
+        // If the network upgrade is not enabled we shouldn't be saving to the repository
+        verify(repository1, never()).addStorageBytes(
+                eq(PrecompiledContracts.BRIDGE_ADDR),
+                eq(DataWord.fromString("nextFedCreationBlockHeight")),
+                any()
+        );
+
+        Repository repository2 = mock(Repository.class);
+
+        BridgeStorageProvider provider2 = new BridgeStorageProvider(
+                repository2, PrecompiledContracts.BRIDGE_ADDR,
+                config.getNetworkConstants().getBridgeConstants(), activationsBeforeFork
+        );
+
+        provider2.clearNextFederationCreationBlockHeight();
+        provider2.saveNextFederationCreationBlockHeight();
+
+        // If the network upgrade is not enabled we shouldn't be saving to the repository
+        verify(repository2, never()).addStorageBytes(
+                eq(PrecompiledContracts.BRIDGE_ADDR),
+                eq(DataWord.fromString("nextFedCreationBlockHeight")),
+                any()
+        );
     }
 
     @Test
@@ -2451,18 +2474,23 @@ public class BridgeStorageProviderTest {
     @Test
     public void saveLastRetiredFederationP2SHScript_before_RSKIP186() {
         Repository repository = mock(Repository.class);
-        // If by chance the repository is called I want to force the tests to fail
-        when(repository.getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromString("lastRetiredFedP2SHScript"))).thenReturn(new byte[] { 1 });
 
         BridgeStorageProvider provider0 = new BridgeStorageProvider(
                 repository, PrecompiledContracts.BRIDGE_ADDR,
                 config.getNetworkConstants().getBridgeConstants(), activationsBeforeFork
         );
 
-        assertEquals(Optional.empty(), provider0.getLastRetiredFederationP2SHScript());
+        Script script = new Script(new byte[]{});
 
-        // If the network upgrade is not enabled we shouldn't be reading the repository
-        verify(repository, never()).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, DataWord.fromString("lastRetiredFedP2SHScript"));
+        provider0.setLastRetiredFederationP2SHScript(script);
+        provider0.saveLastRetiredFederationP2SHScript();
+
+        // If the network upgrade is not enabled we shouldn't be saving to the repository
+        verify(repository, never()).addStorageBytes(
+                eq(PrecompiledContracts.BRIDGE_ADDR),
+                eq(DataWord.fromString("lastRetiredFedP2SHScript")),
+                any()
+        );
     }
 
     private BtcTransaction createTransaction() {
