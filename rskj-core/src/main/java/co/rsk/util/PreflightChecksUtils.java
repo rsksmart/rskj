@@ -11,6 +11,15 @@ import java.util.Arrays;
 
 /**
  * Created by Nazaret García on 21/01/2021
+ *
+ * This class exposes a method to run preflight checks before the node starts.
+ * If any given check fails, then an exception is thrown and the node stops.
+ *
+ * Flags, as command-line arguments, can be used to skip or configure any available check.
+ *
+ * Current Supported Checks:
+ *
+ * - Supported Java Version Check: (can be skipped by setting the --skip-java-check flag)
  */
 
 public class PreflightChecksUtils {
@@ -24,6 +33,10 @@ public class PreflightChecksUtils {
         this.rskContext = rskContext;
     }
 
+    /**
+     * Checks if current Java Version is supported
+     * @throws PreflightCheckException if current Java Version is not supported
+     */
     @VisibleForTesting
     void checkSupportedJavaVersion() throws PreflightCheckException {
         String javaVersion = getJavaVersion();
@@ -45,8 +58,9 @@ public class PreflightChecksUtils {
     /**
      * Returns the Java version as an int value.
      * Formats allowed: 1.8.0_72-ea, 9-ea, 9, 9.0.1, 11, 11.0, etc.
+     * Based on @link https://stackoverflow.com/a/49512420
+     * @param version The java version as String
      * @return the Java version as an int value (8, 9, etc.)
-     * @link https://stackoverflow.com/a/49512420
      */
     @VisibleForTesting
     int getIntJavaVersion(String version) {
