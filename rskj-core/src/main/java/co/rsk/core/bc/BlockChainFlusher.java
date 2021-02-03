@@ -100,7 +100,7 @@ public class BlockChainFlusher implements InternalService {
     }
 
     private void flushAll() {
-        Metric metric = profiler.start(Profiler.PROFILING_TYPE.BLOCKCHAIN_FLUSH);
+        Metric metric = profiler.start(Profiler.MetricType.BLOCKCHAIN_FLUSH);
 
         long saveTime = System.nanoTime();
         trieStore.flush();

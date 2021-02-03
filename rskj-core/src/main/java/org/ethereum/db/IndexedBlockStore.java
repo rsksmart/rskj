@@ -179,7 +179,7 @@ public class IndexedBlockStore implements BlockStore {
 
     @Override
     public synchronized void flush() {
-        Metric metric = profiler.start(Profiler.PROFILING_TYPE.DB_WRITE);
+        Metric metric = profiler.start(Profiler.MetricType.DB_WRITE);
         index.flush();
         profiler.stop(metric);
     }

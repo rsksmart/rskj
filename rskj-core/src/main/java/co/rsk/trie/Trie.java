@@ -144,7 +144,7 @@ public class Trie {
      */
     public static Trie fromMessage(byte[] message, TrieStore store) {
         Trie trie;
-        Metric metric = profiler.start(Profiler.PROFILING_TYPE.BUILD_TRIE_FROM_MSG);
+        Metric metric = profiler.start(Profiler.MetricType.BUILD_TRIE_FROM_MSG);
         if (message[0] == ARITY) {
             trie = fromMessageOrchid(message, store);
         } else {
@@ -380,7 +380,7 @@ public class Trie {
      */
     @Nullable
     public byte[] get(byte[] key) {
-        Metric metric = profiler.start(Profiler.PROFILING_TYPE.TRIE_GET_VALUE_FROM_KEY);
+        Metric metric = profiler.start(Profiler.MetricType.TRIE_GET_VALUE_FROM_KEY);
         Trie node = find(key);
         if (node == null) {
             profiler.stop(metric);
