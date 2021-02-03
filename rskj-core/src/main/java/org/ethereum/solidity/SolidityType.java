@@ -33,6 +33,16 @@ import java.util.Arrays;
 import java.util.List;
 
 public abstract class SolidityType {
+
+    public static final String BYTES = "bytes";
+    public static final String BYTES32 = "bytes32";
+    public static final String STRING = "string";
+    public static final String ADDRESS = "address";
+    public static final String BOOL = "bool";
+    public static final String INT = "int";
+    public static final String INT256 = "int256";
+    public static final String UINT = "uint";
+
     protected String name;
     private final static int INT_32_SIZE = 32;
 
@@ -61,22 +71,22 @@ public abstract class SolidityType {
         if (typeName.contains("[")) {
             return ArrayType.getType(typeName);
         }
-        if ("bool".equals(typeName)) {
+        if (BOOL.equals(typeName)) {
             return new BoolType();
         }
-        if (typeName.startsWith("int") || typeName.startsWith("uint")) {
+        if (typeName.startsWith(INT) || typeName.startsWith(UINT)) {
             return new IntType(typeName);
         }
-        if ("address".equals(typeName)) {
+        if (ADDRESS.equals(typeName)) {
             return new AddressType();
            }
-        if ("string".equals(typeName)) {
+        if (STRING.equals(typeName)) {
             return new StringType();
         }
-        if ("bytes".equals(typeName)) {
+        if (BYTES.equals(typeName)) {
             return new BytesType();
         }
-        if (typeName.startsWith("bytes")) {
+        if (typeName.startsWith(BYTES)) {
             return new Bytes32Type(typeName);
         }
         throw new RuntimeException("Unknown type: " + typeName);
@@ -271,7 +281,7 @@ public abstract class SolidityType {
         }
 
         public BytesType() {
-            super("bytes");
+            super(BYTES);
         }
 
         @Override
@@ -301,7 +311,7 @@ public abstract class SolidityType {
 
     public static class StringType extends BytesType {
         public StringType() {
-            super("string");
+            super(STRING);
         }
 
         @Override
@@ -352,7 +362,7 @@ public abstract class SolidityType {
 
     public static class AddressType extends IntType {
         public AddressType() {
-            super("address");
+            super(SolidityType.ADDRESS);
         }
 
         @Override
@@ -387,10 +397,10 @@ public abstract class SolidityType {
 
         @Override
         public String getCanonicalName() {
-            if (getName().equals("int")) {
+            if (getName().equals(INT)) {
                 return "int256";
             }
-            if (getName().equals("uint")) {
+            if (getName().equals(UINT)) {
                 return "uint256";
             }
             return super.getCanonicalName();
@@ -450,7 +460,7 @@ public abstract class SolidityType {
 
     public static class BoolType extends IntType {
         public BoolType() {
-            super("bool");
+            super(BOOL);
         }
 
         @Override
