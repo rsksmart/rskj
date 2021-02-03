@@ -57,6 +57,7 @@ public enum ConsensusRule {
     RSKIP174("rskip174"),
     RSKIP179("rskip179"), // BTC-RSK timestamp linking
     RSKIP180("rskip180"),
+    RSKIP181("rskip181"), //Peg-in rejection events
     RSKIPUMM("rskipUMM"),
     RSKIP191("rskip191"),
     RSKIP197("rskip197"); //Handle error in Precompile Contracts execution.
