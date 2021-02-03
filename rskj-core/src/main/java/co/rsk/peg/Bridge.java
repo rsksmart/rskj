@@ -436,6 +436,10 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         }
     }
 
+    public boolean registerBtcTransactionIsPublic() {
+        return activations.isActive(ConsensusRule.RSKIP199);
+    }
+
     public void registerBtcTransaction(Object[] args) throws VMException {
         logger.trace("registerBtcTransaction");
 
