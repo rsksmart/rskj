@@ -107,7 +107,9 @@ public class FrameCodec {
     }
 
     public void writeFrame(Frame frame, ByteBuf buf) throws IOException {
-        writeFrame(frame, new ByteBufOutputStream(buf));
+        try (ByteBufOutputStream bos = new ByteBufOutputStream(buf)) {
+            writeFrame(frame, bos);
+        }
     }
 
     public void writeFrame(Frame frame, OutputStream out) throws IOException {

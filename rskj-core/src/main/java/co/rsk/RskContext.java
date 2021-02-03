@@ -1735,13 +1735,8 @@ public class RskContext implements NodeContext, NodeBootstrapper {
             String fullFilename = filePath.toString();
             MessageFilter filter = new MessageFilter(rskSystemProperties.getMessageRecorderCommands());
 
-            try {
-                writerMessageRecorder = new WriterMessageRecorder(
-                        new BufferedWriter(
-                                new OutputStreamWriter(new FileOutputStream(fullFilename), StandardCharsets.UTF_8)
-                        ),
-                        filter
-                );
+            try (FileOutputStream fos = new FileOutputStream(fullFilename); OutputStreamWriter osw = new OutputStreamWriter(fos, StandardCharsets.UTF_8)) {
+                writerMessageRecorder = new WriterMessageRecorder(new BufferedWriter(osw), filter);
             } catch (IOException ex) {
                 throw new IllegalArgumentException("Can't use this path to record messages", ex);
             }
