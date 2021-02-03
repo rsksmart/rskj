@@ -1,10 +1,17 @@
 package co.rsk.peg;
 
+import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.Coin;
+import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.TestSystemProperties;
+import co.rsk.core.RskAddress;
+import java.io.IOException;
+import java.time.Instant;
+import java.util.Arrays;
+import java.util.List;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -12,6 +19,7 @@ import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.Block;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.core.Transaction;
+import org.ethereum.crypto.ECKey;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.exception.VMException;
@@ -19,7 +27,6 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.io.IOException;
 import java.math.BigInteger;
 
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.*;
@@ -156,7 +163,7 @@ public class BridgeTest {
     }
 
     @Test
-    public void registerBtcCoinbaseTransaction_after_RSKIP143_activation() throws BlockStoreException, IOException, VMException {
+    public void registerBtcCoinbaseTransaction_after_RSKIP143_activation() throws VMException {
         ActivationConfig activations = spy(ActivationConfigsForTest.genesis());
         doReturn(true).when(activations).isActive(eq(RSKIP143), anyLong());
 
@@ -194,6 +201,112 @@ public class BridgeTest {
     }
 
     @Test
+    public void registerBtcTransaction_beforeRskip199_rejectsExternalCalls()
+        throws VMException, IOException, BlockStoreException {
+
+        ActivationConfig activations = spy(ActivationConfigsForTest.genesis());
+        doReturn(false).when(activations).isActive(eq(RSKIP199), anyLong());
+
+        Federation activeFederation = new Federation(
+            FederationTestUtils.getFederationMembers(3),
+            Instant.ofEpochMilli(1000),
+            0L,
+            NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
+        );
+
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        when(bridgeSupportMock.getActiveFederation()).thenReturn(activeFederation);
+
+        Transaction rskTx = mock(Transaction.class);
+        when(rskTx.getSender()).thenReturn(new RskAddress("0000000000000000000000000000000000000001"));
+
+        Bridge bridge = getBridgeInstance(bridgeSupportMock, activations, rskTx);
+
+        byte[] value = Sha256Hash.ZERO_HASH.getBytes();
+        int zero = 0;
+        byte[] data = Bridge.REGISTER_BTC_TRANSACTION.encode(new Object[]{ value, zero, value });
+
+        try {
+            bridge.execute(data);
+            Assert.fail();
+        } catch (VMException e) {
+            Assert.assertEquals("Exception executing bridge: Sender is not part of the active or retiring federations, so he is not enabled to call the function 'registerBtcTransaction'", e.getMessage());
+        }
+
+        verify(bridgeSupportMock, never()).registerBtcTransaction(
+            any(Transaction.class),
+            any(byte[].class),
+            anyInt(),
+            any(byte[].class)
+        );
+    }
+
+    @Test
+    public void registerBtcTransaction_beforeRskip199_acceptsCallFromFederationMember()
+        throws VMException, IOException, BlockStoreException {
+
+        ActivationConfig activations = spy(ActivationConfigsForTest.genesis());
+        doReturn(false).when(activations).isActive(eq(RSKIP199), anyLong());
+
+        BtcECKey fed1Key = new BtcECKey();
+        RskAddress fed1Address = new RskAddress(ECKey.fromPublicOnly(fed1Key.getPubKey()).getAddress());
+        List<BtcECKey> federationKeys = Arrays.asList(fed1Key, new BtcECKey(), new BtcECKey());
+        federationKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
+
+        Federation activeFederation = new Federation(
+            FederationTestUtils.getFederationMembersWithKeys(federationKeys),
+            Instant.ofEpochMilli(1000),
+            0L,
+            NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
+        );
+
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        when(bridgeSupportMock.getActiveFederation()).thenReturn(activeFederation);
+
+        Transaction rskTx = mock(Transaction.class);
+        when(rskTx.getSender()).thenReturn(fed1Address);
+
+        Bridge bridge = getBridgeInstance(bridgeSupportMock, activations, rskTx);
+
+        byte[] value = Sha256Hash.ZERO_HASH.getBytes();
+        int zero = 0;
+        byte[] data = Bridge.REGISTER_BTC_TRANSACTION.encode(new Object[]{ value, zero, value });
+
+        bridge.execute(data);
+
+        verify(bridgeSupportMock, times(1)).registerBtcTransaction(
+            any(Transaction.class),
+            any(byte[].class),
+            anyInt(),
+            any(byte[].class)
+        );
+    }
+
+    @Test
+    public void registerBtcTransaction_afterRskip199_acceptsExternalCalls()
+        throws VMException, IOException, BlockStoreException {
+
+        ActivationConfig activations = spy(ActivationConfigsForTest.genesis());
+        doReturn(true).when(activations).isActive(eq(RSKIP199), anyLong());
+
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        Bridge bridge = getBridgeInstance(bridgeSupportMock, activations);
+
+        byte[] value = Sha256Hash.ZERO_HASH.getBytes();
+        int zero = 0;
+        byte[] data = Bridge.REGISTER_BTC_TRANSACTION.encode(new Object[]{ value, zero, value });
+
+        bridge.execute(data);
+
+        verify(bridgeSupportMock, times(1)).registerBtcTransaction(
+            any(Transaction.class),
+            any(byte[].class),
+            anyInt(),
+            any(byte[].class)
+        );
+    }
+
+    @Test
     public void getActiveFederationCreationBlockHeight_before_RSKIP186_activation() throws VMException {
         doReturn(false).when(activationConfig).isActive(eq(RSKIP186), anyLong());
 
@@ -228,16 +341,22 @@ public class BridgeTest {
      * @param bridgeSupportInstance Provide the bridgeSupport to be used
      * @return
      */
-    private Bridge getBridgeInstance(BridgeSupport bridgeSupportInstance, ActivationConfig activationConfig) {
-        Transaction txMock = mock(Transaction.class);
-        BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
+    private Bridge getBridgeInstance(
+        BridgeSupport bridgeSupportInstance,
+        ActivationConfig activationConfig,
+        Transaction rskTx) {
 
+        BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
         when(bridgeSupportFactoryMock.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupportInstance);
 
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, bridgeSupportFactoryMock);
-        bridge.init(txMock, getGenesisBlock(), null, null, null, null);
+        bridge.init(rskTx, getGenesisBlock(), null, null, null, null);
 
         return bridge;
+    }
+
+    private Bridge getBridgeInstance(BridgeSupport bridgeSupportInstance, ActivationConfig activationConfig) {
+        return getBridgeInstance(bridgeSupportInstance, activationConfig, mock(Transaction.class));
     }
 
     @Deprecated
@@ -248,5 +367,4 @@ public class BridgeTest {
     private Block getGenesisBlock() {
         return new BlockGenerator().getGenesisBlock();
     }
-
 }
