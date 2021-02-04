@@ -949,7 +949,9 @@ public class BridgeSupportTestPowerMock {
         Repository track = repository.startTracking();
 
         org.ethereum.core.Transaction tx = new InternalTransaction(
-                null, 0, 0,
+                Keccak256.ZERO_HASH.getBytes(),
+                0,
+                0,
                 BigIntegers.asUnsignedByteArray(NONCE),
                 DataWord.valueOf(BigIntegers.asUnsignedByteArray(GAS_PRICE)),
                 DataWord.valueOf(BigIntegers.asUnsignedByteArray(GAS_LIMIT)),
@@ -957,7 +959,8 @@ public class BridgeSupportTestPowerMock {
                 Hex.decode(TO_ADDRESS),
                 BigIntegers.asUnsignedByteArray(AMOUNT),
                 Hex.decode(DATA),
-                "");
+                ""
+        );
 
         track.saveCode(tx.getSender(), new byte[]{0x1});
         BridgeStorageProvider provider = new BridgeStorageProvider(track, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationsBeforeForks);

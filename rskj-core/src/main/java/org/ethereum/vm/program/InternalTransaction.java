@@ -29,22 +29,29 @@ import static co.rsk.util.ListArrayUtil.*;
 
 public class InternalTransaction extends Transaction {
 
-    private byte[] parentHash;
-    private int deep;
-    private int index;
+    private final byte[] originHash;
+    private final byte[] parentHash;
+    private final int deep;
+    private final int index;
+    private final String note;
     private boolean rejected = false;
-    private String note;
 
-    public InternalTransaction(byte[] parentHash, int deep, int index, byte[] nonce, DataWord gasPrice, DataWord gasLimit,
-                               byte[] sendAddress, byte[] receiveAddress, byte[] value, byte[] data, String note) {
+    public InternalTransaction(byte[] originHash, byte[] parentHash, int deep, int index, byte[] nonce, DataWord gasPrice, DataWord gasLimit,
+        byte[] sendAddress, byte[] receiveAddress, byte[] value, byte[] data, String note) {
 
         super(nonce, getData(gasPrice), getData(gasLimit), receiveAddress, nullToEmpty(value), nullToEmpty(data));
 
+        this.originHash = originHash.clone();
         this.parentHash = parentHash;
         this.deep = deep;
         this.index = index;
         this.sender = RLP.parseRskAddress(sendAddress);
         this.note = note;
+    }
+
+    public InternalTransaction(byte[] parentHash, int deep, int index, byte[] nonce, DataWord gasPrice, DataWord gasLimit,
+                               byte[] sendAddress, byte[] receiveAddress, byte[] value, byte[] data, String note) {
+        this(parentHash, parentHash, deep, index, nonce, gasPrice, gasLimit, sendAddress, receiveAddress, value, data, note);
     }
 
     private static byte[] getData(DataWord gasPrice) {
@@ -54,7 +61,6 @@ public class InternalTransaction extends Transaction {
     public void reject() {
         this.rejected = true;
     }
-
 
     public int getDeep() {
         return deep;
@@ -73,7 +79,11 @@ public class InternalTransaction extends Transaction {
     }
 
     public byte[] getParentHash() {
-        return parentHash;
+        return parentHash.clone();
+    }
+
+    public byte[] getOriginHash() {
+        return originHash.clone();
     }
 
     @Override
