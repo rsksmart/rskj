@@ -1,6 +1,8 @@
 package co.rsk.pcc.bls12dot381;
 
+import co.rsk.bls12_381.BLS12_381Exception;
 import org.ethereum.vm.PrecompiledContracts;
+import org.ethereum.vm.exception.VMException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,9 +26,12 @@ public abstract class AbstractBLS12PrecompiledContract extends PrecompiledContra
     static final int MAX_DISCOUNT = 174;
 
     @Override
-    public byte[] execute(byte[] input) {
-        // todo (fedejinich) handle exception, then throw own BLS12Exception (extending VM exception)
-        return internalExecute(input);
+    public byte[] execute(byte[] input) throws VMException {
+        try { // handles an external exception, then throws own BLS12Exception (extending VM exception)
+            return internalExecute(input);
+        } catch (BLS12_381Exception e) {
+            throw new VMException(e.getMessage());
+        }
     }
 
     protected abstract byte[] internalExecute(byte[] input);

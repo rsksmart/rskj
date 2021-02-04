@@ -20,40 +20,15 @@ package co.rsk.pcc;
 
 
 import co.rsk.config.TestSystemProperties;
-import co.rsk.core.RskAddress;
-import co.rsk.db.RepositorySnapshot;
-import co.rsk.pcc.bls12dot381.AbstractBLS12PrecompiledContract;
-import co.rsk.test.World;
-import co.rsk.test.dsl.DslParser;
-import co.rsk.test.dsl.DslProcessorException;
-import co.rsk.test.dsl.WorldDslProcessor;
-import com.google.common.base.Strings;
-import com.google.common.io.CharStreams;
-import com.google.common.primitives.Bytes;
 import com.typesafe.config.ConfigValueFactory;
 import org.bouncycastle.util.encoders.Hex;
-import org.ethereum.core.Transaction;
-import org.ethereum.core.TransactionReceipt;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
-import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.exception.VMException;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.ArgumentCaptor;
-import org.slf4j.Logger;
 
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.util.Iterator;
-import java.util.List;
-import java.util.stream.Collectors;
-
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.ethereum.rpc.exception.RskJsonRpcRequestException.invalidParamError;
 import static org.ethereum.util.ByteUtil.stripLeadingZeroes;
 import static org.junit.Assert.*;
@@ -63,8 +38,6 @@ import static org.mockito.Mockito.verify;
 
 
 public class BLS12PrecompiledContractTest {
-
-
     private TestSystemProperties config;
     private PrecompiledContracts precompiledContracts;
 
@@ -79,7 +52,6 @@ public class BLS12PrecompiledContractTest {
     //simple test, equivalent to first example of g1_add.csv
     @Test
     public void bls12G1AddPrecompiledContractTest() throws VMException {
-
         DataWord addr = DataWord.valueFromHex("000000000000000000000000000000000000000000000000000000000000000A");
         PrecompiledContracts.PrecompiledContract contract = precompiledContracts.getContractForAddress(config.getActivationConfig().forBlock(0), addr);
         byte[] input = Hex.decode(
@@ -195,11 +167,10 @@ public class BLS12PrecompiledContractTest {
                 return;
             }
             testSinglePrecompileCase(address, removeLeading(input), removeLeading(expectedResult), expectedGasUsed, notes);
-
         });
     }
 
-    private void testSinglePrecompileCase(String address, String input, String expectedResult, String expectedGasUsed, String notes) {
+    private void testSinglePrecompileCase(String address, String input, String expectedResult, String expectedGasUsed, String notes) throws VMException {
         byte[] inputAsByteArray = Hex.decode(input);
         DataWord addr = DataWord.valueFromHex(address);
         PrecompiledContracts.PrecompiledContract contract = precompiledContracts.getContractForAddress(config.getActivationConfig().forBlock(0), addr);
@@ -210,13 +181,12 @@ public class BLS12PrecompiledContractTest {
             String resultAsHexString = ByteUtil.toHexString(result);
             assertEquals(expectedResult, resultAsHexString);
             assertEquals(Long.parseLong(expectedGasUsed), contract.getGasForData(inputAsByteArray));
-        }
-        else {
+        } else {
             try{
                 contract.execute(inputAsByteArray);
                 Assert.fail("Exception expected");
             }
-            catch(AbstractBLS12PrecompiledContract.BLS12FailureException e) {
+            catch(BLS12VMException e) {
                 assertEquals(notes, ((AbstractBLS12PrecompiledContract) contract ).getFailureReason());
             }
         }
@@ -240,5 +210,5 @@ public class BLS12PrecompiledContractTest {
                 .collect(Collectors.toList());
     }
 
-*/
+    */
 }
