@@ -840,7 +840,7 @@ public class BridgeSupportTest {
         BtcBlockStoreWithCache.Factory btcBlockStoreFactory = mock(BtcBlockStoreWithCache.Factory.class);
 
         BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
-        when(btcBlockStoreFactory.newInstance(any(Repository.class))).thenReturn(btcBlockStore);
+        when(btcBlockStoreFactory.newInstance(any(Repository.class), any(), any(), any())).thenReturn(btcBlockStore);
 
         // Create transaction
         Coin lockValue = Coin.COIN;
@@ -907,7 +907,7 @@ public class BridgeSupportTest {
         BtcBlockStoreWithCache.Factory btcBlockStoreFactory = mock(BtcBlockStoreWithCache.Factory.class);
 
         BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
-        when(btcBlockStoreFactory.newInstance(any(Repository.class))).thenReturn(btcBlockStore);
+        when(btcBlockStoreFactory.newInstance(any(Repository.class), any(), any(), any())).thenReturn(btcBlockStore);
 
         // Create transaction
         Coin lockValue = Coin.COIN;
