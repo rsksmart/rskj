@@ -1015,7 +1015,8 @@ public class BridgeSupport {
         );
         if (txsWithEnoughConfirmations.size() > 0) {
             ReleaseTransactionSet.Entry entry = txsWithEnoughConfirmations.iterator().next();
-            if (activations.isActive(ConsensusRule.RSKIP146)) {
+            // Since RSKIP176 we are moving back to using the updateCollections related txHash as the set key
+            if (activations.isActive(ConsensusRule.RSKIP146) && !activations.isActive(ConsensusRule.RSKIP176)) {
                 // The release transaction may have been created prior to the Consensus Rule activation
                 // therefore it won't have a rskTxHash value, fallback to this transaction's hash
                 txsWaitingForSignatures.put(entry.getRskTxHash() == null ? rskTx.getHash() : entry.getRskTxHash(), entry.getTransaction());
