@@ -20,20 +20,35 @@ package co.rsk.pcc;
 
 
 import co.rsk.config.TestSystemProperties;
+import co.rsk.test.World;
+import co.rsk.test.dsl.DslParser;
+import co.rsk.test.dsl.DslProcessorException;
+import co.rsk.test.dsl.WorldDslProcessor;
+import com.google.common.base.Strings;
+import com.google.common.io.CharStreams;
+import com.google.common.primitives.Bytes;
 import com.typesafe.config.ConfigValueFactory;
 import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.core.TransactionReceipt;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
+import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.exception.VMException;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import static org.ethereum.rpc.exception.RskJsonRpcRequestException.invalidParamError;
-import static org.ethereum.util.ByteUtil.stripLeadingZeroes;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.*;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
 
 
 
@@ -64,11 +79,9 @@ public class BLS12PrecompiledContractTest {
         assertEquals(expected, ByteUtil.toHexString(result));
     }
 
-    /*
-
     //dsl test equivalent to the same example
     @Test
-    public void fullDslBbls12G1AddPrecompiledContractTest() throws FileNotFoundException, DslProcessorException {
+    public void fullDslBls12G1AddPrecompiledContractTest() throws FileNotFoundException, DslProcessorException {
         World world = new World(config);
         WorldDslProcessor processor = new WorldDslProcessor(world);
         DslParser parser = DslParser.fromResource("dsl/bls12/bls12_example.txt");
@@ -166,28 +179,34 @@ public class BLS12PrecompiledContractTest {
                 // skip the header row
                 return;
             }
-            testSinglePrecompileCase(address, removeLeading(input), removeLeading(expectedResult), expectedGasUsed, notes);
+            testSinglePrecompileCase(address, removeLeading(input), removeLeading(expectedResult), expectedGasUsed, notes, config.getActivationConfig().forBlock(0));
         });
     }
 
-    private void testSinglePrecompileCase(String address, String input, String expectedResult, String expectedGasUsed, String notes) throws VMException {
+    private void testSinglePrecompileCase(String address, String input, String expectedResult, String expectedGasUsed, String notes, ActivationConfig.ForBlock activations) {
         byte[] inputAsByteArray = Hex.decode(input);
         DataWord addr = DataWord.valueFromHex(address);
-        PrecompiledContracts.PrecompiledContract contract = precompiledContracts.getContractForAddress(config.getActivationConfig().forBlock(0), addr);
+
+        PrecompiledContracts.PrecompiledContract contract = precompiledContracts.getContractForAddress(activations, addr);
 
         if(!Strings.isNullOrEmpty(expectedResult)) {
-            byte[] result = contract.execute(inputAsByteArray);
+            byte[] result = new byte[0];
+            try {
+                result = contract.execute(inputAsByteArray);
+            } catch (VMException e) {
+                e.printStackTrace();
+                Assert.fail("Contract execution failed");
+            }
             assertNotNull("Result should be not null for input: " + input, result);
             String resultAsHexString = ByteUtil.toHexString(result);
             assertEquals(expectedResult, resultAsHexString);
             assertEquals(Long.parseLong(expectedGasUsed), contract.getGasForData(inputAsByteArray));
         } else {
-            try{
+            try {
                 contract.execute(inputAsByteArray);
                 Assert.fail("Exception expected");
-            }
-            catch(BLS12VMException e) {
-                assertEquals(notes, ((AbstractBLS12PrecompiledContract) contract ).getFailureReason());
+            } catch(VMException e) {
+                assertEquals(notes, e.getMessage());
             }
         }
     }
@@ -196,19 +215,17 @@ public class BLS12PrecompiledContractTest {
         if(!Strings.isNullOrEmpty(x) && x.startsWith("0x")) {
             return x.substring(2);
         }
-        else {
-            return x;
-        }
+
+        return x;
     }
 
     public static Iterable<String[]> readCsvTestCases(String fileName) throws IOException {
         InputStream resourceAsStream = BLS12PrecompiledContractTest.class.getResourceAsStream(fileName);
+
         return CharStreams.readLines(
                 new InputStreamReader(resourceAsStream, UTF_8))
                 .stream()
                 .map(line -> line.split(",", 4))
                 .collect(Collectors.toList());
     }
-
-    */
 }
