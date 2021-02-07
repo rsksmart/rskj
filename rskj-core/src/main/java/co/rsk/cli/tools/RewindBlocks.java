@@ -37,10 +37,10 @@ public class RewindBlocks {
         RskContext ctx = new RskContext(args);
         BlockStore blockStore = ctx.getBlockStore();
 
-        execute(args, blockStore, System.out);
+        execute(args, blockStore);
     }
 
-    public static void execute(String[] args, BlockStore blockStore, PrintStream writer) {
+    public static void execute(String[] args, BlockStore blockStore) {
         long blockNumber = Long.parseLong(args[0]);
 
         blockStore.rewind(blockNumber);
