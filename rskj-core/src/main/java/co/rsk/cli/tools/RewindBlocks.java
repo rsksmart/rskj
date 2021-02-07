@@ -34,15 +34,14 @@ import java.util.Optional;
  */
 public class RewindBlocks {
     public static void main(String[] args) {
-        RskContext ctx = new RskContext(args);
-        BlockStore blockStore = ctx.getBlockStore();
-
-        execute(args, blockStore);
+        execute(args, new RskContext(args).getBlockStore());
     }
 
     public static void execute(String[] args, BlockStore blockStore) {
         long blockNumber = Long.parseLong(args[0]);
 
-        blockStore.rewind(blockNumber);
+        if (blockStore.getMaxNumber() > blockNumber) {
+            blockStore.rewind(blockNumber);
+        }
     }
 }
