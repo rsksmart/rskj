@@ -19,15 +19,27 @@
 package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.BtcECKey;
+import co.rsk.bitcoinj.core.NetworkParameters;
 import org.ethereum.crypto.ECKey;
 
 import java.math.BigInteger;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
 public class FederationTestUtils {
+
+    public static Federation getFederation(Integer... federationMemberPks) {
+        return new Federation(
+                getFederationMembersFromPks(federationMemberPks),
+                ZonedDateTime.parse("2017-06-10T02:30:01Z").toInstant(),
+                0L,
+                NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
+        );
+    }
+
     public static List<FederationMember> getFederationMembers(int memberCount) {
         List<FederationMember> result = new ArrayList<>();
         for (int i = 1; i <= memberCount; i++) {

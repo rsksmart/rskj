@@ -29,7 +29,6 @@ import org.ethereum.crypto.ECKey;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.exception.VMException;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -37,6 +36,7 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.*;
+import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
@@ -67,7 +67,7 @@ public class BridgeTest {
 
         byte[] data = BridgeMethods.GET_LOCKING_CAP.getFunction().encode(new Object[]{});
 
-        Assert.assertNull(bridge.execute(data));
+        assertNull(bridge.execute(data));
     }
 
     @Test
@@ -82,9 +82,9 @@ public class BridgeTest {
 
         byte[] data = Bridge.GET_LOCKING_CAP.encode(new Object[]{});
         byte[] result = bridge.execute(data);
-        Assert.assertEquals(Coin.COIN.getValue(), ((BigInteger) Bridge.GET_LOCKING_CAP.decodeResult(result)[0]).longValue());
+        assertEquals(Coin.COIN.getValue(), ((BigInteger) Bridge.GET_LOCKING_CAP.decodeResult(result)[0]).longValue());
         // Also test the method itself
-        Assert.assertEquals(Coin.COIN.getValue(), bridge.getLockingCap(new Object[]{}));
+        assertEquals(Coin.COIN.getValue(), bridge.getLockingCap(new Object[]{}));
     }
 
     @Test
@@ -96,7 +96,7 @@ public class BridgeTest {
 
         byte[] data = BridgeMethods.INCREASE_LOCKING_CAP.getFunction().encode(new Object[]{});
 
-        Assert.assertNull(bridge.execute(data));
+        assertNull(bridge.execute(data));
     }
 
     @Test
@@ -111,15 +111,15 @@ public class BridgeTest {
 
         byte[] data = Bridge.INCREASE_LOCKING_CAP.encode(new Object[]{1});
         byte[] result = bridge.execute(data);
-        Assert.assertTrue((boolean) Bridge.INCREASE_LOCKING_CAP.decodeResult(result)[0]);
+        assertTrue((boolean) Bridge.INCREASE_LOCKING_CAP.decodeResult(result)[0]);
         // Also test the method itself
-        Assert.assertEquals(true, bridge.increaseLockingCap(new Object[]{BigInteger.valueOf(1)}));
+        assertEquals(true, bridge.increaseLockingCap(new Object[]{BigInteger.valueOf(1)}));
 
         data = Bridge.INCREASE_LOCKING_CAP.encode(new Object[]{21_000_000});
         result = bridge.execute(data);
-        Assert.assertTrue((boolean) Bridge.INCREASE_LOCKING_CAP.decodeResult(result)[0]);
+        assertTrue((boolean) Bridge.INCREASE_LOCKING_CAP.decodeResult(result)[0]);
         // Also test the method itself
-        Assert.assertEquals(true, bridge.increaseLockingCap(new Object[]{BigInteger.valueOf(21_000_000)}));
+        assertEquals(true, bridge.increaseLockingCap(new Object[]{BigInteger.valueOf(21_000_000)}));
     }
 
     @Test
@@ -133,24 +133,24 @@ public class BridgeTest {
         // The solidity decoder in the Bridge will convert the undefined argument as 0, but the initial validation in the method will reject said value
         byte[] data = Bridge.INCREASE_LOCKING_CAP.encodeSignature();
         byte[] result = bridge.execute(data);
-        Assert.assertNull(result);
+        assertNull(result);
 
         // Uses the proper signature but appends invalid data type
         // This will be rejected by the solidity decoder in the Bridge directly
         data = ByteUtil.merge(Bridge.INCREASE_LOCKING_CAP.encodeSignature(), Hex.decode("ab"));
         result = bridge.execute(data);
-        Assert.assertNull(result);
+        assertNull(result);
 
         // Uses the proper signature and data type, but with an invalid value
         // This will be rejected by the initial validation in the method
         data = Bridge.INCREASE_LOCKING_CAP.encode(new Object[]{-1});
         result = bridge.execute(data);
-        Assert.assertNull(result);
+        assertNull(result);
 
         // Uses the proper signature and data type, but with a value that exceeds the long max value
         data = ByteUtil.merge(Bridge.INCREASE_LOCKING_CAP.encodeSignature(), Hex.decode("0000000000000000000000000000000000000000000000080000000000000000"));
         result = bridge.execute(data);
-        Assert.assertNull(result);
+        assertNull(result);
     }
 
     @Test
@@ -166,7 +166,7 @@ public class BridgeTest {
 
         byte[] data = Bridge.REGISTER_BTC_COINBASE_TRANSACTION.encode(new Object[]{value, zero, value, zero, zero});
 
-        Assert.assertNull(bridge.execute(data));
+        assertNull(bridge.execute(data));
     }
 
     @Test
@@ -196,15 +196,15 @@ public class BridgeTest {
 
         byte[] data = Bridge.REGISTER_BTC_COINBASE_TRANSACTION.encodeSignature();
         byte[] result = bridge.execute(data);
-        Assert.assertNull(result);
+        assertNull(result);
 
         data = ByteUtil.merge(Bridge.REGISTER_BTC_COINBASE_TRANSACTION.encodeSignature(), Hex.decode("ab"));
         result = bridge.execute(data);
-        Assert.assertNull(result);
+        assertNull(result);
 
         data = ByteUtil.merge(Bridge.REGISTER_BTC_COINBASE_TRANSACTION.encodeSignature(), Hex.decode("0000000000000000000000000000000000000000000000080000000000000000"));
         result = bridge.execute(data);
-        Assert.assertNull(result);
+        assertNull(result);
     }
 
     @Test
@@ -235,9 +235,9 @@ public class BridgeTest {
 
         try {
             bridge.execute(data);
-            Assert.fail();
+            fail();
         } catch (VMException e) {
-            Assert.assertEquals("Exception executing bridge: Sender is not part of the active or retiring federations, so he is not enabled to call the function 'registerBtcTransaction'", e.getMessage());
+            assertEquals("Exception executing bridge: Sender is not part of the active or retiring federations, so he is not enabled to call the function 'registerBtcTransaction'", e.getMessage());
         }
 
         verify(bridgeSupportMock, never()).registerBtcTransaction(
@@ -322,7 +322,7 @@ public class BridgeTest {
 
         byte[] data = BridgeMethods.GET_ACTIVE_FEDERATION_CREATION_BLOCK_HEIGHT.getFunction().encode(new Object[]{});
 
-        Assert.assertNull(bridge.execute(data));
+        assertNull(bridge.execute(data));
     }
 
     @Test
@@ -338,9 +338,9 @@ public class BridgeTest {
         CallTransaction.Function function = BridgeMethods.GET_ACTIVE_FEDERATION_CREATION_BLOCK_HEIGHT.getFunction();
         byte[] data = function.encode(new Object[]{ });
         byte[] result = bridge.execute(data);
-        Assert.assertEquals(1L, ((BigInteger)function.decodeResult(result)[0]).longValue());
+        assertEquals(1L, ((BigInteger)function.decodeResult(result)[0]).longValue());
         // Also test the method itself
-        Assert.assertEquals(1L, bridge.getActiveFederationCreationBlockHeight(new Object[]{ }));
+        assertEquals(1L, bridge.getActiveFederationCreationBlockHeight(new Object[]{ }));
     }
 
     @Test
@@ -365,7 +365,7 @@ public class BridgeTest {
         );
 
         //Assert
-        Assert.assertNull(bridge.execute(data));
+        assertNull(bridge.execute(data));
     }
 
     @Test
@@ -416,7 +416,7 @@ public class BridgeTest {
         byte[] result = bridge.execute(data);
 
         //Assert
-        Assert.assertEquals(BigInteger.valueOf(2), Bridge.REGISTER_FAST_BRIDGE_BTC_TRANSACTION.decodeResult(result)[0]);
+        assertEquals(BigInteger.valueOf(2), Bridge.REGISTER_FAST_BRIDGE_BTC_TRANSACTION.decodeResult(result)[0]);
         verify(bridgeSupportMock, times(1)).registerFastBridgeBtcTransaction(
                 any(Transaction.class),
                 eq(value),
@@ -469,8 +469,8 @@ public class BridgeTest {
             true
         );
         byte[] result = bridge.execute(data);
-        
-        Assert.assertEquals(BridgeSupport.FAST_BRIDGE_GENERIC_ERROR, 
+
+        assertEquals(BridgeSupport.FAST_BRIDGE_GENERIC_ERROR,
             ((BigInteger)Bridge.REGISTER_FAST_BRIDGE_BTC_TRANSACTION.decodeResult(result)[0]).longValue());
     }
 
@@ -485,11 +485,11 @@ public class BridgeTest {
 
         byte[] data = Bridge.REGISTER_FAST_BRIDGE_BTC_TRANSACTION.encodeSignature();
         byte[] result = bridge.execute(data);
-        Assert.assertNull(result);
+        assertNull(result);
 
         data = ByteUtil.merge(Bridge.REGISTER_FAST_BRIDGE_BTC_TRANSACTION.encodeSignature(), value);
         result = bridge.execute(data);
-        Assert.assertNull(result);
+        assertNull(result);
     }
 
     public void receiveHeader_before_RSKIP200() throws VMException {
@@ -513,7 +513,7 @@ public class BridgeTest {
         byte[] data = Bridge.RECEIVE_HEADER.encode(parameters);
 
         bridge.execute(data);
-        Assert.assertNull(bridge.execute(data));
+        assertNull(bridge.execute(data));
         verify(bridge, never()).receiveHeader(any(Object[].class));
     }
 
@@ -527,7 +527,7 @@ public class BridgeTest {
 
         byte[] data = Bridge.RECEIVE_HEADER.encode(new Object[]{});
 
-        Assert.assertNull(bridge.execute(data));
+        assertNull(bridge.execute(data));
         verify(bridge, never()).receiveHeader(any(Object[].class));
         verifyZeroInteractions(bridgeSupportMock);
     }
@@ -554,7 +554,7 @@ public class BridgeTest {
 
         byte[] result = bridge.execute(data);
         verify(bridge, times(1)).receiveHeader(eq(parameters));
-        Assert.assertEquals(BigInteger.valueOf(0), Bridge.RECEIVE_HEADER.decodeResult(result)[0]);
+        assertEquals(BigInteger.valueOf(0), Bridge.RECEIVE_HEADER.decodeResult(result)[0]);
     }
 
     @Test(expected = VMException.class)
@@ -598,9 +598,9 @@ public class BridgeTest {
 
         try {
             bridge.execute(Bridge.RECEIVE_HEADERS.encode());
-            Assert.fail();
+            fail();
         } catch (Exception ex) {
-            Assert.assertTrue(ex.getMessage().contains("Sender is not part of the active or retiring federation"));
+            assertTrue(ex.getMessage().contains("Sender is not part of the active or retiring federation"));
         }
     }
 
@@ -617,7 +617,7 @@ public class BridgeTest {
         byte[] data = Bridge.RECEIVE_HEADER.encode(parameters);
 
         byte[] result = bridge.execute(data);
-        Assert.assertEquals(BigInteger.valueOf(-20), Bridge.RECEIVE_HEADER.decodeResult(result)[0]);
+        assertEquals(BigInteger.valueOf(-20), Bridge.RECEIVE_HEADER.decodeResult(result)[0]);
     }
 
     @Test
@@ -627,7 +627,7 @@ public class BridgeTest {
 
         Bridge bridge = getBridgeInstance(mock(BridgeSupport.class), activations);
 
-        Assert.assertFalse(bridge.getBtcBlockchainBestChainHeightOnlyAllowsLocalCalls(new Object[0]));
+        assertFalse(bridge.getBtcBlockchainBestChainHeightOnlyAllowsLocalCalls(new Object[0]));
     }
 
     @Test
@@ -637,13 +637,158 @@ public class BridgeTest {
 
         Bridge bridge = getBridgeInstance(mock(BridgeSupport.class), activations);
 
-        Assert.assertTrue(bridge.getBtcBlockchainBestChainHeightOnlyAllowsLocalCalls(new Object[0]));
+        assertTrue(bridge.getBtcBlockchainBestChainHeightOnlyAllowsLocalCalls(new Object[0]));
+    }
+
+    @Test
+    public void activeAndRetiringFederationOnly_activeFederationIsNotFromFederateMember_retiringFederationIsNull_throwsVMException() throws Exception {
+        // Given
+        BridgeMethods.BridgeMethodExecutor executor = Bridge.activeAndRetiringFederationOnly(
+                null,
+                null
+        );
+
+        int senderPK = 999; // Sender PK does not belong to Member PKs
+        Integer[] memberPKs = new Integer[]{100, 200, 300, 400, 500, 600};
+        Federation activeFederation = FederationTestUtils.getFederation(memberPKs);
+
+        Bridge bridge = getBridgeInstance(activeFederation, null, senderPK);
+
+        // Then
+        try {
+            executor.execute(bridge, null);
+            fail("VMException should be thrown!");
+        } catch (VMException vme) {
+            assertEquals(
+                    "Sender is not part of the active or retiring federations, so he is not enabled to call the function 'null'",
+                    vme.getMessage()
+            );
+        }
+    }
+
+    @Test
+    public void activeAndRetiringFederationOnly_activeFederationIsNotFromFederateMember_retiringFederationIsNotNull_retiringFederationIsNotFromFederateMember_throwsVMException() throws Exception {
+        // Given
+        BridgeMethods.BridgeMethodExecutor executor = Bridge.activeAndRetiringFederationOnly(
+                null,
+                null
+        );
+
+        int senderPK = 999; // Sender PK does not belong to Member PKs of active nor retiring fed
+        Integer[] activeMemberPKs = new Integer[]{100, 200, 300, 400, 500, 600};
+        Integer[] retiringMemberPKs = new Integer[]{101, 202, 303, 404, 505, 606};
+
+        Federation activeFederation = FederationTestUtils.getFederation(activeMemberPKs);
+        Federation retiringFederation = FederationTestUtils.getFederation(retiringMemberPKs);
+
+        Bridge bridge = getBridgeInstance(activeFederation, retiringFederation, senderPK);
+
+        // Then
+        try {
+            executor.execute(bridge, null);
+            fail("VMException should be thrown!");
+        } catch (VMException vme) {
+            assertEquals(
+                    "Sender is not part of the active or retiring federations, so he is not enabled to call the function 'null'",
+                    vme.getMessage()
+            );
+        }
+    }
+
+    @Test
+    public void activeAndRetiringFederationOnly_activeFederationIsFromFederateMember_OK() throws Exception {
+        // Given
+        BridgeMethods.BridgeMethodExecutor decorate = mock(
+                BridgeMethods.BridgeMethodExecutor.class
+        );
+        BridgeMethods.BridgeMethodExecutor executor = Bridge.activeAndRetiringFederationOnly(
+                decorate,
+                null
+        );
+
+        int senderPK = 101; // Sender PK belongs to active federation member PKs
+        Integer[] memberPKs = new Integer[]{100, 200, 300, 400, 500, 600};
+
+        Federation activeFederation = FederationTestUtils.getFederation(memberPKs);
+
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        Bridge bridge = getBridgeInstance(activeFederation, null, senderPK, bridgeSupportMock);
+
+        // When
+        executor.execute(bridge, null);
+
+        // Then
+        verify(bridgeSupportMock, times(1)).getActiveFederation();
+        verify(bridgeSupportMock, times(1)).getRetiringFederation();
+        verify(decorate, times(1)).execute(any(), any());
+    }
+
+    @Test
+    public void activeAndRetiringFederationOnly_activeFederationIsNotFromFederateMember_retiringFederationIsNotNull_retiringFederationIsFromFederateMember_OK() throws Exception {
+        // Given
+        BridgeMethods.BridgeMethodExecutor decorate = mock(
+                BridgeMethods.BridgeMethodExecutor.class
+        );
+        BridgeMethods.BridgeMethodExecutor executor = Bridge.activeAndRetiringFederationOnly(
+                decorate,
+                null
+        );
+
+        int senderPK = 405; // Sender PK belongs to retiring federation member PKs
+        Integer[] activeMemberPKs = new Integer[]{100, 200, 300, 400, 500, 600};
+        Integer[] retiringMemberPKs = new Integer[]{101, 202, 303, 404, 505, 606};
+
+        Federation activeFederation = FederationTestUtils.getFederation(activeMemberPKs);
+        Federation retiringFederation = FederationTestUtils.getFederation(retiringMemberPKs);
+
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        Bridge bridge = getBridgeInstance(activeFederation, retiringFederation, senderPK, bridgeSupportMock);
+
+        // When
+        executor.execute(bridge, null);
+
+        // Then
+        verify(bridgeSupportMock, times(1)).getActiveFederation();
+        verify(bridgeSupportMock, times(1)).getRetiringFederation();
+        verify(decorate, times(1)).execute(any(), any());
+    }
+
+    private Bridge getBridgeInstance(Federation activeFederation, Federation retiringFederation, int senderPK) {
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        doReturn(activeFederation).when(bridgeSupportMock).getActiveFederation();
+        doReturn(retiringFederation).when(bridgeSupportMock).getRetiringFederation();
+
+        ECKey key = ECKey.fromPrivate(BigInteger.valueOf(senderPK));
+        Transaction rskTxMock = mock(Transaction.class);
+        doReturn(new RskAddress(key.getAddress())).when(rskTxMock).getSender();
+
+        ActivationConfig activations = spy(ActivationConfigsForTest.genesis());
+        doReturn(true).when(activations).isActive(eq(RSKIP143), anyLong());
+
+        return getBridgeInstance(rskTxMock, bridgeSupportMock, activations);
+    }
+
+    private Bridge getBridgeInstance(Federation activeFederation, Federation retiringFederation, int senderPK, BridgeSupport bridgeSupportMock) {
+        doReturn(activeFederation).when(bridgeSupportMock).getActiveFederation();
+        doReturn(retiringFederation).when(bridgeSupportMock).getRetiringFederation();
+
+        ECKey key = ECKey.fromPrivate(BigInteger.valueOf(senderPK));
+        Transaction rskTxMock = mock(Transaction.class);
+        doReturn(new RskAddress(key.getAddress())).when(rskTxMock).getSender();
+
+        ActivationConfig activations = spy(ActivationConfigsForTest.genesis());
+        doReturn(true).when(activations).isActive(eq(RSKIP143), anyLong());
+
+        return getBridgeInstance(rskTxMock, bridgeSupportMock, activations);
     }
 
     /**
-     * Gets a bride instance mocking the transaction and BridgeSupportFactory
+     * Gets a bridge instance mocking the transaction and BridgeSupportFactory
+     *
+     * @param txMock                Provide the transaction to be used
      * @param bridgeSupportInstance Provide the bridgeSupport to be used
-     * @return
+     * @param activationConfig      Provide the activationConfig to be used
+     * @return Bridge instance
      */
     private Bridge getBridgeInstance(Transaction txMock, BridgeSupport bridgeSupportInstance, ActivationConfig activationConfig) {
         BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
