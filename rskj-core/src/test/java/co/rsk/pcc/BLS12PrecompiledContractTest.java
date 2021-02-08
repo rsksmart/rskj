@@ -50,8 +50,6 @@ import java.util.stream.Collectors;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.*;
 
-
-
 public class BLS12PrecompiledContractTest {
     private TestSystemProperties config;
     private PrecompiledContracts precompiledContracts;
