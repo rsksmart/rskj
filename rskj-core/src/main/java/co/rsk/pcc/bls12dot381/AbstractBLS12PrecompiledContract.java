@@ -10,8 +10,8 @@ import org.slf4j.LoggerFactory;
 
 public abstract class AbstractBLS12PrecompiledContract extends PrecompiledContracts.PrecompiledContract {
 
-    public static final Logger logger = LoggerFactory.getLogger("precompiled");
     public static final String ERROR_MESSAGE = "couldn't load native library, stopping execution";
+    private static final Logger logger = LoggerFactory.getLogger("precompiled");
     private final PanicProcessor panicProcessor = new PanicProcessor();
 
     public AbstractBLS12PrecompiledContract() {
@@ -26,6 +26,7 @@ public abstract class AbstractBLS12PrecompiledContract extends PrecompiledContra
         try { // handles an external exception, then throws own BLS12Exception (extending VM exception)
             return internalExecute(input);
         } catch (BLS12_381Exception e) {
+            logger.error("bls12_381 execution failed", e);
             throw new VMException(e.getMessage());
         }
     }
