@@ -18,15 +18,7 @@
 package co.rsk.cli.tools;
 
 import co.rsk.RskContext;
-import co.rsk.trie.NodeReference;
-import co.rsk.trie.Trie;
-import co.rsk.trie.TrieStore;
-import org.ethereum.core.Block;
 import org.ethereum.db.BlockStore;
-import org.ethereum.util.ByteUtil;
-
-import java.io.PrintStream;
-import java.util.Optional;
 
 /**
  * The entry point for rewind blocks state CLI tool
