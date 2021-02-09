@@ -37,6 +37,8 @@ public class Op {
     private long gas;
     private long gasCost;
 
+    // Note that "memory" and "stack" are included in JSON serialization (debug_traceTransaction)
+    // so we remove them from LGTM warnings.
     private List<String> memory = new ArrayList<>(); // lgtm [java/unused-container]
     private List<String> stack = new ArrayList<>(); // lgtm [java/unused-container]
     private Map<String, String> storage = new HashMap<>();
