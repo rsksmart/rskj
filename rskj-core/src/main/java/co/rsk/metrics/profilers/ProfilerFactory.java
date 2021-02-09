@@ -1,8 +1,9 @@
 package co.rsk.metrics.profilers;
 
+import co.rsk.metrics.profilers.impl.*;
 
-import co.rsk.metrics.profilers.impl.DummyProfiler;
-
+import javax.annotation.Nonnull;
+import java.util.Objects;
 
 /**
  * ProfilerFactory is used to get the configured Profiler instance.
@@ -11,23 +12,38 @@ import co.rsk.metrics.profilers.impl.DummyProfiler;
  */
 public final class ProfilerFactory {
 
-    private static volatile Profiler instance = null;
+    private static final ProxyProfiler instance = new ProxyProfiler();
 
-    private ProfilerFactory(){
-        super();
-    }
+    private ProfilerFactory() { /* hidden */ }
 
-    public static synchronized void configure(Profiler profiler){
-        if(instance == null){
-            instance = profiler;
+    public static synchronized void configure(@Nonnull Profiler profiler) {
+        if (instance.getBase() == null) {
+            instance.setBase(Objects.requireNonNull(profiler));
+        } else {
+            throw new IllegalArgumentException("another profiler is already configured");
         }
     }
 
-    public static Profiler getInstance(){
-        if(instance == null){
-            configure(new DummyProfiler());
+    public static synchronized void remove(@Nonnull Profiler profiler) {
+        if (instance.getBase() == Objects.requireNonNull(profiler)) {
+            instance.setBase(null);
+        } else {
+            throw new IllegalArgumentException("this profiler was not configured");
         }
+    }
 
+    public static Profiler getInstance() {
         return instance;
+    }
+
+    public static Profiler makeProfiler(@Nonnull ProfilerName profilerName) {
+        switch (profilerName) {
+            case IN_MEMORY:
+                return new InMemProfiler();
+            case LOGGING:
+                return new LoggingProfiler();
+            default:
+                throw new IllegalArgumentException("Illegal profiler: " + profilerName);
+        }
     }
 }

@@ -39,6 +39,23 @@
         </rollingPolicy>
     </appender>
 
+    <appender name="FILE-PROFILER"
+              class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>./logs/rsk-metrics.log</file>
+        <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+            <!-- we use the replace pattern to allow wrapping mdc keys in [] while avoiding outputting an empty [] if none -->
+            <Pattern>
+                %date{yyyy-MM-dd-HH:mm:ss.SSSS} %m%n
+            </Pattern>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>./logs/rsk-metrics-%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
+            <maxFileSize>100MB</maxFileSize>
+            <maxHistory>7</maxHistory>
+            <totalSizeCap>1GB</totalSizeCap>
+        </rollingPolicy>
+    </appender>
+
     <logger name="execute" level="INFO"/>
     <logger name="blockvalidator" level="INFO"/>
     <logger name="blockexecutor" level="INFO"/>
@@ -90,7 +107,11 @@
     <logger name="btcBlockStore" level="INFO" />
 
     <!-- Use INFO or upper levels for productive environments. -->
-    <logger name="com.googlecode.jsonrpc4j" level="INFO"></logger>
+    <logger name="com.googlecode.jsonrpc4j" level="INFO" />
+
+    <logger name="profiler" level="INFO" additivity="true">
+        <appender-ref ref="FILE-PROFILER"/>
+    </logger>
 
     <root level="DEBUG">
         <appender-ref ref="stdout"/>

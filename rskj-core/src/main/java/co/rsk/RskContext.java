@@ -41,6 +41,10 @@ import co.rsk.metrics.BlockHeaderElement;
 import co.rsk.metrics.HashRateCalculator;
 import co.rsk.metrics.HashRateCalculatorMining;
 import co.rsk.metrics.HashRateCalculatorNonMining;
+import co.rsk.metrics.profilers.Profiler;
+import co.rsk.metrics.profilers.ProfilerFactory;
+import co.rsk.metrics.profilers.ProfilerService;
+import co.rsk.metrics.profilers.impl.ProfilerName;
 import co.rsk.mine.*;
 import co.rsk.net.*;
 import co.rsk.net.discovery.PeerExplorer;
@@ -826,6 +830,13 @@ public class RskContext implements NodeBootstrapper {
 
     public List<InternalService> buildInternalServices() {
         List<InternalService> internalServices = new ArrayList<>();
+
+        ProfilerName profilerName = getRskSystemProperties().profilerName();
+        if (profilerName != null) {
+            Profiler profiler = ProfilerFactory.makeProfiler(profilerName);
+            internalServices.add(new ProfilerService(profiler, profilerName.toString()));
+        }
+
         internalServices.add(getTransactionPool());
         internalServices.add(getChannelManager());
         internalServices.add(getNodeMessageHandler());

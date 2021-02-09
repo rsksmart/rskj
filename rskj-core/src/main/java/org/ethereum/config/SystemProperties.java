@@ -23,6 +23,7 @@ import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.config.BridgeDevNetConstants;
 import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.config.ConfigLoader;
+import co.rsk.metrics.profilers.impl.ProfilerName;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigObject;
 import com.typesafe.config.ConfigRenderOptions;
@@ -87,6 +88,8 @@ public abstract class SystemProperties {
     public static final String PROPERTY_BIND_ADDRESS = "bind_address";
 
     public static final String PROPERTY_PRINT_SYSTEM_INFO = "system.printInfo";
+
+    public static final String PROPERTY_PROFILER = "system.profiler";
 
     public static final String PROPERTY_SKIP_JAVA_VERSION_CHECK = "system.checkJavaVersion";
 
@@ -284,6 +287,10 @@ public abstract class SystemProperties {
 
     public String databaseDir() {
         return databaseDir == null ? configFromFiles.getString(PROPERTY_BASE_PATH) : databaseDir;
+    }
+
+    public ProfilerName profilerName() {
+        return ProfilerName.of(configFromFiles.getString(PROPERTY_PROFILER));
     }
 
     public void setDataBaseDir(String dataBaseDir) {

@@ -18,6 +18,11 @@
 package co.rsk.cli.tools;
 
 import co.rsk.RskContext;
+import co.rsk.metrics.profilers.Profiler;
+import co.rsk.metrics.profilers.ProfilerFactory;
+import co.rsk.metrics.profilers.ProfilerService;
+import co.rsk.metrics.profilers.impl.ProfilerName;
+import co.rsk.metrics.profilers.impl.ProxyProfiler;
 import co.rsk.trie.TrieStore;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.Block;
@@ -29,13 +34,15 @@ import org.ethereum.db.ReceiptStore;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.Optional;
 
 /**
  * The entry point for connect blocks CLI tool
  * This is an experimental/unsupported tool
  */
 public class ConnectBlocks {
-    public static void main(String[] args) throws IOException {
+
+    public static void main(String[] args) throws Exception {
         RskContext ctx = new RskContext(args);
 
         BlockFactory blockFactory = ctx.getBlockFactory();
@@ -47,7 +54,13 @@ public class ConnectBlocks {
         String filename = args[0];
 
         try (BufferedReader reader = new BufferedReader(new FileReader(filename))) {
-            execute(blockFactory, blockchain, trieStore, blockStore, receiptStore, reader);
+            ProfilerName profilerName = ctx.getRskSystemProperties().profilerName();
+            Profiler profiler = Optional.ofNullable(profilerName).map(ProfilerFactory::makeProfiler).orElseGet(ProxyProfiler::new);
+            String name = Optional.ofNullable(profilerName).map(Enum::toString).orElse("DISABLED");
+
+            try (ProfilerService ignored = new ProfilerService(profiler, name)) {
+                execute(blockFactory, blockchain, trieStore, blockStore, receiptStore, reader);
+            }
         }
     }
 

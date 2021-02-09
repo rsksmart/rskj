@@ -1,5 +1,6 @@
 package co.rsk.metrics.profilers;
 
+import javax.annotation.Nonnull;
 
 /**
  * Interface every profiler has to implement. The profiler is responsible of the profiling logic.
@@ -8,9 +9,9 @@ package co.rsk.metrics.profilers;
 public interface Profiler {
 
     /**
-     *List of possible measurement categories (or types).
+     * List of possible measurement categories (or types).
      * Depending on what is actually being profiled, new categories can be added or
-     * categories not needed can be removed
+     * categories not needed can be removed.
      */
     enum MetricType {
         // BLOCK_CONNECTION - BLOCK_EXECUTE = Time consumed fetching the block and, after block execution, saving the data
@@ -36,20 +37,22 @@ public interface Profiler {
         BUILD_TRIE_FROM_MSG,
         TRIE_TO_MESSAGE, //Currently inactive, to measure, add the hooks in Trie::toMessage() and Trie::toMessageOrchid()
         TRIE_CONVERTER_GET_ACCOUNT_ROOT,
-        BLOCKCHAIN_FLUSH
+        BLOCKCHAIN_FLUSH,
+        SAVE_RECEIPTS,
+        FLUSH_RECEIPTS
     }
-
 
     /**
      * Starts a metric of a specific type
      * @param type task category that needs to be profiled
      * @return new Metric instance
      */
+    @Nonnull
     Metric start(MetricType type);
 
     /**
      * Stops a metric finalizing all the properties being profiled
      * @param metric Metric instance that needs to be finalized
      */
-    void stop(Metric metric);
+    void stop(@Nonnull Metric metric);
 }

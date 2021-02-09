@@ -132,6 +132,8 @@ public class BlockChainImpl implements Blockchain {
      */
     @Override
     public ImportResult tryToConnect(Block block) {
+        Metric metric = profiler.start(Profiler.MetricType.BLOCK_CONNECTION);
+
         this.lock.readLock().lock();
 
         try {
@@ -175,13 +177,13 @@ public class BlockChainImpl implements Blockchain {
             finally {
                 org.slf4j.MDC.remove("blockHash");
                 org.slf4j.MDC.remove("blockHeight");
-
             }
         }
         finally {
             this.lock.readLock().unlock();
-        }
 
+            profiler.stop(metric);
+        }
     }
 
     private ImportResult internalTryToConnect(Block block) {
@@ -470,15 +472,21 @@ public class BlockChainImpl implements Blockchain {
     }
 
     private void saveReceipts(Block block, BlockResult result) {
-        if (result == null) {
-            return;
-        }
+        Metric metric = profiler.start(Profiler.MetricType.SAVE_RECEIPTS);
 
-        if (result.getTransactionReceipts().isEmpty()) {
-            return;
-        }
+        try {
+            if (result == null) {
+                return;
+            }
 
-        receiptStore.saveMultiple(block.getHash().getBytes(), result.getTransactionReceipts());
+            if (result.getTransactionReceipts().isEmpty()) {
+                return;
+            }
+
+            receiptStore.saveMultiple(block.getHash().getBytes(), result.getTransactionReceipts());
+        } finally {
+            profiler.stop(metric);
+        }
     }
 
     private void processBest(final Block block) {
@@ -486,7 +494,6 @@ public class BlockChainImpl implements Blockchain {
         // this has to happen in the same thread so the TransactionPool is immediately aware of the new best block
         transactionPool.processBest(block);
         logger.debug("Finished running transactionPool.processBest(block)");
-
     }
 
     private void onBlock(Block block, BlockResult result) {

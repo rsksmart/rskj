@@ -20,6 +20,9 @@
 package org.ethereum.db;
 
 import co.rsk.crypto.Keccak256;
+import co.rsk.metrics.profilers.Metric;
+import co.rsk.metrics.profilers.Profiler;
+import co.rsk.metrics.profilers.ProfilerFactory;
 import org.ethereum.core.Block;
 import org.ethereum.core.TransactionReceipt;
 import org.ethereum.datasource.KeyValueDataSource;
@@ -37,6 +40,9 @@ import java.util.Optional;
  */
 
 public class ReceiptStoreImpl implements ReceiptStore {
+
+    private static final Profiler profiler = ProfilerFactory.getInstance();
+
     private KeyValueDataSource receiptsDS;
 
     public ReceiptStoreImpl(KeyValueDataSource receiptsDS){
@@ -144,6 +150,8 @@ public class ReceiptStoreImpl implements ReceiptStore {
 
     @Override
     public void flush() {
+        Metric metric = profiler.start(Profiler.MetricType.FLUSH_RECEIPTS);
         this.receiptsDS.flush();
+        profiler.stop(metric);
     }
 }

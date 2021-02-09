@@ -41,6 +41,12 @@ public enum NodeCliOptions implements OptionalizableCliArg {
             return config.withValue(SystemProperties.PROPERTY_BASE_PATH, ConfigValueFactory.fromAnyRef(configValue));
         }
     },
+    PROFILER("profiler", true) {
+        @Override
+        public Config withConfig(Config config, String configValue) {
+            return config.withValue(SystemProperties.PROPERTY_PROFILER, ConfigValueFactory.fromAnyRef(configValue));
+        }
+    },
     ;
 
     private final String optionName;
