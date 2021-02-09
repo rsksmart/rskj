@@ -63,8 +63,15 @@ public class GarbageCollector implements InternalService {
 
     private void collect(long untilBlock) {
         BlockHeader untilHeader = blockStore.getChainBlockByNumber(untilBlock).getHeader();
-        multiTrieStore.collect(repositoryLocator.snapshotAt(untilHeader).getRoot());
-        multiTrieStore.discardOldestEpoch();
+        final byte[] oldestRoot = repositoryLocator.snapshotAt(untilHeader).getRoot();
+
+        new Thread("collecting oldest state root in garbage collector") {
+            @Override
+            public void run() {
+                multiTrieStore.collect(oldestRoot);
+                multiTrieStore.discardOldestEpoch();
+            }
+        }.run();
     }
 
     private class GarbageCollectorInvoker extends EthereumListenerAdapter {
