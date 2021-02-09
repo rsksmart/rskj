@@ -77,7 +77,7 @@ public class GarbageCollector implements InternalService {
                 multiTrieStore.collect(oldestRoot);
                 multiTrieStore.discardOldestEpoch();
             }
-        }.run();
+        }.start();
     }
 
     private class GarbageCollectorInvoker extends EthereumListenerAdapter {

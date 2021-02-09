@@ -172,7 +172,7 @@ public class MultiTrieStore implements TrieStore {
         readWriteLock.readLock().lock();
 
         try {
-            Trie oldestTrieToKeep = retrieve(oldestTrieHashToKeep)
+            Trie  oldestTrieToKeep = retrieve(oldestTrieHashToKeep)
                     .orElseThrow(() ->
                             new IllegalArgumentException(String.format("The trie with root %s is missing from every epoch",
                                     ByteUtil.toHexString(oldestTrieHashToKeep)

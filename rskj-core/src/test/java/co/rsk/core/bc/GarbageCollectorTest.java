@@ -63,7 +63,7 @@ public class GarbageCollectorTest {
     }
 
     @Test
-    public void collectsOnBlocksPerEpochModulo() {
+    public void collectsOnBlocksPerEpochModulo() throws InterruptedException {
         for (int i = 100; i < 105; i++) {
             Block block = block(i);
             listener.onBestBlock(block, null);
@@ -78,12 +78,15 @@ public class GarbageCollectorTest {
         Block block = block(105);
         listener.onBestBlock(block, null);
 
+        // TODO improve
+        Thread.sleep(1000);
+
         verify(multiTrieStore).collect(stateRoot);
         verify(multiTrieStore).discardOldestEpoch();
     }
 
     @Test
-    public void collectsOnBlocksPerEpochModuloAndMinimumOfStatesToKeep() {
+    public void collectsOnBlocksPerEpochModuloAndMinimumOfStatesToKeep() throws InterruptedException {
         for (int i = 0; i < 21; i++) {
             Block block = block(i);
             listener.onBestBlock(block, null);
@@ -97,6 +100,9 @@ public class GarbageCollectorTest {
 
         Block block = block(21);
         listener.onBestBlock(block, null);
+
+        // TODO improve
+        Thread.sleep(1000);
 
         verify(multiTrieStore).collect(stateRoot);
         verify(multiTrieStore).discardOldestEpoch();
