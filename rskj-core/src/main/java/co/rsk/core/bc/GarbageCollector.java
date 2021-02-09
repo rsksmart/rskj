@@ -28,10 +28,14 @@ import org.ethereum.db.BlockStore;
 import org.ethereum.listener.CompositeEthereumListener;
 import org.ethereum.listener.EthereumListener;
 import org.ethereum.listener.EthereumListenerAdapter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
 public class GarbageCollector implements InternalService {
+    private static final Logger logger = LoggerFactory.getLogger("garbagecollector");
+
     private final CompositeEthereumListener emitter;
     private final MultiTrieStore multiTrieStore;
     private final BlockStore blockStore;
@@ -64,6 +68,8 @@ public class GarbageCollector implements InternalService {
     private void collect(long untilBlock) {
         BlockHeader untilHeader = blockStore.getChainBlockByNumber(untilBlock).getHeader();
         final byte[] oldestRoot = repositoryLocator.snapshotAt(untilHeader).getRoot();
+
+        logger.trace("Launch garbage collector collect and discard epoch");
 
         new Thread("collecting oldest state root in garbage collector") {
             @Override
