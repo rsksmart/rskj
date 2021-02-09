@@ -84,7 +84,6 @@ dependencies {
     implementation "org.mapdb:mapdb:2.0-beta13"
     implementation "co.rsk.bitcoinj:bitcoinj-thin:${bitcoinjVersion}"
     implementation 'com.github.briandilley.jsonrpc4j:jsonrpc4j:1.5.1'
-    implementation 'co.rsk:native:1.0.1'
     implementation 'com.sun.xml.ws:jaxws-rt:2.3.3'
     implementation "co.rsk:native:${nativeLibrary}"
 
