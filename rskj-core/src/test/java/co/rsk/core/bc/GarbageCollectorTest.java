@@ -70,13 +70,16 @@ public class GarbageCollectorTest {
         }
 
         verify(multiTrieStore, never()).collect(any());
+        verify(multiTrieStore, never()).discardOldestEpoch();
 
         byte[] stateRoot = new byte[] {0x42, 0x43, 0x02};
         withSnapshotStateRootAtBlockNumber(85, stateRoot);
 
         Block block = block(105);
         listener.onBestBlock(block, null);
+
         verify(multiTrieStore).collect(stateRoot);
+        verify(multiTrieStore).discardOldestEpoch();
     }
 
     @Test
@@ -87,13 +90,16 @@ public class GarbageCollectorTest {
         }
 
         verify(multiTrieStore, never()).collect(any());
+        verify(multiTrieStore, never()).discardOldestEpoch();
 
         byte[] stateRoot = new byte[] {0x42, 0x43, 0x02};
         withSnapshotStateRootAtBlockNumber(1, stateRoot);
 
         Block block = block(21);
         listener.onBestBlock(block, null);
+
         verify(multiTrieStore).collect(stateRoot);
+        verify(multiTrieStore).discardOldestEpoch();
     }
 
     private void withSnapshotStateRootAtBlockNumber(int i, byte[] stateRoot) {

@@ -104,7 +104,7 @@ public class MultiTrieStore implements TrieStore {
     }
 
     /**
-     * Discards the oldest epoch.
+     * Save the oldest trie hash to keep into the previous to oldest epoch.
      *
      * The children of <code>oldestTrieHashToKeep</code> stored in the oldest epoch will be saved
      * into the previous one
@@ -119,6 +119,13 @@ public class MultiTrieStore implements TrieStore {
         )));
 
         epochs.get(epochs.size() - 2).save(oldestTrieToKeep); // save into the upcoming last epoch
+    }
+
+    /**
+     * Discards the oldest epoch.
+     *
+     */
+    public void discardOldestEpoch() {
         epochs.get(epochs.size() - 1).dispose(); // dispose last epoch
         disposer.callback(currentEpoch - epochs.size());
         Collections.rotate(epochs, 1); // move last epoch to first place
