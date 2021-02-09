@@ -30,7 +30,7 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class MultiTrieStore implements TrieStore {
-    private static final Logger logger = LoggerFactory.getLogger("multitrie");
+    private static final Logger logger = LoggerFactory.getLogger("multitriestore");
 
     private int currentEpoch;
     private final List<TrieStore> epochs;
