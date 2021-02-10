@@ -1735,8 +1735,14 @@ public class RskContext implements NodeContext, NodeBootstrapper {
             String fullFilename = filePath.toString();
             MessageFilter filter = new MessageFilter(rskSystemProperties.getMessageRecorderCommands());
 
-            try (FileOutputStream fos = new FileOutputStream(fullFilename); OutputStreamWriter osw = new OutputStreamWriter(fos, StandardCharsets.UTF_8)) {
-                writerMessageRecorder = new WriterMessageRecorder(new BufferedWriter(osw), filter);
+            try {
+                // This resource needs to remain open when method returns, so LGTM warning is disabled.
+                writerMessageRecorder = new WriterMessageRecorder(
+                        new BufferedWriter(
+                                new OutputStreamWriter(new FileOutputStream(fullFilename), StandardCharsets.UTF_8) // lgtm [java/output-resource-leak]
+                        ),
+                        filter
+                );
             } catch (IOException ex) {
                 throw new IllegalArgumentException("Can't use this path to record messages", ex);
             }
