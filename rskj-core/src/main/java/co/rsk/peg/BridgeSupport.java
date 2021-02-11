@@ -2368,6 +2368,9 @@ public class BridgeSupport {
             InternalTransaction internalTx = (InternalTransaction)rskTx;
             logger.info("[registerFastBridgeBtcTransaction] Locking cap surpassed, going to return funds!");
             WalletProvider walletProvider = createFastBridgeWalletProvider(fastBridgeFederationInformation);
+
+            provider.markFastBridgeFederationDerivationHashAsUsed(btcTxHash, fastBridgeDerivationHash);
+
             if (shouldTransferToContract) {
                 logger.debug("[registerFastBridgeBtcTransaction] Returning to liquidity provider");
                 generateRejectionRelease(btcTx, lpBtcAddress, fastBridgeFedAddress, new Keccak256(internalTx.getOriginHash()), totalAmount, walletProvider);
@@ -2383,7 +2386,7 @@ public class BridgeSupport {
 
         saveFastBridgeDataInStorage(
             btcTxHashWithoutWitness,
-            derivationArgumentsHash,
+            fastBridgeDerivationHash,
             fastBridgeFederationInformation,
             getUTXOsForAddress(btcTx, fastBridgeFedAddress)
         );
