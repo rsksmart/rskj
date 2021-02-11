@@ -6524,10 +6524,9 @@ public class BridgeSupportTest {
         when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP134)).thenReturn(true);
 
-        BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
-        when(provider.isFastBridgeFederationDerivationHashUsed(any(Sha256Hash.class), any(Keccak256.class))).thenReturn(true);
-
         ReleaseTransactionSet releaseTransactionSet = new ReleaseTransactionSet(new HashSet<>());
+
+        BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
         when(provider.getReleaseTransactionSet()).thenReturn(releaseTransactionSet);
         when(provider.isFastBridgeFederationDerivationHashUsed(any(), any())).thenReturn(false);
 
@@ -6602,6 +6601,115 @@ public class BridgeSupportTest {
         );
 
         Assert.assertEquals(BridgeSupport.FAST_BRIDGE_REFUNDED_USER_ERROR_CODE, result);
+    }
+
+    @Test
+    public void registerFastBridgeBtcTransaction_surpasses_locking_cap_and_tries_to_register_again()
+        throws IOException, BlockStoreException, BridgeIllegalArgumentException {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP134)).thenReturn(true);
+
+        Repository repository = createRepository();
+        repository.addBalance(PrecompiledContracts.BRIDGE_ADDR, co.rsk.core.Coin.valueOf(1));
+
+        BridgeStorageProvider provider = new BridgeStorageProvider(
+            repository,
+            PrecompiledContracts.BRIDGE_ADDR,
+            bridgeConstants,
+            activations
+        );
+
+        BtcLockSender btcLockSender = mock(BtcLockSender.class);
+        BtcLockSenderProvider btcLockSenderProvider = mock(BtcLockSenderProvider.class);
+        when(btcLockSenderProvider.tryGetBtcLockSender(any())).thenReturn(Optional.of(btcLockSender));
+
+        Context btcContext = mock(Context.class);
+        when(btcContext.getParams()).thenReturn(bridgeConstants.getBtcParams());
+
+        BridgeSupport bridgeSupport = spy(new BridgeSupport(
+            bridgeConstants,
+            provider,
+            mock(BridgeEventLogger.class),
+            btcLockSenderProvider,
+            new PeginInstructionsProvider(),
+            repository,
+            mock(Block.class),
+            btcContext,
+            mock(FederationSupport.class),
+            mock(BtcBlockStoreWithCache.Factory.class),
+            activations
+        ));
+
+        doReturn(bridgeConstants.getGenesisFederation()).when(bridgeSupport).getActiveFederation();
+        doReturn(true).when(bridgeSupport).validationsForRegisterBtcTransaction(any(), anyInt(), any(), any());
+        doReturn(
+            Coin.COIN, // The first time we simulate a lower locking cap than the value to register, to force the reimburse
+            Coin.FIFTY_COINS // The next time we simulate a hight locking cap, to verify the user can't attempt to register the already reimbursed tx
+        ).when(bridgeSupport).getLockingCap();
+        doReturn(PegTestUtils.createHash3(1)).when(bridgeSupport).getFastBridgeDerivationHash(
+            any(Keccak256.class),
+            any(Address.class),
+            any(Address.class),
+            any(RskAddress.class)
+        );
+
+        Address btcAddress = Address.fromBase58(
+            btcParams,
+            "n3PLxDiwWqa5uH7fSbHCxS6VAjD9Y7Rwkj"
+        );
+
+        ECKey key = ECKey.fromPublicOnly(new BtcECKey().getPubKey());
+        RskAddress lbcAddress = new RskAddress(key.getAddress());
+
+        BtcTransaction tx = createBtcTransactionWithOutputToAddress(Coin.COIN, getFastBridgeFederationAddress());
+        byte[] pmtSerialized = Hex.decode("ab");
+        InternalTransaction rskTx = new InternalTransaction(
+            Keccak256.ZERO_HASH.getBytes(),
+            0,
+            0,
+            null,
+            null,
+            null,
+            lbcAddress.getBytes(),
+            null,
+            null,
+            null,
+            null
+        );
+
+        Keccak256 dHash = PegTestUtils.createHash3(0);
+
+        long result = bridgeSupport.registerFastBridgeBtcTransaction(
+            rskTx,
+            tx.bitcoinSerialize(),
+            100,
+            pmtSerialized,
+            dHash,
+            btcAddress,
+            lbcAddress,
+            btcAddress,
+            false
+        );
+
+        Assert.assertEquals(BridgeSupport.FAST_BRIDGE_REFUNDED_USER_ERROR_CODE, result);
+
+        // Update repository
+        bridgeSupport.save();
+
+        result = bridgeSupport.registerFastBridgeBtcTransaction(
+            rskTx,
+            tx.bitcoinSerialize(),
+            100,
+            pmtSerialized,
+            dHash,
+            btcAddress,
+            lbcAddress,
+            btcAddress,
+            false
+        );
+
+        Assert.assertEquals(BridgeSupport.FAST_BRIDGE_UNPROCESSABLE_TX_ALREADY_PROCESSED_ERROR_CODE, result);
     }
 
     @Test
@@ -6694,8 +6802,28 @@ public class BridgeSupportTest {
         );
 
         bridgeSupport.save();
-        Assert.assertTrue(provider.isFastBridgeFederationDerivationHashUsed(tx.getHash(), PegTestUtils.createHash3(0)));
+        Assert.assertTrue(
+            provider.isFastBridgeFederationDerivationHashUsed(
+                tx.getHash(),
+                bridgeSupport.getFastBridgeDerivationHash(PegTestUtils.createHash3(0), btcAddress, btcAddress, lbcAddress)
+            )
+        );
         Assert.assertEquals(1, provider.getNewFederationBtcUTXOs().size());
+
+        // Trying to register the same transaction again fails
+        result = bridgeSupport.registerFastBridgeBtcTransaction(
+            rskTx,
+            tx.bitcoinSerialize(),
+            100,
+            Hex.decode("ab"),
+            PegTestUtils.createHash3(0),
+            btcAddress,
+            lbcAddress,
+            btcAddress,
+            true
+        );
+
+        Assert.assertEquals(BridgeSupport.FAST_BRIDGE_UNPROCESSABLE_TX_ALREADY_PROCESSED_ERROR_CODE, result);
     }
 
     @Test
