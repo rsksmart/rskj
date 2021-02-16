@@ -78,11 +78,15 @@ public class GarbageCollectorTest {
         Block block = block(105);
         listener.onBestBlock(block, null);
 
-        // TODO improve
-        Thread.sleep(1000);
+        collector.lock();
 
-        verify(multiTrieStore).collect(stateRoot);
-        verify(multiTrieStore).discardOldestEpoch();
+        try {
+            verify(multiTrieStore).collect(stateRoot);
+            verify(multiTrieStore).discardOldestEpoch();
+        }
+        finally {
+            collector.unlock();
+        }
     }
 
     @Test
@@ -101,11 +105,15 @@ public class GarbageCollectorTest {
         Block block = block(21);
         listener.onBestBlock(block, null);
 
-        // TODO improve
-        Thread.sleep(1000);
+        this.collector.lock();
 
-        verify(multiTrieStore).collect(stateRoot);
-        verify(multiTrieStore).discardOldestEpoch();
+        try {
+            verify(multiTrieStore).collect(stateRoot);
+            verify(multiTrieStore).discardOldestEpoch();
+        }
+        finally {
+            this.collector.unlock();
+        }
     }
 
     private void withSnapshotStateRootAtBlockNumber(int i, byte[] stateRoot) {

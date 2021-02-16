@@ -21,6 +21,7 @@ package co.rsk.core.bc;
 import co.rsk.config.InternalService;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.trie.MultiTrieStore;
+import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.TransactionReceipt;
@@ -32,6 +33,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.concurrent.Semaphore;
 
 public class GarbageCollector implements InternalService {
     private static final Logger logger = LoggerFactory.getLogger("garbagecollector");
@@ -41,6 +43,8 @@ public class GarbageCollector implements InternalService {
     private final BlockStore blockStore;
     private final RepositoryLocator repositoryLocator;
     private final EthereumListener garbageCollectorInvoker;
+
+    private final Semaphore semaphore = new Semaphore(1);
 
     public GarbageCollector(CompositeEthereumListener emitter,
                             int blocksPerEpoch,
@@ -65,17 +69,46 @@ public class GarbageCollector implements InternalService {
         emitter.removeListener(garbageCollectorInvoker);
     }
 
+    @VisibleForTesting
+    public void lock() {
+        try {
+            semaphore.acquire();
+        }
+        catch (InterruptedException ex) {
+            logger.trace(ex.getMessage());
+        }
+    }
+
+    @VisibleForTesting
+    public void unlock() {
+        semaphore.release();
+    }
+
+    private boolean tryLock() {
+        return semaphore.tryAcquire();
+    }
+
     private void collect(long untilBlock) {
         BlockHeader untilHeader = blockStore.getChainBlockByNumber(untilBlock).getHeader();
         final byte[] oldestRoot = repositoryLocator.snapshotAt(untilHeader).getRoot();
+
+        if (!tryLock()) {
+            logger.trace("Garbage collector still running");
+            return;
+        }
 
         logger.trace("Launch garbage collector collect and discard epoch");
 
         new Thread("collecting oldest state root in garbage collector") {
             @Override
             public void run() {
-                multiTrieStore.collect(oldestRoot);
-                multiTrieStore.discardOldestEpoch();
+                try {
+                    multiTrieStore.collect(oldestRoot);
+                    multiTrieStore.discardOldestEpoch();
+                }
+                finally {
+                    unlock();
+                }
             }
         }.start();
     }
