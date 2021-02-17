@@ -24,7 +24,6 @@ import org.ethereum.core.Block;
 import org.ethereum.core.TransactionReceipt;
 import org.ethereum.db.TransactionInfo;
 import org.ethereum.rpc.LogFilterElement;
-import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.LogInfo;
 
 import static org.ethereum.rpc.TypeConverter.*;
@@ -46,7 +45,6 @@ public class TransactionReceiptDTO {
     private LogFilterElement[] logs;     // Array of log objects, which this transaction generated.
     private String from;                 // address of the sender.
     private String to;                   // address of the receiver. null when it's a contract creation transaction.
-    private String root;                 // post-transaction stateroot
     private String status;               // either 1 (success) or 0 (failure)
     private String logsBloom;            // Bloom filter for light clients to quickly retrieve related logs.
 
@@ -73,7 +71,6 @@ public class TransactionReceiptDTO {
                     txInfo.getReceipt().getTransaction(), i);
         }
 
-        root = toUnformattedJsonHex(ByteUtil.toBytesWithLeadingZeros(receipt.getPostTxState(), ROOT_HASH_LEN));
         to = receipt.getTransaction().getReceiveAddress().toJsonString();
         transactionHash = receipt.getTransaction().getHash().toJsonString();
         transactionIndex = toQuantityJsonHex(txInfo.getIndex());
@@ -118,10 +115,6 @@ public class TransactionReceiptDTO {
 
     public String getTo() {
         return to;
-    }
-
-    public String getRoot() {
-        return root;
     }
 
     public String getStatus() {
