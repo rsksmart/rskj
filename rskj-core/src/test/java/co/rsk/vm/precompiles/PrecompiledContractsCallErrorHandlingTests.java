@@ -71,14 +71,14 @@ public class PrecompiledContractsCallErrorHandlingTests {
         assertTransactionOk("tx12", PrecompiledContracts.ALT_BN_128_MUL_ADDR_STR);
         assertTransactionOk("tx13", PrecompiledContracts.ALT_BN_128_PAIRING_ADDR_STR);
         assertTransactionOk("tx14", PrecompiledContracts.BLS12_G1ADD_ADDR_STR);
-//        assertTransactionOk("tx15", PrecompiledContracts.BLS12_G1MUL_ADDR_STR);
-//        assertTransactionOk("tx15", PrecompiledContracts.BLS12_G1MULTIEXP_ADDR_STR);
-//        assertTransactionOk("tx16", PrecompiledContracts.BLS12_G2ADD_ADDR_STR);
-//        assertTransactionOk("tx17", PrecompiledContracts.BLS12_G2MUL_ADDR_STR);
-//        assertTransactionOk("tx18", PrecompiledContracts.BLS12_G2MULTIEXP_ADDR_STR);
-//        assertTransactionOk("tx19", PrecompiledContracts.BLS12_PAIRING_ADDR_STR);
-//        assertTransactionOk("tx20", PrecompiledContracts.BLS12_MAP_FP_TO_G1_ADDR_STR);
-//        assertTransactionOk("tx21", PrecompiledContracts.BLS12_MAP_FP2_TO_G2_ADDR_STR);
+        assertTransactionOk("tx15", PrecompiledContracts.BLS12_G1MUL_ADDR_STR);
+        assertTransactionOk("tx16", PrecompiledContracts.BLS12_G1MULTIEXP_ADDR_STR);
+        assertTransactionOk("tx17", PrecompiledContracts.BLS12_G2ADD_ADDR_STR);
+        assertTransactionOk("tx18", PrecompiledContracts.BLS12_G2MUL_ADDR_STR);
+        assertTransactionOk("tx19", PrecompiledContracts.BLS12_G2MULTIEXP_ADDR_STR);
+        assertTransactionOk("tx20", PrecompiledContracts.BLS12_PAIRING_ADDR_STR);
+        assertTransactionOk("tx21", PrecompiledContracts.BLS12_MAP_FP_TO_G1_ADDR_STR);
+        assertTransactionOk("tx22", PrecompiledContracts.BLS12_MAP_FP2_TO_G2_ADDR_STR);
 
         assertTransactionCount(world.getBlockByName("b01").getTransactionsList().size());
     }
