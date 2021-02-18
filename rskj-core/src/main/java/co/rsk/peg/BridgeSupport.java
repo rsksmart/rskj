@@ -1820,7 +1820,14 @@ public class BridgeSupport {
         Instant creationTime = Instant.ofEpochMilli(rskExecutionBlock.getTimestamp());
         Federation oldFederation = getActiveFederation();
         provider.setOldFederation(oldFederation);
-        provider.setNewFederation(currentPendingFederation.buildFederation(creationTime, rskExecutionBlock.getNumber(), bridgeConstants.getBtcParams()));
+        provider.setNewFederation(
+            currentPendingFederation.buildFederation(
+                creationTime,
+                rskExecutionBlock.getNumber(),
+                bridgeConstants.getBtcParams(),
+                activations,
+                bridgeConstants)
+        );
         provider.setPendingFederation(null);
 
         // Clear votes on election
