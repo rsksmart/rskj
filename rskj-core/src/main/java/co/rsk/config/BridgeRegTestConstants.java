@@ -24,6 +24,7 @@ import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.peg.AddressBasedAuthorizer;
 import co.rsk.peg.Federation;
 import co.rsk.peg.FederationMember;
+import java.math.BigInteger;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
@@ -47,7 +48,11 @@ public class BridgeRegTestConstants extends BridgeConstants {
             .map(key -> BtcECKey.fromPublicOnly(key.getPubKey()))
             .collect(Collectors.toList());
 
-    private static BridgeRegTestConstants instance = new BridgeRegTestConstants(REGTEST_FEDERATION_PUBLIC_KEYS);
+    private static final BridgeRegTestConstants instance = new BridgeRegTestConstants(REGTEST_FEDERATION_PUBLIC_KEYS);
+
+    private static final BtcECKey erpEcKey1 = BtcECKey.fromPrivate(BigInteger.valueOf(400));
+    private static final BtcECKey erpEcKey2 = BtcECKey.fromPrivate(BigInteger.valueOf(500));
+    private static final BtcECKey erpEcKey3 = BtcECKey.fromPrivate(BigInteger.valueOf(600));
 
     public BridgeRegTestConstants(List<BtcECKey> federationPublicKeys) {
         btcParamsString = NetworkParameters.ID_REGTEST;
@@ -131,6 +136,8 @@ public class BridgeRegTestConstants extends BridgeConstants {
                 AddressBasedAuthorizer.MinimumRequiredCalculation.ONE
         );
 
+        erpFedActivationDelay = 5063;
+        erpFedPubKeysList = Arrays.asList(erpEcKey1, erpEcKey2, erpEcKey3);
     }
 
     public static BridgeRegTestConstants getInstance() {

@@ -24,6 +24,7 @@ import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.peg.AddressBasedAuthorizer;
 import co.rsk.peg.Federation;
 import co.rsk.peg.FederationMember;
+import java.math.BigInteger;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.ECKey;
 
@@ -40,6 +41,10 @@ public class BridgeDevNetConstants extends BridgeConstants {
             BtcECKey.fromPublicOnly(Hex.decode("02914c05df0b11862ac6931c226ad40ebc4f5624ee6dca34278d3bbfa73b914cbd")),
             BtcECKey.fromPublicOnly(Hex.decode("0309d9df35855aa45235a04e30d228889eb03e462874588e631359d5f9cdea6519"))
     );
+
+    private static final BtcECKey erpEcKey1 = BtcECKey.fromPrivate(BigInteger.valueOf(400));
+    private static final BtcECKey erpEcKey2 = BtcECKey.fromPrivate(BigInteger.valueOf(500));
+    private static final BtcECKey erpEcKey3 = BtcECKey.fromPrivate(BigInteger.valueOf(600));
 
     public BridgeDevNetConstants(List<BtcECKey> federationPublicKeys) {
         btcParamsString = NetworkParameters.ID_TESTNET;
@@ -128,5 +133,8 @@ public class BridgeDevNetConstants extends BridgeConstants {
         initialLockingCap = Coin.COIN.multiply(1_000L); // 1_000 BTC
 
         lockingCapIncrementsMultiplier = 2;
+
+        erpFedActivationDelay = 5063;
+        erpFedPubKeysList = Arrays.asList(erpEcKey1, erpEcKey2, erpEcKey3);
     }
 }

@@ -18,10 +18,12 @@
 
 package co.rsk.config;
 
+import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.peg.AddressBasedAuthorizer;
 import co.rsk.peg.Federation;
+import java.util.List;
 
 public class BridgeConstants {
     protected String btcParamsString;
@@ -59,6 +61,10 @@ public class BridgeConstants {
     protected Coin initialLockingCap;
 
     protected int lockingCapIncrementsMultiplier;
+
+    protected long erpFedActivationDelay;
+
+    protected List<BtcECKey> erpFedPubKeysList;
 
     public NetworkParameters getBtcParams() {
         return NetworkParameters.fromID(btcParamsString);
@@ -117,4 +123,12 @@ public class BridgeConstants {
     public Coin getMaxFeePerKb() { return maxFeePerKb; }
 
     public Coin getMaxRbtc() { return Coin.valueOf(21_000_000, 0); }
+
+    public long getErpFedActivationDelay() {
+        return erpFedActivationDelay;
+    }
+
+    public List<BtcECKey> getErpFedPubKeysList() {
+        return erpFedPubKeysList;
+    }
 }
