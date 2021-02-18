@@ -32,9 +32,6 @@ import static org.ethereum.rpc.TypeConverter.*;
  * Created by Ruben on 5/1/2016.
  */
 public class TransactionReceiptDTO {
-
-    private static final int ROOT_HASH_LEN = Keccak256.HASH_LEN;
-
     private String transactionHash;      // hash of the transaction.
     private String transactionIndex;     // integer of the transactions index position in the block.
     private String blockHash;            // hash of the block where this transaction was in.
