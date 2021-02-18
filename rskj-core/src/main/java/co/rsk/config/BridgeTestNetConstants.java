@@ -24,6 +24,7 @@ import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.peg.AddressBasedAuthorizer;
 import co.rsk.peg.Federation;
 import co.rsk.peg.FederationMember;
+import java.util.ArrayList;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.ECKey;
 
@@ -129,6 +130,12 @@ public class BridgeTestNetConstants extends BridgeConstants {
 
         btcHeightWhenBlockIndexActivates = 700_000; //TODO define this value when Iris activation height in RSK is determined
         maxDepthToSearchBlocksBelowIndexActivation = 1_000; //TODO define this value with Sergio
+
+        // TODO: These value is not real
+        erpFedActivationDelay = 5063;
+        
+        // TODO: WE NEED TO DEFINE THESE KEYS
+        erpFedPubKeysList = new ArrayList<>();
     }
 
     public static BridgeTestNetConstants getInstance() {
