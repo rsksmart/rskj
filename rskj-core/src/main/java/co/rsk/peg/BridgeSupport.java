@@ -1744,7 +1744,13 @@ public class BridgeSupport {
         // Creation time is the block's timestamp.
         Instant creationTime = Instant.ofEpochMilli(rskExecutionBlock.getTimestamp());
         provider.setOldFederation(getActiveFederation());
-        provider.setNewFederation(currentPendingFederation.buildFederation(creationTime, rskExecutionBlock.getNumber(), bridgeConstants.getBtcParams()));
+        provider.setNewFederation(currentPendingFederation.buildFederation(
+            creationTime,
+            rskExecutionBlock.getNumber(),
+            bridgeConstants.getBtcParams(),
+            activations,
+            bridgeConstants)
+        );
         provider.setPendingFederation(null);
 
         // Clear votes on election

@@ -20,7 +20,10 @@ package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.NetworkParameters;
+import co.rsk.config.BridgeConstants;
 import co.rsk.crypto.Keccak256;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.crypto.HashUtil;
 
 import java.time.Instant;
@@ -81,9 +84,25 @@ public final class PendingFederation {
      * @param btcParams the bitcoin parameters for the new Federation
      * @return a Federation
      */
-    public Federation buildFederation(Instant creationTime, long blockNumber, NetworkParameters btcParams) {
+    public Federation buildFederation(
+        Instant creationTime,
+        long blockNumber,
+        NetworkParameters btcParams,
+        ActivationConfig.ForBlock activations,
+        BridgeConstants bridgeConstants) {
         if (!this.isComplete()) {
             throw new IllegalStateException("PendingFederation is incomplete");
+        }
+
+        if (activations.isActive(ConsensusRule.RSKIP199)) {
+            return new ErpFederation(
+                members,
+                creationTime,
+                blockNumber,
+                btcParams,
+                bridgeConstants.getErpFedPubKeysList(),
+                bridgeConstants.getErpFedActivationDelay()
+            );
         }
 
         return new Federation(
