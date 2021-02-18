@@ -1,5 +1,6 @@
 package co.rsk.peg;
 
+import co.rsk.bitcoinj.core.Address;
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.bitcoinj.script.ErpFederationRedeemScriptParser;
@@ -50,9 +51,22 @@ public class ErpFederation extends Federation {
     @Override
     public Script getP2SHScript() {
         if (p2shScript == null) {
-            p2shScript = ScriptBuilder.createP2SHOutputScript(redeemScript);
+            if (redeemScript == null) {
+                p2shScript = ScriptBuilder.createP2SHOutputScript(getRedeemScript());
+            } else {
+                p2shScript = ScriptBuilder.createP2SHOutputScript(redeemScript);
+            }
         }
 
         return p2shScript;
+    }
+
+    @Override
+    public Address getAddress() {
+        if (address == null) {
+            address = Address.fromP2SHScript(btcParams, getP2SHScript());
+        }
+
+        return address;
     }
 }
