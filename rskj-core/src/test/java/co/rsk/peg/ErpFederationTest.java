@@ -35,6 +35,11 @@ public class ErpFederationTest {
     }
 
     @Test
+    public void getErpPubKeys() {
+        Assert.assertEquals(erpFedKeys, federation.getErpPubKeys());
+    }
+
+    @Test
     public void getActivationDelay() {
         Assert.assertEquals(5063, federation.getActivationDelay());
     }
