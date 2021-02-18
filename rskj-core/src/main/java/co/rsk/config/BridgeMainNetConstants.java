@@ -7,6 +7,7 @@ import co.rsk.peg.AddressBasedAuthorizer;
 import co.rsk.peg.Federation;
 import co.rsk.peg.FederationMember;
 import com.google.common.collect.Lists;
+import java.math.BigInteger;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.ECKey;
 
@@ -17,6 +18,10 @@ import java.util.stream.Collectors;
 
 public class BridgeMainNetConstants extends BridgeConstants {
     private static BridgeMainNetConstants instance = new BridgeMainNetConstants();
+
+    private static final BtcECKey erpEcKey1 = BtcECKey.fromPrivate(BigInteger.valueOf(400));
+    private static final BtcECKey erpEcKey2 = BtcECKey.fromPrivate(BigInteger.valueOf(500));
+    private static final BtcECKey erpEcKey3 = BtcECKey.fromPrivate(BigInteger.valueOf(600));
 
     BridgeMainNetConstants() {
         btcParamsString = NetworkParameters.ID_MAINNET;
@@ -126,6 +131,9 @@ public class BridgeMainNetConstants extends BridgeConstants {
 
         lockingCapIncrementsMultiplier = 2;
         initialLockingCap = Coin.COIN.multiply(300); // 300 BTC
+
+        erpFedActivationDelay = 5063;
+        erpFedPubKeysList = Arrays.asList(erpEcKey1, erpEcKey2, erpEcKey3);
     }
 
     public static BridgeMainNetConstants getInstance() {
