@@ -18,10 +18,12 @@
 
 package co.rsk.config;
 
+import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.peg.AddressBasedAuthorizer;
 import co.rsk.peg.Federation;
+import java.util.List;
 
 public class BridgeConstants {
     protected String btcParamsString;
@@ -65,6 +67,10 @@ public class BridgeConstants {
     protected long minSecondsBetweenCallsReceiveHeader;  // (seconds)
 
     protected int maxDepthBlockchainAccepted;
+
+    protected long erpFedActivationDelay;
+
+    protected List<BtcECKey> erpFedPubKeysList;
 
     public NetworkParameters getBtcParams() {
         return NetworkParameters.fromID(btcParamsString);
@@ -127,6 +133,14 @@ public class BridgeConstants {
     public int getBtcHeightWhenBlockIndexActivates() { return btcHeightWhenBlockIndexActivates; }
 
     public int getMaxDepthToSearchBlocksBelowIndexActivation() { return maxDepthToSearchBlocksBelowIndexActivation; }
+
+    public long getErpFedActivationDelay() {
+        return erpFedActivationDelay;
+    }
+
+    public List<BtcECKey> getErpFedPubKeysList() {
+        return erpFedPubKeysList;
+    }
 
     public long getMinSecondsBetweenCallsToReceiveHeader() { return minSecondsBetweenCallsReceiveHeader; }
 
