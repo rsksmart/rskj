@@ -47,7 +47,7 @@ public class BridgeRegTestConstants extends BridgeConstants {
             .map(key -> BtcECKey.fromPublicOnly(key.getPubKey()))
             .collect(Collectors.toList());
 
-    private static BridgeRegTestConstants instance = new BridgeRegTestConstants(REGTEST_FEDERATION_PUBLIC_KEYS);
+    private static final BridgeRegTestConstants instance = new BridgeRegTestConstants(REGTEST_FEDERATION_PUBLIC_KEYS);
 
     public BridgeRegTestConstants(List<BtcECKey> federationPublicKeys) {
         btcParamsString = NetworkParameters.ID_REGTEST;
@@ -135,8 +135,19 @@ public class BridgeRegTestConstants extends BridgeConstants {
                 AddressBasedAuthorizer.MinimumRequiredCalculation.ONE
         );
 
+        // TODO: This value is not real
         btcHeightWhenBlockIndexActivates = 10;
         maxDepthToSearchBlocksBelowIndexActivation = 1_000; //TODO define this value with Sergio
+
+        erpFedActivationDelay = 1000;
+
+        // Keys generated with GenNodeKey using generators 'erp-fed-01' through 'erp-fed-03'
+        erpFedPubKeysList = Arrays.stream(new String[]{
+                "03b9fc46657cf72a1afa007ecf431de1cd27ff5cc8829fa625b66ca47b967e6b24",
+                "029cecea902067992d52c38b28bf0bb2345bda9b21eca76b16a17c477a64e43301",
+                "03284178e5fbcc63c54c3b38e3ef88adf2da6c526313650041b0ef955763634ebd",
+            }).map(hex -> BtcECKey.fromPublicOnly(Hex.decode(hex))).collect(Collectors.toList()
+        );
     }
 
     public static BridgeRegTestConstants getInstance() {

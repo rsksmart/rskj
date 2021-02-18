@@ -132,6 +132,16 @@ public class BridgeDevNetConstants extends BridgeConstants {
         btcHeightWhenBlockIndexActivates = 700_000; //TODO define this value when Iris activation height in RSK is determined
 
         maxDepthToSearchBlocksBelowIndexActivation = 1_000; //TODO define this value with Sergio
+
+        erpFedActivationDelay = 1000;
+
+        // Keys generated with GenNodeKey using generators 'erp-fed-01' through 'erp-fed-03'
+        erpFedPubKeysList = Arrays.stream(new String[]{
+                "03b9fc46657cf72a1afa007ecf431de1cd27ff5cc8829fa625b66ca47b967e6b24",
+                "029cecea902067992d52c38b28bf0bb2345bda9b21eca76b16a17c477a64e43301",
+                "03284178e5fbcc63c54c3b38e3ef88adf2da6c526313650041b0ef955763634ebd",
+            }).map(hex -> BtcECKey.fromPublicOnly(Hex.decode(hex))).collect(Collectors.toList()
+        );
         minSecondsBetweenCallsReceiveHeader = 600;  // 10 minutes in Seconds
 
         maxDepthBlockchainAccepted = 25;
