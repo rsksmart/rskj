@@ -60,7 +60,6 @@ public class RegisterBtcTransactionTest extends BridgePerformanceTestCase {
         );
 
         executeAndAverage("registerBtcTransaction-lockSuccess", times, getABIEncoder(), storageInitializer, Helper.getZeroValueValueTxBuilderFromFedMember(), Helper.getRandomHeightProvider(10), stats);
-
     }
 
     private void registerBtcTransaction_alreadyProcessed(int times, ExecutionStats stats) throws VMException {
@@ -97,7 +96,8 @@ public class RegisterBtcTransactionTest extends BridgePerformanceTestCase {
     private BridgeStorageProviderInitializer generateInitializerForLock(int minBtcBlocks, int maxBtcBlocks, int numberOfLockConfirmations, boolean markAsAlreadyProcessed) {
         return (BridgeStorageProvider provider, Repository repository, int executionIndex, BtcBlockStore blockStore) -> {
             BtcBlockStoreWithCache.Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(bridgeConstants.getBtcParams());
-            BtcBlockStore btcBlockStore = btcBlockStoreFactory.newInstance(repository.startTracking());
+            Repository thisRepository = repository.startTracking();
+            BtcBlockStore btcBlockStore = btcBlockStoreFactory.newInstance(thisRepository);
             Context btcContext = new Context(networkParameters);
             BtcBlockChain btcBlockChain;
             try {
@@ -112,8 +112,8 @@ public class RegisterBtcTransactionTest extends BridgePerformanceTestCase {
             // Sender and amounts
             BtcECKey from = new BtcECKey();
             Address fromAddress = from.toAddress(networkParameters);
-            Coin fromAmount = Coin.CENT.multiply(Helper.randomInRange(10, 100));
-            Coin lockAmount = fromAmount.divide(Helper.randomInRange(2, 10));
+            Coin fromAmount = Coin.CENT.multiply(Helper.randomInRange(100, 150));
+            Coin lockAmount = fromAmount.divide(Helper.randomInRange(2, 4));
             Coin changeAmount = fromAmount.subtract(lockAmount).subtract(Coin.MILLICOIN); // 1 millicoin fee simulation
 
             // Whitelisting sender
@@ -144,6 +144,8 @@ public class RegisterBtcTransactionTest extends BridgePerformanceTestCase {
 
             Helper.generateAndAddBlocks(btcBlockChain, numberOfLockConfirmations);
 
+            thisRepository.commit();
+
             // Marking as already processed
             if (markAsAlreadyProcessed) {
                 try {
@@ -154,6 +156,4 @@ public class RegisterBtcTransactionTest extends BridgePerformanceTestCase {
             }
         };
     }
-
-
 }
