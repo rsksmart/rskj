@@ -44,7 +44,7 @@ import java.util.stream.Collectors;
 public final class PendingFederation {
     private static final int MIN_MEMBERS_REQUIRED = 2;
 
-    private List<FederationMember> members;
+    private final List<FederationMember> members;
 
     public PendingFederation(List<FederationMember> members) {
         // Sorting members ensures same order for members
@@ -60,7 +60,7 @@ public final class PendingFederation {
 
     public List<BtcECKey> getBtcPublicKeys() {
         // Copy keys since we don't control immutability of BtcECKey(s)
-        return members.stream().map(m -> m.getBtcPublicKey()).collect(Collectors.toList());
+        return members.stream().map(FederationMember::getBtcPublicKey).collect(Collectors.toList());
     }
 
     public boolean isComplete() {
