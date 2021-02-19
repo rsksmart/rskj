@@ -92,6 +92,39 @@ public class ProgramResultTest {
         Assert.assertArrayEquals(originTx.getHash().getBytes(), result.getOriginHash());
     }
 
+    @Test
+    public void spendGas() {
+        ProgramResult programResult = new ProgramResult();
+
+        programResult.spendGas(100_000L);
+
+        Assert.assertEquals(100_000L, programResult.getGasUsed());
+        Assert.assertEquals(0L, programResult.getGasRefund());
+    }
+
+    @Test
+    public void spendGasTwice() {
+        ProgramResult programResult = new ProgramResult();
+
+        programResult.spendGas(100_000L);
+        programResult.spendGas(100_000L);
+
+        Assert.assertEquals(200_000L, programResult.getGasUsed());
+        Assert.assertEquals(0L, programResult.getGasRefund());
+    }
+
+    @Test
+    public void spendGasTwiceAndPartialRefund() {
+        ProgramResult programResult = new ProgramResult();
+
+        programResult.spendGas(100_000L);
+        programResult.spendGas(100_000L);
+        programResult.refundGas(50_000L);
+
+        Assert.assertEquals(150_000L, programResult.getGasUsed());
+        Assert.assertEquals(50_000L, programResult.getGasRefund());
+    }
+
     private Transaction getOriginTransaction() {
         return Transaction.builder()
             .nonce(BigInteger.ONE.toByteArray())
