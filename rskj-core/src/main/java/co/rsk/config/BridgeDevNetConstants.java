@@ -24,7 +24,6 @@ import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.peg.AddressBasedAuthorizer;
 import co.rsk.peg.Federation;
 import co.rsk.peg.FederationMember;
-import java.math.BigInteger;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.ECKey;
 
@@ -42,9 +41,13 @@ public class BridgeDevNetConstants extends BridgeConstants {
             BtcECKey.fromPublicOnly(Hex.decode("0309d9df35855aa45235a04e30d228889eb03e462874588e631359d5f9cdea6519"))
     );
 
-    private static final BtcECKey erpEcKey1 = BtcECKey.fromPrivate(BigInteger.valueOf(400));
-    private static final BtcECKey erpEcKey2 = BtcECKey.fromPrivate(BigInteger.valueOf(500));
-    private static final BtcECKey erpEcKey3 = BtcECKey.fromPrivate(BigInteger.valueOf(600));
+    // TODO: These keys are not real values
+    // Keys generated with GenNodeKey using generators 'erp-fed-01' through 'erp-fed-03'
+    List<BtcECKey> erpFedsList = Arrays.stream(new String[]{
+        "03b9fc46657cf72a1afa007ecf431de1cd27ff5cc8829fa625b66ca47b967e6b24",
+        "029cecea902067992d52c38b28bf0bb2345bda9b21eca76b16a17c477a64e43301",
+        "03284178e5fbcc63c54c3b38e3ef88adf2da6c526313650041b0ef955763634ebd",
+    }).map(hex -> BtcECKey.fromPublicOnly(Hex.decode(hex))).collect(Collectors.toList());
 
     public BridgeDevNetConstants(List<BtcECKey> federationPublicKeys) {
         btcParamsString = NetworkParameters.ID_TESTNET;
@@ -134,7 +137,8 @@ public class BridgeDevNetConstants extends BridgeConstants {
 
         lockingCapIncrementsMultiplier = 2;
 
+        // TODO: This value is not real
         erpFedActivationDelay = 5063;
-        erpFedPubKeysList = Arrays.asList(erpEcKey1, erpEcKey2, erpEcKey3);
+        erpFedPubKeysList = erpFedsList;
     }
 }
