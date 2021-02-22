@@ -153,6 +153,7 @@ task javadocJar(type: Jar) {
 }
 
 jar {
+    dependsOn 'generateResources'
     def commitHash = gitCommitHash()
     def currentBranch = gitCurrentBranch()
     manifest {
