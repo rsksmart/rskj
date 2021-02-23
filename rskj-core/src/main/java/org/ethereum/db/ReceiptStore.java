@@ -19,7 +19,6 @@
 
 package org.ethereum.db;
 
-import co.rsk.crypto.Keccak256;
 import org.ethereum.core.TransactionReceipt;
 
 import java.util.List;
