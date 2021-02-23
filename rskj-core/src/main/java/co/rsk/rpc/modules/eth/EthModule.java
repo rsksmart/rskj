@@ -30,6 +30,7 @@ import co.rsk.peg.BridgeSupport;
 import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.rpc.ExecutionBlockRetriever;
 import co.rsk.trie.TrieStoreImpl;
+import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.*;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.MutableRepository;
@@ -37,12 +38,14 @@ import org.ethereum.rpc.TypeConverter;
 import org.ethereum.rpc.Web3;
 import org.ethereum.rpc.converters.CallArgumentsToByteArray;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
+import org.ethereum.vm.GasCost;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.ProgramResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
@@ -117,9 +120,12 @@ public class EthModule
 
     public String call(Web3.CallArguments args, String bnOrId) {
         String hReturn = null;
+
         try {
             BlockResult blockResult = executionBlockRetriever.getExecutionBlock_workaround(bnOrId);
+
             ProgramResult res;
+
             if (blockResult.getFinalState() != null) {
                 res = callConstant_workaround(args, blockResult);
             } else {
@@ -143,11 +149,53 @@ public class EthModule
         }
     }
 
+    @VisibleForTesting
+    public boolean runWithArgumentsAndBlock(Web3.CallArguments args, Block block) {
+        ProgramResult res = callConstant(args, blockchain.getBestBlock());
+
+        return res.getException() == null;
+    }
+
     public String estimateGas(Web3.CallArguments args) {
         String s = null;
+        long top;
+        long bottom;
+
         try {
-            ProgramResult res = callConstant(args, blockchain.getBestBlock());
-            return s = TypeConverter.toQuantityJsonHex(res.getGasUsed());
+            String initialGasString = args.gas;
+
+            if (initialGasString.startsWith("0x"))
+                initialGasString = initialGasString.substring(2);
+
+            top = new BigInteger(initialGasString, 16).longValue();
+
+            Block block = blockchain.getBestBlock();
+            ProgramResult res = callConstant(args, block);
+
+            long gasUsed = res.getGasUsed();
+
+            args.gas = Long.toString(gasUsed, 16);
+
+            if (runWithArgumentsAndBlock(args, block)) {
+                return s = TypeConverter.toQuantityJsonHex(gasUsed);
+            }
+
+            bottom = gasUsed;
+
+            while (Math.abs(top - bottom) > 1000) {
+                long middle = (top + bottom) / 2;
+
+                args.gas = Long.toString(middle, 16);
+
+                if (runWithArgumentsAndBlock(args, block)) {
+                    top = middle;
+                }
+                else {
+                    bottom = middle;
+                }
+            }
+
+            return s = TypeConverter.toQuantityJsonHex(top);
         } finally {
             LOGGER.debug("eth_estimateGas(): {}", s);
         }
