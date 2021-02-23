@@ -46,7 +46,7 @@ public class RskModuleImpl implements RskModule {
         String s = null;
         try {
             byte[] hash = stringHexToByteArray(transactionHash);
-            TransactionInfo txInfo = receiptStore.getInMainChain(hash, blockStore);
+            TransactionInfo txInfo = receiptStore.getInMainChain(hash, blockStore).orElse(null);
 
             if (txInfo == null) {
                 logger.trace("No transaction info for {}", transactionHash);
@@ -78,14 +78,14 @@ public class RskModuleImpl implements RskModule {
                 Transaction transaction = transactions.get(k);
                 Keccak256 txh = transaction.getHash();
 
-                Optional<TransactionInfo> txinfoOpt = this.receiptStore.get(txh, bhash);
-                if (!txinfoOpt.isPresent()) {
+                Optional<TransactionInfo> txInfoOpt = this.receiptStore.get(txh.getBytes(), bhash.getBytes());
+                if (!txInfoOpt.isPresent()) {
                     logger.error("Missing receipt for transaction {} in block {}", txh, bhash);
                     continue;
                 }
 
-                TransactionInfo txinfo = txinfoOpt.get();
-                receipts.add(txinfo.getReceipt());
+                TransactionInfo txInfo = txInfoOpt.get();
+                receipts.add(txInfo.getReceipt());
 
                 if (txh.equals(txHash)) {
                     ntx = k;

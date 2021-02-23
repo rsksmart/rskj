@@ -428,12 +428,12 @@ public class BlockChainImpl implements Blockchain {
     /**
      * Returns transaction info by hash
      *
-     * @param hash      the hash of the transaction
+     * @param txHash the hash of the transaction
      * @return transaction info, null if the transaction does not exist
      */
     @Override
-    public TransactionInfo getTransactionInfo(byte[] hash) {
-        TransactionInfo txInfo = receiptStore.get(hash);
+    public TransactionInfo getTransactionInfo(byte[] txHash) {
+        TransactionInfo txInfo = receiptStore.getInMainChain(txHash, blockStore).orElse(null);
 
         if (txInfo == null) {
             return null;

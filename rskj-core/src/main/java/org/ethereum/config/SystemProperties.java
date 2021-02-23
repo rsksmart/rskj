@@ -73,6 +73,7 @@ public abstract class SystemProperties {
     public static final String PROPERTY_BASE_PATH = "database.dir";
     public static final String PROPERTY_DB_RESET = "database.reset";
     public static final String PROPERTY_DB_IMPORT = "database.import.enabled";
+    public static final String PROPERTY_DB_RECEIPTS_DATA_FORMAT_VERSION = "database.receipts.dataFormatVersion";
     // TODO review rpc properties
     public static final String PROPERTY_RPC_CORS = "rpc.providers.web.cors";
     public static final String PROPERTY_RPC_HTTP_ENABLED = "rpc.providers.web.http.enabled";
@@ -207,6 +208,12 @@ public abstract class SystemProperties {
 
     public boolean importEnabled() {
         return configFromFiles.getBoolean(PROPERTY_DB_IMPORT);
+    }
+
+    public String receiptsDataFormatVersion() {
+        return configFromFiles.hasPath(PROPERTY_DB_RECEIPTS_DATA_FORMAT_VERSION)
+                ? configFromFiles.getString(PROPERTY_DB_RECEIPTS_DATA_FORMAT_VERSION)
+                : "v1";
     }
 
     public String importUrl() {

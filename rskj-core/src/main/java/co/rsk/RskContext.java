@@ -102,6 +102,7 @@ import org.ethereum.datasource.LevelDbDataSource;
 import org.ethereum.db.IndexedBlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.db.ReceiptStoreImpl;
+import org.ethereum.db.ReceiptStoreImplV2;
 import org.ethereum.facade.Ethereum;
 import org.ethereum.facade.EthereumImpl;
 import org.ethereum.listener.CompositeEthereumListener;
@@ -977,14 +978,21 @@ public class RskContext implements NodeBootstrapper {
     }
 
     protected ReceiptStore buildReceiptStore() {
-        int receiptsCacheSize = getRskSystemProperties().getReceiptsCacheSize();
-        KeyValueDataSource ds = LevelDbDataSource.makeDataSource(Paths.get(getRskSystemProperties().databaseDir(), "receipts"));
+        RskSystemProperties rskSystemProperties = getRskSystemProperties();
+        int receiptsCacheSize = rskSystemProperties.getReceiptsCacheSize();
+        KeyValueDataSource ds = LevelDbDataSource.makeDataSource(Paths.get(rskSystemProperties.databaseDir(), "receipts"));
 
         if (receiptsCacheSize != 0) {
             ds = new DataSourceWithCache(ds, receiptsCacheSize);
         }
 
-        return new ReceiptStoreImpl(ds);
+        //noinspection SwitchStatementWithTooFewBranches
+        switch (rskSystemProperties.receiptsDataFormatVersion()) {
+            case "v2":
+                return new ReceiptStoreImplV2(ds);
+            default:
+                return new ReceiptStoreImpl(ds);
+        }
     }
 
     protected BlockValidator buildBlockValidator() {

@@ -196,6 +196,7 @@ public class RskContextTest {
 
         doReturn(1).when(testProperties).getNumOfAccountSlots();
         doReturn(true).when(testProperties).fastBlockPropagation();
+        doReturn("").when(testProperties).receiptsDataFormatVersion();
 
         ActivationConfig config = mock(ActivationConfig.class);
         doReturn(config).when(testProperties).getActivationConfig();

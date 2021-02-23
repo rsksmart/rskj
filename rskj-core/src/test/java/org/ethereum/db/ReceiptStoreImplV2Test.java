@@ -34,13 +34,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-/**
- * Created by ajlopez on 3/1/2016.
- */
-public class ReceiptStoreImplTest {
+public class ReceiptStoreImplV2Test {
+
     @Test
     public void getUnknownKey() {
-        ReceiptStore store = new ReceiptStoreImpl(new HashMapDB());
+        ReceiptStore store = new ReceiptStoreImplV2(new HashMapDB());
         byte[] key = new byte[]{0x01, 0x02};
 
         Optional<TransactionInfo> result = store.get(key, key);
@@ -49,8 +47,95 @@ public class ReceiptStoreImplTest {
     }
 
     @Test
+    public void getOlderReceiptDataViaFallback() {
+        HashMapDB hashMapDB = new HashMapDB();
+        ReceiptStore storeV1 = new ReceiptStoreImpl(hashMapDB);
+        ReceiptStore storeV2 = new ReceiptStoreImplV2(hashMapDB);
+
+        TransactionReceipt receipt = createReceipt();
+        byte[] blockHash = Hex.decode("0102030405060708");
+
+        storeV1.add(blockHash, 42, receipt);
+
+        TransactionInfo result = storeV2.get(receipt.getTransaction().getHash().getBytes(), blockHash).orElse(null);
+
+        Assert.assertNotNull(result);
+        Assert.assertNotNull(result.getBlockHash());
+        Assert.assertArrayEquals(blockHash, result.getBlockHash());
+        Assert.assertEquals(42, result.getIndex());
+        Assert.assertArrayEquals(receipt.getEncoded(), result.getReceipt().getEncoded());
+    }
+
+    @Test
+    public void addToExistingOlderReceiptDataViaFallback() {
+        HashMapDB hashMapDB = new HashMapDB();
+        ReceiptStore storeV1 = new ReceiptStoreImpl(hashMapDB);
+        ReceiptStore storeV2 = new ReceiptStoreImplV2(hashMapDB);
+
+        TransactionReceipt receipt = createReceipt();
+
+        byte[] blockHash1 = Hex.decode("0102030405060708");
+        byte[] blockHash2 = Hex.decode("0102030405060709");
+
+        storeV1.add(blockHash1, 41, receipt);
+        storeV2.add(blockHash2, 42, receipt);
+
+        TransactionInfo result1 = storeV1.get(receipt.getTransaction().getHash().getBytes(), blockHash1).orElse(null);
+
+        Assert.assertNotNull(result1);
+        Assert.assertNotNull(result1.getBlockHash());
+        Assert.assertArrayEquals(blockHash1, result1.getBlockHash());
+        Assert.assertEquals(41, result1.getIndex());
+        Assert.assertArrayEquals(receipt.getEncoded(), result1.getReceipt().getEncoded());
+
+        TransactionInfo result2 = storeV1.get(receipt.getTransaction().getHash().getBytes(), blockHash2).orElse(null);
+
+        Assert.assertNotNull(result2);
+        Assert.assertNotNull(result2.getBlockHash());
+        Assert.assertArrayEquals(blockHash2, result2.getBlockHash());
+        Assert.assertEquals(42, result2.getIndex());
+        Assert.assertArrayEquals(receipt.getEncoded(), result2.getReceipt().getEncoded());
+    }
+
+    @Test
+    public void ignoreNewerReceiptDataByInitialImpl() {
+        HashMapDB hashMapDB = new HashMapDB();
+        ReceiptStore storeV1 = new ReceiptStoreImpl(hashMapDB);
+        ReceiptStore storeV2 = new ReceiptStoreImplV2(hashMapDB);
+
+        TransactionReceipt receipt = createReceipt();
+        byte[] blockHash = Hex.decode("0102030405060708");
+
+        storeV2.add(blockHash, 42, receipt);
+
+        TransactionInfo result = storeV1.get(receipt.getTransaction().getHash().getBytes(), blockHash).orElse(null);
+
+        Assert.assertNull(result);
+    }
+
+    @Test
+    public void useOlderDataFormatAsFallback() {
+        HashMapDB hashMapDB = new HashMapDB();
+        ReceiptStore storeV1 = new ReceiptStoreImpl(hashMapDB);
+        ReceiptStore storeV2 = new ReceiptStoreImplV2(hashMapDB);
+
+        TransactionReceipt receipt = createReceipt();
+        byte[] blockHash = Hex.decode("0102030405060708");
+
+        storeV1.add(blockHash, 42, receipt);
+
+        TransactionInfo result = storeV2.get(receipt.getTransaction().getHash().getBytes(), blockHash).orElse(null);
+
+        Assert.assertNotNull(result);
+        Assert.assertNotNull(result.getBlockHash());
+        Assert.assertArrayEquals(blockHash, result.getBlockHash());
+        Assert.assertEquals(42, result.getIndex());
+        Assert.assertArrayEquals(receipt.getEncoded(), result.getReceipt().getEncoded());
+    }
+
+    @Test
     public void addAndGetTransaction() {
-        ReceiptStore store = new ReceiptStoreImpl(new HashMapDB());
+        ReceiptStore store = new ReceiptStoreImplV2(new HashMapDB());
 
         TransactionReceipt receipt = createReceipt();
         byte[] blockHash = Hex.decode("0102030405060708");
@@ -68,7 +153,7 @@ public class ReceiptStoreImplTest {
 
     @Test
     public void addAndGetTransactionWith128AsIndex() {
-        ReceiptStore store = new ReceiptStoreImpl(new HashMapDB());
+        ReceiptStore store = new ReceiptStoreImplV2(new HashMapDB());
 
         TransactionReceipt receipt = createReceipt();
         byte[] blockHash = Hex.decode("0102030405060708");
@@ -86,7 +171,7 @@ public class ReceiptStoreImplTest {
 
     @Test
     public void addAndGetTransactionWith238AsIndex() {
-        ReceiptStore store = new ReceiptStoreImpl(new HashMapDB());
+        ReceiptStore store = new ReceiptStoreImplV2(new HashMapDB());
 
         TransactionReceipt receipt = createReceipt();
         byte[] blockHash = Hex.decode("0102030405060708");
@@ -104,7 +189,7 @@ public class ReceiptStoreImplTest {
 
     @Test
     public void addTwoTransactionsAndGetLastTransaction() {
-        ReceiptStore store = new ReceiptStoreImpl(new HashMapDB());
+        ReceiptStore store = new ReceiptStoreImplV2(new HashMapDB());
 
         TransactionReceipt receipt0 = createReceipt();
         byte[] blockHash0 = Hex.decode("010203040506070809");
@@ -127,7 +212,7 @@ public class ReceiptStoreImplTest {
 
     @Test
     public void addTwoTransactionsAndGetAllTransactions() {
-        ReceiptStore store = new ReceiptStoreImpl(new HashMapDB());
+        ReceiptStore store = new ReceiptStoreImplV2(new HashMapDB());
 
         TransactionReceipt receipt0 = createReceipt();
         byte[] blockHash0 = Hex.decode("010203040506070809");
@@ -160,7 +245,7 @@ public class ReceiptStoreImplTest {
 
     @Test
     public void getUnknownTransactionByBlock() {
-        ReceiptStore store = new ReceiptStoreImpl(new HashMapDB());
+        ReceiptStore store = new ReceiptStoreImplV2(new HashMapDB());
         TransactionReceipt receipt = createReceipt();
 
         Keccak256 blockHash = TestUtils.randomHash();
@@ -172,7 +257,7 @@ public class ReceiptStoreImplTest {
 
     @Test
     public void getTransactionByUnknownBlock() {
-        ReceiptStore store = new ReceiptStoreImpl(new HashMapDB());
+        ReceiptStore store = new ReceiptStoreImplV2(new HashMapDB());
         TransactionReceipt receipt = createReceipt();
 
         Keccak256 blockHash0 = new Keccak256("0102030405060708000000000000000000000000000000000000000000000000");
@@ -187,7 +272,7 @@ public class ReceiptStoreImplTest {
 
     @Test
     public void addTwoTransactionsAndGetTransactionByFirstBlock() {
-        ReceiptStore store = new ReceiptStoreImpl(new HashMapDB());
+        ReceiptStore store = new ReceiptStoreImplV2(new HashMapDB());
 
         TransactionReceipt receipt0 = createReceipt();
         Keccak256 blockHash0 = new Keccak256("0102030405060708090000000000000000000000000000000000000000000000");
@@ -210,7 +295,7 @@ public class ReceiptStoreImplTest {
 
     @Test
     public void addTwoTransactionsAndGetTransactionBySecondBlock() {
-        ReceiptStore store = new ReceiptStoreImpl(new HashMapDB());
+        ReceiptStore store = new ReceiptStoreImplV2(new HashMapDB());
 
         TransactionReceipt receipt0 = createReceipt();
         Keccak256 blockHash0 = new Keccak256("0102030405060708090000000000000000000000000000000000000000000000");

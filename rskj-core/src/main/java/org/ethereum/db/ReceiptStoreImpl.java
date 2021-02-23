@@ -19,7 +19,6 @@
 
 package org.ethereum.db;
 
-import co.rsk.crypto.Keccak256;
 import org.ethereum.core.Block;
 import org.ethereum.core.TransactionReceipt;
 import org.ethereum.datasource.KeyValueDataSource;
@@ -37,7 +36,8 @@ import java.util.Optional;
  */
 
 public class ReceiptStoreImpl implements ReceiptStore {
-    private KeyValueDataSource receiptsDS;
+
+    private final KeyValueDataSource receiptsDS;
 
     public ReceiptStoreImpl(KeyValueDataSource receiptsDS){
         this.receiptsDS = receiptsDS;
@@ -65,31 +65,20 @@ public class ReceiptStoreImpl implements ReceiptStore {
     }
 
     @Override
-    public TransactionInfo get(byte[] transactionHash){
-        List<TransactionInfo> txs = getAll(transactionHash);
-
-        if (txs.isEmpty()) {
-            return null;
-        }
-
-        return txs.get(txs.size() - 1);
-    }
-
-    @Override
-    public Optional<TransactionInfo> get(Keccak256 transactionHash, Keccak256 blockHash) {
+    public Optional<TransactionInfo> get(byte[] transactionHash, byte[] blockHash) {
         // it is not guaranteed that there will be only one matching TransactionInfo, but if there were more than one,
         // they would be exactly the same
-        return getAll(transactionHash.getBytes()).stream()
-                .filter(ti -> Arrays.equals(ti.getBlockHash(), blockHash.getBytes()))
+        return getAll(transactionHash).stream()
+                .filter(ti -> Arrays.equals(ti.getBlockHash(), blockHash))
                 .findAny();
     }
 
     @Override
-    public TransactionInfo getInMainChain(byte[] transactionHash, BlockStore store) {
+    public Optional<TransactionInfo> getInMainChain(byte[] transactionHash, BlockStore store) {
         List<TransactionInfo> tis = this.getAll(transactionHash);
 
         if (tis.isEmpty()) {
-            return null;
+            return Optional.empty();
         }
 
         for (TransactionInfo ti : tis) {
@@ -108,25 +97,31 @@ public class ReceiptStoreImpl implements ReceiptStore {
             }
 
             if (Arrays.equals(bhash, mblock.getHash().getBytes())) {
-                return ti;
+                return Optional.of(ti);
             }
         }
 
-        return null;
+        return Optional.empty();
     }
 
-    @Override
-    public List<TransactionInfo> getAll(byte[] transactionHash) {
+    private List<TransactionInfo> getAll(byte[] transactionHash) {
         byte[] txsBytes = receiptsDS.get(transactionHash);
 
         if (txsBytes == null || txsBytes.length == 0) {
-            return new ArrayList<TransactionInfo>();
+            return new ArrayList<>();
         }
 
         List<TransactionInfo> txsInfo = new ArrayList<>();
         RLPList txsList = (RLPList) RLP.decode2(txsBytes).get(0);
 
-        for (int i = 0; i < txsList.size(); ++i) {
+
+        int txsListSize = txsList.size();
+        // check if list is empty or data format is incorrect
+        if (txsListSize == 0 || !(txsList.get(0) instanceof RLPList)) {
+            return new ArrayList<>();
+        }
+
+        for (int i = 0; i < txsListSize; ++i) {
             RLPList rlpData = ((RLPList) txsList.get(i));
             txsInfo.add(new TransactionInfo(rlpData.getRLPData()));
         }
