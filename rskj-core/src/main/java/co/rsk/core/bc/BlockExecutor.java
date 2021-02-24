@@ -21,6 +21,7 @@ package co.rsk.core.bc;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.TransactionExecutorFactory;
+import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.db.StateRootHandler;
 import co.rsk.metrics.profilers.Metric;
@@ -32,6 +33,7 @@ import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
+import org.ethereum.vm.program.ProgramResult;
 import org.ethereum.vm.trace.ProgramTraceProcessor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -58,6 +60,8 @@ public class BlockExecutor {
     private final TransactionExecutorFactory transactionExecutorFactory;
     private final StateRootHandler stateRootHandler;
     private final ActivationConfig activationConfig;
+
+    private Map<Keccak256, ProgramResult> transactionResults;
 
     public BlockExecutor(
             ActivationConfig activationConfig,
@@ -277,6 +281,8 @@ public class BlockExecutor {
 
         int txindex = 0;
 
+        this.transactionResults = new HashMap<>();
+
         for (Transaction tx : block.getTransactionsList()) {
             logger.trace("apply block: [{}] tx: [{}] ", block.getNumber(), i);
 
@@ -305,6 +311,7 @@ public class BlockExecutor {
             }
 
             executedTransactions.add(tx);
+            this.transactionResults.put(tx.getHash(), txExecutor.getResult());
 
             if (vmTrace) {
                 txExecutor.extractTrace(programTraceProcessor);
@@ -400,5 +407,9 @@ public class BlockExecutor {
         }
 
         return logBloom.getData();
+    }
+
+    public ProgramResult getProgramResult(Keccak256 txhash) {
+        return this.transactionResults.get(txhash);
     }
 }
