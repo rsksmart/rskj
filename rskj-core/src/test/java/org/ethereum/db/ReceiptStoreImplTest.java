@@ -29,6 +29,8 @@ import org.ethereum.datasource.HashMapDB;
 import org.ethereum.vm.LogInfo;
 import org.junit.Assert;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -37,10 +39,35 @@ import java.util.Optional;
 /**
  * Created by ajlopez on 3/1/2016.
  */
+@RunWith(Parameterized.class)
 public class ReceiptStoreImplTest {
+
+    enum StoreImpl {
+        V1, V2
+    }
+
+    @Parameterized.Parameters(name = "Receipt store impl: {0}")
+    public static Object[] data() {
+        return StoreImpl.values();
+    }
+    
+    private final ReceiptStore store;
+
+    public ReceiptStoreImplTest(StoreImpl impl) {
+        switch (impl) {
+            case V1:
+                this.store = new ReceiptStoreImpl(new HashMapDB());
+                break;
+            case V2:
+                this.store = new ReceiptStoreImplV2(new HashMapDB());
+                break;
+            default:
+                throw new IllegalArgumentException();
+        }
+    }
+
     @Test
     public void getUnknownKey() {
-        ReceiptStore store = new ReceiptStoreImpl(new HashMapDB());
         byte[] key = new byte[]{0x01, 0x02};
 
         Optional<TransactionInfo> result = store.get(key, key);
@@ -50,8 +77,6 @@ public class ReceiptStoreImplTest {
 
     @Test
     public void addAndGetTransaction() {
-        ReceiptStore store = new ReceiptStoreImpl(new HashMapDB());
-
         TransactionReceipt receipt = createReceipt();
         byte[] blockHash = Hex.decode("0102030405060708");
 
@@ -68,8 +93,6 @@ public class ReceiptStoreImplTest {
 
     @Test
     public void addAndGetTransactionWith128AsIndex() {
-        ReceiptStore store = new ReceiptStoreImpl(new HashMapDB());
-
         TransactionReceipt receipt = createReceipt();
         byte[] blockHash = Hex.decode("0102030405060708");
 
@@ -86,8 +109,6 @@ public class ReceiptStoreImplTest {
 
     @Test
     public void addAndGetTransactionWith238AsIndex() {
-        ReceiptStore store = new ReceiptStoreImpl(new HashMapDB());
-
         TransactionReceipt receipt = createReceipt();
         byte[] blockHash = Hex.decode("0102030405060708");
 
@@ -104,8 +125,6 @@ public class ReceiptStoreImplTest {
 
     @Test
     public void addTwoTransactionsAndGetLastTransaction() {
-        ReceiptStore store = new ReceiptStoreImpl(new HashMapDB());
-
         TransactionReceipt receipt0 = createReceipt();
         byte[] blockHash0 = Hex.decode("010203040506070809");
 
@@ -127,8 +146,6 @@ public class ReceiptStoreImplTest {
 
     @Test
     public void addTwoTransactionsAndGetAllTransactions() {
-        ReceiptStore store = new ReceiptStoreImpl(new HashMapDB());
-
         TransactionReceipt receipt0 = createReceipt();
         byte[] blockHash0 = Hex.decode("010203040506070809");
 
@@ -160,7 +177,6 @@ public class ReceiptStoreImplTest {
 
     @Test
     public void getUnknownTransactionByBlock() {
-        ReceiptStore store = new ReceiptStoreImpl(new HashMapDB());
         TransactionReceipt receipt = createReceipt();
 
         Keccak256 blockHash = TestUtils.randomHash();
@@ -172,7 +188,6 @@ public class ReceiptStoreImplTest {
 
     @Test
     public void getTransactionByUnknownBlock() {
-        ReceiptStore store = new ReceiptStoreImpl(new HashMapDB());
         TransactionReceipt receipt = createReceipt();
 
         Keccak256 blockHash0 = new Keccak256("0102030405060708000000000000000000000000000000000000000000000000");
@@ -187,8 +202,6 @@ public class ReceiptStoreImplTest {
 
     @Test
     public void addTwoTransactionsAndGetTransactionByFirstBlock() {
-        ReceiptStore store = new ReceiptStoreImpl(new HashMapDB());
-
         TransactionReceipt receipt0 = createReceipt();
         Keccak256 blockHash0 = new Keccak256("0102030405060708090000000000000000000000000000000000000000000000");
 
@@ -210,8 +223,6 @@ public class ReceiptStoreImplTest {
 
     @Test
     public void addTwoTransactionsAndGetTransactionBySecondBlock() {
-        ReceiptStore store = new ReceiptStoreImpl(new HashMapDB());
-
         TransactionReceipt receipt0 = createReceipt();
         Keccak256 blockHash0 = new Keccak256("0102030405060708090000000000000000000000000000000000000000000000");
 
