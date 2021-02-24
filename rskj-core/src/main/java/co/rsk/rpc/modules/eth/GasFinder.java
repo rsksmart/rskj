@@ -25,6 +25,7 @@ import java.util.Optional;
  */
 public class GasFinder {
     private static final long DIFFERENCE = 1000L;
+    private static final long UPWARD_STEP = 1000000L;
 
     private long lastGasUsed;
     private Optional<Long> lowerSuccess = Optional.empty();
@@ -35,8 +36,16 @@ public class GasFinder {
             return (this.upperFailure.get() + this.lowerSuccess.get()) / 2;
         }
 
+        if (!this.upperFailure.isPresent() && !this.lowerSuccess.isPresent() && this.lastGasUsed > 0) {
+            return this.lastGasUsed + UPWARD_STEP;
+        }
+
         if (this.lastGasUsed > 0) {
             return this.lastGasUsed;
+        }
+
+        if (this.upperFailure.isPresent()) {
+            return this.upperFailure.get() + UPWARD_STEP;
         }
 
         throw new IllegalStateException("No gas data");
@@ -51,6 +60,11 @@ public class GasFinder {
     }
 
     public void registerFailure(long gasLimit) {
+        if (!this.upperFailure.isPresent() && !this.lowerSuccess.isPresent()) {
+            this.lastGasUsed = gasLimit;
+            return;
+        }
+
         if (!this.upperFailure.isPresent() || this.upperFailure.get() < gasLimit) {
             this.upperFailure = Optional.of(gasLimit);
         }

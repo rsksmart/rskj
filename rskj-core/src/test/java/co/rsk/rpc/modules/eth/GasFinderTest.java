@@ -100,4 +100,25 @@ public class GasFinderTest {
         Assert.assertTrue(gasFinder.wasFound());
         Assert.assertEquals(2000L, gasFinder.getGasFound());
     }
+
+    @Test
+    public void firstFailureNextTry() {
+        GasFinder gasFinder = new GasFinder();
+
+        gasFinder.registerFailure(1000L);
+
+        Assert.assertFalse(gasFinder.wasFound());
+        Assert.assertTrue(gasFinder.nextTry() > 1000L);
+    }
+
+    @Test
+    public void firstFailureThenSuccess() {
+        GasFinder gasFinder = new GasFinder();
+
+        gasFinder.registerFailure(1000L);
+        gasFinder.registerSuccess(1001000L, 2000L);
+
+        Assert.assertFalse(gasFinder.wasFound());
+        Assert.assertEquals(2000L, gasFinder.nextTry());
+    }
 }

@@ -137,6 +137,13 @@ public class EthModuleDLSTest {
         args.gas = "0x" + Long.toString(estimatedGas - 1, 16);
 
         Assert.assertFalse(eth.runWithArgumentsAndBlock(args, block));
+
+        // Try estimate gas with too low initial gas limit
+        args.gas = "0x6000";
+        String newEstimation = eth.estimateGas(args);
+        long newEstimatedGas = Long.parseLong(newEstimation.substring(2), 16);
+
+        Assert.assertEquals(estimatedGas, newEstimatedGas);
     }
 
     private EthModule buildEthModule(World world) {
