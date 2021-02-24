@@ -158,8 +158,7 @@ public class EthModule
 
     public String estimateGas(Web3.CallArguments args) {
         String s = null;
-        long top;
-        long bottom;
+        GasFinder gasFinder = new GasFinder();
 
         try {
             String initialGasString = args.gas;
@@ -167,35 +166,30 @@ public class EthModule
             if (initialGasString.startsWith("0x"))
                 initialGasString = initialGasString.substring(2);
 
-            top = new BigInteger(initialGasString, 16).longValue();
+            long gasLimitToTry = new BigInteger(initialGasString, 16).longValue();
 
-            Block block = blockchain.getBestBlock();
-            ProgramResult res = callConstant(args, block);
+            while (!gasFinder.wasFound()) {
+                args.gas = Long.toString(gasLimitToTry, 16);
 
-            long gasUsed = res.getGasUsed();
+                Block block = blockchain.getBestBlock();
+                ProgramResult res = callConstant(args, block);
 
-            args.gas = Long.toString(gasUsed, 16);
+                if (res.getException() == null) {
+                    long gasUsed = res.getGasUsed();
 
-            if (runWithArgumentsAndBlock(args, block)) {
-                return s = TypeConverter.toQuantityJsonHex(gasUsed);
-            }
-
-            bottom = gasUsed;
-
-            while (Math.abs(top - bottom) > 1000) {
-                long middle = (top + bottom) / 2;
-
-                args.gas = Long.toString(middle, 16);
-
-                if (runWithArgumentsAndBlock(args, block)) {
-                    top = middle;
+                    gasFinder.registerSuccess(gasLimitToTry, gasUsed);
+                } else {
+                    gasFinder.registerFailure(gasLimitToTry);
                 }
-                else {
-                    bottom = middle;
+
+                if (!gasFinder.wasFound()) {
+                    gasLimitToTry = gasFinder.nextTry();
                 }
             }
 
-            return s = TypeConverter.toQuantityJsonHex(top);
+            long gasFound = gasFinder.getGasFound();
+
+            return s = TypeConverter.toQuantityJsonHex(gasFound);
         } finally {
             LOGGER.debug("eth_estimateGas(): {}", s);
         }
@@ -272,7 +266,8 @@ public class EthModule
         }
     }
 
-    private ProgramResult callConstant(Web3.CallArguments args, Block executionBlock) {
+    @VisibleForTesting
+    public ProgramResult callConstant(Web3.CallArguments args, Block executionBlock) {
         CallArgumentsToByteArray hexArgs = new CallArgumentsToByteArray(args);
         return reversibleTransactionExecutor.executeTransaction(
                 executionBlock,

@@ -114,15 +114,23 @@ public class EthModuleDLSTest {
         args.nonce = "1";
         args.gas = "10000000";
 
+        Block block = world.getBlockChain().getBestBlock();
+
+        // Evaluate the gas used
+        long gasUsed = eth.callConstant(args, block).getGasUsed();
+
+        // Estimate the gas to use
         String estimation = eth.estimateGas(args);
         long estimatedGas = Long.parseLong(estimation.substring(2), 16);
 
+        // The estimated gas should be less than the transaction used gas for setValue(0, 42)
         Assert.assertTrue(estimatedGas < new BigInteger(1, setValueTransactionReceipt.getGasUsed()).longValue());
+        // The estimated gas should be equal to the gas used in the call
+        Assert.assertEquals(gasUsed, estimatedGas);
 
         // Call same transaction with estimated gas
         args.gas = "0x" + Long.toString(estimatedGas, 16);
 
-        Block block = world.getBlockChain().getBestBlock();
         Assert.assertTrue(eth.runWithArgumentsAndBlock(args, block));
 
         // Call same transaction with estimated gas minus 1
