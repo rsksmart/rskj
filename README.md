@@ -1,6 +1,7 @@
 # Welcome to RskJ
 [![CircleCI](https://circleci.com/gh/rsksmart/rskj/tree/master.svg?style=svg)](https://circleci.com/gh/rsksmart/rskj/tree/master)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=rskj&metric=alert_status)](https://sonarcloud.io/dashboard?id=rskj)
+[![Language grade: Java](https://img.shields.io/lgtm/grade/java/g/rsksmart/rskj.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/rsksmart/rskj/context:java)
 
 # About
 RskJ is a Java implementation of the RSK node. For more information about RSK, visit [www.rsk.co](http://www.rsk.co). The [RSK white paper](https://www.rsk.co/Whitepapers/RSK-White-Paper-Updated.pdf) provides a complete conceptual overview of the platform.
