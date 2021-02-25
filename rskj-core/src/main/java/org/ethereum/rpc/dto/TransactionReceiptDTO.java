@@ -19,7 +19,6 @@
 package org.ethereum.rpc.dto;
 
 import co.rsk.core.RskAddress;
-import co.rsk.crypto.Keccak256;
 import org.ethereum.core.Block;
 import org.ethereum.core.TransactionReceipt;
 import org.ethereum.db.TransactionInfo;
