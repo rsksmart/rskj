@@ -48,7 +48,6 @@ import org.ethereum.net.message.Message;
 import org.ethereum.net.p2p.HelloMessage;
 import org.ethereum.net.rlpx.Node;
 import org.ethereum.net.server.Channel;
-import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RskTestFactory;
 import org.ethereum.vm.PrecompiledContracts;
