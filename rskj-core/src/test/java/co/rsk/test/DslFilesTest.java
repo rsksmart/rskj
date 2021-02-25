@@ -18,12 +18,14 @@
 
 package co.rsk.test;
 
+import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockChainStatus;
 import co.rsk.test.dsl.DslParser;
 import co.rsk.test.dsl.DslProcessorException;
 import co.rsk.test.dsl.WorldDslProcessor;
+import com.typesafe.config.ConfigValueFactory;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.Block;
@@ -156,8 +158,12 @@ public class DslFilesTest {
     @Test
     public void runCreateContractAndPreserveBalance() throws FileNotFoundException, DslProcessorException {
         // after rskip174 activation
+        TestSystemProperties config = new TestSystemProperties(rawConfig ->
+                rawConfig.withValue("blockchain.config.hardforkActivationHeights.iris300", ConfigValueFactory.fromAnyRef(5))
+        );
+
         DslParser parser = DslParser.fromResource("dsl/create_and_preserve_balance.txt");
-        World world = new World();
+        World world = new World(config);
         WorldDslProcessor processor = new WorldDslProcessor(world);
         processor.processCommands(parser);
 

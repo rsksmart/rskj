@@ -18,12 +18,14 @@
 
 package co.rsk.vm;
 
+import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.db.RepositorySnapshot;
 import co.rsk.test.World;
 import co.rsk.test.dsl.DslParser;
 import co.rsk.test.dsl.DslProcessorException;
 import co.rsk.test.dsl.WorldDslProcessor;
+import com.typesafe.config.ConfigValueFactory;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.vm.DataWord;
@@ -45,7 +47,10 @@ public class ExtCodeHashDslTest {
 
     @Before
     public void setup() {
-        this.world = new World();
+        TestSystemProperties config = new TestSystemProperties(rawConfig ->
+                rawConfig.withValue("blockchain.config.hardforkActivationHeights.iris300", ConfigValueFactory.fromAnyRef(5))
+        );
+        this.world = new World(config);
         this.processor = new WorldDslProcessor(world);
 
     }

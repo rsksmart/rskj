@@ -1,6 +1,6 @@
 package co.rsk.pcc.altBN128.impls;
 
-import co.rsk.altbn128.cloudflare.JniBn128;
+import co.rsk.altbn128.JniBn128;
 
 public class GoAltBN128 extends AbstractAltBN128 {
     @Override

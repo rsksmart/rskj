@@ -34,6 +34,10 @@ tasks.withType(Javadoc) {
 }
 
 repositories {
+    // todo(fedejinich) remove flatDirs, just for dev
+    flatDir {
+        dirs 'libs'
+    }
     mavenCentral()
     jcenter()
     maven {
@@ -67,7 +71,7 @@ ext {
     logbackVersion = '1.2.2'
     bitcoinjVersion = '0.14.4-rsk-9'
     nettyVersion = '4.0.56.Final'
-    nativeLibrary = '1.2.0'
+    nativeLibrary = '1.3.0'
 }
 
 dependencies {
@@ -85,7 +89,10 @@ dependencies {
     implementation "co.rsk.bitcoinj:bitcoinj-thin:${bitcoinjVersion}"
     implementation 'com.github.briandilley.jsonrpc4j:jsonrpc4j:1.5.1'
     implementation 'com.sun.xml.ws:jaxws-rt:2.3.3'
-    implementation "co.rsk:native:${nativeLibrary}"
+//    implementation "co.rsk:native:${nativeLibrary}" //todo(fedejinich) the actual impl
+
+    //todo(fedejinich) remove this jar, just for dev
+    implementation files('libs/native-1.3.0.jar')
 
     runtimeOnly "org.slf4j:log4j-over-slf4j:${slf4jVersion}"
     runtimeOnly "ch.qos.logback:logback-classic:${logbackVersion}"

@@ -120,7 +120,6 @@ public class PrecompiledContractTest {
 
         System.out.println(ByteUtil.toHexString(result));
 
-        // todo(fedejinich) analyse this case
         assertEquals(expected, ByteUtil.toHexString(result));
     }
     @Test

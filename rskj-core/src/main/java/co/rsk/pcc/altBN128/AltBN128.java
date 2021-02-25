@@ -1,6 +1,6 @@
 package co.rsk.pcc.altBN128;
 
-import co.rsk.altbn128.cloudflare.Utils;
+import co.rsk.Utils;
 import co.rsk.pcc.altBN128.impls.AbstractAltBN128;
 import co.rsk.pcc.altBN128.impls.GoAltBN128;
 import co.rsk.pcc.altBN128.impls.JavaAltBN128;

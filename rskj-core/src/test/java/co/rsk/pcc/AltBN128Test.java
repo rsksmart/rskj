@@ -19,7 +19,7 @@ package co.rsk.pcc;
  */
 
 
-import co.rsk.altbn128.cloudflare.Utils;
+import co.rsk.Utils;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.config.VmConfig;
 import co.rsk.pcc.altBN128.BN128Addition;
