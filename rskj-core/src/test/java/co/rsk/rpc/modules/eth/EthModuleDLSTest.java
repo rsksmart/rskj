@@ -146,6 +146,53 @@ public class EthModuleDLSTest {
         Assert.assertEquals(estimatedGas, newEstimatedGas);
     }
 
+    @Test
+    public void testEstimateGasUsingCallWithValue() throws FileNotFoundException, DslProcessorException {
+        DslParser parser = DslParser.fromResource("dsl/eth_module/callWithValue.txt");
+        World world = new World();
+
+        WorldDslProcessor processor = new WorldDslProcessor(world);
+        processor.processCommands(parser);
+
+        TransactionReceipt deployTransactionReceipt = world.getTransactionReceiptByName("tx01");
+        byte[] status = deployTransactionReceipt.getStatus();
+
+        Assert.assertNotNull(status);
+        Assert.assertEquals(1, status.length);
+        Assert.assertEquals(0x01, status[0]);
+
+        // Estimate gas for callWithValue()
+        EthModule eth = buildEthModule(world);
+        final Web3.CallArguments args = new Web3.CallArguments();
+        args.to = deployTransactionReceipt.getTransaction().getContractAddress().toHexString(); //"6252703f5ba322ec64d3ac45e56241b7d9e481ad";
+        args.data = "c3cefd36";
+        args.value = "10000";
+        args.nonce = "1";
+        args.gas = "10000000";
+
+        Block block = world.getBlockChain().getBestBlock();
+
+        // Evaluate the gas used
+        long gasUsed = eth.callConstant(args, block).getGasUsed();
+
+        // Estimate the gas to use
+        String estimation = eth.estimateGas(args);
+        long estimatedGas = Long.parseLong(estimation.substring(2), 16);
+
+        // The estimated gas should be greater than the gas used in the call
+        Assert.assertTrue(gasUsed < estimatedGas);
+
+        // Call same transaction with estimated gas
+        args.gas = "0x" + Long.toString(estimatedGas, 16);
+
+        Assert.assertTrue(eth.runWithArgumentsAndBlock(args, block));
+
+        // Call same transaction with gas used should fail
+        args.gas = "0x" + Long.toString(gasUsed, 16);
+
+        Assert.assertFalse(eth.runWithArgumentsAndBlock(args, block));
+    }
+
     private EthModule buildEthModule(World world) {
         final TestSystemProperties config = new TestSystemProperties();
         TransactionExecutorFactory executor = new TransactionExecutorFactory(
