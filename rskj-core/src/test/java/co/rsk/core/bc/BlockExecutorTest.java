@@ -100,6 +100,54 @@ public class BlockExecutorTest {
 
     @Test
     public void executeBlockWithOneTransaction() {
+        executor.setRegisterProgramResults(false);
+        Block block = getBlockWithOneTransaction(); // this changes the best block
+        Block parent = blockchain.getBestBlock();
+
+        Transaction tx = block.getTransactionsList().get(0);
+        RskAddress account = tx.getSender();
+
+        BlockResult result = executor.execute(block, parent.getHeader(), false);
+
+        Assert.assertNotNull(result);
+        Assert.assertNotNull(result.getTransactionReceipts());
+        Assert.assertFalse(result.getTransactionReceipts().isEmpty());
+        Assert.assertEquals(1, result.getTransactionReceipts().size());
+
+        Assert.assertNull(executor.getProgramResult(tx.getHash()));
+
+        TransactionReceipt receipt = result.getTransactionReceipts().get(0);
+        Assert.assertEquals(tx, receipt.getTransaction());
+        Assert.assertEquals(21000, new BigInteger(1, receipt.getGasUsed()).longValue());
+        Assert.assertEquals(21000, new BigInteger(1, receipt.getCumulativeGas()).longValue());
+        Assert.assertTrue(receipt.hasTxStatus() && receipt.isTxStatusOK() && receipt.isSuccessful());
+
+        Assert.assertEquals(21000, result.getGasUsed());
+        Assert.assertEquals(21000, result.getPaidFees().asBigInteger().intValueExact());
+
+        Assert.assertFalse(Arrays.equals(repository.getRoot(), result.getFinalState().getHash().getBytes()));
+
+        byte[] calculatedLogsBloom = BlockExecutor.calculateLogsBloom(result.getTransactionReceipts());
+        Assert.assertEquals(256, calculatedLogsBloom.length);
+        Assert.assertArrayEquals(new byte[256], calculatedLogsBloom);
+
+        AccountState accountState = repository.getAccountState(account);
+
+        Assert.assertNotNull(accountState);
+        Assert.assertEquals(BigInteger.valueOf(30000), accountState.getBalance().asBigInteger());
+
+        Repository finalRepository = new MutableRepository(trieStore,
+                trieStore.retrieve(result.getFinalState().getHash().getBytes()).get());
+
+        accountState = finalRepository.getAccountState(account);
+
+        Assert.assertNotNull(accountState);
+        Assert.assertEquals(BigInteger.valueOf(30000 - 21000 - 10), accountState.getBalance().asBigInteger());
+    }
+
+    @Test
+    public void executeBlockWithOneTransactionAndCollectingProgramResults() {
+        executor.setRegisterProgramResults(true);
         Block block = getBlockWithOneTransaction(); // this changes the best block
         Block parent = blockchain.getBestBlock();
 
@@ -114,6 +162,7 @@ public class BlockExecutorTest {
         Assert.assertEquals(1, result.getTransactionReceipts().size());
 
         Assert.assertNotNull(executor.getProgramResult(tx.getHash()));
+        executor.setRegisterProgramResults(false);
 
         TransactionReceipt receipt = result.getTransactionReceipts().get(0);
         Assert.assertEquals(tx, receipt.getTransaction());

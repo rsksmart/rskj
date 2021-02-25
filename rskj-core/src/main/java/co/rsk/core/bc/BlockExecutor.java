@@ -62,6 +62,7 @@ public class BlockExecutor {
     private final ActivationConfig activationConfig;
 
     private Map<Keccak256, ProgramResult> transactionResults;
+    private boolean registerProgramResults;
 
     public BlockExecutor(
             ActivationConfig activationConfig,
@@ -281,8 +282,6 @@ public class BlockExecutor {
 
         int txindex = 0;
 
-        this.transactionResults = new HashMap<>();
-
         for (Transaction tx : block.getTransactionsList()) {
             logger.trace("apply block: [{}] tx: [{}] ", block.getNumber(), i);
 
@@ -311,7 +310,10 @@ public class BlockExecutor {
             }
 
             executedTransactions.add(tx);
-            this.transactionResults.put(tx.getHash(), txExecutor.getResult());
+
+            if (this.registerProgramResults) {
+                this.transactionResults.put(tx.getHash(), txExecutor.getResult());
+            }
 
             if (vmTrace) {
                 txExecutor.extractTrace(programTraceProcessor);
@@ -411,5 +413,10 @@ public class BlockExecutor {
 
     public ProgramResult getProgramResult(Keccak256 txhash) {
         return this.transactionResults.get(txhash);
+    }
+
+    public void setRegisterProgramResults(boolean value) {
+        this.registerProgramResults = value;
+        this.transactionResults = new HashMap<>();
     }
 }
