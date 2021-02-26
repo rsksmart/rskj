@@ -16,11 +16,13 @@ public class ErpFederationTest {
     private ErpFederation federation;
 
     // ERP federation keys
-    List<BtcECKey> erpFedKeys = Arrays.stream(new String[]{
+    private static final List<BtcECKey> ERP_FED_KEYS = Arrays.stream(new String[]{
         "03b9fc46657cf72a1afa007ecf431de1cd27ff5cc8829fa625b66ca47b967e6b24",
         "029cecea902067992d52c38b28bf0bb2345bda9b21eca76b16a17c477a64e43301",
         "03284178e5fbcc63c54c3b38e3ef88adf2da6c526313650041b0ef955763634ebd",
     }).map(hex -> BtcECKey.fromPublicOnly(Hex.decode(hex))).collect(Collectors.toList());
+
+    private static final long ACTIVATION_DELAY_VALUE = 5063;
 
     @Before
     public void createErpFederation() {
@@ -29,14 +31,14 @@ public class ErpFederationTest {
             ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),
             0L,
             NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
-            erpFedKeys,
-            5063
+            ERP_FED_KEYS,
+            ACTIVATION_DELAY_VALUE
         );
     }
 
     @Test
     public void getActivationDelay() {
-        Assert.assertEquals(5063, federation.getActivationDelay());
+        Assert.assertEquals(ACTIVATION_DELAY_VALUE, federation.getActivationDelay());
     }
 
     @Test
@@ -59,6 +61,19 @@ public class ErpFederationTest {
     }
 
     @Test
+    public void getP2SHScript() {
+        Script p2shs = federation.getP2SHScript();
+        String expectedProgram = "a914faa3554b3ced8b80db8c09e26d4027db56e04ae987";
+
+        Assert.assertEquals(expectedProgram, Hex.toHexString(p2shs.getProgram()));
+        Assert.assertEquals(3, p2shs.getChunks().size());
+        Assert.assertEquals(
+            federation.getAddress(),
+            p2shs.getToAddress(NetworkParameters.fromID(NetworkParameters.ID_REGTEST))
+        );
+    }
+
+    @Test
     public void getAddress() {
         String fedAddress = federation.getAddress().toBase58();
         String expectedAddress = "2NG6Uaq5jFGs2xSn3mjDysR8BDTCfyTJgjb";
@@ -68,7 +83,7 @@ public class ErpFederationTest {
 
     @Test
     public void getErpPubKeys_compressed_public_keys() {
-        Assert.assertEquals(erpFedKeys, federation.getErpPubKeys());
+        Assert.assertEquals(ERP_FED_KEYS, federation.getErpPubKeys());
     }
 
     @Test
@@ -90,9 +105,9 @@ public class ErpFederationTest {
             0L,
             NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
             erpPubKeysList,
-            5063
+            ACTIVATION_DELAY_VALUE
         );
 
-        Assert.assertEquals(erpFedKeys, federation.getErpPubKeys());
+        Assert.assertEquals(ERP_FED_KEYS, federation.getErpPubKeys());
     }
 }
