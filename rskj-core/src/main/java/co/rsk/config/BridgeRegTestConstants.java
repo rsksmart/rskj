@@ -131,7 +131,6 @@ public class BridgeRegTestConstants extends BridgeConstants {
                 AddressBasedAuthorizer.MinimumRequiredCalculation.ONE
         );
 
-        // TODO: This value is not real
         btcHeightWhenBlockIndexActivates = 10;
         maxDepthToSearchBlocksBelowIndexActivation = 1_000; //TODO define this value with Sergio
 

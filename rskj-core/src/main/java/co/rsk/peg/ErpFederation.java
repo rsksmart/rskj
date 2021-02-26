@@ -49,13 +49,16 @@ public class ErpFederation extends Federation {
     }
 
     @Override
+    public Script getStandardRedeemScript() {
+        return ErpFederationRedeemScriptParser.extractStandardRedeemScript(
+            getRedeemScript().getChunks()
+        );
+    }
+
+    @Override
     public Script getP2SHScript() {
         if (p2shScript == null) {
-            if (redeemScript == null) {
-                p2shScript = ScriptBuilder.createP2SHOutputScript(getRedeemScript());
-            } else {
-                p2shScript = ScriptBuilder.createP2SHOutputScript(redeemScript);
-            }
+            p2shScript = ScriptBuilder.createP2SHOutputScript(getRedeemScript());
         }
 
         return p2shScript;

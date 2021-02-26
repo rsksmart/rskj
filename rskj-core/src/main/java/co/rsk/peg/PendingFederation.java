@@ -81,15 +81,17 @@ public final class PendingFederation {
     /**
      * Builds a Federation from this PendingFederation
      * @param creationTime the creation time for the new Federation
-     * @param btcParams the bitcoin parameters for the new Federation
+     * @param bridgeConstants to get the bitcoin parameters for the new Federation,
+     * and the keys for creating an ERP Federation
+     * @param activations Activation configuration to check hard fork
      * @return a Federation
      */
     public Federation buildFederation(
         Instant creationTime,
         long blockNumber,
-        NetworkParameters btcParams,
-        ActivationConfig.ForBlock activations,
-        BridgeConstants bridgeConstants) {
+        BridgeConstants bridgeConstants,
+        ActivationConfig.ForBlock activations
+        ) {
         if (!this.isComplete()) {
             throw new IllegalStateException("PendingFederation is incomplete");
         }
@@ -99,7 +101,7 @@ public final class PendingFederation {
                 members,
                 creationTime,
                 blockNumber,
-                btcParams,
+                bridgeConstants.getBtcParams(),
                 bridgeConstants.getErpFedPubKeysList(),
                 bridgeConstants.getErpFedActivationDelay()
             );
@@ -109,7 +111,7 @@ public final class PendingFederation {
                 members,
                 creationTime,
                 blockNumber,
-                btcParams
+                bridgeConstants.getBtcParams()
         );
     }
 
