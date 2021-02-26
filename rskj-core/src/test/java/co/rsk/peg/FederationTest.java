@@ -169,7 +169,7 @@ public class FederationTest {
 
     @Test
     public void testEquals_basic() {
-        Assert.assertEquals(federation, federation);
+        Assert.assertTrue(federation.equals(federation));
 
         Assert.assertNotEquals(null, federation);
         Assert.assertNotEquals(federation, new Object());

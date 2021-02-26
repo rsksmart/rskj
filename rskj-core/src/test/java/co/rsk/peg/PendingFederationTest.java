@@ -128,7 +128,7 @@ public class PendingFederationTest {
     }
 
     @Test
-    public void buildFederation_ok_a() {
+    public void buildFederation_ok_6_members_before_RSKIP_199_activation() {
         PendingFederation otherPendingFederation = new PendingFederation(
             FederationTestUtils.getFederationMembersFromPks(100, 200, 300, 400, 500, 600));
 
@@ -143,15 +143,14 @@ public class PendingFederationTest {
                 otherPendingFederation.buildFederation(
                         Instant.ofEpochMilli(1234L),
                         0L,
-                        NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
-                    mock(ForBlock.class),
-                    null
+                        bridgeConstants,
+                    mock(ForBlock.class)
                 )
         );
     }
 
     @Test
-    public void buildFederation_ok_b() {
+    public void buildFederation_ok_9_members_before_RSKIP_199_activation() {
         PendingFederation otherPendingFederation = new PendingFederation(
             FederationTestUtils.getFederationMembersFromPks(
                 100, 200, 300, 400, 500, 600, 700, 800, 900
@@ -171,9 +170,8 @@ public class PendingFederationTest {
                 otherPendingFederation.buildFederation(
                         Instant.ofEpochMilli(1234L),
                         0L,
-                        NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
-                    mock(ForBlock.class),
-                    null
+                        bridgeConstants,
+                    mock(ForBlock.class)
                 )
         );
     }
@@ -202,9 +200,8 @@ public class PendingFederationTest {
             otherPendingFederation.buildFederation(
                 Instant.ofEpochMilli(1234L),
                 0L,
-                NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
-                activations,
-                bridgeConstants
+                bridgeConstants,
+                activations
             )
         );
     }
@@ -217,7 +214,6 @@ public class PendingFederationTest {
             otherPendingFederation.buildFederation(
                 Instant.ofEpochMilli(12L),
                 0L,
-                NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
                 null,
                 null
             );
