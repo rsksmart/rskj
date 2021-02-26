@@ -104,6 +104,10 @@ public class Federation {
         return redeemScript;
     }
 
+    public Script getStandardRedeemScript() {
+        return getRedeemScript();
+    }
+
     public Script getP2SHScript() {
         if (p2shScript == null) {
             p2shScript = ScriptBuilder.createP2SHOutputScript(getNumberOfSignaturesRequired(), getBtcPublicKeys());
