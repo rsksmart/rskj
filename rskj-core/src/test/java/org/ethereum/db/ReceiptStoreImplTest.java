@@ -22,6 +22,7 @@ package org.ethereum.db;
 import co.rsk.crypto.Keccak256;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.TestUtils;
+import org.ethereum.core.Block;
 import org.ethereum.core.Bloom;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionReceipt;
@@ -35,6 +36,10 @@ import org.junit.runners.Parameterized;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * Created by ajlopez on 3/1/2016.
@@ -242,20 +247,65 @@ public class ReceiptStoreImplTest {
         Assert.assertArrayEquals(receipt.getEncoded(), result.getReceipt().getEncoded());
     }
 
-    // from TransactionTest
+    @Test
+    public void addFourTransactionsAndGetReceiptByBlockHashAndBestInChain() {
+        for (int i = 0; i < 4; i++) {
+            TransactionReceipt receipt = createReceipt(i);
+            Keccak256 blockHash = new Keccak256("01020304050607080900000000000000000000000000000000000000000000" + String.format("%02d" , i));
+
+            store.add(blockHash.getBytes(), i, receipt);
+        }
+
+        Block block = mock(Block.class);
+        when(block.getNumber()).thenReturn(1L);
+        BlockStore blockStore = mock(BlockStore.class);
+
+        for (int i = 0; i < 4; i++) {
+            TransactionReceipt receipt = createReceipt(i);
+            Keccak256 blockHash = new Keccak256("01020304050607080900000000000000000000000000000000000000000000" + String.format("%02d" , i));
+
+            TransactionInfo result = store.get(receipt.getTransaction().getHash().getBytes(), blockHash.getBytes()).orElse(null);
+
+            Assert.assertNotNull(result);
+            Assert.assertNotNull(result.getBlockHash());
+            Assert.assertArrayEquals(blockHash.getBytes(), result.getBlockHash());
+            Assert.assertEquals(i, result.getIndex());
+            Assert.assertArrayEquals(receipt.getEncoded(), result.getReceipt().getEncoded());
+
+            when(blockStore.getBlockByHash(eq(blockHash.getBytes()))).thenReturn(block);
+            when(blockStore.getChainBlockByNumber(1)).thenReturn(block);
+            when(block.getHash()).thenReturn(blockHash);
+
+            result = store.getInMainChain(receipt.getTransaction().getHash().getBytes(), blockStore).orElse(null);
+
+            Assert.assertNotNull(result);
+            Assert.assertNotNull(result.getBlockHash());
+            Assert.assertArrayEquals(blockHash.getBytes(), result.getBlockHash());
+            Assert.assertEquals(i, result.getIndex());
+            Assert.assertArrayEquals(receipt.getEncoded(), result.getReceipt().getEncoded());
+        }
+    }
+
     private static TransactionReceipt createReceipt() {
+        return createReceipt(1);
+    }
+
+    // from TransactionTest
+    private static TransactionReceipt createReceipt(int numOfLogs) {
         byte[] stateRoot = Hex.decode("f5ff3fbd159773816a7c707a9b8cb6bb778b934a8f6466c7830ed970498f4b68");
         byte[] gasUsed = Hex.decode("01E848");
         Bloom bloom = new Bloom(Hex.decode("0000000000000000800000000000000004000000000000000000000000000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"));
 
-        LogInfo logInfo1 = new LogInfo(
-                Hex.decode("cd2a3d9f938e13cd947ec05abc7fe734df8dd826"),
-                null,
-                Hex.decode("a1a1a1")
-        );
-
         List<LogInfo> logs = new ArrayList<>();
-        logs.add(logInfo1);
+
+        for (int i = 0; i < numOfLogs; i++) {
+            LogInfo logInfo = new LogInfo(
+                    Hex.decode("cd2a3d9f938e13cd947ec05abc7fe734df8dd826"),
+                    null,
+                    Hex.decode("a1a1a1")
+            );
+            logs.add(logInfo);
+        }
 
         // TODO calculate cumulative gas
         TransactionReceipt receipt = new TransactionReceipt(stateRoot, gasUsed, gasUsed, bloom, logs, new byte[]{0x01});

@@ -43,7 +43,7 @@ public class ReceiptStoreImplV2 extends ReceiptStoreImpl {
             // add block hash to the list
             byte[][] blockHashArr = new byte[txListSize + 1][];
             for (int i = 0; i < txListSize; ++i) {
-                blockHashArr[i] = txList.get(i).getRLPData();
+                blockHashArr[i] = RLP.encodeElement(txList.get(i).getRLPData());
             }
 
             blockHashArr[txListSize] = RLP.encodeElement(blockHash);
@@ -117,7 +117,7 @@ public class ReceiptStoreImplV2 extends ReceiptStoreImpl {
 
         ArrayList<byte[]> result = new ArrayList<>(txHashList.size());
         for (int i = 0; i < txHashList.size(); i++) {
-            result.add(txHashList.get(0).getRLPData());
+            result.add(txHashList.get(i).getRLPData());
         }
 
         return result;
