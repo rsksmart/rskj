@@ -903,7 +903,8 @@ public class BridgeSupport {
                 btcContext.getParams(),
                 activeFederationWallet,
                 getFederationAddress(),
-                getFeePerKb()
+                getFeePerKb(),
+                activations
         );
 
         releaseRequestQueue.process(MAX_RELEASE_ITERATIONS, (ReleaseRequestQueue.Entry releaseRequest) -> {
@@ -2643,7 +2644,8 @@ public class BridgeSupport {
             btcContext.getParams(),
             walletProvider.provide(btcTx, spendingAddress),
             btcRefundAddress,
-            getFeePerKb()
+            getFeePerKb(),
+            activations
         );
 
         Optional<ReleaseTransactionBuilder.BuildResult> buildReturnResult = txBuilder.buildEmptyWalletTo(btcRefundAddress);
