@@ -112,6 +112,25 @@ public class GasFinderTest {
     }
 
     @Test
+    public void manyFailuresThenTopGas() {
+        GasFinder gasFinder = new GasFinder();
+
+        gasFinder.registerFailure(1000L);
+
+        for (int k = 0; k < 11; k++) {
+            gasFinder.registerFailure(gasFinder.nextTry());
+        }
+
+        try {
+            gasFinder.nextTry();
+            Assert.fail();
+        }
+        catch (IllegalStateException ex) {
+            Assert.assertEquals("Too much gas to try", ex.getMessage());
+        }
+    }
+
+    @Test
     public void firstFailureThenSuccess() {
         GasFinder gasFinder = new GasFinder();
 

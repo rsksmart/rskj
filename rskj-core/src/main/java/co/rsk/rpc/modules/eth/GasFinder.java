@@ -25,7 +25,8 @@ import java.util.Optional;
  */
 public class GasFinder {
     private static final long DIFFERENCE = 1000L;
-    private static final long UPWARD_STEP = 1000000L;
+    private static final long UPWARD_STEP = 1_000_000L;
+    private static final long TOP_GAS = 12_000_000L;
 
     private long lastGasUsed;
     private Optional<Long> lowerSuccess = Optional.empty();
@@ -37,7 +38,13 @@ public class GasFinder {
         }
 
         if (!this.upperFailure.isPresent() && !this.lowerSuccess.isPresent() && this.lastGasUsed > 0) {
-            return this.lastGasUsed + UPWARD_STEP;
+            long newGasToTry = this.lastGasUsed + UPWARD_STEP;
+
+            if (newGasToTry > TOP_GAS) {
+                throw new IllegalStateException("Too much gas to try");
+            }
+
+            return newGasToTry;
         }
 
         if (this.lastGasUsed > 0) {
