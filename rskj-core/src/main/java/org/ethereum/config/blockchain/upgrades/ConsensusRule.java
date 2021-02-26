@@ -49,6 +49,7 @@ public enum ConsensusRule {
     RSKIP150("rskip150"),
     RSKIP151("rskip151"),
     RSKIP152("rskip152"),
+    RSKIP153("rskip153"), // BLAKE2 Compression Function Precompiled
     RSKIP156("rskip156"),
     RSKIP169("rskip169"),
     RSKIP170("rskip170"),
