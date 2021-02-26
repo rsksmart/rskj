@@ -1824,9 +1824,9 @@ public class BridgeSupport {
             currentPendingFederation.buildFederation(
                 creationTime,
                 rskExecutionBlock.getNumber(),
-                bridgeConstants.getBtcParams(),
-                activations,
-                bridgeConstants)
+                bridgeConstants,
+                activations
+            )
         );
         provider.setPendingFederation(null);
 
