@@ -25,9 +25,11 @@ import org.junit.Test;
  * Created by ajlopez on 24/02/2021.
  */
 public class GasFinderTest {
+    private static final GasFinderConfiguration gasFinderConfiguration = new GasFinderConfiguration(1000L, 12_000_000L, 1_000_000L);
+
     @Test
     public void throwsIllegalOperationExceptionOnNextTryWithoutData() {
-        GasFinder gasFinder = new GasFinder();
+        GasFinder gasFinder = new GasFinder(gasFinderConfiguration);
 
         try {
             gasFinder.nextTry();
@@ -40,7 +42,7 @@ public class GasFinderTest {
 
     @Test
     public void registerFirstSuccessfulGasAndGetNextTry() {
-        GasFinder gasFinder = new GasFinder();
+        GasFinder gasFinder = new GasFinder(gasFinderConfiguration);
 
         gasFinder.registerSuccess(1000000L, 100000L);
 
@@ -50,7 +52,7 @@ public class GasFinderTest {
 
     @Test
     public void registerSuccessAndFailure() {
-        GasFinder gasFinder = new GasFinder();
+        GasFinder gasFinder = new GasFinder(gasFinderConfiguration);
 
         gasFinder.registerSuccess(1000000L, 100000L);
         gasFinder.registerFailure(100000L);
@@ -61,7 +63,7 @@ public class GasFinderTest {
 
     @Test
     public void registerSuccessAndSuccessWithGasUsedFirstTime() {
-        GasFinder gasFinder = new GasFinder();
+        GasFinder gasFinder = new GasFinder(gasFinderConfiguration);
 
         gasFinder.registerSuccess(1000000L, 100000L);
         gasFinder.registerSuccess(100000L, 100000L);
@@ -72,14 +74,14 @@ public class GasFinderTest {
 
     @Test
     public void wasNotFoundAtTheBeginning() {
-        GasFinder gasFinder = new GasFinder();
+        GasFinder gasFinder = new GasFinder(gasFinderConfiguration);
 
         Assert.assertFalse(gasFinder.wasFound());
     }
 
     @Test
     public void getGasFoundWithoutData() {
-        GasFinder gasFinder = new GasFinder();
+        GasFinder gasFinder = new GasFinder(gasFinderConfiguration);
 
         try {
             gasFinder.getGasFound();
@@ -92,7 +94,7 @@ public class GasFinderTest {
 
     @Test
     public void wasFound() {
-        GasFinder gasFinder = new GasFinder();
+        GasFinder gasFinder = new GasFinder(gasFinderConfiguration);
 
         gasFinder.registerSuccess(2000, 1000);
         gasFinder.registerFailure(1000);
@@ -103,7 +105,7 @@ public class GasFinderTest {
 
     @Test
     public void firstFailureNextTry() {
-        GasFinder gasFinder = new GasFinder();
+        GasFinder gasFinder = new GasFinder(gasFinderConfiguration);
 
         gasFinder.registerFailure(1000L);
 
@@ -113,7 +115,7 @@ public class GasFinderTest {
 
     @Test
     public void manyFailuresThenTopGas() {
-        GasFinder gasFinder = new GasFinder();
+        GasFinder gasFinder = new GasFinder(gasFinderConfiguration);
 
         gasFinder.registerFailure(1000L);
 
@@ -132,7 +134,7 @@ public class GasFinderTest {
 
     @Test
     public void firstFailureThenSuccess() {
-        GasFinder gasFinder = new GasFinder();
+        GasFinder gasFinder = new GasFinder(gasFinderConfiguration);
 
         gasFinder.registerFailure(1000L);
         gasFinder.registerSuccess(1001000L, 2000L);

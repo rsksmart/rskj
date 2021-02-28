@@ -215,6 +215,8 @@ public class EthModuleDLSTest {
                 null,
                 null,
                 null,
-                world.getBridgeSupportFactory());
+                world.getBridgeSupportFactory(),
+                new GasFinderConfiguration(1000L, 12_000_000L, 1_000_000L)
+            );
     }
 }

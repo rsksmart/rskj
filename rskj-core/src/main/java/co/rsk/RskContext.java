@@ -242,6 +242,7 @@ public class RskContext implements NodeBootstrapper {
     private ReceivedTxSignatureCache receivedTxSignatureCache;
     private BlockTxSignatureCache blockTxSignatureCache;
     private PeerScoringReporterService peerScoringReporterService;
+    private GasFinderConfiguration gasFinderConfiguration;
 
     public RskContext(String[] args) {
         this(new CliArgs.Parser<>(
@@ -595,11 +596,28 @@ public class RskContext implements NodeBootstrapper {
                     getRepositoryLocator(),
                     getEthModuleWallet(),
                     getEthModuleTransaction(),
-                    getBridgeSupportFactory()
+                    getBridgeSupportFactory(),
+                    getGasFinderConfiguration()
             );
         }
 
         return ethModule;
+    }
+
+    private GasFinderConfiguration getGasFinderConfiguration() {
+        if (this.gasFinderConfiguration == null) {
+            long difference;
+            long topGas;
+            long upwardStep;
+
+            difference = rskSystemProperties.gasFinderDifference();
+            topGas = rskSystemProperties.gasFinderTopGas();
+            upwardStep = rskSystemProperties.gasFinderUpwardStep();
+
+            this.gasFinderConfiguration = new GasFinderConfiguration(difference, topGas, upwardStep);
+        }
+
+        return this.gasFinderConfiguration;
     }
 
     public EvmModule getEvmModule() {

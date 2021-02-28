@@ -18,19 +18,23 @@
 
 package co.rsk.rpc.modules.eth;
 
+import org.ethereum.vm.GasCost;
+
 import java.util.Optional;
 
 /**
  * Created by ajlopez on 24/02/2021.
  */
 public class GasFinder {
-    private static final long DIFFERENCE = 1000L;
-    private static final long UPWARD_STEP = 1_000_000L;
-    private static final long TOP_GAS = 12_000_000L;
+    private final GasFinderConfiguration config;
 
     private long lastGasUsed;
     private Optional<Long> lowerSuccess = Optional.empty();
     private Optional<Long> upperFailure = Optional.empty();
+
+    public GasFinder(GasFinderConfiguration config) {
+        this.config = config;
+    }
 
     public long nextTry() {
         if (this.upperFailure.isPresent() && this.lowerSuccess.isPresent()) {
@@ -38,9 +42,9 @@ public class GasFinder {
         }
 
         if (!this.upperFailure.isPresent() && !this.lowerSuccess.isPresent() && this.lastGasUsed > 0) {
-            long newGasToTry = this.lastGasUsed + UPWARD_STEP;
+            long newGasToTry = GasCost.add(this.lastGasUsed, this.config.getUpwardStep());
 
-            if (newGasToTry > TOP_GAS) {
+            if (newGasToTry > this.config.getTopGas()) {
                 throw new IllegalStateException("Too much gas to try");
             }
 
@@ -52,7 +56,7 @@ public class GasFinder {
         }
 
         if (this.upperFailure.isPresent()) {
-            return this.upperFailure.get() + UPWARD_STEP;
+            return GasCost.add(this.upperFailure.get(), this.config.getUpwardStep());
         }
 
         throw new IllegalStateException("No gas data");
@@ -93,7 +97,7 @@ public class GasFinder {
         long top = this.lowerSuccess.get();
         long bottom = this.upperFailure.get();
 
-        return Math.abs(top - bottom) <= DIFFERENCE;
+        return Math.abs(top - bottom) <= this.config.getDifference();
     }
 
     public long getGasFound() {

@@ -38,7 +38,6 @@ import org.ethereum.rpc.TypeConverter;
 import org.ethereum.rpc.Web3;
 import org.ethereum.rpc.converters.CallArgumentsToByteArray;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
-import org.ethereum.vm.GasCost;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.ProgramResult;
 import org.slf4j.Logger;
@@ -74,6 +73,7 @@ public class EthModule
     private final BridgeConstants bridgeConstants;
     private final BridgeSupportFactory bridgeSupportFactory;
     private final byte chainId;
+    private final GasFinderConfiguration gasFinderConfiguration;
 
 
     public EthModule(
@@ -86,7 +86,8 @@ public class EthModule
             RepositoryLocator repositoryLocator,
             EthModuleWallet ethModuleWallet,
             EthModuleTransaction ethModuleTransaction,
-            BridgeSupportFactory bridgeSupportFactory) {
+            BridgeSupportFactory bridgeSupportFactory,
+            GasFinderConfiguration gasFinderConfiguration) {
         this.chainId = chainId;
         this.blockchain = blockchain;
         this.transactionPool = transactionPool;
@@ -97,6 +98,7 @@ public class EthModule
         this.ethModuleTransaction = ethModuleTransaction;
         this.bridgeConstants = bridgeConstants;
         this.bridgeSupportFactory = bridgeSupportFactory;
+        this.gasFinderConfiguration = gasFinderConfiguration;
     }
 
     @Override
@@ -158,7 +160,7 @@ public class EthModule
 
     public String estimateGas(Web3.CallArguments args) {
         String s = null;
-        GasFinder gasFinder = new GasFinder();
+        GasFinder gasFinder = new GasFinder(this.gasFinderConfiguration);
 
         try {
             String initialGasString = args.gas;
