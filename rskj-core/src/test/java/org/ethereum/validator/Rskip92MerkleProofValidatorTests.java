@@ -13,6 +13,8 @@ import static org.junit.Assert.*;
 
 public class Rskip92MerkleProofValidatorTests {
 
+    private static final int MAX_MERKLE_PROOF_SIZE = 960;
+
     @Test
     public void isValid_PassValidHashes_ShouldReturnTrue() {
         List<byte[]> hashList = makeHashList();
@@ -53,26 +55,30 @@ public class Rskip92MerkleProofValidatorTests {
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void createInstance_PassNullProofAndRskip180Enabled_ShouldThrowError() {
+    public void createInstance_PassNullProofAndRskip180Enabled_ShouldThrowIllegalArgumentError() {
         new Rskip92MerkleProofValidator(null, true);
     }
 
-    @Test
-    public void createInstance_PassNullProofAndRskip180Disabled_ShouldNotThrowError() {
-        byte[] pmtSerialized = new byte[15 * Sha256Hash.LENGTH];
-        Rskip92MerkleProofValidator instance = new Rskip92MerkleProofValidator(pmtSerialized, false);
-        assertNotNull(instance);
+    @Test(expected = NullPointerException.class)
+    public void createInstance_PassNullProofAndRskip180Disabled_ShouldThrowNullPointerError() {
+        new Rskip92MerkleProofValidator(null, false);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void createInstance_PassLargeProofAndRskip180Enabled_ShouldThrowError() {
-        byte[] pmtSerialized = new byte[16 * Sha256Hash.LENGTH];
+        byte[] pmtSerialized = new byte[MAX_MERKLE_PROOF_SIZE + 1];
         new Rskip92MerkleProofValidator(pmtSerialized, true);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void createInstance_PassLargeMalformedProofAndRskip180Disabled_ShouldThrowError() {
+        byte[] pmtSerialized = new byte[MAX_MERKLE_PROOF_SIZE + 1];
+        new Rskip92MerkleProofValidator(pmtSerialized, false);
     }
 
     @Test
     public void createInstance_PassLargeProofAndRskip180Disabled_ShouldNotThrowError() {
-        byte[] pmtSerialized = new byte[16 * Sha256Hash.LENGTH];
+        byte[] pmtSerialized = new byte[MAX_MERKLE_PROOF_SIZE + Sha256Hash.LENGTH];
         Rskip92MerkleProofValidator instance = new Rskip92MerkleProofValidator(pmtSerialized, false);
         assertNotNull(instance);
     }
