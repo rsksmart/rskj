@@ -7,6 +7,7 @@ import co.rsk.peg.AddressBasedAuthorizer;
 import co.rsk.peg.Federation;
 import co.rsk.peg.FederationMember;
 import com.google.common.collect.Lists;
+import java.util.ArrayList;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.ECKey;
 
@@ -130,14 +131,8 @@ public class BridgeMainNetConstants extends BridgeConstants {
         // TODO: This value is not real
         erpFedActivationDelay = 5063;
 
-        // TODO: These keys are not real values
-        // Keys generated with GenNodeKey using generators 'erp-fed-01' through 'erp-fed-03'
-        erpFedPubKeysList = Arrays.stream(new String[]{
-                "03b9fc46657cf72a1afa007ecf431de1cd27ff5cc8829fa625b66ca47b967e6b24",
-                "029cecea902067992d52c38b28bf0bb2345bda9b21eca76b16a17c477a64e43301",
-                "03284178e5fbcc63c54c3b38e3ef88adf2da6c526313650041b0ef955763634ebd",
-            }).map(hex -> BtcECKey.fromPublicOnly(Hex.decode(hex))).collect(Collectors.toList()
-        );
+        // TODO: WE NEED TO DEFINE THESE KEYS
+        erpFedPubKeysList = new ArrayList<>();
     }
 
     public static BridgeMainNetConstants getInstance() {
