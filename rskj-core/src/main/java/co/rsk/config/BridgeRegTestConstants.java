@@ -131,10 +131,8 @@ public class BridgeRegTestConstants extends BridgeConstants {
                 AddressBasedAuthorizer.MinimumRequiredCalculation.ONE
         );
 
-        // TODO: This value is not real
-        erpFedActivationDelay = 5063;
+        erpFedActivationDelay = 1000;
 
-        // TODO: These keys are not real values
         // Keys generated with GenNodeKey using generators 'erp-fed-01' through 'erp-fed-03'
         erpFedPubKeysList = Arrays.stream(new String[]{
                 "03b9fc46657cf72a1afa007ecf431de1cd27ff5cc8829fa625b66ca47b967e6b24",
