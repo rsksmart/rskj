@@ -20,6 +20,7 @@ package co.rsk.peg.performance;
 
 import co.rsk.db.BenchmarkedRepository;
 import co.rsk.db.RepositoryTrackWithBenchmarking;
+import co.rsk.peg.BridgeStorageProvider;
 import co.rsk.vm.VMPerformanceTest;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
@@ -208,6 +209,8 @@ public abstract class PrecompiledContractPerformanceTestCase {
 
             BenchmarkedRepository getBenchmarkedRepository();
 
+            BridgeStorageProvider getStorageProvider();
+
             void finalise();
 
             static Environment withContract(PrecompiledContracts.PrecompiledContract contract) {
@@ -220,6 +223,10 @@ public abstract class PrecompiledContractPerformanceTestCase {
                     @Override
                     public BenchmarkedRepository getBenchmarkedRepository() {
                         return () -> new BenchmarkedRepository.Statistics();
+                    }
+
+                    public BridgeStorageProvider getStorageProvider() {
+                        return null;
                     }
 
                     @Override

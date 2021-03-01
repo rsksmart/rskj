@@ -33,33 +33,27 @@ import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import java.io.IOException;
 import java.math.BigInteger;
 
 @Ignore
 public class ReleaseBtcTest extends BridgePerformanceTestCase {
     @Test
     public void releaseBtc() throws VMException {
+
+        ExecutionStats stats = new ExecutionStats("releaseBtc");
+        releaseBtc_success(1000, stats);
+        releaseBtc_refund(500, stats);
+        Assert.assertTrue(BridgePerformanceTest.addStats(stats));
+    }
+
+    private void releaseBtc_success(int times, ExecutionStats stats) throws VMException {
         int minCentsBtc = 5;
         int maxCentsBtc = 100;
+        int queueSizeOriginal = Helper.randomInRange(10, 100);
 
-        final NetworkParameters parameters = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
-        BridgeStorageProviderInitializer storageInitializer = (BridgeStorageProvider provider, Repository repository, int executionIndex, BtcBlockStore blockStore) -> {
-            ReleaseRequestQueue queue;
 
-            try {
-                queue = provider.getReleaseRequestQueue();
-            } catch (Exception e) {
-                throw new RuntimeException("Unable to gather release request queue");
-            }
-
-            for (int i = 0; i < Helper.randomInRange(10, 100); i++) {
-                Coin value = Coin.CENT.multiply(Helper.randomInRange(minCentsBtc, maxCentsBtc));
-                queue.add(new BtcECKey().toAddress(parameters), value, null);
-            }
-        };
-
-        final byte[] releaseBtcEncoded = Bridge.RELEASE_BTC.encode();
-        ABIEncoder abiEncoder = (int executionIndex) -> releaseBtcEncoded;
+        BridgeStorageProviderInitializer storageInitializer = generateInitializer(minCentsBtc, maxCentsBtc, queueSizeOriginal);
 
         TxBuilder txBuilder = (int executionIndex) -> {
             long satoshis = Coin.CENT.multiply(Helper.randomInRange(minCentsBtc, maxCentsBtc)).getValue();
@@ -69,9 +63,85 @@ public class ReleaseBtcTest extends BridgePerformanceTestCase {
             return Helper.buildSendValueTx(sender, weis);
         };
 
-        ExecutionStats stats = new ExecutionStats("releaseBtc");
-        executeAndAverage("releaseBtc", 1000, abiEncoder, storageInitializer, txBuilder, Helper.getRandomHeightProvider(10), stats);
+        executeAndAverage(
+                "releaseBtc_success",
+                times,
+                getABIEncoder(),
+                storageInitializer,
+                txBuilder,
+                Helper.getRandomHeightProvider(10),
+                stats,
+                (EnvironmentBuilder.Environment environment, byte[] result) -> {
+                    int sizeQueue = -1;
+                    try {
 
-        Assert.assertTrue(BridgePerformanceTest.addStats(stats));
+                        ReleaseRequestQueue queue = environment.getStorageProvider().getReleaseRequestQueue();
+                        sizeQueue = queue.getEntries().size();
+                    } catch (IOException e) {
+                        Assert.fail();
+                    }
+                    Assert.assertEquals(queueSizeOriginal + 1, sizeQueue);
+                }
+        );
+    }
+
+    private void releaseBtc_refund(int times, ExecutionStats stats) throws VMException {
+        int minCentsBtc = 6;
+        int maxCentsBtc = 10;
+        int queueSizeOriginal = Helper.randomInRange(10, 100);
+
+        BridgeStorageProviderInitializer storageInitializer = generateInitializer(minCentsBtc, maxCentsBtc, queueSizeOriginal);
+
+        TxBuilder txBuilder = (int executionIndex) -> {
+            long satoshis = Coin.CENT.divide(Helper.randomInRange(minCentsBtc, maxCentsBtc)).getValue();
+            BigInteger weis = Denomination.satoshisToWeis(BigInteger.valueOf(satoshis));
+            ECKey sender = new ECKey();
+
+            return Helper.buildSendValueTx(sender, weis);
+        };
+
+        executeAndAverage(
+                "releaseBtc_success",
+                times,
+                getABIEncoder(),
+                storageInitializer,
+                txBuilder,
+                Helper.getRandomHeightProvider(10),
+                stats,
+                (EnvironmentBuilder.Environment environment, byte[] result) -> {
+                        int sizeQueue = -1;
+                        try {
+                            ReleaseRequestQueue queue = environment.getStorageProvider().getReleaseRequestQueue();
+                            sizeQueue = queue.getEntries().size();
+                        } catch (IOException e) {
+                            Assert.fail();
+                        }
+                       Assert.assertEquals(queueSizeOriginal, sizeQueue);
+                }
+        );
+    }
+
+    private ABIEncoder getABIEncoder() {
+        return (int executionIndex) ->
+                Bridge.RELEASE_BTC.encode();
+    }
+
+    private BridgeStorageProviderInitializer generateInitializer(int minCentsBtc, int maxCentsBtc, int releaseQueueSize) {
+        return (BridgeStorageProvider provider, Repository repository, int executionIndex, BtcBlockStore blockStore) -> {
+            ReleaseRequestQueue queue;
+
+            final NetworkParameters parameters = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
+
+            try {
+                queue = provider.getReleaseRequestQueue();
+            } catch (Exception e) {
+                throw new RuntimeException("Unable to gather release request queue");
+            }
+
+            for (int i = 0; i < releaseQueueSize; i++) {
+                Coin value = Coin.CENT.multiply(Helper.randomInRange(minCentsBtc, maxCentsBtc));
+                queue.add(new BtcECKey().toAddress(parameters), value, null);
+            }
+        };
     }
 }
