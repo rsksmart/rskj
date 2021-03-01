@@ -66,6 +66,7 @@ public class PrecompiledContractsCallErrorHandlingTests {
         assertTransactionOk("tx11", PrecompiledContracts.ALT_BN_128_ADD_ADDR_STR);
         assertTransactionOk("tx12", PrecompiledContracts.ALT_BN_128_MUL_ADDR_STR);
         assertTransactionOk("tx13", PrecompiledContracts.ALT_BN_128_PAIRING_ADDR_STR);
+        assertTransactionOk("tx14", PrecompiledContracts.BLAKE2F_ADDR_STR);
 
         assertTransactionCount(world.getBlockByName("b01").getTransactionsList().size());
     }
@@ -96,6 +97,7 @@ public class PrecompiledContractsCallErrorHandlingTests {
         assertTransactionOk("tx11", PrecompiledContracts.ALT_BN_128_ADD_ADDR_STR);
         assertTransactionOk("tx12", PrecompiledContracts.ALT_BN_128_MUL_ADDR_STR);
         assertTransactionOk("tx13", PrecompiledContracts.ALT_BN_128_PAIRING_ADDR_STR);
+        assertTransactionOkWithErrorHandling("tx14", PrecompiledContracts.BLAKE2F_ADDR_STR);
 
         assertTransactionCount(world.getBlockByName("b01").getTransactionsList().size());
     }
