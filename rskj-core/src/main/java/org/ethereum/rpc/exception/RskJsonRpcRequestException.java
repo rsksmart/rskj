@@ -23,7 +23,7 @@ public class RskJsonRpcRequestException extends RuntimeException {
     }
 
     public static RskJsonRpcRequestException transactionRevertedExecutionError(String revertReason) {
-        return executionError(revertReason);
+        return executionError("revert " + revertReason);
     }
 
     public static RskJsonRpcRequestException unknownError(String message) {
