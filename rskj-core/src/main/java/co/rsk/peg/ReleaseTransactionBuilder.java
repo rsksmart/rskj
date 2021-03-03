@@ -117,7 +117,7 @@ public class ReleaseTransactionBuilder {
         // Build a tx and send request and configure it
         BtcTransaction btcTx = new BtcTransaction(params);
 
-        if (activations.isActive(ConsensusRule.RSKIP199)) {
+        if (activations.isActive(ConsensusRule.RSKIP201)) {
             btcTx.setVersion(2);
         }
 
