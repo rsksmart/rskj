@@ -19,7 +19,6 @@
 package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.BtcECKey;
-import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.config.BridgeConstants;
 import co.rsk.crypto.Keccak256;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -32,6 +31,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Immutable representation of an RSK Pending Federation.
@@ -45,6 +46,8 @@ public final class PendingFederation {
     private static final int MIN_MEMBERS_REQUIRED = 2;
 
     private final List<FederationMember> members;
+
+    private static final Logger logger = LoggerFactory.getLogger("PendingFederation");
 
     public PendingFederation(List<FederationMember> members) {
         // Sorting members ensures same order for members
@@ -96,7 +99,8 @@ public final class PendingFederation {
             throw new IllegalStateException("PendingFederation is incomplete");
         }
 
-        if (activations.isActive(ConsensusRule.RSKIP199)) {
+        if (activations.isActive(ConsensusRule.RSKIP201)) {
+            logger.info("[buildFederation] Going to create an ERP Federation");
             return new ErpFederation(
                 members,
                 creationTime,
