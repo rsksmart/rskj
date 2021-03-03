@@ -338,7 +338,7 @@ public class ReleaseTransactionBuilderTest {
     private void test_buildEmptyWalletTo_ok(boolean isRSKIPActive, int expectedTxVersion)
         throws InsufficientMoneyException, UTXOProviderException {
         Context btcContext = new Context(NetworkParameters.fromID(NetworkParameters.ID_REGTEST));
-        when(activations.isActive(ConsensusRule.RSKIP199)).thenReturn(isRSKIPActive);
+        when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(isRSKIPActive);
         Address to = mockAddress(123);
 
         List<UTXO> availableUTXOs = Arrays.asList(
