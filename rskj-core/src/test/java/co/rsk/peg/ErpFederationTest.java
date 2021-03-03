@@ -38,7 +38,7 @@ public class ErpFederationTest {
 
     @Test
     public void getErpPubKeys() {
-        Assert.assertEquals(erpFedKeys, federation.getErpPubKeys());
+        Assert.assertEquals(ERP_FED_KEYS, federation.getErpPubKeys());
     }
 
     @Test
