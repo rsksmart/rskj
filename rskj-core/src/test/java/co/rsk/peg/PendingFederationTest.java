@@ -177,9 +177,9 @@ public class PendingFederationTest {
     }
 
     @Test
-    public void buildFederation_erp_ok_after_RSKIP_199_activation() {
+    public void buildFederation_erp_ok_after_RSKIP_201_activation() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-        when(activations.isActive(ConsensusRule.RSKIP199)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(true);
 
         PendingFederation otherPendingFederation =
             new PendingFederation(FederationTestUtils.getFederationMembersFromPks(
