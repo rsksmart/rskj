@@ -75,6 +75,7 @@ public class GarbageCollector implements InternalService {
             semaphore.acquire();
         }
         catch (InterruptedException ex) {
+            Thread.interrupted();
             logger.trace(ex.getMessage());
         }
     }
