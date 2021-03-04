@@ -136,4 +136,7 @@ public class BlockStoreDummy implements BlockStore {
     public Map<Long, List<Sibling>> getSiblingsFromBlockByHash(Keccak256 hash) {
         return null;
     }
+
+    @Override
+    public void rewind(long blockNumber) { }
 }

@@ -500,6 +500,7 @@ public class IndexedBlockStore implements BlockStore {
      * Deletes from disk storage all blocks with number strictly larger than blockNumber.
      * Note that this doesn't clean the caches, making it unsuitable for using after initialization.
      */
+    @Override
     public void rewind(long blockNumber) {
         if (index.isEmpty()) {
             return;
@@ -513,7 +514,9 @@ public class IndexedBlockStore implements BlockStore {
                 this.blocks.delete(blockInfo.getHash().getBytes());
             }
         }
+
         flush();
+        blocks.flush();
     }
 
     /**
