@@ -165,10 +165,11 @@ public class EthModule
         try {
             String initialGasString = args.gas;
 
-            if (initialGasString.startsWith("0x"))
+            if (initialGasString.startsWith("0x")) {
                 initialGasString = initialGasString.substring(2);
+            }
 
-            long gasLimitToTry = new BigInteger(initialGasString, 16).longValue();
+            ong gasLimitToTry = new BigInteger(initialGasString, 16).longValue();
 
             while (!gasFinder.wasFound()) {
                 args.gas = Long.toString(gasLimitToTry, 16);
