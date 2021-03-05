@@ -20,6 +20,7 @@ package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.Script;
+import co.rsk.config.BridgeConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.bitcoin.CoinbaseInformation;
@@ -243,7 +244,7 @@ public class BridgeSerializationUtils {
     }
 
     // For the serialization format, see BridgeSerializationUtils::serializeFederationWithSerializer
-    private static Federation deserializeFederationWithDesserializer(
+    private static Federation deserializeFederationWithDeserializer(
         byte[] data,
         NetworkParameters networkParameters,
         FederationMemberDesserializer federationMemberDesserializer) {
@@ -285,7 +286,7 @@ public class BridgeSerializationUtils {
 
     // For the serialization format, see BridgeSerializationUtils::serializeFederationOnlyBtcKeys
     public static Federation deserializeFederationOnlyBtcKeys(byte[] data, NetworkParameters networkParameters) {
-        return deserializeFederationWithDesserializer(data, networkParameters,
+        return deserializeFederationWithDeserializer(data, networkParameters,
                 (pubKeyBytes -> FederationMember.getFederationMemberFromKey(BtcECKey.fromPublicOnly(pubKeyBytes))));
     }
 
@@ -299,9 +300,36 @@ public class BridgeSerializationUtils {
     }
 
     // For the serialization format, see BridgeSerializationUtils::serializeFederation
-    public static Federation deserializeFederation(byte[] data, NetworkParameters networkParameters) {
-        return deserializeFederationWithDesserializer(data, networkParameters,
-                BridgeSerializationUtils::deserializeFederationMember);
+    public static Federation deserializeFederation(
+        byte[] data,
+        NetworkParameters networkParameters
+    ) {
+        return deserializeFederationWithDeserializer(
+            data,
+            networkParameters,
+            BridgeSerializationUtils::deserializeFederationMember
+        );
+    }
+
+    public static ErpFederation deserializeErpFederation(
+        byte[] data,
+        NetworkParameters networkParameters,
+        BridgeConstants bridgeConstants
+    ) {
+        Federation federation = deserializeFederationWithDeserializer(
+            data,
+            networkParameters,
+            BridgeSerializationUtils::deserializeFederationMember
+        );
+
+        return new ErpFederation(
+            federation.getMembers(),
+            federation.creationTime,
+            federation.getCreationBlockNumber(),
+            federation.getBtcParams(),
+            bridgeConstants.getErpFedPubKeysList(),
+            bridgeConstants.getErpFedActivationDelay()
+        );
     }
 
     /**

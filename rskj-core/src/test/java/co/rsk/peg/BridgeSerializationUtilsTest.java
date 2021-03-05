@@ -21,6 +21,8 @@ package co.rsk.peg;
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
+import co.rsk.config.BridgeConstants;
+import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.peg.fastbridge.FastBridgeFederationInformation;
 import co.rsk.peg.whitelist.LockWhitelist;
@@ -227,25 +229,12 @@ public class BridgeSerializationUtilsTest {
 
     @Test
     public void serializeAndDeserializeFederation() {
-        final int NUM_CASES = 20;
+        testSerializeAndDeserializeFederation(false);
+    }
 
-        final NetworkParameters networkParameters = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
-
-        for (int i = 0; i < NUM_CASES; i++) {
-            int numMembers = randomInRange(2, 14);
-            List<FederationMember> members = new ArrayList<>();
-            for (int j = 0; j < numMembers; j++) {
-                members.add(new FederationMember(new BtcECKey(), new ECKey(), new ECKey()));
-            }
-            Federation testFederation = new Federation(members, Instant.now(), 123, networkParameters);
-
-            byte[] serializedTestFederation = BridgeSerializationUtils.serializeFederation(testFederation);
-
-            Federation deserializedTestFederation = BridgeSerializationUtils.deserializeFederation(
-                    serializedTestFederation, networkParameters);
-
-            Assert.assertEquals(testFederation, deserializedTestFederation);
-        }
+    @Test
+    public void serializeAndDeserializeErpFederation() {
+        testSerializeAndDeserializeFederation(true);
     }
 
     @Test
@@ -1120,6 +1109,57 @@ public class BridgeSerializationUtilsTest {
         Assert.assertArrayEquals(fastBridge.getDerivationHash().getBytes(), result.getDerivationHash().getBytes());
         Assert.assertArrayEquals(fastBridge.getFederationScriptHash(), result.getFederationScriptHash());
         Assert.assertArrayEquals(fastBridge.getFastBridgeScriptHash(), result.getFastBridgeScriptHash());
+    }
+
+    private void testSerializeAndDeserializeFederation(boolean isErpFed) {
+        final int NUM_CASES = 20;
+        final NetworkParameters networkParameters = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
+        final BridgeConstants bridgeConstants = BridgeRegTestConstants.getInstance();
+
+        for (int i = 0; i < NUM_CASES; i++) {
+            int numMembers = randomInRange(2, 14);
+            List<FederationMember> members = new ArrayList<>();
+
+            for (int j = 0; j < numMembers; j++) {
+                members.add(new FederationMember(new BtcECKey(), new ECKey(), new ECKey()));
+            }
+
+            Federation testFederation;
+
+            if (isErpFed) {
+                 testFederation = new ErpFederation(
+                    members,
+                    Instant.now(),
+                    123,
+                    networkParameters,
+                    bridgeConstants.getErpFedPubKeysList(),
+                    bridgeConstants.getErpFedActivationDelay()
+                );
+            } else {
+                testFederation = new Federation(
+                    members,
+                    Instant.now(),
+                    123,
+                    networkParameters
+                );
+            }
+
+            byte[] serializedTestFederation = BridgeSerializationUtils.serializeFederation(testFederation);
+            Federation deserializedTestFederation;
+
+            if (isErpFed) {
+                deserializedTestFederation = BridgeSerializationUtils.deserializeErpFederation(
+                    serializedTestFederation,
+                    networkParameters,
+                    bridgeConstants
+                );
+            } else {
+                deserializedTestFederation = BridgeSerializationUtils.deserializeFederation(
+                    serializedTestFederation, networkParameters);
+            }
+
+            Assert.assertEquals(testFederation, deserializedTestFederation);
+        }
     }
 
     private Address mockAddressHash160(String hash160) {
