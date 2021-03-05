@@ -20,6 +20,9 @@ package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.crypto.TransactionSignature;
+import co.rsk.bitcoinj.script.RedeemScriptParser;
+import co.rsk.bitcoinj.script.RedeemScriptParser.MultiSigType;
+import co.rsk.bitcoinj.script.RedeemScriptParserFactory;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptChunk;
 import co.rsk.bitcoinj.wallet.Wallet;
@@ -262,8 +265,18 @@ public class BridgeUtils {
         TransactionInput input = btcTx.getInput(0);
         Script scriptSig = input.getScriptSig();
         List<ScriptChunk> chunks = scriptSig.getChunks();
+        Script redeemScript = new Script(chunks.get(chunks.size() - 1).data);
+        RedeemScriptParser parser = RedeemScriptParserFactory.get(redeemScript.getChunks());
 
-        for (int i = 1; i < chunks.size() - 1; i++) {
+        int lastChunk;
+
+        if (parser.getMultiSigType().equals(MultiSigType.STANDARD_MULTISIG)) {
+            lastChunk = chunks.size() - 1;
+        } else {
+            lastChunk = chunks.size() - 2;
+        }
+
+        for (int i = 1; i < lastChunk; i++) {
             ScriptChunk chunk = chunks.get(i);
             if (!chunk.isOpCode() && chunk.data.length == 0) {
                 unsigned++;
@@ -282,10 +295,24 @@ public class BridgeUtils {
         // When the tx is constructed OP_0 are placed where signature should go.
         // Check all OP_0 have been replaced with actual signatures in all inputs
         Context.propagate(btcContext);
+        Script scriptSig;
+        List<ScriptChunk> chunks;
+        Script redeemScript;
+        RedeemScriptParser parser;
+
+        int lastChunk;
         for (TransactionInput input : btcTx.getInputs()) {
-            Script scriptSig = input.getScriptSig();
-            List<ScriptChunk> chunks = scriptSig.getChunks();
-            for (int i = 1; i < chunks.size(); i++) {
+            scriptSig = input.getScriptSig();
+            chunks = scriptSig.getChunks();
+            redeemScript = new Script(chunks.get(chunks.size() - 1).data);
+            parser = RedeemScriptParserFactory.get(redeemScript.getChunks());
+
+            if (parser.getMultiSigType().equals(MultiSigType.STANDARD_MULTISIG)) {
+                lastChunk = chunks.size() - 1;
+            } else {
+                lastChunk = chunks.size() - 2;
+            }
+            for (int i = 1; i < lastChunk; i++) {
                 ScriptChunk chunk = chunks.get(i);
                 if (!chunk.isOpCode() && chunk.data.length == 0) {
                     return false;
