@@ -1066,6 +1066,12 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         return bridgeSupport.hasBtcBlockCoinbaseTransactionInformation(blockHash);
     }
 
+    public long getActiveFederationCreationBlockHeight(Object[] args) {
+        logger.trace("getActiveFederationCreationBlockHeight");
+
+        return bridgeSupport.getActiveFederationCreationBlockHeight();
+    }
+
     public static BridgeMethods.BridgeMethodExecutor activeAndRetiringFederationOnly(BridgeMethods.BridgeMethodExecutor decoratee, String funcName) {
         return (self, args) -> {
             Federation retiringFederation = self.bridgeSupport.getRetiringFederation();

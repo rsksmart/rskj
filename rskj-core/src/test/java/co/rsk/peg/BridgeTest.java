@@ -10,6 +10,7 @@ import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.Block;
+import org.ethereum.core.CallTransaction;
 import org.ethereum.core.Transaction;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.PrecompiledContracts;
@@ -21,8 +22,7 @@ import org.junit.Test;
 import java.io.IOException;
 import java.math.BigInteger;
 
-import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP134;
-import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP143;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
@@ -191,6 +191,36 @@ public class BridgeTest {
         data = ByteUtil.merge(Bridge.REGISTER_BTC_COINBASE_TRANSACTION.encodeSignature(), Hex.decode("0000000000000000000000000000000000000000000000080000000000000000"));
         result = bridge.execute(data);
         Assert.assertNull(result);
+    }
+
+    @Test
+    public void getActiveFederationCreationBlockHeight_before_RSKIP186_activation() throws VMException {
+        doReturn(false).when(activationConfig).isActive(eq(RSKIP186), anyLong());
+
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        Bridge bridge = getBridgeInstance(bridgeSupportMock);
+
+        byte[] data = BridgeMethods.GET_ACTIVE_FEDERATION_CREATION_BLOCK_HEIGHT.getFunction().encode(new Object[]{});
+
+        Assert.assertNull(bridge.execute(data));
+    }
+
+    @Test
+    public void getActiveFederationCreationBlockHeight_after_RSKIP186_activation() throws VMException {
+        doReturn(true).when(activationConfig).isActive(eq(RSKIP186), anyLong());
+
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        Bridge bridge = getBridgeInstance(bridgeSupportMock);
+
+        // Don't really care about the internal logic, just checking if the method is active
+        when(bridgeSupportMock.getActiveFederationCreationBlockHeight()).thenReturn(1L);
+
+        CallTransaction.Function function = BridgeMethods.GET_ACTIVE_FEDERATION_CREATION_BLOCK_HEIGHT.getFunction();
+        byte[] data = function.encode(new Object[]{ });
+        byte[] result = bridge.execute(data);
+        Assert.assertEquals(1L, ((BigInteger)function.decodeResult(result)[0]).longValue());
+        // Also test the method itself
+        Assert.assertEquals(1L, bridge.getActiveFederationCreationBlockHeight(new Object[]{ }));
     }
 
     /**

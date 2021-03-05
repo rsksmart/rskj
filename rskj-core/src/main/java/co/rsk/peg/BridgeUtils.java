@@ -37,10 +37,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Stream;
 
 /**
  * @author Oscar Guindzberg
@@ -114,22 +112,28 @@ public class BridgeUtils {
      * It checks if the tx doesn't spend any of the federations' funds and if it sends more than
      * the minimum ({@see BridgeConstants::getMinimumLockTxValue}) to any of the federations
      * @param tx the BTC transaction to check
-     * @param federations the active federations
+     * @param activeFederations the active federations
+     * @param retiredFederationP2SHScript the retired federation P2SHScript. Could be {@code null}.
      * @param btcContext the BTC Context
      * @param bridgeConstants the Bridge constants
      * @return true if this is a valid lock transaction
      */
-    public static boolean isLockTx(BtcTransaction tx, List<Federation> federations, Context btcContext, BridgeConstants bridgeConstants) {
+    public static boolean isPegInTx(BtcTransaction tx, List<Federation> activeFederations, Script retiredFederationP2SHScript,
+                                    Context btcContext, BridgeConstants bridgeConstants) {
         // First, check tx is not a typical release tx (tx spending from the any of the federation addresses and
         // optionally sending some change to any of the federation addresses)
         for (int i = 0; i < tx.getInputs().size(); i++) {
             final int index = i;
-            if (federations.stream().anyMatch(federation -> scriptCorrectlySpendsTx(tx, index, federation.getP2SHScript()))) {
+            if (activeFederations.stream().anyMatch(federation -> scriptCorrectlySpendsTx(tx, index, federation.getP2SHScript()))) {
+                return false;
+            }
+
+            if (retiredFederationP2SHScript != null && scriptCorrectlySpendsTx(tx, index, retiredFederationP2SHScript)) {
                 return false;
             }
         }
 
-        Wallet federationsWallet = BridgeUtils.getFederationsNoSpendWallet(btcContext, federations);
+        Wallet federationsWallet = BridgeUtils.getFederationsNoSpendWallet(btcContext, activeFederations);
         Coin valueSentToMe = tx.getValueSentToMe(federationsWallet);
 
         int valueSentToMeSignum = valueSentToMe.signum();
@@ -139,8 +143,8 @@ public class BridgeUtils {
         return (valueSentToMeSignum > 0 && !valueSentToMe.isLessThan(bridgeConstants.getMinimumLockTxValue()));
     }
 
-    public static boolean isLockTx(BtcTransaction tx, Federation federation, Context btcContext, BridgeConstants bridgeConstants) {
-        return isLockTx(tx, Collections.singletonList(federation), btcContext, bridgeConstants);
+    public static boolean isPegInTx(BtcTransaction tx, Federation federation, Context btcContext, BridgeConstants bridgeConstants) {
+        return isPegInTx(tx, Collections.singletonList(federation), null, btcContext, bridgeConstants);
     }
 
     /**
@@ -156,29 +160,36 @@ public class BridgeUtils {
             (activations.isActive(ConsensusRule.RSKIP143) && txSenderAddressType != TxSenderAddressType.UNKNOWN);
     }
 
-    private static boolean isReleaseTx(BtcTransaction tx, Federation federation) {
-        return isReleaseTx(tx, Collections.singletonList(federation));
+    private static boolean isPegOutTx(BtcTransaction tx, Federation federation) {
+        return isPegOutTx(tx, Collections.singletonList(federation));
     }
 
-    public static boolean isReleaseTx(BtcTransaction tx, List<Federation> federations) {
+    public static boolean isPegOutTx(BtcTransaction tx, List<Federation> federations) {
+        return isPegOutTx(tx, federations.stream().filter(Objects::nonNull).map(Federation::getP2SHScript).toArray(Script[]::new));
+    }
+
+    public static boolean isPegOutTx(BtcTransaction tx, Script... p2shScript) {
         int inputsSize = tx.getInputs().size();
         for (int i = 0; i < inputsSize; i++) {
             final int inputIndex = i;
-            if (federations.stream().map(Federation::getP2SHScript).anyMatch(federationPayScript -> scriptCorrectlySpendsTx(tx, inputIndex, federationPayScript))) {
+            if (Stream.of(p2shScript).anyMatch(federationPayScript -> scriptCorrectlySpendsTx(tx, inputIndex, federationPayScript))) {
                 return true;
             }
         }
         return false;
     }
 
-    public static boolean isMigrationTx(BtcTransaction btcTx, Federation activeFederation, Federation retiringFederation, Context btcContext, BridgeConstants bridgeConstants) {
-        if (retiringFederation == null) {
+    public static boolean isMigrationTx(BtcTransaction btcTx,
+                                        Federation activeFederation, Federation retiringFederation, Script retiredFederationP2SHScript,
+                                        Context btcContext, BridgeConstants bridgeConstants) {
+        if (retiredFederationP2SHScript == null && retiringFederation == null) {
             return false;
         }
-        boolean moveFromRetiring = isReleaseTx(btcTx, retiringFederation);
-        boolean moveToActive = isLockTx(btcTx, activeFederation, btcContext, bridgeConstants);
+        boolean moveFromRetired = retiredFederationP2SHScript != null && isPegOutTx(btcTx, retiredFederationP2SHScript);
+        boolean moveFromRetiring = retiringFederation != null && isPegOutTx(btcTx, retiringFederation);
+        boolean moveToActive = isPegInTx(btcTx, activeFederation, btcContext, bridgeConstants);
 
-        return moveFromRetiring && moveToActive;
+        return (moveFromRetired || moveFromRetiring) && moveToActive;
     }
 
     /**

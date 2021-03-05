@@ -3172,7 +3172,8 @@ public class BridgeTestPowerMock {
                 BridgeMethods.ROLLBACK_FEDERATION,
                 BridgeMethods.SET_LOCK_WHITELIST_DISABLE_BLOCK_DELAY,
                 BridgeMethods.UPDATE_COLLECTIONS,
-                BridgeMethods.VOTE_FEE_PER_KB
+                BridgeMethods.VOTE_FEE_PER_KB,
+                BridgeMethods.GET_ACTIVE_FEDERATION_CREATION_BLOCK_HEIGHT
         ).stream().forEach(m -> {
             Assert.assertFalse(m.onlyAllowsLocalCalls());
         });
