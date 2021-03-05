@@ -7,13 +7,11 @@ import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.peg.Bridge;
 import co.rsk.peg.BridgeStorageProvider;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
-import co.rsk.util.MaxSizeHashMap;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.ECKey;
-import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.exception.VMException;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -112,7 +110,7 @@ public class LockingCapTest extends BridgePerformanceTestCase {
         final int maxBtcBlocks = 1000;
 
         return (BridgeStorageProvider provider, Repository repository, int executionIndex, BtcBlockStore blockStore) -> {
-            BtcBlockStore btcBlockStore = new RepositoryBtcBlockStoreWithCache.Factory(BridgeRegTestConstants.getInstance().getBtcParams()).newInstance(repository.startTracking());
+            BtcBlockStore btcBlockStore = new RepositoryBtcBlockStoreWithCache.Factory(networkParameters).newInstance(repository.startTracking(), null, null, null);
             Context btcContext = new Context(networkParameters);
             BtcBlockChain btcBlockChain;
             try {

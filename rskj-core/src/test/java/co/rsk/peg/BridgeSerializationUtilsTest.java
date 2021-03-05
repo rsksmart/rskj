@@ -1013,6 +1013,31 @@ public class BridgeSerializationUtilsTest {
     }
 
     @Test
+    public void serializeSha256Hash() {
+        Sha256Hash originalHash = PegTestUtils.createHash(2);
+        byte[] encodedHash = RLP.encodeElement(originalHash.getBytes());
+
+        byte[] result = BridgeSerializationUtils.serializeSha256Hash(originalHash);
+
+        Assert.assertArrayEquals(encodedHash, result);
+    }
+
+    @Test
+    public void deserializeSha256Hash() {
+        Sha256Hash originalHash = PegTestUtils.createHash(2);
+        byte[] encodedHash = RLP.encodeElement(originalHash.getBytes());
+
+        Sha256Hash result = BridgeSerializationUtils.deserializeSha256Hash(encodedHash);
+        Assert.assertEquals(originalHash, result);
+    }
+
+    @Test
+    public void deserializeSha256Hash_nullValue() {
+        Sha256Hash result = BridgeSerializationUtils.deserializeSha256Hash(null);
+        Assert.assertNull(result);
+    }
+
+    @Test
     public void serializeScript() {
         Script expectedScript = ScriptBuilder.createP2SHOutputScript(2, Lists.newArrayList(new BtcECKey(), new BtcECKey(), new BtcECKey()));
 

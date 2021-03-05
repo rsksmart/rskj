@@ -503,7 +503,11 @@ public enum BridgeMethods {
                     new String[]{}
             ),
             fixedCost(22000L),
-            Bridge.activeAndRetiringFederationOnly((BridgeMethodExecutorVoid) Bridge::registerBtcTransaction, "registerBtcTransaction"),
+            Bridge.executeIfElse(
+                Bridge::registerBtcTransactionIsPublic,
+                (BridgeMethodExecutorVoid) Bridge::registerBtcTransaction,
+                Bridge.activeAndRetiringFederationOnly((BridgeMethodExecutorVoid) Bridge::registerBtcTransaction, "registerBtcTransaction")
+            ),
             false
     ),
     RELEASE_BTC(
