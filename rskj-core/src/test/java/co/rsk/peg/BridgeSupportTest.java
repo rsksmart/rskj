@@ -1,50 +1,6 @@
 package co.rsk.peg;
 
-import static co.rsk.peg.PegTestUtils.createBaseInputScriptThatSpendsFromTheFederation;
-import static co.rsk.peg.PegTestUtils.createBaseRedeemScriptThatSpendsFromTheFederation;
-import static org.hamcrest.Matchers.hasItem;
-import static org.hamcrest.Matchers.lessThanOrEqualTo;
-import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
-import static org.hamcrest.collection.IsEmptyCollection.empty;
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsNot.not;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anyList;
-import static org.mockito.Mockito.anyLong;
-import static org.mockito.Mockito.atLeastOnce;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
-import co.rsk.bitcoinj.core.Address;
-import co.rsk.bitcoinj.core.AddressFormatException;
-import co.rsk.bitcoinj.core.BtcBlock;
-import co.rsk.bitcoinj.core.BtcECKey;
-import co.rsk.bitcoinj.core.BtcTransaction;
-import co.rsk.bitcoinj.core.Coin;
-import co.rsk.bitcoinj.core.Context;
-import co.rsk.bitcoinj.core.NetworkParameters;
-import co.rsk.bitcoinj.core.PartialMerkleTree;
-import co.rsk.bitcoinj.core.Sha256Hash;
-import co.rsk.bitcoinj.core.StoredBlock;
-import co.rsk.bitcoinj.core.TransactionInput;
-import co.rsk.bitcoinj.core.TransactionOutPoint;
-import co.rsk.bitcoinj.core.TransactionOutput;
-import co.rsk.bitcoinj.core.TransactionWitness;
-import co.rsk.bitcoinj.core.UTXO;
-import co.rsk.bitcoinj.core.VerificationException;
+import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.crypto.TransactionSignature;
 import co.rsk.bitcoinj.params.RegTestParams;
 import co.rsk.bitcoinj.script.FastBridgeRedeemScriptParser;
@@ -76,23 +32,6 @@ import co.rsk.peg.whitelist.LockWhitelist;
 import co.rsk.peg.whitelist.OneOffWhiteListEntry;
 import co.rsk.trie.Trie;
 import com.google.common.collect.Lists;
-import java.io.IOException;
-import java.math.BigInteger;
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.TreeMap;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import javax.annotation.Nullable;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.crypto.ec.CustomNamedCurves;
 import org.bouncycastle.crypto.params.ECDomainParameters;
@@ -141,6 +80,7 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNot.not;
 import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.*;
 
 public class BridgeSupportTest {
@@ -6284,6 +6224,42 @@ public class BridgeSupportTest {
         verify(btcBlockStore, never()).put(storedBlock2);
         verify(provider, never()).setReceiveHeadersLastTimestamp(anyLong());
         Assert.assertEquals(-2, result);
+    }
+
+    @Test
+    public void receiveHeader_block_exist_in_storage() throws IOException, BlockStoreException {
+        Repository repository = mock(Repository.class);
+        StoredBlock storedBlock = mock(StoredBlock.class);
+        BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
+
+        BtcBlock btcBlock = mock(BtcBlock.class);
+        Sha256Hash btcBlockHash = PegTestUtils.createHash(1);
+        when(btcBlock.getHash()).thenReturn(btcBlockHash);
+        when(btcBlockStore.get(btcBlockHash)).thenReturn(mock(StoredBlock.class));
+
+        BridgeStorageProvider provider = spy(new BridgeStorageProvider(
+                        repository,
+                        contractAddress,
+                        bridgeConstants,
+                        activationsAfterForks
+                )
+        );
+
+        BridgeSupport bridgeSupport = getBridgeSupportConfiguredToTestReceiveHeader(
+                btcBlock,
+                btcBlockStore,
+                provider,
+                storedBlock,
+                activationsAfterForks
+        );
+
+       // when(btcBlockStore.get(any())).thenReturn(nul);
+        int result = bridgeSupport.receiveHeader(btcBlock);
+
+        // Calls put when is adding the block header. (Saves his storedBlock)
+        verify(btcBlockStore, never()).put(any(StoredBlock.class));
+        verify(provider, never()).setReceiveHeadersLastTimestamp(anyLong());
+        Assert.assertEquals(-4, result);
     }
 
     private void assertRefundInProcessPegInVersionLegacy(
