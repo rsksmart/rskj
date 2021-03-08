@@ -163,7 +163,7 @@ public class BlockChainImpl implements Blockchain {
                         logger.warn("block: num: [{}] hash: [{}], processed after: [{}]seconds, gas used: {}, no txs: {}, result {}", block.getNumber(), block.getPrintableHash(), timeInSeconds, block.getGasUsed(), block.getTransactionsList().size(), result);
                     }
                     else {
-                        logger.info("block: num: [{}] hash: [{}], processed after: [{}]seconds, result {}", block.getNumber(), block.getPrintableHash(), timeInSeconds, result);
+                        logger.info("block: num: [{}] hash: [{}], processed after: [{}]seconds, gas used: {}, no txs: {}, result {}", block.getNumber(), block.getPrintableHash(), timeInSeconds, block.getGasUsed(), block.getTransactionsList().size(), result);
                     }
 
                     return result;
