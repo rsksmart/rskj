@@ -137,6 +137,8 @@ public class BridgeMainNetConstants extends BridgeConstants {
         // TODO: WE NEED TO DEFINE THESE KEYS
         erpFedPubKeysList = new ArrayList<>();
 
+        oldFederationAddress = "35JUi1FxabGdhygLhnNUEFG4AgvpNMgxK1";
+
         minSecondsBetweenCallsReceiveHeader = 600;  // 10 minutes in Seconds
         maxDepthBlockchainAccepted = 25;
     }
