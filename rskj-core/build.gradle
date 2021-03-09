@@ -34,6 +34,7 @@ tasks.withType(Javadoc) {
 }
 
 repositories {
+    mavenLocal()
     mavenCentral()
     jcenter()
     maven {
@@ -65,7 +66,7 @@ ext {
     powermockitoVersion = '2.0.2'
     rskLllVersion = '0.0.2'
     logbackVersion = '1.2.2'
-    bitcoinjVersion = '0.14.4-rsk-10-rc'
+    bitcoinjVersion = '0.14.4-rsk-10-erp'
     nettyVersion = '4.0.56.Final'
     nativeLibrary = '1.2.0'
 }
