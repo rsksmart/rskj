@@ -47,6 +47,13 @@ public class BridgeRegTestConstants extends BridgeConstants {
             .map(key -> BtcECKey.fromPublicOnly(key.getPubKey()))
             .collect(Collectors.toList());
 
+    public static final List<BtcECKey> REGTEST_OLD_FEDERATION_PRIVATE_KEYS = Arrays.asList(
+        BtcECKey.fromPrivate(Hex.decode("47129ffed2c0273c75d21bb8ba020073bb9a1638df0e04853407461fdd9e8b83")),
+        BtcECKey.fromPrivate(Hex.decode("9f72d27ba603cfab5a0201974a6783ca2476ec3d6b4e2625282c682e0e5f1c35")),
+        BtcECKey.fromPrivate(Hex.decode("e1b17fcd0ef1942465eee61b20561b16750191143d365e71de08b33dd84a9788"))
+    );
+
+
     private static final BridgeRegTestConstants instance = new BridgeRegTestConstants(REGTEST_FEDERATION_PUBLIC_KEYS);
 
     public BridgeRegTestConstants(List<BtcECKey> federationPublicKeys) {
@@ -145,6 +152,8 @@ public class BridgeRegTestConstants extends BridgeConstants {
                 "03ab0e2cd7ed158687fc13b88019990860cdb72b1f5777b58513312550ea1584bc"
             }).map(hex -> BtcECKey.fromPublicOnly(Hex.decode(hex))).collect(Collectors.toList()
         );
+
+        oldFederationAddress = "2N7ZgQyhFKm17RbaLqygYbS7KLrQfapyZzu";
     }
 
     public static BridgeRegTestConstants getInstance() {

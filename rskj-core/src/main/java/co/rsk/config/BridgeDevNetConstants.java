@@ -143,5 +143,7 @@ public class BridgeDevNetConstants extends BridgeConstants {
                 "03ab0e2cd7ed158687fc13b88019990860cdb72b1f5777b58513312550ea1584bc"
             }).map(hex -> BtcECKey.fromPublicOnly(Hex.decode(hex))).collect(Collectors.toList()
         );
+
+        oldFederationAddress = "2N7ZgQyhFKm17RbaLqygYbS7KLrQfapyZzu";
     }
 }
