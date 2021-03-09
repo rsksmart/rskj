@@ -131,7 +131,7 @@ public class BridgeUtils {
         return wallet;
     }
 
-    private static boolean scriptCorrectlySpendsTx(BtcTransaction tx, int index, Script script) {
+    public static boolean scriptCorrectlySpendsTx(BtcTransaction tx, int index, Script script) {
         try {
             TransactionInput txInput = tx.getInput(index);
             txInput.getScriptSig().correctlySpends(tx, index, script, Script.ALL_VERIFY_FLAGS);
