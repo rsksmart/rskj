@@ -1057,7 +1057,7 @@ public class BridgeSerializationUtilsTest {
         Assert.assertEquals(expectedScript, actualScript);
     }
 
-    @Test(expected = RuntimeException.class)
+    @Test
     public void deserializeFastBridge_no_data() {
         Assert.assertNull(BridgeSerializationUtils.deserializeFastBridgeInformation(new byte[]{}, new byte[]{}));
     }

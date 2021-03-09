@@ -6741,7 +6741,7 @@ public class BridgeSupportTest {
             repository,
             mock(Block.class),
             btcContext,
-            mock(FederationSupport.class),
+            federationSupportMock,
             mock(BtcBlockStoreWithCache.Factory.class),
             activations
         ));
