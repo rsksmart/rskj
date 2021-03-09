@@ -369,6 +369,13 @@ public class BridgeSupport {
     protected TxType getTransactionType(BtcTransaction btcTx) {
         Script retiredFederationP2SHScript = provider.getLastRetiredFederationP2SHScript().orElse(null);
 
+        /************************************************************************/
+        /** Special case to migrate funds from an old federation               **/
+        /************************************************************************/
+        if (activations.isActive(ConsensusRule.RSKIP199) && txIsFromOldFederation(btcTx)) {
+            return TxType.MIGRATION;
+        }
+
         if (BridgeUtils.isPegInTx(btcTx, getLiveFederations(), retiredFederationP2SHScript, btcContext, bridgeConstants)) {
             return TxType.PEGIN;
         }
@@ -390,6 +397,20 @@ public class BridgeSupport {
 
         return TxType.UNKNOWN;
     }
+
+    private boolean txIsFromOldFederation(BtcTransaction btcTx) {
+        Address oldFederationAddress = Address.fromBase58(bridgeConstants.getBtcParams(), bridgeConstants.getOldFederationAddress());
+        Script p2shScript = ScriptBuilder.createP2SHOutputScript(oldFederationAddress.getHash160());
+
+        for (int i = 0; i < btcTx.getInputs().size(); i++) {
+            if (BridgeUtils.scriptCorrectlySpendsTx(btcTx, i, p2shScript)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
 
     protected void processPegIn(
         BtcTransaction btcTx,

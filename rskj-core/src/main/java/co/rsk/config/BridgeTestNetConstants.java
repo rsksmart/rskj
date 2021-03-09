@@ -136,6 +136,8 @@ public class BridgeTestNetConstants extends BridgeConstants {
         
         // TODO: WE NEED TO DEFINE THESE KEYS
         erpFedPubKeysList = new ArrayList<>();
+
+        oldFederationAddress = "2N7ZgQyhFKm17RbaLqygYbS7KLrQfapyZzu";
     }
 
     public static BridgeTestNetConstants getInstance() {

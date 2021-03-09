@@ -69,6 +69,8 @@ public class BridgeConstants {
 
     protected List<BtcECKey> erpFedPubKeysList;
 
+    protected String oldFederationAddress;
+
     public NetworkParameters getBtcParams() {
         return NetworkParameters.fromID(btcParamsString);
     }
@@ -138,4 +140,9 @@ public class BridgeConstants {
     public List<BtcECKey> getErpFedPubKeysList() {
         return erpFedPubKeysList;
     }
+
+    public String getOldFederationAddress() {
+        return oldFederationAddress;
+    }
+
 }
