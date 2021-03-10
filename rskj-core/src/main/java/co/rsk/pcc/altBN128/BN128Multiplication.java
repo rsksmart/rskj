@@ -43,8 +43,8 @@ import org.ethereum.vm.GasCost;
  */
 public class BN128Multiplication extends BN128PrecompiledContract {
 
-    public BN128Multiplication(ActivationConfig.ForBlock activations) {
-        super(activations);
+    public BN128Multiplication(ActivationConfig.ForBlock activations, AbstractAltBN128 altBN128) {
+        super(activations, altBN128);
     }
 
     @Override
@@ -53,7 +53,7 @@ public class BN128Multiplication extends BN128PrecompiledContract {
     }
 
     @Override
-    protected int concreteExecute(byte[] data, AbstractAltBN128 altBN128) {
-        return altBN128.mul(data, data.length);
+    protected int concreteExecute(byte[] data) {
+        return altBN128Lib.mul(data, data.length);
     }
 }

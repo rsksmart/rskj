@@ -50,8 +50,8 @@ public class BN128Pairing extends BN128PrecompiledContract {
 
     public static final int PAIR_SIZE = 192;
 
-    public BN128Pairing(ActivationConfig.ForBlock activations) {
-        super(activations);
+    public BN128Pairing(ActivationConfig.ForBlock activations, AbstractAltBN128 altBN128) {
+        super(activations, altBN128);
     }
 
     @Override
@@ -67,7 +67,7 @@ public class BN128Pairing extends BN128PrecompiledContract {
     }
 
     @Override
-    protected int concreteExecute(byte[] data, AbstractAltBN128 altBN128) {
-        return altBN128.pairing(data, data.length);
+    protected int concreteExecute(byte[] data) {
+        return altBN128Lib.pairing(data, data.length);
     }
 }
