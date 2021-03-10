@@ -98,6 +98,7 @@ public class BridgeSupport {
     public static final Integer RECEIVE_HEADER_CALLED_TOO_SOON = -1;
     public static final Integer RECEIVE_HEADER_BLOCK_TOO_OLD = -2;
     public static final Integer RECEIVE_HEADER_CANT_FOUND_PREVIOUS_BLOCK = -3;
+    public static final Integer RECEIVE_HEADER_BLOCK_PREVIOUSLY_SAVED = -4;
     public static final Integer RECEIVE_HEADER_UNEXPECTED_EXCEPTION = -99;
 
     // Enough depth to be able to search backwards one month worth of blocks
@@ -219,6 +220,10 @@ public class BridgeSupport {
     public Integer receiveHeader(BtcBlock header) throws IOException, BlockStoreException {
         Context.propagate(btcContext);
         this.ensureBtcBlockChain();
+
+        if (btcBlockStore.get(header.getHash()) != null) {
+            return RECEIVE_HEADER_BLOCK_PREVIOUSLY_SAVED;
+        }
 
         long diffTimeStamp = bridgeConstants.getMinSecondsBetweenCallsToReceiveHeader();
 
