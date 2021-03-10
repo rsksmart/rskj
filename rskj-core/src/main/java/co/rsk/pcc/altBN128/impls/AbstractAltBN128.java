@@ -3,6 +3,8 @@ package co.rsk.pcc.altBN128.impls;
 import co.rsk.altbn128.cloudflare.Utils;
 
 public abstract class AbstractAltBN128 {
+    public static final int PAIR_SIZE = 192;
+
     protected byte[] output;
 
     public static AbstractAltBN128 init() {

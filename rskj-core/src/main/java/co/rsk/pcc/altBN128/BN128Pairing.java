@@ -47,9 +47,7 @@ import org.ethereum.vm.GasCost;
  * @since 10.09.2019
  */
 public class BN128Pairing extends BN128PrecompiledContract {
-
-    public static final int PAIR_SIZE = 192;
-
+    
     public BN128Pairing(ActivationConfig.ForBlock activations, AbstractAltBN128 altBN128) {
         super(activations, altBN128);
     }
@@ -63,7 +61,7 @@ public class BN128Pairing extends BN128PrecompiledContract {
             return baseCost;
         }
 
-        return  GasCost.add(GasCost.multiply(perPairCost, (data.length / PAIR_SIZE)) , baseCost);
+        return GasCost.add(GasCost.multiply(perPairCost, (data.length / AbstractAltBN128.PAIR_SIZE)) , baseCost);
     }
 
     @Override
