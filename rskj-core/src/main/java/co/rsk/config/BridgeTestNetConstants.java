@@ -38,12 +38,15 @@ public class BridgeTestNetConstants extends BridgeConstants {
     BridgeTestNetConstants() {
         btcParamsString = NetworkParameters.ID_TESTNET;
 
-        BtcECKey federator0PublicKey = BtcECKey.fromPublicOnly(Hex.decode("039a060badbeb24bee49eb2063f616c0f0f0765d4ca646b20a88ce828f259fcdb9"));
-        BtcECKey federator1PublicKey = BtcECKey.fromPublicOnly(Hex.decode("02afc230c2d355b1a577682b07bc2646041b5d0177af0f98395a46018da699b6da"));
-        BtcECKey federator2PublicKey = BtcECKey.fromPublicOnly(Hex.decode("0344a3c38cd59afcba3edcebe143e025574594b001700dec41e59409bdbd0f2a09"));
-        BtcECKey federator3PublicKey = BtcECKey.fromPublicOnly(Hex.decode("034844a99cd7028aa319476674cc381df006628be71bc5593b8b5fdb32bb42ef85"));
+        // Federation address: 2NDw8trifn5QYfc9eg4rTXiv5dADMitucpm
+        // Generated with seed fed-01
+        BtcECKey federator0PublicKey = BtcECKey.fromPublicOnly(Hex.decode("02fe0881821ea20b7a7ae69429e05a6baeda2460778ab6b24b51fc92ff69656fa5"));
+        // Generated with seed fed-02
+        BtcECKey federator1PublicKey = BtcECKey.fromPublicOnly(Hex.decode("03394f1ecdc50498b8e5d4beba3f3612e97c74e56e5f90426df74b2fc074ecbde8"));
+        // Generated with seed fed-03
+        BtcECKey federator2PublicKey = BtcECKey.fromPublicOnly(Hex.decode("02a2acc68ec45a1cde42508b26dda8b67843c346fcc2b33866d806fb82c5642b2b"));
 
-        List<BtcECKey> genesisFederationPublicKeys = Arrays.asList(federator0PublicKey, federator1PublicKey, federator2PublicKey, federator3PublicKey);
+        List<BtcECKey> genesisFederationPublicKeys = Arrays.asList(federator0PublicKey, federator1PublicKey, federator2PublicKey);
 
         // IMPORTANT: BTC, RSK and MST keys are the same.
         // Change upon implementation of the <INSERT FORK NAME HERE> fork.
@@ -60,7 +63,7 @@ public class BridgeTestNetConstants extends BridgeConstants {
                 getBtcParams()
         );
 
-        btc2RskMinimumAcceptableConfirmations = 10;
+        btc2RskMinimumAcceptableConfirmations = 5;
         btc2RskMinimumAcceptableConfirmationsOnRsk = 10;
         rsk2BtcMinimumAcceptableConfirmations = 10;
 
@@ -68,14 +71,17 @@ public class BridgeTestNetConstants extends BridgeConstants {
 
         maxBtcHeadersPerRskBlock = 500;
 
-        minimumLockTxValue = Coin.valueOf(1000000);
-        minimumReleaseTxValue = Coin.valueOf(500000);
+        minimumLockTxValue = Coin.valueOf( 1_000_000);
+        minimumReleaseTxValue = Coin.valueOf(500_000);
 
         // Passphrases are kept private
         List<ECKey> federationChangeAuthorizedKeys = Arrays.stream(new String[]{
-                "04d9052c2022f6f35da53f04f02856ff5e59f9836eec03daad0328d12c5c66140205da540498e46cd05bf63c1201382dd84c100f0d52a10654159965aea452c3f2",
-                "04bf889f2035c8c441d7d1054b6a449742edd04d202f44a29348b4140b34e2a81ce66e388f40046636fd012bd7e3cecd9b951ffe28422334722d20a1cf6c7926fb",
-                "047e707e4f67655c40c539363fb435d89574b8fe400971ba0290de9c2adbb2bd4e1e5b35a2188b9409ff2cc102292616efc113623483056bb8d8a02bf7695670ea"
+            // private key from seed fed-changer-01
+            "04ed498022f9d618a96f272b1990a640d9f24fb97d2648f8716f9ee22dc008eba793f340602211b48a5393467f0b496bdee2bee0141e9b7150767664f7c7aec1fa",
+            // private key from seed fed-changer-02
+            "046f66639295ca8e4294c24d63e3fbc11247f6ba6a27b6b4de9a3492f414152d9b99717cacac94d3af114bfde4edbcce4ced20053c0937d94f5aeca349c7f7b211",
+            // private key from seed fed-changer-03
+            "04132685d71b0109fecef0160f1efcab0187eff916f4d472289741bff2666d0e1c80d2f8271e7f9ce9d9a7bf327084caf3fc5a1bb1db0e1bf90d77f60b79186b1a"
         }).map(hex -> ECKey.fromPublicOnly(Hex.decode(hex))).collect(Collectors.toList());
 
         federationChangeAuthorizer = new AddressBasedAuthorizer(
@@ -85,7 +91,8 @@ public class BridgeTestNetConstants extends BridgeConstants {
 
         // Passphrases are kept private
         List<ECKey> lockWhitelistAuthorizedKeys = Arrays.stream(new String[]{
-                "04bf7e3bca7f7c58326382ed9c2516a8773c21f1b806984bb1c5c33bd18046502d97b28c0ea5b16433fbb2b23f14e95b36209f304841e814017f1ede1ecbdcfce3"
+            // PK from seed whitelist-disabler-01
+            "041a7f5c5e7cdf31d122ba94a305d6a5483cfe63e9400ab3567eca4f2ca1459fb6513a19614e24b59767cfaf138077a488ce096039d6ad9e8d4f77673bafe0d95d"
         }).map(hex -> ECKey.fromPublicOnly(Hex.decode(hex))).collect(Collectors.toList());
 
         lockWhitelistChangeAuthorizer = new AddressBasedAuthorizer(
@@ -114,9 +121,8 @@ public class BridgeTestNetConstants extends BridgeConstants {
         maxFeePerKb = Coin.valueOf(5_000_000L);
 
         List<ECKey> increaseLockingCapAuthorizedKeys = Arrays.stream(new String[]{
-                "04701d1d27f8c2ae97912d96fb1f82f10c2395fd320e7a869049268c6b53d2060dfb2e22e3248955332d88cd2ae29a398f8f3858e48dd6d8ffbc37dfd6d1aa4934",
-                "045ef89e4a5645dc68895dbc33b4c966c3a0a52bb837ecdd2ba448604c4f47266456d1191420e1d32bbe8741f8315fde4d1440908d400e5998dbed6549d499559b",
-                "0455db9b3867c14e84a6f58bd2165f13bfdba0703cb84ea85788373a6a109f3717e40483aa1f8ef947f435ccdf10e530dd8b3025aa2d4a7014f12180ee3a301d27"
+            // pk from seed locking-cap-changer-01
+            "04701d1d27f8c2ae97912d96fb1f82f10c2395fd320e7a869049268c6b53d2060dfb2e22e3248955332d88cd2ae29a398f8f3858e48dd6d8ffbc37dfd6d1aa4934"
         }).map(hex -> ECKey.fromPublicOnly(Hex.decode(hex))).collect(Collectors.toList());
 
         increaseLockingCapAuthorizer = new AddressBasedAuthorizer(
@@ -127,7 +133,7 @@ public class BridgeTestNetConstants extends BridgeConstants {
         lockingCapIncrementsMultiplier = 2;
         initialLockingCap = Coin.COIN.multiply(200); // 200 BTC
 
-        btcHeightWhenBlockIndexActivates = 700_000; //TODO define this value when Iris activation height in RSK is determined
+        btcHeightWhenBlockIndexActivates = 1_940_000; //TODO define this value when Iris activation height in RSK is determined
         maxDepthToSearchBlocksBelowIndexActivation = 1_000; //TODO define this value with Sergio
     }
 
