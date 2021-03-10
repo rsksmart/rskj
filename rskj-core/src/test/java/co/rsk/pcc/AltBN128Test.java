@@ -25,7 +25,6 @@ import co.rsk.pcc.altBN128.BN128Addition;
 import co.rsk.pcc.altBN128.BN128Multiplication;
 import co.rsk.pcc.altBN128.BN128Pairing;
 import co.rsk.pcc.altBN128.BN128PrecompiledContract;
-import co.rsk.pcc.altBN128.impls.JavaAltBN128;
 import co.rsk.vm.BytecodeCompiler;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -663,7 +662,7 @@ public class AltBN128Test {
         BN128PrecompiledContract contract = (BN128PrecompiledContract) spy(precompiledContracts.getContractForAddress(activations, contractAddress));
         runAndAssertError(inputString, errorMessage, contract, gasCost);
         //force Java execution.
-        when(contract.getAltBN128()).thenReturn(new JavaAltBN128());
+//        when(contract.initAltBN128Lib()).thenReturn(new JavaAltBN128());
         runAndAssertError(inputString, errorMessage, contract, gasCost);
     }
 
@@ -672,7 +671,7 @@ public class AltBN128Test {
         BN128PrecompiledContract contract = (BN128PrecompiledContract) spy(precompiledContracts.getContractForAddress(activations, contractAddress));
         runAndAssert(inputString, expectedOutput, errorMessage, contract, gasCost);
         //force Java execution.
-        when(contract.getAltBN128()).thenReturn(new JavaAltBN128());
+//        when(contract.initAltBN128Lib()).thenReturn(new JavaAltBN128());
         runAndAssert(inputString, expectedOutput, errorMessage, contract, gasCost);
     }
 

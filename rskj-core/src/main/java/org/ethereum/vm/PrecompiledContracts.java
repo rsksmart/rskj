@@ -26,6 +26,7 @@ import co.rsk.core.RskAddress;
 import co.rsk.pcc.altBN128.BN128Addition;
 import co.rsk.pcc.altBN128.BN128Multiplication;
 import co.rsk.pcc.altBN128.BN128Pairing;
+import co.rsk.pcc.altBN128.impls.AbstractAltBN128;
 import co.rsk.pcc.blockheader.BlockHeaderContract;
 import co.rsk.pcc.bto.HDWalletUtils;
 import co.rsk.peg.Bridge;
@@ -182,15 +183,15 @@ public class PrecompiledContracts {
         }
 
         if (activations.isActive(ConsensusRule.RSKIP137) && address.equals(ALT_BN_128_ADD_DW)) {
-            return new BN128Addition(activations);
+            return new BN128Addition(activations, AbstractAltBN128.init());
         }
 
         if (activations.isActive(ConsensusRule.RSKIP137) && address.equals(ALT_BN_128_MUL_DW)) {
-            return new BN128Multiplication(activations);
+            return new BN128Multiplication(activations, AbstractAltBN128.init());
         }
 
         if (activations.isActive(ConsensusRule.RSKIP137) && address.equals(ALT_BN_128_PAIRING_DW)) {
-            return new BN128Pairing(activations);
+            return new BN128Pairing(activations, AbstractAltBN128.init());
         }
 
         if (activations.isActive(ConsensusRule.RSKIP153) && address.equals(BLAKE2F_ADDR_DW)) {

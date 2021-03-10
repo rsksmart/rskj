@@ -22,7 +22,6 @@ import co.rsk.altbn128.cloudflare.Utils;
 import co.rsk.pcc.altBN128.impls.AbstractAltBN128;
 import co.rsk.pcc.altBN128.impls.GoAltBN128;
 import co.rsk.pcc.altBN128.impls.JavaAltBN128;
-import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.vm.PrecompiledContracts;
@@ -37,9 +36,11 @@ import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 public abstract class BN128PrecompiledContract extends PrecompiledContracts.PrecompiledContract {
 
     private final ActivationConfig.ForBlock activations;
+    protected final AbstractAltBN128 altBN128Lib;
 
-    protected BN128PrecompiledContract(ActivationConfig.ForBlock activations) {
+    public BN128PrecompiledContract(ActivationConfig.ForBlock activations, AbstractAltBN128 altBN128) {
         this.activations = activations;
+        this.altBN128Lib = altBN128;
     }
 
     /**
@@ -61,12 +62,11 @@ public abstract class BN128PrecompiledContract extends PrecompiledContracts.Prec
         if (data == null) {
             data = EMPTY_BYTE_ARRAY;
         }
-        AbstractAltBN128 altBN128 = getAltBN128();
-        int rs = concreteExecute(data, altBN128);
+        int rs = concreteExecute(data);
         if (rs < 0) {
             throw new VMException("Invalid result.");
         }
-        return altBN128.getOutput();
+        return altBN128Lib.getOutput();
     }
 
     /**
@@ -76,22 +76,12 @@ public abstract class BN128PrecompiledContract extends PrecompiledContracts.Prec
         if (data == null) {
             data = EMPTY_BYTE_ARRAY;
         }
-        AbstractAltBN128 altBN128 = getAltBN128();
-        int rs = concreteExecute(data, altBN128);
+        int rs = concreteExecute(data);
         if (rs < 0) {
             return EMPTY_BYTE_ARRAY;
         }
-        return altBN128.getOutput();
+        return altBN128Lib.getOutput();
     }
 
-    @VisibleForTesting
-    public AbstractAltBN128 getAltBN128() {
-        if (Utils.isLinux()) {
-            return new GoAltBN128();
-        } else {
-            return new JavaAltBN128();
-        }
-    }
-
-    protected abstract int concreteExecute(byte[] data, AbstractAltBN128 altBN128);
+    protected abstract int concreteExecute(byte[] data);
 }
