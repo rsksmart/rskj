@@ -1,6 +1,8 @@
 package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.BtcECKey;
+import co.rsk.bitcoinj.core.Address;
+import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.bitcoinj.core.Sha256Hash;
@@ -12,6 +14,7 @@ import java.io.IOException;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
+import co.rsk.crypto.Keccak256;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -336,6 +339,155 @@ public class BridgeTest {
         Assert.assertEquals(1L, bridge.getActiveFederationCreationBlockHeight(new Object[]{ }));
     }
 
+    @Test
+    public void registerFastBridgeBtcTransaction_before_RSKIP176_activation() throws VMException {
+        doReturn(false).when(activationConfig).isActive(eq(RSKIP176), anyLong());
+
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        Bridge bridge = getBridgeInstance(bridgeSupportMock);
+
+        byte[] value = Sha256Hash.ZERO_HASH.getBytes();
+        byte[] pubKeyHash = new BtcECKey().getPubKeyHash();
+
+        byte[] data = BridgeMethods.REGISTER_FAST_BRIDGE_BTC_TRANSACTION.getFunction().encode(
+            value,
+            1,
+            value,
+            value,
+            pubKeyHash,
+            "2e12a7e43926ccd228a2587896e53c3d1a51dacb",
+            pubKeyHash,
+            true
+        );
+
+        //Assert
+        Assert.assertNull(bridge.execute(data));
+    }
+
+    @Test
+    public void registerFastBridgeBtcTransaction_after_RSKIP176_activation()
+        throws VMException, IOException, BlockStoreException {
+        NetworkParameters networkParameters = constants.getBridgeConstants().getBtcParams();
+        doReturn(true).when(activationConfig).isActive(eq(RSKIP176), anyLong());
+
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        Bridge bridge = getBridgeInstance(bridgeSupportMock);
+
+        when(bridgeSupportMock.registerFastBridgeBtcTransaction(
+                any(Transaction.class),
+                any(byte[].class),
+                anyInt(),
+                any(byte[].class),
+                any(Keccak256.class),
+                any(Address.class),
+                any(RskAddress.class),
+                any(Address.class),
+                anyBoolean()
+        )).thenReturn(Long.valueOf(2));
+
+        byte[] value = Sha256Hash.ZERO_HASH.getBytes();
+
+        BtcECKey btcECKeyRefund = new BtcECKey();
+        Address refundBtcAddress = btcECKeyRefund.toAddress(networkParameters);
+        byte[] refundBtcAddressBytes = addressToByteArray(refundBtcAddress);
+
+        BtcECKey btcECKeyLp = new BtcECKey();
+        Address lpBtcAddress = btcECKeyLp.toAddress(networkParameters);
+        byte[] lpBtcAddressBytes = addressToByteArray(lpBtcAddress);
+
+        ECKey ecKey = new ECKey();
+        RskAddress rskAddress = new RskAddress(ecKey.getAddress());
+
+        byte[] data = Bridge.REGISTER_FAST_BRIDGE_BTC_TRANSACTION.encode(
+            value,
+            1,
+            value,
+            value,
+            refundBtcAddressBytes,
+            rskAddress.toHexString(),
+            lpBtcAddressBytes,
+            true
+        );
+
+        byte[] result = bridge.execute(data);
+
+        //Assert
+        Assert.assertEquals(BigInteger.valueOf(2), Bridge.REGISTER_FAST_BRIDGE_BTC_TRANSACTION.decodeResult(result)[0]);
+        verify(bridgeSupportMock, times(1)).registerFastBridgeBtcTransaction(
+                any(Transaction.class),
+                eq(value),
+                eq(1),
+                eq(value),
+                eq(new Keccak256(value)),
+                eq(refundBtcAddress),
+                eq(rskAddress),
+                eq(lpBtcAddress),
+                eq(true)
+        );
+    }
+
+    @Test
+    public void registerFastBridgeBtcTransaction_after_RSKIP176_activation_generic_error()
+        throws VMException, IOException, BlockStoreException {
+        doReturn(true).when(activationConfig).isActive(eq(RSKIP176), anyLong());
+
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        Bridge bridge = getBridgeInstance(bridgeSupportMock);
+
+        when(bridgeSupportMock.registerFastBridgeBtcTransaction(
+                any(Transaction.class),
+                any(byte[].class),
+                anyInt(),
+                any(byte[].class),
+                any(Keccak256.class),
+                any(Address.class),
+                any(RskAddress.class),
+                any(Address.class),
+                anyBoolean()
+        )).thenReturn(BridgeSupport.FAST_BRIDGE_GENERIC_ERROR);
+
+        byte[] value = Sha256Hash.ZERO_HASH.getBytes();
+        BtcECKey btcECKeyRefund = new BtcECKey();
+        byte[] pubKeyHashRefund = btcECKeyRefund.getPubKeyHash();
+        BtcECKey btcECKeyLp = new BtcECKey();
+        byte[] pubKeyHashLp = btcECKeyLp.getPubKeyHash();
+
+        ECKey ecKey = new ECKey();
+        RskAddress rskAddress = new RskAddress(ecKey.getAddress());
+        byte[] data = Bridge.REGISTER_FAST_BRIDGE_BTC_TRANSACTION.encode(
+            value,
+            1,
+            value,
+            value,
+            pubKeyHashRefund,
+            rskAddress.toHexString(),
+            pubKeyHashLp,
+            true
+        );
+        byte[] result = bridge.execute(data);
+        
+        Assert.assertEquals(BridgeSupport.FAST_BRIDGE_GENERIC_ERROR, 
+            ((BigInteger)Bridge.REGISTER_FAST_BRIDGE_BTC_TRANSACTION.decodeResult(result)[0]).longValue());
+    }
+
+    @Test
+    public void registerFastBridgeBtcTransaction_after_RSKIP176_null_parameter() throws VMException {
+        doReturn(true).when(activationConfig).isActive(eq(RSKIP176), anyLong());
+
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        Bridge bridge = getBridgeInstance(bridgeSupportMock);
+
+        byte[] value = Sha256Hash.ZERO_HASH.getBytes();
+
+        byte[] data = Bridge.REGISTER_FAST_BRIDGE_BTC_TRANSACTION.encodeSignature();
+        byte[] result = bridge.execute(data);
+        Assert.assertNull(result);
+
+        data = ByteUtil.merge(Bridge.REGISTER_FAST_BRIDGE_BTC_TRANSACTION.encodeSignature(), value);
+        result = bridge.execute(data);
+        Assert.assertNull(result);
+    }
+
     /**
      * Gets a bride instance mocking the transaction and BridgeSupportFactory
      * @param bridgeSupportInstance Provide the bridgeSupport to be used
@@ -366,5 +518,16 @@ public class BridgeTest {
 
     private Block getGenesisBlock() {
         return new BlockGenerator().getGenesisBlock();
+    }
+
+    private byte[] addressToByteArray(Address address) {
+        byte[] version = BigInteger.valueOf(address.getVersion()).toByteArray();
+
+        byte[] hash = address.getHash160();
+        byte[] addressBytes = new byte[version.length + hash.length];
+        System.arraycopy(version, 0, addressBytes, 0, version.length);
+        System.arraycopy(hash, 0, addressBytes, version.length, hash.length);
+
+        return addressBytes;
     }
 }

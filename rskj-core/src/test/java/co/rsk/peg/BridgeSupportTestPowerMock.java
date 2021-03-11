@@ -747,7 +747,7 @@ public class BridgeSupportTestPowerMock {
 
         // Fake wallet returned every time
         PowerMockito.mockStatic(BridgeUtils.class);
-        PowerMockito.when(BridgeUtils.getFederationSpendWallet(any(Context.class), any(Federation.class), any(List.class))).thenReturn(new SimpleWallet(context));
+        PowerMockito.when(BridgeUtils.getFederationSpendWallet(any(Context.class), any(Federation.class), any(List.class), anyBoolean(), any())).thenReturn(new SimpleWallet(context));
 
         Repository repository = createRepository();
         Repository track = repository.startTracking();
@@ -2814,14 +2814,14 @@ public class BridgeSupportTestPowerMock {
 
         final Wallet expectedWallet = mock(Wallet.class);
         PowerMockito.mockStatic(BridgeUtils.class);
-        PowerMockito.when(BridgeUtils.getFederationSpendWallet(any(), any(), any())).then((InvocationOnMock m) -> {
+        PowerMockito.when(BridgeUtils.getFederationSpendWallet(any(), any(), any(), anyBoolean(), any())).then((InvocationOnMock m) -> {
             Assert.assertEquals(m.<Context>getArgument(0), expectedContext);
             Assert.assertEquals(m.<Federation>getArgument(1), expectedFederation);
             Assert.assertEquals(m.<Object>getArgument(2), expectedUtxos);
             return expectedWallet;
         });
 
-        Assert.assertSame(expectedWallet, bridgeSupport.getActiveFederationWallet());
+        Assert.assertSame(expectedWallet, bridgeSupport.getActiveFederationWallet(false));
     }
 
     @Test
@@ -2857,14 +2857,14 @@ public class BridgeSupportTestPowerMock {
 
         final Wallet expectedWallet = mock(Wallet.class);
         PowerMockito.mockStatic(BridgeUtils.class);
-        PowerMockito.when(BridgeUtils.getFederationSpendWallet(any(), any(), any())).then((InvocationOnMock m) -> {
+        PowerMockito.when(BridgeUtils.getFederationSpendWallet(any(), any(), any(), anyBoolean(), any())).then((InvocationOnMock m) -> {
             Assert.assertEquals(m.<Context>getArgument(0), expectedContext);
             Assert.assertEquals(m.<Federation>getArgument(1), expectedFederation);
             Assert.assertEquals(m.<Object>getArgument(2), expectedUtxos);
             return expectedWallet;
         });
 
-        Assert.assertSame(expectedWallet, bridgeSupport.getRetiringFederationWallet());
+        Assert.assertSame(expectedWallet, bridgeSupport.getRetiringFederationWallet(false));
     }
 
     @Test

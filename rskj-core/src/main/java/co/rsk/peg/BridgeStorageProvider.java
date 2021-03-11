@@ -24,6 +24,7 @@ import co.rsk.config.BridgeConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.bitcoin.CoinbaseInformation;
+import co.rsk.peg.fastbridge.FastBridgeFederationInformation;
 import co.rsk.peg.whitelist.LockWhitelist;
 import co.rsk.peg.whitelist.LockWhitelistEntry;
 import co.rsk.peg.whitelist.OneOffWhiteListEntry;
@@ -32,6 +33,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.Repository;
 import org.ethereum.vm.DataWord;
+import org.spongycastle.util.encoders.Hex;
 
 import java.io.IOException;
 import java.util.*;
@@ -73,6 +75,9 @@ public class BridgeStorageProvider {
     private static final DataWord OLD_FEDERATION_FORMAT_VERSION = DataWord.fromString("oldFederationFormatVersion");
     private static final DataWord PENDING_FEDERATION_FORMAT_VERSION = DataWord.fromString("pendingFederationFormatVersion");
     private static final Integer FEDERATION_FORMAT_VERSION_MULTIKEY = 1000;
+
+    // Dummy value to use when saved Fast Bridge Derivation Argument Hash
+    private static final byte FAST_BRIDGE_FEDERATION_DERIVATION_ARGUMENTS_HASH_TRUE_VALUE = (byte) 1;
 
     private final Repository repository;
     private final RskAddress contractAddress;
@@ -120,12 +125,16 @@ public class BridgeStorageProvider {
     private Long nextFederationCreationBlockHeight; // if -1, then clear value
     private Script lastRetiredFederationP2SHScript;
 
+    private Keccak256 fastBridgeDerivationArgumentsHashToSave = null;
+    private Sha256Hash fastBridgeBtcTxHashToSave = null;
+
+    private FastBridgeFederationInformation fastBridgeFederationInformationsToSave = null;
+
     public BridgeStorageProvider(
         Repository repository,
         RskAddress contractAddress,
         BridgeConstants bridgeConstants,
         ActivationConfig.ForBlock activations) {
-
         this.repository = repository;
         this.contractAddress = contractAddress;
         this.networkParameters = bridgeConstants.getBtcParams();
@@ -725,6 +734,81 @@ public class BridgeStorageProvider {
         safeSaveToRepository(LAST_RETIRED_FEDERATION_P2SH_SCRIPT_KEY, lastRetiredFederationP2SHScript, BridgeSerializationUtils::serializeScript);
     }
 
+    public boolean isFastBridgeFederationDerivationHashUsed(Sha256Hash btcTxHash, Keccak256 derivationArgsHash) {
+        if (!activations.isActive(RSKIP176)) {
+            return false;
+        }
+
+        if (btcTxHash == null || derivationArgsHash == null) {
+            return false;
+        }
+
+        byte[] data = repository.getStorageBytes(
+                contractAddress,
+                getStorageKeyForDerivationArgumentsHash(btcTxHash, derivationArgsHash)
+        );
+
+        return ((data != null) && (data.length == 1) && (data[0] == FAST_BRIDGE_FEDERATION_DERIVATION_ARGUMENTS_HASH_TRUE_VALUE));
+    }
+
+    public void markFastBridgeFederationDerivationHashAsUsed(Sha256Hash btcTxHashToSave, Keccak256 derivationArgsHash) {
+        if (activations.isActive(RSKIP176)) {
+            fastBridgeBtcTxHashToSave = btcTxHashToSave;
+            fastBridgeDerivationArgumentsHashToSave = derivationArgsHash;
+        }
+    }
+
+    private void saveDerivationArgumentsHash() {
+        if (fastBridgeDerivationArgumentsHashToSave == null || fastBridgeBtcTxHashToSave == null) {
+            return;
+        }
+        repository.addStorageBytes(
+                contractAddress,
+                getStorageKeyForDerivationArgumentsHash(fastBridgeBtcTxHashToSave, fastBridgeDerivationArgumentsHashToSave),
+                new byte[]{FAST_BRIDGE_FEDERATION_DERIVATION_ARGUMENTS_HASH_TRUE_VALUE}
+        );
+    }
+
+    public Optional<FastBridgeFederationInformation> getFastBridgeFederationInformation(byte[] fastBridgeScriptHash) {
+        if (!activations.isActive(RSKIP176)) {
+            return Optional.empty();
+        }
+
+        if (fastBridgeScriptHash == null || fastBridgeScriptHash.length == 0) {
+            return Optional.empty();
+        }
+
+        FastBridgeFederationInformation fastBridgeFederationInformation = this.safeGetFromRepository(
+                getStorageKeyForfastBridgeFederationInformation(fastBridgeScriptHash),
+            data -> BridgeSerializationUtils.deserializeFastBridgeInformation(data, fastBridgeScriptHash)
+        );
+        if (fastBridgeFederationInformation == null) {
+            return Optional.empty();
+        }
+
+        return Optional.of(fastBridgeFederationInformation);
+    }
+
+    public void setFastBridgeFederationInformation(FastBridgeFederationInformation fastBridgeFederationInformation) {
+        if (activations.isActive(RSKIP176)) {
+            this.fastBridgeFederationInformationsToSave = fastBridgeFederationInformation;
+        }
+    }
+
+    private void saveFastBridgeFederationInformation() {
+        if (fastBridgeFederationInformationsToSave == null) {
+            return;
+        }
+
+        safeSaveToRepository(
+                getStorageKeyForfastBridgeFederationInformation(
+                    fastBridgeFederationInformationsToSave.getFastBridgeScriptHash()
+                ),
+                fastBridgeFederationInformationsToSave,
+                BridgeSerializationUtils::serializeFastBridgeInformation
+        );
+    }
+
     public void save() throws IOException {
         saveBtcTxHashesAlreadyProcessed();
 
@@ -758,6 +842,9 @@ public class BridgeStorageProvider {
         saveLastRetiredFederationP2SHScript();
 
         saveBtcBlocksIndex();
+
+        saveDerivationArgumentsHash();
+        saveFastBridgeFederationInformation();
     }
 
     private DataWord getStorageKeyForBtcTxHashAlreadyProcessed(Sha256Hash btcTxHash) {
@@ -770,6 +857,14 @@ public class BridgeStorageProvider {
 
     private DataWord getStorageKeyForBtcBlockIndex(Integer height) {
         return DataWord.fromLongString("btcBlockHeight-" + height);
+    }
+
+    private DataWord getStorageKeyForDerivationArgumentsHash(Sha256Hash btcTxHash, Keccak256 derivationHash) {
+        return DataWord.fromLongString("fastBridgeHashUsedInBtcTx-" + btcTxHash.toString() + derivationHash.toString());
+    }
+
+    private DataWord getStorageKeyForfastBridgeFederationInformation(byte[] fastBridgeScriptHash) {
+        return DataWord.fromLongString("fastBridgeFederationInformation-" + Hex.toHexString(fastBridgeScriptHash));
     }
 
     private Optional<Integer> getStorageVersion(DataWord versionKey) {

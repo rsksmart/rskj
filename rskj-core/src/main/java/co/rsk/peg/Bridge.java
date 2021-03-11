@@ -22,6 +22,7 @@ import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.config.BridgeConstants;
 import co.rsk.core.RskAddress;
+import co.rsk.crypto.Keccak256;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.peg.bitcoin.MerkleBranch;
 import co.rsk.peg.utils.BtcTransactionFormatUtils;
@@ -189,6 +190,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     public static final CallTransaction.Function GET_LOCKING_CAP = BridgeMethods.GET_LOCKING_CAP.getFunction();
     public static final CallTransaction.Function REGISTER_BTC_COINBASE_TRANSACTION = BridgeMethods.REGISTER_BTC_COINBASE_TRANSACTION.getFunction();
     public static final CallTransaction.Function HAS_BTC_BLOCK_COINBASE_TRANSACTION_INFORMATION = BridgeMethods.HAS_BTC_BLOCK_COINBASE_TRANSACTION_INFORMATION.getFunction();
+    public static final CallTransaction.Function REGISTER_FAST_BRIDGE_BTC_TRANSACTION = BridgeMethods.REGISTER_FAST_BRIDGE_BTC_TRANSACTION.getFunction();
 
     public static final int LOCK_WHITELIST_UNLIMITED_MODE_CODE = 0;
     public static final int LOCK_WHITELIST_ENTRY_NOT_FOUND_CODE = -1;
@@ -1076,6 +1078,49 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         return bridgeSupport.getActiveFederationCreationBlockHeight();
     }
 
+    public long registerFastBridgeBtcTransaction(Object[] args) {
+        logger.trace("registerFastBridgeBtcTransaction");
+
+        try {
+            byte[] btcTxSerialized = (byte[]) args[0];
+            int height = ((BigInteger) args[1]).intValue();
+            byte[] pmtSerialized = (byte[]) args[2];
+            Keccak256 derivationArgumentsHash = new Keccak256((byte[]) args[3]);
+            // Parse data to create BTC user refund address with version and hash
+            byte[] refundAddressInfo = (byte[]) args[4];
+            Address userRefundAddress = new Address(
+                bridgeConstants.getBtcParams(),
+                BridgeUtils.extractAddressVersionFromBytes(refundAddressInfo),
+                BridgeUtils.extractHash160FromBytes(refundAddressInfo)
+            );
+            // A DataWord cast is used because a SolidityType "address" is decoded using this specific type.
+            RskAddress lbcAddress = new RskAddress((DataWord) args[5]);
+            // Parse data to create BTC liquidity provider address with version and hash
+            byte[] lpAddressInfo = (byte[]) args[6];
+            Address lpBtcAddress = new Address(
+                bridgeConstants.getBtcParams(),
+                BridgeUtils.extractAddressVersionFromBytes(lpAddressInfo),
+                BridgeUtils.extractHash160FromBytes(lpAddressInfo)
+            );
+            boolean shouldTransferToContract = ((boolean) args[7]);
+
+            return bridgeSupport.registerFastBridgeBtcTransaction(
+                rskTx,
+                btcTxSerialized,
+                height,
+                pmtSerialized,
+                derivationArgumentsHash,
+                userRefundAddress,
+                lbcAddress,
+                lpBtcAddress,
+                shouldTransferToContract
+            );
+        } catch (Exception e) {
+            logger.warn("Exception in registerFastBridgeBtcTransaction", e);
+            return BridgeSupport.FAST_BRIDGE_GENERIC_ERROR;
+        }
+    }
+
     public static BridgeMethods.BridgeMethodExecutor activeAndRetiringFederationOnly(BridgeMethods.BridgeMethodExecutor decoratee, String funcName) {
         return (self, args) -> {
             Federation retiringFederation = self.bridgeSupport.getRetiringFederation();
@@ -1103,7 +1148,6 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             }
         };
     }
-
 
     private boolean isLocalCall() {
         return rskTx.isLocalCallTransaction();

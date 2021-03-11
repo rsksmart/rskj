@@ -42,7 +42,8 @@ import org.junit.runners.Suite;
         GetBtcTransactionConfirmationsTest.class,
         RegisterBtcCoinbaseTransactionTest.class,
         HasBtcBlockCoinbaseTransactionInformationTest.class,
-        LockingCapTest.class
+        LockingCapTest.class,
+        RegisterFastBridgeBtcTransactionTest.class
 })
 
 //-------------- COMMENT THIS TO RUN THE TEST AND EACH CLASS --------------

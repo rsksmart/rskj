@@ -1402,7 +1402,15 @@ public class Program {
         // Special initialization for Bridge, Remasc and NativeContract contracts
         if (contract instanceof Bridge || contract instanceof RemascContract || contract instanceof NativeContract) {
             // CREATE CALL INTERNAL TRANSACTION
-            InternalTransaction internalTx = addInternalTx(null, getGasLimit(), senderAddress, contextAddress, endowment, EMPTY_BYTE_ARRAY, "call");
+            InternalTransaction internalTx = addInternalTx(
+                null,
+                getGasLimit(),
+                senderAddress,
+                contextAddress,
+                endowment,
+                EMPTY_BYTE_ARRAY,
+                "call"
+            );
 
             // Propagate the "local call" nature of the originating transaction down to the callee
             internalTx.setLocalCallTransaction(this.transaction.isLocalCallTransaction());

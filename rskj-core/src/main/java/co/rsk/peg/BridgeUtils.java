@@ -47,28 +47,83 @@ public class BridgeUtils {
 
     private static final Logger logger = LoggerFactory.getLogger("BridgeUtils");
 
-    public static Wallet getFederationNoSpendWallet(Context btcContext, Federation federation) {
-        return getFederationsNoSpendWallet(btcContext, Collections.singletonList(federation));
+    public static Wallet getFederationNoSpendWallet(
+        Context btcContext,
+        Federation federation,
+        boolean isFastBridgeCompatible,
+        BridgeStorageProvider storageProvider
+    ) {
+        return getFederationsNoSpendWallet(
+            btcContext,
+            Collections.singletonList(federation),
+            isFastBridgeCompatible,
+            storageProvider
+        );
     }
 
-    public static Wallet getFederationsNoSpendWallet(Context btcContext, List<Federation> federations) {
-        Wallet wallet = new BridgeBtcWallet(btcContext, federations);
-        federations.forEach(federation -> wallet.addWatchedAddress(federation.getAddress(), federation.getCreationTime().toEpochMilli()));
+    public static Wallet getFederationsNoSpendWallet(
+        Context btcContext,
+        List<Federation> federations,
+        boolean isFastBridgeCompatible,
+        BridgeStorageProvider storageProvider
+    ) {
+        Wallet wallet;
+        if (isFastBridgeCompatible) {
+            wallet = new FastBridgeCompatibleBtcWalletWithStorage(btcContext, federations, storageProvider);
+        } else {
+            wallet = new BridgeBtcWallet(btcContext, federations);
+        }
+
+        federations.forEach(federation ->
+            wallet.addWatchedAddress(
+                federation.getAddress(),
+                federation.getCreationTime().toEpochMilli()
+            )
+        );
+
         return wallet;
     }
 
-    public static Wallet getFederationSpendWallet(Context btcContext, Federation federation, List<UTXO> utxos) {
-        return getFederationsSpendWallet(btcContext, Collections.singletonList(federation), utxos);
+    public static Wallet getFederationSpendWallet(
+        Context btcContext,
+        Federation federation,
+        List<UTXO> utxos,
+        boolean isFastBridgeCompatible,
+        BridgeStorageProvider storageProvider
+    ) {
+        return getFederationsSpendWallet(
+            btcContext,
+            Collections.singletonList(federation),
+            utxos,
+            isFastBridgeCompatible,
+            storageProvider
+        );
     }
 
-    public static Wallet getFederationsSpendWallet(Context btcContext, List<Federation> federations, List<UTXO> utxos) {
-        Wallet wallet = new BridgeBtcWallet(btcContext, federations);
+    public static Wallet getFederationsSpendWallet(
+        Context btcContext,
+        List<Federation> federations,
+        List<UTXO> utxos,
+        boolean isFastBridgeCompatible,
+        BridgeStorageProvider storageProvider
+    ) {
+        Wallet wallet;
+        if (isFastBridgeCompatible) {
+            wallet = new FastBridgeCompatibleBtcWalletWithStorage(btcContext, federations, storageProvider);
+        } else {
+            wallet = new BridgeBtcWallet(btcContext, federations);
+        }
 
         RskUTXOProvider utxoProvider = new RskUTXOProvider(btcContext.getParams(), utxos);
         wallet.setUTXOProvider(utxoProvider);
-        federations.forEach(federation -> {
-            wallet.addWatchedAddress(federation.getAddress(), federation.getCreationTime().toEpochMilli());
-        });
+
+        federations.forEach(federation ->
+            wallet.addWatchedAddress(
+                federation.getAddress(),
+                federation.getCreationTime().toEpochMilli()
+            )
+        );
+
         wallet.setCoinSelector(new RskAllowUnconfirmedCoinSelector());
         return wallet;
     }
@@ -133,7 +188,7 @@ public class BridgeUtils {
             }
         }
 
-        Wallet federationsWallet = BridgeUtils.getFederationsNoSpendWallet(btcContext, activeFederations);
+        Wallet federationsWallet = BridgeUtils.getFederationsNoSpendWallet(btcContext, activeFederations, false, null);
         Coin valueSentToMe = tx.getValueSentToMe(federationsWallet);
 
         int valueSentToMeSignum = valueSentToMe.signum();
@@ -376,5 +431,22 @@ public class BridgeUtils {
             }
         }
         return false;
+    }
+
+    public static int extractAddressVersionFromBytes(byte[] addressBytes) throws BridgeIllegalArgumentException {
+        if (addressBytes == null || addressBytes.length == 0) {
+            throw new BridgeIllegalArgumentException("Can't get an address version if the bytes are empty");
+        }
+        return addressBytes[0];
+    }
+
+    public static byte[] extractHash160FromBytes(byte[] addressBytes)
+        throws BridgeIllegalArgumentException {
+        if (addressBytes == null || addressBytes.length == 0) {
+            throw new BridgeIllegalArgumentException("Can't get an address hash160 if the bytes are empty");
+        }
+        byte[] hashBytes = new byte[20];
+        System.arraycopy(addressBytes, 1, hashBytes, 0, 20);
+        return hashBytes;
     }
 }
