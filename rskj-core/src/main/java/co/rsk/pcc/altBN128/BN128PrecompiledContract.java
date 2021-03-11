@@ -18,10 +18,7 @@
 
 package co.rsk.pcc.altBN128;
 
-import co.rsk.altbn128.cloudflare.Utils;
 import co.rsk.pcc.altBN128.impls.AbstractAltBN128;
-import co.rsk.pcc.altBN128.impls.GoAltBN128;
-import co.rsk.pcc.altBN128.impls.JavaAltBN128;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.vm.PrecompiledContracts;
