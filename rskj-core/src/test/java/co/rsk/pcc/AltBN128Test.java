@@ -25,6 +25,8 @@ import co.rsk.pcc.altBN128.BN128Addition;
 import co.rsk.pcc.altBN128.BN128Multiplication;
 import co.rsk.pcc.altBN128.BN128Pairing;
 import co.rsk.pcc.altBN128.BN128PrecompiledContract;
+import co.rsk.pcc.altBN128.impls.AbstractAltBN128;
+import co.rsk.pcc.altBN128.impls.JavaAltBN128;
 import co.rsk.vm.BytecodeCompiler;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -38,6 +40,7 @@ import org.ethereum.vm.exception.VMException;
 import org.ethereum.vm.program.Program;
 import org.ethereum.vm.program.Stack;
 import org.ethereum.vm.program.invoke.ProgramInvokeMockImpl;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -232,7 +235,8 @@ public class AltBN128Test {
         executePrecompileAndAssertError(input,
                 "Invalid result.",
                 PrecompiledContracts.ALT_BN_128_ADD_DW,
-                ADD_GAS_COST);
+                ADD_GAS_COST,
+                activations);
 
     }
 
@@ -340,7 +344,7 @@ public class AltBN128Test {
 
         executePrecompileAndAssertError(input, "Invalid result.",
                 PrecompiledContracts.ALT_BN_128_MUL_DW,
-                MUL_GAS_COST);
+                MUL_GAS_COST, activations);
     }
 
     @Test
@@ -358,7 +362,7 @@ public class AltBN128Test {
 
         executePrecompileAndAssertError(input, "Invalid result.",
                 PrecompiledContracts.ALT_BN_128_MUL_DW,
-                MUL_GAS_COST);
+                MUL_GAS_COST, activations);
     }
 
     @Test
@@ -503,7 +507,7 @@ public class AltBN128Test {
         when(activations.isActive(ConsensusRule.RSKIP197)).thenReturn(true);
 
         executePrecompileAndAssertError(input, "Invalid result.",
-                PrecompiledContracts.ALT_BN_128_PAIRING_DW, 45_000);
+                PrecompiledContracts.ALT_BN_128_PAIRING_DW, 45_000, activations);
 
     }
 
@@ -547,7 +551,7 @@ public class AltBN128Test {
         when(activations.isActive(ConsensusRule.RSKIP197)).thenReturn(true);
 
         executePrecompileAndAssertError(input, "Invalid result.",
-                PrecompiledContracts.ALT_BN_128_PAIRING_DW, 113_000);
+                PrecompiledContracts.ALT_BN_128_PAIRING_DW, 113_000, activations);
     }
 
     @Test
@@ -658,12 +662,11 @@ public class AltBN128Test {
     }
 
     private void executePrecompileAndAssertError(String inputString, String errorMessage,
-                                                 DataWord contractAddress, long gasCost) {
-        BN128PrecompiledContract contract = (BN128PrecompiledContract) spy(precompiledContracts.getContractForAddress(activations, contractAddress));
+                                                 DataWord contractAddress, long gasCost, ActivationConfig.ForBlock activations) {
+        BN128PrecompiledContract contract = (BN128PrecompiledContract) spy(precompiledContracts.getContractForAddress(this.activations, contractAddress));
         runAndAssertError(inputString, errorMessage, contract, gasCost);
         //force Java execution.
-//        when(contract.initAltBN128Lib()).thenReturn(new JavaAltBN128());
-        runAndAssertError(inputString, errorMessage, contract, gasCost);
+        runAndAssertError(inputString, errorMessage, javaContract(contractAddress, activations), gasCost);
     }
 
     private void executePrecompileAndAssert(String inputString, String expectedOutput, String errorMessage,
@@ -671,8 +674,7 @@ public class AltBN128Test {
         BN128PrecompiledContract contract = (BN128PrecompiledContract) spy(precompiledContracts.getContractForAddress(activations, contractAddress));
         runAndAssert(inputString, expectedOutput, errorMessage, contract, gasCost);
         //force Java execution.
-//        when(contract.initAltBN128Lib()).thenReturn(new JavaAltBN128());
-        runAndAssert(inputString, expectedOutput, errorMessage, contract, gasCost);
+        runAndAssert(inputString, expectedOutput, errorMessage, javaContract(contractAddress, activations), gasCost);
     }
 
     private void runAndAssert(String inputString, String expectedOutput, String errorMessage, BN128PrecompiledContract contract, long gasCost) throws VMException {
@@ -800,4 +802,18 @@ public class AltBN128Test {
         return program;
     }
 
+    private BN128PrecompiledContract javaContract(DataWord contractAddress, ActivationConfig.ForBlock activations) {
+        AbstractAltBN128 javaAltbn128 = new JavaAltBN128();
+        if (contractAddress.equals(PrecompiledContracts.ALT_BN_128_ADD_DW)) {
+            return new BN128Addition(activations, javaAltbn128);
+        } else if (contractAddress.equals(PrecompiledContracts.ALT_BN_128_MUL_DW)) {
+            return new BN128Multiplication(activations, javaAltbn128);
+        } else if (contractAddress.equals(PrecompiledContracts.ALT_BN_128_PAIRING_DW)) {
+            return new BN128Pairing(activations, javaAltbn128);
+        }
+
+        Assert.fail("this is unexpected");
+
+        return null;
+    }
 }
