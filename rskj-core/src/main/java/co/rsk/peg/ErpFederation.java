@@ -40,7 +40,7 @@ public class ErpFederation extends Federation {
         if (redeemScript == null) {
             redeemScript = ErpFederationRedeemScriptParser.createErpRedeemScript(
                 ScriptBuilder.createRedeemScript(getNumberOfSignaturesRequired(), getBtcPublicKeys()),
-                ScriptBuilder.createRedeemScript(2, erpPubKeys),
+                ScriptBuilder.createRedeemScript(erpPubKeys.size() / 2 + 1, erpPubKeys),
                 activationDelay
             );
         }
