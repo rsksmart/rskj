@@ -859,10 +859,6 @@ public class BridgeStorageProvider {
         return DataWord.fromLongString("btcBlockHeight-" + height);
     }
 
-    private DataWord getStorageKeyForDerivationP2SHByHash(Sha256Hash derivationHash) {
-        return DataWord.fromLongString("fastBridgeP2SH-" + derivationHash.toString());
-    }
-
     private DataWord getStorageKeyForDerivationArgumentsHash(Sha256Hash btcTxHash, Keccak256 derivationHash) {
         return DataWord.fromLongString("fastBridgeHashUsedInBtcTx-" + btcTxHash.toString() + derivationHash.toString());
     }
