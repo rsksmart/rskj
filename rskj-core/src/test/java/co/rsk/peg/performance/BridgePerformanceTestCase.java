@@ -221,8 +221,8 @@ public abstract class BridgePerformanceTestCase extends PrecompiledContractPerfo
                 Trie trie = new Trie(trieStore);
                 benchmarkerTrack = new RepositoryTrackWithBenchmarking(trieStore,  trie);
                 Repository repository = benchmarkerTrack.startTracking();
-                BtcBlockStore btcBlockStore = btcBlockStoreFactory.newInstance(repository, null, null, null);
                 BridgeStorageProvider storageProvider = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationConfig.forBlock((long) executionIndex));
+                BtcBlockStore btcBlockStore = btcBlockStoreFactory.newInstance(repository, bridgeConstants, storageProvider, activationConfig.forBlock((long) executionIndex));
                 storageInitializer.initialize(storageProvider, repository, executionIndex, btcBlockStore);
                 repository.addBalance(PrecompiledContracts.BRIDGE_ADDR, co.rsk.core.Coin.fromBitcoin(Coin.COIN.multiply(21_000_000L)));
 
