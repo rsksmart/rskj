@@ -93,6 +93,11 @@ public class BridgeSupportTest {
     private static final String DATA = "80af2871";
     private static final co.rsk.core.Coin LIMIT_MONETARY_BASE = new co.rsk.core.Coin(new BigInteger("21000000000000000000000000"));
     private static final RskAddress contractAddress = PrecompiledContracts.BRIDGE_ADDR;
+    private static final List<BtcECKey> REGTEST_OLD_FEDERATION_PRIVATE_KEYS = Arrays.asList(
+        BtcECKey.fromPrivate(Hex.decode("47129ffed2c0273c75d21bb8ba020073bb9a1638df0e04853407461fdd9e8b83")),
+        BtcECKey.fromPrivate(Hex.decode("9f72d27ba603cfab5a0201974a6783ca2476ec3d6b4e2625282c682e0e5f1c35")),
+        BtcECKey.fromPrivate(Hex.decode("e1b17fcd0ef1942465eee61b20561b16750191143d365e71de08b33dd84a9788"))
+    );
 
     private BridgeConstants bridgeConstants;
     private NetworkParameters btcParams;
@@ -5830,7 +5835,7 @@ public class BridgeSupportTest {
 
         int multisigSigners = 2;
         Federation activeFederation = bridgeConstants.getGenesisFederation();
-        List<BtcECKey> oldFederationPrivateKeys = BridgeRegTestConstants.REGTEST_OLD_FEDERATION_PRIVATE_KEYS;
+        List<BtcECKey> oldFederationPrivateKeys = REGTEST_OLD_FEDERATION_PRIVATE_KEYS;
         Script redeemScript = ScriptBuilder.createRedeemScript(multisigSigners, oldFederationPrivateKeys);
         Script outputScript = ScriptBuilder.createP2SHOutputScript(redeemScript);
         Address sender = Address.fromP2SHScript(btcParams, outputScript);
@@ -5886,7 +5891,7 @@ public class BridgeSupportTest {
 
         int multisigSigners = 2;
         Federation activeFederation = bridgeConstants.getGenesisFederation();
-        List<BtcECKey> oldFederationPrivateKeys = BridgeRegTestConstants.REGTEST_OLD_FEDERATION_PRIVATE_KEYS;
+        List<BtcECKey> oldFederationPrivateKeys = REGTEST_OLD_FEDERATION_PRIVATE_KEYS;
         Script redeemScript = ScriptBuilder.createRedeemScript(multisigSigners, oldFederationPrivateKeys);
         Script outputScript = ScriptBuilder.createP2SHOutputScript(redeemScript);
         Address sender = Address.fromP2SHScript(btcParams, outputScript);
