@@ -270,7 +270,7 @@ public class BridgeUtils {
 
         int lastChunk;
 
-        if (parser.getMultiSigType().equals(MultiSigType.STANDARD_MULTISIG)) {
+        if (parser.getMultiSigType() == MultiSigType.STANDARD_MULTISIG) {
             lastChunk = chunks.size() - 1;
         } else {
             lastChunk = chunks.size() - 2;
@@ -307,7 +307,7 @@ public class BridgeUtils {
             redeemScript = new Script(chunks.get(chunks.size() - 1).data);
             parser = RedeemScriptParserFactory.get(redeemScript.getChunks());
 
-            if (parser.getMultiSigType().equals(MultiSigType.STANDARD_MULTISIG)) {
+            if (parser.getMultiSigType() == MultiSigType.STANDARD_MULTISIG) {
                 lastChunk = chunks.size() - 1;
             } else {
                 lastChunk = chunks.size() - 2;
