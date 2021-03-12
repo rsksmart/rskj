@@ -8,6 +8,7 @@ import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.peg.utils.EcKeyUtils;
 import java.time.Instant;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
@@ -29,7 +30,7 @@ public class ErpFederation extends Federation {
     }
 
     public List<BtcECKey> getErpPubKeys() {
-        return erpPubKeys;
+        return Collections.unmodifiableList(erpPubKeys);
     }
 
     public long getActivationDelay() {
