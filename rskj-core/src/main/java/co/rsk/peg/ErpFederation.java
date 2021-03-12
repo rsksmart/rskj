@@ -9,6 +9,7 @@ import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.peg.utils.EcKeyUtils;
 import java.time.Instant;
 import java.util.List;
+import java.util.Objects;
 
 public class ErpFederation extends Federation {
     private final List<BtcECKey> erpPubKeys;
@@ -71,5 +72,41 @@ public class ErpFederation extends Federation {
         }
 
         return address;
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        if (this == other) {
+            return true;
+        }
+
+        if (other == null || this.getClass() != other.getClass()) {
+            return false;
+        }
+
+        ErpFederation otherErpFederation = (ErpFederation) other;
+
+        return this.getNumberOfSignaturesRequired() == otherErpFederation.getNumberOfSignaturesRequired() &&
+            this.getSize() == otherErpFederation.getSize() &&
+            this.getCreationTime().equals(otherErpFederation.getCreationTime()) &&
+            this.creationBlockNumber == otherErpFederation.creationBlockNumber &&
+            this.btcParams.equals(otherErpFederation.btcParams) &&
+            this.members.equals(otherErpFederation.members) &&
+            this.erpPubKeys.equals(otherErpFederation.erpPubKeys) &&
+            this.activationDelay == otherErpFederation.activationDelay;
+    }
+
+    @Override
+    public int hashCode() {
+        // Can use java.util.Objects.hash since all of Instant, int and List<BtcECKey> have
+        // well-defined hashCode()s
+        return Objects.hash(
+            getCreationTime(),
+            this.creationBlockNumber,
+            getNumberOfSignaturesRequired(),
+            getBtcPublicKeys(),
+            getErpPubKeys(),
+            getActivationDelay()
+        );
     }
 }
