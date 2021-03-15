@@ -43,11 +43,10 @@ import org.slf4j.LoggerFactory;
  * @author Ariel Mendelzon
  */
 public final class PendingFederation {
+    private static final Logger logger = LoggerFactory.getLogger("PendingFederation");
     private static final int MIN_MEMBERS_REQUIRED = 2;
 
     private final List<FederationMember> members;
-
-    private static final Logger logger = LoggerFactory.getLogger("PendingFederation");
 
     public PendingFederation(List<FederationMember> members) {
         // Sorting members ensures same order for members

@@ -48,7 +48,7 @@ public abstract class FastBridgeCompatibleBtcWallet extends BridgeBtcWallet {
             RedeemScriptParser parser = RedeemScriptParserFactory.get(fedRedeemScript.getChunks());
             Script fastBridgeRedeemScript;
 
-            if (parser.getMultiSigType().equals(MultiSigType.ERP_FED)) {
+            if (parser.getMultiSigType() == MultiSigType.ERP_FED) {
                 fastBridgeRedeemScript = FastBridgeErpRedeemScriptParser.createFastBridgeErpRedeemScript(
                     fedRedeemScript,
                     Sha256Hash.wrap(fastBridgeFederationInformationInstance
