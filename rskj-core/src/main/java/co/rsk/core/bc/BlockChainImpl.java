@@ -140,7 +140,7 @@ public class BlockChainImpl implements Blockchain {
             }
 
             if (!block.isSealed()) {
-                panicProcessor.panic("unsealedblock", String.format("Unsealed block %s %s", block.getNumber(), block.getHash()));
+                //panicProcessor.panic("unsealedblock", String.format("Unsealed block %s %s", block.getNumber(), block.getHash()));
                 block.seal();
             }
 

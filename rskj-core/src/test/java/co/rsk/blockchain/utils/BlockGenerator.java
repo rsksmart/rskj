@@ -218,6 +218,7 @@ public class BlockGenerator {
     }
 
     public Block createChildBlock(Block parent, int ntxs, long difficulty) {
+
         List<Transaction> txs = new ArrayList<>();
 
         for (int ntx = 0; ntx < ntxs; ntx++) {
@@ -239,8 +240,16 @@ public class BlockGenerator {
     }
 
 
+    static int blockCounter = 0;
+
     public Block createChildBlock(Block parent, List<Transaction> txs, List<BlockHeader> uncles,
                                   long difficulty, BigInteger minGasPrice, byte[] gasLimit, RskAddress coinbase) {
+
+        // CreateChildBlock callers ASSUME that every time this method is called
+        // EVEN if it's called with the same arguments, it will create a block with DIFFERENT
+        // hash. Since we can't use the block timestamp as before, we'll use the ExtraData value for a counter.
+        //
+
         if (txs == null) {
             txs = new ArrayList<>();
         }
@@ -276,8 +285,10 @@ public class BlockGenerator {
                 .setMinimumGasPrice(coinMinGasPrice)
                 .setUncleCount(uncles.size())
                 .setUmmRoot(ummRoot)
+                .setExtraData(BigInteger.valueOf(blockCounter).toByteArray())
                 .build();
 
+        blockCounter++;
         if (difficulty == 0) {
             newHeader.setDifficulty(difficultyCalculator.calcDifficulty(newHeader, parent.getHeader()));
         } else {

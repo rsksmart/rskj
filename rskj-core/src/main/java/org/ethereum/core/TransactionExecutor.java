@@ -126,7 +126,10 @@ public class TransactionExecutor {
         this.txindex = txindex;
         this.coinbase = coinbase;
         this.track = track;
-        this.rentTracker = new RentTracker(executionBlock.getTimestamp());
+        if (this.activations.isActive(ConsensusRule.RSKIPSR))
+            this.rentTracker = new RentTracker(executionBlock.getTimestamp());
+        else
+            this.rentTracker = null;
         this.cacheTrack = track.startTracking(rentTracker);
         this.blockStore = blockStore;
         this.receiptStore = receiptStore;

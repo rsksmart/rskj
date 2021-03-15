@@ -36,6 +36,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.math.BigInteger;
+import java.time.Clock;
 import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -72,6 +73,7 @@ public class TransactionPoolImpl implements TransactionPool {
     private Block bestBlock;
 
     private final TxPendingValidator validator;
+    private TransactionPoolMode forTesting = TransactionPoolMode.NORMAL;
 
     public TransactionPoolImpl(
             RskSystemProperties config,
@@ -82,7 +84,7 @@ public class TransactionPoolImpl implements TransactionPool {
             TransactionExecutorFactory transactionExecutorFactory,
             SignatureCache signatureCache,
             int outdatedThreshold,
-            int outdatedTimeout) {
+            int outdatedTimeout, TransactionPoolMode forTesting) {
         this.config = config;
         this.blockStore = blockStore;
         this.repositoryLocator = repositoryLocator;
@@ -92,6 +94,7 @@ public class TransactionPoolImpl implements TransactionPool {
         this.signatureCache = signatureCache;
         this.outdatedThreshold = outdatedThreshold;
         this.outdatedTimeout = outdatedTimeout;
+        this.forTesting = forTesting;
 
         this.validator = new TxPendingValidator(config.getNetworkConstants(), config.getActivationConfig(), config.getNumOfAccountSlots());
 
@@ -138,8 +141,10 @@ public class TransactionPoolImpl implements TransactionPool {
         return getPendingState(getCurrentRepository());
     }
 
+
     private PendingState getPendingState(RepositorySnapshot currentRepository) {
         removeObsoleteTransactions(this.outdatedThreshold, this.outdatedTimeout);
+
         return new PendingState(
                 currentRepository,
                 new TransactionSet(pendingTransactions),
@@ -453,16 +458,39 @@ public class TransactionPoolImpl implements TransactionPool {
 
         return bestBlock.getNumber();
     }
+    public final int timeAdjustment = 15;
 
+    public long calculateTimestampForChild(BlockHeader parentHeader) {
+        long previousTimestamp = parentHeader.getTimestamp();
+
+        if (forTesting==TransactionPoolMode.TESTING_WITHOUT_STORAGE_RENT) {
+            // Here we assume "1" won't ever be enough to force a rent collection.
+            return previousTimestamp + 1;
+        }
+        if (forTesting==TransactionPoolMode.TESTING_WITH_STORAGE_RENT) {
+            return previousTimestamp + timeAdjustment;
+        }
+
+        long ret = Clock.systemUTC().instant().plusSeconds(timeAdjustment).getEpochSecond();
+        return Long.max(ret, previousTimestamp + 1);
+    }
     private Block createFakePendingBlock(Block best) {
         // creating fake lightweight calculated block with no hashes calculations
+        // To be able to realistically track rent, we set the block timestamp
+        // as the current time plus 1 minute.
+        // Testing is a problem, because tests are using the genesis block as "best".
+        // But storage rent time start time (RentTracker.RSK_START_DATE) is much later
+        // than genesis block timestamp.
+        // For testing, the block time should be deterministic.
+        // TODO: a security margin of more than 1 minute may be necessary.
+        long timeStamp =calculateTimestampForChild(best.getHeader());
         return blockFactory.newBlock(
                 blockFactory.getBlockHeaderBuilder()
                     .setParentHash(best.getHash().getBytes())
                     .setDifficulty(best.getDifficulty())
                     .setNumber(best.getNumber() + 1)
                     .setGasLimit(ByteUtil.longToBytesNoLeadZeroes(Long.MAX_VALUE))
-                    .setTimestamp(best.getTimestamp() + 1)
+                    .setTimestamp(timeStamp)
                     .build()
                 ,
                 Collections.emptyList(),

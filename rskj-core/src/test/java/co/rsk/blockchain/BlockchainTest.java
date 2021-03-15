@@ -121,6 +121,7 @@ public class BlockchainTest {
         Assert.assertEquals(ImportResult.NO_PARENT, blockchain.tryToConnect(block2));
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockchain.tryToConnect(block1));
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockchain.tryToConnect(block2));
+        // falla
         Assert.assertEquals(ImportResult.IMPORTED_NOT_BEST, blockchain.tryToConnect(block1b));
         Assert.assertEquals(ImportResult.EXIST, blockchain.tryToConnect(block1));
         Assert.assertEquals(ImportResult.EXIST, blockchain.tryToConnect(block1b));

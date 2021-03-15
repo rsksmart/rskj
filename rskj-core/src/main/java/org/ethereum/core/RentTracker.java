@@ -15,7 +15,8 @@ public class RentTracker {
     private long rentDue;
 
     public RentTracker(long currentTime) {
-        this.currentTime = currentTime;
+        this.currentTime = correctTime(currentTime);
+
     }
     public void trackCreateRent(byte[] key,int valueLength) {
         // we do nothing now.
@@ -65,11 +66,25 @@ public class RentTracker {
         else
             trackReadRent(nodedata.getValueLength(),nodedata.getLastRentPaidTime());
     }
+
+    private  long correctTime(long time) {
+        // Test cases use timestamps that are close to zero, therefore either
+        // we move all timestamps used by tests to start in RSK_START_DATE or
+        // we keep using values close to zero, and we move them all to the
+        // RSK_START_DATE+n range. To avoid changing testing code, we do the second option
+        // now.
+        if (time<0) return time; // special values
+
+        if (time<RSK_START_DATE)
+            time = RSK_START_DATE+time;
+
+        return time;
+
+    }
     // The method is called for each READ operation
     // the received values are the values read.
     public void trackReadRent(int valueLength,long time) {
-        if (time==0)
-            time = RSK_START_DATE;
+        time = correctTime(time);
         if (time==-1) // old node time -1 means new node
             return; // nothing to do
         long timeDelta = currentTime - time;
@@ -83,8 +98,7 @@ public class RentTracker {
 
     public void trackRewriteRent(int oldValueLength,long oldTime,
                                  int newValueLength) {
-        if (oldTime==0)
-            oldTime = RSK_START_DATE;
+        oldTime = correctTime(oldTime);
         if (oldTime==-1) // new node
             return; // nothing to do
 

@@ -27,6 +27,7 @@ import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.core.bc.TransactionPoolImpl;
+import co.rsk.core.bc.TransactionPoolMode;
 import co.rsk.db.*;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieConverter;
@@ -153,7 +154,7 @@ public class TestRunner {
         StateRootHandler stateRootHandler = new StateRootHandler(config.getActivationConfig(), new TrieConverter(), new HashMapDB(), new HashMap<>());
         RepositoryLocator repositoryLocator = new RepositoryLocator(trieStore, stateRootHandler);
 
-        TransactionPoolImpl transactionPool = new TransactionPoolImpl(config, repositoryLocator, null, blockFactory, listener, transactionExecutorFactory,  new ReceivedTxSignatureCache(), 10, 100);
+        TransactionPoolImpl transactionPool = new TransactionPoolImpl(config, repositoryLocator, null, blockFactory, listener, transactionExecutorFactory,  new ReceivedTxSignatureCache(), 10, 100, TransactionPoolMode.TESTING_WITHOUT_STORAGE_RENT);
 
         BlockChainImpl blockchain = new BlockChainImpl(
                 blockStore,

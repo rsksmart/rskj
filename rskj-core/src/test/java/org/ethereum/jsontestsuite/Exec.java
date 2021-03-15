@@ -65,7 +65,9 @@ public class Exec {
         String data = exec.get("data").toString();
 
         String gas = exec.get("gas").toString();
-        String rentGas = exec.get("rentGas").toString(); // #mish shadowing gas
+        String rentGas ="0";
+        if (exec.get("rentGas")!=null)
+             rentGas = exec.get("rentGas").toString(); // #mish shadowing gas
         String gasPrice = exec.get("gasPrice").toString();
         String origin = exec.get("origin").toString();
 
