@@ -48,7 +48,6 @@ import java.util.stream.Collectors;
  * Created by mario on 20/04/17.
  */
 public class BridgeSerializationUtils {
-
     private static final int FEDERATION_RLP_LIST_SIZE = 3;
     private static final int FEDERATION_CREATION_TIME_INDEX = 0;
     private static final int FEDERATION_CREATION_BLOCK_NUMBER_INDEX = 1;
@@ -750,10 +749,11 @@ public class BridgeSerializationUtils {
     }
 
     public static Sha256Hash deserializeSha256Hash(byte[] data) {
-        if (data == null) {
+        RLPElement element = RLP.decodeFirstElement(data, 0);
+        if (element == null) {
             return null;
         }
-        return Sha256Hash.wrap(RLP.decodeBigInteger(data, 0).toByteArray());
+        return Sha256Hash.wrap(element.getRLPData());
     }
 
     public static byte[] serializeScript(Script script) {
