@@ -52,6 +52,7 @@ import static org.mockito.Mockito.mock;
 import static org.powermock.api.mockito.PowerMockito.when;
 
 public class BridgeSerializationUtilsTest {
+
     @Test
     public void serializeMapOfHashesToLong() throws Exception {
         Map<Sha256Hash, Long> sample = new HashMap<>();
@@ -1036,6 +1037,15 @@ public class BridgeSerializationUtilsTest {
     public void deserializeSha256Hash_nullValue() {
         Sha256Hash result = BridgeSerializationUtils.deserializeSha256Hash(null);
         Assert.assertNull(result);
+    }
+
+    @Test
+    public void deserializeSha256Hash_hashWithLeadingZero() {
+        Sha256Hash originalHash = PegTestUtils.createHash(0);
+        byte[] encodedHash = RLP.encodeElement(originalHash.getBytes());
+
+        Sha256Hash result = BridgeSerializationUtils.deserializeSha256Hash(encodedHash);
+        Assert.assertEquals(originalHash, result);
     }
 
     @Test
