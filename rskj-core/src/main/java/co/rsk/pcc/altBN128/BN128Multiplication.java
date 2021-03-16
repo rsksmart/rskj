@@ -18,10 +18,9 @@
 
 package co.rsk.pcc.altBN128;
 
+import co.rsk.pcc.altBN128.impls.AbstractAltBN128;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.vm.GasCost;
-import org.ethereum.vm.PrecompiledContracts;
-
-import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
 /**
  * Computes multiplication of scalar value on a point belonging to Barreto–Naehrig curve.
@@ -42,7 +41,11 @@ import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
  * @author Sebastian Sicardi
  * @since 10.09.2019
  */
-public class BN128Multiplication extends PrecompiledContracts.PrecompiledContract {
+public class BN128Multiplication extends BN128PrecompiledContract {
+
+    public BN128Multiplication(ActivationConfig.ForBlock activations, AbstractAltBN128 altBN128) {
+        super(activations, altBN128);
+    }
 
     @Override
     public long getGasForData(byte[] data) {
@@ -50,15 +53,7 @@ public class BN128Multiplication extends PrecompiledContracts.PrecompiledContrac
     }
 
     @Override
-    public byte[] execute(byte[] data) {
-        if (data == null) {
-            data = EMPTY_BYTE_ARRAY;
-        }
-        AltBN128 altBN128 = new AltBN128();
-        int rs = altBN128.mul(data, data.length);
-        if (rs < 0) {
-            return EMPTY_BYTE_ARRAY;
-        }
-        return altBN128.getOutput();
+    protected int concreteExecute(byte[] data) {
+        return altBN128Lib.mul(data, data.length);
     }
 }
