@@ -1192,6 +1192,20 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         }
     }
 
+    public byte[] getBitcoinParentByHash(Object[] args) {
+        logger.trace("getBitcoinParentByHash");
+
+        try {
+            byte[] hashBytes = (byte[])args[0];
+            Sha256Hash hash = new Sha256Hash(hashBytes);
+
+            return this.bridgeSupport.getBtcParentBlockHeaderByHash(hash);
+        } catch (Exception e) {
+            logger.warn("Exception in getBitcoinHeaderByHash", e);
+            return null;
+        }
+    }
+
     public static BridgeMethods.BridgeMethodExecutor activeAndRetiringFederationOnly(BridgeMethods.BridgeMethodExecutor decoratee, String funcName) {
         return (self, args) -> {
             Federation retiringFederation = self.bridgeSupport.getRetiringFederation();

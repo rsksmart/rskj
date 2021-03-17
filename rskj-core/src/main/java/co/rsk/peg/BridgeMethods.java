@@ -657,6 +657,17 @@ public enum BridgeMethods {
             (BridgeMethodExecutorTyped) Bridge::getBitcoinHeaderByHash,
             activations -> true, // TODO: Review activation
             false
+    ),
+    GET_BITCOIN_PARENT_BY_HASH(
+            CallTransaction.Function.fromSignature(
+                    "getBitcoinParentByHash",
+                    new String[]{"bytes32"},
+                    new String[]{"bytes"}
+            ),
+            fixedCost(10000L),  // TODO: Define a cost
+            (BridgeMethodExecutorTyped) Bridge::getBitcoinParentByHash,
+            activations -> true, // TODO: Review activation
+            false
     );
 
     private final CallTransaction.Function function;
