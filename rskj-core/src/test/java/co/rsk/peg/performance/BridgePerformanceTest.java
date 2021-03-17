@@ -37,7 +37,6 @@ import org.junit.runners.Suite;
         FederationChangeTest.class,
         VoteFeePerKbChangeTest.class,
         GetFeePerKbTest.class,
-        LockWhitelistTest.class,
         StateForBtcReleaseClientTest.class,
         GetBtcTransactionConfirmationsTest.class,
         RegisterBtcCoinbaseTransactionTest.class,
