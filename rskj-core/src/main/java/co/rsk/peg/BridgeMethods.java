@@ -614,6 +614,17 @@ public enum BridgeMethods {
             activations -> activations.isActive(RSKIP176),
             false
     ),
+    GET_BEST_BLOCK_HEADER(
+            CallTransaction.Function.fromSignature(
+                    "getBestBlockHeader",
+                    new String[0],
+                    new String[]{"bytes"}
+            ),
+            fixedCost(10000L),  // TODO: Define a cost
+            (BridgeMethodExecutorTyped) Bridge::getBestBlockHeader,
+            activations -> true, // TODO: Review activation
+            false
+    ),
     GET_BEST_BLOCK_NUMBER(
             CallTransaction.Function.fromSignature(
                     "getBestBlockNumber",
