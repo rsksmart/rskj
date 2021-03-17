@@ -82,8 +82,8 @@ public class BtcBlockchainTest extends BridgePerformanceTestCase {
                 repository,
                 new HashMap<>(),
                 PrecompiledContracts.BRIDGE_ADDR,
-                null,
-                null,
+                bridgeConstants,
+                provider,
                 null
             );
             Context btcContext = new Context(networkParameters);
@@ -98,6 +98,5 @@ public class BtcBlockchainTest extends BridgePerformanceTestCase {
             Helper.generateAndAddBlocks(btcBlockChain, blocksToGenerate);
         };
     }
-
 
 }
