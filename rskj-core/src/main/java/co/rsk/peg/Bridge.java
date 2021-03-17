@@ -1145,6 +1145,17 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         }
     }
 
+    public byte[] getBestBlockHeader(Object[] args) {
+        logger.trace("getBestBlockHeader");
+
+        try {
+            return this.bridgeSupport.getBtcBlockchainSerializedBestBlockHeader();
+        } catch (Exception e) {
+            logger.warn("Exception in getBestBlockHeader", e);
+            return null;
+        }
+    }
+
     public long getBestBlockNumber(Object[] args) {
         logger.trace("getBestBlockNumber");
 

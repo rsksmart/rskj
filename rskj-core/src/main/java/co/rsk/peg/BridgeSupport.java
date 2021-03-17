@@ -1356,6 +1356,20 @@ public class BridgeSupport {
         return blockLocator;
     }
 
+    public byte[] getBtcBlockchainSerializedBestBlockHeader() throws BlockStoreException, IOException {
+        this.ensureBtcBlockStore();
+
+        StoredBlock head = btcBlockStore.getChainHead();
+
+        byte[] bytes = head.getHeader().unsafeBitcoinSerialize();
+
+        byte[] header = new byte[80];
+
+        System.arraycopy(bytes, 0, header, 0, 80);
+
+        return header;
+    }
+
     public Sha256Hash getBtcBlockchainBlockHashAtDepth(int depth) throws BlockStoreException, IOException {
         Context.propagate(btcContext);
         this.ensureBtcBlockStore();
