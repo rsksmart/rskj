@@ -613,6 +613,17 @@ public enum BridgeMethods {
             (BridgeMethodExecutorTyped) Bridge::registerFastBridgeBtcTransaction,
             activations -> activations.isActive(RSKIP176),
             false
+    ),
+    GET_BEST_BLOCK_NUMBER(
+            CallTransaction.Function.fromSignature(
+                    "getBestBlockNumber",
+                    new String[0],
+                    new String[]{"uint256"}
+            ),
+            fixedCost(10000L),  // TODO: Define a cost
+            (BridgeMethodExecutorTyped) Bridge::getBestBlockNumber,
+            activations -> true, // TODO: Review activation
+            false
     );
 
     private final CallTransaction.Function function;

@@ -1145,6 +1145,17 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         }
     }
 
+    public long getBestBlockNumber(Object[] args) {
+        logger.trace("getBestBlockNumber");
+
+        try {
+            return this.bridgeSupport.getBtcBlockchainBestChainHeight();
+        } catch (Exception e) {
+            logger.warn("Exception in getBestBlockNumber", e);
+            return BridgeSupport.FAST_BRIDGE_GENERIC_ERROR;
+        }
+    }
+
     public static BridgeMethods.BridgeMethodExecutor activeAndRetiringFederationOnly(BridgeMethods.BridgeMethodExecutor decoratee, String funcName) {
         return (self, args) -> {
             Federation retiringFederation = self.bridgeSupport.getRetiringFederation();
