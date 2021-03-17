@@ -267,10 +267,15 @@ public class BridgeUtils {
         List<ScriptChunk> chunks = scriptSig.getChunks();
         Script redeemScript = new Script(chunks.get(chunks.size() - 1).data);
         RedeemScriptParser parser = RedeemScriptParserFactory.get(redeemScript.getChunks());
+        MultiSigType multiSigType;
 
         int lastChunk;
 
-        if (parser.getMultiSigType() == MultiSigType.STANDARD_MULTISIG) {
+        multiSigType = parser.getMultiSigType();
+
+        if (multiSigType == MultiSigType.STANDARD_MULTISIG ||
+            multiSigType == MultiSigType.FAST_BRIDGE_MULTISIG
+        ) {
             lastChunk = chunks.size() - 1;
         } else {
             lastChunk = chunks.size() - 2;
@@ -299,6 +304,7 @@ public class BridgeUtils {
         List<ScriptChunk> chunks;
         Script redeemScript;
         RedeemScriptParser parser;
+        MultiSigType multiSigType;
 
         int lastChunk;
         for (TransactionInput input : btcTx.getInputs()) {
@@ -306,12 +312,16 @@ public class BridgeUtils {
             chunks = scriptSig.getChunks();
             redeemScript = new Script(chunks.get(chunks.size() - 1).data);
             parser = RedeemScriptParserFactory.get(redeemScript.getChunks());
+            multiSigType = parser.getMultiSigType();
 
-            if (parser.getMultiSigType() == MultiSigType.STANDARD_MULTISIG) {
+            if (multiSigType == MultiSigType.STANDARD_MULTISIG ||
+            multiSigType == MultiSigType.FAST_BRIDGE_MULTISIG
+            ) {
                 lastChunk = chunks.size() - 1;
             } else {
                 lastChunk = chunks.size() - 2;
             }
+
             for (int i = 1; i < lastChunk; i++) {
                 ScriptChunk chunk = chunks.get(i);
                 if (!chunk.isOpCode() && chunk.data.length == 0) {
