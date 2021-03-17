@@ -635,6 +635,28 @@ public enum BridgeMethods {
             (BridgeMethodExecutorTyped) Bridge::getBestBlockNumber,
             activations -> true, // TODO: Review activation
             false
+    ),
+    GET_BEST_BLOCK_HASH(
+            CallTransaction.Function.fromSignature(
+                    "getBestBlockHash",
+                    new String[0],
+                    new String[]{"bytes32"}
+            ),
+            fixedCost(10000L),  // TODO: Define a cost
+            (BridgeMethodExecutorTyped) Bridge::getBestBlockHash,
+            activations -> true, // TODO: Review activation
+            false
+    ),
+    GET_BITCOIN_HEADER_BY_HASH(
+            CallTransaction.Function.fromSignature(
+                    "getBitcoinHeaderByHash",
+                    new String[]{"bytes32"},
+                    new String[]{"bytes"}
+            ),
+            fixedCost(10000L),  // TODO: Define a cost
+            (BridgeMethodExecutorTyped) Bridge::getBitcoinHeaderByHash,
+            activations -> true, // TODO: Review activation
+            false
     );
 
     private final CallTransaction.Function function;

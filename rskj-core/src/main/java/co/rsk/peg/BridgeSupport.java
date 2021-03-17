@@ -1356,6 +1356,24 @@ public class BridgeSupport {
         return blockLocator;
     }
 
+    public byte[] getBtcBlockHeaderByHash(Sha256Hash hash) throws IOException, BlockStoreException {
+        this.ensureBtcBlockStore();
+
+        StoredBlock block = btcBlockStore.get(hash);
+
+        if (block == null) {
+            return null;
+        }
+
+        byte[] bytes = block.getHeader().unsafeBitcoinSerialize();
+
+        byte[] header = new byte[80];
+
+        System.arraycopy(bytes, 0, header, 0, 80);
+
+        return header;
+    }
+
     public byte[] getBtcBlockchainSerializedBestBlockHeader() throws BlockStoreException, IOException {
         this.ensureBtcBlockStore();
 
@@ -1368,6 +1386,14 @@ public class BridgeSupport {
         System.arraycopy(bytes, 0, header, 0, 80);
 
         return header;
+    }
+
+    public Sha256Hash getBtcBlockchainBestBlockHash() throws BlockStoreException, IOException {
+        this.ensureBtcBlockStore();
+
+        StoredBlock head = btcBlockStore.getChainHead();
+
+        return head.getHeader().getHash();
     }
 
     public Sha256Hash getBtcBlockchainBlockHashAtDepth(int depth) throws BlockStoreException, IOException {
