@@ -1272,7 +1272,7 @@ public class BridgeSupport {
             provider.getRskTxsWaitingForSignatures().remove(new Keccak256(rskTxHash));
 
             eventLogger.logReleaseBtc(btcTx, rskTxHash);
-        } else {
+        } else if (logger.isDebugEnabled()) {
             int missingSignatures = BridgeUtils.countMissingSignatures(btcContext, btcTx);
             int neededSignatures = federation.getNumberOfSignaturesRequired();
             int signaturesCount = neededSignatures - missingSignatures;
