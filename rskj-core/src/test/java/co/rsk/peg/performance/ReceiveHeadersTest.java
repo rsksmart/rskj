@@ -132,8 +132,8 @@ public class ReceiveHeadersTest extends BridgePerformanceTestCase {
                         (Repository) environment.getBenchmarkedRepository(),
                         new HashMap<>(),
                         PrecompiledContracts.BRIDGE_ADDR,
-                        null,
-                        null,
+                        bridgeConstants,
+                        (BridgeStorageProvider) environment.getStorageProvider(),
                         null
                     );
                     Sha256Hash bestBlockHash = null;
