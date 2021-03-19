@@ -101,7 +101,7 @@ public class ReleaseBtcTest extends BridgePerformanceTestCase {
         };
 
         executeAndAverage(
-                "releaseBtc_success",
+                "releaseBtc_refund",
                 times,
                 getABIEncoder(),
                 storageInitializer,
