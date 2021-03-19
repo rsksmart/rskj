@@ -103,10 +103,10 @@ public class ReceiveHeaderTest extends BridgePerformanceTestCase {
         );
     }
 
-    private ABIEncoder getABIEncoder(boolean testExistedBlock) {
+    private ABIEncoder getABIEncoder(boolean testExistingBlock) {
         return (int executionIndex) -> {
             BtcBlock block = null;
-            if (testExistedBlock) {
+            if (testExistingBlock) {
                 // lastBlock is an already existing block.
                 block = lastBlock.cloneAsHeader();
             } else {
