@@ -620,7 +620,7 @@ public enum BridgeMethods {
                     new String[0],
                     new String[]{"bytes"}
             ),
-            fixedCost(10000L),  // TODO: Define a cost
+            fixedCost(20000L),
             (BridgeMethodExecutorTyped) Bridge::getBestBlockHeader,
             activations -> true, // TODO: Review activation
             false
@@ -631,7 +631,7 @@ public enum BridgeMethods {
                     new String[0],
                     new String[]{"uint256"}
             ),
-            fixedCost(10000L),  // TODO: Define a cost
+            fixedCost(20000L),
             (BridgeMethodExecutorTyped) Bridge::getBestBlockNumber,
             activations -> true, // TODO: Review activation
             false
@@ -642,7 +642,7 @@ public enum BridgeMethods {
                     new String[0],
                     new String[]{"bytes32"}
             ),
-            fixedCost(10000L),  // TODO: Define a cost
+            fixedCost(20000L),
             (BridgeMethodExecutorTyped) Bridge::getBestBlockHash,
             activations -> true, // TODO: Review activation
             false
@@ -653,7 +653,7 @@ public enum BridgeMethods {
                     new String[]{"bytes32"},
                     new String[]{"bytes"}
             ),
-            fixedCost(10000L),  // TODO: Define a cost
+            fixedCost(20000L),
             (BridgeMethodExecutorTyped) Bridge::getBitcoinHeaderByHash,
             activations -> true, // TODO: Review activation
             false
@@ -664,7 +664,7 @@ public enum BridgeMethods {
                     new String[]{"bytes32"},
                     new String[]{"bytes"}
             ),
-            fixedCost(10000L),  // TODO: Define a cost
+            fixedCost(20000L),
             (BridgeMethodExecutorTyped) Bridge::getBitcoinParentByHash,
             activations -> true, // TODO: Review activation
             false
@@ -675,7 +675,7 @@ public enum BridgeMethods {
                     new String[]{"uint256"},
                     new String[]{"bytes"}
             ),
-            fixedCost(10000L),  // TODO: Define a cost
+            fixedCost(20000L),
             (BridgeMethodExecutorTyped) Bridge::getBitcoinHeaderByHeight,
             activations -> true, // TODO: Review activation
             false
