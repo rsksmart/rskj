@@ -68,5 +68,35 @@ public class TransactionResultDTOTest {
 
         Assert.assertEquals(expectedV, dto.v);
     }
+
+    @Test
+    public void transactionWithZeroNonce() {
+        Transaction originalTransaction = CallTransaction.createCallTransaction(
+                0, 0, 100000000000000L,
+                new RskAddress("095e7baea6a6c7c4c2dfeb977efac326af552d87"), 0,
+                CallTransaction.Function.fromSignature("get"), chainId);
+
+        originalTransaction.sign(new byte[]{});
+
+        TransactionResultDTO dto = new TransactionResultDTO(mock(Block.class), 42, originalTransaction);
+
+        Assert.assertNotNull(dto.nonce);
+        Assert.assertEquals("0x0", dto.nonce);
+    }
+
+    @Test
+    public void transactionWithOneNonceWithoutLeadingZeroes() {
+        Transaction originalTransaction = CallTransaction.createCallTransaction(
+                1, 0, 100000000000000L,
+                new RskAddress("095e7baea6a6c7c4c2dfeb977efac326af552d87"), 0,
+                CallTransaction.Function.fromSignature("get"), chainId);
+
+        originalTransaction.sign(new byte[]{});
+
+        TransactionResultDTO dto = new TransactionResultDTO(mock(Block.class), 42, originalTransaction);
+
+        Assert.assertNotNull(dto.nonce);
+        Assert.assertEquals("0x1", dto.nonce);
+    }
 }
 
