@@ -1192,6 +1192,19 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         }
     }
 
+    public byte[] getBitcoinHeaderByHeight(Object[] args) {
+        logger.trace("getBitcoinHeaderByHeight");
+
+        try {
+            int height = ((BigInteger) args[0]).intValue();
+
+            return this.bridgeSupport.getBtcBlockHeaderByHeight(height);
+        } catch (Exception e) {
+            logger.warn("Exception in getBitcoinHeaderByHeight", e);
+            return null;
+        }
+    }
+
     public byte[] getBitcoinParentByHash(Object[] args) {
         logger.trace("getBitcoinParentByHash");
 

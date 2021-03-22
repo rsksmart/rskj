@@ -1435,6 +1435,34 @@ public class BridgeSupport {
         return blockAtDepth.getHeader().getHash();
     }
 
+    public byte[] getBtcBlockHeaderByHeight(int height) throws BlockStoreException, IOException {
+        Context.propagate(btcContext);
+        this.ensureBtcBlockStore();
+
+        StoredBlock head = btcBlockStore.getChainHead();
+        int highestHeight= head.getHeight();
+        int lowestHeight = getLowestBlock().getHeight();
+        int maxDepth = head.getHeight() - getLowestBlock().getHeight();
+
+        if (height < lowestHeight || height > highestHeight) {
+            throw new IndexOutOfBoundsException(String.format("Height must be between %d and %d", lowestHeight, highestHeight));
+        }
+
+        StoredBlock block = btcBlockStore.getStoredBlockAtMainChainDepth(highestHeight - height);
+
+        if (block == null) {
+            return null;
+        }
+
+        byte[] bytes = block.getHeader().unsafeBitcoinSerialize();
+
+        byte[] header = new byte[80];
+
+        System.arraycopy(bytes, 0, header, 0, 80);
+
+        return header;
+    }
+
     public Long getBtcTransactionConfirmationsGetCost(Object[] args) {
         final long BASIC_COST = 27_000;
         final long STEP_COST = 315;
