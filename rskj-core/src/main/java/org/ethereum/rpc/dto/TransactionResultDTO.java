@@ -24,9 +24,6 @@ import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.signature.ECDSASignature;
 import org.ethereum.rpc.TypeConverter;
-import org.ethereum.util.ByteUtil;
-
-import java.util.Arrays;
 
 /**
  * Created by Ruben on 8/1/2016.
