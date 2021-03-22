@@ -143,6 +143,25 @@ public class Web3ImplUnitTest {
                 result);
     }
 
+
+    @Test
+    public void eth_getStorageAtEmptyCell() {
+        String id = "id";
+        String addr = "0x0011223344556677880011223344556677889900";
+        RskAddress expectedAddress = new RskAddress(addr);
+        String storageIdx = "0x01";
+        DataWord expectedIdx = DataWord.valueOf(stringHexToByteArray(storageIdx));
+
+        AccountInformationProvider aip = mock(AccountInformationProvider.class);
+        when(retriever.getInformationProvider(eq(id))).thenReturn(aip);
+        when(aip.getStorageValue(eq(expectedAddress), eq(expectedIdx)))
+                .thenReturn(null);
+
+        String result = target.eth_getStorageAt(addr, storageIdx, id);
+        assertEquals("0x0",
+                result);
+    }
+
     @Test
     public void eth_getBlockTransactionCountByNumber_blockNotFound() {
         String id = "id";

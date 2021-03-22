@@ -409,7 +409,7 @@ public class Web3Impl implements Web3 {
                     .getStorageValue(addr, DataWord.valueOf(stringHexToByteArray(storageIdx)));
 
             if (sv == null) {
-                s = null;
+                s = "0x0";
             } else {
                 s = toUnformattedJsonHex(sv.getData());
             }
