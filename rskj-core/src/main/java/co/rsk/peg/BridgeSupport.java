@@ -1359,19 +1359,7 @@ public class BridgeSupport {
     public byte[] getBtcBlockHeaderByHash(Sha256Hash hash) throws IOException, BlockStoreException {
         this.ensureBtcBlockStore();
 
-        StoredBlock block = btcBlockStore.get(hash);
-
-        if (block == null) {
-            return null;
-        }
-
-        byte[] bytes = block.getHeader().unsafeBitcoinSerialize();
-
-        byte[] header = new byte[80];
-
-        System.arraycopy(bytes, 0, header, 0, 80);
-
-        return header;
+        return serializeBlockHeader(btcBlockStore.get(hash));
     }
 
     public byte[] getBtcParentBlockHeaderByHash(Sha256Hash hash) throws IOException, BlockStoreException {
@@ -1380,36 +1368,16 @@ public class BridgeSupport {
         StoredBlock block = btcBlockStore.get(hash);
 
         if (block == null) {
-            return null;
+            return ByteUtil.EMPTY_BYTE_ARRAY;
         }
 
-        StoredBlock parent = btcBlockStore.get(block.getHeader().getPrevBlockHash());
-
-        if (parent == null) {
-            return null;
-        }
-
-        byte[] bytes = parent.getHeader().unsafeBitcoinSerialize();
-
-        byte[] header = new byte[80];
-
-        System.arraycopy(bytes, 0, header, 0, 80);
-
-        return header;
+        return serializeBlockHeader(btcBlockStore.get(block.getHeader().getPrevBlockHash()));
     }
 
     public byte[] getBtcBlockchainSerializedBestBlockHeader() throws BlockStoreException, IOException {
         this.ensureBtcBlockStore();
 
-        StoredBlock head = btcBlockStore.getChainHead();
-
-        byte[] bytes = head.getHeader().unsafeBitcoinSerialize();
-
-        byte[] header = new byte[80];
-
-        System.arraycopy(bytes, 0, header, 0, 80);
-
-        return header;
+        return serializeBlockHeader(btcBlockStore.getChainHead());
     }
 
     public Sha256Hash getBtcBlockchainBestBlockHash() throws BlockStoreException, IOException {
@@ -1448,19 +1416,7 @@ public class BridgeSupport {
             throw new IndexOutOfBoundsException(String.format("Height must be between %d and %d", lowestHeight, highestHeight));
         }
 
-        StoredBlock block = btcBlockStore.getStoredBlockAtMainChainDepth(highestHeight - height);
-
-        if (block == null) {
-            return null;
-        }
-
-        byte[] bytes = block.getHeader().unsafeBitcoinSerialize();
-
-        byte[] header = new byte[80];
-
-        System.arraycopy(bytes, 0, header, 0, 80);
-
-        return header;
+        return serializeBlockHeader(btcBlockStore.getStoredBlockAtMainChainDepth(highestHeight - height));
     }
 
     public Long getBtcTransactionConfirmationsGetCost(Object[] args) {
@@ -3053,5 +3009,19 @@ public class BridgeSupport {
             amountToRetiring = btcTx.getValueSentToMe(retiringFederationWallet);
         }
         return amountToActive.add(amountToRetiring);
+    }
+
+    private static byte[] serializeBlockHeader(StoredBlock block) {
+        if (block == null) {
+            return ByteUtil.EMPTY_BYTE_ARRAY;
+        }
+
+        byte[] bytes = block.getHeader().unsafeBitcoinSerialize();
+
+        byte[] header = new byte[80];
+
+        System.arraycopy(bytes, 0, header, 0, 80);
+
+        return header;
     }
 }
