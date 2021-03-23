@@ -96,6 +96,19 @@ public class BridgeNewMethodsTest {
     }
 
     @Test
+    public void getBitcoinParentByHash() throws IOException, BlockStoreException {
+        byte[] hashBytes = new byte[32];
+        random.nextBytes(hashBytes);
+        byte[] header = new byte[80];
+        random.nextBytes(header);
+
+        when(bridgeSupport.getBtcParentBlockHeaderByHash(Sha256Hash.wrap(hashBytes))).thenReturn(header);
+        byte[] result = bridge.getBitcoinParentByHash(new Object[] { hashBytes });
+
+        Assert.assertArrayEquals(header, result);
+    }
+
+    @Test
     public void getBitcoinHeaderByHeight() throws IOException, BlockStoreException {
         byte[] header = new byte[80];
         random.nextBytes(header);

@@ -1210,7 +1210,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
 
         try {
             byte[] hashBytes = (byte[])args[0];
-            Sha256Hash hash = new Sha256Hash(hashBytes);
+            Sha256Hash hash = Sha256Hash.wrap(hashBytes);
 
             return this.bridgeSupport.getBtcParentBlockHeaderByHash(hash);
         } catch (Exception e) {
