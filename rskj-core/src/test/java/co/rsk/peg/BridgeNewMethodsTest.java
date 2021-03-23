@@ -1,5 +1,6 @@
 package co.rsk.peg;
 
+import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.config.TestSystemProperties;
 import org.ethereum.config.Constants;
@@ -66,5 +67,16 @@ public class BridgeNewMethodsTest {
         byte[] result = bridge.getBestBlockHeader(new Object[0]);
 
         Assert.assertArrayEquals(header, result);
+    }
+
+    @Test
+    public void getBestBlockHash() throws IOException, BlockStoreException {
+        byte[] hashBytes = new byte[32];
+        random.nextBytes(hashBytes);
+        Sha256Hash hash = new Sha256Hash(hashBytes);
+        when(bridgeSupport.getBtcBlockchainBestBlockHash()).thenReturn(hash);
+        byte[] result = bridge.getBestBlockHash(new Object[0]);
+
+        Assert.assertArrayEquals(hashBytes, result);
     }
 }
