@@ -7,11 +7,13 @@ import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.Block;
+import org.ethereum.vm.PrecompiledContracts;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.math.BigInteger;
 import java.util.Random;
 
 import static org.mockito.Mockito.*;
@@ -87,8 +89,20 @@ public class BridgeNewMethodsTest {
         byte[] header = new byte[80];
         random.nextBytes(header);
 
-        when(bridgeSupport.getBtcBlockHeaderByHash(any())).thenReturn(header);
+        when(bridgeSupport.getBtcBlockHeaderByHash(Sha256Hash.wrap(hashBytes))).thenReturn(header);
         byte[] result = bridge.getBitcoinHeaderByHash(new Object[] { hashBytes });
+
+        Assert.assertArrayEquals(header, result);
+    }
+
+    @Test
+    public void getBitcoinHeaderByHeight() throws IOException, BlockStoreException {
+        byte[] header = new byte[80];
+        random.nextBytes(header);
+        BigInteger height = BigInteger.TEN;
+
+        when(bridgeSupport.getBtcBlockHeaderByHeight(10)).thenReturn(header);
+        byte[] result = bridge.getBitcoinHeaderByHeight(new Object[] { height });
 
         Assert.assertArrayEquals(header, result);
     }
