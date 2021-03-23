@@ -73,10 +73,23 @@ public class BridgeNewMethodsTest {
     public void getBestBlockHash() throws IOException, BlockStoreException {
         byte[] hashBytes = new byte[32];
         random.nextBytes(hashBytes);
-        Sha256Hash hash = new Sha256Hash(hashBytes);
+        Sha256Hash hash = Sha256Hash.wrap(hashBytes);
         when(bridgeSupport.getBtcBlockchainBestBlockHash()).thenReturn(hash);
         byte[] result = bridge.getBestBlockHash(new Object[0]);
 
         Assert.assertArrayEquals(hashBytes, result);
+    }
+
+    @Test
+    public void getBitcoinHeaderByHash() throws IOException, BlockStoreException {
+        byte[] hashBytes = new byte[32];
+        random.nextBytes(hashBytes);
+        byte[] header = new byte[80];
+        random.nextBytes(header);
+
+        when(bridgeSupport.getBtcBlockHeaderByHash(any())).thenReturn(header);
+        byte[] result = bridge.getBitcoinHeaderByHash(new Object[] { hashBytes });
+
+        Assert.assertArrayEquals(header, result);
     }
 }
