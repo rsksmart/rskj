@@ -1374,7 +1374,7 @@ public class BridgeSupport {
         return serializeBlockHeader(btcBlockStore.get(block.getHeader().getPrevBlockHash()));
     }
 
-    public byte[] getBtcBlockchainSerializedBestBlockHeader() throws BlockStoreException, IOException {
+    public byte[] getBtcBlockchainBestBlockHeader() throws BlockStoreException, IOException {
         this.ensureBtcBlockStore();
 
         return serializeBlockHeader(btcBlockStore.getChainHead());
@@ -1403,14 +1403,13 @@ public class BridgeSupport {
         return blockAtDepth.getHeader().getHash();
     }
 
-    public byte[] getBtcBlockHeaderByHeight(int height) throws BlockStoreException, IOException {
+    public byte[] getBtcBlockchainBlockHeaderByHeight(int height) throws BlockStoreException, IOException {
         Context.propagate(btcContext);
         this.ensureBtcBlockStore();
 
         StoredBlock head = btcBlockStore.getChainHead();
-        int highestHeight= head.getHeight();
+        int highestHeight = head.getHeight();
         int lowestHeight = getLowestBlock().getHeight();
-        int maxDepth = head.getHeight() - getLowestBlock().getHeight();
 
         if (height < lowestHeight || height > highestHeight) {
             throw new IndexOutOfBoundsException(String.format("Height must be between %d and %d", lowestHeight, highestHeight));
