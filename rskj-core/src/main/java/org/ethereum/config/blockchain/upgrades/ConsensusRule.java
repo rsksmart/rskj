@@ -63,11 +63,11 @@ public enum ConsensusRule {
     RSKIPUMM("rskipUMM"),
     RSKIP185("rskip185"), // Peg-out refund and events
     RSKIP191("rskip191"),
-    RSKIP197("rskip197"), //Handle error in Precompile Contracts execution.
+    RSKIP197("rskip197"), // Handle error in Precompile Contracts execution.
     RSKIP199("rskip199"),
     RSKIP200("rskip200"),
     RSKIP201("rskip201"),
-    RSKIPXYZ("rskipXYZ");
+    RSKIP218("rskip218"); // New rewards fee adddress
 
     private String configKey;
 

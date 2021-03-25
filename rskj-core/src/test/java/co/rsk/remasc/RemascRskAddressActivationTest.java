@@ -24,15 +24,14 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
 import org.ethereum.db.BlockStore;
 import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.PrecompiledContracts;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Mockito;
 
 import java.util.Collections;
 import java.util.List;
@@ -42,39 +41,45 @@ import static org.powermock.api.mockito.PowerMockito.spy;
 
 public class RemascRskAddressActivationTest {
 
-    private RemascConfig remascConfig;
-    private Block blockMock;
-    private Remasc remasc;
-
-    @Before
-    public void setUp() {
-        RemascTransaction txMock = Mockito.mock(RemascTransaction.class);
-        Repository repositoryMock = Mockito.mock(Repository.class);
-        BlockStore blockStoreMock = Mockito.mock(BlockStore.class);
-        ActivationConfig activationConfig = new TestSystemProperties().getActivationConfig();
-        List<LogInfo> logs = Collections.emptyList();
-
-        blockMock = mock(Block.class);
-        remascConfig = spy(new RemascConfigFactory(RemascContract.REMASC_CONFIG).createRemascConfig("regtest"));
-        remasc = new Remasc(Constants.regtest(), activationConfig, repositoryMock, blockStoreMock, remascConfig, txMock, PrecompiledContracts.REMASC_ADDR, blockMock, logs);
-    }
-
     @Test
     public void testActivation() {
-        final RskAddress oldAddress = new RskAddress("0000000000000000000000000000000001000001");
-        final RskAddress newAddress = new RskAddress("0000000000000000000000000000000001000002");
+        final RskAddress rskLabsAddress = new RskAddress("14d3065c8Eb89895f4df12450EC6b130049F8034");
+        final RskAddress rskLabsAddressRskip218 = new RskAddress("dcb12179ba4697350f66224c959bdd9c282818df");
 
-        when(remascConfig.getRskLabsAddress()).thenReturn(oldAddress);
-        when(remascConfig.getRskLabsAddressRskipXyz()).thenReturn(newAddress);
+        final RemascTransaction txMock = mock(RemascTransaction.class);
+        final Repository repositoryMock = mock(Repository.class);
+        final BlockStore blockStoreMock = mock(BlockStore.class);
+        final List<LogInfo> logs = Collections.emptyList();
+        final ActivationConfig activationConfig = mock(ActivationConfig.class);
+        final Block blockMock = mock(Block.class);
+        final RemascConfig remascConfig = spy(new RemascConfigFactory(RemascContract.REMASC_CONFIG)
+                .createRemascConfig("regtest"));
 
-        when(blockMock.getNumber()).thenReturn(4L);
+        final Remasc remasc = new Remasc(Constants.regtest(), activationConfig, repositoryMock,
+                blockStoreMock, remascConfig, txMock, PrecompiledContracts.REMASC_ADDR, blockMock, logs);
+
+        when(remascConfig.getRskLabsAddress()).thenReturn(rskLabsAddress);
+        when(remascConfig.getRskLabsAddressRskip218()).thenReturn(rskLabsAddressRskip218);
+
+        when(activationConfig.isActive(ConsensusRule.RSKIP218, 1)).thenReturn(false);
+        when(activationConfig.isActive(ConsensusRule.RSKIP218, 2)).thenReturn(true);
+
+        when(blockMock.getNumber()).thenReturn(1L);
+
         RskAddress actualAddress = remasc.getRskLabsAddress();
-        Assert.assertEquals(oldAddress, actualAddress);
+
+        Assert.assertEquals(rskLabsAddress, actualAddress);
+        Assert.assertEquals(blockMock.getNumber(), 1L);
+        Assert.assertFalse(activationConfig.isActive(ConsensusRule.RSKIP218, blockMock.getNumber()));
         verify(remascConfig).getRskLabsAddress();
 
-        when(blockMock.getNumber()).thenReturn(5L);
+        when(blockMock.getNumber()).thenReturn(2L);
+
         actualAddress = remasc.getRskLabsAddress();
-        Assert.assertEquals(newAddress, actualAddress);
-        verify(remascConfig).getRskLabsAddressRskipXyz();
+
+        Assert.assertEquals(rskLabsAddressRskip218, actualAddress);
+        Assert.assertEquals(blockMock.getNumber(), 2L);
+        Assert.assertTrue(activationConfig.isActive(ConsensusRule.RSKIP218, blockMock.getNumber()));
+        verify(remascConfig).getRskLabsAddressRskip218();
     }
 }

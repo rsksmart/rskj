@@ -194,8 +194,8 @@ public class Remasc {
     }
 
     RskAddress getRskLabsAddress() {
-        boolean isRskipXyzEnabled = activationConfig.isActive(ConsensusRule.RSKIPXYZ, executionBlock.getNumber());
-        return isRskipXyzEnabled ? remascConstants.getRskLabsAddressRskipXyz() : remascConstants.getRskLabsAddress();
+        boolean isRskip218Enabled = activationConfig.isActive(ConsensusRule.RSKIP218, executionBlock.getNumber());
+        return isRskip218Enabled ? remascConstants.getRskLabsAddressRskip218() : remascConstants.getRskLabsAddress();
     }
 
     private Coin payToFederation(Constants constants, boolean isRskip85Enabled, Block processingBlock, BlockHeader processingBlockHeader, Coin syntheticReward) {
