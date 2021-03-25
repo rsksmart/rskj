@@ -36,6 +36,7 @@ public class BridgeSupportNewMethodsTest {
     private BtcBlockStoreWithCache btcBlockStore;
     private StoredBlock storedBlock;
     private BtcBlock btcBlock;
+    private BridgeSupport bridgeSupport;
 
     @Before
     public void setUpOnEachTest() throws BlockStoreException {
@@ -67,12 +68,12 @@ public class BridgeSupportNewMethodsTest {
         int height = 30;
 
         mockChainOfStoredBlocks(btcBlockStore, btcBlock, height + bridgeConstants.getBtc2RskMinimumAcceptableConfirmations(), height);
+
+        bridgeSupport = getBridgeSupport(bridgeConstants, btcBlockStoreFactory, activationsAfterForks);
     }
 
     @Test
     public void getBtcBlockchainBestBlockHeader() throws BlockStoreException, IOException {
-        BridgeSupport bridgeSupport = getBridgeSupport(bridgeConstants, btcBlockStoreFactory, activationsAfterForks);
-
         byte[] result = bridgeSupport.getBtcBlockchainBestBlockHeader();
 
         Assert.assertArrayEquals(header, result);
@@ -80,8 +81,6 @@ public class BridgeSupportNewMethodsTest {
 
     @Test
     public void getBtcBlockHeaderByHash() throws BlockStoreException, IOException {
-        BridgeSupport bridgeSupport = getBridgeSupport(bridgeConstants, btcBlockStoreFactory, activationsAfterForks);
-
         byte[] result = bridgeSupport.getBtcBlockHeaderByHash(hash);
 
         Assert.assertArrayEquals(header, result);
@@ -94,8 +93,6 @@ public class BridgeSupportNewMethodsTest {
         Sha256Hash unknownHash = Sha256Hash.wrap(unknownHashBytes);
 
         when(btcBlockStore.get(unknownHash)).thenReturn(null);
-
-        BridgeSupport bridgeSupport = getBridgeSupport(bridgeConstants, btcBlockStoreFactory, activationsAfterForks);
 
         byte[] result = bridgeSupport.getBtcBlockHeaderByHash(unknownHash);
 
@@ -116,8 +113,6 @@ public class BridgeSupportNewMethodsTest {
         when(parentBtcBlock.unsafeBitcoinSerialize()).thenReturn(header);
         when(parentStoredBlock.getHeader()).thenReturn(parentBtcBlock);
 
-        BridgeSupport bridgeSupport = getBridgeSupport(bridgeConstants, btcBlockStoreFactory, activationsAfterForks);
-
         byte[] result = bridgeSupport.getBtcParentBlockHeaderByHash(hash);
 
         Assert.assertArrayEquals(header, result);
@@ -126,8 +121,6 @@ public class BridgeSupportNewMethodsTest {
     @Test
     public void getBtcParentBlockHeaderByUnknownHash() throws BlockStoreException, IOException {
         when(btcBlockStore.get(hash)).thenReturn(null);
-
-        BridgeSupport bridgeSupport = getBridgeSupport(bridgeConstants, btcBlockStoreFactory, activationsAfterForks);
 
         byte[] result = bridgeSupport.getBtcParentBlockHeaderByHash(hash);
 
@@ -139,8 +132,6 @@ public class BridgeSupportNewMethodsTest {
     public void getBtcBlockchainBlockHeaderByHeight() throws BlockStoreException, IOException {
         when(btcBlockStore.getStoredBlockAtMainChainDepth(10)).thenReturn(storedBlock);
 
-        BridgeSupport bridgeSupport = getBridgeSupport(bridgeConstants, btcBlockStoreFactory, activationsAfterForks);
-
         byte[] result = bridgeSupport.getBtcBlockchainBlockHeaderByHeight(20);
 
         Assert.assertArrayEquals(header, result);
@@ -149,8 +140,6 @@ public class BridgeSupportNewMethodsTest {
     @Test
     public void getBtcBlockchainBlockHeaderByHeightTooHight() throws BlockStoreException, IOException {
         when(btcBlockStore.getStoredBlockAtMainChainDepth(10)).thenReturn(storedBlock);
-
-        BridgeSupport bridgeSupport = getBridgeSupport(bridgeConstants, btcBlockStoreFactory, activationsAfterForks);
 
         try {
             bridgeSupport.getBtcBlockchainBlockHeaderByHeight(40);
