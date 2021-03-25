@@ -4,6 +4,7 @@ import co.rsk.core.bc.ConsensusValidationMainchainView;
 import co.rsk.net.Peer;
 import co.rsk.validators.BlockHeaderValidationRule;
 import org.ethereum.core.BlockIdentifier;
+import org.ethereum.core.Blockchain;
 import org.ethereum.validator.DependentBlockHeaderRule;
 import org.junit.Assert;
 import org.junit.Test;
@@ -23,10 +24,11 @@ public class DownloadingHeadersSyncStateTest {
         SyncState syncState = new DownloadingHeadersSyncState(
                 syncConfiguration,
                 syncEventsHandler,
+                mock(Blockchain.class),
                 mock(ConsensusValidationMainchainView.class),
                 mock(DependentBlockHeaderRule.class),
                 mock(BlockHeaderValidationRule.class),
-                mock(Peer.class), skeletons,
+                mock(Peer.class), mock(Peer.class), skeletons,
                 0);
 
         for (int i = 0; i < 10; i++) {
@@ -42,10 +44,11 @@ public class DownloadingHeadersSyncStateTest {
         SyncState syncState = new DownloadingHeadersSyncState(
                 syncConfiguration,
                 syncEventsHandler,
+                mock(Blockchain.class),
                 mock(ConsensusValidationMainchainView.class),
                 mock(DependentBlockHeaderRule.class),
                 mock(BlockHeaderValidationRule.class),
-                mock(Peer.class), Collections.emptyMap(),
+                mock(Peer.class), mock(Peer.class), Collections.emptyMap(),
                 0);
 
         syncState.newPeerStatus();
@@ -65,10 +68,11 @@ public class DownloadingHeadersSyncStateTest {
         DownloadingHeadersSyncState syncState = new DownloadingHeadersSyncState(
                 syncConfiguration,
                 syncEventsHandler,
+                mock(Blockchain.class),
                 mock(ConsensusValidationMainchainView.class),
                 mock(DependentBlockHeaderRule.class),
                 mock(BlockHeaderValidationRule.class),
-                mock(Peer.class), Collections.emptyMap(),
+                mock(Peer.class), mock(Peer.class), Collections.emptyMap(),
                 0);
 
         syncState.newPeerStatus();

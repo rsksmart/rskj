@@ -8,6 +8,7 @@ import co.rsk.validators.BlockHeaderValidationRule;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.BlockIdentifier;
+import org.ethereum.core.Blockchain;
 import org.ethereum.rpc.TypeConverter;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.validator.DependentBlockHeaderRule;
@@ -17,27 +18,33 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class DownloadingHeadersSyncState extends BaseSyncState {
 
+    private final Blockchain blockchain;
     private final Map<Peer, List<BlockIdentifier>> skeletons;
     private final List<Deque<BlockHeader>> pendingHeaders;
     private final ChunksDownloadHelper chunksDownloadHelper;
     private final DependentBlockHeaderRule blockParentValidationRule;
     private final BlockHeaderValidationRule blockHeaderValidationRule;
     private final Peer selectedPeer;
+    private final Peer bestPeer;
     private Map<Keccak256, BlockHeader> pendingHeadersByHash;
 
     public DownloadingHeadersSyncState(
             SyncConfiguration syncConfiguration,
             SyncEventsHandler syncEventsHandler,
+            Blockchain blockchain,
             ConsensusValidationMainchainView mainchainView,
             DependentBlockHeaderRule blockParentValidationRule,
             BlockHeaderValidationRule blockHeaderValidationRule,
             Peer peer,
+            Peer bestPeer,
             Map<Peer, List<BlockIdentifier>> skeletons,
             long connectionPoint) {
         super(syncEventsHandler, syncConfiguration);
+        this.blockchain = blockchain;
         this.blockParentValidationRule = blockParentValidationRule;
         this.blockHeaderValidationRule = blockHeaderValidationRule;
         this.selectedPeer = peer;
+        this.bestPeer = bestPeer;
         this.pendingHeaders = new ArrayList<>();
         this.skeletons = skeletons;
         this.chunksDownloadHelper = new ChunksDownloadHelper(
@@ -94,6 +101,15 @@ public class DownloadingHeadersSyncState extends BaseSyncState {
         pendingHeaders.add(headers);
 
         if (!chunksDownloadHelper.hasNextChunk()) {
+            boolean atLeastOneUnknown = pendingHeaders.stream().anyMatch(x -> x.stream().anyMatch(y -> isBlockUnknown(y.getHash())));
+            if (!atLeastOneUnknown) { // all blocks are already downloaded
+                syncEventsHandler.onErrorSyncing(
+                        bestPeer.getPeerNodeID(),
+                        "All received headers are already in blockchain",
+                        EventType.NOTHING_TO_DOWNLOAD);
+                return;
+            }
+
             // Finished verifying headers
             syncEventsHandler.startDownloadingBodies(pendingHeaders, skeletons, selectedPeer);
             return;
@@ -141,5 +157,9 @@ public class DownloadingHeadersSyncState extends BaseSyncState {
         }
 
         return blockParentValidationRule.validate(header, parentHeader);
+    }
+
+    private boolean isBlockUnknown(Keccak256 hash) {
+        return blockchain.getBlockByHash(hash.getBytes()) == null;
     }
 }

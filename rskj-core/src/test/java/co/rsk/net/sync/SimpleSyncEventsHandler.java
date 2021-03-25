@@ -1,6 +1,5 @@
 package co.rsk.net.sync;
 
-
 import co.rsk.net.NodeID;
 import co.rsk.net.Peer;
 import co.rsk.scoring.EventType;
@@ -8,7 +7,6 @@ import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.BlockIdentifier;
 
-import javax.annotation.Nonnull;
 import java.util.Deque;
 import java.util.List;
 import java.util.Map;
@@ -47,7 +45,7 @@ public class SimpleSyncEventsHandler implements SyncEventsHandler {
     }
 
     @Override
-    public void startDownloadingHeaders(Map<Peer, List<BlockIdentifier>> skeletons, long connectionPoint, Peer peer) { }
+    public void startDownloadingHeaders(Map<Peer, List<BlockIdentifier>> skeletons, long connectionPoint, Peer peerr, Peer bestPeer) { }
 
     @Override
     public void startSyncing(Peer peer) {

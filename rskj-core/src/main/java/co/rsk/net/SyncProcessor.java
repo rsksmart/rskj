@@ -244,14 +244,16 @@ public class SyncProcessor implements SyncEventsHandler {
     }
 
     @Override
-    public void startDownloadingHeaders(Map<Peer, List<BlockIdentifier>> skeletons, long connectionPoint, Peer peer) {
+    public void startDownloadingHeaders(Map<Peer, List<BlockIdentifier>> skeletons, long connectionPoint, Peer peer, Peer bestPeer) {
         setSyncState(new DownloadingHeadersSyncState(
                 syncConfiguration,
                 this,
+                blockchain,
                 consensusValidationMainchainView,
                 difficultyRule,
                 blockHeaderValidationRule,
                 peer,
+                bestPeer,
                 skeletons,
                 connectionPoint));
     }

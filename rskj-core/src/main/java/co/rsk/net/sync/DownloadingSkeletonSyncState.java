@@ -61,7 +61,7 @@ public class DownloadingSkeletonSyncState extends BaseSyncState {
                 syncEventsHandler.stopSyncing();
                 return;
             }
-            syncEventsHandler.startDownloadingHeaders(skeletons, connectionPoint, peer);
+            syncEventsHandler.startDownloadingHeaders(skeletons, connectionPoint, peer, selectedPeer);
         }
     }
 
@@ -83,7 +83,7 @@ public class DownloadingSkeletonSyncState extends BaseSyncState {
                 return;
             }
 
-            syncEventsHandler.startDownloadingHeaders(skeletons, connectionPoint, selectedPeer);
+            syncEventsHandler.startDownloadingHeaders(skeletons, connectionPoint, selectedPeer, selectedPeer);
         }
     }
 

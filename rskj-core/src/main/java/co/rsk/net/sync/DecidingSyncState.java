@@ -40,7 +40,6 @@ public class DecidingSyncState extends BaseSyncState {
     }
 
     private void tryStartSyncing() {
-
         Optional<Peer> bestPeer = peersInformation.getBestPeer();
         if (!bestPeer.isPresent()) {
             return;

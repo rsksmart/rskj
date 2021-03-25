@@ -22,7 +22,7 @@ public interface SyncEventsHandler {
 
     void startDownloadingBodies(List<Deque<BlockHeader>> pendingHeaders, Map<Peer, List<BlockIdentifier>> skeletons, Peer peer);
 
-    void startDownloadingHeaders(Map<Peer, List<BlockIdentifier>> skeletons, long connectionPoint, Peer peer);
+    void startDownloadingHeaders(Map<Peer, List<BlockIdentifier>> skeletons, long connectionPoint, Peer peer, Peer bestPeer);
 
     void startDownloadingSkeleton(long connectionPoint, Peer peer);
 

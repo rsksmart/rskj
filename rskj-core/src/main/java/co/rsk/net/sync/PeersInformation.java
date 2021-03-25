@@ -27,7 +27,7 @@ import java.util.stream.Stream;
 public class PeersInformation {
 
     private static final int TIME_LIMIT_FAILURE_RECORD = 600;
-    private static final int MAX_SIZE_FAILURE_RECORDS = 10;
+    private static final int MAX_SIZE_FAILURE_RECORDS = 15;
     private static final Logger logger = LoggerFactory.getLogger(PeersInformation.class);
 
     private final ChannelManager channelManager;
