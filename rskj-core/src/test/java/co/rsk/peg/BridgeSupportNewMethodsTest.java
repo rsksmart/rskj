@@ -7,7 +7,6 @@ import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.peg.btcLockSender.BtcLockSenderProvider;
 import co.rsk.peg.pegininstructions.PeginInstructionsProvider;
 import co.rsk.peg.utils.BridgeEventLogger;
-import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.Block;
@@ -22,7 +21,6 @@ import java.util.Random;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
-import static org.mockito.Mockito.doReturn;
 
 public class BridgeSupportNewMethodsTest {
     private static Random random = new Random();
@@ -31,6 +29,9 @@ public class BridgeSupportNewMethodsTest {
     private NetworkParameters btcParams;
     private ActivationConfig.ForBlock activationsBeforeForks;
     private ActivationConfig.ForBlock activationsAfterForks;
+    private byte[] hashBytes;
+    private Sha256Hash hash;
+    private byte[] header;
 
     @Before
     public void setUpOnEachTest() {
@@ -38,17 +39,17 @@ public class BridgeSupportNewMethodsTest {
         btcParams = bridgeConstants.getBtcParams();
         activationsBeforeForks = ActivationConfigsForTest.genesis().forBlock(0);
         activationsAfterForks = ActivationConfigsForTest.all().forBlock(0);
+
+        hashBytes = new byte[32];
+        random.nextBytes(hashBytes);
+        hash = Sha256Hash.wrap(hashBytes);
+
+        header = new byte[80];
+        random.nextBytes(header);
     }
 
     @Test
     public void getBtcBlockchainBestBlockHeader() throws BlockStoreException, IOException {
-        byte[] hashBytes = new byte[32];
-        random.nextBytes(hashBytes);
-        Sha256Hash hash = Sha256Hash.wrap(hashBytes);
-
-        byte[] header = new byte[80];
-        random.nextBytes(header);
-
         BtcBlockStoreWithCache.Factory btcBlockStoreFactory = mock(BtcBlockStoreWithCache.Factory.class);
 
         BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
@@ -59,7 +60,6 @@ public class BridgeSupportNewMethodsTest {
         when(btcBlock.unsafeBitcoinSerialize()).thenReturn(header);
         when(storedBlock.getHeader()).thenReturn(btcBlock);
 
-        BtcBlockStoreWithCache.Factory btcBlockStoreFactor = mock(BtcBlockStoreWithCache.Factory.class);
         when(btcBlockStoreFactory.newInstance(any(), any(), any(), any())).thenReturn(btcBlockStore);
 
         when(btcBlock.getHash()).thenReturn(hash);
@@ -77,13 +77,6 @@ public class BridgeSupportNewMethodsTest {
 
     @Test
     public void getBtcBlockHeaderByHash() throws BlockStoreException, IOException {
-        byte[] hashBytes = new byte[32];
-        random.nextBytes(hashBytes);
-        Sha256Hash hash = Sha256Hash.wrap(hashBytes);
-
-        byte[] header = new byte[80];
-        random.nextBytes(header);
-
         BtcBlockStoreWithCache.Factory btcBlockStoreFactory = mock(BtcBlockStoreWithCache.Factory.class);
 
         BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
@@ -115,13 +108,6 @@ public class BridgeSupportNewMethodsTest {
 
     @Test
     public void getBtcBlockHeaderByUnknownHash() throws BlockStoreException, IOException {
-        byte[] hashBytes = new byte[32];
-        random.nextBytes(hashBytes);
-        Sha256Hash hash = Sha256Hash.wrap(hashBytes);
-
-        byte[] header = new byte[80];
-        random.nextBytes(header);
-
         BtcBlockStoreWithCache.Factory btcBlockStoreFactory = mock(BtcBlockStoreWithCache.Factory.class);
 
         BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
@@ -154,16 +140,9 @@ public class BridgeSupportNewMethodsTest {
 
     @Test
     public void getBtcParentBlockHeaderByHash() throws BlockStoreException, IOException {
-        byte[] hashBytes = new byte[32];
-        random.nextBytes(hashBytes);
-        Sha256Hash hash = Sha256Hash.wrap(hashBytes);
-
         byte[] parentHashBytes = new byte[32];
         random.nextBytes(parentHashBytes);
         Sha256Hash parentHash = Sha256Hash.wrap(parentHashBytes);
-
-        byte[] header = new byte[80];
-        random.nextBytes(header);
 
         BtcBlockStoreWithCache.Factory btcBlockStoreFactory = mock(BtcBlockStoreWithCache.Factory.class);
 
@@ -182,7 +161,6 @@ public class BridgeSupportNewMethodsTest {
         when(parentBtcBlock.unsafeBitcoinSerialize()).thenReturn(header);
         when(parentStoredBlock.getHeader()).thenReturn(parentBtcBlock);
 
-        BtcBlockStoreWithCache.Factory btcBlockStoreFactor = mock(BtcBlockStoreWithCache.Factory.class);
         when(btcBlockStoreFactory.newInstance(any(), any(), any(), any())).thenReturn(btcBlockStore);
 
         when(btcBlock.getHash()).thenReturn(hash);
@@ -200,16 +178,9 @@ public class BridgeSupportNewMethodsTest {
 
     @Test
     public void getBtcParentBlockHeaderByUnknownHash() throws BlockStoreException, IOException {
-        byte[] hashBytes = new byte[32];
-        random.nextBytes(hashBytes);
-        Sha256Hash hash = Sha256Hash.wrap(hashBytes);
-
         byte[] parentHashBytes = new byte[32];
         random.nextBytes(parentHashBytes);
         Sha256Hash parentHash = Sha256Hash.wrap(parentHashBytes);
-
-        byte[] header = new byte[80];
-        random.nextBytes(header);
 
         BtcBlockStoreWithCache.Factory btcBlockStoreFactory = mock(BtcBlockStoreWithCache.Factory.class);
 
@@ -241,13 +212,6 @@ public class BridgeSupportNewMethodsTest {
 
     @Test
     public void getBtcBlockchainBlockHeaderByHeight() throws BlockStoreException, IOException {
-        byte[] hashBytes = new byte[32];
-        random.nextBytes(hashBytes);
-        Sha256Hash hash = Sha256Hash.wrap(hashBytes);
-
-        byte[] header = new byte[80];
-        random.nextBytes(header);
-
         BtcBlockStoreWithCache.Factory btcBlockStoreFactory = mock(BtcBlockStoreWithCache.Factory.class);
 
         BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
@@ -260,7 +224,6 @@ public class BridgeSupportNewMethodsTest {
         when(storedBlock.getHeader()).thenReturn(btcBlock);
         when(storedBlock.getHeight()).thenReturn(30);
 
-        BtcBlockStoreWithCache.Factory btcBlockStoreFactor = mock(BtcBlockStoreWithCache.Factory.class);
         when(btcBlockStoreFactory.newInstance(any(), any(), any(), any())).thenReturn(btcBlockStore);
 
         when(btcBlock.getHash()).thenReturn(hash);
@@ -278,13 +241,6 @@ public class BridgeSupportNewMethodsTest {
 
     @Test
     public void getBtcBlockchainBlockHeaderByHeightTooHight() throws BlockStoreException, IOException {
-        byte[] hashBytes = new byte[32];
-        random.nextBytes(hashBytes);
-        Sha256Hash hash = Sha256Hash.wrap(hashBytes);
-
-        byte[] header = new byte[80];
-        random.nextBytes(header);
-
         BtcBlockStoreWithCache.Factory btcBlockStoreFactory = mock(BtcBlockStoreWithCache.Factory.class);
 
         BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
@@ -301,8 +257,6 @@ public class BridgeSupportNewMethodsTest {
         when(btcBlockStoreFactory.newInstance(any(), any(), any(), any())).thenReturn(btcBlockStore);
 
         when(btcBlock.getHash()).thenReturn(hash);
-        Assert.assertArrayEquals(header, btcBlock.unsafeBitcoinSerialize());
-        Assert.assertArrayEquals(header, storedBlock.getHeader().unsafeBitcoinSerialize());
 
         int height = 30;
 
@@ -347,13 +301,5 @@ public class BridgeSupportNewMethodsTest {
         // Simulate that the block is in there by mocking the getter by height,
         // and then simulate that the txs have enough confirmations by setting a high head.
         when(btcBlockStore.getStoredBlockAtMainChainHeight(targetHeight)).thenReturn(new StoredBlock(targetHeader, BigInteger.ONE, targetHeight));
-        // Mock current pointer's header
-        StoredBlock currentStored = mock(StoredBlock.class);
-        BtcBlock currentBlock = mock(BtcBlock.class);
-        doReturn(Sha256Hash.of(Hex.decode("aa"))).when(currentBlock).getHash();
-        doReturn(currentBlock).when(currentStored).getHeader();
-        when(currentStored.getHeader()).thenReturn(currentBlock);
-        //when(btcBlockStore.getChainHead()).thenReturn(currentStored);
-        when(currentStored.getHeight()).thenReturn(headHeight);
     }
 }
