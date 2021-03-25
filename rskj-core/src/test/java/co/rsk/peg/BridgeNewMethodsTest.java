@@ -7,7 +7,6 @@ import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.Block;
-import org.ethereum.vm.PrecompiledContracts;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -65,7 +64,7 @@ public class BridgeNewMethodsTest {
     public void getBestBlockHeader() throws IOException, BlockStoreException {
         byte[] header = new byte[80];
         random.nextBytes(header);
-        when(bridgeSupport.getBtcBlockchainSerializedBestBlockHeader()).thenReturn(header);
+        when(bridgeSupport.getBtcBlockchainBestBlockHeader()).thenReturn(header);
         byte[] result = bridge.getBestBlockHeader(new Object[0]);
 
         Assert.assertArrayEquals(header, result);
@@ -114,7 +113,7 @@ public class BridgeNewMethodsTest {
         random.nextBytes(header);
         BigInteger height = BigInteger.TEN;
 
-        when(bridgeSupport.getBtcBlockHeaderByHeight(10)).thenReturn(header);
+        when(bridgeSupport.getBtcBlockchainBlockHeaderByHeight(10)).thenReturn(header);
         byte[] result = bridge.getBitcoinHeaderByHeight(new Object[] { height });
 
         Assert.assertArrayEquals(header, result);

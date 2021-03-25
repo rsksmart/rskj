@@ -1149,7 +1149,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         logger.trace("getBestBlockHeader");
 
         try {
-            return this.bridgeSupport.getBtcBlockchainSerializedBestBlockHeader();
+            return this.bridgeSupport.getBtcBlockchainBestBlockHeader();
         } catch (Exception e) {
             logger.warn("Exception in getBestBlockHeader", e);
             return null;
@@ -1198,7 +1198,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         try {
             int height = ((BigInteger) args[0]).intValue();
 
-            return this.bridgeSupport.getBtcBlockHeaderByHeight(height);
+            return this.bridgeSupport.getBtcBlockchainBlockHeaderByHeight(height);
         } catch (Exception e) {
             logger.warn("Exception in getBitcoinHeaderByHeight", e);
             return null;
