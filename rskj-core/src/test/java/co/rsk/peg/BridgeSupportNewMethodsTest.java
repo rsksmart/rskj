@@ -67,7 +67,7 @@ public class BridgeSupportNewMethodsTest {
 
         int height = 30;
 
-        mockChainOfStoredBlocks(btcBlockStore, btcBlock, height + bridgeConstants.getBtc2RskMinimumAcceptableConfirmations(), height);
+        when(btcBlockStore.getStoredBlockAtMainChainHeight(height)).thenReturn(new StoredBlock(btcBlock, BigInteger.ONE, height));
 
         bridgeSupport = getBridgeSupport(bridgeConstants, btcBlockStoreFactory, activationsAfterForks);
     }
@@ -172,11 +172,5 @@ public class BridgeSupportNewMethodsTest {
                 blockStoreFactory,
                 activations
         );
-    }
-
-    private void mockChainOfStoredBlocks(BtcBlockStoreWithCache btcBlockStore, BtcBlock targetHeader, int headHeight, int targetHeight) throws BlockStoreException {
-        // Simulate that the block is in there by mocking the getter by height,
-        // and then simulate that the txs have enough confirmations by setting a high head.
-        when(btcBlockStore.getStoredBlockAtMainChainHeight(targetHeight)).thenReturn(new StoredBlock(targetHeader, BigInteger.ONE, targetHeight));
     }
 }
