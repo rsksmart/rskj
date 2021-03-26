@@ -1152,7 +1152,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             return this.bridgeSupport.getBtcBlockchainBestBlockHeader();
         } catch (Exception e) {
             logger.warn("Exception in getBestBlockHeader", e);
-            return null;
+            return ByteUtil.EMPTY_BYTE_ARRAY;
         }
     }
 
@@ -1177,7 +1177,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             return this.bridgeSupport.getBtcBlockHeaderByHash(hash);
         } catch (Exception e) {
             logger.warn("Exception in getBitcoinHeaderByHash", e);
-            return null;
+            return ByteUtil.EMPTY_BYTE_ARRAY;
         }
     }
 
@@ -1190,7 +1190,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             return this.bridgeSupport.getBtcBlockchainBlockHeaderByHeight(height);
         } catch (Exception e) {
             logger.warn("Exception in getBitcoinHeaderByHeight", e);
-            return null;
+            return ByteUtil.EMPTY_BYTE_ARRAY;
         }
     }
 
@@ -1204,7 +1204,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             return this.bridgeSupport.getBtcParentBlockHeaderByHash(hash);
         } catch (Exception e) {
             logger.warn("Exception in getBitcoinHeaderByHash", e);
-            return null;
+            return ByteUtil.EMPTY_BYTE_ARRAY;
         }
     }
 
