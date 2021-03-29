@@ -130,24 +130,11 @@ public class BridgeSupportRSKIP220NewMethodsTest {
 
     @Test
     public void getBtcBlockchainBlockHeaderByHeight() throws BlockStoreException, IOException {
-        when(btcBlockStore.getStoredBlockAtMainChainDepth(10)).thenReturn(storedBlock);
+        when(btcBlockStore.getStoredBlockAtMainChainHeight(20)).thenReturn(storedBlock);
 
         byte[] result = bridgeSupport.getBtcBlockchainBlockHeaderByHeight(20);
 
         Assert.assertArrayEquals(header, result);
-    }
-
-    @Test
-    public void getBtcBlockchainBlockHeaderByHeightTooHight() throws BlockStoreException, IOException {
-        when(btcBlockStore.getStoredBlockAtMainChainDepth(10)).thenReturn(storedBlock);
-
-        try {
-            bridgeSupport.getBtcBlockchainBlockHeaderByHeight(40);
-            Assert.fail();
-        }
-        catch (IndexOutOfBoundsException ex) {
-            Assert.assertEquals("Height must be between 0 and 30", ex.getMessage());
-        }
     }
 
     private BridgeSupport getBridgeSupport(BridgeConstants constants,
