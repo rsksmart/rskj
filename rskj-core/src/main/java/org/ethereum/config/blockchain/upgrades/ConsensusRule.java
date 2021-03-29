@@ -18,7 +18,8 @@
 
 package org.ethereum.config.blockchain.upgrades;
 
-public enum ConsensusRule {
+public enum
+ConsensusRule {
     ARE_BRIDGE_TXS_PAID("areBridgeTxsPaid"),
     RSKIP85("rskip85"),
     RSKIP87("rskip87"),
@@ -66,7 +67,8 @@ public enum ConsensusRule {
     RSKIP191("rskip191"),
     RSKIP197("rskip197"), //Handle error in Precompile Contracts execution.
     RSKIP199("rskip199"),
-    RSKIP200("rskip200");
+    RSKIP200("rskip200"),
+    RSKIP219("rskip219");
 
     private String configKey;
 
