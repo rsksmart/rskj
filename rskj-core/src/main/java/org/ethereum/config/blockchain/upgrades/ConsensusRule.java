@@ -18,7 +18,8 @@
 
 package org.ethereum.config.blockchain.upgrades;
 
-public enum ConsensusRule {
+public enum
+ConsensusRule {
     ARE_BRIDGE_TXS_PAID("areBridgeTxsPaid"),
     RSKIP85("rskip85"),
     RSKIP87("rskip87"),
@@ -68,6 +69,7 @@ public enum ConsensusRule {
     RSKIP200("rskip200"),
     RSKIP201("rskip201"),
     RSKIP218("rskip218"), // New rewards fee adddress
+    RSKIP219("rskip219"),
     RSKIP220("rskip220");
 
     private String configKey;
