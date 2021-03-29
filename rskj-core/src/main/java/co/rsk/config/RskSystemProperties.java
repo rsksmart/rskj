@@ -216,6 +216,10 @@ public class RskSystemProperties extends SystemProperties {
         this.remascEnabled = remascEnabled;
     }
 
+    public boolean skipRemasc() {
+            return getBoolean("rpc.skipRemasc", false);
+    }
+
     public long peerDiscoveryMessageTimeOut() {
         return getLong("peer.discovery.msg.timeout", PD_DEFAULT_TIMEOUT_MESSAGE);
     }
