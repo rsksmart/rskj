@@ -622,7 +622,7 @@ public enum BridgeMethods {
             ),
             fixedCost(20000L),
             (BridgeMethodExecutorTyped) Bridge::getBestBlockHeader,
-            activations -> true, // TODO: Review activation
+            activations -> activations.isActive(RSKIP220),
             false
     ),
     GET_BEST_BLOCK_NUMBER(
@@ -633,7 +633,7 @@ public enum BridgeMethods {
             ),
             fixedCost(20000L),
             (BridgeMethodExecutorTyped) Bridge::getBestBlockNumber,
-            activations -> true, // TODO: Review activation
+            activations -> activations.isActive(RSKIP220),
             false
     ),
     GET_BITCOIN_HEADER_BY_HASH(
@@ -644,7 +644,7 @@ public enum BridgeMethods {
             ),
             fixedCost(20000L),
             (BridgeMethodExecutorTyped) Bridge::getBitcoinHeaderByHash,
-            activations -> true, // TODO: Review activation
+            activations -> activations.isActive(RSKIP220),
             false
     ),
     GET_BITCOIN_PARENT_BY_HASH(
@@ -655,7 +655,7 @@ public enum BridgeMethods {
             ),
             fixedCost(20000L),
             (BridgeMethodExecutorTyped) Bridge::getBitcoinParentByHash,
-            activations -> true, // TODO: Review activation
+            activations -> activations.isActive(RSKIP220),
             false
     ),
     GET_BITCOIN_HEADER_BY_HEIGHT(
@@ -666,7 +666,7 @@ public enum BridgeMethods {
             ),
             fixedCost(20000L),
             (BridgeMethodExecutorTyped) Bridge::getBitcoinHeaderByHeight,
-            activations -> true, // TODO: Review activation
+            activations -> activations.isActive(RSKIP220),
             false
     );
 
