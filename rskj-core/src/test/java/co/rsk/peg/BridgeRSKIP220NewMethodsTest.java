@@ -17,7 +17,7 @@ import java.util.Random;
 
 import static org.mockito.Mockito.*;
 
-public class BridgeNewMethodsTest {
+public class BridgeRSKIP220NewMethodsTest {
     private static Random random = new Random();
 
     private TestSystemProperties config;

@@ -67,7 +67,8 @@ public enum ConsensusRule {
     RSKIP199("rskip199"),
     RSKIP200("rskip200"),
     RSKIP201("rskip201"),
-    RSKIP218("rskip218"); // New rewards fee adddress
+    RSKIP218("rskip218"), // New rewards fee adddress
+    RSKIP220("rskip220");
 
     private String configKey;
 

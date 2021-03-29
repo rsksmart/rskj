@@ -22,7 +22,7 @@ import java.util.Random;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
-public class BridgeSupportNewMethodsTest {
+public class BridgeSupportRSKIP220NewMethodsTest {
     private static Random random = new Random();
 
     private BridgeConstants bridgeConstants;
