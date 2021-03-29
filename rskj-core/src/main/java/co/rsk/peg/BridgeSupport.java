@@ -1399,15 +1399,13 @@ public class BridgeSupport {
         Context.propagate(btcContext);
         this.ensureBtcBlockStore();
 
-        StoredBlock head = btcBlockStore.getChainHead();
-        int highestHeight = head.getHeight();
-        int lowestHeight = getLowestBlock().getHeight();
+        StoredBlock block = btcBlockStore.getStoredBlockAtMainChainHeight(height);
 
-        if (height < lowestHeight || height > highestHeight) {
-            throw new IndexOutOfBoundsException(String.format("Height must be between %d and %d", lowestHeight, highestHeight));
+        if (block == null) {
+            return ByteUtil.EMPTY_BYTE_ARRAY;
         }
 
-        return serializeBlockHeader(btcBlockStore.getStoredBlockAtMainChainDepth(highestHeight - height));
+        return serializeBlockHeader(block);
     }
 
     public Long getBtcTransactionConfirmationsGetCost(Object[] args) {
