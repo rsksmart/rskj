@@ -19,12 +19,10 @@
 package org.ethereum.rpc.dto;
 
 import co.rsk.core.RskAddress;
-import co.rsk.crypto.Keccak256;
 import org.ethereum.core.Block;
 import org.ethereum.core.TransactionReceipt;
 import org.ethereum.db.TransactionInfo;
 import org.ethereum.rpc.LogFilterElement;
-import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.LogInfo;
 
 import static org.ethereum.rpc.TypeConverter.*;
@@ -33,9 +31,6 @@ import static org.ethereum.rpc.TypeConverter.*;
  * Created by Ruben on 5/1/2016.
  */
 public class TransactionReceiptDTO {
-
-    private static final int ROOT_HASH_LEN = Keccak256.HASH_LEN;
-
     private String transactionHash;      // hash of the transaction.
     private String transactionIndex;     // integer of the transactions index position in the block.
     private String blockHash;            // hash of the block where this transaction was in.
@@ -46,7 +41,6 @@ public class TransactionReceiptDTO {
     private LogFilterElement[] logs;     // Array of log objects, which this transaction generated.
     private String from;                 // address of the sender.
     private String to;                   // address of the receiver. null when it's a contract creation transaction.
-    private String root;                 // post-transaction stateroot
     private String status;               // either 1 (success) or 0 (failure)
     private String logsBloom;            // Bloom filter for light clients to quickly retrieve related logs.
 
@@ -73,7 +67,6 @@ public class TransactionReceiptDTO {
                     txInfo.getReceipt().getTransaction(), i);
         }
 
-        root = toUnformattedJsonHex(ByteUtil.toBytesWithLeadingZeros(receipt.getPostTxState(), ROOT_HASH_LEN));
         to = receipt.getTransaction().getReceiveAddress().toJsonString();
         transactionHash = receipt.getTransaction().getHash().toJsonString();
         transactionIndex = toQuantityJsonHex(txInfo.getIndex());
@@ -118,10 +111,6 @@ public class TransactionReceiptDTO {
 
     public String getTo() {
         return to;
-    }
-
-    public String getRoot() {
-        return root;
     }
 
     public String getStatus() {
