@@ -22,6 +22,7 @@ import co.rsk.config.InternalService;
 import co.rsk.rpc.*;
 import co.rsk.scoring.PeerScoringReputationSummary;
 import co.rsk.scoring.PeerScoringInformation;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import java.util.Arrays;
 import java.util.Map;
@@ -33,6 +34,7 @@ public interface Web3 extends InternalService, Web3TxPoolModule, Web3EthModule, 
         public String highestBlock;
     }
 
+    @JsonIgnoreProperties("chainId")
     class CallArguments {
         public String from;
         public String to;
