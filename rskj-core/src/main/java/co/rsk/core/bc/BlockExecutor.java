@@ -61,7 +61,7 @@ public class BlockExecutor {
     private final StateRootHandler stateRootHandler;
     private final ActivationConfig activationConfig;
 
-    private Map<Keccak256, ProgramResult> transactionResults;
+    private final Map<Keccak256, ProgramResult> transactionResults = new HashMap<>();
     private boolean registerProgramResults;
 
     public BlockExecutor(
@@ -417,6 +417,6 @@ public class BlockExecutor {
 
     public void setRegisterProgramResults(boolean value) {
         this.registerProgramResults = value;
-        this.transactionResults = new HashMap<>();
+        this.transactionResults.clear();
     }
 }
