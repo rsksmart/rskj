@@ -27,6 +27,8 @@ import co.rsk.peg.Federation;
 import co.rsk.peg.PegTestUtils;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.HashUtil;
+import org.ethereum.vm.exception.VMException;
+import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -37,7 +39,7 @@ import java.util.*;
 @Ignore
 public class StateForBtcReleaseClientTest extends BridgePerformanceTestCase {
     @Test
-    public void getStateForBtcReleaseClient() {
+    public void getStateForBtcReleaseClient() throws VMException {
         ExecutionStats stats = new ExecutionStats("getStateForBtcReleaseClient");
 
         executeAndAverage(
@@ -50,7 +52,7 @@ public class StateForBtcReleaseClientTest extends BridgePerformanceTestCase {
                 stats
         );
 
-        BridgePerformanceTest.addStats(stats);
+        Assert.assertTrue(BridgePerformanceTest.addStats(stats));
     }
 
     private BridgeStorageProviderInitializer getInitializer() {

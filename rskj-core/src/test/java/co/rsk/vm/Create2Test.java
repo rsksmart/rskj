@@ -22,16 +22,18 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.config.VmConfig;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import co.rsk.crypto.Keccak256;
 import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
 import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.TransactionBuilder;
 import org.bouncycastle.util.Arrays;
-import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.Account;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.core.Transaction;
+import org.ethereum.util.ByteUtil;
+import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.VM;
@@ -46,7 +48,8 @@ import java.math.BigInteger;
 import java.util.HashSet;
 
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP125;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 
 /**
@@ -204,7 +207,6 @@ public class Create2Test {
                 1000000);
     }
 
-
     @Test
     public void testCREATE2_DuplicateContractCreation() {
         /**
@@ -245,11 +247,53 @@ public class Create2Test {
         Program program = executeCode(codeToExecute);
         Stack stack = program.getStack();
         Assert.assertEquals(2, stack.size());
-        String address2 = Hex.toHexString(stack.pop().getLast20Bytes());
-        String address1 = Hex.toHexString(stack.pop().getLast20Bytes());
+        String address2 = ByteUtil.toHexString(stack.pop().getLast20Bytes());
+        String address1 = ByteUtil.toHexString(stack.pop().getLast20Bytes());
         Assert.assertEquals(expectedAddress1.toUpperCase(), address1.toUpperCase());
         Assert.assertEquals(expectedAddress2.toUpperCase(), address2.toUpperCase());
         Assert.assertEquals(gasExpected, program.getResult().getGasUsed());
+    }
+
+    @Test
+    public void testCREATE2_PreserveContractAddressBalance() {
+        /**
+         *  CREATE2 call with expected address that has non-zero balance
+         */
+        String address = "0x0000000000000000000000000000000000000000";
+        String salt = "0x0000000000000000000000000000000000000000000000000000000000000000";
+        String pushInitCode = "PUSH32 0x6000000000000000000000000000000000000000000000000000000000000000";
+        String expectedContractAddress = "9CC90A6BDF7A59E213CFB70958A2E1A8EA5AF1E6";
+        int size = 1;
+        int intOffset = 0;
+        int value = 10;
+        int initialContractAddressBalance = 100;
+        Coin expectedContractBalance = Coin.valueOf(initialContractAddressBalance + value);
+
+        RskAddress testAddress = new RskAddress(address);
+        RskAddress contractAddress = new RskAddress(expectedContractAddress);
+        invoke.setOwnerAddress(testAddress);
+        invoke.getRepository().addBalance(testAddress, Coin.valueOf(value + 1000));
+        invoke.getRepository().addBalance(contractAddress, Coin.valueOf(initialContractAddressBalance));
+        String inSize = "0x" + DataWord.valueOf(size);
+        String inOffset = "0x" + DataWord.valueOf(intOffset);
+
+        pushInitCode += " PUSH1 0x00 MSTORE";
+
+        String codeToExecute = pushInitCode +
+                " PUSH32 " + salt +
+                " PUSH32 " + inSize +
+                " PUSH32 " + inOffset +
+                " PUSH32 " + "0x" + DataWord.valueOf(value) +
+                " CREATE2 ";
+
+        Program program = executeCode(codeToExecute);
+        Coin actualContractBalance = invoke.getRepository().getBalance(contractAddress);
+        Stack stack = program.getStack();
+        Assert.assertEquals(1, stack.size());
+        String actualAddress = ByteUtil.toHexString(stack.pop().getLast20Bytes());
+        Assert.assertEquals(expectedContractAddress.toUpperCase(), actualAddress.toUpperCase());
+        Assert.assertEquals(expectedContractAddress.toUpperCase(), actualAddress.toUpperCase());
+        Assert.assertEquals(expectedContractBalance, actualContractBalance);
     }
 
     @Test
@@ -266,7 +310,7 @@ public class Create2Test {
         Program program = executeCode(code);
 
         Stack stack = program.getStack();
-        String address = Hex.toHexString(stack.peek().getLast20Bytes());
+        String address = ByteUtil.toHexString(stack.peek().getLast20Bytes());
         long nonce = program.getStorage().getNonce(new RskAddress(address)).longValue();
 
         Assert.assertEquals(0, nonce);
@@ -285,6 +329,44 @@ public class Create2Test {
                 8,
                 "A992CD9E3E78C0A6BBBB4F06B52B3AD8924B0916",
                 32045);
+    }
+
+    @Test
+    public void testCREATE2_EmptyCodeNonStandard() {
+        /**
+         * Check for a call with no init_code
+         * (Note that it should return same address than previous test)
+         */
+        callCreate2("0x0f6510583d425cfcf94b99f8b073b44f60d1912b",
+                "0x0000000000000000000000000000000000000000000000000000000000000000",
+                "",
+                0,
+                0,
+                "65BD0714DEFB919BC02F9507D6F9D9CD21195ECC",
+                32012);
+
+        Keccak256 existentHash = invoke.getRepository().getCodeHashNonStandard(new RskAddress("65BD0714DEFB919BC02F9507D6F9D9CD21195ECC"));
+        Assert.assertArrayEquals(Keccak256.ZERO_HASH.getBytes(), existentHash.getBytes());
+    }
+
+    @Test
+    public void testCREATE2_EmptyCodeStandard() {
+        /**
+         * Check for a call with no init_code
+         * (Note that it should return same address than previous test)
+         */
+        callCreate2("0x0f6510583d425cfcf94b99f8b073b44f60d1912b",
+                "0x0000000000000000000000000000000000000000000000000000000000000000",
+                "",
+                0,
+                0,
+                "65BD0714DEFB919BC02F9507D6F9D9CD21195ECC",
+                32012);
+
+        byte[] emptyHash = Keccak256Helper.keccak256(ExtCodeHashTest.EMPTY_BYTE_ARRAY);
+        Keccak256 existentHash = invoke.getRepository().getCodeHashStandard(new RskAddress("65BD0714DEFB919BC02F9507D6F9D9CD21195ECC"));
+
+        Assert.assertArrayEquals(emptyHash, existentHash.getBytes());
     }
 
     private void callCreate2(String address, String salt, String pushInitCode, int size, int intOffset, String expected, long gasExpected) {
@@ -307,7 +389,7 @@ public class Create2Test {
                         " PUSH32 " + "0x" + DataWord.valueOf(value) +
                         " CREATE2");
         Stack stack = program.getStack();
-        String result = Hex.toHexString(Arrays.copyOfRange(stack.peek().getData(), 12, stack.peek().getData().length));
+        String result = ByteUtil.toHexString(Arrays.copyOfRange(stack.peek().getData(), 12, stack.peek().getData().length));
 
         Assert.assertEquals(1, stack.size());
         Assert.assertEquals(expected.toUpperCase(), result.toUpperCase());

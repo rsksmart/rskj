@@ -35,7 +35,6 @@ import co.rsk.trie.TrieConverter;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
 import org.bouncycastle.util.BigIntegers;
-import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
@@ -100,6 +99,7 @@ public class BlockExecutorTest {
 
     @Test
     public void executeBlockWithOneTransaction() {
+        executor.setRegisterProgramResults(false);
         Block block = getBlockWithOneTransaction(); // this changes the best block
         Block parent = blockchain.getBestBlock();
 
@@ -112,6 +112,8 @@ public class BlockExecutorTest {
         Assert.assertNotNull(result.getTransactionReceipts());
         Assert.assertFalse(result.getTransactionReceipts().isEmpty());
         Assert.assertEquals(1, result.getTransactionReceipts().size());
+
+        Assert.assertNull(executor.getProgramResult(tx.getHash()));
 
         TransactionReceipt receipt = result.getTransactionReceipts().get(0);
         Assert.assertEquals(tx, receipt.getTransaction());
@@ -133,7 +135,56 @@ public class BlockExecutorTest {
         Assert.assertNotNull(accountState);
         Assert.assertEquals(BigInteger.valueOf(30000), accountState.getBalance().asBigInteger());
 
-        Repository finalRepository = new MutableRepository(trieStore, trieStore.retrieve(result.getFinalState().getHash().getBytes()));
+        Repository finalRepository = new MutableRepository(trieStore,
+                trieStore.retrieve(result.getFinalState().getHash().getBytes()).get());
+
+        accountState = finalRepository.getAccountState(account);
+
+        Assert.assertNotNull(accountState);
+        Assert.assertEquals(BigInteger.valueOf(30000 - 21000 - 10), accountState.getBalance().asBigInteger());
+    }
+
+    @Test
+    public void executeBlockWithOneTransactionAndCollectingProgramResults() {
+        executor.setRegisterProgramResults(true);
+        Block block = getBlockWithOneTransaction(); // this changes the best block
+        Block parent = blockchain.getBestBlock();
+
+        Transaction tx = block.getTransactionsList().get(0);
+        RskAddress account = tx.getSender();
+
+        BlockResult result = executor.execute(block, parent.getHeader(), false);
+
+        Assert.assertNotNull(result);
+        Assert.assertNotNull(result.getTransactionReceipts());
+        Assert.assertFalse(result.getTransactionReceipts().isEmpty());
+        Assert.assertEquals(1, result.getTransactionReceipts().size());
+
+        Assert.assertNotNull(executor.getProgramResult(tx.getHash()));
+        executor.setRegisterProgramResults(false);
+
+        TransactionReceipt receipt = result.getTransactionReceipts().get(0);
+        Assert.assertEquals(tx, receipt.getTransaction());
+        Assert.assertEquals(21000, new BigInteger(1, receipt.getGasUsed()).longValue());
+        Assert.assertEquals(21000, new BigInteger(1, receipt.getCumulativeGas()).longValue());
+        Assert.assertTrue(receipt.hasTxStatus() && receipt.isTxStatusOK() && receipt.isSuccessful());
+
+        Assert.assertEquals(21000, result.getGasUsed());
+        Assert.assertEquals(21000, result.getPaidFees().asBigInteger().intValueExact());
+
+        Assert.assertFalse(Arrays.equals(repository.getRoot(), result.getFinalState().getHash().getBytes()));
+
+        byte[] calculatedLogsBloom = BlockExecutor.calculateLogsBloom(result.getTransactionReceipts());
+        Assert.assertEquals(256, calculatedLogsBloom.length);
+        Assert.assertArrayEquals(new byte[256], calculatedLogsBloom);
+
+        AccountState accountState = repository.getAccountState(account);
+
+        Assert.assertNotNull(accountState);
+        Assert.assertEquals(BigInteger.valueOf(30000), accountState.getBalance().asBigInteger());
+
+        Repository finalRepository = new MutableRepository(trieStore,
+                trieStore.retrieve(result.getFinalState().getHash().getBytes()).get());
 
         accountState = finalRepository.getAccountState(account);
 
@@ -190,7 +241,8 @@ public class BlockExecutorTest {
 
         // here is the papa. my commit changes stateroot while previous commit did not.
 
-        Repository finalRepository = new MutableRepository(trieStore, trieStore.retrieve(result.getFinalState().getHash().getBytes()));
+        Repository finalRepository = new MutableRepository(trieStore,
+                trieStore.retrieve(result.getFinalState().getHash().getBytes()).get());
 
         accountState = finalRepository.getAccountState(account);
 
@@ -235,18 +287,28 @@ public class BlockExecutorTest {
 
         BlockExecutor executor = buildBlockExecutor(trieStore);
 
-        Transaction tx = createTransaction(
-                account,
-                account2,
-                BigInteger.TEN,
-                repository.getNonce(account.getAddress())
-        );
-        Transaction tx2 = createTransaction(
-                account3,
-                account2,
-                BigInteger.TEN,
-                repository.getNonce(account3.getAddress())
-        );
+        Transaction tx3 = Transaction
+                .builder()
+                .nonce(repository.getNonce(account.getAddress()))
+                .gasPrice(BigInteger.ONE)
+                .gasLimit(BigInteger.valueOf(21000))
+                .destination(account2.getAddress())
+                .chainId(config.getNetworkConstants().getChainId())
+                .value(BigInteger.TEN)
+                .build();
+        tx3.sign(account.getEcKey().getPrivKeyBytes());
+        Transaction tx = tx3;
+        Transaction tx1 = Transaction
+                .builder()
+                .nonce(repository.getNonce(account3.getAddress()))
+                .gasPrice(BigInteger.ONE)
+                .gasLimit(BigInteger.valueOf(21000))
+                .destination(account2.getAddress())
+                .chainId(config.getNetworkConstants().getChainId())
+                .value(BigInteger.TEN)
+                .build();
+        tx1.sign(account3.getEcKey().getPrivKeyBytes());
+        Transaction tx2 = tx1;
         List<Transaction> txs = new ArrayList<>();
         txs.add(tx);
         txs.add(tx2);
@@ -288,18 +350,28 @@ public class BlockExecutorTest {
 
         BlockExecutor executor = buildBlockExecutor(trieStore);
 
-        Transaction tx = createTransaction(
-                account,
-                account2,
-                BigInteger.TEN,
-                repository.getNonce(account.getAddress())
-        );
-        Transaction tx2 = createTransaction(
-                account3,
-                account2,
-                BigInteger.TEN,
-                repository.getNonce(account3.getAddress())
-        );
+        Transaction tx3 = Transaction
+                .builder()
+                .nonce(repository.getNonce(account.getAddress()))
+                .gasPrice(BigInteger.ONE)
+                .gasLimit(BigInteger.valueOf(21000))
+                .destination(account2.getAddress())
+                .chainId(config.getNetworkConstants().getChainId())
+                .value(BigInteger.TEN)
+                .build();
+        tx3.sign(account.getEcKey().getPrivKeyBytes());
+        Transaction tx = tx3;
+        Transaction tx1 = Transaction
+                .builder()
+                .nonce(repository.getNonce(account3.getAddress()))
+                .gasPrice(BigInteger.ONE)
+                .gasLimit(BigInteger.valueOf(21000))
+                .destination(account2.getAddress())
+                .chainId(config.getNetworkConstants().getChainId())
+                .value(BigInteger.TEN)
+                .build();
+        tx1.sign(account3.getEcKey().getPrivKeyBytes());
+        Transaction tx2 = tx1;
         List<Transaction> txs = new ArrayList<>();
         txs.add(tx);
         txs.add(tx2);
@@ -404,12 +476,17 @@ public class BlockExecutorTest {
 
         BlockExecutor executor = buildBlockExecutor(trieStore);
 
-        Transaction tx = createTransaction(
-                account,
-                account2,
-                BigInteger.TEN,
-                repository.getNonce(account.getAddress())
-        );
+        Transaction tx1 = Transaction
+                .builder()
+                .nonce(repository.getNonce(account.getAddress()))
+                .gasPrice(BigInteger.ONE)
+                .gasLimit(BigInteger.valueOf(21000))
+                .destination(account2.getAddress())
+                .chainId(config.getNetworkConstants().getChainId())
+                .value(BigInteger.TEN)
+                .build();
+        tx1.sign(account.getEcKey().getPrivKeyBytes());
+        Transaction tx = tx1;
         List<Transaction> txs = new ArrayList<>();
         txs.add(tx);
 
@@ -446,8 +523,18 @@ public class BlockExecutorTest {
         bestBlock.setStateRoot(repository.getRoot());
 
         // then we create the new block to connect
+        Transaction tx = Transaction
+                .builder()
+                .nonce(repository.getNonce(account.getAddress()))
+                .gasPrice(BigInteger.ONE)
+                .gasLimit(BigInteger.valueOf(21000))
+                .destination(account2.getAddress())
+                .chainId(config.getNetworkConstants().getChainId())
+                .value(BigInteger.TEN)
+                .build();
+        tx.sign(account.getEcKey().getPrivKeyBytes());
         List<Transaction> txs = Collections.singletonList(
-                createTransaction(account, account2, BigInteger.TEN, repository.getNonce(account.getAddress()))
+                tx
         );
 
         List<BlockHeader> uncles = new ArrayList<>();
@@ -469,21 +556,33 @@ public class BlockExecutorTest {
         bestBlock.setStateRoot(repository.getRoot());
 
         // then we create the new block to connect
+        Transaction tx = Transaction
+                .builder()
+                .nonce(repository.getNonce(account.getAddress()).add(BigInteger.ONE))
+                .gasPrice(BigInteger.ONE)
+                .gasLimit(BigInteger.valueOf(21000))
+                .destination(account2.getAddress())
+                .chainId(config.getNetworkConstants().getChainId())
+                .value(BigInteger.TEN)
+                .build();
+        tx.sign(account.getEcKey().getPrivKeyBytes());
+        Transaction tx1 = Transaction
+                .builder()
+                .nonce(repository.getNonce(account.getAddress()))
+                .gasPrice(BigInteger.ONE)
+                .gasLimit(BigInteger.valueOf(21000))
+                .destination(account2.getAddress())
+                .chainId(config.getNetworkConstants().getChainId())
+                .value(BigInteger.TEN)
+                .build();
+        tx1.sign(account.getEcKey().getPrivKeyBytes());
         List<Transaction> txs = Arrays.asList(
-                createTransaction(account, account2, BigInteger.TEN, repository.getNonce(account.getAddress())),
-                createTransaction(account, account2, BigInteger.TEN, repository.getNonce(account.getAddress()).add(BigInteger.ONE))
+                tx1,
+                tx
         );
 
         List<BlockHeader> uncles = new ArrayList<>();
         return new BlockGenerator().createChildBlock(bestBlock, txs, uncles, 1, null);
-    }
-
-    private static Transaction createTransaction(Account sender, Account receiver, BigInteger value, BigInteger nonce) {
-        String toAddress = Hex.toHexString(receiver.getAddress().getBytes());
-        byte[] privateKeyBytes = sender.getEcKey().getPrivKeyBytes();
-        Transaction tx = new Transaction(toAddress, value, nonce, BigInteger.ONE, BigInteger.valueOf(21000), config.getNetworkConstants().getChainId());
-        tx.sign(privateKeyBytes);
-        return tx;
     }
 
     public static Account createAccount(String seed, Repository repository, Coin balance) {
@@ -529,7 +628,8 @@ public class BlockExecutorTest {
         Block block = objects.getBlock();
         TrieStore trieStore = objects.getTrieStore();
         BlockExecutor executor = buildBlockExecutor(trieStore);
-        Repository repository = new MutableRepository(trieStore, trieStore.retrieve(objects.getParent().getStateRoot()));
+        Repository repository = new MutableRepository(trieStore,
+                trieStore.retrieve(objects.getParent().getStateRoot()).get());
         Transaction tx = objects.getTransaction();
         Account account = objects.getAccount();
 
@@ -576,7 +676,8 @@ public class BlockExecutorTest {
         Assert.assertNotNull(accountState);
         Assert.assertEquals(BigInteger.valueOf(30000), accountState.getBalance().asBigInteger());
 
-        Repository finalRepository = new MutableRepository(trieStore, trieStore.retrieve(result.getFinalState().getHash().getBytes()));
+        Repository finalRepository = new MutableRepository(trieStore,
+                trieStore.retrieve(result.getFinalState().getHash().getBytes()).get());
 
         accountState = finalRepository.getAccountState(account.getAddress());
 
@@ -648,14 +749,13 @@ public class BlockExecutorTest {
             valueData = newValueData;
         }
 
-        Transaction tx = new Transaction(
-                BigIntegers.asUnsignedByteArray(nonce),
-                BigIntegers.asUnsignedByteArray(BigInteger.ONE), //gasPrice
-                gasLimitData, // gasLimit
-                to,
-                valueData,
-                null
-        ); // no data
+        Transaction tx = Transaction.builder()
+                .nonce(nonce)
+                .gasPrice(BigInteger.ONE)
+                .gasLimit(gasLimitData)
+                .destination(to)
+                .value(valueData)
+                .build(); // no data
         tx.sign(privateKeyBytes);
         return tx;
     }
@@ -686,7 +786,8 @@ public class BlockExecutorTest {
                         null,
                         blockFactory,
                         new ProgramInvokeFactoryImpl(),
-                        new PrecompiledContracts(config, bridgeSupportFactory)
+                        new PrecompiledContracts(config, bridgeSupportFactory),
+                        new BlockTxSignatureCache(new ReceivedTxSignatureCache())
                 )
         );
     }
@@ -802,11 +903,6 @@ public class BlockExecutorTest {
 
         @Override
         public void onTransactionPoolChanged(TransactionPool transactionPool) {
-
-        }
-
-        @Override
-        public void onSyncDone() {
 
         }
 

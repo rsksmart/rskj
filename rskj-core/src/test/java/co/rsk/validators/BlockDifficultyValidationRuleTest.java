@@ -51,11 +51,12 @@ public class BlockDifficultyValidationRuleTest {
     }
 
     private BlockHeader getEmptyHeader(BlockDifficulty difficulty, long blockTimestamp, int uCount) {
-        BlockHeader header = blockFactory.newHeader(null, null,
-                TestUtils.randomAddress().getBytes(), null, difficulty.getBytes(), 0,
-                null, 0,
-                blockTimestamp, null, null, uCount);
-        return header;
+        return blockFactory.getBlockHeaderBuilder()
+                .setCoinbase(TestUtils.randomAddress())
+                .setDifficulty(difficulty)
+                .setTimestamp(blockTimestamp)
+                .setUncleCount(uCount)
+                .build();
     }
 
     @Test

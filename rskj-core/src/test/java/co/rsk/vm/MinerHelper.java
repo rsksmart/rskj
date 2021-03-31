@@ -27,9 +27,9 @@ import co.rsk.mine.GasLimitCalculator;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
-import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
+import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.PrecompiledContracts;
 import org.powermock.reflect.Whitebox;
 import org.slf4j.Logger;
@@ -78,8 +78,8 @@ public class MinerHelper {
         latestStateRootHash = track.getRoot();
 
         // RSK test, remove
-        String stateHash1 = Hex.toHexString(blockchain.getBestBlock().getStateRoot());
-        String stateHash2 = Hex.toHexString(repository.getRoot());
+        String stateHash1 = ByteUtil.toHexString(blockchain.getBestBlock().getStateRoot());
+        String stateHash2 = ByteUtil.toHexString(repository.getRoot());
         if (stateHash1.compareTo(stateHash2) != 0) {
             logger.error("Strange state in block {} {}", block.getNumber(), block.getHash());
             panicProcessor.panic("minerserver", String.format("Strange state in block %d %s", block.getNumber(), block.getHash()));
@@ -92,6 +92,8 @@ public class MinerHelper {
                 config.getNetworkConstants().getBridgeConstants(),
                 config.getActivationConfig());
 
+        BlockTxSignatureCache blockTxSignatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
+
         for (Transaction tx : block.getTransactionsList()) {
             TransactionExecutorFactory transactionExecutorFactory = new TransactionExecutorFactory(
                     config,
@@ -99,14 +101,11 @@ public class MinerHelper {
                     null,
                     blockFactory,
                     null,
-                    new PrecompiledContracts(config, bridgeSupportFactory));
+                    new PrecompiledContracts(config, bridgeSupportFactory), blockTxSignatureCache);
             TransactionExecutor executor = transactionExecutorFactory
                     .newInstance(tx, txindex++, block.getCoinbase(), track, block, totalGasUsed);
 
-            executor.init();
-            executor.execute();
-            executor.go();
-            executor.finalization();
+            executor.executeTransaction();
 
             long gasUsed = executor.getGasUsed();
             Coin paidFees = executor.getPaidFees();

@@ -21,7 +21,7 @@ package co.rsk;
 
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
-import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.util.ByteUtil;
 
 import java.nio.charset.StandardCharsets;
 
@@ -44,11 +44,11 @@ public class GenNodeKeyId {
             key = ECKey.fromPrivate(HashUtil.keccak256(generator.getBytes(StandardCharsets.UTF_8)));
         }
 
-        String keybytes = Hex.toHexString(key.getPrivKeyBytes());
-        String pubkeybytes = Hex.toHexString(key.getPubKey());
-        String compressedpubkeybytes = Hex.toHexString(key.getPubKey(true));
-        String address = Hex.toHexString(key.getAddress());
-        String nodeid = Hex.toHexString(key.getNodeId());
+        String keybytes = ByteUtil.toHexString(key.getPrivKeyBytes());
+        String pubkeybytes = ByteUtil.toHexString(key.getPubKey());
+        String compressedpubkeybytes = ByteUtil.toHexString(key.getPubKey(true));
+        String address = ByteUtil.toHexString(key.getAddress());
+        String nodeid = ByteUtil.toHexString(key.getNodeId());
 
         System.out.println('{');
         System.out.println("   \"privateKey\": \"" + keybytes + "\",");

@@ -1,9 +1,6 @@
 package org.ethereum.rpc.exception;
 
-/**
- * Created by mario on 17/10/2016.
- */
-public class RskJsonRpcRequestException extends RuntimeException{
+public class RskJsonRpcRequestException extends RuntimeException {
 
     private final Integer code;
 
@@ -25,16 +22,39 @@ public class RskJsonRpcRequestException extends RuntimeException{
         return executionError("transaction reverted");
     }
 
+    public static RskJsonRpcRequestException transactionRevertedExecutionError(String revertReason) {
+        return executionError("revert " + revertReason);
+    }
+
     public static RskJsonRpcRequestException unknownError(String message) {
         return new RskJsonRpcRequestException(-32009, message);
     }
 
     private static RskJsonRpcRequestException executionError(String message) {
-        return new RskJsonRpcRequestException(-32015, String.format("VM execution error: %s", message));
+        return new RskJsonRpcRequestException(-32015, String.format("VM Exception while processing transaction: %s", message));
     }
 
     public static RskJsonRpcRequestException transactionError(String message) {
         return new RskJsonRpcRequestException(-32010, message);
     }
 
+    public static RskJsonRpcRequestException invalidParamError(String message) {
+        return new RskJsonRpcRequestException(-32602, message);
+    }
+
+    public static RskJsonRpcRequestException invalidParamError(String message, Exception e) {
+        return new RskJsonRpcRequestException(-32602, message, e);
+    }
+
+    public static RskJsonRpcRequestException unimplemented(String message) {
+        return new RskJsonRpcRequestException(-32201, message);
+    }
+
+    public static RskJsonRpcRequestException blockNotFound(String message) {
+        return new RskJsonRpcRequestException(-32600, message);
+    }
+
+    public static RskJsonRpcRequestException stateNotFound(String message) {
+        return new RskJsonRpcRequestException(-32600, message);
+    }
 }

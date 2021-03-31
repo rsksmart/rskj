@@ -18,66 +18,47 @@
 
 package co.rsk.net;
 
-import co.rsk.config.InternalService;
-import co.rsk.crypto.Keccak256;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionPool;
-import org.ethereum.listener.CompositeEthereumListener;
-import org.ethereum.listener.EthereumListenerAdapter;
+import org.ethereum.core.TransactionPoolAddResult;
 import org.ethereum.net.server.ChannelManager;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import javax.annotation.Nonnull;
+import java.util.*;
 
 /**
  * Centralizes receiving and relaying transactions, so we can only distribute information to nodes that don't already
  * have it.
  */
-public class TransactionGateway implements InternalService {
+public class TransactionGateway {
     private final ChannelManager channelManager;
-    private final CompositeEthereumListener emitter;
     private final TransactionPool transactionPool;
-
-    private final TransactionNodeInformation transactionNodeInformation = new TransactionNodeInformation();
-    private final OnPendingTransactionsReceivedListener listener = new OnPendingTransactionsReceivedListener();
 
     public TransactionGateway(
             ChannelManager channelManager,
-            TransactionPool transactionPool,
-            CompositeEthereumListener emitter) {
+            TransactionPool transactionPool) {
         this.channelManager = Objects.requireNonNull(channelManager);
         this.transactionPool = Objects.requireNonNull(transactionPool);
-        this.emitter = Objects.requireNonNull(emitter);
     }
 
-    @Override
-    public void start() {
-        emitter.addListener(listener);
-    }
-
-    @Override
-    public void stop() {
-        emitter.removeListener(listener);
-    }
-
-    public void receiveTransactionsFrom(List<Transaction> txs, NodeID nodeID) {
-        txs.forEach(tx -> transactionNodeInformation.addTransactionToNode(tx.getHash(), nodeID));
-        transactionPool.addTransactions(txs);
-    }
-
-    private class OnPendingTransactionsReceivedListener extends EthereumListenerAdapter {
-        @Override
-        public void onPendingTransactionsReceived(List<Transaction> txs) {
-            for (Transaction tx : txs) {
-                Keccak256 txHash = tx.getHash();
-                Set<NodeID> nodesToSkip = new HashSet<>(transactionNodeInformation.getNodesByTransaction(txHash));
-                Set<NodeID> newNodes = channelManager.broadcastTransaction(tx, nodesToSkip);
-
-                newNodes.forEach(nodeID -> transactionNodeInformation.addTransactionToNode(txHash, nodeID));
-            }
+    /**
+     * Receives transactions from other node
+     */
+    public void receiveTransactionsFrom(@Nonnull List<Transaction> txs, @Nonnull Set<NodeID> nodeIDS) {
+        List<Transaction> result  = transactionPool.addTransactions(txs);
+        if(!result.isEmpty()) {
+            channelManager.broadcastTransactions(result, nodeIDS);
         }
     }
-}
 
+    /**
+    * Receives transaction via JSON RPC
+    */
+    public TransactionPoolAddResult receiveTransaction(Transaction transaction) {
+        TransactionPoolAddResult result  = transactionPool.addTransaction(transaction);
+        if(result.pendingTransactionsWereAdded()) {
+            channelManager.broadcastTransactions(result.getPendingTransactionsAdded(), Collections.emptySet());
+        }
+        return result;
+    }
+}

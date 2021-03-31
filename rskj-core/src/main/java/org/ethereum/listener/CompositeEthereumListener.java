@@ -92,11 +92,6 @@ public class CompositeEthereumListener implements EthereumListener {
     }
 
     @Override
-    public void onSyncDone() {
-        scheduleListenerCallbacks(EthereumListener::onSyncDone);
-    }
-
-    @Override
     public void onNoConnections() {
         scheduleListenerCallbacks(EthereumListener::onNoConnections);
     }

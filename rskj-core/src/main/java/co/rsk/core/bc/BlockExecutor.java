@@ -21,6 +21,7 @@ package co.rsk.core.bc;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.TransactionExecutorFactory;
+import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.db.StateRootHandler;
 import co.rsk.metrics.profilers.Metric;
@@ -32,6 +33,7 @@ import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
+import org.ethereum.vm.program.ProgramResult;
 import org.ethereum.vm.trace.ProgramTraceProcessor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -58,6 +60,9 @@ public class BlockExecutor {
     private final TransactionExecutorFactory transactionExecutorFactory;
     private final StateRootHandler stateRootHandler;
     private final ActivationConfig activationConfig;
+
+    private final Map<Keccak256, ProgramResult> transactionResults = new HashMap<>();
+    private boolean registerProgramResults;
 
     public BlockExecutor(
             ActivationConfig activationConfig,
@@ -136,34 +141,34 @@ public class BlockExecutor {
     public boolean validate(Block block, BlockResult result) {
         Metric metric = profiler.start(Profiler.PROFILING_TYPE.BLOCK_FINAL_STATE_VALIDATION);
         if (result == BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT) {
-            logger.error("Block {} [{}] execution was interrupted because of an invalid transaction", block.getNumber(), block.getShortHash());
+            logger.error("Block {} [{}] execution was interrupted because of an invalid transaction", block.getNumber(), block.getPrintableHash());
             profiler.stop(metric);
             return false;
         }
 
         boolean isValidStateRoot = validateStateRoot(block.getHeader(), result);
         if (!isValidStateRoot) {
-            logger.error("Block {} [{}] given State Root is invalid", block.getNumber(), block.getShortHash());
+            logger.error("Block {} [{}] given State Root is invalid", block.getNumber(), block.getPrintableHash());
             profiler.stop(metric);
             return false;
         }
 
         boolean isValidReceiptsRoot = validateReceiptsRoot(block.getHeader(), result);
         if (!isValidReceiptsRoot) {
-            logger.error("Block {} [{}] given Receipt Root is invalid", block.getNumber(), block.getShortHash());
+            logger.error("Block {} [{}] given Receipt Root is invalid", block.getNumber(), block.getPrintableHash());
             profiler.stop(metric);
             return false;
         }
 
         boolean isValidLogsBloom = validateLogsBloom(block.getHeader(), result);
         if (!isValidLogsBloom) {
-            logger.error("Block {} [{}] given Logs Bloom is invalid", block.getNumber(), block.getShortHash());
+            logger.error("Block {} [{}] given Logs Bloom is invalid", block.getNumber(), block.getPrintableHash());
             profiler.stop(metric);
             return false;
         }
 
         if (result.getGasUsed() != block.getGasUsed()) {
-            logger.error("Block {} [{}] given gasUsed doesn't match: {} != {}", block.getNumber(), block.getShortHash(), block.getGasUsed(), result.getGasUsed());
+            logger.error("Block {} [{}] given gasUsed doesn't match: {} != {}", block.getNumber(), block.getPrintableHash(), block.getGasUsed(), result.getGasUsed());
             profiler.stop(metric);
             return false;
         }
@@ -172,7 +177,7 @@ public class BlockExecutor {
         Coin feesPaidToMiner = block.getFeesPaidToMiner();
 
         if (!paidFees.equals(feesPaidToMiner))  {
-            logger.error("Block {} [{}] given paidFees doesn't match: {} != {}", block.getNumber(), block.getShortHash(), feesPaidToMiner, paidFees);
+            logger.error("Block {} [{}] given paidFees doesn't match: {} != {}", block.getNumber(), block.getPrintableHash(), feesPaidToMiner, paidFees);
             profiler.stop(metric);
             return false;
         }
@@ -181,7 +186,7 @@ public class BlockExecutor {
         List<Transaction> transactionsList = block.getTransactionsList();
 
         if (!executedTransactions.equals(transactionsList))  {
-            logger.error("Block {} [{}] given txs doesn't match: {} != {}", block.getNumber(), block.getShortHash(), transactionsList, executedTransactions);
+            logger.error("Block {} [{}] given txs doesn't match: {} != {}", block.getNumber(), block.getPrintableHash(), transactionsList, executedTransactions);
             profiler.stop(metric);
             return false;
         }
@@ -222,7 +227,7 @@ public class BlockExecutor {
     }
 
     public BlockResult execute(Block block, BlockHeader parent, boolean discardInvalidTxs, boolean ignoreReadyToExecute) {
-        return executeInternal(null, block, parent, discardInvalidTxs, ignoreReadyToExecute);
+        return executeInternal(null, 0, block, parent, discardInvalidTxs, ignoreReadyToExecute);
     }
 
     /**
@@ -230,22 +235,25 @@ public class BlockExecutor {
      */
     public void traceBlock(
             ProgramTraceProcessor programTraceProcessor,
+            int vmTraceOptions,
             Block block,
             BlockHeader parent,
             boolean discardInvalidTxs,
             boolean ignoreReadyToExecute) {
         executeInternal(
-                Objects.requireNonNull(programTraceProcessor), block, parent, discardInvalidTxs, ignoreReadyToExecute
+                Objects.requireNonNull(programTraceProcessor), vmTraceOptions, block, parent, discardInvalidTxs, ignoreReadyToExecute
         );
     }
 
     private BlockResult executeInternal(
             @Nullable ProgramTraceProcessor programTraceProcessor,
+            int vmTraceOptions,
             Block block,
             BlockHeader parent,
             boolean discardInvalidTxs,
-            boolean ignoreReadyToExecute) {
+            boolean acceptInvalidTransactions) {
         boolean vmTrace = programTraceProcessor != null;
+        logger.trace("Start executeInternal.");
         logger.trace("applyBlock: block: [{}] tx.list: [{}]", block.getNumber(), block.getTransactionsList().size());
 
         // Forks the repo, does not change "repository". It will have a completely different
@@ -274,7 +282,6 @@ public class BlockExecutor {
 
         int txindex = 0;
 
-
         for (Transaction tx : block.getTransactionsList()) {
             logger.trace("apply block: [{}] tx: [{}] ", block.getNumber(), i);
 
@@ -286,11 +293,11 @@ public class BlockExecutor {
                     block,
                     totalGasUsed,
                     vmTrace,
+                    vmTraceOptions,
                     deletedAccounts);
-            boolean readyToExecute = txExecutor.init();
+            boolean transactionExecuted = txExecutor.executeTransaction();
 
-
-            if (!ignoreReadyToExecute && !readyToExecute) {
+            if (!acceptInvalidTransactions && !transactionExecuted) {
                 if (discardInvalidTxs) {
                     logger.warn("block: [{}] discarded tx: [{}]", block.getNumber(), tx.getHash());
                     continue;
@@ -304,9 +311,10 @@ public class BlockExecutor {
 
             executedTransactions.add(tx);
 
-            txExecutor.execute();
-            txExecutor.go();
-            txExecutor.finalization();
+            if (this.registerProgramResults) {
+                this.transactionResults.put(tx.getHash(), txExecutor.getResult());
+            }
+
             if (vmTrace) {
                 txExecutor.extractTrace(programTraceProcessor);
             }
@@ -346,17 +354,24 @@ public class BlockExecutor {
             logger.trace("tx done");
         }
 
-        track.save();
+        logger.trace("End txs executions.");
+        if (!vmTrace) {
+            logger.trace("Saving track.");
+            track.save();
+            logger.trace("End saving track.");
+        }
 
+        logger.trace("Building execution results.");
         BlockResult result = new BlockResult(
                 block,
                 executedTransactions,
                 receipts,
                 totalGasUsed,
                 totalPaidFees,
-                track.getTrie()
+                vmTrace ? null : track.getTrie()
         );
         profiler.stop(metric);
+        logger.trace("End executeInternal.");
         return result;
     }
 
@@ -394,5 +409,14 @@ public class BlockExecutor {
         }
 
         return logBloom.getData();
+    }
+
+    public ProgramResult getProgramResult(Keccak256 txhash) {
+        return this.transactionResults.get(txhash);
+    }
+
+    public void setRegisterProgramResults(boolean value) {
+        this.registerProgramResults = value;
+        this.transactionResults.clear();
     }
 }

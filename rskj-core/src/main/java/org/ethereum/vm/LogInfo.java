@@ -21,15 +21,12 @@ package org.ethereum.vm;
 
 import org.ethereum.core.Bloom;
 import org.ethereum.crypto.HashUtil;
-import org.ethereum.util.RLP;
-import org.ethereum.util.RLPElement;
-import org.ethereum.util.RLPItem;
-import org.ethereum.util.RLPList;
-
-import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.util.*;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * @author Roman Mandeleil
@@ -57,7 +54,8 @@ public class LogInfo {
         this.address = address.getRLPData() != null ? address.getRLPData() : new byte[]{};
         this.data = data.getRLPData() != null ? data.getRLPData() : new byte[]{};
 
-        for (RLPElement topic1 : topics) {
+        for (int k = 0; k < topics.size(); k++) {
+            RLPElement topic1 = topics.get(k);
             byte[] topic = topic1.getRLPData();
             this.topics.add(DataWord.valueOf(topic));
         }
@@ -120,6 +118,10 @@ public class LogInfo {
         this.rejected = true;
     }
 
+    public static List<DataWord> byteArrayToList(byte[][] data) {
+        return Arrays.stream(data).map(DataWord::valueOf).collect(Collectors.toList());
+    }
+
     @Override
     public String toString() {
 
@@ -127,16 +129,16 @@ public class LogInfo {
         topicsStr.append("[");
 
         for (DataWord topic : topics) {
-            String topicStr = Hex.toHexString(topic.getData());
+            String topicStr = ByteUtil.toHexString(topic.getData());
             topicsStr.append(topicStr).append(" ");
         }
         topicsStr.append("]");
 
 
         return "LogInfo{" +
-                "address=" + Hex.toHexString(address) +
+                "address=" + ByteUtil.toHexString(address) +
                 ", topics=" + topicsStr +
-                ", data=" + Hex.toHexString(data) +
+                ", data=" + ByteUtil.toHexString(data) +
                 '}';
     }
 

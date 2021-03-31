@@ -162,9 +162,9 @@ public class BlockchainTest {
         BlockGenerator blockGenerator = new BlockGenerator();
         List<Block> chain1 = blockGenerator.getBlockChain(blockchain.getBestBlock(), height, chain1Diff);
         List<Block> chain2 = blockGenerator.getBlockChain(blockchain.getBestBlock(), height, chain2Diff);
-
+        int i = 0;
         for (Block b : chain1)
-            Assert.assertEquals(ImportResult.IMPORTED_BEST, blockchain.tryToConnect(b));
+            Assert.assertEquals("Block "+ i++ + " Not Equal.", ImportResult.IMPORTED_BEST, blockchain.tryToConnect(b));
         for (Block b : chain2)
             Assert.assertEquals(ImportResult.IMPORTED_NOT_BEST, blockchain.tryToConnect(b));
 

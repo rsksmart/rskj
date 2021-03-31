@@ -22,6 +22,8 @@ import co.rsk.bitcoinj.core.Context;
 import co.rsk.config.BridgeConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.peg.BtcBlockStoreWithCache.Factory;
+import co.rsk.peg.btcLockSender.BtcLockSenderProvider;
+import co.rsk.peg.pegininstructions.PeginInstructionsProvider;
 import co.rsk.peg.utils.BridgeEventLogger;
 import co.rsk.peg.utils.BridgeEventLoggerImpl;
 import java.util.List;
@@ -47,10 +49,8 @@ public class BridgeSupportFactory {
         this.activationConfig = activationConfig;
     }
 
-
     public BridgeSupport newInstance(Repository repository, Block executionBlock,
             RskAddress contractAddress, List<LogInfo> logs) {
-
         ActivationConfig.ForBlock activations = activationConfig.forBlock(executionBlock.getNumber());
         Context btcContext = new Context(bridgeConstants.getBtcParams());
 
@@ -58,7 +58,7 @@ public class BridgeSupportFactory {
             repository,
             contractAddress,
             bridgeConstants,
-            BridgeStorageConfiguration.fromBlockchainConfig(activations)
+            activations
         );
 
         FederationSupport federationSupport = new FederationSupport(bridgeConstants, provider, executionBlock);
@@ -67,10 +67,24 @@ public class BridgeSupportFactory {
         if (logs == null) {
             eventLogger = null;
         } else {
-            eventLogger = new BridgeEventLoggerImpl(bridgeConstants, logs);
+            eventLogger = new BridgeEventLoggerImpl(bridgeConstants, activations, logs);
         }
 
-        return new BridgeSupport(bridgeConstants, provider, eventLogger, repository, executionBlock, btcContext,
-                federationSupport, btcBlockStoreFactory);
+        BtcLockSenderProvider btcLockSenderProvider = new BtcLockSenderProvider();
+        PeginInstructionsProvider peginInstructionsProvider = new PeginInstructionsProvider();
+
+        return new BridgeSupport(
+                bridgeConstants,
+                provider,
+                eventLogger,
+                btcLockSenderProvider,
+                peginInstructionsProvider,
+                repository,
+                executionBlock,
+                btcContext,
+                federationSupport,
+                btcBlockStoreFactory,
+                activations
+        );
     }
 }

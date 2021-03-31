@@ -22,6 +22,7 @@ package org.ethereum.db;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.db.RemascCache;
 import org.ethereum.core.Block;
+import org.ethereum.core.Bloom;
 
 import javax.annotation.Nonnull;
 import java.util.List;
@@ -48,8 +49,6 @@ public interface BlockStore extends RemascCache {
 
     Block getBlockByHash(byte[] hash);
 
-    Block getBlockByHashAndDepth(byte[] hash, long depth);
-
     Block getBlockAtDepthStartingAt(long depth, byte[] hash);
 
     boolean isBlockExist(byte[] hash);
@@ -62,11 +61,29 @@ public interface BlockStore extends RemascCache {
 
     Block getBestBlock();
 
+    /**
+     * @return The highest block number stored.
+     * @throws IllegalStateException if the blockstore is empty.
+     */
     long getMaxNumber();
+
+    /**
+     * @return The smallest block number stored.
+     * @throws IllegalStateException if the blockstore is empty.
+     */
+    long getMinNumber();
 
     void flush();
 
     void reBranch(Block forkBlock);
 
     List<BlockInformation> getBlocksInformationByNumber(long number);
+
+    boolean isEmpty();
+
+    void close();
+
+    Bloom bloomByBlockNumber(long blockNumber);
+
+    void rewind(long blockNumber);
 }

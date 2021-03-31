@@ -20,8 +20,8 @@
 package org.ethereum.crypto;
 
 import org.bouncycastle.crypto.digests.KeccakDigest;
-import org.bouncycastle.crypto.digests.KeccakDigest;
 import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.util.ByteUtil;
 
 import java.math.BigInteger;
 
@@ -88,7 +88,7 @@ public class Keccak256Helper {
     private static String keccak256String(byte[] message, KeccakDigest digest, boolean bouncyencoder) {
         byte[] hash = doKeccak256(message, digest, bouncyencoder);
         if (bouncyencoder) {
-            return Hex.toHexString(hash);
+            return ByteUtil.toHexString(hash);
         } else {
             BigInteger bigInt = new BigInteger(1, hash);
             return bigInt.toString(16);

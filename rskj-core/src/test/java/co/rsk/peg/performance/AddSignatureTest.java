@@ -25,9 +25,14 @@ import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.script.ScriptChunk;
 import co.rsk.bitcoinj.store.BtcBlockStore;
 import co.rsk.crypto.Keccak256;
-import co.rsk.peg.*;
+import co.rsk.peg.Bridge;
+import co.rsk.peg.BridgeStorageProvider;
+import co.rsk.peg.Federation;
+import co.rsk.peg.PegTestUtils;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.HashUtil;
+import org.ethereum.vm.exception.VMException;
+import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -51,16 +56,16 @@ public class AddSignatureTest extends BridgePerformanceTestCase {
     );
 
     @Test
-    public void addSignature() {
+    public void addSignature() throws VMException {
         ExecutionStats stats = new ExecutionStats("addSignature");
 
         addSignature_nonFullySigned(100, stats);
         addSignature_fullySigned(100, stats);
 
-        BridgePerformanceTest.addStats(stats);
+        Assert.assertTrue(BridgePerformanceTest.addStats(stats));
     }
 
-    private void addSignature_nonFullySigned(int times, ExecutionStats stats) {
+    private void addSignature_nonFullySigned(int times, ExecutionStats stats) throws VMException {
         executeAndAverage(
                 "addSignature-nonFullySigned",
                 times,
@@ -72,7 +77,7 @@ public class AddSignatureTest extends BridgePerformanceTestCase {
         );
     }
 
-    private void addSignature_fullySigned(int times, ExecutionStats stats) {
+    private void addSignature_fullySigned(int times, ExecutionStats stats) throws VMException {
         executeAndAverage(
                 "addSignature-fullySigned",
                 times,

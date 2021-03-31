@@ -21,21 +21,19 @@ package co.rsk.peg.performance;
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.bitcoinj.store.BtcBlockStore;
-import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.peg.Bridge;
 import co.rsk.peg.BridgeStorageProvider;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
 import co.rsk.peg.whitelist.LockWhitelist;
 import co.rsk.peg.whitelist.OneOffWhiteListEntry;
-import co.rsk.util.MaxSizeHashMap;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.ECKey;
-import org.ethereum.vm.PrecompiledContracts;
+import org.ethereum.vm.exception.VMException;
+import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import java.io.IOException;
 import java.math.BigInteger;
 
 @Ignore
@@ -45,25 +43,25 @@ public class LockWhitelistTest extends BridgePerformanceTestCase {
     private static final ECKey authorizedWhitelistChanger = ECKey.fromPrivate(Hex.decode("3890187a3071327cee08467ba1b44ed4c13adb2da0d5ffcc0563c371fa88259c"));
 
     @Test
-    public void getLockWhitelistSize() throws IOException {
+    public void getLockWhitelistSize() throws VMException {
         ExecutionStats stats = new ExecutionStats("getLockWhitelistSize");
         executeTestCase((int executionIndex) -> Bridge.GET_LOCK_WHITELIST_SIZE.encode(), "getLockWhitelistSize", 200, stats);
-        BridgePerformanceTest.addStats(stats);
+        Assert.assertTrue(BridgePerformanceTest.addStats(stats));
     }
 
     @Test
-    public void getLockWhitelistAddress() throws IOException {
+    public void getLockWhitelistAddress() throws VMException {
         ExecutionStats stats = new ExecutionStats("getLockWhitelistAddress");
         executeTestCase(
                 (int executionIndex) -> Bridge.GET_LOCK_WHITELIST_ADDRESS.encode(new Object[]{Helper.randomInRange(0, lockWhitelist.getSize()-1)}),
                 "getLockWhitelistAddress",
                 200,
                 stats);
-        BridgePerformanceTest.addStats(stats);
+        Assert.assertTrue(BridgePerformanceTest.addStats(stats));
     }
 
     @Test
-    public void addLockWhitelistAddress() throws IOException {
+    public void addLockWhitelistAddress() throws VMException {
         ExecutionStats stats = new ExecutionStats("addLockWhitelistAddress");
         executeTestCase(
                 (int executionIndex) -> {
@@ -74,11 +72,11 @@ public class LockWhitelistTest extends BridgePerformanceTestCase {
                 "addLockWhitelistAddress",
                 200,
                 stats);
-        BridgePerformanceTest.addStats(stats);
+        Assert.assertTrue(BridgePerformanceTest.addStats(stats));
     }
 
     @Test
-    public void removeLockWhitelistAddress() throws IOException {
+    public void removeLockWhitelistAddress() throws VMException {
         ExecutionStats stats = new ExecutionStats("removeLockWhitelistAddress");
         executeTestCase(
                 (int executionIndex) -> {
@@ -88,11 +86,11 @@ public class LockWhitelistTest extends BridgePerformanceTestCase {
                 "removeLockWhitelistAddress",
                 200,
                 stats);
-        BridgePerformanceTest.addStats(stats);
+        Assert.assertTrue(BridgePerformanceTest.addStats(stats));
     }
 
     @Test
-    public void setLockWhitelistDisableBlockDelay() throws IOException {
+    public void setLockWhitelistDisableBlockDelay() throws VMException {
         ExecutionStats stats = new ExecutionStats("setLockWhitelistDisableBlockDelay");
         executeTestCase(
                 (int executionIndex) -> {
@@ -102,10 +100,10 @@ public class LockWhitelistTest extends BridgePerformanceTestCase {
                 "setLockWhitelistDisableBlockDelay",
                 200,
                 stats);
-        BridgePerformanceTest.addStats(stats);
+        Assert.assertTrue(BridgePerformanceTest.addStats(stats));
     }
 
-    private void executeTestCase(ABIEncoder abiEncoder, String name, int times, ExecutionStats stats) {
+    private void executeTestCase(ABIEncoder abiEncoder, String name, int times, ExecutionStats stats) throws VMException {
         executeAndAverage(
                 name,
                 times,
@@ -124,9 +122,7 @@ public class LockWhitelistTest extends BridgePerformanceTestCase {
         final int maxBtcBlocks = 1000;
 
         return (BridgeStorageProvider provider, Repository repository, int executionIndex, BtcBlockStore blockStore) -> {
-            BtcBlockStore btcBlockStore = new RepositoryBtcBlockStoreWithCache(BridgeRegTestConstants.getInstance().getBtcParams(),
-                    repository.startTracking(), new MaxSizeHashMap<>(RepositoryBtcBlockStoreWithCache.MAX_SIZE_MAP_STORED_BLOCKS, true),
-                    PrecompiledContracts.BRIDGE_ADDR);
+            BtcBlockStore btcBlockStore = new RepositoryBtcBlockStoreWithCache.Factory(networkParameters).newInstance(repository.startTracking(), null, null, null);
             Context btcContext = new Context(networkParameters);
             BtcBlockChain btcBlockChain;
             try {

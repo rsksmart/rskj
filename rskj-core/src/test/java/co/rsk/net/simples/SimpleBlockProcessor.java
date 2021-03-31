@@ -18,44 +18,37 @@
 
 package co.rsk.net.simples;
 
-import co.rsk.crypto.Keccak256;
 import co.rsk.net.BlockNodeInformation;
 import co.rsk.net.BlockProcessResult;
 import co.rsk.net.BlockProcessor;
-import co.rsk.net.MessageChannel;
+import co.rsk.net.Peer;
 import co.rsk.net.messages.NewBlockHashesMessage;
+import java.time.Instant;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
-import org.ethereum.core.Blockchain;
-import org.ethereum.core.ImportResult;
 
-import java.time.Duration;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Created by ajlopez on 5/11/2016.
  */
 public class SimpleBlockProcessor implements BlockProcessor {
     public long lastKnownBlockNumber = 0;
-    private List<Block> blocks = new ArrayList<Block>();
+    private final List<Block> blocks = new ArrayList<Block>();
     private long requestId;
     private byte[] hash;
     private int count;
     private long blockGap = 1000000;
 
     @Override
-    public BlockProcessResult processBlock(MessageChannel sender, Block block) {
-        Map<Keccak256, ImportResult> connectionsResult = new HashMap<>();
+    public BlockProcessResult processBlock(Peer sender, Block block) {
         this.blocks.add(block);
-        connectionsResult.put(block.getHash(), ImportResult.IMPORTED_BEST);
-        return new BlockProcessResult(false, connectionsResult, block.getShortHash(), Duration.ZERO);
+        return BlockProcessResult.ignoreBlockResult(block, Instant.now());
     }
 
     @Override
-    public void processGetBlock(MessageChannel sender, byte[] hash) {
+    public void processGetBlock(Peer sender, byte[] hash) {
 
     }
 
@@ -69,24 +62,23 @@ public class SimpleBlockProcessor implements BlockProcessor {
     }
 
     @Override
-    public void processBlockRequest(MessageChannel sender, long requestId, byte[] hash) {
-        this.requestId = requestId;
-        this.hash = hash;
-        this.count = count;
-    }
-
-    @Override
-    public void processBlockHeadersRequest(MessageChannel sender, long requestId, byte[] hash, int count) {
+    public void processBlockRequest(Peer sender, long requestId, byte[] hash) {
         this.requestId = requestId;
         this.hash = hash;
     }
 
     @Override
-    public void processBodyRequest(MessageChannel sender, long requestId, byte[] hash) {
+    public void processBlockHeadersRequest(Peer sender, long requestId, byte[] hash, int count) {
+        this.requestId = requestId;
+        this.hash = hash;
     }
 
     @Override
-    public void processBlockHashRequest(MessageChannel sender, long requestId, long height) {
+    public void processBodyRequest(Peer sender, long requestId, byte[] hash) {
+    }
+
+    @Override
+    public void processBlockHashRequest(Peer sender, long requestId, long height) {
     }
 
     @Override
@@ -103,17 +95,17 @@ public class SimpleBlockProcessor implements BlockProcessor {
     }
 
     @Override
-    public void processNewBlockHashesMessage(MessageChannel sender, NewBlockHashesMessage message) {
+    public void processNewBlockHashesMessage(Peer sender, NewBlockHashesMessage message) {
 
     }
 
     @Override
-    public void processBlockHeaders(MessageChannel sender, List<BlockHeader> blockHeaders) {
+    public void processBlockHeaders(Peer sender, List<BlockHeader> blockHeaders) {
 
     }
 
     @Override
-    public void processSkeletonRequest(final MessageChannel sender, long requestId, final long startNumber) {
+    public void processSkeletonRequest(final Peer sender, long requestId, final long startNumber) {
 
     }
 

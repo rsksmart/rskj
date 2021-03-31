@@ -20,9 +20,9 @@
 package org.ethereum.net.server;
 
 import co.rsk.config.RskSystemProperties;
+import co.rsk.net.Peer;
 import co.rsk.net.NodeID;
 import co.rsk.net.Status;
-import co.rsk.net.eth.RskMessage;
 import co.rsk.net.messages.*;
 import co.rsk.scoring.InetAddressBlock;
 import com.google.common.annotations.VisibleForTesting;
@@ -30,7 +30,6 @@ import org.ethereum.config.NodeFilter;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockIdentifier;
 import org.ethereum.core.Transaction;
-import org.ethereum.net.eth.message.EthMessage;
 import org.ethereum.net.message.ReasonCode;
 import org.ethereum.sync.SyncPool;
 import org.slf4j.Logger;
@@ -42,6 +41,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.stream.Collectors;
 
 /**
  * @author Roman Mandeleil
@@ -95,7 +95,7 @@ public class ChannelManagerImpl implements ChannelManager {
         mainWorker.shutdown();
     }
 
-    private void handleNewPeersAndDisconnections(){
+    private void handleNewPeersAndDisconnections() {
         this.tryProcessNewPeers();
         this.cleanDisconnections();
     }
@@ -121,9 +121,11 @@ public class ChannelManagerImpl implements ChannelManager {
     }
 
     private void processNewPeers() {
-        List<Channel> processedChannels = new ArrayList<>();
-        newPeers.stream().filter(Channel::isProtocolsInitialized).forEach(c -> processNewPeer(c, processedChannels));
-        newPeers.removeAll(processedChannels);
+        synchronized (newPeers) {
+            List<Channel> processedChannels = new ArrayList<>();
+            newPeers.stream().filter(Channel::isProtocolsInitialized).forEach(c -> processNewPeer(c, processedChannels));
+            newPeers.removeAll(processedChannels);
+        }
     }
 
     private void processNewPeer(Channel channel, List<Channel> processedChannels) {
@@ -151,9 +153,9 @@ public class ChannelManagerImpl implements ChannelManager {
     private void disconnect(Channel peer, ReasonCode reason) {
         logger.debug("Disconnecting peer with reason {} : {}", reason, peer);
         peer.disconnect(reason);
-        synchronized (disconnectionTimeoutsLock){
+        synchronized (disconnectionTimeoutsLock) {
             disconnectionsTimeouts.put(peer.getInetSocketAddress().getAddress(),
-                                       Instant.now().plus(INBOUND_CONNECTION_BAN_TIMEOUT));
+                    Instant.now().plus(INBOUND_CONNECTION_BAN_TIMEOUT));
         }
     }
 
@@ -170,7 +172,7 @@ public class ChannelManagerImpl implements ChannelManager {
     private void addToActives(Channel peer) {
         if (peer.isUsingNewProtocol() || peer.hasEthStatusSucceeded()) {
             syncPool.add(peer);
-            synchronized (activePeersLock){
+            synchronized (activePeersLock) {
                 activePeers.put(peer.getNodeId(), peer);
             }
         }
@@ -187,9 +189,9 @@ public class ChannelManagerImpl implements ChannelManager {
 
         final Set<NodeID> nodesIdsBroadcastedTo = new HashSet<>();
         final BlockIdentifier bi = new BlockIdentifier(block.getHash().getBytes(), block.getNumber());
-        final EthMessage newBlock = new RskMessage(new BlockMessage(block));
-        final EthMessage newBlockHashes = new RskMessage(new NewBlockHashesMessage(Arrays.asList(bi)));
-        synchronized (activePeersLock){
+        final Message newBlock = new BlockMessage(block);
+        final Message newBlockHashes = new NewBlockHashesMessage(Arrays.asList(bi));
+        synchronized (activePeersLock) {
             // Get a randomized list with all the peers that don't have the block yet.
             activePeers.values().forEach(c -> logger.trace("RSK activePeers: {}", c));
             List<Channel> peers = new ArrayList<>(activePeers.values());
@@ -215,9 +217,9 @@ public class ChannelManagerImpl implements ChannelManager {
     @Nonnull
     public Set<NodeID> broadcastBlockHash(@Nonnull final List<BlockIdentifier> identifiers, final Set<NodeID> targets) {
         final Set<NodeID> nodesIdsBroadcastedTo = new HashSet<>();
-        final EthMessage newBlockHash = new RskMessage(new NewBlockHashesMessage(identifiers));
+        final Message newBlockHash = new NewBlockHashesMessage(identifiers);
 
-        synchronized (activePeersLock){
+        synchronized (activePeersLock) {
             activePeers.values().forEach(c -> logger.trace("RSK activePeers: {}", c));
 
             activePeers.values().stream()
@@ -231,35 +233,10 @@ public class ChannelManagerImpl implements ChannelManager {
         return nodesIdsBroadcastedTo;
     }
 
-    /**
-     * broadcastTransaction Propagates a transaction message across active peers with exclusion of
-     * the peers with an id belonging to the skip set.
-     *
-     * @param transaction new Transaction to be sent
-     * @param skip  the set of peers to avoid sending the message.
-     * @return a set containing the ids of the peers that received the transaction.
-     */
-    @Nonnull
-    public Set<NodeID> broadcastTransaction(@Nonnull final Transaction transaction, final Set<NodeID> skip) {
-        List<Transaction> transactions = Collections.singletonList(transaction);
-
-        final Set<NodeID> nodesIdsBroadcastedTo = new HashSet<>();
-        final EthMessage newTransactions = new RskMessage(new TransactionsMessage(transactions));
-
-        activePeers.values().stream()
-            .filter(p -> !skip.contains(p.getNodeId()))
-            .forEach(peer -> {
-                peer.sendMessage(newTransactions);
-                nodesIdsBroadcastedTo.add(peer.getNodeId());
-            });
-
-        return nodesIdsBroadcastedTo;
-    }
-
     @Override
     public int broadcastStatus(Status status) {
-        final EthMessage message = new RskMessage(new StatusMessage(status));
-        synchronized (activePeersLock){
+        final Message message = new StatusMessage(status);
+        synchronized (activePeersLock) {
             if (activePeers.isEmpty()) {
                 return 0;
             }
@@ -287,37 +264,26 @@ public class ChannelManagerImpl implements ChannelManager {
     }
 
     public void notifyDisconnect(Channel channel) {
-        logger.debug("Peer {}: notifies about disconnect", channel.getPeerIdShort());
+        logger.debug("Peer {}: notifies about disconnect", channel.getPeerId());
         channel.onDisconnect();
-        syncPool.onDisconnect(channel);
-        synchronized (activePeersLock){
-            activePeers.values().remove(channel);
-        }
-        if(newPeers.remove(channel)) {
-            logger.info("Peer removed from active peers: {}", channel.getPeerId());
+        synchronized (newPeers) {
+            if(newPeers.remove(channel)) {
+                logger.info("Peer removed from new peers list: {}", channel.getPeerId());
+            }
+            synchronized (activePeersLock){
+                if(activePeers.values().remove(channel)) {
+                    logger.info("Peer removed from active peers list: {}", channel.getPeerId());
+                }
+            }
+            syncPool.onDisconnect(channel);
         }
     }
 
-    public void onSyncDone(boolean done) {
-        activePeers.values().forEach(channel -> channel.onSyncDone(done));
-    }
-
-    public Collection<Channel> getActivePeers() {
+    public Collection<Peer> getActivePeers() {
         // from the docs: it is imperative to synchronize when iterating
-        synchronized (activePeersLock){
+        synchronized (activePeersLock) {
             return new ArrayList<>(activePeers.values());
         }
-    }
-
-    @Override
-    public boolean sendMessageTo(NodeID nodeID, MessageWithId message) {
-        Channel channel = activePeers.get(nodeID);
-        if (channel == null){
-            return false;
-        }
-        EthMessage msg = new RskMessage(message);
-        channel.sendMessage(msg);
-        return true;
     }
 
     public boolean isAddressBlockAvailable(InetAddress inetAddress) {
@@ -329,6 +295,54 @@ public class ChannelManagerImpl implements ChannelManager {
                     .filter(block -> block.contains(inetAddress))
                     .count() < maxConnectionsAllowed;
         }
+    }
+
+    /**
+     * broadcastTransaction Propagates a transaction message across active peers with exclusion of
+     * the peers with an id belonging to the skip set.
+     *
+     * @param transaction new Transaction to be sent
+     * @param skip        the set of peers to avoid sending the message.
+     * @return a set containing the ids of the peers that received the transaction.
+     */
+    @Nonnull
+    public Set<NodeID> broadcastTransaction(@Nonnull final Transaction transaction, @Nonnull final Set<NodeID> skip) {
+        List<Transaction> transactions = Collections.singletonList(transaction);
+
+        return internalBroadcastTransactions(skip, transactions);
+    }
+
+    /**
+     * broadcastTransaction Propagates a transaction message across active peers with exclusion of
+     * the peers with an id belonging to the skip set.
+     *
+     * @param transactions List of Transactions to be sent
+     * @param skip        the set of peers to avoid sending the message.
+     * @return a set containing the ids of the peers that received the transaction.
+     */
+    @Override
+    public Set<NodeID> broadcastTransactions(@Nonnull final List<Transaction> transactions, @Nonnull final Set<NodeID> skip) {
+        return internalBroadcastTransactions(skip, transactions);
+    }
+
+    private Set<NodeID> internalBroadcastTransactions(Set<NodeID> skip, List<Transaction> transactions) {
+        final Set<NodeID> nodesIdsBroadcastedTo = new HashSet<>();
+        final Message newTransactions = new TransactionsMessage(transactions);
+        final List<Channel> peersToBroadcast = activePeers.values().stream().
+                filter(p -> !skip.contains(p.getNodeId())).collect(Collectors.toList());
+
+        peersToBroadcast.forEach(peer -> {
+            peer.sendMessage(newTransactions);
+            nodesIdsBroadcastedTo.add(peer.getNodeId());
+        });
+
+        return nodesIdsBroadcastedTo;
+    }
+
+    @VisibleForTesting
+    public void setActivePeers(Map<NodeID, Channel> newActivePeers) {
+        this.activePeers.clear();
+        this.activePeers.putAll(newActivePeers);
     }
 
 }

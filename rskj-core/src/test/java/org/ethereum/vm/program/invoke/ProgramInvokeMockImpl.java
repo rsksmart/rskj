@@ -32,6 +32,7 @@ import org.ethereum.db.MutableRepository;
 import org.ethereum.vm.DataWord;
 import org.bouncycastle.util.encoders.Hex;
 
+import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 
 /**
@@ -65,9 +66,11 @@ public class ProgramInvokeMockImpl implements ProgramInvoke {
         this.repository = new MutableRepository(new MutableTrieImpl(null, new Trie()));
 
         this.repository.createAccount(ownerAddress);
+        this.repository.addBalance(ownerAddress, new Coin(BigInteger.valueOf(1000)));
         //Defaults to defaultContractAddress constant defined in this mock
         this.contractAddress = contractAddress!=null?contractAddress:this.defaultContractAddress;
         this.repository.createAccount(this.contractAddress);
+        this.repository.setupContract(this.contractAddress);
         this.repository.saveCode(this.contractAddress, contractCode);
         this.txindex = DataWord.ZERO;
     }

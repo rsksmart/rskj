@@ -19,10 +19,10 @@
 package co.rsk.pcc.bto;
 
 import co.rsk.pcc.ExecutionEnvironment;
-import co.rsk.pcc.NativeContractIllegalArgumentException;
+import co.rsk.pcc.exception.NativeContractIllegalArgumentException;
 import co.rsk.pcc.NativeMethod;
-import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.CallTransaction;
+import org.ethereum.util.ByteUtil;
 
 import java.math.BigInteger;
 
@@ -66,7 +66,7 @@ public class ToBase58Check extends NativeMethod {
     }
 
     @Override
-    public Object execute(Object[] arguments) {
+    public Object execute(Object[] arguments) throws NativeContractIllegalArgumentException {
         if (arguments == null) {
             throw new NativeContractIllegalArgumentException(HASH_NOT_PRESENT);
         }
@@ -77,7 +77,7 @@ public class ToBase58Check extends NativeMethod {
         if (hash.length != 20) {
             throw new NativeContractIllegalArgumentException(String.format(
                     HASH_INVALID,
-                    Hex.toHexString(hash), hash.length
+                    ByteUtil.toHexString(hash), hash.length
             ));
         }
 

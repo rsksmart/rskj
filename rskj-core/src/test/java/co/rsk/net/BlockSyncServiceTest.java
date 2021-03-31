@@ -22,6 +22,7 @@ import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.net.sync.SyncConfiguration;
 import co.rsk.test.builders.BlockChainBuilder;
+import co.rsk.validators.DummyBlockValidator;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
 import org.junit.Assert;
@@ -35,10 +36,10 @@ public class BlockSyncServiceTest {
     public void sendBlockMessagesAndAddThemToBlockchain() {
         for (int i = 0; i < 50; i += 5) {
             Blockchain blockchain = new BlockChainBuilder().ofSize(10 * i);
-            BlockStore store = new BlockStore();
+            NetBlockStore store = new NetBlockStore();
             BlockNodeInformation nodeInformation = new BlockNodeInformation();
             TestSystemProperties config = new TestSystemProperties();
-            BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, SyncConfiguration.IMMEDIATE_FOR_TESTING);
+            BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, SyncConfiguration.IMMEDIATE_FOR_TESTING, DummyBlockValidator.VALID_RESULT_INSTANCE);
             Assert.assertEquals(10 * i, blockchain.getBestBlock().getNumber());
 
             List<Block> extendedChain = new BlockGenerator().getBlockChain(blockchain.getBestBlock(), i);
@@ -54,10 +55,10 @@ public class BlockSyncServiceTest {
     public void sendBlockMessagesAndAddThemToBlockchainInReverseOrder() {
         for (int i = 1; i < 52; i += 5) {
             Blockchain blockchain = new BlockChainBuilder().ofSize(10 * i);
-            BlockStore store = new BlockStore();
+            NetBlockStore store = new NetBlockStore();
             BlockNodeInformation nodeInformation = new BlockNodeInformation();
             TestSystemProperties config = new TestSystemProperties();
-            BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, SyncConfiguration.IMMEDIATE_FOR_TESTING);
+            BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, SyncConfiguration.IMMEDIATE_FOR_TESTING, DummyBlockValidator.VALID_RESULT_INSTANCE);
             Assert.assertEquals(10 * i, blockchain.getBestBlock().getNumber());
 
             Block initialBestBlock = blockchain.getBestBlock();
@@ -83,10 +84,10 @@ public class BlockSyncServiceTest {
     @Test
     public void sendBlockMessageAndAddItToBlockchainWithCommonAncestors() {
         Blockchain blockchain = new BlockChainBuilder().ofSize(10);
-        BlockStore store = new BlockStore();
+        NetBlockStore store = new NetBlockStore();
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         TestSystemProperties config = new TestSystemProperties();
-        BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, SyncConfiguration.IMMEDIATE_FOR_TESTING);
+        BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, SyncConfiguration.IMMEDIATE_FOR_TESTING, DummyBlockValidator.VALID_RESULT_INSTANCE);
 
         Block initialBestBlock = blockchain.getBestBlock();
         Assert.assertEquals(10, initialBestBlock.getNumber());

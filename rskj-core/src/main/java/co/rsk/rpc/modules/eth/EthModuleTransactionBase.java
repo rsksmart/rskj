@@ -20,13 +20,14 @@ package co.rsk.rpc.modules.eth;
 
 import co.rsk.core.RskAddress;
 import co.rsk.core.Wallet;
+import co.rsk.net.TransactionGateway;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
 import org.ethereum.core.*;
 import org.ethereum.rpc.TypeConverter;
 import org.ethereum.rpc.Web3;
-import org.ethereum.rpc.exception.JsonRpcInvalidParamException;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
+import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.GasCost;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,6 +35,7 @@ import org.slf4j.LoggerFactory;
 import java.math.BigInteger;
 
 import static org.ethereum.rpc.TypeConverter.stringHexToByteArray;
+import static org.ethereum.rpc.exception.RskJsonRpcRequestException.invalidParamError;
 
 public class EthModuleTransactionBase implements EthModuleTransaction {
 
@@ -42,11 +44,13 @@ public class EthModuleTransactionBase implements EthModuleTransaction {
     private final Wallet wallet;
     private final TransactionPool transactionPool;
     private final Constants constants;
+    private final TransactionGateway transactionGateway;
 
-    public EthModuleTransactionBase(Constants constants, Wallet wallet, TransactionPool transactionPool) {
+    public EthModuleTransactionBase(Constants constants, Wallet wallet, TransactionPool transactionPool, TransactionGateway transactionGateway) {
         this.wallet = wallet;
         this.transactionPool = transactionPool;
         this.constants = constants;
+        this.transactionGateway = transactionGateway;
     }
 
     @Override
@@ -54,7 +58,7 @@ public class EthModuleTransactionBase implements EthModuleTransaction {
         Account account = this.wallet.getAccount(new RskAddress(args.from));
         String s = null;
         try {
-            String toAddress = args.to != null ? Hex.toHexString(stringHexToByteArray(args.to)) : null;
+            String toAddress = args.to != null ? ByteUtil.toHexString(stringHexToByteArray(args.to)) : null;
 
             BigInteger value = args.value != null ? TypeConverter.stringNumberAsBigInt(args.value) : BigInteger.ZERO;
             BigInteger gasPrice = args.gasPrice != null ? TypeConverter.stringNumberAsBigInt(args.gasPrice) : BigInteger.ZERO;
@@ -66,10 +70,22 @@ public class EthModuleTransactionBase implements EthModuleTransaction {
 
             synchronized (transactionPool) {
                 BigInteger accountNonce = args.nonce != null ? TypeConverter.stringNumberAsBigInt(args.nonce) : transactionPool.getPendingState().getNonce(account.getAddress());
-                Transaction tx = new Transaction(toAddress, value, accountNonce, gasPrice, gasLimit, args.data, constants.getChainId());
+                Transaction tx = Transaction
+                        .builder()
+                        .nonce(accountNonce)
+                        .gasPrice(gasPrice)
+                        .gasLimit(gasLimit)
+                        .destination(toAddress == null ? null : Hex.decode(toAddress))
+                        .data(args.data == null ? null : Hex.decode(args.data))
+                        .chainId(constants.getChainId())
+                        .value(value)
+                        .build();
                 tx.sign(account.getEcKey().getPrivKeyBytes());
-                transactionPool.addTransaction(tx.toImmutableTransaction())
-                        .ifTransactionWasNotAdded(message -> { throw RskJsonRpcRequestException.transactionError(message); });
+                TransactionPoolAddResult result = transactionGateway.receiveTransaction(tx.toImmutableTransaction());
+                if(!result.transactionsWereAdded()) {
+                    throw RskJsonRpcRequestException.transactionError(result.getErrorMessage());
+                }
+
                 s = tx.getHash().toJsonString();
             }
 
@@ -89,11 +105,13 @@ public class EthModuleTransactionBase implements EthModuleTransaction {
             if (null == tx.getGasLimit()
                     || null == tx.getGasPrice()
                     || null == tx.getValue()) {
-                throw new JsonRpcInvalidParamException("Missing parameter, gasPrice, gas or value");
+                throw invalidParamError("Missing parameter, gasPrice, gas or value");
             }
 
-            transactionPool.addTransaction(tx)
-                    .ifTransactionWasNotAdded(message -> { throw RskJsonRpcRequestException.transactionError(message); });
+            TransactionPoolAddResult result = transactionGateway.receiveTransaction(tx);
+            if(!result.transactionsWereAdded()) {
+                throw RskJsonRpcRequestException.transactionError(result.getErrorMessage());
+            }
 
             return s = tx.getHash().toJsonString();
         } finally {

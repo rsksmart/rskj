@@ -23,6 +23,8 @@ import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.config.*;
 import co.rsk.core.BlockDifficulty;
 import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -42,6 +44,7 @@ public class Constants {
     private static final byte[] FALLBACKMINING_PUBKEY_1 = Hex.decode("04b55031870df5de88bdb84f65bd1c6f8331c633e759caa5ac7cad3fa4f8a36791e995804bba1558ddcf330a67ff5bfa253fa1d8789735f97a97e849686527976e");
     private static final BigInteger SECP256K1N = new BigInteger("fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141", 16);
     private static final BigInteger TRANSACTION_GAS_CAP = BigDecimal.valueOf(Math.pow(2, 60)).toBigInteger();
+    private static final BigInteger RSKIP156_DIF_BOUND_DIVISOR = BigInteger.valueOf(400);
 
     private final byte chainId;
     private final boolean seedCowAccounts;
@@ -88,7 +91,13 @@ public class Constants {
         return fallbackMiningDifficulty;
     }
 
-    public BigInteger getDifficultyBoundDivisor() {
+    public BigInteger getDifficultyBoundDivisor(ActivationConfig.ForBlock activationConfig) {
+        // divisor used since inception until the RSKIP156
+        if (activationConfig.isActive(ConsensusRule.RSKIP156)
+                && getChainId() != Constants.REGTEST_CHAIN_ID) {
+            // Unless we are in regtest, this RSKIP increments the difficulty divisor from 50 to 400
+            return RSKIP156_DIF_BOUND_DIVISOR;
+        }
         return difficultyBoundDivisor;
     }
 
@@ -169,6 +178,14 @@ public class Constants {
 
     public static int getMaxAddressByteLength() {
         return 20;
+    }
+
+    public static long getMaxTimestampsDiffInSecs() {
+        return 300;
+    }
+
+    public static int getMaxBitcoinMergedMiningMerkleProofLength() {
+        return 960;
     }
 
     public static Constants mainnet() {

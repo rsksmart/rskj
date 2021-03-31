@@ -27,7 +27,6 @@ public enum ConsensusRule {
     RSKIP90("rskip90"),
     RSKIP91("rskip91"),
     RSKIP92("rskip92"),
-    RSKIP94("rskip94"),
     RSKIP97("rskip97"),
     RSKIP98("rskip98"),
     RSKIP103("rskip103"),
@@ -41,7 +40,32 @@ public enum ConsensusRule {
     RSKIP125("rskip125"),
     RSKIP126("rskip126"),
     RSKIP132("rskip132"),
-    RSKIP136("rskip136");
+    RSKIP134("rskip134"),
+    RSKIP136("rskip136"),
+    RSKIP137("rskip137"),
+    RSKIP140("rskip140"),
+    RSKIP143("rskip143"),
+    RSKIP146("rskip146"),
+    RSKIP150("rskip150"),
+    RSKIP151("rskip151"),
+    RSKIP152("rskip152"),
+    RSKIP153("rskip153"), // BLAKE2 Compression Function Precompiled
+    RSKIP156("rskip156"),
+    RSKIP169("rskip169"),
+    RSKIP170("rskip170"),
+    RSKIP171("rskip171"),
+    RSKIP174("rskip174"),
+    RSKIP176("rskip176"),
+    RSKIP179("rskip179"), // BTC-RSK timestamp linking
+    RSKIP180("rskip180"), // Limit RSK merged mining merkle proof
+    RSKIP181("rskip181"), // Peg-in rejection events
+    RSKIP186("rskip186"), // Active Federation creation block height registration
+    RSKIPUMM("rskipUMM"),
+    RSKIP185("rskip185"), // Peg-out refund and events
+    RSKIP191("rskip191"),
+    RSKIP197("rskip197"), //Handle error in Precompile Contracts execution.
+    RSKIP199("rskip199"),
+    RSKIP200("rskip200");
 
     private String configKey;
 

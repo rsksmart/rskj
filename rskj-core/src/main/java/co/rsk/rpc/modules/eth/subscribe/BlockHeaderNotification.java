@@ -24,7 +24,7 @@ import org.ethereum.rpc.TypeConverter;
 /**
  * The block header DTO for JSON serialization purposes.
  */
-public class BlockHeaderNotification {
+public class BlockHeaderNotification implements EthSubscriptionNotificationDTO {
     private final String difficulty;
     private final String extraData;
     private final String gasLimit;
@@ -41,7 +41,7 @@ public class BlockHeaderNotification {
     private final String hash;
 
     public BlockHeaderNotification(Block block) {
-        difficulty = TypeConverter.toJsonHex(block.getDifficulty().getBytes());
+        difficulty = TypeConverter.toQuantityJsonHex(block.getDifficulty().getBytes());
         extraData = TypeConverter.toJsonHex(block.getExtraData());
         gasLimit = TypeConverter.toJsonHex(block.getGasLimit());
         gasUsed = TypeConverter.toQuantityJsonHex(block.getGasUsed());

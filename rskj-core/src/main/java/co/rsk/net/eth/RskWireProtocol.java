@@ -19,10 +19,11 @@
 package co.rsk.net.eth;
 
 import co.rsk.config.RskSystemProperties;
-import co.rsk.core.BlockDifficulty;
-import co.rsk.core.bc.BlockChainStatus;
 import co.rsk.crypto.Keccak256;
-import co.rsk.net.*;
+import co.rsk.net.MessageHandler;
+import co.rsk.net.NodeID;
+import co.rsk.net.Status;
+import co.rsk.net.StatusResolver;
 import co.rsk.net.messages.BlockMessage;
 import co.rsk.net.messages.GetBlockMessage;
 import co.rsk.net.messages.Message;
@@ -30,19 +31,20 @@ import co.rsk.net.messages.StatusMessage;
 import co.rsk.scoring.EventType;
 import co.rsk.scoring.PeerScoringManager;
 import io.netty.channel.ChannelHandlerContext;
-import org.ethereum.core.*;
+import io.netty.channel.SimpleChannelInboundHandler;
+import org.ethereum.core.Genesis;
 import org.ethereum.listener.CompositeEthereumListener;
+import org.ethereum.net.MessageQueue;
 import org.ethereum.net.eth.EthVersion;
-import org.ethereum.net.eth.handler.EthHandler;
+import org.ethereum.net.eth.handler.Eth;
 import org.ethereum.net.eth.message.EthMessage;
+import org.ethereum.net.eth.message.EthMessageCodes;
 import org.ethereum.net.message.ReasonCode;
 import org.ethereum.net.server.Channel;
-import org.ethereum.sync.SyncState;
 import org.ethereum.sync.SyncStatistics;
 import org.ethereum.util.ByteUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.bouncycastle.util.encoders.Hex;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -52,10 +54,11 @@ import java.util.NoSuchElementException;
 import static org.ethereum.net.eth.EthVersion.V62;
 import static org.ethereum.net.message.ReasonCode.USELESS_PEER;
 
-public class RskWireProtocol extends EthHandler {
+public class RskWireProtocol extends SimpleChannelInboundHandler<EthMessage> implements Eth {
 
     private static final Logger logger = LoggerFactory.getLogger("sync");
     private static final Logger loggerNet = LoggerFactory.getLogger("net");
+    private final CompositeEthereumListener ethereumListener;
     /**
      * Header list sent in GET_BLOCK_BODIES message,
      * used to create blocks from headers and bodies
@@ -63,47 +66,56 @@ public class RskWireProtocol extends EthHandler {
      * or in case when peer is disconnected
      */
     private final PeerScoringManager peerScoringManager;
-    protected final SyncStatistics syncStats = new SyncStatistics();
-    protected EthState ethState = EthState.INIT;
-    protected SyncState syncState = SyncState.IDLE;
-    protected boolean syncDone = false;
+    private final SyncStatistics syncStats = new SyncStatistics();
+    private final Channel channel;
+    private final EthVersion version;
+    private EthState ethState = EthState.INIT;
 
     private final RskSystemProperties config;
-    private final MessageChannel messageSender;
+    private final StatusResolver statusResolver;
     private final MessageHandler messageHandler;
-    private final Blockchain blockchain;
     private final MessageRecorder messageRecorder;
     private final Genesis genesis;
+    private final MessageQueue msgQueue;
 
-    public RskWireProtocol(RskSystemProperties config, PeerScoringManager peerScoringManager, MessageHandler messageHandler, Blockchain blockchain, CompositeEthereumListener ethereumListener, Genesis genesis, MessageRecorder messageRecorder) {
-        super(blockchain, config, ethereumListener, V62);
+    public RskWireProtocol(RskSystemProperties config,
+                           PeerScoringManager peerScoringManager,
+                           MessageHandler messageHandler,
+                           CompositeEthereumListener ethereumListener,
+                           Genesis genesis,
+                           MessageRecorder messageRecorder,
+                           StatusResolver statusResolver,
+                           MessageQueue msgQueue,
+                           Channel channel) {
+        this.ethereumListener = ethereumListener;
+        this.version = V62;
+
+        this.msgQueue = msgQueue;
+        this.channel = channel;
         this.peerScoringManager = peerScoringManager;
         this.messageHandler = messageHandler;
-        this.blockchain = blockchain;
         this.config = config;
-        this.messageSender = new EthMessageSender(this);
+        this.statusResolver = statusResolver;
         this.messageRecorder = messageRecorder;
         this.genesis = genesis;
     }
 
     @Override
-    public void setChannel(Channel channel) {
-        super.setChannel(channel);
+    public void channelRead0(final ChannelHandlerContext ctx, EthMessage msg) throws InterruptedException {
+        loggerNet.debug("Read message: {}", msg);
 
-        if (channel == null) {
-            return;
+        if (EthMessageCodes.inRange(msg.getCommand().asByte(), version)) {
+            loggerNet.trace("EthHandler invoke: [{}]", msg.getCommand());
         }
 
-        this.messageSender.setPeerNodeID(channel.getNodeId());
-        this.messageSender.setAddress(channel.getInetSocketAddress().getAddress());
-    }
+        ethereumListener.trace(String.format("EthHandler invoke: [%s]", msg.getCommand()));
 
-    @Override
-    public void channelRead0(final ChannelHandlerContext ctx, EthMessage msg) throws InterruptedException {
-        super.channelRead0(ctx, msg);
+        channel.getNodeStatistics().getEthInbound().add();
+
+        msgQueue.receivedMessage(msg);
 
         if (this.messageRecorder != null) {
-            this.messageRecorder.recordMessage(messageSender.getPeerNodeID(), msg);
+            this.messageRecorder.recordMessage(channel.getPeerNodeID(), msg);
         }
 
         if (!hasGoodReputation(ctx)) {
@@ -121,21 +133,21 @@ public class RskWireProtocol extends EthHandler {
 
                 switch (message.getMessageType()) {
                     case BLOCK_MESSAGE:
-                        loggerNet.trace("RSK Block Message: Block {} {} from {}", ((BlockMessage)message).getBlock().getNumber(), ((BlockMessage)message).getBlock().getShortHash(), this.messageSender.getPeerNodeID());
+                        loggerNet.trace("RSK Block Message: Block {} {} from {}", ((BlockMessage)message).getBlock().getNumber(), ((BlockMessage)message).getBlock().getPrintableHash(), channel.getPeerNodeID());
                         syncStats.addBlocks(1);
                         break;
                     case GET_BLOCK_MESSAGE:
-                        loggerNet.trace("RSK Get Block Message: Block {} from {}", Hex.toHexString(((GetBlockMessage)message).getBlockHash()).substring(0, 10), this.messageSender.getPeerNodeID());
+                        loggerNet.trace("RSK Get Block Message: Block {} from {}", ByteUtil.toHexString(((GetBlockMessage)message).getBlockHash()), channel.getPeerNodeID());
                         syncStats.getBlock();
                         break;
                     case STATUS_MESSAGE:
-                        loggerNet.trace("RSK Status Message: Block {} {} from {}", ((StatusMessage)message).getStatus().getBestBlockNumber(), Hex.toHexString(((StatusMessage)message).getStatus().getBestBlockHash()).substring(0, 10), this.messageSender.getPeerNodeID());
+                        loggerNet.trace("RSK Status Message: Block {} {} from {}", ((StatusMessage)message).getStatus().getBestBlockNumber(), ByteUtil.toHexString(((StatusMessage)message).getStatus().getBestBlockHash()), channel.getPeerNodeID());
                         syncStats.addStatus();
                         break;
                 }
 
                 if (this.messageHandler != null) {
-                    this.messageHandler.postMessage(this.messageSender, rskmessage.getMessage());
+                    this.messageHandler.postMessage(channel, rskmessage.getMessage());
                 }
                 break;
             default:
@@ -147,7 +159,7 @@ public class RskWireProtocol extends EthHandler {
      *  Message Processing   *
      *************************/
 
-    protected void processStatus(org.ethereum.net.eth.message.StatusMessage msg, ChannelHandlerContext ctx) throws InterruptedException {
+    protected void processStatus(org.ethereum.net.eth.message.StatusMessage msg, ChannelHandlerContext ctx) {
         try {
             byte protocolVersion = msg.getProtocolVersion();
             byte versionCode = version.getCode();
@@ -222,8 +234,8 @@ public class RskWireProtocol extends EthHandler {
 
     private void recordEvent(EventType event) {
         peerScoringManager.recordEvent(
-                        this.messageSender.getPeerNodeID(),
-                        this.messageSender.getAddress(),
+                        channel.getPeerNodeID(),
+                        channel.getAddress(),
                         event);
     }
 
@@ -237,36 +249,27 @@ public class RskWireProtocol extends EthHandler {
         byte protocolVersion = version.getCode();
         int networkId = config.networkId();
 
-        BlockChainStatus blockChainStatus = this.blockchain.getStatus();
-        Block bestBlock = blockChainStatus.getBestBlock();
-        BlockDifficulty totalDifficulty = blockChainStatus.getTotalDifficulty();
+        Status status = statusResolver.currentStatus();
 
         // Original status
-        org.ethereum.net.eth.message.StatusMessage msg = new org.ethereum.net.eth.message.StatusMessage(protocolVersion, networkId,
-                ByteUtil.bigIntegerToBytes(totalDifficulty.asBigInteger()), bestBlock.getHash().getBytes(), genesis.getHash().getBytes());
+        org.ethereum.net.eth.message.StatusMessage msg = new org.ethereum.net.eth.message.StatusMessage(
+                protocolVersion,
+                networkId,
+                ByteUtil.bigIntegerToBytes(status.getTotalDifficulty().asBigInteger()),
+                status.getBestBlockHash(),
+                genesis.getHash().getBytes());
         sendMessage(msg);
 
         // RSK new protocol send status
-        Status status = new Status(bestBlock.getNumber(), bestBlock.getHash().getBytes(), bestBlock.getParentHash().getBytes(), totalDifficulty);
         RskMessage rskmessage = new RskMessage(new StatusMessage(status));
-        loggerNet.trace("Sending status best block {} to {}", status.getBestBlockNumber(), this.messageSender.getPeerNodeID());
+        loggerNet.trace("Sending status best block {} to {}",
+                status.getBestBlockNumber(),
+                channel.getPeerNodeID());
         sendMessage(rskmessage);
 
         ethState = EthState.STATUS_SENT;
     }
 
-    /*************************
-     *    Sync Management    *
-     *************************/
-
-    @Override
-    public void onShutdown() {
-
-    }
-
-    /*************************
-     *   Getters, setters    *
-     *************************/
 
     @Override
     public boolean hasStatusPassed() {
@@ -276,21 +279,6 @@ public class RskWireProtocol extends EthHandler {
     @Override
     public boolean hasStatusSucceeded() {
         return ethState == EthState.STATUS_SUCCEEDED;
-    }
-
-    @Override
-    public boolean isIdle() {
-        return syncState == SyncState.IDLE;
-    }
-
-    @Override
-    public void enableTransactions() {
-        processTransactions = true;
-    }
-
-    @Override
-    public void disableTransactions() {
-        processTransactions = false;
     }
 
     @Override
@@ -304,16 +292,11 @@ public class RskWireProtocol extends EthHandler {
     }
 
     @Override
-    public void onSyncDone(boolean done) {
-        syncDone = done;
-    }
-
-    @Override
     public void dropConnection() {
 
         // todo: reduce reputation
 
-        logger.info("Peer {}: is a bad one, drop", channel.getPeerIdShort());
+        logger.info("Peer {}: is a bad one, drop", channel.getPeerId());
         disconnect(USELESS_PEER);
     }
 
@@ -322,7 +305,37 @@ public class RskWireProtocol extends EthHandler {
         return true;
     }
 
-    protected enum EthState {
+    @Override
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
+        loggerNet.error("Eth handling failed", cause);
+        ctx.close();
+    }
+
+    @Override
+    public void handlerRemoved(ChannelHandlerContext ctx) {
+        loggerNet.debug("handlerRemoved: kill timers in EthHandler");
+    }
+
+    public void activate() {
+        loggerNet.info("RSK protocol activated");
+        ethereumListener.trace("RSK protocol activated");
+        sendStatus();
+    }
+
+    protected void disconnect(ReasonCode reason) {
+        msgQueue.disconnect(reason);
+        channel.getNodeStatistics().nodeDisconnectedLocal(reason);
+    }
+
+    @Override
+    public void sendMessage(EthMessage message) {
+        loggerNet.debug("Send message: {}", message);
+
+        msgQueue.sendMessage(message);
+        channel.getNodeStatistics().getEthOutbound().add();
+    }
+
+    private enum EthState {
         INIT,
         STATUS_SENT,
         STATUS_SUCCEEDED,
@@ -330,6 +343,6 @@ public class RskWireProtocol extends EthHandler {
     }
 
     public interface Factory {
-        RskWireProtocol newInstance();
+        RskWireProtocol newInstance(MessageQueue messageQueue, Channel channel);
     }
 }

@@ -111,7 +111,7 @@ public class BlockValidatorBuilder {
     }
 
     public BlockValidatorBuilder addBlockTimeStampValidationRule(int validPeriod) {
-        this.blockTimeStampValidationRule = new BlockTimeStampValidationRule(validPeriod);
+        this.blockTimeStampValidationRule = new BlockTimeStampValidationRule(validPeriod, config.getActivationConfig());
         return this;
     }
 

@@ -27,13 +27,11 @@ import co.rsk.net.simples.SimpleAsyncNode;
 import co.rsk.net.sync.PeersInformation;
 import co.rsk.net.sync.SyncConfiguration;
 import co.rsk.test.World;
-import co.rsk.validators.BlockCompositeRule;
-import co.rsk.validators.BlockRootValidationRule;
-import co.rsk.validators.BlockUnclesHashValidationRule;
-import co.rsk.validators.DummyBlockValidationRule;
+import co.rsk.validators.*;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.core.Blockchain;
+import org.ethereum.core.Genesis;
 import org.ethereum.rpc.Simples.SimpleChannelManager;
 import org.ethereum.util.RskMockFactory;
 import org.junit.Assert;
@@ -50,23 +48,25 @@ import static org.mockito.Mockito.mock;
 public class OneAsyncNodeTest {
     private static SimpleAsyncNode createNode() {
         final World world = new World();
-        final BlockStore store = new BlockStore();
+        final NetBlockStore store = new NetBlockStore();
         final Blockchain blockchain = world.getBlockChain();
 
         TestSystemProperties config = new TestSystemProperties();
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
-        BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
+        BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration, DummyBlockValidator.VALID_RESULT_INSTANCE);
         NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
         SimpleChannelManager channelManager = new SimpleChannelManager();
         SyncProcessor syncProcessor = new SyncProcessor(
-                blockchain, mock(ConsensusValidationMainchainView.class), blockSyncService, channelManager, syncConfiguration,
+                blockchain, mock(org.ethereum.db.BlockStore.class), mock(ConsensusValidationMainchainView.class), blockSyncService, syncConfiguration,
                 new BlockFactory(config.getActivationConfig()),
                 new DummyBlockValidationRule(),
-                new BlockCompositeRule(new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())),
-                new DifficultyCalculator(config.getActivationConfig(), config.getNetworkConstants()), new PeersInformation(channelManager, syncConfiguration, blockchain, RskMockFactory.getPeerScoringManager())
+                new SyncBlockValidatorRule(new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())),
+                new DifficultyCalculator(config.getActivationConfig(), config.getNetworkConstants()),
+                new PeersInformation(channelManager, syncConfiguration, blockchain, RskMockFactory.getPeerScoringManager()),
+                mock(Genesis.class)
         );
-        NodeMessageHandler handler = new NodeMessageHandler(config, mock(org.ethereum.db.BlockStore.class), processor, syncProcessor, channelManager, null, RskMockFactory.getPeerScoringManager(), new DummyBlockValidationRule());
+        NodeMessageHandler handler = new NodeMessageHandler(config, processor, syncProcessor, channelManager, null, RskMockFactory.getPeerScoringManager(), mock(StatusResolver.class));
 
         return new SimpleAsyncNode(handler, blockchain, syncProcessor, channelManager);
     }
@@ -78,7 +78,7 @@ public class OneAsyncNodeTest {
     }
 
     @Test
-    public void buildBlockchain() throws InterruptedException {
+    public void buildBlockchain() {
         SimpleAsyncNode node = createNode();
 
         List<Block> blocks = new BlockGenerator().getBlockChain(getGenesis(), 10);
@@ -94,7 +94,7 @@ public class OneAsyncNodeTest {
     }
 
     @Test
-    public void buildBlockchainInReverse() throws InterruptedException {
+    public void buildBlockchainInReverse() {
         SimpleAsyncNode node = createNode();
 
         List<Block> blocks = new BlockGenerator().getBlockChain(getGenesis(), 10);

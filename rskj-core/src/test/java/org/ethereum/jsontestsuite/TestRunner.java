@@ -68,7 +68,7 @@ import java.lang.management.ThreadMXBean;
 import java.math.BigInteger;
 import java.util.*;
 
-import static org.ethereum.crypto.HashUtil.shortHash;
+import static org.ethereum.crypto.HashUtil.toPrintableHash;
 import static org.ethereum.json.Utils.parseData;
 import static org.ethereum.json.Utils.parseNumericData;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
@@ -89,14 +89,14 @@ public class TestRunner {
     private ProgramTrace trace = null;
     private boolean validateGasUsed = false; // until EIP150 test cases are ready.
     private boolean validateBalances = true;
-    private boolean validateStateRoots =false;
+    private boolean validateStateRoots = false;
 
-    public TestRunner setValidateGasUsed( boolean v) {
-        validateGasUsed= v;
+    public TestRunner setValidateGasUsed(boolean v) {
+        validateGasUsed = v;
         return this;
     }
 
-    public TestRunner setValidateStateRoots ( boolean v) {
+    public TestRunner setValidateStateRoots(boolean v) {
         validateStateRoots = v;
         return this;
     }
@@ -140,6 +140,7 @@ public class TestRunner {
         KeyValueDataSource ds = new HashMapDB();
         ds.init();
         ReceiptStore receiptStore = new ReceiptStoreImpl(ds);
+        BlockTxSignatureCache blockTxSignatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
 
         TransactionExecutorFactory transactionExecutorFactory = new TransactionExecutorFactory(
                 config,
@@ -147,11 +148,12 @@ public class TestRunner {
                 receiptStore,
                 blockFactory,
                 new ProgramInvokeFactoryImpl(),
-                null);
+                null,
+                blockTxSignatureCache);
         StateRootHandler stateRootHandler = new StateRootHandler(config.getActivationConfig(), new TrieConverter(), new HashMapDB(), new HashMap<>());
         RepositoryLocator repositoryLocator = new RepositoryLocator(trieStore, stateRootHandler);
 
-        TransactionPoolImpl transactionPool = new TransactionPoolImpl(config, repositoryLocator, null, blockFactory, listener, transactionExecutorFactory, 10, 100);
+        TransactionPoolImpl transactionPool = new TransactionPoolImpl(config, repositoryLocator, null, blockFactory, listener, transactionExecutorFactory, new ReceivedTxSignatureCache(), 10, 100);
 
         BlockChainImpl blockchain = new BlockChainImpl(
                 blockStore,
@@ -183,11 +185,11 @@ public class TestRunner {
                 tBlock = blockFactory.decodeBlock(rlp);
 
                 ArrayList<String> outputSummary =
-                        BlockHeaderValidator.valid(tBlock.getHeader(), block.getHeader(),null);
+                        BlockHeaderValidator.valid(tBlock.getHeader(), block.getHeader(), null);
 
-                if (!outputSummary.isEmpty()){
+                if (!outputSummary.isEmpty()) {
                     for (String output : outputSummary)
-                        logger.error("at block {}: {}", Integer.toString(blockTraffic.size()),output);
+                        logger.error("at block {}: {}", Integer.toString(blockTraffic.size()), output);
                 }
 
                 blockTraffic.add(tBlock);
@@ -200,16 +202,16 @@ public class TestRunner {
         for (Block block : blockTraffic) {
 
             ImportResult importResult = blockchain.tryToConnect(block);
-            logger.debug("{} ~ {} difficulty: {} ::: {}", block.getShortHash(), shortHash(block.getParentHash().getBytes()),
+            logger.debug("{} ~ {} difficulty: {} ::: {}", block.getPrintableHash(), toPrintableHash(block.getParentHash().getBytes()),
                     block.getCumulativeDifficulty(), importResult.toString());
         }
 
         //Check state root matches last valid block
         List<String> results = new ArrayList<>();
-        String currRoot = Hex.toHexString(repository.getRoot());
+        String currRoot = ByteUtil.toHexString(repository.getRoot());
 
         byte[] bestHash = Hex.decode(testCase.getLastblockhash());
-        String finalRoot = Hex.toHexString(blockStore.getBlockByHash(bestHash).getStateRoot());
+        String finalRoot = ByteUtil.toHexString(blockStore.getBlockByHash(bestHash).getStateRoot());
 
         if (validateStateRoots) {
             if (!finalRoot.equals(currRoot)) {
@@ -220,7 +222,7 @@ public class TestRunner {
         }
 
         Repository postRepository = RepositoryBuilder.build(testCase.getPostState());
-        List<String> repoResults = RepositoryValidator.valid(repository, postRepository, validateStateRoots,validateBalances,null);
+        List<String> repoResults = RepositoryValidator.valid(repository, postRepository, validateStateRoots, validateBalances, null);
         results.addAll(repoResults);
 
         return results;
@@ -283,7 +285,7 @@ public class TestRunner {
             Exception e = null;
             ThreadMXBean thread;
             Boolean oldMode;
-            long startTime =0;
+            long startTime = 0;
             thread = ManagementFactory.getThreadMXBean();
             if (thread.isThreadCpuTimeSupported()) {
                 oldMode = thread.isThreadCpuTimeEnabled();
@@ -291,12 +293,13 @@ public class TestRunner {
                 startTime = thread.getCurrentThreadCpuTime(); // in nanoseconds.
             }
             try {
-                vm.steps(program,Long.MAX_VALUE);;
+                vm.steps(program, Long.MAX_VALUE);
+                ;
             } catch (RuntimeException ex) {
                 vmDidThrowAnEception = true;
                 e = ex;
             }
-            if (startTime!=0) {
+            if (startTime != 0) {
                 long endTime = thread.getCurrentThreadCpuTime();
                 long deltaTime = (endTime - startTime) / 1000; // de nano a micro.
                 logger.info("Time elapsed [uS]: " + Long.toString(deltaTime));
@@ -390,8 +393,8 @@ public class TestRunner {
                         String output =
                                 String.format("The code result is different. account: [ %s ],  expectedCode: [ %s ] is actualCode: [ %s ] ",
                                         addr,
-                                        Hex.toHexString(expectedCode),
-                                        Hex.toHexString(actualCode));
+                                        ByteUtil.toHexString(expectedCode),
+                                        ByteUtil.toHexString(actualCode));
                         logger.info(output);
                         results.add(output);
                     }
@@ -407,7 +410,7 @@ public class TestRunner {
                         if (!program.getStorage().isContract(accountAddress)) {
                             String output =
                                     String.format("Storage raw doesn't exist: key [ %s ], expectedValue: [ %s ]",
-                                            Hex.toHexString(storageKey.getData()),
+                                            ByteUtil.toHexString(storageKey.getData()),
                                             expectedStValue.toString()
                                     );
 
@@ -429,9 +432,9 @@ public class TestRunner {
 
                             String output =
                                     String.format("Storage value different: key [ %s ], expectedValue: [ %s ], actualValue: [ %s ]",
-                                            Hex.toHexString(storageKey.getData()),
+                                            ByteUtil.toHexString(storageKey.getData()),
                                             expectedStValue.toString(),
-                                            actualValue == null ? "" : Hex.toHexString(actualValue));
+                                            actualValue == null ? "" : ByteUtil.toHexString(actualValue));
                             logger.info(output);
                             results.add(output);
                         }
@@ -461,14 +464,14 @@ public class TestRunner {
                         } else {
                             if (!Arrays.equals(expectedLogInfo.getAddress(), foundLogInfo.getAddress())) {
                                 String output =
-                                        String.format("Expected address [ %s ], found [ %s ]", Hex.toHexString(expectedLogInfo.getAddress()), Hex.toHexString(foundLogInfo.getAddress()));
+                                        String.format("Expected address [ %s ], found [ %s ]", ByteUtil.toHexString(expectedLogInfo.getAddress()), ByteUtil.toHexString(foundLogInfo.getAddress()));
                                 logger.info(output);
                                 results.add(output);
                             }
 
                             if (!Arrays.equals(expectedLogInfo.getData(), foundLogInfo.getData())) {
                                 String output =
-                                        String.format("Expected data [ %s ], found [ %s ]", Hex.toHexString(expectedLogInfo.getData()), Hex.toHexString(foundLogInfo.getData()));
+                                        String.format("Expected data [ %s ], found [ %s ]", ByteUtil.toHexString(expectedLogInfo.getData()), ByteUtil.toHexString(foundLogInfo.getData()));
                                 logger.info(output);
                                 results.add(output);
                             }
@@ -476,8 +479,8 @@ public class TestRunner {
                             if (!expectedLogInfo.getBloom().equals(foundLogInfo.getBloom())) {
                                 String output =
                                         String.format("Expected bloom [ %s ], found [ %s ]",
-                                                Hex.toHexString(expectedLogInfo.getBloom().getData()),
-                                                Hex.toHexString(foundLogInfo.getBloom().getData()));
+                                                ByteUtil.toHexString(expectedLogInfo.getBloom().getData()),
+                                                ByteUtil.toHexString(foundLogInfo.getBloom().getData()));
                                 logger.info(output);
                                 results.add(output);
                             }
@@ -495,7 +498,7 @@ public class TestRunner {
 
                                     if (!Arrays.equals(topic.getData(), foundTopic)) {
                                         String output =
-                                                String.format("Expected topic [ %s ], found [ %s ]", Hex.toHexString(topic.getData()), Hex.toHexString(foundTopic));
+                                                String.format("Expected topic [ %s ], found [ %s ]", ByteUtil.toHexString(topic.getData()), ByteUtil.toHexString(foundTopic));
                                         logger.info(output);
                                         results.add(output);
                                     }
@@ -530,10 +533,10 @@ public class TestRunner {
 
                         String output =
                                 String.format("Missing call/create invoke: to: [ %s ], data: [ %s ], gas: [ %s ], value: [ %s ]",
-                                        Hex.toHexString(expectedCallCreate.getDestination()),
-                                        Hex.toHexString(expectedCallCreate.getData()),
+                                        ByteUtil.toHexString(expectedCallCreate.getDestination()),
+                                        ByteUtil.toHexString(expectedCallCreate.getData()),
                                         Long.toHexString(expectedCallCreate.getGasLimit()),
-                                        Hex.toHexString(expectedCallCreate.getValue()));
+                                        ByteUtil.toHexString(expectedCallCreate.getValue()));
                         logger.info(output);
                         results.add(output);
 
@@ -547,8 +550,8 @@ public class TestRunner {
 
                         String output =
                                 String.format("Call/Create destination is different. Expected: [ %s ], result: [ %s ]",
-                                        Hex.toHexString(expectedCallCreate.getDestination()),
-                                        Hex.toHexString(resultCallCreate.getDestination()));
+                                        ByteUtil.toHexString(expectedCallCreate.getDestination()),
+                                        ByteUtil.toHexString(resultCallCreate.getDestination()));
                         logger.info(output);
                         results.add(output);
                     }
@@ -560,14 +563,14 @@ public class TestRunner {
 
                         String output =
                                 String.format("Call/Create data is different. Expected: [ %s ], result: [ %s ]",
-                                        Hex.toHexString(expectedCallCreate.getData()),
-                                        Hex.toHexString(resultCallCreate.getData()));
+                                        ByteUtil.toHexString(expectedCallCreate.getData()),
+                                        ByteUtil.toHexString(resultCallCreate.getData()));
                         logger.info(output);
                         results.add(output);
                     }
 
                     boolean assertGasLimit =
-                            expectedCallCreate.getGasLimit()==resultCallCreate.getGasLimit();
+                            expectedCallCreate.getGasLimit() == resultCallCreate.getGasLimit();
 
                     if (!assertGasLimit) {
                         String output =
@@ -584,8 +587,8 @@ public class TestRunner {
                     if (!assertValue) {
                         String output =
                                 String.format("Call/Create value is different. Expected: [ %s ], result: [ %s ]",
-                                        Hex.toHexString(expectedCallCreate.getValue()),
-                                        Hex.toHexString(resultCallCreate.getValue()));
+                                        ByteUtil.toHexString(expectedCallCreate.getValue()),
+                                        ByteUtil.toHexString(resultCallCreate.getValue()));
                         logger.info(output);
                         results.add(output);
                     }
@@ -602,8 +605,8 @@ public class TestRunner {
 
                     String output =
                             String.format("HReturn is different. Expected hReturn: [ %s ], actual hReturn: [ %s ]",
-                                    Hex.toHexString(expectedHReturn),
-                                    Hex.toHexString(actualHReturn));
+                                    ByteUtil.toHexString(expectedHReturn),
+                                    ByteUtil.toHexString(actualHReturn));
                     logger.info(output);
                     results.add(output);
                 }
@@ -612,15 +615,15 @@ public class TestRunner {
                 BigInteger expectedGas = new BigInteger(1, testCase.getGas());
                 BigInteger actualGas = new BigInteger(1, gas).subtract(BigInteger.valueOf(program.getResult().getGasUsed()));
                 if (validateGasUsed)
-                if (!expectedGas.equals(actualGas)) {
+                    if (!expectedGas.equals(actualGas)) {
 
-                    String output =
-                            String.format("Gas remaining is different. Expected gas remaining: [ %s ], actual gas remaining: [ %s ]",
-                                    expectedGas.toString(),
-                                    actualGas.toString());
-                    logger.info(output);
-                    results.add(output);
-                }
+                        String output =
+                                String.format("Gas remaining is different. Expected gas remaining: [ %s ], actual gas remaining: [ %s ]",
+                                        expectedGas.toString(),
+                                        actualGas.toString());
+                        logger.info(output);
+                        results.add(output);
+                    }
                 /*
                  * end of if(testCase.getPost().size() == 0)
                  */
@@ -634,24 +637,20 @@ public class TestRunner {
 
     public org.ethereum.core.Transaction createTransaction(Transaction tx) {
 
-        byte[] nonceBytes = ByteUtil.longToBytes(tx.nonce);
-        byte[] gasPriceBytes = ByteUtil.longToBytes(tx.gasPrice);
-        byte[] gasBytes = tx.gasLimit;
-        byte[] valueBytes = ByteUtil.longToBytes(tx.value);
-        byte[] toAddr = tx.getTo();
-        byte[] data = tx.getData();
-
-        org.ethereum.core.Transaction transaction = new org.ethereum.core.Transaction(
-                nonceBytes, gasPriceBytes, gasBytes,
-                toAddr, valueBytes, data);
-
-        return transaction;
+        return org.ethereum.core.Transaction.builder()
+                .nonce(BigInteger.valueOf(tx.nonce))
+                .gasPrice(BigInteger.valueOf(tx.gasPrice))
+                .gasLimit(tx.gasLimit)
+                .destination(tx.getTo())
+                .value(BigInteger.valueOf(tx.value))
+                .data(tx.getData())
+                .build();
     }
 
     public Repository loadRepository(Repository track, Map<RskAddress, AccountState> pre) {
 
 
-            /* 1. Store pre-exist accounts - Pre */
+        /* 1. Store pre-exist accounts - Pre */
         for (RskAddress addr : pre.keySet()) {
 
             AccountState accountState = pre.get(addr);
@@ -702,31 +701,25 @@ public class TestRunner {
             a = a.substring(2);
         }
 
-        return Long.parseLong(a,16);
+        return Long.parseLong(a, 16);
     }
 
     private static BlockHeader buildHeader(BlockFactory blockFactory, BlockHeaderTck headerTck) {
-        return blockFactory.newHeader(
-                parseData(headerTck.getParentHash()),
-                parseData(headerTck.getUncleHash()),
-                parseData(headerTck.getCoinbase()),
-                parseData(headerTck.getStateRoot()),
-                parseData(headerTck.getTransactionsTrie()),
-                parseData(headerTck.getReceiptTrie()),
-                parseData(headerTck.getBloom()),
-                parseNumericData(headerTck.getDifficulty()),
-                getPositiveLong(headerTck.getNumber()),
-                parseData(headerTck.getGasLimit()),
-                getPositiveLong(headerTck.getGasUsed()),
-                getPositiveLong(headerTck.getTimestamp()),
-                parseData(headerTck.getExtraData()),
-                Coin.ZERO,
-                null,
-                null,
-                null,
-                null,
-                null,
-                0
-        );
+        return blockFactory.getBlockHeaderBuilder()
+                .setParentHash(parseData(headerTck.getParentHash()))
+                .setUnclesHash(parseData(headerTck.getUncleHash()))
+                .setCoinbase(new RskAddress(parseData(headerTck.getCoinbase())))
+                .setStateRoot(parseData(headerTck.getStateRoot()))
+                .setTxTrieRoot(parseData(headerTck.getTransactionsTrie()))
+                .setReceiptTrieRoot(parseData(headerTck.getReceiptTrie()))
+                .setLogsBloom(parseData(headerTck.getBloom()))
+                .setDifficultyFromBytes(parseNumericData(headerTck.getDifficulty()))
+                .setNumber(getPositiveLong(headerTck.getNumber()))
+                .setGasLimit(parseData(headerTck.getGasLimit()))
+                .setGasUsed(getPositiveLong(headerTck.getGasUsed()))
+                .setTimestamp(getPositiveLong(headerTck.getTimestamp()))
+                .setExtraData(parseData(headerTck.getExtraData()))
+                .setUncleCount(0)
+                .build();
     }
 }

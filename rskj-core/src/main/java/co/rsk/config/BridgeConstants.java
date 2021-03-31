@@ -52,6 +52,20 @@ public class BridgeConstants {
 
     protected Coin genesisFeePerKb;
 
+    protected Coin maxFeePerKb;
+
+    protected AddressBasedAuthorizer increaseLockingCapAuthorizer;
+
+    protected Coin initialLockingCap;
+
+    protected int lockingCapIncrementsMultiplier;
+
+    protected int btcHeightWhenBlockIndexActivates;
+    protected int maxDepthToSearchBlocksBelowIndexActivation;
+    protected long minSecondsBetweenCallsReceiveHeader;  // (seconds)
+
+    protected int maxDepthBlockchainAccepted;
+
     public NetworkParameters getBtcParams() {
         return NetworkParameters.fromID(btcParamsString);
     }
@@ -98,5 +112,23 @@ public class BridgeConstants {
 
     public AddressBasedAuthorizer getFeePerKbChangeAuthorizer() { return feePerKbChangeAuthorizer; }
 
+    public AddressBasedAuthorizer getIncreaseLockingCapAuthorizer() { return increaseLockingCapAuthorizer; }
+
+    public int getLockingCapIncrementsMultiplier() { return lockingCapIncrementsMultiplier; }
+
+    public Coin getInitialLockingCap() { return initialLockingCap; }
+
     public Coin getGenesisFeePerKb() { return genesisFeePerKb; }
+
+    public Coin getMaxFeePerKb() { return maxFeePerKb; }
+
+    public Coin getMaxRbtc() { return Coin.valueOf(21_000_000, 0); }
+
+    public int getBtcHeightWhenBlockIndexActivates() { return btcHeightWhenBlockIndexActivates; }
+
+    public int getMaxDepthToSearchBlocksBelowIndexActivation() { return maxDepthToSearchBlocksBelowIndexActivation; }
+
+    public long getMinSecondsBetweenCallsToReceiveHeader() { return minSecondsBetweenCallsReceiveHeader; }
+
+    public int getMaxDepthBlockchainAccepted() { return maxDepthBlockchainAccepted; }
 }

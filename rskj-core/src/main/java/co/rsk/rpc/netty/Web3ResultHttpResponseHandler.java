@@ -24,16 +24,22 @@ import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.DefaultFullHttpResponse;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpVersion;
+import static io.netty.handler.codec.http.HttpHeaders.Names.CONTENT_TYPE;
+import static io.netty.handler.codec.http.HttpHeaders.Values.APPLICATION_JSON;
 
 public class Web3ResultHttpResponseHandler extends SimpleChannelInboundHandler<Web3Result> {
 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, Web3Result msg) {
-        ctx.write(new DefaultFullHttpResponse(
-            HttpVersion.HTTP_1_1,
-            HttpResponseStatus.valueOf(DefaultHttpStatusCodeProvider.INSTANCE.getHttpStatusCode(msg.getCode())),
-            msg.getContent()
-        )).addListener(ChannelFutureListener.CLOSE);
+        DefaultFullHttpResponse response = new DefaultFullHttpResponse(
+                HttpVersion.HTTP_1_1,
+                HttpResponseStatus.valueOf(DefaultHttpStatusCodeProvider.INSTANCE.getHttpStatusCode(msg.getCode())),
+                msg.getContent()
+        );
+
+        response.headers().add(CONTENT_TYPE, APPLICATION_JSON);
+
+        ctx.write(response).addListener(ChannelFutureListener.CLOSE);
     }
 
     @Override

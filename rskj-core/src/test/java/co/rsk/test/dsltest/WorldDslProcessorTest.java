@@ -18,6 +18,7 @@
 
 package co.rsk.test.dsltest;
 
+import co.rsk.bitcoinj.core.Address;
 import co.rsk.db.RepositorySnapshot;
 import co.rsk.test.World;
 import co.rsk.test.dsl.DslParser;
@@ -69,6 +70,31 @@ public class WorldDslProcessorTest {
         WorldDslProcessor processor = new WorldDslProcessor(world);
 
         DslParser parser = new DslParser("block_chain g00 b01 b02");
+
+        processor.processCommands(parser);
+
+        Block genesis = world.getBlockByName("g00");
+
+        Block block1 = world.getBlockByName("b01");
+
+        Assert.assertNotNull(block1);
+        Assert.assertEquals(1, block1.getNumber());
+        Assert.assertEquals(genesis.getHash(), block1.getParentHash());
+
+        Block block2 = world.getBlockByName("b02");
+
+        Assert.assertNotNull(block2);
+        Assert.assertEquals(2, block2.getNumber());
+        Assert.assertEquals(block1.getHash(), block2.getParentHash());
+    }
+
+    @Test
+    public void processBlockChainCommandWithTwoChildBlocksSkippingMultilineComments() throws DslProcessorException {
+        World world = new World();
+
+        WorldDslProcessor processor = new WorldDslProcessor(world);
+
+        DslParser parser = new DslParser("comment\nthis is a comment\nend\nblock_chain g00 b01 b02\ncomment\nthis is another comment\nwith two lines\n  end  \n");
 
         processor.processCommands(parser);
 
@@ -271,6 +297,61 @@ public class WorldDslProcessorTest {
         Assert.assertNotNull(account);
         RepositorySnapshot repository = world.getRepositoryLocator().snapshotAt(world.getBlockChain().getBestBlock().getHeader());
         Assert.assertEquals(new BigInteger("1000000"), repository.getBalance(account.getAddress()).asBigInteger());
+    }
+
+    @Test
+    public void processAccountNewCommandWithBalanceAndCode() throws DslProcessorException {
+        World world = new World();
+
+        WorldDslProcessor processor = new WorldDslProcessor(world);
+
+        DslParser parser = new DslParser("account_new acc1 1000000 01020304");
+
+        processor.processCommands(parser);
+
+        Account account = world.getAccountByName("acc1");
+
+        Assert.assertNotNull(account);
+        RepositorySnapshot repository = world.getRepositoryLocator().snapshotAt(world.getBlockChain().getBestBlock().getHeader());
+        Assert.assertEquals(new BigInteger("1000000"), repository.getBalance(account.getAddress()).asBigInteger());
+
+        byte[] code = repository.getCode(account.getAddress());
+
+        Assert.assertNotNull(code);
+        Assert.assertArrayEquals(new byte[] { 0x01, 0x02, 0x03, 0x04 }, code);
+    }
+
+    @Test
+    public void processAccountNewCommandWithBalanceAndCodeWithOtherAccountAddress() throws DslProcessorException {
+        World world = new World();
+
+        WorldDslProcessor processor = new WorldDslProcessor(world);
+
+        DslParser parser0 = new DslParser("account_new acc0");
+
+        processor.processCommands(parser0);
+
+        DslParser parser = new DslParser("account_new acc1 1000000 0102[acc0]0304");
+
+        processor.processCommands(parser);
+
+        Account account0 = world.getAccountByName("acc0");
+        Account account = world.getAccountByName("acc1");
+
+        Assert.assertNotNull(account);
+        RepositorySnapshot repository = world.getRepositoryLocator().snapshotAt(world.getBlockChain().getBestBlock().getHeader());
+        Assert.assertEquals(new BigInteger("1000000"), repository.getBalance(account.getAddress()).asBigInteger());
+
+        byte[] code = repository.getCode(account.getAddress());
+        byte[] expected = new byte[4 + 20];
+        expected[0] = 0x01;
+        expected[1] = 0x02;
+        System.arraycopy(account0.getAddress().getBytes(), 0, expected, 2, Address.LENGTH);
+        expected[22] = 0x03;
+        expected[23] = 0x04;
+
+        Assert.assertNotNull(code);
+        Assert.assertArrayEquals(expected, code);
     }
 
     @Test

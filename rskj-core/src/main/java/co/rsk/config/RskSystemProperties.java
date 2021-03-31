@@ -150,6 +150,18 @@ public class RskSystemProperties extends SystemProperties {
         return getDouble("miner.minFeesNotifyInDollars", 0);
     }
 
+    public boolean bloomServiceEnabled() {
+        return getBoolean("bloom.service", false);
+    }
+
+    public int bloomNumberOfBlocks() {
+        return getInt("bloom.blocks", 64);
+    }
+
+    public int bloomNumberOfConfirmations() {
+        return getInt("bloom.confirmations", 400);
+    }
+
     public boolean waitForSync() {
         return getBoolean("sync.waitForSync", false);
     }
@@ -272,6 +284,11 @@ public class RskSystemProperties extends SystemProperties {
     }
 
     // Sync config properties
+
+    public boolean getIsHeartBeatEnabled() {
+        return getBoolean("sync.heartBeat.enabled", false);
+    }
+
     public int getExpectedPeers() {
         return configFromFiles.getInt("sync.expectedPeers");
     }
@@ -292,13 +309,21 @@ public class RskSystemProperties extends SystemProperties {
         return configFromFiles.getInt("sync.maxSkeletonChunks");
     }
 
+    public int getMaxRequestedBodies() {
+        return configFromFiles.getInt("sync.maxRequestedBodies");
+    }
+
+    public int getLongSyncLimit() {
+        return configFromFiles.getInt("sync.longSyncLimit");
+    }
+
     // its fixed, cannot be set by config file
     public int getChunkSize() {
         return CHUNK_SIZE;
     }
 
     public VmConfig getVmConfig() {
-        return new VmConfig(vmTrace(), vmTraceInitStorageLimit(), dumpBlock(), dumpStyle());
+        return new VmConfig(vmTrace(), vmTraceOptions(), vmTraceInitStorageLimit(), dumpBlock(), dumpStyle(), getNetworkConstants().getChainId());
     }
 
     public long peerDiscoveryCleanPeriod() {
@@ -313,11 +338,43 @@ public class RskSystemProperties extends SystemProperties {
         return configFromFiles.getInt("transaction.gasPriceBump");
     }
 
+    public Integer getNumOfAccountSlots() {
+        return configFromFiles.getInt("transaction.accountSlots");
+    }
+
     public int getStatesCacheSize() {
         return configFromFiles.getInt("cache.states.max-elements");
     }
 
+    public int getReceiptsCacheSize() {
+        return configFromFiles.getInt("cache.receipts.max-elements");
+    }
+
+    public int getBtcBlockStoreCacheSize() {
+        return configFromFiles.getInt("cache.btcBlockStore.size");
+    }
+
+    public int getBtcBlockStoreCacheDepth() {
+        return configFromFiles.getInt("cache.btcBlockStore.depth");
+    }
+
     public long getVmExecutionStackSize() {
         return configFromFiles.getBytes("vm.executionStackSize");
+    }
+
+    public String cryptoLibrary() {
+        return configFromFiles.getString("crypto.library");
+    }
+
+    public boolean isPeerScoringStatsReportEnabled() {
+        return configFromFiles.getBoolean("scoring.summary.enabled");
+    }
+
+    public long getPeerScoringSummaryTime() {
+        return configFromFiles.getLong("scoring.summary.time");
+    }
+
+    public boolean fastBlockPropagation() {
+        return configFromFiles.getBoolean("peer.fastBlockPropagation");
     }
 }

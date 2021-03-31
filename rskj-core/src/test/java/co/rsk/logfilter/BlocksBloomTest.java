@@ -33,9 +33,27 @@ public class BlocksBloomTest {
 
         blocksBloom.addBlockBloom(1, bloom);
 
+        Assert.assertTrue(blocksBloom.hasBlockBloom(1));
+        Assert.assertFalse(blocksBloom.hasBlockBloom(2));
         Assert.assertEquals(1, blocksBloom.size());
         Assert.assertEquals(1, blocksBloom.fromBlock());
         Assert.assertEquals(1, blocksBloom.toBlock());
+
+        Assert.assertArrayEquals(bytes, blocksBloom.getBloom().getData());
+    }
+
+    @Test
+    public void addBlockZeroToBlocksBloom() {
+        BlocksBloom blocksBloom = new BlocksBloom();
+        byte[] bytes = new byte[Bloom.BLOOM_BYTES];
+        bytes[0] = 0x01;
+        Bloom bloom = new Bloom(bytes);
+
+        blocksBloom.addBlockBloom(0, bloom);
+
+        Assert.assertEquals(1, blocksBloom.size());
+        Assert.assertEquals(0, blocksBloom.fromBlock());
+        Assert.assertEquals(0, blocksBloom.toBlock());
 
         Assert.assertArrayEquals(bytes, blocksBloom.getBloom().getData());
     }

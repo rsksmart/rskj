@@ -36,6 +36,7 @@ import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.*;
 import org.ethereum.crypto.HashUtil;
+import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPElement;
 import org.ethereum.util.RLPList;
@@ -55,7 +56,7 @@ public class BlockGenerator {
 
     private static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
 
-    private static final Block[] blockCache = new Block[5];
+    private final Block[] blockCache = new Block[5];
 
     private final DifficultyCalculator difficultyCalculator;
     private final BlockFactory blockFactory;
@@ -99,10 +100,23 @@ public class BlockGenerator {
 
         boolean isRskip126Enabled = activationConfig.isActive(ConsensusRule.RSKIP126, 0);
         boolean useRskip92Encoding = activationConfig.isActive(ConsensusRule.RSKIP92, 0);
-        return new Genesis(parentHash, EMPTY_LIST_HASH, coinbase, getZeroHash(),
-                difficulty, 0, gasLimit, 0, timestamp, extraData,
-                null, null, null, BigInteger.valueOf(100L).toByteArray(), useRskip92Encoding,
-                isRskip126Enabled, accounts, Collections.emptyMap(), Collections.emptyMap()
+        return new Genesis(
+                isRskip126Enabled, accounts, Collections.emptyMap(), Collections.emptyMap(), new GenesisHeader(
+                parentHash,
+                EMPTY_LIST_HASH,
+                getZeroHash(),
+                difficulty,
+                0,
+                        ByteUtil.longToBytes(gasLimit),
+                0,
+                timestamp,
+                extraData,
+                null,
+                null,
+                null,
+                BigInteger.valueOf(100L).toByteArray(),
+                useRskip92Encoding,
+                coinbase)
         );
     }
 
@@ -134,18 +148,32 @@ public class BlockGenerator {
     public Block createChildBlock(Block parent, long fees, List<BlockHeader> uncles, byte[] difficulty) {
         byte[] unclesListHash = HashUtil.keccak256(BlockHeader.getUnclesEncodedEx(uncles));
 
+        long blockNumber = parent.getNumber() + 1;
+
+        byte[] ummRoot = activationConfig.isActive(ConsensusRule.RSKIPUMM, blockNumber) ? new byte[0] : null;
+
+        BlockHeader newHeader = blockFactory.getBlockHeaderBuilder()
+                .setParentHashFromKeccak256(parent.getHash())
+                .setUnclesHash(unclesListHash).setCoinbase(parent.getCoinbase())
+                .setStateRoot(ByteUtils.clone(parent.getStateRoot()))
+                .setEmptyLogsBloom()
+                .setEmptyReceiptTrieRoot()
+                .setDifficultyFromBytes(difficulty)
+                .setNumber(parent.getNumber()+1)
+                .setGasLimit(parent.getGasLimit())
+                .setGasUsed( parent.getGasUsed()) // why ? I just copied the value before
+                .setTimestamp(parent.getTimestamp() + ++count)
+                .setPaidFees(Coin.valueOf(fees))
+                .setEmptyMergedMiningForkDetectionData()
+                .setUncleCount(uncles.size())
+                .setUmmRoot(ummRoot)
+                .build();
+
         return blockFactory.newBlock(
-                blockFactory.newHeader(
-                        parent.getHash().getBytes(), unclesListHash, parent.getCoinbase().getBytes(),
-                        ByteUtils.clone(parent.getStateRoot()), EMPTY_TRIE_HASH, EMPTY_TRIE_HASH,
-                        ByteUtils.clone(new Bloom().getData()), difficulty, parent.getNumber() + 1,
-                        parent.getGasLimit(), parent.getGasUsed(), parent.getTimestamp() + ++count, EMPTY_BYTE_ARRAY,
-                        Coin.valueOf(fees), null, null, null, new byte[12], null, uncles.size()
-                ),
+                newHeader,
                 Collections.emptyList(),
                 uncles
         );
-//        return createChildBlock(parent, 0);
     }
 
     public Block createChildBlock(Block parent, List<Transaction> txs, byte[] stateRoot) {
@@ -156,14 +184,29 @@ public class BlockGenerator {
         Bloom logBloom = new Bloom();
 
         boolean isRskip126Enabled = activationConfig.isActive(ConsensusRule.RSKIP126, 0);
+
+        long blockNumber = parent.getNumber() + 1;
+
+        byte[] ummRoot = activationConfig.isActive(ConsensusRule.RSKIPUMM, blockNumber) ? new byte[0] : null;
+
+        BlockHeader newHeader = blockFactory.getBlockHeaderBuilder()
+                .setParentHashFromKeccak256(parent.getHash())
+                .setTxTrieRoot(BlockHashesHelper.getTxTrieRoot(txs, isRskip126Enabled))
+                .setCoinbase(parent.getCoinbase())
+                .setStateRoot(ByteUtils.clone(parent.getStateRoot()))
+                .setEmptyLogsBloom()
+                .setEmptyReceiptTrieRoot()
+                .setDifficulty(parent.getDifficulty())
+                .setNumber(parent.getNumber()+1)
+                .setGasLimit(parent.getGasLimit())
+                .setGasUsed( parent.getGasUsed()) // why ? I just copied the value before
+                .setTimestamp(parent.getTimestamp() + ++count)
+                .setEmptyMergedMiningForkDetectionData()
+                .setUmmRoot(ummRoot)
+                .build();
+
         return blockFactory.newBlock(
-                blockFactory.newHeader(
-                        parent.getHash().getBytes(), EMPTY_LIST_HASH, coinbase,
-                        stateRoot, BlockHashesHelper.getTxTrieRoot(txs, isRskip126Enabled),
-                        EMPTY_TRIE_HASH, logBloom.getData(), parent.getDifficulty().getBytes(), parent.getNumber() + 1,
-                        parent.getGasLimit(), parent.getGasUsed(), parent.getTimestamp() + ++count,
-                        EMPTY_BYTE_ARRAY, Coin.ZERO, null, null, null, new byte[12], null, 0
-                ),
+                newHeader,
                 txs,
                 Collections.emptyList(),
                 false
@@ -208,25 +251,30 @@ public class BlockGenerator {
 
         byte[] unclesListHash = HashUtil.keccak256(BlockHeader.getUnclesEncodedEx(uncles));
 
-        BlockHeader newHeader = blockFactory.newHeader(parent.getHash().getBytes(),
-                unclesListHash,
-                coinbase.getBytes(),
-                ByteUtils.clone(new Bloom().getData()),
-                new byte[]{1},
-                parent.getNumber()+1,
-                gasLimit,
-                0,
-                parent.getTimestamp() + ++count,
-                new byte[]{},
-                new byte[]{},
-                new byte[]{},
-                new byte[]{},
-                parent.getNumber()+1 > MiningConfig.REQUIRED_NUMBER_OF_BLOCKS_FOR_FORK_DETECTION_CALCULATION ?
-                        new byte[12] :
-                        new byte[0],
-                (minGasPrice != null) ? minGasPrice.toByteArray() : null,
-                uncles.size()
-        );
+        byte[] miningForkDetectionData = parent.getNumber() + 1 > MiningConfig.REQUIRED_NUMBER_OF_BLOCKS_FOR_FORK_DETECTION_CALCULATION ?
+                new byte[12] :
+                new byte[0];
+
+        long blockNumber = parent.getNumber() + 1;
+
+        byte[] ummRoot = activationConfig.isActive(ConsensusRule.RSKIPUMM, blockNumber) ? new byte[0] : null;
+
+        Coin coinMinGasPrice = (minGasPrice != null) ? new Coin(minGasPrice) : null;
+        BlockHeader newHeader = blockFactory.getBlockHeaderBuilder()
+                .setParentHash(parent.getHash().getBytes())
+                .setUnclesHash(unclesListHash)
+                .setCoinbase(coinbase)
+                .setLogsBloom(ByteUtils.clone(new Bloom().getData()))
+                .setDifficulty(BlockDifficulty.ONE)
+                .setNumber(parent.getNumber()+1)
+                .setGasLimit(gasLimit)
+                .setGasUsed(0)
+                .setTimestamp(parent.getTimestamp() + ++count)
+                .setMergedMiningForkDetectionData(miningForkDetectionData)
+                .setMinimumGasPrice(coinMinGasPrice)
+                .setUncleCount(uncles.size())
+                .setUmmRoot(ummRoot)
+                .build();
 
         if (difficulty == 0) {
             newHeader.setDifficulty(difficultyCalculator.calcDifficulty(newHeader, parent.getHeader()));
@@ -262,14 +310,28 @@ public class BlockGenerator {
         Coin minimumGasPrice = new MinimumGasPriceCalculator(Coin.valueOf(100L)).calculate(previousMGP);
 
         boolean isRskip126Enabled = activationConfig.isActive(ConsensusRule.RSKIP126, 0);
+
+        byte[] ummRoot = activationConfig.isActive(ConsensusRule.RSKIPUMM, number) ? new byte[0] : null;
+
+        BlockHeader newHeader = blockFactory.getBlockHeaderBuilder()
+                .setParentHashFromKeccak256(parent.getHash())
+                .setCoinbase(parent.getCoinbase())
+                .setTxTrieRoot(BlockHashesHelper.getTxTrieRoot(txs, isRskip126Enabled))
+                .setStateRoot(ByteUtils.clone(parent.getStateRoot()))
+                .setEmptyLogsBloom()
+                .setEmptyReceiptTrieRoot()
+                .setDifficulty(parent.getDifficulty())
+                .setNumber(number)
+                .setGasLimit(parent.getGasLimit())
+                .setGasUsed( parent.getGasUsed()) // why ? I just copied the value before
+                .setTimestamp(parent.getTimestamp() + ++count)
+                .setEmptyMergedMiningForkDetectionData()
+                .setMinimumGasPrice(minimumGasPrice)
+                .setUmmRoot(ummRoot)
+                .build();
+
         return blockFactory.newBlock(
-                blockFactory.newHeader(
-                        parent.getHash().getBytes(), EMPTY_LIST_HASH, parent.getCoinbase().getBytes(),
-                        EMPTY_TRIE_HASH, BlockHashesHelper.getTxTrieRoot(txs, isRskip126Enabled), EMPTY_TRIE_HASH,
-                        logBloom.getData(), parent.getDifficulty().getBytes(), number,
-                        parent.getGasLimit(), parent.getGasUsed(), parent.getTimestamp() + ++count,
-                        EMPTY_BYTE_ARRAY, Coin.ZERO, null, null, null, new byte[12], minimumGasPrice.getBytes(), 0
-                ),
+                newHeader,
                 txs,
                 Collections.emptyList()
         );
@@ -284,14 +346,29 @@ public class BlockGenerator {
             txs.add(new SimpleRskTransaction(PegTestUtils.createHash3().getBytes()));
         }
 
+        long blockNumber = parent.getNumber() + 1;
+
+        byte[] ummRoot = activationConfig.isActive(ConsensusRule.RSKIPUMM, blockNumber) ? new byte[0] : null;
+
+        BlockHeader newHeader = blockFactory.getBlockHeaderBuilder()
+                .setParentHashFromKeccak256(parent.getHash())
+                .setCoinbase(parent.getCoinbase())
+                .setStateRoot(ByteUtils.clone(parent.getStateRoot()))
+                .setEmptyTxTrieRoot()
+                .setEmptyLogsBloom()
+                .setEmptyReceiptTrieRoot()
+                .setDifficulty(parent.getDifficulty())
+                .setNumber(parent.getNumber() + 1)
+                .setGasLimit(parent.getGasLimit())
+                .setGasUsed( parent.getGasUsed()) // why ? I just copied the value before
+                .setTimestamp(parent.getTimestamp() + ++count)
+                .setEmptyMergedMiningForkDetectionData()
+                .setMinimumGasPrice(Coin.valueOf(10))
+                .setUmmRoot(ummRoot)
+                .build();
+
         return blockFactory.newBlock(
-                blockFactory.newHeader(
-                        parent.getHash().getBytes(), EMPTY_LIST_HASH, parent.getCoinbase().getBytes(),
-                        EMPTY_TRIE_HASH, EMPTY_TRIE_HASH, EMPTY_TRIE_HASH,
-                        logBloom.getData(), parent.getDifficulty().getBytes(), parent.getNumber() + 1,
-                        parent.getGasLimit(), parent.getGasUsed(), parent.getTimestamp() + ++count,
-                        EMPTY_BYTE_ARRAY, Coin.ZERO, null, null, null, new byte[12], Coin.valueOf(10).getBytes(), 0
-                ),
+                newHeader,
                 txs,
                 Collections.emptyList()
         );
@@ -413,8 +490,9 @@ public class BlockGenerator {
             return rlpEncoded;
         }
 
-        header.remove(header.size() - 1); // remove last element
-        header.remove(header.size() - 1); // remove second last element
+        // TODO Fix
+        //header.remove(header.size() - 1); // remove last element
+        //header.remove(header.size() - 1); // remove second last element
 
         List<byte[]> newHeader = new ArrayList<>();
         for (int i = 0; i < header.size(); i++) {

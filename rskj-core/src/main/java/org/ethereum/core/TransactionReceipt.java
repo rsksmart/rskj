@@ -19,21 +19,17 @@
 
 package org.ethereum.core;
 
-import org.bouncycastle.util.BigIntegers;
-import org.bouncycastle.util.encoders.Hex;
-import org.ethereum.util.RLP;
-import org.ethereum.util.RLPElement;
-import org.ethereum.util.RLPItem;
-import org.ethereum.util.RLPList;
-import org.ethereum.vm.LogInfo;
+    import org.bouncycastle.util.BigIntegers;
+    import org.ethereum.util.*;
+    import org.ethereum.vm.LogInfo;
 
-import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+    import java.math.BigInteger;
+    import java.util.ArrayList;
+    import java.util.Arrays;
+    import java.util.List;
 
-import static co.rsk.util.ListArrayUtil.nullToEmpty;
-import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
+    import static co.rsk.util.ListArrayUtil.nullToEmpty;
+    import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
 /**
  * The transaction receipt is a tuple of three items
@@ -83,7 +79,8 @@ public class TransactionReceipt {
             this.status = transactionStatus;
         }
 
-        for (RLPElement log : logs) {
+        for (int k = 0; k < logs.size(); k++) {
+            RLPElement log = logs.get(k);
             LogInfo logInfo = new LogInfo(log.getRLPData());
             logInfoList.add(logInfo);
         }
@@ -235,8 +232,8 @@ public class TransactionReceipt {
 
         return "TransactionReceipt[" +
                 "\n  , " + (hasTxStatus() ? ("txStatus=" + (isSuccessful()? "OK" : "FAILED"))
-                        : ("postTxState=" + Hex.toHexString(postTxState))) +
-                "\n  , cumulativeGas=" + Hex.toHexString(cumulativeGas) +
+                        : ("postTxState=" + ByteUtil.toHexString(postTxState))) +
+                "\n  , cumulativeGas=" + ByteUtil.toHexString(cumulativeGas) +
                 "\n  , bloom=" + bloomFilter.toString() +
                 "\n  , logs=" + logInfoList +
                 ']';

@@ -21,8 +21,8 @@ package org.ethereum.rpc;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Wallet;
 import co.rsk.core.WalletFactory;
-import co.rsk.core.bc.MiningMainchainViewImpl;
 import co.rsk.core.bc.MiningMainchainView;
+import co.rsk.core.bc.MiningMainchainViewImpl;
 import co.rsk.net.NodeID;
 import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.rpc.ExecutionBlockRetriever;
@@ -30,7 +30,6 @@ import co.rsk.rpc.Web3RskImpl;
 import co.rsk.rpc.modules.debug.DebugModule;
 import co.rsk.rpc.modules.debug.DebugModuleImpl;
 import co.rsk.rpc.modules.eth.EthModule;
-import co.rsk.rpc.modules.eth.EthModuleSolidityDisabled;
 import co.rsk.rpc.modules.eth.EthModuleWalletEnabled;
 import co.rsk.rpc.modules.personal.PersonalModule;
 import co.rsk.rpc.modules.personal.PersonalModuleWalletEnabled;
@@ -38,9 +37,10 @@ import co.rsk.rpc.modules.txpool.TxPoolModule;
 import co.rsk.rpc.modules.txpool.TxPoolModuleImpl;
 import co.rsk.scoring.*;
 import co.rsk.test.World;
-import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.TestUtils;
 import org.ethereum.rpc.Simples.SimpleEthereum;
-import org.ethereum.rpc.exception.JsonRpcInvalidParamException;
+import org.ethereum.rpc.exception.RskJsonRpcRequestException;
+import org.ethereum.util.ByteUtil;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -68,31 +68,24 @@ public class Web3ImplScoringTest {
     }
 
     @Test
-    public void addBannedAddressWithInvalidMask() throws UnknownHostException {
+    public void addBannedAddressWithInvalidMask() {
         PeerScoringManager peerScoringManager = createPeerScoringManager();
         Web3Impl web3 = createWeb3(peerScoringManager);
 
-        try {
-            web3.sco_banAddress("192.168.56.1/a");
-            Assert.fail();
-        }
-        catch (JsonRpcInvalidParamException ex) {
-            Assert.assertEquals("invalid banned address 192.168.56.1/a", ex.getMessage());
-        }
+        RskJsonRpcRequestException ex = TestUtils.assertThrows(RskJsonRpcRequestException.class,
+                () -> web3.sco_banAddress("192.168.56.1/a"));
+        Assert.assertEquals("invalid banned address 192.168.56.1/a", ex.getMessage());
+
     }
 
     @Test
-    public void removeBannedAddressWithInvalidMask() throws UnknownHostException {
+    public void removeBannedAddressWithInvalidMask() {
         PeerScoringManager peerScoringManager = createPeerScoringManager();
         Web3Impl web3 = createWeb3(peerScoringManager);
 
-        try {
-            web3.sco_unbanAddress("192.168.56.1/a");
-            Assert.fail();
-        }
-        catch (JsonRpcInvalidParamException ex) {
-            Assert.assertEquals("invalid banned address 192.168.56.1/a", ex.getMessage());
-        }
+        RskJsonRpcRequestException ex = TestUtils.assertThrows(RskJsonRpcRequestException.class,
+                () -> web3.sco_unbanAddress("192.168.56.1/a"));
+        Assert.assertEquals("invalid banned address 192.168.56.1/a", ex.getMessage());
     }
 
     @Test
@@ -126,7 +119,7 @@ public class Web3ImplScoringTest {
         Assert.assertTrue(peerScoringManager.hasGoodReputation(address));
     }
 
-    @Test(expected = JsonRpcInvalidParamException.class)
+    @Test
     public void banningLocalIPv4AddressThrowsException() throws UnknownHostException {
         PeerScoringManager peerScoringManager = createPeerScoringManager();
         Web3Impl web3 = createWeb3(peerScoringManager);
@@ -135,7 +128,12 @@ public class Web3ImplScoringTest {
 
         Assert.assertTrue(peerScoringManager.hasGoodReputation(address));
 
-        web3.sco_banAddress(address.getHostAddress());
+        RskJsonRpcRequestException e =
+                TestUtils.assertThrows(RskJsonRpcRequestException.class,
+                        () -> {
+                            web3.sco_banAddress(address.getHostAddress());
+                        });
+        Assert.assertEquals(-32602, (int) e.getCode());
     }
 
     @Test
@@ -156,7 +154,7 @@ public class Web3ImplScoringTest {
         Assert.assertTrue(peerScoringManager.hasGoodReputation(address));
     }
 
-    @Test(expected = JsonRpcInvalidParamException.class)
+    @Test
     public void banningUsingLocalIPV4AndMaskThrowsException() throws UnknownHostException {
         PeerScoringManager peerScoringManager = createPeerScoringManager();
         Web3Impl web3 = createWeb3(peerScoringManager);
@@ -165,7 +163,10 @@ public class Web3ImplScoringTest {
 
         Assert.assertTrue(peerScoringManager.hasGoodReputation(address));
 
-        web3.sco_banAddress(address.getHostAddress() + "/8");
+        RskJsonRpcRequestException exception = TestUtils
+                .assertThrows(RskJsonRpcRequestException.class,
+                        () -> web3.sco_banAddress(address.getHostAddress() + "/8"));
+        Assert.assertEquals(-32602, (int) exception.getCode());
     }
 
     @Test
@@ -255,7 +256,7 @@ public class Web3ImplScoringTest {
         Assert.assertEquals(2, result.length);
 
         PeerScoringInformation info = result[0];
-        Assert.assertEquals(Hex.toHexString(node.getID()).substring(0, 8), info.getId());
+        Assert.assertEquals(ByteUtil.toHexString(node.getID()).substring(0, 8), info.getId());
         Assert.assertEquals(2, info.getValidBlocks());
         Assert.assertEquals(0, info.getInvalidBlocks());
         Assert.assertEquals(1, info.getValidTransactions());
@@ -363,7 +364,7 @@ public class Web3ImplScoringTest {
         EthModule em = new EthModule(
                 config.getNetworkConstants().getBridgeConstants(), config.getNetworkConstants().getChainId(), world.getBlockChain(), null,
                 null, new ExecutionBlockRetriever(miningMainchainView, world.getBlockChain(), null, null),
-                null, new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(wallet), null,
+                null, new EthModuleWalletEnabled(wallet), null,
                 new BridgeSupportFactory(
                         null, config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig())
         );
@@ -372,7 +373,6 @@ public class Web3ImplScoringTest {
         return new Web3RskImpl(
                 rsk,
                 world.getBlockChain(),
-                null,
                 config,
                 Web3Mocks.getMockMinerClient(),
                 Web3Mocks.getMockMinerServer(),
@@ -382,9 +382,8 @@ public class Web3ImplScoringTest {
                 tpm,
                 null,
                 dm,
-                null,
+                null, null,
                 Web3Mocks.getMockChannelManager(),
-                null,
                 peerScoringManager,
                 null,
                 null,
@@ -394,8 +393,8 @@ public class Web3ImplScoringTest {
                 null,
                 null,
                 null,
-                null
-        );
+                null,
+                null);
     }
 
     private static NodeID generateNodeID() {

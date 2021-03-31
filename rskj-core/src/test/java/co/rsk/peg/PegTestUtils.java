@@ -18,11 +18,16 @@
 
 package co.rsk.peg;
 
+import co.rsk.bitcoinj.core.Address;
 import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
+import co.rsk.bitcoinj.script.ScriptOpCodes;
 import co.rsk.bitcoinj.wallet.RedeemData;
+import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
+import java.util.Optional;
+import org.bouncycastle.util.encoders.Hex;
 
 /**
  * Created by oscar on 05/08/2016.
@@ -78,5 +83,74 @@ public class PegTestUtils {
     public static Script createBaseRedeemScriptThatSpendsFromTheFederation(Federation federation) {
         Script redeemScript = ScriptBuilder.createRedeemScript(federation.getNumberOfSignaturesRequired(), federation.getBtcPublicKeys());
         return redeemScript;
+    }
+
+    public static Script createOpReturnScriptForRsk(
+        int protocolVersion,
+        RskAddress rskDestinationAddress,
+        Optional<Address> btcRefundAddressOptional
+    ) {
+        int index = 0;
+        int payloadLength;
+        if (btcRefundAddressOptional.isPresent()) {
+            payloadLength = 46;
+        } else {
+            payloadLength = 25;
+        }
+        byte[] payloadBytes = new byte[payloadLength];
+
+        byte[] prefix = Hex.decode("52534b54"); // 'RSKT' in hexa
+        System.arraycopy(prefix, 0, payloadBytes, index, prefix.length);
+        index += prefix.length;
+
+        payloadBytes[index] = (byte) protocolVersion;
+        index++;
+
+        System.arraycopy(
+            rskDestinationAddress.getBytes(),
+            0,
+            payloadBytes,
+            index,
+            rskDestinationAddress.getBytes().length
+        );
+        index += rskDestinationAddress.getBytes().length;
+
+        if (btcRefundAddressOptional.isPresent()) {
+            Address btcRefundAddress = btcRefundAddressOptional.get();
+            if (btcRefundAddress.isP2SHAddress()) {
+                payloadBytes[index] = 2; // P2SH address type
+            } else {
+                payloadBytes[index] = 1; // P2PKH address type
+            }
+            index++;
+
+            System.arraycopy(
+                btcRefundAddress.getHash160(),
+                0,
+                payloadBytes,
+                index,
+                btcRefundAddress.getHash160().length
+            );
+        }
+
+        return ScriptBuilder.createOpReturnScript(payloadBytes);
+    }
+
+    public static Script createOpReturnScriptForRskWithCustomPayload(int protocolVersion, byte[] customPayload) {
+        int index = 0;
+        int payloadLength = customPayload.length;
+
+        byte[] payloadBytes = new byte[payloadLength + 5]; // Add 4 bytes for the prefix, and another for the protocol version
+
+        byte[] prefix = Hex.decode("52534b54"); // 'RSKT' in hexa
+        System.arraycopy(prefix, 0, payloadBytes, index, prefix.length);
+        index += prefix.length;
+
+        payloadBytes[index] = (byte) protocolVersion;
+        index++;
+
+        System.arraycopy(customPayload, 0, payloadBytes, index, customPayload.length);
+
+        return ScriptBuilder.createOpReturnScript(payloadBytes);
     }
 }

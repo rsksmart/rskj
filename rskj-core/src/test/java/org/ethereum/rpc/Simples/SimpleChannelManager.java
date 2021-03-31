@@ -18,7 +18,8 @@
 
 package org.ethereum.rpc.Simples;
 
-import co.rsk.net.MessageChannel;
+import co.rsk.config.RskSystemProperties;
+import co.rsk.net.Peer;
 import co.rsk.net.NodeID;
 import co.rsk.net.Status;
 import co.rsk.net.messages.MessageWithId;
@@ -29,24 +30,23 @@ import org.ethereum.core.BlockIdentifier;
 import org.ethereum.core.Transaction;
 import org.ethereum.net.server.Channel;
 import org.ethereum.net.server.ChannelManager;
+import org.ethereum.net.server.ChannelManagerImpl;
+import org.ethereum.sync.SyncPool;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.net.InetAddress;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 /**
  * Created by Ruben on 09/06/2016.
  */
 public class SimpleChannelManager implements ChannelManager {
     private List<Transaction> transactions = new ArrayList<>();
-    private Set<NodeID> lastSkip;
-    private Map<NodeID, MessageChannel> simpleChannels = new ConcurrentHashMap<>();
+    private Map<NodeID, Peer> simpleChannels = new ConcurrentHashMap<>();
 
     @Override
     public void start() {
@@ -77,7 +77,6 @@ public class SimpleChannelManager implements ChannelManager {
     @Override
     public Set<NodeID> broadcastTransaction(@Nonnull Transaction transaction, @Nullable Set<NodeID> skip) {
         this.transactions.add(transaction);
-        this.lastSkip = skip;
         return new HashSet<>();
     }
 
@@ -88,11 +87,10 @@ public class SimpleChannelManager implements ChannelManager {
 
     @Override
     public void add(Channel peer) {
-
     }
 
-    public MessageChannel getMessageChannel(SimpleNode sender, SimpleNode receiver) {
-        MessageChannel channel = simpleChannels.get(sender.getNodeID());
+    public Peer getMessageChannel(SimpleNode sender, SimpleNode receiver) {
+        Peer channel = simpleChannels.get(sender.getNodeID());
         if (channel != null){
             return channel;
         }
@@ -104,39 +102,11 @@ public class SimpleChannelManager implements ChannelManager {
 
     @Override
     public void notifyDisconnect(Channel channel) {
-
     }
 
     @Override
-    public void onSyncDone(boolean done) {
-
-    }
-
-    @Override
-    public Collection<Channel> getActivePeers() {
-        return simpleChannels.values().stream().map(this::getMockedChannel).collect(Collectors.toList());
-
-//        Collection<Channel> channels = new ArrayList<Channel>();
-//        channels.add(new Channel(null, null, null, null, null, null, null, null));
-//        channels.add(new Channel(null, null, null, null, null, null, null, null));
-//        return channels;
-    }
-
-    private Channel getMockedChannel(MessageChannel mc) {
-        Channel channel = mock(Channel.class);
-        when(channel.getNodeId()).thenReturn(mc.getPeerNodeID());
-        return channel;
-    }
-
-    @Override
-    public boolean sendMessageTo(NodeID nodeID, MessageWithId message) {
-//        simpleChannels.get(nodeID).sendMessage(message);
-        MessageChannel channel = simpleChannels.get(nodeID);
-        // TODO(lsebrie): handle better tests where channels are not initialized
-        if (channel != null){
-            channel.sendMessage(message);
-        }
-        return true;
+    public Collection<Peer> getActivePeers() {
+        return simpleChannels.values();
     }
 
     @Override
@@ -144,13 +114,17 @@ public class SimpleChannelManager implements ChannelManager {
         return true;
     }
 
+    @Override
+    public Set<NodeID> broadcastTransactions(List<Transaction> transactions, Set<NodeID> nodeID) {
+        transactions.forEach(tx -> broadcastTransaction(tx, nodeID));
+        return new HashSet<>();
+    }
+
+    @Override
+    public void setActivePeers(Map<NodeID, Channel> newActivePeers) {
+    }
+
     public List<Transaction> getTransactions() {
         return transactions;
     }
-
-    public Set<NodeID> getLastSkip() {
-        return lastSkip;
-    }
-
-    public void setLastSkip(Set<NodeID> value) { lastSkip = value; }
 }

@@ -19,9 +19,9 @@
 package co.rsk.trie.delete;
 
 import co.rsk.trie.Trie;
+import org.ethereum.util.ByteUtil;
 import org.junit.Assert;
 import org.junit.Test;
-import org.spongycastle.util.encoders.Hex;
 
 import java.util.Arrays;
 import java.util.List;
@@ -81,11 +81,11 @@ public class SecureTrieKeyValueTest {
         byte[] key3 = "11200".getBytes();
         byte[] key4 = "1145".getBytes();
 
-        byte[] msg0 = Hex.toHexString(key0).getBytes();
-        byte[] msg1 = Hex.toHexString(key1).getBytes();
-        byte[] msg2 = Hex.toHexString(key2).getBytes();
-        byte[] msg3 = Hex.toHexString(key3).getBytes();
-        byte[] msg4 = Hex.toHexString(key4).getBytes();
+        byte[] msg0 = ByteUtil.toHexString(key0).getBytes();
+        byte[] msg1 = ByteUtil.toHexString(key1).getBytes();
+        byte[] msg2 = ByteUtil.toHexString(key2).getBytes();
+        byte[] msg3 = ByteUtil.toHexString(key3).getBytes();
+        byte[] msg4 = ByteUtil.toHexString(key4).getBytes();
 
         List<byte[]> keys = Arrays.asList(key0, key1, key2, key3, key4);
         List<byte[]> values = Arrays.asList(msg0, msg1, msg2, msg3, msg4);
@@ -122,11 +122,11 @@ public class SecureTrieKeyValueTest {
         byte[] key3 = "11200".getBytes();
         byte[] key4 = "1145".getBytes();
 
-        byte[] msg0 = Hex.toHexString(key0).getBytes();
-        byte[] msg1 = Hex.toHexString(key1).getBytes();
-        byte[] msg2 = Hex.toHexString(key2).getBytes();
-        byte[] msg3 = Hex.toHexString(key3).getBytes();
-        byte[] msg4 = Hex.toHexString(key4).getBytes();
+        byte[] msg0 = ByteUtil.toHexString(key0).getBytes();
+        byte[] msg1 = ByteUtil.toHexString(key1).getBytes();
+        byte[] msg2 = ByteUtil.toHexString(key2).getBytes();
+        byte[] msg3 = ByteUtil.toHexString(key3).getBytes();
+        byte[] msg4 = ByteUtil.toHexString(key4).getBytes();
 
         List<byte[]> keys = Arrays.asList(key0, key1, key2, key3, key4);
         List<byte[]> values = Arrays.asList(msg0, msg1, msg2, msg3, msg4);

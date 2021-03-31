@@ -26,12 +26,13 @@ import co.rsk.peg.performance.ExecutionStats;
 import co.rsk.peg.performance.PrecompiledContractPerformanceTestCase;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.crypto.ECKey;
+import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.PrecompiledContracts;
+import org.ethereum.vm.exception.VMException;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
-import org.spongycastle.util.encoders.Hex;
 
 import java.util.Arrays;
 import java.util.Random;
@@ -54,7 +55,7 @@ public class GetMultisigScriptHashPerformanceTestCase extends PrecompiledContrac
     }
 
     @Test
-    public void getMultisigScriptHash_Weighed() {
+    public void getMultisigScriptHash_Weighed() throws VMException {
         warmUp();
 
         CombinedExecutionStats stats = new CombinedExecutionStats(String.format("%s-weighed", function.name));
@@ -67,7 +68,7 @@ public class GetMultisigScriptHashPerformanceTestCase extends PrecompiledContrac
     }
 
     @Test
-    public void getMultisigScriptHash_Even() {
+    public void getMultisigScriptHash_Even() throws VMException {
         warmUp();
 
         CombinedExecutionStats stats = new CombinedExecutionStats(String.format("%s-even", function.name));
@@ -79,7 +80,7 @@ public class GetMultisigScriptHashPerformanceTestCase extends PrecompiledContrac
         HDWalletUtilsPerformanceTest.addStats(stats);
     }
 
-    private void warmUp() {
+    private void warmUp() throws VMException {
         // Get rid of outliers by executing some cases beforehand
         setQuietMode(true);
         System.out.print("Doing an initial pass... ");
@@ -88,7 +89,7 @@ public class GetMultisigScriptHashPerformanceTestCase extends PrecompiledContrac
         setQuietMode(false);
     }
 
-    private ExecutionStats estimateGetMultisigScriptHash(int times, int numberOfKeys, EnvironmentBuilder environmentBuilder) {
+    private ExecutionStats estimateGetMultisigScriptHash(int times, int numberOfKeys, EnvironmentBuilder environmentBuilder) throws VMException {
         String name = String.format("%s-%d", function.name, numberOfKeys);
         ExecutionStats stats = new ExecutionStats(name);
         Random rnd = new Random();
@@ -99,7 +100,7 @@ public class GetMultisigScriptHashPerformanceTestCase extends PrecompiledContrac
             publicKeys[i] = new ECKey().getPubKey(true);
         }
 
-        String expectedHashHex = Hex.toHexString(ScriptBuilder.createP2SHOutputScript(
+        String expectedHashHex = ByteUtil.toHexString(ScriptBuilder.createP2SHOutputScript(
                 minimumSignatures,
                 Arrays.stream(publicKeys).map(BtcECKey::fromPublicOnly).collect(Collectors.toList())
         ).getPubKeyHash());
@@ -119,7 +120,7 @@ public class GetMultisigScriptHashPerformanceTestCase extends PrecompiledContrac
                 (EnvironmentBuilder.Environment environment, byte[] result) -> {
                     Object[] decodedResult = function.decodeResult(result);
                     Assert.assertEquals(byte[].class, decodedResult[0].getClass());
-                    String hexHash = Hex.toHexString((byte[]) decodedResult[0]);
+                    String hexHash = ByteUtil.toHexString((byte[]) decodedResult[0]);
                     Assert.assertEquals(expectedHashHex, hexHash);
                 }
         );

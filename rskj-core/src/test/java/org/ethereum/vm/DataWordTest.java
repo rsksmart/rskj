@@ -19,15 +19,15 @@
 
 package org.ethereum.vm;
 
+import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.crypto.HashUtil;
+import org.ethereum.util.ByteUtil;
 import org.junit.Test;
 
-import org.bouncycastle.util.encoders.Hex;
-
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 public class DataWordTest {
 
@@ -71,7 +71,7 @@ public class DataWordTest {
         assertArrayEquals(xdata, x.getData());
         assertArrayEquals(ydata, y.getData());
         assertEquals(32, result.getData().length);
-        assertEquals(expected, Hex.toHexString(result.getData()));
+        assertEquals(expected, ByteUtil.toHexString(result.getData()));
     }
 
     @Test
@@ -92,9 +92,9 @@ public class DataWordTest {
         assertArrayEquals(xdata, x.getData());
         assertArrayEquals(ydata, y.getData());
         assertEquals(32, y.getData().length);
-        assertEquals("0000000000000000000000010000000000000000000000000000000000000000", Hex.toHexString(y.getData()));
+        assertEquals("0000000000000000000000010000000000000000000000000000000000000000", ByteUtil.toHexString(y.getData()));
         assertEquals(32, result.getData().length);
-        assertEquals("0000000000000000000000010000000000000000000000000000000000000000", Hex.toHexString(result.getData()));
+        assertEquals("0000000000000000000000010000000000000000000000000000000000000000", ByteUtil.toHexString(result.getData()));
     }
 
     @Test
@@ -115,9 +115,9 @@ public class DataWordTest {
         assertArrayEquals(xdata, x.getData());
         assertArrayEquals(ydata, y.getData());
         assertEquals(32, y.getData().length);
-        assertEquals("0100000000000000000000000000000000000000000000000000000000000000", Hex.toHexString(y.getData()));
+        assertEquals("0100000000000000000000000000000000000000000000000000000000000000", ByteUtil.toHexString(y.getData()));
         assertEquals(32, result.getData().length);
-        assertEquals("0000000000000000000000000000000000000000000000000000000000000000", Hex.toHexString(result.getData()));
+        assertEquals("0000000000000000000000000000000000000000000000000000000000000000", ByteUtil.toHexString(result.getData()));
     }
 
     @Test
@@ -139,7 +139,7 @@ public class DataWordTest {
         assertArrayEquals(xdata, x.getData());
         assertArrayEquals(ydata, y.getData());
         assertEquals(32, result.getData().length);
-        assertEquals("0000000000000000000000000000000000000000000000000000000000000014", Hex.toHexString(result.getData()));
+        assertEquals("0000000000000000000000000000000000000000000000000000000000000014", ByteUtil.toHexString(result.getData()));
     }
 
     @Test
@@ -347,6 +347,15 @@ public class DataWordTest {
     }
 
     @Test
+    public void testFromLongString() {
+        String value = "012345678901234567890123456789012345678901234567890123456789";
+        byte[] hashedValue = HashUtil.keccak256(value.getBytes(StandardCharsets.UTF_8));
+        DataWord parsed = DataWord.fromLongString(value);
+
+        assertArrayEquals(parsed.getData(),hashedValue);
+    }
+
+    @Test
     public void testAddModOverflow() {
         testAddMod("9999999999999999999999999999999999999999999999999999999999999999",
                 "8888888888888888888888888888888888888888888888888888888888888888",
@@ -396,7 +405,7 @@ public class DataWordTest {
         assertArrayEquals(dataw1, w1.getData());
         assertArrayEquals(dataw2, w2.getData());
         assertEquals(32, result.getData().length);
-        assertEquals("0000000000000000000000000000000000000000000000000000000000000001", org.spongycastle.util.encoders.Hex.toHexString(result.getData()));
+        assertEquals("0000000000000000000000000000000000000000000000000000000000000001", ByteUtil.toHexString(result.getData()));
     }
 
     @Test

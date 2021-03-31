@@ -20,7 +20,6 @@
 package org.ethereum.util;
 
 import javax.annotation.Nullable;
-import java.io.Serializable;
 
 /**
  * Wrapper class for decoded elements from an RLP encoded byte array.
@@ -28,7 +27,7 @@ import java.io.Serializable;
  * @author Roman Mandeleil
  * @since 01.04.2014
  */
-public interface RLPElement extends Serializable {
+public interface RLPElement {
 
     /**
      * @implNote this function will return null when the RLP data is an empty byte array.

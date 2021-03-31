@@ -24,8 +24,9 @@ import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 
 public class BtcTransactionFormatUtils {
-    private static int MIN_BLOCK_HEADER_SIZE = 80;
-    private static int MAX_BLOCK_HEADER_SIZE = 85;
+
+    private static final int MIN_BLOCK_HEADER_SIZE = 80;
+    private static final int MAX_BLOCK_HEADER_SIZE = 85;
 
     public static Sha256Hash calculateBtcTxHash(byte[] btcTxSerialized) {
         return Sha256Hash.wrapReversed(Sha256Hash.hashTwice(btcTxSerialized));
@@ -36,8 +37,26 @@ public class BtcTransactionFormatUtils {
         return inputsCounter.value;
     }
 
+    public static long getInputsCountForSegwit(byte[] btcTxSerialized) {
+        VarInt inputsCounter = new VarInt(btcTxSerialized, 4);
+
+        if (inputsCounter.value != 0) {
+            return -1;
+        }
+
+        inputsCounter = new VarInt(btcTxSerialized, 5);
+
+        if (inputsCounter.value != 1) {
+            return -1;
+        }
+
+        inputsCounter = new VarInt(btcTxSerialized, 6);
+        return inputsCounter.value;
+    }
+
     public static boolean isBlockHeaderSize(int size, ActivationConfig.ForBlock activations) {
         return (activations.isActive(ConsensusRule.RSKIP124) && size == MIN_BLOCK_HEADER_SIZE) ||
-                (!activations.isActive(ConsensusRule.RSKIP124) && size >= MIN_BLOCK_HEADER_SIZE && size <= MAX_BLOCK_HEADER_SIZE);
+            (!activations.isActive(ConsensusRule.RSKIP124) && size >= MIN_BLOCK_HEADER_SIZE
+                && size <= MAX_BLOCK_HEADER_SIZE);
     }
 }

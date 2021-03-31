@@ -61,7 +61,7 @@ public class CallContractTest {
     private static ProgramResult callContract(World world, RskAddress receiveAddress, byte[] data) {
         Transaction tx = CallTransaction.createRawTransaction(0, 0, 100000000000000L,
                 receiveAddress, 0, data, config.getNetworkConstants().getChainId());
-        tx.sign(new byte[32]);
+        tx.sign(new byte[]{});
 
         Block bestBlock = world.getBlockChain().getBestBlock();
 
@@ -81,17 +81,15 @@ public class CallContractTest {
                     null,
                     blockFactory,
                     new ProgramInvokeFactoryImpl(),
-                    new PrecompiledContracts(config, bridgeSupportFactory)
-                    );
+                    new PrecompiledContracts(config, bridgeSupportFactory),
+                    world.getBlockTxSignatureCache()
+            );
 
             org.ethereum.core.TransactionExecutor executor = transactionExecutorFactory
                     .newInstance(tx, 0, bestBlock.getCoinbase(), repository, bestBlock, 0)
                     .setLocalCall(true);
 
-            executor.init();
-            executor.execute();
-            executor.go();
-            executor.finalization();
+            executor.executeTransaction();
 
             return executor.getResult();
         } finally {

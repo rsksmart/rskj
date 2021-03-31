@@ -27,6 +27,7 @@ import java.math.BigInteger;
  */
 public class BlockDifficulty implements Comparable<BlockDifficulty>, Serializable {
     public static final BlockDifficulty ZERO = new BlockDifficulty(BigInteger.ZERO);
+    public static final BlockDifficulty ONE = new BlockDifficulty(BigInteger.ONE);
 
     private final BigInteger value;
 
@@ -79,6 +80,11 @@ public class BlockDifficulty implements Comparable<BlockDifficulty>, Serializabl
     public BlockDifficulty add(BlockDifficulty other) {
         return new BlockDifficulty(value.add(other.value));
     }
+
+    public BlockDifficulty subtract(BlockDifficulty other) {
+        return new BlockDifficulty(value.subtract(other.value));
+    }
+
 
     @Override
     public int compareTo(@Nonnull BlockDifficulty other) {

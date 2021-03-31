@@ -40,7 +40,13 @@ import org.junit.runners.Suite;
         LockWhitelistTest.class,
         StateForBtcReleaseClientTest.class,
         GetBtcTransactionConfirmationsTest.class,
+        RegisterBtcCoinbaseTransactionTest.class,
+        HasBtcBlockCoinbaseTransactionInformationTest.class,
+        LockingCapTest.class,
+        RegisterFastBridgeBtcTransactionTest.class
 })
+
+//-------------- COMMENT THIS TO RUN THE TEST AND EACH CLASS --------------
 @Ignore
 public class BridgePerformanceTest extends PrecompiledContractPerformanceTest {
 }

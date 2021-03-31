@@ -22,15 +22,9 @@ package org.ethereum.net;
 import org.ethereum.net.eth.message.StatusMessage;
 import org.ethereum.net.message.ReasonCode;
 import org.ethereum.util.ByteUtil;
-import org.mapdb.Serializer;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
-import java.io.Serializable;
 import java.math.BigInteger;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
 
 import static java.lang.Math.min;
 
@@ -43,31 +37,6 @@ import static java.lang.Math.min;
  */
 public class NodeStatistics {
     public static final int REPUTATION_PREDEFINED = 1000500;
-
-    public class StatHandler {
-        AtomicInteger count = new AtomicInteger(0);
-        public void add() {count.incrementAndGet(); }
-        public int get() {return count.get();}
-        public String toString() {return count.toString();}
-    }
-
-    static class Persistent  implements Serializable {
-        private static final long serialVersionUID = -1246930309060559921L;
-        static final Serializer<Persistent> MapDBSerializer = new Serializer<Persistent>() {
-            @Override
-            public void serialize(DataOutput out, Persistent value) throws IOException {
-                out.writeInt(value.reputation);
-            }
-
-            @Override
-            public Persistent deserialize(DataInput in, int available) throws IOException {
-                Persistent persistent = new Persistent();
-                persistent.reputation = in.readInt();
-                return persistent;
-            }
-        };
-        int reputation;
-    }
 
     private boolean isPredefined = false;
 
@@ -82,7 +51,6 @@ public class NodeStatistics {
     public final StatHandler discoverOutFind = new StatHandler();
     public final StatHandler discoverInNeighbours = new StatHandler();
     public final StatHandler discoverOutNeighbours = new StatHandler();
-    public final AtomicLong lastPongReplyTime = new AtomicLong(0l); // in milliseconds
 
     // rlpx stat
     public final StatHandler rlpxConnectionAttempts = new StatHandler();
@@ -101,15 +69,15 @@ public class NodeStatistics {
 
     // Eth stat
     public final StatHandler ethHandshake = new StatHandler();
-    public final StatHandler ethInbound = new StatHandler();
-    public final StatHandler ethOutbound = new StatHandler();
+    private final StatHandler ethInbound = new StatHandler();
+    private final StatHandler ethOutbound = new StatHandler();
     private StatusMessage ethLastInboundStatusMsg = null;
     private BigInteger ethTotalDifficulty = BigInteger.ZERO;
-
 
     int getSessionReputation() {
         return getSessionFairReputation() + (isPredefined ? REPUTATION_PREDEFINED : 0);
     }
+
     int getSessionFairReputation() {
         int discoverReput = 0;
 
@@ -152,11 +120,6 @@ public class NodeStatistics {
         rlpxLastLocalDisconnectReason = reason;
     }
 
-    public void disconnected() {
-        disconnected = true;
-    }
-
-
     public void ethHandshake(StatusMessage ethInboundStatus) {
         this.ethLastInboundStatusMsg = ethInboundStatus;
         this.ethTotalDifficulty = ethInboundStatus.getTotalDifficultyAsBigInt();
@@ -167,34 +130,12 @@ public class NodeStatistics {
         return ethTotalDifficulty;
     }
 
-    public void setEthTotalDifficulty(BigInteger ethTotalDifficulty) {
-        this.ethTotalDifficulty = ethTotalDifficulty;
-    }
-
     public void setClientId(String clientId) {
         this.clientId = clientId;
     }
 
     public void setPredefined(boolean isPredefined) {
         this.isPredefined = isPredefined;
-    }
-
-    public boolean isPredefined() {
-        return isPredefined;
-    }
-
-    public StatusMessage getEthLastInboundStatusMsg() {
-        return ethLastInboundStatusMsg;
-    }
-
-    Persistent getPersistent() {
-        Persistent persistent = new Persistent();
-        persistent.reputation = (getSessionFairReputation() + savedReputation) / 2;
-        return persistent;
-    }
-
-    void setPersistedData(Persistent persistedData) {
-        savedReputation = persistedData.reputation;
     }
 
     @Override
@@ -206,11 +147,26 @@ public class NodeStatistics {
                 discoverOutNeighbours + "/" + discoverInFind + " " +
                 ", rlpx: " + rlpxHandshake + "/" + rlpxAuthMessagesSent + "/" + rlpxConnectionAttempts + " " +
                 rlpxInMessages + "/" + rlpxOutMessages +
-                ", eth: " + ethHandshake + "/" + ethInbound + "/" + ethOutbound + " " +
-                (ethLastInboundStatusMsg != null ? ByteUtil.toHexString(ethLastInboundStatusMsg.getTotalDifficulty()) : "-") + " " +
+                ", eth: " + ethHandshake + "/" + getEthInbound() + "/" + getEthOutbound() + " " +
+                (ethLastInboundStatusMsg != null ? ByteUtil.toHexStringOrEmpty(ethLastInboundStatusMsg.getTotalDifficulty()) : "-") + " " +
                 (disconnected ? "X " : "") +
                 (rlpxLastLocalDisconnectReason != null ? ("<=" + rlpxLastLocalDisconnectReason) : " ") +
                 (rlpxLastRemoteDisconnectReason != null ? ("=>" + rlpxLastRemoteDisconnectReason) : " ")  +
                 "[" + clientId + "]";
+    }
+
+    public StatHandler getEthInbound() {
+        return ethInbound;
+    }
+
+    public StatHandler getEthOutbound() {
+        return ethOutbound;
+    }
+
+    public class StatHandler {
+        AtomicInteger count = new AtomicInteger(0);
+        public void add() {count.incrementAndGet(); }
+        public int get() {return count.get();}
+        public String toString() {return count.toString();}
     }
 }

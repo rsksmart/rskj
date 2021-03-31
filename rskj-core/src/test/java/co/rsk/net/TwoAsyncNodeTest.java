@@ -24,7 +24,7 @@ import co.rsk.net.messages.BlockMessage;
 import co.rsk.net.simples.SimpleAsyncNode;
 import co.rsk.net.sync.SyncConfiguration;
 import co.rsk.test.World;
-import co.rsk.validators.DummyBlockValidationRule;
+import co.rsk.validators.DummyBlockValidator;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
 import org.junit.Assert;
@@ -44,7 +44,7 @@ public class TwoAsyncNodeTest {
 
     private static SimpleAsyncNode createNode(int size) {
         final World world = new World();
-        final BlockStore store = new BlockStore();
+        final NetBlockStore store = new NetBlockStore();
         final Blockchain blockchain = world.getBlockChain();
 
         List<Block> blocks = new BlockGenerator().getBlockChain(blockchain.getBestBlock(), size);
@@ -54,16 +54,16 @@ public class TwoAsyncNodeTest {
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
-        BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
+        BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration, DummyBlockValidator.VALID_RESULT_INSTANCE);
         NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
-        NodeMessageHandler handler = new NodeMessageHandler(config, mock(org.ethereum.db.BlockStore.class), processor, null, null, null, null, new DummyBlockValidationRule());
+        NodeMessageHandler handler = new NodeMessageHandler(config, processor, null, null, null, null, mock(StatusResolver.class));
 
         return new SimpleAsyncNode(handler, blockchain);
     }
 
     private static SimpleAsyncNode createNodeWithUncles(int size) {
         final World world = new World();
-        final BlockStore store = new BlockStore();
+        final NetBlockStore store = new NetBlockStore();
         final Blockchain blockchain = world.getBlockChain();
 
         List<Block> blocks = new BlockGenerator().getBlockChain(blockchain.getBestBlock(), size, 0, true);
@@ -73,9 +73,9 @@ public class TwoAsyncNodeTest {
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
-        BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
+        BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration, DummyBlockValidator.VALID_RESULT_INSTANCE);
         NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
-        NodeMessageHandler handler = new NodeMessageHandler(config, mock(org.ethereum.db.BlockStore.class), processor, null, null, null, null, new DummyBlockValidationRule());
+        NodeMessageHandler handler = new NodeMessageHandler(config, processor, null, null, null, null, mock(StatusResolver.class));
 
         return new SimpleAsyncNode(handler, blockchain);
     }

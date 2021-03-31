@@ -33,15 +33,19 @@ import org.ethereum.core.Blockchain;
 import org.ethereum.core.TransactionPool;
 import org.ethereum.rpc.TypeConverter;
 import org.ethereum.rpc.Web3;
+import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.vm.program.ProgramResult;
+import org.hamcrest.Matchers;
 import org.junit.Assert;
 import org.junit.Test;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.*;
 
 public class EthModuleTest {
+
     @Test
     public void callSmokeTest() {
         Web3.CallArguments args = new Web3.CallArguments();
@@ -52,8 +56,89 @@ public class EthModuleTest {
                 .thenReturn(blockResult);
         when(blockResult.getBlock()).thenReturn(block);
 
-        byte[] hreturn = TypeConverter.stringToByteArray("hello");
+        byte[] hReturn = TypeConverter.stringToByteArray("hello");
         ProgramResult executorResult = mock(ProgramResult.class);
+        when(executorResult.getHReturn())
+                .thenReturn(hReturn);
+
+        ReversibleTransactionExecutor executor = mock(ReversibleTransactionExecutor.class);
+        when(executor.executeTransaction(eq(blockResult.getBlock()), any(), any(), any(), any(), any(), any(), any()))
+                .thenReturn(executorResult);
+
+        EthModule eth = new EthModule(
+                null,
+                anyByte(),
+                null,
+                null,
+                executor,
+                retriever,
+                null,
+                null,
+                null,
+                new BridgeSupportFactory(
+                        null, null, null));
+
+        String expectedResult = TypeConverter.toUnformattedJsonHex(hReturn);
+        String actualResult = eth.call(args, "latest");
+
+        assertEquals(expectedResult, actualResult);
+    }
+
+    @Test
+    public void callWithoutReturn() {
+        Web3.CallArguments args = new Web3.CallArguments();
+        BlockResult blockResult = mock(BlockResult.class);
+        Block block = mock(Block.class);
+        ExecutionBlockRetriever retriever = mock(ExecutionBlockRetriever.class);
+        when(retriever.getExecutionBlock_workaround("latest"))
+                .thenReturn(blockResult);
+        when(blockResult.getBlock()).thenReturn(block);
+
+        byte[] hReturn = new byte[0];
+        ProgramResult executorResult = mock(ProgramResult.class);
+        when(executorResult.getHReturn())
+                .thenReturn(hReturn);
+
+        ReversibleTransactionExecutor executor = mock(ReversibleTransactionExecutor.class);
+        when(executor.executeTransaction(eq(blockResult.getBlock()), any(), any(), any(), any(), any(), any(), any()))
+                .thenReturn(executorResult);
+
+        EthModule eth = new EthModule(
+                null,
+                anyByte(),
+                null,
+                null,
+                executor,
+                retriever,
+                null,
+                null,
+                null,
+                new BridgeSupportFactory(
+                        null, null, null));
+
+        String expectedResult = TypeConverter.toUnformattedJsonHex(hReturn);
+        String actualResult = eth.call(args, "latest");
+
+        assertEquals(expectedResult, actualResult);
+    }
+
+    @Test
+    public void test_revertedTransaction() {
+        Web3.CallArguments args = new Web3.CallArguments();
+        BlockResult blockResult = mock(BlockResult.class);
+        Block block = mock(Block.class);
+        ExecutionBlockRetriever retriever = mock(ExecutionBlockRetriever.class);
+        when(retriever.getExecutionBlock_workaround("latest"))
+                .thenReturn(blockResult);
+        when(blockResult.getBlock()).thenReturn(block);
+
+        byte[] hreturn = Hex.decode(
+                "08c379a000000000000000000000000000000000000000000000000000000000" +
+                        "0000002000000000000000000000000000000000000000000000000000000000" +
+                        "0000000f6465706f73697420746f6f2062696700000000000000000000000000" +
+                        "00000000");
+        ProgramResult executorResult = mock(ProgramResult.class);
+        when(executorResult.isRevert()).thenReturn(true);
         when(executorResult.getHReturn())
                 .thenReturn(hreturn);
 
@@ -71,12 +156,14 @@ public class EthModuleTest {
                 null,
                 null,
                 null,
-                null,
                 new BridgeSupportFactory(
                         null, null, null));
 
-        String result = eth.call(args, "latest");
-        assertThat(result, is(TypeConverter.toJsonHex(hreturn)));
+        try {
+            eth.call(args, "latest");
+        } catch (RskJsonRpcRequestException e) {
+            assertThat(e.getMessage(), Matchers.containsString("deposit too big"));
+        }
     }
 
     @Test
@@ -94,7 +181,6 @@ public class EthModuleTest {
                 (byte) 0,
                 null,
                 mockTransactionPool,
-                null,
                 null,
                 null,
                 null,
@@ -121,7 +207,6 @@ public class EthModuleTest {
                 mock(ReversibleTransactionExecutor.class),
                 mock(ExecutionBlockRetriever.class),
                 mock(RepositoryLocator.class),
-                mock(EthModuleSolidity.class),
                 mock(EthModuleWallet.class),
                 mock(EthModuleTransaction.class),
                 mock(BridgeSupportFactory.class)

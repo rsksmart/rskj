@@ -33,6 +33,7 @@ import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.net.p2p.P2pHandler;
 import org.ethereum.net.rlpx.MessageCodec;
 import org.ethereum.net.rlpx.Node;
+import org.ethereum.util.ByteUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -48,11 +49,11 @@ import java.util.stream.Collectors;
 
 /**
  * Utility class to retrieve property values from the rskj.conf files
- *
+ * <p>
  * The properties are taken from different sources and merged in the following order
  * (the config option from the next source overrides option from previous):
  * - resource rskj.conf : normally used as a reference config with default values
- *          and shouldn't be changed
+ * and shouldn't be changed
  * - system property : each config entry might be altered via -D VM option
  * - [user dir]/config/rskj.conf
  * - config specified with the -Drsk.conf.file=[file.conf] VM option
@@ -66,10 +67,12 @@ public abstract class SystemProperties {
 
     public static final String PROPERTY_BLOCKCHAIN_CONFIG = "blockchain.config";
     public static final String PROPERTY_BC_CONFIG_NAME = PROPERTY_BLOCKCHAIN_CONFIG + ".name";
+    public static final String PROPERTY_BC_VERIFY = PROPERTY_BLOCKCHAIN_CONFIG + ".verify";
     public static final String PROPERTY_GENESIS_CONSTANTS_FEDERATION_PUBLICKEYS = "genesis_constants.federationPublicKeys";
     public static final String PROPERTY_PEER_PORT = "peer.port";
     public static final String PROPERTY_BASE_PATH = "database.dir";
     public static final String PROPERTY_DB_RESET = "database.reset";
+    public static final String PROPERTY_DB_IMPORT = "database.import.enabled";
     // TODO review rpc properties
     public static final String PROPERTY_RPC_CORS = "rpc.providers.web.cors";
     public static final String PROPERTY_RPC_HTTP_ENABLED = "rpc.providers.web.http.enabled";
@@ -82,6 +85,10 @@ public abstract class SystemProperties {
 
     public static final String PROPERTY_PUBLIC_IP = "public.ip";
     public static final String PROPERTY_BIND_ADDRESS = "bind_address";
+
+    public static final String PROPERTY_PRINT_SYSTEM_INFO = "system.printInfo";
+
+    public static final String PROPERTY_SKIP_JAVA_VERSION_CHECK = "system.checkJavaVersion";
 
     /* Testing */
     private static final Boolean DEFAULT_VMTEST_LOAD_LOCAL = false;
@@ -198,7 +205,17 @@ public abstract class SystemProperties {
         return configFromFiles.getBoolean("database.reset");
     }
 
+    public boolean importEnabled() {
+        return configFromFiles.getBoolean(PROPERTY_DB_IMPORT);
+    }
 
+    public String importUrl() {
+        return configFromFiles.getString("database.import.url");
+    }
+
+    public List<String> importTrustedKeys() {
+        return configFromFiles.getStringList("database.import.trusted-keys");
+    }
 
     public List<Node> peerActive() {
         if (!configFromFiles.hasPath("peer.active")) {
@@ -306,11 +323,15 @@ public abstract class SystemProperties {
     }
 
     public List<String> peerCapabilities() {
-        return configFromFiles.hasPath("peer.capabilities") ?  configFromFiles.getStringList("peer.capabilities") : new ArrayList<>(Arrays.asList("rsk"));
+        return configFromFiles.hasPath("peer.capabilities") ? configFromFiles.getStringList("peer.capabilities") : new ArrayList<>(Arrays.asList("rsk"));
     }
 
     public boolean vmTrace() {
         return configFromFiles.getBoolean("vm.structured.trace");
+    }
+
+    public int vmTraceOptions() {
+        return configFromFiles.getInt("vm.structured.traceOptions");
     }
 
     public boolean vmTraceCompressed() {
@@ -342,15 +363,19 @@ public abstract class SystemProperties {
             File file = new File(databaseDir(), "nodeId.properties");
             Properties props = new Properties();
             if (file.canRead()) {
-                props.load(new FileReader(file));
+                try (FileReader reader = new FileReader(file)) {
+                    props.load(reader);
+                }
             } else {
                 ECKey key = new ECKey();
-                props.setProperty("nodeIdPrivateKey", Hex.toHexString(key.getPrivKeyBytes()));
-                props.setProperty("nodeId", Hex.toHexString(key.getNodeId()));
+                props.setProperty("nodeIdPrivateKey", ByteUtil.toHexString(key.getPrivKeyBytes()));
+                props.setProperty("nodeId", ByteUtil.toHexString(key.getNodeId()));
                 file.getParentFile().mkdirs();
-                props.store(new FileWriter(file), "Generated NodeID. To use your own nodeId please refer to 'peer.privateKey' config option.");
-                logger.info("New nodeID generated: {}", props.getProperty("nodeId"));
-                logger.info("Generated nodeID and its private key stored in {}", file);
+                try (FileWriter writer = new FileWriter(file)) {
+                    props.store(writer, "Generated NodeID. To use your own nodeId please refer to 'peer.privateKey' config option.");
+                    logger.info("New nodeID generated: {}", props.getProperty("nodeId"));
+                    logger.info("Generated nodeID and its private key stored in {}", file);
+                }
             }
             return props.getProperty("nodeIdPrivateKey");
         } catch (IOException e) {
@@ -363,7 +388,7 @@ public abstract class SystemProperties {
     }
 
     /**
-     *  Home NodeID calculated from 'peer.privateKey' property
+     * Home NodeID calculated from 'peer.privateKey' property
      */
     public byte[] nodeId() {
         return getMyKey().getNodeId();
@@ -412,7 +437,7 @@ public abstract class SystemProperties {
 
         if (configFromFiles.hasPath(PROPERTY_PUBLIC_IP)) {
             String externalIpFromConfig = configFromFiles.getString(PROPERTY_PUBLIC_IP).trim();
-            if (!externalIpFromConfig.isEmpty()){
+            if (!externalIpFromConfig.isEmpty()) {
                 try {
                     InetAddress address = tryParseIpOrThrow(externalIpFromConfig);
                     publicIp = address.getHostAddress();
@@ -429,7 +454,7 @@ public abstract class SystemProperties {
         return publicIp;
     }
 
-    private InetAddress getMyPublicIpFromRemoteService(){
+    private InetAddress getMyPublicIpFromRemoteService() {
         try {
             URL ipCheckService = publicIpCheckService();
             logger.info("Public IP wasn't set or resolved, using {} to identify it...", ipCheckService);
@@ -454,7 +479,7 @@ public abstract class SystemProperties {
         }
 
         InetAddress bindAddress = getBindAddress();
-        if (bindAddress.isAnyLocalAddress()){
+        if (bindAddress.isAnyLocalAddress()) {
             throw new RuntimeException("Wildcard on bind address it's not allowed as fallback for public IP " + bindAddress);
         }
 
@@ -486,7 +511,7 @@ public abstract class SystemProperties {
         return configFromFiles.getInt("transaction.outdated.timeout");
     }
 
-    public void setGenesisInfo(String genesisInfo){
+    public void setGenesisInfo(String genesisInfo) {
         this.genesisInfo = genesisInfo;
     }
 
@@ -525,6 +550,14 @@ public abstract class SystemProperties {
         return TimeUnit.MINUTES.toMillis(getLong("scoring.addresses.maximum", TimeUnit.DAYS.toMinutes(7)));
     }
 
+    public boolean shouldPrintSystemInfo() {
+        return getBoolean(PROPERTY_PRINT_SYSTEM_INFO, false);
+    }
+
+    public boolean shouldSkipJavaVersionCheck() {
+        return getBoolean(PROPERTY_SKIP_JAVA_VERSION_CHECK, false);
+    }
+
     protected int getInt(String path, int val) {
         return configFromFiles.hasPath(path) ? configFromFiles.getInt(path) : val;
     }
@@ -556,7 +589,7 @@ public abstract class SystemProperties {
     }
 
     public String customSolcPath() {
-        return configFromFiles.hasPath("solc.path") ? configFromFiles.getString("solc.path"): null;
+        return configFromFiles.hasPath("solc.path") ? configFromFiles.getString("solc.path") : null;
     }
 
     public String netName() {

@@ -53,6 +53,5 @@ public class Status {
     @Nullable
     public byte[] getBestBlockParentHash() { return this.bestBlockParentHash; }
 
-    @Nullable
     public BlockDifficulty getTotalDifficulty() { return this.totalDifficulty; }
 }

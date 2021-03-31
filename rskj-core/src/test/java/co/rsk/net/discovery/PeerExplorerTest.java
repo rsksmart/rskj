@@ -24,15 +24,19 @@ import co.rsk.net.discovery.table.NodeDistanceTable;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import org.apache.commons.lang3.StringUtils;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.net.rlpx.Node;
+import org.ethereum.util.ByteUtil;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
-import org.bouncycastle.util.encoders.Hex;
 
 import java.net.InetSocketAddress;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
 
 /**
  * Created by mario on 15/02/17.
@@ -46,22 +50,22 @@ public class PeerExplorerTest {
 
     private static final String KEY_2 = "bd2d20e480dfb1c9c07ba0bc8cf9052f89923d38b5128c5dbfc18d4eea38262f";
     private static final String NODE_ID_2 = "3c7931f323989425a1e56164043af0dff567f33df8c67d4c6918647535f88798d54bc864b936d8c77d4096e8b8485b6061b0d0d2b708cd9154e6dcf981533261";
-    private static final String HOST_2 = "localhost";
+    private static final String HOST_2 = "127.0.0.2";
     private static final int PORT_2 = 44036;
 
     private static final String KEY_3 = "bd3d20e480dfb1c9c07ba0bc8cf9052f89923d38b5128c5dbfc18d4eea38263f";
     private static final String NODE_ID_3 = "e229918d45c131e130c91c4ea51c97ab4f66cfbd0437b35c92392b5c2b3d44b28ea15b84a262459437c955f6cc7f10ad1290132d3fc866bfaf4115eac0e8e860";
-    private static final String HOST_3 = "localhost";
+    private static final String HOST_3 = "127.0.0.3";
     private static final int PORT_3 = 44037;
 
     private static final String KEY_4 = "bd4d20e480dfb1c9c07ba0bc8cf9052f89923d38b5128c5dbfc18d4eea38264f";
     private static final String NODE_ID_4 = "900783f4b84b9a7c2ad44b24c62d9b6b8deed3aa428ed4a091f349229d3b7bd9dd0cd72135fe69cadc9dc1c224ee153f3467a1d292310ed29017102dc3a34b96";
-    private static final String HOST_4 = "localhost";
+    private static final String HOST_4 = "127.0.0.4";
     private static final int PORT_4 = 44038;
 
 //    private static final String KEY_5 = "bd5d20e480dfb1c9c07ba0bc8cf9052f89923d38b5128c5dbfc18d4eea38265f";
     private static final String NODE_ID_5 = "55f358ce8275a895d16890c60562ee379e298174b2baa607240b07ed7e7f73e8ce3658ce74e6f677bdf9f23d176daaeb7adfe2ecc94fd21d89964b411acf6c1f";
-    private static final String HOST_5 = "localhost";
+    private static final String HOST_5 = "127.0.0.5";
     private static final int PORT_5 = 44039;
 
     private static final long TIMEOUT = 30000;
@@ -166,26 +170,27 @@ public class PeerExplorerTest {
         ECKey key1 = ECKey.fromPrivate(Hex.decode(KEY_1)).decompress();
         String check = UUID.randomUUID().toString();
         PingPeerMessage nodeMessage = PingPeerMessage.create(HOST_1, PORT_1, check, key1, this.NETWORK_ID1);
-        DiscoveryEvent incomingPingEvent = new DiscoveryEvent(nodeMessage, new InetSocketAddress(HOST_1, PORT_1));
+        DiscoveryEvent incomingPingEvent = new DiscoveryEvent(nodeMessage, new InetSocketAddress(HOST_2, PORT_3));
 
         //A message is received
         channel.channelRead0(ctx, incomingPingEvent);
         //As part of the ping response, a Ping and a Pong are sent to the sender.
+        //NOTE: The ip/port of the DiscoveryEvent is the one to be used and not the one inside the message itself
         List<DiscoveryEvent> sentEvents = channel.getEventsWritten();
         Assert.assertEquals(2, sentEvents.size());
         DiscoveryEvent pongEvent = sentEvents.get(0);
         PongPeerMessage toSenderPong = (PongPeerMessage) pongEvent.getMessage();
         Assert.assertEquals(DiscoveryMessageType.PONG, toSenderPong.getMessageType());
-        Assert.assertEquals(new InetSocketAddress(HOST_1, PORT_1), pongEvent.getAddress());
+        Assert.assertEquals(new InetSocketAddress(HOST_2, PORT_3), pongEvent.getAddress());
 
         DiscoveryEvent pingEvent = sentEvents.get(1);
         PingPeerMessage toSenderPing = (PingPeerMessage) pingEvent.getMessage();
         Assert.assertEquals(DiscoveryMessageType.PING, toSenderPing.getMessageType());
-        Assert.assertEquals(new InetSocketAddress(HOST_1, PORT_1), pingEvent.getAddress());
+        Assert.assertEquals(new InetSocketAddress(HOST_2, PORT_3), pingEvent.getAddress());
 
         //After a pong returns from a node, when we receive a ping from that node, we only answer with a pong (no additional ping)
         PongPeerMessage pongResponseFromSender = PongPeerMessage.create(HOST_1, PORT_1, toSenderPing.getMessageId(), key1, NETWORK_ID1);
-        DiscoveryEvent incomingPongEvent = new DiscoveryEvent(pongResponseFromSender, new InetSocketAddress(HOST_1, PORT_1));
+        DiscoveryEvent incomingPongEvent = new DiscoveryEvent(pongResponseFromSender, new InetSocketAddress(HOST_2, PORT_3));
         channel.channelRead0(ctx, incomingPongEvent);
         channel.clearEvents();
         channel.channelRead0(ctx, incomingPingEvent);
@@ -194,8 +199,8 @@ public class PeerExplorerTest {
         pongEvent = sentEvents.get(0);
         toSenderPong = (PongPeerMessage) pongEvent.getMessage();
         Assert.assertEquals(DiscoveryMessageType.PONG, toSenderPong.getMessageType());
-        Assert.assertEquals(new InetSocketAddress(HOST_1, PORT_1), pongEvent.getAddress());
-        Assert.assertEquals(NODE_ID_2, Hex.toHexString(toSenderPong.getKey().getNodeId()));
+        Assert.assertEquals(new InetSocketAddress(HOST_2, PORT_3), pongEvent.getAddress());
+        Assert.assertEquals(NODE_ID_2, ByteUtil.toHexString(toSenderPong.getKey().getNodeId()));
     }
 
     @Test
@@ -331,8 +336,8 @@ public class PeerExplorerTest {
 
         List<Node> foundNodes = peerExplorer.getNodes();
         Assert.assertEquals(2, foundNodes.size());
-        Assert.assertEquals(NODE_ID_3, Hex.toHexString(foundNodes.get(0).getId().getID()));
-        Assert.assertEquals(NODE_ID_1, Hex.toHexString(foundNodes.get(1).getId().getID()));
+        Assert.assertEquals(NODE_ID_3, ByteUtil.toHexString(foundNodes.get(0).getId().getID()));
+        Assert.assertEquals(NODE_ID_1, ByteUtil.toHexString(foundNodes.get(1).getId().getID()));
 
         String check = UUID.randomUUID().toString();
         FindNodePeerMessage findNodePeerMessage = FindNodePeerMessage.create(key1.getNodeId(), check, key1, NETWORK_ID1);

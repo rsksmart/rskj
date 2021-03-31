@@ -21,17 +21,18 @@ package co.rsk.pcc.bto;
 
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.pcc.ExecutionEnvironment;
-import co.rsk.pcc.NativeContractIllegalArgumentException;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import co.rsk.pcc.exception.NativeContractIllegalArgumentException;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.solidity.SolidityType;
+import org.ethereum.util.ByteUtil;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.math.BigInteger;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 import static org.mockito.Mockito.mock;
 
@@ -68,10 +69,10 @@ public class GetMultisigScriptHashTest {
     }
 
     @Test
-    public void executesWithAllCompressed() {
+    public void executesWithAllCompressed() throws NativeContractIllegalArgumentException {
         Assert.assertEquals(
                 "51f103320b435b5fe417b3f3e0f18972ccc710a0",
-                Hex.toHexString((byte[]) method.execute(new Object[]{
+                ByteUtil.toHexString((byte[]) method.execute(new Object[]{
                         BigInteger.valueOf(8L),
                         new byte[][] {
                                 Hex.decode("03b53899c390573471ba30e5054f78376c5f797fda26dde7a760789f02908cbad2"),
@@ -94,10 +95,10 @@ public class GetMultisigScriptHashTest {
     }
 
     @Test
-    public void executesWithMixed() {
+    public void executesWithMixed() throws NativeContractIllegalArgumentException {
         Assert.assertEquals(
                 "51f103320b435b5fe417b3f3e0f18972ccc710a0",
-                Hex.toHexString((byte[]) method.execute(new Object[]{
+                ByteUtil.toHexString((byte[]) method.execute(new Object[]{
                         BigInteger.valueOf(8L),
                         new byte[][] {
                                 Hex.decode("04b53899c390573471ba30e5054f78376c5f797fda26dde7a760789f02908cbad2aafaaa2611606699ec4f82777a268b708dab346de4880cd223969f7bbe5422bf"),
@@ -266,5 +267,9 @@ public class GetMultisigScriptHashTest {
             Assert.assertEquals(NativeContractIllegalArgumentException.class, ex.getClass());
             Assert.assertTrue(ex.getMessage().contains(expectedMessage));
         });
+    }
+
+    public interface Runnable {
+        void run() throws Exception;
     }
 }

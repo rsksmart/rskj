@@ -21,10 +21,10 @@ package org.ethereum.jsontestsuite;
 
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
 import org.json.simple.JSONObject;
-import org.bouncycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
 import java.util.HashMap;
@@ -105,8 +105,8 @@ public class AccountState {
         return "AccountState{" +
                 "address=" + address +
                 ", balance=" + balance +
-                ", code=" + Hex.toHexString(code) +
-                ", nonce=" + Hex.toHexString(nonce) +
+                ", code=" + ByteUtil.toHexString(code) +
+                ", nonce=" + ByteUtil.toHexString(nonce) +
                 ", storage=" + storage +
                 '}';
     }

@@ -20,12 +20,13 @@
 package org.ethereum.crypto;
 
 import co.rsk.core.RskAddress;
-import org.ethereum.crypto.cryptohash.Keccak256;
-import org.ethereum.util.RLP;
-import org.ethereum.util.Utils;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.RIPEMD160Digest;
 import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.crypto.cryptohash.Keccak256;
+import org.ethereum.util.ByteUtil;
+import org.ethereum.util.RLP;
+import org.ethereum.util.Utils;
 
 import javax.annotation.Nonnull;
 import java.math.BigInteger;
@@ -74,7 +75,6 @@ public class HashUtil {
         return Keccak256Helper.keccak256(input, start, length);
     }
 
-
     /**
      * @param data - message to hash
      * @return - reipmd160 hash of the message
@@ -89,7 +89,6 @@ public class HashUtil {
         }
         throw new NullPointerException("Can't hash a NULL value");
     }
-
 
     /**
      * Calculates RIGTMOST160(KECCAK256(input)). This is used in address calculations.
@@ -176,14 +175,13 @@ public class HashUtil {
      * @return generates random peer id for the HelloMessage
      */
     public static byte[] randomPeerId() {
-
         byte[] peerIdBytes = new BigInteger(512, Utils.getRandom()).toByteArray();
 
         final String peerId;
         if (peerIdBytes.length > 64) {
-            peerId = Hex.toHexString(peerIdBytes, 1, 64);
+            peerId = ByteUtil.toHexString(peerIdBytes, 1, 64);
         } else {
-            peerId = Hex.toHexString(peerIdBytes);
+            peerId = ByteUtil.toHexString(peerIdBytes);
         }
 
         return Hex.decode(peerId);
@@ -192,16 +190,21 @@ public class HashUtil {
     /**
      * @return - generate random 32 byte hash
      */
-    public static byte[] randomHash(){
-
+    public static byte[] randomHash() {
         byte[] randomHash = new byte[32];
         SecureRandom random = new SecureRandom();
         random.nextBytes(randomHash);
         return randomHash;
     }
 
+    /**
+     * Converts {@code hash} in a form of byte array to {@code String}
+     * that's suitable to be printed out in a text form.
+     *
+     * @throws NullPointerException if {@code hash} is {@code null}
+     */
     @Nonnull
-    public static String shortHash(@Nonnull final byte[] hash){
-        return Hex.toHexString(hash).substring(0, Math.min(hash.length, 6));
+    public static String toPrintableHash(@Nonnull final byte[] hash) {
+        return ByteUtil.toHexString(hash);
     }
 }

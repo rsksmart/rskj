@@ -19,8 +19,10 @@
 
 package org.ethereum.vm.program;
 
+import org.ethereum.core.Transaction;
 import org.ethereum.vm.CallCreate;
 import org.ethereum.vm.DataWord;
+import org.ethereum.vm.GasCost;
 import org.ethereum.vm.LogInfo;
 
 import java.util.*;
@@ -35,7 +37,7 @@ public class ProgramResult {
 
     private long gasUsed;
     private byte[] hReturn = EMPTY_BYTE_ARRAY;
-    private RuntimeException exception;
+    private Exception exception;
     private boolean revert;
 
     // Important:
@@ -60,7 +62,7 @@ public class ProgramResult {
     }
 
     public void spendGas(long gas) {
-        gasUsed += gas;
+        gasUsed = GasCost.add(gasUsed, gas);
     }
 
     public void setRevert() {
@@ -72,7 +74,7 @@ public class ProgramResult {
     }
 
     public void refundGas(long gas) {
-        gasUsed -= gas;
+        gasUsed = GasCost.subtract(gasUsed, gas);
     }
 
     public void setHReturn(byte[] hReturn) {
@@ -84,7 +86,7 @@ public class ProgramResult {
         return hReturn;
     }
 
-    public RuntimeException getException() {
+    public Exception getException() {
         return exception;
     }
 
@@ -92,7 +94,7 @@ public class ProgramResult {
         return gasUsed;
     }
 
-    public void setException(RuntimeException exception) {
+    public void setException(Exception exception) {
         this.exception = exception;
     }
 
@@ -171,10 +173,37 @@ public class ProgramResult {
         return internalTransactions;
     }
 
-    public InternalTransaction addInternalTransaction(byte[] parentHash, int deep, byte[] nonce, DataWord gasPrice, DataWord gasLimit,
-                                                      byte[] senderAddress, byte[] receiveAddress, byte[] value, byte[] data, String note) {
-        InternalTransaction transaction = new InternalTransaction(parentHash, deep, getInternalTransactions().size(),
-                                        nonce, gasPrice, gasLimit, senderAddress, receiveAddress, value, data, note);
+    public InternalTransaction addInternalTransaction(
+        Transaction parentTransaction,
+        int deep,
+        byte[] nonce,
+        DataWord gasPrice,
+        DataWord gasLimit,
+        byte[] senderAddress,
+        byte[] receiveAddress,
+        byte[] value,
+        byte[] data,
+        String note
+    ) {
+        byte[] parentHash = parentTransaction.getHash().getBytes();
+        byte[] originHash = parentHash;
+        if (parentTransaction instanceof InternalTransaction) {
+            originHash = ((InternalTransaction) parentTransaction).getOriginHash();
+        }
+        InternalTransaction transaction = new InternalTransaction(
+            originHash,
+            parentHash,
+            deep,
+            getInternalTransactions().size(),
+            nonce,
+            gasPrice,
+            gasLimit,
+            senderAddress,
+            receiveAddress,
+            value,
+            data,
+            note
+        );
         getInternalTransactions().add(transaction);
         return transaction;
     }

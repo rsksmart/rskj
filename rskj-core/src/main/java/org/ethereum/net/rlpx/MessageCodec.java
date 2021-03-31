@@ -23,7 +23,6 @@ import com.google.common.io.ByteStreams;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToMessageCodec;
 import org.apache.commons.lang3.tuple.Pair;
-import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.SystemProperties;
 import org.ethereum.listener.EthereumListener;
 import org.ethereum.net.client.Capability;
@@ -34,6 +33,7 @@ import org.ethereum.net.message.Message;
 import org.ethereum.net.p2p.P2pMessageCodes;
 import org.ethereum.net.p2p.P2pMessageFactory;
 import org.ethereum.net.server.Channel;
+import org.ethereum.util.ByteUtil;
 import org.ethereum.util.LRUMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -136,7 +136,7 @@ public class MessageCodec extends MessageToMessageCodec<Frame, Message> {
         }
 
         if (loggerWire.isDebugEnabled()) {
-            loggerWire.debug("Recv: Encoded: {} [{}]", frameType, Hex.toHexString(payload));
+            loggerWire.debug("Recv: Encoded: {} [{}]", frameType, ByteUtil.toHexString(payload));
         }
 
         Message msg = createMessage((byte) frameType, payload);
@@ -159,7 +159,7 @@ public class MessageCodec extends MessageToMessageCodec<Frame, Message> {
         byte[] encoded = msg.getEncoded();
 
         if (loggerWire.isDebugEnabled()) {
-            loggerWire.debug("Send: Encoded: {} [{}]", getCode(msg.getCommand()), Hex.toHexString(encoded));
+            loggerWire.debug("Send: Encoded: {} [{}]", getCode(msg.getCommand()), ByteUtil.toHexString(encoded));
         }
 
         List<Frame> frames = splitMessageToFrames(msg);
@@ -227,7 +227,7 @@ public class MessageCodec extends MessageToMessageCodec<Frame, Message> {
             return ethMessageFactory.create(resolved, payload);
         }
 
-        throw new IllegalArgumentException("No such message: " + code + " [" + Hex.toHexString(payload) + "]");
+        throw new IllegalArgumentException("No such message: " + code + " [" + ByteUtil.toHexString(payload) + "]");
     }
 
     public void setChannel(Channel channel){

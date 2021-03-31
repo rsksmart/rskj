@@ -38,38 +38,6 @@ public class BlockNodeInformationTest {
     }
 
     @Test
-    public void nodeEvictionPolicy() {
-        final BlockNodeInformation nodeInformation = new BlockNodeInformation();
-        final Keccak256 block = createBlockHash(10);
-
-        // Add a few nodes, not exceeding the node limit.
-        // These nodes should contain the block when we call getBlocksByNode
-        for (int i = 0; i < 30; i++) {
-            final NodeID node = createNodeID(i);
-            nodeInformation.addBlockToNode(block, node);
-        }
-
-        Assert.assertTrue(nodeInformation.getBlocksByNode(createNodeID(10)).contains(block));
-        Assert.assertTrue(nodeInformation.getBlocksByNode(createNodeID(20)).contains(block));
-        Assert.assertFalse(nodeInformation.getBlocksByNode(createNodeID(80)).contains(block));
-
-        // Add more nodes, exceeding the node limit. The previous nodes should be evicted.
-        // Except for node 10, which is being constantly accessed.
-        for (int i = 30; i < 100; i++) {
-            final NodeID node = createNodeID(i);
-            nodeInformation.addBlockToNode(block, node);
-            nodeInformation.getBlocksByNode(createNodeID(10));
-        }
-
-        Assert.assertTrue(nodeInformation.getBlocksByNode(createNodeID(10)).contains(block));
-
-        Assert.assertFalse(nodeInformation.getBlocksByNode(createNodeID(20)).contains(block));
-        Assert.assertFalse(nodeInformation.getBlocksByNode(createNodeID(210)).contains(block));
-
-        Assert.assertTrue(nodeInformation.getBlocksByNode(createNodeID(80)).contains(block));
-    }
-
-    @Test
     public void blockEvictionPolicy() {
         final BlockNodeInformation nodeInformation = new BlockNodeInformation();
         final NodeID nodeID1 = new NodeID(new byte[]{2});
@@ -83,8 +51,8 @@ public class BlockNodeInformationTest {
         Assert.assertTrue(nodeInformation.getNodesByBlock(createBlockHash(15)).contains(nodeID1));
         Assert.assertTrue(nodeInformation.getNodesByBlock(createBlockHash(200)).contains(nodeID1));
 
-        Assert.assertTrue(nodeInformation.getBlocksByNode(nodeID1).contains(createBlockHash(15)));
-        Assert.assertTrue(nodeInformation.getBlocksByNode(nodeID1).contains(createBlockHash(300)));
+        Assert.assertTrue(nodeInformation.getNodesByBlock(createBlockHash(15)).contains(nodeID1));
+        Assert.assertTrue(nodeInformation.getNodesByBlock(createBlockHash(300)).contains(nodeID1));
 
         // Add more blocks, exceeding MAX_NODES. All previous blocks should be evicted.
         // Except from block 10, which is being constantly accessed.
@@ -102,19 +70,17 @@ public class BlockNodeInformationTest {
         Assert.assertTrue(nodeInformation.getNodesByBlock(createBlockHash(1900)).contains(nodeID1));
         Assert.assertTrue(nodeInformation.getNodesByBlock(createBlockHash(10)).contains(nodeID1));
 
-        Assert.assertFalse(nodeInformation.getBlocksByNode(nodeID1).contains(createBlockHash(25)));
-        Assert.assertFalse(nodeInformation.getBlocksByNode(nodeID1).contains(createBlockHash(70)));
+        Assert.assertFalse(nodeInformation.getNodesByBlock(createBlockHash(25)).contains(nodeID1));
+        Assert.assertFalse(nodeInformation.getNodesByBlock(createBlockHash(70)).contains(nodeID1));
 
-        Assert.assertTrue(nodeInformation.getBlocksByNode(nodeID1).contains(createBlockHash(1901)));
+        Assert.assertTrue(nodeInformation.getNodesByBlock(createBlockHash(1901)).contains(nodeID1));
     }
 
     @Test
     public void getIsEmptyIfNotPresent() {
         final BlockNodeInformation nodeInformation = new BlockNodeInformation();
 
-        Assert.assertTrue(nodeInformation.getBlocksByNode(new NodeID(new byte[]{})).size() == 0);
         Assert.assertTrue(nodeInformation.getNodesByBlock(createBlockHash(0)).size() == 0);
-        Assert.assertTrue(nodeInformation.getBlocksByNode(createBlockHash(0).getBytes()).size() == 0);
         Assert.assertTrue(nodeInformation.getNodesByBlock(createBlockHash(0)).size() == 0);
     }
 
@@ -128,13 +94,6 @@ public class BlockNodeInformationTest {
         final NodeID badNode = new NodeID(new byte[]{4});
 
         nodeInformation.addBlockToNode(hash1, nodeID1);
-        Set<Keccak256> blocks = nodeInformation.getBlocksByNode(nodeID1);
-        Assert.assertTrue(blocks.size() == 1);
-        Assert.assertTrue(blocks.contains(hash1));
-        Assert.assertFalse(blocks.contains(badHash));
-
-        blocks = nodeInformation.getBlocksByNode(badNode);
-        Assert.assertTrue(blocks.size() == 0);
 
         Set<NodeID> nodes = nodeInformation.getNodesByBlock(hash1);
         Assert.assertTrue(nodes.size() == 1);
@@ -158,19 +117,12 @@ public class BlockNodeInformationTest {
         nodeInformation.addBlockToNode(hash2, nodeID1);
         nodeInformation.addBlockToNode(hash2, nodeID2);
 
-        Set<Keccak256> blocks1 = nodeInformation.getBlocksByNode(nodeID1);
-        Set<Keccak256> blocks2 = nodeInformation.getBlocksByNode(nodeID2);
         Set<NodeID> nodes1 = nodeInformation.getNodesByBlock(hash1);
         Set<NodeID> nodes2 = nodeInformation.getNodesByBlock(hash2);
 
-        Assert.assertTrue(blocks1.size() == 2);
-        Assert.assertTrue(blocks2.size() == 1);
         Assert.assertTrue(nodes1.size() == 1);
         Assert.assertTrue(nodes2.size() == 2);
 
-        Assert.assertTrue(blocks1.contains(hash1));
-        Assert.assertTrue(blocks1.contains(hash2));
-        Assert.assertTrue(blocks2.contains(hash2));
 
         Assert.assertTrue(nodes1.contains(nodeID1));
         Assert.assertTrue(nodes2.contains(nodeID1));

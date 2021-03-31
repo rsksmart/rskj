@@ -18,8 +18,13 @@
 
 package org.ethereum.rpc.dto;
 
+import co.rsk.config.TestSystemProperties;
+import co.rsk.core.RskAddress;
 import co.rsk.remasc.RemascTransaction;
 import org.ethereum.core.Block;
+import org.ethereum.core.CallTransaction;
+import org.ethereum.core.Transaction;
+import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.Random;
@@ -30,6 +35,9 @@ import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
 
 public class TransactionResultDTOTest {
+    private final TestSystemProperties config = new TestSystemProperties();
+    private final byte chainId = config.getNetworkConstants().getChainId();
+
     @Test
     public void remascAddressSerialization() {
         RemascTransaction remascTransaction = new RemascTransaction(new Random().nextLong());
@@ -40,4 +48,25 @@ public class TransactionResultDTOTest {
         assertThat(dto.s, is(nullValue()));
         assertThat(dto.v, is(nullValue()));
     }
+
+    @Test
+    public void signedTransactionWithChainIdSerialization() {
+        Transaction originalTransaction = CallTransaction.createCallTransaction(
+                0, 0, 100000000000000L,
+                new RskAddress("095e7baea6a6c7c4c2dfeb977efac326af552d87"), 0,
+                CallTransaction.Function.fromSignature("get"), chainId);
+
+        originalTransaction.sign(new byte[]{});
+
+        TransactionResultDTO dto = new TransactionResultDTO(mock(Block.class), 42, originalTransaction);
+
+        Assert.assertNotNull(dto.r);
+        Assert.assertNotNull(dto.s);
+        Assert.assertNotNull(dto.v);
+
+        String expectedV = String.format("0x%02x", originalTransaction.getSignature().getV() - Transaction.LOWER_REAL_V + Transaction.CHAIN_ID_INC + chainId * 2);
+
+        Assert.assertEquals(expectedV, dto.v);
+    }
 }
+

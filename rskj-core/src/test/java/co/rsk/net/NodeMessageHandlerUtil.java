@@ -10,10 +10,10 @@ import co.rsk.test.World;
 import co.rsk.validators.*;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.core.Blockchain;
+import org.ethereum.core.Genesis;
+import org.ethereum.db.BlockStore;
 import org.ethereum.net.server.ChannelManager;
-import org.ethereum.net.server.ChannelManagerImpl;
 import org.ethereum.rpc.Simples.SimpleChannelManager;
-import org.ethereum.sync.SyncPool;
 import org.ethereum.util.RskMockFactory;
 import org.mockito.Mockito;
 
@@ -25,58 +25,51 @@ public class NodeMessageHandlerUtil {
     private static final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
     private static final DifficultyCalculator DIFFICULTY_CALCULATOR = new DifficultyCalculator(config.getActivationConfig(), config.getNetworkConstants());
 
-    public static NodeMessageHandler createHandler(BlockValidationRule validationRule, Blockchain blockchain) {
-        final BlockStore store = new BlockStore();
+    public static NodeMessageHandler createHandler(Blockchain blockchain) {
+        final NetBlockStore store = new NetBlockStore();
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
-        BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
+        BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration, DummyBlockValidator.VALID_RESULT_INSTANCE);
         SyncProcessor syncProcessor = new SyncProcessor(
-                blockchain, mock(ConsensusValidationMainchainView.class), blockSyncService,
-                RskMockFactory.getChannelManager(), syncConfiguration, blockFactory, new DummyBlockValidationRule(),
-                new BlockCompositeRule(new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())),
-                DIFFICULTY_CALCULATOR, new PeersInformation(RskMockFactory.getChannelManager(), syncConfiguration, blockchain, RskMockFactory.getPeerScoringManager())
-        );
+                blockchain, mock(org.ethereum.db.BlockStore.class), mock(ConsensusValidationMainchainView.class), blockSyncService,
+                syncConfiguration, blockFactory, new DummyBlockValidationRule(),
+                new SyncBlockValidatorRule(new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())),
+                DIFFICULTY_CALCULATOR, new PeersInformation(RskMockFactory.getChannelManager(), syncConfiguration, blockchain, RskMockFactory.getPeerScoringManager()),
+                mock(Genesis.class));
         NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
 
-        return new NodeMessageHandler(config, mock(org.ethereum.db.BlockStore.class), processor, syncProcessor, new SimpleChannelManager(), null, RskMockFactory.getPeerScoringManager(), validationRule);
-    }
-
-    public static NodeMessageHandler createHandlerWithSyncProcessor() {
-        return createHandlerWithSyncProcessor(SyncConfiguration.IMMEDIATE_FOR_TESTING);
-    }
-
-    public static NodeMessageHandler createHandlerWithSyncProcessor(SyncConfiguration syncConfiguration) {
-        return createHandlerWithSyncProcessor(syncConfiguration, new ChannelManagerImpl(config, mock(SyncPool.class)));
-    }
-
-    public static NodeMessageHandler createHandlerWithSyncProcessor(ChannelManager channelManager) {
-        return createHandlerWithSyncProcessor(SyncConfiguration.IMMEDIATE_FOR_TESTING, channelManager);
+        return new NodeMessageHandler(config, processor, syncProcessor, new SimpleChannelManager(), null, RskMockFactory.getPeerScoringManager(), mock(StatusResolver.class));
     }
 
     public static NodeMessageHandler createHandlerWithSyncProcessor(SyncConfiguration syncConfiguration, ChannelManager channelManager) {
         final World world = new World();
         final Blockchain blockchain = world.getBlockChain();
-        return createHandlerWithSyncProcessor(blockchain, syncConfiguration, channelManager);
+        final BlockStore blockStore = world.getBlockStore();
+        return createHandlerWithSyncProcessor(blockchain, syncConfiguration, channelManager, blockStore);
     }
 
     public static NodeMessageHandler createHandlerWithSyncProcessor(
             Blockchain blockchain,
             SyncConfiguration syncConfiguration,
-            ChannelManager channelManager) {
-        final BlockStore store = new BlockStore();
+            ChannelManager channelManager, BlockStore blockStore) {
+        final NetBlockStore store = new NetBlockStore();
 
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
-        BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
+        BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration, DummyBlockValidator.VALID_RESULT_INSTANCE);
         NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
         ProofOfWorkRule blockValidationRule = new ProofOfWorkRule(config);
         PeerScoringManager peerScoringManager = mock(PeerScoringManager.class);
         Mockito.when(peerScoringManager.hasGoodReputation(isA(NodeID.class))).thenReturn(true);
         SyncProcessor syncProcessor = new SyncProcessor(
-                blockchain, mock(ConsensusValidationMainchainView.class), blockSyncService, channelManager, syncConfiguration, blockFactory,
-                blockValidationRule, new BlockCompositeRule(new BlockUnclesHashValidationRule(),
-                new BlockRootValidationRule(config.getActivationConfig())), DIFFICULTY_CALCULATOR, new PeersInformation(channelManager, syncConfiguration, blockchain, peerScoringManager)
+                blockchain, blockStore, mock(ConsensusValidationMainchainView.class), blockSyncService, syncConfiguration, blockFactory,
+                blockValidationRule, new SyncBlockValidatorRule(new BlockUnclesHashValidationRule(),
+                new BlockRootValidationRule(config.getActivationConfig())),
+                DIFFICULTY_CALCULATOR,
+                new PeersInformation(channelManager, syncConfiguration, blockchain, peerScoringManager),
+                mock(Genesis.class)
         );
-        return new NodeMessageHandler(config, mock(org.ethereum.db.BlockStore.class), processor, syncProcessor, channelManager, null, null, blockValidationRule);
+
+        return new NodeMessageHandler(config, processor, syncProcessor, channelManager, null, null, mock(StatusResolver.class));
     }
 }

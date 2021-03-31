@@ -21,7 +21,7 @@ package co.rsk.peg;
 import co.rsk.bitcoinj.core.BtcECKey;
 import com.google.common.primitives.UnsignedBytes;
 import org.ethereum.crypto.ECKey;
-import org.spongycastle.util.encoders.Hex;
+import org.ethereum.util.ByteUtil;
 
 import java.util.Arrays;
 import java.util.Comparator;
@@ -157,9 +157,9 @@ public final class FederationMember {
     public String toString() {
         return String.format(
                 "<BTC-%s, RSK-%s, MST-%s> federation member",
-                Hex.toHexString(btcPublicKey.getPubKey()),
-                Hex.toHexString(rskPublicKey.getPubKey()),
-                Hex.toHexString(mstPublicKey.getPubKey())
+                ByteUtil.toHexString(btcPublicKey.getPubKey()),
+                ByteUtil.toHexString(rskPublicKey.getPubKey()),
+                ByteUtil.toHexString(mstPublicKey.getPubKey())
         );
     }
 

@@ -88,7 +88,9 @@ public class HelloMessage extends P2pMessage {
 
         RLPList capabilityList = (RLPList) paramsList.get(2);
         this.capabilities = new ArrayList<>();
-        for (Object aCapabilityList : capabilityList) {
+
+        for (int k = 0; k < capabilityList.size(); k++) {
+            Object aCapabilityList = capabilityList.get(k);
 
             RLPElement capId = ((RLPList) aCapabilityList).get(0);
             RLPElement capVersion = ((RLPList) aCapabilityList).get(1);
@@ -104,7 +106,7 @@ public class HelloMessage extends P2pMessage {
         this.listenPort = ByteUtil.byteArrayToInt(peerPortBytes);
 
         byte[] peerIdBytes = paramsList.get(4).getRLPData();
-        this.peerId = Hex.toHexString(peerIdBytes);
+        this.peerId = ByteUtil.toHexString(peerIdBytes);
         this.parsed = true;
     }
 

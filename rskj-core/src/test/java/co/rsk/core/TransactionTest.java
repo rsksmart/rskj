@@ -26,9 +26,13 @@ import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
+import org.ethereum.crypto.signature.Secp256k1;
 import org.ethereum.db.BlockStoreDummy;
 import org.ethereum.jsontestsuite.StateTestSuite;
 import org.ethereum.jsontestsuite.runners.StateTestRunner;
+import org.ethereum.util.ByteUtil;
+import org.ethereum.util.RLP;
+import org.ethereum.util.RLPList;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.ProgramResult;
 import org.junit.Assert;
@@ -65,29 +69,32 @@ public class TransactionTest {
         byte[] gas = Hex.decode("4255");
 
         // Tn (nonce); Tp(pgas); Tg(gaslimi); Tt(value); Tv(value); Ti(sender);  Tw; Tr; Ts
-        Transaction tx = new Transaction(null, gasPrice, gas, ecKey.getAddress(),
-                value.toByteArray(),
-                null);
+        Transaction tx = Transaction.builder()
+                .gasPrice(gasPrice)
+                .gasLimit(gas)
+                .destination(ecKey.getAddress())
+                .value(value)
+                .build();
 
         tx.sign(senderPrivKey);
 
-        System.out.println("v\t\t\t: " + Hex.toHexString(new byte[]{tx.getSignature().v}));
-        System.out.println("r\t\t\t: " + Hex.toHexString(BigIntegers.asUnsignedByteArray(tx.getSignature().r)));
-        System.out.println("s\t\t\t: " + Hex.toHexString(BigIntegers.asUnsignedByteArray(tx.getSignature().s)));
+        System.out.println("v\t\t\t: " + ByteUtil.toHexString(new byte[]{tx.getSignature().getV()}));
+        System.out.println("r\t\t\t: " + ByteUtil.toHexString(BigIntegers.asUnsignedByteArray(tx.getSignature().getR())));
+        System.out.println("s\t\t\t: " + ByteUtil.toHexString(BigIntegers.asUnsignedByteArray(tx.getSignature().getS())));
 
-        System.out.println("RLP encoded tx\t\t: " + Hex.toHexString(tx.getEncoded()));
+        System.out.println("RLP encoded tx\t\t: " + ByteUtil.toHexString(tx.getEncoded()));
 
         // retrieve the signer/sender of the transaction
-        ECKey key = ECKey.signatureToKey(tx.getHash().getBytes(), tx.getSignature());
+        ECKey key = Secp256k1.getInstance().signatureToKey(tx.getHash().getBytes(), tx.getSignature());
 
-        System.out.println("Tx unsigned RLP\t\t: " + Hex.toHexString(tx.getEncodedRaw()));
-        System.out.println("Tx signed   RLP\t\t: " + Hex.toHexString(tx.getEncoded()));
+        System.out.println("Tx unsigned RLP\t\t: " + ByteUtil.toHexString(tx.getEncodedRaw()));
+        System.out.println("Tx signed   RLP\t\t: " + ByteUtil.toHexString(tx.getEncoded()));
 
-        System.out.println("Signature public key\t: " + Hex.toHexString(key.getPubKey()));
-        System.out.println("Sender is\t\t: " + Hex.toHexString(key.getAddress()));
+        System.out.println("Signature public key\t: " + ByteUtil.toHexString(key.getPubKey()));
+        System.out.println("Sender is\t\t: " + ByteUtil.toHexString(key.getAddress()));
 
         assertEquals("cd2a3d9f938e13cd947ec05abc7fe734df8dd826",
-                Hex.toHexString(key.getAddress()));
+                ByteUtil.toHexString(key.getAddress()));
 
         System.out.println(tx.toString());
     }
@@ -105,17 +112,20 @@ public class TransactionTest {
         byte[] gas = Hex.decode("4255");
 
         // Tn(nonce); Tp(pgas); Tg(gaslimit); Tt(value); Tv(value); Ti(sender);  Tw; Tr; Ts
-        Transaction tx = new Transaction(null, gasPrice, gas, ecKey.getAddress(),
-                value.toByteArray(),
-                null);
+        Transaction tx = Transaction.builder()
+                .gasPrice(gasPrice)
+                .gasLimit(gas)
+                .destination(ecKey.getAddress())
+                .value(value)
+                .build();
 
         tx.sign(senderPrivateKey);
 
-        System.out.println("v\t\t\t: " + Hex.toHexString(new byte[]{tx.getSignature().v}));
-        System.out.println("r\t\t\t: " + Hex.toHexString(BigIntegers.asUnsignedByteArray(tx.getSignature().r)));
-        System.out.println("s\t\t\t: " + Hex.toHexString(BigIntegers.asUnsignedByteArray(tx.getSignature().s)));
+        System.out.println("v\t\t\t: " + ByteUtil.toHexString(new byte[]{tx.getSignature().getV()}));
+        System.out.println("r\t\t\t: " + ByteUtil.toHexString(BigIntegers.asUnsignedByteArray(tx.getSignature().getR())));
+        System.out.println("s\t\t\t: " + ByteUtil.toHexString(BigIntegers.asUnsignedByteArray(tx.getSignature().getS())));
 
-        System.out.println("RLP encoded tx\t\t: " + Hex.toHexString(tx.getEncoded()));
+        System.out.println("RLP encoded tx\t\t: " + ByteUtil.toHexString(tx.getEncoded()));
 
         // Retrieve sender from transaction
         RskAddress sender = tx.getSender();
@@ -240,7 +250,7 @@ public class TransactionTest {
                             0, 0, 100000000000000L,
                             new RskAddress("095e7baea6a6c7c4c2dfeb977efac326af552d87"), 0,
                             CallTransaction.Function.fromSignature("get"), chainId);
-                    txConst.sign(new byte[32]);
+                    txConst.sign(new byte[]{});
 
                     Block bestBlock = block;
 
@@ -256,15 +266,14 @@ public class TransactionTest {
                             null,
                             blockFactory,
                             invokeFactory,
-                            precompiledContracts);
+                            precompiledContracts,
+                            new BlockTxSignatureCache(new ReceivedTxSignatureCache())
+                    );
                     TransactionExecutor executor = transactionExecutorFactory
                             .newInstance(txConst, 0, bestBlock.getCoinbase(), track, bestBlock, 0)
                             .setLocalCall(true);
 
-                    executor.init();
-                    executor.execute();
-                    executor.go();
-                    executor.finalization();
+                    executor.executeTransaction();
 
                     track.rollback();
 
@@ -282,19 +291,20 @@ public class TransactionTest {
     public void testEip155() {
         // Test to match the example provided in https://github.com/ethereum/eips/issues/155
         // Note that vitalik's tx encoded raw hash is wrong and kvhnuke fixes that in a comment
-        byte[] nonce = BigInteger.valueOf(9).toByteArray();
-        byte[] gasPrice = BigInteger.valueOf(20000000000L).toByteArray();
-        byte[] gas = BigInteger.valueOf(21000).toByteArray();
-        byte[] to = Hex.decode("3535353535353535353535353535353535353535");
-        byte[] value = BigInteger.valueOf(1000000000000000000L).toByteArray();
-        byte[] data = new byte[0];
-        byte chainId = 1;
-        Transaction tx = new Transaction(nonce, gasPrice, gas, to, value, data, chainId);
+        Transaction tx = Transaction
+                .builder()
+                .nonce(BigInteger.valueOf(9))
+                .gasPrice(BigInteger.valueOf(20000000000L))
+                .gasLimit(BigInteger.valueOf(21000))
+                .destination(Hex.decode("3535353535353535353535353535353535353535"))
+                .chainId((byte) 1)
+                .value(BigInteger.valueOf(1000000000000000000L))
+                .build();
         byte[] encoded = tx.getEncodedRaw();
         byte[] hash = tx.getRawHash().getBytes();
-        String strenc = Hex.toHexString(encoded);
+        String strenc = ByteUtil.toHexString(encoded);
         Assert.assertEquals("ec098504a817c800825208943535353535353535353535353535353535353535880de0b6b3a764000080018080", strenc);
-        String strhash = Hex.toHexString(hash);
+        String strhash = ByteUtil.toHexString(hash);
         Assert.assertEquals("daf5a779ae972f972197303d7b574746c7ef83eadac0f2791ad23db92e4c8e53", strhash);
         System.out.println(strenc);
         System.out.println(strhash);
@@ -302,14 +312,20 @@ public class TransactionTest {
 
     @Test
     public void testTransaction() {
-        Transaction tx = new Transaction(9L, 20000000000L, 21000L,
-                "3535353535353535353535353535353535353535", 1000000000000000000L, new byte[0], (byte) 1);
-
+        Transaction tx = Transaction
+                .builder()
+                .nonce(BigInteger.valueOf(9L))
+                .gasPrice(BigInteger.valueOf(20000000000L))
+                .gasLimit(BigInteger.valueOf(21000L))
+                .destination(Hex.decode("3535353535353535353535353535353535353535"))
+                .chainId((byte) 1)
+                .value(BigInteger.valueOf(1000000000000000000L))
+                .build();
         byte[] encoded = tx.getEncodedRaw();
         byte[] hash = tx.getRawHash().getBytes();
-        String strenc = Hex.toHexString(encoded);
+        String strenc = ByteUtil.toHexString(encoded);
         Assert.assertEquals("ec098504a817c800825208943535353535353535353535353535353535353535880de0b6b3a764000080018080", strenc);
-        String strhash = Hex.toHexString(hash);
+        String strhash = ByteUtil.toHexString(hash);
         Assert.assertEquals("daf5a779ae972f972197303d7b574746c7ef83eadac0f2791ad23db92e4c8e53", strhash);
         System.out.println(strenc);
         System.out.println(strhash);
@@ -317,37 +333,104 @@ public class TransactionTest {
 
     @Test
     public void isContractCreationWhenReceiveAddressIsNull() {
-        Transaction tx = new Transaction(null, BigInteger.ONE, BigInteger.TEN, BigInteger.ONE, BigInteger.valueOf(21000L), chainId);
+        Transaction tx = Transaction
+                .builder()
+                .destination(RskAddress.nullAddress())
+                .build();
         Assert.assertTrue(tx.isContractCreation());
     }
 
     @Test
     public void isContractCreationWhenReceiveAddressIsEmptyString() {
-        Transaction tx = new Transaction("", BigInteger.ONE, BigInteger.TEN, BigInteger.ONE, BigInteger.valueOf(21000L), chainId);
+        Transaction tx = Transaction
+                .builder()
+                .nonce(BigInteger.TEN)
+                .gasPrice(BigInteger.ONE)
+                .gasLimit(BigInteger.valueOf(21000L))
+                .destination(Hex.decode(""))
+                .chainId(chainId)
+                .value(BigInteger.ONE)
+                .build();
         Assert.assertTrue(tx.isContractCreation());
     }
 
     @Test(expected = RuntimeException.class)
     public void isContractCreationWhenReceiveAddressIs00() {
-        new Transaction("00", BigInteger.ONE, BigInteger.TEN, BigInteger.ONE, BigInteger.valueOf(21000L), chainId);
+        Transaction
+                .builder()
+                .nonce(BigInteger.TEN)
+                .gasPrice(BigInteger.ONE)
+                .gasLimit(BigInteger.valueOf(21000L))
+                .destination(Hex.decode("00"))
+                .chainId(chainId)
+                .value(BigInteger.ONE);
     }
 
     @Test
     public void isContractCreationWhenReceiveAddressIsFortyZeroes() {
-        Transaction tx = new Transaction("0000000000000000000000000000000000000000", BigInteger.ONE, BigInteger.TEN, BigInteger.ONE, BigInteger.valueOf(21000L), chainId);
+        Transaction tx = Transaction
+                .builder()
+                .nonce(BigInteger.TEN)
+                .gasPrice(BigInteger.ONE)
+                .gasLimit(BigInteger.valueOf(21000L))
+                .destination(Hex.decode("0000000000000000000000000000000000000000"))
+                .chainId(chainId)
+                .value(BigInteger.ONE)
+                .build();
         Assert.assertFalse(tx.isContractCreation());
     }
 
     @Test
     public void isNotContractCreationWhenReceiveAddressIsCowAddress() {
-        Transaction tx = new Transaction("cd2a3d9f938e13cd947ec05abc7fe734df8dd826", BigInteger.ONE, BigInteger.TEN, BigInteger.ONE, BigInteger.valueOf(21000L), chainId);
+        Transaction tx = Transaction
+                .builder()
+                .nonce(BigInteger.TEN)
+                .gasPrice(BigInteger.ONE)
+                .gasLimit(BigInteger.valueOf(21000L))
+                .destination(Hex.decode("cd2a3d9f938e13cd947ec05abc7fe734df8dd826"))
+                .chainId(chainId)
+                .value(BigInteger.ONE)
+                .build();
         Assert.assertFalse(tx.isContractCreation());
     }
 
     @Test
     public void isNotContractCreationWhenReceiveAddressIsBridgeAddress() {
-        Transaction tx = new Transaction(PrecompiledContracts.BRIDGE_ADDR_STR, BigInteger.ONE, BigInteger.TEN, BigInteger.ONE, BigInteger.valueOf(21000L), chainId);
+        Transaction tx = Transaction
+                .builder()
+                .nonce(BigInteger.TEN)
+                .gasPrice(BigInteger.ONE)
+                .gasLimit(BigInteger.valueOf(21000L))
+                .destination(Hex.decode(PrecompiledContracts.BRIDGE_ADDR_STR))
+                .chainId(chainId)
+                .value(BigInteger.ONE)
+                .build();
         Assert.assertFalse(tx.isContractCreation());
     }
 
+    @Test
+    public void createEncodeAndDecodeTransactionWithChainId() {
+        Transaction originalTransaction = CallTransaction.createCallTransaction(
+                0, 0, 100000000000000L,
+                new RskAddress("095e7baea6a6c7c4c2dfeb977efac326af552d87"), 0,
+                CallTransaction.Function.fromSignature("get"), chainId);
+
+        originalTransaction.sign(new byte[]{});
+
+        byte[] encoded = originalTransaction.getEncoded();
+
+        RLPList rlpList = RLP.decodeList(encoded);
+
+        byte[] vData = rlpList.get(6).getRLPData();
+
+        Assert.assertEquals (Transaction.CHAIN_ID_INC + chainId * 2, vData[0]);
+        Assert.assertEquals (Transaction.CHAIN_ID_INC + chainId * 2, originalTransaction.getEncodedV());
+
+        Transaction transaction = new ImmutableTransaction(encoded);
+
+        Assert.assertEquals(chainId, transaction.getChainId());
+        Assert.assertEquals(Transaction.LOWER_REAL_V, transaction.getSignature().getV());
+        Assert.assertEquals (Transaction.CHAIN_ID_INC + chainId * 2, transaction.getEncodedV());
+    }
 }
+

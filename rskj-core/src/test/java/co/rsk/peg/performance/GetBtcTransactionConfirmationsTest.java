@@ -12,6 +12,7 @@ import org.ethereum.core.CallTransaction;
 import org.ethereum.core.Repository;
 import org.ethereum.solidity.SolidityType;
 import org.ethereum.vm.PrecompiledContracts;
+import org.ethereum.vm.exception.VMException;
 import org.junit.*;
 import org.mockito.invocation.InvocationOnMock;
 import org.powermock.reflect.Whitebox;
@@ -20,8 +21,8 @@ import java.math.BigInteger;
 import java.util.*;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.when;
 
 @Ignore
 public class GetBtcTransactionConfirmationsTest extends BridgePerformanceTestCase {
@@ -41,7 +42,15 @@ public class GetBtcTransactionConfirmationsTest extends BridgePerformanceTestCas
 
     private class DiskAccessRepositoryBlockStore extends RepositoryBtcBlockStoreWithCache {
         public DiskAccessRepositoryBlockStore(Repository repository, RskAddress contractAddress) {
-            super(bridgeConstants.getBtcParams(), repository, null, contractAddress);
+            super(
+                bridgeConstants.getBtcParams(),
+                repository,
+                null,
+                contractAddress,
+                null,
+                null,
+                null
+            );
         }
 
         @Override
@@ -51,11 +60,11 @@ public class GetBtcTransactionConfirmationsTest extends BridgePerformanceTestCas
     }
 
     @Before
-    public void setRskipToTrue() {
+    public void setRskipToTrue() throws VMException {
         warmUp();
     }
 
-    private void warmUp() {
+    private void warmUp() throws VMException {
         // Doing an initial estimation gets some things cached and speeds up the rest,
         // so that we get even numbers at the end
         System.out.print("Doing an initial pass... ");
@@ -67,7 +76,7 @@ public class GetBtcTransactionConfirmationsTest extends BridgePerformanceTestCas
     }
 
     @Test
-    public void getBtcTransactionConfirmations_Weighed_Cache() {
+    public void getBtcTransactionConfirmations_Weighed_Cache() throws VMException {
         final String CASE_NAME = "getBtcTransactionConfirmations-weighed";
         CombinedExecutionStats stats = new CombinedExecutionStats(CASE_NAME);
 
@@ -84,7 +93,7 @@ public class GetBtcTransactionConfirmationsTest extends BridgePerformanceTestCas
     }
 
     @Test
-    public void getBtcTransactionConfirmations_Weighed_Disk() {
+    public void getBtcTransactionConfirmations_Weighed_Disk() throws VMException {
         final String CASE_NAME = "getBtcTransactionConfirmations-weighed";
         CombinedExecutionStats stats = new CombinedExecutionStats(CASE_NAME);
 
@@ -101,7 +110,7 @@ public class GetBtcTransactionConfirmationsTest extends BridgePerformanceTestCas
     }
 
     @Test
-    public void getBtcTransactionConfirmations_Even_Cache() {
+    public void getBtcTransactionConfirmations_Even_Cache() throws VMException {
         final String CASE_NAME = "getBtcTransactionConfirmations-even";
         CombinedExecutionStats stats = new CombinedExecutionStats(CASE_NAME);
 
@@ -116,7 +125,7 @@ public class GetBtcTransactionConfirmationsTest extends BridgePerformanceTestCas
     }
 
     @Test
-    public void getBtcTransactionConfirmations_Even_Disk() {
+    public void getBtcTransactionConfirmations_Even_Disk() throws VMException {
         final String CASE_NAME = "getBtcTransactionConfirmations-even";
         CombinedExecutionStats stats = new CombinedExecutionStats(CASE_NAME);
 
@@ -131,7 +140,7 @@ public class GetBtcTransactionConfirmationsTest extends BridgePerformanceTestCas
     }
 
     @Test
-    public void getBtcTransactionConfirmations_Zero() {
+    public void getBtcTransactionConfirmations_Zero() throws VMException {
         BridgePerformanceTest.addStats(estimateGetBtcTransactionConfirmations(
                 "getBtcTransactionConfirmations-zero",
                 2000, 0, 750, 3000, true
@@ -144,7 +153,7 @@ public class GetBtcTransactionConfirmationsTest extends BridgePerformanceTestCas
     }
 
     @Test
-    public void getBtcTransactionConfirmations_Hundred() {
+    public void getBtcTransactionConfirmations_Hundred() throws VMException {
         BridgePerformanceTest.addStats(estimateGetBtcTransactionConfirmations(
                 "getBtcTransactionConfirmations-hundred",
                 2000, 100, 750, 3000, true
@@ -159,7 +168,7 @@ public class GetBtcTransactionConfirmationsTest extends BridgePerformanceTestCas
     private ExecutionStats estimateGetBtcTransactionConfirmations(
             String caseName,
             int times, int confirmations, int  minTransactions,
-            int maxTransactions, boolean useCache) {
+            int maxTransactions, boolean useCache) throws VMException {
 
         BridgeStorageProviderInitializer storageInitializer = generateBlockChainInitializer(
                 1000,
@@ -181,7 +190,6 @@ public class GetBtcTransactionConfirmationsTest extends BridgePerformanceTestCas
                 Helper.getRandomHeightProvider(10),
                 stats,
                 (environment, executionResult) -> {
-                    byte[] res = executionResult;
                     int numberOfConfirmations = new BigInteger(executionResult).intValueExact();
                     Assert.assertEquals(expectedConfirmations, numberOfConfirmations);
                 },
@@ -228,9 +236,9 @@ public class GetBtcTransactionConfirmationsTest extends BridgePerformanceTestCas
         SolidityType input0Type = spy(getBtcTransactionConfirmationsFn.inputs[0].type);
         SolidityType input1Type = spy(getBtcTransactionConfirmationsFn.inputs[1].type);
         SolidityType input3ElementType = spy((SolidityType) Whitebox.getInternalState(getBtcTransactionConfirmationsFn.inputs[3].type, "elementType"));
-        when(input0Type.encode(any())).thenAnswer(this::encodeBytes32OnMock);
-        when(input1Type.encode(any())).thenAnswer(this::encodeBytes32OnMock);
-        when(input3ElementType.encode(any())).thenAnswer(this::encodeBytes32OnMock);
+        doAnswer(this::encodeBytes32OnMock).when(input0Type).encode(any());
+        doAnswer(this::encodeBytes32OnMock).when(input1Type).encode(any());
+        doAnswer(this::encodeBytes32OnMock).when(input3ElementType).encode(any());
         getBtcTransactionConfirmationsFn.inputs[0].type = input0Type;
         getBtcTransactionConfirmationsFn.inputs[1].type = input1Type;
         Whitebox.setInternalState(getBtcTransactionConfirmationsFn.inputs[3].type, "elementType", input3ElementType);
@@ -246,11 +254,10 @@ public class GetBtcTransactionConfirmationsTest extends BridgePerformanceTestCas
 
     private BridgeStorageProviderInitializer generateBlockChainInitializer(int minBtcBlocks, int maxBtcBlocks, int numberOfConfirmations, int minNumberOfTransactions, int maxNumberOfTransactions) {
         return (BridgeStorageProvider provider, Repository repository, int executionIndex, BtcBlockStore blockStore) -> {
-            BtcBlockStore btcBlockStore = btcBlockStoreFactory.newInstance(repository);
             Context btcContext = new Context(networkParameters);
             BtcBlockChain btcBlockChain;
             try {
-                btcBlockChain = new BtcBlockChain(btcContext, btcBlockStore);
+                btcBlockChain = new BtcBlockChain(btcContext, blockStore);
             } catch (BlockStoreException e) {
                 throw new RuntimeException("Error initializing btc blockchain for tests");
             }
@@ -299,6 +306,7 @@ public class GetBtcTransactionConfirmationsTest extends BridgePerformanceTestCas
             merkleBranchPath = merkleBranch.getPath();
             merkleBranchHashes = merkleBranch.getHashes();
             expectedConfirmations = numberOfConfirmations + 1;
+
         };
     }
 

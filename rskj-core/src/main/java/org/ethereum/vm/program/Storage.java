@@ -21,6 +21,7 @@ package org.ethereum.vm.program;
 
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import co.rsk.crypto.Keccak256;
 import co.rsk.trie.Trie;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Repository;
@@ -121,6 +122,17 @@ public class Storage implements Repository, ProgramListenerAware {
     public int getCodeLength(RskAddress addr) {
         return repository.getCodeLength(addr);
     }
+
+    @Override
+    public Keccak256 getCodeHashNonStandard(RskAddress addr) {
+        return repository.getCodeHashNonStandard(addr);
+    }
+
+    @Override
+    public Keccak256 getCodeHashStandard(RskAddress addr) {
+        return repository.getCodeHashStandard(addr);
+    }
+
 
     @Override
     public boolean isContract(RskAddress addr) {

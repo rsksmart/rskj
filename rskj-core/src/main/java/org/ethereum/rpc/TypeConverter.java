@@ -18,8 +18,9 @@
 
 package org.ethereum.rpc;
 
-import org.bouncycastle.util.encoders.Hex;
 import co.rsk.core.Coin;
+import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.util.ByteUtil;
 
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
@@ -44,6 +45,9 @@ public class TypeConverter {
     }
 
     public static BigInteger stringHexToBigInteger(String input) {
+        if(!input.startsWith("0x")) {
+            throw new NumberFormatException("Invalid hex number, expected 0x prefix");
+        }
         String hexa = input.substring(2);
         return new BigInteger(hexa, 16);
     }
@@ -107,7 +111,7 @@ public class TypeConverter {
      * @return A hex representation of the input with two hex digits per byte
      */
     public static String toUnformattedJsonHex(byte[] x) {
-        return "0x" + (x == null ? "" : Hex.toHexString(x));
+        return "0x" + (x == null ? "" : ByteUtil.toHexString(x));
     }
 
     /**

@@ -27,11 +27,11 @@ import co.rsk.db.RepositoryLocator;
 import co.rsk.logfilter.BlocksBloomStore;
 import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.rpc.ExecutionBlockRetriever;
+import co.rsk.rpc.Web3InformationRetriever;
 import co.rsk.rpc.Web3RskImpl;
 import co.rsk.rpc.modules.debug.DebugModule;
 import co.rsk.rpc.modules.debug.DebugModuleImpl;
 import co.rsk.rpc.modules.eth.EthModule;
-import co.rsk.rpc.modules.eth.EthModuleSolidityDisabled;
 import co.rsk.rpc.modules.eth.EthModuleWalletEnabled;
 import co.rsk.rpc.modules.personal.PersonalModule;
 import co.rsk.rpc.modules.personal.PersonalModuleWalletEnabled;
@@ -41,13 +41,13 @@ import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.BlockBuilder;
 import co.rsk.test.builders.TransactionBuilder;
 import co.rsk.trie.TrieStore;
-import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.*;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.facade.Ethereum;
 import org.ethereum.rpc.Simples.SimpleConfigCapabilities;
 import org.ethereum.rpc.dto.TransactionReceiptDTO;
+import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RskTestFactory;
 import org.junit.Assert;
 import org.junit.Before;
@@ -56,6 +56,8 @@ import org.junit.Test;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
+
+import static org.mockito.Mockito.mock;
 
 /**
  * Created by ajlopez on 30/11/2016.
@@ -190,7 +192,7 @@ public class Web3ImplLogsTest {
         Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block1));
 
         Web3.FilterRequest fr = new Web3.FilterRequest();
-        fr.address = Hex.toHexString(tx.getContractAddress().getBytes());
+        fr.address = ByteUtil.toHexString(tx.getContractAddress().getBytes());
         fr.topics = new Object[] { "06acbfb32bcf8383f3b0a768b70ac9ec234ea0f2d3b9c77fa6a2de69b919aad1" };
         String id = web3.eth_newFilter(fr);
 
@@ -346,6 +348,7 @@ public class Web3ImplLogsTest {
 
         Web3.FilterRequest fr = new Web3.FilterRequest();
         fr.fromBlock = "earliest";
+        fr.toBlock = "latest";
         Object[] logs = web3.eth_getLogs(fr);
 
         Assert.assertNotNull(logs);
@@ -444,7 +447,7 @@ public class Web3ImplLogsTest {
         Block block1 = blockChain.getBlockByNumber(1l);
         Web3.FilterRequest fr = new Web3.FilterRequest();
         fr.fromBlock = "earliest";
-        fr.address = Hex.toHexString(block1.getTransactionsList().get(0).getContractAddress().getBytes());
+        fr.address = ByteUtil.toHexString(block1.getTransactionsList().get(0).getContractAddress().getBytes());
         Object[] logs = web3.eth_getLogs(fr);
 
         Assert.assertNotNull(logs);
@@ -463,7 +466,7 @@ public class Web3ImplLogsTest {
         Block block1 = blockChain.getBlockByNumber(1l);
         Web3.FilterRequest fr = new Web3.FilterRequest();
         fr.fromBlock = "earliest";
-        fr.address = Hex.toHexString(block1.getTransactionsList().get(0).getContractAddress().getBytes());
+        fr.address = ByteUtil.toHexString(block1.getTransactionsList().get(0).getContractAddress().getBytes());
         web3.eth_getLogs(fr);
         Object[] logs = web3.eth_getLogs(fr);
 
@@ -484,7 +487,7 @@ public class Web3ImplLogsTest {
         Web3.FilterRequest fr = new Web3.FilterRequest();
         fr.fromBlock = "earliest";
         List<String> addresses = new ArrayList<>();
-        addresses.add(Hex.toHexString(new byte[20]));
+        addresses.add(ByteUtil.toHexString(new byte[20]));
         fr.address = addresses;
         Object[] logs = web3.eth_getLogs(fr);
 
@@ -499,7 +502,7 @@ public class Web3ImplLogsTest {
         Web3.FilterRequest fr = new Web3.FilterRequest();
         fr.fromBlock = "earliest";
         List<String> addresses = new ArrayList<>();
-        addresses.add(Hex.toHexString(new byte[20]));
+        addresses.add(ByteUtil.toHexString(new byte[20]));
         fr.address = addresses;
         web3.eth_getLogs(fr);
         Object[] logs = web3.eth_getLogs(fr);
@@ -549,7 +552,7 @@ public class Web3ImplLogsTest {
         Object[] logs = web3.eth_getLogs(fr);
 
         Assert.assertNotNull(logs);
-        String address = "0x" + Hex.toHexString(block1.getTransactionsList().get(0).getContractAddress().getBytes());
+        String address = "0x" + ByteUtil.toHexString(block1.getTransactionsList().get(0).getContractAddress().getBytes());
         Assert.assertEquals(1, logs.length);
         Assert.assertEquals(address,((LogFilterElement)logs[0]).address);
     }
@@ -567,7 +570,7 @@ public class Web3ImplLogsTest {
         Object[] logs = web3.eth_getLogs(fr);
 
         Assert.assertNotNull(logs);
-        String address = "0x" + Hex.toHexString(block1.getTransactionsList().get(0).getContractAddress().getBytes());
+        String address = "0x" + ByteUtil.toHexString(block1.getTransactionsList().get(0).getContractAddress().getBytes());
         Assert.assertEquals(1, logs.length);
         Assert.assertEquals(address,((LogFilterElement)logs[0]).address);
     }
@@ -585,7 +588,7 @@ public class Web3ImplLogsTest {
         Object[] logs = web3.eth_getLogs(fr);
 
         Assert.assertNotNull(logs);
-        String address = "0x" + Hex.toHexString(block1.getTransactionsList().get(0).getContractAddress().getBytes());
+        String address = "0x" + ByteUtil.toHexString(block1.getTransactionsList().get(0).getContractAddress().getBytes());
         Assert.assertEquals(1, logs.length);
         Assert.assertEquals(address,((LogFilterElement)logs[0]).address);
     }
@@ -604,7 +607,7 @@ public class Web3ImplLogsTest {
         Object[] logs = web3.eth_getLogs(fr);
 
         Assert.assertNotNull(logs);
-        String address = "0x" + Hex.toHexString(block1.getTransactionsList().get(0).getContractAddress().getBytes());
+        String address = "0x" + ByteUtil.toHexString(block1.getTransactionsList().get(0).getContractAddress().getBytes());
         Assert.assertEquals(1, logs.length);
         Assert.assertEquals(address,((LogFilterElement)logs[0]).address);
     }
@@ -623,7 +626,7 @@ public class Web3ImplLogsTest {
         Object[] logs = web3.eth_getLogs(fr);
 
         Assert.assertNotNull(logs);
-        String address = "0x" + Hex.toHexString(block1.getTransactionsList().get(0).getContractAddress().getBytes());
+        String address = "0x" + ByteUtil.toHexString(block1.getTransactionsList().get(0).getContractAddress().getBytes());
         Assert.assertEquals(2, logs.length);
 
         for (int k = 0; k < logs.length; k++) {
@@ -646,7 +649,7 @@ public class Web3ImplLogsTest {
         Object[] logs = web3.eth_getLogs(fr);
 
         Assert.assertNotNull(logs);
-        String address = "0x" + Hex.toHexString(block1.getTransactionsList().get(0).getContractAddress().getBytes());
+        String address = "0x" + ByteUtil.toHexString(block1.getTransactionsList().get(0).getContractAddress().getBytes());
         Assert.assertEquals(2, logs.length);
 
         for (int k = 0; k < logs.length; k++) {
@@ -666,7 +669,7 @@ public class Web3ImplLogsTest {
         Object[] logs = web3.eth_getLogs(fr);
 
         Assert.assertNotNull(logs);
-        String address = "0x" + Hex.toHexString(block1.getTransactionsList().get(0).getContractAddress().getBytes());
+        String address = "0x" + ByteUtil.toHexString(block1.getTransactionsList().get(0).getContractAddress().getBytes());
         Assert.assertEquals(1, logs.length);
         Assert.assertEquals(address,((LogFilterElement)logs[0]).address);
     }
@@ -684,7 +687,7 @@ public class Web3ImplLogsTest {
         Object[] logs = web3.eth_getLogs(fr);
 
         Assert.assertNotNull(logs);
-        String address = "0x" + Hex.toHexString(block1.getTransactionsList().get(0).getContractAddress().getBytes());
+        String address = "0x" + ByteUtil.toHexString(block1.getTransactionsList().get(0).getContractAddress().getBytes());
         Assert.assertEquals(1, logs.length);
         Assert.assertEquals(address,((LogFilterElement)logs[0]).address);
     }
@@ -700,7 +703,7 @@ public class Web3ImplLogsTest {
         Object[] logs = web3.eth_getLogs(fr);
 
         Assert.assertNotNull(logs);
-        String address = "0x" + Hex.toHexString(block1.getTransactionsList().get(0).getContractAddress().getBytes());
+        String address = "0x" + ByteUtil.toHexString(block1.getTransactionsList().get(0).getContractAddress().getBytes());
         Assert.assertEquals(3, logs.length);
 
         for (int k = 0; k < logs.length; k++) {
@@ -720,7 +723,7 @@ public class Web3ImplLogsTest {
         Object[] logs = web3.eth_getLogs(fr);
 
         Assert.assertNotNull(logs);
-        String address = "0x" + Hex.toHexString(block1.getTransactionsList().get(0).getContractAddress().getBytes());
+        String address = "0x" + ByteUtil.toHexString(block1.getTransactionsList().get(0).getContractAddress().getBytes());
         Assert.assertEquals(3, logs.length);
 
         for (int k = 0; k < logs.length; k++) {
@@ -740,7 +743,7 @@ public class Web3ImplLogsTest {
         Object[] logs = web3.eth_getLogs(fr);
 
         Assert.assertNotNull(logs);
-        String address = "0x" + Hex.toHexString(block1.getTransactionsList().get(0).getContractAddress().getBytes());
+        String address = "0x" + ByteUtil.toHexString(block1.getTransactionsList().get(0).getContractAddress().getBytes());
         Assert.assertEquals(1, logs.length);
 
         Assert.assertEquals(address, ((LogFilterElement) logs[0]).address);
@@ -761,7 +764,7 @@ public class Web3ImplLogsTest {
         Object[] logs = web3.eth_getLogs(fr);
 
         Assert.assertNotNull(logs);
-        String address = "0x" + Hex.toHexString(block1.getTransactionsList().get(0).getContractAddress().getBytes());
+        String address = "0x" + ByteUtil.toHexString(block1.getTransactionsList().get(0).getContractAddress().getBytes());
         Assert.assertEquals(1, logs.length);
 
         Assert.assertEquals(address, ((LogFilterElement) logs[0]).address);
@@ -781,7 +784,7 @@ public class Web3ImplLogsTest {
         Object[] logs = web3.eth_getLogs(fr);
 
         Assert.assertNotNull(logs);
-        String address = "0x" + Hex.toHexString(block1.getTransactionsList().get(0).getContractAddress().getBytes());
+        String address = "0x" + ByteUtil.toHexString(block1.getTransactionsList().get(0).getContractAddress().getBytes());
         Assert.assertEquals(1, logs.length);
 
         Assert.assertEquals(address, ((LogFilterElement) logs[0]).address);
@@ -802,7 +805,7 @@ public class Web3ImplLogsTest {
         Object[] logs = web3.eth_getLogs(fr);
 
         Assert.assertNotNull(logs);
-        String address = "0x" + Hex.toHexString(block1.getTransactionsList().get(0).getContractAddress().getBytes());
+        String address = "0x" + ByteUtil.toHexString(block1.getTransactionsList().get(0).getContractAddress().getBytes());
         Assert.assertEquals(1, logs.length);
 
         Assert.assertEquals(address, ((LogFilterElement) logs[0]).address);
@@ -865,7 +868,7 @@ public class Web3ImplLogsTest {
 
         Transaction tx2;
         tx2 = getCallerContractTransaction(acc1, mainAddress);
-        String callerAddress = Hex.toHexString(tx2.getContractAddress().getBytes());
+        String callerAddress = ByteUtil.toHexString(tx2.getContractAddress().getBytes());
 
         List<Transaction> txs2 = new ArrayList<>();
         txs2.add(tx2);
@@ -910,7 +913,7 @@ public class Web3ImplLogsTest {
 
         Transaction tx2;
         tx2 = getCallerContractTransaction(acc1, mainAddress);
-        String callerAddress = Hex.toHexString(tx2.getContractAddress().getBytes());
+        String callerAddress = ByteUtil.toHexString(tx2.getContractAddress().getBytes());
 
         List<Transaction> txs2 = new ArrayList<>();
         txs2.add(tx2);
@@ -999,7 +1002,7 @@ public class Web3ImplLogsTest {
         EthModule ethModule = new EthModule(
                 config.getNetworkConstants().getBridgeConstants(), config.getNetworkConstants().getChainId(), blockChain, transactionPool,
                 null, new ExecutionBlockRetriever(mainchainView, blockChain, null, null),
-                null, new EthModuleSolidityDisabled(), new EthModuleWalletEnabled(wallet), null,
+                null, new EthModuleWalletEnabled(wallet), null,
                 new BridgeSupportFactory(
                         null, config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig())
         );
@@ -1008,7 +1011,6 @@ public class Web3ImplLogsTest {
         return new Web3RskImpl(
                 eth,
                 blockChain,
-                transactionPool,
                 config,
                 Web3Mocks.getMockMinerClient(),
                 Web3Mocks.getMockMinerServer(),
@@ -1018,9 +1020,8 @@ public class Web3ImplLogsTest {
                 txPoolModule,
                 null,
                 debugModule,
-                null,
+                null, null,
                 Web3Mocks.getMockChannelManager(),
-                repositoryLocator,
                 null,
                 null,
                 blockStore,
@@ -1030,8 +1031,8 @@ public class Web3ImplLogsTest {
                 null,
                 new SimpleConfigCapabilities(),
                 null,
-                new BlocksBloomStore(2, 0)
-        );
+                new BlocksBloomStore(2, 0, null),
+                mock(Web3InformationRetriever.class));
     }
 
     private void addTwoEmptyBlocks() {
@@ -1301,7 +1302,7 @@ contract caller {
                 .receiverAddress(receiverAddress)
                 .gasLimit(BigInteger.valueOf(1000000))
                 .gasPrice(BigInteger.ONE)
-                .data(Hex.toHexString(func.encode("0x" + address)))
+                .data(ByteUtil.toHexString(func.encode("0x" + address)))
                 .nonce(2)
                 .build();
     }

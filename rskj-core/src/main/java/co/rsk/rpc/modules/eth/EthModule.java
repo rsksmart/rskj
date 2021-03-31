@@ -30,17 +30,12 @@ import co.rsk.peg.BridgeSupport;
 import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.rpc.ExecutionBlockRetriever;
 import co.rsk.trie.TrieStoreImpl;
-import org.ethereum.core.Block;
-import org.ethereum.core.Blockchain;
-import org.ethereum.core.Repository;
-import org.ethereum.core.TransactionPool;
+import org.ethereum.core.*;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.MutableRepository;
 import org.ethereum.rpc.TypeConverter;
 import org.ethereum.rpc.Web3;
 import org.ethereum.rpc.converters.CallArgumentsToByteArray;
-import org.ethereum.rpc.dto.CompilationResultDTO;
-import org.ethereum.rpc.exception.JsonRpcInvalidParamException;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.ProgramResult;
@@ -48,28 +43,35 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Map;
+import java.util.Optional;
 
+import static java.util.Arrays.copyOfRange;
 import static org.ethereum.rpc.TypeConverter.stringHexToBigInteger;
-import static org.ethereum.rpc.TypeConverter.toJsonHex;
+import static org.ethereum.rpc.TypeConverter.toUnformattedJsonHex;
+import static org.ethereum.rpc.exception.RskJsonRpcRequestException.invalidParamError;
 
 // TODO add all RPC methods
 public class EthModule
-    implements EthModuleSolidity, EthModuleWallet, EthModuleTransaction {
+    implements EthModuleWallet, EthModuleTransaction {
 
     private static final Logger LOGGER = LoggerFactory.getLogger("web3");
+
+    private static final CallTransaction.Function ERROR_ABI_FUNCTION = CallTransaction.Function.fromSignature("Error", "string");
+    private static final byte[] ERROR_ABI_FUNCTION_SIGNATURE = ERROR_ABI_FUNCTION.encodeSignature(); //08c379a0
 
     private final Blockchain blockchain;
     private final TransactionPool transactionPool;
     private final ReversibleTransactionExecutor reversibleTransactionExecutor;
     private final ExecutionBlockRetriever executionBlockRetriever;
     private final RepositoryLocator repositoryLocator;
-    private final EthModuleSolidity ethModuleSolidity;
     private final EthModuleWallet ethModuleWallet;
     private final EthModuleTransaction ethModuleTransaction;
     private final BridgeConstants bridgeConstants;
     private final BridgeSupportFactory bridgeSupportFactory;
     private final byte chainId;
+
 
     public EthModule(
             BridgeConstants bridgeConstants,
@@ -79,7 +81,6 @@ public class EthModule
             ReversibleTransactionExecutor reversibleTransactionExecutor,
             ExecutionBlockRetriever executionBlockRetriever,
             RepositoryLocator repositoryLocator,
-            EthModuleSolidity ethModuleSolidity,
             EthModuleWallet ethModuleWallet,
             EthModuleTransaction ethModuleTransaction,
             BridgeSupportFactory bridgeSupportFactory) {
@@ -89,7 +90,6 @@ public class EthModule
         this.reversibleTransactionExecutor = reversibleTransactionExecutor;
         this.executionBlockRetriever = executionBlockRetriever;
         this.repositoryLocator = repositoryLocator;
-        this.ethModuleSolidity = ethModuleSolidity;
         this.ethModuleWallet = ethModuleWallet;
         this.ethModuleTransaction = ethModuleTransaction;
         this.bridgeConstants = bridgeConstants;
@@ -110,13 +110,13 @@ public class EthModule
 
         byte[] result = bridgeSupport.getStateForDebugging();
 
-        BridgeState state = BridgeState.create(bridgeConstants, result);
+        BridgeState state = BridgeState.create(bridgeConstants, result, null);
 
         return state.stateToMap();
     }
 
     public String call(Web3.CallArguments args, String bnOrId) {
-        String s = null;
+        String hReturn = null;
         try {
             BlockResult blockResult = executionBlockRetriever.getExecutionBlock_workaround(bnOrId);
             ProgramResult res;
@@ -127,18 +127,20 @@ public class EthModule
             }
 
             if (res.isRevert()) {
-                throw RskJsonRpcRequestException.transactionRevertedExecutionError();
+                Optional<String> revertReason = decodeRevertReason(res);
+                if (revertReason.isPresent()) {
+                    throw RskJsonRpcRequestException.transactionRevertedExecutionError(revertReason.get());
+                } else {
+                    throw RskJsonRpcRequestException.transactionRevertedExecutionError();
+                }
             }
 
-            return s = toJsonHex(res.getHReturn());
-        } finally {
-            LOGGER.debug("eth_call(): {}", s);
-        }
-    }
+            hReturn = toUnformattedJsonHex(res.getHReturn());
 
-    @Override
-    public Map<String, CompilationResultDTO> compileSolidity(String contract) throws Exception {
-        return ethModuleSolidity.compileSolidity(contract);
+            return hReturn;
+        } finally {
+            LOGGER.debug("eth_call(): {}", hReturn);
+        }
     }
 
     public String estimateGas(Web3.CallArguments args) {
@@ -217,7 +219,7 @@ public class EthModule
                     }
                     return null;
                 } catch (NumberFormatException | StringIndexOutOfBoundsException e) {
-                    throw new JsonRpcInvalidParamException("invalid blocknumber " + id);
+                    throw invalidParamError("invalid blocknumber " + id);
                 }
         }
     }
@@ -234,6 +236,28 @@ public class EthModule
                 hexArgs.getData(),
                 hexArgs.getFromAddress()
         );
+    }
+
+    /**
+     * Look for { Error("msg") } function, if it matches decode the "msg" param.
+     * The 4 first bytes are the function signature.
+     *
+     * @param res
+     * @return revert reason, empty if didnt match.
+     */
+    public static Optional<String> decodeRevertReason(ProgramResult res) {
+        byte[] bytes = res.getHReturn();
+        if (bytes == null || bytes.length < 4) {
+            return Optional.empty();
+        }
+
+        final byte[] signature = copyOfRange(res.getHReturn(), 0, 4);
+        if (!Arrays.equals(signature, ERROR_ABI_FUNCTION_SIGNATURE)) {
+            return Optional.empty();
+        }
+
+        final Object[] decode = ERROR_ABI_FUNCTION.decode(res.getHReturn());
+        return decode != null && decode.length > 0 ? Optional.of((String) decode[0]) : Optional.empty();
     }
 
     @Deprecated

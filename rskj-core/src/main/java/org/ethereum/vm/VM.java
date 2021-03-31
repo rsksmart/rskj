@@ -21,11 +21,13 @@ package org.ethereum.vm;
 
 import co.rsk.config.VmConfig;
 import co.rsk.core.RskAddress;
+import co.rsk.crypto.Keccak256;
 import org.bouncycastle.util.BigIntegers;
-import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.HashUtil;
+import org.ethereum.crypto.Keccak256Helper;
+import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.MessageCall.MsgType;
 import org.ethereum.vm.program.Program;
 import org.ethereum.vm.program.Stack;
@@ -114,13 +116,11 @@ public class VM {
     }
 
     private void checkSizeArgument(long size) {
-        if (size > Program.MAX_MEMORY)
-            // Force exception
-        {
-            throw Program.ExceptionHelper.notEnoughOpGas(op, Long.MAX_VALUE, program.getRemainingGas());
+        if (size > Program.MAX_MEMORY) { // Force exception
+            throw Program.ExceptionHelper.notEnoughOpGas(program, op, Long.MAX_VALUE, program.getRemainingGas());
         }
-
     }
+
     private long calcMemGas(long oldMemSize, long newMemSize, long copySize) {
         long currentGasCost = 0;
 
@@ -134,28 +134,35 @@ public class VM {
         // This comparison assumes (oldMemSize % 32 == 0)
         if (newMemSize > oldMemSize) { // optimization to avoid div/mul
             long memoryUsage = (newMemSize+31) / 32 * 32; // rounds up
+
             if (memoryUsage > oldMemSize) {
                 memWords = (memoryUsage / 32); // 25 sig digits
                 long memWordsOld = (oldMemSize / 32);
                 long memGas;
 
                  // MemWords*MemWords has 50 sig digits, so this cannot overflow
-                 memGas = (GasCost.MEMORY * memWords + memWords * memWords / 512)
-                        - (GasCost.MEMORY * memWordsOld + memWordsOld * memWordsOld / 512);
-
-                currentGasCost += memGas;
+                memGas = GasCost.subtract(
+                        GasCost.add(
+                                GasCost.multiply(GasCost.MEMORY, memWords),
+                                GasCost.multiply(memWords, memWords) / 512
+                        ),
+                        GasCost.add(
+                                GasCost.multiply(GasCost.MEMORY, memWordsOld),
+                                GasCost.multiply(memWordsOld, memWordsOld) / 512
+                        )
+                );
+                currentGasCost = GasCost.add(currentGasCost, memGas);
             }
         }
 
         // copySize is invalid if newMemSize > 2^63, but it only gets here if newMemSize is <= 2^30
         if (copySize > 0) {
-            long copyGas = GasCost.COPY_GAS * ((copySize + 31) / 32);
-            currentGasCost += copyGas;
+            long copyGas = GasCost.multiply(GasCost.COPY_GAS, GasCost.add(copySize, 31) / 32);
+            currentGasCost = GasCost.add(currentGasCost, copyGas);
         }
 
         return currentGasCost;
     }
-
 
     public void step(Program aprogram) {
         steps(aprogram,1);
@@ -171,14 +178,13 @@ public class VM {
 
     protected void checkOpcode() {
         if (op == null) {
-            throw Program.ExceptionHelper.invalidOpCode(program.getCurrentOp());
+            throw Program.ExceptionHelper.invalidOpCode(program);
         }
         if (op.scriptVersion() > program.getScriptVersion()) {
-            throw Program.ExceptionHelper.invalidOpCode(program.getCurrentOp());
+            throw Program.ExceptionHelper.invalidOpCode(program);
         }
 
     }
-
 
     public static long limitedAddToMaxLong(long left, long right) {
         try {
@@ -192,15 +198,16 @@ public class VM {
         if (!computeGas) {
             return;
         }
+
         program.spendGas(gasCost, op.name());
     }
-
 
     protected void doSTOP() {
         if (computeGas) {
             gasCost = GasCost.STOP;
             spendOpCodeGas();
         }
+
         // EXECUTION PHASE
         program.setHReturn(EMPTY_BYTE_ARRAY);
         program.stop();
@@ -309,7 +316,7 @@ public class VM {
         if (computeGas) {
             DataWord exp = stack.get(stack.size() - 2);
             int bytesOccupied = exp.bytesOccupied();
-            gasCost = (long)GasCost.EXP_GAS + GasCost.EXP_BYTE_GAS * bytesOccupied;
+            gasCost = GasCost.calculateTotal(GasCost.EXP_GAS, GasCost.EXP_BYTE_GAS, bytesOccupied);
         }
         spendOpCodeGas();
         // EXECUTION PHASE
@@ -609,8 +616,8 @@ public class VM {
             checkSizeArgument(sizeLong);
             newMemSize = memNeeded(stack.peek(), sizeLong);
             long chunkUsed = (sizeLong + 31) / 32;
-            gasCost += chunkUsed * GasCost.SHA3_WORD;
-            gasCost += calcMemGas(oldMemSize, newMemSize, 0);
+            gasCost = GasCost.calculateTotal(gasCost, GasCost.SHA3_WORD, chunkUsed);
+            gasCost = GasCost.add(gasCost, calcMemGas(oldMemSize, newMemSize, 0));
 
             spendOpCodeGas();
         }
@@ -636,7 +643,7 @@ public class VM {
         DataWord address = program.getOwnerAddress();
 
         if (isLogEnabled) {
-            hint = "address: " + Hex.toHexString(address.getLast20Bytes());
+            hint = "address: " + ByteUtil.toHexString(address.getLast20Bytes());
         }
 
         program.stackPush(address);
@@ -654,7 +661,7 @@ public class VM {
 
         if (isLogEnabled) {
             hint = "address: "
-                    + Hex.toHexString(address.getLast20Bytes())
+                    + ByteUtil.toHexString(address.getLast20Bytes())
                     + " balance: " + balance.toString();
         }
 
@@ -668,7 +675,7 @@ public class VM {
         DataWord originAddress = program.getOriginAddress();
 
         if (isLogEnabled) {
-            hint = "address: " + Hex.toHexString(originAddress.getLast20Bytes());
+            hint = "address: " + ByteUtil.toHexString(originAddress.getLast20Bytes());
         }
 
         program.stackPush(originAddress);
@@ -681,7 +688,7 @@ public class VM {
         DataWord callerAddress = program.getCallerAddress();
 
         if (isLogEnabled) {
-            hint = "address: " + Hex.toHexString(callerAddress.getLast20Bytes());
+            hint = "address: " + ByteUtil.toHexString(callerAddress.getLast20Bytes());
         }
 
         program.stackPush(callerAddress);
@@ -730,7 +737,7 @@ public class VM {
 
     protected void doCALLDATACOPY() {
         if (computeGas) {
-            gasCost += computeDataCopyGas();
+            gasCost = GasCost.add(gasCost, computeDataCopyGas());
             spendOpCodeGas();
         }
         // EXECUTION PHASE
@@ -741,7 +748,7 @@ public class VM {
         byte[] msgData = program.getDataCopy(dataOffsetData, lengthData);
 
         if (isLogEnabled) {
-            hint = "data: " + Hex.toHexString(msgData);
+            hint = "data: " + ByteUtil.toHexString(msgData);
         }
 
         program.memorySave(memOffsetData.intValue(), msgData);
@@ -778,12 +785,47 @@ public class VM {
                 }
             }
         }
-
         if (isLogEnabled) {
             hint = "size: " + codeLength;
         }
-
         program.stackPush(codeLength);
+        program.step();
+    }
+
+    protected void doEXTCODEHASH() {
+        if (computeGas) {
+            gasCost = GasCost.EXT_CODE_HASH;
+            spendOpCodeGas();
+        }
+
+        //EXECUTION PHASE
+        DataWord address = program.stackPop();
+
+        ActivationConfig.ForBlock activations = program.getActivations();
+        PrecompiledContracts.PrecompiledContract precompiledContract = precompiledContracts.getContractForAddress(activations, address);
+        boolean isPrecompiledContract = precompiledContract != null;
+
+        if (isPrecompiledContract) {
+            byte[] emptyHash = Keccak256Helper.keccak256(EMPTY_BYTE_ARRAY);
+            program.stackPush(DataWord.valueOf(emptyHash));
+
+            if (isLogEnabled) {
+                hint = "hash: " + ByteUtil.toHexString(emptyHash);
+            }
+        } else {
+            Keccak256 codeHash = program.getCodeHashAt(address,activations.isActive(RSKIP169));
+            //If account does not exist, 0 is pushed in stack
+            if (codeHash.equals(Keccak256.ZERO_HASH)) {
+                program.stackPush(DataWord.ZERO);
+            } else {
+                DataWord word = DataWord.valueOf(codeHash.getBytes());
+                program.stackPush(word);
+            }
+
+            if (isLogEnabled) {
+                hint = "hash: " + codeHash.toHexString();
+            }
+        }
 
         program.step();
     }
@@ -800,13 +842,13 @@ public class VM {
                 copySize = Program.limitToMaxLong(size);
                 checkSizeArgument(copySize);
                 newMemSize = memNeeded(stack.get(stack.size() - 2), copySize);
-                gasCost += calcMemGas(oldMemSize, newMemSize, copySize);
+                gasCost = GasCost.add(gasCost, calcMemGas(oldMemSize, newMemSize, copySize));
             } else {
                 size = stack.get(stack.size() - 3);
                 copySize = Program.limitToMaxLong(size);
                 checkSizeArgument(copySize);
                 newMemSize = memNeeded(stack.peek(), copySize);
-                gasCost += calcMemGas(oldMemSize, newMemSize, copySize);
+                gasCost = GasCost.add(gasCost, calcMemGas(oldMemSize, newMemSize, copySize));
             }
             spendOpCodeGas();
         }
@@ -859,7 +901,7 @@ public class VM {
         }
 
         if (isLogEnabled) {
-            hint = "code: " + Hex.toHexString(codeCopy);
+            hint = "code: " + ByteUtil.toHexString(codeCopy);
         }
 
         // TODO: an optimization to avoid double-copying would be to override programSave
@@ -882,7 +924,7 @@ public class VM {
 
     protected void doRETURNDATACOPY() {
         if (computeGas) {
-            gasCost += computeDataCopyGas();
+            gasCost = GasCost.add(gasCost, computeDataCopyGas());
             spendOpCodeGas();
         }
 
@@ -899,7 +941,7 @@ public class VM {
                 });
 
         if (isLogEnabled) {
-            hint = "data: " + Hex.toHexString(msgData);
+            hint = "data: " + ByteUtil.toHexString(msgData);
         }
 
         program.memorySave(memOffsetData.intValueSafe(), msgData);
@@ -955,7 +997,7 @@ public class VM {
         DataWord coinbase = program.getCoinbase();
 
         if (isLogEnabled) {
-            hint = "coinbase: " + Hex.toHexString(coinbase.getLast20Bytes());
+            hint = "coinbase: " + ByteUtil.toHexString(coinbase.getLast20Bytes());
         }
 
         program.stackPush(coinbase);
@@ -1011,6 +1053,32 @@ public class VM {
         }
 
         program.stackPush(gaslimit);
+        program.step();
+    }
+
+    protected void doCHAINID() {
+        spendOpCodeGas();
+        // EXECUTION PHASE
+        DataWord chainId = DataWord.valueOf(vmConfig.getChainId());
+
+        if (isLogEnabled) {
+            hint = "chainId: " + chainId;
+        }
+
+        program.stackPush(chainId);
+        program.step();
+    }
+
+    protected void doSELFBALANCE(){
+        spendOpCodeGas();
+        // EXECUTION PHASE
+        DataWord balance = program.getBalance(program.getOwnerAddress());
+
+        if (isLogEnabled) {
+            hint = "selfBalance: " + balance;
+        }
+
+        program.stackPush(balance);
         program.step();
     }
 
@@ -1070,7 +1138,7 @@ public class VM {
 
     protected void doLOG(){
         if (program.isStaticCall() && program.getActivations().isActive(RSKIP91)) {
-            throw Program.ExceptionHelper.modificationException();
+            throw Program.ExceptionHelper.modificationException(program);
         }
 
         DataWord size;
@@ -1084,17 +1152,10 @@ public class VM {
             checkSizeArgument(sizeLong);
             newMemSize = memNeeded(stack.peek(), sizeLong);
 
-            long dataCost = Program.multiplyLimitToMaxLong(sizeLong, GasCost.LOG_DATA_GAS);
+            long dataCost = GasCost.multiply(sizeLong, GasCost.LOG_DATA_GAS);
 
-            if (dataCost > Program.MAX_GAS) {
-                throw Program.ExceptionHelper.notEnoughOpGas(op, dataCost, program.getRemainingGas());
-            }
-
-            gasCost = GasCost.LOG_GAS +
-                    GasCost.LOG_TOPIC_GAS * nTopics +
-                    dataCost;
-
-            gasCost += calcMemGas(oldMemSize, newMemSize, 0);
+            gasCost = GasCost.calculateTotal(GasCost.add(GasCost.LOG_GAS, dataCost), GasCost.LOG_TOPIC_GAS, nTopics);
+            gasCost = GasCost.add(gasCost, calcMemGas(oldMemSize, newMemSize, 0));
 
             spendOpCodeGas();
         }
@@ -1130,7 +1191,7 @@ public class VM {
 
         if (computeGas) {
             newMemSize = memNeeded(stack.peek(), 32);
-            gasCost += calcMemGas(oldMemSize, newMemSize, 0);
+            gasCost = GasCost.add(gasCost, calcMemGas(oldMemSize, newMemSize, 0));
             spendOpCodeGas();
         }
         // EXECUTION PHASE
@@ -1150,7 +1211,7 @@ public class VM {
 
         if (computeGas) {
             newMemSize = memNeeded(stack.peek(), 32);
-            gasCost += calcMemGas(oldMemSize, newMemSize, 0);
+            gasCost = GasCost.add(gasCost, calcMemGas(oldMemSize, newMemSize, 0));
             spendOpCodeGas();
         }
         // EXECUTION PHASE
@@ -1170,7 +1231,7 @@ public class VM {
 
         if (computeGas) {
             newMemSize = memNeeded(stack.peek(), 1);
-            gasCost += calcMemGas(oldMemSize, newMemSize, 0);
+            gasCost = GasCost.add(gasCost, calcMemGas(oldMemSize, newMemSize, 0));
 
             spendOpCodeGas();
         }
@@ -1208,7 +1269,7 @@ public class VM {
 
     protected void doSSTORE() {
         if (program.isStaticCall() && program.getActivations().isActive(RSKIP91)) {
-            throw Program.ExceptionHelper.modificationException();
+            throw Program.ExceptionHelper.modificationException(program);
         }
 
         if (computeGas) {
@@ -1240,7 +1301,7 @@ public class VM {
         DataWord value = program.stackPop();
 
         if (isLogEnabled) {
-            hint = "[" + program.getOwnerAddress().toPrefixString() + "] key: " + addr + " value: " + value;
+            hint = "[" + program.getOwnerAddress() + "] key: " + addr + " value: " + value;
         }
 
         program.storageSave(addr, value);
@@ -1330,7 +1391,7 @@ public class VM {
         DataWord data = program.sweepGetDataWord(nPush);
 
         if (isLogEnabled) {
-            hint = "" + Hex.toHexString(data.getData());
+            hint = "" + ByteUtil.toHexString(data.getData());
         }
 
         program.stackPush(data);
@@ -1345,7 +1406,7 @@ public class VM {
 
     protected void doCREATE(){
         if (program.isStaticCall() && program.getActivations().isActive(RSKIP91)) {
-            throw Program.ExceptionHelper.modificationException();
+            throw Program.ExceptionHelper.modificationException(program);
         }
 
         DataWord size;
@@ -1358,7 +1419,7 @@ public class VM {
             sizeLong = Program.limitToMaxLong(size);
             checkSizeArgument(sizeLong);
             newMemSize = memNeeded(stack.get(stack.size() - 2), sizeLong);
-            gasCost += calcMemGas(oldMemSize, newMemSize, 0);
+            gasCost = GasCost.add(gasCost, calcMemGas(oldMemSize, newMemSize, 0));
 
             spendOpCodeGas();
         }
@@ -1380,14 +1441,19 @@ public class VM {
 
     protected void doCREATE2(){
         if (program.isStaticCall()) {
-            throw Program.ExceptionHelper.modificationException();
+            throw Program.ExceptionHelper.modificationException(program);
         }
 
         if (computeGas){
-            Long codeSize = stack.get(stack.size() - 3).longValueSafe();
-            gasCost = GasCost.CREATE +
-                    calcMemGas(oldMemSize, memNeeded(stack.get(stack.size() - 2), codeSize), 0) +
-                    (codeSize+31)/32 * GasCost.SHA3_WORD;
+            long codeSize = stack.get(stack.size() - 3).longValueSafe();
+            gasCost = GasCost.calculateTotal(
+                    GasCost.add(
+                            GasCost.CREATE,
+                            calcMemGas(oldMemSize, memNeeded(stack.get(stack.size() - 2), codeSize), 0)
+                    ),
+                    GasCost.SHA3_WORD,
+                    GasCost.add(codeSize, 31) / 32
+            );
             spendOpCodeGas();
         }
 
@@ -1412,20 +1478,26 @@ public class VM {
         DataWord gas = program.stackPop();
         DataWord codeAddress = program.stackPop();
 
-        DataWord value;
-
         ActivationConfig.ForBlock activations = program.getActivations();
 
-        if (activations.isActive(RSKIP103)) {
-            // value is always zero in a DELEGATECALL or STATICCALL operation
-            value = op == OpCode.DELEGATECALL || op == OpCode.STATICCALL ? DataWord.ZERO : program.stackPop();
+        MessageCall msg = getMessageCall(gas, codeAddress, activations);
+
+        PrecompiledContracts.PrecompiledContract precompiledContract = precompiledContracts.getContractForAddress(activations, codeAddress);
+
+        if (precompiledContract != null) {
+            program.callToPrecompiledAddress(msg, precompiledContract);
         } else {
-            // value is always zero in a DELEGATECALL operation
-            value = op == OpCode.DELEGATECALL ? DataWord.ZERO : program.stackPop();
+            program.callToAddress(msg);
         }
 
+        program.step();
+    }
+
+    private MessageCall getMessageCall(DataWord gas, DataWord codeAddress, ActivationConfig.ForBlock activations) {
+        DataWord value = calculateCallValue(activations);
+
         if (program.isStaticCall() && op == CALL && !value.isZero()) {
-            throw Program.ExceptionHelper.modificationException();
+            throw Program.ExceptionHelper.modificationException(program);
         }
 
         DataWord inDataOffs = program.stackPop();
@@ -1441,35 +1513,29 @@ public class VM {
         // gasCost doesn't include the calleeGas at this point
         // because we want to throw gasOverflow instead of notEnoughSpendingGas
         long requiredGas = gasCost;
-        long remainingGas = program.getRemainingGas() - requiredGas;
-        if (remainingGas < 0) {
-            throw Program.ExceptionHelper.gasOverflow(BigInteger.valueOf(program.getRemainingGas()), BigInteger.valueOf(requiredGas));
+        if (requiredGas > program.getRemainingGas()) {
+            throw Program.ExceptionHelper.gasOverflow(program, BigInteger.valueOf(program.getRemainingGas()), BigInteger.valueOf(requiredGas));
         }
+        long remainingGas = GasCost.subtract(program.getRemainingGas(), requiredGas);
+        long minimumTransferGas = calculateGetMinimumTransferGas(value, remainingGas);
 
-        // We give the callee a basic stipend whenever we transfer value,
-        // basically to avoid problems when invoking a contract's default function.
-        long minimumTransferGas = 0;
-        if (!value.isZero()) {
-            minimumTransferGas += GasCost.STIPEND_CALL;
-
-            if (remainingGas < minimumTransferGas) {
-                throw Program.ExceptionHelper.notEnoughSpendingGas(op.name(), minimumTransferGas, program);
-            }
-        }
+        long userSpecifiedGas = Program.limitToMaxLong(gas);
+        long specifiedGasPlusMin = activations.isActive(RSKIP150) ?
+                GasCost.add(userSpecifiedGas, minimumTransferGas) :
+                userSpecifiedGas + minimumTransferGas;
 
         // If specified gas is higher than available gas then move all remaining gas to callee.
         // This will have one possibly undesired behavior: if the specified gas is higher than the remaining gas,
         // the callee will receive less gas than the parent expected.
-        long userSpecifiedGas = Program.limitToMaxLong(gas);
-        long calleeGas = Math.min(remainingGas, userSpecifiedGas + minimumTransferGas);
+        long calleeGas = Math.min(remainingGas, specifiedGasPlusMin);
 
         if (computeGas) {
-            gasCost += calleeGas;
+            gasCost = GasCost.add(gasCost, calleeGas);
             spendOpCodeGas();
         }
 
         if (isLogEnabled) {
-            hint = "addr: " + Hex.toHexString(codeAddress.getLast20Bytes())
+            hint = "addr: " + ByteUtil.toHexString(codeAddress.getLast20Bytes())
                     + " gas: " + calleeGas
                     + " inOff: " + inDataOffs.shortHex()
                     + " inSize: " + inDataSize.shortHex();
@@ -1481,25 +1547,38 @@ public class VM {
 
         program.memoryExpand(outDataOffs, outDataSize);
 
-        MessageCall msg = new MessageCall(
+        return new MessageCall(
                 MsgType.fromOpcode(op),
                 DataWord.valueOf(calleeGas), codeAddress, value, inDataOffs, inDataSize,
                 outDataOffs, outDataSize);
-
-        callToAddress(codeAddress, msg);
-
-        program.step();
     }
 
-    private void callToAddress(DataWord codeAddress, MessageCall msg) {
-        ActivationConfig.ForBlock activations = program.getActivations();
-        PrecompiledContracts.PrecompiledContract contract = precompiledContracts.getContractForAddress(activations, codeAddress);
-
-        if (contract != null) {
-            program.callToPrecompiledAddress(msg, contract);
+    private DataWord calculateCallValue(ActivationConfig.ForBlock activations) {
+        DataWord value;
+        if (activations.isActive(RSKIP103)) {
+            // value is always zero in a DELEGATECALL or STATICCALL operation
+            value = op == OpCode.DELEGATECALL || op == OpCode.STATICCALL ? DataWord.ZERO : program.stackPop();
         } else {
-            program.callToAddress(msg);
+            // value is always zero in a DELEGATECALL operation
+            value = op == OpCode.DELEGATECALL ? DataWord.ZERO : program.stackPop();
         }
+        return value;
+    }
+
+    private long calculateGetMinimumTransferGas(DataWord value, long remainingGas) {
+        // We give the callee a basic stipend whenever we transfer value,
+        // basically to avoid problems when invoking a contract's default function.
+        long minimumTransferGas = 0;
+
+        if (!value.isZero()) {
+
+            minimumTransferGas = GasCost.add(minimumTransferGas, GasCost.STIPEND_CALL);
+            if (remainingGas < minimumTransferGas) {
+                throw Program.ExceptionHelper.notEnoughSpendingGas(program, op.name(), minimumTransferGas);
+            }
+        }
+
+        return minimumTransferGas;
     }
 
     private long computeCallGas(DataWord codeAddress,
@@ -1512,12 +1591,11 @@ public class VM {
 
         //check to see if account does not exist and is not a precompiled contract
         if (op == OpCode.CALL && !program.getStorage().isExist(new RskAddress(codeAddress))) {
-            callGas += GasCost.NEW_ACCT_CALL;
+            callGas = GasCost.add(callGas, GasCost.NEW_ACCT_CALL);
         }
-
         // RSKIP103: we don't need to check static call nor delegate call since value will always be zero
         if (!value.isZero()) {
-            callGas += GasCost.VT_CALL;
+            callGas = GasCost.add(callGas, GasCost.VT_CALL);
         }
 
         long inSizeLong = Program.limitToMaxLong(inDataSize);
@@ -1526,7 +1604,7 @@ public class VM {
         long in = memNeeded(inDataOffs, inSizeLong); // in offset+size
         long out = memNeeded(outDataOffs, outSizeLong); // out offset+size
         long newMemSize = Long.max(in, out);
-        callGas += calcMemGas(oldMemSize, newMemSize, 0);
+        callGas = GasCost.add(callGas, calcMemGas(oldMemSize, newMemSize, 0));
         return callGas;
     }
 
@@ -1547,8 +1625,7 @@ public class VM {
             sizeLong = Program.limitToMaxLong(size);
             checkSizeArgument(sizeLong);
             newMemSize = memNeeded(stack.peek(), sizeLong);
-            gasCost += calcMemGas(oldMemSize, newMemSize, 0);
-
+            gasCost = GasCost.add(gasCost, calcMemGas(oldMemSize, newMemSize, 0));
             spendOpCodeGas();
         }
         // EXECUTION PHASE
@@ -1559,7 +1636,7 @@ public class VM {
         program.setHReturn(hReturn);
 
         if (isLogEnabled) {
-            hint = "data: " + Hex.toHexString(hReturn)
+            hint = "data: " + ByteUtil.toHexString(hReturn)
                     + " offset: " + offset.value()
                     + " size: " + size.value();
         }
@@ -1570,14 +1647,14 @@ public class VM {
 
     protected void doSUICIDE(){
         if (program.isStaticCall() && program.getActivations().isActive(RSKIP91)) {
-            throw Program.ExceptionHelper.modificationException();
+            throw Program.ExceptionHelper.modificationException(program);
         }
 
         if (computeGas) {
             gasCost = GasCost.SUICIDE;
             DataWord suicideAddressWord = stack.get(stack.size() - 1);
             if (!program.getStorage().isExist(new RskAddress(suicideAddressWord))) {
-                gasCost += GasCost.NEW_ACCT_SUICIDE;
+                gasCost = GasCost.add(gasCost, GasCost.NEW_ACCT_SUICIDE);
             }
             spendOpCodeGas();
         }
@@ -1586,58 +1663,10 @@ public class VM {
         program.suicide(address);
 
         if (isLogEnabled) {
-            hint = "address: " + Hex.toHexString(program.getOwnerAddress().getLast20Bytes());
+            hint = "address: " + ByteUtil.toHexString(program.getOwnerAddress().getLast20Bytes());
         }
 
         program.stop();
-    }
-
-    protected void doCODEREPLACE() {
-
-        DataWord size;
-        long newCodeSizeLong;
-        long newMemSize ;
-        if (computeGas) {
-            gasCost = GasCost.CODEREPLACE;
-            size = stack.get(stack.size() - 2);
-            newCodeSizeLong = Program.limitToMaxLong(size);
-            checkSizeArgument(newCodeSizeLong); // max 30 bits
-            newMemSize = memNeeded(stack.peek(), newCodeSizeLong); // max 30 bits
-            gasCost += calcMemGas(oldMemSize, newMemSize, 0); // max 32 bits
-            long oldCodeSize = program.getCode().length;
-
-            // If the contract is been created (initialization code is been executed)
-            // then the meaning of codereplace is less clear. It's better to disallow it.
-            long storedLength = program.getCodeAt(program.getOwnerAddress()).length;
-            if (storedLength == 0) { // rise OOG, but a specific exception would be better
-                throw Program.ExceptionHelper.notEnoughOpGas(op, Long.MAX_VALUE, program.getRemainingGas());
-            }
-
-            // every byte replaced pays REPLACE_DATA
-            // every byte added pays CREATE_DATA
-            if (newCodeSizeLong <= oldCodeSize) {
-                gasCost += GasCost.REPLACE_DATA * newCodeSizeLong; // max 38 bits
-            } else {
-                gasCost += GasCost.REPLACE_DATA * oldCodeSize;
-                gasCost += GasCost.CREATE_DATA * (newCodeSizeLong-oldCodeSize);
-            }
-
-            spendOpCodeGas();
-        }
-        // EXECUTION PHASE
-        DataWord memOffsetData = program.stackPop();
-        DataWord lengthData = program.stackPop();
-        byte[] buffer = program.memoryChunk(memOffsetData.intValue(), lengthData.intValue());
-        int resultInt = program.replaceCode(buffer);
-
-        DataWord result = DataWord.valueOf(resultInt);
-
-        if (isLogEnabled) {
-            hint = result.toString();
-        }
-
-        program.stackPush(result);
-        program.step();
     }
 
     protected void executeOpcode() {
@@ -1698,19 +1727,19 @@ public class VM {
             break;
             case OpCodes.OP_SHL:
                 if (!activations.isActive(RSKIP120)) {
-                    throw Program.ExceptionHelper.invalidOpCode(program.getCurrentOp());
+                    throw Program.ExceptionHelper.invalidOpCode(program);
                 }
                 doSHL();
             break;
             case OpCodes.OP_SHR:
                 if (!activations.isActive(RSKIP120)) {
-                    throw Program.ExceptionHelper.invalidOpCode(program.getCurrentOp());
+                    throw Program.ExceptionHelper.invalidOpCode(program);
                 }
                 doSHR();
             break;
             case OpCodes.OP_SAR:
                 if (!activations.isActive(RSKIP120)) {
-                    throw Program.ExceptionHelper.invalidOpCode(program.getCurrentOp());
+                    throw Program.ExceptionHelper.invalidOpCode(program);
                 }
                 doSAR();
             break;
@@ -1745,6 +1774,14 @@ public class VM {
             case OpCodes.OP_CODECOPY:
             case OpCodes.OP_EXTCODECOPY: doCODECOPY();
             break;
+
+
+            case OpCodes.OP_EXTCODEHASH:
+                if (!activations.isActive(RSKIP140)) {
+                    throw Program.ExceptionHelper.invalidOpCode(program);
+                }
+                doEXTCODEHASH();
+            break;
             case OpCodes.OP_RETURNDATASIZE: doRETURNDATASIZE();
             break;
             case OpCodes.OP_RETURNDATACOPY: doRETURNDATACOPY();
@@ -1767,8 +1804,27 @@ public class VM {
             break;
             case OpCodes.OP_GASLIMIT: doGASLIMIT();
             break;
-            case OpCodes.OP_TXINDEX: doTXINDEX();
+            case OpCodes.OP_CHAINID:
+                if (!activations.isActive(RSKIP152)) {
+                    throw Program.ExceptionHelper.invalidOpCode(program);
+                }
+                doCHAINID();
             break;
+            case OpCodes.OP_SELFBALANCE:
+                if (!activations.isActive(RSKIP151)) {
+                    throw Program.ExceptionHelper.invalidOpCode(program);
+                }
+                doSELFBALANCE();
+            break;
+            case OpCodes.OP_TXINDEX:
+                if (activations.isActive(RSKIP191)) {
+                    throw Program.ExceptionHelper.invalidOpCode(program);
+                }
+
+                doTXINDEX();
+
+                break;
+
             case OpCodes.OP_POP: doPOP();
             break;
             case OpCodes.OP_DUP_1:
@@ -1805,8 +1861,15 @@ public class VM {
             case OpCodes.OP_SWAP_15:
             case OpCodes.OP_SWAP_16: doSWAP();
             break;
-            case OpCodes.OP_SWAPN: doSWAPN();
+            case OpCodes.OP_SWAPN:
+                if (activations.isActive(RSKIP191)) {
+                    throw Program.ExceptionHelper.invalidOpCode(program);
+                }
+
+                doSWAPN();
+
                 break;
+
             case OpCodes.OP_LOG_0:
             case OpCodes.OP_LOG_1:
             case OpCodes.OP_LOG_2:
@@ -1873,7 +1936,7 @@ public class VM {
             break;
             case OpCodes.OP_CREATE2:
                 if (!activations.isActive(RSKIP125)) {
-                    throw Program.ExceptionHelper.invalidOpCode(program.getCurrentOp());
+                    throw Program.ExceptionHelper.invalidOpCode(program);
                 }
                 doCREATE2();
             break;
@@ -1884,7 +1947,7 @@ public class VM {
             break;
             case OpCodes.OP_STATICCALL:
                 if (!activations.isActive(RSKIP91)) {
-                    throw Program.ExceptionHelper.invalidOpCode(program.getCurrentOp());
+                    throw Program.ExceptionHelper.invalidOpCode(program);
                 }
                 doCALL();
             break;
@@ -1894,20 +1957,21 @@ public class VM {
             break;
             case OpCodes.OP_SUICIDE: doSUICIDE();
             break;
-            case OpCodes.OP_CODEREPLACE:
-                if (activations.isActive(RSKIP94)) {
-                    throw Program.ExceptionHelper.invalidOpCode(program.getCurrentOp());
+            case OpCodes.OP_DUPN:
+                if (activations.isActive(RSKIP191)) {
+                    throw Program.ExceptionHelper.invalidOpCode(program);
                 }
-                doCODEREPLACE();
-            break;
-            case OpCodes.OP_DUPN: doDUPN();
+
+                doDUPN();
+
                 break;
             case OpCodes.OP_HEADER:
                 //fallthrough to default case until implementation's ready
+
             default:
                 // It should never execute this line.
                 // We rise an exception to prevent DoS attacks that halt the node, in case of a bug.
-                throw Program.ExceptionHelper.invalidOpCode(program.getCurrentOp());
+                throw Program.ExceptionHelper.invalidOpCode(program);
         }
     }
 
@@ -1985,8 +2049,7 @@ public class VM {
                 program.stop();
                 throw e;
         } finally {
-            if (isLogEnabled) // this must be prevented because it's slow!
-            {
+            if (isLogEnabled) { // this must be prevented because it's slow!
                 program.fullTrace();
             }
         }
@@ -2053,16 +2116,16 @@ public class VM {
                         DataWord key = keysIterator.next();
                         DataWord value = storage.getStorageValue(ownerAddress, key);
                         dumpLogger.trace("{} {}",
-                                Hex.toHexString(key.getNoLeadZeroesData()),
-                                Hex.toHexString(value.getNoLeadZeroesData()));
+                                ByteUtil.toHexString(key.getNoLeadZeroesData()),
+                                ByteUtil.toHexString(value.getNoLeadZeroesData()));
                     }
                     break;
                 default:
                     break;
             }
-            String addressString = Hex.toHexString(program.getOwnerAddress().getLast20Bytes());
-            String pcString = Hex.toHexString(DataWord.valueOf(program.getPC()).getNoLeadZeroesData());
-            String opString = Hex.toHexString(new byte[]{op.val()});
+            String addressString = ByteUtil.toHexString(program.getOwnerAddress().getLast20Bytes());
+            String pcString = ByteUtil.toHexString(DataWord.valueOf(program.getPC()).getNoLeadZeroesData());
+            String opString = ByteUtil.toHexString(new byte[]{op.val()});
             String gasString = Long.toHexString(program.getRemainingGas());
 
             dumpLogger.trace("{} {} {} {}", addressString, pcString, opString, gasString);
@@ -2087,7 +2150,7 @@ public class VM {
             }
 
             int level = program.getCallDeep();
-            String contract = Hex.toHexString(program.getOwnerAddress().getLast20Bytes());
+            String contract = ByteUtil.toHexString(program.getOwnerAddress().getLast20Bytes());
             String internalSteps = String.format("%4s", Integer.toHexString(program.getPC())).replace(' ', '0').toUpperCase();
             dumpLogger.trace("{} | {} | #{} | {} : {} | {} | -{} | {}x32",
                     level, contract, vmCounter, internalSteps, op,

@@ -18,10 +18,21 @@
 
 package co.rsk.validators;
 
+import co.rsk.bitcoinj.core.BtcBlock;
+import co.rsk.bitcoinj.core.NetworkParameters;
+import co.rsk.bitcoinj.params.RegTestParams;
+import co.rsk.util.TimeProvider;
+import org.ethereum.config.Constants;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import java.util.Objects;
 
 /**
  * Created by mario on 23/01/17.
@@ -30,10 +41,27 @@ public class BlockTimeStampValidationRule implements BlockParentDependantValidat
 
     private static final Logger logger = LoggerFactory.getLogger("blockvalidator");
 
-    private int validPeriodLength;
+    private static final long MAX_TIMESTAMPS_DIFF_IN_SECS = Constants.getMaxTimestampsDiffInSecs();
 
-    public BlockTimeStampValidationRule(int validPeriodLength) {
+    private final int validPeriodLength;
+    private final ActivationConfig activationConfig;
+    private final TimeProvider timeProvider;
+    private final NetworkParameters bitcoinNetworkParameters;
+
+    public BlockTimeStampValidationRule(int validPeriodLength, ActivationConfig activationConfig,
+                                        TimeProvider timeProvider, NetworkParameters bitcoinNetworkParameters) {
         this.validPeriodLength = validPeriodLength;
+        this.activationConfig = Objects.requireNonNull(activationConfig);
+        this.timeProvider = Objects.requireNonNull(timeProvider);
+        this.bitcoinNetworkParameters = Objects.requireNonNull(bitcoinNetworkParameters);
+    }
+
+    public BlockTimeStampValidationRule(int validPeriodLength, ActivationConfig activationConfig, TimeProvider timeProvider) {
+        this(validPeriodLength, activationConfig, timeProvider, RegTestParams.get());
+    }
+
+    public BlockTimeStampValidationRule(int validPeriodLength, ActivationConfig activationConfig) {
+        this(validPeriodLength, activationConfig, System::currentTimeMillis, RegTestParams.get());
     }
 
     @Override
@@ -47,16 +75,16 @@ public class BlockTimeStampValidationRule implements BlockParentDependantValidat
             return true;
         }
 
-        final long currentTime = System.currentTimeMillis() / 1000L;
+        final long currentTime = timeProvider.currentTimeMillis() / 1000L;
         final long blockTime = header.getTimestamp();
 
         boolean result = blockTime - currentTime <= this.validPeriodLength;
 
-        if(!result) {
+        if (!result) {
             logger.warn("Error validating block. Invalid timestamp {}.", blockTime);
         }
 
-        return result;
+        return result && isBitcoinTimestampValid(header);
     }
 
     @Override
@@ -81,5 +109,44 @@ public class BlockTimeStampValidationRule implements BlockParentDependantValidat
     @Override
     public boolean isValid(Block block, Block parent) {
         return isValid(block.getHeader(), parent);
+    }
+
+    private boolean isBitcoinTimestampValid(BlockHeader header) {
+        if (!activationConfig.isActive(ConsensusRule.RSKIP179, header.getNumber())) {
+            return true;
+        }
+
+        byte[] bitcoinMergedMiningHeader = header.getBitcoinMergedMiningHeader();
+        if (bitcoinMergedMiningHeader == null) {
+            return false;
+        }
+
+        BtcBlock btcBlock = makeBlock(bitcoinMergedMiningHeader);
+        if (btcBlock == null) {
+            return false;
+        }
+
+        long bitcoinTimestampInSecs = btcBlock.getTimeSeconds();
+
+        long rskTimestampInSecs = header.getTimestamp();
+
+        boolean valid = Math.abs(bitcoinTimestampInSecs - rskTimestampInSecs) < MAX_TIMESTAMPS_DIFF_IN_SECS;
+
+        if (!valid) {
+            logger.warn("Error validating block. RSK block timestamp {} and BTC block timestamp {} differ by more than {} secs.",
+                    rskTimestampInSecs, bitcoinTimestampInSecs, MAX_TIMESTAMPS_DIFF_IN_SECS);
+        }
+
+        return valid;
+    }
+
+    @Nullable
+    private BtcBlock makeBlock(@Nonnull byte[] bitcoinMergedMiningHeader) {
+        try {
+            return bitcoinNetworkParameters.getDefaultSerializer().makeBlock(bitcoinMergedMiningHeader);
+        } catch (RuntimeException e) {
+            logger.error("Cannot make a BTC block from `{}`", bitcoinMergedMiningHeader, e);
+            return null;
+        }
     }
 }

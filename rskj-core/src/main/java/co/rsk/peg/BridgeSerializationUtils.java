@@ -19,14 +19,18 @@
 package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.*;
+import co.rsk.bitcoinj.script.Script;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
+import co.rsk.peg.bitcoin.CoinbaseInformation;
+import co.rsk.peg.fastbridge.FastBridgeFederationInformation;
 import co.rsk.peg.whitelist.OneOffWhiteListEntry;
 import co.rsk.peg.whitelist.UnlimitedWhiteListEntry;
 import org.apache.commons.lang3.tuple.Pair;
 import org.bouncycastle.util.BigIntegers;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.util.RLP;
+import org.ethereum.util.RLPElement;
 import org.ethereum.util.RLPList;
 
 import javax.annotation.Nullable;
@@ -44,7 +48,6 @@ import java.util.stream.Collectors;
  * Created by mario on 20/04/17.
  */
 public class BridgeSerializationUtils {
-
     private static final int FEDERATION_RLP_LIST_SIZE = 3;
     private static final int FEDERATION_CREATION_TIME_INDEX = 0;
     private static final int FEDERATION_CREATION_BLOCK_NUMBER_INDEX = 1;
@@ -201,7 +204,7 @@ public class BridgeSerializationUtils {
 
         for (int k = 0; k < numEntries; k++) {
             Sha256Hash hash = Sha256Hash.wrap(rlpList.get(k * 2).getRLPData());
-            Long number = BigIntegers.fromUnsignedByteArray(rlpList.get(k * 2 + 1).getRLPData()).longValue();
+            long number = BigIntegers.fromUnsignedByteArray(rlpList.get(k * 2 + 1).getRLPData()).longValue();
             map.put(hash, number);
         }
 
@@ -256,9 +259,15 @@ public class BridgeSerializationUtils {
         byte[] creationBlockNumberBytes = rlpList.get(FEDERATION_CREATION_BLOCK_NUMBER_INDEX).getRLPData();
         long creationBlockNumber = BigIntegers.fromUnsignedByteArray(creationBlockNumberBytes).longValue();
 
-        List<FederationMember> federationMembers = ((RLPList) rlpList.get(FEDERATION_MEMBERS_INDEX)).stream()
-                .map(memberBytes -> federationMemberDesserializer.deserialize(memberBytes.getRLPData()))
-                .collect(Collectors.toList());
+        RLPList rlpMembers = (RLPList) rlpList.get(FEDERATION_MEMBERS_INDEX);
+
+        List<FederationMember> federationMembers = new ArrayList();
+
+        for (int k = 0; k < rlpMembers.size(); k++) {
+            RLPElement element = rlpMembers.get(k);
+            FederationMember member = federationMemberDesserializer.deserialize(element.getRLPData());
+            federationMembers.add(member);
+        }
 
         return new Federation(federationMembers, creationTime, creationBlockNumber, networkParameters);
     }
@@ -365,9 +374,13 @@ public class BridgeSerializationUtils {
     public static PendingFederation deserializePendingFederation(byte[] data) {
         RLPList rlpList = (RLPList)RLP.decode2(data).get(0);
 
-        List<FederationMember> members = rlpList.stream()
-                .map(memberBytes -> deserializeFederationMember(memberBytes.getRLPData()))
-                .collect(Collectors.toList());
+        List<FederationMember> members = new ArrayList<>();
+
+        for (int k = 0; k < rlpList.size(); k++) {
+            RLPElement element = rlpList.get(k);
+            FederationMember member = deserializeFederationMember(element.getRLPData());
+            members.add(member);
+        }
 
         return new PendingFederation(members);
     }
@@ -516,7 +529,7 @@ public class BridgeSerializationUtils {
     // Order of entries in serialized output is order of the request queue entries
     // so that we enforce a FIFO policy on release requests.
     public static byte[] serializeReleaseRequestQueue(ReleaseRequestQueue queue) {
-        List<ReleaseRequestQueue.Entry> entries = queue.getEntries();
+        List<ReleaseRequestQueue.Entry> entries = queue.getEntriesWithoutHash();
 
         byte[][] bytes = new byte[entries.size() * 2][];
         int n = 0;
@@ -529,32 +542,72 @@ public class BridgeSerializationUtils {
         return RLP.encodeList(bytes);
     }
 
-    // For the serialization format, see BridgeSerializationUtils::serializeReleaseRequestQueue
-    public static ReleaseRequestQueue deserializeReleaseRequestQueue(byte[] data, NetworkParameters networkParameters) {
-        List<ReleaseRequestQueue.Entry> entries = new ArrayList<>();
+    public static byte[] serializeReleaseRequestQueueWithTxHash(ReleaseRequestQueue queue) {
+        List<ReleaseRequestQueue.Entry> entries = queue.getEntriesWithHash();
 
-        if (data == null || data.length == 0) {
-            return new ReleaseRequestQueue(entries);
+        byte[][] bytes = new byte[entries.size() * 3][];
+        int n = 0;
+
+        for (ReleaseRequestQueue.Entry entry : entries) {
+            bytes[n++] = RLP.encodeElement(entry.getDestination().getHash160());
+            bytes[n++] = RLP.encodeBigInteger(BigInteger.valueOf(entry.getAmount().getValue()));
+            bytes[n++] = RLP.encodeElement(entry.getRskTxHash().getBytes());
         }
 
+        return RLP.encodeList(bytes);
+    }
+
+    public static List<ReleaseRequestQueue.Entry> deserializeReleaseRequestQueue(byte[] data, NetworkParameters networkParameters) {
+        return deserializeReleaseRequestQueue(data, networkParameters, false);
+    }
+
+    public static List<ReleaseRequestQueue.Entry> deserializeReleaseRequestQueue(byte[] data, NetworkParameters networkParameters, boolean hasTxHash) {
+        if (data == null || data.length == 0) {
+            return new ArrayList<>();
+        }
+
+        int elementsMultipleCount = hasTxHash ? 3 : 2;
         RLPList rlpList = (RLPList)RLP.decode2(data).get(0);
 
         // Must have an even number of items
-        if (rlpList.size() % 2 != 0) {
-            throw new RuntimeException(String.format("Invalid serialized ReleaseRequestQueue. Expected an even number of elements, but got %d", rlpList.size()));
+        if (rlpList.size() % elementsMultipleCount != 0) {
+            throw new RuntimeException(String.format("Invalid serialized ReleaseRequestQueue. Expected a multiple of %d number of elements, but got %d", elementsMultipleCount, rlpList.size()));
         }
 
-        int n = rlpList.size() / 2;
+        return hasTxHash ? deserializeReleaseRequestQueueWithTxHash(rlpList, networkParameters) : deserializeReleaseRequestQueueWithoutTxHash(rlpList, networkParameters);
+    }
 
+    // For the serialization format, see BridgeSerializationUtils::serializeReleaseRequestQueue
+    private static List<ReleaseRequestQueue.Entry> deserializeReleaseRequestQueueWithoutTxHash(RLPList rlpList, NetworkParameters networkParameters) {
+        List<ReleaseRequestQueue.Entry> entries = new ArrayList<>();
+
+        int n = rlpList.size() / 2;
         for (int k = 0; k < n; k++) {
             byte[] addressBytes = rlpList.get(k * 2).getRLPData();
             Address address = new Address(networkParameters, addressBytes);
-            Long amount = BigIntegers.fromUnsignedByteArray(rlpList.get(k * 2 + 1).getRLPData()).longValue();
+            long amount = BigIntegers.fromUnsignedByteArray(rlpList.get(k * 2 + 1).getRLPData()).longValue();
 
-            entries.add(new ReleaseRequestQueue.Entry(address, Coin.valueOf(amount)));
+            entries.add(new ReleaseRequestQueue.Entry(address, Coin.valueOf(amount), null));
         }
 
-        return new ReleaseRequestQueue(entries);
+        return entries;
+    }
+
+    // For the serialization format, see BridgeSerializationUtils::serializeReleaseRequestQueue
+    private static List<ReleaseRequestQueue.Entry> deserializeReleaseRequestQueueWithTxHash(RLPList rlpList, NetworkParameters networkParameters) {
+        List<ReleaseRequestQueue.Entry> entries = new ArrayList<>();
+
+        int n = rlpList.size() / 3;
+        for (int k = 0; k < n; k++) {
+            byte[] addressBytes = rlpList.get(k * 3).getRLPData();
+            Address address = new Address(networkParameters, addressBytes);
+            long amount = BigIntegers.fromUnsignedByteArray(rlpList.get(k * 3 + 1).getRLPData()).longValue();
+            Keccak256 txHash = new Keccak256(rlpList.get(k * 3 + 2).getRLPData());
+
+            entries.add(new ReleaseRequestQueue.Entry(address, Coin.valueOf(amount), txHash));
+        }
+
+        return entries;
     }
 
     // A ReleaseTransactionSet is serialized as follows:
@@ -566,7 +619,7 @@ public class BridgeSerializationUtils {
     // serialized btc transaction bytes
     // (see ReleaseTransactionSet.Entry.BTC_TX_COMPARATOR)
     public static byte[] serializeReleaseTransactionSet(ReleaseTransactionSet set) {
-        List<ReleaseTransactionSet.Entry> entries = set.getEntries().stream().collect(Collectors.toList());
+        List<ReleaseTransactionSet.Entry> entries = set.getEntriesWithoutHash().stream().collect(Collectors.toList());
         entries.sort(ReleaseTransactionSet.Entry.BTC_TX_COMPARATOR);
 
         byte[][] bytes = new byte[entries.size() * 2][];
@@ -580,30 +633,71 @@ public class BridgeSerializationUtils {
         return RLP.encodeList(bytes);
     }
 
-    // For the serialization format, see BridgeSerializationUtils::serializeReleaseTransactionSet
-    public static ReleaseTransactionSet deserializeReleaseTransactionSet(byte[] data, NetworkParameters networkParameters) {
-        Set<ReleaseTransactionSet.Entry> entries = new HashSet<>();
+    public static byte[] serializeReleaseTransactionSetWithTxHash(ReleaseTransactionSet set) {
+        List<ReleaseTransactionSet.Entry> entries = new ArrayList<>(set.getEntriesWithHash());
+        entries.sort(ReleaseTransactionSet.Entry.BTC_TX_COMPARATOR);
 
-        if (data == null || data.length == 0) {
-            return new ReleaseTransactionSet(entries);
+        byte[][] bytes = new byte[entries.size() * 3][];
+        int n = 0;
+
+        for (ReleaseTransactionSet.Entry entry : entries) {
+            bytes[n++] = RLP.encodeElement(entry.getTransaction().bitcoinSerialize());
+            bytes[n++] = RLP.encodeBigInteger(BigInteger.valueOf(entry.getRskBlockNumber()));
+            bytes[n++] = RLP.encodeElement(entry.getRskTxHash().getBytes());
         }
 
+        return RLP.encodeList(bytes);
+    }
+
+    public static ReleaseTransactionSet deserializeReleaseTransactionSet(byte[] data, NetworkParameters networkParameters) {
+        return deserializeReleaseTransactionSet(data, networkParameters, false);
+    }
+
+    public static ReleaseTransactionSet deserializeReleaseTransactionSet(byte[] data, NetworkParameters networkParameters, boolean hasTxHash) {
+        if (data == null || data.length == 0) {
+            return new ReleaseTransactionSet(new HashSet<>());
+        }
+
+        int elementsMultipleCount = hasTxHash ? 3 : 2;
         RLPList rlpList = (RLPList)RLP.decode2(data).get(0);
 
         // Must have an even number of items
-        if (rlpList.size() % 2 != 0) {
-            throw new RuntimeException(String.format("Invalid serialized ReleaseTransactionSet. Expected an even number of elements, but got %d", rlpList.size()));
+        if (rlpList.size() % elementsMultipleCount != 0) {
+            throw new RuntimeException(String.format("Invalid serialized ReleaseTransactionSet. Expected a multiple of %d number of elements, but got %d", elementsMultipleCount, rlpList.size()));
         }
 
-        int n = rlpList.size() / 2;
+        return hasTxHash ? deserializeReleaseTransactionSetWithTxHash(rlpList, networkParameters) : deserializeReleaseTransactionSetWithoutTxHash(rlpList, networkParameters);
+    }
 
+    // For the serialization format, see BridgeSerializationUtils::serializeReleaseTransactionSet
+    private static ReleaseTransactionSet deserializeReleaseTransactionSetWithoutTxHash(RLPList rlpList, NetworkParameters networkParameters) {
+        Set<ReleaseTransactionSet.Entry> entries = new HashSet<>();
+
+        int n = rlpList.size() / 2;
         for (int k = 0; k < n; k++) {
             byte[] txPayload = rlpList.get(k * 2).getRLPData();
             BtcTransaction tx =  new BtcTransaction(networkParameters, txPayload);
 
-            Long height = BigIntegers.fromUnsignedByteArray(rlpList.get(k * 2 + 1).getRLPData()).longValue();
+            long height = BigIntegers.fromUnsignedByteArray(rlpList.get(k * 2 + 1).getRLPData()).longValue();
 
             entries.add(new ReleaseTransactionSet.Entry(tx, height));
+        }
+
+        return new ReleaseTransactionSet(entries);
+    }
+
+    private static ReleaseTransactionSet deserializeReleaseTransactionSetWithTxHash(RLPList rlpList, NetworkParameters networkParameters) {
+        Set<ReleaseTransactionSet.Entry> entries = new HashSet<>();
+
+        int n = rlpList.size() / 3;
+        for (int k = 0; k < n; k++) {
+            byte[] txPayload = rlpList.get(k * 3).getRLPData();
+            BtcTransaction tx =  new BtcTransaction(networkParameters, txPayload);
+
+            long height = BigIntegers.fromUnsignedByteArray(rlpList.get(k * 3 + 1).getRLPData()).longValue();
+            Keccak256 rskTxHash = new Keccak256(rlpList.get(k * 3 + 2).getRLPData());
+
+            entries.add(new ReleaseTransactionSet.Entry(tx, height, rskTxHash));
         }
 
         return new ReleaseTransactionSet(entries);
@@ -615,6 +709,96 @@ public class BridgeSerializationUtils {
 
     public static Integer deserializeInteger(byte[] data) {
         return RLP.decodeBigInteger(data, 0).intValue();
+    }
+
+    public static byte[] serializeLong(long value) { return RLP.encodeBigInteger(BigInteger.valueOf(value)); }
+
+    public static Optional<Long> deserializeOptionalLong(byte[] data) {
+        if (data == null) {
+            return Optional.empty();
+        }
+        return Optional.of(RLP.decodeBigInteger(data, 0).longValue());
+    }
+
+    public static CoinbaseInformation deserializeCoinbaseInformation(byte[] data) {
+        if (data == null) {
+            return null;
+        }
+        RLPList rlpList = (RLPList)RLP.decode2(data).get(0);
+
+        if (rlpList.size() != 1) {
+            throw new RuntimeException(String.format("Invalid serialized coinbase information, expected 1 value but got %d", rlpList.size()));
+        }
+
+        Sha256Hash witnessMerkleRoot = Sha256Hash.wrap(rlpList.get(0).getRLPData());
+
+        return new CoinbaseInformation(witnessMerkleRoot);
+    }
+
+    public static byte[] serializeCoinbaseInformation(CoinbaseInformation coinbaseInformation) {
+        if (coinbaseInformation == null) {
+            return null;
+        }
+        byte[][] rlpElements = new byte[1][];
+        rlpElements[0] = RLP.encodeElement(coinbaseInformation.getWitnessMerkleRoot().getBytes());
+        return RLP.encodeList(rlpElements);
+    }
+
+    public static byte[] serializeSha256Hash(Sha256Hash hash) {
+        return RLP.encodeElement(hash.getBytes());
+    }
+
+    public static Sha256Hash deserializeSha256Hash(byte[] data) {
+        RLPElement element = RLP.decodeFirstElement(data, 0);
+        if (element == null) {
+            return null;
+        }
+        return Sha256Hash.wrap(element.getRLPData());
+    }
+
+    public static byte[] serializeScript(Script script) {
+        return RLP.encodeList(RLP.encodeElement(script.getProgram()));
+    }
+
+    @Nullable
+    public static Script deserializeScript(byte[] data) {
+        if (data == null) {
+            return null;
+        }
+
+        RLPList rlpList = (RLPList) RLP.decode2(data).get(0);
+        if (rlpList.size() != 1) {
+            throw new RuntimeException(String.format("Invalid serialized script. Expected 1 element, but got %d", rlpList.size()));
+        }
+
+        return new Script(rlpList.get(0).getRLPRawData());
+    }
+
+    public static FastBridgeFederationInformation deserializeFastBridgeInformation(byte[] data, byte[] fastBridgeScriptHash) {
+        if ((data == null) || (data.length == 0)) {
+            return null;
+        }
+
+        RLPList rlpList = (RLPList)RLP.decode2(data).get(0);
+
+        if (rlpList.size() != 2) {
+            throw new RuntimeException(String.format("Invalid serialized Fast Bridge Federation: expected 2 value but got %d", rlpList.size()));
+        }
+        Keccak256 derivationHash = new Keccak256(rlpList.get(0).getRLPData());
+        byte[] federationP2SH = rlpList.get(1).getRLPData();
+
+        return new FastBridgeFederationInformation(derivationHash, federationP2SH, fastBridgeScriptHash);
+    }
+
+    public static byte[] serializeFastBridgeInformation(FastBridgeFederationInformation fastBridgeFederationP2SH) {
+        if (fastBridgeFederationP2SH == null) {
+            return new byte[]{};
+        }
+        byte[][] rlpElements = new byte[2][];
+        rlpElements[0] = RLP.encodeElement(fastBridgeFederationP2SH.getDerivationHash().getBytes());
+        rlpElements[1] = RLP.encodeElement(fastBridgeFederationP2SH.getFederationScriptHash());
+
+        return RLP.encodeList(rlpElements);
     }
 
     // An ABI call spec is serialized as:
@@ -639,7 +823,12 @@ public class BridgeSerializationUtils {
         }
 
         String function = new String(rlpList.get(0).getRLPData(), StandardCharsets.UTF_8);
-        byte[][] arguments = ((RLPList)rlpList.get(1)).stream().map(rlpElement -> rlpElement.getRLPData()).toArray(byte[][]::new);
+        RLPList rlpArguments = (RLPList)rlpList.get(1);
+        byte[][] arguments = new byte[rlpArguments.size()][];
+
+        for (int k = 0; k < rlpArguments.size(); k++) {
+            arguments[k] = rlpArguments.get(k).getRLPData();
+        }
 
         return new ABICallSpec(function, arguments);
     }
@@ -660,9 +849,15 @@ public class BridgeSerializationUtils {
     private static List<BtcECKey> deserializeBtcPublicKeys(byte[] data) {
         RLPList rlpList = (RLPList)RLP.decode2(data).get(0);
 
-        return rlpList.stream()
-                .map(pubKeyBytes -> BtcECKey.fromPublicOnly(pubKeyBytes.getRLPData()))
-                .collect(Collectors.toList());
+        List<BtcECKey> keys = new ArrayList<>();
+
+        for (int k = 0; k < rlpList.size(); k++) {
+            RLPElement element = rlpList.get(k);
+            BtcECKey key = BtcECKey.fromPublicOnly(element.getRLPData());
+            keys.add(key);
+        }
+
+        return keys;
     }
 
     // A list of voters is serialized as
@@ -680,8 +875,14 @@ public class BridgeSerializationUtils {
     private static List<RskAddress> deserializeVoters(byte[] data) {
         RLPList rlpList = (RLPList)RLP.decode2(data).get(0);
 
-        return rlpList.stream()
-                .map(pubKeyBytes -> new RskAddress(pubKeyBytes.getRLPData()))
-                .collect(Collectors.toList());
+        List<RskAddress> addresses = new ArrayList<>();
+
+        for (int k = 0; k < rlpList.size(); k++) {
+            RLPElement element = rlpList.get(k);
+            RskAddress address = new RskAddress(element.getRLPData());
+            addresses.add(address);
+        }
+
+        return addresses;
     }
 }

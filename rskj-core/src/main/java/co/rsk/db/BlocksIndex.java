@@ -32,12 +32,25 @@ import java.util.List;
  */
 //TODO(im): Better public methods, this storage should enforce its own invariants.
 public interface BlocksIndex {
+
+    /**
+     * @return True iif the index is empty.
+     */
+    boolean isEmpty();
+
     /**
      * Retrieves the max block number stored in the index. It might not belong to the main chain.
-     *
-     * @return The max block number if it exists, -1 if not.
+     * @return The max block number if it exists.
+     * @throws IllegalStateException if the blockstore is empty.
      */
     long getMaxNumber();
+
+    /**
+     * Retrieves the min block number stored in the index. It should always belong to the main chain.
+     * @return The min block number.
+     * @throws IllegalStateException if the blockstore is empty.
+     */
+    long getMinNumber();
 
     /**
      * Checks if a block number was stored previously.
@@ -71,4 +84,6 @@ public interface BlocksIndex {
      * Commits the changes to the underlying permanent storage.
      */
     void flush();
+
+    void close();
 }

@@ -128,7 +128,7 @@ class RemascTestRunner {
 
         BlockFactory blockFactory = new BlockFactory(builder.getConfig().getActivationConfig());
         final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
-
+        BlockTxSignatureCache blockTxSignatureCache = new BlockTxSignatureCache(new ReceivedTxSignatureCache());
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
                 new RepositoryBtcBlockStoreWithCache.Factory(
                         builder.getConfig().getNetworkConstants().getBridgeConstants().getBtcParams()),
@@ -145,7 +145,8 @@ class RemascTestRunner {
                         null,
                         blockFactory,
                         programInvokeFactory,
-                        precompiledContracts
+                        precompiledContracts,
+                        blockTxSignatureCache
                 )
         );
 
@@ -227,16 +228,16 @@ class RemascTestRunner {
                                     List<BlockHeader> uncles, long gasLimit, long gasPrice, long txNonce, long txValue,
                                     ECKey txSigningKey, Long difficulty) {
         if (gasLimit == 0) throw new IllegalArgumentException();
-        Transaction tx = new Transaction(
-                BigInteger.valueOf(txNonce).toByteArray(),
-                BigInteger.valueOf(gasPrice).toByteArray(),
-                BigInteger.valueOf(gasLimit).toByteArray(),
-                new ECKey().getAddress() ,
-                BigInteger.valueOf(txValue).toByteArray(),
-                null,
-                //TODO(mc): inject network chain id
-                Constants.REGTEST_CHAIN_ID
-        );
+        //TODO(mc): inject network chain id
+        Transaction tx = Transaction
+                .builder()
+                .nonce(BigInteger.valueOf(txNonce))
+                .gasPrice(BigInteger.valueOf(gasPrice))
+                .gasLimit(BigInteger.valueOf(gasLimit))
+                .destination(new ECKey().getAddress())
+                .chainId(Constants.REGTEST_CHAIN_ID)
+                .value(BigInteger.valueOf(txValue))
+                .build();
 
         tx.sign(txSigningKey.getPrivKeyBytes());
         //createBlook 1
@@ -293,7 +294,7 @@ class RemascTestRunner {
                     HashUtil.EMPTY_TRIE_HASH, new Bloom().getData(), finalDifficulty, parentBlock.getNumber() + 1,
                     parentBlock.getGasLimit(), parentBlock.getGasUsed(), parentBlock.getTimestamp(), new byte[0],
                     paidFees, null, null, null, new byte[0],
-                    Coin.valueOf(10), uncles.size(), false, true, false
+                    Coin.valueOf(10), uncles.size(), false, true, false, new byte[0]
             );
             this.blockHash = blockHash;
         }

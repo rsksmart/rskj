@@ -25,9 +25,24 @@ import org.ethereum.core.Bloom;
  * Created by ajlopez on 29/01/2019.
  */
 public class BlocksBloom {
-    private final Bloom bloom = new Bloom();
-    private long fromBlock = -1;
-    private long toBlock = -1;
+    private final Bloom bloom;
+    private long fromBlock;
+    private long toBlock;
+    private boolean empty;
+
+    public BlocksBloom() {
+        this.bloom = new Bloom();
+        this.fromBlock = 0;
+        this.toBlock = 0;
+        this.empty = true;
+    }
+
+    public BlocksBloom(long fromBlock, long toBlock, Bloom bloom) {
+        this.bloom = bloom;
+        this.fromBlock = fromBlock;
+        this.toBlock = toBlock;
+        this.empty = false;
+    }
 
     public Bloom getBloom() { return this.bloom; }
 
@@ -36,20 +51,29 @@ public class BlocksBloom {
     public long toBlock() { return this.toBlock; }
 
     public long size() {
-        if (this.fromBlock == -1) {
+        if (this.empty) {
             return 0;
         }
 
         return this.toBlock - this.fromBlock + 1;
     }
 
+    public boolean hasBlockBloom(long blockNumber) {
+        if (this.empty) {
+            return false;
+        }
+
+        return this.fromBlock <= blockNumber && blockNumber <= this.toBlock;
+    }
+
     public void addBlockBloom(long blockNumber, Bloom blockBloom) {
-        if (fromBlock == -1) {
-            fromBlock = blockNumber;
-            toBlock = blockNumber;
+        if (this.empty) {
+            this.fromBlock = blockNumber;
+            this.toBlock = blockNumber;
+            this.empty = false;
         }
         else if (blockNumber == toBlock + 1) {
-            toBlock = blockNumber;
+            this.toBlock = blockNumber;
         }
         else {
             throw new UnsupportedOperationException("Block out of sequence");

@@ -20,6 +20,7 @@ package co.rsk.db;
 
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.AccountInformationProvider;
+import co.rsk.crypto.Keccak256;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Repository;
 
@@ -45,6 +46,25 @@ public interface RepositorySnapshot extends AccountInformationProvider {
      * in some cases.
      */
     int getCodeLength(RskAddress addr);
+
+    /**
+     * This method can retrieve the hash code without actually retrieving the code
+     * in some cases.
+     * This is the PRE RSKIP169 implementation, which has a bug we need to preserve
+     * before the implementation
+     * @param addr of the account
+     * @return hash of the contract code
+     */
+    Keccak256 getCodeHashNonStandard(RskAddress addr);
+
+    /**
+     * This method can retrieve the hash code without actually retrieving the code
+     * in some cases.
+     * This is the POST RSKIP169 implementation which fixes the bug
+     * @param addr of the account
+     * @return hash of the contract code
+     */
+    Keccak256 getCodeHashStandard(RskAddress addr);
 
     /**
      * @param addr - account to check

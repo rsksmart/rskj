@@ -27,7 +27,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.ethereum.util.ByteUtil.toHexString;
+import static org.ethereum.util.ByteUtil.toHexStringOrEmpty;
 
 public class OpActions {
 
@@ -135,7 +135,7 @@ public class OpActions {
     public Action addMemoryWrite(int address, byte[] data, int size) {
         return addAction(memory, Action.Name.WRITE)
                 .addParam("address", address)
-                .addParam("data", toHexString(data).substring(0, size));
+                .addParam("data", toHexStringOrEmpty(data).substring(0, size));
     }
 
     public Action addStoragePut(DataWord key, DataWord value) {

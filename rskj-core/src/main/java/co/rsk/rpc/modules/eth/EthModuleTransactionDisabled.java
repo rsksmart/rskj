@@ -18,24 +18,26 @@
 
 package co.rsk.rpc.modules.eth;
 
+import co.rsk.net.TransactionGateway;
 import org.ethereum.config.Constants;
 import org.ethereum.core.TransactionPool;
 import org.ethereum.rpc.Web3;
-import org.ethereum.rpc.exception.JsonRpcInvalidParamException;
+
+import static org.ethereum.rpc.exception.RskJsonRpcRequestException.invalidParamError;
 
 /**
  * This module disables sendTransaction because it needs a local wallet, but sendRawTransaction should still work.
  */
 public class EthModuleTransactionDisabled extends EthModuleTransactionBase {
 
-    public EthModuleTransactionDisabled(Constants constants, TransactionPool transactionPool) {
+    public EthModuleTransactionDisabled(Constants constants, TransactionPool transactionPool, TransactionGateway transactionGateway) {
         // wallet is only used from EthModuleTransactionBase::sendTransaction, which is overrode
-        super(constants, null, transactionPool);
+        super(constants, null, transactionPool, transactionGateway);
     }
 
     @Override
     public String sendTransaction(Web3.CallArguments args) {
         LOGGER.debug("eth_sendTransaction({}): {}", args, null);
-        throw new JsonRpcInvalidParamException("Local wallet is disabled in this node");
+        throw invalidParamError("Local wallet is disabled in this node");
     }
 }

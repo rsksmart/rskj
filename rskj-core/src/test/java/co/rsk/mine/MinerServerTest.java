@@ -110,9 +110,11 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
 
         Repository repository = repositoryLocator.startTrackingAt(blockStore.getBestBlock().getHeader());
         Repository track = mock(Repository.class);
+        BlockTxSignatureCache blockTxSignatureCache = mock(BlockTxSignatureCache.class);
         Mockito.doReturn(repository.getRoot()).when(track).getRoot();
         Mockito.doReturn(repository.getTrie()).when(track).getTrie();
         when(track.getNonce(tx1.getSender())).thenReturn(BigInteger.ZERO);
+        when(track.getNonce(tx1.getSender(blockTxSignatureCache))).thenReturn(BigInteger.ZERO);
         when(track.getNonce(RemascTransaction.REMASC_ADDRESS)).thenReturn(BigInteger.ZERO);
         when(track.getBalance(tx1.getSender())).thenReturn(Coin.valueOf(4200000L));
         when(track.getBalance(RemascTransaction.REMASC_ADDRESS)).thenReturn(Coin.valueOf(4200000L));
@@ -803,7 +805,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
 
         byte[] secondItem = decodedExtraData.get(1).getRLPData();
         assertNotNull(secondItem);
-        assertEquals("SNAPSHOT-cb7f28e", new String(secondItem));
+        assertEquals(config.projectVersionModifier().concat("-cb7f28e"), new String(secondItem));
     }
 
     @Test
@@ -833,7 +835,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
 
         byte[] secondItem = decodedExtraData.get(1).getRLPData();
         assertNotNull(secondItem);
-        assertEquals("SNAPSHOT-cb7f28e", new String(secondItem));
+        assertEquals(config.projectVersionModifier().concat("-cb7f28e"), new String(secondItem));
 
         byte[] thirdItem = decodedExtraData.get(2).getRLPData();
         assertNotNull(thirdItem);
@@ -868,11 +870,18 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
 
         byte[] secondItem = decodedExtraData.get(1).getRLPData();
         assertNotNull(secondItem);
-        assertEquals("SNAPSHOT-cb7f28e", new String(secondItem));
+        assertEquals(config.projectVersionModifier().concat("-cb7f28e"), new String(secondItem));
 
         byte[] thirdItem = decodedExtraData.get(2).getRLPData();
         assertNotNull(thirdItem);
-        assertEquals("tincho is th", new String(thirdItem));
+
+        // The final client extra data may be truncated by the combined size of the other encoded elements
+        int extraDataMaxLength = 32;
+        int extraDataEncodingOverhead = 3;
+        Integer clientExtraDataSize =
+                extraDataMaxLength - extraDataEncodingOverhead - firstItem.length - secondItem.length;
+
+        assertEquals("tincho is the king of mining".substring(0, clientExtraDataSize), new String(thirdItem));
     }
 
     private BtcBlock getMergedMiningBlockWithOnlyCoinbase(MinerWork work) {

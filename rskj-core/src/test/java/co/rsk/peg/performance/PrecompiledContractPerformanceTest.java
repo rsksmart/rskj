@@ -66,9 +66,10 @@ public class PrecompiledContractPerformanceTest {
         return running;
     }
 
-    public static void addStats(ExecutionStats stats) {
+    public static boolean addStats(ExecutionStats stats) {
         ensureStatsCreated();
-        statsList.add(stats);
+
+        return statsList.add(stats);
     }
 
     private static void ensureStatsCreated() {

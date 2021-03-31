@@ -18,113 +18,175 @@
 
 package co.rsk.validators;
 
+import co.rsk.bitcoinj.core.BtcBlock;
+import co.rsk.bitcoinj.core.MessageSerializer;
+import co.rsk.bitcoinj.core.NetworkParameters;
+import co.rsk.util.TimeProvider;
+import org.ethereum.config.Constants;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
-import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Mockito;
+import org.junit.runner.RunWith;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
+
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.*;
+import static org.powermock.api.mockito.PowerMockito.mock;
+import static org.powermock.api.mockito.PowerMockito.when;
 
 /**
  * Created by mario on 23/01/17.
  */
+@RunWith(PowerMockRunner.class)
+@PrepareForTest({MessageSerializer.class, NetworkParameters.class})
 public class BlockTimeStampValidationRuleTest {
+
+    private static final long MAX_TIMESTAMPS_DIFF_IN_SECS = Constants.getMaxTimestampsDiffInSecs();
+
+    private final ActivationConfig preRskip179Config = mock(ActivationConfig.class);
+    private final ActivationConfig postRskip179Config = mock(ActivationConfig.class);
+
+    private final TimeProvider timeProvider = mock(TimeProvider.class);
+
+    private final NetworkParameters bitcoinNetworkParameters = mock(NetworkParameters.class);
+
+    @Before
+    public void setUp() {
+        when(preRskip179Config.isActive(eq(ConsensusRule.RSKIP179), anyLong())).thenReturn(false);
+        when(postRskip179Config.isActive(eq(ConsensusRule.RSKIP179), anyLong())).thenReturn(true);
+    }
+
+    @Test
+    public void timestampsAreCloseEnough() {
+        int validPeriod = 540;
+        BlockTimeStampValidationRule validationRule = new BlockTimeStampValidationRule(validPeriod, postRskip179Config, timeProvider, bitcoinNetworkParameters);
+
+        byte[] bitcoinMergedMiningHeader = new byte[0];
+        when(timeProvider.currentTimeMillis()).thenReturn(10_000_000L);
+        BlockHeader header = mock(BlockHeader.class);
+        Block block = mock(Block.class);
+        when(block.getHeader()).thenReturn(header);
+        when(header.getBitcoinMergedMiningHeader()).thenReturn(bitcoinMergedMiningHeader);
+        BtcBlock btcBlock = mock(BtcBlock.class);
+        MessageSerializer messageSerializer = mock(MessageSerializer.class);
+        when(messageSerializer.makeBlock(eq(bitcoinMergedMiningHeader))).thenReturn(btcBlock);
+        when(bitcoinNetworkParameters.getDefaultSerializer()).thenReturn(messageSerializer);
+
+        when(btcBlock.getTimeSeconds()).thenReturn(1_000L);
+        when(header.getTimestamp()).thenReturn(1_000L);
+        assertTrue(validationRule.isValid(header));
+
+        when(btcBlock.getTimeSeconds()).thenReturn(1_000L + MAX_TIMESTAMPS_DIFF_IN_SECS);
+        when(header.getTimestamp()).thenReturn(1_000L);
+        assertFalse(validationRule.isValid(header));
+
+        when(btcBlock.getTimeSeconds()).thenReturn(1_000L + MAX_TIMESTAMPS_DIFF_IN_SECS);
+        when(header.getTimestamp()).thenReturn(1_001L);
+        assertTrue(validationRule.isValid(header));
+
+        when(btcBlock.getTimeSeconds()).thenReturn(1_001L);
+        when(header.getTimestamp()).thenReturn(1_000L + MAX_TIMESTAMPS_DIFF_IN_SECS);
+        assertTrue(validationRule.isValid(header));
+    }
 
     @Test
     public void blockInThePast() {
         int validPeriod = 540;
-        BlockTimeStampValidationRule validationRule = new BlockTimeStampValidationRule(validPeriod);
+        BlockTimeStampValidationRule validationRule = new BlockTimeStampValidationRule(validPeriod, preRskip179Config, timeProvider);
 
-        BlockHeader header = Mockito.mock(BlockHeader.class);
-        Block block = Mockito.mock(Block.class);
-        Mockito.when(block.getHeader()).thenReturn(header);
-        Mockito.when(header.getTimestamp())
-                .thenReturn((System.currentTimeMillis() / 1000) - 1000);
+        when(timeProvider.currentTimeMillis()).thenReturn(10_000_000L);
+        BlockHeader header = mock(BlockHeader.class);
+        Block block = mock(Block.class);
+        when(block.getHeader()).thenReturn(header);
+        when(header.getTimestamp()).thenReturn(10_000L - 1000);
 
-        Assert.assertTrue(validationRule.isValid(header));
+        assertTrue(validationRule.isValid(header));
     }
 
     @Test
     public void blockInTheFutureLimit() {
         int validPeriod = 540;
-        BlockTimeStampValidationRule validationRule = new BlockTimeStampValidationRule(validPeriod);
+        BlockTimeStampValidationRule validationRule = new BlockTimeStampValidationRule(validPeriod, preRskip179Config, timeProvider);
 
-        BlockHeader header = Mockito.mock(BlockHeader.class);
-        Block block = Mockito.mock(Block.class);
-        Mockito.when(block.getHeader()).thenReturn(header);
-        Mockito.when(header.getTimestamp())
-                .thenReturn((System.currentTimeMillis() / 1000) + validPeriod);
+        when(timeProvider.currentTimeMillis()).thenReturn(10_000_000L);
+        BlockHeader header = mock(BlockHeader.class);
+        Block block = mock(Block.class);
+        when(block.getHeader()).thenReturn(header);
+        when(header.getTimestamp()).thenReturn(10_000L + validPeriod);
 
-        Assert.assertTrue(validationRule.isValid(header));
+        assertTrue(validationRule.isValid(header));
     }
 
     @Test
     public void blockInTheFuture() {
         int validPeriod = 540;
-        BlockTimeStampValidationRule validationRule = new BlockTimeStampValidationRule(validPeriod);
+        BlockTimeStampValidationRule validationRule = new BlockTimeStampValidationRule(validPeriod, preRskip179Config, timeProvider);
 
-        BlockHeader header = Mockito.mock(BlockHeader.class);
-        Block block = Mockito.mock(Block.class);
-        Mockito.when(block.getHeader()).thenReturn(header);
-        Mockito.when(header.getTimestamp())
-                .thenReturn((System.currentTimeMillis() / 1000) + 2*validPeriod);
+        when(timeProvider.currentTimeMillis()).thenReturn(10_000_000L);
+        BlockHeader header = mock(BlockHeader.class);
+        Block block = mock(Block.class);
+        when(block.getHeader()).thenReturn(header);
+        when(header.getTimestamp()).thenReturn(10_000L + 2*validPeriod);
 
-        Assert.assertFalse(validationRule.isValid(header));
+        assertFalse(validationRule.isValid(header));
     }
 
     @Test
     public void blockTimeLowerThanParentTime() {
         int validPeriod = 540;
-        BlockTimeStampValidationRule validationRule = new BlockTimeStampValidationRule(validPeriod);
+        BlockTimeStampValidationRule validationRule = new BlockTimeStampValidationRule(validPeriod, preRskip179Config, timeProvider);
 
-        BlockHeader header = Mockito.mock(BlockHeader.class);
-        Block block = Mockito.mock(Block.class);
-        Mockito.when(block.getHeader()).thenReturn(header);
-        Block parent = Mockito.mock(Block.class);
+        when(timeProvider.currentTimeMillis()).thenReturn(10_000_000L);
+        BlockHeader header = mock(BlockHeader.class);
+        Block block = mock(Block.class);
+        when(block.getHeader()).thenReturn(header);
+        Block parent = mock(Block.class);
 
-        Mockito.when(header.getTimestamp())
-                .thenReturn(System.currentTimeMillis() / 1000);
+        when(header.getTimestamp()).thenReturn(10_000L);
 
-        Mockito.when(parent.getTimestamp())
-                .thenReturn((System.currentTimeMillis() / 1000) + 1000);
+        when(parent.getTimestamp()).thenReturn(10_000L + 1000);
 
-        Assert.assertFalse(validationRule.isValid(header, parent));
+        assertFalse(validationRule.isValid(header, parent));
     }
 
     @Test
     public void blockTimeGreaterThanParentTime() {
         int validPeriod = 540;
-        BlockTimeStampValidationRule validationRule = new BlockTimeStampValidationRule(validPeriod);
+        BlockTimeStampValidationRule validationRule = new BlockTimeStampValidationRule(validPeriod, preRskip179Config, timeProvider);
 
-        BlockHeader header = Mockito.mock(BlockHeader.class);
-        Block block = Mockito.mock(Block.class);
-        Mockito.when(block.getHeader()).thenReturn(header);
-        Block parent = Mockito.mock(Block.class);
+        when(timeProvider.currentTimeMillis()).thenReturn(10_000_000L);
+        BlockHeader header = mock(BlockHeader.class);
+        Block block = mock(Block.class);
+        when(block.getHeader()).thenReturn(header);
+        Block parent = mock(Block.class);
 
-        Mockito.when(header.getTimestamp())
-                .thenReturn(System.currentTimeMillis() / 1000);
+        when(header.getTimestamp()).thenReturn(10_000L);
 
-        Mockito.when(parent.getTimestamp())
-                .thenReturn((System.currentTimeMillis() / 1000) - 1000);
+        when(parent.getTimestamp()).thenReturn(10_000L - 1000);
 
-        Assert.assertTrue(validationRule.isValid(header, parent));
+        assertTrue(validationRule.isValid(header, parent));
     }
 
     @Test
     public void blockTimeEqualsParentTime() {
         int validPeriod = 540;
-        BlockTimeStampValidationRule validationRule = new BlockTimeStampValidationRule(validPeriod);
+        BlockTimeStampValidationRule validationRule = new BlockTimeStampValidationRule(validPeriod, preRskip179Config, timeProvider);
 
-        BlockHeader header = Mockito.mock(BlockHeader.class);
-        Block block = Mockito.mock(Block.class);
-        Mockito.when(block.getHeader()).thenReturn(header);
-        Block parent = Mockito.mock(Block.class);
+        when(timeProvider.currentTimeMillis()).thenReturn(10_000_000L);
+        BlockHeader header = mock(BlockHeader.class);
+        Block block = mock(Block.class);
+        when(block.getHeader()).thenReturn(header);
+        Block parent = mock(Block.class);
 
-        Mockito.when(header.getTimestamp())
-                .thenReturn(System.currentTimeMillis() / 1000);
+        when(header.getTimestamp()).thenReturn(10_000L);
 
-        Mockito.when(parent.getTimestamp())
-                .thenReturn(System.currentTimeMillis() / 1000);
+        when(parent.getTimestamp()).thenReturn(10_000L);
 
-        Assert.assertFalse(validationRule.isValid(header, parent));
+        assertFalse(validationRule.isValid(header, parent));
     }
 }

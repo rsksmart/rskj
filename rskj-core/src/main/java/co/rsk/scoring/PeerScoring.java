@@ -176,7 +176,6 @@ public class PeerScoring {
      *
      * @param   expirationTime  punishment duration in milliseconds
      */
-    @VisibleForTesting
     public void startPunishment(long expirationTime) {
         if (!punishmentEnabled) {
             return;

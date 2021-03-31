@@ -45,7 +45,6 @@ public class FullNodeRunnerTest {
     @Test
     public void callingRunStartsInternalServices() {
         runner.run();
-
         for (InternalService internalService : internalServices) {
             verify(internalService).start();
         }

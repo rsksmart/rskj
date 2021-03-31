@@ -20,8 +20,8 @@ package co.rsk.core;
 
 import com.google.common.primitives.UnsignedBytes;
 import org.ethereum.rpc.TypeConverter;
+import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
-import org.bouncycastle.util.encoders.Hex;
 
 import java.util.Arrays;
 import java.util.Comparator;
@@ -94,7 +94,7 @@ public class RskAddress {
     }
 
     public String toHexString() {
-        return Hex.toHexString(bytes);
+        return ByteUtil.toHexString(bytes);
     }
 
     @Override

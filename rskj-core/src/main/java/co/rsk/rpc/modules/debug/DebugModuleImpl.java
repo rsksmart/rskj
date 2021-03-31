@@ -31,6 +31,8 @@ import org.ethereum.vm.trace.ProgramTraceProcessor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Map;
+
 import static org.ethereum.rpc.TypeConverter.stringHexToByteArray;
 
 public class DebugModuleImpl implements DebugModule {
@@ -60,8 +62,13 @@ public class DebugModuleImpl implements DebugModule {
     }
 
     @Override
-    public JsonNode traceTransaction(String transactionHash) throws Exception {
-        logger.trace("debug_traceTransaction({})", transactionHash);
+    public JsonNode traceTransaction(String transactionHash, Map<String, String> traceOptions) throws Exception {
+        logger.trace("debug_traceTransaction({}, {})", transactionHash, traceOptions);
+
+        if (traceOptions != null && !traceOptions.isEmpty()) {
+            // TODO: implement the logic that takes into account trace options.
+            logger.warn("Received {} trace options. For now trace options are being ignored", traceOptions);
+        }
 
         byte[] hash = stringHexToByteArray(transactionHash);
         TransactionInfo txInfo = receiptStore.getInMainChain(hash, blockStore);
@@ -77,7 +84,7 @@ public class DebugModuleImpl implements DebugModule {
         txInfo.setTransaction(tx);
 
         ProgramTraceProcessor programTraceProcessor = new ProgramTraceProcessor();
-        blockExecutor.traceBlock(programTraceProcessor, block, parent.getHeader(), false, false);
+        blockExecutor.traceBlock(programTraceProcessor, 0, block, parent.getHeader(), false, false);
 
         return programTraceProcessor.getProgramTraceAsJsonNode(tx.getHash());
     }

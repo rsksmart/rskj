@@ -19,9 +19,11 @@
 
 package org.ethereum.db;
 
+import co.rsk.crypto.Keccak256;
 import org.ethereum.core.TransactionReceipt;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Created by Ruben on 6/1/2016.
@@ -34,11 +36,13 @@ public interface ReceiptStore {
 
     TransactionInfo get(byte[] transactionHash);
 
-    TransactionInfo get(byte[] transactionHash, byte[] blockHash, BlockStore store);
+    Optional<TransactionInfo> get(Keccak256 transactionHash, Keccak256 blockHash);
 
     TransactionInfo getInMainChain(byte[] transactionHash, BlockStore store);
 
     List<TransactionInfo> getAll(byte[] transactionHash);
 
     void saveMultiple(byte[] blockHash, List<TransactionReceipt> receipts);
+
+    void flush();
 }

@@ -28,6 +28,7 @@ import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.db.MutableRepository;
+import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
 import org.junit.Assert;
 import org.junit.Test;
@@ -69,7 +70,7 @@ import static org.hamcrest.Matchers.is;
  *         track.commit();
  *         repository.flush();
  *
- *         System.out.println(Hex.toHexString(repository.getRoot()));
+ *         System.out.println(ByteUtil.toHexString(repository.getRoot()));
  *     }
  * }
  */
@@ -251,7 +252,7 @@ public class TrieConverterTest {
         byte[] oldRoot = tc.getOrchidAccountTrieRoot(repository.getTrie());
         Trie atrie = deserialize(SERIALIZED_ORCHID_TRIESTORE_WITH_LEADING_ZEROES_STORAGE_KEYS);
 
-        Assert.assertThat(Hex.toHexString(oldRoot), is(atrie.getHashOrchid(true).toHexString()));
+        Assert.assertThat(ByteUtil.toHexString(oldRoot), is(atrie.getHashOrchid(true).toHexString()));
     }
 
     @Test
@@ -289,7 +290,7 @@ public class TrieConverterTest {
         byte[] oldRoot = tc.getOrchidAccountTrieRoot(repository.getTrie());
         Trie atrie = deserialize(SERIALIZED_ORCHID_TRIESTORE_SIMPLE);
 
-        Assert.assertThat(Hex.toHexString(oldRoot), is(atrie.getHashOrchid(true).toHexString()));
+        Assert.assertThat(ByteUtil.toHexString(oldRoot), is(atrie.getHashOrchid(true).toHexString()));
     }
 
     private byte[] randomCode(int maxSize) {
@@ -309,7 +310,7 @@ public class TrieConverterTest {
         byte[] root = Arrays.copyOfRange(bytes, Short.BYTES, expectedSize);
         TrieStore store = trieStoreDeserialization(bytes, expectedSize, new HashMapDB());
 
-        return store.retrieve(root);
+        return store.retrieve(root).get();
     }
 
     private static TrieStore trieStoreDeserialization(byte[] bytes, int offset, KeyValueDataSource ds) {

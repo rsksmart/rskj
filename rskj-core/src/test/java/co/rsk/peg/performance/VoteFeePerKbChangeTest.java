@@ -19,24 +19,31 @@
 package co.rsk.peg.performance;
 
 import co.rsk.bitcoinj.core.Coin;
+import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.peg.Bridge;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
+import org.ethereum.vm.exception.VMException;
+import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import java.io.IOException;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
+import java.util.concurrent.atomic.AtomicReference;
 
 @Ignore
 public class VoteFeePerKbChangeTest extends BridgePerformanceTestCase {
 
     @Test
-    public void voteFeePerKbChange() throws IOException {
+    public void voteFeePerKbChange() throws VMException {
         BridgeStorageProviderInitializer storageInitializer = Helper.buildNoopInitializer();
 
-        ABIEncoder abiEncoder = (int executionIndex) -> Bridge.VOTE_FEE_PER_KB.encode(BigInteger.valueOf(Helper.randomCoin(Coin.MILLICOIN, 1, 100).getValue()));
+        AtomicReference<Long> newValue = new AtomicReference<>();
+        ABIEncoder abiEncoder = (int executionIndex) -> {
+            newValue.set(Helper.randomCoin(Coin.MILLICOIN, 1, 50).getValue());
+            return Bridge.VOTE_FEE_PER_KB.encode(BigInteger.valueOf(newValue.get().longValue()));
+        };
 
         TxBuilder txBuilder = (int executionIndex) -> {
             String generator = "auth-fee-per-kb";
@@ -46,7 +53,48 @@ public class VoteFeePerKbChangeTest extends BridgePerformanceTestCase {
         };
 
         ExecutionStats stats = new ExecutionStats("voteFeePerKbChange");
-        executeAndAverage("voteFeePerKbChange", 1000, abiEncoder, storageInitializer, txBuilder, Helper.getRandomHeightProvider(10), stats);
+        executeAndAverage(
+                "voteFeePerKbChange",
+                1000,
+                abiEncoder,
+                storageInitializer,
+                txBuilder,
+                Helper.getRandomHeightProvider(10),
+                stats,
+                ((environment, callResult) -> {
+                    Assert.assertEquals(newValue.get().longValue(),((Bridge)environment.getContract()).getFeePerKb(null));
+                }));
+
+        BridgePerformanceTest.addStats(stats);
+    }
+
+    @Test
+    public void voteFeePerKbChange_unauthorized() throws VMException {
+        BridgeStorageProviderInitializer storageInitializer = Helper.buildNoopInitializer();
+
+        Coin genesisFeePerKB = BridgeRegTestConstants.getInstance().getGenesisFeePerKb();
+        ABIEncoder abiEncoder = (int executionIndex) -> Bridge.VOTE_FEE_PER_KB.encode(BigInteger.valueOf(Helper.randomCoin(Coin.MILLICOIN, 1, 100).getValue()));
+
+        TxBuilder txBuilder = (int executionIndex) -> {
+            String generator = "unauthorized";
+            ECKey sender = ECKey.fromPrivate(HashUtil.keccak256(generator.getBytes(StandardCharsets.UTF_8)));
+
+            return Helper.buildTx(sender);
+        };
+
+        ExecutionStats stats = new ExecutionStats("voteFeePerKbChange_unauthorized");
+        executeAndAverage(
+                "voteFeePerKbChange_unauthorized",
+                1000,
+                abiEncoder,
+                storageInitializer,
+                txBuilder,
+                Helper.getRandomHeightProvider(10),
+                stats,
+                ((environment, callResult) -> {
+                    Assert.assertEquals(genesisFeePerKB.getValue(),((Bridge)environment.getContract()).getFeePerKb(null));
+                })
+        );
 
         BridgePerformanceTest.addStats(stats);
     }

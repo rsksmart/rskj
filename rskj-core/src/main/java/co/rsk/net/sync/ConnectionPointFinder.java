@@ -9,16 +9,15 @@ import java.util.Optional;
  */
 public class ConnectionPointFinder {
 
-    // Status used to find connection point
     private long start;
     private long end;
 
     // Connection point found or not
     private Long connectionPoint = null;
 
-    public ConnectionPointFinder(long height) {
-        this.start = 0;
-        this.end = height;
+    public ConnectionPointFinder(long fromHeight, long toHeight) {
+        this.start = fromHeight;
+        this.end = toHeight;
     }
 
     public Optional<Long> getConnectionPoint() {

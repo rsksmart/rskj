@@ -20,7 +20,7 @@
 package co.rsk.pcc.bto;
 
 import co.rsk.pcc.ExecutionEnvironment;
-import co.rsk.pcc.NativeContractIllegalArgumentException;
+import co.rsk.pcc.exception.NativeContractIllegalArgumentException;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.solidity.SolidityType;
 import org.junit.Assert;
@@ -63,7 +63,7 @@ public class DeriveExtendedPublicKeyTest {
     }
 
     @Test
-    public void executes() {
+    public void executes() throws NativeContractIllegalArgumentException {
         Assert.assertEquals(
                 "tpubDCGMkPKredy7oh6zw8f4ExWFdTgQCrAHToF1ytny3gbVy9GkUNK2Nqh7NbKbh8dkd5VtjUiLJPkbEkeg29NVHwxYwzHJFt9SazGLZrrU4Y4",
                 method.execute(new Object[]{
@@ -221,5 +221,9 @@ public class DeriveExtendedPublicKeyTest {
         } catch (NativeContractIllegalArgumentException e) {
             Assert.assertTrue(e.getMessage().contains(message));
         }
+    }
+
+    public interface Runnable {
+        void run() throws NativeContractIllegalArgumentException;
     }
 }

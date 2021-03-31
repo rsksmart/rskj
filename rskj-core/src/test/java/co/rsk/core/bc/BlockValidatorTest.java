@@ -29,9 +29,9 @@ import co.rsk.test.builders.BlockBuilder;
 import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.validators.BlockHeaderParentDependantValidationRule;
 import co.rsk.validators.ProofOfWorkRule;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.TestUtils;
 import org.ethereum.core.*;
-import org.ethereum.crypto.HashUtil;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.IndexedBlockStore;
@@ -349,14 +349,16 @@ public class BlockValidatorTest {
         BlockGenerator blockGenerator = new BlockGenerator();
 
         Block genesis = blockGenerator.getGenesisBlock();
+
+        BlockHeader newHeader = blockFactory.getBlockHeaderBuilder()
+                .setCoinbase(TestUtils.randomAddress())
+                .setDifficulty(TEST_DIFFICULTY)
+                .setEmptyMergedMiningForkDetectionData()
+                .setMinimumGasPrice(Coin.valueOf(10))
+                .build();
+
         Block uncle1a = blockGenerator.createChildBlock(blockFactory.newBlock(
-                blockFactory.newHeader(
-                        null, null, TestUtils.randomAddress().getBytes(),
-                        null, HashUtil.EMPTY_TRIE_HASH, null,
-                        null, TEST_DIFFICULTY.getBytes(), 0,
-                        null, 0L, 0L, new byte[]{}, Coin.ZERO,
-                        null, null, null, new byte[12], Coin.valueOf(10).getBytes(), 0
-                ),
+                newHeader,
                 Collections.emptyList(),
                 Collections.emptyList()
         ));
@@ -497,7 +499,16 @@ public class BlockValidatorTest {
                 .parent(new BlockGenerator().getGenesisBlock()).build();
 
         List<Transaction> txs = new ArrayList<>();
-        Transaction tx = new Transaction("0000000000000000000000000000000000000006", BigInteger.ZERO, BigInteger.ZERO, BigInteger.ONE, BigInteger.TEN, config.getNetworkConstants().getChainId());
+        byte chainId = config.getNetworkConstants().getChainId();
+        Transaction tx = Transaction
+                .builder()
+                .nonce(BigInteger.ZERO)
+                .gasPrice(BigInteger.ONE)
+                .gasLimit(BigInteger.TEN)
+                .destination(Hex.decode("0000000000000000000000000000000000000006"))
+                .chainId(chainId)
+                .value(BigInteger.ZERO)
+                .build();
         tx.sign(new byte[]{22, 11, 00});
         txs.add(tx);
         Block block = new BlockBuilder(null, null, null).minGasPrice(BigInteger.TEN).transactions(txs)
@@ -547,7 +558,16 @@ public class BlockValidatorTest {
                 .parent(new BlockGenerator().getGenesisBlock()).build();
 
         List<Transaction> txs = new ArrayList<>();
-        Transaction tx = new Transaction("0000000000000000000000000000000000000006", BigInteger.ZERO, BigInteger.ZERO, BigInteger.valueOf(12L), BigInteger.TEN, config.getNetworkConstants().getChainId());
+        byte chainId = config.getNetworkConstants().getChainId();
+        Transaction tx = Transaction
+                .builder()
+                .nonce(BigInteger.ZERO)
+                .gasPrice(BigInteger.valueOf(12L))
+                .gasLimit(BigInteger.TEN)
+                .destination(Hex.decode("0000000000000000000000000000000000000006"))
+                .chainId(chainId)
+                .value(BigInteger.ZERO)
+                .build();
         tx.sign(new byte[]{22, 11, 00});
         txs.add(tx);
 
@@ -571,7 +591,16 @@ public class BlockValidatorTest {
         Block genesis = blockGenerator.getGenesisBlock();
 
         List<Transaction> txs = new ArrayList<>();
-        Transaction tx = new Transaction("0000000000000000000000000000000000000006", BigInteger.ZERO, BigInteger.ZERO, BigInteger.valueOf(12L), BigInteger.TEN, config.getNetworkConstants().getChainId());
+        byte chainId = config.getNetworkConstants().getChainId();
+        Transaction tx = Transaction
+                .builder()
+                .nonce(BigInteger.ZERO)
+                .gasPrice(BigInteger.valueOf(12L))
+                .gasLimit(BigInteger.TEN)
+                .destination(Hex.decode("0000000000000000000000000000000000000006"))
+                .chainId(chainId)
+                .value(BigInteger.ZERO)
+                .build();
         tx.sign(new byte[]{});
         txs.add(tx);
         Block block = new BlockBuilder(null, null, null).parent(genesis).transactions(txs).build();
@@ -595,7 +624,17 @@ public class BlockValidatorTest {
         Block genesis = blockGenerator.getGenesisBlock();
 
         List<Transaction> txs = new ArrayList<>();
-        Transaction tx = new Transaction("0000000000000000000000000000000000000006", BigInteger.ZERO, BigInteger.ZERO, BigInteger.valueOf(12L), BigInteger.TEN, config.getNetworkConstants().getChainId());
+        byte chainId = config.getNetworkConstants().getChainId();
+        Transaction tx = Transaction
+                .builder()
+                .nonce(BigInteger.ZERO)
+                .gasPrice(BigInteger.valueOf(12L))
+                .gasLimit(BigInteger.TEN)
+                .destination(Hex.decode("0000000000000000000000000000000000000006"))
+                .chainId(chainId)
+                .value(BigInteger.ZERO)
+                .build();
+
         tx.sign(new byte[]{});
         txs.add(new RemascTransaction(BigInteger.ONE.longValue()));
         txs.add(tx);
@@ -615,7 +654,16 @@ public class BlockValidatorTest {
         Block genesis = blockGenerator.getGenesisBlock();
 
         List<Transaction> txs = new ArrayList<>();
-        Transaction tx = new Transaction("0000000000000000000000000000000000000006", BigInteger.ZERO, BigInteger.ZERO, BigInteger.valueOf(12L), BigInteger.TEN, config.getNetworkConstants().getChainId());
+        byte chainId = config.getNetworkConstants().getChainId();
+        Transaction tx = Transaction
+                .builder()
+                .nonce(BigInteger.ZERO)
+                .gasPrice(BigInteger.valueOf(12L))
+                .gasLimit(BigInteger.TEN)
+                .destination(Hex.decode("0000000000000000000000000000000000000006"))
+                .chainId(chainId)
+                .value(BigInteger.ZERO)
+                .build();
         tx.sign(new byte[]{});
         txs.add(tx);
         txs.add(new RemascTransaction(BigInteger.ONE.longValue()));

@@ -22,6 +22,7 @@ import co.rsk.config.RemascConfig;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.SelectionRule;
+import co.rsk.rpc.modules.trace.ProgramSubtrace;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -84,6 +85,10 @@ public class Remasc {
         provider.save();
     }
 
+    public List<ProgramSubtrace> getSubtraces() {
+        return this.feesPayer.getSubtraces();
+    }
+
     /**
      * Returns the internal contract state.
      * @return the internal contract state.
@@ -115,12 +120,13 @@ public class Remasc {
         int uncleGenerationLimit = constants.getUncleGenerationLimit();
         Deque<Map<Long, List<Sibling>>> descendantsBlocks = new LinkedList<>();
 
-        // this search can be optimized if have certainty that the execution block is not in a fork
-        // larger than depth
-        Block currentBlock = blockStore.getBlockByHashAndDepth(
-                executionBlock.getParentHash().getBytes(),
-                remascConstants.getMaturity() - 1 - uncleGenerationLimit
+        // this search is now optimized if have certainty that the execution block is not in a fork
+        // larger than depth. The optimized algorithm already covers this case
+        Block currentBlock = blockStore.getBlockAtDepthStartingAt(
+                remascConstants.getMaturity() - 1 - uncleGenerationLimit,
+                executionBlock.getParentHash().getBytes()
         );
+
         descendantsBlocks.push(blockStore.getSiblingsFromBlockByHash(currentBlock.getHash()));
 
         // descendants are stored in reverse order because the original order to pay siblings is defined in the way
@@ -157,7 +163,7 @@ public class Remasc {
             Coin minPayableFees = executionBlock.getMinimumGasPrice().multiply(minimumPayableGas);
             if (syntheticReward.compareTo(minPayableFees) < 0) {
                 logger.debug("Synthetic Reward: {} is lower than minPayableFees: {} at block: {}",
-                             syntheticReward, minPayableFees, executionBlock.getShortHash());
+                             syntheticReward, minPayableFees, executionBlock.getPrintableHash());
                 return;
             }
         }

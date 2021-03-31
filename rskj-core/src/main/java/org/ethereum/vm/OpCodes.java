@@ -227,6 +227,12 @@ public class OpCodes {
     static final byte OP_RETURNDATASIZE = 0x3d;
     static final byte OP_RETURNDATACOPY = 0x3e;
 
+    /**
+     * (0x3f) Get hash of code running in current
+     * environment
+     */
+    public static final byte OP_EXTCODEHASH = 0x3f;
+
     /*  Block Information   */
 
     /**
@@ -254,6 +260,14 @@ public class OpCodes {
      * (0x45) Get the block’s gas limit
      */
     static final byte OP_GASLIMIT =0x45 ;
+    /**
+     * (0x46) Get the chain id
+     */
+    public static final byte OP_CHAINID =0x46 ;
+    /**
+     * (0x45) Get the senders balance
+     */
+    public static final byte OP_SELFBALANCE = 0x47 ;
 
     /*  Memory Storage and F Operations */
 
@@ -586,7 +600,6 @@ public class OpCodes {
     static final byte OP_DUPN = (byte)0xa8;
     static final byte OP_SWAPN = (byte)0xa9;
     static final byte OP_TXINDEX = (byte)0xaa;
-    static final byte OP_CODEREPLACE =(byte)0xab;
 
     /**
      * (0xf0) Create a new account with associated code

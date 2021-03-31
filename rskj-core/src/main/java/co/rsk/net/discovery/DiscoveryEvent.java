@@ -38,9 +38,4 @@ public class DiscoveryEvent {
     public InetSocketAddress getAddress() {
         return address;
     }
-
-    public String getAddressIp() {
-        return this.address.getAddress().getHostAddress();
-    }
-
 }

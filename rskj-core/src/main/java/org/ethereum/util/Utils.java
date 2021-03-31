@@ -24,13 +24,10 @@ import org.bouncycastle.util.encoders.Hex;
 
 import java.lang.reflect.Array;
 import java.math.BigInteger;
-
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
-
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
@@ -117,7 +114,7 @@ public class Utils {
             throw new Error("not an address");
         }
 
-        String addrShort = Hex.toHexString(addr, 0, 3);
+        String addrShort = ByteUtil.toHexString(addr, 0, 3);
 
         StringBuffer sb = new StringBuffer();
         sb.append(addrShort);
@@ -157,13 +154,9 @@ public class Utils {
         }
 
         StringBuilder sb = new StringBuilder();
-        String firstHash = Hex.toHexString(blockHashes.get(0));
-        String lastHash = Hex.toHexString(blockHashes.get(blockHashes.size() - 1));
+        String firstHash = ByteUtil.toHexString(blockHashes.get(0));
+        String lastHash = ByteUtil.toHexString(blockHashes.get(blockHashes.size() - 1));
         return sb.append(" ").append(firstHash).append("...").append(lastHash).toString();
-    }
-
-    public static String getNodeIdShort(String nodeId) {
-        return nodeId == null ? "<null>" : nodeId.substring(0, 8);
     }
 
     public static long toUnixTime(long javaTime) {

@@ -439,6 +439,39 @@ public enum BridgeMethods {
             (BridgeMethodExecutorTyped) Bridge::getStateForDebugging,
             true
     ),
+    GET_LOCKING_CAP(
+            CallTransaction.Function.fromSignature(
+                    "getLockingCap",
+                    new String[]{},
+                    new String[]{"int256"}
+            ),
+            fixedCost(3_000L),
+            (BridgeMethodExecutorTyped) Bridge::getLockingCap,
+            activations -> activations.isActive(RSKIP134),
+            true
+    ),
+    GET_ACTIVE_FEDERATION_CREATION_BLOCK_HEIGHT(
+            CallTransaction.Function.fromSignature(
+                    "getActiveFederationCreationBlockHeight",
+                    new String[]{},
+                    new String[]{"uint256"}
+            ),
+            fixedCost(3_000L),
+            (BridgeMethodExecutorTyped) Bridge::getActiveFederationCreationBlockHeight,
+            activations -> activations.isActive(RSKIP186),
+            false
+    ),
+    INCREASE_LOCKING_CAP(
+            CallTransaction.Function.fromSignature(
+                    "increaseLockingCap",
+                    new String[]{"int256"},
+                    new String[]{"bool"}
+            ),
+            fixedCost(8_000L),
+            (BridgeMethodExecutorTyped) Bridge::increaseLockingCap,
+            activations -> activations.isActive(RSKIP134),
+            false
+    ),
     IS_BTC_TX_HASH_ALREADY_PROCESSED(
             CallTransaction.Function.fromSignature(
                     "isBtcTxHashAlreadyProcessed",
@@ -463,6 +496,17 @@ public enum BridgeMethods {
             ),
             false
     ),
+    RECEIVE_HEADER(
+            CallTransaction.Function.fromSignature(
+                    "receiveHeader",
+                    new String[]{"bytes"},
+                    new String[]{"int256"}
+            ),
+            fixedCost(22_000L),  // TODO: calculate gas cost.
+            (BridgeMethodExecutorTyped) Bridge::receiveHeader,
+            activations -> activations.isActive(RSKIP200),
+            false
+    ),
     REGISTER_BTC_TRANSACTION(
             CallTransaction.Function.fromSignature(
                     "registerBtcTransaction",
@@ -470,7 +514,11 @@ public enum BridgeMethods {
                     new String[]{}
             ),
             fixedCost(22000L),
-            Bridge.activeAndRetiringFederationOnly((BridgeMethodExecutorVoid) Bridge::registerBtcTransaction, "registerBtcTransaction"),
+            Bridge.executeIfElse(
+                Bridge::registerBtcTransactionIsPublic,
+                (BridgeMethodExecutorVoid) Bridge::registerBtcTransaction,
+                Bridge.activeAndRetiringFederationOnly((BridgeMethodExecutorVoid) Bridge::registerBtcTransaction, "registerBtcTransaction")
+            ),
             false
     ),
     RELEASE_BTC(
@@ -531,6 +579,39 @@ public enum BridgeMethods {
             ),
             fixedCost(10000L),
             (BridgeMethodExecutorTyped) Bridge::voteFeePerKbChange,
+            false
+    ),
+    REGISTER_BTC_COINBASE_TRANSACTION(
+            CallTransaction.Function.fromSignature(
+            "registerBtcCoinbaseTransaction",
+                    new String[]{"bytes", "bytes32", "bytes", "bytes32", "bytes32"},
+                    new String[]{}
+            ),
+            fixedCost(10000L),
+            (BridgeMethodExecutorVoid) Bridge::registerBtcCoinbaseTransaction,
+            activations -> activations.isActive(RSKIP143),
+            false
+    ),
+    HAS_BTC_BLOCK_COINBASE_TRANSACTION_INFORMATION(
+            CallTransaction.Function.fromSignature(
+                    "hasBtcBlockCoinbaseTransactionInformation",
+                    new String[]{"bytes32"},
+                    new String[]{"bool"}
+            ),
+            fixedCost(5000L),
+            (BridgeMethodExecutorTyped) Bridge::hasBtcBlockCoinbaseTransactionInformation,
+            activations -> activations.isActive(RSKIP143),
+            false
+    ),
+    REGISTER_FAST_BRIDGE_BTC_TRANSACTION(
+            CallTransaction.Function.fromSignature(
+                    "registerFastBridgeBtcTransaction",
+                    new String[]{"bytes", "uint256", "bytes", "bytes32", "bytes", "address", "bytes", "bool"},
+                    new String[]{"int256"}
+            ),
+            fixedCost(10000L),  // TODO: Define a cost
+            (BridgeMethodExecutorTyped) Bridge::registerFastBridgeBtcTransaction,
+            activations -> activations.isActive(RSKIP176),
             false
     );
 

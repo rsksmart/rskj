@@ -25,7 +25,7 @@ We’ll try to keep you informed about our progress throughout the process.
 * Follow HackerOne's [disclosure guidelines](https://www.hackerone.com/disclosure-guidelines).
 * Public disclosure of a vulnerability makes it ineligible for a bounty. If the user reports the vulnerability to other security teams (e.g. Ethereum or ETC) but reports to RSK with considerable delay, then RSK may reduce or cancel the bounty.
 
-For more information check RSK bounty program policy at [HackerOne](https://hackerone.com/rsksmart)
+For more information check RSK bounty program policy at [HackerOne](https://hackerone.com/iovlabs)
 
 ## Public Keys
 

@@ -19,16 +19,16 @@
 
 package org.ethereum.net;
 
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.net.message.ReasonCode;
 import org.ethereum.net.p2p.DisconnectMessage;
-
+import org.ethereum.util.ByteUtil;
 import org.junit.Test;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.bouncycastle.util.encoders.Hex;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class DisconnectMessageTest {
 
@@ -64,7 +64,7 @@ public class DisconnectMessageTest {
         logger.trace("{}" + disconnectMessage);
 
         String expected = "c107";
-        assertEquals(expected, Hex.toHexString(disconnectMessage.getEncoded()));
+        assertEquals(expected, ByteUtil.toHexString(disconnectMessage.getEncoded()));
 
         assertEquals(ReasonCode.NULL_IDENTITY, disconnectMessage.getReason());
     }

@@ -19,7 +19,7 @@
 
 package org.ethereum.jsontestsuite.validators;
 
-import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.util.ByteUtil;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -32,7 +32,7 @@ public class OutputValidator {
 
         List<String> results = new ArrayList<>();
 
-        String postOutputFormated = Hex.toHexString(parseData(postOutput));
+        String postOutputFormated = ByteUtil.toHexString(parseData(postOutput));
         if (vStats!=null) vStats.outputChecks++;
         if (!origOutput.equals(postOutputFormated)){
             String formattedString = String.format("HReturn: wrong expected: %s, current: %s",

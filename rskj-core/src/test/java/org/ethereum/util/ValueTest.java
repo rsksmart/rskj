@@ -19,12 +19,10 @@
 
 package org.ethereum.util;
 
+import org.bouncycastle.util.encoders.Hex;
 import org.junit.Test;
 
-import org.bouncycastle.util.encoders.Hex;
-
 import java.math.BigInteger;
-
 import java.util.Arrays;
 import java.util.Objects;
 
@@ -70,16 +68,69 @@ public class ValueTest {
         assertEquals(bigInt.asBigInt(), bigExp);
     }
 
-
     @Test
     public void longListRLPBug_1() {
-
         String testRlp = "f7808080d387206f72726563748a626574656c676575736580d387207870726573738a70726564696361626c658080808080808080808080";
 
         Value val = Value.fromRlpEncoded(Hex.decode(testRlp));
 
-        assertEquals(testRlp, Hex.toHexString(val.encode()));
+        assertEquals(testRlp, ByteUtil.toHexString(val.encode()));
     }
 
+    @Test
+    public void toString_Empty() {
+        Value val = new Value(null);
+        String str = val.toString();
+
+        assertEquals("", str);
+    }
+
+    @Test
+    public void toString_SameString() {
+        Value val = new Value("hello");
+        String str = val.toString();
+
+        assertEquals("hello", str);
+    }
+
+    @Test
+    public void toString_Array() {
+        Value val = new Value(new String[] {"hello", "world", "!"});
+        String str = val.toString();
+
+        assertEquals(" ['hello', 'world', '!'] ", str);
+    }
+
+    @Test
+    public void toString_UnsupportedType() {
+        Value val = new Value('a');
+        String str = val.toString();
+
+        assertEquals("Unexpected type", str);
+    }
+
+    @Test
+    public void isEmpty_Null() {
+        Value val = new Value(null);
+        assertTrue(val.isEmpty());
+    }
+
+    @Test
+    public void isEmpty_EmptyString() {
+        Value val = new Value("");
+        assertTrue(val.isEmpty());
+    }
+
+    @Test
+    public void isEmpty_Bytes() {
+        Value val = new Value(new byte[0]);
+        assertTrue(val.isEmpty());
+    }
+
+    @Test
+    public void isEmpty_Array() {
+        Value val = new Value(new String[0]);
+        assertTrue(val.isEmpty());
+    }
 
 }

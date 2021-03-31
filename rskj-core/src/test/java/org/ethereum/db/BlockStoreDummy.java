@@ -23,12 +23,14 @@ import co.rsk.core.BlockDifficulty;
 import co.rsk.crypto.Keccak256;
 import co.rsk.remasc.Sibling;
 import org.ethereum.core.Block;
+import org.ethereum.core.Bloom;
 import org.ethereum.crypto.HashUtil;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * @author Roman Mandeleil
@@ -49,11 +51,6 @@ public class BlockStoreDummy implements BlockStore {
 
     @Override
     public Block getBlockByHash(byte[] hash) {
-        return null;
-    }
-
-    @Override
-    public Block getBlockByHashAndDepth(byte[] hash, long depth) {
         return null;
     }
 
@@ -96,6 +93,11 @@ public class BlockStoreDummy implements BlockStore {
         return 0;
     }
 
+    @Override
+    public long getMinNumber() {
+        return 0L;
+    }
+
 
     @Override
     public void reBranch(Block forkBlock) {
@@ -116,7 +118,25 @@ public class BlockStoreDummy implements BlockStore {
     public List<BlockInformation> getBlocksInformationByNumber(long blockNumber) { return null; }
 
     @Override
+    public boolean isEmpty() {
+        return false;
+    }
+
+    @Override
+    public void close() {
+
+    }
+
+    @Override
+    public Bloom bloomByBlockNumber(long blockNumber) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public Map<Long, List<Sibling>> getSiblingsFromBlockByHash(Keccak256 hash) {
         return null;
     }
+
+    @Override
+    public void rewind(long blockNumber) { }
 }

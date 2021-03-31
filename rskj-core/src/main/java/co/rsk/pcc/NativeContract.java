@@ -20,15 +20,17 @@ package co.rsk.pcc;
 
 import co.rsk.core.RskAddress;
 import co.rsk.panic.PanicProcessor;
-import org.bouncycastle.util.encoders.Hex;
+import co.rsk.pcc.exception.NativeContractIllegalArgumentException;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
+import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.PrecompiledContracts;
+import org.ethereum.vm.exception.VMException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -105,24 +107,24 @@ public abstract class NativeContract extends PrecompiledContracts.PrecompiledCon
     }
 
     @Override
-    public byte[] execute(byte[] data) {
+    public byte[] execute(byte[] data) throws VMException {
         try
         {
             // Preliminary validation: we need an execution environment
             if (executionEnvironment == null) {
-                throw new RuntimeException("Execution environment is null");
+                throw new VMException("Execution environment is null");
             }
 
             // Preliminary validation: the transaction on which we execute cannot be null
             if (executionEnvironment.getTransaction() == null) {
-                throw new RuntimeException("RSK Transaction is null");
+                throw new VMException("RSK Transaction is null");
             }
 
             Optional<NativeMethod.WithArguments> methodWithArguments = parseData(data);
 
             // No function found with the given data? => halt!
             if (!methodWithArguments.isPresent()) {
-                String errorMessage = String.format("Invalid data given: %s.", Hex.toHexString(data));
+                String errorMessage = String.format("Invalid data given: %s.", ByteUtil.toHexString(data));
                 logger.info(errorMessage);
                 throw new NativeContractIllegalArgumentException(errorMessage);
             }
@@ -171,13 +173,13 @@ public abstract class NativeContract extends PrecompiledContracts.PrecompiledCon
         } catch (Exception ex) {
             logger.error(ex.getMessage(), ex);
             panicProcessor.panic("nativecontractexecute", ex.getMessage());
-            throw new RuntimeException(String.format("Exception executing native contract: %s", ex.getMessage()), ex);
+            throw new VMException(String.format("Exception executing native contract: %s", ex.getMessage()), ex);
         }
     }
 
     private Optional<NativeMethod.WithArguments> parseData(byte[] data) {
         if (data != null && (data.length >= 1 && data.length <= 3)) {
-            logger.warn("Invalid function signature {}.", Hex.toHexString(data));
+            logger.warn("Invalid function signature {}.", ByteUtil.toHexString(data));
             return Optional.empty();
         }
 
@@ -197,7 +199,7 @@ public abstract class NativeContract extends PrecompiledContracts.PrecompiledCon
                     ).findFirst();
 
             if (!maybeMethod.isPresent()) {
-                logger.warn("Invalid function signature {}.", Hex.toHexString(encodedSignature));
+                logger.warn("Invalid function signature {}.", ByteUtil.toHexString(encodedSignature));
                 return Optional.empty();
             }
 
@@ -212,7 +214,7 @@ public abstract class NativeContract extends PrecompiledContracts.PrecompiledCon
                 Object[] arguments = method.getFunction().decode(data);
                 return Optional.of(method.new WithArguments(arguments, data));
             } catch (Exception e) {
-                logger.warn(String.format("Invalid arguments %s for function %s.", Hex.toHexString(data), Hex.toHexString(encodedSignature)), e);
+                logger.warn(String.format("Invalid arguments %s for function %s.", ByteUtil.toHexString(data), ByteUtil.toHexString(encodedSignature)), e);
                 return Optional.empty();
             }
         }

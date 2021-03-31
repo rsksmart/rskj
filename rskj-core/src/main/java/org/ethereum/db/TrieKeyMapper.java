@@ -25,8 +25,16 @@ import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
 
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
+/**
+ * Utility used for the Repository to translate {@link RskAddress} into keys of the trie.
+ *
+ * It uses internally a map cache of address->key (1:1, due to the immutability of the RskAddress object)
+ */
 public class TrieKeyMapper {
+
     public static final int SECURE_KEY_SIZE = 10;
     public static final int REMASC_ACCOUNT_KEY_SIZE = SECURE_KEY_SIZE + RemascTransaction.REMASC_ADDRESS.getBytes().length;
     public static final int ACCOUNT_KEY_SIZE = RskAddress.LENGTH_IN_BYTES;
@@ -35,21 +43,19 @@ public class TrieKeyMapper {
     private static final byte[] STORAGE_PREFIX = new byte[] {0x00}; // This makes the MSB 0 be branching
     private static final byte[] CODE_PREFIX = new byte[] {(byte) 0x80}; // This makes the MSB 1 be branching
 
-    // This is a performance enhancement. When multiple storage rows for the same
-    // contract are stored, the same RskAddress is hashed over and over.
-    // We don't need to re-hash it if was hashed last time.
-    // The reduction we get is about 50% (2x efficiency)
-    private RskAddress lastAddr;
-    private byte[] lastAccountKey;
+    private final Map<RskAddress, byte[]> accountKeys = new HashMap<>(); //map cache of address->key (1:1) ** RskAddress is immutable.
 
     public synchronized byte[] getAccountKey(RskAddress addr) {
-        if (!addr.equals(lastAddr)) {
-            byte[] secureKey = secureKeyPrefix(addr.getBytes());
-            lastAccountKey = ByteUtil.merge(DOMAIN_PREFIX, secureKey, addr.getBytes());
-            lastAddr = addr;
+        if (accountKeys.containsKey(addr)) {
+            byte[] key = accountKeys.get(addr);
+            return Arrays.copyOf(key, key.length);
         }
 
-        return Arrays.copyOf(lastAccountKey, lastAccountKey.length);
+        byte[] key = mapRskAddressToKey(addr);
+
+        accountKeys.put(addr, key);
+
+        return Arrays.copyOf(key, key.length);
     }
 
     public byte[] getCodeKey(RskAddress addr) {
@@ -79,4 +85,10 @@ public class TrieKeyMapper {
     public static byte[] storagePrefix() {
         return Arrays.copyOf(STORAGE_PREFIX, STORAGE_PREFIX.length);
     }
+
+    protected byte[] mapRskAddressToKey(RskAddress addr) {
+        byte[] secureKey = secureKeyPrefix(addr.getBytes());
+        return ByteUtil.merge(DOMAIN_PREFIX, secureKey, addr.getBytes());
+    }
+
 }

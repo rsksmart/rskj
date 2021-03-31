@@ -24,6 +24,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.FastByteComparisons;
 
@@ -398,7 +399,7 @@ public final class DataWord implements Comparable<DataWord> {
     @JsonValue
     @Override
     public String toString() {
-        return Hex.toHexString(data);
+        return ByteUtil.toHexString(data);
     }
 
     public String toPrefixString() {
@@ -409,14 +410,14 @@ public final class DataWord implements Comparable<DataWord> {
         }
 
         if (pref.length < 7) {
-            return Hex.toHexString(pref);
+            return ByteUtil.toHexString(pref);
         }
 
-        return Hex.toHexString(pref).substring(0, 6);
+        return ByteUtil.toHexString(pref).substring(0, 6);
     }
 
     public String shortHex() {
-        String hexValue = Hex.toHexString(getNoLeadZeroesData()).toUpperCase();
+        String hexValue = ByteUtil.toHexString(getNoLeadZeroesData()).toUpperCase();
         return "0x" + hexValue.replaceFirst("^0+(?!$)", "");
     }
 
@@ -529,7 +530,7 @@ public final class DataWord implements Comparable<DataWord> {
     }
 
     public boolean isHex(String hex) {
-        return Hex.toHexString(data).equals(hex);
+        return ByteUtil.toHexString(data).equals(hex);
     }
 
     /**
@@ -540,6 +541,13 @@ public final class DataWord implements Comparable<DataWord> {
     public static DataWord fromString(String value) {
         return valueOf(value.getBytes(StandardCharsets.UTF_8));
     }
+
+    /**
+     * Will create a Dataword from the keccack256 representation of the string value.
+     * @param value any streing with a byte representation of more than 32 bytes
+     * @return a DataWord with the hashed string as the data
+     */
+    public static DataWord fromLongString(String value) { return valueOf(HashUtil.keccak256(value.getBytes(StandardCharsets.UTF_8))); }
 
     @JsonCreator
     public static DataWord valueFromHex(String data) {

@@ -19,6 +19,7 @@
 package co.rsk.peg;
 
 import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.util.ByteUtil;
 import org.junit.Assert;
 import org.junit.Test;
 import org.powermock.reflect.Whitebox;
@@ -54,7 +55,7 @@ public class ABICallSpecTest {
         });
 
         StringBuilder expectedBuilder = new StringBuilder();
-        expectedBuilder.append(Hex.toHexString("a-function".getBytes(StandardCharsets.UTF_8)));
+        expectedBuilder.append(ByteUtil.toHexString("a-function".getBytes(StandardCharsets.UTF_8)));
         expectedBuilder.append("1122334455");
         Assert.assertTrue(Arrays.equals(Hex.decode(expectedBuilder.toString()), spec.getEncoded()));
     }

@@ -670,11 +670,37 @@ public class RLPTest {
     }
 
     @Test
+    public void invalidLengthWithZeroByteLengthUsingDecode2() {
+        byte[] encoded = new byte[] { (byte)0x81 };
+
+        try {
+            RLP.decode2(encoded);
+            Assert.fail();
+        }
+        catch (RLPException ex) {
+            Assert.assertEquals("The RLP byte array doesn't have enough space to hold an element with the specified length", ex.getMessage());
+        }
+    }
+
+    @Test
     public void invalidLengthWithOneByteLength() {
         byte[] encoded = new byte[] { (byte)(183 + 1), 0x01 };
 
         try {
             RLP.decode2OneItem(encoded, 0);
+            Assert.fail();
+        }
+        catch (RLPException ex) {
+            Assert.assertEquals("The RLP byte array doesn't have enough space to hold an element with the specified length", ex.getMessage());
+        }
+    }
+
+    @Test
+    public void invalidLengthWithOneByteLengthUsingDecode2() {
+        byte[] encoded = new byte[] { (byte)(183 + 1), 0x01 };
+
+        try {
+            RLP.decode2(encoded);
             Assert.fail();
         }
         catch (RLPException ex) {
@@ -698,11 +724,39 @@ public class RLPTest {
     }
 
     @Test
+    public void invalidLengthWithOneByteLengthBorderCaseUsingDecode2() {
+        byte[] encoded = new byte[256];
+        encoded[0] = (byte)(183 + 1);
+        encoded[1] = (byte)0xff;
+
+        try {
+            RLP.decode2(encoded);
+            Assert.fail();
+        }
+        catch (RLPException ex) {
+            Assert.assertEquals("The RLP byte array doesn't have enough space to hold an element with the specified length", ex.getMessage());
+        }
+    }
+
+    @Test
     public void invalidLengthWithTwoByteLength() {
         byte[] encoded = new byte[] { (byte)(183 + 2), 0x01, 0x00 };
 
         try {
             RLP.decode2OneItem(encoded, 0);
+            Assert.fail();
+        }
+        catch (RLPException ex) {
+            Assert.assertEquals("The RLP byte array doesn't have enough space to hold an element with the specified length", ex.getMessage());
+        }
+    }
+
+    @Test
+    public void invalidLengthWithTwoByteLengthUsingDecode2() {
+        byte[] encoded = new byte[] { (byte)(183 + 2), 0x01, 0x00 };
+
+        try {
+            RLP.decode2(encoded);
             Assert.fail();
         }
         catch (RLPException ex) {
@@ -719,6 +773,22 @@ public class RLPTest {
 
         try {
             RLP.decode2OneItem(encoded, 0);
+            Assert.fail();
+        }
+        catch (RLPException ex) {
+            Assert.assertEquals("The RLP byte array doesn't have enough space to hold an element with the specified length", ex.getMessage());
+        }
+    }
+
+    @Test
+    public void invalidLengthWithTwoByteLengthBorderCaseUsingDecode2() {
+        byte[] encoded = new byte[1 + 2 + 256 * 256 - 2];
+        encoded[0] = (byte)(183 + 2);
+        encoded[1] = (byte)0xff;
+        encoded[2] = (byte)0xff;
+
+        try {
+            RLP.decode2(encoded);
             Assert.fail();
         }
         catch (RLPException ex) {
@@ -744,11 +814,41 @@ public class RLPTest {
     }
 
     @Test
+    public void invalidLengthWithThreeByteLengthBorderCaseUsingDecode2() {
+        byte[] encoded = new byte[1 + 3 + 256 * 256 * 256 - 2];
+        encoded[0] = (byte)(183 + 3);
+        encoded[1] = (byte)255;
+        encoded[2] = (byte)255;
+        encoded[3] = (byte)255;
+
+        try {
+            RLP.decode2(encoded);
+            Assert.fail();
+        }
+        catch (RLPException ex) {
+            Assert.assertEquals("The RLP byte array doesn't have enough space to hold an element with the specified length", ex.getMessage());
+        }
+    }
+
+    @Test
     public void invalidLengthWithFourByteLength() {
         byte[] encoded = new byte[] { (byte)(183 + 4), 0x01, 0x00, 0x00, 0x00 };
 
         try {
             RLP.decode2OneItem(encoded, 0);
+            Assert.fail();
+        }
+        catch (RLPException ex) {
+            Assert.assertEquals("The RLP byte array doesn't have enough space to hold an element with the specified length", ex.getMessage());
+        }
+    }
+
+    @Test
+    public void invalidLengthWithFourByteLengthUsingDecode2() {
+        byte[] encoded = new byte[] { (byte)(183 + 4), 0x01, 0x00, 0x00, 0x00 };
+
+        try {
+            RLP.decode2(encoded);
             Assert.fail();
         }
         catch (RLPException ex) {
@@ -770,11 +870,37 @@ public class RLPTest {
     }
 
     @Test
+    public void invalidOneByteLengthUsingDecode2() {
+        byte[] encoded = new byte[] { (byte)(183 + 1) };
+
+        try {
+            RLP.decode2(encoded);
+            Assert.fail();
+        }
+        catch (RLPException ex) {
+            Assert.assertEquals("The length of the RLP item length can't possibly fit the data byte array", ex.getMessage());
+        }
+    }
+
+    @Test
     public void invalidTwoByteLength() {
         byte[] encoded = new byte[] { (byte)(183 + 2), 0x01 };
 
         try {
             RLP.decode2OneItem(encoded, 0);
+            Assert.fail();
+        }
+        catch (RLPException ex) {
+            Assert.assertEquals("The length of the RLP item length can't possibly fit the data byte array", ex.getMessage());
+        }
+    }
+
+    @Test
+    public void invalidTwoByteLengthUsingDecode2() {
+        byte[] encoded = new byte[] { (byte)(183 + 2), 0x01 };
+
+        try {
+            RLP.decode2(encoded);
             Assert.fail();
         }
         catch (RLPException ex) {
@@ -796,11 +922,37 @@ public class RLPTest {
     }
 
     @Test
+    public void invalidThreeByteLengthUsingDecode2() {
+        byte[] encoded = new byte[] { (byte)(183 + 3), 0x01, 0x02 };
+
+        try {
+            RLP.decode2(encoded);
+            Assert.fail();
+        }
+        catch (RLPException ex) {
+            Assert.assertEquals("The length of the RLP item length can't possibly fit the data byte array", ex.getMessage());
+        }
+    }
+
+    @Test
     public void invalidFourByteLength() {
         byte[] encoded = new byte[] { (byte)(183 + 4), 0x01, 0x02, 0x03 };
 
         try {
             RLP.decode2OneItem(encoded, 0);
+            Assert.fail();
+        }
+        catch (RLPException ex) {
+            Assert.assertEquals("The length of the RLP item length can't possibly fit the data byte array", ex.getMessage());
+        }
+    }
+
+    @Test
+    public void invalidFourByteLengthUsingDecode2() {
+        byte[] encoded = new byte[] { (byte)(183 + 4), 0x01, 0x02, 0x03 };
+
+        try {
+            RLP.decode2(encoded);
             Assert.fail();
         }
         catch (RLPException ex) {

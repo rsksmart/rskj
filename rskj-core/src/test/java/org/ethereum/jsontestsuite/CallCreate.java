@@ -19,9 +19,9 @@
 
 package org.ethereum.jsontestsuite;
 
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.util.ByteUtil;
 import org.json.simple.JSONObject;
-import org.bouncycastle.util.encoders.Hex;
 
 /**
  * @author Roman Mandeleil
@@ -78,10 +78,10 @@ public class CallCreate {
     @Override
     public String toString() {
         return "CallCreate{" +
-                "data=" + Hex.toHexString(data) +
-                ", destination=" + Hex.toHexString(destination) +
+                "data=" + ByteUtil.toHexString(data) +
+                ", destination=" + ByteUtil.toHexString(destination) +
                 ", gasLimit=" + Long.toHexString(gasLimit) +
-                ", value=" + Hex.toHexString(value) +
+                ", value=" + ByteUtil.toHexString(value) +
                 '}';
     }
 }

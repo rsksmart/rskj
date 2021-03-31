@@ -80,4 +80,35 @@ public class ListArrayUtil {
 
         return array;
     }
+
+    public static int lastIndexOfSubList(byte[] source, byte[] target) {
+        if (source == null || target == null) {
+            return -1;
+        }
+        if (target.length == 0) {
+            return source.length;
+        }
+        if (source.length < target.length) {
+            return -1;
+        }
+
+        final int max = source.length - target.length;
+
+        for (int i = max; i >= 0; i--) {
+            boolean found = true;
+
+            for (int j = 0; j < target.length; j++) {
+                if (source[i + j] != target[j]) {
+                    found = false;
+                    break;
+                }
+            }
+
+            if (found) {
+                return i;
+            }
+        }
+
+        return -1;
+    }
 }

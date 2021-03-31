@@ -25,6 +25,7 @@ import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.BlockFactory;
+import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.OpCode;
 import org.ethereum.vm.PrecompiledContracts;
@@ -507,7 +508,7 @@ public class VMPerformanceTest {
         //if (!Arrays.equals(expectedHReturn, actualHReturn)) {
 
         // DataWord item1 = program.stackPop();
-        assertEquals(s_expected_1, Hex.toHexString(actualHReturn).toUpperCase());
+        assertEquals(s_expected_1, ByteUtil.toHexString(actualHReturn).toUpperCase());
     }
 
     LinkedList<Object> lk;
@@ -621,7 +622,7 @@ public class VMPerformanceTest {
         if (program.getResult().getHReturn() != null) {
             actualHReturn = program.getResult().getHReturn();
         }
-        assertEquals(s_expected, Hex.toHexString(actualHReturn).toUpperCase());
+        assertEquals(s_expected, ByteUtil.toHexString(actualHReturn).toUpperCase());
         System.out.println("-----------------------------------------------------------------------------");
     }
     /* TEST CASE LIST END */

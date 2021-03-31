@@ -25,6 +25,7 @@ import co.rsk.crypto.Keccak256;
 import org.apache.commons.lang3.StringUtils;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockFactory;
+import org.ethereum.core.BlockHeader;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.vm.DataWord;
 import org.mapdb.DB;
@@ -33,7 +34,10 @@ import org.mapdb.DBMaker;
 import java.io.File;
 import java.math.BigInteger;
 import java.util.*;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
+import static junit.framework.TestCase.*;
 import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
 
 public final class TestUtils {
@@ -107,14 +111,17 @@ public final class TestUtils {
             byte[] difficutly = new BigInteger(8, new Random()).toByteArray();
             byte[] newHash = HashUtil.randomHash();
 
+            BlockHeader newHeader = blockFactory.getBlockHeaderBuilder()
+                    .setParentHash(lastHash)
+                    .setUnclesHash(newHash)
+                    .setCoinbase(RskAddress.nullAddress())
+                    .setStateRoot(HashUtil.randomHash())
+                    .setDifficultyFromBytes(difficutly)
+                    .setNumber(lastIndex)
+                    .build();
+
             Block block = blockFactory.newBlock(
-                    blockFactory.newHeader(
-                            lastHash, newHash, RskAddress.nullAddress().getBytes(),
-                            HashUtil.randomHash(), EMPTY_TRIE_HASH, null,
-                            null, difficutly, lastIndex,
-                            new byte[] {0}, 0, 0, null, Coin.ZERO,
-                            null, null, null, null, null, 0
-                    ),
+                    newHeader,
                     Collections.emptyList(),
                     Collections.emptyList()
             );
@@ -143,5 +150,18 @@ public final class TestUtils {
         byte[] result = Arrays.copyOf(first, first.length + second.length);
         System.arraycopy(second, 0, result, first.length, second.length);
         return result;
+    }
+
+    public static<T extends Exception>  T assertThrows(Class<T> c, Runnable f) {
+        Exception thrownException = null;
+        try {
+            f.run();
+        } catch (Exception e) {
+            thrownException = e;
+        }
+
+        assertNotNull(thrownException);
+        assertEquals(thrownException.getClass(), c);
+        return c.cast(thrownException);
     }
 }

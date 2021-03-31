@@ -36,18 +36,17 @@ import co.rsk.test.World;
 import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.util.DifficultyUtils;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
-import org.ethereum.core.Block;
-import org.ethereum.core.BlockFactory;
-import org.ethereum.core.CallTransaction;
-import org.ethereum.core.Transaction;
+import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
+import org.ethereum.vm.exception.VMException;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -119,7 +118,16 @@ public class BlockHeaderContractTest {
         getUncleCoinbaseAddressFunction = getContractFunction(contract, GetUncleCoinbaseAddress.class);
 
         // invoke transaction
-        rskTx = new Transaction(PrecompiledContracts.BLOCK_HEADER_ADDR_STR, AMOUNT, NONCE, GAS_PRICE, GAS_LIMIT, DATA, Constants.REGTEST_CHAIN_ID);
+        rskTx = Transaction
+                .builder()
+                .nonce(NONCE)
+                .gasPrice(GAS_PRICE)
+                .gasLimit(GAS_LIMIT)
+                .destination(Hex.decode(PrecompiledContracts.BLOCK_HEADER_ADDR_STR))
+                .data(Hex.decode(DATA))
+                .chainId(Constants.REGTEST_CHAIN_ID)
+                .value(AMOUNT)
+                .build();
         rskTx.sign(new ECKey().getPrivKeyBytes());
 
         executionEnvironment = mock(ExecutionEnvironment.class);
@@ -127,7 +135,7 @@ public class BlockHeaderContractTest {
     }
 
     @Test
-    public void getCoinbase() {
+    public void getCoinbase() throws VMException {
         buildBlockchainOfLength(2);
 
         contract.init(rskTx, world.getBlockChain().getBestBlock(), world.getRepository(), world.getBlockStore(), null, new LinkedList<>());
@@ -144,7 +152,7 @@ public class BlockHeaderContractTest {
     }
 
     @Test
-    public void getMinimumGasPrice() {
+    public void getMinimumGasPrice() throws VMException {
         buildBlockchainOfLength(2);
 
         contract.init(rskTx, world.getBlockChain().getBestBlock(), world.getRepository(), world.getBlockStore(), null, new LinkedList<>());
@@ -161,7 +169,7 @@ public class BlockHeaderContractTest {
     }
 
     @Test
-    public void getBlockHash() {
+    public void getBlockHash() throws VMException {
         buildBlockchainOfLength(2);
 
         contract.init(rskTx, world.getBlockChain().getBestBlock(), world.getRepository(), world.getBlockStore(), null, new LinkedList<>());
@@ -174,11 +182,11 @@ public class BlockHeaderContractTest {
 
         byte[] blockHash = (byte[]) decodedResult[0];
 
-        assertEquals(Hex.toHexString(expectedHash), Hex.toHexString(blockHash));
+        assertEquals(ByteUtil.toHexString(expectedHash), ByteUtil.toHexString(blockHash));
     }
 
     @Test
-    public void getMergedMiningTags() {
+    public void getMergedMiningTags() throws VMException {
         buildBlockchainOfLength(2);
 
         contract.init(rskTx, world.getBlockChain().getBestBlock(), world.getRepository(), world.getBlockStore(), null, new LinkedList<>());
@@ -197,7 +205,7 @@ public class BlockHeaderContractTest {
     }
 
     @Test
-    public void getEmptyMergedMiningTags() {
+    public void getEmptyMergedMiningTags() throws VMException {
         contract.init(rskTx, world.getBlockChain().getBestBlock(), world.getRepository(), world.getBlockStore(), null, new LinkedList<>());
 
         byte[] encodedResult = contract.execute(getMergedMiningTagsFunction.encode(new BigInteger("0")));
@@ -211,7 +219,7 @@ public class BlockHeaderContractTest {
     }
 
     @Test
-    public void getGasLimit() {
+    public void getGasLimit() throws VMException {
         buildBlockchainOfLength(2);
 
         contract.init(rskTx, world.getBlockChain().getBestBlock(), world.getRepository(), world.getBlockStore(), null, new LinkedList<>());
@@ -228,7 +236,7 @@ public class BlockHeaderContractTest {
     }
 
     @Test
-    public void getGasUsed() {
+    public void getGasUsed() throws VMException {
         buildBlockchainOfLength(2);
 
         contract.init(rskTx, world.getBlockChain().getBestBlock(), world.getRepository(), world.getBlockStore(), null, new LinkedList<>());
@@ -245,7 +253,7 @@ public class BlockHeaderContractTest {
     }
 
     @Test
-    public void getDifficulty() {
+    public void getDifficulty() throws VMException {
         buildBlockchainOfLength(2);
 
         contract.init(rskTx, world.getBlockChain().getBestBlock(), world.getRepository(), world.getBlockStore(), null, new LinkedList<>());
@@ -262,7 +270,7 @@ public class BlockHeaderContractTest {
     }
 
     @Test
-    public void getBitcoinHeader() {
+    public void getBitcoinHeader() throws VMException {
         buildBlockchainOfLength(2);
 
         contract.init(rskTx, world.getBlockChain().getBestBlock(), world.getRepository(), world.getBlockStore(), null, new LinkedList<>());
@@ -287,7 +295,7 @@ public class BlockHeaderContractTest {
     }
 
     @Test
-    public void getUncleCoinbaseAddress() {
+    public void getUncleCoinbaseAddress() throws VMException {
         // creates a blockchain where every block has two uncles
         buildBlockchainOfLengthWithUncles(6);
 
@@ -327,7 +335,7 @@ public class BlockHeaderContractTest {
     }
 
     @Test
-    public void getDifficultyForBlockAtDepth1000() {
+    public void getDifficultyForBlockAtDepth1000() throws VMException {
         buildBlockchainOfLength(4000);
 
         contract.init(rskTx, world.getBlockChain().getBestBlock(), world.getRepository(), world.getBlockStore(), null, new LinkedList<>());
@@ -344,7 +352,7 @@ public class BlockHeaderContractTest {
     }
 
     @Test
-    public void blockBeyondMaximumBlockDepth() {
+    public void blockBeyondMaximumBlockDepth() throws VMException {
         buildBlockchainOfLength(5000);
 
         contract.init(rskTx, world.getBlockChain().getBestBlock(), world.getRepository(), world.getBlockStore(), null, new LinkedList<>());
@@ -360,7 +368,7 @@ public class BlockHeaderContractTest {
     }
 
     @Test
-    public void invalidBlockDepth() {
+    public void invalidBlockDepth() throws VMException {
         buildBlockchainOfLength(300);
 
         contract.init(rskTx, world.getBlockChain().getBestBlock(), world.getRepository(), world.getBlockStore(), null, new LinkedList<>());
@@ -376,7 +384,7 @@ public class BlockHeaderContractTest {
     }
 
     @Test
-    public void getBlockHeaderFieldsFromBranch(){
+    public void getBlockHeaderFieldsFromBranch() throws VMException {
         String bestChainCoinbase = "22222222222222222222";
         String initialChainCoinbase = "33333333333333333333";
 
@@ -416,8 +424,8 @@ public class BlockHeaderContractTest {
         executeAndAssertCoinbase(new BigInteger("3"), initialChainCoinbase);
     }
 
-    @Test(expected = RuntimeException.class)
-    public void negativeBlockDepth() {
+    @Test(expected = VMException.class)
+    public void negativeBlockDepth() throws VMException {
         buildBlockchainOfLength(10);
 
         contract.init(rskTx, world.getBlockChain().getBestBlock(), world.getRepository(), world.getBlockStore(), null, new LinkedList<>());
@@ -427,8 +435,8 @@ public class BlockHeaderContractTest {
         Assert.fail("Trying to access a block using a negative block depth should throw an exception");
     }
 
-    @Test(expected = RuntimeException.class)
-    public void negativeUncleIndex() {
+    @Test(expected = VMException.class)
+    public void negativeUncleIndex() throws VMException {
         buildBlockchainOfLength(10);
 
         contract.init(rskTx, world.getBlockChain().getBestBlock(), world.getRepository(), world.getBlockStore(), null, new LinkedList<>());
@@ -438,7 +446,7 @@ public class BlockHeaderContractTest {
         Assert.fail("Trying to access an uncle coinbase using a negative uncle index should throw an exception");
     }
 
-    private void executeAndAssertCoinbase(BigInteger blockDepth, String expectedCoinbase){
+    private void executeAndAssertCoinbase(BigInteger blockDepth, String expectedCoinbase) throws VMException {
         byte[] encodedResult = contract.execute(getCoinbaseFunction.encode(blockDepth));
         Object[] decodedResult = getCoinbaseFunction.decodeResult(encodedResult);
 

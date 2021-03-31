@@ -88,9 +88,11 @@ public class ParentGasLimitRuleTest {
     public static BlockHeader getHeader(BlockFactory blockFactory, long gasLimitValue) {
         byte[] gasLimit = DataWord.valueOf(gasLimitValue).getData();
 
-        BlockHeader header = blockFactory.newHeader(null, null, TestUtils.randomAddress().getBytes(),
-                null, BlockDifficulty.ZERO.getBytes(), 0, gasLimit, 0,
-                0, null, null, 0);
+        BlockHeader header = blockFactory.getBlockHeaderBuilder()
+                .setCoinbase(TestUtils.randomAddress())
+                .setDifficulty(BlockDifficulty.ZERO)
+                .setGasLimit(gasLimit)
+                .build();
 
         return header;
     }

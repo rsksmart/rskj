@@ -28,12 +28,11 @@ import co.rsk.net.sync.SyncConfiguration;
 import co.rsk.scoring.PeerScoringManager;
 import co.rsk.test.World;
 import co.rsk.test.builders.BlockChainBuilder;
-import co.rsk.validators.BlockCompositeRule;
-import co.rsk.validators.BlockRootValidationRule;
-import co.rsk.validators.BlockUnclesHashValidationRule;
-import co.rsk.validators.DummyBlockValidationRule;
+import co.rsk.validators.*;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.core.Blockchain;
+import org.ethereum.core.Genesis;
+import org.ethereum.db.IndexedBlockStore;
 import org.ethereum.rpc.Simples.SimpleChannelManager;
 import org.ethereum.util.RskMockFactory;
 import org.junit.Assert;
@@ -67,7 +66,7 @@ public class SimpleAsyncNode extends SimpleNode {
 
     @Override
     public void receiveMessageFrom(SimpleNode peer, Message message) {
-        MessageChannel senderToPeer = simpleChannelManager.getMessageChannel(this, peer);
+        Peer senderToPeer = simpleChannelManager.getMessageChannel(this, peer);
         futures.add(
                 executor.submit(() -> this.getHandler().processMessage(senderToPeer, message)));
     }
@@ -119,22 +118,30 @@ public class SimpleAsyncNode extends SimpleNode {
     }
 
     public static SimpleAsyncNode createNode(Blockchain blockchain, SyncConfiguration syncConfiguration) {
-        final BlockStore store = new BlockStore();
+        return createNode(blockchain, syncConfiguration, mock(IndexedBlockStore.class));
+    }
 
+    public static SimpleAsyncNode createNode(
+            Blockchain blockchain,
+            SyncConfiguration syncConfiguration,
+            org.ethereum.db.BlockStore indexedBlockStore) {
+        NetBlockStore blockStore = new NetBlockStore();
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
-        BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, syncConfiguration);
-        NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
+        BlockSyncService blockSyncService = new BlockSyncService(config, blockStore, blockchain, nodeInformation, syncConfiguration, DummyBlockValidator.VALID_RESULT_INSTANCE);
+        NodeBlockProcessor processor = new NodeBlockProcessor(blockStore, blockchain, nodeInformation, blockSyncService, syncConfiguration);
         DummyBlockValidationRule blockValidationRule = new DummyBlockValidationRule();
         PeerScoringManager peerScoringManager = RskMockFactory.getPeerScoringManager();
         SimpleChannelManager channelManager = new SimpleChannelManager();
         BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
         SyncProcessor syncProcessor = new SyncProcessor(
-                blockchain, mock(ConsensusValidationMainchainView.class), blockSyncService, channelManager, syncConfiguration, blockFactory,
+                blockchain, indexedBlockStore, mock(ConsensusValidationMainchainView.class), blockSyncService, syncConfiguration, blockFactory,
                 blockValidationRule,
-                new BlockCompositeRule(new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())),
-                new DifficultyCalculator(config.getActivationConfig(), config.getNetworkConstants()), new PeersInformation(channelManager, syncConfiguration, blockchain, peerScoringManager)
+                new SyncBlockValidatorRule(new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())),
+                new DifficultyCalculator(config.getActivationConfig(), config.getNetworkConstants()),
+                new PeersInformation(channelManager, syncConfiguration, blockchain, peerScoringManager),
+                mock(Genesis.class)
         );
-        NodeMessageHandler handler = new NodeMessageHandler(config, mock(org.ethereum.db.BlockStore.class), processor, syncProcessor, channelManager, null, peerScoringManager, blockValidationRule);
+        NodeMessageHandler handler = new NodeMessageHandler(config, processor, syncProcessor, channelManager, null, peerScoringManager, mock(StatusResolver.class));
 
         return new SimpleAsyncNode(handler, blockchain, syncProcessor, channelManager);
     }
@@ -144,13 +151,13 @@ public class SimpleAsyncNode extends SimpleNode {
     public static SimpleAsyncNode createNodeWithBlockChainBuilder(int size) {
         final Blockchain blockchain = new BlockChainBuilder().ofSize(0);
         BlockChainBuilder.extend(blockchain, size, false, true);
-        return createNode(blockchain, SyncConfiguration.IMMEDIATE_FOR_TESTING);
+        return createNode(blockchain, SyncConfiguration.IMMEDIATE_FOR_TESTING, mock(org.ethereum.db.BlockStore.class));
     }
 
     public static SimpleAsyncNode createNodeWithWorldBlockChain(int size, boolean withUncles, boolean mining) {
         final World world = new World();
         final Blockchain blockchain = world.getBlockChain();
         BlockChainBuilder.extend(blockchain, size, withUncles, mining);
-        return createNode(blockchain, SyncConfiguration.IMMEDIATE_FOR_TESTING);
+        return createNode(blockchain, SyncConfiguration.IMMEDIATE_FOR_TESTING, world.getBlockStore());
     }
 }

@@ -19,17 +19,20 @@
 
 package org.ethereum.db;
 
-import co.rsk.test.World;
-import co.rsk.test.builders.BlockBuilder;
-import org.ethereum.core.*;
+import co.rsk.crypto.Keccak256;
+import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.TestUtils;
+import org.ethereum.core.Bloom;
+import org.ethereum.core.Transaction;
+import org.ethereum.core.TransactionReceipt;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.vm.LogInfo;
 import org.junit.Assert;
 import org.junit.Test;
-import org.bouncycastle.util.encoders.Hex;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Created by ajlopez on 3/1/2016.
@@ -38,7 +41,7 @@ public class ReceiptStoreImplTest {
     @Test
     public void getUnknownKey() {
         ReceiptStore store = new ReceiptStoreImpl(new HashMapDB());
-        byte[] key = new byte[] { 0x01, 0x02 };
+        byte[] key = new byte[]{0x01, 0x02};
 
         TransactionInfo result = store.get(key);
 
@@ -157,11 +160,11 @@ public class ReceiptStoreImplTest {
         ReceiptStore store = new ReceiptStoreImpl(new HashMapDB());
         TransactionReceipt receipt = createReceipt();
 
-        byte[] blockHash = Hex.decode("010203040506070809");
+        Keccak256 blockHash = TestUtils.randomHash();
 
-        TransactionInfo result = store.get(receipt.getTransaction().getHash().getBytes(), blockHash, null);
+        Optional<TransactionInfo> resultOpt = store.get(receipt.getTransaction().getHash(), blockHash);
 
-        Assert.assertNull(result);
+        Assert.assertFalse(resultOpt.isPresent());
     }
 
     @Test
@@ -169,14 +172,14 @@ public class ReceiptStoreImplTest {
         ReceiptStore store = new ReceiptStoreImpl(new HashMapDB());
         TransactionReceipt receipt = createReceipt();
 
-        byte[] blockHash0 = Hex.decode("0102030405060708000000000000000000000000000000000000000000000000");
-        byte[] blockHash = Hex.decode("0102030405060708090000000000000000000000000000000000000000000000");
+        Keccak256 blockHash0 = new Keccak256("0102030405060708000000000000000000000000000000000000000000000000");
+        Keccak256 blockHash = new Keccak256("0102030405060708090000000000000000000000000000000000000000000000");
 
-        store.add(blockHash, 1, receipt);
+        store.add(blockHash.getBytes(), 1, receipt);
 
-        TransactionInfo result = store.get(receipt.getTransaction().getHash().getBytes(), blockHash0, null);
+        Optional<TransactionInfo> resultOpt = store.get(receipt.getTransaction().getHash(), blockHash0);
 
-        Assert.assertNull(result);
+        Assert.assertFalse(resultOpt.isPresent());
     }
 
     @Test
@@ -184,19 +187,20 @@ public class ReceiptStoreImplTest {
         ReceiptStore store = new ReceiptStoreImpl(new HashMapDB());
 
         TransactionReceipt receipt0 = createReceipt();
-        byte[] blockHash0 = Hex.decode("0102030405060708090000000000000000000000000000000000000000000000");
+        Keccak256 blockHash0 = new Keccak256("0102030405060708090000000000000000000000000000000000000000000000");
 
-        store.add(blockHash0, 3, receipt0);
+        store.add(blockHash0.getBytes(), 3, receipt0);
 
         TransactionReceipt receipt = createReceipt();
-        byte[] blockHash = Hex.decode("0102030405060708000000000000000000000000000000000000000000000000");
+        Keccak256 blockHash = new Keccak256("0102030405060708000000000000000000000000000000000000000000000000");
 
-        store.add(blockHash, 42, receipt);
+        store.add(blockHash.getBytes(), 42, receipt);
 
-        TransactionInfo result = store.get(receipt.getTransaction().getHash().getBytes(), blockHash0, null);
+        Optional<TransactionInfo> resultOpt = store.get(receipt.getTransaction().getHash(), blockHash0);
+        TransactionInfo result = resultOpt.get();
 
         Assert.assertNotNull(result.getBlockHash());
-        Assert.assertArrayEquals(blockHash0, result.getBlockHash());
+        Assert.assertArrayEquals(blockHash0.getBytes(), result.getBlockHash());
         Assert.assertEquals(3, result.getIndex());
         Assert.assertArrayEquals(receipt0.getEncoded(), result.getReceipt().getEncoded());
     }
@@ -206,68 +210,22 @@ public class ReceiptStoreImplTest {
         ReceiptStore store = new ReceiptStoreImpl(new HashMapDB());
 
         TransactionReceipt receipt0 = createReceipt();
-        byte[] blockHash0 = Hex.decode("0102030405060708090000000000000000000000000000000000000000000000");
+        Keccak256 blockHash0 = new Keccak256("0102030405060708090000000000000000000000000000000000000000000000");
 
-        store.add(blockHash0, 3, receipt0);
-
-        TransactionReceipt receipt = createReceipt();
-        byte[] blockHash = Hex.decode("0102030405060708000000000000000000000000000000000000000000000000");
-
-        store.add(blockHash, 42, receipt);
-
-        TransactionInfo result = store.get(receipt.getTransaction().getHash().getBytes(), blockHash, null);
-
-        Assert.assertNotNull(result.getBlockHash());
-        Assert.assertArrayEquals(blockHash, result.getBlockHash());
-        Assert.assertEquals(42, result.getIndex());
-        Assert.assertArrayEquals(receipt.getEncoded(), result.getReceipt().getEncoded());
-    }
-
-    @Test
-    public void addTwoTransactionsAndGetTransactionByDescendantBlocks() {
-        World world = new World();
-        Block genesis = world.getBlockChain().getBestBlock();
-
-        Block block1a = new BlockBuilder(null, null, null).difficulty(10).parent(genesis).build();
-        Block block1b = new BlockBuilder(null, null,null).difficulty(block1a.getDifficulty().asBigInteger().longValue()-1).parent(genesis).build();
-
-        Block block2a = new BlockBuilder(null, null, null).parent(block1a).build();
-        Block block2b = new BlockBuilder(null, null, null).parent(block1b).build();
-
-        Assert.assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block1a));
-        Assert.assertEquals(ImportResult.IMPORTED_NOT_BEST, world.getBlockChain().tryToConnect(block1b));
-        Assert.assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block2a));
-        Assert.assertEquals(ImportResult.IMPORTED_NOT_BEST, world.getBlockChain().tryToConnect(block2b));
-
-        ReceiptStore store = new ReceiptStoreImpl(new HashMapDB());
-
-        TransactionReceipt receipt0 = createReceipt();
-        byte[] blockHash0 = Hex.decode("010203040506070809");
-
-        store.add(block1a.getHash().getBytes(), 3, receipt0);
+        store.add(blockHash0.getBytes(), 3, receipt0);
 
         TransactionReceipt receipt = createReceipt();
-        byte[] blockHash = Hex.decode("0102030405060708");
+        Keccak256 blockHash = new Keccak256("0102030405060708000000000000000000000000000000000000000000000000");
 
-        store.add(block1b.getHash().getBytes(), 42, receipt);
+        store.add(blockHash.getBytes(), 42, receipt);
 
-        TransactionInfo result = store.get(receipt.getTransaction().getHash().getBytes(), block2a.getHash().getBytes(), world.getBlockStore());
-
-        Assert.assertNotNull(result.getBlockHash());
-        Assert.assertArrayEquals(block1a.getHash().getBytes(), result.getBlockHash());
-        Assert.assertEquals(3, result.getIndex());
-        Assert.assertArrayEquals(receipt.getEncoded(), result.getReceipt().getEncoded());
-
-        result = store.get(receipt.getTransaction().getHash().getBytes(), block2b.getHash().getBytes(), world.getBlockStore());
+        Optional<TransactionInfo> resultOpt = store.get(receipt.getTransaction().getHash(), blockHash);
+        TransactionInfo result = resultOpt.get();
 
         Assert.assertNotNull(result.getBlockHash());
-        Assert.assertArrayEquals(block1b.getHash().getBytes(), result.getBlockHash());
+        Assert.assertArrayEquals(blockHash.getBytes(), result.getBlockHash());
         Assert.assertEquals(42, result.getIndex());
         Assert.assertArrayEquals(receipt.getEncoded(), result.getReceipt().getEncoded());
-
-        result = store.get(receipt.getTransaction().getHash().getBytes(), genesis.getHash().getBytes(), world.getBlockStore());
-
-        Assert.assertNull(result);
     }
 
     // from TransactionTest
@@ -287,9 +245,7 @@ public class ReceiptStoreImplTest {
 
         // TODO calculate cumulative gas
         TransactionReceipt receipt = new TransactionReceipt(stateRoot, gasUsed, gasUsed, bloom, logs, new byte[]{0x01});
-
-        receipt.setTransaction(new Transaction((byte[]) null, null, null, null, null, null));
-
+        receipt.setTransaction(Transaction.builder().build());
         return receipt;
     }
 }

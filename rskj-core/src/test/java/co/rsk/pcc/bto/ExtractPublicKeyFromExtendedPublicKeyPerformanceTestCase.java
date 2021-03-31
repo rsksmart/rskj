@@ -26,11 +26,12 @@ import co.rsk.peg.performance.ExecutionStats;
 import co.rsk.peg.performance.PrecompiledContractPerformanceTestCase;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.crypto.ECKey;
+import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.PrecompiledContracts;
+import org.ethereum.vm.exception.VMException;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
-import org.spongycastle.util.encoders.Hex;
 
 import java.util.Random;
 
@@ -39,7 +40,7 @@ public class ExtractPublicKeyFromExtendedPublicKeyPerformanceTestCase extends Pr
     private CallTransaction.Function function;
 
     @Test
-    public void extractPublicKeyFromExtendedPublicKey() {
+    public void extractPublicKeyFromExtendedPublicKey() throws VMException {
         function = new ExtractPublicKeyFromExtendedPublicKey(null, null).getFunction();
 
         EnvironmentBuilder environmentBuilder = (int executionIndex, TxBuilder txBuilder, int height) -> {
@@ -52,14 +53,14 @@ public class ExtractPublicKeyFromExtendedPublicKeyPerformanceTestCase extends Pr
         HDWalletUtilsPerformanceTest.addStats(estimateExtractPublicKeyFromExtendedPublicKey(500, environmentBuilder));
     }
 
-    private ExecutionStats estimateExtractPublicKeyFromExtendedPublicKey(int times, EnvironmentBuilder environmentBuilder) {
+    private ExecutionStats estimateExtractPublicKeyFromExtendedPublicKey(int times, EnvironmentBuilder environmentBuilder) throws VMException {
         ExecutionStats stats = new ExecutionStats(function.name);
         Random rnd = new Random();
         byte[] chainCode = new byte[32];
         NetworkParameters networkParameters = NetworkParameters.fromID(NetworkParameters.ID_MAINNET);
 
         byte[] publicKey = new ECKey().getPubKey(true);
-        String expectedHexPublicKey = Hex.toHexString(publicKey);
+        String expectedHexPublicKey = ByteUtil.toHexString(publicKey);
 
         ABIEncoder abiEncoder = (int executionIndex) -> {
             rnd.nextBytes(chainCode);
@@ -84,7 +85,7 @@ public class ExtractPublicKeyFromExtendedPublicKeyPerformanceTestCase extends Pr
                 (EnvironmentBuilder.Environment environment, byte[] result) -> {
                     Object[] decodedResult = function.decodeResult(result);
                     Assert.assertEquals(byte[].class, decodedResult[0].getClass());
-                    String hexPublicKey = Hex.toHexString((byte[]) decodedResult[0]);
+                    String hexPublicKey = ByteUtil.toHexString((byte[]) decodedResult[0]);
                     Assert.assertEquals(expectedHexPublicKey, hexPublicKey);
                 }
         );

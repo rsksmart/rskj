@@ -24,7 +24,7 @@ import co.rsk.bitcoinj.crypto.DeterministicKey;
 import co.rsk.bitcoinj.crypto.HDKeyDerivation;
 import co.rsk.bitcoinj.crypto.HDUtils;
 import co.rsk.pcc.ExecutionEnvironment;
-import co.rsk.pcc.NativeContractIllegalArgumentException;
+import co.rsk.pcc.exception.NativeContractIllegalArgumentException;
 import co.rsk.pcc.NativeMethod;
 import org.ethereum.core.CallTransaction;
 
@@ -57,7 +57,7 @@ public class DeriveExtendedPublicKey extends NativeMethod {
     }
 
     @Override
-    public Object execute(Object[] arguments) {
+    public Object execute(Object[] arguments) throws NativeContractIllegalArgumentException {
         if (arguments == null) {
             throw new NativeContractIllegalArgumentException("Must provide xpub and path arguments. None was provided");
         }
@@ -121,7 +121,7 @@ public class DeriveExtendedPublicKey extends NativeMethod {
         return 107_000L;
     }
 
-    private void throwInvalidPath(String path) {
+    private void throwInvalidPath(String path) throws NativeContractIllegalArgumentException {
         throw new NativeContractIllegalArgumentException(getInvalidPathErrorMessage(path));
     }
 

@@ -32,6 +32,7 @@ import org.ethereum.core.Repository;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.MutableRepository;
+import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RskTestFactory;
 import org.ethereum.vm.DataWord;
 import org.junit.Assert;
@@ -669,7 +670,7 @@ public class RepositoryImplOriginalTest {
         track1.commit();
         // leaving level_1
 
-        Assert.assertEquals(Hex.toHexString(HashUtil.EMPTY_TRIE_HASH), Hex.toHexString(repository.getRoot()));
+        Assert.assertEquals(ByteUtil.toHexString(HashUtil.EMPTY_TRIE_HASH), ByteUtil.toHexString(repository.getRoot()));
     }
 
     @Test
@@ -767,7 +768,7 @@ public class RepositoryImplOriginalTest {
         Repository[] snaps = new Repository[10];
 
         for (int i = 0; i < 10; ++i) {
-            snaps[i] = new MutableRepository(trieStore, trieStore.retrieve(repository.getRoot()));
+            snaps[i] = new MutableRepository(trieStore, trieStore.retrieve(repository.getRoot()).get());
         }
         for (int i = 0; i < 10; ++i) {
             int finalI = i;

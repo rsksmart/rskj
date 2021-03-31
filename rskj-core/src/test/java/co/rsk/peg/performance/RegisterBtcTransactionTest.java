@@ -25,6 +25,8 @@ import co.rsk.bitcoinj.store.BtcBlockStore;
 import co.rsk.peg.*;
 import co.rsk.peg.whitelist.OneOffWhiteListEntry;
 import org.ethereum.core.Repository;
+import org.ethereum.vm.exception.VMException;
+import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -41,15 +43,15 @@ public class RegisterBtcTransactionTest extends BridgePerformanceTestCase {
     private PartialMerkleTree pmtOfLockTx;
 
     @Test
-    public void registerBtcTransaction() {
+    public void registerBtcTransaction() throws VMException {
         ExecutionStats stats = new ExecutionStats("registerBtcTransaction");
         registerBtcTransaction_lockSuccess(100, stats);
         registerBtcTransaction_alreadyProcessed(100, stats);
         registerBtcTransaction_notEnoughConfirmations(100, stats);
-        BridgePerformanceTest.addStats(stats);
+        Assert.assertTrue(BridgePerformanceTest.addStats(stats));
     }
 
-    private void registerBtcTransaction_lockSuccess(int times, ExecutionStats stats) {
+    private void registerBtcTransaction_lockSuccess(int times, ExecutionStats stats) throws VMException {
         BridgeStorageProviderInitializer storageInitializer = generateInitializerForLock(
                 1000,
                 2000,
@@ -58,10 +60,9 @@ public class RegisterBtcTransactionTest extends BridgePerformanceTestCase {
         );
 
         executeAndAverage("registerBtcTransaction-lockSuccess", times, getABIEncoder(), storageInitializer, Helper.getZeroValueValueTxBuilderFromFedMember(), Helper.getRandomHeightProvider(10), stats);
-
     }
 
-    private void registerBtcTransaction_alreadyProcessed(int times, ExecutionStats stats) {
+    private void registerBtcTransaction_alreadyProcessed(int times, ExecutionStats stats) throws VMException {
         BridgeStorageProviderInitializer storageInitializer = generateInitializerForLock(
                 1000,
                 2000,
@@ -72,7 +73,7 @@ public class RegisterBtcTransactionTest extends BridgePerformanceTestCase {
         executeAndAverage("registerBtcTransaction-alreadyProcessed", times, getABIEncoder(), storageInitializer, Helper.getZeroValueValueTxBuilderFromFedMember(), Helper.getRandomHeightProvider(10), stats);
     }
 
-    private void registerBtcTransaction_notEnoughConfirmations(int times, ExecutionStats stats) {
+    private void registerBtcTransaction_notEnoughConfirmations(int times, ExecutionStats stats) throws VMException {
         BridgeStorageProviderInitializer storageInitializer = generateInitializerForLock(
                 1000,
                 2000,
@@ -95,7 +96,13 @@ public class RegisterBtcTransactionTest extends BridgePerformanceTestCase {
     private BridgeStorageProviderInitializer generateInitializerForLock(int minBtcBlocks, int maxBtcBlocks, int numberOfLockConfirmations, boolean markAsAlreadyProcessed) {
         return (BridgeStorageProvider provider, Repository repository, int executionIndex, BtcBlockStore blockStore) -> {
             BtcBlockStoreWithCache.Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(bridgeConstants.getBtcParams());
-            BtcBlockStore btcBlockStore = btcBlockStoreFactory.newInstance(repository.startTracking());
+            Repository thisRepository = repository.startTracking();
+            BtcBlockStore btcBlockStore = btcBlockStoreFactory.newInstance(
+                thisRepository,
+                null,
+                null,
+                null
+            );
             Context btcContext = new Context(networkParameters);
             BtcBlockChain btcBlockChain;
             try {
@@ -110,8 +117,8 @@ public class RegisterBtcTransactionTest extends BridgePerformanceTestCase {
             // Sender and amounts
             BtcECKey from = new BtcECKey();
             Address fromAddress = from.toAddress(networkParameters);
-            Coin fromAmount = Coin.CENT.multiply(Helper.randomInRange(10, 100));
-            Coin lockAmount = fromAmount.divide(Helper.randomInRange(2, 10));
+            Coin fromAmount = Coin.CENT.multiply(Helper.randomInRange(100, 150));
+            Coin lockAmount = fromAmount.divide(Helper.randomInRange(2, 4));
             Coin changeAmount = fromAmount.subtract(lockAmount).subtract(Coin.MILLICOIN); // 1 millicoin fee simulation
 
             // Whitelisting sender
@@ -142,16 +149,16 @@ public class RegisterBtcTransactionTest extends BridgePerformanceTestCase {
 
             Helper.generateAndAddBlocks(btcBlockChain, numberOfLockConfirmations);
 
+            thisRepository.commit();
+
             // Marking as already processed
             if (markAsAlreadyProcessed) {
                 try {
-                    provider.getBtcTxHashesAlreadyProcessed().put(txToLock.getHash(), (long) blockWithTxHeight - 10);
+                    provider.setHeightBtcTxhashAlreadyProcessed(txToLock.getHash(), (long) blockWithTxHeight - 10);
                 } catch (IOException e) {
                     throw new RuntimeException("Exception while trying to mark tx as already processed for test");
                 }
             }
         };
     }
-
-
 }

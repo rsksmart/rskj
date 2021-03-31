@@ -24,6 +24,7 @@ import org.ethereum.core.Account;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
+import org.ethereum.util.ByteUtil;
 import org.ethereum.util.Utils;
 
 import java.math.BigInteger;
@@ -45,7 +46,7 @@ public class TransactionUtils {
 
     public static String getAddress() {
         Account targetAcc = new Account(new ECKey(Utils.getRandom()));
-        return Hex.toHexString(targetAcc.getAddress().getBytes());
+        return ByteUtil.toHexString(targetAcc.getAddress().getBytes());
     }
 
     public static byte[] getPrivateKeyBytes() {
@@ -57,8 +58,20 @@ public class TransactionUtils {
     }
 
     public static Transaction createTransaction(byte[] privateKey, String toAddress, BigInteger value, BigInteger nonce, BigInteger gasPrice, BigInteger gasLimit) {
-        Transaction tx = new Transaction(toAddress, value, nonce, gasPrice, gasLimit, Constants.REGTEST_CHAIN_ID);
+        Transaction tx = Transaction
+                .builder()
+                .nonce(nonce)
+                .gasPrice(gasPrice)
+                .gasLimit(gasLimit)
+                .destination(toAddress != null ? Hex.decode(toAddress) : null)
+                .chainId(Constants.REGTEST_CHAIN_ID)
+                .value(value)
+                .build();
         tx.sign(privateKey);
         return tx;
+    }
+
+    public static Transaction createTransaction() {
+        return getTransactions(1).get(0);
     }
 }

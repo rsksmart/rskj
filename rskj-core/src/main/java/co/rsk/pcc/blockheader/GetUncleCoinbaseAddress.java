@@ -20,7 +20,7 @@
 package co.rsk.pcc.blockheader;
 
 import co.rsk.pcc.ExecutionEnvironment;
-import co.rsk.pcc.NativeContractIllegalArgumentException;
+import co.rsk.pcc.exception.NativeContractIllegalArgumentException;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.CallTransaction;
@@ -52,7 +52,7 @@ public class GetUncleCoinbaseAddress extends BlockHeaderContractMethod {
     }
 
     @Override
-    protected Object internalExecute(Block block, Object[] arguments) {
+    protected Object internalExecute(Block block, Object[] arguments) throws NativeContractIllegalArgumentException {
         List<BlockHeader> uncles = block.getUncleList();
         if (uncles == null) {
             return ByteUtil.EMPTY_BYTE_ARRAY;

@@ -27,12 +27,10 @@ import org.ethereum.vm.LogInfo;
 
 import static org.ethereum.rpc.TypeConverter.*;
 
-
 /**
  * Created by Ruben on 5/1/2016.
  */
 public class TransactionReceiptDTO {
-
     private String transactionHash;      // hash of the transaction.
     private String transactionIndex;     // integer of the transactions index position in the block.
     private String blockHash;            // hash of the block where this transaction was in.
@@ -43,13 +41,10 @@ public class TransactionReceiptDTO {
     private LogFilterElement[] logs;     // Array of log objects, which this transaction generated.
     private String from;                 // address of the sender.
     private String to;                   // address of the receiver. null when it's a contract creation transaction.
-    private String root;                 // post-transaction stateroot
     private String status;               // either 1 (success) or 0 (failure)
     private String logsBloom;            // Bloom filter for light clients to quickly retrieve related logs.
 
-
-    public  TransactionReceiptDTO(Block block, TransactionInfo txInfo) {
-
+    public TransactionReceiptDTO(Block block, TransactionInfo txInfo) {
         TransactionReceipt receipt = txInfo.getReceipt();
 
         status = toQuantityJsonHex(txInfo.getReceipt().getStatus());
@@ -72,7 +67,6 @@ public class TransactionReceiptDTO {
                     txInfo.getReceipt().getTransaction(), i);
         }
 
-        root = toUnformattedJsonHex(receipt.getPostTxState());
         to = receipt.getTransaction().getReceiveAddress().toJsonString();
         transactionHash = receipt.getTransaction().getHash().toJsonString();
         transactionIndex = toQuantityJsonHex(txInfo.getIndex());
@@ -117,10 +111,6 @@ public class TransactionReceiptDTO {
 
     public String getTo() {
         return to;
-    }
-
-    public String getRoot() {
-        return root;
     }
 
     public String getStatus() {

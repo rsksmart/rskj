@@ -19,11 +19,12 @@
 
 package org.ethereum.jsontestsuite;
 
+import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.LogInfo;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
-import org.bouncycastle.util.encoders.Hex;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -68,8 +69,8 @@ public class Logs {
 
             LogInfo realLog = logs.get(i);
 
-            String postAddress = Hex.toHexString(postLog.getAddress());
-            String realAddress = Hex.toHexString(realLog.getAddress());
+            String postAddress = ByteUtil.toHexString(postLog.getAddress());
+            String realAddress = ByteUtil.toHexString(realLog.getAddress());
 
             if (!postAddress.equals(realAddress)) {
 
@@ -78,8 +79,8 @@ public class Logs {
                 results.add(formattedString);
             }
 
-            String postData = Hex.toHexString(postLog.getData());
-            String realData = Hex.toHexString(realLog.getData());
+            String postData = ByteUtil.toHexString(postLog.getData());
+            String realData = ByteUtil.toHexString(realLog.getData());
 
             if (!postData.equals(realData)) {
 
@@ -88,8 +89,8 @@ public class Logs {
                 results.add(formattedString);
             }
 
-            String postBloom = Hex.toHexString(postLog.getBloom().getData());
-            String realBloom = Hex.toHexString(realLog.getBloom().getData());
+            String postBloom = ByteUtil.toHexString(postLog.getBloom().getData());
+            String realBloom = ByteUtil.toHexString(realLog.getBloom().getData());
 
             if (!postData.equals(realData)) {
 

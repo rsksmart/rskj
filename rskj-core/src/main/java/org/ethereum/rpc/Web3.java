@@ -20,12 +20,13 @@ package org.ethereum.rpc;
 
 import co.rsk.config.InternalService;
 import co.rsk.rpc.*;
+import co.rsk.scoring.PeerScoringReputationSummary;
 import co.rsk.scoring.PeerScoringInformation;
 
 import java.util.Arrays;
 import java.util.Map;
 
-public interface Web3 extends InternalService, Web3TxPoolModule, Web3EthModule, Web3EvmModule, Web3MnrModule, Web3DebugModule, Web3RskModule {
+public interface Web3 extends InternalService, Web3TxPoolModule, Web3EthModule, Web3EvmModule, Web3MnrModule, Web3DebugModule, Web3TraceModule, Web3RskModule {
     class SyncingResult {
         public String startingBlock;
         public String currentBlock;
@@ -108,4 +109,5 @@ public interface Web3 extends InternalService, Web3TxPoolModule, Web3EthModule, 
     void sco_unbanAddress(String address);
     PeerScoringInformation[] sco_peerList();
     String[] sco_bannedAddresses();
+    PeerScoringReputationSummary sco_reputationSummary();
 }

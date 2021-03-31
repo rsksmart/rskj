@@ -28,7 +28,7 @@ public class PeerScoringTest {
     @Test
     public void getInformationFromNewScoring() {
         PeerScoring scoring = new PeerScoring();
-        PeerScoringInformation info = new PeerScoringInformation(scoring, "nodeid", "node");
+        PeerScoringInformation info = PeerScoringInformation.buildByScoring(scoring, "nodeid", "node");
 
         Assert.assertTrue(info.getGoodReputation());
         Assert.assertEquals(0, info.getValidBlocks());
@@ -51,7 +51,7 @@ public class PeerScoringTest {
         scoring.recordEvent(EventType.VALID_BLOCK);
         scoring.recordEvent(EventType.VALID_BLOCK);
 
-        PeerScoringInformation info = new PeerScoringInformation(scoring, "nodeid", "node");
+        PeerScoringInformation info = PeerScoringInformation.buildByScoring(scoring, "nodeid", "node");
 
         Assert.assertTrue(info.getGoodReputation());
         Assert.assertEquals(2, info.getValidBlocks());
@@ -69,7 +69,7 @@ public class PeerScoringTest {
         scoring.recordEvent(EventType.INVALID_BLOCK);
         scoring.recordEvent(EventType.INVALID_BLOCK);
 
-        PeerScoringInformation info = new PeerScoringInformation(scoring, "node", "nodeid");
+        PeerScoringInformation info = PeerScoringInformation.buildByScoring(scoring, "node", "nodeid");
 
         Assert.assertTrue(info.getGoodReputation());
         Assert.assertEquals(0, info.getValidBlocks());
@@ -86,7 +86,7 @@ public class PeerScoringTest {
         scoring.recordEvent(EventType.VALID_TRANSACTION);
         scoring.recordEvent(EventType.VALID_TRANSACTION);
 
-        PeerScoringInformation info = new PeerScoringInformation(scoring, "nodeid", "node");
+        PeerScoringInformation info = PeerScoringInformation.buildByScoring(scoring, "nodeid", "node");
 
         Assert.assertTrue(info.getGoodReputation());
         Assert.assertEquals(0, info.getValidBlocks());
@@ -104,7 +104,7 @@ public class PeerScoringTest {
         scoring.recordEvent(EventType.INVALID_TRANSACTION);
         scoring.recordEvent(EventType.INVALID_TRANSACTION);
 
-        PeerScoringInformation info = new PeerScoringInformation(scoring, "nodeid", "node");
+        PeerScoringInformation info = PeerScoringInformation.buildByScoring(scoring, "nodeid", "node");
 
         Assert.assertTrue(info.getGoodReputation());
         Assert.assertEquals(0, info.getValidBlocks());

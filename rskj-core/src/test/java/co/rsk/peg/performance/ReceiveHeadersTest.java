@@ -32,9 +32,9 @@ import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.Repository;
 import org.ethereum.vm.PrecompiledContracts;
+import org.ethereum.vm.exception.VMException;
 import org.junit.*;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -67,7 +67,7 @@ public class ReceiveHeadersTest extends BridgePerformanceTestCase {
     }
 
     @Before
-    public void warmup() {
+    public void warmup() throws VMException {
         setQuietMode(true);
         System.out.print("Doing a few initial passes... ");
         doReceiveHeaders("warmup", 100, 1, 0);
@@ -76,12 +76,12 @@ public class ReceiveHeadersTest extends BridgePerformanceTestCase {
     }
 
     @Test
-    public void receiveHeadersSingleBlock() {
+    public void receiveHeadersSingleBlock() throws VMException {
         BridgePerformanceTest.addStats(doReceiveHeaders("receiveHeaders-singleBlock", 2000, 1, 0));
     }
 
     @Test
-    public void receiveHeadersInterpolation() {
+    public void receiveHeadersInterpolation() throws VMException {
         CombinedExecutionStats stats = new CombinedExecutionStats("receiveHeaders-interpolation");
 
         stats.add(doReceiveHeaders("receiveHeaders-interpolation",1000, 1, 0));
@@ -91,7 +91,7 @@ public class ReceiveHeadersTest extends BridgePerformanceTestCase {
     }
 
     @Test
-    public void receiveHeadersIncremental() {
+    public void receiveHeadersIncremental() throws VMException {
         CombinedExecutionStats stats = new CombinedExecutionStats("receiveHeaders-incremental");
 
         for (int i = 1; i <= 500; i++) {
@@ -102,7 +102,7 @@ public class ReceiveHeadersTest extends BridgePerformanceTestCase {
     }
 
     @Test
-    public void receiveHeadersWithForking() {
+    public void receiveHeadersWithForking() throws VMException {
         CombinedExecutionStats stats = new CombinedExecutionStats("receiveHeaders-withForking");
 
         for (int numHeaders = 1; numHeaders < 10; numHeaders++) {
@@ -114,19 +114,28 @@ public class ReceiveHeadersTest extends BridgePerformanceTestCase {
         BridgePerformanceTest.addStats(stats);
     }
 
-    private ExecutionStats doReceiveHeaders(String caseName, int times, int numHeaders, int forkDepth) {
+    private ExecutionStats doReceiveHeaders(String caseName, int times, int numHeaders, int forkDepth) throws VMException {
         String name = String.format("%s-forkdepth-%d-headers-%d", caseName, forkDepth, numHeaders);
         ExecutionStats stats = new ExecutionStats(name);
         int totalHeaders = numHeaders + forkDepth;
         return executeAndAverage(
-                name, times,
+                name,
+                times,
                 generateABIEncoder(totalHeaders, totalHeaders, forkDepth),
                 buildInitializer(1000, 2000),
                 Helper.getZeroValueTxBuilder(Helper.getRandomFederatorECKey()),
                 Helper.getRandomHeightProvider(10),
                 stats,
                 (EnvironmentBuilder.Environment environment, byte[] result) -> {
-                    btcBlockStore = new RepositoryBtcBlockStoreWithCache(BridgeRegTestConstants.getInstance().getBtcParams(), (Repository) environment.getBenchmarkedRepository(), new HashMap<>(),PrecompiledContracts.BRIDGE_ADDR);
+                    btcBlockStore = new RepositoryBtcBlockStoreWithCache(
+                        BridgeRegTestConstants.getInstance().getBtcParams(),
+                        (Repository) environment.getBenchmarkedRepository(),
+                        new HashMap<>(),
+                        PrecompiledContracts.BRIDGE_ADDR,
+                        null,
+                        null,
+                        null
+                    );
                     Sha256Hash bestBlockHash = null;
                     try {
                         bestBlockHash = btcBlockStore.getChainHead().getHeader().getHash();

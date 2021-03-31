@@ -19,15 +19,15 @@
 
 package org.ethereum.net.rlpx;
 
+import org.bouncycastle.math.ec.ECPoint;
 import org.ethereum.crypto.ECKey;
+import org.ethereum.crypto.signature.ECDSASignature;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
-import org.bouncycastle.math.ec.ECPoint;
-import org.bouncycastle.util.encoders.Hex;
 
-import static org.ethereum.util.ByteUtil.merge;
 import static org.bouncycastle.util.BigIntegers.asUnsignedByteArray;
+import static org.ethereum.util.ByteUtil.merge;
 
 /**
  * Auth Initiate message defined by EIP-8
@@ -37,7 +37,7 @@ import static org.bouncycastle.util.BigIntegers.asUnsignedByteArray;
  */
 public class AuthInitiateMessageV4 {
 
-    ECKey.ECDSASignature signature; // 65 bytes
+    private ECDSASignature signature; // 65 bytes
     ECPoint publicKey; // 64 bytes - uncompressed and no type byte
     byte[] nonce; // 32 bytes
     int version = 4; // 4 bytes
@@ -59,7 +59,7 @@ public class AuthInitiateMessageV4 {
         System.arraycopy(signatureBytes, offset, s, 0, 32);
         offset += 32;
         int v = signatureBytes[offset] + 27;
-        message.signature = ECKey.ECDSASignature.fromComponents(r, s, (byte)v);
+        message.signature = ECDSASignature.fromComponents(r, s, (byte)v);
 
         byte[] publicKeyBytes = params.get(1).getRLPData();
         byte[] bytes = new byte[65];
@@ -78,17 +78,17 @@ public class AuthInitiateMessageV4 {
     public byte[] encode() {
 
         byte[] rsigPad = new byte[32];
-        byte[] rsig = asUnsignedByteArray(signature.r);
+        byte[] rsig = asUnsignedByteArray(signature.getR());
         System.arraycopy(rsig, 0, rsigPad, rsigPad.length - rsig.length, rsig.length);
 
         byte[] ssigPad = new byte[32];
-        byte[] ssig = asUnsignedByteArray(signature.s);
+        byte[] ssig = asUnsignedByteArray(signature.getS());
         System.arraycopy(ssig, 0, ssigPad, ssigPad.length - ssig.length, ssig.length);
 
         byte[] publicKey = new byte[64];
         System.arraycopy(this.publicKey.getEncoded(false), 1, publicKey, 0, publicKey.length);
 
-        byte[] sigBytes = RLP.encode(merge(rsigPad, ssigPad, new byte[]{EncryptionHandshake.recIdFromSignatureV(signature.v)}));
+        byte[] sigBytes = RLP.encode(merge(rsigPad, ssigPad, new byte[]{EncryptionHandshake.recIdFromSignatureV(signature.getV())}));
         byte[] publicBytes = RLP.encode(publicKey);
         byte[] nonceBytes = RLP.encode(nonce);
         byte[] versionBytes = RLP.encodeInt(version);
@@ -96,16 +96,24 @@ public class AuthInitiateMessageV4 {
         return RLP.encodeList(sigBytes, publicBytes, nonceBytes, versionBytes);
     }
 
+    public ECDSASignature getSignature() {
+        return signature;
+    }
+
+    public void setSignature(ECDSASignature signature) {
+        this.signature = signature;
+    }
+
     @Override
     public String toString() {
 
-        byte[] sigBytes = merge(asUnsignedByteArray(signature.r),
-                asUnsignedByteArray(signature.s), new byte[]{EncryptionHandshake.recIdFromSignatureV(signature.v)});
+        byte[] sigBytes = merge(asUnsignedByteArray(signature.getR()),
+                asUnsignedByteArray(signature.getS()), new byte[]{EncryptionHandshake.recIdFromSignatureV(signature.getV())});
 
         return "AuthInitiateMessage{" +
-                "\n  sigBytes=" + Hex.toHexString(sigBytes) +
-                "\n  publicKey=" + Hex.toHexString(publicKey.getEncoded(false)) +
-                "\n  nonce=" + Hex.toHexString(nonce) +
+                "\n  sigBytes=" + ByteUtil.toHexString(sigBytes) +
+                "\n  publicKey=" + ByteUtil.toHexString(publicKey.getEncoded(false)) +
+                "\n  nonce=" + ByteUtil.toHexString(nonce) +
                 "\n  version=" + version +
                 "\n}";
     }

@@ -2,6 +2,7 @@ package co.rsk.pcc.blockheader;
 
 import co.rsk.pcc.ExecutionEnvironment;
 import co.rsk.pcc.NativeMethod;
+import co.rsk.pcc.exception.NativeContractIllegalArgumentException;
 import org.ethereum.core.Block;
 import org.ethereum.util.ByteUtil;
 
@@ -22,7 +23,7 @@ public abstract class BlockHeaderContractMethod extends NativeMethod {
     }
 
     @Override
-    public Object execute(Object[] arguments) {
+    public Object execute(Object[] arguments) throws NativeContractIllegalArgumentException {
         short blockDepth;
         try {
             blockDepth = ((BigInteger) arguments[0]).shortValueExact();
@@ -38,7 +39,7 @@ public abstract class BlockHeaderContractMethod extends NativeMethod {
         return ByteUtil.EMPTY_BYTE_ARRAY;
     }
 
-    protected abstract Object internalExecute(Block block, Object[] arguments);
+    protected abstract Object internalExecute(Block block, Object[] arguments) throws NativeContractIllegalArgumentException;
 
     @Override
     public boolean isEnabled() {

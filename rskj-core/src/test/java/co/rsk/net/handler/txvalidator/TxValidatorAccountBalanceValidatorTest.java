@@ -74,13 +74,16 @@ public class TxValidatorAccountBalanceValidatorTest {
 
     @Test
     public void balanceIsNotValidatedIfFreeTx() {
-        Transaction tx = new Transaction(BigInteger.ZERO.toByteArray(),
-                BigInteger.ONE.toByteArray(),
-                BigInteger.valueOf(21071).toByteArray(),
-                new ECKey().getAddress(),
-                BigInteger.ZERO.toByteArray(),
-                Hex.decode("0001"),
-                Constants.REGTEST_CHAIN_ID);
+        Transaction tx = Transaction
+                .builder()
+                .nonce(BigInteger.ZERO)
+                .gasPrice(BigInteger.ONE)
+                .gasLimit(BigInteger.valueOf(21071))
+                .destination(new ECKey().getAddress())
+                .data(Hex.decode("0001"))
+                .chainId(Constants.REGTEST_CHAIN_ID)
+                .value(BigInteger.ZERO)
+                .build();
 
         tx.sign(new ECKey().getPrivKeyBytes());
 

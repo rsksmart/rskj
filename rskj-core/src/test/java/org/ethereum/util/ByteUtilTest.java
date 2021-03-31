@@ -19,16 +19,13 @@
 
 package org.ethereum.util;
 
+import org.bouncycastle.util.BigIntegers;
+import org.bouncycastle.util.encoders.Hex;
 import org.junit.Assert;
 import org.junit.Test;
 
-import org.bouncycastle.util.BigIntegers;
-import org.bouncycastle.util.encoders.Hex;
-
 import java.math.BigInteger;
-
 import java.nio.ByteBuffer;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -68,8 +65,19 @@ public class ByteUtilTest {
     }
 
     @Test
-    public void testToHexString() {
+    public void testToHexString_ProducedHex() {
+        byte[] data = new byte[] {(byte) 0xff, 0x0, 0x13, (byte) 0x88};
+        assertEquals(Hex.toHexString(data), ByteUtil.toHexString(data));
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testToHexString_NullPointerExceptionForNull() {
         assertEquals("", ByteUtil.toHexString(null));
+    }
+
+    @Test
+    public void testToHexStringOrEmpty_EmptyStringForNull() {
+        assertEquals("", ByteUtil.toHexStringOrEmpty(null));
     }
 
     @Test
@@ -77,6 +85,25 @@ public class ByteUtilTest {
         byte[] test = new byte[]{0x0f, 0x10, 0x43};
         byte[] expected = new byte[]{0x00, 0x00, 0x00, 0x03};
         assertArrayEquals(expected, ByteUtil.calcPacketLength(test));
+    }
+
+    @Test
+    public void testByteArrayToLong() {
+        assertEquals(Long.MAX_VALUE, ByteUtil.byteArrayToLong(new byte[]{
+                (byte)127, (byte)255, (byte)255, (byte)255,
+                (byte)255, (byte)255, (byte)255, (byte)255,
+                }
+        ));
+        assertEquals(0, ByteUtil.byteArrayToLong(new byte[]{ } ));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testByteArrayToLongThrowsWhenOverflow() {
+        assertEquals(Long.MAX_VALUE, ByteUtil.byteArrayToLong(new byte[]{
+                (byte)255, (byte)255, (byte)255, (byte)255,
+                (byte)255, (byte)255, (byte)255, (byte)255,
+                (byte)123, }
+        ));
     }
 
     @Test
@@ -228,7 +255,7 @@ public class ByteUtilTest {
                     break;
                 }
             }
-            System.out.println(System.currentTimeMillis() - start1 + "ms to reach: " + Hex.toHexString(counter1));
+            System.out.println(System.currentTimeMillis() - start1 + "ms to reach: " + ByteUtil.toHexString(counter1));
 
             BigInteger counter2 = BigInteger.ZERO;
             long start2 = System.currentTimeMillis();
@@ -238,7 +265,7 @@ public class ByteUtilTest {
                 }
                 counter2 = counter2.add(BigInteger.ONE);
             }
-            System.out.println(System.currentTimeMillis() - start2 + "ms to reach: " + Hex.toHexString(BigIntegers.asUnsignedByteArray(4, counter2)));
+            System.out.println(System.currentTimeMillis() - start2 + "ms to reach: " + ByteUtil.toHexString(BigIntegers.asUnsignedByteArray(4, counter2)));
         }
     }
 
@@ -439,7 +466,52 @@ public class ByteUtilTest {
         for (int i=0; i < b3.length; i++) {
             assertEquals(b3[i],normalByteArrayOffset3LeadingZeroes[i]);
         }
-
     }
 
+    @Test(expected = IllegalArgumentException.class)
+    public void testToBytesWithLeadingZeros_InvalidLen() {
+        ByteUtil.toBytesWithLeadingZeros(new byte[0], -1);
+    }
+
+    @Test
+    public void testToBytesWithLeadingZeros_NullSource() {
+        byte[] actualResult = ByteUtil.toBytesWithLeadingZeros(null, 1);
+
+        assertNull(actualResult);
+    }
+
+    @Test
+    public void testToBytesWithLeadingZeros_EmptySource() {
+        byte[] src = new byte[0];
+
+        byte[] actualResult = ByteUtil.toBytesWithLeadingZeros(src, 0);
+
+        assertEquals(src, actualResult);
+    }
+
+    @Test
+    public void testToBytesWithLeadingZeros_SameSource() {
+        byte[] src = new byte[]{0};
+
+        byte[] actualResult = ByteUtil.toBytesWithLeadingZeros(src, 0);
+
+        assertEquals(src, actualResult);
+    }
+
+    @Test
+    public void testToBytesWithLeadingZeros_WithLeadingZeros() {
+        byte[] src = new byte[]{1, 2};
+
+        byte[] actualResult = ByteUtil.toBytesWithLeadingZeros(src, 10);
+
+        assertEquals(10, actualResult.length);
+
+        int srcStart = actualResult.length - src.length;
+        for (int i = 0; i < srcStart; i++) {
+            assertEquals(0, actualResult[i]);
+        }
+        for (int i = srcStart; i < actualResult.length; i++) {
+            assertEquals(src[i - srcStart], actualResult[i]);
+        }
+    }
 }

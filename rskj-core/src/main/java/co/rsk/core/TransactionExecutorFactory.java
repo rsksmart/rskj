@@ -29,8 +29,6 @@ import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
 
 import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 public class TransactionExecutorFactory {
 
@@ -40,7 +38,7 @@ public class TransactionExecutorFactory {
     private final BlockFactory blockFactory;
     private final ProgramInvokeFactory programInvokeFactory;
     private final PrecompiledContracts precompiledContracts;
-    private final ExecutorService vmExecutorService;
+    private BlockTxSignatureCache blockTxSignatureCache;
 
     public TransactionExecutorFactory(
             RskSystemProperties config,
@@ -48,19 +46,15 @@ public class TransactionExecutorFactory {
             ReceiptStore receiptStore,
             BlockFactory blockFactory,
             ProgramInvokeFactory programInvokeFactory,
-            PrecompiledContracts precompiledContracts) {
+            PrecompiledContracts precompiledContracts,
+            BlockTxSignatureCache blockTxSignatureCache) {
         this.config = config;
         this.blockStore = blockStore;
         this.receiptStore = receiptStore;
         this.blockFactory = blockFactory;
         this.programInvokeFactory = programInvokeFactory;
         this.precompiledContracts = precompiledContracts;
-        this.vmExecutorService = Executors.newCachedThreadPool(threadFactory -> new Thread(
-            Thread.currentThread().getThreadGroup(),
-            threadFactory,
-            "vmExecution",
-            config.getVmExecutionStackSize()
-        ));
+        this.blockTxSignatureCache = blockTxSignatureCache;
     }
 
     public TransactionExecutor newInstance(
@@ -70,7 +64,7 @@ public class TransactionExecutorFactory {
             Repository track,
             Block block,
             long totalGasUsed) {
-        return newInstance(tx, txindex, coinbase, track, block, totalGasUsed, false, new HashSet<>());
+        return newInstance(tx, txindex, coinbase, track, block, totalGasUsed, false, 0, new HashSet<>());
     }
 
     public TransactionExecutor newInstance(
@@ -81,17 +75,20 @@ public class TransactionExecutorFactory {
             Block block,
             long totalGasUsed,
             boolean vmTrace,
+            int vmTraceOptions,
             Set<DataWord> deletedAccounts) {
-        // Tracing configuration is scattered across different files (VM, ProgramTrace, etc.) and
+        // Tracing configuration is scattered across different files (VM, DetailedProgramTrace, etc.) and
         // TransactionExecutor#extractTrace doesn't work when called independently.
         // It would be great to decouple from VmConfig#vmTrace, but sadly that's a major refactor we can't do now.
         VmConfig vmConfig = config.getVmConfig();
         if (vmTrace) {
             vmConfig = new VmConfig(
                     true,
+                    vmTraceOptions,
                     vmConfig.vmTraceInitStorageLimit(),
                     vmConfig.dumpBlock(),
-                    vmConfig.dumpStyle()
+                    vmConfig.dumpStyle(),
+                    vmConfig.getChainId()
             );
         }
 
@@ -109,11 +106,10 @@ public class TransactionExecutorFactory {
                 block,
                 totalGasUsed,
                 vmConfig,
-                config.playVM(),
                 config.isRemascEnabled(),
                 precompiledContracts,
                 deletedAccounts,
-                vmExecutorService
+                blockTxSignatureCache
         );
     }
 }

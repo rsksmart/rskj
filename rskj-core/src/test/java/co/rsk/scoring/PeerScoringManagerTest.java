@@ -1,9 +1,9 @@
 package co.rsk.scoring;
 
 import co.rsk.net.NodeID;
+import org.ethereum.util.ByteUtil;
 import org.junit.Assert;
 import org.junit.Test;
-import org.bouncycastle.util.encoders.Hex;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -337,7 +337,7 @@ public class PeerScoringManagerTest {
         Assert.assertEquals(2, result.size());
 
         PeerScoringInformation info = result.get(0);
-        Assert.assertEquals(Hex.toHexString(node.getID()).substring(0, 8), info.getId());
+        Assert.assertEquals(ByteUtil.toHexString(node.getID()).substring(0, 8), info.getId());
         Assert.assertEquals(1, info.getValidBlocks());
         Assert.assertEquals(0, info.getInvalidBlocks());
         Assert.assertEquals(0, info.getValidTransactions());
@@ -374,7 +374,7 @@ public class PeerScoringManagerTest {
         Assert.assertEquals(2, result.size());
 
         PeerScoringInformation info = result.get(0);
-        Assert.assertEquals(Hex.toHexString(node.getID()).substring(0, 8), info.getId());
+        Assert.assertEquals(ByteUtil.toHexString(node.getID()).substring(0, 8), info.getId());
         Assert.assertEquals(2, info.getValidBlocks());
         Assert.assertEquals(0, info.getInvalidBlocks());
         Assert.assertEquals(1, info.getValidTransactions());

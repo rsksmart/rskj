@@ -23,7 +23,7 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.net.*;
 import co.rsk.scoring.EventType;
 import co.rsk.scoring.PeerScoringManager;
-import co.rsk.validators.BlockValidationRule;
+import co.rsk.util.FormatUtils;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockIdentifier;
 import org.ethereum.core.Transaction;
@@ -31,11 +31,7 @@ import org.ethereum.net.server.ChannelManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.Nonnull;
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -51,10 +47,9 @@ public class MessageVisitor {
     private final BlockProcessor blockProcessor;
     private final SyncProcessor syncProcessor;
     private final TransactionGateway transactionGateway;
-    private final MessageChannel sender;
+    private final Peer sender;
     private final PeerScoringManager peerScoringManager;
     private final RskSystemProperties config;
-    private final BlockValidationRule blockValidationRule;
     private final ChannelManager channelManager;
 
     public MessageVisitor(RskSystemProperties config,
@@ -63,15 +58,13 @@ public class MessageVisitor {
                           TransactionGateway transactionGateway,
                           PeerScoringManager peerScoringManager,
                           ChannelManager channelManager,
-                          BlockValidationRule blockValidationRule,
-                          MessageChannel sender) {
+                          Peer sender) {
 
         this.blockProcessor = blockProcessor;
         this.syncProcessor = syncProcessor;
         this.transactionGateway = transactionGateway;
         this.peerScoringManager = peerScoringManager;
         this.channelManager = channelManager;
-        this.blockValidationRule = blockValidationRule;
         this.config = config;
         this.sender = sender;
     }
@@ -85,39 +78,43 @@ public class MessageVisitor {
     public void apply(BlockMessage message) {
         final Block block = message.getBlock();
 
-        logger.trace("Process block {} {}", block.getNumber(), block.getShortHash());
+        logger.trace("Process block {} {}", block.getNumber(), block.getPrintableHash());
 
         if (block.isGenesis()) {
-            logger.trace("Skip block processing {} {}", block.getNumber(), block.getShortHash());
+            logger.trace("Skip block processing {} {}", block.getNumber(), block.getPrintableHash());
             return;
         }
 
         long blockNumber = block.getNumber();
 
         if (this.blockProcessor.isAdvancedBlock(blockNumber)) {
-            logger.trace("Too advanced block {} {}", blockNumber, block.getShortHash());
-            return;
-        }
-
-        if (!isValidBlock(block)) {
-            logger.trace("Invalid block {} {}", blockNumber, block.getShortHash());
-            recordEvent(sender, EventType.INVALID_BLOCK);
+            logger.trace("Too advanced block {} {}", blockNumber, block.getPrintableHash());
             return;
         }
 
         if (blockProcessor.canBeIgnoredForUnclesRewards(block.getNumber())){
-            logger.trace("Block ignored: too far from best block {} {}", blockNumber, block.getShortHash());
+            logger.trace("Block ignored: too far from best block {} {}", blockNumber, block.getPrintableHash());
             return;
         }
 
         if (blockProcessor.hasBlockInSomeBlockchain(block.getHash().getBytes())){
-            logger.trace("Block ignored: it's included in blockchain {} {}", blockNumber, block.getShortHash());
+            logger.trace("Block ignored: it's included in blockchain {} {}", blockNumber, block.getPrintableHash());
             return;
         }
 
         BlockProcessResult result = this.blockProcessor.processBlock(sender, block);
+
+        if (result.isInvalidBlock()) {
+            logger.trace("Invalid block {} {}", blockNumber, block.getPrintableHash());
+            recordEventForPeerScoring(sender, EventType.INVALID_BLOCK);
+            return;
+        }
+
         tryRelayBlock(block, result);
-        recordEvent(sender, EventType.VALID_BLOCK);
+
+        sender.imported(result.isBest());
+
+        recordEventForPeerScoring(sender, EventType.VALID_BLOCK);
     }
 
     public void apply(StatusMessage message) {
@@ -202,19 +199,21 @@ public class MessageVisitor {
 
         for (Transaction tx : messageTxs) {
             if (!tx.acceptTransactionSignature(config.getNetworkConstants().getChainId())) {
-                recordEvent(sender, EventType.INVALID_TRANSACTION);
+                recordEventForPeerScoring(sender, EventType.INVALID_TRANSACTION);
             } else {
                 txs.add(tx);
-                recordEvent(sender, EventType.VALID_TRANSACTION);
+                recordEventForPeerScoring(sender, EventType.VALID_TRANSACTION);
             }
         }
 
-        transactionGateway.receiveTransactionsFrom(txs, sender.getPeerNodeID());
+        transactionGateway.receiveTransactionsFrom(txs, Collections.singleton(sender.getPeerNodeID()));
 
-        loggerMessageProcess.debug("Tx message process finished after [{}] nano.", System.nanoTime() - start);
+        if (loggerMessageProcess.isDebugEnabled()) {
+            loggerMessageProcess.debug("Tx message process finished after [{}] seconds.", FormatUtils.formatNanosecondsToSeconds(System.nanoTime() - start));
+        }
     }
 
-    private void recordEvent(MessageChannel sender, EventType event) {
+    private void recordEventForPeerScoring(Peer sender, EventType event) {
         if (sender == null) {
             return;
         }
@@ -222,25 +221,9 @@ public class MessageVisitor {
         this.peerScoringManager.recordEvent(sender.getPeerNodeID(), sender.getAddress(), event);
     }
 
-    /**
-     * isValidBlock validates if the given block meets the minimum criteria to be processed:
-     * The PoW should be valid and the block can't be too far in the future.
-     *
-     * @param block the block to check
-     * @return true if the block is valid, false otherwise.
-     */
-    private boolean isValidBlock(@Nonnull final Block block) {
-        try {
-            return blockValidationRule.isValid(block);
-        } catch (Exception e) {
-            logger.error("Failed to validate PoW from block {}: {}", block.getShortHash(), e);
-            return false;
-        }
-    }
-
     private void  tryRelayBlock(Block block, BlockProcessResult result) {
         // is new block and it is not orphan, it is in some blockchain
-        if (result.wasBlockAdded(block) && !this.blockProcessor.hasBetterBlockToSync()) {
+        if ((result.isScheduledForProcessing() || result.wasBlockAdded(block)) && !this.blockProcessor.hasBetterBlockToSync()) {
             relayBlock(block);
         }
     }
@@ -252,7 +235,6 @@ public class MessageVisitor {
         final Set<NodeID> newNodes = this.syncProcessor.getKnownPeersNodeIDs().stream()
                 .filter(p -> !nodesWithBlock.contains(p))
                 .collect(Collectors.toSet());
-
 
         List<BlockIdentifier> identifiers = new ArrayList<>();
         identifiers.add(new BlockIdentifier(blockHash.getBytes(), block.getNumber()));
