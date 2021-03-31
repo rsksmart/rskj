@@ -1486,7 +1486,8 @@ public class RskContext implements NodeBootstrapper {
                         getMinerServer(),
                         getMinerClient(),
                         getBlockchain(),
-                        getTransactionGateway()
+                        getTransactionGateway(),
+                        getBlockExecutor()
                 );
             } else {
                 ethModuleTransaction = new EthModuleTransactionBase(constants, wallet, transactionPool, getTransactionGateway());

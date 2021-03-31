@@ -19,6 +19,8 @@
 package co.rsk.rpc.modules.eth;
 
 import co.rsk.core.Wallet;
+import co.rsk.core.bc.BlockExecutor;
+import co.rsk.crypto.Keccak256;
 import co.rsk.mine.MinerClient;
 import co.rsk.mine.MinerServer;
 import co.rsk.net.TransactionGateway;
@@ -28,6 +30,10 @@ import org.ethereum.core.TransactionPool;
 import org.ethereum.db.TransactionInfo;
 import org.ethereum.rpc.TypeConverter;
 import org.ethereum.rpc.Web3;
+import org.ethereum.rpc.exception.RskJsonRpcRequestException;
+import org.ethereum.vm.program.ProgramResult;
+
+import java.util.Optional;
 
 import static org.ethereum.rpc.exception.RskJsonRpcRequestException.transactionRevertedExecutionError;
 import static org.ethereum.rpc.exception.RskJsonRpcRequestException.unknownError;
@@ -37,6 +43,7 @@ public class EthModuleTransactionInstant extends EthModuleTransactionBase {
     private final MinerServer minerServer;
     private final MinerClient minerClient;
     private final Blockchain blockchain;
+    private final BlockExecutor blockExecutor;
 
     public EthModuleTransactionInstant(
             Constants constants,
@@ -45,26 +52,46 @@ public class EthModuleTransactionInstant extends EthModuleTransactionBase {
             MinerServer minerServer,
             MinerClient minerClient,
             Blockchain blockchain,
-            TransactionGateway transactionGateway) {
+            TransactionGateway transactionGateway,
+            BlockExecutor blockExecutor) {
         super(constants, wallet, transactionPool, transactionGateway);
 
         this.minerServer = minerServer;
         this.minerClient = minerClient;
         this.blockchain = blockchain;
+        this.blockExecutor = blockExecutor;
     }
 
     @Override
     public synchronized String sendTransaction(Web3.CallArguments args) {
-        String txHash = super.sendTransaction(args);
-        mineTransaction();
-        return getReturnMessage(txHash);
+        try {
+            this.blockExecutor.setRegisterProgramResults(true);
+
+            String txHash = super.sendTransaction(args);
+
+            mineTransaction();
+
+            return getReturnMessage(txHash);
+        }
+        finally {
+            this.blockExecutor.setRegisterProgramResults(false);
+        }
     }
 
     @Override
     public String sendRawTransaction(String rawData) {
-        String txHash = super.sendRawTransaction(rawData);
-        mineTransaction();
-        return getReturnMessage(txHash);
+        try {
+            this.blockExecutor.setRegisterProgramResults(true);
+
+            String txHash = super.sendRawTransaction(rawData);
+
+            mineTransaction();
+
+            return getReturnMessage(txHash);
+        }
+        finally {
+            this.blockExecutor.setRegisterProgramResults(false);
+        }
     }
 
     private void mineTransaction() {
@@ -80,6 +107,19 @@ public class EthModuleTransactionInstant extends EthModuleTransactionBase {
         TransactionInfo transactionInfo = blockchain.getTransactionInfo(TypeConverter.stringHexToByteArray(txHash));
         if (transactionInfo == null) {
             throw unknownError("Unknown error when sending transaction: transaction wasn't mined");
+        }
+
+        Keccak256 hash = new Keccak256(txHash.substring(2));
+        ProgramResult programResult = this.blockExecutor.getProgramResult(hash);
+
+        if (programResult != null && programResult.isRevert()) {
+            Optional<String> revertReason = EthModule.decodeRevertReason(programResult);
+
+            if (revertReason.isPresent()) {
+                throw RskJsonRpcRequestException.transactionRevertedExecutionError(revertReason.get());
+            } else {
+                throw RskJsonRpcRequestException.transactionRevertedExecutionError();
+            }
         }
 
         if (!transactionInfo.getReceipt().isSuccessful()) {

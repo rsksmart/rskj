@@ -332,6 +332,13 @@ public class TransactionModuleTest {
         MinerClock minerClock = new MinerClock(true, Clock.systemUTC());
         transactionExecutorFactory = buildTransactionExecutorFactory(blockStore, receiptStore, signatureCache);
         MiningConfig miningConfig = ConfigUtils.getDefaultMiningConfig();
+        BlockExecutor blockExecutor = new BlockExecutor(
+                config.getActivationConfig(),
+                repositoryLocator,
+                stateRootHandler,
+                transactionExecutorFactory
+        );
+
         MinerServer minerServer = new MinerServerImpl(
                 config,
                 eth,
@@ -350,12 +357,7 @@ public class TransactionModuleTest {
                         Mockito.mock(BlockUnclesValidationRule.class),
                         minerClock,
                         blockFactory,
-                        new BlockExecutor(
-                                config.getActivationConfig(),
-                                repositoryLocator,
-                                stateRootHandler,
-                                transactionExecutorFactory
-                        ),
+                        blockExecutor,
                         new MinimumGasPriceCalculator(Coin.valueOf(miningConfig.getMinGasPriceTarget())),
                         new MinerUtils()
                 ),
@@ -376,7 +378,7 @@ public class TransactionModuleTest {
         );
 
         if (mineInstant) {
-            transactionModule = new EthModuleTransactionInstant(config.getNetworkConstants(), wallet, transactionPool, minerServer, minerClient, blockchain, transactionGateway);
+            transactionModule = new EthModuleTransactionInstant(config.getNetworkConstants(), wallet, transactionPool, minerServer, minerClient, blockchain, transactionGateway, blockExecutor);
         } else {
             transactionModule = new EthModuleTransactionBase(config.getNetworkConstants(), wallet, transactionPool, transactionGateway);
         }
