@@ -576,7 +576,7 @@ public class TransactionPoolImplTest {
     }
 
     @Test
-    public void checkTxWithHighGasLimitIsRejected() {
+    public void checkTxWithHighGasLimitIsAccepted() {
         Coin balance = Coin.valueOf(1000000);
         createTestAccounts(2, balance);
         Transaction tx = createSampleTransaction(1, 2, 1000, 0, BigInteger.valueOf(3000001));
@@ -584,11 +584,10 @@ public class TransactionPoolImplTest {
 
         TransactionPoolAddResult result = transactionPool.addTransaction(tx);
 
-        Assert.assertFalse(result.transactionsWereAdded());
-        Assert.assertEquals("transaction's gas limit of 3000001 is higher than the block's gas limit of 3000000", result.getErrorMessage());
+        Assert.assertTrue(result.transactionsWereAdded());
 
         List<Transaction> pending = transactionPool.getPendingTransactions();
-        Assert.assertTrue(pending.isEmpty());
+        Assert.assertFalse(pending.isEmpty());
     }
 
     @Test

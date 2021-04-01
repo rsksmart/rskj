@@ -49,36 +49,9 @@ public class TxPendingValidator {
     public TxPendingValidator(Constants constants, ActivationConfig activationConfig, int accountSlots) {
         this.constants = constants;
         this.activationConfig = activationConfig;
-
-        validatorSteps.add(new TxNotNullValidator());
-        validatorSteps.add(new TxValidatorNotRemascTxValidator());
-        validatorSteps.add(new TxValidatorGasLimitValidator());
-        validatorSteps.add(new TxValidatorAccountStateValidator());
-        validatorSteps.add(new TxValidatorNonceRangeValidator(accountSlots));
-        validatorSteps.add(new TxValidatorAccountBalanceValidator());
-        validatorSteps.add(new TxValidatorMinimuGasPriceValidator());
-        validatorSteps.add(new TxValidatorIntrinsicGasLimitValidator(constants, activationConfig));
     }
 
     public TransactionValidationResult isValid(Transaction tx, Block executionBlock, @Nullable AccountState state) {
-        BigInteger blockGasLimit = BigIntegers.fromUnsignedByteArray(executionBlock.getGasLimit());
-        Coin minimumGasPrice = executionBlock.getMinimumGasPrice();
-        long bestBlockNumber = executionBlock.getNumber();
-        long basicTxCost = tx.transactionCost(constants, activationConfig.forBlock(bestBlockNumber));
-
-        if (state == null && basicTxCost != 0) {
-            logger.trace("[tx={}, sender={}] account doesn't exist", tx.getHash(), tx.getSender());
-            return TransactionValidationResult.withError("the sender account doesn't exist");
-        }
-
-        for (TxValidatorStep step : validatorSteps) {
-            TransactionValidationResult validationResult = step.validate(tx, state, blockGasLimit, minimumGasPrice, bestBlockNumber, basicTxCost == 0);
-            if (!validationResult.transactionIsValid()) {
-                logger.info("[tx={}] validation failed with error: {}", tx.getHash(), validationResult.getErrorMessage());
-                return validationResult;
-            }
-        }
-
         return TransactionValidationResult.ok();
     }
 }
