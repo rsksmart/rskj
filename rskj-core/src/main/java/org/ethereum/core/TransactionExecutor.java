@@ -179,17 +179,6 @@ public class TransactionExecutor {
 
         Coin senderBalance = track.getBalance(tx.getSender());
 
-        if (!isCovers(senderBalance, totalCost)) {
-
-            logger.warn("Not enough cash: Require: {}, Sender cash: {}, tx {}", totalCost, senderBalance, tx.getHash());
-            logger.warn("Transaction Data: {}", tx);
-            logger.warn("Tx Included in the following block: {}", this.executionBlock);
-
-            execError(String.format("Not enough cash: Require: %s, Sender cash: %s", totalCost, senderBalance));
-
-            return false;
-        }
-
         if (!transactionAddressesAreValid()) {
             return false;
         }
@@ -363,7 +352,10 @@ public class TransactionExecutor {
 
         if (result.getException() == null) {
             Coin endowment = tx.getValue();
-            cacheTrack.transfer(tx.getSender(), targetAddress, endowment);
+
+            if (cacheTrack != null) {
+                cacheTrack.transfer(tx.getSender(), targetAddress, endowment);
+            }
         }
     }
 
@@ -409,7 +401,11 @@ public class TransactionExecutor {
     private void go() {
         // TODO: transaction call for pre-compiled  contracts
         if (vm == null) {
-            cacheTrack.commit();
+
+            if (cacheTrack != null) {
+                cacheTrack.commit();
+            }
+
             return;
         }
 
@@ -501,7 +497,9 @@ public class TransactionExecutor {
 
         logger.trace("Finalize transaction {} {}", toBI(tx.getNonce()), tx.getHash());
 
-        cacheTrack.commit();
+        if (cacheTrack != null) {
+            cacheTrack.commit();
+        }
 
         //Transaction sender is stored in cache
         signatureCache.storeSender(tx);

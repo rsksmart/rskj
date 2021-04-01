@@ -271,7 +271,7 @@ public class BlockExecutorTest {
     }
 
     @Test
-    public void executeAndFillBlockWithTxToExcludeBecauseSenderHasNoBalance() {
+    public void executeAndFillBlockWithTxToIncludedWhenSenderHasNoBalance() {
         TrieStore trieStore = new TrieStoreImpl(new HashMapDB());
         Repository repository = new MutableRepository(new MutableTrieImpl(trieStore, new Trie(trieStore)));
 
@@ -322,19 +322,16 @@ public class BlockExecutorTest {
 
         executor.executeAndFill(block, genesis.getHeader());
 
-        // Check tx2 was excluded
-        Assert.assertEquals(1, block.getTransactionsList().size());
+        // Check tx2 was included
+        Assert.assertEquals(2, block.getTransactionsList().size());
         Assert.assertEquals(tx, block.getTransactionsList().get(0));
-        Assert.assertArrayEquals(
-                calculateTxTrieRoot(Collections.singletonList(tx), block.getNumber()),
-                block.getTxTrieRoot()
-        );
+        Assert.assertEquals(tx2, block.getTransactionsList().get(1));
 
         Assert.assertEquals(3141592, new BigInteger(1, block.getGasLimit()).longValue());
     }
 
     @Test
-    public void executeBlockWithTxThatMakesBlockInvalidSenderHasNoBalance() {
+    public void executeBlockWithTxWhenSenderHasNoBalance() {
         TrieStore trieStore = new TrieStoreImpl(new HashMapDB());
         Repository repository = new MutableRepository(new MutableTrieImpl(trieStore, new Trie(trieStore)));
 
@@ -385,7 +382,7 @@ public class BlockExecutorTest {
 
         BlockResult result = executor.execute(block, genesis.getHeader(), false);
 
-        Assert.assertSame(BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT, result);
+        Assert.assertNotEquals(BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT, result);
     }
 
     @Test

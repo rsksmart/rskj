@@ -88,6 +88,8 @@ public class TransactionExecutorTest {
         when(executionBlock.getGasLimit()).thenReturn(BigInteger.valueOf(6800000).toByteArray());
         when(repository.getNonce(transaction.getSender())).thenReturn(BigInteger.valueOf(1L));
         when(transaction.getNonce()).thenReturn(BigInteger.valueOf(1L).toByteArray());
+        when(transaction.getSender()).thenReturn(PrecompiledContracts.BRIDGE_ADDR);
+        when(transaction.getGasPrice()).thenReturn(Coin.ZERO);
         // more paperwork, the receiver is just someone
         RskAddress receiver = new RskAddress("0000000000000000000000000000000000000001");
         when(transaction.getReceiveAddress()).thenReturn(receiver);
@@ -98,7 +100,7 @@ public class TransactionExecutorTest {
         when(transaction.getValue()).thenReturn(new Coin(BigInteger.valueOf(68000)));
         // note that the transaction is free of cost
         assertEquals(0, transaction.transactionCost(constants, activationConfig.forBlock(executionBlock.getNumber())));
-        assertFalse(txExecutor.executeTransaction());
+        assertTrue(txExecutor.executeTransaction());
     }
 
     @Test
@@ -188,12 +190,12 @@ public class TransactionExecutorTest {
         );
 
         assertEquals(0, transaction.transactionCost(constants, activationConfig.forBlock(executionBlock.getNumber())));
-        assertFalse(txExecutor.executeTransaction());
-        assertFalse(blockTxSignatureCache.containsTx(transaction));
+        assertTrue(txExecutor.executeTransaction());
+        assertTrue(blockTxSignatureCache.containsTx(transaction));
     }
 
     @Test
-    public void remascTxIsReceivedAndShouldntBeInCache(){
+    public void remascTxIsReceivedAndAcceptedInCache(){
         ReceivedTxSignatureCache receivedTxSignatureCache = mock(ReceivedTxSignatureCache.class);
         BlockTxSignatureCache blockTxSignatureCache = new BlockTxSignatureCache(receivedTxSignatureCache);
         MutableRepository cacheTrack = mock(MutableRepository.class);
@@ -221,8 +223,8 @@ public class TransactionExecutorTest {
         );
 
         assertEquals(0, transaction.transactionCost(constants, activationConfig.forBlock(executionBlock.getNumber())));
-        assertFalse(txExecutor.executeTransaction());
-        assertFalse(blockTxSignatureCache.containsTx(transaction));
+        assertTrue(txExecutor.executeTransaction());
+        assertTrue(blockTxSignatureCache.containsTx(transaction));
     }
 
     @Test
