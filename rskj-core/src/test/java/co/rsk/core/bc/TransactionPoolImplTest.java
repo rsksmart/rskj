@@ -634,7 +634,7 @@ public class TransactionPoolImplTest {
     }
 
     @Test
-    public void checkTxWithLowGasPriceIsRejected() {
+    public void checkTxWithLowGasPriceIsAccepted() {
         Block newBest = new BlockBuilder(null, null,null)
                 .parent(transactionPool.getBestBlock()).minGasPrice(BigInteger.valueOf(100)).build();
         transactionPool.processBest(newBest);
@@ -645,10 +645,9 @@ public class TransactionPoolImplTest {
 
         TransactionPoolAddResult result = transactionPool.addTransaction(tx);
 
-        Assert.assertFalse(result.transactionsWereAdded());
-        Assert.assertEquals("transaction's gas price lower than block's minimum", result.getErrorMessage());
+        Assert.assertTrue(result.transactionsWereAdded());
 
-        Assert.assertTrue(transactionPool.getPendingTransactions().isEmpty());
+        Assert.assertFalse(transactionPool.getPendingTransactions().isEmpty());
     }
 
     @Test
@@ -666,15 +665,14 @@ public class TransactionPoolImplTest {
     }
 
     @Test
-    public void checkTxFromNullStateIsRejected() {
+    public void checkTxFromNullStateIsAccepted() {
         Transaction tx = createSampleTransaction(1, 2, 1000, 0);
 
         TransactionPoolAddResult result = transactionPool.addTransaction(tx);
 
-        Assert.assertFalse(result.transactionsWereAdded());
-        Assert.assertEquals("the sender account doesn't exist", result.getErrorMessage());
+        Assert.assertTrue(result.transactionsWereAdded());
 
-        Assert.assertTrue(transactionPool.getPendingTransactions().isEmpty());
+        Assert.assertFalse(transactionPool.getPendingTransactions().isEmpty());
     }
 
     @Test
@@ -742,12 +740,12 @@ public class TransactionPoolImplTest {
     }
 
     @Test
-    public void invalidTxsIsSentAndShouldntBeInCache(){
+    public void invalidTxsIsSentAndAcceptedInCache(){
         Coin balance = Coin.valueOf(0);
         createTestAccounts(2, balance);
         Transaction tx1 = createSampleTransaction(1, 2, 1000, 1);
         transactionPool.addTransaction(tx1);
-        Assert.assertFalse(signatureCache.containsTx(tx1));
+        Assert.assertTrue(signatureCache.containsTx(tx1));
     }
 
     @Test
