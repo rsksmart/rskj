@@ -117,9 +117,6 @@ public class Transaction {
         // only parse signature in case tx is signed
         byte[] vData = transaction.get(6).getRLPData();
         if (vData != null) {
-            if (vData.length != 1) {
-                throw new TransactionException("Signature V is invalid");
-            }
             byte v = vData[0];
             this.chainId = extractChainIdFromV(v);
             byte[] r = transaction.get(7).getRLPData();
@@ -213,32 +210,6 @@ public class Transaction {
     }
 
     private void validate() {
-        if (getNonce().length > DATAWORD_LENGTH) {
-            throw new RuntimeException("Nonce is not valid");
-        }
-        if (receiveAddress != null && receiveAddress.getBytes().length != 0 && receiveAddress.getBytes().length != Constants.getMaxAddressByteLength()) {
-            throw new RuntimeException("Receive address is not valid");
-        }
-        if (gasLimit.length > DATAWORD_LENGTH) {
-            throw new RuntimeException("Gas Limit is not valid");
-        }
-        if (gasPrice != null && gasPrice.getBytes().length > DATAWORD_LENGTH) {
-            throw new RuntimeException("Gas Price is not valid");
-        }
-        if (value.getBytes().length > DATAWORD_LENGTH) {
-            throw new RuntimeException("Value is not valid");
-        }
-        if (getSignature() != null) {
-            if (BigIntegers.asUnsignedByteArray(signature.getR()).length > DATAWORD_LENGTH) {
-                throw new RuntimeException("Signature R is not valid");
-            }
-            if (BigIntegers.asUnsignedByteArray(signature.getS()).length > DATAWORD_LENGTH) {
-                throw new RuntimeException("Signature S is not valid");
-            }
-            if (getSender().getBytes() != null && getSender().getBytes().length != Constants.getMaxAddressByteLength()) {
-                throw new RuntimeException("Sender is not valid");
-            }
-        }
     }
 
     public Keccak256 getHash() {
