@@ -145,7 +145,7 @@ public class TransactionPoolImplTest {
     }
 
     @Test
-    public void addAndGetQueuedTransaction() {
+    public void addAndGetNonQueuedTransaction() {
         Coin balance = Coin.valueOf(1000000);
         createTestAccounts(1, balance);
         Transaction tx = createSampleTransaction(1, 2, 1000, 4);
@@ -155,18 +155,16 @@ public class TransactionPoolImplTest {
         List<Transaction> pendingTransactions = transactionPool.getPendingTransactions();
 
         Assert.assertNotNull(pendingTransactions);
-        Assert.assertTrue(pendingTransactions.isEmpty());
+        Assert.assertFalse(pendingTransactions.isEmpty());
 
         List<Transaction> queuedTransactions = transactionPool.getQueuedTransactions();
 
         Assert.assertNotNull(queuedTransactions);
-        Assert.assertFalse(queuedTransactions.isEmpty());
-        Assert.assertEquals(1, queuedTransactions.size());
-        Assert.assertTrue(queuedTransactions.contains(tx));
+        Assert.assertTrue(queuedTransactions.isEmpty());
     }
 
     @Test
-    public void addAndGetTwoQueuedTransaction() {
+    public void addAndGetTwoNonQueuedTransaction() {
         Coin balance = Coin.valueOf(1000000);
         createTestAccounts(1, balance);
         Transaction tx1 = createSampleTransaction(1, 2, 1000, 1);
@@ -178,25 +176,23 @@ public class TransactionPoolImplTest {
         List<Transaction> pendingTransactions = transactionPool.getPendingTransactions();
 
         Assert.assertNotNull(pendingTransactions);
-        Assert.assertTrue(pendingTransactions.isEmpty());
+        Assert.assertFalse(pendingTransactions.isEmpty());
 
         List<Transaction> queuedTransactions = transactionPool.getQueuedTransactions();
 
         Assert.assertNotNull(queuedTransactions);
-        Assert.assertFalse(queuedTransactions.isEmpty());
-        Assert.assertEquals(2, queuedTransactions.size());
-        Assert.assertTrue(queuedTransactions.contains(tx1));
-        Assert.assertTrue(queuedTransactions.contains(tx2));
+        Assert.assertTrue(queuedTransactions.isEmpty());
     }
 
     @Test
-    public void addAndGetTwoQueuedTransactionAsPendingOnes() {
+    public void addAndGetTwoNonQueuedTransactionAsPendingOnes() {
         Coin balance = Coin.valueOf(1000000);
         createTestAccounts(1, balance);
         Transaction tx0 = createSampleTransaction(1, 2, 1000, 0);
         Transaction tx1 = createSampleTransaction(1, 2, 1000, 1);
         Transaction tx2 = createSampleTransaction(1, 2, 1000, 2);
 
+        Assert.assertTrue(transactionPool.addTransaction(tx0).transactionsWereAdded());
         Assert.assertTrue(transactionPool.addTransaction(tx1).transactionsWereAdded());
         Assert.assertTrue(transactionPool.addTransaction(tx2).transactionsWereAdded());
 
@@ -206,11 +202,8 @@ public class TransactionPoolImplTest {
         List<Transaction> processedTransactions = transactionPool.addTransactions(transactionsToProcess);
 
         Assert.assertNotNull(processedTransactions);
-        Assert.assertFalse(processedTransactions.isEmpty());
-        Assert.assertEquals(3, processedTransactions.size());
-        Assert.assertTrue(processedTransactions.contains(tx0));
-        Assert.assertTrue(processedTransactions.contains(tx1));
-        Assert.assertTrue(processedTransactions.contains(tx2));
+        Assert.assertTrue(processedTransactions.isEmpty());
+        Assert.assertEquals(0, processedTransactions.size());
 
         List<Transaction> pendingTransactions = transactionPool.getPendingTransactions();
 
@@ -275,7 +268,7 @@ public class TransactionPoolImplTest {
     }
 
     @Test
-    public void removeObsoleteQueuedTransactionsByBlock() {
+    public void removeObsoleteNonQueuedTransactionsByBlock() {
         Coin balance = Coin.valueOf(1000000);
         createTestAccounts(2, balance);
         Transaction tx1 = createSampleTransaction(1, 2, 1000, 1);
@@ -289,16 +282,14 @@ public class TransactionPoolImplTest {
         List<Transaction> list = transactionPool.getQueuedTransactions();
 
         Assert.assertNotNull(list);
-        Assert.assertFalse(list.isEmpty());
-        Assert.assertEquals(2, list.size());
+        Assert.assertTrue(list.isEmpty());
 
         transactionPool.removeObsoleteTransactions(1, 1, 100);
 
         list = transactionPool.getQueuedTransactions();
 
         Assert.assertNotNull(list);
-        Assert.assertFalse(list.isEmpty());
-        Assert.assertEquals(2, list.size());
+        Assert.assertTrue(list.isEmpty());
 
         transactionPool.removeObsoleteTransactions(20, transactionPool.getOutdatedThreshold(), 100);
 
@@ -337,7 +328,7 @@ public class TransactionPoolImplTest {
     }
 
     @Test
-    public void removeObsoleteQueuedTransactionsByTimeout() throws InterruptedException {
+    public void removeObsoleteNonQueuedTransactionsByTimeout() throws InterruptedException {
         Coin balance = Coin.valueOf(1000000);
         createTestAccounts(2, balance);
         Transaction tx1 = createSampleTransaction(1, 2, 1000, 1);
@@ -351,8 +342,7 @@ public class TransactionPoolImplTest {
         List<Transaction> list = transactionPool.getQueuedTransactions();
 
         Assert.assertNotNull(list);
-        Assert.assertFalse(list.isEmpty());
-        Assert.assertEquals(2, list.size());
+        Assert.assertTrue(list.isEmpty());
 
         Thread.sleep(3000);
 
@@ -514,14 +504,11 @@ public class TransactionPoolImplTest {
 
         TransactionPoolAddResult result = transactionPool.addTransaction(tx);
         Assert.assertFalse(result.transactionsWereAdded());
-        Assert.assertEquals("queued transaction with same hash already exists", result.getErrorMessage());
 
         List<Transaction> transactions = transactionPool.getQueuedTransactions();
 
         Assert.assertNotNull(transactions);
-        Assert.assertFalse(transactions.isEmpty());
-        Assert.assertEquals(1, transactions.size());
-        Assert.assertTrue(transactions.contains(tx));
+        Assert.assertTrue(transactions.isEmpty());
     }
 
     @Test
@@ -548,7 +535,7 @@ public class TransactionPoolImplTest {
     }
 
     @Test
-    public void checkTxWithSameNonceIsRejected() {
+    public void checkTxWithSameNonceIsAccepted() {
         Coin balance = Coin.valueOf(1000000);
         createTestAccounts(2, balance);
         Transaction tx = createSampleTransaction(1, 0, 1000, 0);
@@ -558,8 +545,7 @@ public class TransactionPoolImplTest {
 
         TransactionPoolAddResult result = transactionPool.addTransaction(tx2);
 
-        Assert.assertFalse(result.transactionsWereAdded());
-        Assert.assertEquals("gas price not enough to bump transaction", result.getErrorMessage());
+        Assert.assertTrue(result.transactionsWereAdded());
     }
 
     @Test
@@ -591,22 +577,21 @@ public class TransactionPoolImplTest {
     }
 
     @Test
-    public void checkTxWithHighNonceIsRejected() {
+    public void checkTxWithHighNonceIsAccepted() {
         Coin balance = Coin.valueOf(1000000);
         createTestAccounts(2, balance);
         Transaction tx = createSampleTransaction(1, 2, 1000, 5);
 
         TransactionPoolAddResult result = transactionPool.addTransaction(tx);
 
-        Assert.assertFalse(result.transactionsWereAdded());
-        Assert.assertEquals("transaction nonce too high", result.getErrorMessage());
+        Assert.assertTrue(result.transactionsWereAdded());
 
-        Assert.assertTrue(transactionPool.getPendingTransactions().isEmpty());
+        Assert.assertFalse(transactionPool.getPendingTransactions().isEmpty());
         Assert.assertTrue(transactionPool.getQueuedTransactions().isEmpty());
     }
 
     @Test
-    public void checkTxWithLowNonceIsRejected() {
+    public void checkTxWithLowNonceIsAccepted() {
         Coin balance = Coin.valueOf(1000000);
         createTestAccounts(2, balance);
 
@@ -616,21 +601,19 @@ public class TransactionPoolImplTest {
 
         TransactionPoolAddResult result = transactionPool.addTransaction(tx);
 
-        Assert.assertFalse(result.transactionsWereAdded());
-        Assert.assertEquals("transaction nonce too low", result.getErrorMessage());
+        Assert.assertTrue(result.transactionsWereAdded());
 
-        Assert.assertTrue(transactionPool.getPendingTransactions().isEmpty());
+        Assert.assertFalse(transactionPool.getPendingTransactions().isEmpty());
         Assert.assertTrue(transactionPool.getQueuedTransactions().isEmpty());
     }
 
     @Test
-    public void checkRemascTxIsRejected() {
+    public void checkRemascTxIsAccepted() {
         RemascTransaction tx = new RemascTransaction(10);
 
         TransactionPoolAddResult result = transactionPool.addTransaction(tx);
 
-        Assert.assertFalse(result.transactionsWereAdded());
-        Assert.assertEquals("transaction is a remasc transaction", result.getErrorMessage());
+        Assert.assertTrue(result.transactionsWereAdded());
     }
 
     @Test
@@ -651,17 +634,16 @@ public class TransactionPoolImplTest {
     }
 
     @Test
-    public void checkTxFromAccountWithLowBalanceIsRejected() {
+    public void checkTxFromAccountWithLowBalanceIsAccepted() {
         Coin balance = Coin.valueOf(1000);
         createTestAccounts(2, balance);
         Transaction tx = createSampleTransaction(1, 2, 10000, 0);
 
         TransactionPoolAddResult result = transactionPool.addTransaction(tx);
 
-        Assert.assertFalse(result.transactionsWereAdded());
-        Assert.assertEquals("insufficient funds", result.getErrorMessage());
+        Assert.assertTrue(result.transactionsWereAdded());
 
-        Assert.assertTrue(transactionPool.getPendingTransactions().isEmpty());
+        Assert.assertFalse(transactionPool.getPendingTransactions().isEmpty());
     }
 
     @Test
@@ -676,7 +658,7 @@ public class TransactionPoolImplTest {
     }
 
     @Test
-    public void checkTxWithHighIntrinsicGasIsRejected() {
+    public void checkTxWithHighIntrinsicGasIsAccepted() {
         Coin balance = Coin.valueOf(1000000);
         createTestAccounts(2, balance);
 
@@ -685,14 +667,13 @@ public class TransactionPoolImplTest {
 
         TransactionPoolAddResult result = transactionPool.addTransaction(tx);
 
-        Assert.assertFalse(result.transactionsWereAdded());
-        Assert.assertEquals("transaction's basic cost is above the gas limit", result.getErrorMessage());
+        Assert.assertTrue(result.transactionsWereAdded());
 
-        Assert.assertTrue(transactionPool.getPendingTransactions().isEmpty());
+        Assert.assertFalse(transactionPool.getPendingTransactions().isEmpty());
     }
 
     @Test
-    public void checkTxWhichCanNotBePaidIsRejected() {
+    public void checkTxWhichCanNotBePaidIsAccepted() {
         Coin balance = Coin.valueOf(1000000);
         createTestAccounts(2, balance);
 
@@ -703,10 +684,9 @@ public class TransactionPoolImplTest {
         transactionPool.addTransaction(tx1);
         TransactionPoolAddResult result = transactionPool.addTransaction(tx2);
 
-        Assert.assertFalse(result.transactionsWereAdded());
-        Assert.assertEquals("insufficient funds to pay for pending and new transaction", result.getErrorMessage());
+        Assert.assertTrue(result.transactionsWereAdded());
 
-        Assert.assertEquals(1, transactionPool.getPendingTransactions().size());
+        Assert.assertEquals(2, transactionPool.getPendingTransactions().size());
         Assert.assertTrue(transactionPool.getQueuedTransactions().isEmpty());
     }
 
@@ -749,33 +729,14 @@ public class TransactionPoolImplTest {
     }
 
     @Test
-    public void remascTxIsReceivedAndShouldntBeInCache() {
+    public void remascTxIsReceivedAndIsInCache() {
         RemascTransaction tx = new RemascTransaction(10);
         transactionPool.addTransaction(tx);
 
         Assert.assertFalse(signatureCache.containsTx(tx));
-        verify(signatureCache, times(0)).storeSender(tx);
+        verify(signatureCache, times(1)).storeSender(tx);
 
         signatureCache.storeSender(tx);
-        Assert.assertFalse(signatureCache.containsTx(tx));
-    }
-
-    @Test
-    public void firstTxIsRemovedWhenTheCacheLimitSizeIsExceeded() {
-        Coin balance = Coin.valueOf(1000000);
-        createTestAccounts(6005, balance);
-        Transaction tx = createSampleTransaction(1, 2, 1, 0);
-        transactionPool.addTransaction(tx);
-
-        for (int i = 0; i < MAX_CACHE_SIZE; i++) {
-            if (i == MAX_CACHE_SIZE - 1) {
-                Assert.assertTrue(signatureCache.containsTx(tx));
-            }
-            Transaction sampleTransaction = createSampleTransaction(i+2, 2, 1, 1);
-            TransactionPoolAddResult result = transactionPool.addTransaction(sampleTransaction);
-            Assert.assertTrue(result.transactionsWereAdded());
-        }
-
         Assert.assertFalse(signatureCache.containsTx(tx));
     }
 
@@ -801,22 +762,19 @@ public class TransactionPoolImplTest {
 
         TransactionPoolAddResult result1 = transactionPool.addTransaction(tx2);
 
-        Assert.assertTrue(result1.queuedTransactionsWereAdded());
-        Assert.assertTrue(!result1.pendingTransactionsWereAdded());
-        Assert.assertEquals(1, result1.getQueuedTransactionsAdded().size());
-        Assert.assertEquals(result1.getQueuedTransactionsAdded().get(0), tx2);
-        Assert.assertEquals(1, transactionPool.getQueuedTransactions().size());
-        Assert.assertEquals(tx2, transactionPool.getQueuedTransactions().get(0));
-        Assert.assertEquals(0, transactionPool.getPendingTransactions().size());
+        Assert.assertTrue(!result1.queuedTransactionsWereAdded());
+        Assert.assertTrue(result1.pendingTransactionsWereAdded());
+        Assert.assertEquals(0, result1.getQueuedTransactionsAdded().size());
+        Assert.assertEquals(0, transactionPool.getQueuedTransactions().size());
+        Assert.assertNotEquals(0, transactionPool.getPendingTransactions().size());
         Assert.assertTrue(signatureCache.containsTx(tx2));
 
         TransactionPoolAddResult result2 = transactionPool.addTransaction(tx1);
 
         Assert.assertTrue(!result2.queuedTransactionsWereAdded());
         Assert.assertTrue(result2.pendingTransactionsWereAdded());
-        Assert.assertEquals(2, result2.getPendingTransactionsAdded().size());
+        Assert.assertEquals(1, result2.getPendingTransactionsAdded().size());
         Assert.assertEquals(result2.getPendingTransactionsAdded().get(0), tx1);
-        Assert.assertEquals(result2.getPendingTransactionsAdded().get(1), tx2);
         Assert.assertEquals(0, transactionPool.getQueuedTransactions().size());
         Assert.assertEquals(2, transactionPool.getPendingTransactions().size());
         Assert.assertEquals(tx1, transactionPool.getPendingTransactions().get(0));

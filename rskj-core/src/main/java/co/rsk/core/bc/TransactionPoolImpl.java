@@ -230,37 +230,15 @@ public class TransactionPoolImpl implements TransactionPool {
         }
 
         RepositorySnapshot currentRepository = getCurrentRepository();
-        TransactionValidationResult validationResult = shouldAcceptTx(tx, currentRepository);
-
-        if (!validationResult.transactionIsValid()) {
-            return TransactionPoolAddResult.withError(validationResult.getErrorMessage());
-        }
 
         Keccak256 hash = tx.getHash();
         logger.trace("add transaction {} {}", toBI(tx.getNonce()), tx.getHash());
 
         Long bnumber = Long.valueOf(getCurrentBestBlockNumber());
 
-        if (!isBumpingGasPriceForSameNonceTx(tx)) {
-            return TransactionPoolAddResult.withError("gas price not enough to bump transaction");
-        }
-
         transactionBlocks.put(hash, bnumber);
         final long timestampSeconds = this.getCurrentTimeInSeconds();
         transactionTimes.put(hash, timestampSeconds);
-
-        BigInteger currentNonce = getPendingState(currentRepository).getNonce(tx.getSender());
-        BigInteger txNonce = tx.getNonceAsInteger();
-        if (txNonce.compareTo(currentNonce) > 0) {
-            this.addQueuedTransaction(tx);
-            signatureCache.storeSender(tx);
-            return TransactionPoolAddResult.okQueuedTransaction(tx);
-        }
-
-        if (!senderCanPayPendingTransactionsAndNewTx(tx, currentRepository)) {
-            // discard this tx to prevent spam
-            return TransactionPoolAddResult.withError("insufficient funds to pay for pending and new transaction");
-        }
 
         pendingTransactions.addTransaction(tx);
         signatureCache.storeSender(tx);
