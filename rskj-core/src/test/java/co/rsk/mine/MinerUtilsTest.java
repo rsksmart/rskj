@@ -116,7 +116,7 @@ public class MinerUtilsTest {
 
         List<Transaction> txsToRemove = new LinkedList<>();
         List<Transaction> res = new MinerUtils().filterTransactions(txsToRemove, txs, accountNounces, repository, minGasPrice);
-        Assert.assertEquals(0, res.size());
+        Assert.assertEquals(1, res.size());
         Assert.assertEquals(0, txsToRemove.size());
     }
 
@@ -133,8 +133,8 @@ public class MinerUtilsTest {
 
         LinkedList<Transaction> txsToRemove = new LinkedList<>();
         List<Transaction> res = new MinerUtils().filterTransactions(txsToRemove, txs, accountNounces, repository, minGasPrice);
-        Assert.assertEquals(0, res.size());
-        Assert.assertEquals(1, txsToRemove.size());
+        Assert.assertEquals(1, res.size());
+        Assert.assertEquals(0, txsToRemove.size());
     }
 
     @Test
@@ -151,8 +151,8 @@ public class MinerUtilsTest {
 
         LinkedList<Transaction> txsToRemove = new LinkedList<>();
         List<Transaction> res = new MinerUtils().filterTransactions(txsToRemove, txs, accountNounces, repository, minGasPrice);
-        Assert.assertEquals(0, res.size());
-        Assert.assertEquals(1, txsToRemove.size());
+        Assert.assertEquals(1, res.size());
+        Assert.assertEquals(0, txsToRemove.size());
     }
 
     @Test

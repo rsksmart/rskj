@@ -179,26 +179,6 @@ public class MinerUtils {
                 RskAddress txSender = tx.getSender();
                 logger.debug("Examining tx={} sender: {} value: {} nonce: {}", hash, txSender, txValue, txNonce);
 
-                BigInteger expectedNonce;
-
-                if (accountNonces.containsKey(txSender)) {
-                    expectedNonce = accountNonces.get(txSender).add(BigInteger.ONE);
-                } else {
-                    expectedNonce = originalRepo.getNonce(txSender);
-                }
-
-                if (!(tx instanceof RemascTransaction) && tx.getGasPrice().compareTo(minGasPrice) < 0) {
-                    logger.warn("Rejected tx={} because of low gas account {}, removing tx from pending state.", hash, txSender);
-
-                    txsToRemove.add(tx);
-                    continue;
-                }
-
-                if (!expectedNonce.equals(txNonce)) {
-                    logger.warn("Invalid nonce, expected {}, found {}, tx={}", expectedNonce, txNonce, hash);
-                    continue;
-                }
-
                 accountNonces.put(txSender, txNonce);
 
                 logger.debug("Accepted tx={} sender: {} value: {} nonce: {}", hash, txSender, txValue, txNonce);
