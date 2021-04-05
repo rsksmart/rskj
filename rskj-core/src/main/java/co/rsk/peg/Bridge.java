@@ -1145,30 +1145,19 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         }
     }
 
-    public byte[] getBestBlockHeader(Object[] args) {
-        logger.trace("getBestBlockHeader");
+    public byte[] getBtcBlockchainBestBlockHeader(Object[] args) {
+        logger.trace("getBtcBlockchainBestBlockHeader");
 
         try {
             return this.bridgeSupport.getBtcBlockchainBestBlockHeader();
         } catch (Exception e) {
-            logger.warn("Exception in getBestBlockHeader", e);
+            logger.warn("Exception in getBtcBlockchainBestBlockHeader", e);
             return ByteUtil.EMPTY_BYTE_ARRAY;
         }
     }
 
-    public long getBestBlockNumber(Object[] args) {
-        logger.trace("getBestBlockNumber");
-
-        try {
-            return this.bridgeSupport.getBtcBlockchainBestChainHeight();
-        } catch (Exception e) {
-            logger.warn("Exception in getBestBlockNumber", e);
-            return BridgeSupport.FAST_BRIDGE_GENERIC_ERROR;
-        }
-    }
-
-    public byte[] getBitcoinHeaderByHash(Object[] args) {
-        logger.trace("getBitcoinHeaderByHash");
+    public byte[] getBtcBlockHeaderByHash(Object[] args) {
+        logger.trace("getBtcBlockHeaderByHash");
 
         try {
             byte[] hashBytes = (byte[])args[0];
@@ -1176,26 +1165,26 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
 
             return this.bridgeSupport.getBtcBlockHeaderByHash(hash);
         } catch (Exception e) {
-            logger.warn("Exception in getBitcoinHeaderByHash", e);
+            logger.warn("Exception in getBtcBlockHeaderByHash", e);
             return ByteUtil.EMPTY_BYTE_ARRAY;
         }
     }
 
-    public byte[] getBitcoinHeaderByHeight(Object[] args) {
-        logger.trace("getBitcoinHeaderByHeight");
+    public byte[] getBtcBlockchainBlockHeaderByHeight(Object[] args) {
+        logger.trace("getBtcBlockchainBlockHeaderByHeight");
 
         try {
             int height = ((BigInteger) args[0]).intValue();
 
             return this.bridgeSupport.getBtcBlockchainBlockHeaderByHeight(height);
         } catch (Exception e) {
-            logger.warn("Exception in getBitcoinHeaderByHeight", e);
+            logger.warn("Exception in getBtcBlockchainBlockHeaderByHeight", e);
             return ByteUtil.EMPTY_BYTE_ARRAY;
         }
     }
 
-    public byte[] getBitcoinParentByHash(Object[] args) {
-        logger.trace("getBitcoinParentByHash");
+    public byte[] getBtcParentBlockHeaderByHash(Object[] args) {
+        logger.trace("getBtcParentBlockHeaderByHash");
 
         try {
             byte[] hashBytes = (byte[])args[0];
@@ -1203,7 +1192,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
 
             return this.bridgeSupport.getBtcParentBlockHeaderByHash(hash);
         } catch (Exception e) {
-            logger.warn("Exception in getBitcoinHeaderByHash", e);
+            logger.warn("Exception in getBtcParentBlockHeaderByHash", e);
             return ByteUtil.EMPTY_BYTE_ARRAY;
         }
     }

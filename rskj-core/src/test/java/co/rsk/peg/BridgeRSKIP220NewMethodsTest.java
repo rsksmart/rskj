@@ -7,6 +7,7 @@ import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.Block;
+import org.ethereum.vm.exception.VMException;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -52,58 +53,58 @@ public class BridgeRSKIP220NewMethodsTest {
     }
 
     @Test
-    public void getBestBlockNumber() throws IOException, BlockStoreException {
+    public void getBtcBlockchainBestChainHeight() throws IOException, BlockStoreException, VMException {
         when(bridgeSupport.getBtcBlockchainBestChainHeight()).thenReturn(42);
 
-        long result = bridge.getBestBlockNumber(new Object[0]);
+        int result = bridge.getBtcBlockchainBestChainHeight(new Object[0]);
 
         Assert.assertEquals(42, result);
     }
 
     @Test
-    public void getBestBlockHeader() throws IOException, BlockStoreException {
+    public void getBtcBlockchainBestBlockHeader() throws IOException, BlockStoreException {
         byte[] header = new byte[80];
         random.nextBytes(header);
         when(bridgeSupport.getBtcBlockchainBestBlockHeader()).thenReturn(header);
-        byte[] result = bridge.getBestBlockHeader(new Object[0]);
+        byte[] result = bridge.getBtcBlockchainBestBlockHeader(new Object[0]);
 
         Assert.assertArrayEquals(header, result);
     }
 
     @Test
-    public void getBitcoinHeaderByHash() throws IOException, BlockStoreException {
+    public void getBtcBlockHeaderByHash() throws IOException, BlockStoreException {
         byte[] hashBytes = new byte[32];
         random.nextBytes(hashBytes);
         byte[] header = new byte[80];
         random.nextBytes(header);
 
         when(bridgeSupport.getBtcBlockHeaderByHash(Sha256Hash.wrap(hashBytes))).thenReturn(header);
-        byte[] result = bridge.getBitcoinHeaderByHash(new Object[] { hashBytes });
+        byte[] result = bridge.getBtcBlockHeaderByHash(new Object[] { hashBytes });
 
         Assert.assertArrayEquals(header, result);
     }
 
     @Test
-    public void getBitcoinParentByHash() throws IOException, BlockStoreException {
+    public void getBtcParentBlockHeaderByHash() throws IOException, BlockStoreException {
         byte[] hashBytes = new byte[32];
         random.nextBytes(hashBytes);
         byte[] header = new byte[80];
         random.nextBytes(header);
 
         when(bridgeSupport.getBtcParentBlockHeaderByHash(Sha256Hash.wrap(hashBytes))).thenReturn(header);
-        byte[] result = bridge.getBitcoinParentByHash(new Object[] { hashBytes });
+        byte[] result = bridge.getBtcParentBlockHeaderByHash(new Object[] { hashBytes });
 
         Assert.assertArrayEquals(header, result);
     }
 
     @Test
-    public void getBitcoinHeaderByHeight() throws IOException, BlockStoreException {
+    public void getBtcBlockchainBlockHeaderByHeight() throws IOException, BlockStoreException {
         byte[] header = new byte[80];
         random.nextBytes(header);
         BigInteger height = BigInteger.TEN;
 
         when(bridgeSupport.getBtcBlockchainBlockHeaderByHeight(10)).thenReturn(header);
-        byte[] result = bridge.getBitcoinHeaderByHeight(new Object[] { height });
+        byte[] result = bridge.getBtcBlockchainBlockHeaderByHeight(new Object[] { height });
 
         Assert.assertArrayEquals(header, result);
     }
