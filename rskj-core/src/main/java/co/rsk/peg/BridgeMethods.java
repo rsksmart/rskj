@@ -621,7 +621,7 @@ public enum BridgeMethods {
                     new String[]{"bytes"}
             ),
             fixedCost(20000L), // TODO: calculate gas cost
-            (BridgeMethodExecutorTyped) Bridge::getBestBlockHeader,
+            (BridgeMethodExecutorTyped) Bridge::getBtcBlockchainBestBlockHeader,
             activations -> activations.isActive(RSKIP220),
             false
     ),
@@ -632,7 +632,7 @@ public enum BridgeMethods {
                     new String[]{"uint256"}
             ),
             fixedCost(20000L), // TODO: calculate gas cost
-            (BridgeMethodExecutorTyped) Bridge::getBestBlockNumber,
+            (BridgeMethodExecutorTyped) Bridge::getBtcBlockchainBestChainHeight,
             activations -> activations.isActive(RSKIP220),
             false
     ),
@@ -643,7 +643,7 @@ public enum BridgeMethods {
                     new String[]{"bytes"}
             ),
             fixedCost(20000L), // TODO: calculate gas cost
-            (BridgeMethodExecutorTyped) Bridge::getBitcoinHeaderByHash,
+            (BridgeMethodExecutorTyped) Bridge::getBtcBlockHeaderByHash,
             activations -> activations.isActive(RSKIP220),
             false
     ),
@@ -654,7 +654,7 @@ public enum BridgeMethods {
                     new String[]{"bytes"}
             ),
             fixedCost(20000L), // TODO: calculate gas cost
-            (BridgeMethodExecutorTyped) Bridge::getBitcoinParentByHash,
+            (BridgeMethodExecutorTyped) Bridge::getBtcParentBlockHeaderByHash,
             activations -> activations.isActive(RSKIP220),
             false
     ),
@@ -665,7 +665,7 @@ public enum BridgeMethods {
                     new String[]{"bytes"}
             ),
             fixedCost(20000L), // TODO: calculate gas cost
-            (BridgeMethodExecutorTyped) Bridge::getBitcoinHeaderByHeight,
+            (BridgeMethodExecutorTyped) Bridge::getBtcBlockchainBlockHeaderByHeight,
             activations -> activations.isActive(RSKIP220),
             false
     );
