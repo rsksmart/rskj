@@ -68,6 +68,11 @@ public class EthModuleTransactionBase implements EthModuleTransaction {
                 args.data = args.data.substring(2);
             }
 
+            byte txChainId = hexToChainId(args.chainId);
+            if (txChainId == 0) {
+                txChainId = constants.getChainId();
+            }
+
             synchronized (transactionPool) {
                 BigInteger accountNonce = args.nonce != null ? TypeConverter.stringNumberAsBigInt(args.nonce) : transactionPool.getPendingState().getNonce(account.getAddress());
                 Transaction tx = Transaction
@@ -77,10 +82,15 @@ public class EthModuleTransactionBase implements EthModuleTransaction {
                         .gasLimit(gasLimit)
                         .destination(toAddress == null ? null : Hex.decode(toAddress))
                         .data(args.data == null ? null : Hex.decode(args.data))
-                        .chainId(constants.getChainId())
+                        .chainId(txChainId)
                         .value(value)
                         .build();
                 tx.sign(account.getEcKey().getPrivKeyBytes());
+
+                if (!tx.acceptTransactionSignature(constants.getChainId())) {
+                    throw RskJsonRpcRequestException.invalidParamError("Invalid chainId: " + args.chainId);
+                }
+
                 TransactionPoolAddResult result = transactionGateway.receiveTransaction(tx.toImmutableTransaction());
                 if(!result.transactionsWereAdded()) {
                     throw RskJsonRpcRequestException.transactionError(result.getErrorMessage());
@@ -118,6 +128,22 @@ public class EthModuleTransactionBase implements EthModuleTransaction {
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug("eth_sendRawTransaction({}): {}", rawData, s);
             }
+        }
+    }
+
+    private static byte hexToChainId(String hex) {
+        if (hex == null) {
+            return 0;
+        }
+        try {
+            byte[] bytes = TypeConverter.stringHexToByteArray(hex);
+            if (bytes.length != 1) {
+                throw RskJsonRpcRequestException.invalidParamError("Invalid chainId: " + hex);
+            }
+
+            return bytes[0];
+        } catch (Exception e) {
+            throw RskJsonRpcRequestException.invalidParamError("Invalid chainId: " + hex, e);
         }
     }
 }
