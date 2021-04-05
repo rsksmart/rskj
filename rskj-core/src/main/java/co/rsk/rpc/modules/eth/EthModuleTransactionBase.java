@@ -39,6 +39,8 @@ import static org.ethereum.rpc.exception.RskJsonRpcRequestException.invalidParam
 
 public class EthModuleTransactionBase implements EthModuleTransaction {
 
+    private static final String ERR_INVALID_CHAIN_ID = "Invalid chainId: ";
+
     protected static final Logger LOGGER = LoggerFactory.getLogger("web3");
 
     private final Wallet wallet;
@@ -88,7 +90,7 @@ public class EthModuleTransactionBase implements EthModuleTransaction {
                 tx.sign(account.getEcKey().getPrivKeyBytes());
 
                 if (!tx.acceptTransactionSignature(constants.getChainId())) {
-                    throw RskJsonRpcRequestException.invalidParamError("Invalid chainId: " + args.chainId);
+                    throw RskJsonRpcRequestException.invalidParamError(ERR_INVALID_CHAIN_ID + args.chainId);
                 }
 
                 TransactionPoolAddResult result = transactionGateway.receiveTransaction(tx.toImmutableTransaction());
@@ -138,12 +140,12 @@ public class EthModuleTransactionBase implements EthModuleTransaction {
         try {
             byte[] bytes = TypeConverter.stringHexToByteArray(hex);
             if (bytes.length != 1) {
-                throw RskJsonRpcRequestException.invalidParamError("Invalid chainId: " + hex);
+                throw RskJsonRpcRequestException.invalidParamError(ERR_INVALID_CHAIN_ID + hex);
             }
 
             return bytes[0];
         } catch (Exception e) {
-            throw RskJsonRpcRequestException.invalidParamError("Invalid chainId: " + hex, e);
+            throw RskJsonRpcRequestException.invalidParamError(ERR_INVALID_CHAIN_ID + hex, e);
         }
     }
 }
