@@ -1399,10 +1399,6 @@ public class BridgeSupport {
 
         StoredBlock block = btcBlockStore.getStoredBlockAtMainChainHeight(height);
 
-        if (block == null) {
-            return ByteUtil.EMPTY_BYTE_ARRAY;
-        }
-
         return serializeBlockHeader(block);
     }
 
