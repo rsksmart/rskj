@@ -620,10 +620,10 @@ public enum BridgeMethods {
                     new String[0],
                     new String[]{"bytes"}
             ),
-            fixedCost(20000L),
+            fixedCost(20000L), // TODO: calculate gas cost
             (BridgeMethodExecutorTyped) Bridge::getBestBlockHeader,
             activations -> activations.isActive(RSKIP220),
-            false
+            true
     ),
     GET_BEST_BLOCK_NUMBER(
             CallTransaction.Function.fromSignature(
@@ -631,10 +631,10 @@ public enum BridgeMethods {
                     new String[0],
                     new String[]{"uint256"}
             ),
-            fixedCost(20000L),
+            fixedCost(20000L), // TODO: calculate gas cost
             (BridgeMethodExecutorTyped) Bridge::getBestBlockNumber,
             activations -> activations.isActive(RSKIP220),
-            false
+            true
     ),
     GET_BITCOIN_HEADER_BY_HASH(
             CallTransaction.Function.fromSignature(
@@ -642,10 +642,10 @@ public enum BridgeMethods {
                     new String[]{"bytes32"},
                     new String[]{"bytes"}
             ),
-            fixedCost(20000L),
+            fixedCost(20000L), // TODO: calculate gas cost
             (BridgeMethodExecutorTyped) Bridge::getBitcoinHeaderByHash,
             activations -> activations.isActive(RSKIP220),
-            false
+            true
     ),
     GET_BITCOIN_PARENT_BY_HASH(
             CallTransaction.Function.fromSignature(
@@ -653,10 +653,10 @@ public enum BridgeMethods {
                     new String[]{"bytes32"},
                     new String[]{"bytes"}
             ),
-            fixedCost(20000L),
+            fixedCost(20000L), // TODO: calculate gas cost
             (BridgeMethodExecutorTyped) Bridge::getBitcoinParentByHash,
             activations -> activations.isActive(RSKIP220),
-            false
+            true
     ),
     GET_BITCOIN_HEADER_BY_HEIGHT(
             CallTransaction.Function.fromSignature(
@@ -664,10 +664,10 @@ public enum BridgeMethods {
                     new String[]{"uint256"},
                     new String[]{"bytes"}
             ),
-            fixedCost(20000L),
+            fixedCost(20000L), // TODO: calculate gas cost
             (BridgeMethodExecutorTyped) Bridge::getBitcoinHeaderByHeight,
             activations -> activations.isActive(RSKIP220),
-            false
+            true
     );
 
     private final CallTransaction.Function function;
