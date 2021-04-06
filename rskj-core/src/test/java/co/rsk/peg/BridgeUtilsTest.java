@@ -20,10 +20,8 @@ package co.rsk.peg;
 
 import static co.rsk.peg.PegTestUtils.createBaseRedeemScriptThatSpendsFromTheFederation;
 import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
@@ -120,13 +118,15 @@ public class BridgeUtilsTest {
         Wallet wallet = new BridgeBtcWallet(btcContext, Collections.singletonList(federation));
         Address federationAddress = federation.getAddress();
         wallet.addWatchedAddress(federationAddress, federation.getCreationTime().toEpochMilli());
+        ActivationConfig.ForBlock actForBlock = mock(ActivationConfig.ForBlock.class);
+        when(actForBlock.isActive(any(ConsensusRule.class))).thenReturn(false);
 
         // Tx sending less than the minimum allowed, not a lock tx
-        Coin minimumLockValue = bridgeConstants.getMinimumLockTxValue();
+        Coin minimumLockValue = bridgeConstants.getMinimumPeginTxValue();
         BtcTransaction tx = new BtcTransaction(params);
         tx.addOutput(minimumLockValue.subtract(Coin.CENT), federationAddress);
         tx.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
-        assertFalse(BridgeUtils.isPegInTx(tx, federation, btcContext, bridgeConstants));
+        assertFalse(BridgeUtils.isPegInTxAndValidateMinimum(tx, federation, btcContext, bridgeConstants, actForBlock));
 
         // Tx sending 1 btc to the federation, but also spending from the federation addres, the typical release tx, not a lock tx.
         BtcTransaction tx2 = new BtcTransaction(params);
@@ -134,19 +134,138 @@ public class BridgeUtilsTest {
         TransactionInput txIn = new TransactionInput(params, tx2, new byte[]{}, new TransactionOutPoint(params, 0, Sha256Hash.ZERO_HASH));
         tx2.addInput(txIn);
         signWithNecessaryKeys(bridgeConstants.getGenesisFederation(), BridgeRegTestConstants.REGTEST_FEDERATION_PRIVATE_KEYS, txIn, tx2, bridgeConstants);
-        assertFalse(BridgeUtils.isPegInTx(tx2, federation, btcContext, bridgeConstants));
+        assertFalse(BridgeUtils.isPegInTxAndValidateMinimum(tx2, federation, btcContext, bridgeConstants, actForBlock));
 
         // Tx sending 1 btc to the federation, is a lock tx
         BtcTransaction tx3 = new BtcTransaction(params);
         tx3.addOutput(Coin.COIN, federationAddress);
         tx3.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
-        assertTrue(BridgeUtils.isPegInTx(tx3, federation, btcContext, bridgeConstants));
+        assertTrue(BridgeUtils.isPegInTxAndValidateMinimum(tx3, federation, btcContext, bridgeConstants, actForBlock));
 
         // Tx sending 50 btc to the federation, is a lock tx
         BtcTransaction tx4 = new BtcTransaction(params);
         tx4.addOutput(Coin.FIFTY_COINS, federationAddress);
         tx4.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
-        assertTrue(BridgeUtils.isPegInTx(tx4, federation, btcContext, bridgeConstants));
+        assertTrue(BridgeUtils.isPegInTxAndValidateMinimum(tx4, federation, btcContext, bridgeConstants, actForBlock));
+    }
+
+
+    @Test
+    public void testIsLock_less_than_minimum_not_pegin_after_iris() {
+        // Tx sending less than the minimum allowed, not a lock tx
+        NetworkParameters params = RegTestParams.get();
+        Context btcContext = new Context(params);
+        BridgeRegTestConstants bridgeConstants = BridgeRegTestConstants.getInstance();
+        Federation federation = this.getGenesisFederationForTest(bridgeConstants, btcContext);
+
+        ActivationConfig.ForBlock actForBlock = mock(ActivationConfig.ForBlock.class);
+        when(actForBlock.isActive(any(ConsensusRule.class))).thenReturn(true);
+        Coin minimumLockValueAfterIris = bridgeConstants.getMinimumPeginTxValueAfterIris();
+
+
+        // Tx sending less than the minimum allowed, not a lock tx
+        BtcTransaction tx = new BtcTransaction(params);
+        tx.addOutput(minimumLockValueAfterIris.subtract(Coin.CENT), federation.getAddress());
+        tx.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
+        assertFalse(BridgeUtils.isPegInTxAndValidateMinimum(tx, federation, btcContext, bridgeConstants, actForBlock));
+        assertTrue(BridgeUtils.isPegInTx(tx, federation, btcContext));
+    }
+    @Test
+    public void testIsLock_spending_from_federation_is_pegout_after_iris() {
+        // Tx sending 1 btc to the federation, but also spending from the federation address, the typical release tx, not a lock tx.
+        NetworkParameters params = RegTestParams.get();
+        Context btcContext = new Context(params);
+        BridgeRegTestConstants bridgeConstants = BridgeRegTestConstants.getInstance();
+        Federation federation = this.getGenesisFederationForTest(bridgeConstants, btcContext);
+
+        ActivationConfig.ForBlock actForBlock = mock(ActivationConfig.ForBlock.class);
+        when(actForBlock.isActive(any(ConsensusRule.class))).thenReturn(true);
+
+        BtcTransaction tx = new BtcTransaction(params);
+        tx.addOutput(Coin.COIN, federation.getAddress());
+        TransactionInput txIn = new TransactionInput(params, tx, new byte[]{}, new TransactionOutPoint(params, 0, Sha256Hash.ZERO_HASH));
+        tx.addInput(txIn);
+        signWithNecessaryKeys(bridgeConstants.getGenesisFederation(), BridgeRegTestConstants.REGTEST_FEDERATION_PRIVATE_KEYS, txIn, tx, bridgeConstants);
+        assertFalse(BridgeUtils.isPegInTxAndValidateMinimum(tx, federation, btcContext, bridgeConstants, actForBlock));
+        assertFalse(BridgeUtils.isPegInTx(tx, federation, btcContext));
+
+    }
+
+    @Test
+    public void testIsLock_sending_50_btc_after_iris() {
+        // Tx sending 50 btc to the federation, is a lock tx
+        NetworkParameters params = RegTestParams.get();
+        Context btcContext = new Context(params);
+        BridgeRegTestConstants bridgeConstants = BridgeRegTestConstants.getInstance();
+        Federation federation = this.getGenesisFederationForTest(bridgeConstants, btcContext);
+
+        ActivationConfig.ForBlock actForBlock = mock(ActivationConfig.ForBlock.class);
+        when(actForBlock.isActive(any(ConsensusRule.class))).thenReturn(true);
+
+        BtcTransaction tx = new BtcTransaction(params);
+        tx.addOutput(Coin.FIFTY_COINS, federation.getAddress());
+        tx.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
+        assertTrue(BridgeUtils.isPegInTxAndValidateMinimum(tx, federation, btcContext, bridgeConstants, actForBlock));
+    }
+
+    @Test
+    public void testIsLock_value_between_old_and_new_before_iris() {
+        // Tx sending btc between old and new value, it is not a lock before iris
+        NetworkParameters params = RegTestParams.get();
+        Context btcContext = new Context(params);
+        BridgeRegTestConstants bridgeConstants = BridgeRegTestConstants.getInstance();
+        Federation federation = this.getGenesisFederationForTest(bridgeConstants, btcContext);
+
+        ActivationConfig.ForBlock actForBlock = mock(ActivationConfig.ForBlock.class);
+        when(actForBlock.isActive(any(ConsensusRule.class))).thenReturn(true);
+        Coin minimumLockValueAfterIris = bridgeConstants.getMinimumPeginTxValueAfterIris();
+        Coin minimumValueBeforeIris = bridgeConstants.getMinimumPeginTxValue();
+
+        when(actForBlock.isActive(ConsensusRule.RSKIP219)).thenReturn(false);
+        BtcTransaction tx = new BtcTransaction(params);
+
+        Coin valueLock = minimumLockValueAfterIris.plus((minimumValueBeforeIris.subtract(minimumLockValueAfterIris)).div(2));
+        assertTrue(valueLock.isLessThan(minimumValueBeforeIris));
+        assertTrue(valueLock.isGreaterThan(minimumLockValueAfterIris));
+        tx.addOutput(valueLock, federation.getAddress());
+        tx.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
+        assertFalse(BridgeUtils.isValidMinimumPegin(valueLock, bridgeConstants, tx.getHash(), actForBlock));
+        assertTrue(BridgeUtils.isPegInTx(tx, federation, btcContext));
+        assertFalse(BridgeUtils.isPegInTxAndValidateMinimum(tx, federation, btcContext, bridgeConstants, actForBlock));
+    }
+
+    @Test
+    public void testIsLock_value_between_old_and_new_after_iris() {
+        // Tx sending btc between old and new value, it is a lock after iris
+        NetworkParameters params = RegTestParams.get();
+        Context btcContext = new Context(params);
+        BridgeRegTestConstants bridgeConstants = BridgeRegTestConstants.getInstance();
+        Federation federation = this.getGenesisFederationForTest(bridgeConstants, btcContext);
+
+        ActivationConfig.ForBlock actForBlock = mock(ActivationConfig.ForBlock.class);
+        when(actForBlock.isActive(any(ConsensusRule.class))).thenReturn(true);
+        Coin minimumLockValueAfterIris = bridgeConstants.getMinimumPeginTxValueAfterIris();
+
+        when(actForBlock.isActive(ConsensusRule.RSKIP219)).thenReturn(true);
+        BtcTransaction tx = new BtcTransaction(params);
+
+        Coin minimumValueBeforeIris = bridgeConstants.getMinimumPeginTxValue();
+        Coin valueLock = minimumLockValueAfterIris.plus((minimumValueBeforeIris.subtract(minimumLockValueAfterIris)).div(2));
+        assertTrue(valueLock.isGreaterThan(minimumLockValueAfterIris));
+        assertTrue(valueLock.isLessThan(minimumValueBeforeIris));
+        tx.addOutput(valueLock, federation.getAddress());
+        tx.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
+        assertTrue(BridgeUtils.isPegInTx(tx, federation, btcContext));
+        assertTrue(BridgeUtils.isValidMinimumPegin(valueLock, bridgeConstants, tx.getHash(), actForBlock));
+        assertTrue(BridgeUtils.isPegInTxAndValidateMinimum(tx, federation, btcContext, bridgeConstants, actForBlock));
+    }
+
+    private Federation getGenesisFederationForTest(BridgeRegTestConstants bridgeConstants, Context btcContext){
+        Federation federation = bridgeConstants.getGenesisFederation();
+        Wallet wallet = new BridgeBtcWallet(btcContext, Collections.singletonList(federation));
+        Address federationAddress = federation.getAddress();
+        wallet.addWatchedAddress(federationAddress, federation.getCreationTime().toEpochMilli());
+        return federation;
     }
 
     @Test
@@ -154,6 +273,8 @@ public class BridgeUtilsTest {
         BridgeRegTestConstants bridgeConstants = BridgeRegTestConstants.getInstance();
         NetworkParameters parameters = bridgeConstants.getBtcParams();
         Context btcContext = new Context(parameters);
+        ActivationConfig.ForBlock actForBlock = mock(ActivationConfig.ForBlock.class);
+        when(actForBlock.isActive(any(ConsensusRule.class))).thenReturn(false);
 
         List<BtcECKey> federation1Keys = Arrays.asList(
                 BtcECKey.fromPrivate(Hex.decode("fa01")),
@@ -177,20 +298,20 @@ public class BridgeUtilsTest {
         BtcTransaction tx = new BtcTransaction(parameters);
         tx.addOutput(Coin.CENT, address1);
         tx.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
-        assertFalse(BridgeUtils.isPegInTx(tx, federations, null, btcContext, bridgeConstants));
+        assertFalse(BridgeUtils.isPegInTxAndValidateMinimum(tx, federations, null, btcContext, bridgeConstants, actForBlock));
 
         // Tx sending less than 1 btc to the second federation, not a lock tx
         tx = new BtcTransaction(parameters);
         tx.addOutput(Coin.CENT, address2);
         tx.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
-        assertFalse(BridgeUtils.isPegInTx(tx, federations, null, btcContext, bridgeConstants));
+        assertFalse(BridgeUtils.isPegInTxAndValidateMinimum(tx, federations, null, btcContext, bridgeConstants, actForBlock));
 
         // Tx sending less than 1 btc to both federations, not a lock tx
         tx = new BtcTransaction(parameters);
         tx.addOutput(Coin.CENT, address1);
         tx.addOutput(Coin.CENT, address2);
         tx.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
-        assertFalse(BridgeUtils.isPegInTx(tx, federations, null, btcContext, bridgeConstants));
+        assertFalse(BridgeUtils.isPegInTxAndValidateMinimum(tx, federations, null, btcContext, bridgeConstants, actForBlock));
 
         // Tx sending 1 btc to the first federation, but also spending from the first federation address, the typical release tx, not a lock tx.
         BtcTransaction tx2 = new BtcTransaction(parameters);
@@ -198,7 +319,7 @@ public class BridgeUtilsTest {
         TransactionInput txIn = new TransactionInput(parameters, tx2, new byte[]{}, new TransactionOutPoint(parameters, 0, Sha256Hash.ZERO_HASH));
         tx2.addInput(txIn);
         signWithNecessaryKeys(federation1, federation1Keys, txIn, tx2, bridgeConstants);
-        assertFalse(BridgeUtils.isPegInTx(tx2, federations, null, btcContext, bridgeConstants));
+        assertFalse(BridgeUtils.isPegInTxAndValidateMinimum(tx2, federations, null, btcContext, bridgeConstants, actForBlock));
 
         // Tx sending 1 btc to the second federation, but also spending from the second federation address, the typical release tx, not a lock tx.
         tx2 = new BtcTransaction(parameters);
@@ -206,7 +327,7 @@ public class BridgeUtilsTest {
         txIn = new TransactionInput(parameters, tx2, new byte[]{}, new TransactionOutPoint(parameters, 0, Sha256Hash.ZERO_HASH));
         tx2.addInput(txIn);
         signWithNecessaryKeys(federation2, federation2Keys, txIn, tx2, bridgeConstants);
-        assertFalse(BridgeUtils.isPegInTx(tx2, federations, null, btcContext, bridgeConstants));
+        assertFalse(BridgeUtils.isPegInTxAndValidateMinimum(tx2, federations, null, btcContext, bridgeConstants, actForBlock));
 
         // Tx sending 1 btc to both federations, but also spending from the first federation address, the typical release tx, not a lock tx.
         tx2 = new BtcTransaction(parameters);
@@ -215,7 +336,7 @@ public class BridgeUtilsTest {
         txIn = new TransactionInput(parameters, tx2, new byte[]{}, new TransactionOutPoint(parameters, 0, Sha256Hash.ZERO_HASH));
         tx2.addInput(txIn);
         signWithNecessaryKeys(federation1, federation1Keys, txIn, tx2, bridgeConstants);
-        assertFalse(BridgeUtils.isPegInTx(tx2, federations, null, btcContext, bridgeConstants));
+        assertFalse(BridgeUtils.isPegInTxAndValidateMinimum(tx2, federations, null, btcContext, bridgeConstants, actForBlock));
 
         // Tx sending 1 btc to both federations, but also spending from the second federation address, the typical release tx, not a lock tx.
         tx2 = new BtcTransaction(parameters);
@@ -224,7 +345,7 @@ public class BridgeUtilsTest {
         txIn = new TransactionInput(parameters, tx2, new byte[]{}, new TransactionOutPoint(parameters, 0, Sha256Hash.ZERO_HASH));
         tx2.addInput(txIn);
         signWithNecessaryKeys(federation2, federation2Keys, txIn, tx2, bridgeConstants);
-        assertFalse(BridgeUtils.isPegInTx(tx2, federations, null, btcContext, bridgeConstants));
+        assertFalse(BridgeUtils.isPegInTxAndValidateMinimum(tx2, federations, null, btcContext, bridgeConstants, actForBlock));
 
         // Tx sending 1 btc from federation1 to federation2, the typical migration tx, not a lock tx.
         tx2 = new BtcTransaction(parameters);
@@ -232,7 +353,7 @@ public class BridgeUtilsTest {
         txIn = new TransactionInput(parameters, tx2, new byte[]{}, new TransactionOutPoint(parameters, 0, Sha256Hash.ZERO_HASH));
         tx2.addInput(txIn);
         signWithNecessaryKeys(federation1, federation1Keys, txIn, tx2, bridgeConstants);
-        assertFalse(BridgeUtils.isPegInTx(tx2, federations, null, btcContext, bridgeConstants));
+        assertFalse(BridgeUtils.isPegInTxAndValidateMinimum(tx2, federations, null, btcContext, bridgeConstants, actForBlock));
 
         // Tx sending 1 btc from federation1 to federation2, the typical migration tx from the retired federation, not a lock tx.
         tx2 = new BtcTransaction(parameters);
@@ -240,45 +361,45 @@ public class BridgeUtilsTest {
         txIn = new TransactionInput(parameters, tx2, new byte[]{}, new TransactionOutPoint(parameters, 0, Sha256Hash.ZERO_HASH));
         tx2.addInput(txIn);
         signWithNecessaryKeys(federation1, federation1Keys, txIn, tx2, bridgeConstants);
-        assertFalse(BridgeUtils.isPegInTx(tx2, Collections.singletonList(federation2), federation1.getP2SHScript(), btcContext, bridgeConstants));
+        assertFalse(BridgeUtils.isPegInTxAndValidateMinimum(tx2, Collections.singletonList(federation2), federation1.getP2SHScript(), btcContext, bridgeConstants, actForBlock));
 
         // Tx sending 1 btc to the first federation, is a lock tx
         BtcTransaction tx3 = new BtcTransaction(parameters);
         tx3.addOutput(Coin.COIN, address1);
         tx3.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
-        assertTrue(BridgeUtils.isPegInTx(tx3, federations, null, btcContext, bridgeConstants));
+        assertTrue(BridgeUtils.isPegInTxAndValidateMinimum(tx3, federations, null, btcContext, bridgeConstants, actForBlock));
 
         // Tx sending 1 btc to the second federation, is a lock tx
         tx3 = new BtcTransaction(parameters);
         tx3.addOutput(Coin.COIN, address2);
         tx3.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
-        assertTrue(BridgeUtils.isPegInTx(tx3, federations, null, btcContext, bridgeConstants));
+        assertTrue(BridgeUtils.isPegInTxAndValidateMinimum(tx3, federations, null, btcContext, bridgeConstants, actForBlock));
 
         // Tx sending 1 btc to the both federations, is a lock tx
         tx3 = new BtcTransaction(parameters);
         tx3.addOutput(Coin.COIN, address1);
         tx3.addOutput(Coin.COIN, address2);
         tx3.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
-        assertTrue(BridgeUtils.isPegInTx(tx3, federations, null, btcContext, bridgeConstants));
+        assertTrue(BridgeUtils.isPegInTxAndValidateMinimum(tx3, federations, null, btcContext, bridgeConstants, actForBlock));
 
         // Tx sending 50 btc to the first federation, is a lock tx
         BtcTransaction tx4 = new BtcTransaction(parameters);
         tx4.addOutput(Coin.FIFTY_COINS, address1);
         tx4.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
-        assertTrue(BridgeUtils.isPegInTx(tx4, federations, null, btcContext, bridgeConstants));
+        assertTrue(BridgeUtils.isPegInTxAndValidateMinimum(tx4, federations, null, btcContext, bridgeConstants, actForBlock));
 
         // Tx sending 50 btc to the second federation, is a lock tx
         tx4 = new BtcTransaction(parameters);
         tx4.addOutput(Coin.FIFTY_COINS, address2);
         tx4.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
-        assertTrue(BridgeUtils.isPegInTx(tx4, federations, null, btcContext, bridgeConstants));
+        assertTrue(BridgeUtils.isPegInTxAndValidateMinimum(tx4, federations, null, btcContext, bridgeConstants, actForBlock));
 
         // Tx sending 50 btc to the both federations, is a lock tx
         tx4 = new BtcTransaction(parameters);
         tx4.addOutput(Coin.FIFTY_COINS, address1);
         tx4.addOutput(Coin.FIFTY_COINS, address2);
         tx4.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
-        assertTrue(BridgeUtils.isPegInTx(tx4, federations, null, btcContext, bridgeConstants));
+        assertTrue(BridgeUtils.isPegInTxAndValidateMinimum(tx4, federations, null, btcContext, bridgeConstants, actForBlock));
     }
 
     @Test
@@ -308,6 +429,7 @@ public class BridgeUtilsTest {
         BridgeRegTestConstants bridgeConstants = BridgeRegTestConstants.getInstance();
         NetworkParameters parameters = bridgeConstants.getBtcParams();
         Context btcContext = new Context(parameters);
+        ActivationConfig.ForBlock activation = mock(ActivationConfig.ForBlock.class);
 
         List<BtcECKey> activeFederationKeys = Stream.of(
                 BtcECKey.fromPrivate(Hex.decode("fa01")),
@@ -335,12 +457,12 @@ public class BridgeUtilsTest {
         TransactionInput migrationTxInput = new TransactionInput(parameters, migrationTx, new byte[]{}, new TransactionOutPoint(parameters, 0, Sha256Hash.ZERO_HASH));
         migrationTx.addInput(migrationTxInput);
         signWithNecessaryKeys(retiringFederation, retiringFederationKeys, migrationTxInput, migrationTx, bridgeConstants);
-        assertThat(BridgeUtils.isMigrationTx(migrationTx, activeFederation, retiringFederation, null, btcContext, bridgeConstants), is(true));
+        assertThat(BridgeUtils.isMigrationTx(migrationTx, activeFederation, retiringFederation, null, btcContext, bridgeConstants, activation), is(true));
 
         BtcTransaction toActiveFederationTx = new BtcTransaction(parameters);
         toActiveFederationTx.addOutput(Coin.COIN, activeFederationAddress);
         toActiveFederationTx.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
-        assertThat(BridgeUtils.isMigrationTx(toActiveFederationTx, activeFederation, retiringFederation, null, btcContext, bridgeConstants), is(false));
+        assertThat(BridgeUtils.isMigrationTx(toActiveFederationTx, activeFederation, retiringFederation, null, btcContext, bridgeConstants, activation), is(false));
 
         Address randomAddress = Address.fromBase58(
                 NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
@@ -351,9 +473,9 @@ public class BridgeUtilsTest {
         TransactionInput fromRetiringFederationTxInput = new TransactionInput(parameters, fromRetiringFederationTx, new byte[]{}, new TransactionOutPoint(parameters, 0, Sha256Hash.ZERO_HASH));
         fromRetiringFederationTx.addInput(fromRetiringFederationTxInput);
         signWithNecessaryKeys(retiringFederation, retiringFederationKeys, fromRetiringFederationTxInput, fromRetiringFederationTx, bridgeConstants);
-        assertThat(BridgeUtils.isMigrationTx(fromRetiringFederationTx, activeFederation, retiringFederation, null, btcContext, bridgeConstants), is(false));
+        assertThat(BridgeUtils.isMigrationTx(fromRetiringFederationTx, activeFederation, retiringFederation, null, btcContext, bridgeConstants, activation), is(false));
 
-        assertThat(BridgeUtils.isMigrationTx(migrationTx, activeFederation, null, null, btcContext, bridgeConstants), is(false));
+        assertThat(BridgeUtils.isMigrationTx(migrationTx, activeFederation, null, null, btcContext, bridgeConstants, activation), is(false));
 
         BtcTransaction retiredMigrationTx = new BtcTransaction(parameters);
         retiredMigrationTx.addOutput(Coin.COIN, activeFederationAddress);
@@ -361,11 +483,11 @@ public class BridgeUtilsTest {
         retiredMigrationTx.addInput(retiredMigrationTxInput);
         signWithNecessaryKeys(retiredFederation, retiredFederationKeys, retiredMigrationTxInput, retiredMigrationTx, bridgeConstants);
         Script p2SHScript = retiredFederation.getP2SHScript();
-        assertThat(BridgeUtils.isMigrationTx(retiredMigrationTx, activeFederation, null, p2SHScript, btcContext, bridgeConstants), is(true));
+        assertThat(BridgeUtils.isMigrationTx(retiredMigrationTx, activeFederation, null, p2SHScript, btcContext, bridgeConstants, activation), is(true));
 
-        assertThat(BridgeUtils.isMigrationTx(retiredMigrationTx, activeFederation, retiringFederation, p2SHScript, btcContext, bridgeConstants), is(true));
-        assertThat(BridgeUtils.isMigrationTx(toActiveFederationTx, activeFederation, null, p2SHScript, btcContext, bridgeConstants), is(false));
-        assertThat(BridgeUtils.isMigrationTx(toActiveFederationTx, activeFederation, retiringFederation, p2SHScript, btcContext, bridgeConstants), is(false));
+        assertThat(BridgeUtils.isMigrationTx(retiredMigrationTx, activeFederation, retiringFederation, p2SHScript, btcContext, bridgeConstants, activation), is(true));
+        assertThat(BridgeUtils.isMigrationTx(toActiveFederationTx, activeFederation, null, p2SHScript, btcContext, bridgeConstants, activation), is(false));
+        assertThat(BridgeUtils.isMigrationTx(toActiveFederationTx, activeFederation, retiringFederation, p2SHScript, btcContext, bridgeConstants, activation), is(false));
     }
 
     @Test
@@ -705,7 +827,7 @@ public class BridgeUtilsTest {
         TransactionInput releaseFromFederation2 = new TransactionInput(params, releaseWithChange, new byte[]{}, new TransactionOutPoint(params, 0, Sha256Hash.ZERO_HASH));
         releaseWithChange.addInput(releaseFromFederation2);
         signWithNecessaryKeys(federation2, federation2Keys, releaseFromFederation2, releaseWithChange, bridgeConstants);
-        assertThat(BridgeUtils.isPegInTx(releaseWithChange, federations, null, btcContext, bridgeConstants), is(false));
+        assertThat(BridgeUtils.isPegInTxAndValidateMinimum(releaseWithChange, federations, null, btcContext, bridgeConstants, mock(ActivationConfig.ForBlock.class)), is(false));
         assertThat(BridgeUtils.isPegOutTx(releaseWithChange, federations), is(true));
     }
 

@@ -54,6 +54,7 @@ import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ActivationConfigTest;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
@@ -1424,6 +1425,8 @@ public class BridgeSupportTestPowerMock {
         BridgeStorageProvider mockBridgeStorageProvider = mock(BridgeStorageProvider.class, Mockito.RETURNS_DEEP_STUBS);
         when(mockBridgeStorageProvider.getHeightIfBtcTxhashIsAlreadyProcessed(any(Sha256Hash.class))).thenReturn(Optional.empty());
         when(mockBridgeStorageProvider.getLastRetiredFederationP2SHScript()).thenReturn(Optional.empty());
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+
 
         List<UTXO> retiringFederationUtxos = new ArrayList<>();
         FederationSupport mockFederationSupport = mock(FederationSupport.class);
@@ -1455,8 +1458,8 @@ public class BridgeSupportTestPowerMock {
         when(mockFactory.newInstance(any(), any(), any(), any())).thenReturn(mockBtcBlockStore);
 
         PowerMockito.spy(BridgeUtils.class);
-        PowerMockito.doReturn(false).when(BridgeUtils.class, "isPegInTx", any(BtcTransaction.class), anyList(), nullable(Script.class), any(Context.class), any(BridgeConstants.class));
-        PowerMockito.doReturn(true).when(BridgeUtils.class, "isMigrationTx", any(BtcTransaction.class), any(Federation.class), any(Federation.class), isNull(), any(Context.class), any(BridgeConstants.class));
+        PowerMockito.doReturn(false).when(BridgeUtils.class, "isPegInTxAndValidateMinimum", any(BtcTransaction.class), anyList(), nullable(Script.class), any(Context.class), any(BridgeConstants.class), any(ActivationConfig.ForBlock.class));
+        PowerMockito.doReturn(true).when(BridgeUtils.class, "isMigrationTx", any(BtcTransaction.class), any(Federation.class), any(Federation.class), isNull(), any(Context.class), any(BridgeConstants.class), any(ActivationConfig.ForBlock.class));
 
         BridgeSupport bridgeSupport = new BridgeSupport(
                 bridgeConstants,
@@ -1469,7 +1472,7 @@ public class BridgeSupportTestPowerMock {
                 btcContext,
                 mockFederationSupport,
                 mockFactory,
-                mock(ActivationConfig.ForBlock.class)
+                activations
         );
 
         bridgeSupport.registerBtcTransaction(mock(Transaction.class), releaseWithChangeTx.bitcoinSerialize(), 1, partialMerkleTree.bitcoinSerialize());
@@ -1480,7 +1483,7 @@ public class BridgeSupportTestPowerMock {
         assertThat(changeUtxo.getScript().getToAddress(params), is(retiringFederationAddress));
 
         PowerMockito.verifyStatic(BridgeUtils.class);
-        BridgeUtils.isMigrationTx(releaseWithChangeTx, activeFederation, retiringFederation, null, btcContext, bridgeConstants);
+        BridgeUtils.isMigrationTx(releaseWithChangeTx, activeFederation, retiringFederation, null, btcContext, bridgeConstants, activations);
     }
 
     @Test

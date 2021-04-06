@@ -71,8 +71,10 @@ public class BridgeRegTestConstants extends BridgeConstants {
 
         maxBtcHeadersPerRskBlock = 500;
 
-        minimumLockTxValue = Coin.COIN;
+        minimumPeginTxValue = Coin.COIN;
         minimumReleaseTxValue = Coin.valueOf(500000);
+
+        minimumPeginTxValueAfterIris = Coin.COIN.div(2);
 
         // Keys generated with GenNodeKey using generators 'auth-a' through 'auth-e'
         List<ECKey> federationChangeAuthorizedKeys = Arrays.stream(new String[]{

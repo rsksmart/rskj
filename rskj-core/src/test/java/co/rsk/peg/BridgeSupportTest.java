@@ -5664,7 +5664,6 @@ public class BridgeSupportTest {
     @Test
     public void getTransactionType_pegin_tx() {
         BridgeSupport bridgeSupport = getBridgeSupport(bridgeConstants, mock(BridgeStorageProvider.class));
-
         BtcTransaction btcTx = new BtcTransaction(btcParams);
         btcTx.addOutput(Coin.COIN.multiply(10), bridgeConstants.getGenesisFederation().getAddress());
         btcTx.addInput(PegTestUtils.createHash(1), 0, new Script(new byte[]{}));
@@ -7635,7 +7634,7 @@ public class BridgeSupportTest {
         when(activations.isActive(ConsensusRule.RSKIP134)).thenReturn(isLockingCapEnabled);
 
         BridgeConstants bridgeConstants = mock(BridgeConstants.class);
-        when(bridgeConstants.getMinimumLockTxValue()).thenReturn(Coin.SATOSHI);
+        when(bridgeConstants.getMinimumPeginTxValue()).thenReturn(Coin.SATOSHI);
         when(bridgeConstants.getBtcParams()).thenReturn(BridgeRegTestConstants.getInstance().getBtcParams());
         when(bridgeConstants.getBtc2RskMinimumAcceptableConfirmations()).thenReturn(1);
         when(bridgeConstants.getGenesisFeePerKb()).thenReturn(BridgeRegTestConstants.getInstance().getGenesisFeePerKb());
