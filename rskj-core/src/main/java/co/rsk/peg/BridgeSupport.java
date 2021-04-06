@@ -426,7 +426,14 @@ public class BridgeSupport {
             return TxType.MIGRATION;
         }
 
-        if (BridgeUtils.isPegInTx(btcTx, getLiveFederations(), retiredFederationP2SHScript, btcContext, bridgeConstants)) {
+        if (BridgeUtils.isPegInTxAndValidateMinimum(
+                btcTx,
+                getLiveFederations(),
+                retiredFederationP2SHScript,
+                btcContext,
+                bridgeConstants,
+                activations
+        )) {
             return TxType.PEGIN;
         }
 
@@ -436,7 +443,8 @@ public class BridgeSupport {
             getRetiringFederation(),
             retiredFederationP2SHScript,
             btcContext,
-            bridgeConstants
+            bridgeConstants,
+            activations
         )) {
             return TxType.MIGRATION;
         }
@@ -2240,7 +2248,7 @@ public class BridgeSupport {
      * @return the minimum amount of satoshis a user should send to the federation.
      */
     public Coin getMinimumLockTxValue() {
-        return bridgeConstants.getMinimumLockTxValue();
+        return bridgeConstants.getMinimumPeginTxValue();
     }
 
     /**

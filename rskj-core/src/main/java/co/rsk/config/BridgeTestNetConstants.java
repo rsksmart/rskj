@@ -69,7 +69,8 @@ public class BridgeTestNetConstants extends BridgeConstants {
 
         maxBtcHeadersPerRskBlock = 500;
 
-        minimumLockTxValue = Coin.valueOf(1000000);
+        minimumPeginTxValue = Coin.valueOf(1000000);
+        minimumPeginTxValueAfterIris = Coin.valueOf(500000);
         minimumReleaseTxValue = Coin.valueOf(500000);
 
         // Passphrases are kept private

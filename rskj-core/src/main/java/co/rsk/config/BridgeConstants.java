@@ -38,7 +38,8 @@ public class BridgeConstants {
 
     protected int maxBtcHeadersPerRskBlock;
 
-    protected Coin minimumLockTxValue;
+    protected Coin minimumPeginTxValue;
+    protected Coin minimumPeginTxValueAfterIris;
     protected Coin minimumReleaseTxValue;
 
     protected long federationActivationAge;
@@ -100,7 +101,9 @@ public class BridgeConstants {
 
     public int getMaxBtcHeadersPerRskBlock() { return maxBtcHeadersPerRskBlock; }
 
-    public Coin getMinimumLockTxValue() { return minimumLockTxValue; }
+    public Coin getMinimumPeginTxValue() { return minimumPeginTxValue; }
+
+    public Coin getMinimumPeginTxValueAfterIris() { return minimumPeginTxValueAfterIris; }
 
     public Coin getMinimumReleaseTxValue() { return minimumReleaseTxValue; }
 

@@ -166,6 +166,47 @@ public class BridgeUtils {
         return Optional.of(tx.getInput(0).getScriptSig());
     }
 
+    public static Coin getValueSentInPeginTx(
+            BtcTransaction tx,
+            List<Federation> activeFederations,
+            Script retiredFederationP2SHScript,
+            Context btcContext
+    ) {
+        // First, check tx is not a typical release tx (tx spending from the any of the federation addresses and
+        // optionally sending some change to any of the federation addresses)
+        for (int i = 0; i < tx.getInputs().size(); i++) {
+            final int index = i;
+            if (activeFederations.stream().anyMatch(federation -> scriptCorrectlySpendsTx(tx, index, federation.getP2SHScript()))) {
+                return Coin.ZERO;
+            }
+
+            if (retiredFederationP2SHScript != null && scriptCorrectlySpendsTx(tx, index, retiredFederationP2SHScript)) {
+                return Coin.ZERO;
+            }
+        }
+
+        Wallet federationsWallet = BridgeUtils.getFederationsNoSpendWallet(btcContext, activeFederations, false, null);
+
+        return tx.getValueSentToMe(federationsWallet);
+    }
+
+    /**
+     * Verify if the value sent into the transaction is gratter or not the minimum, depending of the HF.
+     * @param valueSentToMe the value sent into the transaction in Coin
+     * @param bridgeConstants the Bridge constants
+     * @param txHash hash of the transaction (only to be used if the tx fails, to log info)
+     * @param activation calls different function to get minimum after or before Iris.
+     * @return true if this is a valid lock transaction
+     */
+    public static boolean isValidMinimumPegin(Coin valueSentToMe, BridgeConstants bridgeConstants, Sha256Hash txHash, ActivationConfig.ForBlock activation) {
+        int valueSentToMeSignum = valueSentToMe.signum();
+        Coin minimumValue = activation.isActive(ConsensusRule.RSKIP219) ? bridgeConstants.getMinimumPeginTxValueAfterIris() : bridgeConstants.getMinimumPeginTxValue();
+        if (valueSentToMe.isLessThan(minimumValue)) {
+            logger.warn("[btctx:{}]Someone sent to the federation less than {} satoshis", txHash, minimumValue);
+        }
+        return (valueSentToMeSignum > 0 && !valueSentToMe.isLessThan(minimumValue));
+    }
+
     /**
      * It checks if the tx doesn't spend any of the federations' funds and if it sends more than
      * the minimum ({@see BridgeConstants::getMinimumLockTxValue}) to any of the federations
@@ -173,36 +214,61 @@ public class BridgeUtils {
      * @param activeFederations the active federations
      * @param retiredFederationP2SHScript the retired federation P2SHScript. Could be {@code null}.
      * @param btcContext the BTC Context
-     * @param bridgeConstants the Bridge constants
      * @return true if this is a valid lock transaction
      */
-    public static boolean isPegInTx(BtcTransaction tx, List<Federation> activeFederations, Script retiredFederationP2SHScript,
-                                    Context btcContext, BridgeConstants bridgeConstants) {
-        // First, check tx is not a typical release tx (tx spending from the any of the federation addresses and
-        // optionally sending some change to any of the federation addresses)
-        for (int i = 0; i < tx.getInputs().size(); i++) {
-            final int index = i;
-            if (activeFederations.stream().anyMatch(federation -> scriptCorrectlySpendsTx(tx, index, federation.getP2SHScript()))) {
-                return false;
-            }
-
-            if (retiredFederationP2SHScript != null && scriptCorrectlySpendsTx(tx, index, retiredFederationP2SHScript)) {
-                return false;
-            }
-        }
-
-        Wallet federationsWallet = BridgeUtils.getFederationsNoSpendWallet(btcContext, activeFederations, false, null);
-        Coin valueSentToMe = tx.getValueSentToMe(federationsWallet);
+    public static boolean isPegInTx(
+            BtcTransaction tx,
+            List<Federation> activeFederations,
+            Script retiredFederationP2SHScript,
+            Context btcContext
+    ) {
+        Coin valueSentToMe = getValueSentInPeginTx(tx, activeFederations, retiredFederationP2SHScript, btcContext);
 
         int valueSentToMeSignum = valueSentToMe.signum();
-        if (valueSentToMe.isLessThan(bridgeConstants.getMinimumLockTxValue())) {
-            logger.warn("[btctx:{}]Someone sent to the federation less than {} satoshis", tx.getHash(), bridgeConstants.getMinimumLockTxValue());
-        }
-        return (valueSentToMeSignum > 0 && !valueSentToMe.isLessThan(bridgeConstants.getMinimumLockTxValue()));
+        return (valueSentToMeSignum > 0);
     }
 
-    public static boolean isPegInTx(BtcTransaction tx, Federation federation, Context btcContext, BridgeConstants bridgeConstants) {
-        return isPegInTx(tx, Collections.singletonList(federation), null, btcContext, bridgeConstants);
+    public static boolean isPegInTx(
+            BtcTransaction tx,
+            Federation federation,
+            Context btcContext
+    ) {
+        return isPegInTx(tx, Collections.singletonList(federation), null, btcContext);
+    }
+
+    public static boolean isPegInTxAndValidateMinimum(
+            BtcTransaction tx,
+            Federation federation,
+            Context btcContext,
+            BridgeConstants bridgeConstants,
+            ActivationConfig.ForBlock activation
+    ) {
+
+        return isPegInTxAndValidateMinimum(
+                tx,
+                Collections.singletonList(federation),
+                null,
+                btcContext,
+                bridgeConstants,
+                activation
+        );
+    }
+
+    public static boolean isPegInTxAndValidateMinimum(
+            BtcTransaction tx,
+            List<Federation> activeFederations,
+            Script retiredFederationP2SHScript,
+            Context btcContext,
+            BridgeConstants bridgeConstants,
+            ActivationConfig.ForBlock activation
+    ) {
+        Coin valueSentToMe = getValueSentInPeginTx(
+                tx,
+                activeFederations,
+                retiredFederationP2SHScript,
+                btcContext
+        );
+        return isValidMinimumPegin(valueSentToMe, bridgeConstants, tx.getHash(), activation);
     }
 
     /**
@@ -237,15 +303,21 @@ public class BridgeUtils {
         return false;
     }
 
-    public static boolean isMigrationTx(BtcTransaction btcTx,
-                                        Federation activeFederation, Federation retiringFederation, Script retiredFederationP2SHScript,
-                                        Context btcContext, BridgeConstants bridgeConstants) {
+    public static boolean isMigrationTx(
+            BtcTransaction btcTx,
+            Federation activeFederation,
+            Federation retiringFederation,
+            Script retiredFederationP2SHScript,
+            Context btcContext,
+            BridgeConstants bridgeConstants,
+            ActivationConfig.ForBlock activation
+    ) {
         if (retiredFederationP2SHScript == null && retiringFederation == null) {
             return false;
         }
         boolean moveFromRetired = retiredFederationP2SHScript != null && isPegOutTx(btcTx, retiredFederationP2SHScript);
         boolean moveFromRetiring = retiringFederation != null && isPegOutTx(btcTx, retiringFederation);
-        boolean moveToActive = isPegInTx(btcTx, activeFederation, btcContext, bridgeConstants);
+        boolean moveToActive = isPegInTxAndValidateMinimum(btcTx, activeFederation, btcContext, bridgeConstants, activation);
 
         return (moveFromRetired || moveFromRetiring) && moveToActive;
     }
