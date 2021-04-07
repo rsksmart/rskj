@@ -35,6 +35,11 @@ public class RemascConfig {
     // is deserialized automatically from JSON.
     private String rskLabsAddress;
 
+    // RSK labs address.
+    // Note that his has to be a basic type (such as String) because RemascConfig
+    // is deserialized automatically from JSON.
+    private String rskLabsAddressRskip218;
+
     // RSK labs cut. Available reward / rskLabsDivisor is what RSK gets.
     private long rskLabsDivisor = 5;
 
@@ -67,6 +72,10 @@ public class RemascConfig {
 
     public RskAddress getRskLabsAddress() {
         return new RskAddress(this.rskLabsAddress);
+    }
+
+    public RskAddress getRskLabsAddressRskip218() {
+        return new RskAddress(this.rskLabsAddressRskip218);
     }
 
     public long getRskLabsDivisor() {
