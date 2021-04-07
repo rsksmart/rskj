@@ -2,16 +2,21 @@ package co.rsk.peg;
 
 import static org.mockito.Mockito.mock;
 
+import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.Context;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.bitcoinj.core.Sha256Hash;
+import co.rsk.bitcoinj.script.FastBridgeErpRedeemScriptParser;
 import co.rsk.bitcoinj.script.FastBridgeRedeemScriptParser;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.wallet.RedeemData;
 import co.rsk.peg.fastbridge.FastBridgeFederationInformation;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
+import org.bouncycastle.util.encoders.Hex;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -23,7 +28,23 @@ public class FastBridgeCompatibleBtcWalletWithSingleScriptTest {
         NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
     );
 
+    private static final List<BtcECKey> erpFedKeys = Arrays.stream(new String[]{
+        "03b9fc46657cf72a1afa007ecf431de1cd27ff5cc8829fa625b66ca47b967e6b24",
+        "029cecea902067992d52c38b28bf0bb2345bda9b21eca76b16a17c477a64e43301",
+        "03284178e5fbcc63c54c3b38e3ef88adf2da6c526313650041b0ef955763634ebd",
+    }).map(hex -> BtcECKey.fromPublicOnly(Hex.decode(hex))).collect(Collectors.toList());
+
+    private final ErpFederation erpFederation = new ErpFederation(
+        FederationTestUtils.getFederationMembers(3),
+        Instant.ofEpochMilli(1000),
+        0L,
+        NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
+        erpFedKeys,
+        5063
+    );
+
     private final List<Federation> federationList = Collections.singletonList(federation);
+    private final List<Federation> erpFederationList = Collections.singletonList(erpFederation);
 
     @Test
     public void findRedeemDataFromScriptHash_null_destination_federation() {
@@ -59,6 +80,33 @@ public class FastBridgeCompatibleBtcWalletWithSingleScriptTest {
 
         Script fastBridgeRedeemScript = FastBridgeRedeemScriptParser.createMultiSigFastBridgeRedeemScript(
             federation.getRedeemScript(), Sha256Hash.wrap(fastBridgeFederationInformation.getDerivationHash().getBytes())
+        );
+
+        Assert.assertNotNull(redeemData);
+        Assert.assertEquals(fastBridgeRedeemScript, redeemData.redeemScript);
+    }
+
+    @Test
+    public void findRedeemDataFromScriptHash_with_fastBridgeInformation_and_erp_federation() {
+        byte[] fastBridgeScriptHash = new byte[]{(byte)0x22};
+        FastBridgeFederationInformation fastBridgeFederationInformation =
+            new FastBridgeFederationInformation(
+                PegTestUtils.createHash3(2),
+                erpFederation.getP2SHScript().getPubKeyHash(),
+                fastBridgeScriptHash);
+
+        FastBridgeCompatibleBtcWalletWithSingleScript fastBridgeCompatibleBtcWalletWithSingleScript =
+            new FastBridgeCompatibleBtcWalletWithSingleScript(
+                mock(Context.class),
+                erpFederationList,
+                fastBridgeFederationInformation);
+
+        RedeemData redeemData = fastBridgeCompatibleBtcWalletWithSingleScript.findRedeemDataFromScriptHash(
+            erpFederation.getP2SHScript().getPubKeyHash());
+
+        Script fastBridgeRedeemScript = FastBridgeErpRedeemScriptParser.createFastBridgeErpRedeemScript(
+            erpFederation.getRedeemScript(),
+            Sha256Hash.wrap(fastBridgeFederationInformation.getDerivationHash().getBytes())
         );
 
         Assert.assertNotNull(redeemData);

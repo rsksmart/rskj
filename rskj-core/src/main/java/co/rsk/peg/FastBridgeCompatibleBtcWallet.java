@@ -1,8 +1,12 @@
 package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.Context;
-import co.rsk.bitcoinj.script.FastBridgeRedeemScriptParser;
 import co.rsk.bitcoinj.core.Sha256Hash;
+import co.rsk.bitcoinj.script.FastBridgeErpRedeemScriptParser;
+import co.rsk.bitcoinj.script.FastBridgeRedeemScriptParser;
+import co.rsk.bitcoinj.script.RedeemScriptParser;
+import co.rsk.bitcoinj.script.RedeemScriptParser.MultiSigType;
+import co.rsk.bitcoinj.script.RedeemScriptParserFactory;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.wallet.RedeemData;
 import co.rsk.peg.fastbridge.FastBridgeFederationInformation;
@@ -40,9 +44,24 @@ public abstract class FastBridgeCompatibleBtcWallet extends BridgeBtcWallet {
 
             Federation destinationFederationInstance = destinationFederation.get();
             Script fedRedeemScript = destinationFederationInstance.getRedeemScript();
-            Script fastBridgeRedeemScript = FastBridgeRedeemScriptParser
-                .createMultiSigFastBridgeRedeemScript(fedRedeemScript,
-                    Sha256Hash.wrap(fastBridgeFederationInformationInstance.getDerivationHash().getBytes()));
+
+            RedeemScriptParser parser = RedeemScriptParserFactory.get(fedRedeemScript.getChunks());
+            Script fastBridgeRedeemScript;
+
+            if (parser.getMultiSigType() == MultiSigType.ERP_FED) {
+                fastBridgeRedeemScript = FastBridgeErpRedeemScriptParser.createFastBridgeErpRedeemScript(
+                    fedRedeemScript,
+                    Sha256Hash.wrap(fastBridgeFederationInformationInstance
+                        .getDerivationHash()
+                        .getBytes()
+                    )
+                );
+            } else {
+                fastBridgeRedeemScript = FastBridgeRedeemScriptParser
+                    .createMultiSigFastBridgeRedeemScript(fedRedeemScript,
+                        Sha256Hash.wrap(fastBridgeFederationInformationInstance.getDerivationHash()
+                            .getBytes()));
+            }
 
             return RedeemData.of(destinationFederationInstance.getBtcPublicKeys(), fastBridgeRedeemScript);
         }

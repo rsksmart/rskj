@@ -7,6 +7,7 @@ import co.rsk.peg.AddressBasedAuthorizer;
 import co.rsk.peg.Federation;
 import co.rsk.peg.FederationMember;
 import com.google.common.collect.Lists;
+import java.util.ArrayList;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.ECKey;
 
@@ -129,6 +130,14 @@ public class BridgeMainNetConstants extends BridgeConstants {
 
         btcHeightWhenBlockIndexActivates = 700_000; //TODO define this value when Iris activation height in RSK is determined
         maxDepthToSearchBlocksBelowIndexActivation = 1_000; //TODO define this value with Sergio
+
+        // TODO: This value is not real
+        erpFedActivationDelay = 5063;
+
+        // TODO: WE NEED TO DEFINE THESE KEYS
+        erpFedPubKeysList = new ArrayList<>();
+
+        oldFederationAddress = "35JUi1FxabGdhygLhnNUEFG4AgvpNMgxK1";
 
         minSecondsBetweenCallsReceiveHeader = 600;  // 10 minutes in Seconds
         maxDepthBlockchainAccepted = 25;

@@ -18,9 +18,17 @@
 
 package co.rsk.peg;
 
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.NetworkParameters;
+import co.rsk.config.BridgeConstants;
+import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.crypto.Keccak256;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig.ForBlock;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.junit.Assert;
@@ -38,6 +46,7 @@ import java.util.List;
 @RunWith(PowerMockRunner.class)
 public class PendingFederationTest {
     private PendingFederation pendingFederation;
+    private final BridgeConstants bridgeConstants = BridgeRegTestConstants.getInstance();
 
     @Before
     public void createPendingFederation() {
@@ -76,17 +85,17 @@ public class PendingFederationTest {
 
     @Test
     public void testEquals_basic() {
-        Assert.assertTrue(pendingFederation.equals(pendingFederation));
+        Assert.assertEquals(pendingFederation, pendingFederation);
 
-        Assert.assertFalse(pendingFederation.equals(null));
-        Assert.assertFalse(pendingFederation.equals(new Object()));
-        Assert.assertFalse(pendingFederation.equals("something else"));
+        Assert.assertNotEquals(null, pendingFederation);
+        Assert.assertNotEquals(pendingFederation, new Object());
+        Assert.assertNotEquals("something else", pendingFederation);
     }
 
     @Test
     public void testEquals_differentNumberOfMembers() {
         PendingFederation otherPendingFederation = new PendingFederation(FederationTestUtils.getFederationMembersFromPks(100, 200, 300, 400, 500, 600, 700));
-        Assert.assertFalse(pendingFederation.equals(otherPendingFederation));
+        Assert.assertNotEquals(pendingFederation, otherPendingFederation);
     }
 
     @Test
@@ -100,15 +109,15 @@ public class PendingFederationTest {
         members.add(new FederationMember(BtcECKey.fromPrivate(BigInteger.valueOf(600)), ECKey.fromPrivate(BigInteger.valueOf(610)), ECKey.fromPrivate(BigInteger.valueOf(630))));
         PendingFederation yetOtherPendingFederation = new PendingFederation(members);
 
-        Assert.assertFalse(otherPendingFederation.equals(yetOtherPendingFederation));
-        Assert.assertFalse(pendingFederation.equals(otherPendingFederation));
-        Assert.assertFalse(pendingFederation.equals(yetOtherPendingFederation));
+        Assert.assertNotEquals(otherPendingFederation, yetOtherPendingFederation);
+        Assert.assertNotEquals(pendingFederation, otherPendingFederation);
+        Assert.assertNotEquals(pendingFederation, yetOtherPendingFederation);
     }
 
     @Test
     public void testEquals_same() {
         PendingFederation otherPendingFederation = new PendingFederation(FederationTestUtils.getFederationMembersFromPks(100, 200, 300, 400, 500, 600));
-        Assert.assertTrue(pendingFederation.equals(otherPendingFederation));
+        Assert.assertEquals(pendingFederation, otherPendingFederation);
     }
 
     @Test
@@ -119,8 +128,9 @@ public class PendingFederationTest {
     }
 
     @Test
-    public void buildFederation_ok_a() {
-        PendingFederation otherPendingFederation = new PendingFederation(FederationTestUtils.getFederationMembersFromPks(100, 200, 300, 400, 500, 600));
+    public void buildFederation_ok_6_members_before_RSKIP_199_activation() {
+        PendingFederation otherPendingFederation = new PendingFederation(
+            FederationTestUtils.getFederationMembersFromPks(100, 200, 300, 400, 500, 600));
 
         Federation expectedFederation = new Federation(
                 FederationTestUtils.getFederationMembersFromPks(100, 200, 300, 400, 500, 600),
@@ -133,20 +143,25 @@ public class PendingFederationTest {
                 otherPendingFederation.buildFederation(
                         Instant.ofEpochMilli(1234L),
                         0L,
-                        NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
+                        bridgeConstants,
+                    mock(ForBlock.class)
                 )
         );
     }
 
     @Test
-    public void buildFederation_ok_b() {
-        PendingFederation otherPendingFederation = new PendingFederation(FederationTestUtils.getFederationMembersFromPks(
+    public void buildFederation_ok_9_members_before_RSKIP_199_activation() {
+        PendingFederation otherPendingFederation = new PendingFederation(
+            FederationTestUtils.getFederationMembersFromPks(
                 100, 200, 300, 400, 500, 600, 700, 800, 900
         ));
 
         Federation expectedFederation = new Federation(
-                FederationTestUtils.getFederationMembersFromPks(100, 200, 300, 400, 500, 600, 700, 800, 900),
-                Instant.ofEpochMilli(1234L), 0L,
+                FederationTestUtils.getFederationMembersFromPks(
+                    100, 200, 300, 400, 500, 600, 700, 800, 900
+                ),
+                Instant.ofEpochMilli(1234L),
+            0L,
                 NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
         );
 
@@ -155,8 +170,39 @@ public class PendingFederationTest {
                 otherPendingFederation.buildFederation(
                         Instant.ofEpochMilli(1234L),
                         0L,
-                        NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
+                        bridgeConstants,
+                    mock(ForBlock.class)
                 )
+        );
+    }
+
+    @Test
+    public void buildFederation_erp_ok_after_RSKIP_201_activation() {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(true);
+
+        PendingFederation otherPendingFederation =
+            new PendingFederation(FederationTestUtils.getFederationMembersFromPks(
+                100, 200, 300, 400, 500, 600)
+            );
+
+        ErpFederation expectedFederation = new ErpFederation(
+            FederationTestUtils.getFederationMembersFromPks(100, 200, 300, 400, 500, 600),
+            Instant.ofEpochMilli(1234L),
+            0L,
+            NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
+            bridgeConstants.getErpFedPubKeysList(),
+            bridgeConstants.getErpFedActivationDelay()
+        );
+
+        Assert.assertEquals(
+            expectedFederation,
+            otherPendingFederation.buildFederation(
+                Instant.ofEpochMilli(1234L),
+                0L,
+                bridgeConstants,
+                activations
+            )
         );
     }
 
@@ -165,7 +211,12 @@ public class PendingFederationTest {
         PendingFederation otherPendingFederation = new PendingFederation(FederationTestUtils.getFederationMembersFromPks(100));
 
         try {
-            otherPendingFederation.buildFederation(Instant.ofEpochMilli(12L), 0L, NetworkParameters.fromID(NetworkParameters.ID_REGTEST));
+            otherPendingFederation.buildFederation(
+                Instant.ofEpochMilli(12L),
+                0L,
+                null,
+                null
+            );
         } catch (Exception e) {
             Assert.assertEquals("PendingFederation is incomplete", e.getMessage());
             return;

@@ -419,6 +419,13 @@ public class BridgeSupport {
     protected TxType getTransactionType(BtcTransaction btcTx) {
         Script retiredFederationP2SHScript = provider.getLastRetiredFederationP2SHScript().orElse(null);
 
+        /************************************************************************/
+        /** Special case to migrate funds from an old federation               **/
+        /************************************************************************/
+        if (activations.isActive(ConsensusRule.RSKIP199) && txIsFromOldFederation(btcTx)) {
+            return TxType.MIGRATION;
+        }
+
         if (BridgeUtils.isPegInTx(btcTx, getLiveFederations(), retiredFederationP2SHScript, btcContext, bridgeConstants)) {
             return TxType.PEGIN;
         }
@@ -440,6 +447,20 @@ public class BridgeSupport {
 
         return TxType.UNKNOWN;
     }
+
+    private boolean txIsFromOldFederation(BtcTransaction btcTx) {
+        Address oldFederationAddress = Address.fromBase58(bridgeConstants.getBtcParams(), bridgeConstants.getOldFederationAddress());
+        Script p2shScript = ScriptBuilder.createP2SHOutputScript(oldFederationAddress.getHash160());
+
+        for (int i = 0; i < btcTx.getInputs().size(); i++) {
+            if (BridgeUtils.scriptCorrectlySpendsTx(btcTx, i, p2shScript)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
 
     protected void processPegIn(
         BtcTransaction btcTx,
@@ -960,7 +981,8 @@ public class BridgeSupport {
                 btcContext.getParams(),
                 activeFederationWallet,
                 getFederationAddress(),
-                getFeePerKb()
+                getFeePerKb(),
+                activations
         );
 
         releaseRequestQueue.process(MAX_RELEASE_ITERATIONS, (ReleaseRequestQueue.Entry releaseRequest) -> {
@@ -1250,7 +1272,7 @@ public class BridgeSupport {
             provider.getRskTxsWaitingForSignatures().remove(new Keccak256(rskTxHash));
 
             eventLogger.logReleaseBtc(btcTx, rskTxHash);
-        } else {
+        } else if (logger.isDebugEnabled()) {
             int missingSignatures = BridgeUtils.countMissingSignatures(btcContext, btcTx);
             int neededSignatures = federation.getNumberOfSignaturesRequired();
             int signaturesCount = neededSignatures - missingSignatures;
@@ -1820,7 +1842,14 @@ public class BridgeSupport {
         Instant creationTime = Instant.ofEpochMilli(rskExecutionBlock.getTimestamp());
         Federation oldFederation = getActiveFederation();
         provider.setOldFederation(oldFederation);
-        provider.setNewFederation(currentPendingFederation.buildFederation(creationTime, rskExecutionBlock.getNumber(), bridgeConstants.getBtcParams()));
+        provider.setNewFederation(
+            currentPendingFederation.buildFederation(
+                creationTime,
+                rskExecutionBlock.getNumber(),
+                bridgeConstants,
+                activations
+            )
+        );
         provider.setPendingFederation(null);
 
         // Clear votes on election
@@ -2747,7 +2776,8 @@ public class BridgeSupport {
             btcContext.getParams(),
             walletProvider.provide(btcTx, spendingAddress),
             btcRefundAddress,
-            getFeePerKb()
+            getFeePerKb(),
+            activations
         );
 
         Optional<ReleaseTransactionBuilder.BuildResult> buildReturnResult = txBuilder.buildEmptyWalletTo(btcRefundAddress);

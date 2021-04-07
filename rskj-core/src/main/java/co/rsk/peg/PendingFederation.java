@@ -19,8 +19,10 @@
 package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.BtcECKey;
-import co.rsk.bitcoinj.core.NetworkParameters;
+import co.rsk.config.BridgeConstants;
 import co.rsk.crypto.Keccak256;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.crypto.HashUtil;
 
 import java.time.Instant;
@@ -29,6 +31,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Immutable representation of an RSK Pending Federation.
@@ -39,9 +43,10 @@ import java.util.stream.Collectors;
  * @author Ariel Mendelzon
  */
 public final class PendingFederation {
+    private static final Logger logger = LoggerFactory.getLogger("PendingFederation");
     private static final int MIN_MEMBERS_REQUIRED = 2;
 
-    private List<FederationMember> members;
+    private final List<FederationMember> members;
 
     public PendingFederation(List<FederationMember> members) {
         // Sorting members ensures same order for members
@@ -57,7 +62,7 @@ public final class PendingFederation {
 
     public List<BtcECKey> getBtcPublicKeys() {
         // Copy keys since we don't control immutability of BtcECKey(s)
-        return members.stream().map(m -> m.getBtcPublicKey()).collect(Collectors.toList());
+        return members.stream().map(FederationMember::getBtcPublicKey).collect(Collectors.toList());
     }
 
     public boolean isComplete() {
@@ -78,19 +83,38 @@ public final class PendingFederation {
     /**
      * Builds a Federation from this PendingFederation
      * @param creationTime the creation time for the new Federation
-     * @param btcParams the bitcoin parameters for the new Federation
+     * @param bridgeConstants to get the bitcoin parameters for the new Federation,
+     * and the keys for creating an ERP Federation
+     * @param activations Activation configuration to check hard fork
      * @return a Federation
      */
-    public Federation buildFederation(Instant creationTime, long blockNumber, NetworkParameters btcParams) {
+    public Federation buildFederation(
+        Instant creationTime,
+        long blockNumber,
+        BridgeConstants bridgeConstants,
+        ActivationConfig.ForBlock activations
+        ) {
         if (!this.isComplete()) {
             throw new IllegalStateException("PendingFederation is incomplete");
+        }
+
+        if (activations.isActive(ConsensusRule.RSKIP201)) {
+            logger.info("[buildFederation] Going to create an ERP Federation");
+            return new ErpFederation(
+                members,
+                creationTime,
+                blockNumber,
+                bridgeConstants.getBtcParams(),
+                bridgeConstants.getErpFedPubKeysList(),
+                bridgeConstants.getErpFedActivationDelay()
+            );
         }
 
         return new Federation(
                 members,
                 creationTime,
                 blockNumber,
-                btcParams
+                bridgeConstants.getBtcParams()
         );
     }
 

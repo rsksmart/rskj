@@ -24,6 +24,7 @@ import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.peg.AddressBasedAuthorizer;
 import co.rsk.peg.Federation;
 import co.rsk.peg.FederationMember;
+import java.util.ArrayList;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.ECKey;
 
@@ -129,6 +130,18 @@ public class BridgeTestNetConstants extends BridgeConstants {
 
         btcHeightWhenBlockIndexActivates = 700_000; //TODO define this value when Iris activation height in RSK is determined
         maxDepthToSearchBlocksBelowIndexActivation = 1_000; //TODO define this value with Sergio
+
+        // TODO: These value is not real
+        erpFedActivationDelay = 5063;
+
+        // TODO: WE NEED TO DEFINE THESE KEYS
+        erpFedPubKeysList = new ArrayList<>();
+
+        // Multisig address created in bitcoind with the following private keys:
+        // 47129ffed2c0273c75d21bb8ba020073bb9a1638df0e04853407461fdd9e8b83
+        // 9f72d27ba603cfab5a0201974a6783ca2476ec3d6b4e2625282c682e0e5f1c35
+        // e1b17fcd0ef1942465eee61b20561b16750191143d365e71de08b33dd84a9788
+        oldFederationAddress = "2N7ZgQyhFKm17RbaLqygYbS7KLrQfapyZzu";
 
         minSecondsBetweenCallsReceiveHeader = 600;  // 10 minutes in Seconds
         maxDepthBlockchainAccepted = 25;
