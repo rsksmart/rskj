@@ -676,11 +676,22 @@ public enum BridgeMethods {
     private final BridgeMethodExecutor executor;
     private final boolean onlyAllowsLocalCalls;
 
-    BridgeMethods(CallTransaction.Function function, CostProvider costProvider, BridgeMethodExecutor executor, boolean onlyAllowsLocalCalls) {
+    BridgeMethods(
+        CallTransaction.Function function,
+        CostProvider costProvider,
+        BridgeMethodExecutor executor,
+        boolean onlyAllowsLocalCalls) {
+
         this(function, costProvider, executor, activations -> Boolean.TRUE, onlyAllowsLocalCalls);
     }
 
-    BridgeMethods(CallTransaction.Function function, CostProvider costProvider, BridgeMethodExecutor executor, Function<ActivationConfig.ForBlock, Boolean> isEnabled, boolean onlyAllowsLocalCalls) {
+    BridgeMethods(
+        CallTransaction.Function function,
+        CostProvider costProvider,
+        BridgeMethodExecutor executor,
+        Function<ActivationConfig.ForBlock, Boolean> isEnabled,
+        boolean onlyAllowsLocalCalls) {
+
         this.function = function;
         this.costProvider = costProvider;
         this.executor = executor;
@@ -753,7 +764,23 @@ public enum BridgeMethods {
     private static CostProvider fromMethod(BridgeCostProvider bridgeCostProvider) {
         return (Bridge bridge, ActivationConfig.ForBlock config, Object[] args) -> bridgeCostProvider.getCost(bridge, args);
     }
-    
+
+    private interface CallPermissionProvider {
+        boolean getOnlyAllowLocalCallsPermission(Bridge bridge, ActivationConfig.ForBlock config, Object[] args);
+    }
+
+    private interface BridgeCallPermissionProvider {
+        boolean getOnlyAllowLocalCallsPermission(Bridge bridge, Object[] args);
+    }
+
+    private static CallPermissionProvider fixedPermission(boolean onlyAllowsLocalCalls) {
+        return (Bridge bridge, ActivationConfig.ForBlock config, Object[] args) -> onlyAllowsLocalCalls;
+    }
+
+    private static CallPermissionProvider fromMethod(BridgeCallPermissionProvider bridgeCallPermissionProvider) {
+        return (Bridge bridge, ActivationConfig.ForBlock config, Object[] args) -> bridgeCallPermissionProvider.getOnlyAllowLocalCallsPermission(bridge, args);
+    }
+
     private static final Map<ByteArrayWrapper, BridgeMethods> SIGNATURES = Stream.of(BridgeMethods.values())
             .collect(Collectors.toMap(
                     m -> new ByteArrayWrapper(m.getFunction().encodeSignature()),
