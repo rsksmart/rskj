@@ -1356,13 +1356,26 @@ public class BridgeSupport {
         return blockLocator;
     }
 
-    public byte[] getBtcBlockHeaderByHash(Sha256Hash hash) throws IOException, BlockStoreException {
+    public byte[] getBtcBlockchainBestBlockHeader() throws BlockStoreException, IOException {
+        return serializeBlockHeader(getBtcBlockchainChainHead());
+    }
+
+    public byte[] getBtcBlockchainBlockHeaderByHash(Sha256Hash hash) throws IOException, BlockStoreException {
         this.ensureBtcBlockStore();
 
         return serializeBlockHeader(btcBlockStore.get(hash));
     }
 
-    public byte[] getBtcParentBlockHeaderByHash(Sha256Hash hash) throws IOException, BlockStoreException {
+    public byte[] getBtcBlockchainBlockHeaderByHeight(int height) throws BlockStoreException, IOException {
+        Context.propagate(btcContext);
+        this.ensureBtcBlockStore();
+
+        StoredBlock block = btcBlockStore.getStoredBlockAtMainChainHeight(height);
+
+        return serializeBlockHeader(block);
+    }
+
+    public byte[] getBtcBlockchainParentBlockHeaderByHash(Sha256Hash hash) throws IOException, BlockStoreException {
         this.ensureBtcBlockStore();
 
         StoredBlock block = btcBlockStore.get(hash);
@@ -1372,10 +1385,6 @@ public class BridgeSupport {
         }
 
         return serializeBlockHeader(btcBlockStore.get(block.getHeader().getPrevBlockHash()));
-    }
-
-    public byte[] getBtcBlockchainBestBlockHeader() throws BlockStoreException, IOException {
-        return serializeBlockHeader(getBtcBlockchainChainHead());
     }
 
     public Sha256Hash getBtcBlockchainBlockHashAtDepth(int depth) throws BlockStoreException, IOException {
@@ -1391,15 +1400,6 @@ public class BridgeSupport {
 
         StoredBlock blockAtDepth = btcBlockStore.getStoredBlockAtMainChainDepth(depth);
         return blockAtDepth.getHeader().getHash();
-    }
-
-    public byte[] getBtcBlockchainBlockHeaderByHeight(int height) throws BlockStoreException, IOException {
-        Context.propagate(btcContext);
-        this.ensureBtcBlockStore();
-
-        StoredBlock block = btcBlockStore.getStoredBlockAtMainChainHeight(height);
-
-        return serializeBlockHeader(block);
     }
 
     public Long getBtcTransactionConfirmationsGetCost(Object[] args) {

@@ -636,36 +636,36 @@ public enum BridgeMethods {
             activations -> activations.isActive(RSKIP220),
             false
     ),
-    GET_BTC_BLOCK_HEADER_BY_HASH(
+    GET_BTC_BLOCKCHAIN_BLOCK_HEADER_BY_HASH(
             CallTransaction.Function.fromSignature(
-                    "getBitcoinHeaderByHash",
+                    "getBtcBlockchainBlockHeaderByHash",
                     new String[]{"bytes32"},
                     new String[]{"bytes"}
             ),
             fixedCost(20000L), // TODO: calculate gas cost
-            (BridgeMethodExecutorTyped) Bridge::getBtcBlockHeaderByHash,
+            (BridgeMethodExecutorTyped) Bridge::getBtcBlockchainBlockHeaderByHash,
             activations -> activations.isActive(RSKIP220),
             false
     ),
-    GET_BITCOIN_PARENT_BY_HASH(
+    GET_BTC_BLOCKCHAIN_BLOCK_HEADER_BY_HEIGHT(
+        CallTransaction.Function.fromSignature(
+            "getBtcBlockchainBlockHeaderByHeight",
+            new String[]{"uint256"},
+            new String[]{"bytes"}
+        ),
+        fixedCost(20000L), // TODO: calculate gas cost
+        (BridgeMethodExecutorTyped) Bridge::getBtcBlockchainBlockHeaderByHeight,
+        activations -> activations.isActive(RSKIP220),
+        false
+    ),
+    GET_BTC_BLOCKCHAIN_PARENT_BLOCK_HEADER_BY_HASH(
             CallTransaction.Function.fromSignature(
-                    "getBitcoinParentByHash",
+                    "getBtcBlockchainParentBlockHeaderByHash",
                     new String[]{"bytes32"},
                     new String[]{"bytes"}
             ),
             fixedCost(20000L), // TODO: calculate gas cost
-            (BridgeMethodExecutorTyped) Bridge::getBtcParentBlockHeaderByHash,
-            activations -> activations.isActive(RSKIP220),
-            false
-    ),
-    GET_BITCOIN_HEADER_BY_HEIGHT(
-            CallTransaction.Function.fromSignature(
-                    "getBitcoinHeaderByHeight",
-                    new String[]{"uint256"},
-                    new String[]{"bytes"}
-            ),
-            fixedCost(20000L), // TODO: calculate gas cost
-            (BridgeMethodExecutorTyped) Bridge::getBtcBlockchainBlockHeaderByHeight,
+            (BridgeMethodExecutorTyped) Bridge::getBtcBlockchainParentBlockHeaderByHash,
             activations -> activations.isActive(RSKIP220),
             false
     );
@@ -753,7 +753,7 @@ public enum BridgeMethods {
     private static CostProvider fromMethod(BridgeCostProvider bridgeCostProvider) {
         return (Bridge bridge, ActivationConfig.ForBlock config, Object[] args) -> bridgeCostProvider.getCost(bridge, args);
     }
-
+    
     private static final Map<ByteArrayWrapper, BridgeMethods> SIGNATURES = Stream.of(BridgeMethods.values())
             .collect(Collectors.toMap(
                     m -> new ByteArrayWrapper(m.getFunction().encodeSignature()),

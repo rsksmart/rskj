@@ -1156,16 +1156,16 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         }
     }
 
-    public byte[] getBtcBlockHeaderByHash(Object[] args) {
-        logger.trace("getBtcBlockHeaderByHash");
+    public byte[] getBtcBlockchainBlockHeaderByHash(Object[] args) {
+        logger.trace("getBtcBlockchainBlockHeaderByHash");
 
         try {
             byte[] hashBytes = (byte[])args[0];
             Sha256Hash hash = Sha256Hash.wrap(hashBytes);
 
-            return this.bridgeSupport.getBtcBlockHeaderByHash(hash);
+            return this.bridgeSupport.getBtcBlockchainBlockHeaderByHash(hash);
         } catch (Exception e) {
-            logger.warn("Exception in getBtcBlockHeaderByHash", e);
+            logger.warn("Exception in getBtcBlockchainBlockHeaderByHash", e);
             return ByteUtil.EMPTY_BYTE_ARRAY;
         }
     }
@@ -1183,16 +1183,16 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         }
     }
 
-    public byte[] getBtcParentBlockHeaderByHash(Object[] args) {
-        logger.trace("getBtcParentBlockHeaderByHash");
+    public byte[] getBtcBlockchainParentBlockHeaderByHash(Object[] args) {
+        logger.trace("getBtcBlockchainParentBlockHeaderByHash");
 
         try {
             byte[] hashBytes = (byte[])args[0];
             Sha256Hash hash = Sha256Hash.wrap(hashBytes);
 
-            return this.bridgeSupport.getBtcParentBlockHeaderByHash(hash);
+            return this.bridgeSupport.getBtcBlockchainParentBlockHeaderByHash(hash);
         } catch (Exception e) {
-            logger.warn("Exception in getBtcParentBlockHeaderByHash", e);
+            logger.warn("Exception in getBtcBlockchainParentBlockHeaderByHash", e);
             return ByteUtil.EMPTY_BYTE_ARRAY;
         }
     }

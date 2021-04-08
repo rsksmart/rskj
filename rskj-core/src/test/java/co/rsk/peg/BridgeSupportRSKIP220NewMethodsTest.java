@@ -80,49 +80,21 @@ public class BridgeSupportRSKIP220NewMethodsTest {
     }
 
     @Test
-    public void getBtcBlockHeaderByHash() throws BlockStoreException, IOException {
-        byte[] result = bridgeSupport.getBtcBlockHeaderByHash(hash);
+    public void getBtcBlockchainBlockHeaderByHash() throws BlockStoreException, IOException {
+        byte[] result = bridgeSupport.getBtcBlockchainBlockHeaderByHash(hash);
 
         Assert.assertArrayEquals(header, result);
     }
 
     @Test
-    public void getBtcBlockHeaderByUnknownHash() throws BlockStoreException, IOException {
+    public void getBtcBlockchainBlockHeaderByUnknownHash() throws BlockStoreException, IOException {
         byte[] unknownHashBytes = new byte[32];
         random.nextBytes(unknownHashBytes);
         Sha256Hash unknownHash = Sha256Hash.wrap(unknownHashBytes);
 
         when(btcBlockStore.get(unknownHash)).thenReturn(null);
 
-        byte[] result = bridgeSupport.getBtcBlockHeaderByHash(unknownHash);
-
-        Assert.assertNotNull(result);
-        Assert.assertEquals(0, result.length);
-    }
-
-    @Test
-    public void getBtcParentBlockHeaderByHash() throws BlockStoreException, IOException {
-        byte[] parentHashBytes = new byte[32];
-        random.nextBytes(parentHashBytes);
-        Sha256Hash parentHash = Sha256Hash.wrap(parentHashBytes);
-
-        StoredBlock parentStoredBlock = mock(StoredBlock.class);
-        when(btcBlockStore.get(parentHash)).thenReturn(parentStoredBlock);
-        when(btcBlock.getPrevBlockHash()).thenReturn(parentHash);
-        BtcBlock parentBtcBlock = mock(BtcBlock.class);
-        when(parentBtcBlock.unsafeBitcoinSerialize()).thenReturn(header);
-        when(parentStoredBlock.getHeader()).thenReturn(parentBtcBlock);
-
-        byte[] result = bridgeSupport.getBtcParentBlockHeaderByHash(hash);
-
-        Assert.assertArrayEquals(header, result);
-    }
-
-    @Test
-    public void getBtcParentBlockHeaderByUnknownHash() throws BlockStoreException, IOException {
-        when(btcBlockStore.get(hash)).thenReturn(null);
-
-        byte[] result = bridgeSupport.getBtcParentBlockHeaderByHash(hash);
+        byte[] result = bridgeSupport.getBtcBlockchainBlockHeaderByHash(unknownHash);
 
         Assert.assertNotNull(result);
         Assert.assertEquals(0, result.length);
@@ -135,6 +107,34 @@ public class BridgeSupportRSKIP220NewMethodsTest {
         byte[] result = bridgeSupport.getBtcBlockchainBlockHeaderByHeight(20);
 
         Assert.assertArrayEquals(header, result);
+    }
+
+    @Test
+    public void getBtcBlockchainParentBlockHeaderByHash() throws BlockStoreException, IOException {
+        byte[] parentHashBytes = new byte[32];
+        random.nextBytes(parentHashBytes);
+        Sha256Hash parentHash = Sha256Hash.wrap(parentHashBytes);
+
+        StoredBlock parentStoredBlock = mock(StoredBlock.class);
+        when(btcBlockStore.get(parentHash)).thenReturn(parentStoredBlock);
+        when(btcBlock.getPrevBlockHash()).thenReturn(parentHash);
+        BtcBlock parentBtcBlock = mock(BtcBlock.class);
+        when(parentBtcBlock.unsafeBitcoinSerialize()).thenReturn(header);
+        when(parentStoredBlock.getHeader()).thenReturn(parentBtcBlock);
+
+        byte[] result = bridgeSupport.getBtcBlockchainParentBlockHeaderByHash(hash);
+
+        Assert.assertArrayEquals(header, result);
+    }
+
+    @Test
+    public void getBtcBlockchainParentBlockHeaderByUnknownHash() throws BlockStoreException, IOException {
+        when(btcBlockStore.get(hash)).thenReturn(null);
+
+        byte[] result = bridgeSupport.getBtcBlockchainParentBlockHeaderByHash(hash);
+
+        Assert.assertNotNull(result);
+        Assert.assertEquals(0, result.length);
     }
 
     private BridgeSupport getBridgeSupport(BridgeConstants constants,
