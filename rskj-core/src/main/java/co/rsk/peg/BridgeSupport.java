@@ -99,6 +99,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP186;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP219;
 
 /**
  * Helper class to move funds from btc to rsk and rsk to btc
@@ -818,7 +819,8 @@ public class BridgeSupport {
      * @throws IOException
      */
     private boolean requestRelease(Address destinationAddress, Coin value, Transaction rskTx) throws IOException {
-        if (!value.isGreaterThan(bridgeConstants.getMinimumReleaseTxValue())) {
+        Coin minimumPegoutTxValue = activations.isActive(RSKIP219) ? bridgeConstants.getMinimumPegoutTxValueAfterIrisTxValue() : bridgeConstants.getLegacyMinimumPegoutTxValueInSatoshis();
+        if (value.isLessThan(minimumPegoutTxValue)) {
             return false;
         }
 
@@ -2247,8 +2249,8 @@ public class BridgeSupport {
      * Returns the minimum amount of satoshis a user should send to the federation.
      * @return the minimum amount of satoshis a user should send to the federation.
      */
-    public Coin getMinimumLockTxValue() {
-        return bridgeConstants.getMinimumPeginTxValue();
+    public Coin getMinimumPeginTxValue() {
+        return activations.isActive(RSKIP219) ? bridgeConstants.getMinimumPeginTxValueInSatoshis() : bridgeConstants.getlegacyMinimumPeginTxValueInSatoshis();
     }
 
     /**
