@@ -614,9 +614,9 @@ public enum BridgeMethods {
             activations -> activations.isActive(RSKIP176),
             false
     ),
-    GET_BEST_BLOCK_HEADER(
+    GET_BTC_BLOCKCHAIN_BEST_BLOCK_HEADER(
             CallTransaction.Function.fromSignature(
-                    "getBestBlockHeader",
+                    "getBtcBlockchainBestBlockHeader",
                     new String[0],
                     new String[]{"bytes"}
             ),
@@ -625,9 +625,9 @@ public enum BridgeMethods {
             activations -> activations.isActive(RSKIP220),
             false
     ),
-    GET_BEST_BLOCK_NUMBER(
+    GET_BTC_BLOCKCHAIN_BEST_CHAIN_HEIGHT_2(
             CallTransaction.Function.fromSignature(
-                    "getBestBlockNumber",
+                    "getBtcBlockchainBestChainHeight2",
                     new String[0],
                     new String[]{"uint256"}
             ),
@@ -636,7 +636,7 @@ public enum BridgeMethods {
             activations -> activations.isActive(RSKIP220),
             false
     ),
-    GET_BITCOIN_HEADER_BY_HASH(
+    GET_BTC_BLOCK_HEADER_BY_HASH(
             CallTransaction.Function.fromSignature(
                     "getBitcoinHeaderByHash",
                     new String[]{"bytes32"},
