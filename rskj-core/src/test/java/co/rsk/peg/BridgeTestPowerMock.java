@@ -1005,7 +1005,7 @@ public class BridgeTestPowerMock {
 
         byte[] data = Bridge.GET_MINIMUM_LOCK_TX_VALUE.encode();
 
-        Assert.assertArrayEquals(Bridge.GET_MINIMUM_LOCK_TX_VALUE.encodeOutputs(bridgeConstants.getMinimumPeginTxValue().value), bridge.execute(data));
+        Assert.assertArrayEquals(Bridge.GET_MINIMUM_LOCK_TX_VALUE.encodeOutputs(bridgeConstants.getlegacyMinimumPeginTxValueInSatoshis().value), bridge.execute(data));
     }
 
     @Test

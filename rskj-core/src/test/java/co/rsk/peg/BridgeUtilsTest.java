@@ -122,7 +122,7 @@ public class BridgeUtilsTest {
         when(actForBlock.isActive(any(ConsensusRule.class))).thenReturn(false);
 
         // Tx sending less than the minimum allowed, not a lock tx
-        Coin minimumLockValue = bridgeConstants.getMinimumPeginTxValue();
+        Coin minimumLockValue = bridgeConstants.getlegacyMinimumPeginTxValueInSatoshis();
         BtcTransaction tx = new BtcTransaction(params);
         tx.addOutput(minimumLockValue.subtract(Coin.CENT), federationAddress);
         tx.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
@@ -160,7 +160,7 @@ public class BridgeUtilsTest {
 
         ActivationConfig.ForBlock actForBlock = mock(ActivationConfig.ForBlock.class);
         when(actForBlock.isActive(any(ConsensusRule.class))).thenReturn(true);
-        Coin minimumLockValueAfterIris = bridgeConstants.getMinimumPeginTxValueAfterIris();
+        Coin minimumLockValueAfterIris = bridgeConstants.getMinimumPeginTxValueInSatoshis();
 
 
         // Tx sending less than the minimum allowed, not a lock tx
@@ -188,7 +188,6 @@ public class BridgeUtilsTest {
         signWithNecessaryKeys(bridgeConstants.getGenesisFederation(), BridgeRegTestConstants.REGTEST_FEDERATION_PRIVATE_KEYS, txIn, tx, bridgeConstants);
         assertFalse(BridgeUtils.isPegInTxAndValidateMinimum(tx, federation, btcContext, bridgeConstants, actForBlock));
         assertFalse(BridgeUtils.isPegInTx(tx, federation, btcContext));
-
     }
 
     @Test
@@ -218,8 +217,8 @@ public class BridgeUtilsTest {
 
         ActivationConfig.ForBlock actForBlock = mock(ActivationConfig.ForBlock.class);
         when(actForBlock.isActive(any(ConsensusRule.class))).thenReturn(true);
-        Coin minimumLockValueAfterIris = bridgeConstants.getMinimumPeginTxValueAfterIris();
-        Coin minimumValueBeforeIris = bridgeConstants.getMinimumPeginTxValue();
+        Coin minimumLockValueAfterIris = bridgeConstants.getMinimumPeginTxValueInSatoshis();
+        Coin minimumValueBeforeIris = bridgeConstants.getlegacyMinimumPeginTxValueInSatoshis();
 
         when(actForBlock.isActive(ConsensusRule.RSKIP219)).thenReturn(false);
         BtcTransaction tx = new BtcTransaction(params);
@@ -229,7 +228,6 @@ public class BridgeUtilsTest {
         assertTrue(valueLock.isGreaterThan(minimumLockValueAfterIris));
         tx.addOutput(valueLock, federation.getAddress());
         tx.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
-        assertFalse(BridgeUtils.isValidMinimumPegin(valueLock, bridgeConstants, tx.getHash(), actForBlock));
         assertTrue(BridgeUtils.isPegInTx(tx, federation, btcContext));
         assertFalse(BridgeUtils.isPegInTxAndValidateMinimum(tx, federation, btcContext, bridgeConstants, actForBlock));
     }
@@ -244,19 +242,18 @@ public class BridgeUtilsTest {
 
         ActivationConfig.ForBlock actForBlock = mock(ActivationConfig.ForBlock.class);
         when(actForBlock.isActive(any(ConsensusRule.class))).thenReturn(true);
-        Coin minimumLockValueAfterIris = bridgeConstants.getMinimumPeginTxValueAfterIris();
+        Coin minimumLockValueAfterIris = bridgeConstants.getMinimumPeginTxValueInSatoshis();
 
         when(actForBlock.isActive(ConsensusRule.RSKIP219)).thenReturn(true);
         BtcTransaction tx = new BtcTransaction(params);
 
-        Coin minimumValueBeforeIris = bridgeConstants.getMinimumPeginTxValue();
+        Coin minimumValueBeforeIris = bridgeConstants.getlegacyMinimumPeginTxValueInSatoshis();
         Coin valueLock = minimumLockValueAfterIris.plus((minimumValueBeforeIris.subtract(minimumLockValueAfterIris)).div(2));
         assertTrue(valueLock.isGreaterThan(minimumLockValueAfterIris));
         assertTrue(valueLock.isLessThan(minimumValueBeforeIris));
         tx.addOutput(valueLock, federation.getAddress());
         tx.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
         assertTrue(BridgeUtils.isPegInTx(tx, federation, btcContext));
-        assertTrue(BridgeUtils.isValidMinimumPegin(valueLock, bridgeConstants, tx.getHash(), actForBlock));
         assertTrue(BridgeUtils.isPegInTxAndValidateMinimum(tx, federation, btcContext, bridgeConstants, actForBlock));
     }
 

@@ -38,9 +38,10 @@ public class BridgeConstants {
 
     protected int maxBtcHeadersPerRskBlock;
 
-    protected Coin minimumPeginTxValue;
-    protected Coin minimumPeginTxValueAfterIris;
-    protected Coin minimumReleaseTxValue;
+    protected Coin legacyMinimumPeginTxValueInSatoshis;
+    protected Coin minimumPeginTxValueInSatoshis;
+    protected Coin legacyMinimumPegoutTxValueInSatoshis;
+    protected Coin minimumPegoutTxValueInSatoshis;
 
     protected long federationActivationAge;
 
@@ -101,11 +102,13 @@ public class BridgeConstants {
 
     public int getMaxBtcHeadersPerRskBlock() { return maxBtcHeadersPerRskBlock; }
 
-    public Coin getMinimumPeginTxValue() { return minimumPeginTxValue; }
+    public Coin getlegacyMinimumPeginTxValueInSatoshis() { return legacyMinimumPeginTxValueInSatoshis; }
 
-    public Coin getMinimumPeginTxValueAfterIris() { return minimumPeginTxValueAfterIris; }
+    public Coin getMinimumPeginTxValueInSatoshis() { return minimumPeginTxValueInSatoshis; }
 
-    public Coin getMinimumReleaseTxValue() { return minimumReleaseTxValue; }
+    public Coin getLegacyMinimumPegoutTxValueInSatoshis() { return legacyMinimumPegoutTxValueInSatoshis; }
+
+    public Coin getMinimumPegoutTxValueAfterIrisTxValue() { return minimumPegoutTxValueInSatoshis; }
 
     public long getFederationActivationAge() { return federationActivationAge; }
 

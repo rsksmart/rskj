@@ -198,9 +198,9 @@ public class BridgeUtils {
      * @param activation calls different function to get minimum after or before Iris.
      * @return true if this is a valid lock transaction
      */
-    public static boolean isValidMinimumPegin(Coin valueSentToMe, BridgeConstants bridgeConstants, Sha256Hash txHash, ActivationConfig.ForBlock activation) {
+    private static boolean isValidMinimumPegin(Coin valueSentToMe, BridgeConstants bridgeConstants, Sha256Hash txHash, ActivationConfig.ForBlock activation) {
         int valueSentToMeSignum = valueSentToMe.signum();
-        Coin minimumValue = activation.isActive(ConsensusRule.RSKIP219) ? bridgeConstants.getMinimumPeginTxValueAfterIris() : bridgeConstants.getMinimumPeginTxValue();
+        Coin minimumValue = activation.isActive(ConsensusRule.RSKIP219) ? bridgeConstants.getMinimumPeginTxValueInSatoshis() : bridgeConstants.getlegacyMinimumPeginTxValueInSatoshis();
         if (valueSentToMe.isLessThan(minimumValue)) {
             logger.warn("[btctx:{}]Someone sent to the federation less than {} satoshis", txHash, minimumValue);
         }
