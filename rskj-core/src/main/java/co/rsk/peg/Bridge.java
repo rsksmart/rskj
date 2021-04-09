@@ -32,7 +32,6 @@ import co.rsk.rpc.modules.trace.ProgramSubtrace;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
-import org.ethereum.config.blockchain.upgrades.ActivationConfig.ForBlock;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Block;
 import org.ethereum.core.CallTransaction;
@@ -338,7 +337,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             // allows for non-local calls
             if (activations.isActive(ConsensusRule.RSKIP88) &&
                 !isLocalCall() &&
-                bridgeParsedData.bridgeMethod.onlyAllowsLocalCalls(this, activations, bridgeParsedData.args)) {
+                bridgeParsedData.bridgeMethod.onlyAllowsLocalCalls(this, bridgeParsedData.args)) {
 
                 String errorMessage = String.format("Non-local-call to %s. Returning without execution.", bridgeParsedData.bridgeMethod.getFunction().name);
                 logger.info(errorMessage);

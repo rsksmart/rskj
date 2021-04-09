@@ -2966,7 +2966,7 @@ public class BridgeTestPowerMock {
                 BridgeMethods.GET_STATE_FOR_DEBUGGING,
                 BridgeMethods.IS_BTC_TX_HASH_ALREADY_PROCESSED
         ).stream().forEach(m -> {
-            Assert.assertTrue(m.onlyAllowsLocalCalls(bridge, activationConfigAll, new Object[0]));
+            Assert.assertTrue(m.onlyAllowsLocalCalls(bridge, new Object[0]));
         });
     }
 
@@ -2996,7 +2996,7 @@ public class BridgeTestPowerMock {
                 BridgeMethods.VOTE_FEE_PER_KB,
                 BridgeMethods.GET_ACTIVE_FEDERATION_CREATION_BLOCK_HEIGHT
         ).stream().forEach(m -> {
-            Assert.assertFalse(m.onlyAllowsLocalCalls(bridge, activationConfigAll, new Object[0]));
+            Assert.assertFalse(m.onlyAllowsLocalCalls(bridge, new Object[0]));
         });
     }
 
@@ -3007,7 +3007,7 @@ public class BridgeTestPowerMock {
 
         Bridge bridge = getBridgeInstance(activationsMock);
 
-        Assert.assertFalse(BridgeMethods.GET_BTC_BLOCKCHAIN_BEST_CHAIN_HEIGHT.onlyAllowsLocalCalls(bridge, activationsMock, new Object[0]));
+        Assert.assertFalse(BridgeMethods.GET_BTC_BLOCKCHAIN_BEST_CHAIN_HEIGHT.onlyAllowsLocalCalls(bridge, new Object[0]));
     }
 
     @Test
@@ -3017,7 +3017,7 @@ public class BridgeTestPowerMock {
 
         Bridge bridge = getBridgeInstance(activationsMock);
 
-        Assert.assertTrue(BridgeMethods.GET_BTC_BLOCKCHAIN_BEST_CHAIN_HEIGHT.onlyAllowsLocalCalls(bridge, activationsMock, new Object[0]));
+        Assert.assertTrue(BridgeMethods.GET_BTC_BLOCKCHAIN_BEST_CHAIN_HEIGHT.onlyAllowsLocalCalls(bridge, new Object[0]));
     }
 
     @Test
