@@ -412,9 +412,14 @@ public class BridgeTestPowerMock {
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
                 new RepositoryBtcBlockStoreWithCache.Factory(bridgeConstants.getBtcParams()),
                 bridgeConstants,
-                activationConfig);
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                bridgeSupportFactory);
+                activationConfig
+        );
+        Bridge bridge = new Bridge(
+            PrecompiledContracts.BRIDGE_ADDR,
+            constants,
+            activationConfig,
+            bridgeSupportFactory
+        );
         Transaction mockedTx = mock(Transaction.class);
 
         try {
@@ -425,7 +430,6 @@ public class BridgeTestPowerMock {
             Assert.assertTrue(e.getMessage().contains("Invalid data given"));
         }
     }
-
 
     @Test
     public void executeWithInexistentFunctionBeforeRskip88() throws VMException {
@@ -776,7 +780,6 @@ public class BridgeTestPowerMock {
 
     }
 
-
     @Test
     public void registerBtcTransactionWithNonParseableTx() throws VMException {
         Repository repository = createRepository();
@@ -835,94 +838,6 @@ public class BridgeTestPowerMock {
         BtcTransaction tx = new HugeDeclaredSizeBtcTransaction(btcParams, false, false, false, true);
         registerBtcTransactionWithHugeDeclaredSize(tx);
     }
-
-    private void registerBtcTransactionWithHugeDeclaredSize(BtcTransaction tx) throws VMException {
-        Repository repository = createRepository();
-        Repository track = repository.startTracking();
-
-        Transaction rskTx = Transaction
-                .builder()
-                .nonce(NONCE)
-                .gasPrice(GAS_PRICE)
-                .gasLimit(GAS_LIMIT)
-                .destination(Hex.decode(PrecompiledContracts.BRIDGE_ADDR_STR))
-                .data(Hex.decode(DATA))
-                .chainId(Constants.REGTEST_CHAIN_ID)
-                .value(AMOUNT)
-                .build();
-        rskTx.sign(fedECPrivateKey.getPrivKeyBytes());
-
-        BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
-                new RepositoryBtcBlockStoreWithCache.Factory(bridgeConstants.getBtcParams()),
-                bridgeConstants,
-                activationConfig);
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                bridgeSupportFactory);
-        bridge.init(rskTx, getGenesisBlock(), track, null, null, null);
-
-        byte[] serializedTx = tx.bitcoinSerialize();
-
-        byte[] data = Bridge.REGISTER_BTC_TRANSACTION.encode(serializedTx, 1, new byte[30]);
-
-        Assert.assertNull(bridge.execute(data));
-    }
-
-    private static class HugeDeclaredSizeBtcTransaction extends BtcTransaction {
-
-        private boolean hackInputsSize;
-        private boolean hackOutputsSize;
-        private boolean hackWitnessPushCountSize;
-        private boolean hackWitnessPushSize;
-
-        public HugeDeclaredSizeBtcTransaction(NetworkParameters params, boolean hackInputsSize, boolean hackOutputsSize, boolean hackWitnessPushCountSize, boolean hackWitnessPushSize) {
-            super(params);
-            BtcTransaction inputTx = new BtcTransaction(params);
-            inputTx.addOutput(Coin.FIFTY_COINS, BtcECKey.fromPrivate(BigInteger.valueOf(123456)).toAddress(params));
-            Address to = BtcECKey.fromPrivate(BigInteger.valueOf(1000)).toAddress(params);
-            this.addInput(inputTx.getOutput(0));
-            this.getInput(0).disconnect();
-            TransactionWitness witness = new TransactionWitness(1);
-            witness.setPush(0, new byte[] {0});
-            this.setWitness(0, witness);
-            this.addOutput(Coin.COIN, to);
-
-            this.hackInputsSize = hackInputsSize;
-            this.hackOutputsSize = hackOutputsSize;
-            this.hackWitnessPushCountSize = hackWitnessPushCountSize;
-            this.hackWitnessPushSize = hackWitnessPushSize;
-        }
-
-        protected void bitcoinSerializeToStream(OutputStream stream, boolean serializeWitRequested) throws IOException {
-            boolean serializeWit = serializeWitRequested && hasWitness();
-            uint32ToByteStreamLE(getVersion(), stream);
-            if (serializeWit) {
-                stream.write(new byte[]{0, 1});
-            }
-
-            long inputsSize = hackInputsSize ? Integer.MAX_VALUE : getInputs().size();
-            stream.write(new VarInt(inputsSize).encode());
-            for (TransactionInput in : getInputs())
-                in.bitcoinSerialize(stream);
-            long outputsSize = hackOutputsSize ? Integer.MAX_VALUE : getOutputs().size();
-            stream.write(new VarInt(outputsSize).encode());
-            for (TransactionOutput out : getOutputs())
-                out.bitcoinSerialize(stream);
-            if (serializeWit) {
-                for (int i = 0; i < getInputs().size(); i++) {
-                    TransactionWitness witness = getWitness(i);
-                    long pushCount = hackWitnessPushCountSize ? Integer.MAX_VALUE : witness.getPushCount();
-                    stream.write(new VarInt(pushCount).encode());
-                    for (int y = 0; y < witness.getPushCount(); y++) {
-                        byte[] push = witness.getPush(y);
-                        long pushLength = hackWitnessPushSize ? Integer.MAX_VALUE : push.length;
-                        stream.write(new VarInt(pushLength).encode());
-                        stream.write(push);
-                    }
-                }
-            }
-            uint32ToByteStreamLE(getLockTime(), stream);
-        }
-    };
 
     @Test
     public void registerBtcTransactionWithNonParseableMerkleeProof1() throws Exception{
@@ -1394,10 +1309,6 @@ public class BridgeTestPowerMock {
         }
     }
 
-    private BtcTransaction createTransaction() {
-        return new SimpleBtcTransaction(networkParameters, PegTestUtils.createHash());
-    }
-
     @Test
     public void getGasForDataFreeTx() {
         activationConfig = ActivationConfigsForTest.bridgeUnitTest();
@@ -1457,6 +1368,7 @@ public class BridgeTestPowerMock {
     public void getGasForDataAddSignature() {
         getGasForDataPaidTx(70000 + 548*2, Bridge.ADD_SIGNATURE, new byte[3], new byte[3][2], new byte[3]);
     }
+
     @Test
     public void getGasForDataGSFBRC() {
         getGasForDataPaidTx(4000 + 8, Bridge.GET_STATE_FOR_BTC_RELEASE_CLIENT);
@@ -1485,54 +1397,6 @@ public class BridgeTestPowerMock {
     @Test
     public void getGasForDataGetMinimumLockTxValue() {
         getGasForDataPaidTx(2000 + 8, Bridge.GET_MINIMUM_LOCK_TX_VALUE);
-    }
-
-    private void getGasForDataPaidTx(int expected, CallTransaction.Function function, Object... funcArgs) {
-        activationConfig = ActivationConfigsForTest.bridgeUnitTest();
-
-        BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
-                new RepositoryBtcBlockStoreWithCache.Factory(bridgeConstants.getBtcParams()),
-                bridgeConstants,
-                activationConfig);
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                bridgeSupportFactory);
-        org.ethereum.core.Transaction rskTx;
-        if (function==null) {
-            rskTx = CallTransaction.createRawTransaction(
-                    0,
-                    1,
-                    1,
-                    PrecompiledContracts.BRIDGE_ADDR,
-                    0,
-                    new byte[]{1,2,3},
-                    Constants.REGTEST_CHAIN_ID
-            );
-        } else {
-            rskTx = CallTransaction.createCallTransaction(
-                    0,
-                    1,
-                    1,
-                    PrecompiledContracts.BRIDGE_ADDR,
-                    0,
-                    function,
-                    Constants.REGTEST_CHAIN_ID,
-                    funcArgs
-            );
-        }
-
-        rskTx.sign(BridgeRegTestConstants.REGTEST_FEDERATION_PRIVATE_KEYS.get(0).getPrivKeyBytes());
-
-        BlockGenerator blockGenerator = new BlockGenerator();
-        Block rskExecutionBlock = blockGenerator.createChildBlock(getGenesisInstance(config));
-        for (int i = 0; i < 20; i++) {
-            rskExecutionBlock = blockGenerator.createChildBlock(rskExecutionBlock);
-        }
-
-        Repository mockRepository = mock(Repository.class);
-        when(mockRepository.getCode(any(RskAddress.class))).thenReturn(null);
-
-        bridge.init(rskTx, rskExecutionBlock, mockRepository, null, null, null);
-        Assert.assertEquals(expected, bridge.getGasForData(rskTx.getData()));
     }
 
     @Test
@@ -1678,7 +1542,7 @@ public class BridgeTestPowerMock {
     }
 
     @Test
-    public void getFederationCreationBlockNumber() throws IOException {
+    public void getFederationCreationBlockNumber() {
         Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null);
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
@@ -2074,7 +1938,7 @@ public class BridgeTestPowerMock {
     }
 
     @Test
-    public void createFederation() throws IOException, BridgeIllegalArgumentException {
+    public void createFederation() throws BridgeIllegalArgumentException {
         Transaction txMock = mock(Transaction.class);
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
                 new RepositoryBtcBlockStoreWithCache.Factory(constants.getBridgeConstants().getBtcParams()),
@@ -2354,7 +2218,7 @@ public class BridgeTestPowerMock {
     }
 
     @Test
-    public void addLockWhitelistAddressBeforeRskip87Fork() throws IOException, VMException {
+    public void addLockWhitelistAddressBeforeRskip87Fork() throws VMException {
         doReturn(false).when(activationConfig).isActive(eq(RSKIP87), anyLong());
         doReturn(false).when(activationConfig).isActive(eq(RSKIP88), anyLong());
 
@@ -2412,7 +2276,7 @@ public class BridgeTestPowerMock {
     }
 
     @Test
-    public void addOneOffLockWhitelistAddressBeforeRskip87And88Fork() throws IOException, VMException {
+    public void addOneOffLockWhitelistAddressBeforeRskip87And88Fork() throws VMException {
         doReturn(false).when(activationConfig).isActive(eq(RSKIP87), anyLong());
         doReturn(false).when(activationConfig).isActive(eq(RSKIP88), anyLong());
 
@@ -2546,7 +2410,7 @@ public class BridgeTestPowerMock {
     }
 
     @Test
-    public void voteFeePerKb_ok() throws IOException {
+    public void voteFeePerKb_ok() {
         Transaction txMock = mock(Transaction.class);
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
                 new RepositoryBtcBlockStoreWithCache.Factory(constants.getBridgeConstants().getBtcParams()),
@@ -2681,7 +2545,7 @@ public class BridgeTestPowerMock {
     }
 
     @Test
-    public void executeMethodWithOnlyLocalCallsAllowed_nonLocalCallTx() throws Exception {
+    public void executeMethodWithOnlyLocalCallsAllowed_nonLocalCallTx() {
         doReturn(false).when(activationConfig).isActive(eq(RSKIP87), anyLong());
         doReturn(true).when(activationConfig).isActive(eq(RSKIP88), anyLong());
 
@@ -2714,48 +2578,6 @@ public class BridgeTestPowerMock {
     @Test
     public void executeMethodWithAnyCallsAllowed_nonLocalCallTx() throws Exception {
         executeAndCheckMethodWithAnyCallsAllowed(false);
-    }
-
-    private void executeAndCheckMethodWithAnyCallsAllowed(boolean localCall) throws Exception {
-        Transaction tx = mock(Transaction.class);
-        when(tx.isLocalCallTransaction()).thenReturn(localCall);
-
-        BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
-
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                bridgeSupportFactoryMock);
-
-
-        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        when(bridgeSupportFactoryMock.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupportMock);
-        when(bridgeSupportMock.voteFeePerKbChange(tx, Coin.CENT)).thenReturn(1);
-
-        bridge.init(tx, getGenesisBlock(), null, null, null, null);
-
-        byte[] data = BridgeMethods.VOTE_FEE_PER_KB.getFunction().encode(new Object[]{ Coin.CENT.longValue() });
-        bridge.execute(data);
-
-        verify(bridgeSupportMock, times(1)).voteFeePerKbChange(tx, Coin.CENT);
-    }
-
-    // We need reflection to mock static final fields
-    private void setFinalStatic(Field field, Object newValue) throws Exception {
-        field.setAccessible(true);
-        Field modifiersField = Field.class.getDeclaredField("modifiers");
-        modifiersField.setAccessible(true);
-        modifiersField.setInt(field, field.getModifiers() & ~Modifier.FINAL);
-        field.set(null, newValue);
-    }
-
-    public void getBtcBlockchainInitialBlockHeight() throws IOException, VMException {
-        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
-                null);
-        bridge.init(null, getGenesisBlock(), null, null, null, null);
-        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
-        Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
-        when(bridgeSupportMock.getBtcBlockchainInitialBlockHeight()).thenReturn(1234);
-
-        Assert.assertEquals(1234, bridge.getBtcBlockchainInitialBlockHeight(new Object[]{}).intValue());
     }
 
     @Test
@@ -3016,10 +2838,6 @@ public class BridgeTestPowerMock {
         Assert.assertEquals(mockedResult, Sha256Hash.wrap(bridge.getBtcBlockchainBlockHashAtDepth(new Object[]{BigInteger.valueOf(555)})));
     }
 
-    private Block getGenesisBlock() {
-        return new BlockGenerator().getGenesisBlock();
-    }
-
     @Test
     public void testCallFromContract_beforeOrchid() {
 //        GenesisConfig mockedConfig = spy(new GenesisConfig());
@@ -3113,12 +2931,13 @@ public class BridgeTestPowerMock {
 
     @Test
     public void localCallOnlyMethodsDefinition() {
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null);
+
         // To force initialization
         String foo = Bridge.UPDATE_COLLECTIONS.name;
 
         // Actual tests
         Arrays.asList(
-                BridgeMethods.GET_BTC_BLOCKCHAIN_BEST_CHAIN_HEIGHT,
                 BridgeMethods.GET_BTC_BLOCKCHAIN_INITIAL_BLOCK_HEIGHT,
                 BridgeMethods.GET_BTC_BLOCKCHAIN_BLOCK_LOCATOR,
                 BridgeMethods.GET_BTC_BLOCKCHAIN_BLOCK_HASH_AT_DEPTH,
@@ -3147,12 +2966,14 @@ public class BridgeTestPowerMock {
                 BridgeMethods.GET_STATE_FOR_DEBUGGING,
                 BridgeMethods.IS_BTC_TX_HASH_ALREADY_PROCESSED
         ).stream().forEach(m -> {
-            Assert.assertTrue(m.onlyAllowsLocalCalls());
+            Assert.assertTrue(m.onlyAllowsLocalCalls(bridge, activationConfigAll, new Object[0]));
         });
     }
 
     @Test
     public void mineableMethodsDefinition() {
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, null);
+
         // To force initialization
         String foo = Bridge.UPDATE_COLLECTIONS.name;
 
@@ -3175,8 +2996,28 @@ public class BridgeTestPowerMock {
                 BridgeMethods.VOTE_FEE_PER_KB,
                 BridgeMethods.GET_ACTIVE_FEDERATION_CREATION_BLOCK_HEIGHT
         ).stream().forEach(m -> {
-            Assert.assertFalse(m.onlyAllowsLocalCalls());
+            Assert.assertFalse(m.onlyAllowsLocalCalls(bridge, activationConfigAll, new Object[0]));
         });
+    }
+
+    @Test
+    public void getBtcBlockchainBestChainHeight_beforeRskip220_isMineable() {
+        ActivationConfig.ForBlock activationsMock = mock(ActivationConfig.ForBlock.class);
+        when(activationsMock.isActive(RSKIP220)).thenReturn(true);
+
+        Bridge bridge = getBridgeInstance(activationsMock);
+
+        Assert.assertFalse(BridgeMethods.GET_BTC_BLOCKCHAIN_BEST_CHAIN_HEIGHT.onlyAllowsLocalCalls(bridge, activationsMock, new Object[0]));
+    }
+
+    @Test
+    public void getBtcBlockchainBestChainHeight_afterRskip220_onlyAllowsLocalCalls() {
+        ActivationConfig.ForBlock activationsMock = mock(ActivationConfig.ForBlock.class);
+        when(activationsMock.isActive(RSKIP220)).thenReturn(false);
+
+        Bridge bridge = getBridgeInstance(activationsMock);
+
+        Assert.assertTrue(BridgeMethods.GET_BTC_BLOCKCHAIN_BEST_CHAIN_HEIGHT.onlyAllowsLocalCalls(bridge, activationsMock, new Object[0]));
     }
 
     @Test
@@ -3200,7 +3041,7 @@ public class BridgeTestPowerMock {
     }
 
     @Test
-    public void receiveHeadersGasCost_afterDynamicCost() throws Exception {
+    public void receiveHeadersGasCost_afterDynamicCost() {
         doReturn(true).when(activationConfig).isActive(eq(RSKIP124), anyLong());
 
         Transaction txMock = mock(Transaction.class);
@@ -3346,4 +3187,201 @@ public class BridgeTestPowerMock {
         TrieStore trieStore = new TrieStoreImpl(new HashMapDB());
         return new TestGenesisLoader(trieStore, config.genesisInfo(), config.getNetworkConstants().getInitialNonce(), false, false, false).load();
     }
+
+    private void executeAndCheckMethodWithAnyCallsAllowed(boolean localCall) throws Exception {
+        Transaction tx = mock(Transaction.class);
+        when(tx.isLocalCallTransaction()).thenReturn(localCall);
+
+        BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
+
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
+            bridgeSupportFactoryMock);
+
+
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        when(bridgeSupportFactoryMock.newInstance(any(), any(), any(), any())).thenReturn(bridgeSupportMock);
+        when(bridgeSupportMock.voteFeePerKbChange(tx, Coin.CENT)).thenReturn(1);
+
+        bridge.init(tx, getGenesisBlock(), null, null, null, null);
+
+        byte[] data = BridgeMethods.VOTE_FEE_PER_KB.getFunction().encode(new Object[]{ Coin.CENT.longValue() });
+        bridge.execute(data);
+
+        verify(bridgeSupportMock, times(1)).voteFeePerKbChange(tx, Coin.CENT);
+    }
+
+    // We need reflection to mock static final fields
+    private void setFinalStatic(Field field, Object newValue) throws Exception {
+        field.setAccessible(true);
+        Field modifiersField = Field.class.getDeclaredField("modifiers");
+        modifiersField.setAccessible(true);
+        modifiersField.setInt(field, field.getModifiers() & ~Modifier.FINAL);
+        field.set(null, newValue);
+    }
+
+    public void getBtcBlockchainInitialBlockHeight() throws IOException, VMException {
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
+            null);
+        bridge.init(null, getGenesisBlock(), null, null, null, null);
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        Whitebox.setInternalState(bridge, "bridgeSupport", bridgeSupportMock);
+        when(bridgeSupportMock.getBtcBlockchainInitialBlockHeight()).thenReturn(1234);
+
+        Assert.assertEquals(1234, bridge.getBtcBlockchainInitialBlockHeight(new Object[]{}).intValue());
+    }
+
+    private BtcTransaction createTransaction() {
+        return new SimpleBtcTransaction(networkParameters, PegTestUtils.createHash());
+    }
+
+    private Block getGenesisBlock() {
+        return new BlockGenerator().getGenesisBlock();
+    }
+
+    private void getGasForDataPaidTx(int expected, CallTransaction.Function function, Object... funcArgs) {
+        activationConfig = ActivationConfigsForTest.bridgeUnitTest();
+
+        BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
+            new RepositoryBtcBlockStoreWithCache.Factory(bridgeConstants.getBtcParams()),
+            bridgeConstants,
+            activationConfig);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
+            bridgeSupportFactory);
+        org.ethereum.core.Transaction rskTx;
+        if (function==null) {
+            rskTx = CallTransaction.createRawTransaction(
+                0,
+                1,
+                1,
+                PrecompiledContracts.BRIDGE_ADDR,
+                0,
+                new byte[]{1,2,3},
+                Constants.REGTEST_CHAIN_ID
+            );
+        } else {
+            rskTx = CallTransaction.createCallTransaction(
+                0,
+                1,
+                1,
+                PrecompiledContracts.BRIDGE_ADDR,
+                0,
+                function,
+                Constants.REGTEST_CHAIN_ID,
+                funcArgs
+            );
+        }
+
+        rskTx.sign(BridgeRegTestConstants.REGTEST_FEDERATION_PRIVATE_KEYS.get(0).getPrivKeyBytes());
+
+        BlockGenerator blockGenerator = new BlockGenerator();
+        Block rskExecutionBlock = blockGenerator.createChildBlock(getGenesisInstance(config));
+        for (int i = 0; i < 20; i++) {
+            rskExecutionBlock = blockGenerator.createChildBlock(rskExecutionBlock);
+        }
+
+        Repository mockRepository = mock(Repository.class);
+        when(mockRepository.getCode(any(RskAddress.class))).thenReturn(null);
+
+        bridge.init(rskTx, rskExecutionBlock, mockRepository, null, null, null);
+        Assert.assertEquals(expected, bridge.getGasForData(rskTx.getData()));
+    }
+
+    private void registerBtcTransactionWithHugeDeclaredSize(BtcTransaction tx) throws VMException {
+        Repository repository = createRepository();
+        Repository track = repository.startTracking();
+
+        Transaction rskTx = Transaction
+            .builder()
+            .nonce(NONCE)
+            .gasPrice(GAS_PRICE)
+            .gasLimit(GAS_LIMIT)
+            .destination(Hex.decode(PrecompiledContracts.BRIDGE_ADDR_STR))
+            .data(Hex.decode(DATA))
+            .chainId(Constants.REGTEST_CHAIN_ID)
+            .value(AMOUNT)
+            .build();
+        rskTx.sign(fedECPrivateKey.getPrivKeyBytes());
+
+        BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
+            new RepositoryBtcBlockStoreWithCache.Factory(bridgeConstants.getBtcParams()),
+            bridgeConstants,
+            activationConfig);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig,
+            bridgeSupportFactory);
+        bridge.init(rskTx, getGenesisBlock(), track, null, null, null);
+
+        byte[] serializedTx = tx.bitcoinSerialize();
+
+        byte[] data = Bridge.REGISTER_BTC_TRANSACTION.encode(serializedTx, 1, new byte[30]);
+
+        Assert.assertNull(bridge.execute(data));
+    }
+
+    private Bridge getBridgeInstance(ActivationConfig.ForBlock activations) {
+        BridgeSupportFactory bridgeSupportFactoryMock = mock(BridgeSupportFactory.class);
+        when(bridgeSupportFactoryMock.newInstance(any(), any(), any(), any())).thenReturn(mock(BridgeSupport.class));
+
+        when(activationConfig.forBlock(anyLong())).thenReturn(activations);
+        Bridge bridge = new Bridge(PrecompiledContracts.BRIDGE_ADDR, constants, activationConfig, bridgeSupportFactoryMock);
+        bridge.init(mock(Transaction.class), getGenesisBlock(), null, null, null, null);
+
+        return bridge;
+    }
+
+    private static class HugeDeclaredSizeBtcTransaction extends BtcTransaction {
+
+        private boolean hackInputsSize;
+        private boolean hackOutputsSize;
+        private boolean hackWitnessPushCountSize;
+        private boolean hackWitnessPushSize;
+
+        public HugeDeclaredSizeBtcTransaction(NetworkParameters params, boolean hackInputsSize, boolean hackOutputsSize, boolean hackWitnessPushCountSize, boolean hackWitnessPushSize) {
+            super(params);
+            BtcTransaction inputTx = new BtcTransaction(params);
+            inputTx.addOutput(Coin.FIFTY_COINS, BtcECKey.fromPrivate(BigInteger.valueOf(123456)).toAddress(params));
+            Address to = BtcECKey.fromPrivate(BigInteger.valueOf(1000)).toAddress(params);
+            this.addInput(inputTx.getOutput(0));
+            this.getInput(0).disconnect();
+            TransactionWitness witness = new TransactionWitness(1);
+            witness.setPush(0, new byte[] {0});
+            this.setWitness(0, witness);
+            this.addOutput(Coin.COIN, to);
+
+            this.hackInputsSize = hackInputsSize;
+            this.hackOutputsSize = hackOutputsSize;
+            this.hackWitnessPushCountSize = hackWitnessPushCountSize;
+            this.hackWitnessPushSize = hackWitnessPushSize;
+        }
+
+        protected void bitcoinSerializeToStream(OutputStream stream, boolean serializeWitRequested) throws IOException {
+            boolean serializeWit = serializeWitRequested && hasWitness();
+            uint32ToByteStreamLE(getVersion(), stream);
+            if (serializeWit) {
+                stream.write(new byte[]{0, 1});
+            }
+
+            long inputsSize = hackInputsSize ? Integer.MAX_VALUE : getInputs().size();
+            stream.write(new VarInt(inputsSize).encode());
+            for (TransactionInput in : getInputs())
+                in.bitcoinSerialize(stream);
+            long outputsSize = hackOutputsSize ? Integer.MAX_VALUE : getOutputs().size();
+            stream.write(new VarInt(outputsSize).encode());
+            for (TransactionOutput out : getOutputs())
+                out.bitcoinSerialize(stream);
+            if (serializeWit) {
+                for (int i = 0; i < getInputs().size(); i++) {
+                    TransactionWitness witness = getWitness(i);
+                    long pushCount = hackWitnessPushCountSize ? Integer.MAX_VALUE : witness.getPushCount();
+                    stream.write(new VarInt(pushCount).encode());
+                    for (int y = 0; y < witness.getPushCount(); y++) {
+                        byte[] push = witness.getPush(y);
+                        long pushLength = hackWitnessPushSize ? Integer.MAX_VALUE : push.length;
+                        stream.write(new VarInt(pushLength).encode());
+                        stream.write(push);
+                    }
+                }
+            }
+            uint32ToByteStreamLE(getLockTime(), stream);
+        }
+    };
 }

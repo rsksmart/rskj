@@ -126,7 +126,7 @@ public enum BridgeMethods {
             ),
             fixedCost(19000L),
             (BridgeMethodExecutorTyped) Bridge::getBtcBlockchainBestChainHeight,
-            fixedPermission(true)
+            fromMethod(Bridge::getBtcBlockchainBestChainHeightOnlyAllowsLocalCalls)
     ),
     GET_BTC_BLOCKCHAIN_INITIAL_BLOCK_HEIGHT(
             CallTransaction.Function.fromSignature(
@@ -622,17 +622,6 @@ public enum BridgeMethods {
             ),
             fixedCost(20000L), // TODO: calculate gas cost
             (BridgeMethodExecutorTyped) Bridge::getBtcBlockchainBestBlockHeader,
-            activations -> activations.isActive(RSKIP220),
-            fixedPermission(false)
-    ),
-    GET_BTC_BLOCKCHAIN_BEST_CHAIN_HEIGHT_2(
-            CallTransaction.Function.fromSignature(
-                    "getBtcBlockchainBestChainHeight2",
-                    new String[0],
-                    new String[]{"uint256"}
-            ),
-            fixedCost(20000L), // TODO: calculate gas cost
-            (BridgeMethodExecutorTyped) Bridge::getBtcBlockchainBestChainHeight,
             activations -> activations.isActive(RSKIP220),
             fixedPermission(false)
     ),
