@@ -139,7 +139,7 @@ public class BridgeMainNetConstants extends BridgeConstants {
 
         oldFederationAddress = "35JUi1FxabGdhygLhnNUEFG4AgvpNMgxK1";
 
-        minSecondsBetweenCallsReceiveHeader = 600;  // 10 minutes in Seconds
+        minSecondsBetweenCallsReceiveHeader = 300;  // 5 minutes in Seconds
         maxDepthBlockchainAccepted = 25;
     }
 

@@ -121,7 +121,7 @@ public class BridgeRegTestConstants extends BridgeConstants {
 
         lockingCapIncrementsMultiplier = 2;
 
-        minSecondsBetweenCallsReceiveHeader = 600;  // 10 minutes in Seconds
+        minSecondsBetweenCallsReceiveHeader = 300;  // 5 minutes in Seconds
 
         maxDepthBlockchainAccepted = 25;
 

@@ -143,7 +143,7 @@ public class BridgeTestNetConstants extends BridgeConstants {
         // e1b17fcd0ef1942465eee61b20561b16750191143d365e71de08b33dd84a9788
         oldFederationAddress = "2N7ZgQyhFKm17RbaLqygYbS7KLrQfapyZzu";
 
-        minSecondsBetweenCallsReceiveHeader = 600;  // 10 minutes in Seconds
+        minSecondsBetweenCallsReceiveHeader = 300;  // 5 minutes in Seconds
         maxDepthBlockchainAccepted = 25;
     }
 
