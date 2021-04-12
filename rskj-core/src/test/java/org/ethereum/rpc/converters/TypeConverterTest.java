@@ -91,7 +91,13 @@ public class TypeConverterTest {
         byte[] toEncode = new byte[]{0x00, 0x00};
         Assert.assertEquals("0x0", TypeConverter.toQuantityJsonHex(toEncode));
     }
-    
+
+    @Test
+    public void toQuantityJsonHex_EmptyByteArray() {
+        byte[] toEncode = new byte[0];
+        Assert.assertEquals("0x0", TypeConverter.toQuantityJsonHex(toEncode));
+    }
+
     @Test
     public void toJsonHexCoin() {
         Assert.assertEquals("1234", TypeConverter.toJsonHex(new Coin(new BigInteger("1234"))));

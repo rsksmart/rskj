@@ -24,9 +24,6 @@ import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.signature.ECDSASignature;
 import org.ethereum.rpc.TypeConverter;
-import org.ethereum.util.ByteUtil;
-
-import java.util.Arrays;
 
 /**
  * Created by Ruben on 8/1/2016.
@@ -53,11 +50,7 @@ public class TransactionResultDTO {
     public TransactionResultDTO(Block b, Integer index, Transaction tx) {
         hash = tx.getHash().toJsonString();
 
-        if (Arrays.equals(tx.getNonce(), ByteUtil.EMPTY_BYTE_ARRAY)) {
-            nonce = "0";
-        } else {
-            nonce = TypeConverter.toJsonHex(tx.getNonce());
-        }
+        nonce = TypeConverter.toQuantityJsonHex(tx.getNonce());
 
         blockHash = b != null ? b.getHashJsonString() : null;
         blockNumber = b != null ? TypeConverter.toQuantityJsonHex(b.getNumber()) : null;

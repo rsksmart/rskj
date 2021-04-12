@@ -461,7 +461,7 @@ public class Web3ImplTest {
         assertNotNull(tr);
 
         assertEquals("0x" + hashString, tr.hash);
-        assertEquals("0", tr.nonce);
+        assertEquals("0x0", tr.nonce);
         assertEquals(null, tr.blockHash);
         assertEquals(null, tr.transactionIndex);
         assertEquals("0x", tr.input);
