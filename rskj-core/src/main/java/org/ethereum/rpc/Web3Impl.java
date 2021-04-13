@@ -402,6 +402,7 @@ public class Web3Impl implements Web3 {
 
         try {
             RskAddress addr = new RskAddress(address);
+            
             AccountInformationProvider accountInformationProvider =
                     web3InformationRetriever.getInformationProvider(blockId);
 
