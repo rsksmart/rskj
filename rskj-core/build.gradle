@@ -1,7 +1,3 @@
-import java.util.jar.JarEntry
-import java.util.jar.JarFile
-import java.util.jar.JarOutputStream
-
 plugins {
     id 'application'
 }
@@ -137,9 +133,6 @@ tasks.withType(Jar) {
     reproducibleFileOrder = true
     dirMode = 0775
     fileMode = 0664
-    doLast {
-        stripJar(outputs.files.singleFile)
-    }
 }
 
 task sourcesJar(type: Jar, dependsOn: classes) {
@@ -215,34 +208,12 @@ artifacts {
     archives distTar
 }
 
-def gitCurrentBranch() {
+static def gitCurrentBranch() {
     def process = "git rev-parse --abbrev-ref HEAD".execute()
     return process.text.trim()
 }
 
-def gitCommitHash() {
+static def gitCommitHash() {
     def process = "git rev-parse --short HEAD".execute()
     return process.text.trim()
-}
-
-def gitDateHash() {
-    def process = "git show -s --format=%ct ${gitCommitHash()}".execute()
-    return process.text.toLong()
-}
-
-def stripJar(File originalFile) {
-    def constantTimeForZipEntries = new GregorianCalendar(1980, Calendar.FEBRUARY, 1, 0, 0, 0).timeInMillis
-    def reproducibleFile = File.createTempFile("temp", ".tmp")
-    reproducibleFile.withOutputStream { fout ->
-        def out = new JarOutputStream(fout)
-        def jf = new JarFile(originalFile)
-        jf.entries().unique {it.name}.sort {it.name}.each {
-            def copy = new JarEntry(it.name)
-            copy.time = constantTimeForZipEntries
-            out.putNextEntry(copy)
-            out << jf.getInputStream(it)
-        }
-        out.finish()
-    }
-    reproducibleFile.renameTo originalFile
 }
