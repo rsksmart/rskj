@@ -28,3 +28,4 @@ RskJ has been developed with the intention to foster the progress of society. By
 - Any kind of act, activity or business that is expected to infringe upon intellectual property rights belonging to other people;
 - Any kind of act, activity or business involving dangerous or controlled goods or substances, including stolen goods, firearms, radioactive materials or drugs.
 Something will be considered illegal, criminal, or requiring any kind of governmental authorization or license, when either the laws or regulations of the country in which you reside, or the laws or regulations of the country from which you use RskJ, consider it illegal, criminal, or requiring any kind of governmental authorization or license.
+
