@@ -127,14 +127,21 @@ public class ReceiveHeadersTest extends BridgePerformanceTestCase {
                 Helper.getRandomHeightProvider(10),
                 stats,
                 (EnvironmentBuilder.Environment environment, byte[] result) -> {
+                    BridgeStorageProvider bridgeStorageProvider = new BridgeStorageProvider(
+                            (Repository) environment.getBenchmarkedRepository(),
+                            PrecompiledContracts.BRIDGE_ADDR,
+                            constants.getBridgeConstants(),
+                            activationConfig.forBlock(0)
+                    );
+
                     btcBlockStore = new RepositoryBtcBlockStoreWithCache(
                         BridgeRegTestConstants.getInstance().getBtcParams(),
                         (Repository) environment.getBenchmarkedRepository(),
                         new HashMap<>(),
                         PrecompiledContracts.BRIDGE_ADDR,
                         bridgeConstants,
-                        (BridgeStorageProvider) environment.getStorageProvider(),
-                        null
+                        bridgeStorageProvider,
+                        activationConfig.forBlock(0)
                     );
                     Sha256Hash bestBlockHash = null;
                     try {

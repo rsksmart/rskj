@@ -29,7 +29,6 @@ import org.junit.runners.Suite;
         ReceiveHeadersTest.class,
         RegisterBtcTransactionTest.class,
         AddSignatureTest.class,
-        BtcBlockchainTest.class,
         LockTest.class,
         ActiveFederationTest.class,
         RetiringFederationTest.class,
@@ -42,7 +41,11 @@ import org.junit.runners.Suite;
         RegisterBtcCoinbaseTransactionTest.class,
         HasBtcBlockCoinbaseTransactionInformationTest.class,
         LockingCapTest.class,
-        RegisterFastBridgeBtcTransactionTest.class
+        RegisterFastBridgeBtcTransactionTest.class,
+        GetBtcBlockchainBestBlockHeaderTest.class,
+        GetBtcBlockchainBlockHeaderByHashTest.class,
+        GetBtcBlockchainBlockHeaderByHeightTest.class,
+        GetBtcBlockchainParentBlockHeaderByHashTest.class
 })
 
 //-------------- COMMENT THIS TO RUN THE TEST AND EACH CLASS --------------

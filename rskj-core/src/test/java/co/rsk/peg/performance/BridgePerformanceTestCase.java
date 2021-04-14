@@ -234,6 +234,7 @@ public abstract class BridgePerformanceTestCase extends PrecompiledContractPerfo
                         storageProvider,
                         activationConfig.forBlock((long) executionIndex)
                 );
+
                 storageInitializer.initialize(storageProvider, repository, executionIndex, btcBlockStore);
                 repository.addBalance(PrecompiledContracts.BRIDGE_ADDR, co.rsk.core.Coin.fromBitcoin(Coin.COIN.multiply(21_000_000L)));
 
@@ -291,11 +292,6 @@ public abstract class BridgePerformanceTestCase extends PrecompiledContractPerfo
                     @Override
                     public BenchmarkedRepository getBenchmarkedRepository() {
                         return benchmarkerTrack;
-                    }
-
-                    @Override
-                    public BridgeStorageProvider getStorageProvider() {
-                        return storageProvider;
                     }
 
                     @Override
