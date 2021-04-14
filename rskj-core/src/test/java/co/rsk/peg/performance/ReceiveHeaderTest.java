@@ -3,7 +3,6 @@ package co.rsk.peg.performance;
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.bitcoinj.store.BtcBlockStore;
-import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.peg.Bridge;
 import co.rsk.peg.BridgeStorageProvider;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
@@ -19,11 +18,9 @@ import org.junit.Test;
 import org.ethereum.vm.exception.VMException;
 
 import java.math.BigInteger;
-import java.util.HashMap;
 
 @Ignore
 public class ReceiveHeaderTest extends BridgePerformanceTestCase {
-    private BtcBlockStore btcBlockStore;
     private BtcBlock lastBlock;
     private BtcBlock expectedBlock;
 
@@ -60,6 +57,12 @@ public class ReceiveHeaderTest extends BridgePerformanceTestCase {
                         // Working fine.
                         int result = new BigInteger(executionResult).intValue();
                         Assert.assertEquals(0, result);
+                        BridgeStorageProvider bridgeStorageProvider = new BridgeStorageProvider(
+                                (Repository) environment.getBenchmarkedRepository(),
+                                PrecompiledContracts.BRIDGE_ADDR,
+                                constants.getBridgeConstants(),
+                                activationConfig.forBlock(0)
+                        );
 
                         // Best Block is the new block added.
                         BtcBlockStore btcBlockStore = new RepositoryBtcBlockStoreWithCache.
@@ -67,7 +70,7 @@ public class ReceiveHeaderTest extends BridgePerformanceTestCase {
                                 newInstance(
                                         (Repository) environment.getBenchmarkedRepository(),
                                         bridgeConstants,
-                                        (BridgeStorageProvider) environment.getStorageProvider(),
+                                        bridgeStorageProvider,
                                         null
                                 );
 
@@ -121,11 +124,10 @@ public class ReceiveHeaderTest extends BridgePerformanceTestCase {
 
     private BridgeStorageProviderInitializer generateInitializer(int minBlocks, int maxBlocks) {
         return (BridgeStorageProvider provider, Repository repository, int executionIndex, BtcBlockStore blockStore) -> {
-            btcBlockStore = blockStore;
             Context btcContext = new Context(networkParameters);
             BtcBlockChain btcBlockChain;
             try {
-                btcBlockChain = new BtcBlockChain(btcContext, btcBlockStore);
+                btcBlockChain = new BtcBlockChain(btcContext, blockStore);
             } catch (BlockStoreException e) {
                 throw new RuntimeException("Error initializing btc blockchain for tests");
             }

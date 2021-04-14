@@ -28,6 +28,7 @@ import co.rsk.peg.ReleaseRequestQueue;
 import org.ethereum.core.Denomination;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.ECKey;
+import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.exception.VMException;
 import org.junit.Assert;
 import org.junit.Ignore;
@@ -38,6 +39,7 @@ import java.math.BigInteger;
 
 @Ignore
 public class ReleaseBtcTest extends BridgePerformanceTestCase {
+
     @Test
     public void releaseBtc() throws VMException {
 
@@ -74,8 +76,13 @@ public class ReleaseBtcTest extends BridgePerformanceTestCase {
                 (EnvironmentBuilder.Environment environment, byte[] result) -> {
                     int sizeQueue = -1;
                     try {
-
-                        ReleaseRequestQueue queue = environment.getStorageProvider().getReleaseRequestQueue();
+                        BridgeStorageProvider bridgeStorageProvider = new BridgeStorageProvider(
+                                (Repository) environment.getBenchmarkedRepository(),
+                                PrecompiledContracts.BRIDGE_ADDR,
+                                constants.getBridgeConstants(),
+                                activationConfig.forBlock(0)
+                        );
+                        ReleaseRequestQueue queue = bridgeStorageProvider.getReleaseRequestQueue();
                         sizeQueue = queue.getEntries().size();
                     } catch (IOException e) {
                         Assert.fail();
@@ -111,7 +118,13 @@ public class ReleaseBtcTest extends BridgePerformanceTestCase {
                 (EnvironmentBuilder.Environment environment, byte[] result) -> {
                         int sizeQueue = -1;
                         try {
-                            ReleaseRequestQueue queue = environment.getStorageProvider().getReleaseRequestQueue();
+                            BridgeStorageProvider bridgeStorageProvider = new BridgeStorageProvider(
+                                    (Repository) environment.getBenchmarkedRepository(),
+                                    PrecompiledContracts.BRIDGE_ADDR,
+                                    constants.getBridgeConstants(),
+                                    activationConfig.forBlock(0)
+                            );
+                            ReleaseRequestQueue queue = bridgeStorageProvider.getReleaseRequestQueue();
                             sizeQueue = queue.getEntries().size();
                         } catch (IOException e) {
                             Assert.fail();
