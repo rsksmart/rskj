@@ -402,6 +402,7 @@ public class Web3Impl implements Web3 {
 
         try {
             RskAddress addr = new RskAddress(address);
+            
             AccountInformationProvider accountInformationProvider =
                     web3InformationRetriever.getInformationProvider(blockId);
 
@@ -409,7 +410,7 @@ public class Web3Impl implements Web3 {
                     .getStorageValue(addr, DataWord.valueOf(stringHexToByteArray(storageIdx)));
 
             if (sv == null) {
-                s = null;
+                s = "0x0";
             } else {
                 s = toUnformattedJsonHex(sv.getData());
             }
