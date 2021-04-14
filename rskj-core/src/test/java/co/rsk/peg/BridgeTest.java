@@ -620,6 +620,26 @@ public class BridgeTest {
         Assert.assertEquals(BigInteger.valueOf(-20), Bridge.RECEIVE_HEADER.decodeResult(result)[0]);
     }
 
+    @Test
+    public void getBtcBlockchainBestChainHeightOnlyAllowsLocalCalls_afterRskip220() {
+        ActivationConfig activations = spy(ActivationConfigsForTest.genesis());
+        doReturn(true).when(activations).isActive(eq(RSKIP220), anyLong());
+
+        Bridge bridge = getBridgeInstance(mock(BridgeSupport.class), activations);
+
+        Assert.assertFalse(bridge.getBtcBlockchainBestChainHeightOnlyAllowsLocalCalls(new Object[0]));
+    }
+
+    @Test
+    public void getBtcBlockchainBestChainHeightOnlyAllowsLocalCalls_beforeRskip220() {
+        ActivationConfig activations = spy(ActivationConfigsForTest.genesis());
+        doReturn(false).when(activations).isActive(eq(RSKIP220), anyLong());
+
+        Bridge bridge = getBridgeInstance(mock(BridgeSupport.class), activations);
+
+        Assert.assertTrue(bridge.getBtcBlockchainBestChainHeightOnlyAllowsLocalCalls(new Object[0]));
+    }
+
     /**
      * Gets a bride instance mocking the transaction and BridgeSupportFactory
      * @param bridgeSupportInstance Provide the bridgeSupport to be used

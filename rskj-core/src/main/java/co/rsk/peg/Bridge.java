@@ -335,7 +335,10 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
 
             // If this is not a local call, then first check whether the function
             // allows for non-local calls
-            if (activations.isActive(ConsensusRule.RSKIP88) && !isLocalCall() && bridgeParsedData.bridgeMethod.onlyAllowsLocalCalls()) {
+            if (activations.isActive(ConsensusRule.RSKIP88) &&
+                !isLocalCall() &&
+                bridgeParsedData.bridgeMethod.onlyAllowsLocalCalls(this, bridgeParsedData.args)) {
+
                 String errorMessage = String.format("Non-local-call to %s. Returning without execution.", bridgeParsedData.bridgeMethod.getFunction().name);
                 logger.info(errorMessage);
                 throw new BridgeIllegalArgumentException(errorMessage);
@@ -565,6 +568,10 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         }
     }
 
+    public boolean getBtcBlockchainBestChainHeightOnlyAllowsLocalCalls(Object[] args) {
+        return !activations.isActive(ConsensusRule.RSKIP220);
+    }
+
     public Integer getBtcBlockchainInitialBlockHeight(Object[] args) throws VMException {
         logger.trace("getBtcBlockchainInitialBlockHeight");
 
@@ -640,8 +647,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         }
     }
 
-    public Long getMinimumLockTxValue(Object[] args)
-    {
+    public Long getMinimumLockTxValue(Object[] args) {
         logger.trace("getMinimumLockTxValue");
         return bridgeSupport.getMinimumLockTxValue().getValue();
     }
@@ -670,29 +676,25 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         }
     }
 
-    public String getFederationAddress(Object[] args)
-    {
+    public String getFederationAddress(Object[] args) {
         logger.trace("getFederationAddress");
 
         return bridgeSupport.getFederationAddress().toBase58();
     }
 
-    public Integer getFederationSize(Object[] args)
-    {
+    public Integer getFederationSize(Object[] args) {
         logger.trace("getFederationSize");
 
         return bridgeSupport.getFederationSize();
     }
 
-    public Integer getFederationThreshold(Object[] args)
-    {
+    public Integer getFederationThreshold(Object[] args) {
         logger.trace("getFederationThreshold");
 
         return bridgeSupport.getFederationThreshold();
     }
 
-    public byte[] getFederatorPublicKey(Object[] args)
-    {
+    public byte[] getFederatorPublicKey(Object[] args) {
         logger.trace("getFederatorPublicKey");
 
         int index = ((BigInteger) args[0]).intValue();
@@ -715,8 +717,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         return bridgeSupport.getFederatorPublicKeyOfType(index, keyType);
     }
 
-    public Long getFederationCreationTime(Object[] args)
-    {
+    public Long getFederationCreationTime(Object[] args) {
         logger.trace("getFederationCreationTime");
 
         // Return the creation time in milliseconds from the epoch
@@ -728,8 +729,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         return bridgeSupport.getFederationCreationBlockNumber();
     }
 
-    public String getRetiringFederationAddress(Object[] args)
-    {
+    public String getRetiringFederationAddress(Object[] args) {
         logger.trace("getRetiringFederationAddress");
 
         Address address = bridgeSupport.getRetiringFederationAddress();
@@ -742,22 +742,19 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         return address.toBase58();
     }
 
-    public Integer getRetiringFederationSize(Object[] args)
-    {
+    public Integer getRetiringFederationSize(Object[] args) {
         logger.trace("getRetiringFederationSize");
 
         return bridgeSupport.getRetiringFederationSize();
     }
 
-    public Integer getRetiringFederationThreshold(Object[] args)
-    {
+    public Integer getRetiringFederationThreshold(Object[] args) {
         logger.trace("getRetiringFederationThreshold");
 
         return bridgeSupport.getRetiringFederationThreshold();
     }
 
-    public byte[] getRetiringFederatorPublicKey(Object[] args)
-    {
+    public byte[] getRetiringFederatorPublicKey(Object[] args) {
         logger.trace("getRetiringFederatorPublicKey");
 
         int index = ((BigInteger) args[0]).intValue();
@@ -794,8 +791,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         return publicKey;
     }
 
-    public Long getRetiringFederationCreationTime(Object[] args)
-    {
+    public Long getRetiringFederationCreationTime(Object[] args) {
         logger.trace("getRetiringFederationCreationTime");
 
         Instant creationTime = bridgeSupport.getRetiringFederationCreationTime();
@@ -879,8 +875,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         );
     }
 
-    public byte[] getPendingFederationHash(Object[] args)
-    {
+    public byte[] getPendingFederationHash(Object[] args) {
         logger.trace("getPendingFederationHash");
 
         byte[] hash = bridgeSupport.getPendingFederationHash();
@@ -893,15 +888,13 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         return hash;
     }
 
-    public Integer getPendingFederationSize(Object[] args)
-    {
+    public Integer getPendingFederationSize(Object[] args) {
         logger.trace("getPendingFederationSize");
 
         return bridgeSupport.getPendingFederationSize();
     }
 
-    public byte[] getPendingFederatorPublicKey(Object[] args)
-    {
+    public byte[] getPendingFederatorPublicKey(Object[] args) {
         logger.trace("getPendingFederatorPublicKey");
 
         int index = ((BigInteger) args[0]).intValue();
@@ -938,15 +931,13 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         return publicKey;
     }
 
-    public Integer getLockWhitelistSize(Object[] args)
-    {
+    public Integer getLockWhitelistSize(Object[] args) {
         logger.trace("getLockWhitelistSize");
 
         return bridgeSupport.getLockWhitelistSize();
     }
 
-    public String getLockWhitelistAddress(Object[] args)
-    {
+    public String getLockWhitelistAddress(Object[] args) {
         logger.trace("getLockWhitelistAddress");
 
         int index = ((BigInteger) args[0]).intValue();
@@ -960,8 +951,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         return entry.address().toBase58();
     }
 
-    public long getLockWhitelistEntryByAddress(Object[] args)
-    {
+    public long getLockWhitelistEntryByAddress(Object[] args) {
         logger.trace("getLockWhitelistEntryByAddress");
 
         String addressBase58;
@@ -984,8 +974,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
                 LOCK_WHITELIST_UNLIMITED_MODE_CODE;
     }
 
-    public Integer addOneOffLockWhitelistAddress(Object[] args)
-    {
+    public Integer addOneOffLockWhitelistAddress(Object[] args) {
         logger.trace("addOneOffLockWhitelistAddress");
 
         String addressBase58;
@@ -1001,8 +990,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         return bridgeSupport.addOneOffLockWhitelistAddress(rskTx, addressBase58, maxTransferValue);
     }
 
-    public Integer addUnlimitedLockWhitelistAddress(Object[] args)
-    {
+    public Integer addUnlimitedLockWhitelistAddress(Object[] args) {
         logger.trace("addUnlimitedLockWhitelistAddress");
 
         String addressBase58;
@@ -1016,8 +1004,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         return bridgeSupport.addUnlimitedLockWhitelistAddress(rskTx, addressBase58);
     }
 
-    public Integer removeLockWhitelistAddress(Object[] args)
-    {
+    public Integer removeLockWhitelistAddress(Object[] args) {
         logger.trace("removeLockWhitelistAddress");
 
         String addressBase58;
@@ -1037,8 +1024,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         return bridgeSupport.setLockWhitelistDisableBlockDelay(rskTx, lockWhitelistDisableBlockDelay);
     }
 
-    public Integer voteFeePerKbChange(Object[] args)
-    {
+    public Integer voteFeePerKbChange(Object[] args) {
         logger.trace("voteFeePerKbChange");
 
         Coin feePerKb;
@@ -1052,8 +1038,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         return bridgeSupport.voteFeePerKbChange(rskTx, feePerKb);
     }
 
-    public long getFeePerKb(Object[] args)
-    {
+    public long getFeePerKb(Object[] args) {
         logger.trace("getFeePerKb");
 
         return bridgeSupport.getFeePerKb().getValue();
@@ -1142,6 +1127,58 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         } catch (Exception e) {
             logger.warn("Exception in registerFastBridgeBtcTransaction", e);
             return BridgeSupport.FAST_BRIDGE_GENERIC_ERROR;
+        }
+    }
+
+    public byte[] getBtcBlockchainBestBlockHeader(Object[] args) {
+        logger.trace("getBtcBlockchainBestBlockHeader");
+
+        try {
+            return this.bridgeSupport.getBtcBlockchainBestBlockHeader();
+        } catch (Exception e) {
+            logger.warn("Exception in getBtcBlockchainBestBlockHeader", e);
+            return ByteUtil.EMPTY_BYTE_ARRAY;
+        }
+    }
+
+    public byte[] getBtcBlockchainBlockHeaderByHash(Object[] args) {
+        logger.trace("getBtcBlockchainBlockHeaderByHash");
+
+        try {
+            byte[] hashBytes = (byte[])args[0];
+            Sha256Hash hash = Sha256Hash.wrap(hashBytes);
+
+            return this.bridgeSupport.getBtcBlockchainBlockHeaderByHash(hash);
+        } catch (Exception e) {
+            logger.warn("Exception in getBtcBlockchainBlockHeaderByHash", e);
+            return ByteUtil.EMPTY_BYTE_ARRAY;
+        }
+    }
+
+    public byte[] getBtcBlockchainBlockHeaderByHeight(Object[] args) {
+        logger.trace("getBtcBlockchainBlockHeaderByHeight");
+
+        try {
+            int height = ((BigInteger) args[0]).intValue();
+
+            return this.bridgeSupport.getBtcBlockchainBlockHeaderByHeight(height);
+        } catch (Exception e) {
+            logger.warn("Exception in getBtcBlockchainBlockHeaderByHeight", e);
+            return ByteUtil.EMPTY_BYTE_ARRAY;
+        }
+    }
+
+    public byte[] getBtcBlockchainParentBlockHeaderByHash(Object[] args) {
+        logger.trace("getBtcBlockchainParentBlockHeaderByHash");
+
+        try {
+            byte[] hashBytes = (byte[])args[0];
+            Sha256Hash hash = Sha256Hash.wrap(hashBytes);
+
+            return this.bridgeSupport.getBtcBlockchainParentBlockHeaderByHash(hash);
+        } catch (Exception e) {
+            logger.warn("Exception in getBtcBlockchainParentBlockHeaderByHash", e);
+            return ByteUtil.EMPTY_BYTE_ARRAY;
         }
     }
 
