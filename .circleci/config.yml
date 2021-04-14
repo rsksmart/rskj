@@ -7,7 +7,6 @@ executors:
     environment:
       _JAVA_OPTIONS: "-Xmx3G -Xms2G"
     working_directory: /app
-    resource_class: medium+
   sonarqube-executor:
     docker:
       - image: openjdk:11-jdk
