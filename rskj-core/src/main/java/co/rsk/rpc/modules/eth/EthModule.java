@@ -191,7 +191,7 @@ public class EthModule
                     code = new byte[0];
                 }
 
-                s = TypeConverter.toJsonHex(code);
+                s = toUnformattedJsonHex(code);
             }
 
             return s;
