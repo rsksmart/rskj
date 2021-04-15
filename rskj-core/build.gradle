@@ -107,6 +107,7 @@ javadoc {
 }
 
 def generatedResources = "$buildDir/generated-resources"
+
 sourceSets {
     main {
         resources {
@@ -118,7 +119,7 @@ sourceSets {
 task generateResources {
     doLast {
         mkdir generatedResources
-        def generated = new File(generatedResources, 'build-info.properties')
+        def generated = new File(generatedResources as String, 'build-info.properties')
         def commitHash = gitCommitHash()
         def currentBranch = gitCurrentBranch()
         generated.text = """
@@ -136,12 +137,12 @@ tasks.withType(Jar) {
 }
 
 task sourcesJar(type: Jar, dependsOn: classes) {
-    classifier = 'sources'
+    archiveClassifier.set('sources')
     from sourceSets.main.allSource
 }
 
 task javadocJar(type: Jar) {
-    classifier = "javadoc"
+    archiveClassifier.set('javadoc')
     from javadoc
 }
 
@@ -151,7 +152,7 @@ jar {
     def currentBranch = gitCurrentBranch()
     manifest {
         attributes  'Git-Commit': commitHash,
-                'Git-Branch': currentBranch
+                    'Git-Branch': currentBranch
     }
     from sourceSets.main.output.classesDirs
     from sourceSets.main.output.resourcesDir
@@ -160,12 +161,12 @@ jar {
 
 task generatePom(dependsOn: jar) {
     def jarName = jar.outputs.files.singleFile.name
-    def pomFile = "$libsDir/${jarName.take(jarName.lastIndexOf('.'))}.pom"
-    ext.file = new File(pomFile)
+    def pomFile = libsDirectory.dir("${jarName.take(jarName.lastIndexOf('.'))}.pom").get().asFile
+    ext.file = pomFile
     doLast {
         pom {
             project {
-                groupId project.group
+                groupId project.group as String
                 artifactId project.name
                 version project.version
 
@@ -182,18 +183,31 @@ task generatePom(dependsOn: jar) {
 }
 
 task fatJar(type: Jar, dependsOn: jar) {
+    archiveClassifier.set('all')
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+
     manifest {
         attributes 'Main-Class': "$mainClassName"
     }
-    exclude "META-INF/*.SF", "META-INF/*.DSA", "META-INF/*.RSA"
-    classifier = 'all'
+
+    exclude 'META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/*.RSA'
+
+    exclude 'META-INF/NOTICE'
+    exclude 'META-INF/NOTICE.md'
+    exclude 'META-INF/NOTICE.txt'
+    exclude 'META-INF/LICENSE'
+    exclude 'META-INF/LICENSE.md'
+    exclude 'META-INF/LICENSE.txt'
+
+    exclude 'module-info.class'
+
     from { configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) } }
     with jar
 }
 
 tasks.withType(Tar) {
     compression = Compression.GZIP
-    extension = 'tar.gz'
+    archiveExtension.set('tar.gz')
 }
 
 artifacts {
