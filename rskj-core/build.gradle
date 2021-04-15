@@ -175,6 +175,7 @@ javadoc {
 }
 
 def generatedResources = "$buildDir/generated-resources"
+
 sourceSets {
     main {
         resources {
@@ -186,7 +187,7 @@ sourceSets {
 task generateResources {
     doLast {
         mkdir generatedResources
-        def generated = new File(generatedResources, 'build-info.properties')
+        def generated = new File(generatedResources as String, 'build-info.properties')
         def commitHash = gitCommitHash()
         def currentBranch = gitCurrentBranch()
         generated.text = """
@@ -212,7 +213,7 @@ jar {
     def currentBranch = gitCurrentBranch()
     manifest {
         attributes  'Git-Commit': commitHash,
-                'Git-Branch': currentBranch
+                    'Git-Branch': currentBranch
     }
     from sourceSets.main.output.classesDirs
     from sourceSets.main.output.resourcesDir
@@ -221,12 +222,12 @@ jar {
 
 task generatePom(dependsOn: jar) {
     def jarName = jar.outputs.files.singleFile.name
-    def pomFile = "$libsDir/${jarName.take(jarName.lastIndexOf('.'))}.pom"
-    ext.file = new File(pomFile)
+    def pomFile = libsDirectory.dir("${jarName.take(jarName.lastIndexOf('.'))}.pom").get().asFile
+    ext.file = pomFile
     doLast {
         pom {
             project {
-                groupId project.group
+                groupId project.group as String
                 artifactId project.name
                 version project.version
 
@@ -264,7 +265,7 @@ task fatJar(type: Jar, dependsOn: jar) {
 
 tasks.withType(Tar) {
     compression = Compression.GZIP
-    archiveExtension = 'tar.gz'
+    archiveExtension.set('tar.gz')
 }
 
 artifacts {
