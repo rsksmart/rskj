@@ -108,7 +108,7 @@ public class BridgeConstants {
 
     public Coin getLegacyMinimumPegoutTxValueInSatoshis() { return legacyMinimumPegoutTxValueInSatoshis; }
 
-    public Coin getMinimumPegoutTxValueAfterIrisTxValue() { return minimumPegoutTxValueInSatoshis; }
+    public Coin getMinimumPegoutTxValueInSatoshis() { return minimumPegoutTxValueInSatoshis; }
 
     public long getFederationActivationAge() { return federationActivationAge; }
 
