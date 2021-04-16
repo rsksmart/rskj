@@ -819,9 +819,16 @@ public class BridgeSupport {
      * @throws IOException
      */
     private boolean requestRelease(Address destinationAddress, Coin value, Transaction rskTx) throws IOException {
-        Coin minimumPegoutTxValue = activations.isActive(RSKIP219) ? bridgeConstants.getMinimumPegoutTxValueAfterIrisTxValue() : bridgeConstants.getLegacyMinimumPegoutTxValueInSatoshis();
-        if (value.isLessThan(minimumPegoutTxValue)) {
-            return false;
+        if (activations.isActive(RSKIP219)) {
+            // Since Iris the peg-out the rule is that the minimum is inclusive
+            if (value.isLessThan(bridgeConstants.getMinimumPegoutTxValueInSatoshis())) {
+                return false;
+            }
+        } else {
+            // For legacy peg-outs the rule stated that the minimum was exclusive
+            if (!value.isGreaterThan(bridgeConstants.getLegacyMinimumPegoutTxValueInSatoshis())) {
+                return false;
+            }
         }
 
         if (activations.isActive(ConsensusRule.RSKIP146)) {
