@@ -24,7 +24,6 @@ import co.rsk.bitcoinj.script.RedeemScriptParser;
 import co.rsk.bitcoinj.script.RedeemScriptParser.MultiSigType;
 import co.rsk.bitcoinj.script.RedeemScriptParserFactory;
 import co.rsk.bitcoinj.script.Script;
-import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.script.ScriptChunk;
 import co.rsk.bitcoinj.wallet.Wallet;
 import co.rsk.config.BridgeConstants;
@@ -153,7 +152,7 @@ public class BridgeUtils {
      * @param activations the network HF activations configuration
      * @return true if this is a valid peg-in transaction
      */
-    public static boolean isPegInTx(
+    public static boolean isValidPegInTx(
         BtcTransaction tx,
         List<Federation> activeFederations,
         Script retiredFederationP2SHScript,
@@ -198,14 +197,14 @@ public class BridgeUtils {
      * @param activations the network HF activations configuration
      * @return true if this is a valid peg-in transaction
      */
-    public static boolean isPegInTx(
+    public static boolean isValidPegInTx(
         BtcTransaction tx,
         Federation federation,
         Context btcContext,
         BridgeConstants bridgeConstants,
         ActivationConfig.ForBlock activations) {
 
-        return isPegInTx(
+        return isValidPegInTx(
             tx,
             Collections.singletonList(federation),
             null,
@@ -261,7 +260,7 @@ public class BridgeUtils {
         }
         boolean moveFromRetired = retiredFederationP2SHScript != null && isPegOutTx(btcTx, retiredFederationP2SHScript);
         boolean moveFromRetiring = retiringFederation != null && isPegOutTx(btcTx, retiringFederation);
-        boolean moveToActive = isPegInTx(btcTx, activeFederation, btcContext, bridgeConstants, activations);
+        boolean moveToActive = isValidPegInTx(btcTx, activeFederation, btcContext, bridgeConstants, activations);
 
         return (moveFromRetired || moveFromRetiring) && moveToActive;
     }
