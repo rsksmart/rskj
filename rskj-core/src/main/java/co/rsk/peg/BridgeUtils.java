@@ -24,6 +24,7 @@ import co.rsk.bitcoinj.script.RedeemScriptParser;
 import co.rsk.bitcoinj.script.RedeemScriptParser.MultiSigType;
 import co.rsk.bitcoinj.script.RedeemScriptParserFactory;
 import co.rsk.bitcoinj.script.Script;
+import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.script.ScriptChunk;
 import co.rsk.bitcoinj.wallet.Wallet;
 import co.rsk.config.BridgeConstants;
@@ -172,11 +173,29 @@ public class BridgeUtils {
             if (retiredFederationP2SHScript != null && scriptCorrectlySpendsTx(tx, index, retiredFederationP2SHScript)) {
                 return false;
             }
+
+            // Check if the registered utxo is not change from an utxo spent from either a fast bridge federation,
+            // erp federation, or even a retired fast bridge or erp federation
+            if (activations.isActive(ConsensusRule.RSKIP201)) {
+                RedeemScriptParser redeemScriptParser = RedeemScriptParserFactory.get(tx.getInput(index).getScriptSig().getChunks());
+                try {
+                    Script inputStandardRedeemScript = redeemScriptParser.extractStandardRedeemScript();
+                    if (activeFederations.stream().anyMatch(federation -> federation.getStandardRedeemScript().equals(inputStandardRedeemScript))) {
+                        return false;
+                    }
+
+                    Script outputScript = ScriptBuilder.createP2SHOutputScript(inputStandardRedeemScript);
+                    if (outputScript.equals(retiredFederationP2SHScript)) {
+                        return false;
+                    }
+                } catch (ScriptException e) {
+                    // There is no redeem script, could be a peg-in from a P2PKH address
+                }
+            }
         }
 
         Wallet federationsWallet = BridgeUtils.getFederationsNoSpendWallet(btcContext, activeFederations, false, null);
         Coin valueSentToMe = tx.getValueSentToMe(federationsWallet);
-
         Coin minimumPegInTxValue = activations.isActive(ConsensusRule.RSKIP219) ?
             bridgeConstants.getMinimumPeginTxValueInSatoshis() :
             bridgeConstants.getlegacyMinimumPeginTxValueInSatoshis();
