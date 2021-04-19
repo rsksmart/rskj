@@ -427,7 +427,7 @@ public class BridgeSupport {
             return TxType.MIGRATION;
         }
 
-        if (BridgeUtils.isPegInTx(
+        if (BridgeUtils.isValidPegInTx(
             btcTx,
             getLiveFederations(),
             retiredFederationP2SHScript,

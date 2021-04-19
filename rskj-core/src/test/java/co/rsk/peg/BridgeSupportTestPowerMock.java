@@ -1509,7 +1509,7 @@ public class BridgeSupportTestPowerMock {
         PowerMockito.spy(BridgeUtils.class);
         PowerMockito.doReturn(false).when(
             BridgeUtils.class,
-            "isPegInTx",
+            "isValidPegInTx",
             any(BtcTransaction.class),
             anyList(),
             nullable(Script.class),
