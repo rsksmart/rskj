@@ -118,6 +118,16 @@ public class TrieKeySlice {
         return new TrieKeySlice(expandedKey, 0, expandedKey.length);
     }
 
+    public boolean equalPath(TrieKeySlice t) {
+        if (this.length()!=t.length())
+            return false;
+        //return Arrays.equals(this.expandedKey,this.offset,this.limit,t.expandedKey,t.offset,t.limit);
+        int len = length();
+        for (int i= 0;i<len;i++)
+            if (this.expandedKey[this.offset+i]!=t.expandedKey[t.offset+i])
+                return false;
+        return true;
+    }
     public static TrieKeySlice empty() {
         return new TrieKeySlice(new byte[0], 0, 0);
     }

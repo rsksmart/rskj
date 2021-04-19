@@ -97,6 +97,7 @@ import org.ethereum.core.genesis.GenesisLoaderImpl;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.signature.Secp256k1;
 import org.ethereum.datasource.DataSourceWithCache;
+import org.ethereum.datasource.DataSourceWithFullReadCache;
 import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.datasource.LevelDbDataSource;
 import org.ethereum.db.IndexedBlockStore;
@@ -932,7 +933,7 @@ public class RskContext implements NodeBootstrapper {
             } catch (IOException e) {
                 logger.error("Unable to check if GC was ever enabled", e);
             }
-            newTrieStore = buildTrieStore(trieStorePath);
+            newTrieStore = buildTrieStore(trieStorePath,true); // add trie read-cache
         }
         return newTrieStore;
     }
@@ -1010,12 +1011,15 @@ public class RskContext implements NodeBootstrapper {
         );
     }
 
-    protected TrieStore buildTrieStore(Path trieStorePath) {
+    protected TrieStore buildTrieStore(Path trieStorePath,boolean worldStateCache) {
         int statesCacheSize = getRskSystemProperties().getStatesCacheSize();
         KeyValueDataSource ds = LevelDbDataSource.makeDataSource(trieStorePath);
 
         if (statesCacheSize != 0) {
             ds = new DataSourceWithCache(ds, statesCacheSize);
+        }
+        if (worldStateCache) {
+            ds = new DataSourceWithFullReadCache(ds, statesCacheSize);
         }
 
         return new TrieStoreImpl(ds);
@@ -1048,7 +1052,7 @@ public class RskContext implements NodeBootstrapper {
         return new MultiTrieStore(
                 currentEpoch + 1,
                 numberOfEpochs,
-                name -> buildTrieStore(databasePath.resolve(namePrefix + name)),
+                name -> buildTrieStore(databasePath.resolve(namePrefix + name),false),
                 disposedEpoch -> FileUtil.recursiveDelete(databasePath.resolve(namePrefix + disposedEpoch).toString())
         );
     }
