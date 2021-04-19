@@ -38,11 +38,12 @@ repositories {
 }
 
 sourceCompatibility = 1.8
+targetCompatibility = 1.8
 
 mainClassName = 'co.rsk.Start'
 applicationDefaultJvmArgs = ["-server", "-Xss32m", "-Xms3G", "-XX:+UseCompressedOops", "-XX:-OmitStackTraceInFastThrow"]
 
-tasks.withType(JavaCompile){
+tasks.withType(JavaCompile) {
     options.warnings = false
     options.encoding = 'UTF-8'
     options.compilerArgs << '-XDignore.symbol.file'
@@ -51,6 +52,9 @@ tasks.withType(JavaCompile){
 tasks.withType(AbstractArchiveTask) {
     preserveFileTimestamps = false
     reproducibleFileOrder = true
+
+    dirMode = 0775
+    fileMode = 0664
 }
 
 ext {
@@ -189,20 +193,13 @@ build.branch=$currentBranch
     }
 }
 
-tasks.withType(Jar) {
-    preserveFileTimestamps = false
-    reproducibleFileOrder = true
-    dirMode = 0775
-    fileMode = 0664
-}
-
 task sourcesJar(type: Jar, dependsOn: classes) {
-    archiveClassifier.set('sources')
+    archiveClassifier = 'sources'
     from sourceSets.main.allSource
 }
 
 task javadocJar(type: Jar) {
-    archiveClassifier.set('javadoc')
+    archiveClassifier = 'javadoc'
     from javadoc
 }
 
@@ -243,7 +240,7 @@ task generatePom(dependsOn: jar) {
 }
 
 task fatJar(type: Jar, dependsOn: jar) {
-    archiveClassifier.set('all')
+    archiveClassifier = 'all'
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 
     manifest {
@@ -267,7 +264,7 @@ task fatJar(type: Jar, dependsOn: jar) {
 
 tasks.withType(Tar) {
     compression = Compression.GZIP
-    archiveExtension.set('tar.gz')
+    archiveExtension = 'tar.gz'
 }
 
 artifacts {
