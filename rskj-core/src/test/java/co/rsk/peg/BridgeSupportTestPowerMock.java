@@ -1507,21 +1507,40 @@ public class BridgeSupportTestPowerMock {
         when(mockFactory.newInstance(any(), any(), any(), any())).thenReturn(mockBtcBlockStore);
 
         PowerMockito.spy(BridgeUtils.class);
-        PowerMockito.doReturn(false).when(BridgeUtils.class, "isPegInTxAndValidateMinimum", any(BtcTransaction.class), anyList(), nullable(Script.class), any(Context.class), any(BridgeConstants.class), any(ActivationConfig.ForBlock.class));
-        PowerMockito.doReturn(true).when(BridgeUtils.class, "isMigrationTx", any(BtcTransaction.class), any(Federation.class), any(Federation.class), isNull(), any(Context.class), any(BridgeConstants.class), any(ActivationConfig.ForBlock.class));
+        PowerMockito.doReturn(false).when(
+            BridgeUtils.class,
+            "isPegInTx",
+            any(BtcTransaction.class),
+            anyList(),
+            nullable(Script.class),
+            any(Context.class),
+            any(BridgeConstants.class),
+            any(ActivationConfig.ForBlock.class)
+        );
+        PowerMockito.doReturn(true).when(
+            BridgeUtils.class,
+            "isMigrationTx",
+            any(BtcTransaction.class),
+            any(Federation.class),
+            any(Federation.class),
+            isNull(),
+            any(Context.class),
+            any(BridgeConstants.class),
+            any(ActivationConfig.ForBlock.class)
+        );
 
         BridgeSupport bridgeSupport = new BridgeSupport(
-                bridgeConstants,
-                mockBridgeStorageProvider,
-                mock(BridgeEventLogger.class),
-                mock(BtcLockSenderProvider.class),
-                mock(PeginInstructionsProvider.class),
-                mock(Repository.class),
-                mock(Block.class),
-                btcContext,
-                mockFederationSupport,
-                mockFactory,
-                activations
+            bridgeConstants,
+            mockBridgeStorageProvider,
+            mock(BridgeEventLogger.class),
+            mock(BtcLockSenderProvider.class),
+            mock(PeginInstructionsProvider.class),
+            mock(Repository.class),
+            mock(Block.class),
+            btcContext,
+            mockFederationSupport,
+            mockFactory,
+            activations
         );
 
         bridgeSupport.registerBtcTransaction(mock(Transaction.class), releaseWithChangeTx.bitcoinSerialize(), 1, partialMerkleTree.bitcoinSerialize());

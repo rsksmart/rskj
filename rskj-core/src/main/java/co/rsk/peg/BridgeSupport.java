@@ -427,13 +427,13 @@ public class BridgeSupport {
             return TxType.MIGRATION;
         }
 
-        if (BridgeUtils.isPegInTxAndValidateMinimum(
-                btcTx,
-                getLiveFederations(),
-                retiredFederationP2SHScript,
-                btcContext,
-                bridgeConstants,
-                activations
+        if (BridgeUtils.isPegInTx(
+            btcTx,
+            getLiveFederations(),
+            retiredFederationP2SHScript,
+            btcContext,
+            bridgeConstants,
+            activations
         )) {
             return TxType.PEGIN;
         }
