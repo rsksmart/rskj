@@ -75,7 +75,8 @@ public class DataSourceWithFullReadCache implements KeyValueDataSource {
 
         try {
             InputStream in;
-            String fileName = "C:\\s\\RSK\\Repos\\block-processor\\f3210000.txt";
+            //String fileName = "C:\\s\\RSK\\Repos\\block-processor\\f3210000.txt";
+            String fileName = "f3210000.bin";
             in = new FileInputStream(fileName);
             cache = new HashMap<>();
             try {
