@@ -141,31 +141,6 @@ public class BridgeUtils {
         }
     }
 
-    /**
-     * Indicates whether a tx is a valid lock tx or not, checking the first input's script sig
-     * @param tx
-     * @return
-     */
-    public static boolean isValidLockTx(BtcTransaction tx) {
-        if (tx.getInputs().size() == 0) {
-            return false;
-        }
-        // This indicates that the tx is a P2PKH transaction which is the only one we support for now
-        return tx.getInput(0).getScriptSig().getChunks().size() == 2;
-    }
-
-    /**
-     * Will return a valid scriptsig for the first input
-     * @param tx
-     * @return
-     */
-    public static Optional<Script> getFirstInputScriptSig(BtcTransaction tx) {
-        if (!isValidLockTx(tx)) {
-            return Optional.empty();
-        }
-        return Optional.of(tx.getInput(0).getScriptSig());
-    }
-
     public static Coin getValueSentInPeginTx(
             BtcTransaction tx,
             List<Federation> activeFederations,
