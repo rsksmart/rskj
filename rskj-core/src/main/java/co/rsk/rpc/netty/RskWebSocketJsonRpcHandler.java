@@ -28,10 +28,13 @@ import co.rsk.rpc.modules.eth.subscribe.EthSubscribeRequest;
 import co.rsk.rpc.modules.eth.subscribe.EthUnsubscribeRequest;
 import io.netty.buffer.ByteBufHolder;
 import io.netty.buffer.ByteBufInputStream;
+import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
+import io.netty.handler.codec.http.websocketx.CloseWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
+import io.netty.handler.timeout.WriteTimeoutException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -48,15 +51,15 @@ import java.io.IOException;
  */
 
 @Sharable
-public class RskJsonRpcHandler
+public class RskWebSocketJsonRpcHandler
         extends SimpleChannelInboundHandler<ByteBufHolder>
         implements RskJsonRpcRequestVisitor {
-    private static final Logger LOGGER = LoggerFactory.getLogger(RskJsonRpcHandler.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(RskWebSocketJsonRpcHandler.class);
 
     private final EthSubscriptionNotificationEmitter emitter;
     private final JsonRpcSerializer serializer;
 
-    public RskJsonRpcHandler(EthSubscriptionNotificationEmitter emitter, JsonRpcSerializer serializer) {
+    public RskWebSocketJsonRpcHandler(EthSubscriptionNotificationEmitter emitter, JsonRpcSerializer serializer) {
         this.emitter = emitter;
         this.serializer = serializer;
     }

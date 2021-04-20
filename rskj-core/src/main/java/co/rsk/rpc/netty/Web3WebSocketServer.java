@@ -29,18 +29,21 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.codec.http.HttpServerCodec;
 import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolHandler;
+import io.netty.handler.timeout.WriteTimeoutHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.net.InetAddress;
+import java.util.concurrent.TimeUnit;
 
 public class Web3WebSocketServer implements InternalService {
     private static final Logger logger = LoggerFactory.getLogger(Web3WebSocketServer.class);
+    public static final int WRITE_TIMEOUT_SECONDS = 5;
 
     private final InetAddress host;
     private final int port;
-    private final RskJsonRpcHandler jsonRpcHandler;
+    private final RskWebSocketJsonRpcHandler webSocketJsonRpcHandler;
     private final JsonRpcWeb3ServerHandler web3ServerHandler;
     private final EventLoopGroup bossGroup;
     private final EventLoopGroup workerGroup;
@@ -49,11 +52,11 @@ public class Web3WebSocketServer implements InternalService {
     public Web3WebSocketServer(
             InetAddress host,
             int port,
-            RskJsonRpcHandler jsonRpcHandler,
+            RskWebSocketJsonRpcHandler webSocketJsonRpcHandler,
             JsonRpcWeb3ServerHandler web3ServerHandler) {
         this.host = host;
         this.port = port;
-        this.jsonRpcHandler = jsonRpcHandler;
+        this.webSocketJsonRpcHandler = webSocketJsonRpcHandler;
         this.web3ServerHandler = web3ServerHandler;
         this.bossGroup = new NioEventLoopGroup();
         this.workerGroup = new NioEventLoopGroup();
@@ -71,8 +74,9 @@ public class Web3WebSocketServer implements InternalService {
                     ChannelPipeline p = ch.pipeline();
                     p.addLast(new HttpServerCodec());
                     p.addLast(new HttpObjectAggregator(1024 * 1024 * 5));
-                    p.addLast(new WebSocketServerProtocolHandler("/websocket"));
-                    p.addLast(jsonRpcHandler);
+                    p.addLast(new WriteTimeoutHandler(WRITE_TIMEOUT_SECONDS, TimeUnit.SECONDS));
+                    p.addLast(new RskWebSocketServerProtocolHandler("/websocket"));
+                    p.addLast(webSocketJsonRpcHandler);
                     p.addLast(web3ServerHandler);
                     p.addLast(new Web3ResultWebSocketResponseHandler());
                 }

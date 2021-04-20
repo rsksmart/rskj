@@ -71,7 +71,7 @@ public class Web3WebSocketServerTest {
         int randomPort = 9998;//new ServerSocket(0).getLocalPort();
 
         List<ModuleDescription> filteredModules = Collections.singletonList(new ModuleDescription("web3", "1.0", true, Collections.emptyList(), Collections.emptyList()));
-        RskJsonRpcHandler handler = new RskJsonRpcHandler(null, new JacksonBasedRpcSerializer());
+        RskWebSocketJsonRpcHandler handler = new RskWebSocketJsonRpcHandler(null, new JacksonBasedRpcSerializer());
         JsonRpcWeb3ServerHandler serverHandler = new JsonRpcWeb3ServerHandler(web3Mock, filteredModules);
 
         Web3WebSocketServer websocketServer = new Web3WebSocketServer(InetAddress.getLoopbackAddress(), randomPort, handler, serverHandler);
