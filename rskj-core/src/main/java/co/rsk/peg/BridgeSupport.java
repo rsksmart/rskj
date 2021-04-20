@@ -2286,7 +2286,7 @@ public class BridgeSupport {
      * @return the minimum amount of satoshis a user should send to the federation.
      */
     public Coin getMinimumPeginTxValue() {
-        return activations.isActive(RSKIP219) ? bridgeConstants.getMinimumPeginTxValueInSatoshis() : bridgeConstants.getlegacyMinimumPeginTxValueInSatoshis();
+        return activations.isActive(RSKIP219) ? bridgeConstants.getMinimumPeginTxValueInSatoshis() : bridgeConstants.getLegacyMinimumPeginTxValueInSatoshis();
     }
 
     /**
