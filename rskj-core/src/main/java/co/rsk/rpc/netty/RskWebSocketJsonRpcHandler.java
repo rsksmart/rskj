@@ -26,6 +26,7 @@ import co.rsk.rpc.modules.RskJsonRpcRequest;
 import co.rsk.rpc.modules.RskJsonRpcRequestVisitor;
 import co.rsk.rpc.modules.eth.subscribe.EthSubscribeRequest;
 import co.rsk.rpc.modules.eth.subscribe.EthUnsubscribeRequest;
+import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufHolder;
 import io.netty.buffer.ByteBufInputStream;
 import io.netty.channel.ChannelFutureListener;
@@ -66,10 +67,11 @@ public class RskWebSocketJsonRpcHandler
 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, ByteBufHolder msg) {
+        ByteBuf content = null;
+
         try {
-            RskJsonRpcRequest request = serializer.deserializeRequest(
-                    new ByteBufInputStream(msg.copy().content())
-            );
+            content = msg.content().copy();
+            RskJsonRpcRequest request = serializer.deserializeRequest(new ByteBufInputStream(content));
 
             // TODO(mc) we should support the ModuleDescription method filters
             JsonRpcResultOrError resultOrError = request.accept(this, ctx);
@@ -78,10 +80,13 @@ public class RskWebSocketJsonRpcHandler
             return;
         } catch (IOException e) {
             LOGGER.trace("Not a known or valid JsonRpcRequest", e);
+
+            // We need to release this resource, netty only takes care about 'ByteBufHolder msg'
+            content.release(content.refCnt());
         }
 
         // delegate to the next handler if the message can't be matched to a known JSON-RPC request
-        ctx.fireChannelRead(msg.retain());
+        ctx.fireChannelRead(msg);
     }
 
     @Override
