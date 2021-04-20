@@ -104,7 +104,7 @@ public class BridgeConstants {
 
     public int getMaxBtcHeadersPerRskBlock() { return maxBtcHeadersPerRskBlock; }
 
-    public Coin getlegacyMinimumPeginTxValueInSatoshis() { return legacyMinimumPeginTxValueInSatoshis; }
+    public Coin getLegacyMinimumPeginTxValueInSatoshis() { return legacyMinimumPeginTxValueInSatoshis; }
 
     public Coin getMinimumPeginTxValueInSatoshis() { return minimumPeginTxValueInSatoshis; }
 

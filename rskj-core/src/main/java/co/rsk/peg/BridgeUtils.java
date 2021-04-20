@@ -198,7 +198,7 @@ public class BridgeUtils {
         Coin valueSentToMe = tx.getValueSentToMe(federationsWallet);
         Coin minimumPegInTxValue = activations.isActive(ConsensusRule.RSKIP219) ?
             bridgeConstants.getMinimumPeginTxValueInSatoshis() :
-            bridgeConstants.getlegacyMinimumPeginTxValueInSatoshis();
+            bridgeConstants.getLegacyMinimumPeginTxValueInSatoshis();
 
         if (valueSentToMe.isLessThan(minimumPegInTxValue)) {
             logger.warn("[btctx:{}] Someone sent to the federation less than {} satoshis", tx.getHash(), minimumPegInTxValue);

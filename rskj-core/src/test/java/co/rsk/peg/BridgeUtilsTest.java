@@ -127,7 +127,7 @@ public class BridgeUtilsTest {
         when(actForBlock.isActive(any(ConsensusRule.class))).thenReturn(false);
 
         // Tx sending less than the minimum allowed, not a peg-in tx
-        Coin minimumLockValue = bridgeConstants.getlegacyMinimumPeginTxValueInSatoshis();
+        Coin minimumLockValue = bridgeConstants.getLegacyMinimumPeginTxValueInSatoshis();
         BtcTransaction tx = new BtcTransaction(networkParameters);
         tx.addOutput(minimumLockValue.subtract(Coin.CENT), federationAddress);
         tx.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
@@ -230,7 +230,7 @@ public class BridgeUtilsTest {
         BtcTransaction tx = new BtcTransaction(networkParameters);
 
         // Get a value in between pre and post iris minimum
-        Coin minimumPegInValueBeforeIris = bridgeConstants.getlegacyMinimumPeginTxValueInSatoshis();
+        Coin minimumPegInValueBeforeIris = bridgeConstants.getLegacyMinimumPeginTxValueInSatoshis();
         Coin minimumPegInValueAfterIris = bridgeConstants.getMinimumPeginTxValueInSatoshis();
         Coin valueLock = minimumPegInValueAfterIris.plus((minimumPegInValueBeforeIris.subtract(minimumPegInValueAfterIris)).div(2));
         assertTrue(valueLock.isLessThan(minimumPegInValueBeforeIris));
@@ -254,7 +254,7 @@ public class BridgeUtilsTest {
         BtcTransaction tx = new BtcTransaction(networkParameters);
 
         // Get a value in between pre and post iris minimum
-        Coin minimumPegInValueBeforeIris = bridgeConstants.getlegacyMinimumPeginTxValueInSatoshis();
+        Coin minimumPegInValueBeforeIris = bridgeConstants.getLegacyMinimumPeginTxValueInSatoshis();
         Coin minimumPegInValueAfterIris = bridgeConstants.getMinimumPeginTxValueInSatoshis();
         Coin valueLock = minimumPegInValueAfterIris.plus((minimumPegInValueBeforeIris.subtract(minimumPegInValueAfterIris)).div(2));
         assertTrue(valueLock.isGreaterThan(minimumPegInValueAfterIris));
