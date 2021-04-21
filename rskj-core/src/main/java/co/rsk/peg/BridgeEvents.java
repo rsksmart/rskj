@@ -10,27 +10,27 @@ public enum BridgeEvents {
                     new CallTransaction.Param(true, Fields.RECEIVER, SolidityType.getType(SolidityType.ADDRESS)),
                     new CallTransaction.Param(false, "btcTxHash", SolidityType.getType(SolidityType.BYTES32)),
                     new CallTransaction.Param(false, "senderBtcAddress", SolidityType.getType(SolidityType.STRING)),
-                    new CallTransaction.Param(false, Fields.AMOUNT, SolidityType.getType(SolidityType.INT))
+                    new CallTransaction.Param(false, Fields.AMOUNT, SolidityType.getType(SolidityType.INT256))
             }
     ),
     PEGIN_BTC("pegin_btc",
         new CallTransaction.Param[]{
             new CallTransaction.Param(true, Fields.RECEIVER, SolidityType.getType(SolidityType.ADDRESS)),
             new CallTransaction.Param(true, "btcTxHash", SolidityType.getType(SolidityType.BYTES32)),
-            new CallTransaction.Param(false, Fields.AMOUNT, SolidityType.getType(SolidityType.INT)),
-            new CallTransaction.Param(false, "protocolVersion", SolidityType.getType(SolidityType.INT))
+            new CallTransaction.Param(false, Fields.AMOUNT, SolidityType.getType(SolidityType.INT256)),
+            new CallTransaction.Param(false, "protocolVersion", SolidityType.getType(SolidityType.INT256))
         }
     ),
     REJECTED_PEGIN("rejected_pegin",
             new CallTransaction.Param[]{
-                    new CallTransaction.Param(true, "btcTxHash", SolidityType.getType("bytes32")),
-                    new CallTransaction.Param(false, "reason", SolidityType.getType("int"))
+                    new CallTransaction.Param(true, "btcTxHash", SolidityType.getType(SolidityType.BYTES32)),
+                    new CallTransaction.Param(false, "reason", SolidityType.getType(SolidityType.INT256))
             }
     ),
     UNREFUNDABLE_PEGIN("unrefundable_pegin",
             new CallTransaction.Param[]{
-                    new CallTransaction.Param(true, "btcTxHash", SolidityType.getType("bytes32")),
-                    new CallTransaction.Param(false, "reason", SolidityType.getType("int"))
+                    new CallTransaction.Param(true, "btcTxHash", SolidityType.getType(SolidityType.BYTES32)),
+                    new CallTransaction.Param(false, "reason", SolidityType.getType(SolidityType.INT256))
             }
     ),
     UPDATE_COLLECTIONS("update_collections",
@@ -64,21 +64,21 @@ public enum BridgeEvents {
             new CallTransaction.Param[]{
                     new CallTransaction.Param(true, "rskTxHash", SolidityType.getType(SolidityType.BYTES32)),
                     new CallTransaction.Param(true, "btcTxHash", SolidityType.getType(SolidityType.BYTES32)),
-                    new CallTransaction.Param(false, Fields.AMOUNT, SolidityType.getType(SolidityType.UINT))
+                    new CallTransaction.Param(false, Fields.AMOUNT, SolidityType.getType(SolidityType.INT256))
             }
     ),
     RELEASE_REQUEST_RECEIVED("release_request_received",
             new CallTransaction.Param[]{
                     new CallTransaction.Param(true, Fields.SENDER, SolidityType.getType(SolidityType.ADDRESS)),
                     new CallTransaction.Param(false, "btcDestinationAddress", SolidityType.getType(SolidityType.BYTES)),
-                    new CallTransaction.Param(false, Fields.AMOUNT, SolidityType.getType(SolidityType.UINT))
+                    new CallTransaction.Param(false, Fields.AMOUNT, SolidityType.getType(SolidityType.INT256))
             }
     ),
     RELEASE_REQUEST_REJECTED("release_request_rejected",
             new CallTransaction.Param[]{
                     new CallTransaction.Param(true, Fields.SENDER, SolidityType.getType(SolidityType.ADDRESS)),
-                    new CallTransaction.Param(false, Fields.AMOUNT, SolidityType.getType(SolidityType.UINT)),
-                    new CallTransaction.Param(false, Fields.REASON, SolidityType.getType(SolidityType.INT))
+                    new CallTransaction.Param(false, Fields.AMOUNT, SolidityType.getType(SolidityType.INT256)),
+                    new CallTransaction.Param(false, Fields.REASON, SolidityType.getType(SolidityType.INT256))
             }
     );
 
