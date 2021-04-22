@@ -99,6 +99,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP186;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP219;
 
 /**
  * Helper class to move funds from btc to rsk and rsk to btc
@@ -426,7 +427,14 @@ public class BridgeSupport {
             return TxType.MIGRATION;
         }
 
-        if (BridgeUtils.isPegInTx(btcTx, getLiveFederations(), retiredFederationP2SHScript, btcContext, bridgeConstants)) {
+        if (BridgeUtils.isValidPegInTx(
+            btcTx,
+            getLiveFederations(),
+            retiredFederationP2SHScript,
+            btcContext,
+            bridgeConstants,
+            activations
+        )) {
             return TxType.PEGIN;
         }
 
@@ -436,7 +444,8 @@ public class BridgeSupport {
             getRetiringFederation(),
             retiredFederationP2SHScript,
             btcContext,
-            bridgeConstants
+            bridgeConstants,
+            activations
         )) {
             return TxType.MIGRATION;
         }
@@ -810,8 +819,16 @@ public class BridgeSupport {
      * @throws IOException
      */
     private boolean requestRelease(Address destinationAddress, Coin value, Transaction rskTx) throws IOException {
-        if (!value.isGreaterThan(bridgeConstants.getMinimumReleaseTxValue())) {
-            return false;
+        if (activations.isActive(RSKIP219)) {
+            // Since Iris the peg-out the rule is that the minimum is inclusive
+            if (value.isLessThan(bridgeConstants.getMinimumPegoutTxValueInSatoshis())) {
+                return false;
+            }
+        } else {
+            // For legacy peg-outs the rule stated that the minimum was exclusive
+            if (!value.isGreaterThan(bridgeConstants.getLegacyMinimumPegoutTxValueInSatoshis())) {
+                return false;
+            }
         }
 
         if (activations.isActive(ConsensusRule.RSKIP146)) {
@@ -2239,8 +2256,8 @@ public class BridgeSupport {
      * Returns the minimum amount of satoshis a user should send to the federation.
      * @return the minimum amount of satoshis a user should send to the federation.
      */
-    public Coin getMinimumLockTxValue() {
-        return bridgeConstants.getMinimumLockTxValue();
+    public Coin getMinimumPeginTxValue() {
+        return activations.isActive(RSKIP219) ? bridgeConstants.getMinimumPeginTxValueInSatoshis() : bridgeConstants.getlegacyMinimumPeginTxValueInSatoshis();
     }
 
     /**

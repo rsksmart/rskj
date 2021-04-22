@@ -69,8 +69,10 @@ public class BridgeTestNetConstants extends BridgeConstants {
 
         maxBtcHeadersPerRskBlock = 500;
 
-        minimumLockTxValue = Coin.valueOf(1000000);
-        minimumReleaseTxValue = Coin.valueOf(500000);
+        legacyMinimumPeginTxValueInSatoshis = Coin.valueOf(1_000_000);
+        minimumPeginTxValueInSatoshis = Coin.valueOf(500_000);
+        legacyMinimumPegoutTxValueInSatoshis = Coin.valueOf(500_000);
+        minimumPegoutTxValueInSatoshis = Coin.valueOf(250_000);
 
         // Passphrases are kept private
         List<ECKey> federationChangeAuthorizedKeys = Arrays.stream(new String[]{

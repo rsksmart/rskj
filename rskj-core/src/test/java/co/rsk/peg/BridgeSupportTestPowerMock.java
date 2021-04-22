@@ -55,12 +55,10 @@ import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
-import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.MutableRepository;
-import org.ethereum.db.ReceiptStore;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.InternalTransaction;
@@ -262,7 +260,16 @@ public class BridgeSupportTestPowerMock {
     private List<BtcBlock> createBtcBlocks(NetworkParameters _networkParameters, BtcBlock parent, int numberOfBlocksToCreate) {
         List<BtcBlock> list = new ArrayList<>();
         for (int i = 0; i < numberOfBlocksToCreate; i++) {
-            BtcBlock block = new BtcBlock(_networkParameters, 2l, parent.getHash(), Sha256Hash.ZERO_HASH, parent.getTimeSeconds() + 1, parent.getDifficultyTarget(), 0, new ArrayList<BtcTransaction>());
+            BtcBlock block = new BtcBlock(
+                _networkParameters,
+                2L,
+                parent.getHash(),
+                Sha256Hash.ZERO_HASH,
+                parent.getTimeSeconds() + 1,
+                parent.getDifficultyTarget(),
+                0,
+                new ArrayList<>()
+            );
             block.solve();
             list.add(block);
             parent = block;
@@ -336,7 +343,7 @@ public class BridgeSupportTestPowerMock {
     }
 
     @Test
-    public void callUpdateCollectionsFundsEnoughForJustTheSmallerTx() throws IOException, BlockStoreException {
+    public void callUpdateCollectionsFundsEnoughForJustTheSmallerTx() throws IOException {
         // Federation is the genesis federation ATM
         Federation federation = bridgeConstants.getGenesisFederation();
 
@@ -402,13 +409,13 @@ public class BridgeSupportTestPowerMock {
         Assert.assertEquals(1, provider.getReleaseTransactionSet().getEntries().size());
         Assert.assertEquals(0, provider.getRskTxsWaitingForSignatures().size());
         // Check value sent to user is 10 BTC minus fee
-        Assert.assertEquals(Coin.valueOf(999962800l), provider.getReleaseTransactionSet().getEntries().iterator().next().getTransaction().getOutput(0).getValue());
+        Assert.assertEquals(Coin.valueOf(999962800L), provider.getReleaseTransactionSet().getEntries().iterator().next().getTransaction().getOutput(0).getValue());
         // Check the wallet has been emptied
         Assert.assertTrue(provider.getNewFederationBtcUTXOs().isEmpty());
     }
 
     @Test
-    public void callUpdateCollectionsThrowsCouldNotAdjustDownwards() throws IOException, BlockStoreException {
+    public void callUpdateCollectionsThrowsCouldNotAdjustDownwards() throws IOException {
         // Federation is the genesis federation ATM
         Federation federation = bridgeConstants.getGenesisFederation();
 
@@ -525,8 +532,6 @@ public class BridgeSupportTestPowerMock {
             builder.getBlockStore().saveBlock(block, TEST_DIFFICULTY, true);
 
         org.ethereum.core.Block rskCurrentBlock = blocks.get(9);
-        ReceiptStore rskReceiptStore = null;
-        org.ethereum.db.BlockStore rskBlockStore = builder.getBlockStore();
         Transaction tx = Transaction
                 .builder()
                 .nonce(NONCE)
@@ -665,7 +670,7 @@ public class BridgeSupportTestPowerMock {
         // Federation is the genesis federation ATM
         Federation federation = bridgeConstants.getGenesisFederation();
 
-        Map<byte[], BigInteger> preMineMap = new HashMap<byte[], BigInteger>();
+        Map<byte[], BigInteger> preMineMap = new HashMap<>();
         preMineMap.put(PrecompiledContracts.BRIDGE_ADDR.getBytes(), LIMIT_MONETARY_BASE.asBigInteger());
 
         BlockGenerator blockGenerator = new BlockGenerator();
@@ -842,7 +847,16 @@ public class BridgeSupportTestPowerMock {
 
         BridgeSupport bridgeSupport = getBridgeSupport(provider, track, mockFactory, activations);
 
-        co.rsk.bitcoinj.core.BtcBlock block = new co.rsk.bitcoinj.core.BtcBlock(btcParams, 1, PegTestUtils.createHash(), PegTestUtils.createHash(), 1, btcParams.getGenesisBlock().getDifficultyTarget(), 1, new ArrayList<BtcTransaction>());
+        co.rsk.bitcoinj.core.BtcBlock block = new co.rsk.bitcoinj.core.BtcBlock(
+            btcParams,
+            1,
+            PegTestUtils.createHash(1),
+            PegTestUtils.createHash(2),
+            1,
+            btcParams.getGenesisBlock().getDifficultyTarget(),
+            1,
+            new ArrayList<>()
+        );
         co.rsk.bitcoinj.core.BtcBlock[] headers = new co.rsk.bitcoinj.core.BtcBlock[1];
         headers[0] = block;
 
@@ -875,7 +889,16 @@ public class BridgeSupportTestPowerMock {
         BridgeSupport bridgeSupport = getBridgeSupport(provider, track, mockFactory, activations);
         BtcBlockChain btcBlockChain = new SimpleBlockChain(btcContext, btcBlockStore);
         Whitebox.setInternalState(bridgeSupport, "btcBlockChain", btcBlockChain);
-        co.rsk.bitcoinj.core.BtcBlock block = new co.rsk.bitcoinj.core.BtcBlock(btcParams, 1, PegTestUtils.createHash(), PegTestUtils.createHash(), 1, 1, 1, new ArrayList<BtcTransaction>());
+        co.rsk.bitcoinj.core.BtcBlock block = new co.rsk.bitcoinj.core.BtcBlock(
+            btcParams,
+            1,
+            PegTestUtils.createHash(1),
+            PegTestUtils.createHash(2),
+            1,
+            1,
+            1,
+            new ArrayList<>()
+        );
         co.rsk.bitcoinj.core.BtcBlock[] headers = new co.rsk.bitcoinj.core.BtcBlock[1];
         headers[0] = block;
 
@@ -888,7 +911,7 @@ public class BridgeSupportTestPowerMock {
     }
 
     @Test
-    public void releaseBtcWithDustOutput() throws BlockStoreException, AddressFormatException, IOException {
+    public void releaseBtcWithDustOutput() throws AddressFormatException, IOException {
         Repository repository = createRepository();
         Repository track = repository.startTracking();
 
@@ -1179,7 +1202,16 @@ public class BridgeSupportTestPowerMock {
         List<Sha256Hash> hashlist = new ArrayList<>();
         Sha256Hash merkleRoot = pmt.getTxnHashAndMerkleRoot(hashlist);
 
-        co.rsk.bitcoinj.core.BtcBlock block = new co.rsk.bitcoinj.core.BtcBlock(btcParams, 1, PegTestUtils.createHash(), merkleRoot, 1, 1, 1, new ArrayList<BtcTransaction>());
+        co.rsk.bitcoinj.core.BtcBlock block = new co.rsk.bitcoinj.core.BtcBlock(
+            btcParams,
+            1,
+            PegTestUtils.createHash(1),
+            merkleRoot,
+            1,
+            1,
+            1,
+            new ArrayList<>()
+        );
 
         btcBlockChain.add(block);
 
@@ -1269,7 +1301,16 @@ public class BridgeSupportTestPowerMock {
         List<Sha256Hash> hashlist = new ArrayList<>();
         Sha256Hash merkleRoot = pmt.getTxnHashAndMerkleRoot(hashlist);
 
-        co.rsk.bitcoinj.core.BtcBlock registerHeader = new co.rsk.bitcoinj.core.BtcBlock(btcParams, 1, PegTestUtils.createHash(), merkleRoot, 1, 1, 1, new ArrayList<BtcTransaction>());
+        co.rsk.bitcoinj.core.BtcBlock registerHeader = new co.rsk.bitcoinj.core.BtcBlock(
+            btcParams,
+            1,
+            PegTestUtils.createHash(1),
+            merkleRoot,
+            1,
+            1,
+            1,
+            new ArrayList<>()
+        );
 
         int height = 30;
         mockChainOfStoredBlocks(btcBlockStore, registerHeader, 35, height);
@@ -1379,7 +1420,16 @@ public class BridgeSupportTestPowerMock {
         List<Sha256Hash> hashlist = new ArrayList<>();
         Sha256Hash merkleRoot = pmt.getTxnHashAndMerkleRoot(hashlist);
 
-        co.rsk.bitcoinj.core.BtcBlock registerHeader = new co.rsk.bitcoinj.core.BtcBlock(btcParams, 1, PegTestUtils.createHash(), merkleRoot, 1, 1, 1, new ArrayList<BtcTransaction>());
+        co.rsk.bitcoinj.core.BtcBlock registerHeader = new co.rsk.bitcoinj.core.BtcBlock(
+            btcParams,
+            1,
+            PegTestUtils.createHash(1),
+            merkleRoot,
+            1,
+            1,
+            1,
+            new ArrayList<>()
+        );
 
         int height = 30;
         mockChainOfStoredBlocks(btcBlockStore, registerHeader, 35, height);
@@ -1424,6 +1474,8 @@ public class BridgeSupportTestPowerMock {
         BridgeStorageProvider mockBridgeStorageProvider = mock(BridgeStorageProvider.class, Mockito.RETURNS_DEEP_STUBS);
         when(mockBridgeStorageProvider.getHeightIfBtcTxhashIsAlreadyProcessed(any(Sha256Hash.class))).thenReturn(Optional.empty());
         when(mockBridgeStorageProvider.getLastRetiredFederationP2SHScript()).thenReturn(Optional.empty());
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+
 
         List<UTXO> retiringFederationUtxos = new ArrayList<>();
         FederationSupport mockFederationSupport = mock(FederationSupport.class);
@@ -1455,21 +1507,40 @@ public class BridgeSupportTestPowerMock {
         when(mockFactory.newInstance(any(), any(), any(), any())).thenReturn(mockBtcBlockStore);
 
         PowerMockito.spy(BridgeUtils.class);
-        PowerMockito.doReturn(false).when(BridgeUtils.class, "isPegInTx", any(BtcTransaction.class), anyList(), nullable(Script.class), any(Context.class), any(BridgeConstants.class));
-        PowerMockito.doReturn(true).when(BridgeUtils.class, "isMigrationTx", any(BtcTransaction.class), any(Federation.class), any(Federation.class), isNull(), any(Context.class), any(BridgeConstants.class));
+        PowerMockito.doReturn(false).when(
+            BridgeUtils.class,
+            "isValidPegInTx",
+            any(BtcTransaction.class),
+            anyList(),
+            nullable(Script.class),
+            any(Context.class),
+            any(BridgeConstants.class),
+            any(ActivationConfig.ForBlock.class)
+        );
+        PowerMockito.doReturn(true).when(
+            BridgeUtils.class,
+            "isMigrationTx",
+            any(BtcTransaction.class),
+            any(Federation.class),
+            any(Federation.class),
+            isNull(),
+            any(Context.class),
+            any(BridgeConstants.class),
+            any(ActivationConfig.ForBlock.class)
+        );
 
         BridgeSupport bridgeSupport = new BridgeSupport(
-                bridgeConstants,
-                mockBridgeStorageProvider,
-                mock(BridgeEventLogger.class),
-                mock(BtcLockSenderProvider.class),
-                mock(PeginInstructionsProvider.class),
-                mock(Repository.class),
-                mock(Block.class),
-                btcContext,
-                mockFederationSupport,
-                mockFactory,
-                mock(ActivationConfig.ForBlock.class)
+            bridgeConstants,
+            mockBridgeStorageProvider,
+            mock(BridgeEventLogger.class),
+            mock(BtcLockSenderProvider.class),
+            mock(PeginInstructionsProvider.class),
+            mock(Repository.class),
+            mock(Block.class),
+            btcContext,
+            mockFederationSupport,
+            mockFactory,
+            activations
         );
 
         bridgeSupport.registerBtcTransaction(mock(Transaction.class), releaseWithChangeTx.bitcoinSerialize(), 1, partialMerkleTree.bitcoinSerialize());
@@ -1480,7 +1551,7 @@ public class BridgeSupportTestPowerMock {
         assertThat(changeUtxo.getScript().getToAddress(params), is(retiringFederationAddress));
 
         PowerMockito.verifyStatic(BridgeUtils.class);
-        BridgeUtils.isMigrationTx(releaseWithChangeTx, activeFederation, retiringFederation, null, btcContext, bridgeConstants);
+        BridgeUtils.isMigrationTx(releaseWithChangeTx, activeFederation, retiringFederation, null, btcContext, bridgeConstants, activations);
     }
 
     @Test
@@ -1575,7 +1646,16 @@ public class BridgeSupportTestPowerMock {
         List<Sha256Hash> hashlist = new ArrayList<>();
         Sha256Hash merkleRoot = pmt.getTxnHashAndMerkleRoot(hashlist);
 
-        co.rsk.bitcoinj.core.BtcBlock registerHeader = new co.rsk.bitcoinj.core.BtcBlock(btcParams, 1, PegTestUtils.createHash(), merkleRoot, 1, 1, 1, new ArrayList<BtcTransaction>());
+        co.rsk.bitcoinj.core.BtcBlock registerHeader = new co.rsk.bitcoinj.core.BtcBlock(
+            btcParams,
+            1,
+            PegTestUtils.createHash(1),
+            merkleRoot,
+            1,
+            1,
+            1,
+            new ArrayList<>()
+        );
 
         int height = 30;
         mockChainOfStoredBlocks(btcBlockStore, registerHeader, 35, height);
@@ -1637,7 +1717,7 @@ public class BridgeSupportTestPowerMock {
         BridgeSupport bridgeSupport = getBridgeSupport(getBridgeStorageProviderMockWithProcessedHashes(), null);
 
         for (int i = 0; i < 10; i++) {
-            Assert.assertEquals((long) i, bridgeSupport.getBtcTxHashProcessedHeight(Sha256Hash.of(("hash_" + i).getBytes())).longValue());
+            Assert.assertEquals(i, bridgeSupport.getBtcTxHashProcessedHeight(Sha256Hash.of(("hash_" + i).getBytes())).longValue());
         }
         Assert.assertEquals(-1L, bridgeSupport.getBtcTxHashProcessedHeight(Sha256Hash.of("anything".getBytes())).longValue());
     }
@@ -2702,7 +2782,7 @@ public class BridgeSupportTestPowerMock {
         Assert.assertEquals(0, provider.getNewFederationBtcUTXOs().size());
         Assert.assertEquals(5, provider.getOldFederationBtcUTXOs().size());
         for (int i = 0; i < 5; i++) {
-            Assert.assertEquals((long) i, provider.getOldFederationBtcUTXOs().get(i).getIndex());
+            Assert.assertEquals(i, provider.getOldFederationBtcUTXOs().get(i).getIndex());
             Assert.assertEquals(Coin.valueOf((i + 1) * 1000), provider.getOldFederationBtcUTXOs().get(i).getValue());
         }
         verify(mocksProvider.getElection(), times(1)).clearWinners();
@@ -2868,7 +2948,7 @@ public class BridgeSupportTestPowerMock {
     }
 
     @Test
-    public void getLockWhitelistMethods() throws IOException {
+    public void getLockWhitelistMethods() {
         NetworkParameters parameters = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
         LockWhitelist mockedWhitelist = mock(LockWhitelist.class);
         when(mockedWhitelist.getSize()).thenReturn(4);
@@ -2893,7 +2973,7 @@ public class BridgeSupportTestPowerMock {
     }
 
     @Test
-    public void addLockWhitelistAddress_ok() throws IOException {
+    public void addLockWhitelistAddress_ok() {
         Transaction mockedTx = mock(Transaction.class);
         byte[] senderBytes = ECKey.fromPublicOnly(Hex.decode(
             // Public key hex of the authorized whitelist admin in regtest, taken from BridgeRegTestConstants
@@ -2914,7 +2994,7 @@ public class BridgeSupportTestPowerMock {
     }
 
     @Test
-    public void addLockWhitelistAddress_addFails() throws IOException {
+    public void addLockWhitelistAddress_addFails() {
         Transaction mockedTx = mock(Transaction.class);
         byte[] senderBytes = ECKey.fromPublicOnly(Hex.decode(
                 // Public key hex of the authorized whitelist admin in regtest, taken from BridgeRegTestConstants
@@ -2934,7 +3014,7 @@ public class BridgeSupportTestPowerMock {
     }
 
     @Test
-    public void addLockWhitelistAddress_notAuthorized() throws IOException {
+    public void addLockWhitelistAddress_notAuthorized() {
         Transaction mockedTx = mock(Transaction.class);
         byte[] senderBytes = Hex.decode("0000000000000000000000000000000000aabbcc");
         RskAddress sender = new RskAddress(senderBytes);
@@ -3127,7 +3207,7 @@ public class BridgeSupportTestPowerMock {
     }
 
     @Test
-    public void removeLockWhitelistAddress_ok() throws IOException {
+    public void removeLockWhitelistAddress_ok() {
         Transaction mockedTx = mock(Transaction.class);
         byte[] senderBytes = ECKey.fromPublicOnly(Hex.decode(
                 // Public key hex of the authorized whitelist admin in regtest, taken from BridgeRegTestConstants
@@ -3148,7 +3228,7 @@ public class BridgeSupportTestPowerMock {
     }
 
     @Test
-    public void removeLockWhitelistAddress_removeFails() throws IOException {
+    public void removeLockWhitelistAddress_removeFails() {
         Transaction mockedTx = mock(Transaction.class);
         byte[] senderBytes = ECKey.fromPublicOnly(Hex.decode(
                 // Public key hex of the authorized whitelist admin in regtest, taken from BridgeRegTestConstants
@@ -3169,7 +3249,7 @@ public class BridgeSupportTestPowerMock {
     }
 
     @Test
-    public void removeLockWhitelistAddress_notAuthorized() throws IOException {
+    public void removeLockWhitelistAddress_notAuthorized() {
         Transaction mockedTx = mock(Transaction.class);
         byte[] senderBytes = Hex.decode("0000000000000000000000000000000000aabbcc");
         RskAddress sender = new RskAddress(senderBytes);
@@ -3182,7 +3262,7 @@ public class BridgeSupportTestPowerMock {
     }
 
     @Test
-    public void removeLockWhitelistAddress_invalidAddress() throws IOException {
+    public void removeLockWhitelistAddress_invalidAddress() {
         Transaction mockedTx = mock(Transaction.class);
         byte[] senderBytes = ECKey.fromPublicOnly(Hex.decode(
             // Public key hex of the authorized whitelist admin in regtest, taken from BridgeRegTestConstants
@@ -3487,7 +3567,7 @@ public class BridgeSupportTestPowerMock {
     }
 
     @Test
-    public void getBtcTransactionConfirmationsGetCost_blockDoesNotExist() throws BlockStoreException, IOException {
+    public void getBtcTransactionConfirmationsGetCost_blockDoesNotExist() throws BlockStoreException {
         Repository repository = createRepository();
         Repository track = repository.startTracking();
 
@@ -3520,7 +3600,7 @@ public class BridgeSupportTestPowerMock {
     }
 
     @Test
-    public void getBtcTransactionConfirmationsGetCost_getBestChainHeightError() throws BlockStoreException, IOException {
+    public void getBtcTransactionConfirmationsGetCost_getBestChainHeightError() throws BlockStoreException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
 
         Repository repository = createRepository();
@@ -3553,7 +3633,7 @@ public class BridgeSupportTestPowerMock {
     }
 
     @Test
-    public void getBtcTransactionConfirmationsGetCost_blockTooDeep() throws BlockStoreException, IOException {
+    public void getBtcTransactionConfirmationsGetCost_blockTooDeep() throws BlockStoreException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
 
         Repository repository = createRepository();
@@ -3646,12 +3726,11 @@ public class BridgeSupportTestPowerMock {
     }
 
     private BridgeStorageProvider getBridgeStorageProviderMockWithProcessedHashes() throws IOException {
-        Map<Sha256Hash, Long> mockedHashes = new HashMap<>();
         BridgeStorageProvider providerMock = mock(BridgeStorageProvider.class);
 
         for (int i = 0; i < 10; i++) {
             when(providerMock.getHeightIfBtcTxhashIsAlreadyProcessed(Sha256Hash.of(("hash_" + i).getBytes())))
-                    .thenReturn(Optional.of(Long.valueOf((long)i)));
+                    .thenReturn(Optional.of(Long.valueOf(i)));
         }
 
         return providerMock;

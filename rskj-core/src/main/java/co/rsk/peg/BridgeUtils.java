@@ -142,31 +142,6 @@ public class BridgeUtils {
     }
 
     /**
-     * Indicates whether a tx is a valid lock tx or not, checking the first input's script sig
-     * @param tx
-     * @return
-     */
-    public static boolean isValidLockTx(BtcTransaction tx) {
-        if (tx.getInputs().size() == 0) {
-            return false;
-        }
-        // This indicates that the tx is a P2PKH transaction which is the only one we support for now
-        return tx.getInput(0).getScriptSig().getChunks().size() == 2;
-    }
-
-    /**
-     * Will return a valid scriptsig for the first input
-     * @param tx
-     * @return
-     */
-    public static Optional<Script> getFirstInputScriptSig(BtcTransaction tx) {
-        if (!isValidLockTx(tx)) {
-            return Optional.empty();
-        }
-        return Optional.of(tx.getInput(0).getScriptSig());
-    }
-
-    /**
      * It checks if the tx doesn't spend any of the federations' funds and if it sends more than
      * the minimum ({@see BridgeConstants::getMinimumLockTxValue}) to any of the federations
      * @param tx the BTC transaction to check
@@ -174,10 +149,17 @@ public class BridgeUtils {
      * @param retiredFederationP2SHScript the retired federation P2SHScript. Could be {@code null}.
      * @param btcContext the BTC Context
      * @param bridgeConstants the Bridge constants
-     * @return true if this is a valid lock transaction
+     * @param activations the network HF activations configuration
+     * @return true if this is a valid peg-in transaction
      */
-    public static boolean isPegInTx(BtcTransaction tx, List<Federation> activeFederations, Script retiredFederationP2SHScript,
-                                    Context btcContext, BridgeConstants bridgeConstants) {
+    public static boolean isValidPegInTx(
+        BtcTransaction tx,
+        List<Federation> activeFederations,
+        Script retiredFederationP2SHScript,
+        Context btcContext,
+        BridgeConstants bridgeConstants,
+        ActivationConfig.ForBlock activations) {
+
         // First, check tx is not a typical release tx (tx spending from the any of the federation addresses and
         // optionally sending some change to any of the federation addresses)
         for (int i = 0; i < tx.getInputs().size(); i++) {
@@ -194,15 +176,42 @@ public class BridgeUtils {
         Wallet federationsWallet = BridgeUtils.getFederationsNoSpendWallet(btcContext, activeFederations, false, null);
         Coin valueSentToMe = tx.getValueSentToMe(federationsWallet);
 
-        int valueSentToMeSignum = valueSentToMe.signum();
-        if (valueSentToMe.isLessThan(bridgeConstants.getMinimumLockTxValue())) {
-            logger.warn("[btctx:{}]Someone sent to the federation less than {} satoshis", tx.getHash(), bridgeConstants.getMinimumLockTxValue());
+        Coin minimumPegInTxValue = activations.isActive(ConsensusRule.RSKIP219) ?
+            bridgeConstants.getMinimumPeginTxValueInSatoshis() :
+            bridgeConstants.getlegacyMinimumPeginTxValueInSatoshis();
+
+        if (valueSentToMe.isLessThan(minimumPegInTxValue)) {
+            logger.warn("[btctx:{}] Someone sent to the federation less than {} satoshis", tx.getHash(), minimumPegInTxValue);
         }
-        return (valueSentToMeSignum > 0 && !valueSentToMe.isLessThan(bridgeConstants.getMinimumLockTxValue()));
+
+        return valueSentToMe.isPositive() && !valueSentToMe.isLessThan(minimumPegInTxValue);
     }
 
-    public static boolean isPegInTx(BtcTransaction tx, Federation federation, Context btcContext, BridgeConstants bridgeConstants) {
-        return isPegInTx(tx, Collections.singletonList(federation), null, btcContext, bridgeConstants);
+    /**
+     * It checks if the tx doesn't spend any of the federations' funds and if it sends more than
+     * the minimum ({@see BridgeConstants::getMinimumLockTxValue}) to any of the federations
+     * @param tx the BTC transaction to check
+     * @param federation the active federation
+     * @param btcContext the BTC Context
+     * @param bridgeConstants the Bridge constants
+     * @param activations the network HF activations configuration
+     * @return true if this is a valid peg-in transaction
+     */
+    public static boolean isValidPegInTx(
+        BtcTransaction tx,
+        Federation federation,
+        Context btcContext,
+        BridgeConstants bridgeConstants,
+        ActivationConfig.ForBlock activations) {
+
+        return isValidPegInTx(
+            tx,
+            Collections.singletonList(federation),
+            null,
+            btcContext,
+            bridgeConstants,
+            activations
+        );
     }
 
     /**
@@ -237,15 +246,21 @@ public class BridgeUtils {
         return false;
     }
 
-    public static boolean isMigrationTx(BtcTransaction btcTx,
-                                        Federation activeFederation, Federation retiringFederation, Script retiredFederationP2SHScript,
-                                        Context btcContext, BridgeConstants bridgeConstants) {
+    public static boolean isMigrationTx(
+        BtcTransaction btcTx,
+        Federation activeFederation,
+        Federation retiringFederation,
+        Script retiredFederationP2SHScript,
+        Context btcContext,
+        BridgeConstants bridgeConstants,
+        ActivationConfig.ForBlock activations) {
+
         if (retiredFederationP2SHScript == null && retiringFederation == null) {
             return false;
         }
         boolean moveFromRetired = retiredFederationP2SHScript != null && isPegOutTx(btcTx, retiredFederationP2SHScript);
         boolean moveFromRetiring = retiringFederation != null && isPegOutTx(btcTx, retiringFederation);
-        boolean moveToActive = isPegInTx(btcTx, activeFederation, btcContext, bridgeConstants);
+        boolean moveToActive = isValidPegInTx(btcTx, activeFederation, btcContext, bridgeConstants, activations);
 
         return (moveFromRetired || moveFromRetiring) && moveToActive;
     }
