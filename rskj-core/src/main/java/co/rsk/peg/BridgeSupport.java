@@ -98,6 +98,7 @@ import org.ethereum.vm.program.invoke.TransferInvoke;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static co.rsk.peg.BridgeUtils.getRegularPegoutTxSize;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP186;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP219;
 
@@ -820,8 +821,26 @@ public class BridgeSupport {
      */
     private boolean requestRelease(Address destinationAddress, Coin value, Transaction rskTx) throws IOException {
         if (activations.isActive(RSKIP219)) {
+            int pegoutSize = getRegularPegoutTxSize(getActiveFederation());
+            Coin feePerKB = getFeePerKb();
+            // The pegout transaction has a cost related to its size and the current feePerKB
+            // The actual cost cannot be asserted exactly so the calculation is approximated
+            // On top of this, the remainder after the fee should be enough for the user to be able to operate
+            // For this, the calculation includes an additional percentage to assert for this
+            Coin requireFundsForFee = feePerKB
+                .divide(1000) // Get the s/b
+                .multiply(pegoutSize); // times the size in bytes
+            requireFundsForFee = requireFundsForFee
+                .add(requireFundsForFee
+                    .times(bridgeConstants.getPercentageAboveFeeForPegouts())
+                    .divide(100)
+                ); // add the gap
+
+            // The pegout value should be greater or equals than the max of these two values
+            Coin minValue = Coin.valueOf(Math.max(bridgeConstants.getMinimumPegoutTxValueInSatoshis().value, requireFundsForFee.value));
+
             // Since Iris the peg-out the rule is that the minimum is inclusive
-            if (value.isLessThan(bridgeConstants.getMinimumPegoutTxValueInSatoshis())) {
+            if (value.isLessThan(minValue)) {
                 return false;
             }
         } else {

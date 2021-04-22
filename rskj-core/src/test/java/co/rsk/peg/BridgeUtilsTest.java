@@ -1349,6 +1349,21 @@ public class BridgeUtilsTest {
         Assert.assertArrayEquals(hash160, obtainedHash160);
     }
 
+    @Test
+    public void calculatePegoutTxSize() {
+        Federation fed = new Federation(
+            Arrays.asList(FederationMember.getFederationMemberFromKey(new BtcECKey())),
+            Instant.now(),
+            0,
+            BridgeRegTestConstants.getInstance().getBtcParams()
+        );
+
+        int pegoutTxSize = BridgeUtils.calculatePegoutTxSize(fed, 1, 1, 1, 1);
+
+        int calculation = 1 + fed.getRedeemScript().getProgram().length + 1;
+        assertEquals(calculation, pegoutTxSize);
+    }
+
     private void test_getSpendWallet(boolean isFastBridgeCompatible) throws UTXOProviderException {
         Federation federation = new Federation(FederationTestUtils.getFederationMembersWithBtcKeys(Arrays.asList(
             BtcECKey.fromPublicOnly(Hex.decode("036bb9eab797eadc8b697f0e82a01d01cabbfaaca37e5bafc06fdc6fdd38af894a")),

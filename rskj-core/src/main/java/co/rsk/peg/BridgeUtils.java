@@ -31,6 +31,7 @@ import co.rsk.core.RskAddress;
 import co.rsk.peg.bitcoin.RskAllowUnconfirmedCoinSelector;
 import co.rsk.peg.btcLockSender.BtcLockSender.TxSenderAddressType;
 import co.rsk.peg.utils.BtcTransactionFormatUtils;
+import javax.annotation.Nonnull;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -500,5 +501,35 @@ public class BridgeUtils {
         byte[] hashBytes = new byte[20];
         System.arraycopy(addressBytes, 1, hashBytes, 0, 20);
         return hashBytes;
+    }
+
+    public static int getRegularPegoutTxSize(@Nonnull Federation federation) {
+        final int INPUT_MULTIPLIER = 2;
+        final int SIGNATURE_MULTIPLIER = 71;
+        final int OUTPUT_MULTIPLIER = 2;
+        final int OUTPUT_SIZE = 67;
+
+        return calculatePegoutTxSize(
+            federation,
+            INPUT_MULTIPLIER,
+            SIGNATURE_MULTIPLIER,
+            OUTPUT_MULTIPLIER,
+            OUTPUT_SIZE
+        );
+    }
+
+    public static int calculatePegoutTxSize(
+        Federation federation,
+        int inputMultiplier,
+        int signatureMultiplier,
+        int outputMultiplier,
+        int outputSize
+    ) {
+        return (
+            federation.getNumberOfSignaturesRequired() * signatureMultiplier +
+                federation.getRedeemScript().getProgram().length
+        ) * inputMultiplier +
+            outputMultiplier * outputSize;
+
     }
 }

@@ -76,6 +76,8 @@ public class BridgeConstants {
 
     protected String oldFederationAddress;
 
+    protected int percentageAboveFeeForPegouts;
+
     public NetworkParameters getBtcParams() {
         return NetworkParameters.fromID(btcParamsString);
     }
@@ -157,4 +159,8 @@ public class BridgeConstants {
     public long getMinSecondsBetweenCallsToReceiveHeader() { return minSecondsBetweenCallsReceiveHeader; }
 
     public int getMaxDepthBlockchainAccepted() { return maxDepthBlockchainAccepted; }
+
+    public int getPercentageAboveFeeForPegouts() {
+        return percentageAboveFeeForPegouts;
+    }
 }
