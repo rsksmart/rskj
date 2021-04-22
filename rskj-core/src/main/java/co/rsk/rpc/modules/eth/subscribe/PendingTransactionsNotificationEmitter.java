@@ -5,9 +5,7 @@ import co.rsk.rpc.JsonRpcSerializer;
 import co.rsk.util.EncodeUtils;
 import io.netty.channel.Channel;
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
-import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
-import org.ethereum.core.TransactionReceipt;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.facade.Ethereum;
 import org.ethereum.listener.EthereumListenerAdapter;
@@ -63,7 +61,7 @@ public class PendingTransactionsNotificationEmitter {
                 String msg = jsonRpcSerializer.serializeMessage(request);
                 channel.writeAndFlush(new TextWebSocketFrame(msg));
             } catch (IOException e) {
-                logger.error("Couldn't serialize block header result for notification", e);
+                logger.error("Couldn't serialize new pending transactions result for notification", e);
             }
         });
     }

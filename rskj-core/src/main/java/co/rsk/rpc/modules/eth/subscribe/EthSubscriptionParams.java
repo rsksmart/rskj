@@ -26,12 +26,18 @@ import java.util.Objects;
  */
 public class EthSubscriptionParams {
     private final SubscriptionId subscription;
-    private final EthSubscriptionNotificationDTO result;
+    private final Object result;
 
     public EthSubscriptionParams(SubscriptionId subscription, EthSubscriptionNotificationDTO result) {
         this.subscription = Objects.requireNonNull(subscription);
         this.result = Objects.requireNonNull(result);
     }
+
+    public EthSubscriptionParams(SubscriptionId subscription, String result) {
+        this.subscription = Objects.requireNonNull(subscription);
+        this.result = Objects.requireNonNull(result);
+    }
+
 
     @JsonInclude(JsonInclude.Include.ALWAYS)
     public SubscriptionId getSubscription() {
@@ -39,7 +45,7 @@ public class EthSubscriptionParams {
     }
 
     @JsonInclude(JsonInclude.Include.ALWAYS)
-    public EthSubscriptionNotificationDTO getResult() {
+    public Object getResult() {
         return result;
     }
 }

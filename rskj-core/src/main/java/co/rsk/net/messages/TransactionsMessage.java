@@ -18,6 +18,7 @@
 
 package co.rsk.net.messages;
 
+import co.rsk.util.EncodeUtils;
 import org.ethereum.core.Transaction;
 import org.ethereum.util.RLP;
 
@@ -45,15 +46,7 @@ public class TransactionsMessage extends Message {
 
     @Override
     public byte[] getEncodedMessage() {
-        List<byte[]> encodedElements = new ArrayList<>();
-
-        for (Transaction tx : transactions) {
-            encodedElements.add(tx.getEncoded());
-        }
-
-        byte[][] encodedElementArray = encodedElements.toArray(new byte[encodedElements.size()][]);
-
-        return RLP.encodeList(encodedElementArray);
+        return EncodeUtils.encodeTransactionList(transactions);
     }
 
     public String getMessageContentInfo() {
