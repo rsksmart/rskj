@@ -1355,13 +1355,56 @@ public class BridgeUtilsTest {
             Arrays.asList(FederationMember.getFederationMemberFromKey(new BtcECKey())),
             Instant.now(),
             0,
-            BridgeRegTestConstants.getInstance().getBtcParams()
+            networkParameters
         );
 
         int pegoutTxSize = BridgeUtils.calculatePegoutTxSize(fed, 1, 1, 1, 1);
 
-        int calculation = 1 + fed.getRedeemScript().getProgram().length + 1;
+        // 58 accounts for all the added values as part of a peg-out tx
+        int calculation = fed.getRedeemScript().getProgram().length+ 58;
         assertEquals(calculation, pegoutTxSize);
+    }
+
+    @Test
+    public void getRegularPegoutTxSize_has_proper_calculations() {
+        BtcECKey key1 = new BtcECKey();
+        BtcECKey key2 = new BtcECKey();
+        BtcECKey key3 = new BtcECKey();
+        List<BtcECKey> keys = Arrays.asList(key1, key2, key3);
+        Federation fed = new Federation(
+            FederationMember.getFederationMembersFromKeys(keys),
+            Instant.now(),
+            0,
+            networkParameters
+        );
+
+        // Create a pegout tx with two inputs and two outputs
+        int inputs = 2;
+        BtcTransaction pegoutTx = createPegOutTx(Collections.emptyList(), inputs, fed, false);
+
+        for (int inputIndex = 0; inputIndex < inputs; inputIndex++) {
+            Script inputScript = pegoutTx.getInput(inputIndex).getScriptSig();
+
+            Sha256Hash sighash = pegoutTx.hashForSignature(inputIndex, fed.getRedeemScript(), BtcTransaction.SigHash.ALL, false);
+
+            for (int keyIndex = 0; keyIndex < keys.size() - 1; keyIndex++) {
+                BtcECKey key = keys.get(keyIndex);
+                BtcECKey.ECDSASignature sig = key.sign(sighash);
+                TransactionSignature txSig = new TransactionSignature(sig, BtcTransaction.SigHash.ALL, false);
+                byte[] txSigEncoded = txSig.encodeToBitcoin();
+
+                int sigIndex = inputScript.getSigInsertionIndex(sighash, key);
+                inputScript = ScriptBuilder.updateScriptWithSignature(inputScript, txSigEncoded, sigIndex, 1, 1);
+                pegoutTx.getInput(inputIndex).setScriptSig(inputScript);
+            }
+        }
+
+        int pegoutTxSize = BridgeUtils.getRegularPegoutTxSize(fed);
+
+        // The difference between the calculated size and a real tx size should be smaller than 10% in any direction
+        int difference = pegoutTx.bitcoinSerialize().length - pegoutTxSize;
+        double tolerance = pegoutTxSize * .1;
+        assertTrue(difference < tolerance && difference > -tolerance);
     }
 
     private void test_getSpendWallet(boolean isFastBridgeCompatible) throws UTXOProviderException {
@@ -1539,6 +1582,14 @@ public class BridgeUtilsTest {
             new BtcECKey().toAddress(networkParameters)
         );
         btcTx.addOutput(output);
+
+        TransactionOutput changeOutput = new TransactionOutput(
+            networkParameters,
+            btcTx,
+            Coin.COIN,
+            federation.getAddress()
+        );
+        btcTx.addOutput(changeOutput);
 
         return btcTx;
     }
