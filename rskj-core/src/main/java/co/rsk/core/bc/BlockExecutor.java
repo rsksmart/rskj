@@ -203,7 +203,11 @@ public class BlockExecutor {
 
         boolean isRskip126Enabled = activationConfig.isActive(RSKIP126, header.getNumber());
         if (!isRskip126Enabled) {
-            byte[] orchidStateRoot = stateRootHandler.convert(header, result.getFinalState()).getBytes();
+            // SDL:
+            // Do not validate. We'll be validating only the state in the first wasabi
+            // block
+            //return true;
+             byte[] orchidStateRoot = stateRootHandler.convert(header, result.getFinalState()).getBytes();
             return Arrays.equals(orchidStateRoot, header.getStateRoot());
         }
 
@@ -266,7 +270,7 @@ public class BlockExecutor {
         // (e.g. once while building the block in tests/mining, and the other when trying
         // to conect the block). This is because the first execution will change the state
         // of the repository to the state post execution, so it's necessary to get it to
-        // the state prior execution again.
+        //SDL the state prior execution again.
         Metric metric = profiler.start(Profiler.PROFILING_TYPE.BLOCK_EXECUTE);
 
         Repository track = repositoryLocator.startTrackingAt(parent);
@@ -358,6 +362,7 @@ public class BlockExecutor {
         if (!vmTrace) {
             logger.trace("Saving track.");
             track.save();
+            repositoryLocator.cacheTrie(block.getHeader(),track.getTrie());
             logger.trace("End saving track.");
         }
 

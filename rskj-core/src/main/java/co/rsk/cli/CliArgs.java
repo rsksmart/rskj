@@ -91,6 +91,7 @@ public class CliArgs<O, F> {
                             if (args[i].length() < 3) {
                                 throw new IllegalArgumentException("You must provide a flag name, e.g. --quiet");
                             }
+                            String a = args[i].substring(2, args[i].length());
                             flags.add(getFlagByName(args[i].substring(2, args[i].length())));
                         } else {
                             if (args.length - 1 == i) {

@@ -37,6 +37,13 @@ public class DataSourceWithCache implements KeyValueDataSource {
     private final KeyValueDataSource base;
     private final Map<ByteArrayWrapper, byte[]> uncommittedCache;
     private final Map<ByteArrayWrapper, byte[]> committedCache;
+    long hits;
+    long gets;
+    long hitsPartial;
+    long getsPartial;
+    long started;
+    long partialTime;
+
 
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
 
@@ -54,13 +61,39 @@ public class DataSourceWithCache implements KeyValueDataSource {
         byte[] value;
 
         this.lock.readLock().lock();
+        if (gets==0) {
+            started = System.currentTimeMillis();
+            partialTime = started;
+        }
+        gets++;
+        getsPartial++;
+        if (getsPartial%5000==0) {
+            long currentTime = System.currentTimeMillis();
+            // No more than 1/sec
+            if (currentTime>partialTime+1000) {
+                long deltaTime = (currentTime - started);
+                System.out.println("Time[s]: " + (deltaTime / 1000));
 
+                if (gets>0)
+                    System.out.println("total gets: " + gets+" hits: "+hits+" rate: "+(hits*100/gets)+"% gets/sec: "+(gets*1000/deltaTime));
+                if (getsPartial>0)
+                    System.out.println("part  gets: " + getsPartial+" hits: "+hitsPartial+" rate: "+(hitsPartial*100/getsPartial)+"% gets/sec: "+(getsPartial*1000/deltaTime));
+
+                getsPartial=0;
+                hitsPartial=0;
+                partialTime = currentTime;
+            }
+        }
         try {
             if (committedCache.containsKey(wrappedKey)) {
+                hitsPartial++;
+                hits++;
                 return committedCache.get(wrappedKey);
             }
 
             if (uncommittedCache.containsKey(wrappedKey)) {
+                hitsPartial++;
+                hits++;
                 return uncommittedCache.get(wrappedKey);
             }
 

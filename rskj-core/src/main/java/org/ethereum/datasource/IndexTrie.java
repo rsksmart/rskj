@@ -21,14 +21,11 @@ import co.rsk.metrics.profilers.Metric;
 import co.rsk.metrics.profilers.Profiler;
 import co.rsk.metrics.profilers.ProfilerFactory;
 import org.ethereum.db.ByteArrayWrapper;
-import org.ethereum.util.ByteUtil;
 import co.rsk.trie.TrieKeySlice;
-import co.rsk.trie.PathEncoder;
+
 import javax.annotation.Nullable;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
-
-import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
 /**
  * A binary trie node.
@@ -45,7 +42,7 @@ import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
  *
  * An empty node has no subnodes and a null value
  */
-public class FastTrie {
+public class IndexTrie {
     static final int nullValue = -1;
 
     private static final Profiler profiler = ProfilerFactory.getInstance();
@@ -54,27 +51,27 @@ public class FastTrie {
     // this node associated value, if any
     private final int value;
 
-    private final FastTrie left;
+    private final IndexTrie left;
 
-    private final FastTrie right;
+    private final IndexTrie right;
 
     // shared Path
     private TrieKeySlice sharedPath;
 
-    static FastTrie empty() {
-        return new FastTrie();
+    static IndexTrie empty() {
+        return new IndexTrie();
     }
 
-    public FastTrie() {
+    public IndexTrie() {
         this( TrieKeySlice.empty(), nullValue);
     }
 
-    private FastTrie(TrieKeySlice sharedPath, int value) {
+    private IndexTrie(TrieKeySlice sharedPath, int value) {
         this( sharedPath, value, null, null);
     }
 
     public boolean equals(Object obj) {
-        FastTrie t2 = (FastTrie) obj;
+        IndexTrie t2 = (IndexTrie) obj;
 
         if (t2.value!=this.value) return false;
         if (!t2.sharedPath.equalPath(this.sharedPath)) {
@@ -84,7 +81,7 @@ public class FastTrie {
     }
 
     // full constructor
-    private FastTrie( TrieKeySlice sharedPath, int value, FastTrie left, FastTrie right) {
+    private IndexTrie(TrieKeySlice sharedPath, int value, IndexTrie left, IndexTrie right) {
         this.value = value;
         this.left = left;
         this.right = right;
@@ -107,7 +104,7 @@ public class FastTrie {
     @Nullable
     public int get(byte[] key) {
         Metric metric = profiler.start(Profiler.PROFILING_TYPE.TRIE_GET_VALUE_FROM_KEY);
-        FastTrie node = find(key);
+        IndexTrie node = find(key);
         if (node == null) {
             profiler.stop(metric);
             return nullValue;
@@ -138,14 +135,14 @@ public class FastTrie {
      * key-value association. The original node is immutable, a new tree
      * is build, adding some new nodes
      */
-    public FastTrie put(byte[] key,int value) {
+    public IndexTrie put(byte[] key, int value) {
         TrieKeySlice keySlice = TrieKeySlice.fromKey(key);
-        FastTrie trie = put(keySlice, value, false);
+        IndexTrie trie = put(keySlice, value, false);
 
-        return trie == null ? new FastTrie() : trie;
+        return trie == null ? new IndexTrie() : trie;
     }
 
-    public FastTrie put(ByteArrayWrapper key, int value) {
+    public IndexTrie put(ByteArrayWrapper key, int value) {
         return put(key.getData(), value);
     }
     /**
@@ -158,7 +155,7 @@ public class FastTrie {
      * @return  a new NewTrie, the top node of a new trie having the key
      * value association
      */
-    public FastTrie put(String key, int value) {
+    public IndexTrie put(String key, int value) {
         return put(key.getBytes(StandardCharsets.UTF_8), value);
     }
 
@@ -170,16 +167,16 @@ public class FastTrie {
      * @return the new top node of the trie with the association removed
      *
      */
-    public FastTrie delete(byte[] key) {
+    public IndexTrie delete(byte[] key) {
         return put(key, nullValue);
     }
 
     // This is O(1). The node with exact key "key" MUST exists.
-    public FastTrie deleteRecursive(byte[] key) {
+    public IndexTrie deleteRecursive(byte[] key) {
         TrieKeySlice keySlice = TrieKeySlice.fromKey(key);
-        FastTrie trie = put(keySlice, nullValue, true);
+        IndexTrie trie = put(keySlice, nullValue, true);
 
-        return trie == null ? new FastTrie() : trie;
+        return trie == null ? new IndexTrie() : trie;
     }
 
     /**
@@ -189,7 +186,7 @@ public class FastTrie {
      *
      * @return the new top node of the trie with the key removed
      */
-    public FastTrie delete(String key) {
+    public IndexTrie delete(String key) {
         return delete(key.getBytes(StandardCharsets.UTF_8));
     }
 
@@ -208,7 +205,7 @@ public class FastTrie {
         }
 
         for (byte k = 0; k < 2; k++) {
-            FastTrie node = this.retrieveNode(k);
+            IndexTrie node = this.retrieveNode(k);
 
             if (node == null) {
                 continue;
@@ -257,12 +254,12 @@ public class FastTrie {
      *
      */
     @Nullable
-    public FastTrie find(byte[] key) {
+    public IndexTrie find(byte[] key) {
         return find(TrieKeySlice.fromKey(key));
     }
 
     @Nullable
-    private FastTrie find(TrieKeySlice key) {
+    private IndexTrie find(TrieKeySlice key) {
         if (sharedPath.length() > key.length()) {
             return null;
         }
@@ -276,7 +273,7 @@ public class FastTrie {
             return this;
         }
 
-        FastTrie node = this.retrieveNode(key.get(commonPathLength));
+        IndexTrie node = this.retrieveNode(key.get(commonPathLength));
         if (node == null) {
             return null;
         }
@@ -285,33 +282,25 @@ public class FastTrie {
     }
 
 
-    private FastTrie retrieveNode(byte implicitByte) {
+    private IndexTrie retrieveNode(byte implicitByte) {
         return getNodeReference(implicitByte);
     }
 
-    public FastTrie getNodeReference(byte implicitByte) {
+    public IndexTrie getNodeReference(byte implicitByte) {
         return implicitByte == 0 ? this.left : this.right;
     }
 
-    public FastTrie getLeft() {
+    public IndexTrie getLeft() {
         return left;
     }
 
-    public FastTrie getRight() {
+    public IndexTrie getRight() {
         return right;
     }
 
-    /**
-     * put key with associated value, returning a new NewTrie
-     *
-     * @param key   key to be updated
-     * @param value     associated value
-     *
-     * @return the new NewTrie containing the tree with the new key value association
-     *
-     */
 
-    static FastTrie coalesce(FastTrie trie) {
+
+    static IndexTrie coalesce(IndexTrie trie) {
         // the following code coalesces nodes if needed for delete operation
 
         // it's null or it is not a delete operation
@@ -336,7 +325,7 @@ public class FastTrie {
             return trie;
         }
 
-        FastTrie child;
+        IndexTrie child;
         byte childImplicitByte;
         if (trie.left!=null) {
             child = trie.left;
@@ -347,12 +336,21 @@ public class FastTrie {
         }
 
         TrieKeySlice newSharedPath = trie.sharedPath.rebuildSharedPath(childImplicitByte, child.sharedPath);
-        return new FastTrie(newSharedPath, child.value, child.left, child.right);
+        return new IndexTrie(newSharedPath, child.value, child.left, child.right);
     }
 
-    private FastTrie put(TrieKeySlice key, int value, boolean isRecursiveDelete) {
+    /**
+     * put key with associated value, returning a new NewTrie
+     *
+     * @param key   key to be updated
+     * @param value     associated value
+     *
+     * @return the new NewTrie containing the tree with the new key value association
+     *
+     */
+    private IndexTrie put(TrieKeySlice key, int value, boolean isRecursiveDelete) {
 
-        FastTrie trie = this.internalPut(key, value, isRecursiveDelete);
+        IndexTrie trie = this.internalPut(key, value, isRecursiveDelete);
 
         // If it's not deletion, there is no need to coalesce
         if (value>=0)
@@ -361,7 +359,7 @@ public class FastTrie {
 
     }
 
-    private FastTrie internalPut(TrieKeySlice key, int value, boolean isRecursiveDelete) {
+    private IndexTrie internalPut(TrieKeySlice key, int value, boolean isRecursiveDelete) {
         TrieKeySlice commonPath = key.commonPath(sharedPath);
         if (commonPath.length() < sharedPath.length()) {
             // when we are removing a key we know splitting is not necessary. the key wasn't found at this point.
@@ -382,14 +380,14 @@ public class FastTrie {
             }
 
             if (isRecursiveDelete) {
-                return new FastTrie(this.sharedPath, nullValue);
+                return new IndexTrie(this.sharedPath, nullValue);
             }
 
             if (isEmptyTrie(value, this.left, this.right)) {
                 return null;
             }
 
-            return new FastTrie(
+            return new IndexTrie(
                     this.sharedPath,
                     value,
                     this.left,
@@ -398,27 +396,27 @@ public class FastTrie {
         }
 
         if (isEmptyTrie()) {
-            return new FastTrie( key, value);
+            return new IndexTrie( key, value);
         }
 
         // this bit will be implicit and not present in a shared path
         byte pos = key.get(sharedPath.length());
 
-        FastTrie node = retrieveNode(pos);
+        IndexTrie node = retrieveNode(pos);
         if (node == null) {
-            node = new FastTrie();
+            node = new IndexTrie();
         }
 
         TrieKeySlice subKey = key.slice(sharedPath.length() + 1, key.length());
-        FastTrie newNode = node.put(subKey, value, isRecursiveDelete);
+        IndexTrie newNode = node.put(subKey, value, isRecursiveDelete);
 
         // reference equality
         if (newNode == node) {
             return this;
         }
 
-        FastTrie newLeft;
-        FastTrie newRight;
+        IndexTrie newLeft;
+        IndexTrie newRight;
         if (pos == 0) {
             newLeft = newNode;
             newRight = this.right;
@@ -431,19 +429,19 @@ public class FastTrie {
             return null;
         }
 
-        return new FastTrie(this.sharedPath, this.value, newLeft, newRight);
+        return new IndexTrie(this.sharedPath, this.value, newLeft, newRight);
     }
 
-    private FastTrie split(TrieKeySlice commonPath) {
+    private IndexTrie split(TrieKeySlice commonPath) {
         int commonPathLength = commonPath.length();
         TrieKeySlice newChildSharedPath = sharedPath.slice(commonPathLength + 1, sharedPath.length());
-        FastTrie newChildTrie = new FastTrie(newChildSharedPath, this.value, this.left, this.right);
+        IndexTrie newChildTrie = new IndexTrie(newChildSharedPath, this.value, this.left, this.right);
 
         // this bit will be implicit and not present in a shared path
         byte pos = sharedPath.get(commonPathLength);
 
-        FastTrie newLeft;
-        FastTrie newRight;
+        IndexTrie newLeft;
+        IndexTrie newRight;
         if (pos == 0) {
             newLeft = newChildTrie;
             newRight = null;
@@ -452,7 +450,7 @@ public class FastTrie {
             newRight = newChildTrie;
         }
 
-        return new FastTrie(commonPath, nullValue, newLeft, newRight);
+        return new IndexTrie(commonPath, nullValue, newLeft, newRight);
     }
 
     public boolean isTerminal() {
@@ -467,7 +465,7 @@ public class FastTrie {
         return isEmptyTrie(this.value, this.left, this.right);
     }
 
-    private static boolean isEmptyTrieRecursive(FastTrie node) {
+    private static boolean isEmptyTrieRecursive(IndexTrie node) {
         if (node==null)
             return true;
         return (isEmptyTrieRecursive(node.value,node.left,node.right));
@@ -482,7 +480,7 @@ public class FastTrie {
      * @return true if no data
      */
 
-    private static boolean isEmptyTrie(int value,FastTrie left, FastTrie right) {
+    private static boolean isEmptyTrie(int value, IndexTrie left, IndexTrie right) {
         if (value>=0)
             return false;
         if (left!=null)
@@ -492,7 +490,7 @@ public class FastTrie {
         return true;
 
     }
-    private static boolean isEmptyTrieRecursive(int value,FastTrie left, FastTrie right) {
+    private static boolean isEmptyTrieRecursive(int value, IndexTrie left, IndexTrie right) {
         if (value>=0)
             return false;
         if (!isEmptyTrieRecursive(left))
@@ -563,7 +561,7 @@ public class FastTrie {
 
         private final Deque<IterationElement> visiting;
 
-        public InOrderIterator(FastTrie root) {
+        public InOrderIterator(IndexTrie root) {
             Objects.requireNonNull(root);
             TrieKeySlice traversedPath = root.getSharedPath();
             this.visiting = new LinkedList<>();
@@ -580,9 +578,9 @@ public class FastTrie {
         @SuppressWarnings("squid:S2272") // NoSuchElementException is thrown by {@link Deque#pop()} when it's empty
         public IterationElement next() {
             IterationElement visitingElement = visiting.pop();
-            FastTrie node = visitingElement.getNode();
+            IndexTrie node = visitingElement.getNode();
             // if the node has a right child, its leftmost node is next
-            FastTrie rightNode = node.retrieveNode((byte) 0x01);
+            IndexTrie rightNode = node.retrieveNode((byte) 0x01);
             if (rightNode != null) {
                 TrieKeySlice rightNodeKey = visitingElement.getNodeKey().rebuildSharedPath((byte) 0x01, rightNode.getSharedPath());
                 visiting.push(new IterationElement(rightNodeKey, rightNode)); // push the right node
@@ -605,9 +603,9 @@ public class FastTrie {
          * @param nodeKey
          * @param node the root of the subtree for which we are trying to reach the leftmost node
          */
-        private void pushLeftmostNode(TrieKeySlice nodeKey, FastTrie node) {
+        private void pushLeftmostNode(TrieKeySlice nodeKey, IndexTrie node) {
             // find the leftmost node
-            FastTrie leftNode = node.retrieveNode((byte) 0x00);
+            IndexTrie leftNode = node.retrieveNode((byte) 0x00);
             if (leftNode != null) {
                 TrieKeySlice leftNodeKey = nodeKey.rebuildSharedPath((byte) 0x00, leftNode.getSharedPath());
                 visiting.push(new IterationElement(leftNodeKey, leftNode)); // push the left node
@@ -620,7 +618,7 @@ public class FastTrie {
 
         private final Deque<IterationElement> visiting;
 
-        public PreOrderIterator(FastTrie root) {
+        public PreOrderIterator(IndexTrie root) {
             Objects.requireNonNull(root);
             TrieKeySlice traversedPath = root.getSharedPath();
             this.visiting = new LinkedList<>();
@@ -631,16 +629,16 @@ public class FastTrie {
         @SuppressWarnings("squid:S2272") // NoSuchElementException is thrown by {@link Deque#pop()} when it's empty
         public IterationElement next() {
             IterationElement visitingElement = visiting.pop();
-            FastTrie node = visitingElement.getNode();
+            IndexTrie node = visitingElement.getNode();
             TrieKeySlice nodeKey = visitingElement.getNodeKey();
             // need to visit the left subtree first, then the right since a stack is a LIFO, push the right subtree first,
             // then the left
-            FastTrie rightNode = node.retrieveNode((byte) 0x01);
+            IndexTrie rightNode = node.retrieveNode((byte) 0x01);
             if (rightNode != null) {
                 TrieKeySlice rightNodeKey = nodeKey.rebuildSharedPath((byte) 0x01, rightNode.getSharedPath());
                 visiting.push(new IterationElement(rightNodeKey, rightNode));
             }
-            FastTrie leftNode = node.retrieveNode((byte) 0x00);
+            IndexTrie leftNode = node.retrieveNode((byte) 0x00);
             if (leftNode != null) {
                 TrieKeySlice leftNodeKey = nodeKey.rebuildSharedPath((byte) 0x00, leftNode.getSharedPath());
                 visiting.push(new IterationElement(leftNodeKey, leftNode));
@@ -660,7 +658,7 @@ public class FastTrie {
         private final Deque<IterationElement> visiting;
         private final Deque<Boolean> visitingRightChild;
 
-        public PostOrderIterator(FastTrie root) {
+        public PostOrderIterator(IndexTrie root) {
             Objects.requireNonNull(root);
             TrieKeySlice traversedPath = root.getSharedPath();
             this.visiting = new LinkedList<>();
@@ -681,8 +679,8 @@ public class FastTrie {
         @SuppressWarnings("squid:S2272") // NoSuchElementException is thrown by {@link Deque#element()} when it's empty
         public IterationElement next() {
             IterationElement visitingElement = visiting.element();
-            FastTrie node = visitingElement.getNode();
-            FastTrie rightNode = node.retrieveNode((byte) 0x01);
+            IndexTrie node = visitingElement.getNode();
+            IndexTrie rightNode = node.retrieveNode((byte) 0x01);
             if (rightNode == null || visitingRightChild.peek()) { // no right subtree, or right subtree already visited
                 // already visited right child, time to visit the node on top
                 visiting.removeFirst(); // it was already picked
@@ -709,9 +707,9 @@ public class FastTrie {
          * @param nodeKey
          * @param node the root of the subtree for which we are trying to reach the leftmost node
          */
-        private void pushLeftmostNodeRecord(TrieKeySlice nodeKey, FastTrie node) {
+        private void pushLeftmostNodeRecord(TrieKeySlice nodeKey, IndexTrie node) {
             // find the leftmost node
-            FastTrie leftNode = node.retrieveNode((byte) 0x00);
+            IndexTrie leftNode = node.retrieveNode((byte) 0x00);
             if (leftNode != null) {
                 TrieKeySlice leftNodeKey = nodeKey.rebuildSharedPath((byte) 0x00, leftNode.getSharedPath());
                 visiting.push(new IterationElement(leftNodeKey, leftNode)); // push the left node
@@ -723,14 +721,14 @@ public class FastTrie {
 
     public static class IterationElement {
         private final TrieKeySlice nodeKey;
-        private final FastTrie node;
+        private final IndexTrie node;
 
-        public IterationElement(final TrieKeySlice nodeKey, final FastTrie node) {
+        public IterationElement(final TrieKeySlice nodeKey, final IndexTrie node) {
             this.nodeKey = nodeKey;
             this.node = node;
         }
 
-        public FastTrie getNode() {
+        public IndexTrie getNode() {
             return node;
         }
 
@@ -765,22 +763,22 @@ public class FastTrie {
     // Additional auxiliary methods for Merkle Proof
 
     @Nullable
-    public List<FastTrie> getNodes(byte[] key) {
+    public List<IndexTrie> getNodes(byte[] key) {
         return findNodes(key);
     }
 
     @Nullable
-    public List<FastTrie> getNodes(String key) {
+    public List<IndexTrie> getNodes(String key) {
         return this.getNodes(key.getBytes(StandardCharsets.UTF_8));
     }
 
     @Nullable
-    private List<FastTrie> findNodes(byte[] key) {
+    private List<IndexTrie> findNodes(byte[] key) {
         return findNodes(TrieKeySlice.fromKey(key));
     }
 
     @Nullable
-    private List<FastTrie> findNodes(TrieKeySlice key) {
+    private List<IndexTrie> findNodes(TrieKeySlice key) {
         if (sharedPath.length() > key.length()) {
             return null;
         }
@@ -792,18 +790,18 @@ public class FastTrie {
         }
 
         if (commonPathLength == key.length()) {
-            List<FastTrie> nodes = new ArrayList<>();
+            List<IndexTrie> nodes = new ArrayList<>();
             nodes.add(this);
             return nodes;
         }
 
-        FastTrie node = this.retrieveNode(key.get(commonPathLength));
+        IndexTrie node = this.retrieveNode(key.get(commonPathLength));
 
         if (node == null) {
             return null;
         }
 
-        List<FastTrie> subnodes = node.findNodes(key.slice(commonPathLength + 1, key.length()));
+        List<IndexTrie> subnodes = node.findNodes(key.slice(commonPathLength + 1, key.length()));
 
         if (subnodes == null) {
             return null;

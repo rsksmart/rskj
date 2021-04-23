@@ -1,14 +1,12 @@
 package org.ethereum.datasource;
 
-import co.rsk.trie.TrieValueTest;
-import org.ethereum.crypto.Keccak256Helper;
 import org.junit.Assert;
 import org.junit.Test;
 
-public class FastTrieTest {
+public class IndexTrieTest {
     @Test
     public void noLongValueInEmptyTrie() {
-        FastTrie trie = new FastTrie();
+        IndexTrie trie = new IndexTrie();
 
         Assert.assertTrue(trie.getValue()<0);
     }
@@ -17,17 +15,30 @@ public class FastTrieTest {
     public void noLongValueInTrieWithShortValue() {
         byte[] key = new byte[] { 0x04, 0x05 };
         int value =100;
-        FastTrie trie = new FastTrie().put(key, value);
+        IndexTrie trie = new IndexTrie().put(key, value);
         Assert.assertEquals(value, trie.getValue());
+    }
+
+    @Test
+    public void noWithoutPath() {
+        byte[] key1 = new byte[] { 0x00};
+        byte[] key2 = new byte[] { (byte) 0x80};
+        int value1 =100;
+        int value2 =101;
+        IndexTrie trie = new IndexTrie().put(key1, value1).put(key2,value2);
+
+        Assert.assertEquals(IndexTrie.nullValue, trie.getValue());
+        Assert.assertEquals(0, trie.getSharedPath().length());
+
     }
 
     // Key tests
     @Test
     public void getNullForUnknownKey() {
-        FastTrie trie = new FastTrie();
+        IndexTrie trie = new IndexTrie();
 
-        Assert.assertEquals(FastTrie.nullValue,trie.get(new byte[] { 0x01, 0x02, 0x03 }));
-        Assert.assertEquals(FastTrie.nullValue,trie.get(fooKey));
+        Assert.assertEquals(IndexTrie.nullValue,trie.get(new byte[] { 0x01, 0x02, 0x03 }));
+        Assert.assertEquals(IndexTrie.nullValue,trie.get(fooKey));
     }
 
     int foo = 100;
@@ -37,7 +48,7 @@ public class FastTrieTest {
 
     @Test
     public void putAndGetKeyValue() {
-        FastTrie trie = new FastTrie();
+        IndexTrie trie = new IndexTrie();
 
         trie = trie.put(fooKey, bar);
         Assert.assertTrue(0<=trie.get(fooKey));
@@ -46,9 +57,9 @@ public class FastTrieTest {
 
     @Test
     public void putAndGetKeyValueTwice() {
-        FastTrie trie = new FastTrie();
-        FastTrie trie1 = trie.put(fooKey, bar);
-        FastTrie trie2 = trie1.put(fooKey, bar);
+        IndexTrie trie = new IndexTrie();
+        IndexTrie trie1 = trie.put(fooKey, bar);
+        IndexTrie trie2 = trie1.put(fooKey, bar);
         Assert.assertTrue(0<=trie1.get(fooKey));
         Assert.assertEquals(bar, trie1.get(fooKey));
         Assert.assertTrue(0<=trie2.get(fooKey));
@@ -57,9 +68,9 @@ public class FastTrieTest {
     }
     @Test
     public void putAndGetKeyValueTwiceWithDifferenteValues() {
-        FastTrie trie = new FastTrie();
-        FastTrie trie1 = trie.put(fooKey, bar+1);
-        FastTrie trie2 = trie1.put(fooKey, bar+2);
+        IndexTrie trie = new IndexTrie();
+        IndexTrie trie1 = trie.put(fooKey, bar+1);
+        IndexTrie trie2 = trie1.put(fooKey, bar+2);
         Assert.assertTrue(0<=trie1.get(fooKey));
         Assert.assertEquals(bar+1, trie1.get(fooKey));
         Assert.assertTrue(0<=trie2.get(fooKey));
@@ -69,7 +80,7 @@ public class FastTrieTest {
 
     @Test
     public void putAndGetKeyLongValue() {
-        FastTrie trie = new FastTrie();
+        IndexTrie trie = new IndexTrie();
         int value = 100;
         trie = trie.put(fooKey, value);
         Assert.assertTrue(0<=trie.get(fooKey));
@@ -78,7 +89,7 @@ public class FastTrieTest {
 
     @Test
     public void putKeyValueAndDeleteKey() {
-        FastTrie trie = new FastTrie();
+        IndexTrie trie = new IndexTrie();
 
         trie = trie.put(fooKey, bar).delete(fooKey);
         Assert.assertEquals(trie.get(fooKey),-1);
@@ -86,7 +97,7 @@ public class FastTrieTest {
 
     @Test
     public void putAndGetEmptyKeyValue() {
-        FastTrie trie = new FastTrie();
+        IndexTrie trie = new IndexTrie();
 
         trie = trie.put("", bar);
         Assert.assertTrue(0<=trie.get(""));
@@ -95,7 +106,7 @@ public class FastTrieTest {
 
     @Test
     public void putAndGetEmptyKeyLongValue() {
-        FastTrie trie = new FastTrie();
+        IndexTrie trie = new IndexTrie();
         int  value = 100;
 
         trie = trie.put("", value);
@@ -105,7 +116,7 @@ public class FastTrieTest {
 
     @Test
     public void putAndGetTwoKeyValues() {
-        FastTrie trie = new FastTrie();
+        IndexTrie trie = new IndexTrie();
 
         trie = trie.put(fooKey, bar);
         trie = trie.put(barKey, foo);
@@ -119,7 +130,7 @@ public class FastTrieTest {
 
     @Test
     public void putAndGetTwoKeyLongValues() {
-        FastTrie trie = new FastTrie();
+        IndexTrie trie = new IndexTrie();
         int value1 = 100;
         int value2 = 200;
 
@@ -135,7 +146,7 @@ public class FastTrieTest {
 
     @Test
     public void putAndGetKeyAndSubKeyValues() {
-        FastTrie trie = new FastTrie();
+        IndexTrie trie = new IndexTrie();
 
         trie = trie.put(fooKey, bar);
         trie = trie.put("f", 42);
@@ -150,7 +161,7 @@ public class FastTrieTest {
 
     @Test
     public void putAndGetKeyAndSubKeyValuesInverse() {
-        FastTrie trie = new FastTrie();
+        IndexTrie trie = new IndexTrie();
 
         trie = trie.put("f", 42)
                 .put("fo", bar);
@@ -165,7 +176,7 @@ public class FastTrieTest {
 
     @Test
     public void putAndGetOneHundredKeyValues() {
-        FastTrie trie = new FastTrie();
+        IndexTrie trie = new IndexTrie();
 
         for (int k = 0; k < 100; k++)
             trie = trie.put(k + "", k);
@@ -179,7 +190,7 @@ public class FastTrieTest {
     }
     @Test
     public void deleteValueGivintEmptyTrie() {
-        FastTrie trie = new FastTrie().put("key", 1);
+        IndexTrie trie = new IndexTrie().put("key", 1);
 
         trie = trie.delete("key".getBytes());
 
@@ -188,12 +199,12 @@ public class FastTrieTest {
 
     @Test
     public void deleteOneValueGivesTheSameHash() {
-        FastTrie trie1 = new FastTrie()
+        IndexTrie trie1 = new IndexTrie()
                 .put("key1", gvalue1)
                 .put("key2", gvalue2)
                 .delete("key1");
 
-        FastTrie trie2 = new FastTrie().put("key2", gvalue2);
+        IndexTrie trie2 = new IndexTrie().put("key2", gvalue2);
 
         Assert.assertTrue(trie1.equals(trie2));
     }
@@ -203,32 +214,32 @@ public class FastTrieTest {
 
     @Test
     public void deleteOneLongValueGivesTheSameHash() {
-        FastTrie trie1 = new FastTrie()
+        IndexTrie trie1 = new IndexTrie()
                 .put("key1",1024)
                 .put("key2", gvalue2)
                 .delete("key1");
 
-        FastTrie trie2 = new FastTrie().put("key2", gvalue2);
+        IndexTrie trie2 = new IndexTrie().put("key2", gvalue2);
 
         Assert.assertTrue(trie1.equals(trie2));
     }
 
     @Test
     public void deleteOneValueTwiceGivesTheSameHash() {
-        FastTrie trie1 = new FastTrie()
+        IndexTrie trie1 = new IndexTrie()
                 .put("key1", gvalue1)
                 .put("key2", gvalue2)
                 .put("key2", gvalue2)
                 .delete("key1");
 
-        FastTrie trie2 = new FastTrie().put("key2", gvalue2);
+        IndexTrie trie2 = new IndexTrie().put("key2", gvalue2);
 
         Assert.assertTrue(trie1.equals(trie2));
     }
 
     @Test
     public void deleteOneHundredValuesGivesTheSameHash() {
-        FastTrie trie1 = new FastTrie();
+        IndexTrie trie1 = new IndexTrie();
 
         int valueBase = 1000;
         for (int k = 0; k < 200; k++)
@@ -237,7 +248,7 @@ public class FastTrieTest {
         for (int k = 1; k < 200; k += 2)
             trie1 = trie1.delete("key" + k);
 
-        FastTrie trie2 = new FastTrie();
+        IndexTrie trie2 = new IndexTrie();
 
         for (int k = 0; k < 200; k += 2)
             trie2 = trie2.put("key" + k,valueBase  + k);
@@ -247,7 +258,7 @@ public class FastTrieTest {
 
     @Test
     public void deleteTwoHundredValuesGivesTheEmptyHash() {
-        FastTrie trie1 = new FastTrie();
+        IndexTrie trie1 = new IndexTrie();
         int valueBase = 1;
 
         for (int k = 0; k < 200; k++)

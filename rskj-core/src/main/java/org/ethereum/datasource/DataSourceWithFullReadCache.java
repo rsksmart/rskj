@@ -16,6 +16,10 @@ public class DataSourceWithFullReadCache implements KeyValueDataSource {
     //private final IndexTrie committedCache;
     //private byte[] cache;
     HashMap<ByteArrayWrapper,ByteArrayWrapper> cache;
+    long hits;
+    long gets;
+    long hitsPartial;
+    long getsPartial;
 
     public static class TrieItem  {
         public byte[] hash;
@@ -101,18 +105,46 @@ public class DataSourceWithFullReadCache implements KeyValueDataSource {
         }
     }
 
+    long started;
+    long partialTime;
     @Override
     public byte[] get(byte[] key) {
         Objects.requireNonNull(key);
         ByteArrayWrapper wrappedKey = ByteUtil.wrap(key);
         byte[] value= null;
+        if (gets==0) {
+            started = System.currentTimeMillis();
+            partialTime = started;
+        }
 
          try {
              ByteArrayWrapper data = cache.get(wrappedKey);
-             if (data!=null)
-                value = data.getData();
+             if (data!=null) {
+                 value = data.getData();
+                 hitsPartial++;
+                 hits++;
+             }
              else
                 value = base.get(key); // pass-through
+             gets++;
+             getsPartial++;
+             if (getsPartial%5000==0) {
+                 long currentTime = System.currentTimeMillis();
+                 // No more than 1/sec
+                 if (currentTime>partialTime+1000) {
+                     long deltaTime = (currentTime - started);
+                     System.out.println("Time[s]: " + (deltaTime / 1000));
+
+                     if (gets>0)
+                        System.out.println("total gets: " + gets+" hits: "+hits+" rate: "+(hits*100/gets)+"% gets/sec: "+(gets*1000/deltaTime));
+                     if (getsPartial>0)
+                        System.out.println("part  gets: " + getsPartial+" hits: "+hitsPartial+" rate: "+(hitsPartial*100/getsPartial)+"% gets/sec: "+(getsPartial*1000/deltaTime));
+
+                     getsPartial=0;
+                     hitsPartial=0;
+                     partialTime = currentTime;
+                 }
+             }
         }
         finally {
         }

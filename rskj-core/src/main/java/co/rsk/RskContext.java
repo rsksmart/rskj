@@ -933,7 +933,8 @@ public class RskContext implements NodeBootstrapper {
             } catch (IOException e) {
                 logger.error("Unable to check if GC was ever enabled", e);
             }
-            newTrieStore = buildTrieStore(trieStorePath,true); // add trie read-cache
+            // SDL
+            newTrieStore = buildTrieStore(trieStorePath,false); // add trie read-cache
         }
         return newTrieStore;
     }
@@ -1013,6 +1014,8 @@ public class RskContext implements NodeBootstrapper {
 
     protected TrieStore buildTrieStore(Path trieStorePath,boolean worldStateCache) {
         int statesCacheSize = getRskSystemProperties().getStatesCacheSize();
+        statesCacheSize = 2_000_000;
+
         KeyValueDataSource ds = LevelDbDataSource.makeDataSource(trieStorePath);
 
         if (statesCacheSize != 0) {

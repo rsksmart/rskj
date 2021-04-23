@@ -22,12 +22,15 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.trie.MutableTrie;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStore;
+import co.rsk.util.MaxSizeHashMap;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.db.MutableRepository;
 import org.ethereum.util.RLP;
 
+import java.util.Collections;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
@@ -82,15 +85,35 @@ public class RepositoryLocator {
                 "The trie with root %s is missing in this store", header.getHash()
         ));
     }
+    final int cacheSize =10;
+    Map<Keccak256, Trie> trieCache  = Collections.synchronizedMap(new MaxSizeHashMap<>(cacheSize, true));
+    final boolean useCache = false;
 
+    public void cacheTrie(BlockHeader header,Trie entry) {
+      if (!useCache) return;
+
+      Keccak256 stateRoot = stateRootHandler.translate(header);
+      trieCache.put(stateRoot,entry);
+    }
+
+    // header is the header that specifies the final state.
+    // the header points to the parent block of the block currently being processed.
     private Optional<MutableTrie> mutableTrieSnapshotAt(BlockHeader header) {
         Keccak256 stateRoot = stateRootHandler.translate(header);
 
         if (EMPTY_HASH.equals(stateRoot)) {
             return Optional.of(new MutableTrieImpl(trieStore, new Trie(trieStore)));
         }
-
-        Optional<Trie> trie = trieStore.retrieve(stateRoot.getBytes());
+        Optional<Trie> trie;
+        if (!useCache)  {
+            trie = trieStore.retrieve(stateRoot.getBytes());
+        } else {
+            Trie trieEntry = trieCache.get(stateRoot);
+            if (trieEntry != null)
+                trie = Optional.of(trieEntry);
+            else
+                trie = trieStore.retrieve(stateRoot.getBytes());
+        }
 
         return trie.map(t -> new MutableTrieImpl(trieStore, t));
     }
