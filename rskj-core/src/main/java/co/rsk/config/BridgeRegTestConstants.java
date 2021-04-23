@@ -159,7 +159,7 @@ public class BridgeRegTestConstants extends BridgeConstants {
         // e1b17fcd0ef1942465eee61b20561b16750191143d365e71de08b33dd84a9788
         oldFederationAddress = "2N7ZgQyhFKm17RbaLqygYbS7KLrQfapyZzu";
 
-        percentageAboveFeeForPegouts = 20;
+        minimumPegoutValuePercentageToReceiveAfterFee = 20;
     }
 
     public static BridgeRegTestConstants getInstance() {

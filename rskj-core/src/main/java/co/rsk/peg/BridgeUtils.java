@@ -504,6 +504,10 @@ public class BridgeUtils {
     }
 
     public static int getRegularPegoutTxSize(@Nonnull Federation federation) {
+        // A regular peg-out transaction has two inputs and two outputs
+        // Each input has M/N signatures and each signature is around 71 bytes long (signed sighash)
+        // The outputs are composed of the scriptPubkeyHas(or publicKeyHash)
+        // and the op_codes for the corresponding script
         final int INPUT_MULTIPLIER = 2;
         final int SIGNATURE_MULTIPLIER = 71;
         final int OUTPUT_MULTIPLIER = 2;
