@@ -194,7 +194,12 @@ public class BridgeUtils {
             }
         }
 
-        Wallet federationsWallet = BridgeUtils.getFederationsNoSpendWallet(btcContext, activeFederations, false, null);
+        Wallet federationsWallet = BridgeUtils.getFederationsNoSpendWallet(
+            btcContext,
+            activeFederations,
+            false,
+            null
+        );
         Coin valueSentToMe = tx.getValueSentToMe(federationsWallet);
         Coin minimumPegInTxValue = activations.isActive(ConsensusRule.RSKIP219) ?
             bridgeConstants.getMinimumPeginTxValueInSatoshis() :
@@ -247,22 +252,37 @@ public class BridgeUtils {
             (activations.isActive(ConsensusRule.RSKIP143) && txSenderAddressType != TxSenderAddressType.UNKNOWN);
     }
 
-    private static boolean isPegOutTx(BtcTransaction tx, Federation federation) {
-        return isPegOutTx(tx, Collections.singletonList(federation));
+    private static boolean isPegOutTx(BtcTransaction tx, Federation federation, ActivationConfig.ForBlock activations) {
+        return isPegOutTx(tx, Collections.singletonList(federation), activations);
     }
 
-    public static boolean isPegOutTx(BtcTransaction tx, List<Federation> federations) {
-        return isPegOutTx(tx, federations.stream().filter(Objects::nonNull).map(Federation::getP2SHScript).toArray(Script[]::new));
+    public static boolean isPegOutTx(BtcTransaction tx, List<Federation> federations, ActivationConfig.ForBlock activations) {
+        return isPegOutTx(tx, activations, federations.stream().filter(Objects::nonNull).map(Federation::getP2SHScript).toArray(Script[]::new));
     }
 
-    public static boolean isPegOutTx(BtcTransaction tx, Script... p2shScript) {
+    public static boolean isPegOutTx(BtcTransaction tx, ActivationConfig.ForBlock activations, Script... p2shScript) {
         int inputsSize = tx.getInputs().size();
         for (int i = 0; i < inputsSize; i++) {
             final int inputIndex = i;
             if (Stream.of(p2shScript).anyMatch(federationPayScript -> scriptCorrectlySpendsTx(tx, inputIndex, federationPayScript))) {
                 return true;
             }
+
+            // Check if the registered utxo is from a fast bridge or erp federation
+            if (activations.isActive(ConsensusRule.RSKIP201)) {
+                RedeemScriptParser redeemScriptParser = RedeemScriptParserFactory.get(tx.getInput(inputIndex).getScriptSig().getChunks());
+                try {
+                    Script inputStandardRedeemScript = redeemScriptParser.extractStandardRedeemScript();
+                    Script outputScript = ScriptBuilder.createP2SHOutputScript(inputStandardRedeemScript);
+                    if (Stream.of(p2shScript).anyMatch(federationPayScript -> federationPayScript.equals(outputScript))) {
+                        return true;
+                    }
+                } catch (ScriptException e) {
+                    // There is no redeem script, could be a peg-in from a P2PKH address
+                }
+            }
         }
+
         return false;
     }
 
@@ -278,8 +298,8 @@ public class BridgeUtils {
         if (retiredFederationP2SHScript == null && retiringFederation == null) {
             return false;
         }
-        boolean moveFromRetired = retiredFederationP2SHScript != null && isPegOutTx(btcTx, retiredFederationP2SHScript);
-        boolean moveFromRetiring = retiringFederation != null && isPegOutTx(btcTx, retiringFederation);
+        boolean moveFromRetired = retiredFederationP2SHScript != null && isPegOutTx(btcTx, activations, retiredFederationP2SHScript);
+        boolean moveFromRetiring = retiringFederation != null && isPegOutTx(btcTx, retiringFederation, activations);
         boolean moveToActive = isValidPegInTx(btcTx, activeFederation, btcContext, bridgeConstants, activations);
 
         return (moveFromRetired || moveFromRetiring) && moveToActive;
