@@ -114,6 +114,11 @@ public class TrieStoreImpl implements TrieStore {
 
     @Override
     public Optional<Trie> retrieve(byte[] hash) {
+
+        Trie e =savedTries.get(new ByteArrayWrapper(hash));
+        if (e!=null)
+            return Optional.of(e);
+
         byte[] message = this.store.get(hash);
         if (message == null) {
             return Optional.empty();
