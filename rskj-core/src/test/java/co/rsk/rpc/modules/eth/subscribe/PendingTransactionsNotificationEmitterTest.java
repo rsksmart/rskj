@@ -93,8 +93,4 @@ public class PendingTransactionsNotificationEmitterTest {
         listener.onPendingTransactionsReceived(TransactionUtils.getTransactions(2));
         verifyNoMoreInteractions(channel);
     }
-
-//    private EthSubscriptionNotification mockResult() {
-//        //return new EthSubscriptionNotification();
-//    }
 }

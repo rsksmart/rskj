@@ -38,7 +38,6 @@ public class EthSubscriptionParams {
         this.result = Objects.requireNonNull(result);
     }
 
-
     @JsonInclude(JsonInclude.Include.ALWAYS)
     public SubscriptionId getSubscription() {
         return subscription;

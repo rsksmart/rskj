@@ -39,6 +39,4 @@ public class EthSubscriptionNotification extends JsonRpcMessage {
     public EthSubscriptionParams getParams() {
         return params;
     }
-
-
 }
