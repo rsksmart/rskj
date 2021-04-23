@@ -28,7 +28,6 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.codec.http.HttpServerCodec;
-import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolHandler;
 import io.netty.handler.timeout.WriteTimeoutHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,7 +38,7 @@ import java.util.concurrent.TimeUnit;
 
 public class Web3WebSocketServer implements InternalService {
     private static final Logger logger = LoggerFactory.getLogger(Web3WebSocketServer.class);
-    public static final int WRITE_TIMEOUT_SECONDS = 5;
+    public static final int WRITE_TIMEOUT_SECONDS = 30;
 
     private final InetAddress host;
     private final int port;
