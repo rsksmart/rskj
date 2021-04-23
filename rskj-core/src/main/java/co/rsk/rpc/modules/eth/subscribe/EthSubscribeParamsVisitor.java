@@ -43,9 +43,4 @@ public interface EthSubscribeParamsVisitor {
      * @return a subscription id which should be used as an unsubscribe parameter.
      */
     SubscriptionId visit(EthSubscribePendingTransactionsParams params, Channel channel);
-
-
-
-
-
 }
