@@ -1,0 +1,34 @@
+name: Reproducible build
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout rskj repo
+        uses: actions/checkout@v2
+      - name: Set rskj version
+        id: vars
+        run: echo ::set-output name=tag::${GITHUB_REF#refs/*/}
+      - name: Create Docker image
+        id: docker_build
+        uses: docker/build-push-action@v2
+        with:
+          context: ./
+          file: Dockerfile.reproducible
+          push: false
+          tags: rskj:${{ steps.vars.outputs.tag }}
+      - name: Check SHA256SUM
+        run: |
+          docker run --rm rskj:${{ steps.vars.outputs.tag }} bash -c 'sha256sum /code/rskj/rskj-core/build/libs/* | grep -v javadoc'
+      - name: Extract JAR from image
+        run: |
+          cid=$(docker run -d rskj:${{ steps.vars.outputs.tag }} /bin/true) && \
+          docker cp "$cid":/code/rskj/rskj-core/build/libs/ . && \
+          docker rm "$cid"
+      - name: Export artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: rskj-${{ steps.vars.outputs.tag }}
+          path: libs/
+          if-no-files-found: error
