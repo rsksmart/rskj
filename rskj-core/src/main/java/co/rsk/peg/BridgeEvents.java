@@ -64,20 +64,20 @@ public enum BridgeEvents {
             new CallTransaction.Param[]{
                     new CallTransaction.Param(true, "rskTxHash", SolidityType.getType(SolidityType.BYTES32)),
                     new CallTransaction.Param(true, Fields.BTC_TX_HASH, SolidityType.getType(SolidityType.BYTES32)),
-                    new CallTransaction.Param(false, Fields.AMOUNT, SolidityType.getType(SolidityType.INT256))
+                    new CallTransaction.Param(false, Fields.AMOUNT, SolidityType.getType(SolidityType.UINT256))
             }
     ),
     RELEASE_REQUEST_RECEIVED("release_request_received",
             new CallTransaction.Param[]{
                     new CallTransaction.Param(true, Fields.SENDER, SolidityType.getType(SolidityType.ADDRESS)),
                     new CallTransaction.Param(false, "btcDestinationAddress", SolidityType.getType(SolidityType.BYTES)),
-                    new CallTransaction.Param(false, Fields.AMOUNT, SolidityType.getType(SolidityType.INT256))
+                    new CallTransaction.Param(false, Fields.AMOUNT, SolidityType.getType(SolidityType.UINT256))
             }
     ),
     RELEASE_REQUEST_REJECTED("release_request_rejected",
             new CallTransaction.Param[]{
                     new CallTransaction.Param(true, Fields.SENDER, SolidityType.getType(SolidityType.ADDRESS)),
-                    new CallTransaction.Param(false, Fields.AMOUNT, SolidityType.getType(SolidityType.INT256)),
+                    new CallTransaction.Param(false, Fields.AMOUNT, SolidityType.getType(SolidityType.UINT256)),
                     new CallTransaction.Param(false, Fields.REASON, SolidityType.getType(SolidityType.INT256))
             }
     );

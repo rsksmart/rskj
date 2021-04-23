@@ -42,6 +42,7 @@ public abstract class SolidityType {
     public static final String INT = "int";
     public static final String INT256 = "int256";
     public static final String UINT = "uint";
+    public static final String UINT256 = "uint256";
 
     protected String name;
     private final static int INT_32_SIZE = 32;
