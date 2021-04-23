@@ -1262,19 +1262,6 @@ public class BridgeUtilsTest {
         assertTrue(BridgeUtils.isPegOutTx(pegOutTx1, activations, federation.getP2SHScript()));
         assertTrue(BridgeUtils.isPegOutTx(pegOutTx1, activations, federation.getP2SHScript(), federation2.getP2SHScript()));
         assertFalse(BridgeUtils.isPegOutTx(pegOutTx1, activations, federation2.getP2SHScript()));
-
-        BtcTransaction pegOutTx2 = new BtcTransaction(networkParameters);
-        pegOutTx2.addOutput(Coin.COIN, randomAddress);
-        TransactionInput pegOutInput2 = new TransactionInput(
-            networkParameters,
-            pegOutTx2,
-            new byte[]{},
-            new TransactionOutPoint(networkParameters, 0, Sha256Hash.ZERO_HASH)
-        );
-        pegOutTx2.addInput(pegOutInput2);
-        signWithNKeys(federation, federation.getRedeemScript(), federationPrivateKeys, pegOutInput2, pegOutTx2, 1);
-
-        assertFalse(BridgeUtils.isPegOutTx(pegOutTx2, Collections.singletonList(federation), activations));
     }
 
     @Test
@@ -1314,25 +1301,6 @@ public class BridgeUtilsTest {
         );
         signWithNecessaryKeys(fastBridgeFederation, fastBridgeRedeemScript, fastBridgeFederationKeys, pegOutInput1, pegOutTx1);
 
-        // Create a partially signed tx from the fast bridge fed to a random address
-        BtcTransaction pegOutTx2 = new BtcTransaction(networkParameters);
-        pegOutTx2.addOutput(Coin.COIN, randomAddress);
-        TransactionInput pegOutInput2 = new TransactionInput(
-            networkParameters,
-            pegOutTx2,
-            new byte[]{},
-            new TransactionOutPoint(networkParameters, 0, Sha256Hash.ZERO_HASH)
-        );
-        pegOutTx2.addInput(pegOutInput2);
-        signWithNKeys(
-            fastBridgeFederation,
-            fastBridgeFederation.getRedeemScript(),
-            fastBridgeFederationKeys,
-            pegOutInput2,
-            pegOutTx2,
-            1
-        );
-
         // Before RSKIP 201 activation
         when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(false);
 
@@ -1354,9 +1322,6 @@ public class BridgeUtilsTest {
         assertTrue(BridgeUtils.isPegOutTx(pegOutTx1, activations, fastBridgeFederation.getP2SHScript()));
         assertTrue(BridgeUtils.isPegOutTx(pegOutTx1, activations, fastBridgeFederation.getP2SHScript(), standardFederation.getP2SHScript()));
         assertFalse(BridgeUtils.isPegOutTx(pegOutTx1, activations, standardFederation.getP2SHScript()));
-
-        // We are not validating the if tx is completely signed
-        assertTrue(BridgeUtils.isPegOutTx(pegOutTx2, Collections.singletonList(fastBridgeFederation), activations));
     }
 
     @Test
@@ -1504,6 +1469,45 @@ public class BridgeUtilsTest {
         assertTrue(BridgeUtils.isPegOutTx(pegOutTx1, activations, defaultFederation.getP2SHScript()));
         assertTrue(BridgeUtils.isPegOutTx(pegOutTx1, activations, defaultFederation.getP2SHScript(), standardFederation.getP2SHScript()));
         assertFalse(BridgeUtils.isPegOutTx(pegOutTx1, activations, standardFederation.getP2SHScript()));
+    }
+
+    @Test
+    public void testIsPegOutTx_noRedeemScript() {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        Federation federation = bridgeConstants.getGenesisFederation();
+        Address randomAddress = PegTestUtils.createRandomBtcAddress();
+
+        BtcTransaction pegOutTx1 = new BtcTransaction(networkParameters);
+        pegOutTx1.addOutput(Coin.COIN, randomAddress);
+        TransactionInput pegOutInput1 = new TransactionInput(
+            networkParameters,
+            pegOutTx1,
+            new byte[]{},
+            new TransactionOutPoint(networkParameters, 0, Sha256Hash.ZERO_HASH)
+        );
+        pegOutTx1.addInput(pegOutInput1);
+
+        assertFalse(BridgeUtils.isPegOutTx(pegOutTx1, Collections.singletonList(federation), activations));
+    }
+
+    @Test
+    public void testIsPegOutTx_invalidRedeemScript() {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        Federation federation = bridgeConstants.getGenesisFederation();
+        Address randomAddress = PegTestUtils.createRandomBtcAddress();
+        Script invalidRedeemScript = ScriptBuilder.createRedeemScript(2, Arrays.asList(new BtcECKey(), new BtcECKey()));
+
+        BtcTransaction pegOutTx1 = new BtcTransaction(networkParameters);
+        pegOutTx1.addOutput(Coin.COIN, randomAddress);
+        TransactionInput pegOutInput1 = new TransactionInput(
+            networkParameters,
+            pegOutTx1,
+            invalidRedeemScript.getProgram(),
+            new TransactionOutPoint(networkParameters, 0, Sha256Hash.ZERO_HASH)
+        );
+        pegOutTx1.addInput(pegOutInput1);
+
+        assertFalse(BridgeUtils.isPegOutTx(pegOutTx1, Collections.singletonList(federation), activations));
     }
 
     @Test

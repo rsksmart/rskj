@@ -263,23 +263,27 @@ public class BridgeUtils {
     public static boolean isPegOutTx(BtcTransaction tx, ActivationConfig.ForBlock activations, Script... p2shScript) {
         int inputsSize = tx.getInputs().size();
         for (int i = 0; i < inputsSize; i++) {
-            final int inputIndex = i;
-            if (Stream.of(p2shScript).anyMatch(federationPayScript -> scriptCorrectlySpendsTx(tx, inputIndex, federationPayScript))) {
-                return true;
+            TransactionInput txInput = tx.getInput(i);
+            Optional<Script> redeemScriptOptional = extractRedeemScriptFromInput(tx.getInput(i));
+            if (!redeemScriptOptional.isPresent()) {
+                continue;
             }
 
-            // Check if the registered utxo is from a fast bridge or erp federation
+            Script redeemScript = redeemScriptOptional.get();
             if (activations.isActive(ConsensusRule.RSKIP201)) {
-                RedeemScriptParser redeemScriptParser = RedeemScriptParserFactory.get(tx.getInput(inputIndex).getScriptSig().getChunks());
+                // Extract standard redeem script since the registered utxo could be from a fast bridge or erp federation
+                RedeemScriptParser redeemScriptParser = RedeemScriptParserFactory.get(txInput.getScriptSig().getChunks());
                 try {
-                    Script inputStandardRedeemScript = redeemScriptParser.extractStandardRedeemScript();
-                    Script outputScript = ScriptBuilder.createP2SHOutputScript(inputStandardRedeemScript);
-                    if (Stream.of(p2shScript).anyMatch(federationPayScript -> federationPayScript.equals(outputScript))) {
-                        return true;
-                    }
+                    redeemScript = redeemScriptParser.extractStandardRedeemScript();
                 } catch (ScriptException e) {
-                    // There is no redeem script, could be a peg-in from a P2PKH address
+                    // There is no redeem script
+                    continue;
                 }
+            }
+
+            Script outputScript = ScriptBuilder.createP2SHOutputScript(redeemScript);
+            if (Stream.of(p2shScript).anyMatch(federationPayScript -> federationPayScript.equals(outputScript))) {
+                return true;
             }
         }
 
@@ -580,5 +584,30 @@ public class BridgeUtils {
         return TX_ADDITIONAL_DATA_SIZE +
             (scriptSigChunk + INPUT_ADDITIONAL_DATA_SIZE) * inputMultiplier +
             (outputSize + 1 + OUTPUT_ADDITIONAL_DATA_SIZE) * outputMultiplier;
+    }
+
+    private static Optional<Script> extractRedeemScriptFromInput(TransactionInput txInput) {
+        Script inputScript = txInput.getScriptSig();
+        List<ScriptChunk> chunks = inputScript.getChunks();
+        if (chunks == null || chunks.isEmpty()) {
+            return Optional.empty();
+        }
+
+        byte[] program = chunks.get(chunks.size() - 1).data;
+        if (program == null) {
+            return Optional.empty();
+        }
+
+        try {
+            Script redeemScript = new Script(program);
+            return Optional.of(redeemScript);
+        } catch (ScriptException e) {
+            logger.debug(
+                "[extractRedeemScriptFromInput] Failed to extract redeem script from tx input {}. {}",
+                txInput.getHash(),
+                e.getMessage()
+            );
+            return Optional.empty();
+        }
     }
 }
