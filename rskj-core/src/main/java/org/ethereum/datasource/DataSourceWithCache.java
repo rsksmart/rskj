@@ -31,7 +31,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class DataSourceWithCache implements KeyValueDataSource {
-    private static final Logger logger = LoggerFactory.getLogger(DataSourceWithCache.class);
+    private static final Logger logger = LoggerFactory.getLogger("datasourcewithcache");
 
     private final int cacheSize;
     private final KeyValueDataSource base;
@@ -39,6 +39,10 @@ public class DataSourceWithCache implements KeyValueDataSource {
     private final Map<ByteArrayWrapper, byte[]> committedCache;
 
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
+
+    private int noPuts;
+    private int noGets;
+    private int noGetsFromStore;
 
     public DataSourceWithCache(KeyValueDataSource base, int cacheSize) {
         this.cacheSize = cacheSize;
@@ -55,6 +59,8 @@ public class DataSourceWithCache implements KeyValueDataSource {
 
         this.lock.readLock().lock();
 
+        noGets++;
+
         try {
             if (committedCache.containsKey(wrappedKey)) {
                 return committedCache.get(wrappedKey);
@@ -65,6 +71,8 @@ public class DataSourceWithCache implements KeyValueDataSource {
             }
 
             value = base.get(key);
+
+            noGetsFromStore++;
 
             //null value, as expected, is allowed here to be stored in committedCache
             committedCache.put(wrappedKey, value);
@@ -79,6 +87,8 @@ public class DataSourceWithCache implements KeyValueDataSource {
     @Override
     public byte[] put(byte[] key, byte[] value) {
         ByteArrayWrapper wrappedKey = ByteUtil.wrap(key);
+
+        noPuts++;
 
         return put(wrappedKey, value);
     }
@@ -249,6 +259,21 @@ public class DataSourceWithCache implements KeyValueDataSource {
             base.close();
             uncommittedCache.clear();
             committedCache.clear();
+        }
+        finally {
+            this.lock.writeLock().unlock();
+        }
+    }
+
+    public void emitLogs() {
+        this.lock.writeLock().lock();
+
+        try {
+            logger.trace("Activity: No. Gets: {}. No. Puts: {}. No. Gets from Store: {}", noGets, noPuts, noGetsFromStore);
+
+            noGetsFromStore = 0;
+            noGets = 0;
+            noPuts = 0;
         }
         finally {
             this.lock.writeLock().unlock();
