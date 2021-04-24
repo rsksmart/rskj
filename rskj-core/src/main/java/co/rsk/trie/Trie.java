@@ -103,6 +103,9 @@ public class Trie {
     // associated store, to store or retrieve nodes in the trie
     private TrieStore store;
 
+    // already saved in store flag
+    private boolean saved;
+
     // shared Path
     private final TrieKeySlice sharedPath;
 
@@ -151,7 +154,10 @@ public class Trie {
             trie = fromMessageRskip107(ByteBuffer.wrap(message), store);
         }
 
+        trie.saved = true;
+
         profiler.stop(metric);
+
         return trie;
     }
 
@@ -232,7 +238,10 @@ public class Trie {
         }
 
         // it doesn't need to clone value since it's retrieved from store or created from message
-        return new Trie(store, sharedPath, value, left, right, lvalue, valueHash);
+        Trie trie = new Trie(store, sharedPath, value, left, right, lvalue, valueHash);
+        trie.saved = true;
+
+        return trie;
     }
 
     private static Trie fromMessageRskip107(ByteBuffer message, TrieStore store) {
@@ -320,7 +329,10 @@ public class Trie {
             throw new IllegalArgumentException("The message had more data than expected");
         }
 
-        return new Trie(store, sharedPath, value, left, right, lvalue, valueHash, childrenSize);
+        Trie trie = new Trie(store, sharedPath, value, left, right, lvalue, valueHash, childrenSize);
+        trie.saved = true;
+
+        return trie;
     }
 
     /**
@@ -1421,5 +1433,13 @@ public class Trie {
         subnodes.add(this);
 
         return subnodes;
+    }
+
+    public boolean wasSaved() {
+        return this.saved;
+    }
+
+    public void saved() {
+        this.saved = true;
     }
 }

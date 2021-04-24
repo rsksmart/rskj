@@ -43,10 +43,6 @@ public class TrieStoreImpl implements TrieStore {
 
     private KeyValueDataSource store;
 
-    /** Weak references are removed once the tries are garbage collected */
-    private Set<Trie> savedTries = Collections
-            .newSetFromMap(Collections.synchronizedMap(new WeakHashMap<>()));
-
     private int noRetrieves;
     private int noSaves;
     private int noNoSaves;
@@ -77,12 +73,11 @@ public class TrieStoreImpl implements TrieStore {
      * @param forceSaveRoot allows saving the root node even if it's embeddable
      */
     private void save(Trie trie, boolean forceSaveRoot, int level) {
-        logger.trace("Start saving trie, level : {}", level);
-        if (savedTries.contains(trie)) {
-            // it is guaranteed that the children of a saved node are also saved
-            noNoSaves++;
+        if (trie.wasSaved()) {
             return;
         }
+
+        logger.trace("Start saving trie, level : {}", level);
 
         noSaves++;
 
@@ -94,10 +89,19 @@ public class TrieStoreImpl implements TrieStore {
             return;
         }
 
-        logger.trace("Start left trie. Level: {}", level);
-        trie.getLeft().getNode().ifPresent(t -> save(t, false, level + 1));
-        logger.trace("Start right trie. Level: {}", level);
-        trie.getRight().getNode().ifPresent(t -> save(t, false, level + 1));
+        NodeReference leftNodeReference = trie.getLeft();
+
+        if (leftNodeReference.wasLoaded()) {
+            logger.trace("Start left trie. Level: {}", level);
+            leftNodeReference.getNode().ifPresent(t -> save(t, false, level + 1));
+        }
+
+        NodeReference rightNodeReference = trie.getRight();
+
+        if (rightNodeReference.wasLoaded()) {
+            logger.trace("Start right trie. Level: {}", level);
+            rightNodeReference.getNode().ifPresent(t -> save(t, false, level + 1));
+        }
 
         if (trie.hasLongValue()) {
             // Note that there is no distinction in keys between node data and value data. This could bring problems in
@@ -121,8 +125,8 @@ public class TrieStoreImpl implements TrieStore {
 
         logger.trace("Putting in store trie root.");
         this.store.put(trieKeyBytes, trie.toMessage());
+        trie.saved();
         logger.trace("End putting in store trie root.");
-        savedTries.add(trie);
         logger.trace("End Saving trie, level: {}.", level);
     }
 
@@ -141,7 +145,6 @@ public class TrieStoreImpl implements TrieStore {
         noRetrieves++;
 
         Trie trie = Trie.fromMessage(message, this);
-        savedTries.add(trie);
         return Optional.of(trie);
     }
 
