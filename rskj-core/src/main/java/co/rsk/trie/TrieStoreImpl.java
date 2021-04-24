@@ -18,6 +18,7 @@
 
 package co.rsk.trie;
 
+import org.ethereum.datasource.DataSourceWithCache;
 import org.ethereum.datasource.KeyValueDataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,6 +47,10 @@ public class TrieStoreImpl implements TrieStore {
     private Set<Trie> savedTries = Collections
             .newSetFromMap(Collections.synchronizedMap(new WeakHashMap<>()));
 
+    private int noRetrieves;
+    private int noSaves;
+    private int noNoSaves;
+
     public TrieStoreImpl(KeyValueDataSource store) {
         this.store = store;
     }
@@ -55,9 +60,17 @@ public class TrieStoreImpl implements TrieStore {
      */
     @Override
     public void save(Trie trie) {
+        noRetrieves = 0;
+        noSaves = 0;
+        noNoSaves = 0;
+
         logger.trace("Start saving trie root.");
         save(trie, true, 0);
-        logger.trace("End saving trie root.");
+        logger.trace("End saving trie root. No. Retrieves: {}. No. Saves: {}. No. No Saves: {}", noRetrieves, noSaves, noNoSaves);
+
+        if (store instanceof DataSourceWithCache) {
+            ((DataSourceWithCache)store).emitLogs();
+        }
     }
 
     /**
@@ -67,8 +80,11 @@ public class TrieStoreImpl implements TrieStore {
         logger.trace("Start saving trie, level : {}", level);
         if (savedTries.contains(trie)) {
             // it is guaranteed that the children of a saved node are also saved
+            noNoSaves++;
             return;
         }
+
+        noSaves++;
 
         byte[] trieKeyBytes = trie.getHash().getBytes();
 
@@ -121,6 +137,8 @@ public class TrieStoreImpl implements TrieStore {
         if (message == null) {
             return Optional.empty();
         }
+
+        noRetrieves++;
 
         Trie trie = Trie.fromMessage(message, this);
         savedTries.add(trie);
