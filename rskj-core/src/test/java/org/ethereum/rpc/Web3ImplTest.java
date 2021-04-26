@@ -246,6 +246,29 @@ public class Web3ImplTest {
         assertEquals(balanceString, web3.eth_getBalance(accountAddress, blockRef));
     }
 
+    @Test(expected=org.ethereum.rpc.exception.RskJsonRpcRequestException.class)
+    //[ "0x<address>", { "invalidInput": "0x0" } -> throw RskJsonRpcRequestException
+    public void getBalanceWithAccountAndInvalidInputThrowsException() {
+        World world = new World();
+        Account acc1 = new AccountBuilder(world).name("acc1").balance(Coin.valueOf(10000)).build();
+        Block genesis = world.getBlockByName("g00");
+
+        Block block1 = new BlockBuilder(null, null, null).parent(genesis).build();
+        world.getBlockChain().tryToConnect(block1);
+
+        Web3Impl web3 = createWeb3(world);
+
+        String accountAddress = ByteUtil.toHexString(acc1.getAddress().getBytes());
+        String balanceString = "0x" + ByteUtil.toHexString(BigInteger.valueOf(10000).toByteArray());
+        Map<String, String> blockRef = new HashMap<String, String>() {
+            {
+                put("invalidInput", "0x1");
+            }
+        };
+
+        web3.eth_getBalance(accountAddress, blockRef);
+    }
+
     @Test
     public void getBalanceWithAccountAndBlockWithTransaction() {
         World world = new World();
