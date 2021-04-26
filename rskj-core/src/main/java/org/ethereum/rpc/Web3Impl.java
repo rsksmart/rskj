@@ -59,6 +59,7 @@ import org.ethereum.rpc.dto.BlockResultDTO;
 import org.ethereum.rpc.dto.CompilationResultDTO;
 import org.ethereum.rpc.dto.TransactionReceiptDTO;
 import org.ethereum.rpc.dto.TransactionResultDTO;
+import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.util.BuildInfo;
 import org.ethereum.vm.DataWord;
 import org.slf4j.Logger;
@@ -397,7 +398,7 @@ public class Web3Impl implements Web3 {
     @Override
     public String eth_getBalance(String address, Map<String, String> block) {
         Optional<String> blockNumber = Optional.ofNullable(block.get("blockNumber"));
-        return this.eth_getBalance(address, blockNumber.get());
+        return this.eth_getBalance(address, blockNumber.orElseThrow(() -> invalidParamError("invalid block input")));
     }
 
     @Override
