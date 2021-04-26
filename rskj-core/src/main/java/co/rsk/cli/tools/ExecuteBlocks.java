@@ -21,6 +21,7 @@ import co.rsk.RskContext;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.trie.TrieStore;
 import org.ethereum.core.Block;
+import org.ethereum.datasource.DataSourceWithCache;
 import org.ethereum.db.BlockStore;
 
 /**
@@ -34,22 +35,47 @@ public class ExecuteBlocks {
         BlockExecutor blockExecutor = ctx.getBlockExecutor();
         BlockStore blockStore = ctx.getBlockStore();
         TrieStore trieStore = ctx.getTrieStore();
-        
+
         execute(args, blockExecutor, blockStore, trieStore);
     }
-    
+
     public static void execute(String[] args, BlockExecutor blockExecutor, BlockStore blockStore, TrieStore trieStore) {
         long fromBlockNumber = Long.parseLong(args[0]);
         long toBlockNumber = Long.parseLong(args[1]);
-
+        long started = System.currentTimeMillis();
+        long lastTime = started;
+        int printInterval = 5;
+        int bcount = 0;
         for (long n = fromBlockNumber; n <= toBlockNumber; n++) {
             Block block = blockStore.getChainBlockByNumber(n);
+            //System.out.println("Block: "+n+" ("+(n*100/toBlockNumber)+"%)");
             Block parent = blockStore.getBlockByHash(block.getParentHash().getBytes());
+            bcount++;
+            if (bcount>=printInterval) {
+                System.out.println("Block: "+n+" ("+(n*100/toBlockNumber)+"%)");
 
-            blockExecutor.execute(block, parent.getHeader(), false, false);
+            }
+            if (!blockExecutor.executeAndValidate(block,parent.getHeader())) {
+                System.out.println("out of consensus at block: "+n);
+                break;
+            }
+            if (bcount >=printInterval) {
+                long currentTime = System.currentTimeMillis();
+                long deltaTime = (currentTime - started);
+                long deltaBlock = (n-fromBlockNumber);
+                System.out.println("Time[s]: " + (deltaTime / 1000));
+                if (currentTime>started)
+                    System.out.println("total blocks/sec: " +deltaBlock*1000/(currentTime-started));
+                if (currentTime>lastTime) {
+                    System.out.println("current blocks/sec: " +bcount*1000/(currentTime-lastTime));
+                    lastTime = currentTime;
+                }
+
+                bcount =0;
+            }
         }
 
         trieStore.flush();
-        blockStore.flush();
+        //blockStore.flush();
     }
 }
