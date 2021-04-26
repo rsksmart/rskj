@@ -31,6 +31,7 @@ import co.rsk.core.RskAddress;
 import co.rsk.peg.bitcoin.RskAllowUnconfirmedCoinSelector;
 import co.rsk.peg.btcLockSender.BtcLockSender.TxSenderAddressType;
 import co.rsk.peg.utils.BtcTransactionFormatUtils;
+import javax.annotation.Nonnull;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -500,5 +501,45 @@ public class BridgeUtils {
         byte[] hashBytes = new byte[20];
         System.arraycopy(addressBytes, 1, hashBytes, 0, 20);
         return hashBytes;
+    }
+
+    public static int getRegularPegoutTxSize(@Nonnull Federation federation) {
+        // A regular peg-out transaction has two inputs and two outputs
+        // Each input has M/N signatures and each signature is around 71 bytes long (signed sighash)
+        // The outputs are composed of the scriptPubkeyHas(or publicKeyHash)
+        // and the op_codes for the corresponding script
+        final int INPUT_MULTIPLIER = 2;
+        final int SIGNATURE_MULTIPLIER = 71;
+        final int OUTPUT_MULTIPLIER = 2;
+        final int OUTPUT_SIZE = 25;
+
+        return calculatePegoutTxSize(
+            federation,
+            INPUT_MULTIPLIER,
+            SIGNATURE_MULTIPLIER,
+            OUTPUT_MULTIPLIER,
+            OUTPUT_SIZE
+        );
+    }
+
+    public static int calculatePegoutTxSize(
+        Federation federation,
+        int inputMultiplier,
+        int signatureMultiplier,
+        int outputMultiplier,
+        int outputSize
+    ) {
+        // This data accounts for txid+vout+sequence
+        int INPUT_ADDITIONAL_DATA_SIZE = 40;
+        // This data accounts for the value+index
+        int OUTPUT_ADDITIONAL_DATA_SIZE = 9;
+        // This data accounts for the version field
+        int TX_ADDITIONAL_DATA_SIZE = 4;
+        // The added ones are to account for the data size
+        int scriptSigChunk = federation.getNumberOfSignaturesRequired() * (signatureMultiplier + 1) +
+                federation.getRedeemScript().getProgram().length + 1;
+        return TX_ADDITIONAL_DATA_SIZE +
+            (scriptSigChunk + INPUT_ADDITIONAL_DATA_SIZE) * inputMultiplier +
+            (outputSize + 1 + OUTPUT_ADDITIONAL_DATA_SIZE) * outputMultiplier;
     }
 }
