@@ -452,7 +452,7 @@ public class BridgeSupport {
             return TxType.MIGRATION;
         }
 
-        if (BridgeUtils.isPegOutTx(btcTx, getLiveFederations())) {
+        if (BridgeUtils.isPegOutTx(btcTx, getLiveFederations(), activations)) {
             return TxType.PEGOUT;
         }
 
@@ -2286,7 +2286,7 @@ public class BridgeSupport {
      * @return the minimum amount of satoshis a user should send to the federation.
      */
     public Coin getMinimumPeginTxValue() {
-        return activations.isActive(RSKIP219) ? bridgeConstants.getMinimumPeginTxValueInSatoshis() : bridgeConstants.getlegacyMinimumPeginTxValueInSatoshis();
+        return activations.isActive(RSKIP219) ? bridgeConstants.getMinimumPeginTxValueInSatoshis() : bridgeConstants.getLegacyMinimumPeginTxValueInSatoshis();
     }
 
     /**
