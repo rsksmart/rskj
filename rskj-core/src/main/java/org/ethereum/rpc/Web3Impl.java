@@ -41,7 +41,10 @@ import co.rsk.rpc.modules.trace.TraceModule;
 import co.rsk.rpc.modules.txpool.TxPoolModule;
 import co.rsk.scoring.*;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
-import org.ethereum.core.*;
+import org.ethereum.core.Block;
+import org.ethereum.core.BlockHeader;
+import org.ethereum.core.Blockchain;
+import org.ethereum.core.Transaction;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.BlockInformation;
 import org.ethereum.db.BlockStore;
@@ -389,6 +392,12 @@ public class Web3Impl implements Web3 {
         Coin balance = accountInformationProvider.getBalance(addr);
 
         return toQuantityJsonHex(balance.asBigInteger());
+    }
+
+    @Override
+    public String eth_getBalance(String address, Map<String, String> block) {
+        Optional<String> blockNumber = Optional.ofNullable(block.get("blockNumber"));
+        return this.eth_getBalance(address, blockNumber.get());
     }
 
     @Override
