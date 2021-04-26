@@ -395,6 +395,12 @@ public class Web3Impl implements Web3 {
     }
 
     @Override
+    public String eth_getBalance(String address, Map<String, String> block) {
+        Optional<String> blockNumber = Optional.ofNullable(block.get("blockNumber"));
+        return this.eth_getBalance(address, blockNumber.get());
+    }
+
+    @Override
     public String eth_getBalance(String address) {
         return eth_getBalance(address, "latest");
     }

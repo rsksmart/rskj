@@ -81,10 +81,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.hamcrest.Matchers.is;
@@ -225,6 +222,28 @@ public class Web3ImplTest {
         String balanceString = "0x" + ByteUtil.toHexString(BigInteger.valueOf(10000).toByteArray());
 
         assertEquals(balanceString, web3.eth_getBalance(accountAddress, "0x1"));
+    }
+
+    @Test
+    //[ "0x<address>", { "blockNumber": "0x0" } -> return storage at given address in genesis block
+    public void getBalanceWithAccountAndBlockNumber() {
+        World world = new World();
+        Account acc1 = new AccountBuilder(world).name("acc1").balance(Coin.valueOf(10000)).build();
+        Block genesis = world.getBlockByName("g00");
+
+        Block block1 = new BlockBuilder(null, null, null).parent(genesis).build();
+        world.getBlockChain().tryToConnect(block1);
+
+        Web3Impl web3 = createWeb3(world);
+
+        String accountAddress = ByteUtil.toHexString(acc1.getAddress().getBytes());
+        String balanceString = "0x" + ByteUtil.toHexString(BigInteger.valueOf(10000).toByteArray());
+        Map<String, String> blockRef = new HashMap<String, String>() {
+            {
+                put("blockNumber", "0x1");
+            }
+        };
+        assertEquals(balanceString, web3.eth_getBalance(accountAddress, blockRef));
     }
 
     @Test
