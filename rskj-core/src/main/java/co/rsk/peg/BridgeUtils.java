@@ -604,7 +604,7 @@ public class BridgeUtils {
         } catch (ScriptException e) {
             logger.debug(
                 "[extractRedeemScriptFromInput] Failed to extract redeem script from tx input {}. {}",
-                txInput.getHash(),
+                txInput,
                 e.getMessage()
             );
             return Optional.empty();
