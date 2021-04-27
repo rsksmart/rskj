@@ -59,7 +59,6 @@ import org.ethereum.rpc.dto.BlockResultDTO;
 import org.ethereum.rpc.dto.CompilationResultDTO;
 import org.ethereum.rpc.dto.TransactionReceiptDTO;
 import org.ethereum.rpc.dto.TransactionResultDTO;
-import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.util.BuildInfo;
 import org.ethereum.vm.DataWord;
 import org.slf4j.Logger;
@@ -69,6 +68,7 @@ import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.*;
+import java.util.function.Function;
 
 import static java.lang.Math.max;
 import static org.ethereum.rpc.TypeConverter.*;
@@ -397,22 +397,27 @@ public class Web3Impl implements Web3 {
 
     @Override
     public String eth_getBalance(String address, Map<String, String> inputs) {
-        Optional<String> blockHash = Optional.ofNullable(inputs.get("blockHash"));
-        if(blockHash.isPresent()) {
-            Optional<Block> optBlock = Optional.ofNullable(this.blockchain.getBlockByHash(stringHexToByteArray(blockHash.get())));
-            Block block = optBlock.orElseThrow(() -> blockNotFound(String.format("Block with hash %s not found", blockHash)));
+        final Function<String, String> getBalanceByBlockHash = hash -> {
+            Optional<Block> optBlock = Optional.ofNullable(this.blockchain.getBlockByHash(stringHexToByteArray(hash)));
+            Block block = optBlock.orElseThrow(() -> blockNotFound(String.format("Block with hash %s not found", hash)));
 
             //check if is canonical required
             Optional<String> requireCanonical = Optional.ofNullable(inputs.get("requireCanonical"));
             if (Boolean.parseBoolean(requireCanonical.orElse("false")) && !isInMainChain(block.getHash().getBytes(), block.getNumber())) {
-                throw blockNotFound(String.format("Block with hash %s is not canonical and it is required", blockHash));
+                throw blockNotFound(String.format("Block with hash %s is not canonical and it is required", hash));
             }
-
             return this.eth_getBalance(address, toQuantityJsonHex(block.getNumber()));
-        }
+        };
 
-        Optional<String> blockNumber = Optional.ofNullable(inputs.get("blockNumber"));
-        return this.eth_getBalance(address, blockNumber.orElseThrow(() -> invalidParamError("Invalid block input")));
+        final Function<String, String> getBalanceByBlockNumber = number -> this.eth_getBalance(address, number);
+
+        return applyIfPresent(inputs, "blockHash", getBalanceByBlockHash)
+                .orElseGet(() -> applyIfPresent(inputs, "blockNumber", getBalanceByBlockNumber)
+                        .orElseThrow(() -> invalidParamError("Invalid block input")));
+    }
+
+    private Optional<String> applyIfPresent(final Map<String, String> inputs, final String reference, final Function<String, String> function) {
+        return Optional.ofNullable(inputs.get(reference)).map(function);
     }
 
     private boolean isInMainChain(byte[] blockHashBytes, long blockNumber) {
