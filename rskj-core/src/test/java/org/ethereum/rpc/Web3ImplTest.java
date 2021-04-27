@@ -211,10 +211,7 @@ public class Web3ImplTest {
     public void getBalanceWithAccountAndBlock() {
         World world = new World();
         Account acc1 = new AccountBuilder(world).name("acc1").balance(Coin.valueOf(10000)).build();
-        Block genesis = world.getBlockByName("g00");
-
-        Block block1 = new BlockBuilder(null, null, null).parent(genesis).build();
-        world.getBlockChain().tryToConnect(block1);
+        createChainWithOneBlock(world);
 
         Web3Impl web3 = createWeb3(world);
 
@@ -225,14 +222,11 @@ public class Web3ImplTest {
     }
 
     @Test
-    //[ "0x<address>", { "blockNumber": "0x0" } -> return storage at given address in genesis block
+    //[ "0x<address>", { "blockNumber": "0x0" } -> return balance at given address in genesis block
     public void getBalanceWithAccountAndBlockNumber() {
         World world = new World();
         Account acc1 = new AccountBuilder(world).name("acc1").balance(Coin.valueOf(10000)).build();
-        Block genesis = world.getBlockByName("g00");
-
-        Block block1 = new BlockBuilder(null, null, null).parent(genesis).build();
-        world.getBlockChain().tryToConnect(block1);
+        createChainWithOneBlock(world);
 
         Web3Impl web3 = createWeb3(world);
 
@@ -251,10 +245,7 @@ public class Web3ImplTest {
     public void getBalanceWithAccountAndInvalidInputThrowsException() {
         World world = new World();
         Account acc1 = new AccountBuilder(world).name("acc1").balance(Coin.valueOf(10000)).build();
-        Block genesis = world.getBlockByName("g00");
-
-        Block block1 = new BlockBuilder(null, null, null).parent(genesis).build();
-        world.getBlockChain().tryToConnect(block1);
+        createChainWithOneBlock(world);
 
         Web3Impl web3 = createWeb3(world);
 
@@ -267,6 +258,25 @@ public class Web3ImplTest {
         };
 
         web3.eth_getBalance(accountAddress, blockRef);
+    }
+
+    @Test
+    //[ "0x<address>", { "blockHash": "0xd4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3" } -> return balance at given address in genesis block
+    public void getBalanceWithAccountAndBlockHash() {
+        World world = new World();
+        Account acc1 = new AccountBuilder(world).name("acc1").balance(Coin.valueOf(10000)).build();
+
+        Block block1 = createChainWithOneBlock(world);
+        Web3Impl web3 = createWeb3(world);
+
+        String accountAddress = ByteUtil.toHexString(acc1.getAddress().getBytes());
+        String balanceString = "0x" + ByteUtil.toHexString(BigInteger.valueOf(10000).toByteArray());
+        Map<String, String> blockRef = new HashMap<String, String>() {
+            {
+                put("blockHash", "0x" + block1.getPrintableHash());
+            }
+        };
+        assertEquals(balanceString, web3.eth_getBalance(accountAddress, blockRef));
     }
 
     @Test
@@ -2165,5 +2175,13 @@ public class Web3ImplTest {
                 new ProgramInvokeFactoryImpl(),
                 new PrecompiledContracts(config, null),
                 blockTxSignatureCache);
+    }
+
+    private Block createChainWithOneBlock(World world) {
+        Block genesis = world.getBlockByName("g00");
+
+        Block block1 = new BlockBuilder(null, null, null).parent(genesis).build();
+        world.getBlockChain().tryToConnect(block1);
+        return block1;
     }
 }
