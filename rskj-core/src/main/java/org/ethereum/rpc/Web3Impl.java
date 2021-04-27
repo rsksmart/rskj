@@ -397,24 +397,7 @@ public class Web3Impl implements Web3 {
 
     @Override
     public String eth_getBalance(String address, Map<String, String> inputs) {
-        final Function<String, String> toInvokeByBlockNumber = blockNumber -> this.eth_getBalance(address, blockNumber);
-
-        final Function<String, String> getBalanceByBlockHash = hash -> {
-            Optional<Block> optBlock = Optional.ofNullable(this.blockchain.getBlockByHash(stringHexToByteArray(hash)));
-            Block block = optBlock.orElseThrow(() -> blockNotFound(String.format("Block with hash %s not found", hash)));
-
-            //check if is canonical required
-            Optional<String> requireCanonical = Optional.ofNullable(inputs.get("requireCanonical"));
-            if (Boolean.parseBoolean(requireCanonical.orElse("false")) && !isInMainChain(block.getHash().getBytes(), block.getNumber())) {
-                throw blockNotFound(String.format("Block with hash %s is not canonical and it is required", hash));
-            }
-            String blockNumber = toQuantityJsonHex(block.getNumber());
-            return toInvokeByBlockNumber.apply(blockNumber);
-        };
-
-        return applyIfPresent(inputs, "blockHash", getBalanceByBlockHash)
-                .orElseGet(() -> applyIfPresent(inputs, "blockNumber", toInvokeByBlockNumber)
-                        .orElseThrow(() -> invalidParamError("Invalid block input")));
+        return invokeByBlockRef(inputs, blockNumber -> this.eth_getBalance(address, blockNumber));
     }
 
     private Optional<String> applyIfPresent(final Map<String, String> inputs, final String reference, final Function<String, String> function) {
@@ -463,12 +446,29 @@ public class Web3Impl implements Web3 {
 
     @Override
     public String eth_getTransactionCount(String address, Map<String, String> inputs) {
+        return invokeByBlockRef(inputs, blockNumber -> this.eth_getTransactionCount(address, blockNumber));
+    }
 
-        final Function<String, String> toInvokeByBlockNumber = blockNumber -> this.eth_getTransactionCount(address, blockNumber);
-
+    /**
+     * eip-1898 implementations.
+     * It processes inputs maps ex: { "blockNumber": "0x0" },
+     * { "blockHash": "0xd4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3", "requireCanonical": false }
+     * and invoke a function after processing.
+     * @param inputs map
+     * @param toInvokeByBlockNumber a function that returns a string based on the block number
+     * @return function invocation result
+     */
+    private String invokeByBlockRef(Map<String, String> inputs, Function<String, String> toInvokeByBlockNumber) {
         Function<String, String> getBalanceByBlockHash = hash -> {
             Optional<Block> optBlock = Optional.ofNullable(this.blockchain.getBlockByHash(stringHexToByteArray(hash)));
             Block block = optBlock.orElseThrow(() -> blockNotFound(String.format("Block with hash %s not found", hash)));
+
+            //check if is canonical required
+            Optional<String> requireCanonical = Optional.ofNullable(inputs.get("requireCanonical"));
+            if (Boolean.parseBoolean(requireCanonical.orElse("false")) && !isInMainChain(block.getHash().getBytes(), block.getNumber())) {
+                throw blockNotFound(String.format("Block with hash %s is not canonical and it is required", hash));
+            }
+
             String blockNumber = toQuantityJsonHex(block.getNumber());
             return toInvokeByBlockNumber.apply(blockNumber);
         };
