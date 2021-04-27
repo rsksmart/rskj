@@ -250,7 +250,6 @@ public class Web3ImplTest {
         Web3Impl web3 = createWeb3(world);
 
         String accountAddress = ByteUtil.toHexString(acc1.getAddress().getBytes());
-        String balanceString = "0x" + ByteUtil.toHexString(BigInteger.valueOf(10000).toByteArray());
         Map<String, String> blockRef = new HashMap<String, String>() {
             {
                 put("invalidInput", "0x1");
@@ -279,6 +278,25 @@ public class Web3ImplTest {
         assertEquals(balanceString, web3.eth_getBalance(accountAddress, blockRef));
     }
 
+    @Test(expected=org.ethereum.rpc.exception.RskJsonRpcRequestException.class)
+    //[ "0x<address>", { "blockHash": "0x<non-existent-block-hash>" } -> raise block-not-found error
+    public void getBalanceWithAccountAndNonExistentBlockHash() {
+        World world = new World();
+        Account acc1 = new AccountBuilder(world).name("acc1").balance(Coin.valueOf(10000)).build();
+
+        createChainWithOneBlock(world);
+        Web3Impl web3 = createWeb3(world);
+
+        String accountAddress = ByteUtil.toHexString(acc1.getAddress().getBytes());
+        final String nonExistentBlockHash="0x" + String.join("", Collections.nCopies(64, "1")); // "0x1111..."
+        System.out.println(nonExistentBlockHash);
+        Map<String, String> blockRef = new HashMap<String, String>() {
+            {
+                put("blockHash", nonExistentBlockHash);
+            }
+        };
+        web3.eth_getBalance(accountAddress, blockRef);
+    }
     @Test
     public void getBalanceWithAccountAndBlockWithTransaction() {
         World world = new World();

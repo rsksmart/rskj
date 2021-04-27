@@ -400,7 +400,7 @@ public class Web3Impl implements Web3 {
         Optional<String> blockHash = Optional.ofNullable(block.get("blockHash"));
         if(blockHash.isPresent()) {
             Optional<Block> optBlock = Optional.ofNullable(this.blockchain.getBlockByHash(stringHexToByteArray(blockHash.get())));
-            return this.eth_getBalance(address, toQuantityJsonHex(optBlock.get().getNumber()));
+            return this.eth_getBalance(address, toQuantityJsonHex(optBlock.orElseThrow(()->blockNotFound(String.format("Block with hash %s not found", blockHash))).getNumber()));
         }
 
         Optional<String> blockNumber = Optional.ofNullable(block.get("blockNumber"));
