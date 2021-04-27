@@ -846,6 +846,30 @@ public class Web3ImplTest {
     }
 
     @Test
+    //[ "0x<address>", { "blockHash": "0xd4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3" } -> return tx count at given address in genesis block
+    public void getTransactionCountByBlockHash() {
+        World world = new World();
+        Account acc1 = new AccountBuilder(world).name("acc1").balance(Coin.valueOf(100000000)).build();
+        Account acc2 = new AccountBuilder().name("acc2").build();
+        Transaction tx = new TransactionBuilder().sender(acc1).receiver(acc2).value(BigInteger.valueOf(1000000)).build();
+        List<Transaction> txs = new ArrayList<>();
+        txs.add(tx);
+        Block genesis = world.getBlockChain().getBestBlock();
+        Block block1 = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(),
+                world.getBlockStore()).trieStore(world.getTrieStore()).parent(genesis).transactions(txs).build();
+        assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block1));
+        String accountAddress = ByteUtil.toHexString(acc1.getAddress().getBytes());
+        Map<String, String> blockRef = new HashMap<String, String>() {
+            {
+                put("blockHash", "0x" + block1.getPrintableHash());
+            }
+        };
+
+        Web3Impl web3 = createWeb3(world);
+        assertEquals("0x1", web3.eth_getTransactionCount(accountAddress, blockRef));
+    }
+
+    @Test
     public void getBlockByNumber() {
         World world = new World();
 
