@@ -34,21 +34,21 @@ import org.ethereum.util.BuildInfo;
 import org.ethereum.vm.DataWord;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Spy;
 
 import java.math.BigInteger;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 import static org.ethereum.rpc.TypeConverter.stringHexToByteArray;
 import static org.junit.Assert.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 public class Web3ImplUnitTest {
 
     private Blockchain blockchain;
+
     private Web3Impl target;
     private Web3InformationRetriever retriever;
 
@@ -110,6 +110,22 @@ public class Web3ImplUnitTest {
 
         String result = target.eth_getBalance(addr, id);
         assertEquals("0x1", result);
+    }
+
+    @Test
+    //validates invokeByBlockRef call
+    public void eth_getBalanceByBlockRef() {
+        String addr = "0x0011223344556677880011223344556677889900";
+        Map<String, String> blockRef = new HashMap<String, String>() {
+            {
+                put("blockHash", "0x0011223344556677880011223344556677889900");
+            }
+        };
+        final Web3Impl spyTarget = spy(target);
+        doReturn("0x1").when(spyTarget).invokeByBlockRef(eq(blockRef),any());
+        String result = spyTarget.eth_getBalance(addr, blockRef);
+        assertEquals("0x1", result);
+        verify(spyTarget).invokeByBlockRef(eq(blockRef),any());
     }
 
     @Test

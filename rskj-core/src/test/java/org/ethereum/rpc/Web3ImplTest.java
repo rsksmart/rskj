@@ -923,6 +923,43 @@ public class Web3ImplTest {
     }
 
     @Test
+    // [ "0x<address>", { "blockHash": "0x<non-canonical-block-hash>" } -> return tx count at given address in specified bloc
+    public void getTransactionCountByNonCanonicalBlockHash() {
+        World world = new World();
+
+        Account acc1 = new AccountBuilder(world).name("acc1").balance(Coin.valueOf(100000000)).build();
+        Account acc2 = new AccountBuilder().name("acc2").build();
+        Transaction tx = new TransactionBuilder().sender(acc1).receiver(acc2).value(BigInteger.valueOf(1000000)).build();
+        List<Transaction> txs = new ArrayList<>();
+        txs.add(tx);
+
+        Block genesis = world.getBlockChain().getBestBlock();
+
+        final BlockBuilder blockBuilder = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(), world.getBlockStore());
+
+        Block block1Canonical = blockBuilder.trieStore(world.getTrieStore()).parent(genesis).transactions(txs).build();
+        Block nonCanonicalBlock = blockBuilder.trieStore(world.getTrieStore()).parent(genesis).transactions(txs).build();
+        Block block2Canonical = blockBuilder.parent(block1Canonical).build();
+
+
+        world.getBlockChain().tryToConnect(genesis);
+        world.getBlockChain().tryToConnect(block1Canonical);
+        world.getBlockChain().tryToConnect(nonCanonicalBlock);
+        world.getBlockChain().tryToConnect(block2Canonical);
+
+
+        String accountAddress = ByteUtil.toHexString(acc1.getAddress().getBytes());
+        Map<String, String> blockRef = new HashMap<String, String>() {
+            {
+                put("blockHash", "0x" + nonCanonicalBlock.getPrintableHash());
+            }
+        };
+
+        Web3Impl web3 = createWeb3(world);
+        assertEquals("0x1", web3.eth_getTransactionCount(accountAddress, blockRef));
+    }
+
+    @Test
     public void getBlockByNumber() {
         World world = new World();
 
