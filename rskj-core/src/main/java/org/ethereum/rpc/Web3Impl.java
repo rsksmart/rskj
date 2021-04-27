@@ -396,15 +396,31 @@ public class Web3Impl implements Web3 {
     }
 
     @Override
-    public String eth_getBalance(String address, Map<String, String> block) {
-        Optional<String> blockHash = Optional.ofNullable(block.get("blockHash"));
+    public String eth_getBalance(String address, Map<String, String> inputs) {
+        Optional<String> blockHash = Optional.ofNullable(inputs.get("blockHash"));
         if(blockHash.isPresent()) {
             Optional<Block> optBlock = Optional.ofNullable(this.blockchain.getBlockByHash(stringHexToByteArray(blockHash.get())));
-            return this.eth_getBalance(address, toQuantityJsonHex(optBlock.orElseThrow(()->blockNotFound(String.format("Block with hash %s not found", blockHash))).getNumber()));
+            Block block = optBlock.orElseThrow(() -> blockNotFound(String.format("Block with hash %s not found", blockHash)));
+
+            //check if is canonical required
+            Optional<String> requireCanonical = Optional.ofNullable(inputs.get("requireCanonical"));
+            if (Boolean.parseBoolean(requireCanonical.orElse("false")) && !isInMainChain(block.getHash().getBytes(), block.getNumber())) {
+                throw blockNotFound(String.format("Block with hash %s is not canonical and it is required", blockHash));
+            }
+
+            return this.eth_getBalance(address, toQuantityJsonHex(block.getNumber()));
         }
 
-        Optional<String> blockNumber = Optional.ofNullable(block.get("blockNumber"));
-        return this.eth_getBalance(address, blockNumber.orElseThrow(() -> invalidParamError("invalid block input")));
+        Optional<String> blockNumber = Optional.ofNullable(inputs.get("blockNumber"));
+        return this.eth_getBalance(address, blockNumber.orElseThrow(() -> invalidParamError("Invalid block input")));
+    }
+
+    private boolean isInMainChain(byte[] blockHashBytes, long blockNumber) {
+        return this.blockchain.getBlocksInformationByNumber(blockNumber)
+                .stream().anyMatch(b -> {
+                    return b.isInMainChain()
+                            && Arrays.equals(b.getHash(), blockHashBytes);
+                });
     }
 
     @Override

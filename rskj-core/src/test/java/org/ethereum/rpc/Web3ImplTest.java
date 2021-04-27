@@ -289,7 +289,6 @@ public class Web3ImplTest {
 
         String accountAddress = ByteUtil.toHexString(acc1.getAddress().getBytes());
         final String nonExistentBlockHash="0x" + String.join("", Collections.nCopies(64, "1")); // "0x1111..."
-        System.out.println(nonExistentBlockHash);
         Map<String, String> blockRef = new HashMap<String, String>() {
             {
                 put("blockHash", nonExistentBlockHash);
@@ -297,6 +296,37 @@ public class Web3ImplTest {
         };
         web3.eth_getBalance(accountAddress, blockRef);
     }
+
+    @Test(expected=org.ethereum.rpc.exception.RskJsonRpcRequestException.class)
+    // [ "0x<address>", { "blockHash": "0x<non-canonical-block-hash>", "requireCanonical": true } -> raise block-not-canonical error
+    public void getBalanceWithAccountAndNonCanonicalBlockHashWhenCanonicalIsRequired() {
+        World world = new World();
+        Account acc1 = new AccountBuilder(world).name("acc1").balance(Coin.valueOf(10000)).build();
+
+        Block genesis = world.getBlockByName("g00");
+
+        final BlockBuilder blockBuilder = new BlockBuilder(null, null, null);
+        Block block1Canonical = blockBuilder.parent(genesis).build();
+        Block block1NotCanonical = blockBuilder.parent(genesis).build();
+        Block block2Canonical = blockBuilder.parent(block1Canonical).build();
+
+        world.getBlockChain().tryToConnect(genesis);
+        world.getBlockChain().tryToConnect(block1Canonical);
+        world.getBlockChain().tryToConnect(block1NotCanonical);
+        world.getBlockChain().tryToConnect(block2Canonical);
+
+        Web3Impl web3 = createWeb3(world);
+
+        String accountAddress = ByteUtil.toHexString(acc1.getAddress().getBytes());
+        Map<String, String> blockRef = new HashMap<String, String>() {
+            {
+                put("blockHash", "0x" + block1NotCanonical.getPrintableHash());
+                put("requireCanonical","true");
+            }
+        };
+        web3.eth_getBalance(accountAddress, blockRef);
+    }
+
     @Test
     public void getBalanceWithAccountAndBlockWithTransaction() {
         World world = new World();
