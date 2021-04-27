@@ -869,6 +869,23 @@ public class Web3ImplTest {
         assertEquals("0x1", web3.eth_getTransactionCount(accountAddress, blockRef));
     }
 
+    @Test(expected=org.ethereum.rpc.exception.RskJsonRpcRequestException.class)
+    //[ "0x<address>", { "blockHash": "0x<non-existent-block-hash>" } -> raise block-not-found error
+    public void getTransactionCountByNonExistentBlockHash() {
+        World world = new World();
+        String accountAddress = createAccountWith10KBalance(world);
+        createChainWithOneBlock(world);
+        final String nonExistentBlockHash="0x" + String.join("", Collections.nCopies(64, "1")); // "0x1111..."
+        Map<String, String> blockRef = new HashMap<String, String>() {
+            {
+                put("blockHash", nonExistentBlockHash);
+            }
+        };
+
+        Web3Impl web3 = createWeb3(world);
+        web3.eth_getTransactionCount(accountAddress, blockRef);
+    }
+
     @Test
     public void getBlockByNumber() {
         World world = new World();
