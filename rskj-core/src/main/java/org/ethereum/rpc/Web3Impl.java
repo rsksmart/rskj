@@ -458,7 +458,7 @@ public class Web3Impl implements Web3 {
      * @param toInvokeByBlockNumber a function that returns a string based on the block number
      * @return function invocation result
      */
-    private String invokeByBlockRef(Map<String, String> inputs, Function<String, String> toInvokeByBlockNumber) {
+    protected String invokeByBlockRef(Map<String, String> inputs, Function<String, String> toInvokeByBlockNumber) {
         Function<String, String> getBalanceByBlockHash = hash -> {
             Optional<Block> optBlock = Optional.ofNullable(this.blockchain.getBlockByHash(stringHexToByteArray(hash)));
             Block block = optBlock.orElseThrow(() -> blockNotFound(String.format("Block with hash %s not found", hash)));
