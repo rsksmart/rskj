@@ -397,6 +397,12 @@ public class Web3Impl implements Web3 {
 
     @Override
     public String eth_getBalance(String address, Map<String, String> block) {
+        Optional<String> blockHash = Optional.ofNullable(block.get("blockHash"));
+        if(blockHash.isPresent()) {
+            Optional<Block> optBlock = Optional.ofNullable(this.blockchain.getBlockByHash(stringHexToByteArray(blockHash.get())));
+            return this.eth_getBalance(address, toQuantityJsonHex(optBlock.get().getNumber()));
+        }
+
         Optional<String> blockNumber = Optional.ofNullable(block.get("blockNumber"));
         return this.eth_getBalance(address, blockNumber.orElseThrow(() -> invalidParamError("invalid block input")));
     }
