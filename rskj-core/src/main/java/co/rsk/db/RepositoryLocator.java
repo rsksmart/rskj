@@ -87,7 +87,7 @@ public class RepositoryLocator {
     }
     final int cacheSize =10;
     Map<Keccak256, Trie> trieCache  = Collections.synchronizedMap(new MaxSizeHashMap<>(cacheSize, true));
-    final boolean useCache = false;
+    static public boolean useCache = false;
 
     public void cacheTrie(BlockHeader header,Trie entry) {
       if (!useCache) return;

@@ -20,6 +20,7 @@ package co.rsk.cli.tools;
 import co.rsk.RskContext;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.core.bc.BlockResult;
+import co.rsk.db.RepositoryLocator;
 import co.rsk.trie.TrieStore;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Block;
@@ -38,6 +39,7 @@ public class ExecuteBlocks {
         BlockExecutor blockExecutor = ctx.getBlockExecutor();
         BlockStore blockStore = ctx.getBlockStore();
         TrieStore trieStore = ctx.getTrieStore();
+        RepositoryLocator.useCache = true;
         boolean isRskip151Enabledat4000 = ctx.getRskSystemProperties().getActivationConfig()
                 .isActive(ConsensusRule.RSKIP151,4000);
         System.out.println("rskip151 active: "+isRskip151Enabledat4000);
@@ -52,6 +54,8 @@ public class ExecuteBlocks {
         long lastTime = started;
         int printInterval = 10;
         int bcount = 0;
+
+
         for (long n = fromBlockNumber; n <= toBlockNumber; n++) {
             Block block = blockStore.getChainBlockByNumber(n);
             //System.out.println("Block: "+n+" ("+(n*100/toBlockNumber)+"%)");

@@ -69,6 +69,7 @@ public class TrieStoreImpl implements TrieStore {
         }
 
         byte[] trieKeyBytes = trie.getHash().getBytes();
+
         savedTries.put(new ByteArrayWrapper(trie.getHash().getBytes()),trie);
 
         if (forceSaveRoot && this.store.get(trieKeyBytes) != null) {
