@@ -819,6 +819,32 @@ public class Web3ImplTest {
         assertEquals("0x1", web3.eth_getTransactionCount(accountAddress, blockRef));
     }
 
+    @Test(expected=org.ethereum.rpc.exception.RskJsonRpcRequestException.class)
+    //[ "0x<address>", { "invalidInput": "0x0" } -> throw RskJsonRpcRequestException
+    public void getTransactionCountAndInvalidInputThrowsException() {
+        World world = new World();
+        Account acc1 = new AccountBuilder(world).name("acc1").balance(Coin.valueOf(100000000)).build();
+        Account acc2 = new AccountBuilder().name("acc2").build();
+        Transaction tx = new TransactionBuilder().sender(acc1).receiver(acc2).value(BigInteger.valueOf(1000000)).build();
+        List<Transaction> txs = new ArrayList<>();
+        txs.add(tx);
+        Block genesis = world.getBlockChain().getBestBlock();
+        Block block1 = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(),
+                world.getBlockStore()).trieStore(world.getTrieStore()).parent(genesis).transactions(txs).build();
+        assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block1));
+
+
+        String accountAddress = ByteUtil.toHexString(acc1.getAddress().getBytes());
+        Map<String, String> blockRef = new HashMap<String, String>() {
+            {
+                put("invalidInput", "0x1");
+            }
+        };
+
+        Web3Impl web3 = createWeb3(world);
+        web3.eth_getTransactionCount(accountAddress, blockRef);
+    }
+
     @Test
     public void getBlockByNumber() {
         World world = new World();

@@ -462,7 +462,8 @@ public class Web3Impl implements Web3 {
 
     @Override
     public String eth_getTransactionCount(String accountAddress, Map<String, String> blockRef) {
-        return applyIfPresent(blockRef,"blockNumber", blockNumber -> this.eth_getTransactionCount(accountAddress,blockNumber)).get();
+        return applyIfPresent(blockRef,"blockNumber", blockNumber -> this.eth_getTransactionCount(accountAddress,blockNumber))
+                .orElseThrow(() -> invalidParamError("Invalid block input"));
     }
 
     @Override
