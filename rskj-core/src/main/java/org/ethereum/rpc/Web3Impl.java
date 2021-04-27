@@ -406,10 +406,11 @@ public class Web3Impl implements Web3 {
             if (Boolean.parseBoolean(requireCanonical.orElse("false")) && !isInMainChain(block.getHash().getBytes(), block.getNumber())) {
                 throw blockNotFound(String.format("Block with hash %s is not canonical and it is required", hash));
             }
-            return this.eth_getBalance(address, toQuantityJsonHex(block.getNumber()));
+            String blockNumber = toQuantityJsonHex(block.getNumber());
+            return this.eth_getBalance(address, blockNumber);
         };
 
-        final Function<String, String> getBalanceByBlockNumber = number -> this.eth_getBalance(address, number);
+        final Function<String, String> getBalanceByBlockNumber = blockNumber -> this.eth_getBalance(address, blockNumber);
 
         return applyIfPresent(inputs, "blockHash", getBalanceByBlockHash)
                 .orElseGet(() -> applyIfPresent(inputs, "blockNumber", getBalanceByBlockNumber)
@@ -461,9 +462,15 @@ public class Web3Impl implements Web3 {
     }
 
     @Override
-    public String eth_getTransactionCount(String accountAddress, Map<String, String> blockRef) {
-        return applyIfPresent(blockRef,"blockNumber", blockNumber -> this.eth_getTransactionCount(accountAddress,blockNumber))
-                .orElseThrow(() -> invalidParamError("Invalid block input"));
+    public String eth_getTransactionCount(String address, Map<String, String> inputs) {
+        Function<String, String> getBalanceByBlockHash = hash -> {
+            Optional<Block> optBlock = Optional.ofNullable(this.blockchain.getBlockByHash(stringHexToByteArray(hash)));
+            String blockNumber = toQuantityJsonHex(optBlock.get().getNumber());
+            return this.eth_getTransactionCount(address, blockNumber);
+        };
+        return applyIfPresent(inputs, "blockHash", getBalanceByBlockHash).orElseGet(
+                () -> applyIfPresent(inputs, "blockNumber", blockNumber -> this.eth_getTransactionCount(address, blockNumber))
+                        .orElseThrow(() -> invalidParamError("Invalid block input")));
     }
 
     @Override
