@@ -397,6 +397,8 @@ public class Web3Impl implements Web3 {
 
     @Override
     public String eth_getBalance(String address, Map<String, String> inputs) {
+        final Function<String, String> toInvokeByBlockNumber = blockNumber -> this.eth_getBalance(address, blockNumber);
+
         final Function<String, String> getBalanceByBlockHash = hash -> {
             Optional<Block> optBlock = Optional.ofNullable(this.blockchain.getBlockByHash(stringHexToByteArray(hash)));
             Block block = optBlock.orElseThrow(() -> blockNotFound(String.format("Block with hash %s not found", hash)));
@@ -407,13 +409,11 @@ public class Web3Impl implements Web3 {
                 throw blockNotFound(String.format("Block with hash %s is not canonical and it is required", hash));
             }
             String blockNumber = toQuantityJsonHex(block.getNumber());
-            return this.eth_getBalance(address, blockNumber);
+            return toInvokeByBlockNumber.apply(blockNumber);
         };
 
-        final Function<String, String> getBalanceByBlockNumber = blockNumber -> this.eth_getBalance(address, blockNumber);
-
         return applyIfPresent(inputs, "blockHash", getBalanceByBlockHash)
-                .orElseGet(() -> applyIfPresent(inputs, "blockNumber", getBalanceByBlockNumber)
+                .orElseGet(() -> applyIfPresent(inputs, "blockNumber", toInvokeByBlockNumber)
                         .orElseThrow(() -> invalidParamError("Invalid block input")));
     }
 
@@ -463,14 +463,20 @@ public class Web3Impl implements Web3 {
 
     @Override
     public String eth_getTransactionCount(String address, Map<String, String> inputs) {
+
+        final Function<String, String> toInvokeByBlockNumber = blockNumber -> this.eth_getTransactionCount(address, blockNumber);
+
         Function<String, String> getBalanceByBlockHash = hash -> {
             Optional<Block> optBlock = Optional.ofNullable(this.blockchain.getBlockByHash(stringHexToByteArray(hash)));
-            String blockNumber = toQuantityJsonHex(optBlock.get().getNumber());
-            return this.eth_getTransactionCount(address, blockNumber);
+            Block block = optBlock.orElseThrow(() -> blockNotFound(String.format("Block with hash %s not found", hash)));
+            String blockNumber = toQuantityJsonHex(block.getNumber());
+            return toInvokeByBlockNumber.apply(blockNumber);
         };
+
         return applyIfPresent(inputs, "blockHash", getBalanceByBlockHash).orElseGet(
-                () -> applyIfPresent(inputs, "blockNumber", blockNumber -> this.eth_getTransactionCount(address, blockNumber))
-                        .orElseThrow(() -> invalidParamError("Invalid block input")));
+                () -> applyIfPresent(inputs, "blockNumber", toInvokeByBlockNumber)
+                        .orElseThrow(() -> invalidParamError("Invalid block input"))
+        );
     }
 
     @Override
