@@ -1,12 +1,10 @@
 package co.rsk.rpc.modules.eth.subscribe;
 
-import co.rsk.crypto.Keccak256;
 import co.rsk.rpc.JsonRpcSerializer;
-import co.rsk.util.EncodeUtils;
+import com.google.common.annotations.VisibleForTesting;
 import io.netty.channel.Channel;
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
 import org.ethereum.core.Transaction;
-import org.ethereum.crypto.HashUtil;
 import org.ethereum.facade.Ethereum;
 import org.ethereum.listener.EthereumListenerAdapter;
 import org.slf4j.Logger;
@@ -50,19 +48,23 @@ public class PendingTransactionsNotificationEmitter {
         if (subscriptions.isEmpty()) {
             return;
         }
-        byte[] pendingTxsEncoded = EncodeUtils.encodeTransactionList(transactions);
-        String pendingTxsHashed = new Keccak256(HashUtil.keccak256(pendingTxsEncoded)).toJsonString();
-
         subscriptions.forEach((SubscriptionId id, Channel channel) -> {
-            EthSubscriptionNotification request = new EthSubscriptionNotification(
-                    new EthSubscriptionParams(id, pendingTxsHashed)
-            );
-            try {
-                String msg = jsonRpcSerializer.serializeMessage(request);
-                channel.writeAndFlush(new TextWebSocketFrame(msg));
-            } catch (IOException e) {
-                logger.error("Couldn't serialize new pending transactions result for notification", e);
-            }
+            transactions.forEach(tx -> {
+                EthSubscriptionNotification request = getNotification(id, tx);
+                try {
+                    String msg = jsonRpcSerializer.serializeMessage(request);
+                    channel.write(new TextWebSocketFrame(msg));
+                } catch (IOException e) {
+                    logger.error("Couldn't serialize new pending transactions result for notification", e);
+                }
+            });
+            channel.flush();
         });
+    }
+
+    @VisibleForTesting
+    EthSubscriptionNotification getNotification(SubscriptionId id, Transaction transaction) {
+        return new EthSubscriptionNotification(
+                new EthSubscriptionParams(id, transaction.getHash().toJsonString()));
     }
 }

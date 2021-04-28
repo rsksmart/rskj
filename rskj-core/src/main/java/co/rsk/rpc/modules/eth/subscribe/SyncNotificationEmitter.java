@@ -1,0 +1,79 @@
+package co.rsk.rpc.modules.eth.subscribe;
+
+import co.rsk.net.NodeBlockProcessor;
+import co.rsk.rpc.JsonRpcSerializer;
+import io.netty.channel.Channel;
+import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
+import org.ethereum.core.Blockchain;
+import org.ethereum.facade.Ethereum;
+import org.ethereum.listener.EthereumListenerAdapter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+public class SyncNotificationEmitter {
+    private static final Logger logger = LoggerFactory.getLogger(PendingTransactionsNotificationEmitter.class);
+
+    private final JsonRpcSerializer jsonRpcSerializer;
+    private final NodeBlockProcessor nodeBlockProcessor;
+    private final Blockchain blockchain;
+    private final long startingBlock;
+
+    private final Map<SubscriptionId, Channel> subscriptions = new ConcurrentHashMap<>();
+
+    public SyncNotificationEmitter(Ethereum ethereum, JsonRpcSerializer jsonRpcSerializer, NodeBlockProcessor nodeBlockProcessor, Blockchain blockchain) {
+        this.jsonRpcSerializer = jsonRpcSerializer;
+        this.nodeBlockProcessor = nodeBlockProcessor;
+        this.blockchain = blockchain;
+        this.startingBlock = blockchain.getBestBlock().getNumber();
+        ethereum.addListener(new EthereumListenerAdapter() {
+            @Override
+            public void onLongSyncStarted() {
+                emitSyncStatus(true);
+            }
+            @Override
+            public void onLongSyncDone() {
+                emitSyncStatus(false);
+            }
+        });
+    }
+
+    public void subscribe(SubscriptionId subscriptionId, Channel channel) {
+        subscriptions.put(subscriptionId, channel);
+    }
+
+    public boolean unsubscribe(SubscriptionId subscriptionId) {
+        return subscriptions.remove(subscriptionId) != null;
+    }
+
+    public void unsubscribe(Channel channel) {
+        subscriptions.values().removeIf(channel::equals);
+    }
+
+    private synchronized void emitSyncStatus(boolean isSyncing) {
+        if(subscriptions.isEmpty()) {
+            return;
+        }
+        SyncNotification syncNotification;
+        if(isSyncing) {
+            long currentBlockNum = blockchain.getBestBlock().getNumber();
+            long highestBlockNum = this.nodeBlockProcessor.getLastKnownBlockNumber();
+            syncNotification = new SyncNotification(true, new SyncStatusNotification(startingBlock, currentBlockNum, highestBlockNum));
+        } else {
+            syncNotification = new SyncNotification(true, null);
+        }
+        subscriptions.forEach((SubscriptionId id, Channel channel) -> {
+            EthSubscriptionNotification request = new EthSubscriptionNotification(
+                    new EthSubscriptionParams(id, syncNotification));
+            try {
+                String msg = jsonRpcSerializer.serializeMessage(request);
+                channel.writeAndFlush(new TextWebSocketFrame(msg));
+            } catch (IOException e) {
+                logger.error("Couldn't serialize sync result for notification", e);
+            }
+        });
+    }
+}

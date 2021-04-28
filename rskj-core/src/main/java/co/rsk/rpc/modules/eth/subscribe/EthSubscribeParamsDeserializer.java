@@ -39,6 +39,7 @@ public class EthSubscribeParamsDeserializer extends JsonDeserializer {
         this.subscriptionTypes.put("newHeads", EthSubscribeNewHeadsParams.class);
         this.subscriptionTypes.put("logs", EthSubscribeLogsParams.class);
         this.subscriptionTypes.put("newPendingTransactions", EthSubscribePendingTransactionsParams.class);
+        this.subscriptionTypes.put("syncing", EthSubscribeSyncParams.class);
     }
 
     @Override

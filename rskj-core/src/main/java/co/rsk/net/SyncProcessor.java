@@ -12,6 +12,7 @@ import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.*;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.BlockStore;
+import org.ethereum.listener.EthereumListener;
 import org.ethereum.validator.DifficultyRule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,6 +38,7 @@ public class SyncProcessor implements SyncEventsHandler {
     private final SyncBlockValidatorRule blockValidationRule;
     private final DifficultyRule difficultyRule;
     private final Genesis genesis;
+    private final EthereumListener ethereumListener;
 
     private final PeersInformation peersInformation;
     private final Map<Long, MessageType> pendingMessages;
@@ -54,7 +56,8 @@ public class SyncProcessor implements SyncEventsHandler {
                          SyncBlockValidatorRule syncBlockValidatorRule,
                          DifficultyCalculator difficultyCalculator,
                          PeersInformation peersInformation,
-                         Genesis genesis) {
+                         Genesis genesis,
+                         EthereumListener ethereumListener) {
         this.blockchain = blockchain;
         this.blockStore = blockStore;
         this.consensusValidationMainchainView = consensusValidationMainchainView;
@@ -65,6 +68,7 @@ public class SyncProcessor implements SyncEventsHandler {
         this.blockValidationRule = syncBlockValidatorRule;
         this.difficultyRule = new DifficultyRule(difficultyCalculator);
         this.genesis = genesis;
+        this.ethereumListener = ethereumListener;
         this.pendingMessages = new LinkedHashMap<Long, MessageType>() {
             @Override
             protected boolean removeEldestEntry(Map.Entry<Long, MessageType> eldest) {
@@ -231,7 +235,6 @@ public class SyncProcessor implements SyncEventsHandler {
         if (peerBestBlockNumber > blockSyncService.getLastKnownBlockNumber()) {
             blockSyncService.setLastKnownBlockNumber(peerBestBlockNumber);
         }
-
         setSyncState(new DownloadingBodiesSyncState(syncConfiguration,
                 this,
                 peersInformation,
@@ -240,7 +243,8 @@ public class SyncProcessor implements SyncEventsHandler {
                 blockSyncService,
                 blockValidationRule,
                 pendingHeaders,
-                skeletons));
+                skeletons,
+                ethereumListener));
     }
 
     @Override
@@ -311,6 +315,9 @@ public class SyncProcessor implements SyncEventsHandler {
         // always that a syncing process ends unexpectedly the best block number is reset
         blockSyncService.setLastKnownBlockNumber(blockchain.getBestBlock().getNumber());
         peersInformation.clearOldFailedPeers();
+        if(getSyncState().isSyncing()) {
+            ethereumListener.onLongSyncDone();
+        }
         setSyncState(new DecidingSyncState(syncConfiguration,
                 this,
                 peersInformation,

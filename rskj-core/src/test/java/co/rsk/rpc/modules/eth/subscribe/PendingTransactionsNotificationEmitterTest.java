@@ -17,33 +17,24 @@
  */
 package co.rsk.rpc.modules.eth.subscribe;
 
-import co.rsk.TestHelpers.Tx;
-import co.rsk.config.TestSystemProperties;
 import co.rsk.net.utils.TransactionUtils;
 import co.rsk.rpc.JsonRpcSerializer;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.netty.channel.Channel;
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
-import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.Transaction;
-import org.ethereum.crypto.ECKey;
-import org.ethereum.crypto.HashUtil;
 import org.ethereum.facade.Ethereum;
 import org.ethereum.listener.EthereumListener;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 
-import java.math.BigInteger;
-import java.util.Arrays;
-import java.util.List;
-
 import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.*;
 
 public class PendingTransactionsNotificationEmitterTest {
-    private final TestSystemProperties config = new TestSystemProperties();
     private PendingTransactionsNotificationEmitter emitter;
     private EthereumListener listener;
     private JsonRpcSerializer serializer;
@@ -65,11 +56,48 @@ public class PendingTransactionsNotificationEmitterTest {
         Channel channel = mock(Channel.class);
         emitter.subscribe(subscriptionId, channel);
         when(serializer.serializeMessage(any()))
-                .thenReturn("serialized");
+                .thenReturn("serialized1")
+                .thenReturn("serialized2");
 
         listener.onPendingTransactionsReceived(TransactionUtils.getTransactions(2));
 
-        verify(channel).writeAndFlush(new TextWebSocketFrame("serialized"));
+        verify(channel).write(new TextWebSocketFrame("serialized1"));
+        verify(channel).write(new TextWebSocketFrame("serialized2"));
+        verify(channel).flush();
+    }
+
+    @Test
+    public void sendMultipleTransactionsToMultipleSubscriptions() throws JsonProcessingException {
+        SubscriptionId subscriptionId1 = mock(SubscriptionId.class);
+        Channel channel1 = mock(Channel.class);
+        SubscriptionId subscriptionId2 = mock(SubscriptionId.class);
+        Channel channel2 = mock(Channel.class);
+        emitter.subscribe(subscriptionId1, channel1);
+        emitter.subscribe(subscriptionId2, channel2);
+        when(serializer.serializeMessage(any()))
+                .thenReturn("serialized1")
+                .thenReturn("serialized2")
+                .thenReturn("serialized3")
+                .thenReturn("serialized4");
+
+        listener.onPendingTransactionsReceived(TransactionUtils.getTransactions(2));
+
+        verify(channel2).write(new TextWebSocketFrame("serialized1"));
+        verify(channel2).write(new TextWebSocketFrame("serialized2"));
+        verify(channel2).flush();
+        verify(channel1).write(new TextWebSocketFrame("serialized3"));
+        verify(channel1).write(new TextWebSocketFrame("serialized4"));
+        verify(channel1).flush();
+    }
+
+    @Test
+    public void notificationContainsHashedTransaction() {
+        SubscriptionId subscriptionId =  new SubscriptionId(("0x7392"));
+        Transaction transaction = TransactionUtils.createTransaction();
+        EthSubscriptionNotification notification = emitter.getNotification(subscriptionId, transaction);
+
+        assertEquals(transaction.getHash().toJsonString(), notification.getParams().getResult());
+        assertEquals(subscriptionId, notification.getParams().getSubscription());
     }
 
     @Test
