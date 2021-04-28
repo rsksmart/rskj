@@ -9,6 +9,7 @@ import co.rsk.scoring.EventType;
 import co.rsk.validators.SyncBlockValidatorRule;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.*;
+import org.ethereum.listener.EthereumListener;
 import org.ethereum.util.ByteUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -65,7 +66,8 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
                                       BlockSyncService blockSyncService,
                                       SyncBlockValidatorRule blockValidationRule,
                                       List<Deque<BlockHeader>> pendingHeaders,
-                                      Map<Peer, List<BlockIdentifier>> skeletons) {
+                                      Map<Peer, List<BlockIdentifier>> skeletons,
+                                      EthereumListener ethereumListener) {
 
         super(syncEventsHandler, syncConfiguration);
         this.peersInformation = peersInformation;
@@ -86,6 +88,7 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
 
         initializeSegments();
         this.suitablePeers = new ArrayList<>(segmentByNode.keySet());
+        ethereumListener.onLongSyncStarted();
     }
 
     @Override

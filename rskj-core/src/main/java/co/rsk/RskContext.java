@@ -63,6 +63,7 @@ import co.rsk.rpc.modules.eth.*;
 import co.rsk.rpc.modules.eth.subscribe.BlockHeaderNotificationEmitter;
 import co.rsk.rpc.modules.eth.subscribe.LogsNotificationEmitter;
 import co.rsk.rpc.modules.eth.subscribe.PendingTransactionsNotificationEmitter;
+import co.rsk.rpc.modules.eth.subscribe.SyncNotificationEmitter;
 import co.rsk.rpc.modules.evm.EvmModule;
 import co.rsk.rpc.modules.evm.EvmModuleImpl;
 import co.rsk.rpc.modules.mnr.MnrModule;
@@ -1514,7 +1515,8 @@ public class RskContext implements NodeBootstrapper {
                     ),
                     getDifficultyCalculator(),
                     getPeersInformation(),
-                    getGenesis());
+                    getGenesis(),
+                    getCompositeEthereumListener());
         }
 
         return syncProcessor;
@@ -1595,7 +1597,8 @@ public class RskContext implements NodeBootstrapper {
                             getReceiptStore(),
                             new BlockchainBranchComparator(getBlockStore())
                     ),
-                    new PendingTransactionsNotificationEmitter(rsk, jsonRpcSerializer)
+                    new PendingTransactionsNotificationEmitter(rsk, jsonRpcSerializer),
+                    new SyncNotificationEmitter(rsk, jsonRpcSerializer, nodeBlockProcessor, blockchain)
             );
             RskJsonRpcHandler jsonRpcHandler = new RskJsonRpcHandler(emitter, jsonRpcSerializer);
             web3WebSocketServer = new Web3WebSocketServer(

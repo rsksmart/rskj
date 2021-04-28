@@ -33,6 +33,7 @@ import org.ethereum.core.BlockFactory;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.Genesis;
 import org.ethereum.db.IndexedBlockStore;
+import org.ethereum.listener.EthereumListener;
 import org.ethereum.rpc.Simples.SimpleChannelManager;
 import org.ethereum.util.RskMockFactory;
 import org.junit.Assert;
@@ -139,7 +140,7 @@ public class SimpleAsyncNode extends SimpleNode {
                 new SyncBlockValidatorRule(new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())),
                 new DifficultyCalculator(config.getActivationConfig(), config.getNetworkConstants()),
                 new PeersInformation(channelManager, syncConfiguration, blockchain, peerScoringManager),
-                mock(Genesis.class)
+                mock(Genesis.class), mock(EthereumListener.class)
         );
         NodeMessageHandler handler = new NodeMessageHandler(config, processor, syncProcessor, channelManager, null, peerScoringManager, mock(StatusResolver.class));
 
