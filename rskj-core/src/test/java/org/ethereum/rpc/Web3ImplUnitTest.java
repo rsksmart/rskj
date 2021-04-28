@@ -34,7 +34,6 @@ import org.ethereum.util.BuildInfo;
 import org.ethereum.vm.DataWord;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Spy;
 
 import java.math.BigInteger;
 import java.util.*;
@@ -218,6 +217,24 @@ public class Web3ImplUnitTest {
         String result = target.eth_getBlockTransactionCountByNumber(id);
 
         assertEquals("0x2", result);
+    }
+
+    @Test
+    //validates invokeByBlockRef call
+    public void  eth_getCode() {
+        final String addr = "0x0011223344556677880011223344556677889900";
+        Map<String, String> blockRef = new HashMap<String, String>() {
+            {
+                put("blockHash", "0x0011223344556677880011223344556677889900");
+            }
+        };
+        final Web3Impl spyTarget = spy(target);
+        final String expectedData =  "0x010203";
+        System.out.println(expectedData);
+        doReturn(expectedData).when(spyTarget).invokeByBlockRef(eq(blockRef),any());
+        String result = spyTarget.eth_getCode(addr,blockRef);
+        assertEquals(expectedData, result);
+        verify(spyTarget).invokeByBlockRef(eq(blockRef),any());
     }
 
     @Test
