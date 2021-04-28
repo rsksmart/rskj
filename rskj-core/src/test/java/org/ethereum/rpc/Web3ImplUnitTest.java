@@ -203,6 +203,22 @@ public class Web3ImplUnitTest {
     }
 
     @Test
+    //validates invokeByBlockRef call
+    public void  eth_getBlockTransactionCountByBlockRef() {
+        String addr = "0x0011223344556677880011223344556677889900";
+        Map<String, String> blockRef = new HashMap<String, String>() {
+            {
+                put("blockHash", "0x0011223344556677880011223344556677889900");
+            }
+        };
+        final Web3Impl spyTarget = spy(target);
+        doReturn("0x1").when(spyTarget).invokeByBlockRef(eq(blockRef),any());
+        String result = spyTarget.eth_getTransactionCount(addr, blockRef);
+        assertEquals("0x1", result);
+        verify(spyTarget).invokeByBlockRef(eq(blockRef),any());
+    }
+
+    @Test
     public void eth_getUncleCountByBlockHash_blockNotFound() {
         String hash = "0x4A54";
         byte[] bytesHash = TypeConverter.stringHexToByteArray(hash);

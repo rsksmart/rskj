@@ -404,11 +404,11 @@ public class Web3Impl implements Web3 {
         return Optional.ofNullable(inputs.get(reference)).map(function);
     }
 
-    private boolean isInMainChain(byte[] blockHashBytes, long blockNumber) {
-        return this.blockchain.getBlocksInformationByNumber(blockNumber)
+    private boolean isInMainChain(Block block) {
+        return this.blockchain.getBlocksInformationByNumber(block.getNumber())
                 .stream().anyMatch(b -> {
                     return b.isInMainChain()
-                            && Arrays.equals(b.getHash(), blockHashBytes);
+                            && Arrays.equals(b.getHash(), block.getHash().getBytes());
                 });
     }
 
@@ -459,23 +459,24 @@ public class Web3Impl implements Web3 {
      * @return function invocation result
      */
     protected String invokeByBlockRef(Map<String, String> inputs, Function<String, String> toInvokeByBlockNumber) {
-        Function<String, String> getBalanceByBlockHash = hash -> {
-            Optional<Block> optBlock = Optional.ofNullable(this.blockchain.getBlockByHash(stringHexToByteArray(hash)));
-            Block block = optBlock.orElseThrow(() -> blockNotFound(String.format("Block with hash %s not found", hash)));
+        Function<String, String> getBalanceByBlockHash = blockHash -> {
+
+            Block block = Optional.ofNullable(this.blockchain.getBlockByHash(stringHexToByteArray(blockHash)))
+                    .orElseThrow(() -> blockNotFound(String.format("Block with hash %s not found", blockHash)));
 
             //check if is canonical required
-            Optional<String> requireCanonical = Optional.ofNullable(inputs.get("requireCanonical"));
-            if (Boolean.parseBoolean(requireCanonical.orElse("false")) && !isInMainChain(block.getHash().getBytes(), block.getNumber())) {
-                throw blockNotFound(String.format("Block with hash %s is not canonical and it is required", hash));
-            }
+            Optional.ofNullable(inputs.get("requireCanonical")).ifPresent((requireCanonical) -> {
+                if (Boolean.parseBoolean(requireCanonical) && !isInMainChain(block)) {
+                    throw blockNotFound(String.format("Block with hash %s is not canonical and it is required", blockHash));
+                }
+            });
 
-            String blockNumber = toQuantityJsonHex(block.getNumber());
-            return toInvokeByBlockNumber.apply(blockNumber);
+            return toInvokeByBlockNumber.apply(toQuantityJsonHex(block.getNumber()));
         };
 
-        return applyIfPresent(inputs, "blockHash", getBalanceByBlockHash).orElseGet(
-                () -> applyIfPresent(inputs, "blockNumber", toInvokeByBlockNumber)
-                        .orElseThrow(() -> invalidParamError("Invalid block input"))
+        return applyIfPresent(inputs, "blockHash", getBalanceByBlockHash)
+                .orElseGet(() -> applyIfPresent(inputs, "blockNumber", toInvokeByBlockNumber)
+                .orElseThrow(() -> invalidParamError("Invalid block input"))
         );
     }
 
