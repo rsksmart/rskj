@@ -77,6 +77,8 @@ public interface Web3EthModule {
 
     String eth_getBalance(String address, Map<String, String> block) throws Exception;
 
+    String eth_getStorageAt(String address, String storageIdx, Map<String, String> blockRef) throws Exception;
+
     String eth_getStorageAt(String address, String storageIdx, String blockId) throws Exception;
 
     String eth_getTransactionCount(String address, Map<String, String> blockRef) throws Exception ;

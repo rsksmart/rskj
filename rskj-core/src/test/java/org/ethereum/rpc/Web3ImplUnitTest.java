@@ -159,6 +159,24 @@ public class Web3ImplUnitTest {
                 result);
     }
 
+    @Test
+    //validates invokeByBlockRef call
+    public void  eth_getStorageAtByBlockRef() {
+        final String addr = "0x0011223344556677880011223344556677889900";
+        final String storageIdx = "0x01";
+        Map<String, String> blockRef = new HashMap<String, String>() {
+            {
+                put("blockHash", "0x0011223344556677880011223344556677889900");
+            }
+        };
+        final Web3Impl spyTarget = spy(target);
+        final String expecteData = "0x0000000000000000000000000000000000000000000000000000000000000001";
+        doReturn(expecteData).when(spyTarget).invokeByBlockRef(eq(blockRef),any());
+        String result = spyTarget.eth_getStorageAt(addr, storageIdx, blockRef);
+        assertEquals(expecteData, result);
+        verify(spyTarget).invokeByBlockRef(eq(blockRef),any());
+    }
+
 
     @Test
     public void eth_getStorageAtEmptyCell() {
