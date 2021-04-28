@@ -380,6 +380,11 @@ public class Web3Impl implements Web3 {
     }
 
     @Override
+    public String eth_call(CallArguments args, Map<String, String> inputs) {
+        return invokeByBlockRef(inputs, blockNumber -> this.eth_call(args,blockNumber));
+    }
+
+    @Override
     public String eth_getBalance(String address, String block) {
         /* HEX String  - an integer block number
         *  String "earliest"  for the earliest/genesis block

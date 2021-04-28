@@ -71,11 +71,13 @@ public interface Web3EthModule {
 
     String eth_blockNumber();
 
+    String eth_call(Web3.CallArguments args, Map<String, String> blockRef) throws Exception;
+
     String eth_getBalance(String address, String block) throws Exception;
 
     String eth_getBalance(String address) throws Exception;
 
-    String eth_getBalance(String address, Map<String, String> block) throws Exception;
+    String eth_getBalance(String address, Map<String, String> blockRef) throws Exception;
 
     String eth_getStorageAt(String address, String storageIdx, Map<String, String> blockRef) throws Exception;
 
