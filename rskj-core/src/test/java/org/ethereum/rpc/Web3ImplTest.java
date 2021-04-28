@@ -431,6 +431,169 @@ public class Web3ImplTest {
     }
 
     @Test
+    public void invokeByBlockNumber() {
+        World world = new World();
+        createChainWithOneBlock(world);
+        Map<String, String> blockRef = new HashMap<String, String>() {
+            {
+                put("blockNumber", "0x1");
+            }
+        };
+        Web3Impl web3 = createWeb3(world);
+        assertEquals("0x1",web3.invokeByBlockRef(blockRef,b -> b));
+    }
+
+    @Test(expected=org.ethereum.rpc.exception.RskJsonRpcRequestException.class)
+    public void invokeByInvalidInputThrowsException() {
+        World world = new World();
+        createChainWithOneBlock(world);
+        Map<String, String> blockRef = new HashMap<String, String>() {
+            {
+                put("invalidInput", "0x1");
+            }
+        };
+
+        Web3Impl web3 = createWeb3(world);
+        web3.invokeByBlockRef(blockRef,b -> b);
+    }
+
+    @Test
+    public void invokeByBlockHash() {
+        World world = new World();
+        Block block = createChainWithOneBlock(world);
+        Map<String, String> blockRef = new HashMap<String, String>() {
+            {
+                put("blockHash", "0x" + block.getPrintableHash());
+            }
+        };
+
+        Web3Impl web3 = createWeb3(world);
+        assertEquals("0x1",web3.invokeByBlockRef(blockRef,b -> b));
+    }
+
+    @Test(expected=org.ethereum.rpc.exception.RskJsonRpcRequestException.class)
+    public void invokeByNonExistentBlockHash() {
+        World world = new World();
+        createChainWithOneBlock(world);
+        final String nonExistentBlockHash="0x" + String.join("", Collections.nCopies(64, "1")); // "0x1111..."
+        Map<String, String> blockRef = new HashMap<String, String>() {
+            {
+                put("blockHash", nonExistentBlockHash);
+            }
+        };
+
+        Web3Impl web3 = createWeb3(world);
+        web3.invokeByBlockRef(blockRef,b -> b);
+    }
+
+    @Test(expected=org.ethereum.rpc.exception.RskJsonRpcRequestException.class)
+    public void invokeByNonExistentBlockHashWhenCanonicalIsRequired() {
+        World world = new World();
+        createChainWithOneBlock(world);
+        final String nonExistentBlockHash="0x" + String.join("", Collections.nCopies(64, "1")); // "0x1111..."
+        Map<String, String> blockRef = new HashMap<String, String>() {
+            {
+                put("blockHash", nonExistentBlockHash);
+                put("requireCanonical","true");
+            }
+        };
+
+        Web3Impl web3 = createWeb3(world);
+        web3.invokeByBlockRef(blockRef,b -> b);;
+    }
+
+    @Test(expected=org.ethereum.rpc.exception.RskJsonRpcRequestException.class)
+    public void invokeByNonExistentBlockHashWhenCanonicalIsNotRequired() {
+        World world = new World();
+        createChainWithOneBlock(world);
+        final String nonExistentBlockHash="0x" + String.join("", Collections.nCopies(64, "1")); // "0x1111..."
+        Map<String, String> blockRef = new HashMap<String, String>() {
+            {
+                put("blockHash", nonExistentBlockHash);
+                put("requireCanonical","false");
+            }
+        };
+
+        Web3Impl web3 = createWeb3(world);
+        web3.invokeByBlockRef(blockRef,b -> b);
+    }
+
+    @Test(expected=org.ethereum.rpc.exception.RskJsonRpcRequestException.class)
+    public void invokeByNonCanonicalBlockHashWhenCanonicalIsRequired() {
+        World world = new World();
+        String accountAddress = createAccountWith10KBalance(world);
+        Block nonCanonicalBlock = createChainWithNonCanonicalBlock(world);
+        Map<String, String> blockRef = new HashMap<String, String>() {
+            {
+                put("blockHash", "0x" + nonCanonicalBlock.getPrintableHash());
+                put("requireCanonical","true");
+            }
+        };
+
+        Web3Impl web3 = createWeb3(world);
+        web3.invokeByBlockRef(blockRef,b -> b);
+    }
+
+    @Test
+    public void invokeCanonicalBlockHashWhenCanonicalIsRequired() {
+        World world = new World();
+        Block block = createChainWithOneBlock(world);
+        Map<String, String> blockRef = new HashMap<String, String>() {
+            {
+                put("blockHash", "0x" + block.getPrintableHash());
+                put("requireCanonical","true");
+            }
+        };
+
+        Web3Impl web3 = createWeb3(world);
+        assertEquals("0x1",web3.invokeByBlockRef(blockRef,b -> b));
+    }
+
+    @Test
+    public void invokeByCanonicalBlockHashWhenCanonicalIsNotRequired() {
+        World world = new World();
+        Block block = createChainWithOneBlock(world);
+        Map<String, String> blockRef = new HashMap<String, String>() {
+            {
+                put("blockHash", "0x" + block.getPrintableHash());
+                put("requireCanonical","false");
+            }
+        };
+
+        Web3Impl web3 = createWeb3(world);
+        assertEquals("0x1",web3.invokeByBlockRef(blockRef,b -> b));
+    }
+
+    @Test
+    public void invokeByNonCanonicalBlockHashWhenCanonicalIsNotRequired() {
+        World world = new World();
+        Block nonCanonicalBlock = createChainWithNonCanonicalBlock(world);
+        Map<String, String> blockRef = new HashMap<String, String>() {
+            {
+                put("blockHash", "0x" + nonCanonicalBlock.getPrintableHash());
+                put("requireCanonical","false");
+            }
+        };
+
+        Web3Impl web3 = createWeb3(world);
+        assertEquals("0x1",web3.invokeByBlockRef(blockRef,b -> b));
+    }
+
+    @Test
+    public void invokeByNonCanonicalBlockHash() {
+        World world = new World();
+        Block nonCanonicalBlock = createChainWithNonCanonicalBlock(world);
+        Map<String, String> blockRef = new HashMap<String, String>() {
+            {
+                put("blockHash", "0x" + nonCanonicalBlock.getPrintableHash());
+            }
+        };
+
+        Web3Impl web3 = createWeb3(world);
+        assertEquals("0x1",web3.invokeByBlockRef(blockRef,b -> b));
+    }
+
+    @Test
     public void eth_mining()  {
         Ethereum ethMock = Web3Mocks.getMockEthereum();
         Blockchain blockchain = Web3Mocks.getMockBlockchain();
