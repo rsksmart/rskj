@@ -97,6 +97,7 @@ public interface Web3EthModule {
     default String eth_getCode(String address, String blockId) {
         return getEthModule().getCode(address, blockId);
     }
+    String eth_getCode(String address, Map<String, String> blockRef) throws Exception;
 
     default String eth_sendRawTransaction(String rawData) {
         return getEthModule().sendRawTransaction(rawData);

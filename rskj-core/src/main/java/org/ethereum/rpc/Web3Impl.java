@@ -381,7 +381,12 @@ public class Web3Impl implements Web3 {
 
     @Override
     public String eth_call(CallArguments args, Map<String, String> inputs) {
-        return invokeByBlockRef(inputs, blockNumber -> this.eth_call(args,blockNumber));
+        return invokeByBlockRef(inputs, blockNumber -> this.eth_call(args, blockNumber));
+    }
+
+    @Override
+    public String eth_getCode(String address, Map<String, String> inputs) {
+        return invokeByBlockRef(inputs, blockNumber -> this.eth_getCode(address, blockNumber));
     }
 
     @Override
