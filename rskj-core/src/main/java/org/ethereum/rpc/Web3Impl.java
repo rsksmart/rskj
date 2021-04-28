@@ -418,6 +418,11 @@ public class Web3Impl implements Web3 {
     }
 
     @Override
+    public String eth_getStorageAt(String address, String storageIdx, Map<String, String> blockRef) {
+        return invokeByBlockRef(blockRef, blockNumber -> this.eth_getStorageAt(address,storageIdx, blockNumber));
+    }
+
+    @Override
     public String eth_getStorageAt(String address, String storageIdx, String blockId) {
         String s = null;
 
