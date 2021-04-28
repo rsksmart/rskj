@@ -170,10 +170,10 @@ public class Web3ImplUnitTest {
             }
         };
         final Web3Impl spyTarget = spy(target);
-        final String expecteData = "0x0000000000000000000000000000000000000000000000000000000000000001";
-        doReturn(expecteData).when(spyTarget).invokeByBlockRef(eq(blockRef),any());
+        final String expectedData = "0x0000000000000000000000000000000000000000000000000000000000000001";
+        doReturn(expectedData).when(spyTarget).invokeByBlockRef(eq(blockRef),any());
         String result = spyTarget.eth_getStorageAt(addr, storageIdx, blockRef);
-        assertEquals(expecteData, result);
+        assertEquals(expectedData, result);
         verify(spyTarget).invokeByBlockRef(eq(blockRef),any());
     }
 
@@ -218,6 +218,27 @@ public class Web3ImplUnitTest {
         String result = target.eth_getBlockTransactionCountByNumber(id);
 
         assertEquals("0x2", result);
+    }
+
+    @Test
+    //validates invokeByBlockRef call
+    public void  eth_callAtByBlockRef() {
+
+        Web3.CallArguments argsForCall = new Web3.CallArguments();
+        argsForCall.to = "0x0011223344556677880011223344556677889900";
+        argsForCall.data = "ead710c40000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000568656c6c6f000000000000000000000000000000000000000000000000000000";
+        Map<String, String> blockRef = new HashMap<String, String>() {
+            {
+                put("blockHash", "0x0011223344556677880011223344556677889900");
+            }
+        };
+        final Web3Impl spyTarget = spy(target);
+        final String expectedData = "0x0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000568656c6c6f000000000000000000000000000000000000000000000000000000";
+
+        doReturn(expectedData).when(spyTarget).invokeByBlockRef(eq(blockRef),any());
+        String result = spyTarget.eth_call(argsForCall,blockRef);
+        assertEquals(expectedData, result);
+        verify(spyTarget).invokeByBlockRef(eq(blockRef),any());
     }
 
     @Test
