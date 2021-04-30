@@ -31,6 +31,7 @@ import co.rsk.peg.simples.SimpleRskTransaction;
 import co.rsk.peg.utils.*;
 import co.rsk.peg.whitelist.LockWhitelist;
 import co.rsk.peg.whitelist.OneOffWhiteListEntry;
+import co.rsk.test.builders.BridgeSupportBuilder;
 import co.rsk.trie.Trie;
 import com.google.common.collect.Lists;
 import org.bouncycastle.asn1.x9.X9ECParameters;
@@ -103,6 +104,7 @@ public class BridgeSupportTest {
     private NetworkParameters btcParams;
     private ActivationConfig.ForBlock activationsBeforeForks;
     private ActivationConfig.ForBlock activationsAfterForks;
+    private BridgeSupportBuilder bridgeSupportBuilder;
 
     @Before
     public void setUpOnEachTest() {
@@ -110,6 +112,7 @@ public class BridgeSupportTest {
         btcParams = bridgeConstants.getBtcParams();
         activationsBeforeForks = ActivationConfigsForTest.genesis().forBlock(0);
         activationsAfterForks = ActivationConfigsForTest.all().forBlock(0);
+        bridgeSupportBuilder = new BridgeSupportBuilder();
     }
 
     @Test
