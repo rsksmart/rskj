@@ -84,6 +84,7 @@ public class EthSubscriptionNotificationEmitterTest {
         assertThat(unsubscribed, is(false));
         verify(newHeads).unsubscribe(subscriptionId);
         verify(logs).unsubscribe(subscriptionId);
+        verify(pendingTransactions).unsubscribe(subscriptionId);
     }
 
     @Test
@@ -96,6 +97,7 @@ public class EthSubscriptionNotificationEmitterTest {
         assertThat(unsubscribed, is(true));
         verify(newHeads).unsubscribe(subscriptionId);
         verify(logs).unsubscribe(subscriptionId);
+        verify(pendingTransactions).unsubscribe(subscriptionId);
     }
 
     @Test
@@ -108,6 +110,20 @@ public class EthSubscriptionNotificationEmitterTest {
         assertThat(unsubscribed, is(true));
         verify(newHeads).unsubscribe(subscriptionId);
         verify(logs).unsubscribe(subscriptionId);
+        verify(pendingTransactions).unsubscribe(subscriptionId);
+    }
+
+    @Test
+    public void unsubscribeSuccessfullyFromPendingTransactions() {
+        SubscriptionId subscriptionId = mock(SubscriptionId.class);
+        when(pendingTransactions.unsubscribe(subscriptionId)).thenReturn(true);
+
+        boolean unsubscribed = emitter.unsubscribe(subscriptionId);
+
+        assertThat(unsubscribed, is(true));
+        verify(newHeads).unsubscribe(subscriptionId);
+        verify(logs).unsubscribe(subscriptionId);
+        verify(pendingTransactions).unsubscribe(subscriptionId);
     }
 
     @Test
@@ -118,5 +134,6 @@ public class EthSubscriptionNotificationEmitterTest {
 
         verify(newHeads).unsubscribe(channel);
         verify(logs).unsubscribe(channel);
+        verify(pendingTransactions).unsubscribe(channel);
     }
 }

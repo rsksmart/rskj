@@ -65,7 +65,8 @@ public class EthSubscriptionNotificationEmitter implements EthSubscribeParamsVis
         // temporal variables avoid short-circuiting behavior
         boolean unsubscribedBlockHeader = blockHeader.unsubscribe(subscriptionId);
         boolean unsubscribedLogs = logs.unsubscribe(subscriptionId);
-        return unsubscribedBlockHeader || unsubscribedLogs;
+        boolean unsubscribedPendingTransactions = pendingTransactions.unsubscribe(subscriptionId);
+        return unsubscribedBlockHeader || unsubscribedLogs || unsubscribedPendingTransactions;
     }
 
     /**
@@ -74,5 +75,6 @@ public class EthSubscriptionNotificationEmitter implements EthSubscribeParamsVis
     public void unsubscribe(Channel channel) {
         blockHeader.unsubscribe(channel);
         logs.unsubscribe(channel);
+        pendingTransactions.unsubscribe(channel);
     }
 }
