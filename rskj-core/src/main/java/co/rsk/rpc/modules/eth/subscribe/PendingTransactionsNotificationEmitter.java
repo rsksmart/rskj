@@ -31,21 +31,24 @@ public class PendingTransactionsNotificationEmitter {
         });
     }
 
+    public void subscribe(SubscriptionId subscriptionId, Channel channel) {
+        subscriptions.put(subscriptionId, channel);
+    }
+
     private void emit(List<Transaction> transactions) {
         subscriptions.forEach((SubscriptionId id, Channel channel) -> {
-            String txHash = transactions.get(0).getHash().toJsonString();
-            EthSubscriptionParams params = new EthSubscriptionParams(id, txHash);
-            EthSubscriptionNotification request = new EthSubscriptionNotification(params);
-            try {
-                String msg = jsonRpcSerializer.serializeMessage(request);
-                channel.writeAndFlush(new TextWebSocketFrame(msg));
-            } catch (JsonProcessingException e) {
-                logger.error("Couldn't serialize block header result for notification", e);
-            }
+            transactions.forEach(t -> emit(id, channel, t.getHash().toJsonString()));
         });
     }
 
-    public void subscribe(SubscriptionId subscriptionId, Channel channel) {
-        subscriptions.put(subscriptionId, channel);
+    private void emit(SubscriptionId id, Channel channel, String txHash) {
+        EthSubscriptionParams params = new EthSubscriptionParams(id, txHash);
+        EthSubscriptionNotification request = new EthSubscriptionNotification(params);
+        try {
+            String msg = jsonRpcSerializer.serializeMessage(request);
+            channel.writeAndFlush(new TextWebSocketFrame(msg));
+        } catch (JsonProcessingException e) {
+            logger.error("Couldn't serialize block header result for notification", e);
+        }
     }
 }
