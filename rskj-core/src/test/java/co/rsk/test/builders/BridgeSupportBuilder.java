@@ -23,8 +23,6 @@ public class BridgeSupportBuilder {
     private PeginInstructionsProvider peginInstructionsProvider;
     private Repository repository;
     private Block executionBlock;
-    private Context btcContext;
-    private FederationSupport federationSupport;
     private Factory btcBlockStoreFactory;
     private ActivationConfig.ForBlock activations;
 
@@ -36,8 +34,6 @@ public class BridgeSupportBuilder {
         this.peginInstructionsProvider = mock(PeginInstructionsProvider.class);
         this.repository = mock(Repository.class);
         this.executionBlock = mock(Block.class);
-        this.btcContext = mock(Context.class);
-        this.federationSupport = mock(FederationSupport.class);
         this.btcBlockStoreFactory = mock(Factory.class);
         this.activations = mock(ActivationConfig.ForBlock.class);
     }
@@ -77,16 +73,6 @@ public class BridgeSupportBuilder {
         return this;
     }
 
-    public BridgeSupportBuilder btcContext(Context btcContext) {
-        this.btcContext = btcContext;
-        return this;
-    }
-
-    public BridgeSupportBuilder federationSupport(FederationSupport federationSupport) {
-        this.federationSupport = federationSupport;
-        return this;
-    }
-
     public BridgeSupportBuilder btcBlockStoreFactory(Factory btcBlockStoreFactory) {
         this.btcBlockStoreFactory = btcBlockStoreFactory;
         return this;
@@ -106,8 +92,8 @@ public class BridgeSupportBuilder {
             peginInstructionsProvider,
             repository,
             executionBlock,
-            btcContext,
-            federationSupport,
+            new Context(bridgeConstants.getBtcParams()),
+            new FederationSupport(bridgeConstants, provider, executionBlock),
             btcBlockStoreFactory,
             activations
         );
