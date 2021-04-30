@@ -248,17 +248,14 @@ task fatJar(type: Jar, dependsOn: jar) {
     }
 
     exclude 'META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/*.RSA'
-
-    exclude 'META-INF/NOTICE'
-    exclude 'META-INF/NOTICE.md'
-    exclude 'META-INF/NOTICE.txt'
-    exclude 'META-INF/LICENSE'
-    exclude 'META-INF/LICENSE.md'
-    exclude 'META-INF/LICENSE.txt'
-
     exclude 'module-info.class'
 
-    from { configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) } }
+    for (def jar in configurations.runtimeClasspath.findAll { it.name.endsWith('jar') }.collect { zipTree(it) }) {
+        from(jar) {
+            eachFile { details -> amendPathIfNeeded(details) }
+        }
+    }
+
     with jar
 }
 
@@ -287,4 +284,14 @@ static def gitCurrentBranch() {
 static def gitCommitHash() {
     def process = "git rev-parse --short HEAD".execute()
     return process.text.trim()
+}
+
+static def amendPathIfNeeded(details) {
+    def uPath = details.path.toUpperCase()
+    if (uPath.startsWith("META-INF/LICENSE") || uPath.startsWith("META-INF/NOTICE")) {
+        def originalFile = details.file as File
+        def jarName = originalFile.parentFile.parentFile.name.split(".jar")[0]
+        def newPath = originalFile.parentFile.name + "/" + jarName + "_" + originalFile.name
+        details.path = newPath
+    }
 }
