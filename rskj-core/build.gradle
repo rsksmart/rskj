@@ -192,9 +192,16 @@ task fatJar(type: Jar, dependsOn: jar) {
     manifest {
         attributes 'Main-Class': "$mainClassName"
     }
-    exclude "META-INF/*.SF", "META-INF/*.DSA", "META-INF/*.RSA"
-    classifier = 'all'
-    from { configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) } }
+
+    exclude 'META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/*.RSA'
+    exclude 'module-info.class'
+
+    for (def jar in configurations.runtimeClasspath.findAll { it.name.endsWith('jar') }.collect { zipTree(it) }) {
+        from(jar) {
+            eachFile { details -> amendPathIfNeeded(details) }
+        }
+    }
+
     with jar
 }
 
@@ -225,24 +232,12 @@ def gitCommitHash() {
     return process.text.trim()
 }
 
-def gitDateHash() {
-    def process = "git show -s --format=%ct ${gitCommitHash()}".execute()
-    return process.text.toLong()
-}
-
-def stripJar(File originalFile) {
-    def constantTimeForZipEntries = new GregorianCalendar(1980, Calendar.FEBRUARY, 1, 0, 0, 0).timeInMillis
-    def reproducibleFile = File.createTempFile("temp", ".tmp")
-    reproducibleFile.withOutputStream { fout ->
-        def out = new JarOutputStream(fout)
-        def jf = new JarFile(originalFile)
-        jf.entries().unique {it.name}.sort {it.name}.each {
-            def copy = new JarEntry(it.name)
-            copy.time = constantTimeForZipEntries
-            out.putNextEntry(copy)
-            out << jf.getInputStream(it)
-        }
-        out.finish()
+static def amendPathIfNeeded(details) {
+    def uPath = details.path.toUpperCase()
+    if (uPath.startsWith("META-INF/LICENSE") || uPath.startsWith("META-INF/NOTICE")) {
+        def originalFile = details.file as File
+        def jarName = originalFile.parentFile.parentFile.name.split(".jar")[0]
+        def newPath = originalFile.parentFile.name + "/" + jarName + "_" + originalFile.name
+        details.path = newPath
     }
-    reproducibleFile.renameTo originalFile
 }
