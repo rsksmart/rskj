@@ -96,4 +96,21 @@ public class PendingTransactionsNotificationEmitterTest {
         assertThat(emitter.unsubscribe(new SubscriptionId()), is(false));
         assertThat(emitter.unsubscribe(subscriptionId), is(true));
     }
+
+    @Test
+    public void unsubscribeChannelThenNothingIsEmitted() {
+        SubscriptionId subscriptionId = mock(SubscriptionId.class);
+        Channel channel = mock(Channel.class);
+        emitter.subscribe(subscriptionId, channel);
+
+        emitter.unsubscribe(channel);
+
+        Transaction tx = mock(Transaction.class);
+        Keccak256 txHash = new Keccak256("d6fdc5cc41a9959e922f30cb772a9aef46f4daea279307bc5f7024edc4ccd7fa");
+        when(tx.getHash()).thenReturn(txHash);
+        List<Transaction> transactions = Arrays.asList(tx);
+        listener.onPendingTransactionsReceived(transactions);
+
+        verifyNoMoreInteractions(channel);
+    }
 }
