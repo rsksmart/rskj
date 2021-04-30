@@ -30,13 +30,16 @@ import static org.mockito.Mockito.*;
 public class EthSubscriptionNotificationEmitterTest {
     private BlockHeaderNotificationEmitter newHeads;
     private LogsNotificationEmitter logs;
+    private PendingTransactionsNotificationEmitter pendingTransactions;
+
     private EthSubscriptionNotificationEmitter emitter;
 
     @Before
     public void setUp() {
         newHeads = mock(BlockHeaderNotificationEmitter.class);
         logs = mock(LogsNotificationEmitter.class);
-        emitter = new EthSubscriptionNotificationEmitter(newHeads, logs);
+        pendingTransactions = mock(PendingTransactionsNotificationEmitter.class);
+        emitter = new EthSubscriptionNotificationEmitter(newHeads, logs, pendingTransactions);
     }
 
     @Test
@@ -59,6 +62,17 @@ public class EthSubscriptionNotificationEmitterTest {
 
         assertThat(subscriptionId, notNullValue());
         verify(logs).subscribe(subscriptionId, channel, params);
+    }
+
+    @Test
+    public void subscribeToPendingTransactions() {
+        Channel channel = mock(Channel.class);
+
+        EthSubscribePendingTransactionsParams params = mock(EthSubscribePendingTransactionsParams.class);
+        SubscriptionId subscriptionId = emitter.visit(params, channel);
+
+        assertThat(subscriptionId, notNullValue());
+        verify(pendingTransactions).subscribe(subscriptionId, channel);
     }
 
     @Test

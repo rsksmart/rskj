@@ -27,12 +27,14 @@ import io.netty.channel.Channel;
 public class EthSubscriptionNotificationEmitter implements EthSubscribeParamsVisitor {
     private final BlockHeaderNotificationEmitter blockHeader;
     private final LogsNotificationEmitter logs;
+    private final PendingTransactionsNotificationEmitter pendingTransactions;
 
     public EthSubscriptionNotificationEmitter(
             BlockHeaderNotificationEmitter blockHeader,
-            LogsNotificationEmitter logs) {
+            LogsNotificationEmitter logs, PendingTransactionsNotificationEmitter pendingTransactions) {
         this.blockHeader = blockHeader;
         this.logs = logs;
+        this.pendingTransactions = pendingTransactions;
     }
 
     @Override
@@ -46,6 +48,13 @@ public class EthSubscriptionNotificationEmitter implements EthSubscribeParamsVis
     public SubscriptionId visit(EthSubscribeLogsParams params, Channel channel) {
         SubscriptionId subscriptionId = new SubscriptionId();
         logs.subscribe(subscriptionId, channel, params);
+        return subscriptionId;
+    }
+
+    @Override
+    public SubscriptionId visit(EthSubscribePendingTransactionsParams params, Channel channel) {
+        SubscriptionId subscriptionId = new SubscriptionId();
+        pendingTransactions.subscribe(subscriptionId, channel);
         return subscriptionId;
     }
 
