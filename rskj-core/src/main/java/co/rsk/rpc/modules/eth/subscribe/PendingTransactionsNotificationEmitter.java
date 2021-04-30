@@ -35,6 +35,10 @@ public class PendingTransactionsNotificationEmitter {
         subscriptions.put(subscriptionId, channel);
     }
 
+    public boolean unsubscribe(SubscriptionId subscriptionId) {
+        return subscriptions.remove(subscriptionId) != null;
+    }
+
     private void emit(List<Transaction> transactions) {
         subscriptions.forEach((SubscriptionId id, Channel channel) -> {
             transactions.forEach(t -> emit(id, channel, t.getHash().toJsonString()));
