@@ -140,16 +140,15 @@ public class BridgeSupportTest {
         BridgeConstants constants = mock(BridgeConstants.class);
         AddressBasedAuthorizer authorizer = mock(AddressBasedAuthorizer.class);
 
-        when(provider.getFeePerKbElection(any()))
-                .thenReturn(new ABICallElection(null));
-        when(tx.getSender())
-                .thenReturn(new RskAddress(ByteUtil.leftPadBytes(new byte[]{0x43}, 20)));
-        when(constants.getFeePerKbChangeAuthorizer())
-                .thenReturn(authorizer);
-        when(authorizer.isAuthorized(tx))
-                .thenReturn(true);
+        when(provider.getFeePerKbElection(any())).thenReturn(new ABICallElection(null));
+        when(tx.getSender()).thenReturn(new RskAddress(ByteUtil.leftPadBytes(new byte[]{0x43}, 20)));
+        when(constants.getFeePerKbChangeAuthorizer()).thenReturn(authorizer);
+        when(authorizer.isAuthorized(tx)).thenReturn(true);
 
-        BridgeSupport bridgeSupport = getBridgeSupport(constants, provider);
+        BridgeSupport bridgeSupport = bridgeSupportBuilder
+            .bridgeConstants(constants)
+            .provider(provider)
+            .build();
 
         bridgeSupport.voteFeePerKbChange(tx, null);
         verify(provider, never()).setFeePerKb(any());
@@ -163,16 +162,15 @@ public class BridgeSupportTest {
         AddressBasedAuthorizer authorizer = mock(AddressBasedAuthorizer.class);
         byte[] senderBytes = ByteUtil.leftPadBytes(new byte[]{0x43}, 20);
 
-        when(provider.getFeePerKbElection(any()))
-                .thenReturn(new ABICallElection(authorizer));
-        when(tx.getSender())
-                .thenReturn(new RskAddress(senderBytes));
-        when(constants.getFeePerKbChangeAuthorizer())
-                .thenReturn(authorizer);
-        when(authorizer.isAuthorized(tx))
-                .thenReturn(false);
+        when(provider.getFeePerKbElection(any())).thenReturn(new ABICallElection(authorizer));
+        when(tx.getSender()).thenReturn(new RskAddress(senderBytes));
+        when(constants.getFeePerKbChangeAuthorizer()).thenReturn(authorizer);
+        when(authorizer.isAuthorized(tx)).thenReturn(false);
 
-        BridgeSupport bridgeSupport = getBridgeSupport(constants, provider);
+        BridgeSupport bridgeSupport = bridgeSupportBuilder
+            .bridgeConstants(constants)
+            .provider(provider)
+            .build();
 
         assertThat(bridgeSupport.voteFeePerKbChange(tx, Coin.CENT), is(-10));
         verify(provider, never()).setFeePerKb(any());
@@ -1479,7 +1477,13 @@ public class BridgeSupportTest {
         tx.sign(new ECKey().getPrivKeyBytes());
 
         BridgeSupport bridgeSupport = getBridgeSupport(
-                bridgeConstants, provider, mock(Repository.class), bridgeEventLogger, rskCurrentBlock, null, activations
+            bridgeConstants,
+            provider,
+            mock(Repository.class),
+            bridgeEventLogger,
+            rskCurrentBlock,
+            null,
+            activations
         );
 
         List<UTXO> sufficientUTXOsForMigration1 = new ArrayList<>();
