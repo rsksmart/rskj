@@ -33,11 +33,9 @@ public class PendingTransactionsNotificationEmitter {
 
     private void emit(List<Transaction> transactions) {
         subscriptions.forEach((SubscriptionId id, Channel channel) -> {
-            //TODO: HARDCODED FOR TDD
-            EthSubscriptionNotification request = new EthSubscriptionNotification(
-                    new EthSubscriptionParams(id, new EthSubscriptionNotificationDTO() {
-                    })
-            );
+            String txHash = transactions.get(0).getHash().toJsonString();
+            EthSubscriptionParams params = new EthSubscriptionParams(id, txHash);
+            EthSubscriptionNotification request = new EthSubscriptionNotification(params);
             try {
                 String msg = jsonRpcSerializer.serializeMessage(request);
                 channel.writeAndFlush(new TextWebSocketFrame(msg));

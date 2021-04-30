@@ -1,5 +1,7 @@
 package co.rsk.rpc.modules.eth.subscribe;
 
+import co.rsk.crypto.Keccak256;
+import co.rsk.rpc.JacksonBasedRpcSerializer;
 import co.rsk.rpc.JsonRpcSerializer;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.netty.channel.Channel;
@@ -11,7 +13,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -25,7 +26,7 @@ public class PendingTransactionsNotificationEmitterTest {
     @Before
     public void setUp() {
         Ethereum ethereum = mock(Ethereum.class);
-        serializer = mock(JsonRpcSerializer.class);
+        serializer = new JacksonBasedRpcSerializer();
         emitter = new PendingTransactionsNotificationEmitter(ethereum, serializer);
 
         ArgumentCaptor<EthereumListener> listenerCaptor = ArgumentCaptor.forClass(EthereumListener.class);
@@ -34,40 +35,19 @@ public class PendingTransactionsNotificationEmitterTest {
     }
 
     @Test
-    public void onPendingTransactionsReceivedTriggersMessageToChannel() throws JsonProcessingException {
-        SubscriptionId subscriptionId = mock(SubscriptionId.class);
+    public void onOnePendingTransactionsReceivedTriggersMessageToChannel() throws JsonProcessingException {
+        SubscriptionId subscriptionId = new SubscriptionId("0xc3b33aa549fb9a60e95d21862596617c");
         Channel channel = mock(Channel.class);
         emitter.subscribe(subscriptionId, channel);
-        when(serializer.serializeMessage(any()))
-                .thenReturn("serialized");
 
-        List<Transaction> transactions = new ArrayList<>();
-        listener.onPendingTransactionsReceived(transactions);
-
-        verify(channel).writeAndFlush(new TextWebSocketFrame("serialized"));
-    }
-
-    @Test
-    public void onPendingTransactionsReceivedTriggersMessageToChannelWithTxHash() throws JsonProcessingException {
-        SubscriptionId subscriptionId = mock(SubscriptionId.class);
-
-        String result = "{\n" +
-                "        \"jsonrpc\":\"2.0\",\n" +
-                "        \"method\":\"eth_subscription\",\n" +
-                "        \"params\":{\n" +
-                "            \"subscription\":\"0xc3b33aa549fb9a60e95d21862596617c\",\n" +
-                "            \"result\":\"0xd6fdc5cc41a9959e922f30cb772a9aef46f4daea279307bc5f7024edc4ccd7fa\"\n" +
-                "        }\n" +
-                "   }";
-
-        Channel channel = mock(Channel.class);
-        emitter.subscribe(subscriptionId, channel);
         Transaction tx = mock(Transaction.class);
-        when(serializer.serializeMessage(any())).thenReturn(result);
+        Keccak256 txHash = new Keccak256("d6fdc5cc41a9959e922f30cb772a9aef46f4daea279307bc5f7024edc4ccd7fa");
+        when(tx.getHash()).thenReturn(txHash);
         List<Transaction> transactions = Arrays.asList(tx);
 
         listener.onPendingTransactionsReceived(transactions);
 
+        String result = "{\"jsonrpc\":\"2.0\",\"method\":\"eth_subscription\",\"params\":{\"subscription\":\"0xc3b33aa549fb9a60e95d21862596617c\",\"result\":\"0xd6fdc5cc41a9959e922f30cb772a9aef46f4daea279307bc5f7024edc4ccd7fa\"}}";
         verify(channel).writeAndFlush(new TextWebSocketFrame(result));
     }
 }
