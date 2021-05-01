@@ -96,6 +96,8 @@ public class SyncPool implements InternalService {
 
     @Override
     public void start() {
+        ethereumListener.onSyncing(true);
+
         this.syncPoolExecutor = Executors.newSingleThreadScheduledExecutor(target -> new Thread(target, "syncPool"));
 
         updateLowerUsefulDifficulty();
@@ -130,6 +132,7 @@ public class SyncPool implements InternalService {
 
     @Override
     public void stop() {
+        ethereumListener.onSyncing(false);
         syncPoolExecutor.shutdown();
     }
 

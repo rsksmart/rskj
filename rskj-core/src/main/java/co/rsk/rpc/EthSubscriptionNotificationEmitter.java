@@ -28,13 +28,15 @@ public class EthSubscriptionNotificationEmitter implements EthSubscribeParamsVis
     private final BlockHeaderNotificationEmitter blockHeader;
     private final LogsNotificationEmitter logs;
     private final PendingTransactionsNotificationEmitter pendingTransactions;
+    private final SyncingNotificationEmitter syncing;
 
     public EthSubscriptionNotificationEmitter(
             BlockHeaderNotificationEmitter blockHeader,
-            LogsNotificationEmitter logs, PendingTransactionsNotificationEmitter pendingTransactions) {
+            LogsNotificationEmitter logs, PendingTransactionsNotificationEmitter pendingTransactions, SyncingNotificationEmitter syncing) {
         this.blockHeader = blockHeader;
         this.logs = logs;
         this.pendingTransactions = pendingTransactions;
+        this.syncing = syncing;
     }
 
     @Override
@@ -58,6 +60,13 @@ public class EthSubscriptionNotificationEmitter implements EthSubscribeParamsVis
         return subscriptionId;
     }
 
+    @Override
+    public SubscriptionId visit(EthSubscribeSyncingParams params, Channel channel) {
+        SubscriptionId subscriptionId = new SubscriptionId();
+        syncing.subscribe(subscriptionId, channel);
+        return subscriptionId;
+    }
+
     /**
      * @return whether the unsubscription succeeded.
      */
@@ -66,7 +75,8 @@ public class EthSubscriptionNotificationEmitter implements EthSubscribeParamsVis
         boolean unsubscribedBlockHeader = blockHeader.unsubscribe(subscriptionId);
         boolean unsubscribedLogs = logs.unsubscribe(subscriptionId);
         boolean unsubscribedPendingTransactions = pendingTransactions.unsubscribe(subscriptionId);
-        return unsubscribedBlockHeader || unsubscribedLogs || unsubscribedPendingTransactions;
+        boolean unsubscribedSyncing = syncing.unsubscribe(subscriptionId);
+        return unsubscribedBlockHeader || unsubscribedLogs || unsubscribedPendingTransactions || unsubscribedSyncing;
     }
 
     /**
@@ -76,5 +86,6 @@ public class EthSubscriptionNotificationEmitter implements EthSubscribeParamsVis
         blockHeader.unsubscribe(channel);
         logs.unsubscribe(channel);
         pendingTransactions.unsubscribe(channel);
+        syncing.unsubscribe(channel);
     }
 }
