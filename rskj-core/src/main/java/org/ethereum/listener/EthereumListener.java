@@ -64,4 +64,6 @@ public interface EthereumListener {
     void onLongSyncDone();
 
     void onLongSyncStarted();
+
+    void onSyncing(boolean  isStarted);
 }

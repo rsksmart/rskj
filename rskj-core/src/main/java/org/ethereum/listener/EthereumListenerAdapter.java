@@ -99,4 +99,9 @@ public class EthereumListenerAdapter implements EthereumListener {
     public void onLongSyncStarted() {
 
     }
+
+    @Override
+    public void onSyncing(boolean isStarted) {
+
+    }
 }

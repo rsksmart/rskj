@@ -126,6 +126,11 @@ public class CompositeEthereumListener implements EthereumListener {
         scheduleListenerCallbacks(EthereumListener::onLongSyncStarted);
     }
 
+    @Override
+    public void onSyncing(boolean isStarted) {
+        scheduleListenerCallbacks(listener -> listener.onSyncing(isStarted));
+    }
+
     private void scheduleListenerCallbacks(Consumer<EthereumListener> callback) {
         for (EthereumListener listener : listeners) {
             try {
