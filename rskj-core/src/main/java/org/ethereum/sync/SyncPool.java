@@ -96,13 +96,7 @@ public class SyncPool implements InternalService {
 
     @Override
     public void start() {
-        long currentBlock = this.blockchain.getBestBlock().getNumber();
-        long highestBlock = this.nodeBlockProcessor.getLastKnownBlockNumber();
 
-        ethereumListener.onSyncing(true, new LinkedHashMap() {{
-            put("currentBlock",currentBlock);
-            put("highestBlock",highestBlock);
-        }});
 
         this.syncPoolExecutor = Executors.newSingleThreadScheduledExecutor(target -> new Thread(target, "syncPool"));
 
@@ -123,6 +117,8 @@ public class SyncPool implements InternalService {
                 }
             }, WORKER_TIMEOUT, WORKER_TIMEOUT, TimeUnit.SECONDS
         );
+
+        emmitStartEvent();
 
         if (config.waitForSync()) {
             try {
@@ -338,6 +334,16 @@ public class SyncPool implements InternalService {
                 }
             }
         }
+    }
+
+    private void emmitStartEvent() {
+        long currentBlock = this.blockchain.getBestBlock().getNumber();
+        long highestBlock = this.nodeBlockProcessor.getLastKnownBlockNumber();
+
+        ethereumListener.onSyncing(true, new LinkedHashMap() {{
+            put("currentBlock",currentBlock);
+            put("highestBlock",highestBlock);
+        }});
     }
 
     public interface PeerClientFactory {
