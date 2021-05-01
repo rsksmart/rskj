@@ -96,7 +96,16 @@ public class SyncPool implements InternalService {
 
     @Override
     public void start() {
-        ethereumListener.onSyncing(true);
+        long currentBlock = this.blockchain.getBestBlock().getNumber();
+        long highestBlock = this.nodeBlockProcessor.getLastKnownBlockNumber();
+
+        Map<String, String> status = new LinkedHashMap() {{
+            put("startingBlock",currentBlock); //TODO: REVIEW MISSING PARAMETER
+            put("currentBlock",currentBlock);
+            put("highestBlock",highestBlock);
+        }};
+
+        ethereumListener.onSyncing(true,status);
 
         this.syncPoolExecutor = Executors.newSingleThreadScheduledExecutor(target -> new Thread(target, "syncPool"));
 
@@ -132,7 +141,7 @@ public class SyncPool implements InternalService {
 
     @Override
     public void stop() {
-        ethereumListener.onSyncing(false);
+        ethereumListener.onSyncing(false,null);
         syncPoolExecutor.shutdown();
     }
 

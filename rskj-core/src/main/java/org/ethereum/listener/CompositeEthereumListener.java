@@ -33,6 +33,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
 
@@ -127,8 +128,8 @@ public class CompositeEthereumListener implements EthereumListener {
     }
 
     @Override
-    public void onSyncing(boolean isStarted) {
-        scheduleListenerCallbacks(listener -> listener.onSyncing(isStarted));
+    public void onSyncing(boolean isStarted, Map<String, String> status) {
+        scheduleListenerCallbacks(listener -> listener.onSyncing(isStarted, status));
     }
 
     private void scheduleListenerCallbacks(Consumer<EthereumListener> callback) {

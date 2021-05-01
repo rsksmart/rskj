@@ -14,7 +14,9 @@ import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 
 import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
@@ -47,9 +49,16 @@ public class SyncingNotificationEmitterTest {
         when(tx.getHash()).thenReturn(txHash);
         List<Transaction> transactions = Arrays.asList(tx);
 
-        listener.onSyncing(true);
+        Map<String, String> status = new LinkedHashMap() {{
+            put("startingBlock",674427);
+            put("currentBlock",67400);
+            put("highestBlock",674432);
+            put("pulledStates",0);
+            put("knownStates",0);
+        }};
+        listener.onSyncing(true,status);
 
-        String result = "{\"jsonrpc\":\"2.0\",\"method\":\"eth_subscription\",\"params\":{\"subscription\":\"0xc3b33aa549fb9a60e95d21862596617c\",\"result\":true}}";
+        String result = "{\"jsonrpc\":\"2.0\",\"method\":\"eth_subscription\",\"params\":{\"subscription\":\"0xc3b33aa549fb9a60e95d21862596617c\",\"result\":{\"syncing\":true,\"status\":{\"startingBlock\":674427,\"currentBlock\":67400,\"highestBlock\":674432,\"pulledStates\":0,\"knownStates\":0}}}}";
         verify(channel).writeAndFlush(new TextWebSocketFrame(result));
     }
 
@@ -84,7 +93,7 @@ public class SyncingNotificationEmitterTest {
         Keccak256 txHash = new Keccak256("d6fdc5cc41a9959e922f30cb772a9aef46f4daea279307bc5f7024edc4ccd7fa");
         when(tx.getHash()).thenReturn(txHash);
         List<Transaction> transactions = Arrays.asList(tx);
-        listener.onSyncing(true);
+        listener.onSyncing(false, null);
 
         verifyNoMoreInteractions(channel);
     }

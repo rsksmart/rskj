@@ -9,6 +9,7 @@ import org.ethereum.listener.EthereumListenerAdapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -23,8 +24,8 @@ public class SyncingNotificationEmitter {
         this.jsonRpcSerializer = jsonRpcSerializer;
         ethereum.addListener(new EthereumListenerAdapter() {
             @Override
-            public void onSyncing(boolean isStarted) {
-                emit(isStarted);
+            public void onSyncing(boolean isStarted, Map<String, String> status) {
+                emit(isStarted,status);
             }
         });
     }
@@ -41,14 +42,17 @@ public class SyncingNotificationEmitter {
         subscriptions.values().removeIf(channel::equals);
     }
 
-    private void emit(boolean isStarted) {
+    private void emit(boolean isStarted,Map<String, String> status) {
         subscriptions.forEach((SubscriptionId id, Channel channel) -> {
-            emit(id, channel, isStarted);
+            emit(id, channel, isStarted,status );
         });
     }
 
-    private void emit(SubscriptionId id, Channel channel, boolean isStarted) {
-        EthSubscriptionParams params = new EthSubscriptionParams(id, isStarted);
+    private void emit(SubscriptionId id, Channel channel, boolean isStarted, Map<String, String> status) {
+
+        SyncingNotification syncStatus = new SyncingNotification(isStarted,status);
+        EthSubscriptionParams params = new EthSubscriptionParams(id, syncStatus);
+
         EthSubscriptionNotification request = new EthSubscriptionNotification(params);
         try {
             String msg = jsonRpcSerializer.serializeMessage(request);

@@ -30,6 +30,7 @@ import org.ethereum.net.rlpx.Node;
 import org.ethereum.net.server.Channel;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author Roman Mandeleil
@@ -65,5 +66,5 @@ public interface EthereumListener {
 
     void onLongSyncStarted();
 
-    void onSyncing(boolean  isStarted);
+    void onSyncing(boolean isStarted, Map<String, String> status);
 }
