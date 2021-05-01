@@ -99,13 +99,10 @@ public class SyncPool implements InternalService {
         long currentBlock = this.blockchain.getBestBlock().getNumber();
         long highestBlock = this.nodeBlockProcessor.getLastKnownBlockNumber();
 
-        Map<String, String> status = new LinkedHashMap() {{
-            put("startingBlock",currentBlock); //TODO: REVIEW MISSING PARAMETER
+        ethereumListener.onSyncing(true, new LinkedHashMap() {{
             put("currentBlock",currentBlock);
             put("highestBlock",highestBlock);
-        }};
-
-        ethereumListener.onSyncing(true,status);
+        }});
 
         this.syncPoolExecutor = Executors.newSingleThreadScheduledExecutor(target -> new Thread(target, "syncPool"));
 
