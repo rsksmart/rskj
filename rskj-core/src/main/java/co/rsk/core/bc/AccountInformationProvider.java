@@ -20,11 +20,14 @@ package co.rsk.core.bc;
 
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import co.rsk.crypto.Keccak256;
+import co.rsk.rpc.modules.eth.getProof.StorageProof;
 import org.ethereum.vm.DataWord;
 
 import javax.annotation.Nullable;
 import java.math.BigInteger;
 import java.util.Iterator;
+import java.util.List;
 
 public interface AccountInformationProvider {
 
@@ -95,4 +98,27 @@ public interface AccountInformationProvider {
      * @return value of the nonce
      */
     BigInteger getNonce(RskAddress addr);
+
+    /**
+     * Retrieve a Keccak256(of the current storage root) of a given account
+     *
+     * @param addr an address
+     * @return Keccak256(storageRoot)
+     * */
+    Keccak256 getStorageHash(RskAddress addr);
+
+    /**
+     * According to the EIP-1186 https://eips.ethereum.org/EIPS/eip-1186
+     *
+     * Retrieves an account proof for a given address
+     * An account proof represents all the nodes starting from the state root following the path by the given the address.
+     * Each node is RLP encoded.
+     * NOTE: the value is also included at the end of the list
+     *
+     * @param addr an address
+     * @return a list of proofs for a given account
+     * */
+    List<String> getAccountProof(RskAddress addr);
+
+    List<StorageProof> getStorageProof(RskAddress addr, List<DataWord> storageKeys);
 }

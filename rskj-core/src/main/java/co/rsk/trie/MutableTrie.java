@@ -25,9 +25,7 @@ import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.vm.DataWord;
 
 import javax.annotation.Nullable;
-import java.util.Iterator;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Every operation of a MutableTrie mutates the parent trie top node and therefore its stateRoot.
@@ -72,4 +70,6 @@ public interface MutableTrie {
     // the key has to match exactly an account key
     // it won't work if it is used with an storage key or any other
     Iterator<DataWord> getStorageKeys(RskAddress addr);
+
+    List<Trie> getNodes(byte[] key);
 }

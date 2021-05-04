@@ -20,7 +20,9 @@ package co.rsk.core.bc;
 
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositorySnapshot;
+import co.rsk.rpc.modules.eth.getProof.StorageProof;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionExecutor;
@@ -98,6 +100,21 @@ public class PendingState implements AccountInformationProvider {
                 .filter(nonce -> nonce.compareTo(nextNonce) >= 0);
 
         return maxNonce.orElse(nextNonce);
+    }
+
+    @Override
+    public Keccak256 getStorageHash(RskAddress addr) {
+        return postExecutionReturn(executedRepository -> executedRepository.getStorageHash(addr));
+    }
+
+    @Override
+    public List<String> getAccountProof(RskAddress addr) {
+        return postExecutionReturn(executedRepository -> executedRepository.getAccountProof(addr));
+    }
+
+    @Override
+    public List<StorageProof> getStorageProof(RskAddress addr, List<DataWord> storageKeys) {
+        return postExecutionReturn(executedRepository -> executedRepository.getStorageProof(addr, storageKeys));
     }
 
     // sortByPriceTakingIntoAccountSenderAndNonce sorts the transactions by price, but

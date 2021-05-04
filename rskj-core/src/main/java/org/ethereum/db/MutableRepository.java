@@ -24,6 +24,7 @@ import co.rsk.core.types.ints.Uint24;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.MutableTrieCache;
 import co.rsk.db.MutableTrieImpl;
+import co.rsk.rpc.modules.eth.getProof.StorageProof;
 import co.rsk.trie.MutableTrie;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieKeySlice;
@@ -36,10 +37,15 @@ import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.vm.DataWord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import javax.annotation.Nonnull;
 import java.math.BigInteger;
 import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
+import static org.ethereum.rpc.TypeConverter.toUnformattedJsonHex;
 
 public class MutableRepository implements Repository {
     private static final Logger logger = LoggerFactory.getLogger("repository");
@@ -136,7 +142,6 @@ public class MutableRepository implements Repository {
 
         return account.getNonce();
     }
-
     @Override
     public synchronized void saveCode(RskAddress addr, byte[] code) {
         byte[] key = trieKeyMapper.getCodeKey(addr);
@@ -346,6 +351,51 @@ public class MutableRepository implements Repository {
         byte[] accountKey = trieKeyMapper.getAccountKey(addr);
         mutableTrie.put(accountKey, accountState.getEncoded());
     }
+
+    @Override
+    public Keccak256 getStorageHash(RskAddress addr) {
+        byte[] storageRoot = getStorageStateRoot(addr);
+        return new Keccak256(storageRoot);
+    }
+
+    private List<String> getProof(byte[] key, Function<Trie, String> toProof) {
+        return mutableTrie
+                .getNodes(key)
+                .stream()
+                .map(toProof)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<String> getAccountProof(RskAddress addr) {
+        return getProof(trieKeyMapper.getAccountKey(addr), this::toAccountProof);
+    }
+
+    private String toAccountProof(Trie trie) {
+        throw new NotImplementedException();
+    }
+
+    @Override
+    public List<StorageProof> getStorageProof(RskAddress addr, List<DataWord> storageKeys) {
+        List<StorageProof> storageProofs = storageKeys
+                .stream()
+                .map(storageKey -> storageProofBy(addr, storageKey))
+                .collect(Collectors.toList());
+
+        return storageProofs;
+    }
+
+    private StorageProof storageProofBy(RskAddress addr, DataWord storageKey) {
+        List<String> proofs = getProof(trieKeyMapper.getAccountStorageKey(addr, storageKey), this::toStorageProof);
+        String storageValue = toUnformattedJsonHex(getStorageValue(addr, storageKey).getData());
+
+        return new StorageProof(storageKey.toString(), storageValue, proofs);
+    }
+
+    private String toStorageProof(Trie trie) {
+        throw new NotImplementedException();
+    }
+
 
     @VisibleForTesting
     public byte[] getStorageStateRoot(RskAddress addr) {

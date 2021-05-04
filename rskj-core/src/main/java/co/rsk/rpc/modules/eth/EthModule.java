@@ -24,11 +24,14 @@ import co.rsk.core.ReversibleTransactionExecutor;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.AccountInformationProvider;
 import co.rsk.core.bc.BlockResult;
+import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.peg.BridgeState;
 import co.rsk.peg.BridgeSupport;
 import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.rpc.ExecutionBlockRetriever;
+import co.rsk.rpc.modules.eth.getProof.ProofDTO;
+import co.rsk.rpc.modules.eth.getProof.StorageProof;
 import co.rsk.trie.TrieStoreImpl;
 import org.ethereum.core.*;
 import org.ethereum.datasource.HashMapDB;
@@ -37,6 +40,7 @@ import org.ethereum.rpc.TypeConverter;
 import org.ethereum.rpc.Web3;
 import org.ethereum.rpc.converters.CallArgumentsToByteArray;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
+import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.ProgramResult;
 import org.slf4j.Logger;
@@ -44,12 +48,13 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import static java.util.Arrays.copyOfRange;
-import static org.ethereum.rpc.TypeConverter.stringHexToBigInteger;
-import static org.ethereum.rpc.TypeConverter.toUnformattedJsonHex;
+import static org.ethereum.rpc.TypeConverter.*;
 import static org.ethereum.rpc.exception.RskJsonRpcRequestException.invalidParamError;
 
 // TODO add all RPC methods
@@ -147,7 +152,7 @@ public class EthModule
         String s = null;
         try {
             ProgramResult res = callConstant(args, blockchain.getBestBlock());
-            return s = TypeConverter.toQuantityJsonHex(res.getGasUsed());
+            return s = toQuantityJsonHex(res.getGasUsed());
         } finally {
             LOGGER.debug("eth_estimateGas(): {}", s);
         }
@@ -274,5 +279,28 @@ public class EthModule
                 hexArgs.getData(),
                 hexArgs.getFromAddress()
         );
+    }
+
+    public ProofDTO getProof(String address, List<String> storageKeys, String blockOrId) {
+        RskAddress rskAddress = new RskAddress(address);
+        List<DataWord> storageKeysDw = storageKeys
+                .stream()
+                .map(key -> DataWord.fromLongString(key))
+                .collect(Collectors.toList());
+        AccountInformationProvider accountInformationProvider = getAccountInformationProvider(blockOrId);
+
+        String balance = accountInformationProvider.getBalance(rskAddress).toString();
+        String nonce = toQuantityJsonHex(accountInformationProvider.getNonce(rskAddress));
+        String storageHash = accountInformationProvider.getStorageHash(rskAddress).toHexString();
+
+        // EIP-1186: For a simple Account (without associated code) it will return a SHA3(empty byte array)
+        String codeHash = accountInformationProvider.isContract(rskAddress) ?
+                toUnformattedJsonHex(accountInformationProvider.getCode(rskAddress)) :
+                toUnformattedJsonHex(Keccak256.ZERO_HASH.getBytes());
+
+        List<String> accountProof = accountInformationProvider.getAccountProof(rskAddress);
+        List<StorageProof> storageProof = accountInformationProvider.getStorageProof(rskAddress, storageKeysDw);
+
+        return new ProofDTO(balance, codeHash, nonce, storageHash, accountProof, storageProof);
     }
 }

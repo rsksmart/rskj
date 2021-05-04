@@ -33,6 +33,7 @@ import co.rsk.rpc.ModuleDescription;
 import co.rsk.rpc.Web3InformationRetriever;
 import co.rsk.rpc.modules.debug.DebugModule;
 import co.rsk.rpc.modules.eth.EthModule;
+import co.rsk.rpc.modules.eth.getProof.ProofDTO;
 import co.rsk.rpc.modules.evm.EvmModule;
 import co.rsk.rpc.modules.mnr.MnrModule;
 import co.rsk.rpc.modules.personal.PersonalModule;
@@ -1085,5 +1086,10 @@ public class Web3Impl implements Web3 {
      */
     public PeerScoringReputationSummary sco_reputationSummary() {
         return PeerScoringReporterUtil.buildReputationSummary(peerScoringManager.getPeersInformation());
+    }
+
+    @Override
+    public ProofDTO eth_getProof(String address, List<String> storageKeys, String blockOrId) {
+        return ethModule.getProof(address, storageKeys, blockOrId);
     }
 }
