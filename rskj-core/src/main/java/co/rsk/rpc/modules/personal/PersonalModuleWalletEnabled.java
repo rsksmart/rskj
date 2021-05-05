@@ -48,6 +48,8 @@ public class PersonalModuleWalletEnabled implements PersonalModule {
     private final TransactionPool transactionPool;
     private final RskSystemProperties config;
 
+    private final BigInteger DEFAULT_GAS_LIMIT = BigInteger.valueOf(GasCost.TRANSACTION_DEFAULT);
+    
     public PersonalModuleWalletEnabled(RskSystemProperties config, Ethereum eth, Wallet wallet, TransactionPool transactionPool) {
         this.config = config;
         this.eth = eth;
@@ -193,7 +195,14 @@ public class PersonalModuleWalletEnabled implements PersonalModule {
         BigInteger accountNonce = args.nonce != null ? TypeConverter.stringNumberAsBigInt(args.nonce) : transactionPool.getPendingState().getNonce(account.getAddress());
         BigInteger value = args.value != null ? TypeConverter.stringNumberAsBigInt(args.value) : BigInteger.ZERO;
         BigInteger gasPrice = args.gasPrice != null ? TypeConverter.stringNumberAsBigInt(args.gasPrice) : BigInteger.ZERO;
-        BigInteger gasLimit = args.gas != null ? TypeConverter.stringNumberAsBigInt(args.gas) : BigInteger.valueOf(GasCost.TRANSACTION);
+
+        BigInteger gasLimit = DEFAULT_GAS_LIMIT;
+        if(args.gasLimit != null) {
+        	gasLimit = TypeConverter.stringNumberAsBigInt(args.gasLimit);
+        }
+        if(args.gas != null) {
+        	gasLimit = TypeConverter.stringNumberAsBigInt(args.gas);
+        }
 
         if (args.data != null && args.data.startsWith("0x")) {
             args.data = args.data.substring(2);

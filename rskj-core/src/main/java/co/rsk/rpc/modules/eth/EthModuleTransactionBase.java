@@ -48,6 +48,8 @@ public class EthModuleTransactionBase implements EthModuleTransaction {
     private final Constants constants;
     private final TransactionGateway transactionGateway;
 
+    private final BigInteger DEFAULT_GAS_LIMIT = BigInteger.valueOf(GasCost.TRANSACTION_DEFAULT);
+    
     public EthModuleTransactionBase(Constants constants, Wallet wallet, TransactionPool transactionPool, TransactionGateway transactionGateway) {
         this.wallet = wallet;
         this.transactionPool = transactionPool;
@@ -64,8 +66,15 @@ public class EthModuleTransactionBase implements EthModuleTransaction {
 
             BigInteger value = args.value != null ? TypeConverter.stringNumberAsBigInt(args.value) : BigInteger.ZERO;
             BigInteger gasPrice = args.gasPrice != null ? TypeConverter.stringNumberAsBigInt(args.gasPrice) : BigInteger.ZERO;
-            BigInteger gasLimit = args.gas != null ? TypeConverter.stringNumberAsBigInt(args.gas) : BigInteger.valueOf(GasCost.TRANSACTION_DEFAULT);
 
+            BigInteger gasLimit = DEFAULT_GAS_LIMIT;
+            if(args.gasLimit != null) {
+            	gasLimit = TypeConverter.stringNumberAsBigInt(args.gasLimit);
+            }
+            if(args.gas != null) {
+            	gasLimit = TypeConverter.stringNumberAsBigInt(args.gas);
+            }
+            
             if (args.data != null && args.data.startsWith("0x")) {
                 args.data = args.data.substring(2);
             }
