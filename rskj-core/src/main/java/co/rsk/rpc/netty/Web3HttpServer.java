@@ -81,7 +81,7 @@ public class Web3HttpServer implements InternalService {
                     p.addLast(jsonRpcWeb3FilterHandler);
                     p.addLast(new Web3HttpMethodFilterHandler());
                     p.addLast(jsonRpcWeb3ServerHandler);
-                    p.addLast(new Web3ResultHttpResponseHandler());
+                    p.addLast(buildWeb3ResultHttpResponseHandler());
                 }
             });
         try {
@@ -90,6 +90,11 @@ public class Web3HttpServer implements InternalService {
             logger.error("The RPC HTTP server couldn't be started", e);
             Thread.currentThread().interrupt();
         }
+    }
+
+    private Web3ResultHttpResponseHandler buildWeb3ResultHttpResponseHandler() {
+        Web3HttpStatusCodeProvider web3HttpStatusCodeProvider = new Web3HttpStatusCodeProvider();
+        return new Web3ResultHttpResponseHandler(web3HttpStatusCodeProvider);
     }
 
     @Override

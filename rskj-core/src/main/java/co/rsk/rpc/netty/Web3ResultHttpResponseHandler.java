@@ -17,23 +17,30 @@
  */
 package co.rsk.rpc.netty;
 
-import com.googlecode.jsonrpc4j.DefaultHttpStatusCodeProvider;
+import com.googlecode.jsonrpc4j.HttpStatusCodeProvider;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.DefaultFullHttpResponse;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpVersion;
+
 import static io.netty.handler.codec.http.HttpHeaders.Names.CONTENT_TYPE;
 import static io.netty.handler.codec.http.HttpHeaders.Values.APPLICATION_JSON;
 
 public class Web3ResultHttpResponseHandler extends SimpleChannelInboundHandler<Web3Result> {
 
+    private HttpStatusCodeProvider httpStatusCodeProvider;
+
+    public Web3ResultHttpResponseHandler(HttpStatusCodeProvider httpStatusCodeProvider) {
+        this.httpStatusCodeProvider = httpStatusCodeProvider;
+    }
+
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, Web3Result msg) {
         DefaultFullHttpResponse response = new DefaultFullHttpResponse(
                 HttpVersion.HTTP_1_1,
-                HttpResponseStatus.valueOf(DefaultHttpStatusCodeProvider.INSTANCE.getHttpStatusCode(msg.getCode())),
+                HttpResponseStatus.valueOf(httpStatusCodeProvider.getHttpStatusCode(msg.getCode())),
                 msg.getContent()
         );
 
