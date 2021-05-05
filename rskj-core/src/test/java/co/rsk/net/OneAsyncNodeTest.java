@@ -65,7 +65,8 @@ public class OneAsyncNodeTest {
                 new SyncBlockValidatorRule(new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())),
                 new DifficultyCalculator(config.getActivationConfig(), config.getNetworkConstants()),
                 new PeersInformation(channelManager, syncConfiguration, blockchain, RskMockFactory.getPeerScoringManager()),
-                mock(Genesis.class), mock(EthereumListener.class)
+                mock(Genesis.class),
+                mock(EthereumListener.class)
         );
         NodeMessageHandler handler = new NodeMessageHandler(config, processor, syncProcessor, channelManager, null, RskMockFactory.getPeerScoringManager(), mock(StatusResolver.class));
 

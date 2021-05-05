@@ -51,7 +51,7 @@ public class PendingTransactionsNotificationEmitterTest {
     }
 
     @Test
-    public void ethereumOnPendingTransactionsReceivedEventTriggersMessageToChannel() throws JsonProcessingException {
+    public void onPendingTransactionsReceivedEventTriggersMessageToChannel() throws JsonProcessingException {
         SubscriptionId subscriptionId = mock(SubscriptionId.class);
         Channel channel = mock(Channel.class);
         emitter.subscribe(subscriptionId, channel);
