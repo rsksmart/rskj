@@ -37,7 +37,8 @@ public class NodeMessageHandlerUtil {
                 syncConfiguration, blockFactory, new DummyBlockValidationRule(),
                 new SyncBlockValidatorRule(new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())),
                 DIFFICULTY_CALCULATOR, new PeersInformation(RskMockFactory.getChannelManager(), syncConfiguration, blockchain, RskMockFactory.getPeerScoringManager()),
-                mock(Genesis.class), mock(EthereumListener.class));
+                mock(Genesis.class),
+                mock(EthereumListener.class));
         NodeBlockProcessor processor = new NodeBlockProcessor(store, blockchain, nodeInformation, blockSyncService, syncConfiguration);
 
         return new NodeMessageHandler(config, processor, syncProcessor, new SimpleChannelManager(), null, RskMockFactory.getPeerScoringManager(), mock(StatusResolver.class));
@@ -68,7 +69,8 @@ public class NodeMessageHandlerUtil {
                 new BlockRootValidationRule(config.getActivationConfig())),
                 DIFFICULTY_CALCULATOR,
                 new PeersInformation(channelManager, syncConfiguration, blockchain, peerScoringManager),
-                mock(Genesis.class), mock(EthereumListener.class)
+                mock(Genesis.class),
+                mock(EthereumListener.class)
         );
 
         return new NodeMessageHandler(config, processor, syncProcessor, channelManager, null, null, mock(StatusResolver.class));
