@@ -23,10 +23,7 @@ import org.ethereum.datasource.KeyValueDataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Collections;
 import java.util.Optional;
-import java.util.Set;
-import java.util.WeakHashMap;
 
 /**
  * TrieStoreImpl store and retrieve Trie node by hash
@@ -43,9 +40,13 @@ public class TrieStoreImpl implements TrieStore {
 
     private KeyValueDataSource store;
 
-    private int noRetrieves;
-    private int noSaves;
-    private int noNoSaves;
+    private int noRetrievesInBlockProcess;
+    private int noSavesInBlockProcess;
+    private int noNoSavesInBlockProcess;
+
+    private int noRetrievesInSaveTrie;
+    private int noSavesInSaveTrie;
+    private int noNoSavesInSaveTrie;
 
     public TrieStoreImpl(KeyValueDataSource store) {
         this.store = store;
@@ -56,13 +57,18 @@ public class TrieStoreImpl implements TrieStore {
      */
     @Override
     public void save(Trie trie) {
-        noRetrieves = 0;
-        noSaves = 0;
-        noNoSaves = 0;
+        noRetrievesInSaveTrie = 0;
+        noSavesInSaveTrie = 0;
+        noNoSavesInSaveTrie = 0;
 
         logger.trace("Start saving trie root.");
         save(trie, true, 0);
-        logger.trace("End saving trie root. No. Retrieves: {}. No. Saves: {}. No. No Saves: {}", noRetrieves, noSaves, noNoSaves);
+        logger.trace("End saving trie root. No. Retrieves: {}. No. Saves: {}. No. No Saves: {}", noRetrievesInSaveTrie, noSavesInSaveTrie, noNoSavesInSaveTrie);
+        logger.trace("End process block. No. Retrieves: {}. No. Saves: {}. No. No Saves: {}", noRetrievesInBlockProcess, noSavesInBlockProcess, noNoSavesInBlockProcess);
+
+        noRetrievesInBlockProcess = 0;
+        noSavesInBlockProcess = 0;
+        noNoSavesInBlockProcess = 0;
 
         if (store instanceof DataSourceWithCache) {
             ((DataSourceWithCache)store).emitLogs();
@@ -79,15 +85,20 @@ public class TrieStoreImpl implements TrieStore {
 
         logger.trace("Start saving trie, level : {}", level);
 
-        noSaves++;
-
         byte[] trieKeyBytes = trie.getHash().getBytes();
 
         if (isRootNode && this.store.get(trieKeyBytes) != null) {
             // the full trie is already saved
             logger.trace("End saving trie, level : {}, already saved.", level);
+
+            noNoSavesInSaveTrie++;
+            noNoSavesInBlockProcess++;
+
             return;
         }
+
+        noSavesInSaveTrie++;
+        noSavesInBlockProcess++;
 
         NodeReference leftNodeReference = trie.getLeft();
 
@@ -138,11 +149,13 @@ public class TrieStoreImpl implements TrieStore {
     @Override
     public Optional<Trie> retrieve(byte[] hash) {
         byte[] message = this.store.get(hash);
+
         if (message == null) {
             return Optional.empty();
         }
 
-        noRetrieves++;
+        noRetrievesInSaveTrie++;
+        noRetrievesInBlockProcess++;
 
         Trie trie = Trie.fromMessage(message, this);
         return Optional.of(trie);
@@ -150,6 +163,9 @@ public class TrieStoreImpl implements TrieStore {
 
     @Override
     public byte[] retrieveValue(byte[] hash) {
+        noRetrievesInSaveTrie++;
+        noRetrievesInBlockProcess++;
+
         return this.store.get(hash);
     }
 
