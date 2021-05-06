@@ -3,9 +3,15 @@
 
 #### Configure the RSK-compatible Gradle local installation
 
+Using a local Gradle installation will be necessary to be able to run `./gradlew` commands while avoiding the `Error: Could not find or load main class org.gradle.wrapper.GradleWrapperMain` error.
+
+##### Linux and macOS
+
 Run `sh configure.sh` in the project's root directory.
 
-Now you'll be able to run `./gradlew` commands (while avoiding the `Error: Could not find or load main class org.gradle.wrapper.GradleWrapperMain` error).
+##### Windows
+
+Run `./configure.sh` in the project's root directory, using Windows 10's git bash. You could also run `bash configure.sh` under WSL.
 
 #### Compile, test and package
 
