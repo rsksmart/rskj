@@ -33,9 +33,9 @@ import org.ethereum.util.RLPElement;
 import org.ethereum.util.RLPList;
 
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.LinkedList;
 import java.util.Objects;
+import java.util.Queue;
 
 public class BootstrapImporter {
 
@@ -61,35 +61,54 @@ public class BootstrapImporter {
 
     private void updateDatabase() {
         byte[] encodedData = bootstrapDataProvider.getBootstrapData();
+
         RLPList rlpElements = RLP.decodeList(encodedData);
-        insertBlocks(blockStore, blockFactory, rlpElements.get(0));
-        insertState(trieStore, rlpElements.get(1));
+        encodedData = null;
+
+        RLPElement rlpElement0 = rlpElements.get(0);
+        RLPElement rlpElement1 = rlpElements.get(1);
+        rlpElements = null;
+
+        insertBlocks(blockStore, blockFactory, rlpElement0);
+        rlpElement0 = null;
+
+        insertState(trieStore, rlpElement1);
     }
 
     private static void insertState(TrieStore destinationTrieStore, RLPElement rlpElement) {
         RLPList statesData = RLP.decodeList(rlpElement.getRLPData());
         RLPList nodesData = RLP.decodeList(statesData.get(0).getRLPData());
         RLPList valuesData = RLP.decodeList(statesData.get(1).getRLPData());
+        statesData = null;
+
         HashMapDB hashMapDB = new HashMapDB();
         TrieStoreImpl fakeStore = new TrieStoreImpl(hashMapDB);
 
-        List<Trie> nodes = new ArrayList<>();
+        Queue<Trie> nodes = new LinkedList<>();
 
-        for (int k = 0; k < nodesData.size(); k++) {
+        int nodesDataSize = nodesData.size();
+        for (int k = 0; k < nodesDataSize; k++) {
             RLPElement element = nodesData.get(k);
             byte[] rlpData = Objects.requireNonNull(element.getRLPData());
             Trie trie = Trie.fromMessage(rlpData, fakeStore);
             hashMapDB.put(trie.getHash().getBytes(), rlpData);
             nodes.add(trie);
         }
+        nodesData = null;
+        fakeStore = null;
 
-        for (int k = 0; k < valuesData.size(); k++) {
+        int valuesDataSize = valuesData.size();
+        for (int k = 0; k < valuesDataSize; k++) {
             RLPElement element = valuesData.get(k);
             byte[] rlpData = element.getRLPData();
             hashMapDB.put(Keccak256Helper.keccak256(rlpData), rlpData);
         }
+        valuesData = null;
+        hashMapDB = null;
 
-        nodes.forEach(destinationTrieStore::save);
+        for (Trie trie = nodes.poll(); trie != null; trie = nodes.poll()) {
+            destinationTrieStore.save(trie);
+        }
     }
 
     private static void insertBlocks(BlockStore blockStore,
