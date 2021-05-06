@@ -714,6 +714,7 @@ public class BridgeSupportTest {
                 .bridgeConstants(bridgeConstants)
                 .provider(mockBridgeStorageProvider)
                 .eventLogger(mockedEventLogger)
+                .btcLockSenderProvider(btcLockSenderProvider)
                 .peginInstructionsProvider(new PeginInstructionsProvider())
                 .executionBlock(executionBlock)
                 .btcBlockStoreFactory(btcBlockStoreFactory)
