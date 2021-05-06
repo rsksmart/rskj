@@ -45,8 +45,6 @@ public interface Web3EthModule {
         return getEthModule().estimateGas(args);
     }
 
-
-
     default Map<String, Object> eth_bridgeState() throws Exception {
         return getEthModule().bridgeState();
     }

@@ -1700,8 +1700,39 @@ public class Web3ImplTest {
     }
 
     @Test
-    public void eth_sendTransaction()
-    {
+    public void eth_sendTransactionWithValidChainId() {
+        checkSendTransaction(config.getNetworkConstants().getChainId());
+    }
+
+    @Test
+    public void eth_sendTransactionWithZeroChainId() {
+        checkSendTransaction((byte) 0);
+    }
+
+    @Test
+    public void eth_sendTransactionWithNoChainId() {
+        checkSendTransaction(null);
+    }
+
+    @Test(expected = RskJsonRpcRequestException.class)
+    public void eth_sendTransactionWithInvalidChainId() {
+        checkSendTransaction((byte) 1); // chain id of Ethereum Mainnet
+    }
+
+    @Test
+    public void createNewAccountWithoutDuplicates(){
+        Web3Impl web3 = createWeb3();
+        int originalAccountSize = wallet.getAccountAddresses().size();
+        String testAccountAddress = web3.personal_newAccountWithSeed("testAccount");
+
+        assertEquals("The number of accounts was not increased", originalAccountSize + 1, wallet.getAccountAddresses().size());
+
+        web3.personal_newAccountWithSeed("testAccount");
+
+        assertEquals("The number of accounts was increased", originalAccountSize + 1, wallet.getAccountAddresses().size());
+    }
+
+    private void checkSendTransaction(Byte chainId) {
         BigInteger nonce = BigInteger.ONE;
         ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
         World world = new World(receiptStore);
@@ -1732,6 +1763,9 @@ public class Web3ImplTest {
         args.gasPrice = TypeConverter.toQuantityJsonHex(gasPrice);
         args.value = value.toString();
         args.nonce = nonce.toString();
+        if (chainId != null) {
+            args.chainId = TypeConverter.toJsonHex(new byte[] { chainId });
+        }
 
         String txHash = web3.eth_sendTransaction(args);
 
@@ -1751,20 +1785,7 @@ public class Web3ImplTest {
 
         String expectedHash = tx.getHash().toJsonString();
 
-        assertTrue("Method is not creating the expected transaction", expectedHash.compareTo(txHash) == 0);
-    }
-
-    @Test
-    public void createNewAccountWithoutDuplicates(){
-        Web3Impl web3 = createWeb3();
-        int originalAccountSize = wallet.getAccountAddresses().size();
-        String testAccountAddress = web3.personal_newAccountWithSeed("testAccount");
-
-        assertEquals("The number of accounts was not increased", originalAccountSize + 1, wallet.getAccountAddresses().size());
-
-        web3.personal_newAccountWithSeed("testAccount");
-
-        assertEquals("The number of accounts was increased", originalAccountSize + 1, wallet.getAccountAddresses().size());
+        assertEquals("Method is not creating the expected transaction", 0, expectedHash.compareTo(txHash));
     }
 
     @Test
