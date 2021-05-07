@@ -2,7 +2,6 @@ package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.crypto.TransactionSignature;
-import co.rsk.bitcoinj.params.RegTestParams;
 import co.rsk.bitcoinj.script.FastBridgeRedeemScriptParser;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
@@ -120,7 +119,7 @@ public class BridgeSupportTest {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP124)).thenReturn(true);
 
-        BridgeSupport bridgeSupport = bridgeSupportBuilder.activations(activations).build();
+        BridgeSupport bridgeSupport = bridgeSupportBuilder.withActivations(activations).build();
 
         Assert.assertTrue(bridgeSupport.getActivations().isActive(ConsensusRule.RSKIP124));
     }
@@ -138,8 +137,8 @@ public class BridgeSupportTest {
         when(authorizer.isAuthorized(tx)).thenReturn(true);
 
         BridgeSupport bridgeSupport = bridgeSupportBuilder
-            .bridgeConstants(constants)
-            .provider(provider)
+            .withBridgeConstants(constants)
+            .withProvider(provider)
             .build();
 
         bridgeSupport.voteFeePerKbChange(tx, null);
@@ -160,8 +159,8 @@ public class BridgeSupportTest {
         when(authorizer.isAuthorized(tx)).thenReturn(false);
 
         BridgeSupport bridgeSupport = bridgeSupportBuilder
-            .bridgeConstants(constants)
-            .provider(provider)
+            .withBridgeConstants(constants)
+            .withProvider(provider)
             .build();
 
         assertThat(bridgeSupport.voteFeePerKbChange(tx, Coin.CENT), is(-10));
@@ -190,8 +189,8 @@ public class BridgeSupportTest {
                 .thenReturn(2);
 
         BridgeSupport bridgeSupport = bridgeSupportBuilder
-                .bridgeConstants(constants)
-                .provider(provider)
+                .withBridgeConstants(constants)
+                .withProvider(provider)
                 .build();
 
         assertThat(bridgeSupport.voteFeePerKbChange(tx, Coin.NEGATIVE_SATOSHI), is(-1));
@@ -224,8 +223,8 @@ public class BridgeSupportTest {
                 .thenReturn(Coin.valueOf(MAX_FEE_PER_KB));
 
         BridgeSupport bridgeSupport = bridgeSupportBuilder
-                .bridgeConstants(constants)
-                .provider(provider)
+                .withBridgeConstants(constants)
+                .withProvider(provider)
                 .build();
 
         assertThat(bridgeSupport.voteFeePerKbChange(tx, Coin.valueOf(MAX_FEE_PER_KB)), is(1));
@@ -258,8 +257,8 @@ public class BridgeSupportTest {
                 .thenReturn(Coin.valueOf(MAX_FEE_PER_KB));
 
         BridgeSupport bridgeSupport = bridgeSupportBuilder
-                .bridgeConstants(constants)
-                .provider(provider)
+                .withBridgeConstants(constants)
+                .withProvider(provider)
                 .build();
 
         assertThat(bridgeSupport.voteFeePerKbChange(tx, Coin.CENT), is(1));
@@ -291,8 +290,8 @@ public class BridgeSupportTest {
                 .thenReturn(Coin.valueOf(MAX_FEE_PER_KB));
 
         BridgeSupport bridgeSupport = bridgeSupportBuilder
-                .bridgeConstants(constants)
-                .provider(provider)
+                .withBridgeConstants(constants)
+                .withProvider(provider)
                 .build();
 
         assertThat(bridgeSupport.voteFeePerKbChange(tx, Coin.CENT), is(1));
@@ -311,9 +310,9 @@ public class BridgeSupportTest {
         when(provider.getLockingCap()).thenReturn(null).thenReturn(constants.getInitialLockingCap());
 
         BridgeSupport bridgeSupport = bridgeSupportBuilder
-                .bridgeConstants(constants)
-                .provider(provider)
-                .activations(activations)
+                .withBridgeConstants(constants)
+                .withProvider(provider)
+                .withActivations(activations)
                 .build();
 
         // First time should also call setLockingCap as it was null
@@ -333,8 +332,8 @@ public class BridgeSupportTest {
         when(constants.getIncreaseLockingCapAuthorizer()).thenReturn(authorizer);
 
         BridgeSupport bridgeSupport = bridgeSupportBuilder
-                .bridgeConstants(constants)
-                .activations(ActivationConfigsForTest.all().forBlock(0))
+                .withBridgeConstants(constants)
+                .withActivations(ActivationConfigsForTest.all().forBlock(0))
                 .build();
 
         assertFalse(bridgeSupport.increaseLockingCap(mock(Transaction.class), Coin.SATOSHI));
@@ -352,9 +351,9 @@ public class BridgeSupportTest {
         when(constants.getIncreaseLockingCapAuthorizer()).thenReturn(authorizer);
 
         BridgeSupport bridgeSupport = bridgeSupportBuilder
-                .bridgeConstants(constants)
-                .provider(provider)
-                .activations(ActivationConfigsForTest.all().forBlock(0))
+                .withBridgeConstants(constants)
+                .withProvider(provider)
+                .withActivations(ActivationConfigsForTest.all().forBlock(0))
                 .build();
 
         assertFalse(bridgeSupport.increaseLockingCap(mock(Transaction.class), Coin.SATOSHI));
@@ -375,9 +374,9 @@ public class BridgeSupportTest {
         when(constants.getLockingCapIncrementsMultiplier()).thenReturn(multiplier);
 
         BridgeSupport bridgeSupport = bridgeSupportBuilder
-                .bridgeConstants(constants)
-                .provider(provider)
-                .activations(ActivationConfigsForTest.all().forBlock(0))
+                .withBridgeConstants(constants)
+                .withProvider(provider)
+                .withActivations(ActivationConfigsForTest.all().forBlock(0))
                 .build();
 
         assertFalse(bridgeSupport.increaseLockingCap(mock(Transaction.class), Coin.COIN.multiply(multiplier).plus(Coin.SATOSHI)));
@@ -398,9 +397,9 @@ public class BridgeSupportTest {
         when(constants.getLockingCapIncrementsMultiplier()).thenReturn(multiplier);
 
         BridgeSupport bridgeSupport = bridgeSupportBuilder
-                .bridgeConstants(constants)
-                .provider(provider)
-                .activations(ActivationConfigsForTest.all().forBlock(0))
+                .withBridgeConstants(constants)
+                .withProvider(provider)
+                .withActivations(ActivationConfigsForTest.all().forBlock(0))
                 .build();
 
         // Accepts up to the last value (increment 0)
@@ -502,9 +501,9 @@ public class BridgeSupportTest {
         when(bridgeStorageProvider.getHeightIfBtcTxhashIsAlreadyProcessed(hash1)).thenReturn(Optional.of(1L));
 
         BridgeSupport bridgeSupport = bridgeSupportBuilder
-                .bridgeConstants(bridgeConstants)
-                .provider(bridgeStorageProvider)
-                .activations(activations)
+                .withBridgeConstants(bridgeConstants)
+                .withProvider(bridgeStorageProvider)
+                .withActivations(activations)
                 .build();
 
         assertTrue(bridgeSupport.isBtcTxHashAlreadyProcessed(hash1));
@@ -523,9 +522,9 @@ public class BridgeSupportTest {
         when(bridgeStorageProvider.getHeightIfBtcTxhashIsAlreadyProcessed(hash1)).thenReturn(Optional.of(1L));
 
         BridgeSupport bridgeSupport = bridgeSupportBuilder
-                .bridgeConstants(bridgeConstants)
-                .provider(bridgeStorageProvider)
-                .activations(activations)
+                .withBridgeConstants(bridgeConstants)
+                .withProvider(bridgeStorageProvider)
+                .withActivations(activations)
                 .build();
 
         assertEquals(Long.valueOf(1), bridgeSupport.getBtcTxHashProcessedHeight(hash1));
@@ -576,14 +575,14 @@ public class BridgeSupportTest {
         mockChainOfStoredBlocks(btcBlockStore, btcBlock, height + bridgeConstants.getBtc2RskMinimumAcceptableConfirmations(), height);
 
         BridgeSupport bridgeSupport = bridgeSupportBuilder
-                .bridgeConstants(bridgeConstants)
-                .provider(mockBridgeStorageProvider)
-                .eventLogger(mockedEventLogger)
-                .btcLockSenderProvider(new BtcLockSenderProvider())
-                .peginInstructionsProvider(new PeginInstructionsProvider())
-                .executionBlock(executionBlock)
-                .btcBlockStoreFactory(btcBlockStoreFactory)
-                .activations(activations)
+                .withBridgeConstants(bridgeConstants)
+                .withProvider(mockBridgeStorageProvider)
+                .withEventLogger(mockedEventLogger)
+                .withBtcLockSenderProvider(new BtcLockSenderProvider())
+                .withPeginInstructionsProvider(new PeginInstructionsProvider())
+                .withExecutionBlock(executionBlock)
+                .withBtcBlockStoreFactory(btcBlockStoreFactory)
+                .withActivations(activations)
                 .build();
 
         bridgeSupport.registerBtcTransaction(mock(Transaction.class), tx.bitcoinSerialize(), height, pmt.bitcoinSerialize());
@@ -647,14 +646,14 @@ public class BridgeSupportTest {
         );
 
         BridgeSupport bridgeSupport = bridgeSupportBuilder
-                .bridgeConstants(bridgeConstants)
-                .provider(mockBridgeStorageProvider)
-                .eventLogger(mockedEventLogger)
-                .btcLockSenderProvider(new BtcLockSenderProvider())
-                .peginInstructionsProvider(new PeginInstructionsProvider())
-                .executionBlock(executionBlock)
-                .btcBlockStoreFactory(btcBlockStoreFactory)
-                .activations(activations)
+                .withBridgeConstants(bridgeConstants)
+                .withProvider(mockBridgeStorageProvider)
+                .withEventLogger(mockedEventLogger)
+                .withBtcLockSenderProvider(new BtcLockSenderProvider())
+                .withPeginInstructionsProvider(new PeginInstructionsProvider())
+                .withExecutionBlock(executionBlock)
+                .withBtcBlockStoreFactory(btcBlockStoreFactory)
+                .withActivations(activations)
                 .build();
 
         bridgeSupport.registerBtcTransaction(mock(Transaction.class), tx.bitcoinSerialize(), height, pmt.bitcoinSerialize());
@@ -711,14 +710,14 @@ public class BridgeSupportTest {
         when(peginInstructionsProvider.buildPeginInstructions(any(BtcTransaction.class))).thenReturn(Optional.empty());
 
         BridgeSupport bridgeSupport = bridgeSupportBuilder
-                .bridgeConstants(bridgeConstants)
-                .provider(mockBridgeStorageProvider)
-                .eventLogger(mockedEventLogger)
-                .btcLockSenderProvider(btcLockSenderProvider)
-                .peginInstructionsProvider(new PeginInstructionsProvider())
-                .executionBlock(executionBlock)
-                .btcBlockStoreFactory(btcBlockStoreFactory)
-                .activations(activations)
+                .withBridgeConstants(bridgeConstants)
+                .withProvider(mockBridgeStorageProvider)
+                .withEventLogger(mockedEventLogger)
+                .withBtcLockSenderProvider(btcLockSenderProvider)
+                .withPeginInstructionsProvider(new PeginInstructionsProvider())
+                .withExecutionBlock(executionBlock)
+                .withBtcBlockStoreFactory(btcBlockStoreFactory)
+                .withActivations(activations)
                 .build();
 
         bridgeSupport.registerBtcTransaction(mock(Transaction.class), tx.bitcoinSerialize(), height, pmt.bitcoinSerialize());
@@ -778,14 +777,14 @@ public class BridgeSupportTest {
         when(peginInstructionsProvider.buildPeginInstructions(any(BtcTransaction.class))).thenReturn(Optional.empty());
 
         BridgeSupport bridgeSupport = bridgeSupportBuilder
-                .bridgeConstants(bridgeConstants)
-                .provider(mockBridgeStorageProvider)
-                .eventLogger(mockedEventLogger)
-                .btcLockSenderProvider(btcLockSenderProvider)
-                .peginInstructionsProvider(new PeginInstructionsProvider())
-                .executionBlock(executionBlock)
-                .btcBlockStoreFactory(btcBlockStoreFactory)
-                .activations(activations)
+                .withBridgeConstants(bridgeConstants)
+                .withProvider(mockBridgeStorageProvider)
+                .withEventLogger(mockedEventLogger)
+                .withBtcLockSenderProvider(btcLockSenderProvider)
+                .withPeginInstructionsProvider(new PeginInstructionsProvider())
+                .withExecutionBlock(executionBlock)
+                .withBtcBlockStoreFactory(btcBlockStoreFactory)
+                .withActivations(activations)
                 .build();
 
         bridgeSupport.registerBtcTransaction(mock(Transaction.class), tx.bitcoinSerialize(), height, pmt.bitcoinSerialize());
@@ -839,14 +838,14 @@ public class BridgeSupportTest {
         mockChainOfStoredBlocks(btcBlockStore, btcBlock, height + bridgeConstants.getBtc2RskMinimumAcceptableConfirmations(), height);
 
         BridgeSupport bridgeSupport = bridgeSupportBuilder
-                .bridgeConstants(bridgeConstants)
-                .provider(mockBridgeStorageProvider)
-                .eventLogger(mockedEventLogger)
-                .btcLockSenderProvider(new BtcLockSenderProvider())
-                .peginInstructionsProvider(new PeginInstructionsProvider())
-                .executionBlock(executionBlock)
-                .btcBlockStoreFactory(btcBlockStoreFactory)
-                .activations(activations)
+                .withBridgeConstants(bridgeConstants)
+                .withProvider(mockBridgeStorageProvider)
+                .withEventLogger(mockedEventLogger)
+                .withBtcLockSenderProvider(new BtcLockSenderProvider())
+                .withPeginInstructionsProvider(new PeginInstructionsProvider())
+                .withExecutionBlock(executionBlock)
+                .withBtcBlockStoreFactory(btcBlockStoreFactory)
+                .withActivations(activations)
                 .build();
 
         bridgeSupport.registerBtcTransaction(mock(Transaction.class), tx.bitcoinSerialize(), height, pmt.bitcoinSerialize());
@@ -901,14 +900,14 @@ public class BridgeSupportTest {
                 height + bridgeConstants.getBtc2RskMinimumAcceptableConfirmations(), height);
 
         BridgeSupport bridgeSupport = bridgeSupportBuilder
-                .bridgeConstants(bridgeConstants)
-                .provider(mockBridgeStorageProvider)
-                .eventLogger(mockedEventLogger)
-                .btcLockSenderProvider(new BtcLockSenderProvider())
-                .peginInstructionsProvider(new PeginInstructionsProvider())
-                .executionBlock(executionBlock)
-                .btcBlockStoreFactory(btcBlockStoreFactory)
-                .activations(activations)
+                .withBridgeConstants(bridgeConstants)
+                .withProvider(mockBridgeStorageProvider)
+                .withEventLogger(mockedEventLogger)
+                .withBtcLockSenderProvider(new BtcLockSenderProvider())
+                .withPeginInstructionsProvider(new PeginInstructionsProvider())
+                .withExecutionBlock(executionBlock)
+                .withBtcBlockStoreFactory(btcBlockStoreFactory)
+                .withActivations(activations)
                 .build();
 
         bridgeSupport.registerBtcTransaction(mock(Transaction.class), tx.bitcoinSerialize(), height, pmt.bitcoinSerialize());
@@ -1338,13 +1337,13 @@ public class BridgeSupportTest {
         when(executionBlock.getNumber()).thenReturn(666L);
 
         BridgeSupport bridgeSupport = bridgeSupportBuilder
-                .bridgeConstants(bridgeConstants)
-                .provider(provider)
-                .btcLockSenderProvider(new BtcLockSenderProvider())
-                .peginInstructionsProvider(new PeginInstructionsProvider())
-                .executionBlock(executionBlock)
-                .btcBlockStoreFactory(mockFactory)
-                .activations(mockedActivations)
+                .withBridgeConstants(bridgeConstants)
+                .withProvider(provider)
+                .withBtcLockSenderProvider(new BtcLockSenderProvider())
+                .withPeginInstructionsProvider(new PeginInstructionsProvider())
+                .withExecutionBlock(executionBlock)
+                .withBtcBlockStoreFactory(mockFactory)
+                .withActivations(mockedActivations)
                 .build();
 
         int height = 30;
@@ -1409,11 +1408,11 @@ public class BridgeSupportTest {
                 .build();
 
         BridgeSupport bridgeSupport = bridgeSupportBuilder
-                .bridgeConstants(bridgeConstants)
-                .provider(provider)
-                .eventLogger(bridgeEventLogger)
-                .executionBlock(rskCurrentBlock)
-                .activations(activations)
+                .withBridgeConstants(bridgeConstants)
+                .withProvider(provider)
+                .withEventLogger(bridgeEventLogger)
+                .withExecutionBlock(rskCurrentBlock)
+                .withActivations(activations)
                 .build();
 
         List<UTXO> sufficientUTXOsForMigration1 = new ArrayList<>();
@@ -1473,11 +1472,11 @@ public class BridgeSupportTest {
         tx.sign(new ECKey().getPrivKeyBytes());
 
         BridgeSupport bridgeSupport = bridgeSupportBuilder
-                .bridgeConstants(bridgeConstants)
-                .provider(provider)
-                .eventLogger(bridgeEventLogger)
-                .executionBlock(rskCurrentBlock)
-                .activations(activations)
+                .withBridgeConstants(bridgeConstants)
+                .withProvider(provider)
+                .withEventLogger(bridgeEventLogger)
+                .withExecutionBlock(rskCurrentBlock)
+                .withActivations(activations)
                 .build();
 
         List<UTXO> sufficientUTXOsForMigration1 = new ArrayList<>();
@@ -1537,11 +1536,11 @@ public class BridgeSupportTest {
                 .build();
 
         BridgeSupport bridgeSupport = bridgeSupportBuilder
-                .bridgeConstants(bridgeConstants)
-                .provider(provider)
-                .eventLogger(bridgeEventLogger)
-                .executionBlock(rskCurrentBlock)
-                .activations(activations)
+                .withBridgeConstants(bridgeConstants)
+                .withProvider(provider)
+                .withEventLogger(bridgeEventLogger)
+                .withExecutionBlock(rskCurrentBlock)
+                .withActivations(activations)
                 .build();
 
         List<UTXO> sufficientUTXOsForMigration1 = new ArrayList<>();
@@ -1600,11 +1599,11 @@ public class BridgeSupportTest {
                 .build();
 
         BridgeSupport bridgeSupport = bridgeSupportBuilder
-                .bridgeConstants(bridgeConstants)
-                .provider(provider)
-                .eventLogger(bridgeEventLogger)
-                .executionBlock(rskCurrentBlock)
-                .activations(activations)
+                .withBridgeConstants(bridgeConstants)
+                .withProvider(provider)
+                .withEventLogger(bridgeEventLogger)
+                .withExecutionBlock(rskCurrentBlock)
+                .withActivations(activations)
                 .build();
 
         List<UTXO> sufficientUTXOsForMigration1 = new ArrayList<>();
@@ -1664,11 +1663,11 @@ public class BridgeSupportTest {
                 .build();
 
         BridgeSupport bridgeSupport = bridgeSupportBuilder
-                .bridgeConstants(bridgeConstants)
-                .provider(provider)
-                .eventLogger(bridgeEventLogger)
-                .executionBlock(rskCurrentBlock)
-                .activations(activations)
+                .withBridgeConstants(bridgeConstants)
+                .withProvider(provider)
+                .withEventLogger(bridgeEventLogger)
+                .withExecutionBlock(rskCurrentBlock)
+                .withActivations(activations)
                 .build();
 
         List<UTXO> sufficientUTXOsForMigration1 = new ArrayList<>();
@@ -1727,11 +1726,11 @@ public class BridgeSupportTest {
                 .build();
 
         BridgeSupport bridgeSupport = bridgeSupportBuilder
-                .bridgeConstants(bridgeConstants)
-                .provider(provider)
-                .eventLogger(bridgeEventLogger)
-                .executionBlock(rskCurrentBlock)
-                .activations(activations)
+                .withBridgeConstants(bridgeConstants)
+                .withProvider(provider)
+                .withEventLogger(bridgeEventLogger)
+                .withExecutionBlock(rskCurrentBlock)
+                .withActivations(activations)
                 .build();
 
         List<UTXO> sufficientUTXOsForMigration1 = new ArrayList<>();
@@ -1776,10 +1775,10 @@ public class BridgeSupportTest {
         when(executionBlock.getNumber()).thenReturn(2L);
 
         BridgeSupport bridgeSupport = bridgeSupportBuilder
-                .bridgeConstants(spiedBridgeConstants)
-                .provider(provider)
-                .executionBlock(executionBlock)
-                .activations(activations)
+                .withBridgeConstants(spiedBridgeConstants)
+                .withProvider(provider)
+                .withExecutionBlock(executionBlock)
+                .withActivations(activations)
                 .build();
 
         Transaction tx = Transaction
@@ -1818,10 +1817,10 @@ public class BridgeSupportTest {
         when(executionBlock.getNumber()).thenReturn(2L);
 
         BridgeSupport bridgeSupport = bridgeSupportBuilder
-                .bridgeConstants(spiedBridgeConstants)
-                .provider(provider)
-                .executionBlock(executionBlock)
-                .activations(activations)
+                .withBridgeConstants(spiedBridgeConstants)
+                .withProvider(provider)
+                .withExecutionBlock(executionBlock)
+                .withActivations(activations)
                 .build();
 
         Transaction tx = Transaction
@@ -1861,10 +1860,10 @@ public class BridgeSupportTest {
         when(executionBlock.getNumber()).thenReturn(2L);
 
         BridgeSupport bridgeSupport = bridgeSupportBuilder
-                .bridgeConstants(spiedBridgeConstants)
-                .provider(provider)
-                .executionBlock(executionBlock)
-                .activations(activations)
+                .withBridgeConstants(spiedBridgeConstants)
+                .withProvider(provider)
+                .withExecutionBlock(executionBlock)
+                .withActivations(activations)
                 .build();
 
         Transaction tx = Transaction
@@ -1905,10 +1904,10 @@ public class BridgeSupportTest {
         when(executionBlock.getNumber()).thenReturn(2L);
 
         BridgeSupport bridgeSupport = bridgeSupportBuilder
-                .bridgeConstants(spiedBridgeConstants)
-                .provider(provider)
-                .executionBlock(executionBlock)
-                .activations(activations)
+                .withBridgeConstants(spiedBridgeConstants)
+                .withProvider(provider)
+                .withExecutionBlock(executionBlock)
+                .withActivations(activations)
                 .build();
 
         Transaction tx = Transaction
