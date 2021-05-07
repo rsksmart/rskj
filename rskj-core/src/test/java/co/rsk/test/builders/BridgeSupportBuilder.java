@@ -38,47 +38,47 @@ public class BridgeSupportBuilder {
         this.activations = mock(ActivationConfig.ForBlock.class);
     }
 
-    public BridgeSupportBuilder bridgeConstants(BridgeConstants bridgeConstants) {
+    public BridgeSupportBuilder withBridgeConstants(BridgeConstants bridgeConstants) {
         this.bridgeConstants = bridgeConstants;
         return this;
     }
 
-    public BridgeSupportBuilder provider(BridgeStorageProvider provider) {
+    public BridgeSupportBuilder withProvider(BridgeStorageProvider provider) {
         this.provider = provider;
         return this;
     }
 
-    public BridgeSupportBuilder eventLogger(BridgeEventLogger eventLogger) {
+    public BridgeSupportBuilder withEventLogger(BridgeEventLogger eventLogger) {
         this.eventLogger = eventLogger;
         return this;
     }
 
-    public BridgeSupportBuilder btcLockSenderProvider(BtcLockSenderProvider btcLockSenderProvider) {
+    public BridgeSupportBuilder withBtcLockSenderProvider(BtcLockSenderProvider btcLockSenderProvider) {
         this.btcLockSenderProvider = btcLockSenderProvider;
         return this;
     }
 
-    public BridgeSupportBuilder peginInstructionsProvider(PeginInstructionsProvider peginInstructionsProvider) {
+    public BridgeSupportBuilder withPeginInstructionsProvider(PeginInstructionsProvider peginInstructionsProvider) {
         this.peginInstructionsProvider = peginInstructionsProvider;
         return this;
     }
 
-    public BridgeSupportBuilder repository(Repository repository) {
+    public BridgeSupportBuilder withRepository(Repository repository) {
         this.repository = repository;
         return this;
     }
 
-    public BridgeSupportBuilder executionBlock(Block executionBlock) {
+    public BridgeSupportBuilder withExecutionBlock(Block executionBlock) {
         this.executionBlock = executionBlock;
         return this;
     }
 
-    public BridgeSupportBuilder btcBlockStoreFactory(Factory btcBlockStoreFactory) {
+    public BridgeSupportBuilder withBtcBlockStoreFactory(Factory btcBlockStoreFactory) {
         this.btcBlockStoreFactory = btcBlockStoreFactory;
         return this;
     }
 
-    public BridgeSupportBuilder activations(ActivationConfig.ForBlock activations) {
+    public BridgeSupportBuilder withActivations(ActivationConfig.ForBlock activations) {
         this.activations = activations;
         return this;
     }
