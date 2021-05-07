@@ -3,18 +3,17 @@ package co.rsk.rpc.netty;
 import com.googlecode.jsonrpc4j.HttpStatusCodeProvider;
 import io.netty.handler.codec.http.HttpResponseStatus;
 
-import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
-import static com.googlecode.jsonrpc4j.ErrorResolver.JsonError;
 import static com.googlecode.jsonrpc4j.ErrorResolver.JsonError.*;
 
 public class Web3HttpStatusCodeProvider implements HttpStatusCodeProvider {
 
-    private static final List<JsonError> BAD_REQUEST_JSON_ERRORS = Arrays.asList(
-            METHOD_PARAMS_INVALID, INVALID_REQUEST, PARSE_ERROR
-    );
+    private static final List<Integer> BAD_REQUEST_JSON_ERRORS = Stream.of(METHOD_PARAMS_INVALID, INVALID_REQUEST, PARSE_ERROR)
+            .map(jsonError -> jsonError.code)
+            .collect(Collectors.toList());
 
     /**
      * Only invalid JSON-RPC requests (e.g. a malformed JSON) qualify for a Bad Request HTTP status.
@@ -29,11 +28,7 @@ public class Web3HttpStatusCodeProvider implements HttpStatusCodeProvider {
     }
 
     private boolean isBadRequestResultCode(int resultCode) {
-        Optional<JsonError> optionalJsonError = BAD_REQUEST_JSON_ERRORS
-                .stream()
-                .filter(jsonError -> jsonError.code == resultCode)
-                .findFirst();
-        return optionalJsonError.isPresent();
+        return BAD_REQUEST_JSON_ERRORS.contains(resultCode);
     }
 
     /**
