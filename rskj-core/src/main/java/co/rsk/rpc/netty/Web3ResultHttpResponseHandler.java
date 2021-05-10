@@ -30,7 +30,7 @@ import static io.netty.handler.codec.http.HttpHeaders.Values.APPLICATION_JSON;
 
 public class Web3ResultHttpResponseHandler extends SimpleChannelInboundHandler<Web3Result> {
 
-    private HttpStatusCodeProvider httpStatusCodeProvider;
+    private final HttpStatusCodeProvider httpStatusCodeProvider;
 
     public Web3ResultHttpResponseHandler(HttpStatusCodeProvider httpStatusCodeProvider) {
         this.httpStatusCodeProvider = httpStatusCodeProvider;

@@ -27,7 +27,7 @@ public class Web3HttpStatusCodeProvider implements HttpStatusCodeProvider {
                 HttpResponseStatus.OK.code();
     }
 
-    private boolean isBadRequestResultCode(int resultCode) {
+    private static boolean isBadRequestResultCode(int resultCode) {
         return BAD_REQUEST_JSON_ERRORS.contains(resultCode);
     }
 
