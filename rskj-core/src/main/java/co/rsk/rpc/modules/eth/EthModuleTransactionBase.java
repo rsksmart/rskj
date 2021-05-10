@@ -48,7 +48,7 @@ public class EthModuleTransactionBase implements EthModuleTransaction {
     private final Constants constants;
     private final TransactionGateway transactionGateway;
 
-    private final BigInteger DEFAULT_GAS_LIMIT = BigInteger.valueOf(GasCost.TRANSACTION_DEFAULT);
+    private static final BigInteger DEFAULT_GAS_LIMIT = BigInteger.valueOf(GasCost.TRANSACTION_DEFAULT);
     
     public EthModuleTransactionBase(Constants constants, Wallet wallet, TransactionPool transactionPool, TransactionGateway transactionGateway) {
         this.wallet = wallet;
