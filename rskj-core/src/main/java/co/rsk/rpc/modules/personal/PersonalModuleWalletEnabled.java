@@ -48,7 +48,7 @@ public class PersonalModuleWalletEnabled implements PersonalModule {
     private final TransactionPool transactionPool;
     private final RskSystemProperties config;
 
-    private final BigInteger DEFAULT_GAS_LIMIT = BigInteger.valueOf(GasCost.TRANSACTION_DEFAULT);
+    private static final BigInteger DEFAULT_GAS_LIMIT = BigInteger.valueOf(GasCost.TRANSACTION_DEFAULT);
     
     public PersonalModuleWalletEnabled(RskSystemProperties config, Ethereum eth, Wallet wallet, TransactionPool transactionPool) {
         this.config = config;
