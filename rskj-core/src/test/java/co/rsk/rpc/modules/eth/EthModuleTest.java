@@ -21,16 +21,24 @@ package co.rsk.rpc.modules.eth;
 import co.rsk.config.BridgeConstants;
 import co.rsk.core.ReversibleTransactionExecutor;
 import co.rsk.core.RskAddress;
+import co.rsk.core.Wallet;
 import co.rsk.core.bc.BlockResult;
 import co.rsk.core.bc.PendingState;
 import co.rsk.db.RepositoryLocator;
+import co.rsk.net.TransactionGateway;
 import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.rpc.ExecutionBlockRetriever;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.TestUtils;
+import org.ethereum.config.Constants;
+import org.ethereum.core.Account;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.TransactionPool;
+import org.ethereum.core.TransactionPoolAddResult;
+import org.ethereum.crypto.ECKey;
+import org.ethereum.datasource.HashMapDB;
+import org.ethereum.core.Transaction;
 import org.ethereum.rpc.TypeConverter;
 import org.ethereum.rpc.Web3;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
@@ -82,6 +90,57 @@ public class EthModuleTest {
         String actualResult = eth.call(args, "latest");
 
         assertEquals(expectedResult, actualResult);
+    }
+
+    @Test
+    public void sendTransactionWithGasLimitTest() {
+    	
+    	Constants constants = Constants.regtest();
+    	
+    	
+    	Wallet wallet = new Wallet(new HashMapDB());
+    	RskAddress sender = wallet.addAccount();
+    	RskAddress receiver = wallet.addAccount();
+    	
+    	// Simulation of the args handled in the sendTransaction call
+    	Web3.CallArguments args = new Web3.CallArguments();
+    	args.from = sender.toJsonString();
+    	args.to = receiver.toJsonString();
+    	args.gasLimit = "0x76c0";
+    	args.gasPrice = "0x9184e72a000";
+    	args.value = "0x186A0";
+    	args.nonce = "0x01";
+
+    	// Transaction that is expected to be constructed WITH the gasLimit
+        Transaction tx = Transaction
+                .builder()
+                .nonce(TypeConverter.stringNumberAsBigInt(args.nonce))
+                .gasPrice(TypeConverter.stringNumberAsBigInt(args.gasPrice))
+                .gasLimit(TypeConverter.stringNumberAsBigInt(args.gasLimit))
+                .destination(TypeConverter.stringHexToByteArray(args.to))
+                .chainId(constants.getChainId())
+                .value(TypeConverter.stringNumberAsBigInt(args.value))
+                .build();
+        tx.sign(wallet.getAccount(sender).getEcKey().getPrivKeyBytes());
+
+        // Hash of the expected transaction
+        String txExpectedResult = tx.getHash().toJsonString();
+    	
+    	TransactionPoolAddResult transactionPoolAddResult = mock(TransactionPoolAddResult.class);
+    	when(transactionPoolAddResult.transactionsWereAdded()).thenReturn(true);
+    	
+    	TransactionGateway transactionGateway = mock(TransactionGateway.class); 
+    	when(transactionGateway.receiveTransaction(any(Transaction.class)))
+    		.thenReturn(transactionPoolAddResult);
+    	
+    	TransactionPool transactionPool = mock(TransactionPool.class);
+    	
+    	EthModuleTransactionBase ethModuleTransaction = new EthModuleTransactionBase(constants, wallet, transactionPool, transactionGateway);
+    	
+    	// Hash of the actual transaction builded inside the sendTransaction
+    	String txResult = ethModuleTransaction.sendTransaction(args);
+
+    	assertEquals(txExpectedResult, txResult);
     }
 
     @Test
