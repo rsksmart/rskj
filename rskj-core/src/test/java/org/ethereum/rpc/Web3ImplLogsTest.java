@@ -23,6 +23,7 @@ import co.rsk.core.Coin;
 import co.rsk.core.Wallet;
 import co.rsk.core.WalletFactory;
 import co.rsk.core.bc.MiningMainchainView;
+import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.logfilter.BlocksBloomStore;
 import co.rsk.peg.BridgeSupportFactory;
@@ -57,8 +58,8 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.ethereum.rpc.TypeConverter.stringHexToByteArray;
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.mock;
 
 /**
@@ -89,11 +90,13 @@ public class Web3ImplLogsTest {
     // Examples:
     // Incremented(bool indexed odd, uint x) -> Keccak-256("Incremented(bool,uint256)")
     //
-    private final static String GET_VALUED_EVENT_SIGNATURE = "1ee041944547858a75ebef916083b6d4f5ae04bea9cd809334469dd07dbf441b";
-    private final static String INC_EVENT_SIGNATURE = "6e61ef44ac2747ff8b84d353a908eb8bd5c3fb118334d57698c5cfc7041196ad";
-    private final static String ONE_TOPIC = "0000000000000000000000000000000000000000000000000000000000000001";
-    private final static String INCREMENT_METHOD_SIGNATURE = "371303c0";
-    private final static String GET_VALUE_METHOD_SIGNATURE = "20965255";
+    private static final String GET_VALUED_EVENT_SIGNATURE = "1ee041944547858a75ebef916083b6d4f5ae04bea9cd809334469dd07dbf441b";
+    private static final String INC_EVENT_SIGNATURE = "6e61ef44ac2747ff8b84d353a908eb8bd5c3fb118334d57698c5cfc7041196ad";
+    private static final String ONE_TOPIC = "0000000000000000000000000000000000000000000000000000000000000001";
+    private static final String INCREMENT_METHOD_SIGNATURE = "371303c0";
+    private static final String GET_VALUE_METHOD_SIGNATURE = "20965255";
+    private static final String TRACKED_TEST_BLOCK_HASH = "0xafb368a4f74e51a3c6b6d72b049c4fc7bc7506251f13a3afa4fee4bece0e85eb";
+    private static final String UNTRACKED_TEST_BLOCK_HASH = "0xdea168a4f74e51a3eeb6d72b049c4fc7bc750dd51f13a3afa4fee4bece0e85eb";
     private final TestSystemProperties config = new TestSystemProperties();
     private Blockchain blockChain;
 	private MiningMainchainView mainchainView;
@@ -819,7 +822,7 @@ public class Web3ImplLogsTest {
     public void getLogsFromBlockchainWithEventInContractCreationReturnsAsExpectedWithBlockHashFilter() throws Exception {
         addEventInContractCreation();
         Web3.FilterRequest fr = new Web3.FilterRequest();
-        final String blockHash = "0xafb368a4f74e51a3c6b6d72b049c4fc7bc7506251f13a3afa4fee4bece0e85eb";
+        final String blockHash = TRACKED_TEST_BLOCK_HASH;
         fr.blockHash = blockHash;
 
         Object[] logs = web3.eth_getLogs(fr);
@@ -832,12 +835,26 @@ public class Web3ImplLogsTest {
         assertEquals(txdto.getContractAddress(),((LogFilterElement)logs[0]).address);
     }
 
+    @Test
+    public void getLogsWithBlockHashFilterForNonexistentBlockThrowsException() throws Exception {
+        final String blockHash = UNTRACKED_TEST_BLOCK_HASH;
+        byte[] blockHashBytes = new Keccak256(stringHexToByteArray(blockHash)).getBytes();
+        assertFalse(blockChain.hasBlockInSomeBlockchain(blockHashBytes));
+        Web3.FilterRequest fr = new Web3.FilterRequest();
+        fr.blockHash = blockHash;
+
+        Object[] logs = web3.eth_getLogs(fr);
+
+        assertNotNull(logs);
+        assertEquals(0, logs.length);
+    }
+
     @Test(expected = RskJsonRpcRequestException.class)
     public void getLogsThrowsExceptionWhenBlockHashIsUsedCombinedWithFromBlock() throws Exception {
         addEventInContractCreation();
         Web3.FilterRequest fr = new Web3.FilterRequest();
         fr.fromBlock = "earliest";
-        fr.blockHash = "0xafb368a4f74e51a3c6b6d72b049c4fc7bc7506251f13a3afa4fee4bece0e85eb";
+        fr.blockHash = TRACKED_TEST_BLOCK_HASH;
 
         web3.eth_getLogs(fr);
     }
@@ -847,7 +864,7 @@ public class Web3ImplLogsTest {
         addEventInContractCreation();
         Web3.FilterRequest fr = new Web3.FilterRequest();
         fr.toBlock = "latest";
-        fr.blockHash = "0xafb368a4f74e51a3c6b6d72b049c4fc7bc7506251f13a3afa4fee4bece0e85eb";
+        fr.blockHash = TRACKED_TEST_BLOCK_HASH;
 
         web3.eth_getLogs(fr);
     }

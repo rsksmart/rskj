@@ -223,6 +223,9 @@ public class LogFilter extends Filter {
     private static void processSingleBlockByHash(String blockHash, Blockchain blockchain, LogFilter filter, BlocksBloomStore blocksBloomStore) {
         Keccak256 keccak256BlockHash = new Keccak256(stringHexToByteArray(blockHash));
         Block blockByHash = blockchain.getBlockByHash(keccak256BlockHash.getBytes());
+        if (blockByHash == null) {
+            return;
+        }
 
         long blockNumber = blockByHash.getNumber();
         processBlocks(blockNumber, blockNumber, filter, blockchain, blocksBloomStore);
