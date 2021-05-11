@@ -28,7 +28,6 @@ import co.rsk.core.SnapshotManager;
 import co.rsk.core.bc.BlockChainStatus;
 import co.rsk.core.bc.MiningMainchainView;
 import co.rsk.mine.*;
-import co.rsk.rpc.Web3InformationRetriever;
 import co.rsk.rpc.modules.debug.DebugModule;
 import co.rsk.rpc.modules.debug.DebugModuleImpl;
 import co.rsk.rpc.modules.evm.EvmModule;
@@ -51,8 +50,6 @@ import org.junit.Test;
 
 import java.time.Clock;
 import java.util.List;
-
-import static org.mockito.Mockito.mock;
 
 /**
  * Created by ajlopez on 15/04/2017.
@@ -159,6 +156,21 @@ public class Web3ImplSnapshotTest {
         Assert.assertEquals(1, blockchain.getBestBlock().getNumber());
     }
 
+    @Test
+    public void increaseTime() {
+        SimpleEthereum ethereum = new SimpleEthereum();
+        Web3Impl web3 = createWeb3(ethereum);
+
+        Assert.assertEquals(0, blockchain.getBestBlock().getNumber());
+        Assert.assertEquals(0, blockchain.getBestBlock().getTimestamp());
+
+        web3.evm_increaseTime("600");
+        web3.evm_increaseTime("600");
+        web3.evm_mine();
+
+        Assert.assertEquals(1, blockchain.getBestBlock().getNumber());
+        Assert.assertEquals(1200, blockchain.getBestBlock().getTimestamp());
+    }
 
     private Web3Impl createWeb3(SimpleEthereum ethereum) {
         MinerClock minerClock = new MinerClock(true, Clock.systemUTC());
