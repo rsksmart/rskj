@@ -204,9 +204,9 @@ public class World {
     public TransactionReceipt getTransactionReceiptByName(String name) {
         Transaction transaction = this.getTransactionByName(name);
 
-        TransactionInfo transactionInfo = this.receiptStore.get(transaction.getHash().getBytes());
+        TransactionInfo transactionInfo = this.receiptStore.getInMainChain(transaction.getHash().getBytes(), blockStore).orElse(null);
 
-        if(transactionInfo == null) {
+        if (transactionInfo == null) {
             return null;
         }
         TransactionReceipt transactionReceipt = transactionInfo.getReceipt();

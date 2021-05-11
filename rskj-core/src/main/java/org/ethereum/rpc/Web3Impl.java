@@ -590,7 +590,7 @@ public class Web3Impl implements Web3 {
             Keccak256 txHash = new Keccak256(stringHexToByteArray(transactionHash));
             Block block = null;
 
-            TransactionInfo txInfo = this.receiptStore.getInMainChain(txHash.getBytes(), blockStore);
+            TransactionInfo txInfo = this.receiptStore.getInMainChain(txHash.getBytes(), blockStore).orElse(null);
 
             if (txInfo == null) {
                 List<Transaction> txs =     web3InformationRetriever.getTransactions("pending");
@@ -675,7 +675,7 @@ public class Web3Impl implements Web3 {
         logger.trace("eth_getTransactionReceipt({})", transactionHash);
 
         byte[] hash = stringHexToByteArray(transactionHash);
-        TransactionInfo txInfo = receiptStore.getInMainChain(hash, blockStore);
+        TransactionInfo txInfo = receiptStore.getInMainChain(hash, blockStore).orElse(null);
 
         if (txInfo == null) {
             logger.trace("No transaction info for {}", transactionHash);

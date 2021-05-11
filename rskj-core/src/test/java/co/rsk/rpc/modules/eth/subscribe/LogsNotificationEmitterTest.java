@@ -245,7 +245,7 @@ public class LogsNotificationEmitterTest {
         TransactionReceipt receipt = mock(TransactionReceipt.class);
         when(transactionInfo.getReceipt()).thenReturn(receipt);
         when(receipt.getLogInfoList()).thenReturn(Arrays.asList(logInfos));
-        when(receiptStore.get(transaction.getHash(), block.getHash()))
+        when(receiptStore.get(transaction.getHash().getBytes(), block.getHash().getBytes()))
                 .thenReturn(Optional.of(transactionInfo));
     }
 }
