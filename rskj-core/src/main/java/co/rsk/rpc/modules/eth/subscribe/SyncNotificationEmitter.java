@@ -1,3 +1,20 @@
+/*
+ * This file is part of RskJ
+ * Copyright (C) 2019 RSK Labs Ltd.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
 package co.rsk.rpc.modules.eth.subscribe;
 
 import co.rsk.net.NodeBlockProcessor;
@@ -25,7 +42,11 @@ public class SyncNotificationEmitter {
 
     private final Map<SubscriptionId, Channel> subscriptions = new ConcurrentHashMap<>();
 
-    public SyncNotificationEmitter(Ethereum ethereum, JsonRpcSerializer jsonRpcSerializer, NodeBlockProcessor nodeBlockProcessor, Blockchain blockchain) {
+    public SyncNotificationEmitter(
+            Ethereum ethereum,
+            JsonRpcSerializer jsonRpcSerializer,
+            NodeBlockProcessor nodeBlockProcessor,
+            Blockchain blockchain) {
         this.jsonRpcSerializer = jsonRpcSerializer;
         this.nodeBlockProcessor = nodeBlockProcessor;
         this.blockchain = blockchain;
@@ -35,6 +56,7 @@ public class SyncNotificationEmitter {
             public void onLongSyncStarted() {
                 emitSyncStatus(true);
             }
+
             @Override
             public void onLongSyncDone() {
                 emitSyncStatus(false);
@@ -55,7 +77,7 @@ public class SyncNotificationEmitter {
     }
 
     private synchronized void emitSyncStatus(boolean isSyncing) {
-        if(subscriptions.isEmpty()) {
+        if (subscriptions.isEmpty()) {
             return;
         }
         SyncNotification syncNotification = getNotification(isSyncing);
@@ -74,10 +96,16 @@ public class SyncNotificationEmitter {
     @VisibleForTesting
     protected SyncNotification getNotification(boolean isSyncing) {
         SyncNotification syncNotification;
-        if(isSyncing) {
+        if (isSyncing) {
             long currentBlockNum = blockchain.getBestBlock().getNumber();
             long highestBlockNum = this.nodeBlockProcessor.getLastKnownBlockNumber();
-            syncNotification = new SyncNotification(true, new SyncStatusNotification(startingBlock, currentBlockNum, highestBlockNum));
+            syncNotification = new SyncNotification(
+                    true,
+                    new SyncStatusNotification(startingBlock,
+                                               currentBlockNum,
+                                               highestBlockNum
+                    )
+            );
         } else {
             syncNotification = new SyncNotification(false, null);
         }
