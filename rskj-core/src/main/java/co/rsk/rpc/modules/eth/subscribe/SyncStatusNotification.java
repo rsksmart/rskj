@@ -1,7 +1,6 @@
 package co.rsk.rpc.modules.eth.subscribe;
 
 public class SyncStatusNotification {
-    //TODO JSON HEX?
     private final long startingBlock;
     private final long currentBlock;
     private final long highestBlock;

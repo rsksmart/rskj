@@ -77,17 +77,17 @@ public class PendingTransactionsNotificationEmitterTest {
         when(serializer.serializeMessage(any()))
                 .thenReturn("serialized1")
                 .thenReturn("serialized2")
-                .thenReturn("serialized3")
-                .thenReturn("serialized4");
+                .thenReturn("serialized1")
+                .thenReturn("serialized2");
 
         listener.onPendingTransactionsReceived(TransactionUtils.getTransactions(2));
 
+        verify(channel1).write(new TextWebSocketFrame("serialized1"));
+        verify(channel1).write(new TextWebSocketFrame("serialized2"));
+        verify(channel1).flush();
         verify(channel2).write(new TextWebSocketFrame("serialized1"));
         verify(channel2).write(new TextWebSocketFrame("serialized2"));
         verify(channel2).flush();
-        verify(channel1).write(new TextWebSocketFrame("serialized3"));
-        verify(channel1).write(new TextWebSocketFrame("serialized4"));
-        verify(channel1).flush();
     }
 
     @Test
@@ -120,5 +120,20 @@ public class PendingTransactionsNotificationEmitterTest {
 
         listener.onPendingTransactionsReceived(TransactionUtils.getTransactions(2));
         verifyNoMoreInteractions(channel);
+    }
+
+    @Test
+    public void serializationFailsMessageNotSent() throws JsonProcessingException {
+        SubscriptionId subscriptionId = mock(SubscriptionId.class);
+        JsonProcessingException mockException = mock(JsonProcessingException.class);
+        Channel channel = mock(Channel.class);
+        emitter.subscribe(subscriptionId, channel);
+        when(serializer.serializeMessage(any()))
+                .thenThrow(mockException);
+
+        listener.onPendingTransactionsReceived(TransactionUtils.getTransactions(2));
+
+        verify(channel, times(0)).write(any());
+        verify(channel, times(1)).flush();
     }
 }
