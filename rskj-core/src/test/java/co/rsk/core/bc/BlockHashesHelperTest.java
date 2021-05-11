@@ -73,11 +73,11 @@ public class BlockHashesHelperTest {
 
         byte[] rskBlockHash = new byte[]{0x2};
 
-        when(receiptStore.get(tx1.getHash(), block.getHash())).thenReturn(Optional.of(new TransactionInfo(new TransactionReceipt(),
+        when(receiptStore.get(tx1.getHash().getBytes(), block.getHash().getBytes())).thenReturn(Optional.of(new TransactionInfo(new TransactionReceipt(),
                 rskBlockHash, 0)));
-        when(receiptStore.get(tx2.getHash(), block.getHash())).thenReturn(Optional.of(new TransactionInfo(new TransactionReceipt(),
+        when(receiptStore.get(tx2.getHash().getBytes(), block.getHash().getBytes())).thenReturn(Optional.of(new TransactionInfo(new TransactionReceipt(),
                 rskBlockHash, 0)));
-        when(receiptStore.get(tx3.getHash(), block.getHash())).thenReturn(Optional.of(new TransactionInfo(new TransactionReceipt(),
+        when(receiptStore.get(tx3.getHash().getBytes(), block.getHash().getBytes())).thenReturn(Optional.of(new TransactionInfo(new TransactionReceipt(),
                 rskBlockHash, 0)));
 
         List<Trie> trie = BlockHashesHelper.calculateReceiptsTrieRootFor(block, receiptStore, tx1.getHash());
@@ -133,11 +133,11 @@ public class BlockHashesHelperTest {
 
         byte[] rskBlockHash = new byte[]{0x2};
 
-        when(receiptStore.get(tx1.getHash(), block.getHash())).thenReturn(Optional.of(new TransactionInfo(new TransactionReceipt(),
+        when(receiptStore.get(tx1.getHash().getBytes(), block.getHash().getBytes())).thenReturn(Optional.of(new TransactionInfo(new TransactionReceipt(),
                 rskBlockHash, 0)));
-        when(receiptStore.get(tx2.getHash(), block.getHash())).thenReturn(Optional.of(new TransactionInfo(new TransactionReceipt(),
+        when(receiptStore.get(tx2.getHash().getBytes(), block.getHash().getBytes())).thenReturn(Optional.of(new TransactionInfo(new TransactionReceipt(),
                 rskBlockHash, 0)));
-        when(receiptStore.get(tx3.getHash(), block.getHash())).thenReturn(Optional.of(new TransactionInfo(new TransactionReceipt(),
+        when(receiptStore.get(tx3.getHash().getBytes(), block.getHash().getBytes())).thenReturn(Optional.of(new TransactionInfo(new TransactionReceipt(),
                 rskBlockHash, 0)));
 
         //Tx3 is not part of the transaction list of the block

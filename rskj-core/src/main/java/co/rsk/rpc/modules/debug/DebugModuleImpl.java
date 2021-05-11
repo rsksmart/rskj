@@ -71,7 +71,7 @@ public class DebugModuleImpl implements DebugModule {
         }
 
         byte[] hash = stringHexToByteArray(transactionHash);
-        TransactionInfo txInfo = receiptStore.getInMainChain(hash, blockStore);
+        TransactionInfo txInfo = receiptStore.getInMainChain(hash, blockStore).orElse(null);
 
         if (txInfo == null) {
             logger.trace("No transaction info for {}", transactionHash);

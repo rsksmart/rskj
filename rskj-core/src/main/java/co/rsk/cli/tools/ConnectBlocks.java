@@ -29,6 +29,7 @@ import org.ethereum.db.ReceiptStore;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.time.Instant;
 
 /**
  * The entry point for connect blocks CLI tool
@@ -46,9 +47,16 @@ public class ConnectBlocks {
 
         String filename = args[0];
 
+        long startTime = System.currentTimeMillis();
+        System.out.println("Started at: " + Instant.ofEpochMilli(startTime).toString());
+
         try (BufferedReader reader = new BufferedReader(new FileReader(filename))) {
             execute(blockFactory, blockchain, trieStore, blockStore, receiptStore, reader);
         }
+
+        long endTime = System.currentTimeMillis();
+
+        System.out.println("Duration: " + (endTime - startTime) + " millis");
     }
 
     public static void execute(BlockFactory blockFactory, Blockchain blockchain, TrieStore trieStore, BlockStore blockStore, ReceiptStore receiptStore, BufferedReader reader) throws IOException {

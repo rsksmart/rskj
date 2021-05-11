@@ -36,6 +36,7 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.util.Collections;
+import java.util.Optional;
 
 import static org.ethereum.rpc.TypeConverter.stringHexToByteArray;
 import static org.mockito.Mockito.when;
@@ -82,8 +83,7 @@ public class DebugModuleImplTest {
     @Test
     public void debug_traceTransaction_retrieveUnknownTransactionAsNull() throws Exception {
         byte[] hash = stringHexToByteArray("0x00");
-        when(receiptStore.getAll(hash)).thenReturn(Collections.emptyList());
-        when(receiptStore.getInMainChain(hash, blockStore)).thenReturn(null);
+        when(receiptStore.getInMainChain(hash, blockStore)).thenReturn(Optional.empty());
 
         JsonNode result = debugModule.traceTransaction("0x00", null);
 

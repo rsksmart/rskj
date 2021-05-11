@@ -74,6 +74,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -98,6 +99,7 @@ import org.ethereum.vm.program.invoke.TransferInvoke;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static co.rsk.peg.BridgeUtils.getRegularPegoutTxSize;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP186;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP219;
 
@@ -450,7 +452,7 @@ public class BridgeSupport {
             return TxType.MIGRATION;
         }
 
-        if (BridgeUtils.isPegOutTx(btcTx, getLiveFederations())) {
+        if (BridgeUtils.isPegOutTx(btcTx, getLiveFederations(), activations)) {
             return TxType.PEGOUT;
         }
 
@@ -758,7 +760,6 @@ public class BridgeSupport {
      * @throws IOException
      */
     public void releaseBtc(Transaction rskTx) throws IOException {
-
         Coin value = rskTx.getValue().toBitcoin();
         final RskAddress senderAddress = rskTx.getSender();
         //as we can't send btc from contracts we want to send them back to the senderAddressStr
@@ -775,21 +776,8 @@ public class BridgeSupport {
         Context.propagate(btcContext);
         NetworkParameters btcParams = bridgeConstants.getBtcParams();
         Address btcDestinationAddress = BridgeUtils.recoverBtcAddressFromEthTransaction(rskTx, btcParams);
-        boolean addResult = requestRelease(btcDestinationAddress, value, rskTx);
 
-        if (addResult) {
-
-            if (activations.isActive(ConsensusRule.RSKIP185)) {
-                eventLogger.logReleaseBtcRequestReceived(senderAddress.toHexString(), btcDestinationAddress.getHash160(), value);
-            }
-            logger.info("releaseBtc succesful to {}. Tx {}. Value {}.", btcDestinationAddress, rskTx, value);
-        } else {
-
-            if (activations.isActive(ConsensusRule.RSKIP185)) {
-                refundAndEmitRejectEvent(value, senderAddress, RejectedPegoutReason.LOW_AMOUNT);
-            }
-            logger.warn("releaseBtc ignored because value is considered dust. To {}. Tx {}. Value {}.", btcDestinationAddress, rskTx, value);
-        }
+        requestRelease(btcDestinationAddress, value, rskTx);
     }
 
     private void refundAndEmitRejectEvent(Coin value, RskAddress senderAddress, RejectedPegoutReason reason) {
@@ -814,30 +802,71 @@ public class BridgeSupport {
      *
      * @param destinationAddress the destination BTC address.
      * @param value the amount of BTC to release.
-     * @return true if the request was successfully added, false if the value to release was
-     * considered dust and therefore ignored.
      * @throws IOException
      */
-    private boolean requestRelease(Address destinationAddress, Coin value, Transaction rskTx) throws IOException {
+    private void requestRelease(Address destinationAddress, Coin value, Transaction rskTx) throws IOException {
+        Optional<RejectedPegoutReason> optionalRejectedPegoutReason = Optional.empty();
         if (activations.isActive(RSKIP219)) {
+            int pegoutSize = getRegularPegoutTxSize(getActiveFederation());
+            Coin feePerKB = getFeePerKb();
+            // The pegout transaction has a cost related to its size and the current feePerKB
+            // The actual cost cannot be asserted exactly so the calculation is approximated
+            // On top of this, the remainder after the fee should be enough for the user to be able to operate
+            // For this, the calculation includes an additional percentage to assert for this
+            Coin requireFundsForFee = feePerKB
+                .multiply(pegoutSize) // times the size in bytes
+                .divide(1000); // Get the s/b
+            requireFundsForFee = requireFundsForFee
+                .add(requireFundsForFee
+                    .times(bridgeConstants.getMinimumPegoutValuePercentageToReceiveAfterFee())
+                    .divide(100)
+                ); // add the gap
+
+            // The pegout value should be greater or equals than the max of these two values
+            Coin minValue = Coin.valueOf(Math.max(bridgeConstants.getMinimumPegoutTxValueInSatoshis().value, requireFundsForFee.value));
+
             // Since Iris the peg-out the rule is that the minimum is inclusive
-            if (value.isLessThan(bridgeConstants.getMinimumPegoutTxValueInSatoshis())) {
-                return false;
+            if (value.isLessThan(minValue)) {
+                optionalRejectedPegoutReason = Optional.of(
+                    Objects.equals(minValue, requireFundsForFee) ?
+                    RejectedPegoutReason.FEE_ABOVE_VALUE:
+                    RejectedPegoutReason.LOW_AMOUNT
+                );
             }
         } else {
             // For legacy peg-outs the rule stated that the minimum was exclusive
             if (!value.isGreaterThan(bridgeConstants.getLegacyMinimumPegoutTxValueInSatoshis())) {
-                return false;
+                optionalRejectedPegoutReason = Optional.of(RejectedPegoutReason.LOW_AMOUNT);
             }
         }
 
-        if (activations.isActive(ConsensusRule.RSKIP146)) {
-            provider.getReleaseRequestQueue().add(destinationAddress, value, rskTx.getHash());
+        if (optionalRejectedPegoutReason.isPresent()) {
+            logger.warn(
+                "releaseBtc ignored. To {}. Tx {}. Value {}. Reason: {}",
+                destinationAddress,
+                rskTx,
+                value,
+                optionalRejectedPegoutReason.get()
+            );
+            if (activations.isActive(ConsensusRule.RSKIP185)) {
+                refundAndEmitRejectEvent(
+                    value,
+                    rskTx.getSender(),
+                    optionalRejectedPegoutReason.get()
+                );
+            }
         } else {
-            provider.getReleaseRequestQueue().add(destinationAddress, value);
-        }
+            if (activations.isActive(ConsensusRule.RSKIP146)) {
+                provider.getReleaseRequestQueue().add(destinationAddress, value, rskTx.getHash());
+            } else {
+                provider.getReleaseRequestQueue().add(destinationAddress, value);
+            }
 
-        return true;
+            if (activations.isActive(ConsensusRule.RSKIP185)) {
+                eventLogger.logReleaseBtcRequestReceived(rskTx.getSender().toHexString(), destinationAddress.getHash160(), value);
+            }
+            logger.info("releaseBtc succesful to {}. Tx {}. Value {}.", destinationAddress, rskTx, value);
+        }
     }
 
     /**
@@ -2257,7 +2286,7 @@ public class BridgeSupport {
      * @return the minimum amount of satoshis a user should send to the federation.
      */
     public Coin getMinimumPeginTxValue() {
-        return activations.isActive(RSKIP219) ? bridgeConstants.getMinimumPeginTxValueInSatoshis() : bridgeConstants.getlegacyMinimumPeginTxValueInSatoshis();
+        return activations.isActive(RSKIP219) ? bridgeConstants.getMinimumPeginTxValueInSatoshis() : bridgeConstants.getLegacyMinimumPeginTxValueInSatoshis();
     }
 
     /**

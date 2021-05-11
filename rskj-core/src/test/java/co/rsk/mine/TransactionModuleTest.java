@@ -141,7 +141,6 @@ public class TransactionModuleTest {
      */
     @Test
     public void sendSeveralTransactionsWithAutoMining() {
-
         ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
         World world = new World(receiptStore);
         BlockChainImpl blockchain = world.getBlockChain();
@@ -256,7 +255,6 @@ public class TransactionModuleTest {
     }
 
     private String sendTransaction(Web3Impl web3, RepositorySnapshot repository) {
-
         Web3.CallArguments args = getTransactionParameters(web3, repository);
 
         return web3.eth_sendTransaction(args);
@@ -269,6 +267,7 @@ public class TransactionModuleTest {
         BigInteger gasPrice = BigInteger.valueOf(8);
         BigInteger gasLimit = BigInteger.valueOf(50000);
         String data = "0xff";
+        byte chainId = config.getNetworkConstants().getChainId();
 
         Web3.CallArguments args = new Web3.CallArguments();
         args.from = TypeConverter.toJsonHex(addr1.getBytes());
@@ -278,6 +277,7 @@ public class TransactionModuleTest {
         args.gasPrice = TypeConverter.toQuantityJsonHex(gasPrice);
         args.value = value.toString();
         args.nonce = repository.getAccountState(addr1).getNonce().toString();
+        args.chainId = TypeConverter.toJsonHex(new byte[] { chainId });
 
         return args;
     }

@@ -37,6 +37,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import static org.ethereum.rpc.TypeConverter.stringHexToBigInteger;
 import static org.ethereum.rpc.TypeConverter.stringHexToByteArray;
@@ -66,7 +67,7 @@ public class TraceModuleImpl implements TraceModule {
         logger.trace("trace_transaction({})", transactionHash);
 
         byte[] hash = stringHexToByteArray(transactionHash);
-        TransactionInfo txInfo = this.receiptStore.getInMainChain(hash, this.blockStore);
+        TransactionInfo txInfo = this.receiptStore.getInMainChain(hash, this.blockStore).orElse(null);
 
         if (txInfo == null) {
             logger.trace("No transaction info for {}", transactionHash);
@@ -112,7 +113,8 @@ public class TraceModuleImpl implements TraceModule {
             this.blockExecutor.traceBlock(programTraceProcessor, VmConfig.LIGHT_TRACE, block, parent.getHeader(), false, false);
 
             for (Transaction tx : block.getTransactionsList()) {
-                TransactionInfo txInfo = receiptStore.getInMainChain(tx.getHash().getBytes(), this.blockStore);
+                TransactionInfo txInfo = receiptStore.getInMainChain(tx.getHash().getBytes(), this.blockStore).orElse(null);
+                Objects.requireNonNull(txInfo);
                 txInfo.setTransaction(tx);
 
                 SummarizedProgramTrace programTrace = (SummarizedProgramTrace) programTraceProcessor.getProgramTrace(tx.getHash());

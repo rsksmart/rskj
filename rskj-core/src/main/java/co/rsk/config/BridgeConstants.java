@@ -76,6 +76,8 @@ public class BridgeConstants {
 
     protected String oldFederationAddress;
 
+    protected int minimumPegoutValuePercentageToReceiveAfterFee;
+
     public NetworkParameters getBtcParams() {
         return NetworkParameters.fromID(btcParamsString);
     }
@@ -102,7 +104,7 @@ public class BridgeConstants {
 
     public int getMaxBtcHeadersPerRskBlock() { return maxBtcHeadersPerRskBlock; }
 
-    public Coin getlegacyMinimumPeginTxValueInSatoshis() { return legacyMinimumPeginTxValueInSatoshis; }
+    public Coin getLegacyMinimumPeginTxValueInSatoshis() { return legacyMinimumPeginTxValueInSatoshis; }
 
     public Coin getMinimumPeginTxValueInSatoshis() { return minimumPeginTxValueInSatoshis; }
 
@@ -157,4 +159,8 @@ public class BridgeConstants {
     public long getMinSecondsBetweenCallsToReceiveHeader() { return minSecondsBetweenCallsReceiveHeader; }
 
     public int getMaxDepthBlockchainAccepted() { return maxDepthBlockchainAccepted; }
+
+    public int getMinimumPegoutValuePercentageToReceiveAfterFee() {
+        return minimumPegoutValuePercentageToReceiveAfterFee;
+    }
 }

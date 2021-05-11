@@ -157,5 +157,7 @@ public class BridgeDevNetConstants extends BridgeConstants {
         minSecondsBetweenCallsReceiveHeader = 300;  // 5 minutes in Seconds
 
         maxDepthBlockchainAccepted = 25;
+
+        minimumPegoutValuePercentageToReceiveAfterFee = 20;
     }
 }

@@ -147,6 +147,8 @@ public class BridgeTestNetConstants extends BridgeConstants {
 
         minSecondsBetweenCallsReceiveHeader = 300;  // 5 minutes in Seconds
         maxDepthBlockchainAccepted = 25;
+
+        minimumPegoutValuePercentageToReceiveAfterFee = 20;
     }
 
     public static BridgeTestNetConstants getInstance() {
