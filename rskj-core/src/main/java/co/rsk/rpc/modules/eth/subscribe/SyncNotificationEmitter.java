@@ -2,6 +2,7 @@ package co.rsk.rpc.modules.eth.subscribe;
 
 import co.rsk.net.NodeBlockProcessor;
 import co.rsk.rpc.JsonRpcSerializer;
+import com.google.common.annotations.VisibleForTesting;
 import io.netty.channel.Channel;
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
 import org.ethereum.core.Blockchain;
@@ -57,14 +58,7 @@ public class SyncNotificationEmitter {
         if(subscriptions.isEmpty()) {
             return;
         }
-        SyncNotification syncNotification;
-        if(isSyncing) {
-            long currentBlockNum = blockchain.getBestBlock().getNumber();
-            long highestBlockNum = this.nodeBlockProcessor.getLastKnownBlockNumber();
-            syncNotification = new SyncNotification(true, new SyncStatusNotification(startingBlock, currentBlockNum, highestBlockNum));
-        } else {
-            syncNotification = new SyncNotification(true, null);
-        }
+        SyncNotification syncNotification = getNotification(isSyncing);
         subscriptions.forEach((SubscriptionId id, Channel channel) -> {
             EthSubscriptionNotification request = new EthSubscriptionNotification(
                     new EthSubscriptionParams(id, syncNotification));
@@ -75,5 +69,18 @@ public class SyncNotificationEmitter {
                 logger.error("Couldn't serialize sync result for notification", e);
             }
         });
+    }
+
+    @VisibleForTesting
+    protected SyncNotification getNotification(boolean isSyncing) {
+        SyncNotification syncNotification;
+        if(isSyncing) {
+            long currentBlockNum = blockchain.getBestBlock().getNumber();
+            long highestBlockNum = this.nodeBlockProcessor.getLastKnownBlockNumber();
+            syncNotification = new SyncNotification(true, new SyncStatusNotification(startingBlock, currentBlockNum, highestBlockNum));
+        } else {
+            syncNotification = new SyncNotification(false, null);
+        }
+        return syncNotification;
     }
 }
