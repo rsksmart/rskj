@@ -1,7 +1,6 @@
 package co.rsk.rpc.modules.eth.subscribe;
 
 import co.rsk.net.NodeBlockProcessor;
-import co.rsk.net.utils.TransactionUtils;
 import co.rsk.rpc.JsonRpcSerializer;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.netty.channel.Channel;
@@ -15,7 +14,7 @@ import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -31,8 +30,9 @@ public class SyncNotificationEmitterTest {
         NodeBlockProcessor nodeBlockProcessor = mock(NodeBlockProcessor.class);
         Blockchain blockchain = mock(Blockchain.class);
         Block block = mock(Block.class);
-        when(block.getNumber()).thenReturn(1L);
+        when(block.getNumber()).thenReturn(1L).thenReturn(2L);
         when(blockchain.getBestBlock()).thenReturn(block);
+        when(nodeBlockProcessor.getLastKnownBlockNumber()).thenReturn(100L);
         emitter = new SyncNotificationEmitter(ethereum, serializer, nodeBlockProcessor, blockchain);
 
         ArgumentCaptor<EthereumListener> listenerCaptor = ArgumentCaptor.forClass(EthereumListener.class);
@@ -118,5 +118,22 @@ public class SyncNotificationEmitterTest {
         listener.onLongSyncDone();
 
         verifyNoMoreInteractions(channel);
+    }
+
+    @Test
+    public void validateNotificationSyncingStarted() {
+        SyncNotification syncNotification = emitter.getNotification(true);
+
+        assertTrue(syncNotification.isSyncing());
+        assertEquals(2L, syncNotification.getStatus().getCurrentBlock());
+        assertEquals(100L, syncNotification.getStatus().getHighestBlock());
+        assertEquals(1L, syncNotification.getStatus().getStartingBlock());
+    }
+
+    @Test
+    public void validateNotificationSyncingEnded() {
+        SyncNotification syncNotification = emitter.getNotification(false);
+        assertFalse(syncNotification.isSyncing());
+        assertNull(syncNotification.getStatus());
     }
 }
