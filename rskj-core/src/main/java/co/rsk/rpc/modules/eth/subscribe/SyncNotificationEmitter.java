@@ -33,7 +33,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class SyncNotificationEmitter {
-    private static final Logger logger = LoggerFactory.getLogger(PendingTransactionsNotificationEmitter.class);
+    private static final Logger logger = LoggerFactory.getLogger(SyncNotificationEmitter.class);
 
     private final JsonRpcSerializer jsonRpcSerializer;
     private final NodeBlockProcessor nodeBlockProcessor;
