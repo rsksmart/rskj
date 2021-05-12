@@ -198,34 +198,34 @@ public class Web3Impl implements Web3 {
     }
 
     @JsonRpcDoc(
-        description = "Returns Keccak-256 (not the standardized SHA3-256) of the given data.",
-        isWriteMethod = false,
-        requestExamples = {"web3_sha3.yaml/request/default"},
-        requestParams = {
-            @JsonRpcDocRequestParameter(
-                name = "data",
-                description = "the data to convert into a SHA3 hash."
-            )
-        },
-        responses = {
-            @JsonRpcDocResponse(
-                description = "The SHA3 result of the given string.",
-                code = "Success",
-                examplePath = "web3_sha3.yaml/response/success"
-            ),
-            @JsonRpcDocResponse(
-                description = "The method parameters passed in was invalid",
-                code = "-32602",
-                examplePath = "generic.yaml/response/methodInvalid",
-                success = false
-            ),
-            @JsonRpcDocResponse(
-                description = "Something unexpected happened.",
-                code = "-32603",
-                examplePath = "generic.yaml/response/internalServerError",
-                success = false
-            )
-        }
+            description = "Returns Keccak-256 (not the standardized SHA3-256) of the given data.",
+            isWriteMethod = false,
+            requestExamples = {"web3_sha3.yaml/request/default"},
+            requestParams = {
+                    @JsonRpcDocRequestParameter(
+                            name = "data",
+                            description = "the data to convert into a SHA3 hash."
+                    )
+            },
+            responses = {
+                    @JsonRpcDocResponse(
+                            description = "The SHA3 result of the given string.",
+                            code = "Success",
+                            examplePath = "web3_sha3.yaml/response/success"
+                    ),
+                    @JsonRpcDocResponse(
+                            description = "The method parameters passed in was invalid",
+                            code = "-32602",
+                            examplePath = "generic.yaml/response/methodInvalid",
+                            success = false
+                    ),
+                    @JsonRpcDocResponse(
+                            description = "Something unexpected happened.",
+                            code = "-32603",
+                            examplePath = "generic.yaml/response/internalServerError",
+                            success = false
+                    )
+            }
     )
     @Override
     public String web3_sha3(String data) throws Exception {
@@ -255,25 +255,25 @@ public class Web3Impl implements Web3 {
     }
 
     @JsonRpcDoc(
-        description = "Returns number of peers currently connected to the client.",
-        isWriteMethod = false,
-        responses = {
-            @JsonRpcDocResponse(
-                description = "integer of the number of connected peers.",
-                code = "Success",
-                examplePath = "net_peerCount.yaml/response/success"
-            ),
-            @JsonRpcDocResponse(
-                description = "The method parameters passed in was invalid",
-                code = "-32602",
-                examplePath = "generic.yaml/response/methodInvalid"
-            ),
-            @JsonRpcDocResponse(
-                description = "Something unexpected happened.",
-                code = "-32603",
-                examplePath = "generic.yaml/response/internalServerError"
-            )
-        }
+            description = "Returns number of peers currently connected to the client.",
+            isWriteMethod = false,
+            responses = {
+                    @JsonRpcDocResponse(
+                            description = "integer of the number of connected peers.",
+                            code = "Success",
+                            examplePath = "net_peerCount.yaml/response/success"
+                    ),
+                    @JsonRpcDocResponse(
+                            description = "The method parameters passed in was invalid",
+                            code = "-32602",
+                            examplePath = "generic.yaml/response/methodInvalid"
+                    ),
+                    @JsonRpcDocResponse(
+                            description = "Something unexpected happened.",
+                            code = "-32603",
+                            examplePath = "generic.yaml/response/internalServerError"
+                    )
+            }
     )
     @Override
     public String net_peerCount() {
@@ -430,13 +430,13 @@ public class Web3Impl implements Web3 {
     }
 
     @JsonRpcDoc(
-        isWriteMethod = false,
-        requestParams = {
-            @JsonRpcDocRequestParameter(
-                    name="address",
-                    usePrimary = true
-            ),
-        }
+            isWriteMethod = false,
+            requestParams = {
+                    @JsonRpcDocRequestParameter(
+                            name="address",
+                            usePrimary = true
+                    ),
+            }
     )
     @Override
     public String eth_getBalance(String address) {
@@ -444,39 +444,39 @@ public class Web3Impl implements Web3 {
     }
 
     @JsonRpcDoc(
-        description = "Returns the balance of the account of given address.",
-        primaryForOverloads = true,
-        isWriteMethod = false,
-        requestExamples = "eth_getBalance.yaml/request/default",
-        requestParams = {
-            @JsonRpcDocRequestParameter(
-                name = "address",
-                description = "**DATA**, 20 Bytes - address to check for balance."
-            ),
-            @JsonRpcDocRequestParameter(
-                name = "block",
-                description = "**QUANTITY|TAG** - integer block number, or the string \"latest\", \"earliest\" or \"pending\", see the default block parameter"
-            )
-        },
-        responses = {
-            @JsonRpcDocResponse(
-                description = "**QUANTITY** - integer of the current balance in wei.",
-                code = "Success",
-                examplePath = "eth_getBalance.yaml/response/success"
-            ),
-            @JsonRpcDocResponse(
-                description = "Method parameters invalid.",
-                code = "-32602",
-                examplePath = "generic.yaml/response/methodInvalid",
-                success = false
-            ),
-            @JsonRpcDocResponse(
-                description = "Something unexpected happened.",
-                code = "-32603",
-                examplePath = "generic.yaml/response/internalServerError",
-                success = false
-            )
-        }
+            description = "Returns the balance of the account of given address.",
+            primaryForOverloads = true,
+            isWriteMethod = false,
+            requestExamples = "eth_getBalance.yaml/request/default",
+            requestParams = {
+                    @JsonRpcDocRequestParameter(
+                            name = "address",
+                            description = "**DATA**, 20 Bytes - address to check for balance."
+                    ),
+                    @JsonRpcDocRequestParameter(
+                            name = "block",
+                            description = "**QUANTITY|TAG** - integer block number, or the string \"latest\", \"earliest\" or \"pending\", see the default block parameter"
+                    )
+            },
+            responses = {
+                    @JsonRpcDocResponse(
+                            description = "**QUANTITY** - integer of the current balance in wei.",
+                            code = "Success",
+                            examplePath = "eth_getBalance.yaml/response/success"
+                    ),
+                    @JsonRpcDocResponse(
+                            description = "Method parameters invalid.",
+                            code = "-32602",
+                            examplePath = "generic.yaml/response/methodInvalid",
+                            success = false
+                    ),
+                    @JsonRpcDocResponse(
+                            description = "Something unexpected happened.",
+                            code = "-32603",
+                            examplePath = "generic.yaml/response/internalServerError",
+                            success = false
+                    )
+            }
     )
     @Override
     public String eth_getBalance(String address, String block) {
@@ -666,51 +666,51 @@ public class Web3Impl implements Web3 {
     }
 
     @JsonRpcDoc(
-        description = "Returns information about a block by the block number.",
-        isWriteMethod = false,
-        requestExamples = "eth_getBlockByNumber.yaml/request/default",
-        requestParams = {
-            @JsonRpcDocRequestParameter(
-                name = "bnOrId",
-                description = "integer of a block number, or the string 'earliest', 'latest' or 'pending', as in the default block parameter."
-            ),
-            @JsonRpcDocRequestParameter(
-                name = "fullTransactionObjects",
-                description = "If true it returns the full transaction objects, if false only the hashes of the transactions."
-            )
-        },
-        responses = {
-            @JsonRpcDocResponse(
-                description = "eth_getBlockByNumber.yaml/description/response/txnFound",
-                loadDescriptionFromFile = true,
-                attachModel = true,
-                code = "Success",
-                examplePath = "eth_getBlockByNumber.yaml/response/successWithTxn"
-            ),
-            @JsonRpcDocResponse(
-                description = "The transaction passed in could not be found",
-                code = "Success",
-                examplePath = "eth_getBlockByNumber.yaml/response/successWithoutTxn"
-            ),
-            @JsonRpcDocResponse(
-                description = "Invalid block number passed.",
-                code = "-32602",
-                examplePath = "eth_getBlockByNumber.yaml/response/invalidBlockNumber",
-                success = false
-            ),
-            @JsonRpcDocResponse(
-                description = "Method parameters invalid.",
-                code = "-32602",
-                examplePath = "generic.yaml/response/methodInvalid",
-                success = false
-            ),
-            @JsonRpcDocResponse(
-                description = "Something unexpected happened.",
-                code = "-32603",
-                examplePath = "generic.yaml/response/internalServerError",
-                success = false
-            )
-        }
+            description = "Returns information about a block by the block number.",
+            isWriteMethod = false,
+            requestExamples = "eth_getBlockByNumber.yaml/request/default",
+            requestParams = {
+                    @JsonRpcDocRequestParameter(
+                            name = "bnOrId",
+                            description = "integer of a block number, or the string 'earliest', 'latest' or 'pending', as in the default block parameter."
+                    ),
+                    @JsonRpcDocRequestParameter(
+                            name = "fullTransactionObjects",
+                            description = "If true it returns the full transaction objects, if false only the hashes of the transactions."
+                    )
+            },
+            responses = {
+                    @JsonRpcDocResponse(
+                            description = "eth_getBlockByNumber.yaml/description/response/txnFound",
+                            loadDescriptionFromFile = true,
+                            attachModel = true,
+                            code = "Success",
+                            examplePath = "eth_getBlockByNumber.yaml/response/successWithTxn"
+                    ),
+                    @JsonRpcDocResponse(
+                            description = "The transaction passed in could not be found",
+                            code = "Success",
+                            examplePath = "eth_getBlockByNumber.yaml/response/successWithoutTxn"
+                    ),
+                    @JsonRpcDocResponse(
+                            description = "Invalid block number passed.",
+                            code = "-32602",
+                            examplePath = "eth_getBlockByNumber.yaml/response/invalidBlockNumber",
+                            success = false
+                    ),
+                    @JsonRpcDocResponse(
+                            description = "Method parameters invalid.",
+                            code = "-32602",
+                            examplePath = "generic.yaml/response/methodInvalid",
+                            success = false
+                    ),
+                    @JsonRpcDocResponse(
+                            description = "Something unexpected happened.",
+                            code = "-32603",
+                            examplePath = "generic.yaml/response/internalServerError",
+                            success = false
+                    )
+            }
     )
     @Override
     public BlockResultDTO eth_getBlockByNumber(String bnOrId, Boolean fullTransactionObjects) {
@@ -1031,44 +1031,44 @@ public class Web3Impl implements Web3 {
     }
 
     @JsonRpcDoc(
-        description = "Returns an array of all logs matching a given filter object.",
-        isWriteMethod = false,
-        returnModel = "string[] | object[]",
-        requestExamples = "eth_getLogs.yaml/request/default",
-        requestParams = {
-            @JsonRpcDocRequestParameter(
-                name = "fr",
-                alias = "filterRequest",
-                description = "eth_getLogs.yaml/description/request/default",
-                loadDescriptionFromFile = true
-            )
-        },
-        responses = {
-            @JsonRpcDocResponse(
-                description = "eth_getLogs.yaml/description/response/success",
-                loadDescriptionFromFile = true,
-                attachModel = true,
-                code = "Success",
-                examplePath = "eth_getLogs.yaml/response/success"
-            ),
-            @JsonRpcDocResponse(
-                description = "The search criteria did not match any logs",
-                code = "Success",
-                examplePath = "eth_getLogs.yaml/response/successWithoutLogs"
-            ),
-            @JsonRpcDocResponse(
-                description = "Method parameters invalid.",
-                code = "-32602",
-                examplePath = "generic.yaml/response/methodInvalid",
-                success = false
-            ),
-            @JsonRpcDocResponse(
-                description = "Something unexpected happened.",
-                code = "-32603",
-                examplePath = "generic.yaml/response/internalServerError",
-                success = false
-            )
-        }
+            description = "Returns an array of all logs matching a given filter object.",
+            isWriteMethod = false,
+            returnModel = "string[] | object[]",
+            requestExamples = "eth_getLogs.yaml/request/default",
+            requestParams = {
+                    @JsonRpcDocRequestParameter(
+                            name = "fr",
+                            alias = "filterRequest",
+                            description = "eth_getLogs.yaml/description/request/default",
+                            loadDescriptionFromFile = true
+                    )
+            },
+            responses = {
+                    @JsonRpcDocResponse(
+                            description = "eth_getLogs.yaml/description/response/success",
+                            loadDescriptionFromFile = true,
+                            attachModel = true,
+                            code = "Success",
+                            examplePath = "eth_getLogs.yaml/response/success"
+                    ),
+                    @JsonRpcDocResponse(
+                            description = "The search criteria did not match any logs",
+                            code = "Success",
+                            examplePath = "eth_getLogs.yaml/response/successWithoutLogs"
+                    ),
+                    @JsonRpcDocResponse(
+                            description = "Method parameters invalid.",
+                            code = "-32602",
+                            examplePath = "generic.yaml/response/methodInvalid",
+                            success = false
+                    ),
+                    @JsonRpcDocResponse(
+                            description = "Something unexpected happened.",
+                            code = "-32603",
+                            examplePath = "generic.yaml/response/internalServerError",
+                            success = false
+                    )
+            }
     )
     @Override
     public Object[] eth_getLogs(FilterRequest fr) throws Exception {

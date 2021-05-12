@@ -41,42 +41,42 @@ public interface Web3EthModule {
     }
 
     @JsonRpcDoc(
-        description = "Executes a new message call immediately without creating a transaction on the block chain.",
-        isWriteMethod = true,
-        requestExamples = "eth_call.yaml/request/default",
-        requestParams = {
-            @JsonRpcDocRequestParameter(
-                name = "args",
-                alias = "transaction",
-                description = "eth_call.yaml/description/request/transaction",
-                loadDescriptionFromFile = true,
-                attachModel = true
-            ),
-            @JsonRpcDocRequestParameter(
-                name = "bnOrId",
-                alias = "blockNumberOrId",
-                description = "**QUANTITY|TAG** - integer block number, or the string 'latest', 'earliest' or 'pending', see the default block parameter"
-            )
-        },
-        responses = {
-            @JsonRpcDocResponse(
-                description = "**DATA** - the return value of executed contract.",
-                code = "Success",
-                examplePath = "eth_call.yaml/response/success"
-            ),
-            @JsonRpcDocResponse(
-                description = "Method parameters invalid.",
-                code = "-32602",
-                examplePath = "generic.yaml/response/methodInvalid",
-                success = false
-            ),
-            @JsonRpcDocResponse(
-                description = "Something unexpected happened.",
-                code = "-32603",
-                examplePath = "generic.yaml/response/internalServerError",
-                success = false
-            )
-        }
+            description = "Executes a new message call immediately without creating a transaction on the block chain.",
+            isWriteMethod = true,
+            requestExamples = "eth_call.yaml/request/default",
+            requestParams = {
+                    @JsonRpcDocRequestParameter(
+                            name = "args",
+                            alias = "transaction",
+                            description = "eth_call.yaml/description/request/transaction",
+                            loadDescriptionFromFile = true,
+                            attachModel = true
+                    ),
+                    @JsonRpcDocRequestParameter(
+                            name = "bnOrId",
+                            alias = "blockNumberOrId",
+                            description = "**QUANTITY|TAG** - integer block number, or the string 'latest', 'earliest' or 'pending', see the default block parameter"
+                    )
+            },
+            responses = {
+                    @JsonRpcDocResponse(
+                            description = "**DATA** - the return value of executed contract.",
+                            code = "Success",
+                            examplePath = "eth_call.yaml/response/success"
+                    ),
+                    @JsonRpcDocResponse(
+                            description = "Method parameters invalid.",
+                            code = "-32602",
+                            examplePath = "generic.yaml/response/methodInvalid",
+                            success = false
+                    ),
+                    @JsonRpcDocResponse(
+                            description = "Something unexpected happened.",
+                            code = "-32603",
+                            examplePath = "generic.yaml/response/internalServerError",
+                            success = false
+                    )
+            }
     )
     default String eth_call(Web3.CallArguments args, String bnOrId) {
         return getEthModule().call(args, bnOrId);
