@@ -1,0 +1,18 @@
+---
+response:
+  methodInvalid: >
+    {
+      "error": {
+            "code": -32602,
+            "message": "method parameters invalid"
+        }
+    }
+  internalServerError: >
+    {
+        "jsonrpc": "2.0",
+        "id": 34,
+        "error": {
+            "code": -32603,
+            "message": "Internal server error"
+        }
+    }

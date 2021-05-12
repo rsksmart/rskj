@@ -1,0 +1,8 @@
+---
+request:
+  default: >
+    { "params": ["0x68656c6c6f20776f726c64"] }
+
+response:
+  success: >
+    {"result": "0x5b2c76da96136d193336fad3fbc049867b8ca157da22f69ae0e4923648250acc"}
