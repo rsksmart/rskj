@@ -19,6 +19,7 @@
 package co.rsk.core.bc;
 
 import co.rsk.core.BlockDifficulty;
+import co.rsk.crypto.Keccak256;
 import co.rsk.db.StateRootHandler;
 import co.rsk.metrics.profilers.Metric;
 import co.rsk.metrics.profilers.Profiler;
@@ -39,6 +40,8 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+
+import static org.ethereum.rpc.exception.RskJsonRpcRequestException.invalidParamError;
 
 /**
  * Created by ajlopez on 29/07/2016.
@@ -363,7 +366,24 @@ public class BlockChainImpl implements Blockchain {
 
     @Override
     public Block getBlockByHash(byte[] hash) {
-        return blockStore.getBlockByHash(hash);
+        return getBlockByHash(hash, false);
+    }
+
+    @Override
+    public Block getBlockByHash(byte[] blockHash, Boolean requireCanonical) {
+        // Calling this first validates the existence of the hash
+        Block blockByHash = blockStore.getBlockByHash(blockHash);
+        if(requireCanonical) {
+            long maxNumber = blockStore.getMaxNumber();
+            boolean blockInMainChain = blockStore.isBlockInMainChain(maxNumber, new Keccak256(blockHash));
+
+            // TODO : Check where it is appropriate to throw this error
+            // When the block is not in the main chain and canonical is required
+            if (!blockInMainChain) {
+                throw invalidParamError("Invalid input");
+            }
+        }
+        return blockByHash;
     }
 
     @Override

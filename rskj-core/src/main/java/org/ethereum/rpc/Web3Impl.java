@@ -40,6 +40,9 @@ import co.rsk.rpc.modules.rsk.RskModule;
 import co.rsk.rpc.modules.trace.TraceModule;
 import co.rsk.rpc.modules.txpool.TxPoolModule;
 import co.rsk.scoring.*;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
 import org.ethereum.crypto.HashUtil;
@@ -52,15 +55,14 @@ import org.ethereum.net.client.Capability;
 import org.ethereum.net.client.ConfigCapabilities;
 import org.ethereum.net.server.ChannelManager;
 import org.ethereum.net.server.PeerServer;
-import org.ethereum.rpc.dto.BlockResultDTO;
-import org.ethereum.rpc.dto.CompilationResultDTO;
-import org.ethereum.rpc.dto.TransactionReceiptDTO;
-import org.ethereum.rpc.dto.TransactionResultDTO;
+import org.ethereum.rpc.dto.*;
+import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.util.BuildInfo;
 import org.ethereum.vm.DataWord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
@@ -72,6 +74,8 @@ import static org.ethereum.rpc.exception.RskJsonRpcRequestException.*;
 
 public class Web3Impl implements Web3 {
     private static final Logger logger = LoggerFactory.getLogger("web3");
+
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     public Ethereum eth;
 
@@ -375,21 +379,6 @@ public class Web3Impl implements Web3 {
         return toQuantityJsonHex(b);
     }
 
-    @Override
-    public String eth_getBalance(String address, String block) {
-        /* HEX String  - an integer block number
-        *  String "earliest"  for the earliest/genesis block
-        *  String "latest"  - for the latest mined block
-        *  String "pending"  - for the pending state/transactions
-        */
-
-        AccountInformationProvider accountInformationProvider = web3InformationRetriever.getInformationProvider(block);
-
-        RskAddress addr = new RskAddress(address);
-        Coin balance = accountInformationProvider.getBalance(addr);
-
-        return toQuantityJsonHex(balance.asBigInteger());
-    }
 
     @Override
     public String eth_getBalance(String address) {
@@ -397,14 +386,53 @@ public class Web3Impl implements Web3 {
     }
 
     @Override
+    public String eth_getBalance(String address, String blockString) {
+        BlockParsedRequestDTO blockParsedRequest = new BlockParsedRequestDTO(blockString);
+        return eth_getBalance(address, blockParsedRequest);
+    }
+
+    @Override
+    public String eth_getBalance(String address, BlockParsedRequestDTO blockParsedRequest) {
+        validateBlockParsedRequest(blockParsedRequest);
+
+        AccountInformationProvider accountInformationProvider = getAccountInformationProvider(blockParsedRequest);
+
+        RskAddress addr = new RskAddress(address);
+        Coin balance = accountInformationProvider.getBalance(addr);
+
+        return toQuantityJsonHex(balance.asBigInteger());
+    }
+
+    private void validateBlockParsedRequest(BlockParsedRequestDTO blockParsedRequest) {
+        // There should be either a block number or a block hash present
+        if(StringUtils.isBlank(blockParsedRequest.getBlockNumber()) && ArrayUtils.isEmpty(blockParsedRequest.getBlockHash())){
+            throw invalidParamError("Invalid input");
+        }
+    }
+
+    private AccountInformationProvider getAccountInformationProvider(BlockParsedRequestDTO blockParsedRequest) {
+        return (blockParsedRequest.getUseBlockNumber())
+            ? web3InformationRetriever.getInformationProvider(blockParsedRequest.getBlockNumber())
+            : web3InformationRetriever.getInformationProvider(blockParsedRequest.getBlockHash(), blockParsedRequest.getRequireCanonical());
+    }
+
+    @Override
     public String eth_getStorageAt(String address, String storageIdx, String blockId) {
+        BlockParsedRequestDTO blockParsedRequest = new BlockParsedRequestDTO(blockId);
+        return eth_getStorageAt(address, storageIdx, blockParsedRequest);
+    }
+
+    @Override
+    public String eth_getStorageAt(String address, String storageIdx, BlockParsedRequestDTO blockParsedRequest) {
         String s = null;
 
         try {
+            // TODO : Should the log debug be written if the validation does not pass though
+            validateBlockParsedRequest(blockParsedRequest);
+
             RskAddress addr = new RskAddress(address);
-            
-            AccountInformationProvider accountInformationProvider =
-                    web3InformationRetriever.getInformationProvider(blockId);
+
+            AccountInformationProvider accountInformationProvider = getAccountInformationProvider(blockParsedRequest);
 
             DataWord sv = accountInformationProvider
                     .getStorageValue(addr, DataWord.valueOf(stringHexToByteArray(storageIdx)));
@@ -418,24 +446,30 @@ public class Web3Impl implements Web3 {
             return s;
         } finally {
             if (logger.isDebugEnabled()) {
-                logger.debug("eth_getStorageAt({}, {}, {}): {}", address, storageIdx, blockId, s);
+                logger.debug("eth_getStorageAt({}, {}, {}): {}", address, storageIdx, blockParsedRequest, s);
             }
         }
     }
 
     @Override
     public String eth_getTransactionCount(String address, String blockId) {
+        BlockParsedRequestDTO blockParsedRequest = new BlockParsedRequestDTO(blockId);
+        return eth_getTransactionCount(address, blockParsedRequest);
+    }
+
+    @Override
+    public String eth_getTransactionCount(String address, BlockParsedRequestDTO blockParsedRequest) {
         String s = null;
         try {
+            validateBlockParsedRequest(blockParsedRequest);
             RskAddress addr = new RskAddress(address);
-            AccountInformationProvider accountInformationProvider = web3InformationRetriever
-                    .getInformationProvider(blockId);
+            AccountInformationProvider accountInformationProvider = getAccountInformationProvider(blockParsedRequest);
             BigInteger nonce = accountInformationProvider.getNonce(addr);
             s = toQuantityJsonHex(nonce);
             return s;
         } finally {
             if (logger.isDebugEnabled()) {
-                logger.debug("eth_getTransactionCount({}, {}): {}", address, blockId, s);
+                logger.debug("eth_getTransactionCount({}, {}): {}", address, blockParsedRequest, s);
             }
         }
     }

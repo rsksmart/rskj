@@ -43,6 +43,8 @@ public interface Blockchain {
      */
     Block getBlockByHash(byte[] hash);
 
+    Block getBlockByHash(byte[] blockHash, Boolean requireCanonical);
+
     /**
      * Get total difficulty from the start
      * and until the head of the chain

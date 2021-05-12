@@ -19,11 +19,13 @@
 package co.rsk.rpc;
 
 import co.rsk.core.bc.AccountInformationProvider;
+import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositoryLocator;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionPool;
+import org.ethereum.db.BlockStore;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 
 import java.util.List;
@@ -50,8 +52,9 @@ public class Web3InformationRetriever {
     private static final String PENDING = "pending";
 
 
-    public Web3InformationRetriever(TransactionPool transactionPool, Blockchain blockchain, RepositoryLocator locator) {
-
+    public Web3InformationRetriever(TransactionPool transactionPool,
+                                    Blockchain blockchain,
+                                    RepositoryLocator locator) {
         this.transactionPool = transactionPool;
         this.blockchain = blockchain;
         this.locator = locator;
@@ -74,9 +77,14 @@ public class Web3InformationRetriever {
         } else if (EARLIEST.equals(identifier)) {
             block = blockchain.getBlockByNumber(0);
         } else {
-            block = this.blockchain.getBlockByNumber(getBlockNumber(identifier));
+            block = blockchain.getBlockByNumber(getBlockNumber(identifier));
         }
 
+        return Optional.ofNullable(block);
+    }
+
+    public Optional<Block> getBlockByHash(byte[] blockHash, Boolean requireCanonical) {
+        Block block = blockchain.getBlockByHash(blockHash, requireCanonical);
         return Optional.ofNullable(block);
     }
 
@@ -91,15 +99,23 @@ public class Web3InformationRetriever {
         if (PENDING.equals(identifier)) {
             return transactionPool.getPendingState();
         }
-
         Optional<Block> optBlock = getBlock(identifier);
+        return getAccountInformationProviderForBlock(identifier, optBlock);
+    }
+
+    public AccountInformationProvider getInformationProvider(byte[] identifier, Boolean requireCanonical) {
+        Optional<Block> optBlock = getBlockByHash(identifier, requireCanonical);
+        return getAccountInformationProviderForBlock(identifier, optBlock);
+    }
+
+    private AccountInformationProvider getAccountInformationProviderForBlock(Object identifier, Optional<Block> optBlock) {
         if (!optBlock.isPresent()) {
             throw blockNotFound(String.format("Block %s not found", identifier));
         }
 
         Block block = optBlock.get();
         return locator.findSnapshotAt(block.getHeader()).orElseThrow(() -> RskJsonRpcRequestException
-                .stateNotFound(String.format("State not found for block with hash %s", block.getHash())));
+            .stateNotFound(String.format("State not found for block with hash %s", block.getHash())));
     }
 
     /**

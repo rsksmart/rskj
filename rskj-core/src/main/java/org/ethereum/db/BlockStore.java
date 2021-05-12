@@ -20,6 +20,7 @@
 package org.ethereum.db;
 
 import co.rsk.core.BlockDifficulty;
+import co.rsk.crypto.Keccak256;
 import co.rsk.db.RemascCache;
 import org.ethereum.core.Block;
 import org.ethereum.core.Bloom;
@@ -72,6 +73,8 @@ public interface BlockStore extends RemascCache {
      * @throws IllegalStateException if the blockstore is empty.
      */
     long getMinNumber();
+
+    boolean isBlockInMainChain(long blockNumber, Keccak256 blockHash);
 
     void flush();
 

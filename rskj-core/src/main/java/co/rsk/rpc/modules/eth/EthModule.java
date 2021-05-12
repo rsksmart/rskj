@@ -24,18 +24,23 @@ import co.rsk.core.ReversibleTransactionExecutor;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.AccountInformationProvider;
 import co.rsk.core.bc.BlockResult;
+import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.peg.BridgeState;
 import co.rsk.peg.BridgeSupport;
 import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.rpc.ExecutionBlockRetriever;
 import co.rsk.trie.TrieStoreImpl;
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.ethereum.core.*;
 import org.ethereum.datasource.HashMapDB;
+import org.ethereum.db.BlockStore;
 import org.ethereum.db.MutableRepository;
 import org.ethereum.rpc.TypeConverter;
 import org.ethereum.rpc.Web3;
 import org.ethereum.rpc.converters.CallArgumentsToByteArray;
+import org.ethereum.rpc.dto.BlockParsedRequestDTO;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.ProgramResult;
@@ -116,9 +121,14 @@ public class EthModule
     }
 
     public String call(Web3.CallArguments args, String bnOrId) {
+        BlockParsedRequestDTO blockParsedRequest = new BlockParsedRequestDTO(bnOrId);
+        return call(args, blockParsedRequest);
+    }
+
+    public String call(Web3.CallArguments args, BlockParsedRequestDTO blockParsedRequest) {
         String hReturn = null;
         try {
-            BlockResult blockResult = executionBlockRetriever.getExecutionBlock_workaround(bnOrId);
+            BlockResult blockResult = executionBlockRetriever.getExecutionBlock_workaround(blockParsedRequest);
             ProgramResult res;
             if (blockResult.getFinalState() != null) {
                 res = callConstant_workaround(args, blockResult);
@@ -173,7 +183,12 @@ public class EthModule
     }
 
     public String getCode(String address, String blockId) {
-        if (blockId == null) {
+        BlockParsedRequestDTO blockParsedRequest = new BlockParsedRequestDTO(blockId);
+        return getCode(address, blockParsedRequest);
+    }
+
+    public String getCode(String address, BlockParsedRequestDTO blockParsedRequest) {
+        if (blockParsedRequest == null) {
             throw new NullPointerException();
         }
 
@@ -181,7 +196,7 @@ public class EthModule
         try {
             RskAddress addr = new RskAddress(address);
 
-            AccountInformationProvider accountInformationProvider = getAccountInformationProvider(blockId);
+            AccountInformationProvider accountInformationProvider = getAccountInformationProvider(blockParsedRequest);
 
             if(accountInformationProvider != null) {
                 byte[] code = accountInformationProvider.getCode(addr);
@@ -197,13 +212,19 @@ public class EthModule
             return s;
         } finally {
             if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("eth_getCode({}, {}): {}", address, blockId, s);
+                LOGGER.debug("eth_getCode({}, {}): {}", address, blockParsedRequest, s);
             }
         }
     }
 
-    private AccountInformationProvider getAccountInformationProvider(String id) {
-        switch (id.toLowerCase()) {
+    private AccountInformationProvider getAccountInformationProvider(BlockParsedRequestDTO blockParsedRequest) {
+        validateBlockParsedRequest(blockParsedRequest);
+
+        String switchValue = !StringUtils.isBlank(blockParsedRequest.getBlockNumber())
+            ? blockParsedRequest.getBlockNumber().toLowerCase()
+            : "";
+
+        switch (switchValue) {
             case "pending":
                 return transactionPool.getPendingState();
             case "earliest":
@@ -211,16 +232,29 @@ public class EthModule
             case "latest":
                 return repositoryLocator.snapshotAt(blockchain.getBestBlock().getHeader());
             default:
-                try {
-                    long blockNumber = stringHexToBigInteger(id).longValue();
-                    Block requestedBlock = blockchain.getBlockByNumber(blockNumber);
-                    if (requestedBlock != null) {
-                        return repositoryLocator.snapshotAt(requestedBlock.getHeader());
-                    }
-                    return null;
-                } catch (NumberFormatException | StringIndexOutOfBoundsException e) {
-                    throw invalidParamError("invalid blocknumber " + id);
+                Block requestedBlock = blockParsedRequest.getUseBlockNumber()
+                    ? getBlockByNumber(blockParsedRequest.getBlockNumber())
+                    : blockchain.getBlockByHash(blockParsedRequest.getBlockHash(), blockParsedRequest.getRequireCanonical());
+                if (requestedBlock != null) {
+                    return repositoryLocator.snapshotAt(requestedBlock.getHeader());
                 }
+                return null;
+        }
+    }
+
+    private Block getBlockByNumber(String blockNumberString) {
+        try {
+            long blockNumber = stringHexToBigInteger(blockNumberString).longValue();
+            return blockchain.getBlockByNumber(blockNumber);
+        } catch (NumberFormatException | StringIndexOutOfBoundsException e) {
+            throw invalidParamError("invalid blocknumber " + blockNumberString);
+        }
+    }
+
+    private void validateBlockParsedRequest(BlockParsedRequestDTO blockParsedRequest) {
+        // There should be either a block number or a block hash present
+        if(StringUtils.isBlank(blockParsedRequest.getBlockNumber()) && ArrayUtils.isEmpty(blockParsedRequest.getBlockHash())){
+            throw invalidParamError("Invalid input");
         }
     }
 
