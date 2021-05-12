@@ -129,7 +129,7 @@ public class ExecutionBlockRetriever {
         else {
             Block executionBlock = blockchain.getBlockByHash(blockParsedRequest.getBlockHash(), blockParsedRequest.getRequireCanonical());
             if (executionBlock == null) {
-                throw invalidParamError(String.format("Invalid block number %d", blockParsedRequest.getBlockHashAsString()));
+                throw invalidParamError(String.format("Invalid block number %s", blockParsedRequest.getBlockHashAsString()));
             }
             return newBlockResult_workaround(executionBlock);
         }

@@ -75,8 +75,6 @@ import static org.ethereum.rpc.exception.RskJsonRpcRequestException.*;
 public class Web3Impl implements Web3 {
     private static final Logger logger = LoggerFactory.getLogger("web3");
 
-    private final ObjectMapper objectMapper = new ObjectMapper();
-
     public Ethereum eth;
 
     private final String baseClientVersion = "RskJ";

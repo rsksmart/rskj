@@ -6,6 +6,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 
 import java.util.Arrays;
+import java.util.Objects;
 
 import static org.ethereum.rpc.TypeConverter.stringHexToByteArray;
 
@@ -15,10 +16,12 @@ public class BlockParsedRequestDTO {
     private Boolean useBlockNumber = true;
     private String blockHashAsString;
 
+    // Actual Data fields
     private String blockNumber;
     private byte[] blockHash;
     private Boolean requireCanonical;
 
+    // Added for any serialization requirements
     public BlockParsedRequestDTO() {}
 
     @JsonCreator
@@ -90,5 +93,34 @@ public class BlockParsedRequestDTO {
             ", blockNumber='" + blockNumber + '\'' +
             ", requireCanonical=" + requireCanonical +
             '}';
+    }
+
+    /**
+     * We ignore blockHashAsString and useBlockNumber
+     * since they are convenience fields primarily
+     */
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        BlockParsedRequestDTO that = (BlockParsedRequestDTO) o;
+        return Objects.equals(blockNumber, that.blockNumber) &&
+                Arrays.equals(blockHash, that.blockHash) &&
+                Objects.equals(requireCanonical, that.requireCanonical);
+    }
+
+    /**
+     * We ignore blockHashAsString and useBlockNumber
+     * since they are convenience fields primarily
+     */
+    @Override
+    public int hashCode() {
+        int result = Objects.hash(blockNumber, requireCanonical);
+        result = 31 * result + Arrays.hashCode(blockHash);
+        return result;
     }
 }

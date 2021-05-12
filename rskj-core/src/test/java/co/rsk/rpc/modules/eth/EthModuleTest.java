@@ -33,6 +33,7 @@ import org.ethereum.core.Blockchain;
 import org.ethereum.core.TransactionPool;
 import org.ethereum.rpc.TypeConverter;
 import org.ethereum.rpc.Web3;
+import org.ethereum.rpc.dto.BlockParsedRequestDTO;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.vm.program.ProgramResult;
 import org.hamcrest.Matchers;
@@ -52,7 +53,9 @@ public class EthModuleTest {
         BlockResult blockResult = mock(BlockResult.class);
         Block block = mock(Block.class);
         ExecutionBlockRetriever retriever = mock(ExecutionBlockRetriever.class);
-        when(retriever.getExecutionBlock_workaround("latest"))
+
+        BlockParsedRequestDTO blockParsedRequest = new BlockParsedRequestDTO("latest");
+        when(retriever.getExecutionBlock_workaround(blockParsedRequest))
                 .thenReturn(blockResult);
         when(blockResult.getBlock()).thenReturn(block);
 
@@ -90,7 +93,9 @@ public class EthModuleTest {
         BlockResult blockResult = mock(BlockResult.class);
         Block block = mock(Block.class);
         ExecutionBlockRetriever retriever = mock(ExecutionBlockRetriever.class);
-        when(retriever.getExecutionBlock_workaround("latest"))
+
+        BlockParsedRequestDTO blockParsedRequest = new BlockParsedRequestDTO("latest");
+        when(retriever.getExecutionBlock_workaround(blockParsedRequest))
                 .thenReturn(blockResult);
         when(blockResult.getBlock()).thenReturn(block);
 
@@ -128,7 +133,8 @@ public class EthModuleTest {
         BlockResult blockResult = mock(BlockResult.class);
         Block block = mock(Block.class);
         ExecutionBlockRetriever retriever = mock(ExecutionBlockRetriever.class);
-        when(retriever.getExecutionBlock_workaround("latest"))
+        BlockParsedRequestDTO blockParsedRequest = new BlockParsedRequestDTO("latest");
+        when(retriever.getExecutionBlock_workaround(blockParsedRequest))
                 .thenReturn(blockResult);
         when(blockResult.getBlock()).thenReturn(block);
 

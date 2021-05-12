@@ -34,6 +34,7 @@ import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.db.TransactionInfo;
 import org.ethereum.listener.EthereumListener;
+import org.ethereum.rpc.TypeConverter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,6 +42,7 @@ import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import static org.ethereum.rpc.TypeConverter.*;
 import static org.ethereum.rpc.exception.RskJsonRpcRequestException.invalidParamError;
 
 /**
@@ -373,14 +375,15 @@ public class BlockChainImpl implements Blockchain {
     public Block getBlockByHash(byte[] blockHash, Boolean requireCanonical) {
         // Calling this first validates the existence of the hash
         Block blockByHash = blockStore.getBlockByHash(blockHash);
-        if(requireCanonical) {
-            long maxNumber = blockStore.getMaxNumber();
-            boolean blockInMainChain = blockStore.isBlockInMainChain(maxNumber, new Keccak256(blockHash));
+        if(requireCanonical && blockByHash != null) {
+            boolean blockInMainChain = blockStore.isBlockInMainChain(blockByHash.getNumber(), new Keccak256(blockHash));
 
-            // TODO : Check where it is appropriate to throw this error
             // When the block is not in the main chain and canonical is required
             if (!blockInMainChain) {
-                throw invalidParamError("Invalid input");
+                // According to the spec https://github.com/ethereum/EIPs/blob/master/EIPS/eip-1898.md
+                // we should "raise block-not-canonical error"
+                String blockHashAsString = toUnformattedJsonHex(blockHash);
+                throw invalidParamError(String.format("Block %s not canonical", blockHashAsString));
             }
         }
         return blockByHash;
