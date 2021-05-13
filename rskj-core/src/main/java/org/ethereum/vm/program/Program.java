@@ -618,8 +618,8 @@ public class Program {
 
             if (internalTx == null) {
                 throw new NullPointerException();
-            }
 
+            }
             internalTx.reject();
             programResult.rejectInternalTransactions();
             programResult.rejectLogInfos();
