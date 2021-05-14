@@ -455,7 +455,7 @@ public class Web3Impl implements Web3 {
                     ),
                     @JsonRpcDocRequestParameter(
                             name = "block",
-                            description = "**QUANTITY|TAG** - integer block number, or the string \"latest\", \"earliest\" or \"pending\", see the default block parameter"
+                            description = "**QUANTITY|TAG** - integer block number, or the string 'latest', 'earliest' or 'pending', see the default block parameter"
                     )
             },
             responses = {
