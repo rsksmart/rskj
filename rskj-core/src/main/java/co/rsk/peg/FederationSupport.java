@@ -17,13 +17,14 @@
  */
 package co.rsk.peg;
 
-import co.rsk.bitcoinj.core.BtcECKey;
-import co.rsk.bitcoinj.core.UTXO;
+import co.rsk.bitcoinj.core.*;
+import co.rsk.bitcoinj.wallet.Wallet;
 import co.rsk.config.BridgeConstants;
 import org.ethereum.core.Block;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -34,11 +35,13 @@ public class FederationSupport {
     private final BridgeStorageProvider provider;
     private final BridgeConstants bridgeConstants;
     private final Block executionBlock;
+    private final Context btcContext;
 
     public FederationSupport(BridgeConstants bridgeConstants, BridgeStorageProvider provider, Block executionBlock) {
         this.provider = provider;
         this.bridgeConstants = bridgeConstants;
         this.executionBlock = executionBlock;
+        this.btcContext = new Context(bridgeConstants.getBtcParams());
     }
 
     /**
@@ -228,4 +231,109 @@ public class FederationSupport {
         long federationAge = executionBlock.getNumber() - federation.getCreationBlockNumber();
         return federationAge >= bridgeConstants.getFederationActivationAge();
     }
+
+    /**
+     * Add the btcTx outputs that send btc to the federation(s) to the UTXO list
+     */
+    public void saveNewUTXOs(BtcTransaction btcTx) throws IOException {
+        // Outputs to the active federation
+        List<TransactionOutput> outputsToTheActiveFederation = btcTx.getWalletOutputs(getActiveFederationWallet(
+                false));
+        for (TransactionOutput output : outputsToTheActiveFederation) {
+            UTXO utxo = new UTXO(btcTx.getHash(), output.getIndex(), output.getValue(), 0, btcTx.isCoinBase(), output.getScriptPubKey());
+            getActiveFederationBtcUTXOs().add(utxo);
+        }
+
+        // Outputs to the retiring federation (if any)
+        Wallet retiringFederationWallet = getRetiringFederationWallet(false);
+        if (retiringFederationWallet != null) {
+            List<TransactionOutput> outputsToTheRetiringFederation = btcTx.getWalletOutputs(retiringFederationWallet);
+            for (TransactionOutput output : outputsToTheRetiringFederation) {
+                UTXO utxo = new UTXO(btcTx.getHash(), output.getIndex(), output.getValue(), 0, btcTx.isCoinBase(), output.getScriptPubKey());
+                getRetiringFederationBtcUTXOs().add(utxo);
+            }
+        }
+    }
+
+    /**
+     * Get a no spend wallet for the currently live federations
+     * @return A no spend BTC wallet for the currently live federation(s)
+     *
+     */
+    public Wallet getNoSpendWalletForLiveFederations(boolean isFastBridgeCompatible) {
+        return BridgeUtils.getFederationsNoSpendWallet(btcContext, getLiveFederations(), isFastBridgeCompatible, provider);
+    }
+
+    /**
+     * Returns the currently live federations
+     * This would be the active federation plus
+     * potentially the retiring federation
+     * @return a list of live federations
+     */
+    public List<Federation> getLiveFederations() {
+        List<Federation> liveFederations = new ArrayList<>();
+        liveFederations.add(getActiveFederation());
+        Federation retiringFederation = getRetiringFederation();
+        if (retiringFederation != null) {
+            liveFederations.add(retiringFederation);
+        }
+        return liveFederations;
+    }
+
+    /**
+     * Get the wallet for the currently live federations
+     * but limited to a specific list of UTXOs
+     * @return A BTC wallet for the currently live federation(s)
+     * limited to the given list of UTXOs
+     *
+     */
+    public Wallet getUTXOBasedWalletForLiveFederations(List<UTXO> utxos, boolean isFastBridgeCompatible) {
+        return BridgeUtils.getFederationsSpendWallet(btcContext, getLiveFederations(), utxos, isFastBridgeCompatible, provider);
+    }
+
+    /**
+     * Get the wallet for the currently retiring federation
+     * or null if there's currently no retiring federation
+     * @return A BTC wallet for the currently active federation
+     *
+     * @throws IOException
+     * @param shouldConsiderFastBridgeUTXOs
+     */
+    public Wallet getRetiringFederationWallet(boolean shouldConsiderFastBridgeUTXOs) throws IOException {
+        Federation federation = getRetiringFederation();
+        if (federation == null) {
+            return null;
+        }
+
+        List<UTXO> utxos = getRetiringFederationBtcUTXOs();
+
+        return BridgeUtils.getFederationSpendWallet(
+                btcContext,
+                federation,
+                utxos,
+                shouldConsiderFastBridgeUTXOs,
+                provider
+        );
+    }
+
+    /**
+     * Get the wallet for the currently active federation
+     * @return A BTC wallet for the currently active federation
+     *
+     * @throws IOException
+     * @param shouldConsiderFastBridgeUTXOs
+     */
+    public Wallet getActiveFederationWallet(boolean shouldConsiderFastBridgeUTXOs) throws IOException {
+        Federation federation = getActiveFederation();
+        List<UTXO> utxos = getActiveFederationBtcUTXOs();
+
+        return BridgeUtils.getFederationSpendWallet(
+                btcContext,
+                federation,
+                utxos,
+                shouldConsiderFastBridgeUTXOs,
+                provider
+        );
+    }
+
 }
