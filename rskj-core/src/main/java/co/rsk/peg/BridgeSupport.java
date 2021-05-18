@@ -2896,7 +2896,7 @@ public class BridgeSupport {
         return false;
     }
 
-    private Coin getBtcLockedInFederation() {
+    public Coin getBtcLockedInFederation() {
         Coin maxRbtc = this.bridgeConstants.getMaxRbtc();
         Coin currentBridgeBalance = rskRepository.getBalance(PrecompiledContracts.BRIDGE_ADDR).toBitcoin();
 
