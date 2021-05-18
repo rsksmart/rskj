@@ -28,7 +28,6 @@ import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
-import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.exception.VMException;
 import org.junit.After;
