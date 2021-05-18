@@ -842,7 +842,8 @@ public class Trie {
                     this.left,
                     this.right,
                     getDataLength(value),
-                    null
+                    null,
+                    this.childrenSize
             );
         }
 
