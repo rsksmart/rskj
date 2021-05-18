@@ -117,7 +117,7 @@ public class Trie {
     }
 
     private Trie(TrieStore store, TrieKeySlice sharedPath, byte[] value) {
-        this(store, sharedPath, value, NodeReference.empty(), NodeReference.empty(), getDataLength(value), null);
+        this(store, sharedPath, value, NodeReference.empty(), NodeReference.empty(), getDataLength(value), null, new VarInt(0));
     }
 
     public Trie(TrieStore store, TrieKeySlice sharedPath, byte[] value, NodeReference left, NodeReference right, Uint24 valueLength, Keccak256 valueHash) {
