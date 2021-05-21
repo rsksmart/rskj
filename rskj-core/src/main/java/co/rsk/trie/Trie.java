@@ -30,6 +30,7 @@ import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
+import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import javax.annotation.Nullable;
 import java.nio.ByteBuffer;
@@ -1421,5 +1422,13 @@ public class Trie {
         subnodes.add(this);
 
         return subnodes;
+    }
+
+    /**
+     * Serializes and encodes a Unitrie node. Useful for generating merkle proofs for specific keys
+     * @return an RLP-Serialized node
+     * */
+    public byte[] getProof() {
+        return RLP.encodeElement(toMessage());
     }
 }
