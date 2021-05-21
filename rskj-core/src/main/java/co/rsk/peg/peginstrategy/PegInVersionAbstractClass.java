@@ -44,7 +44,6 @@ public abstract class PegInVersionAbstractClass {
     final ActivationConfig.ForBlock activations;
     final Repository rskRepository;
     final FederationSupport federationSupport;
-    final BridgeSupport bridgeSupport;
     final BridgeStorageProvider provider;
     final BridgeConstants bridgeConstants;
     final Context btcContext;
@@ -56,7 +55,6 @@ public abstract class PegInVersionAbstractClass {
                                         ActivationConfig.ForBlock activations,
                                         Repository rskRepository,
                                         FederationSupport federationSupport,
-                                        BridgeSupport bridgeSupport,
                                         BridgeStorageProvider provider,
                                         BridgeConstants bridgeConstants,
                                         Block rskExecutionBlock) {
@@ -64,7 +62,6 @@ public abstract class PegInVersionAbstractClass {
         this.activations = activations;
         this.rskRepository = rskRepository;
         this.federationSupport = federationSupport;
-        this.bridgeSupport = bridgeSupport;
         this.provider = provider;
         this.bridgeConstants = bridgeConstants;
         this.btcContext = new Context(bridgeConstants.getBtcParams());
@@ -136,8 +133,8 @@ public abstract class PegInVersionAbstractClass {
             return true;
         }
 
-        Coin fedCurrentFunds = bridgeSupport.getBtcLockedInFederation();
-        Coin lockingCap = bridgeSupport.getLockingCap();
+        Coin fedCurrentFunds = getBtcLockedInFederation();
+        Coin lockingCap = getLockingCap();
         logger.trace("Evaluating locking cap for: TxId {}. Value to lock {}. Current funds {}. Current locking cap {}", btcTx.getHash(true), totalAmount, fedCurrentFunds, lockingCap);
         Coin fedUTXOsAfterThisLock = fedCurrentFunds.add(totalAmount);
         // If the federation funds (including this new UTXO) are smaller than or equals to the current locking cap, we are fine.
@@ -147,6 +144,24 @@ public abstract class PegInVersionAbstractClass {
 
         logger.info("locking cap exceeded! btc Tx {}", btcTx);
         return false;
+    }
+
+    public Coin getBtcLockedInFederation() {
+        Coin maxRbtc = this.bridgeConstants.getMaxRbtc();
+        Coin currentBridgeBalance = rskRepository.getBalance(PrecompiledContracts.BRIDGE_ADDR).toBitcoin();
+
+        return maxRbtc.subtract(currentBridgeBalance);
+    }
+
+    public Coin getLockingCap() {
+        // Before returning the locking cap, check if it was already set
+        if (activations.isActive(ConsensusRule.RSKIP134) && this.provider.getLockingCap() == null) {
+            // Set the initial locking cap value
+            logger.debug("Setting initial locking cap value");
+            this.provider.setLockingCap(bridgeConstants.getInitialLockingCap());
+        }
+
+        return this.provider.getLockingCap();
     }
 
     public void generateRejectionRelease(

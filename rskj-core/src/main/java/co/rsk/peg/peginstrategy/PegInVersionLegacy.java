@@ -32,11 +32,10 @@ public class PegInVersionLegacy extends PegInVersionAbstractClass implements Peg
                               ActivationConfig.ForBlock activations,
                               Repository rskRepository,
                               FederationSupport federationSupport,
-                              BridgeSupport bridgeSupport,
                               BridgeStorageProvider provider,
                               BridgeConstants bridgeConstants,
                               Block rskExecutionBlock) {
-        super(eventLogger, activations, rskRepository, federationSupport, bridgeSupport, provider, bridgeConstants, rskExecutionBlock);
+        super(eventLogger, activations, rskRepository, federationSupport, provider, bridgeConstants, rskExecutionBlock);
     }
 
     @Override
