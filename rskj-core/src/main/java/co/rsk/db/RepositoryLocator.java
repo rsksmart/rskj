@@ -45,6 +45,8 @@ public class RepositoryLocator {
     public RepositoryLocator(TrieStore store, StateRootHandler stateRootHandler) {
         this.trieStore = store;
         this.stateRootHandler = stateRootHandler;
+        trieCache  = Collections.synchronizedMap(new MaxSizeHashMap<>(cacheSize, true));
+
     }
 
     /**
@@ -85,8 +87,8 @@ public class RepositoryLocator {
                 "The trie with root %s is missing in this store", header.getHash()
         ));
     }
-    final int cacheSize =10;
-    Map<Keccak256, Trie> trieCache  = Collections.synchronizedMap(new MaxSizeHashMap<>(cacheSize, true));
+    static public int cacheSize =10;
+    Map<Keccak256, Trie> trieCache;
     static public boolean useCache = false;
 
     public void cacheTrie(BlockHeader header,Trie entry) {
@@ -116,5 +118,25 @@ public class RepositoryLocator {
         }
 
         return trie.map(t -> new MutableTrieImpl(trieStore, t));
+    }
+
+    public Trie getTrieAt(BlockHeader header) {
+        Keccak256 stateRoot = stateRootHandler.translate(header);
+
+        if (EMPTY_HASH.equals(stateRoot)) {
+            return new Trie(trieStore);
+        }
+        Optional<Trie> trie;
+        if (!useCache)  {
+            trie = trieStore.retrieve(stateRoot.getBytes());
+        } else {
+            Trie trieEntry = trieCache.get(stateRoot);
+            if (trieEntry != null)
+                trie = Optional.of(trieEntry);
+            else
+                trie = trieStore.retrieve(stateRoot.getBytes());
+        }
+
+        return trie.get();
     }
 }

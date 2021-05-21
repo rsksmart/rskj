@@ -53,6 +53,8 @@ import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP85;
  * Note that this class IS NOT guaranteed to be thread safe because its dependencies might hold state.
  */
 public class BlockExecutor {
+    public static boolean skipCheckTrieConversion = false;
+
     private static final Logger logger = LoggerFactory.getLogger("blockexecutor");
     private static final Profiler profiler = ProfilerFactory.getInstance();
 
@@ -203,10 +205,11 @@ public class BlockExecutor {
 
         boolean isRskip126Enabled = activationConfig.isActive(RSKIP126, header.getNumber());
         if (!isRskip126Enabled) {
-            // SDL:
+            // SDL: skipCheckTrieConversion
             // Do not validate. We'll be validating only the state in the first wasabi
             // block
-            //return true;
+            if (skipCheckTrieConversion)
+                return true;
              byte[] orchidStateRoot = stateRootHandler.convert(header, result.getFinalState()).getBytes();
             return Arrays.equals(orchidStateRoot, header.getStateRoot());
         }

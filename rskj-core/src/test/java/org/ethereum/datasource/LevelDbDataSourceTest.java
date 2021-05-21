@@ -91,7 +91,7 @@ public class LevelDbDataSourceTest {
         LevelDbDataSource.mergeDataSources(destination, sourcePaths);
         KeyValueDataSource destinationDataSource = LevelDbDataSource.makeDataSource(destination);
         try {
-            Set<byte[]> destinationKeys = destinationDataSource.keys();
+            Collection<byte[]> destinationKeys = destinationDataSource.keys();
             Assert.assertThat(destinationKeys, hasSize(sourcesCount));
 
             for (byte[] destinationKey : destinationKeys) {

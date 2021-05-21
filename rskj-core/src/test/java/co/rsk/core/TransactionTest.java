@@ -432,5 +432,27 @@ public class TransactionTest {
         Assert.assertEquals(Transaction.LOWER_REAL_V, transaction.getSignature().getV());
         Assert.assertEquals (Transaction.CHAIN_ID_INC + chainId * 2, transaction.getEncodedV());
     }
+
+
+    @Test
+    public void test10000() {
+        Transaction originalTransaction = CallTransaction.createCallTransaction(
+                0, 0, 100000000000000L,
+                new RskAddress("095e7baea6a6c7c4c2dfeb977efac326af552d87"), 0,
+                CallTransaction.Function.fromSignature("get"), chainId);
+
+        originalTransaction.sign(new byte[]{});
+        long started = System.currentTimeMillis();
+        for(int i=0;i<10000;i++) {
+            originalTransaction.getSender();
+            originalTransaction.clearSender();
+
+        }
+        long currentTime = System.currentTimeMillis();
+        long deltaTime = (currentTime - started);
+        System.out.println("Time[s]: " + (deltaTime / 1000));
+        System.out.println("Time per recover[ms]: " + (deltaTime / 10000));
+    }
+
 }
 

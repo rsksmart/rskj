@@ -106,6 +106,7 @@ public class Trie {
     // shared Path
     private final TrieKeySlice sharedPath;
 
+    public Trie parent;
 
     // default constructor, no secure
     public Trie() {
@@ -625,11 +626,12 @@ public class Trie {
      */
     @Nullable
     public Trie find(byte[] key) {
-        return find(TrieKeySlice.fromKey(key));
+        return find(TrieKeySlice.fromKey(key),null);
     }
 
     @Nullable
-    private Trie find(TrieKeySlice key) {
+    private Trie find(TrieKeySlice key,Trie aparent) {
+        this.parent = aparent;
         if (sharedPath.length() > key.length()) {
             return null;
         }
@@ -648,7 +650,7 @@ public class Trie {
             return null;
         }
 
-        return node.find(key.slice(commonPathLength + 1, key.length()));
+        return node.find(key.slice(commonPathLength + 1, key.length()),this);
     }
 
     private void internalToMessage() {
@@ -993,7 +995,15 @@ public class Trie {
             throw new IllegalArgumentException(INVALID_VALUE_LENGTH);
         }
     }
-
+    public TrieKeySlice getPath() {
+        if (parent==null)
+            return this.getSharedPath();
+        TrieKeySlice parentPath = parent.getPath();
+        if (this==parent.getNodeReference((byte) 0).getNode().get()) {
+            return parentPath.rebuildSharedPath((byte) 0,this.sharedPath);
+        } else
+            return parentPath.rebuildSharedPath((byte) 1,this.sharedPath);
+    }
     public TrieKeySlice getSharedPath() {
         return sharedPath;
     }

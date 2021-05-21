@@ -69,6 +69,11 @@ public class HashMapDB implements KeyValueDataSource {
     }
 
     @Override
+    public Map<ByteArrayWrapper,byte[]> keyValues() {
+        return storage;
+    }
+
+    @Override
     public synchronized Set<byte[]> keys() {
         return storage.keySet().stream()
                 .map(ByteArrayWrapper::getData)

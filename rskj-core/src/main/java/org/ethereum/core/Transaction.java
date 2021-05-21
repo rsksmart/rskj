@@ -371,6 +371,10 @@ public class Transaction {
         return key;
     }
 
+    public void clearSender() {
+        sender = null;
+    }
+
     public synchronized RskAddress getSender() {
         if (sender != null) {
             return sender;

@@ -39,7 +39,8 @@ public class TrieStoreImpl implements TrieStore {
     private static final Logger logger = LoggerFactory.getLogger("triestore");
 
     private KeyValueDataSource store;
-
+    static public boolean reprocessingBlockchain = false;
+    static public boolean useCacheForRetrieve = false;
     /** Weak references are removed once the tries are garbage collected */
     private Map<ByteArrayWrapper,Trie> savedTries = Collections.synchronizedMap(
             new WeakHashMap<>());
@@ -71,17 +72,22 @@ public class TrieStoreImpl implements TrieStore {
         byte[] trieKeyBytes = trie.getHash().getBytes();
 
         savedTries.put(new ByteArrayWrapper(trie.getHash().getBytes()),trie);
-
-        if (forceSaveRoot && this.store.get(trieKeyBytes) != null) {
-            // the full trie is already saved
-            logger.trace("End saving trie, level : {}, already saved.", level);
+        if (reprocessingBlockchain)
             return;
+
+        if (!reprocessingBlockchain) {
+            if (forceSaveRoot && this.store.get(trieKeyBytes) != null) {
+                // the full trie is already saved
+                logger.trace("End saving trie, level : {}, already saved.", level);
+                return;
+            }
         }
 
         logger.trace("Start left trie. Level: {}", level);
         trie.getLeft().getNode().ifPresent(t -> save(t, false, level + 1));
         logger.trace("Start right trie. Level: {}", level);
         trie.getRight().getNode().ifPresent(t -> save(t, false, level + 1));
+
 
         if (trie.hasLongValue()) {
             // Note that there is no distinction in keys between node data and value data. This could bring problems in
@@ -121,10 +127,11 @@ public class TrieStoreImpl implements TrieStore {
         if (message == null) {
             return Optional.empty();
         }
-
-        Trie e =savedTries.get(new ByteArrayWrapper(hash));
-        if (e!=null)
-            return Optional.of(e);
+        if (useCacheForRetrieve) {
+            Trie e = savedTries.get(new ByteArrayWrapper(hash));
+            if (e != null)
+                return Optional.of(e);
+        }
         Trie trie = Trie.fromMessage(message, this);
         savedTries.put(new ByteArrayWrapper(trie.getHash().getBytes()),trie);
         return Optional.of(trie);

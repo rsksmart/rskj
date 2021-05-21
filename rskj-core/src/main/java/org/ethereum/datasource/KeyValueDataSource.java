@@ -22,6 +22,7 @@ package org.ethereum.datasource;
 import org.ethereum.db.ByteArrayWrapper;
 
 import javax.annotation.Nullable;
+import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 
@@ -37,7 +38,9 @@ public interface KeyValueDataSource extends DataSource {
 
     void delete(byte[] key);
 
-    Set<byte[]> keys();
+    Collection<byte[]> keys();
+
+    Map<ByteArrayWrapper,byte[]> keyValues();
 
     /**
      * Note that updateBatch() does not imply the operation is atomic:

@@ -13,6 +13,7 @@ public class DataSourceWithFullReadCache implements KeyValueDataSource {
     private static final Logger logger = LoggerFactory.getLogger(DataSourceWithFullReadCache.class);
 
     private final KeyValueDataSource base;
+    static public String fileName = "";//""f728000.bin";//"f3210000.bin";
     //private final IndexTrie committedCache;
     //private byte[] cache;
     HashMap<ByteArrayWrapper,ByteArrayWrapper> cache;
@@ -67,6 +68,7 @@ public class DataSourceWithFullReadCache implements KeyValueDataSource {
             out.write(value);
         }
     }
+
     public DataSourceWithFullReadCache(KeyValueDataSource base, int cacheSize) {
         this.base = base;
         this.cache = null;
@@ -74,32 +76,49 @@ public class DataSourceWithFullReadCache implements KeyValueDataSource {
        readCache();
     }
 
-    public void readCache() {
-        int count = 0;
+    public void setNewFileName(String fn) {
+      // Remove previous cache
+      fileName = fn;
+      readCache();
+    }
 
+    public void readCache() {
+        cache = new HashMap<>();
+        if (fileName.length()==0) return;
+
+        int count = 0;
+        System.out.println("Reading cache file: "+fileName);
         try {
             InputStream in;
             //String fileName = "C:\\s\\RSK\\Repos\\block-processor\\f3210000.txt";
-            String fileName = "f3210000.bin";
+
             in = new FileInputStream(fileName);
-            cache = new HashMap<>();
+
             try {
                 for (; ; ) {
 
                     TrieItem ti = new TrieItem(in);
                     //System.out.println("Count: "+count+" "+count*100/1200000+"%");
-                    cache.put(new ByteArrayWrapper(ti.hash), new ByteArrayWrapper(ti.value));
+                    ByteArrayWrapper b =new ByteArrayWrapper(ti.hash);
+                    cache.put(b, new ByteArrayWrapper(ti.value));
                     count++;
                     if (count % 100000 == 0) {
                         System.out.println("Count: " + count + " " + count * 100 / 1200000 + "%");
                     }
                 }
+
+
             } catch (EOFException exc) {
                 // end of stream
             }
+            if (count==0) {
+                System.out.println("Empty cache file: "+fileName);
+                System.exit(1);
+            }
             in.close();
         } catch (FileNotFoundException e) {
-            e.printStackTrace();
+            System.out.println("Missing cache file: "+fileName);
+            System.exit(1);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -124,8 +143,11 @@ public class DataSourceWithFullReadCache implements KeyValueDataSource {
                  hitsPartial++;
                  hits++;
              }
-             else
-                value = base.get(key); // pass-through
+             else {
+                 //System.out.println("key: "+wrappedKey.toString());
+                 value = base.get(key); // pass-through
+                 //System.out.println("value: "+ByteUtil.toHexString(value));
+             }
              gets++;
              getsPartial++;
              if (getsPartial%5000==0) {
@@ -172,9 +194,13 @@ public class DataSourceWithFullReadCache implements KeyValueDataSource {
     }
 
     @Override
-    public Set<byte[]> keys() {
+    public Collection<byte[]> keys() {
             return base.keys();
 
+    }
+    @Override
+    public Map<ByteArrayWrapper,byte[]> keyValues() {
+        return base.keyValues();
     }
 
     @Override

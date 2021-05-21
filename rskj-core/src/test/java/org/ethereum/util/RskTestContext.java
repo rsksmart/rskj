@@ -52,7 +52,7 @@ public class RskTestContext extends RskContext {
         return new IndexedBlockStore(getBlockFactory(), new HashMapDB(), new HashMapBlocksIndex());
     }
 
-    @Override
+    //@Override
     protected TrieStore buildTrieStore(Path trieStorePath) {
         return new TrieStoreImpl(new HashMapDB());
     }

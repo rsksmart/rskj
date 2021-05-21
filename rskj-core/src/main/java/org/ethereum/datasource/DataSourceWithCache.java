@@ -43,7 +43,11 @@ public class DataSourceWithCache implements KeyValueDataSource {
     long getsPartial;
     long started;
     long partialTime;
+    static long getsCount;
 
+    public static long getGetsCount() {
+        return getsCount;
+    }
 
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
 
@@ -66,6 +70,7 @@ public class DataSourceWithCache implements KeyValueDataSource {
             partialTime = started;
         }
         gets++;
+        getsCount++;
         getsPartial++;
         if (getsPartial%5000==0) {
             long currentTime = System.currentTimeMillis();
@@ -174,9 +179,13 @@ public class DataSourceWithCache implements KeyValueDataSource {
             this.lock.writeLock().unlock();
         }
     }
+    @Override
+    public Map<ByteArrayWrapper,byte[]> keyValues() {
+        return base.keyValues();
+    }
 
     @Override
-    public Set<byte[]> keys() {
+    public Collection<byte[]> keys() {
         Stream<ByteArrayWrapper> baseKeys;
         Stream<ByteArrayWrapper> committedKeys;
         Stream<ByteArrayWrapper> uncommittedKeys;

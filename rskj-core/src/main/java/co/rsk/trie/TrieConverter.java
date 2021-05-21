@@ -49,7 +49,7 @@ public class TrieConverter {
         cacheStorage = new MaxSizeHashMap<>(600_000, true);
     }
 
-    public byte[] getOrchidAccountTrieRoot(Trie src) {
+    synchronized public byte[]  getOrchidAccountTrieRoot(Trie src) {
         Metric metric = profiler.start(Profiler.PROFILING_TYPE.TRIE_CONVERTER_GET_ACCOUNT_ROOT);
         byte[] trieRoot =  cacheHashes.computeIfAbsent(src.getHash(), k -> {
             Trie trie = getOrchidAccountTrieRoot(src.getSharedPath(), src, true);

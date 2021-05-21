@@ -151,6 +151,7 @@ public class RskContext implements NodeBootstrapper {
     private static Logger logger = LoggerFactory.getLogger(RskContext.class);
 
     private final CliArgs<NodeCliOptions, NodeCliFlags> cliArgs;
+    public static boolean useTrieSnapshot = false;
 
     private RskSystemProperties rskSystemProperties;
     private Blockchain blockchain;
@@ -934,7 +935,7 @@ public class RskContext implements NodeBootstrapper {
                 logger.error("Unable to check if GC was ever enabled", e);
             }
             // SDL
-            newTrieStore = buildTrieStore(trieStorePath,false); // add trie read-cache
+            newTrieStore = buildTrieStore(trieStorePath,useTrieSnapshot); // add trie read-cache
         }
         return newTrieStore;
     }
@@ -1011,6 +1012,7 @@ public class RskContext implements NodeBootstrapper {
                 genesisActivations.isActive(ConsensusRule.RSKIP126)
         );
     }
+    public DataSourceWithFullReadCache dataSourceWithFullReadCache;
 
     protected TrieStore buildTrieStore(Path trieStorePath,boolean worldStateCache) {
         int statesCacheSize = getRskSystemProperties().getStatesCacheSize();
@@ -1022,7 +1024,9 @@ public class RskContext implements NodeBootstrapper {
             ds = new DataSourceWithCache(ds, statesCacheSize);
         }
         if (worldStateCache) {
-            ds = new DataSourceWithFullReadCache(ds, statesCacheSize);
+            dataSourceWithFullReadCache =new DataSourceWithFullReadCache(ds, statesCacheSize);
+            ds = dataSourceWithFullReadCache;
+
         }
 
         return new TrieStoreImpl(ds);
@@ -1084,10 +1088,15 @@ public class RskContext implements NodeBootstrapper {
                 rskSystemProperties.getMaxRequestedBodies(),
                 rskSystemProperties.getLongSyncLimit());
     }
+    KeyValueDataSource stateRootsDB;
 
+    public KeyValueDataSource getStateRootsDB() {
+        if (stateRootsDB==null)
+            stateRootsDB = LevelDbDataSource.makeDataSource(Paths.get(getRskSystemProperties().databaseDir(), "stateRoots"));
+        return stateRootsDB;
+    }
     protected StateRootHandler buildStateRootHandler() {
-        KeyValueDataSource stateRootsDB = LevelDbDataSource.makeDataSource(Paths.get(getRskSystemProperties().databaseDir(), "stateRoots"));
-        return new StateRootHandler(getRskSystemProperties().getActivationConfig(), getTrieConverter(), stateRootsDB, new HashMap<>());
+         return new StateRootHandler(getRskSystemProperties().getActivationConfig(), getTrieConverter(), getStateRootsDB(), new HashMap<>());
     }
 
     protected CompositeEthereumListener buildCompositeEthereumListener() {

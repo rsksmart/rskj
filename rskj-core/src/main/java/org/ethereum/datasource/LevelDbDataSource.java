@@ -222,7 +222,7 @@ public class LevelDbDataSource implements KeyValueDataSource {
     }
 
     @Override
-    public Set<byte[]> keys() {
+    public Collection<byte[]> keys() {
         Metric metric = profiler.start(Profiler.PROFILING_TYPE.DB_READ);
         resetDbLock.readLock().lock();
         try {
@@ -234,6 +234,36 @@ public class LevelDbDataSource implements KeyValueDataSource {
                 Set<byte[]> result = new HashSet<>();
                 for (iterator.seekToFirst(); iterator.hasNext(); iterator.next()) {
                     result.add(iterator.peekNext().getKey());
+                }
+                if (logger.isTraceEnabled()) {
+                    logger.trace("<~ LevelDbDataSource.keys(): {}, {}", name, result.size());
+                }
+
+                return result;
+            } catch (IOException e) {
+                logger.error("Unexpected", e);
+                panicProcessor.panic("leveldb", String.format("Unexpected %s", e.getMessage()));
+                throw new RuntimeException(e);
+            }
+        } finally {
+            resetDbLock.readLock().unlock();
+            profiler.stop(metric);
+        }
+    }
+    @Override
+    public Map<ByteArrayWrapper,byte[]> keyValues() {
+        Metric metric = profiler.start(Profiler.PROFILING_TYPE.DB_READ);
+        resetDbLock.readLock().lock();
+        try {
+            if (logger.isTraceEnabled()) {
+                logger.trace("~> LevelDbDataSource.keys(): {}", name);
+            }
+
+            try (DBIterator iterator = db.iterator()) {
+                Map<ByteArrayWrapper,byte[]> result = new HashMap<>();
+                for (iterator.seekToFirst(); iterator.hasNext(); iterator.next()) {
+                    Map.Entry<byte[], byte[]> next = iterator.peekNext();
+                    result.put(new ByteArrayWrapper(next.getKey()),next.getValue());
                 }
                 if (logger.isTraceEnabled()) {
                     logger.trace("<~ LevelDbDataSource.keys(): {}, {}", name, result.size());
