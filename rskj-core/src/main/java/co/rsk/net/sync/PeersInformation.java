@@ -166,7 +166,7 @@ public class PeersInformation {
     private int comparePeerScoring(
             Map.Entry<Peer, SyncPeerStatus> entry,
             Map.Entry<Peer, SyncPeerStatus> other) {
-        logger.info(
+        logger.debug(
                 "PEER SCORING COMPARISON Entry: {} Other: {}",
                 getScore(entry.getKey().getPeerNodeID()),
                 getScore(other.getKey().getPeerNodeID())
