@@ -186,8 +186,13 @@ public class Storage implements Repository, ProgramListenerAware {
     }
 
     @Override
-    public List<String> getAccountProof(RskAddress addr) {
-        throw new UnsupportedOperationException("Shouldn't get account proof from Storage");
+    public List<byte[]> getAccountProof(RskAddress addr) {
+        throw new UnsupportedOperationException("Shouldn't get account proof from Storage class");
+    }
+
+    @Override
+    public List<byte[]> getStorageProof(RskAddress addr, DataWord storageKey) {
+        throw new UnsupportedOperationException("Shouldn't get storage proof from Storage class");
     }
 
     @Override

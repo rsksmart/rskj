@@ -144,11 +144,14 @@ public interface Web3EthModule {
     boolean eth_submitHashrate(String hashrate, String id);
 
     /**
-     * Returns account and storage proofs for a specific address
+     * According to the EIP-1186 https://eips.ethereum.org/EIPS/eip-1186
+     * Returns account and storage proofs for a specific address and storage key
      *
-     * @param address an address to get proofs
+     * @param address an address
      * @param storageKeys storage keys to get storage proofs
      * @param blockOrId a block number to query the blockchain state (it could also be "latest" or "pending")
+     *
+     * @return account and storage proofs
      * */
     ProofDTO eth_getProof(String address, List<String> storageKeys, String blockOrId);
 }
