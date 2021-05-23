@@ -868,22 +868,32 @@ public class Trie {
             return this;
         }
 
+        VarInt childrenSize = this.childrenSize;
+
         NodeReference newNodeReference = new NodeReference(this.store, newNode, null);
         NodeReference newLeft;
         NodeReference newRight;
         if (pos == 0) {
             newLeft = newNodeReference;
             newRight = this.right;
+
+            if (childrenSize != null) {
+                childrenSize = new VarInt(childrenSize.value - this.left.referenceSize() + newLeft.referenceSize());
+            }
         } else {
             newLeft = this.left;
             newRight = newNodeReference;
+
+            if (childrenSize != null) {
+                childrenSize = new VarInt(childrenSize.value - this.right.referenceSize() + newRight.referenceSize());
+            }
         }
 
         if (isEmptyTrie(this.valueLength, newLeft, newRight)) {
             return null;
         }
 
-        return new Trie(this.store, this.sharedPath, this.value, newLeft, newRight, this.valueLength, this.valueHash);
+        return new Trie(this.store, this.sharedPath, this.value, newLeft, newRight, this.valueLength, this.valueHash, childrenSize);
     }
 
     private Trie split(TrieKeySlice commonPath) {
@@ -895,6 +905,7 @@ public class Trie {
         // this bit will be implicit and not present in a shared path
         byte pos = sharedPath.get(commonPathLength);
 
+        VarInt childrenSize = new VarInt(newChildReference.referenceSize());
         NodeReference newLeft;
         NodeReference newRight;
         if (pos == 0) {
@@ -905,7 +916,7 @@ public class Trie {
             newRight = newChildReference;
         }
 
-        return new Trie(this.store, commonPath, null, newLeft, newRight, Uint24.ZERO, null);
+        return new Trie(this.store, commonPath, null, newLeft, newRight, Uint24.ZERO, null, childrenSize);
     }
 
     public boolean isTerminal() {
