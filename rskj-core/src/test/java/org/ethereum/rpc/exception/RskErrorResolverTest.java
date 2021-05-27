@@ -67,10 +67,11 @@ public class RskErrorResolverTest {
     }
 
     @Test
-    public void test_resolveError_givenUnrecognizedPropertyException_nullExceptionMessage_returnsJsonErrorWithDefaultMessageAsExpected() throws NoSuchMethodException {
+    public void test_resolveError_givenUnrecognizedPropertyException_nullPropertyName_returnsJsonErrorWithDefaultMessageAsExpected() throws NoSuchMethodException {
         // Given
         UnrecognizedPropertyException exception = mock(UnrecognizedPropertyException.class);
-        when(exception.getMessage()).thenReturn(null);
+        when(exception.getPropertyName()).thenReturn(null);
+        when(exception.getKnownPropertyIds()).thenReturn(new ArrayList<>());
 
         Method methodMock = this.getClass().getMethod("mockMethod");
         List<JsonNode> jsonNodeListMock = new ArrayList<>();
@@ -80,7 +81,47 @@ public class RskErrorResolverTest {
 
         // Then
         Assert.assertNotNull(result);
-        Assert.assertEquals(-32603, result.code);
+        Assert.assertEquals(-32602, result.code);
+        Assert.assertEquals("Invalid parameters", result.message);
+        Assert.assertNull(result.data);
+    }
+
+    @Test
+    public void test_resolveError_givenUnrecognizedPropertyException_nullKnownPropertyIds_returnsJsonErrorWithDefaultMessageAsExpected() throws NoSuchMethodException {
+        // Given
+        UnrecognizedPropertyException exception = mock(UnrecognizedPropertyException.class);
+        when(exception.getPropertyName()).thenReturn("propertyName");
+        when(exception.getKnownPropertyIds()).thenReturn(null);
+
+        Method methodMock = this.getClass().getMethod("mockMethod");
+        List<JsonNode> jsonNodeListMock = new ArrayList<>();
+
+        // When
+        JsonError result = rskErrorResolver.resolveError(exception, methodMock, jsonNodeListMock);
+
+        // Then
+        Assert.assertNotNull(result);
+        Assert.assertEquals(-32602, result.code);
+        Assert.assertEquals("Invalid parameters", result.message);
+        Assert.assertNull(result.data);
+    }
+
+    @Test
+    public void test_resolveError_givenUnrecognizedPropertyException_nullPropertyNameAndNullKnownPropertyIds_returnsJsonErrorWithDefaultMessageAsExpected() throws NoSuchMethodException {
+        // Given
+        UnrecognizedPropertyException exception = mock(UnrecognizedPropertyException.class);
+        when(exception.getPropertyName()).thenReturn(null);
+        when(exception.getKnownPropertyIds()).thenReturn(null);
+
+        Method methodMock = this.getClass().getMethod("mockMethod");
+        List<JsonNode> jsonNodeListMock = new ArrayList<>();
+
+        // When
+        JsonError result = rskErrorResolver.resolveError(exception, methodMock, jsonNodeListMock);
+
+        // Then
+        Assert.assertNotNull(result);
+        Assert.assertEquals(-32602, result.code);
         Assert.assertEquals("Invalid parameters", result.message);
         Assert.assertNull(result.data);
     }
@@ -88,9 +129,17 @@ public class RskErrorResolverTest {
     @Test
     public void test_resolveError_givenUnrecognizedPropertyException_returnsJsonErrorWithDescriptiveMessageAsExpected() throws NoSuchMethodException {
         // Given
-        String message = "Unrecognized field \"form\" (class org.ethereum.rpc.Web3$CallArguments), not marked as ignorable (8 known properties: \"gasPrice\", \"value\", \"gas\", \"from\", \"to\", \"chainId\", \"nonce\", \"data\"])\n at [Source: N/A; line: -1, column: -1] (through reference chain: org.ethereum.rpc.Web3$CallArguments[\"form\"])";
+        String propertyName = "propertyName";
+
+        String propertyId1 = "propertyId.1";
+        String propertyId2 = "propertyId.2";
+        List<Object> knownPropertyIds = new ArrayList<>();
+        knownPropertyIds.add(propertyId1);
+        knownPropertyIds.add(propertyId2);
+
         UnrecognizedPropertyException exception = mock(UnrecognizedPropertyException.class);
-        when(exception.getMessage()).thenReturn(message);
+        when(exception.getPropertyName()).thenReturn(propertyName);
+        when(exception.getKnownPropertyIds()).thenReturn(knownPropertyIds);
 
         Method methodMock = this.getClass().getMethod("mockMethod");
         List<JsonNode> jsonNodeListMock = new ArrayList<>();
@@ -100,8 +149,30 @@ public class RskErrorResolverTest {
 
         // Then
         Assert.assertNotNull(result);
-        Assert.assertEquals(-32603, result.code);
-        Assert.assertEquals("Unrecognized field \"form\" (class org.ethereum.rpc.Web3$CallArguments), not marked as ignorable (8 known properties: \"gasPrice\", \"value\", \"gas\", \"from\", \"to\", \"chainId\", \"nonce\", \"data\"])", result.message);
+        Assert.assertEquals(-32602, result.code);
+        Assert.assertEquals("Unrecognized field \"propertyName\" (2 known properties: [\"propertyId.1\", \"propertyId.2\"])", result.message);
+        Assert.assertNull(result.data);
+    }
+
+    @Test
+    public void test_resolveError_givenUnrecognizedPropertyException_withZeroKnownProperties_returnsJsonErrorWithDescriptiveMessageAsExpected() throws NoSuchMethodException {
+        // Given
+        String propertyName = "propertyName";
+
+        UnrecognizedPropertyException exception = mock(UnrecognizedPropertyException.class);
+        when(exception.getPropertyName()).thenReturn(propertyName);
+        when(exception.getKnownPropertyIds()).thenReturn(new ArrayList<>());
+
+        Method methodMock = this.getClass().getMethod("mockMethod");
+        List<JsonNode> jsonNodeListMock = new ArrayList<>();
+
+        // When
+        JsonError result = rskErrorResolver.resolveError(exception, methodMock, jsonNodeListMock);
+
+        // Then
+        Assert.assertNotNull(result);
+        Assert.assertEquals(-32602, result.code);
+        Assert.assertEquals("Unrecognized field \"propertyName\" (0 known properties: [])", result.message);
         Assert.assertNull(result.data);
     }
 
