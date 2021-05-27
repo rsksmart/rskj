@@ -26,12 +26,16 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.introspect.VisibilityChecker;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * Provides tracing and exporting to JSON
  */
 public class ProgramTraceProcessor {
+
     private final Map<Keccak256, ProgramTrace> traces = new HashMap<>();
 
     public void processProgramTrace(ProgramTrace programTrace, Keccak256 txHash) {
@@ -40,6 +44,18 @@ public class ProgramTraceProcessor {
 
     public ProgramTrace getProgramTrace(Keccak256 txHash) {
         return traces.get(txHash);
+    }
+
+    public JsonNode getProgramTracesAsJsonNode(List<Keccak256> txHashes) {
+        List<ProgramTrace> txTraces = txHashes.stream()
+                .map(traces::get)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+
+        ObjectMapper mapper = Serializers.createMapper(true);
+        mapper.setVisibility(fieldsOnlyVisibilityChecker(mapper));
+
+        return mapper.valueToTree(txTraces);
     }
 
     public JsonNode getProgramTraceAsJsonNode(Keccak256 txHash) {

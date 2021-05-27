@@ -27,4 +27,7 @@ public interface DebugModule {
     String wireProtocolQueueSize();
 
     JsonNode traceTransaction(String transactionHash, Map<String, String> traceOptions) throws Exception;
+
+    JsonNode traceBlock(String blockHash, Map<String, String> traceOptions) throws Exception;
+
 }

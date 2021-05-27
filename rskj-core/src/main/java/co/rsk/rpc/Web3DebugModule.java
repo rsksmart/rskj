@@ -37,5 +37,13 @@ public interface Web3DebugModule {
         return getDebugModule().traceTransaction(transactionHash, traceOptions);
     }
 
+    default JsonNode debug_traceBlockByHash(String blockHash) throws Exception {
+        return debug_traceBlockByHash(blockHash, null);
+    }
+
+    default JsonNode debug_traceBlockByHash(String blockHash, Map<String, String> traceOptions) throws Exception {
+        return getDebugModule().traceBlock(blockHash, traceOptions);
+    }
+
     DebugModule getDebugModule();
 }

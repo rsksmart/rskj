@@ -22,6 +22,7 @@ package org.ethereum.vm.trace;
 import co.rsk.config.VmConfig;
 import co.rsk.crypto.Keccak256;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import org.ethereum.TestUtils;
 import org.ethereum.core.Repository;
 import org.ethereum.util.ByteUtil;
@@ -30,10 +31,15 @@ import org.ethereum.vm.program.invoke.ProgramInvoke;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.LinkedList;
+
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class DetailedProgramTraceProcessorTest {
+
     @Test
     public void getUnknownTrace() {
         Keccak256 hash = TestUtils.randomHash();
@@ -45,6 +51,23 @@ public class DetailedProgramTraceProcessorTest {
 
         Assert.assertNull(processor.getProgramTrace(otherHash));
         Assert.assertNull(processor.getProgramTraceAsJsonNode(otherHash));
+    }
+
+    @Test
+    public void getEmptyTrace() {
+        Keccak256 hash = TestUtils.randomHash();
+        Keccak256 otherHash = TestUtils.randomHash();
+        ProgramTraceProcessor processor = new ProgramTraceProcessor();
+
+        DetailedProgramTrace trace = buildTestTrace(DataWord.valueOf(42));
+        processor.processProgramTrace(trace, hash);
+
+        JsonNode jsonNode = processor.getProgramTracesAsJsonNode(Collections.singletonList(otherHash));
+
+        Assert.assertNotNull(jsonNode);
+        Assert.assertTrue(jsonNode.isArray());
+        ArrayNode arrNode = (ArrayNode) jsonNode;
+        Assert.assertEquals(0, arrNode.size());
     }
 
     @Test
@@ -71,12 +94,21 @@ public class DetailedProgramTraceProcessorTest {
         DetailedProgramTrace trace = buildTestTrace(ownerDW);
         processor.processProgramTrace(trace, hash);
 
-        JsonNode jnode = processor.getProgramTraceAsJsonNode(hash);
+        Keccak256 hash2 = TestUtils.randomHash();
+        DataWord ownerDW2 = DataWord.valueOf(42);
+        DetailedProgramTrace trace2 = buildTestTrace(ownerDW2);
+        processor.processProgramTrace(trace2, hash2);
 
-        Assert.assertNotNull(jnode);
-        Assert.assertEquals(ByteUtil.toHexString(ownerDW.getLast20Bytes()), jnode.get("contractAddress").asText());
+        LinkedList<DataWord> ownerDWList = new LinkedList<>();
+        ownerDWList.add(ownerDW);
+        ownerDWList.add(ownerDW2);
 
-        String jsonText = jnode.toString();
+        JsonNode jsonNode = processor.getProgramTraceAsJsonNode(hash);
+
+        Assert.assertNotNull(jsonNode);
+        Assert.assertEquals(ByteUtil.toHexString(ownerDW.getLast20Bytes()), jsonNode.get("contractAddress").asText());
+
+        String jsonText = jsonNode.toString();
         Assert.assertNotNull(jsonText);
         Assert.assertTrue(jsonText.contains("\"contractAddress\""));
         Assert.assertTrue(jsonText.contains("\"initStorage\""));
@@ -84,6 +116,28 @@ public class DetailedProgramTraceProcessorTest {
         Assert.assertTrue(jsonText.contains("\"structLogs\""));
         Assert.assertTrue(jsonText.contains("\"result\""));
         Assert.assertTrue(jsonText.contains("\"storageSize\""));
+
+        jsonNode = processor.getProgramTracesAsJsonNode(Arrays.asList(hash, hash2));
+
+        Assert.assertNotNull(jsonNode);
+        Assert.assertTrue(jsonNode.isArray());
+        ArrayNode arrNode = (ArrayNode) jsonNode;
+        Assert.assertEquals(2, arrNode.size());
+        arrNode.forEach(jn -> {
+            DataWord owner = ownerDWList.poll();
+            Assert.assertNotNull(owner);
+            Assert.assertNotNull(jn);
+            Assert.assertEquals(ByteUtil.toHexString(owner.getLast20Bytes()), jn.get("contractAddress").asText());
+
+            String jsonStr = jn.toString();
+            Assert.assertNotNull(jsonStr);
+            Assert.assertTrue(jsonStr.contains("\"contractAddress\""));
+            Assert.assertTrue(jsonStr.contains("\"initStorage\""));
+            Assert.assertTrue(jsonStr.contains("\"currentStorage\""));
+            Assert.assertTrue(jsonStr.contains("\"structLogs\""));
+            Assert.assertTrue(jsonStr.contains("\"result\""));
+            Assert.assertTrue(jsonStr.contains("\"storageSize\""));
+        });
     }
 
     private DetailedProgramTrace buildTestTrace(DataWord ownerDW) {
