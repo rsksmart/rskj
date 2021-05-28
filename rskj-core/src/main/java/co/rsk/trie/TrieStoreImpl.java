@@ -18,6 +18,7 @@
 
 package co.rsk.trie;
 
+import org.ethereum.datasource.DataSourceWithCache;
 import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.db.ByteArrayWrapper;
 import org.slf4j.Logger;
@@ -41,9 +42,17 @@ public class TrieStoreImpl implements TrieStore {
     private KeyValueDataSource store;
     static public boolean reprocessingBlockchain = false;
     static public boolean useCacheForRetrieve = false;
+    static public boolean useSavedTriesCache = false;
     /** Weak references are removed once the tries are garbage collected */
     private Map<ByteArrayWrapper,Trie> savedTries = Collections.synchronizedMap(
             new WeakHashMap<>());
+    private int noRetrievesInBlockProcess;
+    private int noSavesInBlockProcess;
+    private int noNoSavesInBlockProcess;
+
+    private int noRetrievesInSaveTrie;
+    private int noSavesInSaveTrie;
+    private int noNoSavesInSaveTrie;
 
     public TrieStoreImpl(KeyValueDataSource store) {
         this.store = store;
@@ -54,40 +63,78 @@ public class TrieStoreImpl implements TrieStore {
      */
     @Override
     public void save(Trie trie) {
+        noRetrievesInSaveTrie = 0;
+        noSavesInSaveTrie = 0;
+        noNoSavesInSaveTrie = 0;
+
         logger.trace("Start saving trie root.");
         save(trie, true, 0);
-        logger.trace("End saving trie root.");
+        logger.trace("End saving trie root. No. Retrieves: {}. No. Saves: {}. No. No Saves: {}", noRetrievesInSaveTrie, noSavesInSaveTrie, noNoSavesInSaveTrie);
+        logger.trace("End process block. No. Retrieves: {}. No. Saves: {}. No. No Saves: {}", noRetrievesInBlockProcess, noSavesInBlockProcess, noNoSavesInBlockProcess);
+
+        noRetrievesInBlockProcess = 0;
+        noSavesInBlockProcess = 0;
+        noNoSavesInBlockProcess = 0;
+
+        /*if (store instanceof DataSourceWithCache) {
+            ((DataSourceWithCache)store).emitLogs();
+        }*/
     }
 
     /**
      * @param forceSaveRoot allows saving the root node even if it's embeddable
      */
-    private void save(Trie trie, boolean forceSaveRoot, int level) {
-        logger.trace("Start saving trie, level : {}", level);
-        if (savedTries.containsValue(trie)) {
-            // it is guaranteed that the children of a saved node are also saved
+    public static boolean optimizeAJL = false;
+
+    private void save(Trie trie, boolean isRootNode, int level) {
+       if (optimizeAJL && trie.wasSaved()) {
             return;
         }
 
-        byte[] trieKeyBytes = trie.getHash().getBytes();
+       if (useSavedTriesCache) {
+           if (savedTries.containsValue(trie)) {
+               // it is guaranteed that the children of a saved node are also saved
+               return;
+           }
+       }
+     
+        logger.trace("Start saving trie, level : {}", level);
 
-        savedTries.put(new ByteArrayWrapper(trie.getHash().getBytes()),trie);
+        byte[] trieKeyBytes = trie.getHash().getBytes();
+        if (useSavedTriesCache)
+            savedTries.put(new ByteArrayWrapper(trie.getHash().getBytes()),trie);
+
         if (reprocessingBlockchain)
             return;
 
         if (!reprocessingBlockchain) {
-            if (forceSaveRoot && this.store.get(trieKeyBytes) != null) {
+            if (isRootNode && this.store.get(trieKeyBytes) != null) {
                 // the full trie is already saved
                 logger.trace("End saving trie, level : {}, already saved.", level);
+
+            noNoSavesInSaveTrie++;
+            noNoSavesInBlockProcess++;
+
                 return;
             }
         }
 
-        logger.trace("Start left trie. Level: {}", level);
-        trie.getLeft().getNode().ifPresent(t -> save(t, false, level + 1));
-        logger.trace("Start right trie. Level: {}", level);
-        trie.getRight().getNode().ifPresent(t -> save(t, false, level + 1));
+        noSavesInSaveTrie++;
+        noSavesInBlockProcess++;
 
+        NodeReference leftNodeReference = trie.getLeft();
+
+        if (!optimizeAJL || leftNodeReference.wasLoaded()) {
+        logger.trace("Start left trie. Level: {}", level);
+            leftNodeReference.getNode().ifPresent(t -> save(t, false, level + 1));
+        }
+
+        NodeReference rightNodeReference = trie.getRight();
+
+        if (!optimizeAJL || rightNodeReference.wasLoaded()) {
+            logger.trace("Start right trie. Level: {}", level);
+            rightNodeReference.getNode().ifPresent(t -> save(t, false, level + 1));
+        }
 
         if (trie.hasLongValue()) {
             // Note that there is no distinction in keys between node data and value data. This could bring problems in
@@ -104,13 +151,14 @@ public class TrieStoreImpl implements TrieStore {
             logger.trace("End Putting in store, hasLongValue. Level: {}", level);
         }
 
-        if (trie.isEmbeddable() && !forceSaveRoot) {
+        if (trie.isEmbeddable() && !isRootNode) {
             logger.trace("End Saving. Level: {}", level);
             return;
         }
 
         logger.trace("Putting in store trie root.");
         this.store.put(trieKeyBytes, trie.toMessage());
+        trie.saved();
         logger.trace("End putting in store trie root.");
 
         logger.trace("End Saving trie, level: {}.", level);
@@ -127,18 +175,27 @@ public class TrieStoreImpl implements TrieStore {
         if (message == null) {
             return Optional.empty();
         }
+        
+        noRetrievesInSaveTrie++;
+        noRetrievesInBlockProcess++;
+        
         if (useCacheForRetrieve) {
             Trie e = savedTries.get(new ByteArrayWrapper(hash));
             if (e != null)
                 return Optional.of(e);
         }
         Trie trie = Trie.fromMessage(message, this);
-        savedTries.put(new ByteArrayWrapper(trie.getHash().getBytes()),trie);
+        if (useSavedTriesCache) {
+            savedTries.put(new ByteArrayWrapper(trie.getHash().getBytes()), trie);
+        }
         return Optional.of(trie);
     }
 
     @Override
     public byte[] retrieveValue(byte[] hash) {
+        noRetrievesInSaveTrie++;
+        noRetrievesInBlockProcess++;
+
         return this.store.get(hash);
     }
 

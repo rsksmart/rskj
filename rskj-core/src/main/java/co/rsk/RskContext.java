@@ -1245,8 +1245,14 @@ public class RskContext implements NodeBootstrapper {
         return blockRelayValidator;
     }
 
+    static public boolean useDummyBlockValidator = false;
+
     private BlockValidator getBlockHeaderValidator() {
         if (blockHeaderValidator == null) {
+            if (useDummyBlockValidator) {
+                blockHeaderValidator = DummyBlockValidator.VALID_RESULT_INSTANCE;
+                return blockHeaderValidator;
+            }
             final RskSystemProperties rskSystemProperties = getRskSystemProperties();
             final Constants commonConstants = rskSystemProperties.getNetworkConstants();
             final BlockTimeStampValidationRule blockTimeStampValidationRule = new BlockTimeStampValidationRule(

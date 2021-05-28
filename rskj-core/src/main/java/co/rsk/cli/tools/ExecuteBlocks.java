@@ -19,7 +19,6 @@ package co.rsk.cli.tools;
 
 import co.rsk.RskContext;
 import co.rsk.core.bc.BlockExecutor;
-import co.rsk.core.bc.BlockResult;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStore;
@@ -31,14 +30,15 @@ import org.ethereum.datasource.DataSourceWithFullReadCache;
 import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ByteArrayWrapper;
-import org.ethereum.util.ByteUtil;
 
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP126;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * The entry point for execute blocks CLI tool
@@ -53,10 +53,11 @@ public class ExecuteBlocks {
     // Antes de RISKIP85 NO se valida state root
     // Entre RSKIP85 y RSKIP126 se hace la conversion
     // A partir de RSKIP126 se valida.
-    static final int orchid060 = 1052700; // out of consensus at block: 1053684 (previous 1051701)
-    static final int wasabi100 = 1591000; // out of consensus at block: 1590001
+    static final int orchid060 = 1052700; //
+    static final int wasabi100 = 1591000; //
     static final int twoToThree = 2018000;
     static final int papyrus200 = 2392700;
+    final static  int maxBlockchainBlockInDB = 3_210_000;
 
     static String fileName = "C:\\s\\RSK\\Repos\\block-processor\\staterootdb.bin";
 
@@ -108,21 +109,10 @@ public class ExecuteBlocks {
             e.printStackTrace();
         }
     }
-    public static void mainnetTest(String[] args)  {
-        // Theactivation blocks for different RSKIPs have been changed
-        // the chaged file is the following:
-        // C:\s\RSK\Repos\rskj-latest\rskj\rskj-core\src\main\resources\reference.conf
-        // These most be done before context creation
-        RskContext.useTrieSnapshot = true;
-        //DataSourceWithFullReadCache.fileName = "f1053683.bin";
-
-        TrieStoreImpl.useCacheForRetrieve =true;
-        ////////////////////////////////////////
-        RskContext ctx = new RskContext(args);
-
+    public static void saveStateRoots(RskContext ctx ) {
         KeyValueDataSource rdb = ctx.getStateRootsDB();
         System.out.println("StateRootDB:");
-        Map<ByteArrayWrapper,byte[]> kv = rdb.keyValues();
+        Map<ByteArrayWrapper, byte[]> kv = rdb.keyValues();
         System.out.println(kv.size());
         System.out.println("start save");
         try {
@@ -131,24 +121,56 @@ public class ExecuteBlocks {
             e.printStackTrace();
         }
         System.out.println("done save");
+    }
+
+    public static void mainnetTest(String[] args)  {
+        // Theactivation blocks for different RSKIPs have been changed
+        // the chaged file is the following:
+        // C:\s\RSK\Repos\rskj-latest\rskj\rskj-core\src\main\resources\reference.conf
+        // These most be done before context creation
+        RskContext.useTrieSnapshot = true;
+        RskContext.useDummyBlockValidator = true;
+        //DataSourceWithFullReadCache.fileName = "f1053683.bin";
+
+
+        ////////////////////////////////////////
+        RskContext ctx = new RskContext(args);
+
 
         // We'll dump the key/value database to disk in a fixed format.
-
-        System.exit(1);
+        //saveStateRoots(ctx);
+        //System.exit(1);
 
         BlockExecutor blockExecutor = ctx.getBlockExecutor();
         BlockStore blockStore = ctx.getBlockStore();
         TrieStore trieStore = ctx.getTrieStore();
+
+        TrieStoreImpl.useCacheForRetrieve =true;
+        System.out.println("TrieStoreImpl.useCacheForRetrieve: "+TrieStoreImpl.useCacheForRetrieve);
+
+
         RepositoryLocator.useCache = true;
+        System.out.println("RepositoryLocator.useCache: "+RepositoryLocator.useCache);
+
+        TrieStoreImpl.useSavedTriesCache = true;
+        System.out.println("TrieStoreImpl.useSavedTriesCache: "+TrieStoreImpl.useSavedTriesCache);
+
         // If RepositoryLocator.useCache is set to true, we have 100 assurance
         // that all nodes will be in a memory trie. Therefore we can avoid writing the
         // trie to disk (which also disables reading nodes, because while writting,
         // some nodes are read to avoid recursion
-        if (RepositoryLocator.useCache)
-            TrieStoreImpl.reprocessingBlockchain =true;
+        if (RepositoryLocator.useCache) {
+            // If there is AJL node trie wasSaved, then this flag changes nothing.
+            TrieStoreImpl.reprocessingBlockchain = true;
+            System.out.println("TrieStoreImpl.reprocessingBlockchain: "+TrieStoreImpl.reprocessingBlockchain);
+        }
 
         // Faster for blocks after Orchid
-        BlockExecutor.skipCheckTrieConversion = false;
+        BlockExecutor.skipCheckTrieConversion = true;
+        System.out.println("BlockExecutor.skipCheckTrieConversion: "+BlockExecutor.skipCheckTrieConversion);
+
+        TrieStoreImpl.optimizeAJL = true;
+        System.out.println("TrieStoreImpl.optimizeAJL: "+TrieStoreImpl.optimizeAJL);
 
         boolean isRskip151Enabledat4000 = ctx.getRskSystemProperties().getActivationConfig()
                 .isActive(ConsensusRule.RSKIP151,4000);
@@ -178,11 +200,17 @@ public class ExecuteBlocks {
         executeCenter(twoToThree,defaultRange , ctx);
         executeCenter(papyrus200,defaultRange , ctx);
         */
-        int maxBlockchainBlock = 2000; // 1000 in each thread ... 3_210_000;
+        // Process until a snapshot. 1M blocks
+
         //
-        int snapshotNext  = orchid-defaultRange;
-        int start = snapshotNext;//orchid-defaultRange;
-        executeWithSnapshot(snapshotNext,start,start+maxBlockchainBlock, ctx,true);
+
+        int start = 3_000_000;//papyrus200-defaultRange;//orchid-defaultRange;
+        int snapshotNext  = start;//orchid-defaultRange;
+        long stop = maxBlockchainBlockInDB; // start+maxBlockchainBlock-1
+
+        int numThreads = 4;
+        executeWithSnapshot(snapshotNext,start,stop,
+                ctx,true,numThreads);
     }
 
     static String  testnetFilename ="testnet-1672390.bin";
@@ -279,19 +307,21 @@ public class ExecuteBlocks {
     }
 
 
-    public static void execute(String[] args, BlockExecutor blockExecutor, BlockStore blockStore, TrieStore trieStore) {
+    public static void execute(String[] args, BlockExecutor blockExecutor,
+                               BlockStore blockStore, TrieStore trieStore,int numThreads) {
         long fromBlockNumber = Long.parseLong(args[0]);
         long toBlockNumber = Long.parseLong(args[1]);
-        execute(fromBlockNumber,toBlockNumber,blockExecutor,blockStore,trieStore);
+        execute(fromBlockNumber,toBlockNumber,blockExecutor,blockStore,trieStore,numThreads);
     }
 
-    public static void executeCenter(long centerBlockNumber , long range,  RskContext ctx) {
+    public static void executeCenter(long centerBlockNumber , long range,  RskContext ctx,int numThreads) {
         executeWithSnapshot(centerBlockNumber-range,
-                centerBlockNumber-range,centerBlockNumber+range, ctx,true);
+                centerBlockNumber-range,centerBlockNumber+range, ctx,true,numThreads);
     }
 
     public static void executeWithSnapshot(
-            long snapshotNext,long fromBlockNumber , long toBlockNumber, RskContext ctx,boolean useSnapshot) {
+            long snapshotNext,long fromBlockNumber ,
+            long toBlockNumber, RskContext ctx,boolean useSnapshot,int numThreads) {
         BlockExecutor blockExecutor = ctx.getBlockExecutor();
         BlockStore blockStore = ctx.getBlockStore();
         TrieStore trieStore = ctx.getTrieStore();
@@ -300,45 +330,45 @@ public class ExecuteBlocks {
             ctx.dataSourceWithFullReadCache.setNewFileName(
                     "mainnet-" + (snapshotNext - 1) + ".bin");
         }
-        execute(fromBlockNumber, toBlockNumber,  blockExecutor, blockStore, trieStore);
+        execute(fromBlockNumber, toBlockNumber,  blockExecutor, blockStore, trieStore,numThreads);
     }
+
     public static void executeSingleThread(
-            int thread_num,boolean printStats,long fromBlockNumber , long toBlockNumber,
-            BlockExecutor blockExecutor, BlockStore blockStore, TrieStore trieStore) {
+            WorkArguments args) {
         int printInterval = 250;
         int bcount = 0;
         long lastGetCount =0;
         boolean printBlocks = false;
         boolean printEndStats = true;
-        String tid = "Thread "+thread_num+": ";
-        long  nblocks = (toBlockNumber-fromBlockNumber+1);
+        String tid = "Work "+args.num+": ";
+        long  nblocks = (args.toBlockNumber-args.fromBlockNumber+1);
         System.out.println(tid+"Blocks to process: "+nblocks);
-        System.out.println(tid+"Starting Block: "+fromBlockNumber);
-        if (toBlockNumber-fromBlockNumber<10) {
+        System.out.println(tid+"Starting Block: "+args.fromBlockNumber);
+        if (args.toBlockNumber-args.fromBlockNumber<10) {
             printBlocks = true;
         }
         long started = System.currentTimeMillis();
         long lastTime = started;
 
-        for (long n = fromBlockNumber; n <= toBlockNumber; n++) {
-            Block block = blockStore.getChainBlockByNumber(n);
+        for (long n = args.fromBlockNumber; n <= args.toBlockNumber; n++) {
+            Block block = args.blockStore.getChainBlockByNumber(n);
             if (printBlocks)
-                System.out.println("Thread "+thread_num+": "+"Block: "+n+" ("+(n*100/toBlockNumber)+"%)");
-            Block parent = blockStore.getBlockByHash(block.getParentHash().getBytes());
+                System.out.println("Work "+args.num+": "+"Block: "+n+" ("+(n*100/args.toBlockNumber)+"%)");
+            Block parent = args.blockStore.getBlockByHash(block.getParentHash().getBytes());
             bcount++;
-            if ((bcount>=printInterval) && (printStats)) {
-                System.out.println("Thread "+thread_num+":Block: "+n+" ("+((n-fromBlockNumber)*100/(toBlockNumber-fromBlockNumber))+"%)");
+            if ((bcount>=printInterval) && (args.printStats)) {
+                System.out.println("Work "+args.num+":Block: "+n+" ("+((n-args.fromBlockNumber)*100/(args.toBlockNumber-args.fromBlockNumber))+"%)");
 
             }
             //BlockResult br = blockExecutor.execute(block, parent.getHeader(), false, false);
-            if (!blockExecutor.executeAndValidate(block,parent.getHeader())) {
+            if (!args.blockExecutor.executeAndValidate(block,parent.getHeader())) {
                 System.out.println(tid+"out of consensus at block: "+n);
                 break;
             }
-            if ((bcount >=printInterval) && (printStats)) {
+            if ((bcount >=printInterval) && (args.printStats)) {
                 long currentTime = System.currentTimeMillis();
                 long deltaTime = (currentTime - started);
-                long deltaBlock = (n-fromBlockNumber);
+                long deltaBlock = (n-args.fromBlockNumber);
 
                 System.out.println(tid+"Time[s]: " + (deltaTime / 1000));
 
@@ -363,7 +393,59 @@ public class ExecuteBlocks {
         }
     }
 
-    public static void execute(long fromBlockNumber , long toBlockNumber, BlockExecutor blockExecutor, BlockStore blockStore, TrieStore trieStore) {
+    static class WorkDispatcher implements Runnable {
+        private WorkArguments args;
+
+        public WorkDispatcher(WorkArguments aargs){
+            this.args = aargs;
+        }
+
+        public void run() {
+            System.out.println(Thread.currentThread().getName()+" (Start) work unit = "+args.num);
+            processmessage();//
+            System.out.println(Thread.currentThread().getName()+" (End) work unit = "+args.num);
+        }
+        private void processmessage() {
+            //try {
+                ExecuteBlocks.executeSingleThread(args);
+                block_counter.getAndAdd((int)(args.toBlockNumber-args.fromBlockNumber+1));
+                work_counter.getAndIncrement();
+            //} catch (InterruptedException e) { e.printStackTrace(); }
+        }
+    }
+
+    static class WorkArguments {
+        int num;
+        boolean printStats;
+        long fromBlockNumber;
+        long toBlockNumber;
+        BlockExecutor blockExecutor;
+        BlockStore blockStore;
+        TrieStore trieStore;
+
+        WorkArguments(int num,
+                      boolean printStats,
+                      long fromBlockNumber,
+                      long toBlockNumber,
+                      BlockExecutor blockExecutor,
+                      BlockStore blockStore,
+                      TrieStore trieStore) {
+            this.num = num;
+            this.printStats = printStats;
+            this.fromBlockNumber = fromBlockNumber;
+            this.toBlockNumber  = toBlockNumber;
+            this.blockExecutor = blockExecutor;
+            this.blockStore =blockStore;
+            this.trieStore  = trieStore;
+        }
+    }
+    static AtomicInteger block_counter = new AtomicInteger(0); // a global counter
+    static AtomicInteger work_counter = new AtomicInteger(0); // a global counter
+
+
+    public static void execute(long fromBlockNumber , long toBlockNumber,
+                               BlockExecutor blockExecutor, BlockStore blockStore, TrieStore trieStore,
+                               int numThreads) {
 
         // Dump the current state file, and load a new one
 
@@ -376,10 +458,14 @@ public class ExecuteBlocks {
 
         List<Thread> threads = new ArrayList<>();
         // 4 -> 22 secs
-        int numThreads=1;
-        if (nblocks<100)
-            numThreads=1;
-
+        if (numThreads==0) { // not defined
+            if (nblocks < 100)
+                numThreads = 1;
+            else
+                numThreads=4;
+        }
+        ExecutorService executor = Executors.newFixedThreadPool(numThreads);//
+        /*
         for(int i=0;i<numThreads;i++) {
             long thread_from = fromBlockNumber + (nblocks * i) / numThreads;
             long thread_to = fromBlockNumber + nblocks * (i + 1) / numThreads - 1;
@@ -399,6 +485,48 @@ public class ExecuteBlocks {
                 e.printStackTrace();
             }
         }
+        */
+
+        int divideBy = 100;
+        if (nblocks>100*1000) {
+            divideBy= 400;
+        }
+        // The work is divided int 100 units
+        long work_range = nblocks  / divideBy;
+        if (work_range<100) work_range =100; // minimum 1 seondd work
+        long  work_units = (nblocks+work_range-1)/work_range;
+
+        for(int i=0;i<work_units;i++) {
+            long work_from = fromBlockNumber +  i*work_range;
+            long work_to = work_from + work_range-1;
+            if (work_to>toBlockNumber)
+                work_to = toBlockNumber; // last unit may be shorter
+            int num = i;
+            Runnable worker = new WorkDispatcher(new WorkArguments(
+                    num, false, work_from, work_to, blockExecutor, blockStore,trieStore
+            ));
+            executor.execute(worker);//calling execute method of ExecutorService
+
+        }
+        //;
+        // Returns true if all tasks have completed following shut down. Note that isTerminated is never true unless either shutdown or shutdownNow was called first.
+        while (!executor.isTerminated()) {
+            try {  Thread.sleep(5000);  } catch (InterruptedException e) { e.printStackTrace(); }
+
+            long currentTime = System.currentTimeMillis();
+            long deltaTime = (currentTime - started);
+            long deltaBlock = block_counter.get();
+            long deltaWork =work_counter.get();
+            System.out.println(tid+"Time[s]: " + (deltaTime / 1000));
+            System.out.println(tid+"Blocks:  " +deltaBlock);
+            System.out.println(tid+"Work units finished:  " +deltaWork);
+            if (currentTime>started)
+                System.out.println(tid+"total blocks/sec: " +deltaBlock*1000/(currentTime-started));
+            System.out.println(tid+"Mem MB: " + (double) (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / 1024  /1024);
+            if (deltaWork==work_units)
+                executor.shutdown();
+        }
+
         long currentTime = System.currentTimeMillis();
         long deltaTime = (currentTime - started);
         long deltaBlock = nblocks;

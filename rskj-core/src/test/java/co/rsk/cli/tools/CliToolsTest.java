@@ -160,7 +160,7 @@ public class CliToolsTest {
 
         String[] args = new String[] { "1", "2" };
 
-        ExecuteBlocks.execute(args, world.getBlockExecutor(), world.getBlockStore(), world.getTrieStore());
+        ExecuteBlocks.execute(args, world.getBlockExecutor(), world.getBlockStore(), world.getTrieStore(),1);
 
         Assert.assertEquals(2, world.getBlockChain().getBestBlock().getNumber());
     }
