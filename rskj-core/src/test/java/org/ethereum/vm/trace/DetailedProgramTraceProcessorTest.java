@@ -34,11 +34,23 @@ import org.junit.Test;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
+import java.util.List;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class DetailedProgramTraceProcessorTest {
+
+    private static final String FLD_CONTRACT_ADDRESS = "contractAddress";
+    private static final String FLD_INIT_STORAGE = "initStorage";
+    private static final String FLD_CURRENT_STORAGE = "currentStorage";
+    private static final String FLD_STRUCT_LOGS = "structLogs";
+    private static final String FLD_RESULT = "result";
+    private static final String FLD_STORAGE_SIZE = "storageSize";
+
+    private static final List<String> EXPECTED_FIELDS = Arrays.asList(
+            FLD_CONTRACT_ADDRESS, FLD_INIT_STORAGE, FLD_CURRENT_STORAGE, FLD_STRUCT_LOGS, FLD_RESULT, FLD_STORAGE_SIZE
+    );
 
     @Test
     public void getUnknownTrace() {
@@ -106,16 +118,11 @@ public class DetailedProgramTraceProcessorTest {
         JsonNode jsonNode = processor.getProgramTraceAsJsonNode(hash);
 
         Assert.assertNotNull(jsonNode);
-        Assert.assertEquals(ByteUtil.toHexString(ownerDW.getLast20Bytes()), jsonNode.get("contractAddress").asText());
+        Assert.assertEquals(ByteUtil.toHexString(ownerDW.getLast20Bytes()), jsonNode.get(FLD_CONTRACT_ADDRESS).asText());
 
         String jsonText = jsonNode.toString();
         Assert.assertNotNull(jsonText);
-        Assert.assertTrue(jsonText.contains("\"contractAddress\""));
-        Assert.assertTrue(jsonText.contains("\"initStorage\""));
-        Assert.assertTrue(jsonText.contains("\"currentStorage\""));
-        Assert.assertTrue(jsonText.contains("\"structLogs\""));
-        Assert.assertTrue(jsonText.contains("\"result\""));
-        Assert.assertTrue(jsonText.contains("\"storageSize\""));
+        EXPECTED_FIELDS.forEach(fld -> Assert.assertTrue(jsonText.contains("\"" + fld + "\"")));
 
         jsonNode = processor.getProgramTracesAsJsonNode(Arrays.asList(hash, hash2));
 
@@ -127,16 +134,11 @@ public class DetailedProgramTraceProcessorTest {
             DataWord owner = ownerDWList.poll();
             Assert.assertNotNull(owner);
             Assert.assertNotNull(jn);
-            Assert.assertEquals(ByteUtil.toHexString(owner.getLast20Bytes()), jn.get("contractAddress").asText());
+            Assert.assertEquals(ByteUtil.toHexString(owner.getLast20Bytes()), jn.get(FLD_CONTRACT_ADDRESS).asText());
 
             String jsonStr = jn.toString();
             Assert.assertNotNull(jsonStr);
-            Assert.assertTrue(jsonStr.contains("\"contractAddress\""));
-            Assert.assertTrue(jsonStr.contains("\"initStorage\""));
-            Assert.assertTrue(jsonStr.contains("\"currentStorage\""));
-            Assert.assertTrue(jsonStr.contains("\"structLogs\""));
-            Assert.assertTrue(jsonStr.contains("\"result\""));
-            Assert.assertTrue(jsonStr.contains("\"storageSize\""));
+            EXPECTED_FIELDS.forEach(fld -> Assert.assertTrue(jsonStr.contains("\"" + fld + "\"")));
         });
     }
 
