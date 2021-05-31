@@ -1092,7 +1092,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         return bridgeSupport.getActiveFederationCreationBlockHeight();
     }
 
-    public long registerFastBridgeBtcTransaction(Object[] args) {
+    public BigInteger registerFastBridgeBtcTransaction(Object[] args) {
         logger.trace("registerFastBridgeBtcTransaction");
 
         try {
@@ -1131,7 +1131,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             );
         } catch (Exception e) {
             logger.warn("Exception in registerFastBridgeBtcTransaction", e);
-            return BridgeSupport.FAST_BRIDGE_GENERIC_ERROR;
+            return BigInteger.valueOf(BridgeSupport.FAST_BRIDGE_GENERIC_ERROR);
         }
     }
 
