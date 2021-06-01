@@ -38,7 +38,7 @@ public class RskErrorResolver implements ErrorResolver {
         return error;
     }
 
-    private String getExceptionMessage(UnrecognizedPropertyException ex) {
+    private static String getExceptionMessage(UnrecognizedPropertyException ex) {
         if (ex.getPropertyName() == null || ex.getKnownPropertyIds() == null) return "Invalid parameters";
 
         StringBuilder stringBuilder = new StringBuilder("Unrecognized field \"");
