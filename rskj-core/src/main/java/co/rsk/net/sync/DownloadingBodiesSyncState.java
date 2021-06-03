@@ -66,8 +66,7 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
                                       BlockSyncService blockSyncService,
                                       SyncBlockValidatorRule blockValidationRule,
                                       List<Deque<BlockHeader>> pendingHeaders,
-                                      Map<Peer, List<BlockIdentifier>> skeletons,
-                                      EthereumListener ethereumListener) {
+                                      Map<Peer, List<BlockIdentifier>> skeletons) {
 
         super(syncEventsHandler, syncConfiguration);
         this.peersInformation = peersInformation;
@@ -88,7 +87,6 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
 
         initializeSegments();
         this.suitablePeers = new ArrayList<>(segmentByNode.keySet());
-        ethereumListener.onLongSyncStarted();
     }
 
     @Override
