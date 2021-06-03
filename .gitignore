@@ -22,7 +22,6 @@ out
 bin
 
 # Maven
-# Maven
 *.log
 log/
 target/

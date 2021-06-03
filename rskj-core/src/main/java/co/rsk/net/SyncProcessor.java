@@ -235,6 +235,7 @@ public class SyncProcessor implements SyncEventsHandler {
         if (peerBestBlockNumber > blockSyncService.getLastKnownBlockNumber()) {
             blockSyncService.setLastKnownBlockNumber(peerBestBlockNumber);
         }
+        ethereumListener.onLongSyncStarted();
         setSyncState(new DownloadingBodiesSyncState(syncConfiguration,
                 this,
                 peersInformation,
@@ -243,8 +244,7 @@ public class SyncProcessor implements SyncEventsHandler {
                 blockSyncService,
                 blockValidationRule,
                 pendingHeaders,
-                skeletons,
-                ethereumListener));
+                skeletons));
     }
 
     @Override
