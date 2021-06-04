@@ -80,10 +80,9 @@ public class SyncNotificationEmitter {
         if (subscriptions.isEmpty()) {
             return;
         }
-        SyncNotification syncNotification = getNotification(isSyncing);
         subscriptions.forEach((SubscriptionId id, Channel channel) -> {
-            EthSubscriptionNotification request = new EthSubscriptionNotification(
-                    new EthSubscriptionParams(id, syncNotification));
+            new EthSubscriptionParams(id, false);
+            EthSubscriptionNotification request = getNotification(isSyncing, id);
             try {
                 String msg = jsonRpcSerializer.serializeMessage(request);
                 channel.writeAndFlush(new TextWebSocketFrame(msg));
@@ -94,21 +93,23 @@ public class SyncNotificationEmitter {
     }
 
     @VisibleForTesting
-    protected SyncNotification getNotification(boolean isSyncing) {
-        SyncNotification syncNotification;
+    protected EthSubscriptionNotification getNotification(boolean isSyncing, SubscriptionId id) {
         if (isSyncing) {
             long currentBlockNum = blockchain.getBestBlock().getNumber();
             long highestBlockNum = this.nodeBlockProcessor.getLastKnownBlockNumber();
-            syncNotification = new SyncNotification(
+            SyncNotification syncNotification = new SyncNotification(
                     true,
-                    new SyncStatusNotification(startingBlock,
-                                               currentBlockNum,
-                                               highestBlockNum
+                    new SyncStatusNotification(
+                            startingBlock,
+                            currentBlockNum,
+                            highestBlockNum
                     )
             );
+            return new EthSubscriptionNotification(
+                    new EthSubscriptionParams(id, syncNotification));
         } else {
-            syncNotification = new SyncNotification(false, null);
+            return new EthSubscriptionNotification(
+                    new EthSubscriptionParams(id, false));
         }
-        return syncNotification;
     }
 }

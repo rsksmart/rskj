@@ -80,4 +80,18 @@ public class EthSubscriptionNotificationTest {
         String expected = "{\"jsonrpc\":\"2.0\",\"method\":\"eth_subscription\",\"params\":{\"subscription\":\"0x7392\",\"result\":" + TEST_SYNC_RESULT_JSON + "}}";
         assertThat(serializer.serializeMessage(notification), is(expected));
     }
+
+    @Test
+    public void booleanRequestSync() throws IOException {
+        SubscriptionId subscription = new SubscriptionId("0x7392");
+        EthSubscriptionNotification notification = new EthSubscriptionNotification(
+                new EthSubscriptionParams(
+                        subscription,
+                        false
+                )
+        );
+
+        String expected = "{\"jsonrpc\":\"2.0\",\"method\":\"eth_subscription\",\"params\":{\"subscription\":\"0x7392\",\"result\":false}}";
+        assertThat(serializer.serializeMessage(notification), is(expected));
+    }
 }

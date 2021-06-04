@@ -33,6 +33,11 @@ public class EthSubscriptionParams {
         this.result = Objects.requireNonNull(result);
     }
 
+    public EthSubscriptionParams(SubscriptionId subscription, boolean result) {
+        this.subscription = Objects.requireNonNull(subscription);
+        this.result = result;
+    }
+
     public EthSubscriptionParams(SubscriptionId subscription, String result) {
         this.subscription = Objects.requireNonNull(subscription);
         this.result = Objects.requireNonNull(result);
