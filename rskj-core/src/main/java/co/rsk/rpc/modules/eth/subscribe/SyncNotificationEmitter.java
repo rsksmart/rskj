@@ -81,7 +81,6 @@ public class SyncNotificationEmitter {
             return;
         }
         subscriptions.forEach((SubscriptionId id, Channel channel) -> {
-            new EthSubscriptionParams(id, false);
             EthSubscriptionNotification request = getNotification(isSyncing, id);
             try {
                 String msg = jsonRpcSerializer.serializeMessage(request);
