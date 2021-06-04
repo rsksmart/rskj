@@ -46,6 +46,7 @@ public class SyncProcessor implements SyncEventsHandler {
     private long lastRequestId;
 
     private final EthereumListener ethereumListener;
+    private final long startingBlock;
 
     public SyncProcessor(Blockchain blockchain,
                          BlockStore blockStore,
@@ -80,8 +81,9 @@ public class SyncProcessor implements SyncEventsHandler {
         };
 
         this.peersInformation = peersInformation;
-        setSyncState(new DecidingSyncState(syncConfiguration, this, peersInformation, blockStore));
         this.ethereumListener = ethereumListener;
+        this.startingBlock = blockchain.getBestBlock().getNumber();
+        setSyncState(new DecidingSyncState(syncConfiguration, this, peersInformation, blockStore));
     }
 
     public void processStatus(Peer sender, Status status) {
@@ -393,7 +395,7 @@ public class SyncProcessor implements SyncEventsHandler {
         long highestBlock = this.blockSyncService.getLastKnownBlockNumber();
 
         ethereumListener.onSyncing(true, new LinkedHashMap() {{
-            //it's missing initialBlockNumber
+            put("startingBlock",startingBlock);
             put("currentBlock",currentBlock);
             put("highestBlock",highestBlock);
         }});
