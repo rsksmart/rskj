@@ -118,8 +118,6 @@ public class SyncPool implements InternalService {
             }, WORKER_TIMEOUT, WORKER_TIMEOUT, TimeUnit.SECONDS
         );
 
-        emmitStartEvent();
-
         if (config.waitForSync()) {
             try {
                 while (nodeBlockProcessor.getBestBlockNumber() == 0 || nodeBlockProcessor.hasBetterBlockToSync()) {
@@ -134,7 +132,6 @@ public class SyncPool implements InternalService {
 
     @Override
     public void stop() {
-        ethereumListener.onSyncing(false,null);
         syncPoolExecutor.shutdown();
     }
 
@@ -334,16 +331,6 @@ public class SyncPool implements InternalService {
                 }
             }
         }
-    }
-
-    private void emmitStartEvent() {
-        long currentBlock = this.blockchain.getBestBlock().getNumber();
-        long highestBlock = this.nodeBlockProcessor.getLastKnownBlockNumber();
-
-        ethereumListener.onSyncing(true, new LinkedHashMap() {{
-            put("currentBlock",currentBlock);
-            put("highestBlock",highestBlock);
-        }});
     }
 
     public interface PeerClientFactory {

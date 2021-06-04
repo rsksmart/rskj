@@ -1515,7 +1515,8 @@ public class RskContext implements NodeBootstrapper {
                     ),
                     getDifficultyCalculator(),
                     getPeersInformation(),
-                    getGenesis());
+                    getGenesis(),
+                    getCompositeEthereumListener());
         }
 
         return syncProcessor;

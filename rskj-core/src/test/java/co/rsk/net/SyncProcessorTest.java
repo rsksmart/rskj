@@ -26,6 +26,7 @@ import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.BlockStore;
+import org.ethereum.listener.EthereumListener;
 import org.ethereum.net.server.ChannelManager;
 import org.ethereum.rpc.Simples.SimpleChannelManager;
 import org.ethereum.util.ByteUtil;
@@ -66,7 +67,7 @@ public class SyncProcessorTest {
                         new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())
                 ),
                 DIFFICULTY_CALCULATOR, new PeersInformation(getChannelManager(), SyncConfiguration.IMMEDIATE_FOR_TESTING, blockchain, getPeerScoringManager()),
-                mock(Genesis.class));
+                mock(Genesis.class), null);
 
         Assert.assertEquals(0, processor.getPeersCount());
         Assert.assertEquals(0, processor.getNoAdvancedPeers());
@@ -101,7 +102,7 @@ public class SyncProcessorTest {
                         new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())
                 ),
                 DIFFICULTY_CALCULATOR, new PeersInformation(channelManager, SyncConfiguration.IMMEDIATE_FOR_TESTING, blockchain, RskMockFactory.getPeerScoringManager()),
-                mock(Genesis.class));
+                mock(Genesis.class), null);
         processor.processStatus(sender, status);
 
         Assert.assertEquals(1, processor.getPeersCount());
@@ -152,7 +153,7 @@ public class SyncProcessorTest {
                         new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())
                 ),
                 DIFFICULTY_CALCULATOR, new PeersInformation(channelManager, syncConfiguration, blockchain, RskMockFactory.getPeerScoringManager()),
-                mock(Genesis.class));
+                mock(Genesis.class), null);
         processor.processStatus(sender, status);
 
         Assert.assertEquals(1, processor.getPeersCount());
@@ -202,7 +203,7 @@ public class SyncProcessorTest {
                         new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())
                 ),
                 DIFFICULTY_CALCULATOR, new PeersInformation(getChannelManager(), SyncConfiguration.DEFAULT, blockchain, RskMockFactory.getPeerScoringManager()),
-                mock(Genesis.class));
+                mock(Genesis.class), null);
         SimplePeer sender = new SimplePeer(new byte[]{0x01});
         processor.processStatus(sender, status);
 
@@ -245,7 +246,7 @@ public class SyncProcessorTest {
                         new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())
                 ),
                 DIFFICULTY_CALCULATOR, new PeersInformation(channelManager, SyncConfiguration.DEFAULT, blockchain, RskMockFactory.getPeerScoringManager()),
-                mock(Genesis.class));
+                mock(Genesis.class), null);
 
         List<SimplePeer> senders = new ArrayList<>();
 
@@ -319,7 +320,7 @@ public class SyncProcessorTest {
                         new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())
                 ),
                 DIFFICULTY_CALCULATOR, new PeersInformation(getChannelManager(), SyncConfiguration.IMMEDIATE_FOR_TESTING, blockchain, RskMockFactory.getPeerScoringManager()),
-                mock(Genesis.class));
+                mock(Genesis.class), null);
         processor.processStatus(sender, status);
 
         Assert.assertEquals(1, processor.getPeersCount());
@@ -349,7 +350,7 @@ public class SyncProcessorTest {
                         new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())
                 ),
                 DIFFICULTY_CALCULATOR, new PeersInformation(channelManager, SyncConfiguration.IMMEDIATE_FOR_TESTING, blockchain, RskMockFactory.getPeerScoringManager()),
-                mock(Genesis.class));
+                mock(Genesis.class), null);
 
         processor.sendSkeletonRequest(sender, 0);
 
@@ -383,7 +384,7 @@ public class SyncProcessorTest {
                         new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())
                 ),
                 DIFFICULTY_CALCULATOR, new PeersInformation(channelManager, SyncConfiguration.IMMEDIATE_FOR_TESTING, blockchain, RskMockFactory.getPeerScoringManager()),
-                mock(Genesis.class));
+                mock(Genesis.class), null);
 
         processor.sendBlockHashRequest(sender, 100);
 
@@ -414,7 +415,7 @@ public class SyncProcessorTest {
                         new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())
                 ),
                 DIFFICULTY_CALCULATOR, new PeersInformation(getChannelManager(), SyncConfiguration.IMMEDIATE_FOR_TESTING, blockchain, RskMockFactory.getPeerScoringManager()),
-                mock(Genesis.class));
+                mock(Genesis.class), null);
         processor.processStatus(sender, new Status(100, null));
     }
 
@@ -433,7 +434,7 @@ public class SyncProcessorTest {
                         new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())
                 ),
                 DIFFICULTY_CALCULATOR, new PeersInformation(getChannelManager(), syncConfiguration, blockchain, RskMockFactory.getPeerScoringManager()),
-                mock(Genesis.class));
+                mock(Genesis.class), null);
 
         List<BlockHeader> headers = new ArrayList<>();
 
@@ -461,7 +462,7 @@ public class SyncProcessorTest {
                         new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())
                 ),
                 DIFFICULTY_CALCULATOR, new PeersInformation(getChannelManager(), syncConfiguration, blockchain, RskMockFactory.getPeerScoringManager()),
-                mock(Genesis.class));
+                mock(Genesis.class), null);
 
         List<BlockHeader> headers = new ArrayList<>();
         headers.add(block.getHeader());
@@ -490,7 +491,7 @@ public class SyncProcessorTest {
                         new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())
                 ),
                 DIFFICULTY_CALCULATOR, new PeersInformation(getChannelManager(), syncConfiguration, blockchain, RskMockFactory.getPeerScoringManager()),
-                mock(Genesis.class));
+                mock(Genesis.class), null);
 
         List<BlockHeader> headers = new ArrayList<>();
 
@@ -522,7 +523,7 @@ public class SyncProcessorTest {
                         new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())
                 ),
                 DIFFICULTY_CALCULATOR, new PeersInformation(getChannelManager(), syncConfiguration, blockchain, RskMockFactory.getPeerScoringManager()),
-                mock(Genesis.class));
+                mock(Genesis.class), null);
 
         List<BlockHeader> headers = new ArrayList<>();
         headers.add(block.getHeader());
@@ -550,7 +551,7 @@ public class SyncProcessorTest {
                         new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())
                 ),
                 DIFFICULTY_CALCULATOR, new PeersInformation(getChannelManager(), syncConfiguration, blockchain, RskMockFactory.getPeerScoringManager()),
-                mock(Genesis.class));
+                mock(Genesis.class), null);
 
         BodyResponseMessage response = new BodyResponseMessage(new Random().nextLong(), null, null);
         processor.registerExpectedMessage(response);
@@ -585,7 +586,7 @@ public class SyncProcessorTest {
                         new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())
                 ),
                 DIFFICULTY_CALCULATOR, new PeersInformation(getChannelManager(), SyncConfiguration.IMMEDIATE_FOR_TESTING, blockchain, RskMockFactory.getPeerScoringManager()),
-                mock(Genesis.class));
+                mock(Genesis.class), mock(EthereumListener.class));
         List<Transaction> transactions = blockchain.getBestBlock().getTransactionsList();
         List<BlockHeader> uncles = blockchain.getBestBlock().getUncleList();
         long lastRequestId = new Random().nextLong();
@@ -636,7 +637,7 @@ public class SyncProcessorTest {
                         new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())
                 ),
                 DIFFICULTY_CALCULATOR, new PeersInformation(getChannelManager(), SyncConfiguration.IMMEDIATE_FOR_TESTING, blockchain, RskMockFactory.getPeerScoringManager()),
-                mock(Genesis.class));
+                mock(Genesis.class), mock(EthereumListener.class));
         List<BlockHeader> uncles = blockchain.getBestBlock().getUncleList();
         Account senderAccount = createAccount("sender");
         Account receiverAccount = createAccount("receiver");
@@ -697,7 +698,7 @@ public class SyncProcessorTest {
                         new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())
                 ),
                 DIFFICULTY_CALCULATOR, new PeersInformation(getChannelManager(), SyncConfiguration.IMMEDIATE_FOR_TESTING, blockchain, RskMockFactory.getPeerScoringManager()),
-                mock(Genesis.class));
+                mock(Genesis.class), mock(EthereumListener.class));
         List<Transaction> transactions = blockchain.getBestBlock().getTransactionsList();
         List<BlockHeader> uncles = blockchain.getBestBlock().getUncleList();
         long lastRequestId = new Random().nextLong();
@@ -788,7 +789,7 @@ public class SyncProcessorTest {
                         new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())
                 ),
                 DIFFICULTY_CALCULATOR, new PeersInformation(getChannelManager(), SyncConfiguration.IMMEDIATE_FOR_TESTING, blockchain, RskMockFactory.getPeerScoringManager()),
-                mock(Genesis.class));
+                mock(Genesis.class), mock(EthereumListener.class));
         List<Transaction> transactions = block.getTransactionsList();
         List<BlockHeader> uncles = block.getUncleList();
         long lastRequestId = new Random().nextLong();
@@ -839,7 +840,7 @@ public class SyncProcessorTest {
                         new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())
                 ),
                 DIFFICULTY_CALCULATOR, new PeersInformation(getChannelManager(), SyncConfiguration.IMMEDIATE_FOR_TESTING, blockchain, RskMockFactory.getPeerScoringManager()),
-                mock(Genesis.class));
+                mock(Genesis.class), null);
         BlockResponseMessage response = new BlockResponseMessage(new Random().nextLong(), block);
         processor.registerExpectedMessage(response);
 
@@ -872,7 +873,7 @@ public class SyncProcessorTest {
                         new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())
                 ),
                 DIFFICULTY_CALCULATOR, new PeersInformation(channelManager, SyncConfiguration.IMMEDIATE_FOR_TESTING, blockchain, RskMockFactory.getPeerScoringManager()),
-                mock(Genesis.class));
+                mock(Genesis.class), null);
 
         processor.processStatus(sender, StatusUtils.fromBlockchain(advancedBlockchain));
 
@@ -931,7 +932,7 @@ public class SyncProcessorTest {
                         new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())
                 ),
                 DIFFICULTY_CALCULATOR, new PeersInformation(channelManager, SyncConfiguration.IMMEDIATE_FOR_TESTING, blockchain, RskMockFactory.getPeerScoringManager()),
-                mock(Genesis.class));
+                mock(Genesis.class), null);
 
         Status status = StatusUtils.fromBlockchain(advancedBlockchain);
         processor.processStatus(sender, status);
@@ -988,7 +989,7 @@ public class SyncProcessorTest {
                         new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())
                 ),
                 DIFFICULTY_CALCULATOR, new PeersInformation(channelManager, SyncConfiguration.IMMEDIATE_FOR_TESTING, blockchain, RskMockFactory.getPeerScoringManager()),
-                mock(Genesis.class));
+                mock(Genesis.class), null);
 
         int connectionPoint = 0;
         int step = 10;
@@ -1032,7 +1033,7 @@ public class SyncProcessorTest {
                         new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())
                 ),
                 DIFFICULTY_CALCULATOR, new PeersInformation(getChannelManager(), syncConfiguration, blockchain, RskMockFactory.getPeerScoringManager()),
-                mock(Genesis.class));
+                mock(Genesis.class), null);
 
         List<BlockIdentifier> blockIdentifiers = new ArrayList<>();
 
@@ -1068,7 +1069,7 @@ public class SyncProcessorTest {
                         new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())
                 ),
                 DIFFICULTY_CALCULATOR, new PeersInformation(channelManager, SyncConfiguration.IMMEDIATE_FOR_TESTING, blockchain, RskMockFactory.getPeerScoringManager()),
-                mock(Genesis.class));
+                mock(Genesis.class), null);
 
         int connectionPoint = 25;
         int step = 10;
