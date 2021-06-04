@@ -139,9 +139,11 @@ public class SyncNotificationEmitterTest {
 
     @Test
     public void validateNotificationSyncingStarted() {
-        SyncNotification syncNotification = emitter.getNotification(true);
+        SubscriptionId subscriptionId = mock(SubscriptionId.class);
+        EthSubscriptionNotification ethSubscriptionNotification = emitter.getNotification(true, subscriptionId);
 
-        assertTrue(syncNotification.isSyncing());
+        assertTrue(ethSubscriptionNotification.getParams().getResult() instanceof SyncNotification);
+        SyncNotification syncNotification = (SyncNotification) ethSubscriptionNotification.getParams().getResult();
         assertEquals(2L, syncNotification.getStatus().getCurrentBlock());
         assertEquals(100L, syncNotification.getStatus().getHighestBlock());
         assertEquals(1L, syncNotification.getStatus().getStartingBlock());
@@ -149,8 +151,9 @@ public class SyncNotificationEmitterTest {
 
     @Test
     public void validateNotificationSyncingEnded() {
-        SyncNotification syncNotification = emitter.getNotification(false);
-        assertFalse(syncNotification.isSyncing());
-        assertNull(syncNotification.getStatus());
+        SubscriptionId subscriptionId = mock(SubscriptionId.class);
+        EthSubscriptionNotification ethSubscriptionNotification = emitter.getNotification(false, subscriptionId);
+        assertTrue(ethSubscriptionNotification.getParams().getResult() instanceof Boolean);
+        assertFalse((Boolean)ethSubscriptionNotification.getParams().getResult());
     }
 }
