@@ -48,10 +48,15 @@ public class SyncingNotificationEmitter {
     }
 
     private void emit(SubscriptionId id, Channel channel, boolean isStarted, Map<String, String> status) {
+        if (!isStarted) {
+            emit(channel, new EthSubscriptionParams(id, false));
+        } else {
+            SyncingNotification syncStatus = new SyncingNotification(true, status);
+            emit(channel, new EthSubscriptionParams(id, syncStatus));
+        }
+    }
 
-        SyncingNotification syncStatus = new SyncingNotification(isStarted,status);
-        EthSubscriptionParams params = new EthSubscriptionParams(id, syncStatus);
-
+    private void emit(Channel channel, EthSubscriptionParams params) {
         EthSubscriptionNotification request = new EthSubscriptionNotification(params);
         try {
             String msg = jsonRpcSerializer.serializeMessage(request);
