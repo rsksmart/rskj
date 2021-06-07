@@ -24,21 +24,11 @@ import java.util.Objects;
 /**
  * The subscription params DTO for JSON serialization purposes.
  */
-public class EthSubscriptionParams {
+public class EthSubscriptionParams<T> {
     private final SubscriptionId subscription;
-    private final Object result;
+    private final T result;
 
-    public EthSubscriptionParams(SubscriptionId subscription, EthSubscriptionNotificationDTO result) {
-        this.subscription = Objects.requireNonNull(subscription);
-        this.result = Objects.requireNonNull(result);
-    }
-
-    public EthSubscriptionParams(SubscriptionId subscription, boolean result) {
-        this.subscription = Objects.requireNonNull(subscription);
-        this.result = result;
-    }
-
-    public EthSubscriptionParams(SubscriptionId subscription, String result) {
+    public EthSubscriptionParams(SubscriptionId subscription, T result) {
         this.subscription = Objects.requireNonNull(subscription);
         this.result = Objects.requireNonNull(result);
     }
@@ -49,7 +39,7 @@ public class EthSubscriptionParams {
     }
 
     @JsonInclude(JsonInclude.Include.ALWAYS)
-    public Object getResult() {
+    public T getResult() {
         return result;
     }
 }

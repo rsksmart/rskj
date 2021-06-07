@@ -81,7 +81,7 @@ public class SyncNotificationEmitter {
             return;
         }
         subscriptions.forEach((SubscriptionId id, Channel channel) -> {
-            EthSubscriptionNotification request = getNotification(isSyncing, id);
+            EthSubscriptionNotification<?> request = getNotification(isSyncing, id);
             try {
                 String msg = jsonRpcSerializer.serializeMessage(request);
                 channel.writeAndFlush(new TextWebSocketFrame(msg));
@@ -92,7 +92,7 @@ public class SyncNotificationEmitter {
     }
 
     @VisibleForTesting
-    protected EthSubscriptionNotification getNotification(boolean isSyncing, SubscriptionId id) {
+    protected EthSubscriptionNotification<?> getNotification(boolean isSyncing, SubscriptionId id) {
         if (isSyncing) {
             long currentBlockNum = blockchain.getBestBlock().getNumber();
             long highestBlockNum = this.nodeBlockProcessor.getLastKnownBlockNumber();
@@ -104,11 +104,11 @@ public class SyncNotificationEmitter {
                             highestBlockNum
                     )
             );
-            return new EthSubscriptionNotification(
-                    new EthSubscriptionParams(id, syncNotification));
+            return new EthSubscriptionNotification<>(
+                    new EthSubscriptionParams<>(id, syncNotification));
         } else {
-            return new EthSubscriptionNotification(
-                    new EthSubscriptionParams(id, false));
+            return new EthSubscriptionNotification<>(
+                    new EthSubscriptionParams<>(id, false));
         }
     }
 }
