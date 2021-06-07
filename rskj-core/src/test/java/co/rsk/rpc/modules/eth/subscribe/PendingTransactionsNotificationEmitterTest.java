@@ -94,7 +94,7 @@ public class PendingTransactionsNotificationEmitterTest {
     public void notificationContainsHashedTransaction() {
         SubscriptionId subscriptionId =  new SubscriptionId(("0x7392"));
         Transaction transaction = TransactionUtils.createTransaction();
-        EthSubscriptionNotification notification = emitter.getNotification(subscriptionId, transaction);
+        EthSubscriptionNotification<String> notification = emitter.getNotification(subscriptionId, transaction);
 
         assertEquals(transaction.getHash().toJsonString(), notification.getParams().getResult());
         assertEquals(subscriptionId, notification.getParams().getSubscription());

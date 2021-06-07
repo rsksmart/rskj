@@ -67,7 +67,7 @@ public class PendingTransactionsNotificationEmitter {
         }
         subscriptions.forEach((SubscriptionId id, Channel channel) -> {
             transactions.forEach(tx -> {
-                EthSubscriptionNotification request = getNotification(id, tx);
+                EthSubscriptionNotification<String> request = getNotification(id, tx);
                 try {
                     String msg = jsonRpcSerializer.serializeMessage(request);
                     channel.write(new TextWebSocketFrame(msg));
@@ -80,8 +80,8 @@ public class PendingTransactionsNotificationEmitter {
     }
 
     @VisibleForTesting
-    EthSubscriptionNotification getNotification(SubscriptionId id, Transaction transaction) {
-        return new EthSubscriptionNotification(
-                new EthSubscriptionParams(id, transaction.getHash().toJsonString()));
+    EthSubscriptionNotification<String> getNotification(SubscriptionId id, Transaction transaction) {
+        return new EthSubscriptionNotification<>(
+                new EthSubscriptionParams<>(id, transaction.getHash().toJsonString()));
     }
 }

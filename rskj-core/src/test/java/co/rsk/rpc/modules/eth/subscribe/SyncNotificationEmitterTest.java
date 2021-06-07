@@ -140,7 +140,7 @@ public class SyncNotificationEmitterTest {
     @Test
     public void validateNotificationSyncingStarted() {
         SubscriptionId subscriptionId = mock(SubscriptionId.class);
-        EthSubscriptionNotification ethSubscriptionNotification = emitter.getNotification(true, subscriptionId);
+        EthSubscriptionNotification<?> ethSubscriptionNotification = emitter.getNotification(true, subscriptionId);
 
         assertTrue(ethSubscriptionNotification.getParams().getResult() instanceof SyncNotification);
         SyncNotification syncNotification = (SyncNotification) ethSubscriptionNotification.getParams().getResult();
@@ -152,7 +152,8 @@ public class SyncNotificationEmitterTest {
     @Test
     public void validateNotificationSyncingEnded() {
         SubscriptionId subscriptionId = mock(SubscriptionId.class);
-        EthSubscriptionNotification ethSubscriptionNotification = emitter.getNotification(false, subscriptionId);
+        EthSubscriptionNotification<?> ethSubscriptionNotification = emitter.getNotification(false, subscriptionId);
+
         assertTrue(ethSubscriptionNotification.getParams().getResult() instanceof Boolean);
         assertFalse((Boolean)ethSubscriptionNotification.getParams().getResult());
     }

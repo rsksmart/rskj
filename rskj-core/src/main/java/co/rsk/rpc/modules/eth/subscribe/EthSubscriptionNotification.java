@@ -21,11 +21,11 @@ import co.rsk.jsonrpc.JsonRpcMessage;
 import co.rsk.jsonrpc.JsonRpcVersion;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
-public class EthSubscriptionNotification extends JsonRpcMessage {
+public class EthSubscriptionNotification<T> extends JsonRpcMessage {
 
-    private final EthSubscriptionParams params;
+    private final EthSubscriptionParams<T> params;
 
-    public EthSubscriptionNotification(EthSubscriptionParams params) {
+    public EthSubscriptionNotification(EthSubscriptionParams<T> params) {
         super(JsonRpcVersion.V2_0);
         this.params = params;
     }
@@ -36,7 +36,7 @@ public class EthSubscriptionNotification extends JsonRpcMessage {
     }
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    public EthSubscriptionParams getParams() {
+    public EthSubscriptionParams<T> getParams() {
         return params;
     }
 }

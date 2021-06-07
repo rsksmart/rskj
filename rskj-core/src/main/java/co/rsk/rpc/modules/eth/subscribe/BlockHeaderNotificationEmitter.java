@@ -69,8 +69,8 @@ public class BlockHeaderNotificationEmitter {
         BlockHeaderNotification header = new BlockHeaderNotification(block);
 
         subscriptions.forEach((SubscriptionId id, Channel channel) -> {
-            EthSubscriptionNotification request = new EthSubscriptionNotification(
-                    new EthSubscriptionParams(id, header)
+            EthSubscriptionNotification<BlockHeaderNotification> request = new EthSubscriptionNotification<>(
+                    new EthSubscriptionParams<>(id, header)
             );
 
             try {

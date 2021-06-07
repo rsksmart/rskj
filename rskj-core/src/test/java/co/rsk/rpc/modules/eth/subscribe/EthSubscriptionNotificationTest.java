@@ -41,8 +41,8 @@ public class EthSubscriptionNotificationTest {
     @Test
     public void basicRequestBlockHeader() throws IOException {
         SubscriptionId subscription = new SubscriptionId("0x7392");
-        EthSubscriptionNotification notification = new EthSubscriptionNotification(
-                new EthSubscriptionParams(
+        EthSubscriptionNotification<BlockHeaderNotification> notification = new EthSubscriptionNotification<>(
+                new EthSubscriptionParams<>(
                         subscription,
                         new BlockHeaderNotification(TEST_BLOCK)
                 )
@@ -70,8 +70,8 @@ public class EthSubscriptionNotificationTest {
     public void basicRequestSync() throws IOException {
         SubscriptionId subscription = new SubscriptionId("0x7392");
         SyncStatusNotification syncStatusNotification = new SyncStatusNotification(0L, 1L, 1000L);
-        EthSubscriptionNotification notification = new EthSubscriptionNotification(
-                new EthSubscriptionParams(
+        EthSubscriptionNotification<SyncNotification> notification = new EthSubscriptionNotification<>(
+                new EthSubscriptionParams<>(
                         subscription,
                         new SyncNotification(true, syncStatusNotification)
                 )
@@ -84,8 +84,8 @@ public class EthSubscriptionNotificationTest {
     @Test
     public void booleanRequestSync() throws IOException {
         SubscriptionId subscription = new SubscriptionId("0x7392");
-        EthSubscriptionNotification notification = new EthSubscriptionNotification(
-                new EthSubscriptionParams(
+        EthSubscriptionNotification<Boolean> notification = new EthSubscriptionNotification<>(
+                new EthSubscriptionParams<>(
                         subscription,
                         false
                 )
