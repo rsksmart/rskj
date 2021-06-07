@@ -1,9 +1,21 @@
 
 ## rskj-core
 
+#### Configure the RSK-compatible Gradle local installation
+
+Using a local Gradle installation will be necessary to be able to run `./gradlew` commands while avoiding the `Error: Could not find or load main class org.gradle.wrapper.GradleWrapperMain` error.
+
+##### Linux and macOS
+
+Run `sh configure.sh` in the project's root directory.
+
+##### Windows
+
+Run `./configure.sh` in the project's root directory, using Windows 10's git bash. You could also run `bash configure.sh` under WSL.
+
 #### Compile, test and package
 
-Run `$ ../gradlew build`
+Run `$ ./gradlew build`
 
  - find jar artifacts at `build/libs`
  - find unit test and code coverage reports at `build/reports`
@@ -20,7 +32,7 @@ Note that in order to build the project without errors in IDEA, you will need to
 
 #### Install artifacts into your local `~/.m2` repository
 
-Run `../gradlew install`.
+Run `./gradlew install`.
 
 #### Publish rskj-core builds
 
