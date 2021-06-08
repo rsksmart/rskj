@@ -18,24 +18,25 @@
 
 package co.rsk.rpc.modules.eth;
 
-import co.rsk.core.RskAddress;
-import co.rsk.core.Wallet;
-import co.rsk.net.TransactionGateway;
-import org.bouncycastle.util.encoders.Hex;
+import static org.ethereum.rpc.TypeConverter.stringHexToByteArray;
+import static org.ethereum.rpc.exception.RskJsonRpcRequestException.invalidParamError;
+
 import org.ethereum.config.Constants;
-import org.ethereum.core.*;
-import org.ethereum.rpc.TypeConverter;
+import org.ethereum.core.Account;
+import org.ethereum.core.ImmutableTransaction;
+import org.ethereum.core.Transaction;
+import org.ethereum.core.TransactionArguments;
+import org.ethereum.core.TransactionPool;
+import org.ethereum.core.TransactionPoolAddResult;
 import org.ethereum.rpc.Web3;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
-import org.ethereum.util.ByteUtil;
-import org.ethereum.vm.GasCost;
+import org.ethereum.util.TransactionArgumentsUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.math.BigInteger;
-
-import static org.ethereum.rpc.TypeConverter.stringHexToByteArray;
-import static org.ethereum.rpc.exception.RskJsonRpcRequestException.invalidParamError;
+import co.rsk.core.RskAddress;
+import co.rsk.core.Wallet;
+import co.rsk.net.TransactionGateway;
 
 public class EthModuleTransactionBase implements EthModuleTransaction {
 
@@ -45,9 +46,7 @@ public class EthModuleTransactionBase implements EthModuleTransaction {
     private final TransactionPool transactionPool;
     private final Constants constants;
     private final TransactionGateway transactionGateway;
-
-    private static final BigInteger DEFAULT_GAS_LIMIT = BigInteger.valueOf(GasCost.TRANSACTION_DEFAULT);
-    
+   
     public EthModuleTransactionBase(Constants constants, Wallet wallet, TransactionPool transactionPool, TransactionGateway transactionGateway) {
         this.wallet = wallet;
         this.transactionPool = transactionPool;
@@ -57,51 +56,36 @@ public class EthModuleTransactionBase implements EthModuleTransaction {
 
     @Override
     public synchronized String sendTransaction(Web3.CallArguments args) {
-        Account account = this.wallet.getAccount(new RskAddress(args.from));
-        String s = null;
+        
+    	Account senderAccount = this.wallet.getAccount(new RskAddress(args.from));
+        String txHash = null;
+        
         try {
-            String toAddress = args.to != null ? ByteUtil.toHexString(stringHexToByteArray(args.to)) : null;
 
-            BigInteger value = args.value != null ? TypeConverter.stringNumberAsBigInt(args.value) : BigInteger.ZERO;
-            BigInteger gasPrice = args.gasPrice != null ? TypeConverter.stringNumberAsBigInt(args.gasPrice) : BigInteger.ZERO;
-
-            BigInteger gasLimit = DEFAULT_GAS_LIMIT;
-            if(args.gasLimit != null) {
-            	gasLimit = TypeConverter.stringNumberAsBigInt(args.gasLimit);
-            }
-            if(args.gas != null) {
-            	gasLimit = TypeConverter.stringNumberAsBigInt(args.gas);
-            }
-            
-            if (args.data != null && args.data.startsWith("0x")) {
-                args.data = args.data.substring(2);
-            }
+        	TransactionArguments txArgs = TransactionArgumentsUtil.processArguments(args, transactionPool, senderAccount);
 
             synchronized (transactionPool) {
-                BigInteger accountNonce = args.nonce != null ? TypeConverter.stringNumberAsBigInt(args.nonce) : transactionPool.getPendingState().getNonce(account.getAddress());
+                
                 Transaction tx = Transaction
                         .builder()
-                        .nonce(accountNonce)
-                        .gasPrice(gasPrice)
-                        .gasLimit(gasLimit)
-                        .destination(toAddress == null ? null : Hex.decode(toAddress))
-                        .data(args.data == null ? null : Hex.decode(args.data))
-                        .chainId(constants.getChainId())
-                        .value(value)
+                        .from(txArgs, constants.getChainId())
                         .build();
-                tx.sign(account.getEcKey().getPrivKeyBytes());
+                
+                tx.sign(senderAccount.getEcKey().getPrivKeyBytes());
+                
                 TransactionPoolAddResult result = transactionGateway.receiveTransaction(tx.toImmutableTransaction());
+                
                 if(!result.transactionsWereAdded()) {
                     throw RskJsonRpcRequestException.transactionError(result.getErrorMessage());
                 }
 
-                s = tx.getHash().toJsonString();
+                txHash = tx.getHash().toJsonString();
             }
 
-            return s;
+            return txHash;
 
         } finally {
-            LOGGER.debug("eth_sendTransaction({}): {}", args, s);
+            LOGGER.debug("eth_sendTransaction({}): {}", args, txHash);
         }
     }
 

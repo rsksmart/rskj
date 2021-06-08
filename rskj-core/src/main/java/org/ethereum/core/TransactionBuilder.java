@@ -129,4 +129,18 @@ public final class TransactionBuilder {
     public TransactionBuilder data(String data) {
         return this.data(data == null ? null: Hex.decode(data));
     }
+    
+    public TransactionBuilder from(TransactionArguments args, byte chainId) {
+    	
+        nonce(args.nonce);
+        gasPrice(args.gasPrice);
+        gasLimit(args.gasLimit);
+        destination(args.to);
+        data(args.data);
+        chainId(chainId);
+        value(BigIntegers.asUnsignedByteArray(args.value));
+    	
+        return this;
+    }
+    
 }
