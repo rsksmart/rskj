@@ -1383,6 +1383,9 @@ public class BridgeUtilsTest {
         assertFalse(BridgeUtils.isPegOutTx(pegOutTx1, activations, defaultFederation.getP2SHScript(), standardFederation.getP2SHScript()));
         assertFalse(BridgeUtils.isPegOutTx(pegOutTx1, activations, standardFederation.getP2SHScript()));
 
+        assertFalse(BridgeUtils.isPegOutTx(pegOutTx1, Collections.singletonList(erpFederation), activations));
+        assertFalse(BridgeUtils.isPegOutTx(pegOutTx1, activations, erpFederation.getStandardP2SHScript()));
+
         // After RSKIP 201 activation
         when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(true);
 
@@ -1393,6 +1396,9 @@ public class BridgeUtilsTest {
         assertTrue(BridgeUtils.isPegOutTx(pegOutTx1, activations, defaultFederation.getP2SHScript()));
         assertTrue(BridgeUtils.isPegOutTx(pegOutTx1, activations, defaultFederation.getP2SHScript(), standardFederation.getP2SHScript()));
         assertFalse(BridgeUtils.isPegOutTx(pegOutTx1, activations, standardFederation.getP2SHScript()));
+
+        assertTrue(BridgeUtils.isPegOutTx(pegOutTx1, Collections.singletonList(erpFederation), activations));
+        assertTrue(BridgeUtils.isPegOutTx(pegOutTx1, activations, erpFederation.getStandardP2SHScript()));
     }
 
     @Test
