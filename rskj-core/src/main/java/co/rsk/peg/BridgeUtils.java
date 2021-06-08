@@ -257,7 +257,7 @@ public class BridgeUtils {
     }
 
     public static boolean isPegOutTx(BtcTransaction tx, List<Federation> federations, ActivationConfig.ForBlock activations) {
-        return isPegOutTx(tx, activations, federations.stream().filter(Objects::nonNull).map(Federation::getP2SHScript).toArray(Script[]::new));
+        return isPegOutTx(tx, activations, federations.stream().filter(Objects::nonNull).map(Federation::getStandardP2SHScript).toArray(Script[]::new));
     }
 
     public static boolean isPegOutTx(BtcTransaction tx, ActivationConfig.ForBlock activations, Script... p2shScript) {

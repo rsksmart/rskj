@@ -116,6 +116,10 @@ public class Federation {
         return p2shScript;
     }
 
+    public Script getStandardP2SHScript() {
+        return getP2SHScript();
+    }
+
     public Address getAddress() {
         if (address == null) {
             address = Address.fromP2SHScript(btcParams, getP2SHScript());
