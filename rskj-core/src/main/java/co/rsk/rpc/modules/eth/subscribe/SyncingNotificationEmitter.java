@@ -24,7 +24,7 @@ public class SyncingNotificationEmitter {
         ethereum.addListener(new EthereumListenerAdapter() {
             @Override
             public void onSyncing(boolean isStarted, Map<String, String> status) {
-                emit(isStarted,status);
+                emit(isStarted, status);
             }
         });
     }
