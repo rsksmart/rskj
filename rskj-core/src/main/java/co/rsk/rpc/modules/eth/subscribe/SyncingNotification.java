@@ -5,7 +5,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import java.util.Map;
 
 public class SyncingNotification implements EthSubscriptionNotificationDTO{
-    final boolean syncing;
+    private final boolean syncing;
     final Map<String,String> status;
 
     public SyncingNotification(final boolean syncing, final Map<String, String> status) {
