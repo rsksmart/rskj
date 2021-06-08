@@ -62,7 +62,7 @@ public class SyncingNotificationEmitter {
             String msg = jsonRpcSerializer.serializeMessage(request);
             channel.writeAndFlush(new TextWebSocketFrame(msg));
         } catch (JsonProcessingException e) {
-            logger.error("Couldn't serialize block header result for notification", e);
+            logger.error("Couldn't serialize syncing result for notification", e);
         }
     }
 }
