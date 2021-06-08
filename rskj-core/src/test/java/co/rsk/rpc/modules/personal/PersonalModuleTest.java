@@ -8,8 +8,8 @@ import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionPoolAddResult;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.facade.Ethereum;
-import org.ethereum.rpc.TypeConverter;
 import org.ethereum.rpc.Web3;
+import org.ethereum.util.TransactionTestHelper;
 import org.junit.Test;
 
 import co.rsk.config.TestSystemProperties;
@@ -28,29 +28,10 @@ public class PersonalModuleTest {
     	Wallet wallet = new Wallet(new HashMapDB());
     	RskAddress sender = wallet.addAccount(PASS_FRASE);
     	RskAddress receiver = wallet.addAccount();
-    	
-    	// Simulation of the args handled in the sendTransaction call
-    	Web3.CallArguments args = new Web3.CallArguments();
-    	args.from = sender.toJsonString();
-    	args.to = receiver.toJsonString();
-    	args.gasLimit = "0x76c0";
-    	args.gasPrice = "0x9184e72a000";
-    	args.value = "0x186A0";
-    	args.nonce = "0x01";
-
-    	// Transaction that is expected to be constructed WITH the gasLimit
-        Transaction tx = Transaction
-                .builder()
-                .nonce(TypeConverter.stringNumberAsBigInt(args.nonce))
-                .gasPrice(TypeConverter.stringNumberAsBigInt(args.gasPrice))
-                .gasLimit(TypeConverter.stringNumberAsBigInt(args.gasLimit))
-                .destination(TypeConverter.stringHexToByteArray(args.to))
-                .chainId(props.getNetworkConstants().getChainId())
-                .value(TypeConverter.stringNumberAsBigInt(args.value))
-                .build();
-        tx.sign(wallet.getAccount(sender, PASS_FRASE).getEcKey().getPrivKeyBytes());
 
         // Hash of the expected transaction
+    	Web3.CallArguments args = TransactionTestHelper.createArguments(sender, receiver);
+        Transaction tx = TransactionTestHelper.createTransaction(args, props.getNetworkConstants().getChainId(), wallet.getAccount(sender, PASS_FRASE));
         String txExpectedResult = tx.getHash().toJsonString();
     	
     	TransactionPoolAddResult transactionPoolAddResult = mock(TransactionPoolAddResult.class);
