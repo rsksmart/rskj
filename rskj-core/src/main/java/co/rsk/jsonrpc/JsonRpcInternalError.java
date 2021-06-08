@@ -22,6 +22,6 @@ package co.rsk.jsonrpc;
  */
 public class JsonRpcInternalError extends JsonRpcError {
     public JsonRpcInternalError() {
-        super(-32603, "Internal error.");
+        super(JsonRpcError.INTERNAL_ERROR, "Internal error.");
     }
 }
