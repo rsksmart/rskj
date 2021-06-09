@@ -17,6 +17,7 @@
  */
 package co.rsk.rpc.netty;
 
+import co.rsk.config.TestSystemProperties;
 import co.rsk.rpc.JacksonBasedRpcSerializer;
 import co.rsk.rpc.ModuleDescription;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -30,6 +31,7 @@ import com.squareup.okhttp.ws.WebSocketListener;
 import okio.Buffer;
 import org.ethereum.rpc.Web3;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -46,14 +48,14 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
 public class Web3WebSocketServerTest {
 
     private static JsonNodeFactory JSON_NODE_FACTORY = JsonNodeFactory.instance;
     private static ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    private static final int DEFAULT_WRITE_TIMEOUT = 30;
 
     private ExecutorService wsExecutor;
 
@@ -68,13 +70,24 @@ public class Web3WebSocketServerTest {
         String mockResult = "output";
         when(web3Mock.web3_sha3(anyString())).thenReturn(mockResult);
 
-        int randomPort = 9998;//new ServerSocket(0).getLocalPort();
+        int randomPort = 9998;
+
+        TestSystemProperties testSystemProperties = new TestSystemProperties();
 
         List<ModuleDescription> filteredModules = Collections.singletonList(new ModuleDescription("web3", "1.0", true, Collections.emptyList(), Collections.emptyList()));
         RskWebSocketJsonRpcHandler handler = new RskWebSocketJsonRpcHandler(null, new JacksonBasedRpcSerializer());
         JsonRpcWeb3ServerHandler serverHandler = new JsonRpcWeb3ServerHandler(web3Mock, filteredModules);
+        int serverWriteTimout = testSystemProperties.rpcWebSocketServerWriteTimeout();
 
-        Web3WebSocketServer websocketServer = new Web3WebSocketServer(InetAddress.getLoopbackAddress(), randomPort, handler, serverHandler);
+        assertEquals(DEFAULT_WRITE_TIMEOUT, serverWriteTimout);
+
+        Web3WebSocketServer websocketServer = new Web3WebSocketServer(
+                InetAddress.getLoopbackAddress(),
+                randomPort,
+                handler,
+                serverHandler,
+                serverWriteTimout
+        );
         websocketServer.start();
 
         OkHttpClient wsClient = new OkHttpClient();

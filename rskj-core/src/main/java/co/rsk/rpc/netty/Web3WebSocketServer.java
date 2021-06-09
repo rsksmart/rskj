@@ -38,7 +38,6 @@ import java.util.concurrent.TimeUnit;
 
 public class Web3WebSocketServer implements InternalService {
     private static final Logger logger = LoggerFactory.getLogger(Web3WebSocketServer.class);
-    public static final int WRITE_TIMEOUT_SECONDS = 30;
 
     private final InetAddress host;
     private final int port;
@@ -47,18 +46,21 @@ public class Web3WebSocketServer implements InternalService {
     private final EventLoopGroup bossGroup;
     private final EventLoopGroup workerGroup;
     private @Nullable ChannelFuture webSocketChannel;
+    private final int serverWriteTimeout;
 
     public Web3WebSocketServer(
             InetAddress host,
             int port,
             RskWebSocketJsonRpcHandler webSocketJsonRpcHandler,
-            JsonRpcWeb3ServerHandler web3ServerHandler) {
+            JsonRpcWeb3ServerHandler web3ServerHandler,
+            int serverWriteTimeout) {
         this.host = host;
         this.port = port;
         this.webSocketJsonRpcHandler = webSocketJsonRpcHandler;
         this.web3ServerHandler = web3ServerHandler;
         this.bossGroup = new NioEventLoopGroup();
         this.workerGroup = new NioEventLoopGroup();
+        this.serverWriteTimeout = serverWriteTimeout;
     }
 
     @Override
@@ -73,7 +75,7 @@ public class Web3WebSocketServer implements InternalService {
                     ChannelPipeline p = ch.pipeline();
                     p.addLast(new HttpServerCodec());
                     p.addLast(new HttpObjectAggregator(1024 * 1024 * 5));
-                    p.addLast(new WriteTimeoutHandler(WRITE_TIMEOUT_SECONDS, TimeUnit.SECONDS));
+                    p.addLast(new WriteTimeoutHandler(serverWriteTimeout, TimeUnit.SECONDS));
                     p.addLast(new RskWebSocketServerProtocolHandler("/websocket"));
                     p.addLast(webSocketJsonRpcHandler);
                     p.addLast(web3ServerHandler);
