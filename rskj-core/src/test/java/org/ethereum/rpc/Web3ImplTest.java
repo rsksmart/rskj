@@ -93,12 +93,12 @@ import static org.mockito.Mockito.*;
  */
 public class Web3ImplTest {
 
-    public static final String BALANCE_10K = "0x" + ByteUtil.toHexString(BigInteger.valueOf(10000).toByteArray());
+    private static final String BALANCE_10K_HEX = "0x2710"; //10.000
     private final TestSystemProperties config = new TestSystemProperties();
     private final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
     Wallet wallet;
 
-    @Test
+      @Test
     public void web3_clientVersion() {
         Web3 web3 = createWeb3();
 
@@ -182,7 +182,7 @@ public class Web3ImplTest {
 
         Web3Impl web3 = createWeb3(world);
 
-        assertEquals(BALANCE_10K, web3.eth_getBalance(ByteUtil.toHexString(acc1.getAddress().getBytes())));
+        assertEquals(BALANCE_10K_HEX, web3.eth_getBalance(ByteUtil.toHexString(acc1.getAddress().getBytes())));
     }
 
     @Test
@@ -192,7 +192,7 @@ public class Web3ImplTest {
 
         Web3Impl web3 = createWeb3(world);
 
-        assertEquals(BALANCE_10K, web3.eth_getBalance(ByteUtil.toHexString(acc1.getAddress().getBytes()), "latest"));
+        assertEquals(BALANCE_10K_HEX, web3.eth_getBalance(ByteUtil.toHexString(acc1.getAddress().getBytes()), "latest"));
     }
 
     @Test
@@ -204,7 +204,7 @@ public class Web3ImplTest {
 
         String accountAddress = ByteUtil.toHexString(acc1.getAddress().getBytes());
 
-        assertEquals(BALANCE_10K, web3.eth_getBalance(accountAddress, "0x0"));
+        assertEquals(BALANCE_10K_HEX, web3.eth_getBalance(accountAddress, "0x0"));
     }
 
     @Test
@@ -217,7 +217,7 @@ public class Web3ImplTest {
 
         String accountAddress = ByteUtil.toHexString(acc1.getAddress().getBytes());
 
-        assertEquals(BALANCE_10K, web3.eth_getBalance(accountAddress, "0x1"));
+        assertEquals(BALANCE_10K_HEX, web3.eth_getBalance(accountAddress, "0x1"));
     }
 
     @Test
@@ -232,7 +232,7 @@ public class Web3ImplTest {
             }
         };
         Web3Impl web3 = createWeb3(world);
-        assertEquals(BALANCE_10K, web3.eth_getBalance(accountAddress, blockRef));
+        assertEquals(BALANCE_10K_HEX, web3.eth_getBalance(accountAddress, blockRef));
     }
 
     @Test(expected=org.ethereum.rpc.exception.RskJsonRpcRequestException.class)
@@ -264,7 +264,7 @@ public class Web3ImplTest {
         };
 
         Web3Impl web3 = createWeb3(world);
-        assertEquals(BALANCE_10K, web3.eth_getBalance(accountAddress, blockRef));
+        assertEquals(BALANCE_10K_HEX, web3.eth_getBalance(accountAddress, blockRef));
     }
 
     @Test(expected=org.ethereum.rpc.exception.RskJsonRpcRequestException.class)
@@ -351,7 +351,7 @@ public class Web3ImplTest {
         };
 
         Web3Impl web3 = createWeb3(world);
-        assertEquals(BALANCE_10K, web3.eth_getBalance(accountAddress, blockRef));
+        assertEquals(BALANCE_10K_HEX, web3.eth_getBalance(accountAddress, blockRef));
     }
 
     @Test
@@ -368,7 +368,7 @@ public class Web3ImplTest {
         };
 
         Web3Impl web3 = createWeb3(world);
-        assertEquals(BALANCE_10K, web3.eth_getBalance(accountAddress, blockRef));
+        assertEquals(BALANCE_10K_HEX, web3.eth_getBalance(accountAddress, blockRef));
     }
 
     @Test
@@ -385,7 +385,7 @@ public class Web3ImplTest {
         };
 
         Web3Impl web3 = createWeb3(world);
-        assertEquals(BALANCE_10K, web3.eth_getBalance(accountAddress, blockRef));
+        assertEquals(BALANCE_10K_HEX, web3.eth_getBalance(accountAddress, blockRef));
     }
 
     @Test
@@ -401,7 +401,7 @@ public class Web3ImplTest {
         };
 
         Web3Impl web3 = createWeb3(world);
-        assertEquals(BALANCE_10K, web3.eth_getBalance(accountAddress, blockRef));
+        assertEquals(BALANCE_10K_HEX, web3.eth_getBalance(accountAddress, blockRef));
     }
 
     @Test
@@ -423,7 +423,7 @@ public class Web3ImplTest {
         Web3Impl web3 = createWeb3(world, transactionPool, null);
 
         String accountAddress = ByteUtil.toHexString(acc2.getAddress().getBytes());
-        String balanceString = BALANCE_10K;
+        String balanceString = BALANCE_10K_HEX;
 
         assertEquals("0x0", web3.eth_getBalance(accountAddress, "0x0"));
         assertEquals(balanceString, web3.eth_getBalance(accountAddress, "0x1"));
