@@ -474,23 +474,21 @@ public class Web3Impl implements Web3 {
      * @return function invocation result
      */
     protected String invokeByBlockRef(Map<String, String> inputs, Function<String, String> toInvokeByBlockNumber) {
-        final String requireCanonical = inputs.get("requireCanonical");
+        final boolean requireCanonical = Boolean.parseBoolean(inputs.get("requireCanonical"));
         return applyIfPresent(inputs, "blockHash", blockHash -> this.toInvokeByBlockHash(blockHash, requireCanonical, toInvokeByBlockNumber))
                 .orElseGet(() -> applyIfPresent(inputs, "blockNumber", toInvokeByBlockNumber)
                 .orElseThrow(() -> invalidParamError("Invalid block input"))
         );
     }
 
-    private String toInvokeByBlockHash(String blockHash, String requireCanonical, Function<String, String> toInvokeByBlockNumber) {
+    private String toInvokeByBlockHash(String blockHash, boolean requireCanonical, Function<String, String> toInvokeByBlockNumber) {
         Block block = Optional.ofNullable(this.blockchain.getBlockByHash(stringHexToByteArray(blockHash)))
                 .orElseThrow(() -> blockNotFound(String.format("Block with hash %s not found", blockHash)));
 
         //check if is canonical required
-        Optional.ofNullable(requireCanonical).ifPresent((isRequireCanonical) -> {
-            if (Boolean.parseBoolean(isRequireCanonical) && !isInMainChain(block)) {
-                throw blockNotFound(String.format("Block with hash %s is not canonical and it is required", blockHash));
-            }
-        });
+        if (requireCanonical && !isInMainChain(block)) {
+            throw blockNotFound(String.format("Block with hash %s is not canonical and it is required", blockHash));
+        }
 
         return toInvokeByBlockNumber.apply(toQuantityJsonHex(block.getNumber()));
     }
