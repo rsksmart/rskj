@@ -45,13 +45,13 @@ import org.ethereum.rpc.Web3;
 import org.ethereum.rpc.Web3Mocks;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.LogInfo;
-import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 
 public class Web3RskImplTest {
@@ -136,7 +136,7 @@ public class Web3RskImplTest {
 
         LogFilterElement logFilterElement = new LogFilterElement(logInfo, block, txIndex, tx, logIdx);
 
-        Assert.assertEquals("LogFilterElement{logIndex='0x5', blockNumber='0x1', blockHash='0x5fe7f977e71dba2ea1a68e21057beebb9be2ac30c6410aa38d4f3fbe41dcffd2', transactionHash='0x0200000000000000000000000000000000000000000000000000000000000000', transactionIndex='0x1', address='0x', data='0x5fe7f977e71dba2ea1a68e21057beebb9be2ac30c6410aa38d4f3fbe41dcffd2', topics=[0x00000000000000000000000000000000000000000000000000000000000000c1, 0x00000000000000000000000000000000000000000000000000000000000000c2]}", logFilterElement.toString());
+        assertEquals("LogFilterElement{logIndex='0x5', blockNumber='0x1', blockHash='0x5fe7f977e71dba2ea1a68e21057beebb9be2ac30c6410aa38d4f3fbe41dcffd2', transactionHash='0x0200000000000000000000000000000000000000000000000000000000000000', transactionIndex='0x1', address='0x', data='0x5fe7f977e71dba2ea1a68e21057beebb9be2ac30c6410aa38d4f3fbe41dcffd2', topics=[0x00000000000000000000000000000000000000000000000000000000000000c1, 0x00000000000000000000000000000000000000000000000000000000000000c2]}", logFilterElement.toString());
     }
 
     @Test
@@ -160,7 +160,7 @@ public class Web3RskImplTest {
 
         LogFilterElement logFilterElement = new LogFilterElement(logInfo, block, txIndex, tx, logIdx);
 
-        Assert.assertEquals("LogFilterElement{logIndex='0x5', blockNumber='0x1', blockHash='0x5fe7f977e71dba2ea1a68e21057beebb9be2ac30c6410aa38d4f3fbe41dcffd2', transactionHash='0x0200000000000000000000000000000000000000000000000000000000000000', transactionIndex='0x1', address='0x', data='0x', topics=[0x00000000000000000000000000000000000000000000000000000000000000c1, 0x00000000000000000000000000000000000000000000000000000000000000c2]}", logFilterElement.toString());
+        assertEquals("LogFilterElement{logIndex='0x5', blockNumber='0x1', blockHash='0x5fe7f977e71dba2ea1a68e21057beebb9be2ac30c6410aa38d4f3fbe41dcffd2', transactionHash='0x0200000000000000000000000000000000000000000000000000000000000000', transactionIndex='0x1', address='0x', data='0x', topics=[0x00000000000000000000000000000000000000000000000000000000000000c1, 0x00000000000000000000000000000000000000000000000000000000000000c2]}", logFilterElement.toString());
     }
 
     @Test
@@ -176,7 +176,7 @@ public class Web3RskImplTest {
         callArguments.nonce = "0";
         callArguments.chainId = "0x00";
 
-        Assert.assertEquals("CallArguments{from='0x1', to='0x2', gasLimit='21000', gasPrice='100', value='1', data='data', nonce='0', chainId='0x00'}", callArguments.toString());
+        assertEquals("CallArguments{from='0x1', to='0x2', gasLimit='21000', gasPrice='100', value='1', data='data', nonce='0', chainId='0x00'}", callArguments.toString());
     }
 
     @Test
@@ -186,8 +186,9 @@ public class Web3RskImplTest {
         filterRequest.fromBlock = "1";
         filterRequest.toBlock = "2";
         filterRequest.address = "0x0000000001";
-        filterRequest.topics = new Object[] {"2"};
+        filterRequest.topics = new Object[]{"2"};
+        filterRequest.blockHash = "0x5fe7f977e71dba2ea1a68e21057beebb9be2ac30c6410aa38d4f3fbe41dcffd2";
 
-        Assert.assertEquals(filterRequest.toString(), "FilterRequest{fromBlock='1', toBlock='2', address=0x0000000001, topics=[2]}");
+        assertEquals(filterRequest.toString(), "FilterRequest{fromBlock='1', toBlock='2', address=0x0000000001, topics=[2], blockHash='0x5fe7f977e71dba2ea1a68e21057beebb9be2ac30c6410aa38d4f3fbe41dcffd2'}");
     }
 }
