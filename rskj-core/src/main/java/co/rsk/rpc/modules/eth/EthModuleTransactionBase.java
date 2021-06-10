@@ -64,9 +64,9 @@ public class EthModuleTransactionBase implements EthModuleTransaction {
         
         try {
 
-        	TransactionArguments txArgs = TransactionArgumentsUtil.processArguments(args, transactionPool, senderAccount, constants.getChainId());
+        	synchronized (transactionPool) {
 
-            synchronized (transactionPool) {
+            	TransactionArguments txArgs = TransactionArgumentsUtil.processArguments(args, transactionPool, senderAccount, constants.getChainId());
                 
                 Transaction tx = Transaction.builder().from(txArgs).build();
                 

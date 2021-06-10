@@ -1,6 +1,7 @@
 package org.ethereum.core;
 
 import java.math.BigInteger;
+import java.util.Arrays;
 
 public class TransactionArguments {
 
@@ -12,13 +13,13 @@ public class TransactionArguments {
     public BigInteger value;
     public String data; // compiledCode
     public BigInteger nonce;
-    byte chainId;  //NOSONAR
+    public byte chainId;  //NOSONAR
 
     @Override
     public String toString() {
         return "TransactionArguments{" +
                 "from='" + from + '\'' +
-                ", to='" + to + '\'' +
+                ", to='" + Arrays.toString(to) + '\'' +
                 ", gasLimit='" + ((gas != null)?gas:gasLimit) + '\'' +
                 ", gasPrice='" + gasPrice + '\'' +
                 ", value='" + value + '\'' +
