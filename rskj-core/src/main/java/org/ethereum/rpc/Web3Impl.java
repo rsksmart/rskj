@@ -474,7 +474,7 @@ public class Web3Impl implements Web3 {
      * @return function invocation result
      */
     protected String invokeByBlockRef(Map<String, String> inputs, Function<String, String> toInvokeByBlockNumber) {
-        Function<String, String> getBalanceByBlockHash = blockHash -> {
+        Function<String, String> toInvokeByBlockHash = blockHash -> {
 
             Block block = Optional.ofNullable(this.blockchain.getBlockByHash(stringHexToByteArray(blockHash)))
                     .orElseThrow(() -> blockNotFound(String.format("Block with hash %s not found", blockHash)));
@@ -489,7 +489,7 @@ public class Web3Impl implements Web3 {
             return toInvokeByBlockNumber.apply(toQuantityJsonHex(block.getNumber()));
         };
 
-        return applyIfPresent(inputs, "blockHash", getBalanceByBlockHash)
+        return applyIfPresent(inputs, "blockHash", toInvokeByBlockHash)
                 .orElseGet(() -> applyIfPresent(inputs, "blockNumber", toInvokeByBlockNumber)
                 .orElseThrow(() -> invalidParamError("Invalid block input"))
         );
