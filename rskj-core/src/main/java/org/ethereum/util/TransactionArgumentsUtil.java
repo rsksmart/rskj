@@ -1,41 +1,38 @@
 package org.ethereum.util;
 
 import java.math.BigInteger;
+
 import java.util.Arrays;
 import java.util.Optional;
 import java.util.function.Supplier;
 
 import org.bouncycastle.util.encoders.Hex;
+
 import org.ethereum.core.Account;
 import org.ethereum.core.TransactionArguments;
 import org.ethereum.core.TransactionPool;
 import org.ethereum.rpc.TypeConverter;
 import org.ethereum.rpc.Web3;
+
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
+
 import org.ethereum.vm.GasCost;
 
 public class TransactionArgumentsUtil {
 
 	private static final BigInteger DEFAULT_GAS_LIMIT = BigInteger.valueOf(GasCost.TRANSACTION_DEFAULT);
 	
+
 	public static final String ERR_INVALID_CHAIN_ID = "Invalid chainId: ";
 	
-	
-	public static void main(String[] args) {
 		
-		String hex = "0x01";
-		
-		System.out.println(Arrays.toString(Hex.decode(ByteUtil.toHexString(TypeConverter.stringHexToByteArray(hex)))));
-	}
-	
-	
 	public static TransactionArguments processArguments(Web3.CallArguments argsParam, TransactionPool transactionPool, Account senderAccount, byte defaultChainId) {
 		
 		TransactionArguments argsRet = new TransactionArguments();
 		
 		argsRet.from = argsParam.from;
 		
-		argsRet.to = processToAddress(argsParam.to);
+		argsRet.to = stringHexToByteArray(argsParam.to);
 
         argsRet.nonce = stringNumberAsBigInt(argsParam.nonce, () -> transactionPool.getPendingState().getNonce(senderAccount.getAddress()));
         
@@ -51,14 +48,14 @@ public class TransactionArgumentsUtil {
 
         if (argsParam.data != null && argsParam.data.startsWith("0x")) {
         	argsRet.data = argsParam.data.substring(2);
-        	argsParam.data = argsRet.data; // needs to change the paramenter because some tests expect the changed value after sendTransaction call  
+        	argsParam.data = argsRet.data; // needs to change the parameter because some tests expect the changed value after sendTransaction call  
         }
         
         argsRet.chainId = hexToChainId(argsParam.chainId);
         if (argsRet.chainId == 0) {
         	argsRet.chainId = defaultChainId;
         }
-        
+
 		return argsRet;
 	} 
 		
@@ -69,13 +66,14 @@ public class TransactionArgumentsUtil {
 		return ret;
 	}
 	
-	private static byte[] processToAddress(String value) {
+
+	private static byte[] stringHexToByteArray(String value) {
 		
 		byte[] ret = Optional.ofNullable(value).map(TypeConverter::stringHexToByteArray).orElse(null);
 		
 		return ret;
 	}
-	
+
     private static byte hexToChainId(String hex) {
         if (hex == null) {
             return 0;
@@ -91,6 +89,5 @@ public class TransactionArgumentsUtil {
             throw RskJsonRpcRequestException.invalidParamError(ERR_INVALID_CHAIN_ID + hex, e);
         }
     }
-	
-	
+
 }

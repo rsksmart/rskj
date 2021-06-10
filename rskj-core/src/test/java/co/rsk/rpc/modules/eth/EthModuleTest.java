@@ -125,9 +125,6 @@ public class EthModuleTest {
     	// Hash of the actual transaction builded inside the sendTransaction
     	String txResult = ethModuleTransaction.sendTransaction(args);
 
-    	System.out.println(txExpectedResult);
-    	System.out.println(txResult);
-    	
     	assertEquals(txExpectedResult, txResult);
     }
 

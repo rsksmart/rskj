@@ -130,6 +130,7 @@ public final class TransactionBuilder {
         return this.data(data == null ? null: Hex.decode(data));
     }
     
+
     public TransactionBuilder from(TransactionArguments args) {
     	
         nonce(args.nonce);
