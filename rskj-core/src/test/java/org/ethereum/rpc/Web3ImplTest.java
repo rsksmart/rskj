@@ -235,7 +235,7 @@ public class Web3ImplTest {
         assertEquals(BALANCE_10K_HEX, web3.eth_getBalance(accountAddress, blockRef));
     }
 
-    @Test(expected=org.ethereum.rpc.exception.RskJsonRpcRequestException.class)
+    @Test
     //[ "0x<address>", { "invalidInput": "0x0" } -> throw RskJsonRpcRequestException
     public void getBalanceWithAccountAndInvalidInputThrowsException() {
         World world = new World();
@@ -248,7 +248,7 @@ public class Web3ImplTest {
         };
 
         Web3Impl web3 = createWeb3(world);
-        web3.eth_getBalance(accountAddress, blockRef);
+        this.assertThrown(RskJsonRpcRequestException.class, () -> web3.eth_getBalance(accountAddress, blockRef));
     }
 
     @Test
@@ -267,7 +267,7 @@ public class Web3ImplTest {
         assertEquals(BALANCE_10K_HEX, web3.eth_getBalance(accountAddress, blockRef));
     }
 
-    @Test(expected=org.ethereum.rpc.exception.RskJsonRpcRequestException.class)
+    @Test
     //[ "0x<address>", { "blockHash": "0x<non-existent-block-hash>" } -> raise block-not-found error
     public void getBalanceWithAccountAndNonExistentBlockHash() {
         World world = new World();
@@ -281,10 +281,10 @@ public class Web3ImplTest {
         };
 
         Web3Impl web3 = createWeb3(world);
-        web3.eth_getBalance(accountAddress, blockRef);
+        this.assertThrown(RskJsonRpcRequestException.class, () -> web3.eth_getBalance(accountAddress, blockRef));
     }
 
-    @Test(expected=org.ethereum.rpc.exception.RskJsonRpcRequestException.class)
+    @Test
     //[ "0x<address>", { "blockHash": "0x<non-existent-block-hash>", "requireCanonical": true } -> raise block-not-found error
     public void getBalanceWithAccountAndNonExistentBlockHashWhenCanonicalIsRequired() {
         World world = new World();
@@ -299,10 +299,10 @@ public class Web3ImplTest {
         };
 
         Web3Impl web3 = createWeb3(world);
-        web3.eth_getBalance(accountAddress, blockRef);
+        this.assertThrown(RskJsonRpcRequestException.class, () -> web3.eth_getBalance(accountAddress, blockRef));
     }
 
-    @Test(expected=org.ethereum.rpc.exception.RskJsonRpcRequestException.class)
+    @Test
     //[ "0x<address>", { "blockHash": "0x<non-existent-block-hash>", "requireCanonical": false } -> raise block-not-found error
     public void getBalanceWithAccountAndNonExistentBlockHashWhenCanonicalIsNotRequired() {
         World world = new World();
@@ -317,10 +317,10 @@ public class Web3ImplTest {
         };
 
         Web3Impl web3 = createWeb3(world);
-        web3.eth_getBalance(accountAddress, blockRef);
+        this.assertThrown(RskJsonRpcRequestException.class, () -> web3.eth_getBalance(accountAddress, blockRef));
     }
 
-    @Test(expected=org.ethereum.rpc.exception.RskJsonRpcRequestException.class)
+    @Test
     // [ "0x<address>", { "blockHash": "0x<non-canonical-block-hash>", "requireCanonical": true } -> raise block-not-canonical error
     public void getBalanceWithAccountAndNonCanonicalBlockHashWhenCanonicalIsRequired() {
         World world = new World();
@@ -334,7 +334,7 @@ public class Web3ImplTest {
         };
 
         Web3Impl web3 = createWeb3(world);
-        web3.eth_getBalance(accountAddress, blockRef);
+        this.assertThrown(RskJsonRpcRequestException.class, () -> web3.eth_getBalance(accountAddress, blockRef));
     }
 
     @Test
@@ -443,7 +443,7 @@ public class Web3ImplTest {
         assertEquals("0x1",web3.invokeByBlockRef(blockRef,b -> b));
     }
 
-    @Test(expected=org.ethereum.rpc.exception.RskJsonRpcRequestException.class)
+    @Test
     public void invokeByInvalidInputThrowsException() {
         World world = new World();
         createChainWithOneBlock(world);
@@ -454,7 +454,7 @@ public class Web3ImplTest {
         };
 
         Web3Impl web3 = createWeb3(world);
-        web3.invokeByBlockRef(blockRef,b -> b);
+        this.assertThrown(RskJsonRpcRequestException.class, () -> web3.invokeByBlockRef(blockRef,b -> b));
     }
 
     @Test
@@ -471,7 +471,7 @@ public class Web3ImplTest {
         assertEquals("0x1",web3.invokeByBlockRef(blockRef,b -> b));
     }
 
-    @Test(expected=org.ethereum.rpc.exception.RskJsonRpcRequestException.class)
+    @Test
     public void invokeByNonExistentBlockHash() {
         World world = new World();
         createChainWithOneBlock(world);
@@ -483,10 +483,10 @@ public class Web3ImplTest {
         };
 
         Web3Impl web3 = createWeb3(world);
-        web3.invokeByBlockRef(blockRef,b -> b);
+        this.assertThrown(RskJsonRpcRequestException.class, () -> web3.invokeByBlockRef(blockRef,b -> b));
     }
 
-    @Test(expected=org.ethereum.rpc.exception.RskJsonRpcRequestException.class)
+    @Test
     public void invokeByNonExistentBlockHashWhenCanonicalIsRequired() {
         World world = new World();
         createChainWithOneBlock(world);
@@ -499,10 +499,10 @@ public class Web3ImplTest {
         };
 
         Web3Impl web3 = createWeb3(world);
-        web3.invokeByBlockRef(blockRef,b -> b);;
+        this.assertThrown(RskJsonRpcRequestException.class, () -> web3.invokeByBlockRef(blockRef,b -> b));;
     }
 
-    @Test(expected=org.ethereum.rpc.exception.RskJsonRpcRequestException.class)
+    @Test
     public void invokeByNonExistentBlockHashWhenCanonicalIsNotRequired() {
         World world = new World();
         createChainWithOneBlock(world);
@@ -515,10 +515,10 @@ public class Web3ImplTest {
         };
 
         Web3Impl web3 = createWeb3(world);
-        web3.invokeByBlockRef(blockRef,b -> b);
+        this.assertThrown(RskJsonRpcRequestException.class, () -> web3.invokeByBlockRef(blockRef,b -> b));
     }
 
-    @Test(expected=org.ethereum.rpc.exception.RskJsonRpcRequestException.class)
+    @Test
     public void invokeByNonCanonicalBlockHashWhenCanonicalIsRequired() {
         World world = new World();
         String accountAddress = createAccountWith10KBalance(world);
@@ -531,7 +531,7 @@ public class Web3ImplTest {
         };
 
         Web3Impl web3 = createWeb3(world);
-        web3.invokeByBlockRef(blockRef,b -> b);
+        this.assertThrown(RskJsonRpcRequestException.class, () -> web3.invokeByBlockRef(blockRef,b -> b));
     }
 
     @Test
@@ -982,7 +982,7 @@ public class Web3ImplTest {
         assertEquals("0x1", web3.eth_getTransactionCount(accountAddress, blockRef));
     }
 
-    @Test(expected=org.ethereum.rpc.exception.RskJsonRpcRequestException.class)
+    @Test
     //[ "0x<address>", { "invalidInput": "0x0" } -> throw RskJsonRpcRequestException
     public void getTransactionCountAndInvalidInputThrowsException() {
         World world = new World();
@@ -1005,7 +1005,7 @@ public class Web3ImplTest {
         };
 
         Web3Impl web3 = createWeb3(world);
-        web3.eth_getTransactionCount(accountAddress, blockRef);
+        this.assertThrown(RskJsonRpcRequestException.class, () -> web3.eth_getTransactionCount(accountAddress, blockRef));
     }
 
     @Test
@@ -1032,7 +1032,7 @@ public class Web3ImplTest {
         assertEquals("0x1", web3.eth_getTransactionCount(accountAddress, blockRef));
     }
 
-    @Test(expected=org.ethereum.rpc.exception.RskJsonRpcRequestException.class)
+    @Test
     //[ "0x<address>", { "blockHash": "0x<non-existent-block-hash>" } -> raise block-not-found error
     public void getTransactionCountByNonExistentBlockHash() {
         World world = new World();
@@ -1046,10 +1046,10 @@ public class Web3ImplTest {
         };
 
         Web3Impl web3 = createWeb3(world);
-        web3.eth_getTransactionCount(accountAddress, blockRef);
+        this.assertThrown(RskJsonRpcRequestException.class, () -> web3.eth_getTransactionCount(accountAddress, blockRef));
     }
 
-    @Test(expected=org.ethereum.rpc.exception.RskJsonRpcRequestException.class)
+    @Test
     // [ "0x<address>", { "blockHash": "0x<non-canonical-block-hash>", "requireCanonical": true } -> raise block-not-canonical error
     public void getTransactionCountByNonCanonicalBlockHashWhenCanonicalIsRequired() {
         World world = new World();
@@ -1082,7 +1082,7 @@ public class Web3ImplTest {
         };
 
         Web3Impl web3 = createWeb3(world);
-        web3.eth_getTransactionCount(accountAddress, blockRef);
+        this.assertThrown(RskJsonRpcRequestException.class, () -> web3.eth_getTransactionCount(accountAddress, blockRef));
     }
 
     @Test
@@ -2597,5 +2597,17 @@ public class Web3ImplTest {
     private String createAccountWith10KBalance(World world) {
         Account acc1 = new AccountBuilder(world).name("acc1").balance(Coin.valueOf(10000)).build();
         return ByteUtil.toHexString(acc1.getAddress().getBytes());
+    }
+
+    private void assertThrown(final Class<? extends Throwable> exceptionType, final Runnable method) {
+        try {
+            method.run();
+        } catch (Throwable e) {
+            if (exceptionType.isInstance(e)) {
+                //expected
+                return;
+            }
+        }
+        fail("Expected exception not thrown " + exceptionType);
     }
 }
