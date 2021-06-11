@@ -129,37 +129,36 @@ public class EthModuleTest {
         assertEquals(expectedResult, actualResult);
     }
 
-    @Test
-    public void sendTransactionWithGasLimitTest() {
-    	
-    	Constants constants = Constants.regtest();
-    	
-    	Wallet wallet = new Wallet(new HashMapDB());
-    	RskAddress sender = wallet.addAccount();
-    	RskAddress receiver = wallet.addAccount();
-    	
-        // Hash of the expected transaction
-    	Web3.CallArguments args = TransactionTestHelper.createArguments(sender, receiver);
-        Transaction tx = TransactionTestHelper.createTransaction(args, constants.getChainId(), wallet.getAccount(sender));
-        String txExpectedResult = tx.getHash().toJsonString();
-    	
-    	TransactionPoolAddResult transactionPoolAddResult = mock(TransactionPoolAddResult.class);
-    	when(transactionPoolAddResult.transactionsWereAdded()).thenReturn(true);
-    	
-    	TransactionGateway transactionGateway = mock(TransactionGateway.class); 
-    	when(transactionGateway.receiveTransaction(any(Transaction.class)))
-    		.thenReturn(transactionPoolAddResult);
-    	
-    	TransactionPool transactionPool = mock(TransactionPool.class);
-    	
-    	EthModuleTransactionBase ethModuleTransaction = new EthModuleTransactionBase(constants, wallet, transactionPool, transactionGateway);
-    	
-    	// Hash of the actual transaction builded inside the sendTransaction
-    	String txResult = ethModuleTransaction.sendTransaction(args);
+	@Test
+	public void sendTransactionWithGasLimitTest() {
 
-    	assertEquals(txExpectedResult, txResult);
-    }
-    
+		Constants constants = Constants.regtest();
+
+		Wallet wallet = new Wallet(new HashMapDB());
+		RskAddress sender = wallet.addAccount();
+		RskAddress receiver = wallet.addAccount();
+
+		// Hash of the expected transaction
+		Web3.CallArguments args = TransactionTestHelper.createArguments(sender, receiver);
+		Transaction tx = TransactionTestHelper.createTransaction(args, constants.getChainId(), wallet.getAccount(sender));
+		String txExpectedResult = tx.getHash().toJsonString();
+
+		TransactionPoolAddResult transactionPoolAddResult = mock(TransactionPoolAddResult.class);
+		when(transactionPoolAddResult.transactionsWereAdded()).thenReturn(true);
+
+		TransactionGateway transactionGateway = mock(TransactionGateway.class);
+		when(transactionGateway.receiveTransaction(any(Transaction.class))).thenReturn(transactionPoolAddResult);
+
+		TransactionPool transactionPool = mock(TransactionPool.class);
+
+		EthModuleTransactionBase ethModuleTransaction = new EthModuleTransactionBase(constants, wallet, transactionPool, transactionGateway);
+
+		// Hash of the actual transaction builded inside the sendTransaction
+		String txResult = ethModuleTransaction.sendTransaction(args);
+
+		assertEquals(txExpectedResult, txResult);
+	}
+
     @Test
     public void test_revertedTransaction() {
         Web3.CallArguments args = new Web3.CallArguments();

@@ -36,32 +36,32 @@ import co.rsk.core.Wallet;
 public class PersonalModuleTest {
 
 	private static final String PASS_FRASE = "passfrase";
-	
-    @Test
-    public void sendTransactionWithGasLimitTest() throws Exception {
-    	
-    	TestSystemProperties props = new TestSystemProperties();
-    	
-    	Wallet wallet = new Wallet(new HashMapDB());
-    	RskAddress sender = wallet.addAccount(PASS_FRASE);
-    	RskAddress receiver = wallet.addAccount();
 
-        // Hash of the expected transaction
-    	Web3.CallArguments args = TransactionTestHelper.createArguments(sender, receiver);
-        Transaction tx = TransactionTestHelper.createTransaction(args, props.getNetworkConstants().getChainId(), wallet.getAccount(sender, PASS_FRASE));
-        String txExpectedResult = tx.getHash().toJsonString();
-    	
-    	TransactionPoolAddResult transactionPoolAddResult = mock(TransactionPoolAddResult.class);
-    	when(transactionPoolAddResult.transactionsWereAdded()).thenReturn(true);
-    	
-    	Ethereum ethereum = mock(Ethereum.class);
-    	
-    	PersonalModuleWalletEnabled personalModuleWalletEnabled = new PersonalModuleWalletEnabled(props, ethereum, wallet, null);
-    	
-    	// Hash of the actual transaction builded inside the sendTransaction
-    	String txResult = personalModuleWalletEnabled.sendTransaction(args, PASS_FRASE);
+	@Test
+	public void sendTransactionWithGasLimitTest() throws Exception {
 
-    	assertEquals(txExpectedResult, txResult);
-    }
-	
+		TestSystemProperties props = new TestSystemProperties();
+
+		Wallet wallet = new Wallet(new HashMapDB());
+		RskAddress sender = wallet.addAccount(PASS_FRASE);
+		RskAddress receiver = wallet.addAccount();
+
+		// Hash of the expected transaction
+		Web3.CallArguments args = TransactionTestHelper.createArguments(sender, receiver);
+		Transaction tx = TransactionTestHelper.createTransaction(args, props.getNetworkConstants().getChainId(), wallet.getAccount(sender, PASS_FRASE));
+		String txExpectedResult = tx.getHash().toJsonString();
+
+		TransactionPoolAddResult transactionPoolAddResult = mock(TransactionPoolAddResult.class);
+		when(transactionPoolAddResult.transactionsWereAdded()).thenReturn(true);
+
+		Ethereum ethereum = mock(Ethereum.class);
+
+		PersonalModuleWalletEnabled personalModuleWalletEnabled = new PersonalModuleWalletEnabled(props, ethereum, wallet, null);
+
+		// Hash of the actual transaction builded inside the sendTransaction
+		String txResult = personalModuleWalletEnabled.sendTransaction(args, PASS_FRASE);
+
+		assertEquals(txExpectedResult, txResult);
+	}
+
 }

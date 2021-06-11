@@ -40,79 +40,77 @@ import co.rsk.net.TransactionGateway;
 
 public class EthModuleTransactionBase implements EthModuleTransaction {
 
-    protected static final Logger LOGGER = LoggerFactory.getLogger("web3");
+	protected static final Logger LOGGER = LoggerFactory.getLogger("web3");
 
-    private final Wallet wallet;
-    private final TransactionPool transactionPool;
-    private final Constants constants;
-    private final TransactionGateway transactionGateway;
+	private final Wallet wallet;
+	private final TransactionPool transactionPool;
+	private final Constants constants;
+	private final TransactionGateway transactionGateway;
 
-    public EthModuleTransactionBase(Constants constants, Wallet wallet, TransactionPool transactionPool, TransactionGateway transactionGateway) {
-        this.wallet = wallet;
-        this.transactionPool = transactionPool;
-        this.constants = constants;
-        this.transactionGateway = transactionGateway;
-    }
+	public EthModuleTransactionBase(Constants constants, Wallet wallet, TransactionPool transactionPool, TransactionGateway transactionGateway) {
+		this.wallet = wallet;
+		this.transactionPool = transactionPool;
+		this.constants = constants;
+		this.transactionGateway = transactionGateway;
+	}
 
-    @Override
-    public synchronized String sendTransaction(Web3.CallArguments args) {
-        
-    	Account senderAccount = this.wallet.getAccount(new RskAddress(args.from));
-        String txHash = null;
-        
-        try {
+	@Override
+	public synchronized String sendTransaction(Web3.CallArguments args) {
 
-        	synchronized (transactionPool) {
+		Account senderAccount = this.wallet.getAccount(new RskAddress(args.from));
+		String txHash = null;
 
-            	TransactionArguments txArgs = TransactionArgumentsUtil.processArguments(args, transactionPool, senderAccount, constants.getChainId());
-                
-                Transaction tx = Transaction.builder().from(txArgs).build();
-                
-                tx.sign(senderAccount.getEcKey().getPrivKeyBytes());
-                
-                if (!tx.acceptTransactionSignature(constants.getChainId())) {
-                    throw RskJsonRpcRequestException.invalidParamError(TransactionArgumentsUtil.ERR_INVALID_CHAIN_ID + args.chainId);
-                }
+		try {
 
-                TransactionPoolAddResult result = transactionGateway.receiveTransaction(tx.toImmutableTransaction());
-                
-                if(!result.transactionsWereAdded()) {
-                    throw RskJsonRpcRequestException.transactionError(result.getErrorMessage());
-                }
+			synchronized (transactionPool) {
 
-                txHash = tx.getHash().toJsonString();
-            }
+				TransactionArguments txArgs = TransactionArgumentsUtil.processArguments(args, transactionPool, senderAccount, constants.getChainId());
 
-            return txHash;
+				Transaction tx = Transaction.builder().from(txArgs).build();
 
-        } finally {
-            LOGGER.debug("eth_sendTransaction({}): {}", args, txHash);
-        }
-    }
+				tx.sign(senderAccount.getEcKey().getPrivKeyBytes());
 
-    @Override
-    public String sendRawTransaction(String rawData) {
-        String s = null;
-        try {
-            Transaction tx = new ImmutableTransaction(stringHexToByteArray(rawData));
+				if (!tx.acceptTransactionSignature(constants.getChainId())) {
+					throw RskJsonRpcRequestException.invalidParamError(TransactionArgumentsUtil.ERR_INVALID_CHAIN_ID + args.chainId);
+				}
 
-            if (null == tx.getGasLimit()
-                    || null == tx.getGasPrice()
-                    || null == tx.getValue()) {
-                throw invalidParamError("Missing parameter, gasPrice, gas or value");
-            }
+				TransactionPoolAddResult result = transactionGateway.receiveTransaction(tx.toImmutableTransaction());
 
-            TransactionPoolAddResult result = transactionGateway.receiveTransaction(tx);
-            if(!result.transactionsWereAdded()) {
-                throw RskJsonRpcRequestException.transactionError(result.getErrorMessage());
-            }
+				if (!result.transactionsWereAdded()) {
+					throw RskJsonRpcRequestException.transactionError(result.getErrorMessage());
+				}
 
-            return s = tx.getHash().toJsonString();
-        } finally {
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("eth_sendRawTransaction({}): {}", rawData, s);
-            }
-        }
-    }
+				txHash = tx.getHash().toJsonString();
+			}
+
+			return txHash;
+
+		} finally {
+			LOGGER.debug("eth_sendTransaction({}): {}", args, txHash);
+		}
+	}
+
+	@Override
+	public String sendRawTransaction(String rawData) {
+		String s = null;
+		try {
+			Transaction tx = new ImmutableTransaction(stringHexToByteArray(rawData));
+
+			if (null == tx.getGasLimit() || null == tx.getGasPrice() || null == tx.getValue()) {
+				throw invalidParamError("Missing parameter, gasPrice, gas or value");
+			}
+
+			TransactionPoolAddResult result = transactionGateway.receiveTransaction(tx);
+			if (!result.transactionsWereAdded()) {
+				throw RskJsonRpcRequestException.transactionError(result.getErrorMessage());
+			}
+
+			return s = tx.getHash().toJsonString();
+		} finally {
+			if (LOGGER.isDebugEnabled()) {
+				LOGGER.debug("eth_sendRawTransaction({}): {}", rawData, s);
+			}
+		}
+	}
 
 }

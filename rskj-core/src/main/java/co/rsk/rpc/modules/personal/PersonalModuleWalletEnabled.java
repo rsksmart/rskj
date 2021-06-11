@@ -184,22 +184,22 @@ public class PersonalModuleWalletEnabled implements PersonalModule {
         return wallet.getAccount(new RskAddress(from), passphrase);
     }
 
-    private String sendTransaction(Web3.CallArguments args, Account senderAccount) throws Exception {
-        
-    	if (senderAccount == null) {
-            throw new Exception("From address private key could not be found in this node");
-        }
+	private String sendTransaction(Web3.CallArguments args, Account senderAccount) throws Exception {
 
-    	TransactionArguments txArgs = TransactionArgumentsUtil.processArguments(args, transactionPool, senderAccount, config.getNetworkConstants().getChainId());
+		if (senderAccount == null) {
+			throw new Exception("From address private key could not be found in this node");
+		}
 
-        Transaction tx = Transaction.builder().from(txArgs).build();
+		TransactionArguments txArgs = TransactionArgumentsUtil.processArguments(args, transactionPool, senderAccount, config.getNetworkConstants().getChainId());
 
-        tx.sign(senderAccount.getEcKey().getPrivKeyBytes());
+		Transaction tx = Transaction.builder().from(txArgs).build();
 
-        eth.submitTransaction(tx);
+		tx.sign(senderAccount.getEcKey().getPrivKeyBytes());
 
-        return tx.getHash().toJsonString();
-    }
+		eth.submitTransaction(tx);
+
+		return tx.getHash().toJsonString();
+	}
 
     private String convertFromJsonHexToHex(String x) throws Exception {
         if (!x.startsWith("0x")) {
