@@ -348,9 +348,9 @@ public class MutableRepository implements Repository {
     }
 
     @Override
-    public Keccak256 getStorageHash(RskAddress addr) {
+    public byte[] getStorageHash(RskAddress addr) {
         byte[] storageRoot = getStorageStateRoot(addr);
-        return new Keccak256(storageRoot);
+        return new Keccak256(storageRoot).getBytes();
     }
 
     /**
@@ -360,8 +360,7 @@ public class MutableRepository implements Repository {
      * @return a byte array of RLP-serialized nodes
      * */
     private List<byte[]> prove(byte[] key) {
-        return mutableTrie
-                .getNodes(key)
+        return Optional.ofNullable(mutableTrie.getNodes(key)).orElse(Collections.emptyList())
                 .stream()
                 .map(trie -> trie.getProof())
                 .collect(Collectors.toList());

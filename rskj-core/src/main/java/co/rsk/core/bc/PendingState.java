@@ -102,7 +102,7 @@ public class PendingState implements AccountInformationProvider {
     }
 
     @Override
-    public Keccak256 getStorageHash(RskAddress addr) {
+    public byte[] getStorageHash(RskAddress addr) {
         return postExecutionReturn(executedRepository -> executedRepository.getStorageHash(addr));
     }
 

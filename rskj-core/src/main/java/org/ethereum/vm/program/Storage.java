@@ -181,7 +181,7 @@ public class Storage implements Repository, ProgramListenerAware {
     }
 
     @Override
-    public Keccak256 getStorageHash(RskAddress addr) {
+    public byte[] getStorageHash(RskAddress addr) {
         return repository.getStorageHash(addr);
     }
 

@@ -77,7 +77,6 @@ public class EthModule
     private final BridgeSupportFactory bridgeSupportFactory;
     private final byte chainId;
 
-
     public EthModule(
             BridgeConstants bridgeConstants,
             byte chainId,
@@ -300,7 +299,7 @@ public class EthModule
 
         // EIP-1186: For an externally owned account (without associated code) it will return a SHA3(empty byte array)
         String codeHash = accountInformationProvider.isContract(rskAddress) ?
-                toUnformattedJsonHex(accountInformationProvider.getCode(rskAddress)) :
+                toUnformattedJsonHex(new Keccak256(accountInformationProvider.getCode(rskAddress)).getBytes()) :
                 toUnformattedJsonHex(Keccak256.ZERO_HASH.getBytes());
 
         List<String> accountProof = accountInformationProvider.getAccountProof(rskAddress).stream()
@@ -322,7 +321,7 @@ public class EthModule
      * @param accountInformationProvider an account information provider to retrieve data from the expected block
      * @return a StorageProof object containing key, value and storage proofs
      * */
-    public StorageProofDTO getStorageProof(RskAddress rskAddress, DataWord storageKey, AccountInformationProvider accountInformationProvider) {
+    private StorageProofDTO getStorageProof(RskAddress rskAddress, DataWord storageKey, AccountInformationProvider accountInformationProvider) {
         List<String> storageProof = accountInformationProvider.getStorageProof(rskAddress, storageKey).stream()
                 .map(proof -> toUnformattedJsonHex(proof))
                 .collect(Collectors.toList());

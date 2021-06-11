@@ -104,7 +104,7 @@ public interface AccountInformationProvider {
      * @param addr an address
      * @return Keccak256(storageRoot)
      * */
-    Keccak256 getStorageHash(RskAddress addr);
+    byte[] getStorageHash(RskAddress addr);
 
     /**
      * Retrieves an account proof for a given address
