@@ -21,6 +21,8 @@ package co.rsk.peg;
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.wallet.SendRequest;
 import co.rsk.bitcoinj.wallet.Wallet;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -65,12 +67,20 @@ public class ReleaseTransactionBuilder {
     private final Wallet wallet;
     private final Address changeAddress;
     private final Coin feePerKb;
+    private final ActivationConfig.ForBlock activations;
 
-    public ReleaseTransactionBuilder(NetworkParameters params, Wallet wallet, Address changeAddress, Coin feePerKb) {
+    public ReleaseTransactionBuilder(
+        NetworkParameters params,
+        Wallet wallet,
+        Address changeAddress,
+        Coin feePerKb,
+        ActivationConfig.ForBlock activations
+    ) {
         this.params = params;
         this.wallet = wallet;
         this.changeAddress = changeAddress;
         this.feePerKb = feePerKb;
+        this.activations = activations;
     }
 
     public Wallet getWallet() {
@@ -106,6 +116,11 @@ public class ReleaseTransactionBuilder {
 
         // Build a tx and send request and configure it
         BtcTransaction btcTx = new BtcTransaction(params);
+
+        if (activations.isActive(ConsensusRule.RSKIP201)) {
+            btcTx.setVersion(2);
+        }
+
         SendRequest sr = SendRequest.forTx(btcTx);
         // Default settings
         defaultSettingsConfigurator.configure(sr);

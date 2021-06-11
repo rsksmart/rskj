@@ -108,12 +108,12 @@ public class FederationTest {
             Assert.assertEquals(4, numberOfSignaturesRequired);
             Assert.assertEquals(6, publicKeys.size());
             for (int i = 0; i < sortedPublicKeys.size(); i++) {
-                Assert.assertTrue(Arrays.equals(sortedPublicKeys.get(i).getPubKey(), publicKeys.get(i).getPubKey()));
+                Assert.assertArrayEquals(sortedPublicKeys.get(i).getPubKey(),
+                    publicKeys.get(i).getPubKey());
             }
             return new Script(new byte[]{(byte)0xaa});
         });
-        Assert.assertTrue(Arrays.equals(federation.getRedeemScript().getProgram(), new byte[]{(byte) 0xaa}));
-        Assert.assertTrue(Arrays.equals(federation.getRedeemScript().getProgram(), new byte[]{(byte) 0xaa}));
+        Assert.assertArrayEquals(federation.getRedeemScript().getProgram(), new byte[]{(byte) 0xaa});
         // Make sure the script creation happens only once
         Assert.assertEquals(1, calls.size());
     }
@@ -130,12 +130,12 @@ public class FederationTest {
             Assert.assertEquals(4, numberOfSignaturesRequired);
             Assert.assertEquals(6, publicKeys.size());
             for (int i = 0; i < sortedPublicKeys.size();i ++) {
-                Assert.assertTrue(Arrays.equals(sortedPublicKeys.get(i).getPubKey(), publicKeys.get(i).getPubKey()));
+                Assert.assertArrayEquals(sortedPublicKeys.get(i).getPubKey(),
+                    publicKeys.get(i).getPubKey());
             }
             return new Script(new byte[]{(byte)0xaa});
         });
-        Assert.assertTrue(Arrays.equals(federation.getP2SHScript().getProgram(), new byte[]{(byte) 0xaa}));
-        Assert.assertTrue(Arrays.equals(federation.getP2SHScript().getProgram(), new byte[]{(byte) 0xaa}));
+        Assert.assertArrayEquals(federation.getP2SHScript().getProgram(), new byte[]{(byte) 0xaa});
         // Make sure the script creation happens only once
         Assert.assertEquals(1, calls.size());
     }
@@ -156,12 +156,12 @@ public class FederationTest {
             Assert.assertEquals(4, numberOfSignaturesRequired);
             Assert.assertEquals(6, publicKeys.size());
             for (int i = 0; i < sortedPublicKeys.size();i ++) {
-                Assert.assertTrue(Arrays.equals(sortedPublicKeys.get(i).getPubKey(), publicKeys.get(i).getPubKey()));
+                Assert.assertArrayEquals(sortedPublicKeys.get(i).getPubKey(),
+                    publicKeys.get(i).getPubKey());
             }
             return new Script(Hex.decode("a914896ed9f3446d51b5510f7f0b6ef81b2bde55140e87"));
         });
 
-        Assert.assertEquals("2N5muMepJizJE1gR7FbHJU6CD18V3BpNF9p", federation.getAddress().toBase58());
         Assert.assertEquals("2N5muMepJizJE1gR7FbHJU6CD18V3BpNF9p", federation.getAddress().toBase58());
         // Make sure the address creation happens only once
         Assert.assertEquals(1, calls.size());
@@ -171,9 +171,9 @@ public class FederationTest {
     public void testEquals_basic() {
         Assert.assertTrue(federation.equals(federation));
 
-        Assert.assertFalse(federation.equals(null));
-        Assert.assertFalse(federation.equals(new Object()));
-        Assert.assertFalse(federation.equals("something else"));
+        Assert.assertNotEquals(null, federation);
+        Assert.assertNotEquals(federation, new Object());
+        Assert.assertNotEquals("something else", federation);
     }
 
     @Test
@@ -184,7 +184,7 @@ public class FederationTest {
                 0L,
                 NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
         );
-        Assert.assertFalse(federation.equals(otherFederation));
+        Assert.assertNotEquals(federation, otherFederation);
     }
 
     @Test
@@ -195,7 +195,7 @@ public class FederationTest {
                 0L,
                 NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
         );
-        Assert.assertFalse(federation.equals(otherFederation));
+        Assert.assertNotEquals(federation, otherFederation);
     }
 
     @Test
@@ -217,7 +217,7 @@ public class FederationTest {
                 0L,
                 NetworkParameters.fromID(NetworkParameters.ID_TESTNET)
         );
-        Assert.assertFalse(federation.equals(otherFederation));
+        Assert.assertNotEquals(federation, otherFederation);
     }
 
     @Test
@@ -241,9 +241,9 @@ public class FederationTest {
                 NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
         );
 
-        Assert.assertFalse(otherFederation.equals(yetOtherFederation));
-        Assert.assertFalse(federation.equals(otherFederation));
-        Assert.assertFalse(federation.equals(yetOtherFederation));
+        Assert.assertNotEquals(otherFederation, yetOtherFederation);
+        Assert.assertNotEquals(federation, otherFederation);
+        Assert.assertNotEquals(federation, yetOtherFederation);
     }
 
     @Test
@@ -254,7 +254,7 @@ public class FederationTest {
                 0L,
                 NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
         );
-        Assert.assertTrue(federation.equals(otherFederation));
+        Assert.assertEquals(federation, otherFederation);
     }
 
     @Test

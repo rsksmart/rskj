@@ -19,10 +19,11 @@
 package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.Address;
+import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.Sha256Hash;
+import co.rsk.bitcoinj.params.RegTestParams;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
-import co.rsk.bitcoinj.script.ScriptOpCodes;
 import co.rsk.bitcoinj.wallet.RedeemData;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
@@ -152,5 +153,10 @@ public class PegTestUtils {
         System.arraycopy(customPayload, 0, payloadBytes, index, customPayload.length);
 
         return ScriptBuilder.createOpReturnScript(payloadBytes);
+    }
+
+    public static Address createRandomBtcAddress() {
+        BtcECKey key = new BtcECKey();
+        return key.toAddress(RegTestParams.get());
     }
 }

@@ -191,7 +191,7 @@ public class EthModule
                     code = new byte[0];
                 }
 
-                s = TypeConverter.toJsonHex(code);
+                s = toUnformattedJsonHex(code);
             }
 
             return s;
@@ -245,7 +245,7 @@ public class EthModule
      * @param res
      * @return revert reason, empty if didnt match.
      */
-    private Optional<String> decodeRevertReason(ProgramResult res) {
+    public static Optional<String> decodeRevertReason(ProgramResult res) {
         byte[] bytes = res.getHReturn();
         if (bytes == null || bytes.length < 4) {
             return Optional.empty();

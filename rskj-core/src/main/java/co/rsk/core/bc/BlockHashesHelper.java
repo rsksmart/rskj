@@ -51,13 +51,13 @@ public class BlockHashesHelper {
             Transaction transaction = transactions.get(k);
             Keccak256 txh = transaction.getHash();
 
-            Optional<TransactionInfo> txinfoOpt = receiptStore.get(txh, bhash);
-            if (!txinfoOpt.isPresent()) {
+            Optional<TransactionInfo> txInfoOpt = receiptStore.get(txh.getBytes(), bhash.getBytes());
+            if (!txInfoOpt.isPresent()) {
                 throw new BlockHashesHelperException(String.format("Missing receipt for transaction %s in block %s", txh, bhash));
             }
 
-            TransactionInfo txinfo = txinfoOpt.get();
-            receipts.add(txinfo.getReceipt());
+            TransactionInfo txInfo = txInfoOpt.get();
+            receipts.add(txInfo.getReceipt());
 
             if (txh.equals(txHash)) {
                 ntx = k;

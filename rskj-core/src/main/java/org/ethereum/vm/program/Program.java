@@ -103,7 +103,6 @@ public class Program {
     private int startAddr;
 
     private BitSet jumpdestSet;
-    private BitSet beginsubSet;
 
     private final VmConfig config;
     private final PrecompiledContracts precompiledContracts;
@@ -193,7 +192,7 @@ public class Program {
         byte[] senderNonce = isEmpty(nonce) ? getStorage().getNonce(senderAddress).toByteArray() : nonce;
 
         return getResult().addInternalTransaction(
-                transaction.getHash().getBytes(),
+                transaction,
                 getCallDeep(),
                 senderNonce,
                 getGasPrice(),
@@ -1264,16 +1263,12 @@ public class Program {
         startAddr = 0;
         pc = 0;
         i = processAndSkipCodeHeader(i);
-        computeJumpDestsAndBeginSubs(i);
+        computeJumpDests(i);
     }
 
-    private void computeJumpDestsAndBeginSubs(int start) {
+    private void computeJumpDests(int start) {
         if (jumpdestSet == null) {
             jumpdestSet = new BitSet(ops.length);
-        }
-
-        if (beginsubSet == null) {
-            beginsubSet = new BitSet(ops.length);
         }
 
         for (int i = start; i < ops.length; ++i) {
@@ -1285,9 +1280,6 @@ public class Program {
 
             if (op == OpCode.JUMPDEST) {
                 jumpdestSet.set(i);
-            }
-            else if (op == OpCode.BEGINSUB) {
-                beginsubSet.set(i);
             }
 
             if (op.asInt() >= OpCode.PUSH1.asInt() && op.asInt() <= OpCode.PUSH32.asInt()) {
@@ -1335,20 +1327,6 @@ public class Program {
         if (ret < 0 || ret >= jumpdestSet.size() || !jumpdestSet.get(ret)) {
             throw ExceptionHelper.badJumpDestination(this, ret);
         }
-        return ret;
-    }
-
-    public int verifyBeginSub(DataWord nextPC) {
-        if (nextPC.occupyMoreThan(4)) {
-            throw ExceptionHelper.badJumpSubDestination(this, -1);
-        }
-
-        int ret = nextPC.intValue(); // could be negative
-
-        if (ret < 0 || ret >= beginsubSet.size() || !beginsubSet.get(ret)) {
-            throw ExceptionHelper.badJumpSubDestination(this, ret);
-        }
-
         return ret;
     }
 
@@ -1402,7 +1380,15 @@ public class Program {
         // Special initialization for Bridge, Remasc and NativeContract contracts
         if (contract instanceof Bridge || contract instanceof RemascContract || contract instanceof NativeContract) {
             // CREATE CALL INTERNAL TRANSACTION
-            InternalTransaction internalTx = addInternalTx(null, getGasLimit(), senderAddress, contextAddress, endowment, EMPTY_BYTE_ARRAY, "call");
+            InternalTransaction internalTx = addInternalTx(
+                null,
+                getGasLimit(),
+                senderAddress,
+                contextAddress,
+                endowment,
+                EMPTY_BYTE_ARRAY,
+                "call"
+            );
 
             // Propagate the "local call" nature of the originating transaction down to the callee
             internalTx.setLocalCallTransaction(this.transaction.isLocalCallTransaction());
@@ -1420,7 +1406,7 @@ public class Program {
                     Collections.emptyList()
             );
 
-            contract.init(internalTx, executionBlock, track, this.invoke.getBlockStore(), null, null);
+            contract.init(internalTx, executionBlock, track, this.invoke.getBlockStore(), null, result.getLogInfoList());
         }
 
         long requiredGas = contract.getGasForData(data);
@@ -1528,21 +1514,6 @@ public class Program {
         }
     }
 
-    @SuppressWarnings("serial")
-    public static class InvalidReturnSubException extends RuntimeException {
-
-        public InvalidReturnSubException(String message, Object... args) {
-            super(format(message, args));
-        }
-    }
-
-    @SuppressWarnings("serial")
-    public static class InvalidBeginSubException extends RuntimeException {
-
-        public InvalidBeginSubException(String message, Object... args) {
-            super(format(message, args));
-        }
-    }
 
     @SuppressWarnings("serial")
     public static class StackTooSmallException extends RuntimeException {
@@ -1552,13 +1523,6 @@ public class Program {
         }
     }
 
-    @SuppressWarnings("serial")
-    public static class ReturnStackOverflowException extends RuntimeException {
-
-        public ReturnStackOverflowException(String message, Object... args) {
-            super(format(message, args));
-        }
-    }
 
     @SuppressWarnings("serial")
     public static class StaticCallModificationException extends RuntimeException {
@@ -1612,24 +1576,8 @@ public class Program {
             return new BadJumpDestinationException("Operation with pc isn't 'JUMPDEST': PC[%d], tx[%s]", pc, extractTxHash(program));
         }
 
-        public static BadJumpDestinationException badJumpSubDestination(@Nonnull Program program, int pc) {
-            return new BadJumpDestinationException("Operation with pc isn't 'BEGINSUB': PC[%d], tx[%s]", pc, extractTxHash(program));
-        }
-
-        public static InvalidReturnSubException invalidReturnSub(@Nonnull Program program, int pc) {
-            return new InvalidReturnSubException("Invalid 'RETURNSUB': PC[%d], tx[%s]", pc, extractTxHash(program));
-        }
-
-        public static InvalidBeginSubException invalidBeginSub(@Nonnull Program program, int pc) {
-            return new InvalidBeginSubException("Invalid 'BEGINSUB': PC[%d], tx[%s]", pc, extractTxHash(program));
-        }
-
         public static StackTooSmallException tooSmallStack(@Nonnull Program program, int expectedSize, int actualSize) {
             return new StackTooSmallException("Expected stack size %d but actual %d, tx: %s", expectedSize, actualSize, extractTxHash(program));
-        }
-
-        public static ReturnStackOverflowException returnStackOverflow(@Nonnull Program program, int pc) {
-            return new ReturnStackOverflowException("Return stack overflow: PC[%d], tx[%s]", pc, extractTxHash(program));
         }
 
         public static RuntimeException tooLargeContractSize(@Nonnull Program program, int maxSize, int actualSize) {
@@ -1679,7 +1627,4 @@ public class Program {
 
     @VisibleForTesting
     public BitSet getJumpdestSet() { return this.jumpdestSet; }
-
-    @VisibleForTesting
-    public BitSet getBeginsubSet() { return this.beginsubSet; }
 }

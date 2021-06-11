@@ -39,15 +39,15 @@ import java.util.stream.Collectors;
  * @author Ariel Mendelzon
  */
 
-public final class Federation {
-    private final List<FederationMember> members;
-    private final Instant creationTime;
-    private final long creationBlockNumber;
-    private final NetworkParameters btcParams;
+public class Federation {
+    protected final List<FederationMember> members;
+    protected final Instant creationTime;
+    protected final long creationBlockNumber;
+    protected final NetworkParameters btcParams;
 
-    private Script redeemScript;
-    private Script p2shScript;
-    private Address address;
+    protected Script redeemScript;
+    protected Script p2shScript;
+    protected Address address;
 
     public Federation(List<FederationMember> members, Instant creationTime, long creationBlockNumber,  NetworkParameters btcParams) {
         // Sorting members ensures same order of federation members for same members
@@ -102,6 +102,10 @@ public final class Federation {
         }
 
         return redeemScript;
+    }
+
+    public Script getStandardRedeemScript() {
+        return getRedeemScript();
     }
 
     public Script getP2SHScript() {

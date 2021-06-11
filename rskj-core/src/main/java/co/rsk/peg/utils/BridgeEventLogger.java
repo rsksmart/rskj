@@ -47,4 +47,13 @@ public interface BridgeEventLogger {
     void logPeginBtc(RskAddress rskReceiver, BtcTransaction btcTx, Coin amount, int protocolVersion);
 
     void logReleaseBtcRequested(byte[] rskTxHash, BtcTransaction btcTx, Coin amount);
+
+    void logRejectedPegin(BtcTransaction btcTx, RejectedPeginReason reason);
+
+    void logUnrefundablePegin(BtcTransaction btcTx, UnrefundablePeginReason reason);
+
+
+    void logReleaseBtcRequestReceived(String sender, byte[] btcDestinationAddress, Coin amount);
+
+    void logReleaseBtcRequestRejected(String sender, Coin amount, RejectedPegoutReason reason);
 }

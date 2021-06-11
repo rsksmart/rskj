@@ -17,20 +17,25 @@
  */
 package co.rsk.cli.tools;
 
+import co.rsk.config.TestSystemProperties;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.crypto.Keccak256;
+import co.rsk.db.HashMapBlocksIndex;
 import co.rsk.test.World;
 import co.rsk.test.dsl.DslParser;
 import co.rsk.test.dsl.DslProcessorException;
 import co.rsk.test.dsl.WorldDslProcessor;
 import co.rsk.trie.Trie;
+import org.ethereum.TestUtils;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.core.Blockchain;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.datasource.HashMapDB;
+import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.db.BlockStore;
+import org.ethereum.db.IndexedBlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.db.ReceiptStoreImpl;
 import org.ethereum.util.ByteUtil;
@@ -41,6 +46,13 @@ import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 import java.util.Random;
+
+import static co.rsk.core.BlockDifficulty.ZERO;
+import static org.ethereum.TestUtils.randomHash;
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * Created by ajlopez on 26/04/2020.
@@ -254,5 +266,40 @@ public class CliToolsTest {
 
         Assert.assertNotNull(result);
         Assert.assertArrayEquals(value, result);
+    }
+
+    @Test
+    public void rewindBlocks() {
+        TestSystemProperties config = new TestSystemProperties();
+        BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
+        KeyValueDataSource keyValueDataSource = new HashMapDB();
+
+        IndexedBlockStore indexedBlockStore = new IndexedBlockStore(
+                blockFactory,
+                keyValueDataSource,
+                new HashMapBlocksIndex());
+
+        long blocksToGenerate = 14;
+
+        for (long i = 0; i < blocksToGenerate; i++) {
+            Block block = mock(Block.class);
+            Keccak256 blockHash = randomHash();
+            when(block.getHash()).thenReturn(blockHash);
+            when(block.getNumber()).thenReturn(i);
+            when(block.getEncoded()).thenReturn(TestUtils.randomBytes(128));
+
+            indexedBlockStore.saveBlock(block, ZERO, true);
+        }
+
+        Block bestBlock = indexedBlockStore.getBestBlock();
+        assertThat(bestBlock.getNumber(), is(blocksToGenerate - 1));
+
+        long blockToRewind = blocksToGenerate / 2;
+        String[] args = new String[1];
+        args[0] = blockToRewind + "";
+        RewindBlocks.execute(args, indexedBlockStore);
+
+        bestBlock = indexedBlockStore.getBestBlock();
+        assertThat(bestBlock.getNumber(), is(blockToRewind));
     }
 }

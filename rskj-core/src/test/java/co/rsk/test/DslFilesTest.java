@@ -18,12 +18,14 @@
 
 package co.rsk.test;
 
+import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockChainStatus;
 import co.rsk.test.dsl.DslParser;
 import co.rsk.test.dsl.DslProcessorException;
 import co.rsk.test.dsl.WorldDslProcessor;
+import com.typesafe.config.ConfigValueFactory;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.Block;
@@ -157,18 +159,22 @@ public class DslFilesTest {
     public void runCreateContractAndPreserveBalance() throws FileNotFoundException, DslProcessorException {
         // after rskip174 activation
         DslParser parser = DslParser.fromResource("dsl/create_and_preserve_balance.txt");
-        World world = new World();
+        TestSystemProperties rskip174Active = new TestSystemProperties(rawConfig ->
+                rawConfig.withValue("blockchain.config.hardforkActivationHeights.iris300", ConfigValueFactory.fromAnyRef(0))
+        );
+        World world = new World(rskip174Active);
         WorldDslProcessor processor = new WorldDslProcessor(world);
         processor.processCommands(parser);
 
         Assert.assertEquals(Coin.valueOf(100L), getBalance(world, "6252703f5ba322ec64d3ac45e56241b7d9e481ad"));
     }
-
     @Test
     public void runCreateContractAndPreserveNoBalance() throws FileNotFoundException, DslProcessorException {
         // before rskip174 activation
+        // todo(fedejinich) this test will change when iris300 == 0
         DslParser parser = DslParser.fromResource("dsl/create_and_preserve_no_balance.txt");
         World world = new World();
+
         WorldDslProcessor processor = new WorldDslProcessor(world);
         processor.processCommands(parser);
 

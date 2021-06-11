@@ -47,6 +47,25 @@ public class TestContract {
         return new TestContract(bytecode, runtimeBytecode, functions);
     }
 
+    public static TestContract noreturn() {
+        /*
+        contract CallNoReturn {
+            function noreturn() public pure {
+            }
+        }
+        */
+
+        String bytecode = "6080604052348015600f57600080fd5b5060868061001e6000396000f3fe608060405260043610603f576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff1680630f965a41146044575b600080fd5b348015604f57600080fd5b5060566058565b005b56fea165627a7a72305820ed3355ab58b1171eca06cfdddc3d6f1a9cdf82929c9adeb8959b495e3b4ad6e80029";
+        String runtimeBytecode = "608060405260043610603f576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff1680630f965a41146044575b600080fd5b348015604f57600080fd5b5060566058565b005b56fea165627a7a72305820ed3355ab58b1171eca06cfdddc3d6f1a9cdf82929c9adeb8959b495e3b4ad6e80029";
+        String abi = "[{\"constant\":true,\"inputs\":[],\"name\":\"noreturn\",\"outputs\":[],\"payable\":false,\"type\":\"function\"},{\"inputs\":[],\"payable\":false,\"type\":\"function\"}]";
+
+        CallTransaction.Contract contract = new CallTransaction.Contract(abi);
+
+        Map<String, CallTransaction.Function> functions = new HashMap<>();
+        functions.put("noreturn", contract.getByName("noreturn"));
+        return new TestContract(bytecode, runtimeBytecode, functions);
+    }
+
     public static TestContract hello() {
         /*
         contract helloworld {

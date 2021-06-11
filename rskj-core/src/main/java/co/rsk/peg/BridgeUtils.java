@@ -20,7 +20,11 @@ package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.crypto.TransactionSignature;
+import co.rsk.bitcoinj.script.RedeemScriptParser;
+import co.rsk.bitcoinj.script.RedeemScriptParser.MultiSigType;
+import co.rsk.bitcoinj.script.RedeemScriptParserFactory;
 import co.rsk.bitcoinj.script.Script;
+import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.script.ScriptChunk;
 import co.rsk.bitcoinj.wallet.Wallet;
 import co.rsk.config.BridgeConstants;
@@ -28,6 +32,7 @@ import co.rsk.core.RskAddress;
 import co.rsk.peg.bitcoin.RskAllowUnconfirmedCoinSelector;
 import co.rsk.peg.btcLockSender.BtcLockSender.TxSenderAddressType;
 import co.rsk.peg.utils.BtcTransactionFormatUtils;
+import javax.annotation.Nonnull;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -37,10 +42,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Stream;
 
 /**
  * @author Oscar Guindzberg
@@ -49,33 +52,88 @@ public class BridgeUtils {
 
     private static final Logger logger = LoggerFactory.getLogger("BridgeUtils");
 
-    public static Wallet getFederationNoSpendWallet(Context btcContext, Federation federation) {
-        return getFederationsNoSpendWallet(btcContext, Collections.singletonList(federation));
+    public static Wallet getFederationNoSpendWallet(
+        Context btcContext,
+        Federation federation,
+        boolean isFastBridgeCompatible,
+        BridgeStorageProvider storageProvider
+    ) {
+        return getFederationsNoSpendWallet(
+            btcContext,
+            Collections.singletonList(federation),
+            isFastBridgeCompatible,
+            storageProvider
+        );
     }
 
-    public static Wallet getFederationsNoSpendWallet(Context btcContext, List<Federation> federations) {
-        Wallet wallet = new BridgeBtcWallet(btcContext, federations);
-        federations.forEach(federation -> wallet.addWatchedAddress(federation.getAddress(), federation.getCreationTime().toEpochMilli()));
+    public static Wallet getFederationsNoSpendWallet(
+        Context btcContext,
+        List<Federation> federations,
+        boolean isFastBridgeCompatible,
+        BridgeStorageProvider storageProvider
+    ) {
+        Wallet wallet;
+        if (isFastBridgeCompatible) {
+            wallet = new FastBridgeCompatibleBtcWalletWithStorage(btcContext, federations, storageProvider);
+        } else {
+            wallet = new BridgeBtcWallet(btcContext, federations);
+        }
+
+        federations.forEach(federation ->
+            wallet.addWatchedAddress(
+                federation.getAddress(),
+                federation.getCreationTime().toEpochMilli()
+            )
+        );
+
         return wallet;
     }
 
-    public static Wallet getFederationSpendWallet(Context btcContext, Federation federation, List<UTXO> utxos) {
-        return getFederationsSpendWallet(btcContext, Collections.singletonList(federation), utxos);
+    public static Wallet getFederationSpendWallet(
+        Context btcContext,
+        Federation federation,
+        List<UTXO> utxos,
+        boolean isFastBridgeCompatible,
+        BridgeStorageProvider storageProvider
+    ) {
+        return getFederationsSpendWallet(
+            btcContext,
+            Collections.singletonList(federation),
+            utxos,
+            isFastBridgeCompatible,
+            storageProvider
+        );
     }
 
-    public static Wallet getFederationsSpendWallet(Context btcContext, List<Federation> federations, List<UTXO> utxos) {
-        Wallet wallet = new BridgeBtcWallet(btcContext, federations);
+    public static Wallet getFederationsSpendWallet(
+        Context btcContext,
+        List<Federation> federations,
+        List<UTXO> utxos,
+        boolean isFastBridgeCompatible,
+        BridgeStorageProvider storageProvider
+    ) {
+        Wallet wallet;
+        if (isFastBridgeCompatible) {
+            wallet = new FastBridgeCompatibleBtcWalletWithStorage(btcContext, federations, storageProvider);
+        } else {
+            wallet = new BridgeBtcWallet(btcContext, federations);
+        }
 
         RskUTXOProvider utxoProvider = new RskUTXOProvider(btcContext.getParams(), utxos);
         wallet.setUTXOProvider(utxoProvider);
-        federations.forEach(federation -> {
-            wallet.addWatchedAddress(federation.getAddress(), federation.getCreationTime().toEpochMilli());
-        });
+
+        federations.forEach(federation ->
+            wallet.addWatchedAddress(
+                federation.getAddress(),
+                federation.getCreationTime().toEpochMilli()
+            )
+        );
+
         wallet.setCoinSelector(new RskAllowUnconfirmedCoinSelector());
         return wallet;
     }
 
-    private static boolean scriptCorrectlySpendsTx(BtcTransaction tx, int index, Script script) {
+    public static boolean scriptCorrectlySpendsTx(BtcTransaction tx, int index, Script script) {
         try {
             TransactionInput txInput = tx.getInput(index);
             txInput.getScriptSig().correctlySpends(tx, index, script, Script.ALL_VERIFY_FLAGS);
@@ -86,61 +144,99 @@ public class BridgeUtils {
     }
 
     /**
-     * Indicates whether a tx is a valid lock tx or not, checking the first input's script sig
-     * @param tx
-     * @return
+     * It checks if the tx doesn't spend any of the federations' funds and if it sends more than
+     * the minimum ({@see BridgeConstants::getMinimumLockTxValue}) to any of the federations
+     * @param tx the BTC transaction to check
+     * @param activeFederations the active federations
+     * @param retiredFederationP2SHScript the retired federation P2SHScript. Could be {@code null}.
+     * @param btcContext the BTC Context
+     * @param bridgeConstants the Bridge constants
+     * @param activations the network HF activations configuration
+     * @return true if this is a valid peg-in transaction
      */
-    public static boolean isValidLockTx(BtcTransaction tx) {
-        if (tx.getInputs().size() == 0) {
-            return false;
-        }
-        // This indicates that the tx is a P2PKH transaction which is the only one we support for now
-        return tx.getInput(0).getScriptSig().getChunks().size() == 2;
-    }
+    public static boolean isValidPegInTx(
+        BtcTransaction tx,
+        List<Federation> activeFederations,
+        Script retiredFederationP2SHScript,
+        Context btcContext,
+        BridgeConstants bridgeConstants,
+        ActivationConfig.ForBlock activations) {
 
-    /**
-     * Will return a valid scriptsig for the first input
-     * @param tx
-     * @return
-     */
-    public static Optional<Script> getFirstInputScriptSig(BtcTransaction tx) {
-        if (!isValidLockTx(tx)) {
-            return Optional.empty();
+        // First, check tx is not a typical release tx (tx spending from the any of the federation addresses and
+        // optionally sending some change to any of the federation addresses)
+        for (int i = 0; i < tx.getInputs().size(); i++) {
+            final int index = i;
+            if (activeFederations.stream().anyMatch(federation -> scriptCorrectlySpendsTx(tx, index, federation.getP2SHScript()))) {
+                return false;
+            }
+
+            if (retiredFederationP2SHScript != null && scriptCorrectlySpendsTx(tx, index, retiredFederationP2SHScript)) {
+                return false;
+            }
+
+            // Check if the registered utxo is not change from an utxo spent from either a fast bridge federation,
+            // erp federation, or even a retired fast bridge or erp federation
+            if (activations.isActive(ConsensusRule.RSKIP201)) {
+                RedeemScriptParser redeemScriptParser = RedeemScriptParserFactory.get(tx.getInput(index).getScriptSig().getChunks());
+                try {
+                    Script inputStandardRedeemScript = redeemScriptParser.extractStandardRedeemScript();
+                    if (activeFederations.stream().anyMatch(federation -> federation.getStandardRedeemScript().equals(inputStandardRedeemScript))) {
+                        return false;
+                    }
+
+                    Script outputScript = ScriptBuilder.createP2SHOutputScript(inputStandardRedeemScript);
+                    if (outputScript.equals(retiredFederationP2SHScript)) {
+                        return false;
+                    }
+                } catch (ScriptException e) {
+                    // There is no redeem script, could be a peg-in from a P2PKH address
+                }
+            }
         }
-        return Optional.of(tx.getInput(0).getScriptSig());
+
+        Wallet federationsWallet = BridgeUtils.getFederationsNoSpendWallet(
+            btcContext,
+            activeFederations,
+            false,
+            null
+        );
+        Coin valueSentToMe = tx.getValueSentToMe(federationsWallet);
+        Coin minimumPegInTxValue = activations.isActive(ConsensusRule.RSKIP219) ?
+            bridgeConstants.getMinimumPeginTxValueInSatoshis() :
+            bridgeConstants.getLegacyMinimumPeginTxValueInSatoshis();
+
+        if (valueSentToMe.isLessThan(minimumPegInTxValue)) {
+            logger.warn("[btctx:{}] Someone sent to the federation less than {} satoshis", tx.getHash(), minimumPegInTxValue);
+        }
+
+        return valueSentToMe.isPositive() && !valueSentToMe.isLessThan(minimumPegInTxValue);
     }
 
     /**
      * It checks if the tx doesn't spend any of the federations' funds and if it sends more than
      * the minimum ({@see BridgeConstants::getMinimumLockTxValue}) to any of the federations
      * @param tx the BTC transaction to check
-     * @param federations the active federations
+     * @param federation the active federation
      * @param btcContext the BTC Context
      * @param bridgeConstants the Bridge constants
-     * @return true if this is a valid lock transaction
+     * @param activations the network HF activations configuration
+     * @return true if this is a valid peg-in transaction
      */
-    public static boolean isLockTx(BtcTransaction tx, List<Federation> federations, Context btcContext, BridgeConstants bridgeConstants) {
-        // First, check tx is not a typical release tx (tx spending from the any of the federation addresses and
-        // optionally sending some change to any of the federation addresses)
-        for (int i = 0; i < tx.getInputs().size(); i++) {
-            final int index = i;
-            if (federations.stream().anyMatch(federation -> scriptCorrectlySpendsTx(tx, index, federation.getP2SHScript()))) {
-                return false;
-            }
-        }
+    public static boolean isValidPegInTx(
+        BtcTransaction tx,
+        Federation federation,
+        Context btcContext,
+        BridgeConstants bridgeConstants,
+        ActivationConfig.ForBlock activations) {
 
-        Wallet federationsWallet = BridgeUtils.getFederationsNoSpendWallet(btcContext, federations);
-        Coin valueSentToMe = tx.getValueSentToMe(federationsWallet);
-
-        int valueSentToMeSignum = valueSentToMe.signum();
-        if (valueSentToMe.isLessThan(bridgeConstants.getMinimumLockTxValue())) {
-            logger.warn("[btctx:{}]Someone sent to the federation less than {} satoshis", tx.getHash(), bridgeConstants.getMinimumLockTxValue());
-        }
-        return (valueSentToMeSignum > 0 && !valueSentToMe.isLessThan(bridgeConstants.getMinimumLockTxValue()));
-    }
-
-    public static boolean isLockTx(BtcTransaction tx, Federation federation, Context btcContext, BridgeConstants bridgeConstants) {
-        return isLockTx(tx, Collections.singletonList(federation), btcContext, bridgeConstants);
+        return isValidPegInTx(
+            tx,
+            Collections.singletonList(federation),
+            null,
+            btcContext,
+            bridgeConstants,
+            activations
+        );
     }
 
     /**
@@ -156,29 +252,61 @@ public class BridgeUtils {
             (activations.isActive(ConsensusRule.RSKIP143) && txSenderAddressType != TxSenderAddressType.UNKNOWN);
     }
 
-    private static boolean isReleaseTx(BtcTransaction tx, Federation federation) {
-        return isReleaseTx(tx, Collections.singletonList(federation));
+    private static boolean isPegOutTx(BtcTransaction tx, Federation federation, ActivationConfig.ForBlock activations) {
+        return isPegOutTx(tx, Collections.singletonList(federation), activations);
     }
 
-    public static boolean isReleaseTx(BtcTransaction tx, List<Federation> federations) {
+    public static boolean isPegOutTx(BtcTransaction tx, List<Federation> federations, ActivationConfig.ForBlock activations) {
+        return isPegOutTx(tx, activations, federations.stream().filter(Objects::nonNull).map(Federation::getP2SHScript).toArray(Script[]::new));
+    }
+
+    public static boolean isPegOutTx(BtcTransaction tx, ActivationConfig.ForBlock activations, Script... p2shScript) {
         int inputsSize = tx.getInputs().size();
         for (int i = 0; i < inputsSize; i++) {
-            final int inputIndex = i;
-            if (federations.stream().map(Federation::getP2SHScript).anyMatch(federationPayScript -> scriptCorrectlySpendsTx(tx, inputIndex, federationPayScript))) {
+            TransactionInput txInput = tx.getInput(i);
+            Optional<Script> redeemScriptOptional = extractRedeemScriptFromInput(tx.getInput(i));
+            if (!redeemScriptOptional.isPresent()) {
+                continue;
+            }
+
+            Script redeemScript = redeemScriptOptional.get();
+            if (activations.isActive(ConsensusRule.RSKIP201)) {
+                // Extract standard redeem script since the registered utxo could be from a fast bridge or erp federation
+                RedeemScriptParser redeemScriptParser = RedeemScriptParserFactory.get(txInput.getScriptSig().getChunks());
+                try {
+                    redeemScript = redeemScriptParser.extractStandardRedeemScript();
+                } catch (ScriptException e) {
+                    // There is no redeem script
+                    continue;
+                }
+            }
+
+            Script outputScript = ScriptBuilder.createP2SHOutputScript(redeemScript);
+            if (Stream.of(p2shScript).anyMatch(federationPayScript -> federationPayScript.equals(outputScript))) {
                 return true;
             }
         }
+
         return false;
     }
 
-    public static boolean isMigrationTx(BtcTransaction btcTx, Federation activeFederation, Federation retiringFederation, Context btcContext, BridgeConstants bridgeConstants) {
-        if (retiringFederation == null) {
+    public static boolean isMigrationTx(
+        BtcTransaction btcTx,
+        Federation activeFederation,
+        Federation retiringFederation,
+        Script retiredFederationP2SHScript,
+        Context btcContext,
+        BridgeConstants bridgeConstants,
+        ActivationConfig.ForBlock activations) {
+
+        if (retiredFederationP2SHScript == null && retiringFederation == null) {
             return false;
         }
-        boolean moveFromRetiring = isReleaseTx(btcTx, retiringFederation);
-        boolean moveToActive = isLockTx(btcTx, activeFederation, btcContext, bridgeConstants);
+        boolean moveFromRetired = retiredFederationP2SHScript != null && isPegOutTx(btcTx, activations, retiredFederationP2SHScript);
+        boolean moveFromRetiring = retiringFederation != null && isPegOutTx(btcTx, retiringFederation, activations);
+        boolean moveToActive = isValidPegInTx(btcTx, activeFederation, btcContext, bridgeConstants, activations);
 
-        return moveFromRetiring && moveToActive;
+        return (moveFromRetired || moveFromRetiring) && moveToActive;
     }
 
     /**
@@ -196,8 +324,23 @@ public class BridgeUtils {
         TransactionInput input = btcTx.getInput(0);
         Script scriptSig = input.getScriptSig();
         List<ScriptChunk> chunks = scriptSig.getChunks();
+        Script redeemScript = new Script(chunks.get(chunks.size() - 1).data);
+        RedeemScriptParser parser = RedeemScriptParserFactory.get(redeemScript.getChunks());
+        MultiSigType multiSigType;
 
-        for (int i = 1; i < chunks.size() - 1; i++) {
+        int lastChunk;
+
+        multiSigType = parser.getMultiSigType();
+
+        if (multiSigType == MultiSigType.STANDARD_MULTISIG ||
+            multiSigType == MultiSigType.FAST_BRIDGE_MULTISIG
+        ) {
+            lastChunk = chunks.size() - 1;
+        } else {
+            lastChunk = chunks.size() - 2;
+        }
+
+        for (int i = 1; i < lastChunk; i++) {
             ScriptChunk chunk = chunks.get(i);
             if (!chunk.isOpCode() && chunk.data.length == 0) {
                 unsigned++;
@@ -216,10 +359,29 @@ public class BridgeUtils {
         // When the tx is constructed OP_0 are placed where signature should go.
         // Check all OP_0 have been replaced with actual signatures in all inputs
         Context.propagate(btcContext);
+        Script scriptSig;
+        List<ScriptChunk> chunks;
+        Script redeemScript;
+        RedeemScriptParser parser;
+        MultiSigType multiSigType;
+
+        int lastChunk;
         for (TransactionInput input : btcTx.getInputs()) {
-            Script scriptSig = input.getScriptSig();
-            List<ScriptChunk> chunks = scriptSig.getChunks();
-            for (int i = 1; i < chunks.size(); i++) {
+            scriptSig = input.getScriptSig();
+            chunks = scriptSig.getChunks();
+            redeemScript = new Script(chunks.get(chunks.size() - 1).data);
+            parser = RedeemScriptParserFactory.get(redeemScript.getChunks());
+            multiSigType = parser.getMultiSigType();
+
+            if (multiSigType == MultiSigType.STANDARD_MULTISIG ||
+            multiSigType == MultiSigType.FAST_BRIDGE_MULTISIG
+            ) {
+                lastChunk = chunks.size() - 1;
+            } else {
+                lastChunk = chunks.size() - 2;
+            }
+
+            for (int i = 1; i < lastChunk; i++) {
                 ScriptChunk chunk = chunks.get(i);
                 if (!chunk.isOpCode() && chunk.data.length == 0) {
                     return false;
@@ -365,5 +527,87 @@ public class BridgeUtils {
             }
         }
         return false;
+    }
+
+    public static int extractAddressVersionFromBytes(byte[] addressBytes) throws BridgeIllegalArgumentException {
+        if (addressBytes == null || addressBytes.length == 0) {
+            throw new BridgeIllegalArgumentException("Can't get an address version if the bytes are empty");
+        }
+        return addressBytes[0];
+    }
+
+    public static byte[] extractHash160FromBytes(byte[] addressBytes)
+        throws BridgeIllegalArgumentException {
+        if (addressBytes == null || addressBytes.length == 0) {
+            throw new BridgeIllegalArgumentException("Can't get an address hash160 if the bytes are empty");
+        }
+        byte[] hashBytes = new byte[20];
+        System.arraycopy(addressBytes, 1, hashBytes, 0, 20);
+        return hashBytes;
+    }
+
+    public static int getRegularPegoutTxSize(@Nonnull Federation federation) {
+        // A regular peg-out transaction has two inputs and two outputs
+        // Each input has M/N signatures and each signature is around 71 bytes long (signed sighash)
+        // The outputs are composed of the scriptPubkeyHas(or publicKeyHash)
+        // and the op_codes for the corresponding script
+        final int INPUT_MULTIPLIER = 2;
+        final int SIGNATURE_MULTIPLIER = 71;
+        final int OUTPUT_MULTIPLIER = 2;
+        final int OUTPUT_SIZE = 25;
+
+        return calculatePegoutTxSize(
+            federation,
+            INPUT_MULTIPLIER,
+            SIGNATURE_MULTIPLIER,
+            OUTPUT_MULTIPLIER,
+            OUTPUT_SIZE
+        );
+    }
+
+    public static int calculatePegoutTxSize(
+        Federation federation,
+        int inputMultiplier,
+        int signatureMultiplier,
+        int outputMultiplier,
+        int outputSize
+    ) {
+        // This data accounts for txid+vout+sequence
+        int INPUT_ADDITIONAL_DATA_SIZE = 40;
+        // This data accounts for the value+index
+        int OUTPUT_ADDITIONAL_DATA_SIZE = 9;
+        // This data accounts for the version field
+        int TX_ADDITIONAL_DATA_SIZE = 4;
+        // The added ones are to account for the data size
+        int scriptSigChunk = federation.getNumberOfSignaturesRequired() * (signatureMultiplier + 1) +
+                federation.getRedeemScript().getProgram().length + 1;
+        return TX_ADDITIONAL_DATA_SIZE +
+            (scriptSigChunk + INPUT_ADDITIONAL_DATA_SIZE) * inputMultiplier +
+            (outputSize + 1 + OUTPUT_ADDITIONAL_DATA_SIZE) * outputMultiplier;
+    }
+
+    private static Optional<Script> extractRedeemScriptFromInput(TransactionInput txInput) {
+        Script inputScript = txInput.getScriptSig();
+        List<ScriptChunk> chunks = inputScript.getChunks();
+        if (chunks == null || chunks.isEmpty()) {
+            return Optional.empty();
+        }
+
+        byte[] program = chunks.get(chunks.size() - 1).data;
+        if (program == null) {
+            return Optional.empty();
+        }
+
+        try {
+            Script redeemScript = new Script(program);
+            return Optional.of(redeemScript);
+        } catch (ScriptException e) {
+            logger.debug(
+                "[extractRedeemScriptFromInput] Failed to extract redeem script from tx input {}. {}",
+                txInput,
+                e.getMessage()
+            );
+            return Optional.empty();
+        }
     }
 }

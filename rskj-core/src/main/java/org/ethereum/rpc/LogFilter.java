@@ -19,10 +19,12 @@
 package org.ethereum.rpc;
 
 import co.rsk.core.RskAddress;
+import co.rsk.crypto.Keccak256;
 import co.rsk.logfilter.BlocksBloom;
 import co.rsk.logfilter.BlocksBloomStore;
 import org.ethereum.core.*;
 import org.ethereum.db.TransactionInfo;
+import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.vm.LogInfo;
 
 import java.util.Collection;
@@ -162,6 +164,8 @@ public class LogFilter extends Filter {
         // TODO review pending transaction processing
         // when fromBlock and/or toBlock are "pending"
 
+        validateFilterRequestParameters(fr);
+
         // Default from block value
         if (fr.fromBlock == null) {
             fr.fromBlock = "latest";
@@ -182,7 +186,22 @@ public class LogFilter extends Filter {
         return filter;
     }
 
-    private static void retrieveHistoricalData(Web3.FilterRequest fr, Blockchain blockchain, LogFilter filter, BlocksBloomStore blocksBloomStore) throws Exception {
+    /**
+     * Cannot use both blockHash and fromBlock/toBlock filters, according to EIP-234
+     */
+    private static void validateFilterRequestParameters(Web3.FilterRequest fr) {
+        if (fr.blockHash != null && (fr.fromBlock != null  || fr.toBlock != null)) {
+            throw RskJsonRpcRequestException.invalidParamError("Cannot specify both blockHash and fromBlock/toBlock");
+        }
+    }
+
+    private static void retrieveHistoricalData(Web3.FilterRequest fr, Blockchain blockchain, LogFilter filter, BlocksBloomStore blocksBloomStore) {
+
+        if (fr.blockHash != null) {
+            processSingleBlockByHash(fr.blockHash, blockchain, filter, blocksBloomStore);
+            return;
+        }
+
         Block blockFrom = isBlockWord(fr.fromBlock) ? null : Web3Impl.getBlockByNumberOrStr(fr.fromBlock, blockchain);
         Block blockTo = isBlockWord(fr.toBlock) ? null : Web3Impl.getBlockByNumberOrStr(fr.toBlock, blockchain);
 
@@ -199,6 +218,17 @@ public class LogFilter extends Filter {
         else if ("latest".equalsIgnoreCase(fr.fromBlock)) {
             filter.onBlock(blockchain.getBestBlock());
         }
+    }
+
+    private static void processSingleBlockByHash(String blockHash, Blockchain blockchain, LogFilter filter, BlocksBloomStore blocksBloomStore) {
+        Keccak256 keccak256BlockHash = new Keccak256(stringHexToByteArray(blockHash));
+        Block blockByHash = blockchain.getBlockByHash(keccak256BlockHash.getBytes());
+        if (blockByHash == null) {
+            return;
+        }
+
+        long blockNumber = blockByHash.getNumber();
+        processBlocks(blockNumber, blockNumber, filter, blockchain, blocksBloomStore);
     }
 
     private static void processBlocks(long fromBlockNumber, long toBlockNumber, LogFilter filter, Blockchain blockchain, BlocksBloomStore blocksBloomStore) {

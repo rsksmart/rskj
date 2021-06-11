@@ -7,6 +7,7 @@ import co.rsk.peg.AddressBasedAuthorizer;
 import co.rsk.peg.Federation;
 import co.rsk.peg.FederationMember;
 import com.google.common.collect.Lists;
+import java.util.ArrayList;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.ECKey;
 
@@ -68,8 +69,11 @@ public class BridgeMainNetConstants extends BridgeConstants {
 
         maxBtcHeadersPerRskBlock = 500;
 
-        minimumLockTxValue = Coin.valueOf(1000000);
-        minimumReleaseTxValue = Coin.valueOf(800000);
+        legacyMinimumPeginTxValueInSatoshis = Coin.valueOf(1_000_000);
+        legacyMinimumPegoutTxValueInSatoshis = Coin.valueOf(800_000);
+        minimumPeginTxValueInSatoshis = Coin.valueOf(500_000);
+        minimumPegoutTxValueInSatoshis = Coin.valueOf(400_000);
+
 
         // Keys generated with GenNodeKey using generators 'auth-a' through 'auth-e'
         List<ECKey> federationChangeAuthorizedKeys = Arrays.stream(new String[]{
@@ -126,6 +130,22 @@ public class BridgeMainNetConstants extends BridgeConstants {
 
         lockingCapIncrementsMultiplier = 2;
         initialLockingCap = Coin.COIN.multiply(300); // 300 BTC
+
+        btcHeightWhenBlockIndexActivates = 700_000; //TODO define this value when Iris activation height in RSK is determined
+        maxDepthToSearchBlocksBelowIndexActivation = 1_000; //TODO define this value with Sergio
+
+        // TODO: This value is not real
+        erpFedActivationDelay = 5063;
+
+        // TODO: WE NEED TO DEFINE THESE KEYS
+        erpFedPubKeysList = new ArrayList<>();
+
+        oldFederationAddress = "35JUi1FxabGdhygLhnNUEFG4AgvpNMgxK1";
+
+        minSecondsBetweenCallsReceiveHeader = 300;  // 5 minutes in Seconds
+        maxDepthBlockchainAccepted = 25;
+
+        minimumPegoutValuePercentageToReceiveAfterFee = 20;
     }
 
     public static BridgeMainNetConstants getInstance() {

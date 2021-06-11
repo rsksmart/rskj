@@ -20,8 +20,8 @@ package org.ethereum.rpc;
 
 import co.rsk.config.InternalService;
 import co.rsk.rpc.*;
-import co.rsk.scoring.PeerScoringReputationSummary;
 import co.rsk.scoring.PeerScoringInformation;
+import co.rsk.scoring.PeerScoringReputationSummary;
 
 import java.util.Arrays;
 import java.util.Map;
@@ -41,6 +41,7 @@ public interface Web3 extends InternalService, Web3TxPoolModule, Web3EthModule, 
         public String value;
         public String data; // compiledCode
         public String nonce;
+        public String chainId; //NOSONAR
 
         @Override
         public String toString() {
@@ -52,6 +53,7 @@ public interface Web3 extends InternalService, Web3TxPoolModule, Web3EthModule, 
                     ", value='" + value + '\'' +
                     ", data='" + data + '\'' +
                     ", nonce='" + nonce + '\'' +
+                    ", chainId='" + chainId + '\'' +
                     '}';
         }
     }
@@ -67,6 +69,7 @@ public interface Web3 extends InternalService, Web3TxPoolModule, Web3EthModule, 
         public String toBlock;
         public Object address;
         public Object[] topics;
+        public String blockHash;
 
         @Override
         public String toString() {
@@ -75,6 +78,7 @@ public interface Web3 extends InternalService, Web3TxPoolModule, Web3EthModule, 
                     ", toBlock='" + toBlock + '\'' +
                     ", address=" + address +
                     ", topics=" + Arrays.toString(topics) +
+                    ", blockHash='" + blockHash + '\'' +
                     '}';
         }
     }

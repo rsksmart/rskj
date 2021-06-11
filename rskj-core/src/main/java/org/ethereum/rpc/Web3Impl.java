@@ -41,7 +41,10 @@ import co.rsk.rpc.modules.trace.TraceModule;
 import co.rsk.rpc.modules.txpool.TxPoolModule;
 import co.rsk.scoring.*;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
-import org.ethereum.core.*;
+import org.ethereum.core.Block;
+import org.ethereum.core.BlockHeader;
+import org.ethereum.core.Blockchain;
+import org.ethereum.core.Transaction;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.BlockInformation;
 import org.ethereum.db.BlockStore;
@@ -402,6 +405,7 @@ public class Web3Impl implements Web3 {
 
         try {
             RskAddress addr = new RskAddress(address);
+            
             AccountInformationProvider accountInformationProvider =
                     web3InformationRetriever.getInformationProvider(blockId);
 
@@ -409,7 +413,7 @@ public class Web3Impl implements Web3 {
                     .getStorageValue(addr, DataWord.valueOf(stringHexToByteArray(storageIdx)));
 
             if (sv == null) {
-                s = null;
+                s = "0x0";
             } else {
                 s = toUnformattedJsonHex(sv.getData());
             }
@@ -589,10 +593,10 @@ public class Web3Impl implements Web3 {
             Keccak256 txHash = new Keccak256(stringHexToByteArray(transactionHash));
             Block block = null;
 
-            TransactionInfo txInfo = this.receiptStore.getInMainChain(txHash.getBytes(), blockStore);
+            TransactionInfo txInfo = this.receiptStore.getInMainChain(txHash.getBytes(), blockStore).orElse(null);
 
             if (txInfo == null) {
-                List<Transaction> txs = web3InformationRetriever.getTransactions("pending");
+                List<Transaction> txs =     web3InformationRetriever.getTransactions("pending");
 
                 for (Transaction tx : txs) {
                     if (tx.getHash().equals(txHash)) {
@@ -674,7 +678,7 @@ public class Web3Impl implements Web3 {
         logger.trace("eth_getTransactionReceipt({})", transactionHash);
 
         byte[] hash = stringHexToByteArray(transactionHash);
-        TransactionInfo txInfo = receiptStore.getInMainChain(hash, blockStore);
+        TransactionInfo txInfo = receiptStore.getInMainChain(hash, blockStore).orElse(null);
 
         if (txInfo == null) {
             logger.trace("No transaction info for {}", transactionHash);

@@ -18,10 +18,12 @@
 
 package co.rsk.config;
 
+import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.peg.AddressBasedAuthorizer;
 import co.rsk.peg.Federation;
+import java.util.List;
 
 public class BridgeConstants {
     protected String btcParamsString;
@@ -36,8 +38,10 @@ public class BridgeConstants {
 
     protected int maxBtcHeadersPerRskBlock;
 
-    protected Coin minimumLockTxValue;
-    protected Coin minimumReleaseTxValue;
+    protected Coin legacyMinimumPeginTxValueInSatoshis;
+    protected Coin minimumPeginTxValueInSatoshis;
+    protected Coin legacyMinimumPegoutTxValueInSatoshis;
+    protected Coin minimumPegoutTxValueInSatoshis;
 
     protected long federationActivationAge;
 
@@ -59,6 +63,20 @@ public class BridgeConstants {
     protected Coin initialLockingCap;
 
     protected int lockingCapIncrementsMultiplier;
+
+    protected int btcHeightWhenBlockIndexActivates;
+    protected int maxDepthToSearchBlocksBelowIndexActivation;
+    protected long minSecondsBetweenCallsReceiveHeader;  // (seconds)
+
+    protected int maxDepthBlockchainAccepted;
+
+    protected long erpFedActivationDelay;
+
+    protected List<BtcECKey> erpFedPubKeysList;
+
+    protected String oldFederationAddress;
+
+    protected int minimumPegoutValuePercentageToReceiveAfterFee;
 
     public NetworkParameters getBtcParams() {
         return NetworkParameters.fromID(btcParamsString);
@@ -86,9 +104,13 @@ public class BridgeConstants {
 
     public int getMaxBtcHeadersPerRskBlock() { return maxBtcHeadersPerRskBlock; }
 
-    public Coin getMinimumLockTxValue() { return minimumLockTxValue; }
+    public Coin getLegacyMinimumPeginTxValueInSatoshis() { return legacyMinimumPeginTxValueInSatoshis; }
 
-    public Coin getMinimumReleaseTxValue() { return minimumReleaseTxValue; }
+    public Coin getMinimumPeginTxValueInSatoshis() { return minimumPeginTxValueInSatoshis; }
+
+    public Coin getLegacyMinimumPegoutTxValueInSatoshis() { return legacyMinimumPegoutTxValueInSatoshis; }
+
+    public Coin getMinimumPegoutTxValueInSatoshis() { return minimumPegoutTxValueInSatoshis; }
 
     public long getFederationActivationAge() { return federationActivationAge; }
 
@@ -117,4 +139,28 @@ public class BridgeConstants {
     public Coin getMaxFeePerKb() { return maxFeePerKb; }
 
     public Coin getMaxRbtc() { return Coin.valueOf(21_000_000, 0); }
+
+    public int getBtcHeightWhenBlockIndexActivates() { return btcHeightWhenBlockIndexActivates; }
+
+    public int getMaxDepthToSearchBlocksBelowIndexActivation() { return maxDepthToSearchBlocksBelowIndexActivation; }
+
+    public long getErpFedActivationDelay() {
+        return erpFedActivationDelay;
+    }
+
+    public List<BtcECKey> getErpFedPubKeysList() {
+        return erpFedPubKeysList;
+    }
+
+    public String getOldFederationAddress() {
+        return oldFederationAddress;
+    }
+
+    public long getMinSecondsBetweenCallsToReceiveHeader() { return minSecondsBetweenCallsReceiveHeader; }
+
+    public int getMaxDepthBlockchainAccepted() { return maxDepthBlockchainAccepted; }
+
+    public int getMinimumPegoutValuePercentageToReceiveAfterFee() {
+        return minimumPegoutValuePercentageToReceiveAfterFee;
+    }
 }

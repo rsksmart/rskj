@@ -39,6 +39,7 @@ import org.ethereum.datasource.HashMapDB;
 import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.exception.VMException;
+
 import org.ethereum.vm.program.InternalTransaction;
 import org.junit.BeforeClass;
 
@@ -220,7 +221,7 @@ public abstract class BridgePerformanceTestCase extends PrecompiledContractPerfo
                 Trie trie = new Trie(trieStore);
                 benchmarkerTrack = new RepositoryTrackWithBenchmarking(trieStore,  trie);
                 Repository repository = benchmarkerTrack.startTracking();
-                BtcBlockStore btcBlockStore = btcBlockStoreFactory.newInstance(repository);
+                BtcBlockStore btcBlockStore = btcBlockStoreFactory.newInstance(repository, null, null, null);
                 BridgeStorageProvider storageProvider = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationConfig.forBlock((long) executionIndex));
                 storageInitializer.initialize(storageProvider, repository, executionIndex, btcBlockStore);
                 repository.addBalance(PrecompiledContracts.BRIDGE_ADDR, co.rsk.core.Coin.fromBitcoin(Coin.COIN.multiply(21_000_000L)));

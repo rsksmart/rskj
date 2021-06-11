@@ -185,7 +185,7 @@ public class Constants {
     }
 
     public static int getMaxBitcoinMergedMiningMerkleProofLength() {
-        return 480;
+        return 960;
     }
 
     public static Constants mainnet() {

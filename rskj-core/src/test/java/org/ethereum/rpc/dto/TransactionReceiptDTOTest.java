@@ -39,10 +39,7 @@ import static org.mockito.Mockito.when;
 public class TransactionReceiptDTOTest {
 
     @Test
-    public void testRootField() {
-        byte[] postTxState = new byte[]{0x01};
-        String expectedRoot = toUnformattedJsonHex(ByteUtil.toBytesWithLeadingZeros(postTxState, Keccak256.HASH_LEN));
-
+    public void testOkStatusField() {
         RskAddress rskAddress = RskAddress.nullAddress();
         Keccak256 hash = Keccak256.ZERO_HASH;
         Bloom bloom = new Bloom();
@@ -59,15 +56,105 @@ public class TransactionReceiptDTOTest {
         when(txReceipt.getTransaction()).thenReturn(transaction);
         when(txReceipt.getLogInfoList()).thenReturn(Collections.emptyList());
         when(txReceipt.getBloomFilter()).thenReturn(bloom);
-        when(txReceipt.getPostTxState()).thenReturn(postTxState);
+        when(txReceipt.getStatus()).thenReturn(new byte[] { 0x01 });
 
         TransactionInfo txInfo = new TransactionInfo(txReceipt, hash.getBytes(), 0);
 
         TransactionReceiptDTO transactionReceiptDTO = new TransactionReceiptDTO(block, txInfo);
 
-        String actualRoot = transactionReceiptDTO.getRoot();
+        String actualStatus = transactionReceiptDTO.getStatus();
 
-        assertNotNull(actualRoot);
-        assertEquals(expectedRoot, actualRoot);
+        assertNotNull(actualStatus);
+        assertEquals("0x1", actualStatus);
+    }
+
+    @Test
+    public void testErrorStatusField() {
+        RskAddress rskAddress = RskAddress.nullAddress();
+        Keccak256 hash = Keccak256.ZERO_HASH;
+        Bloom bloom = new Bloom();
+
+        Block block = mock(Block.class);
+        when(block.getHash()).thenReturn(hash);
+
+        Transaction transaction = mock(Transaction.class);
+        when(transaction.getHash()).thenReturn(hash);
+        when(transaction.getSender()).thenReturn(rskAddress);
+        when(transaction.getReceiveAddress()).thenReturn(rskAddress);
+
+        TransactionReceipt txReceipt = mock(TransactionReceipt.class);
+        when(txReceipt.getTransaction()).thenReturn(transaction);
+        when(txReceipt.getLogInfoList()).thenReturn(Collections.emptyList());
+        when(txReceipt.getBloomFilter()).thenReturn(bloom);
+        when(txReceipt.getStatus()).thenReturn(new byte[] { 0x00 });
+
+        TransactionInfo txInfo = new TransactionInfo(txReceipt, hash.getBytes(), 0);
+
+        TransactionReceiptDTO transactionReceiptDTO = new TransactionReceiptDTO(block, txInfo);
+
+        String actualStatus = transactionReceiptDTO.getStatus();
+
+        assertNotNull(actualStatus);
+        assertEquals("0x0", actualStatus);
+    }
+
+    @Test
+    public void testErrorStatusFieldUsingEmptyByteArray() {
+        RskAddress rskAddress = RskAddress.nullAddress();
+        Keccak256 hash = Keccak256.ZERO_HASH;
+        Bloom bloom = new Bloom();
+
+        Block block = mock(Block.class);
+        when(block.getHash()).thenReturn(hash);
+
+        Transaction transaction = mock(Transaction.class);
+        when(transaction.getHash()).thenReturn(hash);
+        when(transaction.getSender()).thenReturn(rskAddress);
+        when(transaction.getReceiveAddress()).thenReturn(rskAddress);
+
+        TransactionReceipt txReceipt = mock(TransactionReceipt.class);
+        when(txReceipt.getTransaction()).thenReturn(transaction);
+        when(txReceipt.getLogInfoList()).thenReturn(Collections.emptyList());
+        when(txReceipt.getBloomFilter()).thenReturn(bloom);
+        when(txReceipt.getStatus()).thenReturn(ByteUtil.EMPTY_BYTE_ARRAY);
+
+        TransactionInfo txInfo = new TransactionInfo(txReceipt, hash.getBytes(), 0);
+
+        TransactionReceiptDTO transactionReceiptDTO = new TransactionReceiptDTO(block, txInfo);
+
+        String actualStatus = transactionReceiptDTO.getStatus();
+
+        assertNotNull(actualStatus);
+        assertEquals("0x0", actualStatus);
+    }
+
+    @Test
+    public void testErrorStatusFieldUsingNullByteArray() {
+        RskAddress rskAddress = RskAddress.nullAddress();
+        Keccak256 hash = Keccak256.ZERO_HASH;
+        Bloom bloom = new Bloom();
+
+        Block block = mock(Block.class);
+        when(block.getHash()).thenReturn(hash);
+
+        Transaction transaction = mock(Transaction.class);
+        when(transaction.getHash()).thenReturn(hash);
+        when(transaction.getSender()).thenReturn(rskAddress);
+        when(transaction.getReceiveAddress()).thenReturn(rskAddress);
+
+        TransactionReceipt txReceipt = mock(TransactionReceipt.class);
+        when(txReceipt.getTransaction()).thenReturn(transaction);
+        when(txReceipt.getLogInfoList()).thenReturn(Collections.emptyList());
+        when(txReceipt.getBloomFilter()).thenReturn(bloom);
+        when(txReceipt.getStatus()).thenReturn(null);
+
+        TransactionInfo txInfo = new TransactionInfo(txReceipt, hash.getBytes(), 0);
+
+        TransactionReceiptDTO transactionReceiptDTO = new TransactionReceiptDTO(block, txInfo);
+
+        String actualStatus = transactionReceiptDTO.getStatus();
+
+        assertNotNull(actualStatus);
+        assertEquals("0x0", actualStatus);
     }
 }

@@ -245,7 +245,9 @@ public class Web3ImplSnapshotTest {
     private static void addBlocks(Blockchain blockchain, int size) {
         List<Block> blocks = new BlockGenerator().getBlockChain(blockchain.getBestBlock(), size);
 
-        for (Block block : blocks)
+        for (Block block : blocks) {
             blockchain.tryToConnect(block);
+            blockchain.getBestBlock().getNumber();
+        }
     }
 }

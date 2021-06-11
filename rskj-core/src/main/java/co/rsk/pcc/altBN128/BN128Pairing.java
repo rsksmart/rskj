@@ -18,10 +18,9 @@
 
 package co.rsk.pcc.altBN128;
 
+import co.rsk.pcc.altBN128.impls.AbstractAltBN128;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.vm.GasCost;
-import org.ethereum.vm.PrecompiledContracts;
-
-import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
 /**
  * Computes pairing check. <br/>
@@ -47,9 +46,11 @@ import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
  * @author Sebastian Sicardi
  * @since 10.09.2019
  */
-public class BN128Pairing extends PrecompiledContracts.PrecompiledContract {
-
-    public static final int PAIR_SIZE = 192;
+public class BN128Pairing extends BN128PrecompiledContract {
+    
+    public BN128Pairing(ActivationConfig.ForBlock activations, AbstractAltBN128 altBN128) {
+        super(activations, altBN128);
+    }
 
     @Override
     public long getGasForData(byte[] data) {
@@ -60,19 +61,11 @@ public class BN128Pairing extends PrecompiledContracts.PrecompiledContract {
             return baseCost;
         }
 
-        return  GasCost.add(GasCost.multiply(perPairCost, (data.length / PAIR_SIZE)) , baseCost);
+        return GasCost.add(GasCost.multiply(perPairCost, (data.length / AbstractAltBN128.PAIR_SIZE)) , baseCost);
     }
 
     @Override
-    public byte[] execute(byte[] data) {
-        if (data == null) {
-            data = EMPTY_BYTE_ARRAY;
-        }
-        AltBN128 altBN128 = new AltBN128();
-        int rs = altBN128.pairing(data, data.length);
-        if (rs < 0) {
-            return EMPTY_BYTE_ARRAY;
-        }
-        return altBN128.getOutput();
+    protected int concreteExecute(byte[] data) {
+        return altBN128Lib.pairing(data, data.length);
     }
 }

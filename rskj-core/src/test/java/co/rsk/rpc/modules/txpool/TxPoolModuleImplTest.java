@@ -63,6 +63,17 @@ public class TxPoolModuleImplTest {
         return tx;
     }
 
+    private Transaction createSampleTransactionWithoutReceiver() {
+        Account sender = new AccountBuilder().name("sender").build();
+
+        Transaction tx = new TransactionBuilder()
+                .sender(sender)
+                .value(BigInteger.TEN)
+                .build();
+
+        return tx;
+    }
+
     private Transaction createSampleTransaction(int from, int to, long value, int nonce) {
         Account sender = getAccount(from);
         Account receiver = getAccount(to);
@@ -92,28 +103,28 @@ public class TxPoolModuleImplTest {
     }
 
     @Test
-    public void txpool_content_basic() throws IOException {
+    public void txpool_content_basic() {
         JsonNode node = txPoolModule.content();
         checkFieldIsObject(node,"pending");
         checkFieldIsObject(node,"queued");
     }
 
     @Test
-    public void txpool_inspect_basic() throws IOException {
+    public void txpool_inspect_basic() {
         JsonNode node = txPoolModule.inspect();
         checkFieldIsObject(node,"pending");
         checkFieldIsObject(node,"queued");
     }
 
     @Test
-    public void txpool_status_basic() throws IOException {
+    public void txpool_status_basic() {
         JsonNode node = txPoolModule.status();
         checkFieldIsNumber(node,"pending");
         checkFieldIsNumber(node,"queued");
     }
 
     @Test
-    public void txpool_content_oneTx() throws Exception {
+    public void txpool_content_oneTx() {
         Transaction tx = createSampleTransaction();
         when(transactionPool.getPendingTransactions()).thenReturn(Collections.singletonList(tx));
         JsonNode node = txPoolModule.content();
@@ -126,7 +137,20 @@ public class TxPoolModuleImplTest {
     }
 
     @Test
-    public void txpool_inspect_oneTx() throws Exception {
+    public void txpool_content_oneTx_no_receiver() {
+        Transaction tx = createSampleTransactionWithoutReceiver();
+        when(transactionPool.getPendingTransactions()).thenReturn(Collections.singletonList(tx));
+        JsonNode node = txPoolModule.content();
+
+        checkFieldIsEmpty(node, "queued");
+        JsonNode pendingNode = checkFieldIsObject(node, "pending");
+        JsonNode senderNode = checkFieldIsObject(pendingNode, tx.getSender().toString());
+        JsonNode nonceNode = checkFieldIsArray(senderNode, tx.getNonceAsInteger().toString());
+        nonceNode.elements().forEachRemaining(item -> assertFullTransaction(tx, item));
+    }
+
+    @Test
+    public void txpool_inspect_oneTx() {
         Transaction tx = createSampleTransaction();
         when(transactionPool.getPendingTransactions()).thenReturn(Collections.singletonList(tx));
         JsonNode node = txPoolModule.inspect();
@@ -139,7 +163,7 @@ public class TxPoolModuleImplTest {
     }
 
     @Test
-    public void txpool_content_sameNonce() throws Exception {
+    public void txpool_content_sameNonce() {
         Transaction tx1 = createSampleTransaction();
         Transaction tx2 = createSampleTransaction();
         Transaction tx3 = createSampleTransaction();
@@ -161,7 +185,7 @@ public class TxPoolModuleImplTest {
     }
 
     @Test
-    public void txpool_inspect_sameNonce() throws Exception {
+    public void txpool_inspect_sameNonce() {
         Transaction tx1 = createSampleTransaction();
         Transaction tx2 = createSampleTransaction();
         Transaction tx3 = createSampleTransaction();
@@ -183,7 +207,7 @@ public class TxPoolModuleImplTest {
     }
 
     @Test
-    public void txpool_content_sameSender() throws Exception {
+    public void txpool_content_sameSender() {
         Transaction tx1 = createSampleTransaction(0, 1, 1, 0);
         Transaction tx2 = createSampleTransaction(0, 2, 1, 1);
         Transaction tx3 = createSampleTransaction(0, 3, 1, 2);
@@ -204,7 +228,7 @@ public class TxPoolModuleImplTest {
     }
 
     @Test
-    public void txpool_inspect_sameSender() throws Exception {
+    public void txpool_inspect_sameSender() {
         Transaction tx1 = createSampleTransaction(0, 1, 1, 0);
         Transaction tx2 = createSampleTransaction(0, 2, 1, 1);
         Transaction tx3 = createSampleTransaction(0, 3, 1, 2);
@@ -225,7 +249,7 @@ public class TxPoolModuleImplTest {
     }
 
     @Test
-    public void txpool_content_manyTxs() throws Exception {
+    public void txpool_content_manyTxs() {
         Transaction tx1 = createSampleTransaction(0, 1, 1, 0);
         Transaction tx2 = createSampleTransaction(0, 2, 1, 0);
         Transaction tx3 = createSampleTransaction(0, 3, 1, 0);
@@ -249,7 +273,7 @@ public class TxPoolModuleImplTest {
     }
 
     @Test
-    public void txpool_inspect_manyTxs() throws Exception {
+    public void txpool_inspect_manyTxs() {
         Transaction tx1 = createSampleTransaction(0, 1, 1, 0);
         Transaction tx2 = createSampleTransaction(0, 2, 1, 0);
         Transaction tx3 = createSampleTransaction(0, 3, 1, 0);
@@ -273,7 +297,7 @@ public class TxPoolModuleImplTest {
     }
 
     @Test
-    public void txpool_status_oneTx() throws Exception {
+    public void txpool_status_oneTx() {
         Transaction tx = createSampleTransaction();
         when(transactionPool.getPendingTransactions()).thenReturn(Collections.singletonList(tx));
         JsonNode node = txPoolModule.status();
@@ -285,7 +309,7 @@ public class TxPoolModuleImplTest {
     }
 
     @Test
-    public void txpool_status_manyPending() throws Exception {
+    public void txpool_status_manyPending() {
         Transaction tx1 = createSampleTransaction();
         Transaction tx2 = createSampleTransaction();
         Transaction tx3 = createSampleTransaction();
@@ -300,7 +324,7 @@ public class TxPoolModuleImplTest {
     }
 
     @Test
-    public void txpool_status_manyTxs() throws Exception {
+    public void txpool_status_manyTxs() {
         Transaction tx1 = createSampleTransaction();
         Transaction tx2 = createSampleTransaction();
         Transaction tx3 = createSampleTransaction();
@@ -381,7 +405,7 @@ public class TxPoolModuleImplTest {
         Assert.assertTrue(transactionNode.has("hash"));
         Assert.assertEquals(transactionNode.get("hash").asText(), TypeConverter.toJsonHex(tx.getHash().toHexString()));
         Assert.assertTrue(transactionNode.has("input"));
-        Assert.assertEquals(transactionNode.get("input").asText(), TypeConverter.toJsonHex(tx.getData()));
+        Assert.assertEquals(transactionNode.get("input").asText(), TypeConverter.toUnformattedJsonHex(tx.getData()));
         Assert.assertTrue(transactionNode.has("nonce"));
         Assert.assertEquals(transactionNode.get("nonce").asText(), TypeConverter.toQuantityJsonHex(tx.getNonceAsInteger()));
         Assert.assertTrue(transactionNode.has("to"));
@@ -390,6 +414,14 @@ public class TxPoolModuleImplTest {
         Assert.assertEquals(transactionNode.get("transactionIndex"), jsonNodeFactory.nullNode());
         Assert.assertTrue(transactionNode.has("value"));
         Assert.assertEquals(transactionNode.get("value").asText(), TypeConverter.toJsonHex(tx.getValue().getBytes()));
+
+        if (tx.getData() != null && tx.getData().length > 0) {
+            Assert.assertTrue(transactionNode.has("data"));
+            Assert.assertEquals(transactionNode.get("data").asText(), TypeConverter.toUnformattedJsonHex(tx.getData()));
+        }
+        else {
+            Assert.assertFalse(transactionNode.has("data"));
+        }
     }
 
     private void assertSummaryTransaction(Transaction tx, JsonNode summaryNode) {

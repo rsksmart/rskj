@@ -19,9 +19,20 @@ package org.ethereum.vm.program;
 
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
+import co.rsk.core.RskAddress;
+import co.rsk.peg.Bridge;
 import com.google.common.collect.Sets;
+import java.math.BigInteger;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
+import org.ethereum.core.Block;
+import org.ethereum.core.BlockFactory;
+import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Repository;
+import org.ethereum.core.Transaction;
+import org.ethereum.crypto.ECKey;
+import org.ethereum.db.BlockStore;
+import org.ethereum.db.ReceiptStore;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.MessageCall;
 import org.ethereum.vm.PrecompiledContracts;
@@ -30,11 +41,15 @@ import org.ethereum.vm.program.invoke.ProgramInvoke;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
+import static org.powermock.api.mockito.PowerMockito.doCallRealMethod;
+import static org.powermock.api.mockito.PowerMockito.mock;
+import static org.powermock.api.mockito.PowerMockito.verifyNew;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ProgramTest {
@@ -65,6 +80,12 @@ public class ProgramTest {
 
         when(programInvoke.getOwnerAddress()).thenReturn(DataWord.ONE);
         when(programInvoke.getRepository()).thenReturn(repository);
+        when(programInvoke.getPrevHash()).thenReturn(DataWord.ONE);
+        when(programInvoke.getCoinbase()).thenReturn(DataWord.ONE);
+        when(programInvoke.getDifficulty()).thenReturn(DataWord.ONE);
+        when(programInvoke.getNumber()).thenReturn(DataWord.ONE);
+        when(programInvoke.getGaslimit()).thenReturn(DataWord.ONE);
+        when(programInvoke.getTimestamp()).thenReturn(DataWord.ONE);
 
         when(msg.getCodeAddress()).thenReturn(DataWord.ONE);
         when(msg.getType()).thenReturn(MessageCall.MsgType.CALL);
@@ -74,7 +95,30 @@ public class ProgramTest {
         when(msg.getInDataOffs()).thenReturn(DataWord.ONE);
         when(msg.getInDataSize()).thenReturn(DataWord.ONE);
         when(msg.getGas()).thenReturn(DataWord.valueOf(TOTAL_GAS));
-        program = new Program(config.getVmConfig(), precompiledContracts, null, activations, null, programInvoke, null, Sets.newHashSet());
+
+        Transaction transaction = Transaction
+            .builder()
+            .nonce(BigInteger.ONE.toByteArray())
+            .gasPrice(BigInteger.ONE)
+            .gasLimit(BigInteger.valueOf(21000))
+            .destination(PrecompiledContracts.BRIDGE_ADDR)
+            .chainId(config.getNetworkConstants().getChainId())
+            .value(BigInteger.TEN)
+            .build();
+        when(repository.getNonce(any(RskAddress.class))).thenReturn(BigInteger.ONE);
+
+        BlockFactory blockFactory = new BlockFactory(ActivationConfigsForTest.all());
+
+        program = new Program(
+            config.getVmConfig(),
+            precompiledContracts,
+            blockFactory,
+            activations,
+            null,
+            programInvoke,
+            transaction,
+            Sets.newHashSet()
+        );
         program.getResult().spendGas(TOTAL_GAS);
     }
 
@@ -108,6 +152,23 @@ public class ProgramTest {
 
         assertStack(STACK_STATE_ERROR);
         assertEquals(gasCost, program.getResult().getGasUsed());
+    }
+
+    @Test
+    public void testCallToPrecompiledAddress_with_logs_success() throws VMException {
+        Bridge bridge = mock(Bridge.class);
+        when(bridge.execute(any())).thenReturn(new byte[]{1});
+
+        program.callToPrecompiledAddress(msg, bridge);
+
+        verify(bridge, atLeastOnce()).init(
+            any(Transaction.class),
+            any(Block.class),
+            any(Repository.class),
+            isNull(),
+            isNull(),
+            anyList()
+        );
     }
 
     /*********************************

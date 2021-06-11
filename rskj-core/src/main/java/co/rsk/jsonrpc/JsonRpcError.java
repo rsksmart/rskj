@@ -23,6 +23,10 @@ import java.util.Objects;
  * The standard JSON-RPC error object for responses.
  */
 public class JsonRpcError implements JsonRpcResultOrError {
+    // Error codes as defined in https://www.jsonrpc.org/specification#error_object
+    public static final int INVALID_PARAMS = -32602;
+    public static final int INTERNAL_ERROR = -32603;
+
     private final int code;
     private final String message;
 

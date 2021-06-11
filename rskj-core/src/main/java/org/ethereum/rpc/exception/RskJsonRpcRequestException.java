@@ -23,7 +23,7 @@ public class RskJsonRpcRequestException extends RuntimeException {
     }
 
     public static RskJsonRpcRequestException transactionRevertedExecutionError(String revertReason) {
-        return executionError(revertReason);
+        return executionError("revert " + revertReason);
     }
 
     public static RskJsonRpcRequestException unknownError(String message) {
@@ -31,7 +31,7 @@ public class RskJsonRpcRequestException extends RuntimeException {
     }
 
     private static RskJsonRpcRequestException executionError(String message) {
-        return new RskJsonRpcRequestException(-32015, String.format("VM execution error: %s", message));
+        return new RskJsonRpcRequestException(-32015, String.format("VM Exception while processing transaction: %s", message));
     }
 
     public static RskJsonRpcRequestException transactionError(String message) {
