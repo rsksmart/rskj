@@ -433,6 +433,156 @@ public class Web3ImplTest {
         TestUtils.assertThrows(RskJsonRpcRequestException.class, () -> chain.web3.invokeByBlockRef(blockRef, b -> b));
     }
 
+    //TODO: /////////////////////////////////////////STORAGE////////////////////////////////////////////////////////////////
+    @Test
+    //[ "0x<address>", { "blockNumber": "0x0" } -> return storage at given address in genesis block
+    public void getStorageAtAccountAndBlockNumber() {
+        final ChainWithAccount10KBalance chain = new ChainWithAccount10KBalance();
+
+        Map<String, String> blockRef = new HashMap<String, String>() {
+            {
+                put("blockNumber", "0x0");
+            }
+        };
+        assertEquals("0x0", chain.web3.eth_getStorageAt(chain.accountAddress, "0x0", blockRef));
+    }
+
+    @Test
+    //[ "0x<address>", { "blockHash": "0xd4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3" } -> return storage at given address in genesis block
+    public void getStorageAtAccountAndBlockHash() {
+        final ChainWithAccount10KBalance chain = new ChainWithAccount10KBalance();
+
+        Map<String, String> blockRef = new HashMap<String, String>() {
+            {
+                put("blockHash", "0x" + chain.block.getPrintableHash());
+            }
+        };
+        assertEquals("0x0", chain.web3.eth_getStorageAt(chain.accountAddress, "0x0", blockRef));
+    }
+
+    @Test
+    //[ "0x<address>", { "blockHash": "0x<non-existent-block-hash>" } -> raise block-not-found error
+    public void getStorageAtAccountAndNonExistentBlockHash() {
+        final ChainWithAccount10KBalance chain = new ChainWithAccount10KBalance();
+
+        final String nonExistentBlockHash = "0x" + String.join("", Collections.nCopies(64, "1")); // "0x1111..."
+        Map<String, String> blockRef = new HashMap<String, String>() {
+            {
+                put("blockHash", nonExistentBlockHash);
+            }
+        };
+
+        TestUtils.assertThrows(RskJsonRpcRequestException.class, () -> chain.web3.eth_getStorageAt(chain.accountAddress, "0x0", blockRef));
+    }
+
+
+    @Test
+    //[ "0x<address>", { "blockHash": "0x<non-existent-block-hash>", "requireCanonical": true } -> raise block-not-found error
+    public void getStorageAtAccountAndNonExistentBlockHashWhenCanonicalIsRequired() {
+        final ChainWithAccount10KBalance chain = new ChainWithAccount10KBalance();
+
+        final String nonExistentBlockHash = "0x" + String.join("", Collections.nCopies(64, "1")); // "0x1111..."
+        Map<String, String> blockRef = new HashMap<String, String>() {
+            {
+                put("blockHash", nonExistentBlockHash);
+                put("requireCanonical", "true");
+            }
+        };
+
+        TestUtils.assertThrows(RskJsonRpcRequestException.class, () -> chain.web3.eth_getStorageAt(chain.accountAddress, "0x0", blockRef));
+    }
+
+    @Test
+    //[ "0x<address>", { "blockHash": "0x<non-existent-block-hash>", "requireCanonical": false } -> raise block-not-found error
+    public void getStorageAtAccountAndNonExistentBlockHashWhenCanonicalIsNotRequired() {
+        final ChainWithAccount10KBalance chain = new ChainWithAccount10KBalance();
+
+        final String nonExistentBlockHash = "0x" + String.join("", Collections.nCopies(64, "1")); // "0x1111..."
+        Map<String, String> blockRef = new HashMap<String, String>() {
+            {
+                put("blockHash", nonExistentBlockHash);
+                put("requireCanonical", "false");
+            }
+        };
+
+        TestUtils.assertThrows(RskJsonRpcRequestException.class, () -> chain.web3.eth_getStorageAt(chain.accountAddress, "0x0", blockRef));
+    }
+
+    @Test
+    // [ "0x<address>", { "blockHash": "0x<non-canonical-block-hash>", "requireCanonical": true } -> raise block-not-canonical error
+    public void getStorageAtAccountAndNonCanonicalBlockHashWhenCanonicalIsRequired() {
+        final ChainWithAccount10KBalance chain = new ChainWithAccount10KBalance(w -> this.createChainWithNonCanonicalBlock(w));
+
+        Map<String, String> blockRef = new HashMap<String, String>() {
+            {
+                put("blockHash", "0x" + chain.block.getPrintableHash());
+                put("requireCanonical", "true");
+            }
+        };
+
+        TestUtils.assertThrows(RskJsonRpcRequestException.class, () -> chain.web3.eth_getStorageAt(chain.accountAddress, "0x0", blockRef));
+    }
+
+    @Test
+    //[ "0x<address>", { "blockHash": "0xd4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3", "requireCanonical": true } -> return storage at given address in genesis block
+    public void getStorageAtAccountAndCanonicalBlockHashWhenCanonicalIsRequired() {
+        final ChainWithAccount10KBalance chain = new ChainWithAccount10KBalance();
+
+        Map<String, String> blockRef = new HashMap<String, String>() {
+            {
+                put("blockHash", "0x" + chain.block.getPrintableHash());
+                put("requireCanonical", "true");
+            }
+        };
+
+        assertEquals("0x0", chain.web3.eth_getStorageAt(chain.accountAddress, "0x0", blockRef));
+    }
+
+    @Test
+    //[ "0x<address>", { "blockHash": "0xd4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3", "requireCanonical": false } -> return storage at given address in genesis block
+    public void getStorageAtAccountAndCanonicalBlockHashWhenCanonicalIsNotRequired() {
+        final ChainWithAccount10KBalance chain = new ChainWithAccount10KBalance();
+
+        Map<String, String> blockRef = new HashMap<String, String>() {
+            {
+                put("blockHash", "0x" + chain.block.getPrintableHash());
+                put("requireCanonical", "false");
+            }
+        };
+
+        assertEquals("0x0", chain.web3.eth_getStorageAt(chain.accountAddress, "0x0", blockRef));
+    }
+
+    @Test
+    // [ "0x<address>", { "blockHash": "0x<non-canonical-block-hash>", "requireCanonical": false } -> return storage at given address in specified block
+    public void getStorageAtAccountAndNonCanonicalBlockHashWhenCanonicalIsNotRequired() {
+        final ChainWithAccount10KBalance chain = new ChainWithAccount10KBalance(w -> this.createChainWithNonCanonicalBlock(w));
+
+        Map<String, String> blockRef = new HashMap<String, String>() {
+            {
+                put("blockHash", "0x" + chain.block.getPrintableHash());
+                put("requireCanonical", "false");
+            }
+        };
+
+        assertEquals("0x0", chain.web3.eth_getStorageAt(chain.accountAddress, "0x0", blockRef));
+    }
+
+    @Test
+    // [ "0x<address>", { "blockHash": "0x<non-canonical-block-hash>" } -> return storage at given address in specified bloc
+    public void getStorageAtAccountAndNonCanonicalBlockHash() {
+        final ChainWithAccount10KBalance chain = new ChainWithAccount10KBalance(w -> this.createChainWithNonCanonicalBlock(w));
+
+        Map<String, String> blockRef = new HashMap<String, String>() {
+            {
+                put("blockHash", "0x" + chain.block.getPrintableHash());
+            }
+        };
+
+        assertEquals("0x0", chain.web3.eth_getStorageAt(chain.accountAddress, "0x0", blockRef));
+    }
+    //TODO: ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
     @Test
     public void invokeByBlockHash() {
         final ChainWithAccount10KBalance chain = new ChainWithAccount10KBalance();

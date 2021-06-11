@@ -230,7 +230,6 @@ public class Web3ImplUnitTest {
         };
         final Web3Impl spyTarget = spy(target);
         final String expectedData =  "0x010203";
-        System.out.println(expectedData);
         doReturn(expectedData).when(spyTarget).invokeByBlockRef(eq(blockRef),any());
         String result = spyTarget.eth_getCode(addr,blockRef);
         assertEquals(expectedData, result);
