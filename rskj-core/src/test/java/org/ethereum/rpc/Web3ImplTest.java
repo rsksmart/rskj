@@ -411,165 +411,154 @@ public class Web3ImplTest {
 
     @Test
     public void invokeByBlockNumber() {
-        World world = new World();
-        createChainWithOneBlock(world);
+        final ChainWithAccount10KBalance chain = new ChainWithAccount10KBalance();
+
         Map<String, String> blockRef = new HashMap<String, String>() {
             {
                 put("blockNumber", "0x1");
             }
         };
-        Web3Impl web3 = createWeb3(world);
-        assertEquals("0x1",web3.invokeByBlockRef(blockRef,b -> b));
+        assertEquals("0x1", chain.web3.invokeByBlockRef(blockRef, b -> b));
     }
 
     @Test
     public void invokeByInvalidInputThrowsException() {
-        World world = new World();
-        createChainWithOneBlock(world);
+        final ChainWithAccount10KBalance chain = new ChainWithAccount10KBalance();
+
         Map<String, String> blockRef = new HashMap<String, String>() {
             {
                 put("invalidInput", "0x1");
             }
         };
 
-        Web3Impl web3 = createWeb3(world);
-        this.assertThrown(RskJsonRpcRequestException.class, () -> web3.invokeByBlockRef(blockRef,b -> b));
+        this.assertThrown(RskJsonRpcRequestException.class, () -> chain.web3.invokeByBlockRef(blockRef, b -> b));
     }
 
     @Test
     public void invokeByBlockHash() {
-        World world = new World();
-        Block block = createChainWithOneBlock(world);
+        final ChainWithAccount10KBalance chain = new ChainWithAccount10KBalance();
+
         Map<String, String> blockRef = new HashMap<String, String>() {
             {
-                put("blockHash", "0x" + block.getPrintableHash());
+                put("blockHash", "0x" + chain.block.getPrintableHash());
             }
         };
 
-        Web3Impl web3 = createWeb3(world);
-        assertEquals("0x1",web3.invokeByBlockRef(blockRef,b -> b));
+        assertEquals("0x1", chain.web3.invokeByBlockRef(blockRef, b -> b));
     }
 
     @Test
     public void invokeByNonExistentBlockHash() {
-        World world = new World();
-        createChainWithOneBlock(world);
-        final String nonExistentBlockHash="0x" + String.join("", Collections.nCopies(64, "1")); // "0x1111..."
+        final ChainWithAccount10KBalance chain = new ChainWithAccount10KBalance();
+
+        final String nonExistentBlockHash = "0x" + String.join("", Collections.nCopies(64, "1")); // "0x1111..."
         Map<String, String> blockRef = new HashMap<String, String>() {
             {
                 put("blockHash", nonExistentBlockHash);
             }
         };
 
-        Web3Impl web3 = createWeb3(world);
-        this.assertThrown(RskJsonRpcRequestException.class, () -> web3.invokeByBlockRef(blockRef,b -> b));
+        this.assertThrown(RskJsonRpcRequestException.class, () -> chain.web3.invokeByBlockRef(blockRef, b -> b));
     }
 
     @Test
     public void invokeByNonExistentBlockHashWhenCanonicalIsRequired() {
-        World world = new World();
-        createChainWithOneBlock(world);
-        final String nonExistentBlockHash="0x" + String.join("", Collections.nCopies(64, "1")); // "0x1111..."
+        final ChainWithAccount10KBalance chain = new ChainWithAccount10KBalance();
+
+        final String nonExistentBlockHash = "0x" + String.join("", Collections.nCopies(64, "1")); // "0x1111..."
         Map<String, String> blockRef = new HashMap<String, String>() {
             {
                 put("blockHash", nonExistentBlockHash);
-                put("requireCanonical","true");
+                put("requireCanonical", "true");
             }
         };
 
-        Web3Impl web3 = createWeb3(world);
-        this.assertThrown(RskJsonRpcRequestException.class, () -> web3.invokeByBlockRef(blockRef,b -> b));;
+        this.assertThrown(RskJsonRpcRequestException.class, () -> chain.web3.invokeByBlockRef(blockRef, b -> b));
+        ;
     }
 
     @Test
     public void invokeByNonExistentBlockHashWhenCanonicalIsNotRequired() {
-        World world = new World();
-        createChainWithOneBlock(world);
-        final String nonExistentBlockHash="0x" + String.join("", Collections.nCopies(64, "1")); // "0x1111..."
+        final ChainWithAccount10KBalance chain = new ChainWithAccount10KBalance();
+
+        final String nonExistentBlockHash = "0x" + String.join("", Collections.nCopies(64, "1")); // "0x1111..."
         Map<String, String> blockRef = new HashMap<String, String>() {
             {
                 put("blockHash", nonExistentBlockHash);
-                put("requireCanonical","false");
+                put("requireCanonical", "false");
             }
         };
 
-        Web3Impl web3 = createWeb3(world);
-        this.assertThrown(RskJsonRpcRequestException.class, () -> web3.invokeByBlockRef(blockRef,b -> b));
+        this.assertThrown(RskJsonRpcRequestException.class, () -> chain.web3.invokeByBlockRef(blockRef, b -> b));
     }
 
     @Test
     public void invokeByNonCanonicalBlockHashWhenCanonicalIsRequired() {
-        World world = new World();
-        String accountAddress = createAccountWith10KBalance(world);
-        Block nonCanonicalBlock = createChainWithNonCanonicalBlock(world);
+        final ChainWithAccount10KBalance chain = new ChainWithAccount10KBalance(w -> this.createChainWithNonCanonicalBlock(w));
+
         Map<String, String> blockRef = new HashMap<String, String>() {
             {
-                put("blockHash", "0x" + nonCanonicalBlock.getPrintableHash());
-                put("requireCanonical","true");
+                put("blockHash", "0x" + chain.block.getPrintableHash());
+                put("requireCanonical", "true");
             }
         };
 
-        Web3Impl web3 = createWeb3(world);
-        this.assertThrown(RskJsonRpcRequestException.class, () -> web3.invokeByBlockRef(blockRef,b -> b));
+        this.assertThrown(RskJsonRpcRequestException.class, () -> chain.web3.invokeByBlockRef(blockRef, b -> b));
     }
 
     @Test
     public void invokeCanonicalBlockHashWhenCanonicalIsRequired() {
-        World world = new World();
-        Block block = createChainWithOneBlock(world);
+        final ChainWithAccount10KBalance chain = new ChainWithAccount10KBalance();
+
         Map<String, String> blockRef = new HashMap<String, String>() {
             {
-                put("blockHash", "0x" + block.getPrintableHash());
-                put("requireCanonical","true");
+                put("blockHash", "0x" + chain.block.getPrintableHash());
+                put("requireCanonical", "true");
             }
         };
 
-        Web3Impl web3 = createWeb3(world);
-        assertEquals("0x1",web3.invokeByBlockRef(blockRef,b -> b));
+        assertEquals("0x1", chain.web3.invokeByBlockRef(blockRef, b -> b));
     }
 
     @Test
     public void invokeByCanonicalBlockHashWhenCanonicalIsNotRequired() {
-        World world = new World();
-        Block block = createChainWithOneBlock(world);
+        final ChainWithAccount10KBalance chain = new ChainWithAccount10KBalance();
+
         Map<String, String> blockRef = new HashMap<String, String>() {
             {
-                put("blockHash", "0x" + block.getPrintableHash());
-                put("requireCanonical","false");
+                put("blockHash", "0x" + chain.block.getPrintableHash());
+                put("requireCanonical", "false");
             }
         };
 
-        Web3Impl web3 = createWeb3(world);
-        assertEquals("0x1",web3.invokeByBlockRef(blockRef,b -> b));
+        assertEquals("0x1", chain.web3.invokeByBlockRef(blockRef, b -> b));
     }
 
     @Test
     public void invokeByNonCanonicalBlockHashWhenCanonicalIsNotRequired() {
-        World world = new World();
-        Block nonCanonicalBlock = createChainWithNonCanonicalBlock(world);
+        final ChainWithAccount10KBalance chain = new ChainWithAccount10KBalance(w -> this.createChainWithNonCanonicalBlock(w));
+
         Map<String, String> blockRef = new HashMap<String, String>() {
             {
-                put("blockHash", "0x" + nonCanonicalBlock.getPrintableHash());
-                put("requireCanonical","false");
+                put("blockHash", "0x" + chain.block.getPrintableHash());
+                put("requireCanonical", "false");
             }
         };
 
-        Web3Impl web3 = createWeb3(world);
-        assertEquals("0x1",web3.invokeByBlockRef(blockRef,b -> b));
+        assertEquals("0x1", chain.web3.invokeByBlockRef(blockRef, b -> b));
     }
 
     @Test
     public void invokeByNonCanonicalBlockHash() {
-        World world = new World();
-        Block nonCanonicalBlock = createChainWithNonCanonicalBlock(world);
+        final ChainWithAccount10KBalance chain = new ChainWithAccount10KBalance(w -> this.createChainWithNonCanonicalBlock(w));
+
         Map<String, String> blockRef = new HashMap<String, String>() {
             {
-                put("blockHash", "0x" + nonCanonicalBlock.getPrintableHash());
+                put("blockHash", "0x" + chain.block.getPrintableHash());
             }
         };
 
-        Web3Impl web3 = createWeb3(world);
-        assertEquals("0x1",web3.invokeByBlockRef(blockRef,b -> b));
+        assertEquals("0x1", chain.web3.invokeByBlockRef(blockRef, b -> b));
     }
 
     @Test
