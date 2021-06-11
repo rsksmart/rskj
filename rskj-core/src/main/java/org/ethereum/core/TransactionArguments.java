@@ -25,17 +25,89 @@ import java.util.Arrays;
 
 public class TransactionArguments {
 
-    public String from;
-    public byte[] to;
-    public BigInteger gas;
-    public BigInteger gasLimit;
-    public BigInteger gasPrice;
-    public BigInteger value;
-    public String data; // compiledCode
-    public BigInteger nonce;
-    public byte chainId;  //NOSONAR
+    private String from;
+    private byte[] to;
+    private BigInteger gas;
+    private BigInteger gasLimit;
+    private BigInteger gasPrice;
+    private BigInteger value;
+    private String data; // compiledCode
+    private BigInteger nonce;
+    private byte chainId;  //NOSONAR
 
-    @Override
+    public String getFrom() {
+		return from;
+	}
+
+	public void setFrom(String from) {
+		this.from = from;
+	}
+
+	public byte[] getTo() {
+		return to;
+	}
+
+	public void setTo(byte[] to) {
+		this.to = to;
+	}
+
+	public BigInteger getGas() {
+		return gas;
+	}
+
+	public void setGas(BigInteger gas) {
+		this.gas = gas;
+	}
+
+	public BigInteger getGasLimit() {
+		return gasLimit;
+	}
+
+	public void setGasLimit(BigInteger gasLimit) {
+		this.gasLimit = gasLimit;
+	}
+
+	public BigInteger getGasPrice() {
+		return gasPrice;
+	}
+
+	public void setGasPrice(BigInteger gasPrice) {
+		this.gasPrice = gasPrice;
+	}
+
+	public BigInteger getValue() {
+		return value;
+	}
+
+	public void setValue(BigInteger value) {
+		this.value = value;
+	}
+
+	public String getData() {
+		return data;
+	}
+
+	public void setData(String data) {
+		this.data = data;
+	}
+
+	public BigInteger getNonce() {
+		return nonce;
+	}
+
+	public void setNonce(BigInteger nonce) {
+		this.nonce = nonce;
+	}
+
+	public byte getChainId() {
+		return chainId;
+	}
+
+	public void setChainId(byte chainId) {
+		this.chainId = chainId;
+	}
+
+	@Override
     public String toString() {
         return "TransactionArguments{" +
                 "from='" + from + '\'' +

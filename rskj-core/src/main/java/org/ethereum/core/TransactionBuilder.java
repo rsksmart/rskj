@@ -132,13 +132,13 @@ public final class TransactionBuilder {
     
     public TransactionBuilder from(TransactionArguments args) {
     	
-        nonce(args.nonce);
-        gasPrice(args.gasPrice);
-        gasLimit(args.gasLimit);
-        destination(args.to);
-        data(args.data);
-        chainId(args.chainId);
-        value(BigIntegers.asUnsignedByteArray(args.value));
+        nonce(args.getNonce());
+        gasPrice(args.getGasPrice());
+        gasLimit(args.getGasLimit());
+        destination(args.getTo());
+        data(args.getData());
+        chainId(args.getChainId());
+        value(BigIntegers.asUnsignedByteArray(args.getValue()));
     	
         return this;
     }

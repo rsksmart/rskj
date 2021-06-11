@@ -46,13 +46,13 @@ public class TransactionArgumentsUtilTest {
 		
 		TransactionArguments txArgs = TransactionArgumentsUtil.processArguments(args, null, wallet.getAccount(sender), constants.getChainId());
 		
-		assertEquals(txArgs.value, BigInteger.valueOf(100000L));
-		assertEquals(txArgs.gasPrice, BigInteger.valueOf(10000000000000L));
-		assertEquals(txArgs.gasLimit, BigInteger.valueOf(30400L));
-		assertEquals(txArgs.chainId, 33);
-		assertEquals(txArgs.nonce, BigInteger.ONE);
-		assertEquals(txArgs.data, null);
-		assertArrayEquals(txArgs.to, receiver.getBytes());
+		assertEquals(txArgs.getValue(), BigInteger.valueOf(100000L));
+		assertEquals(txArgs.getGasPrice(), BigInteger.valueOf(10000000000000L));
+		assertEquals(txArgs.getGasLimit(), BigInteger.valueOf(30400L));
+		assertEquals(txArgs.getChainId(), 33);
+		assertEquals(txArgs.getNonce(), BigInteger.ONE);
+		assertEquals(txArgs.getData(), null);
+		assertArrayEquals(txArgs.getTo(), receiver.getBytes());
 
 	}
 
