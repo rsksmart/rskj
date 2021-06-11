@@ -583,6 +583,157 @@ public class Web3ImplTest {
     }
     //TODO: ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+    //TODO: /////////////////////////////////////////eth_getCode////////////////////////////////////////////////////////////////
+
+    @Test
+    //[ "0x<address>", { "blockNumber": "0x0" } -> return code at given address in genesis block
+    public void getCodeAtAccountAndBlockNumber() {
+        final ChainWithAContractCode chain = new ChainWithAContractCode();
+
+        Map<String, String> blockRef = new HashMap<String, String>() {
+            {
+                put("blockNumber", "0x1");
+            }
+        };
+        assertEquals("0x010203", chain.web3.eth_getCode(chain.accountAddress, blockRef));
+    }
+
+    @Test
+    //[ "0x<address>", { "blockHash": "0xd4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3" } -> return code at given address in genesis block
+    public void getCodeAtAccountAndBlockHash() {
+        final ChainWithAContractCode chain = new ChainWithAContractCode();
+
+        Map<String, String> blockRef = new HashMap<String, String>() {
+            {
+                put("blockHash", "0x" + chain.block.getPrintableHash());
+            }
+        };
+        assertEquals("0x010203", chain.web3.eth_getCode(chain.accountAddress, blockRef));
+    }
+
+    @Test
+    //[ "0x<address>", { "blockHash": "0x<non-existent-block-hash>" } -> raise block-not-found error
+    public void getCodeAtAccountAndNonExistentBlockHash() {
+        final ChainWithAContractCode chain = new ChainWithAContractCode();
+
+        final String nonExistentBlockHash = "0x" + String.join("", Collections.nCopies(64, "1")); // "0x1111..."
+        Map<String, String> blockRef = new HashMap<String, String>() {
+            {
+                put("blockHash", nonExistentBlockHash);
+            }
+        };
+
+        TestUtils.assertThrows(RskJsonRpcRequestException.class, () -> chain.web3.eth_getCode(chain.accountAddress, blockRef));
+    }
+
+
+    @Test
+    //[ "0x<address>", { "blockHash": "0x<non-existent-block-hash>", "requireCanonical": true } -> raise block-not-found error
+    public void getCodeAtAccountAndNonExistentBlockHashWhenCanonicalIsRequired() {
+        final ChainWithAContractCode chain = new ChainWithAContractCode();
+
+        final String nonExistentBlockHash = "0x" + String.join("", Collections.nCopies(64, "1")); // "0x1111..."
+        Map<String, String> blockRef = new HashMap<String, String>() {
+            {
+                put("blockHash", nonExistentBlockHash);
+                put("requireCanonical", "true");
+            }
+        };
+
+        TestUtils.assertThrows(RskJsonRpcRequestException.class, () -> chain.web3.eth_getCode(chain.accountAddress, blockRef));
+    }
+
+    @Test
+    //[ "0x<address>", { "blockHash": "0x<non-existent-block-hash>", "requireCanonical": false } -> raise block-not-found error
+    public void getCodeAtAccountAndNonExistentBlockHashWhenCanonicalIsNotRequired() {
+        final ChainWithAContractCode chain = new ChainWithAContractCode();
+
+        final String nonExistentBlockHash = "0x" + String.join("", Collections.nCopies(64, "1")); // "0x1111..."
+        Map<String, String> blockRef = new HashMap<String, String>() {
+            {
+                put("blockHash", nonExistentBlockHash);
+                put("requireCanonical", "false");
+            }
+        };
+
+        TestUtils.assertThrows(RskJsonRpcRequestException.class, () -> chain.web3.eth_getCode(chain.accountAddress, blockRef));
+    }
+
+    @Test
+    // [ "0x<address>", { "blockHash": "0x<non-canonical-block-hash>", "requireCanonical": true } -> raise block-not-canonical error
+    public void getCodeAtAccountAndNonCanonicalBlockHashWhenCanonicalIsRequired() {
+        final ChainWithAContractCode chain = new ChainWithAContractCode(true);
+
+        Map<String, String> blockRef = new HashMap<String, String>() {
+            {
+                put("blockHash", "0x" + chain.block.getPrintableHash());
+                put("requireCanonical", "true");
+            }
+        };
+
+        TestUtils.assertThrows(RskJsonRpcRequestException.class, () -> chain.web3.eth_getCode(chain.accountAddress, blockRef));
+    }
+
+    @Test
+    //[ "0x<address>", { "blockHash": "0xd4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3", "requireCanonical": true } -> return code at given address in genesis block
+    public void getCodeAtAccountAndCanonicalBlockHashWhenCanonicalIsRequired() {
+        final ChainWithAContractCode chain = new ChainWithAContractCode();
+
+        Map<String, String> blockRef = new HashMap<String, String>() {
+            {
+                put("blockHash", "0x" + chain.block.getPrintableHash());
+                put("requireCanonical", "true");
+            }
+        };
+
+        assertEquals("0x010203", chain.web3.eth_getCode(chain.accountAddress, blockRef));
+    }
+
+    @Test
+    //[ "0x<address>", { "blockHash": "0xd4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3", "requireCanonical": false } -> return code at given address in genesis block
+    public void getCodeAtAccountAndCanonicalBlockHashWhenCanonicalIsNotRequired() {
+        final ChainWithAContractCode chain = new ChainWithAContractCode();
+
+        Map<String, String> blockRef = new HashMap<String, String>() {
+            {
+                put("blockHash", "0x" + chain.block.getPrintableHash());
+                put("requireCanonical", "false");
+            }
+        };
+
+        assertEquals("0x010203", chain.web3.eth_getCode(chain.accountAddress, blockRef));
+    }
+
+    @Test
+    // [ "0x<address>", { "blockHash": "0x<non-canonical-block-hash>", "requireCanonical": false } -> return code at given address in specified block
+    public void getCodeAtAccountAndNonCanonicalBlockHashWhenCanonicalIsNotRequired() {
+        final ChainWithAContractCode chain = new ChainWithAContractCode(true);
+
+        Map<String, String> blockRef = new HashMap<String, String>() {
+            {
+                put("blockHash", "0x" + chain.block.getPrintableHash());
+                put("requireCanonical", "false");
+            }
+        };
+
+        assertEquals("0x010203", chain.web3.eth_getCode(chain.accountAddress, blockRef));
+    }
+
+    @Test
+    // [ "0x<address>", { "blockHash": "0x<non-canonical-block-hash>" } -> return code at given address in specified bloc
+    public void getCodeAtAccountAndNonCanonicalBlockHash() {
+        final ChainWithAContractCode chain = new ChainWithAContractCode(true);
+
+        Map<String, String> blockRef = new HashMap<String, String>() {
+            {
+                put("blockHash", "0x" + chain.block.getPrintableHash());
+            }
+        };
+
+        assertEquals("0x010203", chain.web3.eth_getCode(chain.accountAddress, blockRef));
+    }
+
+    //TODO: ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     @Test
     public void invokeByBlockHash() {
         final ChainWithAccount10KBalance chain = new ChainWithAccount10KBalance();
@@ -2728,7 +2879,7 @@ public class Web3ImplTest {
             txs.add(tx);
             this.accountAddress = ByteUtil.toHexString(acc1.getAddress().getBytes());
             if (isCanonicalBlock) {
-                this.block = getNonCanonicalBlock(world, txs);
+                this.block = getNonCanonicalBlock(txs);
             } else {
                 this.block = getBlock(txs);
             }
@@ -2742,13 +2893,67 @@ public class Web3ImplTest {
             return block;
         }
 
-        private Block getNonCanonicalBlock(World world, List<Transaction> txs) {
+        private Block getNonCanonicalBlock(List<Transaction> txs) {
             final Block block;
             Block genesis = world.getBlockChain().getBestBlock();
 
             final BlockBuilder blockBuilder = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(), world.getBlockStore());
             Block block1Canonical = blockBuilder.trieStore(world.getTrieStore()).parent(genesis).transactions(txs).build();
             block = blockBuilder.trieStore(world.getTrieStore()).parent(genesis).transactions(txs).build();
+            Block block2Canonical = blockBuilder.parent(block1Canonical).build();
+
+            world.getBlockChain().tryToConnect(genesis);
+            world.getBlockChain().tryToConnect(block1Canonical);
+            world.getBlockChain().tryToConnect(block);
+            world.getBlockChain().tryToConnect(block2Canonical);
+            return block;
+        }
+    }
+
+    private class ChainWithAContractCode {
+        private final World world = new World();
+        private final String accountAddress;
+        private final Web3Impl web3 = createWeb3(world);
+        private final Block block;
+
+        public ChainWithAContractCode() {
+            this(false);
+        }
+
+        public ChainWithAContractCode(boolean isCanonicalBlock) {
+            Account acc1 = new AccountBuilder(world).name("acc1").balance(Coin.valueOf(100000000)).build();
+            byte[] code = new byte[] { 0x01, 0x02, 0x03 };
+            world.getRepository().saveCode(acc1.getAddress(), code);
+            this.accountAddress = ByteUtil.toHexString(acc1.getAddress().getBytes());
+            if (isCanonicalBlock) {
+                this.block = getNonCanonicalBlock();//getNonCanonicalBlock(world, txs);
+            } else {
+                this.block = getBlock();
+            }
+        }
+
+        private Block getBlock() {
+            Block genesis = world.getBlockChain().getBestBlock();
+            genesis.setStateRoot(world.getRepository().getRoot());
+            genesis.flushRLP();
+            world.getBlockStore().saveBlock(genesis, genesis.getCumulativeDifficulty(), true);
+            Block block1 = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(),
+                    world.getBlockStore()).trieStore(world.getTrieStore()).parent(genesis).build();
+            assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block1));
+            return block1;
+        }
+
+        private Block getNonCanonicalBlock() {
+            final Block block;
+            Block genesis = world.getBlockChain().getBestBlock();
+            genesis.setStateRoot(world.getRepository().getRoot());
+            genesis.flushRLP();
+            world.getBlockStore().saveBlock(genesis, genesis.getCumulativeDifficulty(), true);
+
+            final BlockBuilder blockBuilder = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(), world.getBlockStore());
+
+            Block block1Canonical = blockBuilder.trieStore(world.getTrieStore()).parent(genesis).build();
+            block = blockBuilder.trieStore(world.getTrieStore()).parent(genesis).build();
             Block block2Canonical = blockBuilder.parent(block1Canonical).build();
 
             world.getBlockChain().tryToConnect(genesis);
