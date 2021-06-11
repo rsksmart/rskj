@@ -926,86 +926,49 @@ public class Web3ImplTest {
     @Test
     //[ "0x<address>", { "blockNumber": "0x0" } -> return tx count at given address in genesis block
     public void getTransactionCountByBlockNumber() {
-        World world = new World();
+        final ChainWithATransaction chain = new ChainWithATransaction();
 
-
-        Account acc1 = new AccountBuilder(world).name("acc1").balance(Coin.valueOf(100000000)).build();
-        Account acc2 = new AccountBuilder().name("acc2").build();
-        Transaction tx = new TransactionBuilder().sender(acc1).receiver(acc2).value(BigInteger.valueOf(1000000)).build();
-        List<Transaction> txs = new ArrayList<>();
-        txs.add(tx);
-        Block genesis = world.getBlockChain().getBestBlock();
-        Block block1 = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(),
-                world.getBlockStore()).trieStore(world.getTrieStore()).parent(genesis).transactions(txs).build();
-        assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block1));
-
-
-        String accountAddress = ByteUtil.toHexString(acc1.getAddress().getBytes());
         Map<String, String> blockRef = new HashMap<String, String>() {
             {
                 put("blockNumber", "0x1");
             }
         };
-        Web3Impl web3 = createWeb3(world);
-        assertEquals("0x1", web3.eth_getTransactionCount(accountAddress, blockRef));
+        assertEquals("0x1", chain.web3.eth_getTransactionCount(chain.accountAddress, blockRef));
     }
 
     @Test
     //[ "0x<address>", { "invalidInput": "0x0" } -> throw RskJsonRpcRequestException
     public void getTransactionCountAndInvalidInputThrowsException() {
-        World world = new World();
-        Account acc1 = new AccountBuilder(world).name("acc1").balance(Coin.valueOf(100000000)).build();
-        Account acc2 = new AccountBuilder().name("acc2").build();
-        Transaction tx = new TransactionBuilder().sender(acc1).receiver(acc2).value(BigInteger.valueOf(1000000)).build();
-        List<Transaction> txs = new ArrayList<>();
-        txs.add(tx);
-        Block genesis = world.getBlockChain().getBestBlock();
-        Block block1 = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(),
-                world.getBlockStore()).trieStore(world.getTrieStore()).parent(genesis).transactions(txs).build();
-        assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block1));
+        final ChainWithATransaction chain = new ChainWithATransaction();
 
-
-        String accountAddress = ByteUtil.toHexString(acc1.getAddress().getBytes());
         Map<String, String> blockRef = new HashMap<String, String>() {
             {
                 put("invalidInput", "0x1");
             }
         };
 
-        Web3Impl web3 = createWeb3(world);
-        this.assertThrown(RskJsonRpcRequestException.class, () -> web3.eth_getTransactionCount(accountAddress, blockRef));
+        this.assertThrown(RskJsonRpcRequestException.class, () -> chain.web3.eth_getTransactionCount(chain.accountAddress, blockRef));
     }
 
     @Test
     //[ "0x<address>", { "blockHash": "0xd4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3" } -> return tx count at given address in genesis block
     public void getTransactionCountByBlockHash() {
-        World world = new World();
-        Account acc1 = new AccountBuilder(world).name("acc1").balance(Coin.valueOf(100000000)).build();
-        Account acc2 = new AccountBuilder().name("acc2").build();
-        Transaction tx = new TransactionBuilder().sender(acc1).receiver(acc2).value(BigInteger.valueOf(1000000)).build();
-        List<Transaction> txs = new ArrayList<>();
-        txs.add(tx);
-        Block genesis = world.getBlockChain().getBestBlock();
-        Block block1 = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(),
-                world.getBlockStore()).trieStore(world.getTrieStore()).parent(genesis).transactions(txs).build();
-        assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block1));
-        String accountAddress = ByteUtil.toHexString(acc1.getAddress().getBytes());
+        final ChainWithATransaction chain = new ChainWithATransaction();
+
         Map<String, String> blockRef = new HashMap<String, String>() {
             {
-                put("blockHash", "0x" + block1.getPrintableHash());
+                put("blockHash", "0x" + chain.block.getPrintableHash());
             }
         };
 
-        Web3Impl web3 = createWeb3(world);
-        assertEquals("0x1", web3.eth_getTransactionCount(accountAddress, blockRef));
+        assertEquals("0x1", chain.web3.eth_getTransactionCount(chain.accountAddress, blockRef));
     }
 
     @Test
     //[ "0x<address>", { "blockHash": "0x<non-existent-block-hash>" } -> raise block-not-found error
     public void getTransactionCountByNonExistentBlockHash() {
-        World world = new World();
-        String accountAddress = createAccountWith10KBalance(world);
-        createChainWithOneBlock(world);
+        final ChainWithAccount10KBalance chain = new ChainWithAccount10KBalance();
+
         final String nonExistentBlockHash="0x" + String.join("", Collections.nCopies(64, "1")); // "0x1111..."
         Map<String, String> blockRef = new HashMap<String, String>() {
             {
@@ -1013,81 +976,36 @@ public class Web3ImplTest {
             }
         };
 
-        Web3Impl web3 = createWeb3(world);
-        this.assertThrown(RskJsonRpcRequestException.class, () -> web3.eth_getTransactionCount(accountAddress, blockRef));
+        this.assertThrown(RskJsonRpcRequestException.class, () -> chain.web3.eth_getTransactionCount(chain.accountAddress, blockRef));
     }
 
     @Test
     // [ "0x<address>", { "blockHash": "0x<non-canonical-block-hash>", "requireCanonical": true } -> raise block-not-canonical error
     public void getTransactionCountByNonCanonicalBlockHashWhenCanonicalIsRequired() {
-        World world = new World();
+        final ChainWithATransaction chain = new ChainWithATransaction(true);
 
-        Account acc1 = new AccountBuilder(world).name("acc1").balance(Coin.valueOf(100000000)).build();
-        Account acc2 = new AccountBuilder().name("acc2").build();
-        Transaction tx = new TransactionBuilder().sender(acc1).receiver(acc2).value(BigInteger.valueOf(1000000)).build();
-        List<Transaction> txs = new ArrayList<>();
-        txs.add(tx);
-
-        Block genesis = world.getBlockChain().getBestBlock();
-
-        final BlockBuilder blockBuilder = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(), world.getBlockStore());
-
-        Block block1Canonical = blockBuilder.trieStore(world.getTrieStore()).parent(genesis).build();
-        Block nonCanonicalBlock = blockBuilder.trieStore(world.getTrieStore()).parent(genesis).transactions(txs).build();
-        Block block2Canonical = blockBuilder.parent(block1Canonical).build();
-
-        world.getBlockChain().tryToConnect(genesis);
-        world.getBlockChain().tryToConnect(block1Canonical);
-        world.getBlockChain().tryToConnect(nonCanonicalBlock);
-        world.getBlockChain().tryToConnect(block2Canonical);
-
-        String accountAddress = ByteUtil.toHexString(acc1.getAddress().getBytes());
         Map<String, String> blockRef = new HashMap<String, String>() {
             {
-                put("blockHash", "0x" + nonCanonicalBlock.getPrintableHash());
+                put("blockHash", "0x" + chain.block.getPrintableHash());
                 put("requireCanonical","true");
             }
         };
 
-        Web3Impl web3 = createWeb3(world);
-        this.assertThrown(RskJsonRpcRequestException.class, () -> web3.eth_getTransactionCount(accountAddress, blockRef));
+        this.assertThrown(RskJsonRpcRequestException.class, () -> chain.web3.eth_getTransactionCount(chain.accountAddress, blockRef));
     }
 
     @Test
     // [ "0x<address>", { "blockHash": "0x<non-canonical-block-hash>" } -> return tx count at given address in specified bloc
     public void getTransactionCountByNonCanonicalBlockHash() {
-        World world = new World();
+        final ChainWithATransaction chain = new ChainWithATransaction(true);
 
-        Account acc1 = new AccountBuilder(world).name("acc1").balance(Coin.valueOf(100000000)).build();
-        Account acc2 = new AccountBuilder().name("acc2").build();
-        Transaction tx = new TransactionBuilder().sender(acc1).receiver(acc2).value(BigInteger.valueOf(1000000)).build();
-        List<Transaction> txs = new ArrayList<>();
-        txs.add(tx);
-
-        Block genesis = world.getBlockChain().getBestBlock();
-
-        final BlockBuilder blockBuilder = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(), world.getBlockStore());
-
-        Block block1Canonical = blockBuilder.trieStore(world.getTrieStore()).parent(genesis).transactions(txs).build();
-        Block nonCanonicalBlock = blockBuilder.trieStore(world.getTrieStore()).parent(genesis).transactions(txs).build();
-        Block block2Canonical = blockBuilder.parent(block1Canonical).build();
-
-
-        world.getBlockChain().tryToConnect(genesis);
-        world.getBlockChain().tryToConnect(block1Canonical);
-        world.getBlockChain().tryToConnect(nonCanonicalBlock);
-        world.getBlockChain().tryToConnect(block2Canonical);
-
-
-        String accountAddress = ByteUtil.toHexString(acc1.getAddress().getBytes());
         Map<String, String> blockRef = new HashMap<String, String>() {
             {
-                put("blockHash", "0x" + nonCanonicalBlock.getPrintableHash());
+                put("blockHash", "0x" + chain.block.getPrintableHash());
             }
         };
 
-        Web3Impl web3 = createWeb3(world);
-        assertEquals("0x1", web3.eth_getTransactionCount(accountAddress, blockRef));
+        assertEquals("0x1", chain.web3.eth_getTransactionCount(chain.accountAddress, blockRef));
     }
 
     @Test
@@ -2591,6 +2509,55 @@ public class Web3ImplTest {
 
         public ChainWithAccount10KBalance(Function<World,Block> blockCreation) {
             this.block = blockCreation.apply(world);
+        }
+    }
+
+    private class ChainWithATransaction {
+        private final World world = new World();
+        private final String accountAddress;
+        private final Web3Impl web3 = createWeb3(world);
+        private final Block block;
+
+        public ChainWithATransaction() {
+            this(false);
+        }
+
+        public ChainWithATransaction(boolean isCanonicalBlock) {
+            Account acc1 = new AccountBuilder(world).name("acc1").balance(Coin.valueOf(100000000)).build();
+            Account acc2 = new AccountBuilder().name("acc2").build();
+            Transaction tx = new TransactionBuilder().sender(acc1).receiver(acc2).value(BigInteger.valueOf(1000000)).build();
+            List<Transaction> txs = new ArrayList<>();
+            txs.add(tx);
+            this.accountAddress = ByteUtil.toHexString(acc1.getAddress().getBytes());
+            if (isCanonicalBlock) {
+                this.block = getNonCanonicalBlock(world, txs);
+            } else {
+                this.block = getBlock(txs);
+            }
+        }
+
+        private Block getBlock(List<Transaction> txs) {
+            Block genesis = world.getBlockChain().getBestBlock();
+            Block block = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(),
+                    world.getBlockStore()).trieStore(world.getTrieStore()).parent(genesis).transactions(txs).build();
+            assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block));
+            return block;
+        }
+
+        private Block getNonCanonicalBlock(World world, List<Transaction> txs) {
+            final Block block;
+            Block genesis = world.getBlockChain().getBestBlock();
+
+            final BlockBuilder blockBuilder = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(), world.getBlockStore());
+            Block block1Canonical = blockBuilder.trieStore(world.getTrieStore()).parent(genesis).transactions(txs).build();
+            block = blockBuilder.trieStore(world.getTrieStore()).parent(genesis).transactions(txs).build();
+            Block block2Canonical = blockBuilder.parent(block1Canonical).build();
+
+            world.getBlockChain().tryToConnect(genesis);
+            world.getBlockChain().tryToConnect(block1Canonical);
+            world.getBlockChain().tryToConnect(block);
+            world.getBlockChain().tryToConnect(block2Canonical);
+            return block;
         }
     }
 }
