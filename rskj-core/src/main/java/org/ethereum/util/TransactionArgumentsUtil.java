@@ -44,30 +44,30 @@ public class TransactionArgumentsUtil {
 
 		TransactionArguments argsRet = new TransactionArguments();
 
-		argsRet.from = argsParam.from;
+		argsRet.setFrom(argsParam.from);
 
-		argsRet.to = stringHexToByteArray(argsParam.to);
+		argsRet.setTo(stringHexToByteArray(argsParam.to));
 
-		argsRet.nonce = stringNumberAsBigInt(argsParam.nonce, () -> transactionPool.getPendingState().getNonce(senderAccount.getAddress()));
+		argsRet.setNonce(stringNumberAsBigInt(argsParam.nonce, () -> transactionPool.getPendingState().getNonce(senderAccount.getAddress())));
 
-		argsRet.value = stringNumberAsBigInt(argsParam.value, () -> BigInteger.ZERO);
+		argsRet.setValue(stringNumberAsBigInt(argsParam.value, () -> BigInteger.ZERO));
 
-		argsRet.gasPrice = stringNumberAsBigInt(argsParam.gasPrice, () -> BigInteger.ZERO);
+		argsRet.setGasPrice(stringNumberAsBigInt(argsParam.gasPrice, () -> BigInteger.ZERO));
 
-		argsRet.gasLimit = stringNumberAsBigInt(argsParam.gas, () -> null);
+		argsRet.setGasLimit(stringNumberAsBigInt(argsParam.gas, () -> null));
 
-		if (argsRet.gasLimit == null) {
-			argsRet.gasLimit = stringNumberAsBigInt(argsParam.gasLimit, () -> DEFAULT_GAS_LIMIT);
+		if (argsRet.getGasLimit() == null) {
+			argsRet.setGasLimit(stringNumberAsBigInt(argsParam.gasLimit, () -> DEFAULT_GAS_LIMIT));
 		}
 
 		if (argsParam.data != null && argsParam.data.startsWith("0x")) {
-			argsRet.data = argsParam.data.substring(2);
-			argsParam.data = argsRet.data; // needs to change the parameter because some places expect the changed value after sendTransaction call
+			argsRet.setData(argsParam.data.substring(2));
+			argsParam.data = argsRet.getData(); // needs to change the parameter because some places expect the changed value after sendTransaction call
 		}
 
-		argsRet.chainId = hexToChainId(argsParam.chainId);
-		if (argsRet.chainId == 0) {
-			argsRet.chainId = defaultChainId;
+		argsRet.setChainId(hexToChainId(argsParam.chainId));
+		if (argsRet.getChainId() == 0) {
+			argsRet.setChainId(defaultChainId);
 		}
 
 		return argsRet;
