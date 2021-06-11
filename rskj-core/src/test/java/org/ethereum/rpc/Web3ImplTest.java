@@ -223,56 +223,48 @@ public class Web3ImplTest {
     @Test
     //[ "0x<address>", { "blockNumber": "0x0" } -> return balance at given address in genesis block
     public void getBalanceWithAccountAndBlockNumber() {
-        World world = new World();
-        String accountAddress = createAccountWith10KBalance(world);
-        createChainWithOneBlock(world);
+        final chainWithAccount10KBalance chain = new chainWithAccount10KBalance();
+
         Map<String, String> blockRef = new HashMap<String, String>() {
             {
                 put("blockNumber", "0x1");
             }
         };
-        Web3Impl web3 = createWeb3(world);
-        assertEquals(BALANCE_10K_HEX, web3.eth_getBalance(accountAddress, blockRef));
+        assertEquals(BALANCE_10K_HEX, chain.web3.eth_getBalance(chain.accountAddress, blockRef));
     }
 
     @Test
     //[ "0x<address>", { "invalidInput": "0x0" } -> throw RskJsonRpcRequestException
     public void getBalanceWithAccountAndInvalidInputThrowsException() {
-        World world = new World();
-        String accountAddress = createAccountWith10KBalance(world);
-        createChainWithOneBlock(world);
+        final chainWithAccount10KBalance chain = new chainWithAccount10KBalance();
+
         Map<String, String> blockRef = new HashMap<String, String>() {
             {
                 put("invalidInput", "0x1");
             }
         };
 
-        Web3Impl web3 = createWeb3(world);
-        this.assertThrown(RskJsonRpcRequestException.class, () -> web3.eth_getBalance(accountAddress, blockRef));
+        this.assertThrown(RskJsonRpcRequestException.class, () -> chain.web3.eth_getBalance(chain.accountAddress, blockRef));
     }
 
     @Test
     //[ "0x<address>", { "blockHash": "0xd4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3" } -> return balance at given address in genesis block
     public void getBalanceWithAccountAndBlockHash() {
-        World world = new World();
-        String accountAddress = createAccountWith10KBalance(world);
-        Block block = createChainWithOneBlock(world);
+        final chainWithAccount10KBalance chain = new chainWithAccount10KBalance();
+
         Map<String, String> blockRef = new HashMap<String, String>() {
             {
-                put("blockHash", "0x" + block.getPrintableHash());
+                put("blockHash", "0x" + chain.block.getPrintableHash());
             }
         };
-
-        Web3Impl web3 = createWeb3(world);
-        assertEquals(BALANCE_10K_HEX, web3.eth_getBalance(accountAddress, blockRef));
+        assertEquals(BALANCE_10K_HEX, chain.web3.eth_getBalance(chain.accountAddress, blockRef));
     }
 
     @Test
     //[ "0x<address>", { "blockHash": "0x<non-existent-block-hash>" } -> raise block-not-found error
     public void getBalanceWithAccountAndNonExistentBlockHash() {
-        World world = new World();
-        String accountAddress = createAccountWith10KBalance(world);
-        createChainWithOneBlock(world);
+        final chainWithAccount10KBalance chain = new chainWithAccount10KBalance();
+
         final String nonExistentBlockHash="0x" + String.join("", Collections.nCopies(64, "1")); // "0x1111..."
         Map<String, String> blockRef = new HashMap<String, String>() {
             {
@@ -280,16 +272,14 @@ public class Web3ImplTest {
             }
         };
 
-        Web3Impl web3 = createWeb3(world);
-        this.assertThrown(RskJsonRpcRequestException.class, () -> web3.eth_getBalance(accountAddress, blockRef));
+        this.assertThrown(RskJsonRpcRequestException.class, () -> chain.web3.eth_getBalance(chain.accountAddress, blockRef));
     }
 
     @Test
     //[ "0x<address>", { "blockHash": "0x<non-existent-block-hash>", "requireCanonical": true } -> raise block-not-found error
     public void getBalanceWithAccountAndNonExistentBlockHashWhenCanonicalIsRequired() {
-        World world = new World();
-        String accountAddress = createAccountWith10KBalance(world);
-        createChainWithOneBlock(world);
+        final chainWithAccount10KBalance chain = new chainWithAccount10KBalance();
+
         final String nonExistentBlockHash="0x" + String.join("", Collections.nCopies(64, "1")); // "0x1111..."
         Map<String, String> blockRef = new HashMap<String, String>() {
             {
@@ -298,16 +288,14 @@ public class Web3ImplTest {
             }
         };
 
-        Web3Impl web3 = createWeb3(world);
-        this.assertThrown(RskJsonRpcRequestException.class, () -> web3.eth_getBalance(accountAddress, blockRef));
+        this.assertThrown(RskJsonRpcRequestException.class, () -> chain.web3.eth_getBalance(chain.accountAddress, blockRef));
     }
 
     @Test
     //[ "0x<address>", { "blockHash": "0x<non-existent-block-hash>", "requireCanonical": false } -> raise block-not-found error
     public void getBalanceWithAccountAndNonExistentBlockHashWhenCanonicalIsNotRequired() {
-        World world = new World();
-        String accountAddress = createAccountWith10KBalance(world);
-        createChainWithOneBlock(world);
+        final chainWithAccount10KBalance chain = new chainWithAccount10KBalance();
+
         final String nonExistentBlockHash="0x" + String.join("", Collections.nCopies(64, "1")); // "0x1111..."
         Map<String, String> blockRef = new HashMap<String, String>() {
             {
@@ -316,8 +304,7 @@ public class Web3ImplTest {
             }
         };
 
-        Web3Impl web3 = createWeb3(world);
-        this.assertThrown(RskJsonRpcRequestException.class, () -> web3.eth_getBalance(accountAddress, blockRef));
+        this.assertThrown(RskJsonRpcRequestException.class, () -> chain.web3.eth_getBalance(chain.accountAddress, blockRef));
     }
 
     @Test
@@ -326,6 +313,8 @@ public class Web3ImplTest {
         World world = new World();
         String accountAddress = createAccountWith10KBalance(world);
         Block nonCanonicalBlock = createChainWithNonCanonicalBlock(world);
+        Web3Impl web3 = createWeb3(world);
+
         Map<String, String> blockRef = new HashMap<String, String>() {
             {
                 put("blockHash", "0x" + nonCanonicalBlock.getPrintableHash());
@@ -333,42 +322,37 @@ public class Web3ImplTest {
             }
         };
 
-        Web3Impl web3 = createWeb3(world);
         this.assertThrown(RskJsonRpcRequestException.class, () -> web3.eth_getBalance(accountAddress, blockRef));
     }
 
     @Test
     //[ "0x<address>", { "blockHash": "0xd4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3", "requireCanonical": true } -> return balance at given address in genesis block
     public void getBalanceWithAccountAndCanonicalBlockHashWhenCanonicalIsRequired() {
-        World world = new World();
-        String accountAddress = createAccountWith10KBalance(world);
-        Block block = createChainWithOneBlock(world);
+        final chainWithAccount10KBalance chain = new chainWithAccount10KBalance();
+
         Map<String, String> blockRef = new HashMap<String, String>() {
             {
-                put("blockHash", "0x" + block.getPrintableHash());
+                put("blockHash", "0x" + chain.block.getPrintableHash());
                 put("requireCanonical","true");
             }
         };
 
-        Web3Impl web3 = createWeb3(world);
-        assertEquals(BALANCE_10K_HEX, web3.eth_getBalance(accountAddress, blockRef));
+        assertEquals(BALANCE_10K_HEX, chain.web3.eth_getBalance(chain.accountAddress, blockRef));
     }
 
     @Test
     //[ "0x<address>", { "blockHash": "0xd4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3", "requireCanonical": false } -> return balance at given address in genesis block
     public void getBalanceWithAccountAndCanonicalBlockHashWhenCanonicalIsNotRequired() {
-        World world = new World();
-        String accountAddress = createAccountWith10KBalance(world);
-        Block block = createChainWithOneBlock(world);
+        final chainWithAccount10KBalance chain = new chainWithAccount10KBalance();
+
         Map<String, String> blockRef = new HashMap<String, String>() {
             {
-                put("blockHash", "0x" + block.getPrintableHash());
+                put("blockHash", "0x" + chain.block.getPrintableHash());
                 put("requireCanonical","false");
             }
         };
 
-        Web3Impl web3 = createWeb3(world);
-        assertEquals(BALANCE_10K_HEX, web3.eth_getBalance(accountAddress, blockRef));
+        assertEquals(BALANCE_10K_HEX, chain.web3.eth_getBalance(chain.accountAddress, blockRef));
     }
 
     @Test
@@ -377,6 +361,8 @@ public class Web3ImplTest {
         World world = new World();
         String accountAddress = createAccountWith10KBalance(world);
         Block nonCanonicalBlock = createChainWithNonCanonicalBlock(world);
+        Web3Impl web3 = createWeb3(world);
+
         Map<String, String> blockRef = new HashMap<String, String>() {
             {
                 put("blockHash", "0x" + nonCanonicalBlock.getPrintableHash());
@@ -384,7 +370,6 @@ public class Web3ImplTest {
             }
         };
 
-        Web3Impl web3 = createWeb3(world);
         assertEquals(BALANCE_10K_HEX, web3.eth_getBalance(accountAddress, blockRef));
     }
 
@@ -394,13 +379,14 @@ public class Web3ImplTest {
         World world = new World();
         String accountAddress = createAccountWith10KBalance(world);
         Block nonCanonicalBlock = createChainWithNonCanonicalBlock(world);
+        Web3Impl web3 = createWeb3(world);
+
         Map<String, String> blockRef = new HashMap<String, String>() {
             {
                 put("blockHash", "0x" + nonCanonicalBlock.getPrintableHash());
             }
         };
 
-        Web3Impl web3 = createWeb3(world);
         assertEquals(BALANCE_10K_HEX, web3.eth_getBalance(accountAddress, blockRef));
     }
 
@@ -2609,5 +2595,12 @@ public class Web3ImplTest {
             }
         }
         fail("Expected exception not thrown " + exceptionType);
+    }
+
+    private class chainWithAccount10KBalance {
+        private final World world = new World();
+        private final String accountAddress = createAccountWith10KBalance(world);
+        private final Block block = createChainWithOneBlock(world);
+        private final Web3Impl web3 = createWeb3(world);
     }
 }
