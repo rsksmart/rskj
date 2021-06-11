@@ -240,7 +240,7 @@ public abstract class SystemProperties {
                     return new Node(nodeId, ip, port);
                 }
 
-                throw new RuntimeException("Invalid config nodeId '" + nodeId + "' at " + configObject);
+                throw new RuntimeException("Invalid config nodeId '" + Arrays.toString(nodeId) + "' at " + configObject);
             }
 
             if (configObject.toConfig().hasPath("nodeName")) {
