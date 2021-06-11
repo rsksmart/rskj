@@ -82,7 +82,6 @@ import org.junit.Test;
 
 import java.math.BigInteger;
 import java.util.*;
-import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -246,7 +245,7 @@ public class Web3ImplTest {
             }
         };
 
-        this.assertThrown(RskJsonRpcRequestException.class, () -> chain.web3.eth_getBalance(chain.accountAddress, blockRef));
+        TestUtils.assertThrows(RskJsonRpcRequestException.class, () -> chain.web3.eth_getBalance(chain.accountAddress, blockRef));
     }
 
     @Test
@@ -274,7 +273,7 @@ public class Web3ImplTest {
             }
         };
 
-        this.assertThrown(RskJsonRpcRequestException.class, () -> chain.web3.eth_getBalance(chain.accountAddress, blockRef));
+        TestUtils.assertThrows(RskJsonRpcRequestException.class, () -> chain.web3.eth_getBalance(chain.accountAddress, blockRef));
     }
 
     @Test
@@ -290,7 +289,7 @@ public class Web3ImplTest {
             }
         };
 
-        this.assertThrown(RskJsonRpcRequestException.class, () -> chain.web3.eth_getBalance(chain.accountAddress, blockRef));
+        TestUtils.assertThrows(RskJsonRpcRequestException.class, () -> chain.web3.eth_getBalance(chain.accountAddress, blockRef));
     }
 
     @Test
@@ -306,7 +305,7 @@ public class Web3ImplTest {
             }
         };
 
-        this.assertThrown(RskJsonRpcRequestException.class, () -> chain.web3.eth_getBalance(chain.accountAddress, blockRef));
+        TestUtils.assertThrows(RskJsonRpcRequestException.class, () -> chain.web3.eth_getBalance(chain.accountAddress, blockRef));
     }
 
     @Test
@@ -321,7 +320,7 @@ public class Web3ImplTest {
             }
         };
 
-        this.assertThrown(RskJsonRpcRequestException.class, () -> chain.web3.eth_getBalance(chain.accountAddress, blockRef));
+        TestUtils.assertThrows(RskJsonRpcRequestException.class, () -> chain.web3.eth_getBalance(chain.accountAddress, blockRef));
     }
 
     @Test
@@ -431,7 +430,7 @@ public class Web3ImplTest {
             }
         };
 
-        this.assertThrown(RskJsonRpcRequestException.class, () -> chain.web3.invokeByBlockRef(blockRef, b -> b));
+        TestUtils.assertThrows(RskJsonRpcRequestException.class, () -> chain.web3.invokeByBlockRef(blockRef, b -> b));
     }
 
     @Test
@@ -458,7 +457,7 @@ public class Web3ImplTest {
             }
         };
 
-        this.assertThrown(RskJsonRpcRequestException.class, () -> chain.web3.invokeByBlockRef(blockRef, b -> b));
+        TestUtils.assertThrows(RskJsonRpcRequestException.class, () -> chain.web3.invokeByBlockRef(blockRef, b -> b));
     }
 
     @Test
@@ -473,7 +472,7 @@ public class Web3ImplTest {
             }
         };
 
-        this.assertThrown(RskJsonRpcRequestException.class, () -> chain.web3.invokeByBlockRef(blockRef, b -> b));
+        TestUtils.assertThrows(RskJsonRpcRequestException.class, () -> chain.web3.invokeByBlockRef(blockRef, b -> b));
         ;
     }
 
@@ -489,7 +488,7 @@ public class Web3ImplTest {
             }
         };
 
-        this.assertThrown(RskJsonRpcRequestException.class, () -> chain.web3.invokeByBlockRef(blockRef, b -> b));
+        TestUtils.assertThrows(RskJsonRpcRequestException.class, () -> chain.web3.invokeByBlockRef(blockRef, b -> b));
     }
 
     @Test
@@ -503,7 +502,7 @@ public class Web3ImplTest {
             }
         };
 
-        this.assertThrown(RskJsonRpcRequestException.class, () -> chain.web3.invokeByBlockRef(blockRef, b -> b));
+        TestUtils.assertThrows(RskJsonRpcRequestException.class, () -> chain.web3.invokeByBlockRef(blockRef, b -> b));
     }
 
     @Test
@@ -947,7 +946,7 @@ public class Web3ImplTest {
             }
         };
 
-        this.assertThrown(RskJsonRpcRequestException.class, () -> chain.web3.eth_getTransactionCount(chain.accountAddress, blockRef));
+        TestUtils.assertThrows(RskJsonRpcRequestException.class, () -> chain.web3.eth_getTransactionCount(chain.accountAddress, blockRef));
     }
 
     @Test
@@ -976,7 +975,7 @@ public class Web3ImplTest {
             }
         };
 
-        this.assertThrown(RskJsonRpcRequestException.class, () -> chain.web3.eth_getTransactionCount(chain.accountAddress, blockRef));
+        TestUtils.assertThrows(RskJsonRpcRequestException.class, () -> chain.web3.eth_getTransactionCount(chain.accountAddress, blockRef));
     }
 
     @Test
@@ -991,7 +990,7 @@ public class Web3ImplTest {
             }
         };
 
-        this.assertThrown(RskJsonRpcRequestException.class, () -> chain.web3.eth_getTransactionCount(chain.accountAddress, blockRef));
+        TestUtils.assertThrows(RskJsonRpcRequestException.class, () -> chain.web3.eth_getTransactionCount(chain.accountAddress, blockRef));
     }
 
     @Test
@@ -2483,18 +2482,6 @@ public class Web3ImplTest {
     private String createAccountWith10KBalance(World world) {
         Account acc1 = new AccountBuilder(world).name("acc1").balance(Coin.valueOf(10000)).build();
         return ByteUtil.toHexString(acc1.getAddress().getBytes());
-    }
-
-    private void assertThrown(final Class<? extends Throwable> exceptionType, final Runnable method) {
-        try {
-            method.run();
-        } catch (Throwable e) {
-            if (exceptionType.isInstance(e)) {
-                //expected
-                return;
-            }
-        }
-        fail("Expected exception not thrown " + exceptionType);
     }
 
     private class ChainWithAccount10KBalance {
