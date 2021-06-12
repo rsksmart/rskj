@@ -327,7 +327,6 @@ public class Web3ImplTest {
         assertEquals(balanceString, web3.eth_getBalance(accountAddress, "pending"));
     }
 
-    //TODO: /////////////////////////////////////////STORAGE////////////////////////////////////////////////////////////////
     @Test
     //[ "0x<address>", { "blockNumber": "0x0" } -> return storage at given address in genesis block
     public void getStorageAtAccountAndBlockNumber() {
@@ -399,9 +398,6 @@ public class Web3ImplTest {
         assertNonCanonicalBlockHash("0x0", chain.block, blockRef -> chain.web3.eth_getStorageAt(chain.accountAddress, "0x0", blockRef));
 
     }
-    //TODO: ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-    //TODO: /////////////////////////////////////////eth_getCode////////////////////////////////////////////////////////////////
 
     @Test
     //[ "0x<address>", { "blockNumber": "0x0" } -> return code at given address in genesis block
@@ -472,7 +468,6 @@ public class Web3ImplTest {
         final ChainParams chain = createChainWithAContractCode(true);
         assertNonCanonicalBlockHash("0x010203", chain.block, blockRef -> chain.web3.eth_getCode(chain.accountAddress, blockRef));
     }
-    //TODO: /////////////////////////////////////////eth_call////////////////////////////////////////////////////////
     @Test
     //[ {argsForCall}, { "blockNumber": "0x0" } -> return contract call respond at given args for call in genesis block
     public void callByBlockNumber() {
@@ -543,7 +538,6 @@ public class Web3ImplTest {
         assertNonCanonicalBlockHash(CALL_RESPOND, chain.block, blockRef -> chain.web3.eth_call(chain.argsForCall, blockRef));
     }
 
-    //TODO: /////////////////////////////////////////////////////////////////////////////////////////////////////////
     @Test
     //[ "0x<address>", { "blockNumber": "0x0" } -> return code at given address in genesis block
     public void invokeByBlockNumber() {
