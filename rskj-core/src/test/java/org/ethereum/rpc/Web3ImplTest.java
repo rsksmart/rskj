@@ -95,6 +95,7 @@ import static org.mockito.Mockito.*;
 public class Web3ImplTest {
 
     private static final String BALANCE_10K_HEX = "0x2710"; //10.000
+    public static final String CALL_RESPOND = "0x0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000568656c6c6f000000000000000000000000000000000000000000000000000000";
     private final TestSystemProperties config = new TestSystemProperties();
     private final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
     Wallet wallet;
@@ -471,7 +472,78 @@ public class Web3ImplTest {
         final ChainParams chain = createChainWithAContractCode(true);
         assertNonCanonicalBlockHash("0x010203", chain.block, blockRef -> chain.web3.eth_getCode(chain.accountAddress, blockRef));
     }
+    //TODO: /////////////////////////////////////////eth_call////////////////////////////////////////////////////////
+    @Test
+    //[ {argsForCall}, { "blockNumber": "0x0" } -> return contract call respond at given args for call in genesis block
+    public void callByBlockNumber() {
+        final ChainParams chain = createChainWithACall(false);
+        assertByBlockNumber(CALL_RESPOND, blockRef -> chain.web3.eth_call(chain.argsForCall, blockRef));
+    }
 
+    @Test
+    //[ {argsForCall}, { "blockHash": "0xd4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3" } -> return  contract call respond at given address in genesis block
+    public void callByBlockHash() {
+        final ChainParams chain = createChainWithACall(false);
+        assertByBlockHash(CALL_RESPOND, chain.block, blockRef -> chain.web3.eth_call(chain.argsForCall, blockRef));
+    }
+
+    @Test
+    //[ {argsForCall}, { "blockHash": "0x<non-existent-block-hash>" } -> raise block-not-found error
+    public void callByNonExistentBlockHash() {
+        final ChainParams chain = createChainWithACall(false);
+        assertNonExistentBlockHash(blockRef -> chain.web3.eth_call(chain.argsForCall, blockRef));
+    }
+
+    @Test
+    //[ {argsForCall}, { "blockHash": "0x<non-existent-block-hash>", "requireCanonical": true } -> raise block-not-found error
+    public void callByNonExistentBlockHashWhenCanonicalIsRequired() {
+        final ChainParams chain = createChainWithACall(false);
+        assertNonBlockHashWhenCanonical(blockRef -> chain.web3.eth_call(chain.argsForCall, blockRef));
+    }
+
+    @Test
+    //[ {argsForCall}, { "blockHash": "0x<non-existent-block-hash>", "requireCanonical": false } -> raise block-not-found error
+    public void callByNonExistentBlockHashWhenCanonicalIsNotRequired() {
+        final ChainParams chain = createChainWithACall(false);
+        assertNonBlockHashWhenIsNotCanonical(blockRef -> chain.web3.eth_call(chain.argsForCall, blockRef));
+    }
+
+    @Test
+    // [ {argsForCall} { "blockHash": "0x<non-canonical-block-hash>", "requireCanonical": true } -> raise block-not-canonical error
+    public void callByNonCanonicalBlockHashWhenCanonicalIsRequired() {
+        final ChainParams chain = createChainWithACall(true);
+        assertNonCanonicalBlockHashWhenCanonical(chain.block, blockRef -> chain.web3.eth_call(chain.argsForCall, blockRef));
+    }
+
+    @Test
+    //[ {argsForCall}, { "blockHash": "0xd4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3", "requireCanonical": true } -> return  contract call respond at given address in genesis block
+    public void callByCanonicalBlockHashWhenCanonicalIsRequired() {
+        final ChainParams chain = createChainWithACall(false);
+        assertCanonicalBlockHashWhenCanonical(CALL_RESPOND, chain.block, blockRef -> chain.web3.eth_call(chain.argsForCall, blockRef));
+    }
+
+    @Test
+    //[ {argsForCall}, { "blockHash": "0xd4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3", "requireCanonical": false } -> return  contract call respond at given address in genesis block
+    public void callByCanonicalBlockHashWhenCanonicalIsNotRequired() {
+        final ChainParams chain = createChainWithACall(false);
+        assertCanonicalBlockHashWhenNotCanonical(CALL_RESPOND, chain.block, blockRef -> chain.web3.eth_call(chain.argsForCall, blockRef));
+    }
+
+    @Test
+    // [ {argsForCall}, { "blockHash": "0x<non-canonical-block-hash>", "requireCanonical": false } -> return  contract call respond at given address in specified block
+    public void callByNonCanonicalBlockHashWhenCanonicalIsNotRequired() {
+        final ChainParams chain = createChainWithACall(true);
+        assertNonCanonicalBlockHashWhenNotCanonical(CALL_RESPOND, chain.block, blockRef -> chain.web3.eth_call(chain.argsForCall, blockRef));
+    }
+
+    @Test
+    // [ {argsForCall}, { "blockHash": "0x<non-canonical-block-hash>" } -> return  contract call respond at given address in specified bloc
+    public void callByNonCanonicalBlockHash() {
+        final ChainParams chain = createChainWithACall(true);
+        assertNonCanonicalBlockHash(CALL_RESPOND, chain.block, blockRef -> chain.web3.eth_call(chain.argsForCall, blockRef));
+    }
+
+    //TODO: /////////////////////////////////////////////////////////////////////////////////////////////////////////
     @Test
     //[ "0x<address>", { "blockNumber": "0x0" } -> return code at given address in genesis block
     public void invokeByBlockNumber() {
@@ -632,10 +704,7 @@ public class Web3ImplTest {
         Transaction tx = new TransactionBuilder().sender(acc1).receiver(acc2).value(BigInteger.valueOf(1000000)).build();
         List<Transaction> txs = new ArrayList<>();
         txs.add(tx);
-        Block genesis = world.getBlockChain().getBestBlock();
-        Block block1 = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(),
-                                        world.getBlockStore()).trieStore(world.getTrieStore()).parent(genesis).transactions(txs).build();
-        assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block1));
+        Block block1 = createCanonicalBlock(world, txs);
 
         String hashString = tx.getHash().toHexString();
 
@@ -707,10 +776,7 @@ public class Web3ImplTest {
         Transaction tx = new TransactionBuilder().sender(acc1).receiver(acc2).value(BigInteger.valueOf(1000000)).build();
         List<Transaction> txs = new ArrayList<>();
         txs.add(tx);
-        Block genesis = world.getBlockChain().getBestBlock();
-        Block block1 = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(),
-                                        world.getBlockStore()).trieStore(world.getTrieStore()).parent(genesis).transactions(txs).build();
-        assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block1));
+        Block block1 = createCanonicalBlock(world, txs);
 
         String hashString = tx.getHash().toHexString();
 
@@ -805,10 +871,7 @@ public class Web3ImplTest {
         Transaction tx = new TransactionBuilder().sender(acc1).receiver(acc2).value(BigInteger.valueOf(1000000)).build();
         List<Transaction> txs = new ArrayList<>();
         txs.add(tx);
-        Block genesis = world.getBlockChain().getBestBlock();
-        Block block1 = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(),
-                                        world.getBlockStore()).trieStore(world.getTrieStore()).parent(genesis).transactions(txs).build();
-        assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block1));
+        Block block1 = createCanonicalBlock(world, txs);
 
         String hashString = tx.getHash().toHexString();
         String blockHashString = block1.getHash().toHexString();
@@ -850,10 +913,7 @@ public class Web3ImplTest {
         Transaction tx = new TransactionBuilder().sender(acc1).receiver(acc2).value(BigInteger.valueOf(1000000)).build();
         List<Transaction> txs = new ArrayList<>();
         txs.add(tx);
-        Block genesis = world.getBlockChain().getBestBlock();
-        Block block1 = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(),
-                                        world.getBlockStore()).trieStore(world.getTrieStore()).parent(genesis).transactions(txs).build();
-        assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block1));
+        Block block1 = createCanonicalBlock(world, txs);
 
         String hashString = tx.getHash().toHexString();
         String blockHashString = block1.getHash().toHexString();
@@ -893,10 +953,7 @@ public class Web3ImplTest {
         Transaction tx = new TransactionBuilder().sender(acc1).receiver(acc2).value(BigInteger.valueOf(1000000)).build();
         List<Transaction> txs = new ArrayList<>();
         txs.add(tx);
-        Block genesis = world.getBlockChain().getBestBlock();
-        Block block1 = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(),
-                                        world.getBlockStore()).trieStore(world.getTrieStore()).parent(genesis).transactions(txs).build();
-        assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block1));
+        Block block1 = createCanonicalBlock(world, txs);
 
         String accountAddress = ByteUtil.toHexString(acc1.getAddress().getBytes());
 
@@ -2614,12 +2671,18 @@ public class Web3ImplTest {
         private final Web3Impl web3;
         private final String accountAddress;
         private final Block block;
+        private Web3.CallArguments argsForCall; // for call tests could be null
 
         private ChainParams(World world, String accountAddress, Block block) {
             this.world = world;
             this.web3 = createWeb3(world);
             this.accountAddress = accountAddress;
             this.block = block;
+        }
+
+        private ChainParams(World world, String accountAddress, Block block, Web3.CallArguments argsForCall) {
+            this(world,accountAddress,block);
+            this.argsForCall = argsForCall;
         }
     }
 
@@ -2640,24 +2703,7 @@ public class Web3ImplTest {
         txs.add(tx);
         final String accountAddress = ByteUtil.toHexString(acc1.getAddress().getBytes());
 
-        final Block block;
-        if (isCanonicalBlock) {
-            final Block genesis = world.getBlockChain().getBestBlock();
-            final BlockBuilder blockBuilder = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(), world.getBlockStore());
-            final Block block1Canonical = blockBuilder.trieStore(world.getTrieStore()).parent(genesis).transactions(txs).build();
-            block = blockBuilder.trieStore(world.getTrieStore()).parent(genesis).transactions(txs).build();
-            final Block block2Canonical = blockBuilder.parent(block1Canonical).build();
-
-            world.getBlockChain().tryToConnect(genesis);
-            world.getBlockChain().tryToConnect(block1Canonical);
-            world.getBlockChain().tryToConnect(block);
-            world.getBlockChain().tryToConnect(block2Canonical);
-        } else {
-            final Block genesis = world.getBlockChain().getBestBlock();
-            block = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(),
-                    world.getBlockStore()).trieStore(world.getTrieStore()).parent(genesis).transactions(txs).build();
-            assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block));
-        }
+        final Block block = isCanonicalBlock?createNonCanonicalBlock(world, txs):createCanonicalBlock(world, txs);
 
         return new ChainParams(world, accountAddress, block);
     }
@@ -2696,5 +2742,65 @@ public class Web3ImplTest {
             assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block));
         }
         return new ChainParams(world, accountAddress, block);
+    }
+
+    private ChainParams createChainWithACall(boolean isCanonicalBlock) {
+        World world = new World();
+
+        Account acc1 = new AccountBuilder(world).name("notDefault").balance(Coin.valueOf(10000000)).build();
+
+    /* contract compiled in data attribute of tx
+    contract Greeter {
+        address owner;
+
+        function greeter() public {
+            owner = msg.sender;
+        }
+
+        function greet(string memory param) public pure returns (string memory) {
+            return param;
+        }
+    }
+    */
+        Transaction tx = new TransactionBuilder()
+                .sender(acc1)
+                .gasLimit(BigInteger.valueOf(500000))
+                .gasPrice(BigInteger.ONE)
+                .data("608060405234801561001057600080fd5b506101fa806100206000396000f3fe608060405234801561001057600080fd5b50600436106100365760003560e01c80631c8499e51461003b578063ead710c414610045575b600080fd5b610043610179565b005b6100fe6004803603602081101561005b57600080fd5b810190808035906020019064010000000081111561007857600080fd5b82018360208201111561008a57600080fd5b803590602001918460018302840111640100000000831117156100ac57600080fd5b91908080601f016020809104026020016040519081016040528093929190818152602001838380828437600081840152601f19601f8201169050808301925050505050505091929192905050506101bb565b6040518080602001828103825283818151815260200191508051906020019080838360005b8381101561013e578082015181840152602081019050610123565b50505050905090810190601f16801561016b5780820380516001836020036101000a031916815260200191505b509250505060405180910390f35b336000806101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff160217905550565b606081905091905056fea265627a7a723158207cbf5ab8312143442836de7909c83aec5160dae50224ecc7c16d7f35a306901e64736f6c63430005100032")
+                .build();
+        final String contractAddress = TypeConverter.toJsonHex(tx.getContractAddress().getBytes());
+        List<Transaction> txs = new ArrayList<>();
+        txs.add(tx);
+
+        final Block block = isCanonicalBlock ? createNonCanonicalBlock(world, txs) : createCanonicalBlock(world, txs);
+
+        Web3.CallArguments argsForCall = new Web3.CallArguments();
+        argsForCall.from = TypeConverter.toJsonHex(acc1.getAddress().getBytes());
+        argsForCall.to = contractAddress;
+        argsForCall.data = "ead710c40000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000568656c6c6f000000000000000000000000000000000000000000000000000000";
+
+        return new ChainParams(world, contractAddress, block, argsForCall);
+    }
+
+    private Block createCanonicalBlock(World world, List<Transaction> txs) {
+        final Block genesis = world.getBlockChain().getBestBlock();
+        final Block block = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(),
+                world.getBlockStore()).trieStore(world.getTrieStore()).parent(genesis).transactions(txs).build();
+        assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block));
+        return block;
+    }
+
+    private Block createNonCanonicalBlock(World world, List<Transaction> txs) {
+        final Block genesis = world.getBlockChain().getBestBlock();
+        final BlockBuilder blockBuilder = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(), world.getBlockStore());
+        final Block block1Canonical = blockBuilder.trieStore(world.getTrieStore()).parent(genesis).transactions(txs).build();
+        final Block block = blockBuilder.trieStore(world.getTrieStore()).parent(genesis).transactions(txs).build();
+        final Block block2Canonical = blockBuilder.parent(block1Canonical).build();
+
+        world.getBlockChain().tryToConnect(genesis);
+        world.getBlockChain().tryToConnect(block1Canonical);
+        world.getBlockChain().tryToConnect(block);
+        world.getBlockChain().tryToConnect(block2Canonical);
+        return block;
     }
 }
