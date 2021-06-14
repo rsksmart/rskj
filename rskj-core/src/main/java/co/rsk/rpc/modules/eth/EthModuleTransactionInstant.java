@@ -113,7 +113,7 @@ public class EthModuleTransactionInstant extends EthModuleTransactionBase {
         ProgramResult programResult = this.blockExecutor.getProgramResult(hash);
 
         if (programResult != null && programResult.isRevert()) {
-            Optional<String> revertReason = EthModule.decodeRevertReason(programResult);
+            Optional<String> revertReason = programResult.decodeRevertReason();
 
             if (revertReason.isPresent()) {
                 throw RskJsonRpcRequestException.transactionRevertedExecutionError(revertReason.get());
