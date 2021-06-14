@@ -238,8 +238,8 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
 
         BridgeParsedData bridgeParsedData = parseData(data);
 
-        Long functionCost;
-        Long totalCost;
+        long functionCost;
+        long totalCost;
         if (bridgeParsedData == null) {
             functionCost = BridgeMethods.RELEASE_BTC.getCost(this, activations, new Object[0]);
             totalCost = functionCost;
