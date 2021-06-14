@@ -195,7 +195,8 @@ public class BlockExecutor {
         return true;
     }
 
-    private boolean validateStateRoot(BlockHeader header, BlockResult result) {
+    @VisibleForTesting
+    boolean validateStateRoot(BlockHeader header, BlockResult result) {
         boolean isRskip85Enabled = activationConfig.isActive(RSKIP85, header.getNumber());
         if (!isRskip85Enabled) {
             return true;
@@ -203,8 +204,7 @@ public class BlockExecutor {
 
         boolean isRskip126Enabled = activationConfig.isActive(RSKIP126, header.getNumber());
         if (!isRskip126Enabled) {
-            byte[] orchidStateRoot = stateRootHandler.convert(header, result.getFinalState()).getBytes();
-            return Arrays.equals(orchidStateRoot, header.getStateRoot());
+            return true;
         }
 
         // we only validate state roots of blocks newer than 0.5.0 activation
