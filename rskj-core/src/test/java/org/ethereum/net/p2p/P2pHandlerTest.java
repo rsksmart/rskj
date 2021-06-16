@@ -47,4 +47,16 @@ public class P2pHandlerTest {
 
         verify(msgQueue, times(1)).disconnect();
     }
+
+    @Test
+    public void channelInactive_shouldCallKillTimers() throws Exception {
+        EthereumListener ethereumListener = mock(EthereumListener.class);
+        P2pHandler p2pHandlerSpy = spy(new P2pHandler(ethereumListener, msgQueue, 1000));
+
+        doNothing().when(p2pHandlerSpy).killTimers();
+
+        p2pHandlerSpy.channelInactive(null);
+
+        verify(p2pHandlerSpy, times(1)).killTimers();
+    }
 }
