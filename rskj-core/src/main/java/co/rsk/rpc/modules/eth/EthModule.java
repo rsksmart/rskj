@@ -284,25 +284,13 @@ public class EthModule
     }
 
     /**
-     *  Given a blockId, it generates account and storage proofs for specific address and storage values
+     * Fetch proof data from account provider and creates a Proof object
      *
      * @param address an RSK address
-     * @param storageKeys storage keys that we want to prove (each storage key as UNFORMATED DATA, check https://eth.wiki/json-rpc/API)
+     * @param storageKeys storage keys to prove (each storage key as UNFORMATED DATA, check https://eth.wiki/json-rpc/API)
      * @param blockOrId a block id
      *
-     * Returns an account object matching the following properties:
-     *
-     *  balance: QUANTITY - the balance of the account. See eth_getBalance
-     *  codeHash: DATA, 32 Bytes - hash of the code of the account. For a simple Account without code it will return "0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470"
-     *  nonce: QUANTITY, - nonce of the account. See eth_getTransactionCount
-     *  storageHash: DATA, 32 Bytes - SHA3 of the StorageRoot. All storage will deliver a MerkleProof starting with this rootHash.
-     *  accountProof: ARRAY - Array of rlp-serialized MerkleTree-Nodes, starting with the stateRoot-Node, following the path of the SHA3 (address) as key.
-     *  storageProof: ARRAY - Array of storage-entries as requested. Each entry is a object with these properties:
-     *      key: QUANTITY - the requested storage key
-     *      value: QUANTITY - the storage value
-     *      proof: ARRAY - Array of rlp-serialized MerkleTree-Nodes, starting with the storageHash-Node, following the path of the SHA3 (key) as path.
-     *
-     * @return account object
+     * @returns a proof object object matching the following properties:
      * */
     public ProofDTO getProof(String address, List<String> storageKeys, String blockOrId) {
         RskAddress rskAddress = new RskAddress(address);

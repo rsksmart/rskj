@@ -187,14 +187,12 @@ public class Storage implements Repository, ProgramListenerAware {
 
     @Override
     public List<byte[]> getAccountProof(RskAddress addr) {
-        // todo(fedejinich) is this ok?
-        throw new UnsupportedOperationException("Shouldn't get account proof from Storage class");
+        return repository.getAccountProof(addr);
     }
 
     @Override
     public List<byte[]> getStorageProof(RskAddress addr, DataWord storageKey) {
-        // todo(fedejinich) is this ok?
-        throw new UnsupportedOperationException("Shouldn't get storage proof from Storage class");
+        return repository.getStorageProof(addr, storageKey);
     }
 
     @Override
