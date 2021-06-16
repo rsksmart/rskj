@@ -33,6 +33,8 @@ import co.rsk.rpc.ExecutionBlockRetriever;
 import co.rsk.rpc.modules.eth.getProof.ProofDTO;
 import co.rsk.rpc.modules.eth.getProof.StorageProofDTO;
 import co.rsk.trie.TrieStoreImpl;
+import com.google.common.annotations.VisibleForTesting;
+import org.bouncycastle.util.encoders.DecoderException;
 import org.ethereum.core.*;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.MutableRepository;
@@ -47,10 +49,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static java.util.Arrays.copyOfRange;
@@ -76,6 +76,8 @@ public class EthModule
     private final BridgeConstants bridgeConstants;
     private final BridgeSupportFactory bridgeSupportFactory;
     private final byte chainId;
+
+    public static final String NO_CONTRACT_CODE_HASH = "0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470";
 
     public EthModule(
             BridgeConstants bridgeConstants,
@@ -206,7 +208,8 @@ public class EthModule
         }
     }
 
-    private AccountInformationProvider getAccountInformationProvider(String id) {
+    @VisibleForTesting
+    public AccountInformationProvider getAccountInformationProvider(String id) {
         switch (id.toLowerCase()) {
             case "pending":
                 return transactionPool.getPendingState();
@@ -282,51 +285,72 @@ public class EthModule
 
     /**
      *  Given a blockId, it generates account and storage proofs for specific address and storage values
-     *  NOTE: It also formats them to match JSON RPC specs
      *
      * @param address an RSK address
-     * @param storageKeys storage keys that we want to prove
+     * @param storageKeys storage keys that we want to prove (each storage key as UNFORMATED DATA, check https://eth.wiki/json-rpc/API)
      * @param blockOrId a block id
-     * @return account and storage proofs
+     *
+     * Returns an account object matching the following properties:
+     *
+     *  balance: QUANTITY - the balance of the account. See eth_getBalance
+     *  codeHash: DATA, 32 Bytes - hash of the code of the account. For a simple Account without code it will return "0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470"
+     *  nonce: QUANTITY, - nonce of the account. See eth_getTransactionCount
+     *  storageHash: DATA, 32 Bytes - SHA3 of the StorageRoot. All storage will deliver a MerkleProof starting with this rootHash.
+     *  accountProof: ARRAY - Array of rlp-serialized MerkleTree-Nodes, starting with the stateRoot-Node, following the path of the SHA3 (address) as key.
+     *  storageProof: ARRAY - Array of storage-entries as requested. Each entry is a object with these properties:
+     *      key: QUANTITY - the requested storage key
+     *      value: QUANTITY - the storage value
+     *      proof: ARRAY - Array of rlp-serialized MerkleTree-Nodes, starting with the storageHash-Node, following the path of the SHA3 (key) as path.
+     *
+     * @return account object
      * */
     public ProofDTO getProof(String address, List<String> storageKeys, String blockOrId) {
         RskAddress rskAddress = new RskAddress(address);
         AccountInformationProvider accountInformationProvider = getAccountInformationProvider(blockOrId);
 
-        String balance = accountInformationProvider.getBalance(rskAddress).toString();
+        String balance = toQuantityJsonHex(accountInformationProvider.getBalance(rskAddress).asBigInteger());
         String nonce = toQuantityJsonHex(accountInformationProvider.getNonce(rskAddress));
-        String storageHash = accountInformationProvider.getStorageHash(rskAddress).toHexString();
+        String storageHash = toUnformattedJsonHex(accountInformationProvider.getStorageHash(rskAddress));
 
-        // EIP-1186: For an externally owned account (without associated code) it will return a SHA3(empty byte array)
+        // EIP-1186: For an externally owned account returns a SHA3(empty byte array)
         String codeHash = accountInformationProvider.isContract(rskAddress) ?
                 toUnformattedJsonHex(new Keccak256(accountInformationProvider.getCode(rskAddress)).getBytes()) :
-                toUnformattedJsonHex(Keccak256.ZERO_HASH.getBytes());
+                NO_CONTRACT_CODE_HASH;
 
-        List<String> accountProof = accountInformationProvider.getAccountProof(rskAddress).stream()
+        List<String> accountProof = accountInformationProvider.getAccountProof(rskAddress)
+                .stream()
                 .map(proof -> toUnformattedJsonHex(proof))
                 .collect(Collectors.toList());
 
         List<StorageProofDTO> storageProof = storageKeys.stream()
-                .map(storageKey -> getStorageProof(rskAddress, DataWord.fromLongString(storageKey), accountInformationProvider))
-                .collect(Collectors.toList());
+                    .map(storageKey -> getStorageProof(rskAddress, storageKey, accountInformationProvider))
+                    .collect(Collectors.toList());
 
         return new ProofDTO(balance, codeHash, nonce, storageHash, accountProof, storageProof);
     }
 
     /**
-     * Retrieves a storage proof for a given (address,storageKey) and storage value, then adapts it to return a StorageProof object.
+     * Retrieves a storage proof for a given (address,storageKey) and storage value, then adapts it to return a StorageProofDTO object.
      *
      * @param rskAddress an rsk address
      * @param storageKey a storage key
      * @param accountInformationProvider an account information provider to retrieve data from the expected block
-     * @return a StorageProof object containing key, value and storage proofs
+     * @return a StorageProofDTO object containing key, value and storage proofs
      * */
-    private StorageProofDTO getStorageProof(RskAddress rskAddress, DataWord storageKey, AccountInformationProvider accountInformationProvider) {
-        List<String> storageProof = accountInformationProvider.getStorageProof(rskAddress, storageKey).stream()
+    private StorageProofDTO getStorageProof(RskAddress rskAddress, String storageKey, AccountInformationProvider accountInformationProvider) {
+        DataWord storageKeyDw;
+        try {
+            storageKeyDw = DataWord.valueFromHex(storageKey.substring(2)); // todo (fedejinich) strip correctly
+        } catch (DecoderException e) {
+            throw new IllegalArgumentException("invalid storage keys");
+        }
+
+        List<String> storageProof = Optional.ofNullable(accountInformationProvider.getStorageProof(rskAddress, storageKeyDw)).orElse(Collections.emptyList())
+                .stream()
                 .map(proof -> toUnformattedJsonHex(proof))
                 .collect(Collectors.toList());
-        DataWord value = accountInformationProvider.getStorageValue(rskAddress, storageKey);
+        DataWord value = accountInformationProvider.getStorageValue(rskAddress, storageKeyDw);
 
-        return new StorageProofDTO(storageKey.toString(), value.toString(), storageProof);
+        return new StorageProofDTO(storageKey, value != null ? value.toString() : null, storageProof);
     }
 }

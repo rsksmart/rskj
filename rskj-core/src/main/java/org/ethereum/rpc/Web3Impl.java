@@ -1088,6 +1088,9 @@ public class Web3Impl implements Web3 {
         return PeerScoringReporterUtil.buildReputationSummary(peerScoringManager.getPeersInformation());
     }
 
+    /**
+     * // todo(fedejinich) write down a description
+     * */
     @Override
     public ProofDTO eth_getProof(String address, List<String> storageKeys, String blockOrId) {
         return ethModule.getProof(address, storageKeys, blockOrId);

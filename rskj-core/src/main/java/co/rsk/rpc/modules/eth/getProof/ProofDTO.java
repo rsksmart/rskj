@@ -1,6 +1,7 @@
 package co.rsk.rpc.modules.eth.getProof;
 
 import java.util.List;
+import java.util.Objects;
 
 public class ProofDTO {
 
@@ -66,5 +67,24 @@ public class ProofDTO {
 
     public void setStorageProof(List<StorageProofDTO> storageProof) {
         this.storageProof = storageProof;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof ProofDTO)) return false;
+        ProofDTO proofDTO = (ProofDTO) o;
+        return Objects.equals(getBalance(), proofDTO.getBalance()) &&
+                Objects.equals(getCodeHash(), proofDTO.getCodeHash()) &&
+                Objects.equals(getNonce(), proofDTO.getNonce()) &&
+                Objects.equals(getStorageHash(), proofDTO.getStorageHash()) &&
+                Objects.equals(getAccountProof(), proofDTO.getAccountProof()) &&
+                Objects.equals(getStorageProof(), proofDTO.getStorageProof());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getBalance(), getCodeHash(), getNonce(),
+                getStorageHash(), getAccountProof(), getStorageProof());
     }
 }

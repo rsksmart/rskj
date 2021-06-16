@@ -1,6 +1,8 @@
 package co.rsk.rpc.modules.eth.getProof;
 
+import javax.annotation.Nullable;
 import java.util.List;
+import java.util.Objects;
 
 public class StorageProofDTO {
 
@@ -8,7 +10,7 @@ public class StorageProofDTO {
     private String value;
     private List<String> proofs;
 
-    public StorageProofDTO(String key, String value, List<String> proofs) {
+    public StorageProofDTO(String key, @Nullable String value, List<String> proofs) {
         this.key = key;
         this.value = value;
         this.proofs = proofs;
@@ -36,5 +38,20 @@ public class StorageProofDTO {
 
     public void setProofs(List<String> proofs) {
         this.proofs = proofs;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof StorageProofDTO)) return false;
+        StorageProofDTO that = (StorageProofDTO) o;
+        return Objects.equals(getKey(), that.getKey()) &&
+                Objects.equals(getValue(), that.getValue()) &&
+                Objects.equals(getProofs(), that.getProofs());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getKey(), getValue(), getProofs());
     }
 }
