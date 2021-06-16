@@ -77,7 +77,7 @@ public abstract class NativeMethod {
         // the default can always be used on top.
         // (e.g., "return 23000L + super(parsedArguments, originalData);")
 
-        return originalData == null ? 0 : originalData.length * 2;
+        return originalData == null ? 0 : originalData.length * 2L;
     }
 
     public abstract boolean isEnabled();

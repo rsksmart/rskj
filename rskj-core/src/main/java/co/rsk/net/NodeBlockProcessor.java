@@ -277,7 +277,7 @@ public class NodeBlockProcessor implements BlockProcessor {
         List<BlockIdentifier> blockIdentifiers = new ArrayList<>();
         long skeletonNumber = skeletonStartHeight;
         int maxSkeletonChunks = syncConfiguration.getMaxSkeletonChunks();
-        long maxSkeletonNumber = Math.min(this.getBestBlockNumber(), skeletonStartHeight + skeletonStep * maxSkeletonChunks);
+        long maxSkeletonNumber = Math.min(this.getBestBlockNumber(), skeletonStartHeight + skeletonStep * (long) maxSkeletonChunks);
 
         for (; skeletonNumber < maxSkeletonNumber; skeletonNumber += skeletonStep) {
             byte[] skeletonHash = getSkeletonHash(skeletonNumber);
