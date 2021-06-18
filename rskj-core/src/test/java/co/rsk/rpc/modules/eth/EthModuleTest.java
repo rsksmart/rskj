@@ -18,31 +18,44 @@
 
 package co.rsk.rpc.modules.eth;
 
-import co.rsk.config.BridgeConstants;
-import co.rsk.core.ReversibleTransactionExecutor;
-import co.rsk.core.RskAddress;
-import co.rsk.core.bc.BlockResult;
-import co.rsk.core.bc.PendingState;
-import co.rsk.db.RepositoryLocator;
-import co.rsk.peg.BridgeSupportFactory;
-import co.rsk.rpc.ExecutionBlockRetriever;
+import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyByte;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.TestUtils;
+import org.ethereum.config.Constants;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
+import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionPool;
+import org.ethereum.core.TransactionPoolAddResult;
+import org.ethereum.datasource.HashMapDB;
 import org.ethereum.rpc.TypeConverter;
 import org.ethereum.rpc.Web3;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
+import org.ethereum.util.TransactionTestHelper;
 import org.ethereum.vm.program.ProgramResult;
 import org.hamcrest.Matchers;
 import org.junit.Assert;
 import org.junit.Test;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
-import static org.mockito.Mockito.*;
+import co.rsk.config.BridgeConstants;
+import co.rsk.core.ReversibleTransactionExecutor;
+import co.rsk.core.RskAddress;
+import co.rsk.core.Wallet;
+import co.rsk.core.bc.BlockResult;
+import co.rsk.core.bc.PendingState;
+import co.rsk.db.RepositoryLocator;
+import co.rsk.net.TransactionGateway;
+import co.rsk.peg.BridgeSupportFactory;
+import co.rsk.rpc.ExecutionBlockRetriever;
 
 public class EthModuleTest {
 
@@ -166,6 +179,36 @@ public class EthModuleTest {
         }
     }
 
+	@Test
+	public void sendTransactionWithGasLimitTest() {
+
+		Constants constants = Constants.regtest();
+
+		Wallet wallet = new Wallet(new HashMapDB());
+		RskAddress sender = wallet.addAccount();
+		RskAddress receiver = wallet.addAccount();
+
+		// Hash of the expected transaction
+		Web3.CallArguments args = TransactionTestHelper.createArguments(sender, receiver);
+		Transaction tx = TransactionTestHelper.createTransaction(args, constants.getChainId(), wallet.getAccount(sender));
+		String txExpectedResult = tx.getHash().toJsonString();
+
+		TransactionPoolAddResult transactionPoolAddResult = mock(TransactionPoolAddResult.class);
+		when(transactionPoolAddResult.transactionsWereAdded()).thenReturn(true);
+
+		TransactionGateway transactionGateway = mock(TransactionGateway.class);
+		when(transactionGateway.receiveTransaction(any(Transaction.class))).thenReturn(transactionPoolAddResult);
+
+		TransactionPool transactionPool = mock(TransactionPool.class);
+
+		EthModuleTransactionBase ethModuleTransaction = new EthModuleTransactionBase(constants, wallet, transactionPool, transactionGateway);
+
+		// Hash of the actual transaction builded inside the sendTransaction
+		String txResult = ethModuleTransaction.sendTransaction(args);
+
+		assertEquals(txExpectedResult, txResult);
+	}
+    
     @Test
     public void getCode() {
         byte[] expectedCode = new byte[] {1, 2, 3};

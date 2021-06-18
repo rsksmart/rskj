@@ -170,13 +170,14 @@ public class Web3RskImplTest {
         callArguments.from = "0x1";
         callArguments.to = "0x2";
         callArguments.gas = "21000";
+        callArguments.gasLimit = "21000";
         callArguments.gasPrice = "100";
         callArguments.value = "1";
         callArguments.data = "data";
         callArguments.nonce = "0";
         callArguments.chainId = "0x00";
 
-        assertEquals("CallArguments{from='0x1', to='0x2', gasLimit='21000', gasPrice='100', value='1', data='data', nonce='0', chainId='0x00'}", callArguments.toString());
+        assertEquals("CallArguments{from='0x1', to='0x2', gas='21000', gasLimit='21000', gasPrice='100', value='1', data='data', nonce='0', chainId='0x00'}", callArguments.toString());
     }
 
     @Test
