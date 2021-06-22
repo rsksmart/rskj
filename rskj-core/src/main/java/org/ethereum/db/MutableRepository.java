@@ -350,7 +350,7 @@ public class MutableRepository implements Repository {
     @Override
     public byte[] getStorageHash(RskAddress addr) {
         byte[] storageRoot = getStorageStateRoot(addr);
-        return new Keccak256(storageRoot).getBytes();
+        return storageRoot == HashUtil.EMPTY_TRIE_HASH ? storageRoot : new Keccak256(storageRoot).getBytes();
     }
 
     /**
