@@ -28,105 +28,120 @@ import org.ethereum.util.RLP;
 import java.math.BigInteger;
 
 public final class TransactionBuilder {
-    private boolean isLocalCall = false;
-    private byte[] nonce = ByteUtil.cloneBytes(null);
-    private Coin value = Coin.ZERO;
-    private RskAddress receiveAddress = RskAddress.nullAddress();
-    private Coin gasPrice = Coin.ZERO;
-    private byte[] gasLimit = ByteUtil.cloneBytes(null);
-    private byte[] data = ByteUtil.cloneBytes(null);
-    private byte chainId = 0;
 
-    TransactionBuilder() {
-    }
+	private boolean isLocalCall = false;
+	private byte[] nonce = ByteUtil.cloneBytes(null);
+	private Coin value = Coin.ZERO;
+	private RskAddress receiveAddress = RskAddress.nullAddress();
+	private Coin gasPrice = Coin.ZERO;
+	private byte[] gasLimit = ByteUtil.cloneBytes(null);
+	private byte[] data = ByteUtil.cloneBytes(null);
+	private byte chainId = 0;
 
-    public TransactionBuilder value(BigInteger value) {
-        return this.value(BigIntegers.asUnsignedByteArray(value));
-    }
+	TransactionBuilder() {
+	}
 
-    public TransactionBuilder gasLimit(BigInteger limit) {
-        return this.gasLimit(BigIntegers.asUnsignedByteArray(limit));
-    }
+	public TransactionBuilder value(BigInteger value) {
+		return this.value(BigIntegers.asUnsignedByteArray(value));
+	}
 
-    public TransactionBuilder gasPrice(BigInteger price) {
-        return this.gasPrice(price.toByteArray());
-    }
+	public TransactionBuilder gasLimit(BigInteger limit) {
+		return this.gasLimit(BigIntegers.asUnsignedByteArray(limit));
+	}
 
-    public TransactionBuilder nonce(BigInteger nonce) {
-        return this.nonce(BigIntegers.asUnsignedByteArray(nonce));
-    }
+	public TransactionBuilder gasPrice(BigInteger price) {
+		return this.gasPrice(price.toByteArray());
+	}
 
-    public TransactionBuilder isLocalCall(boolean isLocalCall) {
-        this.isLocalCall = isLocalCall;
-        return this;
-    }
+	public TransactionBuilder nonce(BigInteger nonce) {
+		return this.nonce(BigIntegers.asUnsignedByteArray(nonce));
+	}
 
-    public TransactionBuilder nonce(byte[] nonce) {
-        this.nonce = ByteUtil.cloneBytes(nonce);
-        return this;
-    }
+	public TransactionBuilder isLocalCall(boolean isLocalCall) {
+		this.isLocalCall = isLocalCall;
+		return this;
+	}
 
-    public TransactionBuilder value(Coin value) {
-        this.value = value;
-        return this;
-    }
+	public TransactionBuilder nonce(byte[] nonce) {
+		this.nonce = ByteUtil.cloneBytes(nonce);
+		return this;
+	}
 
-    public TransactionBuilder value(byte[] value) {
-        this.value(RLP.parseCoinNullZero(ByteUtil.cloneBytes(value)));
-        return this;
-    }
+	public TransactionBuilder value(Coin value) {
+		this.value = value;
+		return this;
+	}
 
-    public TransactionBuilder destination(RskAddress receiveAddress) {
-        this.receiveAddress = receiveAddress;
-        return this;
-    }
+	public TransactionBuilder value(byte[] value) {
+		this.value(RLP.parseCoinNullZero(ByteUtil.cloneBytes(value)));
+		return this;
+	}
 
-    public TransactionBuilder destination(byte[] receiveAddress) {
-        return this.destination(RLP.parseRskAddress(ByteUtil.cloneBytes(receiveAddress)));
-    }
+	public TransactionBuilder destination(RskAddress receiveAddress) {
+		this.receiveAddress = receiveAddress;
+		return this;
+	}
 
-    public TransactionBuilder gasPrice(Coin gasPrice) {
-        this.gasPrice = gasPrice;
-        return this;
-    }
+	public TransactionBuilder destination(byte[] receiveAddress) {
+		return this.destination(RLP.parseRskAddress(ByteUtil.cloneBytes(receiveAddress)));
+	}
 
-    public TransactionBuilder gasPrice(byte[] gasPrice) {
-        this.gasPrice(RLP.parseCoinNonNullZero(ByteUtil.cloneBytes(gasPrice)));
-        return this;
-    }
+	public TransactionBuilder gasPrice(Coin gasPrice) {
+		this.gasPrice = gasPrice;
+		return this;
+	}
 
-    public TransactionBuilder gasLimit(byte[] gasLimit) {
-        this.gasLimit = ByteUtil.cloneBytes(gasLimit);
-        return this;
-    }
+	public TransactionBuilder gasPrice(byte[] gasPrice) {
+		this.gasPrice(RLP.parseCoinNonNullZero(ByteUtil.cloneBytes(gasPrice)));
+		return this;
+	}
 
-    public TransactionBuilder data(byte[] data) {
-        this.data = ByteUtil.cloneBytes(data);
-        return this;
-    }
+	public TransactionBuilder gasLimit(byte[] gasLimit) {
+		this.gasLimit = ByteUtil.cloneBytes(gasLimit);
+		return this;
+	}
 
-    public TransactionBuilder chainId(byte chainId) {
-        this.chainId = chainId;
-        return this;
-    }
+	public TransactionBuilder data(byte[] data) {
+		this.data = ByteUtil.cloneBytes(data);
+		return this;
+	}
 
-    public TransactionBuilder destination(String to) {
-        return this.destination(to == null ? null : Hex.decode(to));
-    }
+	public TransactionBuilder chainId(byte chainId) {
+		this.chainId = chainId;
+		return this;
+	}
 
-    public TransactionBuilder gasLimit(Coin value) {
-        return this.gasLimit(value.getBytes());
-    }
+	public TransactionBuilder destination(String to) {
+		return this.destination(to == null ? null : Hex.decode(to));
+	}
 
-    public TransactionBuilder nonce(Coin value) {
-        return this.nonce(value.getBytes());
-    }
+	public TransactionBuilder gasLimit(Coin value) {
+		return this.gasLimit(value.getBytes());
+	}
 
-    public Transaction build() {
-        return new Transaction(this.nonce, this.gasPrice, this.gasLimit, this.receiveAddress, this.value, this.data, this.chainId, this.isLocalCall);
-    }
+	public TransactionBuilder nonce(Coin value) {
+		return this.nonce(value.getBytes());
+	}
 
-    public TransactionBuilder data(String data) {
-        return this.data(data == null ? null: Hex.decode(data));
-    }
+	public Transaction build() {
+		return new Transaction(this.nonce, this.gasPrice, this.gasLimit, this.receiveAddress, this.value, this.data, this.chainId, this.isLocalCall);
+	}
+
+	public TransactionBuilder data(String data) {
+		return this.data(data == null ? null : Hex.decode(data));
+	}
+
+	public TransactionBuilder from(TransactionArguments args) {
+
+		nonce(args.getNonce());
+		gasPrice(args.getGasPrice());
+		gasLimit(args.getGasLimit());
+		destination(args.getTo());
+		data(args.getData());
+		chainId(args.getChainId());
+		value(BigIntegers.asUnsignedByteArray(args.getValue()));
+
+		return this;
+	}
+
 }
