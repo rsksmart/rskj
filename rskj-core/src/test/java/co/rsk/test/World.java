@@ -36,7 +36,6 @@ import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.peg.BtcBlockStoreWithCache.Factory;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
 import co.rsk.test.builders.BlockChainBuilder;
-import co.rsk.trie.TrieConverter;
 import co.rsk.trie.TrieStore;
 import co.rsk.validators.DummyBlockValidator;
 import org.ethereum.core.*;
@@ -129,7 +128,7 @@ public class World {
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         BlockSyncService blockSyncService = new BlockSyncService(config, store, blockChain, nodeInformation, syncConfiguration, DummyBlockValidator.VALID_RESULT_INSTANCE);
         this.blockProcessor = new NodeBlockProcessor(store, blockChain, nodeInformation, blockSyncService, syncConfiguration);
-        this.stateRootHandler = new StateRootHandler(config.getActivationConfig(), new TrieConverter(), new HashMapDB());
+        this.stateRootHandler = new StateRootHandler(config.getActivationConfig(), new HashMapDB());
 
         this.bridgeSupportFactory = new BridgeSupportFactory(
                 new RepositoryBtcBlockStoreWithCache.Factory(

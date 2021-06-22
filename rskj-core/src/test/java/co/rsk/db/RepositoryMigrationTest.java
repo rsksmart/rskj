@@ -2,14 +2,12 @@ package co.rsk.db;
 
 import co.rsk.core.RskAddress;
 import co.rsk.trie.Trie;
-import co.rsk.trie.TrieConverter;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Repository;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.MutableRepository;
-import org.ethereum.util.ByteUtil;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -34,11 +32,5 @@ public class RepositoryMigrationTest {
         repository.commit();
 
         Assert.assertThat(repository.getAccountState(COW).getNonce(), is(accountNonce));
-
-        TrieConverter converter = new TrieConverter();
-        byte[] oldRoot = converter.getOrchidAccountTrieRoot(repository.getTrie());
-        // expected ab158b4a1d2411492194768fbd2669c069b60e5d0bcc859e51fe477855829ae7
-        System.out.println(ByteUtil.toHexString(oldRoot));
     }
-
 }

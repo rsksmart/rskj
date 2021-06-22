@@ -32,7 +32,6 @@ import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.peg.BtcBlockStoreWithCache;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
 import co.rsk.trie.Trie;
-import co.rsk.trie.TrieConverter;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
 import co.rsk.validators.BlockValidator;
@@ -170,7 +169,7 @@ public class BlockChainBuilder {
         }
 
         if (stateRootHandler == null) {
-            stateRootHandler = new StateRootHandler(config.getActivationConfig(), new TrieConverter(), new HashMapDB());
+            stateRootHandler = new StateRootHandler(config.getActivationConfig(), new HashMapDB());
         }
         
         if (genesis == null) {

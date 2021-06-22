@@ -30,7 +30,6 @@ import co.rsk.db.RepositoryLocator;
 import co.rsk.db.StateRootHandler;
 import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
-import co.rsk.trie.TrieConverter;
 import co.rsk.trie.TrieStoreImpl;
 import org.ethereum.core.*;
 import org.ethereum.datasource.HashMapDB;
@@ -137,7 +136,7 @@ public class StateTestRunner {
         transaction = TransactionBuilder.build(stateTestCase.getTransaction());
         logger.info("transaction: {}", transaction.toString());
         BlockStore blockStore = new IndexedBlockStore(blockFactory, new HashMapDB(), new HashMapBlocksIndex());
-        StateRootHandler stateRootHandler = new StateRootHandler(config.getActivationConfig(), new TrieConverter(), new HashMapDB());
+        StateRootHandler stateRootHandler = new StateRootHandler(config.getActivationConfig(), new HashMapDB());
         blockchain = new BlockChainImpl(
                 blockStore,
                 null,

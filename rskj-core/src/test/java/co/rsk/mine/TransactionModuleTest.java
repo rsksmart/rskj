@@ -40,7 +40,6 @@ import co.rsk.rpc.modules.txpool.TxPoolModuleImpl;
 import co.rsk.test.World;
 import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.TransactionBuilder;
-import co.rsk.trie.TrieConverter;
 import co.rsk.trie.TrieStore;
 import co.rsk.validators.BlockUnclesValidationRule;
 import co.rsk.validators.ProofOfWorkRule;
@@ -288,7 +287,6 @@ public class TransactionModuleTest {
                                        TransactionGateway transactionGateway) {
         StateRootHandler stateRootHandler = new StateRootHandler(
                 config.getActivationConfig(),
-                new TrieConverter(),
                 new HashMapDB()
         );
         return createEnvironment(blockchain,

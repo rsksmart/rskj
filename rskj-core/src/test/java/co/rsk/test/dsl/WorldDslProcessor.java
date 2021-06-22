@@ -31,7 +31,6 @@ import co.rsk.net.NodeBlockProcessor;
 import co.rsk.test.World;
 import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.BlockBuilder;
-import co.rsk.trie.TrieConverter;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.*;
 import org.ethereum.datasource.HashMapDB;
@@ -312,7 +311,7 @@ public class WorldDslProcessor {
             Block block = blockBuilder.difficulty(difficulty).parent(parent).build();
             final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
             final TestSystemProperties config = new TestSystemProperties();
-            StateRootHandler stateRootHandler = new StateRootHandler(config.getActivationConfig(), new TrieConverter(), new HashMapDB());
+            StateRootHandler stateRootHandler = new StateRootHandler(config.getActivationConfig(), new HashMapDB());
             BlockExecutor executor = new BlockExecutor(
                     config.getActivationConfig(),
                     new RepositoryLocator(world.getTrieStore(), stateRootHandler),

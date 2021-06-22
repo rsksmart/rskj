@@ -25,7 +25,6 @@ import co.rsk.core.bc.BlockExecutor;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.db.StateRootHandler;
 import co.rsk.peg.BridgeSupportFactory;
-import co.rsk.trie.TrieConverter;
 import co.rsk.trie.TrieStore;
 import org.bouncycastle.util.BigIntegers;
 import org.ethereum.core.*;
@@ -104,7 +103,7 @@ public class BlockBuilder {
 
         if (blockChain != null) {
             final TestSystemProperties config = new TestSystemProperties();
-            StateRootHandler stateRootHandler = new StateRootHandler(config.getActivationConfig(), new TrieConverter(), new HashMapDB());
+            StateRootHandler stateRootHandler = new StateRootHandler(config.getActivationConfig(), new HashMapDB());
             BlockExecutor executor = new BlockExecutor(
                     config.getActivationConfig(),
                     new RepositoryLocator(trieStore, stateRootHandler),

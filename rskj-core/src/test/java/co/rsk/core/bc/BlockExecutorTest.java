@@ -32,7 +32,6 @@ import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.peg.BtcBlockStoreWithCache.Factory;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
 import co.rsk.trie.Trie;
-import co.rsk.trie.TrieConverter;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
 import org.bouncycastle.util.BigIntegers;
@@ -825,7 +824,7 @@ public class BlockExecutorTest {
     }
 
     private static BlockExecutor buildBlockExecutor(TrieStore store, RskSystemProperties config) {
-        StateRootHandler stateRootHandler = new StateRootHandler(config.getActivationConfig(), new TrieConverter(), new HashMapDB());
+        StateRootHandler stateRootHandler = new StateRootHandler(config.getActivationConfig(), new HashMapDB());
 
         Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(
                 config.getNetworkConstants().getBridgeConstants().getBtcParams());

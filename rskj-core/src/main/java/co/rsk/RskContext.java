@@ -81,7 +81,6 @@ import co.rsk.scoring.PeerScoringManager;
 import co.rsk.scoring.PeerScoringReporterService;
 import co.rsk.scoring.PunishmentParameters;
 import co.rsk.trie.MultiTrieStore;
-import co.rsk.trie.TrieConverter;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
 import co.rsk.util.RskCustomCache;
@@ -178,7 +177,6 @@ public class RskContext implements NodeBootstrapper {
     private TransactionPool transactionPool;
     private RepositoryLocator repositoryLocator;
     private StateRootHandler stateRootHandler;
-    private TrieConverter trieConverter;
     private EvmModule evmModule;
     private BlockToMineBuilder blockToMineBuilder;
     private BlockNodeInformation blockNodeInformation;
@@ -393,14 +391,6 @@ public class RskContext implements NodeBootstrapper {
         }
 
         return stateRootHandler;
-    }
-
-    public TrieConverter getTrieConverter() {
-        if (trieConverter == null) {
-            trieConverter = new TrieConverter();
-        }
-
-        return trieConverter;
     }
 
     public ReceiptStore getReceiptStore() {
@@ -1080,7 +1070,7 @@ public class RskContext implements NodeBootstrapper {
 
     protected StateRootHandler buildStateRootHandler() {
         KeyValueDataSource stateRootsDB = LevelDbDataSource.makeDataSource(Paths.get(getRskSystemProperties().databaseDir(), "stateRoots"));
-        return new StateRootHandler(getRskSystemProperties().getActivationConfig(), getTrieConverter(), stateRootsDB);
+        return new StateRootHandler(getRskSystemProperties().getActivationConfig(), stateRootsDB);
     }
 
     protected CompositeEthereumListener buildCompositeEthereumListener() {

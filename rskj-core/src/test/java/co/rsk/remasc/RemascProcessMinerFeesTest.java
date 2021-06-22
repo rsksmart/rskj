@@ -35,7 +35,6 @@ import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.peg.PegTestUtils;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
 import co.rsk.test.builders.BlockChainBuilder;
-import co.rsk.trie.TrieConverter;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.TestUtils;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
@@ -100,7 +99,7 @@ public class RemascProcessMinerFeesTest {
     @Before
     public void setup() {
         blockFactory = new BlockFactory(config.getActivationConfig());
-        stateRootHandler = new StateRootHandler(config.getActivationConfig(), new TrieConverter(), new HashMapDB());
+        stateRootHandler = new StateRootHandler(config.getActivationConfig(), new HashMapDB());
         blockchainBuilder = new BlockChainBuilder()
                 .setStateRootHandler(stateRootHandler)
                 .setGenesis(genesisBlock)

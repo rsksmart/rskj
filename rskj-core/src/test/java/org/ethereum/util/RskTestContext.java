@@ -58,7 +58,7 @@ public class RskTestContext extends RskContext {
 
     @Override
     protected StateRootHandler buildStateRootHandler() {
-        return new StateRootHandler(getRskSystemProperties().getActivationConfig(), getTrieConverter(), new HashMapDB());
+        return new StateRootHandler(getRskSystemProperties().getActivationConfig(), new HashMapDB());
     }
 
     @Override
