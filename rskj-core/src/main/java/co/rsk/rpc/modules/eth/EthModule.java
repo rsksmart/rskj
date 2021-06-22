@@ -290,7 +290,7 @@ public class EthModule
      * @param storageKeys storage keys to prove (each storage key as UNFORMATED DATA, check https://eth.wiki/json-rpc/API)
      * @param blockOrId a block id
      *
-     * @returns a proof object object matching the following properties:
+     * @return a proof object
      * */
     public ProofDTO getProof(String address, List<String> storageKeys, String blockOrId) {
         RskAddress rskAddress = new RskAddress(address);
@@ -323,7 +323,8 @@ public class EthModule
      * @param rskAddress an rsk address
      * @param storageKey a storage key
      * @param accountInformationProvider an account information provider to retrieve data from the expected block
-     * @return a StorageProofDTO object containing key, value and storage proofs
+     *
+     * @return a storage proof object containing key, value and storage proofs
      * */
     private StorageProofDTO getStorageProof(RskAddress rskAddress, String storageKey, AccountInformationProvider accountInformationProvider) {
         DataWord storageKeyDw;
