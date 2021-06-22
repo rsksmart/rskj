@@ -59,7 +59,10 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.math.BigInteger;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP126;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
@@ -822,8 +825,7 @@ public class BlockExecutorTest {
     }
 
     private static BlockExecutor buildBlockExecutor(TrieStore store, RskSystemProperties config) {
-        StateRootHandler stateRootHandler = new StateRootHandler(
-                config.getActivationConfig(), new TrieConverter(), new HashMapDB(), new HashMap<>());
+        StateRootHandler stateRootHandler = new StateRootHandler(config.getActivationConfig(), new TrieConverter(), new HashMapDB());
 
         Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(
                 config.getNetworkConstants().getBridgeConstants().getBtcParams());

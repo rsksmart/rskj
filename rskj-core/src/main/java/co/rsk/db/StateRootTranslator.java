@@ -20,20 +20,21 @@ package co.rsk.db;
 import co.rsk.crypto.Keccak256;
 import org.ethereum.datasource.KeyValueDataSource;
 
+import java.util.HashMap;
 import java.util.Map;
 
 public class StateRootTranslator {
 
-    private KeyValueDataSource stateRootDB;
-    private Map<Keccak256, Keccak256> stateRootCache;
+    private final Map<Keccak256, Keccak256> stateRootCache = new HashMap<>();
 
-    public StateRootTranslator(KeyValueDataSource stateRootDB, Map<Keccak256, Keccak256> stateRootCache) {
+    private final KeyValueDataSource stateRootDB;
+
+    public StateRootTranslator(KeyValueDataSource stateRootDB) {
         this.stateRootDB = stateRootDB;
-        this.stateRootCache = stateRootCache;
     }
 
     public synchronized Keccak256 get(Keccak256 oldStateRoot) {
-        Keccak256 stateRoot = this.stateRootCache.get(oldStateRoot);
+        Keccak256 stateRoot = stateRootCache.get(oldStateRoot);
 
         if (stateRoot != null) {
             return stateRoot;
@@ -45,12 +46,13 @@ public class StateRootTranslator {
         }
 
         Keccak256 newStateRoot = new Keccak256(stateRootBytes);
-        this.stateRootCache.put(oldStateRoot, newStateRoot);
+        stateRootCache.put(oldStateRoot, newStateRoot);
+
         return newStateRoot;
     }
 
-    public void put(Keccak256 oldStateRoot, Keccak256 newStateRoot) {
-        this.stateRootCache.put(oldStateRoot, newStateRoot);
-        this.stateRootDB.put(oldStateRoot.getBytes(), newStateRoot.getBytes());
+    public synchronized void put(Keccak256 oldStateRoot, Keccak256 newStateRoot) {
+        stateRootCache.put(oldStateRoot, newStateRoot);
+        stateRootDB.put(oldStateRoot.getBytes(), newStateRoot.getBytes());
     }
 }

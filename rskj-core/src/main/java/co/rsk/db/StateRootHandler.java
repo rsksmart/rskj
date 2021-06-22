@@ -26,7 +26,6 @@ import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.datasource.KeyValueDataSource;
 
-import java.util.Map;
 import java.util.Objects;
 
 public class StateRootHandler {
@@ -37,11 +36,10 @@ public class StateRootHandler {
     public StateRootHandler(
             ActivationConfig activationConfig,
             TrieConverter trieConverter,
-            KeyValueDataSource stateRootDB,
-            Map<Keccak256, Keccak256> stateRootCache) {
+            KeyValueDataSource stateRootDB) {
         this.activationConfig = activationConfig;
         this.trieConverter = trieConverter;
-        this.stateRootTranslator = new StateRootTranslator(stateRootDB, stateRootCache);
+        this.stateRootTranslator = new StateRootTranslator(stateRootDB);
     }
 
     public Keccak256 translate(BlockHeader block) {
@@ -73,18 +71,7 @@ public class StateRootHandler {
             return;
         }
 
-        if (executedBlock.isGenesis()) {
-            Keccak256 genesisStateRoot = convert(executedBlock, executionResult);
-            stateRootTranslator.put(genesisStateRoot, executionResult.getHash());
-        } else {
-            boolean isRskip85Enabled = activationConfig.isActive(ConsensusRule.RSKIP85, executedBlock.getNumber());
-            if (isRskip85Enabled) {
-                Keccak256 orchidStateRoot = convert(executedBlock, executionResult);
-                stateRootTranslator.put(orchidStateRoot, executionResult.getHash());
-            } else {
-                Keccak256 blockStateRoot = new Keccak256(executedBlock.getStateRoot());
-                stateRootTranslator.put(blockStateRoot, executionResult.getHash());
-            }
-        }
+        Keccak256 blockStateRoot = new Keccak256(executedBlock.getStateRoot());
+        stateRootTranslator.put(blockStateRoot, executionResult.getHash());
     }
 }

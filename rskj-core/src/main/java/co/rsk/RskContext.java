@@ -1080,7 +1080,7 @@ public class RskContext implements NodeBootstrapper {
 
     protected StateRootHandler buildStateRootHandler() {
         KeyValueDataSource stateRootsDB = LevelDbDataSource.makeDataSource(Paths.get(getRskSystemProperties().databaseDir(), "stateRoots"));
-        return new StateRootHandler(getRskSystemProperties().getActivationConfig(), getTrieConverter(), stateRootsDB, new HashMap<>());
+        return new StateRootHandler(getRskSystemProperties().getActivationConfig(), getTrieConverter(), stateRootsDB);
     }
 
     protected CompositeEthereumListener buildCompositeEthereumListener() {

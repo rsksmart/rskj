@@ -70,7 +70,6 @@ import org.mockito.Mockito;
 
 import java.math.BigInteger;
 import java.time.Clock;
-import java.util.HashMap;
 
 public class TransactionModuleTest {
     private final TestSystemProperties config = new TestSystemProperties();
@@ -290,8 +289,7 @@ public class TransactionModuleTest {
         StateRootHandler stateRootHandler = new StateRootHandler(
                 config.getActivationConfig(),
                 new TrieConverter(),
-                new HashMapDB(),
-                new HashMap<>()
+                new HashMapDB()
         );
         return createEnvironment(blockchain,
                 new MiningMainchainViewImpl(blockStore, 1),

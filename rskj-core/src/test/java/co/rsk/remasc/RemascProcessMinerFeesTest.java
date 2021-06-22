@@ -100,7 +100,7 @@ public class RemascProcessMinerFeesTest {
     @Before
     public void setup() {
         blockFactory = new BlockFactory(config.getActivationConfig());
-        stateRootHandler = new StateRootHandler(config.getActivationConfig(), new TrieConverter(), new HashMapDB(), new HashMap<>());
+        stateRootHandler = new StateRootHandler(config.getActivationConfig(), new TrieConverter(), new HashMapDB());
         blockchainBuilder = new BlockChainBuilder()
                 .setStateRootHandler(stateRootHandler)
                 .setGenesis(genesisBlock)

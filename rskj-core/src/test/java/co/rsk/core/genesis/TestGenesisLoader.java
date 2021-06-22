@@ -79,7 +79,7 @@ public class TestGenesisLoader extends GenesisLoaderImpl {
             boolean isRskip126Enabled) {
         super(
                 activationConfig,
-                new StateRootHandler(activationConfig, null, null, null),
+                new StateRootHandler(activationConfig, null, null),
                 trieStore,
                 resourceAsStream,
                 initialNonce,

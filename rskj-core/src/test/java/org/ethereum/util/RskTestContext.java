@@ -31,7 +31,6 @@ import org.ethereum.db.ReceiptStore;
 import org.ethereum.db.ReceiptStoreImpl;
 
 import java.nio.file.Path;
-import java.util.HashMap;
 
 /**
  * This context overrides every persistent database access with a non-persistent one.
@@ -59,7 +58,7 @@ public class RskTestContext extends RskContext {
 
     @Override
     protected StateRootHandler buildStateRootHandler() {
-        return new StateRootHandler(getRskSystemProperties().getActivationConfig(), getTrieConverter(), new HashMapDB(), new HashMap<>());
+        return new StateRootHandler(getRskSystemProperties().getActivationConfig(), getTrieConverter(), new HashMapDB());
     }
 
     @Override
