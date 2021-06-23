@@ -23,15 +23,20 @@ import co.rsk.crypto.Keccak256;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.introspect.VisibilityChecker;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * Provides tracing and exporting to JSON
  */
 public class ProgramTraceProcessor {
+
+    private static final ObjectMapper OBJECT_MAPPER = makeObjectMapper();
+
     private final Map<Keccak256, ProgramTrace> traces = new HashMap<>();
 
     public void processProgramTrace(ProgramTrace programTrace, Keccak256 txHash) {
@@ -42,6 +47,15 @@ public class ProgramTraceProcessor {
         return traces.get(txHash);
     }
 
+    public JsonNode getProgramTracesAsJsonNode(List<Keccak256> txHashes) {
+        List<ProgramTrace> txTraces = txHashes.stream()
+                .map(traces::get)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+
+        return OBJECT_MAPPER.valueToTree(txTraces);
+    }
+
     public JsonNode getProgramTraceAsJsonNode(Keccak256 txHash) {
         ProgramTrace trace = traces.get(txHash);
 
@@ -49,16 +63,17 @@ public class ProgramTraceProcessor {
             return null;
         }
 
-        ObjectMapper mapper = Serializers.createMapper(true);
-        mapper.setVisibility(fieldsOnlyVisibilityChecker(mapper));
-
-        return mapper.valueToTree(trace);
+        return OBJECT_MAPPER.valueToTree(trace);
     }
 
-    private static VisibilityChecker<?> fieldsOnlyVisibilityChecker(ObjectMapper mapper) {
-        return mapper.getSerializationConfig().getDefaultVisibilityChecker()
+    private static ObjectMapper makeObjectMapper() {
+        final ObjectMapper mapper = Serializers.createMapper(true);
+
+        mapper.setVisibility(mapper.getSerializationConfig().getDefaultVisibilityChecker()
                 .withFieldVisibility(JsonAutoDetect.Visibility.ANY)
                 .withGetterVisibility(JsonAutoDetect.Visibility.NONE)
-                .withIsGetterVisibility(JsonAutoDetect.Visibility.NONE);
+                .withIsGetterVisibility(JsonAutoDetect.Visibility.NONE));
+
+        return mapper;
     }
 }

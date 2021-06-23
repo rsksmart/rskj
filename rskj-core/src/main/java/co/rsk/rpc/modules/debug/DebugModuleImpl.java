@@ -19,6 +19,7 @@
 package co.rsk.rpc.modules.debug;
 
 import co.rsk.core.bc.BlockExecutor;
+import co.rsk.crypto.Keccak256;
 import co.rsk.net.MessageHandler;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.ethereum.core.Block;
@@ -31,7 +32,9 @@ import org.ethereum.vm.trace.ProgramTraceProcessor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static org.ethereum.rpc.TypeConverter.stringHexToByteArray;
 
@@ -62,7 +65,7 @@ public class DebugModuleImpl implements DebugModule {
     }
 
     @Override
-    public JsonNode traceTransaction(String transactionHash, Map<String, String> traceOptions) throws Exception {
+    public JsonNode traceTransaction(String transactionHash, Map<String, String> traceOptions) {
         logger.trace("debug_traceTransaction({}, {})", transactionHash, traceOptions);
 
         if (traceOptions != null && !traceOptions.isEmpty()) {
@@ -87,5 +90,33 @@ public class DebugModuleImpl implements DebugModule {
         blockExecutor.traceBlock(programTraceProcessor, 0, block, parent.getHeader(), false, false);
 
         return programTraceProcessor.getProgramTraceAsJsonNode(tx.getHash());
+    }
+
+    @Override
+    public JsonNode traceBlock(String blockHash, Map<String, String> traceOptions) {
+        logger.trace("debug_traceBlockByHash({}, {})", blockHash, traceOptions);
+
+        if (traceOptions != null && !traceOptions.isEmpty()) {
+            // TODO: implement the logic that takes into account trace options.
+            logger.warn("Received {} trace options. For now trace options are being ignored", traceOptions);
+        }
+
+        byte[] bHash = stringHexToByteArray(blockHash);
+        Block block = blockStore.getBlockByHash(bHash);
+        if (block == null) {
+            logger.trace("No block is found for {}", bHash);
+            return null;
+        }
+
+        Block parent = blockStore.getBlockByHash(block.getParentHash().getBytes());
+
+        ProgramTraceProcessor programTraceProcessor = new ProgramTraceProcessor();
+        blockExecutor.traceBlock(programTraceProcessor, 0, block, parent.getHeader(), false, false);
+
+        List<Keccak256> txHashes = block.getTransactionsList().stream()
+                .map(Transaction::getHash)
+                .collect(Collectors.toList());
+
+        return programTraceProcessor.getProgramTracesAsJsonNode(txHashes);
     }
 }

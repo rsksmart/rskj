@@ -43,7 +43,10 @@ import static org.ethereum.rpc.TypeConverter.stringHexToBigInteger;
 import static org.ethereum.rpc.TypeConverter.stringHexToByteArray;
 
 public class TraceModuleImpl implements TraceModule {
+
     private static final Logger logger = LoggerFactory.getLogger("web3");
+
+    private static final ObjectMapper OBJECT_MAPPER = Serializers.createMapper(true);
 
     private final Blockchain blockchain;
     private final BlockStore blockStore;
@@ -89,8 +92,8 @@ public class TraceModuleImpl implements TraceModule {
         }
 
         List<TransactionTrace> traces = TraceTransformer.toTraces(programTrace, txInfo, block.getNumber());
-        ObjectMapper mapper = Serializers.createMapper(true);
-        return mapper.valueToTree(traces);
+
+        return OBJECT_MAPPER.valueToTree(traces);
     }
 
     @Override
@@ -129,9 +132,7 @@ public class TraceModuleImpl implements TraceModule {
             }
         }
 
-        ObjectMapper mapper = Serializers.createMapper(true);
-
-        return mapper.valueToTree(blockTraces);
+        return OBJECT_MAPPER.valueToTree(blockTraces);
     }
 
     private Block getByJsonArgument(String arg) {
