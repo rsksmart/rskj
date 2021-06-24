@@ -29,6 +29,7 @@ import org.ethereum.db.MutableRepository;
 import org.ethereum.db.TrieKeyMapper;
 import org.ethereum.vm.DataWord;
 import org.junit.Test;
+import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.nio.charset.StandardCharsets;
 import java.util.*;
@@ -439,5 +440,29 @@ public class MutableTrieCacheTest {
     private void getValueHashAndAssert(MutableTrie trie, byte[] key, Keccak256 expectedHash) {
         Optional<Keccak256> hash = trie.getValueHash(key);
         assertEquals(expectedHash, hash.orElse(null));
+    }
+
+    @Test
+    public void getNodes() {
+        Trie baseTrie = new Trie();
+        byte[] accountKey = new TrieKeyMapper().getAccountKey(new RskAddress("0x2Bc03D1A7f1FD22f0e57E46dDC13660999848cFb".toLowerCase(Locale.ROOT)));
+        Trie trie = baseTrie.put(accountKey, "something".getBytes(StandardCharsets.UTF_8));
+
+        MutableTrieCache mutableTrieCache = new MutableTrieCache(new MutableTrieImpl(null, trie));
+        List<Trie> nodes = mutableTrieCache.getNodes(accountKey);
+
+        assertEquals(1, nodes.size());
+        assertArrayEquals("something".getBytes(StandardCharsets.UTF_8), nodes.get(0).getValue());
+    }
+
+    @Test
+    public void getNodes_empty() {
+        Trie baseTrie = new Trie();
+        byte[] accountKey = new TrieKeyMapper().getAccountKey(new RskAddress("0x2Bc03D1A7f1FD22f0e57E46dDC13660999848cFb".toLowerCase(Locale.ROOT)));
+
+        MutableTrieCache mutableTrieCache = new MutableTrieCache(new MutableTrieImpl(null, baseTrie));
+        List<Trie> nodes = mutableTrieCache.getNodes(accountKey);
+
+        assertNull(nodes);
     }
 }
