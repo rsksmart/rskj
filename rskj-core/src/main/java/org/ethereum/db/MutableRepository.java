@@ -349,8 +349,8 @@ public class MutableRepository implements Repository {
 
     @Override
     public byte[] getStorageHash(RskAddress addr) {
-        byte[] storageRoot = getStorageStateRoot(addr);
-        return storageRoot == HashUtil.EMPTY_TRIE_HASH ? storageRoot : new Keccak256(storageRoot).getBytes();
+        // todo(fedejinich) this is an unnecesary method, just use getStorageStateRoot
+        return getStorageStateRoot(addr);
     }
 
     /**
@@ -376,7 +376,6 @@ public class MutableRepository implements Repository {
         return prove(trieKeyMapper.getAccountStorageKey(addr, storageKey));
     }
 
-    @VisibleForTesting
     public byte[] getStorageStateRoot(RskAddress addr) {
         byte[] prefix = trieKeyMapper.getAccountStoragePrefixKey(addr);
 

@@ -36,6 +36,8 @@ import co.rsk.trie.TrieStoreImpl;
 import com.google.common.annotations.VisibleForTesting;
 import org.bouncycastle.util.encoders.DecoderException;
 import org.ethereum.core.*;
+import org.ethereum.crypto.HashUtil;
+import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.MutableRepository;
 import org.ethereum.rpc.TypeConverter;
@@ -301,8 +303,9 @@ public class EthModule
         String storageHash = toUnformattedJsonHex(accountInformationProvider.getStorageHash(rskAddress));
 
         // EIP-1186: For an externally owned account returns a SHA3(empty byte array)
+        // todo(fedejinich) this might be improved by using mutableRepositroy.getCodeHashStandard
         String codeHash = accountInformationProvider.isContract(rskAddress) ?
-                toUnformattedJsonHex(new Keccak256(accountInformationProvider.getCode(rskAddress)).getBytes()) :
+                toUnformattedJsonHex(HashUtil.keccak256(accountInformationProvider.getCode(rskAddress))) :
                 NO_CONTRACT_CODE_HASH;
 
         List<String> accountProof = accountInformationProvider.getAccountProof(rskAddress)
@@ -340,6 +343,6 @@ public class EthModule
                 .collect(Collectors.toList());
         DataWord value = accountInformationProvider.getStorageValue(rskAddress, storageKeyDw);
 
-        return new StorageProofDTO(storageKey, value != null ? value.toString() : null, storageProof);
+        return new StorageProofDTO(storageKey, value != null ? toUnformattedJsonHex(value.getData()) : null, storageProof);
     }
 }
