@@ -353,6 +353,16 @@ public class MutableRepository implements Repository {
         return getStorageStateRoot(addr);
     }
 
+    @Override
+    public List<byte[]> getAccountProof(RskAddress addr) {
+        return prove(trieKeyMapper.getAccountKey(addr));
+    }
+
+    @Override
+    public List<byte[]> getStorageProof(RskAddress addr, DataWord storageKey) {
+        return prove(trieKeyMapper.getAccountStorageKey(addr, storageKey));
+    }
+
     /**
      * Generates a proof for a specific key.
      * Retrieves all the nodes starting from the state root, following the key path to the value
@@ -366,16 +376,7 @@ public class MutableRepository implements Repository {
                 .collect(Collectors.toList());
     }
 
-    @Override
-    public List<byte[]> getAccountProof(RskAddress addr) {
-        return prove(trieKeyMapper.getAccountKey(addr));
-    }
-
-    @Override
-    public List<byte[]> getStorageProof(RskAddress addr, DataWord storageKey) {
-        return prove(trieKeyMapper.getAccountStorageKey(addr, storageKey));
-    }
-
+    @VisibleForTesting
     public byte[] getStorageStateRoot(RskAddress addr) {
         byte[] prefix = trieKeyMapper.getAccountStoragePrefixKey(addr);
 
