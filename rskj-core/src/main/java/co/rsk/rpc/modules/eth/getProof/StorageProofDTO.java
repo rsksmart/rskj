@@ -1,8 +1,12 @@
 package co.rsk.rpc.modules.eth.getProof;
 
+import com.google.common.annotations.VisibleForTesting;
+import org.spongycastle.util.encoders.Hex;
+
 import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 public class StorageProofDTO {
 
@@ -53,5 +57,14 @@ public class StorageProofDTO {
     @Override
     public int hashCode() {
         return Objects.hash(getKey(), getValue(), getProofs());
+    }
+
+    @VisibleForTesting
+    public List<byte[]> getProofsAsByteArray() {
+        return proofs
+                .stream()
+                // todo(fedejinich) strip proof properlly
+                .map(proof -> Hex.decode(proof.substring(2)))
+                .collect(Collectors.toList());
     }
 }

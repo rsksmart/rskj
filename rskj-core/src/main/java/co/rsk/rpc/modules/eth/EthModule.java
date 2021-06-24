@@ -24,7 +24,6 @@ import co.rsk.core.ReversibleTransactionExecutor;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.AccountInformationProvider;
 import co.rsk.core.bc.BlockResult;
-import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.peg.BridgeState;
 import co.rsk.peg.BridgeSupport;
@@ -37,7 +36,6 @@ import com.google.common.annotations.VisibleForTesting;
 import org.bouncycastle.util.encoders.DecoderException;
 import org.ethereum.core.*;
 import org.ethereum.crypto.HashUtil;
-import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.MutableRepository;
 import org.ethereum.rpc.TypeConverter;
@@ -51,7 +49,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -313,11 +310,12 @@ public class EthModule
                 .map(proof -> toUnformattedJsonHex(proof))
                 .collect(Collectors.toList());
 
-        List<StorageProofDTO> storageProof = storageKeys.stream()
-                    .map(storageKey -> getStorageProof(rskAddress, storageKey, accountInformationProvider))
-                    .collect(Collectors.toList());
+        List<StorageProofDTO> storageProofs = storageKeys
+                .stream()
+                .map(storageKey -> storageProof(rskAddress, storageKey, accountInformationProvider))
+                .collect(Collectors.toList());
 
-        return new ProofDTO(balance, codeHash, nonce, storageHash, accountProof, storageProof);
+        return new ProofDTO(balance, codeHash, nonce, storageHash, accountProof, storageProofs);
     }
 
     /**
@@ -329,7 +327,7 @@ public class EthModule
      *
      * @return a storage proof object containing key, value and storage proofs
      * */
-    private StorageProofDTO getStorageProof(RskAddress rskAddress, String storageKey, AccountInformationProvider accountInformationProvider) {
+    private StorageProofDTO storageProof(RskAddress rskAddress, String storageKey, AccountInformationProvider accountInformationProvider) {
         DataWord storageKeyDw;
         try {
             storageKeyDw = DataWord.valueFromHex(storageKey.substring(2)); // todo (fedejinich) strip correctly
@@ -337,7 +335,8 @@ public class EthModule
             throw new IllegalArgumentException("invalid storage keys");
         }
 
-        List<String> storageProof = Optional.ofNullable(accountInformationProvider.getStorageProof(rskAddress, storageKeyDw)).orElse(Collections.emptyList())
+        List<String> storageProof = Optional.ofNullable(accountInformationProvider.getStorageProof(rskAddress, storageKeyDw))
+                .orElse(Collections.emptyList())
                 .stream()
                 .map(proof -> toUnformattedJsonHex(proof))
                 .collect(Collectors.toList());
