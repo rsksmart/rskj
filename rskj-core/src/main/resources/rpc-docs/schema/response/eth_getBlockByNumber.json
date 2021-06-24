@@ -1,0 +1,189 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "type": "object",
+  "properties": {
+    "result": {
+      "type": "object",
+      "properties": {
+        "number": {
+          "type": "string"
+        },
+        "hash": {
+          "type": "string"
+        },
+        "parentHash": {
+          "type": "string"
+        },
+        "sha3Uncles": {
+          "type": "string"
+        },
+        "logsBloom": {
+          "type": "string"
+        },
+        "transactionsRoot": {
+          "type": "string"
+        },
+        "stateRoot": {
+          "type": "string"
+        },
+        "receiptsRoot": {
+          "type": "string"
+        },
+        "miner": {
+          "type": "string"
+        },
+        "difficulty": {
+          "type": "string"
+        },
+        "totalDifficulty": {
+          "type": "string"
+        },
+        "extraData": {
+          "type": "string"
+        },
+        "size": {
+          "type": "string"
+        },
+        "gasLimit": {
+          "type": "string"
+        },
+        "gasUsed": {
+          "type": "string"
+        },
+        "timestamp": {
+          "type": "string"
+        },
+        "transactions": {
+          "type": "array",
+          "items": [
+            {
+              "type": "object",
+              "properties": {
+                "hash": {
+                  "type": "string"
+                },
+                "nonce": {
+                  "type": "string"
+                },
+                "blockHash": {
+                  "type": "string"
+                },
+                "blockNumber": {
+                  "type": "string"
+                },
+                "transactionIndex": {
+                  "type": "string"
+                },
+                "from": {
+                  "type": "string"
+                },
+                "to": {
+                  "type": "string"
+                },
+                "gas": {
+                  "type": "string"
+                },
+                "gasPrice": {
+                  "type": "string"
+                },
+                "value": {
+                  "type": "string"
+                },
+                "input": {
+                  "type": "string"
+                },
+                "v": {
+                  "type": "null"
+                },
+                "r": {
+                  "type": "null"
+                },
+                "s": {
+                  "type": "null"
+                }
+              },
+              "required": [
+                "hash",
+                "nonce",
+                "blockHash",
+                "blockNumber",
+                "transactionIndex",
+                "from",
+                "to",
+                "gas",
+                "gasPrice",
+                "value",
+                "input",
+                "v",
+                "r",
+                "s"
+              ]
+            }
+          ]
+        },
+        "uncles": {
+          "type": "array",
+          "items": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "string"
+            }
+          ]
+        },
+        "minimumGasPrice": {
+          "type": "string"
+        },
+        "bitcoinMergedMiningHeader": {
+          "type": "string"
+        },
+        "bitcoinMergedMiningCoinbaseTransaction": {
+          "type": "string"
+        },
+        "bitcoinMergedMiningMerkleProof": {
+          "type": "string"
+        },
+        "hashForMergedMining": {
+          "type": "string"
+        },
+        "paidFees": {
+          "type": "string"
+        },
+        "cumulativeDifficulty": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "number",
+        "hash",
+        "parentHash",
+        "sha3Uncles",
+        "logsBloom",
+        "transactionsRoot",
+        "stateRoot",
+        "receiptsRoot",
+        "miner",
+        "difficulty",
+        "totalDifficulty",
+        "extraData",
+        "size",
+        "gasLimit",
+        "gasUsed",
+        "timestamp",
+        "transactions",
+        "uncles",
+        "minimumGasPrice",
+        "bitcoinMergedMiningHeader",
+        "bitcoinMergedMiningCoinbaseTransaction",
+        "bitcoinMergedMiningMerkleProof",
+        "hashForMergedMining",
+        "paidFees",
+        "cumulativeDifficulty"
+      ]
+    }
+  },
+  "required": [
+    "result"
+  ]
+}

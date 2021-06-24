@@ -1,0 +1,42 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "integer"
+    },
+    "jsonrpc": {
+      "type": "string"
+    },
+    "method": {
+      "type": "string"
+    },
+    "params": {
+      "type": "array",
+      "items": [
+        {
+          "type": "object",
+          "properties": {
+            "topics": {
+              "type": "array",
+              "items": [
+                {
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "required": [
+            "topics"
+          ]
+        }
+      ]
+    }
+  },
+  "required": [
+    "id",
+    "jsonrpc",
+    "method",
+    "params"
+  ]
+}

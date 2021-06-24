@@ -27,6 +27,7 @@ import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Transaction;
 import org.ethereum.db.BlockStore;
 import org.ethereum.rpc.TypeConverter;
+import co.rsk.rpc.docs.annotation.JsonRpcDocModelType;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -50,7 +51,13 @@ public class BlockResultDTO {
     private final String gasLimit;//: QUANTITY - the maximum gas allowed in this block.
     private final String gasUsed; // QUANTITY - the total used gas by all transactions in this block.
     private final String timestamp; //: QUANTITY - the unix timestamp for when the block was collated.
+
+    @JsonRpcDocModelType(
+        documentationType = "List<String> | List<TransactionResultDTO>",
+        processClassNames = { "TransactionResultDTO" }
+    )
     private final List<Object> transactions; //: Collection - Collection of transaction objects, or 32 Bytes transaction hashes depending on the last given parameter.
+
     private final List<String> uncles; //: Collection - Collection of uncle hashes.
     private final String minimumGasPrice;
     private final String bitcoinMergedMiningHeader;

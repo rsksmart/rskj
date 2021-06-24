@@ -1,0 +1,8 @@
+---
+request:
+  default: >
+    { "params": ["0xc94770007dda54cF92009BFF0dE90c06F603a09f", "latest"] }
+
+response:
+  success: >
+    {"result": "0x0234c8a3397aab58"}

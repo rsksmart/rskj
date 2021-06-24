@@ -1,0 +1,5 @@
+---
+title: RSKJ JSON-RPC APIs
+description: |
+  This documentation contains information above the JSON RPC methods available in a RSK Node and how to use them.
+  It also contains an interactive option where you have the choice of running an actual request from within the documentation.
