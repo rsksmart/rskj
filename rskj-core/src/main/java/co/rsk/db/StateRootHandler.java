@@ -29,26 +29,28 @@ import java.util.Objects;
 
 public class StateRootHandler {
     private final ActivationConfig activationConfig;
-    private final StateRootTranslator stateRootTranslator;
+    private final KeyValueDataSource stateRootDB;
 
     public StateRootHandler(
             ActivationConfig activationConfig,
             KeyValueDataSource stateRootDB) {
         this.activationConfig = activationConfig;
-        this.stateRootTranslator = new StateRootTranslator(stateRootDB);
+        this.stateRootDB = stateRootDB;
     }
 
     public Keccak256 translate(BlockHeader block) {
         boolean isRskip126Enabled = activationConfig.isActive(ConsensusRule.RSKIP126, block.getNumber());
-        Keccak256 blockStateRoot = new Keccak256(block.getStateRoot());
+        byte[] blockStateRoot = block.getStateRoot();
         if (isRskip126Enabled) {
-            return blockStateRoot;
+            return new Keccak256(blockStateRoot);
         }
 
-        return Objects.requireNonNull(
-                stateRootTranslator.get(blockStateRoot),
+        byte[] stateRootHash = Objects.requireNonNull(
+                stateRootDB.get(blockStateRoot),
                 "Reset database or continue syncing with previous version"
         );
+
+        return new Keccak256(stateRootHash);
     }
 
     public void register(BlockHeader executedBlock, Trie executionResult) {
@@ -57,7 +59,6 @@ public class StateRootHandler {
             return;
         }
 
-        Keccak256 blockStateRoot = new Keccak256(executedBlock.getStateRoot());
-        stateRootTranslator.put(blockStateRoot, executionResult.getHash());
+        stateRootDB.put(executedBlock.getStateRoot(), executionResult.getHash().getBytes());
     }
 }

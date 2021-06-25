@@ -1069,7 +1069,13 @@ public class RskContext implements NodeBootstrapper {
     }
 
     protected StateRootHandler buildStateRootHandler() {
+        int stateRootsCacheSize = getRskSystemProperties().getStateRootsCacheSize();
         KeyValueDataSource stateRootsDB = LevelDbDataSource.makeDataSource(Paths.get(getRskSystemProperties().databaseDir(), "stateRoots"));
+
+        if (stateRootsCacheSize > 0) {
+            stateRootsDB = new DataSourceWithCache(stateRootsDB, stateRootsCacheSize);
+        }
+
         return new StateRootHandler(getRskSystemProperties().getActivationConfig(), stateRootsDB);
     }
 
