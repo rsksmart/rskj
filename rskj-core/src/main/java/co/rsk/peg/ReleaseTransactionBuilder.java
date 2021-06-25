@@ -21,6 +21,7 @@ package co.rsk.peg;
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.wallet.SendRequest;
 import co.rsk.bitcoinj.wallet.Wallet;
+import co.rsk.peg.utils.OpReturnUtils;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.slf4j.Logger;
@@ -99,6 +100,10 @@ public class ReleaseTransactionBuilder {
         return buildWithConfiguration((SendRequest sr) -> {
             sr.tx.addOutput(amount, to);
             sr.changeAddress = changeAddress;
+
+            if (activations.isActive(ConsensusRule.RSKIP201)) {
+                sr.tx.addOutput(Coin.ZERO, OpReturnUtils.createPegOutOpReturnScriptForRsk());
+            }
         }, String.format("sending %s to %s", amount, to));
     }
 
@@ -107,6 +112,10 @@ public class ReleaseTransactionBuilder {
             sr.tx.addOutput(Coin.ZERO, to);
             sr.changeAddress = to;
             sr.emptyWallet = true;
+
+            if (activations.isActive(ConsensusRule.RSKIP201)) {
+                sr.tx.addOutput(Coin.ZERO, OpReturnUtils.createPegOutOpReturnScriptForRsk());
+            }
         }, String.format("emptying wallet to %s", to));
     }
 

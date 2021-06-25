@@ -2773,6 +2773,9 @@ public class BridgeSupport {
         for(;;) {
             BtcTransaction migrationBtcTx = new BtcTransaction(originWallet.getParams());
             migrationBtcTx.addOutput(expectedMigrationValue, destinationAddress);
+            if (activations.isActive(ConsensusRule.RSKIP201)) {
+                migrationBtcTx.addOutput(Coin.ZERO, OpReturnUtils.createPegOutOpReturnScriptForRsk());
+            }
 
             SendRequest sr = SendRequest.forTx(migrationBtcTx);
             sr.changeAddress = destinationAddress;

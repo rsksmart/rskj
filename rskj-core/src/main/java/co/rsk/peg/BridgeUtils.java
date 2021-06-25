@@ -31,7 +31,9 @@ import co.rsk.config.BridgeConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.peg.bitcoin.RskAllowUnconfirmedCoinSelector;
 import co.rsk.peg.btcLockSender.BtcLockSender.TxSenderAddressType;
+import co.rsk.peg.pegininstructions.PeginInstructionsException;
 import co.rsk.peg.utils.BtcTransactionFormatUtils;
+import co.rsk.peg.utils.OpReturnUtils;
 import javax.annotation.Nonnull;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -173,34 +175,26 @@ public class BridgeUtils {
         BridgeConstants bridgeConstants,
         ActivationConfig.ForBlock activations) {
 
-        // First, check tx is not a typical release tx (tx spending from the any of the federation addresses and
-        // optionally sending some change to any of the federation addresses)
-        for (int i = 0; i < tx.getInputs().size(); i++) {
-            final int index = i;
-            if (activeFederations.stream().anyMatch(federation -> scriptCorrectlySpendsTx(tx, index, federation.getP2SHScript()))) {
-                return false;
+        if (activations.isActive(ConsensusRule.RSKIP201)) {
+            try {
+                OpReturnUtils.extractPegOutOpReturnData(tx);
+                return false; // It's a peg-out
+            } catch (PeginInstructionsException e) {
+                // Not a peg-out, proceed to check if it sends funds to the federation
             }
+        } else {
+            // First, check tx is not a typical release tx (tx spending from the any of the federation addresses and
+            // optionally sending some change to any of the federation addresses)
+            for (int i = 0; i < tx.getInputs().size(); i++) {
+                final int index = i;
+                if (activeFederations.stream().anyMatch(
+                    federation -> scriptCorrectlySpendsTx(tx, index, federation.getP2SHScript()))) {
+                    return false;
+                }
 
-            if (retiredFederationP2SHScript != null && scriptCorrectlySpendsTx(tx, index, retiredFederationP2SHScript)) {
-                return false;
-            }
-
-            // Check if the registered utxo is not change from an utxo spent from either a fast bridge federation,
-            // erp federation, or even a retired fast bridge or erp federation
-            if (activations.isActive(ConsensusRule.RSKIP201)) {
-                RedeemScriptParser redeemScriptParser = RedeemScriptParserFactory.get(tx.getInput(index).getScriptSig().getChunks());
-                try {
-                    Script inputStandardRedeemScript = redeemScriptParser.extractStandardRedeemScript();
-                    if (activeFederations.stream().anyMatch(federation -> federation.getStandardRedeemScript().equals(inputStandardRedeemScript))) {
-                        return false;
-                    }
-
-                    Script outputScript = ScriptBuilder.createP2SHOutputScript(inputStandardRedeemScript);
-                    if (outputScript.equals(retiredFederationP2SHScript)) {
-                        return false;
-                    }
-                } catch (ScriptException e) {
-                    // There is no redeem script, could be a peg-in from a P2PKH address
+                if (retiredFederationP2SHScript != null && scriptCorrectlySpendsTx(tx, index,
+                    retiredFederationP2SHScript)) {
+                    return false;
                 }
             }
         }
@@ -263,42 +257,14 @@ public class BridgeUtils {
             (activations.isActive(ConsensusRule.RSKIP143) && txSenderAddressType != TxSenderAddressType.UNKNOWN);
     }
 
-    private static boolean isPegOutTx(BtcTransaction tx, Federation federation, ActivationConfig.ForBlock activations) {
-        return isPegOutTx(tx, Collections.singletonList(federation), activations);
-    }
-
     public static boolean isPegOutTx(BtcTransaction tx, List<Federation> federations, ActivationConfig.ForBlock activations) {
         return isPegOutTx(tx, activations, federations.stream().filter(Objects::nonNull).map(Federation::getStandardP2SHScript).toArray(Script[]::new));
     }
 
     public static boolean isPegOutTx(BtcTransaction tx, ActivationConfig.ForBlock activations, Script... p2shScript) {
-        int inputsSize = tx.getInputs().size();
-        for (int i = 0; i < inputsSize; i++) {
-            TransactionInput txInput = tx.getInput(i);
-            Optional<Script> redeemScriptOptional = extractRedeemScriptFromInput(tx.getInput(i));
-            if (!redeemScriptOptional.isPresent()) {
-                continue;
-            }
-
-            Script redeemScript = redeemScriptOptional.get();
-            if (activations.isActive(ConsensusRule.RSKIP201)) {
-                // Extract standard redeem script since the registered utxo could be from a fast bridge or erp federation
-                RedeemScriptParser redeemScriptParser = RedeemScriptParserFactory.get(txInput.getScriptSig().getChunks());
-                try {
-                    redeemScript = redeemScriptParser.extractStandardRedeemScript();
-                } catch (ScriptException e) {
-                    // There is no redeem script
-                    continue;
-                }
-            }
-
-            Script outputScript = ScriptBuilder.createP2SHOutputScript(redeemScript);
-            if (Stream.of(p2shScript).anyMatch(federationPayScript -> federationPayScript.equals(outputScript))) {
-                return true;
-            }
-        }
-
-        return false;
+        return activations.isActive(ConsensusRule.RSKIP201) ?
+            isPegOutTxPostIris(tx) :
+            isPegOutTxPreIris(tx, p2shScript);
     }
 
     public static boolean isMigrationTx(
@@ -619,6 +585,38 @@ public class BridgeUtils {
                 e.getMessage()
             );
             return Optional.empty();
+        }
+    }
+
+    private static boolean isPegOutTx(BtcTransaction tx, Federation federation, ActivationConfig.ForBlock activations) {
+        return isPegOutTx(tx, Collections.singletonList(federation), activations);
+    }
+
+    private static boolean isPegOutTxPreIris(BtcTransaction tx, Script... p2shScript) {
+        int inputsSize = tx.getInputs().size();
+        for (int i = 0; i < inputsSize; i++) {
+            Optional<Script> redeemScriptOptional = extractRedeemScriptFromInput(tx.getInput(i));
+            if (!redeemScriptOptional.isPresent()) {
+                continue;
+            }
+
+            Script redeemScript = redeemScriptOptional.get();
+            Script outputScript = ScriptBuilder.createP2SHOutputScript(redeemScript);
+            if (Stream.of(p2shScript)
+                .anyMatch(federationPayScript -> federationPayScript.equals(outputScript))) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static boolean isPegOutTxPostIris(BtcTransaction tx) {
+        try {
+            OpReturnUtils.extractPegOutOpReturnData(tx);
+            return true;
+        } catch (PeginInstructionsException e) {
+            return false;
         }
     }
 }
