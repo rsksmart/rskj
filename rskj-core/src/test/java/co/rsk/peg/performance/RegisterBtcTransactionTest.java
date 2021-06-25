@@ -247,7 +247,7 @@ public class RegisterBtcTransactionTest extends BridgePerformanceTestCase {
 
             ECKey ecKey = new ECKey();
             if (isVersion1) {
-                Script opReturnScript = PegTestUtils.createOpReturnScriptForRsk(1, new RskAddress(ecKey.getAddress()), Optional.empty());
+                Script opReturnScript = PegTestUtils.createPegInOpReturnScriptForRsk(1, new RskAddress(ecKey.getAddress()), Optional.empty());
                 txToLock.addOutput(Coin.ZERO, opReturnScript);
             }
 

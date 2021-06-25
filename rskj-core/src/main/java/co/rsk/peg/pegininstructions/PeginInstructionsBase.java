@@ -1,6 +1,7 @@
 package co.rsk.peg.pegininstructions;
 
 import co.rsk.core.RskAddress;
+import co.rsk.peg.utils.OpReturnUtils;
 import java.util.Arrays;
 import org.ethereum.util.ByteUtil;
 import org.slf4j.Logger;
@@ -26,21 +27,27 @@ public abstract class PeginInstructionsBase implements PeginInstructions {
     protected abstract void parseAdditionalData(byte[] data) throws PeginInstructionsParseException;
 
     public static int extractProtocolVersion(byte[] data) throws PeginInstructionsParseException {
-        if (data == null || data.length < 5) {
+        byte[] prefix = OpReturnUtils.PEGIN_OUTPUT_IDENTIFIER;
+        int minimumExpectedLength = prefix.length + 1; // 1 extra byte after the prefix for the protocol version
+
+        if (data == null || data.length < minimumExpectedLength) {
             String message;
 
             if (data == null) {
                 message = "Provided data is null";
             } else {
-                message = String.format("Invalid data given. Expected at least 5 bytes, " +
-                    "received %d", data.length);
+                message = String.format(
+                    "Invalid data given. Expected at least %d bytes, received %d",
+                    minimumExpectedLength,
+                    data.length
+                );
             }
 
             logger.debug("[extractProtocolVersion] {}", message);
             throw new PeginInstructionsParseException(message);
         }
 
-        byte[] protocolVersionBytes = Arrays.copyOfRange(data, 4, 5);
+        byte[] protocolVersionBytes = Arrays.copyOfRange(data, prefix.length, prefix.length + 1);
         return ByteUtil.byteArrayToInt(protocolVersionBytes);
     }
 
