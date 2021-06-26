@@ -5672,14 +5672,15 @@ public class BridgeSupportTest {
     }
 
     @Test
-    public void getTransactionType_pegout_tx() {
-        BridgeSupport bridgeSupport = getBridgeSupport(bridgeConstants, mock(BridgeStorageProvider.class), mock(ActivationConfig.ForBlock.class));
+    public void getTransactionType_pegout_tx_before_rskip201_activation() {
+        BridgeSupport bridgeSupport = getBridgeSupport(
+            bridgeConstants,
+            mock(BridgeStorageProvider.class),
+            mock(ActivationConfig.ForBlock.class)
+        );
         Federation federation = bridgeConstants.getGenesisFederation();
         List<BtcECKey> federationPrivateKeys = BridgeRegTestConstants.REGTEST_FEDERATION_PRIVATE_KEYS;
-        Address randomAddress = new Address(
-                        btcParams,
-                        Hex.decode("4a22c3c4cbb31e4d03b15550636762bda0baf85a")
-        );
+        Address randomAddress = PegTestUtils.createRandomBtcAddress();
 
         // Create a tx from the Fed to a random btc address
         BtcTransaction releaseTx1 = new BtcTransaction(btcParams);
@@ -5728,6 +5729,38 @@ public class BridgeSupportTest {
         releaseInput1.setScriptSig(inputScript);
 
         Assert.assertEquals(TxType.PEGOUT, bridgeSupport.getTransactionType(releaseTx1));
+    }
+
+    @Test
+    public void getTransactionType_pegout_tx_after_rskip201_activation() {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(true);
+
+        BridgeSupport bridgeSupport = getBridgeSupport(
+            bridgeConstants,
+            mock(BridgeStorageProvider.class),
+            activations
+        );
+
+        Address randomAddress = PegTestUtils.createRandomBtcAddress();
+
+        // Create a tx with op return peg-out identifier output
+        BtcTransaction releaseTx = new BtcTransaction(btcParams);
+        releaseTx.addOutput(Coin.ZERO, OpReturnUtils.createPegOutOpReturnScriptForRsk());
+
+        Assert.assertEquals(TxType.PEGOUT, bridgeSupport.getTransactionType(releaseTx));
+
+        // Create a tx with op return peg-out identifier output with value
+        releaseTx = new BtcTransaction(btcParams);
+        releaseTx.addOutput(Coin.FIFTY_COINS, OpReturnUtils.createPegOutOpReturnScriptForRsk());
+
+        Assert.assertEquals(TxType.PEGOUT, bridgeSupport.getTransactionType(releaseTx));
+
+        // Create a tx without op return peg-out identifier output
+        releaseTx = new BtcTransaction(btcParams);
+        releaseTx.addOutput(Coin.COIN, randomAddress);
+
+        Assert.assertEquals(TxType.UNKNOWN, bridgeSupport.getTransactionType(releaseTx));
     }
 
     @Test
