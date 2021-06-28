@@ -57,6 +57,7 @@ public class ReleaseTransactionBuilderTest {
         wallet = mock(Wallet.class);
         changeAddress = mockAddress(1000);
         activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(false);
         builder = new ReleaseTransactionBuilder(
             networkParameters,
             wallet,
@@ -423,13 +424,8 @@ public class ReleaseTransactionBuilderTest {
 
             BtcTransaction tx = sr.tx;
 
-            if (isRSKIPActive) {
-                Assert.assertEquals(2, tx.getOutputs().size());
-                Assert.assertEquals(Coin.ZERO, tx.getOutput(1).getValue());
-                Assert.assertEquals(OpReturnUtils.createPegOutOpReturnScriptForRsk(), tx.getOutput(1).getScriptPubKey());
-            } else {
-                Assert.assertEquals(1, tx.getOutputs().size());
-            }
+            // buildEmptyWallet generates a regular peg-out with no OP_RETURN output
+            Assert.assertEquals(1, tx.getOutputs().size());
 
             Assert.assertEquals(Coin.ZERO, tx.getOutput(0).getValue());
             Assert.assertEquals(to, tx.getOutput(0).getAddressFromP2PKHScript(networkParameters));
@@ -450,13 +446,9 @@ public class ReleaseTransactionBuilderTest {
         BtcTransaction tx = result.get().getBtcTx();
         List<UTXO> selectedUTXOs = result.get().getSelectedUTXOs();
 
-        if (isRSKIPActive) {
-            Assert.assertEquals(2, tx.getOutputs().size());
-            Assert.assertEquals(Coin.ZERO, tx.getOutput(1).getValue());
-            Assert.assertEquals(OpReturnUtils.createPegOutOpReturnScriptForRsk(), tx.getOutput(1).getScriptPubKey());
-        } else {
-            Assert.assertEquals(1, tx.getOutputs().size());
-        }
+        // buildEmptyWallet generates a regular peg-out with no OP_RETURN output
+        Assert.assertEquals(1, tx.getOutputs().size());
+
         Assert.assertEquals(Coin.FIFTY_COINS, tx.getOutput(0).getValue());
         Assert.assertEquals(to, tx.getOutput(0).getAddressFromP2PKHScript(networkParameters));
 
