@@ -132,7 +132,7 @@ public class BridgeUtilsTest {
         BtcTransaction tx = new BtcTransaction(networkParameters);
         tx.addOutput(minimumLockValue.subtract(Coin.CENT), federationAddress);
         tx.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
-        assertFalse(BridgeUtils.isValidPegInTx(tx, federation, btcContext, bridgeConstants, actForBlock));
+        assertFalse(BridgeUtils.isValidPegInTx(tx, Collections.singletonList(federation), btcContext, bridgeConstants, actForBlock));
 
         // Tx sending 1 btc to the federation, but also spending from the federation address,
         // the typical peg-out tx, not a peg-in tx.
@@ -146,19 +146,19 @@ public class BridgeUtilsTest {
         );
         tx2.addInput(txIn);
         signWithNecessaryKeys(bridgeConstants.getGenesisFederation(), BridgeRegTestConstants.REGTEST_FEDERATION_PRIVATE_KEYS, txIn, tx2);
-        assertFalse(BridgeUtils.isValidPegInTx(tx2, federation, btcContext, bridgeConstants, actForBlock));
+        assertFalse(BridgeUtils.isValidPegInTx(tx2, Collections.singletonList(federation), btcContext, bridgeConstants, actForBlock));
 
         // Tx sending 1 btc to the federation, is a peg-in tx
         BtcTransaction tx3 = new BtcTransaction(networkParameters);
         tx3.addOutput(Coin.COIN, federationAddress);
         tx3.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
-        assertTrue(BridgeUtils.isValidPegInTx(tx3, federation, btcContext, bridgeConstants, actForBlock));
+        assertTrue(BridgeUtils.isValidPegInTx(tx3, Collections.singletonList(federation), btcContext, bridgeConstants, actForBlock));
 
         // Tx sending 50 btc to the federation, is a peg-in tx
         BtcTransaction tx4 = new BtcTransaction(networkParameters);
         tx4.addOutput(Coin.FIFTY_COINS, federationAddress);
         tx4.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
-        assertTrue(BridgeUtils.isValidPegInTx(tx4, federation, btcContext, bridgeConstants, actForBlock));
+        assertTrue(BridgeUtils.isValidPegInTx(tx4, Collections.singletonList(federation), btcContext, bridgeConstants, actForBlock));
     }
 
     @Test
@@ -176,7 +176,7 @@ public class BridgeUtilsTest {
         tx.addOutput(minimumPegInValueAfterIris.subtract(Coin.CENT), federation.getAddress());
         tx.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
 
-        assertFalse(BridgeUtils.isValidPegInTx(tx, federation, btcContext, bridgeConstants, actForBlock));
+        assertFalse(BridgeUtils.isValidPegInTx(tx, Collections.singletonList(federation), btcContext, bridgeConstants, actForBlock));
     }
 
     @Test
@@ -199,7 +199,7 @@ public class BridgeUtilsTest {
         tx.addInput(txIn);
         signWithNecessaryKeys(bridgeConstants.getGenesisFederation(), BridgeRegTestConstants.REGTEST_FEDERATION_PRIVATE_KEYS, txIn, tx);
 
-        assertFalse(BridgeUtils.isValidPegInTx(tx, federation, btcContext, bridgeConstants, actForBlock));
+        assertFalse(BridgeUtils.isValidPegInTx(tx, Collections.singletonList(federation), btcContext, bridgeConstants, actForBlock));
     }
 
     @Test
@@ -216,7 +216,7 @@ public class BridgeUtilsTest {
         tx.addOutput(Coin.FIFTY_COINS, federation.getAddress());
         tx.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
 
-        assertTrue(BridgeUtils.isValidPegInTx(tx, federation, btcContext, bridgeConstants, actForBlock));
+        assertTrue(BridgeUtils.isValidPegInTx(tx, Collections.singletonList(federation), btcContext, bridgeConstants, actForBlock));
     }
 
     @Test
@@ -241,7 +241,7 @@ public class BridgeUtilsTest {
         tx.addOutput(valueLock, federation.getAddress());
         tx.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
 
-        assertFalse(BridgeUtils.isValidPegInTx(tx, federation, btcContext, bridgeConstants, actForBlock));
+        assertFalse(BridgeUtils.isValidPegInTx(tx, Collections.singletonList(federation), btcContext, bridgeConstants, actForBlock));
     }
 
     @Test
@@ -266,7 +266,7 @@ public class BridgeUtilsTest {
         tx.addOutput(valueLock, federation.getAddress());
         tx.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
 
-        assertTrue(BridgeUtils.isValidPegInTx(tx, federation, btcContext, bridgeConstants, actForBlock));
+        assertTrue(BridgeUtils.isValidPegInTx(tx, Collections.singletonList(federation), btcContext, bridgeConstants, actForBlock));
     }
 
     @Test
@@ -312,7 +312,6 @@ public class BridgeUtilsTest {
         assertFalse(BridgeUtils.isValidPegInTx(
             tx,
             federations,
-            null,
             btcContext,
             bridgeConstants,
             actForBlock
@@ -325,7 +324,6 @@ public class BridgeUtilsTest {
         assertFalse(BridgeUtils.isValidPegInTx(
             tx,
             federations,
-            null,
             btcContext,
             bridgeConstants,
             actForBlock
@@ -339,7 +337,6 @@ public class BridgeUtilsTest {
         assertFalse(BridgeUtils.isValidPegInTx(
             tx,
             federations,
-            null,
             btcContext,
             bridgeConstants,
             actForBlock
@@ -360,7 +357,6 @@ public class BridgeUtilsTest {
         assertFalse(BridgeUtils.isValidPegInTx(
             tx2,
             federations,
-            null,
             btcContext,
             bridgeConstants,
             actForBlock
@@ -381,7 +377,6 @@ public class BridgeUtilsTest {
         assertFalse(BridgeUtils.isValidPegInTx(
             tx2,
             federations,
-            null,
             btcContext,
             bridgeConstants,
             actForBlock
@@ -403,7 +398,6 @@ public class BridgeUtilsTest {
         assertFalse(BridgeUtils.isValidPegInTx(
             tx2,
             federations,
-            null,
             btcContext,
             bridgeConstants,
             actForBlock
@@ -425,7 +419,6 @@ public class BridgeUtilsTest {
         assertFalse(BridgeUtils.isValidPegInTx(
             tx2,
             federations,
-            null,
             btcContext,
             bridgeConstants,
             actForBlock
@@ -445,7 +438,6 @@ public class BridgeUtilsTest {
         assertFalse(BridgeUtils.isValidPegInTx(
             tx2,
             federations,
-            null,
             btcContext,
             bridgeConstants,
             actForBlock
@@ -465,8 +457,7 @@ public class BridgeUtilsTest {
         signWithNecessaryKeys(federation1, federation1Keys, txIn, tx2);
         assertFalse(BridgeUtils.isValidPegInTx(
             tx2,
-            Collections.singletonList(federation2),
-            federation1.getP2SHScript(),
+            Arrays.asList(federation1, federation2),
             btcContext,
             bridgeConstants,
             actForBlock
@@ -479,7 +470,6 @@ public class BridgeUtilsTest {
         assertTrue(BridgeUtils.isValidPegInTx(
             tx3,
             federations,
-            null,
             btcContext,
             bridgeConstants,
             actForBlock
@@ -492,7 +482,6 @@ public class BridgeUtilsTest {
         assertTrue(BridgeUtils.isValidPegInTx(
             tx3,
             federations,
-            null,
             btcContext,
             bridgeConstants,
             actForBlock
@@ -506,7 +495,6 @@ public class BridgeUtilsTest {
         assertTrue(BridgeUtils.isValidPegInTx(
             tx3,
             federations,
-            null,
             btcContext,
             bridgeConstants,
             actForBlock
@@ -519,7 +507,6 @@ public class BridgeUtilsTest {
         assertTrue(BridgeUtils.isValidPegInTx(
             tx4,
             federations,
-            null,
             btcContext,
             bridgeConstants,
             actForBlock
@@ -532,7 +519,6 @@ public class BridgeUtilsTest {
         assertTrue(BridgeUtils.isValidPegInTx(
             tx4,
             federations,
-            null,
             btcContext,
             bridgeConstants,
             actForBlock
@@ -546,7 +532,6 @@ public class BridgeUtilsTest {
         assertTrue(BridgeUtils.isValidPegInTx(
             tx4,
             federations,
-            null,
             btcContext,
             bridgeConstants,
             actForBlock
@@ -606,7 +591,6 @@ public class BridgeUtilsTest {
         assertFalse(BridgeUtils.isValidPegInTx(
             tx,
             federations,
-            null,
             btcContext,
             bridgeConstants,
             actForBlock
@@ -628,7 +612,6 @@ public class BridgeUtilsTest {
         assertFalse(BridgeUtils.isValidPegInTx(
             tx,
             federations,
-            null,
             btcContext,
             bridgeConstants,
             actForBlock
@@ -651,7 +634,6 @@ public class BridgeUtilsTest {
         assertFalse(BridgeUtils.isValidPegInTx(
             tx,
             federations,
-            null,
             btcContext,
             bridgeConstants,
             actForBlock
@@ -674,7 +656,6 @@ public class BridgeUtilsTest {
         assertFalse(BridgeUtils.isValidPegInTx(
             tx,
             federations,
-            null,
             btcContext,
             bridgeConstants,
             actForBlock
@@ -695,7 +676,6 @@ public class BridgeUtilsTest {
         assertFalse(BridgeUtils.isValidPegInTx(
             tx,
             federations,
-            null,
             btcContext,
             bridgeConstants,
             actForBlock
@@ -716,8 +696,7 @@ public class BridgeUtilsTest {
         signWithNecessaryKeys(federation1, federation1Keys, txIn, tx);
         assertFalse(BridgeUtils.isValidPegInTx(
             tx,
-            Collections.singletonList(federation2),
-            federation1.getP2SHScript(),
+            Arrays.asList(federation1, federation2),
             btcContext,
             bridgeConstants,
             actForBlock
@@ -732,7 +711,6 @@ public class BridgeUtilsTest {
         assertFalse(BridgeUtils.isValidPegInTx(
             tx,
             federations,
-            null,
             btcContext,
             bridgeConstants,
             actForBlock
@@ -747,7 +725,6 @@ public class BridgeUtilsTest {
         assertFalse(BridgeUtils.isValidPegInTx(
             tx,
             federations,
-            null,
             btcContext,
             bridgeConstants,
             actForBlock
@@ -1135,7 +1112,6 @@ public class BridgeUtilsTest {
         assertFalse(BridgeUtils.isValidPegInTx(
             pegOutWithChange,
             federations,
-            null,
             btcContext,
             bridgeConstants,
             mock(ActivationConfig.ForBlock.class)

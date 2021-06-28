@@ -432,7 +432,6 @@ public class BridgeSupport {
         if (BridgeUtils.isValidPegInTx(
             btcTx,
             getLiveFederations(),
-            retiredFederationP2SHScript,
             btcContext,
             bridgeConstants,
             activations
