@@ -1512,7 +1512,6 @@ public class BridgeSupportTestPowerMock {
             "isValidPegInTx",
             any(BtcTransaction.class),
             anyList(),
-            nullable(Script.class),
             any(Context.class),
             any(BridgeConstants.class),
             any(ActivationConfig.ForBlock.class)

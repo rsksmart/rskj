@@ -5848,10 +5848,6 @@ public class BridgeSupportTest {
         }
         migrationTxInput.setScriptSig(inputScript);
         Assert.assertEquals(TxType.MIGRATION, bridgeSupport.getTransactionType(migrationTx));
-
-        when(mockFederationSupport.getRetiringFederation()).thenReturn(null);
-        when(provider.getLastRetiredFederationP2SHScript()).thenReturn(Optional.of(retiringFederation.getP2SHScript()));
-        Assert.assertEquals(TxType.MIGRATION, bridgeSupport.getTransactionType(migrationTx));
     }
 
     @Test
