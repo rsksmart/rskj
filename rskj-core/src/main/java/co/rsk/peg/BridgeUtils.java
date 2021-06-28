@@ -136,6 +136,17 @@ public class BridgeUtils {
     public static boolean scriptCorrectlySpendsTx(BtcTransaction tx, int index, Script script) {
         try {
             TransactionInput txInput = tx.getInput(index);
+
+            // Check the input does not contain script op codes
+            List<ScriptChunk> chunks = txInput.getScriptSig().getChunks();
+            Iterator it = chunks.iterator();
+            while(it.hasNext()) {
+                ScriptChunk chunk = (ScriptChunk) it.next();
+                if (chunk.isOpCode() && chunk.opcode > 96) {
+                    return false;
+                }
+            }
+
             txInput.getScriptSig().correctlySpends(tx, index, script, Script.ALL_VERIFY_FLAGS);
             return true;
         } catch (ScriptException se) {

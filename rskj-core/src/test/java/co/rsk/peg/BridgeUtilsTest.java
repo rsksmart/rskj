@@ -2148,6 +2148,52 @@ public class BridgeUtilsTest {
         assertTrue(difference < tolerance && difference > -tolerance);
     }
 
+    @Test
+    public void scriptCorrectlySpends_fromGenesisFederation_ok() {
+        Federation genesisFederation = bridgeConstants.getGenesisFederation();
+        Address destinationAddress = PegTestUtils.createRandomBtcAddress();
+
+        BtcTransaction tx = new BtcTransaction(networkParameters);
+        tx.addOutput(Coin.COIN, destinationAddress);
+        TransactionInput txIn = new TransactionInput(
+            networkParameters,
+            tx,
+            new byte[]{},
+            new TransactionOutPoint(networkParameters, 0, Sha256Hash.ZERO_HASH)
+        );
+        tx.addInput(txIn);
+        signWithNecessaryKeys(genesisFederation, BridgeRegTestConstants.REGTEST_FEDERATION_PRIVATE_KEYS, txIn, tx);
+
+        assertTrue(BridgeUtils.scriptCorrectlySpendsTx(tx, 0, genesisFederation.getP2SHScript()));
+    }
+
+    @Test
+    public void scriptCorrectlySpends_invalidScript() {
+        Federation genesisFederation = bridgeConstants.getGenesisFederation();
+        Address destinationAddress = PegTestUtils.createRandomBtcAddress();
+
+        BtcTransaction tx = new BtcTransaction(networkParameters);
+        tx.addOutput(Coin.COIN, destinationAddress);
+        TransactionInput txIn = new TransactionInput(
+            networkParameters,
+            tx,
+            new byte[]{},
+            new TransactionOutPoint(networkParameters, 0, Sha256Hash.ZERO_HASH)
+        );
+        tx.addInput(txIn);
+        signWithNecessaryKeys(genesisFederation, BridgeRegTestConstants.REGTEST_FEDERATION_PRIVATE_KEYS, txIn, tx);
+
+        // Add script op codes to the tx input script sig to make it invalid
+        ScriptBuilder scriptBuilder = new ScriptBuilder(tx.getInput(0).getScriptSig());
+        Script invalidScript = scriptBuilder
+            .op(ScriptOpCodes.OP_IF)
+            .op(ScriptOpCodes.OP_ENDIF)
+            .build();
+        tx.getInput(0).setScriptSig(invalidScript);
+
+        assertFalse(BridgeUtils.scriptCorrectlySpendsTx(tx, 0, genesisFederation.getP2SHScript()));
+    }
+
     private void test_getSpendWallet(boolean isFastBridgeCompatible) throws UTXOProviderException {
         Federation federation = new Federation(FederationTestUtils.getFederationMembersWithBtcKeys(Arrays.asList(
             BtcECKey.fromPublicOnly(Hex.decode("036bb9eab797eadc8b697f0e82a01d01cabbfaaca37e5bafc06fdc6fdd38af894a")),
