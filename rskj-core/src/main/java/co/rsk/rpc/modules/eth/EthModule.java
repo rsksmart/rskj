@@ -290,6 +290,10 @@ public class EthModule
      * @param blockOrId a block id
      *
      * @return a proof object
+     * // todo In case an address or storage-value does not exist, the proof needs to provide enough data to verify this fact.
+     * // todo This means the client needs to follow the path from the root node and deliver until the last matching node.
+     * // todo If the last matching node is a branch, the proof value in the node must be an empty one.
+     * // todo In case of leaf-type, it must be pointing to a different relative-path in order to proof that the requested path does not exist.
      * */
     public ProofDTO getProof(String address, List<String> storageKeys, String blockOrId) {
         RskAddress rskAddress = new RskAddress(address);
@@ -342,6 +346,7 @@ public class EthModule
                 .collect(Collectors.toList());
         DataWord value = accountInformationProvider.getStorageValue(rskAddress, storageKeyDw);
 
+        // todo In case an address or storage-value does not exist, the proof needs to provide enough data to verify this fact.
         return new StorageProofDTO(storageKey, value != null ? toUnformattedJsonHex(value.getData()) : null, storageProof);
     }
 }

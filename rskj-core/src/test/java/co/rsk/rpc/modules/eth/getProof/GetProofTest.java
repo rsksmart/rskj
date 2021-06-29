@@ -115,6 +115,7 @@ public class GetProofTest {
         String expectedCodehash = EthModule.NO_CONTRACT_CODE_HASH; // As specified at EIP-1186 for EOA
         String expectedNonce = "0x0";
         String expectedStorageHash = EOA_STORAGE_HASH;
+        // todo this might change since we need to define what to do with non existent accounts
         List<String> expectedAccountProof = nonexistentAccountProof(rskAddress)
                 .stream()
                 .map(e -> toUnformattedJsonHex(e))

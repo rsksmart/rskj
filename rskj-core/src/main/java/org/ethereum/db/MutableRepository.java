@@ -370,7 +370,8 @@ public class MutableRepository implements Repository {
      * @return a byte array of RLP-serialized nodes
      * */
     private List<byte[]> prove(byte[] key) {
-        return Optional.ofNullable(mutableTrie.getNodes(key)).orElse(Collections.emptyList())
+        return Optional.ofNullable(mutableTrie.getNodes(key))
+                .orElse(Collections.emptyList())
                 .stream()
                 .map(trie -> trie.getProof())
                 .collect(Collectors.toList());
