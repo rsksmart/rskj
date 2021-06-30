@@ -18,7 +18,7 @@
 
 package co.rsk.rpc.modules.personal;
 
-import org.ethereum.rpc.Web3;
+import org.ethereum.rpc.CallArguments;
 
 public interface PersonalModule {
     String dumpRawKey(String address) throws Exception;
@@ -35,7 +35,7 @@ public interface PersonalModule {
 
     String newAccount(String passphrase);
 
-    String sendTransaction(Web3.CallArguments args, String passphrase) throws Exception;
+    String sendTransaction(CallArguments args, String passphrase) throws Exception;
 
     boolean unlockAccount(String address, String passphrase, String duration);
 }

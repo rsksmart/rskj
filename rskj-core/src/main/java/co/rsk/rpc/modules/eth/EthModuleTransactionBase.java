@@ -28,7 +28,7 @@ import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionArguments;
 import org.ethereum.core.TransactionPool;
 import org.ethereum.core.TransactionPoolAddResult;
-import org.ethereum.rpc.Web3;
+import org.ethereum.rpc.CallArguments;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.util.TransactionArgumentsUtil;
 import org.slf4j.Logger;
@@ -55,9 +55,9 @@ public class EthModuleTransactionBase implements EthModuleTransaction {
 	}
 
 	@Override
-	public synchronized String sendTransaction(Web3.CallArguments args) {
+	public synchronized String sendTransaction(CallArguments args) {
 
-		Account senderAccount = this.wallet.getAccount(new RskAddress(args.from));
+		Account senderAccount = this.wallet.getAccount(new RskAddress(args.getFrom()));
 		String txHash = null;
 
 		try {
@@ -71,7 +71,7 @@ public class EthModuleTransactionBase implements EthModuleTransaction {
 				tx.sign(senderAccount.getEcKey().getPrivKeyBytes());
 
 				if (!tx.acceptTransactionSignature(constants.getChainId())) {
-					throw RskJsonRpcRequestException.invalidParamError(TransactionArgumentsUtil.ERR_INVALID_CHAIN_ID + args.chainId);
+					throw RskJsonRpcRequestException.invalidParamError(TransactionArgumentsUtil.ERR_INVALID_CHAIN_ID + args.getChainId());
 				}
 
 				TransactionPoolAddResult result = transactionGateway.receiveTransaction(tx.toImmutableTransaction());

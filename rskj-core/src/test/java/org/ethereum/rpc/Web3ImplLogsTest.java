@@ -127,8 +127,8 @@ public class Web3ImplLogsTest {
 
     @Test
     public void newFilterInEmptyBlockchain() throws Exception {
-        Web3.FilterRequest fr = new Web3.FilterRequest();
-        fr.fromBlock = "earliest";
+        FilterRequest fr = new FilterRequest();
+        fr.setFromBlock("earliest");
         String id = web3.eth_newFilter(fr);
 
         assertNotNull(id);
@@ -136,8 +136,8 @@ public class Web3ImplLogsTest {
 
     @Test
     public void newFilterGetLogsInEmptyBlockchain() throws Exception {
-        Web3.FilterRequest fr = new Web3.FilterRequest();
-        fr.fromBlock = "earliest";
+        FilterRequest fr = new FilterRequest();
+        fr.setFromBlock("earliest");
         String id = web3.eth_newFilter(fr);
         Object[] logs = web3.eth_getFilterLogs(id);
 
@@ -153,8 +153,8 @@ public class Web3ImplLogsTest {
                                           repositoryLocator).name("notDefault").balance(Coin.valueOf(10000000)).build();
         web3.personal_newAccountWithSeed("notDefault");
 
-        Web3.FilterRequest fr = new Web3.FilterRequest();
-        fr.fromBlock = "latest";
+        FilterRequest fr = new FilterRequest();
+        fr.setFromBlock("latest");
         String id = web3.eth_newFilter(fr);
 
         Block genesis = blockChain.getBlockByNumber(0);
@@ -196,9 +196,9 @@ public class Web3ImplLogsTest {
         ).trieStore(trieStore).parent(genesis).transactions(txs).build();
         assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block1));
 
-        Web3.FilterRequest fr = new Web3.FilterRequest();
-        fr.address = ByteUtil.toHexString(tx.getContractAddress().getBytes());
-        fr.topics = new Object[] { "06acbfb32bcf8383f3b0a768b70ac9ec234ea0f2d3b9c77fa6a2de69b919aad1" };
+        FilterRequest fr = new FilterRequest();
+        fr.setAddress( ByteUtil.toHexString(tx.getContractAddress().getBytes()));
+        fr.setTopics(new Object[] { "06acbfb32bcf8383f3b0a768b70ac9ec234ea0f2d3b9c77fa6a2de69b919aad1" });
         String id = web3.eth_newFilter(fr);
 
         Object[] logs = web3.eth_getFilterLogs(id);
@@ -218,8 +218,8 @@ public class Web3ImplLogsTest {
 
         web3.personal_newAccountWithSeed("notDefault");
 
-        Web3.FilterRequest fr = new Web3.FilterRequest();
-        fr.fromBlock = "earliest";
+        FilterRequest fr = new FilterRequest();
+        fr.setFromBlock("earliest");
         String id = web3.eth_newFilter(fr);
 
         Block genesis = blockChain.getBlockByNumber(0);
@@ -245,8 +245,8 @@ public class Web3ImplLogsTest {
 
     @Test
     public void newFilterGetChangesInEmptyBlockchain() throws Exception {
-        Web3.FilterRequest fr = new Web3.FilterRequest();
-        fr.fromBlock = "earliest";
+        FilterRequest fr = new FilterRequest();
+        fr.setFromBlock("earliest");
         String id = web3.eth_newFilter(fr);
         Object[] logs = web3.eth_getFilterChanges(id);
 
@@ -263,8 +263,8 @@ public class Web3ImplLogsTest {
 
         web3.personal_newAccountWithSeed("notDefault");
 
-        Web3.FilterRequest fr = new Web3.FilterRequest();
-        fr.fromBlock = "earliest";
+        FilterRequest fr = new FilterRequest();
+        fr.setFromBlock("earliest");
         String id = web3.eth_newFilter(fr);
 
         Block genesis = blockChain.getBlockByNumber(0);
@@ -289,8 +289,8 @@ public class Web3ImplLogsTest {
 
     @Test
     public void getLogsFromEmptyBlockchain() throws Exception {
-        Web3.FilterRequest fr = new Web3.FilterRequest();
-        fr.fromBlock = "earliest";
+        FilterRequest fr = new FilterRequest();
+        fr.setFromBlock("earliest");
         Object[] logs = web3.eth_getLogs(fr);
 
         assertNotNull(logs);
@@ -301,8 +301,8 @@ public class Web3ImplLogsTest {
     public void getLogsFromBlockchainWithThreeEmptyBlocks() throws Exception {
         addTwoEmptyBlocks();
 
-        Web3.FilterRequest fr = new Web3.FilterRequest();
-        fr.fromBlock = "earliest";
+        FilterRequest fr = new FilterRequest();
+        fr.setFromBlock("earliest");
         Object[] logs = web3.eth_getLogs(fr);
 
         assertNotNull(logs);
@@ -313,8 +313,8 @@ public class Web3ImplLogsTest {
     public void getLogsTwiceFromBlockchainWithThreeEmptyBlocks() throws Exception {
         addTwoEmptyBlocks();
 
-        Web3.FilterRequest fr = new Web3.FilterRequest();
-        fr.fromBlock = "earliest";
+        FilterRequest fr = new FilterRequest();
+        fr.setFromBlock("earliest");
         web3.eth_getLogs(fr);
         Object[] logs = web3.eth_getLogs(fr);
 
@@ -326,8 +326,8 @@ public class Web3ImplLogsTest {
     public void getLogsFromBlockchainWithContractCreation() throws Exception {
         addContractCreationWithoutEvents();
 
-        Web3.FilterRequest fr = new Web3.FilterRequest();
-        fr.fromBlock = "earliest";
+        FilterRequest fr = new FilterRequest();
+        fr.setFromBlock("earliest");
         Object[] logs = web3.eth_getLogs(fr);
 
         assertNotNull(logs);
@@ -338,8 +338,8 @@ public class Web3ImplLogsTest {
     public void getLogsTwiceFromBlockchainWithContractCreation() throws Exception {
         addContractCreationWithoutEvents();
 
-        Web3.FilterRequest fr = new Web3.FilterRequest();
-        fr.fromBlock = "earliest";
+        FilterRequest fr = new FilterRequest();
+        fr.setFromBlock("earliest");
         web3.eth_getLogs(fr);
         Object[] logs = web3.eth_getLogs(fr);
 
@@ -351,9 +351,9 @@ public class Web3ImplLogsTest {
     public void getLogsFromBlockchainWithEventInContractCreation() throws Exception {
         addEventInContractCreation();
 
-        Web3.FilterRequest fr = new Web3.FilterRequest();
-        fr.fromBlock = "earliest";
-        fr.toBlock = "latest";
+        FilterRequest fr = new FilterRequest();
+        fr.setFromBlock("earliest");
+        fr.setToBlock("latest");
         Object[] logs = web3.eth_getLogs(fr);
 
         assertNotNull(logs);
@@ -369,8 +369,8 @@ public class Web3ImplLogsTest {
     public void getLogsTwiceFromBlockchainWithEventInContractCreation() throws Exception {
         addEventInContractCreation();
 
-        Web3.FilterRequest fr = new Web3.FilterRequest();
-        fr.fromBlock = "earliest";
+        FilterRequest fr = new FilterRequest();
+        fr.setFromBlock("earliest");
         web3.eth_getLogs(fr);
         Object[] logs = web3.eth_getLogs(fr);
 
@@ -387,8 +387,8 @@ public class Web3ImplLogsTest {
     public void getLogsFromBlockchainWithInvokeContract() throws Exception {
         addContractInvoke();
 
-        Web3.FilterRequest fr = new Web3.FilterRequest();
-        fr.fromBlock = "earliest";
+        FilterRequest fr = new FilterRequest();
+        fr.setFromBlock("earliest");
         Object[] logs = web3.eth_getLogs(fr);
 
         assertNotNull(logs);
@@ -406,8 +406,8 @@ public class Web3ImplLogsTest {
     public void getLogsTwiceFromBlockchainWithInvokeContract() throws Exception {
         addContractInvoke();
 
-        Web3.FilterRequest fr = new Web3.FilterRequest();
-        fr.fromBlock = "earliest";
+        FilterRequest fr = new FilterRequest();
+        fr.setFromBlock("earliest");
         web3.eth_getLogs(fr);
         Object[] logs = web3.eth_getLogs(fr);
 
@@ -425,8 +425,8 @@ public class Web3ImplLogsTest {
     public void getLogsFromBlockchainWithCallContract() throws Exception {
         addContractCall();
 
-        Web3.FilterRequest fr = new Web3.FilterRequest();
-        fr.fromBlock = "earliest";
+        FilterRequest fr = new FilterRequest();
+        fr.setFromBlock("earliest");
         Object[] logs = web3.eth_getLogs(fr);
 
         assertNotNull(logs);
@@ -437,8 +437,8 @@ public class Web3ImplLogsTest {
     public void getLogsTwiceFromBlockchainWithCallContract() throws Exception {
         addContractCall();
 
-        Web3.FilterRequest fr = new Web3.FilterRequest();
-        fr.fromBlock = "earliest";
+        FilterRequest fr = new FilterRequest();
+        fr.setFromBlock("earliest");
         web3.eth_getLogs(fr);
         Object[] logs = web3.eth_getLogs(fr);
 
@@ -450,15 +450,15 @@ public class Web3ImplLogsTest {
     public void getLogsFromBlockchainWithCallContractAndFilterByContractAddress() throws Exception {
         addContractCall();
         Block block1 = blockChain.getBlockByNumber(1l);
-        Web3.FilterRequest fr = new Web3.FilterRequest();
-        fr.fromBlock = "earliest";
-        fr.address = ByteUtil.toHexString(block1.getTransactionsList().get(0).getContractAddress().getBytes());
+        FilterRequest fr = new FilterRequest();
+        fr.setFromBlock("earliest");
+        fr.setAddress( ByteUtil.toHexString(block1.getTransactionsList().get(0).getContractAddress().getBytes()));
         Object[] logs = web3.eth_getLogs(fr);
 
         assertNotNull(logs);
         assertEquals(3, logs.length);
 
-        String address = "0x" + fr.address;
+        String address = "0x" + fr.getAddress();
 
         assertEquals(address,((LogFilterElement)logs[0]).address);
         assertEquals(address,((LogFilterElement)logs[1]).address);
@@ -469,16 +469,16 @@ public class Web3ImplLogsTest {
     public void getLogsTwoceFromBlockchainWithCallContractAndFilterByContractAddress() throws Exception {
         addContractCall();
         Block block1 = blockChain.getBlockByNumber(1l);
-        Web3.FilterRequest fr = new Web3.FilterRequest();
-        fr.fromBlock = "earliest";
-        fr.address = ByteUtil.toHexString(block1.getTransactionsList().get(0).getContractAddress().getBytes());
+        FilterRequest fr = new FilterRequest();
+        fr.setFromBlock("earliest");
+        fr.setAddress( ByteUtil.toHexString(block1.getTransactionsList().get(0).getContractAddress().getBytes()));
         web3.eth_getLogs(fr);
         Object[] logs = web3.eth_getLogs(fr);
 
         assertNotNull(logs);
         assertEquals(3, logs.length);
 
-        String address = "0x" + fr.address;
+        String address = "0x" + fr.getAddress();
 
         assertEquals(address,((LogFilterElement)logs[0]).address);
         assertEquals(address,((LogFilterElement)logs[1]).address);
@@ -489,11 +489,11 @@ public class Web3ImplLogsTest {
     public void getLogsFromBlockchainWithCallContractAndFilterByUnknownContractAddress() throws Exception {
         addContractCall();
 
-        Web3.FilterRequest fr = new Web3.FilterRequest();
-        fr.fromBlock = "earliest";
+        FilterRequest fr = new FilterRequest();
+        fr.setFromBlock("earliest");
         List<String> addresses = new ArrayList<>();
         addresses.add(ByteUtil.toHexString(new byte[20]));
-        fr.address = addresses;
+        fr.setAddress(addresses);
         Object[] logs = web3.eth_getLogs(fr);
 
         assertNotNull(logs);
@@ -504,11 +504,11 @@ public class Web3ImplLogsTest {
     public void getLogsTwiceFromBlockchainWithCallContractAndFilterByUnknownContractAddress() throws Exception {
         addContractCall();
 
-        Web3.FilterRequest fr = new Web3.FilterRequest();
-        fr.fromBlock = "earliest";
+        FilterRequest fr = new FilterRequest();
+        fr.setFromBlock("earliest");
         List<String> addresses = new ArrayList<>();
         addresses.add(ByteUtil.toHexString(new byte[20]));
-        fr.address = addresses;
+        fr.setAddress(addresses);
         web3.eth_getLogs(fr);
         Object[] logs = web3.eth_getLogs(fr);
 
@@ -520,10 +520,10 @@ public class Web3ImplLogsTest {
     public void getLogsFromBlockchainWithCallContractAndFilterByUnknownTopic() throws Exception {
         addContractCall();
 
-        Web3.FilterRequest fr = new Web3.FilterRequest();
-        fr.fromBlock = "earliest";
-        fr.topics = new Object[1];
-        fr.topics[0] = "0102030405060102030405060102030405060102030405060102030405060102";
+        FilterRequest fr = new FilterRequest();
+        fr.setFromBlock("earliest");
+        fr.setTopics(new Object[1]);
+        fr.getTopics()[0] = "0102030405060102030405060102030405060102030405060102030405060102";
         Object[] logs = web3.eth_getLogs(fr);
 
         assertNotNull(logs);
@@ -534,10 +534,10 @@ public class Web3ImplLogsTest {
     public void getLogsTwiceFromBlockchainWithCallContractAndFilterByUnknownTopic() throws Exception {
         addContractCall();
 
-        Web3.FilterRequest fr = new Web3.FilterRequest();
-        fr.fromBlock = "earliest";
-        fr.topics = new Object[1];
-        fr.topics[0] = "0102030405060102030405060102030405060102030405060102030405060102";
+        FilterRequest fr = new FilterRequest();
+        fr.setFromBlock("earliest");
+        fr.setTopics(new Object[1]);
+        fr.getTopics()[0] = "0102030405060102030405060102030405060102030405060102030405060102";
         web3.eth_getLogs(fr);
         Object[] logs = web3.eth_getLogs(fr);
 
@@ -550,10 +550,10 @@ public class Web3ImplLogsTest {
         addContractCall();
 
         Block block1 = blockChain.getBlockByNumber(1l);
-        Web3.FilterRequest fr = new Web3.FilterRequest();
-        fr.fromBlock = "earliest";
-        fr.topics = new Object[1];
-        fr.topics[0] = GET_VALUED_EVENT_SIGNATURE;
+        FilterRequest fr = new FilterRequest();
+        fr.setFromBlock("earliest");
+        fr.setTopics(new Object[1]);
+        fr.getTopics()[0] = GET_VALUED_EVENT_SIGNATURE;
         Object[] logs = web3.eth_getLogs(fr);
 
         assertNotNull(logs);
@@ -567,10 +567,10 @@ public class Web3ImplLogsTest {
         addContractCall();
 
         Block block1 = blockChain.getBlockByNumber(1l);
-        Web3.FilterRequest fr = new Web3.FilterRequest();
-        fr.fromBlock = "earliest";
-        fr.topics = new Object[1];
-        fr.topics[0] = GET_VALUED_EVENT_SIGNATURE;
+        FilterRequest fr = new FilterRequest();
+        fr.setFromBlock("earliest");
+        fr.setTopics(new Object[1]);
+        fr.getTopics()[0] = GET_VALUED_EVENT_SIGNATURE;
         web3.eth_getLogs(fr);
         Object[] logs = web3.eth_getLogs(fr);
 
@@ -584,12 +584,12 @@ public class Web3ImplLogsTest {
     public void getLogsFromBlockchainWithCallContractAndFilterByKnownTopicInList() throws Exception {
         addContractCall();
         Block block1 = blockChain.getBlockByNumber(1l);
-        Web3.FilterRequest fr = new Web3.FilterRequest();
-        fr.fromBlock = "earliest";
-        fr.topics = new Object[1];
+        FilterRequest fr = new FilterRequest();
+        fr.setFromBlock("earliest");
+        fr.setTopics(new Object[1]);
         List<String> topics = new ArrayList<>();
         topics.add(GET_VALUED_EVENT_SIGNATURE);
-        fr.topics[0] = topics;
+        fr.getTopics()[0] = topics;
         Object[] logs = web3.eth_getLogs(fr);
 
         assertNotNull(logs);
@@ -602,12 +602,12 @@ public class Web3ImplLogsTest {
     public void getLogsTwiceFromBlockchainWithCallContractAndFilterByKnownTopicInList() throws Exception {
         addContractCall();
         Block block1 = blockChain.getBlockByNumber(1l);
-        Web3.FilterRequest fr = new Web3.FilterRequest();
-        fr.fromBlock = "earliest";
-        fr.topics = new Object[1];
+        FilterRequest fr = new FilterRequest();
+        fr.setFromBlock("earliest");
+        fr.setTopics(new Object[1]);
         List<String> topics = new ArrayList<>();
         topics.add(GET_VALUED_EVENT_SIGNATURE);
-        fr.topics[0] = topics;
+        fr.getTopics()[0] = topics;
         web3.eth_getLogs(fr);
         Object[] logs = web3.eth_getLogs(fr);
 
@@ -621,13 +621,13 @@ public class Web3ImplLogsTest {
     public void getLogsFromBlockchainWithCallContractAndFilterByKnownsTopicInList() throws Exception {
         addContractCall();
         Block block1 = blockChain.getBlockByNumber(1l);
-        Web3.FilterRequest fr = new Web3.FilterRequest();
-        fr.fromBlock = "earliest";
-        fr.topics = new Object[1];
+        FilterRequest fr = new FilterRequest();
+        fr.setFromBlock("earliest");
+        fr.setTopics(new Object[1]);
         List<String> topics = new ArrayList<>();
         topics.add(GET_VALUED_EVENT_SIGNATURE);
         topics.add(INC_EVENT_SIGNATURE);
-        fr.topics[0] = topics;
+        fr.getTopics()[0] = topics;
         Object[] logs = web3.eth_getLogs(fr);
 
         assertNotNull(logs);
@@ -643,13 +643,13 @@ public class Web3ImplLogsTest {
     public void getLogsTwiceFromBlockchainWithCallContractAndFilterByKnownsTopicInList() throws Exception {
         addContractCall();
         Block block1 = blockChain.getBlockByNumber(1l);
-        Web3.FilterRequest fr = new Web3.FilterRequest();
-        fr.fromBlock = "earliest";
-        fr.topics = new Object[1];
+        FilterRequest fr = new FilterRequest();
+        fr.setFromBlock("earliest");
+        fr.setTopics(new Object[1]);
         List<String> topics = new ArrayList<>();
         topics.add(GET_VALUED_EVENT_SIGNATURE);
         topics.add(INC_EVENT_SIGNATURE);
-        fr.topics[0] = topics;
+        fr.getTopics()[0] = topics;
         web3.eth_getLogs(fr);
         Object[] logs = web3.eth_getLogs(fr);
 
@@ -666,11 +666,11 @@ public class Web3ImplLogsTest {
     public void getLogsFromBlockchainWithCallContractAndFilterByKnownTopicInListWithNull() throws Exception {
         addContractCall();
         Block block1 = blockChain.getBlockByNumber(1l);
-        Web3.FilterRequest fr = new Web3.FilterRequest();
-        fr.fromBlock = "earliest";
-        fr.topics = new Object[2];
-        fr.topics[0] = GET_VALUED_EVENT_SIGNATURE;
-        fr.topics[1] = null;
+        FilterRequest fr = new FilterRequest();
+        fr.setFromBlock("earliest");
+        fr.setTopics(new Object[2]);
+        fr.getTopics()[0] = GET_VALUED_EVENT_SIGNATURE;
+        fr.getTopics()[1] = null;
         Object[] logs = web3.eth_getLogs(fr);
 
         assertNotNull(logs);
@@ -683,11 +683,11 @@ public class Web3ImplLogsTest {
     public void getLogsTwiceFromBlockchainWithCallContractAndFilterByKnownTopicInListWithNull() throws Exception {
         addContractCall();
         Block block1 = blockChain.getBlockByNumber(1l);
-        Web3.FilterRequest fr = new Web3.FilterRequest();
-        fr.fromBlock = "earliest";
-        fr.topics = new Object[2];
-        fr.topics[0] = GET_VALUED_EVENT_SIGNATURE;
-        fr.topics[1] = null;
+        FilterRequest fr = new FilterRequest();
+        fr.setFromBlock("earliest");
+        fr.setTopics(new Object[2]);
+        fr.getTopics()[0] = GET_VALUED_EVENT_SIGNATURE;
+        fr.getTopics()[1] = null;
         web3.eth_getLogs(fr);
         Object[] logs = web3.eth_getLogs(fr);
 
@@ -701,10 +701,10 @@ public class Web3ImplLogsTest {
     public void getLogsFromBlockchainWithCallContractAndFilterWithNullTopic() throws Exception {
         addContractCall();
         Block block1 = blockChain.getBlockByNumber(1l);
-        Web3.FilterRequest fr = new Web3.FilterRequest();
-        fr.fromBlock = "earliest";
-        fr.topics = new Object[1];
-        fr.topics[0] = null;
+        FilterRequest fr = new FilterRequest();
+        fr.setFromBlock("earliest");
+        fr.setTopics(new Object[1]);
+        fr.getTopics()[0] = null;
         Object[] logs = web3.eth_getLogs(fr);
 
         assertNotNull(logs);
@@ -720,10 +720,10 @@ public class Web3ImplLogsTest {
     public void getLogsTwiceFromBlockchainWithCallContractAndFilterWithNullTopic() throws Exception {
         addContractCall();
         Block block1 = blockChain.getBlockByNumber(1l);
-        Web3.FilterRequest fr = new Web3.FilterRequest();
-        fr.fromBlock = "earliest";
-        fr.topics = new Object[1];
-        fr.topics[0] = null;
+        FilterRequest fr = new FilterRequest();
+        fr.setFromBlock("earliest");
+        fr.setTopics(new Object[1]);
+        fr.getTopics()[0] = null;
         web3.eth_getLogs(fr);
         Object[] logs = web3.eth_getLogs(fr);
 
@@ -740,11 +740,11 @@ public class Web3ImplLogsTest {
     public void getLogsFromBlockchainWithCallContractAndFilterWithTwoTopics() throws Exception {
         addContractCall();
         Block block1 = blockChain.getBlockByNumber(1l);
-        Web3.FilterRequest fr = new Web3.FilterRequest();
-        fr.fromBlock = "earliest";
-        fr.topics = new Object[2];
-        fr.topics[0] = INC_EVENT_SIGNATURE;
-        fr.topics[1] = ONE_TOPIC;
+        FilterRequest fr = new FilterRequest();
+        fr.setFromBlock("earliest");
+        fr.setTopics(new Object[2]);
+        fr.getTopics()[0] = INC_EVENT_SIGNATURE;
+        fr.getTopics()[1] = ONE_TOPIC;
         Object[] logs = web3.eth_getLogs(fr);
 
         assertNotNull(logs);
@@ -760,11 +760,11 @@ public class Web3ImplLogsTest {
     public void getLogsTwiceFromBlockchainWithCallContractAndFilterWithTwoTopics() throws Exception {
         addContractCall();
         Block block1 = blockChain.getBlockByNumber(1l);
-        Web3.FilterRequest fr = new Web3.FilterRequest();
-        fr.fromBlock = "earliest";
-        fr.topics = new Object[2];
-        fr.topics[0] = INC_EVENT_SIGNATURE;
-        fr.topics[1] = ONE_TOPIC;
+        FilterRequest fr = new FilterRequest();
+        fr.setFromBlock("earliest");
+        fr.setTopics(new Object[2]);
+        fr.getTopics()[0] = INC_EVENT_SIGNATURE;
+        fr.getTopics()[1] = ONE_TOPIC;
         web3.eth_getLogs(fr);
         Object[] logs = web3.eth_getLogs(fr);
 
@@ -781,11 +781,11 @@ public class Web3ImplLogsTest {
     public void getLogsFromBlockchainWithCallContractAndFilterBySecondTopic() throws Exception {
         addContractCall();
         Block block1 = blockChain.getBlockByNumber(1l);
-        Web3.FilterRequest fr = new Web3.FilterRequest();
-        fr.fromBlock = "earliest";
-        fr.topics = new Object[2];
-        fr.topics[0] = null;
-        fr.topics[1] = ONE_TOPIC;
+        FilterRequest fr = new FilterRequest();
+        fr.setFromBlock("earliest");
+        fr.setTopics(new Object[2]);
+        fr.getTopics()[0] = null;
+        fr.getTopics()[1] = ONE_TOPIC;
         Object[] logs = web3.eth_getLogs(fr);
 
         assertNotNull(logs);
@@ -801,11 +801,11 @@ public class Web3ImplLogsTest {
     public void getLogsTwiceFromBlockchainWithCallContractAndFilterBySecondTopic() throws Exception {
         addContractCall();
         Block block1 = blockChain.getBlockByNumber(1l);
-        Web3.FilterRequest fr = new Web3.FilterRequest();
-        fr.fromBlock = "earliest";
-        fr.topics = new Object[2];
-        fr.topics[0] = null;
-        fr.topics[1] = ONE_TOPIC;
+        FilterRequest fr = new FilterRequest();
+        fr.setFromBlock("earliest");
+        fr.setTopics(new Object[2]);
+        fr.getTopics()[0] = null;
+        fr.getTopics()[1] = ONE_TOPIC;
         web3.eth_getLogs(fr);
         Object[] logs = web3.eth_getLogs(fr);
 
@@ -821,9 +821,9 @@ public class Web3ImplLogsTest {
     @Test
     public void getLogsFromBlockchainWithEventInContractCreationReturnsAsExpectedWithBlockHashFilter() throws Exception {
         addEventInContractCreation();
-        Web3.FilterRequest fr = new Web3.FilterRequest();
+        FilterRequest fr = new FilterRequest();
         final String blockHash = TRACKED_TEST_BLOCK_HASH;
-        fr.blockHash = blockHash;
+        fr.setBlockHash(blockHash);
 
         Object[] logs = web3.eth_getLogs(fr);
 
@@ -840,8 +840,8 @@ public class Web3ImplLogsTest {
         final String blockHash = UNTRACKED_TEST_BLOCK_HASH;
         byte[] blockHashBytes = new Keccak256(stringHexToByteArray(blockHash)).getBytes();
         assertFalse(blockChain.hasBlockInSomeBlockchain(blockHashBytes));
-        Web3.FilterRequest fr = new Web3.FilterRequest();
-        fr.blockHash = blockHash;
+        FilterRequest fr = new FilterRequest();
+        fr.setBlockHash(blockHash);
 
         Object[] logs = web3.eth_getLogs(fr);
 
@@ -852,9 +852,9 @@ public class Web3ImplLogsTest {
     @Test(expected = RskJsonRpcRequestException.class)
     public void getLogsThrowsExceptionWhenBlockHashIsUsedCombinedWithFromBlock() throws Exception {
         addEventInContractCreation();
-        Web3.FilterRequest fr = new Web3.FilterRequest();
-        fr.fromBlock = "earliest";
-        fr.blockHash = TRACKED_TEST_BLOCK_HASH;
+        FilterRequest fr = new FilterRequest();
+        fr.setFromBlock("earliest");
+        fr.setBlockHash(TRACKED_TEST_BLOCK_HASH);
 
         web3.eth_getLogs(fr);
     }
@@ -862,9 +862,9 @@ public class Web3ImplLogsTest {
     @Test(expected = RskJsonRpcRequestException.class)
     public void getLogsThrowsExceptionWhenBlockHashIsUsedCombinedWithToBlock() throws Exception {
         addEventInContractCreation();
-        Web3.FilterRequest fr = new Web3.FilterRequest();
-        fr.toBlock = "latest";
-        fr.blockHash = TRACKED_TEST_BLOCK_HASH;
+        FilterRequest fr = new FilterRequest();
+        fr.setToBlock("latest");
+        fr.setBlockHash(TRACKED_TEST_BLOCK_HASH);
 
         web3.eth_getLogs(fr);
     }
@@ -876,8 +876,8 @@ public class Web3ImplLogsTest {
                                           repositoryLocator).name("notDefault").balance(Coin.valueOf(10000000)).build();
         web3.personal_newAccountWithSeed("notDefault");
 
-        Web3.FilterRequest fr = new Web3.FilterRequest();
-        fr.fromBlock = "earliest";
+        FilterRequest fr = new FilterRequest();
+        fr.setFromBlock("earliest");
         String id = web3.eth_newFilter(fr);
 
         Block genesis = blockChain.getBlockByNumber(0);
@@ -905,8 +905,8 @@ public class Web3ImplLogsTest {
                                           repositoryLocator).name("notDefault").balance(Coin.valueOf(10000000)).build();
         web3.personal_newAccountWithSeed("notDefault");
 
-        Web3.FilterRequest fr = new Web3.FilterRequest();
-        fr.fromBlock = "earliest";
+        FilterRequest fr = new FilterRequest();
+        fr.setFromBlock("earliest");
         String id = web3.eth_newFilter(fr);
 
         Block genesis = blockChain.getBlockByNumber(0);
@@ -950,8 +950,8 @@ public class Web3ImplLogsTest {
                                           repositoryLocator).name("notDefault").balance(Coin.valueOf(10000000)).build();
         web3.personal_newAccountWithSeed("notDefault");
 
-        Web3.FilterRequest fr = new Web3.FilterRequest();
-        fr.fromBlock = "earliest";
+        FilterRequest fr = new FilterRequest();
+        fr.setFromBlock("earliest");
         String id = web3.eth_newFilter(fr);
 
         Block genesis = blockChain.getBlockByNumber(0);
@@ -1039,8 +1039,8 @@ public class Web3ImplLogsTest {
         ).trieStore(trieStore).parent(block2).transactions(txs3).build();
         assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block3));
 
-        Web3.FilterRequest fr = new Web3.FilterRequest();
-        fr.address = "0x" + mainAddress;
+        FilterRequest fr = new FilterRequest();
+        fr.setAddress( "0x" + mainAddress);
         String id = web3.eth_newFilter(fr);
 
         Object[] logs = web3.eth_getFilterLogs(id);

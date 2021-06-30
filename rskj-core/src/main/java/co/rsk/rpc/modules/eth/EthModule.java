@@ -33,8 +33,8 @@ import co.rsk.trie.TrieStoreImpl;
 import org.ethereum.core.*;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.MutableRepository;
+import org.ethereum.rpc.CallArguments;
 import org.ethereum.rpc.TypeConverter;
-import org.ethereum.rpc.Web3;
 import org.ethereum.rpc.converters.CallArgumentsToByteArray;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.vm.PrecompiledContracts;
@@ -115,7 +115,7 @@ public class EthModule
         return state.stateToMap();
     }
 
-    public String call(Web3.CallArguments args, String bnOrId) {
+    public String call(CallArguments args, String bnOrId) {
         String hReturn = null;
         try {
             BlockResult blockResult = executionBlockRetriever.getExecutionBlock_workaround(bnOrId);
@@ -143,7 +143,7 @@ public class EthModule
         }
     }
 
-    public String estimateGas(Web3.CallArguments args) {
+    public String estimateGas(CallArguments args) {
         String s = null;
         try {
             ProgramResult res = callConstant(args, blockchain.getBestBlock());
@@ -154,7 +154,7 @@ public class EthModule
     }
 
     @Override
-    public String sendTransaction(Web3.CallArguments args) {
+    public String sendTransaction(CallArguments args) {
         return ethModuleTransaction.sendTransaction(args);
     }
 
@@ -224,7 +224,7 @@ public class EthModule
         }
     }
 
-    private ProgramResult callConstant(Web3.CallArguments args, Block executionBlock) {
+    private ProgramResult callConstant(CallArguments args, Block executionBlock) {
         CallArgumentsToByteArray hexArgs = new CallArgumentsToByteArray(args);
         return reversibleTransactionExecutor.executeTransaction(
                 executionBlock,
@@ -261,7 +261,7 @@ public class EthModule
     }
 
     @Deprecated
-    private ProgramResult callConstant_workaround(Web3.CallArguments args, BlockResult executionBlock) {
+    private ProgramResult callConstant_workaround(CallArguments args, BlockResult executionBlock) {
         CallArgumentsToByteArray hexArgs = new CallArgumentsToByteArray(args);
         return reversibleTransactionExecutor.executeTransaction_workaround(
                 new MutableRepository(new TrieStoreImpl(new HashMapDB()), executionBlock.getFinalState()),

@@ -524,9 +524,9 @@ public class Web3Impl implements Web3 {
 
     public BlockInformationResult getBlockInformationResult(BlockInformation blockInformation) {
         BlockInformationResult bir = new BlockInformationResult();
-        bir.hash = toUnformattedJsonHex(blockInformation.getHash());
-        bir.totalDifficulty = toQuantityJsonHex(blockInformation.getTotalDifficulty().asBigInteger());
-        bir.inMainChain = blockInformation.isInMainChain();
+        bir.setHash(toUnformattedJsonHex(blockInformation.getHash()));
+        bir.setTotalDifficulty(toQuantityJsonHex(blockInformation.getTotalDifficulty().asBigInteger()));
+        bir.setInMainChain(blockInformation.isInMainChain());
 
         return bir;
     }

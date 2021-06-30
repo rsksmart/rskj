@@ -25,7 +25,7 @@ import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionPoolAddResult;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.facade.Ethereum;
-import org.ethereum.rpc.Web3;
+import org.ethereum.rpc.CallArguments;
 import org.ethereum.util.TransactionTestHelper;
 import org.junit.Test;
 
@@ -47,7 +47,7 @@ public class PersonalModuleTest {
 		RskAddress receiver = wallet.addAccount();
 
 		// Hash of the expected transaction
-		Web3.CallArguments args = TransactionTestHelper.createArguments(sender, receiver);
+		CallArguments args = TransactionTestHelper.createArguments(sender, receiver);
 		Transaction tx = TransactionTestHelper.createTransaction(args, props.getNetworkConstants().getChainId(), wallet.getAccount(sender, PASS_FRASE));
 		String txExpectedResult = tx.getHash().toJsonString();
 
