@@ -1110,6 +1110,6 @@ public class Web3Impl implements Web3 {
      * */
     @Override
     public ProofDTO eth_getProof(String address, List<String> storageKeys, String blockOrId) {
-        return ethModule.getProof(address, storageKeys, blockOrId);
+        throw new UnsupportedOperationException("eth_getProof it's not yet activated");
     }
 }
