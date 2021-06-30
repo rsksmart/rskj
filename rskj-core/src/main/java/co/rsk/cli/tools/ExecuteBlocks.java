@@ -20,6 +20,8 @@ package co.rsk.cli.tools;
 import co.rsk.RskContext;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.core.bc.BlockResult;
+import co.rsk.crypto.Keccak256;
+import co.rsk.db.StateRootHandler;
 import co.rsk.trie.TrieStore;
 import org.ethereum.core.Block;
 import org.ethereum.db.BlockStore;
@@ -37,11 +39,13 @@ public class ExecuteBlocks {
         BlockExecutor blockExecutor = ctx.getBlockExecutor();
         BlockStore blockStore = ctx.getBlockStore();
         TrieStore trieStore = ctx.getTrieStore();
-        
-        execute(args, blockExecutor, blockStore, trieStore);
+        StateRootHandler stateRootHandler = ctx.getStateRootHandler();
+
+        execute(args, blockExecutor, blockStore, trieStore, stateRootHandler);
     }
     
-    public static void execute(String[] args, BlockExecutor blockExecutor, BlockStore blockStore, TrieStore trieStore) {
+    public static void execute(String[] args, BlockExecutor blockExecutor, BlockStore blockStore, TrieStore trieStore,
+                               StateRootHandler stateRootHandler) {
         long fromBlockNumber = Long.parseLong(args[0]);
         long toBlockNumber = Long.parseLong(args[1]);
 
@@ -51,7 +55,8 @@ public class ExecuteBlocks {
 
             BlockResult blockResult = blockExecutor.execute(block, parent.getHeader(), false, false);
 
-            if (!Arrays.equals(blockResult.getFinalState().getHash().getBytes(), block.getStateRoot())) {
+            Keccak256 stateRootHash = stateRootHandler.translate(block.getHeader());
+            if (!Arrays.equals(blockResult.getFinalState().getHash().getBytes(), stateRootHash.getBytes())) {
                 System.err.println("Invalid state root block number " + n);
                 break;
             }

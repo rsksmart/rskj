@@ -23,6 +23,7 @@ import org.ethereum.datasource.KeyValueDataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
 import java.util.Optional;
 
 /**
@@ -38,15 +39,9 @@ public class TrieStoreImpl implements TrieStore {
 
     private static final Logger logger = LoggerFactory.getLogger("triestore");
 
-    private KeyValueDataSource store;
+    private static final ThreadLocal<TraceInfo> traceInfoLocal = ThreadLocal.withInitial(TraceInfo::new);
 
-    private int noRetrievesInBlockProcess;
-    private int noSavesInBlockProcess;
-    private int noNoSavesInBlockProcess;
-
-    private int noRetrievesInSaveTrie;
-    private int noSavesInSaveTrie;
-    private int noNoSavesInSaveTrie;
+    private final KeyValueDataSource store;
 
     public TrieStoreImpl(KeyValueDataSource store) {
         this.store = store;
@@ -57,28 +52,39 @@ public class TrieStoreImpl implements TrieStore {
      */
     @Override
     public void save(Trie trie) {
-        noRetrievesInSaveTrie = 0;
-        noSavesInSaveTrie = 0;
-        noNoSavesInSaveTrie = 0;
+        TraceInfo traceInfo = null;
+        if (logger.isTraceEnabled()) {
+            traceInfo = traceInfoLocal.get();
+            traceInfo.noRetrievesInSaveTrie = 0;
+            traceInfo.noSavesInSaveTrie = 0;
+            traceInfo.noNoSavesInSaveTrie = 0;
 
-        logger.trace("Start saving trie root.");
-        save(trie, true, 0);
-        logger.trace("End saving trie root. No. Retrieves: {}. No. Saves: {}. No. No Saves: {}", noRetrievesInSaveTrie, noSavesInSaveTrie, noNoSavesInSaveTrie);
-        logger.trace("End process block. No. Retrieves: {}. No. Saves: {}. No. No Saves: {}", noRetrievesInBlockProcess, noSavesInBlockProcess, noNoSavesInBlockProcess);
+            logger.trace("Start saving trie root.");
+        }
 
-        noRetrievesInBlockProcess = 0;
-        noSavesInBlockProcess = 0;
-        noNoSavesInBlockProcess = 0;
+        // save a trie recursively
+        save(trie, true, 0, traceInfo);
 
-        if (store instanceof DataSourceWithCache) {
-            ((DataSourceWithCache)store).emitLogs();
+        if (traceInfo != null) {
+            logger.trace("End saving trie root. No. Retrieves: {}. No. Saves: {}. No. No Saves: {}",
+                    traceInfo.noRetrievesInSaveTrie, traceInfo.noSavesInSaveTrie, traceInfo.noNoSavesInSaveTrie);
+            logger.trace("End process block. No. Retrieves: {}. No. Saves: {}. No. No Saves: {}",
+                    traceInfo.noRetrievesInBlockProcess, traceInfo.noSavesInBlockProcess, traceInfo.noNoSavesInBlockProcess);
+
+            traceInfo.noRetrievesInBlockProcess = 0;
+            traceInfo.noSavesInBlockProcess = 0;
+            traceInfo.noNoSavesInBlockProcess = 0;
+
+            if (store instanceof DataSourceWithCache) {
+                ((DataSourceWithCache) store).emitLogs();
+            }
         }
     }
 
     /**
      * @param isRootNode it is the root node of the trie
      */
-    private void save(Trie trie, boolean isRootNode, int level) {
+    private void save(Trie trie, boolean isRootNode, int level, @Nullable TraceInfo traceInfo) {
         if (trie.wasSaved()) {
             return;
         }
@@ -91,27 +97,31 @@ public class TrieStoreImpl implements TrieStore {
             // the full trie is already saved
             logger.trace("End saving trie, level : {}, already saved.", level);
 
-            noNoSavesInSaveTrie++;
-            noNoSavesInBlockProcess++;
+            if (traceInfo != null) {
+                traceInfo.noNoSavesInSaveTrie++;
+                traceInfo.noNoSavesInBlockProcess++;
+            }
 
             return;
         }
 
-        noSavesInSaveTrie++;
-        noSavesInBlockProcess++;
+        if (traceInfo != null) {
+            traceInfo.noSavesInSaveTrie++;
+            traceInfo.noSavesInBlockProcess++;
+        }
 
         NodeReference leftNodeReference = trie.getLeft();
 
         if (leftNodeReference.wasLoaded()) {
             logger.trace("Start left trie. Level: {}", level);
-            leftNodeReference.getNode().ifPresent(t -> save(t, false, level + 1));
+            leftNodeReference.getNode().ifPresent(t -> save(t, false, level + 1, traceInfo));
         }
 
         NodeReference rightNodeReference = trie.getRight();
 
         if (rightNodeReference.wasLoaded()) {
             logger.trace("Start right trie. Level: {}", level);
-            rightNodeReference.getNode().ifPresent(t -> save(t, false, level + 1));
+            rightNodeReference.getNode().ifPresent(t -> save(t, false, level + 1, traceInfo));
         }
 
         if (trie.hasLongValue()) {
@@ -136,7 +146,7 @@ public class TrieStoreImpl implements TrieStore {
 
         logger.trace("Putting in store trie root.");
         this.store.put(trieKeyBytes, trie.toMessage());
-        trie.saved();
+        trie.markAsSaved();
         logger.trace("End putting in store trie root.");
         logger.trace("End Saving trie, level: {}.", level);
     }
@@ -154,17 +164,23 @@ public class TrieStoreImpl implements TrieStore {
             return Optional.empty();
         }
 
-        noRetrievesInSaveTrie++;
-        noRetrievesInBlockProcess++;
+        if (logger.isTraceEnabled()) {
+            TraceInfo traceInfo = traceInfoLocal.get();
+            traceInfo.noRetrievesInSaveTrie++;
+            traceInfo.noRetrievesInBlockProcess++;
+        }
 
-        Trie trie = Trie.fromMessage(message, this);
+        Trie trie = Trie.fromMessage(message, this).markAsSaved();
         return Optional.of(trie);
     }
 
     @Override
     public byte[] retrieveValue(byte[] hash) {
-        noRetrievesInSaveTrie++;
-        noRetrievesInBlockProcess++;
+        if (logger.isTraceEnabled()) {
+            TraceInfo traceInfo = traceInfoLocal.get();
+            traceInfo.noRetrievesInSaveTrie++;
+            traceInfo.noRetrievesInBlockProcess++;
+        }
 
         return this.store.get(hash);
     }
@@ -172,5 +188,19 @@ public class TrieStoreImpl implements TrieStore {
     @Override
     public void dispose() {
         store.close();
+    }
+
+    /**
+     * This holds tracing information during execution of the {@link #save(Trie)} method.
+     * Should not be used when logger tracing is disabled ({@link Logger#isTraceEnabled()} is {@code false}).
+     */
+    private static final class TraceInfo {
+        int noRetrievesInBlockProcess;
+        int noSavesInBlockProcess;
+        int noNoSavesInBlockProcess;
+
+        int noRetrievesInSaveTrie;
+        int noSavesInSaveTrie;
+        int noNoSavesInSaveTrie;
     }
 }

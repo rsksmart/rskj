@@ -81,7 +81,7 @@ public class MultiTrieStore implements TrieStore {
             if (message == null) {
                 continue;
             }
-            return Optional.of(Trie.fromMessage(message, this));
+            return Optional.of(Trie.fromMessage(message, this).markAsSaved());
         }
 
         return Optional.empty();

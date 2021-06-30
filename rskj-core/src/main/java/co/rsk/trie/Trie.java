@@ -54,17 +54,18 @@ import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
  * An empty node has no subnodes and a null value
  */
 public class Trie {
-    private static final int ARITY = 2;
-    private static final int MAX_EMBEDDED_NODE_SIZE_IN_BYTES = 44;
 
     private static final Profiler profiler = ProfilerFactory.getInstance();
+
+    private static final int ARITY = 2;
+    private static final int MAX_EMBEDDED_NODE_SIZE_IN_BYTES = 44;
     private static final String INVALID_ARITY = "Invalid arity";
 
     private static final int MESSAGE_HEADER_LENGTH = 2 + Short.BYTES * 2;
     private static final String INVALID_VALUE_LENGTH = "Invalid value length";
 
     // all zeroed, default hash for empty nodes
-    private static Keccak256 emptyHash = makeEmptyHash();
+    private static final Keccak256 EMPTY_HASH = makeEmptyHash();
 
     // this node associated value, if any
     private byte[] value;
@@ -101,10 +102,10 @@ public class Trie {
     private VarInt childrenSize;
 
     // associated store, to store or retrieve nodes in the trie
-    private TrieStore store;
+    private final TrieStore store;
 
     // already saved in store flag
-    private boolean saved;
+    private volatile boolean saved;
 
     // shared Path
     private final TrieKeySlice sharedPath;
@@ -153,8 +154,6 @@ public class Trie {
         } else {
             trie = fromMessageRskip107(ByteBuffer.wrap(message), store);
         }
-
-        trie.saved = true;
 
         profiler.stop(metric);
 
@@ -239,7 +238,6 @@ public class Trie {
 
         // it doesn't need to clone value since it's retrieved from store or created from message
         Trie trie = new Trie(store, sharedPath, value, left, right, lvalue, valueHash);
-        trie.saved = true;
 
         return trie;
     }
@@ -330,7 +328,6 @@ public class Trie {
         }
 
         Trie trie = new Trie(store, sharedPath, value, left, right, lvalue, valueHash, childrenSize);
-        trie.saved = true;
 
         return trie;
     }
@@ -354,7 +351,7 @@ public class Trie {
         }
 
         if (isEmptyTrie()) {
-            return emptyHash.copy();
+            return EMPTY_HASH.copy();
         }
 
         byte[] message = this.toMessage();
@@ -373,7 +370,7 @@ public class Trie {
         }
 
         if (isEmptyTrie()) {
-            return emptyHash.copy();
+            return EMPTY_HASH.copy();
         }
 
         byte[] message = this.toMessageOrchid(isSecure);
@@ -1452,7 +1449,8 @@ public class Trie {
         return this.saved;
     }
 
-    public void saved() {
+    public Trie markAsSaved() {
         this.saved = true;
+        return this;
     }
 }

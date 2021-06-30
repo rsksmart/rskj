@@ -27,6 +27,7 @@ import java.util.Optional;
 
 public class NodeReference {
 
+    private static final NodeReference EMPTY = new NodeReference(null, null, null);
 
     private final TrieStore store;
 
@@ -154,6 +155,6 @@ public class NodeReference {
     }
 
     public static NodeReference empty() {
-        return new NodeReference(null, null, null);
+        return EMPTY;
     }
 }

@@ -35,6 +35,7 @@ import org.ethereum.util.RLPList;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class BootstrapImporter {
 
@@ -76,7 +77,7 @@ public class BootstrapImporter {
 
         for (int k = 0; k < nodesData.size(); k++) {
             RLPElement element = nodesData.get(k);
-            byte[] rlpData = element.getRLPData();
+            byte[] rlpData = Objects.requireNonNull(element.getRLPData());
             Trie trie = Trie.fromMessage(rlpData, fakeStore);
             hashMapDB.put(trie.getHash().getBytes(), rlpData);
             nodes.add(trie);
