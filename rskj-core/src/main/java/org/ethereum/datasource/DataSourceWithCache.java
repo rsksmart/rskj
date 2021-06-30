@@ -26,6 +26,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -40,9 +41,9 @@ public class DataSourceWithCache implements KeyValueDataSource {
 
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
 
-    private int noPuts;
-    private int noGets;
-    private int noGetsFromStore;
+    private final AtomicInteger noPuts = new AtomicInteger();
+    private final AtomicInteger noGets = new AtomicInteger();
+    private final AtomicInteger noGetsFromStore = new AtomicInteger();
 
     public DataSourceWithCache(KeyValueDataSource base, int cacheSize) {
         this.cacheSize = cacheSize;
@@ -54,12 +55,12 @@ public class DataSourceWithCache implements KeyValueDataSource {
     @Override
     public byte[] get(byte[] key) {
         Objects.requireNonNull(key);
+
+        boolean traceEnabled = logger.isTraceEnabled();
         ByteArrayWrapper wrappedKey = ByteUtil.wrap(key);
         byte[] value;
 
         this.lock.readLock().lock();
-
-        noGets++;
 
         try {
             if (committedCache.containsKey(wrappedKey)) {
@@ -72,12 +73,18 @@ public class DataSourceWithCache implements KeyValueDataSource {
 
             value = base.get(key);
 
-            noGetsFromStore++;
+            if (traceEnabled) {
+                noGetsFromStore.incrementAndGet();
+            }
 
             //null value, as expected, is allowed here to be stored in committedCache
             committedCache.put(wrappedKey, value);
         }
         finally {
+            if (traceEnabled) {
+                noGets.incrementAndGet();
+            }
+
             this.lock.readLock().unlock();
         }
 
@@ -87,8 +94,6 @@ public class DataSourceWithCache implements KeyValueDataSource {
     @Override
     public byte[] put(byte[] key, byte[] value) {
         ByteArrayWrapper wrappedKey = ByteUtil.wrap(key);
-
-        noPuts++;
 
         return put(wrappedKey, value);
     }
@@ -110,6 +115,10 @@ public class DataSourceWithCache implements KeyValueDataSource {
             this.putKeyValue(wrappedKey, value);
         }
         finally {
+            if (logger.isTraceEnabled()) {
+                noPuts.incrementAndGet();
+            }
+
             this.lock.writeLock().unlock();
         }
 
@@ -266,14 +275,17 @@ public class DataSourceWithCache implements KeyValueDataSource {
     }
 
     public void emitLogs() {
+        if (!logger.isTraceEnabled()) {
+            return;
+        }
+
         this.lock.writeLock().lock();
 
         try {
-            logger.trace("Activity: No. Gets: {}. No. Puts: {}. No. Gets from Store: {}", noGets, noPuts, noGetsFromStore);
-
-            noGetsFromStore = 0;
-            noGets = 0;
-            noPuts = 0;
+            logger.trace("Activity: No. Gets: {}. No. Puts: {}. No. Gets from Store: {}",
+                    noGets.getAndSet(0),
+                    noPuts.getAndSet(0),
+                    noGetsFromStore.getAndSet(0));
         }
         finally {
             this.lock.writeLock().unlock();
