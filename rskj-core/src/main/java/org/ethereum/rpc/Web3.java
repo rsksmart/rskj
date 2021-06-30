@@ -37,7 +37,7 @@ public interface Web3 extends InternalService, Web3TxPoolModule, Web3EthModule, 
         public String from;
         public String to;
         public String gas;
-        public String gasLimit;
+        private String gasLimit;
         public String gasPrice;
         public String value;
         public String data; // compiledCode
@@ -57,6 +57,14 @@ public interface Web3 extends InternalService, Web3TxPoolModule, Web3EthModule, 
                     ", nonce='" + nonce + '\'' +
                     ", chainId='" + chainId + '\'' +
                     '}';
+        }
+
+        public String getGasLimit() {
+            return gasLimit;
+        }
+
+        public void setGasLimit(String gasLimit) {
+            this.gasLimit = gasLimit;
         }
     }
 

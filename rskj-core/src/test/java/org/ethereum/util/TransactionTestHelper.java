@@ -33,7 +33,7 @@ public class TransactionTestHelper {
 		Web3.CallArguments args = new Web3.CallArguments();
 		args.from = sender.toJsonString();
 		args.to = receiver.toJsonString();
-		args.gasLimit = "0x76c0";
+		args.setGasLimit("0x76c0");
 		args.gasPrice = "0x9184e72a000";
 		args.value = "0x186A0";
 		args.nonce = "0x01";
@@ -47,7 +47,7 @@ public class TransactionTestHelper {
 		Transaction tx = Transaction.builder()
 			.nonce(TypeConverter.stringNumberAsBigInt(args.nonce))
 			.gasPrice(TypeConverter.stringNumberAsBigInt(args.gasPrice))
-			.gasLimit(TypeConverter.stringNumberAsBigInt(args.gasLimit))
+			.gasLimit(TypeConverter.stringNumberAsBigInt(args.getGasLimit()))
 			.destination(TypeConverter.stringHexToByteArray(args.to))
 			.chainId(chainId)
 			.value(TypeConverter.stringNumberAsBigInt(args.value))

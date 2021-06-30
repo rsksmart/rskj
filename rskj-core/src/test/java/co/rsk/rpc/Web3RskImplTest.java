@@ -170,7 +170,7 @@ public class Web3RskImplTest {
         callArguments.from = "0x1";
         callArguments.to = "0x2";
         callArguments.gas = "21000";
-        callArguments.gasLimit = "21000";
+        callArguments.setGasLimit("21000");
         callArguments.gasPrice = "100";
         callArguments.value = "1";
         callArguments.data = "data";

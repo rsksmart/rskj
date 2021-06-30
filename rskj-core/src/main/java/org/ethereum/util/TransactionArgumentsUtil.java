@@ -23,6 +23,7 @@ import java.util.Optional;
 import java.util.function.Supplier;
 
 import org.ethereum.core.Account;
+import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionArguments;
 import org.ethereum.core.TransactionPool;
 import org.ethereum.rpc.TypeConverter;
@@ -31,6 +32,8 @@ import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.vm.GasCost;
 
 public class TransactionArgumentsUtil {
+
+	private TransactionArgumentsUtil() {}
 
 	private static final BigInteger DEFAULT_GAS_LIMIT = BigInteger.valueOf(GasCost.TRANSACTION_DEFAULT);
 
@@ -57,7 +60,7 @@ public class TransactionArgumentsUtil {
 		argsRet.setGasLimit(stringNumberAsBigInt(argsParam.gas, () -> null));
 
 		if (argsRet.getGasLimit() == null) {
-			argsRet.setGasLimit(stringNumberAsBigInt(argsParam.gasLimit, () -> DEFAULT_GAS_LIMIT));
+			argsRet.setGasLimit(stringNumberAsBigInt(argsParam.getGasLimit(), () -> DEFAULT_GAS_LIMIT));
 		}
 
 		if (argsParam.data != null && argsParam.data.startsWith("0x")) {
