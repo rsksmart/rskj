@@ -42,7 +42,7 @@ public class CacheElement<T> {
     }
 
     public Boolean hasExpired() {
-        Long now = System.currentTimeMillis();
+        long now = System.currentTimeMillis();
         return (now - this.lastAccess) >= this.timeToLive;
     }
 }
