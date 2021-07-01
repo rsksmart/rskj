@@ -28,7 +28,7 @@ import static org.ethereum.rpc.TypeConverter.stringHexToByteArray;
  */
 public class CallArgumentsToByteArray {
 
-    private CallArguments args;
+    private final CallArguments args;
 
     public CallArgumentsToByteArray(CallArguments args) {
         this.args = args;
