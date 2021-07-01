@@ -22,7 +22,6 @@ import co.rsk.core.BlockDifficulty;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
-import co.rsk.remasc.RemascTransaction;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Transaction;
@@ -32,6 +31,8 @@ import org.ethereum.rpc.TypeConverter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 
 public class BlockResultDTO {
@@ -128,29 +129,12 @@ public class BlockResultDTO {
 
         Coin mgp = b.getMinimumGasPrice();
 
-        List<Object> transactions = new ArrayList<>();
         List<Transaction> blockTransactions = b.getTransactionsList();
-        if (fullTx) {
-            for (int i = 0; i < blockTransactions.size(); i++) {
-                Transaction tx = blockTransactions.get(i);
-
-                if (skipRemasc && tx.isRemascTransaction(i, blockTransactions.size())) {
-                    continue;
-                }
-
-                transactions.add(new TransactionResultDTO(b, i, blockTransactions.get(i)));
-            }
-        } else {
-            for (int i = 0; i < blockTransactions.size(); i++) {
-                Transaction tx = blockTransactions.get(i);
-
-                if (skipRemasc && tx.isRemascTransaction(i, blockTransactions.size())) {
-                    continue;
-                }
-
-                transactions.add(tx.getHash().toJsonString());
-            }
-        }
+        // For full tx will present as TransactionResultDTO otherwise just as transaction hash
+        List<Object> transactions = IntStream.range(0, blockTransactions.size())
+                .mapToObj(txIndex -> toTransactionResult(txIndex, b, fullTx, skipRemasc))
+                .filter(o -> o != null)
+                .collect(Collectors.toList());
 
         List<String> uncles = new ArrayList<>();
 
@@ -185,6 +169,20 @@ public class BlockResultDTO {
                 b.getHashForMergedMining(),
                 b.getFeesPaidToMiner()
         );
+    }
+
+    private static Object toTransactionResult(int transactionIndex, Block block, boolean fullTx, boolean skipRemasc) {
+        Transaction transaction = block.getTransactionsList().get(transactionIndex);
+
+        if(skipRemasc && transaction.isRemascTransaction(transactionIndex, block.getTransactionsList().size())) {
+            return null;
+        }
+        
+        if(fullTx) {
+            return new TransactionResultDTO(block, transactionIndex, transaction);
+        }
+
+        return transaction.getHash().toJsonString();
     }
 
     public String getNumber() {
