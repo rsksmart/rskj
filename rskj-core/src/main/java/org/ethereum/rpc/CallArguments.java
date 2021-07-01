@@ -27,7 +27,7 @@ public class CallArguments {
     private String value;
     private String data; // compiledCode
     private String nonce;
-    private String chainId; //NOSONAR
+    private String chainId;
 
     public String getFrom() {
         return from;
