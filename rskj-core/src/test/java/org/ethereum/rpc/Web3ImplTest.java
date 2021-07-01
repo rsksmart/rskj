@@ -173,8 +173,8 @@ public class Web3ImplTest {
         Object result = web3.eth_syncing();
 
         assertTrue("Node is syncing, must return sync manager", result instanceof SyncingResult);
-        assertTrue("Highest block is 5", ((SyncingResult)result).highestBlock.compareTo("0x5") == 0);
-        assertTrue("Simple blockchain starts from genesis block", ((SyncingResult)result).currentBlock.compareTo("0x0") == 0);
+        assertTrue("Highest block is 5", ((SyncingResult) result).getHighestBlock().compareTo("0x5") == 0);
+        assertTrue("Simple blockchain starts from genesis block", ((SyncingResult) result).getCurrentBlock().compareTo("0x0") == 0);
     }
 
     @Test

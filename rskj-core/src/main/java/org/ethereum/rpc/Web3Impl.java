@@ -286,13 +286,13 @@ public class Web3Impl implements Web3 {
 
         SyncingResult s = new SyncingResult();
         try {
-            s.startingBlock = TypeConverter.toQuantityJsonHex(initialBlockNumber);
-            s.currentBlock = TypeConverter.toQuantityJsonHex(currentBlock);
-            s.highestBlock = toQuantityJsonHex(highestBlock);
+            s.setStartingBlock(TypeConverter.toQuantityJsonHex(initialBlockNumber));
+            s.setCurrentBlock(TypeConverter.toQuantityJsonHex(currentBlock));
+            s.setHighestBlock(toQuantityJsonHex(highestBlock));
 
             return s;
         } finally {
-            logger.debug("eth_syncing(): starting {}, current {}, highest {} ", s.startingBlock, s.currentBlock, s.highestBlock);
+            logger.debug("eth_syncing(): starting {}, current {}, highest {} ", s.getStartingBlock(), s.getCurrentBlock(), s.getHighestBlock());
         }
     }
 

@@ -1,9 +1,9 @@
 package org.ethereum.rpc;
 
 public class SyncingResult {
-    public String startingBlock;
-    public String currentBlock;
-    public String highestBlock;
+    private String startingBlock;
+    private String currentBlock;
+    private String highestBlock;
 
     public String getStartingBlock() {
         return startingBlock;
