@@ -207,7 +207,7 @@ public class BlockExecutor {
             return true;
         }
 
-        // we only validate state roots of blocks newer than 0.5.0 activation
+        // we only validate state roots of blocks after RSKIP 126 activation
         return Arrays.equals(result.getFinalState().getHash().getBytes(), header.getStateRoot());
     }
 

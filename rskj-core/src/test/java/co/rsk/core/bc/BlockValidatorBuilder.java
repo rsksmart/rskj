@@ -22,6 +22,7 @@ import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.db.StateRootHandler;
+import co.rsk.db.StateRootsStoreImpl;
 import co.rsk.trie.TrieStore;
 import co.rsk.util.TimeProvider;
 import co.rsk.validators.*;
@@ -74,7 +75,7 @@ public class BlockValidatorBuilder {
     public BlockValidatorBuilder addBlockTxsValidationRule(TrieStore trieStore) {
         this.blockTxsValidationRule = new BlockTxsValidationRule(new RepositoryLocator(
                 trieStore,
-                new StateRootHandler(config.getActivationConfig(), new HashMapDB())
+                new StateRootHandler(config.getActivationConfig(), new StateRootsStoreImpl(new HashMapDB()))
         ));
         return this;
     }

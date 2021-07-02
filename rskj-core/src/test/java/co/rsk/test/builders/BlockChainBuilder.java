@@ -24,10 +24,7 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.bc.*;
-import co.rsk.db.BlocksIndex;
-import co.rsk.db.HashMapBlocksIndex;
-import co.rsk.db.RepositoryLocator;
-import co.rsk.db.StateRootHandler;
+import co.rsk.db.*;
 import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.peg.BtcBlockStoreWithCache;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
@@ -169,7 +166,7 @@ public class BlockChainBuilder {
         }
 
         if (stateRootHandler == null) {
-            stateRootHandler = new StateRootHandler(config.getActivationConfig(), new HashMapDB());
+            stateRootHandler = new StateRootHandler(config.getActivationConfig(), new StateRootsStoreImpl(new HashMapDB()));
         }
         
         if (genesis == null) {

@@ -23,21 +23,21 @@ import co.rsk.trie.Trie;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.BlockHeader;
-import org.ethereum.datasource.KeyValueDataSource;
 
+import javax.annotation.Nonnull;
 import java.util.Objects;
 
 public class StateRootHandler {
-    private final ActivationConfig activationConfig;
-    private final KeyValueDataSource stateRootDB;
 
-    public StateRootHandler(
-            ActivationConfig activationConfig,
-            KeyValueDataSource stateRootDB) {
-        this.activationConfig = activationConfig;
-        this.stateRootDB = stateRootDB;
+    private final ActivationConfig activationConfig;
+    private final StateRootsStore stateRootsStore;
+
+    public StateRootHandler(@Nonnull ActivationConfig activationConfig, @Nonnull StateRootsStore stateRootsStore) {
+        this.activationConfig = Objects.requireNonNull(activationConfig);
+        this.stateRootsStore = Objects.requireNonNull(stateRootsStore);
     }
 
+    @Nonnull
     public Keccak256 translate(BlockHeader block) {
         boolean isRskip126Enabled = activationConfig.isActive(ConsensusRule.RSKIP126, block.getNumber());
         byte[] blockStateRoot = block.getStateRoot();
@@ -45,12 +45,10 @@ public class StateRootHandler {
             return new Keccak256(blockStateRoot);
         }
 
-        byte[] stateRootHash = Objects.requireNonNull(
-                stateRootDB.get(blockStateRoot),
+        return Objects.requireNonNull(
+                stateRootsStore.get(blockStateRoot),
                 "Reset database or continue syncing with previous version"
         );
-
-        return new Keccak256(stateRootHash);
     }
 
     public void register(BlockHeader executedBlock, Trie executionResult) {
@@ -59,6 +57,6 @@ public class StateRootHandler {
             return;
         }
 
-        stateRootDB.put(executedBlock.getStateRoot(), executionResult.getHash().getBytes());
+        stateRootsStore.put(executedBlock.getStateRoot(), executionResult.getHash());
     }
 }

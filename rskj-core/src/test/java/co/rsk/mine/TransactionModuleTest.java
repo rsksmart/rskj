@@ -26,6 +26,7 @@ import co.rsk.core.bc.*;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.db.RepositorySnapshot;
 import co.rsk.db.StateRootHandler;
+import co.rsk.db.StateRootsStoreImpl;
 import co.rsk.net.TransactionGateway;
 import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
@@ -287,7 +288,7 @@ public class TransactionModuleTest {
                                        TransactionGateway transactionGateway) {
         StateRootHandler stateRootHandler = new StateRootHandler(
                 config.getActivationConfig(),
-                new HashMapDB()
+                new StateRootsStoreImpl(new HashMapDB())
         );
         return createEnvironment(blockchain,
                 new MiningMainchainViewImpl(blockStore, 1),

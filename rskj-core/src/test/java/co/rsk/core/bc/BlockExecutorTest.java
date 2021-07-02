@@ -24,10 +24,7 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.TransactionExecutorFactory;
-import co.rsk.db.MutableTrieImpl;
-import co.rsk.db.RepositoryLocator;
-import co.rsk.db.RepositorySnapshot;
-import co.rsk.db.StateRootHandler;
+import co.rsk.db.*;
 import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.peg.BtcBlockStoreWithCache.Factory;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
@@ -824,7 +821,7 @@ public class BlockExecutorTest {
     }
 
     private static BlockExecutor buildBlockExecutor(TrieStore store, RskSystemProperties config) {
-        StateRootHandler stateRootHandler = new StateRootHandler(config.getActivationConfig(), new HashMapDB());
+        StateRootHandler stateRootHandler = new StateRootHandler(config.getActivationConfig(), new StateRootsStoreImpl(new HashMapDB()));
 
         Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(
                 config.getNetworkConstants().getBridgeConstants().getBtcParams());

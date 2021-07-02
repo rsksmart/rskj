@@ -27,6 +27,7 @@ import co.rsk.core.bc.BlockExecutor;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.db.RepositorySnapshot;
 import co.rsk.db.StateRootHandler;
+import co.rsk.db.StateRootsStoreImpl;
 import co.rsk.net.NodeBlockProcessor;
 import co.rsk.test.World;
 import co.rsk.test.builders.AccountBuilder;
@@ -311,7 +312,7 @@ public class WorldDslProcessor {
             Block block = blockBuilder.difficulty(difficulty).parent(parent).build();
             final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
             final TestSystemProperties config = new TestSystemProperties();
-            StateRootHandler stateRootHandler = new StateRootHandler(config.getActivationConfig(), new HashMapDB());
+            StateRootHandler stateRootHandler = new StateRootHandler(config.getActivationConfig(), new StateRootsStoreImpl(new HashMapDB()));
             BlockExecutor executor = new BlockExecutor(
                     config.getActivationConfig(),
                     new RepositoryLocator(world.getTrieStore(), stateRootHandler),

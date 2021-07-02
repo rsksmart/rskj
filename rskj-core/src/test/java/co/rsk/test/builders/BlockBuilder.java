@@ -24,6 +24,7 @@ import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.db.StateRootHandler;
+import co.rsk.db.StateRootsStoreImpl;
 import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.trie.TrieStore;
 import org.bouncycastle.util.BigIntegers;
@@ -103,7 +104,7 @@ public class BlockBuilder {
 
         if (blockChain != null) {
             final TestSystemProperties config = new TestSystemProperties();
-            StateRootHandler stateRootHandler = new StateRootHandler(config.getActivationConfig(), new HashMapDB());
+            StateRootHandler stateRootHandler = new StateRootHandler(config.getActivationConfig(), new StateRootsStoreImpl(new HashMapDB()));
             BlockExecutor executor = new BlockExecutor(
                     config.getActivationConfig(),
                     new RepositoryLocator(trieStore, stateRootHandler),

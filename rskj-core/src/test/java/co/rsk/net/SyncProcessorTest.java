@@ -7,6 +7,7 @@ import co.rsk.core.bc.BlockExecutor;
 import co.rsk.core.bc.ConsensusValidationMainchainView;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.db.StateRootHandler;
+import co.rsk.db.StateRootsStoreImpl;
 import co.rsk.net.messages.*;
 import co.rsk.net.simples.SimplePeer;
 import co.rsk.net.sync.DownloadingBodiesSyncState;
@@ -747,7 +748,7 @@ public class SyncProcessorTest {
 
         Block block = new BlockGenerator().createChildBlock(genesis, txs, blockChainBuilder.getRepository().getRoot());
 
-        StateRootHandler stateRootHandler = new StateRootHandler(config.getActivationConfig(), new HashMapDB());
+        StateRootHandler stateRootHandler = new StateRootHandler(config.getActivationConfig(), new StateRootsStoreImpl(new HashMapDB()));
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
                 new RepositoryBtcBlockStoreWithCache.Factory(config.getNetworkConstants().getBridgeConstants().getBtcParams()),
                 config.getNetworkConstants().getBridgeConstants(),

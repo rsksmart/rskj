@@ -31,6 +31,7 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.db.RepositorySnapshot;
 import co.rsk.db.StateRootHandler;
+import co.rsk.db.StateRootsStoreImpl;
 import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.peg.PegTestUtils;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
@@ -99,7 +100,7 @@ public class RemascProcessMinerFeesTest {
     @Before
     public void setup() {
         blockFactory = new BlockFactory(config.getActivationConfig());
-        stateRootHandler = new StateRootHandler(config.getActivationConfig(), new HashMapDB());
+        stateRootHandler = new StateRootHandler(config.getActivationConfig(), new StateRootsStoreImpl(new HashMapDB()));
         blockchainBuilder = new BlockChainBuilder()
                 .setStateRootHandler(stateRootHandler)
                 .setGenesis(genesisBlock)
