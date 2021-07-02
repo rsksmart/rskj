@@ -55,9 +55,9 @@ public class TrieStoreImpl implements TrieStore {
         TraceInfo traceInfo = null;
         if (logger.isTraceEnabled()) {
             traceInfo = traceInfoLocal.get();
-            traceInfo.noRetrievesInSaveTrie = 0;
-            traceInfo.noSavesInSaveTrie = 0;
-            traceInfo.noNoSavesInSaveTrie = 0;
+            traceInfo.numOfRetrievesInSaveTrie = 0;
+            traceInfo.numOfSavesInSaveTrie = 0;
+            traceInfo.numOfNoSavesInSaveTrie = 0;
 
             logger.trace("Start saving trie root.");
         }
@@ -67,13 +67,13 @@ public class TrieStoreImpl implements TrieStore {
 
         if (traceInfo != null) {
             logger.trace("End saving trie root. No. Retrieves: {}. No. Saves: {}. No. No Saves: {}",
-                    traceInfo.noRetrievesInSaveTrie, traceInfo.noSavesInSaveTrie, traceInfo.noNoSavesInSaveTrie);
+                    traceInfo.numOfRetrievesInSaveTrie, traceInfo.numOfSavesInSaveTrie, traceInfo.numOfNoSavesInSaveTrie);
             logger.trace("End process block. No. Retrieves: {}. No. Saves: {}. No. No Saves: {}",
-                    traceInfo.noRetrievesInBlockProcess, traceInfo.noSavesInBlockProcess, traceInfo.noNoSavesInBlockProcess);
+                    traceInfo.numOfRetrievesInBlockProcess, traceInfo.numOfSavesInBlockProcess, traceInfo.numOfNoSavesInBlockProcess);
 
-            traceInfo.noRetrievesInBlockProcess = 0;
-            traceInfo.noSavesInBlockProcess = 0;
-            traceInfo.noNoSavesInBlockProcess = 0;
+            traceInfo.numOfRetrievesInBlockProcess = 0;
+            traceInfo.numOfSavesInBlockProcess = 0;
+            traceInfo.numOfNoSavesInBlockProcess = 0;
 
             if (store instanceof DataSourceWithCache) {
                 ((DataSourceWithCache) store).emitLogs();
@@ -98,16 +98,16 @@ public class TrieStoreImpl implements TrieStore {
             logger.trace("End saving trie, level : {}, already saved.", level);
 
             if (traceInfo != null) {
-                traceInfo.noNoSavesInSaveTrie++;
-                traceInfo.noNoSavesInBlockProcess++;
+                traceInfo.numOfNoSavesInSaveTrie++;
+                traceInfo.numOfNoSavesInBlockProcess++;
             }
 
             return;
         }
 
         if (traceInfo != null) {
-            traceInfo.noSavesInSaveTrie++;
-            traceInfo.noSavesInBlockProcess++;
+            traceInfo.numOfSavesInSaveTrie++;
+            traceInfo.numOfSavesInBlockProcess++;
         }
 
         NodeReference leftNodeReference = trie.getLeft();
@@ -166,8 +166,8 @@ public class TrieStoreImpl implements TrieStore {
 
         if (logger.isTraceEnabled()) {
             TraceInfo traceInfo = traceInfoLocal.get();
-            traceInfo.noRetrievesInSaveTrie++;
-            traceInfo.noRetrievesInBlockProcess++;
+            traceInfo.numOfRetrievesInSaveTrie++;
+            traceInfo.numOfRetrievesInBlockProcess++;
         }
 
         Trie trie = Trie.fromMessage(message, this).markAsSaved();
@@ -178,8 +178,8 @@ public class TrieStoreImpl implements TrieStore {
     public byte[] retrieveValue(byte[] hash) {
         if (logger.isTraceEnabled()) {
             TraceInfo traceInfo = traceInfoLocal.get();
-            traceInfo.noRetrievesInSaveTrie++;
-            traceInfo.noRetrievesInBlockProcess++;
+            traceInfo.numOfRetrievesInSaveTrie++;
+            traceInfo.numOfRetrievesInBlockProcess++;
         }
 
         return this.store.get(hash);
@@ -195,12 +195,12 @@ public class TrieStoreImpl implements TrieStore {
      * Should not be used when logger tracing is disabled ({@link Logger#isTraceEnabled()} is {@code false}).
      */
     private static final class TraceInfo {
-        int noRetrievesInBlockProcess;
-        int noSavesInBlockProcess;
-        int noNoSavesInBlockProcess;
+        int numOfRetrievesInBlockProcess;
+        int numOfSavesInBlockProcess;
+        int numOfNoSavesInBlockProcess;
 
-        int noRetrievesInSaveTrie;
-        int noSavesInSaveTrie;
-        int noNoSavesInSaveTrie;
+        int numOfRetrievesInSaveTrie;
+        int numOfSavesInSaveTrie;
+        int numOfNoSavesInSaveTrie;
     }
 }

@@ -41,9 +41,9 @@ public class DataSourceWithCache implements KeyValueDataSource {
 
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
 
-    private final AtomicInteger noPuts = new AtomicInteger();
-    private final AtomicInteger noGets = new AtomicInteger();
-    private final AtomicInteger noGetsFromStore = new AtomicInteger();
+    private final AtomicInteger numOfPuts = new AtomicInteger();
+    private final AtomicInteger numOfGets = new AtomicInteger();
+    private final AtomicInteger numOfGetsFromStore = new AtomicInteger();
 
     public DataSourceWithCache(KeyValueDataSource base, int cacheSize) {
         this.cacheSize = cacheSize;
@@ -74,7 +74,7 @@ public class DataSourceWithCache implements KeyValueDataSource {
             value = base.get(key);
 
             if (traceEnabled) {
-                noGetsFromStore.incrementAndGet();
+                numOfGetsFromStore.incrementAndGet();
             }
 
             //null value, as expected, is allowed here to be stored in committedCache
@@ -82,7 +82,7 @@ public class DataSourceWithCache implements KeyValueDataSource {
         }
         finally {
             if (traceEnabled) {
-                noGets.incrementAndGet();
+                numOfGets.incrementAndGet();
             }
 
             this.lock.readLock().unlock();
@@ -116,7 +116,7 @@ public class DataSourceWithCache implements KeyValueDataSource {
         }
         finally {
             if (logger.isTraceEnabled()) {
-                noPuts.incrementAndGet();
+                numOfPuts.incrementAndGet();
             }
 
             this.lock.writeLock().unlock();
@@ -283,9 +283,9 @@ public class DataSourceWithCache implements KeyValueDataSource {
 
         try {
             logger.trace("Activity: No. Gets: {}. No. Puts: {}. No. Gets from Store: {}",
-                    noGets.getAndSet(0),
-                    noPuts.getAndSet(0),
-                    noGetsFromStore.getAndSet(0));
+                    numOfGets.getAndSet(0),
+                    numOfPuts.getAndSet(0),
+                    numOfGetsFromStore.getAndSet(0));
         }
         finally {
             this.lock.writeLock().unlock();
