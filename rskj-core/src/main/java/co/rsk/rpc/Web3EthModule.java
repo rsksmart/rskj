@@ -20,10 +20,7 @@ package co.rsk.rpc;
 
 import co.rsk.rpc.modules.eth.EthModule;
 import org.ethereum.rpc.Web3;
-import org.ethereum.rpc.dto.BlockResultDTO;
-import org.ethereum.rpc.dto.CompilationResultDTO;
-import org.ethereum.rpc.dto.TransactionReceiptDTO;
-import org.ethereum.rpc.dto.TransactionResultDTO;
+import org.ethereum.rpc.dto.*;
 
 import java.math.BigInteger;
 import java.util.Map;
@@ -39,6 +36,10 @@ public interface Web3EthModule {
 
     default String eth_call(Web3.CallArguments args, String bnOrId) {
         return getEthModule().call(args, bnOrId);
+    }
+
+    default String eth_call(Web3.CallArguments args, BlockParsedRequestDTO blockParsedRequest) {
+        return getEthModule().call(args, blockParsedRequest);
     }
 
     default String eth_estimateGas(Web3.CallArguments args) {
@@ -73,9 +74,15 @@ public interface Web3EthModule {
 
     String eth_getBalance(String address) throws Exception;
 
+    String eth_getBalance(String address, BlockParsedRequestDTO blockParsedRequest) throws Exception;
+
     String eth_getStorageAt(String address, String storageIdx, String blockId) throws Exception;
 
-    String eth_getTransactionCount(String address, String blockId) throws Exception ;
+    String eth_getStorageAt(String address, String storageIdx, BlockParsedRequestDTO blockParsedRequest) throws Exception;
+
+    String eth_getTransactionCount(String address, String blockId) throws Exception;
+
+    String eth_getTransactionCount(String address, BlockParsedRequestDTO blockParsedRequest) throws Exception;
 
     String eth_getBlockTransactionCountByHash(String blockHash)throws Exception;
 
@@ -87,6 +94,10 @@ public interface Web3EthModule {
 
     default String eth_getCode(String address, String blockId) {
         return getEthModule().getCode(address, blockId);
+    }
+
+    default String eth_getCode(String address, BlockParsedRequestDTO blockParsedRequest) {
+        return getEthModule().getCode(address, blockParsedRequest);
     }
 
     default String eth_sendRawTransaction(String rawData) {

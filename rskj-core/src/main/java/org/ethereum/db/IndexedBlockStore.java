@@ -162,6 +162,7 @@ public class IndexedBlockStore implements BlockStore {
         return block;
     }
 
+    @Override
     public boolean isBlockInMainChain(long blockNumber, Keccak256 blockHash){
         List<BlockInfo> blockInfos = index.getBlocksByNumber(blockNumber);
         if (blockInfos == null) {

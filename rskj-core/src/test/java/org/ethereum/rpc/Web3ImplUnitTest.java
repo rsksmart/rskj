@@ -18,6 +18,7 @@ import co.rsk.rpc.modules.personal.PersonalModule;
 import co.rsk.rpc.modules.rsk.RskModule;
 import co.rsk.rpc.modules.txpool.TxPoolModule;
 import co.rsk.scoring.PeerScoringManager;
+import org.bouncycastle.util.encoders.DecoderException;
 import org.ethereum.TestUtils;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
@@ -29,6 +30,7 @@ import org.ethereum.facade.Ethereum;
 import org.ethereum.net.client.ConfigCapabilities;
 import org.ethereum.net.server.ChannelManager;
 import org.ethereum.net.server.PeerServer;
+import org.ethereum.rpc.dto.BlockParsedRequestDTO;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.util.BuildInfo;
 import org.ethereum.vm.DataWord;
@@ -41,6 +43,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.ethereum.rpc.TypeConverter.stringHexToByteArray;
+import static org.ethereum.rpc.TypeConverter.toJsonHex;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -98,6 +101,22 @@ public class Web3ImplUnitTest {
     }
 
     @Test
+    public void eth_getBalance_stateCannotBeRetrievedForBlockHash() {
+        String blockHash = "0x0011223344556677880011223344556677889900";
+        Boolean requireCanonical = true;
+
+        String addr = "0x0011223344556677880011223344556677889900";
+        byte[] blockHashAsBytes = stringHexToByteArray(blockHash);
+
+        BlockParsedRequestDTO blockParsedRequestDTO = new BlockParsedRequestDTO(null, blockHash, requireCanonical);
+
+        when(retriever.getInformationProvider(eq(blockHashAsBytes), eq(requireCanonical)))
+                .thenThrow(RskJsonRpcRequestException.blockNotFound("Block not found"));
+        TestUtils.assertThrows(RskJsonRpcRequestException.class,
+                               () -> target.eth_getBalance(addr, blockParsedRequestDTO));
+    }
+
+    @Test
     public void eth_getBalance() {
         String id = "id";
         String addr = "0x0011223344556677880011223344556677889900";
@@ -113,6 +132,52 @@ public class Web3ImplUnitTest {
     }
 
     @Test
+    public void eth_getBalance_blockParsedRequest_validateFailRequest() {
+        String addr = "0x0011223344556677880011223344556677889900";
+
+        BlockParsedRequestDTO blockParsedRequestDto = new BlockParsedRequestDTO();
+
+        TestUtils.assertThrows(RskJsonRpcRequestException.class,
+                               () -> target.eth_getBalance(addr, blockParsedRequestDto));
+    }
+
+    @Test
+    public void eth_getBalance_blockParsedRequest_withBlockNumber() {
+        String id = "blockNumber";
+        String addr = "0x0011223344556677880011223344556677889900";
+
+        BlockParsedRequestDTO blockParsedRequestDTO = new BlockParsedRequestDTO(id, null, null);
+
+        AccountInformationProvider aip = mock(AccountInformationProvider.class);
+        RskAddress expectedAddress = new RskAddress(addr);
+        when(aip.getBalance(eq(expectedAddress))).thenReturn(new Coin(BigInteger.ONE));
+
+        when(retriever.getInformationProvider(eq(id))).thenReturn(aip);
+
+        String result = target.eth_getBalance(addr, blockParsedRequestDTO);
+        assertEquals("0x1", result);
+    }
+
+    @Test
+    public void eth_getBalance_blockParsedRequest_withBlockHash() {
+        String hash = "0xf98529d4ab262c0f4d042e9d8d3f2472848eaafe1a9b7213f57617eb40a9f9e0";
+        Boolean requireCanonical = true;
+        String addr = "0x0011223344556677880011223344556677889900";
+
+        byte[] hashAsBytes = stringHexToByteArray(hash);
+        BlockParsedRequestDTO blockParsedRequestDTO = new BlockParsedRequestDTO(null, hash, requireCanonical);
+
+        AccountInformationProvider aip = mock(AccountInformationProvider.class);
+        RskAddress expectedAddress = new RskAddress(addr);
+        when(aip.getBalance(eq(expectedAddress))).thenReturn(new Coin(BigInteger.valueOf(2L)));
+
+        when(retriever.getInformationProvider(eq(hashAsBytes), eq(requireCanonical))).thenReturn(aip);
+
+        String result = target.eth_getBalance(addr, blockParsedRequestDTO);
+        assertEquals("0x2", result);
+    }
+
+    @Test
     public void eth_getStorageAt_stateCannotBeRetrieved() {
         String id = "id";
         String addr = "0x0011223344556677880011223344556677889900";
@@ -123,6 +188,23 @@ public class Web3ImplUnitTest {
 
         TestUtils.assertThrows(RskJsonRpcRequestException.class,
                 () -> target.eth_getStorageAt(addr, storageIdx, id));
+    }
+
+    @Test
+    public void eth_getStorageAt_stateCannotBeRetrievedForBlockHash() {
+        String addr = "0x0011223344556677880011223344556677889900";
+        String storageIdx = "0x01";
+
+        String blockHash = "0x0011223344556677880011223344556677889900";
+        Boolean requireCanonical = true;
+        byte[] blockHashAsBytes = stringHexToByteArray(blockHash);
+
+        BlockParsedRequestDTO blockParsedRequestDTO = new BlockParsedRequestDTO(null, blockHash, requireCanonical);
+
+        when(retriever.getInformationProvider(eq(blockHashAsBytes), eq(requireCanonical)))
+                .thenThrow(RskJsonRpcRequestException.blockNotFound("Block not found"));
+        TestUtils.assertThrows(RskJsonRpcRequestException.class,
+                               () -> target.eth_getStorageAt(addr, storageIdx, blockParsedRequestDTO));
     }
 
     @Test
@@ -160,6 +242,104 @@ public class Web3ImplUnitTest {
         String result = target.eth_getStorageAt(addr, storageIdx, id);
         assertEquals("0x0",
                 result);
+    }
+
+    @Test
+    public void eth_getStorageAtEmptyCell_blockParsedRequest_validateFailRequest() {
+        String addr = "0x0011223344556677880011223344556677889900";
+        String storageIdx = "0x01";
+
+        BlockParsedRequestDTO blockParsedRequestDto = new BlockParsedRequestDTO();
+
+        TestUtils.assertThrows(RskJsonRpcRequestException.class,
+                               () -> target.eth_getStorageAt(addr, storageIdx, blockParsedRequestDto));
+    }
+
+    @Test
+    public void eth_getStorageAtEmptyCell_blockParsedRequest_withBlockNumber() {
+        String id = "blockNumber";
+        String addr = "0x0011223344556677880011223344556677889900";
+        String storageIdx = "0x01";
+        DataWord expectedIdx = DataWord.valueOf(stringHexToByteArray(storageIdx));
+
+        BlockParsedRequestDTO blockParsedRequestDTO = new BlockParsedRequestDTO(id, null, null);
+
+        RskAddress expectedAddress = new RskAddress(addr);
+
+        AccountInformationProvider aip = mock(AccountInformationProvider.class);
+        when(aip.getStorageValue(eq(expectedAddress), eq(expectedIdx)))
+                .thenReturn(null);
+        when(retriever.getInformationProvider(eq(id))).thenReturn(aip);
+
+        String result = target.eth_getStorageAt(addr, storageIdx, blockParsedRequestDTO);
+        assertEquals("0x0", result);
+    }
+
+    @Test
+    public void eth_getStorageAtEmptyCell_blockParsedRequest_withBlockHash() {
+        String hash = "0xf98529d4ab262c0f4d042e9d8d3f2472848eaafe1a9b7213f57617eb40a9f9e0";
+        Boolean requireCanonical = true;
+        String addr = "0x0011223344556677880011223344556677889900";
+        String storageIdx = "0x01";
+        DataWord expectedIdx = DataWord.valueOf(stringHexToByteArray(storageIdx));
+
+        byte[] hashAsBytes = stringHexToByteArray(hash);
+        BlockParsedRequestDTO blockParsedRequestDTO = new BlockParsedRequestDTO(null, hash, requireCanonical);
+
+        AccountInformationProvider aip = mock(AccountInformationProvider.class);
+        RskAddress expectedAddress = new RskAddress(addr);
+        when(aip.getStorageValue(eq(expectedAddress), eq(expectedIdx)))
+                .thenReturn(null);
+
+        when(retriever.getInformationProvider(eq(hashAsBytes), eq(requireCanonical))).thenReturn(aip);
+
+        String result = target.eth_getStorageAt(addr, storageIdx, blockParsedRequestDTO);
+        assertEquals("0x0", result);
+    }
+
+    @Test
+    public void eth_getTransactionCount_blockParsedRequest_validateFailRequest() {
+        String addr = "0x0011223344556677880011223344556677889900";
+
+        BlockParsedRequestDTO blockParsedRequestDto = new BlockParsedRequestDTO();
+
+        TestUtils.assertThrows(RskJsonRpcRequestException.class,
+                               () -> target.eth_getTransactionCount(addr, blockParsedRequestDto));
+    }
+
+    @Test
+    public void eth_getTransactionCount_blockParsedRequest_withBlockNumber() {
+        String id = "blockNumber";
+        String addr = "0x0011223344556677880011223344556677889900";
+
+        BlockParsedRequestDTO blockParsedRequestDTO = new BlockParsedRequestDTO(id, null, null);
+
+        RskAddress expectedAddress = new RskAddress(addr);
+
+        AccountInformationProvider aip = mock(AccountInformationProvider.class);
+        when(aip.getNonce(eq(expectedAddress))).thenReturn(BigInteger.ONE);
+        when(retriever.getInformationProvider(eq(id))).thenReturn(aip);
+
+        String result = target.eth_getTransactionCount(addr, blockParsedRequestDTO);
+        assertEquals("0x1", result);
+    }
+
+    @Test
+    public void eth_getTransactionCount_blockParsedRequest_withBlockHash() {
+        String hash = "0xf98529d4ab262c0f4d042e9d8d3f2472848eaafe1a9b7213f57617eb40a9f9e0";
+        Boolean requireCanonical = true;
+        String addr = "0x0011223344556677880011223344556677889900";
+
+        byte[] hashAsBytes = stringHexToByteArray(hash);
+        BlockParsedRequestDTO blockParsedRequestDTO = new BlockParsedRequestDTO(null, hash, requireCanonical);
+
+        AccountInformationProvider aip = mock(AccountInformationProvider.class);
+        RskAddress expectedAddress = new RskAddress(addr);
+        when(aip.getNonce(eq(expectedAddress))).thenReturn(BigInteger.valueOf(2));
+        when(retriever.getInformationProvider(eq(hashAsBytes), eq(requireCanonical))).thenReturn(aip);
+
+        String result = target.eth_getTransactionCount(addr, blockParsedRequestDTO);
+        assertEquals("0x2", result);
     }
 
     @Test

@@ -19,17 +19,21 @@
 package co.rsk.rpc;
 
 import co.rsk.core.bc.AccountInformationProvider;
+import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositoryLocator;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionPool;
+import org.ethereum.db.BlockStore;
+import org.ethereum.rpc.TypeConverter;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 
 import java.util.List;
 import java.util.Optional;
 
 import static org.ethereum.rpc.TypeConverter.stringHexToBigInteger;
+import static org.ethereum.rpc.TypeConverter.toJsonHex;
 import static org.ethereum.rpc.exception.RskJsonRpcRequestException.*;
 
 /**
@@ -80,6 +84,11 @@ public class Web3InformationRetriever {
         return Optional.ofNullable(block);
     }
 
+    public Optional<Block> getBlockByHash(byte[] blockHash, Boolean requireCanonical) {
+        Block block = blockchain.getBlockByHash(blockHash, requireCanonical);
+        return Optional.ofNullable(block);
+    }
+
     /**
      * Retrieves an {@link AccountInformationProvider} based on the identifier.
      * @param identifier {@link Web3InformationRetriever}
@@ -91,16 +100,32 @@ public class Web3InformationRetriever {
         if (PENDING.equals(identifier)) {
             return transactionPool.getPendingState();
         }
-
         Optional<Block> optBlock = getBlock(identifier);
+
         if (!optBlock.isPresent()) {
             throw blockNotFound(String.format("Block %s not found", identifier));
         }
 
-        Block block = optBlock.get();
+        return getAccountInformationProviderForBlock(optBlock.get());
+    }
+
+    public AccountInformationProvider getInformationProvider(byte[] identifier, Boolean requireCanonical) {
+        Optional<Block> optBlock = getBlockByHash(identifier, requireCanonical);
+
+        if (!optBlock.isPresent()) {
+            String parsedIdentifier = toJsonHex(identifier);
+            throw blockNotFound(String.format("Block %s not found", parsedIdentifier));
+        }
+
+        return getAccountInformationProviderForBlock(optBlock.get());
+    }
+
+    private AccountInformationProvider getAccountInformationProviderForBlock(Block block) {
         return locator.findSnapshotAt(block.getHeader()).orElseThrow(() -> RskJsonRpcRequestException
                 .stateNotFound(String.format("State not found for block with hash %s", block.getHash())));
     }
+
+
 
     /**
      * Retrieves an list of {@link Transaction} based on the identifier

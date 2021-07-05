@@ -27,6 +27,8 @@ import org.ethereum.TestUtils;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Blockchain;
+import org.ethereum.rpc.TypeConverter;
+import org.ethereum.rpc.dto.BlockParsedRequestDTO;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.junit.Assert;
 import org.junit.Before;
@@ -37,6 +39,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
+import static org.ethereum.rpc.TypeConverter.*;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.*;
@@ -467,5 +470,34 @@ public class ExecutionFoundBlockRetrieverTest {
                 .assertThrows(RskJsonRpcRequestException.class,
                         () -> retriever.getExecutionBlock_workaround("other"));
         Assert.assertEquals(INVALID_PARAM_ERROR_CODE, (int) e.getCode());
+    }
+
+    @Test
+    public void getExecutionBlock_workaround_withBlockHash_not_known() {
+        Boolean requireCanonical = true;
+        String hash = "0xf98529d4ab262c0f4d042e9d8d3f2472848eaafe1a9b7213f57617eb40a9f9e0";
+
+        BlockParsedRequestDTO blockParsedRequestDto = new BlockParsedRequestDTO(null, hash, requireCanonical);
+        RskJsonRpcRequestException rskJsonRpcRequestException = TestUtils.assertThrows(
+                RskJsonRpcRequestException.class,
+                () -> retriever.getExecutionBlock_workaround(blockParsedRequestDto).getBlock());
+
+        String expectedString = String.format("Invalid block number %s", hash);
+        Assert.assertEquals(rskJsonRpcRequestException.getMessage(), expectedString);
+    }
+
+    @Test
+    public void getExecutionBlock_workaround_withBlockHash_known() {
+        Block block = mock(Block.class);
+
+        Boolean requireCanonical = true;
+        String hash = "0xf98529d4ab262c0f4d042e9d8d3f2472848eaafe1a9b7213f57617eb40a9f9e0";
+
+        byte[] hashAsBytes = stringHexToByteArray(hash);
+        when(blockchain.getBlockByHash(hashAsBytes, requireCanonical)).thenReturn(block);
+
+        BlockParsedRequestDTO blockParsedRequestDto = new BlockParsedRequestDTO(null, hash, requireCanonical);
+
+        assertThat(retriever.getExecutionBlock_workaround(blockParsedRequestDto).getBlock(), is(block));
     }
 }

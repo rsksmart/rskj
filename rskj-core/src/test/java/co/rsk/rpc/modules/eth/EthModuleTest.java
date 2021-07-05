@@ -39,6 +39,7 @@ import org.ethereum.core.TransactionPoolAddResult;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.rpc.TypeConverter;
 import org.ethereum.rpc.Web3;
+import org.ethereum.rpc.dto.BlockParsedRequestDTO;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.util.TransactionTestHelper;
 import org.ethereum.vm.program.ProgramResult;
@@ -65,7 +66,9 @@ public class EthModuleTest {
         BlockResult blockResult = mock(BlockResult.class);
         Block block = mock(Block.class);
         ExecutionBlockRetriever retriever = mock(ExecutionBlockRetriever.class);
-        when(retriever.getExecutionBlock_workaround("latest"))
+
+        BlockParsedRequestDTO blockParsedRequest = new BlockParsedRequestDTO("latest");
+        when(retriever.getExecutionBlock_workaround(blockParsedRequest))
                 .thenReturn(blockResult);
         when(blockResult.getBlock()).thenReturn(block);
 
@@ -103,7 +106,9 @@ public class EthModuleTest {
         BlockResult blockResult = mock(BlockResult.class);
         Block block = mock(Block.class);
         ExecutionBlockRetriever retriever = mock(ExecutionBlockRetriever.class);
-        when(retriever.getExecutionBlock_workaround("latest"))
+
+        BlockParsedRequestDTO blockParsedRequest = new BlockParsedRequestDTO("latest");
+        when(retriever.getExecutionBlock_workaround(blockParsedRequest))
                 .thenReturn(blockResult);
         when(blockResult.getBlock()).thenReturn(block);
 
@@ -141,7 +146,8 @@ public class EthModuleTest {
         BlockResult blockResult = mock(BlockResult.class);
         Block block = mock(Block.class);
         ExecutionBlockRetriever retriever = mock(ExecutionBlockRetriever.class);
-        when(retriever.getExecutionBlock_workaround("latest"))
+        BlockParsedRequestDTO blockParsedRequest = new BlockParsedRequestDTO("latest");
+        when(retriever.getExecutionBlock_workaround(blockParsedRequest))
                 .thenReturn(blockResult);
         when(blockResult.getBlock()).thenReturn(block);
 

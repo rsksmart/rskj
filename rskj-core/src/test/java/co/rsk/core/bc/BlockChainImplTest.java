@@ -30,12 +30,14 @@ import co.rsk.trie.TrieStore;
 import co.rsk.validators.BlockValidator;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.TestUtils;
 import org.ethereum.core.*;
 import org.ethereum.core.genesis.GenesisLoader;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.db.BlockStore;
 import org.ethereum.listener.CompositeEthereumListener;
+import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.FastByteComparisons;
 import org.ethereum.util.RskTestFactory;
@@ -538,6 +540,72 @@ public class BlockChainImplTest {
 
         Assert.assertNotNull(result);
         Assert.assertEquals(block1.getHash(), result.getHash());
+    }
+
+    @Test
+    public void getBlockByHashWithCanonical_unknownBlock() {
+        byte[] blockHash = new BlockGenerator().getBlock(1).getHash().getBytes();
+
+        // The canonical check must be ignored when the block hash does not exist
+        Block blockByHashWithCanonicalTrue = blockChain.getBlockByHash(blockHash, true);
+        Assert.assertNull(blockByHashWithCanonicalTrue);
+
+        Block blockByHashWithCanonicalFalse = blockChain.getBlockByHash(blockHash, false);
+        Assert.assertNull(blockByHashWithCanonicalFalse);
+    }
+
+    @Test
+    public void getBlockByHashWithCanonical_knownBlock() {
+        Block genesis = blockChain.getBestBlock();
+        Block block1 = new BlockGenerator().createChildBlock(genesis);
+
+        blockChain.tryToConnect(genesis);
+        blockChain.tryToConnect(block1);
+
+        Block result = blockChain.getBlockByHash(genesis.getHash().getBytes(), false);
+
+        Assert.assertNotNull(result);
+        Assert.assertEquals(genesis.getHash(), result.getHash());
+
+        result = blockChain.getBlockByHash(block1.getHash().getBytes(), false);
+
+        Assert.assertNotNull(result);
+        Assert.assertEquals(block1.getHash(), result.getHash());
+    }
+
+    @Test
+    public void getBlockByHashWithCanonical_bestBlock() {
+        Block genesis = blockChain.getBestBlock();
+        BlockGenerator blockGenerator = new BlockGenerator();
+
+        // Chain 1 - Short Chain
+        Block block1a = blockGenerator.createChildBlock(genesis);
+
+        // Chain 2 - Long Chain
+        Block block1b = blockGenerator.createChildBlock(genesis);
+        Block block1b1 = blockGenerator.createChildBlock(block1b);
+        Block block1b2 = blockGenerator.createChildBlock(block1b1);
+
+        blockChain.tryToConnect(genesis);
+        blockChain.tryToConnect(block1a);
+        blockChain.tryToConnect(block1b);
+        blockChain.tryToConnect(block1b1);
+        blockChain.tryToConnect(block1b2);
+
+        // Validate short chain first (non canonical) - return when canonical not required
+        Assert.assertNotNull(blockChain.getBlockByHash(block1a.getHash().getBytes(), false));
+
+        // Validate short chain first (non canonical) - throw error when required
+        RskJsonRpcRequestException exception = TestUtils.assertThrows(
+                RskJsonRpcRequestException.class,
+                () -> blockChain.getBlockByHash(block1a.getHash().getBytes(), true));
+        String expectedMessage = String.format("Block %s not canonical", block1a.getHash().toJsonString());
+        Assert.assertEquals(expectedMessage, exception.getMessage());
+
+        // Validate longest chain, provided main chain (canonical)
+        Assert.assertNotNull(blockChain.getBlockByHash(block1b.getHash().getBytes(), true));
+        Assert.assertNotNull(blockChain.getBlockByHash(block1b1.getHash().getBytes(), true));
+        Assert.assertNotNull(blockChain.getBlockByHash(block1b2.getHash().getBytes(), true));
     }
 
     @Test

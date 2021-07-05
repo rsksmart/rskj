@@ -98,6 +98,11 @@ public class BlockStoreDummy implements BlockStore {
         return 0L;
     }
 
+    @Override
+    public boolean isBlockInMainChain(long blockNumber, Keccak256 blockHash) {
+        return false;
+    }
+
 
     @Override
     public void reBranch(Block forkBlock) {

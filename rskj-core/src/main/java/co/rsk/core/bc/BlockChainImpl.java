@@ -19,6 +19,7 @@
 package co.rsk.core.bc;
 
 import co.rsk.core.BlockDifficulty;
+import co.rsk.crypto.Keccak256;
 import co.rsk.db.StateRootHandler;
 import co.rsk.metrics.profilers.Metric;
 import co.rsk.metrics.profilers.Profiler;
@@ -33,12 +34,16 @@ import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.db.TransactionInfo;
 import org.ethereum.listener.EthereumListener;
+import org.ethereum.rpc.TypeConverter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+
+import static org.ethereum.rpc.TypeConverter.*;
+import static org.ethereum.rpc.exception.RskJsonRpcRequestException.invalidParamError;
 
 /**
  * Created by ajlopez on 29/07/2016.
@@ -363,7 +368,25 @@ public class BlockChainImpl implements Blockchain {
 
     @Override
     public Block getBlockByHash(byte[] hash) {
-        return blockStore.getBlockByHash(hash);
+        return getBlockByHash(hash, false);
+    }
+
+    @Override
+    public Block getBlockByHash(byte[] blockHash, Boolean requireCanonical) {
+        // Calling this first validates the existence of the hash
+        Block blockByHash = blockStore.getBlockByHash(blockHash);
+        if(requireCanonical && blockByHash != null) {
+            boolean blockInMainChain = blockStore.isBlockInMainChain(blockByHash.getNumber(), new Keccak256(blockHash));
+
+            // When the block is not in the main chain and canonical is required
+            if (!blockInMainChain) {
+                // According to the spec https://github.com/ethereum/EIPs/blob/master/EIPS/eip-1898.md
+                // we should "raise block-not-canonical error"
+                String blockHashAsString = toUnformattedJsonHex(blockHash);
+                throw invalidParamError(String.format("Block %s not canonical", blockHashAsString));
+            }
+        }
+        return blockByHash;
     }
 
     @Override

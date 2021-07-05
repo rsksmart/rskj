@@ -69,6 +69,7 @@ import org.ethereum.net.client.ConfigCapabilities;
 import org.ethereum.net.server.ChannelManager;
 import org.ethereum.net.server.PeerServer;
 import org.ethereum.rpc.Simples.*;
+import org.ethereum.rpc.dto.BlockParsedRequestDTO;
 import org.ethereum.rpc.dto.BlockResultDTO;
 import org.ethereum.rpc.dto.TransactionReceiptDTO;
 import org.ethereum.rpc.dto.TransactionResultDTO;
@@ -88,6 +89,9 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static org.ethereum.rpc.TypeConverter.toJsonHex;
+import static org.ethereum.rpc.TypeConverter.toQuantityJsonHex;
+import static org.ethereum.rpc.TypeConverter.toUnformattedJsonHex;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
@@ -252,6 +256,90 @@ public class Web3ImplTest {
         assertEquals("0x0", web3.eth_getBalance(accountAddress, "0x0"));
         assertEquals(balanceString, web3.eth_getBalance(accountAddress, "0x1"));
         assertEquals(balanceString, web3.eth_getBalance(accountAddress, "pending"));
+    }
+
+    @Test
+    public void getBalance_blockParsedRequest_withBlockNumber() {
+        Integer coinBalance = 10000;
+
+        World world = new World();
+        Account acc1 = new AccountBuilder(world)
+                .name("acc1")
+                .balance(Coin.valueOf(coinBalance))
+                .build();
+        Block genesis = world.getBlockByName("g00");
+
+        Block block1 = new BlockBuilder(null, null, null)
+                .parent(genesis)
+                .build();
+        world.getBlockChain().tryToConnect(block1);
+
+        Web3Impl web3 = createWeb3(world);
+
+        String accountAddress = ByteUtil.toHexString(acc1.getAddress().getBytes());
+        String balanceString = "0x" + ByteUtil.toHexString(BigInteger.valueOf(coinBalance).toByteArray());
+
+        BlockParsedRequestDTO blockParsedRequestDto = new BlockParsedRequestDTO("0x1");
+
+        assertEquals(balanceString, web3.eth_getBalance(accountAddress, blockParsedRequestDto));
+    }
+
+    @Test
+    public void getBalance_blockParsedRequest_withBlockHashCanonical() {
+        World world = new World();
+        Web3Impl web3 = createWeb3(world);
+        Integer coinBalance = 2000000;
+
+        Account acc1 = new AccountBuilder(world)
+                .name("acc1")
+                .balance(Coin.valueOf(coinBalance))
+                .build();
+
+        String accountAddress = ByteUtil.toHexString(acc1.getAddress().getBytes());
+        String balanceString = "0x" + ByteUtil.toHexString(BigInteger.valueOf(coinBalance).toByteArray());
+
+        Block genesis = world.getBlockChain().getBestBlock();
+
+        // Short Chain
+        long block1aDifficulty = 10;
+        Block block1a = createBlockForCanonical(world, genesis, block1aDifficulty, null);
+        assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block1a));
+
+        // Long Chain
+        long difficulty1bDifficulty = block1aDifficulty - 1;
+        Block block1b = createBlockForCanonical(world, genesis, difficulty1bDifficulty, null);
+        assertEquals(ImportResult.IMPORTED_NOT_BEST, world.getBlockChain().tryToConnect(block1b));
+
+        long difficulty1b1Difficulty = block1aDifficulty + 1;
+        Block block1b1 = createBlockForCanonical(world, block1b, difficulty1b1Difficulty, null);
+        assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block1b1));
+
+        String hashAsString1a = toJsonHex(block1a.getHash().getBytes());
+        String hashAsString1b1 = toJsonHex(block1b1.getHash().getBytes());
+
+        // TEST CASES
+        // Short Chain - Check canonical false for the short chain
+        BlockParsedRequestDTO blockParsedRequestDto1aOne = new BlockParsedRequestDTO(null, hashAsString1a, false);
+        String result1aOne = web3.eth_getBalance(accountAddress, blockParsedRequestDto1aOne);
+        Assert.assertNotNull(result1aOne);
+        Assert.assertEquals(balanceString, result1aOne);
+
+        // Short Chain - Check canonical true for the short chain (an exception should be thrown since the block was not found)
+        BlockParsedRequestDTO blockParsedRequestDto1aTwo = new BlockParsedRequestDTO(null, hashAsString1a, true);
+        TestUtils.assertThrows(RskJsonRpcRequestException.class,
+           () -> web3.eth_getBalance(accountAddress, blockParsedRequestDto1aTwo));
+
+        // Long Chain - Check canonical false
+        BlockParsedRequestDTO blockParsedRequestDto1b1One = new BlockParsedRequestDTO(null, hashAsString1b1, false);
+        String result1b1One = web3.eth_getBalance(accountAddress, blockParsedRequestDto1b1One);
+        Assert.assertNotNull(result1b1One);
+        Assert.assertEquals(balanceString, result1b1One);
+
+        // Long Chain - Check canonical long
+        BlockParsedRequestDTO blockParsedRequestDto1b1Two = new BlockParsedRequestDTO(null, hashAsString1b1, true);
+        String result1b1Two = web3.eth_getBalance(accountAddress, blockParsedRequestDto1b1Two);
+        Assert.assertNotNull(result1b1Two);
+        Assert.assertEquals(balanceString, result1b1Two);
     }
 
     @Test
@@ -606,6 +694,106 @@ public class Web3ImplTest {
         String accountAddress = ByteUtil.toHexString(acc1.getAddress().getBytes());
 
         String count = web3.eth_getTransactionCount(accountAddress, "0x1");
+
+        assertNotNull(count);
+        assertEquals("0x1", count);
+
+        count = web3.eth_getTransactionCount(accountAddress, "0x0");
+
+        assertNotNull(count);
+        assertEquals("0x0", count);
+    }
+
+    @Test
+    public void getTransactionCount_byBlockHash() {
+        World world = new World();
+        Web3Impl web3 = createWeb3(world);
+
+        Account acc1 = new AccountBuilder(world)
+                .name("acc1")
+                .balance(Coin.valueOf(100000000))
+                .build();
+
+        String accountAddress = ByteUtil.toHexString(acc1.getAddress().getBytes());
+
+        Account acc2 = new AccountBuilder()
+                .name("acc2")
+                .build();
+
+        Transaction tx1 = new TransactionBuilder().sender(acc1).receiver(acc2).value(BigInteger.valueOf(1000000)).build();
+        Transaction tx2 = new TransactionBuilder().sender(acc1).receiver(acc2).value(BigInteger.valueOf(1000)).build();
+
+        Block genesis = world.getBlockChain().getBestBlock();
+
+        // Short Chain
+        long block1aDifficulty = 10;
+        List<Transaction> txs1a = new ArrayList<>(Arrays.asList(tx1));
+        Block block1a = createBlockForCanonical(world, genesis, block1aDifficulty, txs1a);
+        assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block1a));
+
+        // Long Chain
+        long block1bDifficulty = block1aDifficulty - 1;
+        List<Transaction> txs1b = new ArrayList<>(Arrays.asList());
+        Block block1b = createBlockForCanonical(world, genesis, block1bDifficulty, txs1b);
+        assertEquals(ImportResult.IMPORTED_NOT_BEST, world.getBlockChain().tryToConnect(block1b));
+
+        long block1b1Difficulty = block1aDifficulty + 1;
+        Block block1b1 = createBlockForCanonical(world, block1b, block1b1Difficulty, null);
+        assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block1b1));
+
+        long block1b2Difficulty = block1b1Difficulty + 1;
+        List<Transaction> txs1b2 = new ArrayList<>(Arrays.asList(tx2));
+        Block block1b2 = createBlockForCanonical(world, block1b1, block1b2Difficulty, txs1b2);
+        assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block1b2));
+
+        String hashAsString1a = toJsonHex(block1a.getHash().getBytes());
+        String hashAsString1b2 = toJsonHex(block1b2.getHash().getBytes());
+
+
+        // Short Chain - non canonical
+        BlockParsedRequestDTO blockParsedRequestDto1aOne = new BlockParsedRequestDTO(null, hashAsString1a, false);
+        String count1a = web3.eth_getTransactionCount(accountAddress, blockParsedRequestDto1aOne);
+        String expectedTransactionCount1a = toQuantityJsonHex(1L);
+        assertEquals(expectedTransactionCount1a, count1a);
+
+        // Short chain - canonical
+        BlockParsedRequestDTO blockParsedRequestDto1aTwo = new BlockParsedRequestDTO(null, hashAsString1a, true);
+        TestUtils.assertThrows(RskJsonRpcRequestException.class,
+                               () -> web3.eth_getTransactionCount(accountAddress, blockParsedRequestDto1aTwo));
+
+        // Long Chain - non canonical
+        BlockParsedRequestDTO blockParsedRequestDto1b2One = new BlockParsedRequestDTO(null, hashAsString1b2, false);
+        String count1b2One = web3.eth_getTransactionCount(accountAddress, blockParsedRequestDto1b2One);
+        String expectedTransactionCount1b2One = toQuantityJsonHex(1L);
+        assertEquals(expectedTransactionCount1b2One, count1b2One);
+
+        // Long Chain - canonical
+        BlockParsedRequestDTO blockParsedRequestDto1b2Two = new BlockParsedRequestDTO(null, hashAsString1b2, true);
+        String count1b2Two = web3.eth_getTransactionCount(accountAddress, blockParsedRequestDto1b2Two);
+        String expectedTransactionCount1b2Two = toQuantityJsonHex(1L);
+        assertEquals(expectedTransactionCount1b2Two, count1b2Two);
+    }
+
+    @Test
+    public void getTransactionCount_byBlockNumber() {
+        World world = new World();
+
+        Web3Impl web3 = createWeb3(world);
+
+        Account acc1 = new AccountBuilder(world).name("acc1").balance(Coin.valueOf(100000000)).build();
+        Account acc2 = new AccountBuilder().name("acc2").build();
+        Transaction tx = new TransactionBuilder().sender(acc1).receiver(acc2).value(BigInteger.valueOf(1000000)).build();
+        List<Transaction> txs = new ArrayList<>();
+        txs.add(tx);
+        Block genesis = world.getBlockChain().getBestBlock();
+        Block block1 = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(),
+                                        world.getBlockStore()).trieStore(world.getTrieStore()).parent(genesis).transactions(txs).build();
+        assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block1));
+
+        String accountAddress = ByteUtil.toHexString(acc1.getAddress().getBytes());
+
+        BlockParsedRequestDTO blockParsedRequestDto = new BlockParsedRequestDTO("0x1");
+        String count = web3.eth_getTransactionCount(accountAddress, blockParsedRequestDto);
 
         assertNotNull(count);
         assertEquals("0x1", count);
@@ -1280,6 +1468,91 @@ public class Web3ImplTest {
     }
 
     @Test
+    public void getCode_blockParsedRequest_withBlockNumber() {
+        World world = new World();
+
+        Web3Impl web3 = createWeb3(world);
+
+        Account acc1 = new AccountBuilder(world).name("acc1").balance(Coin.valueOf(100000000)).build();
+        byte[] code = new byte[] { 0x01, 0x02, 0x03 };
+        world.getRepository().saveCode(acc1.getAddress(), code);
+        Block genesis = world.getBlockChain().getBestBlock();
+        genesis.setStateRoot(world.getRepository().getRoot());
+        genesis.flushRLP();
+        world.getBlockStore().saveBlock(genesis, genesis.getCumulativeDifficulty(), true);
+        Block block1 = new BlockBuilder(world.getBlockChain(), world.getBridgeSupportFactory(),
+                                        world.getBlockStore()).trieStore(world.getTrieStore()).parent(genesis).build();
+        assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block1));
+
+        String accountAddress = ByteUtil.toHexString(acc1.getAddress().getBytes());
+
+        BlockParsedRequestDTO blockParsedRequestDto = new BlockParsedRequestDTO("0x1");
+        String scode = web3.eth_getCode(accountAddress, blockParsedRequestDto);
+
+        assertNotNull(scode);
+        assertEquals("0x" + ByteUtil.toHexString(code), scode);
+    }
+
+    @Test
+    public void getCode_blockParsedRequest_withBlockHash() {
+        World world = new World();
+
+        Web3Impl web3 = createWeb3(world);
+
+        Account acc1 = new AccountBuilder(world)
+                .name("acc1")
+                .balance(Coin.valueOf(100000000))
+                .build();
+        byte[] code = new byte[] { 0x01, 0x02, 0x03 };
+
+        world.getRepository().saveCode(acc1.getAddress(), code);
+        Block genesis = world.getBlockChain().getBestBlock();
+        genesis.setStateRoot(world.getRepository().getRoot());
+        genesis.flushRLP();
+
+        world.getBlockStore()
+                .saveBlock(genesis, genesis.getCumulativeDifficulty(), true);
+
+        // Short Chain
+        long block1aDifficulty = 10;
+        Block block1a = createBlockForCanonical(world, genesis, block1aDifficulty, null);
+        assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block1a));
+
+        // Long Chain
+        long difficulty1bDifficulty = block1aDifficulty - 1;
+        Block block1b = createBlockForCanonical(world, genesis, difficulty1bDifficulty, null);
+        assertEquals(ImportResult.IMPORTED_NOT_BEST, world.getBlockChain().tryToConnect(block1b));
+
+        long difficulty1b1Difficulty = block1aDifficulty + 1;
+        Block block1b1 = createBlockForCanonical(world, block1b, difficulty1b1Difficulty, null);
+        assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block1b1));
+
+        String hashAsString1a = toJsonHex(block1a.getHash().getBytes());
+        String hashAsString1b1 = toJsonHex(block1b1.getHash().getBytes());
+
+        String accountAddress = ByteUtil.toHexString(acc1.getAddress().getBytes());
+
+        BlockParsedRequestDTO blockParsedRequestDto1aOne = new BlockParsedRequestDTO(null, hashAsString1a, false);
+        String scode1aOne = web3.eth_getCode(accountAddress, blockParsedRequestDto1aOne);
+        assertNotNull(scode1aOne);
+        assertEquals(toUnformattedJsonHex(code), scode1aOne);
+
+        BlockParsedRequestDTO blockParsedRequestDto1aTwo = new BlockParsedRequestDTO(null, hashAsString1a, true);
+        TestUtils.assertThrows(RskJsonRpcRequestException.class,
+                               () -> web3.eth_getCode(accountAddress, blockParsedRequestDto1aTwo));
+
+        BlockParsedRequestDTO blockParsedRequestDto1b1One = new BlockParsedRequestDTO(null, hashAsString1b1, false);
+        String scode1b1One = web3.eth_getCode(accountAddress, blockParsedRequestDto1b1One);
+        assertNotNull(scode1b1One);
+        assertEquals(toUnformattedJsonHex(code), scode1b1One);
+
+        BlockParsedRequestDTO blockParsedRequestDto1b1Two = new BlockParsedRequestDTO(null, hashAsString1b1, true);
+        String scode1b1Two = web3.eth_getCode(accountAddress, blockParsedRequestDto1b1Two);
+        assertNotNull(scode1b1Two);
+        assertEquals(toUnformattedJsonHex(code), scode1b1Two);
+    }
+
+    @Test
     public void callFromDefaultAddressInWallet() {
         World world = new World();
         Account acc1 = new AccountBuilder(world).name("default").balance(Coin.valueOf(10000000)).build();
@@ -1401,6 +1674,124 @@ public class Web3ImplTest {
         String result = web3.eth_call(argsForCall, "latest");
 
         assertEquals("0x", result);
+    }
+
+    @Test
+    public void callFromAddressInWallet_withBlockHash() {
+        World world = new World();
+        Account acc1 = new AccountBuilder(world).name("notDefault").balance(Coin.valueOf(10000000)).build();
+
+        Block genesis = world.getBlockByName("g00");
+
+        Transaction tx = new TransactionBuilder()
+                .sender(acc1)
+                .gasLimit(BigInteger.valueOf(500000))
+                .gasPrice(BigInteger.ONE)
+                .data("608060405234801561001057600080fd5b506101fa806100206000396000f3fe608060405234801561001057600080fd5b50600436106100365760003560e01c80631c8499e51461003b578063ead710c414610045575b600080fd5b610043610179565b005b6100fe6004803603602081101561005b57600080fd5b810190808035906020019064010000000081111561007857600080fd5b82018360208201111561008a57600080fd5b803590602001918460018302840111640100000000831117156100ac57600080fd5b91908080601f016020809104026020016040519081016040528093929190818152602001838380828437600081840152601f19601f8201169050808301925050505050505091929192905050506101bb565b6040518080602001828103825283818151815260200191508051906020019080838360005b8381101561013e578082015181840152602081019050610123565b50505050905090810190601f16801561016b5780820380516001836020036101000a031916815260200191505b509250505060405180910390f35b336000806101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff160217905550565b606081905091905056fea265627a7a723158207cbf5ab8312143442836de7909c83aec5160dae50224ecc7c16d7f35a306901e64736f6c63430005100032")
+                .build();
+
+        List<Transaction> txs = Arrays.asList(tx);
+
+        Block block1a = createBlockForCanonical(world, genesis, 4, txs);
+        Block block1b = createBlockForCanonical(world, genesis, 1, txs);
+        Block block1b1 = createBlockForCanonical(world, block1b, 5, txs);
+
+        assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block1a));
+        assertEquals(ImportResult.IMPORTED_NOT_BEST, world.getBlockChain().tryToConnect(block1b));
+        assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block1b1));
+
+        Web3Impl web3 = createWeb3Mocked(world);
+
+        web3.personal_newAccountWithSeed("default");
+        web3.personal_newAccountWithSeed("notDefault");
+
+        Web3.CallArguments argsForCall = new Web3.CallArguments();
+        argsForCall.from = toJsonHex(acc1.getAddress().getBytes());
+        argsForCall.to = toJsonHex(tx.getContractAddress().getBytes());
+        argsForCall.data = "ead710c40000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000568656c6c6f000000000000000000000000000000000000000000000000000000";
+
+        String expectedResult = "0x0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000568656c6c6f000000000000000000000000000000000000000000000000000000";
+
+        // Short Chain - require Canonical false
+        BlockParsedRequestDTO blockParsedRequest1aOne = new BlockParsedRequestDTO(null, block1a.getHashJsonString(), false);
+        String result1aOne = web3.eth_call(argsForCall, blockParsedRequest1aOne);
+        assertEquals(expectedResult, result1aOne);
+
+        // Short Chain - require Canonical true
+        BlockParsedRequestDTO blockParsedRequest1aTwo = new BlockParsedRequestDTO(null, block1a.getHashJsonString(), true);
+        TestUtils.assertThrows(RskJsonRpcRequestException.class,
+                               () -> web3.eth_call(argsForCall, blockParsedRequest1aTwo));
+
+        // Main Chain - require Canonical false
+        BlockParsedRequestDTO blockParsedRequest1bOne = new BlockParsedRequestDTO(null, block1b1.getHashJsonString(), false);
+        String result1b1One = web3.eth_call(argsForCall, blockParsedRequest1bOne);
+        assertEquals(expectedResult, result1b1One);
+
+        // Main Chain - require Canonical true
+        BlockParsedRequestDTO blockParsedRequest1b1Two = new BlockParsedRequestDTO(null, block1b1.getHashJsonString(), true);
+        String result1b1Two = web3.eth_call(argsForCall, blockParsedRequest1b1Two);
+        assertEquals(expectedResult, result1b1Two);
+    }
+
+    @Test
+    public void getStorageAt_withBlockNumber() {
+        World world = new World();
+        Account acc1 = new AccountBuilder(world).name("notDefault").balance(Coin.valueOf(10000000)).build();
+
+        String accountAddress = ByteUtil.toHexString(acc1.getAddress().getBytes());
+        String storageIdx = "0x01";
+
+        Block genesis = world.getBlockByName("g00");
+
+        Block block1 = createBlockForCanonical(world, genesis, 4, null);
+        Block block2 = createBlockForCanonical(world, block1, 5, null);
+
+        assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block1));
+        assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block2));
+
+        Web3Impl web3 = createWeb3Mocked(world);
+
+        String blockNumber = toQuantityJsonHex(block2.getNumber());
+        BlockParsedRequestDTO blockParsedRequest = new BlockParsedRequestDTO(blockNumber);
+        String result = web3.eth_getStorageAt(accountAddress, storageIdx, blockParsedRequest);
+        Assert.assertEquals("0x0", result);
+    }
+
+    @Test
+    public void getStorageAt_withBlockHash() {
+        World world = new World();
+        Account acc1 = new AccountBuilder(world).name("notDefault").balance(Coin.valueOf(10000000)).build();
+
+        String accountAddress = ByteUtil.toHexString(acc1.getAddress().getBytes());
+        String storageIdx = "0x01";
+
+        Block genesis = world.getBlockByName("g00");
+
+        Block block1a = createBlockForCanonical(world, genesis, 4, null);
+        Block block1b = createBlockForCanonical(world, genesis, 1, null);
+        Block block1b1 = createBlockForCanonical(world, block1b, 5, null);
+
+        assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block1a));
+        assertEquals(ImportResult.IMPORTED_NOT_BEST, world.getBlockChain().tryToConnect(block1b));
+        assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block1b1));
+
+        Web3Impl web3 = createWeb3Mocked(world);
+
+        BlockParsedRequestDTO blockParsedRequest1aOne = new BlockParsedRequestDTO(null, block1a.getHashJsonString(), false);
+        String result1aOne = web3.eth_getStorageAt(accountAddress, storageIdx, blockParsedRequest1aOne);
+        Assert.assertEquals("0x0", result1aOne);
+
+        BlockParsedRequestDTO blockParsedRequest1aTwo = new BlockParsedRequestDTO(null, block1a.getHashJsonString(), true);
+        TestUtils.assertThrows(RskJsonRpcRequestException.class,
+                               () -> web3.eth_getStorageAt(accountAddress, storageIdx, blockParsedRequest1aTwo));
+
+        BlockParsedRequestDTO blockParsedRequest1b1One = new BlockParsedRequestDTO(null, block1b1.getHashJsonString(), false);
+        String result1bOne = web3.eth_getStorageAt(accountAddress, storageIdx, blockParsedRequest1b1One);
+        Assert.assertEquals("0x0", result1bOne);
+
+        BlockParsedRequestDTO blockParsedRequest1b1Two = new BlockParsedRequestDTO(null, block1b1.getHashJsonString(), true);
+        String result1bTwo = web3.eth_getStorageAt(accountAddress, storageIdx, blockParsedRequest1b1Two);
+        Assert.assertEquals("0x0", result1bTwo);
     }
 
     @Test
@@ -2072,6 +2463,29 @@ public class Web3ImplTest {
                 new BuildInfo("test", "test"),
                 null,
                 retriever);
+    }
+
+    private Block createBlockForCanonical(
+            World world,
+            Block parent,
+            long difficulty,
+            List<Transaction> txs) {
+        BlockBuilder block1bWorldBuilder = new BlockBuilder(
+                world.getBlockChain(), world.getBridgeSupportFactory(), world.getBlockStore());
+
+        BlockBuilder blockBuilder = block1bWorldBuilder
+                .trieStore(world.getTrieStore())
+                .difficulty(difficulty)
+                .parent(parent);
+
+        Block block = (txs != null && txs.size() > 0)
+            ? blockBuilder
+                .transactions(txs)
+                .build()
+            : blockBuilder
+                .build();
+
+        return block;
     }
 
     private TransactionExecutorFactory buildTransactionExecutorFactory(

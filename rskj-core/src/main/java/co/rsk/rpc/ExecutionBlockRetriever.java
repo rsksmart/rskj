@@ -21,11 +21,14 @@ package co.rsk.rpc;
 import co.rsk.core.Coin;
 import co.rsk.core.bc.BlockResult;
 import co.rsk.core.bc.MiningMainchainView;
+import co.rsk.crypto.Keccak256;
 import co.rsk.mine.BlockToMineBuilder;
 import co.rsk.mine.MinerServer;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Blockchain;
+import org.ethereum.db.BlockStore;
+import org.ethereum.rpc.dto.BlockParsedRequestDTO;
 import org.ethereum.util.Utils;
 
 import javax.annotation.Nullable;
@@ -65,11 +68,17 @@ public class ExecutionBlockRetriever {
 
     @Deprecated
     public BlockResult getExecutionBlock_workaround(String bnOrId) {
-        if (LATEST_ID.equals(bnOrId)) {
+        BlockParsedRequestDTO blockParsedRequest = new BlockParsedRequestDTO(bnOrId);
+        return getExecutionBlock_workaround(blockParsedRequest);
+    }
+
+    @Deprecated
+    public BlockResult getExecutionBlock_workaround(BlockParsedRequestDTO blockParsedRequest) {
+        if (LATEST_ID.equals(blockParsedRequest.getBlockNumber())) {
             return newBlockResult_workaround(blockchain.getBestBlock());
         }
 
-        if (PENDING_ID.equals(bnOrId)) {
+        if (PENDING_ID.equals(blockParsedRequest.getBlockNumber())) {
             Optional<Block> latestBlock = minerServer.getLatestBlock();
             if (latestBlock.isPresent()) {
                 return newBlockResult_workaround(latestBlock.get());
@@ -93,29 +102,40 @@ public class ExecutionBlockRetriever {
             return cachedResult;
         }
 
-        // Is the block specifier either a hexadecimal or decimal number?
-        Optional<Long> executionBlockNumber = Optional.empty();
+        if(blockParsedRequest.getUseBlockNumber()) {
+            // Is the block specifier either a hexadecimal or decimal number?
+            Optional<Long> executionBlockNumber = Optional.empty();
 
-        if (Utils.isHexadecimalString(bnOrId)) {
-            executionBlockNumber = Optional.of(Utils.hexadecimalStringToLong(bnOrId));
-        } else if (Utils.isDecimalString(bnOrId)) {
-            executionBlockNumber = Optional.of(Utils.decimalStringToLong(bnOrId));
+            if (Utils.isHexadecimalString(blockParsedRequest.getBlockNumber())) {
+                executionBlockNumber = Optional.of(Utils.hexadecimalStringToLong(blockParsedRequest.getBlockNumber()));
+            } else if (Utils.isDecimalString(blockParsedRequest.getBlockNumber())) {
+                executionBlockNumber = Optional.of(Utils.decimalStringToLong(blockParsedRequest.getBlockNumber()));
+            }
+
+            if (executionBlockNumber.isPresent()) {
+                Block executionBlock = blockchain.getBlockByNumber(executionBlockNumber.get());
+                if (executionBlock == null) {
+                    throw invalidParamError(String.format("Invalid block number %d", executionBlockNumber.get()));
+                }
+                return newBlockResult_workaround(executionBlock);
+            }
+
+            // If we got here, the specifier given is unsupported
+            throw invalidParamError(String.format(
+                "Unsupported block specifier '%s'. Can only be either 'latest', " +
+                    "'pending' or a specific block number (either hex - prepending '0x' or decimal).",
+                blockParsedRequest.getBlockNumber()));
         }
-
-        if (executionBlockNumber.isPresent()) {
-            Block executionBlock = blockchain.getBlockByNumber(executionBlockNumber.get());
+        else {
+            Block executionBlock = blockchain.getBlockByHash(blockParsedRequest.getBlockHash(), blockParsedRequest.getRequireCanonical());
             if (executionBlock == null) {
-                throw invalidParamError(String.format("Invalid block number %d", executionBlockNumber.get()));
+                throw invalidParamError(String.format("Invalid block number %s", blockParsedRequest.getBlockHashAsString()));
             }
             return newBlockResult_workaround(executionBlock);
         }
-
-        // If we got here, the specifier given is unsupported
-        throw invalidParamError(String.format(
-                "Unsupported block specifier '%s'. Can only be either 'latest', " +
-                        "'pending' or a specific block number (either hex - prepending '0x' or decimal).",
-                bnOrId));
     }
+
+
 
     public Block getExecutionBlock(String bnOrId) {
         if (LATEST_ID.equals(bnOrId)) {

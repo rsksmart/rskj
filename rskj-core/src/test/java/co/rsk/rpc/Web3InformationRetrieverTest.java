@@ -7,14 +7,17 @@ import co.rsk.db.RepositoryLocator;
 import co.rsk.db.RepositorySnapshot;
 import org.ethereum.TestUtils;
 import org.ethereum.core.*;
+import org.ethereum.rpc.TypeConverter;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mockito;
 
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 
+import static org.ethereum.rpc.TypeConverter.stringHexToByteArray;
 import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -89,6 +92,34 @@ public class Web3InformationRetrieverTest {
         Optional<Block> result = target.getBlock("0x2");
         assertFalse(result.isPresent());
     }
+
+
+    @Test
+    public void getBlockHash_found() {
+        Block secondBlock = mock(Block.class);
+
+        String hashString = "0xf88529d4ab262c0f4d042e9d8d3f2472848eaafe1a9b7213f57617eb40a9f9e0";
+        byte[] hashAsBytes = stringHexToByteArray(hashString);
+
+        Boolean requireCanonical = true;
+
+        when(blockchain.getBlockByHash(hashAsBytes, requireCanonical)).thenReturn(secondBlock);
+        Optional<Block> result = target.getBlockByHash(hashAsBytes, requireCanonical);
+
+        assertTrue(result.isPresent());
+        assertEquals(secondBlock, result.get());
+    }
+
+    @Test
+    public void getBlockHash_notFound() {
+        String hashString = "0xf98529d4ab262c0f4d042e9d8d3f2472848eaafe1a9b7213f57617eb40a9f9e0";
+        byte[] hashAsBytes = stringHexToByteArray(hashString);
+
+        Optional<Block> result = target.getBlockByHash(hashAsBytes, true);
+        assertFalse(result.isPresent());
+    }
+
+
 
     @Test
     public void getTransactions_pending() {
@@ -217,6 +248,57 @@ public class Web3InformationRetrieverTest {
                 .assertThrows(RskJsonRpcRequestException.class, () -> target.getInformationProvider("0x4"));
 
         assertEquals("Block 0x4 not found", e.getMessage());
+    }
+
+    @Test
+    public void getStateFromHash_blockNotFound() {
+        String hashString = "0xf88529d4ab262c0f4d042e9d8d3f2472848eaafe1a9b7213f57617eb40a9f9e0";
+        byte[] hashAsBytes = stringHexToByteArray(hashString);
+        Boolean requireCanonical = true;
+
+        RskJsonRpcRequestException e = TestUtils
+                .assertThrows(RskJsonRpcRequestException.class, () -> target.getInformationProvider(hashAsBytes, requireCanonical));
+
+        String expectedErrorMessage = "Block " + hashString + " not found";
+        assertEquals(expectedErrorMessage, e.getMessage());
+    }
+
+    @Test
+    public void getStateFromHash_hash() {
+        String hashString = "0xf88529d4ab262c0f4d042e9d8d3f2472848eaafe1a9b7213f57617eb40a9f9e0";
+        byte[] hashAsBytes = stringHexToByteArray(hashString);
+        Boolean requireCanonical = true;
+
+        Block block = mock(Block.class);
+        BlockHeader header = mock(BlockHeader.class);
+        when(block.getHeader()).thenReturn(header);
+
+        when(blockchain.getBlockByHash(hashAsBytes, requireCanonical)).thenReturn(block);
+        RepositorySnapshot snapshot = mock(RepositorySnapshot.class);
+        when(locator.findSnapshotAt(eq(header))).thenReturn(Optional.of(snapshot));
+        AccountInformationProvider result = target.getInformationProvider(hashAsBytes, requireCanonical);
+
+        assertEquals(snapshot, result);
+    }
+
+    @Test
+    public void getTransactionsFromHash_stateNotFound() {
+        String hashString = "0xf88529d4ab262c0f4d042e9d8d3f2472848eaafe1a9b7213f57617eb40a9f9e0";
+        byte[] hashAsBytes = stringHexToByteArray(hashString);
+        Boolean requireCanonical = true;
+
+        Block block = mock(Block.class);
+        BlockHeader header = mock(BlockHeader.class);
+        when(block.getHeader()).thenReturn(header);
+        Keccak256 blockHash = new Keccak256(hashAsBytes);
+        when(block.getHash()).thenReturn(blockHash);
+        when(blockchain.getBlockByHash(hashAsBytes, requireCanonical)).thenReturn(block);
+
+        RskJsonRpcRequestException e = TestUtils
+                .assertThrows(RskJsonRpcRequestException.class, () -> target.getInformationProvider(hashAsBytes, requireCanonical));
+
+        String expectedExceptionString = "State not found for block with hash " + blockHash.toString();
+        assertEquals(expectedExceptionString, e.getMessage());
     }
 
     @Test

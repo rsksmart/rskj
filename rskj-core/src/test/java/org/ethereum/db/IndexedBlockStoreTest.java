@@ -37,6 +37,8 @@ import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.mapdb.DB;
+import org.mockito.Mockito;
+import org.mockito.verification.VerificationMode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -51,6 +53,7 @@ import java.util.*;
 
 import static co.rsk.core.BlockDifficulty.ZERO;
 import static org.ethereum.TestUtils.*;
+import static org.ethereum.rpc.TypeConverter.stringHexToByteArray;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.mock;
@@ -1034,5 +1037,108 @@ public class IndexedBlockStoreTest {
 
         bestBlock = indexedBlockStore.getBestBlock();
         assertThat(bestBlock.getNumber(), is(blockToRewind));
+    }
+
+    @Test
+    public void checkBlockMainChain_falseWhenBlockInfosNull() {
+        long blockNumber = 2;
+        String hashString = "0xf98529d4ab262c0f4d042e9d8d3f2472848eaafe1a9b7213f57617eb40a9f9e0";
+        Keccak256 blockHash = new Keccak256(stringHexToByteArray(hashString));
+
+        HashMapBlocksIndex index = mock(HashMapBlocksIndex.class);
+        List<IndexedBlockStore.BlockInfo> blockInfos = null;
+        when(index.getBlocksByNumber(blockNumber)).thenReturn(blockInfos);
+
+        IndexedBlockStore indexedBlockStore = new IndexedBlockStore(null, null, index);
+
+        boolean blockInMainChain = indexedBlockStore.isBlockInMainChain(2, blockHash);
+        Assert.assertFalse(blockInMainChain);
+    }
+
+    @Test
+    public void checkBlockMainChain_hashMatchedButNotInMainChain() {
+        long blockNumber = 2;
+        String hashString = "0xf98529d4ab262c0f4d042e9d8d3f2472848eaafe1a9b7213f57617eb40a9f9e0";
+        Keccak256 blockHash = new Keccak256(stringHexToByteArray(hashString));
+
+        List<IndexedBlockStore.BlockInfo> blockInfos = Arrays.asList(
+            createBlockInfo("0x0000000000000000000000000000000000000000000000000000000000000001", false),
+            createBlockInfo(hashString, false),
+            createBlockInfo("0x0000000000000000000000000000000000000000000000000000000000000002", false),
+            createBlockInfo("0x0000000000000000000000000000000000000000000000000000000000000003", false)
+        );
+
+        IndexedBlockStore.BlockInfo blockInfo2 = new IndexedBlockStore.BlockInfo();
+        blockInfo2.setHash(stringHexToByteArray(hashString));
+        blockInfo2.setMainChain(false);
+
+        HashMapBlocksIndex index = mock(HashMapBlocksIndex.class);
+        when(index.getBlocksByNumber(blockNumber)).thenReturn(blockInfos);
+
+        IndexedBlockStore indexedBlockStore = new IndexedBlockStore(null, null, index);
+
+        boolean blockInMainChain = indexedBlockStore.isBlockInMainChain(2, blockHash);
+        Assert.assertFalse(blockInMainChain);
+    }
+
+    @Test
+    public void checkBlockMainChain_inMainChainButHashNotMatched() {
+        long blockNumber = 2;
+        String hashString = "0xf98529d4ab262c0f4d042e9d8d3f2472848eaafe1a9b7213f57617eb40a9f9e0";
+        Keccak256 blockHash = new Keccak256(stringHexToByteArray(hashString));
+
+        List<IndexedBlockStore.BlockInfo> blockInfos = Arrays.asList(
+                createBlockInfo("0x0000000000000000000000000000000000000000000000000000000000000001", true),
+                createBlockInfo("0x0000000000000000000000000000000000000000000000000000000000000002", true),
+                createBlockInfo("0x0000000000000000000000000000000000000000000000000000000000000003", true),
+                createBlockInfo("0x0000000000000000000000000000000000000000000000000000000000000004", true)
+        );
+
+        IndexedBlockStore.BlockInfo blockInfo2 = new IndexedBlockStore.BlockInfo();
+        blockInfo2.setHash(stringHexToByteArray(hashString));
+        blockInfo2.setMainChain(false);
+
+        HashMapBlocksIndex index = mock(HashMapBlocksIndex.class);
+        when(index.getBlocksByNumber(blockNumber)).thenReturn(blockInfos);
+
+        IndexedBlockStore indexedBlockStore = new IndexedBlockStore(null, null, index);
+
+        boolean blockInMainChain = indexedBlockStore.isBlockInMainChain(2, blockHash);
+        Assert.assertFalse(blockInMainChain);
+    }
+
+    @Test
+    public void checkBlockMainChain_inMainChainAndHashMatched() {
+        long blockNumber = 2;
+        String hashString = "0xf98529d4ab262c0f4d042e9d8d3f2472848eaafe1a9b7213f57617eb40a9f9e0";
+        Keccak256 blockHash = new Keccak256(stringHexToByteArray(hashString));
+
+        List<IndexedBlockStore.BlockInfo> blockInfos = Arrays.asList(
+                createBlockInfo("0x0000000000000000000000000000000000000000000000000000000000000001", true),
+                createBlockInfo(hashString, true),
+                createBlockInfo("0x0000000000000000000000000000000000000000000000000000000000000003", true),
+                createBlockInfo("0x0000000000000000000000000000000000000000000000000000000000000004", true)
+        );
+
+        IndexedBlockStore.BlockInfo blockInfo2 = new IndexedBlockStore.BlockInfo();
+        blockInfo2.setHash(stringHexToByteArray(hashString));
+        blockInfo2.setMainChain(false);
+
+        HashMapBlocksIndex index = mock(HashMapBlocksIndex.class);
+        when(index.getBlocksByNumber(blockNumber)).thenReturn(blockInfos);
+
+        IndexedBlockStore indexedBlockStore = new IndexedBlockStore(null, null, index);
+
+        boolean blockInMainChain = indexedBlockStore.isBlockInMainChain(2, blockHash);
+        Assert.assertTrue(blockInMainChain);
+    }
+
+    private IndexedBlockStore.BlockInfo createBlockInfo(String hash, Boolean isMainChain) {
+        IndexedBlockStore.BlockInfo blockInfo = new IndexedBlockStore.BlockInfo();
+        String randomHash1 = hash;
+        blockInfo.setHash(stringHexToByteArray(randomHash1));
+        blockInfo.setMainChain(isMainChain);
+
+        return blockInfo;
     }
 }
