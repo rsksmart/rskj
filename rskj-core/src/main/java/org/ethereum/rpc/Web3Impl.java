@@ -33,6 +33,7 @@ import co.rsk.rpc.ModuleDescription;
 import co.rsk.rpc.Web3InformationRetriever;
 import co.rsk.rpc.modules.debug.DebugModule;
 import co.rsk.rpc.modules.eth.EthModule;
+import co.rsk.rpc.modules.eth.getProof.ProofDTO;
 import co.rsk.rpc.modules.evm.EvmModule;
 import co.rsk.rpc.modules.mnr.MnrModule;
 import co.rsk.rpc.modules.personal.PersonalModule;
@@ -1088,5 +1089,30 @@ public class Web3Impl implements Web3 {
      */
     public PeerScoringReputationSummary sco_reputationSummary() {
         return PeerScoringReporterUtil.buildReputationSummary(peerScoringManager.getPeersInformation());
+    }
+
+    /**
+     * According to the EIP-1186 https://eips.ethereum.org/EIPS/eip-1186
+     * Given a blockId, it generates account and storage proofs for specific address and storage values
+     *
+     * @param address an RSK address
+     * @param storageKeys storage keys to prove (each storage key as UNFORMATED DATA, check https://eth.wiki/json-rpc/API)
+     * @param blockOrId a block id
+     *
+     * @returns a proof object object matching the following properties:
+     *
+     *  balance: QUANTITY - the balance of the account. See eth_getBalance
+     *  codeHash: DATA, 32 Bytes - hash of the code of the account. For a simple Account without code it will return "0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470"
+     *  nonce: QUANTITY, - nonce of the account. See eth_getTransactionCount
+     *  storageHash: DATA, 32 Bytes - SHA3 of the StorageRoot. All storage will deliver a MerkleProof starting with this rootHash.
+     *  accountProof: ARRAY - Array of rlp-serialized MerkleTree-Nodes, starting with the stateRoot-Node, following the path of the SHA3 (address) as key.
+     *  storageProof: ARRAY - Array of storage-entries as requested. Each entry is a object with these properties:
+     *      key: QUANTITY - the requested storage key
+     *      value: QUANTITY - the storage value
+     *      proof: ARRAY - Array of rlp-serialized MerkleTree-Nodes, starting with the storageHash-Node, following the path of the SHA3 (key) as path.
+     * */
+    @Override
+    public ProofDTO eth_getProof(String address, List<String> storageKeys, String blockOrId) {
+        throw new UnsupportedOperationException("eth_getProof it's not yet activated");
     }
 }

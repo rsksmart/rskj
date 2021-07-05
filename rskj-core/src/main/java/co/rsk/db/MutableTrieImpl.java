@@ -107,6 +107,11 @@ public class MutableTrieImpl implements MutableTrie {
     }
 
     @Override
+    public List<Trie> getNodes(byte[] key) {
+        return trie.getNodes(key);
+    }
+
+    @Override
     public void deleteRecursive(byte[] key) {
         trie = trie.deleteRecursive(key);
     }

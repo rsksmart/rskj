@@ -40,6 +40,7 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.Nonnull;
 import java.math.BigInteger;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class MutableRepository implements Repository {
     private static final Logger logger = LoggerFactory.getLogger("repository");
@@ -136,7 +137,6 @@ public class MutableRepository implements Repository {
 
         return account.getNonce();
     }
-
     @Override
     public synchronized void saveCode(RskAddress addr, byte[] code) {
         byte[] key = trieKeyMapper.getCodeKey(addr);
@@ -345,6 +345,36 @@ public class MutableRepository implements Repository {
     public synchronized void updateAccountState(RskAddress addr, final AccountState accountState) {
         byte[] accountKey = trieKeyMapper.getAccountKey(addr);
         mutableTrie.put(accountKey, accountState.getEncoded());
+    }
+
+    @Override
+    public byte[] getStorageHash(RskAddress addr) {
+        // todo(fedejinich) this is an unnecesary method, just use getStorageStateRoot
+        return getStorageStateRoot(addr);
+    }
+
+    @Override
+    public List<byte[]> getAccountProof(RskAddress addr) {
+        return prove(trieKeyMapper.getAccountKey(addr));
+    }
+
+    @Override
+    public List<byte[]> getStorageProof(RskAddress addr, DataWord storageKey) {
+        return prove(trieKeyMapper.getAccountStorageKey(addr, storageKey));
+    }
+
+    /**
+     * Generates a proof for a specific key.
+     * Retrieves all the nodes starting from the state root, following the key path to the value
+     *
+     * @return a byte array of RLP-serialized nodes
+     * */
+    private List<byte[]> prove(byte[] key) {
+        return Optional.ofNullable(mutableTrie.getNodes(key))
+                .orElse(Collections.emptyList())
+                .stream()
+                .map(trie -> trie.getProof())
+                .collect(Collectors.toList());
     }
 
     @VisibleForTesting

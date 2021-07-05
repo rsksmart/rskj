@@ -19,6 +19,7 @@
 package co.rsk.rpc;
 
 import co.rsk.rpc.modules.eth.EthModule;
+import co.rsk.rpc.modules.eth.getProof.ProofDTO;
 import org.ethereum.rpc.Web3;
 import org.ethereum.rpc.dto.BlockResultDTO;
 import org.ethereum.rpc.dto.CompilationResultDTO;
@@ -26,6 +27,7 @@ import org.ethereum.rpc.dto.TransactionReceiptDTO;
 import org.ethereum.rpc.dto.TransactionResultDTO;
 
 import java.math.BigInteger;
+import java.util.List;
 import java.util.Map;
 
 public interface Web3EthModule {
@@ -51,6 +53,18 @@ public interface Web3EthModule {
 
     default String eth_chainId() {
         return getEthModule().chainId();
+    }
+
+    default String eth_getCode(String address, String blockId) {
+        return getEthModule().getCode(address, blockId);
+    }
+
+    default String eth_sendRawTransaction(String rawData) {
+        return getEthModule().sendRawTransaction(rawData);
+    }
+
+    default String eth_sendTransaction(Web3.CallArguments args) {
+        return getEthModule().sendTransaction(args);
     }
 
     EthModule getEthModule();
@@ -84,18 +98,6 @@ public interface Web3EthModule {
     String eth_getUncleCountByBlockHash(String blockHash)throws Exception;
 
     String eth_getUncleCountByBlockNumber(String bnOrId)throws Exception;
-
-    default String eth_getCode(String address, String blockId) {
-        return getEthModule().getCode(address, blockId);
-    }
-
-    default String eth_sendRawTransaction(String rawData) {
-        return getEthModule().sendRawTransaction(rawData);
-    }
-
-    default String eth_sendTransaction(Web3.CallArguments args) {
-        return getEthModule().sendTransaction(args);
-    }
 
     BlockResultDTO eth_getBlockByHash(String blockHash, Boolean fullTransactionObjects) throws Exception;
 
@@ -140,4 +142,16 @@ public interface Web3EthModule {
     boolean eth_submitWork(String nonce, String header, String mince);
 
     boolean eth_submitHashrate(String hashrate, String id);
+
+    /**
+     * According to the EIP-1186 https://eips.ethereum.org/EIPS/eip-1186
+     * Returns account and storage proofs for a specific address and storage key
+     *
+     * @param address an address
+     * @param storageKeys storage keys to get storage proofs
+     * @param blockOrId a block number to query the blockchain state (it could also be "latest" or "pending")
+     *
+     * @return account and storage proofs
+     * */
+    ProofDTO eth_getProof(String address, List<String> storageKeys, String blockOrId);
 }

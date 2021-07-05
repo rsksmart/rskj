@@ -25,12 +25,15 @@ import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
 import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.core.AccountState;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.MutableRepository;
 import org.ethereum.util.ByteUtil;
+import org.ethereum.util.RLP;
+import org.ethereum.util.RLPElement;
 import org.ethereum.vm.DataWord;
 import org.junit.Assert;
 import org.junit.Before;
@@ -39,8 +42,10 @@ import org.junit.Test;
 import org.junit.runners.MethodSorters;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import static org.junit.Assert.*;
 
@@ -583,4 +588,98 @@ public class RepositoryTest {
         return new Keccak256(Keccak256Helper.keccak256(emptyCode));
     }
 
+    @Test
+    public void testGetAccountProof() {
+        RskAddress address = COW;
+        Repository track = this.repository.startTracking();
+
+        AccountState baseAccountState = track.createAccount(address);
+
+        track.commit();
+
+        List<byte[]> proofs = track.getAccountProof(address);
+
+        AccountState accountStateRetrievedFromProofs = new AccountState(decodeProof(proofs));
+
+        assertArrayEquals(baseAccountState.getEncoded(), accountStateRetrievedFromProofs.getEncoded());
+    }
+
+    @Test
+    public void testGetAccountProof_nonexistentAccount() {
+        // todo (fedejinich) this will change when we clarify what to do with nonexistent accountProofs
+        Repository track = this.repository.startTracking();
+
+        List<byte[]> proofs = track.getAccountProof(COW);
+
+        assertTrue(proofs.isEmpty());
+    }
+
+    @Test
+    public void testGetStorageProof() {
+        Repository track = this.repository.startTracking();
+        track.createAccount(COW);
+        track.addStorageRow(COW, DataWord.ONE, DataWord.valueOf(20));
+
+        track.commit();
+
+        List<byte[]> proof = track.getStorageProof(COW, DataWord.ONE);
+
+        byte[] value = decodeProof(proof);
+
+        assertEquals(DataWord.valueOf(20), DataWord.valueOf(value));
+    }
+
+    @Test
+    public void testGetStorageProof_nonexistentStorage() {
+        // todo (fedejinich) this will change when we clarify what to do with nonexistent storageProofs
+
+        Repository track = this.repository.startTracking();
+        track.createAccount(COW);
+
+        track.commit();
+
+        List<byte[]> proof = track.getStorageProof(COW, DataWord.ONE);
+
+        assertTrue(proof.isEmpty());
+    }
+
+    @Test
+    public void testGetStorageProof_nonexistentAccount() {
+        // todo (fedejinich) this will change when we clarify what to do with nonexistent storageProofs
+
+        Repository track = this.repository.startTracking();
+
+        track.commit();
+
+        List<byte[]> proof = track.getStorageProof(COW, DataWord.ONE);
+
+        assertTrue(proof.isEmpty());
+    }
+
+    private byte[] decodeProof(List<byte[]> proofs) {
+        // Decode RLP proofs
+        List<RLPElement> rlpElementList = proofs
+                .stream()
+                .map(RLP::decode2)
+                // it'll be always a one element list
+                .map(list -> list.get(0))
+                .collect(Collectors.toList());
+
+        List<byte[]> messages = rlpElementList
+                .stream()
+                .map(RLPElement::getRLPRawData)
+                .collect(Collectors.toList());
+
+        // The last node should contain the baseAccountState
+        Trie leafNode = messages
+                .stream()
+                .map(m -> Trie.fromMessage(m, null))
+                .filter(Trie::isTerminal)
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("No leaf node"));
+
+        assertTrue(leafNode.isTerminal());
+
+        return leafNode.getValue();
+    }
 }

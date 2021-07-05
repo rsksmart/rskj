@@ -32,6 +32,7 @@ import org.ethereum.vm.program.listener.ProgramListenerAware;
 
 import java.math.BigInteger;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 
 /*
@@ -177,6 +178,21 @@ public class Storage implements Repository, ProgramListenerAware {
     @Override
     public byte[] getStorageBytes(RskAddress addr, DataWord key) {
         return repository.getStorageBytes(addr, key);
+    }
+
+    @Override
+    public byte[] getStorageHash(RskAddress addr) {
+        return repository.getStorageHash(addr);
+    }
+
+    @Override
+    public List<byte[]> getAccountProof(RskAddress addr) {
+        return repository.getAccountProof(addr);
+    }
+
+    @Override
+    public List<byte[]> getStorageProof(RskAddress addr, DataWord storageKey) {
+        return repository.getStorageProof(addr, storageKey);
     }
 
     @Override

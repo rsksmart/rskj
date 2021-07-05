@@ -1422,4 +1422,12 @@ public class Trie {
 
         return subnodes;
     }
+
+    /**
+     * Serializes and encodes a Unitrie node. Useful for generating merkle proofs for specific keys
+     * @return an RLP-Serialized node
+     * */
+    public byte[] getProof() {
+        return RLP.encodeElement(toMessage());
+    }
 }
