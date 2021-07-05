@@ -228,9 +228,16 @@ public class BridgeUtils {
     }
 
     public static boolean isPegOutTx(BtcTransaction tx, ActivationConfig.ForBlock activations, Script... p2shScript) {
-        return activations.isActive(ConsensusRule.RSKIP201) ?
-            isPegOutTxPostIris(tx) :
-            isPegOutTxPreIris(tx, p2shScript);
+        // If a peg-out is made just before Iris activation and registered afterwards
+        // it won't have the identifying OP_RETURN output
+        // So for a period of time after Iris HF activation we need to perform both checks
+        if (activations.isActive(ConsensusRule.PEGOUT_IDENTIFIER)) {
+            return isPegOutTxPostIris(tx);
+        } else if (activations.isActive(ConsensusRule.RSKIP201)) {
+            return isPegOutTxPostIris(tx) || isPegOutTxPreIris(tx, p2shScript);
+        } else {
+            return isPegOutTxPreIris(tx, p2shScript);
+        }
     }
 
     public static boolean isMigrationTx(

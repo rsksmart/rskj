@@ -41,7 +41,6 @@ import co.rsk.bitcoinj.core.UTXOProviderException;
 import co.rsk.bitcoinj.core.VerificationException;
 import co.rsk.bitcoinj.crypto.TransactionSignature;
 import co.rsk.bitcoinj.params.RegTestParams;
-import co.rsk.bitcoinj.script.ErpFederationRedeemScriptParser;
 import co.rsk.bitcoinj.script.FastBridgeErpRedeemScriptParser;
 import co.rsk.bitcoinj.script.FastBridgeRedeemScriptParser;
 import co.rsk.bitcoinj.script.Script;
@@ -927,6 +926,7 @@ public class BridgeUtilsTest {
         List<BtcECKey> federationPrivateKeys = BridgeRegTestConstants.REGTEST_FEDERATION_PRIVATE_KEYS;
         Address randomAddress = PegTestUtils.createRandomBtcAddress();
 
+        // Regular peg-out tx
         BtcTransaction pegOutTx1 = new BtcTransaction(networkParameters);
         pegOutTx1.addOutput(Coin.COIN, randomAddress);
         TransactionInput pegOutInput1 = new TransactionInput(
@@ -945,10 +945,31 @@ public class BridgeUtilsTest {
         assertTrue(BridgeUtils.isPegOutTx(pegOutTx1, activations, federation.getP2SHScript()));
         assertTrue(BridgeUtils.isPegOutTx(pegOutTx1, activations, federation.getP2SHScript(), federation2.getP2SHScript()));
         assertFalse(BridgeUtils.isPegOutTx(pegOutTx1, activations, federation2.getP2SHScript()));
+
+        // Transaction with pegout identifier, should have same results since it's pre iris activation
+        BtcTransaction pegOutTx2 = new BtcTransaction(networkParameters);
+        pegOutTx1.addOutput(Coin.COIN, randomAddress);
+        TransactionInput pegOutInput2 = new TransactionInput(
+            networkParameters,
+            pegOutTx2,
+            new byte[]{},
+            new TransactionOutPoint(networkParameters, 0, Sha256Hash.ZERO_HASH)
+        );
+        pegOutTx2.addInput(pegOutInput2);
+        pegOutTx2.addOutput(Coin.ZERO, OpReturnUtils.createPegOutOpReturnScriptForRsk());
+        signWithNecessaryKeys(federation, federationPrivateKeys, pegOutInput2, pegOutTx2);
+
+        assertTrue(BridgeUtils.isPegOutTx(pegOutTx2, Collections.singletonList(federation), activations));
+        assertTrue(BridgeUtils.isPegOutTx(pegOutTx2, Arrays.asList(federation, federation2), activations));
+        assertFalse(BridgeUtils.isPegOutTx(pegOutTx2, Collections.singletonList(federation2), activations));
+
+        assertTrue(BridgeUtils.isPegOutTx(pegOutTx2, activations, federation.getP2SHScript()));
+        assertTrue(BridgeUtils.isPegOutTx(pegOutTx2, activations, federation.getP2SHScript(), federation2.getP2SHScript()));
+        assertFalse(BridgeUtils.isPegOutTx(pegOutTx2, activations, federation2.getP2SHScript()));
     }
 
     @Test
-    public void testIsPegOutTx_withOpReturnPegOutOutputIdentifier_postIris() {
+    public void testIsPegOutTx_postIris() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(true);
 
@@ -967,9 +988,9 @@ public class BridgeUtilsTest {
         List<BtcECKey> federationPrivateKeys = BridgeRegTestConstants.REGTEST_FEDERATION_PRIVATE_KEYS;
         Address randomAddress = PegTestUtils.createRandomBtcAddress();
 
+        // Pre iris peg-out tx, no pegout identifier
         BtcTransaction pegOutTx = new BtcTransaction(networkParameters);
         pegOutTx.addOutput(Coin.COIN, randomAddress);
-        pegOutTx.addOutput(Coin.ZERO, OpReturnUtils.createPegOutOpReturnScriptForRsk());
         TransactionInput pegOutInput1 = new TransactionInput(
             networkParameters,
             pegOutTx,
@@ -979,46 +1000,17 @@ public class BridgeUtilsTest {
         pegOutTx.addInput(pegOutInput1);
         signWithNecessaryKeys(federation, federationPrivateKeys, pegOutInput1, pegOutTx);
 
+        // Before PEGOUT_IDENTIFIER activation, should execute both pre iris and post iris logic
         assertTrue(BridgeUtils.isPegOutTx(pegOutTx, Collections.singletonList(federation), activations));
         assertTrue(BridgeUtils.isPegOutTx(pegOutTx, Arrays.asList(federation, federation2), activations));
-        assertTrue(BridgeUtils.isPegOutTx(pegOutTx, Collections.singletonList(federation2), activations));
+        assertFalse(BridgeUtils.isPegOutTx(pegOutTx, Collections.singletonList(federation2), activations));
 
         assertTrue(BridgeUtils.isPegOutTx(pegOutTx, activations, federation.getP2SHScript()));
         assertTrue(BridgeUtils.isPegOutTx(pegOutTx, activations, federation.getP2SHScript(), federation2.getP2SHScript()));
-        assertTrue(BridgeUtils.isPegOutTx(pegOutTx, activations, federation2.getP2SHScript()));
-    }
+        assertFalse(BridgeUtils.isPegOutTx(pegOutTx, activations, federation2.getP2SHScript()));
 
-    @Test
-    public void testIsPegOutTx_withoutOpReturnPegOutOutputIdentifier_postIris() {
-        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-        when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(true);
-
-        Federation federation = bridgeConstants.getGenesisFederation();
-        List<BtcECKey> activeFederationKeys = Stream.of(
-            BtcECKey.fromPrivate(Hex.decode("fa01")),
-            BtcECKey.fromPrivate(Hex.decode("fa02")),
-            BtcECKey.fromPrivate(Hex.decode("fa03"))
-        ).sorted(BtcECKey.PUBKEY_COMPARATOR).collect(Collectors.toList());
-        Federation federation2 = new Federation(
-            FederationTestUtils.getFederationMembersWithBtcKeys(activeFederationKeys),
-            Instant.ofEpochMilli(2000L),
-            2L,
-            bridgeConstants.getBtcParams()
-        );
-        List<BtcECKey> federationPrivateKeys = BridgeRegTestConstants.REGTEST_FEDERATION_PRIVATE_KEYS;
-        Address randomAddress = PegTestUtils.createRandomBtcAddress();
-
-        // Regular peg-out tx
-        BtcTransaction pegOutTx = new BtcTransaction(networkParameters);
-        pegOutTx.addOutput(Coin.COIN, randomAddress);
-        TransactionInput pegOutInput1 = new TransactionInput(
-            networkParameters,
-            pegOutTx,
-            new byte[]{},
-            new TransactionOutPoint(networkParameters, 0, Sha256Hash.ZERO_HASH)
-        );
-        pegOutTx.addInput(pegOutInput1);
-        signWithNecessaryKeys(federation, federationPrivateKeys, pegOutInput1, pegOutTx);
+        // After PEGOUT_IDENTIFIER activation, only post iris logic should be executed
+        when(activations.isActive(ConsensusRule.PEGOUT_IDENTIFIER)).thenReturn(true);
 
         assertFalse(BridgeUtils.isPegOutTx(pegOutTx, Collections.singletonList(federation), activations));
         assertFalse(BridgeUtils.isPegOutTx(pegOutTx, Arrays.asList(federation, federation2), activations));
@@ -1027,6 +1019,41 @@ public class BridgeUtilsTest {
         assertFalse(BridgeUtils.isPegOutTx(pegOutTx, activations, federation.getP2SHScript()));
         assertFalse(BridgeUtils.isPegOutTx(pegOutTx, activations, federation.getP2SHScript(), federation2.getP2SHScript()));
         assertFalse(BridgeUtils.isPegOutTx(pegOutTx, activations, federation2.getP2SHScript()));
+
+        // Post iris peg-out tx, with pegout identifier
+        BtcTransaction pegOutTx2 = new BtcTransaction(networkParameters);
+        pegOutTx2.addOutput(Coin.COIN, randomAddress);
+        pegOutTx2.addOutput(Coin.ZERO, OpReturnUtils.createPegOutOpReturnScriptForRsk());
+        TransactionInput pegOutInput2 = new TransactionInput(
+            networkParameters,
+            pegOutTx,
+            new byte[]{},
+            new TransactionOutPoint(networkParameters, 0, Sha256Hash.ZERO_HASH)
+        );
+        pegOutTx2.addInput(pegOutInput2);
+        signWithNecessaryKeys(federation, federationPrivateKeys, pegOutInput2, pegOutTx2);
+
+        // Before PEGOUT_IDENTIFIER activation, should execute both pre iris and post iris logic
+        when(activations.isActive(ConsensusRule.PEGOUT_IDENTIFIER)).thenReturn(false);
+
+        assertTrue(BridgeUtils.isPegOutTx(pegOutTx2, Collections.singletonList(federation), activations));
+        assertTrue(BridgeUtils.isPegOutTx(pegOutTx2, Arrays.asList(federation, federation2), activations));
+        assertTrue(BridgeUtils.isPegOutTx(pegOutTx2, Collections.singletonList(federation2), activations));
+
+        assertTrue(BridgeUtils.isPegOutTx(pegOutTx2, activations, federation.getP2SHScript()));
+        assertTrue(BridgeUtils.isPegOutTx(pegOutTx2, activations, federation.getP2SHScript(), federation2.getP2SHScript()));
+        assertTrue(BridgeUtils.isPegOutTx(pegOutTx2, activations, federation2.getP2SHScript()));
+
+        // After PEGOUT_IDENTIFIER activation, only post iris logic should be executed
+        when(activations.isActive(ConsensusRule.PEGOUT_IDENTIFIER)).thenReturn(true);
+
+        assertTrue(BridgeUtils.isPegOutTx(pegOutTx2, Collections.singletonList(federation), activations));
+        assertTrue(BridgeUtils.isPegOutTx(pegOutTx2, Arrays.asList(federation, federation2), activations));
+        assertTrue(BridgeUtils.isPegOutTx(pegOutTx2, Collections.singletonList(federation2), activations));
+
+        assertTrue(BridgeUtils.isPegOutTx(pegOutTx2, activations, federation.getP2SHScript()));
+        assertTrue(BridgeUtils.isPegOutTx(pegOutTx2, activations, federation.getP2SHScript(), federation2.getP2SHScript()));
+        assertTrue(BridgeUtils.isPegOutTx(pegOutTx2, activations, federation2.getP2SHScript()));
     }
 
     @Test
