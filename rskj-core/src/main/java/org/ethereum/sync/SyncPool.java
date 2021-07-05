@@ -96,6 +96,8 @@ public class SyncPool implements InternalService {
 
     @Override
     public void start() {
+
+
         this.syncPoolExecutor = Executors.newSingleThreadScheduledExecutor(target -> new Thread(target, "syncPool"));
 
         updateLowerUsefulDifficulty();
