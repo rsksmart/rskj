@@ -91,6 +91,7 @@ public class ActivationConfigTest {
             "    rskip218: iris300",
             "    rskip219: iris300",
             "    rskip220: iris300",
+            "    pegoutIdentifier: 1",
             "}"
     ));
 
