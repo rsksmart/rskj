@@ -131,7 +131,7 @@ public class BridgeMainNetConstants extends BridgeConstants {
         lockingCapIncrementsMultiplier = 2;
         initialLockingCap = Coin.COIN.multiply(300); // 300 BTC
 
-        btcHeightWhenBlockIndexActivates = 700_000; //TODO define this value when Iris activation height in RSK is determined
+        btcHeightWhenBlockIndexActivates = 694_594;
         maxDepthToSearchBlocksBelowIndexActivation = 4_320; // 30 days in BTC blocks (considering 1 block every 10 minutes)
 
         erpFedActivationDelay = 52_560; // 1 year in BTC blocks (considering 1 block every 10 minutes)
