@@ -6,7 +6,6 @@ import co.rsk.bitcoinj.core.BtcTransaction;
 import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.bitcoinj.script.Script;
-import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.script.ScriptOpCodes;
 import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.core.RskAddress;
@@ -39,7 +38,7 @@ public class PeginInstructionsProviderTest {
         // Arrange
         int invalidProtocolVersion = 0;
         BtcTransaction btcTransaction = new BtcTransaction(params);
-        Script opReturnScript = PegTestUtils.createOpReturnScriptForRsk(invalidProtocolVersion, new RskAddress(new byte[20]), Optional.empty());
+        Script opReturnScript = PegTestUtils.createPegInOpReturnScriptForRsk(invalidProtocolVersion, new RskAddress(new byte[20]), Optional.empty());
         btcTransaction.addOutput(Coin.ZERO, opReturnScript);
 
         // Act
@@ -52,7 +51,7 @@ public class PeginInstructionsProviderTest {
         // Arrange
         int protocolVersion = 1;
         BtcTransaction btcTransaction = new BtcTransaction(params);
-        Script opReturnScript = PegTestUtils.createOpReturnScriptForRskWithCustomPayload(protocolVersion, new byte[5]);
+        Script opReturnScript = PegTestUtils.createPegInOpReturnScriptForRskWithCustomPayload(protocolVersion, new byte[5]);
         btcTransaction.addOutput(Coin.ZERO, opReturnScript);
 
         // Act
@@ -65,7 +64,7 @@ public class PeginInstructionsProviderTest {
         // Arrange
         int protocolVersion = 1;
         BtcTransaction btcTransaction = new BtcTransaction(params);
-        Script opReturnScript = PegTestUtils.createOpReturnScriptForRskWithCustomPayload(protocolVersion, new byte[30]);
+        Script opReturnScript = PegTestUtils.createPegInOpReturnScriptForRskWithCustomPayload(protocolVersion, new byte[30]);
         btcTransaction.addOutput(Coin.ZERO, opReturnScript);
 
         // Act
@@ -80,7 +79,7 @@ public class PeginInstructionsProviderTest {
         BtcECKey key = new BtcECKey();
         RskAddress rskDestinationAddress = new RskAddress(ECKey.fromPublicOnly(key.getPubKey()).getAddress());
 
-        Script opReturnScript = PegTestUtils.createOpReturnScriptForRsk(protocolVersion, rskDestinationAddress, Optional.empty());
+        Script opReturnScript = PegTestUtils.createPegInOpReturnScriptForRsk(protocolVersion, rskDestinationAddress, Optional.empty());
         BtcTransaction btcTransaction = new BtcTransaction(params);
         btcTransaction.addOutput(Coin.ZERO, opReturnScript);
 
@@ -102,7 +101,7 @@ public class PeginInstructionsProviderTest {
         RskAddress rskDestinationAddress = new RskAddress(ECKey.fromPublicOnly(key.getPubKey()).getAddress());
         Address btcRefundAddress = key.toAddress(params);
 
-        Script opReturnScript = PegTestUtils.createOpReturnScriptForRsk(protocolVersion, rskDestinationAddress, Optional.of(btcRefundAddress));
+        Script opReturnScript = PegTestUtils.createPegInOpReturnScriptForRsk(protocolVersion, rskDestinationAddress, Optional.of(btcRefundAddress));
         BtcTransaction btcTransaction = new BtcTransaction(params);
         btcTransaction.addOutput(Coin.ZERO, opReturnScript);
 
@@ -118,114 +117,5 @@ public class PeginInstructionsProviderTest {
         PeginInstructionsVersion1 peginInstructionsVersion1 = (PeginInstructionsVersion1) peginInstructions.get();
         Assert.assertTrue(peginInstructionsVersion1.getBtcRefundAddress().isPresent());
         Assert.assertEquals(btcRefundAddress, peginInstructionsVersion1.getBtcRefundAddress().get());
-    }
-
-    @Test(expected = NoOpReturnException.class)
-    public void extractOpReturnData_noOpReturn() throws PeginInstructionsException {
-        // Arrange
-        BtcTransaction btcTransaction = new BtcTransaction(params);
-        btcTransaction.addOutput(Coin.COIN, new BtcECKey().toAddress(params));
-
-        // Act
-        PeginInstructionsProvider.extractOpReturnData(btcTransaction);
-    }
-
-    @Test(expected = NoOpReturnException.class)
-    public void extractOpReturnData_noOpReturnForRsk() throws PeginInstructionsException {
-        // Arrange
-        Script opReturnScript = ScriptBuilder.createOpReturnScript("some-payload".getBytes());
-
-        BtcTransaction btcTransaction = new BtcTransaction(params);
-        btcTransaction.addOutput(Coin.ZERO, opReturnScript);
-
-        // Act
-        PeginInstructionsProvider.extractOpReturnData(btcTransaction);
-    }
-
-    @Test(expected = NoOpReturnException.class)
-    public void extractOpReturnData_opReturnWithDataLengthShorterThanExpected() throws PeginInstructionsException {
-        // Arrange
-        Script opReturnScript = ScriptBuilder.createOpReturnScript("1".getBytes());
-
-        BtcTransaction btcTransaction = new BtcTransaction(params);
-        btcTransaction.addOutput(Coin.ZERO, opReturnScript);
-
-        // Act
-        PeginInstructionsProvider.extractOpReturnData(btcTransaction);
-    }
-
-    @Test(expected = PeginInstructionsException.class)
-    public void extractOpReturnData_twoOpReturnOutputsForRsk() throws PeginInstructionsException {
-        // Arrange
-        Script opReturnScript = PegTestUtils.createOpReturnScriptForRsk(1, new RskAddress(new byte[20]), Optional.empty());
-
-        BtcTransaction btcTransaction = new BtcTransaction(params);
-        btcTransaction.addOutput(Coin.ZERO, opReturnScript);
-        btcTransaction.addOutput(Coin.ZERO, opReturnScript);
-
-        // Act
-        PeginInstructionsProvider.extractOpReturnData(btcTransaction);
-    }
-
-    @Test
-    public void extractOpReturnData_oneOpReturnForRsk() throws PeginInstructionsException {
-        // Arrange
-        Script opReturnScript = PegTestUtils.createOpReturnScriptForRsk(1, new RskAddress(new byte[20]), Optional.empty());
-
-        BtcTransaction btcTransaction = new BtcTransaction(params);
-        btcTransaction.addOutput(Coin.ZERO, opReturnScript);
-
-        // Act
-        byte[] data = PeginInstructionsProvider.extractOpReturnData(btcTransaction);
-
-        // Assert
-        Assert.assertArrayEquals(opReturnScript.getChunks().get(1).data, data);
-    }
-
-    @Test
-    public void extractOpReturnData_oneOpReturnForRskWithValue() throws PeginInstructionsException {
-        // Arrange
-        Script opReturnScript = PegTestUtils.createOpReturnScriptForRsk(1, new RskAddress(new byte[20]), Optional.empty());
-
-        BtcTransaction btcTransaction = new BtcTransaction(params);
-        btcTransaction.addOutput(Coin.FIFTY_COINS, opReturnScript);
-
-        // Act
-        byte[] data = PeginInstructionsProvider.extractOpReturnData(btcTransaction);
-
-        // Assert
-        Assert.assertArrayEquals(opReturnScript.getChunks().get(1).data, data);
-    }
-
-    @Test
-    public void extractOpReturnData_multipleOpReturnOutpust_oneForRsk() throws PeginInstructionsException {
-        // Arrange
-        Script opReturnForRskScript = PegTestUtils.createOpReturnScriptForRsk(1, new RskAddress(new byte[20]), Optional.empty());
-        Script opReturnScript1 = ScriptBuilder.createOpReturnScript("1".getBytes());
-        Script opReturnScript2 = ScriptBuilder.createOpReturnScript("some-payload".getBytes());
-        Script opReturnScript3 = ScriptBuilder.createOpReturnScript("another-output".getBytes());
-
-        BtcTransaction btcTransaction = new BtcTransaction(params);
-        btcTransaction.addOutput(Coin.ZERO, opReturnScript1);
-        btcTransaction.addOutput(Coin.ZERO, opReturnForRskScript);
-        btcTransaction.addOutput(Coin.COIN, opReturnScript2);
-        btcTransaction.addOutput(Coin.FIFTY_COINS, opReturnScript3);
-
-        // Act
-        byte[] data = PeginInstructionsProvider.extractOpReturnData(btcTransaction);
-
-        // Assert
-        Assert.assertArrayEquals(opReturnForRskScript.getChunks().get(1).data, data);
-    }
-
-    @Test(expected = NoOpReturnException.class)
-    public void extractOpReturnData_nullOpReturnData() throws PeginInstructionsException {
-        // Arrange
-        BtcTransaction btcTransaction = new BtcTransaction(params);
-        // Add OP_RETURN output with empty data
-        btcTransaction.addOutput(Coin.ZERO, new Script(new byte[] { ScriptOpCodes.OP_RETURN }));
-
-        // Act
-        PeginInstructionsProvider.extractOpReturnData(btcTransaction);
     }
 }

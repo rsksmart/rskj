@@ -27,8 +27,8 @@ import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.wallet.RedeemData;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
+import co.rsk.peg.utils.OpReturnUtils;
 import java.util.Optional;
-import org.bouncycastle.util.encoders.Hex;
 
 /**
  * Created by oscar on 05/08/2016.
@@ -86,21 +86,22 @@ public class PegTestUtils {
         return redeemScript;
     }
 
-    public static Script createOpReturnScriptForRsk(
+    public static Script createPegInOpReturnScriptForRsk(
         int protocolVersion,
         RskAddress rskDestinationAddress,
         Optional<Address> btcRefundAddressOptional
     ) {
+        byte[] prefix = OpReturnUtils.PEGIN_OUTPUT_IDENTIFIER;
+
         int index = 0;
-        int payloadLength;
+        int payloadLength = prefix.length;
         if (btcRefundAddressOptional.isPresent()) {
-            payloadLength = 46;
+            payloadLength += 42;
         } else {
-            payloadLength = 25;
+            payloadLength += 21;
         }
         byte[] payloadBytes = new byte[payloadLength];
 
-        byte[] prefix = Hex.decode("52534b54"); // 'RSKT' in hexa
         System.arraycopy(prefix, 0, payloadBytes, index, prefix.length);
         index += prefix.length;
 
@@ -137,13 +138,12 @@ public class PegTestUtils {
         return ScriptBuilder.createOpReturnScript(payloadBytes);
     }
 
-    public static Script createOpReturnScriptForRskWithCustomPayload(int protocolVersion, byte[] customPayload) {
+    public static Script createPegInOpReturnScriptForRskWithCustomPayload(int protocolVersion, byte[] customPayload) {
         int index = 0;
-        int payloadLength = customPayload.length;
+        byte[] prefix = OpReturnUtils.PEGIN_OUTPUT_IDENTIFIER;
 
-        byte[] payloadBytes = new byte[payloadLength + 5]; // Add 4 bytes for the prefix, and another for the protocol version
+        byte[] payloadBytes = new byte[prefix.length + customPayload.length + 1]; // Add 1 extra byte for the protocol version
 
-        byte[] prefix = Hex.decode("52534b54"); // 'RSKT' in hexa
         System.arraycopy(prefix, 0, payloadBytes, index, prefix.length);
         index += prefix.length;
 

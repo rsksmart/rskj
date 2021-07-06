@@ -10,7 +10,6 @@ import co.rsk.core.RskAddress;
 import co.rsk.peg.PegTestUtils;
 import java.util.Arrays;
 import java.util.Optional;
-import org.bouncycastle.util.encoders.Hex;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -44,7 +43,7 @@ public class PeginInstructionsVersion1Test {
     @Test
     public void parseAdditionalData_noBtcRefundAddress() throws PeginInstructionsException {
         // Arrange
-        Script opReturnScript = PegTestUtils.createOpReturnScriptForRsk(1, new RskAddress(new byte[20]), Optional.empty());
+        Script opReturnScript = PegTestUtils.createPegInOpReturnScriptForRsk(1, new RskAddress(new byte[20]), Optional.empty());
 
         // Act
         PeginInstructionsVersion1 peginInstructionsVersion1 = new PeginInstructionsVersion1(params);
@@ -60,7 +59,7 @@ public class PeginInstructionsVersion1Test {
         // Arrange
         BtcECKey key = new BtcECKey();
         Address btcRefundAddress = key.toAddress(params);
-        Script opReturnScript = PegTestUtils.createOpReturnScriptForRsk(
+        Script opReturnScript = PegTestUtils.createPegInOpReturnScriptForRsk(
             1,
             new RskAddress(new byte[20]),
             Optional.of(btcRefundAddress)
@@ -85,7 +84,7 @@ public class PeginInstructionsVersion1Test {
             Arrays.asList(new BtcECKey(), new BtcECKey(), new BtcECKey())
         );
         Address btcRefundAddress = Address.fromP2SHScript(params, p2shScript);
-        Script opReturnScript = PegTestUtils.createOpReturnScriptForRsk(
+        Script opReturnScript = PegTestUtils.createPegInOpReturnScriptForRsk(
             1,
             new RskAddress(new byte[20]),
             Optional.of(btcRefundAddress)
@@ -107,7 +106,7 @@ public class PeginInstructionsVersion1Test {
         // Arrange
         BtcECKey key = new BtcECKey();
         Address btcRefundAddress = key.toAddress(params);
-        Script opReturnScript = PegTestUtils.createOpReturnScriptForRsk(
+        Script opReturnScript = PegTestUtils.createPegInOpReturnScriptForRsk(
             1,
             new RskAddress(new byte[20]),
             Optional.of(btcRefundAddress)

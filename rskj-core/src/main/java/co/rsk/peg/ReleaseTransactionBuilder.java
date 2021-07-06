@@ -21,6 +21,7 @@ package co.rsk.peg;
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.wallet.SendRequest;
 import co.rsk.bitcoinj.wallet.Wallet;
+import co.rsk.peg.utils.OpReturnUtils;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.slf4j.Logger;
@@ -95,18 +96,36 @@ public class ReleaseTransactionBuilder {
         return feePerKb;
     }
 
+    /***
+     * Generates a peg-out transaction sending the specified amount to the destination address.
+     * If RSKIP201 is active will generate an additional output with OP_RETURN
+     * @param to
+     * @param amount
+     * @return
+     */
     public Optional<BuildResult> buildAmountTo(Address to, Coin amount) {
         return buildWithConfiguration((SendRequest sr) -> {
             sr.tx.addOutput(amount, to);
             sr.changeAddress = changeAddress;
+
+            if (activations.isActive(ConsensusRule.RSKIP201)) {
+                sr.tx.addOutput(Coin.ZERO, OpReturnUtils.createPegOutOpReturnScriptForRsk());
+            }
         }, String.format("sending %s to %s", amount, to));
     }
 
+    /***
+     * Generates a peg-out transaction spending all the available UTXOs.
+     * Won't generate an additional output with OP_RETURN!!!
+     * @param to
+     * @return
+     */
     public Optional<BuildResult> buildEmptyWalletTo(Address to) {
         return buildWithConfiguration((SendRequest sr) -> {
             sr.tx.addOutput(Coin.ZERO, to);
             sr.changeAddress = to;
             sr.emptyWallet = true;
+
         }, String.format("emptying wallet to %s", to));
     }
 
