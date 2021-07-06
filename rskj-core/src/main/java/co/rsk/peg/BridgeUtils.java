@@ -173,22 +173,16 @@ public class BridgeUtils {
         BridgeConstants bridgeConstants,
         ActivationConfig.ForBlock activations) {
 
-        if (activations.isActive(ConsensusRule.RSKIP201)) {
-            try {
-                OpReturnUtils.extractPegOutOpReturnData(tx);
-                return false; // It's a peg-out
-            } catch (PeginInstructionsException e) {
-                // Not a peg-out, proceed to check if it sends funds to the federation
+        // Check if it's not a pegout or change transaction
+        boolean hasPegOutIdentifier = isPegOutTxPostIris(tx);
+        if (activations.isActive(ConsensusRule.PEGOUT_IDENTIFIER)) {
+            if (hasPegOutIdentifier) {
+                return false;
             }
         } else {
-            // First, check tx is not a typical release tx (tx spending from the any of the federation addresses and
-            // optionally sending some change to any of the federation addresses)
-            for (int i = 0; i < tx.getInputs().size(); i++) {
-                final int index = i;
-                if (activeFederations.stream().anyMatch(
-                    federation -> scriptCorrectlySpendsTx(tx, index, federation.getP2SHScript()))) {
-                    return false;
-                }
+            if ((activations.isActive(ConsensusRule.RSKIP201) && hasPegOutIdentifier) ||
+                federationsCanSpend(tx, activeFederations)) {
+                return false;
             }
         }
 
@@ -204,7 +198,7 @@ public class BridgeUtils {
             bridgeConstants.getLegacyMinimumPeginTxValueInSatoshis();
 
         if (valueSentToMe.isLessThan(minimumPegInTxValue)) {
-            logger.warn("[btctx:{}] Someone sent to the federation less than {} satoshis", tx.getHash(), minimumPegInTxValue);
+            logger.warn("[isValidPegInTx][btctx:{}] Someone sent to the federation less than {} satoshis", tx.getHash(), minimumPegInTxValue);
         }
 
         return valueSentToMe.isPositive() && !valueSentToMe.isLessThan(minimumPegInTxValue);
@@ -575,8 +569,7 @@ public class BridgeUtils {
 
             Script redeemScript = redeemScriptOptional.get();
             Script outputScript = ScriptBuilder.createP2SHOutputScript(redeemScript);
-            if (Stream.of(p2shScript)
-                .anyMatch(federationPayScript -> federationPayScript.equals(outputScript))) {
+            if (Stream.of(p2shScript).anyMatch(federationPayScript -> federationPayScript.equals(outputScript))) {
                 return true;
             }
         }
@@ -591,5 +584,18 @@ public class BridgeUtils {
         } catch (PeginInstructionsException e) {
             return false;
         }
+    }
+
+    private static boolean federationsCanSpend(BtcTransaction tx, List<Federation> activeFederations) {
+        // Check tx is not a typical release tx (tx spending from the any of the federation addresses and
+        // optionally sending some change to any of the federation addresses)
+        for (int i = 0; i < tx.getInputs().size(); i++) {
+            final int index = i;
+            if (activeFederations.stream().anyMatch(federation -> scriptCorrectlySpendsTx(tx, index, federation.getP2SHScript()))) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

@@ -538,11 +538,16 @@ public class BridgeUtilsTest {
     }
 
     @Test
-    public void testIsValidPegInTx_withOpReturnPegOutOutputIdentifier_afterIris() {
+    public void testIsValidPegInTx_pegOutsWithPegOutOutputIdentifier_afterIris() {
         Context btcContext = new Context(networkParameters);
-        ActivationConfig.ForBlock actForBlock = mock(ActivationConfig.ForBlock.class);
-        when(actForBlock.isActive(ConsensusRule.RSKIP201)).thenReturn(true);
-        when(actForBlock.isActive(ConsensusRule.RSKIP219)).thenReturn(true);
+        ActivationConfig.ForBlock activationsPostIris = mock(ActivationConfig.ForBlock.class);
+        when(activationsPostIris.isActive(ConsensusRule.RSKIP201)).thenReturn(true);
+        when(activationsPostIris.isActive(ConsensusRule.RSKIP219)).thenReturn(true);
+
+        ActivationConfig.ForBlock activationsPostPegoutIdentifier = mock(ActivationConfig.ForBlock.class);
+        when(activationsPostPegoutIdentifier.isActive(ConsensusRule.RSKIP201)).thenReturn(true);
+        when(activationsPostPegoutIdentifier.isActive(ConsensusRule.RSKIP219)).thenReturn(true);
+        when(activationsPostPegoutIdentifier.isActive(ConsensusRule.PEGOUT_IDENTIFIER)).thenReturn(true);
 
         List<BtcECKey> federation1Keys = Arrays.asList(
             BtcECKey.fromPrivate(Hex.decode("fa01")),
@@ -592,7 +597,16 @@ public class BridgeUtilsTest {
             federations,
             btcContext,
             bridgeConstants,
-            actForBlock
+            activationsPostIris
+        ));
+
+        // Same test but with pegout identifier active
+        assertFalse(BridgeUtils.isValidPegInTx(
+            tx,
+            federations,
+            btcContext,
+            bridgeConstants,
+            activationsPostPegoutIdentifier
         ));
 
         // Tx sending 1 btc to the second federation, but also spending from the second federation address,
@@ -613,7 +627,16 @@ public class BridgeUtilsTest {
             federations,
             btcContext,
             bridgeConstants,
-            actForBlock
+            activationsPostIris
+        ));
+
+        // Same test but with pegout identifier active
+        assertFalse(BridgeUtils.isValidPegInTx(
+            tx,
+            federations,
+            btcContext,
+            bridgeConstants,
+            activationsPostPegoutIdentifier
         ));
 
         // Tx sending 1 btc to both federations, but also spending from the first federation address,
@@ -635,7 +658,16 @@ public class BridgeUtilsTest {
             federations,
             btcContext,
             bridgeConstants,
-            actForBlock
+            activationsPostIris
+        ));
+
+        // Same test but with pegout identifier active
+        assertFalse(BridgeUtils.isValidPegInTx(
+            tx,
+            federations,
+            btcContext,
+            bridgeConstants,
+            activationsPostPegoutIdentifier
         ));
 
         // Tx sending 1 btc to both federations, but also spending from the second federation address,
@@ -657,7 +689,16 @@ public class BridgeUtilsTest {
             federations,
             btcContext,
             bridgeConstants,
-            actForBlock
+            activationsPostIris
+        ));
+
+        // Same test but with pegout identifier active
+        assertFalse(BridgeUtils.isValidPegInTx(
+            tx,
+            federations,
+            btcContext,
+            bridgeConstants,
+            activationsPostPegoutIdentifier
         ));
 
         // Tx sending 1 btc from federation1 to federation2, the typical migration tx, not a peg-in tx.
@@ -677,7 +718,16 @@ public class BridgeUtilsTest {
             federations,
             btcContext,
             bridgeConstants,
-            actForBlock
+            activationsPostIris
+        ));
+
+        // Same test but with pegout identifier active
+        assertFalse(BridgeUtils.isValidPegInTx(
+            tx,
+            federations,
+            btcContext,
+            bridgeConstants,
+            activationsPostPegoutIdentifier
         ));
 
         // Tx sending 1 btc from federation1 to federation2, the typical migration tx from the retired federation,
@@ -698,7 +748,16 @@ public class BridgeUtilsTest {
             Arrays.asList(federation1, federation2),
             btcContext,
             bridgeConstants,
-            actForBlock
+            activationsPostIris
+        ));
+
+        // Same test but with pegout identifier active
+        assertFalse(BridgeUtils.isValidPegInTx(
+            tx,
+            Arrays.asList(federation1, federation2),
+            btcContext,
+            bridgeConstants,
+            activationsPostPegoutIdentifier
         ));
 
         // Tx sending 1 btc to the first federation but with op return peg-out identifier output,
@@ -712,7 +771,16 @@ public class BridgeUtilsTest {
             federations,
             btcContext,
             bridgeConstants,
-            actForBlock
+            activationsPostIris
+        ));
+
+        // Same test but with pegout identifier active
+        assertFalse(BridgeUtils.isValidPegInTx(
+            tx,
+            federations,
+            btcContext,
+            bridgeConstants,
+            activationsPostPegoutIdentifier
         ));
 
         // Tx sending 1 btc to the second federation but with op return peg-out identifier output,
@@ -724,6 +792,174 @@ public class BridgeUtilsTest {
         assertFalse(BridgeUtils.isValidPegInTx(
             tx,
             federations,
+            btcContext,
+            bridgeConstants,
+            activationsPostIris
+        ));
+
+        // Same test but with pegout identifier active
+        assertFalse(BridgeUtils.isValidPegInTx(
+            tx,
+            federations,
+            btcContext,
+            bridgeConstants,
+            activationsPostPegoutIdentifier
+        ));
+    }
+
+    @Test
+    public void testIsValidPegInTx_pegOutsWithoutPegOutOutputIdentifier_afterIris() {
+        Context btcContext = new Context(networkParameters);
+        ActivationConfig.ForBlock actForBlock = mock(ActivationConfig.ForBlock.class);
+        when(actForBlock.isActive(ConsensusRule.RSKIP201)).thenReturn(true);
+        when(actForBlock.isActive(ConsensusRule.RSKIP219)).thenReturn(true);
+
+        List<BtcECKey> federation1Keys = Arrays.asList(
+            BtcECKey.fromPrivate(Hex.decode("fa01")),
+            BtcECKey.fromPrivate(Hex.decode("fa02"))
+        );
+        federation1Keys.sort(BtcECKey.PUBKEY_COMPARATOR);
+        Federation federation1 = new Federation(
+            FederationTestUtils.getFederationMembersWithBtcKeys(federation1Keys),
+            Instant.ofEpochMilli(1000L),
+            0L,
+            networkParameters
+        );
+
+        List<BtcECKey> federation2Keys = Arrays.asList(
+            BtcECKey.fromPrivate(Hex.decode("fb01")),
+            BtcECKey.fromPrivate(Hex.decode("fb02")),
+            BtcECKey.fromPrivate(Hex.decode("fb03"))
+        );
+        federation2Keys.sort(BtcECKey.PUBKEY_COMPARATOR);
+        Federation federation2 = new Federation(
+            FederationTestUtils.getFederationMembersWithBtcKeys(federation2Keys),
+            Instant.ofEpochMilli(2000L),
+            0L,
+            networkParameters
+        );
+
+        Address address1 = federation1.getAddress();
+        Address address2 = federation2.getAddress();
+
+        List<Federation> federations = Arrays.asList(federation1, federation2);
+        BtcTransaction tx = new BtcTransaction(networkParameters);
+
+        // Tx sending 1 btc to the first federation, but also spending from the first federation address,
+        // the typical peg-out tx, not a peg-in tx.
+        tx.addOutput(Coin.COIN, address1);
+        TransactionInput txIn = new TransactionInput(
+            networkParameters,
+            tx,
+            new byte[]{},
+            new TransactionOutPoint(networkParameters, 0, Sha256Hash.ZERO_HASH)
+        );
+        tx.addInput(txIn);
+        signWithNecessaryKeys(federation1, federation1Keys, txIn, tx);
+        assertFalse(BridgeUtils.isValidPegInTx(
+            tx,
+            federations,
+            btcContext,
+            bridgeConstants,
+            actForBlock
+        ));
+
+        // Tx sending 1 btc to the second federation, but also spending from the second federation address,
+        // the typical peg-out tx, not a peg-in tx.
+        tx = new BtcTransaction(networkParameters);
+        tx.addOutput(Coin.COIN, address2);
+        txIn = new TransactionInput(
+            networkParameters,
+            tx,
+            new byte[]{},
+            new TransactionOutPoint(networkParameters, 0, Sha256Hash.ZERO_HASH)
+        );
+        tx.addInput(txIn);
+        signWithNecessaryKeys(federation2, federation2Keys, txIn, tx);
+        assertFalse(BridgeUtils.isValidPegInTx(
+            tx,
+            federations,
+            btcContext,
+            bridgeConstants,
+            actForBlock
+        ));
+
+        // Tx sending 1 btc to both federations, but also spending from the first federation address,
+        // the typical peg-out tx, not a peg-in tx.
+        tx = new BtcTransaction(networkParameters);
+        tx.addOutput(Coin.COIN, address1);
+        tx.addOutput(Coin.COIN, address2);
+        txIn = new TransactionInput(
+            networkParameters,
+            tx,
+            new byte[]{},
+            new TransactionOutPoint(networkParameters, 0, Sha256Hash.ZERO_HASH)
+        );
+        tx.addInput(txIn);
+        signWithNecessaryKeys(federation1, federation1Keys, txIn, tx);
+        assertFalse(BridgeUtils.isValidPegInTx(
+            tx,
+            federations,
+            btcContext,
+            bridgeConstants,
+            actForBlock
+        ));
+
+        // Tx sending 1 btc to both federations, but also spending from the second federation address,
+        // the typical peg-out tx, not a peg-in tx.
+        tx = new BtcTransaction(networkParameters);
+        tx.addOutput(Coin.COIN, address1);
+        tx.addOutput(Coin.COIN, address2);
+        txIn = new TransactionInput(
+            networkParameters,
+            tx,
+            new byte[]{},
+            new TransactionOutPoint(networkParameters, 0, Sha256Hash.ZERO_HASH)
+        );
+        tx.addInput(txIn);
+        signWithNecessaryKeys(federation2, federation2Keys, txIn, tx);
+        assertFalse(BridgeUtils.isValidPegInTx(
+            tx,
+            federations,
+            btcContext,
+            bridgeConstants,
+            actForBlock
+        ));
+
+        // Tx sending 1 btc from federation1 to federation2, the typical migration tx, not a peg-in tx.
+        tx = new BtcTransaction(networkParameters);
+        tx.addOutput(Coin.COIN, address2);
+        txIn = new TransactionInput(
+            networkParameters,
+            tx,
+            new byte[]{},
+            new TransactionOutPoint(networkParameters, 0, Sha256Hash.ZERO_HASH)
+        );
+        tx.addInput(txIn);
+        signWithNecessaryKeys(federation1, federation1Keys, txIn, tx);
+        assertFalse(BridgeUtils.isValidPegInTx(
+            tx,
+            federations,
+            btcContext,
+            bridgeConstants,
+            actForBlock
+        ));
+
+        // Tx sending 1 btc from federation1 to federation2, the typical migration tx from the retired federation,
+        // not a peg-in tx.
+        tx = new BtcTransaction(networkParameters);
+        tx.addOutput(Coin.COIN, address2);
+        txIn = new TransactionInput(
+            networkParameters,
+            tx,
+            new byte[]{},
+            new TransactionOutPoint(networkParameters, 0, Sha256Hash.ZERO_HASH)
+        );
+        tx.addInput(txIn);
+        signWithNecessaryKeys(federation1, federation1Keys, txIn, tx);
+        assertFalse(BridgeUtils.isValidPegInTx(
+            tx,
+            Arrays.asList(federation1, federation2),
             btcContext,
             bridgeConstants,
             actForBlock
