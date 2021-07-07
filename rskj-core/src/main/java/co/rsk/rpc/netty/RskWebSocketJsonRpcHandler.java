@@ -67,12 +67,9 @@ public class RskWebSocketJsonRpcHandler
 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, ByteBufHolder msg) throws IOException {
-        ByteBuf content = null;
-        ByteBufInputStream source = null;
+        ByteBuf content = msg.content().copy();
 
-        try {
-            content = msg.content().copy();
-            source = new ByteBufInputStream(content);
+        try (ByteBufInputStream source = new ByteBufInputStream(content)){
             RskJsonRpcRequest request = serializer.deserializeRequest(source);
 
             // TODO(mc) we should support the ModuleDescription method filters
@@ -85,10 +82,6 @@ public class RskWebSocketJsonRpcHandler
 
             // We need to release this resource, netty only takes care about 'ByteBufHolder msg'
             content.release(content.refCnt());
-        } finally {
-            if(source != null) {
-                source.close();
-            }
         }
 
         // delegate to the next handler if the message can't be matched to a known JSON-RPC request
