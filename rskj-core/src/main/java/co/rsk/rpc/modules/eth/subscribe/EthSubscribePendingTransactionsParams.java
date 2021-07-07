@@ -1,6 +1,6 @@
 /*
  * This file is part of RskJ
- * Copyright (C) 2018 RSK Labs Ltd.
+ * Copyright (C) 2019 RSK Labs Ltd.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -17,26 +17,11 @@
  */
 package co.rsk.rpc.modules.eth.subscribe;
 
-import co.rsk.jsonrpc.JsonRpcMessage;
-import co.rsk.jsonrpc.JsonRpcVersion;
-import com.fasterxml.jackson.annotation.JsonInclude;
+import io.netty.channel.Channel;
 
-public class EthSubscriptionNotification<T> extends JsonRpcMessage {
-
-    private final EthSubscriptionParams<T> params;
-
-    public EthSubscriptionNotification(EthSubscriptionParams<T> params) {
-        super(JsonRpcVersion.V2_0);
-        this.params = params;
-    }
-
-    @JsonInclude(JsonInclude.Include.ALWAYS)
-    public String getMethod() {
-        return "eth_subscription";
-    }
-
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    public EthSubscriptionParams<T> getParams() {
-        return params;
+public class EthSubscribePendingTransactionsParams implements EthSubscribeParams {
+    @Override
+    public SubscriptionId accept(EthSubscribeParamsVisitor visitor, Channel channel) {
+        return visitor.visit(this, channel);
     }
 }

@@ -22,18 +22,41 @@ import co.rsk.rpc.JacksonBasedRpcSerializer;
 import co.rsk.rpc.JsonRpcSerializer;
 import co.rsk.rpc.modules.RskJsonRpcRequest;
 import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.ethereum.rpc.Topic;
+import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 
+import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.Matchers.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 public class EthSubscribeRequestTest {
     private JsonRpcSerializer serializer = new JacksonBasedRpcSerializer();
+
+    @Test
+    public void deserializeSync() throws IOException {
+        String message = "{\"jsonrpc\":\"2.0\",\"id\":333,\"method\":\"eth_subscribe\",\"params\":[\"syncing\"]}";
+        RskJsonRpcRequest request = serializer.deserializeRequest(
+                new ByteArrayInputStream(message.getBytes(StandardCharsets.UTF_8))
+        );
+
+        validateParams(request, EthSubscribeSyncParams.class);
+    }
+
+    @Test
+    public void deserializePendingTransactions() throws IOException {
+        String message = "{\"jsonrpc\":\"2.0\",\"id\":333,\"method\":\"eth_subscribe\",\"params\":[\"newPendingTransactions\"]}";
+        RskJsonRpcRequest request = serializer.deserializeRequest(
+                new ByteArrayInputStream(message.getBytes(StandardCharsets.UTF_8))
+        );
+
+        validateParams(request, EthSubscribePendingTransactionsParams.class);
+    }
 
     @Test
     public void deserializeNewHeads() throws IOException {

@@ -30,6 +30,7 @@ target/
 database-test
 logs
 test_db*
+rskj-core/networkStateExporterTest.json
 
 # Mac
 .DS_Store

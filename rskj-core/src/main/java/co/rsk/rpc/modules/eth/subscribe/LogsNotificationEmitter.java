@@ -108,8 +108,8 @@ public class LogsNotificationEmitter {
 
             for (LogsNotification notification : notifications) {
                 if (filter.matchesExactly(notification.getLogInfo())) {
-                    EthSubscriptionNotification request = new EthSubscriptionNotification(
-                            new EthSubscriptionParams(id, notification)
+                    EthSubscriptionNotification<LogsNotification> request = new EthSubscriptionNotification<>(
+                            new EthSubscriptionParams<>(id, notification)
                     );
 
                     try {

@@ -18,10 +18,10 @@
 package co.rsk.rpc.modules.eth.subscribe;
 
 import co.rsk.rpc.JsonRpcSerializer;
+import com.google.common.annotations.VisibleForTesting;
 import io.netty.channel.Channel;
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
-import org.ethereum.core.Block;
-import org.ethereum.core.TransactionReceipt;
+import org.ethereum.core.Transaction;
 import org.ethereum.facade.Ethereum;
 import org.ethereum.listener.EthereumListenerAdapter;
 import org.slf4j.Logger;
@@ -32,19 +32,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class BlockHeaderNotificationEmitter {
-    private static final Logger logger = LoggerFactory.getLogger(BlockHeaderNotificationEmitter.class);
+public class PendingTransactionsNotificationEmitter {
+    private static final Logger logger = LoggerFactory.getLogger(PendingTransactionsNotificationEmitter.class);
 
     private final JsonRpcSerializer jsonRpcSerializer;
 
     private final Map<SubscriptionId, Channel> subscriptions = new ConcurrentHashMap<>();
 
-    public BlockHeaderNotificationEmitter(Ethereum ethereum, JsonRpcSerializer jsonRpcSerializer) {
+    public PendingTransactionsNotificationEmitter(Ethereum ethereum, JsonRpcSerializer jsonRpcSerializer) {
         this.jsonRpcSerializer = jsonRpcSerializer;
         ethereum.addListener(new EthereumListenerAdapter() {
             @Override
-            public void onBlock(Block block, List<TransactionReceipt> receipts) {
-                emitBlockHeader(block);
+            public void onPendingTransactionsReceived(List<Transaction> transactions) {
+                emitPendingTransactions(transactions);
             }
         });
     }
@@ -61,24 +61,27 @@ public class BlockHeaderNotificationEmitter {
         subscriptions.values().removeIf(channel::equals);
     }
 
-    private void emitBlockHeader(Block block) {
+    private void emitPendingTransactions(List<Transaction> transactions) {
         if (subscriptions.isEmpty()) {
             return;
         }
-
-        BlockHeaderNotification header = new BlockHeaderNotification(block);
-
         subscriptions.forEach((SubscriptionId id, Channel channel) -> {
-            EthSubscriptionNotification<BlockHeaderNotification> request = new EthSubscriptionNotification<>(
-                    new EthSubscriptionParams<>(id, header)
-            );
-
-            try {
-                String msg = jsonRpcSerializer.serializeMessage(request);
-                channel.writeAndFlush(new TextWebSocketFrame(msg));
-            } catch (IOException e) {
-                logger.error("Couldn't serialize block header result for notification", e);
-            }
+            transactions.forEach(tx -> {
+                EthSubscriptionNotification<String> request = getNotification(id, tx);
+                try {
+                    String msg = jsonRpcSerializer.serializeMessage(request);
+                    channel.write(new TextWebSocketFrame(msg));
+                } catch (IOException e) {
+                    logger.error("Couldn't serialize new pending transactions result for notification", e);
+                }
+            });
+            channel.flush();
         });
+    }
+
+    @VisibleForTesting
+    EthSubscriptionNotification<String> getNotification(SubscriptionId id, Transaction transaction) {
+        return new EthSubscriptionNotification<>(
+                new EthSubscriptionParams<>(id, transaction.getHash().toJsonString()));
     }
 }
