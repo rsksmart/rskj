@@ -38,6 +38,7 @@ import java.util.concurrent.TimeUnit;
 
 public class Web3WebSocketServer implements InternalService {
     private static final Logger logger = LoggerFactory.getLogger(Web3WebSocketServer.class);
+    private static final int HTTP_MAX_CONTENT_LENGTH = 1024 * 1024 * 5;
 
     private final InetAddress host;
     private final int port;
@@ -74,7 +75,7 @@ public class Web3WebSocketServer implements InternalService {
                 protected void initChannel(SocketChannel ch) throws Exception {
                     ChannelPipeline p = ch.pipeline();
                     p.addLast(new HttpServerCodec());
-                    p.addLast(new HttpObjectAggregator(1024 * 1024 * 5));
+                    p.addLast(new HttpObjectAggregator(HTTP_MAX_CONTENT_LENGTH));
                     p.addLast(new WriteTimeoutHandler(serverWriteTimeoutSeconds, TimeUnit.SECONDS));
                     p.addLast(new RskWebSocketServerProtocolHandler("/websocket"));
                     p.addLast(webSocketJsonRpcHandler);
