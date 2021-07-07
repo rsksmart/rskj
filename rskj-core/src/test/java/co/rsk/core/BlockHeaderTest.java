@@ -29,15 +29,24 @@ import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 
 import java.math.BigInteger;
 import java.util.Arrays;
 
 import static java.lang.System.arraycopy;
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertThat;
+import static org.mockito.Mockito.times;
+import static org.powermock.api.mockito.PowerMockito.*;
 
+@RunWith(PowerMockRunner.class)
+@PrepareForTest(HashUtil.class)
 public class BlockHeaderTest {
+
     @Test
     public void getHashForMergedMiningWithForkDetectionDataAndIncludedOnAndMergedMiningFields() {
         BlockHeader header = createBlockHeaderWithMergedMiningFields(new byte[0], true, new byte[0]);
@@ -266,6 +275,23 @@ public class BlockHeaderTest {
         BlockHeader header = createBlockHeaderWithMergedMiningFields(new byte[0], false, new byte[0]);
 
         assertThat(new byte[0], is(header.getMiningForkDetectionData()));
+    }
+
+    @Test
+    public void getHashShouldReuseCalculatedValue() {
+        mockStatic(HashUtil.class);
+
+        BlockHeader header = createBlockHeaderWithMergedMiningFields(new byte[0], false, new byte[0]);
+        byte[] headerEncoded = header.getEncoded();
+
+        when(HashUtil.keccak256(headerEncoded)).thenReturn(Keccak256.ZERO_HASH.getBytes());
+
+        for (int i = 0; i < 5; i++) {
+            header.getHash();
+        }
+
+        verifyStatic(HashUtil.class, times(1));
+        HashUtil.keccak256(headerEncoded);
     }
 
     private BlockHeader createBlockHeaderWithMergedMiningFields(
