@@ -1601,7 +1601,7 @@ public class RskContext implements NodeBootstrapper {
                     rskSystemProperties.rpcWebSocketPort(),
                     jsonRpcHandler,
                     getJsonRpcWeb3ServerHandler(),
-                    rskSystemProperties.rpcWebSocketServerWriteTimeout()
+                    rskSystemProperties.rpcWebSocketServerWriteTimeoutSeconds()
             );
         }
 

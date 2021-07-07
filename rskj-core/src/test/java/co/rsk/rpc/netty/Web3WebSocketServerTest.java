@@ -31,7 +31,6 @@ import com.squareup.okhttp.ws.WebSocketListener;
 import okio.Buffer;
 import org.ethereum.rpc.Web3;
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -55,7 +54,7 @@ public class Web3WebSocketServerTest {
 
     private static JsonNodeFactory JSON_NODE_FACTORY = JsonNodeFactory.instance;
     private static ObjectMapper OBJECT_MAPPER = new ObjectMapper();
-    private static final int DEFAULT_WRITE_TIMEOUT = 30;
+    private static final int DEFAULT_WRITE_TIMEOUT_SECONDS = 30;
 
     private ExecutorService wsExecutor;
 
@@ -77,16 +76,16 @@ public class Web3WebSocketServerTest {
         List<ModuleDescription> filteredModules = Collections.singletonList(new ModuleDescription("web3", "1.0", true, Collections.emptyList(), Collections.emptyList()));
         RskWebSocketJsonRpcHandler handler = new RskWebSocketJsonRpcHandler(null, new JacksonBasedRpcSerializer());
         JsonRpcWeb3ServerHandler serverHandler = new JsonRpcWeb3ServerHandler(web3Mock, filteredModules);
-        int serverWriteTimout = testSystemProperties.rpcWebSocketServerWriteTimeout();
+        int serverWriteTimeoutSeconds = testSystemProperties.rpcWebSocketServerWriteTimeoutSeconds();
 
-        assertEquals(DEFAULT_WRITE_TIMEOUT, serverWriteTimout);
+        assertEquals(DEFAULT_WRITE_TIMEOUT_SECONDS, serverWriteTimeoutSeconds);
 
         Web3WebSocketServer websocketServer = new Web3WebSocketServer(
                 InetAddress.getLoopbackAddress(),
                 randomPort,
                 handler,
                 serverHandler,
-                serverWriteTimout
+                serverWriteTimeoutSeconds
         );
         websocketServer.start();
 
