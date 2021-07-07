@@ -64,7 +64,7 @@ public class RskWebSocketJsonRpcHandler
 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, ByteBufHolder msg) throws IOException {
-        ByteBuf content = msg.content().copy();
+        ByteBuf content = msg.copy().content();
 
         try (ByteBufInputStream source = new ByteBufInputStream(content)){
             RskJsonRpcRequest request = serializer.deserializeRequest(source);
