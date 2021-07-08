@@ -10,6 +10,8 @@ import org.slf4j.LoggerFactory;
 
 public class RskWebSocketServerProtocolHandler extends WebSocketServerProtocolHandler {
     private static final Logger LOGGER = LoggerFactory.getLogger(RskWebSocketServerProtocolHandler.class);
+    public static final String WRITE_TIMEOUT_REASON = "Exceeded write timout";
+    public static final int NORMAL_CLOSE_WEBSOCKET_STATUS = 1000;
 
     public RskWebSocketServerProtocolHandler(String websocketPath) {
         super(websocketPath);
@@ -18,8 +20,8 @@ public class RskWebSocketServerProtocolHandler extends WebSocketServerProtocolHa
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
         if(cause instanceof WriteTimeoutException) {
-            ctx.writeAndFlush(new CloseWebSocketFrame(1000, "Exceeded write timout")).addListener(ChannelFutureListener.CLOSE);
-            LOGGER.error("Write timout exceeded, closing web socket channel", cause);
+            ctx.writeAndFlush(new CloseWebSocketFrame(NORMAL_CLOSE_WEBSOCKET_STATUS, WRITE_TIMEOUT_REASON)).addListener(ChannelFutureListener.CLOSE);
+            LOGGER.error("Write timeout exceeded, closing web socket channel", cause);
         } else {
             super.exceptionCaught(ctx, cause);
         }
