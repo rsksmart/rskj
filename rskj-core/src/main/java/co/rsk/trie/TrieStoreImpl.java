@@ -19,13 +19,11 @@
 package co.rsk.trie;
 
 import org.ethereum.datasource.KeyValueDataSource;
+import org.ethereum.db.ByteArrayWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Collections;
-import java.util.Optional;
-import java.util.Set;
-import java.util.WeakHashMap;
+import java.util.*;
 
 /**
  * TrieStoreImpl store and retrieve Trie node by hash
@@ -43,8 +41,8 @@ public class TrieStoreImpl implements TrieStore {
     private KeyValueDataSource store;
 
     /** Weak references are removed once the tries are garbage collected */
-    private Set<Trie> savedTries = Collections
-            .newSetFromMap(Collections.synchronizedMap(new WeakHashMap<>()));
+    private Map<ByteArrayWrapper,Trie> savedTries = Collections.synchronizedMap(
+            new WeakHashMap<>());
 
     public TrieStoreImpl(KeyValueDataSource store) {
         this.store = store;
@@ -65,13 +63,13 @@ public class TrieStoreImpl implements TrieStore {
      */
     private void save(Trie trie, boolean forceSaveRoot, int level) {
         logger.trace("Start saving trie, level : {}", level);
-        if (savedTries.contains(trie)) {
+        if (savedTries.get(new ByteArrayWrapper(trie.getHash().getBytes()))!=null) {
             // it is guaranteed that the children of a saved node are also saved
             return;
         }
 
         byte[] trieKeyBytes = trie.getHash().getBytes();
-
+        savedTries.put(new ByteArrayWrapper(trieKeyBytes),trie);
         if (forceSaveRoot && this.store.get(trieKeyBytes) != null) {
             // the full trie is already saved
             logger.trace("End saving trie, level : {}, already saved.", level);
@@ -106,7 +104,6 @@ public class TrieStoreImpl implements TrieStore {
         logger.trace("Putting in store trie root.");
         this.store.put(trieKeyBytes, trie.toMessage());
         logger.trace("End putting in store trie root.");
-        savedTries.add(trie);
         logger.trace("End Saving trie, level: {}.", level);
     }
 
@@ -117,13 +114,18 @@ public class TrieStoreImpl implements TrieStore {
 
     @Override
     public Optional<Trie> retrieve(byte[] hash) {
+
+        Trie e =savedTries.get(new ByteArrayWrapper(hash));
+        if (e!=null)
+            return Optional.of(e);
+
         byte[] message = this.store.get(hash);
         if (message == null) {
             return Optional.empty();
         }
 
         Trie trie = Trie.fromMessage(message, this);
-        savedTries.add(trie);
+        savedTries.put(new ByteArrayWrapper(trie.getHash().getBytes()),trie);
         return Optional.of(trie);
     }
 
