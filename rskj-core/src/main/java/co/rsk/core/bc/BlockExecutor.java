@@ -358,6 +358,7 @@ public class BlockExecutor {
         if (!vmTrace) {
             logger.trace("Saving track.");
             track.save();
+            repositoryLocator.cacheTrie(block.getHeader(),track.getTrie());
             logger.trace("End saving track.");
         }
 
