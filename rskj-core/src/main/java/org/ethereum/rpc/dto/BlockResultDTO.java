@@ -22,6 +22,7 @@ import co.rsk.core.BlockDifficulty;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
+import co.rsk.remasc.RemascTransaction;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Transaction;
@@ -117,7 +118,7 @@ public class BlockResultDTO {
         this.paidFees = paidFees != null ? TypeConverter.toQuantityJsonHex(paidFees.getBytes()) : null;
     }
 
-    public static BlockResultDTO fromBlock(Block b, boolean fullTx, BlockStore blockStore) {
+    public static BlockResultDTO fromBlock(Block b, boolean fullTx, BlockStore blockStore, boolean skipRemasc) {
         if (b == null) {
             return null;
         }
@@ -131,10 +132,22 @@ public class BlockResultDTO {
         List<Transaction> blockTransactions = b.getTransactionsList();
         if (fullTx) {
             for (int i = 0; i < blockTransactions.size(); i++) {
+                Transaction tx = blockTransactions.get(i);
+
+                if (skipRemasc && tx.isRemascTransaction(i, blockTransactions.size())) {
+                    continue;
+                }
+
                 transactions.add(new TransactionResultDTO(b, i, blockTransactions.get(i)));
             }
         } else {
-            for (Transaction tx : blockTransactions) {
+            for (int i = 0; i < blockTransactions.size(); i++) {
+                Transaction tx = blockTransactions.get(i);
+
+                if (skipRemasc && tx.isRemascTransaction(i, blockTransactions.size())) {
+                    continue;
+                }
+
                 transactions.add(tx.getHash().toJsonString());
             }
         }
