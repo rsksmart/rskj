@@ -210,7 +210,9 @@ public class NestedContractsTest {
                 world.getRepositoryLocator(),
                 null,
                 null,
-                world.getBridgeSupportFactory());
+                world.getBridgeSupportFactory(),
+                null
+        );
     }
 }
 

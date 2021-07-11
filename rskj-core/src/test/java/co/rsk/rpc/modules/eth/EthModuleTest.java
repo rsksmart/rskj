@@ -89,7 +89,9 @@ public class EthModuleTest {
                 null,
                 null,
                 new BridgeSupportFactory(
-                        null, null, null));
+                        null, null, null),
+                null
+            );
 
         String expectedResult = TypeConverter.toUnformattedJsonHex(hReturn);
         String actualResult = eth.call(args, "latest");
@@ -127,7 +129,9 @@ public class EthModuleTest {
                 null,
                 null,
                 new BridgeSupportFactory(
-                        null, null, null));
+                        null, null, null),
+                null
+            );
 
         String expectedResult = TypeConverter.toUnformattedJsonHex(hReturn);
         String actualResult = eth.call(args, "latest");
@@ -170,7 +174,9 @@ public class EthModuleTest {
                 null,
                 null,
                 new BridgeSupportFactory(
-                        null, null, null));
+                        null, null, null),
+                null
+            );
 
         try {
             eth.call(args, "latest");
@@ -233,7 +239,8 @@ public class EthModuleTest {
                         null,
                         null,
                         null
-                )
+                ),
+                null
         );
 
         String addr = eth.getCode(TestUtils.randomAddress().toHexString(), "pending");
@@ -252,7 +259,8 @@ public class EthModuleTest {
                 mock(RepositoryLocator.class),
                 mock(EthModuleWallet.class),
                 mock(EthModuleTransaction.class),
-                mock(BridgeSupportFactory.class)
+                mock(BridgeSupportFactory.class),
+                null
         );
         assertThat(eth.chainId(), is("0x21"));
     }

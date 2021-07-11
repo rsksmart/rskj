@@ -30,6 +30,7 @@ import co.rsk.peg.BridgeSupport;
 import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.rpc.ExecutionBlockRetriever;
 import co.rsk.trie.TrieStoreImpl;
+import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.*;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.MutableRepository;
@@ -43,6 +44,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
@@ -71,6 +73,7 @@ public class EthModule
     private final BridgeConstants bridgeConstants;
     private final BridgeSupportFactory bridgeSupportFactory;
     private final byte chainId;
+    private final GasFinderConfiguration gasFinderConfiguration;
 
 
     public EthModule(
@@ -83,7 +86,8 @@ public class EthModule
             RepositoryLocator repositoryLocator,
             EthModuleWallet ethModuleWallet,
             EthModuleTransaction ethModuleTransaction,
-            BridgeSupportFactory bridgeSupportFactory) {
+            BridgeSupportFactory bridgeSupportFactory,
+            GasFinderConfiguration gasFinderConfiguration) {
         this.chainId = chainId;
         this.blockchain = blockchain;
         this.transactionPool = transactionPool;
@@ -94,6 +98,7 @@ public class EthModule
         this.ethModuleTransaction = ethModuleTransaction;
         this.bridgeConstants = bridgeConstants;
         this.bridgeSupportFactory = bridgeSupportFactory;
+        this.gasFinderConfiguration = gasFinderConfiguration;
     }
 
     @Override
@@ -117,9 +122,12 @@ public class EthModule
 
     public String call(Web3.CallArguments args, String bnOrId) {
         String hReturn = null;
+
         try {
             BlockResult blockResult = executionBlockRetriever.getExecutionBlock_workaround(bnOrId);
+
             ProgramResult res;
+
             if (blockResult.getFinalState() != null) {
                 res = callConstant_workaround(args, blockResult);
             } else {
@@ -143,11 +151,48 @@ public class EthModule
         }
     }
 
+    @VisibleForTesting
+    public boolean runWithArgumentsAndBlock(Web3.CallArguments args, Block block) {
+        ProgramResult res = callConstant(args, blockchain.getBestBlock());
+
+        return res.getException() == null;
+    }
+
     public String estimateGas(Web3.CallArguments args) {
         String s = null;
+        GasFinder gasFinder = new GasFinder(this.gasFinderConfiguration);
+
         try {
-            ProgramResult res = callConstant(args, blockchain.getBestBlock());
-            return s = TypeConverter.toQuantityJsonHex(res.getGasUsed());
+            String initialGasString = args.gas;
+
+            if (initialGasString.startsWith("0x")) {
+                initialGasString = initialGasString.substring(2);
+            }
+
+            ong gasLimitToTry = new BigInteger(initialGasString, 16).longValue();
+
+            while (!gasFinder.wasFound()) {
+                args.gas = Long.toString(gasLimitToTry, 16);
+
+                Block block = blockchain.getBestBlock();
+                ProgramResult res = callConstant(args, block);
+
+                if (res.getException() == null) {
+                    long gasUsed = res.getGasUsed();
+
+                    gasFinder.registerSuccess(gasLimitToTry, gasUsed);
+                } else {
+                    gasFinder.registerFailure(gasLimitToTry);
+                }
+
+                if (!gasFinder.wasFound()) {
+                    gasLimitToTry = gasFinder.nextTry();
+                }
+            }
+
+            long gasFound = gasFinder.getGasFound();
+
+            return s = TypeConverter.toQuantityJsonHex(gasFound);
         } finally {
             LOGGER.debug("eth_estimateGas(): {}", s);
         }
@@ -224,7 +269,8 @@ public class EthModule
         }
     }
 
-    private ProgramResult callConstant(Web3.CallArguments args, Block executionBlock) {
+    @VisibleForTesting
+    public ProgramResult callConstant(Web3.CallArguments args, Block executionBlock) {
         CallArgumentsToByteArray hexArgs = new CallArgumentsToByteArray(args);
         return reversibleTransactionExecutor.executeTransaction(
                 executionBlock,

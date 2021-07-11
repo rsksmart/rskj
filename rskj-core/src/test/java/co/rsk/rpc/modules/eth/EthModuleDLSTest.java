@@ -27,6 +27,7 @@ import co.rsk.test.dsl.DslParser;
 import co.rsk.test.dsl.DslProcessorException;
 import co.rsk.test.dsl.WorldDslProcessor;
 import org.ethereum.config.Constants;
+import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionReceipt;
 import org.ethereum.rpc.Web3;
@@ -38,6 +39,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.FileNotFoundException;
+import java.math.BigInteger;
 
 import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.anyByte;
@@ -80,6 +82,117 @@ public class EthModuleDLSTest {
         assertEquals("0x", call);
     }
 
+    @Test
+    public void testEstimateGasUsingUpdateStorage() throws FileNotFoundException, DslProcessorException {
+        DslParser parser = DslParser.fromResource("dsl/eth_module/updateStorage.txt");
+        World world = new World();
+
+        WorldDslProcessor processor = new WorldDslProcessor(world);
+        processor.processCommands(parser);
+
+        TransactionReceipt deployTransactionReceipt = world.getTransactionReceiptByName("tx01");
+        byte[] status = deployTransactionReceipt.getStatus();
+
+        Assert.assertNotNull(status);
+        Assert.assertEquals(1, status.length);
+        Assert.assertEquals(0x01, status[0]);
+
+        TransactionReceipt setValueTransactionReceipt = world.getTransactionReceiptByName("tx02");
+        byte[] status2 = setValueTransactionReceipt.getStatus();
+
+        Assert.assertNotNull(status2);
+        Assert.assertEquals(1, status2.length);
+        Assert.assertEquals(0x01, status2[0]);
+
+        // Estimate gas for setValue(1, 0)
+        // it should have a refund
+        EthModule eth = buildEthModule(world);
+        final Web3.CallArguments args = new Web3.CallArguments();
+        args.to = deployTransactionReceipt.getTransaction().getContractAddress().toHexString(); //"6252703f5ba322ec64d3ac45e56241b7d9e481ad";
+        args.data = "7b8d56e300000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000";
+        args.value = "0";
+        args.nonce = "1";
+        args.gas = "10000000";
+
+        Block block = world.getBlockChain().getBestBlock();
+
+        // Evaluate the gas used
+        long gasUsed = eth.callConstant(args, block).getGasUsed();
+
+        // Estimate the gas to use
+        String estimation = eth.estimateGas(args);
+        long estimatedGas = Long.parseLong(estimation.substring(2), 16);
+
+        // The estimated gas should be less than the transaction used gas for setValue(0, 42)
+        Assert.assertTrue(estimatedGas < new BigInteger(1, setValueTransactionReceipt.getGasUsed()).longValue());
+        // The estimated gas should be equal to the gas used in the call
+        Assert.assertEquals(gasUsed, estimatedGas);
+
+        // Call same transaction with estimated gas
+        args.gas = "0x" + Long.toString(estimatedGas, 16);
+
+        Assert.assertTrue(eth.runWithArgumentsAndBlock(args, block));
+
+        // Call same transaction with estimated gas minus 1
+        args.gas = "0x" + Long.toString(estimatedGas - 1, 16);
+
+        Assert.assertFalse(eth.runWithArgumentsAndBlock(args, block));
+
+        // Try estimate gas with too low initial gas limit
+        args.gas = "0x6000";
+        String newEstimation = eth.estimateGas(args);
+        long newEstimatedGas = Long.parseLong(newEstimation.substring(2), 16);
+
+        Assert.assertEquals(estimatedGas, newEstimatedGas);
+    }
+
+    @Test
+    public void testEstimateGasUsingCallWithValue() throws FileNotFoundException, DslProcessorException {
+        DslParser parser = DslParser.fromResource("dsl/eth_module/callWithValue.txt");
+        World world = new World();
+
+        WorldDslProcessor processor = new WorldDslProcessor(world);
+        processor.processCommands(parser);
+
+        TransactionReceipt deployTransactionReceipt = world.getTransactionReceiptByName("tx01");
+        byte[] status = deployTransactionReceipt.getStatus();
+
+        Assert.assertNotNull(status);
+        Assert.assertEquals(1, status.length);
+        Assert.assertEquals(0x01, status[0]);
+
+        // Estimate gas for callWithValue()
+        EthModule eth = buildEthModule(world);
+        final Web3.CallArguments args = new Web3.CallArguments();
+        args.to = deployTransactionReceipt.getTransaction().getContractAddress().toHexString(); //"6252703f5ba322ec64d3ac45e56241b7d9e481ad";
+        args.data = "c3cefd36";
+        args.value = "10000";
+        args.nonce = "1";
+        args.gas = "10000000";
+
+        Block block = world.getBlockChain().getBestBlock();
+
+        // Evaluate the gas used
+        long gasUsed = eth.callConstant(args, block).getGasUsed();
+
+        // Estimate the gas to use
+        String estimation = eth.estimateGas(args);
+        long estimatedGas = Long.parseLong(estimation.substring(2), 16);
+
+        // The estimated gas should be greater than the gas used in the call
+        Assert.assertTrue(gasUsed < estimatedGas);
+
+        // Call same transaction with estimated gas
+        args.gas = "0x" + Long.toString(estimatedGas, 16);
+
+        Assert.assertTrue(eth.runWithArgumentsAndBlock(args, block));
+
+        // Call same transaction with gas used should fail
+        args.gas = "0x" + Long.toString(gasUsed, 16);
+
+        Assert.assertFalse(eth.runWithArgumentsAndBlock(args, block));
+    }
+
     private EthModule buildEthModule(World world) {
         final TestSystemProperties config = new TestSystemProperties();
         TransactionExecutorFactory executor = new TransactionExecutorFactory(
@@ -102,6 +215,8 @@ public class EthModuleDLSTest {
                 null,
                 null,
                 null,
-                world.getBridgeSupportFactory());
+                world.getBridgeSupportFactory(),
+                new GasFinderConfiguration(1000L, 12_000_000L, 1_000_000L)
+            );
     }
 }

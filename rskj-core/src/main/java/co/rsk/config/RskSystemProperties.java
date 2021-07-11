@@ -377,4 +377,16 @@ public class RskSystemProperties extends SystemProperties {
     public boolean fastBlockPropagation() {
         return configFromFiles.getBoolean("peer.fastBlockPropagation");
     }
+
+    public long gasFinderDifference() {
+        return configFromFiles.getLong("gasFinder.difference");
+    }
+
+    public long gasFinderTopGas() {
+        return configFromFiles.getLong("gasFinder.topGas");
+    }
+
+    public long gasFinderUpwardStep() {
+        return configFromFiles.getLong("gasFinder.upwardStep");
+    }
 }

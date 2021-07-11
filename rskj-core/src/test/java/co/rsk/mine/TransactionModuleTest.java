@@ -391,7 +391,8 @@ public class TransactionModuleTest {
                 repositoryLocator, new EthModuleWalletEnabled(wallet), transactionModule,
                 new BridgeSupportFactory(
                         btcBlockStoreFactory, config.getNetworkConstants().getBridgeConstants(),
-                        config.getActivationConfig())
+                        config.getActivationConfig()),
+                new GasFinderConfiguration(config.gasFinderDifference(), config.gasFinderTopGas(), config.gasFinderUpwardStep())
         );
         TxPoolModule txPoolModule = new TxPoolModuleImpl(transactionPool);
         DebugModule debugModule = new DebugModuleImpl(null, null, Web3Mocks.getMockMessageHandler(), null);

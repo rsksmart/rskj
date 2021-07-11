@@ -36,6 +36,8 @@ import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 public class ProgramResult {
 
     private long gasUsed;
+    private long gasRefund;
+
     private byte[] hReturn = EMPTY_BYTE_ARRAY;
     private Exception exception;
     private boolean revert;
@@ -74,7 +76,12 @@ public class ProgramResult {
     }
 
     public void refundGas(long gas) {
+        gasRefund = GasCost.add(gasRefund, gas);
         gasUsed = GasCost.subtract(gasUsed, gas);
+    }
+
+    public long getGasRefund() {
+        return gasRefund;
     }
 
     public void setHReturn(byte[] hReturn) {
