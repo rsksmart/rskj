@@ -1577,6 +1577,33 @@ public class Web3ImplTest {
     }
 
     @Test
+    public void importAccountUsingRawKeyContaining0xPrefix() {
+        Web3Impl web3 = createWeb3();
+
+        ECKey eckey = new ECKey();
+
+        byte[] privKeyBytes = eckey.getPrivKeyBytes();
+
+        ECKey privKey = ECKey.fromPrivate(privKeyBytes);
+
+        RskAddress addr = new RskAddress(privKey.getAddress());
+
+        Account account = wallet.getAccount(addr);
+
+        assertNull(account);
+
+        String address = web3.personal_importRawKey(String.format("0x%s", ByteUtil.toHexString(privKeyBytes)), "passphrase1");
+
+        assertNotNull(address);
+
+        account = wallet.getAccount(addr);
+
+        assertNotNull(account);
+        assertEquals(address, "0x" + ByteUtil.toHexString(account.getAddress().getBytes()));
+        assertArrayEquals(privKeyBytes, account.getEcKey().getPrivKeyBytes());
+    }
+
+    @Test
     public void dumpRawKey() throws Exception {
         Web3Impl web3 = createWeb3();
 
@@ -1590,6 +1617,19 @@ public class Web3ImplTest {
         assertArrayEquals(eckey.getPrivKeyBytes(), Hex.decode(rawKey));
     }
 
+    @Test
+    public void dumpRawKeyContaining0xPrefix() throws Exception {
+        Web3Impl web3 = createWeb3();
+
+        ECKey eckey = new ECKey();
+
+        String address = web3.personal_importRawKey(String.format("0x%s", ByteUtil.toHexString(eckey.getPrivKeyBytes())), "passphrase1");
+        assertTrue(web3.personal_unlockAccount(address, "passphrase1", ""));
+
+        String rawKey = web3.personal_dumpRawKey(address).substring(2);
+
+        assertArrayEquals(eckey.getPrivKeyBytes(), Hex.decode(rawKey));
+    }
 
     @Test
     public void sendPersonalTransaction()
