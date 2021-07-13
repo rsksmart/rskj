@@ -421,20 +421,20 @@ public class Web3ImplTest {
         TransactionResultDTO tr = web3.eth_getTransactionByHash(hashString);
 
         assertNotNull(tr);
-        assertEquals("0x" + hashString, tr.hash);
+        assertEquals("0x" + hashString, tr.getHash());
 
         String blockHashString = "0x" + block1.getHash();
-        assertEquals(blockHashString, tr.blockHash);
+        assertEquals(blockHashString, tr.getBlockHash());
 
-        assertEquals("0x", tr.input);
-        assertEquals("0x" + ByteUtil.toHexString(tx.getReceiveAddress().getBytes()), tr.to);
+        assertEquals("0x", tr.getInput());
+        assertEquals("0x" + ByteUtil.toHexString(tx.getReceiveAddress().getBytes()), tr.getTo());
 
         // Check the v value used to encode the transaction
         // NOT the v value used in signature
         // the encoded value includes chain id
-        Assert.assertArrayEquals(new byte[] {tx.getEncodedV()}, TypeConverter.stringHexToByteArray(tr.v));
-        Assert.assertThat(TypeConverter.stringHexToBigInteger(tr.s), is(tx.getSignature().getS()));
-        Assert.assertThat(TypeConverter.stringHexToBigInteger(tr.r), is(tx.getSignature().getR()));
+        Assert.assertArrayEquals(new byte[] {tx.getEncodedV()}, TypeConverter.stringHexToByteArray(tr.getV()));
+        Assert.assertThat(TypeConverter.stringHexToBigInteger(tr.getS()), is(tx.getSignature().getS()));
+        Assert.assertThat(TypeConverter.stringHexToBigInteger(tr.getR()), is(tx.getSignature().getR()));
     }
 
     @Test
@@ -460,12 +460,12 @@ public class Web3ImplTest {
 
         assertNotNull(tr);
 
-        assertEquals("0x" + hashString, tr.hash);
-        assertEquals("0x0", tr.nonce);
-        assertEquals(null, tr.blockHash);
-        assertEquals(null, tr.transactionIndex);
-        assertEquals("0x", tr.input);
-        assertEquals("0x" + ByteUtil.toHexString(tx.getReceiveAddress().getBytes()), tr.to);
+        assertEquals("0x" + hashString, tr.getHash());
+        assertEquals("0x0", tr.getNonce());
+        assertEquals(null, tr.getBlockHash());
+        assertEquals(null, tr.getTransactionIndex());
+        assertEquals("0x", tr.getInput());
+        assertEquals("0x" + ByteUtil.toHexString(tx.getReceiveAddress().getBytes()), tr.getTo());
     }
 
     @Test
@@ -520,9 +520,9 @@ public class Web3ImplTest {
         TransactionResultDTO tr = web3.eth_getTransactionByBlockHashAndIndex(blockHashString, "0x0");
 
         assertNotNull(tr);
-        assertEquals("0x" + hashString, tr.hash);
+        assertEquals("0x" + hashString, tr.getHash());
 
-        assertEquals("0x" + blockHashString, tr.blockHash);
+        assertEquals("0x" + blockHashString, tr.getBlockHash());
     }
 
     @Test
@@ -565,9 +565,9 @@ public class Web3ImplTest {
         TransactionResultDTO tr = web3.eth_getTransactionByBlockNumberAndIndex("0x01", "0x0");
 
         assertNotNull(tr);
-        assertEquals("0x" + hashString, tr.hash);
+        assertEquals("0x" + hashString, tr.getHash());
 
-        assertEquals("0x" + blockHashString, tr.blockHash);
+        assertEquals("0x" + blockHashString, tr.getBlockHash());
     }
 
     @Test
@@ -832,9 +832,9 @@ public class Web3ImplTest {
         assertNotNull(bresult);
         assertEquals(block1HashString, bresult.getHash());
         assertEquals(1, bresult.getTransactions().size());
-        assertEquals(block1HashString, ((TransactionResultDTO) bresult.getTransactions().get(0)).blockHash);
+        assertEquals(block1HashString, ((TransactionResultDTO) bresult.getTransactions().get(0)).getBlockHash());
         assertEquals(0, bresult.getUncles().size());
-        assertEquals("0x0", ((TransactionResultDTO) bresult.getTransactions().get(0)).value);
+        assertEquals("0x0", ((TransactionResultDTO) bresult.getTransactions().get(0)).getValue());
     }
 
     @Test
