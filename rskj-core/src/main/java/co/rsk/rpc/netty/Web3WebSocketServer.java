@@ -29,6 +29,8 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.codec.http.HttpServerCodec;
 import io.netty.handler.timeout.WriteTimeoutHandler;
+import io.netty.handler.codec.http.websocketx.WebSocketFrameAggregator;
+import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -78,6 +80,7 @@ public class Web3WebSocketServer implements InternalService {
                     p.addLast(new HttpObjectAggregator(HTTP_MAX_CONTENT_LENGTH));
                     p.addLast(new WriteTimeoutHandler(serverWriteTimeoutSeconds, TimeUnit.SECONDS));
                     p.addLast(new RskWebSocketServerProtocolHandler("/websocket"));
+                    p.addLast(new WebSocketFrameAggregator(1024 * 1024 * 5));
                     p.addLast(webSocketJsonRpcHandler);
                     p.addLast(web3ServerHandler);
                     p.addLast(new Web3ResultWebSocketResponseHandler());
