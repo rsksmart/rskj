@@ -31,6 +31,7 @@ import org.ethereum.rpc.TypeConverter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -133,7 +134,7 @@ public class BlockResultDTO {
         // For full tx will present as TransactionResultDTO otherwise just as transaction hash
         List<Object> transactions = IntStream.range(0, blockTransactions.size())
                 .mapToObj(txIndex -> toTransactionResult(txIndex, b, fullTx, skipRemasc))
-                .filter(o -> o != null)
+                .filter(Objects::nonNull)
                 .collect(Collectors.toList());
 
         List<String> uncles = new ArrayList<>();
