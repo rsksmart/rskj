@@ -26,6 +26,11 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import java.math.BigInteger;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 /**
  * Created by ajlopez on 08/08/2016.
@@ -52,5 +57,16 @@ public class TransactionBuilderTest {
         Assert.assertEquals(BigInteger.valueOf(21000), new BigInteger(1, tx.getGasLimit()));
         Assert.assertNotNull(tx.getData());
         Assert.assertEquals(0, tx.getData().length);
+    }
+
+    @Test
+    public void buildValidRandomTransactions() {
+        List<String> randomTxsHashes = IntStream.range(0, 100)
+                .mapToObj(i -> new TransactionBuilder().buildRandomTransaction().getHash().toJsonString())
+                .collect(Collectors.toList());
+
+        Set<String> hashesWithoutDuplicates = randomTxsHashes.stream().collect(Collectors.toSet());
+
+        Assert.assertEquals(randomTxsHashes.size(), hashesWithoutDuplicates.size());
     }
 }
