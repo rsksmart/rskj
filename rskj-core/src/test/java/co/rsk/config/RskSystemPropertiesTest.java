@@ -20,14 +20,12 @@ package co.rsk.config;
 
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
-import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 
@@ -40,13 +38,13 @@ public class RskSystemPropertiesTest {
 
     @Test
     public void defaultValues() {
-        Assert.assertFalse(config.isMinerClientEnabled());
-        Assert.assertFalse(config.isMinerServerEnabled());
+        assertFalse(config.isMinerClientEnabled());
+        assertFalse(config.isMinerServerEnabled());
         assertEquals(0, config.minerMinGasPrice());
         assertEquals(0, config.minerGasUnitInDollars(), 0.001);
         assertEquals(0, config.minerMinFeesNotifyInDollars(), 0.001);
 
-        Assert.assertFalse(config.getIsHeartBeatEnabled());
+        assertFalse(config.getIsHeartBeatEnabled());
     }
 
     @Test
@@ -54,7 +52,7 @@ public class RskSystemPropertiesTest {
         assertTrue(config.hasMessageRecorderEnabled());
 
         List<String> commands = config.getMessageRecorderCommands();
-        Assert.assertNotNull(commands);
+        assertNotNull(commands);
         assertEquals(2, commands.size());
         assertTrue(commands.contains("TRANSACTIONS"));
         assertTrue(commands.contains("RSK_MESSAGE:BLOCK_MESSAGE"));
