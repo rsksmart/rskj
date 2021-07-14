@@ -28,6 +28,7 @@ import org.ethereum.core.Blockchain;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.genesis.GenesisLoader;
 import org.ethereum.db.BlockStore;
+import org.ethereum.rpc.TypeConverter;
 import org.ethereum.util.RskTestFactory;
 import org.junit.Assert;
 import org.junit.Before;
@@ -39,6 +40,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -52,19 +54,7 @@ public class BlockResultDTOTest {
 
     @Before
     public void setup() {
-        RskTestFactory objects = new RskTestFactory() {
-            @Override
-            protected GenesisLoader buildGenesisLoader() {
-                return new TestGenesisLoader(getTrieStore(), "rsk-unittests.json", BigInteger.ZERO, true, true, true);
-            }
-        };
-        Blockchain blockChain = objects.getBlockchain();
-
-        // Build block with remasc and normal txs
-        BlockBuilder builder = new BlockBuilder(null, null, null).parent(blockChain.getBestBlock());
-        List<Transaction> transactions = Arrays.asList(TRANSACTION, REMASC_TRANSACTION);
-
-        block = builder.transactions(transactions).build();
+        block = buildBlockWithTransactions(Arrays.asList(TRANSACTION, REMASC_TRANSACTION));
         blockStore = mock(BlockStore.class);
         when(blockStore.getTotalDifficultyForHash(any())).thenReturn(BlockDifficulty.ONE);
     }
@@ -90,6 +80,18 @@ public class BlockResultDTOTest {
         Assert.assertTrue(transactionHashes.contains(TRANSACTION.getHash().toJsonString()));
         Assert.assertFalse(transactionHashes.contains(REMASC_TRANSACTION.getHash().toJsonString()));
     }
+
+    @Test
+    public void getBlockResultDTOWithoutRemasc_emptyTransactions() {
+        Block block = buildBlockWithTransactions(Arrays.asList(REMASC_TRANSACTION));
+        BlockResultDTO blockResultDTO = BlockResultDTO.fromBlock(block, false, blockStore, true);
+
+        Assert.assertEquals(TypeConverter.toUnformattedJsonHex(EMPTY_TRIE_HASH), blockResultDTO.getTransactionsRoot());
+
+        Assert.assertNotNull(blockResultDTO);
+        Assert.assertTrue(blockResultDTO.getTransactions().isEmpty());
+    }
+
 
     @Test
     public void getBlockResultDTOWithRemascAndFullTransactions() {
@@ -125,5 +127,20 @@ public class BlockResultDTOTest {
         return blockResultDTO.getTransactions().stream()
                 .map(Objects::toString)
                 .collect(Collectors.toList());
+    }
+
+    private Block buildBlockWithTransactions(List<Transaction> transactions) {
+        RskTestFactory objects = new RskTestFactory() {
+            @Override
+            protected GenesisLoader buildGenesisLoader() {
+                return new TestGenesisLoader(getTrieStore(), "rsk-unittests.json", BigInteger.ZERO, true, true, true);
+            }
+        };
+        Blockchain blockChain = objects.getBlockchain();
+
+        // Build block with remasc and normal txs
+        BlockBuilder builder = new BlockBuilder(null, null, null).parent(blockChain.getBestBlock());
+
+        return builder.transactions(transactions).build();
     }
 }

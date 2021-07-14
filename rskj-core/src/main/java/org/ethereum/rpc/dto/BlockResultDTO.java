@@ -35,6 +35,8 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
+
 
 public class BlockResultDTO {
     private final String number; // QUANTITY - the block number. null when its pending block.
@@ -143,13 +145,20 @@ public class BlockResultDTO {
             uncles.add(header.getHash().toJsonString());
         }
 
+        // Useful for geth integration
+        byte[] transactionsRoot = skipRemasc &&
+                b.getTransactionsList().size() == 1 &&
+                b.getTransactionsList().get(0).isRemascTransaction(0,1) ?
+                    EMPTY_TRIE_HASH :
+                    b.getTxTrieRoot();
+
         return new BlockResultDTO(
                 isPending ? null : b.getNumber(),
                 isPending ? null : b.getHash(),
                 b.getParentHash(),
                 b.getUnclesHash(),
                 isPending ? null : b.getLogBloom(),
-                b.getTxTrieRoot(),
+                transactionsRoot,
                 b.getStateRoot(),
                 b.getReceiptsRoot(),
                 isPending ? null : b.getCoinbase(),
