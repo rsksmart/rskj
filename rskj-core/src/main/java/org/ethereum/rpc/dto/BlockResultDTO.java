@@ -65,7 +65,7 @@ public class BlockResultDTO {
     private final String paidFees;
     private final String cumulativeDifficulty;
 
-    public BlockResultDTO(
+    private BlockResultDTO(
             Long number,
             Keccak256 hash,
             Keccak256 parentHash,
