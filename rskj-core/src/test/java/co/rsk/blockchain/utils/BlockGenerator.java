@@ -77,6 +77,10 @@ public class BlockGenerator {
         return getNewGenesisBlock(3141592, Collections.emptyMap(), new byte[] { 2, 0, 0});
     }
 
+    public Genesis getGenesisBlock(long gasLimit) {
+        return getNewGenesisBlock(gasLimit, Collections.emptyMap(), new byte[] { 2, 0, 0});
+    }
+
     public Genesis getGenesisBlock(Map<RskAddress, AccountState> accounts) {
         return getNewGenesisBlock(3141592, accounts, new byte[] {2, 0, 0});
     }
@@ -297,8 +301,16 @@ public class BlockGenerator {
     }
 
     public Block createBlock(int number, int ntxs) {
-        Bloom logBloom = new Bloom();
-        Block parent = getGenesisBlock();
+        return createBlock(number, ntxs, -1);
+    }
+
+    public Block createBlock(int number, int ntxs, long gasLimit){
+        Block parent;
+        if (gasLimit == -1){
+            parent = getGenesisBlock();
+        } else {
+            parent = getGenesisBlock(gasLimit);
+        }
 
         List<Transaction> txs = new ArrayList<>();
 
@@ -330,11 +342,11 @@ public class BlockGenerator {
                 .setUmmRoot(ummRoot)
                 .build();
 
-        return blockFactory.newBlock(
-                newHeader,
-                txs,
-                Collections.emptyList()
-        );
+                return blockFactory.newBlock(
+                    newHeader,
+                    txs,
+                    Collections.emptyList()
+            );
     }
 
     public Block createSimpleChildBlock(Block parent, int ntxs) {
