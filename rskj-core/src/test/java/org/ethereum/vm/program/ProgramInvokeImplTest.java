@@ -133,7 +133,7 @@ public class ProgramInvokeImplTest {
 
         assertEquals(programInvokeA.hashCode(), programInvokeB.hashCode());
 
-        // Different combinations of name and version makes hashcode to be different
+        // Different combinations of property values makes hashcode to be different
 
         ProgramInvokeImpl programInvokeC = new ProgramInvokeImpl(address2, origin2, caller2, balance2, gasPrice2, gas2, callValue2, msgData2, lastHash2, coinbase2, timestamp2, number2, transactionIndex2, difficulty2, gasLimit2, repository2, blockStore2, byTestingSuite2);
 
