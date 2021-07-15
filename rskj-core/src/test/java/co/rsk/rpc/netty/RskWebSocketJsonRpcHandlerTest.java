@@ -37,7 +37,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.*;
 
-public class RskJsonRpcHandlerTest {
+public class RskWebSocketJsonRpcHandlerTest {
     private static final SubscriptionId SAMPLE_SUBSCRIPTION_ID = new SubscriptionId("0x3075");
     private static final EthSubscribeRequest SAMPLE_SUBSCRIBE_REQUEST = new EthSubscribeRequest(
             JsonRpcVersion.V2_0,
@@ -47,7 +47,7 @@ public class RskJsonRpcHandlerTest {
 
     );
 
-    private RskJsonRpcHandler handler;
+    private RskWebSocketJsonRpcHandler handler;
     private EthSubscriptionNotificationEmitter emitter;
     private JsonRpcSerializer serializer;
 
@@ -55,7 +55,7 @@ public class RskJsonRpcHandlerTest {
     public void setUp() {
         emitter = mock(EthSubscriptionNotificationEmitter.class);
         serializer = mock(JsonRpcSerializer.class);
-        handler = new RskJsonRpcHandler(emitter, serializer);
+        handler = new RskWebSocketJsonRpcHandler(emitter, serializer);
     }
 
     @Test
