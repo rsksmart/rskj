@@ -337,11 +337,11 @@ public class BlockGenerator {
                 .setUmmRoot(ummRoot)
                 .build();
 
-                return blockFactory.newBlock(
-                    newHeader,
-                    txs,
-                    Collections.emptyList()
-            );
+        return blockFactory.newBlock(
+                newHeader,
+                txs,
+                Collections.emptyList()
+        );
     }
 
     public Block createSimpleChildBlock(Block parent, int ntxs) {
