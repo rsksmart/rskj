@@ -301,16 +301,11 @@ public class BlockGenerator {
     }
 
     public Block createBlock(int number, int ntxs) {
-        return createBlock(number, ntxs, -1);
+        return createBlock(number, ntxs, null);
     }
 
-    public Block createBlock(int number, int ntxs, long gasLimit){
-        Block parent;
-        if (gasLimit == -1){
-            parent = getGenesisBlock();
-        } else {
-            parent = getGenesisBlock(gasLimit);
-        }
+    public Block createBlock(int number, int ntxs, Long gasLimit){
+        Block parent = gasLimit == null ? getGenesisBlock() : getGenesisBlock(gasLimit);
 
         List<Transaction> txs = new ArrayList<>();
 
