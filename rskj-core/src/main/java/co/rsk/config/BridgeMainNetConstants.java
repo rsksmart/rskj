@@ -74,7 +74,6 @@ public class BridgeMainNetConstants extends BridgeConstants {
         minimumPeginTxValueInSatoshis = Coin.valueOf(500_000);
         minimumPegoutTxValueInSatoshis = Coin.valueOf(400_000);
 
-
         // Keys generated with GenNodeKey using generators 'auth-a' through 'auth-e'
         List<ECKey> federationChangeAuthorizedKeys = Arrays.stream(new String[]{
                 "04e593d4cde25137b13f19462bc4c02e97ba2ed5a3860813497abf9b4eeb9259e37e0384d12cfd2d9a7a0ba606b31ee34317a9d7f4a8591c6bcf5dfd5563248b2f",
@@ -131,7 +130,7 @@ public class BridgeMainNetConstants extends BridgeConstants {
         lockingCapIncrementsMultiplier = 2;
         initialLockingCap = Coin.COIN.multiply(300); // 300 BTC
 
-        btcHeightWhenBlockIndexActivates = 694_594;
+        btcHeightWhenBlockIndexActivates = 696_022;
         maxDepthToSearchBlocksBelowIndexActivation = 4_320; // 30 days in BTC blocks (considering 1 block every 10 minutes)
 
         erpFedActivationDelay = 52_560; // 1 year in BTC blocks (considering 1 block every 10 minutes)
