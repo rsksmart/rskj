@@ -19,7 +19,7 @@
 package org.ethereum.rpc.converters;
 
 import co.rsk.core.RskAddress;
-import org.ethereum.rpc.Web3;
+import org.ethereum.rpc.CallArguments;
 
 import static org.ethereum.rpc.TypeConverter.stringHexToByteArray;
 
@@ -28,16 +28,16 @@ import static org.ethereum.rpc.TypeConverter.stringHexToByteArray;
  */
 public class CallArgumentsToByteArray {
 
-    private Web3.CallArguments args;
+    private final CallArguments args;
 
-    public CallArgumentsToByteArray(Web3.CallArguments args) {
+    public CallArgumentsToByteArray(CallArguments args) {
         this.args = args;
     }
 
     public byte[] getGasPrice() {
         byte[] gasPrice = new byte[] {0};
-        if (args.gasPrice != null && args.gasPrice.length() != 0) {
-            gasPrice = stringHexToByteArray(args.gasPrice);
+        if (args.getGasPrice() != null && args.getGasPrice().length() != 0) {
+            gasPrice = stringHexToByteArray(args.getGasPrice());
         }
 
         return gasPrice;
@@ -47,8 +47,8 @@ public class CallArgumentsToByteArray {
         // maxGasLimit value is 100000000000000
         String maxGasLimit = "0x5AF3107A4000";
         byte[] gasLimit = stringHexToByteArray(maxGasLimit);
-        if (args.gas != null && args.gas.length() != 0) {
-            gasLimit = stringHexToByteArray(args.gas);
+        if (args.getGas() != null && args.getGas().length() != 0) {
+            gasLimit = stringHexToByteArray(args.getGas());
         }
 
         return gasLimit;
@@ -56,8 +56,8 @@ public class CallArgumentsToByteArray {
 
     public byte[] getToAddress() {
         byte[] toAddress = null;
-        if (args.to != null) {
-            toAddress = stringHexToByteArray(args.to);
+        if (args.getTo() != null) {
+            toAddress = stringHexToByteArray(args.getTo());
         }
 
         return toAddress;
@@ -65,8 +65,8 @@ public class CallArgumentsToByteArray {
 
     public byte[] getValue() {
         byte[] value = new byte[] { 0 };
-        if (args.value != null && args.value.length() != 0) {
-            value = stringHexToByteArray(args.value);
+        if (args.getValue() != null && args.getValue().length() != 0) {
+            value = stringHexToByteArray(args.getValue());
         }
 
         return value;
@@ -75,18 +75,19 @@ public class CallArgumentsToByteArray {
     public byte[] getData() {
         byte[] data = null;
 
-        if (args.data != null && args.data.length() != 0) {
-            data = stringHexToByteArray(args.data);
+        if (args.getData() != null && args.getData().length() != 0) {
+            data = stringHexToByteArray(args.getData());
         }
 
         return data;
     }
 
     public RskAddress getFromAddress() {
-        if (args.from == null || args.from.isEmpty()) {
+        if (args.getFrom() == null || args.getFrom().isEmpty()) {
+
             return RskAddress.nullAddress();
         }
 
-        return new RskAddress(stringHexToByteArray(args.from));
+        return new RskAddress(stringHexToByteArray(args.getFrom()));
     }
 }

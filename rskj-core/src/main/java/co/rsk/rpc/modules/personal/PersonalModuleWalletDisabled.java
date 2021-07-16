@@ -18,7 +18,7 @@
 
 package co.rsk.rpc.modules.personal;
 
-import org.ethereum.rpc.Web3;
+import org.ethereum.rpc.CallArguments;
 import org.ethereum.rpc.exception.DisabledWalletException;
 
 public class PersonalModuleWalletDisabled implements PersonalModule {
@@ -50,7 +50,7 @@ public class PersonalModuleWalletDisabled implements PersonalModule {
     }
 
     @Override
-    public String sendTransaction(Web3.CallArguments args, String passphrase) {
+    public String sendTransaction(CallArguments args, String passphrase) {
         throw new DisabledWalletException();
     }
 

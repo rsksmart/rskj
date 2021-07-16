@@ -29,7 +29,7 @@ import co.rsk.test.dsl.WorldDslProcessor;
 import org.ethereum.config.Constants;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionReceipt;
-import org.ethereum.rpc.Web3;
+import org.ethereum.rpc.CallArguments;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
@@ -40,7 +40,6 @@ import org.junit.Test;
 import java.io.FileNotFoundException;
 
 import static org.junit.Assert.*;
-import static org.mockito.ArgumentMatchers.anyByte;
 
 /**
  * Created by patogallaiovlabs on 28/10/2020.
@@ -62,12 +61,12 @@ public class EthModuleDLSTest {
 
         EthModule eth = buildEthModule(world);
         final Transaction tx01 = world.getTransactionByName("tx01");
-        final Web3.CallArguments args = new Web3.CallArguments();
-        args.to = tx01.getContractAddress().toHexString(); //"6252703f5ba322ec64d3ac45e56241b7d9e481ad";
-        args.data = "d96a094a0000000000000000000000000000000000000000000000000000000000000000"; // call to contract with param value = 0
-        args.value = "0";
-        args.nonce = "1";
-        args.gas = "10000000";
+        final CallArguments args = new CallArguments();
+        args.setTo(tx01.getContractAddress().toHexString()); //"6252703f5ba322ec64d3ac45e56241b7d9e481ad";
+        args.setData("d96a094a0000000000000000000000000000000000000000000000000000000000000000"); // call to contract with param value = 0
+        args.setValue("0");
+        args.setNonce("1");
+        args.setGas("10000000");
         try {
             eth.call(args, "0x2");
             fail();
@@ -75,7 +74,7 @@ public class EthModuleDLSTest {
             assertThat(e.getMessage(), Matchers.containsString("Negative value."));
         }
 
-        args.data = "d96a094a0000000000000000000000000000000000000000000000000000000000000001"; // call to contract with param value = 1
+        args.setData("d96a094a0000000000000000000000000000000000000000000000000000000000000001"); // call to contract with param value = 1
         final String call = eth.call(args, "0x2");
         assertEquals("0x", call);
     }

@@ -25,8 +25,8 @@ import java.util.function.Supplier;
 import org.ethereum.core.Account;
 import org.ethereum.core.TransactionArguments;
 import org.ethereum.core.TransactionPool;
+import org.ethereum.rpc.CallArguments;
 import org.ethereum.rpc.TypeConverter;
-import org.ethereum.rpc.Web3;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.vm.GasCost;
 
@@ -40,32 +40,32 @@ public class TransactionArgumentsUtil {
 	 * transform the Web3.CallArguments in TransactionArguments that can be used in
 	 * the TransactionBuilder
 	 */
-	public static TransactionArguments processArguments(Web3.CallArguments argsParam, TransactionPool transactionPool, Account senderAccount, byte defaultChainId) {
+	public static TransactionArguments processArguments(CallArguments argsParam, TransactionPool transactionPool, Account senderAccount, byte defaultChainId) {
 
 		TransactionArguments argsRet = new TransactionArguments();
 
-		argsRet.setFrom(argsParam.from);
+		argsRet.setFrom(argsParam.getFrom());
 
-		argsRet.setTo(stringHexToByteArray(argsParam.to));
+		argsRet.setTo(stringHexToByteArray(argsParam.getTo()));
 
-		argsRet.setNonce(stringNumberAsBigInt(argsParam.nonce, () -> transactionPool.getPendingState().getNonce(senderAccount.getAddress())));
+		argsRet.setNonce(stringNumberAsBigInt(argsParam.getNonce(), () -> transactionPool.getPendingState().getNonce(senderAccount.getAddress())));
 
-		argsRet.setValue(stringNumberAsBigInt(argsParam.value, () -> BigInteger.ZERO));
+		argsRet.setValue(stringNumberAsBigInt(argsParam.getValue(), () -> BigInteger.ZERO));
 
-		argsRet.setGasPrice(stringNumberAsBigInt(argsParam.gasPrice, () -> BigInteger.ZERO));
+		argsRet.setGasPrice(stringNumberAsBigInt(argsParam.getGasPrice(), () -> BigInteger.ZERO));
 
-		argsRet.setGasLimit(stringNumberAsBigInt(argsParam.gas, () -> null));
+		argsRet.setGasLimit(stringNumberAsBigInt(argsParam.getGas(), () -> null));
 
 		if (argsRet.getGasLimit() == null) {
-			argsRet.setGasLimit(stringNumberAsBigInt(argsParam.gasLimit, () -> DEFAULT_GAS_LIMIT));
+			argsRet.setGasLimit(stringNumberAsBigInt(argsParam.getGasLimit(), () -> DEFAULT_GAS_LIMIT));
 		}
 
-		if (argsParam.data != null && argsParam.data.startsWith("0x")) {
-			argsRet.setData(argsParam.data.substring(2));
-			argsParam.data = argsRet.getData(); // needs to change the parameter because some places expect the changed value after sendTransaction call
+		if (argsParam.getData() != null && argsParam.getData().startsWith("0x")) {
+			argsRet.setData(argsParam.getData().substring(2));
+			argsParam.setData(argsRet.getData()); // needs to change the parameter because some places expect the changed value after sendTransaction call
 		}
 
-		argsRet.setChainId(hexToChainId(argsParam.chainId));
+		argsRet.setChainId(hexToChainId(argsParam.getChainId()));
 		if (argsRet.getChainId() == 0) {
 			argsRet.setChainId(defaultChainId);
 		}

@@ -106,7 +106,7 @@ public class LogFilter extends Filter {
         //empty method
     }
 
-    public static LogFilter fromFilterRequest(Web3.FilterRequest fr, Blockchain blockchain, BlocksBloomStore blocksBloomStore) throws Exception {
+    public static LogFilter fromFilterRequest(FilterRequest fr, Blockchain blockchain, BlocksBloomStore blocksBloomStore) throws Exception {
         RskAddress[] addresses;
 
         // Now, there is an array of array of topics
@@ -115,10 +115,10 @@ public class LogFilter extends Filter {
         // null value matches anything
         Topic[][] topics;
 
-        if (fr.address instanceof String) {
-            addresses = new RskAddress[] { new RskAddress(stringHexToByteArray((String) fr.address)) };
-        } else if (fr.address instanceof Collection<?>) {
-            Collection<?> iterable = (Collection<?>)fr.address;
+        if (fr.getAddress() instanceof String) {
+            addresses = new RskAddress[] { new RskAddress(stringHexToByteArray((String) fr.getAddress())) };
+        } else if (fr.getAddress() instanceof Collection<?>) {
+            Collection<?> iterable = (Collection<?>)fr.getAddress();
 
             addresses = iterable.stream()
                     .filter(String.class::isInstance)
@@ -131,11 +131,11 @@ public class LogFilter extends Filter {
             addresses = new RskAddress[0];
         }
 
-        if (fr.topics != null) {
-            topics = new Topic[fr.topics.length][];
+        if (fr.getTopics() != null) {
+            topics = new Topic[fr.getTopics().length][];
 
-            for (int nt = 0; nt < fr.topics.length; nt++) {
-                Object topic = fr.topics[nt];
+            for (int nt = 0; nt < fr.getTopics().length; nt++) {
+                Object topic = fr.getTopics()[nt];
 
                 if (topic == null) {
                     topics[nt] = new Topic[0];
@@ -167,17 +167,17 @@ public class LogFilter extends Filter {
         validateFilterRequestParameters(fr);
 
         // Default from block value
-        if (fr.fromBlock == null) {
-            fr.fromBlock = "latest";
+        if (fr.getFromBlock() == null) {
+            fr.setFromBlock("latest");
         }
 
         // Default to block value
-        if (fr.toBlock == null) {
-            fr.toBlock = "latest";
+        if (fr.getToBlock() == null) {
+            fr.setToBlock("latest");
         }
 
-        boolean fromLatestBlock = "latest".equalsIgnoreCase(fr.fromBlock);
-        boolean toLatestBlock = "latest".equalsIgnoreCase(fr.toBlock);
+        boolean fromLatestBlock = "latest".equalsIgnoreCase(fr.getFromBlock());
+        boolean toLatestBlock = "latest".equalsIgnoreCase(fr.getToBlock());
 
         LogFilter filter = new LogFilter(addressesTopicsFilter, blockchain, fromLatestBlock, toLatestBlock);
 
@@ -189,23 +189,23 @@ public class LogFilter extends Filter {
     /**
      * Cannot use both blockHash and fromBlock/toBlock filters, according to EIP-234
      */
-    private static void validateFilterRequestParameters(Web3.FilterRequest fr) {
-        if (fr.blockHash != null && (fr.fromBlock != null  || fr.toBlock != null)) {
+    private static void validateFilterRequestParameters(FilterRequest fr) {
+        if (fr.getBlockHash() != null && (fr.getFromBlock() != null  || fr.getToBlock() != null)) {
             throw RskJsonRpcRequestException.invalidParamError("Cannot specify both blockHash and fromBlock/toBlock");
         }
     }
 
-    private static void retrieveHistoricalData(Web3.FilterRequest fr, Blockchain blockchain, LogFilter filter, BlocksBloomStore blocksBloomStore) {
+    private static void retrieveHistoricalData(FilterRequest fr, Blockchain blockchain, LogFilter filter, BlocksBloomStore blocksBloomStore) {
 
-        if (fr.blockHash != null) {
-            processSingleBlockByHash(fr.blockHash, blockchain, filter, blocksBloomStore);
+        if (fr.getBlockHash() != null) {
+            processSingleBlockByHash(fr.getBlockHash(), blockchain, filter, blocksBloomStore);
             return;
         }
 
-        Block blockFrom = isBlockWord(fr.fromBlock) ? null : Web3Impl.getBlockByNumberOrStr(fr.fromBlock, blockchain);
-        Block blockTo = isBlockWord(fr.toBlock) ? null : Web3Impl.getBlockByNumberOrStr(fr.toBlock, blockchain);
+        Block blockFrom = isBlockWord(fr.getFromBlock()) ? null : Web3Impl.getBlockByNumberOrStr(fr.getFromBlock(), blockchain);
+        Block blockTo = isBlockWord(fr.getToBlock()) ? null : Web3Impl.getBlockByNumberOrStr(fr.getToBlock(), blockchain);
 
-        if (blockFrom == null && "earliest".equalsIgnoreCase(fr.fromBlock)) {
+        if (blockFrom == null && "earliest".equalsIgnoreCase(fr.getFromBlock())) {
             blockFrom = blockchain.getBlockByNumber(0);
         }
 
@@ -215,7 +215,7 @@ public class LogFilter extends Filter {
 
             processBlocks(blockFrom.getNumber(), blockTo.getNumber(), filter, blockchain, blocksBloomStore);
         }
-        else if ("latest".equalsIgnoreCase(fr.fromBlock)) {
+        else if ("latest".equalsIgnoreCase(fr.getFromBlock())) {
             filter.onBlock(blockchain.getBestBlock());
         }
     }

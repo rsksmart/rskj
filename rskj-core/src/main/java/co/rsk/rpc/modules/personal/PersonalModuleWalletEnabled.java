@@ -28,15 +28,13 @@ import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionArguments;
 import org.ethereum.core.TransactionPool;
 import org.ethereum.facade.Ethereum;
+import org.ethereum.rpc.CallArguments;
 import org.ethereum.rpc.TypeConverter;
-import org.ethereum.rpc.Web3;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.TransactionArgumentsUtil;
-import org.ethereum.vm.GasCost;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.math.BigInteger;
 import java.util.Arrays;
 
 import static org.ethereum.rpc.exception.RskJsonRpcRequestException.invalidParamError;
@@ -137,10 +135,10 @@ public class PersonalModuleWalletEnabled implements PersonalModule {
     }
 
     @Override
-    public String sendTransaction(Web3.CallArguments args, String passphrase) throws Exception {
+    public String sendTransaction(CallArguments args, String passphrase) throws Exception {
         String s = null;
         try {
-            return s = sendTransaction(args, getAccount(args.from, passphrase));
+            return s = sendTransaction(args, getAccount(args.getFrom(), passphrase));
         } finally {
             LOGGER.debug("eth_sendTransaction({}): {}", args,  s);
         }
@@ -188,7 +186,7 @@ public class PersonalModuleWalletEnabled implements PersonalModule {
         return wallet.getAccount(new RskAddress(from), passphrase);
     }
 
-	private String sendTransaction(Web3.CallArguments args, Account senderAccount) throws Exception {
+	private String sendTransaction(CallArguments args, Account senderAccount) throws Exception {
 
 		if (senderAccount == null) {
 			throw new Exception("From address private key could not be found in this node");
