@@ -20,64 +20,13 @@ package org.ethereum.rpc;
 
 import co.rsk.config.InternalService;
 import co.rsk.rpc.*;
-import co.rsk.scoring.PeerScoringReputationSummary;
 import co.rsk.scoring.PeerScoringInformation;
+import co.rsk.scoring.PeerScoringReputationSummary;
 
 import java.util.Arrays;
 import java.util.Map;
 
 public interface Web3 extends InternalService, Web3TxPoolModule, Web3EthModule, Web3EvmModule, Web3MnrModule, Web3DebugModule, Web3TraceModule, Web3RskModule {
-    class SyncingResult {
-        public String startingBlock;
-        public String currentBlock;
-        public String highestBlock;
-    }
-
-    class CallArguments {
-        public String from;
-        public String to;
-        public String gas;
-        public String gasPrice;
-        public String value;
-        public String data; // compiledCode
-        public String nonce;
-
-        @Override
-        public String toString() {
-            return "CallArguments{" +
-                    "from='" + from + '\'' +
-                    ", to='" + to + '\'' +
-                    ", gasLimit='" + gas + '\'' +
-                    ", gasPrice='" + gasPrice + '\'' +
-                    ", value='" + value + '\'' +
-                    ", data='" + data + '\'' +
-                    ", nonce='" + nonce + '\'' +
-                    '}';
-        }
-    }
-
-    class BlockInformationResult {
-        public String hash;
-        public String totalDifficulty;
-        public boolean inMainChain;
-    }
-
-    class FilterRequest {
-        public String fromBlock;
-        public String toBlock;
-        public Object address;
-        public Object[] topics;
-
-        @Override
-        public String toString() {
-            return "FilterRequest{" +
-                    "fromBlock='" + fromBlock + '\'' +
-                    ", toBlock='" + toBlock + '\'' +
-                    ", address=" + address +
-                    ", topics=" + Arrays.toString(topics) +
-                    '}';
-        }
-    }
 
     String web3_clientVersion();
     String web3_sha3(String data) throws Exception;

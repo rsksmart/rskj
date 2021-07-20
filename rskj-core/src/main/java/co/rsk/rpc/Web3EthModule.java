@@ -19,7 +19,8 @@
 package co.rsk.rpc;
 
 import co.rsk.rpc.modules.eth.EthModule;
-import org.ethereum.rpc.Web3;
+import org.ethereum.rpc.CallArguments;
+import org.ethereum.rpc.FilterRequest;
 import org.ethereum.rpc.dto.BlockResultDTO;
 import org.ethereum.rpc.dto.CompilationResultDTO;
 import org.ethereum.rpc.dto.TransactionReceiptDTO;
@@ -37,15 +38,13 @@ public interface Web3EthModule {
         return getEthModule().sign(addr, data);
     }
 
-    default String eth_call(Web3.CallArguments args, String bnOrId) {
+    default String eth_call(CallArguments args, String bnOrId) {
         return getEthModule().call(args, bnOrId);
     }
 
-    default String eth_estimateGas(Web3.CallArguments args) {
+    default String eth_estimateGas(CallArguments args) {
         return getEthModule().estimateGas(args);
     }
-
-
 
     default Map<String, Object> eth_bridgeState() throws Exception {
         return getEthModule().bridgeState();
@@ -95,7 +94,7 @@ public interface Web3EthModule {
         return getEthModule().sendRawTransaction(rawData);
     }
 
-    default String eth_sendTransaction(Web3.CallArguments args) {
+    default String eth_sendTransaction(CallArguments args) {
         return getEthModule().sendTransaction(args);
     }
 
@@ -123,7 +122,7 @@ public interface Web3EthModule {
 
     Map<String, CompilationResultDTO> eth_compileSolidity(String contract);
 
-    String eth_newFilter(Web3.FilterRequest fr) throws Exception;
+    String eth_newFilter(FilterRequest fr) throws Exception;
 
     String eth_newBlockFilter();
 
@@ -135,7 +134,7 @@ public interface Web3EthModule {
 
     Object[] eth_getFilterLogs(String id);
 
-    Object[] eth_getLogs(Web3.FilterRequest fr) throws Exception;
+    Object[] eth_getLogs(FilterRequest fr) throws Exception;
 
     BigInteger eth_netHashrate();
 

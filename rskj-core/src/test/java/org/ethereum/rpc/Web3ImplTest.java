@@ -53,7 +53,6 @@ import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.BlockBuilder;
 import co.rsk.test.builders.TransactionBuilder;
 import co.rsk.util.TestContract;
-import co.rsk.vm.BytecodeCompiler;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.TestUtils;
 import org.ethereum.core.*;
@@ -173,9 +172,9 @@ public class Web3ImplTest {
 
         Object result = web3.eth_syncing();
 
-        assertTrue("Node is syncing, must return sync manager", result instanceof Web3.SyncingResult);
-        assertTrue("Highest block is 5", ((Web3.SyncingResult)result).highestBlock.compareTo("0x5") == 0);
-        assertTrue("Simple blockchain starts from genesis block", ((Web3.SyncingResult)result).currentBlock.compareTo("0x0") == 0);
+        assertTrue("Node is syncing, must return sync manager", result instanceof SyncingResult);
+        assertTrue("Highest block is 5", ((SyncingResult) result).getHighestBlock().compareTo("0x5") == 0);
+        assertTrue("Simple blockchain starts from genesis block", ((SyncingResult) result).getCurrentBlock().compareTo("0x0") == 0);
     }
 
     @Test
@@ -674,7 +673,7 @@ public class Web3ImplTest {
         assertEquals(ImportResult.IMPORTED_NOT_BEST, world.getBlockChain().tryToConnect(block1b));
         assertEquals(ImportResult.IMPORTED_BEST, world.getBlockChain().tryToConnect(block2b));
 
-        Web3.BlockInformationResult[] bresult = web3.eth_getBlocksByNumber("0x1");
+        BlockInformationResult[] bresult = web3.eth_getBlocksByNumber("0x1");
 
         String hashBlock1String = block1.getHashJsonString();
         String hashBlock1bString = block1b.getHashJsonString();
@@ -682,8 +681,8 @@ public class Web3ImplTest {
         assertNotNull(bresult);
 
         assertEquals(2, bresult.length);
-        assertEquals(hashBlock1String, bresult[0].hash);
-        assertEquals(hashBlock1bString, bresult[1].hash);
+        assertEquals(hashBlock1String, bresult[0].getHash());
+        assertEquals(hashBlock1bString, bresult[1].getHash());
     }
 
     @Test
@@ -1314,9 +1313,9 @@ public class Web3ImplTest {
 
         Web3Impl web3 = createWeb3Mocked(world);
 
-        Web3.CallArguments argsForCall = new Web3.CallArguments();
-        argsForCall.to = TypeConverter.toJsonHex(tx.getContractAddress().getBytes());
-        argsForCall.data = "ead710c40000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000568656c6c6f000000000000000000000000000000000000000000000000000000";
+        CallArguments argsForCall = new CallArguments();
+        argsForCall.setTo(TypeConverter.toJsonHex(tx.getContractAddress().getBytes()));
+        argsForCall.setData("ead710c40000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000568656c6c6f000000000000000000000000000000000000000000000000000000");
 
         String result = web3.eth_call(argsForCall, "latest");
 
@@ -1360,10 +1359,10 @@ public class Web3ImplTest {
         web3.personal_newAccountWithSeed("default");
         web3.personal_newAccountWithSeed("notDefault");
 
-        Web3.CallArguments argsForCall = new Web3.CallArguments();
-        argsForCall.from = TypeConverter.toJsonHex(acc1.getAddress().getBytes());
-        argsForCall.to = TypeConverter.toJsonHex(tx.getContractAddress().getBytes());
-        argsForCall.data = "ead710c40000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000568656c6c6f000000000000000000000000000000000000000000000000000000";
+        CallArguments argsForCall = new CallArguments();
+        argsForCall.setFrom(TypeConverter.toJsonHex(acc1.getAddress().getBytes()));
+        argsForCall.setTo(TypeConverter.toJsonHex(tx.getContractAddress().getBytes()));
+        argsForCall.setData("ead710c40000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000568656c6c6f000000000000000000000000000000000000000000000000000000");
 
         String result = web3.eth_call(argsForCall, "latest");
 
@@ -1394,9 +1393,9 @@ public class Web3ImplTest {
         Web3Impl web3 = createWeb3Mocked(world);
 
         CallTransaction.Function func = contract.functions.get("noreturn");
-        Web3.CallArguments argsForCall = new Web3.CallArguments();
-        argsForCall.to = TypeConverter.toUnformattedJsonHex(tx.getContractAddress().getBytes());
-        argsForCall.data = TypeConverter.toUnformattedJsonHex(func.encode());
+        CallArguments argsForCall = new CallArguments();
+        argsForCall.setTo(TypeConverter.toUnformattedJsonHex(tx.getContractAddress().getBytes()));
+        argsForCall.setData(TypeConverter.toUnformattedJsonHex(func.encode()));
 
         String result = web3.eth_call(argsForCall, "latest");
 
@@ -1577,6 +1576,33 @@ public class Web3ImplTest {
     }
 
     @Test
+    public void importAccountUsingRawKeyContaining0xPrefix() {
+        Web3Impl web3 = createWeb3();
+
+        ECKey eckey = new ECKey();
+
+        byte[] privKeyBytes = eckey.getPrivKeyBytes();
+
+        ECKey privKey = ECKey.fromPrivate(privKeyBytes);
+
+        RskAddress addr = new RskAddress(privKey.getAddress());
+
+        Account account = wallet.getAccount(addr);
+
+        assertNull(account);
+
+        String address = web3.personal_importRawKey(String.format("0x%s", ByteUtil.toHexString(privKeyBytes)), "passphrase1");
+
+        assertNotNull(address);
+
+        account = wallet.getAccount(addr);
+
+        assertNotNull(account);
+        assertEquals(address, "0x" + ByteUtil.toHexString(account.getAddress().getBytes()));
+        assertArrayEquals(privKeyBytes, account.getEcKey().getPrivKeyBytes());
+    }
+
+    @Test
     public void dumpRawKey() throws Exception {
         Web3Impl web3 = createWeb3();
 
@@ -1590,6 +1616,19 @@ public class Web3ImplTest {
         assertArrayEquals(eckey.getPrivKeyBytes(), Hex.decode(rawKey));
     }
 
+    @Test
+    public void dumpRawKeyContaining0xPrefix() throws Exception {
+        Web3Impl web3 = createWeb3();
+
+        ECKey eckey = new ECKey();
+
+        String address = web3.personal_importRawKey(String.format("0x%s", ByteUtil.toHexString(eckey.getPrivKeyBytes())), "passphrase1");
+        assertTrue(web3.personal_unlockAccount(address, "passphrase1", ""));
+
+        String rawKey = web3.personal_dumpRawKey(address).substring(2);
+
+        assertArrayEquals(eckey.getPrivKeyBytes(), Hex.decode(rawKey));
+    }
 
     @Test
     public void sendPersonalTransaction()
@@ -1608,14 +1647,14 @@ public class Web3ImplTest {
         BigInteger nonce = BigInteger.ONE;
 
         // ***** Executes the transaction *******************
-        Web3.CallArguments args = new Web3.CallArguments();
-        args.from = addr1;
-        args.to = addr2;
-        args.data = data;
-        args.gas = TypeConverter.toQuantityJsonHex(gasLimit);
-        args.gasPrice= TypeConverter.toQuantityJsonHex(gasPrice);
-        args.value = value.toString();
-        args.nonce = nonce.toString();
+        CallArguments args = new CallArguments();
+        args.setFrom(addr1);
+        args.setTo(addr2);
+        args.setData(data);
+        args.setGas(TypeConverter.toQuantityJsonHex(gasLimit));
+        args.setGasPrice(TypeConverter.toQuantityJsonHex(gasPrice));
+        args.setValue(value.toString());
+        args.setNonce(nonce.toString());
 
         String txHash = null;
         try {
@@ -1633,7 +1672,7 @@ public class Web3ImplTest {
                 .nonce(nonce)
                 .gasPrice(gasPrice)
                 .gasLimit(gasLimit)
-                .data(args.data)
+                .data(args.getData())
                 .chainId(config.getNetworkConstants().getChainId())
                 .build();
         Account account = wallet.getAccount(new RskAddress(addr1), "passphrase1");
@@ -1700,8 +1739,39 @@ public class Web3ImplTest {
     }
 
     @Test
-    public void eth_sendTransaction()
-    {
+    public void eth_sendTransactionWithValidChainId() {
+        checkSendTransaction(config.getNetworkConstants().getChainId());
+    }
+
+    @Test
+    public void eth_sendTransactionWithZeroChainId() {
+        checkSendTransaction((byte) 0);
+    }
+
+    @Test
+    public void eth_sendTransactionWithNoChainId() {
+        checkSendTransaction(null);
+    }
+
+    @Test(expected = RskJsonRpcRequestException.class)
+    public void eth_sendTransactionWithInvalidChainId() {
+        checkSendTransaction((byte) 1); // chain id of Ethereum Mainnet
+    }
+
+    @Test
+    public void createNewAccountWithoutDuplicates(){
+        Web3Impl web3 = createWeb3();
+        int originalAccountSize = wallet.getAccountAddresses().size();
+        String testAccountAddress = web3.personal_newAccountWithSeed("testAccount");
+
+        assertEquals("The number of accounts was not increased", originalAccountSize + 1, wallet.getAccountAddresses().size());
+
+        web3.personal_newAccountWithSeed("testAccount");
+
+        assertEquals("The number of accounts was increased", originalAccountSize + 1, wallet.getAccountAddresses().size());
+    }
+
+    private void checkSendTransaction(Byte chainId) {
         BigInteger nonce = BigInteger.ONE;
         ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
         World world = new World(receiptStore);
@@ -1724,14 +1794,17 @@ public class Web3ImplTest {
         String data = "0xff";
 
         // ***** Executes the transaction *******************
-        Web3.CallArguments args = new Web3.CallArguments();
-        args.from = addr1;
-        args.to = addr2;
-        args.data = data;
-        args.gas = TypeConverter.toQuantityJsonHex(gasLimit);
-        args.gasPrice = TypeConverter.toQuantityJsonHex(gasPrice);
-        args.value = value.toString();
-        args.nonce = nonce.toString();
+        CallArguments args = new CallArguments();
+        args.setFrom(addr1);
+        args.setTo(addr2);
+        args.setData(data);
+        args.setGas(TypeConverter.toQuantityJsonHex(gasLimit));
+        args.setGasPrice(TypeConverter.toQuantityJsonHex(gasPrice));
+        args.setValue(value.toString());
+        args.setNonce(nonce.toString());
+        if (chainId != null) {
+            args.setChainId(TypeConverter.toJsonHex(new byte[]{chainId}));
+        }
 
         String txHash = web3.eth_sendTransaction(args);
 
@@ -1743,7 +1816,7 @@ public class Web3ImplTest {
                 .gasPrice(gasPrice)
                 .gasLimit(gasLimit)
                 .destination(Hex.decode(to))
-                .data(args.data == null ? null : Hex.decode(args.data))
+                .data(args.getData() == null ? null : Hex.decode(args.getData()))
                 .chainId(config.getNetworkConstants().getChainId())
                 .value(value)
                 .build();
@@ -1751,20 +1824,7 @@ public class Web3ImplTest {
 
         String expectedHash = tx.getHash().toJsonString();
 
-        assertTrue("Method is not creating the expected transaction", expectedHash.compareTo(txHash) == 0);
-    }
-
-    @Test
-    public void createNewAccountWithoutDuplicates(){
-        Web3Impl web3 = createWeb3();
-        int originalAccountSize = wallet.getAccountAddresses().size();
-        String testAccountAddress = web3.personal_newAccountWithSeed("testAccount");
-
-        assertEquals("The number of accounts was not increased", originalAccountSize + 1, wallet.getAccountAddresses().size());
-
-        web3.personal_newAccountWithSeed("testAccount");
-
-        assertEquals("The number of accounts was increased", originalAccountSize + 1, wallet.getAccountAddresses().size());
+        assertEquals("Method is not creating the expected transaction", 0, expectedHash.compareTo(txHash));
     }
 
     @Test
@@ -1811,9 +1871,9 @@ public class Web3ImplTest {
 
         Web3Impl web3 = createWeb3MockedCallNoReturn(world);
 
-        Web3.CallArguments argsForCall = new Web3.CallArguments();
-        argsForCall.to = TypeConverter.toJsonHex(tx.getContractAddress().getBytes());
-        argsForCall.data = TypeConverter.toJsonHex(noreturn.functions.get("noreturn").encodeSignature());
+        CallArguments argsForCall = new CallArguments();
+        argsForCall.setTo(TypeConverter.toJsonHex(tx.getContractAddress().getBytes()));
+        argsForCall.setData(TypeConverter.toJsonHex(noreturn.functions.get("noreturn").encodeSignature()));
 
         String result = web3.eth_call(argsForCall, "latest");
 

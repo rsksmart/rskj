@@ -18,10 +18,10 @@
 
 package co.rsk.rpc.modules.eth;
 
-import org.ethereum.rpc.Web3;
+import org.ethereum.rpc.CallArguments;
 
 public interface EthModuleTransaction {
-    String sendTransaction(Web3.CallArguments args);
+    String sendTransaction(CallArguments args);
 
     String sendRawTransaction(String rawData);
 }

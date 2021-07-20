@@ -26,6 +26,7 @@ import co.rsk.rpc.modules.RskJsonRpcRequest;
 import co.rsk.rpc.modules.RskJsonRpcRequestVisitor;
 import co.rsk.rpc.modules.eth.subscribe.EthSubscribeRequest;
 import co.rsk.rpc.modules.eth.subscribe.EthUnsubscribeRequest;
+import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufHolder;
 import io.netty.buffer.ByteBufInputStream;
 import io.netty.channel.ChannelHandler.Sharable;
@@ -48,25 +49,25 @@ import java.io.IOException;
  */
 
 @Sharable
-public class RskJsonRpcHandler
+public class RskWebSocketJsonRpcHandler
         extends SimpleChannelInboundHandler<ByteBufHolder>
         implements RskJsonRpcRequestVisitor {
-    private static final Logger LOGGER = LoggerFactory.getLogger(RskJsonRpcHandler.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(RskWebSocketJsonRpcHandler.class);
 
     private final EthSubscriptionNotificationEmitter emitter;
     private final JsonRpcSerializer serializer;
 
-    public RskJsonRpcHandler(EthSubscriptionNotificationEmitter emitter, JsonRpcSerializer serializer) {
+    public RskWebSocketJsonRpcHandler(EthSubscriptionNotificationEmitter emitter, JsonRpcSerializer serializer) {
         this.emitter = emitter;
         this.serializer = serializer;
     }
 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, ByteBufHolder msg) {
-        try {
-            RskJsonRpcRequest request = serializer.deserializeRequest(
-                    new ByteBufInputStream(msg.copy().content())
-            );
+        ByteBuf content = msg.copy().content();
+
+        try (ByteBufInputStream source = new ByteBufInputStream(content)){
+            RskJsonRpcRequest request = serializer.deserializeRequest(source);
 
             // TODO(mc) we should support the ModuleDescription method filters
             JsonRpcResultOrError resultOrError = request.accept(this, ctx);
@@ -75,10 +76,13 @@ public class RskJsonRpcHandler
             return;
         } catch (IOException e) {
             LOGGER.trace("Not a known or valid JsonRpcRequest", e);
+
+            // We need to release this resource, netty only takes care about 'ByteBufHolder msg'
+            content.release(content.refCnt());
         }
 
         // delegate to the next handler if the message can't be matched to a known JSON-RPC request
-        ctx.fireChannelRead(msg.retain());
+        ctx.fireChannelRead(msg);
     }
 
     @Override

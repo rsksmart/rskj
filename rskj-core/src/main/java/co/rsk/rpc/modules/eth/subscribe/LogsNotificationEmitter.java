@@ -129,7 +129,7 @@ public class LogsNotificationEmitter {
         List<LogsNotification> notifications = new ArrayList<>();
         for (int transactionIndex = 0; transactionIndex < block.getTransactionsList().size(); transactionIndex++) {
             Transaction transaction = block.getTransactionsList().get(transactionIndex);
-            Optional<TransactionInfo> transactionInfoOpt = receiptStore.get(transaction.getHash(), block.getHash());
+            Optional<TransactionInfo> transactionInfoOpt = receiptStore.get(transaction.getHash().getBytes(), block.getHash().getBytes());
             if (!transactionInfoOpt.isPresent()) {
                 logger.error("Missing receipt for transaction {} in block {}", transaction.getHash(), block.getHash());
                 continue;

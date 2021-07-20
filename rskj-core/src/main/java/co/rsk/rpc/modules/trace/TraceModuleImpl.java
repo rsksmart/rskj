@@ -37,12 +37,16 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import static org.ethereum.rpc.TypeConverter.stringHexToBigInteger;
 import static org.ethereum.rpc.TypeConverter.stringHexToByteArray;
 
 public class TraceModuleImpl implements TraceModule {
+
     private static final Logger logger = LoggerFactory.getLogger("web3");
+
+    private static final ObjectMapper OBJECT_MAPPER = Serializers.createMapper(true);
 
     private final Blockchain blockchain;
     private final BlockStore blockStore;
@@ -66,7 +70,7 @@ public class TraceModuleImpl implements TraceModule {
         logger.trace("trace_transaction({})", transactionHash);
 
         byte[] hash = stringHexToByteArray(transactionHash);
-        TransactionInfo txInfo = this.receiptStore.getInMainChain(hash, this.blockStore);
+        TransactionInfo txInfo = this.receiptStore.getInMainChain(hash, this.blockStore).orElse(null);
 
         if (txInfo == null) {
             logger.trace("No transaction info for {}", transactionHash);
@@ -88,8 +92,8 @@ public class TraceModuleImpl implements TraceModule {
         }
 
         List<TransactionTrace> traces = TraceTransformer.toTraces(programTrace, txInfo, block.getNumber());
-        ObjectMapper mapper = Serializers.createMapper(true);
-        return mapper.valueToTree(traces);
+
+        return OBJECT_MAPPER.valueToTree(traces);
     }
 
     @Override
@@ -112,7 +116,8 @@ public class TraceModuleImpl implements TraceModule {
             this.blockExecutor.traceBlock(programTraceProcessor, VmConfig.LIGHT_TRACE, block, parent.getHeader(), false, false);
 
             for (Transaction tx : block.getTransactionsList()) {
-                TransactionInfo txInfo = receiptStore.getInMainChain(tx.getHash().getBytes(), this.blockStore);
+                TransactionInfo txInfo = receiptStore.getInMainChain(tx.getHash().getBytes(), this.blockStore).orElse(null);
+                Objects.requireNonNull(txInfo);
                 txInfo.setTransaction(tx);
 
                 SummarizedProgramTrace programTrace = (SummarizedProgramTrace) programTraceProcessor.getProgramTrace(tx.getHash());
@@ -127,9 +132,7 @@ public class TraceModuleImpl implements TraceModule {
             }
         }
 
-        ObjectMapper mapper = Serializers.createMapper(true);
-
-        return mapper.valueToTree(blockTraces);
+        return OBJECT_MAPPER.valueToTree(blockTraces);
     }
 
     private Block getByJsonArgument(String arg) {

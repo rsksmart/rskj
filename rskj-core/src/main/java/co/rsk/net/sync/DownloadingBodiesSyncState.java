@@ -314,8 +314,8 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
      */
     private void initializeSegments() {
         Deque<Integer> segmentChunks = new ArrayDeque<>();
-        Integer segmentNumber = 0;
-        Integer chunkNumber = 0;
+        int segmentNumber = 0;
+        int chunkNumber = 0;
         List<Peer> nodes = getAvailableNodesIDSFor(chunkNumber);
         List<Peer> prevNodes = nodes;
         segmentChunks.push(chunkNumber);

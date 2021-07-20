@@ -25,16 +25,16 @@ import co.rsk.core.Wallet;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.Account;
 import org.ethereum.core.Transaction;
+import org.ethereum.core.TransactionArguments;
 import org.ethereum.core.TransactionPool;
 import org.ethereum.facade.Ethereum;
+import org.ethereum.rpc.CallArguments;
 import org.ethereum.rpc.TypeConverter;
-import org.ethereum.rpc.Web3;
 import org.ethereum.util.ByteUtil;
-import org.ethereum.vm.GasCost;
+import org.ethereum.util.TransactionArgumentsUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.math.BigInteger;
 import java.util.Arrays;
 
 import static org.ethereum.rpc.exception.RskJsonRpcRequestException.invalidParamError;
@@ -123,6 +123,9 @@ public class PersonalModuleWalletEnabled implements PersonalModule {
     public String importRawKey(String key, String passphrase) {
         String s = null;
         try {
+            if (key != null && key.startsWith("0x")) {
+                key = key.substring(2);
+            }
             RskAddress address = this.wallet.addAccountWithPrivateKey(Hex.decode(key), passphrase);
             unlockAccount(address, passphrase, null);
             return s = address.toJsonString();
@@ -132,10 +135,10 @@ public class PersonalModuleWalletEnabled implements PersonalModule {
     }
 
     @Override
-    public String sendTransaction(Web3.CallArguments args, String passphrase) throws Exception {
+    public String sendTransaction(CallArguments args, String passphrase) throws Exception {
         String s = null;
         try {
-            return s = sendTransaction(args, getAccount(args.from, passphrase));
+            return s = sendTransaction(args, getAccount(args.getFrom(), passphrase));
         } finally {
             LOGGER.debug("eth_sendTransaction({}): {}", args,  s);
         }
@@ -183,39 +186,22 @@ public class PersonalModuleWalletEnabled implements PersonalModule {
         return wallet.getAccount(new RskAddress(from), passphrase);
     }
 
-    private String sendTransaction(Web3.CallArguments args, Account account) throws Exception {
-        if (account == null) {
-            throw new Exception("From address private key could not be found in this node");
-        }
+	private String sendTransaction(CallArguments args, Account senderAccount) throws Exception {
 
-        String toAddress = args.to != null ? ByteUtil.toHexString(TypeConverter.stringHexToByteArray(args.to)) : null;
+		if (senderAccount == null) {
+			throw new Exception("From address private key could not be found in this node");
+		}
 
-        BigInteger accountNonce = args.nonce != null ? TypeConverter.stringNumberAsBigInt(args.nonce) : transactionPool.getPendingState().getNonce(account.getAddress());
-        BigInteger value = args.value != null ? TypeConverter.stringNumberAsBigInt(args.value) : BigInteger.ZERO;
-        BigInteger gasPrice = args.gasPrice != null ? TypeConverter.stringNumberAsBigInt(args.gasPrice) : BigInteger.ZERO;
-        BigInteger gasLimit = args.gas != null ? TypeConverter.stringNumberAsBigInt(args.gas) : BigInteger.valueOf(GasCost.TRANSACTION);
+		TransactionArguments txArgs = TransactionArgumentsUtil.processArguments(args, transactionPool, senderAccount, config.getNetworkConstants().getChainId());
 
-        if (args.data != null && args.data.startsWith("0x")) {
-            args.data = args.data.substring(2);
-        }
+		Transaction tx = Transaction.builder().from(txArgs).build();
 
-        Transaction tx = Transaction
-                .builder()
-                .nonce(accountNonce)
-                .gasPrice(gasPrice)
-                .gasLimit(gasLimit)
-                .destination(toAddress == null ? null : Hex.decode(toAddress))
-                .data(args.data == null ? null : Hex.decode(args.data))
-                .chainId(config.getNetworkConstants().getChainId())
-                .value(value)
-                .build();
+		tx.sign(senderAccount.getEcKey().getPrivKeyBytes());
 
-        tx.sign(account.getEcKey().getPrivKeyBytes());
+		eth.submitTransaction(tx);
 
-        eth.submitTransaction(tx);
-
-        return tx.getHash().toJsonString();
-    }
+		return tx.getHash().toJsonString();
+	}
 
     private String convertFromJsonHexToHex(String x) throws Exception {
         if (!x.startsWith("0x")) {

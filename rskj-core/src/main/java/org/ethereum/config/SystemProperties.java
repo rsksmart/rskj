@@ -82,6 +82,7 @@ public abstract class SystemProperties {
     private static final String PROPERTY_RPC_WEBSOCKET_ENABLED = "rpc.providers.web.ws.enabled";
     private static final String PROPERTY_RPC_WEBSOCKET_ADDRESS = "rpc.providers.web.ws.bind_address";
     private static final String PROPERTY_RPC_WEBSOCKET_PORT = "rpc.providers.web.ws.port";
+    private static final String PROPERTY_RPC_WEBSOCKET_SERVER_WRITE_TIMEOUT_SECONDS = "rpc.providers.web.ws.server_write_timeout_seconds";
 
     public static final String PROPERTY_PUBLIC_IP = "public.ip";
     public static final String PROPERTY_BIND_ADDRESS = "bind_address";
@@ -240,7 +241,7 @@ public abstract class SystemProperties {
                     return new Node(nodeId, ip, port);
                 }
 
-                throw new RuntimeException("Invalid config nodeId '" + nodeId + "' at " + configObject);
+                throw new RuntimeException("Invalid config nodeId '" + Arrays.toString(nodeId) + "' at " + configObject);
             }
 
             if (configObject.toConfig().hasPath("nodeName")) {
@@ -610,6 +611,10 @@ public abstract class SystemProperties {
 
     public int rpcWebSocketPort() {
         return configFromFiles.getInt(PROPERTY_RPC_WEBSOCKET_PORT);
+    }
+
+    public int rpcWebSocketServerWriteTimeoutSeconds() {
+        return configFromFiles.getInt(PROPERTY_RPC_WEBSOCKET_SERVER_WRITE_TIMEOUT_SECONDS);
     }
 
     public InetAddress rpcHttpBindAddress() {

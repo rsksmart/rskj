@@ -123,7 +123,7 @@ public class P2pHandler extends SimpleChannelInboundHandler<P2pMessage> {
 
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
-        logger.info("channel inactive: ", ctx);
+        logger.info("channel inactive: {}", ctx);
         this.killTimers();
     }
 

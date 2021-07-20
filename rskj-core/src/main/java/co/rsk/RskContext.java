@@ -101,7 +101,7 @@ import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.datasource.LevelDbDataSource;
 import org.ethereum.db.IndexedBlockStore;
 import org.ethereum.db.ReceiptStore;
-import org.ethereum.db.ReceiptStoreImpl;
+import org.ethereum.db.ReceiptStoreImplV2;
 import org.ethereum.facade.Ethereum;
 import org.ethereum.facade.EthereumImpl;
 import org.ethereum.listener.CompositeEthereumListener;
@@ -984,7 +984,7 @@ public class RskContext implements NodeBootstrapper {
             ds = new DataSourceWithCache(ds, receiptsCacheSize);
         }
 
-        return new ReceiptStoreImpl(ds);
+        return new ReceiptStoreImplV2(ds);
     }
 
     protected BlockValidator buildBlockValidator() {
@@ -1595,12 +1595,13 @@ public class RskContext implements NodeBootstrapper {
                             new BlockchainBranchComparator(getBlockStore())
                     )
             );
-            RskJsonRpcHandler jsonRpcHandler = new RskJsonRpcHandler(emitter, jsonRpcSerializer);
+            RskWebSocketJsonRpcHandler jsonRpcHandler = new RskWebSocketJsonRpcHandler(emitter, jsonRpcSerializer);
             web3WebSocketServer = new Web3WebSocketServer(
                     rskSystemProperties.rpcWebSocketBindAddress(),
                     rskSystemProperties.rpcWebSocketPort(),
                     jsonRpcHandler,
-                    getJsonRpcWeb3ServerHandler()
+                    getJsonRpcWeb3ServerHandler(),
+                    rskSystemProperties.rpcWebSocketServerWriteTimeoutSeconds()
             );
         }
 
