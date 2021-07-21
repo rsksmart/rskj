@@ -159,10 +159,10 @@ public class DslFilesTest {
     public void runCreateContractAndPreserveBalance() throws FileNotFoundException, DslProcessorException {
         // after rskip174 activation
         DslParser parser = DslParser.fromResource("dsl/create_and_preserve_balance.txt");
-        TestSystemProperties rskip174Active = new TestSystemProperties(rawConfig ->
+        TestSystemProperties rskip174Enabled = new TestSystemProperties(rawConfig ->
                 rawConfig.withValue("blockchain.config.hardforkActivationHeights.iris300", ConfigValueFactory.fromAnyRef(0))
         );
-        World world = new World(rskip174Active);
+        World world = new World(rskip174Enabled);
         WorldDslProcessor processor = new WorldDslProcessor(world);
         processor.processCommands(parser);
 
@@ -171,9 +171,11 @@ public class DslFilesTest {
     @Test
     public void runCreateContractAndPreserveNoBalance() throws FileNotFoundException, DslProcessorException {
         // before rskip174 activation
-        // todo(fedejinich) this test will change when iris300 == 0
+        TestSystemProperties rskip174Disabled = new TestSystemProperties(rawConfig ->
+                rawConfig.withValue("blockchain.config.hardforkActivationHeights.iris300", ConfigValueFactory.fromAnyRef(-1))
+        );
         DslParser parser = DslParser.fromResource("dsl/create_and_preserve_no_balance.txt");
-        World world = new World();
+        World world = new World(rskip174Disabled);
 
         WorldDslProcessor processor = new WorldDslProcessor(world);
         processor.processCommands(parser);
