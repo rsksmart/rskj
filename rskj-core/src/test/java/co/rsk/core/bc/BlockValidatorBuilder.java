@@ -18,6 +18,7 @@
 
 package co.rsk.core.bc;
 
+import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.db.StateRootHandler;
@@ -35,7 +36,7 @@ import java.util.HashMap;
  */
 public class BlockValidatorBuilder {
 
-    private final TestSystemProperties config = new TestSystemProperties();
+    private final TestSystemProperties config;
 
     private BlockTxsValidationRule blockTxsValidationRule;
 
@@ -58,6 +59,14 @@ public class BlockValidatorBuilder {
     private BlockParentCompositeRule blockParentCompositeRule;
 
     private BlockStore blockStore;
+
+    public BlockValidatorBuilder(TestSystemProperties customConfig) {
+        this.config = customConfig;
+    }
+
+    public BlockValidatorBuilder() {
+        this.config = new TestSystemProperties();
+    }
 
     public BlockValidatorBuilder addBlockTxsFieldsValidationRule() {
         this.blockTxsFieldsValidationRule = new BlockTxsFieldsValidationRule();
@@ -130,5 +139,12 @@ public class BlockValidatorBuilder {
         }
 
         return new BlockValidatorImpl(this.blockStore, this.blockParentCompositeRule, this.blockCompositeRule);
+    }
+
+    public BlockValidatorBuilder addBlockTimeStampValidationWithNetworkParameters(int validPeriod, NetworkParameters bitcoinNetworkParameters) {
+        BlockTimeStampValidationRule blockTimeStampValidationRule = new BlockTimeStampValidationRule(
+                validPeriod, config.getActivationConfig(), System::currentTimeMillis, bitcoinNetworkParameters);
+        this.blockTimeStampValidationRule = blockTimeStampValidationRule;
+        return this;
     }
 }
