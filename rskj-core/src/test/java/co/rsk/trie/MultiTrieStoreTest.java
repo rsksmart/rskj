@@ -174,13 +174,14 @@ public class MultiTrieStoreTest {
         when(store1.retrieveValue(hashToRetrieve)).thenReturn(testTrie.toMessage());
 
         store.collect(hashToRetrieve);
+        store.discardOldestEpoch();
 
         verify(disposer).callback(0);
         verify(storeFactory).newInstance("3");
     }
 
     @Test
-    public void performsStoreRotationOnCollect() {
+    public void performsStoreRotationOnCollectAndDiscardOldestEpoch() {
         TrieStore store1 = mock(TrieStore.class);
         TrieStore store2 = mock(TrieStore.class);
         TrieStore store3 = mock(TrieStore.class);
@@ -198,6 +199,7 @@ public class MultiTrieStoreTest {
         when(store1.retrieveValue(testTrieHash)).thenReturn(testTrie.toMessage());
 
         store.collect(testTrieHash);
+        store.discardOldestEpoch();
 
         // 1. save the oldest trie into the second to last store
         verify(store2).save(testTrie);

@@ -19,18 +19,26 @@
 package co.rsk.trie;
 
 import org.ethereum.util.ByteUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class MultiTrieStore implements TrieStore {
+    private static final Logger logger = LoggerFactory.getLogger("multitriestore");
 
     private int currentEpoch;
     private final List<TrieStore> epochs;
     private final TrieStoreFactory trieStoreFactory;
     private final OnEpochDispose disposer;
+
+    // To prevent entrance when executing discardOldEpoch()
+    private final ReadWriteLock readWriteLock = new ReentrantReadWriteLock();
 
     /**
      * Creates a MultiTrieStore
@@ -58,7 +66,14 @@ public class MultiTrieStore implements TrieStore {
      */
     @Override
     public void save(Trie trie) {
-        getCurrentStore().save(trie);
+        readWriteLock.readLock().lock();
+
+        try {
+            getCurrentStore().save(trie);
+        }
+        finally {
+            readWriteLock.readLock().unlock();
+        }
     }
 
     /**
@@ -67,7 +82,18 @@ public class MultiTrieStore implements TrieStore {
      */
     @Override
     public void flush() {
-        epochs.forEach(TrieStore::flush);
+        logger.trace("Start MultiTrie flush");
+
+        readWriteLock.writeLock().lock();
+
+        try {
+            epochs.forEach(TrieStore::flush);
+
+            logger.trace("End MultiTrie flush");
+        }
+        finally {
+            readWriteLock.writeLock().unlock();
+        }
     }
 
 
@@ -76,35 +102,64 @@ public class MultiTrieStore implements TrieStore {
      */
     @Override
     public Optional<Trie> retrieve(byte[] rootHash) {
-        for (TrieStore epochTrieStore : epochs) {
-            byte[] message = epochTrieStore.retrieveValue(rootHash);
-            if (message == null) {
-                continue;
-            }
-            return Optional.of(Trie.fromMessage(message, this));
-        }
+        readWriteLock.readLock().lock();
 
-        return Optional.empty();
+        try {
+            for (TrieStore epochTrieStore : epochs) {
+                byte[] message = epochTrieStore.retrieveValue(rootHash);
+
+                if (message == null) {
+                    continue;
+                }
+
+                return Optional.of(Trie.fromMessage(message, this));
+            }
+
+            return Optional.empty();
+        }
+        finally {
+            readWriteLock.readLock().unlock();
+        }
     }
 
     @Override
     public byte[] retrieveValue(byte[] hash) {
-        for (TrieStore epochTrieStore : epochs) {
-            byte[] value = epochTrieStore.retrieveValue(hash);
-            if (value != null) {
-                return value;
+        readWriteLock.readLock().lock();
+
+        try {
+            for (TrieStore epochTrieStore : epochs) {
+                byte[] value = epochTrieStore.retrieveValue(hash);
+
+                if (value != null) {
+                    return value;
+                }
             }
+
+            return null;
         }
-        return null;
+        finally {
+            readWriteLock.readLock().unlock();
+        }
     }
 
     @Override
     public void dispose() {
-        epochs.forEach(TrieStore::dispose);
+        logger.trace("Start MultiTrie dispose");
+
+        readWriteLock.writeLock().lock();
+
+        try {
+            epochs.forEach(TrieStore::dispose);
+
+            logger.trace("End MultiTrie dispose");
+        }
+        finally {
+            readWriteLock.writeLock().unlock();
+        }
     }
 
     /**
-     * Discards the oldest epoch.
+     * Save the oldest trie hash to keep into the previous to oldest epoch.
      *
      * The children of <code>oldestTrieHashToKeep</code> stored in the oldest epoch will be saved
      * into the previous one
@@ -112,22 +167,58 @@ public class MultiTrieStore implements TrieStore {
      * @param oldestTrieHashToKeep a trie root hash to ensure epoch survival
      */
     public void collect(byte[] oldestTrieHashToKeep) {
-        Trie oldestTrieToKeep = retrieve(oldestTrieHashToKeep)
-                .orElseThrow(() ->
-                        new IllegalArgumentException(String.format("The trie with root %s is missing from every epoch",
-                                ByteUtil.toHexString(oldestTrieHashToKeep)
-        )));
+        logger.trace("Start MultiTrie collect");
 
-        epochs.get(epochs.size() - 2).save(oldestTrieToKeep); // save into the upcoming last epoch
-        epochs.get(epochs.size() - 1).dispose(); // dispose last epoch
-        disposer.callback(currentEpoch - epochs.size());
-        Collections.rotate(epochs, 1); // move last epoch to first place
-        epochs.set(0, trieStoreFactory.newInstance(String.valueOf(currentEpoch))); // update current epoch
-        currentEpoch++;
+        readWriteLock.readLock().lock();
+
+        try {
+            Trie  oldestTrieToKeep = retrieve(oldestTrieHashToKeep)
+                    .orElseThrow(() ->
+                            new IllegalArgumentException(String.format("The trie with root %s is missing from every epoch",
+                                    ByteUtil.toHexString(oldestTrieHashToKeep)
+            )));
+
+            epochs.get(epochs.size() - 2).save(oldestTrieToKeep); // save into the upcoming last epoch
+
+            logger.trace("End MultiTrie collect");
+        }
+        finally {
+            readWriteLock.readLock().unlock();
+        }
+    }
+
+    /**
+     * Discards the oldest epoch.
+     *
+     */
+    public void discardOldestEpoch() {
+        logger.trace("Start MultiTrie discard oldest epoch");
+
+        readWriteLock.writeLock().lock();
+
+        try {
+            epochs.get(epochs.size() - 1).dispose(); // dispose last epoch
+            disposer.callback(currentEpoch - epochs.size());
+            Collections.rotate(epochs, 1); // move last epoch to first place
+            epochs.set(0, trieStoreFactory.newInstance(String.valueOf(currentEpoch))); // update current epoch
+            currentEpoch++;
+
+            logger.trace("End MultiTrie discard oldest epoch");
+        }
+        finally {
+            readWriteLock.writeLock().unlock();
+        }
     }
 
     private TrieStore getCurrentStore() {
-        return epochs.get(0);
+        readWriteLock.readLock().lock();
+
+        try {
+            return epochs.get(0);
+        }
+        finally {
+            readWriteLock.readLock().unlock();
+        }
     }
 
     public interface OnEpochDispose {
