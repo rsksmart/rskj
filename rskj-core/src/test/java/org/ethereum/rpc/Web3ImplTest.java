@@ -2665,7 +2665,7 @@ public class Web3ImplTest {
         private final Web3Impl web3;
         private final String accountAddress;
         private final Block block;
-        private Web3.CallArguments argsForCall; // for call tests could be null
+        private CallArguments argsForCall; // for call tests could be null
 
         private ChainParams(World world, String accountAddress, Block block) {
             this.world = world;
@@ -2674,7 +2674,7 @@ public class Web3ImplTest {
             this.block = block;
         }
 
-        private ChainParams(World world, String accountAddress, Block block, Web3.CallArguments argsForCall) {
+        private ChainParams(World world, String accountAddress, Block block, CallArguments argsForCall) {
             this(world,accountAddress,block);
             this.argsForCall = argsForCall;
         }
@@ -2768,10 +2768,10 @@ public class Web3ImplTest {
 
         final Block block = isCanonicalBlock ? createNonCanonicalBlock(world, txs) : createCanonicalBlock(world, txs);
 
-        Web3.CallArguments argsForCall = new Web3.CallArguments();
-        argsForCall.from = TypeConverter.toJsonHex(acc1.getAddress().getBytes());
-        argsForCall.to = contractAddress;
-        argsForCall.data = "ead710c40000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000568656c6c6f000000000000000000000000000000000000000000000000000000";
+        CallArguments argsForCall = new CallArguments();
+        argsForCall.setFrom(TypeConverter.toJsonHex(acc1.getAddress().getBytes()));
+        argsForCall.setTo(contractAddress);
+        argsForCall.setData("ead710c40000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000568656c6c6f000000000000000000000000000000000000000000000000000000");
 
         return new ChainParams(world, contractAddress, block, argsForCall);
     }
