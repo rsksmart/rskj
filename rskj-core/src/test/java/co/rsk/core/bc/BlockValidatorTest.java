@@ -48,7 +48,6 @@ import org.powermock.reflect.Whitebox;
 import java.math.BigInteger;
 import java.util.*;
 
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 /**

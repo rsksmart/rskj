@@ -157,20 +157,20 @@ public class DslFilesTest {
 
     @Test
     public void runCreateContractAndPreserveBalance() throws FileNotFoundException, DslProcessorException {
-        // after rskip174 activation
         DslParser parser = DslParser.fromResource("dsl/create_and_preserve_balance.txt");
-        TestSystemProperties rskip174Enabled = new TestSystemProperties(rawConfig ->
-                rawConfig.withValue("blockchain.config.hardforkActivationHeights.iris300", ConfigValueFactory.fromAnyRef(0))
-        );
-        World world = new World(rskip174Enabled);
+        World world = new World();
         WorldDslProcessor processor = new WorldDslProcessor(world);
         processor.processCommands(parser);
 
         Assert.assertEquals(Coin.valueOf(100L), getBalance(world, "6252703f5ba322ec64d3ac45e56241b7d9e481ad"));
     }
+
+    /**
+     * This test covers the expected behavior BEFORE implementing the RSKIP174
+     * https://github.com/rsksmart/RSKIPs/pull/260
+     * */
     @Test
     public void runCreateContractAndPreserveNoBalance() throws FileNotFoundException, DslProcessorException {
-        // before rskip174 activation
         TestSystemProperties rskip174Disabled = new TestSystemProperties(rawConfig ->
                 rawConfig.withValue("blockchain.config.hardforkActivationHeights.iris300", ConfigValueFactory.fromAnyRef(-1))
         );
