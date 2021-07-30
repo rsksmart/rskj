@@ -83,6 +83,8 @@ public abstract class SystemProperties {
     private static final String PROPERTY_RPC_WEBSOCKET_ADDRESS = "rpc.providers.web.ws.bind_address";
     private static final String PROPERTY_RPC_WEBSOCKET_PORT = "rpc.providers.web.ws.port";
     private static final String PROPERTY_RPC_WEBSOCKET_SERVER_WRITE_TIMEOUT_SECONDS = "rpc.providers.web.ws.server_write_timeout_seconds";
+    private static final String PROPERTY_RPC_WEBSOCKET_SERVER_MAX_FRAME_SIZE = "rpc.providers.web.ws.max_frame_size";
+    private static final String PROPERTY_RPC_WEBSOCKET_SERVER_MAX_AGGREGATED_FRAME_SIZE = "rpc.providers.web.ws.max_aggregated_frame_size";
 
     public static final String PROPERTY_PUBLIC_IP = "public.ip";
     public static final String PROPERTY_BIND_ADDRESS = "bind_address";
@@ -615,6 +617,14 @@ public abstract class SystemProperties {
 
     public int rpcWebSocketServerWriteTimeoutSeconds() {
         return configFromFiles.getInt(PROPERTY_RPC_WEBSOCKET_SERVER_WRITE_TIMEOUT_SECONDS);
+    }
+
+    public int rpcWebSocketMaxFrameSize() {
+        return configFromFiles.getInt(PROPERTY_RPC_WEBSOCKET_SERVER_MAX_FRAME_SIZE);
+    }
+
+    public int rpcWebSocketMaxAggregatedFrameSize() {
+        return configFromFiles.getInt(PROPERTY_RPC_WEBSOCKET_SERVER_MAX_AGGREGATED_FRAME_SIZE);
     }
 
     public InetAddress rpcHttpBindAddress() {

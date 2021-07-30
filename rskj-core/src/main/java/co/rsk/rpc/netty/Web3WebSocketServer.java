@@ -40,7 +40,6 @@ import java.util.concurrent.TimeUnit;
 
 public class Web3WebSocketServer implements InternalService {
     private static final Logger logger = LoggerFactory.getLogger(Web3WebSocketServer.class);
-    private static final int HTTP_MAX_CONTENT_LENGTH = 1024 * 1024 * 5;
 
     private final InetAddress host;
     private final int port;
@@ -50,13 +49,17 @@ public class Web3WebSocketServer implements InternalService {
     private final EventLoopGroup workerGroup;
     private @Nullable ChannelFuture webSocketChannel;
     private final int serverWriteTimeoutSeconds;
+    private final int maxFrameSize;
+    private final int maxAggregatedFrameSize;
 
     public Web3WebSocketServer(
             InetAddress host,
             int port,
             RskWebSocketJsonRpcHandler webSocketJsonRpcHandler,
             JsonRpcWeb3ServerHandler web3ServerHandler,
-            int serverWriteTimeoutSeconds) {
+            int serverWriteTimeoutSeconds,
+            int maxFrameSize,
+            int maxAggregatedFrameSize) {
         this.host = host;
         this.port = port;
         this.webSocketJsonRpcHandler = webSocketJsonRpcHandler;
@@ -64,6 +67,8 @@ public class Web3WebSocketServer implements InternalService {
         this.bossGroup = new NioEventLoopGroup();
         this.workerGroup = new NioEventLoopGroup();
         this.serverWriteTimeoutSeconds = serverWriteTimeoutSeconds;
+        this.maxFrameSize = maxFrameSize;
+        this.maxAggregatedFrameSize = maxAggregatedFrameSize;
     }
 
     @Override
@@ -77,10 +82,10 @@ public class Web3WebSocketServer implements InternalService {
                 protected void initChannel(SocketChannel ch) throws Exception {
                     ChannelPipeline p = ch.pipeline();
                     p.addLast(new HttpServerCodec());
-                    p.addLast(new HttpObjectAggregator(HTTP_MAX_CONTENT_LENGTH));
+                    p.addLast(new HttpObjectAggregator(maxAggregatedFrameSize));
                     p.addLast(new WriteTimeoutHandler(serverWriteTimeoutSeconds, TimeUnit.SECONDS));
-                    p.addLast(new RskWebSocketServerProtocolHandler("/websocket"));
-                    p.addLast(new WebSocketFrameAggregator(1024 * 1024 * 5));
+                    p.addLast(new RskWebSocketServerProtocolHandler("/websocket", maxFrameSize));
+                    p.addLast(new WebSocketFrameAggregator(maxAggregatedFrameSize));
                     p.addLast(webSocketJsonRpcHandler);
                     p.addLast(web3ServerHandler);
                     p.addLast(new Web3ResultWebSocketResponseHandler());

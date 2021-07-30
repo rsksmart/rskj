@@ -55,6 +55,8 @@ public class Web3WebSocketServerTest {
     private static JsonNodeFactory JSON_NODE_FACTORY = JsonNodeFactory.instance;
     private static ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     private static final int DEFAULT_WRITE_TIMEOUT_SECONDS = 30;
+    private static final int DEFAULT_MAX_FRAME_SIZE = 65536; // 64 kb
+    private static final int DEFAULT_MAX_AGGREGATED_FRAME_SIZE = 5242880; // 5 mb
 
     private ExecutorService wsExecutor;
 
@@ -91,15 +93,21 @@ public class Web3WebSocketServerTest {
         RskWebSocketJsonRpcHandler handler = new RskWebSocketJsonRpcHandler(null, new JacksonBasedRpcSerializer());
         JsonRpcWeb3ServerHandler serverHandler = new JsonRpcWeb3ServerHandler(web3Mock, filteredModules);
         int serverWriteTimeoutSeconds = testSystemProperties.rpcWebSocketServerWriteTimeoutSeconds();
+        int maxFrameSize = testSystemProperties.rpcWebSocketMaxFrameSize();
+        int maxAggregatedFrameSize = testSystemProperties.rpcWebSocketMaxAggregatedFrameSize();
 
         assertEquals(DEFAULT_WRITE_TIMEOUT_SECONDS, serverWriteTimeoutSeconds);
+        assertEquals(DEFAULT_MAX_FRAME_SIZE, maxFrameSize);
+        assertEquals(DEFAULT_MAX_AGGREGATED_FRAME_SIZE, maxAggregatedFrameSize);
 
         Web3WebSocketServer websocketServer = new Web3WebSocketServer(
                 InetAddress.getLoopbackAddress(),
                 randomPort,
                 handler,
                 serverHandler,
-                serverWriteTimeoutSeconds
+                serverWriteTimeoutSeconds,
+                maxFrameSize,
+                maxAggregatedFrameSize
         );
         websocketServer.start();
 
