@@ -150,11 +150,10 @@ public class EthModuleTest {
                         "0000002000000000000000000000000000000000000000000000000000000000" +
                         "0000000f6465706f73697420746f6f2062696700000000000000000000000000" +
                         "00000000");
-        ProgramResult executorResult = mock(ProgramResult.class);
-        when(executorResult.isRevert()).thenReturn(true);
-        when(executorResult.getHReturn())
-                .thenReturn(hreturn);
-
+        ProgramResult executorResult = new ProgramResult();
+        executorResult.setHReturn(hreturn);
+        executorResult.setRevert();
+        
         ReversibleTransactionExecutor executor = mock(ReversibleTransactionExecutor.class);
         when(executor.executeTransaction(eq(blockResult.getBlock()), any(), any(), any(), any(), any(), any(), any()))
                 .thenReturn(executorResult);

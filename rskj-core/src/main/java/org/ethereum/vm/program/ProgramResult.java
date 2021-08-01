@@ -19,6 +19,7 @@
 
 package org.ethereum.vm.program;
 
+import org.ethereum.core.CallTransaction;
 import org.ethereum.core.Transaction;
 import org.ethereum.vm.CallCreate;
 import org.ethereum.vm.DataWord;
@@ -27,6 +28,7 @@ import org.ethereum.vm.LogInfo;
 
 import java.util.*;
 
+import static java.util.Arrays.copyOfRange;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
 /**
@@ -249,5 +251,29 @@ public class ProgramResult {
         ProgramResult result = new ProgramResult();
         result.setHReturn(EMPTY_BYTE_ARRAY);
         return result;
+    }
+
+    /**
+     * Look for { Error("msg") } function, if it matches decode the "msg" param.
+     * The 4 first bytes are the function signature.
+     *
+     * @return revert reason, empty if didnt match.
+     */
+    public Optional<String> decodeRevertReason() {
+        final CallTransaction.Function ERROR_ABI_FUNCTION = CallTransaction.Function.fromSignature("Error", "string");
+        final byte[] ERROR_ABI_FUNCTION_SIGNATURE = ERROR_ABI_FUNCTION.encodeSignature(); //08c379a0
+
+        byte[] bytes = this.getHReturn();
+        if (bytes == null || bytes.length < 4) {
+            return Optional.empty();
+        }
+
+        final byte[] signature = copyOfRange(this.getHReturn(), 0, 4);
+        if (!Arrays.equals(signature, ERROR_ABI_FUNCTION_SIGNATURE)) {
+            return Optional.empty();
+        }
+
+        final Object[] decode = ERROR_ABI_FUNCTION.decode(this.getHReturn());
+        return decode != null && decode.length > 0 ? Optional.of((String) decode[0]) : Optional.empty();
     }
 }

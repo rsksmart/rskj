@@ -58,9 +58,6 @@ public class EthModule
 
     private static final Logger LOGGER = LoggerFactory.getLogger("web3");
 
-    private static final CallTransaction.Function ERROR_ABI_FUNCTION = CallTransaction.Function.fromSignature("Error", "string");
-    private static final byte[] ERROR_ABI_FUNCTION_SIGNATURE = ERROR_ABI_FUNCTION.encodeSignature(); //08c379a0
-
     private final Blockchain blockchain;
     private final TransactionPool transactionPool;
     private final ReversibleTransactionExecutor reversibleTransactionExecutor;
@@ -127,7 +124,7 @@ public class EthModule
             }
 
             if (res.isRevert()) {
-                Optional<String> revertReason = decodeRevertReason(res);
+                Optional<String> revertReason = res.decodeRevertReason();
                 if (revertReason.isPresent()) {
                     throw RskJsonRpcRequestException.transactionRevertedExecutionError(revertReason.get());
                 } else {
@@ -236,28 +233,6 @@ public class EthModule
                 hexArgs.getData(),
                 hexArgs.getFromAddress()
         );
-    }
-
-    /**
-     * Look for { Error("msg") } function, if it matches decode the "msg" param.
-     * The 4 first bytes are the function signature.
-     *
-     * @param res
-     * @return revert reason, empty if didnt match.
-     */
-    public static Optional<String> decodeRevertReason(ProgramResult res) {
-        byte[] bytes = res.getHReturn();
-        if (bytes == null || bytes.length < 4) {
-            return Optional.empty();
-        }
-
-        final byte[] signature = copyOfRange(res.getHReturn(), 0, 4);
-        if (!Arrays.equals(signature, ERROR_ABI_FUNCTION_SIGNATURE)) {
-            return Optional.empty();
-        }
-
-        final Object[] decode = ERROR_ABI_FUNCTION.decode(res.getHReturn());
-        return decode != null && decode.length > 0 ? Optional.of((String) decode[0]) : Optional.empty();
     }
 
     @Deprecated
