@@ -25,6 +25,10 @@ import org.ethereum.util.ByteUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import java.io.*;
+import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -32,24 +36,33 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class DataSourceWithCache implements KeyValueDataSource {
+
     private static final Logger logger = LoggerFactory.getLogger("datasourcewithcache");
 
     private final int cacheSize;
     private final KeyValueDataSource base;
     private final Map<ByteArrayWrapper, byte[]> uncommittedCache;
+    private final Map<ByteArrayWrapper, byte[]> unsafeCommittedCache;
     private final Map<ByteArrayWrapper, byte[]> committedCache;
-
-    private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
+    private final Path cacheSnapshotPath;
 
     private final AtomicInteger numOfPuts = new AtomicInteger();
     private final AtomicInteger numOfGets = new AtomicInteger();
     private final AtomicInteger numOfGetsFromStore = new AtomicInteger();
 
-    public DataSourceWithCache(KeyValueDataSource base, int cacheSize) {
+    private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
+
+    public DataSourceWithCache(@Nonnull KeyValueDataSource base, int cacheSize) {
+        this(base, cacheSize, null);
+    }
+
+    public DataSourceWithCache(@Nonnull KeyValueDataSource base, int cacheSize, @Nullable Path cacheSnapshotPath) {
         this.cacheSize = cacheSize;
-        this.base = base;
+        this.base = Objects.requireNonNull(base);
         this.uncommittedCache = new LinkedHashMap<>(cacheSize / 8, (float)0.75, false);
-        this.committedCache = Collections.synchronizedMap(new MaxSizeHashMap<>(cacheSize, true));
+        this.unsafeCommittedCache = makeCommittedCache(cacheSize, cacheSnapshotPath);
+        this.committedCache = Collections.synchronizedMap(this.unsafeCommittedCache);
+        this.cacheSnapshotPath = cacheSnapshotPath;
     }
 
     @Override
@@ -266,6 +279,9 @@ public class DataSourceWithCache implements KeyValueDataSource {
         try {
             flush();
             base.close();
+            if (cacheSnapshotPath != null) {
+                saveCommittedCache(unsafeCommittedCache, cacheSnapshotPath);
+            }
             uncommittedCache.clear();
             committedCache.clear();
         }
@@ -289,6 +305,118 @@ public class DataSourceWithCache implements KeyValueDataSource {
         }
         finally {
             this.lock.writeLock().unlock();
+        }
+    }
+
+    private static Map<ByteArrayWrapper, byte[]> makeCommittedCache(int cacheSize, @Nullable Path cacheSnapshotPath) {
+        Map<ByteArrayWrapper, byte[]> cache = new MaxSizeHashMap<>(cacheSize, true);
+        if (cacheSnapshotPath == null) {
+            return cache;
+        }
+
+        File cacheSnapshotFile = cacheSnapshotPath.toFile();
+        if (!cacheSnapshotFile.exists()) {
+            return cache;
+        }
+
+        try (DataInputStream inStream = new DataInputStream(new BufferedInputStream(new FileInputStream(cacheSnapshotFile)))) {
+            int count = inStream.readInt();
+            if (count < 1) {
+                throw new IOException("Invalid data: number of entries");
+            }
+            int readSize;
+            for (int i = 0; i < count; i++) {
+                int keySize = inStream.readInt();
+                if (keySize < 1) {
+                    throw new IOException("Invalid data: key size");
+                }
+                byte[] key = new byte[keySize];
+                readSize = inStream.read(key);
+                if (readSize != keySize) {
+                    throw new IOException("Invalid data: actual key length");
+                }
+
+                int valueSize = inStream.readInt();
+                if (valueSize < -1) {
+                    throw new IOException("Invalid data: value size");
+                }
+                byte[] value = null;
+                if (valueSize > 0) {
+                    value = new byte[valueSize];
+                    readSize = inStream.read(value);
+                    if (readSize != valueSize) {
+                        throw new IOException("Invalid data: actual value length");
+                    }
+                } else if (valueSize == 0) {
+                    value = new byte[0];
+                }
+
+                cache.put(ByteUtil.wrap(key), value);
+            }
+        } catch (IOException e) {
+            cache.clear();
+            boolean delResult = cacheSnapshotFile.delete();
+            logger.error("Cannot read from cache snapshot file. File deletion result: '{}'", delResult, e);
+        }
+
+        return cache;
+    }
+
+    private static void saveCommittedCache(@Nonnull Map<ByteArrayWrapper, byte[]> cache, @Nonnull Path cacheSnapshotPath) {
+        File tempFile = null;
+        try {
+            File cacheSnapshotFile = cacheSnapshotPath.toFile();
+            String relativePath = Optional.ofNullable(cacheSnapshotFile.getParentFile())
+                    .map(File::getName)
+                    .orElse("") + "/" + cacheSnapshotFile.getName();
+
+            if (cache.isEmpty()) {
+                logger.info("Cache is empty. Nothing to save to '{}'", relativePath);
+
+                if (cacheSnapshotFile.exists() && !cacheSnapshotFile.delete()) {
+                    throw new IOException("Cannot delete existing cache snapshot file '" + relativePath + "'");
+                }
+                return;
+            }
+
+            tempFile = File.createTempFile("prefix-", "-suffix");
+
+            int count = cache.size();
+            try (DataOutputStream outStream = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(tempFile)))) {
+                outStream.writeInt(count);
+
+                for (Map.Entry<ByteArrayWrapper, byte[]> entry : cache.entrySet()) {
+                    byte[] key = entry.getKey().getData();
+                    outStream.writeInt(key.length);
+                    outStream.write(key);
+
+                    byte[] value = entry.getValue();
+                    if (value == null) {
+                        outStream.writeInt(-1);
+                    } else {
+                        outStream.writeInt(value.length);
+                        if (value.length > 0) {
+                            outStream.write(value);
+                        }
+                    }
+                }
+            }
+
+            if (cacheSnapshotFile.exists() && !cacheSnapshotFile.delete()) {
+                throw new IOException("Cannot delete existing cache snapshot file '" + relativePath + "'");
+            }
+
+            if (!tempFile.renameTo(cacheSnapshotFile)) {
+                throw new IOException("Cannot move temp file to '" + relativePath + "'");
+            }
+
+            logger.info("Saved {} cache entries in '{}'", count, relativePath);
+        } catch (IOException e) {
+            logger.error("Cannot save cache snapshot to file", e);
+
+            if (tempFile != null) {
+                tempFile.deleteOnExit();
+            }
         }
     }
 }

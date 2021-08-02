@@ -40,4 +40,6 @@ public interface ReceiptStore {
     void saveMultiple(byte[] blockHash, List<TransactionReceipt> receipts);
 
     void flush();
+
+    void close();
 }

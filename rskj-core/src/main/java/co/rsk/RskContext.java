@@ -872,6 +872,7 @@ public class RskContext implements NodeBootstrapper {
                     getPeerExplorer()
             ));
         }
+
         if (getRskSystemProperties().isSyncEnabled()) {
             internalServices.add(getSyncPool());
         }
@@ -884,22 +885,12 @@ public class RskContext implements NodeBootstrapper {
             }
         }
 
-        internalServices.add(new BlockChainFlusher(
-                getRskSystemProperties().flushNumberOfBlocks(),
-                getCompositeEthereumListener(),
-                getTrieStore(),
-                getBlockStore(),
-                getReceiptStore(),
-                getBlocksBloomStore(),
-                getStateRootsStore()));
-
         NodeBlockProcessor nodeBlockProcessor = getNodeBlockProcessor();
         if (nodeBlockProcessor instanceof InternalService) {
             internalServices.add((InternalService) nodeBlockProcessor);
         }
 
         GarbageCollectorConfig gcConfig = getRskSystemProperties().garbageCollectorConfig();
-
         if (gcConfig.enabled()) {
             internalServices.add(new GarbageCollector(
                     getCompositeEthereumListener(),
@@ -910,9 +901,20 @@ public class RskContext implements NodeBootstrapper {
                     getRepositoryLocator()
             ));
         }
+
         if(getRskSystemProperties().isPeerScoringStatsReportEnabled()) {
             internalServices.add(getPeerScoringReporterService());
         }
+
+        internalServices.add(new BlockChainFlusher(
+                getRskSystemProperties().flushNumberOfBlocks(),
+                getCompositeEthereumListener(),
+                getTrieStore(),
+                getBlockStore(),
+                getReceiptStore(),
+                getBlocksBloomStore(),
+                getStateRootsStore()));
+
         return Collections.unmodifiableList(internalServices);
     }
 
@@ -1031,7 +1033,10 @@ public class RskContext implements NodeBootstrapper {
         KeyValueDataSource ds = LevelDbDataSource.makeDataSource(trieStorePath);
 
         if (statesCacheSize != 0) {
-            ds = new DataSourceWithCache(ds, statesCacheSize);
+            Path cacheSnapshotPath = getRskSystemProperties().shouldPersistStatesCacheSnapshot()
+                    ? trieStorePath.resolve("cache")
+                    : null;
+            ds = new DataSourceWithCache(ds, statesCacheSize, cacheSnapshotPath);
         }
 
         return new TrieStoreImpl(ds);

@@ -93,6 +93,8 @@ public abstract class SystemProperties {
 
     public static final String PROPERTY_SKIP_JAVA_VERSION_CHECK = "system.checkJavaVersion";
 
+    public static final String PROPERTY_PERSIST_STATES_CACHE_SNAPSHOT = "cache.states.persist-snapshot";
+
     /* Testing */
     private static final Boolean DEFAULT_VMTEST_LOAD_LOCAL = false;
 
@@ -571,6 +573,10 @@ public abstract class SystemProperties {
 
     public boolean shouldSkipJavaVersionCheck() {
         return getBoolean(PROPERTY_SKIP_JAVA_VERSION_CHECK, false);
+    }
+
+    public boolean shouldPersistStatesCacheSnapshot() {
+        return getBoolean(PROPERTY_PERSIST_STATES_CACHE_SNAPSHOT, false);
     }
 
     protected int getInt(String path, int val) {
