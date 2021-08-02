@@ -685,7 +685,7 @@ public class BlockValidatorTest {
         Block genesis = blockGenerator.getGenesisBlock();
         byte[] bitcoinMergedMiningHeader = new byte[0];
         int validPeriod = 6000;
-        long baseTimeStamp = System.currentTimeMillis() / 1000;
+        long baseTimeStamp = 1627932722; // some random timestamp (taken from Sys.currentTimeMills())
 
         BlockHeader header = mock(BlockHeader.class);
         when(header.getBitcoinMergedMiningHeader()).thenReturn(bitcoinMergedMiningHeader);
