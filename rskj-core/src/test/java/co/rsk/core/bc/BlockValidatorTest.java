@@ -31,6 +31,7 @@ import co.rsk.db.HashMapBlocksIndex;
 import co.rsk.remasc.RemascTransaction;
 import co.rsk.test.builders.BlockBuilder;
 import co.rsk.test.builders.BlockChainBuilder;
+import co.rsk.util.TimeProvider;
 import co.rsk.validators.BlockHeaderParentDependantValidationRule;
 import co.rsk.validators.ProofOfWorkRule;
 import com.typesafe.config.ConfigValueFactory;
@@ -685,7 +686,7 @@ public class BlockValidatorTest {
         Block genesis = blockGenerator.getGenesisBlock();
         byte[] bitcoinMergedMiningHeader = new byte[0];
         int validPeriod = 6000;
-        long baseTimeStamp = 1627932722; // some random timestamp (taken from Sys.currentTimeMills())
+        long baseTimeStamp = 1627932722L; // some random timestamp (taken from Sys.currentTimeMills())
 
         BlockHeader header = mock(BlockHeader.class);
         when(header.getBitcoinMergedMiningHeader()).thenReturn(bitcoinMergedMiningHeader);
@@ -724,9 +725,11 @@ public class BlockValidatorTest {
     private void blockTimeStampValidation(int validPeriod, long baseTimeStamp, BlockHeader header, Block block,
                                           NetworkParameters bitcoinNetworkParameters, boolean irisEnabled) {
         TestSystemProperties testSystemProperties = blockTimeStampValidationProperties(irisEnabled);
+        TimeProvider timeProvider = mock(TimeProvider.class);
+        when(timeProvider.currentTimeMillis()).thenReturn(baseTimeStamp * 1000 + validPeriod);
 
         BlockValidatorImpl validator = new BlockValidatorBuilder(testSystemProperties)
-                .addBlockTimeStampValidationWithNetworkParameters(validPeriod, bitcoinNetworkParameters)
+                .addBlockTimeStampValidation(validPeriod, timeProvider, bitcoinNetworkParameters)
                 .build();
 
         when(header.getTimestamp())
@@ -739,7 +742,6 @@ public class BlockValidatorTest {
 
         Assert.assertTrue(validator.isValid(block));
     }
-
 
     @Test
     public void blockInTheFutureIsAcceptedWhenValidPeriodIsZero() {

@@ -24,6 +24,7 @@ import co.rsk.db.RepositoryLocator;
 import co.rsk.db.StateRootHandler;
 import co.rsk.trie.TrieConverter;
 import co.rsk.trie.TrieStore;
+import co.rsk.util.TimeProvider;
 import co.rsk.validators.*;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.BlockStore;
@@ -141,10 +142,19 @@ public class BlockValidatorBuilder {
         return new BlockValidatorImpl(this.blockStore, this.blockParentCompositeRule, this.blockCompositeRule);
     }
 
-    public BlockValidatorBuilder addBlockTimeStampValidationWithNetworkParameters(int validPeriod, NetworkParameters bitcoinNetworkParameters) {
+    public BlockValidatorBuilder addBlockTimeStampValidation(
+        int validPeriod,
+        TimeProvider timeProvider,
+        NetworkParameters bitcoinNetworkParameters) {
+
         BlockTimeStampValidationRule blockTimeStampValidationRule = new BlockTimeStampValidationRule(
-                validPeriod, config.getActivationConfig(), System::currentTimeMillis, bitcoinNetworkParameters);
+            validPeriod,
+            config.getActivationConfig(),
+            timeProvider,
+            bitcoinNetworkParameters
+        );
         this.blockTimeStampValidationRule = blockTimeStampValidationRule;
+
         return this;
     }
 }
