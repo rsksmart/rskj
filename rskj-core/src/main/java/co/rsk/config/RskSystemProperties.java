@@ -377,4 +377,8 @@ public class RskSystemProperties extends SystemProperties {
     public boolean fastBlockPropagation() {
         return configFromFiles.getBoolean("peer.fastBlockPropagation");
     }
+
+    public boolean wireAutoPrune() {
+        return configFromFiles.getBoolean("wire.autoPrune");
+    }
 }

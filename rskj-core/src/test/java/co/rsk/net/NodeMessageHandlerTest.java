@@ -54,6 +54,8 @@ import java.net.UnknownHostException;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.*;
 
 /**
@@ -76,7 +78,7 @@ public class NodeMessageHandlerTest {
         processor.processMessage(sender, message);
 
         Assert.assertNotNull(sbp.getBlocks());
-        Assert.assertEquals(1, sbp.getBlocks().size());
+        assertEquals(1, sbp.getBlocks().size());
         Assert.assertSame(block, sbp.getBlocks().get(0));
 
         Assert.assertFalse(scoring.isEmpty());
@@ -85,15 +87,15 @@ public class NodeMessageHandlerTest {
 
         Assert.assertNotNull(pscoring);
         Assert.assertFalse(pscoring.isEmpty());
-        Assert.assertEquals(1, pscoring.getTotalEventCounter());
-        Assert.assertEquals(1, pscoring.getEventCounter(EventType.VALID_BLOCK));
+        assertEquals(1, pscoring.getTotalEventCounter());
+        assertEquals(1, pscoring.getEventCounter(EventType.VALID_BLOCK));
 
         pscoring = scoring.getPeerScoring(sender.getAddress());
 
         Assert.assertNotNull(pscoring);
         Assert.assertFalse(pscoring.isEmpty());
-        Assert.assertEquals(1, pscoring.getTotalEventCounter());
-        Assert.assertEquals(1, pscoring.getEventCounter(EventType.VALID_BLOCK));
+        assertEquals(1, pscoring.getTotalEventCounter());
+        assertEquals(1, pscoring.getEventCounter(EventType.VALID_BLOCK));
     }
 
     @Test
@@ -108,7 +110,7 @@ public class NodeMessageHandlerTest {
         processor.processMessage(sender, message);
 
         Assert.assertNotNull(sbp.getBlocks());
-        Assert.assertEquals(0, sbp.getBlocks().size());
+        assertEquals(0, sbp.getBlocks().size());
         Assert.assertTrue(scoring.isEmpty());
 
         PeerScoring pscoring = scoring.getPeerScoring(sender.getPeerNodeID());
@@ -130,7 +132,7 @@ public class NodeMessageHandlerTest {
         processor.processMessage(sender, message);
 
         Assert.assertNotNull(sbp.getBlocks());
-        Assert.assertEquals(0, sbp.getBlocks().size());
+        assertEquals(0, sbp.getBlocks().size());
         Assert.assertTrue(scoring.isEmpty());
 
         PeerScoring pscoring = scoring.getPeerScoring(sender.getPeerNodeID());
@@ -156,8 +158,8 @@ public class NodeMessageHandlerTest {
 
         Assert.assertNotNull(pscoring);
         Assert.assertFalse(pscoring.isEmpty());
-        Assert.assertEquals(1, pscoring.getTotalEventCounter());
-        Assert.assertEquals(1, pscoring.getEventCounter(EventType.REPEATED_MESSAGE));
+        assertEquals(1, pscoring.getTotalEventCounter());
+        assertEquals(1, pscoring.getEventCounter(EventType.REPEATED_MESSAGE));
     }
 
     @Test
@@ -176,7 +178,7 @@ public class NodeMessageHandlerTest {
         processor.stop();
 
         Assert.assertNotNull(sbp.getBlocks());
-        Assert.assertEquals(1, sbp.getBlocks().size());
+        assertEquals(1, sbp.getBlocks().size());
         Assert.assertSame(block, sbp.getBlocks().get(0));
     }
 
@@ -197,7 +199,7 @@ public class NodeMessageHandlerTest {
         processor.processMessage(sender, message);
 
         Assert.assertNotNull(sbp.getBlocks());
-        Assert.assertEquals(0, sbp.getBlocks().size());
+        assertEquals(0, sbp.getBlocks().size());
 
         Assert.assertFalse(scoring.isEmpty());
 
@@ -205,8 +207,8 @@ public class NodeMessageHandlerTest {
 
         Assert.assertNotNull(pscoring);
         Assert.assertFalse(pscoring.isEmpty());
-        Assert.assertEquals(1, pscoring.getTotalEventCounter());
-        Assert.assertEquals(1, pscoring.getEventCounter(EventType.INVALID_BLOCK));
+        assertEquals(1, pscoring.getTotalEventCounter());
+        assertEquals(1, pscoring.getEventCounter(EventType.INVALID_BLOCK));
     }
 
     @Test
@@ -226,7 +228,7 @@ public class NodeMessageHandlerTest {
         processor.processMessage(sender, message);
 
         Assert.assertNotNull(sbp.getBlocks());
-        Assert.assertEquals(1, sbp.getBlocks().size());
+        assertEquals(1, sbp.getBlocks().size());
 
         Assert.assertFalse(scoring.isEmpty());
 
@@ -234,9 +236,9 @@ public class NodeMessageHandlerTest {
 
         Assert.assertNotNull(pscoring);
         Assert.assertFalse(pscoring.isEmpty());
-        Assert.assertEquals(1, pscoring.getTotalEventCounter());
-        Assert.assertEquals(1, pscoring.getEventCounter(EventType.VALID_BLOCK));
-        Assert.assertEquals(0, pscoring.getEventCounter(EventType.INVALID_BLOCK));
+        assertEquals(1, pscoring.getTotalEventCounter());
+        assertEquals(1, pscoring.getEventCounter(EventType.VALID_BLOCK));
+        assertEquals(0, pscoring.getEventCounter(EventType.INVALID_BLOCK));
     }
 
     @Test
@@ -250,7 +252,7 @@ public class NodeMessageHandlerTest {
         processor.processMessage(sender, message);
 
         Assert.assertNotNull(sbp.getBlocks());
-        Assert.assertEquals(0, sbp.getBlocks().size());
+        assertEquals(0, sbp.getBlocks().size());
     }
 
     @Test @Ignore("This should be reviewed with sync processor or deleted")
@@ -274,11 +276,11 @@ public class NodeMessageHandlerTest {
         handler.processMessage(sender, message);
 
         Assert.assertNotNull(sender.getGetBlockMessages());
-        Assert.assertEquals(1, sender.getGetBlockMessages().size());
+        assertEquals(1, sender.getGetBlockMessages().size());
 
         final Message msg = sender.getGetBlockMessages().get(0);
 
-        Assert.assertEquals(MessageType.GET_BLOCK_MESSAGE, msg.getMessageType());
+        assertEquals(MessageType.GET_BLOCK_MESSAGE, msg.getMessageType());
 
         final GetBlockMessage gbMessage = (GetBlockMessage) msg;
 
@@ -301,7 +303,7 @@ public class NodeMessageHandlerTest {
         handler.processMessage(sender, message);
 
         Assert.assertFalse(sender.getMessages().isEmpty());
-        Assert.assertEquals(MessageType.BLOCK_HEADERS_REQUEST_MESSAGE, sender.getMessages().get(0).getMessageType());
+        assertEquals(MessageType.BLOCK_HEADERS_REQUEST_MESSAGE, sender.getMessages().get(0).getMessageType());
     }
 
     @Test
@@ -364,15 +366,15 @@ public class NodeMessageHandlerTest {
         handler.processMessage(sender, new GetBlockMessage(block.getHash().getBytes()));
 
         Assert.assertFalse(sender.getMessages().isEmpty());
-        Assert.assertEquals(1, sender.getMessages().size());
+        assertEquals(1, sender.getMessages().size());
 
         final Message message = sender.getMessages().get(0);
 
-        Assert.assertEquals(MessageType.BLOCK_MESSAGE, message.getMessageType());
+        assertEquals(MessageType.BLOCK_MESSAGE, message.getMessageType());
 
         final BlockMessage bMessage = (BlockMessage) message;
 
-        Assert.assertEquals(block.getHash(), bMessage.getBlock().getHash());
+        assertEquals(block.getHash(), bMessage.getBlock().getHash());
     }
 
     @Test
@@ -399,15 +401,15 @@ public class NodeMessageHandlerTest {
         handler.processMessage(sender, new GetBlockMessage(blocks.get(4).getHash().getBytes()));
 
         Assert.assertFalse(sender.getMessages().isEmpty());
-        Assert.assertEquals(1, sender.getMessages().size());
+        assertEquals(1, sender.getMessages().size());
 
         Message message = sender.getMessages().get(0);
 
-        Assert.assertEquals(MessageType.BLOCK_MESSAGE, message.getMessageType());
+        assertEquals(MessageType.BLOCK_MESSAGE, message.getMessageType());
 
         BlockMessage bmessage = (BlockMessage) message;
 
-        Assert.assertEquals(blocks.get(4).getHash(), bmessage.getBlock().getHash());
+        assertEquals(blocks.get(4).getHash(), bmessage.getBlock().getHash());
     }
 
     @Test
@@ -455,15 +457,15 @@ public class NodeMessageHandlerTest {
         handler.processMessage(sender, new BlockHeadersRequestMessage(1,block.getHash().getBytes(), 1));
 
         Assert.assertFalse(sender.getMessages().isEmpty());
-        Assert.assertEquals(1, sender.getMessages().size());
+        assertEquals(1, sender.getMessages().size());
 
         final Message message = sender.getMessages().get(0);
 
-        Assert.assertEquals(MessageType.BLOCK_HEADERS_RESPONSE_MESSAGE, message.getMessageType());
+        assertEquals(MessageType.BLOCK_HEADERS_RESPONSE_MESSAGE, message.getMessageType());
 
         final BlockHeadersResponseMessage bMessage = (BlockHeadersResponseMessage) message;
 
-        Assert.assertEquals(block.getHash(), bMessage.getBlockHeaders().get(0).getHash());
+        assertEquals(block.getHash(), bMessage.getBlockHeaders().get(0).getHash());
     }
 
     @Test
@@ -490,15 +492,15 @@ public class NodeMessageHandlerTest {
         handler.processMessage(sender, new BlockHeadersRequestMessage(1, blocks.get(4).getHash().getBytes(), 1));
 
         Assert.assertFalse(sender.getMessages().isEmpty());
-        Assert.assertEquals(1, sender.getMessages().size());
+        assertEquals(1, sender.getMessages().size());
 
         Message message = sender.getMessages().get(0);
 
-        Assert.assertEquals(MessageType.BLOCK_HEADERS_RESPONSE_MESSAGE, message.getMessageType());
+        assertEquals(MessageType.BLOCK_HEADERS_RESPONSE_MESSAGE, message.getMessageType());
 
         BlockHeadersResponseMessage bMessage = (BlockHeadersResponseMessage) message;
 
-        Assert.assertEquals(blocks.get(4).getHash(), bMessage.getBlockHeaders().get(0).getHash());
+        assertEquals(blocks.get(4).getHash(), bMessage.getBlockHeaders().get(0).getHash());
     }
 
     @Test
@@ -591,7 +593,7 @@ public class NodeMessageHandlerTest {
                 continue;
             }
 
-            Assert.assertEquals(testCase.expected.size(), sender.getMessages().size());
+            assertEquals(testCase.expected.size(), sender.getMessages().size());
 
             Assert.assertTrue(sender.getMessages().stream().allMatch(m -> m.getMessageType() == MessageType.GET_BLOCK_MESSAGE));
 
@@ -667,15 +669,15 @@ public class NodeMessageHandlerTest {
 
         Assert.assertNotNull(pscoring);
         Assert.assertFalse(pscoring.isEmpty());
-        Assert.assertEquals(10, pscoring.getTotalEventCounter());
-        Assert.assertEquals(10, pscoring.getEventCounter(EventType.VALID_TRANSACTION));
+        assertEquals(10, pscoring.getTotalEventCounter());
+        assertEquals(10, pscoring.getEventCounter(EventType.VALID_TRANSACTION));
 
         pscoring = scoring.getPeerScoring(sender2.getPeerNodeID());
 
         Assert.assertNotNull(pscoring);
         Assert.assertFalse(pscoring.isEmpty());
-        Assert.assertEquals(10, pscoring.getTotalEventCounter());
-        Assert.assertEquals(10, pscoring.getEventCounter(EventType.VALID_TRANSACTION));
+        assertEquals(10, pscoring.getTotalEventCounter());
+        assertEquals(10, pscoring.getEventCounter(EventType.VALID_TRANSACTION));
     }
 
     @Test
@@ -697,7 +699,7 @@ public class NodeMessageHandlerTest {
         handler.processMessage(sender, message);
 
         Assert.assertNotNull(channelManager.getTransactions());
-        Assert.assertEquals(0, channelManager.getTransactions().size());
+        assertEquals(0, channelManager.getTransactions().size());
 
         Assert.assertTrue(scoring.isEmpty());
 
@@ -705,8 +707,8 @@ public class NodeMessageHandlerTest {
 
         Assert.assertNotNull(pscoring);
         Assert.assertTrue(pscoring.isEmpty());
-        Assert.assertEquals(0, pscoring.getTotalEventCounter());
-        Assert.assertEquals(0, pscoring.getEventCounter(EventType.INVALID_TRANSACTION));
+        assertEquals(0, pscoring.getTotalEventCounter());
+        assertEquals(0, pscoring.getEventCounter(EventType.INVALID_TRANSACTION));
     }
 
     @Test
@@ -734,7 +736,7 @@ public class NodeMessageHandlerTest {
         handler.processMessage(sender, message);
 
         Assert.assertNotNull(channelManager.getTransactions());
-        Assert.assertEquals(0, channelManager.getTransactions().size());
+        assertEquals(0, channelManager.getTransactions().size());
 
         Assert.assertFalse(scoring.isEmpty());
 
@@ -743,8 +745,8 @@ public class NodeMessageHandlerTest {
         Assert.assertNotNull(pscoring);
         Assert.assertFalse(pscoring.isEmpty());
         // besides this
-        Assert.assertEquals(1, pscoring.getTotalEventCounter());
-        Assert.assertEquals(1, pscoring.getEventCounter(EventType.VALID_TRANSACTION));
+        assertEquals(1, pscoring.getTotalEventCounter());
+        assertEquals(1, pscoring.getEventCounter(EventType.VALID_TRANSACTION));
     }
 
     @Test
@@ -781,7 +783,7 @@ public class NodeMessageHandlerTest {
 
         processor.processMessage(new SimplePeer(), message);
 
-        Assert.assertEquals(100, sbp.getRequestId());
+        assertEquals(100, sbp.getRequestId());
         Assert.assertArrayEquals(block.getHash().getBytes(), sbp.getHash());
     }
 
@@ -795,7 +797,7 @@ public class NodeMessageHandlerTest {
 
         processor.processMessage(new SimplePeer(), message);
 
-        Assert.assertEquals(100, sbp.getRequestId());
+        assertEquals(100, sbp.getRequestId());
         Assert.assertArrayEquals(hash, sbp.getHash());
     }
 
@@ -806,6 +808,34 @@ public class NodeMessageHandlerTest {
                 new PunishmentParameters(600000, 10, 10000000),
                 new PunishmentParameters(600000, 10, 10000000)
         );
+    }
+
+    @Test
+    public void cleanOldQueueMessages() {
+        TestSystemProperties config = mock(TestSystemProperties.class);
+        when(config.wireAutoPrune()).thenReturn(true);
+        Peer peer = mock(Peer.class);
+        when(peer.score(anyLong(), any())).thenReturn(0.0); // disable scoring
+
+        Message message = new BlockHeadersRequestMessage(100, HashUtil.randomHash(), 50);
+        Message message2 = new BlockHeadersRequestMessage(101, HashUtil.randomHash(), 50);
+
+
+        SimpleBlockProcessor sbp = new SimpleBlockProcessor();
+        NodeMessageHandler nodeMessageHandler = new NodeMessageHandler(config, sbp, null,
+                null, null,
+                null, mock(StatusResolver.class));
+        nodeMessageHandler.setAutoPrune(0);
+
+        nodeMessageHandler.postMessage(peer, message);
+
+        assertEquals(1, nodeMessageHandler.getMessageQueueSize());
+        assertTrue(nodeMessageHandler.getMessageQueue().contains(message));
+
+        nodeMessageHandler.postMessage(peer, message2);
+
+        assertEquals(1, nodeMessageHandler.getMessageQueueSize());
+        assertTrue(nodeMessageHandler.getMessageQueue().contains(message2));
     }
 }
 

@@ -24,8 +24,10 @@ import co.rsk.core.bc.BlockUtils;
 import co.rsk.crypto.Keccak256;
 import co.rsk.net.messages.*;
 import co.rsk.scoring.EventType;
+import co.rsk.scoring.InetAddressBlock;
 import co.rsk.scoring.PeerScoringManager;
 import co.rsk.util.FormatUtils;
+import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.net.server.ChannelManager;
 import org.slf4j.Logger;
@@ -36,6 +38,7 @@ import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 public class NodeMessageHandler implements MessageHandler, InternalService, Runnable {
     private static final Logger logger = LoggerFactory.getLogger("messagehandler");
@@ -60,6 +63,8 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
 
     private PriorityBlockingQueue<MessageTask> queue;
 
+    private long autoPrune = TimeUnit.MINUTES.toMillis(180);
+
     private volatile boolean stopped;
 
     /**
@@ -80,7 +85,7 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
         this.statusResolver = statusResolver;
         this.cleanMsgTimestamp = System.currentTimeMillis();
         this.peerScoringManager = peerScoringManager;
-        this.queue = new PriorityBlockingQueue<>(11, new MessageTask.TaskComparator());
+        this.queue = newMessageQueue();
     }
 
     /**
@@ -108,8 +113,7 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
 
         if ((messageType == MessageType.BLOCK_MESSAGE || messageType == MessageType.BODY_RESPONSE_MESSAGE) && BlockUtils.tooMuchProcessTime(processTime)) {
             loggerMessageProcess.warn("Message[{}] processed after [{}] seconds.", message.getMessageType(), timeInSeconds);
-        }
-        else {
+        } else {
             loggerMessageProcess.debug("Message[{}] processed after [{}] seconds.", message.getMessageType(), timeInSeconds);
         }
     }
@@ -122,8 +126,40 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
         // cleanMsgTimestamp is a long replaced by the next value, we don't care
         // enough about the precision of the value it takes
         cleanExpiredMessages();
+        cleanOldQueueMessages();
         tryAddMessage(sender, message);
         logger.trace("End post message (queue size {})", this.queue.size());
+    }
+
+    private void cleanOldQueueMessages() {
+        if (config.wireAutoPrune()) {
+            Object[] messageTaskList = this.queue.toArray();
+            List<MessageTask> pendingMessages = new ArrayList<>();
+            long currentTime = System.currentTimeMillis();
+
+            for (int i = 0; i < messageTaskList.length; i++) {
+                MessageTask currentMessage = (MessageTask) messageTaskList[i];
+                long creationTime = currentMessage.getCreationTime();
+                if (currentTime - creationTime <= autoPrune) {
+                    pendingMessages.add(currentMessage);
+                    this.receivedMessages.remove(currentMessage);
+                }
+            }
+
+            PriorityBlockingQueue queue = newMessageQueue();
+
+            if (!pendingMessages.isEmpty()) {
+                long cleanedMessagesCount = this.queue.size() - pendingMessages.size();
+                logger.trace("Cleaning {} messages from message queue", cleanedMessagesCount);
+                pendingMessages.forEach(m -> queue.offer(m));
+            }
+
+            this.queue = queue;
+        }
+    }
+
+    private PriorityBlockingQueue<MessageTask> newMessageQueue() {
+        return new PriorityBlockingQueue<>(11, new MessageTask.TaskComparator());
     }
 
     private void tryAddMessage(Peer sender, Message message) {
@@ -146,23 +182,24 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
     }
 
     private void addMessage(Peer sender, Message message, double score) {
-        if (score >= 0 && !this.queue.offer(new MessageTask(sender, message, score))) {
+        if (score >= 0 && !this.queue.offer(
+                new MessageTask(sender, message, score, System.currentTimeMillis()))) {
             logger.warn("Unexpected path. Is message queue bounded now?");
         }
     }
 
     private void cleanExpiredMessages() {
         long currentTime = System.currentTimeMillis();
-        if (currentTime - cleanMsgTimestamp > RECEIVED_MESSAGES_CACHE_DURATION) {
+        if (currentTime - this.cleanMsgTimestamp > RECEIVED_MESSAGES_CACHE_DURATION) {
             logger.trace("Cleaning {} messages from rlp queue", receivedMessages.size());
             receivedMessages.clear();
-            cleanMsgTimestamp = currentTime;
+            this.cleanMsgTimestamp = currentTime;
         }
     }
 
     @Override
     public void start() {
-        new Thread(this,"message handler").start();
+        new Thread(this, "message handler").start();
     }
 
     @Override
@@ -195,8 +232,7 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
                 }
 
                 updateTimedEvents();
-            }
-            catch (Exception ex) {
+            } catch (Exception ex) {
                 logger.error("Unexpected error processing: {}", task, ex);
             }
         }
@@ -231,15 +267,26 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
         this.peerScoringManager.recordEvent(sender.getPeerNodeID(), sender.getAddress(), event);
     }
 
-    private static class MessageTask  {
+    @VisibleForTesting
+    public List<Message> getMessageQueue() {
+        return this.queue.stream().map(e -> e.getMessage()).collect(Collectors.toList());
+    }
+
+    public void setAutoPrune(long autoPrune) {
+        this.autoPrune = autoPrune;
+    }
+
+    private static class MessageTask {
+        private final long creationTime;
         private Peer sender;
         private Message message;
         private double score;
 
-        public MessageTask(Peer sender, Message message, double score) {
+        public MessageTask(Peer sender, Message message, double score, long creationTime) {
             this.sender = sender;
             this.message = message;
             this.score = score;
+            this.creationTime = creationTime;
         }
 
         public Peer getSender() {
@@ -258,6 +305,10 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
                     '}';
         }
 
+        public long getCreationTime() {
+            return creationTime;
+        }
+
         private static class TaskComparator implements Comparator<MessageTask> {
             @Override
             public int compare(MessageTask m1, MessageTask m2) {
@@ -266,7 +317,5 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
         }
 
     }
-
-
 }
 
