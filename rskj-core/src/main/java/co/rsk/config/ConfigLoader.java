@@ -92,9 +92,7 @@ public class ConfigLoader {
         Config networkBaseConfig = getNetworkDefaultConfig(userConfig);
         Config unifiedConfig = userConfig.withFallback(networkBaseConfig);
 
-        Config expectedConfig = ConfigFactory.parseResourcesAnySyntax(EXPECTED_RESOURCE_PATH)
-                .withFallback(systemPropsConfig)
-                .withFallback(systemEnvConfig);
+        Config expectedConfig = getExpectedConfig(systemPropsConfig, systemEnvConfig);
         boolean valid = isActualObjectValid("", expectedConfig.root(), unifiedConfig.root());
 
         if (unifiedConfig.getBoolean(SystemProperties.PROPERTY_BC_VERIFY) && !valid) {
@@ -102,6 +100,12 @@ public class ConfigLoader {
         }
 
         return unifiedConfig;
+    }
+
+    protected static Config getExpectedConfig(Config systemPropsConfig, Config systemEnvConfig) {
+        return ConfigFactory.parseResourcesAnySyntax(EXPECTED_RESOURCE_PATH)
+                .withFallback(systemPropsConfig)
+                .withFallback(systemEnvConfig);
     }
 
     private Config getConfigFromCliArgs() {
