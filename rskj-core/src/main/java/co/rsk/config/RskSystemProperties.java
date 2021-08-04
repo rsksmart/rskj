@@ -151,15 +151,15 @@ public class RskSystemProperties extends SystemProperties {
     }
 
     public boolean bloomServiceEnabled() {
-        return getBoolean("bloom.service", false);
+        return getBoolean("blooms.service", false);
     }
 
     public int bloomNumberOfBlocks() {
-        return getInt("bloom.blocks", 64);
+        return getInt("blooms.blocks", 64);
     }
 
     public int bloomNumberOfConfirmations() {
-        return getInt("bloom.confirmations", 400);
+        return getInt("blooms.confirmations", 400);
     }
 
     public boolean waitForSync() {

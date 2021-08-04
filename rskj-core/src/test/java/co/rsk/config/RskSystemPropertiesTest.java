@@ -18,10 +18,16 @@
 
 package co.rsk.config;
 
-import org.junit.Assert;
+import com.typesafe.config.Config;
+import com.typesafe.config.ConfigFactory;
 import org.junit.Test;
+import org.mockito.ArgumentCaptor;
 
 import java.util.List;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
 
 /**
  * Created by ajlopez on 3/16/2016.
@@ -32,23 +38,61 @@ public class RskSystemPropertiesTest {
 
     @Test
     public void defaultValues() {
-        Assert.assertFalse(config.isMinerClientEnabled());
-        Assert.assertFalse(config.isMinerServerEnabled());
-        Assert.assertEquals(0, config.minerMinGasPrice());
-        Assert.assertEquals(0, config.minerGasUnitInDollars(), 0.001);
-        Assert.assertEquals(0, config.minerMinFeesNotifyInDollars(), 0.001);
+        assertFalse(config.isMinerClientEnabled());
+        assertFalse(config.isMinerServerEnabled());
+        assertEquals(0, config.minerMinGasPrice());
+        assertEquals(0, config.minerGasUnitInDollars(), 0.001);
+        assertEquals(0, config.minerMinFeesNotifyInDollars(), 0.001);
 
-        Assert.assertFalse(config.getIsHeartBeatEnabled());
+        assertFalse(config.getIsHeartBeatEnabled());
     }
 
     @Test
     public void hasMessagesConfiguredInTestConfig() {
-        Assert.assertTrue(config.hasMessageRecorderEnabled());
+        assertTrue(config.hasMessageRecorderEnabled());
 
         List<String> commands = config.getMessageRecorderCommands();
-        Assert.assertNotNull(commands);
-        Assert.assertEquals(2, commands.size());
-        Assert.assertTrue(commands.contains("TRANSACTIONS"));
-        Assert.assertTrue(commands.contains("RSK_MESSAGE:BLOCK_MESSAGE"));
+        assertNotNull(commands);
+        assertEquals(2, commands.size());
+        assertTrue(commands.contains("TRANSACTIONS"));
+        assertTrue(commands.contains("RSK_MESSAGE:BLOCK_MESSAGE"));
+    }
+
+    @Test
+    public void shouldUseExpectedBloomConfigKeys() {
+        ArgumentCaptor<String> configKeyCaptorForHasPath = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<String> configKeyCaptorForGetBoolean = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<String> configKeyCaptorForGetInt = ArgumentCaptor.forClass(String.class);
+
+        Config config = mock(Config.class);
+        doReturn(ConfigFactory.empty().root()).when(config).root();
+        doReturn(true).when(config).hasPath(configKeyCaptorForHasPath.capture());
+        doReturn(true).when(config).getBoolean(configKeyCaptorForGetBoolean.capture());
+
+        ConfigLoader loader = mock(ConfigLoader.class);
+        doReturn(config).when(loader).getConfig();
+
+        RskSystemProperties sysProperties = new RskSystemProperties(loader);
+
+        Config expectedConfig = ConfigLoader.getExpectedConfig(ConfigFactory.empty(), ConfigFactory.empty());
+
+        boolean bloomServiceEnabled = sysProperties.bloomServiceEnabled();
+        assertTrue(bloomServiceEnabled);
+        assertTrue(expectedConfig.hasPath(configKeyCaptorForHasPath.getValue()));
+        assertTrue(expectedConfig.hasPath(configKeyCaptorForGetBoolean.getValue()));
+
+        doReturn(11).when(config).getInt(configKeyCaptorForGetInt.capture());
+
+        int bloomNumberOfBlocks = sysProperties.bloomNumberOfBlocks();
+        assertEquals(11, bloomNumberOfBlocks);
+        assertTrue(expectedConfig.hasPath(configKeyCaptorForHasPath.getValue()));
+        assertTrue(expectedConfig.hasPath(configKeyCaptorForGetInt.getValue()));
+
+        doReturn(12).when(config).getInt(configKeyCaptorForGetInt.capture());
+
+        int bloomNumberOfConfirmations = sysProperties.bloomNumberOfConfirmations();
+        assertEquals(12, bloomNumberOfConfirmations);
+        assertTrue(expectedConfig.hasPath(configKeyCaptorForHasPath.getValue()));
+        assertTrue(expectedConfig.hasPath(configKeyCaptorForGetInt.getValue()));
     }
 }
