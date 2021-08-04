@@ -502,7 +502,7 @@ public enum BridgeMethods {
                     new String[]{"bytes"},
                     new String[]{"int256"}
             ),
-            fixedCost(22_000L),  // TODO: calculate gas cost.
+            fixedCost(10_600L),
             (BridgeMethodExecutorTyped) Bridge::receiveHeader,
             activations -> activations.isActive(RSKIP200),
             fixedPermission(false)
@@ -609,7 +609,7 @@ public enum BridgeMethods {
                     new String[]{"bytes", "uint256", "bytes", "bytes32", "bytes", "address", "bytes", "bool"},
                     new String[]{"int256"}
             ),
-            fixedCost(10000L),  // TODO: Define a cost
+            fixedCost(25_000L),
             (BridgeMethodExecutorTyped) Bridge::registerFastBridgeBtcTransaction,
             activations -> activations.isActive(RSKIP176),
             fixedPermission(false)
@@ -620,7 +620,7 @@ public enum BridgeMethods {
                     new String[0],
                     new String[]{"bytes"}
             ),
-            fixedCost(20000L), // TODO: calculate gas cost
+            fixedCost(3_800L),
             (BridgeMethodExecutorTyped) Bridge::getBtcBlockchainBestBlockHeader,
             activations -> activations.isActive(RSKIP220),
             fixedPermission(false)
@@ -631,7 +631,7 @@ public enum BridgeMethods {
                     new String[]{"bytes32"},
                     new String[]{"bytes"}
             ),
-            fixedCost(20000L), // TODO: calculate gas cost
+            fixedCost(4_600L),
             (BridgeMethodExecutorTyped) Bridge::getBtcBlockchainBlockHeaderByHash,
             activations -> activations.isActive(RSKIP220),
             fixedPermission(false)
@@ -642,7 +642,7 @@ public enum BridgeMethods {
             new String[]{"uint256"},
             new String[]{"bytes"}
         ),
-        fixedCost(20000L), // TODO: calculate gas cost
+        fixedCost(5_000L),
         (BridgeMethodExecutorTyped) Bridge::getBtcBlockchainBlockHeaderByHeight,
         activations -> activations.isActive(RSKIP220),
         fixedPermission(false)
@@ -653,7 +653,7 @@ public enum BridgeMethods {
                     new String[]{"bytes32"},
                     new String[]{"bytes"}
             ),
-            fixedCost(20000L), // TODO: calculate gas cost
+            fixedCost(4_900L),
             (BridgeMethodExecutorTyped) Bridge::getBtcBlockchainParentBlockHeaderByHash,
             activations -> activations.isActive(RSKIP220),
             fixedPermission(false)

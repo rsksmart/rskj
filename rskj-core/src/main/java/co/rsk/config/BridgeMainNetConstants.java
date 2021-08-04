@@ -74,7 +74,6 @@ public class BridgeMainNetConstants extends BridgeConstants {
         minimumPeginTxValueInSatoshis = Coin.valueOf(500_000);
         minimumPegoutTxValueInSatoshis = Coin.valueOf(400_000);
 
-
         // Keys generated with GenNodeKey using generators 'auth-a' through 'auth-e'
         List<ECKey> federationChangeAuthorizedKeys = Arrays.stream(new String[]{
                 "04e593d4cde25137b13f19462bc4c02e97ba2ed5a3860813497abf9b4eeb9259e37e0384d12cfd2d9a7a0ba606b31ee34317a9d7f4a8591c6bcf5dfd5563248b2f",
@@ -131,21 +130,24 @@ public class BridgeMainNetConstants extends BridgeConstants {
         lockingCapIncrementsMultiplier = 2;
         initialLockingCap = Coin.COIN.multiply(300); // 300 BTC
 
-        btcHeightWhenBlockIndexActivates = 700_000; //TODO define this value when Iris activation height in RSK is determined
-        maxDepthToSearchBlocksBelowIndexActivation = 1_000; //TODO define this value with Sergio
+        btcHeightWhenBlockIndexActivates = 696_022;
+        maxDepthToSearchBlocksBelowIndexActivation = 4_320; // 30 days in BTC blocks (considering 1 block every 10 minutes)
 
-        // TODO: This value is not real
-        erpFedActivationDelay = 5063;
+        erpFedActivationDelay = 52_560; // 1 year in BTC blocks (considering 1 block every 10 minutes)
 
-        // TODO: WE NEED TO DEFINE THESE KEYS
-        erpFedPubKeysList = new ArrayList<>();
+        erpFedPubKeysList = Arrays.stream(new String[] {
+            "0257c293086c4d4fe8943deda5f890a37d11bebd140e220faa76258a41d077b4d4",
+            "03c2660a46aa73078ee6016dee953488566426cf55fc8011edd0085634d75395f9",
+            "03cd3e383ec6e12719a6c69515e5559bcbe037d0aa24c187e1e26ce932e22ad7b3",
+            "02370a9838e4d15708ad14a104ee5606b36caaaaf739d833e67770ce9fd9b3ec80"
+        }).map(hex -> BtcECKey.fromPublicOnly(Hex.decode(hex))).collect(Collectors.toList());
 
         oldFederationAddress = "35JUi1FxabGdhygLhnNUEFG4AgvpNMgxK1";
 
-        minSecondsBetweenCallsReceiveHeader = 300;  // 5 minutes in Seconds
+        minSecondsBetweenCallsReceiveHeader = 300;  // 5 minutes in seconds
         maxDepthBlockchainAccepted = 25;
 
-        minimumPegoutValuePercentageToReceiveAfterFee = 20;
+        minimumPegoutValuePercentageToReceiveAfterFee = 80;
     }
 
     public static BridgeMainNetConstants getInstance() {

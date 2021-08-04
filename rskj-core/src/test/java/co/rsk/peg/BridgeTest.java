@@ -387,7 +387,7 @@ public class BridgeTest {
                 any(RskAddress.class),
                 any(Address.class),
                 anyBoolean()
-        )).thenReturn(Long.valueOf(2));
+        )).thenReturn(BigInteger.valueOf(2));
 
         byte[] value = Sha256Hash.ZERO_HASH.getBytes();
 
@@ -448,7 +448,7 @@ public class BridgeTest {
                 any(RskAddress.class),
                 any(Address.class),
                 anyBoolean()
-        )).thenReturn(BridgeSupport.FAST_BRIDGE_GENERIC_ERROR);
+        )).thenReturn(BigInteger.valueOf(BridgeSupport.FAST_BRIDGE_GENERIC_ERROR));
 
         byte[] value = Sha256Hash.ZERO_HASH.getBytes();
         BtcECKey btcECKeyRefund = new BtcECKey();

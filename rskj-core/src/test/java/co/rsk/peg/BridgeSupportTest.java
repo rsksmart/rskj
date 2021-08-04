@@ -6559,7 +6559,7 @@ public class BridgeSupportTest {
         Keccak256 hash = new Keccak256(HashUtil.keccak256(new byte[]{}));
         when(rskTxMock.getHash()).thenReturn(hash);
 
-        long result = bridgeSupport.registerFastBridgeBtcTransaction(
+        BigInteger result = bridgeSupport.registerFastBridgeBtcTransaction(
                 rskTxMock,
                 new byte[]{},
                 0,
@@ -6571,7 +6571,7 @@ public class BridgeSupportTest {
                 false
         );
 
-        Assert.assertEquals(BridgeSupport.FAST_BRIDGE_UNPROCESSABLE_TX_NOT_CONTRACT_ERROR_CODE, result);
+        Assert.assertEquals(BigInteger.valueOf(BridgeSupport.FAST_BRIDGE_UNPROCESSABLE_TX_NOT_CONTRACT_ERROR_CODE), result);
     }
 
     @Test
@@ -6607,7 +6607,7 @@ public class BridgeSupportTest {
             null
         );
 
-        long result = bridgeSupport.registerFastBridgeBtcTransaction(
+        BigInteger result = bridgeSupport.registerFastBridgeBtcTransaction(
             rskTx,
             tx.bitcoinSerialize(),
             100,
@@ -6619,7 +6619,7 @@ public class BridgeSupportTest {
             false
         );
 
-        Assert.assertEquals(BridgeSupport.FAST_BRIDGE_UNPROCESSABLE_TX_INVALID_SENDER_ERROR_CODE, result);
+        Assert.assertEquals(BigInteger.valueOf(BridgeSupport.FAST_BRIDGE_UNPROCESSABLE_TX_INVALID_SENDER_ERROR_CODE), result);
     }
 
     @Test
@@ -6663,7 +6663,7 @@ public class BridgeSupportTest {
             null
         );
 
-        long result = bridgeSupport.registerFastBridgeBtcTransaction(
+        BigInteger result = bridgeSupport.registerFastBridgeBtcTransaction(
                 rskTx,
                 tx.bitcoinSerialize(),
                 100,
@@ -6675,7 +6675,7 @@ public class BridgeSupportTest {
                 false
         );
 
-        Assert.assertEquals(BridgeSupport.FAST_BRIDGE_UNPROCESSABLE_TX_ALREADY_PROCESSED_ERROR_CODE, result);
+        Assert.assertEquals(BigInteger.valueOf(BridgeSupport.FAST_BRIDGE_UNPROCESSABLE_TX_ALREADY_PROCESSED_ERROR_CODE), result);
     }
 
 
@@ -6719,7 +6719,7 @@ public class BridgeSupportTest {
             null
         );
 
-        long result = bridgeSupport.registerFastBridgeBtcTransaction(
+        BigInteger result = bridgeSupport.registerFastBridgeBtcTransaction(
             rskTx,
             tx.bitcoinSerialize(),
             100,
@@ -6731,7 +6731,7 @@ public class BridgeSupportTest {
             false
         );
 
-        Assert.assertEquals(BridgeSupport.FAST_BRIDGE_UNPROCESSABLE_TX_VALIDATIONS_ERROR, result);
+        Assert.assertEquals(BigInteger.valueOf(BridgeSupport.FAST_BRIDGE_UNPROCESSABLE_TX_VALIDATIONS_ERROR), result);
     }
 
     @Test
@@ -6784,7 +6784,7 @@ public class BridgeSupportTest {
             null
         );
 
-        long result = bridgeSupport.registerFastBridgeBtcTransaction(
+        BigInteger result = bridgeSupport.registerFastBridgeBtcTransaction(
             rskTx,
             tx.bitcoinSerialize(),
             100,
@@ -6796,7 +6796,7 @@ public class BridgeSupportTest {
             false
         );
 
-        Assert.assertEquals(BridgeSupport.FAST_BRIDGE_UNPROCESSABLE_TX_VALUE_ZERO_ERROR, result);
+        Assert.assertEquals(BigInteger.valueOf(BridgeSupport.FAST_BRIDGE_UNPROCESSABLE_TX_VALUE_ZERO_ERROR), result);
     }
 
     @Test
@@ -6856,7 +6856,7 @@ public class BridgeSupportTest {
         txWit.setPush(0, new byte[]{});
         tx.setWitness(0, txWit);
 
-        long result = bridgeSupport.registerFastBridgeBtcTransaction(
+        BigInteger result = bridgeSupport.registerFastBridgeBtcTransaction(
                 rskTx,
                 tx.bitcoinSerialize(),
                 100,
@@ -6868,7 +6868,7 @@ public class BridgeSupportTest {
                 false
         );
 
-        Assert.assertEquals(BridgeSupport.FAST_BRIDGE_UNPROCESSABLE_TX_ALREADY_PROCESSED_ERROR_CODE, result);
+        Assert.assertEquals(BigInteger.valueOf(BridgeSupport.FAST_BRIDGE_UNPROCESSABLE_TX_ALREADY_PROCESSED_ERROR_CODE), result);
     }
 
     @Test
@@ -6940,7 +6940,7 @@ public class BridgeSupportTest {
             null
         );
 
-        long result = bridgeSupport.registerFastBridgeBtcTransaction(
+        BigInteger result = bridgeSupport.registerFastBridgeBtcTransaction(
             rskTx,
             tx.bitcoinSerialize(),
             100,
@@ -6952,7 +6952,7 @@ public class BridgeSupportTest {
             true
         );
 
-        Assert.assertEquals(BridgeSupport.FAST_BRIDGE_REFUNDED_LP_ERROR_CODE, result);
+        Assert.assertEquals(BigInteger.valueOf(BridgeSupport.FAST_BRIDGE_REFUNDED_LP_ERROR_CODE), result);
     }
 
     @Test
@@ -7026,7 +7026,7 @@ public class BridgeSupportTest {
             null
         );
 
-        long result = bridgeSupport.registerFastBridgeBtcTransaction(
+        BigInteger result = bridgeSupport.registerFastBridgeBtcTransaction(
             rskTx,
             tx.bitcoinSerialize(),
             100,
@@ -7038,7 +7038,7 @@ public class BridgeSupportTest {
             false
         );
 
-        Assert.assertEquals(BridgeSupport.FAST_BRIDGE_REFUNDED_USER_ERROR_CODE, result);
+        Assert.assertEquals(BigInteger.valueOf(BridgeSupport.FAST_BRIDGE_REFUNDED_USER_ERROR_CODE), result);
     }
 
     @Test
@@ -7118,7 +7118,7 @@ public class BridgeSupportTest {
 
         Keccak256 dHash = PegTestUtils.createHash3(0);
 
-        long result = bridgeSupport.registerFastBridgeBtcTransaction(
+        BigInteger result = bridgeSupport.registerFastBridgeBtcTransaction(
             rskTx,
             tx.bitcoinSerialize(),
             100,
@@ -7130,7 +7130,7 @@ public class BridgeSupportTest {
             false
         );
 
-        Assert.assertEquals(BridgeSupport.FAST_BRIDGE_REFUNDED_USER_ERROR_CODE, result);
+        Assert.assertEquals(BigInteger.valueOf(BridgeSupport.FAST_BRIDGE_REFUNDED_USER_ERROR_CODE), result);
 
         // Update repository
         bridgeSupport.save();
@@ -7147,7 +7147,7 @@ public class BridgeSupportTest {
             false
         );
 
-        Assert.assertEquals(BridgeSupport.FAST_BRIDGE_UNPROCESSABLE_TX_ALREADY_PROCESSED_ERROR_CODE, result);
+        Assert.assertEquals(BigInteger.valueOf(BridgeSupport.FAST_BRIDGE_UNPROCESSABLE_TX_ALREADY_PROCESSED_ERROR_CODE), result);
     }
 
     @Test
@@ -7219,7 +7219,7 @@ public class BridgeSupportTest {
 
         co.rsk.core.Coin preCallLbcAddressBalance = repository.getBalance(lbcAddress);
 
-        long result = bridgeSupport.registerFastBridgeBtcTransaction(
+        BigInteger result = bridgeSupport.registerFastBridgeBtcTransaction(
             rskTx,
             tx.bitcoinSerialize(),
             100,
@@ -7231,7 +7231,7 @@ public class BridgeSupportTest {
             true
         );
 
-        Assert.assertEquals(valueToSend.getValue(), result);
+        Assert.assertEquals(co.rsk.core.Coin.fromBitcoin(valueToSend).asBigInteger(), result);
 
         co.rsk.core.Coin postCallLbcAddressBalance = repository.getBalance(lbcAddress);
         Assert.assertEquals(
@@ -7261,7 +7261,7 @@ public class BridgeSupportTest {
             true
         );
 
-        Assert.assertEquals(BridgeSupport.FAST_BRIDGE_UNPROCESSABLE_TX_ALREADY_PROCESSED_ERROR_CODE, result);
+        Assert.assertEquals(BigInteger.valueOf(BridgeSupport.FAST_BRIDGE_UNPROCESSABLE_TX_ALREADY_PROCESSED_ERROR_CODE), result);
     }
 
     @Test

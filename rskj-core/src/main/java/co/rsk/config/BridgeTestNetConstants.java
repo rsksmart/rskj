@@ -130,14 +130,16 @@ public class BridgeTestNetConstants extends BridgeConstants {
         lockingCapIncrementsMultiplier = 2;
         initialLockingCap = Coin.COIN.multiply(200); // 200 BTC
 
-        btcHeightWhenBlockIndexActivates = 700_000; //TODO define this value when Iris activation height in RSK is determined
-        maxDepthToSearchBlocksBelowIndexActivation = 1_000; //TODO define this value with Sergio
+        btcHeightWhenBlockIndexActivates = 2_039_594;
+        maxDepthToSearchBlocksBelowIndexActivation = 4_320; // 30 days in BTC blocks (considering 1 block every 10 minutes)
 
-        // TODO: These value is not real
-        erpFedActivationDelay = 5063;
+        erpFedActivationDelay = 52_560; // 1 year in BTC blocks (considering 1 block every 10 minutes)
 
-        // TODO: WE NEED TO DEFINE THESE KEYS
-        erpFedPubKeysList = new ArrayList<>();
+        erpFedPubKeysList = Arrays.stream(new String[] {
+            "0216c23b2ea8e4f11c3f9e22711addb1d16a93964796913830856b568cc3ea21d3",
+            "034db69f2112f4fb1bb6141bf6e2bd6631f0484d0bd95b16767902c9fe219d4a6f",
+            "0275562901dd8faae20de0a4166362a4f82188db77dbed4ca887422ea1ec185f14"
+        }).map(hex -> BtcECKey.fromPublicOnly(Hex.decode(hex))).collect(Collectors.toList());
 
         // Multisig address created in bitcoind with the following private keys:
         // 47129ffed2c0273c75d21bb8ba020073bb9a1638df0e04853407461fdd9e8b83
@@ -145,10 +147,10 @@ public class BridgeTestNetConstants extends BridgeConstants {
         // e1b17fcd0ef1942465eee61b20561b16750191143d365e71de08b33dd84a9788
         oldFederationAddress = "2N7ZgQyhFKm17RbaLqygYbS7KLrQfapyZzu";
 
-        minSecondsBetweenCallsReceiveHeader = 300;  // 5 minutes in Seconds
+        minSecondsBetweenCallsReceiveHeader = 300;  // 5 minutes in seconds
         maxDepthBlockchainAccepted = 25;
 
-        minimumPegoutValuePercentageToReceiveAfterFee = 20;
+        minimumPegoutValuePercentageToReceiveAfterFee = 80;
     }
 
     public static BridgeTestNetConstants getInstance() {

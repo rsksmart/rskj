@@ -261,7 +261,7 @@ task fatJar(type: Jar, dependsOn: jar) {
 
 tasks.withType(Tar) {
     compression = Compression.GZIP
-    archiveExtension = 'tar.gz'
+    archiveExtension.set('tar.gz')
 }
 
 artifacts {
