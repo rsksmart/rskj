@@ -204,6 +204,10 @@ public abstract class SystemProperties {
         return configFromFiles.hasPath("peer.discovery.ip.list") ? configFromFiles.getStringList("peer.discovery.ip.list") : new ArrayList<>();
     }
 
+    public List<String> blockedPeerIPList() {
+        return configFromFiles.hasPath("peer.blockedIPs") ? configFromFiles.getStringList("peer.blockedIPs") : new ArrayList<>();
+    }
+
     public boolean databaseReset() {
         return configFromFiles.getBoolean("database.reset");
     }

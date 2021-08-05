@@ -22,7 +22,9 @@ import co.rsk.config.InternalService;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.bc.BlockUtils;
 import co.rsk.crypto.Keccak256;
-import co.rsk.net.messages.*;
+import co.rsk.net.messages.Message;
+import co.rsk.net.messages.MessageType;
+import co.rsk.net.messages.MessageVisitor;
 import co.rsk.scoring.EventType;
 import co.rsk.scoring.PeerScoringManager;
 import co.rsk.util.FormatUtils;
@@ -30,12 +32,19 @@ import org.ethereum.crypto.HashUtil;
 import org.ethereum.net.server.ChannelManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.time.Duration;
-import java.util.*;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 public class NodeMessageHandler implements MessageHandler, InternalService, Runnable {
     private static final Logger logger = LoggerFactory.getLogger("messagehandler");
@@ -55,10 +64,11 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
     private volatile long lastTickSent = System.currentTimeMillis();
 
     private final StatusResolver statusResolver;
-    private Set<Keccak256> receivedMessages = Collections.synchronizedSet(new HashSet<>());
+    private final Set<InetAddress> blockedPeers;
+    private final Set<Keccak256> receivedMessages = Collections.synchronizedSet(new HashSet<>());
     private long cleanMsgTimestamp = 0;
 
-    private PriorityBlockingQueue<MessageTask> queue;
+    private final PriorityBlockingQueue<MessageTask> queue;
 
     private volatile boolean stopped;
 
@@ -81,6 +91,9 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
         this.cleanMsgTimestamp = System.currentTimeMillis();
         this.peerScoringManager = peerScoringManager;
         this.queue = new PriorityBlockingQueue<>(11, new MessageTask.TaskComparator());
+        this.blockedPeers = Collections.unmodifiableSet(
+                config.blockedPeerIPList().stream().map(NodeMessageHandler::fromIP).collect(Collectors.toSet())
+        );
     }
 
     /**
@@ -127,6 +140,11 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
     }
 
     private void tryAddMessage(Peer sender, Message message) {
+        if (message.getMessageType() == MessageType.BLOCK_MESSAGE && this.blockedPeers.contains(sender.getAddress())) {
+            logger.trace("Received block message from the blocked peer {}, not added to the queue", sender);
+            return;
+        }
+
         Keccak256 encodedMessage = new Keccak256(HashUtil.keccak256(message.getEncoded()));
         if (!receivedMessages.contains(encodedMessage)) {
             if (message.getMessageType() == MessageType.BLOCK_MESSAGE || message.getMessageType() == MessageType.TRANSACTIONS) {
@@ -267,6 +285,11 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
 
     }
 
-
+    private static InetAddress fromIP(String ip) {
+        try {
+            return InetAddress.getByName(ip);
+        } catch (UnknownHostException e) {
+            throw new RuntimeException(e);
+        }
+    }
 }
-
