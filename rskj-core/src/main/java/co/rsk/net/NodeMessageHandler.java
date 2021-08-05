@@ -30,6 +30,7 @@ import co.rsk.net.messages.MessageVisitor;
 import co.rsk.scoring.EventType;
 import co.rsk.scoring.PeerScoringManager;
 import co.rsk.util.FormatUtils;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.net.server.ChannelManager;
 import org.slf4j.Logger;
@@ -66,7 +67,8 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
     private volatile long lastTickSent = System.currentTimeMillis();
 
     private final StatusResolver statusResolver;
-    private final Set<InetAddress> blockedPeers;
+    private final Set<InetAddress> blockedPeerIPs;
+    private final Set<NodeID> blockedPeerIDs;
     private final Set<RskAddress> blockedMiners;
     private final Set<Keccak256> receivedMessages = Collections.synchronizedSet(new HashSet<>());
     private long cleanMsgTimestamp = 0;
@@ -94,8 +96,11 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
         this.cleanMsgTimestamp = System.currentTimeMillis();
         this.peerScoringManager = peerScoringManager;
         this.queue = new PriorityBlockingQueue<>(11, new MessageTask.TaskComparator());
-        this.blockedPeers = Collections.unmodifiableSet(
+        this.blockedPeerIPs = Collections.unmodifiableSet(
                 config.blockedPeerIPList().stream().map(NodeMessageHandler::fromIP).collect(Collectors.toSet())
+        );
+        this.blockedPeerIDs = Collections.unmodifiableSet(
+                config.blockedPeerIDList().stream().map(NodeMessageHandler::fromNodeID).collect(Collectors.toSet())
         );
         this.blockedMiners = Collections.unmodifiableSet(
                 config.blockedMinerList().stream().map(RskAddress::new).collect(Collectors.toSet())
@@ -146,14 +151,15 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
     }
 
     private void tryAddMessage(Peer sender, Message message) {
-        if (this.blockedPeers.contains(sender.getAddress())) {
+        if (this.blockedPeerIPs.contains(sender.getAddress()) || this.blockedPeerIDs.contains(sender.getPeerNodeID())) {
             logger.trace("Received message from the blocked peer {}, not added to the queue", sender);
             return;
-        } else if (message instanceof BlockMessage) {
+        }
+        if (message instanceof BlockMessage) {
             BlockMessage blockMessage = (BlockMessage) message;
             RskAddress miner = blockMessage.getBlock().getHeader().getCoinbase();
             if (this.blockedMiners.contains(miner)) {
-                logger.trace("Received block mined by blocked miner {} from peer {}, not added to the queue", sender, miner);
+                logger.trace("Received block mined by blocked miner {} from peer {}, not added to the queue", miner, sender);
                 return;
             }
         }
@@ -296,6 +302,10 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
             }
         }
 
+    }
+
+    private static NodeID fromNodeID(String nodeID) {
+        return new NodeID(Hex.decode(nodeID));
     }
 
     private static InetAddress fromIP(String ip) {

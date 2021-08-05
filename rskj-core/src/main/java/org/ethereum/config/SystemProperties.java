@@ -208,6 +208,10 @@ public abstract class SystemProperties {
         return configFromFiles.hasPath("peer.blockedPeerIPs") ? configFromFiles.getStringList("peer.blockedPeerIPs") : new ArrayList<>();
     }
 
+    public List<String> blockedPeerIDList() {
+        return configFromFiles.hasPath("peer.blockedPeerIDs") ? configFromFiles.getStringList("peer.blockedPeerIDs") : new ArrayList<>();
+    }
+
     public List<String> blockedMinerList() {
         return configFromFiles.hasPath("peer.blockedMiners") ? configFromFiles.getStringList("peer.blockedMiners") : new ArrayList<>();
     }
