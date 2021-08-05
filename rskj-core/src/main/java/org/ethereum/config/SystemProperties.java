@@ -205,7 +205,11 @@ public abstract class SystemProperties {
     }
 
     public List<String> blockedPeerIPList() {
-        return configFromFiles.hasPath("peer.blockedIPs") ? configFromFiles.getStringList("peer.blockedIPs") : new ArrayList<>();
+        return configFromFiles.hasPath("peer.blockedPeerIPs") ? configFromFiles.getStringList("peer.blockedPeerIPs") : new ArrayList<>();
+    }
+
+    public List<String> blockedMinerList() {
+        return configFromFiles.hasPath("peer.blockedMiners") ? configFromFiles.getStringList("peer.blockedMiners") : new ArrayList<>();
     }
 
     public boolean databaseReset() {

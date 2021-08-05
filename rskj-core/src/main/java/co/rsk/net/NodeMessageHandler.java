@@ -20,8 +20,10 @@ package co.rsk.net;
 
 import co.rsk.config.InternalService;
 import co.rsk.config.RskSystemProperties;
+import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockUtils;
 import co.rsk.crypto.Keccak256;
+import co.rsk.net.messages.BlockMessage;
 import co.rsk.net.messages.Message;
 import co.rsk.net.messages.MessageType;
 import co.rsk.net.messages.MessageVisitor;
@@ -65,6 +67,7 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
 
     private final StatusResolver statusResolver;
     private final Set<InetAddress> blockedPeers;
+    private final Set<RskAddress> blockedMiners;
     private final Set<Keccak256> receivedMessages = Collections.synchronizedSet(new HashSet<>());
     private long cleanMsgTimestamp = 0;
 
@@ -93,6 +96,9 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
         this.queue = new PriorityBlockingQueue<>(11, new MessageTask.TaskComparator());
         this.blockedPeers = Collections.unmodifiableSet(
                 config.blockedPeerIPList().stream().map(NodeMessageHandler::fromIP).collect(Collectors.toSet())
+        );
+        this.blockedMiners = Collections.unmodifiableSet(
+                config.blockedMinerList().stream().map(RskAddress::new).collect(Collectors.toSet())
         );
     }
 
@@ -140,9 +146,16 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
     }
 
     private void tryAddMessage(Peer sender, Message message) {
-        if (message.getMessageType() == MessageType.BLOCK_MESSAGE && this.blockedPeers.contains(sender.getAddress())) {
-            logger.trace("Received block message from the blocked peer {}, not added to the queue", sender);
+        if (this.blockedPeers.contains(sender.getAddress())) {
+            logger.trace("Received message from the blocked peer {}, not added to the queue", sender);
             return;
+        } else if (message instanceof BlockMessage) {
+            BlockMessage blockMessage = (BlockMessage) message;
+            RskAddress miner = blockMessage.getBlock().getHeader().getCoinbase();
+            if (this.blockedMiners.contains(miner)) {
+                logger.trace("Received block mined by blocked miner {} from peer {}, not added to the queue", sender, miner);
+                return;
+            }
         }
 
         Keccak256 encodedMessage = new Keccak256(HashUtil.keccak256(message.getEncoded()));
