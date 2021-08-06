@@ -217,7 +217,6 @@ public class MessageVisitor {
         if (sender == null) {
             return;
         }
-
         this.peerScoringManager.recordEvent(sender.getPeerNodeID(), sender.getAddress(), event);
     }
 

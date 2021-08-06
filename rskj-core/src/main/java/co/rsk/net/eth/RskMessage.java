@@ -19,8 +19,10 @@
 package co.rsk.net.eth;
 
 import co.rsk.net.messages.Message;
+import io.netty.channel.ChannelHandlerContext;
 import org.ethereum.net.eth.message.EthMessage;
 import org.ethereum.net.eth.message.EthMessageCodes;
+import org.ethereum.net.server.Channel;
 import org.ethereum.util.RLP;
 
 /**
@@ -63,6 +65,11 @@ public class RskMessage extends EthMessage {
         this.encoded = RLP.encodeList(msg);
     }
 
+    @Override
+    public void processCommand(ChannelHandlerContext ctx, Channel channel, RskWireProtocol rskWireProtocol) throws InterruptedException {
+        rskWireProtocol.updateSyncStats(this.getMessage());
+        rskWireProtocol.postMessage(channel, this);
+    }
 
     @Override
     public String toString() {

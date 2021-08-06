@@ -19,7 +19,9 @@
 
 package org.ethereum.net.eth.message;
 
+import co.rsk.net.eth.RskWireProtocol;import io.netty.channel.ChannelHandlerContext;
 import org.ethereum.net.message.Message;
+import org.ethereum.net.server.Channel;
 
 public abstract class EthMessage extends Message {
 
@@ -31,4 +33,6 @@ public abstract class EthMessage extends Message {
     }
 
     public abstract EthMessageCodes getCommand();
+
+    public abstract void processCommand(ChannelHandlerContext ctx, Channel channel, RskWireProtocol rskWireProtocol) throws InterruptedException;
 }

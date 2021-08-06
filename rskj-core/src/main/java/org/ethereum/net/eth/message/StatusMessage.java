@@ -19,6 +19,9 @@
 
 package org.ethereum.net.eth.message;
 
+import co.rsk.net.eth.RskWireProtocol;
+import io.netty.channel.ChannelHandlerContext;
+import org.ethereum.net.server.Channel;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
@@ -146,6 +149,10 @@ public class StatusMessage extends EthMessage {
         return EthMessageCodes.STATUS;
     }
 
+    @Override
+    public void processCommand(ChannelHandlerContext ctx, Channel channel, RskWireProtocol rskWireProtocol) {
+        rskWireProtocol.processStatus(this, ctx);
+    }
 
     @Override
     public String toString() {
