@@ -21,6 +21,7 @@ package co.rsk.net;
 import co.rsk.config.InternalService;
 import co.rsk.crypto.Keccak256;
 import co.rsk.net.sync.SyncConfiguration;
+import co.rsk.util.FormatUtils;
 import co.rsk.validators.BlockValidator;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
@@ -148,19 +149,28 @@ public class AsyncNodeBlockProcessor extends NodeBlockProcessor implements Inter
             Block block = null;
 
             try {
-                logger.trace("Awaiting block for processing from the queue...");
+                logger.trace("Getting block from queue...");
 
                 BlockInfo blockInfo = blocksToProcess.take();
+
+                logger.debug("Queued Blocks: {}", blocksToProcess.size());
 
                 sender = blockInfo.peer;
                 block = blockInfo.block;
 
+                long start = 0L;
                 if (logger.isTraceEnabled()) {
                     logger.trace("Start block processing with number {} and hash {} from {}", block.getNumber(), block.getPrintableHash(), sender);
+
+                    start = System.nanoTime();
                 }
 
                 BlockProcessResult blockProcessResult = blockSyncService.processBlock(block, sender, false);
-                logger.trace("Finished block processing");
+
+                if (logger.isTraceEnabled()) {
+                    long processTime = System.nanoTime() - start;
+                    logger.trace("Finished block processing after [{}] seconds.", FormatUtils.formatNanosecondsToSeconds(processTime));
+                }
 
                 if (listener != null) {
                     listener.onBlockProcessed(this, sender, block, blockProcessResult);
