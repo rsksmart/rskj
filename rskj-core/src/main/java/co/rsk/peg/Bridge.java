@@ -194,6 +194,11 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
     public static final CallTransaction.Function HAS_BTC_BLOCK_COINBASE_TRANSACTION_INFORMATION = BridgeMethods.HAS_BTC_BLOCK_COINBASE_TRANSACTION_INFORMATION.getFunction();
     public static final CallTransaction.Function REGISTER_FAST_BRIDGE_BTC_TRANSACTION = BridgeMethods.REGISTER_FAST_BRIDGE_BTC_TRANSACTION.getFunction();
 
+    public static final CallTransaction.Function GET_BTC_BLOCKCHAIN_BLOCK_HEADER_BY_HASH = BridgeMethods.GET_BTC_BLOCKCHAIN_BLOCK_HEADER_BY_HASH.getFunction();
+    public static final CallTransaction.Function GET_BTC_BLOCKCHAIN_BLOCK_HEADER_BY_HEIGHT = BridgeMethods.GET_BTC_BLOCKCHAIN_BLOCK_HEADER_BY_HEIGHT.getFunction();
+    public static final CallTransaction.Function GET_BTC_BLOCKCHAIN_BEST_BLOCK_HEADER = BridgeMethods.GET_BTC_BLOCKCHAIN_BEST_BLOCK_HEADER.getFunction();
+    public static final CallTransaction.Function GET_BTC_BLOCKCHAIN_PARENT_BLOCK_HEADER_BY_HASH = BridgeMethods.GET_BTC_BLOCKCHAIN_PARENT_BLOCK_HEADER_BY_HASH.getFunction();
+
     public static final int LOCK_WHITELIST_UNLIMITED_MODE_CODE = 0;
     public static final int LOCK_WHITELIST_ENTRY_NOT_FOUND_CODE = -1;
     public static final int LOCK_WHITELIST_INVALID_ADDRESS_FORMAT_ERROR_CODE = -2;
@@ -1087,7 +1092,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         return bridgeSupport.getActiveFederationCreationBlockHeight();
     }
 
-    public long registerFastBridgeBtcTransaction(Object[] args) {
+    public BigInteger registerFastBridgeBtcTransaction(Object[] args) {
         logger.trace("registerFastBridgeBtcTransaction");
 
         try {
@@ -1126,7 +1131,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             );
         } catch (Exception e) {
             logger.warn("Exception in registerFastBridgeBtcTransaction", e);
-            return BridgeSupport.FAST_BRIDGE_GENERIC_ERROR;
+            return BigInteger.valueOf(BridgeSupport.FAST_BRIDGE_GENERIC_ERROR);
         }
     }
 

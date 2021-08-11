@@ -37,8 +37,8 @@ import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionPool;
 import org.ethereum.core.TransactionPoolAddResult;
 import org.ethereum.datasource.HashMapDB;
+import org.ethereum.rpc.CallArguments;
 import org.ethereum.rpc.TypeConverter;
-import org.ethereum.rpc.Web3;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.util.TransactionTestHelper;
 import org.ethereum.vm.program.ProgramResult;
@@ -61,7 +61,7 @@ public class EthModuleTest {
 
     @Test
     public void callSmokeTest() {
-        Web3.CallArguments args = new Web3.CallArguments();
+        CallArguments args = new CallArguments();
         BlockResult blockResult = mock(BlockResult.class);
         Block block = mock(Block.class);
         ExecutionBlockRetriever retriever = mock(ExecutionBlockRetriever.class);
@@ -99,7 +99,7 @@ public class EthModuleTest {
 
     @Test
     public void callWithoutReturn() {
-        Web3.CallArguments args = new Web3.CallArguments();
+        CallArguments args = new CallArguments();
         BlockResult blockResult = mock(BlockResult.class);
         Block block = mock(Block.class);
         ExecutionBlockRetriever retriever = mock(ExecutionBlockRetriever.class);
@@ -137,7 +137,7 @@ public class EthModuleTest {
 
     @Test
     public void test_revertedTransaction() {
-        Web3.CallArguments args = new Web3.CallArguments();
+        CallArguments args = new CallArguments();
         BlockResult blockResult = mock(BlockResult.class);
         Block block = mock(Block.class);
         ExecutionBlockRetriever retriever = mock(ExecutionBlockRetriever.class);
@@ -189,7 +189,7 @@ public class EthModuleTest {
 		RskAddress receiver = wallet.addAccount();
 
 		// Hash of the expected transaction
-		Web3.CallArguments args = TransactionTestHelper.createArguments(sender, receiver);
+		CallArguments args = TransactionTestHelper.createArguments(sender, receiver);
 		Transaction tx = TransactionTestHelper.createTransaction(args, constants.getChainId(), wallet.getAccount(sender));
 		String txExpectedResult = tx.getHash().toJsonString();
 

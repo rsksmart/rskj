@@ -18,11 +18,13 @@
 
 package co.rsk.core.bc;
 
+import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.db.StateRootHandler;
 import co.rsk.trie.TrieConverter;
 import co.rsk.trie.TrieStore;
+import co.rsk.util.TimeProvider;
 import co.rsk.validators.*;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.BlockStore;
@@ -35,7 +37,7 @@ import java.util.HashMap;
  */
 public class BlockValidatorBuilder {
 
-    private final TestSystemProperties config = new TestSystemProperties();
+    private final TestSystemProperties config;
 
     private BlockTxsValidationRule blockTxsValidationRule;
 
@@ -58,6 +60,14 @@ public class BlockValidatorBuilder {
     private BlockParentCompositeRule blockParentCompositeRule;
 
     private BlockStore blockStore;
+
+    public BlockValidatorBuilder(TestSystemProperties customConfig) {
+        this.config = customConfig;
+    }
+
+    public BlockValidatorBuilder() {
+        this.config = new TestSystemProperties();
+    }
 
     public BlockValidatorBuilder addBlockTxsFieldsValidationRule() {
         this.blockTxsFieldsValidationRule = new BlockTxsFieldsValidationRule();
@@ -130,5 +140,21 @@ public class BlockValidatorBuilder {
         }
 
         return new BlockValidatorImpl(this.blockStore, this.blockParentCompositeRule, this.blockCompositeRule);
+    }
+
+    public BlockValidatorBuilder addBlockTimeStampValidation(
+        int validPeriod,
+        TimeProvider timeProvider,
+        NetworkParameters bitcoinNetworkParameters) {
+
+        BlockTimeStampValidationRule blockTimeStampValidationRule = new BlockTimeStampValidationRule(
+            validPeriod,
+            config.getActivationConfig(),
+            timeProvider,
+            bitcoinNetworkParameters
+        );
+        this.blockTimeStampValidationRule = blockTimeStampValidationRule;
+
+        return this;
     }
 }

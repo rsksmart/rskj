@@ -18,8 +18,8 @@
 
 package org.ethereum.rpc.converters;
 
+import org.ethereum.rpc.CallArguments;
 import org.ethereum.rpc.TypeConverter;
-import org.ethereum.rpc.Web3;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -30,7 +30,7 @@ public class CallArgumentsToByteArrayTest {
 
     @Test
     public void getGasPriceWhenValueIsNull() throws Exception {
-        Web3.CallArguments args = new Web3.CallArguments();
+        CallArguments args = new CallArguments();
 
         CallArgumentsToByteArray byteArrayArgs = new CallArgumentsToByteArray(args);
 
@@ -39,8 +39,8 @@ public class CallArgumentsToByteArrayTest {
 
     @Test
     public void getGasPriceWhenValueIsEmpty() throws Exception {
-        Web3.CallArguments args = new Web3.CallArguments();
-        args.gasPrice = "";
+        CallArguments args = new CallArguments();
+        args.setGasPrice("");
 
         CallArgumentsToByteArray byteArrayArgs = new CallArgumentsToByteArray(args);
 
@@ -49,7 +49,7 @@ public class CallArgumentsToByteArrayTest {
 
     @Test
     public void getGasLimitWhenValueIsNull() throws Exception {
-        Web3.CallArguments args = new Web3.CallArguments();
+        CallArguments args = new CallArguments();
 
         CallArgumentsToByteArray byteArrayArgs = new CallArgumentsToByteArray(args);
 
@@ -60,8 +60,8 @@ public class CallArgumentsToByteArrayTest {
 
     @Test
     public void getGasLimitWhenValueIsEmpty() throws Exception {
-        Web3.CallArguments args = new Web3.CallArguments();
-        args.gas = "";
+        CallArguments args = new CallArguments();
+        args.setGas("");
 
         CallArgumentsToByteArray byteArrayArgs = new CallArgumentsToByteArray(args);
 
@@ -72,7 +72,7 @@ public class CallArgumentsToByteArrayTest {
 
     @Test
     public void getToAddressWhenValueIsNull() throws Exception {
-        Web3.CallArguments args = new Web3.CallArguments();
+        CallArguments args = new CallArguments();
 
         CallArgumentsToByteArray byteArrayArgs = new CallArgumentsToByteArray(args);
 
@@ -81,7 +81,7 @@ public class CallArgumentsToByteArrayTest {
 
     @Test
     public void getValueWhenValueIsNull() throws Exception {
-        Web3.CallArguments args = new Web3.CallArguments();
+        CallArguments args = new CallArguments();
 
         CallArgumentsToByteArray byteArrayArgs = new CallArgumentsToByteArray(args);
 
@@ -90,8 +90,8 @@ public class CallArgumentsToByteArrayTest {
 
     @Test
     public void getValueWhenValueIsEmpty() throws Exception {
-        Web3.CallArguments args = new Web3.CallArguments();
-        args.value = "";
+        CallArguments args = new CallArguments();
+        args.setValue("");
 
         CallArgumentsToByteArray byteArrayArgs = new CallArgumentsToByteArray(args);
 
@@ -100,7 +100,7 @@ public class CallArgumentsToByteArrayTest {
 
     @Test
     public void getDataWhenValueIsNull() throws Exception {
-        Web3.CallArguments args = new Web3.CallArguments();
+        CallArguments args = new CallArguments();
 
         CallArgumentsToByteArray byteArrayArgs = new CallArgumentsToByteArray(args);
 
@@ -109,8 +109,8 @@ public class CallArgumentsToByteArrayTest {
 
     @Test
     public void getDataWhenValueIsEmpty() throws Exception {
-        Web3.CallArguments args = new Web3.CallArguments();
-        args.data = "";
+        CallArguments args = new CallArguments();
+        args.setData("");
 
         CallArgumentsToByteArray byteArrayArgs = new CallArgumentsToByteArray(args);
 

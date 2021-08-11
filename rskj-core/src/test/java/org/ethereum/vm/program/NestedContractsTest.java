@@ -30,7 +30,7 @@ import co.rsk.test.dsl.WorldDslProcessor;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
 import org.ethereum.core.CallTransaction;
-import org.ethereum.rpc.Web3;
+import org.ethereum.rpc.CallArguments;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
@@ -106,7 +106,7 @@ public class NestedContractsTest {
 
         //Failed Call ContractA.buy(0) -> 0 > 0
         final String contractA = getContractAddressString(TX_CONTRACTA);
-        Web3.CallArguments args = buildArgs(contractA, Hex.toHexString(BUY_FUNCTION.encode(0)));
+        CallArguments args = buildArgs(contractA, Hex.toHexString(BUY_FUNCTION.encode(0)));
         try {
             ethModule.call(args, "latest");
             fail();
@@ -147,7 +147,7 @@ public class NestedContractsTest {
 
         //Failed Call ContractA.buy(0) -> 0 > 0
         final String contractA = getContractAddressString("tx03");
-        Web3.CallArguments args = buildArgs(contractA, Hex.toHexString(BUY_FUNCTION.encode(0)));
+        CallArguments args = buildArgs(contractA, Hex.toHexString(BUY_FUNCTION.encode(0)));
         String call = ethModule.call(args, "latest");
         assertEquals("0x" + DataWord.valueOf(0).toString(), call);
 
@@ -178,13 +178,13 @@ public class NestedContractsTest {
         return getContractAddress(contractTx).toHexString();
     }
 
-    private Web3.CallArguments buildArgs(String toAddress, String data) {
-        final Web3.CallArguments args = new Web3.CallArguments();
-        args.to = toAddress;
-        args.data = data; // call to contract
-        args.value = "0";
-        args.nonce = "1";
-        args.gas = "10000000";
+    private CallArguments buildArgs(String toAddress, String data) {
+        final CallArguments args = new CallArguments();
+        args.setTo(toAddress);
+        args.setData(data); // call to contract
+        args.setValue("0");
+        args.setNonce("1");
+        args.setGas("10000000");
         return args;
     }
 

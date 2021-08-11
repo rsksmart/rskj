@@ -18,6 +18,10 @@
 
 package co.rsk.core.bc;
 
+import co.rsk.bitcoinj.core.BitcoinSerializer;
+import co.rsk.bitcoinj.core.BtcBlock;
+import co.rsk.bitcoinj.core.MessageSerializer;
+import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.BlockDifficulty;
@@ -27,8 +31,10 @@ import co.rsk.db.HashMapBlocksIndex;
 import co.rsk.remasc.RemascTransaction;
 import co.rsk.test.builders.BlockBuilder;
 import co.rsk.test.builders.BlockChainBuilder;
+import co.rsk.util.TimeProvider;
 import co.rsk.validators.BlockHeaderParentDependantValidationRule;
 import co.rsk.validators.ProofOfWorkRule;
+import com.typesafe.config.ConfigValueFactory;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.TestUtils;
 import org.ethereum.core.*;
@@ -43,8 +49,7 @@ import org.powermock.reflect.Whitebox;
 import java.math.BigInteger;
 import java.util.*;
 
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 /**
  * Created by ajlopez on 04/08/2016.
@@ -679,29 +684,64 @@ public class BlockValidatorTest {
     public void blockInTheFuture() {
         BlockGenerator blockGenerator = new BlockGenerator();
         Block genesis = blockGenerator.getGenesisBlock();
-
+        byte[] bitcoinMergedMiningHeader = new byte[0];
         int validPeriod = 6000;
+        long baseTimeStamp = 1627932722L; // some random timestamp (taken from Sys.currentTimeMills())
 
         BlockHeader header = mock(BlockHeader.class);
-        Block block = mock(Block.class);
-        when(block.getHeader()).thenReturn(header);
+        when(header.getBitcoinMergedMiningHeader()).thenReturn(bitcoinMergedMiningHeader);
         when(header.getTimestamp())
-                .thenReturn((System.currentTimeMillis() / 1000) + 2*validPeriod);
-
+                .thenReturn(baseTimeStamp + 2 * validPeriod);
         when(header.getParentHash()).thenReturn(genesis.getHash());
 
-        BlockValidatorImpl validator = new BlockValidatorBuilder()
-                .addBlockTimeStampValidationRule(validPeriod)
+        Block block = mock(Block.class);
+        when(block.getHeader()).thenReturn(header);
+
+        BtcBlock btcBlock = mock(BtcBlock.class);
+        when(btcBlock.getTimeSeconds()).thenReturn(baseTimeStamp + validPeriod - 100); // a close enough block
+
+        MessageSerializer messageSerializer = mock(BitcoinSerializer.class);
+        when(messageSerializer.makeBlock(bitcoinMergedMiningHeader)).thenReturn(btcBlock);
+
+        NetworkParameters bitcoinNetworkParameters = mock(NetworkParameters.class);
+        when(bitcoinNetworkParameters.getDefaultSerializer()).thenReturn(messageSerializer);
+
+        // Before Iris
+        blockTimeStampValidation(validPeriod, baseTimeStamp, header,
+                block, bitcoinNetworkParameters, false);
+
+        //After Iris
+        blockTimeStampValidation(validPeriod, baseTimeStamp, header,
+                block, bitcoinNetworkParameters, true);
+    }
+
+    private TestSystemProperties blockTimeStampValidationProperties(boolean activateIris) {
+        return new TestSystemProperties(rawConfig ->
+                rawConfig.withValue("blockchain.config.hardforkActivationHeights.iris300",
+                        ConfigValueFactory.fromAnyRef(activateIris ? 0 : -1))
+        );
+    }
+
+    private void blockTimeStampValidation(int validPeriod, long baseTimeStamp, BlockHeader header, Block block,
+                                          NetworkParameters bitcoinNetworkParameters, boolean irisEnabled) {
+        TestSystemProperties testSystemProperties = blockTimeStampValidationProperties(irisEnabled);
+        TimeProvider timeProvider = mock(TimeProvider.class);
+        when(timeProvider.currentTimeMillis()).thenReturn(baseTimeStamp * 1000 + validPeriod);
+
+        BlockValidatorImpl validator = new BlockValidatorBuilder(testSystemProperties)
+                .addBlockTimeStampValidation(validPeriod, timeProvider, bitcoinNetworkParameters)
                 .build();
+
+        when(header.getTimestamp())
+                .thenReturn(baseTimeStamp + 2 * validPeriod);
 
         Assert.assertFalse(validator.isValid(block));
 
         when(header.getTimestamp())
-                .thenReturn((System.currentTimeMillis() / 1000) + validPeriod);
+                .thenReturn(baseTimeStamp + validPeriod);
 
         Assert.assertTrue(validator.isValid(block));
     }
-
 
     @Test
     public void blockInTheFutureIsAcceptedWhenValidPeriodIsZero() {

@@ -1383,6 +1383,9 @@ public class BridgeUtilsTest {
         assertFalse(BridgeUtils.isPegOutTx(pegOutTx1, activations, defaultFederation.getP2SHScript(), standardFederation.getP2SHScript()));
         assertFalse(BridgeUtils.isPegOutTx(pegOutTx1, activations, standardFederation.getP2SHScript()));
 
+        assertFalse(BridgeUtils.isPegOutTx(pegOutTx1, Collections.singletonList(erpFederation), activations));
+        assertFalse(BridgeUtils.isPegOutTx(pegOutTx1, activations, erpFederation.getStandardP2SHScript()));
+
         // After RSKIP 201 activation
         when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(true);
 
@@ -1393,6 +1396,9 @@ public class BridgeUtilsTest {
         assertTrue(BridgeUtils.isPegOutTx(pegOutTx1, activations, defaultFederation.getP2SHScript()));
         assertTrue(BridgeUtils.isPegOutTx(pegOutTx1, activations, defaultFederation.getP2SHScript(), standardFederation.getP2SHScript()));
         assertFalse(BridgeUtils.isPegOutTx(pegOutTx1, activations, standardFederation.getP2SHScript()));
+
+        assertTrue(BridgeUtils.isPegOutTx(pegOutTx1, Collections.singletonList(erpFederation), activations));
+        assertTrue(BridgeUtils.isPegOutTx(pegOutTx1, activations, erpFederation.getStandardP2SHScript()));
     }
 
     @Test
@@ -2140,6 +2146,52 @@ public class BridgeUtilsTest {
         int difference = pegoutTx.bitcoinSerialize().length - pegoutTxSize;
         double tolerance = pegoutTxSize * .1;
         assertTrue(difference < tolerance && difference > -tolerance);
+    }
+
+    @Test
+    public void scriptCorrectlySpends_fromGenesisFederation_ok() {
+        Federation genesisFederation = bridgeConstants.getGenesisFederation();
+        Address destinationAddress = PegTestUtils.createRandomBtcAddress();
+
+        BtcTransaction tx = new BtcTransaction(networkParameters);
+        tx.addOutput(Coin.COIN, destinationAddress);
+        TransactionInput txIn = new TransactionInput(
+            networkParameters,
+            tx,
+            new byte[]{},
+            new TransactionOutPoint(networkParameters, 0, Sha256Hash.ZERO_HASH)
+        );
+        tx.addInput(txIn);
+        signWithNecessaryKeys(genesisFederation, BridgeRegTestConstants.REGTEST_FEDERATION_PRIVATE_KEYS, txIn, tx);
+
+        assertTrue(BridgeUtils.scriptCorrectlySpendsTx(tx, 0, genesisFederation.getP2SHScript()));
+    }
+
+    @Test
+    public void scriptCorrectlySpends_invalidScript() {
+        Federation genesisFederation = bridgeConstants.getGenesisFederation();
+        Address destinationAddress = PegTestUtils.createRandomBtcAddress();
+
+        BtcTransaction tx = new BtcTransaction(networkParameters);
+        tx.addOutput(Coin.COIN, destinationAddress);
+        TransactionInput txIn = new TransactionInput(
+            networkParameters,
+            tx,
+            new byte[]{},
+            new TransactionOutPoint(networkParameters, 0, Sha256Hash.ZERO_HASH)
+        );
+        tx.addInput(txIn);
+        signWithNecessaryKeys(genesisFederation, BridgeRegTestConstants.REGTEST_FEDERATION_PRIVATE_KEYS, txIn, tx);
+
+        // Add script op codes to the tx input script sig to make it invalid
+        ScriptBuilder scriptBuilder = new ScriptBuilder(tx.getInput(0).getScriptSig());
+        Script invalidScript = scriptBuilder
+            .op(ScriptOpCodes.OP_IF)
+            .op(ScriptOpCodes.OP_ENDIF)
+            .build();
+        tx.getInput(0).setScriptSig(invalidScript);
+
+        assertFalse(BridgeUtils.scriptCorrectlySpendsTx(tx, 0, genesisFederation.getP2SHScript()));
     }
 
     private void test_getSpendWallet(boolean isFastBridgeCompatible) throws UTXOProviderException {

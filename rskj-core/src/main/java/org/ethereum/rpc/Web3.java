@@ -27,63 +27,6 @@ import java.util.Arrays;
 import java.util.Map;
 
 public interface Web3 extends InternalService, Web3TxPoolModule, Web3EthModule, Web3EvmModule, Web3MnrModule, Web3DebugModule, Web3TraceModule, Web3RskModule {
-    class SyncingResult {
-        public String startingBlock;
-        public String currentBlock;
-        public String highestBlock;
-    }
-
-    class CallArguments {
-        public String from;
-        public String to;
-        public String gas;
-        public String gasLimit;
-        public String gasPrice;
-        public String value;
-        public String data; // compiledCode
-        public String nonce;
-        public String chainId; //NOSONAR
-
-        @Override
-        public String toString() {
-            return "CallArguments{" +
-                    "from='" + from + '\'' +
-                    ", to='" + to + '\'' +
-                    ", gas='" + gas + '\'' +
-                    ", gasLimit='" + gasLimit + '\'' +
-                    ", gasPrice='" + gasPrice + '\'' +
-                    ", value='" + value + '\'' +
-                    ", data='" + data + '\'' +
-                    ", nonce='" + nonce + '\'' +
-                    ", chainId='" + chainId + '\'' +
-                    '}';
-        }
-    }
-
-    class BlockInformationResult {
-        public String hash;
-        public String totalDifficulty;
-        public boolean inMainChain;
-    }
-
-    class FilterRequest {
-        public String fromBlock;
-        public String toBlock;
-        public Object address;
-        public Object[] topics;
-        public String blockHash;
-
-        @Override
-        public String toString() {
-            return "FilterRequest{" +
-                    "fromBlock='" + fromBlock + '\'' +
-                    ", toBlock='" + toBlock + '\'' +
-                    ", address=" + address +
-                    ", topics=" + Arrays.toString(topics) +
-                    ", blockHash='" + blockHash + '\'' +
-                    '}';
-        }
-    }
 
     String web3_clientVersion();
     String web3_sha3(String data) throws Exception;

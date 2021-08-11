@@ -28,8 +28,8 @@ import org.ethereum.config.Constants;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.TransactionPool;
 import org.ethereum.db.TransactionInfo;
+import org.ethereum.rpc.CallArguments;
 import org.ethereum.rpc.TypeConverter;
-import org.ethereum.rpc.Web3;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.vm.program.ProgramResult;
 
@@ -63,7 +63,7 @@ public class EthModuleTransactionInstant extends EthModuleTransactionBase {
     }
 
     @Override
-    public synchronized String sendTransaction(Web3.CallArguments args) {
+    public synchronized String sendTransaction(CallArguments args) {
         try {
             this.blockExecutor.setRegisterProgramResults(true);
 

@@ -1,6 +1,6 @@
 /*
  * This file is part of RskJ
- * Copyright (C) 2017 RSK Labs Ltd.
+ * Copyright (C) 2021 RSK Labs Ltd.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -16,26 +16,34 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package co.rsk.rpc.modules.personal;
+package org.ethereum.rpc;
 
-import org.ethereum.rpc.CallArguments;
+public class BlockInformationResult {
+    private String hash;
+    private String totalDifficulty;
+    private boolean inMainChain;
 
-public interface PersonalModule {
-    String dumpRawKey(String address) throws Exception;
+    public String getHash() {
+        return hash;
+    }
 
-    String importRawKey(String key, String passphrase);
+    public void setHash(String hash) {
+        this.hash = hash;
+    }
 
-    void init();
+    public String getTotalDifficulty() {
+        return totalDifficulty;
+    }
 
-    String[] listAccounts();
+    public void setTotalDifficulty(String totalDifficulty) {
+        this.totalDifficulty = totalDifficulty;
+    }
 
-    boolean lockAccount(String address);
+    public boolean isInMainChain() {
+        return inMainChain;
+    }
 
-    String newAccountWithSeed(String seed);
-
-    String newAccount(String passphrase);
-
-    String sendTransaction(CallArguments args, String passphrase) throws Exception;
-
-    boolean unlockAccount(String address, String passphrase, String duration);
+    public void setInMainChain(boolean inMainChain) {
+        this.inMainChain = inMainChain;
+    }
 }

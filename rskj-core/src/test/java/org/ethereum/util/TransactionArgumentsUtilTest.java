@@ -25,7 +25,7 @@ import java.math.BigInteger;
 import org.ethereum.config.Constants;
 import org.ethereum.core.TransactionArguments;
 import org.ethereum.datasource.HashMapDB;
-import org.ethereum.rpc.Web3;
+import org.ethereum.rpc.CallArguments;
 import org.junit.Test;
 
 import co.rsk.core.RskAddress;
@@ -42,7 +42,7 @@ public class TransactionArgumentsUtilTest {
 		RskAddress sender = wallet.addAccount();
 		RskAddress receiver = wallet.addAccount();
 		
-		Web3.CallArguments args = TransactionTestHelper.createArguments(sender, receiver);
+		CallArguments args = TransactionTestHelper.createArguments(sender, receiver);
 		
 		TransactionArguments txArgs = TransactionArgumentsUtil.processArguments(args, null, wallet.getAccount(sender), constants.getChainId());
 		

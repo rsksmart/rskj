@@ -57,12 +57,9 @@ import org.ethereum.listener.CompositeEthereumListener;
 import org.ethereum.net.client.ConfigCapabilities;
 import org.ethereum.net.server.ChannelManager;
 import org.ethereum.net.server.ChannelManagerImpl;
+import org.ethereum.rpc.*;
 import org.ethereum.rpc.Simples.SimpleChannelManager;
 import org.ethereum.rpc.Simples.SimpleConfigCapabilities;
-import org.ethereum.rpc.TypeConverter;
-import org.ethereum.rpc.Web3;
-import org.ethereum.rpc.Web3Impl;
-import org.ethereum.rpc.Web3Mocks;
 import org.ethereum.sync.SyncPool;
 import org.ethereum.util.BuildInfo;
 import org.ethereum.util.ByteUtil;
@@ -255,12 +252,12 @@ public class TransactionModuleTest {
     }
 
     private String sendTransaction(Web3Impl web3, RepositorySnapshot repository) {
-        Web3.CallArguments args = getTransactionParameters(web3, repository);
+        CallArguments args = getTransactionParameters(web3, repository);
 
         return web3.eth_sendTransaction(args);
     }
 
-    private Web3.CallArguments getTransactionParameters(Web3Impl web3, RepositorySnapshot repository) {
+    private CallArguments getTransactionParameters(Web3Impl web3, RepositorySnapshot repository) {
         RskAddress addr1 = new RskAddress(ECKey.fromPrivate(Keccak256Helper.keccak256("cow".getBytes())).getAddress());
         String addr2 = web3.personal_newAccountWithSeed("addr2");
         BigInteger value = BigInteger.valueOf(7);
@@ -269,15 +266,15 @@ public class TransactionModuleTest {
         String data = "0xff";
         byte chainId = config.getNetworkConstants().getChainId();
 
-        Web3.CallArguments args = new Web3.CallArguments();
-        args.from = TypeConverter.toJsonHex(addr1.getBytes());
-        args.to = addr2;
-        args.data = data;
-        args.gas = TypeConverter.toQuantityJsonHex(gasLimit);
-        args.gasPrice = TypeConverter.toQuantityJsonHex(gasPrice);
-        args.value = value.toString();
-        args.nonce = repository.getAccountState(addr1).getNonce().toString();
-        args.chainId = TypeConverter.toJsonHex(new byte[] { chainId });
+        CallArguments args = new CallArguments();
+        args.setFrom(TypeConverter.toJsonHex(addr1.getBytes()));
+        args.setTo(addr2);
+        args.setData(data);
+        args.setGas(TypeConverter.toQuantityJsonHex(gasLimit));
+        args.setGasPrice(TypeConverter.toQuantityJsonHex(gasPrice));
+        args.setValue(value.toString());
+        args.setNonce(repository.getAccountState(addr1).getNonce().toString());
+        args.setChainId(TypeConverter.toJsonHex(new byte[]{chainId}));
 
         return args;
     }

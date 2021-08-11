@@ -73,7 +73,7 @@ public class RemascTransaction extends Transaction {
     }
 
     @Override
-    public RskAddress getSender() {
+    public RskAddress getSender() { // lgtm [java/non-sync-override]
         return REMASC_ADDRESS;
     }
 

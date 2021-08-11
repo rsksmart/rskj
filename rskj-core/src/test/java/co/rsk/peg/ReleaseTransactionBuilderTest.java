@@ -22,6 +22,8 @@ import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.wallet.SendRequest;
 import co.rsk.bitcoinj.wallet.Wallet;
+import co.rsk.config.BridgeRegTestConstants;
+import java.time.Instant;
 import java.util.Collections;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -59,6 +61,59 @@ public class ReleaseTransactionBuilderTest {
             changeAddress,
             Coin.MILLICOIN.multiply(2),
             activations);
+    }
+
+    @Test
+    public void first_output_pay_fees() {
+        NetworkParameters networkParameters = BridgeRegTestConstants.getInstance().getBtcParams();
+
+        Federation federation = new Federation(
+            FederationMember.getFederationMembersFromKeys(Arrays.asList(new BtcECKey(), new BtcECKey(), new BtcECKey())),
+            Instant.now(),
+            0,
+            networkParameters
+        );
+
+        List<UTXO> utxos = Arrays.asList(
+            new UTXO(Sha256Hash.of(new byte[]{1}), 0, Coin.COIN, 0, false, federation.getP2SHScript()),
+            new UTXO(Sha256Hash.of(new byte[]{1}), 0, Coin.COIN, 0, false, federation.getP2SHScript())
+        );
+
+        Wallet thisWallet = BridgeUtils.getFederationSpendWallet(
+            Context.getOrCreate(networkParameters),
+            federation,
+            utxos,
+            false,
+            mock(BridgeStorageProvider.class)
+        );
+
+        ReleaseTransactionBuilder rtb = new ReleaseTransactionBuilder(
+            networkParameters,
+            thisWallet,
+            federation.address,
+            Coin.SATOSHI.multiply(1000),
+            activations
+        );
+
+        Address pegoutRecipient = mockAddress(123);
+        Coin pegoutAmount = Coin.COIN.add(Coin.SATOSHI);
+
+        Optional<ReleaseTransactionBuilder.BuildResult> result = rtb.buildAmountTo(
+            pegoutRecipient,
+            pegoutAmount
+        );
+        Assert.assertTrue(result.isPresent());
+        ReleaseTransactionBuilder.BuildResult builtTx = result.get();
+
+        Coin inputsValue = builtTx.getSelectedUTXOs().stream().map(UTXO::getValue).reduce(Coin.ZERO, Coin::add);
+
+        TransactionOutput changeOutput = builtTx.getBtcTx().getOutput(1);
+
+        // Second output should be the change output to the Federation
+        Assert.assertEquals(federation.getAddress(), changeOutput.getAddressFromP2SH(networkParameters));
+        // And if its value is the spent UTXOs summatory minus the requested pegout amount
+        // we can ensure the Federation is not paying fees for pegouts
+        Assert.assertEquals(inputsValue.minus(pegoutAmount), changeOutput.getValue());
     }
 
     @Test

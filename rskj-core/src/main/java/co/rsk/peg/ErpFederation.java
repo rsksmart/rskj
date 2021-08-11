@@ -16,6 +16,9 @@ public class ErpFederation extends Federation {
     private final List<BtcECKey> erpPubKeys;
     private final long activationDelay;
 
+    private Script standardRedeemScript;
+    private Script standardP2SHScript;
+
     public ErpFederation(
         List<FederationMember> members,
         Instant creationTime,
@@ -52,9 +55,12 @@ public class ErpFederation extends Federation {
 
     @Override
     public Script getStandardRedeemScript() {
-        return ErpFederationRedeemScriptParser.extractStandardRedeemScript(
-            getRedeemScript().getChunks()
-        );
+        if (standardRedeemScript == null) {
+            standardRedeemScript = ErpFederationRedeemScriptParser.extractStandardRedeemScript(
+                getRedeemScript().getChunks()
+            );
+        }
+        return standardRedeemScript;
     }
 
     @Override
@@ -64,6 +70,15 @@ public class ErpFederation extends Federation {
         }
 
         return p2shScript;
+    }
+
+    @Override
+    public Script getStandardP2SHScript() {
+        if (standardP2SHScript == null) {
+            standardP2SHScript = ScriptBuilder.createP2SHOutputScript(getStandardRedeemScript());
+        }
+
+        return standardP2SHScript;
     }
 
     @Override
