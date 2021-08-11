@@ -28,6 +28,7 @@ public class CallArguments {
     private String data; // compiledCode
     private String nonce;
     private String chainId;
+    private String type; // ignore, see https://github.com/rsksmart/rskj/pull/1601
 
     public String getFrom() {
         return from;
@@ -101,6 +102,14 @@ public class CallArguments {
         this.chainId = chainId;
     }
 
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+
     @Override
     public String toString() {
         return "CallArguments{" +
@@ -113,6 +122,7 @@ public class CallArguments {
                 ", data='" + data + '\'' +
                 ", nonce='" + nonce + '\'' +
                 ", chainId='" + chainId + '\'' +
+                ", type='" + type + '\'' +
                 '}';
     }
 }
