@@ -133,28 +133,13 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
 
     private void cleanOldQueueMessages() {
         if (config.wireAutoPrune()) {
-            Object[] messageTaskList = this.queue.toArray();
-            List<MessageTask> pendingMessages = new ArrayList<>();
-            long currentTime = System.currentTimeMillis();
-
-            for (int i = 0; i < messageTaskList.length; i++) {
-                MessageTask currentMessage = (MessageTask) messageTaskList[i];
-                long creationTime = currentMessage.getCreationTime();
-                if (currentTime - creationTime <= autoPrune) {
-                    pendingMessages.add(currentMessage);
-                    this.receivedMessages.remove(currentMessage);
-                }
+            int initialSize = this.queue.size();
+            if(this.queue.removeIf(MessageTask::isStale)) {
+                int newSize = this.queue.size();
+                int removedSize = initialSize - newSize;
+                logger.trace("Removed {} elements from message queue (current queue size {})", removedSize, newSize);
+                // todo(fedejinich) should i update also receivedMessages?
             }
-
-            PriorityBlockingQueue queue = newMessageQueue();
-
-            if (!pendingMessages.isEmpty()) {
-                long cleanedMessagesCount = this.queue.size() - pendingMessages.size();
-                logger.trace("Cleaning {} messages from message queue", cleanedMessagesCount);
-                pendingMessages.forEach(m -> queue.offer(m));
-            }
-
-            this.queue = queue;
         }
     }
 
@@ -183,7 +168,7 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
 
     private void addMessage(Peer sender, Message message, double score) {
         if (score >= 0 && !this.queue.offer(
-                new MessageTask(sender, message, score, System.currentTimeMillis()))) {
+                new MessageTask(sender, message, score, System.currentTimeMillis(), this.autoPrune))) {
             logger.warn("Unexpected path. Is message queue bounded now?");
         }
     }
@@ -269,24 +254,29 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
 
     @VisibleForTesting
     public List<Message> getMessageQueue() {
-        return this.queue.stream().map(e -> e.getMessage()).collect(Collectors.toList());
+        return this.queue.stream()
+                .map(e -> e.getMessage())
+                .collect(Collectors.toList());
     }
 
+    @VisibleForTesting
     public void setAutoPrune(long autoPrune) {
         this.autoPrune = autoPrune;
     }
 
     private static class MessageTask {
         private final long creationTime;
+        private final long timeLimit;
         private Peer sender;
         private Message message;
         private double score;
 
-        public MessageTask(Peer sender, Message message, double score, long creationTime) {
+        public MessageTask(Peer sender, Message message, double score, long creationTime, long timeLimit) {
             this.sender = sender;
             this.message = message;
             this.score = score;
             this.creationTime = creationTime;
+            this.timeLimit = timeLimit;
         }
 
         public Peer getSender() {
@@ -307,6 +297,10 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
 
         public long getCreationTime() {
             return creationTime;
+        }
+
+        public boolean isStale() {
+            return System.currentTimeMillis() - this.creationTime > this.timeLimit;
         }
 
         private static class TaskComparator implements Comparator<MessageTask> {
