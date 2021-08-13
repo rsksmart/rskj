@@ -40,7 +40,7 @@ import org.ethereum.datasource.HashMapDB;
 import org.ethereum.rpc.CallArguments;
 import org.ethereum.rpc.TypeConverter;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
-import org.ethereum.util.TransactionTestHelper;
+import org.ethereum.util.TransactionFactoryHelper;
 import org.ethereum.vm.program.ProgramResult;
 import org.hamcrest.Matchers;
 import org.junit.Assert;
@@ -189,8 +189,8 @@ public class EthModuleTest {
 		RskAddress receiver = wallet.addAccount();
 
 		// Hash of the expected transaction
-		CallArguments args = TransactionTestHelper.createArguments(sender, receiver);
-		Transaction tx = TransactionTestHelper.createTransaction(args, constants.getChainId(), wallet.getAccount(sender));
+		CallArguments args = TransactionFactoryHelper.createArguments(sender, receiver);
+		Transaction tx = TransactionFactoryHelper.createTransaction(args, constants.getChainId(), wallet.getAccount(sender));
 		String txExpectedResult = tx.getHash().toJsonString();
 
 		TransactionPoolAddResult transactionPoolAddResult = mock(TransactionPoolAddResult.class);
