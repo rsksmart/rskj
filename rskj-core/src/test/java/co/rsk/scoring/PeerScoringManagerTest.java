@@ -7,6 +7,7 @@ import org.junit.Test;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
@@ -427,7 +428,9 @@ public class PeerScoringManagerTest {
                 PeerScoring::new,
                 nnodes,
                 new PunishmentParameters(10, 10, 1000),
-                new PunishmentParameters(10, 10, 1000)
+                new PunishmentParameters(10, 10, 1000),
+                Collections.emptyList(),
+                Collections.emptyList()
         );
     }
 }

@@ -23,6 +23,7 @@ import co.rsk.net.discovery.message.*;
 import co.rsk.net.discovery.table.NodeDistanceTable;
 import co.rsk.net.discovery.table.OperationResult;
 import co.rsk.net.discovery.table.PeerDiscoveryRequestBuilder;
+import co.rsk.scoring.PeerScoringManager;
 import co.rsk.util.IpUtils;
 import com.google.common.annotations.VisibleForTesting;
 import org.apache.commons.lang3.StringUtils;
@@ -31,7 +32,9 @@ import org.ethereum.net.rlpx.Node;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
 import java.security.SecureRandom;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -50,6 +53,7 @@ public class PeerExplorer {
     private static final int RETRIES_COUNT = 3;
 
     private final Set<InetSocketAddress> bootNodes = ConcurrentHashMap.newKeySet();
+
     private final Map<String, PeerDiscoveryRequest> pendingPingRequests = new ConcurrentHashMap<>();
     private final Map<String, PeerDiscoveryRequest> pendingFindNodeRequests = new ConcurrentHashMap<>();
 
@@ -70,9 +74,14 @@ public class PeerExplorer {
 
     private final NodeChallengeManager challengeManager;
 
-    private long requestTimeout;
+    private final PeerScoringManager peerScoringManager;
 
-    public PeerExplorer(List<String> initialBootNodes, Node localNode, NodeDistanceTable distanceTable, ECKey key, long reqTimeOut, long updatePeriod, long cleanPeriod, Integer networkId) {
+    private final long requestTimeout;
+
+    public PeerExplorer(List<String> initialBootNodes,
+                        Node localNode, NodeDistanceTable distanceTable, ECKey key,
+                        long reqTimeOut, long updatePeriod, long cleanPeriod, Integer networkId,
+                        PeerScoringManager peerScoringManager) {
         this.localNode = localNode;
         this.key = key;
         this.distanceTable = distanceTable;
@@ -83,6 +92,8 @@ public class PeerExplorer {
         this.cleaner = new PeerExplorerCleaner(this, updatePeriod, cleanPeriod);
         this.challengeManager = new NodeChallengeManager();
         this.requestTimeout = reqTimeOut;
+
+        this.peerScoringManager = peerScoringManager;
     }
 
     public void start() {
@@ -179,7 +190,7 @@ public class PeerExplorer {
 
             if (request != null && request.validateMessageResponse(neighborsResponseAddress, message)) {
                 List<Node> nodes = (message.countNodes() > MAX_NODES_PER_MSG) ? message.getNodes().subList(0, MAX_NODES_PER_MSG -1) : message.getNodes();
-                nodes.stream().filter(n -> !StringUtils.equals(n.getHexId(), this.localNode.getHexId()))
+                nodes.stream().filter(n -> !StringUtils.equals(n.getHexId(), this.localNode.getHexId()) && !isBanned(n))
                         .forEach(node -> this.bootNodes.add(node.getAddress()));
                 this.startConversationWithNewNodes();
             }
@@ -373,5 +384,17 @@ public class PeerExplorer {
     @VisibleForTesting
     public NodeChallengeManager getChallengeManager() {
         return challengeManager;
+    }
+
+    private boolean isBanned(Node node) {
+        InetAddress address;
+        try {
+            address = InetAddress.getByName(node.getHost());
+        } catch (UnknownHostException e) {
+            logger.error("Invalid node host: {}", node.getHost(), e);
+            address = null;
+        }
+
+        return address != null && this.peerScoringManager.isAddressBanned(address) || this.peerScoringManager.isNodeIDBanned(node.getId());
     }
 }

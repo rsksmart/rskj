@@ -805,7 +805,9 @@ public class NodeMessageHandlerTest {
                 PeerScoring::new,
                 1000,
                 new PunishmentParameters(600000, 10, 10000000),
-                new PunishmentParameters(600000, 10, 10000000)
+                new PunishmentParameters(600000, 10, 10000000),
+                Collections.emptyList(),
+                Collections.emptyList()
         );
     }
 }

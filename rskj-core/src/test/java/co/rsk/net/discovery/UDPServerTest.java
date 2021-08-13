@@ -20,6 +20,7 @@ package co.rsk.net.discovery;
 
 import co.rsk.net.discovery.table.KademliaOptions;
 import co.rsk.net.discovery.table.NodeDistanceTable;
+import co.rsk.scoring.PeerScoringManager;
 import org.apache.commons.lang3.StringUtils;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.ECKey;
@@ -32,6 +33,8 @@ import org.powermock.reflect.Whitebox;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+
+import static org.mockito.Mockito.mock;
 
 /**
  * Created by mario on 15/02/17.
@@ -89,9 +92,9 @@ public class UDPServerTest {
         NodeDistanceTable distanceTable2 = new NodeDistanceTable(KademliaOptions.BINS, KademliaOptions.BUCKET_SIZE, node2);
         NodeDistanceTable distanceTable3 = new NodeDistanceTable(KademliaOptions.BINS, KademliaOptions.BUCKET_SIZE, node3);
 
-        PeerExplorer peerExplorer1 = new PeerExplorer(node1BootNode, node1, distanceTable1, key1, TIMEOUT, UPDATE, CLEAN, NETWORK_ID);
-        PeerExplorer peerExplorer2 = new PeerExplorer(node2BootNode, node2, distanceTable2, key2, TIMEOUT, UPDATE, CLEAN, NETWORK_ID);
-        PeerExplorer peerExplorer3 = new PeerExplorer(node3BootNode, node3, distanceTable3, key3, TIMEOUT, UPDATE, CLEAN, NETWORK_ID);
+        PeerExplorer peerExplorer1 = new PeerExplorer(node1BootNode, node1, distanceTable1, key1, TIMEOUT, UPDATE, CLEAN, NETWORK_ID, mock(PeerScoringManager.class));
+        PeerExplorer peerExplorer2 = new PeerExplorer(node2BootNode, node2, distanceTable2, key2, TIMEOUT, UPDATE, CLEAN, NETWORK_ID, mock(PeerScoringManager.class));
+        PeerExplorer peerExplorer3 = new PeerExplorer(node3BootNode, node3, distanceTable3, key3, TIMEOUT, UPDATE, CLEAN, NETWORK_ID, mock(PeerScoringManager.class));
 
         Assert.assertEquals(0, peerExplorer1.getNodes().size());
         Assert.assertEquals(0, peerExplorer2.getNodes().size());

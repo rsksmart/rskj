@@ -18,6 +18,7 @@
 
 package co.rsk.net;
 
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.util.ByteUtil;
 
 import javax.annotation.Nonnull;
@@ -29,6 +30,11 @@ import java.util.Arrays;
 public class NodeID {
 
     private final byte[] nodeID;
+
+    @Nonnull
+    public static NodeID ofHexString(@Nonnull String nodeIDHexString) {
+        return new NodeID(Hex.decode(nodeIDHexString));
+    }
 
     public NodeID(@Nonnull final byte[] nodeID) {
         this.nodeID = nodeID;

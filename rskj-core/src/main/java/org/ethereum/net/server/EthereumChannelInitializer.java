@@ -99,6 +99,11 @@ public class EthereumChannelInitializer extends ChannelInitializer<NioSocketChan
                     logger.info("IP range is full, IP {} is not accepted for new connection", address);
                     ch.disconnect();
                     return;
+                } else if (peerScoringManager.isAddressBanned(address)) {
+                    // avoid connections to banned addresses
+                    logger.info("Drop connection - the address is banned, channel: {}", address);
+                    ch.disconnect();
+                    return;
                 }
             }
 

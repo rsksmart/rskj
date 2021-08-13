@@ -204,16 +204,16 @@ public abstract class SystemProperties {
         return configFromFiles.hasPath("peer.discovery.ip.list") ? configFromFiles.getStringList("peer.discovery.ip.list") : new ArrayList<>();
     }
 
-    public List<String> blockedPeerIPList() {
-        return configFromFiles.hasPath("peer.blockedPeerIPs") ? configFromFiles.getStringList("peer.blockedPeerIPs") : new ArrayList<>();
+    public List<String> bannedPeerIPList() {
+        return configFromFiles.hasPath("peer.bannedPeerIPs") ? configFromFiles.getStringList("peer.bannedPeerIPs") : new ArrayList<>();
     }
 
-    public List<String> blockedPeerIDList() {
-        return configFromFiles.hasPath("peer.blockedPeerIDs") ? configFromFiles.getStringList("peer.blockedPeerIDs") : new ArrayList<>();
+    public List<String> bannedPeerIDList() {
+        return configFromFiles.hasPath("peer.bannedPeerIDs") ? configFromFiles.getStringList("peer.bannedPeerIDs") : new ArrayList<>();
     }
 
-    public List<String> blockedMinerList() {
-        return configFromFiles.hasPath("peer.blockedMiners") ? configFromFiles.getStringList("peer.blockedMiners") : new ArrayList<>();
+    public List<String> bannedMinerList() {
+        return configFromFiles.hasPath("peer.bannedMiners") ? configFromFiles.getStringList("peer.bannedMiners") : new ArrayList<>();
     }
 
     public boolean databaseReset() {

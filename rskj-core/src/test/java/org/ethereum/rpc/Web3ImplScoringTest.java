@@ -46,6 +46,7 @@ import org.junit.Test;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.Collections;
 import java.util.Random;
 
 /**
@@ -410,7 +411,9 @@ public class Web3ImplScoringTest {
                 PeerScoring::new,
                 100,
                 new PunishmentParameters(10, 10, 1000),
-                new PunishmentParameters(10, 10, 1000)
+                new PunishmentParameters(10, 10, 1000),
+                Collections.emptyList(),
+                Collections.emptyList()
         );
     }
 }
