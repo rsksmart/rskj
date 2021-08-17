@@ -7,6 +7,7 @@ import org.junit.Test;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
@@ -16,7 +17,44 @@ import java.util.concurrent.TimeUnit;
  * Created by ajlopez on 28/06/2017.
  */
 public class PeerScoringManagerTest {
-    private static Random random = new Random();
+
+    private final Random random = new Random(111);
+
+    @Test
+    public void isAddressBanned_NoBannedPeers_ShouldNotBeBanned() throws UnknownHostException {
+        InetAddress address = generateIPAddressV4();
+        PeerScoringManager manager = createPeerScoringManager();
+
+        Assert.assertFalse(manager.isAddressBanned(address));
+        Assert.assertTrue(manager.hasGoodReputation(address));
+    }
+
+    @Test
+    public void isAddressBanned_AddressIsBanned_ShouldBeBannedWithBadReputation() throws UnknownHostException {
+        InetAddress address = generateIPAddressV4();
+        PeerScoringManager manager = createPeerScoringManager(100, Collections.singleton(address.getHostAddress()), Collections.emptyList());
+
+        Assert.assertTrue(manager.isAddressBanned(address));
+        Assert.assertFalse(manager.hasGoodReputation(address));
+    }
+
+    @Test
+    public void isNodeIDBanned_NoBannedPeers_ShouldNotBeBanned() {
+        NodeID id = generateNodeID();
+        PeerScoringManager manager = createPeerScoringManager();
+
+        Assert.assertFalse(manager.isNodeIDBanned(id));
+        Assert.assertTrue(manager.hasGoodReputation(id));
+    }
+
+    @Test
+    public void isNodeIDBanned_NodeIDIsBanned_ShouldBeBannedWithBadReputation() {
+        NodeID id = generateNodeID();
+        PeerScoringManager manager = createPeerScoringManager(100, Collections.emptyList(), Collections.singleton(ByteUtil.toHexString(id.getID())));
+
+        Assert.assertTrue(manager.isNodeIDBanned(id));
+        Assert.assertFalse(manager.hasGoodReputation(id));
+    }
 
     @Test
     public void getEmptyNodeStatusFromUnknownNodeId() {
@@ -395,7 +433,7 @@ public class PeerScoringManagerTest {
         Assert.assertTrue(info.getScore() > 0);
     }
 
-    private static NodeID generateNodeID() {
+    private NodeID generateNodeID() {
         byte[] bytes = new byte[32];
 
         random.nextBytes(bytes);
@@ -403,7 +441,7 @@ public class PeerScoringManagerTest {
         return new NodeID(bytes);
     }
 
-    private static InetAddress generateIPAddressV4() throws UnknownHostException {
+    private InetAddress generateIPAddressV4() throws UnknownHostException {
         byte[] bytes = new byte[4];
 
         random.nextBytes(bytes);
@@ -411,7 +449,7 @@ public class PeerScoringManagerTest {
         return InetAddress.getByAddress(bytes);
     }
 
-    private static InetAddress generateIPAddressV6() throws UnknownHostException {
+    private InetAddress generateIPAddressV6() throws UnknownHostException {
         byte[] bytes = new byte[16];
 
         random.nextBytes(bytes);
@@ -424,13 +462,21 @@ public class PeerScoringManagerTest {
     }
 
     private static PeerScoringManager createPeerScoringManager(int nnodes) {
+        return createPeerScoringManager(nnodes,
+                Collections.emptyList(),
+                Collections.emptyList());
+    }
+
+    private static PeerScoringManager createPeerScoringManager(int nnodes,
+                                                               Collection<String> bannedPeerIPs,
+                                                               Collection<String> bannedPeerIDs) {
         return new PeerScoringManager(
                 PeerScoring::new,
                 nnodes,
                 new PunishmentParameters(10, 10, 1000),
                 new PunishmentParameters(10, 10, 1000),
-                Collections.emptyList(),
-                Collections.emptyList()
+                bannedPeerIPs,
+                bannedPeerIDs
         );
     }
 }

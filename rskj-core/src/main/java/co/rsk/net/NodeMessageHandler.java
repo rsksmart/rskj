@@ -144,7 +144,7 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
 
     private void tryAddMessage(Peer sender, Message message) {
         if (!this.bannedMiners.isEmpty() && message.getMessageType() == MessageType.BLOCK_MESSAGE) {
-            RskAddress miner = ((BlockMessage) message).getBlock().getHeader().getCoinbase();
+            RskAddress miner = ((BlockMessage) message).getBlock().getCoinbase();
             if (this.bannedMiners.contains(miner)) {
                 logger.trace("Received block mined by banned miner {} from peer {}, not added to the queue", miner, sender);
                 return;

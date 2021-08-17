@@ -19,8 +19,10 @@
 package co.rsk.net;
 
 import co.rsk.blockchain.utils.BlockGenerator;
+import co.rsk.config.RskSystemProperties;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.BlockDifficulty;
+import co.rsk.core.RskAddress;
 import co.rsk.core.bc.ConsensusValidationMainchainView;
 import co.rsk.crypto.Keccak256;
 import co.rsk.net.messages.*;
@@ -179,6 +181,49 @@ public class NodeMessageHandlerTest {
         Assert.assertNotNull(sbp.getBlocks());
         Assert.assertEquals(1, sbp.getBlocks().size());
         Assert.assertSame(block, sbp.getBlocks().get(0));
+    }
+
+    @Test
+    public void postBlockMessageFromBannedMiner() {
+        RskSystemProperties config = spy(this.config);
+        Peer sender = new SimplePeer();
+        PeerScoringManager scoring = createPeerScoringManager();
+        SimpleBlockProcessor sbp = new SimpleBlockProcessor();
+        Block block = new BlockChainBuilder().ofSize(1, true).getBestBlock();
+        Message message = new BlockMessage(block);
+
+        RskAddress bannedMiner = block.getCoinbase();
+        doReturn(Collections.singletonList(bannedMiner.toHexString())).when(config).bannedMinerList();
+
+        NodeMessageHandler nodeMessageHandler = new NodeMessageHandler(config, sbp, null, null, null, scoring,
+                mock(StatusResolver.class));
+
+        nodeMessageHandler.postMessage(sender, message);
+
+        Assert.assertEquals(0, nodeMessageHandler.getMessageQueueSize());
+    }
+
+    @Test
+    public void postBlockMessageFromNonBannedMiner() {
+        RskSystemProperties config = spy(this.config);
+        Peer sender = new SimplePeer();
+        PeerScoringManager scoring = createPeerScoringManager();
+        SimpleBlockProcessor sbp = new SimpleBlockProcessor();
+        Block block = new BlockChainBuilder().ofSize(1, true).getBestBlock();
+        Message message = new BlockMessage(block);
+
+        RskAddress coinbase = block.getCoinbase();
+        RskAddress bannedMiner = new RskAddress("0000000000000000000000000000000000000023");
+        Assert.assertNotEquals(coinbase, bannedMiner);
+
+        doReturn(Collections.singletonList(bannedMiner.toHexString())).when(config).bannedMinerList();
+
+        NodeMessageHandler nodeMessageHandler = new NodeMessageHandler(config, sbp, null, null, null, scoring,
+                mock(StatusResolver.class));
+
+        nodeMessageHandler.postMessage(sender, message);
+
+        Assert.assertEquals(1, nodeMessageHandler.getMessageQueueSize());
     }
 
     // TODO: Difficulty in RegTest is so small that this test will sometimes pass and other times fail

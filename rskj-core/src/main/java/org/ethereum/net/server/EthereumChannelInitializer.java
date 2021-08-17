@@ -131,7 +131,6 @@ public class EthereumChannelInitializer extends ChannelInitializer<NioSocketChan
 
             // be aware of channel closing
             ch.closeFuture().addListener(future -> channelManager.notifyDisconnect(channel));
-
         } catch (Exception e) {
             logger.error("Unexpected error: ", e);
         }
