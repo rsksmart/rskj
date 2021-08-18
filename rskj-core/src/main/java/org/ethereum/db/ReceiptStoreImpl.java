@@ -65,17 +65,6 @@ public class ReceiptStoreImpl implements ReceiptStore {
     }
 
     @Override
-    public TransactionInfo get(byte[] transactionHash){
-        List<TransactionInfo> txs = getAll(transactionHash);
-
-        if (txs.isEmpty()) {
-            return null;
-        }
-
-        return txs.get(txs.size() - 1);
-    }
-
-    @Override
     public Optional<TransactionInfo> get(Keccak256 transactionHash, Keccak256 blockHash) {
         // it is not guaranteed that there will be only one matching TransactionInfo, but if there were more than one,
         // they would be exactly the same

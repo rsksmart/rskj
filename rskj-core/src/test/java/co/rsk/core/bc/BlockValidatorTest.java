@@ -743,7 +743,6 @@ public class BlockValidatorTest {
         Assert.assertTrue(validator.isValid(block));
     }
 
-
     @Test
     public void blockInTheFutureIsAcceptedWhenValidPeriodIsZero() {
         BlockGenerator blockGenerator = new BlockGenerator();

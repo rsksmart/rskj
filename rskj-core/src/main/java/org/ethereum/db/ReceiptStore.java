@@ -34,8 +34,6 @@ public interface ReceiptStore {
 
     void add(byte[] blockHash, int transactionIndex, TransactionReceipt receipt);
 
-    TransactionInfo get(byte[] transactionHash);
-
     Optional<TransactionInfo> get(Keccak256 transactionHash, Keccak256 blockHash);
 
     TransactionInfo getInMainChain(byte[] transactionHash, BlockStore store);
