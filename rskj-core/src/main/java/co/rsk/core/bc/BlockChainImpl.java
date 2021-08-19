@@ -433,7 +433,7 @@ public class BlockChainImpl implements Blockchain {
      */
     @Override
     public TransactionInfo getTransactionInfo(byte[] hash) {
-        TransactionInfo txInfo = receiptStore.get(hash);
+        TransactionInfo txInfo = receiptStore.getInMainChain(hash, blockStore);
 
         if (txInfo == null) {
             return null;

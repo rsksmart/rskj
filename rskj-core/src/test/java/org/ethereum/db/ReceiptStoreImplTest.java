@@ -22,6 +22,7 @@ package org.ethereum.db;
 import co.rsk.crypto.Keccak256;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.TestUtils;
+import org.ethereum.core.Block;
 import org.ethereum.core.Bloom;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionReceipt;
@@ -34,30 +35,44 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+
 /**
  * Created by ajlopez on 3/1/2016.
  */
 public class ReceiptStoreImplTest {
+
     @Test
     public void getUnknownKey() {
+        BlockStore blockStore = mock(BlockStore.class);
+
         ReceiptStore store = new ReceiptStoreImpl(new HashMapDB());
         byte[] key = new byte[]{0x01, 0x02};
 
-        TransactionInfo result = store.get(key);
+        TransactionInfo result = store.getInMainChain(key, blockStore);
 
         Assert.assertNull(result);
     }
 
     @Test
     public void addAndGetTransaction() {
+        byte[] blockHash = Hex.decode("ee5c851e70650111887bb6c04e18ef4353391abe37846234c17895a9ca2b33d5");
+        Block block = mock(Block.class);
+        doReturn(new Keccak256(blockHash)).when(block).getHash();
+        BlockStore blockStore = mock(BlockStore.class);
+        doReturn(block).when(blockStore).getBlockByHash(any());
+        doReturn(block).when(blockStore).getChainBlockByNumber(anyLong());
+
         ReceiptStore store = new ReceiptStoreImpl(new HashMapDB());
 
         TransactionReceipt receipt = createReceipt();
-        byte[] blockHash = Hex.decode("0102030405060708");
 
         store.add(blockHash, 42, receipt);
 
-        TransactionInfo result = store.get(receipt.getTransaction().getHash().getBytes());
+        TransactionInfo result = store.getInMainChain(receipt.getTransaction().getHash().getBytes(), blockStore);
 
         Assert.assertNotNull(result);
         Assert.assertNotNull(result.getBlockHash());
@@ -68,14 +83,20 @@ public class ReceiptStoreImplTest {
 
     @Test
     public void addAndGetTransactionWith128AsIndex() {
+        byte[] blockHash = Hex.decode("ee5c851e70650111887bb6c04e18ef4353391abe37846234c17895a9ca2b33d5");
+        Block block = mock(Block.class);
+        doReturn(new Keccak256(blockHash)).when(block).getHash();
+        BlockStore blockStore = mock(BlockStore.class);
+        doReturn(block).when(blockStore).getBlockByHash(any());
+        doReturn(block).when(blockStore).getChainBlockByNumber(anyLong());
+
         ReceiptStore store = new ReceiptStoreImpl(new HashMapDB());
 
         TransactionReceipt receipt = createReceipt();
-        byte[] blockHash = Hex.decode("0102030405060708");
 
         store.add(blockHash, 128, receipt);
 
-        TransactionInfo result = store.get(receipt.getTransaction().getHash().getBytes());
+        TransactionInfo result = store.getInMainChain(receipt.getTransaction().getHash().getBytes(), blockStore);
 
         Assert.assertNotNull(result);
         Assert.assertNotNull(result.getBlockHash());
@@ -86,14 +107,20 @@ public class ReceiptStoreImplTest {
 
     @Test
     public void addAndGetTransactionWith238AsIndex() {
+        byte[] blockHash = Hex.decode("ee5c851e70650111887bb6c04e18ef4353391abe37846234c17895a9ca2b33d5");
+        Block block = mock(Block.class);
+        doReturn(new Keccak256(blockHash)).when(block).getHash();
+        BlockStore blockStore = mock(BlockStore.class);
+        doReturn(block).when(blockStore).getBlockByHash(any());
+        doReturn(block).when(blockStore).getChainBlockByNumber(anyLong());
+
         ReceiptStore store = new ReceiptStoreImpl(new HashMapDB());
 
         TransactionReceipt receipt = createReceipt();
-        byte[] blockHash = Hex.decode("0102030405060708");
 
         store.add(blockHash, 238, receipt);
 
-        TransactionInfo result = store.get(receipt.getTransaction().getHash().getBytes());
+        TransactionInfo result = store.getInMainChain(receipt.getTransaction().getHash().getBytes(), blockStore);
 
         Assert.assertNotNull(result);
         Assert.assertNotNull(result.getBlockHash());
@@ -103,7 +130,14 @@ public class ReceiptStoreImplTest {
     }
 
     @Test
-    public void addTwoTransactionsAndGetLastTransaction() {
+    public void addTwoTransactionsAndGetTransactionInMainChain() {
+        byte[] blockHash = Hex.decode("ee5c851e70650111887bb6c04e18ef4353391abe37846234c17895a9ca2b33d5");
+        Block block = mock(Block.class);
+        doReturn(new Keccak256(blockHash)).when(block).getHash();
+        BlockStore blockStore = mock(BlockStore.class);
+        doReturn(block).when(blockStore).getBlockByHash(any());
+        doReturn(block).when(blockStore).getChainBlockByNumber(anyLong());
+
         ReceiptStore store = new ReceiptStoreImpl(new HashMapDB());
 
         TransactionReceipt receipt0 = createReceipt();
@@ -112,11 +146,10 @@ public class ReceiptStoreImplTest {
         store.add(blockHash0, 3, receipt0);
 
         TransactionReceipt receipt = createReceipt();
-        byte[] blockHash = Hex.decode("0102030405060708");
 
         store.add(blockHash, 42, receipt);
 
-        TransactionInfo result = store.get(receipt.getTransaction().getHash().getBytes());
+        TransactionInfo result = store.getInMainChain(receipt.getTransaction().getHash().getBytes(), blockStore);
 
         Assert.assertNotNull(result);
         Assert.assertNotNull(result.getBlockHash());
