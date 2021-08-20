@@ -41,6 +41,7 @@ public interface Web3 extends InternalService, Web3TxPoolModule, Web3EthModule, 
         public String value;
         public String data; // compiledCode
         public String nonce;
+        public String type; //NOSONAR
 
         @Override
         public String toString() {
@@ -52,6 +53,7 @@ public interface Web3 extends InternalService, Web3TxPoolModule, Web3EthModule, 
                     ", value='" + value + '\'' +
                     ", data='" + data + '\'' +
                     ", nonce='" + nonce + '\'' +
+                    ", type='" + type + '\'' +
                     '}';
         }
     }
