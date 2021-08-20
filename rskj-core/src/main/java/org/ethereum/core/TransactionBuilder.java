@@ -131,7 +131,7 @@ public final class TransactionBuilder {
 		return this.data(data == null ? null : Hex.decode(data));
 	}
 
-	public TransactionBuilder from(TransactionArguments args) {
+	public TransactionBuilder withTransactionArguments(TransactionArguments args) {
 
 		nonce(args.getNonce());
 		gasPrice(args.getGasPrice());

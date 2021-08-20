@@ -31,6 +31,11 @@ import org.ethereum.rpc.TypeConverter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+
+import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
 
 
 public class BlockResultDTO {
@@ -60,7 +65,7 @@ public class BlockResultDTO {
     private final String paidFees;
     private final String cumulativeDifficulty;
 
-    public BlockResultDTO(
+    private BlockResultDTO(
             Long number,
             Keccak256 hash,
             Keccak256 parentHash,
@@ -117,7 +122,7 @@ public class BlockResultDTO {
         this.paidFees = paidFees != null ? TypeConverter.toQuantityJsonHex(paidFees.getBytes()) : null;
     }
 
-    public static BlockResultDTO fromBlock(Block b, boolean fullTx, BlockStore blockStore) {
+    public static BlockResultDTO fromBlock(Block b, boolean fullTx, BlockStore blockStore, boolean skipRemasc) {
         if (b == null) {
             return null;
         }
@@ -127,17 +132,12 @@ public class BlockResultDTO {
 
         Coin mgp = b.getMinimumGasPrice();
 
-        List<Object> transactions = new ArrayList<>();
         List<Transaction> blockTransactions = b.getTransactionsList();
-        if (fullTx) {
-            for (int i = 0; i < blockTransactions.size(); i++) {
-                transactions.add(new TransactionResultDTO(b, i, blockTransactions.get(i)));
-            }
-        } else {
-            for (Transaction tx : blockTransactions) {
-                transactions.add(tx.getHash().toJsonString());
-            }
-        }
+        // For full tx will present as TransactionResultDTO otherwise just as transaction hash
+        List<Object> transactions = IntStream.range(0, blockTransactions.size())
+                .mapToObj(txIndex -> toTransactionResult(txIndex, b, fullTx, skipRemasc))
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
 
         List<String> uncles = new ArrayList<>();
 
@@ -145,13 +145,20 @@ public class BlockResultDTO {
             uncles.add(header.getHash().toJsonString());
         }
 
+        // Useful for geth integration
+        byte[] transactionsRoot = skipRemasc &&
+                b.getTransactionsList().size() == 1 &&
+                b.getTransactionsList().get(0).isRemascTransaction(0,1) ?
+                    EMPTY_TRIE_HASH :
+                    b.getTxTrieRoot();
+
         return new BlockResultDTO(
                 isPending ? null : b.getNumber(),
                 isPending ? null : b.getHash(),
                 b.getParentHash(),
                 b.getUnclesHash(),
                 isPending ? null : b.getLogBloom(),
-                b.getTxTrieRoot(),
+                transactionsRoot,
                 b.getStateRoot(),
                 b.getReceiptsRoot(),
                 isPending ? null : b.getCoinbase(),
@@ -172,6 +179,20 @@ public class BlockResultDTO {
                 b.getHashForMergedMining(),
                 b.getFeesPaidToMiner()
         );
+    }
+
+    private static Object toTransactionResult(int transactionIndex, Block block, boolean fullTx, boolean skipRemasc) {
+        Transaction transaction = block.getTransactionsList().get(transactionIndex);
+
+        if(skipRemasc && transaction.isRemascTransaction(transactionIndex, block.getTransactionsList().size())) {
+            return null;
+        }
+        
+        if(fullTx) {
+            return new TransactionResultDTO(block, transactionIndex, transaction);
+        }
+
+        return transaction.getHash().toJsonString();
     }
 
     public String getNumber() {

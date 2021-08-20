@@ -30,22 +30,20 @@ import org.ethereum.rpc.TypeConverter;
  */
 public class TransactionResultDTO {
 
-    public String hash;
-    public String nonce;
-    public String blockHash;
-    public String blockNumber;
-    public String transactionIndex;
-
-    public String from;
-    public String to;
-    public String gas;
-    public String gasPrice;
-    public String value;
-    public String input;
-
-    public String v;
-    public String r;
-    public String s;
+    private String hash;
+    private String nonce;
+    private String blockHash;
+    private String blockNumber;
+    private String transactionIndex;
+    private String from;
+    private String to;
+    private String gas;
+    private String gasPrice;
+    private String value;
+    private String input;
+    private String v;
+    private String r;
+    private String s;
 
     public TransactionResultDTO(Block b, Integer index, Transaction tx) {
         hash = tx.getHash().toJsonString();
@@ -59,7 +57,7 @@ public class TransactionResultDTO {
         from = tx.getSender().toJsonString();
         to = tx.getReceiveAddress().toJsonString();
         gas = TypeConverter.toQuantityJsonHex(tx.getGasLimit());
-        
+
         gasPrice = TypeConverter.toQuantityJsonHex(tx.getGasPrice().getBytes());
 
         if (Coin.ZERO.equals(tx.getValue())) {
@@ -79,4 +77,61 @@ public class TransactionResultDTO {
             s = TypeConverter.toQuantityJsonHex(signature.getS());
         }
     }
+
+    public String getHash() {
+        return hash;
+    }
+
+    public String getNonce() {
+        return nonce;
+    }
+
+    public String getBlockHash() {
+        return blockHash;
+    }
+
+    public String getBlockNumber() {
+        return blockNumber;
+    }
+
+    public String getTransactionIndex() {
+        return transactionIndex;
+    }
+
+    public String getFrom() {
+        return from;
+    }
+
+    public String getTo() {
+        return to;
+    }
+
+    public String getGas() {
+        return gas;
+    }
+
+    public String getGasPrice() {
+        return gasPrice;
+    }
+
+    public String getValue() {
+        return value;
+    }
+
+    public String getInput() {
+        return input;
+    }
+
+    public String getV() {
+        return v;
+    }
+
+    public String getR() {
+        return r;
+    }
+
+    public String getS() {
+        return s;
+    }
+
 }

@@ -532,7 +532,7 @@ public class Web3Impl implements Web3 {
     }
 
     public BlockResultDTO getBlockResult(Block b, boolean fullTx) {
-        return BlockResultDTO.fromBlock(b, fullTx, this.blockStore);
+        return BlockResultDTO.fromBlock(b, fullTx, this.blockStore, config.skipRemasc());
     }
 
     public BlockInformationResult[] eth_getBlocksByNumber(String number) {

@@ -43,10 +43,10 @@ public class TransactionResultDTOTest {
         RemascTransaction remascTransaction = new RemascTransaction(new Random().nextLong());
 
         TransactionResultDTO dto = new TransactionResultDTO(mock(Block.class), 42, remascTransaction);
-        assertThat(dto.from, is("0x0000000000000000000000000000000000000000"));
-        assertThat(dto.r, is(nullValue()));
-        assertThat(dto.s, is(nullValue()));
-        assertThat(dto.v, is(nullValue()));
+        assertThat(dto.getFrom(), is("0x0000000000000000000000000000000000000000"));
+        assertThat(dto.getR(), is(nullValue()));
+        assertThat(dto.getS(), is(nullValue()));
+        assertThat(dto.getV(), is(nullValue()));
     }
 
     @Test
@@ -60,13 +60,13 @@ public class TransactionResultDTOTest {
 
         TransactionResultDTO dto = new TransactionResultDTO(mock(Block.class), 42, originalTransaction);
 
-        Assert.assertNotNull(dto.r);
-        Assert.assertNotNull(dto.s);
-        Assert.assertNotNull(dto.v);
+        Assert.assertNotNull(dto.getR());
+        Assert.assertNotNull(dto.getS());
+        Assert.assertNotNull(dto.getV());
 
         String expectedV = String.format("0x%02x", originalTransaction.getSignature().getV() - Transaction.LOWER_REAL_V + Transaction.CHAIN_ID_INC + chainId * 2);
 
-        Assert.assertEquals(expectedV, dto.v);
+        Assert.assertEquals(expectedV, dto.getV());
     }
 
     @Test
@@ -80,8 +80,8 @@ public class TransactionResultDTOTest {
 
         TransactionResultDTO dto = new TransactionResultDTO(mock(Block.class), 42, originalTransaction);
 
-        Assert.assertNotNull(dto.nonce);
-        Assert.assertEquals("0x0", dto.nonce);
+        Assert.assertNotNull(dto.getNonce());
+        Assert.assertEquals("0x0", dto.getNonce());
     }
 
     @Test
@@ -95,8 +95,8 @@ public class TransactionResultDTOTest {
 
         TransactionResultDTO dto = new TransactionResultDTO(mock(Block.class), 42, originalTransaction);
 
-        Assert.assertNotNull(dto.nonce);
-        Assert.assertEquals("0x1", dto.nonce);
+        Assert.assertNotNull(dto.getNonce());
+        Assert.assertEquals("0x1", dto.getNonce());
     }
 }
 

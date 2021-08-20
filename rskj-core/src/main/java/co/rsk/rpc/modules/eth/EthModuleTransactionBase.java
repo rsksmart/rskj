@@ -66,7 +66,7 @@ public class EthModuleTransactionBase implements EthModuleTransaction {
 
 				TransactionArguments txArgs = TransactionArgumentsUtil.processArguments(args, transactionPool, senderAccount, constants.getChainId());
 
-				Transaction tx = Transaction.builder().from(txArgs).build();
+				Transaction tx = Transaction.builder().withTransactionArguments(txArgs).build();
 
 				tx.sign(senderAccount.getEcKey().getPrivKeyBytes());
 

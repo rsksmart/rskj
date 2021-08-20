@@ -23,9 +23,12 @@ import org.ethereum.config.Constants;
 import org.ethereum.core.Account;
 import org.ethereum.core.ImmutableTransaction;
 import org.ethereum.core.Transaction;
+import org.ethereum.crypto.ECKey;
+import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.util.ByteUtil;
 
 import java.math.BigInteger;
+import java.util.Random;
 
 /**
  * Created by ajlopez on 8/6/2016.
@@ -93,21 +96,53 @@ public class TransactionBuilder {
 
     public Transaction build() {
         final String to = receiver != null ? ByteUtil.toHexString(receiver.getAddress().getBytes()) : (receiverAddress != null ? ByteUtil.toHexString(receiverAddress) : null);
+        BigInteger nonce = this.nonce;
+        BigInteger gasLimit = this.gasLimit;
+        BigInteger gasPrice = this.gasPrice;
+        byte chainId = Constants.REGTEST_CHAIN_ID;
+        byte[] data = this.data;
+        BigInteger value = this.value;
+
+        return build(to, nonce, gasLimit, gasPrice, chainId, data, value, sender.getEcKey().getPrivKeyBytes(), this.immutable);
+    }
+
+    private Transaction build(String to, BigInteger nonce, BigInteger gasLimit, BigInteger gasPrice, byte chainId, byte[] data, BigInteger value, byte[] privKeyBytes, boolean immutable) {
         Transaction tx = Transaction.builder()
                 .destination(to)
                 .nonce(nonce)
                 .gasLimit(gasLimit)
                 .gasPrice(gasPrice)
-                .chainId(Constants.REGTEST_CHAIN_ID)
+                .chainId(chainId)
                 .data(data)
                 .value(value)
                 .build();
-        tx.sign(sender.getEcKey().getPrivKeyBytes());
+        tx.sign(privKeyBytes);
 
-        if (this.immutable) {
+        if (immutable) {
             return new ImmutableTransaction(tx.getEncoded());
         }
 
         return tx;
+    }
+
+    /**
+     * Generates a random transaction
+     * */
+    public Transaction buildRandomTransaction() {
+        int i = new Random().nextInt();
+        BigInteger randomPositiveVal = i > 0 ?  BigInteger.valueOf(i) : BigInteger.valueOf(i * -1);
+
+        Account receiver = new AccountBuilder().name("account" + randomPositiveVal).build();
+
+        String to = receiver.getAddress().toHexString();
+        BigInteger nonce = randomPositiveVal;
+        BigInteger gasLimit = randomPositiveVal;
+        BigInteger gasPrice = randomPositiveVal;
+        byte chainId = Constants.REGTEST_CHAIN_ID; // should be a random valid one
+        byte[] data = randomPositiveVal.toByteArray();
+        BigInteger value = randomPositiveVal;
+        byte[] privateKey = ECKey.fromPrivate(randomPositiveVal).getPrivKeyBytes();
+
+        return build(to, nonce, gasLimit, gasPrice, chainId, data, value, privateKey, false);
     }
 }

@@ -18,8 +18,6 @@
 
 package co.rsk.core;
 
-import co.rsk.peg.BridgeEvents;
-import jdk.nashorn.internal.codegen.CompilerConstants;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.CallTransaction;
 import org.ethereum.solidity.SolidityType;

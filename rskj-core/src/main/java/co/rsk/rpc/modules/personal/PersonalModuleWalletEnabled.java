@@ -194,7 +194,7 @@ public class PersonalModuleWalletEnabled implements PersonalModule {
 
 		TransactionArguments txArgs = TransactionArgumentsUtil.processArguments(args, transactionPool, senderAccount, config.getNetworkConstants().getChainId());
 
-		Transaction tx = Transaction.builder().from(txArgs).build();
+		Transaction tx = Transaction.builder().withTransactionArguments(txArgs).build();
 
 		tx.sign(senderAccount.getEcKey().getPrivKeyBytes());
 
