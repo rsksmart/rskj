@@ -55,6 +55,8 @@ public class Web3WebSocketServerTest {
     private static JsonNodeFactory JSON_NODE_FACTORY = JsonNodeFactory.instance;
     private static ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     private static final int DEFAULT_WRITE_TIMEOUT_SECONDS = 30;
+    private static final int DEFAULT_MAX_FRAME_SIZE = 65536; // 64 kb
+    private static final int DEFAULT_MAX_AGGREGATED_FRAME_SIZE = 5242880; // 5 mb
 
     private ExecutorService wsExecutor;
 
@@ -65,6 +67,20 @@ public class Web3WebSocketServerTest {
 
     @Test
     public void smokeTest() throws Exception {
+        smokeTest(getJsonRpcDummyMessage("value"));
+    }
+
+    @Test
+    public void smokeTestWithBigJson() throws Exception {
+        smokeTest(getJsonRpcBigMessage());
+    }
+
+    @After
+    public void tearDown() {
+        wsExecutor.shutdown();
+    }
+
+    private void smokeTest(byte [] msg) throws Exception {
         Web3 web3Mock = mock(Web3.class);
         String mockResult = "output";
         when(web3Mock.web3_sha3(anyString())).thenReturn(mockResult);
@@ -77,15 +93,21 @@ public class Web3WebSocketServerTest {
         RskWebSocketJsonRpcHandler handler = new RskWebSocketJsonRpcHandler(null, new JacksonBasedRpcSerializer());
         JsonRpcWeb3ServerHandler serverHandler = new JsonRpcWeb3ServerHandler(web3Mock, filteredModules);
         int serverWriteTimeoutSeconds = testSystemProperties.rpcWebSocketServerWriteTimeoutSeconds();
+        int maxFrameSize = testSystemProperties.rpcWebSocketMaxFrameSize();
+        int maxAggregatedFrameSize = testSystemProperties.rpcWebSocketMaxAggregatedFrameSize();
 
         assertEquals(DEFAULT_WRITE_TIMEOUT_SECONDS, serverWriteTimeoutSeconds);
+        assertEquals(DEFAULT_MAX_FRAME_SIZE, maxFrameSize);
+        assertEquals(DEFAULT_MAX_AGGREGATED_FRAME_SIZE, maxAggregatedFrameSize);
 
         Web3WebSocketServer websocketServer = new Web3WebSocketServer(
                 InetAddress.getLoopbackAddress(),
                 randomPort,
                 handler,
                 serverHandler,
-                serverWriteTimeoutSeconds
+                serverWriteTimeoutSeconds,
+                maxFrameSize,
+                maxAggregatedFrameSize
         );
         websocketServer.start();
 
@@ -103,7 +125,7 @@ public class Web3WebSocketServerTest {
             @Override
             public void onOpen(WebSocket webSocket, Response response) {
                 wsExecutor.submit(() -> {
-                    RequestBody body = RequestBody.create(WebSocket.TEXT, getJsonRpcDummyMessage());
+                    RequestBody body = RequestBody.create(WebSocket.TEXT, msg);
                     try {
                         this.webSocket = webSocket;
                         this.webSocket.sendMessage(body);
@@ -154,17 +176,12 @@ public class Web3WebSocketServerTest {
         }
     }
 
-    @After
-    public void tearDown() {
-        wsExecutor.shutdown();
-    }
-
-    private byte[] getJsonRpcDummyMessage() {
+    private byte[] getJsonRpcDummyMessage(String value) {
         Map<String, JsonNode> jsonRpcRequestProperties = new HashMap<>();
         jsonRpcRequestProperties.put("jsonrpc", JSON_NODE_FACTORY.textNode("2.0"));
         jsonRpcRequestProperties.put("id", JSON_NODE_FACTORY.numberNode(13));
         jsonRpcRequestProperties.put("method", JSON_NODE_FACTORY.textNode("web3_sha3"));
-        jsonRpcRequestProperties.put("params", JSON_NODE_FACTORY.arrayNode().add("value"));
+        jsonRpcRequestProperties.put("params", JSON_NODE_FACTORY.arrayNode().add(value));
 
         byte[] request = new byte[0];
         try {
@@ -175,5 +192,13 @@ public class Web3WebSocketServerTest {
         }
         return request;
 
+    }
+
+    private byte[] getJsonRpcBigMessage() {
+        StringBuilder s = new StringBuilder();
+        for (int i = 0; i < 55; i++) {
+            s.append("thisisabigmessagethatwillbesentchunked");
+        }
+        return getJsonRpcDummyMessage(s.toString());
     }
 }
