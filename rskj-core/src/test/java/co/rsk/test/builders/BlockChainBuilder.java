@@ -168,7 +168,7 @@ public class BlockChainBuilder {
         if (stateRootHandler == null) {
             stateRootHandler = new StateRootHandler(config.getActivationConfig(), new StateRootsStoreImpl(new HashMapDB()));
         }
-        
+
         if (genesis == null) {
             genesis = new BlockGenerator().getGenesisBlock();
         }
@@ -228,7 +228,6 @@ public class BlockChainBuilder {
         BlockExecutor blockExecutor = new BlockExecutor(
                 config.getActivationConfig(),
                 repositoryLocator,
-                stateRootHandler,
                 transactionExecutorFactory
         );
         BlockChainImpl blockChain = new BlockChainLoader(

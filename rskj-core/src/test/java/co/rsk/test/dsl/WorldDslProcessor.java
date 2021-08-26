@@ -316,7 +316,6 @@ public class WorldDslProcessor {
             BlockExecutor executor = new BlockExecutor(
                     config.getActivationConfig(),
                     new RepositoryLocator(world.getTrieStore(), stateRootHandler),
-                    stateRootHandler,
                     new TransactionExecutorFactory(
                             config,
                             world.getBlockStore(),

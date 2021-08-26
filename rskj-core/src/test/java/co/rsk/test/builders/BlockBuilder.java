@@ -108,7 +108,6 @@ public class BlockBuilder {
             BlockExecutor executor = new BlockExecutor(
                     config.getActivationConfig(),
                     new RepositoryLocator(trieStore, stateRootHandler),
-                    stateRootHandler,
                     new TransactionExecutorFactory(
                             config,
                             blockStore,

@@ -155,7 +155,6 @@ public class World {
             this.blockExecutor = new BlockExecutor(
                     config.getActivationConfig(),
                     new RepositoryLocator(getTrieStore(), stateRootHandler),
-                    stateRootHandler,
                     new TransactionExecutorFactory(
                             config,
                             blockStore,

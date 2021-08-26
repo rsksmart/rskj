@@ -439,8 +439,6 @@ public class RemascStorageProviderTest {
 
         blocks.addAll(createSimpleBlocks(blocks.get(blocks.size()-1),10, coinbase));
 
-        StateRootHandler stateRootHandler = new StateRootHandler(config.getActivationConfig(), new StateRootsStoreImpl(new HashMapDB()));
-
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
                 new RepositoryBtcBlockStoreWithCache.Factory(
                         config.getNetworkConstants().getBridgeConstants().getBtcParams()),
@@ -449,7 +447,6 @@ public class RemascStorageProviderTest {
         BlockExecutor blockExecutor = new BlockExecutor(
                 config.getActivationConfig(),
                 repositoryLocator,
-                stateRootHandler,
                 new TransactionExecutorFactory(
                         config,
                         builder.getBlockStore(),

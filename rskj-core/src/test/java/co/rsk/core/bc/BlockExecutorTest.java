@@ -832,7 +832,6 @@ public class BlockExecutorTest {
         return new BlockExecutor(
                 config.getActivationConfig(),
                 new RepositoryLocator(store, stateRootHandler),
-                stateRootHandler,
                 new TransactionExecutorFactory(
                         config,
                         null,

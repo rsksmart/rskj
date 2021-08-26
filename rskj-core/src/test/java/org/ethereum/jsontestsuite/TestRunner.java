@@ -163,7 +163,6 @@ public class TestRunner {
                 new BlockExecutor(
                         config.getActivationConfig(),
                         new RepositoryLocator(trieStore, stateRootHandler),
-                        stateRootHandler,
                         transactionExecutorFactory
                 ),
                 stateRootHandler

@@ -433,7 +433,6 @@ public class RskContext implements NodeBootstrapper {
             blockExecutor = new BlockExecutor(
                     getRskSystemProperties().getActivationConfig(),
                     getRepositoryLocator(),
-                    getStateRootHandler(),
                     getTransactionExecutorFactory()
             );
         }

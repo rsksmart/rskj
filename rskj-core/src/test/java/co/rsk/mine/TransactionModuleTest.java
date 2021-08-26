@@ -143,7 +143,6 @@ public class TransactionModuleTest {
 
         MiningMainchainView mainchainView = new MiningMainchainViewImpl(world.getBlockStore(), 1);
 
-        StateRootHandler stateRootHandler = world.getStateRootHandler();
         RepositoryLocator repositoryLocator = world.getRepositoryLocator();
 
         BlockStore blockStore = world.getBlockStore();
@@ -151,7 +150,7 @@ public class TransactionModuleTest {
         TransactionPool transactionPool = world.getTransactionPool();
         TransactionGateway transactionGateway = new TransactionGateway(new SimpleChannelManager(), transactionPool);
 
-        Web3Impl web3 = createEnvironment(blockchain, mainchainView, receiptStore, transactionPool, blockStore, true, stateRootHandler, repositoryLocator, world.getBlockTxSignatureCache(), transactionGateway);
+        Web3Impl web3 = createEnvironment(blockchain, mainchainView, receiptStore, transactionPool, blockStore, true, repositoryLocator, world.getBlockTxSignatureCache(), transactionGateway);
 
         for (int i = 1; i < 100; i++) {
             String tx = sendTransaction(web3, repositoryLocator.snapshotAt(blockchain.getBestBlock().getHeader()));
@@ -296,13 +295,12 @@ public class TransactionModuleTest {
                 transactionPool,
                 blockStore,
                 mineInstant,
-                stateRootHandler,
                 new RepositoryLocator(store, stateRootHandler),
                 signatureCache,
                 transactionGateway);
     }
 
-    private Web3Impl createEnvironment(Blockchain blockchain, MiningMainchainView mainchainView, ReceiptStore receiptStore, TransactionPool transactionPool, BlockStore blockStore, boolean mineInstant, StateRootHandler stateRootHandler, RepositoryLocator repositoryLocator, BlockTxSignatureCache signatureCache, TransactionGateway transactionGateway) {
+    private Web3Impl createEnvironment(Blockchain blockchain, MiningMainchainView mainchainView, ReceiptStore receiptStore, TransactionPool transactionPool, BlockStore blockStore, boolean mineInstant, RepositoryLocator repositoryLocator, BlockTxSignatureCache signatureCache, TransactionGateway transactionGateway) {
         transactionPool.processBest(blockchain.getBestBlock());
 
         ConfigCapabilities configCapabilities = new SimpleConfigCapabilities();
@@ -329,7 +327,6 @@ public class TransactionModuleTest {
         BlockExecutor blockExecutor = new BlockExecutor(
                 config.getActivationConfig(),
                 repositoryLocator,
-                stateRootHandler,
                 transactionExecutorFactory
         );
 

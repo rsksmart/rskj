@@ -23,7 +23,6 @@ import co.rsk.core.RskAddress;
 import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositoryLocator;
-import co.rsk.db.StateRootHandler;
 import co.rsk.metrics.profilers.Metric;
 import co.rsk.metrics.profilers.Profiler;
 import co.rsk.metrics.profilers.ProfilerFactory;
@@ -58,7 +57,6 @@ public class BlockExecutor {
 
     private final RepositoryLocator repositoryLocator;
     private final TransactionExecutorFactory transactionExecutorFactory;
-    private final StateRootHandler stateRootHandler;
     private final ActivationConfig activationConfig;
 
     private final Map<Keccak256, ProgramResult> transactionResults = new HashMap<>();
@@ -67,11 +65,9 @@ public class BlockExecutor {
     public BlockExecutor(
             ActivationConfig activationConfig,
             RepositoryLocator repositoryLocator,
-            StateRootHandler stateRootHandler,
             TransactionExecutorFactory transactionExecutorFactory) {
         this.repositoryLocator = repositoryLocator;
         this.transactionExecutorFactory = transactionExecutorFactory;
-        this.stateRootHandler = stateRootHandler;
         this.activationConfig = activationConfig;
     }
 
