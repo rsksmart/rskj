@@ -70,8 +70,10 @@ public class BlockChainFlusherTest {
         verify(stateRootsStore).flush();
 
         verify(blockStore).close();
-        verify(blocksBloomStore).close();
+        verify(trieStore).dispose();
+        verify(receiptStore).close();
         verify(stateRootsStore).close();
+        verify(blocksBloomStore).close();
     }
 
     @Test

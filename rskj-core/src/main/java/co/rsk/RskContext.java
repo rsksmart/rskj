@@ -95,6 +95,7 @@ import org.ethereum.core.genesis.GenesisLoader;
 import org.ethereum.core.genesis.GenesisLoaderImpl;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.signature.Secp256k1;
+import org.ethereum.datasource.CacheSnapshotHandler;
 import org.ethereum.datasource.DataSourceWithCache;
 import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.datasource.LevelDbDataSource;
@@ -1033,10 +1034,10 @@ public class RskContext implements NodeBootstrapper {
         KeyValueDataSource ds = LevelDbDataSource.makeDataSource(trieStorePath);
 
         if (statesCacheSize != 0) {
-            Path cacheSnapshotPath = getRskSystemProperties().shouldPersistStatesCacheSnapshot()
-                    ? trieStorePath.resolve("cache")
+            CacheSnapshotHandler cacheSnapshotHandler = getRskSystemProperties().shouldPersistStatesCacheSnapshot()
+                    ? new CacheSnapshotHandler(trieStorePath.resolve("cache"))
                     : null;
-            ds = new DataSourceWithCache(ds, statesCacheSize, cacheSnapshotPath);
+            ds = new DataSourceWithCache(ds, statesCacheSize, cacheSnapshotHandler);
         }
 
         return new TrieStoreImpl(ds);

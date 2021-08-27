@@ -19,6 +19,7 @@ import static org.mockito.Mockito.*;
 public class DataSourceWithCacheTest {
 
     private static final int CACHE_SIZE = 15;
+
     private HashMapDB baseDataSource;
     private DataSourceWithCache dataSourceWithCache;
 
@@ -174,7 +175,7 @@ public class DataSourceWithCacheTest {
 
         assertThat(baseDataSource.get(randomKey), is(nullValue()));
     }
-    
+
     @Test
     public void deleteNonExistentCachedKey() {
         byte[] randomKey = TestUtils.randomBytes(20);
@@ -215,6 +216,24 @@ public class DataSourceWithCacheTest {
         for (ByteArrayWrapper removedKey : keysToBatchRemove) {
             assertThat(baseDataSource.get(removedKey.getData()), is(nullValue()));
         }
+    }
+
+    @Test
+    public void checkCacheSnapshotLoadTriggered() {
+        CacheSnapshotHandler cacheSnapshotHandler = mock(CacheSnapshotHandler.class);
+        new DataSourceWithCache(baseDataSource, CACHE_SIZE, cacheSnapshotHandler);
+
+        verify(cacheSnapshotHandler, atLeastOnce()).load(anyMap());
+    }
+
+    @Test
+    public void checkCacheSnapshotSaveTriggered() {
+        CacheSnapshotHandler cacheSnapshotHandler = mock(CacheSnapshotHandler.class);
+        DataSourceWithCache dataSourceWithCache = new DataSourceWithCache(baseDataSource, CACHE_SIZE, cacheSnapshotHandler);
+
+        dataSourceWithCache.close();
+
+        verify(cacheSnapshotHandler, atLeastOnce()).save(anyMap());
     }
 
     private Map<ByteArrayWrapper, byte[]> generateRandomValuesToUpdate(int maxValuesToCreate) {
