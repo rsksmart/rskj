@@ -90,9 +90,9 @@ public class BlockChainFlusher implements InternalService {
         blockStore.close();
         logger.trace("blockStore closed.");
 
-        logger.trace("closing trieStore.");
+        logger.trace("disposing trieStore.");
         trieStore.dispose();
-        logger.trace("trieStore closed.");
+        logger.trace("trieStore disposed.");
 
         logger.trace("closing receiptStore.");
         receiptStore.close();

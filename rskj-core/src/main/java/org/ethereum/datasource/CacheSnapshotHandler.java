@@ -54,12 +54,19 @@ public class CacheSnapshotHandler {
 
     public void load(@Nonnull Map<ByteArrayWrapper, byte[]> cache) {
         File cacheSnapshotFile = cacheSnapshotPath.toFile();
+        String relativePath = Optional.ofNullable(cacheSnapshotFile.getParentFile())
+                .map(File::getName)
+                .orElse("") + "/" + cacheSnapshotFile.getName();
+
         if (!cacheSnapshotFile.exists()) {
+            logger.info("Cache snapshot file '{}' not found. Returning empty cache", relativePath);
             return;
         }
 
         try (MapSnapshot.In inSnapshot = mapSnapshotFactory.makeInputSnapshot(new BufferedInputStream(new FileInputStream(cacheSnapshotFile)))) {
             inSnapshot.read(cache);
+
+            logger.info("Loaded {} cache entries from '{}'", cache.size(), relativePath);
         } catch (IOException e) {
             cache.clear();
             File errFile = cacheSnapshotPath.resolveSibling(cacheSnapshotPath.getFileName() + ".err").toFile();
