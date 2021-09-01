@@ -1,15 +1,25 @@
 package co.rsk.pcc.altBN128.impls;
 
 import co.rsk.altbn128.cloudflare.Utils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public abstract class AbstractAltBN128 {
+
+    private static final Logger logger = LoggerFactory.getLogger("altbn128");
+
     public static final int PAIR_SIZE = 192;
 
     protected byte[] output;
 
     public static AbstractAltBN128 init() {
         if (Utils.isLinux()) {
-            return new GoAltBN128();
+            Throwable loadError = GoAltBN128.getLoadError();
+            if (loadError == null) {
+                return new GoAltBN128();
+            }
+
+            logger.warn("Cannot load GoAltBN128 library due to '{}'. Falling back on JavaAltBN128", loadError.getMessage());
         }
         return new JavaAltBN128();
     }

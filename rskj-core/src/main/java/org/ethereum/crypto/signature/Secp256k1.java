@@ -34,14 +34,15 @@ import javax.annotation.Nullable;
  */
 public final class Secp256k1 {
 
+    private static final Logger logger = LoggerFactory.getLogger("secp256k1");
+
     private static final String NATIVE_LIB = "native";
-    private static final Logger logger = LoggerFactory.getLogger(Secp256k1.class);
 
     private static Secp256k1Service instance = new Secp256k1ServiceBC();
+
     private static boolean initialized = false;
 
-    private Secp256k1() {
-    }
+    private Secp256k1() { /* hidden */ }
 
     /**
      * <p> It should be called only once in Node Startup.</p>
@@ -63,10 +64,14 @@ public final class Secp256k1 {
             String cryptoLibrary = rskSystemProperties.cryptoLibrary();
             logger.debug("Trying to initialize Signature Service: {}.", cryptoLibrary);
             if (NATIVE_LIB.equals(cryptoLibrary)) {
-                if(Secp256k1Context.isEnabled()){
+                if(Secp256k1Context.isEnabled()) {
                     instance = new Secp256k1ServiceNative();
                     logger.debug("Native Service initialized.");
                 } else {
+                    Throwable loadError = Secp256k1Context.getLoadError();
+                    if (loadError != null) {
+                        logger.warn("Cannot load native library due to '{}'. Falling back on Bouncy Castle", loadError.getMessage());
+                    }
                     instance = new Secp256k1ServiceBC();
                     logger.debug("Signature Service {} not available, initialized Bouncy Castle.", cryptoLibrary);
                 }
