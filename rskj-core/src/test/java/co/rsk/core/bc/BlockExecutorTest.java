@@ -19,22 +19,20 @@
 package co.rsk.core.bc;
 
 import co.rsk.blockchain.utils.BlockGenerator;
+import co.rsk.config.RskSystemProperties;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.TransactionExecutorFactory;
-import co.rsk.db.MutableTrieImpl;
-import co.rsk.db.RepositoryLocator;
-import co.rsk.db.RepositorySnapshot;
-import co.rsk.db.StateRootHandler;
+import co.rsk.db.*;
 import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.peg.BtcBlockStoreWithCache.Factory;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
 import co.rsk.trie.Trie;
-import co.rsk.trie.TrieConverter;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
 import org.bouncycastle.util.BigIntegers;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
 import org.ethereum.crypto.ECKey;
@@ -57,17 +55,25 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.math.BigInteger;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP126;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.spy;
 
 /**
  * Created by ajlopez on 29/07/2016.
  */
 public class BlockExecutorTest {
-    public static final byte[] EMPTY_TRIE_HASH = sha3(RLP.encodeElement(EMPTY_BYTE_ARRAY));
-    private static final TestSystemProperties config = new TestSystemProperties();
-    private static final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
+    private static final byte[] EMPTY_TRIE_HASH = sha3(RLP.encodeElement(EMPTY_BYTE_ARRAY));
+    private static final TestSystemProperties CONFIG = new TestSystemProperties();
+    private static final BlockFactory BLOCK_FACTORY = new BlockFactory(CONFIG.getActivationConfig());
 
     private Blockchain blockchain;
     private BlockExecutor executor;
@@ -76,7 +82,7 @@ public class BlockExecutorTest {
 
     @Before
     public void setUp() {
-        RskTestFactory objects = new RskTestFactory(config);
+        RskTestFactory objects = new RskTestFactory(CONFIG);
         blockchain = objects.getBlockchain();
         executor = objects.getBlockExecutor();
         trieStore = objects.getTrieStore();
@@ -293,7 +299,7 @@ public class BlockExecutorTest {
                 .gasPrice(BigInteger.ONE)
                 .gasLimit(BigInteger.valueOf(21000))
                 .destination(account2.getAddress())
-                .chainId(config.getNetworkConstants().getChainId())
+                .chainId(CONFIG.getNetworkConstants().getChainId())
                 .value(BigInteger.TEN)
                 .build();
         tx3.sign(account.getEcKey().getPrivKeyBytes());
@@ -304,7 +310,7 @@ public class BlockExecutorTest {
                 .gasPrice(BigInteger.ONE)
                 .gasLimit(BigInteger.valueOf(21000))
                 .destination(account2.getAddress())
-                .chainId(config.getNetworkConstants().getChainId())
+                .chainId(CONFIG.getNetworkConstants().getChainId())
                 .value(BigInteger.TEN)
                 .build();
         tx1.sign(account3.getEcKey().getPrivKeyBytes());
@@ -356,7 +362,7 @@ public class BlockExecutorTest {
                 .gasPrice(BigInteger.ONE)
                 .gasLimit(BigInteger.valueOf(21000))
                 .destination(account2.getAddress())
-                .chainId(config.getNetworkConstants().getChainId())
+                .chainId(CONFIG.getNetworkConstants().getChainId())
                 .value(BigInteger.TEN)
                 .build();
         tx3.sign(account.getEcKey().getPrivKeyBytes());
@@ -367,7 +373,7 @@ public class BlockExecutorTest {
                 .gasPrice(BigInteger.ONE)
                 .gasLimit(BigInteger.valueOf(21000))
                 .destination(account2.getAddress())
-                .chainId(config.getNetworkConstants().getChainId())
+                .chainId(CONFIG.getNetworkConstants().getChainId())
                 .value(BigInteger.TEN)
                 .build();
         tx1.sign(account3.getEcKey().getPrivKeyBytes());
@@ -386,6 +392,50 @@ public class BlockExecutorTest {
         BlockResult result = executor.execute(block, genesis.getHeader(), false);
 
         Assert.assertSame(BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT, result);
+    }
+
+    @Test
+    public void validateStateRootWithRskip126DisabledAndValidStateRoot() {
+        TrieStore trieStore = new TrieStoreImpl(new HashMapDB());
+        Trie trie = new Trie(trieStore);
+
+        Block block = new BlockGenerator().getBlock(1);
+        block.setStateRoot(trie.getHash().getBytes());
+
+        BlockResult blockResult = new BlockResult(block, Collections.emptyList(), Collections.emptyList(), 0,
+                Coin.ZERO, trie);
+
+        RskSystemProperties cfg = spy(CONFIG);
+
+        ActivationConfig activationConfig = spy(cfg.getActivationConfig());
+        doReturn(false).when(activationConfig).isActive(eq(RSKIP126), anyLong());
+        doReturn(activationConfig).when(cfg).getActivationConfig();
+
+        BlockExecutor executor = buildBlockExecutor(trieStore, cfg);
+
+        Assert.assertTrue(executor.validateStateRoot(block.getHeader(), blockResult));
+    }
+
+    @Test
+    public void validateStateRootWithRskip126DisabledAndInvalidStateRoot() {
+        TrieStore trieStore = new TrieStoreImpl(new HashMapDB());
+        Trie trie = new Trie(trieStore);
+
+        Block block = new BlockGenerator().getBlock(1);
+        block.setStateRoot(new byte[] { 1, 2, 3, 4 });
+
+        BlockResult blockResult = new BlockResult(block, Collections.emptyList(), Collections.emptyList(), 0,
+                Coin.ZERO, trie);
+
+        RskSystemProperties cfg = spy(CONFIG);
+
+        ActivationConfig activationConfig = spy(cfg.getActivationConfig());
+        doReturn(false).when(activationConfig).isActive(eq(RSKIP126), anyLong());
+        doReturn(activationConfig).when(cfg).getActivationConfig();
+
+        BlockExecutor executor = buildBlockExecutor(trieStore, cfg);
+
+        Assert.assertTrue(executor.validateStateRoot(block.getHeader(), blockResult));
     }
 
     @Test
@@ -482,7 +532,7 @@ public class BlockExecutorTest {
                 .gasPrice(BigInteger.ONE)
                 .gasLimit(BigInteger.valueOf(21000))
                 .destination(account2.getAddress())
-                .chainId(config.getNetworkConstants().getChainId())
+                .chainId(CONFIG.getNetworkConstants().getChainId())
                 .value(BigInteger.TEN)
                 .build();
         tx1.sign(account.getEcKey().getPrivKeyBytes());
@@ -529,7 +579,7 @@ public class BlockExecutorTest {
                 .gasPrice(BigInteger.ONE)
                 .gasLimit(BigInteger.valueOf(21000))
                 .destination(account2.getAddress())
-                .chainId(config.getNetworkConstants().getChainId())
+                .chainId(CONFIG.getNetworkConstants().getChainId())
                 .value(BigInteger.TEN)
                 .build();
         tx.sign(account.getEcKey().getPrivKeyBytes());
@@ -562,7 +612,7 @@ public class BlockExecutorTest {
                 .gasPrice(BigInteger.ONE)
                 .gasLimit(BigInteger.valueOf(21000))
                 .destination(account2.getAddress())
-                .chainId(config.getNetworkConstants().getChainId())
+                .chainId(CONFIG.getNetworkConstants().getChainId())
                 .value(BigInteger.TEN)
                 .build();
         tx.sign(account.getEcKey().getPrivKeyBytes());
@@ -572,7 +622,7 @@ public class BlockExecutorTest {
                 .gasPrice(BigInteger.ONE)
                 .gasLimit(BigInteger.valueOf(21000))
                 .destination(account2.getAddress())
-                .chainId(config.getNetworkConstants().getChainId())
+                .chainId(CONFIG.getNetworkConstants().getChainId())
                 .value(BigInteger.TEN)
                 .build();
         tx1.sign(account.getEcKey().getPrivKeyBytes());
@@ -724,7 +774,7 @@ public class BlockExecutorTest {
     private byte[] calculateTxTrieRoot(List<Transaction> transactions, long blockNumber) {
         return BlockHashesHelper.getTxTrieRoot(
                 transactions,
-                config.getActivationConfig().isActive(ConsensusRule.RSKIP126, blockNumber)
+                CONFIG.getActivationConfig().isActive(ConsensusRule.RSKIP126, blockNumber)
         );
     }
 
@@ -767,8 +817,11 @@ public class BlockExecutorTest {
     }
 
     private static BlockExecutor buildBlockExecutor(TrieStore store) {
-        StateRootHandler stateRootHandler = new StateRootHandler(
-                config.getActivationConfig(), new TrieConverter(), new HashMapDB(), new HashMap<>());
+        return buildBlockExecutor(store, CONFIG);
+    }
+
+    private static BlockExecutor buildBlockExecutor(TrieStore store, RskSystemProperties config) {
+        StateRootHandler stateRootHandler = new StateRootHandler(config.getActivationConfig(), new StateRootsStoreImpl(new HashMapDB()));
 
         Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(
                 config.getNetworkConstants().getBridgeConstants().getBtcParams());
@@ -779,12 +832,11 @@ public class BlockExecutorTest {
         return new BlockExecutor(
                 config.getActivationConfig(),
                 new RepositoryLocator(store, stateRootHandler),
-                stateRootHandler,
                 new TransactionExecutorFactory(
                         config,
                         null,
                         null,
-                        blockFactory,
+                        BLOCK_FACTORY,
                         new ProgramInvokeFactoryImpl(),
                         new PrecompiledContracts(config, bridgeSupportFactory),
                         new BlockTxSignatureCache(new ReceivedTxSignatureCache())

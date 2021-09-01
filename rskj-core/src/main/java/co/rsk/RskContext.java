@@ -24,9 +24,7 @@ import co.rsk.config.*;
 import co.rsk.core.*;
 import co.rsk.core.bc.*;
 import co.rsk.crypto.Keccak256;
-import co.rsk.db.MapDBBlocksIndex;
-import co.rsk.db.RepositoryLocator;
-import co.rsk.db.StateRootHandler;
+import co.rsk.db.*;
 import co.rsk.db.importer.BootstrapImporter;
 import co.rsk.db.importer.BootstrapURLProvider;
 import co.rsk.db.importer.provider.BootstrapDataProvider;
@@ -81,7 +79,6 @@ import co.rsk.scoring.PeerScoringManager;
 import co.rsk.scoring.PeerScoringReporterService;
 import co.rsk.scoring.PunishmentParameters;
 import co.rsk.trie.MultiTrieStore;
-import co.rsk.trie.TrieConverter;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
 import co.rsk.util.RskCustomCache;
@@ -147,7 +144,8 @@ import java.util.stream.Stream;
  * Note that many methods are public to allow the fed node overriding.
  */
 public class RskContext implements NodeBootstrapper {
-    private static Logger logger = LoggerFactory.getLogger(RskContext.class);
+
+    private static final Logger logger = LoggerFactory.getLogger(RskContext.class);
 
     private final CliArgs<NodeCliOptions, NodeCliFlags> cliArgs;
 
@@ -160,6 +158,7 @@ public class RskContext implements NodeBootstrapper {
     private org.ethereum.db.BlockStore blockStore;
     private NetBlockStore netBlockStore;
     private TrieStore trieStore;
+    private StateRootsStore stateRootsStore;
     private GenesisLoader genesisLoader;
     private Genesis genesis;
     private CompositeEthereumListener compositeEthereumListener;
@@ -178,7 +177,6 @@ public class RskContext implements NodeBootstrapper {
     private TransactionPool transactionPool;
     private RepositoryLocator repositoryLocator;
     private StateRootHandler stateRootHandler;
-    private TrieConverter trieConverter;
     private EvmModule evmModule;
     private BlockToMineBuilder blockToMineBuilder;
     private BlockNodeInformation blockNodeInformation;
@@ -395,14 +393,6 @@ public class RskContext implements NodeBootstrapper {
         return stateRootHandler;
     }
 
-    public TrieConverter getTrieConverter() {
-        if (trieConverter == null) {
-            trieConverter = new TrieConverter();
-        }
-
-        return trieConverter;
-    }
-
     public ReceiptStore getReceiptStore() {
         if (receiptStore == null) {
             receiptStore = buildReceiptStore();
@@ -419,12 +409,30 @@ public class RskContext implements NodeBootstrapper {
         return trieStore;
     }
 
+    public StateRootsStore getStateRootsStore() {
+        if (stateRootsStore == null) {
+            stateRootsStore = buildStateRootsStore();
+        }
+
+        return stateRootsStore;
+    }
+
+    protected StateRootsStore buildStateRootsStore() {
+        int stateRootsCacheSize = getRskSystemProperties().getStateRootsCacheSize();
+        KeyValueDataSource stateRootsDB = LevelDbDataSource.makeDataSource(Paths.get(getRskSystemProperties().databaseDir(), "stateRoots"));
+
+        if (stateRootsCacheSize > 0) {
+            stateRootsDB = new DataSourceWithCache(stateRootsDB, stateRootsCacheSize);
+        }
+
+        return new StateRootsStoreImpl(stateRootsDB);
+    }
+
     public BlockExecutor getBlockExecutor() {
         if (blockExecutor == null) {
             blockExecutor = new BlockExecutor(
                     getRskSystemProperties().getActivationConfig(),
                     getRepositoryLocator(),
-                    getStateRootHandler(),
                     getTransactionExecutorFactory()
             );
         }
@@ -875,7 +883,8 @@ public class RskContext implements NodeBootstrapper {
                 getTrieStore(),
                 getBlockStore(),
                 getReceiptStore(),
-                getBlocksBloomStore()));
+                getBlocksBloomStore(),
+                getStateRootsStore()));
 
         NodeBlockProcessor nodeBlockProcessor = getNodeBlockProcessor();
         if (nodeBlockProcessor instanceof InternalService) {
@@ -1079,8 +1088,7 @@ public class RskContext implements NodeBootstrapper {
     }
 
     protected StateRootHandler buildStateRootHandler() {
-        KeyValueDataSource stateRootsDB = LevelDbDataSource.makeDataSource(Paths.get(getRskSystemProperties().databaseDir(), "stateRoots"));
-        return new StateRootHandler(getRskSystemProperties().getActivationConfig(), getTrieConverter(), stateRootsDB, new HashMap<>());
+        return new StateRootHandler(getRskSystemProperties().getActivationConfig(), getStateRootsStore());
     }
 
     protected CompositeEthereumListener buildCompositeEthereumListener() {

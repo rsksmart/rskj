@@ -17,13 +17,13 @@
  */
 package co.rsk.core.bc;
 
+import co.rsk.db.StateRootsStore;
 import co.rsk.logfilter.BlocksBloomStore;
 import co.rsk.trie.TrieStore;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.listener.CompositeEthereumListener;
 import org.ethereum.listener.EthereumListener;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -36,6 +36,7 @@ public class BlockChainFlusherTest {
     private BlockStore blockStore;
     private ReceiptStore receiptStore;
     private BlocksBloomStore blocksBloomStore;
+    private StateRootsStore stateRootsStore;
     private BlockChainFlusher flusher;
 
     private EthereumListener listener;
@@ -47,7 +48,8 @@ public class BlockChainFlusherTest {
         this.blockStore = mock(BlockStore.class);
         this.receiptStore = mock(ReceiptStore.class);
         this.blocksBloomStore = mock(BlocksBloomStore.class);
-        this.flusher = new BlockChainFlusher(7, emitter, trieStore, blockStore, receiptStore, blocksBloomStore);
+        this.stateRootsStore = mock(StateRootsStore.class);
+        this.flusher = new BlockChainFlusher(7, emitter, trieStore, blockStore, receiptStore, blocksBloomStore, stateRootsStore);
         this.flusher.start();
 
         ArgumentCaptor<EthereumListener> argument = ArgumentCaptor.forClass(EthereumListener.class);
@@ -55,15 +57,25 @@ public class BlockChainFlusherTest {
         this.listener = argument.getValue();
     }
 
-    @After
-    public void tearDown() {
-        verify(emitter, times(0)).removeListener(listener);
+    @Test
+    public void flusherStarted_WhenStopped_ShouldUnsubscribeAndFlushAndCloseStores() {
         flusher.stop();
+
         verify(emitter, times(1)).removeListener(listener);
+
+        verify(trieStore).flush();
+        verify(blockStore).flush();
+        verify(receiptStore).flush();
+        verify(blocksBloomStore).flush();
+        verify(stateRootsStore).flush();
+
+        verify(blockStore).close();
+        verify(blocksBloomStore).close();
+        verify(stateRootsStore).close();
     }
 
     @Test
-    public void flushesAfterNInvocations() {
+    public void flusherStarted_WhenReceive7Blocks_ShouldFlushStores() {
         for (int i = 0; i < 6; i++) {
             listener.onBestBlock(null, null);
         }
@@ -72,6 +84,7 @@ public class BlockChainFlusherTest {
         verify(blockStore, never()).flush();
         verify(receiptStore, never()).flush();
         verify(blocksBloomStore, never()).flush();
+        verify(stateRootsStore, never()).flush();
 
         listener.onBestBlock(null, null);
 
@@ -79,5 +92,6 @@ public class BlockChainFlusherTest {
         verify(blockStore).flush();
         verify(receiptStore).flush();
         verify(blocksBloomStore).flush();
+        verify(stateRootsStore).flush();
     }
 }

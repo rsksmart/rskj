@@ -16,5 +16,6 @@
   "gasLimit": "0x4c4b40",
   "difficulty": "0x0000100000",
   "coinbase": "0x3333333333333333333333333333333333333333",
-  "minimumGasPrice": "0x00"
+  "minimumGasPrice": "0x00",
+  "stateRoot": "0x45bce5168430c42b3d568331753f900a32457b4f3748697cbd8375ff4da72641"
 }

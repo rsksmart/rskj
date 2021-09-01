@@ -27,7 +27,7 @@ import co.rsk.core.bc.BlockExecutor;
 import co.rsk.core.bc.TransactionPoolImpl;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.db.StateRootHandler;
-import co.rsk.trie.TrieConverter;
+import co.rsk.db.StateRootsStoreImpl;
 import co.rsk.trie.TrieStore;
 import co.rsk.validators.DummyBlockValidator;
 import org.ethereum.datasource.HashMapDB;
@@ -39,7 +39,6 @@ import org.ethereum.listener.CompositeEthereumListener;
 import org.ethereum.listener.TestCompositeEthereumListener;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 
-import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -70,7 +69,7 @@ public class ImportLightTest {
                 new ProgramInvokeFactoryImpl(),
                 null,
                 blockTxSignatureCache);
-        StateRootHandler stateRootHandler = new StateRootHandler(config.getActivationConfig(), new TrieConverter(), new HashMapDB(), new HashMap<>());
+        StateRootHandler stateRootHandler = new StateRootHandler(config.getActivationConfig(), new StateRootsStoreImpl(new HashMapDB()));
         RepositoryLocator repositoryLocator = new RepositoryLocator(trieStore, stateRootHandler);
 
         TransactionPoolImpl transactionPool = new TransactionPoolImpl(config, repositoryLocator, null, blockFactory, listener, transactionExecutorFactory, receivedTxSignatureCache, 10, 100);
@@ -84,7 +83,6 @@ public class ImportLightTest {
                 new BlockExecutor(
                         config.getActivationConfig(),
                         repositoryLocator,
-                        stateRootHandler,
                         transactionExecutorFactory
                 ),
                 stateRootHandler

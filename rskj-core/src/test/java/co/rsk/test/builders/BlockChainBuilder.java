@@ -29,7 +29,6 @@ import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.peg.BtcBlockStoreWithCache;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
 import co.rsk.trie.Trie;
-import co.rsk.trie.TrieConverter;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
 import co.rsk.validators.BlockValidator;
@@ -47,7 +46,6 @@ import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 import org.junit.Assert;
 
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -168,9 +166,9 @@ public class BlockChainBuilder {
         }
 
         if (stateRootHandler == null) {
-            stateRootHandler = new StateRootHandler(config.getActivationConfig(), new TrieConverter(), new HashMapDB(), new HashMap<>());
+            stateRootHandler = new StateRootHandler(config.getActivationConfig(), new StateRootsStoreImpl(new HashMapDB()));
         }
-        
+
         if (genesis == null) {
             genesis = new BlockGenerator().getGenesisBlock();
         }
@@ -230,7 +228,6 @@ public class BlockChainBuilder {
         BlockExecutor blockExecutor = new BlockExecutor(
                 config.getActivationConfig(),
                 repositoryLocator,
-                stateRootHandler,
                 transactionExecutorFactory
         );
         BlockChainImpl blockChain = new BlockChainLoader(

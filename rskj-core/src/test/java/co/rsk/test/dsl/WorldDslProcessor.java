@@ -27,21 +27,19 @@ import co.rsk.core.bc.BlockExecutor;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.db.RepositorySnapshot;
 import co.rsk.db.StateRootHandler;
+import co.rsk.db.StateRootsStoreImpl;
 import co.rsk.net.NodeBlockProcessor;
 import co.rsk.test.World;
 import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.BlockBuilder;
-import co.rsk.trie.TrieConverter;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.*;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
-import org.junit.Assert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.math.BigInteger;
-import java.util.HashMap;
 import java.util.StringTokenizer;
 
 /**
@@ -314,11 +312,10 @@ public class WorldDslProcessor {
             Block block = blockBuilder.difficulty(difficulty).parent(parent).build();
             final ProgramInvokeFactoryImpl programInvokeFactory = new ProgramInvokeFactoryImpl();
             final TestSystemProperties config = new TestSystemProperties();
-            StateRootHandler stateRootHandler = new StateRootHandler(config.getActivationConfig(), new TrieConverter(), new HashMapDB(), new HashMap<>());
+            StateRootHandler stateRootHandler = new StateRootHandler(config.getActivationConfig(), new StateRootsStoreImpl(new HashMapDB()));
             BlockExecutor executor = new BlockExecutor(
                     config.getActivationConfig(),
                     new RepositoryLocator(world.getTrieStore(), stateRootHandler),
-                    stateRootHandler,
                     new TransactionExecutorFactory(
                             config,
                             world.getBlockStore(),

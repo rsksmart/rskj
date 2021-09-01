@@ -23,7 +23,6 @@ import co.rsk.core.RskAddress;
 import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositoryLocator;
-import co.rsk.db.StateRootHandler;
 import co.rsk.metrics.profilers.Metric;
 import co.rsk.metrics.profilers.Profiler;
 import co.rsk.metrics.profilers.ProfilerFactory;
@@ -58,7 +57,6 @@ public class BlockExecutor {
 
     private final RepositoryLocator repositoryLocator;
     private final TransactionExecutorFactory transactionExecutorFactory;
-    private final StateRootHandler stateRootHandler;
     private final ActivationConfig activationConfig;
 
     private final Map<Keccak256, ProgramResult> transactionResults = new HashMap<>();
@@ -67,11 +65,9 @@ public class BlockExecutor {
     public BlockExecutor(
             ActivationConfig activationConfig,
             RepositoryLocator repositoryLocator,
-            StateRootHandler stateRootHandler,
             TransactionExecutorFactory transactionExecutorFactory) {
         this.repositoryLocator = repositoryLocator;
         this.transactionExecutorFactory = transactionExecutorFactory;
-        this.stateRootHandler = stateRootHandler;
         this.activationConfig = activationConfig;
     }
 
@@ -108,9 +104,9 @@ public class BlockExecutor {
         boolean isRskip126Enabled = activationConfig.isActive(RSKIP126, block.getNumber());
         header.setTransactionsRoot(BlockHashesHelper.getTxTrieRoot(block.getTransactionsList(), isRskip126Enabled));
         header.setReceiptsRoot(BlockHashesHelper.calculateReceiptsTrieRoot(result.getTransactionReceipts(), isRskip126Enabled));
+        header.setStateRoot(result.getFinalState().getHash().getBytes());
         header.setGasUsed(result.getGasUsed());
         header.setPaidFees(result.getPaidFees());
-        header.setStateRoot(stateRootHandler.convert(header, result.getFinalState()).getBytes());
         header.setLogsBloom(calculateLogsBloom(result.getTransactionReceipts()));
 
         block.flushRLP();
@@ -195,7 +191,8 @@ public class BlockExecutor {
         return true;
     }
 
-    private boolean validateStateRoot(BlockHeader header, BlockResult result) {
+    @VisibleForTesting
+    boolean validateStateRoot(BlockHeader header, BlockResult result) {
         boolean isRskip85Enabled = activationConfig.isActive(RSKIP85, header.getNumber());
         if (!isRskip85Enabled) {
             return true;
@@ -203,11 +200,10 @@ public class BlockExecutor {
 
         boolean isRskip126Enabled = activationConfig.isActive(RSKIP126, header.getNumber());
         if (!isRskip126Enabled) {
-            byte[] orchidStateRoot = stateRootHandler.convert(header, result.getFinalState()).getBytes();
-            return Arrays.equals(orchidStateRoot, header.getStateRoot());
+            return true;
         }
 
-        // we only validate state roots of blocks newer than 0.5.0 activation
+        // we only validate state roots of blocks after RSKIP 126 activation
         return Arrays.equals(result.getFinalState().getHash().getBytes(), header.getStateRoot());
     }
 

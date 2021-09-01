@@ -41,6 +41,7 @@ import org.ethereum.vm.DataWord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigInteger;
 import java.util.HashMap;
@@ -54,15 +55,16 @@ import java.util.Map;
  */
 public class GenesisLoaderImpl implements GenesisLoader {
     private static final byte[] EMPTY_LIST_HASH = HashUtil.keccak256(RLP.encodeList());
+
     private static final Logger logger = LoggerFactory.getLogger(GenesisLoaderImpl.class);
 
     private final ActivationConfig activationConfig;
     private final StateRootHandler stateRootHandler;
     private final TrieStore trieStore;
+    private final GenesisJson genesisJson;
 
     private final BigInteger initialNonce;
     private final boolean isRsk;
-    private final InputStream resourceAsStream;
     private final boolean useRskip92Encoding;
     private final boolean isRskip126Enabled;
 
@@ -99,52 +101,43 @@ public class GenesisLoaderImpl implements GenesisLoader {
         this.activationConfig = activationConfig;
         this.stateRootHandler = stateRootHandler;
         this.trieStore = trieStore;
-
         this.initialNonce = initialNonce;
         this.isRsk = isRsk;
         this.useRskip92Encoding = useRskip92Encoding;
         this.isRskip126Enabled = isRskip126Enabled;
-        this.resourceAsStream = resourceAsStream;
+
+        this.genesisJson = readGenesisJson(resourceAsStream);
     }
 
     @Override
     public Genesis load() {
-        Genesis incompleteGenesis = readFromJson();
+        Genesis incompleteGenesis = mapFromJson();
         Trie genesisTrie = loadGenesisTrie(incompleteGenesis);
-        updateGenesisStateRoot(genesisTrie, incompleteGenesis);
+
+        String stateRoot = genesisJson.getStateRoot();
+        if (stateRoot != null) {
+            incompleteGenesis.setStateRoot(Utils.parseData(stateRoot));
+        } else {
+            incompleteGenesis.setStateRoot(genesisTrie.getHash().getBytes());
+        }
+
+        incompleteGenesis.flushRLP();
+
+        registerGenesisStateRoot(genesisTrie, incompleteGenesis);
         return incompleteGenesis;
     }
 
-    private Genesis readFromJson() {
-        try {
-            try {
-                GenesisJson genesisJson = new ObjectMapper().readValue(resourceAsStream, GenesisJson.class);
-                Genesis genesis = mapFromJson(genesisJson);
-                genesis.flushRLP();
+    private Genesis mapFromJson() {
+        byte[] difficulty = Utils.parseData(genesisJson.difficulty);
+        byte[] coinbase = Utils.parseData(genesisJson.coinbase);
 
-                return genesis;
-            } finally {
-                resourceAsStream.close();
-            }
-        } catch (Exception e) {
-            System.err.println("Genesis block configuration is corrupted or not found ./resources/genesis/...");
-            logger.error("Genesis block configuration is corrupted or not found ./resources/genesis/...", e);
-            System.exit(-1);
-            return null;
-        }
-    }
-
-    private Genesis mapFromJson(GenesisJson json) {
-        byte[] difficulty = Utils.parseData(json.difficulty);
-        byte[] coinbase = Utils.parseData(json.coinbase);
-
-        byte[] timestampBytes = Utils.parseData(json.timestamp);
+        byte[] timestampBytes = Utils.parseData(genesisJson.timestamp);
         long timestamp = ByteUtil.byteArrayToLong(timestampBytes);
 
-        byte[] parentHash = Utils.parseData(json.parentHash);
-        byte[] extraData = Utils.parseData(json.extraData);
+        byte[] parentHash = Utils.parseData(genesisJson.parentHash);
+        byte[] extraData = Utils.parseData(genesisJson.extraData);
 
-        byte[] gasLimitBytes = Utils.parseData(json.gasLimit);
+        byte[] gasLimitBytes = Utils.parseData(genesisJson.gasLimit);
         long gasLimit = ByteUtil.byteArrayToLong(gasLimitBytes);
 
         byte[] bitcoinMergedMiningHeader = null;
@@ -153,16 +146,16 @@ public class GenesisLoaderImpl implements GenesisLoader {
         byte[] minGasPrice = null;
 
         if (isRsk) {
-            bitcoinMergedMiningHeader = Utils.parseData(json.bitcoinMergedMiningHeader);
-            bitcoinMergedMiningMerkleProof = Utils.parseData(json.bitcoinMergedMiningMerkleProof);
-            bitcoinMergedMiningCoinbaseTransaction = Utils.parseData(json.bitcoinMergedMiningCoinbaseTransaction);
-            minGasPrice = Utils.parseData(json.getMinimumGasPrice());
+            bitcoinMergedMiningHeader = Utils.parseData(genesisJson.bitcoinMergedMiningHeader);
+            bitcoinMergedMiningMerkleProof = Utils.parseData(genesisJson.bitcoinMergedMiningMerkleProof);
+            bitcoinMergedMiningCoinbaseTransaction = Utils.parseData(genesisJson.bitcoinMergedMiningCoinbaseTransaction);
+            minGasPrice = Utils.parseData(genesisJson.getMinimumGasPrice());
         }
 
         Map<RskAddress, AccountState> accounts = new HashMap<>();
         Map<RskAddress, byte[]> codes = new HashMap<>();
         Map<RskAddress, Map<DataWord, byte[]>> storages = new HashMap<>();
-        Map<String, AllocatedAccount> alloc = json.getAlloc();
+        Map<String, AllocatedAccount> alloc = genesisJson.getAlloc();
         for (Map.Entry<String, AllocatedAccount> accountEntry : alloc.entrySet()) {
             if(!"00".equals(accountEntry.getKey())) {
                 Coin balance = new Coin(new BigInteger(accountEntry.getValue().getBalance()));
@@ -207,6 +200,7 @@ public class GenesisLoaderImpl implements GenesisLoader {
                 minGasPrice,
                 useRskip92Encoding,
                 coinbase);
+
         return new Genesis(isRskip126Enabled, accounts, codes, storages, header);
     }
 
@@ -221,9 +215,7 @@ public class GenesisLoaderImpl implements GenesisLoader {
         return repository.getTrie();
     }
 
-    private void updateGenesisStateRoot(Trie genesisTrie, Genesis genesis) {
-        genesis.setStateRoot(stateRootHandler.convert(genesis.getHeader(), genesisTrie).getBytes());
-        genesis.flushRLP();
+    private void registerGenesisStateRoot(Trie genesisTrie, Genesis genesis) {
         stateRootHandler.register(genesis.getHeader(), genesisTrie);
     }
 
@@ -258,6 +250,26 @@ public class GenesisLoaderImpl implements GenesisLoader {
         // given the accounts had the proper storage root set from the genesis construction we update the account state
         for (Map.Entry<RskAddress, AccountState> accountEntry : genesis.getAccounts().entrySet()) {
             repository.updateAccountState(accountEntry.getKey(), accountEntry.getValue());
+        }
+    }
+
+    private static GenesisJson readGenesisJson(InputStream inputStream) {
+        try {
+            return new ObjectMapper().readValue(inputStream, GenesisJson.class);
+        } catch (Exception e) {
+            logger.error("Cannot read genesis json file");
+
+            throw new RuntimeException("Genesis block configuration is corrupted or not found ./resources/genesis/...", e);
+        } finally {
+            closeStream(inputStream);
+        }
+    }
+
+    private static void closeStream(InputStream stream) {
+        try {
+            stream.close();
+        } catch (IOException e) {
+            logger.error("Cannot close input stream", e);
         }
     }
 }

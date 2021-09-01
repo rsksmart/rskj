@@ -31,7 +31,6 @@ import co.rsk.peg.PegTestUtils;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
 import co.rsk.test.builders.BlockChainBuilder;
 import co.rsk.trie.Trie;
-import co.rsk.trie.TrieConverter;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -440,9 +439,6 @@ public class RemascStorageProviderTest {
 
         blocks.addAll(createSimpleBlocks(blocks.get(blocks.size()-1),10, coinbase));
 
-        StateRootHandler stateRootHandler = new StateRootHandler(config.getActivationConfig(),
-                new TrieConverter(), new HashMapDB(), new HashMap<>());
-
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
                 new RepositoryBtcBlockStoreWithCache.Factory(
                         config.getNetworkConstants().getBridgeConstants().getBtcParams()),
@@ -451,7 +447,6 @@ public class RemascStorageProviderTest {
         BlockExecutor blockExecutor = new BlockExecutor(
                 config.getActivationConfig(),
                 repositoryLocator,
-                stateRootHandler,
                 new TransactionExecutorFactory(
                         config,
                         builder.getBlockStore(),

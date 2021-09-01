@@ -20,51 +20,35 @@ package co.rsk.db;
 
 import co.rsk.crypto.Keccak256;
 import co.rsk.trie.Trie;
-import co.rsk.trie.TrieConverter;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.BlockHeader;
-import org.ethereum.datasource.KeyValueDataSource;
 
-import java.util.Map;
+import javax.annotation.Nonnull;
 import java.util.Objects;
 
 public class StateRootHandler {
-    private final ActivationConfig activationConfig;
-    private final TrieConverter trieConverter;
-    private final StateRootTranslator stateRootTranslator;
 
-    public StateRootHandler(
-            ActivationConfig activationConfig,
-            TrieConverter trieConverter,
-            KeyValueDataSource stateRootDB,
-            Map<Keccak256, Keccak256> stateRootCache) {
-        this.activationConfig = activationConfig;
-        this.trieConverter = trieConverter;
-        this.stateRootTranslator = new StateRootTranslator(stateRootDB, stateRootCache);
+    private final ActivationConfig activationConfig;
+    private final StateRootsStore stateRootsStore;
+
+    public StateRootHandler(@Nonnull ActivationConfig activationConfig, @Nonnull StateRootsStore stateRootsStore) {
+        this.activationConfig = Objects.requireNonNull(activationConfig);
+        this.stateRootsStore = Objects.requireNonNull(stateRootsStore);
     }
 
+    @Nonnull
     public Keccak256 translate(BlockHeader block) {
         boolean isRskip126Enabled = activationConfig.isActive(ConsensusRule.RSKIP126, block.getNumber());
-        Keccak256 blockStateRoot = new Keccak256(block.getStateRoot());
+        byte[] blockStateRoot = block.getStateRoot();
         if (isRskip126Enabled) {
-            return blockStateRoot;
+            return new Keccak256(blockStateRoot);
         }
 
         return Objects.requireNonNull(
-                stateRootTranslator.get(blockStateRoot),
+                stateRootsStore.get(blockStateRoot),
                 "Reset database or continue syncing with previous version"
         );
-    }
-
-    public Keccak256 convert(BlockHeader minedBlock, Trie executionResult) {
-        boolean isRskip126Enabled = activationConfig.isActive(ConsensusRule.RSKIP126, minedBlock.getNumber());
-        if (isRskip126Enabled) {
-            return executionResult.getHash();
-        }
-
-        //we shouldn't be converting blocks before orchid in stable networks
-        return new Keccak256(trieConverter.getOrchidAccountTrieRoot(executionResult));
     }
 
     public void register(BlockHeader executedBlock, Trie executionResult) {
@@ -73,18 +57,6 @@ public class StateRootHandler {
             return;
         }
 
-        if (executedBlock.isGenesis()) {
-            Keccak256 genesisStateRoot = convert(executedBlock, executionResult);
-            stateRootTranslator.put(genesisStateRoot, executionResult.getHash());
-        } else {
-            boolean isRskip85Enabled = activationConfig.isActive(ConsensusRule.RSKIP85, executedBlock.getNumber());
-            if (isRskip85Enabled) {
-                Keccak256 orchidStateRoot = convert(executedBlock, executionResult);
-                stateRootTranslator.put(orchidStateRoot, executionResult.getHash());
-            } else {
-                Keccak256 blockStateRoot = new Keccak256(executedBlock.getStateRoot());
-                stateRootTranslator.put(blockStateRoot, executionResult.getHash());
-            }
-        }
+        stateRootsStore.put(executedBlock.getStateRoot(), executionResult.getHash());
     }
 }

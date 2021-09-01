@@ -36,6 +36,7 @@ public class GenesisJson {
     String bitcoinMergedMiningMerkleProof;
     String bitcoinMergedMiningCoinbaseTransaction;
     String minimumGasPrice;
+    String stateRoot; // NOSONAR
 
     Map<String, AllocatedAccount> alloc;
 
@@ -131,4 +132,11 @@ public class GenesisJson {
         return minimumGasPrice;
     }
 
+    public String getStateRoot() {
+        return stateRoot;
+    }
+
+    public void setStateRoot(String stateRoot) {
+        this.stateRoot = stateRoot;
+    }
 }

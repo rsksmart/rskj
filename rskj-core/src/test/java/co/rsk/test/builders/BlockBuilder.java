@@ -24,8 +24,8 @@ import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.db.StateRootHandler;
+import co.rsk.db.StateRootsStoreImpl;
 import co.rsk.peg.BridgeSupportFactory;
-import co.rsk.trie.TrieConverter;
 import co.rsk.trie.TrieStore;
 import org.bouncycastle.util.BigIntegers;
 import org.ethereum.core.*;
@@ -35,7 +35,6 @@ import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 
 import java.math.BigInteger;
-import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -105,11 +104,10 @@ public class BlockBuilder {
 
         if (blockChain != null) {
             final TestSystemProperties config = new TestSystemProperties();
-            StateRootHandler stateRootHandler = new StateRootHandler(config.getActivationConfig(), new TrieConverter(), new HashMapDB(), new HashMap<>());
+            StateRootHandler stateRootHandler = new StateRootHandler(config.getActivationConfig(), new StateRootsStoreImpl(new HashMapDB()));
             BlockExecutor executor = new BlockExecutor(
                     config.getActivationConfig(),
                     new RepositoryLocator(trieStore, stateRootHandler),
-                    stateRootHandler,
                     new TransactionExecutorFactory(
                             config,
                             blockStore,

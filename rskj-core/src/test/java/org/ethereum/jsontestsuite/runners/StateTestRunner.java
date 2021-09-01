@@ -28,9 +28,9 @@ import co.rsk.core.bc.BlockExecutor;
 import co.rsk.db.HashMapBlocksIndex;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.db.StateRootHandler;
+import co.rsk.db.StateRootsStoreImpl;
 import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
-import co.rsk.trie.TrieConverter;
 import co.rsk.trie.TrieStoreImpl;
 import org.ethereum.core.*;
 import org.ethereum.datasource.HashMapDB;
@@ -59,7 +59,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 
 import static org.ethereum.util.ByteUtil.byteArrayToLong;
@@ -138,7 +137,7 @@ public class StateTestRunner {
         transaction = TransactionBuilder.build(stateTestCase.getTransaction());
         logger.info("transaction: {}", transaction.toString());
         BlockStore blockStore = new IndexedBlockStore(blockFactory, new HashMapDB(), new HashMapBlocksIndex());
-        StateRootHandler stateRootHandler = new StateRootHandler(config.getActivationConfig(), new TrieConverter(), new HashMapDB(), new HashMap<>());
+        StateRootHandler stateRootHandler = new StateRootHandler(config.getActivationConfig(), new StateRootsStoreImpl(new HashMapDB()));
         blockchain = new BlockChainImpl(
                 blockStore,
                 null,
@@ -148,7 +147,6 @@ public class StateTestRunner {
                 new BlockExecutor(
                         config.getActivationConfig(),
                         new RepositoryLocator(trieStore, stateRootHandler),
-                        stateRootHandler,
                         new TransactionExecutorFactory(
                                 config,
                                 blockStore,

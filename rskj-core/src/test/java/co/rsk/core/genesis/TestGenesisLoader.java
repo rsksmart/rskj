@@ -20,10 +20,12 @@
 package co.rsk.core.genesis;
 
 import co.rsk.db.StateRootHandler;
+import co.rsk.db.StateRootsStoreImpl;
 import co.rsk.trie.TrieStore;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.genesis.GenesisLoaderImpl;
+import org.ethereum.datasource.HashMapDB;
 
 import java.io.InputStream;
 import java.math.BigInteger;
@@ -79,7 +81,7 @@ public class TestGenesisLoader extends GenesisLoaderImpl {
             boolean isRskip126Enabled) {
         super(
                 activationConfig,
-                new StateRootHandler(activationConfig, null, null, null),
+                new StateRootHandler(activationConfig, new StateRootsStoreImpl(new HashMapDB())),
                 trieStore,
                 resourceAsStream,
                 initialNonce,

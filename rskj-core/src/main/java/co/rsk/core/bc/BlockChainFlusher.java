@@ -18,6 +18,7 @@
 package co.rsk.core.bc;
 
 import co.rsk.config.InternalService;
+import co.rsk.db.StateRootsStore;
 import co.rsk.logfilter.BlocksBloomStore;
 import co.rsk.metrics.profilers.Metric;
 import co.rsk.metrics.profilers.Profiler;
@@ -49,6 +50,7 @@ public class BlockChainFlusher implements InternalService {
     private final BlockStore blockStore;
     private final ReceiptStore receiptStore;
     private final BlocksBloomStore blocksBloomStore;
+    private final StateRootsStore stateRootsStore;
 
     private final OnBestBlockListener listener = new OnBestBlockListener();
 
@@ -60,13 +62,15 @@ public class BlockChainFlusher implements InternalService {
             TrieStore trieStore,
             BlockStore blockStore,
             ReceiptStore receiptStore,
-            BlocksBloomStore blocksBloomStore) {
+            BlocksBloomStore blocksBloomStore,
+            StateRootsStore stateRootsStore) {
         this.flushNumberOfBlocks = flushNumberOfBlocks;
         this.emitter = emitter;
         this.trieStore = trieStore;
         this.blockStore = blockStore;
         this.receiptStore = receiptStore;
         this.blocksBloomStore = blocksBloomStore;
+        this.stateRootsStore = stateRootsStore;
     }
 
     @Override
@@ -85,6 +89,11 @@ public class BlockChainFlusher implements InternalService {
         logger.trace("closing blockStore.");
         blockStore.close();
         logger.trace("blockStore closed.");
+
+        logger.trace("closing stateRootsStore.");
+        stateRootsStore.close();
+        logger.trace("stateRootsStore closed.");
+
         logger.trace("closing blocksBloomStore.");
         blocksBloomStore.close();
         logger.trace("blocksBloomStore closed.");
@@ -108,6 +117,14 @@ public class BlockChainFlusher implements InternalService {
 
         if (logger.isTraceEnabled()) {
             logger.trace("repository flush: [{}]seconds", FormatUtils.formatNanosecondsToSeconds(totalTime));
+        }
+
+        saveTime = System.nanoTime();
+        stateRootsStore.flush();
+        totalTime = System.nanoTime() - saveTime;
+
+        if (logger.isTraceEnabled()) {
+            logger.trace("stateRootsStore flush: [{}]seconds", FormatUtils.formatNanosecondsToSeconds(totalTime));
         }
 
         saveTime = System.nanoTime();

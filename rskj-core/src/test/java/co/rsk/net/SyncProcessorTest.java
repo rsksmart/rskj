@@ -7,6 +7,7 @@ import co.rsk.core.bc.BlockExecutor;
 import co.rsk.core.bc.ConsensusValidationMainchainView;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.db.StateRootHandler;
+import co.rsk.db.StateRootsStoreImpl;
 import co.rsk.net.messages.*;
 import co.rsk.net.simples.SimplePeer;
 import co.rsk.net.sync.DownloadingBodiesSyncState;
@@ -18,7 +19,6 @@ import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
 import co.rsk.scoring.PeerScoringManager;
 import co.rsk.test.builders.BlockChainBuilder;
-import co.rsk.trie.TrieConverter;
 import co.rsk.validators.*;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.*;
@@ -748,7 +748,7 @@ public class SyncProcessorTest {
 
         Block block = new BlockGenerator().createChildBlock(genesis, txs, blockChainBuilder.getRepository().getRoot());
 
-        StateRootHandler stateRootHandler = new StateRootHandler(config.getActivationConfig(), new TrieConverter(), new HashMapDB(), new HashMap<>());
+        StateRootHandler stateRootHandler = new StateRootHandler(config.getActivationConfig(), new StateRootsStoreImpl(new HashMapDB()));
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
                 new RepositoryBtcBlockStoreWithCache.Factory(config.getNetworkConstants().getBridgeConstants().getBtcParams()),
                 config.getNetworkConstants().getBridgeConstants(),
@@ -757,7 +757,6 @@ public class SyncProcessorTest {
         BlockExecutor blockExecutor = new BlockExecutor(
                 config.getActivationConfig(),
                 new RepositoryLocator(blockChainBuilder.getTrieStore(), stateRootHandler),
-                stateRootHandler,
                 new TransactionExecutorFactory(
                         config,
                         blockChainBuilder.getBlockStore(),

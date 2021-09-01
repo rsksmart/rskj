@@ -29,7 +29,6 @@ import co.rsk.core.bc.BlockExecutor;
 import co.rsk.core.bc.TransactionPoolImpl;
 import co.rsk.db.*;
 import co.rsk.trie.Trie;
-import co.rsk.trie.TrieConverter;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
 import co.rsk.validators.DummyBlockValidator;
@@ -150,7 +149,7 @@ public class TestRunner {
                 new ProgramInvokeFactoryImpl(),
                 null,
                 blockTxSignatureCache);
-        StateRootHandler stateRootHandler = new StateRootHandler(config.getActivationConfig(), new TrieConverter(), new HashMapDB(), new HashMap<>());
+        StateRootHandler stateRootHandler = new StateRootHandler(config.getActivationConfig(), new StateRootsStoreImpl(new HashMapDB()));
         RepositoryLocator repositoryLocator = new RepositoryLocator(trieStore, stateRootHandler);
 
         TransactionPoolImpl transactionPool = new TransactionPoolImpl(config, repositoryLocator, null, blockFactory, listener, transactionExecutorFactory, new ReceivedTxSignatureCache(), 10, 100);
@@ -164,7 +163,6 @@ public class TestRunner {
                 new BlockExecutor(
                         config.getActivationConfig(),
                         new RepositoryLocator(trieStore, stateRootHandler),
-                        stateRootHandler,
                         transactionExecutorFactory
                 ),
                 stateRootHandler

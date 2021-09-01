@@ -21,6 +21,8 @@ import co.rsk.RskContext;
 import co.rsk.core.Wallet;
 import co.rsk.db.HashMapBlocksIndex;
 import co.rsk.db.StateRootHandler;
+import co.rsk.db.StateRootsStore;
+import co.rsk.db.StateRootsStoreImpl;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
 import org.ethereum.datasource.HashMapDB;
@@ -31,7 +33,6 @@ import org.ethereum.db.ReceiptStore;
 import org.ethereum.db.ReceiptStoreImpl;
 
 import java.nio.file.Path;
-import java.util.HashMap;
 
 /**
  * This context overrides every persistent database access with a non-persistent one.
@@ -48,6 +49,11 @@ public class RskTestContext extends RskContext {
     }
 
     @Override
+    protected StateRootsStore buildStateRootsStore() {
+        return new StateRootsStoreImpl(new HashMapDB());
+    }
+
+    @Override
     protected BlockStore buildBlockStore() {
         return new IndexedBlockStore(getBlockFactory(), new HashMapDB(), new HashMapBlocksIndex());
     }
@@ -59,7 +65,7 @@ public class RskTestContext extends RskContext {
 
     @Override
     protected StateRootHandler buildStateRootHandler() {
-        return new StateRootHandler(getRskSystemProperties().getActivationConfig(), getTrieConverter(), new HashMapDB(), new HashMap<>());
+        return new StateRootHandler(getRskSystemProperties().getActivationConfig(), new StateRootsStoreImpl(new HashMapDB()));
     }
 
     @Override

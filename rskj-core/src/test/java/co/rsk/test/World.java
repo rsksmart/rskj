@@ -27,16 +27,16 @@ import co.rsk.core.bc.BlockExecutor;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.db.StateRootHandler;
+import co.rsk.db.StateRootsStoreImpl;
 import co.rsk.net.BlockNodeInformation;
 import co.rsk.net.BlockSyncService;
-import co.rsk.net.NodeBlockProcessor;
 import co.rsk.net.NetBlockStore;
+import co.rsk.net.NodeBlockProcessor;
 import co.rsk.net.sync.SyncConfiguration;
 import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.peg.BtcBlockStoreWithCache.Factory;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
 import co.rsk.test.builders.BlockChainBuilder;
-import co.rsk.trie.TrieConverter;
 import co.rsk.trie.TrieStore;
 import co.rsk.validators.DummyBlockValidator;
 import org.ethereum.core.*;
@@ -129,7 +129,7 @@ public class World {
         SyncConfiguration syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         BlockSyncService blockSyncService = new BlockSyncService(config, store, blockChain, nodeInformation, syncConfiguration, DummyBlockValidator.VALID_RESULT_INSTANCE);
         this.blockProcessor = new NodeBlockProcessor(store, blockChain, nodeInformation, blockSyncService, syncConfiguration);
-        this.stateRootHandler = new StateRootHandler(config.getActivationConfig(), new TrieConverter(), new HashMapDB(), new HashMap<>());
+        this.stateRootHandler = new StateRootHandler(config.getActivationConfig(), new StateRootsStoreImpl(new HashMapDB()));
 
         this.bridgeSupportFactory = new BridgeSupportFactory(
                 new RepositoryBtcBlockStoreWithCache.Factory(
@@ -155,7 +155,6 @@ public class World {
             this.blockExecutor = new BlockExecutor(
                     config.getActivationConfig(),
                     new RepositoryLocator(getTrieStore(), stateRootHandler),
-                    stateRootHandler,
                     new TransactionExecutorFactory(
                             config,
                             blockStore,

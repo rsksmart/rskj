@@ -138,7 +138,6 @@ class RemascTestRunner {
         BlockExecutor blockExecutor = new BlockExecutor(
                 builder.getConfig().getActivationConfig(),
                 builder.getRepositoryLocator(),
-                builder.getStateRootHandler(),
                 new TransactionExecutorFactory(
                         builder.getConfig(),
                         builder.getBlockStore(),
