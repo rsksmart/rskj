@@ -115,7 +115,7 @@ public class BlockHeader {
     private volatile boolean sealed;
 
     /* Holds calculated block hash */
-    private volatile Keccak256 hash;
+    private Keccak256 hash;
 
     /* Indicates if the block was mined according to RSKIP-92 rules */
     private final boolean useRskip92Encoding;
