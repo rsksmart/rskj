@@ -62,6 +62,18 @@ public class Secp256k1Test {
     }
 
     @Test
+    public void testInitialization_fallbackOnBC() {
+        // Test BC init
+        PowerMockito.when(Secp256k1Context.isEnabled()).thenReturn(Boolean.FALSE);
+        PowerMockito.when(Secp256k1Context.getLoadError()).thenReturn(new RuntimeException("Secp256k1Context test"));
+        Secp256k1.reset();
+        RskSystemProperties properties = Mockito.mock(RskSystemProperties.class);
+        Mockito.when(properties.cryptoLibrary()).thenReturn("native");
+        Secp256k1.initialize(properties);
+        assertTrue(Secp256k1.getInstance() instanceof Secp256k1ServiceBC);
+    }
+
+    @Test
     public void testInitialization_Native() {
         // Test Native init
         Secp256k1.reset();
@@ -70,7 +82,6 @@ public class Secp256k1Test {
         Secp256k1.initialize(properties);
         assertTrue(Secp256k1.getInstance() instanceof Secp256k1ServiceNative);
     }
-
 
     @Test
     public void testInitialization_NullProperties() {
