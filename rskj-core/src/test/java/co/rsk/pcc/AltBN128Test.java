@@ -1,5 +1,3 @@
-package co.rsk.pcc;
-
 /*
  * This file is part of RskJ
  * Copyright (C) 2019 RSK Labs Ltd.
@@ -17,7 +15,7 @@ package co.rsk.pcc;
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-
+package co.rsk.pcc;
 
 import co.rsk.config.TestSystemProperties;
 import co.rsk.config.VmConfig;
@@ -60,21 +58,20 @@ import static org.mockito.Mockito.*;
  */
 @RunWith(MockitoJUnitRunner.class)
 public class AltBN128Test {
-    private final TestSystemProperties config;
-    private final PrecompiledContracts precompiledContracts;
+
+    private TestSystemProperties config;
+    private PrecompiledContracts precompiledContracts;
     private ActivationConfig.ForBlock activations;
 
     private static final int ADD_GAS_COST = 150;
     private static final int MUL_GAS_COST = 6000;
 
-    public AltBN128Test() {
-        this.config = new TestSystemProperties();
-        this.precompiledContracts = new PrecompiledContracts(config, null);
-        this.activations = mock(ActivationConfig.ForBlock.class);
-    }
-
     @Before
     public void init() {
+        config = new TestSystemProperties();
+        precompiledContracts = new PrecompiledContracts(config, null);
+        activations = mock(ActivationConfig.ForBlock.class);
+
         when(activations.isActive(ConsensusRule.RSKIP137)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP197)).thenReturn(false);
     }
@@ -117,7 +114,6 @@ public class AltBN128Test {
         assertThat(altBN128Add, nullValue());
         assertThat(altBN128Mul, nullValue());
         assertThat(altBN128Pair, nullValue());
-
     }
 
     @Test
