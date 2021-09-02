@@ -19,9 +19,12 @@ package co.rsk.cli.tools;
 
 import co.rsk.RskContext;
 import co.rsk.core.bc.BlockExecutor;
+import co.rsk.core.bc.BlockResult;
 import co.rsk.trie.TrieStore;
 import org.ethereum.core.Block;
 import org.ethereum.db.BlockStore;
+
+import java.util.Arrays;
 
 /**
  * The entry point for execute blocks CLI tool
@@ -46,7 +49,12 @@ public class ExecuteBlocks {
             Block block = blockStore.getChainBlockByNumber(n);
             Block parent = blockStore.getBlockByHash(block.getParentHash().getBytes());
 
-            blockExecutor.execute(block, parent.getHeader(), false, false);
+            BlockResult blockResult = blockExecutor.execute(block, parent.getHeader(), false, false);
+
+            if (!Arrays.equals(blockResult.getFinalState().getHash().getBytes(), block.getStateRoot())) {
+                System.err.println("Invalid state root block number " + n);
+                break;
+            }
         }
 
         trieStore.flush();

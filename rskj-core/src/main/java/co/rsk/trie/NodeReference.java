@@ -106,6 +106,11 @@ public class NodeReference {
 
     }
 
+    // the referenced node was loaded
+    public boolean wasLoaded() {
+        return lazyNode != null;
+    }
+
     // This method should only be called from save()
     public int serializedLength() {
         if (!isEmpty()) {
