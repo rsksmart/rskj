@@ -21,25 +21,38 @@ import co.rsk.util.PreflightChecksUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nonnull;
+
 /**
  * The entrypoint for the RSK full node
  */
 public class Start {
-    private static Logger logger = LoggerFactory.getLogger("start");
+
+    private static final Logger logger = LoggerFactory.getLogger("start");
 
     public static void main(String[] args) {
-        Thread.currentThread().setName("main");
-        RskContext ctx = new RskContext(args);
-        PreflightChecksUtils preflightChecks = new PreflightChecksUtils(ctx);
-        NodeRunner runner = ctx.getNodeRunner();
+        setUpThread(Thread.currentThread());
+
         try {
-            preflightChecks.runChecks();
-            runner.run();
-            Runtime.getRuntime().addShutdownHook(new Thread(runner::stop, "stopper"));
+            RskContext ctx = new RskContext(args);
+            runNode(Runtime.getRuntime(), new PreflightChecksUtils(ctx), ctx);
         } catch (Exception e) {
             logger.error("The RSK node main thread failed, closing program", e);
-            runner.stop();
             System.exit(1);
         }
+    }
+
+    static void runNode(@Nonnull Runtime runtime, @Nonnull PreflightChecksUtils preflightChecks, @Nonnull RskContext ctx) throws Exception {
+        preflightChecks.runChecks();
+
+        NodeRunner runner = ctx.getNodeRunner();
+
+        runtime.addShutdownHook(new Thread(ctx::close, "stopper"));
+
+        runner.run();
+    }
+
+    static void setUpThread(@Nonnull Thread thread) {
+        thread.setName("main");
     }
 }

@@ -20,33 +20,74 @@ package co.rsk;
 import co.rsk.config.InternalService;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.util.SystemUtils;
+import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.net.eth.EthVersion;
 import org.ethereum.util.BuildInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class FullNodeRunner implements NodeRunner {
-    private static Logger logger = LoggerFactory.getLogger("fullnoderunner");
 
+    enum State {
+        Created, Running, Stopped
+    }
+
+    private static final Logger logger = LoggerFactory.getLogger("fullnoderunner");
+
+    private final NodeContext nodeContext;
     private final List<InternalService> internalServices;
     private final RskSystemProperties rskSystemProperties;
     private final BuildInfo buildInfo;
 
+    private volatile State state = State.Created;
+
     public FullNodeRunner(
+            NodeContext nodeContext,
             List<InternalService> internalServices,
             RskSystemProperties rskSystemProperties,
             BuildInfo buildInfo) {
+        this.nodeContext = nodeContext;
         this.internalServices = Collections.unmodifiableList(internalServices);
         this.rskSystemProperties = rskSystemProperties;
         this.buildInfo = buildInfo;
     }
 
+    @VisibleForTesting
+    State getState() {
+        return state;
+    }
+
+    /**
+     * This method starts internal services.
+     *
+     * If some internal service throws an exception while starting, then {@link InternalService#stop()} method will be
+     * called on each already started service.
+     *
+     * Note that this method is not idempotent, which means that calling this method on a running node will throw an exception.
+     *
+     * @throws IllegalStateException - if this node is already running.
+     * @throws IllegalStateException - if this node's context is closed.
+     */
     @Override
-    public void run() {
+    public synchronized void run() throws Exception {
+        if (state == State.Running) {
+            throw new IllegalStateException("The node is already running");
+        }
+
+        if (nodeContext.isClosed()) {
+            throw new IllegalStateException("Node Context is closed. Consider creating a brand new RskContext");
+        }
+
+        if (state == State.Stopped) {
+            throw new IllegalStateException("The node is stopped and cannot run again. Consider creating a brand new RskContext");
+        }
+
         logger.info("Starting RSK");
 
         logger.info(
@@ -61,8 +102,20 @@ public class FullNodeRunner implements NodeRunner {
             SystemUtils.printSystemInfo(logger);
         }
 
-        for (InternalService internalService : internalServices) {
-            internalService.start();
+        ArrayList<InternalService> startedServices = new ArrayList<>(internalServices.size());
+        InternalService curService = null;
+        try {
+            for (InternalService internalService : internalServices) {
+                curService = internalService;
+                internalService.start();
+                startedServices.add(internalService);
+            }
+        } catch (RuntimeException e) {
+            logger.error("{} failed to start. Stopping already started services...", Optional.ofNullable(curService).map(Object::getClass).map(Class::getSimpleName), e);
+
+            startedServices.forEach(InternalService::stop);
+
+            throw e;
         }
 
         if (logger.isInfoEnabled()) {
@@ -71,10 +124,26 @@ public class FullNodeRunner implements NodeRunner {
         }
 
         logger.info("done");
+
+        state = State.Running;
     }
 
+    /**
+     * This method stops internal services in reverse order that they were started.
+     *
+     * It has no effect, if a node has not yet been started.
+     *
+     * Note that this method is idempotent, which means that calling this method more than once does not have any
+     * visible side effect.
+     */
     @Override
-    public void stop() {
+    public synchronized void stop() {
+        if (state != State.Running) {
+            return;
+        }
+
+        state = State.Stopped;
+
         logger.info("Shutting down RSK node");
 
         for (int i = internalServices.size() - 1; i >= 0; i--) {

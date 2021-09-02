@@ -27,6 +27,7 @@ import org.ethereum.core.Bloom;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionReceipt;
 import org.ethereum.datasource.HashMapDB;
+import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.vm.LogInfo;
 import org.junit.Assert;
 import org.junit.Test;
@@ -38,8 +39,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 /**
  * Created by ajlopez on 3/1/2016.
@@ -55,20 +55,37 @@ public class ReceiptStoreImplTest {
     public static Object[] data() {
         return StoreImpl.values();
     }
-    
+
+    private final KeyValueDataSource baseDataSource;
     private final ReceiptStore store;
 
     public ReceiptStoreImplTest(StoreImpl impl) {
+        this.baseDataSource = spy(new HashMapDB());
+
         switch (impl) {
             case V1:
-                this.store = new ReceiptStoreImpl(new HashMapDB());
+                this.store = new ReceiptStoreImpl(this.baseDataSource);
                 break;
             case V2:
-                this.store = new ReceiptStoreImplV2(new HashMapDB());
+                this.store = new ReceiptStoreImplV2(this.baseDataSource);
                 break;
             default:
                 throw new IllegalArgumentException();
         }
+    }
+
+    @Test
+    public void flushDataSource() {
+        store.flush();
+
+        verify(baseDataSource, times(1)).flush();
+    }
+
+    @Test
+    public void closeDataSource() {
+        store.close();
+
+        verify(baseDataSource, times(1)).close();
     }
 
     @Test

@@ -34,7 +34,7 @@ public class PreflightChecksUtilsTest {
 
     @Test
     public void getIntJavaVersion_OK() {
-        RskContext rskContext = new RskContext(new String[0]);
+        RskContext rskContext = new RskTestContext(new String[0]);
         PreflightChecksUtils preflightChecksUtils = new PreflightChecksUtils(rskContext);
 
         assertEquals(preflightChecksUtils.getIntJavaVersion("1.8.0_275"), 8);
