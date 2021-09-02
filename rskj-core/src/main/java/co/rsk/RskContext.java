@@ -246,6 +246,8 @@ public class RskContext implements NodeContext, NodeBootstrapper {
 
     private volatile boolean closed;
 
+    /***** Constructors ***********************************************************************************************/
+
     public RskContext(String[] args) {
         this(new CliArgs.Parser<>(
                 NodeCliOptions.class,
@@ -258,8 +260,10 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         initializeSingletons();
     }
 
-    private void initializeSingletons() {
-        Secp256k1.initialize(getRskSystemProperties());
+    /***** Public Methods *********************************************************************************************/
+
+    public CliArgs<NodeCliOptions, NodeCliFlags> getCliArgs() {
+        return cliArgs;
     }
 
     public synchronized BootstrapImporter getBootstrapImporter() {
@@ -390,14 +394,6 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         return receivedTxSignatureCache;
     }
 
-    private BlockTxSignatureCache getBlockTxSignatureCache() {
-        if (blockTxSignatureCache == null) {
-            blockTxSignatureCache = new BlockTxSignatureCache(getReceivedTxSignatureCache());
-        }
-
-        return blockTxSignatureCache;
-    }
-
     public synchronized RepositoryLocator getRepositoryLocator() {
         checkIfNotClosed();
 
@@ -446,19 +442,6 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         }
 
         return stateRootsStore;
-    }
-
-    protected synchronized StateRootsStore buildStateRootsStore() {
-        checkIfNotClosed();
-
-        int stateRootsCacheSize = getRskSystemProperties().getStateRootsCacheSize();
-        KeyValueDataSource stateRootsDB = LevelDbDataSource.makeDataSource(Paths.get(getRskSystemProperties().databaseDir(), "stateRoots"));
-
-        if (stateRootsCacheSize > 0) {
-            stateRootsDB = new DataSourceWithCache(stateRootsDB, stateRootsCacheSize);
-        }
-
-        return new StateRootsStoreImpl(stateRootsDB);
     }
 
     public synchronized BlockExecutor getBlockExecutor() {
@@ -723,10 +706,6 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         return personalModule;
     }
 
-    public CliArgs<NodeCliOptions, NodeCliFlags> getCliArgs() {
-        return cliArgs;
-    }
-
     public synchronized BuildInfo getBuildInfo() {
         checkIfNotClosed();
 
@@ -910,31 +889,6 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         return blocksBloomStore;
     }
 
-    private KeyValueDataSource getBlocksBloomDataSource() {
-        if (this.blocksBloomDataSource == null) {
-            this.blocksBloomDataSource = this.buildBlocksBloomDataSource();
-        }
-
-        return this.blocksBloomDataSource;
-    }
-
-    protected synchronized KeyValueDataSource buildBlocksBloomDataSource() {
-        checkIfNotClosed();
-
-        return LevelDbDataSource.makeDataSource(Paths.get(getRskSystemProperties().databaseDir(), "blooms"));
-    }
-
-    protected synchronized NodeRunner buildNodeRunner() {
-        checkIfNotClosed();
-
-        return new FullNodeRunner(
-                this,
-                buildInternalServices(),
-                getRskSystemProperties(),
-                getBuildInfo()
-        );
-    }
-
     public synchronized List<InternalService> buildInternalServices() {
         checkIfNotClosed();
 
@@ -1016,43 +970,204 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         return Collections.unmodifiableList(internalServices);
     }
 
+    public synchronized GenesisLoader getGenesisLoader() {
+        checkIfNotClosed();
+
+        if (genesisLoader == null) {
+            genesisLoader = buildGenesisLoader();
+        }
+
+        return genesisLoader;
+    }
+
+    public synchronized Genesis getGenesis() {
+        checkIfNotClosed();
+
+        if (genesis == null) {
+            genesis = getGenesisLoader().load();
+        }
+
+        return genesis;
+    }
+
+    public synchronized Wallet getWallet() {
+        checkIfNotClosed();
+
+        if (wallet == null) {
+            wallet = buildWallet();
+        }
+
+        return wallet;
+    }
+
+    public synchronized BlockValidationRule getBlockValidationRule() {
+        checkIfNotClosed();
+
+        if (blockValidationRule == null) {
+            final RskSystemProperties rskSystemProperties = getRskSystemProperties();
+            final Constants commonConstants = rskSystemProperties.getNetworkConstants();
+            final BlockTimeStampValidationRule blockTimeStampValidationRule = new BlockTimeStampValidationRule(
+                    commonConstants.getNewBlockMaxSecondsInTheFuture(),
+                    rskSystemProperties.getActivationConfig()
+            );
+            blockValidationRule = new BlockValidatorRule(
+                    new TxsMinGasPriceRule(),
+                    new BlockUnclesValidationRule(
+                            getBlockStore(),
+                            commonConstants.getUncleListLimit(),
+                            commonConstants.getUncleGenerationLimit(),
+                            new BlockHeaderCompositeRule(
+                                    getProofOfWorkRule(),
+                                    getForkDetectionDataRule(),
+                                    blockTimeStampValidationRule,
+                                    new ValidGasUsedRule()
+                            ),
+                            new BlockHeaderParentCompositeRule(
+                                    new PrevMinGasPriceRule(),
+                                    new BlockParentNumberRule(),
+                                    blockTimeStampValidationRule,
+                                    new BlockDifficultyRule(getDifficultyCalculator()),
+                                    new BlockParentGasLimitRule(commonConstants.getGasLimitBoundDivisor())
+                            )
+                    ),
+                    new BlockRootValidationRule(rskSystemProperties.getActivationConfig()),
+                    getProofOfWorkRule(),
+                    new RemascValidationRule(),
+                    blockTimeStampValidationRule,
+                    new GasLimitRule(commonConstants.getMinGasLimit()),
+                    new ExtraDataRule(commonConstants.getMaximumExtraDataSize()),
+                    getForkDetectionDataRule()
+            );
+        }
+
+        return blockValidationRule;
+    }
+
+    public synchronized BlockParentDependantValidationRule getBlockParentDependantValidationRule() {
+        checkIfNotClosed();
+
+        if (blockParentDependantValidationRule == null) {
+            Constants commonConstants = getRskSystemProperties().getNetworkConstants();
+            blockParentDependantValidationRule = new BlockParentCompositeRule(
+                    new BlockTxsFieldsValidationRule(),
+                    new BlockTxsValidationRule(getRepositoryLocator()),
+                    new PrevMinGasPriceRule(),
+                    new BlockParentNumberRule(),
+                    new BlockDifficultyRule(getDifficultyCalculator()),
+                    new BlockParentGasLimitRule(commonConstants.getGasLimitBoundDivisor())
+            );
+        }
+
+        return blockParentDependantValidationRule;
+    }
+
+    public synchronized org.ethereum.db.BlockStore buildBlockStore(String databaseDir) {
+        checkIfNotClosed();
+
+        File blockIndexDirectory = new File(databaseDir + "/blocks/");
+        File dbFile = new File(blockIndexDirectory, "index");
+        if (!blockIndexDirectory.exists()) {
+            if (!blockIndexDirectory.mkdirs()) {
+                throw new IllegalArgumentException(String.format(
+                        "Unable to create blocks directory: %s", blockIndexDirectory
+                ));
+            }
+        }
+
+        DB indexDB = DBMaker.fileDB(dbFile)
+                .make();
+
+        KeyValueDataSource blocksDB = LevelDbDataSource.makeDataSource(Paths.get(databaseDir, "blocks"));
+
+        return new IndexedBlockStore(getBlockFactory(), blocksDB, new MapDBBlocksIndex(indexDB));
+    }
+
+    public synchronized PeerScoringReporterService getPeerScoringReporterService() {
+        checkIfNotClosed();
+
+        if(peerScoringReporterService == null) {
+            this.peerScoringReporterService = PeerScoringReporterService.withScheduler(getRskSystemProperties().getPeerScoringSummaryTime(), getPeerScoringManager());
+        }
+
+        return peerScoringReporterService;
+    }
+
+    public boolean isClosed() {
+        return closed;
+    }
+
+    /**
+     * This method closes this RSK context.
+     *
+     * Internally it stops a node runner, if started,
+     * and closes / disposes data storages (db instances), if some has already been instantiated.
+     *
+     * Note that this method is idempotent, which means that calling this method more than once does not have any
+     * visible side effect.
+     */
+    @Override
+    public synchronized void close() {
+        if (closed) {
+            return;
+        }
+
+        closed = true;
+
+        if (nodeRunner != null) {
+            logger.trace("stopping nodeRunner.");
+            nodeRunner.stop();
+            logger.trace("nodeRunner stopped.");
+        }
+
+        if (blockStore != null) {
+            logger.trace("closing blockStore.");
+            blockStore.close();
+            logger.trace("blockStore closed.");
+        }
+
+        if (trieStore != null) {
+            logger.trace("disposing trieStore.");
+            trieStore.dispose();
+            logger.trace("trieStore disposed.");
+        }
+
+        if (receiptStore != null) {
+            logger.trace("closing receiptStore.");
+            receiptStore.close();
+            logger.trace("receiptStore closed.");
+        }
+
+        if (blocksBloomStore != null) {
+            logger.trace("closing blocksBloomStore.");
+            blocksBloomStore.close();
+            logger.trace("blocksBloomStore closed.");
+        }
+    }
+
+    /***** Protected Methods ******************************************************************************************/
+
+    protected synchronized KeyValueDataSource buildBlocksBloomDataSource() {
+        checkIfNotClosed();
+
+        return LevelDbDataSource.makeDataSource(Paths.get(getRskSystemProperties().databaseDir(), "blooms"));
+    }
+
+    protected synchronized NodeRunner buildNodeRunner() {
+        checkIfNotClosed();
+
+        return new FullNodeRunner(
+                this,
+                buildInternalServices(),
+                getRskSystemProperties(),
+                getBuildInfo()
+        );
+    }
+
+    @SuppressWarnings("unused")
     protected synchronized SolidityCompiler buildSolidityCompiler() {
         checkIfNotClosed();
 
         return new SolidityCompiler(getRskSystemProperties());
-    }
-
-    private TrieStore buildAbstractTrieStore(Path databasePath) {
-        TrieStore newTrieStore;
-        GarbageCollectorConfig gcConfig = getRskSystemProperties().garbageCollectorConfig();
-        final String multiTrieStoreNamePrefix = "unitrie_";
-        if (gcConfig.enabled()) {
-            try {
-                newTrieStore = buildMultiTrieStore(databasePath, multiTrieStoreNamePrefix, gcConfig.numberOfEpochs());
-            } catch (IOException e) {
-                throw new IllegalStateException("Unable to build multi trie store", e);
-            }
-        } else {
-            Path trieStorePath = databasePath.resolve("unitrie");
-            try (Stream<Path> databasePathFilesStream = Files.list(databasePath)) {
-                List<Path> multiTrieStorePaths = databasePathFilesStream
-                        .filter(p -> p.getFileName().toString().startsWith(multiTrieStoreNamePrefix))
-                        .collect(Collectors.toList());
-
-                boolean gcWasEnabled = !multiTrieStorePaths.isEmpty();
-                if (gcWasEnabled) {
-                    LevelDbDataSource.mergeDataSources(trieStorePath, multiTrieStorePaths);
-                    // cleanup MultiTrieStore data sources
-                    multiTrieStorePaths.stream()
-                            .map(Path::toString)
-                            .forEach(FileUtil::recursiveDelete);
-                }
-            } catch (IOException e) {
-                logger.error("Unable to check if GC was ever enabled", e);
-            }
-            newTrieStore = buildTrieStore(trieStorePath);
-        }
-        return newTrieStore;
     }
 
     protected synchronized Web3 buildWeb3() {
@@ -1154,38 +1269,6 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         return new TrieStoreImpl(ds);
     }
 
-    private TrieStore buildMultiTrieStore(Path databasePath, String namePrefix, int numberOfEpochs) throws IOException {
-        int currentEpoch = numberOfEpochs;
-        if (!getRskSystemProperties().databaseReset()) {
-            try (Stream<Path> databasePaths = Files.list(databasePath)) {
-                currentEpoch = databasePaths
-                        .map(Path::getFileName)
-                        .map(Path::toString)
-                        .filter(fileName -> fileName.startsWith(namePrefix))
-                        .map(multiTrieStoreName -> multiTrieStoreName.replaceFirst(namePrefix, ""))
-                        .map(Integer::valueOf)
-                        .max(Comparator.naturalOrder())
-                        .orElse(numberOfEpochs);
-            }
-            Path unitriePath = databasePath.resolve("unitrie");
-            if (Files.exists(unitriePath)) {
-                // moves the unitrie directory as the currentEpoch. It "knows" the internals of the MultiTrieStore constructor
-                // to assign currentEpoch - 1 as the name
-                Files.move(
-                        unitriePath,
-                        databasePath.resolve(namePrefix + (currentEpoch - 1))
-                );
-            }
-        }
-
-        return new MultiTrieStore(
-                currentEpoch + 1,
-                numberOfEpochs,
-                name -> buildTrieStore(databasePath.resolve(namePrefix + name)),
-                disposedEpoch -> FileUtil.recursiveDelete(databasePath.resolve(namePrefix + disposedEpoch).toString())
-        );
-    }
-
     protected synchronized RepositoryLocator buildRepositoryLocator() {
         checkIfNotClosed();
 
@@ -1196,6 +1279,19 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         checkIfNotClosed();
 
         return buildBlockStore(getRskSystemProperties().databaseDir());
+    }
+
+    protected StateRootsStore buildStateRootsStore() {
+        checkIfNotClosed();
+
+        int stateRootsCacheSize = getRskSystemProperties().getStateRootsCacheSize();
+        KeyValueDataSource stateRootsDB = LevelDbDataSource.makeDataSource(Paths.get(getRskSystemProperties().databaseDir(), "stateRoots"));
+
+        if (stateRootsCacheSize > 0) {
+            stateRootsDB = new DataSourceWithCache(stateRootsDB, stateRootsCacheSize);
+        }
+
+        return new StateRootsStoreImpl(stateRootsDB);
     }
 
     protected synchronized RskSystemProperties buildRskSystemProperties() {
@@ -1231,6 +1327,105 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         return new CompositeEthereumListener();
     }
 
+    protected synchronized Wallet buildWallet() {
+        checkIfNotClosed();
+
+        RskSystemProperties rskSystemProperties = getRskSystemProperties();
+        if (!rskSystemProperties.isWalletEnabled()) {
+            return null;
+        }
+
+        KeyValueDataSource ds = LevelDbDataSource.makeDataSource(Paths.get(rskSystemProperties.databaseDir(), "wallet"));
+        return new Wallet(ds);
+    }
+
+    /***** Private Methods ********************************************************************************************/
+
+    private void initializeSingletons() {
+        Secp256k1.initialize(getRskSystemProperties());
+    }
+
+    private BlockTxSignatureCache getBlockTxSignatureCache() {
+        if (blockTxSignatureCache == null) {
+            blockTxSignatureCache = new BlockTxSignatureCache(getReceivedTxSignatureCache());
+        }
+
+        return blockTxSignatureCache;
+    }
+
+    private KeyValueDataSource getBlocksBloomDataSource() {
+        if (this.blocksBloomDataSource == null) {
+            this.blocksBloomDataSource = this.buildBlocksBloomDataSource();
+        }
+
+        return this.blocksBloomDataSource;
+    }
+
+    private TrieStore buildAbstractTrieStore(Path databasePath) {
+        TrieStore newTrieStore;
+        GarbageCollectorConfig gcConfig = getRskSystemProperties().garbageCollectorConfig();
+        final String multiTrieStoreNamePrefix = "unitrie_";
+        if (gcConfig.enabled()) {
+            try {
+                newTrieStore = buildMultiTrieStore(databasePath, multiTrieStoreNamePrefix, gcConfig.numberOfEpochs());
+            } catch (IOException e) {
+                throw new IllegalStateException("Unable to build multi trie store", e);
+            }
+        } else {
+            Path trieStorePath = databasePath.resolve("unitrie");
+            try (Stream<Path> databasePathFilesStream = Files.list(databasePath)) {
+                List<Path> multiTrieStorePaths = databasePathFilesStream
+                        .filter(p -> p.getFileName().toString().startsWith(multiTrieStoreNamePrefix))
+                        .collect(Collectors.toList());
+
+                boolean gcWasEnabled = !multiTrieStorePaths.isEmpty();
+                if (gcWasEnabled) {
+                    LevelDbDataSource.mergeDataSources(trieStorePath, multiTrieStorePaths);
+                    // cleanup MultiTrieStore data sources
+                    multiTrieStorePaths.stream()
+                            .map(Path::toString)
+                            .forEach(FileUtil::recursiveDelete);
+                }
+            } catch (IOException e) {
+                logger.error("Unable to check if GC was ever enabled", e);
+            }
+            newTrieStore = buildTrieStore(trieStorePath);
+        }
+        return newTrieStore;
+    }
+
+    private TrieStore buildMultiTrieStore(Path databasePath, @SuppressWarnings("SameParameterValue") String namePrefix, int numberOfEpochs) throws IOException {
+        int currentEpoch = numberOfEpochs;
+        if (!getRskSystemProperties().databaseReset()) {
+            try (Stream<Path> databasePaths = Files.list(databasePath)) {
+                currentEpoch = databasePaths
+                        .map(Path::getFileName)
+                        .map(Path::toString)
+                        .filter(fileName -> fileName.startsWith(namePrefix))
+                        .map(multiTrieStoreName -> multiTrieStoreName.replaceFirst(namePrefix, ""))
+                        .map(Integer::valueOf)
+                        .max(Comparator.naturalOrder())
+                        .orElse(numberOfEpochs);
+            }
+            Path unitriePath = databasePath.resolve("unitrie");
+            if (Files.exists(unitriePath)) {
+                // moves the unitrie directory as the currentEpoch. It "knows" the internals of the MultiTrieStore constructor
+                // to assign currentEpoch - 1 as the name
+                Files.move(
+                        unitriePath,
+                        databasePath.resolve(namePrefix + (currentEpoch - 1))
+                );
+            }
+        }
+
+        return new MultiTrieStore(
+                currentEpoch + 1,
+                numberOfEpochs,
+                name -> buildTrieStore(databasePath.resolve(namePrefix + name)),
+                disposedEpoch -> FileUtil.recursiveDelete(databasePath.resolve(namePrefix + disposedEpoch).toString())
+        );
+    }
+
     private PeerExplorer getPeerExplorer() {
         if (peerExplorer == null) {
             RskSystemProperties rskSystemProperties = getRskSystemProperties();
@@ -1264,38 +1459,6 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         return peerExplorer;
     }
 
-    protected synchronized Wallet buildWallet() {
-        checkIfNotClosed();
-
-        RskSystemProperties rskSystemProperties = getRskSystemProperties();
-        if (!rskSystemProperties.isWalletEnabled()) {
-            return null;
-        }
-
-        KeyValueDataSource ds = LevelDbDataSource.makeDataSource(Paths.get(rskSystemProperties.databaseDir(), "wallet"));
-        return new Wallet(ds);
-    }
-
-    public synchronized GenesisLoader getGenesisLoader() {
-        checkIfNotClosed();
-
-        if (genesisLoader == null) {
-            genesisLoader = buildGenesisLoader();
-        }
-
-        return genesisLoader;
-    }
-
-    public synchronized Genesis getGenesis() {
-        checkIfNotClosed();
-
-        if (genesis == null) {
-            genesis = getGenesisLoader().load();
-        }
-
-        return genesis;
-    }
-
     private BlockChainLoader getBlockChainLoader() {
         if (blockChainLoader == null) {
             blockChainLoader = new BlockChainLoader(
@@ -1319,16 +1482,6 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         }
 
         return syncConfiguration;
-    }
-
-    public synchronized Wallet getWallet() {
-        checkIfNotClosed();
-
-        if (wallet == null) {
-            wallet = buildWallet();
-        }
-
-        return wallet;
     }
 
     private BlockSyncService getBlockSyncService() {
@@ -1429,49 +1582,6 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         return eth62MessageFactory;
     }
 
-    public synchronized BlockValidationRule getBlockValidationRule() {
-        checkIfNotClosed();
-
-        if (blockValidationRule == null) {
-            final RskSystemProperties rskSystemProperties = getRskSystemProperties();
-            final Constants commonConstants = rskSystemProperties.getNetworkConstants();
-            final BlockTimeStampValidationRule blockTimeStampValidationRule = new BlockTimeStampValidationRule(
-                    commonConstants.getNewBlockMaxSecondsInTheFuture(),
-                    rskSystemProperties.getActivationConfig()
-            );
-            blockValidationRule = new BlockValidatorRule(
-                    new TxsMinGasPriceRule(),
-                    new BlockUnclesValidationRule(
-                            getBlockStore(),
-                            commonConstants.getUncleListLimit(),
-                            commonConstants.getUncleGenerationLimit(),
-                            new BlockHeaderCompositeRule(
-                                    getProofOfWorkRule(),
-                                    getForkDetectionDataRule(),
-                                    blockTimeStampValidationRule,
-                                    new ValidGasUsedRule()
-                            ),
-                            new BlockHeaderParentCompositeRule(
-                                    new PrevMinGasPriceRule(),
-                                    new BlockParentNumberRule(),
-                                    blockTimeStampValidationRule,
-                                    new BlockDifficultyRule(getDifficultyCalculator()),
-                                    new BlockParentGasLimitRule(commonConstants.getGasLimitBoundDivisor())
-                            )
-                    ),
-                    new BlockRootValidationRule(rskSystemProperties.getActivationConfig()),
-                    getProofOfWorkRule(),
-                    new RemascValidationRule(),
-                    blockTimeStampValidationRule,
-                    new GasLimitRule(commonConstants.getMinGasLimit()),
-                    new ExtraDataRule(commonConstants.getMaximumExtraDataSize()),
-                    getForkDetectionDataRule()
-            );
-        }
-
-        return blockValidationRule;
-    }
-
     private BlockValidationRule getMinerServerBlockValidationRule() {
         if (minerServerBlockValidationRule == null) {
             RskSystemProperties rskSystemProperties = getRskSystemProperties();
@@ -1495,24 +1605,6 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         }
 
         return minerServerBlockValidationRule;
-    }
-
-    public synchronized BlockParentDependantValidationRule getBlockParentDependantValidationRule() {
-        checkIfNotClosed();
-
-        if (blockParentDependantValidationRule == null) {
-            Constants commonConstants = getRskSystemProperties().getNetworkConstants();
-            blockParentDependantValidationRule = new BlockParentCompositeRule(
-                    new BlockTxsFieldsValidationRule(),
-                    new BlockTxsValidationRule(getRepositoryLocator()),
-                    new PrevMinGasPriceRule(),
-                    new BlockParentNumberRule(),
-                    new BlockDifficultyRule(getDifficultyCalculator()),
-                    new BlockParentGasLimitRule(commonConstants.getGasLimitBoundDivisor())
-            );
-        }
-
-        return blockParentDependantValidationRule;
     }
 
     private ForkDetectionDataCalculator getForkDetectionDataCalculator() {
@@ -1918,89 +2010,6 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         }
 
         return minerClock;
-    }
-
-    public synchronized org.ethereum.db.BlockStore buildBlockStore(String databaseDir) {
-        checkIfNotClosed();
-
-        File blockIndexDirectory = new File(databaseDir + "/blocks/");
-        File dbFile = new File(blockIndexDirectory, "index");
-        if (!blockIndexDirectory.exists()) {
-            if (!blockIndexDirectory.mkdirs()) {
-                throw new IllegalArgumentException(String.format(
-                        "Unable to create blocks directory: %s", blockIndexDirectory
-                ));
-            }
-        }
-
-        DB indexDB = DBMaker.fileDB(dbFile)
-                .make();
-
-        KeyValueDataSource blocksDB = LevelDbDataSource.makeDataSource(Paths.get(databaseDir, "blocks"));
-
-        return new IndexedBlockStore(getBlockFactory(), blocksDB, new MapDBBlocksIndex(indexDB));
-    }
-
-    public synchronized PeerScoringReporterService getPeerScoringReporterService() {
-        checkIfNotClosed();
-
-        if(peerScoringReporterService == null) {
-            this.peerScoringReporterService = PeerScoringReporterService.withScheduler(getRskSystemProperties().getPeerScoringSummaryTime(), getPeerScoringManager());
-        }
-
-        return peerScoringReporterService;
-    }
-
-    public boolean isClosed() {
-        return closed;
-    }
-
-    /**
-     * This method closes this RSK context.
-     *
-     * Internally it stops a node runner, if started,
-     * and closes / disposes data storages (db instances), if some has already been instantiated.
-     *
-     * Note that this method is idempotent, which means that calling this method more than once does not have any
-     * visible side effect.
-     */
-    @Override
-    public synchronized void close() {
-        if (closed) {
-            return;
-        }
-
-        closed = true;
-
-        if (nodeRunner != null) {
-            logger.trace("stopping nodeRunner.");
-            nodeRunner.stop();
-            logger.trace("nodeRunner stopped.");
-        }
-
-        if (blockStore != null) {
-            logger.trace("closing blockStore.");
-            blockStore.close();
-            logger.trace("blockStore closed.");
-        }
-
-        if (trieStore != null) {
-            logger.trace("disposing trieStore.");
-            trieStore.dispose();
-            logger.trace("trieStore disposed.");
-        }
-
-        if (receiptStore != null) {
-            logger.trace("closing receiptStore.");
-            receiptStore.close();
-            logger.trace("receiptStore closed.");
-        }
-
-        if (blocksBloomStore != null) {
-            logger.trace("closing blocksBloomStore.");
-            blocksBloomStore.close();
-            logger.trace("blocksBloomStore closed.");
-        }
     }
 
     private void checkIfNotClosed() {

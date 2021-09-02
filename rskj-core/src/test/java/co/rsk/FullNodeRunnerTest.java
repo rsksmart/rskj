@@ -114,7 +114,7 @@ public class FullNodeRunnerTest {
             runner.run();
             fail("Run should throw an exception");
         } catch (IllegalStateException e) {
-            assertEquals("Node Context is closed", e.getMessage());
+            assertEquals("Node Context is closed. Consider creating a brand new RskContext", e.getMessage());
         }
     }
 
