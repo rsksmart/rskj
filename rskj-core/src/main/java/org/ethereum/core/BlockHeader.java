@@ -50,12 +50,12 @@ public class BlockHeader {
     private static final int UMM_LEAVES_LENGTH = 20;
 
     /* The SHA3 256-bit hash of the parent block, in its entirety */
-    private byte[] parentHash;
+    private final byte[] parentHash;
     /* The SHA3 256-bit hash of the uncles list portion of this block */
-    private byte[] unclesHash;
+    private final byte[] unclesHash;
     /* The 160-bit address to which all fees collected from the
      * successful mining of this block be transferred; formally */
-    private RskAddress coinbase;
+    private final RskAddress coinbase;
     /* The SHA3 256-bit hash of the root node of the state trie,
      * after all transactions are executed and finalisations applied */
     private byte[] stateRoot;
@@ -79,12 +79,12 @@ public class BlockHeader {
     private BlockDifficulty difficulty;
     /* A scalar value equalBytes to the reasonable output of Unix's time()
      * at this block's inception */
-    private long timestamp;
+    private final long timestamp;
     /* A scalar value equalBytes to the number of ancestor blocks.
      * The genesis block has a number of zero */
-    private long number;
+    private final long number;
     /* A scalar value equalBytes to the current limit of gas expenditure per block */
-    private byte[] gasLimit;
+    private final byte[] gasLimit;
     /* A scalar value equalBytes to the total gas used in transactions in this block */
     private long gasUsed;
     /* A scalar value equalBytes to the total paid fees in transactions in this block */
@@ -92,7 +92,7 @@ public class BlockHeader {
 
     /* An arbitrary byte array containing data relevant to this block.
      * With the exception of the genesis block, this must be 32 bytes or fewer */
-    private byte[] extraData;
+    private final byte[] extraData;
 
     /* The 80-byte bitcoin block header for merged mining */
     private byte[] bitcoinMergedMiningHeader;
@@ -103,22 +103,25 @@ public class BlockHeader {
 
     private byte[] miningForkDetectionData;
 
-    private byte[] ummRoot;
+    private final byte[] ummRoot;
 
     /**
      * The mgp for a tx to be included in the block.
      */
-    private Coin minimumGasPrice;
-    private int uncleCount;
+    private final Coin minimumGasPrice;
+    private final int uncleCount;
 
     /* Indicates if this block header cannot be changed */
     private volatile boolean sealed;
 
+    /* Holds calculated block hash */
+    private Keccak256 hash;
+
     /* Indicates if the block was mined according to RSKIP-92 rules */
-    private boolean useRskip92Encoding;
+    private final boolean useRskip92Encoding;
 
     /* Indicates if Block hash for merged mining should have the format described in RSKIP-110 */
-    private boolean includeForkDetectionData;
+    private final boolean includeForkDetectionData;
 
     public BlockHeader(byte[] parentHash, byte[] unclesHash, RskAddress coinbase, byte[] stateRoot,
                        byte[] txTrieRoot, byte[] receiptTrieRoot, byte[] logsBloom, BlockDifficulty difficulty,
@@ -192,6 +195,7 @@ public class BlockHeader {
         if (this.sealed) {
             throw new SealedBlockHeaderException("trying to alter state root");
         }
+        this.hash = null;
 
         this.stateRoot = stateRoot;
     }
@@ -205,6 +209,7 @@ public class BlockHeader {
         if (this.sealed) {
             throw new SealedBlockHeaderException("trying to alter receipts root");
         }
+        this.hash = null;
 
         this.receiptTrieRoot = receiptTrieRoot;
     }
@@ -218,6 +223,7 @@ public class BlockHeader {
         if (this.sealed) {
             throw new SealedBlockHeaderException("trying to alter transactions root");
         }
+        this.hash = null;
 
         this.txTrieRoot = stateRoot;
     }
@@ -242,6 +248,7 @@ public class BlockHeader {
         if (this.sealed) {
             throw new SealedBlockHeaderException("trying to alter difficulty");
         }
+        this.hash = null;
 
         this.difficulty = difficulty;
     }
@@ -267,6 +274,7 @@ public class BlockHeader {
         if (this.sealed) {
             throw new SealedBlockHeaderException("trying to alter paid fees");
         }
+        this.hash = null;
 
         this.paidFees = paidFees;
     }
@@ -280,6 +288,7 @@ public class BlockHeader {
         if (this.sealed) {
             throw new SealedBlockHeaderException("trying to alter gas used");
         }
+        this.hash = null;
 
         this.gasUsed = gasUsed;
     }
@@ -293,12 +302,17 @@ public class BlockHeader {
         if (this.sealed) {
             throw new SealedBlockHeaderException("trying to alter logs bloom");
         }
+        this.hash = null;
 
         this.logsBloom = logsBloom;
     }
 
     public Keccak256 getHash() {
-        return new Keccak256(HashUtil.keccak256(getEncoded()));
+        if (this.hash == null) {
+            this.hash = new Keccak256(HashUtil.keccak256(getEncoded()));
+        }
+
+        return this.hash;
     }
 
     public byte[] getFullEncoded() {
@@ -451,6 +465,7 @@ public class BlockHeader {
         if (this.sealed) {
             throw new SealedBlockHeaderException("trying to alter bitcoin merged mining header");
         }
+        this.hash = null;
 
         this.bitcoinMergedMiningHeader = bitcoinMergedMiningHeader;
     }
@@ -464,6 +479,7 @@ public class BlockHeader {
         if (this.sealed) {
             throw new SealedBlockHeaderException("trying to alter bitcoin merged mining merkle proof");
         }
+        this.hash = null;
 
         this.bitcoinMergedMiningMerkleProof = bitcoinMergedMiningMerkleProof;
     }
@@ -477,6 +493,7 @@ public class BlockHeader {
         if (this.sealed) {
             throw new SealedBlockHeaderException("trying to alter bitcoin merged mining coinbase transaction");
         }
+        this.hash = null;
 
         this.bitcoinMergedMiningCoinbaseTransaction = bitcoinMergedMiningCoinbaseTransaction;
     }

@@ -29,15 +29,25 @@ import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPList;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 
 import java.math.BigInteger;
 import java.util.Arrays;
+import java.util.List;
+import java.util.function.Consumer;
 
 import static java.lang.System.arraycopy;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.*;
+import static org.mockito.Mockito.times;
+import static org.powermock.api.mockito.PowerMockito.*;
 
+@RunWith(PowerMockRunner.class)
+@PrepareForTest(HashUtil.class)
 public class BlockHeaderTest {
+
     @Test
     public void getHashForMergedMiningWithForkDetectionDataAndIncludedOnAndMergedMiningFields() {
         BlockHeader header = createBlockHeaderWithMergedMiningFields(new byte[0], true, new byte[0]);
@@ -268,6 +278,52 @@ public class BlockHeaderTest {
         assertThat(new byte[0], is(header.getMiningForkDetectionData()));
     }
 
+    @Test
+    public void getHashShouldReuseCalculatedValue() {
+        mockStatic(HashUtil.class);
+
+        BlockHeader header = createBlockHeaderWithMergedMiningFields(new byte[0], false, new byte[0]);
+        byte[] headerEncoded = header.getEncoded();
+
+        when(HashUtil.keccak256(headerEncoded)).thenReturn(Keccak256.ZERO_HASH.getBytes());
+
+        for (int i = 0; i < 5; i++) {
+            header.getHash();
+        }
+
+        verifyStatic(HashUtil.class, times(1));
+        HashUtil.keccak256(headerEncoded);
+    }
+
+    @Test
+    public void verifyRecalculatedHashForAmendedBlocks() {
+        BlockHeader header = createBlockHeader(new byte[80], new byte[32], new byte[128], new byte[0],
+                false, new byte[0], false, false);
+
+        assertArrayEquals(HashUtil.keccak256(header.getEncoded()), header.getHash().getBytes());
+
+        List<Consumer<BlockHeader>> stateModifiers = Arrays.asList(
+                h -> h.setBitcoinMergedMiningCoinbaseTransaction(HashUtil.keccak256("BitcoinMergedMiningCoinbaseTransaction".getBytes())),
+                h -> h.setBitcoinMergedMiningHeader(HashUtil.keccak256("BitcoinMergedMiningHeader".getBytes())),
+                h -> h.setBitcoinMergedMiningMerkleProof(HashUtil.keccak256("BitcoinMergedMiningMerkleProof".getBytes())),
+                h -> h.setDifficulty(header.getDifficulty().add(BlockDifficulty.ONE)),
+                h -> h.setGasUsed(header.getGasUsed() + 10),
+                h -> h.setLogsBloom(HashUtil.keccak256("LogsBloom".getBytes())),
+                h -> h.setPaidFees(header.getPaidFees().add(Coin.valueOf(10))),
+                h -> h.setReceiptsRoot(HashUtil.keccak256("ReceiptsRoot".getBytes())),
+                h -> h.setStateRoot(HashUtil.keccak256("StateRoot".getBytes())),
+                h -> h.setTransactionsRoot(HashUtil.keccak256("TransactionsRoot".getBytes())),
+                BlockHeader::seal
+        );
+
+        stateModifiers.forEach(sm -> {
+            sm.accept(header);
+            assertArrayEquals("Block header returned invalid hash after modification",
+                    HashUtil.keccak256(header.getEncoded()),
+                    header.getHash().getBytes());
+        });
+    }
+
     private BlockHeader createBlockHeaderWithMergedMiningFields(
             byte[] forkDetectionData,
             boolean includeForkDetectionData, byte[] ummRoot){
@@ -295,6 +351,14 @@ public class BlockHeaderTest {
     private BlockHeader createBlockHeader(byte[] bitcoinMergedMiningHeader, byte[] bitcoinMergedMiningMerkleProof,
                                           byte[] bitcoinMergedMiningCoinbaseTransaction, byte[] forkDetectionData,
                                           boolean includeForkDetectionData, byte[] ummRoot, boolean sealed) {
+        return createBlockHeader(bitcoinMergedMiningHeader, bitcoinMergedMiningMerkleProof, bitcoinMergedMiningCoinbaseTransaction,
+                forkDetectionData, includeForkDetectionData, ummRoot, true, sealed);
+    }
+
+    private BlockHeader createBlockHeader(byte[] bitcoinMergedMiningHeader, byte[] bitcoinMergedMiningMerkleProof,
+                                          byte[] bitcoinMergedMiningCoinbaseTransaction, byte[] forkDetectionData,
+                                          boolean includeForkDetectionData, byte[] ummRoot, boolean useRskip92Encoding,
+                                          boolean sealed) {
         BlockDifficulty difficulty = new BlockDifficulty(BigInteger.ONE);
         long number = 1;
         BigInteger gasLimit = BigInteger.valueOf(6800000);
@@ -322,7 +386,7 @@ public class BlockHeaderTest {
                 Coin.valueOf(10L),
                 0,
                 sealed,
-                true,
+                useRskip92Encoding,
                 includeForkDetectionData,
                 ummRoot);
     }
