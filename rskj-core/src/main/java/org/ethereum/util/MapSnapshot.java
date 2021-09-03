@@ -25,6 +25,15 @@ import java.io.*;
 import java.util.Map;
 import java.util.Objects;
 
+/**
+ * {@link MapSnapshot} is a generic class for writing to and reading from a byte stream map snapshots of type {@code Map<ByteArrayWrapper, byte[]>}.
+ *
+ * There are two appropriate implementations:
+ * - {@link MapSnapshot.In} for reading from a stream
+ * - {@link MapSnapshot.Out} for writing to a stream
+ *
+ * This class implements {@link Closeable} interface, so it should be closed after use to dispose internal resources.
+ */
 public abstract class MapSnapshot<T extends Closeable> implements Closeable {
 
     protected final T stream;
@@ -48,44 +57,6 @@ public abstract class MapSnapshot<T extends Closeable> implements Closeable {
             return new MapSnapshot.Out(new DataOutputStream(outputStream));
         }
 
-    }
-
-    public static class In extends MapSnapshot<DataInputStream> {
-
-        protected In(@Nonnull InputStream input) {
-            super(new DataInputStream(input));
-        }
-
-        public void read(@Nonnull Map<ByteArrayWrapper, byte[]> map) throws IOException {
-            Objects.requireNonNull(map);
-
-            int count = stream.readInt();
-            if (count < 1) {
-                throw new IOException("Invalid data: number of entries");
-            }
-            for (int i = 0; i < count; i++) {
-                int keySize = stream.readInt();
-                if (keySize < 1) {
-                    throw new IOException("Invalid data: key size");
-                }
-                byte[] key = new byte[keySize];
-                stream.readFully(key);
-
-                int valueSize = stream.readInt();
-                if (valueSize < -1) {
-                    throw new IOException("Invalid data: value size");
-                }
-                byte[] value = null;
-                if (valueSize > 0) {
-                    value = new byte[valueSize];
-                    stream.readFully(value);
-                } else if (valueSize == 0) {
-                    value = new byte[0];
-                }
-
-                map.put(ByteUtil.wrap(key), value);
-            }
-        }
     }
 
     public static class Out extends MapSnapshot<DataOutputStream> {
@@ -114,6 +85,45 @@ public abstract class MapSnapshot<T extends Closeable> implements Closeable {
                         stream.write(value);
                     }
                 }
+            }
+        }
+    }
+
+    public static class In extends MapSnapshot<DataInputStream> {
+
+        protected In(@Nonnull InputStream input) {
+            super(new DataInputStream(input));
+        }
+
+        public void read(@Nonnull Map<ByteArrayWrapper, byte[]> map) throws IOException {
+            Objects.requireNonNull(map);
+
+
+            int entryCount = stream.readInt();
+            if (entryCount < 1) {
+                throw new IOException("Invalid data: number of entries");
+            }
+            for (int i = 0; i < entryCount; i++) {
+                int keySize = stream.readInt();
+                if (keySize < 1) {
+                    throw new IOException("Invalid data: key size");
+                }
+                byte[] key = new byte[keySize];
+                stream.readFully(key);
+
+                int valueSize = stream.readInt();
+                if (valueSize < -1) {
+                    throw new IOException("Invalid data: value size");
+                }
+                byte[] value = null;
+                if (valueSize > 0) {
+                    value = new byte[valueSize];
+                    stream.readFully(value);
+                } else if (valueSize == 0) {
+                    value = new byte[0];
+                }
+
+                map.put(ByteUtil.wrap(key), value);
             }
         }
     }

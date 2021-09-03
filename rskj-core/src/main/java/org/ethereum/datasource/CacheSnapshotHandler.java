@@ -79,6 +79,12 @@ public class CacheSnapshotHandler {
         }
     }
 
+    /**
+     *  Saves {@code cache}'s entries into a file.
+     *
+     *  As this operation can take some time and be interrupted in the middle (which potentially could lead to having a corrupted file),
+     *  the entries are being saved into the temporary file first, which then replaces existing one, if any.
+     */
     public void save(@Nonnull Map<ByteArrayWrapper, byte[]> cache) {
         File tempFile = null;
         try {
