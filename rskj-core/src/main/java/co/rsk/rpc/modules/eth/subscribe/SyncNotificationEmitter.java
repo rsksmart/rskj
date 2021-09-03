@@ -92,7 +92,7 @@ public class SyncNotificationEmitter {
     }
 
     @VisibleForTesting
-    protected EthSubscriptionNotification<?> getNotification(boolean isSyncing, SubscriptionId id) {
+    protected EthSubscriptionNotification<Object> getNotification(boolean isSyncing, SubscriptionId id) {
         if (isSyncing) {
             long currentBlockNum = blockchain.getBestBlock().getNumber();
             long highestBlockNum = this.nodeBlockProcessor.getLastKnownBlockNumber();
