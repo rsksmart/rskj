@@ -69,6 +69,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.*;
 import java.util.function.Function;
+import java.util.function.UnaryOperator;
 
 import static java.lang.Math.max;
 import static org.ethereum.rpc.TypeConverter.*;
@@ -410,16 +411,13 @@ public class Web3Impl implements Web3 {
         return invokeByBlockRef(inputs, blockNumber -> this.eth_getBalance(address, blockNumber));
     }
 
-    private Optional<String> applyIfPresent(final Map<String, String> inputs, final String reference, final Function<String, String> function) {
+    private Optional<String> applyIfPresent(final Map<String, String> inputs, final String reference, final UnaryOperator<String> function) {
         return Optional.ofNullable(inputs.get(reference)).map(function);
     }
 
     private boolean isInMainChain(Block block) {
         return this.blockchain.getBlocksInformationByNumber(block.getNumber())
-                .stream().anyMatch(b -> {
-                    return b.isInMainChain()
-                            && Arrays.equals(b.getHash(), block.getHash().getBytes());
-                });
+                .stream().anyMatch(b -> b.isInMainChain() && Arrays.equals(b.getHash(), block.getHash().getBytes()));
     }
 
     @Override
@@ -438,7 +436,7 @@ public class Web3Impl implements Web3 {
 
         try {
             RskAddress addr = new RskAddress(address);
-            
+
             AccountInformationProvider accountInformationProvider =
                     web3InformationRetriever.getInformationProvider(blockId);
 
@@ -473,7 +471,7 @@ public class Web3Impl implements Web3 {
      * @param toInvokeByBlockNumber a function that returns a string based on the block number
      * @return function invocation result
      */
-    protected String invokeByBlockRef(Map<String, String> inputs, Function<String, String> toInvokeByBlockNumber) {
+    protected String invokeByBlockRef(Map<String, String> inputs, UnaryOperator<String> toInvokeByBlockNumber) {
         final boolean requireCanonical = Boolean.parseBoolean(inputs.get("requireCanonical"));
         return applyIfPresent(inputs, "blockHash", blockHash -> this.toInvokeByBlockHash(blockHash, requireCanonical, toInvokeByBlockNumber))
                 .orElseGet(() -> applyIfPresent(inputs, "blockNumber", toInvokeByBlockNumber)
