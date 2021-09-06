@@ -78,6 +78,8 @@ public class TrieStoreImpl implements TrieStore {
             if (store instanceof DataSourceWithCache) {
                 ((DataSourceWithCache) store).emitLogs();
             }
+
+            traceInfoLocal.remove();
         }
     }
 
@@ -195,12 +197,12 @@ public class TrieStoreImpl implements TrieStore {
      * Should not be used when logger tracing is disabled ({@link Logger#isTraceEnabled()} is {@code false}).
      */
     private static final class TraceInfo {
-        int numOfRetrievesInBlockProcess;
-        int numOfSavesInBlockProcess;
-        int numOfNoSavesInBlockProcess;
+        private int numOfRetrievesInBlockProcess;
+        private int numOfSavesInBlockProcess;
+        private int numOfNoSavesInBlockProcess;
 
-        int numOfRetrievesInSaveTrie;
-        int numOfSavesInSaveTrie;
-        int numOfNoSavesInSaveTrie;
+        private int numOfRetrievesInSaveTrie;
+        private int numOfSavesInSaveTrie;
+        private int numOfNoSavesInSaveTrie;
     }
 }

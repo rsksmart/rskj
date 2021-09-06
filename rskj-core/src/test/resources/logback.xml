@@ -70,6 +70,7 @@
     <logger name="co.rsk.db.migration.MissingOrchidStorageKeysProvider" level="INFO"/>
     <logger name="co.rsk.core.bc.BlockChainFlusher" level="TRACE"/>
     <logger name="blooms" level="INFO"/>
+    <logger name="triestore" level="TRACE" />
 
     <root level="DEBUG">
         <appender-ref ref="stdout"/>
