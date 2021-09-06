@@ -27,6 +27,7 @@ import java.util.Optional;
 
 public class NodeReference {
 
+    private static final NodeReference EMPTY = new NodeReference(null, null, null);
 
     private final TrieStore store;
 
@@ -106,6 +107,11 @@ public class NodeReference {
 
     }
 
+    // the referenced node was loaded
+    public boolean wasLoaded() {
+        return lazyNode != null;
+    }
+
     // This method should only be called from save()
     public int serializedLength() {
         if (!isEmpty()) {
@@ -149,6 +155,6 @@ public class NodeReference {
     }
 
     public static NodeReference empty() {
-        return new NodeReference(null, null, null);
+        return EMPTY;
     }
 }
