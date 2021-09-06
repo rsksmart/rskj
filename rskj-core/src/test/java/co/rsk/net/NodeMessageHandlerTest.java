@@ -678,7 +678,9 @@ public class NodeMessageHandlerTest {
         Message message = mock(Message.class);
         Mockito.when(message.getMessageType()).thenReturn(MessageType.NEW_BLOCK_HASHES);
 
-        handler.processMessage(null, message);
+        final SimplePeer sender = new SimplePeer(new NodeID(new byte[] {1}));
+        
+        handler.processMessage(sender, message);
 
         verify(blockProcessor, never()).processNewBlockHashesMessage(any(), any());
     }
@@ -854,6 +856,33 @@ public class NodeMessageHandlerTest {
                 Collections.emptyList(),
                 Collections.emptyList()
         );
+    }
+    
+    @Test
+    public void fillMessageQueue_thenBlockNewMessages() throws UnknownHostException {
+     
+    	TransactionGateway transactionGateway = mock(TransactionGateway.class);
+        BlockProcessor blockProcessor = mock(BlockProcessor.class);
+        Mockito.when(blockProcessor.hasBetterBlockToSync()).thenReturn(false);
+
+        final NodeMessageHandler handler = new NodeMessageHandler(config, blockProcessor, null, null, transactionGateway, RskMockFactory.getPeerScoringManager(),
+                mock(StatusResolver.class));
+
+        final SimplePeer sender = new SimplePeer(new NodeID(new byte[] {1}));
+    
+        // Add more than the queue supports
+        int numMsgToAdd = config.getMessageQueueMaxSize() + 50;
+        for(int i = 0; i < numMsgToAdd; i++) {
+        	
+        	final TransactionsMessage message = new TransactionsMessage(TransactionUtils.getTransactions(1));
+        
+        	handler.postMessage(sender, message);
+        	
+        }
+        
+        // assert that the surplus was not added
+        Assert.assertEquals(config.getMessageQueueMaxSize(), handler.getMessageQueueSize(sender));
+        
     }
 }
 

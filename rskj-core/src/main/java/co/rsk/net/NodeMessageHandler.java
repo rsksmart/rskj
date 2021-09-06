@@ -44,7 +44,11 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.TimeUnit;
+
 import java.util.stream.Collectors;
+
+import java.util.concurrent.atomic.AtomicInteger;
+
 
 public class NodeMessageHandler implements MessageHandler, InternalService, Runnable {
 
@@ -75,6 +79,10 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
 
     private long cleanMsgTimestamp;
 
+    private MessageCounter messageCounter = new MessageCounter();
+	private final int messageQueueMaxSize;
+    
+
     /**
      * Creates a new node message handler.
      */
@@ -97,6 +105,7 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
         this.bannedMiners = Collections.unmodifiableSet(
                 config.bannedMinerList().stream().map(RskAddress::new).collect(Collectors.toSet())
         );
+        this.messageQueueMaxSize = config.getMessageQueueMaxSize();
     }
 
     /**
@@ -128,6 +137,9 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
         else {
             loggerMessageProcess.debug("Message[{}] processed after [{}] seconds.", message.getMessageType(), timeInSeconds);
         }
+        
+        messageCounter.decrement(sender);
+        
     }
 
     @Override
@@ -143,37 +155,98 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
     }
 
     private void tryAddMessage(Peer sender, Message message) {
+    	
+		double score = sender.score(System.currentTimeMillis(), message.getMessageType());
+
+		boolean allowed = controlMessageIngress(sender, message, score);
+
+		if (allowed) {
+			this.addMessage(sender, message, score);
+		}
+    }
+
+	/**
+	 * Responds if a message must be allowed 
+	 */
+	private boolean controlMessageIngress(Peer sender, Message message, double score) {
+
+		return 
+				allowByScore(score) && 
+				allowByMessageCount(sender) && 
+				allowByNotBanned(sender, message) &&
+				allowByMessageUniqueness(sender, message); // prevent repeated is the most expensive and MUST be the last 
+
+	}
+	
+	/**
+	 * assert score is acceptable 
+	 */
+	private boolean allowByScore(double score) {
+		return score >= 0;
+	}
+	
+	/**
+	 * assert message count is under the threshold defined in config
+	 */
+	private boolean allowByMessageCount(Peer sender) {
+		boolean allow = messageCounter.getValue(sender) < messageQueueMaxSize;
+		if (!allow && logger.isInfoEnabled()) {
+			logger.info("Peer [{}] has its queue full(maxSize: []). Its messages will be not allowed for a while.", sender.getPeerNodeID(), messageQueueMaxSize);
+		}
+		return allow;
+	}
+
+	private boolean allowByNotBanned(Peer sender, Message message) {
+		
         if (!this.bannedMiners.isEmpty() && message.getMessageType() == MessageType.BLOCK_MESSAGE) {
             RskAddress miner = ((BlockMessage) message).getBlock().getCoinbase();
             if (this.bannedMiners.contains(miner)) {
                 logger.trace("Received block mined by banned miner {} from peer {}, not added to the queue", miner, sender);
-                return;
+                return false;
             }
         }
 
-        Keccak256 encodedMessage = new Keccak256(HashUtil.keccak256(message.getEncoded()));
-        if (!receivedMessages.contains(encodedMessage)) {
-            if (message.getMessageType() == MessageType.BLOCK_MESSAGE || message.getMessageType() == MessageType.TRANSACTIONS) {
-                if (this.receivedMessages.size() >= MAX_NUMBER_OF_MESSAGES_CACHED) {
-                    this.receivedMessages.clear();
-                }
-                this.receivedMessages.add(encodedMessage);
-            }
+		return true;
+	}
 
-            double score = sender.score(System.currentTimeMillis(), message.getMessageType());
+	/**
+	 * assert message was not received twice
+	 * add it to a map and manages the state of the map
+	 * record event if message is repeated 
+	 */
+	private boolean allowByMessageUniqueness(Peer sender, Message message) {
 
-            this.addMessage(sender, message, score);
-        } else {
-            recordEvent(sender, EventType.REPEATED_MESSAGE);
-            logger.trace("Received message already known, not added to the queue");
-        }
-    }
+		Keccak256 encodedMessage = new Keccak256(HashUtil.keccak256(message.getEncoded()));
 
-    private void addMessage(Peer sender, Message message, double score) {
-        if (score >= 0 && !this.queue.offer(new MessageTask(sender, message, score))) {
-            logger.warn("Unexpected path. Is message queue bounded now?");
-        }
-    }
+		boolean contains = receivedMessages.contains(encodedMessage);
+
+		if (!contains) {
+			if (message.getMessageType() == MessageType.BLOCK_MESSAGE || message.getMessageType() == MessageType.TRANSACTIONS) {
+				if (this.receivedMessages.size() >= MAX_NUMBER_OF_MESSAGES_CACHED) {
+					this.receivedMessages.clear();
+				}
+				this.receivedMessages.add(encodedMessage);
+			}
+
+		} else {
+			recordEvent(sender, EventType.REPEATED_MESSAGE);
+			logger.trace("Received message already known, not added to the queue");
+		}
+
+		return (contains == false);
+	}
+    
+	private void addMessage(Peer sender, Message message, double score) {
+
+		boolean messageAdded = this.queue.offer(new MessageTask(sender, message, score));
+
+		if (messageAdded) {
+			messageCounter.increment(sender);
+		} else {
+			logger.warn("Unexpected path. Is message queue bounded now?");
+		}
+
+	}
 
     private void cleanExpiredMessages() {
         long currentTime = System.currentTimeMillis();
@@ -199,6 +272,10 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
         return this.queue.size();
     }
 
+    public Integer getMessageQueueSize(Peer peer) {
+    	return messageCounter.getValue(peer);
+    }
+
     @Override
     public void run() {
         while (!stopped) {
@@ -219,8 +296,10 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
                 }
 
                 updateTimedEvents();
-            }
-            catch (Exception ex) {
+            } catch (InterruptedException ex) {
+            	logger.error("Interrupted Exception processing: {}", task, ex);
+            	Thread.currentThread().interrupt();
+            } catch (Exception ex) {
                 logger.error("Unexpected error processing: {}", task, ex);
             }
         }

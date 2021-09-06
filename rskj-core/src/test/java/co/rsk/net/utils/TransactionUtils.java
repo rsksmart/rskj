@@ -28,6 +28,7 @@ import org.ethereum.util.ByteUtil;
 import org.ethereum.util.Utils;
 
 import java.math.BigInteger;
+import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -39,7 +40,7 @@ public class TransactionUtils {
         List<Transaction> txs = new ArrayList<>();
 
         for (long k = 0; k < n; k++)
-            txs.add(createTransaction(getPrivateKeyBytes(), getAddress(), BigInteger.valueOf(k + 1), BigInteger.valueOf(k)));
+            txs.add(createTransaction(getPrivateKeyBytes(), getAddress(), BigInteger.valueOf(Utils.getRandom().nextInt(2000)), BigInteger.valueOf(k)));
 
         return txs;
     }
@@ -50,7 +51,7 @@ public class TransactionUtils {
     }
 
     public static byte[] getPrivateKeyBytes() {
-        return HashUtil.keccak256("this is a seed".getBytes());
+        return HashUtil.keccak256(SecureRandom.getSeed(15));
     }
 
     public static Transaction createTransaction(byte[] privateKey, String toAddress, BigInteger value, BigInteger nonce) {
