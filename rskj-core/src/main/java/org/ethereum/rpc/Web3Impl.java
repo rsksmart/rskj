@@ -68,6 +68,7 @@ import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.*;
+import java.util.function.Function;
 
 import static java.lang.Math.max;
 import static org.ethereum.rpc.TypeConverter.*;
@@ -379,6 +380,16 @@ public class Web3Impl implements Web3 {
     }
 
     @Override
+    public String eth_call(CallArguments args, Map<String, String> inputs) {
+        return invokeByBlockRef(inputs, blockNumber -> this.eth_call(args, blockNumber));
+    }
+
+    @Override
+    public String eth_getCode(String address, Map<String, String> inputs) {
+        return invokeByBlockRef(inputs, blockNumber -> this.eth_getCode(address, blockNumber));
+    }
+
+    @Override
     public String eth_getBalance(String address, String block) {
         /* HEX String  - an integer block number
         *  String "earliest"  for the earliest/genesis block
@@ -395,8 +406,30 @@ public class Web3Impl implements Web3 {
     }
 
     @Override
+    public String eth_getBalance(String address, Map<String, String> inputs) {
+        return invokeByBlockRef(inputs, blockNumber -> this.eth_getBalance(address, blockNumber));
+    }
+
+    private Optional<String> applyIfPresent(final Map<String, String> inputs, final String reference, final Function<String, String> function) {
+        return Optional.ofNullable(inputs.get(reference)).map(function);
+    }
+
+    private boolean isInMainChain(Block block) {
+        return this.blockchain.getBlocksInformationByNumber(block.getNumber())
+                .stream().anyMatch(b -> {
+                    return b.isInMainChain()
+                            && Arrays.equals(b.getHash(), block.getHash().getBytes());
+                });
+    }
+
+    @Override
     public String eth_getBalance(String address) {
         return eth_getBalance(address, "latest");
+    }
+
+    @Override
+    public String eth_getStorageAt(String address, String storageIdx, Map<String, String> blockRef) {
+        return invokeByBlockRef(blockRef, blockNumber -> this.eth_getStorageAt(address,storageIdx, blockNumber));
     }
 
     @Override
@@ -424,6 +457,40 @@ public class Web3Impl implements Web3 {
                 logger.debug("eth_getStorageAt({}, {}, {}): {}", address, storageIdx, blockId, s);
             }
         }
+    }
+
+    @Override
+    public String eth_getTransactionCount(String address, Map<String, String> inputs) {
+        return invokeByBlockRef(inputs, blockNumber -> this.eth_getTransactionCount(address, blockNumber));
+    }
+
+    /**
+     * eip-1898 implementations.
+     * It processes inputs maps ex: { "blockNumber": "0x0" },
+     * { "blockHash": "0xd4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3", "requireCanonical": false }
+     * and invoke a function after processing.
+     * @param inputs map
+     * @param toInvokeByBlockNumber a function that returns a string based on the block number
+     * @return function invocation result
+     */
+    protected String invokeByBlockRef(Map<String, String> inputs, Function<String, String> toInvokeByBlockNumber) {
+        final boolean requireCanonical = Boolean.parseBoolean(inputs.get("requireCanonical"));
+        return applyIfPresent(inputs, "blockHash", blockHash -> this.toInvokeByBlockHash(blockHash, requireCanonical, toInvokeByBlockNumber))
+                .orElseGet(() -> applyIfPresent(inputs, "blockNumber", toInvokeByBlockNumber)
+                .orElseThrow(() -> invalidParamError("Invalid block input"))
+        );
+    }
+
+    private String toInvokeByBlockHash(String blockHash, boolean requireCanonical, Function<String, String> toInvokeByBlockNumber) {
+        Block block = Optional.ofNullable(this.blockchain.getBlockByHash(stringHexToByteArray(blockHash)))
+                .orElseThrow(() -> blockNotFound(String.format("Block with hash %s not found", blockHash)));
+
+        //check if is canonical required
+        if (requireCanonical && !isInMainChain(block)) {
+            throw blockNotFound(String.format("Block with hash %s is not canonical and it is required", blockHash));
+        }
+
+        return toInvokeByBlockNumber.apply(toQuantityJsonHex(block.getNumber()));
     }
 
     @Override
