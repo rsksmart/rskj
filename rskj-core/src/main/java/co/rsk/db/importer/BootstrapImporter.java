@@ -60,55 +60,15 @@ public class BootstrapImporter {
     }
 
     private void updateDatabase() {
-        byte[] encodedData = bootstrapDataProvider.getBootstrapData();
+        Queue<RLPElement> rlpElementQueue = decodeQueue(bootstrapDataProvider.getBootstrapData());
 
-        RLPList rlpElements = RLP.decodeList(encodedData);
-        encodedData = null;
-
-        RLPElement rlpElement0 = rlpElements.get(0);
-        RLPElement rlpElement1 = rlpElements.get(1);
-        rlpElements = null;
-
-        insertBlocks(blockStore, blockFactory, rlpElement0);
-        rlpElement0 = null;
-
-        insertState(trieStore, rlpElement1);
-    }
-
-    private static void insertState(TrieStore destinationTrieStore, RLPElement rlpElement) {
-        RLPList statesData = RLP.decodeList(rlpElement.getRLPData());
-        RLPList nodesData = RLP.decodeList(statesData.get(0).getRLPData());
-        RLPList valuesData = RLP.decodeList(statesData.get(1).getRLPData());
-        statesData = null;
+        insertBlocks(blockStore, blockFactory, Objects.requireNonNull(rlpElementQueue.poll()));
 
         HashMapDB hashMapDB = new HashMapDB();
-        TrieStoreImpl fakeStore = new TrieStoreImpl(hashMapDB);
+        Queue<byte[]> nodeDataQueue = new LinkedList<>();
 
-        Queue<Trie> nodes = new LinkedList<>();
-
-        int nodesDataSize = nodesData.size();
-        for (int k = 0; k < nodesDataSize; k++) {
-            RLPElement element = nodesData.get(k);
-            byte[] rlpData = Objects.requireNonNull(element.getRLPData());
-            Trie trie = Trie.fromMessage(rlpData, fakeStore);
-            hashMapDB.put(trie.getHash().getBytes(), rlpData);
-            nodes.add(trie);
-        }
-        nodesData = null;
-        fakeStore = null;
-
-        int valuesDataSize = valuesData.size();
-        for (int k = 0; k < valuesDataSize; k++) {
-            RLPElement element = valuesData.get(k);
-            byte[] rlpData = element.getRLPData();
-            hashMapDB.put(Keccak256Helper.keccak256(rlpData), rlpData);
-        }
-        valuesData = null;
-        hashMapDB = null;
-
-        for (Trie trie = nodes.poll(); trie != null; trie = nodes.poll()) {
-            destinationTrieStore.save(trie);
-        }
+        prepareState(nodeDataQueue, hashMapDB, Objects.requireNonNull(rlpElementQueue.poll()));
+        insertState(trieStore, nodeDataQueue, hashMapDB);
     }
 
     private static void insertBlocks(BlockStore blockStore,
@@ -121,10 +81,58 @@ public class BootstrapImporter {
             RLPList blockData = RLP.decodeList(element.getRLPData());
             RLPList tuple = RLP.decodeList(blockData.getRLPData());
             Block block = blockFactory.decodeBlock(tuple.get(0).getRLPData());
-            BlockDifficulty blockDifficulty = new BlockDifficulty(new BigInteger(tuple.get(1).getRLPData()));
+            BlockDifficulty blockDifficulty = new BlockDifficulty(new BigInteger(Objects.requireNonNull(tuple.get(1).getRLPData())));
             blockStore.saveBlock(block, blockDifficulty, true);
         }
 
         blockStore.flush();
+    }
+
+    private static void prepareState(Queue<byte[]> nodeDataQueue, HashMapDB hashMapDB, RLPElement rlpElement) {
+        Queue<RLPElement> nodeListQueue = decodeQueue(rlpElement.getRLPData());
+
+        prepareNodeData(nodeDataQueue, hashMapDB, RLP.decodeList(Objects.requireNonNull(nodeListQueue.poll()).getRLPData()));
+        prepareNodeValues(hashMapDB, RLP.decodeList(Objects.requireNonNull(nodeListQueue.poll()).getRLPData()));
+    }
+
+    private static void prepareNodeData(Queue<byte[]> rlpDataQueue, HashMapDB hashMapDB, RLPList nodesData) {
+        int size = nodesData.size();
+        for (int k = 0; k < size; k++) {
+            RLPElement element = nodesData.get(k);
+            byte[] rlpData = Objects.requireNonNull(element.getRLPData());
+
+            hashMapDB.put(Keccak256Helper.keccak256(rlpData), rlpData);
+            rlpDataQueue.add(rlpData);
+        }
+    }
+
+    private static void prepareNodeValues(HashMapDB hashMapDB, RLPList nodeValues) {
+        int size = nodeValues.size();
+        for (int k = 0; k < size; k++) {
+            RLPElement element = nodeValues.get(k);
+            byte[] rlpData = element.getRLPData();
+            hashMapDB.put(Keccak256Helper.keccak256(rlpData), rlpData);
+        }
+    }
+
+    private static void insertState(TrieStore destinationTrieStore, Queue<byte[]> nodeDataQueue, HashMapDB hashMapDB) {
+        TrieStoreImpl fakeStore = new TrieStoreImpl(hashMapDB);
+        for (byte[] nodeData = nodeDataQueue.poll(); nodeData != null; nodeData = nodeDataQueue.poll()) {
+            Trie trie = Trie.fromMessage(nodeData, fakeStore);
+
+            destinationTrieStore.save(trie);
+        }
+    }
+
+    private static Queue<RLPElement> decodeQueue(byte[] data) {
+        RLPList rlpList = RLP.decodeList(data);
+        int size = rlpList.size();
+
+        LinkedList<RLPElement> result = new LinkedList<>();
+        for (int i = 0; i < size; i++) {
+            result.add(rlpList.get(i));
+        }
+
+        return result;
     }
 }
