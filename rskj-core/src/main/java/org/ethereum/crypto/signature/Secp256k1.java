@@ -68,10 +68,8 @@ public final class Secp256k1 {
                     instance = new Secp256k1ServiceNative();
                     logger.debug("Native Service initialized.");
                 } else {
-                    Throwable loadError = Secp256k1Context.getLoadError();
-                    if (loadError != null) {
-                        logger.warn("Cannot load native library due to '{}'. Falling back on Bouncy Castle", loadError.getMessage());
-                    }
+                    checkLoadError();
+
                     instance = new Secp256k1ServiceBC();
                     logger.debug("Signature Service {} not available, initialized Bouncy Castle.", cryptoLibrary);
                 }
@@ -96,5 +94,19 @@ public final class Secp256k1 {
     static void reset() {
         instance = new Secp256k1ServiceBC();
         initialized = false;
+    }
+
+    private static void checkLoadError() {
+        Throwable loadError = null;
+
+        // Workaround; TODO: remove workaround when Secp256k1Context is fixed
+        try {
+            loadError = Secp256k1Context.getLoadError();
+        } catch (NoSuchMethodError ignore) { }
+        // End of workaround
+
+        if (loadError != null) {
+            logger.warn("Cannot load native library due to '{}'. Falling back on Bouncy Castle", loadError.getMessage());
+        }
     }
 }
