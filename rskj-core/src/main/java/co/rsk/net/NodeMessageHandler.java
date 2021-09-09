@@ -18,6 +18,23 @@
 
 package co.rsk.net;
 
+import java.time.Duration;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.concurrent.PriorityBlockingQueue;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
+import org.ethereum.crypto.HashUtil;
+import org.ethereum.net.server.ChannelManager;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import co.rsk.config.InternalService;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.RskAddress;
@@ -30,24 +47,6 @@ import co.rsk.net.messages.MessageVisitor;
 import co.rsk.scoring.EventType;
 import co.rsk.scoring.PeerScoringManager;
 import co.rsk.util.FormatUtils;
-import org.ethereum.crypto.HashUtil;
-import org.ethereum.net.server.ChannelManager;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import java.time.Duration;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.concurrent.PriorityBlockingQueue;
-import java.util.concurrent.TimeUnit;
-
-import java.util.stream.Collectors;
-
-import java.util.concurrent.atomic.AtomicInteger;
 
 
 public class NodeMessageHandler implements MessageHandler, InternalService, Runnable {
@@ -57,7 +56,7 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
 
     private static final int MAX_NUMBER_OF_MESSAGES_CACHED = 5000;
     private static final long RECEIVED_MESSAGES_CACHE_DURATION = TimeUnit.MINUTES.toMillis(2);
-
+    
     private final RskSystemProperties config;
     private final BlockProcessor blockProcessor;
     private final SyncProcessor syncProcessor;
@@ -81,7 +80,7 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
 
     private MessageCounter messageCounter = new MessageCounter();
 	private final int messageQueueMaxSize;
-    
+
 
     /**
      * Creates a new node message handler.
@@ -139,7 +138,7 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
         }
         
         messageCounter.decrement(sender);
-        
+
     }
 
     @Override
@@ -154,8 +153,11 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
         logger.trace("End post message (queue size {})", this.queue.size());
     }
 
+    /**
+     * verify if the message is allow, and if so, add it to the queue 
+     */
     private void tryAddMessage(Peer sender, Message message) {
-    	
+
 		double score = sender.score(System.currentTimeMillis(), message.getMessageType());
 
 		boolean allowed = controlMessageIngress(sender, message, score);
@@ -197,7 +199,7 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
 	}
 
 	private boolean allowByNotBanned(Peer sender, Message message) {
-		
+
         if (!this.bannedMiners.isEmpty() && message.getMessageType() == MessageType.BLOCK_MESSAGE) {
             RskAddress miner = ((BlockMessage) message).getBlock().getCoinbase();
             if (this.bannedMiners.contains(miner)) {
@@ -235,18 +237,18 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
 
 		return (contains == false);
 	}
-    
-	private void addMessage(Peer sender, Message message, double score) {
 
-		boolean messageAdded = this.queue.offer(new MessageTask(sender, message, score));
-
-		if (messageAdded) {
-			messageCounter.increment(sender);
-		} else {
-			logger.warn("Unexpected path. Is message queue bounded now?");
-		}
-
-	}
+    private void addMessage(Peer sender, Message message, double score) {
+    	
+    	boolean messageAdded = this.queue.offer(new MessageTask(sender, message, score));
+    	
+    	if(messageAdded) {
+    		messageCounter.increment(sender);
+    	} else {
+            logger.warn("Unexpected path. Is message queue bounded now?");
+        }
+        
+    }
 
     private void cleanExpiredMessages() {
         long currentTime = System.currentTimeMillis();
@@ -259,7 +261,7 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
 
     @Override
     public void start() {
-        new Thread(this,"message handler").start();
+        new Thread(this, "message handler").start();
     }
 
     @Override
@@ -272,7 +274,7 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
         return this.queue.size();
     }
 
-    public Integer getMessageQueueSize(Peer peer) {
+    public int getMessageQueueSize(Peer peer) {
     	return messageCounter.getValue(peer);
     }
 
