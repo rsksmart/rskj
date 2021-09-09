@@ -75,6 +75,7 @@ rskj-core/java/
 #GradleJARS
 rskj-core/libs/gradle-witness.jar
 rskj-core/libs/rsk-gradle-witness.jar
+rskj-core/networkStateExporterTest.json
 gradle/wrapper/gradle-wrapper.jar
 
 #Classes
