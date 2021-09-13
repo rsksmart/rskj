@@ -577,7 +577,7 @@ public class TransactionExecutor {
 
         long gasRefund = refundGas();
 
-//        result.setGasUsed(getGasUsed()); // todo this will/should be enabled
+        result.setGasUsed(getGasUsed());
 
         TransactionExecutionSummary summary = buildTransactionExecutionSummary(summaryBuilder, gasRefund);
 
