@@ -19,32 +19,34 @@
 package co.rsk.rpc.modules.eth;
 
 import co.rsk.config.TestSystemProperties;
-import co.rsk.core.ReversibleTransactionExecutor;
-import co.rsk.core.TransactionExecutorFactory;
-import co.rsk.rpc.ExecutionBlockRetriever;
+import co.rsk.core.Coin;
+import co.rsk.core.RskAddress;
 import co.rsk.test.World;
 import co.rsk.test.dsl.DslParser;
 import co.rsk.test.dsl.DslProcessorException;
 import co.rsk.test.dsl.WorldDslProcessor;
-import org.ethereum.config.Constants;
+import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionReceipt;
 import org.ethereum.rpc.CallArguments;
+import org.ethereum.rpc.TypeConverter;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
-import org.ethereum.vm.PrecompiledContracts;
-import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
+import org.ethereum.util.EthModuleUtils;
+import org.ethereum.vm.program.ProgramResult;
 import org.hamcrest.Matchers;
 import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.FileNotFoundException;
+import java.math.BigInteger;
 
+import static org.ethereum.vm.GasCost.REFUND_SSTORE;
 import static org.junit.Assert.*;
 
 /**
  * Created by patogallaiovlabs on 28/10/2020.
  */
-public class EthModuleDLSTest {
+public class EthModuleDSLTest {
     @Test
     public void testCall_getRevertReason() throws FileNotFoundException, DslProcessorException {
         DslParser parser = DslParser.fromResource("dsl/eth_module/revert_reason.txt");
@@ -59,7 +61,7 @@ public class EthModuleDLSTest {
         Assert.assertNotNull(status);
         Assert.assertEquals(0, status.length);
 
-        EthModule eth = buildEthModule(world);
+        EthModule eth = EthModuleUtils.buildBasicEthModule(world);
         final Transaction tx01 = world.getTransactionByName("tx01");
         final CallArguments args = new CallArguments();
         args.setTo(tx01.getContractAddress().toHexString()); //"6252703f5ba322ec64d3ac45e56241b7d9e481ad";
@@ -77,30 +79,5 @@ public class EthModuleDLSTest {
         args.setData("d96a094a0000000000000000000000000000000000000000000000000000000000000001"); // call to contract with param value = 1
         final String call = eth.call(args, "0x2");
         assertEquals("0x", call);
-    }
-
-    private EthModule buildEthModule(World world) {
-        final TestSystemProperties config = new TestSystemProperties();
-        TransactionExecutorFactory executor = new TransactionExecutorFactory(
-                config,
-                world.getBlockStore(),
-                null,
-                null,
-                new ProgramInvokeFactoryImpl(),
-                new PrecompiledContracts(config, world.getBridgeSupportFactory()),
-                null
-        );
-
-        return new EthModule(
-                null,
-                Constants.REGTEST_CHAIN_ID,
-                world.getBlockChain(),
-                null,
-                new ReversibleTransactionExecutor(world.getRepositoryLocator(), executor),
-                new ExecutionBlockRetriever(null, world.getBlockChain(), null, null),
-                null,
-                null,
-                null,
-                world.getBridgeSupportFactory());
     }
 }

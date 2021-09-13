@@ -37,6 +37,9 @@ import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.peg.BtcBlockStoreWithCache.Factory;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
 import co.rsk.test.builders.BlockChainBuilder;
+import co.rsk.test.dsl.DslParser;
+import co.rsk.test.dsl.DslProcessorException;
+import co.rsk.test.dsl.WorldDslProcessor;
 import co.rsk.trie.TrieStore;
 import co.rsk.validators.DummyBlockValidator;
 import org.ethereum.core.*;
@@ -47,6 +50,7 @@ import org.ethereum.db.TransactionInfo;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 
+import java.io.FileNotFoundException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -138,6 +142,16 @@ public class World {
                 config.getActivationConfig());
         this.receivedTxSignatureCache = new ReceivedTxSignatureCache();
         this.blockTxSignatureCache = new BlockTxSignatureCache(receivedTxSignatureCache);
+    }
+
+    public static World processedWorld(String resourceName) throws FileNotFoundException, DslProcessorException {
+        DslParser parser = DslParser.fromResource(resourceName);
+        World world = new World();
+
+        WorldDslProcessor processor = new WorldDslProcessor(world);
+        processor.processCommands(parser);
+
+        return world;
     }
 
     public NodeBlockProcessor getBlockProcessor() { return this.blockProcessor; }

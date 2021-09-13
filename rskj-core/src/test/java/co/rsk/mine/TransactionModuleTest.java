@@ -30,7 +30,6 @@ import co.rsk.db.StateRootsStoreImpl;
 import co.rsk.net.TransactionGateway;
 import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
-import co.rsk.peg.performance.PrecompiledContractPerformanceTestCase;
 import co.rsk.rpc.ExecutionBlockRetriever;
 import co.rsk.rpc.Web3RskImpl;
 import co.rsk.rpc.modules.debug.DebugModule;
@@ -71,12 +70,12 @@ import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 import org.junit.Assert;
 import org.junit.Test;
-import org.mockito.Mockito;
 
 import java.math.BigInteger;
 import java.time.Clock;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.mockito.Mockito.mock;
 
 public class TransactionModuleTest {
     private final TestSystemProperties config = new TestSystemProperties();
@@ -157,7 +156,9 @@ public class TransactionModuleTest {
         TransactionPool transactionPool = world.getTransactionPool();
         TransactionGateway transactionGateway = new TransactionGateway(new SimpleChannelManager(), transactionPool);
 
-        Web3Impl web3 = createEnvironment(blockchain, mainchainView, receiptStore, transactionPool, blockStore, true, repositoryLocator, world.getBlockTxSignatureCache(), transactionGateway);
+        Web3Impl web3 = createEnvironment(blockchain, mainchainView, receiptStore, transactionPool, blockStore,
+                true, createStateRootHandler(), repositoryLocator,
+                world.getBlockTxSignatureCache(), transactionGateway);
 
         for (int i = 1; i < 100; i++) {
             String tx = sendTransaction(web3, repositoryLocator.snapshotAt(blockchain.getBestBlock().getHeader()));
@@ -229,7 +230,7 @@ public class TransactionModuleTest {
     @Test
     public void testGasEstimation() {
         World world = new World();
-        BlockChainImpl blockchain = world.getBlockChain();
+        Blockchain blockchain = world.getBlockChain();
 
         TrieStore trieStore = world.getTrieStore();
 
@@ -237,20 +238,43 @@ public class TransactionModuleTest {
         RepositorySnapshot repository = repositoryLocator.snapshotAt(blockchain.getBestBlock().getHeader());
 
         BlockStore blockStore = world.getBlockStore();
+        BlockTxSignatureCache blockTxSignatureCache = world.getBlockTxSignatureCache();
+        ReceivedTxSignatureCache receivedTxSignatureCache = world.getReceivedTxSignatureCache();
 
-        TransactionPool transactionPool = new TransactionPoolImpl(config, repositoryLocator, blockStore, blockFactory, null, buildTransactionExecutorFactory(blockStore, null), 10, 100);
+        TransactionExecutorFactory transactionExecutorFactory = buildTransactionExecutionFactoryWithProgramInvokeFactory(blockStore, null, blockTxSignatureCache);
+        TransactionPool transactionPool = new TransactionPoolImpl(
+                config,
+                repositoryLocator,
+                blockStore,
+                blockFactory,
+                null,
+                transactionExecutorFactory,
+                receivedTxSignatureCache,
+                10,
+                100
+        );
+        TransactionGateway transactionGateway = new TransactionGateway(new SimpleChannelManager(), transactionPool);
 
-        Web3Impl web3 = createEnvironment(blockchain, null, trieStore, transactionPool, blockStore, true);
+        Web3Impl web3 = createEnvironmentGasExactimation(
+                blockchain,
+                trieStore,
+                transactionPool,
+                blockStore,
+                transactionGateway,
+                transactionExecutorFactory
+        );
+
         RskAddress srcAddr = new RskAddress(ECKey.fromPrivate(Keccak256Helper.keccak256("cow".getBytes())).getAddress());
 
         // Create the transaction that creates the destination contract
-        String tx = sendContractCreationTransaction(srcAddr, web3, repository);
-        // Compute contract destination address
+        sendContractCreationTransaction(srcAddr, web3, repository);
 
+        // Compute contract destination address
         BigInteger nonce = repository.getAccountState(srcAddr).getNonce();
         RskAddress contractAddress = new RskAddress(HashUtil.calcNewAddr(srcAddr.getBytes(), nonce.toByteArray()));
         int gasLimit = 5000000; // start with 5M
         int consumed = checkEstimateGas(callCallWithValue, 33557,gasLimit,srcAddr,contractAddress,web3, repository);
+
         // Now that I know the estimation, call again using the estimated value
         // it should not fail. We set the gasLimit to the expected value plus 1 to
         // differentiate between OOG and success.
@@ -267,13 +291,13 @@ public class TransactionModuleTest {
     // We check that the transaction does not fail!
     // This is clearly missing for estimateGas. It should return a tuple
     // (success,gasConsumed)
-    public int  checkEstimateGas(int method,int expectedValue,int gasLimit,
+    public int checkEstimateGas(int method,int expectedValue,int gasLimit,
                                  RskAddress srcAddr,RskAddress contractAddress,Web3Impl web3,RepositorySnapshot repository) {
         // If expected value given is the gasLimit we must fail because estimateGas cannot
         // differentiate between transaction failure (OOG) and success.
         Assert.assertNotEquals(expectedValue,gasLimit);
 
-        Web3.CallArguments args = getContractCallTransactionParameters(method,gasLimit,srcAddr,contractAddress,web3, repository);
+        CallArguments args = getContractCallTransactionParameters(method,gasLimit,srcAddr,contractAddress,web3, repository);
         String gas = web3.eth_estimateGas(args);
         byte[] gasReturnedBytes = Hex.decode(gas.substring("0x".length()));
         BigInteger gasReturned =BigIntegers.fromUnsignedByteArray(gasReturnedBytes);
@@ -281,23 +305,6 @@ public class TransactionModuleTest {
         Assert.assertNotEquals(gasReturnedInt,gasLimit);
         Assert.assertEquals(gasReturnedInt, expectedValue);
         return gasReturnedInt;
-    }
-
-    private String getGasEstimationTransactionRawData(Web3Impl web3,int gasLimit) {
-        Account sender = new AccountBuilder().name("cow").build();
-        Account receiver = new AccountBuilder().name("addr2").build();
-
-        Transaction tx = new TransactionBuilder()
-                .sender(sender)
-                .receiver(receiver)
-                .gasPrice(BigInteger.valueOf(8))
-                .gasLimit(BigInteger.valueOf(gasLimit))
-                .value(BigInteger.valueOf(7))
-                .nonce(0)
-                .build();
-
-        String rawData = Hex.toHexString(tx.getEncoded());
-        return rawData;
     }
 
     private String sendRawTransaction(Web3Impl web3) {
@@ -332,7 +339,7 @@ public class TransactionModuleTest {
 
     private String sendContractCreationTransaction(RskAddress srcaddr,Web3Impl web3, RepositorySnapshot repository) {
 
-        Web3.CallArguments args = getContractCreationTransactionParameters(srcaddr,web3, repository);
+        CallArguments args = getContractCreationTransactionParameters(srcaddr,web3, repository);
 
         return web3.eth_sendTransaction(args);
     }
@@ -383,7 +390,7 @@ public class TransactionModuleTest {
 
     }
     //////////////////////////////// */
-    private Web3.CallArguments getContractCreationTransactionParameters(
+    private CallArguments getContractCreationTransactionParameters(
             RskAddress addr1,Web3Impl web3, RepositorySnapshot repository) {
 
         BigInteger value = BigInteger.valueOf(7);
@@ -391,21 +398,21 @@ public class TransactionModuleTest {
         BigInteger gasLimit = BigInteger.valueOf(500000);
         String data = "0x608060405261001261001760201b60201c565b610096565b6001600080600181526020019081526020016000208190555060026000806002815260200190815260200160002081905550600360008060038152602001908152602001600020819055506004600080600481526020019081526020016000208190555060056000806005815260200190815260200160002081905550565b6102a7806100a56000396000f3fe60806040526004361061004a5760003560e01c8063742392c51461004c5780639a1e180f14610077578063c3cefd361461008e578063d9c55ce114610098578063dfd2d2c2146100af575b005b34801561005857600080fd5b506100616100c6565b6040518082815260200191505060405180910390f35b34801561008357600080fd5b5061008c6100e1565b005b610096610133565b005b3480156100a457600080fd5b506100ad61017d565b005b3480156100bb57600080fd5b506100c46101fc565b005b60008060006001815260200190815260200160002054905090565b3073ffffffffffffffffffffffffffffffffffffffff166108fc60649081150290604051600060405180830381858888f19350505050158015610128573d6000803e3d6000fd5b506101316101fc565b565b3073ffffffffffffffffffffffffffffffffffffffff166108fc60649081150290604051600060405180830381858888f1935050505015801561017a573d6000803e3d6000fd5b50565b6001600080600181526020019081526020016000208190555060026000806002815260200190815260200160002081905550600360008060038152602001908152602001600020819055506004600080600481526020019081526020016000208190555060056000806005815260200190815260200160002081905550565b600080600060018152602001908152602001600020819055506000806000600281526020019081526020016000208190555060008060006003815260200190815260200160002081905550600080600060048152602001908152602001600020819055506000806000600581526020019081526020016000208190555056fea165627a7a72305820545214f6b1b9d3a4928fb579044851ba06a9ff28b7d588b175847b7116d7b7c00029";
 
-        Web3.CallArguments args = new Web3.CallArguments();
-        args.from = TypeConverter.toJsonHex(addr1.getBytes());
-        args.to = ""; // null?
-        args.data = data;
-        args.gas = TypeConverter.toQuantityJsonHex(gasLimit);
-        args.gasPrice = TypeConverter.toQuantityJsonHex(gasPrice);
-        args.value = value.toString();
-        args.nonce = repository.getAccountState(addr1).getNonce().toString();
+        CallArguments args = new CallArguments();
+        args.setFrom(TypeConverter.toJsonHex(addr1.getBytes()));
+        args.setTo(""); // null?
+        args.setData(data);
+        args.setGas(TypeConverter.toQuantityJsonHex(gasLimit));
+        args.setGasPrice(TypeConverter.toQuantityJsonHex(gasPrice));
+        args.setValue(value.toString());
+        args.setNonce(repository.getAccountState(addr1).getNonce().toString());
 
         return args;
     }
     public final int callUnfill =0;
     public final int callCallWithValue = 1;
 
-    private Web3.CallArguments getContractCallTransactionParameters(
+    private CallArguments getContractCallTransactionParameters(
             int methodToCall,int gasLimitInt,RskAddress addr1,RskAddress destContract,Web3Impl web3, RepositorySnapshot repository) {
 
         BigInteger value;
@@ -431,14 +438,14 @@ public class TransactionModuleTest {
             encoded = func.encode();
         }
         data = Hex.toHexString(encoded);
-        Web3.CallArguments args = new Web3.CallArguments();
-        args.from = TypeConverter.toJsonHex(addr1.getBytes());
-        args.to = TypeConverter.toJsonHex(destContract.getBytes());
-        args.data = data;
-        args.gas = TypeConverter.toQuantityJsonHex(gasLimit);
-        args.gasPrice = TypeConverter.toQuantityJsonHex(gasPrice);
-        args.value = value.toString();
-        args.nonce = repository.getAccountState(addr1).getNonce().toString();
+        CallArguments args = new CallArguments();
+        args.setFrom(TypeConverter.toJsonHex(addr1.getBytes()));
+        args.setTo(TypeConverter.toJsonHex(destContract.getBytes()));
+        args.setData(data);
+        args.setGas(TypeConverter.toQuantityJsonHex(gasLimit));
+        args.setGasPrice(TypeConverter.toQuantityJsonHex(gasPrice));
+        args.setValue(value.toString());
+        args.setNonce(repository.getAccountState(addr1).getNonce().toString());
 
         return args;
     }
@@ -473,22 +480,75 @@ public class TransactionModuleTest {
                                        boolean mineInstant,
                                        BlockTxSignatureCache signatureCache,
                                        TransactionGateway transactionGateway) {
-        StateRootHandler stateRootHandler = new StateRootHandler(
-                config.getActivationConfig(),
-                new StateRootsStoreImpl(new HashMapDB())
-        );
-        return createEnvironment(blockchain,
+        StateRootHandler stateRootHandler = createStateRootHandler();
+        return createEnvironment(
+                blockchain,
                 new MiningMainchainViewImpl(blockStore, 1),
                 receiptStore,
                 transactionPool,
                 blockStore,
                 mineInstant,
+                stateRootHandler,
                 new RepositoryLocator(store, stateRootHandler),
                 signatureCache,
                 transactionGateway);
     }
 
-    private Web3Impl createEnvironment(Blockchain blockchain, MiningMainchainView mainchainView, ReceiptStore receiptStore, TransactionPool transactionPool, BlockStore blockStore, boolean mineInstant, RepositoryLocator repositoryLocator, BlockTxSignatureCache signatureCache, TransactionGateway transactionGateway) {
+    private Web3Impl createEnvironment(Blockchain blockchain,
+                                       MiningMainchainView mainchainView,
+                                       ReceiptStore receiptStore,
+                                       TransactionPool transactionPool,
+                                       BlockStore blockStore,
+                                       boolean mineInstant,
+                                       StateRootHandler stateRootHandler,
+                                       RepositoryLocator repositoryLocator,
+                                       BlockTxSignatureCache signatureCache,
+                                       TransactionGateway transactionGateway) {
+        return internalCreateEnvironment(
+                blockchain,
+                mainchainView,
+                receiptStore,
+                transactionPool,
+                blockStore,
+                mineInstant,
+                stateRootHandler,
+                repositoryLocator,
+                transactionGateway,
+                buildTransactionExecutorFactory(blockStore, receiptStore, signatureCache)
+        );
+    }
+
+    private Web3Impl createEnvironmentGasExactimation(Blockchain blockchain,
+                                                      TrieStore store,
+                                                      TransactionPool transactionPool,
+                                                      BlockStore blockStore,
+                                                      TransactionGateway transactionGateway,
+                                                      TransactionExecutorFactory transactionExecutorFactory){
+        StateRootHandler stateRootHandler = createStateRootHandler();
+        return internalCreateEnvironment(
+                blockchain,
+                new MiningMainchainViewImpl(blockStore, 1),
+                null,
+                transactionPool,
+                blockStore,
+                true,
+                stateRootHandler,
+                new RepositoryLocator(store, stateRootHandler),
+                transactionGateway,
+                transactionExecutorFactory
+        );
+    }
+
+    private Web3Impl internalCreateEnvironment(Blockchain blockchain,
+                                               MiningMainchainView mainchainView,
+                                               ReceiptStore receiptStore,
+                                               TransactionPool transactionPool,
+                                               BlockStore blockStore,
+                                               boolean mineInstant,
+                                               StateRootHandler stateRootHandler,
+                                               RepositoryLocator repositoryLocator,
+                                               TransactionGateway transactionGateway,
+                                               TransactionExecutorFactory transactionExecutorFactory) {
         transactionPool.processBest(blockchain.getBestBlock());
 
         ConfigCapabilities configCapabilities = new SimpleConfigCapabilities();
@@ -510,12 +570,13 @@ public class TransactionModuleTest {
                 blockchain
         );
         MinerClock minerClock = new MinerClock(true, Clock.systemUTC());
-        transactionExecutorFactory = buildTransactionExecutorFactory(blockStore, receiptStore, signatureCache);
+        this.transactionExecutorFactory = transactionExecutorFactory;
         MiningConfig miningConfig = ConfigUtils.getDefaultMiningConfig();
         BlockExecutor blockExecutor = new BlockExecutor(
                 config.getActivationConfig(),
                 repositoryLocator,
-                transactionExecutorFactory
+//                stateRootHandler,
+                this.transactionExecutorFactory
         );
 
         MinerServer minerServer = new MinerServerImpl(
@@ -533,7 +594,7 @@ public class TransactionModuleTest {
                         new DifficultyCalculator(config.getActivationConfig(), config.getNetworkConstants()),
                         new GasLimitCalculator(config.getNetworkConstants()),
                         new ForkDetectionDataCalculator(),
-                        Mockito.mock(BlockUnclesValidationRule.class),
+                        mock(BlockUnclesValidationRule.class),
                         minerClock,
                         blockFactory,
                         blockExecutor,
@@ -553,7 +614,7 @@ public class TransactionModuleTest {
 
         ReversibleTransactionExecutor reversibleTransactionExecutor1 = new ReversibleTransactionExecutor(
                 repositoryLocator,
-                transactionExecutorFactory
+                this.transactionExecutorFactory
         );
 
         if (mineInstant) {
@@ -570,7 +631,8 @@ public class TransactionModuleTest {
                 repositoryLocator, new EthModuleWalletEnabled(wallet), transactionModule,
                 new BridgeSupportFactory(
                         btcBlockStoreFactory, config.getNetworkConstants().getBridgeConstants(),
-                        config.getActivationConfig())
+                        config.getActivationConfig()),
+                config.getGasEstimationCap()
         );
         TxPoolModule txPoolModule = new TxPoolModuleImpl(transactionPool);
         DebugModule debugModule = new DebugModuleImpl(null, null, Web3Mocks.getMockMessageHandler(), null);
@@ -604,19 +666,42 @@ public class TransactionModuleTest {
                 null);
     }
 
+    private StateRootHandler createStateRootHandler() {
+        return new StateRootHandler(
+                config.getActivationConfig(),
+                new StateRootsStoreImpl(new HashMapDB())
+        );
+    }
+
     private TransactionExecutorFactory buildTransactionExecutorFactory(BlockStore blockStore, ReceiptStore receiptStore, BlockTxSignatureCache blockTxSignatureCache) {
-        BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
-                new RepositoryBtcBlockStoreWithCache.Factory(config.getNetworkConstants().getBridgeConstants().getBtcParams()),
-                config.getNetworkConstants().getBridgeConstants(),
-                config.getActivationConfig());
         return new TransactionExecutorFactory(
                 config,
                 blockStore,
                 receiptStore,
                 blockFactory,
                 null,
-                new PrecompiledContracts(config, bridgeSupportFactory),
+                new PrecompiledContracts(config, bridgeSupportFactory()),
                 blockTxSignatureCache
         );
+    }
+
+    private TransactionExecutorFactory buildTransactionExecutionFactoryWithProgramInvokeFactory(BlockStore blockStore, ReceiptStore receiptStore, BlockTxSignatureCache blockTxSignatureCache) {
+        return new TransactionExecutorFactory(
+                config,
+                blockStore,
+                receiptStore,
+                blockFactory,
+                new ProgramInvokeFactoryImpl(),
+                new PrecompiledContracts(config, bridgeSupportFactory()),
+                blockTxSignatureCache
+        );
+    }
+
+    private BridgeSupportFactory bridgeSupportFactory() {
+        BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
+                new RepositoryBtcBlockStoreWithCache.Factory(config.getNetworkConstants().getBridgeConstants().getBtcParams()),
+                config.getNetworkConstants().getBridgeConstants(),
+                config.getActivationConfig());
+        return bridgeSupportFactory;
     }
 }

@@ -26,6 +26,7 @@ import org.ethereum.vm.GasCost;
 import org.ethereum.vm.LogInfo;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
@@ -35,7 +36,6 @@ import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
  */
 public class ProgramResult {
 
-    private long gasUsed;
     private byte[] hReturn = EMPTY_BYTE_ARRAY;
     private Exception exception;
     private boolean revert;
@@ -48,10 +48,10 @@ public class ProgramResult {
     private Set<DataWord> deleteAccounts;
     private List<InternalTransaction> internalTransactions;
     private List<LogInfo> logInfoList;
-    private long futureRefund = 0;
-    private long deductedRefund =0;
-    private boolean callWithValuePerformed;
 
+    protected long gasUsed;
+    private long futureRefund = 0;
+    protected long deductedRefund = 0;
 
     /*
      * for testing runs ,
@@ -59,15 +59,6 @@ public class ProgramResult {
      * but dummy recorded
      */
     private List<CallCreate> callCreateList;
-
-    public boolean getCallWithValuePerformed() {
-        return callWithValuePerformed;
-    }
-
-    public void markCallWithValuePerformed() {
-        callWithValuePerformed =true;
-    }
-
 
     public void clearUsedGas() {
         gasUsed = 0;
@@ -279,5 +270,15 @@ public class ProgramResult {
         ProgramResult result = new ProgramResult();
         result.setHReturn(EMPTY_BYTE_ARRAY);
         return result;
+    }
+
+    public void setGasUsed(long gasUsed) {
+        this.gasUsed = gasUsed;
+    }
+
+    public List<LogInfo> logsFromNonRejectedTransactions() {
+        return getLogInfoList().stream()
+                .filter(logInfo -> !logInfo.isRejected())
+                .collect(Collectors.toList());
     }
 }

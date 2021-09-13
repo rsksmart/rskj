@@ -47,7 +47,6 @@ import org.slf4j.LoggerFactory;
 
 import java.math.BigInteger;
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static co.rsk.util.ListArrayUtil.getLength;
 import static co.rsk.util.ListArrayUtil.isEmpty;
@@ -94,7 +93,7 @@ public class TransactionExecutor {
 
     private PrecompiledContracts.PrecompiledContract precompiledContract;
 
-    private long mEndGas = 0;
+    private long gasLeftover = 0;
     private long basicTxCost = 0;
     private List<LogInfo> logs = null;
     private final Set<DataWord> deletedAccounts;
@@ -153,12 +152,13 @@ public class TransactionExecutor {
     private boolean init() {
         basicTxCost = tx.transactionCost(constants, activations);
 
+        long txGasLimit = GasCost.toGas(tx.getGasLimit());
+        long curBlockGasLimit = GasCost.toGas(executionBlock.getGasLimit());
+
         if (localCall) {
             return true;
         }
 
-        long txGasLimit = GasCost.toGas(tx.getGasLimit());
-        long curBlockGasLimit = GasCost.toGas(executionBlock.getGasLimit());
 
         if (!gasIsValid(txGasLimit, curBlockGasLimit)) {
             return false;
@@ -320,13 +320,13 @@ public class TransactionExecutor {
                 // no refund no endowment
                 execError(String.format( "Out of Gas calling precompiled contract at block %d " +
                                 "for address 0x%s. required: %s, used: %s, left: %s ",
-                        executionBlock.getNumber(), targetAddress.toString(), requiredGas, gasUsed, mEndGas));
-                mEndGas = 0;
+                        executionBlock.getNumber(), targetAddress.toString(), requiredGas, gasUsed, gasLeftover));
+                gasLeftover = 0;
                 profiler.stop(metric);
                 return;
             }
 
-            mEndGas = activations.isActive(ConsensusRule.RSKIP136) ?
+            gasLeftover = activations.isActive(ConsensusRule.RSKIP136) ?
                     GasCost.subtract(txGasLimit, gasUsed) :
                     txGasLimit - gasUsed;
 
@@ -350,7 +350,7 @@ public class TransactionExecutor {
             byte[] code = track.getCode(targetAddress);
             // Code can be null
             if (isEmpty(code)) {
-                mEndGas = GasCost.subtract(GasCost.toGas(tx.getGasLimit()), basicTxCost);
+                gasLeftover = GasCost.subtract(GasCost.toGas(tx.getGasLimit()), basicTxCost);
                 result.spendGas(basicTxCost);
             } else {
                 ProgramInvoke programInvoke =
@@ -372,7 +372,7 @@ public class TransactionExecutor {
         cacheTrack.createAccount(newContractAddress, activations.isActive(RSKIP174) && cacheTrack.isExist(newContractAddress));
 
         if (isEmpty(tx.getData())) {
-            mEndGas = GasCost.subtract(GasCost.toGas(tx.getGasLimit()), basicTxCost);
+            gasLeftover = GasCost.subtract(GasCost.toGas(tx.getGasLimit()), basicTxCost);
             // If there is no data, then the account is created, but without code nor
             // storage. It doesn't even call setupContract() to setup a storage root
         } else {
@@ -426,7 +426,7 @@ public class TransactionExecutor {
             vm.play(program);
 
             result = program.getResult();
-            mEndGas = GasCost.subtract(GasCost.toGas(tx.getGasLimit()), program.getResult().getGasUsed());
+            gasLeftover = GasCost.subtract(GasCost.toGas(tx.getGasLimit()), program.getResult().getGasUsed());
 
             if (tx.isContractCreation() && !result.isRevert()) {
                 createContract();
@@ -444,8 +444,9 @@ public class TransactionExecutor {
             }
         } catch (Exception e) {
             cacheTrack.rollback();
-            mEndGas = 0;
+            gasLeftover = 0;
             execError(e);
+//            result.setException(e); // todo will/should be enabled
             profiler.stop(metric);
             return;
         }
@@ -456,7 +457,7 @@ public class TransactionExecutor {
     private void createContract() {
         int createdContractSize = getLength(program.getResult().getHReturn());
         long returnDataGasValue = GasCost.multiply(GasCost.CREATE_DATA, createdContractSize);
-        if (mEndGas < returnDataGasValue) {
+        if (gasLeftover < returnDataGasValue) {
             program.setRuntimeFailure(
                     Program.ExceptionHelper.notEnoughSpendingGas(
                             program,
@@ -473,7 +474,7 @@ public class TransactionExecutor {
             result = program.getResult();
             result.setHReturn(EMPTY_BYTE_ARRAY);
         } else {
-            mEndGas = GasCost.subtract(mEndGas,  returnDataGasValue);
+            gasLeftover = GasCost.subtract(gasLeftover,  returnDataGasValue);
             program.spendGas(returnDataGasValue, "CONTRACT DATA COST");
             cacheTrack.saveCode(tx.getContractAddress(), result.getHReturn());
         }
@@ -492,19 +493,15 @@ public class TransactionExecutor {
         return receipt;
     }
 
+    public boolean getProgramCallWithValuePerformed() {
+        return program != null && program.getCallWithValuePerformed();
+    }
 
     private void finalization() {
         // RSK if local call gas balances must not be changed
         if (localCall) {
-            // This should change in the future.
-            // It's preferable that if localCall==true it continues executing normally,
-            // performing the expected commit() and returning the correct program result.
-            // Now it will have invalid deletedAccounts data.
-            // It's better that in this case the track used is a cache that does not
-            // allow flush, so that guarantees no side effects.
-
-            // Informing the CallWithValue is required for gas estimation
-            informOfCallWithValuePerformed();
+            // there's no need to save any change
+            localCallFinalization();
             return;
         }
 
@@ -516,41 +513,16 @@ public class TransactionExecutor {
         signatureCache.storeSender(tx);
 
         // Should include only LogInfo's that was added during not rejected transactions
-        List<LogInfo> notRejectedLogInfos = result.getLogInfoList().stream()
-                .filter(logInfo -> !logInfo.isRejected())
-                .collect(Collectors.toList());
+        List<LogInfo> logsFromNonRejectedTransactions = result.logsFromNonRejectedTransactions();
 
         TransactionExecutionSummary.Builder summaryBuilder = TransactionExecutionSummary.builderFor(tx)
-                .gasLeftover(BigInteger.valueOf(mEndGas))
-                .logs(notRejectedLogInfos)
+                .gasLeftover(BigInteger.valueOf(gasLeftover))
+                .logs(logsFromNonRejectedTransactions)
                 .result(result.getHReturn());
 
+        long gasRefund = refundGas();
 
-        // Accumulate refunds for suicides
-        result.addFutureRefund(GasCost.multiply(result.getDeleteAccounts().size(), GasCost.SUICIDE_REFUND));
-        // The actual gas subtracted is equal to half of the future refund
-        long gasRefund = Math.min(result.getFutureRefund(), result.getGasUsed() / 2);
-        result.addDeductedRefund(gasRefund);
-
-        informOfCallWithValuePerformed();
-
-        mEndGas = activations.isActive(ConsensusRule.RSKIP136) ?
-                GasCost.add(mEndGas, gasRefund) :
-                mEndGas + gasRefund;
-
-        summaryBuilder
-                .gasUsed(toBI(result.getGasUsed()))
-                .gasRefund(toBI(gasRefund))
-                .deletedAccounts(result.getDeleteAccounts())
-                .internalTransactions(result.getInternalTransactions());
-
-        if (result.getException() != null) {
-            summaryBuilder.markAsFailed();
-        }
-
-        logger.trace("Building transaction execution summary");
-
-        TransactionExecutionSummary summary = summaryBuilder.build();
+        TransactionExecutionSummary summary = buildTransactionExecutionSummary(summaryBuilder, gasRefund);
 
         // Refund for gas leftover
         track.addBalance(tx.getSender(), summary.getLeftover().add(summary.getRefund()));
@@ -570,7 +542,7 @@ public class TransactionExecutor {
         this.paidFees = summaryFee;
 
         logger.trace("Processing result");
-        logs = notRejectedLogInfos;
+        logs = logsFromNonRejectedTransactions;
 
         result.getCodeChanges().forEach((key, value) -> track.saveCode(new RskAddress(key), value));
         // Traverse list of suicides
@@ -581,10 +553,77 @@ public class TransactionExecutor {
         logger.trace("tx finalization done");
     }
 
-    public void informOfCallWithValuePerformed() {
-        if ((program != null) && (program.getCallWithValuePerformed())) {
-            result.markCallWithValuePerformed();
+    private void localCallFinalization() {
+        if(result == null) {
+            logger.warn("this is unexpected, a transaction executor should always have a non null result");
+            return;
         }
+
+        if(result.getException() != null) {
+            logger.warn("Local call produced an execution error: {}",
+                    executionError != null ? executionError : "unexpected");
+            return;
+        }
+
+        logger.trace("Finalize transaction gas estimation, txHash: {}, nonce:{},", tx.getHash(), toBI(tx.getNonce()));
+
+        // Should include only LogInfo's that was added during not rejected transactions
+        List<LogInfo> logsFromNonRejectedTransactions = result.logsFromNonRejectedTransactions();
+
+        TransactionExecutionSummary.Builder summaryBuilder = TransactionExecutionSummary.builderFor(tx)
+                .gasLeftover(BigInteger.valueOf(gasLeftover))
+                .logs(logsFromNonRejectedTransactions)
+                .result(result.getHReturn());
+
+        long gasRefund = refundGas();
+
+//        result.setGasUsed(getGasUsed()); // todo this will/should be enabled
+
+        TransactionExecutionSummary summary = buildTransactionExecutionSummary(summaryBuilder, gasRefund);
+
+        logger.trace("Pay total refund to sender: [{}], refund val: [{}]", tx.getSender(), summary.getRefund());
+
+        // Transfer fees to miner
+        this.paidFees = summary.getFee();
+
+        logger.trace("Processing result for gas estimation");
+
+        logs = logsFromNonRejectedTransactions;
+
+        logger.trace("tx listener for gas estimation done");
+
+        logger.trace("tx finalization for gas estimation done");
+    }
+
+    private TransactionExecutionSummary buildTransactionExecutionSummary(TransactionExecutionSummary.Builder summaryBuilder, long gasRefund) {
+        summaryBuilder
+                .gasUsed(toBI(result.getGasUsed()))
+                .gasRefund(toBI(gasRefund))
+                .deletedAccounts(result.getDeleteAccounts())
+                .internalTransactions(result.getInternalTransactions());
+
+        if (result.getException() != null) {
+            summaryBuilder.markAsFailed();
+        }
+
+        logger.trace("Building transaction execution summary");
+
+        return summaryBuilder.build();
+    }
+
+    private long refundGas() {
+        // Accumulate refunds for suicides
+        result.addFutureRefund(GasCost.multiply(result.getDeleteAccounts().size(), GasCost.SUICIDE_REFUND));
+
+        // The actual gas subtracted is equal to half of the future refund
+        long gasRefund = Math.min(result.getFutureRefund(), result.getGasUsed() / 2);
+        result.addDeductedRefund(gasRefund);
+
+        gasLeftover = activations.isActive(ConsensusRule.RSKIP136) ?
+                GasCost.add(gasLeftover, gasRefund) :
+                gasLeftover + gasRefund;
+
+        return gasRefund;
     }
 
 
@@ -629,9 +668,9 @@ public class TransactionExecutor {
 
     public long getGasUsed() {
         if (activations.isActive(ConsensusRule.RSKIP136)) {
-            return GasCost.subtract(GasCost.toGas(tx.getGasLimit()), mEndGas);
+            return GasCost.subtract(GasCost.toGas(tx.getGasLimit()), gasLeftover);
         }
-        return toBI(tx.getGasLimit()).subtract(toBI(mEndGas)).longValue();
+        return toBI(tx.getGasLimit()).subtract(toBI(gasLeftover)).longValue();
     }
 
     public Coin getPaidFees() { return paidFees; }

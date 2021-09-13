@@ -30,6 +30,7 @@ import co.rsk.peg.BridgeSupport;
 import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.rpc.ExecutionBlockRetriever;
 import co.rsk.trie.TrieStoreImpl;
+import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.*;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.MutableRepository;
@@ -74,6 +75,7 @@ public class EthModule
     private final byte chainId;
     private final long gasEstimationCap;
 
+    private ProgramResult estimationResult; // todo(fedejinich) this should be extracted to a Test class
 
     public EthModule(
             BridgeConstants bridgeConstants,
@@ -148,28 +150,36 @@ public class EthModule
     }
 
     public String estimateGas(CallArguments args) {
-        String s = null;
+        String estimation = null;
         try {
-            ProgramResult res = callConstant(args, blockchain.getBestBlock());
+            Block bestBlock = blockchain.getBestBlock();
+            CallArgumentsToByteArray hexArgs = new CallArgumentsToByteArray(args);
 
-            // IMPORTANT: currently, due to localCall=true argument,
-            // res.getDeductedRefund() will always return zero. This is ok.
-            // However this method is prepared for the time where localCall sematic
-            // is changed so that it does process refunds, which is what one would expect.
-
+            TransactionExecutor executor = reversibleTransactionExecutor.estimateGas(
+                    bestBlock,
+                    bestBlock.getCoinbase(),
+                    hexArgs.getGasPrice(),
+                    hexArgs.gasLimitForGasEstimation(gasEstimationCap),
+                    hexArgs.getToAddress(),
+                    hexArgs.getValue(),
+                    hexArgs.getData(),
+                    hexArgs.getFromAddress()
+            );
             // gasUsed cannot be greater than the gas passed, which should not
             // be higher than the block gas limit, so we don't expect any overflow
             // in these operations unless the user provides a malicius gasLimit value.
-            long gasUsed = res.getGasUsed();
-            long gasNeeded = gasUsed + res.getDeductedRefund();
 
-            if (res.getCallWithValuePerformed()) {
+            ProgramResult programResult = executor.getResult();
+            long gasNeeded = programResult.getGasUsed() + programResult.getDeductedRefund();
+            if(executor.getProgramCallWithValuePerformed()) {
                 gasNeeded += GasCost.STIPEND_CALL;
             }
-            s = TypeConverter.toQuantityJsonHex(gasNeeded);
-            return s;
+            estimation = TypeConverter.toQuantityJsonHex(gasNeeded);
+            setEstimationResult(programResult);
+
+            return estimation;
         } finally {
-            LOGGER.debug("eth_estimateGas(): {}", s);
+            LOGGER.debug("eth_estimateGas(): {}", estimation);
         }
     }
 
@@ -244,7 +254,8 @@ public class EthModule
         }
     }
 
-    private ProgramResult callConstant(CallArguments args, Block executionBlock) {
+    @VisibleForTesting
+    public ProgramResult callConstant(CallArguments args, Block executionBlock) {
         CallArgumentsToByteArray hexArgs = new CallArgumentsToByteArray(args);
         return reversibleTransactionExecutor.executeTransaction(
                 executionBlock,
@@ -294,5 +305,13 @@ public class EthModule
                 hexArgs.getData(),
                 hexArgs.getFromAddress()
         );
+    }
+
+    public ProgramResult getEstimationResult() {
+        return estimationResult;
+    }
+
+    public void setEstimationResult(ProgramResult estimationResult) {
+        this.estimationResult = estimationResult;
     }
 }
