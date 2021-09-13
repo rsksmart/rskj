@@ -1,15 +1,12 @@
 comment
 
-// Contracts compiled using
-// Hardhat - Solidity v0.5.0 (solc-js)
-
-pragma solidity >=0.5.0 <0.6.0;
+pragma solidity >=0.6.0 <0.9.0;
 
 contract CallWithValue {
-    function () external payable { }
+    fallback () external payable { }
 
     function callWithValue() public payable {
-        address(this).transfer(100);
+        payable(this).transfer(1);
     }
 }
 
@@ -23,16 +20,7 @@ transaction_build tx01
     sender acc1
     receiverAddress 00
     value 0
-    data 6080604052348015600f57600080fd5b5060a48061001e6000396000f3fe608060405260043610601c5760003560e01c8063c3cefd3614601e575b005b60246026565b005b3073ffffffffffffffffffffffffffffffffffffffff166108fc60649081150290604051600060405180830381858888f19350505050158015606c573d6000803e3d6000fd5b5056fea265627a7a723158203bf413e838652e7b24283fcd4ac5d0ca46bfed18271b3fbfbc3a8c18fc8912c964736f6c63430005100032
-    gas 2000000
-    build
-
-transaction_build tx02
-    sender acc1
-    receiverAddress 6252703f5ba322ec64d3ac45e56241b7d9e481ad
-    nonce 1
-    value 100
-    data c3cefd36
+    data 6080604052348015600f57600080fd5b5060a98061001e6000396000f3fe608060405260043610601f5760003560e01c8063c3cefd36146022576020565b5b005b6028602a565b005b3073ffffffffffffffffffffffffffffffffffffffff166108fc60019081150290604051600060405180830381858888f193505050501580156070573d6000803e3d6000fd5b5056fea264697066735822122088f249a82f3007a2761278a171ae52bad97182b2fd8cfe635e9f0a7f8082d50864736f6c63430007030033
     gas 2000000
     build
 
@@ -44,13 +32,30 @@ block_build b01
 block_connect b01
 assert_best b01
 
+transaction_build tx02
+    sender acc1
+    receiverAddress 6252703f5ba322ec64d3ac45e56241b7d9e481ad
+    nonce 1
+    value 100
+    data c3cefd36
+    gas 2000000
+    build
+
 block_build b02
     parent b01
-    transactions tx02
+    #transactions tx02
     build
 
 block_connect b02
 assert_best b02
+
+block_build b03
+    parent b02
+    transactions tx02
+    build
+
+block_connect b03
+assert_best b03
 
 # Back to code test,
 # you must estimate the gas needed

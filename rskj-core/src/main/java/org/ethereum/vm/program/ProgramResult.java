@@ -24,6 +24,8 @@ import org.ethereum.vm.CallCreate;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.GasCost;
 import org.ethereum.vm.LogInfo;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -35,6 +37,15 @@ import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
  * @since 07.06.2014
  */
 public class ProgramResult {
+
+    private static final Logger LOGGER_FEDE = LoggerFactory.getLogger("fede");
+    private long maxGasUsed = 0;
+
+    private String id;
+    public ProgramResult(){
+        String s = String.valueOf(new Random().nextInt());
+        id = s.substring(s.length() - 4);
+    }
 
     private byte[] hReturn = EMPTY_BYTE_ARRAY;
     private Exception exception;
@@ -60,12 +71,31 @@ public class ProgramResult {
      */
     private List<CallCreate> callCreateList;
 
+    private boolean movedRemainingGasToChild = false;
+
+    public void movedRemainingGasToChild(boolean moved) {
+        this.movedRemainingGasToChild = moved;
+    }
+
+    public boolean movedRemainingGasToChild() {
+        return movedRemainingGasToChild;
+    }
+
     public void clearUsedGas() {
         gasUsed = 0;
     }
 
+    public long getMaxGasUsed() {
+        return maxGasUsed;
+    }
+
     public void spendGas(long gas) {
+        long old = gasUsed;
+        long oldGasNeeded = maxGasUsed;
         gasUsed = GasCost.add(gasUsed, gas);
+        LOGGER_FEDE.error("#PID{} - spendGas({}). gasUsed: b={}, a={}", id, gas, old, gasUsed);
+        this.maxGasUsed = Math.max(gasUsed, maxGasUsed);
+        LOGGER_FEDE.error("#PID{} - maxGasUsed: b={}, a={}", id, oldGasNeeded, maxGasUsed);
     }
 
     public void setRevert() {
@@ -77,7 +107,9 @@ public class ProgramResult {
     }
 
     public void refundGas(long gas) {
+        long old = gasUsed;
         gasUsed = GasCost.subtract(gasUsed, gas);
+        LOGGER_FEDE.error("#PID{} - refundGas({}). gasUsed: b={}, a={}", id, gas, old, gasUsed);
     }
 
     public void setHReturn(byte[] hReturn) {
@@ -256,6 +288,10 @@ public class ProgramResult {
         futureRefund = 0;
     }
 
+    public String getId() {
+        return id;
+    }
+
     public void merge(ProgramResult another) {
         addInternalTransactions(another.getInternalTransactions());
         if (another.getException() == null && !another.isRevert()) {
@@ -263,6 +299,11 @@ public class ProgramResult {
             addLogInfos(another.getLogInfoList());
             addFutureRefund(another.getFutureRefund());
             addDeductedRefund(another.getDeductedRefund());
+            this.maxGasUsed = Math.max(this.maxGasUsed, another.getMaxGasUsed());
+            LOGGER_FEDE.error("#PID{} - merge(#PID{}). parent={}, child={}", id, another.getId(), this.maxGasUsed, another.getMaxGasUsed());
+            LOGGER_FEDE.error("mergeShouldBe {}", Math.max(this.maxGasUsed, another.getMaxGasUsed()));
+            this.movedRemainingGasToChild = this.movedRemainingGasToChild || another.movedRemainingGasToChild;
+//            this.newGasUsed = Math.min(this.newGasUsed, another.getNewGasUsed());
         }
     }
     

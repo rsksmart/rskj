@@ -70,6 +70,8 @@ public class Program {
     private static final Logger logger = LoggerFactory.getLogger("VM");
     private static final Logger gasLogger = LoggerFactory.getLogger("gas");
 
+    private static final Logger LOGGER_FEDE = LoggerFactory.getLogger("fede");
+
     public static final long MAX_MEMORY = (1<<30);
 
     //Max size for stack checks
@@ -181,6 +183,7 @@ public class Program {
 
     public void markCallWithValuePerformed() {
         callWithValuePerformed = true;
+//        result.markCallWithValuePerformed();
     }
 
     public boolean getCallWithValuePerformed() {
@@ -831,12 +834,14 @@ public class Program {
                 msg.getType() == MsgType.DELEGATECALL ? getCallValue() : msg.getEndowment(),
                 limitToMaxLong(msg.getGas()), contextBalance, data, track, this.invoke.getBlockStore(),
                 msg.getType() == MsgType.STATICCALL || isStaticCall(), byTestingSuite());
+        LOGGER_FEDE.error("programInvoke.gasLimit: {}", programInvoke.getGaslimit().toString());
+        LOGGER_FEDE.error("programInvoke.gas: {}", programInvoke.getGas());
 
         VM vm = new VM(config, precompiledContracts);
         Program program = new Program(config, precompiledContracts, blockFactory, activations, programCode, programInvoke, internalTx, deletedAccountsInBlock);
 
         vm.play(program);
-        childResult  = program.getResult();
+        childResult = program.getResult();
 
         getTrace().addSubTrace(ProgramSubtrace.newCallSubtrace(CallType.fromMsgType(msg.getType()), program.getProgramInvoke(), program.getResult(), msg.getCodeAddress(), program.getTrace().getSubtraces()));
 
@@ -879,6 +884,8 @@ public class Program {
         memorySaveLimited(offset, buffer, size);
 
         returnDataBuffer = buffer;
+
+        LOGGER_FEDE.error("childResult.gasUsed: {}", childResult.getGasUsed());
 
         // 5. REFUND THE REMAIN GAS
         BigInteger refundGas = msg.getGas().value().subtract(toBI(childResult.getGasUsed()));

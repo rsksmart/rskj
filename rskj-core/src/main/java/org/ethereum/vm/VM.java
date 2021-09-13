@@ -109,6 +109,8 @@ public class VM {
     private long gasBefore; // only for tracing
     private boolean isLogEnabled;
 
+    private static final Logger LOGGER_FEDE = LoggerFactory.getLogger("fede");
+
     public VM(VmConfig vmConfig, PrecompiledContracts precompiledContracts) {
         this.vmConfig = vmConfig;
         this.precompiledContracts = precompiledContracts;
@@ -1487,6 +1489,7 @@ public class VM {
         // For gas Exactimation, mark this program execution if it requires
         // at least one call with value
         if (!msg.getEndowment().isZero()) {
+            LOGGER_FEDE.error("markCallWithValuePerformed()");
             program.markCallWithValuePerformed();
         }
 
@@ -1500,6 +1503,9 @@ public class VM {
     }
 
     private MessageCall getMessageCall(DataWord gas, DataWord codeAddress, ActivationConfig.ForBlock activations) {
+        LOGGER_FEDE.error("-----getMessageCall-----");
+        LOGGER_FEDE.error("remainingGas: {}", program.getRemainingGas());
+
         DataWord value = calculateCallValue(activations);
 
         if (program.isStaticCall() && op == CALL && !value.isZero()) {
@@ -1514,7 +1520,9 @@ public class VM {
 
         if (computeGas) {
             gasCost = computeCallGas(codeAddress, value, inDataOffs, inDataSize, outDataOffs, outDataSize);
+            LOGGER_FEDE.error("compute gas1");
         }
+        LOGGER_FEDE.error("gasCost: {}", gasCost);
 
         // gasCost doesn't include the calleeGas at this point
         // because we want to throw gasOverflow instead of notEnoughSpendingGas
@@ -1522,23 +1530,41 @@ public class VM {
         if (requiredGas > program.getRemainingGas()) {
             throw Program.ExceptionHelper.gasOverflow(program, BigInteger.valueOf(program.getRemainingGas()), BigInteger.valueOf(requiredGas));
         }
+        LOGGER_FEDE.error("requiredGas: {}", requiredGas);
         long remainingGas = GasCost.subtract(program.getRemainingGas(), requiredGas);
         long minimumTransferGas = calculateGetMinimumTransferGas(value, remainingGas);
+        LOGGER_FEDE.error("minimumTransferGas: {}", minimumTransferGas);
+
 
         long userSpecifiedGas = Program.limitToMaxLong(gas);
+        LOGGER_FEDE.error("userSpecified: {}", userSpecifiedGas);
         long specifiedGasPlusMin = activations.isActive(RSKIP150) ?
                 GasCost.add(userSpecifiedGas, minimumTransferGas) :
                 userSpecifiedGas + minimumTransferGas;
+        LOGGER_FEDE.error("specifiedGasPlusMin: {}", specifiedGasPlusMin);
+        LOGGER_FEDE.error("remainingGas: {}", remainingGas);
 
         // If specified gas is higher than available gas then move all remaining gas to callee.
         // This will have one possibly undesired behavior: if the specified gas is higher than the remaining gas,
         // the callee will receive less gas than the parent expected.
         long calleeGas = Math.min(remainingGas, specifiedGasPlusMin);
+        LOGGER_FEDE.error("calleeGas: {}", calleeGas);
 
         if (computeGas) {
+            long oldGasCost = gasCost;
             gasCost = GasCost.add(gasCost, calleeGas);
+            LOGGER_FEDE.error("compute gas2. gasCost: b={}, a={}", oldGasCost, gasCost);
             spendOpCodeGas();
+
+            // the gas needed for estimateGas will be given by gasUsed (our new lower bound)
+            // because it'll use the transaction gasLimit
+            boolean passedRemainingGasToChild = calleeGas == remainingGas;
+            if(passedRemainingGasToChild) {
+                LOGGER_FEDE.error("movedRemainingGasToChild");
+                program.getResult().movedRemainingGasToChild(true);
+            }
         }
+        LOGGER_FEDE.error("gasCost: {}", gasCost);
 
         if (isLogEnabled) {
             hint = "addr: " + ByteUtil.toHexString(codeAddress.getLast20Bytes())
@@ -1552,6 +1578,8 @@ public class VM {
         }
 
         program.memoryExpand(outDataOffs, outDataSize);
+
+        LOGGER_FEDE.error("-----getMessageCall_end-----");
 
         return new MessageCall(
                 MsgType.fromOpcode(op),
@@ -1610,7 +1638,10 @@ public class VM {
         long in = memNeeded(inDataOffs, inSizeLong); // in offset+size
         long out = memNeeded(outDataOffs, outSizeLong); // out offset+size
         long newMemSize = Long.max(in, out);
-        callGas = GasCost.add(callGas, calcMemGas(oldMemSize, newMemSize, 0));
+        long y = calcMemGas(oldMemSize, newMemSize, 0);
+        LOGGER_FEDE.error("calcMemGas: {}", y);
+        callGas = GasCost.add(callGas, y);
+        LOGGER_FEDE.error("callGas: {}", callGas);
         return callGas;
     }
 

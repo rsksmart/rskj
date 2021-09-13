@@ -71,6 +71,7 @@
     <logger name="co.rsk.core.bc.BlockChainFlusher" level="TRACE"/>
     <logger name="blooms" level="INFO"/>
     <logger name="triestore" level="TRACE" />
+    <logger name="fede" level="ERROR" />
 
     <root level="DEBUG">
         <appender-ref ref="stdout"/>

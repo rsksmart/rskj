@@ -1,11 +1,32 @@
 comment
+compiled using solidity: "0.7.3"
+
 pragma solidity >=0.6.0 <0.9.0;
 
 contract NestedCallWithValue {
+    address payable nextAddress;
+    bool lastCall = false;
+
+    event NestedCallWV();
+    event LastCall();
+
     fallback () external payable { }
 
-    function callAddressWithValue(address payable addr) public payable {
-        addr.transfer(1);
+    function callAddressWithValue() public payable {
+        if(!lastCall) {
+            NestedCallWithValue(nextAddress).callAddressWithValue{value: msg.value, gas: gasleft() - 10000}();
+            emit NestedCallWV();
+        } else {
+            emit LastCall();
+        }
+    }
+
+    function setNextAddress(address payable n) public {
+        nextAddress = n;
+    }
+
+    function setLastCall() public {
+        lastCall = true;
     }
 }
 end

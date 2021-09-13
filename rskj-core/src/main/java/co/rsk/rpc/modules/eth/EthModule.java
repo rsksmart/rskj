@@ -38,7 +38,6 @@ import org.ethereum.rpc.CallArguments;
 import org.ethereum.rpc.TypeConverter;
 import org.ethereum.rpc.converters.CallArgumentsToByteArray;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
-import org.ethereum.vm.GasCost;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.ProgramResult;
 import org.slf4j.Logger;
@@ -151,8 +150,8 @@ public class EthModule
 
     public String estimateGas(CallArguments args) {
         String estimation = null;
+        Block bestBlock = blockchain.getBestBlock();
         try {
-            Block bestBlock = blockchain.getBestBlock();
             CallArgumentsToByteArray hexArgs = new CallArgumentsToByteArray(args);
 
             TransactionExecutor executor = reversibleTransactionExecutor.estimateGas(
@@ -170,11 +169,12 @@ public class EthModule
             // in these operations unless the user provides a malicius gasLimit value.
 
             ProgramResult programResult = executor.getResult();
-            long gasNeeded = programResult.getGasUsed() + programResult.getDeductedRefund();
-            if(executor.getProgramCallWithValuePerformed()) {
-                gasNeeded += GasCost.STIPEND_CALL;
-            }
-            estimation = TypeConverter.toQuantityJsonHex(gasNeeded);
+            
+            long newGasNeeded = programResult.movedRemainingGasToChild() ?
+                    programResult.getGasUsed() + programResult.getDeductedRefund() : // then we need to count the deductedRefunds
+                    programResult.getMaxGasUsed(); // because deductedRefund can never be higher than gasUsed/2, we can just take the relative upper bound
+
+            estimation = TypeConverter.toQuantityJsonHex(newGasNeeded);
             setEstimationResult(programResult);
 
             return estimation;
@@ -182,6 +182,7 @@ public class EthModule
             LOGGER.debug("eth_estimateGas(): {}", estimation);
         }
     }
+    private static final Logger LOGGER_FEDE = LoggerFactory.getLogger("fede");
 
     @Override
     public String sendTransaction(CallArguments args) {
