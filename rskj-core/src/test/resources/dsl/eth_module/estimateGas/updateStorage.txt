@@ -1,0 +1,79 @@
+comment
+
+// Contracts compiled using
+// Truffle v5.1.14 (core: 5.1.14)
+// Solidity v0.5.16 (solc-js)
+
+// the contracts source code
+
+pragma solidity >=0.5.0 <0.6.0;
+
+contract UpdateStorage {
+    uint[100] public values;
+
+    function setValue(uint position, uint value) public {
+        values[position] = value;
+    }
+}
+
+end
+
+account_new acc1 20000000
+
+# Deploy UpdateStorage
+
+transaction_build tx01
+    sender acc1
+    receiverAddress 00
+    value 0
+    data 608060405234801561001057600080fd5b50610144806100206000396000f3fe60806040526004361061004c576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff1680635e383d21146100515780637b8d56e3146100a0575b600080fd5b34801561005d57600080fd5b5061008a6004803603602081101561007457600080fd5b81019080803590602001909291905050506100e5565b6040518082815260200191505060405180910390f35b3480156100ac57600080fd5b506100e3600480360360408110156100c357600080fd5b8101908080359060200190929190803590602001909291905050506100ff565b005b6000816064811015156100f457fe5b016000915090505481565b8060008360648110151561010f57fe5b0181905550505056fea165627a7a72305820d27e1f1cce816508bdc0611d325d8a6695742256aac16b8ea5b69034d0da31830029
+    gas 2000000
+    build
+
+block_build b01
+    parent g00
+    transactions tx01
+    build
+
+block_connect b01
+
+# Assert best block
+assert_best b01
+
+# invoke setValue(1, 42) method
+
+transaction_build tx02
+    sender acc1
+    nonce 1
+    contract tx01   # created in tx01
+    value 0
+    data 7b8d56e30000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000002a
+    gas 6400000
+    build
+
+transaction_build tx03
+    sender acc1
+    nonce 2
+    contract tx01   # created in tx01
+    value 0
+    data 7b8d56e30000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000002a
+    gas 6400000
+    build
+
+block_build b02
+    parent b01
+    transactions tx02 tx03
+    gasLimit 6800000
+    build
+
+block_connect b02
+
+# Assert best block
+assert_best b02
+
+# Back to code test,
+# you must check gas estimation
+# for different setValue invocations
+# (set non-zero cell to non-zero)
+# (set zero cell to non-zero)
+# (set non-zero cell to zero)
