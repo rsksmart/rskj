@@ -20,6 +20,9 @@ package org.ethereum.rpc.converters;
 
 import co.rsk.core.RskAddress;
 import org.ethereum.rpc.CallArguments;
+import org.ethereum.util.ByteUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static org.ethereum.rpc.TypeConverter.stringHexToByteArray;
 
@@ -27,6 +30,7 @@ import static org.ethereum.rpc.TypeConverter.stringHexToByteArray;
  * Created by martin.medina on 3/7/17.
  */
 public class CallArgumentsToByteArray {
+    private static final Logger LOGGER = LoggerFactory.getLogger(CallArgumentsToByteArray.class); //NOSONAR
 
     private final CallArguments args;
 
@@ -89,5 +93,17 @@ public class CallArgumentsToByteArray {
         }
 
         return new RskAddress(stringHexToByteArray(args.getFrom()));
+    }
+
+    public byte[] gasLimitForGasEstimation(long gasCap) {
+        long gasLimit = ByteUtil.byteArrayToLong(this.getGasLimit());
+
+        if(gasLimit > gasCap) {
+            LOGGER.warn("provided gasLimit ({}) exceeds the estimation cap," +
+                    " using the estimation cap ({})", gasLimit, gasCap);
+            return ByteUtil.longToBytes(gasCap);
+        }
+
+        return this.getGasLimit();
     }
 }

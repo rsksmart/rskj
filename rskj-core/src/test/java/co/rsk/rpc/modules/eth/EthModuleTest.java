@@ -26,37 +26,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 import co.rsk.config.BridgeConstants;
-import co.rsk.core.ReversibleTransactionExecutor;
-import co.rsk.core.RskAddress;
-import co.rsk.core.bc.BlockResult;
-import co.rsk.core.bc.PendingState;
-import co.rsk.db.RepositoryLocator;
-import co.rsk.peg.BridgeSupportFactory;
-import co.rsk.rpc.ExecutionBlockRetriever;
-import org.bouncycastle.util.BigIntegers;
-import org.bouncycastle.util.encoders.Hex;
-import org.ethereum.TestUtils;
-import org.ethereum.config.Constants;
-import org.ethereum.core.Block;
-import org.ethereum.core.Blockchain;
-import org.ethereum.core.Transaction;
-import org.ethereum.core.TransactionPool;
-import org.ethereum.core.TransactionPoolAddResult;
-import org.ethereum.crypto.ECKey;
-import org.ethereum.datasource.HashMapDB;
-import org.ethereum.rpc.CallArguments;
-import org.ethereum.core.*;
-import org.ethereum.rpc.TypeConverter;
-import org.ethereum.rpc.Web3;
-import org.ethereum.rpc.Web3Impl;
-import org.ethereum.rpc.exception.RskJsonRpcRequestException;
-import org.ethereum.util.TransactionFactoryHelper;
-import org.ethereum.vm.program.ProgramResult;
-import org.hamcrest.Matchers;
-import org.junit.Assert;
-import org.junit.Test;
-
-import co.rsk.config.BridgeConstants;
+import co.rsk.config.TestSystemProperties;
 import co.rsk.core.ReversibleTransactionExecutor;
 import co.rsk.core.RskAddress;
 import co.rsk.core.Wallet;
@@ -66,16 +36,36 @@ import co.rsk.db.RepositoryLocator;
 import co.rsk.net.TransactionGateway;
 import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.rpc.ExecutionBlockRetriever;
-import java.math.BigInteger;
+import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.TestUtils;
+import org.ethereum.config.Constants;
+import org.ethereum.core.*;
+import org.ethereum.core.Block;
+import org.ethereum.core.Blockchain;
+import org.ethereum.core.Transaction;
+import org.ethereum.core.TransactionPool;
+import org.ethereum.core.TransactionPoolAddResult;
+import org.ethereum.crypto.ECKey;
+import org.ethereum.datasource.HashMapDB;
+import org.ethereum.rpc.CallArguments;
+import org.ethereum.rpc.TypeConverter;
+import org.ethereum.rpc.exception.RskJsonRpcRequestException;
+import org.ethereum.util.TransactionFactoryHelper;
+import org.ethereum.vm.program.ProgramResult;
+import org.hamcrest.Matchers;
+import org.junit.Assert;
+import org.junit.Test;
 
-
-import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 public class EthModuleTest {
+
+    private TestSystemProperties config = new TestSystemProperties();
+    private String anyAddress = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
 
     @Test
     public void callSmokeTest() {
@@ -107,7 +97,8 @@ public class EthModuleTest {
                 null,
                 null,
                 new BridgeSupportFactory(
-                        null, null, null));
+                        null, null, null),
+                config.getGasEstimationCap());
 
         String expectedResult = TypeConverter.toUnformattedJsonHex(hReturn);
         String actualResult = eth.call(args, "latest");
@@ -145,7 +136,8 @@ public class EthModuleTest {
                 null,
                 null,
                 new BridgeSupportFactory(
-                        null, null, null));
+                        null, null, null),
+                config.getGasEstimationCap());
 
         String expectedResult = TypeConverter.toUnformattedJsonHex(hReturn);
         String actualResult = eth.call(args, "latest");
@@ -188,7 +180,8 @@ public class EthModuleTest {
                 null,
                 null,
                 new BridgeSupportFactory(
-                        null, null, null));
+                        null, null, null),
+                config.getGasEstimationCap());
 
         try {
             eth.call(args, "latest");
@@ -226,6 +219,9 @@ public class EthModuleTest {
 
 		assertEquals(txExpectedResult, txResult);
 	}
+
+
+
 
     @Test
     public void sendTransaction_invalidSenderAccount_throwsRskJsonRpcRequestException() {
@@ -275,40 +271,17 @@ public class EthModuleTest {
                         null,
                         null,
                         null
-                )
+                ),
+                config.getGasEstimationCap()
         );
 
         String addr = eth.getCode(TestUtils.randomAddress().toHexString(), "pending");
         Assert.assertThat(Hex.decode(addr.substring("0x".length())), is(expectedCode));
     }
 
-    String anyAddress = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
-
-    private Web3.CallArguments getTransactionParameters() {
-        //
-        RskAddress addr1 = new RskAddress(anyAddress);
-        BigInteger value = BigInteger.valueOf(0); // do not pass value
-        BigInteger gasPrice = BigInteger.valueOf(8);
-        BigInteger gasLimit = BigInteger.valueOf(500000); // large enough
-        String data = "0xff";
-
-        Web3.CallArguments args = new Web3.CallArguments();
-        args.from = TypeConverter.toJsonHex(addr1.getBytes());
-        args.to = args.from;  // same account
-        args.data = data;
-        args.gas = TypeConverter.toQuantityJsonHex(gasLimit);
-        args.gasPrice = TypeConverter.toQuantityJsonHex(gasPrice);
-        args.value = value.toString();
-        // Nonce doesn't matter
-        args.nonce = "0";
-
-        return args;
-    }
-
 
     @Test
     public void estimateGas() {
-
         TransactionPool mockTransactionPool = mock(TransactionPool.class);
         PendingState mockPendingState = mock(PendingState.class);
 
@@ -320,11 +293,12 @@ public class EthModuleTest {
         doReturn(coinbase).when(block).getCoinbase();
 
         ReversibleTransactionExecutor executor = mock(ReversibleTransactionExecutor.class);
+
         ProgramResult programResult = new ProgramResult();
         programResult.addDeductedRefund(10000);
         programResult.spendGas(30000);
-        programResult.markCallWithValuePerformed();
-        doReturn(programResult).when(executor).executeTransaction(any(),any(),
+
+        doReturn(programResult).when(executor).estimateGas(any(),any(),
                 any(),any(),any(),any(),any(),any());
 
         EthModule eth = new EthModule(
@@ -337,18 +311,26 @@ public class EthModuleTest {
                 null,
                 null,
                 null,
-                null,
                 new BridgeSupportFactory(
                         null,
                         null,
                         null
-                )
+                ),
+                config.getGasEstimationCap()
         );
 
-        Web3.CallArguments args = getTransactionParameters();
-        String gas = eth.estimateGas(args);
-        byte[] gasReturned = Hex.decode(gas.substring("0x".length()));
-        Assert.assertThat(gasReturned, is(BigIntegers.asUnsignedByteArray(BigInteger.valueOf(42300))));
+        CallArguments args = new CallArguments();
+        args.setFrom(TypeConverter.toJsonHex(new RskAddress(anyAddress).getBytes()));
+        args.setTo(args.getFrom());  // same account
+        args.setNonce("0"); // nonce doesn't matter
+        args.setGas(TypeConverter.toQuantityJsonHex(500000)); // large enough
+        args.setGasPrice(TypeConverter.toQuantityJsonHex(8));
+        args.setValue(TypeConverter.toQuantityJsonHex(0)); // do not pass value
+        args.setData("0xff");
+
+        String estimatedGas = eth.estimateGas(args);
+
+        Assert.assertEquals(40000, TypeConverter.JSonHexToLong(estimatedGas));
     }
 
     @Test
@@ -363,7 +345,8 @@ public class EthModuleTest {
                 mock(RepositoryLocator.class),
                 mock(EthModuleWallet.class),
                 mock(EthModuleTransaction.class),
-                mock(BridgeSupportFactory.class)
+                mock(BridgeSupportFactory.class),
+                config.getGasEstimationCap()
         );
         assertThat(eth.chainId(), is("0x21"));
     }

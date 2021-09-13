@@ -1060,7 +1060,8 @@ public class Web3ImplLogsTest {
                 null, new ExecutionBlockRetriever(mainchainView, blockChain, null, null),
                 null, new EthModuleWalletEnabled(wallet), null,
                 new BridgeSupportFactory(
-                        null, config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig())
+                        null, config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig()),
+                config.getGasEstimationCap()
         );
         TxPoolModule txPoolModule = new TxPoolModuleImpl(transactionPool);
         DebugModule debugModule = new DebugModuleImpl(null, null, Web3Mocks.getMockMessageHandler(), null);

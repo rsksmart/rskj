@@ -72,6 +72,7 @@ public class EthModule
     private final BridgeConstants bridgeConstants;
     private final BridgeSupportFactory bridgeSupportFactory;
     private final byte chainId;
+    private final long gasEstimationCap;
 
 
     public EthModule(
@@ -84,7 +85,8 @@ public class EthModule
             RepositoryLocator repositoryLocator,
             EthModuleWallet ethModuleWallet,
             EthModuleTransaction ethModuleTransaction,
-            BridgeSupportFactory bridgeSupportFactory) {
+            BridgeSupportFactory bridgeSupportFactory,
+            long gasEstimationCap) {
         this.chainId = chainId;
         this.blockchain = blockchain;
         this.transactionPool = transactionPool;
@@ -95,6 +97,7 @@ public class EthModule
         this.ethModuleTransaction = ethModuleTransaction;
         this.bridgeConstants = bridgeConstants;
         this.bridgeSupportFactory = bridgeSupportFactory;
+        this.gasEstimationCap = gasEstimationCap;
     }
 
     @Override
