@@ -70,11 +70,19 @@ public interface Web3EthModule {
 
     String eth_blockNumber();
 
+    String eth_call(CallArguments args, Map<String, String> blockRef) throws Exception; // NOSONAR
+
     String eth_getBalance(String address, String block) throws Exception;
 
     String eth_getBalance(String address) throws Exception;
 
+    String eth_getBalance(String address, Map<String, String> blockRef) throws Exception; // NOSONAR
+
+    String eth_getStorageAt(String address, String storageIdx, Map<String, String> blockRef) throws Exception; // NOSONAR
+
     String eth_getStorageAt(String address, String storageIdx, String blockId) throws Exception;
+
+    String eth_getTransactionCount(String address, Map<String, String> blockRef) throws Exception; // NOSONAR
 
     String eth_getTransactionCount(String address, String blockId) throws Exception ;
 
@@ -89,6 +97,8 @@ public interface Web3EthModule {
     default String eth_getCode(String address, String blockId) {
         return getEthModule().getCode(address, blockId);
     }
+
+    String eth_getCode(String address, Map<String, String> blockRef) throws Exception; // NOSONAR
 
     default String eth_sendRawTransaction(String rawData) {
         return getEthModule().sendRawTransaction(rawData);

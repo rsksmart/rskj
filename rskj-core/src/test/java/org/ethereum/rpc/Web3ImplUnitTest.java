@@ -36,19 +36,18 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.math.BigInteger;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 import static org.ethereum.rpc.TypeConverter.stringHexToByteArray;
 import static org.junit.Assert.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 public class Web3ImplUnitTest {
 
     private Blockchain blockchain;
+
     private Web3Impl target;
     private Web3InformationRetriever retriever;
 
@@ -113,6 +112,22 @@ public class Web3ImplUnitTest {
     }
 
     @Test
+    //validates invokeByBlockRef call
+    public void eth_getBalanceByBlockRef() {
+        String addr = "0x0011223344556677880011223344556677889900";
+        Map<String, String> blockRef = new HashMap<String, String>() {
+            {
+                put("blockHash", "0x0011223344556677880011223344556677889900");
+            }
+        };
+        final Web3Impl spyTarget = spy(target);
+        doReturn("0x1").when(spyTarget).invokeByBlockRef(eq(blockRef),any());
+        String result = spyTarget.eth_getBalance(addr, blockRef);
+        assertEquals("0x1", result);
+        verify(spyTarget).invokeByBlockRef(eq(blockRef),any());
+    }
+
+    @Test
     public void eth_getStorageAt_stateCannotBeRetrieved() {
         String id = "id";
         String addr = "0x0011223344556677880011223344556677889900";
@@ -141,6 +156,24 @@ public class Web3ImplUnitTest {
         String result = target.eth_getStorageAt(addr, storageIdx, id);
         assertEquals("0x0000000000000000000000000000000000000000000000000000000000000001",
                 result);
+    }
+
+    @Test
+    //validates invokeByBlockRef call
+    public void  eth_getStorageAtByBlockRef() {
+        final String addr = "0x0011223344556677880011223344556677889900";
+        final String storageIdx = "0x01";
+        Map<String, String> blockRef = new HashMap<String, String>() {
+            {
+                put("blockHash", "0x0011223344556677880011223344556677889900");
+            }
+        };
+        final Web3Impl spyTarget = spy(target);
+        final String expectedData = "0x0000000000000000000000000000000000000000000000000000000000000001";
+        doReturn(expectedData).when(spyTarget).invokeByBlockRef(eq(blockRef),any());
+        String result = spyTarget.eth_getStorageAt(addr, storageIdx, blockRef);
+        assertEquals(expectedData, result);
+        verify(spyTarget).invokeByBlockRef(eq(blockRef),any());
     }
 
 
@@ -184,6 +217,60 @@ public class Web3ImplUnitTest {
         String result = target.eth_getBlockTransactionCountByNumber(id);
 
         assertEquals("0x2", result);
+    }
+
+    @Test
+    //validates invokeByBlockRef call
+    public void  eth_getCode() {
+        final String addr = "0x0011223344556677880011223344556677889900";
+        Map<String, String> blockRef = new HashMap<String, String>() {
+            {
+                put("blockHash", "0x0011223344556677880011223344556677889900");
+            }
+        };
+        final Web3Impl spyTarget = spy(target);
+        final String expectedData =  "0x010203";
+        doReturn(expectedData).when(spyTarget).invokeByBlockRef(eq(blockRef),any());
+        String result = spyTarget.eth_getCode(addr,blockRef);
+        assertEquals(expectedData, result);
+        verify(spyTarget).invokeByBlockRef(eq(blockRef),any());
+    }
+
+    @Test
+    //validates invokeByBlockRef call
+    public void  eth_callAtByBlockRef() {
+
+        CallArguments argsForCall = new CallArguments();
+        argsForCall.setTo("0x0011223344556677880011223344556677889900");
+        argsForCall.setData("ead710c40000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000568656c6c6f000000000000000000000000000000000000000000000000000000");
+        Map<String, String> blockRef = new HashMap<String, String>() {
+            {
+                put("blockHash", "0x0011223344556677880011223344556677889900");
+            }
+        };
+        final Web3Impl spyTarget = spy(target);
+        final String expectedData = "0x0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000568656c6c6f000000000000000000000000000000000000000000000000000000";
+
+        doReturn(expectedData).when(spyTarget).invokeByBlockRef(eq(blockRef),any());
+        String result = spyTarget.eth_call(argsForCall,blockRef);
+        assertEquals(expectedData, result);
+        verify(spyTarget).invokeByBlockRef(eq(blockRef),any());
+    }
+
+    @Test
+    //validates invokeByBlockRef call
+    public void  eth_getBlockTransactionCountByBlockRef() {
+        String addr = "0x0011223344556677880011223344556677889900";
+        Map<String, String> blockRef = new HashMap<String, String>() {
+            {
+                put("blockHash", "0x0011223344556677880011223344556677889900");
+            }
+        };
+        final Web3Impl spyTarget = spy(target);
+        doReturn("0x1").when(spyTarget).invokeByBlockRef(eq(blockRef),any());
+        String result = spyTarget.eth_getTransactionCount(addr, blockRef);
+        assertEquals("0x1", result);
+        verify(spyTarget).invokeByBlockRef(eq(blockRef),any());
     }
 
     @Test
