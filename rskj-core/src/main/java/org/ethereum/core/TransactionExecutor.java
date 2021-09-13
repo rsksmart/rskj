@@ -446,7 +446,7 @@ public class TransactionExecutor {
             cacheTrack.rollback();
             gasLeftover = 0;
             execError(e);
-//            result.setException(e); // todo will/should be enabled
+            result.setException(e);
             profiler.stop(metric);
             return;
         }
