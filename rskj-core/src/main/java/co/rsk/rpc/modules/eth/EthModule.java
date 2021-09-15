@@ -169,7 +169,7 @@ public class EthModule
             // in these operations unless the user provides a malicius gasLimit value.
 
             ProgramResult programResult = executor.getResult();
-            
+
             long newGasNeeded = programResult.movedRemainingGasToChild() ?
                     programResult.getGasUsed() + programResult.getDeductedRefund() : // then we need to count the deductedRefunds
                     programResult.getMaxGasUsed(); // because deductedRefund can never be higher than gasUsed/2, we can just take the relative upper bound

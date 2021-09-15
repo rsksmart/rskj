@@ -279,60 +279,6 @@ public class EthModuleTest {
         Assert.assertThat(Hex.decode(addr.substring("0x".length())), is(expectedCode));
     }
 
-
-    @Test
-    public void estimateGas() {
-        TransactionPool mockTransactionPool = mock(TransactionPool.class);
-        PendingState mockPendingState = mock(PendingState.class);
-
-        doReturn(mockPendingState).when(mockTransactionPool).getPendingState();
-        Blockchain blockchain = mock(Blockchain.class);
-        Block block = mock(Block.class);
-        doReturn(block).when(blockchain).getBestBlock();
-        RskAddress coinbase = new RskAddress(anyAddress);
-        doReturn(coinbase).when(block).getCoinbase();
-
-        ReversibleTransactionExecutor executor = mock(ReversibleTransactionExecutor.class);
-
-        ProgramResult programResult = new ProgramResult();
-        programResult.addDeductedRefund(10000);
-        programResult.spendGas(30000);
-
-        doReturn(programResult).when(executor).estimateGas(any(),any(),
-                any(),any(),any(),any(),any(),any());
-
-        EthModule eth = new EthModule(
-                null,
-                (byte) 0,
-                blockchain,
-                mockTransactionPool,
-                executor ,
-                null,
-                null,
-                null,
-                null,
-                new BridgeSupportFactory(
-                        null,
-                        null,
-                        null
-                ),
-                config.getGasEstimationCap()
-        );
-
-        CallArguments args = new CallArguments();
-        args.setFrom(TypeConverter.toJsonHex(new RskAddress(anyAddress).getBytes()));
-        args.setTo(args.getFrom());  // same account
-        args.setNonce("0"); // nonce doesn't matter
-        args.setGas(TypeConverter.toQuantityJsonHex(500000)); // large enough
-        args.setGasPrice(TypeConverter.toQuantityJsonHex(8));
-        args.setValue(TypeConverter.toQuantityJsonHex(0)); // do not pass value
-        args.setData("0xff");
-
-        String estimatedGas = eth.estimateGas(args);
-
-        Assert.assertEquals(40000, TypeConverter.JSonHexToLong(estimatedGas));
-    }
-
     @Test
     public void chainId() {
         EthModule eth = new EthModule(

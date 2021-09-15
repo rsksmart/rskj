@@ -13,6 +13,7 @@ import org.ethereum.rpc.CallArguments;
 import org.ethereum.rpc.TypeConverter;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.EthModuleUtils;
+import org.ethereum.vm.GasCost;
 import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.program.InternalTransaction;
 import org.ethereum.vm.program.ProgramResult;
@@ -35,6 +36,48 @@ public class EthModuleGasEstimationDSLTest {
     private ProgramResult localCallResult;
     private static final Logger LOGGER_FEDE = LoggerFactory.getLogger("fede");
 
+    @Test
+    public void testEstimateGas_basicTests() throws FileNotFoundException, DslProcessorException {
+        World world = World.processedWorld("dsl/eth_module/estimateGas/basicTests.txt");
+
+        EthModule eth = EthModuleUtils.buildBasicEthModule(world);
+        Block block = world.getBlockChain().getBestBlock();
+
+        final CallArguments args = new CallArguments();
+        args.setTo("6252703f5ba322ec64d3ac45e56241b7d9e481ad"); // some address;
+        args.setValue(TypeConverter.toQuantityJsonHex(0)); // no value
+        args.setNonce(TypeConverter.toQuantityJsonHex(0));
+        args.setGas(TypeConverter.toQuantityJsonHex(BLOCK_GAS_LIMIT));
+        args.setData(""); // no data
+
+        long estimatedGas = estimateGas(eth, args);
+
+        ProgramResult callConstantResult = eth.callConstant(args, block);
+
+        assertEquals(callConstantResult.getGasUsed(), estimatedGas);
+
+        // Call same transaction with estimated gas
+        args.setGas(TypeConverter.toQuantityJsonHex(estimatedGas));
+        assertTrue(runWithArgumentsAndBlock(eth, args, block));
+
+        // Call same transaction with estimated gas - 1
+        try {
+            args.setGas(TypeConverter.toQuantityJsonHex(estimatedGas - 1));
+            runWithArgumentsAndBlock(eth, args, block);
+            fail("shouldn't reach here");
+        } catch (GasCost.InvalidGasException e) {
+            assertEquals("Got invalid gas value, tried operation: 20999 - 21000", e.getMessage());
+        }
+
+        // Try to estimate with not enough gas
+        try {
+            args.setGas(TypeConverter.toQuantityJsonHex(1000));
+            estimateGas(eth, args);
+            fail("shouldn't reach here");
+        } catch (GasCost.InvalidGasException e) {
+            assertEquals("Got invalid gas value, tried operation: 1000 - 21000", e.getMessage());
+        }
+    }
 
     @Test
     public void testEstimateGas_contractCallsWithValueTransfer() throws FileNotFoundException, DslProcessorException {
@@ -74,7 +117,7 @@ public class EthModuleGasEstimationDSLTest {
         assertEquals(ByteUtil.byteArrayToLong(callWithValueReceipt.getGasUsed()), gasUsed);
 
         // Estimate the gas to use
-        long estimatedGas = Long.parseLong(eth.estimateGas(args).substring(2), 16);
+        long estimatedGas = estimateGas(eth, args);
         ProgramResult estimationResult = eth.getEstimationResult();
         assertEquals(0, estimationResult.getDeductedRefund());
 
@@ -130,7 +173,7 @@ public class EthModuleGasEstimationDSLTest {
         ProgramResult callConstantResult = eth.callConstant(args, block);
 
         long clearStorageGasUsed = callConstantResult.getGasUsed();
-        long clearStoreageEstimatedGas = Long.parseLong(eth.estimateGas(args).substring(2), 16);
+        long clearStoreageEstimatedGas = estimateGas(eth, args);
 
         assertTrue( 0 < clearStorageGasUsed && clearStorageGasUsed < initStorageGasUsed);
         assertTrue(clearStoreageEstimatedGas < initStorageGasUsed);
@@ -152,7 +195,7 @@ public class EthModuleGasEstimationDSLTest {
                 "0000000000000000000000000000000000000000000000000000000000000001" +
                 "0000000000000000000000000000000000000000000000000000000000000001"); // setValue(1,1)
         long updateStorageGasUsed = eth.callConstant(args, block).getGasUsed();
-        long updateStoreageEstimatedGas = Long.parseLong(eth.estimateGas(args).substring(2), 16);
+        long updateStoreageEstimatedGas = estimateGas(eth, args);
 
         // The estimated gas should be less than the gas used gas for initializing a storage cell
         assertTrue(updateStorageGasUsed < initStorageGasUsed);
@@ -184,7 +227,7 @@ public class EthModuleGasEstimationDSLTest {
 
         ProgramResult anotherCallConstantResult = eth.callConstant(args, block);
         long anotherClearStorageGasUsed = anotherCallConstantResult.getGasUsed();
-        long anotherClearStorageEstimatedGas = Long.parseLong(eth.estimateGas(args).substring("0x".length()), 16);
+        long anotherClearStorageEstimatedGas = estimateGas(eth, args);
 
         assertEquals(initStorageGasUsed, anotherInitStorageGasUsed);
         assertEquals(clearStoreageEstimatedGas, anotherClearStorageEstimatedGas);
@@ -248,7 +291,7 @@ public class EthModuleGasEstimationDSLTest {
         ProgramResult callConstant = eth.callConstant(args, block);
         long callConstantGasUsed = callConstant.getGasUsed();
 
-        long estimatedGas = Long.parseLong(eth.estimateGas(args).substring("0x".length()), 16);
+        long estimatedGas = estimateGas(eth, args);
         assertTrue(estimatedGas > callConstantGasUsed);
         assertEquals(callConstant.getMaxGasUsed(), estimatedGas);
 
@@ -320,7 +363,7 @@ public class EthModuleGasEstimationDSLTest {
         long callConstantGasUsed = callConstant.getGasUsed();
 
         LOGGER_FEDE.error("---------------------START ESTIMATE--------------------");
-        long estimatedGas = Long.parseLong(eth.estimateGas(args).substring("0x".length()), 16);
+        long estimatedGas = estimateGas(eth, args);
         LOGGER_FEDE.error("---------------------END ESTIMATE--------------------");
         assertEquals(callConstant.getGasUsed(), estimatedGas);
 
@@ -394,7 +437,7 @@ public class EthModuleGasEstimationDSLTest {
         long callConstantGasUsed = callConstant.getGasUsed();
 
         LOGGER_FEDE.error("---------------------START ESTIMATE--------------------");
-        long estimatedGas = Long.parseLong(eth.estimateGas(args).substring("0x".length()), 16);
+        long estimatedGas = estimateGas(eth, args);
         LOGGER_FEDE.error("---------------------END ESTIMATE--------------------");
         assertTrue(callConstant.getDeductedRefund() > 0);
         assertEquals(callConstantGasUsed + callConstant.getDeductedRefund(), estimatedGas);
@@ -413,6 +456,10 @@ public class EthModuleGasEstimationDSLTest {
         localCallResult = ethModule.callConstant(args, block);
 
         return localCallResult.getException() == null;
+    }
+
+    private long estimateGas(EthModule eth, CallArguments args) {
+        return Long.parseLong(eth.estimateGas(args).substring("0x".length()), 16);
     }
 
     // todo this is duplicated code, should be extracted into a test util
