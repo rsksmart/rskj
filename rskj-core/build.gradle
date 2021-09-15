@@ -31,7 +31,6 @@ tasks.withType(Javadoc) {
 
 repositories {
     mavenCentral()
-    jcenter()
     maven {
         url "https://deps.rsklabs.io"
     }
