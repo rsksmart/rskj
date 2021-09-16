@@ -25,7 +25,6 @@ import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionExecutor;
-import org.ethereum.vm.GasCost;
 import org.ethereum.vm.program.ProgramResult;
 
 /**
