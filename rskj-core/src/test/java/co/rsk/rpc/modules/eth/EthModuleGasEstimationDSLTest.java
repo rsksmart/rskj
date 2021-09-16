@@ -34,7 +34,6 @@ public class EthModuleGasEstimationDSLTest {
 
     public static final long BLOCK_GAS_LIMIT = new TestSystemProperties().getTargetGasLimit();
     private ProgramResult localCallResult;
-    private static final Logger LOGGER_FEDE = LoggerFactory.getLogger("fede");
 
     @Test
     public void testEstimateGas_basicTests() throws FileNotFoundException, DslProcessorException {
@@ -362,9 +361,8 @@ public class EthModuleGasEstimationDSLTest {
 
         long callConstantGasUsed = callConstant.getGasUsed();
 
-        LOGGER_FEDE.error("---------------------START ESTIMATE--------------------");
         long estimatedGas = estimateGas(eth, args);
-        LOGGER_FEDE.error("---------------------END ESTIMATE--------------------");
+
         assertEquals(callConstant.getGasUsed(), estimatedGas);
 
         args.setGas(TypeConverter.toQuantityJsonHex(callConstantGasUsed));
@@ -436,9 +434,8 @@ public class EthModuleGasEstimationDSLTest {
 
         long callConstantGasUsed = callConstant.getGasUsed();
 
-        LOGGER_FEDE.error("---------------------START ESTIMATE--------------------");
         long estimatedGas = estimateGas(eth, args);
-        LOGGER_FEDE.error("---------------------END ESTIMATE--------------------");
+
         assertTrue(callConstant.getDeductedRefund() > 0);
         assertEquals(callConstant.getGasUsedBeforeRefunds() / 2, callConstant.getDeductedRefund());
         assertEquals(callConstantGasUsed + callConstant.getDeductedRefund(), estimatedGas);
@@ -510,9 +507,8 @@ public class EthModuleGasEstimationDSLTest {
 
         long callConstantGasUsed = callConstant.getGasUsed();
 
-        LOGGER_FEDE.error("---------------------START ESTIMATE--------------------");
         long estimatedGas = estimateGas(eth, args);
-        LOGGER_FEDE.error("---------------------END ESTIMATE--------------------");
+
         assertTrue(callConstant.getDeductedRefund() > 0);
         assertEquals(callConstant.getGasUsedBeforeRefunds() / 2, callConstant.getDeductedRefund());
         assertEquals(callConstantGasUsed + callConstant.getDeductedRefund(), estimatedGas);

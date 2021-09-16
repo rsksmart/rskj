@@ -182,7 +182,6 @@ public class EthModule
             LOGGER.debug("eth_estimateGas(): {}", estimation);
         }
     }
-    private static final Logger LOGGER_FEDE = LoggerFactory.getLogger("fede");
 
     @Override
     public String sendTransaction(CallArguments args) {
