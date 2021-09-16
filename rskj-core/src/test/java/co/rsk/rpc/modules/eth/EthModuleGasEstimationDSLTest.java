@@ -233,7 +233,7 @@ public class EthModuleGasEstimationDSLTest {
         assertEquals(clearStorageGasUsed, anotherClearStorageGasUsed);
     }
 
-    @Test @Ignore
+    @Test
     public void estimateGas_gasCap() throws FileNotFoundException, DslProcessorException {
         World world = World.processedWorld("dsl/eth_module/estimateGas/gasCap.txt");
 
