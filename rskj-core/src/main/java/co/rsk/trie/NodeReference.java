@@ -55,7 +55,7 @@ public class NodeReference {
     }
 
     public NodeReference(TrieStore store, @Nullable Trie node, @Nullable Keccak256 hash) {
-        this(store, node, hash, exitStatus -> System.exit(1));
+        this(store, node, hash, exitStatus -> System.exit(exitStatus));
     }
 
     public boolean isEmpty() {
