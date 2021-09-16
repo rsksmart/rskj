@@ -33,7 +33,7 @@ end
 
 account_new acc1 20000000
 
-# Deploy three instances of NestedCallsWithValue
+# Deploy three instances of NestedCallWithValue
 
 transaction_build tx01
     sender acc1

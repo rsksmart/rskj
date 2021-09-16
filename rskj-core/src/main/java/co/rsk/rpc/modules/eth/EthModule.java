@@ -171,7 +171,7 @@ public class EthModule
             ProgramResult programResult = executor.getResult();
 
             long newGasNeeded = programResult.movedRemainingGasToChild() ?
-                    programResult.getGasUsed() + programResult.getDeductedRefund() : // then we need to count the deductedRefunds
+                    programResult.getGasUsed() + programResult.getDeductedRefund() :
                     programResult.getMaxGasUsed(); // because deductedRefund can never be higher than gasUsed/2, we can just take the relative upper bound
 
             estimation = TypeConverter.toQuantityJsonHex(newGasNeeded);

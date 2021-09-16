@@ -266,7 +266,7 @@ public class EthModuleGasEstimationDSLTest {
      * */
     @Test
     public void estimateGas_callWithValuePlusSStoreRefund() throws FileNotFoundException, DslProcessorException {
-        World world = World.processedWorld("dsl/eth_module/estimateGas/callWithValuePlusSstoreRefundRefactor.txt");
+        World world = World.processedWorld("dsl/eth_module/estimateGas/callWithValuePlusSstoreRefund.txt");
 
         TransactionReceipt contractDeployReceipt = world.getTransactionReceiptByName("tx01");
         String contractAddress = contractDeployReceipt.getTransaction().getContractAddress().toHexString();
@@ -440,6 +440,81 @@ public class EthModuleGasEstimationDSLTest {
         long estimatedGas = estimateGas(eth, args);
         LOGGER_FEDE.error("---------------------END ESTIMATE--------------------");
         assertTrue(callConstant.getDeductedRefund() > 0);
+        assertEquals(callConstant.getGasUsedBeforeRefunds() / 2, callConstant.getDeductedRefund());
+        assertEquals(callConstantGasUsed + callConstant.getDeductedRefund(), estimatedGas);
+
+        args.setGas(TypeConverter.toQuantityJsonHex(callConstantGasUsed));
+        assertFalse(runWithArgumentsAndBlock(eth, args, block));
+
+        args.setGas(TypeConverter.toQuantityJsonHex(estimatedGas));
+        assertTrue(runWithArgumentsAndBlock(eth, args, block));
+
+        args.setGas(TypeConverter.toQuantityJsonHex(estimatedGas - 1));
+        assertFalse(runWithArgumentsAndBlock(eth, args, block));
+    }
+
+    /**
+     * Send 1 rBTC accross three contracts, then the last contract frees a storage cell and does a CALL with value
+     * */
+    @Test
+    public void estimateGas_nestedCallsWithValueFixedGasRetainAndStorageRefund() throws FileNotFoundException, DslProcessorException {
+        World world = World.processedWorld("dsl/eth_module/estimateGas/nestedCallsWithValueStorageRefundAndFixedGas.txt");
+
+        TransactionReceipt contractDeployA = world.getTransactionReceiptByName("tx01");
+        String contractAddressA = contractDeployA.getTransaction().getContractAddress().toHexString();
+        byte[] status = contractDeployA.getStatus();
+
+        assertNotNull(status);
+        assertEquals(1, status.length);
+        assertEquals(0x01, status[0]);
+        assertEquals("6252703f5ba322ec64d3ac45e56241b7d9e481ad", contractAddressA);
+
+        TransactionReceipt contractDeployB = world.getTransactionReceiptByName("tx02");
+        String contractAddressB = contractDeployB.getTransaction().getContractAddress().toHexString();
+        byte[] status2 = contractDeployB.getStatus();
+
+        assertNotNull(status2);
+        assertEquals(1, status2.length);
+        assertEquals(0x01, status2[0]);
+        assertEquals("56aa252dd82173789984fa164ee26ce2da9336ff", contractAddressB);
+
+        TransactionReceipt contractDeployC = world.getTransactionReceiptByName("tx03");
+        String contractAddressC = contractDeployC.getTransaction().getContractAddress().toHexString();
+        byte[] status3 = contractDeployC.getStatus();
+
+        assertNotNull(status3);
+        assertEquals(1, status3.length);
+        assertEquals(0x01, status3[0]);
+        assertEquals("27444fbce96cb2d27b94e116d1506d7739c05862", contractAddressC);
+
+        EthModule eth = EthModuleUtils.buildBasicEthModule(world);
+        Block block = world.getBlockChain().getBestBlock();
+
+        // call callAddressWithValue, it should start the nested calls
+        final CallArguments args = new CallArguments();
+        args.setTo(contractAddressA);
+        args.setValue(TypeConverter.toQuantityJsonHex(1));
+        args.setNonce(TypeConverter.toQuantityJsonHex(6));
+        args.setGas(TypeConverter.toQuantityJsonHex(BLOCK_GAS_LIMIT));
+        args.setData("fb60f709"); // callAddressWithValue()
+
+        ProgramResult callConstant = eth.callConstant(args, block);
+        List<InternalTransaction> internalTransactions = callConstant.getInternalTransactions();
+
+        assertTrue(internalTransactions.stream().allMatch(i -> i.getValue().equals(Coin.valueOf(1))));
+        assertEquals(3, internalTransactions.size());
+        assertEquals(3, callConstant.getLogInfoList().size());
+        assertEvents(callConstant, "NestedCallWV", 2);
+        assertEvents(callConstant, "LastCall", 1);
+
+
+        long callConstantGasUsed = callConstant.getGasUsed();
+
+        LOGGER_FEDE.error("---------------------START ESTIMATE--------------------");
+        long estimatedGas = estimateGas(eth, args);
+        LOGGER_FEDE.error("---------------------END ESTIMATE--------------------");
+        assertTrue(callConstant.getDeductedRefund() > 0);
+        assertEquals(callConstant.getGasUsedBeforeRefunds() / 2, callConstant.getDeductedRefund());
         assertEquals(callConstantGasUsed + callConstant.getDeductedRefund(), estimatedGas);
 
         args.setGas(TypeConverter.toQuantityJsonHex(callConstantGasUsed));

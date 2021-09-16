@@ -39,11 +39,17 @@ import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 public class ProgramResult {
 
     private static final Logger LOGGER_FEDE = LoggerFactory.getLogger("fede");
+
+    // useful to estimateGas, sometimes the estimatedGas matches the maximum gasUsed
     private long maxGasUsed = 0;
 
+    // this field it's useful to test if the deductedRefund value is less than the half of the gasUsed
+    private long gasUsedBeforeRefunds = 0;
+
     private String id;
+
     public ProgramResult(){
-        String s = String.valueOf(new Random().nextInt());
+        String s = String.valueOf(new Random().nextInt()); //NOSONAR
         id = s.substring(s.length() - 4);
     }
 
@@ -321,5 +327,13 @@ public class ProgramResult {
         return getLogInfoList().stream()
                 .filter(logInfo -> !logInfo.isRejected())
                 .collect(Collectors.toList());
+    }
+
+    public void setGasUsedBeforeRefunds(long gasUsedBeforeRefunds) {
+        this.gasUsedBeforeRefunds = gasUsedBeforeRefunds;
+    }
+
+    public long getGasUsedBeforeRefunds() {
+        return gasUsedBeforeRefunds;
     }
 }

@@ -618,6 +618,7 @@ public class TransactionExecutor {
         // The actual gas subtracted is equal to half of the future refund
         long gasRefund = Math.min(result.getFutureRefund(), result.getGasUsed() / 2);
         result.addDeductedRefund(gasRefund);
+        result.setGasUsedBeforeRefunds(result.getGasUsed());
 
         gasLeftover = activations.isActive(ConsensusRule.RSKIP136) ?
                 GasCost.add(gasLeftover, gasRefund) :

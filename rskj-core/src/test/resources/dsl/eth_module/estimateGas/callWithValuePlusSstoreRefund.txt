@@ -3,45 +3,35 @@ pragma solidity >=0.6.0 <0.9.0;
 
 // import "hardhat/console.sol";
 
-contract ValueTransfer {
-    function callSstoreClearWithValue(address payable sstoreClearAddress) public payable {
-        // payable(sstoreClearAddress).transfer(msg.value);
-        SStoreClear s = SStoreClear(sstoreClearAddress);
-        s.receiveAndClearStorage{value: msg.value}();
-    }
-}
-
-contract SStoreClear {
+contract SStoreCallWithValue {
     uint[100] public values;
 
-    event Received(address, uint);
-    event StorageState(uint, uint);
-
-    function receiveAndClearStorage() external payable {
-        emit Received(msg.sender, msg.value);
-        values[1] = 0;
-        emit StorageState(1, values[1]);
+    constructor() {
+        values[1] = 42;
     }
 
     function initStorage() public {
         values[1] = 42;
     }
 
-    function isStorageInit() view public returns (bool) {
-        return values[1] == 42;
+    function clearStorageAndSendValue() public payable {
+        values[1] = 0;
+        payable(address(this)).transfer(1);
     }
+
+    fallback () external payable { }
 }
 end
 
 account_new acc1 20000000
 
-# Deploy ValueTransfer
+# Deploy SStoreCallWithValue
 
 transaction_build tx01
     sender acc1
     receiverAddress 00
     value 0
-    data 608060405234801561001057600080fd5b5060ff8061001f6000396000f3fe608060405260043610601b5760003560e01c8062c6f1e6146020575b600080fd5b605f60048036036020811015603457600080fd5b81019080803573ffffffffffffffffffffffffffffffffffffffff1690602001909291905050506061565b005b60008190508073ffffffffffffffffffffffffffffffffffffffff1663830136a6346040518263ffffffff1660e01b81526004016000604051808303818588803b15801560ad57600080fd5b505af115801560c0573d6000803e3d6000fd5b5050505050505056fea2646970667358221220162bdf1fffa9fb7218e7e20afb5c8c3d774ff5920a1b4a46a446f934c74459d364736f6c63430007030033
+    data 608060405234801561001057600080fd5b50602a600060016064811061002157fe5b018190555061016e806100356000396000f3fe6080604052600436106100385760003560e01c80635b3f81401461003b5780635e383d211461004557806394b3f5ee1461009457610039565b5b005b6100436100ab565b005b34801561005157600080fd5b5061007e6004803603602081101561006857600080fd5b8101908080359060200190929190505050610109565b6040518082815260200191505060405180910390f35b3480156100a057600080fd5b506100a9610121565b005b6000806001606481106100ba57fe5b01819055503073ffffffffffffffffffffffffffffffffffffffff166108fc60019081150290604051600060405180830381858888f19350505050158015610106573d6000803e3d6000fd5b50565b6000816064811061011657fe5b016000915090505481565b602a600060016064811061013157fe5b018190555056fea26469706673582212204f4296fafbb59e65b8ab38addc7f71380bbcba3f71112e6f4c4304298ed663c864736f6c63430007030033
     gas 2000000
     build
 
@@ -53,14 +43,15 @@ block_build b01
 block_connect b01
 assert_best b01
 
-# Deploy SStoreClear
+# call clearStorageAndSendValue()
 
 transaction_build tx02
     sender acc1
     nonce 1
-    value 0
-    data 608060405234801561001057600080fd5b5061021a806100206000396000f3fe60806040526004361061003f5760003560e01c806326d7ae02146100445780635e383d2114610071578063830136a6146100c057806394b3f5ee146100ca575b600080fd5b34801561005057600080fd5b506100596100e1565b60405180821515815260200191505060405180910390f35b34801561007d57600080fd5b506100aa6004803603602081101561009457600080fd5b81019080803590602001909291905050506100fb565b6040518082815260200191505060405180910390f35b6100c8610113565b005b3480156100d657600080fd5b506100df6101cd565b005b6000602a60006001606481106100f357fe5b015414905090565b6000816064811061010857fe5b016000915090505481565b7f88a5966d370b9919b20f3e2c13ff65706f196a4e32cc2c12bf57088f885258743334604051808373ffffffffffffffffffffffffffffffffffffffff1681526020018281526020019250505060405180910390a160008060016064811061017757fe5b01819055507ff81e688351a0b14d35e19a1855b78412f6b2dba0f95d0fac876a8488f7f812f2600160006001606481106101ad57fe5b0154604051808381526020018281526020019250505060405180910390a1565b602a60006001606481106101dd57fe5b018190555056fea2646970667358221220a98485a100594465b2a199bb245f6d370e93e9ccc196010d3fd5eef924b621fd64736f6c63430007030033
-    gas 2000000
+    contract tx01   # created in tx01
+    value 1
+    data 5b3f8140
+    gas 6800000
     build
 
 block_build b02
@@ -69,52 +60,5 @@ block_build b02
     gasLimit 6800000
     build
 
-block_connect b02
-assert_best b02
-
-# Init SStoreClear storage
-transaction_build tx03
-    sender acc1
-    nonce 2
-    contract tx02   # created in tx02
-    value 0
-    data 94b3f5ee
-    gas 6400000
-    build
-
-block_build b03
-    parent b02
-    transactions tx03
-    gasLimit 6800000
-    build
-
-block_connect b03
-assert_best b03
-
-block_build b04
-    parent b03
-    gasLimit 6800000
-    build
-
-block_connect b04
-assert_best b04
-
-# callSstoreClearWithValue("56aa252dd82173789984fa164ee26ce2da9336ff")
-
-transaction_build tx04
-    sender acc1
-    nonce 3
-    contract tx01   # created in tx01
-    value 1
-    data 00c6f1e600000000000000000000000056aa252dd82173789984fa164ee26ce2da9336ff
-    gas 6800000
-    build
-
-block_build b05
-    parent b04
-    transactions tx04
-    gasLimit 6800000
-    build
-
-block_connect b05
-assert_best b05
+#block_connect b02
+#assert_best b02

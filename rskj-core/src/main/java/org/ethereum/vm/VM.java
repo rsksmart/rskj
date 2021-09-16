@@ -1557,7 +1557,6 @@ public class VM {
             spendOpCodeGas();
 
             // the gas needed for estimateGas will be given by gasUsed (our new lower bound)
-            // because it'll use the transaction gasLimit
             boolean passedRemainingGasToChild = calleeGas == remainingGas;
             if(passedRemainingGasToChild) {
                 LOGGER_FEDE.error("movedRemainingGasToChild");
