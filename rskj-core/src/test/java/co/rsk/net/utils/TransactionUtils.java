@@ -18,6 +18,10 @@
 
 package co.rsk.net.utils;
 
+import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.List;
+
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
 import org.ethereum.core.Account;
@@ -27,20 +31,16 @@ import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.Utils;
 
-import java.math.BigInteger;
-import java.security.SecureRandom;
-import java.util.ArrayList;
-import java.util.List;
-
 /**
  * Created by ajlopez on 7/22/2016.
  */
 public class TransactionUtils {
+	
     public static List<Transaction> getTransactions(int n) {
         List<Transaction> txs = new ArrayList<>();
 
         for (long k = 0; k < n; k++)
-            txs.add(createTransaction(getPrivateKeyBytes(), getAddress(), BigInteger.valueOf(Utils.getRandom().nextInt(2000)), BigInteger.valueOf(k)));
+            txs.add(createTransaction(getPrivateKeyBytes(k), getAddress(), BigInteger.valueOf(k + 1), BigInteger.valueOf(k)));
 
         return txs;
     }
@@ -51,7 +51,12 @@ public class TransactionUtils {
     }
 
     public static byte[] getPrivateKeyBytes() {
-        return HashUtil.keccak256(SecureRandom.getSeed(15));
+    	return getPrivateKeyBytes(0L);
+    }
+    
+    public static byte[] getPrivateKeyBytes(long salt) {
+    	String seed = "this is a seed" + Long.toString(salt);
+        return HashUtil.keccak256(seed.getBytes());
     }
 
     public static Transaction createTransaction(byte[] privateKey, String toAddress, BigInteger value, BigInteger nonce) {
