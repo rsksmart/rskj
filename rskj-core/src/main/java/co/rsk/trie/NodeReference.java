@@ -19,22 +19,29 @@ package co.rsk.trie;
 
 import co.rsk.core.types.ints.Uint8;
 import co.rsk.crypto.Keccak256;
+import co.rsk.util.NodeStopper;
 import org.ethereum.crypto.Keccak256Helper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.nio.ByteBuffer;
+import java.util.Objects;
 import java.util.Optional;
 
 public class NodeReference {
 
+    private static final Logger logger = LoggerFactory.getLogger(NodeReference.class);
     private static final NodeReference EMPTY = new NodeReference(null, null, null);
 
     private final TrieStore store;
+    private final NodeStopper nodeStopper;
 
     private Trie lazyNode;
     private Keccak256 lazyHash;
 
-    public NodeReference(TrieStore store, @Nullable Trie node, @Nullable Keccak256 hash) {
+    public NodeReference(TrieStore store, @Nullable Trie node, @Nullable Keccak256 hash, @Nonnull NodeStopper nodeStopper) {
         this.store = store;
         if (node != null && node.isEmptyTrie()) {
             this.lazyNode = null;
@@ -43,6 +50,12 @@ public class NodeReference {
             this.lazyNode = node;
             this.lazyHash = hash;
         }
+
+        this.nodeStopper = Objects.requireNonNull(nodeStopper);
+    }
+
+    public NodeReference(TrieStore store, @Nullable Trie node, @Nullable Keccak256 hash) {
+        this(store, node, hash, exitStatus -> System.exit(1));
     }
 
     public boolean isEmpty() {
@@ -52,6 +65,7 @@ public class NodeReference {
     /**
      * The node or empty if this is an empty reference.
      * If the node is not present but its hash is known, it will be retrieved from the store.
+     * If the node could not be retrieved from the store, the Node is stopped using System.exit(1)
      */
     public Optional<Trie> getNode() {
         if (lazyNode != null) {
@@ -64,7 +78,15 @@ public class NodeReference {
 
         Optional<Trie> node = store.retrieve(lazyHash.getBytes());
 
-        lazyNode = node.orElse(null);
+        // Broken database, can't continue
+        if (!node.isPresent()) {
+            logger.error("Broken database, execution can't continue");
+            nodeStopper.stop(1);
+            return Optional.empty();
+        }
+
+        lazyNode = node.get();
+
         return node;
     }
 
