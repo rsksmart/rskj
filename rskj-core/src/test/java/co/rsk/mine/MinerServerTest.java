@@ -59,8 +59,7 @@ import java.util.List;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 /**
  * Created by adrian.eidelman on 3/16/2016.
@@ -129,36 +128,10 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
         BlockUnclesValidationRule unclesValidationRule = mock(BlockUnclesValidationRule.class);
         when(unclesValidationRule.isValid(any())).thenReturn(true);
         MinerClock clock = new MinerClock(true, Clock.systemUTC());
-        MinerServerImpl minerServer = new MinerServerImpl(
-                config,
-                mock(EthereumImpl.class),
-                this.blockchain,
-                null,
-                new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
-                new BlockToMineBuilder(
-                        config.getActivationConfig(),
-                        ConfigUtils.getDefaultMiningConfig(),
-                        repositoryLocator,
-                        blockStore,
-                        localTransactionPool,
-                        difficultyCalculator,
-                        new GasLimitCalculator(config.getNetworkConstants()),
-                        new ForkDetectionDataCalculator(),
-                        unclesValidationRule,
-                        clock,
-                        blockFactory,
-                        blockExecutor,
-                        minimumGasPriceCalculator,
-                        minerUtils
-                ),
-                clock,
-                blockFactory,
-                new BuildInfo("cb7f28e", "master"),
-                ConfigUtils.getDefaultMiningConfig()
-        );
+        MinerServerImpl minerServer = makeMinerServer(mock(EthereumImpl.class), unclesValidationRule, clock, localTransactionPool);
 
         minerServer.buildBlockToMine(false);
-        Block blockAtHeightOne = minerServer.getBlocksWaitingforPoW().entrySet().iterator().next().getValue();
+        Block blockAtHeightOne = minerServer.getBlocksWaitingForPoW().entrySet().iterator().next().getValue();
 
         List<Transaction> blockTransactions = blockAtHeightOne.getTransactionsList();
         assertNotNull(blockTransactions);
@@ -176,33 +149,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
         BlockUnclesValidationRule unclesValidationRule = mock(BlockUnclesValidationRule.class);
         when(unclesValidationRule.isValid(any())).thenReturn(true);
         MinerClock clock = new MinerClock(true, Clock.systemUTC());
-        MinerServer minerServer = new MinerServerImpl(
-                config,
-                ethereumImpl,
-                blockchain,
-                null,
-                new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
-                new BlockToMineBuilder(
-                        config.getActivationConfig(),
-                        ConfigUtils.getDefaultMiningConfig(),
-                        repositoryLocator,
-                        blockStore,
-                        transactionPool,
-                        difficultyCalculator,
-                        new GasLimitCalculator(config.getNetworkConstants()),
-                        new ForkDetectionDataCalculator(),
-                        unclesValidationRule,
-                        clock,
-                        blockFactory,
-                        blockExecutor,
-                        minimumGasPriceCalculator,
-                        minerUtils
-                ),
-                clock,
-                blockFactory,
-                new BuildInfo("cb7f28e", "master"),
-                ConfigUtils.getDefaultMiningConfig()
-        );
+        MinerServerImpl minerServer = makeMinerServer(ethereumImpl, unclesValidationRule, clock);
         try {
         byte[] extraData = ByteBuffer.allocate(4).putInt(1).array();
         minerServer.setExtraData(extraData);
@@ -219,7 +166,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
 
         findNonce(work, bitcoinMergedMiningBlock);
         SubmitBlockResult result;
-        result = ((MinerServerImpl) minerServer).submitBitcoinBlock(work2.getBlockHashForMergedMining(), bitcoinMergedMiningBlock,true);
+        result = minerServer.submitBitcoinBlock(work2.getBlockHashForMergedMining(), bitcoinMergedMiningBlock,true);
 
 
         Assert.assertEquals("OK", result.getStatus());
@@ -228,7 +175,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
         Assert.assertEquals("0x494d504f525445445f42455354", result.getBlockInfo().getBlockImportedResult());
 
         // Submit again the save PoW for a different header
-        result = ((MinerServerImpl) minerServer).submitBitcoinBlock(work.getBlockHashForMergedMining(), bitcoinMergedMiningBlock,false);
+        result = minerServer.submitBitcoinBlock(work.getBlockHashForMergedMining(), bitcoinMergedMiningBlock,false);
 
         Assert.assertEquals("ERROR", result.getStatus());
 
@@ -246,33 +193,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
         BlockUnclesValidationRule unclesValidationRule = mock(BlockUnclesValidationRule.class);
         when(unclesValidationRule.isValid(any())).thenReturn(true);
         MinerClock clock = new MinerClock(true, Clock.systemUTC());
-        MinerServer minerServer = new MinerServerImpl(
-                config,
-                ethereumImpl,
-                blockchain,
-                null,
-                new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
-                new BlockToMineBuilder(
-                        config.getActivationConfig(),
-                        ConfigUtils.getDefaultMiningConfig(),
-                        repositoryLocator,
-                        blockStore,
-                        transactionPool,
-                        difficultyCalculator,
-                        new GasLimitCalculator(config.getNetworkConstants()),
-                        new ForkDetectionDataCalculator(),
-                        unclesValidationRule,
-                        clock,
-                        blockFactory,
-                        blockExecutor,
-                        minimumGasPriceCalculator,
-                        minerUtils
-                ),
-                clock,
-                blockFactory,
-                new BuildInfo("cb7f28e", "master"),
-                ConfigUtils.getDefaultMiningConfig()
-        );
+        MinerServer minerServer = makeMinerServer(ethereumImpl, unclesValidationRule, clock);
         try {
             minerServer.start();
             MinerWork work = minerServer.getWork();
@@ -302,33 +223,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
         BlockUnclesValidationRule unclesValidationRule = mock(BlockUnclesValidationRule.class);
         when(unclesValidationRule.isValid(any())).thenReturn(true);
         MinerClock clock = new MinerClock(true, Clock.systemUTC());
-        MinerServer minerServer = new MinerServerImpl(
-                config,
-                ethereumImpl,
-                blockchain,
-                null,
-                new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
-                new BlockToMineBuilder(
-                        config.getActivationConfig(),
-                        ConfigUtils.getDefaultMiningConfig(),
-                        repositoryLocator,
-                        blockStore,
-                        transactionPool,
-                        difficultyCalculator,
-                        new GasLimitCalculator(config.getNetworkConstants()),
-                        new ForkDetectionDataCalculator(),
-                        unclesValidationRule,
-                        clock,
-                        blockFactory,
-                        blockExecutor,
-                        minimumGasPriceCalculator,
-                        minerUtils
-                ),
-                clock,
-                blockFactory,
-                new BuildInfo("cb7f28e", "master"),
-                ConfigUtils.getDefaultMiningConfig()
-        );
+        MinerServer minerServer = makeMinerServer(ethereumImpl, unclesValidationRule, clock);
         try {
             minerServer.start();
             MinerWork work = minerServer.getWork();
@@ -361,33 +256,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
         BlockUnclesValidationRule unclesValidationRule = mock(BlockUnclesValidationRule.class);
         when(unclesValidationRule.isValid(any())).thenReturn(true);
         MinerClock clock = new MinerClock(true, Clock.systemUTC());
-        MinerServer minerServer = new MinerServerImpl(
-                config,
-                ethereumImpl,
-                blockchain,
-                null,
-                new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
-                new BlockToMineBuilder(
-                        config.getActivationConfig(),
-                        ConfigUtils.getDefaultMiningConfig(),
-                        repositoryLocator,
-                        blockStore,
-                        transactionPool,
-                        difficultyCalculator,
-                        new GasLimitCalculator(config.getNetworkConstants()),
-                        new ForkDetectionDataCalculator(),
-                        unclesValidationRule,
-                        clock,
-                        blockFactory,
-                        blockExecutor,
-                        minimumGasPriceCalculator,
-                        minerUtils
-                ),
-                clock,
-                blockFactory,
-                new BuildInfo("cb7f28e", "master"),
-                ConfigUtils.getDefaultMiningConfig()
-        );
+        MinerServer minerServer = makeMinerServer(ethereumImpl, unclesValidationRule, clock);
         try {
             minerServer.start();
             MinerWork work = minerServer.getWork();
@@ -427,33 +296,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
         BlockUnclesValidationRule unclesValidationRule = mock(BlockUnclesValidationRule.class);
         when(unclesValidationRule.isValid(any())).thenReturn(true);
         MinerClock clock = new MinerClock(true, Clock.systemUTC());
-        MinerServer minerServer = new MinerServerImpl(
-                config,
-                ethereumImpl,
-                blockchain,
-                null,
-                new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
-                new BlockToMineBuilder(
-                        config.getActivationConfig(),
-                        ConfigUtils.getDefaultMiningConfig(),
-                        repositoryLocator,
-                        blockStore,
-                        transactionPool,
-                        difficultyCalculator,
-                        new GasLimitCalculator(config.getNetworkConstants()),
-                        new ForkDetectionDataCalculator(),
-                        unclesValidationRule,
-                        clock,
-                        blockFactory,
-                        blockExecutor,
-                        minimumGasPriceCalculator,
-                        minerUtils
-                ),
-                clock,
-                blockFactory,
-                new BuildInfo("cb7f28e", "master"),
-                ConfigUtils.getDefaultMiningConfig()
-        );
+        MinerServer minerServer = makeMinerServer(ethereumImpl, unclesValidationRule, clock);
         try {
             minerServer.start();
             MinerWork work = minerServer.getWork();
@@ -485,34 +328,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
         BlockUnclesValidationRule unclesValidationRule = mock(BlockUnclesValidationRule.class);
         when(unclesValidationRule.isValid(any())).thenReturn(true);
         MinerClock clock = new MinerClock(true, Clock.systemUTC());
-        MinerServer minerServer = new MinerServerImpl(
-                config,
-                ethereumImpl,
-                blockchain,
-                null,
-                new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
-                new BlockToMineBuilder(
-                        config.getActivationConfig(),
-                        ConfigUtils.getDefaultMiningConfig(),
-                        repositoryLocator,
-                        blockStore,
-                        transactionPool,
-                        difficultyCalculator,
-                        new GasLimitCalculator(config.getNetworkConstants()),
-                        new ForkDetectionDataCalculator(),
-                        unclesValidationRule,
-                        clock,
-                        blockFactory,
-                        blockExecutor,
-                        minimumGasPriceCalculator,
-                        minerUtils
-
-                ),
-                clock,
-                blockFactory,
-                new BuildInfo("cb7f28e", "master"),
-                ConfigUtils.getDefaultMiningConfig()
-        );
+        MinerServer minerServer = makeMinerServer(ethereumImpl, unclesValidationRule, clock);
         try {
             minerServer.start();
             MinerWork work = minerServer.getWork();
@@ -549,33 +365,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
         BlockUnclesValidationRule unclesValidationRule = mock(BlockUnclesValidationRule.class);
         when(unclesValidationRule.isValid(any())).thenReturn(true);
         MinerClock clock = new MinerClock(true, Clock.systemUTC());
-        MinerServer minerServer = new MinerServerImpl(
-                config,
-                ethereumImpl,
-                this.blockchain,
-                null,
-                new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
-                new BlockToMineBuilder(
-                        config.getActivationConfig(),
-                        ConfigUtils.getDefaultMiningConfig(),
-                        repositoryLocator,
-                        blockStore,
-                        transactionPool,
-                        difficultyCalculator,
-                        new GasLimitCalculator(config.getNetworkConstants()),
-                        new ForkDetectionDataCalculator(),
-                        unclesValidationRule,
-                        clock,
-                        blockFactory,
-                        blockExecutor,
-                        minimumGasPriceCalculator,
-                        minerUtils
-                ),
-                clock,
-                blockFactory,
-                new BuildInfo("cb7f28e", "master"),
-                ConfigUtils.getDefaultMiningConfig()
-        );
+        MinerServer minerServer = makeMinerServer(ethereumImpl, unclesValidationRule, clock, transactionPool);
 
         minerServer.start();
         try {
@@ -594,39 +384,13 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
         BlockUnclesValidationRule unclesValidationRule = mock(BlockUnclesValidationRule.class);
         when(unclesValidationRule.isValid(any())).thenReturn(true);
         MinerClock clock = new MinerClock(true, Clock.systemUTC());
-        MinerServer minerServer = new MinerServerImpl(
-                config,
-                ethereumImpl,
-                this.blockchain,
-                null,
-                new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
-                new BlockToMineBuilder(
-                        config.getActivationConfig(),
-                        ConfigUtils.getDefaultMiningConfig(),
-                        repositoryLocator,
-                        blockStore,
-                        transactionPool,
-                        difficultyCalculator,
-                        new GasLimitCalculator(config.getNetworkConstants()),
-                        new ForkDetectionDataCalculator(),
-                        unclesValidationRule,
-                        clock,
-                        blockFactory,
-                        blockExecutor,
-                        minimumGasPriceCalculator,
-                        minerUtils
-                ),
-                clock,
-                blockFactory,
-                new BuildInfo("cb7f28e", "master"),
-                ConfigUtils.getDefaultMiningConfig()
-        );
+        MinerServer minerServer = makeMinerServer(ethereumImpl, unclesValidationRule, clock, transactionPool);
         try {
-        minerServer.start();
+            minerServer.start();
 
-        MinerWork work = minerServer.getWork();
+            MinerWork work = minerServer.getWork();
 
-        assertEquals(true, work.getNotify());
+            assertTrue(work.getNotify());
         } finally {
             minerServer.stop();
         }
@@ -639,43 +403,17 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
         BlockUnclesValidationRule unclesValidationRule = mock(BlockUnclesValidationRule.class);
         when(unclesValidationRule.isValid(any())).thenReturn(true);
         MinerClock clock = new MinerClock(true, Clock.systemUTC());
-        MinerServer minerServer = new MinerServerImpl(
-                config,
-                ethereumImpl,
-                this.blockchain,
-                null,
-                new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
-                new BlockToMineBuilder(
-                        config.getActivationConfig(),
-                        ConfigUtils.getDefaultMiningConfig(),
-                        repositoryLocator,
-                        blockStore,
-                        transactionPool,
-                        difficultyCalculator,
-                        new GasLimitCalculator(config.getNetworkConstants()),
-                        new ForkDetectionDataCalculator(),
-                        unclesValidationRule,
-                        clock,
-                        blockFactory,
-                        blockExecutor,
-                        minimumGasPriceCalculator,
-                        minerUtils
-                ),
-                clock,
-                blockFactory,
-                new BuildInfo("cb7f28e", "master"),
-                ConfigUtils.getDefaultMiningConfig()
-        );
+        MinerServer minerServer = makeMinerServer(ethereumImpl, unclesValidationRule, clock, transactionPool);
 
         minerServer.start();
         try {
-        MinerWork work = minerServer.getWork();
+            MinerWork work = minerServer.getWork();
 
-        assertEquals(true, work.getNotify());
+            assertTrue(work.getNotify());
 
-        work = minerServer.getWork();
+            work = minerServer.getWork();
 
-        assertEquals(false, work.getNotify());
+            assertFalse(work.getNotify());
         } finally {
             minerServer.stop();
         }
@@ -736,48 +474,80 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
         BlockUnclesValidationRule unclesValidationRule = mock(BlockUnclesValidationRule.class);
         when(unclesValidationRule.isValid(any())).thenReturn(true);
         MinerClock clock = new MinerClock(true, Clock.systemUTC());
-        MinerServer minerServer = new MinerServerImpl(
-                config,
-                ethereumImpl,
-                this.blockchain,
-                null,
-                new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
-                new BlockToMineBuilder(
-                        config.getActivationConfig(),
-                        ConfigUtils.getDefaultMiningConfig(),
-                        repositoryLocator,
-                        blockStore,
-                        transactionPool,
-                        difficultyCalculator,
-                        new GasLimitCalculator(config.getNetworkConstants()),
-                        new ForkDetectionDataCalculator(),
-                        unclesValidationRule,
-                        clock,
-                        blockFactory,
-                        blockExecutor,
-                        minimumGasPriceCalculator,
-                        minerUtils
-                ),
-                clock,
-                blockFactory,
-                new BuildInfo("cb7f28e", "master"),
-                ConfigUtils.getDefaultMiningConfig()
-        );
+        MinerServer minerServer = makeMinerServer(ethereumImpl, unclesValidationRule, clock, transactionPool);
         try {
-        minerServer.start();
+            minerServer.start();
 
-        MinerWork work = minerServer.getWork();
+            MinerWork work = minerServer.getWork();
 
-        String hashForMergedMining = work.getBlockHashForMergedMining();
+            String hashForMergedMining = work.getBlockHashForMergedMining();
 
-        minerServer.buildBlockToMine(false);
+            minerServer.buildBlockToMine(false);
 
-        work = minerServer.getWork();
-        assertEquals(hashForMergedMining, work.getBlockHashForMergedMining());
-        assertEquals(false, work.getNotify());
+            work = minerServer.getWork();
+            assertEquals(hashForMergedMining, work.getBlockHashForMergedMining());
+            assertFalse(work.getNotify());
         } finally {
             minerServer.stop();
         }
+    }
+
+    @Test
+    public void submitTwoBitcoinBlocksAtSameTimeWithoutRateLimit() {
+        EthereumImpl ethereumImpl = mock(EthereumImpl.class);
+        when(ethereumImpl.addNewMinedBlock(any())).thenReturn(ImportResult.IMPORTED_BEST);
+
+        BlockUnclesValidationRule unclesValidationRule = mock(BlockUnclesValidationRule.class);
+        when(unclesValidationRule.isValid(any())).thenReturn(true);
+        MinerClock clock = new MinerClock(true, Clock.systemUTC());
+        SubmissionRateLimitHandler submissionRateLimitHandler = mock(SubmissionRateLimitHandler.class);
+        doReturn(false).when(submissionRateLimitHandler).isEnabled();
+        MinerServer minerServer = makeMinerServer(ethereumImpl, unclesValidationRule, clock, transactionPool, submissionRateLimitHandler);
+
+        minerServer.buildBlockToMine(false);
+        MinerWork work = minerServer.getWork();
+        BtcBlock bitcoinMergedMiningBlock = getMergedMiningBlockWithOnlyCoinbase(work);
+        findNonce(work, bitcoinMergedMiningBlock);
+
+        SubmitBlockResult result = minerServer.submitBitcoinBlock(work.getBlockHashForMergedMining(), bitcoinMergedMiningBlock);
+        Assert.assertEquals("OK", result.getStatus());
+
+        result = minerServer.submitBitcoinBlock(work.getBlockHashForMergedMining(), bitcoinMergedMiningBlock);
+        Assert.assertEquals("OK", result.getStatus());
+
+        verify(submissionRateLimitHandler, never()).isSubmissionAllowed();
+        verify(submissionRateLimitHandler, never()).onSubmit();
+    }
+
+    @Test
+    public void submitTwoBitcoinBlocksAtSameTimeWithRateLimit() {
+        EthereumImpl ethereumImpl = mock(EthereumImpl.class);
+        when(ethereumImpl.addNewMinedBlock(any())).thenReturn(ImportResult.IMPORTED_BEST);
+
+        BlockUnclesValidationRule unclesValidationRule = mock(BlockUnclesValidationRule.class);
+        when(unclesValidationRule.isValid(any())).thenReturn(true);
+        MinerClock clock = new MinerClock(true, Clock.systemUTC());
+        SubmissionRateLimitHandler submissionRateLimitHandler = mock(SubmissionRateLimitHandler.class);
+        doReturn(true).when(submissionRateLimitHandler).isEnabled();
+        MinerServer minerServer = makeMinerServer(ethereumImpl, unclesValidationRule, clock, transactionPool, submissionRateLimitHandler);
+
+        minerServer.buildBlockToMine(false);
+        MinerWork work = minerServer.getWork();
+        BtcBlock bitcoinMergedMiningBlock = getMergedMiningBlockWithOnlyCoinbase(work);
+        findNonce(work, bitcoinMergedMiningBlock);
+
+        doReturn(false).when(submissionRateLimitHandler).isSubmissionAllowed();
+        SubmitBlockResult result = minerServer.submitBitcoinBlock(work.getBlockHashForMergedMining(), bitcoinMergedMiningBlock);
+        Assert.assertEquals("ERROR", result.getStatus());
+
+        verify(submissionRateLimitHandler, atLeastOnce()).isSubmissionAllowed();
+        verify(submissionRateLimitHandler, never()).onSubmit();
+
+        doReturn(true).when(submissionRateLimitHandler).isSubmissionAllowed();
+        result = minerServer.submitBitcoinBlock(work.getBlockHashForMergedMining(), bitcoinMergedMiningBlock);
+        Assert.assertEquals("OK", result.getStatus());
+
+        verify(submissionRateLimitHandler, times(1)).onSubmit();
     }
 
     @Test
@@ -878,8 +648,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
         // The final client extra data may be truncated by the combined size of the other encoded elements
         int extraDataMaxLength = 32;
         int extraDataEncodingOverhead = 3;
-        Integer clientExtraDataSize =
-                extraDataMaxLength - extraDataEncodingOverhead - firstItem.length - secondItem.length;
+        int clientExtraDataSize = extraDataMaxLength - extraDataEncodingOverhead - firstItem.length - secondItem.length;
 
         assertEquals("tincho is the king of mining".substring(0, clientExtraDataSize), new String(thirdItem));
     }
@@ -922,5 +691,74 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
                 throw new RuntimeException(e); // Cannot happen.
             }
         }
+    }
+
+    private MinerServerImpl makeMinerServer(EthereumImpl ethereumImpl, BlockUnclesValidationRule unclesValidationRule,
+                                        MinerClock clock) {
+        return makeMinerServer(ethereumImpl, unclesValidationRule, clock, transactionPool);
+    }
+
+    private MinerServerImpl makeMinerServer(EthereumImpl ethereumImpl, BlockUnclesValidationRule unclesValidationRule,
+                                            MinerClock clock, TransactionPool transactionPool) {
+        return new MinerServerImpl(
+                config,
+                ethereumImpl,
+                this.blockchain,
+                null,
+                new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
+                new BlockToMineBuilder(
+                        config.getActivationConfig(),
+                        ConfigUtils.getDefaultMiningConfig(),
+                        repositoryLocator,
+                        blockStore,
+                        transactionPool,
+                        difficultyCalculator,
+                        new GasLimitCalculator(config.getNetworkConstants()),
+                        new ForkDetectionDataCalculator(),
+                        unclesValidationRule,
+                        clock,
+                        blockFactory,
+                        blockExecutor,
+                        minimumGasPriceCalculator,
+                        minerUtils
+                ),
+                clock,
+                blockFactory,
+                new BuildInfo("cb7f28e", "master"),
+                ConfigUtils.getDefaultMiningConfig()
+        );
+    }
+
+    private MinerServerImpl makeMinerServer(EthereumImpl ethereumImpl, BlockUnclesValidationRule unclesValidationRule,
+                                            MinerClock clock, TransactionPool transactionPool,
+                                            SubmissionRateLimitHandler submissionRateLimitHandler) {
+        return new MinerServerImpl(
+                config,
+                ethereumImpl,
+                this.blockchain,
+                null,
+                new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
+                new BlockToMineBuilder(
+                        config.getActivationConfig(),
+                        ConfigUtils.getDefaultMiningConfig(),
+                        repositoryLocator,
+                        blockStore,
+                        transactionPool,
+                        difficultyCalculator,
+                        new GasLimitCalculator(config.getNetworkConstants()),
+                        new ForkDetectionDataCalculator(),
+                        unclesValidationRule,
+                        clock,
+                        blockFactory,
+                        blockExecutor,
+                        minimumGasPriceCalculator,
+                        minerUtils
+                ),
+                clock,
+                blockFactory,
+                new BuildInfo("cb7f28e", "master"),
+                ConfigUtils.getDefaultMiningConfig(),
+                submissionRateLimitHandler
+        );
     }
 }

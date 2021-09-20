@@ -88,7 +88,7 @@ public class MinerServerImpl implements MinerServer {
     private byte[] extraData;
 
     @GuardedBy("lock")
-    private LinkedHashMap<Keccak256, Block> blocksWaitingforPoW;
+    private final LinkedHashMap<Keccak256, Block> blocksWaitingForPoW;
     @GuardedBy("lock")
     private Keccak256 latestParentHash;
     @GuardedBy("lock")
@@ -104,6 +104,7 @@ public class MinerServerImpl implements MinerServer {
     private final BigDecimal gasUnitInDollars;
 
     private final BlockProcessor nodeBlockProcessor;
+    private final SubmissionRateLimitHandler submissionRateLimitHandler;
 
     public MinerServerImpl(
             RskSystemProperties config,
@@ -116,6 +117,23 @@ public class MinerServerImpl implements MinerServer {
             BlockFactory blockFactory,
             BuildInfo buildInfo,
             MiningConfig miningConfig) {
+        this(config, ethereum, mainchainView, nodeBlockProcessor, powRule, builder,
+                clock, blockFactory, buildInfo, miningConfig, SubmissionRateLimitHandler.ofMiningConfig(miningConfig));
+    }
+
+    @VisibleForTesting
+    MinerServerImpl(
+            RskSystemProperties config,
+            Ethereum ethereum,
+            MiningMainchainView mainchainView,
+            BlockProcessor nodeBlockProcessor,
+            ProofOfWorkRule powRule,
+            BlockToMineBuilder builder,
+            MinerClock clock,
+            BlockFactory blockFactory,
+            BuildInfo buildInfo,
+            MiningConfig miningConfig,
+            SubmissionRateLimitHandler submissionRateLimitHandler) {
         this.ethereum = ethereum;
         this.mainchainView = mainchainView;
         this.nodeBlockProcessor = nodeBlockProcessor;
@@ -124,8 +142,9 @@ public class MinerServerImpl implements MinerServer {
         this.clock = clock;
         this.blockFactory = blockFactory;
         this.activationConfig = config.getActivationConfig();
+        this.submissionRateLimitHandler = Objects.requireNonNull(submissionRateLimitHandler);
 
-        blocksWaitingforPoW = createNewBlocksWaitingList();
+        blocksWaitingForPoW = createNewBlocksWaitingList();
 
         latestPaidFeesWithNotify = Coin.ZERO;
         latestParentHash = null;
@@ -148,12 +167,11 @@ public class MinerServerImpl implements MinerServer {
                 return size() > CACHE_SIZE;
             }
         };
-
     }
 
     @VisibleForTesting
-    public Map<Keccak256, Block> getBlocksWaitingforPoW() {
-        return blocksWaitingforPoW;
+    Map<Keccak256, Block> getBlocksWaitingForPoW() {
+        return blocksWaitingForPoW;
     }
 
     @Override
@@ -260,7 +278,18 @@ public class MinerServerImpl implements MinerServer {
         Keccak256 key = new Keccak256(TypeConverter.removeZeroX(blockHashForMergedMining));
 
         synchronized (lock) {
-            Block workingBlock = blocksWaitingforPoW.get(key);
+            if (submissionRateLimitHandler.isEnabled()) {
+                if (!submissionRateLimitHandler.isSubmissionAllowed()) {
+                    String message = "Cannot publish block, block submission rate limit exceeded";
+                    logger.warn(message);
+
+                    return new SubmitBlockResult("ERROR", message);
+                }
+
+                submissionRateLimitHandler.onSubmit();
+            }
+
+            Block workingBlock = blocksWaitingForPoW.get(key);
 
             if (workingBlock == null) {
                 String message = "Cannot publish block, could not find hash " + blockHashForMergedMining + " in the cache";
@@ -271,7 +300,7 @@ public class MinerServerImpl implements MinerServer {
 
             newBlock = blockFactory.cloneBlockForModification(workingBlock);
 
-            logger.debug("blocksWaitingForPoW size {}", blocksWaitingforPoW.size());
+            logger.debug("blocksWaitingForPoW size {}", blocksWaitingForPoW.size());
         }
 
         logger.info("Received block {} {}", newBlock.getNumber(), newBlock.getHash());
@@ -457,8 +486,8 @@ public class MinerServerImpl implements MinerServer {
             currentWork = updateGetWork(newBlock, notify);
             Keccak256 latestBlockHashWaitingForPoW = new Keccak256(newBlock.getHashForMergedMining());
 
-            blocksWaitingforPoW.put(latestBlockHashWaitingForPoW, latestBlock);
-            logger.debug("blocksWaitingForPoW size {}", blocksWaitingforPoW.size());
+            blocksWaitingForPoW.put(latestBlockHashWaitingForPoW, latestBlock);
+            logger.debug("blocksWaitingForPoW size {}", blocksWaitingForPoW.size());
         }
 
         logger.debug("Built block {}. Parent {}", newBlock.getPrintableHashForMergedMining(), newBlockParentHeader.getPrintableHashForMergedMining());
