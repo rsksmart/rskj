@@ -25,6 +25,7 @@ import javax.annotation.Nonnull;
 import java.io.*;
 import java.security.DigestInputStream;
 import java.security.DigestOutputStream;
+import java.security.MessageDigest;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Objects;
@@ -160,7 +161,7 @@ public abstract class MapSnapshot<T extends Closeable> implements Closeable {
                 }
             }
 
-            if (!Arrays.equals(digest, snapshotDigest)) {
+            if (!MessageDigest.isEqual(digest, snapshotDigest)) {
                 throw new IOException("Invalid digest of snapshot");
             }
         }

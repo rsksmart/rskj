@@ -35,6 +35,11 @@ public class HashUtilTest {
     }
 
     @Test
+    public void testMessageDigestAlg() {
+        assertEquals("SHA-256", HashUtil.makeMessageDigest().getAlgorithm());
+    }
+
+    @Test
     public void testSha256_EmptyString() {
         String expected1 = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
         String result1 = ByteUtil.toHexString(HashUtil.sha256(new byte[0]));

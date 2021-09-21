@@ -54,25 +54,44 @@ public class MapSnapshotTest {
         assertArrayEquals(value, map.values().stream().findFirst().orElseThrow(IllegalStateException::new));
     }
 
-    @Test
+    @Test(expected = IOException.class)
+    public void readSnapshot_WhenMismatchedChecksums_ThrowError() throws IOException {
+        byte[] key = new byte[] {0, 1, 2, 3, 4};
+        byte[] value = new byte[] {5, 6, 7, 8, 9};
+
+        byte[] bytes = composeByteArray(out -> {
+            out.writeInt(1);
+            out.writeInt(key.length);
+            out.write(key);
+            out.writeInt(value.length);
+            out.write(value);
+        });
+        bytes[9]++; // corrupt data
+        InputStream inputStream = new ByteArrayInputStream(bytes);
+        MapSnapshot.In inSnapshot = new MapSnapshot.In(inputStream);
+        Map<ByteArrayWrapper, byte[]> map = new HashMap<>();
+
+        inSnapshot.read(map);
+
+        assertFalse(map.isEmpty());
+        assertArrayEquals(key, map.keySet().stream().findFirst().orElseThrow(IllegalStateException::new).getData());
+        assertArrayEquals(value, map.values().stream().findFirst().orElseThrow(IllegalStateException::new));
+    }
+
+    @Test(expected = NullPointerException.class)
     public void readSnapshot_WhenNull_ThrowError() throws IOException {
         InputStream inputStream = makeInputStream(out -> {});
         MapSnapshot.In inSnapshot = new MapSnapshot.In(inputStream);
-        try {
-            //noinspection ConstantConditions
-            inSnapshot.read(null);
-            fail();
-        } catch (NullPointerException ignored) { }
+
+        //noinspection ConstantConditions
+        inSnapshot.read(null);
     }
 
-    @Test
-    public void readSnapshot_WhenEmptyStream_ThrowError() {
+    @Test(expected = IOException.class)
+    public void readSnapshot_WhenEmptyStream_ThrowError() throws IOException {
         InputStream inputStream = makeInputStream(out -> {});
         MapSnapshot.In inSnapshot = new MapSnapshot.In(inputStream);
-        try {
-            inSnapshot.read(new HashMap<>());
-            fail();
-        } catch (IOException ignored) { }
+        inSnapshot.read(new HashMap<>());
     }
 
     @Test
@@ -87,36 +106,28 @@ public class MapSnapshotTest {
         }
     }
 
-    @Test
-    public void readSnapshot_WhenInvalidKeySize_ThrowError() {
+    @Test(expected = IOException.class)
+    public void readSnapshot_WhenInvalidKeySize_ThrowError() throws IOException {
         InputStream inputStream = makeInputStream(out -> {
             out.writeInt(1);
             out.writeInt(0);
         });
         MapSnapshot.In inSnapshot = new MapSnapshot.In(inputStream);
-        try {
-            inSnapshot.read(new HashMap<>());
-            fail();
-        } catch (IOException e) {
-            assertEquals("Invalid data: key size", e.getMessage());
-        }
+        inSnapshot.read(new HashMap<>());
     }
 
-    @Test
-    public void readSnapshot_WhenInvalidKeyLength_ThrowError() {
+    @Test(expected = IOException.class)
+    public void readSnapshot_WhenInvalidKeyLength_ThrowError() throws IOException {
         InputStream inputStream = makeInputStream(out -> {
             out.writeInt(1);
             out.writeInt(1);
         });
         MapSnapshot.In inSnapshot = new MapSnapshot.In(inputStream);
-        try {
-            inSnapshot.read(new HashMap<>());
-            fail();
-        } catch (IOException ignored) { }
+        inSnapshot.read(new HashMap<>());
     }
 
-    @Test
-    public void readSnapshot_WhenInvalidValueSize_ThrowError() {
+    @Test(expected = IOException.class)
+    public void readSnapshot_WhenInvalidValueSize_ThrowError() throws IOException {
         InputStream inputStream = makeInputStream(out -> {
             out.writeInt(1);
             out.writeInt(1);
@@ -124,16 +135,11 @@ public class MapSnapshotTest {
             out.writeInt(-2);
         });
         MapSnapshot.In inSnapshot = new MapSnapshot.In(inputStream);
-        try {
-            inSnapshot.read(new HashMap<>());
-            fail();
-        } catch (IOException e) {
-            assertEquals("Invalid data: value size", e.getMessage());
-        }
+        inSnapshot.read(new HashMap<>());
     }
 
-    @Test
-    public void readSnapshot_WhenInvalidValueLength_ThrowError() {
+    @Test(expected = IOException.class)
+    public void readSnapshot_WhenInvalidValueLength_ThrowError() throws IOException {
         InputStream inputStream = makeInputStream(out -> {
             out.writeInt(1);
             out.writeInt(1);
@@ -141,10 +147,7 @@ public class MapSnapshotTest {
             out.writeInt(1);
         });
         MapSnapshot.In inSnapshot = new MapSnapshot.In(inputStream);
-        try {
-            inSnapshot.read(new HashMap<>());
-            fail();
-        } catch (IOException ignored) { }
+        inSnapshot.read(new HashMap<>());
     }
 
     @Test
@@ -220,7 +223,7 @@ public class MapSnapshotTest {
         }
     }
 
-    private static InputStream makeInputStream(OutputStreamConsumer consumer) {
+    private static byte[] composeByteArray(OutputStreamConsumer consumer) {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         try {
             DigestOutputStream digestOutput = new DigestOutputStream(outputStream, HashUtil.makeMessageDigest());
@@ -232,7 +235,11 @@ public class MapSnapshotTest {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        return new ByteArrayInputStream(outputStream.toByteArray());
+        return outputStream.toByteArray();
+    }
+
+    private static InputStream makeInputStream(OutputStreamConsumer consumer) {
+        return new ByteArrayInputStream(composeByteArray(consumer));
     }
 
     @FunctionalInterface
