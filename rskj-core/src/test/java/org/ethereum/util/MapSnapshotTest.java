@@ -18,10 +18,12 @@
  */
 package org.ethereum.util;
 
+import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.ByteArrayWrapper;
 import org.junit.Test;
 
 import java.io.*;
+import java.security.DigestOutputStream;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -75,9 +77,7 @@ public class MapSnapshotTest {
 
     @Test
     public void readSnapshot_WhenInvalidCount_ThrowError() {
-        InputStream inputStream = makeInputStream(out -> {
-            out.writeInt(0);
-        });
+        InputStream inputStream = makeInputStream(out -> out.writeInt(0));
         MapSnapshot.In inSnapshot = new MapSnapshot.In(inputStream);
         try {
             inSnapshot.read(new HashMap<>());
@@ -165,12 +165,16 @@ public class MapSnapshotTest {
         outMap.put(ByteUtil.wrap(key), value);
 
         ByteArrayOutputStream expectedOutputStream = new ByteArrayOutputStream();
-        DataOutputStream dataOutputStream = new DataOutputStream(expectedOutputStream);
+        DigestOutputStream digestOutput = new DigestOutputStream(expectedOutputStream, HashUtil.makeMessageDigest());
+        DataOutputStream dataOutputStream = new DataOutputStream(digestOutput);
         dataOutputStream.writeInt(1);
         dataOutputStream.writeInt(key.length);
         dataOutputStream.write(key);
         dataOutputStream.writeInt(value.length);
         dataOutputStream.write(value);
+        byte[] digest = digestOutput.getMessageDigest().digest();
+        dataOutputStream.writeInt(digest.length);
+        dataOutputStream.write(digest);
 
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         MapSnapshot.Out outSnapshot = new MapSnapshot.Out(outputStream);
@@ -219,7 +223,12 @@ public class MapSnapshotTest {
     private static InputStream makeInputStream(OutputStreamConsumer consumer) {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         try {
-            consumer.accept(new DataOutputStream(outputStream));
+            DigestOutputStream digestOutput = new DigestOutputStream(outputStream, HashUtil.makeMessageDigest());
+            DataOutputStream dataOutput = new DataOutputStream(digestOutput);
+            consumer.accept(dataOutput);
+            byte[] digest = digestOutput.getMessageDigest().digest();
+            dataOutput.writeInt(digest.length);
+            dataOutput.write(digest);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

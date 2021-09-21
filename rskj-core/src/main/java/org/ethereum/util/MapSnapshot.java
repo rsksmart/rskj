@@ -18,10 +18,14 @@
  */
 package org.ethereum.util;
 
+import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.ByteArrayWrapper;
 
 import javax.annotation.Nonnull;
 import java.io.*;
+import java.security.DigestInputStream;
+import java.security.DigestOutputStream;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.Objects;
 
@@ -36,7 +40,7 @@ import java.util.Objects;
  */
 public abstract class MapSnapshot<T extends Closeable> implements Closeable {
 
-    protected final T stream;
+    private final Closeable stream;
 
     protected MapSnapshot(@Nonnull T stream) {
         this.stream = Objects.requireNonNull(stream);
@@ -50,81 +54,119 @@ public abstract class MapSnapshot<T extends Closeable> implements Closeable {
     public interface Factory {
 
         default MapSnapshot.In makeInputSnapshot(@Nonnull InputStream inputStream) {
-            return new MapSnapshot.In(new DataInputStream(inputStream));
+            return new MapSnapshot.In(inputStream);
         }
 
         default MapSnapshot.Out makeOutputSnapshot(@Nonnull OutputStream outputStream) {
-            return new MapSnapshot.Out(new DataOutputStream(outputStream));
+            return new MapSnapshot.Out(outputStream);
         }
 
     }
 
-    public static class Out extends MapSnapshot<DataOutputStream> {
+    public static class Out extends MapSnapshot<OutputStream> {
+
+        private final DigestOutputStream digestOutput;
+        private final DataOutputStream dataOutput;
 
         protected Out(@Nonnull OutputStream output) {
-            super(new DataOutputStream(output));
+            super(output);
+            digestOutput = new DigestOutputStream(output, HashUtil.makeMessageDigest());
+            dataOutput = new DataOutputStream(digestOutput);
         }
 
         public void write(@Nonnull Map<ByteArrayWrapper, byte[]> map) throws IOException {
             Objects.requireNonNull(map);
 
             int count = map.size();
-            stream.writeInt(count);
+            dataOutput.writeInt(count);
 
             for (Map.Entry<ByteArrayWrapper, byte[]> entry : map.entrySet()) {
                 byte[] key = entry.getKey().getData();
-                stream.writeInt(key.length);
-                stream.write(key);
+                dataOutput.writeInt(key.length);
+                dataOutput.write(key);
 
                 byte[] value = entry.getValue();
                 if (value == null) {
-                    stream.writeInt(-1);
+                    dataOutput.writeInt(-1);
                 } else {
-                    stream.writeInt(value.length);
+                    dataOutput.writeInt(value.length);
                     if (value.length > 0) {
-                        stream.write(value);
+                        dataOutput.write(value);
                     }
+                }
+            }
+
+            byte[] digest = cloneArray(digestOutput.getMessageDigest().digest());
+            if (digest == null) {
+                dataOutput.writeInt(-1);
+            } else {
+                dataOutput.writeInt(digest.length);
+                if (digest.length > 0) {
+                    dataOutput.write(digest);
                 }
             }
         }
     }
 
-    public static class In extends MapSnapshot<DataInputStream> {
+    public static class In extends MapSnapshot<InputStream> {
+
+        private final DigestInputStream digestInput;
+        private final DataInputStream dataInput;
 
         protected In(@Nonnull InputStream input) {
-            super(new DataInputStream(input));
+            super(input);
+            digestInput = new DigestInputStream(input, HashUtil.makeMessageDigest());
+            dataInput = new DataInputStream(digestInput);
         }
 
         public void read(@Nonnull Map<ByteArrayWrapper, byte[]> map) throws IOException {
             Objects.requireNonNull(map);
 
-
-            int entryCount = stream.readInt();
+            int entryCount = dataInput.readInt();
             if (entryCount < 1) {
                 throw new IOException("Invalid data: number of entries");
             }
             for (int i = 0; i < entryCount; i++) {
-                int keySize = stream.readInt();
+                int keySize = dataInput.readInt();
                 if (keySize < 1) {
                     throw new IOException("Invalid data: key size");
                 }
                 byte[] key = new byte[keySize];
-                stream.readFully(key);
+                dataInput.readFully(key);
 
-                int valueSize = stream.readInt();
+                int valueSize = dataInput.readInt();
                 if (valueSize < -1) {
                     throw new IOException("Invalid data: value size");
                 }
                 byte[] value = null;
                 if (valueSize > 0) {
                     value = new byte[valueSize];
-                    stream.readFully(value);
+                    dataInput.readFully(value);
                 } else if (valueSize == 0) {
                     value = new byte[0];
                 }
 
                 map.put(ByteUtil.wrap(key), value);
             }
+
+            byte[] digest = cloneArray(digestInput.getMessageDigest().digest());
+
+            byte[] snapshotDigest = null;
+            int digestSize = dataInput.readInt();
+            if (digestSize >= 0) {
+                snapshotDigest = new byte[digestSize];
+                if (digestSize > 0) {
+                    dataInput.readFully(snapshotDigest);
+                }
+            }
+
+            if (!Arrays.equals(digest, snapshotDigest)) {
+                throw new IOException("Invalid digest of snapshot");
+            }
         }
+    }
+
+    private static byte[] cloneArray(byte[] array) {
+        return array == null ? null : Arrays.copyOf(array, array.length);
     }
 }
