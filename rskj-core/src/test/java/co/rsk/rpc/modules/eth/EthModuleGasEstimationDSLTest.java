@@ -17,10 +17,7 @@ import org.ethereum.vm.GasCost;
 import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.program.InternalTransaction;
 import org.ethereum.vm.program.ProgramResult;
-import org.junit.Ignore;
 import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.FileNotFoundException;
 import java.math.BigInteger;
@@ -79,6 +76,7 @@ public class EthModuleGasEstimationDSLTest {
     }
 
     @Test
+
     public void testEstimateGas_contractCallsWithValueTransfer() throws FileNotFoundException, DslProcessorException {
         World world = World.processedWorld("dsl/eth_module/estimateGas/callWithValue.txt");
 
@@ -105,20 +103,23 @@ public class EthModuleGasEstimationDSLTest {
         final CallArguments args = new CallArguments();
         args.setTo(contractAddress.toHexString());
         args.setData("c3cefd36"); // callWithValue()
-        args.setValue(TypeConverter.toQuantityJsonHex(10000)); // some value
+        args.setValue(TypeConverter.toQuantityJsonHex(10_000)); // some value
         args.setNonce(TypeConverter.toQuantityJsonHex(3));
         args.setGas(TypeConverter.toQuantityJsonHex(BLOCK_GAS_LIMIT));
 
         Block block = world.getBlockChain().getBlockByNumber(2); // block 2 contains 0 tx
 
         // Evaluate the gas used
-        long gasUsed = eth.callConstant(args, block).getGasUsed();
+        ProgramResult callConstant = eth.callConstant(args, block);
+        long gasUsed = callConstant.getGasUsed();
         assertEquals(ByteUtil.byteArrayToLong(callWithValueReceipt.getGasUsed()), gasUsed);
+        assertFalse(callConstant.getMovedRemainingGasToChild()); // it just moved STIPEND_CALL (2300) to child
 
         // Estimate the gas to use
         long estimatedGas = estimateGas(eth, args);
         ProgramResult estimationResult = eth.getEstimationResult();
         assertEquals(0, estimationResult.getDeductedRefund());
+
 
         // The estimated gas should be greater than the gas used in the call
         assertTrue(gasUsed < estimatedGas);
@@ -252,7 +253,7 @@ public class EthModuleGasEstimationDSLTest {
         CallArguments callArguments = new CallArguments();
         callArguments.setFrom(sender); // the creator
         callArguments.setTo(contractAddress);  // deployed contract
-        callArguments.setGas(TypeConverter.toQuantityJsonHex(gasEstimationCap + 1000000000)); // exceeding the gas cap
+        callArguments.setGas(TypeConverter.toQuantityJsonHex(gasEstimationCap + 1_000_000_000)); // exceeding the gas cap
         callArguments.setData("31fe52e8"); // call outOfGas()
 
         String estimatedGas = eth.estimateGas(callArguments);
@@ -293,6 +294,7 @@ public class EthModuleGasEstimationDSLTest {
         long estimatedGas = estimateGas(eth, args);
         assertTrue(estimatedGas > callConstantGasUsed);
         assertEquals(callConstant.getMaxGasUsed(), estimatedGas);
+        assertFalse(callConstant.getMovedRemainingGasToChild()); // it just moved STIPEND_CALL (2300) to child
 
         args.setGas(TypeConverter.toQuantityJsonHex(callConstantGasUsed));
         assertFalse(runWithArgumentsAndBlock(eth, args, block));
@@ -358,6 +360,7 @@ public class EthModuleGasEstimationDSLTest {
         assertEquals(3, callConstant.getLogInfoList().size());
         assertEvents(callConstant, "NestedCallWV", 2);
         assertEvents(callConstant, "LastCall", 1);
+        assertTrue(callConstant.getMovedRemainingGasToChild());
 
         long callConstantGasUsed = callConstant.getGasUsed();
 
@@ -430,6 +433,7 @@ public class EthModuleGasEstimationDSLTest {
         assertEquals(3, callConstant.getLogInfoList().size());
         assertEvents(callConstant, "NestedCallWV", 2);
         assertEvents(callConstant, "LastCall", 1);
+        assertTrue(callConstant.getMovedRemainingGasToChild());
 
 
         long callConstantGasUsed = callConstant.getGasUsed();
@@ -504,7 +508,6 @@ public class EthModuleGasEstimationDSLTest {
         assertEvents(callConstant, "NestedCallWV", 2);
         assertEvents(callConstant, "LastCall", 1);
 
-
         long callConstantGasUsed = callConstant.getGasUsed();
 
         long estimatedGas = estimateGas(eth, args);
@@ -512,6 +515,7 @@ public class EthModuleGasEstimationDSLTest {
         assertTrue(callConstant.getDeductedRefund() > 0);
         assertEquals(callConstant.getGasUsedBeforeRefunds() / 2, callConstant.getDeductedRefund());
         assertEquals(callConstantGasUsed + callConstant.getDeductedRefund(), estimatedGas);
+        assertTrue(callConstant.getMovedRemainingGasToChild());
 
         args.setGas(TypeConverter.toQuantityJsonHex(callConstantGasUsed));
         assertFalse(runWithArgumentsAndBlock(eth, args, block));
