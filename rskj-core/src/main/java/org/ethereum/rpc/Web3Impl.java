@@ -40,6 +40,8 @@ import co.rsk.rpc.modules.rsk.RskModule;
 import co.rsk.rpc.modules.trace.TraceModule;
 import co.rsk.rpc.modules.txpool.TxPoolModule;
 import co.rsk.scoring.*;
+import co.rsk.util.HexUtils;
+
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
@@ -72,7 +74,7 @@ import java.util.function.Function;
 import java.util.function.UnaryOperator;
 
 import static java.lang.Math.max;
-import static org.ethereum.rpc.TypeConverter.*;
+import static co.rsk.util.HexUtils.*;
 import static org.ethereum.rpc.exception.RskJsonRpcRequestException.*;
 
 public class Web3Impl implements Web3 {
@@ -178,14 +180,6 @@ public class Web3Impl implements Web3 {
         hashRateCalculator.stop();
     }
 
-    private int JSonHexToInt(String x) {
-        if (!x.startsWith("0x")) {
-            throw invalidParamError("Incorrect hex syntax");
-        }
-        x = x.substring(2);
-        return Integer.parseInt(x, 16);
-    }
-
     @Override
     public String web3_clientVersion() {
         String clientVersion = baseClientVersion + "/" + config.projectVersion() + "/" +
@@ -203,8 +197,17 @@ public class Web3Impl implements Web3 {
     public String web3_sha3(String data) throws Exception {
         String s = null;
         try {
-            byte[] result = HashUtil.keccak256(data.getBytes(StandardCharsets.UTF_8));
-            return s = TypeConverter.toJsonHex(result);
+        	
+        	byte[] dataBytes = data.getBytes(StandardCharsets.UTF_8);
+        	
+        	byte[] bytesToHash = dataBytes;
+        	
+        	if(HexUtils.isHexWithPrefix(data)) {
+        		bytesToHash = HexUtils.decode(dataBytes);
+        	}
+        	
+            byte[] result = HashUtil.keccak256(bytesToHash);
+            return s = HexUtils.toJsonHex(result);
         } finally {
             if (logger.isDebugEnabled()) {
                 logger.debug("web3_sha3({}): {}", data, s);
@@ -231,7 +234,7 @@ public class Web3Impl implements Web3 {
         String s = null;
         try {
             int n = channelManager.getActivePeers().size();
-            return s = TypeConverter.toQuantityJsonHex(n);
+            return s = HexUtils.toQuantityJsonHex(n);
         } finally {
             if (logger.isDebugEnabled()) {
                 logger.debug("net_peerCount(): {}", s);
@@ -288,8 +291,8 @@ public class Web3Impl implements Web3 {
 
         SyncingResult s = new SyncingResult();
         try {
-            s.setStartingBlock(TypeConverter.toQuantityJsonHex(initialBlockNumber));
-            s.setCurrentBlock(TypeConverter.toQuantityJsonHex(currentBlock));
+            s.setStartingBlock(HexUtils.toQuantityJsonHex(initialBlockNumber));
+            s.setCurrentBlock(HexUtils.toQuantityJsonHex(currentBlock));
             s.setHighestBlock(toQuantityJsonHex(highestBlock));
 
             return s;
@@ -357,7 +360,7 @@ public class Web3Impl implements Web3 {
     public String eth_gasPrice() {
         String gasPrice = null;
         try {
-            gasPrice = TypeConverter.toQuantityJsonHex(eth.getGasPrice().asBigInteger().longValue());
+            gasPrice = HexUtils.toQuantityJsonHex(eth.getGasPrice().asBigInteger().longValue());
             return gasPrice;
         } finally {
             if (logger.isDebugEnabled()) {
@@ -525,7 +528,7 @@ public class Web3Impl implements Web3 {
 
             long n = b.getTransactionsList().size();
 
-            s = TypeConverter.toQuantityJsonHex(n);
+            s = HexUtils.toQuantityJsonHex(n);
             return s;
         } finally {
             if (logger.isDebugEnabled()) {
@@ -583,7 +586,7 @@ public class Web3Impl implements Web3 {
         return web3InformationRetriever.getBlock(bnOrId)
                 .map(Block::getUncleList)
                 .map(List::size)
-                .map(TypeConverter::toQuantityJsonHex)
+                .map(HexUtils::toQuantityJsonHex)
                 .orElseThrow(() -> blockNotFound(String.format("Block %s not found", bnOrId)));
     }
 
@@ -604,7 +607,7 @@ public class Web3Impl implements Web3 {
         long blockNumber;
 
         try {
-            blockNumber = TypeConverter.stringNumberAsBigInt(number).longValue();
+            blockNumber = HexUtils.stringNumberAsBigInt(number).longValue();
         } catch (NumberFormatException | StringIndexOutOfBoundsException e) {
             throw invalidParamError(String.format("invalid blocknumber %s", number));
         }
