@@ -1487,9 +1487,7 @@ public class VM {
 
         // For gas Exactimation, mark this program execution if it requires
         // at least one call with value
-        if (!msg.getEndowment().isZero()) {
-            program.markCallWithValuePerformed();
-        }
+        // todo(fedejinich) remove this comment before merging it into master
 
         if (precompiledContract != null) {
             program.callToPrecompiledAddress(msg, precompiledContract);
@@ -1538,11 +1536,10 @@ public class VM {
         long calleeGas = Math.min(remainingGas, specifiedGasPlusMin);
 
         if (computeGas) {
-            long oldGasCost = gasCost;
             gasCost = GasCost.add(gasCost, calleeGas);
             spendOpCodeGas();
 
-            // the gas needed for estimateGas will be given by gasUsed (our new lower bound)
+            // the gas needed for estimateGas will be given by gasUsed
             boolean passedRemainingGasToChild = calleeGas == remainingGas;
             if(passedRemainingGasToChild) {
                 program.getResult().movedRemainingGasToChild(true);

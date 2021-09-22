@@ -102,7 +102,6 @@ public class Program {
     private byte exeVersion;    // currently limited to 0..127
     private byte scriptVersion; // currently limited to 0..127
     private int startAddr;
-    private boolean callWithValuePerformed;
     private BitSet jumpdestSet;
 
     private final VmConfig config;
@@ -178,15 +177,6 @@ public class Program {
             return 400;
         }
         return 1024;
-    }
-
-    public void markCallWithValuePerformed() {
-        callWithValuePerformed = true;
-//        result.markCallWithValuePerformed();
-    }
-
-    public boolean getCallWithValuePerformed() {
-        return callWithValuePerformed;
     }
 
     public int getCallDeep() {
