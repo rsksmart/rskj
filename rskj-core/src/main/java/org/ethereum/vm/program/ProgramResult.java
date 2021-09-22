@@ -19,6 +19,7 @@
 
 package org.ethereum.vm.program;
 
+import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.Transaction;
 import org.ethereum.vm.CallCreate;
 import org.ethereum.vm.DataWord;
@@ -36,11 +37,6 @@ import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
  */
 public class ProgramResult {
 
-    // useful to estimateGas, sometimes the estimatedGas matches the maximum gasUsed
-    private long maxGasUsed = 0;
-
-    // this field it's useful to test if the deductedRefund value is less than the half of the gasUsed
-    private long gasUsedBeforeRefunds = 0;
 
     private byte[] hReturn = EMPTY_BYTE_ARRAY;
     private Exception exception;
@@ -66,13 +62,17 @@ public class ProgramResult {
      */
     private List<CallCreate> callCreateList;
 
+    // estimateGas fields
+    private long maxGasUsed = 0; // sometimes the estimatedGas matches the maximum gasUsed
     private boolean movedRemainingGasToChild = false;
+    @VisibleForTesting
+    private long gasUsedBeforeRefunds = 0; // this field it's useful to test if the deductedRefund value is less than the half of the gasUsed
 
     public void movedRemainingGasToChild(boolean moved) {
         this.movedRemainingGasToChild = moved;
     }
 
-    public boolean movedRemainingGasToChild() {
+    public boolean getMovedRemainingGasToChild() {
         return movedRemainingGasToChild;
     }
 
@@ -98,7 +98,6 @@ public class ProgramResult {
     }
 
     public void refundGas(long gas) {
-        long old = gasUsed;
         gasUsed = GasCost.subtract(gasUsed, gas);
     }
 
