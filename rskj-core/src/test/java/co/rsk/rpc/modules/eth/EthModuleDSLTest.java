@@ -18,29 +18,21 @@
 
 package co.rsk.rpc.modules.eth;
 
-import co.rsk.config.TestSystemProperties;
-import co.rsk.core.Coin;
-import co.rsk.core.RskAddress;
 import co.rsk.test.World;
 import co.rsk.test.dsl.DslParser;
 import co.rsk.test.dsl.DslProcessorException;
 import co.rsk.test.dsl.WorldDslProcessor;
-import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionReceipt;
 import org.ethereum.rpc.CallArguments;
-import org.ethereum.rpc.TypeConverter;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
-import org.ethereum.util.EthModuleUtils;
-import org.ethereum.vm.program.ProgramResult;
+import org.ethereum.util.EthModuleTestUtils;
 import org.hamcrest.Matchers;
 import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.FileNotFoundException;
-import java.math.BigInteger;
 
-import static org.ethereum.vm.GasCost.REFUND_SSTORE;
 import static org.junit.Assert.*;
 
 /**
@@ -61,7 +53,7 @@ public class EthModuleDSLTest {
         Assert.assertNotNull(status);
         Assert.assertEquals(0, status.length);
 
-        EthModule eth = EthModuleUtils.buildBasicEthModule(world);
+        EthModule eth = EthModuleTestUtils.buildBasicEthModule(world);
         final Transaction tx01 = world.getTransactionByName("tx01");
         final CallArguments args = new CallArguments();
         args.setTo(tx01.getContractAddress().toHexString()); //"6252703f5ba322ec64d3ac45e56241b7d9e481ad";

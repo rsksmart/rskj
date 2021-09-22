@@ -12,7 +12,7 @@ import org.ethereum.crypto.HashUtil;
 import org.ethereum.rpc.CallArguments;
 import org.ethereum.rpc.TypeConverter;
 import org.ethereum.util.ByteUtil;
-import org.ethereum.util.EthModuleUtils;
+import org.ethereum.util.EthModuleTestUtils;
 import org.ethereum.vm.GasCost;
 import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.program.InternalTransaction;
@@ -39,7 +39,7 @@ public class EthModuleGasEstimationDSLTest {
     public void testEstimateGas_basicTests() throws FileNotFoundException, DslProcessorException {
         World world = World.processedWorld("dsl/eth_module/estimateGas/basicTests.txt");
 
-        EthModule eth = EthModuleUtils.buildBasicEthModule(world);
+        EthModule eth = EthModuleTestUtils.buildBasicEthModule(world);
         Block block = world.getBlockChain().getBestBlock();
 
         final CallArguments args = new CallArguments();
@@ -100,7 +100,7 @@ public class EthModuleGasEstimationDSLTest {
         assertEquals(0x01, status2[0]);
 
         // Call with value estimation
-        EthModule eth = EthModuleUtils.buildBasicEthModule(world);
+        EthModule eth = EthModuleTestUtils.buildBasicEthModule(world);
 
         final CallArguments args = new CallArguments();
         args.setTo(contractAddress.toHexString());
@@ -156,7 +156,7 @@ public class EthModuleGasEstimationDSLTest {
         assertEquals(1, status2.length);
         assertEquals(0x01, status2[0]);
 
-        EthModule eth = EthModuleUtils.buildBasicEthModule(world);
+        EthModule eth = EthModuleTestUtils.buildBasicEthModule(world);
         Block block = world.getBlockChain().getBestBlock();
 
         // from non-zero to zero - setValue(1, 0) - it should have a refund
@@ -246,7 +246,7 @@ public class EthModuleGasEstimationDSLTest {
         assertEquals(1, status.length);
         assertEquals(0x01, status[0]);
 
-        EthModule eth = EthModuleUtils.buildBasicEthModule(world);
+        EthModule eth = EthModuleTestUtils.buildBasicEthModule(world);
         long gasEstimationCap = new TestSystemProperties().getGasEstimationCap();
 
         CallArguments callArguments = new CallArguments();
@@ -275,7 +275,7 @@ public class EthModuleGasEstimationDSLTest {
         assertEquals(1, status.length);
         assertEquals(0x01, status[0]);
 
-        EthModule eth = EthModuleUtils.buildBasicEthModule(world);
+        EthModule eth = EthModuleTestUtils.buildBasicEthModule(world);
         Block block = world.getBlockChain().getBlockByNumber(1);
 
         // call clearStorageAndSendValue, it should estimate correctly the stipend cost and the gas refund
@@ -339,7 +339,7 @@ public class EthModuleGasEstimationDSLTest {
         assertEquals(0x01, status3[0]);
         assertEquals("27444fbce96cb2d27b94e116d1506d7739c05862", contractAddressC);
 
-        EthModule eth = EthModuleUtils.buildBasicEthModule(world);
+        EthModule eth = EthModuleTestUtils.buildBasicEthModule(world);
         Block block = world.getBlockChain().getBestBlock();
 
         // call callAddressWithValue, it should start the nested calls
@@ -411,7 +411,7 @@ public class EthModuleGasEstimationDSLTest {
         assertEquals(0x01, status3[0]);
         assertEquals("27444fbce96cb2d27b94e116d1506d7739c05862", contractAddressC);
 
-        EthModule eth = EthModuleUtils.buildBasicEthModule(world);
+        EthModule eth = EthModuleTestUtils.buildBasicEthModule(world);
         Block block = world.getBlockChain().getBestBlock();
 
         // call callAddressWithValue, it should start the nested calls
@@ -484,7 +484,7 @@ public class EthModuleGasEstimationDSLTest {
         assertEquals(0x01, status3[0]);
         assertEquals("27444fbce96cb2d27b94e116d1506d7739c05862", contractAddressC);
 
-        EthModule eth = EthModuleUtils.buildBasicEthModule(world);
+        EthModule eth = EthModuleTestUtils.buildBasicEthModule(world);
         Block block = world.getBlockChain().getBestBlock();
 
         // call callAddressWithValue, it should start the nested calls
