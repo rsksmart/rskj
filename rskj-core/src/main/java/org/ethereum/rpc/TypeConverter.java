@@ -28,7 +28,9 @@ import java.util.regex.Pattern;
 
 /**
  * Created by Ruben on 19/11/2015.
+ * @deprecated in favor of {@link co.rsk.util.HexUtils HexUtils}.
  */
+@Deprecated
 public class TypeConverter {
     private static final Pattern LEADING_ZEROS_PATTERN = Pattern.compile("0x(0)+");
 
@@ -71,6 +73,9 @@ public class TypeConverter {
         return input.getBytes(StandardCharsets.UTF_8);
     }
 
+    /**
+     *@deprecated in favor of {@link co.rsk.util.HexUtils HexUtils}.
+     */
     public static String toJsonHex(byte[] x) {
         String result = toUnformattedJsonHex(x);
 
