@@ -152,13 +152,12 @@ public class TransactionExecutor {
     private boolean init() {
         basicTxCost = tx.transactionCost(constants, activations);
 
-        long txGasLimit = GasCost.toGas(tx.getGasLimit());
-        long curBlockGasLimit = GasCost.toGas(executionBlock.getGasLimit());
-
         if (localCall) {
             return true;
         }
 
+        long txGasLimit = GasCost.toGas(tx.getGasLimit());
+        long curBlockGasLimit = GasCost.toGas(executionBlock.getGasLimit());
 
         if (!gasIsValid(txGasLimit, curBlockGasLimit)) {
             return false;
@@ -491,10 +490,6 @@ public class TransactionExecutor {
             receipt.setStatus(executionError.isEmpty() ? TransactionReceipt.SUCCESS_STATUS : TransactionReceipt.FAILED_STATUS);
         }
         return receipt;
-    }
-
-    public boolean getProgramCallWithValuePerformed() {
-        return program != null && program.getCallWithValuePerformed();
     }
 
     private void finalization() {
