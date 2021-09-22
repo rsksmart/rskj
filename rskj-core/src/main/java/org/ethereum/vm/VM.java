@@ -1619,8 +1619,7 @@ public class VM {
         long in = memNeeded(inDataOffs, inSizeLong); // in offset+size
         long out = memNeeded(outDataOffs, outSizeLong); // out offset+size
         long newMemSize = Long.max(in, out);
-        long y = calcMemGas(oldMemSize, newMemSize, 0);
-        callGas = GasCost.add(callGas, y);
+        callGas = GasCost.add(callGas, calcMemGas(oldMemSize, newMemSize, 0));
         return callGas;
     }
 
