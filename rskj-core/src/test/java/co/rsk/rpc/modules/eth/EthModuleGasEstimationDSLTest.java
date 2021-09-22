@@ -36,7 +36,7 @@ public class EthModuleGasEstimationDSLTest {
     public void testEstimateGas_basicTests() throws FileNotFoundException, DslProcessorException {
         World world = World.processedWorld("dsl/eth_module/estimateGas/basicTests.txt");
 
-        EthModule eth = EthModuleTestUtils.buildBasicEthModule(world);
+        EthModuleTestUtils.EthModuleGasEstimation eth = EthModuleTestUtils.buildBasicEthModuleForGasEstimation(world);
         Block block = world.getBlockChain().getBestBlock();
 
         final CallArguments args = new CallArguments();
@@ -47,6 +47,8 @@ public class EthModuleGasEstimationDSLTest {
         args.setData(""); // no data
 
         long estimatedGas = estimateGas(eth, args);
+
+        assertEquals(0, eth.getEstimationResult().getDeductedRefund());
 
         ProgramResult callConstantResult = eth.callConstant(args, block);
 
@@ -98,7 +100,7 @@ public class EthModuleGasEstimationDSLTest {
         assertEquals(0x01, status2[0]);
 
         // Call with value estimation
-        EthModule eth = EthModuleTestUtils.buildBasicEthModule(world);
+        EthModuleTestUtils.EthModuleGasEstimation eth = EthModuleTestUtils.buildBasicEthModuleForGasEstimation(world);
 
         final CallArguments args = new CallArguments();
         args.setTo(contractAddress.toHexString());
@@ -117,9 +119,8 @@ public class EthModuleGasEstimationDSLTest {
 
         // Estimate the gas to use
         long estimatedGas = estimateGas(eth, args);
-        ProgramResult estimationResult = eth.getEstimationResult();
-        assertEquals(0, estimationResult.getDeductedRefund());
 
+        assertEquals(0, eth.getEstimationResult().getDeductedRefund());
 
         // The estimated gas should be greater than the gas used in the call
         assertTrue(gasUsed < estimatedGas);
@@ -157,7 +158,7 @@ public class EthModuleGasEstimationDSLTest {
         assertEquals(1, status2.length);
         assertEquals(0x01, status2[0]);
 
-        EthModule eth = EthModuleTestUtils.buildBasicEthModule(world);
+        EthModuleTestUtils.EthModuleGasEstimation eth = EthModuleTestUtils.buildBasicEthModuleForGasEstimation(world);
         Block block = world.getBlockChain().getBestBlock();
 
         // from non-zero to zero - setValue(1, 0) - it should have a refund
@@ -174,6 +175,8 @@ public class EthModuleGasEstimationDSLTest {
 
         long clearStorageGasUsed = callConstantResult.getGasUsed();
         long clearStoreageEstimatedGas = estimateGas(eth, args);
+
+        assertTrue(eth.getEstimationResult().getDeductedRefund() > 0);
 
         assertTrue( 0 < clearStorageGasUsed && clearStorageGasUsed < initStorageGasUsed);
         assertTrue(clearStoreageEstimatedGas < initStorageGasUsed);
@@ -196,6 +199,8 @@ public class EthModuleGasEstimationDSLTest {
                 "0000000000000000000000000000000000000000000000000000000000000001"); // setValue(1,1)
         long updateStorageGasUsed = eth.callConstant(args, block).getGasUsed();
         long updateStoreageEstimatedGas = estimateGas(eth, args);
+
+        assertEquals(0, eth.getEstimationResult().getDeductedRefund());
 
         // The estimated gas should be less than the gas used gas for initializing a storage cell
         assertTrue(updateStorageGasUsed < initStorageGasUsed);
@@ -229,6 +234,8 @@ public class EthModuleGasEstimationDSLTest {
         long anotherClearStorageGasUsed = anotherCallConstantResult.getGasUsed();
         long anotherClearStorageEstimatedGas = estimateGas(eth, args);
 
+        assertTrue(eth.getEstimationResult().getDeductedRefund() > 0);
+
         assertEquals(initStorageGasUsed, anotherInitStorageGasUsed);
         assertEquals(clearStoreageEstimatedGas, anotherClearStorageEstimatedGas);
         assertEquals(clearStorageGasUsed, anotherClearStorageGasUsed);
@@ -247,7 +254,7 @@ public class EthModuleGasEstimationDSLTest {
         assertEquals(1, status.length);
         assertEquals(0x01, status[0]);
 
-        EthModule eth = EthModuleTestUtils.buildBasicEthModule(world);
+        EthModuleTestUtils.EthModuleGasEstimation eth = EthModuleTestUtils.buildBasicEthModuleForGasEstimation(world);
         long gasEstimationCap = new TestSystemProperties().getGasEstimationCap();
 
         CallArguments callArguments = new CallArguments();
@@ -276,7 +283,7 @@ public class EthModuleGasEstimationDSLTest {
         assertEquals(1, status.length);
         assertEquals(0x01, status[0]);
 
-        EthModule eth = EthModuleTestUtils.buildBasicEthModule(world);
+        EthModuleTestUtils.EthModuleGasEstimation eth = EthModuleTestUtils.buildBasicEthModuleForGasEstimation(world);
         Block block = world.getBlockChain().getBlockByNumber(1);
 
         // call clearStorageAndSendValue, it should estimate correctly the stipend cost and the gas refund
@@ -295,6 +302,7 @@ public class EthModuleGasEstimationDSLTest {
         assertTrue(estimatedGas > callConstantGasUsed);
         assertEquals(callConstant.getMaxGasUsed(), estimatedGas);
         assertFalse(callConstant.getMovedRemainingGasToChild()); // it just moved STIPEND_CALL (2300) to child
+        assertTrue(eth.getEstimationResult().getDeductedRefund() > 0);
 
         args.setGas(TypeConverter.toQuantityJsonHex(callConstantGasUsed));
         assertFalse(runWithArgumentsAndBlock(eth, args, block));
@@ -341,7 +349,7 @@ public class EthModuleGasEstimationDSLTest {
         assertEquals(0x01, status3[0]);
         assertEquals("27444fbce96cb2d27b94e116d1506d7739c05862", contractAddressC);
 
-        EthModule eth = EthModuleTestUtils.buildBasicEthModule(world);
+        EthModuleTestUtils.EthModuleGasEstimation eth = EthModuleTestUtils.buildBasicEthModuleForGasEstimation(world);
         Block block = world.getBlockChain().getBestBlock();
 
         // call callAddressWithValue, it should start the nested calls
@@ -365,6 +373,8 @@ public class EthModuleGasEstimationDSLTest {
         long callConstantGasUsed = callConstant.getGasUsed();
 
         long estimatedGas = estimateGas(eth, args);
+
+        assertEquals(0, eth.getEstimationResult().getDeductedRefund());
 
         assertEquals(callConstant.getGasUsed(), estimatedGas);
 
@@ -414,7 +424,7 @@ public class EthModuleGasEstimationDSLTest {
         assertEquals(0x01, status3[0]);
         assertEquals("27444fbce96cb2d27b94e116d1506d7739c05862", contractAddressC);
 
-        EthModule eth = EthModuleTestUtils.buildBasicEthModule(world);
+        EthModuleTestUtils.EthModuleGasEstimation eth = EthModuleTestUtils.buildBasicEthModuleForGasEstimation(world);
         Block block = world.getBlockChain().getBestBlock();
 
         // call callAddressWithValue, it should start the nested calls
@@ -439,6 +449,8 @@ public class EthModuleGasEstimationDSLTest {
         long callConstantGasUsed = callConstant.getGasUsed();
 
         long estimatedGas = estimateGas(eth, args);
+
+        assertTrue(eth.getEstimationResult().getDeductedRefund() > 0);
 
         assertTrue(callConstant.getDeductedRefund() > 0);
         assertEquals(callConstant.getGasUsedBeforeRefunds() / 2, callConstant.getDeductedRefund());
@@ -488,7 +500,7 @@ public class EthModuleGasEstimationDSLTest {
         assertEquals(0x01, status3[0]);
         assertEquals("27444fbce96cb2d27b94e116d1506d7739c05862", contractAddressC);
 
-        EthModule eth = EthModuleTestUtils.buildBasicEthModule(world);
+        EthModuleTestUtils.EthModuleGasEstimation eth = EthModuleTestUtils.buildBasicEthModuleForGasEstimation(world);
         Block block = world.getBlockChain().getBestBlock();
 
         // call callAddressWithValue, it should start the nested calls
@@ -512,6 +524,8 @@ public class EthModuleGasEstimationDSLTest {
 
         long estimatedGas = estimateGas(eth, args);
 
+        assertTrue(eth.getEstimationResult().getDeductedRefund() > 0);
+
         assertTrue(callConstant.getDeductedRefund() > 0);
         assertEquals(callConstant.getGasUsedBeforeRefunds() / 2, callConstant.getDeductedRefund());
         assertEquals(callConstantGasUsed + callConstant.getDeductedRefund(), estimatedGas);
@@ -527,13 +541,13 @@ public class EthModuleGasEstimationDSLTest {
         assertFalse(runWithArgumentsAndBlock(eth, args, block));
     }
 
-    public boolean runWithArgumentsAndBlock(EthModule ethModule, CallArguments args, Block block) {
+    public boolean runWithArgumentsAndBlock(EthModuleTestUtils.EthModuleGasEstimation ethModule, CallArguments args, Block block) {
         localCallResult = ethModule.callConstant(args, block);
 
         return localCallResult.getException() == null;
     }
 
-    private long estimateGas(EthModule eth, CallArguments args) {
+    private long estimateGas(EthModuleTestUtils.EthModuleGasEstimation eth, CallArguments args) {
         return Long.parseLong(eth.estimateGas(args).substring("0x".length()), 16);
     }
 

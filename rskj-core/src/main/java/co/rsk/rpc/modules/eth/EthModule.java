@@ -74,8 +74,6 @@ public class EthModule
     private final byte chainId;
     private final long gasEstimationCap;
 
-    private ProgramResult estimationResult; // todo(fedejinich) this should be extracted to a Test class
-
     public EthModule(
             BridgeConstants bridgeConstants,
             byte chainId,
@@ -168,19 +166,20 @@ public class EthModule
             // be higher than the block gas limit, so we don't expect any overflow
             // in these operations unless the user provides a malicius gasLimit value.
 
-            ProgramResult programResult = executor.getResult();
-
-            long newGasNeeded = programResult.getMovedRemainingGasToChild() ?
-                    programResult.getGasUsed() + programResult.getDeductedRefund() :
-                    programResult.getMaxGasUsed(); // because deductedRefund can never be higher than gasUsed/2, we can just take the relative upper bound
-
-            estimation = TypeConverter.toQuantityJsonHex(newGasNeeded);
-            setEstimationResult(programResult);
+            estimation = internalEstimateGas(executor.getResult());
 
             return estimation;
         } finally {
             LOGGER.debug("eth_estimateGas(): {}", estimation);
         }
+    }
+
+    protected String internalEstimateGas(ProgramResult reversibleExecutionResult) {
+        long estimatedGas = reversibleExecutionResult.getMovedRemainingGasToChild() ?
+                reversibleExecutionResult.getGasUsed() + reversibleExecutionResult.getDeductedRefund() :
+                reversibleExecutionResult.getMaxGasUsed(); // because deductedRefund can never be higher than gasUsed/2, we can just take the relative upper bound
+
+        return TypeConverter.toQuantityJsonHex(estimatedGas);
     }
 
     @Override
@@ -305,13 +304,5 @@ public class EthModule
                 hexArgs.getData(),
                 hexArgs.getFromAddress()
         );
-    }
-
-    public ProgramResult getEstimationResult() {
-        return estimationResult;
-    }
-
-    public void setEstimationResult(ProgramResult estimationResult) {
-        this.estimationResult = estimationResult;
     }
 }

@@ -19,29 +19,30 @@
 
 package org.ethereum.util;
 
+import co.rsk.config.BridgeConstants;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.ReversibleTransactionExecutor;
 import co.rsk.core.TransactionExecutorFactory;
+import co.rsk.db.RepositoryLocator;
+import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.rpc.ExecutionBlockRetriever;
 import co.rsk.rpc.modules.eth.EthModule;
+import co.rsk.rpc.modules.eth.EthModuleTransaction;
+import co.rsk.rpc.modules.eth.EthModuleWallet;
 import co.rsk.test.World;
 import org.ethereum.config.Constants;
+import org.ethereum.core.Blockchain;
+import org.ethereum.core.TransactionPool;
+import org.ethereum.rpc.CallArguments;
 import org.ethereum.vm.PrecompiledContracts;
+import org.ethereum.vm.program.ProgramResult;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 
 public class EthModuleTestUtils {
 
     public static EthModule buildBasicEthModule(World world) {
         TestSystemProperties config = new TestSystemProperties();
-        TransactionExecutorFactory executor = new TransactionExecutorFactory(
-                config,
-                world.getBlockStore(),
-                null,
-                null,
-                new ProgramInvokeFactoryImpl(),
-                new PrecompiledContracts(config, world.getBridgeSupportFactory()),
-                null
-        );
+        TransactionExecutorFactory executor = buildBasicExecutorFactory(world, config);
 
         return new EthModule(
                 null,
@@ -56,4 +57,61 @@ public class EthModuleTestUtils {
                 world.getBridgeSupportFactory(),
                 config.getGasEstimationCap());
     }
+
+    public static EthModuleGasEstimation buildBasicEthModuleForGasEstimation(World world) {
+        TestSystemProperties config = new TestSystemProperties();
+        TransactionExecutorFactory executor = buildBasicExecutorFactory(world, config);
+
+        return new EthModuleGasEstimation(
+                null,
+                Constants.REGTEST_CHAIN_ID,
+                world.getBlockChain(),
+                null,
+                new ReversibleTransactionExecutor(world.getRepositoryLocator(), executor),
+                new ExecutionBlockRetriever(null, world.getBlockChain(), null, null),
+                null,
+                null,
+                null,
+                world.getBridgeSupportFactory(),
+                config.getGasEstimationCap());
+    }
+
+    private static TransactionExecutorFactory buildBasicExecutorFactory(World world, TestSystemProperties config) {
+        return new TransactionExecutorFactory(
+                config,
+                world.getBlockStore(),
+                null,
+                null,
+                new ProgramInvokeFactoryImpl(),
+                new PrecompiledContracts(config, world.getBridgeSupportFactory()),
+                null
+        );
+    }
+
+    public static class EthModuleGasEstimation extends EthModule {
+        private EthModuleGasEstimation(BridgeConstants bridgeConstants, byte chainId, Blockchain blockchain,
+                                      TransactionPool transactionPool, ReversibleTransactionExecutor reversibleTransactionExecutor,
+                                      ExecutionBlockRetriever executionBlockRetriever, RepositoryLocator repositoryLocator,
+                                      EthModuleWallet ethModuleWallet, EthModuleTransaction ethModuleTransaction,
+                                      BridgeSupportFactory bridgeSupportFactory, long gasEstimationCap) {
+            super(bridgeConstants, chainId, blockchain, transactionPool, reversibleTransactionExecutor,
+                    executionBlockRetriever, repositoryLocator, ethModuleWallet, ethModuleTransaction,
+                    bridgeSupportFactory, gasEstimationCap);
+        }
+
+        private ProgramResult estimationResult;
+
+        public ProgramResult getEstimationResult() {
+            return estimationResult;
+        }
+
+        @Override
+        public String internalEstimateGas(ProgramResult reversibleExecutionResult) {
+            String estimatedGas = super.internalEstimateGas(reversibleExecutionResult);
+            estimationResult = reversibleExecutionResult;
+
+            return estimatedGas;
+        }
+    }
 }
+
