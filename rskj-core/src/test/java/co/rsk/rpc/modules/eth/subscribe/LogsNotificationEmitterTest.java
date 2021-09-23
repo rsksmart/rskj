@@ -203,8 +203,8 @@ public class LogsNotificationEmitterTest {
         verify(serializer, times(results.length)).serializeMessage(captor.capture());
         assertThat(captor.getAllValues(), hasSize(results.length));
         for (int i = 0; i < results.length; i++) {
-            EthSubscriptionNotification subscriptionNotification = (EthSubscriptionNotification) captor.getAllValues().get(i);
-            LogsNotification logsNotification = (LogsNotification) subscriptionNotification.getParams().getResult();
+            EthSubscriptionNotification<LogsNotification> subscriptionNotification = (EthSubscriptionNotification<LogsNotification>) captor.getAllValues().get(i);
+            LogsNotification logsNotification = subscriptionNotification.getParams().getResult();
             checker.accept(logsNotification, results[i]);
         }
     }

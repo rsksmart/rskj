@@ -1,6 +1,6 @@
 /*
  * This file is part of RskJ
- * Copyright (C) 2018 RSK Labs Ltd.
+ * Copyright (C) 2019 RSK Labs Ltd.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -17,26 +17,23 @@
  */
 package co.rsk.rpc.modules.eth.subscribe;
 
-import co.rsk.jsonrpc.JsonRpcMessage;
-import co.rsk.jsonrpc.JsonRpcVersion;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
-public class EthSubscriptionNotification<T> extends JsonRpcMessage {
+@JsonInclude(JsonInclude.Include.NON_NULL)
+public class SyncNotification implements EthSubscriptionNotificationDTO {
+    private final boolean syncing;
+    private final SyncStatusNotification status;
 
-    private final EthSubscriptionParams<T> params;
-
-    public EthSubscriptionNotification(EthSubscriptionParams<T> params) {
-        super(JsonRpcVersion.V2_0);
-        this.params = params;
+    public SyncNotification(boolean syncing, SyncStatusNotification status) {
+        this.syncing = syncing;
+        this.status = status;
     }
 
-    @JsonInclude(JsonInclude.Include.ALWAYS)
-    public String getMethod() {
-        return "eth_subscription";
+    public boolean isSyncing() {
+        return syncing;
     }
 
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    public EthSubscriptionParams<T> getParams() {
-        return params;
+    public SyncStatusNotification getStatus() {
+        return status;
     }
 }

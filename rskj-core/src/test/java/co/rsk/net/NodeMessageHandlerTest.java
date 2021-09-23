@@ -39,6 +39,7 @@ import co.rsk.validators.*;
 import org.ethereum.core.*;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.BlockStore;
+import org.ethereum.listener.EthereumListener;
 import org.ethereum.net.server.ChannelManager;
 import org.ethereum.rpc.Simples.SimpleChannelManager;
 import org.ethereum.util.RskMockFactory;
@@ -324,7 +325,7 @@ public class NodeMessageHandlerTest {
                 new DummyBlockValidationRule(),
                 new SyncBlockValidatorRule(new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())),
                 null,
-                new PeersInformation(RskMockFactory.getChannelManager(), syncConfiguration, blockchain, RskMockFactory.getPeerScoringManager()), mock(Genesis.class));
+                new PeersInformation(RskMockFactory.getChannelManager(), syncConfiguration, blockchain, RskMockFactory.getPeerScoringManager()), mock(Genesis.class), mock(EthereumListener.class));
         final NodeMessageHandler handler = new NodeMessageHandler(config,
                 bp, syncProcessor, null, null,
                 null, mock(StatusResolver.class));

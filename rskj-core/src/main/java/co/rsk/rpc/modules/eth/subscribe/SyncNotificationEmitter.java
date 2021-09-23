@@ -17,34 +17,49 @@
  */
 package co.rsk.rpc.modules.eth.subscribe;
 
+import co.rsk.net.NodeBlockProcessor;
 import co.rsk.rpc.JsonRpcSerializer;
+import com.google.common.annotations.VisibleForTesting;
 import io.netty.channel.Channel;
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
-import org.ethereum.core.Block;
-import org.ethereum.core.TransactionReceipt;
+import org.ethereum.core.Blockchain;
 import org.ethereum.facade.Ethereum;
 import org.ethereum.listener.EthereumListenerAdapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class BlockHeaderNotificationEmitter {
-    private static final Logger logger = LoggerFactory.getLogger(BlockHeaderNotificationEmitter.class);
+public class SyncNotificationEmitter {
+    private static final Logger logger = LoggerFactory.getLogger(SyncNotificationEmitter.class);
 
     private final JsonRpcSerializer jsonRpcSerializer;
+    private final NodeBlockProcessor nodeBlockProcessor;
+    private final Blockchain blockchain;
+    private final long startingBlock;
 
     private final Map<SubscriptionId, Channel> subscriptions = new ConcurrentHashMap<>();
 
-    public BlockHeaderNotificationEmitter(Ethereum ethereum, JsonRpcSerializer jsonRpcSerializer) {
+    public SyncNotificationEmitter(
+            Ethereum ethereum,
+            JsonRpcSerializer jsonRpcSerializer,
+            NodeBlockProcessor nodeBlockProcessor,
+            Blockchain blockchain) {
         this.jsonRpcSerializer = jsonRpcSerializer;
+        this.nodeBlockProcessor = nodeBlockProcessor;
+        this.blockchain = blockchain;
+        this.startingBlock = blockchain.getBestBlock().getNumber();
         ethereum.addListener(new EthereumListenerAdapter() {
             @Override
-            public void onBlock(Block block, List<TransactionReceipt> receipts) {
-                emitBlockHeader(block);
+            public void onLongSyncStarted() {
+                emitSyncStatus(true);
+            }
+
+            @Override
+            public void onLongSyncDone() {
+                emitSyncStatus(false);
             }
         });
     }
@@ -61,24 +76,39 @@ public class BlockHeaderNotificationEmitter {
         subscriptions.values().removeIf(channel::equals);
     }
 
-    private void emitBlockHeader(Block block) {
+    private synchronized void emitSyncStatus(boolean isSyncing) {
         if (subscriptions.isEmpty()) {
             return;
         }
-
-        BlockHeaderNotification header = new BlockHeaderNotification(block);
-
         subscriptions.forEach((SubscriptionId id, Channel channel) -> {
-            EthSubscriptionNotification<BlockHeaderNotification> request = new EthSubscriptionNotification<>(
-                    new EthSubscriptionParams<>(id, header)
-            );
-
+            EthSubscriptionNotification<?> request = getNotification(isSyncing, id);
             try {
                 String msg = jsonRpcSerializer.serializeMessage(request);
                 channel.writeAndFlush(new TextWebSocketFrame(msg));
             } catch (IOException e) {
-                logger.error("Couldn't serialize block header result for notification", e);
+                logger.error("Couldn't serialize sync result for notification", e);
             }
         });
+    }
+
+    @VisibleForTesting
+    protected EthSubscriptionNotification<Object> getNotification(boolean isSyncing, SubscriptionId id) {
+        if (isSyncing) {
+            long currentBlockNum = blockchain.getBestBlock().getNumber();
+            long highestBlockNum = this.nodeBlockProcessor.getLastKnownBlockNumber();
+            SyncNotification syncNotification = new SyncNotification(
+                    true,
+                    new SyncStatusNotification(
+                            startingBlock,
+                            currentBlockNum,
+                            highestBlockNum
+                    )
+            );
+            return new EthSubscriptionNotification<>(
+                    new EthSubscriptionParams<>(id, syncNotification));
+        } else {
+            return new EthSubscriptionNotification<>(
+                    new EthSubscriptionParams<>(id, false));
+        }
     }
 }
