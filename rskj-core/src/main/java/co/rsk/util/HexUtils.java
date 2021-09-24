@@ -49,7 +49,7 @@ public class HexUtils {
         if (hasHexPrefix(input)) {
             return HexUtils.stringHexToBigInteger(input);
         } else {
-            return HexUtils.stringDecimalToBigInteger(input);
+            return new BigInteger(input);
         }
     }
 
@@ -61,12 +61,12 @@ public class HexUtils {
         return new BigInteger(hexa, 16);
     }
 
-    private static BigInteger stringDecimalToBigInteger(String input) {
-        return new BigInteger(input);
-    }
-
     public static byte[] stringHexToByteArray(final String param) {
         
+        if (param == null) {
+            throw invalidParamError("input cant be null");
+        }
+    	
     	String result = removeHexPrefix(param);
         
         if (result.length() % 2 != 0) {
@@ -141,14 +141,7 @@ public class HexUtils {
         return withoutLeading;
     }
 
-    /**
-     * Converts "0x876AF" to "876AF"
-     */
-    public static String removeZeroX(String str) {
-        return str.substring(2);
-    }
-
-    public static long JSonHexToLong(String x) {
+    public static long jsonHexToLong(String x) {
         if (!hasHexPrefix(x)) {
             throw new NumberFormatException("Incorrect hex syntax");
         }
@@ -167,6 +160,10 @@ public class HexUtils {
      * if the paramenter has the hex prefix 
      */
     public static boolean hasHexPrefix(final byte[] data) {
+    	
+		if(data == null) {
+			return false;
+		}
     	
     	for(int i = 0; i < HEX_PREFIX_BYTE_ARRAY.length; i++) {
     		if(HEX_PREFIX_BYTE_ARRAY[i] != data[i]) {
@@ -213,6 +210,10 @@ public class HexUtils {
 	 */
 	public static boolean isHex(final String data, int startAt) {
 		
+        if (data == null) {
+            return false;
+        }
+		
 	    for (int i = startAt; i < data.length(); i++){
 	        char c = data.charAt(i);
 
@@ -228,6 +229,11 @@ public class HexUtils {
 	 * Receives a plain byte array -> converts it to hexa and prepend the 0x  
 	 */
     public static byte[] encodeToHexByteArray(final byte[] input) {
+    	
+        if (input == null) {
+            throw invalidParamError("input cant be null");
+        }
+    	
     	byte[] encoded = Hex.encode(input);
     	
     	byte[] result = new byte[HEX_PREFIX_BYTE_ARRAY.length + encoded.length];
@@ -254,10 +260,8 @@ public class HexUtils {
      */
 	public static byte[] removeHexPrefix(final byte[] data) {
 		byte[] result = data;
-		if(hasHexPrefix(data)) {
-		
+		if(result != null && hasHexPrefix(result)) {
 			result = new byte[data.length - HEX_PREFIX_BYTE_ARRAY.length];
-		
         	System.arraycopy(data, HEX_PREFIX_BYTE_ARRAY.length, result, 0, result.length);
 		}
 		
@@ -266,7 +270,7 @@ public class HexUtils {
 	
 	public static byte[] leftPad(final byte[] data) {
 		byte[] result = data;
-        if (data.length % 2 != 0) {
+        if (result != null && result.length % 2 != 0) {
         	result = new byte[data.length + ZERO_BYTE_ARRAY.length];
             System.arraycopy(ZERO_BYTE_ARRAY, 0, result, 0, ZERO_BYTE_ARRAY.length);
             System.arraycopy(data, 0, result, ZERO_BYTE_ARRAY.length, data.length);
@@ -279,7 +283,7 @@ public class HexUtils {
 		return Hex.decode(HexUtils.leftPad(HexUtils.removeHexPrefix(dataBytes)));
 	}
 
-    public static int JSonHexToInt(final String param) {
+    public static int jsonHexToInt(final String param) {
         if (!hasHexPrefix(param)) {
             throw invalidParamError("Incorrect hex syntax");
         }

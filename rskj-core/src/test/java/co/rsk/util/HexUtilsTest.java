@@ -33,6 +33,26 @@ import java.util.Arrays;
  */
 public class HexUtilsTest {
 
+	
+	@Test
+	public void test_stringNumberAsBigInt() {
+		
+		BigInteger hundred = BigInteger.valueOf(100);
+		
+		String hexNumberWithPrefix = "0x64";
+		
+		String decNumber = "100";
+		
+		BigInteger fromPrefix = HexUtils.stringNumberAsBigInt(hexNumberWithPrefix);
+
+		BigInteger fromDec = HexUtils.stringNumberAsBigInt(decNumber);
+		
+		Assert.assertEquals(fromPrefix, hundred);
+
+		Assert.assertEquals(fromDec, hundred);
+		
+	}
+	
     @Test
     public void stringToByteArray() {
         Assert.assertArrayEquals(new byte[] { 116, 105, 110, 99, 104, 111 }, HexUtils.stringToByteArray("tincho"));
@@ -96,6 +116,40 @@ public class HexUtilsTest {
     }
 
     @Test
+    public void test_JSonHexToLong() {
+    	String hexNumberWithPrefix = "0x64";
+    	
+    	long value = HexUtils.jsonHexToLong(hexNumberWithPrefix);
+    	
+    	Assert.assertEquals(value, 100L);
+    }
+    
+    @Test(expected = NumberFormatException.class)
+    public void test_JSonHexToLong_withWrongParamenter_thenThrowException() {
+    	
+    	HexUtils.jsonHexToLong("64");
+    }
+    
+    @Test
+    public void test_hasHexPrefix() {
+    	
+    	String hexNumberWithPrefix = "0x64";
+    	String hexNumberWithOutPrefix = "64";
+    	
+    	boolean trueCaseStr = HexUtils.hasHexPrefix(hexNumberWithPrefix);
+    	boolean falseCaseStr = HexUtils.hasHexPrefix(hexNumberWithOutPrefix);
+
+    	boolean trueCaseBA = HexUtils.hasHexPrefix(hexNumberWithPrefix.getBytes());
+    	boolean falseCaseBA = HexUtils.hasHexPrefix(hexNumberWithOutPrefix.getBytes());
+    	
+    	Assert.assertTrue(trueCaseStr);
+    	Assert.assertFalse(falseCaseStr);
+
+    	Assert.assertTrue(trueCaseBA);
+    	Assert.assertFalse(falseCaseBA);
+    }
+    
+    @Test
     public void toQuantityJsonHex_EmptyByteArray() {
         byte[] toEncode = new byte[0];
         Assert.assertEquals("0x0", HexUtils.toQuantityJsonHex(toEncode));
@@ -146,21 +200,6 @@ public class HexUtilsTest {
     public void stringHexToBigIntegerWhenItDoesNotStartWith0x() {
         HexUtils.stringHexToBigInteger("0d99");
     }
-    
-    @Test
-    public void test_hasHexPrefix_valid_case() {
-    	Assert.assertTrue(HexUtils.hasHexPrefix("0x746573746530"));
-    }
-    
-    @Test
-    public void test_isHexWithPrefix_valid_invalid_case() {
-    	
-    	boolean trueCase = HexUtils.isHexWithPrefix("0x746573746530");
-    	boolean falseCase = HexUtils.isHexWithPrefix("internet");
-    	
-    	Assert.assertTrue(trueCase);
-    	Assert.assertFalse(falseCase);
-    }
    
     @Test
     public void test_encodeToHexByteArray_compare_preencoded() {
@@ -173,14 +212,7 @@ public class HexUtilsTest {
 		
 		Assert.assertTrue(Arrays.equals(encoded.getBytes(), strEncoded));
     }
- 
-    @Test
-    public void test_hasHexPrefix() {
-    	byte[] data = "0x746573746530".getBytes();
-    	boolean hasHexPrefix = HexUtils.hasHexPrefix(data);
-    	Assert.assertTrue(hasHexPrefix);
-    }
-    
+
     @Test
     public void test_removeHexPrefix() {
     	
@@ -189,6 +221,17 @@ public class HexUtilsTest {
     	byte[] clean = HexUtils.removeHexPrefix(data);
 
     	Assert.assertEquals("746573746530", new String(clean));
+    }
+    
+    @Test
+    public void test_leftPad() {
+    	
+    	String hex = "a";
+    	
+    	byte[] res = HexUtils.leftPad(hex.getBytes());
+    	
+    	Assert.assertEquals(new String(res), "0a");
+    	
     }
     
     
