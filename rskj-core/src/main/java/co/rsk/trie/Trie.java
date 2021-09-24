@@ -26,11 +26,15 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.metrics.profilers.Metric;
 import co.rsk.metrics.profilers.Profiler;
 import co.rsk.metrics.profilers.ProfilerFactory;
+import co.rsk.util.NodeStopper;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
@@ -55,6 +59,8 @@ import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
  */
 public class Trie {
 
+    private static final Logger logger = LoggerFactory.getLogger(Trie.class);
+
     private static final Profiler profiler = ProfilerFactory.getInstance();
 
     private static final int ARITY = 2;
@@ -73,6 +79,8 @@ public class Trie {
     private final NodeReference left;
 
     private final NodeReference right;
+
+    private final NodeStopper nodeStopper;
 
     // this node hash value
     private Keccak256 hash;
@@ -128,8 +136,12 @@ public class Trie {
         this(store, sharedPath, value, left, right, valueLength, valueHash, null);
     }
 
-    // full constructor
     private Trie(TrieStore store, TrieKeySlice sharedPath, byte[] value, NodeReference left, NodeReference right, Uint24 valueLength, Keccak256 valueHash, VarInt childrenSize) {
+        this(store, sharedPath, value, left, right, valueLength, valueHash, childrenSize, exitStatus -> System.exit(exitStatus));
+    }
+
+    // full constructor
+    private Trie(TrieStore store, TrieKeySlice sharedPath, byte[] value, NodeReference left, NodeReference right, Uint24 valueLength, Keccak256 valueHash, VarInt childrenSize, @Nonnull NodeStopper nodeStopper) {
         this.value = value;
         this.left = left;
         this.right = right;
@@ -138,6 +150,7 @@ public class Trie {
         this.valueLength = valueLength;
         this.valueHash = valueHash;
         this.childrenSize = childrenSize;
+        this.nodeStopper = Objects.requireNonNull(nodeStopper);
         checkValueLength();
     }
 
@@ -775,24 +788,26 @@ public class Trie {
             return trie;
         }
 
-        Optional<Trie> leftOpt = trie.left.getNode();
-        Optional<Trie> rightOpt = trie.right.getNode();
-        if (leftOpt.isPresent() && rightOpt.isPresent()) {
-            return trie;
-        }
-
-        if (!leftOpt.isPresent() && !rightOpt.isPresent()) {
+        // both left and right exist (or not) at the same time
+        if (trie.left.isEmpty() == trie.right.isEmpty()) {
             return trie;
         }
 
         Trie child;
         byte childImplicitByte;
-        if (leftOpt.isPresent()) {
-            child = leftOpt.get();
+        if (!trie.left.isEmpty()) {
+            child = trie.left.getNode().orElse(null);
             childImplicitByte = (byte) 0;
         } else { // has right node
-            child = rightOpt.get();
+            child = trie.right.getNode().orElse(null);
             childImplicitByte = (byte) 1;
+        }
+
+        // could not retrieve from database
+        if (child == null) {
+            logger.error("Broken database, execution can't continue");
+            nodeStopper.stop(1);
+            return trie;
         }
 
         TrieKeySlice newSharedPath = trie.sharedPath.rebuildSharedPath(childImplicitByte, child.sharedPath);
