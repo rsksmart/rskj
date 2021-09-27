@@ -1,8 +1,8 @@
 package co.rsk.net;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -10,7 +10,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class MessageCounter {
 
-    private Map<NodeID, AtomicInteger> messagesPerNode = new HashMap<>();
+    private Map<NodeID, AtomicInteger> messagesPerNode = new ConcurrentHashMap<>();
 
     private static final AtomicInteger ZERO = new AtomicInteger(0);
 			
@@ -20,8 +20,9 @@ public class MessageCounter {
     }
     
     public void increment(Peer sender) {
-    	messagesPerNode.computeIfAbsent(sender.getPeerNodeID(), this::createAtomicInteger);
-    	messagesPerNode.get(sender.getPeerNodeID()).incrementAndGet();
+    	messagesPerNode
+    		.computeIfAbsent(sender.getPeerNodeID(), this::createAtomicInteger)
+    		.incrementAndGet();
     }
     
     private AtomicInteger createAtomicInteger(NodeID nodeId) {
