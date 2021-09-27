@@ -7,6 +7,7 @@ import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.BlockIdentifier;
 
+import javax.annotation.Nullable;
 import java.util.Deque;
 import java.util.List;
 import java.util.Map;
@@ -31,6 +32,8 @@ public interface SyncEventsHandler {
     void backwardDownloadBodies(Block parent, List<BlockHeader> toRequest, Peer peer);
 
     void stopSyncing();
+
+    void onLongSyncUpdate(boolean isSyncing, @Nullable Long peerBestBlockNumber);
 
     void onErrorSyncing(NodeID peerId, String message, EventType eventType, Object... arguments);
 

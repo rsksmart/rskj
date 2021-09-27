@@ -17,7 +17,7 @@
  */
 package co.rsk.rpc.modules.eth.subscribe;
 
-import co.rsk.net.NodeBlockProcessor;
+import co.rsk.net.SyncProcessor;
 import co.rsk.rpc.JsonRpcSerializer;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.netty.channel.Channel;
@@ -44,13 +44,14 @@ public class SyncNotificationEmitterTest {
     public void setUp() {
         Ethereum ethereum = mock(Ethereum.class);
         serializer = mock(JsonRpcSerializer.class);
-        NodeBlockProcessor nodeBlockProcessor = mock(NodeBlockProcessor.class);
         Blockchain blockchain = mock(Blockchain.class);
         Block block = mock(Block.class);
-        when(block.getNumber()).thenReturn(1L).thenReturn(2L);
+        when(block.getNumber()).thenReturn(2L);
         when(blockchain.getBestBlock()).thenReturn(block);
-        when(nodeBlockProcessor.getLastKnownBlockNumber()).thenReturn(100L);
-        emitter = new SyncNotificationEmitter(ethereum, serializer, nodeBlockProcessor, blockchain);
+        SyncProcessor syncProcessor = mock(SyncProcessor.class);
+        when(syncProcessor.getInitialBlockNumber()).thenReturn(2L);
+        when(syncProcessor.getHighestBlockNumber()).thenReturn(100L);
+        emitter = new SyncNotificationEmitter(ethereum, serializer, blockchain, syncProcessor);
 
         ArgumentCaptor<EthereumListener> listenerCaptor = ArgumentCaptor.forClass(EthereumListener.class);
         verify(ethereum).addListener(listenerCaptor.capture());
@@ -144,9 +145,9 @@ public class SyncNotificationEmitterTest {
 
         assertTrue(ethSubscriptionNotification.getParams().getResult() instanceof SyncNotification);
         SyncNotification syncNotification = (SyncNotification) ethSubscriptionNotification.getParams().getResult();
+        assertEquals(2L, syncNotification.getStatus().getStartingBlock());
         assertEquals(2L, syncNotification.getStatus().getCurrentBlock());
         assertEquals(100L, syncNotification.getStatus().getHighestBlock());
-        assertEquals(1L, syncNotification.getStatus().getStartingBlock());
     }
 
     @Test

@@ -368,11 +368,6 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
         return expected != null && expected.nodeID.equals(peerId);
     }
 
-    @Override
-    public boolean isSyncing() {
-        return true;
-    }
-
     @VisibleForTesting
     public void expectBodyResponseFor(long requestId, NodeID nodeID, BlockHeader header) {
         pendingBodyResponses.put(requestId, new PendingBodyResponse(nodeID, header));

@@ -78,12 +78,9 @@ public class ThreeAsyncNodeUsingSyncProcessorTest {
         node2.joinWithTimeout();
         node3.joinWithTimeout();
 
-        Assert.assertFalse(node1.getSyncProcessor().getSyncState().isSyncing());
-        Assert.assertFalse(node1.getSyncProcessor().getSyncState().isSyncing());
-        Assert.assertFalse(node2.getSyncProcessor().getSyncState().isSyncing());
-        Assert.assertFalse(node2.getSyncProcessor().getSyncState().isSyncing());
-        Assert.assertFalse(node3.getSyncProcessor().getSyncState().isSyncing());
-        Assert.assertFalse(node3.getSyncProcessor().getSyncState().isSyncing());
+        Assert.assertFalse(node1.getSyncProcessor().isSyncing());
+        Assert.assertFalse(node2.getSyncProcessor().isSyncing());
+        Assert.assertFalse(node3.getSyncProcessor().isSyncing());
     }
 
     @Test
@@ -130,12 +127,9 @@ public class ThreeAsyncNodeUsingSyncProcessorTest {
         node2.joinWithTimeout();
         node3.joinWithTimeout();
 
-        Assert.assertFalse(node1.getSyncProcessor().getSyncState().isSyncing());
-        Assert.assertFalse(node1.getSyncProcessor().getSyncState().isSyncing());
-        Assert.assertFalse(node2.getSyncProcessor().getSyncState().isSyncing());
-        Assert.assertFalse(node2.getSyncProcessor().getSyncState().isSyncing());
-        Assert.assertFalse(node3.getSyncProcessor().getSyncState().isSyncing());
-        Assert.assertFalse(node2.getSyncProcessor().getSyncState().isSyncing());
+        Assert.assertFalse(node1.getSyncProcessor().isSyncing());
+        Assert.assertFalse(node2.getSyncProcessor().isSyncing());
+        Assert.assertFalse(node3.getSyncProcessor().isSyncing());
     }
 
     @Ignore
@@ -185,12 +179,9 @@ public class ThreeAsyncNodeUsingSyncProcessorTest {
         node2.joinWithTimeout();
         node3.joinWithTimeout();
 
-        Assert.assertFalse(node1.getSyncProcessor().getSyncState().isSyncing());
-        Assert.assertFalse(node1.getSyncProcessor().getSyncState().isSyncing());
-        Assert.assertFalse(node2.getSyncProcessor().getSyncState().isSyncing());
-        Assert.assertFalse(node2.getSyncProcessor().getSyncState().isSyncing());
-        Assert.assertFalse(node3.getSyncProcessor().getSyncState().isSyncing());
-        Assert.assertFalse(node2.getSyncProcessor().getSyncState().isSyncing());
+        Assert.assertFalse(node1.getSyncProcessor().isSyncing());
+        Assert.assertFalse(node2.getSyncProcessor().isSyncing());
+        Assert.assertFalse(node3.getSyncProcessor().isSyncing());
     }
 
     @Ignore
@@ -229,12 +220,9 @@ public class ThreeAsyncNodeUsingSyncProcessorTest {
         node2.joinWithTimeout();
         node3.joinWithTimeout();
 
-        Assert.assertFalse(node1.getSyncProcessor().getSyncState().isSyncing());
-        Assert.assertFalse(node1.getSyncProcessor().getSyncState().isSyncing());
-        Assert.assertFalse(node2.getSyncProcessor().getSyncState().isSyncing());
-        Assert.assertFalse(node2.getSyncProcessor().getSyncState().isSyncing());
-        Assert.assertFalse(node3.getSyncProcessor().getSyncState().isSyncing());
-        Assert.assertFalse(node2.getSyncProcessor().getSyncState().isSyncing());
+        Assert.assertFalse(node1.getSyncProcessor().isSyncing());
+        Assert.assertFalse(node2.getSyncProcessor().isSyncing());
+        Assert.assertFalse(node3.getSyncProcessor().isSyncing());
     }
 
     @Ignore
@@ -273,12 +261,9 @@ public class ThreeAsyncNodeUsingSyncProcessorTest {
         node2.joinWithTimeout();
         node3.joinWithTimeout();
 
-        Assert.assertFalse(node1.getSyncProcessor().getSyncState().isSyncing());
-        Assert.assertFalse(node1.getSyncProcessor().getSyncState().isSyncing());
-        Assert.assertFalse(node2.getSyncProcessor().getSyncState().isSyncing());
-        Assert.assertFalse(node2.getSyncProcessor().getSyncState().isSyncing());
-        Assert.assertFalse(node3.getSyncProcessor().getSyncState().isSyncing());
-        Assert.assertFalse(node2.getSyncProcessor().getSyncState().isSyncing());
+        Assert.assertFalse(node1.getSyncProcessor().isSyncing());
+        Assert.assertFalse(node2.getSyncProcessor().isSyncing());
+        Assert.assertFalse(node3.getSyncProcessor().isSyncing());
     }
 
     @Ignore
@@ -322,12 +307,9 @@ public class ThreeAsyncNodeUsingSyncProcessorTest {
         node2.joinWithTimeout();
         node3.joinWithTimeout();
 
-        Assert.assertFalse(node1.getSyncProcessor().getSyncState().isSyncing());
-        Assert.assertFalse(node1.getSyncProcessor().getSyncState().isSyncing());
-        Assert.assertFalse(node2.getSyncProcessor().getSyncState().isSyncing());
-        Assert.assertFalse(node2.getSyncProcessor().getSyncState().isSyncing());
-        Assert.assertFalse(node3.getSyncProcessor().getSyncState().isSyncing());
-        Assert.assertFalse(node2.getSyncProcessor().getSyncState().isSyncing());
+        Assert.assertFalse(node1.getSyncProcessor().isSyncing());
+        Assert.assertFalse(node2.getSyncProcessor().isSyncing());
+        Assert.assertFalse(node3.getSyncProcessor().isSyncing());
     }
 
     @Ignore
@@ -368,12 +350,9 @@ public class ThreeAsyncNodeUsingSyncProcessorTest {
         node2.joinWithTimeout();
         node3.joinWithTimeout();
 
-        Assert.assertFalse(node1.getSyncProcessor().getSyncState().isSyncing());
-        Assert.assertFalse(node1.getSyncProcessor().getSyncState().isSyncing());
-        Assert.assertFalse(node2.getSyncProcessor().getSyncState().isSyncing());
-        Assert.assertFalse(node2.getSyncProcessor().getSyncState().isSyncing());
-        Assert.assertFalse(node3.getSyncProcessor().getSyncState().isSyncing());
-        Assert.assertFalse(node2.getSyncProcessor().getSyncState().isSyncing());
+        Assert.assertFalse(node1.getSyncProcessor().isSyncing());
+        Assert.assertFalse(node2.getSyncProcessor().isSyncing());
+        Assert.assertFalse(node3.getSyncProcessor().isSyncing());
     }
 
     @Ignore
@@ -419,9 +398,9 @@ public class ThreeAsyncNodeUsingSyncProcessorTest {
         node3.joinWithTimeout();
         node4.joinWithTimeout();
 
-        Assert.assertFalse(node1.getSyncProcessor().getSyncState().isSyncing());
-        Assert.assertFalse(node2.getSyncProcessor().getSyncState().isSyncing());
-        Assert.assertFalse(node3.getSyncProcessor().getSyncState().isSyncing());
+        Assert.assertFalse(node1.getSyncProcessor().isSyncing());
+        Assert.assertFalse(node2.getSyncProcessor().isSyncing());
+        Assert.assertFalse(node3.getSyncProcessor().isSyncing());
     }
 
     @Ignore
@@ -464,12 +443,9 @@ public class ThreeAsyncNodeUsingSyncProcessorTest {
         node2.joinWithTimeout();
         node3.joinWithTimeout();
 
-        Assert.assertFalse(node1.getSyncProcessor().getSyncState().isSyncing());
-        Assert.assertFalse(node1.getSyncProcessor().getSyncState().isSyncing());
-        Assert.assertFalse(node2.getSyncProcessor().getSyncState().isSyncing());
-        Assert.assertFalse(node2.getSyncProcessor().getSyncState().isSyncing());
-        Assert.assertFalse(node3.getSyncProcessor().getSyncState().isSyncing());
-        Assert.assertFalse(node2.getSyncProcessor().getSyncState().isSyncing());
+        Assert.assertFalse(node1.getSyncProcessor().isSyncing());
+        Assert.assertFalse(node2.getSyncProcessor().isSyncing());
+        Assert.assertFalse(node3.getSyncProcessor().isSyncing());
     }
 
     @Ignore
@@ -516,12 +492,9 @@ public class ThreeAsyncNodeUsingSyncProcessorTest {
         node2.joinWithTimeout();
         node3.joinWithTimeout();
 
-        Assert.assertFalse(node1.getSyncProcessor().getSyncState().isSyncing());
-        Assert.assertFalse(node1.getSyncProcessor().getSyncState().isSyncing());
-        Assert.assertFalse(node2.getSyncProcessor().getSyncState().isSyncing());
-        Assert.assertFalse(node2.getSyncProcessor().getSyncState().isSyncing());
-        Assert.assertFalse(node3.getSyncProcessor().getSyncState().isSyncing());
-        Assert.assertFalse(node2.getSyncProcessor().getSyncState().isSyncing());
+        Assert.assertFalse(node1.getSyncProcessor().isSyncing());
+        Assert.assertFalse(node2.getSyncProcessor().isSyncing());
+        Assert.assertFalse(node3.getSyncProcessor().isSyncing());
     }
 
     @Ignore
@@ -560,12 +533,9 @@ public class ThreeAsyncNodeUsingSyncProcessorTest {
         node2.joinWithTimeout();
         node3.joinWithTimeout();
 
-        Assert.assertFalse(node1.getSyncProcessor().getSyncState().isSyncing());
-        Assert.assertFalse(node1.getSyncProcessor().getSyncState().isSyncing());
-        Assert.assertFalse(node2.getSyncProcessor().getSyncState().isSyncing());
-        Assert.assertFalse(node2.getSyncProcessor().getSyncState().isSyncing());
-        Assert.assertFalse(node3.getSyncProcessor().getSyncState().isSyncing());
-        Assert.assertFalse(node2.getSyncProcessor().getSyncState().isSyncing());
+        Assert.assertFalse(node1.getSyncProcessor().isSyncing());
+        Assert.assertFalse(node2.getSyncProcessor().isSyncing());
+        Assert.assertFalse(node3.getSyncProcessor().isSyncing());
     }
 
     @Ignore
@@ -609,11 +579,8 @@ public class ThreeAsyncNodeUsingSyncProcessorTest {
         node2.joinWithTimeout();
         node3.joinWithTimeout();
 
-        Assert.assertFalse(node1.getSyncProcessor().getSyncState().isSyncing());
-        Assert.assertFalse(node1.getSyncProcessor().getSyncState().isSyncing());
-        Assert.assertFalse(node2.getSyncProcessor().getSyncState().isSyncing());
-        Assert.assertFalse(node2.getSyncProcessor().getSyncState().isSyncing());
-        Assert.assertFalse(node3.getSyncProcessor().getSyncState().isSyncing());
-        Assert.assertFalse(node2.getSyncProcessor().getSyncState().isSyncing());
+        Assert.assertFalse(node1.getSyncProcessor().isSyncing());
+        Assert.assertFalse(node2.getSyncProcessor().isSyncing());
+        Assert.assertFalse(node3.getSyncProcessor().isSyncing());
     }
 }

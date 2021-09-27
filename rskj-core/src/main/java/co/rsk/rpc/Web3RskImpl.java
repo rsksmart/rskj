@@ -25,6 +25,7 @@ import co.rsk.metrics.HashRateCalculator;
 import co.rsk.mine.MinerClient;
 import co.rsk.mine.MinerServer;
 import co.rsk.net.BlockProcessor;
+import co.rsk.net.SyncProcessor;
 import co.rsk.rpc.modules.debug.DebugModule;
 import co.rsk.rpc.modules.eth.EthModule;
 import co.rsk.rpc.modules.evm.EvmModule;
@@ -92,11 +93,12 @@ public class Web3RskImpl extends Web3Impl {
             ConfigCapabilities configCapabilities,
             BuildInfo buildInfo,
             BlocksBloomStore blocksBloomStore,
-            Web3InformationRetriever retriever) {
+            Web3InformationRetriever retriever,
+            SyncProcessor syncProcessor) {
             super(eth, blockchain, blockStore, receiptStore, properties, minerClient, minerServer,
                     personalModule, ethModule, evmModule, txPoolModule, mnrModule, debugModule, traceModule, rskModule,
                     channelManager, peerScoringManager, peerServer, nodeBlockProcessor,
-                    hashRateCalculator, configCapabilities, buildInfo, blocksBloomStore, retriever);
+                    hashRateCalculator, configCapabilities, buildInfo, blocksBloomStore, retriever, syncProcessor);
 
         this.networkStateExporter = networkStateExporter;
         this.blockStore = blockStore;

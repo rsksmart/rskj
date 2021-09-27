@@ -18,8 +18,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.time.Duration;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * This class' methods are executed one at a time because NodeMessageHandler is synchronized.
@@ -42,6 +44,10 @@ public class SyncProcessor implements SyncEventsHandler {
 
     private final PeersInformation peersInformation;
     private final Map<Long, MessageType> pendingMessages;
+    private final AtomicBoolean isSyncing = new AtomicBoolean();
+
+    private volatile long initialBlockNumber;
+    private volatile long highestBlockNumber;
 
     private SyncState syncState;
     private long lastRequestId;
@@ -235,7 +241,7 @@ public class SyncProcessor implements SyncEventsHandler {
         if (peerBestBlockNumber > blockSyncService.getLastKnownBlockNumber()) {
             blockSyncService.setLastKnownBlockNumber(peerBestBlockNumber);
         }
-        ethereumListener.onLongSyncStarted();
+
         setSyncState(new DownloadingBodiesSyncState(syncConfiguration,
                 this,
                 peersInformation,
@@ -315,13 +321,35 @@ public class SyncProcessor implements SyncEventsHandler {
         // always that a syncing process ends unexpectedly the best block number is reset
         blockSyncService.setLastKnownBlockNumber(blockchain.getBestBlock().getNumber());
         peersInformation.clearOldFailedPeers();
-        if(getSyncState().isSyncing()) {
-            ethereumListener.onLongSyncDone();
-        }
+
         setSyncState(new DecidingSyncState(syncConfiguration,
                 this,
                 peersInformation,
                 blockStore));
+    }
+
+    public long getInitialBlockNumber() {
+        return initialBlockNumber;
+    }
+
+    public long getHighestBlockNumber() {
+        return highestBlockNumber;
+    }
+
+    public boolean isSyncing() {
+        return isSyncing.get();
+    }
+
+    @Override
+    public void onLongSyncUpdate(boolean isSyncing, @Nullable Long peerBestBlockNumber) {
+        boolean wasSyncing = this.isSyncing.getAndSet(isSyncing);
+        if (!wasSyncing && isSyncing) {
+            initialBlockNumber = blockchain.getBestBlock().getNumber();
+            highestBlockNumber = Optional.ofNullable(peerBestBlockNumber).orElse(initialBlockNumber);
+            ethereumListener.onLongSyncStarted();
+        } else if (wasSyncing && !isSyncing) {
+            ethereumListener.onLongSyncDone();
+        }
     }
 
     @Override

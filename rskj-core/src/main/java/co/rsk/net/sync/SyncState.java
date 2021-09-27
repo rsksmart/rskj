@@ -26,6 +26,4 @@ public interface SyncState {
     void onEnter();
 
     void tick(Duration duration);
-
-    boolean isSyncing();
 }

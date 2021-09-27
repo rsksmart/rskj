@@ -1219,7 +1219,8 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                 getConfigCapabilities(),
                 getBuildInfo(),
                 getBlocksBloomStore(),
-                getWeb3InformationRetriever());
+                getWeb3InformationRetriever(),
+                getSyncProcessor());
     }
 
     protected synchronized Web3InformationRetriever getWeb3InformationRetriever() {
@@ -1858,6 +1859,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
             RskSystemProperties rskSystemProperties = getRskSystemProperties();
             JsonRpcSerializer jsonRpcSerializer = getJsonRpcSerializer();
             Ethereum rsk = getRsk();
+            SyncProcessor syncProcessor = getSyncProcessor();
             EthSubscriptionNotificationEmitter emitter = new EthSubscriptionNotificationEmitter(
                     new BlockHeaderNotificationEmitter(rsk, jsonRpcSerializer),
                     new LogsNotificationEmitter(
@@ -1867,7 +1869,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                             new BlockchainBranchComparator(getBlockStore())
                     ),
                     new PendingTransactionsNotificationEmitter(rsk, jsonRpcSerializer),
-                    new SyncNotificationEmitter(rsk, jsonRpcSerializer, nodeBlockProcessor, blockchain)
+                    new SyncNotificationEmitter(rsk, jsonRpcSerializer, blockchain, syncProcessor)
             );
             RskWebSocketJsonRpcHandler jsonRpcHandler = new RskWebSocketJsonRpcHandler(emitter);
             web3WebSocketServer = new Web3WebSocketServer(

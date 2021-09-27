@@ -112,8 +112,6 @@ public class SimpleAsyncNode extends SimpleNode {
         return this.syncProcessor;
     }
 
-
-
     public static SimpleAsyncNode createDefaultNode(Blockchain blockChain){
         return createNode(blockChain, SyncConfiguration.DEFAULT);
     }

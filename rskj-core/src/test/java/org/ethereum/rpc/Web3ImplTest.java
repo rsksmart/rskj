@@ -30,6 +30,7 @@ import co.rsk.db.RepositoryLocator;
 import co.rsk.mine.MinerClient;
 import co.rsk.mine.MinerServer;
 import co.rsk.net.BlockProcessor;
+import co.rsk.net.SyncProcessor;
 import co.rsk.net.TransactionGateway;
 import co.rsk.net.simples.SimpleBlockProcessor;
 import co.rsk.peg.BridgeSupportFactory;
@@ -95,12 +96,15 @@ import static org.mockito.Mockito.*;
 public class Web3ImplTest {
 
     private static final String BALANCE_10K_HEX = "0x2710"; //10.000
-    public static final String CALL_RESPOND = "0x0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000568656c6c6f000000000000000000000000000000000000000000000000000000";
+    private static final String CALL_RESPOND = "0x0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000568656c6c6f000000000000000000000000000000000000000000000000000000";
+
     private final TestSystemProperties config = new TestSystemProperties();
     private final BlockFactory blockFactory = new BlockFactory(config.getActivationConfig());
-    Wallet wallet;
+    private final SyncProcessor syncProcessor = mock(SyncProcessor.class);
 
-      @Test
+    private Wallet wallet;
+
+    @Test
     public void web3_clientVersion() {
         Web3 web3 = createWeb3();
 
@@ -167,14 +171,16 @@ public class Web3ImplTest {
     public void eth_syncing_returnSyncingResultWhenSyncing()  {
         World world = new World();
         SimpleBlockProcessor nodeProcessor = new SimpleBlockProcessor();
-        nodeProcessor.lastKnownBlockNumber = 5;
         Web3Impl web3 = createWeb3(world, nodeProcessor, null);
+
+        doReturn(true).when(syncProcessor).isSyncing();
+        doReturn(5L).when(syncProcessor).getHighestBlockNumber();
 
         Object result = web3.eth_syncing();
 
         assertTrue("Node is syncing, must return sync manager", result instanceof SyncingResult);
-        assertTrue("Highest block is 5", ((SyncingResult) result).getHighestBlock().compareTo("0x5") == 0);
-        assertTrue("Simple blockchain starts from genesis block", ((SyncingResult) result).getCurrentBlock().compareTo("0x0") == 0);
+        assertEquals("Highest block is 5", 0, ((SyncingResult) result).getHighestBlock().compareTo("0x5"));
+        assertEquals("Simple blockchain starts from genesis block", 0, ((SyncingResult) result).getCurrentBlock().compareTo("0x0"));
     }
 
     @Test
@@ -648,7 +654,8 @@ public class Web3ImplTest {
                 null,
                 null,
                 null,
-                mock(Web3InformationRetriever.class));
+                mock(Web3InformationRetriever.class),
+                null);
 
         assertTrue("Node is not mining", !web3.eth_mining());
         try {
@@ -665,7 +672,7 @@ public class Web3ImplTest {
     @Test
     public void getGasPrice()  {
         Web3Impl web3 = createWeb3();
-        web3.eth = new SimpleEthereum();
+        web3.setEth(new SimpleEthereum());
         String expectedValue = ByteUtil.toHexString(new BigInteger("20000000000").toByteArray());
         expectedValue = "0x" + (expectedValue.startsWith("0") ? expectedValue.substring(1) : expectedValue);
         assertEquals(expectedValue, web3.eth_gasPrice());
@@ -1858,7 +1865,8 @@ public class Web3ImplTest {
                 null,
                 null,
                 null,
-                mock(Web3InformationRetriever.class));
+                mock(Web3InformationRetriever.class),
+                null);
 
         assertEquals("0x" + originalCoinbase, web3.eth_coinbase());
         verify(minerServerMock, times(1)).getCoinbaseAddress();
@@ -2336,7 +2344,8 @@ public class Web3ImplTest {
                 new Web3InformationRetriever(
                         transactionPool,
                         blockchain,
-                        mock(RepositoryLocator.class)));
+                        mock(RepositoryLocator.class)),
+                null);
     }
 
     private Web3Impl createWeb3(Ethereum eth, World world, ReceiptStore receiptStore) {
@@ -2441,7 +2450,8 @@ public class Web3ImplTest {
                 configCapabilities,
                 new BuildInfo("test", "test"),
                 null,
-                retriever
+                retriever,
+                syncProcessor
         );
     }
 
@@ -2499,7 +2509,8 @@ public class Web3ImplTest {
                 configCapabilities,
                 new BuildInfo("test", "test"),
                 null,
-                retriever);
+                retriever,
+                null);
     }
 
     private TransactionExecutorFactory buildTransactionExecutorFactory(
