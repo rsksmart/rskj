@@ -22,5 +22,20 @@ public class MessageCounterTest {
 		Assert.assertFalse(counter.hasCounter(sender));
 		
 	}
+
+	@Test
+	public void decrement() {
+
+		SimplePeer sender = new SimplePeer(new NodeID(new byte[] {1}));
+		
+		MessageCounter counter = new MessageCounter();
+		
+		counter.increment(sender);
+		counter.increment(sender);
+		
+		counter.decrement(sender);
+		
+		Assert.assertTrue(counter.getValue(sender) == 1);
+	}
 	
 }
