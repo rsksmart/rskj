@@ -10,10 +10,9 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class MessageCounter {
 
-    private Map<NodeID, AtomicInteger> messagesPerNode = new ConcurrentHashMap<>();
+	private static final AtomicInteger ZERO = new AtomicInteger(0);
 
-    private static final AtomicInteger ZERO = new AtomicInteger(0);
-			
+	private Map<NodeID, AtomicInteger> messagesPerNode = new ConcurrentHashMap<>();			
     
     public int getValue(Peer sender) {
     	return Optional.ofNullable(messagesPerNode.get(sender.getPeerNodeID())).orElse(ZERO).intValue();
@@ -38,6 +37,10 @@ public class MessageCounter {
     		.filter(counter -> counter.get() < 1)
     		.ifPresent(counter -> messagesPerNode.remove(sender.getPeerNodeID()));
 
+    }
+    
+    public boolean hasCounter(Peer sender) {
+    	return messagesPerNode.containsKey(sender.getPeerNodeID());
     }
     
 }
