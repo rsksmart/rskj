@@ -90,7 +90,6 @@ public class Web3Impl implements Web3 {
 
     private final Blockchain blockchain;
     private final ReceiptStore receiptStore;
-    private final BlockProcessor nodeBlockProcessor;
     private final HashRateCalculator hashRateCalculator;
     private final ConfigCapabilities configCapabilities;
     private final BlockStore blockStore;
@@ -157,7 +156,6 @@ public class Web3Impl implements Web3 {
         this.channelManager = channelManager;
         this.peerScoringManager = peerScoringManager;
         this.peerServer = peerServer;
-        this.nodeBlockProcessor = nodeBlockProcessor;
         this.hashRateCalculator = hashRateCalculator;
         this.configCapabilities = configCapabilities;
         this.config = config;
