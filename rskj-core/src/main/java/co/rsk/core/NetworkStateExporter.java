@@ -98,7 +98,7 @@ public class NetworkStateExporter {
             byte[] code = accountInformation.getCode(addr);
             String codeStr = "";
             if (code == null) {
-                codeStr = "<empty>";
+                codeStr = "";
             } else {
                 codeStr = ByteUtil.toHexString(code);
             }
