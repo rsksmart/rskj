@@ -20,6 +20,7 @@ package co.rsk.core.bc;
 
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositorySnapshot;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
@@ -83,6 +84,10 @@ public class PendingState implements AccountInformationProvider {
         return postExecutionReturn(executedRepository -> executedRepository.getCode(addr));
     }
 
+    @Override
+    public Keccak256 getCodeHashStandard(RskAddress addr) {
+        return postExecutionReturn(executedRepository -> executedRepository.getCodeHashStandard(addr));
+    }
     @Override
     public boolean isContract(RskAddress addr) {
         return postExecutionReturn(executedRepository -> executedRepository.isContract(addr));

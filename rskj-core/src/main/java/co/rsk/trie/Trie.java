@@ -19,6 +19,7 @@
 package co.rsk.trie;
 
 import co.rsk.bitcoinj.core.VarInt;
+import co.rsk.core.RskAddress;
 import co.rsk.core.types.ints.Uint16;
 import co.rsk.core.types.ints.Uint24;
 import co.rsk.core.types.ints.Uint8;
@@ -29,6 +30,7 @@ import co.rsk.metrics.profilers.ProfilerFactory;
 import co.rsk.util.NodeStopper;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.db.ByteArrayWrapper;
+import org.ethereum.db.TrieKeyMapper;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
 import org.slf4j.Logger;
@@ -1040,7 +1042,11 @@ public class Trie {
     }
 
     public Iterator<IterationElement> getPreOrderIterator() {
-        return new PreOrderIterator(this);
+        return new PreOrderIterator(this,false);
+    }
+
+    public Iterator<IterationElement> getPreOrderIterator(boolean stopAtAccountDepth) {
+        return new PreOrderIterator(this,stopAtAccountDepth);
     }
 
     private static byte[] cloneArray(byte[] array) {
@@ -1198,9 +1204,11 @@ public class Trie {
     private class PreOrderIterator implements Iterator<IterationElement> {
 
         private final Deque<IterationElement> visiting;
+        private boolean stopAtAccountDepth;
 
-        public PreOrderIterator(Trie root) {
+        public PreOrderIterator(Trie root,boolean stopAtAccountDepth) {
             Objects.requireNonNull(root);
+            this.stopAtAccountDepth = stopAtAccountDepth;
             TrieKeySlice traversedPath = root.getSharedPath();
             this.visiting = new LinkedList<>();
             this.visiting.push(new IterationElement(traversedPath, root));
@@ -1212,17 +1220,23 @@ public class Trie {
             IterationElement visitingElement = visiting.pop();
             Trie node = visitingElement.getNode();
             TrieKeySlice nodeKey = visitingElement.getNodeKey();
-            // need to visit the left subtree first, then the right since a stack is a LIFO, push the right subtree first,
-            // then the left
-            Trie rightNode = node.retrieveNode((byte) 0x01);
-            if (rightNode != null) {
-                TrieKeySlice rightNodeKey = nodeKey.rebuildSharedPath((byte) 0x01, rightNode.getSharedPath());
-                visiting.push(new IterationElement(rightNodeKey, rightNode));
-            }
-            Trie leftNode = node.retrieveNode((byte) 0x00);
-            if (leftNode != null) {
-                TrieKeySlice leftNodeKey = nodeKey.rebuildSharedPath((byte) 0x00, leftNode.getSharedPath());
-                visiting.push(new IterationElement(leftNodeKey, leftNode));
+
+            int nodeKeyLength = nodeKey.length();
+            // If we're stoping at accounts, do not add children
+            if ((!stopAtAccountDepth) || (nodeKeyLength < (1 + TrieKeyMapper.SECURE_KEY_SIZE + RskAddress.LENGTH_IN_BYTES) * Byte.SIZE))
+            {
+                // need to visit the left subtree first, then the right since a stack is a LIFO, push the right subtree first,
+                // then the left
+                Trie rightNode = node.retrieveNode((byte) 0x01);
+                if (rightNode != null) {
+                    TrieKeySlice rightNodeKey = nodeKey.rebuildSharedPath((byte) 0x01, rightNode.getSharedPath());
+                    visiting.push(new IterationElement(rightNodeKey, rightNode));
+                }
+                Trie leftNode = node.retrieveNode((byte) 0x00);
+                if (leftNode != null) {
+                    TrieKeySlice leftNodeKey = nodeKey.rebuildSharedPath((byte) 0x00, leftNode.getSharedPath());
+                    visiting.push(new IterationElement(leftNodeKey, leftNode));
+                }
             }
             // may not have pushed anything.  If so, we are at the end
             return visitingElement;

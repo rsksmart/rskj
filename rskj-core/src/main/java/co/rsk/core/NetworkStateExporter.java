@@ -57,6 +57,10 @@ public class NetworkStateExporter {
     }
 
     public boolean exportStatus(String outputFile) {
+        return exportStatus(outputFile, "",true,true);
+    }
+
+    public boolean exportStatus(String outputFile,String accountKey, boolean exportStorageKeys,boolean exportCode) {
         RepositorySnapshot frozenRepository = repositoryLocator.snapshotAt(blockchain.getBestBlock().getHeader());
 
         File dumpFile = new File(outputFile);
@@ -64,45 +68,75 @@ public class NetworkStateExporter {
         try(FileWriter fw = new FileWriter(dumpFile.getAbsoluteFile()); BufferedWriter bw = new BufferedWriter(fw)) {
             JsonNodeFactory jsonFactory = new JsonNodeFactory(false);
             ObjectNode mainNode = jsonFactory.objectNode();
-            for (RskAddress addr : frozenRepository.getAccountsKeys()) {
-                if(!addr.equals(RskAddress.nullAddress())) {
-                    mainNode.set(addr.toString(), createAccountNode(mainNode, addr, frozenRepository));
+            if (accountKey.length()==0) {
+                for (RskAddress addr : frozenRepository.getAccountsKeys()) {
+                    if (!addr.equals(RskAddress.nullAddress())) {
+                        mainNode.set(addr.toString(), createAccountNode(mainNode, addr, frozenRepository, exportStorageKeys,exportCode));
+                    }
                 }
+            } else {
+                RskAddress addr = new RskAddress(accountKey);
+                if (!addr.equals(RskAddress.nullAddress())) {
+                    mainNode.set(addr.toString(), createAccountNode(mainNode, addr, frozenRepository, exportStorageKeys,exportCode));
+                }
+
             }
             ObjectMapper mapper = new ObjectMapper();
             ObjectWriter writer = mapper.writerWithDefaultPrettyPrinter();
             bw.write(writer.writeValueAsString(mainNode));
             return true;
-        } catch (IOException e) {
+        } catch (Exception e) {
             logger.error(e.getMessage(), e);
             panicProcessor.panic("dumpstate", e.getMessage());
             return false;
         }
     }
 
-    private ObjectNode createContractNode(ObjectNode accountNode, AccountInformationProvider accountInformation, RskAddress addr, Iterator<DataWord> contractKeys) {
+    private ObjectNode createContractNode(ObjectNode accountNode, AccountInformationProvider accountInformation, RskAddress addr, Iterator<DataWord> contractKeys,boolean exportCode) {
         ObjectNode contractNode = accountNode.objectNode();
-        contractNode.put("code", ByteUtil.toHexString(accountInformation.getCode(addr)));
-        ObjectNode dataNode = contractNode.objectNode();
-        while (contractKeys.hasNext()) {
-            DataWord key = contractKeys.next();
-            byte[] value = accountInformation.getStorageBytes(addr, key);
-            dataNode.put(ByteUtil.toHexString(key.getData()), ByteUtil.toHexString(value));
+        if (exportCode) {
+            byte[] code = accountInformation.getCode(addr);
+            String codeStr = "";
+            if (code == null) {
+                codeStr = "<empty>";
+            } else {
+                codeStr = ByteUtil.toHexString(code);
+            }
+            contractNode.put("code", codeStr);
         }
-        contractNode.set("data", dataNode);
+        contractNode.put("codeHash", accountInformation.getCodeHashStandard(addr).toHexString());
+
+        if (contractKeys!=null) {
+            ObjectNode dataNode = contractNode.objectNode();
+            while (contractKeys.hasNext()) {
+                DataWord key = contractKeys.next();
+                byte[] value = accountInformation.getStorageBytes(addr, key);
+                dataNode.put(ByteUtil.toHexString(key.getData()), ByteUtil.toHexString(value));
+            }
+            contractNode.set("data", dataNode);
+        }
         return contractNode;
     }
 
-    private ObjectNode createAccountNode(ObjectNode mainNode, RskAddress addr, AccountInformationProvider accountInformation) {
+    private ObjectNode createAccountNode(ObjectNode mainNode, RskAddress addr, AccountInformationProvider accountInformation,
+                                         boolean exportStorageKeys,
+                                         boolean exportCode) {
         ObjectNode accountNode = mainNode.objectNode();
         Coin balance = accountInformation.getBalance(addr);
         accountNode.put("balance", balance.asBigInteger().toString());
         BigInteger nonce = accountInformation.getNonce(addr);
         accountNode.put("nonce", nonce.toString());
-        Iterator<DataWord> contractKeys = accountInformation.getStorageKeys(addr);
-        if (contractKeys.hasNext() && !PrecompiledContracts.REMASC_ADDR.equals(addr)) {
-            accountNode.set("contract", createContractNode(accountNode, accountInformation, addr, contractKeys));
+
+        if (accountInformation.isContract(addr)) {
+            Iterator<DataWord> contractKeys = null;
+            if (exportStorageKeys) {
+                contractKeys = accountInformation.getStorageKeys(addr);
+            }
+            if (((contractKeys == null) || contractKeys.hasNext()) && !PrecompiledContracts.REMASC_ADDR.equals(addr)) {
+                accountNode.set("contract", createContractNode(accountNode, accountInformation, addr, contractKeys,exportCode));
+            }
         }
+
         return accountNode;
     }
 }

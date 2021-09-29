@@ -112,7 +112,7 @@ public class Web3RskImplTest {
                 null,
                 null,
                 null);
-        web3.ext_dumpState();
+        web3.ext_dumpState("",true,true);
     }
 
     @Test
