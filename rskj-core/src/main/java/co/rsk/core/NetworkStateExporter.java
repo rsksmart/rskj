@@ -36,7 +36,6 @@ import org.slf4j.LoggerFactory;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
-import java.io.IOException;
 import java.math.BigInteger;
 import java.util.Iterator;
 
@@ -60,6 +59,14 @@ public class NetworkStateExporter {
         return exportStatus(outputFile, "",true,true);
     }
 
+    public void exportAllAccounts(ObjectNode mainNode,RepositorySnapshot frozenRepository,boolean exportStorageKeys,boolean exportCode) {
+        for (RskAddress addr : frozenRepository.getAccountsKeys()) {
+            if (!addr.equals(RskAddress.nullAddress())) {
+                mainNode.set(addr.toString(), createAccountNode(mainNode, addr, frozenRepository, exportStorageKeys,exportCode));
+            }
+        }
+    }
+
     public boolean exportStatus(String outputFile,String accountKey, boolean exportStorageKeys,boolean exportCode) {
         RepositorySnapshot frozenRepository = repositoryLocator.snapshotAt(blockchain.getBestBlock().getHeader());
 
@@ -69,11 +76,7 @@ public class NetworkStateExporter {
             JsonNodeFactory jsonFactory = new JsonNodeFactory(false);
             ObjectNode mainNode = jsonFactory.objectNode();
             if (accountKey.length()==0) {
-                for (RskAddress addr : frozenRepository.getAccountsKeys()) {
-                    if (!addr.equals(RskAddress.nullAddress())) {
-                        mainNode.set(addr.toString(), createAccountNode(mainNode, addr, frozenRepository, exportStorageKeys,exportCode));
-                    }
-                }
+                exportAllAccounts(mainNode,frozenRepository, exportStorageKeys,exportCode);
             } else {
                 RskAddress addr = new RskAddress(accountKey);
                 if (!addr.equals(RskAddress.nullAddress())) {

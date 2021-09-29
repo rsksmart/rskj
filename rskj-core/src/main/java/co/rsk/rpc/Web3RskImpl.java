@@ -110,12 +110,13 @@ public class Web3RskImpl extends Web3Impl {
                 bestBlcock.getHash(), bestBlcock.getNumber(),account);
         String name = "rskdump";
         if (account.length()!=0) {
-            if (!account.toUpperCase().matches("^[0-9A-F]+$"))
+            if (!account.toUpperCase().matches("^[0-9A-F]+$")) {
                 return;
+            }
             name = name +"-"+account;
         }
-        String filename = System.getProperty("user.dir") + "/" + name+".json";
-        logger.info("Dumping in file: "+filename);
+        String filename = System.getProperty("user.dir") +  File.separatorChar + name+".json";
+        logger.info("Dumping in file: {} ",filename);
         networkStateExporter.exportStatus(filename,account,exportStorageKeys,exportCode);
         logger.info("Dump finished");
     }
