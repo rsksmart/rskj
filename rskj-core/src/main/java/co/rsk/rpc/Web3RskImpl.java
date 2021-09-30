@@ -118,8 +118,9 @@ public class Web3RskImpl extends Web3Impl {
 
                 // Now make sure we don't enable path-traversal vulnerabilities in case
                 // the address format is ever changed.
-                if (account.indexOf(File.separatorChar)>=0)
+                if (account.indexOf(File.separatorChar)>=0) {
                     return;
+                }
             } catch (DecoderException e) {
                 return;
             }
