@@ -61,9 +61,13 @@ public class NetworkStateExporter {
 
     public void exportAllAccounts(ObjectNode mainNode,RepositorySnapshot frozenRepository,boolean exportStorageKeys,boolean exportCode) {
         for (RskAddress addr : frozenRepository.getAccountsKeys()) {
-            if (!addr.equals(RskAddress.nullAddress())) {
-                mainNode.set(addr.toString(), createAccountNode(mainNode, addr, frozenRepository, exportStorageKeys,exportCode));
-            }
+            exportAccount(addr, mainNode, frozenRepository, exportStorageKeys, exportCode);
+        }
+    }
+
+    public void exportAccount(RskAddress addr ,ObjectNode mainNode,RepositorySnapshot frozenRepository,boolean exportStorageKeys,boolean exportCode) {
+        if (!addr.equals(RskAddress.nullAddress())) {
+            mainNode.set(addr.toString(), createAccountNode(mainNode, addr, frozenRepository, exportStorageKeys, exportCode));
         }
     }
 
@@ -79,10 +83,7 @@ public class NetworkStateExporter {
                 exportAllAccounts(mainNode,frozenRepository, exportStorageKeys,exportCode);
             } else {
                 RskAddress addr = new RskAddress(accountKey);
-                if (!addr.equals(RskAddress.nullAddress())) {
-                    mainNode.set(addr.toString(), createAccountNode(mainNode, addr, frozenRepository, exportStorageKeys,exportCode));
-                }
-
+                exportAccount(addr,mainNode,frozenRepository, exportStorageKeys,exportCode);
             }
             ObjectMapper mapper = new ObjectMapper();
             ObjectWriter writer = mapper.writerWithDefaultPrettyPrinter();

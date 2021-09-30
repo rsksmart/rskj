@@ -1045,6 +1045,14 @@ public class Trie {
         return new PreOrderIterator(this,false);
     }
 
+     /**
+     * Returns a Pre-order iterator
+     *
+     * @param stopAtAccountDepth     if true, only nodes up to the account level will ve traversed
+     *                               excluding contract storage and contract code nodes.
+     *
+     * @return iterator
+     */
     public Iterator<IterationElement> getPreOrderIterator(boolean stopAtAccountDepth) {
         return new PreOrderIterator(this,stopAtAccountDepth);
     }
