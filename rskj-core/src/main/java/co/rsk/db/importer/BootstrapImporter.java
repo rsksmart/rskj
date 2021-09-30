@@ -128,7 +128,7 @@ public class BootstrapImporter {
         RLPList rlpList = RLP.decodeList(data);
         int size = rlpList.size();
 
-        LinkedList<RLPElement> result = new LinkedList<>();
+        Queue<RLPElement> result = new LinkedList<>();
         for (int i = 0; i < size; i++) {
             result.add(rlpList.get(i));
         }
