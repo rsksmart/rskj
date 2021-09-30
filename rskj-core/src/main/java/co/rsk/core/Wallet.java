@@ -193,6 +193,12 @@ public class Wallet {
         return account.getAddress();
     }
 
+    public void close() {
+        synchronized (accessLock) {
+            keyDS.close();
+        }
+    }
+
     private void saveAccount(Account account) {
         synchronized (accessLock) {
             accounts.put(account.getAddress(), account.getEcKey().getPrivKeyBytes());

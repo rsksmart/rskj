@@ -139,6 +139,7 @@ public class FullNodeRunner implements NodeRunner {
     @Override
     public synchronized void stop() {
         if (state != State.Running) {
+            logger.warn("The node is not running. Ignoring");
             return;
         }
 

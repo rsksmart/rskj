@@ -127,6 +127,7 @@ import org.mapdb.DBMaker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
 import java.io.*;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
@@ -1108,6 +1109,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
     @Override
     public synchronized void close() {
         if (closed) {
+            logger.warn("The context has already been closed. Ignoring");
             return;
         }
 
@@ -1123,6 +1125,12 @@ public class RskContext implements NodeContext, NodeBootstrapper {
             logger.trace("closing blockStore.");
             blockStore.close();
             logger.trace("blockStore closed.");
+        }
+
+        if (stateRootsStore != null) {
+            logger.trace("closing stateRootsStore.");
+            stateRootsStore.close();
+            logger.trace("stateRootsStore closed.");
         }
 
         if (trieStore != null) {
@@ -1141,6 +1149,12 @@ public class RskContext implements NodeContext, NodeBootstrapper {
             logger.trace("closing blocksBloomStore.");
             blocksBloomStore.close();
             logger.trace("blocksBloomStore closed.");
+        }
+
+        if (wallet != null) {
+            logger.trace("closing wallet.");
+            wallet.close();
+            logger.trace("wallet closed.");
         }
     }
 
@@ -1327,6 +1341,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         return new CompositeEthereumListener();
     }
 
+    @Nullable
     protected synchronized Wallet buildWallet() {
         checkIfNotClosed();
 

@@ -19,10 +19,7 @@
 package co.rsk;
 
 import co.rsk.blockchain.utils.BlockGenerator;
-import co.rsk.config.BridgeConstants;
-import co.rsk.config.GarbageCollectorConfig;
-import co.rsk.config.NodeCliFlags;
-import co.rsk.config.RskSystemProperties;
+import co.rsk.config.*;
 import co.rsk.net.AsyncNodeBlockProcessor;
 import co.rsk.net.NodeBlockProcessor;
 import co.rsk.trie.MultiTrieStore;
@@ -45,14 +42,16 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.IntStream;
 
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.*;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.*;
 
 public class RskContextTest {
 
@@ -61,27 +60,20 @@ public class RskContextTest {
 
     private File databaseDir;
     private RskSystemProperties testProperties;
+    private InternalService internalService;
     private RskContext rskContext;
 
     @Before
     public void setUp() throws IOException {
         databaseDir = this.temporaryFolder.newFolder("database");
 
-        testProperties = mock(RskSystemProperties.class);
+        testProperties = spy(new TestSystemProperties());
         doReturn(0).when(testProperties).getStatesCacheSize();
         doReturn(databaseDir.getAbsolutePath()).when(testProperties).databaseDir();
 
-        rskContext = new RskContext(new String[0]) {
-            @Override
-            public RskSystemProperties getRskSystemProperties() {
-                return testProperties;
-            }
+        internalService = mock(InternalService.class);
 
-            @Override
-            public Genesis getGenesis() {
-                return new BlockGenerator().getGenesisBlock();
-            }
-        };
+        rskContext = makeRskContext();
     }
 
     @Test
@@ -129,11 +121,13 @@ public class RskContextTest {
 
     @Test
     public void shouldBuildMultiTrieStoreMigratingSingleTrieStore() throws IOException {
+        rskContext.close();
+
         long numberOfEpochs = 3;
         Path testDatabasesDirectory = databaseDir.toPath();
         doReturn(new GarbageCollectorConfig(true, 1000, (int) numberOfEpochs)).when(testProperties).garbageCollectorConfig();
 
-        Files.createDirectory(testDatabasesDirectory.resolve("unitrie"));
+        rskContext = makeRskContext();
 
         TrieStore trieStore = rskContext.getTrieStore();
         assertThat(trieStore, is(instanceOf(MultiTrieStore.class)));
@@ -145,12 +139,15 @@ public class RskContextTest {
     public void shouldBuildMultiTrieStoreFromExistingDirectories() throws IOException {
         int numberOfEpochs = 3;
         Path testDatabasesDirectory = databaseDir.toPath();
+        doReturn(false).when(testProperties).databaseReset();
         doReturn(new GarbageCollectorConfig(true, 1000, numberOfEpochs)).when(testProperties).garbageCollectorConfig();
 
         int initialEpoch = 3;
         for (int i = initialEpoch; i < initialEpoch + numberOfEpochs; i++) {
             Files.createDirectory(testDatabasesDirectory.resolve(String.format("unitrie_%d", i)));
         }
+        rskContext.close();
+        rskContext = makeRskContext();
 
         TrieStore trieStore = rskContext.getTrieStore();
         assertThat(trieStore, is(instanceOf(MultiTrieStore.class)));
@@ -213,7 +210,17 @@ public class RskContextTest {
     }
 
     @Test
-    public void closedContextShouldThrowErrorWhenBeingUsed() throws InvocationTargetException, IllegalAccessException {
+    public void closeShouldStopInternalService() throws Exception {
+        assertFalse(rskContext.isClosed());
+
+        rskContext.getNodeRunner().run();
+        rskContext.close();
+        assertTrue(rskContext.isClosed());
+        verify(internalService, times(1)).stop();
+    }
+
+    @Test
+    public void closedContextShouldThrowErrorWhenBeingUsed() throws IllegalAccessException {
         RskContext rskContext = new RskContext(new String[0]);
 
         rskContext.close();
@@ -229,11 +236,56 @@ public class RskContextTest {
             if ((Modifier.isPublic(modifiers) || Modifier.isProtected(modifiers)) && !methodsToSkip.contains(method.getName())) {
                 try {
                     method.invoke(rskContext, new Object[method.getParameterCount()]);
-                    fail("runNode should throw an exception");
+                    fail(method.getName() + " should throw an exception when called on closed context");
                 } catch (InvocationTargetException e) {
                     assertEquals("RSK Context is closed and cannot be in use anymore", e.getTargetException().getMessage());
                 }
             }
         }
+    }
+
+    @Test
+    public void shouldMakeNewContext() throws Exception {
+        assertFalse(rskContext.isClosed());
+
+        rskContext.getNodeRunner().run();
+
+        rskContext.close();
+        assertTrue(rskContext.isClosed());
+
+        rskContext = makeRskContext(); // make a brand new context
+        assertFalse(rskContext.isClosed());
+
+        rskContext.getNodeRunner().run();
+
+        rskContext.close();
+        assertTrue(rskContext.isClosed());
+    }
+
+    private RskContext makeRskContext() {
+        return new RskContext(new String[0]) {
+            @Override
+            public RskSystemProperties getRskSystemProperties() {
+                return testProperties;
+            }
+
+            @Override
+            public Genesis getGenesis() {
+                return new BlockGenerator().getGenesisBlock();
+            }
+
+            @Override
+            public synchronized List<InternalService> buildInternalServices() {
+                // instantiate LevelDB instances which should be closed when the context is being closed
+                assertNotNull(getBlockStore());
+                assertNotNull(getTrieStore());
+                assertNotNull(getReceiptStore());
+                assertNotNull(getStateRootsStore());
+                assertNotNull(getBlockStore());
+                assertNotNull(getWallet());
+
+                return Collections.singletonList(internalService);
+            }
+        };
     }
 }
