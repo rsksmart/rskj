@@ -1115,12 +1115,19 @@ public class RskContext implements NodeContext, NodeBootstrapper {
 
         closed = true;
 
+        // as RskContext creates PeerExplorer and manages its lifecycle, dispose it here
+        if (peerExplorer != null) {
+            peerExplorer.dispose();
+        }
+
+        // stop node runner
         if (nodeRunner != null) {
             logger.trace("stopping nodeRunner.");
             nodeRunner.stop();
             logger.trace("nodeRunner stopped.");
         }
 
+        // then close data stores
         if (blockStore != null) {
             logger.trace("closing blockStore.");
             blockStore.close();

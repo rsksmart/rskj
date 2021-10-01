@@ -99,7 +99,6 @@ public class PeerExplorerTest {
         Assert.assertTrue(nodesWithMessage.isEmpty());
     }
 
-
     @Test
     public void sendInitialMessageToNodes() {
         List<String> nodes = new ArrayList<>();
@@ -169,6 +168,8 @@ public class PeerExplorerTest {
         ChannelHandlerContext ctx = Mockito.mock(ChannelHandlerContext.class);
         peerExplorer.setUDPChannel(channel);
 
+        peerExplorer.start(false);
+
         Assert.assertTrue(peerExplorer.getNodes().isEmpty());
 
         ECKey key1 = ECKey.fromPrivate(Hex.decode(KEY_1)).decompress();
@@ -205,6 +206,8 @@ public class PeerExplorerTest {
         Assert.assertEquals(DiscoveryMessageType.PONG, toSenderPong.getMessageType());
         Assert.assertEquals(new InetSocketAddress(HOST_2, PORT_3), pongEvent.getAddress());
         Assert.assertEquals(NODE_ID_2, ByteUtil.toHexString(toSenderPong.getKey().getNodeId()));
+
+        peerExplorer.dispose();
     }
 
     @Test
@@ -226,6 +229,8 @@ public class PeerExplorerTest {
         ChannelHandlerContext ctx = Mockito.mock(ChannelHandlerContext.class);
         peerExplorer.setUDPChannel(channel);
         Assert.assertTrue(peerExplorer.getNodes().isEmpty());
+
+        peerExplorer.start(false);
 
         //A incoming pong for a Ping we did not sent.
         String check = UUID.randomUUID().toString();
@@ -256,6 +261,8 @@ public class PeerExplorerTest {
         channel.clearEvents();
         channel.channelRead0(ctx, incomingPongEvent);
         Assert.assertEquals(1, peerExplorer.getNodes().size());
+
+        peerExplorer.dispose();
     }
 
     @Test
@@ -276,6 +283,8 @@ public class PeerExplorerTest {
         UDPTestChannel channel = new UDPTestChannel(internalChannel, peerExplorer);
         ChannelHandlerContext ctx = Mockito.mock(ChannelHandlerContext.class);
         peerExplorer.setUDPChannel(channel);
+
+        peerExplorer.start(false);
 
         //We try to handle a findNode message from an unkown sender, no message should be send as a response
         String check = UUID.randomUUID().toString();
@@ -303,6 +312,8 @@ public class PeerExplorerTest {
         Assert.assertEquals(1, sentEvents.size());
         NeighborsPeerMessage neighborsPeerMessage = (NeighborsPeerMessage) sentEvents.get(0).getMessage();
         Assert.assertEquals(1, neighborsPeerMessage.getNodes().size());
+
+        peerExplorer.dispose();
     }
 
     @Test
@@ -324,6 +335,8 @@ public class PeerExplorerTest {
         ChannelHandlerContext ctx = Mockito.mock(ChannelHandlerContext.class);
         peerExplorer.setUDPChannel(channel);
         Assert.assertTrue(peerExplorer.getNodes().isEmpty());
+
+        peerExplorer.start(false);
 
         //we send the ping first
         peerExplorer.startConversationWithNewNodes();
@@ -351,16 +364,10 @@ public class PeerExplorerTest {
         Assert.assertEquals(1, sentEvents.size());
         NeighborsPeerMessage neighborsPeerMessage = (NeighborsPeerMessage) sentEvents.get(0).getMessage();
         Assert.assertEquals(2, neighborsPeerMessage.getNodes().size());
-        Assert.assertTrue(cotainsNode(NODE_ID_1, neighborsPeerMessage.getNodes()));
-        Assert.assertTrue(cotainsNode(NODE_ID_3, neighborsPeerMessage.getNodes()));
-    }
+        Assert.assertTrue(containsNodeId(NODE_ID_1, neighborsPeerMessage.getNodes()));
+        Assert.assertTrue(containsNodeId(NODE_ID_3, neighborsPeerMessage.getNodes()));
 
-    private boolean cotainsNode(String nodeId, List<Node> nodes) {
-        for(Node n : nodes) {
-            if(StringUtils.equals(n.getHexId(), nodeId))
-                return true;
-        }
-        return false;
+        peerExplorer.dispose();
     }
 
     @Test
@@ -383,6 +390,8 @@ public class PeerExplorerTest {
         ChannelHandlerContext ctx = Mockito.mock(ChannelHandlerContext.class);
         peerExplorer.setUDPChannel(channel);
         Assert.assertTrue(peerExplorer.getNodes().isEmpty());
+
+        peerExplorer.start(false);
 
         // We try to process a Message without previous connection
         List<Node> newNodes = new ArrayList<>();
@@ -453,10 +462,12 @@ public class PeerExplorerTest {
                 1, channel.getEventsWritten().size());
         Assert.assertEquals("There should be one message in written events from non-banned address",
                 parseAddress(HOST_1), channel.getEventsWritten().get(0).getAddress().getAddress());
+
+        peerExplorer.dispose();
     }
 
     @Test
-    public void testCleanPeriod() throws InterruptedException, Exception{
+    public void testCleanPeriod() throws Exception{
         List<String> nodes = new ArrayList<>();
         nodes.add(HOST_1 + ":" + PORT_1);
         nodes.add(HOST_3 + ":" + PORT_3);
@@ -474,6 +485,8 @@ public class PeerExplorerTest {
         ChannelHandlerContext ctx = Mockito.mock(ChannelHandlerContext.class);
         peerExplorer.setUDPChannel(channel);
         Assert.assertTrue(peerExplorer.getNodes().isEmpty());
+
+        peerExplorer.start(false);
 
         //A incoming pong for a Ping we did not sent.
         String check = UUID.randomUUID().toString();
@@ -512,6 +525,12 @@ public class PeerExplorerTest {
         peerExplorer.clean();
         peerExplorer.clean();
         Assert.assertEquals(0, peerExplorer.getChallengeManager().activeChallengesCount());
+
+        peerExplorer.dispose();
+    }
+
+    private boolean containsNodeId(String nodeId, List<Node> nodes) {
+        return nodes.stream().map(Node::getHexId).anyMatch(h -> StringUtils.equals(h, nodeId));
     }
 
     private static InetAddress parseAddress(String host) {
@@ -521,5 +540,4 @@ public class PeerExplorerTest {
             throw new IllegalArgumentException(e);
         }
     }
-
 }

@@ -20,6 +20,7 @@ package co.rsk;
 
 import co.rsk.config.InternalService;
 import co.rsk.config.RskSystemProperties;
+import co.rsk.util.ExecState;
 import org.ethereum.util.BuildInfo;
 import org.junit.Before;
 import org.junit.Test;
@@ -59,11 +60,11 @@ public class FullNodeRunnerTest {
     @Test
     public void nodeIsNotRunning_WhenRunNode_IsRunningShouldReturnTrue() throws Exception {
         doReturn(false).when(nodeContext).isClosed();
-        assertEquals(FullNodeRunner.State.Created, runner.getState());
+        assertEquals(ExecState.CREATED, runner.getState());
 
         runner.run();
 
-        assertEquals(FullNodeRunner.State.Running, runner.getState());
+        assertEquals(ExecState.RUNNING, runner.getState());
     }
 
     @Test
@@ -73,7 +74,7 @@ public class FullNodeRunnerTest {
         runner.run();
         runner.stop();
 
-        assertEquals(FullNodeRunner.State.Stopped, runner.getState());
+        assertEquals(ExecState.FINISHED, runner.getState());
     }
 
     @Test

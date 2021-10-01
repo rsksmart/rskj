@@ -19,6 +19,7 @@ package co.rsk;
 
 import co.rsk.config.InternalService;
 import co.rsk.config.RskSystemProperties;
+import co.rsk.util.ExecState;
 import co.rsk.util.SystemUtils;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.net.eth.EthVersion;
@@ -34,10 +35,6 @@ import java.util.stream.Collectors;
 
 public class FullNodeRunner implements NodeRunner {
 
-    enum State {
-        Created, Running, Stopped
-    }
-
     private static final Logger logger = LoggerFactory.getLogger("fullnoderunner");
 
     private final NodeContext nodeContext;
@@ -45,7 +42,7 @@ public class FullNodeRunner implements NodeRunner {
     private final RskSystemProperties rskSystemProperties;
     private final BuildInfo buildInfo;
 
-    private volatile State state = State.Created;
+    private volatile ExecState state = ExecState.CREATED;
 
     public FullNodeRunner(
             NodeContext nodeContext,
@@ -59,7 +56,7 @@ public class FullNodeRunner implements NodeRunner {
     }
 
     @VisibleForTesting
-    State getState() {
+    ExecState getState() {
         return state;
     }
 
@@ -76,7 +73,7 @@ public class FullNodeRunner implements NodeRunner {
      */
     @Override
     public synchronized void run() throws Exception {
-        if (state == State.Running) {
+        if (state == ExecState.RUNNING) {
             throw new IllegalStateException("The node is already running");
         }
 
@@ -84,7 +81,7 @@ public class FullNodeRunner implements NodeRunner {
             throw new IllegalStateException("Node Context is closed. Consider creating a brand new RskContext");
         }
 
-        if (state == State.Stopped) {
+        if (state == ExecState.FINISHED) {
             throw new IllegalStateException("The node is stopped and cannot run again. Consider creating a brand new RskContext");
         }
 
@@ -125,7 +122,7 @@ public class FullNodeRunner implements NodeRunner {
 
         logger.info("done");
 
-        state = State.Running;
+        state = ExecState.RUNNING;
     }
 
     /**
@@ -138,12 +135,12 @@ public class FullNodeRunner implements NodeRunner {
      */
     @Override
     public synchronized void stop() {
-        if (state != State.Running) {
+        if (state != ExecState.RUNNING) {
             logger.warn("The node is not running. Ignoring");
             return;
         }
 
-        state = State.Stopped;
+        state = ExecState.FINISHED;
 
         logger.info("Shutting down RSK node");
 
