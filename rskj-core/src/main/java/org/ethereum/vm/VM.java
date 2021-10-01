@@ -1485,11 +1485,8 @@ public class VM {
 
         PrecompiledContracts.PrecompiledContract precompiledContract = precompiledContracts.getContractForAddress(activations, codeAddress);
 
-        // For gas Exactimation, mark this program execution if it requires
-        // at least one call with value
-        // todo(fedejinich) remove this comment before merging it into master
-
         if (precompiledContract != null) {
+
             program.callToPrecompiledAddress(msg, precompiledContract);
         } else {
             program.callToAddress(msg);
