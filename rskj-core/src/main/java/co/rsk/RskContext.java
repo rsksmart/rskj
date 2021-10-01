@@ -1177,7 +1177,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
     protected synchronized NodeRunner buildNodeRunner() {
         checkIfNotClosed();
 
-        return new FullNodeRunner(
+        return new NodeRunnerImpl(
                 this,
                 buildInternalServices(),
                 getRskSystemProperties(),
@@ -1451,7 +1451,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         );
     }
 
-    private PeerExplorer getPeerExplorer() {
+    protected PeerExplorer getPeerExplorer() {
         if (peerExplorer == null) {
             RskSystemProperties rskSystemProperties = getRskSystemProperties();
             ECKey key = rskSystemProperties.getMyKey();

@@ -17,6 +17,8 @@
  */
 package co.rsk.cli.tools;
 
+import co.rsk.NodeRunner;
+import co.rsk.RskContext;
 import co.rsk.RskContext;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.config.TestSystemProperties;
@@ -28,6 +30,8 @@ import co.rsk.test.dsl.DslParser;
 import co.rsk.test.dsl.DslProcessorException;
 import co.rsk.test.dsl.WorldDslProcessor;
 import co.rsk.trie.Trie;
+import co.rsk.util.NodeStopper;
+import co.rsk.util.PreflightChecksUtils;
 import co.rsk.util.NodeStopper;
 import org.ethereum.TestUtils;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
@@ -46,6 +50,7 @@ import org.ethereum.util.ByteUtil;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
+import org.mockito.ArgumentCaptor;
 import org.junit.rules.TemporaryFolder;
 
 import java.io.*;
@@ -58,6 +63,7 @@ import java.util.Random;
 import static co.rsk.core.BlockDifficulty.ZERO;
 import static org.ethereum.TestUtils.randomHash;
 import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.*;
 
@@ -375,5 +381,42 @@ public class CliToolsTest {
         assertThat(bestBlock.getNumber(), is(blockToRewind));
 
         verify(stopper).stop(0);
+    }
+
+    @Test
+    public void startBootstrap() throws Exception {
+        // check thread setup
+        Thread thread = new Thread(() -> {});
+
+        StartBootstrap.setUpThread(thread);
+
+        assertEquals("main", thread.getName());
+
+        // check happy flow of bootstrap node start
+        ArgumentCaptor<Thread> threadCaptor = ArgumentCaptor.forClass(Thread.class);
+        NodeRunner runner = mock(NodeRunner.class);
+        RskContext ctx = mock(RskContext.class);
+        doReturn(runner).when(ctx).getNodeRunner();
+        PreflightChecksUtils preflightChecks = mock(PreflightChecksUtils.class);
+        Runtime runtime = mock(Runtime.class);
+        NodeStopper nodeStopper = mock(NodeStopper.class);
+
+        StartBootstrap.runBootstrapNode(ctx, preflightChecks, runtime, nodeStopper);
+
+        verify(preflightChecks, times(1)).runChecks();
+        verify(runner, times(1)).run();
+        verify(runtime, times(1)).addShutdownHook(threadCaptor.capture());
+        assertEquals("stopper", threadCaptor.getValue().getName());
+
+        // check unhappy flow of bootstrap node start
+        doThrow(new RuntimeException()).when(preflightChecks).runChecks();
+
+        StartBootstrap.runBootstrapNode(ctx, preflightChecks, runtime, nodeStopper);
+
+        verify(preflightChecks, times(2)).runChecks();
+        verify(runner, times(1)).run();
+        verify(runtime, times(1)).addShutdownHook(any());
+        verify(runner, times(1)).stop();
+        verify(nodeStopper, times(1)).stop(1);
     }
 }
