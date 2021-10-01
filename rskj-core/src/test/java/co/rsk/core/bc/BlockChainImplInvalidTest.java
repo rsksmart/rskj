@@ -31,6 +31,7 @@ import org.ethereum.core.genesis.GenesisLoader;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.BlockStore;
 import org.ethereum.util.RskTestContext;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -62,6 +63,11 @@ public class BlockChainImplInvalidTest {
             }
         };
         blockChain = objects.getBlockchain();
+    }
+
+    @After
+    public void tearDown() {
+        objects.close();
     }
 
     @Test

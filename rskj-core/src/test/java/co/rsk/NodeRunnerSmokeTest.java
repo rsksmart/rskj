@@ -23,23 +23,41 @@ import org.junit.Test;
 
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 public class NodeRunnerSmokeTest {
     @Test
     public void mainnetSmokeTest() {
         RskTestContext rskContext = new RskTestContext(new String[0]);
         assertThat(rskContext.getNodeRunner(), notNullValue());
+        rskContext.close();
     }
 
     @Test
     public void testnetSmokeTest() {
         RskTestContext rskContext = new RskTestContext(new String[] { "--testnet" });
         assertThat(rskContext.getNodeRunner(), notNullValue());
+        rskContext.close();
     }
 
     @Test
     public void regtestSmokeTest() {
         RskTestContext rskContext = new RskTestContext(new String[] { "--regtest" });
         assertThat(rskContext.getNodeRunner(), notNullValue());
+        rskContext.close();
+    }
+
+    @Test
+    public void contextRecreationSmokeTest() {
+        RskTestContext rskContext = new RskTestContext(new String[] { "--regtest" });
+        assertThat(rskContext.getNodeRunner(), notNullValue());
+        rskContext.close();
+        assertTrue(rskContext.isClosed());
+
+        // re-create context
+        rskContext = new RskTestContext(new String[] { "--regtest" });
+        assertThat(rskContext.getNodeRunner(), notNullValue());
+        rskContext.close();
+        assertTrue(rskContext.isClosed());
     }
 }

@@ -129,6 +129,11 @@ public class PeerExplorer {
     }
 
     @VisibleForTesting
+    ExecState getState() {
+        return state;
+    }
+
+    @VisibleForTesting
     Set<String> startConversationWithNewNodes() {
         Set<String> sentAddresses = new HashSet<>();
 

@@ -20,6 +20,7 @@ package co.rsk.net.discovery;
 
 import co.rsk.config.InternalService;
 import co.rsk.util.ExecState;
+import com.google.common.annotations.VisibleForTesting;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelInitializer;
@@ -31,7 +32,9 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 
 /**
  * Created by mario on 10/02/17.
@@ -44,15 +47,22 @@ public class UDPServer implements InternalService {
     private final String address;
 
     private final PeerExplorer peerExplorer;
+    private final Function<Runnable, Thread> threadFactory;
 
     private Channel channel;
 
     private volatile ExecState state = ExecState.CREATED;
 
-    public UDPServer(String address, int port, PeerExplorer peerExplorer) {
+    public UDPServer(String address, int port, @Nonnull PeerExplorer peerExplorer) {
+        this(address, port, peerExplorer, makeDefaultThreadFactory());
+    }
+
+    @VisibleForTesting
+    UDPServer(String address, int port, @Nonnull PeerExplorer peerExplorer, @Nonnull Function<Runnable, Thread> threadFactory) {
         this.address = address;
         this.port = port;
-        this.peerExplorer = peerExplorer;
+        this.peerExplorer = Objects.requireNonNull(peerExplorer);
+        this.threadFactory = Objects.requireNonNull(threadFactory);
     }
 
     @Override
@@ -67,18 +77,40 @@ public class UDPServer implements InternalService {
         } else {
             state = ExecState.RUNNING;
 
-            new Thread("UDPServer") {
-                @Override
-                public void run() {
-                    try {
-                        startUDPServer();
-                    } catch (Exception e) {
-                        logger.error("Discovery can't be started. ", e);
-                        throw new PeerDiscoveryException("Discovery can't be started. ", e);
-                    }
-                }
-            }.start();
+            startThread();
         }
+    }
+
+    @Override
+    public synchronized void stop()  {
+        if (state != ExecState.RUNNING) {
+            logger.warn("Cannot stop UDPServer as current state is {}", state);
+            return;
+        }
+
+        state = ExecState.FINISHED;
+
+        logger.info("Closing UDPListener...");
+
+        if (channel != null) {
+            try {
+                channel.close().await(10, TimeUnit.SECONDS);
+            } catch (InterruptedException e) {
+                logger.error("Couldn't stop the UDP Server", e);
+                Thread.currentThread().interrupt();
+            }
+        }
+    }
+
+    private void startThread() {
+        threadFactory.apply(() -> {
+            try {
+                startUDPServer();
+            } catch (Exception e) {
+                logger.error("Discovery can't be started. ", e);
+                throw new PeerDiscoveryException("Discovery can't be started. ", e);
+            }
+        }).start();
     }
 
     private void startUDPServer() throws InterruptedException {
@@ -105,6 +137,10 @@ public class UDPServer implements InternalService {
         group.shutdownGracefully().sync();
     }
 
+    private boolean isRunning() {
+        return state == ExecState.RUNNING;
+    }
+
     @Nullable
     private synchronized Channel createChannel(EventLoopGroup group) throws InterruptedException {
         if (state != ExecState.RUNNING) {
@@ -117,29 +153,9 @@ public class UDPServer implements InternalService {
         return channel;
     }
 
-    private boolean isRunning() {
-        return state == ExecState.RUNNING;
-    }
-
-    @Override
-    public synchronized void stop()  {
-        if (state != ExecState.RUNNING) {
-            logger.warn("Cannot stop UDPServer as current state is {}", state);
-            return;
-        }
-
-        state = ExecState.FINISHED;
-
-        logger.info("Closing UDPListener...");
-
-        if (channel != null) {
-            try {
-                channel.close().await(10, TimeUnit.SECONDS);
-            } catch (InterruptedException e) {
-                logger.error("Couldn't stop the UDP Server", e);
-                Thread.currentThread().interrupt();
-            }
-        }
+    @VisibleForTesting
+    ExecState getState() {
+        return state;
     }
 
     private Bootstrap createBootstrap(EventLoopGroup group) {
@@ -153,6 +169,10 @@ public class UDPServer implements InternalService {
                         ch.pipeline().addLast(udpChannel);
                     }
                 });
+    }
+
+    private static Function<Runnable, Thread> makeDefaultThreadFactory() {
+        return (Runnable r) -> new Thread(r, "UDPServer");
     }
 }
 

@@ -23,6 +23,7 @@ import co.rsk.net.discovery.message.*;
 import co.rsk.net.discovery.table.KademliaOptions;
 import co.rsk.net.discovery.table.NodeDistanceTable;
 import co.rsk.scoring.PeerScoringManager;
+import co.rsk.util.ExecState;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import org.apache.commons.lang3.StringUtils;
@@ -39,6 +40,7 @@ import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.*;
 
+import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 
@@ -118,7 +120,7 @@ public class PeerExplorerTest {
 
         Set<String> nodesWithMessage = peerExplorer.startConversationWithNewNodes();
 
-        Assert.assertEquals(2, nodesWithMessage.size());
+        assertEquals(2, nodesWithMessage.size());
         Assert.assertTrue(nodesWithMessage.contains("localhost/127.0.0.1:3307"));
         Assert.assertTrue(nodesWithMessage.contains("localhost/127.0.0.1:3306"));
     }
@@ -149,7 +151,7 @@ public class PeerExplorerTest {
         channel.channelRead0(ctx, incomingPingEvent);
         //There should be no response, since they are from different networks.
         List<DiscoveryEvent> sentEvents = channel.getEventsWritten();
-        Assert.assertEquals(0, sentEvents.size());
+        assertEquals(0, sentEvents.size());
     }
 
     @Test
@@ -182,16 +184,16 @@ public class PeerExplorerTest {
         //As part of the ping response, a Ping and a Pong are sent to the sender.
         //NOTE: The ip/port of the DiscoveryEvent is the one to be used and not the one inside the message itself
         List<DiscoveryEvent> sentEvents = channel.getEventsWritten();
-        Assert.assertEquals(2, sentEvents.size());
+        assertEquals(2, sentEvents.size());
         DiscoveryEvent pongEvent = sentEvents.get(0);
         PongPeerMessage toSenderPong = (PongPeerMessage) pongEvent.getMessage();
-        Assert.assertEquals(DiscoveryMessageType.PONG, toSenderPong.getMessageType());
-        Assert.assertEquals(new InetSocketAddress(HOST_2, PORT_3), pongEvent.getAddress());
+        assertEquals(DiscoveryMessageType.PONG, toSenderPong.getMessageType());
+        assertEquals(new InetSocketAddress(HOST_2, PORT_3), pongEvent.getAddress());
 
         DiscoveryEvent pingEvent = sentEvents.get(1);
         PingPeerMessage toSenderPing = (PingPeerMessage) pingEvent.getMessage();
-        Assert.assertEquals(DiscoveryMessageType.PING, toSenderPing.getMessageType());
-        Assert.assertEquals(new InetSocketAddress(HOST_2, PORT_3), pingEvent.getAddress());
+        assertEquals(DiscoveryMessageType.PING, toSenderPing.getMessageType());
+        assertEquals(new InetSocketAddress(HOST_2, PORT_3), pingEvent.getAddress());
 
         //After a pong returns from a node, when we receive a ping from that node, we only answer with a pong (no additional ping)
         PongPeerMessage pongResponseFromSender = PongPeerMessage.create(HOST_1, PORT_1, toSenderPing.getMessageId(), key1, NETWORK_ID1);
@@ -200,12 +202,12 @@ public class PeerExplorerTest {
         channel.clearEvents();
         channel.channelRead0(ctx, incomingPingEvent);
         sentEvents = channel.getEventsWritten();
-        Assert.assertEquals(1, sentEvents.size());
+        assertEquals(1, sentEvents.size());
         pongEvent = sentEvents.get(0);
         toSenderPong = (PongPeerMessage) pongEvent.getMessage();
-        Assert.assertEquals(DiscoveryMessageType.PONG, toSenderPong.getMessageType());
-        Assert.assertEquals(new InetSocketAddress(HOST_2, PORT_3), pongEvent.getAddress());
-        Assert.assertEquals(NODE_ID_2, ByteUtil.toHexString(toSenderPong.getKey().getNodeId()));
+        assertEquals(DiscoveryMessageType.PONG, toSenderPong.getMessageType());
+        assertEquals(new InetSocketAddress(HOST_2, PORT_3), pongEvent.getAddress());
+        assertEquals(NODE_ID_2, ByteUtil.toHexString(toSenderPong.getKey().getNodeId()));
 
         peerExplorer.dispose();
     }
@@ -238,29 +240,29 @@ public class PeerExplorerTest {
         DiscoveryEvent incomingPongEvent = new DiscoveryEvent(incomingPongMessage, new InetSocketAddress(HOST_1, PORT_1));
         channel.clearEvents();
         channel.channelRead0(ctx, incomingPongEvent);
-        Assert.assertEquals(0, channel.getEventsWritten().size());
-        Assert.assertEquals(0, peerExplorer.getNodes().size());
+        assertEquals(0, channel.getEventsWritten().size());
+        assertEquals(0, peerExplorer.getNodes().size());
 
         //Now we send the ping first
         peerExplorer.startConversationWithNewNodes();
         List<DiscoveryEvent> initialPingMessages = new ArrayList<>(channel.getEventsWritten());
-        Assert.assertEquals(2, initialPingMessages.size());
+        assertEquals(2, initialPingMessages.size());
         incomingPongMessage = PongPeerMessage.create(HOST_1, PORT_1, ((PingPeerMessage) initialPingMessages.get(0).getMessage()).getMessageId(), key1, NETWORK_ID1);
         incomingPongEvent = new DiscoveryEvent(incomingPongMessage, new InetSocketAddress(HOST_1, PORT_1));
         channel.clearEvents();
         List<Node> addedNodes = peerExplorer.getNodes();
-        Assert.assertEquals(0, addedNodes.size());
+        assertEquals(0, addedNodes.size());
         channel.channelRead0(ctx, incomingPongEvent);
-        Assert.assertEquals(1, peerExplorer.getNodes().size());
+        assertEquals(1, peerExplorer.getNodes().size());
         addedNodes = peerExplorer.getNodes();
-        Assert.assertEquals(1, addedNodes.size());
+        assertEquals(1, addedNodes.size());
 
         //A incoming pong for a ping we sent but from a different address
         incomingPongMessage = PongPeerMessage.create(HOST_4, PORT_4, ((PingPeerMessage) initialPingMessages.get(1).getMessage()).getMessageId(), key4, NETWORK_ID1);
         incomingPongEvent = new DiscoveryEvent(incomingPongMessage, new InetSocketAddress(HOST_1, PORT_1));
         channel.clearEvents();
         channel.channelRead0(ctx, incomingPongEvent);
-        Assert.assertEquals(1, peerExplorer.getNodes().size());
+        assertEquals(1, peerExplorer.getNodes().size());
 
         peerExplorer.dispose();
     }
@@ -292,7 +294,7 @@ public class PeerExplorerTest {
         channel.clearEvents();
         channel.channelRead0(ctx, new DiscoveryEvent(findNodePeerMessage, new InetSocketAddress(HOST_1, PORT_1)));
         List<DiscoveryEvent> sentEvents = channel.getEventsWritten();
-        Assert.assertEquals(0, sentEvents.size());
+        assertEquals(0, sentEvents.size());
 
         //Now we send the ping first
         peerExplorer.startConversationWithNewNodes();
@@ -309,9 +311,9 @@ public class PeerExplorerTest {
         channel.clearEvents();
         channel.channelRead0(ctx, new DiscoveryEvent(findNodePeerMessage, new InetSocketAddress(HOST_1, PORT_1)));
         sentEvents = channel.getEventsWritten();
-        Assert.assertEquals(1, sentEvents.size());
+        assertEquals(1, sentEvents.size());
         NeighborsPeerMessage neighborsPeerMessage = (NeighborsPeerMessage) sentEvents.get(0).getMessage();
-        Assert.assertEquals(1, neighborsPeerMessage.getNodes().size());
+        assertEquals(1, neighborsPeerMessage.getNodes().size());
 
         peerExplorer.dispose();
     }
@@ -341,7 +343,7 @@ public class PeerExplorerTest {
         //we send the ping first
         peerExplorer.startConversationWithNewNodes();
         List<DiscoveryEvent> sentEvents = channel.getEventsWritten();
-        Assert.assertEquals(2, sentEvents.size());
+        assertEquals(2, sentEvents.size());
         PongPeerMessage incomingPongMessage1 = PongPeerMessage.create(HOST_1, PORT_1, ((PingPeerMessage) sentEvents.get(0).getMessage()).getMessageId(), key1, NETWORK_ID1);
         DiscoveryEvent incomingPongEvent1 = new DiscoveryEvent(incomingPongMessage1, new InetSocketAddress(HOST_1, PORT_1));
         PongPeerMessage incomingPongMessage2 = PongPeerMessage.create(HOST_3, PORT_3, ((PingPeerMessage) sentEvents.get(1).getMessage()).getMessageId(), key3, NETWORK_ID1);
@@ -352,18 +354,18 @@ public class PeerExplorerTest {
         channel.channelRead0(ctx, incomingPongEvent2);
 
         List<Node> foundNodes = peerExplorer.getNodes();
-        Assert.assertEquals(2, foundNodes.size());
-        Assert.assertEquals(NODE_ID_3, ByteUtil.toHexString(foundNodes.get(0).getId().getID()));
-        Assert.assertEquals(NODE_ID_1, ByteUtil.toHexString(foundNodes.get(1).getId().getID()));
+        assertEquals(2, foundNodes.size());
+        assertEquals(NODE_ID_3, ByteUtil.toHexString(foundNodes.get(0).getId().getID()));
+        assertEquals(NODE_ID_1, ByteUtil.toHexString(foundNodes.get(1).getId().getID()));
 
         String check = UUID.randomUUID().toString();
         FindNodePeerMessage findNodePeerMessage = FindNodePeerMessage.create(key1.getNodeId(), check, key1, NETWORK_ID1);
         channel.clearEvents();
         channel.channelRead0(ctx, new DiscoveryEvent(findNodePeerMessage, new InetSocketAddress(HOST_1, PORT_1)));
         sentEvents = channel.getEventsWritten();
-        Assert.assertEquals(1, sentEvents.size());
+        assertEquals(1, sentEvents.size());
         NeighborsPeerMessage neighborsPeerMessage = (NeighborsPeerMessage) sentEvents.get(0).getMessage();
-        Assert.assertEquals(2, neighborsPeerMessage.getNodes().size());
+        assertEquals(2, neighborsPeerMessage.getNodes().size());
         Assert.assertTrue(containsNodeId(NODE_ID_1, neighborsPeerMessage.getNodes()));
         Assert.assertTrue(containsNodeId(NODE_ID_3, neighborsPeerMessage.getNodes()));
 
@@ -401,7 +403,7 @@ public class PeerExplorerTest {
         channel.clearEvents();
         channel.channelRead0(ctx, neighborsEvent);
         List<DiscoveryEvent> sentEvents = channel.getEventsWritten();
-        Assert.assertEquals(0, sentEvents.size());
+        assertEquals(0, sentEvents.size());
 
         // We establish a connection but we dont send the findnode message.
         peerExplorer.startConversationWithNewNodes();
@@ -411,7 +413,7 @@ public class PeerExplorerTest {
         channel.clearEvents();
         channel.channelRead0(ctx, neighborsEvent);
         sentEvents = channel.getEventsWritten();
-        Assert.assertEquals(0, sentEvents.size());
+        assertEquals(0, sentEvents.size());
 
         // We send a findNode first
         channel.clearEvents();
@@ -423,10 +425,10 @@ public class PeerExplorerTest {
         channel.channelRead0(ctx, neighborsEvent);
 
         sentEvents = channel.getEventsWritten();
-        Assert.assertEquals(1, sentEvents.size());
+        assertEquals(1, sentEvents.size());
         DiscoveryEvent discoveryEvent = sentEvents.get(0);
-        Assert.assertEquals(new InetSocketAddress(HOST_3, PORT_3), discoveryEvent.getAddress());
-        Assert.assertEquals(DiscoveryMessageType.PING, discoveryEvent.getMessage().getMessageType());
+        assertEquals(new InetSocketAddress(HOST_3, PORT_3), discoveryEvent.getAddress());
+        assertEquals(DiscoveryMessageType.PING, discoveryEvent.getMessage().getMessageType());
 
         // We send a findNode first but we respond from another host
         channel.clearEvents();
@@ -439,7 +441,7 @@ public class PeerExplorerTest {
         channel.channelRead0(ctx, neighborsEvent);
 
         sentEvents = channel.getEventsWritten();
-        Assert.assertEquals(0, sentEvents.size());
+        assertEquals(0, sentEvents.size());
 
         // We send a findNode first and expect no PING message to banned peers
         InetAddress bannedAddress = parseAddress(HOST_4);
@@ -467,7 +469,7 @@ public class PeerExplorerTest {
     }
 
     @Test
-    public void testCleanPeriod() throws Exception{
+    public void testCleanPeriod() throws Exception {
         List<String> nodes = new ArrayList<>();
         nodes.add(HOST_1 + ":" + PORT_1);
         nodes.add(HOST_3 + ":" + PORT_3);
@@ -495,38 +497,57 @@ public class PeerExplorerTest {
         channel.clearEvents();
         channel.channelRead0(ctx, incomingPongEvent);
         List<DiscoveryEvent> sentEvents = channel.getEventsWritten();
-        Assert.assertEquals(0, sentEvents.size());
-        Assert.assertEquals(0, peerExplorer.getNodes().size());
+        assertEquals(0, sentEvents.size());
+        assertEquals(0, peerExplorer.getNodes().size());
 
         //Now we send the ping first
         peerExplorer.startConversationWithNewNodes();
         sentEvents = channel.getEventsWritten();
-        Assert.assertEquals(2, sentEvents.size());
+        assertEquals(2, sentEvents.size());
         incomingPongMessage = PongPeerMessage.create(HOST_1, PORT_1, ((PingPeerMessage) sentEvents.get(0).getMessage()).getMessageId(), key1, NETWORK_ID1);
         incomingPongEvent = new DiscoveryEvent(incomingPongMessage, new InetSocketAddress(HOST_1, PORT_1));
         PongPeerMessage incomingPongMessage3 = PongPeerMessage.create(HOST_3, PORT_3, ((PingPeerMessage) sentEvents.get(1).getMessage()).getMessageId(), key3, NETWORK_ID1);
         DiscoveryEvent incomingPongEvent3 = new DiscoveryEvent(incomingPongMessage3, new InetSocketAddress(HOST_3, PORT_3));
         channel.clearEvents();
         List<Node> addedNodes = peerExplorer.getNodes();
-        Assert.assertEquals(0, addedNodes.size());
+        assertEquals(0, addedNodes.size());
         channel.channelRead0(ctx, incomingPongEvent);
-        Assert.assertEquals(1, peerExplorer.getNodes().size());
+        assertEquals(1, peerExplorer.getNodes().size());
         addedNodes = peerExplorer.getNodes();
-        Assert.assertEquals(1, addedNodes.size());
+        assertEquals(1, addedNodes.size());
 
         channel.channelRead0(ctx, incomingPongEvent3);
-        Assert.assertEquals(1, peerExplorer.getNodes().size());
+        assertEquals(1, peerExplorer.getNodes().size());
         addedNodes = peerExplorer.getNodes();
-        Assert.assertEquals(1, addedNodes.size());
+        assertEquals(1, addedNodes.size());
 
-        Assert.assertEquals(1, peerExplorer.getChallengeManager().activeChallengesCount());
+        assertEquals(1, peerExplorer.getChallengeManager().activeChallengesCount());
         Thread.sleep(200L);
         peerExplorer.clean();
         peerExplorer.clean();
         peerExplorer.clean();
-        Assert.assertEquals(0, peerExplorer.getChallengeManager().activeChallengesCount());
+        assertEquals(0, peerExplorer.getChallengeManager().activeChallengesCount());
 
         peerExplorer.dispose();
+    }
+
+    @Test
+    public void testStartAndStop() {
+        ECKey key = ECKey.fromPrivate(Hex.decode(KEY_1)).decompress();
+        Node node = new Node(key.getNodeId(), HOST_2, PORT_2);
+        NodeDistanceTable distanceTable = new NodeDistanceTable(1, 1, node);
+
+        PeerExplorer peerExplorer = new PeerExplorer(Collections.emptyList(), node, distanceTable, key, 199, UPDATE, CLEAN, NETWORK_ID1, mock(PeerScoringManager.class));
+        assertEquals(ExecState.CREATED, peerExplorer.getState());
+
+        peerExplorer.start();
+        assertEquals(ExecState.RUNNING, peerExplorer.getState());
+
+        peerExplorer.dispose();
+        assertEquals(ExecState.FINISHED, peerExplorer.getState());
+
+        peerExplorer.start(); // re-start is not allowed
+        assertEquals(ExecState.FINISHED, peerExplorer.getState());
     }
 
     private boolean containsNodeId(String nodeId, List<Node> nodes) {

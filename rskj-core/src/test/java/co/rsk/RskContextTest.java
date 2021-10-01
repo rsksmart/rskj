@@ -81,6 +81,7 @@ public class RskContextTest {
         RskTestContext devnetContext = new RskTestContext(new String[] { "--devnet" });
         assertThat(devnetContext.getCliArgs(), notNullValue());
         assertThat(devnetContext.getCliArgs().getFlags(), contains(NodeCliFlags.NETWORK_DEVNET));
+        devnetContext.close();
     }
 
     @Test
