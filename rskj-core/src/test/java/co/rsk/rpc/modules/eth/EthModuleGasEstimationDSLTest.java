@@ -313,7 +313,6 @@ public class EthModuleGasEstimationDSLTest {
         args.setGas(TypeConverter.toQuantityJsonHex(BLOCK_GAS_LIMIT));
         args.setData("5b3f8140"); // clearStorageAndSendValue()
 
-        // todo it'd be nice to test if a callConstant consumes exact the same gas amount than a regular call
         ProgramResult callConstant = eth.callConstant(args, block);
         long callConstantGasUsed = callConstant.getGasUsed();
 

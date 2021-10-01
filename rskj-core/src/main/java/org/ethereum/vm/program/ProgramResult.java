@@ -65,7 +65,6 @@ public class ProgramResult {
     // estimateGas fields
     private long maxGasUsed = 0; // sometimes the estimatedGas matches the maximum gasUsed
     private boolean movedRemainingGasToChild = false;
-    @VisibleForTesting
     private long gasUsedBeforeRefunds = 0; // this field it's useful to test if the deductedRefund value is less than the half of the gasUsed
 
     public void movedRemainingGasToChild(boolean moved) {
@@ -252,7 +251,7 @@ public class ProgramResult {
     // This is the actual refunded amount of gas.
     // It should never be higher than half of the amount of gas consumed.
     public void addDeductedRefund(long gasValue) {
-        deductedRefund += gasValue;
+        deductedRefund = GasCost.add(deductedRefund,gasValue);
     }
 
     public long getDeductedRefund() {
@@ -266,7 +265,7 @@ public class ProgramResult {
     // This is the maximum possible future Refund. This is NOT the actual amount
     // deducted, because this value is restricted by half of the consumed gas.
     public void addFutureRefund(long gasValue) {
-        futureRefund += gasValue;
+        futureRefund = GasCost.add(futureRefund, gasValue);
     }
 
     public long getFutureRefund() {
@@ -305,10 +304,12 @@ public class ProgramResult {
                 .collect(Collectors.toList());
     }
 
+    @VisibleForTesting
     public void setGasUsedBeforeRefunds(long gasUsedBeforeRefunds) {
         this.gasUsedBeforeRefunds = gasUsedBeforeRefunds;
     }
 
+    @VisibleForTesting
     public long getGasUsedBeforeRefunds() {
         return gasUsedBeforeRefunds;
     }
