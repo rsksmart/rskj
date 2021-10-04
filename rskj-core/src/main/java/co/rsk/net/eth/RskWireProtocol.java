@@ -58,6 +58,7 @@ public class RskWireProtocol extends SimpleChannelInboundHandler<EthMessage> imp
 
     private static final Logger logger = LoggerFactory.getLogger("sync");
     private static final Logger loggerNet = LoggerFactory.getLogger("net");
+
     private final CompositeEthereumListener ethereumListener;
     /**
      * Header list sent in GET_BLOCK_BODIES message,

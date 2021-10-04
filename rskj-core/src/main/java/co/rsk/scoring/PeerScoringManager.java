@@ -21,6 +21,9 @@ import java.util.stream.Collectors;
  * Created by ajlopez on 28/06/2017.
  */
 public class PeerScoringManager {
+
+    private static final Logger logger = LoggerFactory.getLogger("peerScoring");
+
     private final PeerScoring.Factory peerScoringFactory;
     private final ScoringCalculator scoringCalculator;
     private final PunishmentCalculator nodePunishmentCalculator;
@@ -29,8 +32,7 @@ public class PeerScoringManager {
     private final Object accessLock = new Object();
 
     private final InetAddressTable addressTable = new InetAddressTable();
-
-    private static final Logger logger = LoggerFactory.getLogger("peerScoring");
+    private final Set<NodeID> bannedNodeIds;
 
     @GuardedBy("accessLock")
     private final Map<NodeID, PeerScoring> peersByNodeID;
@@ -51,7 +53,9 @@ public class PeerScoringManager {
             PeerScoring.Factory peerScoringFactory,
             int nodePeersSize,
             PunishmentParameters nodeParameters,
-            PunishmentParameters ipParameters) {
+            PunishmentParameters ipParameters,
+            Collection<String> bannedPeerIPs,
+            Collection<String> bannedPeerIDs) {
         this.peerScoringFactory = peerScoringFactory;
         this.scoringCalculator = new ScoringCalculator();
         this.nodePunishmentCalculator = new PunishmentCalculator(nodeParameters);
@@ -65,6 +69,12 @@ public class PeerScoringManager {
         };
 
         this.peersByAddress = new HashMap<>();
+
+        this.bannedNodeIds = Collections.unmodifiableSet(
+                bannedPeerIDs.stream().map(NodeID::ofHexString).collect(Collectors.toSet())
+        );
+
+        bannedPeerIPs.forEach(this::banAddressOrThrow);
     }
 
     /**
@@ -102,6 +112,10 @@ public class PeerScoringManager {
      * @return  <tt>true</tt> if the node has good reputation
      */
     public boolean hasGoodReputation(NodeID id) {
+        if (isNodeIDBanned(id)) {
+            return false;
+        }
+
         synchronized (accessLock) {
             return this.getPeerScoring(id).hasGoodReputation();
         }
@@ -113,15 +127,22 @@ public class PeerScoringManager {
      * @param address   the network address
      * @return  <tt>true</tt> if the address has good reputation
      */
-    public boolean hasGoodReputation(InetAddress address)
-    {
-        if (this.addressTable.contains(address)) {
+    public boolean hasGoodReputation(InetAddress address) {
+        if (isAddressBanned(address)) {
             return false;
         }
 
         synchronized (accessLock) {
             return this.getPeerScoring(address).hasGoodReputation();
         }
+    }
+
+    public boolean isAddressBanned(InetAddress address) {
+        return this.addressTable.contains(address);
+    }
+
+    public boolean isNodeIDBanned(NodeID id) {
+        return this.bannedNodeIds.contains(id);
     }
 
     /**
@@ -292,5 +313,13 @@ public class PeerScoringManager {
             return "NO_ADDRESS";
         }
         return address.getHostAddress();
+    }
+
+    private void banAddressOrThrow(String address) {
+        try {
+            banAddress(address);
+        } catch (InvalidInetAddressException e) {
+            throw new IllegalArgumentException("Invalid address", e);
+        }
     }
 }

@@ -20,9 +20,13 @@ package co.rsk.net;
 
 import co.rsk.config.InternalService;
 import co.rsk.config.RskSystemProperties;
+import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockUtils;
 import co.rsk.crypto.Keccak256;
-import co.rsk.net.messages.*;
+import co.rsk.net.messages.BlockMessage;
+import co.rsk.net.messages.Message;
+import co.rsk.net.messages.MessageType;
+import co.rsk.net.messages.MessageVisitor;
 import co.rsk.scoring.EventType;
 import co.rsk.scoring.PeerScoringManager;
 import co.rsk.util.FormatUtils;
@@ -30,14 +34,20 @@ import org.ethereum.crypto.HashUtil;
 import org.ethereum.net.server.ChannelManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.time.Duration;
-import java.util.*;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 public class NodeMessageHandler implements MessageHandler, InternalService, Runnable {
+
     private static final Logger logger = LoggerFactory.getLogger("messagehandler");
     private static final Logger loggerMessageProcess = LoggerFactory.getLogger("messageProcess");
 
@@ -51,26 +61,29 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
     private final TransactionGateway transactionGateway;
     private final PeerScoringManager peerScoringManager;
 
+    private final StatusResolver statusResolver;
+    private final Set<Keccak256> receivedMessages = Collections.synchronizedSet(new HashSet<>());
+
+    private final PriorityBlockingQueue<MessageTask> queue;
+
+    private final Set<RskAddress> bannedMiners;
+
     private volatile long lastStatusSent = System.currentTimeMillis();
     private volatile long lastTickSent = System.currentTimeMillis();
 
-    private final StatusResolver statusResolver;
-    private Set<Keccak256> receivedMessages = Collections.synchronizedSet(new HashSet<>());
-    private long cleanMsgTimestamp = 0;
-
-    private PriorityBlockingQueue<MessageTask> queue;
-
     private volatile boolean stopped;
 
+    private long cleanMsgTimestamp;
+
     /**
-     * @param statusResolver
+     * Creates a new node message handler.
      */
     public NodeMessageHandler(RskSystemProperties config,
-                              final BlockProcessor blockProcessor,
-                              final SyncProcessor syncProcessor,
-                              @Nullable final ChannelManager channelManager,
-                              @Nullable final TransactionGateway transactionGateway,
-                              @Nullable final PeerScoringManager peerScoringManager,
+                              BlockProcessor blockProcessor,
+                              SyncProcessor syncProcessor,
+                              @Nullable ChannelManager channelManager,
+                              @Nullable TransactionGateway transactionGateway,
+                              @Nullable PeerScoringManager peerScoringManager,
                               StatusResolver statusResolver) {
         this.config = config;
         this.channelManager = channelManager;
@@ -81,6 +94,9 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
         this.cleanMsgTimestamp = System.currentTimeMillis();
         this.peerScoringManager = peerScoringManager;
         this.queue = new PriorityBlockingQueue<>(11, new MessageTask.TaskComparator());
+        this.bannedMiners = Collections.unmodifiableSet(
+                config.bannedMinerList().stream().map(RskAddress::new).collect(Collectors.toSet())
+        );
     }
 
     /**
@@ -127,6 +143,14 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
     }
 
     private void tryAddMessage(Peer sender, Message message) {
+        if (!this.bannedMiners.isEmpty() && message.getMessageType() == MessageType.BLOCK_MESSAGE) {
+            RskAddress miner = ((BlockMessage) message).getBlock().getCoinbase();
+            if (this.bannedMiners.contains(miner)) {
+                logger.trace("Received block mined by banned miner {} from peer {}, not added to the queue", miner, sender);
+                return;
+            }
+        }
+
         Keccak256 encodedMessage = new Keccak256(HashUtil.keccak256(message.getEncoded()));
         if (!receivedMessages.contains(encodedMessage)) {
             if (message.getMessageType() == MessageType.BLOCK_MESSAGE || message.getMessageType() == MessageType.TRANSACTIONS) {
@@ -266,7 +290,4 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
         }
 
     }
-
-
 }
-

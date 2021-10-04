@@ -20,16 +20,17 @@ package co.rsk.net.discovery;
 
 import co.rsk.net.discovery.table.KademliaOptions;
 import co.rsk.net.discovery.table.NodeDistanceTable;
+import co.rsk.scoring.PeerScoringManager;
+import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.net.rlpx.Node;
 import org.junit.Assert;
 import org.junit.Test;
-import org.mockito.Mockito;
-import org.bouncycastle.util.encoders.Hex;
 
 import java.util.ArrayList;
-import java.util.OptionalInt;
 import java.util.UUID;
+
+import static org.mockito.Mockito.mock;
 
 /**
  * Created by mario on 22/02/17.
@@ -53,7 +54,6 @@ public class NodeChallengeManagerTest {
     private static final long UPDATE = 60000;
     private static final long CLEAN = 60000;
 
-
     @Test
     public void startChallenge() {
         ECKey key1 = ECKey.fromPrivate(Hex.decode(KEY_1)).decompress();
@@ -65,8 +65,8 @@ public class NodeChallengeManagerTest {
         Node node3 = new Node(key3.getNodeId(), HOST_3, PORT_3);
 
         NodeDistanceTable distanceTable = new NodeDistanceTable(KademliaOptions.BINS, KademliaOptions.BUCKET_SIZE, node1);
-        PeerExplorer peerExplorer = new PeerExplorer(new ArrayList<>(), node1, distanceTable, new ECKey(), TIMEOUT, UPDATE, CLEAN, NETWORK_ID);
-        peerExplorer.setUDPChannel(Mockito.mock(UDPChannel.class));
+        PeerExplorer peerExplorer = new PeerExplorer(new ArrayList<>(), node1, distanceTable, new ECKey(), TIMEOUT, UPDATE, CLEAN, NETWORK_ID, mock(PeerScoringManager.class));
+        peerExplorer.setUDPChannel(mock(UDPChannel.class));
 
         NodeChallengeManager manager = new NodeChallengeManager();
         NodeChallenge challenge = manager.startChallenge(node2, node3, peerExplorer);

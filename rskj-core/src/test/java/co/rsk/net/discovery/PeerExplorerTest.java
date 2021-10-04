@@ -18,9 +18,11 @@
 
 package co.rsk.net.discovery;
 
+import co.rsk.net.NodeID;
 import co.rsk.net.discovery.message.*;
 import co.rsk.net.discovery.table.KademliaOptions;
 import co.rsk.net.discovery.table.NodeDistanceTable;
+import co.rsk.scoring.PeerScoringManager;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import org.apache.commons.lang3.StringUtils;
@@ -32,11 +34,13 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
 
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
+import java.net.UnknownHostException;
+import java.util.*;
+
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
 
 /**
  * Created by mario on 15/02/17.
@@ -79,7 +83,7 @@ public class PeerExplorerTest {
     public void sendInitialMessageToNodesNoNodes() {
         Node node = new Node(new ECKey().getNodeId(), HOST_2, PORT_2);
         NodeDistanceTable distanceTable = new NodeDistanceTable(KademliaOptions.BINS, KademliaOptions.BUCKET_SIZE, node);
-        PeerExplorer peerExplorer = new PeerExplorer(new ArrayList<>(), node, distanceTable, new ECKey(), TIMEOUT, UPDATE, CLEAN, NETWORK_ID1);
+        PeerExplorer peerExplorer = new PeerExplorer(new ArrayList<>(), node, distanceTable, new ECKey(), TIMEOUT, UPDATE, CLEAN, NETWORK_ID1, mock(PeerScoringManager.class));
 
         peerExplorer.setUDPChannel(Mockito.mock(UDPChannel.class));
 
@@ -87,7 +91,7 @@ public class PeerExplorerTest {
 
         Assert.assertTrue(nodesWithMessage.isEmpty());
 
-        peerExplorer = new PeerExplorer(new ArrayList<>(), node, distanceTable, new ECKey(), TIMEOUT, UPDATE, CLEAN, NETWORK_ID1);
+        peerExplorer = new PeerExplorer(new ArrayList<>(), node, distanceTable, new ECKey(), TIMEOUT, UPDATE, CLEAN, NETWORK_ID1, mock(PeerScoringManager.class));
         peerExplorer.setUDPChannel(Mockito.mock(UDPChannel.class));
 
         nodesWithMessage = peerExplorer.startConversationWithNewNodes();
@@ -108,7 +112,7 @@ public class PeerExplorerTest {
         Node node = new Node(new ECKey().getNodeId(), HOST_1, PORT_1);
         NodeDistanceTable distanceTable = new NodeDistanceTable(KademliaOptions.BINS, KademliaOptions.BUCKET_SIZE, node);
 
-        PeerExplorer peerExplorer = new PeerExplorer(nodes, node, distanceTable, new ECKey(), TIMEOUT, UPDATE, CLEAN, NETWORK_ID1);
+        PeerExplorer peerExplorer = new PeerExplorer(nodes, node, distanceTable, new ECKey(), TIMEOUT, UPDATE, CLEAN, NETWORK_ID1, mock(PeerScoringManager.class));
 
         UDPChannel channel = new UDPChannel(Mockito.mock(Channel.class), peerExplorer);
         peerExplorer.setUDPChannel(channel);
@@ -128,7 +132,7 @@ public class PeerExplorerTest {
 
         Node node = new Node(key2.getNodeId(), HOST_2, PORT_2);
         NodeDistanceTable distanceTable = new NodeDistanceTable(KademliaOptions.BINS, KademliaOptions.BUCKET_SIZE, node);
-        PeerExplorer peerExplorer = new PeerExplorer(nodes, node, distanceTable, key2, TIMEOUT, UPDATE, CLEAN, NETWORK_ID1);
+        PeerExplorer peerExplorer = new PeerExplorer(nodes, node, distanceTable, key2, TIMEOUT, UPDATE, CLEAN, NETWORK_ID1, mock(PeerScoringManager.class));
 
         Channel internalChannel = Mockito.mock(Channel.class);
         UDPTestChannel channel = new UDPTestChannel(internalChannel, peerExplorer);
@@ -158,7 +162,7 @@ public class PeerExplorerTest {
         Node node = new Node(key2.getNodeId(), HOST_2, PORT_2);
         NodeDistanceTable distanceTable = new NodeDistanceTable(KademliaOptions.BINS, KademliaOptions.BUCKET_SIZE, node);
 
-        PeerExplorer peerExplorer = new PeerExplorer(nodes, node, distanceTable, key2, TIMEOUT, UPDATE, CLEAN, NETWORK_ID1);
+        PeerExplorer peerExplorer = new PeerExplorer(nodes, node, distanceTable, key2, TIMEOUT, UPDATE, CLEAN, NETWORK_ID1, mock(PeerScoringManager.class));
 
         Channel internalChannel = Mockito.mock(Channel.class);
         UDPTestChannel channel = new UDPTestChannel(internalChannel, peerExplorer);
@@ -215,7 +219,7 @@ public class PeerExplorerTest {
 
         Node node = new Node(key2.getNodeId(), HOST_2, PORT_2);
         NodeDistanceTable distanceTable = new NodeDistanceTable(KademliaOptions.BINS, KademliaOptions.BUCKET_SIZE, node);
-        PeerExplorer peerExplorer = new PeerExplorer(nodes, node, distanceTable, key2, TIMEOUT, UPDATE, CLEAN, NETWORK_ID1);
+        PeerExplorer peerExplorer = new PeerExplorer(nodes, node, distanceTable, key2, TIMEOUT, UPDATE, CLEAN, NETWORK_ID1, mock(PeerScoringManager.class));
 
         Channel internalChannel = Mockito.mock(Channel.class);
         UDPTestChannel channel = new UDPTestChannel(internalChannel, peerExplorer);
@@ -266,7 +270,7 @@ public class PeerExplorerTest {
         Node node = new Node(key2.getNodeId(), HOST_2, PORT_2);
         NodeDistanceTable distanceTable = new NodeDistanceTable(KademliaOptions.BINS, KademliaOptions.BUCKET_SIZE, node);
 
-        PeerExplorer peerExplorer = new PeerExplorer(nodes, node, distanceTable, key2, TIMEOUT, UPDATE, CLEAN, NETWORK_ID1);
+        PeerExplorer peerExplorer = new PeerExplorer(nodes, node, distanceTable, key2, TIMEOUT, UPDATE, CLEAN, NETWORK_ID1, mock(PeerScoringManager.class));
 
         Channel internalChannel = Mockito.mock(Channel.class);
         UDPTestChannel channel = new UDPTestChannel(internalChannel, peerExplorer);
@@ -313,7 +317,7 @@ public class PeerExplorerTest {
 
         Node node = new Node(key2.getNodeId(), HOST_2, PORT_2);
         NodeDistanceTable distanceTable = new NodeDistanceTable(KademliaOptions.BINS, KademliaOptions.BUCKET_SIZE, node);
-        PeerExplorer peerExplorer = new PeerExplorer(nodes, node, distanceTable, key2, TIMEOUT, UPDATE, CLEAN, NETWORK_ID1);
+        PeerExplorer peerExplorer = new PeerExplorer(nodes, node, distanceTable, key2, TIMEOUT, UPDATE, CLEAN, NETWORK_ID1, mock(PeerScoringManager.class));
 
         Channel internalChannel = Mockito.mock(Channel.class);
         UDPTestChannel channel = new UDPTestChannel(internalChannel, peerExplorer);
@@ -370,8 +374,9 @@ public class PeerExplorerTest {
         Node node1 = new Node(key1.getNodeId(), HOST_1, PORT_1);
         Node node2 = new Node(key2.getNodeId(), HOST_2, PORT_2);
         NodeDistanceTable distanceTable = new NodeDistanceTable(KademliaOptions.BINS, KademliaOptions.BUCKET_SIZE, node2);
+        PeerScoringManager peerScoringManager = mock(PeerScoringManager.class);
 
-        PeerExplorer peerExplorer = new PeerExplorer(nodes, node2, distanceTable, key2, TIMEOUT, UPDATE, CLEAN, NETWORK_ID1);
+        PeerExplorer peerExplorer = new PeerExplorer(nodes, node2, distanceTable, key2, TIMEOUT, UPDATE, CLEAN, NETWORK_ID1, peerScoringManager);
 
         Channel internalChannel = Mockito.mock(Channel.class);
         UDPTestChannel channel = new UDPTestChannel(internalChannel, peerExplorer);
@@ -379,7 +384,7 @@ public class PeerExplorerTest {
         peerExplorer.setUDPChannel(channel);
         Assert.assertTrue(peerExplorer.getNodes().isEmpty());
 
-        //We try to process a Message without previous connection
+        // We try to process a Message without previous connection
         List<Node> newNodes = new ArrayList<>();
         newNodes.add(new Node(Hex.decode(NODE_ID_3), HOST_3, PORT_3));
         NeighborsPeerMessage neighborsPeerMessage = NeighborsPeerMessage.create(newNodes, UUID.randomUUID().toString(), key1, NETWORK_ID1);
@@ -389,7 +394,7 @@ public class PeerExplorerTest {
         List<DiscoveryEvent> sentEvents = channel.getEventsWritten();
         Assert.assertEquals(0, sentEvents.size());
 
-        //we establish a connection but we dont send the findnode message.
+        // We establish a connection but we dont send the findnode message.
         peerExplorer.startConversationWithNewNodes();
         PongPeerMessage incomingPongMessage = PongPeerMessage.create(HOST_1, PORT_1, ((PingPeerMessage) sentEvents.get(0).getMessage()).getMessageId(), key1, NETWORK_ID1);
         DiscoveryEvent incomingPongEvent = new DiscoveryEvent(incomingPongMessage, new InetSocketAddress(HOST_1, PORT_1));
@@ -399,8 +404,7 @@ public class PeerExplorerTest {
         sentEvents = channel.getEventsWritten();
         Assert.assertEquals(0, sentEvents.size());
 
-
-        //We send a findNode first
+        // We send a findNode first
         channel.clearEvents();
         peerExplorer.sendFindNode(node1);
         FindNodePeerMessage findNodePeerMessage = (FindNodePeerMessage) channel.getEventsWritten().get(0).getMessage();
@@ -415,7 +419,7 @@ public class PeerExplorerTest {
         Assert.assertEquals(new InetSocketAddress(HOST_3, PORT_3), discoveryEvent.getAddress());
         Assert.assertEquals(DiscoveryMessageType.PING, discoveryEvent.getMessage().getMessageType());
 
-        //We send a findNode first but we respond from another host
+        // We send a findNode first but we respond from another host
         channel.clearEvents();
         peerExplorer.sendFindNode(node1);
         findNodePeerMessage = (FindNodePeerMessage) channel.getEventsWritten().get(0).getMessage();
@@ -428,6 +432,27 @@ public class PeerExplorerTest {
         sentEvents = channel.getEventsWritten();
         Assert.assertEquals(0, sentEvents.size());
 
+        // We send a findNode first and expect no PING message to banned peers
+        InetAddress bannedAddress = parseAddress(HOST_4);
+        NodeID bannedNodeID = NodeID.ofHexString(NODE_ID_5);
+        doReturn(true).when(peerScoringManager).isAddressBanned(bannedAddress);
+        doReturn(true).when(peerScoringManager).isNodeIDBanned(bannedNodeID);
+        peerExplorer.sendFindNode(node1);
+        findNodePeerMessage = (FindNodePeerMessage) channel.getEventsWritten().get(0).getMessage();
+        channel.clearEvents();
+        neighborsPeerMessage = NeighborsPeerMessage.create(Arrays.asList(
+                new Node(Hex.decode(NODE_ID_1), HOST_1, PORT_1),
+                new Node(Hex.decode(NODE_ID_4), HOST_4, PORT_4),
+                new Node(Hex.decode(NODE_ID_5), "unknown", PORT_5)),
+                findNodePeerMessage.getMessageId(), key1, NETWORK_ID1);
+        neighborsEvent = new DiscoveryEvent(neighborsPeerMessage, new InetSocketAddress(HOST_1, PORT_1));
+        channel.clearEvents();
+        channel.channelRead0(ctx, neighborsEvent);
+
+        Assert.assertEquals("There should be one message in written events",
+                1, channel.getEventsWritten().size());
+        Assert.assertEquals("There should be one message in written events from non-banned address",
+                parseAddress(HOST_1), channel.getEventsWritten().get(0).getAddress().getAddress());
     }
 
     @Test
@@ -442,7 +467,7 @@ public class PeerExplorerTest {
 
         Node node = new Node(key2.getNodeId(), HOST_2, PORT_2);
         NodeDistanceTable distanceTable = new NodeDistanceTable(1, 1, node);
-        PeerExplorer peerExplorer = new PeerExplorer(nodes, node, distanceTable, key2, 199, UPDATE, CLEAN, NETWORK_ID1);
+        PeerExplorer peerExplorer = new PeerExplorer(nodes, node, distanceTable, key2, 199, UPDATE, CLEAN, NETWORK_ID1, mock(PeerScoringManager.class));
 
         Channel internalChannel = Mockito.mock(Channel.class);
         UDPTestChannel channel = new UDPTestChannel(internalChannel, peerExplorer);
@@ -487,6 +512,14 @@ public class PeerExplorerTest {
         peerExplorer.clean();
         peerExplorer.clean();
         Assert.assertEquals(0, peerExplorer.getChallengeManager().activeChallengesCount());
+    }
+
+    private static InetAddress parseAddress(String host) {
+        try {
+            return InetAddress.getByName(host);
+        } catch (UnknownHostException e) {
+            throw new IllegalArgumentException(e);
+        }
     }
 
 }
