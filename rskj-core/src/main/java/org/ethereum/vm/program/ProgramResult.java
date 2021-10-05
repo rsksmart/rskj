@@ -304,12 +304,10 @@ public class ProgramResult {
                 .collect(Collectors.toList());
     }
 
-    @VisibleForTesting
     public void setGasUsedBeforeRefunds(long gasUsedBeforeRefunds) {
         this.gasUsedBeforeRefunds = gasUsedBeforeRefunds;
     }
 
-    @VisibleForTesting
     public long getGasUsedBeforeRefunds() {
         return gasUsedBeforeRefunds;
     }
