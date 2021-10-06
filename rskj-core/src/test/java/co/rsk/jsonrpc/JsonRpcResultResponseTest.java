@@ -30,10 +30,10 @@ public class JsonRpcResultResponseTest {
 
     @Test
     public void serializeResponseWithResult() throws IOException {
-        String message = "{\"jsonrpc\":\"2.0\",\"id\":48,\"result\":true}";
+        String message = "{\"jsonrpc\":\"2.0\",\"id\":\"48\",\"result\":true}";
         assertThat(
                 serializer.writeValueAsString(
-                        new JsonRpcResultResponse(48, new JsonRpcBooleanResult(true))
+                        new JsonRpcResultResponse("48", new JsonRpcBooleanResult(true))
                 ),
                 is(message)
         );

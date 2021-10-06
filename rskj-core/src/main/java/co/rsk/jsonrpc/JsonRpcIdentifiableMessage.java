@@ -22,28 +22,30 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 /**
  * The basic JSON-RPC request or response. It is required to have an ID.
  *
- * Note that the JSON-RPC 2.0 spec allows using strings as IDs, but our implementation doesn't.
+ * Note that the JSON-RPC 2.0 spec allows using strings as IDs.
  */
 public abstract class JsonRpcIdentifiableMessage extends JsonRpcMessage {
-    private final int id;
+	
+    private final String id;
 
-    public JsonRpcIdentifiableMessage(JsonRpcVersion version, int id) {
+    private static final String ID_BAD_PARAMETER_MSG = "JSON-RPC message id should be a String or a positive number, but was %s.";
+    
+    public JsonRpcIdentifiableMessage(JsonRpcVersion version, String id) {
         super(version);
-        this.id = requireNonNegative(id);
+        requireNonEmpty(id);
+        this.id = id;
     }
 
     @JsonInclude(JsonInclude.Include.ALWAYS)
-    public int getId() {
+    public String getId() {
         return id;
     }
 
-    private static int requireNonNegative(int id) {
-        if (id < 0) {
-            throw new IllegalArgumentException(
-                    String.format("JSON-RPC message id should be a positive number, but was %s.", id)
-            );
+    private static void requireNonEmpty(String id) {
+
+    	if (id == null || id.trim().length() == 0) {
+            throw new IllegalArgumentException(String.format(ID_BAD_PARAMETER_MSG, id));
         }
 
-        return id;
     }
 }

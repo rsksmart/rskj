@@ -33,10 +33,8 @@ import io.netty.channel.ChannelHandlerContext;
         @JsonSubTypes.Type(value = EthUnsubscribeRequest.class, name = "eth_unsubscribe"),
 })
 public abstract class RskJsonRpcRequest extends JsonRpcRequest<RskJsonRpcMethod> {
-    public RskJsonRpcRequest(
-            JsonRpcVersion version,
-            RskJsonRpcMethod method,
-            int id) {
+	
+    public RskJsonRpcRequest(JsonRpcVersion version, RskJsonRpcMethod method, String id) {
         super(version, method, id);
     }
 

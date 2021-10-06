@@ -58,7 +58,7 @@ public class RskWebSocketJsonRpcHandlerTest {
         EthUnsubscribeRequest unsubscribe = new EthUnsubscribeRequest(
                 JsonRpcVersion.V2_0,
                 RskJsonRpcMethod.ETH_UNSUBSCRIBE,
-                35,
+                "35",
                 new EthUnsubscribeParams(SAMPLE_SUBSCRIPTION_ID_1)
 
         );
@@ -138,7 +138,7 @@ public class RskWebSocketJsonRpcHandlerTest {
         return new EthSubscribeRequest(
                 JsonRpcVersion.V2_0,
                 RskJsonRpcMethod.ETH_SUBSCRIBE,
-                35,
+                "35",
                 ethSubscribeParams
         );
     }

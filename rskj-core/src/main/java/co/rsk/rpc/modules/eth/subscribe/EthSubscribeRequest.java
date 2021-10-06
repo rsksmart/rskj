@@ -33,11 +33,13 @@ public class EthSubscribeRequest extends RskJsonRpcRequest {
 
     private final EthSubscribeParams params;
 
+    private static final String WRONG_RPC_METHOD_MSG = "Wrong method mapped to eth_subscribe. Check JSON mapping configuration in JsonRpcRequest.";
+    
     @JsonCreator
     public EthSubscribeRequest(
             @JsonProperty("jsonrpc") JsonRpcVersion version,
             @JsonProperty("method") RskJsonRpcMethod method,
-            @JsonProperty("id") Integer id,
+            @JsonProperty("id") String id,
             @JsonProperty("params") EthSubscribeParams params) {
         super(version, verifyMethod(method), Objects.requireNonNull(id));
         this.params = Objects.requireNonNull(params);
@@ -55,9 +57,7 @@ public class EthSubscribeRequest extends RskJsonRpcRequest {
 
     private static RskJsonRpcMethod verifyMethod(RskJsonRpcMethod method) {
         if (method != RskJsonRpcMethod.ETH_SUBSCRIBE) {
-            throw new IllegalArgumentException(
-                    "Wrong method mapped to eth_subscribe. Check JSON mapping configuration in JsonRpcRequest."
-            );
+            throw new IllegalArgumentException(WRONG_RPC_METHOD_MSG);
         }
 
         return method;
