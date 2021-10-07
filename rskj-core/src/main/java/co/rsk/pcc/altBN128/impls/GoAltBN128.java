@@ -3,6 +3,11 @@ package co.rsk.pcc.altBN128.impls;
 import co.rsk.altbn128.cloudflare.JniBn128;
 
 public class GoAltBN128 extends AbstractAltBN128 {
+
+    public static Throwable getLoadError() {
+        return JniBn128.getLoadError();
+    }
+
     @Override
     public int add(byte[] data, int length) {
         byte[] jniOutput = new byte[64];

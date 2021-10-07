@@ -75,7 +75,7 @@ ext {
             jaxwsRtVer: '2.3.3',
 
             bitcoinjThinVer: '0.14.4-rsk-10',
-            rskjNativeVer: '1.2.0',
+            rskjNativeVer: '1.2.1',
     ]
 
     libs = [
