@@ -29,9 +29,9 @@ import io.netty.channel.ChannelHandlerContext;
 
 public class EthUnsubscribeRequest extends RskJsonRpcRequest {
 
-    private final EthUnsubscribeParams params;
+	private static final String WRONG_RPC_METHOD_MSG = "Wrong method mapped to eth_unsubscribe. Check JSON mapping configuration in JsonRpcRequest.";
 
-    private static final String WRONG_RPC_METHOD_MSG = "Wrong method mapped to eth_unsubscribe. Check JSON mapping configuration in JsonRpcRequest.";
+	private final EthUnsubscribeParams params;
     
     @JsonCreator
     public EthUnsubscribeRequest(

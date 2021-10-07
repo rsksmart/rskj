@@ -34,7 +34,7 @@ import io.netty.channel.ChannelHandlerContext;
 })
 public abstract class RskJsonRpcRequest extends JsonRpcRequest<RskJsonRpcMethod> {
 	
-    public RskJsonRpcRequest(JsonRpcVersion version, RskJsonRpcMethod method, String id) {
+    protected RskJsonRpcRequest(JsonRpcVersion version, RskJsonRpcMethod method, String id) {
         super(version, method, id);
     }
 

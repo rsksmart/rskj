@@ -31,9 +31,9 @@ import java.util.Objects;
 
 public class EthSubscribeRequest extends RskJsonRpcRequest {
 
-    private final EthSubscribeParams params;
+	private static final String WRONG_RPC_METHOD_MSG = "Wrong method mapped to eth_subscribe. Check JSON mapping configuration in JsonRpcRequest.";
 
-    private static final String WRONG_RPC_METHOD_MSG = "Wrong method mapped to eth_subscribe. Check JSON mapping configuration in JsonRpcRequest.";
+	private final EthSubscribeParams params;
     
     @JsonCreator
     public EthSubscribeRequest(

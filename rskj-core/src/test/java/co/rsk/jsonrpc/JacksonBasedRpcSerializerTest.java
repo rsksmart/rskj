@@ -30,7 +30,7 @@ public class JacksonBasedRpcSerializerTest {
 		String messageInt = "{\"jsonrpc\": \"2.0\",\"method\": \"eth_subscribe\",\"params\": [\"newHeads\"],\"id\": 64}";
 		RskJsonRpcRequest requestFromIntId = converJson(messageInt); 
 		
-		Assert.assertEquals(requestFromIntId.getId(), "64");
+		Assert.assertEquals("64", requestFromIntId.getId());
 	}
 
 	@Test
@@ -39,7 +39,7 @@ public class JacksonBasedRpcSerializerTest {
 		String messageStr = "{\"jsonrpc\": \"2.0\",\"method\": \"eth_subscribe\",\"params\": [\"newHeads\"],\"id\": \"string\"}";
 		RskJsonRpcRequest requestFromStringId = converJson(messageStr); 
 
-		Assert.assertEquals(requestFromStringId.getId(), "string");
+		Assert.assertEquals("string", requestFromStringId.getId());
 		
 	}
 

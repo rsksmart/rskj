@@ -18,8 +18,10 @@
 package co.rsk.rpc.modules.eth.subscribe;
 
 import co.rsk.core.RskAddress;
+import co.rsk.jsonrpc.JsonRpcVersion;
 import co.rsk.rpc.JacksonBasedRpcSerializer;
 import co.rsk.rpc.JsonRpcSerializer;
+import co.rsk.rpc.modules.RskJsonRpcMethod;
 import co.rsk.rpc.modules.RskJsonRpcRequest;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -166,4 +168,12 @@ public class EthSubscribeRequestTest {
         assertThat(params, instanceOf(paramsClass));
         return paramsClass.cast(params);
     }
+    
+    @Test(expected = IllegalArgumentException.class)
+    public void subscribe_withWrongParameter_thenThrowException() {
+    	
+    	new EthSubscribeRequest(JsonRpcVersion.V2_0, RskJsonRpcMethod.ETH_UNSUBSCRIBE, "test", null);
+    	
+    }
+    
 }

@@ -26,11 +26,11 @@ import com.fasterxml.jackson.annotation.JsonInclude;
  */
 public abstract class JsonRpcIdentifiableMessage extends JsonRpcMessage {
 	
-    private final String id;
+	private static final String ID_BAD_PARAMETER_MSG = "JSON-RPC message id should be a String or a positive number, but was %s.";
 
-    private static final String ID_BAD_PARAMETER_MSG = "JSON-RPC message id should be a String or a positive number, but was %s.";
+	private final String id;
     
-    public JsonRpcIdentifiableMessage(JsonRpcVersion version, String id) {
+    protected JsonRpcIdentifiableMessage(JsonRpcVersion version, String id) {
         super(version);
         requireNonEmpty(id);
         this.id = id;
