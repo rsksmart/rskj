@@ -18,22 +18,48 @@
 package co.rsk.cli.tools;
 
 import co.rsk.RskContext;
+import co.rsk.cli.CliToolRskContextAware;
 import org.ethereum.db.BlockStore;
+
+import javax.annotation.Nonnull;
+import java.lang.invoke.MethodHandles;
 
 /**
  * The entry point for rewind blocks state CLI tool
  * This is an experimental/unsupported tool
+ *
+ * Required cli args:
+ * - args[0] - block number
  */
-public class RewindBlocks {
+public class RewindBlocks extends CliToolRskContextAware {
+
     public static void main(String[] args) {
-        execute(args, new RskContext(args).getBlockStore());
+        execute(args, MethodHandles.lookup().lookupClass());
     }
 
-    public static void execute(String[] args, BlockStore blockStore) {
-        long blockNumber = Long.parseLong(args[0]);
+    public static void rewindBlocks(long blockNumber, BlockStore blockStore) {
+        long maxNumber = blockStore.getMaxNumber();
 
-        if (blockStore.getMaxNumber() > blockNumber) {
+        logger.info("Highest block number stored in db: {}", maxNumber);
+        logger.info("Block number to rewind to: {}", blockNumber);
+
+        if (maxNumber > blockNumber) {
+            logger.info("Rewinding...");
+
             blockStore.rewind(blockNumber);
+
+            maxNumber = blockStore.getMaxNumber();
+            logger.info("Done. New highest block number stored in db: {}", maxNumber);
+        } else {
+            logger.info("No need to rewind");
         }
+    }
+
+    @Override
+    protected void onExecute(@Nonnull String[] args, @Nonnull RskContext ctx) {
+        long blockNumber = Long.parseLong(args[0]);
+        BlockStore blockStore = ctx.getBlockStore();
+
+        rewindBlocks(blockNumber, blockStore);
     }
 }

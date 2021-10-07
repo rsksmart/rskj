@@ -18,35 +18,34 @@
 package co.rsk.cli.tools;
 
 import co.rsk.RskContext;
+import co.rsk.cli.CliToolRskContextAware;
 import co.rsk.core.BlockDifficulty;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.db.BlockStore;
 
+import javax.annotation.Nonnull;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.lang.invoke.MethodHandles;
 import java.math.BigInteger;
 
 /**
  * The entry point for import blocks CLI tool
  * This is an experimental/unsupported tool
+ *
+ * Required cli args:
+ * - args[0] - file path
  */
-public class ImportBlocks {
-    public static void main(String[] args) throws IOException {
-        RskContext ctx = new RskContext(args);
-        BlockFactory blockFactory = ctx.getBlockFactory();
-        BlockStore blockStore = ctx.getBlockStore();
+public class ImportBlocks extends CliToolRskContextAware {
 
-        String filename = args[0];
-
-        try (BufferedReader reader = new BufferedReader(new FileReader(filename))) {
-            execute(blockFactory, blockStore, reader);
-        }
+    public static void main(String[] args) {
+        execute(args, MethodHandles.lookup().lookupClass());
     }
 
-    public static void execute(BlockFactory blockFactory, BlockStore blockStore, BufferedReader reader) throws IOException {
+    public static void importBlocks(BlockFactory blockFactory, BlockStore blockStore, BufferedReader reader) throws IOException {
         for (String line = reader.readLine(); line != null; line = reader.readLine()) {
             String[] parts = line.split(",");
 
@@ -64,5 +63,17 @@ public class ImportBlocks {
         }
 
         blockStore.flush();
+    }
+
+    @Override
+    protected void onExecute(@Nonnull String[] args, @Nonnull RskContext ctx) throws Exception {
+        BlockFactory blockFactory = ctx.getBlockFactory();
+        BlockStore blockStore = ctx.getBlockStore();
+
+        String filename = args[0];
+
+        try (BufferedReader reader = new BufferedReader(new FileReader(filename))) {
+            importBlocks(blockFactory, blockStore, reader);
+        }
     }
 }

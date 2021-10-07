@@ -71,7 +71,7 @@ public class CliToolsTest {
         final String utf8 = StandardCharsets.UTF_8.name();
 
         try (PrintStream ps = new PrintStream(baos, true, utf8)) {
-            ExportBlocks.execute(args, world.getBlockStore(), ps);
+            ExportBlocks.exportBlocks(args, world.getBlockStore(), ps);
         }
 
         String data = baos.toString(utf8);
@@ -102,7 +102,7 @@ public class CliToolsTest {
         final String utf8 = StandardCharsets.UTF_8.name();
 
         try (PrintStream ps = new PrintStream(baos, true, utf8)) {
-            ExportState.execute(args, world.getBlockStore(), world.getTrieStore(), ps);
+            ExportState.exportState(args, world.getBlockStore(), world.getTrieStore(), ps);
         }
 
         String data = baos.toString(utf8);
@@ -135,7 +135,7 @@ public class CliToolsTest {
         final String utf8 = StandardCharsets.UTF_8.name();
 
         try (PrintStream ps = new PrintStream(baos, true, utf8)) {
-            ShowStateInfo.execute(args, world.getBlockStore(), world.getTrieStore(), ps);
+            ShowStateInfo.printStateInfo(args, world.getBlockStore(), world.getTrieStore(), ps::println);
         }
 
         String data = baos.toString(utf8);
@@ -160,7 +160,7 @@ public class CliToolsTest {
 
         String[] args = new String[] { "1", "2" };
 
-        ExecuteBlocks.execute(args, world.getBlockExecutor(), world.getBlockStore(), world.getTrieStore(),
+        ExecuteBlocks.executeBlocks(args, world.getBlockExecutor(), world.getBlockStore(), world.getTrieStore(),
                 world.getStateRootHandler());
 
         Assert.assertEquals(2, world.getBlockChain().getBestBlock().getNumber());
@@ -195,7 +195,7 @@ public class CliToolsTest {
 
         BufferedReader reader = new BufferedReader(new StringReader(stringBuilder.toString()));
 
-        ConnectBlocks.execute(
+        ConnectBlocks.connectBlocks(
                 new BlockFactory(ActivationConfigsForTest.all()),
                 blockchain,
                 world.getTrieStore(),
@@ -237,7 +237,7 @@ public class CliToolsTest {
 
         BufferedReader reader = new BufferedReader(new StringReader(stringBuilder.toString()));
 
-        ImportBlocks.execute(
+        ImportBlocks.importBlocks(
                 new BlockFactory(ActivationConfigsForTest.all()),
                 world.getBlockStore(),
                 reader);
@@ -260,7 +260,7 @@ public class CliToolsTest {
 
         BufferedReader reader = new BufferedReader(new StringReader(stringBuilder.toString()));
 
-        ImportState.execute(reader, trieDB);
+        ImportState.importState(reader, trieDB);
 
         byte[] key = new Keccak256(Keccak256Helper.keccak256(value)).getBytes();
         byte[] result = trieDB.get(key);
@@ -296,9 +296,7 @@ public class CliToolsTest {
         assertThat(bestBlock.getNumber(), is(blocksToGenerate - 1));
 
         long blockToRewind = blocksToGenerate / 2;
-        String[] args = new String[1];
-        args[0] = blockToRewind + "";
-        RewindBlocks.execute(args, indexedBlockStore);
+        RewindBlocks.rewindBlocks(blockToRewind, indexedBlockStore);
 
         bestBlock = indexedBlockStore.getBestBlock();
         assertThat(bestBlock.getNumber(), is(blockToRewind));

@@ -18,6 +18,7 @@
 package co.rsk.cli.tools;
 
 import co.rsk.RskContext;
+import co.rsk.cli.CliToolRskContextAware;
 import co.rsk.trie.NodeReference;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStore;
@@ -25,23 +26,28 @@ import org.ethereum.core.Block;
 import org.ethereum.db.BlockStore;
 import org.ethereum.util.ByteUtil;
 
+import javax.annotation.Nonnull;
+import java.io.BufferedOutputStream;
+import java.io.FileOutputStream;
 import java.io.PrintStream;
+import java.lang.invoke.MethodHandles;
 import java.util.Optional;
 
 /**
  * The entry point for export state CLI tool
  * This is an experimental/unsupported tool
+ *
+ * Required cli args:
+ * - args[0] - block number
+ * - args[1] - file path
  */
-public class ExportState {
-    public static void main(String[] args) {
-        RskContext ctx = new RskContext(args);
-        BlockStore blockStore = ctx.getBlockStore();
-        TrieStore trieStore = ctx.getTrieStore();
+public class ExportState extends CliToolRskContextAware {
 
-        execute(args, blockStore, trieStore, System.out);
+    public static void main(String[] args) {
+        execute(args, MethodHandles.lookup().lookupClass());
     }
 
-    public static void execute(String[] args, BlockStore blockStore, TrieStore trieStore, PrintStream writer) {
+    public static void exportState(String[] args, BlockStore blockStore, TrieStore trieStore, PrintStream writer) {
         long blockNumber = Long.parseLong(args[0]);
 
         Block block = blockStore.getChainBlockByNumber(blockNumber);
@@ -98,6 +104,17 @@ public class ExportState {
 
         if (trie.hasLongValue()) {
             writer.println(ByteUtil.toHexString(trie.getValue()));
+        }
+    }
+
+    @Override
+    protected void onExecute(@Nonnull String[] args, @Nonnull RskContext ctx) throws Exception {
+        String filePath = args[1];
+        BlockStore blockStore = ctx.getBlockStore();
+        TrieStore trieStore = ctx.getTrieStore();
+
+        try (PrintStream writer = new PrintStream(new BufferedOutputStream(new FileOutputStream(filePath)))) {
+            exportState(args, blockStore, trieStore, writer);
         }
     }
 }

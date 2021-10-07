@@ -18,35 +18,34 @@
 package co.rsk.cli.tools;
 
 import co.rsk.RskContext;
+import co.rsk.cli.CliToolRskContextAware;
 import co.rsk.crypto.Keccak256;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.datasource.LevelDbDataSource;
 
+import javax.annotation.Nonnull;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.lang.invoke.MethodHandles;
 import java.nio.file.Paths;
 
 /**
  * The entry point for import state CLI tool
  * This is an experimental/unsupported tool
+ *
+ * Required cli args:
+ * - args[0] - file path
  */
-public class ImportState {
-    public static void main(String[] args) throws IOException {
-        RskContext ctx = new RskContext(args);
-        String databaseDir = ctx.getRskSystemProperties().databaseDir();
-        KeyValueDataSource trieDB = LevelDbDataSource.makeDataSource(Paths.get(databaseDir, "unitrie"));
+public class ImportState extends CliToolRskContextAware {
 
-        String filename = args[0];
-
-        try (BufferedReader reader = new BufferedReader(new FileReader(filename))) {
-            execute(reader, trieDB);
-        }
+    public static void main(String[] args) {
+        execute(args, MethodHandles.lookup().lookupClass());
     }
 
-    public static void execute(BufferedReader reader, KeyValueDataSource trieDB) throws IOException {
+    public static void importState(BufferedReader reader, KeyValueDataSource trieDB) throws IOException {
         for (String line = reader.readLine(); line != null; line = reader.readLine()) {
             line = line.trim();
             byte[] value = Hex.decode(line);
@@ -57,5 +56,17 @@ public class ImportState {
 
         trieDB.flush();
         trieDB.close();
+    }
+
+    @Override
+    protected void onExecute(@Nonnull String[] args, @Nonnull RskContext ctx) throws Exception {
+        String databaseDir = ctx.getRskSystemProperties().databaseDir();
+        KeyValueDataSource trieDB = LevelDbDataSource.makeDataSource(Paths.get(databaseDir, "unitrie"));
+
+        String filename = args[0];
+
+        try (BufferedReader reader = new BufferedReader(new FileReader(filename))) {
+            importState(reader, trieDB);
+        }
     }
 }
