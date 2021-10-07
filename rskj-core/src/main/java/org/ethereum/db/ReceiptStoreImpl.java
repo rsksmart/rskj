@@ -141,4 +141,9 @@ public class ReceiptStoreImpl implements ReceiptStore {
     public void flush() {
         this.receiptsDS.flush();
     }
+
+    @Override
+    public void close() {
+        this.receiptsDS.close();
+    }
 }

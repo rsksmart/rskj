@@ -1,6 +1,6 @@
 /*
  * This file is part of RskJ
- * Copyright (C) 2017 RSK Labs Ltd.
+ * Copyright (C) 2021 RSK Labs Ltd.
  * (derived from ethereumJ library, Copyright (c) 2016 <ether.camp>)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -16,30 +16,13 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
+package org.ethereum.util;
 
-package org.ethereum.db;
+import java.io.File;
+import java.io.IOException;
 
-import org.ethereum.core.TransactionReceipt;
+public interface TempFileCreator {
 
-import java.util.List;
-import java.util.Optional;
+    File createTempFile(String prefix, String suffix) throws IOException;
 
-/**
- * Created by Ruben on 6/1/2016.
- * Interface used for store transaction receipts
- */
-
-public interface ReceiptStore {
-
-    void add(byte[] blockHash, int transactionIndex, TransactionReceipt receipt);
-
-    Optional<TransactionInfo> get(byte[] transactionHash, byte[] blockHash);
-
-    Optional<TransactionInfo> getInMainChain(byte[] transactionHash, BlockStore store);
-
-    void saveMultiple(byte[] blockHash, List<TransactionReceipt> receipts);
-
-    void flush();
-
-    void close();
 }

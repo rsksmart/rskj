@@ -25,8 +25,19 @@ import org.ethereum.crypto.HashUtil;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 public class HashUtilTest {
+
+    @Test
+    public void testMessageDigestCreation() {
+        assertNotNull(HashUtil.makeMessageDigest());
+    }
+
+    @Test
+    public void testMessageDigestAlg() {
+        assertEquals("SHA-256", HashUtil.makeMessageDigest().getAlgorithm());
+    }
 
     @Test
     public void testSha256_EmptyString() {

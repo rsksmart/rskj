@@ -40,11 +40,12 @@ import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 public class HashUtil {
     public static final byte[] EMPTY_TRIE_HASH = keccak256(RLP.encodeElement(EMPTY_BYTE_ARRAY));
 
-    private static final MessageDigest sha256digest;
+    private static final MessageDigest sha256digest = makeMessageDigest();
 
-    static {
+    @Nonnull
+    public static MessageDigest makeMessageDigest() {
         try {
-            sha256digest = MessageDigest.getInstance("SHA-256");
+            return MessageDigest.getInstance("SHA-256");
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException(e);  // Can't happen.
         }
