@@ -42,7 +42,7 @@ public class TransactionArgumentsUtilTest {
 		RskAddress sender = wallet.addAccount();
 		RskAddress receiver = wallet.addAccount();
 		
-		CallArguments args = TransactionTestHelper.createArguments(sender, receiver);
+		CallArguments args = TransactionFactoryHelper.createArguments(sender, receiver);
 		
 		TransactionArguments txArgs = TransactionArgumentsUtil.processArguments(args, null, wallet.getAccount(sender), constants.getChainId());
 		
