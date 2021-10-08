@@ -208,7 +208,7 @@ public class EthModuleTest {
 	}
 
     @Test
-    public void sendTransactionInvalidSenderAccountTest() {
+    public void sendTransaction_invalidSenderAccount_throwsRskJsonRpcRequestException() {
         // Given
         Constants constants = Constants.regtest();
         Wallet wallet = new Wallet(new HashMapDB());
@@ -217,7 +217,7 @@ public class EthModuleTest {
 
         CallArguments argsMock = mock(CallArguments.class);
         RskAddress addressFrom = new RskAddress(new ECKey().getAddress());
-        doReturn(addressFrom.toJsonString()).when(argsMock).getFrom();
+        doReturn(addressFrom.toJsonString()).when(argsMock).getFrom(); // Address not in wallet
 
         EthModuleTransactionBase ethModuleTransaction = new EthModuleTransactionBase(constants, wallet, transactionPoolMock, transactionGatewayMock);
 
