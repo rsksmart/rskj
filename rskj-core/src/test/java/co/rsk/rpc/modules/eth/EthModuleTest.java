@@ -19,14 +19,11 @@
 package co.rsk.rpc.modules.eth;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyByte;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.TestUtils;
@@ -36,6 +33,7 @@ import org.ethereum.core.Blockchain;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionPool;
 import org.ethereum.core.TransactionPoolAddResult;
+import org.ethereum.crypto.ECKey;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.rpc.CallArguments;
 import org.ethereum.rpc.TypeConverter;
@@ -208,6 +206,30 @@ public class EthModuleTest {
 
 		assertEquals(txExpectedResult, txResult);
 	}
+
+    @Test
+    public void sendTransactionInvalidSenderAccountTest() {
+        // Given
+        Constants constants = Constants.regtest();
+        Wallet wallet = new Wallet(new HashMapDB());
+        TransactionPool transactionPoolMock = mock(TransactionPool.class);
+        TransactionGateway transactionGatewayMock = mock(TransactionGateway.class);
+
+        CallArguments argsMock = mock(CallArguments.class);
+        RskAddress addressFrom = new RskAddress(new ECKey().getAddress());
+        doReturn(addressFrom.toJsonString()).when(argsMock).getFrom();
+
+        EthModuleTransactionBase ethModuleTransaction = new EthModuleTransactionBase(constants, wallet, transactionPoolMock, transactionGatewayMock);
+
+        // Then
+        try {
+            ethModuleTransaction.sendTransaction(argsMock);
+            fail("RskJsonRpcRequestException should be thrown");
+        } catch (RskJsonRpcRequestException ex) {
+            verify(argsMock, times(2)).getFrom();
+            assertEquals("Could not find account for address: " + addressFrom.toJsonString(), ex.getMessage());
+        }
+    }
     
     @Test
     public void getCode() {
