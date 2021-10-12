@@ -19,7 +19,6 @@
 
 package org.ethereum.vm.program;
 
-import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.Transaction;
 import org.ethereum.vm.CallCreate;
 import org.ethereum.vm.DataWord;
@@ -64,7 +63,7 @@ public class ProgramResult {
 
     // estimateGas fields
     private long maxGasUsed = 0; // sometimes the estimatedGas matches the maximum gasUsed
-    private boolean movedRemainingGasToChild = false;
+    private boolean movedRemainingGasToChild = false; // this will happen when there's no more gas left than expected from the child call
     private long gasUsedBeforeRefunds = 0; // this field it's useful to test if the deductedRefund value is less than the half of the gasUsed
 
     public void movedRemainingGasToChild(boolean moved) {
