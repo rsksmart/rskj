@@ -96,8 +96,10 @@ public class EthModuleGasEstimationDSLTest {
         }
     }
 
+    /**
+     * A contract with an internal CALL with value transfer, it should take into account the STIPEND_CALL amount
+     * */
     @Test
-
     public void testEstimateGas_contractCallsWithValueTransfer() throws FileNotFoundException, DslProcessorException {
         World world = World.processedWorld("dsl/eth_module/estimateGas/callWithValue.txt");
 
@@ -157,6 +159,9 @@ public class EthModuleGasEstimationDSLTest {
         assertFalse(runWithArgumentsAndBlock(eth, args, block));
     }
 
+    /**
+     * A contract with already initialized storage cells, the estimation should take into account the storage refunds
+     * */
     @Test
     public void testEstimateGas_storageRefunds() throws FileNotFoundException, DslProcessorException {
         World world = World.processedWorld("dsl/eth_module/estimateGas/updateStorage.txt");
@@ -260,6 +265,9 @@ public class EthModuleGasEstimationDSLTest {
         assertEquals(clearStorageGasUsed, anotherClearStorageGasUsed);
     }
 
+    /**
+     * Test if a user can estimate a transaction that exceeds the block limit
+     * */
     @Test
     public void estimateGas_gasCap() throws FileNotFoundException, DslProcessorException {
         World world = World.processedWorld("dsl/eth_module/estimateGas/gasCap.txt");
@@ -410,6 +418,7 @@ public class EthModuleGasEstimationDSLTest {
 
     /**
      * Send 1 rBTC accross three contracts, then the last contract frees a storage cell and does a CALL with value
+     * NOTE: each nested call retains 10000 gas to emit events
      * */
     @Test
     public void estimateGas_nestedCallsWithValueGasRetainAndStorageRefund() throws FileNotFoundException, DslProcessorException {
@@ -486,6 +495,7 @@ public class EthModuleGasEstimationDSLTest {
 
     /**
      * Send 1 rBTC accross three contracts, then the last contract frees a storage cell and does a CALL with value
+     * NOTE: this test uses a fixed amount of gas for each internal call
      * */
     @Test
     public void estimateGas_nestedCallsWithValueFixedGasRetainAndStorageRefund() throws FileNotFoundException, DslProcessorException {

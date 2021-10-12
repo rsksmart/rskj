@@ -162,9 +162,6 @@ public class EthModule
                     hexArgs.getData(),
                     hexArgs.getFromAddress()
             );
-            // gasUsed cannot be greater than the gas passed, which should not
-            // be higher than the block gas limit, so we don't expect any overflow
-            // in these operations unless the user provides a malicius gasLimit value.
 
             estimation = internalEstimateGas(executor.getResult());
 
@@ -177,7 +174,7 @@ public class EthModule
     protected String internalEstimateGas(ProgramResult reversibleExecutionResult) {
         long estimatedGas = reversibleExecutionResult.getMovedRemainingGasToChild() ?
                 reversibleExecutionResult.getGasUsed() + reversibleExecutionResult.getDeductedRefund() :
-                reversibleExecutionResult.getMaxGasUsed(); // because deductedRefund can never be higher than gasUsed/2, we can just take the relative upper bound
+                reversibleExecutionResult.getMaxGasUsed();
 
         return TypeConverter.toQuantityJsonHex(estimatedGas);
     }
