@@ -43,28 +43,7 @@ import java.lang.invoke.MethodHandles;
 public class ConnectBlocks extends CliToolRskContextAware {
 
     public static void main(String[] args) throws IOException {
-        execute(args, MethodHandles.lookup().lookupClass());
-    }
-
-    public static void connectBlocks(BlockFactory blockFactory, Blockchain blockchain, TrieStore trieStore, BlockStore blockStore, ReceiptStore receiptStore, BufferedReader reader) throws IOException {
-        for (String line = reader.readLine(); line != null; line = reader.readLine()) {
-            String[] parts = line.split(",");
-
-            if (parts.length < 4) {
-                continue;
-            }
-
-            byte[] encoded = Hex.decode(parts[3]);
-
-            Block block = blockFactory.decodeBlock(encoded);
-            block.seal();
-
-            blockchain.tryToConnect(block);
-        }
-
-        blockStore.flush();
-        trieStore.flush();
-        receiptStore.flush();
+        create(MethodHandles.lookup().lookupClass()).execute(args);
     }
 
     @Override
@@ -85,6 +64,27 @@ public class ConnectBlocks extends CliToolRskContextAware {
 
         long endTime = System.currentTimeMillis();
 
-        logger.info("Duration: " + (endTime - startTime) + " millis");
+        printInfo("Duration: " + (endTime - startTime) + " millis");
+    }
+
+    private void connectBlocks(BlockFactory blockFactory, Blockchain blockchain, TrieStore trieStore, BlockStore blockStore, ReceiptStore receiptStore, BufferedReader reader) throws IOException {
+        for (String line = reader.readLine(); line != null; line = reader.readLine()) {
+            String[] parts = line.split(",");
+
+            if (parts.length < 4) {
+                continue;
+            }
+
+            byte[] encoded = Hex.decode(parts[3]);
+
+            Block block = blockFactory.decodeBlock(encoded);
+            block.seal();
+
+            blockchain.tryToConnect(block);
+        }
+
+        blockStore.flush();
+        trieStore.flush();
+        receiptStore.flush();
     }
 }

@@ -34,25 +34,7 @@ import java.lang.invoke.MethodHandles;
 public class RewindBlocks extends CliToolRskContextAware {
 
     public static void main(String[] args) {
-        execute(args, MethodHandles.lookup().lookupClass());
-    }
-
-    public static void rewindBlocks(long blockNumber, BlockStore blockStore) {
-        long maxNumber = blockStore.getMaxNumber();
-
-        logger.info("Highest block number stored in db: {}", maxNumber);
-        logger.info("Block number to rewind to: {}", blockNumber);
-
-        if (maxNumber > blockNumber) {
-            logger.info("Rewinding...");
-
-            blockStore.rewind(blockNumber);
-
-            maxNumber = blockStore.getMaxNumber();
-            logger.info("Done. New highest block number stored in db: {}", maxNumber);
-        } else {
-            logger.info("No need to rewind");
-        }
+        create(MethodHandles.lookup().lookupClass()).execute(args);
     }
 
     @Override
@@ -61,5 +43,23 @@ public class RewindBlocks extends CliToolRskContextAware {
         BlockStore blockStore = ctx.getBlockStore();
 
         rewindBlocks(blockNumber, blockStore);
+    }
+
+    private void rewindBlocks(long blockNumber, BlockStore blockStore) {
+        long maxNumber = blockStore.getMaxNumber();
+
+        printInfo("Highest block number stored in db: {}", maxNumber);
+        printInfo("Block number to rewind to: {}", blockNumber);
+
+        if (maxNumber > blockNumber) {
+            printInfo("Rewinding...");
+
+            blockStore.rewind(blockNumber);
+
+            maxNumber = blockStore.getMaxNumber();
+            printInfo("Done. New highest block number stored in db: {}", maxNumber);
+        } else {
+            printInfo("No need to rewind");
+        }
     }
 }

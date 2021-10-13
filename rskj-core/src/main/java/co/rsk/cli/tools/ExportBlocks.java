@@ -42,24 +42,7 @@ import java.lang.invoke.MethodHandles;
 public class ExportBlocks extends CliToolRskContextAware {
 
     public static void main(String[] args) {
-        execute(args, MethodHandles.lookup().lookupClass());
-    }
-
-    public static void exportBlocks(String[] args, BlockStore blockStore, PrintStream writer) {
-        long fromBlockNumber = Long.parseLong(args[0]);
-        long toBlockNumber = Long.parseLong(args[1]);
-
-        for (long n = fromBlockNumber; n <= toBlockNumber; n++) {
-            Block block = blockStore.getChainBlockByNumber(n);
-            BlockDifficulty totalDifficulty = blockStore.getTotalDifficultyForHash(block.getHash().getBytes());
-
-            writer.println(
-                block.getNumber() + "," +
-                ByteUtil.toHexString(block.getHash().getBytes()) + "," +
-                ByteUtil.toHexString(totalDifficulty.getBytes()) + "," +
-                ByteUtil.toHexString(block.getEncoded())
-            );
-        }
+        create(MethodHandles.lookup().lookupClass()).execute(args);
     }
 
     @Override
@@ -69,6 +52,23 @@ public class ExportBlocks extends CliToolRskContextAware {
 
         try (PrintStream writer = new PrintStream(new BufferedOutputStream(new FileOutputStream(filePath)))) {
             exportBlocks(args, blockStore, writer);
+        }
+    }
+
+    private void exportBlocks(String[] args, BlockStore blockStore, PrintStream writer) {
+        long fromBlockNumber = Long.parseLong(args[0]);
+        long toBlockNumber = Long.parseLong(args[1]);
+
+        for (long n = fromBlockNumber; n <= toBlockNumber; n++) {
+            Block block = blockStore.getChainBlockByNumber(n);
+            BlockDifficulty totalDifficulty = blockStore.getTotalDifficultyForHash(block.getHash().getBytes());
+
+            writer.println(
+                    block.getNumber() + "," +
+                            ByteUtil.toHexString(block.getHash().getBytes()) + "," +
+                            ByteUtil.toHexString(totalDifficulty.getBytes()) + "," +
+                            ByteUtil.toHexString(block.getEncoded())
+            );
         }
     }
 }

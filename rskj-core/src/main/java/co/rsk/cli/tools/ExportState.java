@@ -44,10 +44,21 @@ import java.util.Optional;
 public class ExportState extends CliToolRskContextAware {
 
     public static void main(String[] args) {
-        execute(args, MethodHandles.lookup().lookupClass());
+        create(MethodHandles.lookup().lookupClass()).execute(args);
     }
 
-    public static void exportState(String[] args, BlockStore blockStore, TrieStore trieStore, PrintStream writer) {
+    @Override
+    protected void onExecute(@Nonnull String[] args, @Nonnull RskContext ctx) throws Exception {
+        String filePath = args[1];
+        BlockStore blockStore = ctx.getBlockStore();
+        TrieStore trieStore = ctx.getTrieStore();
+
+        try (PrintStream writer = new PrintStream(new BufferedOutputStream(new FileOutputStream(filePath)))) {
+            exportState(args, blockStore, trieStore, writer);
+        }
+    }
+
+    private void exportState(String[] args, BlockStore blockStore, TrieStore trieStore, PrintStream writer) {
         long blockNumber = Long.parseLong(args[0]);
 
         Block block = blockStore.getChainBlockByNumber(blockNumber);
@@ -104,17 +115,6 @@ public class ExportState extends CliToolRskContextAware {
 
         if (trie.hasLongValue()) {
             writer.println(ByteUtil.toHexString(trie.getValue()));
-        }
-    }
-
-    @Override
-    protected void onExecute(@Nonnull String[] args, @Nonnull RskContext ctx) throws Exception {
-        String filePath = args[1];
-        BlockStore blockStore = ctx.getBlockStore();
-        TrieStore trieStore = ctx.getTrieStore();
-
-        try (PrintStream writer = new PrintStream(new BufferedOutputStream(new FileOutputStream(filePath)))) {
-            exportState(args, blockStore, trieStore, writer);
         }
     }
 }

@@ -17,6 +17,8 @@
  */
 package co.rsk.cli.tools;
 
+import co.rsk.RskContext;
+import co.rsk.config.RskSystemProperties;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.crypto.Keccak256;
@@ -26,6 +28,7 @@ import co.rsk.test.dsl.DslParser;
 import co.rsk.test.dsl.DslProcessorException;
 import co.rsk.test.dsl.WorldDslProcessor;
 import co.rsk.trie.Trie;
+import co.rsk.util.NodeStopper;
 import org.ethereum.TestUtils;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.Block;
@@ -34,16 +37,21 @@ import org.ethereum.core.Blockchain;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.datasource.KeyValueDataSource;
+import org.ethereum.datasource.LevelDbDataSource;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.IndexedBlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.db.ReceiptStoreImpl;
 import org.ethereum.util.ByteUtil;
 import org.junit.Assert;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Optional;
 import java.util.Random;
 
@@ -51,30 +59,34 @@ import static co.rsk.core.BlockDifficulty.ZERO;
 import static org.ethereum.TestUtils.randomHash;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 /**
  * Created by ajlopez on 26/04/2020.
  */
 public class CliToolsTest {
+
+    @Rule
+    public TemporaryFolder tempFolder = new TemporaryFolder();
+
     @Test
-    public void exportBlocks() throws FileNotFoundException, DslProcessorException, UnsupportedEncodingException {
+    public void exportBlocks() throws IOException, DslProcessorException {
         DslParser parser = DslParser.fromResource("dsl/blocks01.txt");
         World world = new World();
         WorldDslProcessor processor = new WorldDslProcessor(world);
         processor.processCommands(parser);
 
-        String[] args = new String[] { "0", "2" };
+        File blocksFile = new File(tempFolder.getRoot(), "blocks.txt");
+        String[] args = new String[] { "0", "2", blocksFile.getAbsolutePath() };
 
-        final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        final String utf8 = StandardCharsets.UTF_8.name();
+        RskContext rskContext = mock(RskContext.class);
+        doReturn(world.getBlockStore()).when(rskContext).getBlockStore();
+        NodeStopper stopper = mock(NodeStopper.class);
 
-        try (PrintStream ps = new PrintStream(baos, true, utf8)) {
-            ExportBlocks.exportBlocks(args, world.getBlockStore(), ps);
-        }
+        ExportBlocks exportBlocksCliTool = new ExportBlocks();
+        exportBlocksCliTool.execute(args, () -> rskContext, stopper);
 
-        String data = baos.toString(utf8);
+        String data = new String(Files.readAllBytes(blocksFile.toPath()), StandardCharsets.UTF_8);
 
         Blockchain blockchain = world.getBlockChain();
         BlockStore blockStore = world.getBlockStore();
@@ -85,27 +97,31 @@ public class CliToolsTest {
 
             String line = block.getNumber() + "," + block.getHash().toHexString() + "," + ByteUtil.toHexString(totalDifficulty.getBytes()) + "," + ByteUtil.toHexString(block.getEncoded());
 
-            Assert.assertTrue(data.indexOf(line) >= 0);
+            Assert.assertTrue(data.contains(line));
         }
+
+        verify(stopper).stop(0);
     }
 
     @Test
-    public void exportState() throws FileNotFoundException, DslProcessorException, UnsupportedEncodingException {
+    public void exportState() throws IOException, DslProcessorException {
         DslParser parser = DslParser.fromResource("dsl/contracts02.txt");
         World world = new World();
         WorldDslProcessor processor = new WorldDslProcessor(world);
         processor.processCommands(parser);
 
-        String[] args = new String[] { "2" };
+        File stateFile = new File(tempFolder.getRoot(), "state.txt");
+        String[] args = new String[] { "2", stateFile.getAbsolutePath() };
 
-        final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        final String utf8 = StandardCharsets.UTF_8.name();
+        RskContext rskContext = mock(RskContext.class);
+        doReturn(world.getBlockStore()).when(rskContext).getBlockStore();
+        doReturn(world.getTrieStore()).when(rskContext).getTrieStore();
+        NodeStopper stopper = mock(NodeStopper.class);
 
-        try (PrintStream ps = new PrintStream(baos, true, utf8)) {
-            ExportState.exportState(args, world.getBlockStore(), world.getTrieStore(), ps);
-        }
+        ExportState exportStateCliTool = new ExportState();
+        exportStateCliTool.execute(args, () -> rskContext, stopper);
 
-        String data = baos.toString(utf8);
+        String data = new String(Files.readAllBytes(stateFile.toPath()), StandardCharsets.UTF_8);
 
         Block block = world.getBlockByName("b02");
 
@@ -119,11 +135,13 @@ public class CliToolsTest {
 
         String line = ByteUtil.toHexString(encoded);
 
-        Assert.assertTrue(data.indexOf(line) >= 0);
+        Assert.assertTrue(data.contains(line));
+
+        verify(stopper).stop(0);
     }
 
     @Test
-    public void showStateInfo() throws FileNotFoundException, DslProcessorException, UnsupportedEncodingException {
+    public void showStateInfo() throws FileNotFoundException, DslProcessorException {
         DslParser parser = DslParser.fromResource("dsl/contracts02.txt");
         World world = new World();
         WorldDslProcessor processor = new WorldDslProcessor(world);
@@ -131,28 +149,32 @@ public class CliToolsTest {
 
         String[] args = new String[] { "best" };
 
-        final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        final String utf8 = StandardCharsets.UTF_8.name();
+        RskContext rskContext = mock(RskContext.class);
+        doReturn(world.getBlockStore()).when(rskContext).getBlockStore();
+        doReturn(world.getTrieStore()).when(rskContext).getTrieStore();
+        NodeStopper stopper = mock(NodeStopper.class);
 
-        try (PrintStream ps = new PrintStream(baos, true, utf8)) {
-            ShowStateInfo.printStateInfo(args, world.getBlockStore(), world.getTrieStore(), ps::println);
-        }
+        StringBuilder output = new StringBuilder();
+        ShowStateInfo showStateInfoCliTool = new ShowStateInfo(output::append);
+        showStateInfoCliTool.execute(args, () -> rskContext, stopper);
 
-        String data = baos.toString(utf8);
+        String data = output.toString();
 
         Block block = world.getBlockByName("b02");
 
         String blockLine = "Block hash: " + ByteUtil.toHexString(block.getHash().getBytes());
 
-        Assert.assertTrue(data.indexOf(blockLine) >= 0);
+        Assert.assertTrue(data.contains(blockLine));
 
         String longValueLine = "Trie long values: 1";
 
-        Assert.assertTrue(data.indexOf(longValueLine) >= 0);
+        Assert.assertTrue(data.contains(longValueLine));
+
+        verify(stopper).stop(0);
     }
 
     @Test
-    public void executeBlocks() throws FileNotFoundException, DslProcessorException, UnsupportedEncodingException {
+    public void executeBlocks() throws FileNotFoundException, DslProcessorException {
         DslParser parser = DslParser.fromResource("dsl/contracts02.txt");
         World world = new World();
         WorldDslProcessor processor = new WorldDslProcessor(world);
@@ -160,10 +182,19 @@ public class CliToolsTest {
 
         String[] args = new String[] { "1", "2" };
 
-        ExecuteBlocks.executeBlocks(args, world.getBlockExecutor(), world.getBlockStore(), world.getTrieStore(),
-                world.getStateRootHandler());
+        RskContext rskContext = mock(RskContext.class);
+        doReturn(world.getBlockExecutor()).when(rskContext).getBlockExecutor();
+        doReturn(world.getBlockStore()).when(rskContext).getBlockStore();
+        doReturn(world.getTrieStore()).when(rskContext).getTrieStore();
+        doReturn(world.getStateRootHandler()).when(rskContext).getStateRootHandler();
+        NodeStopper stopper = mock(NodeStopper.class);
+
+        ExecuteBlocks executeBlocksCliTool = new ExecuteBlocks();
+        executeBlocksCliTool.execute(args, () -> rskContext, stopper);
 
         Assert.assertEquals(2, world.getBlockChain().getBestBlock().getNumber());
+
+        verify(stopper).stop(0);
     }
 
     @Test
@@ -193,19 +224,29 @@ public class CliToolsTest {
         stringBuilder.append(ByteUtil.toHexString(block2.getEncoded()));
         stringBuilder.append("\n");
 
-        BufferedReader reader = new BufferedReader(new StringReader(stringBuilder.toString()));
+        File blocksFile = new File(tempFolder.getRoot(), "blocks.txt");
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(blocksFile))) {
+            writer.write(stringBuilder.toString());
+        }
 
-        ConnectBlocks.connectBlocks(
-                new BlockFactory(ActivationConfigsForTest.all()),
-                blockchain,
-                world.getTrieStore(),
-                world.getBlockStore(),
-                receiptStore,
-                reader);
+        String[] args = new String[] { blocksFile.getAbsolutePath() };
+
+        RskContext rskContext = mock(RskContext.class);
+        doReturn(blockchain).when(rskContext).getBlockchain();
+        doReturn(world.getBlockStore()).when(rskContext).getBlockStore();
+        doReturn(world.getTrieStore()).when(rskContext).getTrieStore();
+        doReturn(receiptStore).when(rskContext).getReceiptStore();
+        doReturn(new BlockFactory(ActivationConfigsForTest.all())).when(rskContext).getBlockFactory();
+        NodeStopper stopper = mock(NodeStopper.class);
+
+        ConnectBlocks connectBlocksCliTool = new ConnectBlocks();
+        connectBlocksCliTool.execute(args, () -> rskContext, stopper);
 
         Assert.assertEquals(2, blockchain.getBestBlock().getNumber());
         Assert.assertEquals(block1.getHash(), blockchain.getBlockByNumber(1).getHash());
         Assert.assertEquals(block2.getHash(), blockchain.getBlockByNumber(2).getHash());
+
+        verify(stopper).stop(0);
     }
 
     @Test
@@ -235,21 +276,29 @@ public class CliToolsTest {
         stringBuilder.append(ByteUtil.toHexString(block2.getEncoded()));
         stringBuilder.append("\n");
 
-        BufferedReader reader = new BufferedReader(new StringReader(stringBuilder.toString()));
+        File blocksFile = new File(tempFolder.getRoot(), "blocks.txt");
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(blocksFile))) {
+            writer.write(stringBuilder.toString());
+        }
 
-        ImportBlocks.importBlocks(
-                new BlockFactory(ActivationConfigsForTest.all()),
-                world.getBlockStore(),
-                reader);
+        String[] args = new String[] { blocksFile.getAbsolutePath() };
+
+        RskContext rskContext = mock(RskContext.class);
+        doReturn(world.getBlockStore()).when(rskContext).getBlockStore();
+        doReturn(new BlockFactory(ActivationConfigsForTest.all())).when(rskContext).getBlockFactory();
+        NodeStopper stopper = mock(NodeStopper.class);
+
+        ImportBlocks importBlocksCliTool = new ImportBlocks();
+        importBlocksCliTool.execute(args, () -> rskContext, stopper);
 
         Assert.assertEquals(block1.getHash(), blockchain.getBlockByNumber(1).getHash());
         Assert.assertEquals(block2.getHash(), blockchain.getBlockByNumber(2).getHash());
+
+        verify(stopper).stop(0);
     }
 
     @Test
     public void importState() throws IOException {
-        HashMapDB trieDB = new HashMapDB();
-        trieDB.setClearOnClose(false);
         byte[] value = new byte[42];
         Random random = new Random();
         random.nextBytes(value);
@@ -258,15 +307,32 @@ public class CliToolsTest {
         stringBuilder.append(ByteUtil.toHexString(value));
         stringBuilder.append("\n");
 
-        BufferedReader reader = new BufferedReader(new StringReader(stringBuilder.toString()));
+        File stateFile = new File(tempFolder.getRoot(), "state.txt");
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(stateFile))) {
+            writer.write(stringBuilder.toString());
+        }
 
-        ImportState.importState(reader, trieDB);
+        String databaseDir = new File(tempFolder.getRoot(), "db").getAbsolutePath();
+        String[] args = new String[] { stateFile.getAbsolutePath() };
+
+        RskContext rskContext = mock(RskContext.class);
+        RskSystemProperties rskSystemProperties = mock(RskSystemProperties.class);
+        doReturn(databaseDir).when(rskSystemProperties).databaseDir();
+        doReturn(rskSystemProperties).when(rskContext).getRskSystemProperties();
+        NodeStopper stopper = mock(NodeStopper.class);
+
+        ImportState importStateCliTool = new ImportState();
+        importStateCliTool.execute(args, () -> rskContext, stopper);
 
         byte[] key = new Keccak256(Keccak256Helper.keccak256(value)).getBytes();
+        KeyValueDataSource trieDB = LevelDbDataSource.makeDataSource(Paths.get(databaseDir, "unitrie"));
         byte[] result = trieDB.get(key);
+        trieDB.close();
 
         Assert.assertNotNull(result);
         Assert.assertArrayEquals(value, result);
+
+        verify(stopper).stop(0);
     }
 
     @Test
@@ -296,9 +362,18 @@ public class CliToolsTest {
         assertThat(bestBlock.getNumber(), is(blocksToGenerate - 1));
 
         long blockToRewind = blocksToGenerate / 2;
-        RewindBlocks.rewindBlocks(blockToRewind, indexedBlockStore);
+        String[] args = new String[] { String.valueOf(blockToRewind) };
+
+        RskContext rskContext = mock(RskContext.class);
+        doReturn(indexedBlockStore).when(rskContext).getBlockStore();
+        NodeStopper stopper = mock(NodeStopper.class);
+
+        RewindBlocks rewindBlocksCliTool = new RewindBlocks();
+        rewindBlocksCliTool.execute(args, () -> rskContext, stopper);
 
         bestBlock = indexedBlockStore.getBestBlock();
         assertThat(bestBlock.getNumber(), is(blockToRewind));
+
+        verify(stopper).stop(0);
     }
 }

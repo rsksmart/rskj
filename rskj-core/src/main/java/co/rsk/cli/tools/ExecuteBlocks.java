@@ -42,11 +42,21 @@ import java.util.Arrays;
 public class ExecuteBlocks extends CliToolRskContextAware {
 
     public static void main(String[] args) {
-        execute(args, MethodHandles.lookup().lookupClass());
+        create(MethodHandles.lookup().lookupClass()).execute(args);
     }
 
-    public static void executeBlocks(String[] args, BlockExecutor blockExecutor, BlockStore blockStore, TrieStore trieStore,
-                                     StateRootHandler stateRootHandler) {
+    @Override
+    protected void onExecute(@Nonnull String[] args, @Nonnull RskContext ctx) throws Exception {
+        BlockExecutor blockExecutor = ctx.getBlockExecutor();
+        BlockStore blockStore = ctx.getBlockStore();
+        TrieStore trieStore = ctx.getTrieStore();
+        StateRootHandler stateRootHandler = ctx.getStateRootHandler();
+
+        executeBlocks(args, blockExecutor, blockStore, trieStore, stateRootHandler);
+    }
+
+    private void executeBlocks(String[] args, BlockExecutor blockExecutor, BlockStore blockStore, TrieStore trieStore,
+                               StateRootHandler stateRootHandler) {
         long fromBlockNumber = Long.parseLong(args[0]);
         long toBlockNumber = Long.parseLong(args[1]);
 
@@ -58,22 +68,12 @@ public class ExecuteBlocks extends CliToolRskContextAware {
 
             Keccak256 stateRootHash = stateRootHandler.translate(block.getHeader());
             if (!Arrays.equals(blockResult.getFinalState().getHash().getBytes(), stateRootHash.getBytes())) {
-                logger.error("Invalid state root block number " + n);
+                printError("Invalid state root block number " + n);
                 break;
             }
         }
 
         trieStore.flush();
         blockStore.flush();
-    }
-
-    @Override
-    protected void onExecute(@Nonnull String[] args, @Nonnull RskContext ctx) throws Exception {
-        BlockExecutor blockExecutor = ctx.getBlockExecutor();
-        BlockStore blockStore = ctx.getBlockStore();
-        TrieStore trieStore = ctx.getTrieStore();
-        StateRootHandler stateRootHandler = ctx.getStateRootHandler();
-
-        executeBlocks(args, blockExecutor, blockStore, trieStore, stateRootHandler);
     }
 }

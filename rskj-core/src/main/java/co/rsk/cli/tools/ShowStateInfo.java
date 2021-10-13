@@ -28,6 +28,7 @@ import org.ethereum.util.ByteUtil;
 
 import javax.annotation.Nonnull;
 import java.lang.invoke.MethodHandles;
+import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -40,10 +41,29 @@ import java.util.Optional;
 public class ShowStateInfo extends CliToolRskContextAware {
 
     public static void main(String[] args) {
-        execute(args, MethodHandles.lookup().lookupClass());
+        create(MethodHandles.lookup().lookupClass()).execute(args);
     }
 
-    public static void printStateInfo(String[] args, BlockStore blockStore, TrieStore trieStore, Printer printer) {
+    private final Printer printer;
+
+    @SuppressWarnings("unused")
+    public ShowStateInfo() { // used via reflection
+        this(ShowStateInfo::printInfo);
+    }
+
+    public ShowStateInfo(@Nonnull Printer printer) {
+        this.printer = Objects.requireNonNull(printer);
+    }
+
+    @Override
+    protected void onExecute(@Nonnull String[] args, @Nonnull RskContext ctx) throws Exception {
+        BlockStore blockStore = ctx.getBlockStore();
+        TrieStore trieStore = ctx.getTrieStore();
+
+        printStateInfo(args, blockStore, trieStore);
+    }
+
+    private void printStateInfo(String[] args, BlockStore blockStore, TrieStore trieStore) {
         StateInfo stateInfo = new StateInfo();
 
         Block block;
@@ -119,14 +139,6 @@ public class ShowStateInfo extends CliToolRskContextAware {
             stateInfo.nvalues++;
             stateInfo.nbytes += trie.getValue().length;
         }
-    }
-
-    @Override
-    protected void onExecute(@Nonnull String[] args, @Nonnull RskContext ctx) throws Exception {
-        BlockStore blockStore = ctx.getBlockStore();
-        TrieStore trieStore = ctx.getTrieStore();
-
-        printStateInfo(args, blockStore, trieStore, logger::info);
     }
 
     @FunctionalInterface

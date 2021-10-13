@@ -18,10 +18,13 @@
 package co.rsk.cli;
 
 import co.rsk.RskContext;
+import co.rsk.util.Factory;
+import co.rsk.util.NodeStopper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
+import java.util.Objects;
 
 /**
  * An abstract class for cli tools that need {@link RskContext}. Lifecycle of the  {@link RskContext} instance
@@ -31,31 +34,52 @@ import javax.annotation.Nonnull;
  */
 public abstract class CliToolRskContextAware {
 
-    protected static final Logger logger = LoggerFactory.getLogger("clitool");
+    private static final Logger logger = LoggerFactory.getLogger("clitool");
 
-    protected static void execute(@Nonnull String[] args, @Nonnull Class<?> cliToolClass) {
+    protected static CliToolRskContextAware create(@Nonnull Class<?> cliToolClass) {
+        Objects.requireNonNull(cliToolClass, "cliToolClass should not be null");
+
         if (!CliToolRskContextAware.class.isAssignableFrom(cliToolClass)) {
             throw new IllegalArgumentException("cliToolClass");
         }
 
-        RskContext ctx = new RskContext(args); // TODO: close context when such capability is ready
         try {
-            CliToolRskContextAware cliTool = (CliToolRskContextAware) cliToolClass.newInstance();
-            String cliToolName = cliToolClass.getSimpleName();
-
-            logger.info("{} started", cliToolName);
-
-            cliTool.onExecute(args, ctx);
-
-            logger.info("{} finished", cliToolName);
-            System.exit(0);
+            return (CliToolRskContextAware) cliToolClass.newInstance();
         } catch (InstantiationException | IllegalAccessException e) {
-            logger.error("Cannot create an instance of {} cli tool", cliToolClass.getSimpleName(), e);
-            System.exit(2);
-        } catch (Exception e) {
-            logger.error("{} failed", cliToolClass.getSimpleName(), e);
-            System.exit(1);
+            printError("Cannot create an instance of {} cli tool", cliToolClass.getSimpleName(), e);
+            throw new IllegalArgumentException("Cannot create instance of " + cliToolClass.getName(), e);
         }
+    }
+
+    public void execute(@Nonnull String[] args) {
+        execute(args, () -> new RskContext(args), System::exit);
+    }
+
+    public void execute(@Nonnull String[] args, @Nonnull Factory<RskContext> contextFactory, @Nonnull NodeStopper stopper) {
+        Objects.requireNonNull(args, "args should not be null");
+        Objects.requireNonNull(contextFactory, "contextFactory should not be null");
+
+        String cliToolName = getClass().getSimpleName();
+        RskContext ctx = contextFactory.create(); // TODO: close context when such capability is ready
+        try {
+            printInfo("{} started", cliToolName);
+
+            onExecute(args, ctx);
+
+            printInfo("{} finished", cliToolName);
+            stopper.stop(0);
+        } catch (Exception e) {
+            printError("{} failed", cliToolName, e);
+            stopper.stop(1);
+        }
+    }
+
+    protected static void printInfo(String format, Object... arguments) {
+        logger.info(format, arguments);
+    }
+
+    protected static void printError(String format, Object... arguments) {
+        logger.error(format, arguments);
     }
 
     /**

@@ -42,20 +42,7 @@ import java.nio.file.Paths;
 public class ImportState extends CliToolRskContextAware {
 
     public static void main(String[] args) {
-        execute(args, MethodHandles.lookup().lookupClass());
-    }
-
-    public static void importState(BufferedReader reader, KeyValueDataSource trieDB) throws IOException {
-        for (String line = reader.readLine(); line != null; line = reader.readLine()) {
-            line = line.trim();
-            byte[] value = Hex.decode(line);
-            byte[] key = new Keccak256(Keccak256Helper.keccak256(value)).getBytes();
-
-            trieDB.put(key, value);
-        }
-
-        trieDB.flush();
-        trieDB.close();
+        create(MethodHandles.lookup().lookupClass()).execute(args);
     }
 
     @Override
@@ -67,6 +54,19 @@ public class ImportState extends CliToolRskContextAware {
 
         try (BufferedReader reader = new BufferedReader(new FileReader(filename))) {
             importState(reader, trieDB);
+        }
+
+        trieDB.flush();
+        trieDB.close();
+    }
+
+    private void importState(BufferedReader reader, KeyValueDataSource trieDB) throws IOException {
+        for (String line = reader.readLine(); line != null; line = reader.readLine()) {
+            line = line.trim();
+            byte[] value = Hex.decode(line);
+            byte[] key = new Keccak256(Keccak256Helper.keccak256(value)).getBytes();
+
+            trieDB.put(key, value);
         }
     }
 }

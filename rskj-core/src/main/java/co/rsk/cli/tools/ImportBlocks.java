@@ -42,10 +42,22 @@ import java.math.BigInteger;
 public class ImportBlocks extends CliToolRskContextAware {
 
     public static void main(String[] args) {
-        execute(args, MethodHandles.lookup().lookupClass());
+        create(MethodHandles.lookup().lookupClass()).execute(args);
     }
 
-    public static void importBlocks(BlockFactory blockFactory, BlockStore blockStore, BufferedReader reader) throws IOException {
+    @Override
+    protected void onExecute(@Nonnull String[] args, @Nonnull RskContext ctx) throws Exception {
+        BlockFactory blockFactory = ctx.getBlockFactory();
+        BlockStore blockStore = ctx.getBlockStore();
+
+        String filename = args[0];
+
+        try (BufferedReader reader = new BufferedReader(new FileReader(filename))) {
+            importBlocks(blockFactory, blockStore, reader);
+        }
+    }
+
+    private void importBlocks(BlockFactory blockFactory, BlockStore blockStore, BufferedReader reader) throws IOException {
         for (String line = reader.readLine(); line != null; line = reader.readLine()) {
             String[] parts = line.split(",");
 
@@ -63,17 +75,5 @@ public class ImportBlocks extends CliToolRskContextAware {
         }
 
         blockStore.flush();
-    }
-
-    @Override
-    protected void onExecute(@Nonnull String[] args, @Nonnull RskContext ctx) throws Exception {
-        BlockFactory blockFactory = ctx.getBlockFactory();
-        BlockStore blockStore = ctx.getBlockStore();
-
-        String filename = args[0];
-
-        try (BufferedReader reader = new BufferedReader(new FileReader(filename))) {
-            importBlocks(blockFactory, blockStore, reader);
-        }
     }
 }
