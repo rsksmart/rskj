@@ -1536,12 +1536,9 @@ public class VM {
             gasCost = GasCost.add(gasCost, calleeGas);
             spendOpCodeGas();
 
-            // the gas needed for the estimateGas will be given by gasUsed instead of maxGasUsed
-            // this is because the remaining gas it's spent and passed to the child, when it's actually not being spend
-            boolean passedRemainingGasToChild = calleeGas == remainingGas;
-            if(passedRemainingGasToChild) {
-                program.getResult().movedRemainingGasToChild(true);
-            }
+            // when there's less gas than expected from the child call,
+            // the estimateGas will be given by gasUsed + deductedRefunds instead of maxGasUsed
+            program.getResult().movedRemainingGasToChild(calleeGas == remainingGas);
         }
 
         if (isLogEnabled) {
