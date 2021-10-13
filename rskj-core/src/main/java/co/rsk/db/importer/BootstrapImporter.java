@@ -31,6 +31,8 @@ import org.ethereum.db.BlockStore;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPElement;
 import org.ethereum.util.RLPList;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.math.BigInteger;
 import java.util.LinkedList;
@@ -38,6 +40,8 @@ import java.util.Objects;
 import java.util.Queue;
 
 public class BootstrapImporter {
+
+    private static final Logger logger = LoggerFactory.getLogger(BootstrapImporter.class);
 
     private final BootstrapDataProvider bootstrapDataProvider;
     private final BlockStore blockStore;
@@ -55,20 +59,38 @@ public class BootstrapImporter {
     }
 
     public void importData() {
+        long start = System.currentTimeMillis();
+
         bootstrapDataProvider.retrieveData();
         updateDatabase();
+
+        long durationInMills = System.currentTimeMillis() - start;
+        logger.info("Bootstrap data has successfully been imported in {} mills", durationInMills);
     }
 
     private void updateDatabase() {
         Queue<RLPElement> rlpElementQueue = decodeQueue(bootstrapDataProvider.getBootstrapData());
 
+        long start = System.currentTimeMillis();
+        logger.debug("Inserting blocks...");
         insertBlocks(blockStore, blockFactory, Objects.requireNonNull(rlpElementQueue.poll()));
+        logger.debug("Blocks have been inserted in {} mills", System.currentTimeMillis() - start);
 
         HashMapDB hashMapDB = new HashMapDB();
         Queue<byte[]> nodeDataQueue = new LinkedList<>();
+        Queue<byte[]> nodeValueQueue = new LinkedList<>();
+        Queue<Trie> trieQueue = new LinkedList<>();
 
-        prepareState(nodeDataQueue, hashMapDB, Objects.requireNonNull(rlpElementQueue.poll()));
-        insertState(trieStore, nodeDataQueue, hashMapDB);
+        start = System.currentTimeMillis();
+        logger.debug("Preparing state for insertion...");
+        fillUpRlpDataQueues(nodeDataQueue, nodeValueQueue, Objects.requireNonNull(rlpElementQueue.poll()));
+        fillUpTrieQueue(trieQueue, nodeDataQueue, nodeValueQueue, hashMapDB);
+        logger.debug("State has been prepared in {} mills", System.currentTimeMillis() - start);
+
+        start = System.currentTimeMillis();
+        logger.debug("Inserting state...");
+        insertState(trieStore, trieQueue);
+        logger.debug("State has been inserted in {} mills", System.currentTimeMillis() - start);
     }
 
     private static void insertBlocks(BlockStore blockStore,
@@ -80,46 +102,49 @@ public class BootstrapImporter {
             RLPElement element = blocksData.get(k);
             RLPList blockData = RLP.decodeList(element.getRLPData());
             RLPList tuple = RLP.decodeList(blockData.getRLPData());
-            Block block = blockFactory.decodeBlock(tuple.get(0).getRLPData());
-            BlockDifficulty blockDifficulty = new BlockDifficulty(new BigInteger(Objects.requireNonNull(tuple.get(1).getRLPData())));
+            Block block = blockFactory.decodeBlock(Objects.requireNonNull(tuple.get(0).getRLPData(), "block data is missing"));
+            BlockDifficulty blockDifficulty = new BlockDifficulty(new BigInteger(Objects.requireNonNull(tuple.get(1).getRLPData(), "block difficulty data is missing")));
             blockStore.saveBlock(block, blockDifficulty, true);
         }
 
         blockStore.flush();
     }
 
-    private static void prepareState(Queue<byte[]> nodeDataQueue, HashMapDB hashMapDB, RLPElement rlpElement) {
+    private static void fillUpRlpDataQueues(Queue<byte[]> nodeDataQueue, Queue<byte[]> nodeValueQueue, RLPElement rlpElement) {
         Queue<RLPElement> nodeListQueue = decodeQueue(rlpElement.getRLPData());
 
-        prepareNodeData(nodeDataQueue, hashMapDB, RLP.decodeList(Objects.requireNonNull(nodeListQueue.poll()).getRLPData()));
-        prepareNodeValues(hashMapDB, RLP.decodeList(Objects.requireNonNull(nodeListQueue.poll()).getRLPData()));
+        fillUpRlpDataQueue(nodeDataQueue, RLP.decodeList(Objects.requireNonNull(nodeListQueue.poll()).getRLPData()));
+        fillUpRlpDataQueue(nodeValueQueue, RLP.decodeList(Objects.requireNonNull(nodeListQueue.poll()).getRLPData()));
     }
 
-    private static void prepareNodeData(Queue<byte[]> rlpDataQueue, HashMapDB hashMapDB, RLPList nodesData) {
+    private static void fillUpRlpDataQueue(Queue<byte[]> rlpDataQueue, RLPList nodesData) {
         int size = nodesData.size();
         for (int k = 0; k < size; k++) {
             RLPElement element = nodesData.get(k);
             byte[] rlpData = Objects.requireNonNull(element.getRLPData());
 
-            hashMapDB.put(Keccak256Helper.keccak256(rlpData), rlpData);
             rlpDataQueue.add(rlpData);
         }
     }
 
-    private static void prepareNodeValues(HashMapDB hashMapDB, RLPList nodeValues) {
-        int size = nodeValues.size();
-        for (int k = 0; k < size; k++) {
-            RLPElement element = nodeValues.get(k);
-            byte[] rlpData = element.getRLPData();
-            hashMapDB.put(Keccak256Helper.keccak256(rlpData), rlpData);
+    private static void fillUpTrieQueue(Queue<Trie> trieQueue,
+                                        Queue<byte[]> nodeDataQueue, Queue<byte[]> nodeValueQueue,
+                                        HashMapDB hashMapDB) {
+        TrieStoreImpl fakeStore = new TrieStoreImpl(hashMapDB);
+
+        for (byte[] nodeData = nodeDataQueue.poll(); nodeData != null; nodeData = nodeDataQueue.poll()) {
+            Trie trie = Trie.fromMessage(nodeData, fakeStore);
+            hashMapDB.put(trie.getHash().getBytes(), nodeData);
+            trieQueue.add(trie);
+        }
+
+        for (byte[] nodeValue = nodeValueQueue.poll(); nodeValue != null; nodeValue = nodeValueQueue.poll()) {
+            hashMapDB.put(Keccak256Helper.keccak256(nodeValue), nodeValue);
         }
     }
 
-    private static void insertState(TrieStore destinationTrieStore, Queue<byte[]> nodeDataQueue, HashMapDB hashMapDB) {
-        TrieStoreImpl fakeStore = new TrieStoreImpl(hashMapDB);
-        for (byte[] nodeData = nodeDataQueue.poll(); nodeData != null; nodeData = nodeDataQueue.poll()) {
-            Trie trie = Trie.fromMessage(nodeData, fakeStore);
-
+    private static void insertState(TrieStore destinationTrieStore, Queue<Trie> trieQueue) {
+        for (Trie trie = trieQueue.poll(); trie != null; trie = trieQueue.poll()) {
             destinationTrieStore.save(trie);
         }
     }
