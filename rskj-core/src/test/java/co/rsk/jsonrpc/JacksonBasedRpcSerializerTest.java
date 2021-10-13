@@ -25,25 +25,25 @@ public class JacksonBasedRpcSerializerTest {
 	}
 	
 	@Test
-	public void testIntegerId_then_convert_successfully() throws IOException {
+	public void testIntegerId_then_convertSuccessfully() throws IOException {
 
 		String messageInt = "{\"jsonrpc\": \"2.0\",\"method\": \"eth_subscribe\",\"params\": [\"newHeads\"],\"id\": 64}";
-		RskJsonRpcRequest requestFromIntId = converJson(messageInt); 
+		RskJsonRpcRequest requestFromIntId = convertJson(messageInt); 
 		
 		Assert.assertEquals("64", requestFromIntId.getId());
 	}
 
 	@Test
-	public void testStringId_then_convert_successfully() throws IOException {
+	public void testStringId_then_convertSuccessfully() throws IOException {
 
 		String messageStr = "{\"jsonrpc\": \"2.0\",\"method\": \"eth_subscribe\",\"params\": [\"newHeads\"],\"id\": \"string\"}";
-		RskJsonRpcRequest requestFromStringId = converJson(messageStr); 
+		RskJsonRpcRequest requestFromStringId = convertJson(messageStr); 
 
 		Assert.assertEquals("string", requestFromStringId.getId());
 		
 	}
 
-	private RskJsonRpcRequest converJson(String message) throws IOException {
+	private RskJsonRpcRequest convertJson(String message) throws IOException {
 		
 		RskJsonRpcRequest request = null;
 		

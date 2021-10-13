@@ -17,25 +17,27 @@
  */
 package co.rsk.rpc.modules.eth.subscribe;
 
+import static org.hamcrest.CoreMatchers.instanceOf;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.arrayWithSize;
+import static org.hamcrest.Matchers.hasItemInArray;
+import static org.hamcrest.Matchers.is;
+
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+
+import org.ethereum.rpc.Topic;
+import org.junit.Test;
+
+import com.fasterxml.jackson.databind.JsonMappingException;
+
 import co.rsk.core.RskAddress;
 import co.rsk.jsonrpc.JsonRpcVersion;
 import co.rsk.rpc.JacksonBasedRpcSerializer;
 import co.rsk.rpc.JsonRpcSerializer;
 import co.rsk.rpc.modules.RskJsonRpcMethod;
 import co.rsk.rpc.modules.RskJsonRpcRequest;
-import com.fasterxml.jackson.databind.JsonMappingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.ethereum.rpc.Topic;
-import org.junit.Assert;
-import org.junit.Test;
-
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-
-import static org.hamcrest.CoreMatchers.instanceOf;
-import static org.hamcrest.Matchers.*;
-import static org.hamcrest.MatcherAssert.assertThat;
 
 public class EthSubscribeRequestTest {
     private JsonRpcSerializer serializer = new JacksonBasedRpcSerializer();

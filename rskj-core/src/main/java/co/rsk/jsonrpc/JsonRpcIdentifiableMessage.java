@@ -17,22 +17,28 @@
  */
 package co.rsk.jsonrpc;
 
+import org.apache.commons.lang3.StringUtils;
+
+
 import com.fasterxml.jackson.annotation.JsonInclude;
+
+import co.rsk.util.NumberUtils;
 
 /**
  * The basic JSON-RPC request or response. It is required to have an ID.
  *
  * Note that the JSON-RPC 2.0 spec allows using strings as IDs.
+ * 
  */
 public abstract class JsonRpcIdentifiableMessage extends JsonRpcMessage {
-	
-	private static final String ID_BAD_PARAMETER_MSG = "JSON-RPC message id should be a String or a positive number, but was %s.";
+
+	private static final String ID_BAD_PARAMETER_MSG = "JSON-RPC message id should be a String or a positive number, but was '%s'.";
 
 	private final String id;
-    
+
     protected JsonRpcIdentifiableMessage(JsonRpcVersion version, String id) {
         super(version);
-        requireNonEmpty(id);
+        requireValidId(id);
         this.id = id;
     }
 
@@ -41,11 +47,21 @@ public abstract class JsonRpcIdentifiableMessage extends JsonRpcMessage {
         return id;
     }
 
-    private static void requireNonEmpty(String id) {
+    private static void requireValidId(String id) {
+    	requireNonEmpty(id);
+    	requirePositiveIfNumber(id);
+    }
 
-    	if (id == null || id.trim().length() == 0) {
+    private static void requireNonEmpty(String id) {
+    	if (StringUtils.isEmpty(id)) {
             throw new IllegalArgumentException(String.format(ID_BAD_PARAMETER_MSG, id));
         }
-
     }
+
+    private static void requirePositiveIfNumber(String id) {    	
+        if (NumberUtils.isNumber(id) && Long.parseLong(id) < 0) {
+            throw new IllegalArgumentException(String.format(ID_BAD_PARAMETER_MSG, id));
+        }
+    }
+
 }
