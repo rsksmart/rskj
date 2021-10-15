@@ -58,13 +58,13 @@ public class RskWebSocketJsonRpcHandler extends SimpleChannelInboundHandler<Byte
 	
     private static final Logger LOGGER = LoggerFactory.getLogger(RskWebSocketJsonRpcHandler.class);
 
+    private static final String ID = "id";
+    
     private final EthSubscriptionNotificationEmitter emitter;
-
+    
     private final ObjectMapper mapper = new ObjectMapper();
     
     private final RskWebSocketJsonParameterValidator parameterValidator = new RskWebSocketJsonParameterValidator();
-    
-    private static final String ID = "id";
     
     public RskWebSocketJsonRpcHandler(EthSubscriptionNotificationEmitter emitter) {
         this.emitter = emitter;
