@@ -24,7 +24,7 @@ package co.rsk.jsonrpc;
 public abstract class JsonRpcResult implements JsonRpcResultOrError {
 	
     @Override
-    public JsonRpcIdentifiableMessage responseFor(String messageId) {
+    public JsonRpcIdentifiableMessage responseFor(Object messageId) {
         return new JsonRpcResultResponse(messageId, this);
     }
 

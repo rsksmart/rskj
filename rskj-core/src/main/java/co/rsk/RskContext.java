@@ -1869,7 +1869,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     new PendingTransactionsNotificationEmitter(rsk, jsonRpcSerializer),
                     new SyncNotificationEmitter(rsk, jsonRpcSerializer, nodeBlockProcessor, blockchain)
             );
-            RskWebSocketJsonRpcHandler jsonRpcHandler = new RskWebSocketJsonRpcHandler(emitter, jsonRpcSerializer);
+            RskWebSocketJsonRpcHandler jsonRpcHandler = new RskWebSocketJsonRpcHandler(emitter);
             web3WebSocketServer = new Web3WebSocketServer(
                     rskSystemProperties.rpcWebSocketBindAddress(),
                     rskSystemProperties.rpcWebSocketPort(),

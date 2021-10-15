@@ -29,7 +29,7 @@ public abstract class JsonRpcRequest<T extends Enum<T>> extends JsonRpcIdentifia
     
 	private final T method;
 
-    protected JsonRpcRequest(JsonRpcVersion version, T method, String id) {
+    protected JsonRpcRequest(JsonRpcVersion version, T method, Object id) {
         super(version, id);
         this.method = Objects.requireNonNull(method);
     }

@@ -17,11 +17,21 @@
  */
 package co.rsk.rpc.netty;
 
+import java.io.IOException;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+
 import co.rsk.jsonrpc.JsonRpcBooleanResult;
+import co.rsk.jsonrpc.JsonRpcError;
 import co.rsk.jsonrpc.JsonRpcIdentifiableMessage;
 import co.rsk.jsonrpc.JsonRpcResultOrError;
 import co.rsk.rpc.EthSubscriptionNotificationEmitter;
-import co.rsk.rpc.JsonRpcSerializer;
 import co.rsk.rpc.modules.RskJsonRpcRequest;
 import co.rsk.rpc.modules.RskJsonRpcRequestVisitor;
 import co.rsk.rpc.modules.eth.subscribe.EthSubscribeRequest;
@@ -33,10 +43,6 @@ import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
 
 /**
  * This handler decodes inbound messages and dispatches valid JSON-RPC requests.
@@ -47,33 +53,50 @@ import java.io.IOException;
  * We make this object Sharable so it can be instanced once in the netty pipeline
  * and since all objects used by this object are thread safe, 
  */
-
 @Sharable
-public class RskWebSocketJsonRpcHandler
-        extends SimpleChannelInboundHandler<ByteBufHolder>
-        implements RskJsonRpcRequestVisitor {
+public class RskWebSocketJsonRpcHandler extends SimpleChannelInboundHandler<ByteBufHolder> implements RskJsonRpcRequestVisitor {
+	
     private static final Logger LOGGER = LoggerFactory.getLogger(RskWebSocketJsonRpcHandler.class);
 
     private final EthSubscriptionNotificationEmitter emitter;
-    private final JsonRpcSerializer serializer;
 
-    public RskWebSocketJsonRpcHandler(EthSubscriptionNotificationEmitter emitter, JsonRpcSerializer serializer) {
+    private final ObjectMapper mapper = new ObjectMapper();
+    
+    private final RskWebSocketJsonParameterValidator parameterValidator = new RskWebSocketJsonParameterValidator();
+    
+    private static final String ID = "id";
+    
+    public RskWebSocketJsonRpcHandler(EthSubscriptionNotificationEmitter emitter) {
         this.emitter = emitter;
-        this.serializer = serializer;
     }
 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, ByteBufHolder msg) {
         ByteBuf content = msg.copy().content();
 
-        try (ByteBufInputStream source = new ByteBufInputStream(content)){
-            RskJsonRpcRequest request = serializer.deserializeRequest(source);
+        try (ByteBufInputStream source = new ByteBufInputStream(content)) {
+        	
+        	final JsonNode jsonNodeRequest = mapper.readTree(source);
+        	
+            RskWebSocketJsonParameterValidator.Result validationResult = parameterValidator.validate(jsonNodeRequest);
 
-            // TODO(mc) we should support the ModuleDescription method filters
-            JsonRpcResultOrError resultOrError = request.accept(this, ctx);
+            RskJsonRpcRequest request = mapper.treeToValue(jsonNodeRequest, RskJsonRpcRequest.class);
+            
+            JsonRpcResultOrError resultOrError = null;
+            
+            if(validationResult.isValid()) {
+                // TODO(mc) we should support the ModuleDescription method filters
+                resultOrError = request.accept(this, ctx);
+            } else {
+            	resultOrError = new JsonRpcError(JsonRpcError.INVALID_PARAMS, validationResult.getMessage());
+            }
+
             JsonRpcIdentifiableMessage response = resultOrError.responseFor(request.getId());
-            ctx.writeAndFlush(new TextWebSocketFrame(serializer.serializeMessage(response)));
+            
+            ctx.writeAndFlush(new TextWebSocketFrame(getJsonWithTypedId(jsonNodeRequest, response)));
+            
             return;
+
         } catch (IOException e) {
             LOGGER.trace("Not a known or valid JsonRpcRequest", e);
 
@@ -84,7 +107,13 @@ public class RskWebSocketJsonRpcHandler
         // delegate to the next handler if the message can't be matched to a known JSON-RPC request
         ctx.fireChannelRead(msg);
     }
-
+    
+    private String getJsonWithTypedId(JsonNode jsonNodeRequest, JsonRpcIdentifiableMessage response) throws JsonProcessingException {
+    	JsonNode jsonNodeResponse = mapper.valueToTree(response);
+        ((ObjectNode) jsonNodeResponse).set(ID, jsonNodeRequest.get(ID));
+        return mapper.writeValueAsString(jsonNodeResponse);
+    }
+    		
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
         emitter.unsubscribe(ctx.channel());

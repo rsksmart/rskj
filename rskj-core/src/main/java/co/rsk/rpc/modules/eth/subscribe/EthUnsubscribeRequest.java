@@ -37,7 +37,7 @@ public class EthUnsubscribeRequest extends RskJsonRpcRequest {
     public EthUnsubscribeRequest(
             @JsonProperty("jsonrpc") JsonRpcVersion version,
             @JsonProperty("method") RskJsonRpcMethod method,
-            @JsonProperty("id") String id,
+            @JsonProperty("id") Object id,
             @JsonProperty("params") EthUnsubscribeParams params) {
         super(version, verifyMethod(method), id);
         this.params = params;

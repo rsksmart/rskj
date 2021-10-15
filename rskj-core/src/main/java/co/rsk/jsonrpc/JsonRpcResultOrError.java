@@ -29,5 +29,5 @@ public interface JsonRpcResultOrError {
      * @param messageId the message ID
      */
     @JsonIgnore
-    JsonRpcIdentifiableMessage responseFor(String messageId);
+    JsonRpcIdentifiableMessage responseFor(Object messageId);
 }

@@ -25,7 +25,7 @@ import java.util.Objects;
 public class JsonRpcResultResponse extends JsonRpcIdentifiableMessage {
     private final JsonRpcResult result;
 
-    public JsonRpcResultResponse(String id, JsonRpcResult result) {
+    public JsonRpcResultResponse(Object id, JsonRpcResult result) {
         super(JsonRpcVersion.V2_0, id);
         this.result = Objects.requireNonNull(result);
     }
