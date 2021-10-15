@@ -39,7 +39,7 @@ public class EthSubscribeRequest extends RskJsonRpcRequest {
     public EthSubscribeRequest(
             @JsonProperty("jsonrpc") JsonRpcVersion version,
             @JsonProperty("method") RskJsonRpcMethod method,
-            @JsonProperty("id") String id,
+            @JsonProperty("id") Object id,
             @JsonProperty("params") EthSubscribeParams params) {
         super(version, verifyMethod(method), Objects.requireNonNull(id));
         this.params = Objects.requireNonNull(params);
