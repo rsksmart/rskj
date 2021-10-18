@@ -2,57 +2,65 @@ package co.rsk.storagerent;
 
 import org.junit.Test;
 
-import static co.rsk.storagerent.StorageRentComputation.READ_THRESHOLD;
-import static co.rsk.storagerent.StorageRentComputation.RENT_CAP;
-import static org.junit.Assert.*;
+import java.util.GregorianCalendar;
+
+import static co.rsk.storagerent.StorageRentComputation.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class StorageRentComputationTest {
 
-    private static final double ONE_MONTH = 2629746; // expressed in seconds
+    private static final long ONE_MONTH = 2_629_746; // expressed in seconds
 
     @Test
     public void computeRead_normalArguments_rent() {
-        double rent = StorageRentComputation.computeRent(100, ONE_MONTH * 9, RENT_CAP, READ_THRESHOLD);
+        long rent = StorageRentComputation.computeRent(rentDue(100, ONE_MONTH * 9),
+                RENT_CAP, READ_THRESHOLD);
+
         assertTrue(READ_THRESHOLD < rent);
         assertTrue(RENT_CAP > rent);
-        assertEqualsDouble(2573.127170562744, rent);
+        assertEqualsDouble(2573.0, rent);
     }
 
     @Test
     public void computeRead_belowThreshold_zeroRent() {
-        double rent = StorageRentComputation.computeRent(100, ONE_MONTH * 8, RENT_CAP, READ_THRESHOLD);
+        long rent = StorageRentComputation.computeRent(rentDue(100, ONE_MONTH * 8),
+                RENT_CAP, READ_THRESHOLD);
+
         assertTrue(READ_THRESHOLD > rent);
         assertEqualsDouble(0, rent);
     }
 
     @Test
     public void computeRead_aboveCap_cappedRent() {
-        double rent = StorageRentComputation.computeRent(100, ONE_MONTH * (17 + 1), RENT_CAP, READ_THRESHOLD);
+        long rent = StorageRentComputation.computeRent(rentDue(100, ONE_MONTH * (17 + 1)),
+                RENT_CAP, READ_THRESHOLD);
+
         assertEqualsDouble(RENT_CAP, rent);
     }
 
     @Test
     public void computeRead_invalidArguments() {
         try {
-            StorageRentComputation.computeRent(0, ONE_MONTH, RENT_CAP, READ_THRESHOLD);
+            StorageRentComputation.computeRent(rentDue(0, ONE_MONTH), RENT_CAP, READ_THRESHOLD);
         } catch (IllegalArgumentException e) {
             assertEquals("node size must be positive", e.getMessage());
         }
 
         try {
-            StorageRentComputation.computeRent(100, 0, RENT_CAP, READ_THRESHOLD);
+            StorageRentComputation.computeRent(rentDue(100, 0), RENT_CAP, READ_THRESHOLD);
         } catch (IllegalArgumentException e) {
             assertEquals("duration must be positive", e.getMessage());
         }
 
         try {
-            StorageRentComputation.computeRent(100, ONE_MONTH, 0, READ_THRESHOLD);
+            StorageRentComputation.computeRent(rentDue(100, ONE_MONTH), 0, READ_THRESHOLD);
         } catch (IllegalArgumentException e) {
             assertEquals("cap must be positive", e.getMessage());
         }
 
         try {
-            StorageRentComputation.computeRent(100, ONE_MONTH, RENT_CAP, 0);
+            StorageRentComputation.computeRent(rentDue(100, ONE_MONTH), RENT_CAP, 0);
         } catch (IllegalArgumentException e) {
             assertEquals("threshold must be positive", e.getMessage());
         }
@@ -60,23 +68,32 @@ public class StorageRentComputationTest {
 
     @Test
     public void computeTimestamp_withinRange_blockTimestamp() {
-        long newTimestamp = StorageRentComputation
-                .computeTimestamp(lastPaidTimestamp, currentBlockTimestamp,rentDue, rentCap, rentThreshold);
-        assertEquals(currentBlockTimestamp, newTimestamp);
+        long newTimestamp = StorageRentComputation.computeNewTimestamp(100, 2574, 1,
+                2, RENT_CAP, READ_THRESHOLD);
+
+        assertEquals(2, newTimestamp);
     }
 
     @Test
     public void computeTimestamp_belowThreshold_sameTimestamp() { // since it won't be paid
-        long newTimestamp = StorageRentComputation
-                .computeTimestamp(lastPaidTimestamp, currentBlockTimestamp,rentDue, rentCap, rentThreshold);
-        assertEquals(lastPaidTimestamp, newTimestamp);
+        long newTimestamp = StorageRentComputation.computeNewTimestamp(100, 0,1,
+                2, RENT_CAP, READ_THRESHOLD);
+
+        assertEquals(1, newTimestamp);
     }
 
     @Test
     public void computeTimestamp_exceedingRentCap_partiallyAdvancedTimestamp() { // since rent it's not completely paid
-        long newTimestamp = StorageRentComputation
-                .computeTimestamp(lastPaidTimestamp, currentBlockTimestamp,rentDue, rentCap, rentThreshold);
-        assertEquals(partiallyAdvancedTimestamp, newTimestamp);
+        long nodeSize = 100;
+        long lastPaidTimestamp = new GregorianCalendar(2018, 1, 29).getTimeInMillis();
+        long currentBlockTimestamp = new GregorianCalendar(2021, 1, 29).getTimeInMillis();
+        long partiallyAdvancedTimestamp = 1_519_978_057_600L; // Fri Mar 02 05:07:37 ART 2018
+        long rentDue = rentDue(nodeSize, currentBlockTimestamp - lastPaidTimestamp);
+
+        long result = StorageRentComputation.computeNewTimestamp(nodeSize, rentDue, lastPaidTimestamp,
+                currentBlockTimestamp, RENT_CAP, READ_THRESHOLD);
+
+        assertEquals(partiallyAdvancedTimestamp, result);
         assertTrue(lastPaidTimestamp < partiallyAdvancedTimestamp);
         assertTrue(partiallyAdvancedTimestamp < currentBlockTimestamp);
     }
