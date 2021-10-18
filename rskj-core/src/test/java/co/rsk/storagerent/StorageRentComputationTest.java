@@ -2,7 +2,8 @@ package co.rsk.storagerent;
 
 import org.junit.Test;
 
-import static co.rsk.storagerent.StorageRentComputation.*;
+import static co.rsk.storagerent.StorageRentComputation.READ_THRESHOLD;
+import static co.rsk.storagerent.StorageRentComputation.RENT_CAP;
 import static org.junit.Assert.*;
 
 public class StorageRentComputationTest {
@@ -10,7 +11,7 @@ public class StorageRentComputationTest {
     private static final double ONE_MONTH = 2629746; // expressed in seconds
 
     @Test
-    public void computeRead() {
+    public void computeRead_normalArguments_rent() {
         double rent = StorageRentComputation.computeRent(100, ONE_MONTH * 9, RENT_CAP, READ_THRESHOLD);
         assertTrue(READ_THRESHOLD < rent);
         assertTrue(RENT_CAP > rent);
@@ -55,6 +56,29 @@ public class StorageRentComputationTest {
         } catch (IllegalArgumentException e) {
             assertEquals("threshold must be positive", e.getMessage());
         }
+    }
+
+    @Test
+    public void computeTimestamp_withinRange_blockTimestamp() {
+        long newTimestamp = StorageRentComputation
+                .computeTimestamp(lastPaidTimestamp, currentBlockTimestamp,rentDue, rentCap, rentThreshold);
+        assertEquals(currentBlockTimestamp, newTimestamp);
+    }
+
+    @Test
+    public void computeTimestamp_belowThreshold_sameTimestamp() { // since it won't be paid
+        long newTimestamp = StorageRentComputation
+                .computeTimestamp(lastPaidTimestamp, currentBlockTimestamp,rentDue, rentCap, rentThreshold);
+        assertEquals(lastPaidTimestamp, newTimestamp);
+    }
+
+    @Test
+    public void computeTimestamp_exceedingRentCap_partiallyAdvancedTimestamp() { // since rent it's not completely paid
+        long newTimestamp = StorageRentComputation
+                .computeTimestamp(lastPaidTimestamp, currentBlockTimestamp,rentDue, rentCap, rentThreshold);
+        assertEquals(partiallyAdvancedTimestamp, newTimestamp);
+        assertTrue(lastPaidTimestamp < partiallyAdvancedTimestamp);
+        assertTrue(partiallyAdvancedTimestamp < currentBlockTimestamp);
     }
 
     private void assertEqualsDouble(double expected, double actual) {
