@@ -18,7 +18,7 @@ public class StorageRentComputation {
     private static final double RENTAL_RATE = (1 / Math.pow(2, 21));
     private static final long STORAGE_OVERHEAD = 128;
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(StorageRentComputation.class);
+    private StorageRentComputation() {}
 
     /**
      * Computes the amount of rent to be paid for trie reads/writes.
@@ -32,9 +32,8 @@ public class StorageRentComputation {
         validateArgumentsComputeRent(rentCap, rentThreshold);
 
         long computedRent = Math.min(rentCap, rentDue);
-        long result = computedRent > rentThreshold ? computedRent : 0;
 
-        return result;
+        return computedRent > rentThreshold ? computedRent : 0;
     }
 
     /**
@@ -67,21 +66,33 @@ public class StorageRentComputation {
      *
      * @return the next timestamp (it can be the same if it doesn't reach the threshold)
      * */
-    public static long computeNewTimestamp(long nodeSize, long rentDue, long lastPaidTimestamp, long currentBlockTimestamp,
-                                        long rentCap, long rentThreshold) {
-        // todo(fedejinnich) add validations
+    public static long computeNewTimestamp(long nodeSize, long rentDue, long lastPaidTimestamp,
+                                           long currentBlockTimestamp, long rentCap, long rentThreshold) {
+        validateArgumentsComputeTimestamp(nodeSize, rentDue, lastPaidTimestamp, currentBlockTimestamp,
+                rentCap, rentThreshold);
+
         if (rentDue <= rentThreshold) {
             return lastPaidTimestamp;
-        } else if (rentThreshold < rentDue && rentDue <= rentCap) {
-            return currentBlockTimestamp;
         }
 
-        double rentCapDouble = Long.valueOf(rentCap).doubleValue();
-        double nodeSizeDouble = Long.valueOf(nodeSize).doubleValue();
-
+        if (rentThreshold < rentDue && rentDue <= rentCap) {
+            return currentBlockTimestamp;
+        }
+        
         // if rent due exceeds cap, it partially advances the last paid timestamp
-        Double timePaid = Math.floor(rentCapDouble / (nodeSizeDouble * RENTAL_RATE));
+        Double timePaid = Math.floor(rentCap / (nodeSize * RENTAL_RATE));
         return lastPaidTimestamp + timePaid.longValue();
+    }
+
+    private static void validateArgumentsComputeTimestamp(long nodeSize, long rentDue, long lastPaidTimestamp,
+                                                          long currentBlockTimestamp, long rentCap,
+                                                          long rentThreshold) {
+        validPositiveValue(nodeSize, "nodeSize must be positive");
+        validPositiveValue(rentDue, "rentDue must be positive");
+        validPositiveValue(lastPaidTimestamp, "lastPaidTime must be positive");
+        validPositiveValue(currentBlockTimestamp, "currentBlockTimestamp must be positive");
+        validPositiveValue(rentCap, "rentCap must be positive");
+        validPositiveValue(rentThreshold, "rentThreshold must be positive");
     }
 
     private static void validateArgumentsRentDue(long nodeSize, long duration) {

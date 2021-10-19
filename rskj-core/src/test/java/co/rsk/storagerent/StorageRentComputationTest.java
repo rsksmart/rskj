@@ -96,6 +96,51 @@ public class StorageRentComputationTest {
         assertTrue(partiallyAdvancedTimestamp < currentBlockTimestamp);
     }
 
+    @Test
+    public void computeTimestamp_invalidArguments() {
+        try {
+            StorageRentComputation.computeNewTimestamp(0, 1, 1, 1,
+                    1, 1);
+        } catch (IllegalArgumentException e) {
+            assertEquals("nodeSize must be positive", e.getMessage());
+        }
+
+        try {
+            StorageRentComputation.computeNewTimestamp(1, 0, 1, 1,
+                    1, 1);
+        } catch (IllegalArgumentException e) {
+            assertEquals("rentDue must be positive", e.getMessage());
+        }
+
+        try {
+            StorageRentComputation.computeNewTimestamp(1, 1, 0, 1,
+                    1, 1);
+        } catch (IllegalArgumentException e) {
+            assertEquals("lastPaidTime must be positive", e.getMessage());
+        }
+
+        try {
+            StorageRentComputation.computeNewTimestamp(1, 1, 1, 0,
+                    1, 1);
+        } catch (IllegalArgumentException e) {
+            assertEquals("currentBlockTimestamp must be positive", e.getMessage());
+        }
+
+        try {
+            StorageRentComputation.computeNewTimestamp(1, 1, 1, 1,
+                    0, 1);
+        } catch (IllegalArgumentException e) {
+            assertEquals("rentCap must be positive", e.getMessage());
+        }
+
+        try {
+            StorageRentComputation.computeNewTimestamp(1, 1, 1, 1,
+                    1, 0);
+        } catch (IllegalArgumentException e) {
+            assertEquals("rentThreshold must be positive", e.getMessage());
+        }
+    }
+
     private void assertEqualsDouble(double expected, double actual) {
         assertEquals(expected, actual, 0);
     }
