@@ -30,7 +30,8 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.ethereum.rpc.TypeConverter.stringHexToBigInteger;
-import static org.ethereum.rpc.exception.RskJsonRpcRequestException.*;
+import static org.ethereum.rpc.exception.RskJsonRpcRequestException.blockNotFound;
+import static org.ethereum.rpc.exception.RskJsonRpcRequestException.invalidParamError;
 
 /**
  * Retrieves information requested by web3 based on the block identifier:
@@ -41,35 +42,37 @@ import static org.ethereum.rpc.exception.RskJsonRpcRequestException.*;
  * String "pending"  - for the pending state/transactions
  */
 public class Web3InformationRetriever {
-    private final TransactionPool transactionPool;
-    private final Blockchain blockchain;
-    private final RepositoryLocator locator;
 
     private static final String EARLIEST = "earliest";
     private static final String LATEST = "latest";
     private static final String PENDING = "pending";
 
+    private final TransactionPool transactionPool;
+    private final Blockchain blockchain;
+    private final RepositoryLocator locator;
+    private final ExecutionBlockRetriever executionBlockRetriever;
 
-    public Web3InformationRetriever(TransactionPool transactionPool, Blockchain blockchain, RepositoryLocator locator) {
-
+    public Web3InformationRetriever(TransactionPool transactionPool,
+                                    Blockchain blockchain,
+                                    RepositoryLocator locator,
+                                    ExecutionBlockRetriever executionBlockRetriever) {
         this.transactionPool = transactionPool;
         this.blockchain = blockchain;
         this.locator = locator;
+        this.executionBlockRetriever = executionBlockRetriever;
     }
 
     /**
      * Retrieves the block based on the identifier.
      * @param identifier {@link Web3InformationRetriever}
      * @return An optional containing the block if found.
-     * @throws RskJsonRpcRequestException if the identifier is {@link #PENDING}, as it is not implemented yet.
+     * @throws RskJsonRpcRequestException if the identifier is an invalid block identifier.
      */
     public Optional<Block> getBlock(String identifier) {
-        if (PENDING.equals(identifier)) {
-            throw unimplemented("This method doesn't support 'pending' as a parameter");
-        }
-
         Block block;
-        if (LATEST.equals(identifier)) {
+        if (PENDING.equals(identifier)) {
+            block = executionBlockRetriever.getExecutionBlock_workaround(identifier).getBlock();
+        } else if (LATEST.equals(identifier)) {
             block = blockchain.getBestBlock();
         } else if (EARLIEST.equals(identifier)) {
             block = blockchain.getBlockByNumber(0);

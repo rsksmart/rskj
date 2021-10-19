@@ -2344,7 +2344,8 @@ public class Web3ImplTest {
                 new Web3InformationRetriever(
                         transactionPool,
                         blockchain,
-                        mock(RepositoryLocator.class)),
+                        mock(RepositoryLocator.class),
+                        mock(ExecutionBlockRetriever.class)),
                 null);
     }
 
@@ -2404,6 +2405,7 @@ public class Web3ImplTest {
             ConfigCapabilities configCapabilities,
             ReceiptStore receiptStore) {
         MiningMainchainView miningMainchainViewMock = mock(MiningMainchainView.class);
+        ExecutionBlockRetriever executionBlockRetriever = mock(ExecutionBlockRetriever.class);
         wallet = WalletFactory.createWallet();
         PersonalModuleWalletEnabled personalModule = new PersonalModuleWalletEnabled(config, eth, wallet, transactionPool);
 
@@ -2412,7 +2414,7 @@ public class Web3ImplTest {
             buildTransactionExecutorFactory(blockStore, null)
         );
 
-        Web3InformationRetriever retriever = new Web3InformationRetriever(transactionPool, blockchain, repositoryLocator);
+        Web3InformationRetriever retriever = new Web3InformationRetriever(transactionPool, blockchain, repositoryLocator, executionBlockRetriever);
         TransactionGateway transactionGateway = new TransactionGateway(new SimpleChannelManager(), transactionPool);
         EthModule ethModule = new EthModule(
                 config.getNetworkConstants().getBridgeConstants(), config.getNetworkConstants().getChainId(), blockchain, transactionPool, executor,
@@ -2465,13 +2467,14 @@ public class Web3ImplTest {
             ConfigCapabilities configCapabilities,
             ReceiptStore receiptStore) {
         MiningMainchainView miningMainchainViewMock = mock(MiningMainchainView.class);
+        ExecutionBlockRetriever executionBlockRetriever = mock(ExecutionBlockRetriever.class);
         wallet = WalletFactory.createWallet();
         PersonalModuleWalletEnabled personalModule = new PersonalModuleWalletEnabled(config, eth, wallet, transactionPool);
         ReversibleTransactionExecutor executor = mock(ReversibleTransactionExecutor.class);
         ProgramResult res = new ProgramResult();
         res.setHReturn(new byte[0]);
         when(executor.executeTransaction(any(), any(), any(), any(), any(), any(), any(), any())).thenReturn(res);
-        Web3InformationRetriever retriever = new Web3InformationRetriever(transactionPool, blockchain, repositoryLocator);
+        Web3InformationRetriever retriever = new Web3InformationRetriever(transactionPool, blockchain, repositoryLocator, executionBlockRetriever);
         EthModule ethModule = new EthModule(
                 config.getNetworkConstants().getBridgeConstants(), config.getNetworkConstants().getChainId(), blockchain, transactionPool, executor,
                 new ExecutionBlockRetriever(miningMainchainViewMock, blockchain, null, null), repositoryLocator,

@@ -1,6 +1,7 @@
 package co.rsk.rpc;
 
 import co.rsk.core.bc.AccountInformationProvider;
+import co.rsk.core.bc.BlockResult;
 import co.rsk.core.bc.PendingState;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositoryLocator;
@@ -22,28 +23,33 @@ import static org.mockito.Mockito.when;
 
 public class Web3InformationRetrieverTest {
 
-    private static final int UNIMPLEMENTED_ERROR_CODE = -32201;
     private static final int INVALID_PARAM_ERROR_CODE = -32602;
 
     private Web3InformationRetriever target;
     private Blockchain blockchain;
     private TransactionPool txPool;
     private RepositoryLocator locator;
+    private ExecutionBlockRetriever executionBlockRetriever;
 
     @Before
     public void setUp() {
         txPool = mock(TransactionPool.class);
         blockchain = mock(Blockchain.class);
         locator = mock(RepositoryLocator.class);
-        target = new Web3InformationRetriever(txPool, blockchain, locator);
+        executionBlockRetriever = mock(ExecutionBlockRetriever.class);
+        target = new Web3InformationRetriever(txPool, blockchain, locator, executionBlockRetriever);
     }
 
     @Test
     public void getBlock_pending() {
-        RskJsonRpcRequestException e = TestUtils
-                .assertThrows(RskJsonRpcRequestException.class, () -> target.getBlock("pending"));
+        Block pendingBlock = mock(Block.class);
+        BlockResult pendingBlockResult = mock(BlockResult.class);
+        when(pendingBlockResult.getBlock()).thenReturn(pendingBlock);
+        when(executionBlockRetriever.getExecutionBlock_workaround("pending")).thenReturn(pendingBlockResult);
+        Optional<Block> result = target.getBlock("pending");
 
-        assertEquals(UNIMPLEMENTED_ERROR_CODE, (int) e.getCode());
+        assertTrue(result.isPresent());
+        assertEquals(pendingBlock, result.get());
     }
 
     @Test
