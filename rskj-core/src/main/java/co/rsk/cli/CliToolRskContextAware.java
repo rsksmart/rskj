@@ -60,8 +60,7 @@ public abstract class CliToolRskContextAware {
         Objects.requireNonNull(contextFactory, "contextFactory should not be null");
 
         String cliToolName = getClass().getSimpleName();
-        RskContext ctx = contextFactory.create(); // TODO: close context when such capability is ready
-        try {
+        try (RskContext ctx = contextFactory.create()) {
             printInfo("{} started", cliToolName);
 
             onExecute(args, ctx);
