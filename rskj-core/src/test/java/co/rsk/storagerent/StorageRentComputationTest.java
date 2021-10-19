@@ -2,8 +2,6 @@ package co.rsk.storagerent;
 
 import org.junit.Test;
 
-import java.util.GregorianCalendar;
-
 import static co.rsk.storagerent.StorageRentComputation.*;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -85,8 +83,8 @@ public class StorageRentComputationTest {
     @Test
     public void computeTimestamp_exceedingRentCap_partiallyAdvancedTimestamp() { // since rent it's not completely paid
         long nodeSize = 100;
-        long lastPaidTimestamp = new GregorianCalendar(2018, 1, 29).getTimeInMillis();
-        long currentBlockTimestamp = new GregorianCalendar(2021, 1, 29).getTimeInMillis();
+        long lastPaidTimestamp = 1_519_873_200_000L; // Thu Mar 01 00:00:00 ART 2018
+        long currentBlockTimestamp = 1_614_567_600_000L; // Mon Mar 01 00:00:00 ART 2021
         long partiallyAdvancedTimestamp = 1_519_978_057_600L; // Fri Mar 02 05:07:37 ART 2018
         long rentDue = rentDue(nodeSize, currentBlockTimestamp - lastPaidTimestamp);
 
