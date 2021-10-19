@@ -24,10 +24,10 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
  * It can generate a response with the correct result or error response type.
  */
 public interface JsonRpcResultOrError {
-    /**
-     * @return a response according to the result or error state of this object.
-     * @param messageId the message ID
-     */
-    @JsonIgnore
-    JsonRpcIdentifiableMessage responseFor(Object messageId);
+	/**
+	 * @return a response according to the result or error state of this object.
+	 * @param messageId the message ID
+	 */
+	@JsonIgnore
+	JsonRpcIdentifiableMessage responseFor(Object messageId);
 }

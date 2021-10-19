@@ -32,32 +32,32 @@ public class EthUnsubscribeRequest extends RskJsonRpcRequest {
 	private static final String WRONG_RPC_METHOD_MSG = "Wrong method mapped to eth_unsubscribe. Check JSON mapping configuration in JsonRpcRequest.";
 
 	private final EthUnsubscribeParams params;
-    
-    @JsonCreator
-    public EthUnsubscribeRequest(
-            @JsonProperty("jsonrpc") JsonRpcVersion version,
-            @JsonProperty("method") RskJsonRpcMethod method,
-            @JsonProperty("id") Object id,
-            @JsonProperty("params") EthUnsubscribeParams params) {
-        super(version, verifyMethod(method), id);
-        this.params = params;
-    }
 
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    public EthUnsubscribeParams getParams() {
-        return params;
-    }
+	@JsonCreator
+	public EthUnsubscribeRequest(
+			@JsonProperty("jsonrpc") JsonRpcVersion version,
+			@JsonProperty("method") RskJsonRpcMethod method, 
+			@JsonProperty("id") Object id,
+			@JsonProperty("params") EthUnsubscribeParams params) {
+		super(version, verifyMethod(method), id);
+		this.params = params;
+	}
 
-    @Override
-    public JsonRpcResultOrError accept(RskJsonRpcRequestVisitor visitor, ChannelHandlerContext ctx) {
-        return visitor.visit(this, ctx);
-    }
+	@JsonInclude(JsonInclude.Include.NON_NULL)
+	public EthUnsubscribeParams getParams() {
+		return params;
+	}
 
-    private static RskJsonRpcMethod verifyMethod(RskJsonRpcMethod method) {
-        if (method != RskJsonRpcMethod.ETH_UNSUBSCRIBE) {
-            throw new IllegalArgumentException(WRONG_RPC_METHOD_MSG);
-        }
+	@Override
+	public JsonRpcResultOrError accept(RskJsonRpcRequestVisitor visitor, ChannelHandlerContext ctx) {
+		return visitor.visit(this, ctx);
+	}
 
-        return method;
-    }
+	private static RskJsonRpcMethod verifyMethod(RskJsonRpcMethod method) {
+		if (method != RskJsonRpcMethod.ETH_UNSUBSCRIBE) {
+			throw new IllegalArgumentException(WRONG_RPC_METHOD_MSG);
+		}
+
+		return method;
+	}
 }

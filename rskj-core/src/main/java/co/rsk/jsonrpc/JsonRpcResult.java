@@ -22,10 +22,10 @@ package co.rsk.jsonrpc;
  * Inheritors should add properties specific to the result type.
  */
 public abstract class JsonRpcResult implements JsonRpcResultOrError {
-	
-    @Override
-    public JsonRpcIdentifiableMessage responseFor(Object messageId) {
-        return new JsonRpcResultResponse(messageId, this);
-    }
+
+	@Override
+	public JsonRpcIdentifiableMessage responseFor(Object messageId) {
+		return new JsonRpcResultResponse(messageId, this);
+	}
 
 }

@@ -26,16 +26,14 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 
 public class JsonRpcErrorResponseTest {
-    private ObjectMapper serializer = new ObjectMapper();
 
-    @Test
-    public void serializeResponseWithError() throws IOException {
-        String message = "{\"jsonrpc\":\"2.0\",\"id\":\"48\",\"error\":{\"code\":-32603,\"message\":\"Internal error.\"}}";
-        assertThat(
-                serializer.writeValueAsString(
-                        new JsonRpcErrorResponse("48", new JsonRpcInternalError())
-                ),
-                is(message)
-        );
-    }
+	private ObjectMapper serializer = new ObjectMapper();
+
+	@Test
+	public void serializeResponseWithError() throws IOException {
+		
+		String message = "{\"jsonrpc\":\"2.0\",\"id\":\"48\",\"error\":{\"code\":-32603,\"message\":\"Internal error.\"}}";
+		
+		assertThat(serializer.writeValueAsString(new JsonRpcErrorResponse("48", new JsonRpcInternalError())), is(message));
+	}
 }

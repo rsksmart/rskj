@@ -24,9 +24,9 @@ import com.fasterxml.jackson.databind.JsonNode;
 public class RskWebSocketJsonParameterValidator {
 
 	private static final String ID_BAD_PARAMETER_MSG = "JSON-RPC message id should be a String or a positive integer, but was '%s'.";
-	
+
 	public static final String ID = "id";
-	
+
 	public Result validate(final JsonNode node) {
 		return requireValidId(node.get(ID));
 	}
@@ -35,50 +35,50 @@ public class RskWebSocketJsonParameterValidator {
 	 * id must be non null and of the type String or posisitive integer/long
 	 * No other type is accepted nor empty string
 	 */
-    private Result requireValidId(JsonNode id) {
+	private Result requireValidId(JsonNode id) {
 
-    	Result result = new Result(true, null);
-    	
-    	boolean notNull = id != null;
-    	
-    	boolean validAsString = notNull && id.isTextual() && StringUtils.isNotEmpty(id.asText());
+		Result result = new Result(true, null);
 
-    	boolean validAsInt = notNull && id.isIntegralNumber() && id.asLong() >= 0; // int OR long
-    	
-        if (!validAsString && !validAsInt) {
-        	result.setValid(false);
-        	result.setMessage(String.format(ID_BAD_PARAMETER_MSG, id));
-        }
-        
-        return result;
-    }
-    
-    public static class Result {
-    	
-    	private boolean valid;
-    	private String message;
-    	
-    	public Result(boolean valid, String message) {
-    		this.valid = valid;
-    		this.message = message;
-    	}
+		boolean notNull = id != null;
+
+		boolean validAsString = notNull && id.isTextual() && StringUtils.isNotEmpty(id.asText());
+
+		boolean validAsInt = notNull && id.isIntegralNumber() && id.asLong() >= 0; // int OR long
+
+		if (!validAsString && !validAsInt) {
+			result.setValid(false);
+			result.setMessage(String.format(ID_BAD_PARAMETER_MSG, id));
+		}
+
+		return result;
+	}
+
+	public static class Result {
+
+		private boolean valid;
+		private String message;
+
+		public Result(boolean valid, String message) {
+			this.valid = valid;
+			this.message = message;
+		}
 
 		public boolean isValid() {
 			return valid;
 		}
-		
+
 		public void setValid(boolean valid) {
 			this.valid = valid;
 		}
-		
+
 		public String getMessage() {
 			return message;
 		}
-    	
+
 		public void setMessage(String message) {
 			this.message = message;
 		}
-		
-    }
-	
+
+	}
+
 }

@@ -29,16 +29,14 @@ public abstract class JsonRpcIdentifiableMessage extends JsonRpcMessage {
 
 	private final Object id;
 
-    protected JsonRpcIdentifiableMessage(JsonRpcVersion version, Object id) {
-        super(version);
-        this.id = id;
-    }
+	protected JsonRpcIdentifiableMessage(JsonRpcVersion version, Object id) {
+		super(version);
+		this.id = id;
+	}
 
-    @JsonInclude(JsonInclude.Include.ALWAYS)
-    public Object getId() {
-        return id;
-    }
-
-
+	@JsonInclude(JsonInclude.Include.ALWAYS)
+	public Object getId() {
+		return id;
+	}
 
 }

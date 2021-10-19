@@ -34,32 +34,32 @@ public class EthSubscribeRequest extends RskJsonRpcRequest {
 	private static final String WRONG_RPC_METHOD_MSG = "Wrong method mapped to eth_subscribe. Check JSON mapping configuration in JsonRpcRequest.";
 
 	private final EthSubscribeParams params;
-    
-    @JsonCreator
-    public EthSubscribeRequest(
-            @JsonProperty("jsonrpc") JsonRpcVersion version,
-            @JsonProperty("method") RskJsonRpcMethod method,
-            @JsonProperty("id") Object id,
-            @JsonProperty("params") EthSubscribeParams params) {
-        super(version, verifyMethod(method), Objects.requireNonNull(id));
-        this.params = Objects.requireNonNull(params);
-    }
 
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    public EthSubscribeParams getParams() {
-        return params;
-    }
+	@JsonCreator
+	public EthSubscribeRequest(
+			@JsonProperty("jsonrpc") JsonRpcVersion version,
+			@JsonProperty("method") RskJsonRpcMethod method, 
+			@JsonProperty("id") Object id,
+			@JsonProperty("params") EthSubscribeParams params) {
+		super(version, verifyMethod(method), Objects.requireNonNull(id));
+		this.params = Objects.requireNonNull(params);
+	}
 
-    @Override
-    public JsonRpcResultOrError accept(RskJsonRpcRequestVisitor visitor, ChannelHandlerContext ctx) {
-        return visitor.visit(this, ctx);
-    }
+	@JsonInclude(JsonInclude.Include.NON_NULL)
+	public EthSubscribeParams getParams() {
+		return params;
+	}
 
-    private static RskJsonRpcMethod verifyMethod(RskJsonRpcMethod method) {
-        if (method != RskJsonRpcMethod.ETH_SUBSCRIBE) {
-            throw new IllegalArgumentException(WRONG_RPC_METHOD_MSG);
-        }
+	@Override
+	public JsonRpcResultOrError accept(RskJsonRpcRequestVisitor visitor, ChannelHandlerContext ctx) {
+		return visitor.visit(this, ctx);
+	}
 
-        return method;
-    }
+	private static RskJsonRpcMethod verifyMethod(RskJsonRpcMethod method) {
+		if (method != RskJsonRpcMethod.ETH_SUBSCRIBE) {
+			throw new IllegalArgumentException(WRONG_RPC_METHOD_MSG);
+		}
+
+		return method;
+	}
 }
