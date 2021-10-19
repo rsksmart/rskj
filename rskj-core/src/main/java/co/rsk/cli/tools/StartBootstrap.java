@@ -92,7 +92,7 @@ public class StartBootstrap {
         }
 
         @Override
-        public List<InternalService> buildInternalServices() {
+        public synchronized List<InternalService> buildInternalServices() {
             RskSystemProperties rskSystemProperties = getRskSystemProperties();
             UDPServer udpServer = new UDPServer(
                     rskSystemProperties.getBindAddress().getHostAddress(),
