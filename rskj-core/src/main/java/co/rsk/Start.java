@@ -33,11 +33,17 @@ public class Start {
     public static void main(String[] args) {
         setUpThread(Thread.currentThread());
 
+        RskContext ctx = null;
         try {
-            RskContext ctx = new RskContext(args);
+            ctx = new RskContext(args);
             runNode(Runtime.getRuntime(), new PreflightChecksUtils(ctx), ctx);
         } catch (Exception e) {
             logger.error("The RSK node main thread failed, closing program", e);
+
+            if (ctx != null) {
+                ctx.close();
+            }
+
             System.exit(1);
         }
     }

@@ -58,20 +58,21 @@ public class StartBootstrap {
                                  @Nonnull PreflightChecksUtils preflightChecks,
                                  @Nonnull Runtime runtime,
                                  @Nonnull NodeStopper nodeStopper) {
-        NodeRunner runner = ctx.getNodeRunner();
         try {
             // make preflight checks
             preflightChecks.runChecks();
 
-            // start node runner
-            runner.run();
-
             // subscribe to shutdown hook
-            runtime.addShutdownHook(new Thread(runner::stop, "stopper"));
+            runtime.addShutdownHook(new Thread(ctx::close, "stopper"));
+
+            // start node runner
+            NodeRunner runner = ctx.getNodeRunner();
+            runner.run();
         } catch (Exception e) {
             logger.error("Main thread of RSK bootstrap node crashed", e);
 
-            runner.stop();
+            ctx.close();
+
             nodeStopper.stop(1);
         }
     }

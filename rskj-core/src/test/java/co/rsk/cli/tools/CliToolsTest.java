@@ -416,7 +416,7 @@ public class CliToolsTest {
         verify(preflightChecks, times(2)).runChecks();
         verify(runner, times(1)).run();
         verify(runtime, times(1)).addShutdownHook(any());
-        verify(runner, times(1)).stop();
+        verify(ctx, times(1)).close();
         verify(nodeStopper, times(1)).stop(1);
     }
 }
