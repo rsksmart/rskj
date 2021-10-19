@@ -1,8 +1,24 @@
+/*
+ * This file is part of RskJ
+ * Copyright (C) 2017 RSK Labs Ltd.
+ * (derived from ethereumJ library, Copyright (c) 2016 <ether.camp>)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package co.rsk.storagerent;
 
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Rent computation util according to the RSKIP240
@@ -75,10 +91,10 @@ public class StorageRentComputation {
             return lastPaidTimestamp;
         }
 
-        if (rentThreshold < rentDue && rentDue <= rentCap) {
+        if (rentDue <= rentCap) {
             return currentBlockTimestamp;
         }
-        
+
         // if rent due exceeds cap, it partially advances the last paid timestamp
         Double timePaid = Math.floor(rentCap / (nodeSize * RENTAL_RATE));
         return lastPaidTimestamp + timePaid.longValue();
