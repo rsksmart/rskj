@@ -30,11 +30,13 @@ public class PreflightChecksUtilsTest {
         preflightChecksUtilsSpy.runChecks();
 
         verify(preflightChecksUtilsSpy, times(0)).getJavaVersion();
+
+        rskContext.close();
     }
 
     @Test
     public void getIntJavaVersion_OK() {
-        RskContext rskContext = new RskContext(new String[0]);
+        RskContext rskContext = new RskTestContext(new String[0]);
         PreflightChecksUtils preflightChecksUtils = new PreflightChecksUtils(rskContext);
 
         assertEquals(preflightChecksUtils.getIntJavaVersion("1.8.0_275"), 8);
@@ -45,6 +47,8 @@ public class PreflightChecksUtilsTest {
         assertEquals(preflightChecksUtils.getIntJavaVersion("11"), 11);
         assertEquals(preflightChecksUtils.getIntJavaVersion("333"), 333);
         assertEquals(preflightChecksUtils.getIntJavaVersion("9-ea"), 9);
+
+        rskContext.close();
     }
 
     @Test
@@ -58,6 +62,8 @@ public class PreflightChecksUtilsTest {
         when(preflightChecksUtilsSpy.getJavaVersion()).thenReturn("16");
 
         preflightChecksUtilsSpy.runChecks();
+
+        rskContext.close();
     }
 
     @Test
@@ -71,6 +77,8 @@ public class PreflightChecksUtilsTest {
 
         verify(preflightChecksUtilsSpy, times(1)).getJavaVersion();
         verify(preflightChecksUtilsSpy, times(1)).getIntJavaVersion("1.8");
+
+        rskContext.close();
     }
 
     @Test
@@ -84,6 +92,8 @@ public class PreflightChecksUtilsTest {
 
         verify(preflightChecksUtilsSpy, times(1)).getJavaVersion();
         verify(preflightChecksUtilsSpy, times(1)).getIntJavaVersion("11");
+
+        rskContext.close();
     }
 
     @Test
@@ -98,6 +108,8 @@ public class PreflightChecksUtilsTest {
         verify(preflightChecksUtilsSpy, times(1)).getJavaVersion();
         verify(preflightChecksUtilsSpy, times(1)).getIntJavaVersion("1.8.0_275");
         verify(preflightChecksUtilsSpy, times(1)).checkSupportedJavaVersion();
+
+        rskContext.close();
     }
 
 }

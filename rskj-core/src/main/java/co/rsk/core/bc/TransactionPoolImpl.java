@@ -113,7 +113,9 @@ public class TransactionPoolImpl implements TransactionPool {
 
     @Override
     public void stop() {
-        // consider cleaning up cleanerTimer/cleanerFuture
+        if (cleanerTimer != null) {
+            cleanerTimer.shutdown();
+        }
     }
 
     public boolean hasCleanerFuture() {

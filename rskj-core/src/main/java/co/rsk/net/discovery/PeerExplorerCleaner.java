@@ -18,6 +18,11 @@
 
 package co.rsk.net.discovery;
 
+import co.rsk.util.ExecState;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.Objects;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -25,33 +30,55 @@ import java.util.concurrent.TimeUnit;
 /**
  * Created by mario on 22/02/17.
  */
-public class PeerExplorerCleaner {
+class PeerExplorerCleaner {
 
-    private PeerExplorer peerExplorer;
-    private ScheduledExecutorService updateTask;
-    private long updatePeriod;
-    private long cleanPeriod;
-    private boolean running = false;
+    private static final Logger logger = LoggerFactory.getLogger(PeerExplorerCleaner.class);
 
-    public PeerExplorerCleaner(PeerExplorer peerExplorer, long updatePeriod, long cleanPeriod) {
-        this.peerExplorer = peerExplorer;
+    private final long updatePeriod;
+    private final long cleanPeriod;
+
+    private final PeerExplorer peerExplorer;
+    private final ScheduledExecutorService executor;
+
+    private ExecState state = ExecState.CREATED;
+
+    PeerExplorerCleaner(long updatePeriod, long cleanPeriod, PeerExplorer peerExplorer) {
+        this(updatePeriod, cleanPeriod, peerExplorer, makeDefaultScheduledExecutorService());
+    }
+
+    PeerExplorerCleaner(long updatePeriod, long cleanPeriod, PeerExplorer peerExplorer, ScheduledExecutorService executor) {
         this.updatePeriod = updatePeriod;
         this.cleanPeriod = cleanPeriod;
-        // it should stay on a single thread since there are two tasks that could interfere with each other running here
-        this.updateTask = Executors.newSingleThreadScheduledExecutor(r -> new Thread(r, "PeerExplorerCleaner"));
+        this.peerExplorer = Objects.requireNonNull(peerExplorer);
+        this.executor = Objects.requireNonNull(executor);
     }
 
-    public void run() {
-        if (!running) {
-            this.startUpdateTask();
-            running = true;
+    synchronized void start() {
+        if (state != ExecState.CREATED) {
+            logger.warn("Cannot start peer explorer cleaner as current state is {}", state);
+            return;
         }
+        state = ExecState.RUNNING;
+
+        startCleanAndUpdateTasks();
     }
 
-    private void startUpdateTask() {
-        updateTask.scheduleAtFixedRate(() -> peerExplorer.clean(), cleanPeriod, cleanPeriod, TimeUnit.MILLISECONDS);
-        updateTask.scheduleAtFixedRate(() -> peerExplorer.update(), updatePeriod, updatePeriod, TimeUnit.MILLISECONDS);
+    synchronized void dispose() {
+        if (state == ExecState.FINISHED) {
+            logger.warn("Cannot dispose peer explorer cleaner as current state is {}", state);
+            return;
+        }
+        state = ExecState.FINISHED;
+
+        executor.shutdown();
     }
 
+    private void startCleanAndUpdateTasks() {
+        executor.scheduleAtFixedRate(peerExplorer::clean, cleanPeriod, cleanPeriod, TimeUnit.MILLISECONDS);
+        executor.scheduleAtFixedRate(peerExplorer::update, updatePeriod, updatePeriod, TimeUnit.MILLISECONDS);
+    }
 
+    private static ScheduledExecutorService makeDefaultScheduledExecutorService() {
+        return Executors.newSingleThreadScheduledExecutor(r -> new Thread(r, "PeerExplorerCleaner"));
+    }
 }

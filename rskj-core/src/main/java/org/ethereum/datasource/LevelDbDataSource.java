@@ -57,7 +57,7 @@ public class LevelDbDataSource implements KeyValueDataSource {
     // The leveldbJNI lib has a protection over accessing closed DB but it is not synchronized
     // This ReadWriteLock still permits concurrent execution of insert/delete/update operations
     // however blocks them on init/close/delete operations
-    private ReadWriteLock resetDbLock = new ReentrantReadWriteLock();
+    private final ReadWriteLock resetDbLock = new ReentrantReadWriteLock();
 
     public LevelDbDataSource(String name, String databaseDir) {
         this.databaseDir = databaseDir;

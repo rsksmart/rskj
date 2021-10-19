@@ -20,6 +20,7 @@ package co.rsk.net.discovery;
 
 import co.rsk.net.discovery.table.KademliaOptions;
 import co.rsk.net.discovery.table.NodeDistanceTable;
+import co.rsk.util.ExecState;
 import co.rsk.scoring.PeerScoringManager;
 import org.apache.commons.lang3.StringUtils;
 import org.bouncycastle.util.encoders.Hex;
@@ -33,6 +34,12 @@ import org.powermock.reflect.Whitebox;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
 
 import static org.mockito.Mockito.mock;
 
@@ -50,7 +57,7 @@ public class UDPServerTest {
     private static final String KEY_3 = "bd3d20e480dfb1c9c07ba0bc8cf9052f89923d38b5128c5dbfc18d4eea38263f";
     private static final String NODE_ID_3 = "e229918d45c131e130c91c4ea51c97ab4f66cfbd0437b35c92392b5c2b3d44b28ea15b84a262459437c955f6cc7f10ad1290132d3fc866bfaf4115eac0e8e860";
 
-    private String HOST = "localhost";
+    private static final String HOST = "localhost";
     private static final int PORT_1 = 40305;
     private static final int PORT_2 = 40306;
     private static final int PORT_3 = 40307;
@@ -62,7 +69,7 @@ public class UDPServerTest {
 
     @Test
     public void port0DoesntCreateANewChannel() throws InterruptedException {
-        UDPServer udpServer = new UDPServer(HOST, 0, null);
+        UDPServer udpServer = new UDPServer(HOST, 0, mock(PeerExplorer.class));
         Channel channel = Whitebox.getInternalState(udpServer, "channel");
         udpServer.start();
         TimeUnit.SECONDS.sleep(2);
@@ -96,9 +103,9 @@ public class UDPServerTest {
         PeerExplorer peerExplorer2 = new PeerExplorer(node2BootNode, node2, distanceTable2, key2, TIMEOUT, UPDATE, CLEAN, NETWORK_ID, mock(PeerScoringManager.class));
         PeerExplorer peerExplorer3 = new PeerExplorer(node3BootNode, node3, distanceTable3, key3, TIMEOUT, UPDATE, CLEAN, NETWORK_ID, mock(PeerScoringManager.class));
 
-        Assert.assertEquals(0, peerExplorer1.getNodes().size());
-        Assert.assertEquals(0, peerExplorer2.getNodes().size());
-        Assert.assertEquals(0, peerExplorer3.getNodes().size());
+        assertEquals(0, peerExplorer1.getNodes().size());
+        assertEquals(0, peerExplorer2.getNodes().size());
+        assertEquals(0, peerExplorer3.getNodes().size());
 
         UDPServer udpServer1 = new UDPServer(HOST, PORT_1, peerExplorer1);
         UDPServer udpServer2 = new UDPServer(HOST, PORT_2, peerExplorer2);
@@ -131,18 +138,40 @@ public class UDPServerTest {
         List<Node> foundNodes2 = peerExplorer2.getNodes();
         List<Node> foundNodes3 = peerExplorer3.getNodes();
 
-        Assert.assertEquals(2, foundNodes1.size());
-        Assert.assertEquals(2, foundNodes2.size());
-        Assert.assertEquals(2, foundNodes3.size());
+        assertEquals(2, foundNodes1.size());
+        assertEquals(2, foundNodes2.size());
+        assertEquals(2, foundNodes3.size());
 
         udpServer1.stop();
         udpServer2.stop();
         udpServer3.stop();
         TimeUnit.SECONDS.sleep(5);
 
-        Assert.assertTrue(checkNodeIds(foundNodes1, NODE_ID_2, NODE_ID_3));
-        Assert.assertTrue(checkNodeIds(foundNodes2, NODE_ID_1, NODE_ID_3));
-        Assert.assertTrue(checkNodeIds(foundNodes3, NODE_ID_2, NODE_ID_1));
+        assertTrue(checkNodeIds(foundNodes1, NODE_ID_2, NODE_ID_3));
+        assertTrue(checkNodeIds(foundNodes2, NODE_ID_1, NODE_ID_3));
+        assertTrue(checkNodeIds(foundNodes3, NODE_ID_2, NODE_ID_1));
+    }
+
+    @Test
+    public void startAndStopUDPServer() {
+        //noinspection unchecked
+        Function<Runnable, Thread> threadFactory = (Function<Runnable, Thread>) mock(Function.class);
+        UDPServer udpServer = new UDPServer(HOST, PORT_1, mock(PeerExplorer.class), threadFactory);
+        assertEquals(ExecState.CREATED, udpServer.getState());
+
+        Thread thread = mock(Thread.class);
+        doReturn(thread).when(threadFactory).apply(any());
+
+        udpServer.start();
+        assertEquals(ExecState.RUNNING, udpServer.getState());
+        verify(thread, times(1)).start();
+
+        udpServer.stop();
+        assertEquals(ExecState.FINISHED, udpServer.getState());
+
+        udpServer.start(); // re-start is not allowed
+        assertEquals(ExecState.FINISHED, udpServer.getState());
+        verify(thread, times(1)).start();
     }
 
     private boolean checkNodeIds(List<Node> nodes, String... idsToCheck) {

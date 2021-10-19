@@ -28,6 +28,7 @@ import org.ethereum.core.*;
 import org.ethereum.core.genesis.GenesisLoader;
 import org.ethereum.util.RskTestContext;
 import org.ethereum.vm.DataWord;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -46,6 +47,8 @@ import static org.mockito.Mockito.*;
  */
 public class TransactionPoolImplTest {
     private static final int MAX_CACHE_SIZE = 6000;
+
+    private RskTestContext rskTestContext;
     private Blockchain blockChain;
     private TransactionPoolImpl transactionPool;
     private Repository repository;
@@ -53,7 +56,7 @@ public class TransactionPoolImplTest {
 
     @Before
     public void setUp() {
-        RskTestContext rskTestContext = new RskTestContext(new String[]{"--regtest"}) {
+        rskTestContext = new RskTestContext(new String[]{"--regtest"}) {
             @Override
             protected GenesisLoader buildGenesisLoader() {
                 return new TestGenesisLoader(getTrieStore(), "rsk-unittests.json", BigInteger.ZERO, true, true, true);
@@ -84,6 +87,11 @@ public class TransactionPoolImplTest {
         // this is to workaround the current test structure, which abuses the Repository by
         // modifying it in place
         doReturn(repository).when(repositoryLocator).snapshotAt(any());
+    }
+
+    @After
+    public void tearDown() {
+        rskTestContext.close();
     }
 
     @Test

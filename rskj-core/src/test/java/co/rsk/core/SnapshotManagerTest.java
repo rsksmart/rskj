@@ -26,6 +26,7 @@ import co.rsk.test.builders.TransactionBuilder;
 import org.ethereum.core.*;
 import org.ethereum.db.BlockStore;
 import org.ethereum.util.RskTestContext;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -39,6 +40,7 @@ import static org.mockito.Mockito.mock;
  */
 public class SnapshotManagerTest {
 
+    private RskTestContext testContext;
     private Blockchain blockchain;
     private TransactionPool transactionPool;
     private SnapshotManager manager;
@@ -47,15 +49,20 @@ public class SnapshotManagerTest {
 
     @Before
     public void setUp() {
-        RskTestContext factory = new RskTestContext(new String[]{"--regtest"});
-        blockchain = factory.getBlockchain();
-        minerServer = factory.getMinerServer();
-        minerClient = factory.getMinerClient();
-        transactionPool = factory.getTransactionPool();
-        BlockStore blockStore = factory.getBlockStore();
+        testContext = new RskTestContext(new String[]{"--regtest"});
+        blockchain = testContext.getBlockchain();
+        minerServer = testContext.getMinerServer();
+        minerClient = testContext.getMinerClient();
+        transactionPool = testContext.getTransactionPool();
+        BlockStore blockStore = testContext.getBlockStore();
         // don't call start to avoid creating threads
         transactionPool.processBest(blockchain.getBestBlock());
         manager = new SnapshotManager(blockchain, blockStore, transactionPool, mock(MinerServer.class));
+    }
+
+    @After
+    public void tearDown() {
+        testContext.close();
     }
 
     @Test

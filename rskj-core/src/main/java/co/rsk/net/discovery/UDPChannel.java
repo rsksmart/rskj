@@ -27,22 +27,22 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.InetSocketAddress;
+import java.util.Objects;
 
 public class UDPChannel extends SimpleChannelInboundHandler<DiscoveryEvent> {
-    static final Logger logger = LoggerFactory.getLogger(UDPChannel.class);
+    private static final Logger logger = LoggerFactory.getLogger(UDPChannel.class);
 
-    private Channel channel;
-
-    private PeerExplorer peerExplorer;
+    private final Channel channel;
+    private final PeerExplorer peerExplorer;
 
     public UDPChannel(Channel ch, PeerExplorer peerExplorer) {
-        this.channel = ch;
-        this.peerExplorer = peerExplorer;
+        this.channel = Objects.requireNonNull(ch);
+        this.peerExplorer = Objects.requireNonNull(peerExplorer);
     }
 
     @Override
     public void channelRead0(ChannelHandlerContext ctx, DiscoveryEvent event) throws Exception {
-        this.peerExplorer.handleMessage(event);
+        peerExplorer.handleMessage(event);
     }
 
     public void write(DiscoveryEvent discoveryEvent) {

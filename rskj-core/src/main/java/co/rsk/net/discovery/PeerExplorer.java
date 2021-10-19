@@ -23,6 +23,7 @@ import co.rsk.net.discovery.message.*;
 import co.rsk.net.discovery.table.NodeDistanceTable;
 import co.rsk.net.discovery.table.OperationResult;
 import co.rsk.net.discovery.table.PeerDiscoveryRequestBuilder;
+import co.rsk.util.ExecState;
 import co.rsk.scoring.PeerScoringManager;
 import co.rsk.util.IpUtils;
 import com.google.common.annotations.VisibleForTesting;
@@ -47,6 +48,7 @@ import java.util.stream.Collectors;
  */
 public class PeerExplorer {
     private static final Logger logger = LoggerFactory.getLogger(PeerExplorer.class);
+
     private static final int MAX_NODES_PER_MSG = 20;
     private static final int MAX_NODES_TO_ASK = 24;
     private static final int MAX_NODES_TO_CHECK = 16;
@@ -59,8 +61,6 @@ public class PeerExplorer {
 
     private final Map<NodeID, Node> establishedConnections = new ConcurrentHashMap<>();
     private final Integer networkId;
-
-    private UDPChannel udpChannel;
 
     private final ECKey key;
 
@@ -78,6 +78,10 @@ public class PeerExplorer {
 
     private final long requestTimeout;
 
+    private ExecState state = ExecState.CREATED;
+
+    private UDPChannel udpChannel;
+
     public PeerExplorer(List<String> initialBootNodes,
                         Node localNode, NodeDistanceTable distanceTable, ECKey key,
                         long reqTimeOut, long updatePeriod, long cleanPeriod, Integer networkId,
@@ -89,19 +93,48 @@ public class PeerExplorer {
         this.networkId = networkId;
         loadInitialBootNodes(initialBootNodes);
 
-        this.cleaner = new PeerExplorerCleaner(this, updatePeriod, cleanPeriod);
+        this.cleaner = new PeerExplorerCleaner(updatePeriod, cleanPeriod, this);
         this.challengeManager = new NodeChallengeManager();
         this.requestTimeout = reqTimeOut;
 
         this.peerScoringManager = peerScoringManager;
     }
 
-    public void start() {
-        this.cleaner.run();
-        this.startConversationWithNewNodes();
+    void start() {
+        start(true);
     }
 
-    public Set<String> startConversationWithNewNodes() {
+    synchronized void start(boolean startConversation) {
+        if (state != ExecState.CREATED) {
+            logger.warn("Cannot start peer explorer as current state is {}", state);
+            return;
+        }
+        state = ExecState.RUNNING;
+
+        this.cleaner.start();
+
+        if (startConversation) {
+            this.startConversationWithNewNodes();
+        }
+    }
+
+    public synchronized void dispose() {
+        if (state == ExecState.FINISHED) {
+            logger.warn("Cannot dispose peer explorer as current state is {}", state);
+            return;
+        }
+        state = ExecState.FINISHED;
+
+        this.cleaner.dispose();
+    }
+
+    @VisibleForTesting
+    ExecState getState() {
+        return state;
+    }
+
+    @VisibleForTesting
+    Set<String> startConversationWithNewNodes() {
         Set<String> sentAddresses = new HashSet<>();
 
         for (InetSocketAddress nodeAddress : this.bootNodes) {
@@ -115,12 +148,16 @@ public class PeerExplorer {
         return sentAddresses;
     }
 
-    public void setUDPChannel(UDPChannel udpChannel) {
+    void setUDPChannel(UDPChannel udpChannel) {
         this.udpChannel = udpChannel;
     }
 
+    synchronized void handleMessage(DiscoveryEvent event) {
+        if (state != ExecState.RUNNING) {
+            logger.warn("Cannot handle message as current state is {}", state);
+            return;
+        }
 
-    public void handleMessage(DiscoveryEvent event) {
         DiscoveryMessageType type = event.getMessage().getMessageType();
         //If this is not from my network ignore it. But if the messages do not
         //have a networkId in the message yet, then just let them through, for now.
@@ -145,7 +182,7 @@ public class PeerExplorer {
         }
     }
 
-    public void handlePingMessage(InetSocketAddress address, PingPeerMessage message) {
+    private void handlePingMessage(InetSocketAddress address, PingPeerMessage message) {
         this.sendPong(address, message);
 
         Node connectedNode = this.establishedConnections.get(message.getNodeId());
@@ -157,7 +194,7 @@ public class PeerExplorer {
         }
     }
 
-    public void handlePong(InetSocketAddress pongAddress, PongPeerMessage message) {
+    private void handlePong(InetSocketAddress pongAddress, PongPeerMessage message) {
         PeerDiscoveryRequest request = this.pendingPingRequests.get(message.getMessageId());
 
         if (request != null && request.validateMessageResponse(pongAddress, message)) {
@@ -169,7 +206,7 @@ public class PeerExplorer {
         }
     }
 
-    public void handleFindNode(FindNodePeerMessage message) {
+    private void handleFindNode(FindNodePeerMessage message) {
         NodeID nodeId = message.getNodeId();
         Node connectedNode = this.establishedConnections.get(nodeId);
 
@@ -181,7 +218,7 @@ public class PeerExplorer {
         }
     }
 
-    public void handleNeighborsMessage(InetSocketAddress neighborsResponseAddress, NeighborsPeerMessage message) {
+    private void handleNeighborsMessage(InetSocketAddress neighborsResponseAddress, NeighborsPeerMessage message) {
         Node connectedNode = this.establishedConnections.get(message.getNodeId());
 
         if (connectedNode != null) {
@@ -202,11 +239,11 @@ public class PeerExplorer {
         return new ArrayList<>(this.establishedConnections.values());
     }
 
-    public PingPeerMessage sendPing(InetSocketAddress nodeAddress, int attempt) {
+    private PingPeerMessage sendPing(InetSocketAddress nodeAddress, int attempt) {
         return sendPing(nodeAddress, attempt, null);
     }
 
-    public PingPeerMessage sendPing(InetSocketAddress nodeAddress, int attempt, Node node) {
+    synchronized PingPeerMessage sendPing(InetSocketAddress nodeAddress, int attempt, Node node) {
         PingPeerMessage nodeMessage = checkPendingPeerToAddress(nodeAddress);
 
         if (nodeMessage != null) {
@@ -249,7 +286,7 @@ public class PeerExplorer {
         return null;
     }
 
-    public PongPeerMessage sendPong(InetSocketAddress nodeAddress, PingPeerMessage message) {
+    private PongPeerMessage sendPong(InetSocketAddress nodeAddress, PingPeerMessage message) {
         InetSocketAddress localAddress = this.localNode.getAddress();
         PongPeerMessage pongPeerMessage = PongPeerMessage.create(localAddress.getHostName(), localAddress.getPort(), message.getMessageId(), this.key, this.networkId);
         udpChannel.write(new DiscoveryEvent(pongPeerMessage, nodeAddress));
@@ -257,7 +294,8 @@ public class PeerExplorer {
         return pongPeerMessage;
     }
 
-    public FindNodePeerMessage sendFindNode(Node node) {
+    @VisibleForTesting
+    FindNodePeerMessage sendFindNode(Node node) {
         InetSocketAddress nodeAddress = node.getAddress();
         String id = UUID.randomUUID().toString();
         FindNodePeerMessage findNodePeerMessage = FindNodePeerMessage.create(this.key.getNodeId(), id, this.key, this.networkId);
@@ -270,7 +308,7 @@ public class PeerExplorer {
         return findNodePeerMessage;
     }
 
-    public NeighborsPeerMessage sendNeighbors(InetSocketAddress nodeAddress, List<Node> nodes, String id) {
+    private NeighborsPeerMessage sendNeighbors(InetSocketAddress nodeAddress, List<Node> nodes, String id) {
         List<Node> nodesToSend = getRandomizeLimitedList(nodes, MAX_NODES_PER_MSG, 5);
         NeighborsPeerMessage sendNodesMessage = NeighborsPeerMessage.create(nodesToSend, id, this.key, networkId);
         udpChannel.write(new DiscoveryEvent(sendNodesMessage, nodeAddress));
@@ -279,7 +317,7 @@ public class PeerExplorer {
         return sendNodesMessage;
     }
 
-    public void purgeRequests() {
+    private void purgeRequests() {
         List<PeerDiscoveryRequest> oldPingRequests = removeExpiredRequests(this.pendingPingRequests);
         removeExpiredChallenges(oldPingRequests);
         resendExpiredPing(oldPingRequests);
@@ -289,11 +327,21 @@ public class PeerExplorer {
         removeExpiredRequests(this.pendingFindNodeRequests);
     }
 
-    public void clean() {
+    synchronized void clean() {
+        if (state != ExecState.RUNNING) {
+            logger.warn("Cannot clean as current state is {}", state);
+            return;
+        }
+
         this.purgeRequests();
     }
 
-    public void update() {
+    synchronized void update() {
+        if (state != ExecState.RUNNING) {
+            logger.warn("Cannot update as current state is {}", state);
+            return;
+        }
+
         List<Node> closestNodes = this.distanceTable.getClosestNodes(this.localNode.getId());
         this.askForMoreNodes(closestNodes);
         this.checkPeersPulse(closestNodes);
@@ -382,7 +430,7 @@ public class PeerExplorer {
     }
 
     @VisibleForTesting
-    public NodeChallengeManager getChallengeManager() {
+    NodeChallengeManager getChallengeManager() {
         return challengeManager;
     }
 

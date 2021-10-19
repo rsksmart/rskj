@@ -181,11 +181,13 @@ public class IndexedBlockStore implements BlockStore {
     public synchronized void flush() {
         Metric metric = profiler.start(Profiler.PROFILING_TYPE.DB_WRITE);
         index.flush();
+        blocks.flush();
         profiler.stop(metric);
     }
 
-    public void close() {
-        this.index.close();
+    public synchronized void close() {
+        index.close();
+        blocks.close();
     }
 
     @Override
@@ -516,7 +518,6 @@ public class IndexedBlockStore implements BlockStore {
         }
 
         flush();
-        blocks.flush();
     }
 
     /**
