@@ -27,7 +27,8 @@ public enum NetworkUpgrade {
     WASABI_100("wasabi100"),
     PAPYRUS_200("papyrus200"),
     TWOTOTHREE("twoToThree"),
-    IRIS300("iris300");
+    IRIS300("iris300"),
+    IRIS310("iris310");
 
     private String name;
 
