@@ -48,115 +48,104 @@ import co.rsk.scoring.EventType;
 import co.rsk.scoring.PeerScoringManager;
 import co.rsk.util.FormatUtils;
 
-
 public class NodeMessageHandler implements MessageHandler, InternalService, Runnable {
+	
+	private static final Logger logger = LoggerFactory.getLogger("messagehandler");
+	private static final Logger loggerMessageProcess = LoggerFactory.getLogger("messageProcess");
 
-    private static final Logger logger = LoggerFactory.getLogger("messagehandler");
-    private static final Logger loggerMessageProcess = LoggerFactory.getLogger("messageProcess");
+	private static final int MAX_NUMBER_OF_MESSAGES_CACHED = 5000;
+	private static final long RECEIVED_MESSAGES_CACHE_DURATION = TimeUnit.MINUTES.toMillis(2);
 
-    private static final int MAX_NUMBER_OF_MESSAGES_CACHED = 5000;
-    private static final long RECEIVED_MESSAGES_CACHE_DURATION = TimeUnit.MINUTES.toMillis(2);
-    
-    private final RskSystemProperties config;
-    private final BlockProcessor blockProcessor;
-    private final SyncProcessor syncProcessor;
-    private final ChannelManager channelManager;
-    private final TransactionGateway transactionGateway;
-    private final PeerScoringManager peerScoringManager;
+	private final RskSystemProperties config;
+	private final BlockProcessor blockProcessor;
+	private final SyncProcessor syncProcessor;
+	private final ChannelManager channelManager;
+	private final TransactionGateway transactionGateway;
+	private final PeerScoringManager peerScoringManager;
 
-    private final StatusResolver statusResolver;
-    private final Set<Keccak256> receivedMessages = Collections.synchronizedSet(new HashSet<>());
+	private volatile long lastStatusSent = System.currentTimeMillis();
+	private volatile long lastTickSent = System.currentTimeMillis();
 
-    private final PriorityBlockingQueue<MessageTask> queue;
+	private final StatusResolver statusResolver;
+	private Set<Keccak256> receivedMessages = Collections.synchronizedSet(new HashSet<>());
+	private long cleanMsgTimestamp = 0;
 
-    private final Set<RskAddress> bannedMiners;
+	private final Set<RskAddress> bannedMiners;
+	
+	private PriorityBlockingQueue<MessageTask> queue;
 
-    private volatile long lastStatusSent = System.currentTimeMillis();
-    private volatile long lastTickSent = System.currentTimeMillis();
+	private volatile boolean stopped;
 
-    private volatile boolean stopped;
-
-    private long cleanMsgTimestamp;
-
-    private MessageCounter messageCounter = new MessageCounter();
+	private MessageCounter messageCounter = new MessageCounter();
 	private final int messageQueueMaxSize;
 
-
-    /**
-     * Creates a new node message handler.
-     */
-    public NodeMessageHandler(RskSystemProperties config,
-                              BlockProcessor blockProcessor,
-                              SyncProcessor syncProcessor,
-                              @Nullable ChannelManager channelManager,
-                              @Nullable TransactionGateway transactionGateway,
-                              @Nullable PeerScoringManager peerScoringManager,
-                              StatusResolver statusResolver) {
-        this.config = config;
-        this.channelManager = channelManager;
-        this.blockProcessor = blockProcessor;
-        this.syncProcessor = syncProcessor;
-        this.transactionGateway = transactionGateway;
-        this.statusResolver = statusResolver;
-        this.cleanMsgTimestamp = System.currentTimeMillis();
-        this.peerScoringManager = peerScoringManager;
-        this.queue = new PriorityBlockingQueue<>(11, new MessageTask.TaskComparator());
+	/**
+	 * Creates a new node message handler.
+	 */
+	public NodeMessageHandler(RskSystemProperties config,
+            BlockProcessor blockProcessor,
+            SyncProcessor syncProcessor,
+            @Nullable ChannelManager channelManager,
+            @Nullable TransactionGateway transactionGateway,
+            @Nullable PeerScoringManager peerScoringManager,
+            StatusResolver statusResolver) {
+		this.config = config;
+		this.channelManager = channelManager;
+		this.blockProcessor = blockProcessor;
+		this.syncProcessor = syncProcessor;
+		this.transactionGateway = transactionGateway;
+		this.statusResolver = statusResolver;
+		this.cleanMsgTimestamp = System.currentTimeMillis();
+		this.peerScoringManager = peerScoringManager;
+		this.queue = new PriorityBlockingQueue<>(11, new MessageTask.TaskComparator());
         this.bannedMiners = Collections.unmodifiableSet(
                 config.bannedMinerList().stream().map(RskAddress::new).collect(Collectors.toSet())
         );
-        this.messageQueueMaxSize = config.getMessageQueueMaxSize();
-    }
+		this.messageQueueMaxSize = config.getMessageQueueMaxSize();
+	}
 
-    /**
-     * processMessage processes a RSK Message, doing the appropriate action based on the message type.
-     *
-     * @param sender  the message sender.
-     * @param message the message to be processed.
-     */
-    public synchronized void processMessage(final Peer sender, @Nonnull final Message message) {
-        long start = System.nanoTime();
-        MessageType messageType = message.getMessageType();
-        logger.trace("Process message type: {}", messageType);
+	/**
+	 * processMessage processes a RSK Message, doing the appropriate action based on the message type.
+	 *
+	 * @param sender  the message sender.
+	 * @param message the message to be processed.
+	 */
+	public synchronized void processMessage(final Peer sender, @Nonnull final Message message) {
+		long start = System.nanoTime();
+		MessageType messageType = message.getMessageType();
+		logger.trace("Process message type: {}", messageType);
 
-        MessageVisitor mv = new MessageVisitor(config,
-                blockProcessor,
-                syncProcessor,
-                transactionGateway,
-                peerScoringManager,
-                channelManager,
-                sender);
-        message.accept(mv);
+		MessageVisitor mv = new MessageVisitor(config, blockProcessor, syncProcessor, transactionGateway, peerScoringManager, channelManager, sender);
+		message.accept(mv);
 
-        long processTime = System.nanoTime() - start;
-        String timeInSeconds = FormatUtils.formatNanosecondsToSeconds(processTime);
+		long processTime = System.nanoTime() - start;
+		String timeInSeconds = FormatUtils.formatNanosecondsToSeconds(processTime);
 
-        if ((messageType == MessageType.BLOCK_MESSAGE || messageType == MessageType.BODY_RESPONSE_MESSAGE) && BlockUtils.tooMuchProcessTime(processTime)) {
-            loggerMessageProcess.warn("Message[{}] processed after [{}] seconds.", message.getMessageType(), timeInSeconds);
-        }
-        else {
-            loggerMessageProcess.debug("Message[{}] processed after [{}] seconds.", message.getMessageType(), timeInSeconds);
-        }
-        
-        messageCounter.decrement(sender);
+		if ((messageType == MessageType.BLOCK_MESSAGE || messageType == MessageType.BODY_RESPONSE_MESSAGE) && BlockUtils.tooMuchProcessTime(processTime)) {
+			loggerMessageProcess.warn("Message[{}] processed after [{}] seconds.", message.getMessageType(), timeInSeconds);
+		} else {
+			loggerMessageProcess.debug("Message[{}] processed after [{}] seconds.", message.getMessageType(), timeInSeconds);
+		}
 
-    }
+		messageCounter.decrement(sender);
+	}
 
-    @Override
-    public void postMessage(Peer sender, Message message) {
-        logger.trace("Start post message (queue size {}) (message type {})", this.queue.size(), message.getMessageType());
-        // There's an obvious race condition here, but fear not.
-        // receivedMessages and logger are thread-safe
-        // cleanMsgTimestamp is a long replaced by the next value, we don't care
-        // enough about the precision of the value it takes
-        cleanExpiredMessages();
-        tryAddMessage(sender, message);
-        logger.trace("End post message (queue size {})", this.queue.size());
-    }
+	@Override
+	public void postMessage(Peer sender, Message message) {
+		logger.trace("Start post message (queue size {}) (message type {})", this.queue.size(), message.getMessageType());
+		// There's an obvious race condition here, but fear not.
+		// receivedMessages and logger are thread-safe
+		// cleanMsgTimestamp is a long replaced by the next value, we don't care
+		// enough about the precision of the value it takes
+		cleanExpiredMessages();
+		tryAddMessage(sender, message);
+		logger.trace("End post message (queue size {})", this.queue.size());
+	}
 
-    /**
-     * verify if the message is allow, and if so, add it to the queue 
-     */
-    private void tryAddMessage(Peer sender, Message message) {
+	/**
+	 * verify if the message is allowed, and if so, add it to the queue 
+	 */
+	private void tryAddMessage(Peer sender, Message message) {
 
 		double score = sender.score(System.currentTimeMillis(), message.getMessageType());
 
@@ -165,7 +154,8 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
 		if (allowed) {
 			this.addMessage(sender, message, score);
 		}
-    }
+
+	}
 
 	/**
 	 * Responds if a message must be allowed 
@@ -179,7 +169,7 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
 				allowByMessageUniqueness(sender, message); // prevent repeated is the most expensive and MUST be the last 
 
 	}
-	
+
 	/**
 	 * assert score is acceptable 
 	 */
@@ -210,7 +200,7 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
 
 		return true;
 	}
-
+	
 	/**
 	 * assert message was not received twice
 	 * add it to a map and manages the state of the map
@@ -238,137 +228,133 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
 		return (contains == false);
 	}
 
-    private void addMessage(Peer sender, Message message, double score) {
-    	
-    	boolean messageAdded = this.queue.offer(new MessageTask(sender, message, score));
-    	
-    	if(messageAdded) {
-    		messageCounter.increment(sender);
-    	} else {
-            logger.warn("Unexpected path. Is message queue bounded now?");
-        }
-        
-    }
+	private void addMessage(Peer sender, Message message, double score) {
 
-    private void cleanExpiredMessages() {
-        long currentTime = System.currentTimeMillis();
-        if (currentTime - cleanMsgTimestamp > RECEIVED_MESSAGES_CACHE_DURATION) {
-            logger.trace("Cleaning {} messages from rlp queue", receivedMessages.size());
-            receivedMessages.clear();
-            cleanMsgTimestamp = currentTime;
-        }
-    }
+		boolean messageAdded = this.queue.offer(new MessageTask(sender, message, score));
 
-    @Override
-    public void start() {
-        new Thread(this, "message handler").start();
-    }
+		if (messageAdded) {
+			messageCounter.increment(sender);
+		} else {
+			logger.warn("Unexpected path. Is message queue bounded now?");
+		}
 
-    @Override
-    public void stop() {
-        this.stopped = true;
-    }
+	}
 
-    @Override
-    public long getMessageQueueSize() {
-        return this.queue.size();
-    }
+	private void cleanExpiredMessages() {
+		long currentTime = System.currentTimeMillis();
+		if (currentTime - cleanMsgTimestamp > RECEIVED_MESSAGES_CACHE_DURATION) {
+			logger.trace("Cleaning {} messages from rlp queue", receivedMessages.size());
+			receivedMessages.clear();
+			cleanMsgTimestamp = currentTime;
+		}
+	}
 
-    public int getMessageQueueSize(Peer peer) {
-    	return messageCounter.getValue(peer);
-    }
+	@Override
+	public void start() {
+		new Thread(this, "message handler").start();
+	}
 
-    @Override
-    public void run() {
-        while (!stopped) {
-            MessageTask task = null;
-            try {
-                logger.trace("Get task");
+	@Override
+	public void stop() {
+		this.stopped = true;
+	}
 
-                task = this.queue.poll(1, TimeUnit.SECONDS);
+	@Override
+	public long getMessageQueueSize() {
+		return this.queue.size();
+	}
 
-                loggerMessageProcess.debug("Queued Messages: {}", this.queue.size());
+	public int getMessageQueueSize(Peer peer) {
+		return messageCounter.getValue(peer);
+	}
 
-                if (task != null) {
-                    logger.trace("Start task");
-                    this.processMessage(task.getSender(), task.getMessage());
-                    logger.trace("End task");
-                } else {
-                    logger.trace("No task");
-                }
+	@Override
+	public void run() {
+		while (!stopped) {
+			MessageTask task = null;
+			try {
+				logger.trace("Get task");
 
-                updateTimedEvents();
-            } catch (InterruptedException ex) {
-            	logger.error("Interrupted Exception processing: {}", task, ex);
-            	Thread.currentThread().interrupt();
-            } catch (Exception ex) {
-                logger.error("Unexpected error processing: {}", task, ex);
-            }
-        }
-    }
+				task = this.queue.poll(1, TimeUnit.SECONDS);
 
-    private void updateTimedEvents() {
-        long now = System.currentTimeMillis();
-        Duration timeTick = Duration.ofMillis(now - lastTickSent);
-        // TODO(lsebrie): handle timeouts properly
-        lastTickSent = now;
-        if (queue.isEmpty()) {
-            this.syncProcessor.onTimePassed(timeTick);
-        }
+				loggerMessageProcess.debug("Queued Messages: {}", this.queue.size());
 
-        //Refresh status to peers every 10 seconds or so
-        Duration timeStatus = Duration.ofMillis(now - lastStatusSent);
-        if (timeStatus.getSeconds() > 10) {
-            Status status = statusResolver.currentStatus();
-            logger.trace("Sending status best block to all {} {}",
-                    status.getBestBlockNumber(),
-                    status.getBestBlockHash());
-            channelManager.broadcastStatus(status);
-            lastStatusSent = now;
-        }
-    }
+				if (task != null) {
+					logger.trace("Start task");
+					this.processMessage(task.getSender(), task.getMessage());
+					logger.trace("End task");
+				} else {
+					logger.trace("No task");
+				}
 
-    private void recordEvent(Peer sender, EventType event) {
-        if (sender == null) {
-            return;
-        }
+				updateTimedEvents();
+			} catch (InterruptedException iex) {
+				logger.error("Interrupted exception processing: {}", task, iex);
+				Thread.currentThread().interrupt();
+			} catch (Exception ex) {
+				logger.error("Unexpected error processing: {}", task, ex);
+			}
+		}
+	}
 
-        this.peerScoringManager.recordEvent(sender.getPeerNodeID(), sender.getAddress(), event);
-    }
+	private void updateTimedEvents() {
+		long now = System.currentTimeMillis();
+		Duration timeTick = Duration.ofMillis(now - lastTickSent);
+		// TODO(lsebrie): handle timeouts properly
+		lastTickSent = now;
+		if (queue.isEmpty()) {
+			this.syncProcessor.onTimePassed(timeTick);
+		}
 
-    private static class MessageTask  {
-        private Peer sender;
-        private Message message;
-        private double score;
+		//Refresh status to peers every 10 seconds or so
+		Duration timeStatus = Duration.ofMillis(now - lastStatusSent);
+		if (timeStatus.getSeconds() > 10) {
+			Status status = statusResolver.currentStatus();
+			logger.trace("Sending status best block to all {} {}", status.getBestBlockNumber(), status.getBestBlockHash());
+			channelManager.broadcastStatus(status);
+			lastStatusSent = now;
+		}
+	}
 
-        public MessageTask(Peer sender, Message message, double score) {
-            this.sender = sender;
-            this.message = message;
-            this.score = score;
-        }
+	private void recordEvent(Peer sender, EventType event) {
+		if (sender == null) {
+			return;
+		}
 
-        public Peer getSender() {
-            return this.sender;
-        }
+		this.peerScoringManager.recordEvent(sender.getPeerNodeID(), sender.getAddress(), event);
+	}
 
-        public Message getMessage() {
-            return this.message;
-        }
+	private static class MessageTask {
+		private Peer sender;
+		private Message message;
+		private double score;
 
-        @Override
-        public String toString() {
-            return "MessageTask{" +
-                    "sender=" + sender +
-                    ", message=" + message +
-                    '}';
-        }
+		public MessageTask(Peer sender, Message message, double score) {
+			this.sender = sender;
+			this.message = message;
+			this.score = score;
+		}
 
-        private static class TaskComparator implements Comparator<MessageTask> {
-            @Override
-            public int compare(MessageTask m1, MessageTask m2) {
-                return Double.compare(m2.score, m1.score);
-            }
-        }
+		public Peer getSender() {
+			return this.sender;
+		}
 
-    }
+		public Message getMessage() {
+			return this.message;
+		}
+
+		@Override
+		public String toString() {
+			return "MessageTask{" + "sender=" + sender + ", message=" + message + '}';
+		}
+
+		private static class TaskComparator implements Comparator<MessageTask> {
+			@Override
+			public int compare(MessageTask m1, MessageTask m2) {
+				return Double.compare(m2.score, m1.score);
+			}
+		}
+
+	}
+
 }
