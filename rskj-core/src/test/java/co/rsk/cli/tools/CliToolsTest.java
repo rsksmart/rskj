@@ -35,9 +35,9 @@ import org.ethereum.core.Block;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.core.Blockchain;
 import org.ethereum.crypto.Keccak256Helper;
+import org.ethereum.datasource.DbKind;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.datasource.KeyValueDataSource;
-import org.ethereum.datasource.LevelDbDataSource;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.IndexedBlockStore;
 import org.ethereum.db.ReceiptStore;
@@ -318,6 +318,7 @@ public class CliToolsTest {
         RskContext rskContext = mock(RskContext.class);
         RskSystemProperties rskSystemProperties = mock(RskSystemProperties.class);
         doReturn(databaseDir).when(rskSystemProperties).databaseDir();
+        doReturn(DbKind.LEVEL_DB).when(rskSystemProperties).databaseKind();
         doReturn(rskSystemProperties).when(rskContext).getRskSystemProperties();
         NodeStopper stopper = mock(NodeStopper.class);
 
@@ -325,7 +326,7 @@ public class CliToolsTest {
         importStateCliTool.execute(args, () -> rskContext, stopper);
 
         byte[] key = new Keccak256(Keccak256Helper.keccak256(value)).getBytes();
-        KeyValueDataSource trieDB = LevelDbDataSource.makeDataSource(Paths.get(databaseDir, "unitrie"));
+        KeyValueDataSource trieDB = KeyValueDataSource.makeDataSource(Paths.get(databaseDir, "unitrie"), DbKind.LEVEL_DB);
         byte[] result = trieDB.get(key);
         trieDB.close();
 

@@ -30,6 +30,7 @@ import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.Keccak256Helper;
+import org.ethereum.datasource.DbKind;
 import org.ethereum.net.p2p.P2pHandler;
 import org.ethereum.net.rlpx.MessageCodec;
 import org.ethereum.net.rlpx.Node;
@@ -301,6 +302,10 @@ public abstract class SystemProperties {
 
     public String databaseDir() {
         return databaseDir == null ? configFromFiles.getString(PROPERTY_BASE_PATH) : databaseDir;
+    }
+
+    public DbKind databaseKind() {
+        return DbKind.ofName(configFromFiles.getString("keyvalue.datasource"));
     }
 
     public void setDataBaseDir(String dataBaseDir) {

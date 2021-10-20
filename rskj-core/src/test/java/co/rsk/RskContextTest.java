@@ -28,6 +28,7 @@ import co.rsk.trie.TrieStoreImpl;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.core.Genesis;
+import org.ethereum.datasource.DbKind;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.util.RskTestContext;
 import org.junit.Before;
@@ -70,6 +71,7 @@ public class RskContextTest {
         testProperties = spy(new TestSystemProperties());
         doReturn(0).when(testProperties).getStatesCacheSize();
         doReturn(databaseDir.getAbsolutePath()).when(testProperties).databaseDir();
+        doReturn(DbKind.LEVEL_DB).when(testProperties).databaseKind();
 
         internalService = mock(InternalService.class);
 

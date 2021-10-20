@@ -48,11 +48,11 @@ public class LevelDbDataSourceTest {
 
         final int batchSize = 100;
         Map<ByteArrayWrapper, byte[]> batch = createBatch(batchSize);
-        
+
         dataSource.updateBatch(batch, Collections.emptySet());
 
         assertEquals(batchSize, dataSource.keys().size());
-        
+
         dataSource.close();
     }
 
@@ -66,7 +66,7 @@ public class LevelDbDataSourceTest {
 
         assertNotNull(dataSource.get(key));
         assertEquals(1, dataSource.keys().size());
-        
+
         dataSource.close();
     }
 
@@ -80,7 +80,7 @@ public class LevelDbDataSourceTest {
         for (int i = 0; i < sourcesCount; i++) {
             Path sourcePath = testDatabasesDirectory.resolve(String.format("src-%d", i));
             sourcePaths.add(sourcePath);
-            KeyValueDataSource originDataSource = LevelDbDataSource.makeDataSource(sourcePath);
+            KeyValueDataSource originDataSource = KeyValueDataSource.makeDataSource(sourcePath, DbKind.LEVEL_DB);
             byte[] currentElement = {(byte) i};
             sourceKeys.add(currentElement);
             originDataSource.put(currentElement, currentElement);
@@ -88,8 +88,8 @@ public class LevelDbDataSourceTest {
         }
 
         Path destination = testDatabasesDirectory.resolve("destination");
-        LevelDbDataSource.mergeDataSources(destination, sourcePaths);
-        KeyValueDataSource destinationDataSource = LevelDbDataSource.makeDataSource(destination);
+        KeyValueDataSource.mergeDataSources(destination, sourcePaths, DbKind.LEVEL_DB);
+        KeyValueDataSource destinationDataSource = KeyValueDataSource.makeDataSource(destination, DbKind.LEVEL_DB);
         try {
             Set<byte[]> destinationKeys = destinationDataSource.keys();
             Assert.assertThat(destinationKeys, hasSize(sourcesCount));
