@@ -159,6 +159,8 @@ public class BridgeRegTestConstants extends BridgeConstants {
         oldFederationAddress = "2N7ZgQyhFKm17RbaLqygYbS7KLrQfapyZzu";
 
         minimumPegoutValuePercentageToReceiveAfterFee = 20;
+
+        numberOfBlocksBetweenPegouts = 50; // 25 Minutes of RSK blocks (considering 1 block every 30 seconds)
     }
 
     public static BridgeRegTestConstants getInstance() {
