@@ -81,8 +81,8 @@ public class EthModuleWalletEnabled implements EthModuleWallet {
         ECDSASignature signature = ECDSASignature.fromSignature(ecKey.sign(messageHash));
 
         return TypeConverter.toJsonHex(ByteUtil.merge(
-                ByteUtil.bigIntegerToBytes(signature.getR()),
-                ByteUtil.bigIntegerToBytes(signature.getS()),
+                ByteUtil.bigIntegerToBytes(signature.getR(), 32),
+                ByteUtil.bigIntegerToBytes(signature.getS(), 32),
                 new byte[] {signature.getV()}
         ));
     }
