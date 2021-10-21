@@ -33,9 +33,9 @@ public class MessageCounter {
     	Optional.ofNullable(messagesPerNode.get(sender.getPeerNodeID())).ifPresent(AtomicInteger::decrementAndGet);
     	
     	// if this counter is zero or negative: remove key from map
-    	Optional.ofNullable(messagesPerNode.get(sender.getPeerNodeID()))
-    		.filter(counter -> counter.get() < 1)
-    		.ifPresent(counter -> messagesPerNode.remove(sender.getPeerNodeID()));
+		Optional.ofNullable(messagesPerNode.get(sender.getPeerNodeID()))
+			.filter(counter -> counter.get() < 1)
+			.ifPresent(counter -> messagesPerNode.remove(sender.getPeerNodeID()));
 
     }
     
