@@ -49,7 +49,7 @@ import co.rsk.scoring.PeerScoringManager;
 import co.rsk.util.FormatUtils;
 
 public class NodeMessageHandler implements MessageHandler, InternalService, Runnable {
-	
+
 	private static final Logger logger = LoggerFactory.getLogger("messagehandler");
 	private static final Logger loggerMessageProcess = LoggerFactory.getLogger("messageProcess");
 
@@ -83,12 +83,12 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
 	 * Creates a new node message handler.
 	 */
 	public NodeMessageHandler(RskSystemProperties config,
-            BlockProcessor blockProcessor,
-            SyncProcessor syncProcessor,
-            @Nullable ChannelManager channelManager,
-            @Nullable TransactionGateway transactionGateway,
-            @Nullable PeerScoringManager peerScoringManager,
-            StatusResolver statusResolver) {
+			BlockProcessor blockProcessor,
+			SyncProcessor syncProcessor,
+			@Nullable ChannelManager channelManager,
+			@Nullable TransactionGateway transactionGateway,
+			@Nullable PeerScoringManager peerScoringManager,
+			StatusResolver statusResolver) {
 		this.config = config;
 		this.channelManager = channelManager;
 		this.blockProcessor = blockProcessor;
@@ -98,9 +98,9 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
 		this.cleanMsgTimestamp = System.currentTimeMillis();
 		this.peerScoringManager = peerScoringManager;
 		this.queue = new PriorityBlockingQueue<>(11, new MessageTask.TaskComparator());
-        this.bannedMiners = Collections.unmodifiableSet(
-                config.bannedMinerList().stream().map(RskAddress::new).collect(Collectors.toSet())
-        );
+		this.bannedMiners = Collections.unmodifiableSet(
+				config.bannedMinerList().stream().map(RskAddress::new).collect(Collectors.toSet())
+		);
 		this.messageQueueMaxSize = config.getMessageQueueMaxSize();
 	}
 
@@ -165,7 +165,7 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
 		return 
 				allowByScore(score) && 
 				allowByMessageCount(sender) && 
-				allowByNotBanned(sender, message) &&
+				allowByMinerNotBanned(sender, message) &&
 				allowByMessageUniqueness(sender, message); // prevent repeated is the most expensive and MUST be the last 
 
 	}
@@ -183,22 +183,24 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
 	private boolean allowByMessageCount(Peer sender) {
 		boolean allow = messageCounter.getValue(sender) < messageQueueMaxSize;
 		if (!allow && logger.isInfoEnabled()) {
-			logger.info("Peer [{}] has its queue full(maxSize: []). Its messages will be not allowed for a while.", sender.getPeerNodeID(), messageQueueMaxSize);
+			logger.info("Peer [{}] has its queue full(maxSize: {}). Its messages will not be allowed for a while.", sender.getPeerNodeID(), messageQueueMaxSize);
 		}
 		return allow;
 	}
 
-	private boolean allowByNotBanned(Peer sender, Message message) {
+	private boolean allowByMinerNotBanned(Peer sender, Message message) {
 
-        if (!this.bannedMiners.isEmpty() && message.getMessageType() == MessageType.BLOCK_MESSAGE) {
-            RskAddress miner = ((BlockMessage) message).getBlock().getCoinbase();
-            if (this.bannedMiners.contains(miner)) {
-                logger.trace("Received block mined by banned miner {} from peer {}, not added to the queue", miner, sender);
-                return false;
-            }
-        }
+		boolean allow = true;
+		
+		if (!this.bannedMiners.isEmpty() && message.getMessageType() == MessageType.BLOCK_MESSAGE) {
+			RskAddress miner = ((BlockMessage) message).getBlock().getCoinbase();
+			if (this.bannedMiners.contains(miner)) {
+				logger.trace("Received block mined by banned miner {} from peer {}, not added to the queue", miner, sender);
+				allow = false;
+			}
+		}
 
-		return true;
+		return allow;
 	}
 	
 	/**
