@@ -20,6 +20,7 @@ package co.rsk.rpc.modules.eth;
 
 import co.rsk.core.RskAddress;
 import co.rsk.core.Wallet;
+import org.bouncycastle.util.BigIntegers;
 import org.ethereum.core.Account;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
@@ -81,9 +82,9 @@ public class EthModuleWalletEnabled implements EthModuleWallet {
         ECDSASignature signature = ECDSASignature.fromSignature(ecKey.sign(messageHash));
 
         return TypeConverter.toJsonHex(ByteUtil.merge(
-                ByteUtil.bigIntegerToBytes(signature.getR(), 32),
-                ByteUtil.bigIntegerToBytes(signature.getS(), 32),
-                new byte[] {signature.getV()}
+                BigIntegers.asUnsignedByteArray(32, signature.getR()),
+                BigIntegers.asUnsignedByteArray(32, signature.getS()),
+                new byte[]{signature.getV()}
         ));
     }
 }
