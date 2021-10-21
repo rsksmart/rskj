@@ -69,7 +69,8 @@ public enum ConsensusRule {
     RSKIP201("rskip201"),
     RSKIP218("rskip218"), // New rewards fee adddress
     RSKIP219("rskip219"),
-    RSKIP220("rskip220");
+    RSKIP220("rskip220"),
+    RSKIP271("rskip271"); // Peg Out Batching
 
     private String configKey;
 
