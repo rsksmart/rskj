@@ -227,7 +227,7 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
 			logger.trace("Received message already known, not added to the queue");
 		}
 
-		return (contains == false);
+		return !contains;
 	}
 
 	private void addMessage(Peer sender, Message message, double score) {

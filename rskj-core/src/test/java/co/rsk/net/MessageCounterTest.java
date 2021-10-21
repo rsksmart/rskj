@@ -35,7 +35,7 @@ public class MessageCounterTest {
 		
 		counter.decrement(sender);
 		
-		Assert.assertTrue(counter.getValue(sender) == 1);
+		Assert.assertEquals(1, counter.getValue(sender));
 	}
 	
 }
