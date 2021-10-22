@@ -121,7 +121,7 @@ public class HexUtilsTest {
     	
     	long value = HexUtils.jsonHexToLong(hexNumberWithPrefix);
     	
-    	Assert.assertEquals(value, 100L);
+    	Assert.assertEquals(100L, value);
     }
     
     @Test(expected = NumberFormatException.class)
@@ -230,7 +230,7 @@ public class HexUtilsTest {
     	
     	byte[] res = HexUtils.leftPad(hex.getBytes());
     	
-    	Assert.assertEquals(new String(res), "0a");
+    	Assert.assertEquals("0a", new String(res));
     	
     }
     

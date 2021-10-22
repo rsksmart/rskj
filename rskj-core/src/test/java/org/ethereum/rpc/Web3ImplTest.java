@@ -160,7 +160,7 @@ public class Web3ImplTest {
         
         // Function must apply the Keccak-256 algorithm
         // Result taken from https://emn178.github.io/online-tools/keccak_256.html
-        assertEquals("hash does not match", resultFromHex, "0x2949b355406e040cb594c48726db3cf34bd8f963605e2c39a6b0b862e46825a5");
+        assertEquals("hash does not match", "0x2949b355406e040cb594c48726db3cf34bd8f963605e2c39a6b0b862e46825a5", resultFromHex);
 
     }
 
