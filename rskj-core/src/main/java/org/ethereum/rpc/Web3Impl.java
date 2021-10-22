@@ -200,24 +200,27 @@ public class Web3Impl implements Web3 {
 
     @Override
     public String web3_sha3(String data) throws Exception {
+    	
         String s = null;
+        
         try {
         	
-        	byte[] dataBytes = data.getBytes(StandardCharsets.UTF_8);
-        	
-        	byte[] bytesToHash = dataBytes;
-        	
         	if(HexUtils.isHexWithPrefix(data)) {
-        		bytesToHash = HexUtils.decode(dataBytes);
+        		
+        		byte[] dataBytes = data.getBytes(StandardCharsets.UTF_8);
+                byte[] result = HashUtil.keccak256(HexUtils.decode(dataBytes));                
+                return s = HexUtils.toJsonHex(result);
+        		
+        	} else {
+        		throw invalidParamError("Parameter must be hexadecimal encoded with the '0x' prefix.");
         	}
-        	
-            byte[] result = HashUtil.keccak256(bytesToHash);
-            return s = HexUtils.toJsonHex(result);
+
         } finally {
             if (logger.isDebugEnabled()) {
                 logger.debug("web3_sha3({}): {}", data, s);
             }
         }
+
     }
 
     @Override

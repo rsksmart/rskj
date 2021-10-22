@@ -151,23 +151,26 @@ public class Web3ImplTest {
 
     @Test
     public void web3_sha3() throws Exception {
-        
-    	String toHash = "internet";
-        
+                
     	String toHashInHex = "0x696e7465726e6574"; // 'internet' in hexa
 
         Web3 web3 = createWeb3();
-
-        String result = web3.web3_sha3(toHash);
 
         String resultFromHex = web3.web3_sha3(toHashInHex);        
         
         // Function must apply the Keccak-256 algorithm
         // Result taken from https://emn178.github.io/online-tools/keccak_256.html
-        assertEquals("hash does not match", result, "0x2949b355406e040cb594c48726db3cf34bd8f963605e2c39a6b0b862e46825a5");
+        assertEquals("hash does not match", resultFromHex, "0x2949b355406e040cb594c48726db3cf34bd8f963605e2c39a6b0b862e46825a5");
 
-        // result from hexa and plain must be the same
-        assertEquals("hash from plain text hand hexa does not match", result, resultFromHex);
+    }
+
+    @Test(expected = RskJsonRpcRequestException.class)
+    public void web3_sha3_expect_exception() throws Exception {
+    	
+    	Web3 web3 = createWeb3();
+    	
+    	web3.web3_sha3("internet");        
+    	
     }
 
     @Test
