@@ -58,6 +58,7 @@ public abstract class CliToolRskContextAware {
     public void execute(@Nonnull String[] args, @Nonnull Factory<RskContext> contextFactory, @Nonnull NodeStopper stopper) {
         Objects.requireNonNull(args, "args should not be null");
         Objects.requireNonNull(contextFactory, "contextFactory should not be null");
+        Objects.requireNonNull(stopper, "stopper should not be null");
 
         String cliToolName = getClass().getSimpleName();
         try (RskContext ctx = contextFactory.create()) {
