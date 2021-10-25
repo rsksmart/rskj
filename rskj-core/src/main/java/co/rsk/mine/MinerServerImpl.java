@@ -142,7 +142,11 @@ public class MinerServerImpl implements MinerServer {
         this.clock = clock;
         this.blockFactory = blockFactory;
         this.activationConfig = config.getActivationConfig();
+
         this.submissionRateLimitHandler = Objects.requireNonNull(submissionRateLimitHandler);
+        if (this.submissionRateLimitHandler.isEnabled()) {
+            logger.warn("Miner submission rate limit is enabled. Usually it is being used in test networks. Make sure it's intentional and not by mistake");
+        }
 
         blocksWaitingForPoW = createNewBlocksWaitingList();
 
@@ -278,16 +282,14 @@ public class MinerServerImpl implements MinerServer {
         Keccak256 key = new Keccak256(TypeConverter.removeZeroX(blockHashForMergedMining));
 
         synchronized (lock) {
-            if (submissionRateLimitHandler.isEnabled()) {
-                if (!submissionRateLimitHandler.isSubmissionAllowed()) {
-                    String message = "Cannot publish block, block submission rate limit exceeded";
-                    logger.warn(message);
+            if (!submissionRateLimitHandler.isSubmissionAllowed()) {
+                String message = "Cannot publish block, block submission rate limit exceeded";
+                logger.warn(message);
 
-                    return new SubmitBlockResult("ERROR", message);
-                }
-
-                submissionRateLimitHandler.onSubmit();
+                return new SubmitBlockResult("ERROR", message);
             }
+
+            submissionRateLimitHandler.onSubmit();
 
             Block workingBlock = blocksWaitingForPoW.get(key);
 

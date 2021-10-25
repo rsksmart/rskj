@@ -502,6 +502,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
         MinerClock clock = new MinerClock(true, Clock.systemUTC());
         SubmissionRateLimitHandler submissionRateLimitHandler = mock(SubmissionRateLimitHandler.class);
         doReturn(false).when(submissionRateLimitHandler).isEnabled();
+        doReturn(true).when(submissionRateLimitHandler).isSubmissionAllowed();
         MinerServer minerServer = makeMinerServer(ethereumImpl, unclesValidationRule, clock, transactionPool, submissionRateLimitHandler);
 
         minerServer.buildBlockToMine(false);
@@ -514,9 +515,6 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
 
         result = minerServer.submitBitcoinBlock(work.getBlockHashForMergedMining(), bitcoinMergedMiningBlock);
         Assert.assertEquals("OK", result.getStatus());
-
-        verify(submissionRateLimitHandler, never()).isSubmissionAllowed();
-        verify(submissionRateLimitHandler, never()).onSubmit();
     }
 
     @Test
