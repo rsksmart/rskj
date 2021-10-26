@@ -81,6 +81,8 @@ public class BridgeStorageProvider {
     // Dummy value to use when saved Fast Bridge Derivation Argument Hash
     private static final byte FAST_BRIDGE_FEDERATION_DERIVATION_ARGUMENTS_HASH_TRUE_VALUE = (byte) 1;
 
+    private static final DataWord NEXT_PEGOUT_HEIGHT_KEY = DataWord.fromString("nextPegoutHeight");
+
     private final Repository repository;
     private final RskAddress contractAddress;
     private final NetworkParameters networkParameters;
@@ -132,6 +134,8 @@ public class BridgeStorageProvider {
     private Sha256Hash fastBridgeBtcTxHashToSave = null;
     private FastBridgeFederationInformation fastBridgeFederationInformationsToSave = null;
     private long receiveHeadersLastTimestamp = 0;
+
+    private Long nextPegoutHeight;
 
     public BridgeStorageProvider(
         Repository repository,
@@ -884,6 +888,30 @@ public class BridgeStorageProvider {
         }
     }
 
+    public Optional<Long> getNextPegoutHeight() {
+        if (!activations.isActive(RSKIP271)) {
+            return Optional.empty();
+        }
+
+        if (nextPegoutHeight == null) {
+            nextPegoutHeight = safeGetFromRepository(NEXT_PEGOUT_HEIGHT_KEY, BridgeSerializationUtils::deserializeOptionalLong).orElse(0L);
+        }
+
+        return Optional.of(nextPegoutHeight);
+    }
+
+    public void setNextPegoutHeight(long nextPegoutHeight) {
+        this.nextPegoutHeight = nextPegoutHeight;
+    }
+    
+    protected void saveNextPegoutHeight() {
+        if (nextPegoutHeight == null || !activations.isActive(RSKIP271)) {
+            return;
+        }
+        
+        safeSaveToRepository(NEXT_PEGOUT_HEIGHT_KEY, nextPegoutHeight, BridgeSerializationUtils::serializeLong);
+    }
+
     public void save() throws IOException {
         saveBtcTxHashesAlreadyProcessed();
 
@@ -922,6 +950,8 @@ public class BridgeStorageProvider {
         saveFastBridgeFederationInformation();
 
         saveReceiveHeadersLastTimestamp();
+
+        saveNextPegoutHeight();
     }
 
     private DataWord getStorageKeyForBtcTxHashAlreadyProcessed(Sha256Hash btcTxHash) {
