@@ -128,9 +128,9 @@ public class BridgeStorageProvider {
     private Long nextFederationCreationBlockHeight; // if -1, then clear value
     private Script lastRetiredFederationP2SHScript;
 
-    private Keccak256 fastBridgeDerivationArgumentsHashToSave = null;
-    private Sha256Hash fastBridgeBtcTxHashToSave = null;
-    private FastBridgeFederationInformation fastBridgeFederationInformationsToSave = null;
+    private Keccak256 fastBridgeDerivationArgumentsHash;
+    private Sha256Hash fastBridgeBtcTxHash;
+    private FastBridgeFederationInformation fastBridgeFederationInformations;
     private long receiveHeadersLastTimestamp = 0;
 
     public BridgeStorageProvider(
@@ -788,52 +788,54 @@ public class BridgeStorageProvider {
     }
 
     public boolean isFastBridgeFederationDerivationHashUsed(Sha256Hash btcTxHash, Keccak256 derivationArgsHash) {
-        if (!activations.isActive(RSKIP176)) {
-            return false;
-        }
-
-        if (btcTxHash == null || derivationArgsHash == null) {
+        if (!activations.isActive(RSKIP176) || btcTxHash == null || derivationArgsHash == null) {
             return false;
         }
 
         byte[] data = repository.getStorageBytes(
-                contractAddress,
-                getStorageKeyForDerivationArgumentsHash(btcTxHash, derivationArgsHash)
+            contractAddress,
+            getStorageKeyForDerivationArgumentsHash(btcTxHash, derivationArgsHash)
         );
 
-        return ((data != null) && (data.length == 1) && (data[0] == FAST_BRIDGE_FEDERATION_DERIVATION_ARGUMENTS_HASH_TRUE_VALUE));
+        return data != null &&
+            data.length == 1 &&
+            data[0] == FAST_BRIDGE_FEDERATION_DERIVATION_ARGUMENTS_HASH_TRUE_VALUE;
     }
 
-    public void markFastBridgeFederationDerivationHashAsUsed(Sha256Hash btcTxHashToSave, Keccak256 derivationArgsHash) {
+    public void markFastBridgeFederationDerivationHashAsUsed(Sha256Hash btcTxHash, Keccak256 derivationArgsHash) {
         if (activations.isActive(RSKIP176)) {
-            fastBridgeBtcTxHashToSave = btcTxHashToSave;
-            fastBridgeDerivationArgumentsHashToSave = derivationArgsHash;
+            fastBridgeBtcTxHash = btcTxHash;
+            fastBridgeDerivationArgumentsHash = derivationArgsHash;
         }
     }
 
     private void saveDerivationArgumentsHash() {
-        if (fastBridgeDerivationArgumentsHashToSave == null || fastBridgeBtcTxHashToSave == null) {
+        if (fastBridgeDerivationArgumentsHash == null || fastBridgeBtcTxHash == null) {
             return;
         }
+
         repository.addStorageBytes(
-                contractAddress,
-                getStorageKeyForDerivationArgumentsHash(fastBridgeBtcTxHashToSave, fastBridgeDerivationArgumentsHashToSave),
-                new byte[]{FAST_BRIDGE_FEDERATION_DERIVATION_ARGUMENTS_HASH_TRUE_VALUE}
+            contractAddress,
+            getStorageKeyForDerivationArgumentsHash(
+                fastBridgeBtcTxHash,
+                fastBridgeDerivationArgumentsHash
+            ),
+            new byte[]{FAST_BRIDGE_FEDERATION_DERIVATION_ARGUMENTS_HASH_TRUE_VALUE}
         );
     }
 
-    public Optional<FastBridgeFederationInformation> getFastBridgeFederationInformation(byte[] fastBridgeScriptHash) {
+    public Optional<FastBridgeFederationInformation> getFastBridgeFederationInformation(byte[] fastBridgeFederationRedeemScriptHash) {
         if (!activations.isActive(RSKIP176)) {
             return Optional.empty();
         }
 
-        if (fastBridgeScriptHash == null || fastBridgeScriptHash.length == 0) {
+        if (fastBridgeFederationRedeemScriptHash == null || fastBridgeFederationRedeemScriptHash.length == 0) {
             return Optional.empty();
         }
 
         FastBridgeFederationInformation fastBridgeFederationInformation = this.safeGetFromRepository(
-                getStorageKeyForfastBridgeFederationInformation(fastBridgeScriptHash),
-            data -> BridgeSerializationUtils.deserializeFastBridgeInformation(data, fastBridgeScriptHash)
+            getStorageKeyForfastBridgeFederationInformation(fastBridgeFederationRedeemScriptHash),
+            data -> BridgeSerializationUtils.deserializeFastBridgeFederationInformation(data, fastBridgeFederationRedeemScriptHash)
         );
         if (fastBridgeFederationInformation == null) {
             return Optional.empty();
@@ -844,31 +846,32 @@ public class BridgeStorageProvider {
 
     public void setFastBridgeFederationInformation(FastBridgeFederationInformation fastBridgeFederationInformation) {
         if (activations.isActive(RSKIP176)) {
-            this.fastBridgeFederationInformationsToSave = fastBridgeFederationInformation;
+            this.fastBridgeFederationInformations = fastBridgeFederationInformation;
         }
     }
 
     private void saveFastBridgeFederationInformation() {
-        if (fastBridgeFederationInformationsToSave == null) {
+        if (fastBridgeFederationInformations == null) {
             return;
         }
 
         safeSaveToRepository(
-                getStorageKeyForfastBridgeFederationInformation(
-                    fastBridgeFederationInformationsToSave.getFastBridgeScriptHash()
-                ),
-                fastBridgeFederationInformationsToSave,
-                BridgeSerializationUtils::serializeFastBridgeInformation
+            getStorageKeyForfastBridgeFederationInformation(
+                fastBridgeFederationInformations.getFastBridgeFederationRedeemScriptHash()
+            ),
+            fastBridgeFederationInformations,
+            BridgeSerializationUtils::serializeFastBridgeFederationInformation
         );
     }
 
     public Optional<Long> getReceiveHeadersLastTimestamp() {
         if (activations.isActive(RSKIP200)) {
             return safeGetFromRepository(
-                    RECEIVE_HEADERS_TIMESTAMP,
-                    BridgeSerializationUtils::deserializeOptionalLong
+                RECEIVE_HEADERS_TIMESTAMP,
+                BridgeSerializationUtils::deserializeOptionalLong
             );
         }
+
         return Optional.empty();
     }
 
@@ -940,8 +943,8 @@ public class BridgeStorageProvider {
         return DataWord.fromLongString("fastBridgeHashUsedInBtcTx-" + btcTxHash.toString() + derivationHash.toString());
     }
 
-    private DataWord getStorageKeyForfastBridgeFederationInformation(byte[] fastBridgeScriptHash) {
-        return DataWord.fromLongString("fastBridgeFederationInformation-" + Hex.toHexString(fastBridgeScriptHash));
+    private DataWord getStorageKeyForfastBridgeFederationInformation(byte[] fastBridgeFederationRedeemScriptHash) {
+        return DataWord.fromLongString("fastBridgeFederationInformation-" + Hex.toHexString(fastBridgeFederationRedeemScriptHash));
     }
 
     private Optional<Integer> getStorageVersion(DataWord versionKey) {

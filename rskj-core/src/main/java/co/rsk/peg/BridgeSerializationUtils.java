@@ -802,8 +802,8 @@ public class BridgeSerializationUtils {
         return new Script(rlpList.get(0).getRLPRawData());
     }
 
-    public static FastBridgeFederationInformation deserializeFastBridgeInformation(byte[] data, byte[] fastBridgeScriptHash) {
-        if ((data == null) || (data.length == 0)) {
+    public static FastBridgeFederationInformation deserializeFastBridgeFederationInformation(byte[] data, byte[] fastBridgeScriptHash) {
+        if (data == null || data.length == 0) {
             return null;
         }
 
@@ -818,13 +818,13 @@ public class BridgeSerializationUtils {
         return new FastBridgeFederationInformation(derivationHash, federationP2SH, fastBridgeScriptHash);
     }
 
-    public static byte[] serializeFastBridgeInformation(FastBridgeFederationInformation fastBridgeFederationP2SH) {
-        if (fastBridgeFederationP2SH == null) {
+    public static byte[] serializeFastBridgeFederationInformation(FastBridgeFederationInformation fastBridgeFederationInformation) {
+        if (fastBridgeFederationInformation == null) {
             return new byte[]{};
         }
         byte[][] rlpElements = new byte[2][];
-        rlpElements[0] = RLP.encodeElement(fastBridgeFederationP2SH.getDerivationHash().getBytes());
-        rlpElements[1] = RLP.encodeElement(fastBridgeFederationP2SH.getFederationScriptHash());
+        rlpElements[0] = RLP.encodeElement(fastBridgeFederationInformation.getDerivationHash().getBytes());
+        rlpElements[1] = RLP.encodeElement(fastBridgeFederationInformation.getFederationRedeemScriptHash());
 
         return RLP.encodeList(rlpElements);
     }

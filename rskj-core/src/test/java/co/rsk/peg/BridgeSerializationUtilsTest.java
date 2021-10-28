@@ -1059,68 +1059,89 @@ public class BridgeSerializationUtilsTest {
     }
 
     @Test
-    public void deserializeFastBridge_no_data() {
-        Assert.assertNull(BridgeSerializationUtils.deserializeFastBridgeInformation(new byte[]{}, new byte[]{}));
+    public void deserializeFastBridgeFederationInformation_no_data() {
+        FastBridgeFederationInformation result = BridgeSerializationUtils.deserializeFastBridgeFederationInformation(
+            new byte[]{},
+            new byte[]{}
+        );
+
+        Assert.assertNull(result);
     }
 
     @Test
-    public void deserializeFastBridge_null_data() {
-        Assert.assertNull(BridgeSerializationUtils.deserializeFastBridgeInformation(null, null));
+    public void deserializeFastBridgeFederationInformation_null_data() {
+        FastBridgeFederationInformation result = BridgeSerializationUtils.deserializeFastBridgeFederationInformation(
+            null,
+            null
+        );
+
+        Assert.assertNull(result);
     }
 
     @Test(expected = RuntimeException.class)
-    public void deserializeFastBridge_one_data() {
+    public void deserializeFastBridgeFederationInformation_one_data() {
         byte[][] rlpElements = new byte[1][];
         rlpElements[0] = RLP.encodeElement(new byte[]{(byte)0x11});
 
-        BridgeSerializationUtils.deserializeFastBridgeInformation(
-            RLP.encodeList(rlpElements), new byte[]{(byte)0x23});
+        BridgeSerializationUtils.deserializeFastBridgeFederationInformation(
+            RLP.encodeList(rlpElements),
+            new byte[]{(byte)0x23}
+        );
     }
 
     @Test
-    public void deserializeFastBridge_Ok() {
+    public void deserializeFastBridgeFederationInformation_ok() {
         byte[][] rlpElements = new byte[2][];
         rlpElements[0] = RLP.encodeElement(Sha256Hash.wrap("0000000000000000000000000000000000000000000000000000000000000002").getBytes());
         rlpElements[1] = RLP.encodeElement(new byte[]{(byte)0x22});
 
-        FastBridgeFederationInformation result =
-            BridgeSerializationUtils.deserializeFastBridgeInformation(
-                RLP.encodeList(rlpElements),
-                new byte[]{(byte)0x23}
-            );
+        FastBridgeFederationInformation result = BridgeSerializationUtils.deserializeFastBridgeFederationInformation(
+            RLP.encodeList(rlpElements),
+            new byte[]{(byte)0x23}
+        );
 
         Assert.assertNotNull(result);
         Assert.assertArrayEquals(
-                Sha256Hash.wrap("0000000000000000000000000000000000000000000000000000000000000002").getBytes(),
-                result.getDerivationHash().getBytes()
+            Sha256Hash.wrap("0000000000000000000000000000000000000000000000000000000000000002").getBytes(),
+            result.getDerivationHash().getBytes()
         );
-        Assert.assertArrayEquals(new byte[]{(byte)0x22}, result.getFederationScriptHash());
-        Assert.assertArrayEquals(new byte[]{(byte)0x23}, result.getFastBridgeScriptHash());
+        Assert.assertArrayEquals(new byte[]{(byte)0x22}, result.getFederationRedeemScriptHash());
+        Assert.assertArrayEquals(new byte[]{(byte)0x23}, result.getFastBridgeFederationRedeemScriptHash());
     }
 
     @Test
-    public void serializeFastBridgeInformation_no_data() {
-        Assert.assertEquals(0, BridgeSerializationUtils.serializeFastBridgeInformation(null).length);
+    public void serializeFastBridgeFederationInformation_no_data() {
+        byte[] result = BridgeSerializationUtils.serializeFastBridgeFederationInformation(null);
+
+        Assert.assertEquals(0, result.length);
     }
 
     @Test
-    public void serializeFastBridgeInformation_Ok() {
-        byte[] fastBridgeScriptHash = new byte[]{(byte)0x23};
-        FastBridgeFederationInformation fastBridge = new FastBridgeFederationInformation(
-                PegTestUtils.createHash3(2),
-                new byte[]{(byte)0x22},
-                fastBridgeScriptHash
+    public void serializeFastBridgeFederationInformation_Ok() {
+        byte[] fastBridgeFederationRedeemScriptHash = new byte[]{(byte)0x23};
+        FastBridgeFederationInformation fastBridgeFederationInformation = new FastBridgeFederationInformation(
+            PegTestUtils.createHash3(2),
+            new byte[]{(byte)0x22},
+            fastBridgeFederationRedeemScriptHash
         );
 
-        FastBridgeFederationInformation result =
-            BridgeSerializationUtils.deserializeFastBridgeInformation(
-                BridgeSerializationUtils.serializeFastBridgeInformation(fastBridge),
-                fastBridgeScriptHash
-            );
+        FastBridgeFederationInformation result = BridgeSerializationUtils.deserializeFastBridgeFederationInformation(
+            BridgeSerializationUtils.serializeFastBridgeFederationInformation(fastBridgeFederationInformation),
+            fastBridgeFederationRedeemScriptHash
+        );
 
-        Assert.assertArrayEquals(fastBridge.getDerivationHash().getBytes(), result.getDerivationHash().getBytes());
-        Assert.assertArrayEquals(fastBridge.getFederationScriptHash(), result.getFederationScriptHash());
-        Assert.assertArrayEquals(fastBridge.getFastBridgeScriptHash(), result.getFastBridgeScriptHash());
+        Assert.assertArrayEquals(
+            fastBridgeFederationInformation.getDerivationHash().getBytes(),
+            result.getDerivationHash().getBytes()
+        );
+        Assert.assertArrayEquals(
+            fastBridgeFederationInformation.getFederationRedeemScriptHash(),
+            result.getFederationRedeemScriptHash()
+        );
+        Assert.assertArrayEquals(
+            fastBridgeFederationInformation.getFastBridgeFederationRedeemScriptHash(),
+            result.getFastBridgeFederationRedeemScriptHash()
+        );
     }
 
     private void testSerializeAndDeserializeFederation(boolean isErpFed) {
