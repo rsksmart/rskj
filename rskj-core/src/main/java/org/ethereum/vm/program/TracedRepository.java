@@ -35,17 +35,17 @@ import java.util.Iterator;
 import java.util.Set;
 
 /*
- * A Storage is a proxy class for Repository. It encapsulates a repository providing tracing services.
+ * A TracedRepository is a proxy class for Repository. It encapsulates a repository providing tracing services.
  * It is only used by Program.
  * It does not provide any other functionality different from tracing.
  */
-public class Storage implements Repository, ProgramListenerAware {
+public class TracedRepository implements Repository, ProgramListenerAware {
 
     private final Repository repository;
     private final RskAddress addr;
     private ProgramListener traceListener;
 
-    public Storage(ProgramInvoke programInvoke) {
+    public TracedRepository(ProgramInvoke programInvoke) {
         this.addr = new RskAddress(programInvoke.getOwnerAddress());
         this.repository = programInvoke.getRepository();
     }

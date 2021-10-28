@@ -88,7 +88,7 @@ public class Program {
 
     private final Stack stack;
     private final Memory memory;
-    private final Storage storage;
+    private final TracedRepository tracedRepository;
     private byte[] returnDataBuffer;
 
     private final ProgramResult result = new ProgramResult();
@@ -148,7 +148,7 @@ public class Program {
         this.memory = setupProgramListener(new Memory());
         this.stack = setupProgramListener(new Stack());
         this.stack.ensureCapacity(1024); // faster?
-        this.storage = setupProgramListener(new Storage(programInvoke));
+        this.tracedRepository = setupProgramListener(new TracedRepository(programInvoke));
         this.deletedAccountsInBlock = new HashSet<>(deletedAccounts);
 
         precompile();
@@ -424,7 +424,7 @@ public class Program {
     }
 
     public Repository getStorage() {
-        return this.storage;
+        return this.tracedRepository;
     }
 
     @SuppressWarnings("ThrowableResultOfMethodCallIgnored")
@@ -1221,7 +1221,7 @@ public class Program {
 
     public void saveOpTrace() {
         if (this.pc < ops.length) {
-            trace.addOp(ops[pc], pc, getCallDeep(), getRemainingGas(), this.memory, this.stack, this.storage);
+            trace.addOp(ops[pc], pc, getCallDeep(), getRemainingGas(), this.memory, this.stack, this.tracedRepository);
         }
     }
 

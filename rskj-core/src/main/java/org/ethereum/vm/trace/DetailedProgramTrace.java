@@ -29,7 +29,7 @@ import org.ethereum.vm.DataWord;
 import org.ethereum.vm.OpCode;
 import org.ethereum.vm.program.Memory;
 import org.ethereum.vm.program.Stack;
-import org.ethereum.vm.program.Storage;
+import org.ethereum.vm.program.TracedRepository;
 import org.ethereum.vm.program.invoke.ProgramInvoke;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -205,7 +205,7 @@ public class DetailedProgramTrace implements ProgramTrace {
     }
 
     @Override
-    public Op addOp(byte code, int pc, int deep, long gas, Memory memory, Stack stack, Storage storage) {
+    public Op addOp(byte code, int pc, int deep, long gas, Memory memory, Stack stack, TracedRepository tracedRepository) {
         Op op = new Op();
         OpCode opcode = OpCode.code(code);
         op.setOp(opcode);
@@ -218,7 +218,7 @@ public class DetailedProgramTrace implements ProgramTrace {
 
         if (this.storageKey != null) {
             RskAddress currentAddress = new RskAddress(this.contractAddress);
-            DataWord value = storage.getStorageValue(currentAddress, this.storageKey);
+            DataWord value = tracedRepository.getStorageValue(currentAddress, this.storageKey);
 
             if (value != null) {
                 this.currentStorage = new HashMap<>(this.currentStorage);

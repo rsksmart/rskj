@@ -22,7 +22,7 @@ package org.ethereum.vm.trace;
 import co.rsk.rpc.modules.trace.ProgramSubtrace;
 import org.ethereum.vm.program.Memory;
 import org.ethereum.vm.program.Stack;
-import org.ethereum.vm.program.Storage;
+import org.ethereum.vm.program.TracedRepository;
 import org.ethereum.vm.program.invoke.ProgramInvoke;
 
 import java.util.List;
@@ -39,7 +39,7 @@ public class EmptyProgramTrace implements ProgramTrace {
     }
 
     @Override
-    public Op addOp(byte code, int pc, int deep, long gas, Memory memory, Stack stack, Storage storage) {
+    public Op addOp(byte code, int pc, int deep, long gas, Memory memory, Stack stack, TracedRepository tracedRepository) {
         return null;
     }
 
