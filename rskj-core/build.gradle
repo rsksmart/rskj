@@ -173,6 +173,23 @@ sourceSets {
     }
 }
 
+publishing {
+    publications {
+        rskj(MavenPublication) {
+            pom {
+                from components.java
+                licenses {
+                    license {
+                        name = 'GNU General Public License (GPL) version 3.0'
+                        url = 'http://www.gnu.org/licenses/gpl-3.0.txt'
+                        distribution = 'repo'
+                    }
+                }
+            }
+        }
+    }
+}
+
 task generateResources {
     def buildInfoFile = 'build-info.properties'
 
@@ -216,26 +233,17 @@ jar {
 }
 
 task generatePom(dependsOn: jar) {
+    dependsOn generatePomFileForRskjPublication
+
     def jarName = jar.outputs.files.singleFile.name
     def pomFile = libsDirectory.dir("${jarName.take(jarName.lastIndexOf('.'))}.pom").get().asFile
     ext.file = pomFile
-    subprojects {
-        doLast {
-            pom {
-                project {
-                    groupId project.group as String
-                    artifactId project.name
-                    version project.version
 
-                    licenses {
-                        license {
-                            name 'GNU General Public License (GPL) version 3.0'
-                            url 'http://www.gnu.org/licenses/gpl-3.0.txt'
-                            distribution 'repo'
-                        }
-                    }
-                }
-            }.writeTo(pomFile)
+    doLast {
+        copy {
+            from "$buildDir/publications/rskj/pom-default.xml"
+            into pomFile.parentFile
+            rename 'pom-default.xml', pomFile.name
         }
     }
 }
