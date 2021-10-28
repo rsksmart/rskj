@@ -22,6 +22,8 @@ import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.wallet.SendRequest;
 import co.rsk.bitcoinj.wallet.Wallet;
+import co.rsk.config.BridgeConstants;
+import co.rsk.config.BridgeMainNetConstants;
 import co.rsk.config.BridgeRegTestConstants;
 import java.time.Instant;
 import java.util.Collections;
@@ -60,7 +62,8 @@ public class ReleaseTransactionBuilderTest {
             wallet,
             changeAddress,
             Coin.MILLICOIN.multiply(2),
-            activations);
+            activations
+        );
     }
 
     @Test
@@ -68,15 +71,33 @@ public class ReleaseTransactionBuilderTest {
         NetworkParameters networkParameters = BridgeRegTestConstants.getInstance().getBtcParams();
 
         Federation federation = new Federation(
-            FederationMember.getFederationMembersFromKeys(Arrays.asList(new BtcECKey(), new BtcECKey(), new BtcECKey())),
+            FederationMember.getFederationMembersFromKeys(Arrays.asList(
+                new BtcECKey(),
+                new BtcECKey(),
+                new BtcECKey())
+            ),
             Instant.now(),
             0,
             networkParameters
         );
 
         List<UTXO> utxos = Arrays.asList(
-            new UTXO(Sha256Hash.of(new byte[]{1}), 0, Coin.COIN, 0, false, federation.getP2SHScript()),
-            new UTXO(Sha256Hash.of(new byte[]{1}), 0, Coin.COIN, 0, false, federation.getP2SHScript())
+            new UTXO(
+                Sha256Hash.of(new byte[]{1}),
+                0,
+                Coin.COIN,
+                0,
+                false,
+                federation.getP2SHScript()
+            ),
+            new UTXO(
+                Sha256Hash.of(new byte[]{1}),
+                0,
+                Coin.COIN,
+                0,
+                false,
+                federation.getP2SHScript()
+            )
         );
 
         Wallet thisWallet = BridgeUtils.getFederationSpendWallet(
@@ -114,6 +135,71 @@ public class ReleaseTransactionBuilderTest {
         // And if its value is the spent UTXOs summatory minus the requested pegout amount
         // we can ensure the Federation is not paying fees for pegouts
         Assert.assertEquals(inputsValue.minus(pegoutAmount), changeOutput.getValue());
+    }
+
+    @Test
+    public void build_pegout_tx_from_erp_federation() {
+        NetworkParameters networkParameters = BridgeRegTestConstants.getInstance().getBtcParams();
+
+        // Use mainnet constants to test a real situation
+        BridgeConstants bridgeConstants = BridgeMainNetConstants.getInstance();
+
+        Federation erpFederation = new ErpFederation(
+            FederationMember.getFederationMembersFromKeys(Arrays.asList(
+                new BtcECKey(),
+                new BtcECKey(),
+                new BtcECKey())
+            ),
+            Instant.now(),
+            0,
+            networkParameters,
+            bridgeConstants.getErpFedPubKeysList(),
+            bridgeConstants.getErpFedActivationDelay()
+        );
+
+        List<UTXO> utxos = Arrays.asList(
+            new UTXO(
+                Sha256Hash.of(new byte[]{1}),
+                0,
+                Coin.COIN,
+                0,
+                false,
+                erpFederation.getP2SHScript()
+            ),
+            new UTXO(
+                Sha256Hash.of(new byte[]{1}),
+                0,
+                Coin.COIN,
+                0,
+                false,
+                erpFederation.getP2SHScript()
+            )
+        );
+
+        Wallet thisWallet = BridgeUtils.getFederationSpendWallet(
+            Context.getOrCreate(networkParameters),
+            erpFederation,
+            utxos,
+            false,
+            mock(BridgeStorageProvider.class)
+        );
+
+        ReleaseTransactionBuilder releaseTransactionBuilder = new ReleaseTransactionBuilder(
+            networkParameters,
+            thisWallet,
+            erpFederation.address,
+            Coin.SATOSHI.multiply(1000),
+            activations
+        );
+
+        Address pegoutRecipient = mockAddress(123);
+        Coin pegoutAmount = Coin.COIN.add(Coin.SATOSHI);
+
+        Optional<ReleaseTransactionBuilder.BuildResult> result = releaseTransactionBuilder.buildAmountTo(
+            pegoutRecipient,
+            pegoutAmount
+        );
+        Assert.assertTrue(result.isPresent());
     }
 
     @Test
@@ -285,6 +371,25 @@ public class ReleaseTransactionBuilderTest {
         Optional<ReleaseTransactionBuilder.BuildResult> result = builder.buildAmountTo(to, amount);
         verify(wallet, times(1)).completeTx(any(SendRequest.class));
 
+        Assert.assertFalse(result.isPresent());
+    }
+
+    @Test
+    public void buildAmountTo_illegalStateException() throws InsufficientMoneyException, UTXOProviderException {
+        Context btcContext = new Context(NetworkParameters.fromID(NetworkParameters.ID_REGTEST));
+        Address to = mockAddress(123);
+        Coin amount = Coin.CENT.multiply(3);
+
+        doThrow(new IllegalStateException()).when(wallet).completeTx(any(SendRequest.class));
+
+        Optional<ReleaseTransactionBuilder.BuildResult> result = Optional.empty();
+        try {
+            result = builder.buildAmountTo(to, amount);
+        } catch (Exception e) {
+            Assert.assertTrue(e instanceof IllegalStateException);
+        }
+
+        verify(wallet, times(1)).completeTx(any(SendRequest.class));
         Assert.assertFalse(result.isPresent());
     }
 
