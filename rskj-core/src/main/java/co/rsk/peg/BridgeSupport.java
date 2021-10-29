@@ -102,6 +102,7 @@ import org.slf4j.LoggerFactory;
 import static co.rsk.peg.BridgeUtils.getRegularPegoutTxSize;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP186;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP219;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP271;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP294;
 
 /**
@@ -2516,6 +2517,10 @@ public class BridgeSupport {
 
         Optional<Long> activeFederationCreationBlockHeightOpt = provider.getActiveFederationCreationBlockHeight();
         return activeFederationCreationBlockHeightOpt.orElse(0L);
+    }
+
+    public long getNextPegoutCreationBlockNumber() {
+        return activations.isActive(RSKIP271) ? provider.getNextPegoutHeight().orElse(0L) : 0L;
     }
 
     public BigInteger registerFastBridgeBtcTransaction(

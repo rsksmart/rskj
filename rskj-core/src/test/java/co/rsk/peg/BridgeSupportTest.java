@@ -7670,6 +7670,35 @@ public class BridgeSupportTest {
         Assert.assertTrue(expectedInputSizes.isEmpty()); // All expected sizes should have been found and removed
     }
 
+    @Test
+    public void getNextPegoutCreationBlockNumber_before_RSKIP271_activation() {
+
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(false);
+
+        BridgeSupport bridgeSupport = bridgeSupportBuilder
+                .withActivations(activations)
+                .build();
+
+        assertEquals(0L, bridgeSupport.getNextPegoutCreationBlockNumber());
+    }
+
+    @Test
+    public void getNextPegoutCreationBlockNumber_after_RSKIP271_activation() {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
+
+        BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
+        when(provider.getNextPegoutHeight()).thenReturn(Optional.of(10L));
+
+        BridgeSupport bridgeSupport = bridgeSupportBuilder
+                .withProvider(provider)
+                .withActivations(activations)
+                .build();
+
+        assertEquals(10L, bridgeSupport.getNextPegoutCreationBlockNumber());
+    }
+
     private Address getFastBridgeFederationAddress() {
         Script fastBridgeRedeemScript = FastBridgeRedeemScriptParser.createMultiSigFastBridgeRedeemScript(
             bridgeConstants.getGenesisFederation().getRedeemScript(),
