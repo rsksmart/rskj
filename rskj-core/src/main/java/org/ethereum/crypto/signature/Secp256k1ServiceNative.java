@@ -41,6 +41,7 @@ public class Secp256k1ServiceNative extends Secp256k1ServiceBC {
     @Override
     public ECKey recoverFromSignature(int recId, ECDSASignature sig, byte[] messageHash, boolean compressed) {
         check(recId >= 0, "recId must be positive");
+        check(recId <= 3, "recId must be less than or equal to 3");
         check(sig.getR().signum() >= 0, "r must be positive");
         check(sig.getS().signum() >= 0, "s must be positive");
         check(messageHash != null, "messageHash must not be null");
