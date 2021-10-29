@@ -1187,6 +1187,12 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         }
     }
 
+    public long getNextPegoutCreationBlockNumber(Object[] args) {
+        logger.trace("getNextPegoutCreationBlockNumber");
+
+        return bridgeSupport.getNextPegoutCreationBlockNumber();
+    }
+
     public static BridgeMethods.BridgeMethodExecutor activeAndRetiringFederationOnly(BridgeMethods.BridgeMethodExecutor decoratee, String funcName) {
         return (self, args) -> {
             Federation retiringFederation = self.bridgeSupport.getRetiringFederation();
