@@ -153,97 +153,97 @@ public class HexUtils {
      * if the paramenter has the hex prefix 
      */
     public static boolean hasHexPrefix(final String data) {
-    	return data != null && data.startsWith(HEX_PREFIX);
+        return data != null && data.startsWith(HEX_PREFIX);
     }
-    
+
     /**
      * if the paramenter has the hex prefix 
      */
     public static boolean hasHexPrefix(final byte[] data) {
-    	
-		if(data == null) {
-			return false;
-		}
-    	
-    	for(int i = 0; i < HEX_PREFIX_BYTE_ARRAY.length; i++) {
-    		if(HEX_PREFIX_BYTE_ARRAY[i] != data[i]) {
-    			return false;
-    		}
-    	}
-    	
-    	return true;
+
+        if (data == null) {
+            return false;
+        }
+
+        for (int i = 0; i < HEX_PREFIX_BYTE_ARRAY.length; i++) {
+            if (HEX_PREFIX_BYTE_ARRAY[i] != data[i]) {
+                return false;
+            }
+        }
+
+        return true;
     }
-    
+
     /**
      * if string is hexadecimal with 0x prefix
      */
-	public static boolean isHexWithPrefix(final String data) {
-		
-		if(data == null) {
-			return false;
-		} 
-		
-	    String value = data.toLowerCase();
+    public static boolean isHexWithPrefix(final String data) {
 
-	    if (value.startsWith("-")) {
-	        value = value.substring(1);
-	    }
-	    
-	    if (value.length() <= 2 || !hasHexPrefix(value)) {
-	        return false;
-	    }
+        if (data == null) {
+            return false;
+        }
 
-	    // start testing after 0x prefix
-	    return isHex(value, 2);
-	}
-	
+        String value = data.toLowerCase();
+
+        if (value.startsWith("-")) {
+            value = value.substring(1);
+        }
+
+        if (value.length() <= 2 || !hasHexPrefix(value)) {
+            return false;
+        }
+
+        // start testing after 0x prefix
+        return isHex(value, 2);
+    }
+
 	/**
 	 * if a string is composed solely of hexa chars
 	 */
-	public static boolean isHex(final String data) {
-		return isHex(data, 0);
-	}
-	
+    public static boolean isHex(final String data) {
+        return isHex(data, 0);
+    }
+
 	/**
 	 * if a string is composed solely of hexa chars
 	 * Starting at the given index
 	 */
-	public static boolean isHex(final String data, int startAt) {
-		
+    public static boolean isHex(final String data, int startAt) {
+
         if (data == null) {
             return false;
         }
-		
-	    for (int i = startAt; i < data.length(); i++){
-	        char c = data.charAt(i);
 
-	        if (!(c >= '0' && c <= '9' || c >= 'a' && c <= 'f')) {
-	            return false;
-	        }
-	    }
-		
-	    return true;
-	}
-	
+        for (int i = startAt; i < data.length(); i++) {
+            char c = data.charAt(i);
+
+            if (!(c >= '0' && c <= '9' || c >= 'a' && c <= 'f')) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
 	/**
 	 * Receives a plain byte array -> converts it to hexa and prepend the 0x  
 	 */
     public static byte[] encodeToHexByteArray(final byte[] input) {
-    	
+
         if (input == null) {
             throw invalidParamError("input cant be null");
         }
-    	
-    	byte[] encoded = Hex.encode(input);
-    	
-    	byte[] result = new byte[HEX_PREFIX_BYTE_ARRAY.length + encoded.length];
-    	
+
+        byte[] encoded = Hex.encode(input);
+
+        byte[] result = new byte[HEX_PREFIX_BYTE_ARRAY.length + encoded.length];
+
         System.arraycopy(HEX_PREFIX_BYTE_ARRAY, 0, result, 0, HEX_PREFIX_BYTE_ARRAY.length);
         System.arraycopy(encoded, 0, result, HEX_PREFIX_BYTE_ARRAY.length, encoded.length);
-        
+
         return result;
-    } 
-    
+    }
+
     /**
      * remove Hex Prefix from string
      */
@@ -254,34 +254,34 @@ public class HexUtils {
         }
         return result;
 	}
-	
+
     /**
      * remove Hex Prefix from byte array
      */
-	public static byte[] removeHexPrefix(final byte[] data) {
-		byte[] result = data;
-		if(result != null && hasHexPrefix(result)) {
-			result = new byte[data.length - HEX_PREFIX_BYTE_ARRAY.length];
-        	System.arraycopy(data, HEX_PREFIX_BYTE_ARRAY.length, result, 0, result.length);
-		}
-		
+    public static byte[] removeHexPrefix(final byte[] data) {
+        byte[] result = data;
+        if (result != null && hasHexPrefix(result)) {
+            result = new byte[data.length - HEX_PREFIX_BYTE_ARRAY.length];
+            System.arraycopy(data, HEX_PREFIX_BYTE_ARRAY.length, result, 0, result.length);
+        }
+
         return result;
-	}
-	
+    }
+
 	public static byte[] leftPad(final byte[] data) {
 		byte[] result = data;
         if (result != null && result.length % 2 != 0) {
-        	result = new byte[data.length + ZERO_BYTE_ARRAY.length];
+            result = new byte[data.length + ZERO_BYTE_ARRAY.length];
             System.arraycopy(ZERO_BYTE_ARRAY, 0, result, 0, ZERO_BYTE_ARRAY.length);
             System.arraycopy(data, 0, result, ZERO_BYTE_ARRAY.length, data.length);
         }
-		
+
         return result;
 	}
 
-	public static byte[] decode(byte[] dataBytes) {
-		return Hex.decode(HexUtils.leftPad(HexUtils.removeHexPrefix(dataBytes)));
-	}
+    public static byte[] decode(byte[] dataBytes) {
+        return Hex.decode(HexUtils.leftPad(HexUtils.removeHexPrefix(dataBytes)));
+    }
 
     public static int jsonHexToInt(final String param) {
         if (!hasHexPrefix(param)) {

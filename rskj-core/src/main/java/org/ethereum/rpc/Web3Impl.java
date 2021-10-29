@@ -204,18 +204,18 @@ public class Web3Impl implements Web3 {
         String hash = null;
         
         try {
-        	
-        	if(HexUtils.isHexWithPrefix(data)) {
-        		
-        		byte[] dataBytes = data.getBytes(StandardCharsets.UTF_8);
-                byte[] result = HashUtil.keccak256(HexUtils.decode(dataBytes));                
+
+            if (HexUtils.isHexWithPrefix(data)) {
+
+                byte[] dataBytes = data.getBytes(StandardCharsets.UTF_8);
+                byte[] result = HashUtil.keccak256(HexUtils.decode(dataBytes));
                 hash = HexUtils.toJsonHex(result);
-        		
+
                 return hash;
-                
-        	} else {
-        		throw invalidParamError("Parameter must be hexadecimal encoded with the '0x' prefix.");
-        	}
+
+            } else {
+                throw invalidParamError("Parameter must be hexadecimal encoded with the '0x' prefix.");
+            }
 
         } finally {
             if (logger.isDebugEnabled()) {
