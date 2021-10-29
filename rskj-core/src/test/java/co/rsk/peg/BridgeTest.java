@@ -753,6 +753,36 @@ public class BridgeTest {
         verify(decorate, times(1)).execute(any(), any());
     }
 
+    @Test
+    public void getNextPegoutCreationBlockNumber_before_RSKIP271_activation() throws VMException {
+        doReturn(false).when(activationConfig).isActive(eq(RSKIP271), anyLong());
+
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        Bridge bridge = getBridgeInstance(bridgeSupportMock);
+
+        byte[] data = BridgeMethods.GET_NEXT_PEGOUT_CREATION_BLOCK_NUMBER.getFunction().encode(new Object[]{});
+
+        assertNull(bridge.execute(data));
+    }
+
+    @Test
+    public void getNextPegoutCreationBlockNumber_after_RSKIP271_activation() throws VMException {
+        doReturn(true).when(activationConfig).isActive(eq(RSKIP271), anyLong());
+
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        Bridge bridge = getBridgeInstance(bridgeSupportMock);
+
+        when(bridgeSupportMock.getNextPegoutCreationBlockNumber()).thenReturn(1L);
+
+        CallTransaction.Function function = BridgeMethods.GET_NEXT_PEGOUT_CREATION_BLOCK_NUMBER.getFunction();
+        byte[] data = function.encode(new Object[]{ });
+        byte[] result = bridge.execute(data);
+
+        assertEquals(1L, ((BigInteger)function.decodeResult(result)[0]).longValue());
+        // Also test the method itself
+        assertEquals(1L, bridge.getNextPegoutCreationBlockNumber(new Object[]{ }));
+    }
+
     private Bridge getBridgeInstance(Federation activeFederation, Federation retiringFederation, int senderPK) {
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         doReturn(activeFederation).when(bridgeSupportMock).getActiveFederation();
