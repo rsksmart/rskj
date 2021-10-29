@@ -130,7 +130,7 @@ public class BridgeStorageProvider {
 
     private Keccak256 fastBridgeDerivationArgumentsHash;
     private Sha256Hash fastBridgeBtcTxHash;
-    private FastBridgeFederationInformation fastBridgeFederationInformations;
+    private FastBridgeFederationInformation fastBridgeFederationInformation;
     private long receiveHeadersLastTimestamp = 0;
 
     public BridgeStorageProvider(
