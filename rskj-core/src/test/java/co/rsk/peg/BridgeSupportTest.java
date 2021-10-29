@@ -7500,17 +7500,22 @@ public class BridgeSupportTest {
             repository,
             PrecompiledContracts.BRIDGE_ADDR,
             bridgeConstants,
-            activationsAfterForks);
-        BridgeSupport bridgeSupport = getBridgeSupport(bridgeConstants, provider, activationsAfterForks);
+            activationsAfterForks
+        );
+        BridgeSupport bridgeSupport = bridgeSupportBuilder
+            .withBridgeConstants(bridgeConstants)
+            .withProvider(provider)
+            .withActivations(activationsAfterForks)
+            .build();
 
         Sha256Hash btcTxHash = PegTestUtils.createHash(1);
         Keccak256 derivationHash = PegTestUtils.createHash3(1);
 
         byte[] fastBridgeScriptHash = new byte[]{0x1};
         FastBridgeFederationInformation fastBridgeFederationInformation = new FastBridgeFederationInformation(
-                PegTestUtils.createHash3(2),
-                new byte[]{0x1},
-                fastBridgeScriptHash
+            PegTestUtils.createHash3(2),
+            new byte[]{0x1},
+            fastBridgeScriptHash
         );
 
         List<UTXO> utxos = new ArrayList<>();
@@ -7530,7 +7535,7 @@ public class BridgeSupportTest {
         Assert.assertTrue(optionalFastBridgeFederationInformation.isPresent());
         FastBridgeFederationInformation obtainedFastBridgeFederationInformation = optionalFastBridgeFederationInformation.get();
         Assert.assertEquals(fastBridgeFederationInformation.getDerivationHash(), obtainedFastBridgeFederationInformation.getDerivationHash() );
-        Assert.assertArrayEquals(fastBridgeFederationInformation.getFederationScriptHash(), obtainedFastBridgeFederationInformation.getFederationScriptHash() );
+        Assert.assertArrayEquals(fastBridgeFederationInformation.getFederationRedeemScriptHash(), obtainedFastBridgeFederationInformation.getFederationRedeemScriptHash() );
     }
 
     @Test
