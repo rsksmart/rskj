@@ -418,15 +418,15 @@ public class BridgeTest {
         //Assert
         assertEquals(BigInteger.valueOf(2), Bridge.REGISTER_FAST_BRIDGE_BTC_TRANSACTION.decodeResult(result)[0]);
         verify(bridgeSupportMock, times(1)).registerFastBridgeBtcTransaction(
-                any(Transaction.class),
-                eq(value),
-                eq(1),
-                eq(value),
-                eq(new Keccak256(value)),
-                eq(refundBtcAddress),
-                eq(rskAddress),
-                eq(lpBtcAddress),
-                eq(true)
+            any(Transaction.class),
+            eq(value),
+            eq(1),
+            eq(value),
+            eq(new Keccak256(value)),
+            eq(refundBtcAddress),
+            eq(rskAddress),
+            eq(lpBtcAddress),
+            eq(true)
         );
     }
 
@@ -439,15 +439,15 @@ public class BridgeTest {
         Bridge bridge = getBridgeInstance(bridgeSupportMock);
 
         when(bridgeSupportMock.registerFastBridgeBtcTransaction(
-                any(Transaction.class),
-                any(byte[].class),
-                anyInt(),
-                any(byte[].class),
-                any(Keccak256.class),
-                any(Address.class),
-                any(RskAddress.class),
-                any(Address.class),
-                anyBoolean()
+            any(Transaction.class),
+            any(byte[].class),
+            anyInt(),
+            any(byte[].class),
+            any(Keccak256.class),
+            any(Address.class),
+            any(RskAddress.class),
+            any(Address.class),
+            anyBoolean()
         )).thenReturn(BigInteger.valueOf(BridgeSupport.FAST_BRIDGE_GENERIC_ERROR));
 
         byte[] value = Sha256Hash.ZERO_HASH.getBytes();
@@ -492,6 +492,7 @@ public class BridgeTest {
         assertNull(result);
     }
 
+    @Test
     public void receiveHeader_before_RSKIP200() throws VMException {
         ActivationConfig activations = spy(ActivationConfigsForTest.genesis());
         doReturn(false).when(activations).isActive(eq(RSKIP200), anyLong());
