@@ -7,7 +7,6 @@ import co.rsk.bitcoinj.core.Address;
 import co.rsk.config.BridgeConstants;
 import co.rsk.config.BridgeMainNetConstants;
 import co.rsk.config.BridgeRegTestConstants;
-import co.rsk.config.BridgeTestNetConstants;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -201,7 +200,6 @@ public class BridgeUtilsLegacyTest {
 
     @Test
     public void deserializeBtcAddressWithVersionLegacy_with_extra_bytes() throws BridgeIllegalArgumentException {
-        BridgeConstants bridgeConstants = BridgeTestNetConstants.getInstance();
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(false);
 
         String addressVersionHex = "6f"; // Testnet pubkey hash
@@ -211,7 +209,7 @@ public class BridgeUtilsLegacyTest {
 
         // The extra data should be ignored
         Address address = BridgeUtilsLegacy.deserializeBtcAddressWithVersionLegacy(
-            bridgeConstants.getBtcParams(),
+            bridgeConstantsRegtest.getBtcParams(),
             activations,
             addressBytes
         );
@@ -219,5 +217,21 @@ public class BridgeUtilsLegacyTest {
         Assert.assertEquals(111, address.getVersion());
         Assert.assertArrayEquals(Hex.decode(addressHash160Hex), address.getHash160());
         Assert.assertEquals("mmWFbkYYKCT9jvCUzJD9XoVjSkfachVpMs", address.toBase58());
+    }
+
+    @Test(expected = ArrayIndexOutOfBoundsException.class)
+    public void deserializeBtcAddressWithVersionLegacy_invalid_address_hash() throws BridgeIllegalArgumentException {
+        when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(false);
+
+        String addressVersionHex = "6f"; // Testnet pubkey hash
+        String addressHash160Hex = "41";
+        byte[] addressBytes = Hex.decode(addressVersionHex.concat(addressHash160Hex));
+
+        // Should fail when trying to copy the address hash
+        BridgeUtilsLegacy.deserializeBtcAddressWithVersionLegacy(
+            bridgeConstantsRegtest.getBtcParams(),
+            activations,
+            addressBytes
+        );
     }
 }
