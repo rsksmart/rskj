@@ -37,6 +37,7 @@ import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Transaction;
+import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.PrecompiledContracts;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -540,21 +541,26 @@ public class BridgeUtils {
         return false;
     }
 
-    public static int extractAddressVersionFromBytes(byte[] addressBytes) throws BridgeIllegalArgumentException {
-        if (addressBytes == null || addressBytes.length == 0) {
-            throw new BridgeIllegalArgumentException("Can't get an address version if the bytes are empty");
-        }
-        return addressBytes[0];
-    }
+    public static Address deserializeBtcAddressWithVersion(
+        NetworkParameters networkParameters,
+        ActivationConfig.ForBlock activations,
+        byte[] addressBytes) throws BridgeIllegalArgumentException {
 
-    public static byte[] extractHash160FromBytes(byte[] addressBytes)
-        throws BridgeIllegalArgumentException {
-        if (addressBytes == null || addressBytes.length == 0) {
-            throw new BridgeIllegalArgumentException("Can't get an address hash160 if the bytes are empty");
+        if (!activations.isActive(ConsensusRule.RSKIP284)) {
+            return BridgeUtilsLegacy.deserializeBtcAddressWithVersionLegacy(networkParameters, activations, addressBytes);
         }
+
+        // We expect 1 byte for the address version and 20 for the script hash / pub key hash
+        if (addressBytes == null || addressBytes.length != 21) {
+            throw new BridgeIllegalArgumentException("Invalid address, expected 21 bytes long array");
+        }
+
+        int version = ByteUtil.byteArrayToInt(new byte[]{addressBytes[0]});
+
         byte[] hashBytes = new byte[20];
         System.arraycopy(addressBytes, 1, hashBytes, 0, 20);
-        return hashBytes;
+
+        return new Address(networkParameters, version, hashBytes);
     }
 
     public static int getRegularPegoutTxSize(@Nonnull Federation federation) {

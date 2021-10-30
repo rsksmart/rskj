@@ -106,6 +106,7 @@ public class BridgeUtilsTest {
     private ActivationConfig activationConfig;
     private ActivationConfig.ForBlock activations;
     private BridgeConstants bridgeConstantsRegtest;
+    private BridgeConstants bridgeConstantsMainnet;
     private NetworkParameters networkParameters;
 
     @Before
@@ -114,6 +115,7 @@ public class BridgeUtilsTest {
         activationConfig = spy(ActivationConfigsForTest.all());
         activations = mock(ActivationConfig.ForBlock.class);
         bridgeConstantsRegtest = BridgeRegTestConstants.getInstance();
+        bridgeConstantsMainnet = BridgeMainNetConstants.getInstance();
         networkParameters = bridgeConstantsRegtest.getBtcParams();
     }
 
@@ -2050,6 +2052,217 @@ public class BridgeUtilsTest {
 
         // Assert
         Assert.assertFalse(isSigned);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void deserializeBtcAddressWithVersion_before_rskip184() throws BridgeIllegalArgumentException {
+        when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(false);
+
+        String addressVersionHex = "c4"; // Testnet script hash
+        String addressHash160Hex = "41aec8ca3fcf17e62077e9f35961385360d6a570";
+        byte[] addressBytes = Hex.decode(addressVersionHex.concat(addressHash160Hex));
+
+        // Should use the legacy method and fail for using testnet script hash
+        BridgeUtils.deserializeBtcAddressWithVersion(
+            bridgeConstantsRegtest.getBtcParams(),
+            activations,
+            addressBytes
+        );
+    }
+
+    @Test(expected = BridgeIllegalArgumentException.class)
+    public void deserializeBtcAddressWithVersion_null_bytes() throws BridgeIllegalArgumentException {
+        when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
+
+        BridgeUtils.deserializeBtcAddressWithVersion(
+            bridgeConstantsRegtest.getBtcParams(),
+            activations,
+            null
+        );
+    }
+
+    @Test(expected = BridgeIllegalArgumentException.class)
+    public void deserializeBtcAddressWithVersion_empty_bytes() throws BridgeIllegalArgumentException {
+        when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
+
+        BridgeUtils.deserializeBtcAddressWithVersion(
+            bridgeConstantsRegtest.getBtcParams(),
+            activations,
+            new byte[]{}
+        );
+    }
+
+    @Test
+    public void deserializeBtcAddressWithVersion_p2pkh_testnet() throws BridgeIllegalArgumentException {
+        when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
+
+        String addressVersionHex = "6f"; // Testnet pubkey hash
+        String addressHash160Hex = "41aec8ca3fcf17e62077e9f35961385360d6a570";
+        byte[] addressBytes = Hex.decode(addressVersionHex.concat(addressHash160Hex));
+
+        Address address = BridgeUtils.deserializeBtcAddressWithVersion(
+            bridgeConstantsRegtest.getBtcParams(),
+            activations,
+            addressBytes
+        );
+
+        Assert.assertEquals(111, address.getVersion());
+        Assert.assertArrayEquals(Hex.decode(addressHash160Hex), address.getHash160());
+        Assert.assertEquals("mmWFbkYYKCT9jvCUzJD9XoVjSkfachVpMs", address.toBase58());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void deserializeBtcAddressWithVersion_p2pkh_testnet_wrong_network() throws BridgeIllegalArgumentException {
+        when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
+
+        String addressVersionHex = "6f"; // Testnet pubkey hash
+        String addressHash160Hex = "41aec8ca3fcf17e62077e9f35961385360d6a570";
+        byte[] addressBytes = Hex.decode(addressVersionHex.concat(addressHash160Hex));
+
+        BridgeUtils.deserializeBtcAddressWithVersion(
+            bridgeConstantsMainnet.getBtcParams(),
+            activations,
+            addressBytes
+        );
+    }
+
+    @Test
+    public void deserializeBtcAddressWithVersion_p2sh_testnet() throws BridgeIllegalArgumentException {
+        when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
+
+        String addressVersionHex = "c4"; // Testnet script hash
+        String addressHash160Hex = "41aec8ca3fcf17e62077e9f35961385360d6a570";
+        byte[] addressBytes = Hex.decode(addressVersionHex.concat(addressHash160Hex));
+
+        Address address = BridgeUtils.deserializeBtcAddressWithVersion(
+            bridgeConstantsRegtest.getBtcParams(),
+            activations,
+            addressBytes
+        );
+
+        Assert.assertEquals(196, address.getVersion());
+        Assert.assertArrayEquals(Hex.decode(addressHash160Hex), address.getHash160());
+        Assert.assertEquals("2MyEXHyt2fXqdFm3r4xXEkTdbwdZm7qFiDP", address.toBase58());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void deserializeBtcAddressWithVersion_p2sh_testnet_wrong_network() throws BridgeIllegalArgumentException {
+        when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
+
+        String addressVersionHex = "c4"; // Testnet script hash
+        String addressHash160Hex = "41aec8ca3fcf17e62077e9f35961385360d6a570";
+        byte[] addressBytes = Hex.decode(addressVersionHex.concat(addressHash160Hex));
+
+        BridgeUtils.deserializeBtcAddressWithVersion(
+            bridgeConstantsMainnet.getBtcParams(),
+            activations,
+            addressBytes
+        );
+    }
+
+    @Test
+    public void deserializeBtcAddressWithVersion_p2pkh_mainnet() throws BridgeIllegalArgumentException {
+        when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
+
+        String addressVersionHex = "00"; // Mainnet pubkey hash
+        String addressHash160Hex = "41aec8ca3fcf17e62077e9f35961385360d6a570";
+        byte[] addressBytes = Hex.decode(addressVersionHex.concat(addressHash160Hex));
+
+        Address address = BridgeUtils.deserializeBtcAddressWithVersion(
+            bridgeConstantsMainnet.getBtcParams(),
+            activations,
+            addressBytes
+        );
+
+        Assert.assertEquals(0, address.getVersion());
+        Assert.assertArrayEquals(Hex.decode(addressHash160Hex), address.getHash160());
+        Assert.assertEquals("16zJJhTZWB1txoisGjEmhtHQam4sikpTd2", address.toBase58());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void deserializeBtcAddressWithVersion_p2pkh_mainnet_wrong_network() throws BridgeIllegalArgumentException {
+        when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
+
+        String addressVersionHex = "00"; // Mainnet pubkey hash
+        String addressHash160Hex = "41aec8ca3fcf17e62077e9f35961385360d6a570";
+        byte[] addressBytes = Hex.decode(addressVersionHex.concat(addressHash160Hex));
+
+        BridgeUtils.deserializeBtcAddressWithVersion(
+            bridgeConstantsRegtest.getBtcParams(),
+            activations,
+            addressBytes
+        );
+    }
+
+    @Test
+    public void deserializeBtcAddressWithVersion_p2sh_mainnet() throws BridgeIllegalArgumentException {
+        when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
+
+        String addressVersionHex = "05"; // Mainnet script hash
+        String addressHash160Hex = "41aec8ca3fcf17e62077e9f35961385360d6a570";
+        byte[] addressBytes = Hex.decode(addressVersionHex.concat(addressHash160Hex));
+
+        Address address = BridgeUtils.deserializeBtcAddressWithVersion(
+            bridgeConstantsMainnet.getBtcParams(),
+            activations,
+            addressBytes
+        );
+
+        Assert.assertEquals(5, address.getVersion());
+        Assert.assertArrayEquals(Hex.decode(addressHash160Hex), address.getHash160());
+        Assert.assertEquals("37gKEEx145LH3yRJPpuN8WeLjHMbJJo8vn", address.toBase58());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void deserializeBtcAddressWithVersion_p2sh_mainnet_wrong_network() throws BridgeIllegalArgumentException {
+        when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
+
+        String addressVersionHex = "05"; // Mainnet script hash
+        String addressHash160Hex = "41aec8ca3fcf17e62077e9f35961385360d6a570";
+        byte[] addressBytes = Hex.decode(addressVersionHex.concat(addressHash160Hex));
+
+        Address address = BridgeUtils.deserializeBtcAddressWithVersion(
+            bridgeConstantsRegtest.getBtcParams(),
+            activations,
+            addressBytes
+        );
+
+        Assert.assertEquals(5, address.getVersion());
+        Assert.assertArrayEquals(Hex.decode(addressHash160Hex), address.getHash160());
+        Assert.assertEquals("37gKEEx145LH3yRJPpuN8WeLjHMbJJo8vn", address.toBase58());
+    }
+
+    @Test(expected = BridgeIllegalArgumentException.class)
+    public void deserializeBtcAddressWithVersion_with_extra_bytes() throws BridgeIllegalArgumentException {
+        when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
+
+        String addressVersionHex = "6f"; // Testnet pubkey hash
+        String addressHash160Hex = "41aec8ca3fcf17e62077e9f35961385360d6a570";
+        String extraData = "0000aaaaeeee1111ffff";
+        byte[] addressBytes = Hex.decode(addressVersionHex.concat(addressHash160Hex).concat(extraData));
+
+        // Should fail for having more than 21 bytes
+        BridgeUtils.deserializeBtcAddressWithVersion(
+            bridgeConstantsRegtest.getBtcParams(),
+            activations,
+            addressBytes
+        );
+    }
+
+    @Test(expected = BridgeIllegalArgumentException.class)
+    public void deserializeBtcAddressWithVersion_invalid_address_hash() throws BridgeIllegalArgumentException {
+        when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
+
+        String addressVersionHex = "6f"; // Testnet pubkey hash
+        String addressHash160Hex = "41";
+        byte[] addressBytes = Hex.decode(addressVersionHex.concat(addressHash160Hex));
+
+        // Should fail for having less than 21 bytes
+        BridgeUtils.deserializeBtcAddressWithVersion(
+            bridgeConstantsRegtest.getBtcParams(),
+            activations,
+            addressBytes
+        );
     }
 
     @Test
