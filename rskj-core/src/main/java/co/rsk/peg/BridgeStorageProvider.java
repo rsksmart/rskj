@@ -846,20 +846,20 @@ public class BridgeStorageProvider {
 
     public void setFastBridgeFederationInformation(FastBridgeFederationInformation fastBridgeFederationInformation) {
         if (activations.isActive(RSKIP176)) {
-            this.fastBridgeFederationInformations = fastBridgeFederationInformation;
+            this.fastBridgeFederationInformation = fastBridgeFederationInformation;
         }
     }
 
     private void saveFastBridgeFederationInformation() {
-        if (fastBridgeFederationInformations == null) {
+        if (fastBridgeFederationInformation == null) {
             return;
         }
 
         safeSaveToRepository(
             getStorageKeyForfastBridgeFederationInformation(
-                fastBridgeFederationInformations.getFastBridgeFederationRedeemScriptHash()
+                fastBridgeFederationInformation.getFastBridgeFederationRedeemScriptHash()
             ),
-            fastBridgeFederationInformations,
+            fastBridgeFederationInformation,
             BridgeSerializationUtils::serializeFastBridgeFederationInformation
         );
     }
