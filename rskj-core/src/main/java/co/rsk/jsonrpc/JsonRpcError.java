@@ -23,28 +23,29 @@ import java.util.Objects;
  * The standard JSON-RPC error object for responses.
  */
 public class JsonRpcError implements JsonRpcResultOrError {
-    // Error codes as defined in https://www.jsonrpc.org/specification#error_object
-    public static final int INVALID_PARAMS = -32602;
-    public static final int INTERNAL_ERROR = -32603;
 
-    private final int code;
-    private final String message;
+	// Error codes as defined in https://www.jsonrpc.org/specification#error_object
+	public static final int INVALID_PARAMS = -32602;
+	public static final int INTERNAL_ERROR = -32603;
 
-    public JsonRpcError(int code, String message) {
-        this.code = code;
-        this.message = Objects.requireNonNull(message);
-    }
+	private final int code;
+	private final String message;
 
-    public String getMessage() {
-        return message;
-    }
+	public JsonRpcError(int code, String message) {
+		this.code = code;
+		this.message = Objects.requireNonNull(message);
+	}
 
-    public int getCode() {
-        return code;
-    }
+	public String getMessage() {
+		return message;
+	}
 
-    @Override
-    public JsonRpcIdentifiableMessage responseFor(int messageId) {
-        return new JsonRpcErrorResponse(messageId, this);
-    }
+	public int getCode() {
+		return code;
+	}
+
+	@Override
+	public JsonRpcIdentifiableMessage responseFor(Object messageId) {
+		return new JsonRpcErrorResponse(messageId, this);
+	}
 }

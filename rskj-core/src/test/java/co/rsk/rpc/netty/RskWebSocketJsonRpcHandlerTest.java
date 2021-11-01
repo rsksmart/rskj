@@ -50,7 +50,7 @@ public class RskWebSocketJsonRpcHandlerTest {
     public void setUp() {
         emitter = mock(EthSubscriptionNotificationEmitter.class);
         serializer = mock(JsonRpcSerializer.class);
-        handler = new RskWebSocketJsonRpcHandler(emitter, serializer);
+        handler = new RskWebSocketJsonRpcHandler(emitter);
     }
 
     @Test
@@ -58,7 +58,7 @@ public class RskWebSocketJsonRpcHandlerTest {
         EthUnsubscribeRequest unsubscribe = new EthUnsubscribeRequest(
                 JsonRpcVersion.V2_0,
                 RskJsonRpcMethod.ETH_UNSUBSCRIBE,
-                35,
+                "35",
                 new EthUnsubscribeParams(SAMPLE_SUBSCRIPTION_ID_1)
 
         );
@@ -101,22 +101,21 @@ public class RskWebSocketJsonRpcHandlerTest {
 
     @Test
     public void handlerDeserializesAndHandlesRequest() throws Exception {
+    	
+    	String json = "{\"jsonrpc\":\"2.0\",\"id\":\"teste\",\"method\":\"eth_subscribe\",\"params\":[\"newHeads\"]}";
+    	
         Channel channel = mock(Channel.class);
         ChannelHandlerContext ctx = mock(ChannelHandlerContext.class);
         when(ctx.channel())
                 .thenReturn(channel);
 
-        when(serializer.deserializeRequest(any()))
-                .thenReturn(createMockRequest(new EthSubscribeNewHeadsParams()));
         when(emitter.visit(any(EthSubscribeNewHeadsParams.class), eq(channel)))
                 .thenReturn(SAMPLE_SUBSCRIPTION_ID_1);
-        when(serializer.serializeMessage(any()))
-                .thenReturn("serialized");
 
-        DefaultByteBufHolder msg = new DefaultByteBufHolder(Unpooled.copiedBuffer("raw".getBytes()));
+        DefaultByteBufHolder msg = new DefaultByteBufHolder(Unpooled.copiedBuffer(json.getBytes()));
         handler.channelRead(ctx, msg);
 
-        verify(ctx, times(1)).writeAndFlush(new TextWebSocketFrame("serialized"));
+        verify(ctx, times(1)).writeAndFlush(new TextWebSocketFrame("{\"jsonrpc\":\"2.0\",\"id\":\"teste\",\"result\":\"0x3075\"}"));
         verify(ctx, never()).fireChannelRead(any());
     }
 
@@ -138,7 +137,7 @@ public class RskWebSocketJsonRpcHandlerTest {
         return new EthSubscribeRequest(
                 JsonRpcVersion.V2_0,
                 RskJsonRpcMethod.ETH_SUBSCRIBE,
-                35,
+                "35",
                 ethSubscribeParams
         );
     }

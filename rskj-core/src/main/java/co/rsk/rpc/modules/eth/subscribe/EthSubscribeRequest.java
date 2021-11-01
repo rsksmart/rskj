@@ -31,35 +31,35 @@ import java.util.Objects;
 
 public class EthSubscribeRequest extends RskJsonRpcRequest {
 
-    private final EthSubscribeParams params;
+	private static final String WRONG_RPC_METHOD_MSG = "Wrong method mapped to eth_subscribe. Check JSON mapping configuration in JsonRpcRequest.";
 
-    @JsonCreator
-    public EthSubscribeRequest(
-            @JsonProperty("jsonrpc") JsonRpcVersion version,
-            @JsonProperty("method") RskJsonRpcMethod method,
-            @JsonProperty("id") Integer id,
-            @JsonProperty("params") EthSubscribeParams params) {
-        super(version, verifyMethod(method), Objects.requireNonNull(id));
-        this.params = Objects.requireNonNull(params);
-    }
+	private final EthSubscribeParams params;
 
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    public EthSubscribeParams getParams() {
-        return params;
-    }
+	@JsonCreator
+	public EthSubscribeRequest(
+			@JsonProperty("jsonrpc") JsonRpcVersion version,
+			@JsonProperty("method") RskJsonRpcMethod method, 
+			@JsonProperty("id") Object id,
+			@JsonProperty("params") EthSubscribeParams params) {
+		super(version, verifyMethod(method), Objects.requireNonNull(id));
+		this.params = Objects.requireNonNull(params);
+	}
 
-    @Override
-    public JsonRpcResultOrError accept(RskJsonRpcRequestVisitor visitor, ChannelHandlerContext ctx) {
-        return visitor.visit(this, ctx);
-    }
+	@JsonInclude(JsonInclude.Include.NON_NULL)
+	public EthSubscribeParams getParams() {
+		return params;
+	}
 
-    private static RskJsonRpcMethod verifyMethod(RskJsonRpcMethod method) {
-        if (method != RskJsonRpcMethod.ETH_SUBSCRIBE) {
-            throw new IllegalArgumentException(
-                    "Wrong method mapped to eth_subscribe. Check JSON mapping configuration in JsonRpcRequest."
-            );
-        }
+	@Override
+	public JsonRpcResultOrError accept(RskJsonRpcRequestVisitor visitor, ChannelHandlerContext ctx) {
+		return visitor.visit(this, ctx);
+	}
 
-        return method;
-    }
+	private static RskJsonRpcMethod verifyMethod(RskJsonRpcMethod method) {
+		if (method != RskJsonRpcMethod.ETH_SUBSCRIBE) {
+			throw new IllegalArgumentException(WRONG_RPC_METHOD_MSG);
+		}
+
+		return method;
+	}
 }

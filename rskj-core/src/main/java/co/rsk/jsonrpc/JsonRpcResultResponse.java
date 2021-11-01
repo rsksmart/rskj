@@ -23,15 +23,16 @@ import java.util.Objects;
  * This the JSON-RPC result response DTO for JSON serialization purposes.
  */
 public class JsonRpcResultResponse extends JsonRpcIdentifiableMessage {
-    private final JsonRpcResult result;
+	
+	private final JsonRpcResult result;
 
-    public JsonRpcResultResponse(int id, JsonRpcResult result) {
-        super(JsonRpcVersion.V2_0, id);
-        this.result = Objects.requireNonNull(result);
-    }
+	public JsonRpcResultResponse(Object id, JsonRpcResult result) {
+		super(JsonRpcVersion.V2_0, id);
+		this.result = Objects.requireNonNull(result);
+	}
 
-    @SuppressWarnings("unused")
-    public JsonRpcResult getResult() {
-        return result;
-    }
+	@SuppressWarnings("unused")
+	public JsonRpcResult getResult() {
+		return result;
+	}
 }

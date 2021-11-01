@@ -26,18 +26,16 @@ import java.util.Objects;
  * Inheritors should define the methods it accepts and how to map to different specific implementations.
  */
 public abstract class JsonRpcRequest<T extends Enum<T>> extends JsonRpcIdentifiableMessage {
-    private final T method;
 
-    public JsonRpcRequest(
-            JsonRpcVersion version,
-            T method,
-            int id) {
-        super(version, id);
-        this.method = Objects.requireNonNull(method);
-    }
+	private final T method;
 
-    @JsonInclude(JsonInclude.Include.ALWAYS)
-    public T getMethod() {
-        return method;
-    }
+	protected JsonRpcRequest(JsonRpcVersion version, T method, Object id) {
+		super(version, id);
+		this.method = Objects.requireNonNull(method);
+	}
+
+	@JsonInclude(JsonInclude.Include.ALWAYS)
+	public T getMethod() {
+		return method;
+	}
 }
