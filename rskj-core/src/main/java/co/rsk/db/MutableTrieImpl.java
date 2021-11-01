@@ -21,6 +21,7 @@ package co.rsk.db;
 import co.rsk.core.RskAddress;
 import co.rsk.core.types.ints.Uint24;
 import co.rsk.crypto.Keccak256;
+import co.rsk.storagerent.RentTracker;
 import co.rsk.trie.MutableTrie;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieKeySlice;
@@ -104,6 +105,11 @@ public class MutableTrieImpl implements MutableTrie {
             return new StorageKeysIterator(storageIterator, storageKeyOffset);
         }
         return Collections.emptyIterator();
+    }
+
+    @Override
+    public void initRentTracker(RentTracker rentTracker) {
+        this.trie.initRentTracker(rentTracker);
     }
 
     @Override

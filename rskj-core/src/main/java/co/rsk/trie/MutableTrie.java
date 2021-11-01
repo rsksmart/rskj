@@ -21,6 +21,7 @@ package co.rsk.trie;
 import co.rsk.core.RskAddress;
 import co.rsk.core.types.ints.Uint24;
 import co.rsk.crypto.Keccak256;
+import co.rsk.storagerent.RentTracker;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.vm.DataWord;
 
@@ -72,4 +73,6 @@ public interface MutableTrie {
     // the key has to match exactly an account key
     // it won't work if it is used with an storage key or any other
     Iterator<DataWord> getStorageKeys(RskAddress addr);
+
+    void initRentTracker(RentTracker rentTracker);
 }

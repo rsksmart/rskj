@@ -24,6 +24,7 @@ import co.rsk.core.types.ints.Uint24;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.MutableTrieCache;
 import co.rsk.db.MutableTrieImpl;
+import co.rsk.storagerent.RentTracker;
 import co.rsk.trie.MutableTrie;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieKeySlice;
@@ -371,5 +372,10 @@ public class MutableRepository implements Repository {
 
     private byte[] getAccountData(RskAddress addr) {
         return mutableTrie.get(trieKeyMapper.getAccountKey(addr));
+    }
+
+    @Override
+    public void initRentTracker(RentTracker rentTracker) {
+        this.mutableTrie.initRentTracker(rentTracker);
     }
 }
