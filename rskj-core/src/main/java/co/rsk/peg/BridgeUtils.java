@@ -550,7 +550,9 @@ public class BridgeUtils {
             // BigInteger adds a leading byte to indicate the sign,
             // but we need the version number to be 1 byte only.
             // Use new serialization after HF activation
-            version = ByteUtil.intToBytesNoLeadZeroes(btcAddress.getVersion());
+            version = btcAddress.getVersion() != 0 ?
+                ByteUtil.intToBytesNoLeadZeroes(btcAddress.getVersion()) :
+                new byte[]{0};
         }
 
         byte[] btcAddressBytes = new byte[version.length + hash160.length];
