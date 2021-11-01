@@ -28,7 +28,7 @@ public class BridgeUtilsLegacyTest {
     }
 
     @Test(expected = DeprecatedMethodCallException.class)
-    public void deserializeBtcAddressWithVersionLegacy_after_rskip184() throws BridgeIllegalArgumentException {
+    public void deserializeBtcAddressWithVersionLegacy_after_rskip284() throws BridgeIllegalArgumentException {
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
 
         BridgeUtilsLegacy.deserializeBtcAddressWithVersionLegacy(
