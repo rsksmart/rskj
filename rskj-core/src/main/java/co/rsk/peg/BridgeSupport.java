@@ -102,6 +102,7 @@ import org.slf4j.LoggerFactory;
 import static co.rsk.peg.BridgeUtils.getRegularPegoutTxSize;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP186;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP219;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP284;
 
 /**
  * Helper class to move funds from btc to rsk and rsk to btc
@@ -2529,10 +2530,10 @@ public class BridgeSupport {
         Sha256Hash btcTxHash = BtcTransactionFormatUtils.calculateBtcTxHash(btcTxSerialized);
 
         Keccak256 fastBridgeDerivationHash = getFastBridgeDerivationHash(
-                derivationArgumentsHash,
-                userRefundAddress,
-                lpBtcAddress,
-                lbcAddress
+            derivationArgumentsHash,
+            userRefundAddress,
+            lpBtcAddress,
+            lbcAddress
         );
 
         if (provider.isFastBridgeFederationDerivationHashUsed(btcTxHash, fastBridgeDerivationHash)) {
@@ -2553,7 +2554,7 @@ public class BridgeSupport {
 
         Sha256Hash btcTxHashWithoutWitness = btcTx.getHash(false);
         if (!btcTxHashWithoutWitness.equals(btcTxHash) &&
-            (provider.isFastBridgeFederationDerivationHashUsed(btcTxHashWithoutWitness, derivationArgumentsHash))) {
+            provider.isFastBridgeFederationDerivationHashUsed(btcTxHashWithoutWitness, derivationArgumentsHash)) {
             logger.debug("[registerFastBridgeBtcTransaction] Transaction and derivation hash already used");
             return BigInteger.valueOf(FAST_BRIDGE_UNPROCESSABLE_TX_ALREADY_PROCESSED_ERROR_CODE);
         }
@@ -2572,7 +2573,7 @@ public class BridgeSupport {
         }
 
         if (!verifyLockDoesNotSurpassLockingCap(btcTx, totalAmount)) {
-            InternalTransaction internalTx = (InternalTransaction)rskTx;
+            InternalTransaction internalTx = (InternalTransaction) rskTx;
             logger.info("[registerFastBridgeBtcTransaction] Locking cap surpassed, going to return funds!");
             WalletProvider walletProvider = createFastBridgeWalletProvider(fastBridgeFederationInformation);
 
@@ -2661,11 +2662,15 @@ public class BridgeSupport {
         RskAddress lbcAddress
     ) {
         byte[] fastBridgeDerivationHashData = derivationArgumentsHash.getBytes();
-        byte[] userRefundAddressBytes = getBytesFromBtcAddress(userRefundAddress);
-        byte[] lpBtcAddressBytes = getBytesFromBtcAddress(lpBtcAddress);
+        byte[] userRefundAddressBytes = BridgeUtils.serializeBtcAddressWithVersion(activations, userRefundAddress);
+        byte[] lpBtcAddressBytes = BridgeUtils.serializeBtcAddressWithVersion(activations, lpBtcAddress);
         byte[] lbcAddressBytes = lbcAddress.getBytes();
-        byte[] result = new byte[fastBridgeDerivationHashData.length +
-            userRefundAddressBytes.length + lpBtcAddressBytes.length + lbcAddressBytes.length];
+        byte[] result = new byte[
+            fastBridgeDerivationHashData.length +
+            userRefundAddressBytes.length +
+            lpBtcAddressBytes.length +
+            lbcAddressBytes.length
+        ];
 
         int dstPosition = 0;
 
@@ -2676,7 +2681,6 @@ public class BridgeSupport {
             dstPosition,
             fastBridgeDerivationHashData.length
         );
-
         dstPosition += fastBridgeDerivationHashData.length;
 
         System.arraycopy(
@@ -2686,7 +2690,6 @@ public class BridgeSupport {
             dstPosition,
             userRefundAddressBytes.length
         );
-
         dstPosition += userRefundAddressBytes.length;
 
         System.arraycopy(
@@ -2696,7 +2699,6 @@ public class BridgeSupport {
             dstPosition,
             lbcAddressBytes.length
         );
-
         dstPosition += lbcAddressBytes.length;
 
         System.arraycopy(
@@ -2706,17 +2708,8 @@ public class BridgeSupport {
             dstPosition,
             lpBtcAddressBytes.length
         );
+
         return new Keccak256(HashUtil.keccak256(result));
-    }
-
-    protected byte[] getBytesFromBtcAddress(Address btcAddress) {
-        byte[] hash160 = btcAddress.getHash160();
-        byte[] version = BigInteger.valueOf(btcAddress.getVersion()).toByteArray();
-        byte[] btcAddressBytes = new byte[hash160.length + version.length];
-        System.arraycopy(version, 0, btcAddressBytes, 0, version.length);
-        System.arraycopy(hash160, 0, btcAddressBytes, version.length, hash160.length);
-
-        return btcAddressBytes;
     }
 
     protected Coin getAmountSentToAddress(BtcTransaction btcTx, Address btcAddress) {

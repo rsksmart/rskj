@@ -18,6 +18,8 @@
 
 package co.rsk.peg;
 
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP284;
+
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.crypto.TransactionSignature;
 import co.rsk.bitcoinj.script.RedeemScriptParser;
@@ -539,6 +541,23 @@ public class BridgeUtils {
             }
         }
         return false;
+    }
+
+    public static byte[] serializeBtcAddressWithVersion(ActivationConfig.ForBlock activations, Address btcAddress) {
+        byte[] hash160 = btcAddress.getHash160();
+        byte[] version = BigInteger.valueOf(btcAddress.getVersion()).toByteArray();
+        if (activations.isActive(RSKIP284)) {
+            // BigInteger adds a leading byte to indicate the sign,
+            // but we need the version number to be 1 byte only.
+            // Use new serialization after HF activation
+            version = ByteUtil.intToBytesNoLeadZeroes(btcAddress.getVersion());
+        }
+
+        byte[] btcAddressBytes = new byte[version.length + hash160.length];
+        System.arraycopy(version, 0, btcAddressBytes, 0, version.length);
+        System.arraycopy(hash160, 0, btcAddressBytes, version.length, hash160.length);
+
+        return btcAddressBytes;
     }
 
     public static Address deserializeBtcAddressWithVersion(
