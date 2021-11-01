@@ -71,7 +71,7 @@ public class Web3InformationRetriever {
     public Optional<Block> getBlock(String identifier) {
         Block block;
         if (PENDING.equals(identifier)) {
-            block = executionBlockRetriever.getExecutionBlock_workaround(identifier).getBlock();
+            block = executionBlockRetriever.retrieveExecutionBlock(identifier).getBlock();
         } else if (LATEST.equals(identifier)) {
             block = blockchain.getBestBlock();
         } else if (EARLIEST.equals(identifier)) {

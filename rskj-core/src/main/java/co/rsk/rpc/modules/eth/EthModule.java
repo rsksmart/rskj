@@ -118,7 +118,7 @@ public class EthModule
     public String call(CallArguments args, String bnOrId) {
         String hReturn = null;
         try {
-            BlockResult blockResult = executionBlockRetriever.getExecutionBlock_workaround(bnOrId);
+            BlockResult blockResult = executionBlockRetriever.retrieveExecutionBlock(bnOrId);
             ProgramResult res;
             if (blockResult.getFinalState() != null) {
                 res = callConstant_workaround(args, blockResult);

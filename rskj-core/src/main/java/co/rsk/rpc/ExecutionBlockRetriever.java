@@ -63,16 +63,15 @@ public class ExecutionBlockRetriever {
         this.builder = builder;
     }
 
-    @Deprecated
-    public BlockResult getExecutionBlock_workaround(String bnOrId) {
+    public BlockResult retrieveExecutionBlock(String bnOrId) {
         if (LATEST_ID.equals(bnOrId)) {
-            return newBlockResult_workaround(blockchain.getBestBlock());
+            return newBlockResult(blockchain.getBestBlock());
         }
 
         if (PENDING_ID.equals(bnOrId)) {
             Optional<Block> latestBlock = minerServer.getLatestBlock();
             if (latestBlock.isPresent()) {
-                return newBlockResult_workaround(latestBlock.get());
+                return newBlockResult(latestBlock.get());
             }
 
             Block bestBlock = blockchain.getBestBlock();
@@ -107,7 +106,7 @@ public class ExecutionBlockRetriever {
             if (executionBlock == null) {
                 throw invalidParamError(String.format("Invalid block number %d", executionBlockNumber.get()));
             }
-            return newBlockResult_workaround(executionBlock);
+            return newBlockResult(executionBlock);
         }
 
         // If we got here, the specifier given is unsupported
@@ -170,8 +169,7 @@ public class ExecutionBlockRetriever {
                 bnOrId));
     }
 
-    @Deprecated
-    private static BlockResult newBlockResult_workaround(Block block) {
+    private static BlockResult newBlockResult(Block block) {
         return new BlockResult(
                 block,
                 Collections.emptyList(),

@@ -63,7 +63,7 @@ public class EthModuleTest {
         BlockResult blockResult = mock(BlockResult.class);
         Block block = mock(Block.class);
         ExecutionBlockRetriever retriever = mock(ExecutionBlockRetriever.class);
-        when(retriever.getExecutionBlock_workaround("latest"))
+        when(retriever.retrieveExecutionBlock("latest"))
                 .thenReturn(blockResult);
         when(blockResult.getBlock()).thenReturn(block);
 
@@ -101,7 +101,7 @@ public class EthModuleTest {
         BlockResult blockResult = mock(BlockResult.class);
         Block block = mock(Block.class);
         ExecutionBlockRetriever retriever = mock(ExecutionBlockRetriever.class);
-        when(retriever.getExecutionBlock_workaround("latest"))
+        when(retriever.retrieveExecutionBlock("latest"))
                 .thenReturn(blockResult);
         when(blockResult.getBlock()).thenReturn(block);
 
@@ -139,7 +139,7 @@ public class EthModuleTest {
         BlockResult blockResult = mock(BlockResult.class);
         Block block = mock(Block.class);
         ExecutionBlockRetriever retriever = mock(ExecutionBlockRetriever.class);
-        when(retriever.getExecutionBlock_workaround("latest"))
+        when(retriever.retrieveExecutionBlock("latest"))
                 .thenReturn(blockResult);
         when(blockResult.getBlock()).thenReturn(block);
 
@@ -230,7 +230,7 @@ public class EthModuleTest {
             assertEquals("Could not find account for address: " + addressFrom.toJsonString(), ex.getMessage());
         }
     }
-    
+
     @Test
     public void getCode() {
         byte[] expectedCode = new byte[] {1, 2, 3};

@@ -45,7 +45,7 @@ public class Web3InformationRetrieverTest {
         Block pendingBlock = mock(Block.class);
         BlockResult pendingBlockResult = mock(BlockResult.class);
         when(pendingBlockResult.getBlock()).thenReturn(pendingBlock);
-        when(executionBlockRetriever.getExecutionBlock_workaround("pending")).thenReturn(pendingBlockResult);
+        when(executionBlockRetriever.retrieveExecutionBlock("pending")).thenReturn(pendingBlockResult);
         Optional<Block> result = target.getBlock("pending");
 
         assertTrue(result.isPresent());
