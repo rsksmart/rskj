@@ -3287,6 +3287,40 @@ public class BridgeStorageProviderTest {
         );
     }
 
+    @Test
+    public void getReleaseRequestQueueSize_when_releaseRequestQueue_is_null() throws IOException {
+        Repository repository = mock(Repository.class);
+
+        BridgeStorageProvider storageProvider = new BridgeStorageProvider(
+                repository, PrecompiledContracts.BRIDGE_ADDR,
+                config.getNetworkConstants().getBridgeConstants(), activationsAllForks
+        );
+
+        Assert.assertEquals(0, storageProvider.getReleaseRequestQueueSize());
+    }
+
+    @Test
+    public void getReleaseRequestQueueSize_when_releaseRequestQueue_is_not_null() throws IOException {
+        Repository repository = mock(Repository.class);
+
+        BridgeStorageProvider storageProvider = new BridgeStorageProvider(
+                repository, PrecompiledContracts.BRIDGE_ADDR,
+                config.getNetworkConstants().getBridgeConstants(), activationsAllForks
+        );
+
+        ReleaseRequestQueue releaseRequestQueue = storageProvider.getReleaseRequestQueue();
+
+        releaseRequestQueue.add(Address.fromBase58(BridgeRegTestConstants.getInstance().getBtcParams(), "mseEsMLuzaEdGbyAv9c9VRL9qGcb49qnxB"),
+                Coin.COIN,
+                PegTestUtils.createHash3(0));
+
+        releaseRequestQueue.add(Address.fromBase58(BridgeRegTestConstants.getInstance().getBtcParams(), "mmWJhA74Pd6peL39V3AmtGHdGdJ4PyeXvL"),
+                Coin.COIN,
+                PegTestUtils.createHash3(1));
+
+        Assert.assertEquals(2, storageProvider.getReleaseRequestQueueSize());
+    }
+
     private void testGetOldFederation(Federation oldFederation, ForBlock activations) {
         BridgeConstants bridgeConstants = config.getNetworkConstants().getBridgeConstants();
         List<Integer> storageCalls = new ArrayList<>();
