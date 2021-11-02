@@ -668,6 +668,17 @@ public enum BridgeMethods {
             (BridgeMethodExecutorTyped) Bridge::getNextPegoutCreationBlockNumber,
             activations -> activations.isActive(RSKIP271),
             fixedPermission(false)
+    ),
+    GET_QUEUED_PEGOUTS_COUNT(
+            CallTransaction.Function.fromSignature(
+                    "getQueuedPegoutsCount",
+                    new String[]{},
+                    new String[]{"uint256"}
+            ),
+            fixedCost(3_000L), // TODO: calculate gas cost
+            (BridgeMethodExecutorTyped) Bridge::getQueuedPegoutsCount,
+            activations -> activations.isActive(RSKIP271),
+            fixedPermission(false)
     );
 
     private final CallTransaction.Function function;

@@ -7638,6 +7638,38 @@ public class BridgeSupportTest {
         assertEquals(10L, bridgeSupport.getNextPegoutCreationBlockNumber());
     }
 
+    @Test
+    public void getQueuedPegoutsCount_before_RSKIP271_activation() throws IOException {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(false);
+
+        BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
+
+        BridgeSupport bridgeSupport = bridgeSupportBuilder
+                .withActivations(activations)
+                .withProvider(provider)
+                .build();
+
+        verify(provider, never()).getReleaseRequestQueueSize();
+        assertEquals(0, bridgeSupport.getQueuedPegoutsCount());
+    }
+
+    @Test
+    public void getQueuedPegoutsCount_after_RSKIP271_activation() throws IOException {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
+
+        BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
+        when(provider.getReleaseRequestQueueSize()).thenReturn(2);
+
+        BridgeSupport bridgeSupport = bridgeSupportBuilder
+                .withProvider(provider)
+                .withActivations(activations)
+                .build();
+
+        assertEquals(2, bridgeSupport.getQueuedPegoutsCount());
+    }
+
     private Address getFastBridgeFederationAddress() {
         Script fastBridgeRedeemScript = FastBridgeRedeemScriptParser.createMultiSigFastBridgeRedeemScript(
             bridgeConstants.getGenesisFederation().getRedeemScript(),
