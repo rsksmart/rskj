@@ -1193,6 +1193,12 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         return bridgeSupport.getNextPegoutCreationBlockNumber();
     }
 
+    public int getQueuedPegoutsCount(Object[] args) throws IOException {
+        logger.trace("getQueuedPegoutsCount");
+
+        return bridgeSupport.getQueuedPegoutsCount();
+    }
+
     public static BridgeMethods.BridgeMethodExecutor activeAndRetiringFederationOnly(BridgeMethods.BridgeMethodExecutor decoratee, String funcName) {
         return (self, args) -> {
             Federation retiringFederation = self.bridgeSupport.getRetiringFederation();

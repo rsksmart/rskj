@@ -858,6 +858,36 @@ public class BridgeTest {
         assertEquals(1L, bridge.getNextPegoutCreationBlockNumber(new Object[]{ }));
     }
 
+    @Test
+    public void getQueuedPegoutsCount_before_RSKIP271_activation() throws VMException {
+        doReturn(false).when(activationConfig).isActive(eq(RSKIP271), anyLong());
+
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        Bridge bridge = getBridgeInstance(bridgeSupportMock);
+
+        byte[] data = BridgeMethods.GET_QUEUED_PEGOUTS_COUNT.getFunction().encode(new Object[]{});
+
+        assertNull(bridge.execute(data));
+    }
+
+    @Test
+    public void getQueuedPegoutsCount_after_RSKIP271_activation() throws VMException, IOException {
+        doReturn(true).when(activationConfig).isActive(eq(RSKIP271), anyLong());
+
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        Bridge bridge = getBridgeInstance(bridgeSupportMock);
+
+        when(bridgeSupportMock.getQueuedPegoutsCount()).thenReturn(1);
+
+        CallTransaction.Function function = BridgeMethods.GET_QUEUED_PEGOUTS_COUNT.getFunction();
+        byte[] data = function.encode(new Object[]{ });
+        byte[] result = bridge.execute(data);
+
+        assertEquals(1, ((BigInteger)function.decodeResult(result)[0]).intValue());
+        // Also test the method itself
+        assertEquals(1, bridge.getQueuedPegoutsCount(new Object[]{ }));
+    }
+
     private Bridge getBridgeInstance(Federation activeFederation, Federation retiringFederation, int senderPK) {
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         doReturn(activeFederation).when(bridgeSupportMock).getActiveFederation();
