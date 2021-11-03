@@ -33,9 +33,7 @@ public class BridgeIllegalArgumentException extends VMException {
         super(s);
     }
 
-
     public BridgeIllegalArgumentException(String message, Throwable cause) {
         super(message, cause);
     }
-
 }
