@@ -45,7 +45,7 @@ public class ErpFederation extends Federation {
     }
 
     @Override
-    public Script getRedeemScript() {
+    public final Script getRedeemScript() {
         if (redeemScript == null) {
             redeemScript = ErpFederationRedeemScriptParser.createErpRedeemScript(
                 ScriptBuilder.createRedeemScript(getNumberOfSignaturesRequired(), getBtcPublicKeys()),
