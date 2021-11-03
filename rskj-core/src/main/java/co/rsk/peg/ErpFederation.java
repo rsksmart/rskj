@@ -30,6 +30,10 @@ public class ErpFederation extends Federation {
         super(members, creationTime, creationBlockNumber, btcParams);
         this.erpPubKeys = EcKeyUtils.getCompressedPubKeysList(erpPubKeys);
         this.activationDelay = activationDelay;
+
+        // Try getting the redeem script in order to validate it can be built
+        // using the given public keys and csv value
+        getRedeemScript();
     }
 
     public List<BtcECKey> getErpPubKeys() {
