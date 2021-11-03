@@ -6,7 +6,7 @@ import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 
 /**
- * Methods included in this class are to be used only prior to the latest HF activation
+ * @deprecated Methods included in this class are to be used only prior to the latest HF activation
  */
 @Deprecated
 public class BridgeUtilsLegacy {
