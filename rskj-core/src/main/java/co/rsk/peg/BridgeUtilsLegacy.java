@@ -11,6 +11,8 @@ import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 @Deprecated
 public class BridgeUtilsLegacy {
 
+    private BridgeUtilsLegacy() {}
+
     @Deprecated
     protected static Address deserializeBtcAddressWithVersionLegacy(
         NetworkParameters networkParameters,
