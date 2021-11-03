@@ -55,6 +55,8 @@ public class BridgeUtils {
 
     private static final Logger logger = LoggerFactory.getLogger("BridgeUtils");
 
+    private BridgeUtils() {}
+
     public static Wallet getFederationNoSpendWallet(
         Context btcContext,
         Federation federation,
