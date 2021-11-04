@@ -22,10 +22,12 @@ import co.rsk.core.Coin;
 import co.rsk.util.HexUtils;
 
 import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.junit.Assert;
 import org.junit.Test;
 
 import java.math.BigInteger;
+import java.nio.ByteBuffer;
 import java.util.Arrays;
 
 /**
@@ -33,26 +35,26 @@ import java.util.Arrays;
  */
 public class HexUtilsTest {
 
-	
-	@Test
-	public void test_stringNumberAsBigInt() {
-		
-		BigInteger hundred = BigInteger.valueOf(100);
-		
-		String hexNumberWithPrefix = "0x64";
-		
-		String decNumber = "100";
-		
-		BigInteger fromPrefix = HexUtils.stringNumberAsBigInt(hexNumberWithPrefix);
 
-		BigInteger fromDec = HexUtils.stringNumberAsBigInt(decNumber);
-		
-		Assert.assertEquals(fromPrefix, hundred);
+    @Test
+    public void test_stringNumberAsBigInt() {
 
-		Assert.assertEquals(fromDec, hundred);
-		
-	}
-	
+        BigInteger hundred = BigInteger.valueOf(100);
+
+        String hexNumberWithPrefix = "0x64";
+
+        String decNumber = "100";
+
+        BigInteger fromPrefix = HexUtils.stringNumberAsBigInt(hexNumberWithPrefix);
+
+        BigInteger fromDec = HexUtils.stringNumberAsBigInt(decNumber);
+
+        Assert.assertEquals(fromPrefix, hundred);
+
+        Assert.assertEquals(fromDec, hundred);
+
+    }
+
     @Test
     public void stringToByteArray() {
         Assert.assertArrayEquals(new byte[] { 116, 105, 110, 99, 104, 111 }, HexUtils.stringToByteArray("tincho"));
@@ -117,44 +119,78 @@ public class HexUtilsTest {
 
     @Test
     public void test_JSonHexToLong() {
-    	String hexNumberWithPrefix = "0x64";
-    	
-    	long value = HexUtils.jsonHexToLong(hexNumberWithPrefix);
-    	
-    	Assert.assertEquals(100L, value);
+        String hexNumberWithPrefix = "0x64";
+
+        long value = HexUtils.jsonHexToLong(hexNumberWithPrefix);
+
+        Assert.assertEquals(100L, value);
     }
-    
+
     @Test(expected = NumberFormatException.class)
     public void test_JSonHexToLong_withWrongParamenter_thenThrowException() {
-    	
-    	HexUtils.jsonHexToLong("64");
+        HexUtils.jsonHexToLong("64");
     }
-    
+
     @Test
     public void test_hasHexPrefix() {
-    	
-    	String hexNumberWithPrefix = "0x64";
-    	String hexNumberWithOutPrefix = "64";
-    	
-    	boolean trueCaseStr = HexUtils.hasHexPrefix(hexNumberWithPrefix);
-    	boolean falseCaseStr = HexUtils.hasHexPrefix(hexNumberWithOutPrefix);
 
-    	boolean trueCaseBA = HexUtils.hasHexPrefix(hexNumberWithPrefix.getBytes());
-    	boolean falseCaseBA = HexUtils.hasHexPrefix(hexNumberWithOutPrefix.getBytes());
-    	
-    	Assert.assertTrue(trueCaseStr);
-    	Assert.assertFalse(falseCaseStr);
+        String hexNumberWithPrefix = "0x64";
+        String hexNumberWithOutPrefix = "64";
 
-    	Assert.assertTrue(trueCaseBA);
-    	Assert.assertFalse(falseCaseBA);
+        boolean trueCaseStr = HexUtils.hasHexPrefix(hexNumberWithPrefix);
+        boolean falseCaseStr = HexUtils.hasHexPrefix(hexNumberWithOutPrefix);
+        boolean falseCaseNull = HexUtils.hasHexPrefix((String)null);
+
+        boolean trueCaseBA = HexUtils.hasHexPrefix(hexNumberWithPrefix.getBytes());
+        boolean falseCaseBA = HexUtils.hasHexPrefix(hexNumberWithOutPrefix.getBytes());
+        boolean falseCaseBANull = HexUtils.hasHexPrefix((byte[])null);
+
+        Assert.assertTrue(trueCaseStr);
+        Assert.assertFalse(falseCaseStr);
+        Assert.assertFalse(falseCaseNull);
+
+        Assert.assertTrue(trueCaseBA);
+        Assert.assertFalse(falseCaseBA);
+        Assert.assertFalse(falseCaseBANull);
     }
-    
+
+    @Test
+    public void test_isHexWithPrefix() {
+
+        String hexNumberWithPrefix = "0x64";
+        String hexNumberWithPrefixNeg = "-0x64";
+        String hexNumberWithOutPrefix = "64";
+        String hexTooShort = "a";
+
+        boolean trueCase = HexUtils.isHexWithPrefix(hexNumberWithPrefix);
+        boolean trueCaseNeg = HexUtils.isHexWithPrefix(hexNumberWithPrefixNeg);
+        boolean falseCase = HexUtils.isHexWithPrefix(hexNumberWithOutPrefix);
+        boolean falseCaseShort = HexUtils.isHexWithPrefix(hexTooShort);
+        boolean nullCase = HexUtils.isHexWithPrefix(null);
+
+        Assert.assertTrue(trueCase);
+        Assert.assertTrue(trueCaseNeg);
+        Assert.assertFalse(falseCase);
+        Assert.assertFalse(falseCaseShort);
+        Assert.assertFalse(nullCase);
+    }
+
     @Test
     public void toQuantityJsonHex_EmptyByteArray() {
         byte[] toEncode = new byte[0];
         Assert.assertEquals("0x0", HexUtils.toQuantityJsonHex(toEncode));
     }
 
+    @Test
+    public void test_isHex() {
+        String hex = "64ffde45";
+        String notHex = "w64ffde45";
+
+        Assert.assertTrue(HexUtils.isHex(hex));
+        Assert.assertFalse(HexUtils.isHex(notHex));
+        Assert.assertFalse(HexUtils.isHex(null));
+    }
+    
     @Test
     public void toJsonHexCoin() {
         Assert.assertEquals("1234", HexUtils.toJsonHex(new Coin(new BigInteger("1234"))));
@@ -164,7 +200,6 @@ public class HexUtilsTest {
     public void toJsonHexNullCoin() {
         Assert.assertEquals("", HexUtils.toJsonHex((Coin) null));
     }
-
 
     @Test
     public void stringHexToBigIntegerDefaultCase() {
@@ -200,39 +235,53 @@ public class HexUtilsTest {
     public void stringHexToBigIntegerWhenItDoesNotStartWith0x() {
         HexUtils.stringHexToBigInteger("0d99");
     }
-   
+
+    @Test(expected = RskJsonRpcRequestException.class)
+    public void test_encodeToHexByteArray_whenNullProvided_expectException() {
+        HexUtils.encodeToHexByteArray(null);
+    }
+    
     @Test
     public void test_encodeToHexByteArray_compare_preencoded() {
-    	
-    	byte[] strBytes = "internet".getBytes();
-    	
-    	String encoded = "0x" + Hex.toHexString(strBytes);
 
-		byte[] strEncoded = HexUtils.encodeToHexByteArray(strBytes);
-		
-		Assert.assertTrue(Arrays.equals(encoded.getBytes(), strEncoded));
+        byte[] strBytes = "internet".getBytes();
+
+        String encoded = "0x" + Hex.toHexString(strBytes);
+
+        byte[] strEncoded = HexUtils.encodeToHexByteArray(strBytes);
+
+        Assert.assertTrue(Arrays.equals(encoded.getBytes(), strEncoded));
     }
 
     @Test
-    public void test_removeHexPrefix() {
-    	
-    	byte[] data = "0x746573746530".getBytes();
-    	
-    	byte[] clean = HexUtils.removeHexPrefix(data);
-
-    	Assert.assertEquals("746573746530", new String(clean));
+    public void test_decode() {
+        Assert.assertEquals(17, ByteBuffer.wrap(HexUtils.decode("11".getBytes())).get());
     }
     
+    @Test
+    public void test_removeHexPrefix() {
+
+        byte[] data = "0x746573746530".getBytes();
+
+        byte[] clean = HexUtils.removeHexPrefix(data);
+
+        Assert.assertEquals("746573746530", new String(clean));
+    }
+
     @Test
     public void test_leftPad() {
-    	
-    	String hex = "a";
-    	
-    	byte[] res = HexUtils.leftPad(hex.getBytes());
-    	
-    	Assert.assertEquals("0a", new String(res));
-    	
+
+        String hex = "a";
+
+        byte[] res = HexUtils.leftPad(hex.getBytes());
+
+        Assert.assertEquals("0a", new String(res));
+
     }
     
-    
+    @Test
+    public void test_jsonHexToInt() {
+        Assert.assertEquals(4095, HexUtils.jsonHexToInt("0xfff"));
+    }
+
 }
