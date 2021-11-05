@@ -19,12 +19,13 @@ package co.rsk.cli.tools;
 
 import co.rsk.NodeRunner;
 import co.rsk.RskContext;
-import co.rsk.RskContext;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.HashMapBlocksIndex;
+import co.rsk.logfilter.BlocksBloom;
+import co.rsk.logfilter.BlocksBloomStore;
 import co.rsk.test.World;
 import co.rsk.test.dsl.DslParser;
 import co.rsk.test.dsl.DslProcessorException;
@@ -32,12 +33,12 @@ import co.rsk.test.dsl.WorldDslProcessor;
 import co.rsk.trie.Trie;
 import co.rsk.util.NodeStopper;
 import co.rsk.util.PreflightChecksUtils;
-import co.rsk.util.NodeStopper;
 import org.ethereum.TestUtils;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.core.Blockchain;
+import org.ethereum.core.Bloom;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.datasource.KeyValueDataSource;
@@ -50,8 +51,8 @@ import org.ethereum.util.ByteUtil;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
-import org.mockito.ArgumentCaptor;
 import org.junit.rules.TemporaryFolder;
+import org.mockito.ArgumentCaptor;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
@@ -63,8 +64,7 @@ import java.util.Random;
 import static co.rsk.core.BlockDifficulty.ZERO;
 import static org.ethereum.TestUtils.randomHash;
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
 /**
@@ -418,5 +418,53 @@ public class CliToolsTest {
         verify(runtime, times(1)).addShutdownHook(any());
         verify(ctx, times(1)).close();
         verify(nodeStopper, times(1)).stop(1);
+    }
+
+    @Test
+    public void indexBlooms() {
+        Block block = mock(Block.class);
+        BlockStore blockStore = mock(BlockStore.class);
+        BlocksBloomStore blocksBloomStore = mock(BlocksBloomStore.class);
+        ArgumentCaptor<BlocksBloom> captor = ArgumentCaptor.forClass(BlocksBloom.class);
+
+        doReturn(new byte[Bloom.BLOOM_BYTES]).when(block).getLogBloom();
+        doReturn(block).when(blockStore).getChainBlockByNumber(anyLong());
+        doAnswer(i -> {
+            long num = i.getArgument(0);
+            return num - (num % 64);
+        }).when(blocksBloomStore).firstNumberInRange(anyLong());
+        doAnswer(i -> {
+            long num = i.getArgument(0);
+            return num - (num % 64) + 64 - 1;
+        }).when(blocksBloomStore).lastNumberInRange(anyLong());
+
+        IndexBlooms.execute(0, 63, blockStore, blocksBloomStore);
+
+        verify(blocksBloomStore, times(1)).addBlocksBloom(captor.capture());
+        verify(blockStore, times(64)).getChainBlockByNumber(anyLong());
+
+        BlocksBloom blocksBloom = captor.getValue();
+        assertEquals(0, blocksBloom.fromBlock());
+        assertEquals(63, blocksBloom.toBlock());
+        assertArrayEquals(new byte[Bloom.BLOOM_BYTES], blocksBloom.getBloom().getData());
+
+        clearInvocations(blocksBloomStore, blockStore);
+
+        IndexBlooms.execute(60, 300, blockStore, blocksBloomStore);
+
+        // saved 3 block blooms in range [60..300]
+        verify(blocksBloomStore, times(3)).addBlocksBloom(captor.capture());
+
+        int i = 0;
+        for (BlocksBloom bb : captor.getAllValues()) {
+            assertEquals(i * 64L, bb.fromBlock());
+            assertEquals(i * 64L + 63L, bb.toBlock());
+            assertArrayEquals(new byte[Bloom.BLOOM_BYTES], bb.getBloom().getData());
+            i++;
+        }
+
+        // [60..63] - ignored, [64..300] - processed
+        // 192 (3*64) processed and saved, and 45 processed but not saved
+        verify(blockStore, times(192 + 45)).getChainBlockByNumber(anyLong());
     }
 }
