@@ -421,6 +421,63 @@ public class CliToolsTest {
     }
 
     @Test
+    public void makeBlockRange() {
+        BlockStore blockStore = mock(BlockStore.class);
+        doReturn(5L).when(blockStore).getMinNumber();
+        doReturn(10L).when(blockStore).getMaxNumber();
+
+        try {
+            IndexBlooms.makeBlockRange(new String[]{}, blockStore);
+            fail();
+        } catch (IllegalArgumentException ignored) { /* ignored */ }
+
+        try {
+            IndexBlooms.makeBlockRange(new String[]{ "0" }, blockStore);
+            fail();
+        } catch (IllegalArgumentException ignored) { /* ignored */ }
+
+        try {
+            IndexBlooms.makeBlockRange(new String[]{ "0", "abc" }, blockStore);
+            fail();
+        } catch (NumberFormatException ignored) { /* ignored */ }
+
+        try {
+            IndexBlooms.makeBlockRange(new String[]{ "-1", "1" }, blockStore);
+            fail();
+        } catch (IllegalArgumentException e) {
+            assertEquals("Invalid 'from' and/or 'to' block number", e.getMessage());
+        }
+
+        try {
+            IndexBlooms.makeBlockRange(new String[]{ "2", "1" }, blockStore);
+            fail();
+        } catch (IllegalArgumentException e) {
+            assertEquals("Invalid 'from' and/or 'to' block number", e.getMessage());
+        }
+
+        doReturn(2L).when(blockStore).getMinNumber();
+
+        try {
+            IndexBlooms.makeBlockRange(new String[]{ "1", "10" }, blockStore); // min block num is 10
+            fail();
+        } catch (IllegalArgumentException e) {
+            assertEquals("'from' block number is lesser than the min block number stored", e.getMessage());
+        }
+
+        try {
+            IndexBlooms.makeBlockRange(new String[]{ "5", "11" }, blockStore); // best block num is 10
+            fail();
+        } catch (IllegalArgumentException e) {
+            assertEquals("'to' block number is greater than the best block number", e.getMessage());
+        }
+
+        IndexBlooms.Range range = IndexBlooms.makeBlockRange(new String[]{"5", "10"}, blockStore);
+
+        assertEquals(5, range.fromBlockNumber);
+        assertEquals(10, range.toBlockNumber);
+    }
+
+    @Test
     public void indexBlooms() {
         Block block = mock(Block.class);
         BlockStore blockStore = mock(BlockStore.class);
@@ -438,7 +495,7 @@ public class CliToolsTest {
             return num - (num % 64) + 64 - 1;
         }).when(blocksBloomStore).lastNumberInRange(anyLong());
 
-        IndexBlooms.execute(0, 63, blockStore, blocksBloomStore);
+        IndexBlooms.execute(new IndexBlooms.Range(0, 63), blockStore, blocksBloomStore);
 
         verify(blocksBloomStore, times(1)).addBlocksBloom(captor.capture());
         verify(blockStore, times(64)).getChainBlockByNumber(anyLong());
@@ -450,7 +507,7 @@ public class CliToolsTest {
 
         clearInvocations(blocksBloomStore, blockStore);
 
-        IndexBlooms.execute(60, 300, blockStore, blocksBloomStore);
+        IndexBlooms.execute(new IndexBlooms.Range(60, 300), blockStore, blocksBloomStore);
 
         // saved 3 block blooms in range [60..300]
         verify(blocksBloomStore, times(3)).addBlocksBloom(captor.capture());
