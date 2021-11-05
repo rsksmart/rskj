@@ -111,6 +111,9 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
      * @param message the message to be processed.
      */
     public synchronized void processMessage(final Peer sender, @Nonnull final Message message) {
+
+        messageCounter.decrement(sender);
+
         long start = System.nanoTime();
         MessageType messageType = message.getMessageType();
         logger.trace("Process message type: {}", messageType);
@@ -127,7 +130,6 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
             loggerMessageProcess.debug("Message[{}] processed after [{}] seconds.", message.getMessageType(), timeInSeconds);
         }
 
-        messageCounter.decrement(sender);
     }
 
     @Override

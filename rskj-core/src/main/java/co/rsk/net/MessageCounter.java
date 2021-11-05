@@ -22,14 +22,21 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * Keeps the counter of messages per peer
  */
 public class MessageCounter {
 
+    private static final Logger LOG = LoggerFactory.getLogger(MessageCounter.class);
+
     private static final AtomicInteger ZERO = new AtomicInteger(0);
 
     private Map<NodeID, AtomicInteger> messagesPerNode = new ConcurrentHashMap<>();
+
+    private static final String COUNTER_ERROR = "Counter for {} is null or negative: {}.";
 
     public int getValue(Peer sender) {
         return Optional.ofNullable(messagesPerNode.get(sender.getPeerNodeID())).orElse(ZERO).intValue();
@@ -47,13 +54,20 @@ public class MessageCounter {
 
     public void decrement(Peer sender) {
 
-        Optional.ofNullable(messagesPerNode.get(sender.getPeerNodeID()))
-            .ifPresent(AtomicInteger::decrementAndGet);
+        NodeID peerNodeID = sender.getPeerNodeID();
+        AtomicInteger cnt = messagesPerNode.get(peerNodeID);
+
+        if(cnt == null || cnt.get() < 0) {
+            LOG.error(COUNTER_ERROR, peerNodeID, cnt);
+            return;
+        }
+
+        int newValue = cnt.decrementAndGet();
 
         // if this counter is zero or negative: remove key from map
-        Optional.ofNullable(messagesPerNode.get(sender.getPeerNodeID()))
-            .filter(counter -> counter.get() < 1)
-            .ifPresent(counter -> messagesPerNode.remove(sender.getPeerNodeID()));
+        if(newValue < 1) {
+            messagesPerNode.remove(peerNodeID);
+        }
 
     }
 
