@@ -30,13 +30,14 @@ import org.slf4j.LoggerFactory;
  */
 public class MessageCounter {
 
-    private static final Logger LOG = LoggerFactory.getLogger(MessageCounter.class);
+    private static final Logger logger = LoggerFactory.getLogger(MessageCounter.class);
 
     private static final AtomicInteger ZERO = new AtomicInteger(0);
 
+    private static final String COUNTER_ERROR = "Counter for {} is null or negative: {}.";
+
     private Map<NodeID, AtomicInteger> messagesPerNode = new ConcurrentHashMap<>();
 
-    private static final String COUNTER_ERROR = "Counter for {} is null or negative: {}.";
 
     public int getValue(Peer sender) {
         return Optional.ofNullable(messagesPerNode.get(sender.getPeerNodeID())).orElse(ZERO).intValue();
@@ -58,7 +59,7 @@ public class MessageCounter {
         AtomicInteger cnt = messagesPerNode.get(peerNodeID);
 
         if(cnt == null || cnt.get() < 0) {
-            LOG.error(COUNTER_ERROR, peerNodeID, cnt);
+            logger.error(COUNTER_ERROR, peerNodeID, cnt);
             return;
         }
 
