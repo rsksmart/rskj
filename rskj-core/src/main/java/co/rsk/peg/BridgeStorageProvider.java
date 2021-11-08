@@ -912,6 +912,10 @@ public class BridgeStorageProvider {
         safeSaveToRepository(NEXT_PEGOUT_HEIGHT_KEY, nextPegoutHeight, BridgeSerializationUtils::serializeLong);
     }
 
+    protected int getReleaseRequestQueueSize() throws IOException {
+        return getReleaseRequestQueue().getEntries().size();
+    }
+
     public void save() throws IOException {
         saveBtcTxHashesAlreadyProcessed();
 

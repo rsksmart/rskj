@@ -2504,6 +2504,13 @@ public class BridgeSupport {
         return activations.isActive(RSKIP271) ? provider.getNextPegoutHeight().orElse(0L) : 0L;
     }
 
+    public int getQueuedPegoutsCount() throws IOException {
+        if (activations.isActive(RSKIP271)) {
+            return provider.getReleaseRequestQueueSize();
+        }
+        return 0;
+    }
+
     public BigInteger registerFastBridgeBtcTransaction(
         Transaction rskTx,
         byte[] btcTxSerialized,
