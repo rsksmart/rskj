@@ -2092,18 +2092,22 @@ public class BridgeUtilsTest {
 
     @Test
     public void calculatePegoutTxSize() {
-        Federation fed = new Federation(
-            Arrays.asList(FederationMember.getFederationMemberFromKey(new BtcECKey())),
-            Instant.now(),
-            0,
-            networkParameters
+        List<BtcECKey> keys = createBtcECKeys(13);
+        Federation federation = new Federation(
+                FederationMember.getFederationMembersFromKeys(keys),
+                Instant.now(),
+                0,
+                networkParameters
         );
 
-        int pegoutTxSize = BridgeUtils.calculatePegoutTxSize(fed, 1, 1, 1, 1);
+        int pegoutTxSize = BridgeUtils.calculatePegoutTxSizeHop(federation, 2, 2);
 
-        // 58 accounts for all the added values as part of a peg-out tx
-        int calculation = fed.getRedeemScript().getProgram().length+ 58;
-        assertEquals(calculation, pegoutTxSize);
+        // The difference between the calculated size and a real tx size should be smaller than 1% in any direction
+        int origTxSize = 2076; // Data for 2 inputs, 2 outputs Based on Pegouts From Blockchain.info Explorer
+        int difference = origTxSize - pegoutTxSize;
+        double tolerance = origTxSize * .01;
+
+        assertTrue(difference < tolerance && difference > -tolerance);
     }
 
     @Test
@@ -2192,6 +2196,14 @@ public class BridgeUtilsTest {
         tx.getInput(0).setScriptSig(invalidScript);
 
         assertFalse(BridgeUtils.scriptCorrectlySpendsTx(tx, 0, genesisFederation.getP2SHScript()));
+    }
+
+    private List<BtcECKey> createBtcECKeys(int keysCount) {
+        List<BtcECKey> keys = new ArrayList<>();
+        for (int i = 0; i < keysCount; i++) {
+            keys.add(new BtcECKey());
+        }
+        return keys;
     }
 
     private void test_getSpendWallet(boolean isFastBridgeCompatible) throws UTXOProviderException {

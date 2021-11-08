@@ -2511,6 +2511,29 @@ public class BridgeSupport {
         return 0;
     }
 
+    public Coin getEstimatedFeesForNextPegOutEvent() throws IOException {
+        //  This method returns the fees of a peg-out transaction containing (N+2) outputs and 2 inputs,
+        //  where N is the number of peg-outs requests waiting in the queue.
+
+        final int INPUT_MULTIPLIER = 2; // 2 inputs
+
+        int pegoutRequestsCount = getQueuedPegoutsCount();
+
+        if (!activations.isActive(RSKIP271) || pegoutRequestsCount == 0) {
+            return Coin.ZERO;
+        }
+
+        int totalOutputs = pegoutRequestsCount + 2; // N + 2 outputs
+
+        int pegoutTxSize = BridgeUtils.calculatePegoutTxSizeHop(getActiveFederation(), INPUT_MULTIPLIER, totalOutputs);
+
+        Coin feePerKB = getFeePerKb();
+
+        return feePerKB
+                .multiply(pegoutTxSize) // times the size in bytes
+                .divide(1000);
+    }
+
     public BigInteger registerFastBridgeBtcTransaction(
         Transaction rskTx,
         byte[] btcTxSerialized,
