@@ -1199,6 +1199,12 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         return bridgeSupport.getQueuedPegoutsCount();
     }
 
+    public long getEstimatedFeesForNextPegOutEvent(Object[] args) throws IOException {
+        logger.trace("getEstimatedFeesForNextPegOutEvent");
+
+        return bridgeSupport.getEstimatedFeesForNextPegOutEvent().value;
+    }
+
     public static BridgeMethods.BridgeMethodExecutor activeAndRetiringFederationOnly(BridgeMethods.BridgeMethodExecutor decoratee, String funcName) {
         return (self, args) -> {
             Federation retiringFederation = self.bridgeSupport.getRetiringFederation();

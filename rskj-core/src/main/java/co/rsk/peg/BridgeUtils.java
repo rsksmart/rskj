@@ -592,38 +592,50 @@ public class BridgeUtils {
         // The outputs are composed of the scriptPubkeyHas(or publicKeyHash)
         // and the op_codes for the corresponding script
         final int INPUT_MULTIPLIER = 2;
-        final int SIGNATURE_MULTIPLIER = 71;
         final int OUTPUT_MULTIPLIER = 2;
-        final int OUTPUT_SIZE = 25;
 
         return calculatePegoutTxSize(
             federation,
             INPUT_MULTIPLIER,
-            SIGNATURE_MULTIPLIER,
-            OUTPUT_MULTIPLIER,
-            OUTPUT_SIZE
+            OUTPUT_MULTIPLIER
         );
     }
 
     public static int calculatePegoutTxSize(
         Federation federation,
         int inputMultiplier,
-        int signatureMultiplier,
-        int outputMultiplier,
-        int outputSize
+        int outputMultiplier
     ) {
+
+        final int SIGNATURE_MULTIPLIER = 71;
+        final int OUTPUT_SIZE = 25;
         // This data accounts for txid+vout+sequence
-        int INPUT_ADDITIONAL_DATA_SIZE = 40;
+        final int INPUT_ADDITIONAL_DATA_SIZE = 40;
         // This data accounts for the value+index
-        int OUTPUT_ADDITIONAL_DATA_SIZE = 9;
+        final int OUTPUT_ADDITIONAL_DATA_SIZE = 9;
         // This data accounts for the version field
-        int TX_ADDITIONAL_DATA_SIZE = 4;
+        final int TX_ADDITIONAL_DATA_SIZE = 4;
         // The added ones are to account for the data size
-        int scriptSigChunk = federation.getNumberOfSignaturesRequired() * (signatureMultiplier + 1) +
+        final int scriptSigChunk = federation.getNumberOfSignaturesRequired() * (SIGNATURE_MULTIPLIER + 1) +
                 federation.getRedeemScript().getProgram().length + 1;
         return TX_ADDITIONAL_DATA_SIZE +
             (scriptSigChunk + INPUT_ADDITIONAL_DATA_SIZE) * inputMultiplier +
-            (outputSize + 1 + OUTPUT_ADDITIONAL_DATA_SIZE) * outputMultiplier;
+            (OUTPUT_SIZE + 1 + OUTPUT_ADDITIONAL_DATA_SIZE) * outputMultiplier;
+    }
+
+    public static int calculatePegoutTxSizeHop(Federation federation, int inputs, int outputs) {
+        final int SIGNATURE_MULTIPLIER = 72;
+        BtcTransaction pegoutTx = new BtcTransaction(federation.btcParams);
+        for (int i = 0; i < inputs; i++) {
+            pegoutTx.addInput(Sha256Hash.ZERO_HASH, 0, federation.getRedeemScript());
+        }
+        for (int i = 0; i < outputs; i++) {
+            pegoutTx.addOutput(Coin.ZERO, federation.getAddress());
+        }
+        int baseSize = pegoutTx.bitcoinSerialize().length;
+        int signingSize = federation.getNumberOfSignaturesRequired() * inputs * SIGNATURE_MULTIPLIER;
+
+        return baseSize + signingSize;
     }
 
     private static Optional<Script> extractRedeemScriptFromInput(TransactionInput txInput) {
