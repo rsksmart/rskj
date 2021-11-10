@@ -1088,7 +1088,8 @@ public class Web3ImplLogsTest {
                 new SimpleConfigCapabilities(),
                 null,
                 new BlocksBloomStore(2, 0, null),
-                mock(Web3InformationRetriever.class));
+                mock(Web3InformationRetriever.class),
+                null);
     }
 
     private void addTwoEmptyBlocks() {

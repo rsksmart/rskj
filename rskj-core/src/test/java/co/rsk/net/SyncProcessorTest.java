@@ -5,15 +5,13 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.core.*;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.core.bc.ConsensusValidationMainchainView;
+import co.rsk.crypto.Keccak256;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.db.StateRootHandler;
 import co.rsk.db.StateRootsStoreImpl;
 import co.rsk.net.messages.*;
 import co.rsk.net.simples.SimplePeer;
-import co.rsk.net.sync.DownloadingBodiesSyncState;
-import co.rsk.net.sync.DownloadingHeadersSyncState;
-import co.rsk.net.sync.PeersInformation;
-import co.rsk.net.sync.SyncConfiguration;
+import co.rsk.net.sync.*;
 import co.rsk.net.utils.StatusUtils;
 import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
@@ -26,7 +24,6 @@ import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.BlockStore;
-import org.ethereum.facade.Ethereum;
 import org.ethereum.listener.EthereumListener;
 import org.ethereum.net.server.ChannelManager;
 import org.ethereum.rpc.Simples.SimpleChannelManager;
@@ -340,7 +337,7 @@ public class SyncProcessorTest {
 
         // is null when we're not syncing
         Assert.assertEquals(0, processor.getExpectedResponses().size());
-        Assert.assertFalse(processor.getSyncState().isSyncing());
+        Assert.assertFalse(processor.isSyncing());
     }
 
     @Test
@@ -686,8 +683,7 @@ public class SyncProcessorTest {
         Assert.assertEquals(10, blockchain.getBestBlock().getNumber());
         Assert.assertNotEquals(block.getNumber(), blockchain.getBestBlock().getNumber());
         // if an unexpected body arrives then stops syncing
-        Assert.assertFalse(processor.getSyncState().isSyncing());
-        verify(listener).onLongSyncDone();
+        Assert.assertFalse(processor.isSyncing());
     }
 
     @Test
@@ -743,7 +739,7 @@ public class SyncProcessorTest {
         Assert.assertEquals(10, blockchain.getBestBlock().getNumber());
         Assert.assertNotEquals(block.getNumber(), blockchain.getBestBlock().getNumber());
         // if an invalid body arrives then stops syncing
-        Assert.assertFalse(processor.getSyncState().isSyncing());
+        Assert.assertFalse(processor.isSyncing());
     }
 
     @Test
@@ -1067,7 +1063,7 @@ public class SyncProcessorTest {
         processor.registerExpectedMessage(response);
         processor.processSkeletonResponse(sender, response);
 
-        Assert.assertFalse(processor.getSyncState().isSyncing());
+        Assert.assertFalse(processor.isSyncing());
         Assert.assertTrue(sender.getMessages().isEmpty());
         Assert.assertTrue(processor.getExpectedResponses().isEmpty());
     }
@@ -1123,42 +1119,45 @@ public class SyncProcessorTest {
     public void syncEventsSentToListener() {
         final NetBlockStore store = new NetBlockStore();
         Blockchain blockchain = new BlockChainBuilder().ofSize(10);
-        SimplePeer sender = new SimplePeer(new byte[] { 0x01 });
+        SimplePeer peer = new SimplePeer(new byte[] { 0x01 });
+        BlockStore blockStore = mock(BlockStore.class);
         BlockNodeInformation nodeInformation = new BlockNodeInformation();
+        PeersInformation peersInformation = spy(new PeersInformation(getChannelManager(), SyncConfiguration.IMMEDIATE_FOR_TESTING, blockchain, RskMockFactory.getPeerScoringManager()));
         TestSystemProperties config = new TestSystemProperties();
         BlockSyncService blockSyncService = new BlockSyncService(config, store, blockchain, nodeInformation, SyncConfiguration.IMMEDIATE_FOR_TESTING, DummyBlockValidator.VALID_RESULT_INSTANCE);
         EthereumListener listener = mock(EthereumListener.class);
 
         SyncProcessor processor = new SyncProcessor(
-                blockchain, mock(org.ethereum.db.BlockStore.class), mock(ConsensusValidationMainchainView.class), blockSyncService,
+                blockchain, blockStore, mock(ConsensusValidationMainchainView.class), blockSyncService,
                 SyncConfiguration.IMMEDIATE_FOR_TESTING, blockFactory,
                 new ProofOfWorkRule(config).setFallbackMiningEnabled(false),
                 new SyncBlockValidatorRule(
                         new BlockUnclesHashValidationRule(), new BlockRootValidationRule(config.getActivationConfig())
                 ),
-                DIFFICULTY_CALCULATOR, new PeersInformation(getChannelManager(), SyncConfiguration.IMMEDIATE_FOR_TESTING, blockchain, RskMockFactory.getPeerScoringManager()),
+                DIFFICULTY_CALCULATOR, peersInformation,
                 mock(Genesis.class),
                 listener);
-        List<Transaction> transactions = blockchain.getBestBlock().getTransactionsList();
-        List<BlockHeader> uncles = blockchain.getBestBlock().getUncleList();
-        long lastRequestId = new Random().nextLong();
-        BodyResponseMessage response = new BodyResponseMessage(lastRequestId, transactions, uncles);
-        processor.registerExpectedMessage(response);
 
-        Block block = new BlockGenerator().createChildBlock(blockchain.getBlockByNumber(10));
-        Deque<BlockHeader> headerStack = new ArrayDeque<>();
-        headerStack.add(block.getHeader());
-        List<Deque<BlockHeader>> headers = new ArrayList<>();
-        headers.add(headerStack);
+        peersInformation.registerPeer(peer);
 
-        List<BlockIdentifier> bids = new ArrayList<>();
-        bids.add(new BlockIdentifier(blockchain.getBlockByNumber(0).getHash().getBytes(), 0));
-        bids.add(new BlockIdentifier(block.getHash().getBytes(), 1));
+        Block block = mock(Block.class);
+        doReturn(1L).when(block).getNumber();
+        doReturn(Keccak256.ZERO_HASH).when(block).getHash();
+        doReturn(block).when(blockStore).getBestBlock();
+        doReturn(Optional.of(peer)).when(peersInformation).getBestPeer();
+        SyncPeerStatus peerStatus = mock(SyncPeerStatus.class);
+        Status status = mock(Status.class);
+        doReturn(status).when(peerStatus).getStatus();
+        doReturn(peerStatus).when(peersInformation).getPeer(eq(peer));
 
-        processor.startDownloadingBodies(headers, Collections.singletonMap(sender, bids), sender);
-        processor.stopSyncing();
-
+        processor.getSyncState().newPeerStatus();
         verify(listener).onLongSyncStarted();
+
+        doReturn(1L).when(blockStore).getMinNumber();
+        doReturn(block).when(blockStore).getChainBlockByNumber(anyLong());
+        processor.stopSyncing();
+        processor.getSyncState().newPeerStatus();
+
         verify(listener).onLongSyncDone();
     }
 

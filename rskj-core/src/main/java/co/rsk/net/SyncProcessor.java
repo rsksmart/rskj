@@ -1,3 +1,20 @@
+/*
+ * This file is part of RskJ
+ * Copyright (C) 2017 RSK Labs Ltd.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
 package co.rsk.net;
 
 import co.rsk.core.DifficultyCalculator;
@@ -18,8 +35,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.time.Duration;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * This class' methods are executed one at a time because NodeMessageHandler is synchronized.
@@ -42,6 +61,10 @@ public class SyncProcessor implements SyncEventsHandler {
 
     private final PeersInformation peersInformation;
     private final Map<Long, MessageType> pendingMessages;
+    private final AtomicBoolean isSyncing = new AtomicBoolean();
+
+    private volatile long initialBlockNumber;
+    private volatile long highestBlockNumber;
 
     private SyncState syncState;
     private long lastRequestId;
@@ -235,7 +258,7 @@ public class SyncProcessor implements SyncEventsHandler {
         if (peerBestBlockNumber > blockSyncService.getLastKnownBlockNumber()) {
             blockSyncService.setLastKnownBlockNumber(peerBestBlockNumber);
         }
-        ethereumListener.onLongSyncStarted();
+
         setSyncState(new DownloadingBodiesSyncState(syncConfiguration,
                 this,
                 peersInformation,
@@ -315,13 +338,35 @@ public class SyncProcessor implements SyncEventsHandler {
         // always that a syncing process ends unexpectedly the best block number is reset
         blockSyncService.setLastKnownBlockNumber(blockchain.getBestBlock().getNumber());
         peersInformation.clearOldFailedPeers();
-        if(getSyncState().isSyncing()) {
-            ethereumListener.onLongSyncDone();
-        }
+
         setSyncState(new DecidingSyncState(syncConfiguration,
                 this,
                 peersInformation,
                 blockStore));
+    }
+
+    public long getInitialBlockNumber() {
+        return initialBlockNumber;
+    }
+
+    public long getHighestBlockNumber() {
+        return highestBlockNumber;
+    }
+
+    public boolean isSyncing() {
+        return isSyncing.get();
+    }
+
+    @Override
+    public void onLongSyncUpdate(boolean isSyncing, @Nullable Long peerBestBlockNumber) {
+        boolean wasSyncing = this.isSyncing.getAndSet(isSyncing);
+        if (!wasSyncing && isSyncing) {
+            initialBlockNumber = blockchain.getBestBlock().getNumber();
+            highestBlockNumber = Optional.ofNullable(peerBestBlockNumber).orElse(initialBlockNumber);
+            ethereumListener.onLongSyncStarted();
+        } else if (wasSyncing && !isSyncing) {
+            ethereumListener.onLongSyncDone();
+        }
     }
 
     @Override

@@ -29,6 +29,7 @@ import co.rsk.mine.MinerClient;
 import co.rsk.mine.MinerServer;
 import co.rsk.net.BlockProcessor;
 import co.rsk.net.Peer;
+import co.rsk.net.SyncProcessor;
 import co.rsk.rpc.ModuleDescription;
 import co.rsk.rpc.Web3InformationRetriever;
 import co.rsk.rpc.modules.debug.DebugModule;
@@ -40,6 +41,7 @@ import co.rsk.rpc.modules.rsk.RskModule;
 import co.rsk.rpc.modules.trace.TraceModule;
 import co.rsk.rpc.modules.txpool.TxPoolModule;
 import co.rsk.scoring.*;
+import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
@@ -78,21 +80,16 @@ import static org.ethereum.rpc.exception.RskJsonRpcRequestException.*;
 public class Web3Impl implements Web3 {
     private static final Logger logger = LoggerFactory.getLogger("web3");
 
-    public Ethereum eth;
-
-    private final String baseClientVersion = "RskJ";
-
-    private long initialBlockNumber;
+    private static final String CLIENT_VERSION_PREFIX = "RskJ";
 
     private final MinerClient minerClient;
-    protected MinerServer minerServer;
+    private final MinerServer minerServer;
     private final ChannelManager channelManager;
     private final PeerScoringManager peerScoringManager;
     private final PeerServer peerServer;
 
     private final Blockchain blockchain;
     private final ReceiptStore receiptStore;
-    private final BlockProcessor nodeBlockProcessor;
     private final HashRateCalculator hashRateCalculator;
     private final ConfigCapabilities configCapabilities;
     private final BlockStore blockStore;
@@ -112,6 +109,9 @@ public class Web3Impl implements Web3 {
     private final DebugModule debugModule;
     private final TraceModule traceModule;
     private final RskModule rskModule;
+    private final SyncProcessor syncProcessor;
+
+    private Ethereum eth;
 
     protected Web3Impl(
             Ethereum eth,
@@ -137,7 +137,8 @@ public class Web3Impl implements Web3 {
             ConfigCapabilities configCapabilities,
             BuildInfo buildInfo,
             BlocksBloomStore blocksBloomStore,
-            Web3InformationRetriever web3InformationRetriever) {
+            Web3InformationRetriever web3InformationRetriever,
+            SyncProcessor syncProcessor) {
         this.eth = eth;
         this.blockchain = blockchain;
         this.blockStore = blockStore;
@@ -155,7 +156,6 @@ public class Web3Impl implements Web3 {
         this.channelManager = channelManager;
         this.peerScoringManager = peerScoringManager;
         this.peerServer = peerServer;
-        this.nodeBlockProcessor = nodeBlockProcessor;
         this.hashRateCalculator = hashRateCalculator;
         this.configCapabilities = configCapabilities;
         this.config = config;
@@ -163,9 +163,14 @@ public class Web3Impl implements Web3 {
         this.buildInfo = buildInfo;
         this.blocksBloomStore = blocksBloomStore;
         this.web3InformationRetriever = web3InformationRetriever;
-        initialBlockNumber = this.blockchain.getBestBlock().getNumber();
+        this.syncProcessor = syncProcessor;
 
         personalModule.init();
+    }
+
+    @VisibleForTesting
+    void setEth(Ethereum eth) {
+        this.eth = eth;
     }
 
     @Override
@@ -188,7 +193,7 @@ public class Web3Impl implements Web3 {
 
     @Override
     public String web3_clientVersion() {
-        String clientVersion = baseClientVersion + "/" + config.projectVersion() + "/" +
+        String clientVersion = CLIENT_VERSION_PREFIX + "/" + config.projectVersion() + "/" +
                 System.getProperty("os.name") + "/Java1.8/" +
                 config.projectVersionModifier() + "-" + buildInfo.getBuildHash();
 
@@ -279,18 +284,19 @@ public class Web3Impl implements Web3 {
 
     @Override
     public Object eth_syncing() {
-        long currentBlock = this.blockchain.getBestBlock().getNumber();
-        long highestBlock = this.nodeBlockProcessor.getLastKnownBlockNumber();
-
-        if (highestBlock <= currentBlock){
+        if (!syncProcessor.isSyncing()) {
             return false;
         }
 
+        long initialBlockNum = syncProcessor.getInitialBlockNumber();
+        long currentBlockNum = blockchain.getBestBlock().getNumber();
+        long highestBlockNum = syncProcessor.getHighestBlockNumber();
+
         SyncingResult s = new SyncingResult();
         try {
-            s.setStartingBlock(TypeConverter.toQuantityJsonHex(initialBlockNumber));
-            s.setCurrentBlock(TypeConverter.toQuantityJsonHex(currentBlock));
-            s.setHighestBlock(toQuantityJsonHex(highestBlock));
+            s.setStartingBlock(TypeConverter.toQuantityJsonHex(initialBlockNum));
+            s.setCurrentBlock(TypeConverter.toQuantityJsonHex(currentBlockNum));
+            s.setHighestBlock(toQuantityJsonHex(highestBlockNum));
 
             return s;
         } finally {

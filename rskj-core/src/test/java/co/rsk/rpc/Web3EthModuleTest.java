@@ -25,6 +25,7 @@ import co.rsk.metrics.HashRateCalculator;
 import co.rsk.mine.MinerClient;
 import co.rsk.mine.MinerServer;
 import co.rsk.net.BlockProcessor;
+import co.rsk.net.SyncProcessor;
 import co.rsk.rpc.modules.debug.DebugModule;
 import co.rsk.rpc.modules.eth.EthModule;
 import co.rsk.rpc.modules.evm.EvmModule;
@@ -77,7 +78,8 @@ public class Web3EthModuleTest {
                 mock(ConfigCapabilities.class),
                 mock(BuildInfo.class),
                 mock(BlocksBloomStore.class),
-                mock(Web3InformationRetriever.class));
+                mock(Web3InformationRetriever.class),
+                mock(SyncProcessor.class));
 
         assertThat(web3.eth_chainId(), is("0x21"));
     }

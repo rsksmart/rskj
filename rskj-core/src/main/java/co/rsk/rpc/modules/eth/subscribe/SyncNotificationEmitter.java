@@ -17,7 +17,7 @@
  */
 package co.rsk.rpc.modules.eth.subscribe;
 
-import co.rsk.net.NodeBlockProcessor;
+import co.rsk.net.SyncProcessor;
 import co.rsk.rpc.JsonRpcSerializer;
 import com.google.common.annotations.VisibleForTesting;
 import io.netty.channel.Channel;
@@ -36,21 +36,19 @@ public class SyncNotificationEmitter {
     private static final Logger logger = LoggerFactory.getLogger(SyncNotificationEmitter.class);
 
     private final JsonRpcSerializer jsonRpcSerializer;
-    private final NodeBlockProcessor nodeBlockProcessor;
     private final Blockchain blockchain;
-    private final long startingBlock;
+    private final SyncProcessor syncProcessor;
 
     private final Map<SubscriptionId, Channel> subscriptions = new ConcurrentHashMap<>();
 
     public SyncNotificationEmitter(
             Ethereum ethereum,
             JsonRpcSerializer jsonRpcSerializer,
-            NodeBlockProcessor nodeBlockProcessor,
-            Blockchain blockchain) {
+            Blockchain blockchain,
+            SyncProcessor syncProcessor) {
         this.jsonRpcSerializer = jsonRpcSerializer;
-        this.nodeBlockProcessor = nodeBlockProcessor;
         this.blockchain = blockchain;
-        this.startingBlock = blockchain.getBestBlock().getNumber();
+        this.syncProcessor = syncProcessor;
         ethereum.addListener(new EthereumListenerAdapter() {
             @Override
             public void onLongSyncStarted() {
@@ -94,12 +92,14 @@ public class SyncNotificationEmitter {
     @VisibleForTesting
     protected EthSubscriptionNotification<Object> getNotification(boolean isSyncing, SubscriptionId id) {
         if (isSyncing) {
+            long initialBlockNum = syncProcessor.getInitialBlockNumber();
             long currentBlockNum = blockchain.getBestBlock().getNumber();
-            long highestBlockNum = this.nodeBlockProcessor.getLastKnownBlockNumber();
+            long highestBlockNum = syncProcessor.getHighestBlockNumber();
+
             SyncNotification syncNotification = new SyncNotification(
                     true,
                     new SyncStatusNotification(
-                            startingBlock,
+                            initialBlockNum,
                             currentBlockNum,
                             highestBlockNum
                     )

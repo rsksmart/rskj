@@ -82,7 +82,8 @@ public class Web3ImplUnitTest {
                 mock(ConfigCapabilities.class),
                 mock(BuildInfo.class),
                 mock(BlocksBloomStore.class),
-                retriever);
+                retriever,
+                null);
     }
 
     @Test
