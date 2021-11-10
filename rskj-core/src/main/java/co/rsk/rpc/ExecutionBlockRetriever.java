@@ -116,59 +116,6 @@ public class ExecutionBlockRetriever {
                 bnOrId));
     }
 
-    public Block getExecutionBlock(String bnOrId) {
-        if (LATEST_ID.equals(bnOrId)) {
-            return blockchain.getBestBlock();
-        }
-
-        if (PENDING_ID.equals(bnOrId)) {
-            Optional<Block> latestBlock = minerServer.getLatestBlock();
-            if (latestBlock.isPresent()) {
-                return latestBlock.get();
-            }
-
-            Block bestBlock = blockchain.getBestBlock();
-            if (cachedBlock == null || !bestBlock.isParentOf(cachedBlock)) {
-
-                // If the miner server is not running there is no one to update the mining mainchain view,
-                // thus breaking eth_call with 'pending' parameter
-                //
-                // This is just a provisional fix not intended to remain in the long run
-                if (!minerServer.isRunning()) {
-                    miningMainchainView.addBest(bestBlock.getHeader());
-                }
-
-                List<BlockHeader> mainchainHeaders = miningMainchainView.get();
-                cachedBlock = builder.build(mainchainHeaders, null).getBlock();
-            }
-
-            return cachedBlock;
-        }
-
-        // Is the block specifier either a hexadecimal or decimal number?
-        Optional<Long> executionBlockNumber = Optional.empty();
-
-        if (Utils.isHexadecimalString(bnOrId)) {
-            executionBlockNumber = Optional.of(Utils.hexadecimalStringToLong(bnOrId));
-        } else if (Utils.isDecimalString(bnOrId)) {
-            executionBlockNumber = Optional.of(Utils.decimalStringToLong(bnOrId));
-        }
-
-        if (executionBlockNumber.isPresent()) {
-            Block executionBlock = blockchain.getBlockByNumber(executionBlockNumber.get());
-            if (executionBlock == null) {
-                throw invalidParamError(String.format("Invalid block number %d", executionBlockNumber.get()));
-            }
-            return executionBlock;
-        }
-
-        // If we got here, the specifier given is unsupported
-        throw invalidParamError(String.format(
-                "Unsupported block specifier '%s'. Can only be either 'latest', " +
-                "'pending' or a specific block number (either hex - prepending '0x' or decimal).",
-                bnOrId));
-    }
-
     private static BlockResult newBlockResult(Block block) {
         return new BlockResult(
                 block,
