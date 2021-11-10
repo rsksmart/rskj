@@ -30,10 +30,13 @@ tasks.withType(Javadoc) {
 }
 
 repositories {
-    mavenCentral()
     maven {
         url "https://deps.rsklabs.io"
     }
+    flatDir {
+        dirs "${projectDir}/libs"
+    }
+    mavenCentral()
 }
 
 sourceCompatibility = 1.8
@@ -92,7 +95,7 @@ ext {
             jaxwsRtLib             : "com.sun.xml.ws:jaxws-rt:${libVersions.jaxwsRtVer}",
 
             bitcoinjThinLib        : "co.rsk.bitcoinj:bitcoinj-thin:${libVersions.bitcoinjThinVer}",
-            rskjNativeLib          : "co.rsk:native:${libVersions.rskjNativeVer}",
+            rskjNativeLib          : "native-${libVersions.rskjNativeVer}",
     ]
 
     testLibVersions = [
@@ -137,7 +140,7 @@ dependencies {
     implementation "${libs.jaxwsRtLib}"
 
     implementation "${libs.bitcoinjThinLib}"
-    implementation "${libs.rskjNativeLib}"
+    implementation files("libs/${libs.rskjNativeLib}.jar")
 
     runtimeOnly "${libs.log4jOverSlf4jLib}"
     runtimeOnly "${libs.logbackCoreLib}"
