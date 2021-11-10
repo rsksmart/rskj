@@ -24,6 +24,7 @@ import org.bouncycastle.util.BigIntegers;
 import org.ethereum.TestUtils;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
+import org.ethereum.core.SignatureCache;
 import org.ethereum.core.Transaction;
 import org.junit.Assert;
 import org.junit.Before;
@@ -50,7 +51,17 @@ public class BlockTxsValidationRuleTest {
         repositorySnapshot = mock(RepositorySnapshot.class);
         when(repositoryLocator.snapshotAt(parentHeader)).thenReturn(repositorySnapshot);
 
-        rule = new BlockTxsValidationRule(repositoryLocator);
+        rule = new BlockTxsValidationRule(repositoryLocator, new SignatureCache() {
+            @Override
+            public RskAddress getSender(Transaction transaction) {
+                return null;
+            }
+
+            @Override
+            public void storeSender(Transaction tx) {
+
+            }
+        });
     }
 
     @Test

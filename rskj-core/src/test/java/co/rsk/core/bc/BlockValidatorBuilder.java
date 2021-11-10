@@ -20,12 +20,15 @@ package co.rsk.core.bc;
 
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.config.TestSystemProperties;
+import co.rsk.core.RskAddress;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.db.StateRootHandler;
 import co.rsk.db.StateRootsStoreImpl;
 import co.rsk.trie.TrieStore;
 import co.rsk.util.TimeProvider;
 import co.rsk.validators.*;
+import org.ethereum.core.SignatureCache;
+import org.ethereum.core.Transaction;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.BlockStore;
 import org.mockito.Mockito;
@@ -76,7 +79,17 @@ public class BlockValidatorBuilder {
         this.blockTxsValidationRule = new BlockTxsValidationRule(new RepositoryLocator(
                 trieStore,
                 new StateRootHandler(config.getActivationConfig(), new StateRootsStoreImpl(new HashMapDB()))
-        ));
+        ), new SignatureCache() {
+            @Override
+            public RskAddress getSender(Transaction transaction) {
+                return null;
+            }
+
+            @Override
+            public void storeSender(Transaction tx) {
+
+            }
+        });
         return this;
     }
 
