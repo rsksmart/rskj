@@ -8,8 +8,8 @@
 <!--    http://www.qos.ch/shop/products/professionalSupport         -->
 <!--                                                                -->
 <configuration debug="false" scan="true" scanPeriod="3600 seconds">
-    <!-- Errors were reported during translation. -->
-    <!-- Could not find transformer for org.apache.log4j.rolling.RollingFileAppender -->
+
+    <!-- Stdout appender -->
     <appender name="stdout" class="ch.qos.logback.core.ConsoleAppender">
         <Target>System.out</Target>
         <encoder>
@@ -18,12 +18,25 @@
             </Pattern>
         </encoder>
         <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
-            <level>OFF</level>
+            <level>${logging.stdout:-OFF}</level>
         </filter>
     </appender>
 
-    <appender name="FILE-AUDIT"
-              class="ch.qos.logback.core.rolling.RollingFileAppender">
+    <!-- Stdout appender for CLI tools -->
+    <appender name="STDOUT_CLI_TOOL" class="ch.qos.logback.core.ConsoleAppender">
+        <Target>System.out</Target>
+        <encoder>
+            <Pattern>
+                %date{yyyy-MM-dd-HH:mm:ss.SSSS} %p [%c{1}] [%thread]%replace( [%mdc{}]){' \[\]', ''}  %m%n
+            </Pattern>
+        </encoder>
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>${logging.stdout.clitools:-INFO}</level>
+        </filter>
+    </appender>
+
+    <!-- File appender -->
+    <appender name="FILE-AUDIT" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>./logs/rsk.log</file>
         <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
             <!-- we use the replace pattern to allow wrapping mdc keys in [] while avoiding outputting an empty [] if none -->
@@ -37,8 +50,12 @@
             <maxHistory>7</maxHistory>
             <totalSizeCap>1GB</totalSizeCap>
         </rollingPolicy>
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>${logging:-TRACE}</level>
+        </filter>
     </appender>
 
+    <!-- Loggers -->
     <logger name="execute" level="INFO"/>
     <logger name="blockvalidator" level="INFO"/>
     <logger name="blockexecutor" level="INFO"/>
@@ -91,9 +108,16 @@
     <logger name="secp256k1" level="INFO" />
     <logger name="altbn128" level="INFO" />
 
-    <!-- Use INFO or upper levels for productive environments. -->
-    <logger name="com.googlecode.jsonrpc4j" level="INFO"></logger>
+    <!-- Use INFO or upper levels for production environments. -->
+    <logger name="com.googlecode.jsonrpc4j" level="INFO" />
 
+    <!-- Logger for CLI tools -->
+    <logger name="clitool" level="DEBUG" additivity="false" >
+        <appender-ref ref="STDOUT_CLI_TOOL"/>
+        <appender-ref ref="FILE-AUDIT"/>
+    </logger>
+
+    <!-- Root logger -->
     <root level="DEBUG">
         <appender-ref ref="stdout"/>
         <appender-ref ref="FILE-AUDIT"/>

@@ -18,35 +18,49 @@
 package co.rsk.cli.tools;
 
 import co.rsk.RskContext;
+import co.rsk.cli.CliToolRskContextAware;
 import co.rsk.crypto.Keccak256;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.datasource.LevelDbDataSource;
 
+import javax.annotation.Nonnull;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.lang.invoke.MethodHandles;
 import java.nio.file.Paths;
 
 /**
  * The entry point for import state CLI tool
  * This is an experimental/unsupported tool
+ *
+ * Required cli args:
+ * - args[0] - file path
  */
-public class ImportState {
-    public static void main(String[] args) throws IOException {
-        RskContext ctx = new RskContext(args);
+public class ImportState extends CliToolRskContextAware {
+
+    public static void main(String[] args) {
+        create(MethodHandles.lookup().lookupClass()).execute(args);
+    }
+
+    @Override
+    protected void onExecute(@Nonnull String[] args, @Nonnull RskContext ctx) throws Exception {
         String databaseDir = ctx.getRskSystemProperties().databaseDir();
         KeyValueDataSource trieDB = LevelDbDataSource.makeDataSource(Paths.get(databaseDir, "unitrie"));
 
         String filename = args[0];
 
         try (BufferedReader reader = new BufferedReader(new FileReader(filename))) {
-            execute(reader, trieDB);
+            importState(reader, trieDB);
         }
+
+        trieDB.flush();
+        trieDB.close();
     }
 
-    public static void execute(BufferedReader reader, KeyValueDataSource trieDB) throws IOException {
+    private void importState(BufferedReader reader, KeyValueDataSource trieDB) throws IOException {
         for (String line = reader.readLine(); line != null; line = reader.readLine()) {
             line = line.trim();
             byte[] value = Hex.decode(line);
@@ -54,8 +68,5 @@ public class ImportState {
 
             trieDB.put(key, value);
         }
-
-        trieDB.flush();
-        trieDB.close();
     }
 }

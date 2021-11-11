@@ -18,26 +18,44 @@
 package co.rsk.cli.tools;
 
 import co.rsk.RskContext;
+import co.rsk.cli.CliToolRskContextAware;
 import co.rsk.core.BlockDifficulty;
 import org.ethereum.core.Block;
 import org.ethereum.db.BlockStore;
 import org.ethereum.util.ByteUtil;
 
+import javax.annotation.Nonnull;
+import java.io.BufferedOutputStream;
+import java.io.FileOutputStream;
 import java.io.PrintStream;
+import java.lang.invoke.MethodHandles;
 
 /**
  * The entry point for export blocks CLI tool
  * This is an experimental/unsupported tool
+ *
+ * Required cli args:
+ * - args[0] - from block number
+ * - args[1] - to block number
+ * - args[2] - file path
  */
-public class ExportBlocks {
-    public static void main(String[] args) {
-        RskContext ctx = new RskContext(args);
-        BlockStore blockStore = ctx.getBlockStore();
+public class ExportBlocks extends CliToolRskContextAware {
 
-        execute(args, blockStore, System.out);
+    public static void main(String[] args) {
+        create(MethodHandles.lookup().lookupClass()).execute(args);
     }
 
-    public static void execute(String[] args, BlockStore blockStore, PrintStream writer) {
+    @Override
+    protected void onExecute(@Nonnull String[] args, @Nonnull RskContext ctx) throws Exception {
+        String filePath = args[2];
+        BlockStore blockStore = ctx.getBlockStore();
+
+        try (PrintStream writer = new PrintStream(new BufferedOutputStream(new FileOutputStream(filePath)))) {
+            exportBlocks(args, blockStore, writer);
+        }
+    }
+
+    private void exportBlocks(String[] args, BlockStore blockStore, PrintStream writer) {
         long fromBlockNumber = Long.parseLong(args[0]);
         long toBlockNumber = Long.parseLong(args[1]);
 
@@ -46,10 +64,10 @@ public class ExportBlocks {
             BlockDifficulty totalDifficulty = blockStore.getTotalDifficultyForHash(block.getHash().getBytes());
 
             writer.println(
-                block.getNumber() + "," +
-                ByteUtil.toHexString(block.getHash().getBytes()) + "," +
-                ByteUtil.toHexString(totalDifficulty.getBytes()) + "," +
-                ByteUtil.toHexString(block.getEncoded())
+                    block.getNumber() + "," +
+                            ByteUtil.toHexString(block.getHash().getBytes()) + "," +
+                            ByteUtil.toHexString(totalDifficulty.getBytes()) + "," +
+                            ByteUtil.toHexString(block.getEncoded())
             );
         }
     }
