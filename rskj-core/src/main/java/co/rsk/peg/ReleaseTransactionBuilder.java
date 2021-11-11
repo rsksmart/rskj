@@ -169,6 +169,10 @@ public class ReleaseTransactionBuilder {
         }
     }
 
+    public Optional<BuildResult> buildBatchedPegouts(List<ReleaseRequestQueue.Entry> entries) {
+        return Optional.empty();
+    }
+
     private final SendRequestConfigurator defaultSettingsConfigurator = (SendRequest sr) -> {
         sr.missingSigsMode = Wallet.MissingSigsMode.USE_OP_ZERO;
         sr.feePerKb = getFeePerKb();
