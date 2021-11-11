@@ -50,10 +50,34 @@ public class Constants {
     private final boolean seedCowAccounts;
     private final int durationLimit;
     private final BlockDifficulty minimumDifficulty;
+    private final BlockDifficulty minimumDifficultyForRskip290;
     private final BlockDifficulty fallbackMiningDifficulty;
     private final BigInteger difficultyBoundDivisor;
     private final int newBlockMaxSecondsInTheFuture;
     public final BridgeConstants bridgeConstants;
+    private final ActivationConfig activationConfig;
+
+    public Constants(
+            byte chainId,
+            boolean seedCowAccounts,
+            int durationLimit,
+            BlockDifficulty minimumDifficulty,
+            BlockDifficulty fallbackMiningDifficulty,
+            BigInteger difficultyBoundDivisor,
+            int newBlockMaxSecondsInTheFuture,
+            BridgeConstants bridgeConstants,
+            ActivationConfig activationConfig) {
+        this.chainId = chainId;
+        this.seedCowAccounts = seedCowAccounts;
+        this.durationLimit = durationLimit;
+        this.minimumDifficulty = minimumDifficulty;
+        this.fallbackMiningDifficulty = fallbackMiningDifficulty;
+        this.difficultyBoundDivisor = difficultyBoundDivisor;
+        this.newBlockMaxSecondsInTheFuture = newBlockMaxSecondsInTheFuture;
+        this.bridgeConstants = bridgeConstants;
+        this.activationConfig = activationConfig;
+        this.minimumDifficultyForRskip290 = new BlockDifficulty(new BigInteger("550000000"));
+    }
 
     public Constants(
             byte chainId,
@@ -64,14 +88,15 @@ public class Constants {
             BigInteger difficultyBoundDivisor,
             int newBlockMaxSecondsInTheFuture,
             BridgeConstants bridgeConstants) {
-        this.chainId = chainId;
-        this.seedCowAccounts = seedCowAccounts;
-        this.durationLimit = durationLimit;
-        this.minimumDifficulty = minimumDifficulty;
-        this.fallbackMiningDifficulty = fallbackMiningDifficulty;
-        this.difficultyBoundDivisor = difficultyBoundDivisor;
-        this.newBlockMaxSecondsInTheFuture = newBlockMaxSecondsInTheFuture;
-        this.bridgeConstants = bridgeConstants;
+        this(chainId,
+                seedCowAccounts,
+                durationLimit,
+                minimumDifficulty,
+                fallbackMiningDifficulty,
+                difficultyBoundDivisor,
+                newBlockMaxSecondsInTheFuture,
+                bridgeConstants,
+                null);
     }
 
     public boolean seedCowAccounts() {
@@ -84,7 +109,13 @@ public class Constants {
     }
 
     public BlockDifficulty getMinimumDifficulty() {
-        return minimumDifficulty;
+        return getMinimumDifficulty(null);
+    }
+
+    public BlockDifficulty getMinimumDifficulty(Long blockNumber) {
+        boolean isRskip290Enabled = chainId == TESTNET_CHAIN_ID && blockNumber != null && activationConfig != null
+                && activationConfig.isActive(ConsensusRule.RSKIP290, blockNumber);
+        return isRskip290Enabled ? minimumDifficultyForRskip290 : minimumDifficulty;
     }
 
     public BlockDifficulty getFallbackMiningDifficulty() {
@@ -215,6 +246,10 @@ public class Constants {
     }
 
     public static Constants testnet() {
+        return testnet(null);
+    }
+
+    public static Constants testnet(ActivationConfig activationConfig) {
         return new Constants(
                 TESTNET_CHAIN_ID,
                 false,
@@ -223,7 +258,8 @@ public class Constants {
                 new BlockDifficulty(BigInteger.valueOf((long) 14E15)),
                 BigInteger.valueOf(50),
                 540,
-                BridgeTestNetConstants.getInstance()
+                BridgeTestNetConstants.getInstance(),
+                activationConfig
         );
     }
 
