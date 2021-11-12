@@ -43,6 +43,7 @@ import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.script.ScriptChunk;
 import co.rsk.bitcoinj.store.BlockStoreException;
+import co.rsk.bitcoinj.utils.DeprecatedConverter;
 import co.rsk.bitcoinj.wallet.SendRequest;
 import co.rsk.bitcoinj.wallet.Wallet;
 import co.rsk.config.BridgeConstants;
@@ -102,6 +103,7 @@ import org.slf4j.LoggerFactory;
 import static co.rsk.peg.BridgeUtils.getRegularPegoutTxSize;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP186;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP219;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP284;
 
 /**
  * Helper class to move funds from btc to rsk and rsk to btc
@@ -314,6 +316,19 @@ public class BridgeSupport {
             btcContext,
             federation,
             utxos,
+            shouldConsiderFastBridgeUTXOs,
+            provider
+        );
+    }
+
+    public co.rsk.bitcoinj.deprecated.wallet.Wallet getActiveFederationWalletDeprecated(boolean shouldConsiderFastBridgeUTXOs) throws IOException {
+        Federation federation = getActiveFederation();
+        List<UTXO> utxos = getActiveFederationBtcUTXOs();
+
+        return BridgeUtils.getFederationSpendWalletDeprecated(
+            DeprecatedConverter.toDeprecated(btcContext),
+            federation,
+            DeprecatedConverter.toDeprecatedUtxos(utxos),
             shouldConsiderFastBridgeUTXOs,
             provider
         );
@@ -1011,97 +1026,189 @@ public class BridgeSupport {
      */
     private void processReleaseRequests() {
         final Wallet activeFederationWallet;
+        final co.rsk.bitcoinj.deprecated.wallet.Wallet activeFederationWalletDeprecated;
         final ReleaseRequestQueue releaseRequestQueue;
 
         try {
+            // Releases are attempted using the currently active federation wallet.
             activeFederationWallet = getActiveFederationWallet(true);
+            activeFederationWalletDeprecated = getActiveFederationWalletDeprecated(true);
             releaseRequestQueue = provider.getReleaseRequestQueue();
         } catch (IOException e) {
             logger.error("Unexpected error accessing storage while attempting to process release requests", e);
             return;
         }
 
-        // Releases are attempted using the currently active federation
-        // wallet.
-        final ReleaseTransactionBuilder txBuilder = new ReleaseTransactionBuilder(
-                btcContext.getParams(),
-                activeFederationWallet,
-                getFederationAddress(),
-                getFeePerKb(),
-                activations
-        );
-
         releaseRequestQueue.process(MAX_RELEASE_ITERATIONS, (ReleaseRequestQueue.Entry releaseRequest) -> {
-            Optional<ReleaseTransactionBuilder.BuildResult> result = txBuilder.buildAmountTo(
-                    releaseRequest.getDestination(),
-                    releaseRequest.getAmount()
-            );
 
-            // Couldn't build a transaction to release these funds
-            // Log the event and return false so that the request remains in the
-            // queue for future processing.
-            // Further logging is done at the tx builder level.
-            if (!result.isPresent()) {
-                logger.warn(
+            if (activations.isActive(RSKIP284)) {
+                final ReleaseTransactionBuilderDeprecated txBuilder = new ReleaseTransactionBuilderDeprecated(
+                    DeprecatedConverter.toDeprecated(btcContext.getParams()),
+                    activeFederationWalletDeprecated,
+                    DeprecatedConverter.toDeprecated(btcContext.getParams(), getFederationAddress()),
+                    DeprecatedConverter.toDeprecated(getFeePerKb()),
+                    activations
+                );
+
+                Optional<ReleaseTransactionBuilderDeprecated.BuildResult> result = txBuilder.buildAmountTo(
+                    DeprecatedConverter.toDeprecated(btcContext.getParams(), releaseRequest.getDestination()),
+                    DeprecatedConverter.toDeprecated(releaseRequest.getAmount())
+                );
+
+                // Couldn't build a transaction to release these funds
+                // Log the event and return false so that the request remains in the
+                // queue for future processing.
+                // Further logging is done at the tx builder level.
+                if (!result.isPresent()) {
+                    logger.warn(
                         "Couldn't build a release BTC tx for <{}, {}>",
                         releaseRequest.getDestination().toBase58(),
                         releaseRequest.getAmount());
-                return false;
-            }
+                    return false;
+                }
 
-            // We have a BTC transaction, mark the UTXOs as spent and add the tx
-            // to the release set.
+                // We have a BTC transaction, mark the UTXOs as spent and add the tx
+                // to the release set.
 
-            List<UTXO> selectedUTXOs = result.get().getSelectedUTXOs();
-            BtcTransaction generatedTransaction = result.get().getBtcTx();
-            List<UTXO> availableUTXOs;
-            ReleaseTransactionSet releaseTransactionSet;
+                List<UTXO> selectedUTXOs;
+                try {
+                    selectedUTXOs = DeprecatedConverter.toStandardUtxos(result.get().getSelectedUTXOs());
+                } catch (IOException e) {
+                    logger.warn(
+                        "Couldn't build a release BTC tx for <{}, {}>",
+                        releaseRequest.getDestination().toBase58(),
+                        releaseRequest.getAmount());
+                    return false;
+                }
+                BtcTransaction generatedTransaction = DeprecatedConverter.toStandard(btcContext.getParams(), result.get().getBtcTx());
+                List<UTXO> availableUTXOs;
+                ReleaseTransactionSet releaseTransactionSet;
 
-            // Attempt access to storage first
-            // (any of these could fail and would invalidate both
-            // the tx build and utxo selection, so treat as atomic)
-            try {
-                availableUTXOs = getActiveFederationBtcUTXOs();
-                releaseTransactionSet = provider.getReleaseTransactionSet();
-            } catch (IOException exception) {
-                // Unexpected error accessing storage, log and fail
-                logger.error(
+                // Attempt access to storage first
+                // (any of these could fail and would invalidate both
+                // the tx build and utxo selection, so treat as atomic)
+                try {
+                    availableUTXOs = getActiveFederationBtcUTXOs();
+                    releaseTransactionSet = provider.getReleaseTransactionSet();
+                } catch (IOException exception) {
+                    // Unexpected error accessing storage, log and fail
+                    logger.error(
                         String.format(
-                                "Unexpected error accessing storage while attempting to add a release BTC tx for <%s, %s>",
-                                releaseRequest.getDestination().toString(),
-                                releaseRequest.getAmount().toString()
+                            "Unexpected error accessing storage while attempting to add a release BTC tx for <%s, %s>",
+                            releaseRequest.getDestination().toString(),
+                            releaseRequest.getAmount().toString()
                         ),
                         exception
-                );
-                return false;
-            }
-
-            if (activations.isActive(ConsensusRule.RSKIP146)) {
-                Keccak256 rskTxHash = releaseRequest.getRskTxHash();
-                // Add the TX
-                releaseTransactionSet.add(generatedTransaction, rskExecutionBlock.getNumber(), rskTxHash);
-                // For a short time period, there could be items in the release request queue that don't have the rskTxHash
-                // (these are releases created right before the consensus rule activation, that weren't processed before its activation)
-                // We shouldn't generate the event for those releases
-                if (rskTxHash != null) {
-                    // Log the Release request
-                    eventLogger.logReleaseBtcRequested(rskTxHash.getBytes(), generatedTransaction, releaseRequest.getAmount());
+                    );
+                    return false;
                 }
+
+                if (activations.isActive(ConsensusRule.RSKIP146)) {
+                    Keccak256 rskTxHash = releaseRequest.getRskTxHash();
+                    // Add the TX
+                    releaseTransactionSet.add(generatedTransaction, rskExecutionBlock.getNumber(), rskTxHash);
+                    // For a short time period, there could be items in the release request queue that don't have the rskTxHash
+                    // (these are releases created right before the consensus rule activation, that weren't processed before its activation)
+                    // We shouldn't generate the event for those releases
+                    if (rskTxHash != null) {
+                        // Log the Release request
+                        eventLogger.logReleaseBtcRequested(rskTxHash.getBytes(), generatedTransaction, releaseRequest.getAmount());
+                    }
+                } else {
+                    releaseTransactionSet.add(generatedTransaction, rskExecutionBlock.getNumber());
+                }
+
+                // Mark UTXOs as spent
+                availableUTXOs.removeAll(selectedUTXOs);
+
+                // TODO: (Ariel Mendelzon, 07/12/2017)
+                // TODO: Balance adjustment assumes that change output is output with index 1.
+                // TODO: This will change if we implement multiple releases per BTC tx, so
+                // TODO: it would eventually need to be fixed.
+                // Adjust balances in edge cases
+                adjustBalancesIfChangeOutputWasDust(generatedTransaction, releaseRequest.getAmount());
+
+                return true;
             } else {
-                releaseTransactionSet.add(generatedTransaction, rskExecutionBlock.getNumber());
+                final ReleaseTransactionBuilder txBuilder = new ReleaseTransactionBuilder(
+                    btcContext.getParams(),
+                    activeFederationWallet,
+                    getFederationAddress(),
+                    getFeePerKb(),
+                    activations
+                );
+
+                Optional<ReleaseTransactionBuilder.BuildResult> result = txBuilder.buildAmountTo(
+                    releaseRequest.getDestination(),
+                    releaseRequest.getAmount()
+                );
+
+                // Couldn't build a transaction to release these funds
+                // Log the event and return false so that the request remains in the
+                // queue for future processing.
+                // Further logging is done at the tx builder level.
+                if (!result.isPresent()) {
+                    logger.warn(
+                        "Couldn't build a release BTC tx for <{}, {}>",
+                        releaseRequest.getDestination().toBase58(),
+                        releaseRequest.getAmount());
+                    return false;
+                }
+
+                // We have a BTC transaction, mark the UTXOs as spent and add the tx
+                // to the release set.
+
+                List<UTXO> selectedUTXOs = result.get().getSelectedUTXOs();
+                BtcTransaction generatedTransaction = result.get().getBtcTx();
+                List<UTXO> availableUTXOs;
+                ReleaseTransactionSet releaseTransactionSet;
+
+                // Attempt access to storage first
+                // (any of these could fail and would invalidate both
+                // the tx build and utxo selection, so treat as atomic)
+                try {
+                    availableUTXOs = getActiveFederationBtcUTXOs();
+                    releaseTransactionSet = provider.getReleaseTransactionSet();
+                } catch (IOException exception) {
+                    // Unexpected error accessing storage, log and fail
+                    logger.error(
+                        String.format(
+                            "Unexpected error accessing storage while attempting to add a release BTC tx for <%s, %s>",
+                            releaseRequest.getDestination().toString(),
+                            releaseRequest.getAmount().toString()
+                        ),
+                        exception
+                    );
+                    return false;
+                }
+
+                if (activations.isActive(ConsensusRule.RSKIP146)) {
+                    Keccak256 rskTxHash = releaseRequest.getRskTxHash();
+                    // Add the TX
+                    releaseTransactionSet.add(generatedTransaction, rskExecutionBlock.getNumber(), rskTxHash);
+                    // For a short time period, there could be items in the release request queue that don't have the rskTxHash
+                    // (these are releases created right before the consensus rule activation, that weren't processed before its activation)
+                    // We shouldn't generate the event for those releases
+                    if (rskTxHash != null) {
+                        // Log the Release request
+                        eventLogger.logReleaseBtcRequested(rskTxHash.getBytes(), generatedTransaction, releaseRequest.getAmount());
+                    }
+                } else {
+                    releaseTransactionSet.add(generatedTransaction, rskExecutionBlock.getNumber());
+                }
+
+                // Mark UTXOs as spent
+                availableUTXOs.removeAll(selectedUTXOs);
+
+                // TODO: (Ariel Mendelzon, 07/12/2017)
+                // TODO: Balance adjustment assumes that change output is output with index 1.
+                // TODO: This will change if we implement multiple releases per BTC tx, so
+                // TODO: it would eventually need to be fixed.
+                // Adjust balances in edge cases
+                adjustBalancesIfChangeOutputWasDust(generatedTransaction, releaseRequest.getAmount());
+
+                return true;
             }
-
-            // Mark UTXOs as spent
-            availableUTXOs.removeAll(selectedUTXOs);
-
-            // TODO: (Ariel Mendelzon, 07/12/2017)
-            // TODO: Balance adjustment assumes that change output is output with index 1.
-            // TODO: This will change if we implement multiple releases per BTC tx, so
-            // TODO: it would eventually need to be fixed.
-            // Adjust balances in edge cases
-            adjustBalancesIfChangeOutputWasDust(generatedTransaction, releaseRequest.getAmount());
-
-            return true;
         });
     }
 

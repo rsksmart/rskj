@@ -32,6 +32,7 @@ import co.rsk.bitcoinj.wallet.Wallet;
 import co.rsk.config.BridgeConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.peg.bitcoin.RskAllowUnconfirmedCoinSelector;
+import co.rsk.peg.bitcoin.RskAllowUnconfirmedCoinSelectorDeprecated;
 import co.rsk.peg.btcLockSender.BtcLockSender.TxSenderAddressType;
 import co.rsk.peg.utils.BtcTransactionFormatUtils;
 import javax.annotation.Nonnull;
@@ -94,6 +95,29 @@ public class BridgeUtils {
         return wallet;
     }
 
+    public static co.rsk.bitcoinj.deprecated.wallet.Wallet getFederationsNoSpendWalletDeprecated(
+        co.rsk.bitcoinj.deprecated.core.Context btcContext,
+        List<Federation> federations,
+        boolean isFastBridgeCompatible,
+        BridgeStorageProvider storageProvider
+    ) {
+        co.rsk.bitcoinj.deprecated.wallet.Wallet wallet;
+        if (isFastBridgeCompatible) {
+            wallet = new FastBridgeCompatibleBtcWalletWithStorageDeprecated(btcContext, federations, storageProvider);
+        } else {
+            wallet = new BridgeBtcWalletDeprecated(btcContext, federations);
+        }
+
+        federations.forEach(federation ->
+            wallet.addWatchedAddress(
+                co.rsk.bitcoinj.deprecated.core.Address.fromBase58(btcContext.getParams(), federation.getAddress().toBase58()),
+                federation.getCreationTime().toEpochMilli()
+            )
+        );
+
+        return wallet;
+    }
+
     public static Wallet getFederationSpendWallet(
         Context btcContext,
         Federation federation,
@@ -135,6 +159,50 @@ public class BridgeUtils {
         );
 
         wallet.setCoinSelector(new RskAllowUnconfirmedCoinSelector());
+        return wallet;
+    }
+
+    public static co.rsk.bitcoinj.deprecated.wallet.Wallet getFederationSpendWalletDeprecated(
+        co.rsk.bitcoinj.deprecated.core.Context btcContext,
+        Federation federation,
+        List<co.rsk.bitcoinj.deprecated.core.UTXO> utxos,
+        boolean isFastBridgeCompatible,
+        BridgeStorageProvider storageProvider
+    ) {
+        return getFederationsSpendWalletDeprecated(
+            btcContext,
+            Collections.singletonList(federation),
+            utxos,
+            isFastBridgeCompatible,
+            storageProvider
+        );
+    }
+
+    public static co.rsk.bitcoinj.deprecated.wallet.Wallet getFederationsSpendWalletDeprecated(
+        co.rsk.bitcoinj.deprecated.core.Context btcContext,
+        List<Federation> federations,
+        List<co.rsk.bitcoinj.deprecated.core.UTXO> utxos,
+        boolean isFastBridgeCompatible,
+        BridgeStorageProvider storageProvider
+    ) {
+        co.rsk.bitcoinj.deprecated.wallet.Wallet wallet;
+        if (isFastBridgeCompatible) {
+            wallet = new FastBridgeCompatibleBtcWalletWithStorageDeprecated(btcContext, federations, storageProvider);
+        } else {
+            wallet = new BridgeBtcWalletDeprecated(btcContext, federations);
+        }
+
+        RskUTXOProviderDeprecated utxoProvider = new RskUTXOProviderDeprecated(btcContext.getParams(), utxos);
+        wallet.setUTXOProvider(utxoProvider);
+
+        federations.forEach(federation ->
+            wallet.addWatchedAddress(
+                co.rsk.bitcoinj.deprecated.core.Address.fromBase58(btcContext.getParams(), federation.getAddress().toBase58()),
+                federation.getCreationTime().toEpochMilli()
+            )
+        );
+
+        wallet.setCoinSelector(new RskAllowUnconfirmedCoinSelectorDeprecated());
         return wallet;
     }
 
