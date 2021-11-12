@@ -125,28 +125,4 @@ public class ErpFederationTest {
 
         Assert.assertEquals(ERP_FED_KEYS, federation.getErpPubKeys());
     }
-
-    @Test(expected = VerificationException.class)
-    public void createInvalidErpFederation_negativeCsvValue() {
-        new ErpFederation(
-            FederationTestUtils.getFederationMembersFromPks(100, 200, 300),
-            ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),
-            0L,
-            NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
-            ERP_FED_KEYS,
-            -100L
-        );
-    }
-
-    @Test(expected = VerificationException.class)
-    public void createInvalidErpFederation_csvValueAboveMax() {
-        new ErpFederation(
-            FederationTestUtils.getFederationMembersFromPks(100, 200, 300),
-            ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),
-            0L,
-            NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
-            ERP_FED_KEYS,
-            ErpFederationRedeemScriptParser.MAX_CSV_VALUE + 1
-        );
-    }
 }
