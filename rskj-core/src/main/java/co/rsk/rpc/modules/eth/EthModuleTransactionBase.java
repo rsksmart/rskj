@@ -58,6 +58,11 @@ public class EthModuleTransactionBase implements EthModuleTransaction {
 	public synchronized String sendTransaction(CallArguments args) {
 
 		Account senderAccount = this.wallet.getAccount(new RskAddress(args.getFrom()));
+
+		if (senderAccount == null) {
+			throw RskJsonRpcRequestException.invalidParamError(TransactionArgumentsUtil.ERR_COULD_NOT_FIND_ACCOUNT + args.getFrom());
+		}
+
 		String txHash = null;
 
 		try {
