@@ -2092,6 +2092,9 @@ public class BridgeUtilsTest {
 
     @Test
     public void calculatePegoutTxSize() {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
+
         List<BtcECKey> keys = createBtcECKeys(13);
         Federation federation = new Federation(
                 FederationMember.getFederationMembersFromKeys(keys),
@@ -2100,7 +2103,7 @@ public class BridgeUtilsTest {
                 networkParameters
         );
 
-        int pegoutTxSize = BridgeUtils.calculatePegoutTxSizeHop(federation, 2, 2);
+        int pegoutTxSize = BridgeUtils.calculatePegoutTxSize(activations, federation, 2, 2);
 
         // The difference between the calculated size and a real tx size should be smaller than 1% in any direction
         int origTxSize = 2076; // Data for 2 inputs, 2 outputs Based on Pegouts From Blockchain.info Explorer
@@ -2112,6 +2115,9 @@ public class BridgeUtilsTest {
 
     @Test
     public void getRegularPegoutTxSize_has_proper_calculations() {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
+
         BtcECKey key1 = new BtcECKey();
         BtcECKey key2 = new BtcECKey();
         BtcECKey key3 = new BtcECKey();
@@ -2144,7 +2150,7 @@ public class BridgeUtilsTest {
             }
         }
 
-        int pegoutTxSize = BridgeUtils.getRegularPegoutTxSize(fed);
+        int pegoutTxSize = BridgeUtils.getRegularPegoutTxSize(activations, fed);
 
         // The difference between the calculated size and a real tx size should be smaller than 10% in any direction
         int difference = pegoutTx.bitcoinSerialize().length - pegoutTxSize;

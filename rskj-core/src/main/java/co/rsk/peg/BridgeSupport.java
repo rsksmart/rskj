@@ -808,7 +808,7 @@ public class BridgeSupport {
     private void requestRelease(Address destinationAddress, Coin value, Transaction rskTx) throws IOException {
         Optional<RejectedPegoutReason> optionalRejectedPegoutReason = Optional.empty();
         if (activations.isActive(RSKIP219)) {
-            int pegoutSize = getRegularPegoutTxSize(getActiveFederation());
+            int pegoutSize = getRegularPegoutTxSize(activations, getActiveFederation());
             Coin feePerKB = getFeePerKb();
             // The pegout transaction has a cost related to its size and the current feePerKB
             // The actual cost cannot be asserted exactly so the calculation is approximated
@@ -2525,7 +2525,7 @@ public class BridgeSupport {
 
         int totalOutputs = pegoutRequestsCount + 2; // N + 2 outputs
 
-        int pegoutTxSize = BridgeUtils.calculatePegoutTxSizeHop(getActiveFederation(), INPUT_MULTIPLIER, totalOutputs);
+        int pegoutTxSize = BridgeUtils.calculatePegoutTxSize(activations, getActiveFederation(), INPUT_MULTIPLIER, totalOutputs);
 
         Coin feePerKB = getFeePerKb();
 

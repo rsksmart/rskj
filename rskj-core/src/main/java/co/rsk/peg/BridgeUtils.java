@@ -557,7 +557,7 @@ public class BridgeUtils {
         return hashBytes;
     }
 
-    public static int getRegularPegoutTxSize(@Nonnull Federation federation) {
+    public static int getRegularPegoutTxSize(ActivationConfig.ForBlock activations, @Nonnull Federation federation) {
         // A regular peg-out transaction has two inputs and two outputs
         // Each input has M/N signatures and each signature is around 71 bytes long (signed sighash)
         // The outputs are composed of the scriptPubkeyHas(or publicKeyHash)
@@ -566,35 +566,18 @@ public class BridgeUtils {
         final int OUTPUT_MULTIPLIER = 2;
 
         return calculatePegoutTxSize(
+            activations,
             federation,
             INPUT_MULTIPLIER,
             OUTPUT_MULTIPLIER
         );
     }
 
-    public static int calculatePegoutTxSize(
-        Federation federation,
-        int inputMultiplier,
-        int outputMultiplier
-    ) {
+    public static int calculatePegoutTxSize(ActivationConfig.ForBlock activations, Federation federation, int inputs, int outputs) {
+        if (!activations.isActive(ConsensusRule.RSKIP271)) {
+            return BridgeUtilsLegacy.calculatePegoutTxSize(activations, federation, inputs, outputs);
+        }
 
-        final int SIGNATURE_MULTIPLIER = 71;
-        final int OUTPUT_SIZE = 25;
-        // This data accounts for txid+vout+sequence
-        final int INPUT_ADDITIONAL_DATA_SIZE = 40;
-        // This data accounts for the value+index
-        final int OUTPUT_ADDITIONAL_DATA_SIZE = 9;
-        // This data accounts for the version field
-        final int TX_ADDITIONAL_DATA_SIZE = 4;
-        // The added ones are to account for the data size
-        final int scriptSigChunk = federation.getNumberOfSignaturesRequired() * (SIGNATURE_MULTIPLIER + 1) +
-                federation.getRedeemScript().getProgram().length + 1;
-        return TX_ADDITIONAL_DATA_SIZE +
-            (scriptSigChunk + INPUT_ADDITIONAL_DATA_SIZE) * inputMultiplier +
-            (OUTPUT_SIZE + 1 + OUTPUT_ADDITIONAL_DATA_SIZE) * outputMultiplier;
-    }
-
-    public static int calculatePegoutTxSizeHop(Federation federation, int inputs, int outputs) {
         final int SIGNATURE_MULTIPLIER = 72;
         BtcTransaction pegoutTx = new BtcTransaction(federation.btcParams);
         for (int i = 0; i < inputs; i++) {
