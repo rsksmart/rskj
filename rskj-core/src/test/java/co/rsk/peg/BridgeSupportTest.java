@@ -7769,7 +7769,7 @@ public class BridgeSupportTest {
         when(federationSupport.getActiveFederation()).thenReturn(federation);
 
         int outputs = pegoutRequestsCount + 2; // N + 2 outputs
-        int pegoutTxSize = BridgeUtils.calculatePegoutTxSizeHop(federation, 2, outputs);
+        int pegoutTxSize = BridgeUtils.calculatePegoutTxSize(activations, federation, 2, outputs);
 
         Coin expected = feePerKB.multiply(pegoutTxSize).divide(1000);
 
