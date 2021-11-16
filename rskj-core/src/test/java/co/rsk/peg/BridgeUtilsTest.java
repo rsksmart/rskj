@@ -2090,25 +2090,210 @@ public class BridgeUtilsTest {
         Assert.assertArrayEquals(hash160, obtainedHash160);
     }
 
-    @Test
-    public void calculatePegoutTxSize() {
+    @Test(expected = IllegalArgumentException.class)
+    public void testCalculatePegoutTxSize_ZeroInput_ZeroOutput() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
 
         List<BtcECKey> keys = createBtcECKeys(13);
         Federation federation = new Federation(
-                FederationMember.getFederationMembersFromKeys(keys),
-                Instant.now(),
-                0,
-                networkParameters
+            FederationMember.getFederationMembersFromKeys(keys),
+            Instant.now(),
+            0,
+            networkParameters
         );
 
-        int pegoutTxSize = BridgeUtils.calculatePegoutTxSize(activations, federation, 2, 2);
+        BridgeUtils.calculatePegoutTxSize(activations, federation, 0, 0);
+    }
+
+    @Test
+    public void testCalculatePegoutTxSize_2Inputs_2Outputs() {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
+
+        List<BtcECKey> keys = createBtcECKeys(13);
+        Federation federation = new Federation(
+            FederationMember.getFederationMembersFromKeys(keys),
+            Instant.now(),
+            0,
+            networkParameters
+        );
+
+        int inputSize = 2;
+        int outputSize = 2;
+        int pegoutTxSize = BridgeUtils.calculatePegoutTxSize(activations, federation, inputSize, outputSize);
 
         // The difference between the calculated size and a real tx size should be smaller than 1% in any direction
-        int origTxSize = 2076; // Data for 2 inputs, 2 outputs Based on Pegouts From Blockchain.info Explorer
+        int origTxSize = 2076; // Data for 2 inputs, 2 outputs From https://www.blockchain.com/btc/tx/e92cab54ecf738a00083fd8990515247aa3404df4f76ec358d9fe87d95102ae4
         int difference = origTxSize - pegoutTxSize;
         double tolerance = origTxSize * .01;
+
+        assertTrue(difference < tolerance && difference > -tolerance);
+    }
+
+    @Test
+    public void testCalculatePegoutTxSize_9Inputs_2Outputs() {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
+
+        List<BtcECKey> keys = createBtcECKeys(13);
+        Federation federation = new Federation(
+            FederationMember.getFederationMembersFromKeys(keys),
+            Instant.now(),
+            0,
+            networkParameters
+        );
+
+        int inputSize = 9;
+        int outputSize = 2;
+        int pegoutTxSize = BridgeUtils.calculatePegoutTxSize(activations, federation, inputSize, outputSize);
+
+        // The difference between the calculated size and a real tx size should be smaller than 1% in any direction
+        int origTxSize = 9069; // Data for 9 inputs, 2 outputs From https://www.blockchain.com/btc/tx/15adf52f7b4b7a7e563fca92aec7bbe8149b87fac6941285a181e6fcd799a1cd
+        int difference = origTxSize - pegoutTxSize;
+        double tolerance = origTxSize * .01;
+
+        assertTrue(difference < tolerance && difference > -tolerance);
+    }
+
+    @Test
+    public void testCalculatePegoutTxSize_10Inputs_20Outputs() {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
+
+        List<BtcECKey> keys = createBtcECKeys(13);
+        Federation federation = new Federation(
+            FederationMember.getFederationMembersFromKeys(keys),
+            Instant.now(),
+            0,
+            networkParameters
+        );
+
+        // Create a pegout tx with 10 inputs and 20 outputs
+        int inputSize = 10;
+        int outputSize = 20;
+        BtcTransaction pegoutTx = createPegOutTx(inputSize, outputSize, federation, keys);
+
+        int pegoutTxSize = BridgeUtils.calculatePegoutTxSize(activations, federation, inputSize, outputSize);
+
+        // The difference between the calculated size and a real tx size should be smaller than 2% in any direction
+        int origTxSize = pegoutTx.bitcoinSerialize().length;
+        int difference = origTxSize - pegoutTxSize;
+        double tolerance = origTxSize * .02;
+
+        assertTrue(difference < tolerance && difference > -tolerance);
+    }
+
+    @Test
+    public void testCalculatePegoutTxSize_50Inputs_200Outputs() {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
+
+        List<BtcECKey> keys = createBtcECKeys(13);
+        Federation federation = new Federation(
+            FederationMember.getFederationMembersFromKeys(keys),
+            Instant.now(),
+            0,
+            networkParameters
+        );
+
+        // Create a pegout tx with 50 inputs and 200 outputs
+        int inputSize = 50;
+        int outputSize = 200;
+        BtcTransaction pegoutTx = createPegOutTx(inputSize, outputSize, federation, keys);
+
+        int pegoutTxSize = BridgeUtils.calculatePegoutTxSize(activations, federation, inputSize, outputSize);
+
+        // The difference between the calculated size and a real tx size should be smaller than 2% in any direction
+        int origTxSize = pegoutTx.bitcoinSerialize().length;
+        int difference = origTxSize - pegoutTxSize;
+        double tolerance = origTxSize * .02;
+
+        assertTrue(difference < tolerance && difference > -tolerance);
+    }
+
+    @Test
+    public void testCalculatePegoutTxSize_50Inputs_200Outputs_erpFederation() {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
+
+        List<BtcECKey> defaultFederationKeys = Arrays.asList(
+            BtcECKey.fromPrivate(Hex.decode("fa01")),
+            BtcECKey.fromPrivate(Hex.decode("fa02")),
+            BtcECKey.fromPrivate(Hex.decode("fa03"))
+        );
+        defaultFederationKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
+
+        List<BtcECKey> erpFederationPublicKeys = Arrays.asList(
+            BtcECKey.fromPrivate(Hex.decode("fa03")),
+            BtcECKey.fromPrivate(Hex.decode("fa04")),
+            BtcECKey.fromPrivate(Hex.decode("fa05"))
+        );
+        erpFederationPublicKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
+
+        Federation erpFederation = new ErpFederation(
+            FederationTestUtils.getFederationMembersWithBtcKeys(defaultFederationKeys),
+            Instant.ofEpochMilli(1000L),
+            0L,
+            bridgeConstants.getBtcParams(),
+            erpFederationPublicKeys,
+            500L
+        );
+
+        // Create a pegout tx with 50 inputs and 200 outputs
+        int inputSize = 50;
+        int outputSize = 200;
+        BtcTransaction pegoutTx = createPegOutTx(inputSize, outputSize, erpFederation, defaultFederationKeys);
+
+        int pegoutTxSize = BridgeUtils.calculatePegoutTxSize(activations, erpFederation, inputSize, outputSize);
+
+        // The difference between the calculated size and a real tx size should be smaller than 3% in any direction
+        int origTxSize = pegoutTx.bitcoinSerialize().length;
+        int difference = origTxSize - pegoutTxSize;
+        double tolerance = origTxSize * .03;
+
+        assertTrue(difference < tolerance && difference > -tolerance);
+    }
+
+    @Test
+    public void testCalculatePegoutTxSize_100Inputs_50Outputs_erpFederation() {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
+
+        List<BtcECKey> defaultFederationKeys = Arrays.asList(
+            BtcECKey.fromPrivate(Hex.decode("fa01")),
+            BtcECKey.fromPrivate(Hex.decode("fa02")),
+            BtcECKey.fromPrivate(Hex.decode("fa03"))
+        );
+        defaultFederationKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
+
+        List<BtcECKey> erpFederationPublicKeys = Arrays.asList(
+            BtcECKey.fromPrivate(Hex.decode("fa03")),
+            BtcECKey.fromPrivate(Hex.decode("fa04")),
+            BtcECKey.fromPrivate(Hex.decode("fa05"))
+        );
+        erpFederationPublicKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
+
+        Federation erpFederation = new ErpFederation(
+            FederationTestUtils.getFederationMembersWithBtcKeys(defaultFederationKeys),
+            Instant.ofEpochMilli(1000L),
+            0L,
+            networkParameters,
+            erpFederationPublicKeys,
+            500L
+        );
+
+        // Create a pegout tx with 100 inputs and 50 outputs
+        int inputSize = 100;
+        int outputSize = 50;
+        BtcTransaction pegoutTx = createPegOutTx(inputSize, outputSize, erpFederation, defaultFederationKeys);
+
+        int pegoutTxSize = BridgeUtils.calculatePegoutTxSize(activations, erpFederation, inputSize, outputSize);
+
+        // The difference between the calculated size and a real tx size should be smaller than 3% in any direction
+        int origTxSize = pegoutTx.bitcoinSerialize().length;
+        int difference = origTxSize - pegoutTxSize;
+        double tolerance = origTxSize * .03;
 
         assertTrue(difference < tolerance && difference > -tolerance);
     }
@@ -2395,6 +2580,33 @@ public class BridgeUtilsTest {
             federation.getAddress()
         );
         btcTx.addOutput(changeOutput);
+
+        return btcTx;
+    }
+
+    private BtcTransaction createPegOutTx(int inputSize, int outputSize, Federation federation, List<BtcECKey> keys) {
+        Address randomAddress = PegTestUtils.createRandomBtcAddress();
+
+        BtcTransaction btcTx = new BtcTransaction(networkParameters);
+
+        TransactionInput transInput = new TransactionInput(
+            networkParameters,
+            btcTx,
+            new byte[]{},
+            new TransactionOutPoint(networkParameters, 0, Sha256Hash.ZERO_HASH)
+        );
+
+        // Add inputs
+        for (int i = 0; i < inputSize; i++) {
+            btcTx.addInput(transInput);
+            // sign input
+            signWithNecessaryKeys(federation, keys, transInput, btcTx);
+        }
+
+        // Add outputs
+        for (int i = 0; i < outputSize; i++) {
+            btcTx.addOutput(Coin.COIN, randomAddress);
+        }
 
         return btcTx;
     }
