@@ -245,4 +245,8 @@ public class World {
 
     public ReceivedTxSignatureCache getReceivedTxSignatureCache() { return receivedTxSignatureCache; }
 
+    public ReceiptStore getReceiptStore() {
+        return this.receiptStore;
+    }
+
 }

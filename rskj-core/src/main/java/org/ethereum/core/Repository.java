@@ -22,7 +22,7 @@ package org.ethereum.core;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.db.RepositorySnapshot;
-import co.rsk.storagerent.RentTracker;
+import co.rsk.storagerent.RentManager;
 import co.rsk.trie.Trie;
 import org.ethereum.vm.DataWord;
 
@@ -145,5 +145,5 @@ public interface Repository extends RepositorySnapshot {
         addBalance(toAddr, value);
     }
 
-    void initRentTracker(RentTracker rentTracker);
+    void initRentManager(RentManager rentManager);
 }

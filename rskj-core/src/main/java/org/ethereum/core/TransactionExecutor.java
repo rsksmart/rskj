@@ -27,7 +27,8 @@ import co.rsk.metrics.profilers.Profiler;
 import co.rsk.metrics.profilers.ProfilerFactory;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.rpc.modules.trace.ProgramSubtrace;
-import co.rsk.storagerent.RentTracker;
+import co.rsk.storagerent.RentManager;
+import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -53,6 +54,7 @@ import java.util.stream.Collectors;
 import static co.rsk.util.ListArrayUtil.getLength;
 import static co.rsk.util.ListArrayUtil.isEmpty;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP174;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP240;
 import static org.ethereum.util.BIUtil.*;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
@@ -103,7 +105,7 @@ public class TransactionExecutor {
 
     private boolean localCall = false;
 
-    private RentTracker rentTracker;
+    private RentManager rentManager;
 
     public TransactionExecutor(
             Constants constants, ActivationConfig activationConfig, Transaction tx, int txindex, RskAddress coinbase,
@@ -129,7 +131,7 @@ public class TransactionExecutor {
         this.precompiledContracts = precompiledContracts;
         this.enableRemasc = remascEnabled;
         this.deletedAccounts = new HashSet<>(deletedAccounts);
-        this.rentTracker = new RentTracker();
+        this.rentManager = new RentManager();
     }
 
     /**
@@ -155,7 +157,9 @@ public class TransactionExecutor {
      * set readyToExecute = true
      */
     private boolean init() {
-        track.initRentTracker(rentTracker);
+        if(activations.isActive(RSKIP240)) {
+            track.initRentManager(rentManager);
+        }
 
         basicTxCost = tx.transactionCost(constants, activations);
 
@@ -274,6 +278,7 @@ public class TransactionExecutor {
 
     private void execute() {
         logger.trace("Execute transaction {} {}", toBI(tx.getNonce()), tx.getHash());
+        // logger.error("SR - Execute transaction {} {}", toBI(tx.getNonce()), tx.getHash()); // todo(fedejinich) remove this
 
         if (!localCall) {
 
@@ -619,4 +624,14 @@ public class TransactionExecutor {
     }
 
     public Coin getPaidFees() { return paidFees; }
+
+    @VisibleForTesting
+    public RentManager getRentManager() {
+        return this.rentManager;
+    }
+
+    @VisibleForTesting
+    public void setRentManager(RentManager spy) {
+        this.rentManager = spy;
+    }
 }

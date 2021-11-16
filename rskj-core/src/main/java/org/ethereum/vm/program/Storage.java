@@ -22,7 +22,7 @@ package org.ethereum.vm.program;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
-import co.rsk.storagerent.RentTracker;
+import co.rsk.storagerent.RentManager;
 import co.rsk.trie.Trie;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Repository;
@@ -30,7 +30,6 @@ import org.ethereum.vm.DataWord;
 import org.ethereum.vm.program.invoke.ProgramInvoke;
 import org.ethereum.vm.program.listener.ProgramListener;
 import org.ethereum.vm.program.listener.ProgramListenerAware;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.math.BigInteger;
 import java.util.Iterator;
@@ -227,7 +226,7 @@ public class Storage implements Repository, ProgramListenerAware {
     }
 
     @Override
-    public void initRentTracker(RentTracker rentTracker) {
-        throw new NotImplementedException();
+    public void initRentManager(RentManager rentManager) {
+        repository.initRentManager(rentManager);
     }
 }

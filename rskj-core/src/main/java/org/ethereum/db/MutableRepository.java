@@ -24,7 +24,7 @@ import co.rsk.core.types.ints.Uint24;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.MutableTrieCache;
 import co.rsk.db.MutableTrieImpl;
-import co.rsk.storagerent.RentTracker;
+import co.rsk.storagerent.RentManager;
 import co.rsk.trie.MutableTrie;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieKeySlice;
@@ -375,7 +375,7 @@ public class MutableRepository implements Repository {
     }
 
     @Override
-    public void initRentTracker(RentTracker rentTracker) {
-        this.mutableTrie.initRentTracker(rentTracker);
+    public void initRentManager(RentManager rentManager) {
+        this.mutableTrie.initRentManager(rentManager);
     }
 }

@@ -26,7 +26,7 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.metrics.profilers.Metric;
 import co.rsk.metrics.profilers.Profiler;
 import co.rsk.metrics.profilers.ProfilerFactory;
-import co.rsk.storagerent.RentTracker;
+import co.rsk.storagerent.RentManager;
 import co.rsk.util.NodeStopper;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.db.ByteArrayWrapper;
@@ -40,6 +40,7 @@ import javax.annotation.Nullable;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.function.Function;
 
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
@@ -116,10 +117,10 @@ public class Trie {
     // already saved in store flag
     private volatile boolean saved;
 
-    // shared Path
+    // shared path
     private final TrieKeySlice sharedPath;
 
-    private RentTracker rentTracker; // a rent tracker to track gets and puts
+    private RentManager rentManager; // a rent manager to track finds and puts
 
     // default constructor, no secure
     public Trie() {
@@ -649,18 +650,15 @@ public class Trie {
      */
     @Nullable
     public Trie find(byte[] key) {
-        Trie trie = find(TrieKeySlice.fromKey(key));
-        trackNode(trie);
+        TrieKeySlice trieKeySlice = TrieKeySlice.fromKey(key);
+        // logger.error("SR - find. key={}", trieKeySlice.toString());
+        Trie trie = findInTrie(trieKeySlice);
+        trackNodes(trieKeySlice, this);
         return trie;
     }
 
-    private void trackNode(Trie trie) {
-        this.rentTracker.trackNode(trie); // todo(fedejinich) shouldn't I track all the internmediate nodes?
-//        this.findNodes(key); // todo(fedejinich) this is an option for tracking all the intermediate nodes up to a key
-    }
-
     @Nullable
-    private Trie find(TrieKeySlice key) {
+    private Trie findInTrie(TrieKeySlice key) {
         if (sharedPath.length() > key.length()) {
             return null;
         }
@@ -678,7 +676,8 @@ public class Trie {
         if (node == null) {
             return null;
         }
-        return node.find(key.slice(commonPathLength + 1, key.length()));
+
+        return node.findInTrie(key.slice(commonPathLength + 1, key.length()));
     }
 
     private void internalToMessage() {
@@ -764,13 +763,21 @@ public class Trie {
     /**
      * put key with associated value, returning a new NewTrie
      *
-     * @param key   key to be updated
+     * @param trieKeySlice   key to be updated
      * @param value     associated value
      *
      * @return the new NewTrie containing the tree with the new key value association
      *
      */
-    private Trie put(TrieKeySlice key, byte[] value, boolean isRecursiveDelete) {
+    private Trie put(TrieKeySlice trieKeySlice, byte[] value, boolean isRecursiveDelete) {
+        Trie trie = putInTrie(trieKeySlice, value, isRecursiveDelete);
+        // todo(fedejinich) should I track from the newest root? or from the old one? I guess from the new one
+        // logger.error("SR - put. key={}", trieKeySlice.toString());
+        trackNodes(trieKeySlice, trie);
+        return trie;
+    }
+
+    private Trie putInTrie(TrieKeySlice key, byte[] value, boolean isRecursiveDelete) {
         // First of all, setting the value as an empty byte array is equivalent
         // to removing the key/value. This is because other parts of the trie make
         // this equivalent. Use always null to mark a node for deletion.
@@ -779,7 +786,6 @@ public class Trie {
         }
 
         Trie trie = this.internalPut(key, value, isRecursiveDelete);
-        trackNode(trie);
 
         // the following code coalesces nodes if needed for delete operation
 
@@ -816,12 +822,25 @@ public class Trie {
         if (child == null) {
             logger.error("Broken database, execution can't continue");
             nodeStopper.stop(1);
+
             return trie;
         }
 
         TrieKeySlice newSharedPath = trie.sharedPath.rebuildSharedPath(childImplicitByte, child.sharedPath);
 
         return new Trie(child.store, newSharedPath, child.value, child.left, child.right, child.valueLength, child.valueHash, child.childrenSize);
+    }
+
+    /**
+     * Tracks nodes during a transaction execution
+     * */
+    private void trackNodes(TrieKeySlice trieKeySlice, Trie trieResult) {
+        if(rentManager != null) { // the rent manager will only be initialized at transaction execution
+            // logger.error("SR - tracking nodes. key = {}", trieKeySlice);
+            this.rentManager.trackNodes(trieKeySlice, trieResult);
+        } else {
+            // logger.error("SR - no need to track nodes");
+        }
     }
 
     private static Uint24 getDataLength(byte[] value) {
@@ -1144,8 +1163,8 @@ public class Trie {
         return new VarInt(bytes, 0);
     }
 
-    public void initRentTracker(RentTracker rentTracker) {
-        this.rentTracker = rentTracker;
+    public void initRentManager(RentManager rentManager) {
+        this.rentManager = rentManager;
     }
 
     /**
@@ -1439,7 +1458,7 @@ public class Trie {
     }
 
     @Nullable
-    private List<Trie> findNodes(TrieKeySlice key) {
+    public List<Trie> findNodes(TrieKeySlice key) {
         if (sharedPath.length() > key.length()) {
             return null;
         }
