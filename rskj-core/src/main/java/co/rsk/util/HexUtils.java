@@ -192,10 +192,10 @@ public class HexUtils {
      */
     public static boolean hasHexPrefix(final byte[] data) {
 
-        if (data == null) {
+        if (data == null || data.length < HEX_PREFIX_BYTE_ARRAY.length) {
             return false;
         }
-
+        
         for (int i = 0; i < HEX_PREFIX_BYTE_ARRAY.length; i++) {
             if (HEX_PREFIX_BYTE_ARRAY[i] != data[i]) {
                 return false;
@@ -215,10 +215,6 @@ public class HexUtils {
         }
 
         String value = data.toLowerCase();
-
-        if (value.startsWith("-")) {
-            value = value.substring(1);
-        }
 
         if (value.length() <= 2 || !hasHexPrefix(value)) {
             return false;

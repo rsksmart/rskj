@@ -158,18 +158,15 @@ public class HexUtilsTest {
     public void test_isHexWithPrefix() {
 
         String hexNumberWithPrefix = "0x64";
-        String hexNumberWithPrefixNeg = "-0x64";
         String hexNumberWithOutPrefix = "64";
         String hexTooShort = "a";
 
         boolean trueCase = HexUtils.isHexWithPrefix(hexNumberWithPrefix);
-        boolean trueCaseNeg = HexUtils.isHexWithPrefix(hexNumberWithPrefixNeg);
         boolean falseCase = HexUtils.isHexWithPrefix(hexNumberWithOutPrefix);
         boolean falseCaseShort = HexUtils.isHexWithPrefix(hexTooShort);
         boolean nullCase = HexUtils.isHexWithPrefix(null);
 
         Assert.assertTrue(trueCase);
-        Assert.assertTrue(trueCaseNeg);
         Assert.assertFalse(falseCase);
         Assert.assertFalse(falseCaseShort);
         Assert.assertFalse(nullCase);
