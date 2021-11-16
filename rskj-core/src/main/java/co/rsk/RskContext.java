@@ -1230,7 +1230,8 @@ public class RskContext implements NodeContext, NodeBootstrapper {
             web3InformationRetriever = new Web3InformationRetriever(
                     getTransactionPool(),
                     getBlockchain(),
-                    getRepositoryLocator());
+                    getRepositoryLocator(),
+                    getExecutionBlockRetriever());
         }
         return web3InformationRetriever;
     }

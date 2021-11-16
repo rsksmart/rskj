@@ -65,7 +65,7 @@ public class ExecutionFoundBlockRetrieverTest {
         when(blockchain.getBestBlock())
                 .thenReturn(latest);
 
-        assertThat(retriever.getExecutionBlock("latest"), is(latest));
+        assertThat(retriever.retrieveExecutionBlock("latest").getBlock(), is(latest));
     }
 
     @Test
@@ -76,8 +76,8 @@ public class ExecutionFoundBlockRetrieverTest {
                 .thenReturn(latest1)
                 .thenReturn(latest2);
 
-        assertThat(retriever.getExecutionBlock("latest"), is(latest1));
-        assertThat(retriever.getExecutionBlock("latest"), is(latest2));
+        assertThat(retriever.retrieveExecutionBlock("latest").getBlock(), is(latest1));
+        assertThat(retriever.retrieveExecutionBlock("latest").getBlock(), is(latest2));
     }
 
     @Test
@@ -86,7 +86,7 @@ public class ExecutionFoundBlockRetrieverTest {
         when(minerServer.getLatestBlock())
                 .thenReturn(Optional.of(latest));
 
-        assertThat(retriever.getExecutionBlock("pending"), is(latest));
+        assertThat(retriever.retrieveExecutionBlock("pending").getBlock(), is(latest));
     }
 
     @Test
@@ -97,8 +97,8 @@ public class ExecutionFoundBlockRetrieverTest {
                 .thenReturn(Optional.of(latest1))
                 .thenReturn(Optional.of(latest2));
 
-        assertThat(retriever.getExecutionBlock("pending"), is(latest1));
-        assertThat(retriever.getExecutionBlock("pending"), is(latest2));
+        assertThat(retriever.retrieveExecutionBlock("pending").getBlock(), is(latest1));
+        assertThat(retriever.retrieveExecutionBlock("pending").getBlock(), is(latest2));
     }
 
     @Test
@@ -121,7 +121,7 @@ public class ExecutionFoundBlockRetrieverTest {
                 .thenReturn(blockResult);
         when(blockResult.getBlock()).thenReturn(builtBlock);
 
-        assertThat(retriever.getExecutionBlock("pending"), is(builtBlock));
+        assertThat(retriever.retrieveExecutionBlock("pending").getBlock(), is(builtBlock));
     }
 
     @Test
@@ -151,9 +151,11 @@ public class ExecutionFoundBlockRetrieverTest {
                 .thenReturn(blockResult);
         when(blockResult.getBlock()).thenReturn(builtBlock);
 
-        assertThat(retriever.getExecutionBlock("pending"), is(builtBlock));
-        assertThat(retriever.getExecutionBlock("pending"), is(builtBlock));
-        verify(builder, times(1)).build(mainchainHeaders, null);
+        assertThat(retriever.retrieveExecutionBlock("pending"), is(blockResult));
+        assertThat(retriever.retrieveExecutionBlock("pending"), is(blockResult));
+        // TODO(mc): the cache doesn't work properly in getExecutionBlock_workaround.
+        //           this is a known bug in version 1.0.1, and should be fixed in master
+        verify(builder, times(2)).build(mainchainHeaders, null);
     }
 
     @Test
@@ -190,8 +192,8 @@ public class ExecutionFoundBlockRetrieverTest {
         when(blockResult2.getBlock()).thenReturn(builtBlock2);
         when(builder.build(new ArrayList<>(Collections.singleton(bestHeader2)), null)).thenReturn(blockResult2);
 
-        assertThat(retriever.getExecutionBlock("pending"), is(builtBlock1));
-        assertThat(retriever.getExecutionBlock("pending"), is(builtBlock2));
+        assertThat(retriever.retrieveExecutionBlock("pending").getBlock(), is(builtBlock1));
+        assertThat(retriever.retrieveExecutionBlock("pending").getBlock(), is(builtBlock2));
     }
 
     @Test
@@ -200,8 +202,8 @@ public class ExecutionFoundBlockRetrieverTest {
         when(blockchain.getBlockByNumber(123))
                 .thenReturn(myBlock);
 
-        assertThat(retriever.getExecutionBlock("0x7B"), is(myBlock));
-        assertThat(retriever.getExecutionBlock("0x7b"), is(myBlock));
+        assertThat(retriever.retrieveExecutionBlock("0x7B").getBlock(), is(myBlock));
+        assertThat(retriever.retrieveExecutionBlock("0x7b").getBlock(), is(myBlock));
     }
 
     @Test
@@ -210,7 +212,7 @@ public class ExecutionFoundBlockRetrieverTest {
         when(blockchain.getBlockByNumber(123))
                 .thenReturn(myBlock);
 
-        assertThat(retriever.getExecutionBlock("123"), is(myBlock));
+        assertThat(retriever.retrieveExecutionBlock("123").getBlock(), is(myBlock));
     }
 
     @Test
@@ -220,19 +222,17 @@ public class ExecutionFoundBlockRetrieverTest {
 
         RskJsonRpcRequestException e = TestUtils
                 .assertThrows(RskJsonRpcRequestException.class,
-                        () -> retriever.getExecutionBlock("0x7B"));
+                        () -> retriever.retrieveExecutionBlock("0x7B"));
         Assert.assertEquals(INVALID_PARAM_ERROR_CODE, (int) e.getCode());
-
     }
 
     @Test
     public void getByNumberInvalidBlockNumberDec() {
         when(blockchain.getBlockByNumber(123))
                 .thenReturn(null);
-
         RskJsonRpcRequestException e = TestUtils
                 .assertThrows(RskJsonRpcRequestException.class,
-                        () -> retriever.getExecutionBlock("123"));
+                        () -> retriever.retrieveExecutionBlock("123"));
         Assert.assertEquals(INVALID_PARAM_ERROR_CODE, (int) e.getCode());
     }
 
@@ -240,7 +240,7 @@ public class ExecutionFoundBlockRetrieverTest {
     public void getByNumberInvalidHex() {
         RskJsonRpcRequestException e = TestUtils
                 .assertThrows(RskJsonRpcRequestException.class,
-                        () -> retriever.getExecutionBlock("0xzz"));
+                        () -> retriever.retrieveExecutionBlock("0xzz"));
         Assert.assertEquals(INVALID_PARAM_ERROR_CODE, (int) e.getCode());
 
         verify(blockchain, never()).getBlockByNumber(any(long.class));
@@ -250,9 +250,8 @@ public class ExecutionFoundBlockRetrieverTest {
     public void getByNumberInvalidDec() {
         RskJsonRpcRequestException e = TestUtils
                 .assertThrows(RskJsonRpcRequestException.class,
-                        () -> retriever.getExecutionBlock("zz"));
+                        () -> retriever.retrieveExecutionBlock("zz"));
         Assert.assertEquals(INVALID_PARAM_ERROR_CODE, (int) e.getCode());
-
         verify(blockchain, never()).getBlockByNumber(any(long.class));
     }
 
@@ -260,212 +259,7 @@ public class ExecutionFoundBlockRetrieverTest {
     public void getOtherThanPendingLatestOrNumberThrows() {
         RskJsonRpcRequestException e = TestUtils
                 .assertThrows(RskJsonRpcRequestException.class,
-                        () -> retriever.getExecutionBlock("other"));
-
-        Assert.assertEquals(INVALID_PARAM_ERROR_CODE, (int) e.getCode());
-    }
-
-    @Test
-    public void getLatest_workaround() {
-        Block latest = mock(Block.class);
-        when(blockchain.getBestBlock())
-                .thenReturn(latest);
-
-        assertThat(retriever.getExecutionBlock_workaround("latest").getBlock(), is(latest));
-    }
-
-    @Test
-    public void getLatestIsUpToDate_workaround() {
-        Block latest1 = mock(Block.class);
-        Block latest2 = mock(Block.class);
-        when(blockchain.getBestBlock())
-                .thenReturn(latest1)
-                .thenReturn(latest2);
-
-        assertThat(retriever.getExecutionBlock_workaround("latest").getBlock(), is(latest1));
-        assertThat(retriever.getExecutionBlock_workaround("latest").getBlock(), is(latest2));
-    }
-
-    @Test
-    public void getPendingUsesMinerServerLatestBlock_workaround() {
-        Block latest = mock(Block.class);
-        when(minerServer.getLatestBlock())
-                .thenReturn(Optional.of(latest));
-
-        assertThat(retriever.getExecutionBlock_workaround("pending").getBlock(), is(latest));
-    }
-
-    @Test
-    public void getPendingUsesMinerServerAndIsUpToDate_workaround() {
-        Block latest1 = mock(Block.class);
-        Block latest2 = mock(Block.class);
-        when(minerServer.getLatestBlock())
-                .thenReturn(Optional.of(latest1))
-                .thenReturn(Optional.of(latest2));
-
-        assertThat(retriever.getExecutionBlock_workaround("pending").getBlock(), is(latest1));
-        assertThat(retriever.getExecutionBlock_workaround("pending").getBlock(), is(latest2));
-    }
-
-    @Test
-    public void getPendingBuildsPendingBlockIfMinerServerHasNoWork_workaround() {
-        when(minerServer.getLatestBlock())
-                .thenReturn(Optional.empty());
-
-        BlockHeader bestHeader = mock(BlockHeader.class);
-        Block bestBlock = mock(Block.class);
-        when(bestBlock.getHeader()).thenReturn(bestHeader);
-        when(blockchain.getBestBlock())
-                .thenReturn(bestBlock);
-
-        when(miningMainchainView.get())
-                .thenReturn(new ArrayList<>(Collections.singleton(bestHeader)));
-
-        Block builtBlock = mock(Block.class);
-        BlockResult blockResult = mock(BlockResult.class);
-        when(builder.build(new ArrayList<>(Collections.singleton(bestHeader)), null))
-                .thenReturn(blockResult);
-        when(blockResult.getBlock()).thenReturn(builtBlock);
-
-        assertThat(retriever.getExecutionBlock_workaround("pending").getBlock(), is(builtBlock));
-    }
-
-    @Test
-    public void getPendingReturnsCachedBlockIfMinerServerHasNoWork_workaround() {
-        when(minerServer.getLatestBlock())
-                .thenReturn(Optional.empty())
-                .thenReturn(Optional.empty());
-
-        BlockHeader bestHeader = mock(BlockHeader.class);
-        Block bestBlock = mock(Block.class);
-        when(bestBlock.getHeader()).thenReturn(bestHeader);
-        when(blockchain.getBestBlock())
-                .thenReturn(bestBlock)
-                .thenReturn(bestBlock);
-
-        List<BlockHeader> mainchainHeaders = new ArrayList<>();
-        mainchainHeaders.add(bestBlock.getHeader());
-        mainchainHeaders.add(bestBlock.getHeader());
-        when(miningMainchainView.get())
-                .thenReturn(mainchainHeaders);
-
-        BlockResult blockResult = mock(BlockResult.class);
-        Block builtBlock = mock(Block.class);
-        when(bestBlock.isParentOf(builtBlock))
-                .thenReturn(true);
-        when(builder.build(mainchainHeaders, null))
-                .thenReturn(blockResult);
-        when(blockResult.getBlock()).thenReturn(builtBlock);
-
-        assertThat(retriever.getExecutionBlock_workaround("pending"), is(blockResult));
-        assertThat(retriever.getExecutionBlock_workaround("pending"), is(blockResult));
-        // TODO(mc): the cache doesn't work properly in getExecutionBlock_workaround.
-        //           this is a known bug in version 1.0.1, and should be fixed in master
-        verify(builder, times(2)).build(mainchainHeaders, null);
-    }
-
-    @Test
-    public void getPendingDoesntUseCacheIfBestBlockHasChanged_workaround() {
-        when(minerServer.getLatestBlock())
-                .thenReturn(Optional.empty())
-                .thenReturn(Optional.empty());
-
-        BlockHeader bestHeader1 = mock(BlockHeader.class);
-        Block bestBlock1 = mock(Block.class);
-        when(bestBlock1.getHeader()).thenReturn(bestHeader1);
-
-        BlockHeader bestHeader2 = mock(BlockHeader.class);
-        Block bestBlock2 = mock(Block.class);
-        when(bestBlock2.getHeader()).thenReturn(bestHeader2);
-
-        when(blockchain.getBestBlock())
-                .thenReturn(bestBlock1)
-                .thenReturn(bestBlock2);
-
-        when(miningMainchainView.get())
-                .thenReturn(new ArrayList<>(Collections.singleton(bestHeader1)))
-                .thenReturn(new ArrayList<>(Collections.singleton(bestHeader2)));
-
-        Block builtBlock1 = mock(Block.class);
-        when(bestBlock1.isParentOf(builtBlock1)).thenReturn(true);
-        BlockResult blockResult1 = mock(BlockResult.class);
-        when(blockResult1.getBlock()).thenReturn(builtBlock1);
-        when(builder.build(new ArrayList<>(Collections.singleton(bestHeader1)), null)).thenReturn(blockResult1);
-
-        Block builtBlock2 = mock(Block.class);
-        when(bestBlock2.isParentOf(builtBlock2)).thenReturn(true);
-        BlockResult blockResult2 = mock(BlockResult.class);
-        when(blockResult2.getBlock()).thenReturn(builtBlock2);
-        when(builder.build(new ArrayList<>(Collections.singleton(bestHeader2)), null)).thenReturn(blockResult2);
-
-        assertThat(retriever.getExecutionBlock_workaround("pending").getBlock(), is(builtBlock1));
-        assertThat(retriever.getExecutionBlock_workaround("pending").getBlock(), is(builtBlock2));
-    }
-
-    @Test
-    public void getByNumberBlockExistsHex_workaround() {
-        Block myBlock = mock(Block.class);
-        when(blockchain.getBlockByNumber(123))
-                .thenReturn(myBlock);
-
-        assertThat(retriever.getExecutionBlock_workaround("0x7B").getBlock(), is(myBlock));
-        assertThat(retriever.getExecutionBlock_workaround("0x7b").getBlock(), is(myBlock));
-    }
-
-    @Test
-    public void getByNumberBlockExistsDec_workaround() {
-        Block myBlock = mock(Block.class);
-        when(blockchain.getBlockByNumber(123))
-                .thenReturn(myBlock);
-
-        assertThat(retriever.getExecutionBlock_workaround("123").getBlock(), is(myBlock));
-    }
-
-    @Test
-    public void getByNumberInvalidBlockNumberHex_workaround() {
-        when(blockchain.getBlockByNumber(123))
-                .thenReturn(null);
-
-        RskJsonRpcRequestException e = TestUtils
-                .assertThrows(RskJsonRpcRequestException.class,
-                        () -> retriever.getExecutionBlock_workaround("0x7B"));
-        Assert.assertEquals(INVALID_PARAM_ERROR_CODE, (int) e.getCode());
-    }
-
-    @Test
-    public void getByNumberInvalidBlockNumberDec_workaround() {
-        when(blockchain.getBlockByNumber(123))
-                .thenReturn(null);
-        RskJsonRpcRequestException e = TestUtils
-                .assertThrows(RskJsonRpcRequestException.class,
-                        () -> retriever.getExecutionBlock_workaround("123"));
-        Assert.assertEquals(INVALID_PARAM_ERROR_CODE, (int) e.getCode());
-    }
-
-    @Test
-    public void getByNumberInvalidHex_workaround() {
-        RskJsonRpcRequestException e = TestUtils
-                .assertThrows(RskJsonRpcRequestException.class,
-                        () -> retriever.getExecutionBlock_workaround("0xzz"));
-        Assert.assertEquals(INVALID_PARAM_ERROR_CODE, (int) e.getCode());
-
-        verify(blockchain, never()).getBlockByNumber(any(long.class));
-    }
-
-    @Test
-    public void getByNumberInvalidDec_workaround() {
-        RskJsonRpcRequestException e = TestUtils
-                .assertThrows(RskJsonRpcRequestException.class,
-                        () -> retriever.getExecutionBlock_workaround("zz"));
-        Assert.assertEquals(INVALID_PARAM_ERROR_CODE, (int) e.getCode());
-        verify(blockchain, never()).getBlockByNumber(any(long.class));
-    }
-
-    @Test
-    public void getOtherThanPendingLatestOrNumberThrows_workaround() {
-        RskJsonRpcRequestException e = TestUtils
-                .assertThrows(RskJsonRpcRequestException.class,
-                        () -> retriever.getExecutionBlock_workaround("other"));
+                        () -> retriever.retrieveExecutionBlock("other"));
         Assert.assertEquals(INVALID_PARAM_ERROR_CODE, (int) e.getCode());
     }
 }
