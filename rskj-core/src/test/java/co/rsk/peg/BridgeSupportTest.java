@@ -7697,18 +7697,67 @@ public class BridgeSupportTest {
         when(provider.getReleaseRequestQueueSize()).thenReturn(pegoutRequestsCount);
         when(provider.getFeePerKb()).thenReturn(feePerKB);
 
-        BridgeSupport bridgeSupport = bridgeSupportBuilder
-                .withProvider(provider)
-                .withActivations(activations)
-                .withBridgeConstants(bridgeConstants)
-                .build();
-
         Federation federation = bridgeConstants.getGenesisFederation();
-        FederationSupport federationSupport = mock(FederationSupport.class);
-        when(federationSupport.getActiveFederation()).thenReturn(federation);
+        when(provider.getNewFederation()).thenReturn(federation);
+
+        BridgeSupport bridgeSupport = bridgeSupportBuilder
+            .withActivations(activations)
+            .withBridgeConstants(bridgeConstants)
+            .withProvider(provider)
+            .build();
 
         int outputs = pegoutRequestsCount + 2; // N + 2 outputs
         int pegoutTxSize = BridgeUtils.calculatePegoutTxSize(activations, federation, 2, outputs);
+
+        Coin expected = feePerKB.multiply(pegoutTxSize).divide(1000);
+
+        assertEquals(expected, bridgeSupport.getEstimatedFeesForNextPegOutEvent());
+    }
+
+    @Test
+    public void getEstimatedFeesForNextPegOutEvent_after_RSKIP271_activation_with_erpFederation() throws IOException {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
+
+        int pegoutRequestsCount = 5;
+        Coin feePerKB = Coin.MILLICOIN;
+        BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
+        when(provider.getReleaseRequestQueueSize()).thenReturn(pegoutRequestsCount);
+        when(provider.getFeePerKb()).thenReturn(feePerKB);
+
+        List<BtcECKey> defaultFederationKeys = Arrays.asList(
+                BtcECKey.fromPrivate(Hex.decode("fa01")),
+                BtcECKey.fromPrivate(Hex.decode("fa02")),
+                BtcECKey.fromPrivate(Hex.decode("fa03"))
+        );
+        defaultFederationKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
+
+        List<BtcECKey> erpFederationPublicKeys = Arrays.asList(
+                BtcECKey.fromPrivate(Hex.decode("fa03")),
+                BtcECKey.fromPrivate(Hex.decode("fa04")),
+                BtcECKey.fromPrivate(Hex.decode("fa05"))
+        );
+        erpFederationPublicKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
+
+        Federation erpFederation = new ErpFederation(
+                FederationTestUtils.getFederationMembersWithBtcKeys(defaultFederationKeys),
+                Instant.ofEpochMilli(1000L),
+                0L,
+                bridgeConstants.getBtcParams(),
+                erpFederationPublicKeys,
+                500L
+        );
+
+        when(provider.getNewFederation()).thenReturn(erpFederation);
+
+        BridgeSupport bridgeSupport = bridgeSupportBuilder
+            .withActivations(activations)
+            .withBridgeConstants(bridgeConstants)
+            .withProvider(provider)
+            .build();
+
+        int outputs = pegoutRequestsCount + 2; // N + 2 outputs
+        int pegoutTxSize = BridgeUtils.calculatePegoutTxSize(activations, erpFederation, 2, outputs);
 
         Coin expected = feePerKB.multiply(pegoutTxSize).divide(1000);
 

@@ -252,10 +252,10 @@ public class BridgeUtilsLegacyTest {
 
         int pegoutTxSize = BridgeUtilsLegacy.calculatePegoutTxSize(activations, federation, 2, 2);
 
-        // The difference between the calculated size and a real tx size should be smaller than 1% in any direction
-        int origTxSize = 2076; // Data for 2 inputs, 2 outputs Based on Pegouts From Blockchain.info Explorer
+        // The difference between the calculated size and a real tx size should be smaller than 2% in any direction
+        int origTxSize = 2076; // Data for 2 inputs, 2 outputs From https://www.blockchain.com/btc/tx/e92cab54ecf738a00083fd8990515247aa3404df4f76ec358d9fe87d95102ae4
         int difference = origTxSize - pegoutTxSize;
-        double tolerance = origTxSize * .01;
+        double tolerance = origTxSize * .02;
 
         Assert.assertTrue(difference < tolerance && difference > -tolerance);
     }
@@ -273,5 +273,20 @@ public class BridgeUtilsLegacyTest {
         );
 
         BridgeUtilsLegacy.calculatePegoutTxSize(activations, federation, 2, 2);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void calculatePegoutTxSize_ZeroInput_ZeroOutput() {
+        when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(false);
+
+        List<BtcECKey> keys = createBtcECKeys(13);
+        Federation federation = new Federation(
+            FederationMember.getFederationMembersFromKeys(keys),
+            Instant.now(),
+            0,
+            networkParameters
+        );
+
+        BridgeUtilsLegacy.calculatePegoutTxSize(activations, federation, 0, 0);
     }
 }
