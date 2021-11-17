@@ -103,12 +103,12 @@ public class TransactionFactoryHelper {
 
 		// Transaction that is expected to be constructed WITH the gasLimit
 		Transaction tx = Transaction.builder()
-			.nonce(TypeConverter.stringNumberAsBigInt(args.getNonce()))
-			.gasPrice(TypeConverter.stringNumberAsBigInt(args.getGasPrice()))
-			.gasLimit(TypeConverter.stringNumberAsBigInt(args.getGasLimit()))
-			.destination(TypeConverter.stringHexToByteArray(args.getTo()))
+			.nonce(TypeConverter.stringHexToByteArray(args.getNonce()))
+			.gasPrice(TypeConverter.strHexOrStrNumberToBigInteger(args.getGasPrice()))
+			.gasLimit(TypeConverter.strHexOrStrNumberToBigInteger(args.getGasLimit()))
+			.destination(TypeConverter.strHexOrStrNumberToByteArray(args.getTo()))
 			.chainId(chainId)
-			.value(TypeConverter.stringNumberAsBigInt(args.getValue()))
+			.value(TypeConverter.strHexOrStrNumberToBigInteger(args.getValue()))
 			.build();
 		tx.sign(senderAccount.getEcKey().getPrivKeyBytes());
 

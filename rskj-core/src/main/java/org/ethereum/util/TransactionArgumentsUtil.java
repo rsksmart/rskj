@@ -49,16 +49,16 @@ public class TransactionArgumentsUtil {
 
 		argsRet.setTo(stringHexToByteArray(argsParam.getTo()));
 
-		argsRet.setNonce(stringNumberAsBigInt(argsParam.getNonce(), () -> transactionPool.getPendingState().getNonce(senderAccount.getAddress())));
+		argsRet.setNonce(strHexOrStrNumberToBigInteger(argsParam.getNonce(), () -> transactionPool.getPendingState().getNonce(senderAccount.getAddress())));
 
-		argsRet.setValue(stringNumberAsBigInt(argsParam.getValue(), () -> BigInteger.ZERO));
+		argsRet.setValue(strHexOrStrNumberToBigInteger(argsParam.getValue(), () -> BigInteger.ZERO));
 
-		argsRet.setGasPrice(stringNumberAsBigInt(argsParam.getGasPrice(), () -> BigInteger.ZERO));
+		argsRet.setGasPrice(strHexOrStrNumberToBigInteger(argsParam.getGasPrice(), () -> BigInteger.ZERO));
 
-		argsRet.setGasLimit(stringNumberAsBigInt(argsParam.getGas(), () -> null));
+		argsRet.setGasLimit(strHexOrStrNumberToBigInteger(argsParam.getGas(), () -> null));
 
 		if (argsRet.getGasLimit() == null) {
-			argsRet.setGasLimit(stringNumberAsBigInt(argsParam.getGasLimit(), () -> DEFAULT_GAS_LIMIT));
+			argsRet.setGasLimit(strHexOrStrNumberToBigInteger(argsParam.getGasLimit(), () -> DEFAULT_GAS_LIMIT));
 		}
 
 		if (argsParam.getData() != null && argsParam.getData().startsWith("0x")) {
@@ -74,16 +74,16 @@ public class TransactionArgumentsUtil {
 		return argsRet;
 	}
 
-	private static BigInteger stringNumberAsBigInt(String number, Supplier<BigInteger> getDefaultValue) {
+	private static byte[] stringHexToByteArray(String value) {
 
-		BigInteger ret = Optional.ofNullable(number).map(TypeConverter::stringNumberAsBigInt).orElseGet(getDefaultValue);
+		byte[] ret = Optional.ofNullable(value).map(TypeConverter::stringHexToByteArray).orElse(null);
 
 		return ret;
 	}
 
-	private static byte[] stringHexToByteArray(String value) {
+	private static BigInteger strHexOrStrNumberToBigInteger(String value, Supplier<BigInteger> getDefaultValue) {
 
-		byte[] ret = Optional.ofNullable(value).map(TypeConverter::stringHexToByteArray).orElse(null);
+		BigInteger ret = Optional.ofNullable(value).map(TypeConverter::strHexOrStrNumberToBigInteger).orElseGet(getDefaultValue);
 
 		return ret;
 	}
@@ -93,7 +93,7 @@ public class TransactionArgumentsUtil {
 			return 0;
 		}
 		try {
-			byte[] bytes = TypeConverter.stringHexToByteArray(hex);
+			byte[] bytes = TypeConverter.strHexOrStrNumberToByteArray(hex);
 			if (bytes.length != 1) {
 				throw RskJsonRpcRequestException.invalidParamError(ERR_INVALID_CHAIN_ID + hex);
 			}

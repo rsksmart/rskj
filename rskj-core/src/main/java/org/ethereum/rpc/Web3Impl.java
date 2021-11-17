@@ -454,7 +454,7 @@ public class Web3Impl implements Web3 {
                     web3InformationRetriever.getInformationProvider(blockId);
 
             DataWord sv = accountInformationProvider
-                    .getStorageValue(addr, DataWord.valueOf(stringHexToByteArray(storageIdx)));
+                    .getStorageValue(addr, DataWord.valueOf(strHexOrStrNumberToByteArray(storageIdx)));
 
             if (sv == null) {
                 s = "0x0";

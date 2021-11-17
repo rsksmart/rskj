@@ -41,6 +41,26 @@ public class TypeConverterTest {
     }
 
     @Test
+    public void stringHexToByteArrayReturnsHexDecodedValueInsteadOfBytesOfNumber() {
+        Assert.assertArrayEquals(new byte[] { 16, 0 }, TypeConverter.stringHexToByteArray("1000"));
+    }
+
+    @Test
+    public void strHexOrStrNumberToByteArrayParseNonHexToBytesOfNumber() {
+        Assert.assertArrayEquals(new byte[] { 3, -24 }, TypeConverter.strHexOrStrNumberToByteArray("1000"));
+    }
+
+    @Test
+    public void strHexOrStrNumberToByteArrayParseToHexBytes() {
+        Assert.assertArrayEquals(new byte[] { 32 }, TypeConverter.strHexOrStrNumberToByteArray("0x20"));
+    }
+
+    @Test
+    public void strHexOrStrNumberToByteArrayParseToHexBytesWhenContainingAHexLetter() {
+        Assert.assertArrayEquals(new byte[] { 2, -80 }, TypeConverter.strHexOrStrNumberToByteArray("2b0"));
+    }
+
+    @Test
     public void stringHexToByteArrayLengthNotModTwo() {
         Assert.assertArrayEquals(new byte[] { 2 }, TypeConverter.stringHexToByteArray("0x2"));
     }

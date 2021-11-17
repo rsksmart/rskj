@@ -47,7 +47,7 @@ public class TypeConverter {
     }
 
     public static BigInteger stringHexToBigInteger(String input) {
-        if(!input.startsWith("0x")) {
+        if (!input.startsWith("0x")) {
             throw new NumberFormatException("Invalid hex number, expected 0x prefix");
         }
         String hexa = input.substring(2);
@@ -69,6 +69,31 @@ public class TypeConverter {
         return Hex.decode(result);
     }
 
+    public static byte[] strHexOrStrNumberToByteArray(String strHexOrStrNumber) {
+        if (strHexOrStrNumber.startsWith("0x")) {
+            return stringHexToByteArray(strHexOrStrNumber);
+        }
+
+        try {
+            BigInteger number = new BigInteger(strHexOrStrNumber);
+            return ByteUtil.bigIntegerToBytes(number);
+        } catch (NumberFormatException e) {
+            return stringHexToByteArray(strHexOrStrNumber);
+        }
+    }
+
+    public static BigInteger strHexOrStrNumberToBigInteger(String strHexOrStrNumber) {
+        if (strHexOrStrNumber.startsWith("0x")) {
+            return stringHexToBigInteger(strHexOrStrNumber);
+        }
+
+        try {
+            return new BigInteger(strHexOrStrNumber);
+        } catch (NumberFormatException e) {
+            return stringHexToBigInteger("0x" + strHexOrStrNumber);
+        }
+    }
+
     public static byte[] stringToByteArray(String input) {
         return input.getBytes(StandardCharsets.UTF_8);
     }
@@ -87,11 +112,11 @@ public class TypeConverter {
     }
 
     public static String toJsonHex(Coin x) {
-        return x != null ? x.asBigInteger().toString() : "" ;
+        return x != null ? x.asBigInteger().toString() : "";
     }
 
     public static String toJsonHex(String x) {
-        return "0x"+x;
+        return "0x" + x;
     }
 
     /**
@@ -105,7 +130,7 @@ public class TypeConverter {
      * @return A Hex representation of n WITHOUT leading zeroes
      */
     public static String toQuantityJsonHex(BigInteger n) {
-        return "0x"+ n.toString(16);
+        return "0x" + n.toString(16);
     }
 
     /**
@@ -126,6 +151,7 @@ public class TypeConverter {
      * 0x000AEF -> 0x2AEF
      * <p>
      * 0x00 -> 0x0
+     *
      * @param x A hex string with or without leading zeroes ("0x00AEF"). If null, it is considered as zero.
      * @return A hex string without leading zeroes ("0xAEF")
      */

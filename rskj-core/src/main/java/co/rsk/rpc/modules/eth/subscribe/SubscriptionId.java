@@ -33,7 +33,7 @@ public class SubscriptionId extends JsonRpcResult {
 
     @JsonCreator
     public SubscriptionId(String hexId) {
-        this.id = TypeConverter.stringHexToByteArray(hexId);
+        this.id = TypeConverter.strHexOrStrNumberToByteArray(hexId);
     }
 
     public SubscriptionId() {
