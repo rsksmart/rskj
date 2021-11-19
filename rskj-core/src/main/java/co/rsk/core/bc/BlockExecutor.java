@@ -284,7 +284,9 @@ public class BlockExecutor {
         List<Future<TransactionExecutionResult>> futures = new ArrayList<>(transactionsCount);
         int txindex = 0;
 
-         if(transactionsMap.size() > 1) {
+        if(transactionsMap.size() > 1) {
+            Metric parallelMetric = profiler.start(Profiler.PROFILING_TYPE.BLOCK_EXECUTE_PARALLEL);
+
             for (Map.Entry<Integer, List<Transaction>> threadSet : transactionsMap.entrySet()) {
                 if (threadSet.getKey() == threadCount) {
                     continue;
@@ -326,6 +328,7 @@ public class BlockExecutor {
                     return BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT;
                 }
             }
+            profiler.stop(parallelMetric);
         }
         List<Transaction> pendingTxs = transactionsMap.get(transactionsMap.size()); // get the last sub set of transactions, those that wa
         executePendingTransactions(
