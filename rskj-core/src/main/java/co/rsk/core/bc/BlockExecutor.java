@@ -38,9 +38,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
-import javax.annotation.processing.Processor;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP126;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP85;
@@ -271,58 +271,80 @@ public class BlockExecutor {
 
         maintainPrecompiledContractStorageRoots(track, activationConfig.forBlock(block.getNumber()));
 
-        int i = 0;
+        AtomicInteger i = new AtomicInteger(1);
         long totalGasUsed = 0;
         Coin totalPaidFees = Coin.ZERO;
         List<TransactionReceipt> receipts = new ArrayList<>();
         List<Transaction> executedTransactions = new ArrayList<>();
         Set<DataWord> deletedAccounts = new HashSet<>();
+        int threadCount = 4;
 
-        int threadsCount = 3;
-        ExecutorService threadPool = Executors.newFixedThreadPool(threadsCount);
-        // TODO: split into 4 lists, and execute the last one after the rest.
+        Map<Integer, List<Transaction>> transactionsMap = getSplitTransactionsByThread(block.getTransactionsList(), threadCount);
         int transactionsCount = block.getTransactionsList().size();
         List<Future<TransactionExecutionResult>> futures = new ArrayList<>(transactionsCount);
+        int txindex = 0;
 
-        for (int j = 0; j < block.getTransactionsList().size(); j++) {
-            Transaction tx = block.getTransactionsList().get(j);
-            TransactionConcurrentExecutor concurrentExecutor =
-                    new TransactionConcurrentExecutor(
-                            tx,
-                            transactionExecutorFactory,
-                            track,
-                            block,
-                            vmTrace,
-                            vmTraceOptions,
-                            acceptInvalidTransactions,
-                            discardInvalidTxs,
-                            metric,
-                            programTraceProcessor,
-                            i++);
-
-            futures.add(threadPool.submit(concurrentExecutor));
-        }
-
-        for (Future<TransactionExecutionResult> f : futures) {
-            try {
-                TransactionExecutionResult result = f.get();
-                deletedAccounts.addAll(result.getDeletedAccounts());
-                executedTransactions.add(result.getExecutedTransaction());
-                receipts.add(result.getReceipt());
-                if (this.registerProgramResults) {
-                    transactionResults.put(result.getTxHash(), result.getResult());
+         if(transactionsMap.size() > 1) {
+            for (Map.Entry<Integer, List<Transaction>> threadSet : transactionsMap.entrySet()) {
+                if (threadSet.getKey() == threadCount) {
+                    continue;
                 }
-                totalPaidFees.add(result.getTotalPaidFees());
-                totalGasUsed += result.getTotalGasUsed();
+                ExecutorService msgQueue = Executors.newSingleThreadExecutor();
+                threadSet.getValue().forEach((Transaction tx) -> {
+                    TransactionConcurrentExecutor concurrentExecutor =
+                            new TransactionConcurrentExecutor(
+                                    tx,
+                                    transactionExecutorFactory,
+                                    track,
+                                    block,
+                                    vmTrace,
+                                    vmTraceOptions,
+                                    acceptInvalidTransactions,
+                                    discardInvalidTxs,
+                                    metric,
+                                    programTraceProcessor,
+                                    i.getAndIncrement());
+                    futures.add(msgQueue.submit(concurrentExecutor));
+                });
+            }
 
-            } catch (InterruptedException | ExecutionException e) {
-                e.printStackTrace();
-            } catch (TransactionException e){
-                return BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT;
+            for (Future<TransactionExecutionResult> f : futures) {
+                try {
+                    TransactionExecutionResult result = f.get();
+                    deletedAccounts.addAll(result.getDeletedAccounts());
+                    executedTransactions.add(result.getExecutedTransaction());
+                    receipts.add(result.getReceipt());
+                    if (this.registerProgramResults) {
+                        transactionResults.put(result.getTxHash(), result.getResult());
+                    }
+                    totalPaidFees.add(result.getTotalPaidFees());
+                    totalGasUsed += result.getTotalGasUsed();
+
+                } catch (InterruptedException | ExecutionException e) {
+                    e.printStackTrace();
+                } catch (TransactionException e) {
+                    return BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT;
+                }
             }
         }
-
-        // TODO: here do executePendingTxs() with the last sublist of transactions to be executed (the sequential ones)
+        List<Transaction> pendingTxs = transactionsMap.get(transactionsMap.size()); // get the last sub set of transactions, those that wa
+        executePendingTransactions(
+                pendingTxs,
+                block,
+                i.get(),
+                txindex,
+                track,
+                totalGasUsed,
+                vmTrace,
+                vmTraceOptions,
+                deletedAccounts,
+                acceptInvalidTransactions,
+                discardInvalidTxs,
+                executedTransactions,
+                metric,
+                programTraceProcessor,
+                totalPaidFees,
+                receipts);
 
         logger.trace("End txs executions.");
 
@@ -345,6 +367,133 @@ public class BlockExecutor {
         logger.trace("End executeInternal.");
         return result;
     }
+
+    private BlockResult executePendingTransactions(
+            List<Transaction> transactions,
+            Block block,
+            int i,
+            int txindex,
+            Repository track,
+            long totalGasUsed,
+            boolean vmTrace,
+            int vmTraceOptions,
+            Set<DataWord> deletedAccounts,
+            boolean acceptInvalidTransactions,
+            boolean discardInvalidTxs,
+            List<Transaction> executedTransactions,
+            Metric metric,
+            ProgramTraceProcessor programTraceProcessor,
+            Coin totalPaidFees,
+            List<TransactionReceipt> receipts
+            ) {
+        for (Transaction tx : transactions) {
+            TransactionExecutor txExecutor = transactionExecutorFactory.newInstance(
+                    tx,
+                    txindex++,
+                    block.getCoinbase(),
+                    track,
+                    block,
+                    totalGasUsed,
+                    vmTrace,
+                    vmTraceOptions,
+                    deletedAccounts);
+            boolean transactionExecuted = txExecutor.executeTransaction();
+
+            if (!acceptInvalidTransactions && !transactionExecuted) {
+                if (discardInvalidTxs) {
+                    logger.warn("block: [{}] discarded tx: [{}]", block.getNumber(), tx.getHash());
+                    continue;
+                } else {
+                    logger.warn("block: [{}] execution interrupted because of invalid tx: [{}]",
+                            block.getNumber(), tx.getHash());
+                    profiler.stop(metric);
+                    return BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT;
+                }
+            }
+
+            executedTransactions.add(tx);
+
+            if (this.registerProgramResults) {
+                this.transactionResults.put(tx.getHash(), txExecutor.getResult());
+            }
+
+            if (vmTrace) {
+                txExecutor.extractTrace(programTraceProcessor);
+            }
+
+            logger.trace("tx executed");
+
+            // No need to commit the changes here. track.commit();
+
+            logger.trace("track commit");
+
+            long gasUsed = txExecutor.getGasUsed();
+            totalGasUsed += gasUsed;
+            Coin paidFees = txExecutor.getPaidFees();
+            if (paidFees != null) {
+                totalPaidFees = totalPaidFees.add(paidFees);
+            }
+
+            deletedAccounts.addAll(txExecutor.getResult().getDeleteAccounts());
+
+            TransactionReceipt receipt = new TransactionReceipt();
+            receipt.setGasUsed(gasUsed);
+            receipt.setCumulativeGas(totalGasUsed);
+
+            receipt.setTxStatus(txExecutor.getReceipt().isSuccessful());
+            receipt.setTransaction(tx);
+            receipt.setLogInfoList(txExecutor.getVMLogs());
+            receipt.setStatus(txExecutor.getReceipt().getStatus());
+
+            logger.trace("block: [{}] executed tx: [{}]", block.getNumber(), tx.getHash());
+
+            logger.trace("tx[{}].receipt", i);
+
+            i++;
+
+            receipts.add(receipt);
+
+            logger.trace("tx done");
+        }
+        return null;
+    }
+
+    private Map<Integer, List<Transaction>> getSplitTransactionsByThread(List<Transaction> transactionsList, int threadCount) {
+        Map<RskAddress, Set<Transaction>> groupedTransactions = new LinkedHashMap<>();
+        Map<Integer, List<Transaction>> result = new HashMap<>();
+        transactionsList.forEach(transaction ->
+                groupedTransactions.computeIfAbsent(transaction.getSender(), k -> new LinkedHashSet<>()).add(transaction));
+        int amountOfTransactionsPerConcurrentThread = (int) (transactionsList.size() * 0.20); // 20% of the total to each thread, expect from the last one that accumulates all the rest
+        int currentTransactionIndex = 0;
+        int currentThread = 1;
+        for (RskAddress address : groupedTransactions.keySet()) {
+            // if the current index is higher than the expected index for the current thread
+            // and if the current thread is not the last one
+            // move to the next thread
+            if(amountOfTransactionsPerConcurrentThread * currentThread < currentTransactionIndex && currentThread < threadCount){
+                currentThread++;
+            }
+            // add all the transactions belonging to that address, in order. It assumes transactions are already ordered (nonce).
+            result.computeIfAbsent(currentThread, k -> new ArrayList<>()).addAll(groupedTransactions.get(address));
+        }
+        return result;
+    }
+
+//    private static List<Transaction> sortBySenderAndNonce(List<Transaction> transactions) {
+//
+//        transactions.sort((Comparator) (o1, o2) -> {
+//            int senderComparison = ((Transaction) o1).compareTo(((Transaction) o2));
+//
+//            if (senderComparison != 0) {
+//                return senderComparison;
+//            }
+//
+//            BigInteger x1 = ((Transaction) o1).getNonceAsInteger();
+//            BigInteger x2 = ((Transaction) o2).getNonceAsInteger();
+//            return x1.compareTo(x2);
+//        });
+//        return transactions;
+//    }
 
     /**
      * Precompiled contracts storage is setup like any other contract for consistency. Here, we apply this logic on the
