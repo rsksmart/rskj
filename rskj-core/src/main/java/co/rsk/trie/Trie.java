@@ -120,7 +120,7 @@ public class Trie {
     // shared path
     private final TrieKeySlice sharedPath;
 
-    private RentManager rentManager; // a rent manager to track finds and puts
+    private RentManager rentManager; // a rent manager to track finds and puts (ideally, this should be part of Repository)
 
     // default constructor, no secure
     public Trie() {
@@ -834,15 +834,15 @@ public class Trie {
     /**
      * Tracks nodes during a transaction execution
      * todo(fedejinich) ideally this method (and rentManager also)
-     *  should be part of Repository, but for doing that we need to move the find and put methods to MutableTrie,
+     *  should be part of Repository, but for doing that we need to move the find() and put() methods to MutableTrie,
      *  and that's a major refactor.
      * */
-    private void trackNodes(TrieKeySlice trieKeySlice, Trie trieResult) {
+    private void trackNodes(TrieKeySlice trieKeySlice, Trie trie) {
         if(rentManager != null) { // the rent manager will only be initialized at transaction execution
             // logger.error("SR - tracking nodes. key = {}", trieKeySlice);
-            this.rentManager.trackNodes(trieKeySlice, trieResult);
+            this.rentManager.trackNodes(trieKeySlice, trie);
         } else {
-            // logger.error("SR - no need to track nodes");
+            // logger.error("SR - rent manager is disabled, there's no need to track nodes");
         }
     }
 

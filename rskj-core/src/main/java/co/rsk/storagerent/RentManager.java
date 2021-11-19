@@ -17,11 +17,10 @@ public class RentManager {
     private static final Logger logger = LoggerFactory.getLogger(RentManager.class);
 
     private final Set<Trie> trackedNodes = new HashSet<>();
-
     private final List<TrieKeySlice> mismatches = new ArrayList<>();
 
     /**
-     * Tracks nodes from an already updated Trie instance
+     * Tracks nodes from a Trie instance
      * */
     public void trackNodes(TrieKeySlice trieKeySlice, Trie trie) {
         if(trie != null) {
