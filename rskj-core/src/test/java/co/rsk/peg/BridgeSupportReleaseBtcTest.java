@@ -473,6 +473,32 @@ public class BridgeSupportReleaseBtcTest {
         testPegoutMinimumWithFeeVerification(Coin.COIN, Coin.FIFTY_COINS, true);
     }
 
+    @Test
+    public void processReleasesInBatch_before_rskip_271() throws IOException {
+        when(activationMock.isActive(ConsensusRule.RSKIP271)).thenReturn(false);
+
+        bridgeSupport.releaseBtc(releaseTx);
+
+        Transaction rskTx = buildUpdateTx();
+        bridgeSupport.updateCollections(rskTx);
+
+        assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
+        assertEquals(1, provider.getReleaseTransactionSet().getEntries().size());
+    }
+
+    @Test
+    public void processReleasesInBatch_after_rskip_271() throws IOException {
+        when(activationMock.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
+
+        bridgeSupport.releaseBtc(releaseTx);
+
+        Transaction rskTx = buildUpdateTx();
+        bridgeSupport.updateCollections(rskTx);
+
+        assertEquals(1, provider.getReleaseRequestQueue().getEntries().size());
+        assertEquals(0, provider.getReleaseTransactionSet().getEntries().size());
+    }
+
     private void testPegoutMinimumWithFeeVerification(Coin feePerKB, Coin value, boolean shouldPegout)
         throws IOException {
         when(activationMock.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
