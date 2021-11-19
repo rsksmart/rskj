@@ -833,6 +833,9 @@ public class Trie {
 
     /**
      * Tracks nodes during a transaction execution
+     * todo(fedejinich) ideally this method (and rentManager also)
+     *  should be part of Repository, but for doing that we need to move the find and put methods to MutableTrie,
+     *  and that's a major refactor.
      * */
     private void trackNodes(TrieKeySlice trieKeySlice, Trie trieResult) {
         if(rentManager != null) { // the rent manager will only be initialized at transaction execution
