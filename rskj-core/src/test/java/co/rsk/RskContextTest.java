@@ -27,6 +27,7 @@ import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Genesis;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.util.RskTestContext;
@@ -199,6 +200,7 @@ public class RskContextTest {
         doReturn(true).when(testProperties).fastBlockPropagation();
 
         ActivationConfig config = mock(ActivationConfig.class);
+        doReturn(true).when(config).isActive(eq(ConsensusRule.RSKIP126), anyLong());
         doReturn(config).when(testProperties).getActivationConfig();
 
         Constants constants = mock(Constants.class);

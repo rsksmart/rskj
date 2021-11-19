@@ -24,6 +24,8 @@ import co.rsk.config.TestSystemProperties;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.HashMapBlocksIndex;
+import co.rsk.db.RepositoryLocator;
+import co.rsk.db.RepositorySnapshot;
 import co.rsk.logfilter.BlocksBloom;
 import co.rsk.logfilter.BlocksBloomStore;
 import co.rsk.test.World;
@@ -352,33 +354,92 @@ public class CliToolsTest {
                 keyValueDataSource,
                 new HashMapBlocksIndex());
 
-        long blocksToGenerate = 14;
+        int blocksToGenerate = 14;
 
+        Keccak256 parentHash = Keccak256.ZERO_HASH;
         for (long i = 0; i < blocksToGenerate; i++) {
             Block block = mock(Block.class);
             Keccak256 blockHash = randomHash();
             when(block.getHash()).thenReturn(blockHash);
+            when(block.getParentHash()).thenReturn(parentHash);
             when(block.getNumber()).thenReturn(i);
             when(block.getEncoded()).thenReturn(TestUtils.randomBytes(128));
 
             indexedBlockStore.saveBlock(block, ZERO, true);
+            parentHash = blockHash;
         }
 
         Block bestBlock = indexedBlockStore.getBestBlock();
-        assertThat(bestBlock.getNumber(), is(blocksToGenerate - 1));
-
-        long blockToRewind = blocksToGenerate / 2;
-        String[] args = new String[] { String.valueOf(blockToRewind) };
+        assertThat(bestBlock.getNumber(), is((long) blocksToGenerate - 1));
 
         RskContext rskContext = mock(RskContext.class);
         doReturn(indexedBlockStore).when(rskContext).getBlockStore();
+        RepositoryLocator repositoryLocator = mock(RepositoryLocator.class);
+        doReturn(Optional.of(mock(RepositorySnapshot.class))).when(repositoryLocator).findSnapshotAt(any());
+        doReturn(repositoryLocator).when(rskContext).getRepositoryLocator();
         NodeStopper stopper = mock(NodeStopper.class);
 
-        RewindBlocks rewindBlocksCliTool = new RewindBlocks();
-        rewindBlocksCliTool.execute(args, () -> rskContext, stopper);
+        StringBuilder output = new StringBuilder();
+        RewindBlocks rewindBlocksCliTool = new RewindBlocks(output::append);
+        rewindBlocksCliTool.execute(new String[] { "fmi" }, () -> rskContext, stopper);
+
+        String data = output.toString();
+        Assert.assertTrue(data.contains("No inconsistent block has been found"));
+
+        verify(stopper).stop(0);
+
+        clearInvocations(stopper);
+
+        long blockToRewind = blocksToGenerate / 2;
+
+        output = new StringBuilder();
+        rewindBlocksCliTool = new RewindBlocks(output::append);
+        rewindBlocksCliTool.execute(new String[] { String.valueOf(blockToRewind) }, () -> rskContext, stopper);
 
         bestBlock = indexedBlockStore.getBestBlock();
         assertThat(bestBlock.getNumber(), is(blockToRewind));
+
+        data = output.toString();
+        Assert.assertTrue(data.contains("New highest block number stored in db: " + blockToRewind));
+
+        verify(stopper).stop(0);
+
+        clearInvocations(stopper);
+
+        output = new StringBuilder();
+        rewindBlocksCliTool = new RewindBlocks(output::append);
+        rewindBlocksCliTool.execute(new String[] { String.valueOf(blocksToGenerate + 1) }, () -> rskContext, stopper);
+
+        bestBlock = indexedBlockStore.getBestBlock();
+        assertThat(bestBlock.getNumber(), is(blockToRewind));
+
+        data = output.toString();
+        Assert.assertTrue(data.contains("No need to rewind"));
+
+        verify(stopper).stop(0);
+
+        clearInvocations(stopper);
+
+        doReturn(Optional.empty()).when(repositoryLocator).findSnapshotAt(any());
+
+        output = new StringBuilder();
+        rewindBlocksCliTool = new RewindBlocks(output::append);
+        rewindBlocksCliTool.execute(new String[] { "fmi" }, () -> rskContext, stopper);
+
+        data = output.toString();
+        Assert.assertTrue(data.contains("Min inconsistent block number: 0"));
+
+        verify(stopper).stop(0);
+
+        clearInvocations(stopper);
+
+        output = new StringBuilder();
+        rewindBlocksCliTool = new RewindBlocks(output::append);
+        rewindBlocksCliTool.execute(new String[] { "rbc" }, () -> rskContext, stopper);
+
+        data = output.toString();
+        Assert.assertTrue(data.contains("Min inconsistent block number: 0"));
+        Assert.assertTrue(data.contains("New highest block number stored in db: -1"));
 
         verify(stopper).stop(0);
     }

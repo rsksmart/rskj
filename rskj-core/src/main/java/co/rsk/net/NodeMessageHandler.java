@@ -46,6 +46,7 @@ import co.rsk.net.messages.MessageType;
 import co.rsk.net.messages.MessageVisitor;
 import co.rsk.scoring.EventType;
 import co.rsk.scoring.PeerScoringManager;
+import co.rsk.util.ExecState;
 import co.rsk.util.FormatUtils;
 
 public class NodeMessageHandler implements MessageHandler, InternalService, Runnable {
@@ -63,21 +64,24 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
     private final TransactionGateway transactionGateway;
     private final PeerScoringManager peerScoringManager;
 
+    private final StatusResolver statusResolver;
+    private final Set<Keccak256> receivedMessages = Collections.synchronizedSet(new HashSet<>());
+
+    private final Set<RskAddress> bannedMiners;
+
+    private final Thread thread;
+
+    private final PriorityBlockingQueue<MessageTask> queue;
+
+    private final MessageCounter messageCounter = new MessageCounter();
+    private final int messageQueueMaxSize;
+
     private volatile long lastStatusSent = System.currentTimeMillis();
     private volatile long lastTickSent = System.currentTimeMillis();
 
-    private final StatusResolver statusResolver;
-    private Set<Keccak256> receivedMessages = Collections.synchronizedSet(new HashSet<>());
-    private long cleanMsgTimestamp = 0;
+    private volatile ExecState state = ExecState.CREATED;
 
-    private final Set<RskAddress> bannedMiners;
-    
-    private PriorityBlockingQueue<MessageTask> queue;
-
-    private volatile boolean stopped;
-
-    private MessageCounter messageCounter = new MessageCounter();
-    private final int messageQueueMaxSize;
+    private long cleanMsgTimestamp;
 
     /**
      * Creates a new node message handler.
@@ -102,6 +106,7 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
                 config.bannedMinerList().stream().map(RskAddress::new).collect(Collectors.toSet())
         );
         this.messageQueueMaxSize = config.getMessageQueueMaxSize();
+        this.thread = new Thread(this, "message handler");
     }
 
     /**
@@ -111,7 +116,6 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
      * @param message the message to be processed.
      */
     public synchronized void processMessage(final Peer sender, @Nonnull final Message message) {
-
         messageCounter.decrement(sender);
 
         long start = System.nanoTime();
@@ -129,7 +133,6 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
         } else {
             loggerMessageProcess.debug("Message[{}] processed after [{}] seconds.", message.getMessageType(), timeInSeconds);
         }
-
     }
 
     @Override
@@ -145,10 +148,9 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
     }
 
     /**
-     * verify if the message is allowed, and if so, add it to the queue 
+     * verify if the message is allowed, and if so, add it to the queue
      */
     private void tryAddMessage(Peer sender, Message message) {
-
         double score = sender.score(System.currentTimeMillis(), message.getMessageType());
 
         boolean allowed = controlMessageIngress(sender, message, score);
@@ -156,29 +158,27 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
         if (allowed) {
             this.addMessage(sender, message, score);
         }
-
     }
 
     /**
-     * Responds if a message must be allowed 
+     * Responds if a message must be allowed
      */
     private boolean controlMessageIngress(Peer sender, Message message, double score) {
-
-        return 
-                allowByScore(score) && 
-                allowByMessageCount(sender) && 
+        return
+                allowByScore(score) &&
+                allowByMessageCount(sender) &&
                 allowByMinerNotBanned(sender, message) &&
-                allowByMessageUniqueness(sender, message); // prevent repeated is the most expensive and MUST be the last 
+                allowByMessageUniqueness(sender, message); // prevent repeated is the most expensive and MUST be the last
 
     }
 
     /**
-     * assert score is acceptable 
+     * assert score is acceptable
      */
     private boolean allowByScore(double score) {
         return score >= 0;
     }
-    
+
     /**
      * assert message count is under the threshold defined in config
      */
@@ -191,9 +191,8 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
     }
 
     private boolean allowByMinerNotBanned(Peer sender, Message message) {
-
         boolean allow = true;
-        
+
         if (!this.bannedMiners.isEmpty() && message.getMessageType() == MessageType.BLOCK_MESSAGE) {
             RskAddress miner = ((BlockMessage) message).getBlock().getCoinbase();
             if (this.bannedMiners.contains(miner)) {
@@ -204,14 +203,13 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
 
         return allow;
     }
-    
+
     /**
      * assert message was not received twice
      * add it to a map and manages the state of the map
-     * record event if message is repeated 
+     * record event if message is repeated
      */
     private boolean allowByMessageUniqueness(Peer sender, Message message) {
-
         Keccak256 encodedMessage = new Keccak256(HashUtil.keccak256(message.getEncoded()));
 
         boolean contains = receivedMessages.contains(encodedMessage);
@@ -233,7 +231,6 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
     }
 
     private void addMessage(Peer sender, Message message, double score) {
-
         boolean messageAdded = this.queue.offer(new MessageTask(sender, message, score));
 
         if (messageAdded) {
@@ -241,7 +238,6 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
         } else {
             logger.warn("Unexpected path. Is message queue bounded now?");
         }
-
     }
 
     private void cleanExpiredMessages() {
@@ -254,13 +250,27 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
     }
 
     @Override
-    public void start() {
-        new Thread(this, "message handler").start();
+    public synchronized void start() {
+        if (!state.isCreated()) {
+            logger.warn("Cannot start message handler as current state is {}", state);
+            return;
+        }
+
+        state = ExecState.RUNNING;
+
+        thread.start();
     }
 
     @Override
-    public void stop() {
-        this.stopped = true;
+    public synchronized void stop() {
+        if (!state.isRunning()) {
+            logger.warn("Message handler is not running. Ignoring");
+            return;
+        }
+
+        state = ExecState.FINISHED;
+
+        thread.interrupt();
     }
 
     @Override
@@ -274,7 +284,7 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
 
     @Override
     public void run() {
-        while (!stopped) {
+        while (this.state.isRunning()) {
             MessageTask task = null;
             try {
                 logger.trace("Get task");
@@ -292,13 +302,18 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
                 }
 
                 updateTimedEvents();
-            } catch (InterruptedException iex) {
-                logger.error("Interrupted exception processing: {}", task, iex);
+            } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
-            } catch (Exception ex) {
-                logger.error("Unexpected error processing: {}", task, ex);
+                break;
+            } catch (Exception e) {
+                logger.error("Got unexpected error while processing task: {}", task, e);
+            } catch (IllegalAccessError e) { // Usually this is been thrown by DB instances when closed
+                logger.warn("Message handler got `{}`. Exiting", e.getClass().getSimpleName(), e);
+                return;
             }
         }
+
+        logger.trace("Message handler was finished. Exiting");
     }
 
     private void updateTimedEvents() {
@@ -320,7 +335,7 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
         }
     }
 
-    private void recordEvent(Peer sender, EventType event) {
+    private void recordEvent(Peer sender, @SuppressWarnings("SameParameterValue") EventType event) {
         if (sender == null) {
             return;
         }
@@ -329,9 +344,9 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
     }
 
     private static class MessageTask {
-        private Peer sender;
-        private Message message;
-        private double score;
+        private final Peer sender;
+        private final Message message;
+        private final double score;
 
         public MessageTask(Peer sender, Message message, double score) {
             this.sender = sender;

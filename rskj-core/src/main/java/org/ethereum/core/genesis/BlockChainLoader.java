@@ -19,9 +19,11 @@
 
 package org.ethereum.core.genesis;
 
+import co.rsk.cli.tools.RewindBlocks;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.core.bc.BlockChainImpl;
 import co.rsk.core.bc.BlockExecutor;
+import co.rsk.db.RepositoryLocator;
 import co.rsk.db.StateRootHandler;
 import co.rsk.validators.BlockValidator;
 import org.ethereum.core.Block;
@@ -34,6 +36,7 @@ import org.ethereum.util.ByteUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nonnull;
 import java.util.ArrayList;
 
 /**
@@ -51,6 +54,7 @@ public class BlockChainLoader {
     private final BlockExecutor blockExecutor;
     private final Genesis genesis;
     private final StateRootHandler stateRootHandler;
+    private final RepositoryLocator repositoryLocator;
 
     public BlockChainLoader(
             BlockStore blockStore,
@@ -60,7 +64,8 @@ public class BlockChainLoader {
             BlockValidator blockValidator,
             BlockExecutor blockExecutor,
             Genesis genesis,
-            StateRootHandler stateRootHandler) {
+            StateRootHandler stateRootHandler,
+            RepositoryLocator repositoryLocator) {
         this.blockStore = blockStore;
         this.receiptStore = receiptStore;
         this.transactionPool = transactionPool;
@@ -69,6 +74,7 @@ public class BlockChainLoader {
         this.blockExecutor = blockExecutor;
         this.genesis = genesis;
         this.stateRootHandler = stateRootHandler;
+        this.repositoryLocator = repositoryLocator;
     }
 
     public BlockChainImpl loadBlockchain() {
@@ -92,6 +98,13 @@ public class BlockChainLoader {
                     ByteUtil.toHexString(bestBlock.getStateRoot()));
         }
 
+        if (!isBlockConsistent(bestBlock)) {
+            String errorMessage = String.format("Best block is not consistent with the state db. Consider using `%s` cli tool to rewind inconsistent blocks",
+                    RewindBlocks.class.getSimpleName());
+            logger.error(errorMessage);
+            throw new RuntimeException(errorMessage);
+        }
+
         BlockChainImpl blockchain = new BlockChainImpl(
                 blockStore,
                 receiptStore,
@@ -104,5 +117,9 @@ public class BlockChainLoader {
         blockchain.setStatus(bestBlock, totalDifficulty);
 
         return blockchain;
+    }
+
+    private boolean isBlockConsistent(@Nonnull Block block) {
+        return repositoryLocator.findSnapshotAt(block.getHeader()).isPresent();
     }
 }
