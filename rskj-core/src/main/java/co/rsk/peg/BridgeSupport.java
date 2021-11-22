@@ -1065,16 +1065,10 @@ public class BridgeSupport {
             return;
         }
 
-        // Instead of creating a pegout transaction for every element in the release request queue,
-        // check if the elapsed time or blocks have gone by before creating the pegout transaction including all elements in the release request queue.
-        // Under a rush hour of peg-outs, the Bridge may need to create more than one peg-out transaction
-        // simultaneously per peg-out event to reduce the transaction size, and input count.
-        // Pending: Define the limit of the transaction size
-
         if (activations.isActive(RSKIP271)) {
-            processReleasesInBatch(releaseRequestQueue, txBuilder, availableUTXOs, releaseTransactionSet);
+            processReleasesInBatch(releaseRequestQueue, txBuilder, availableUTXOs, releaseTransactionSet, activeFederationWallet);
         } else {
-            processReleasesIndividually(releaseRequestQueue, txBuilder, availableUTXOs, releaseTransactionSet);
+            processReleasesIndividually(releaseRequestQueue, txBuilder, availableUTXOs, releaseTransactionSet, activeFederationWallet);
         }
     }
 
@@ -1093,23 +1087,19 @@ public class BridgeSupport {
                 eventLogger.logReleaseBtcRequested(rskTxHash.getBytes(), generatedTransaction, releaseRequest.getAmount());
             }
         } else {
-            addPegoutTxToReleaseTransactionSet(generatedTransaction, releaseTransactionSet);
+            releaseTransactionSet.add(generatedTransaction, rskExecutionBlock.getNumber());
         }
-    }
-
-    private void addPegoutTxToReleaseTransactionSet(BtcTransaction generatedTransaction,
-                                                    ReleaseTransactionSet releaseTransactionSet) {
-        releaseTransactionSet.add(generatedTransaction, rskExecutionBlock.getNumber());
     }
 
     private void processReleasesIndividually(ReleaseRequestQueue releaseRequestQueue,
                                              ReleaseTransactionBuilder txBuilder,
                                              List<UTXO> availableUTXOs,
-                                             ReleaseTransactionSet releaseTransactionSet){
+                                             ReleaseTransactionSet releaseTransactionSet,
+                                             Wallet wallet) {
         releaseRequestQueue.process(MAX_RELEASE_ITERATIONS, (ReleaseRequestQueue.Entry releaseRequest) -> {
             Optional<ReleaseTransactionBuilder.BuildResult> result = txBuilder.buildAmountTo(
-                    releaseRequest.getDestination(),
-                    releaseRequest.getAmount()
+                releaseRequest.getDestination(),
+                releaseRequest.getAmount()
             );
 
             // Couldn't build a transaction to release these funds
@@ -1118,9 +1108,9 @@ public class BridgeSupport {
             // Further logging is done at the tx builder level.
             if (!result.isPresent()) {
                 logger.warn(
-                        "Couldn't build a release BTC tx for <{}, {}>",
-                        releaseRequest.getDestination().toBase58(),
-                        releaseRequest.getAmount());
+                    "Couldn't build a release BTC tx for <{}, {}>",
+                    releaseRequest.getDestination().toBase58(),
+                    releaseRequest.getAmount());
                 return false;
             }
 
@@ -1136,7 +1126,7 @@ public class BridgeSupport {
             // TODO: This will change if we implement multiple releases per BTC tx, so
             // TODO: it would eventually need to be fixed.
             // Adjust balances in edge cases
-            adjustBalancesIfChangeOutputWasDust(generatedTransaction, releaseRequest.getAmount());
+            adjustBalancesIfChangeOutputWasDust(generatedTransaction, releaseRequest.getAmount(), wallet);
 
             return true;
         });
@@ -1145,7 +1135,8 @@ public class BridgeSupport {
     private void processReleasesInBatch(ReleaseRequestQueue releaseRequestQueue,
                                         ReleaseTransactionBuilder txBuilder,
                                         List<UTXO> availableUTXOs,
-                                        ReleaseTransactionSet releaseTransactionSet) {
+                                        ReleaseTransactionSet releaseTransactionSet,
+                                        Wallet wallet) {
         long currentBlockNumber = rskExecutionBlock.getNumber();
         long nextPegoutCreationBlockNumber = getNextPegoutCreationBlockNumber();
 
@@ -1155,14 +1146,14 @@ public class BridgeSupport {
 
             if (!result.isPresent()) {
                 logger.warn(
-                        "Couldn't build a release BTC tx for <{}, with sum {}>",
-                        releaseRequestQueue.getEntries().hashCode(),
-                        releaseRequestQueue.getEntries().stream().mapToDouble(e -> e.getAmount().value).sum());
+                    "Couldn't build a release BTC tx for <{}, with sum {}>",
+                    releaseRequestQueue.getEntries().hashCode(),
+                    releaseRequestQueue.getEntries().stream().mapToDouble(entry -> entry.getAmount().value).sum());
                 return;
             }
 
             BtcTransaction generatedTransaction = result.get().getBtcTx();
-            addPegoutTxToReleaseTransactionSet(generatedTransaction, releaseTransactionSet);
+            releaseTransactionSet.add(generatedTransaction, rskExecutionBlock.getNumber());
 
             // Mark UTXOs as spent
             List<UTXO> selectedUTXOs = result.get().getSelectedUTXOs();
@@ -1173,7 +1164,7 @@ public class BridgeSupport {
             provider.setNextPegoutHeight(nextPegoutHeight);
 
             adjustBalancesIfChangeOutputWasDust(generatedTransaction,
-                Coin.valueOf(releaseRequestQueue.getEntries().stream().mapToLong(e -> e.getAmount().value).sum()));
+                Coin.valueOf(releaseRequestQueue.getEntries().stream().mapToLong(entry -> entry.getAmount().value).sum()), wallet);
         }
     }
 
@@ -1248,7 +1239,7 @@ public class BridgeSupport {
      * @param btcTx      The btc tx that was just completed
      * @param sentByUser The number of sBTC originaly sent by the user
      */
-    private void adjustBalancesIfChangeOutputWasDust(BtcTransaction btcTx, Coin sentByUser) {
+    private void adjustBalancesIfChangeOutputWasDust(BtcTransaction btcTx, Coin sentByUser, Wallet wallet) {
         if (btcTx.getOutputs().size() <= 1) {
             // If there is no change, do-nothing
             return;
@@ -1258,12 +1249,7 @@ public class BridgeSupport {
             sumInputs = sumInputs.add(transactionInput.getValue());
         }
 
-        Coin change = Coin.ZERO;
-        try {
-            change = btcTx.getValueSentToMe(getActiveFederationWallet(false));
-        } catch (IOException e) {
-            logger.error("Unexpected error accessing storage while attempting to process release requests", e);
-        }
+        Coin change = btcTx.getValueSentToMe(wallet);
         Coin spentByFederation = sumInputs.subtract(change);
         if (spentByFederation.isLessThan(sentByUser)) {
             Coin coinsToBurn = sentByUser.subtract(spentByFederation);
