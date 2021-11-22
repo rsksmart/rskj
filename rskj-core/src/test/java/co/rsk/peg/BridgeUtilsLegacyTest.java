@@ -1,9 +1,5 @@
 package co.rsk.peg;
 
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
-import co.rsk.bitcoinj.core.Address;
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.config.BridgeConstants;
 import co.rsk.config.BridgeMainNetConstants;
@@ -16,6 +12,9 @@ import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class BridgeUtilsLegacyTest {
 
@@ -242,7 +241,7 @@ public class BridgeUtilsLegacyTest {
     public void calculatePegoutTxSize_before_rskip_271() {
         when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(false);
 
-        List<BtcECKey> keys = createBtcECKeys(13);
+        List<BtcECKey> keys = PegTestUtils.createBtcECKeys(13);
         Federation federation = new Federation(
             FederationMember.getFederationMembersFromKeys(keys),
             Instant.now(),
@@ -264,7 +263,7 @@ public class BridgeUtilsLegacyTest {
     public void calculatePegoutTxSize_after_rskip_271() {
         when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
 
-        List<BtcECKey> keys = createBtcECKeys(13);
+        List<BtcECKey> keys = PegTestUtils.createBtcECKeys(13);
         Federation federation = new Federation(
             FederationMember.getFederationMembersFromKeys(keys),
             Instant.now(),
@@ -279,7 +278,7 @@ public class BridgeUtilsLegacyTest {
     public void calculatePegoutTxSize_ZeroInput_ZeroOutput() {
         when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(false);
 
-        List<BtcECKey> keys = createBtcECKeys(13);
+        List<BtcECKey> keys = PegTestUtils.createBtcECKeys(13);
         Federation federation = new Federation(
             FederationMember.getFederationMembersFromKeys(keys),
             Instant.now(),

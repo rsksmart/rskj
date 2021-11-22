@@ -2375,7 +2375,7 @@ public class BridgeUtilsTest {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
 
-        List<BtcECKey> keys = createBtcECKeys(13);
+        List<BtcECKey> keys = PegTestUtils.createBtcECKeys(13);
         Federation federation = new Federation(
             FederationMember.getFederationMembersFromKeys(keys),
             Instant.now(),
@@ -2391,7 +2391,7 @@ public class BridgeUtilsTest {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
 
-        List<BtcECKey> keys = createBtcECKeys(13);
+        List<BtcECKey> keys = PegTestUtils.createBtcECKeys(13);
         Federation federation = new Federation(
             FederationMember.getFederationMembersFromKeys(keys),
             Instant.now(),
@@ -2416,7 +2416,7 @@ public class BridgeUtilsTest {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
 
-        List<BtcECKey> keys = createBtcECKeys(13);
+        List<BtcECKey> keys = PegTestUtils.createBtcECKeys(13);
         Federation federation = new Federation(
             FederationMember.getFederationMembersFromKeys(keys),
             Instant.now(),
@@ -2441,7 +2441,7 @@ public class BridgeUtilsTest {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
 
-        List<BtcECKey> keys = createBtcECKeys(13);
+        List<BtcECKey> keys = PegTestUtils.createBtcECKeys(13);
         Federation federation = new Federation(
             FederationMember.getFederationMembersFromKeys(keys),
             Instant.now(),
@@ -2469,7 +2469,7 @@ public class BridgeUtilsTest {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
 
-        List<BtcECKey> keys = createBtcECKeys(13);
+        List<BtcECKey> keys = PegTestUtils.createBtcECKeys(13);
         Federation federation = new Federation(
             FederationMember.getFederationMembersFromKeys(keys),
             Instant.now(),
@@ -2667,14 +2667,6 @@ public class BridgeUtilsTest {
         tx.getInput(0).setScriptSig(invalidScript);
 
         assertFalse(BridgeUtils.scriptCorrectlySpendsTx(tx, 0, genesisFederation.getP2SHScript()));
-    }
-
-    private List<BtcECKey> createBtcECKeys(int keysCount) {
-        List<BtcECKey> keys = new ArrayList<>();
-        for (int i = 0; i < keysCount; i++) {
-            keys.add(new BtcECKey());
-        }
-        return keys;
     }
 
     private void test_getSpendWallet(boolean isFastBridgeCompatible) throws UTXOProviderException {
