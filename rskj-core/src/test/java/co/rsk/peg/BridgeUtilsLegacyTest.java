@@ -1,8 +1,5 @@
 package co.rsk.peg;
 
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.config.BridgeConstants;
@@ -14,8 +11,10 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.List;
+
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class BridgeUtilsLegacyTest {
 
@@ -34,12 +33,12 @@ public class BridgeUtilsLegacyTest {
     public void calculatePegoutTxSize_before_rskip_271() {
         when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(false);
 
-        List<BtcECKey> keys = createBtcECKeys(13);
+        List<BtcECKey> keys = PegTestUtils.createBtcECKeys(13);
         Federation federation = new Federation(
-                FederationMember.getFederationMembersFromKeys(keys),
-                Instant.now(),
-                0,
-                networkParameters
+            FederationMember.getFederationMembersFromKeys(keys),
+            Instant.now(),
+            0,
+            networkParameters
         );
 
         int pegoutTxSize = BridgeUtilsLegacy.calculatePegoutTxSize(activations, federation, 2, 2);
@@ -56,12 +55,12 @@ public class BridgeUtilsLegacyTest {
     public void calculatePegoutTxSize_after_rskip_271() {
         when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
 
-        List<BtcECKey> keys = createBtcECKeys(13);
+        List<BtcECKey> keys = PegTestUtils.createBtcECKeys(13);
         Federation federation = new Federation(
-                FederationMember.getFederationMembersFromKeys(keys),
-                Instant.now(),
-                0,
-                networkParameters
+            FederationMember.getFederationMembersFromKeys(keys),
+            Instant.now(),
+            0,
+            networkParameters
         );
 
         BridgeUtilsLegacy.calculatePegoutTxSize(activations, federation, 2, 2);
@@ -71,7 +70,7 @@ public class BridgeUtilsLegacyTest {
     public void calculatePegoutTxSize_ZeroInput_ZeroOutput() {
         when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(false);
 
-        List<BtcECKey> keys = createBtcECKeys(13);
+        List<BtcECKey> keys = PegTestUtils.createBtcECKeys(13);
         Federation federation = new Federation(
             FederationMember.getFederationMembersFromKeys(keys),
             Instant.now(),
@@ -80,13 +79,5 @@ public class BridgeUtilsLegacyTest {
         );
 
         BridgeUtilsLegacy.calculatePegoutTxSize(activations, federation, 0, 0);
-    }
-
-    private List<BtcECKey> createBtcECKeys(int keysCount) {
-        List<BtcECKey> keys = new ArrayList<>();
-        for (int i = 0; i < keysCount; i++) {
-            keys.add(new BtcECKey());
-        }
-        return keys;
     }
 }
