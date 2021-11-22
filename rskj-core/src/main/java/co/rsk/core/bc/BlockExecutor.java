@@ -466,7 +466,7 @@ public class BlockExecutor {
         Map<Integer, List<Transaction>> result = new HashMap<>();
         transactionsList.forEach(transaction ->
                 groupedTransactions.computeIfAbsent(transaction.getSender(), k -> new LinkedHashSet<>()).add(transaction));
-        int amountOfTransactionsPerConcurrentThread = (int) (transactionsList.size() * 0.20); // 20% of the total to each thread, expect from the last one that accumulates all the rest
+        int amountOfTransactionsPerConcurrentThread = (int) (transactionsList.size() * 0.30); // 30% of the total to each thread, expect from the last one that accumulates all the rest
         int currentTransactionIndex = 0;
         int currentThread = 1;
         for (RskAddress address : groupedTransactions.keySet()) {
