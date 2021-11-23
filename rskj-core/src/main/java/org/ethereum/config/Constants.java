@@ -66,7 +66,8 @@ public class Constants {
             BigInteger difficultyBoundDivisor,
             int newBlockMaxSecondsInTheFuture,
             BridgeConstants bridgeConstants,
-            ActivationConfig activationConfig) {
+            ActivationConfig activationConfig,
+            BlockDifficulty minimumDifficultyForRskip290) {
         this.chainId = chainId;
         this.seedCowAccounts = seedCowAccounts;
         this.durationLimit = durationLimit;
@@ -76,7 +77,7 @@ public class Constants {
         this.newBlockMaxSecondsInTheFuture = newBlockMaxSecondsInTheFuture;
         this.bridgeConstants = bridgeConstants;
         this.activationConfig = activationConfig;
-        this.minimumDifficultyForRskip290 = new BlockDifficulty(new BigInteger("550000000"));
+        this.minimumDifficultyForRskip290 = minimumDifficultyForRskip290;
     }
 
     public Constants(
@@ -87,7 +88,8 @@ public class Constants {
             BlockDifficulty fallbackMiningDifficulty,
             BigInteger difficultyBoundDivisor,
             int newBlockMaxSecondsInTheFuture,
-            BridgeConstants bridgeConstants) {
+            BridgeConstants bridgeConstants,
+            BlockDifficulty minimumDifficultyForRskip290) {
         this(chainId,
                 seedCowAccounts,
                 durationLimit,
@@ -96,7 +98,9 @@ public class Constants {
                 difficultyBoundDivisor,
                 newBlockMaxSecondsInTheFuture,
                 bridgeConstants,
-                null);
+                null,
+                minimumDifficultyForRskip290
+                );
     }
 
     public boolean seedCowAccounts() {
@@ -106,10 +110,6 @@ public class Constants {
     // Average Time between blocks
     public int getDurationLimit() {
         return durationLimit;
-    }
-
-    public BlockDifficulty getMinimumDifficulty() {
-        return getMinimumDifficulty(null);
     }
 
     public BlockDifficulty getMinimumDifficulty(Long blockNumber) {
@@ -228,7 +228,8 @@ public class Constants {
                 new BlockDifficulty(BigInteger.valueOf((long) 14E15)),
                 BigInteger.valueOf(50),
                 60,
-                BridgeMainNetConstants.getInstance()
+                BridgeMainNetConstants.getInstance(),
+                new BlockDifficulty(new BigInteger("550000000"))
         );
     }
 
@@ -241,7 +242,8 @@ public class Constants {
                 new BlockDifficulty(BigInteger.valueOf((long) 14E15)),
                 BigInteger.valueOf(50),
                 540,
-                new BridgeDevNetConstants(federationPublicKeys)
+                new BridgeDevNetConstants(federationPublicKeys),
+                new BlockDifficulty(new BigInteger("550000000"))
         );
     }
 
@@ -259,7 +261,8 @@ public class Constants {
                 BigInteger.valueOf(50),
                 540,
                 BridgeTestNetConstants.getInstance(),
-                activationConfig
+                activationConfig,
+                new BlockDifficulty(new BigInteger("550000000"))
         );
     }
 
@@ -272,7 +275,8 @@ public class Constants {
                 BlockDifficulty.ZERO,
                 BigInteger.valueOf(2048),
                 0,
-                BridgeRegTestConstants.getInstance()
+                BridgeRegTestConstants.getInstance(),
+                new BlockDifficulty(new BigInteger("550000000"))
         );
     }
 
@@ -285,7 +289,8 @@ public class Constants {
                 BlockDifficulty.ZERO,
                 BigInteger.valueOf(2048),
                 0,
-                new BridgeRegTestConstants(genesisFederationPublicKeys)
+                new BridgeRegTestConstants(genesisFederationPublicKeys),
+                new BlockDifficulty(new BigInteger("550000000"))
         );
     }
 }
