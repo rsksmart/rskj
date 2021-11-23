@@ -46,7 +46,7 @@ public class RentManagerTest {
 
         assertTrue(trackedNodes.isEmpty());
         assertEquals(1, rentManager.getMismatches().size());
-        assertEquals(TrieKeySlice.fromKey(decode("1a")), rentManager.getMismatches().get(0));
+        assertArrayEquals(TrieKeySlice.fromKey(decode("1a")).encode(), rentManager.getMismatches().get(0).encode());
     }
 
     @Test
@@ -58,7 +58,7 @@ public class RentManagerTest {
 
         assertTrue(trackedNodes.isEmpty());
         assertEquals(1, rentManager.getMismatches().size());
-        assertEquals(TrieKeySlice.fromKey(decode("0a008001")), rentManager.getMismatches().get(0));
+        assertArrayEquals(TrieKeySlice.fromKey(decode("0a008001")).encode(), rentManager.getMismatches().get(0).encode());
     }
 
     @Test
@@ -68,7 +68,6 @@ public class RentManagerTest {
 
         assertTrue(trackedNodes.isEmpty());
         assertEquals(0, rentManager.getMismatches().size());
-        assertEquals(TrieKeySlice.fromKey(decode("0a008000")), rentManager.getMismatches());
     }
 
     @Test
