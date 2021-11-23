@@ -277,60 +277,60 @@ public class BlockExecutor {
         List<TransactionReceipt> receipts = new ArrayList<>();
         List<Transaction> executedTransactions = new ArrayList<>();
         Set<DataWord> deletedAccounts = new HashSet<>();
-        int threadCount = 4;
+//        int threadCount = 1;
 
-        Map<Integer, List<Transaction>> transactionsMap = getSplitTransactionsByThread(block.getTransactionsList(), threadCount);
-        int transactionsCount = block.getTransactionsList().size();
-        List<Future<TransactionExecutionResult>> futures = new ArrayList<>(transactionsCount);
+//        Map<Integer, List<Transaction>> transactionsMap = getSplitTransactionsByThread(block.getTransactionsList(), threadCount);
+//        int transactionsCount = block.getTransactionsList().size();
+//        List<Future<TransactionExecutionResult>> futures = new ArrayList<>(transactionsCount);
         int txindex = 0;
-
-        if(transactionsMap.size() > 1) {
-            Metric parallelMetric = profiler.start(Profiler.PROFILING_TYPE.BLOCK_EXECUTE_PARALLEL);
-            for (Map.Entry<Integer, List<Transaction>> threadSet : transactionsMap.entrySet()) {
-                if (threadSet.getKey() == threadCount) {
-                    continue;
-                }
-                ExecutorService msgQueue = Executors.newSingleThreadExecutor();
-                threadSet.getValue().forEach((Transaction tx) -> {
-                    TransactionConcurrentExecutor concurrentExecutor =
-                            new TransactionConcurrentExecutor(
-                                    tx,
-                                    transactionExecutorFactory,
-                                    track,
-                                    block,
-                                    vmTrace,
-                                    vmTraceOptions,
-                                    acceptInvalidTransactions,
-                                    discardInvalidTxs,
-                                    programTraceProcessor,
-                                    i.getAndIncrement());
-                    futures.add(msgQueue.submit(concurrentExecutor));
-                });
-            }
-
-            for (Future<TransactionExecutionResult> f : futures) {
-                try {
-                    TransactionExecutionResult result = f.get();
-                    deletedAccounts.addAll(result.getDeletedAccounts());
-                    executedTransactions.add(result.getExecutedTransaction());
-                    receipts.add(result.getReceipt());
-                    if (this.registerProgramResults) {
-                        transactionResults.put(result.getTxHash(), result.getResult());
-                    }
-                    totalPaidFees.add(result.getTotalPaidFees());
-                    totalGasUsed += result.getTotalGasUsed();
-
-                } catch (InterruptedException | ExecutionException e) {
-                    profiler.stop(parallelMetric);
-                    e.printStackTrace();
-                } catch (TransactionException e) {
-                    profiler.stop(parallelMetric);
-                    return BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT;
-                }
-            }
-            profiler.stop(parallelMetric);
-        }
-        List<Transaction> pendingTxs = transactionsMap.get(transactionsMap.size()); // get the last sub set of transactions, those that wa
+//
+//        if(transactionsMap.size() > 1) {
+//            Metric parallelMetric = profiler.start(Profiler.PROFILING_TYPE.BLOCK_EXECUTE_PARALLEL);
+//            for (Map.Entry<Integer, List<Transaction>> threadSet : transactionsMap.entrySet()) {
+//                if (threadSet.getKey() == threadCount) {
+//                    continue;
+//                }
+//                ExecutorService msgQueue = Executors.newSingleThreadExecutor();
+//                threadSet.getValue().forEach((Transaction tx) -> {
+//                    TransactionConcurrentExecutor concurrentExecutor =
+//                            new TransactionConcurrentExecutor(
+//                                    tx,
+//                                    transactionExecutorFactory,
+//                                    track,
+//                                    block,
+//                                    vmTrace,
+//                                    vmTraceOptions,
+//                                    acceptInvalidTransactions,
+//                                    discardInvalidTxs,
+//                                    programTraceProcessor,
+//                                    i.getAndIncrement());
+//                    futures.add(msgQueue.submit(concurrentExecutor));
+//                });
+//            }
+//
+//            for (Future<TransactionExecutionResult> f : futures) {
+//                try {
+//                    TransactionExecutionResult result = f.get();
+//                    deletedAccounts.addAll(result.getDeletedAccounts());
+//                    executedTransactions.add(result.getExecutedTransaction());
+//                    receipts.add(result.getReceipt());
+//                    if (this.registerProgramResults) {
+//                        transactionResults.put(result.getTxHash(), result.getResult());
+//                    }
+//                    totalPaidFees.add(result.getTotalPaidFees());
+//                    totalGasUsed += result.getTotalGasUsed();
+//
+//                } catch (InterruptedException | ExecutionException e) {
+//                    profiler.stop(parallelMetric);
+//                    e.printStackTrace();
+//                } catch (TransactionException e) {
+//                    profiler.stop(parallelMetric);
+//                    return BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT;
+//                }
+//            }
+//            profiler.stop(parallelMetric);
+//        }
+        List<Transaction> pendingTxs = block.getTransactionsList(); // get the last sub set of transactions, those that wa
         executePendingTransactions(
                 pendingTxs,
                 block,
