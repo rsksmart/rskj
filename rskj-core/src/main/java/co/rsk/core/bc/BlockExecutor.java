@@ -286,7 +286,6 @@ public class BlockExecutor {
 
         if(transactionsMap.size() > 1) {
             Metric parallelMetric = profiler.start(Profiler.PROFILING_TYPE.BLOCK_EXECUTE_PARALLEL);
-
             for (Map.Entry<Integer, List<Transaction>> threadSet : transactionsMap.entrySet()) {
                 if (threadSet.getKey() == threadCount) {
                     continue;
@@ -303,7 +302,7 @@ public class BlockExecutor {
                                     vmTraceOptions,
                                     acceptInvalidTransactions,
                                     discardInvalidTxs,
-                                    metric,
+                                    parallelMetric,
                                     programTraceProcessor,
                                     i.getAndIncrement());
                     futures.add(msgQueue.submit(concurrentExecutor));
@@ -323,8 +322,10 @@ public class BlockExecutor {
                     totalGasUsed += result.getTotalGasUsed();
 
                 } catch (InterruptedException | ExecutionException e) {
+                    profiler.stop(parallelMetric);
                     e.printStackTrace();
                 } catch (TransactionException e) {
+                    profiler.stop(parallelMetric);
                     return BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT;
                 }
             }
