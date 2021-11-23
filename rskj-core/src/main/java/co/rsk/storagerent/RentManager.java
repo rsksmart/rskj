@@ -6,10 +6,7 @@ import com.google.common.annotations.VisibleForTesting;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class RentManager {
@@ -42,12 +39,12 @@ public class RentManager {
 
     @VisibleForTesting
     public Set<Trie> getTrackedNodes() {
-        return trackedNodes;
+        return Collections.unmodifiableSet(trackedNodes);
     }
 
     @VisibleForTesting
     public List<TrieKeySlice> getMismatches() {
-        return mismatches;
+        return Collections.unmodifiableList(mismatches);
     }
 
     private List<String> printableTrackedNodesSet(Set<Trie> trackedNodes) { // todo(fedejinich) this method it's just for debugging purposes
