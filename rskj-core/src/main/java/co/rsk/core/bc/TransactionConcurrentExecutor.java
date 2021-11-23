@@ -1,14 +1,10 @@
 package co.rsk.core.bc;
 
 import co.rsk.core.Coin;
-import co.rsk.core.RskAddress;
 import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.metrics.profilers.Metric;
-import co.rsk.metrics.profilers.Profiler;
-import co.rsk.metrics.profilers.ProfilerFactory;
 import org.ethereum.core.*;
 import org.ethereum.vm.DataWord;
-import org.ethereum.vm.program.ProgramResult;
 import org.ethereum.vm.trace.ProgramTraceProcessor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,8 +14,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Callable;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.RunnableFuture;
 
 public class TransactionConcurrentExecutor implements Callable<TransactionExecutionResult> {
     private static final Logger logger = LoggerFactory.getLogger("transactionconcurrentexecutor");
@@ -32,14 +26,12 @@ public class TransactionConcurrentExecutor implements Callable<TransactionExecut
     private Set<DataWord> deletedAccounts;
     private boolean acceptInvalidTransactions;
     private boolean discardInvalidTxs;
-    private Metric metric;
     private ProgramTraceProcessor programTraceProcessor;
     private Coin totalPaidFees;
     private int i;
     private List<TransactionReceipt> receipts;
     private final Transaction tx;
     private final TransactionExecutorFactory transactionExecutorFactory;
-    private static final Profiler profiler = ProfilerFactory.getInstance();
 
 
     public TransactionConcurrentExecutor(Transaction tx,
@@ -50,7 +42,6 @@ public class TransactionConcurrentExecutor implements Callable<TransactionExecut
                                          int vmTraceOptions,
                                          boolean acceptInvalidTransactions,
                                          boolean discardInvalidTxs,
-                                         Metric metric,
                                          ProgramTraceProcessor programTraceProcessor,
                                          int index) {
         this.tx = tx;
@@ -62,7 +53,6 @@ public class TransactionConcurrentExecutor implements Callable<TransactionExecut
         this.deletedAccounts = new HashSet<>();
         this.acceptInvalidTransactions = acceptInvalidTransactions;
         this.discardInvalidTxs = discardInvalidTxs;
-        this.metric = metric;
         this.programTraceProcessor = programTraceProcessor;
         this.totalPaidFees = Coin.ZERO;
         this.i = index;
@@ -91,7 +81,6 @@ public class TransactionConcurrentExecutor implements Callable<TransactionExecut
             } else {
                 logger.warn("block: [{}] execution interrupted because of invalid tx: [{}]",
                         block.getNumber(), tx.getHash());
-                profiler.stop(metric);
                 throw new TransactionException("Invalid transaction.");
             }
         }

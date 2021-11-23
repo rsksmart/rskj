@@ -302,7 +302,6 @@ public class BlockExecutor {
                                     vmTraceOptions,
                                     acceptInvalidTransactions,
                                     discardInvalidTxs,
-                                    parallelMetric,
                                     programTraceProcessor,
                                     i.getAndIncrement());
                     futures.add(msgQueue.submit(concurrentExecutor));
