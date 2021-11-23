@@ -773,7 +773,7 @@ public class Trie {
         Trie trie = putInTrie(trieKeySlice, value, isRecursiveDelete);
         // todo(fedejinich) should I track from the newest root? or from the old one? I guess from the new one
         // logger.error("SR - put. key={}", trieKeySlice.toString());
-        trackNodes(trieKeySlice, trie);
+        trackNodes(trieKeySlice, this);
         return trie;
     }
 
