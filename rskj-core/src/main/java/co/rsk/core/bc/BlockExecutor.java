@@ -265,7 +265,6 @@ public class BlockExecutor {
         // to conect the block). This is because the first execution will change the state
         // of the repository to the state post execution, so it's necessary to get it to
         // the state prior execution again.
-        Metric metric = profiler.start(Profiler.PROFILING_TYPE.BLOCK_EXECUTE);
 
         Repository track = repositoryLocator.startTrackingAt(parent);
 
@@ -283,6 +282,7 @@ public class BlockExecutor {
         int transactionsCount = block.getTransactionsList().size();
         List<Future<TransactionExecutionResult>> futures = new ArrayList<>(transactionsCount);
         int txindex = 0;
+        Metric metric = profiler.start(Profiler.PROFILING_TYPE.BLOCK_EXECUTE);
 
         if(transactionsMap.size() > 1) {
             Metric parallelMetric = profiler.start(Profiler.PROFILING_TYPE.BLOCK_EXECUTE_PARALLEL);
