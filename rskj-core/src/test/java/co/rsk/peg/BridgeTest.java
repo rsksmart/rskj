@@ -813,6 +813,36 @@ public class BridgeTest {
         assertEquals(1, bridge.getQueuedPegoutsCount(new Object[]{ }));
     }
 
+    @Test
+    public void getEstimatedFeesForNextPegOutEvent_before_RSKIP271_activation() throws VMException {
+        doReturn(false).when(activationConfig).isActive(eq(RSKIP271), anyLong());
+
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        Bridge bridge = getBridgeInstance(bridgeSupportMock);
+
+        byte[] data = BridgeMethods.GET_ESTIMATED_FEES_FOR_NEXT_PEGOUT_EVENT.getFunction().encode(new Object[]{});
+
+        assertNull(bridge.execute(data));
+    }
+
+    @Test
+    public void getEstimatedFeesForNextPegOutEvent_after_RSKIP271_activation() throws VMException, IOException {
+        doReturn(true).when(activationConfig).isActive(eq(RSKIP271), anyLong());
+
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        Bridge bridge = getBridgeInstance(bridgeSupportMock);
+
+        when(bridgeSupportMock.getEstimatedFeesForNextPegOutEvent()).thenReturn(Coin.SATOSHI);
+
+        CallTransaction.Function function = BridgeMethods.GET_ESTIMATED_FEES_FOR_NEXT_PEGOUT_EVENT.getFunction();
+        byte[] data = function.encode(new Object[]{ });
+        byte[] result = bridge.execute(data);
+
+        assertEquals(Coin.SATOSHI.value, ((BigInteger)function.decodeResult(result)[0]).intValue());
+        // Also test the method itself
+        assertEquals(Coin.SATOSHI.value, bridge.getEstimatedFeesForNextPegOutEvent(new Object[]{ }));
+    }
+
     private Bridge getBridgeInstance(Federation activeFederation, Federation retiringFederation, int senderPK) {
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
         doReturn(activeFederation).when(bridgeSupportMock).getActiveFederation();
