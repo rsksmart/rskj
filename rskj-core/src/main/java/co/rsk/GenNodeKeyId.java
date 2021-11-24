@@ -31,7 +31,7 @@ import java.nio.charset.StandardCharsets;
  */
 public class GenNodeKeyId {
     public static void main(String[] args) {
-        String generator = "cow";
+        String generator = "";
 
         if (args.length > 0) {
             generator = args[0];
