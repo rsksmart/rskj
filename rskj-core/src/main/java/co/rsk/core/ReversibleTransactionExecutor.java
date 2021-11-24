@@ -42,6 +42,21 @@ public class ReversibleTransactionExecutor {
         this.transactionExecutorFactory = transactionExecutorFactory;
     }
 
+    public TransactionExecutor estimateGas(Block executionBlock, RskAddress coinbase, byte[] gasPrice, byte[] gasLimit,
+                                                                byte[] toAddress, byte[] value, byte[] data, RskAddress fromAddress) {
+        return reversibleExecution(
+                repositoryLocator.snapshotAt(executionBlock.getHeader()),
+                executionBlock,
+                coinbase,
+                gasPrice,
+                gasLimit,
+                toAddress,
+                value,
+                data,
+                fromAddress
+        );
+    }
+
     public ProgramResult executeTransaction(
             Block executionBlock,
             RskAddress coinbase,
@@ -64,6 +79,8 @@ public class ReversibleTransactionExecutor {
         );
     }
 
+
+
     @Deprecated
     public ProgramResult executeTransaction_workaround(
             RepositorySnapshot snapshot,
@@ -75,6 +92,12 @@ public class ReversibleTransactionExecutor {
             byte[] value,
             byte[] data,
             RskAddress fromAddress) {
+        return reversibleExecution(snapshot, executionBlock, coinbase, gasPrice, gasLimit, toAddress, value, data, fromAddress).getResult();
+    }
+
+    private TransactionExecutor reversibleExecution(RepositorySnapshot snapshot, Block executionBlock, RskAddress coinbase,
+                                                    byte[] gasPrice, byte[] gasLimit, byte[] toAddress, byte[] value,
+                                                    byte[] data, RskAddress fromAddress) {
         Repository track = snapshot.startTracking();
 
         byte[] nonce = track.getNonce(fromAddress).toByteArray();
@@ -94,7 +117,7 @@ public class ReversibleTransactionExecutor {
 
         executor.executeTransaction();
 
-        return executor.getResult();
+        return executor;
     }
 
     private static class UnsignedTransaction extends Transaction {

@@ -18,6 +18,13 @@
 
 package org.ethereum.rpc;
 
+/**
+ * Wraps call arguments for several json-rpc methods.
+ * Take account to fill up the arguments using the right hex value encoding (QUANTITY and UNFORMATTED DATA),
+ * a simple way to do this is by using the TypeConverter class.
+ *
+ * Note: you can find more info about hex encoding in this site https://eth.wiki/json-rpc/API
+ * */
 public class CallArguments {
     private String from;
     private String to;

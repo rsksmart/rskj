@@ -85,6 +85,7 @@ public abstract class SystemProperties {
     private static final String PROPERTY_RPC_WEBSOCKET_SERVER_WRITE_TIMEOUT_SECONDS = "rpc.providers.web.ws.server_write_timeout_seconds";
     private static final String PROPERTY_RPC_WEBSOCKET_SERVER_MAX_FRAME_SIZE = "rpc.providers.web.ws.max_frame_size";
     private static final String PROPERTY_RPC_WEBSOCKET_SERVER_MAX_AGGREGATED_FRAME_SIZE = "rpc.providers.web.ws.max_aggregated_frame_size";
+    private static final String PROPERTY_RPC_GAS_ESTIMATION_CAP = "rpc.gasEstimationCap";
 
     public static final String PROPERTY_PUBLIC_IP = "public.ip";
     public static final String PROPERTY_BIND_ADDRESS = "bind_address";
@@ -694,5 +695,9 @@ public abstract class SystemProperties {
                 configFederationPublicKeys.stream()
                         .map(key -> BtcECKey.fromPublicOnly(Hex.decode(key))).collect(Collectors.toList())
         );
+    }
+
+    public long getGasEstimationCap() {
+        return configFromFiles.getLong(PROPERTY_RPC_GAS_ESTIMATION_CAP);
     }
 }

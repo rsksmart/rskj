@@ -26,6 +26,7 @@ import org.ethereum.vm.GasCost;
 import org.ethereum.vm.LogInfo;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
@@ -35,7 +36,7 @@ import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
  */
 public class ProgramResult {
 
-    private long gasUsed;
+
     private byte[] hReturn = EMPTY_BYTE_ARRAY;
     private Exception exception;
     private boolean revert;
@@ -48,7 +49,10 @@ public class ProgramResult {
     private Set<DataWord> deleteAccounts;
     private List<InternalTransaction> internalTransactions;
     private List<LogInfo> logInfoList;
+
+    protected long gasUsed;
     private long futureRefund = 0;
+    protected long deductedRefund = 0;
 
     /*
      * for testing runs ,
@@ -57,12 +61,30 @@ public class ProgramResult {
      */
     private List<CallCreate> callCreateList;
 
+    // estimateGas fields
+    private long maxGasUsed = 0; // sometimes the estimatedGas matches the maximum gasUsed
+    private boolean movedRemainingGasToChild = false; // this will happen when there's no more gas left than expected from the child call
+    private long gasUsedBeforeRefunds = 0; // this field it's useful to test if the deductedRefund value is less than the half of the gasUsed
+
+    public void movedRemainingGasToChild(boolean moved) {
+        this.movedRemainingGasToChild = moved;
+    }
+
+    public boolean getMovedRemainingGasToChild() {
+        return movedRemainingGasToChild;
+    }
+
     public void clearUsedGas() {
         gasUsed = 0;
     }
 
+    public long getMaxGasUsed() {
+        return maxGasUsed;
+    }
+
     public void spendGas(long gas) {
         gasUsed = GasCost.add(gasUsed, gas);
+        maxGasUsed = Math.max(gasUsed, maxGasUsed);
     }
 
     public void setRevert() {
@@ -137,6 +159,7 @@ public class ProgramResult {
             codeChanges.clear();
         }
         resetFutureRefund();
+        resetDeductedRefund();
     }
 
 
@@ -224,8 +247,24 @@ public class ProgramResult {
         }
     }
 
+    // This is the actual refunded amount of gas.
+    // It should never be higher than half of the amount of gas consumed.
+    public void addDeductedRefund(long gasValue) {
+        deductedRefund = GasCost.add(deductedRefund,gasValue);
+    }
+
+    public long getDeductedRefund() {
+        return deductedRefund;
+    }
+
+    public void resetDeductedRefund() {
+        deductedRefund = 0;
+    }
+
+    // This is the maximum possible future Refund. This is NOT the actual amount
+    // deducted, because this value is restricted by half of the consumed gas.
     public void addFutureRefund(long gasValue) {
-        futureRefund += gasValue;
+        futureRefund = GasCost.add(futureRefund, gasValue);
     }
 
     public long getFutureRefund() {
@@ -242,6 +281,9 @@ public class ProgramResult {
             addDeleteAccounts(another.getDeleteAccounts());
             addLogInfos(another.getLogInfoList());
             addFutureRefund(another.getFutureRefund());
+            addDeductedRefund(another.getDeductedRefund());
+            this.maxGasUsed = Math.max(this.maxGasUsed, another.getMaxGasUsed());
+            this.movedRemainingGasToChild = this.movedRemainingGasToChild || another.movedRemainingGasToChild;
         }
     }
     
@@ -249,5 +291,23 @@ public class ProgramResult {
         ProgramResult result = new ProgramResult();
         result.setHReturn(EMPTY_BYTE_ARRAY);
         return result;
+    }
+
+    public void setGasUsed(long gasUsed) {
+        this.gasUsed = gasUsed;
+    }
+
+    public List<LogInfo> logsFromNonRejectedTransactions() {
+        return getLogInfoList().stream()
+                .filter(logInfo -> !logInfo.isRejected())
+                .collect(Collectors.toList());
+    }
+
+    public void setGasUsedBeforeRefunds(long gasUsedBeforeRefunds) {
+        this.gasUsedBeforeRefunds = gasUsedBeforeRefunds;
+    }
+
+    public long getGasUsedBeforeRefunds() {
+        return gasUsedBeforeRefunds;
     }
 }

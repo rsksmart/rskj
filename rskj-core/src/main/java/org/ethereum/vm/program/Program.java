@@ -70,6 +70,7 @@ public class Program {
     private static final Logger logger = LoggerFactory.getLogger("VM");
     private static final Logger gasLogger = LoggerFactory.getLogger("gas");
 
+
     public static final long MAX_MEMORY = (1<<30);
 
     //Max size for stack checks
@@ -101,7 +102,6 @@ public class Program {
     private byte exeVersion;    // currently limited to 0..127
     private byte scriptVersion; // currently limited to 0..127
     private int startAddr;
-
     private BitSet jumpdestSet;
 
     private final VmConfig config;
@@ -828,7 +828,7 @@ public class Program {
         Program program = new Program(config, precompiledContracts, blockFactory, activations, programCode, programInvoke, internalTx, deletedAccountsInBlock);
 
         vm.play(program);
-        childResult  = program.getResult();
+        childResult = program.getResult();
 
         getTrace().addSubTrace(ProgramSubtrace.newCallSubtrace(CallType.fromMsgType(msg.getType()), program.getProgramInvoke(), program.getResult(), msg.getCodeAddress(), program.getTrace().getSubtraces()));
 

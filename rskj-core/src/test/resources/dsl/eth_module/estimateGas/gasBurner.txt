@@ -1,0 +1,37 @@
+comment
+// SPDX-License-Identifier: GPL-3.0
+pragma solidity >=0.6.0 <0.9.0;
+
+contract GasBurner {
+    function burnGas(uint256 lowerLimit) public returns (bool) {
+        uint256 counter = 0;
+        while(gasleft() > lowerLimit) {
+            counter++;
+        }
+
+        return true;
+    }
+}
+end
+
+account_new acc1 20000000
+
+# Deploy GasBurner
+
+transaction_build tx01
+    sender acc1
+    receiverAddress 00
+    value 0
+    data 6080604052348015600f57600080fd5b5060ac8061001e6000396000f3fe6080604052348015600f57600080fd5b506004361060285760003560e01c8063b9554c5914602d575b600080fd5b6033604b565b60405180821515815260200191505060405180910390f35b600080600090505b6127105a1115606e5760008190505080806001019150506053565b50600190509056fea264697066735822122026bfffa9a996f0df8d2ed7759d8bc2ef51c61f30824877454f324e954a6a93d764736f6c63430007030033
+    gas 2000000
+    build
+
+block_build b01
+    parent g00
+    transactions tx01
+    build
+
+block_connect b01
+
+# Assert best block
+assert_best b01

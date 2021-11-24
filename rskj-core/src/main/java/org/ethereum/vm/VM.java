@@ -109,6 +109,7 @@ public class VM {
     private long gasBefore; // only for tracing
     private boolean isLogEnabled;
 
+
     public VM(VmConfig vmConfig, PrecompiledContracts precompiledContracts) {
         this.vmConfig = vmConfig;
         this.precompiledContracts = precompiledContracts;
@@ -1485,6 +1486,7 @@ public class VM {
         PrecompiledContracts.PrecompiledContract precompiledContract = precompiledContracts.getContractForAddress(activations, codeAddress);
 
         if (precompiledContract != null) {
+
             program.callToPrecompiledAddress(msg, precompiledContract);
         } else {
             program.callToAddress(msg);
@@ -1516,6 +1518,7 @@ public class VM {
         if (requiredGas > program.getRemainingGas()) {
             throw Program.ExceptionHelper.gasOverflow(program, BigInteger.valueOf(program.getRemainingGas()), BigInteger.valueOf(requiredGas));
         }
+
         long remainingGas = GasCost.subtract(program.getRemainingGas(), requiredGas);
         long minimumTransferGas = calculateGetMinimumTransferGas(value, remainingGas);
 
@@ -1532,6 +1535,10 @@ public class VM {
         if (computeGas) {
             gasCost = GasCost.add(gasCost, calleeGas);
             spendOpCodeGas();
+
+            // when there's less gas than expected from the child call,
+            // the estimateGas will be given by gasUsed + deductedRefunds instead of maxGasUsed
+            program.getResult().movedRemainingGasToChild(calleeGas == remainingGas);
         }
 
         if (isLogEnabled) {

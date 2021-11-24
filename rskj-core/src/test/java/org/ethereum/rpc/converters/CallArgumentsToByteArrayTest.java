@@ -18,15 +18,20 @@
 
 package org.ethereum.rpc.converters;
 
+import co.rsk.config.TestSystemProperties;
 import org.ethereum.rpc.CallArguments;
 import org.ethereum.rpc.TypeConverter;
+import org.ethereum.util.ByteUtil;
 import org.junit.Assert;
 import org.junit.Test;
+import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 /**
  * Created by martin.medina on 3/7/17.
  */
 public class CallArgumentsToByteArrayTest {
+
+    private TestSystemProperties config = new TestSystemProperties();
 
     @Test
     public void getGasPriceWhenValueIsNull() throws Exception {
@@ -115,5 +120,33 @@ public class CallArgumentsToByteArrayTest {
         CallArgumentsToByteArray byteArrayArgs = new CallArgumentsToByteArray(args);
 
         Assert.assertNull(byteArrayArgs.getData());
+    }
+
+    @Test
+    public void gasLimitForGasEstimationExceedingGasCap() {
+        long hugeAmountOfGas = 900000000000000l;
+        long gasEstimationCap = config.getGasEstimationCap();
+
+        CallArguments callArguments = new CallArguments();
+        callArguments.setGas(TypeConverter.toQuantityJsonHex(hugeAmountOfGas));
+
+        Assert.assertEquals(hugeAmountOfGas, Long.decode(callArguments.getGas()).longValue());
+
+        CallArgumentsToByteArray callArgumentsToByteArray = new CallArgumentsToByteArray(callArguments);
+
+        Assert.assertEquals(hugeAmountOfGas, ByteUtil.byteArrayToLong(callArgumentsToByteArray.getGasLimit()));
+        Assert.assertEquals(gasEstimationCap, ByteUtil.byteArrayToLong(
+                callArgumentsToByteArray.gasLimitForGasEstimation(gasEstimationCap)));
+    }
+
+    @Test
+    public void gasLimitForGasEstimationBelowGasCap() {
+        CallArguments callArguments = new CallArguments();
+        callArguments.setGas(TypeConverter.toQuantityJsonHex(1));
+
+        CallArgumentsToByteArray callArgumentsToByteArray = new CallArgumentsToByteArray(callArguments);
+
+        Assert.assertEquals(1, ByteUtil.byteArrayToLong(
+                callArgumentsToByteArray.gasLimitForGasEstimation(config.getGasEstimationCap())));
     }
 }
