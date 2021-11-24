@@ -977,8 +977,8 @@ public class BridgeStorageProvider {
         if (version.equals(ERP_FEDERATION_FORMAT_VERSION)) {
             return BridgeSerializationUtils.deserializeErpFederation(
                 data,
-                networkParameters,
-                bridgeConstants
+                bridgeConstants,
+                activations
             );
         }
 

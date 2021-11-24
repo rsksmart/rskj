@@ -29,6 +29,7 @@ import co.rsk.peg.whitelist.OneOffWhiteListEntry;
 import co.rsk.peg.whitelist.UnlimitedWhiteListEntry;
 import org.apache.commons.lang3.tuple.Pair;
 import org.bouncycastle.util.BigIntegers;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPElement;
@@ -59,8 +60,9 @@ public class BridgeSerializationUtils {
     private static final int FEDERATION_MEMBER_RSK_KEY_INDEX = 1;
     private static final int FEDERATION_MEMBER_MST_KEY_INDEX = 2;
 
-
-    private BridgeSerializationUtils(){}
+    private BridgeSerializationUtils() {
+        throw new IllegalAccessError("Utility class, do not instantiate it");
+    }
 
     public static byte[] serializeMap(SortedMap<Keccak256, BtcTransaction> map) {
         int ntxs = map.size();
@@ -312,12 +314,12 @@ public class BridgeSerializationUtils {
 
     public static ErpFederation deserializeErpFederation(
         byte[] data,
-        NetworkParameters networkParameters,
-        BridgeConstants bridgeConstants
+        BridgeConstants bridgeConstants,
+        ActivationConfig.ForBlock activations
     ) {
         Federation federation = deserializeFederationWithDeserializer(
             data,
-            networkParameters,
+            bridgeConstants.getBtcParams(),
             BridgeSerializationUtils::deserializeFederationMember
         );
 
@@ -327,7 +329,8 @@ public class BridgeSerializationUtils {
             federation.getCreationBlockNumber(),
             federation.getBtcParams(),
             bridgeConstants.getErpFedPubKeysList(),
-            bridgeConstants.getErpFedActivationDelay()
+            bridgeConstants.getErpFedActivationDelay(),
+            activations
         );
     }
 
