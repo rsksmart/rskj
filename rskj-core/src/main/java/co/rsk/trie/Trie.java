@@ -960,6 +960,7 @@ public class Trie {
     }
 
     public boolean hasLongValue() {
+        // todo(techdebt) 32 needs to be extracted to a public (used for TrieMessageTest) constant
         return this.valueLength.compareTo(new Uint24(32)) > 0;
     }
 

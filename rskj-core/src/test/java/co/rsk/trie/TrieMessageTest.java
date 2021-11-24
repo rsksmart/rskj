@@ -18,14 +18,21 @@
 
 package co.rsk.trie;
 
+import co.rsk.core.types.ints.Uint24;
 import org.ethereum.crypto.Keccak256Helper;
 import org.junit.Assert;
 import org.junit.Test;
+
+import static org.bouncycastle.util.encoders.Hex.decode;
+import static org.junit.Assert.fail;
 
 /**
  * Created by ajlopez on 11/01/2017.
  */
 public class TrieMessageTest {
+
+    // todo(techdebt) this needs to be referenced from Trie class
+    public static final int LONG_VALUE = 32 + 1;
 
     /**
      * Orchid message serialization tests
@@ -49,7 +56,7 @@ public class TrieMessageTest {
 
     @Test
     public void trieWithValueToMessageOrchid() {
-        Trie trie = new Trie().put(new byte[0], new byte[] { 1, 2, 3, 4 });
+        Trie trie = new Trie().put(new byte[0], new byte[]{1, 2, 3, 4});
 
         byte[] message = trie.toMessageOrchid(false);
 
@@ -91,7 +98,7 @@ public class TrieMessageTest {
 
     @Test
     public void trieWithSubtrieAndNoValueToMessageOrchid() {
-        Trie trie = new Trie().put(new byte[] { 0x2 }, new byte[] { 1, 2, 3, 4 });
+        Trie trie = new Trie().put(new byte[]{0x2}, new byte[]{1, 2, 3, 4});
 
         byte[] message = trie.toMessageOrchid(false);
 
@@ -115,8 +122,8 @@ public class TrieMessageTest {
 
     @Test
     public void trieWithSubtriesAndNoValueToMessageOrchid() {
-        Trie trie = new Trie().put(new byte[] { 0x2 }, new byte[] { 1, 2, 3, 4 })
-                .put(new byte[] { 0x12 }, new byte[] { 1, 2, 3, 4 });
+        Trie trie = new Trie().put(new byte[]{0x2}, new byte[]{1, 2, 3, 4})
+                .put(new byte[]{0x12}, new byte[]{1, 2, 3, 4});
 
         byte[] message = trie.toMessageOrchid(false);
 
@@ -152,7 +159,7 @@ public class TrieMessageTest {
         byte[] oldKey = new byte[0];
         byte[] key = Keccak256Helper.keccak256(oldKey);
 
-        Trie trie = new Trie().put(key, new byte[] { 1, 2, 3, 4 });
+        Trie trie = new Trie().put(key, new byte[]{1, 2, 3, 4});
 
         byte[] message = trie.toMessageOrchid(true);
 
@@ -204,10 +211,10 @@ public class TrieMessageTest {
 
     @Test
     public void trieWithSubtrieAndNoValueToMessageOrchidSecure() {
-        byte[] oldKey = new byte[] { 0x02 };
+        byte[] oldKey = new byte[]{0x02};
         byte[] key = Keccak256Helper.keccak256(oldKey);
 
-        Trie trie = new Trie().put(key, new byte[] { 1, 2, 3, 4 });
+        Trie trie = new Trie().put(key, new byte[]{1, 2, 3, 4});
 
         byte[] message = trie.toMessageOrchid(true);
 
@@ -232,8 +239,8 @@ public class TrieMessageTest {
     @Test
     public void trieWithSubtriesAndNoValueToMessageOrchidSecure() {
         Trie trie = new Trie()
-                .put(Keccak256Helper.keccak256(new byte[] { 0x2 }), new byte[] { 1, 2, 3, 4 })
-                .put(Keccak256Helper.keccak256(new byte[] { 0x12 }), new byte[] { 1, 2, 3, 4 });
+                .put(Keccak256Helper.keccak256(new byte[]{0x2}), new byte[]{1, 2, 3, 4})
+                .put(Keccak256Helper.keccak256(new byte[]{0x12}), new byte[]{1, 2, 3, 4});
 
         byte[] message = trie.toMessageOrchid(true);
 
@@ -243,5 +250,162 @@ public class TrieMessageTest {
         Assert.assertEquals(1, message[1]);
         Assert.assertEquals(0, message[4]);
         Assert.assertEquals(0, message[5]);
+    }
+
+
+    /**
+     * Wasabi message serialization tests
+     **/
+
+    @Test
+    public void emptyTrieToMessageWasabiToMessageWasabi() {
+        Trie trie = new Trie();
+
+        byte[] message = trie.toMessage();
+
+        Assert.assertNotNull(message);
+
+        // flags (1 byte)
+        Assert.assertEquals(1, message.length);
+
+        // check flags
+        Assert.assertEquals(0b01000000, message[0]);
+    }
+
+    @Test
+    public void trieWithLeftEmbeddedChildToMessageWasabi() {
+        Trie trie = new Trie()
+                .put(decode("0a"), new byte[]{1})
+                .put(decode("0a00"), new byte[]{7});
+
+        byte[] message = trie.toMessage();
+
+        Assert.assertNotNull(message);
+        Assert.assertEquals(10, message.length); // todo(fedejinich) why?
+
+        // check flags (version + lshared + left + leftEmbedded) => 0b01000000 | 0b00010000 | 0b00001000 | 0b00000010
+        Assert.assertEquals(0b01011010, message[0]);
+    }
+
+    @Test
+    public void trieWithLeftChildToMessageWasabi() {
+        Trie trie = new Trie()
+                .put(decode("0a"), TrieValueTest.makeValue(LONG_VALUE - 1))
+                .put(decode("0a01"), TrieValueTest.makeValue(LONG_VALUE - 1))
+                .put(decode("0a0110"), TrieValueTest.makeValue(LONG_VALUE - 1));
+
+        Assert.assertTrue(trie.getLeft().getNode().isPresent());
+        Assert.assertFalse(trie.getLeft().isEmbeddable());
+        Assert.assertFalse(trie.getRight().getNode().isPresent());
+
+        byte[] message = trie.toMessage();
+
+        Assert.assertNotNull(message);
+        Assert.assertEquals(68, message.length); // todo(fedejinich) why?
+
+        // check flags (version + lshared + left) => 0b01000000 | 0b00010000 | 0b00001000
+        Assert.assertEquals(0b01011000, message[0]);
+    }
+
+    @Test
+    public void trieWithEmbeddedLeftRightChildsToMessageWasabi() {
+        Trie trie = new Trie()
+                .put(decode("1a"), TrieValueTest.makeValue(LONG_VALUE - 1))
+                .put(decode("0a"), TrieValueTest.makeValue(LONG_VALUE - 1))
+                .put(decode("1a10"), TrieValueTest.makeValue(LONG_VALUE - 1));
+
+        Assert.assertTrue(trie.getLeft().isEmbeddable());
+        Assert.assertTrue(trie.getLeft().getNode().get().isTerminal());
+        Assert.assertFalse(trie.getRight().isEmbeddable());
+        Assert.assertFalse(trie.getRight().getNode().get().isTerminal());
+
+        byte[] message = trie.toMessage();
+
+        Assert.assertNotNull(message);
+        Assert.assertEquals(72, message.length); // todo(fedejinich) why?
+
+        // check flags (version + lshared + left + leftEmbedded + right) => 0b01000000 | 0b00010000 | 0b00001000 | 0b00000010 | 0b00000100
+        Assert.assertEquals(0b01011110, message[0]);
+    }
+
+    @Test
+    public void trieWithLeftEmbeddedRightChildsToMessageWasabi() {
+        Trie trie = new Trie()
+                .put(decode("1a"), TrieValueTest.makeValue(LONG_VALUE - 1))
+                .put(decode("0a"), TrieValueTest.makeValue(LONG_VALUE - 1))
+                .put(decode("0a10"), TrieValueTest.makeValue(LONG_VALUE - 1));
+
+        Assert.assertFalse(trie.getLeft().isEmbeddable());
+        Assert.assertFalse(trie.getLeft().getNode().get().isTerminal());
+        Assert.assertTrue(trie.getRight().isEmbeddable());
+        Assert.assertTrue(trie.getRight().getNode().get().isTerminal());
+
+        byte[] message = trie.toMessage();
+
+        Assert.assertNotNull(message);
+        Assert.assertEquals(72, message.length); // todo(fedejinich) why?
+
+        // check flags (version + lshared + left + right + rightEmbedded) => 0b01000000 | 0b00010000 | 0b00001000 | 0b00000100 | 0b00000001
+        Assert.assertEquals(0b01011101, message[0]);
+    }
+
+    @Test
+    public void trieWithBothEmbeddedChildsToMessageWasabi() {
+        Trie trie = new Trie()
+                .put(decode("0a"), new byte[]{1})
+                .put(decode("10"), new byte[]{9});
+
+        byte[] message = trie.toMessage();
+
+        Assert.assertNotNull(message);
+        Assert.assertEquals(14, message.length); // todo(fedejinich) why?
+
+        // check flags (version + lshared + left + leftEmbedded + right + rightEmbedded) => 0b01000000 | 0b00010000 | 0b00001000 | 0b00000010
+        Assert.assertEquals(0b01011111, message[0]);
+    }
+
+    @Test
+    public void trieWithValueToMessageWasabi() {
+        Trie trie = new Trie().put(new byte[0], new byte[]{1, 2, 3, 4});
+
+        byte[] message = trie.toMessage();
+
+        Assert.assertNotNull(message);
+
+        // flags (1 byte) + value (4 bytes)
+        Assert.assertEquals(5, message.length);
+
+        // check flags
+        Assert.assertEquals(0b01000000, message[0]);
+
+        // check value
+        Assert.assertEquals(1, message[1]);
+        Assert.assertEquals(2, message[2]);
+        Assert.assertEquals(3, message[3]);
+        Assert.assertEquals(4, message[4]);
+    }
+
+    @Test
+    public void trieWithLongValueToMessageWasabi() {
+        Trie trie = new Trie().put(new byte[0], TrieValueTest.makeValue(LONG_VALUE));
+
+        byte[] message = trie.toMessage();
+
+        Assert.assertNotNull(message);
+
+        // flags (1 byte) + valueHash (32 bytes) + valueLength (3 bytes)
+        Assert.assertEquals(36, message.length);
+
+        // check flags => 0b01100000 | 0b00100000
+        Assert.assertEquals(0b01100000, message[0]);
+
+        // check encoded valueHash
+        byte[] valueHash = trie.getValueHash().getBytes();
+        for (int k = 0; k < valueHash.length; k++) {
+            Assert.assertEquals(valueHash[k], message[k + 1]); // the first byte corresponds to flags
+        }
+
+        // check value length
+        Assert.assertEquals(new Uint24(LONG_VALUE), Uint24.decode(new byte[]{message[33], message[34], message[35]}, 0));
     }
 }
