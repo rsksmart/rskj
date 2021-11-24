@@ -22,7 +22,8 @@ import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.config.BridgeConstants;
-import co.rsk.config.BridgeRegTestConstants;
+import co.rsk.config.BridgeMainNetConstants;
+import co.rsk.config.BridgeTestNetConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.peg.bitcoin.CoinbaseInformation;
 import co.rsk.peg.utils.MerkleTreeUtils;
@@ -34,6 +35,8 @@ import com.google.common.collect.Lists;
 import com.google.common.primitives.UnsignedBytes;
 import org.apache.commons.lang3.tuple.Pair;
 import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
@@ -231,13 +234,23 @@ public class BridgeSerializationUtilsTest {
     }
 
     @Test
-    public void serializeAndDeserializeFederation() {
-        testSerializeAndDeserializeFederation(false);
+    public void serializeAndDeserializeFederation_beforeRskip284_testnet() {
+        testSerializeAndDeserializeFederation(false, NetworkParameters.ID_TESTNET);
     }
 
     @Test
-    public void serializeAndDeserializeErpFederation() {
-        testSerializeAndDeserializeFederation(true);
+    public void serializeAndDeserializeFederation_beforeRskip284_mainnet() {
+        testSerializeAndDeserializeFederation(false, NetworkParameters.ID_MAINNET);
+    }
+
+    @Test
+    public void serializeAndDeserializeFederation_afterRskip284_testnet() {
+        testSerializeAndDeserializeFederation(true, NetworkParameters.ID_TESTNET);
+    }
+
+    @Test
+    public void serializeAndDeserializeFederation_afterRskip284_mainnet() {
+        testSerializeAndDeserializeFederation(true, NetworkParameters.ID_MAINNET);
     }
 
     @Test
@@ -1144,57 +1157,6 @@ public class BridgeSerializationUtilsTest {
         );
     }
 
-    private void testSerializeAndDeserializeFederation(boolean isErpFed) {
-        final int NUM_CASES = 20;
-        final NetworkParameters networkParameters = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
-        final BridgeConstants bridgeConstants = BridgeRegTestConstants.getInstance();
-
-        for (int i = 0; i < NUM_CASES; i++) {
-            int numMembers = randomInRange(2, 14);
-            List<FederationMember> members = new ArrayList<>();
-
-            for (int j = 0; j < numMembers; j++) {
-                members.add(new FederationMember(new BtcECKey(), new ECKey(), new ECKey()));
-            }
-
-            Federation testFederation;
-
-            if (isErpFed) {
-                 testFederation = new ErpFederation(
-                    members,
-                    Instant.now(),
-                    123,
-                    networkParameters,
-                    bridgeConstants.getErpFedPubKeysList(),
-                    bridgeConstants.getErpFedActivationDelay()
-                );
-            } else {
-                testFederation = new Federation(
-                    members,
-                    Instant.now(),
-                    123,
-                    networkParameters
-                );
-            }
-
-            byte[] serializedTestFederation = BridgeSerializationUtils.serializeFederation(testFederation);
-            Federation deserializedTestFederation;
-
-            if (isErpFed) {
-                deserializedTestFederation = BridgeSerializationUtils.deserializeErpFederation(
-                    serializedTestFederation,
-                    networkParameters,
-                    bridgeConstants
-                );
-            } else {
-                deserializedTestFederation = BridgeSerializationUtils.deserializeFederation(
-                    serializedTestFederation, networkParameters);
-            }
-
-            Assert.assertEquals(testFederation, deserializedTestFederation);
-        }
-    }
-
     @Test
     public void deserializeCoinbaseInformation_dataIsNull_returnsNull() {
         Assert.assertNull(BridgeSerializationUtils.deserializeCoinbaseInformation(null));
@@ -1224,6 +1186,70 @@ public class BridgeSerializationUtilsTest {
         byte[] serializedCoinbaseInformation = BridgeSerializationUtils.serializeCoinbaseInformation(coinbaseInformation);
 
         Assert.assertEquals(witnessRoot, BridgeSerializationUtils.deserializeCoinbaseInformation(serializedCoinbaseInformation).getWitnessMerkleRoot());
+    }
+
+    private void testSerializeAndDeserializeFederation(boolean isRskip284Active, String networkId) {
+        final int NUM_CASES = 20;
+
+        BridgeConstants bridgeConstants;
+        if (networkId.equals(NetworkParameters.ID_MAINNET)) {
+            bridgeConstants = BridgeMainNetConstants.getInstance();
+        } else {
+            bridgeConstants = BridgeTestNetConstants.getInstance();
+        }
+
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(isRskip284Active);
+
+        for (int i = 0; i < NUM_CASES; i++) {
+            int numMembers = randomInRange(2, 14);
+            List<FederationMember> members = new ArrayList<>();
+
+            for (int j = 0; j < numMembers; j++) {
+                members.add(new FederationMember(new BtcECKey(), new ECKey(), new ECKey()));
+            }
+
+            Federation testFederation = new Federation(
+                members,
+                Instant.now(),
+                123,
+                bridgeConstants.getBtcParams()
+            );
+            byte[] serializedTestFederation = BridgeSerializationUtils.serializeFederation(testFederation);
+
+            Federation deserializedTestFederation = BridgeSerializationUtils.deserializeFederation(
+                serializedTestFederation,
+                bridgeConstants.getBtcParams()
+            );
+
+            Federation testErpFederation = new ErpFederation(
+                members,
+                Instant.now(),
+                123,
+                bridgeConstants.getBtcParams(),
+                bridgeConstants.getErpFedPubKeysList(),
+                bridgeConstants.getErpFedActivationDelay(),
+                activations
+            );
+            byte[] serializedTestErpFederation = BridgeSerializationUtils.serializeFederation(testErpFederation);
+
+            Federation deserializedTestErpFederation = BridgeSerializationUtils.deserializeErpFederation(
+                serializedTestErpFederation,
+                bridgeConstants,
+                activations
+            );
+
+            Assert.assertEquals(testFederation, deserializedTestFederation);
+            Assert.assertEquals(testErpFederation, deserializedTestErpFederation);
+            Assert.assertNotEquals(testFederation, deserializedTestErpFederation);
+            Assert.assertNotEquals(testErpFederation, deserializedTestFederation);
+
+            if (!isRskip284Active && !networkId.equals(NetworkParameters.ID_MAINNET)) {
+                final byte[] ERP_TESTNET_REDEEM_SCRIPT_BYTES = Hex.decode("6453210208f40073a9e43b3e9103acec79767a6de9b0409749884e989960fee578012fce210225e892391625854128c5c4ea4340de0c2a70570f33db53426fc9c746597a03f42102afc230c2d355b1a577682b07bc2646041b5d0177af0f98395a46018da699b6da210344a3c38cd59afcba3edcebe143e025574594b001700dec41e59409bdbd0f2a0921039a060badbeb24bee49eb2063f616c0f0f0765d4ca646b20a88ce828f259fcdb9556702cd50b27552210216c23b2ea8e4f11c3f9e22711addb1d16a93964796913830856b568cc3ea21d321034db69f2112f4fb1bb6141bf6e2bd6631f0484d0bd95b16767902c9fe219d4a6f210275562901dd8faae20de0a4166362a4f82188db77dbed4ca887422ea1ec185f145368ae");
+                Script erpTestnetRedeemScript = new Script(ERP_TESTNET_REDEEM_SCRIPT_BYTES);
+                Assert.assertEquals(testErpFederation.getRedeemScript(), erpTestnetRedeemScript);
+            }
+        }
     }
 
     private Address mockAddressHash160(String hash160) {
