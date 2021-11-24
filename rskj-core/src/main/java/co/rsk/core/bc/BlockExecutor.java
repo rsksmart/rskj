@@ -280,7 +280,7 @@ public class BlockExecutor {
 
         Map<Integer, List<Transaction>> transactionsMap = getSplitTransactionsByThread(block.getTransactionsList(), threadCount);
         int transactionsCount = block.getTransactionsList().size();
-        List<Future<TransactionExecutionResult>> futures = new ArrayList<>(transactionsCount);
+        List<Future<List<TransactionExecutionResult>>> futures = new ArrayList<>(transactionsCount);
         int txindex = 0;
         Metric metric = profiler.start(Profiler.PROFILING_TYPE.BLOCK_EXECUTE);
 
@@ -291,35 +291,33 @@ public class BlockExecutor {
                     continue;
                 }
                 ExecutorService msgQueue = Executors.newSingleThreadExecutor();
-                threadSet.getValue().forEach((Transaction tx) -> {
-                    TransactionConcurrentExecutor concurrentExecutor =
-                            new TransactionConcurrentExecutor(
-                                    tx,
-                                    transactionExecutorFactory,
-                                    track,
-                                    block,
-                                    vmTrace,
-                                    vmTraceOptions,
-                                    acceptInvalidTransactions,
-                                    discardInvalidTxs,
-                                    programTraceProcessor,
-                                    i.getAndIncrement());
-                    futures.add(msgQueue.submit(concurrentExecutor));
-                });
+                TransactionConcurrentExecutor concurrentExecutor = new TransactionConcurrentExecutor(
+                        threadSet.getValue(),
+                        transactionExecutorFactory,
+                        track,
+                        block,
+                        vmTrace,
+                        vmTraceOptions,
+                        acceptInvalidTransactions,
+                        discardInvalidTxs,
+                        programTraceProcessor,
+                        i.getAndIncrement());
+                futures.add(msgQueue.submit(concurrentExecutor));
             }
 
-            for (Future<TransactionExecutionResult> f : futures) {
+            for (Future<List<TransactionExecutionResult>> f : futures) {
                 try {
-                    TransactionExecutionResult result = f.get();
-                    deletedAccounts.addAll(result.getDeletedAccounts());
-                    executedTransactions.add(result.getExecutedTransaction());
-                    receipts.add(result.getReceipt());
-                    if (this.registerProgramResults) {
-                        transactionResults.put(result.getTxHash(), result.getResult());
+                    List<TransactionExecutionResult> results = f.get();
+                    for (TransactionExecutionResult result : results) {
+                        deletedAccounts.addAll(result.getDeletedAccounts());
+                        executedTransactions.add(result.getExecutedTransaction());
+                        receipts.add(result.getReceipt());
+                        if (this.registerProgramResults) {
+                            transactionResults.put(result.getTxHash(), result.getResult());
+                        }
+                        totalPaidFees.add(result.getTotalPaidFees());
+                        totalGasUsed += result.getTotalGasUsed();
                     }
-                    totalPaidFees.add(result.getTotalPaidFees());
-                    totalGasUsed += result.getTotalGasUsed();
-
                 } catch (InterruptedException | ExecutionException e) {
                     profiler.stop(parallelMetric);
                     e.printStackTrace();
