@@ -278,18 +278,17 @@ public class BlockExecutor {
         int threadCount = 4;
 
         Map<Integer, List<Transaction>> transactionsMap = getSplitTransactionsByThread(block.getTransactionsList(), threadCount);
-        int transactionsCount = block.getTransactionsList().size();
-        List<Future<List<TransactionExecutionResult>>> futures = new ArrayList<>(transactionsCount);
         int txindex = 0;
         Metric metric = profiler.start(Profiler.PROFILING_TYPE.BLOCK_EXECUTE);
 
         if(transactionsMap.size() > 1) {
             Metric parallelMetric = profiler.start(Profiler.PROFILING_TYPE.BLOCK_EXECUTE_PARALLEL);
+            ExecutorService msgQueue = Executors.newFixedThreadPool(threadCount - 1);
+            CompletionService<List<TransactionExecutionResult>> completionService = new ExecutorCompletionService<>(msgQueue);
             for (Map.Entry<Integer, List<Transaction>> threadSet : transactionsMap.entrySet()) {
                 if (threadSet.getKey() == threadCount) {
                     continue;
                 }
-                ExecutorService msgQueue = Executors.newSingleThreadExecutor();
                 TransactionConcurrentExecutor concurrentExecutor = new TransactionConcurrentExecutor(
                         threadSet.getValue(),
                         transactionExecutorFactory,
@@ -301,12 +300,16 @@ public class BlockExecutor {
                         discardInvalidTxs,
                         programTraceProcessor,
                         i.getAndIncrement());
-                futures.add(msgQueue.submit(concurrentExecutor));
+                completionService.submit(concurrentExecutor);
             }
 
-            for (Future<List<TransactionExecutionResult>> f : futures) {
+            int received = 0;
+
+            while(received < threadCount - 1) {
                 try {
-                    List<TransactionExecutionResult> results = f.get();
+                    Future<List<TransactionExecutionResult>> resultFuture = completionService.take();
+                    List<TransactionExecutionResult> results = resultFuture.get();
+                    received ++;
                     for (TransactionExecutionResult result : results) {
                         deletedAccounts.addAll(result.getDeletedAccounts());
                         executedTransactions.add(result.getExecutedTransaction());
@@ -317,7 +320,8 @@ public class BlockExecutor {
                         totalPaidFees.add(result.getTotalPaidFees());
                         totalGasUsed += result.getTotalGasUsed();
                     }
-                } catch (InterruptedException | ExecutionException e) {
+                }
+                catch (InterruptedException | ExecutionException e) {
                     profiler.stop(parallelMetric);
                     e.printStackTrace();
                 } catch (TransactionException e) {
