@@ -8,6 +8,7 @@ import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.bitcoinj.core.VerificationException;
 import co.rsk.bitcoinj.script.ErpFederationRedeemScriptParser;
 import co.rsk.bitcoinj.script.Script;
+import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.Arrays;
 import java.util.List;
@@ -243,5 +244,180 @@ public class ErpFederationTest {
 
         Script testnetRedeemScript = new Script(ERP_TESTNET_REDEEM_SCRIPT_BYTES);
         Assert.assertNotEquals(testnetRedeemScript, erpFederation.getRedeemScript());
+    }
+
+    @Test
+    public void testEquals_basic() {
+        Assert.assertTrue(federation.equals(federation));
+
+        Assert.assertNotEquals(null, federation);
+        Assert.assertNotEquals(federation, new Object());
+        Assert.assertNotEquals("something else", federation);
+    }
+
+    @Test
+    public void testEquals_same() {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
+
+        Federation otherFederation = new ErpFederation(
+            federation.getMembers(),
+            federation.getCreationTime(),
+            federation.getCreationBlockNumber(),
+            federation.getBtcParams(),
+            federation.getErpPubKeys(),
+            federation.getActivationDelay(),
+            activations
+        );
+
+        Assert.assertTrue(federation.equals(otherFederation));
+    }
+
+    @Test
+    public void testEquals_differentNumberOfMembers() {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
+
+        Federation otherFederation = new ErpFederation(
+            FederationTestUtils.getFederationMembersFromPks(100, 200, 300, 400, 500, 600, 700),
+            federation.getCreationTime(),
+            federation.getCreationBlockNumber(),
+            federation.getBtcParams(),
+            federation.getErpPubKeys(),
+            federation.getActivationDelay(),
+            activations
+        );
+
+        Assert.assertNotEquals(federation, otherFederation);
+    }
+
+    @Test
+    public void testEquals_differentCreationTime() {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
+
+        Federation otherFederation = new ErpFederation(
+            federation.getMembers(),
+            Instant.now(),
+            federation.getCreationBlockNumber(),
+            federation.getBtcParams(),
+            federation.getErpPubKeys(),
+            federation.getActivationDelay(),
+            activations
+        );
+
+        Assert.assertNotEquals(federation, otherFederation);
+    }
+
+    @Test
+    public void testEquals_differentCreationBlockNumber() {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
+
+        Federation otherFederation = new ErpFederation(
+            federation.getMembers(),
+            federation.getCreationTime(),
+            federation.getCreationBlockNumber() + 1,
+            federation.getBtcParams(),
+            federation.getErpPubKeys(),
+            federation.getActivationDelay(),
+            activations
+        );
+
+        Assert.assertNotEquals(federation, otherFederation);
+    }
+
+    @Test
+    public void testEquals_differentNetworkParameters() {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
+
+        Federation otherFederation = new ErpFederation(
+            federation.getMembers(),
+            federation.getCreationTime(),
+            federation.getCreationBlockNumber(),
+            NetworkParameters.fromID(NetworkParameters.ID_MAINNET),
+            federation.getErpPubKeys(),
+            federation.getActivationDelay(),
+            activations
+        );
+
+        Assert.assertNotEquals(federation, otherFederation);
+    }
+
+    @Test
+    public void testEquals_differentMembers() {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
+
+        Federation otherFederation = new ErpFederation(
+            FederationTestUtils.getFederationMembersFromPks(101, 201, 301),
+            federation.getCreationTime(),
+            federation.getCreationBlockNumber(),
+            federation.getBtcParams(),
+            federation.getErpPubKeys(),
+            federation.getActivationDelay(),
+            activations
+        );
+
+        Assert.assertNotEquals(federation, otherFederation);
+    }
+
+    @Test
+    public void testEquals_differentRedeemScript() {
+        ActivationConfig.ForBlock activationsPre = mock(ActivationConfig.ForBlock.class);
+        when(activationsPre.isActive(ConsensusRule.RSKIP284)).thenReturn(false);
+
+        ActivationConfig.ForBlock activationsPost = mock(ActivationConfig.ForBlock.class);
+        when(activationsPost.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
+
+        // Both federations created before RSKIP284 with the same data, should have the same redeem script
+        Federation erpFederation = new ErpFederation(
+            FederationTestUtils.getFederationMembersFromPks(100, 200, 300),
+            ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),
+            0L,
+            NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
+            ERP_FED_KEYS,
+            ACTIVATION_DELAY_VALUE,
+            activationsPre
+        );
+
+        Federation otherErpFederation = new ErpFederation(
+            FederationTestUtils.getFederationMembersFromPks(100, 200, 300),
+            ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),
+            0L,
+            NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
+            ERP_FED_KEYS,
+            ACTIVATION_DELAY_VALUE,
+            activationsPre
+        );
+
+        Assert.assertEquals(erpFederation, otherErpFederation);
+
+        // One federation created after RSKIP284 with the same data, should have different redeem script
+        otherErpFederation = new ErpFederation(
+            FederationTestUtils.getFederationMembersFromPks(100, 200, 300),
+            ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),
+            0L,
+            NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
+            ERP_FED_KEYS,
+            ACTIVATION_DELAY_VALUE,
+            activationsPost
+        );
+
+        Assert.assertNotEquals(erpFederation, otherErpFederation);
+
+        // The other federation created after RSKIP284 with the same data, should have same redeem script
+        erpFederation = new ErpFederation(
+            FederationTestUtils.getFederationMembersFromPks(100, 200, 300),
+            ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),
+            0L,
+            NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
+            ERP_FED_KEYS,
+            ACTIVATION_DELAY_VALUE,
+            activationsPost
+        );
+
+        Assert.assertEquals(erpFederation, otherErpFederation);
     }
 }
