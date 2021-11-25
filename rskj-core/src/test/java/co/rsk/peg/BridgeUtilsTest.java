@@ -816,6 +816,7 @@ public class BridgeUtilsTest {
         Context btcContext = new Context(networkParameters);
         Federation activeFederation = bridgeConstantsRegtest.getGenesisFederation();
         when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(false);
+        when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
 
         List<BtcECKey> retiredFederationKeys = Arrays.asList(
             BtcECKey.fromPrivate(Hex.decode("fa01")),
@@ -841,7 +842,8 @@ public class BridgeUtilsTest {
             0L,
             networkParameters,
             erpFederationPublicKeys,
-            500L
+            500L,
+            activations
         );
 
         // Create a tx from the retired fast bridge fed to the active fed
@@ -876,6 +878,7 @@ public class BridgeUtilsTest {
         Context btcContext = new Context(networkParameters);
         Federation activeFederation = bridgeConstantsRegtest.getGenesisFederation();
         when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
 
         List<BtcECKey> retiredFederationKeys = Arrays.asList(
             BtcECKey.fromPrivate(Hex.decode("fa01")),
@@ -901,7 +904,8 @@ public class BridgeUtilsTest {
             0L,
             networkParameters,
             erpFederationPublicKeys,
-            500L
+            500L,
+            activations
         );
 
         // Create a tx from the retired fast bridge fed to the active fed
@@ -936,6 +940,8 @@ public class BridgeUtilsTest {
         Context btcContext = new Context(networkParameters);
         Federation activeFederation = bridgeConstantsRegtest.getGenesisFederation();
 
+        when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
+
         List<BtcECKey> retiredFederationKeys = Arrays.asList(
             BtcECKey.fromPrivate(Hex.decode("fa01")),
             BtcECKey.fromPrivate(Hex.decode("fa02"))
@@ -960,7 +966,8 @@ public class BridgeUtilsTest {
             0L,
             networkParameters,
             erpFederationPublicKeys,
-            500L
+            500L,
+            activations
         );
 
         // Create a tx from the retired erp fed to the active fed
@@ -990,6 +997,7 @@ public class BridgeUtilsTest {
         Context btcContext = new Context(networkParameters);
         Federation activeFederation = bridgeConstantsRegtest.getGenesisFederation();
         when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
 
         List<BtcECKey> retiredFederationKeys = Arrays.asList(
             BtcECKey.fromPrivate(Hex.decode("fa01")),
@@ -1015,7 +1023,8 @@ public class BridgeUtilsTest {
             0L,
             networkParameters,
             erpFederationPublicKeys,
-            500L
+            500L,
+            activations
         );
 
         // Create a tx from the retired erp fed to the active fed
@@ -1312,6 +1321,8 @@ public class BridgeUtilsTest {
 
     @Test
     public void testIsPegOutTx_fromErpFederation() {
+        when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
+
         List<BtcECKey> defaultFederationKeys = Arrays.asList(
             BtcECKey.fromPrivate(Hex.decode("fa01")),
             BtcECKey.fromPrivate(Hex.decode("fa02")),
@@ -1338,7 +1349,8 @@ public class BridgeUtilsTest {
             0L,
             networkParameters,
             erpFederationPublicKeys,
-            500L
+            500L,
+            activations
         );
 
         Federation standardFederation = bridgeConstantsRegtest.getGenesisFederation();
@@ -1387,6 +1399,8 @@ public class BridgeUtilsTest {
 
     @Test
     public void testIsPegOutTx_fromFastBridgeErpFederation() {
+        when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
+
         List<BtcECKey> defaultFederationKeys = Arrays.asList(
             BtcECKey.fromPrivate(Hex.decode("fa01")),
             BtcECKey.fromPrivate(Hex.decode("fa02")),
@@ -1413,7 +1427,8 @@ public class BridgeUtilsTest {
             0L,
             networkParameters,
             erpFederationPublicKeys,
-            500L
+            500L,
+            activations
         );
 
         Federation standardFederation = bridgeConstantsRegtest.getGenesisFederation();
@@ -2622,7 +2637,8 @@ public class BridgeUtilsTest {
             genesisFederation.getCreationBlockNumber(),
             genesisFederation.getBtcParams(),
             bridgeConstantsRegtest.getErpFedPubKeysList(),
-            bridgeConstantsRegtest.getErpFedActivationDelay()
+            bridgeConstantsRegtest.getErpFedActivationDelay(),
+            activations
         );
     }
 
