@@ -474,7 +474,7 @@ public class BridgeSupportReleaseBtcTest {
     }
 
     @Test
-    public void processReleasesInBatch_before_rskip_271() throws IOException {
+    public void processPegoutsInBatch_before_rskip_271() throws IOException {
         when(activationMock.isActive(ConsensusRule.RSKIP271)).thenReturn(false);
 
         bridgeSupport.releaseBtc(releaseTx);
@@ -487,7 +487,7 @@ public class BridgeSupportReleaseBtcTest {
     }
 
     @Test
-    public void processReleasesInBatch_after_rskip_271() throws IOException {
+    public void processPegoutsInBatch_after_rskip_271() throws IOException {
         when(activationMock.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
 
         bridgeSupport.releaseBtc(releaseTx);
