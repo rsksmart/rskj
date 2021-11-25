@@ -403,7 +403,8 @@ public class BridgeStorageProviderTest {
             newFederation.getCreationBlockNumber(),
             newFederation.getBtcParams(),
             config.getNetworkConstants().getBridgeConstants().getErpFedPubKeysList(),
-            config.getNetworkConstants().getBridgeConstants().getErpFedActivationDelay()
+            config.getNetworkConstants().getBridgeConstants().getErpFedActivationDelay(),
+            activationsAllForks
         );
 
         testGetNewFederationPostMultiKey(erpFederation, activationsAllForks);
@@ -511,7 +512,8 @@ public class BridgeStorageProviderTest {
             newFederation.getCreationBlockNumber(),
             newFederation.getBtcParams(),
             bridgeConstants.getErpFedPubKeysList(),
-            bridgeConstants.getErpFedActivationDelay()
+            bridgeConstants.getErpFedActivationDelay(),
+            activationsAllForks
         );
 
         testSaveNewFederationPostMultiKey(erpFederation, 2000);
@@ -621,7 +623,8 @@ public class BridgeStorageProviderTest {
             oldFederation.getCreationBlockNumber(),
             oldFederation.getBtcParams(),
             bridgeConstants.getErpFedPubKeysList(),
-            bridgeConstants.getErpFedActivationDelay()
+            bridgeConstants.getErpFedActivationDelay(),
+            activationsAllForks
         );
 
         testGetOldFederation(erpFederation, activationsAllForks);
@@ -726,7 +729,8 @@ public class BridgeStorageProviderTest {
             oldFederation.getCreationBlockNumber(),
             oldFederation.getBtcParams(),
             bridgeConstants.getErpFedPubKeysList(),
-            bridgeConstants.getErpFedActivationDelay()
+            bridgeConstants.getErpFedActivationDelay(),
+            activationsAllForks
         );
 
         testSaveOldFederation(erpFederation, 2000);
