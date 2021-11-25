@@ -124,6 +124,7 @@ public class ErpFederation extends Federation {
             this.creationBlockNumber == otherErpFederation.creationBlockNumber &&
             this.btcParams.equals(otherErpFederation.btcParams) &&
             this.members.equals(otherErpFederation.members) &&
+            this.getRedeemScript().equals(otherErpFederation.getRedeemScript()) &&
             this.erpPubKeys.equals(otherErpFederation.erpPubKeys) &&
             this.activationDelay == otherErpFederation.activationDelay;
     }
