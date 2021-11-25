@@ -270,6 +270,8 @@ public class TrieMessageTest {
 
         // check flags
         Assert.assertEquals(0b01000000, message[0]);
+
+        Assert.assertEquals(trie, Trie.fromMessage(message, null));
     }
 
     @Test
@@ -285,6 +287,8 @@ public class TrieMessageTest {
 
         // check flags (version + lshared + left + leftEmbedded) => 0b01000000 | 0b00010000 | 0b00001000 | 0b00000010
         Assert.assertEquals(0b01011010, message[0]);
+
+        Assert.assertEquals(trie, Trie.fromMessage(message, null));
     }
 
     @Test
@@ -305,6 +309,8 @@ public class TrieMessageTest {
 
         // check flags (version + lshared + left) => 0b01000000 | 0b00010000 | 0b00001000
         Assert.assertEquals(0b01011000, message[0]);
+
+        Assert.assertEquals(trie, Trie.fromMessage(message, null));
     }
 
     @Test
@@ -326,6 +332,8 @@ public class TrieMessageTest {
 
         // check flags (version + lshared + left + leftEmbedded + right) => 0b01000000 | 0b00010000 | 0b00001000 | 0b00000010 | 0b00000100
         Assert.assertEquals(0b01011110, message[0]);
+
+        Assert.assertEquals(trie, Trie.fromMessage(message, null));
     }
 
     @Test
@@ -347,6 +355,8 @@ public class TrieMessageTest {
 
         // check flags (version + lshared + left + right + rightEmbedded) => 0b01000000 | 0b00010000 | 0b00001000 | 0b00000100 | 0b00000001
         Assert.assertEquals(0b01011101, message[0]);
+
+        Assert.assertEquals(trie, Trie.fromMessage(message, null));
     }
 
     @Test
@@ -362,6 +372,8 @@ public class TrieMessageTest {
 
         // check flags (version + lshared + left + leftEmbedded + right + rightEmbedded) => 0b01000000 | 0b00010000 | 0b00001000 | 0b00000010
         Assert.assertEquals(0b01011111, message[0]);
+
+        Assert.assertEquals(trie, Trie.fromMessage(message, null));
     }
 
     @Test
@@ -383,6 +395,8 @@ public class TrieMessageTest {
         Assert.assertEquals(2, message[2]);
         Assert.assertEquals(3, message[3]);
         Assert.assertEquals(4, message[4]);
+
+        Assert.assertEquals(trie, Trie.fromMessage(message, null));
     }
 
     @Test
@@ -407,5 +421,7 @@ public class TrieMessageTest {
 
         // check value length
         Assert.assertEquals(new Uint24(LONG_VALUE), Uint24.decode(new byte[]{message[33], message[34], message[35]}, 0));
+
+        Assert.assertEquals(trie, Trie.fromMessage(message, null));
     }
 }
