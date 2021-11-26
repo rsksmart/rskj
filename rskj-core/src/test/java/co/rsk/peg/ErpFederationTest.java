@@ -376,7 +376,7 @@ public class ErpFederationTest {
             FederationTestUtils.getFederationMembersFromPks(100, 200, 300),
             ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),
             0L,
-            NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
+            NetworkParameters.fromID(NetworkParameters.ID_TESTNET),
             ERP_FED_KEYS,
             ACTIVATION_DELAY_VALUE,
             activationsPre
@@ -386,7 +386,7 @@ public class ErpFederationTest {
             FederationTestUtils.getFederationMembersFromPks(100, 200, 300),
             ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),
             0L,
-            NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
+            NetworkParameters.fromID(NetworkParameters.ID_TESTNET),
             ERP_FED_KEYS,
             ACTIVATION_DELAY_VALUE,
             activationsPre
@@ -399,7 +399,7 @@ public class ErpFederationTest {
             FederationTestUtils.getFederationMembersFromPks(100, 200, 300),
             ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),
             0L,
-            NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
+            NetworkParameters.fromID(NetworkParameters.ID_TESTNET),
             ERP_FED_KEYS,
             ACTIVATION_DELAY_VALUE,
             activationsPost
@@ -412,7 +412,7 @@ public class ErpFederationTest {
             FederationTestUtils.getFederationMembersFromPks(100, 200, 300),
             ZonedDateTime.parse("2017-06-10T02:30:00Z").toInstant(),
             0L,
-            NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
+            NetworkParameters.fromID(NetworkParameters.ID_TESTNET),
             ERP_FED_KEYS,
             ACTIVATION_DELAY_VALUE,
             activationsPost
