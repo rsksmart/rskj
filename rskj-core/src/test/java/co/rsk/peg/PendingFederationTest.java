@@ -29,10 +29,8 @@ import co.rsk.config.BridgeMainNetConstants;
 import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.config.BridgeTestNetConstants;
 import co.rsk.crypto.Keccak256;
-import java.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
-import org.ethereum.config.blockchain.upgrades.ActivationConfig.ForBlock;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
@@ -190,25 +188,25 @@ public class PendingFederationTest {
 
     @Test
     public void buildFederation_erp_ok_after_RSKIP_201_activation_before_RSKIP284_testnet() {
-        testBuildErpFederation(false, NetworkParameters.ID_TESTNET);
+        testBuildErpFederationConsideringRskip284ActivationAndNetworkId(false, NetworkParameters.ID_TESTNET);
     }
 
     @Test
     public void buildFederation_erp_ok_after_RSKIP_201_activation_before_RSKIP284_mainnet() {
-        testBuildErpFederation(false, NetworkParameters.ID_MAINNET);
+        testBuildErpFederationConsideringRskip284ActivationAndNetworkId(false, NetworkParameters.ID_MAINNET);
     }
 
     @Test
     public void buildFederation_erp_ok_after_RSKIP_201_activation_after_RSKIP284_testnet() {
-        testBuildErpFederation(true, NetworkParameters.ID_TESTNET);
+        testBuildErpFederationConsideringRskip284ActivationAndNetworkId(true, NetworkParameters.ID_TESTNET);
     }
 
     @Test
     public void buildFederation_erp_ok_after_RSKIP_201_activation_after_RSKIP284_mainnet() {
-        testBuildErpFederation(true, NetworkParameters.ID_MAINNET);
+        testBuildErpFederationConsideringRskip284ActivationAndNetworkId(true, NetworkParameters.ID_MAINNET);
     }
 
-    private void testBuildErpFederation(boolean isRskip284Active, String networkId) {
+    private void testBuildErpFederationConsideringRskip284ActivationAndNetworkId(boolean isRskip284Active, String networkId) {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(isRskip284Active);
