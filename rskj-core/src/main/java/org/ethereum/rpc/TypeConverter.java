@@ -20,6 +20,7 @@ package org.ethereum.rpc;
 
 import co.rsk.core.Coin;
 import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.util.ByteUtil;
 
 import java.math.BigInteger;
@@ -89,8 +90,8 @@ public class TypeConverter {
 
         try {
             return new BigInteger(strHexOrStrNumber);
-        } catch (NumberFormatException e) {
-            return stringHexToBigInteger("0x" + strHexOrStrNumber);
+        } catch (Exception e) {
+            throw RskJsonRpcRequestException.invalidParamError("Number values should not contain letters or hex values should start with 0x.");
         }
     }
 
