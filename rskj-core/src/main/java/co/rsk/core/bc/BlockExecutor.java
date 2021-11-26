@@ -283,7 +283,7 @@ public class BlockExecutor {
         Metric metric = profiler.start(Profiler.PROFILING_TYPE.BLOCK_EXECUTE);
 
             Metric parallelMetric = profiler.start(Profiler.PROFILING_TYPE.BLOCK_EXECUTE_PARALLEL);
-            ExecutorService msgQueue = Executors.newFixedThreadPool(threadCount - 1);
+            ExecutorService msgQueue = Executors.newFixedThreadPool(threadCount);
             CompletionService<List<TransactionExecutionResult>> completionService = new ExecutorCompletionService<>(msgQueue);
             for (Map.Entry<Integer, List<Transaction>> threadSet : transactionsMap.entrySet()) {
                 if (threadSet.getKey() == threadCount) {
@@ -305,7 +305,7 @@ public class BlockExecutor {
 
             int received = 0;
 
-            while(received < threadCount - 1) {
+            while(received < transactionsMap.entrySet().size()) {
                 try {
                     Future<List<TransactionExecutionResult>> resultFuture = completionService.take();
                     List<TransactionExecutionResult> results = resultFuture.get();
