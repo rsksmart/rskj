@@ -244,7 +244,7 @@ public class ErpFederationTest {
 
     @Test
     public void testEquals_basic() {
-        Assert.assertTrue(federation.equals(federation));
+        Assert.assertEquals(federation,federation);
 
         Assert.assertNotEquals(null, federation);
         Assert.assertNotEquals(federation, new Object());
@@ -266,7 +266,7 @@ public class ErpFederationTest {
             activations
         );
 
-        Assert.assertTrue(federation.equals(otherFederation));
+        Assert.assertEquals(federation, otherFederation);
     }
 
     @Test
