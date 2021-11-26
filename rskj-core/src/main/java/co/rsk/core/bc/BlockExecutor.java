@@ -303,6 +303,7 @@ public class BlockExecutor {
                 completionService.submit(concurrentExecutor);
             }
 
+            msgQueue.shutdown();
             int received = 0;
 
             while(received < transactionsMap.entrySet().size()) {
