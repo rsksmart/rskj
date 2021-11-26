@@ -276,7 +276,7 @@ public class BlockExecutor {
         List<TransactionReceipt> receipts = new ArrayList<>();
         List<Transaction> executedTransactions = new ArrayList<>();
         Set<DataWord> deletedAccounts = new HashSet<>();
-        int threadCount = 4;
+        int threadCount = 8;
 
         Map<Integer, List<Transaction>> transactionsMap = getSplitTransactionsByThread(block.getTransactionsList(), threadCount);
         int txindex = 0;
@@ -468,7 +468,7 @@ public class BlockExecutor {
         Map<Integer, List<Transaction>> result = new HashMap<>();
         transactionsList.forEach(transaction ->
                 groupedTransactions.computeIfAbsent(transaction.getSender(), k -> new LinkedHashSet<>()).add(transaction));
-        int amountOfTransactionsPerConcurrentThread = (int) (transactionsList.size() * 0.25); // 15% of the total to each thread, expect from the last one that accumulates all the rest
+        int amountOfTransactionsPerConcurrentThread = (int) (transactionsList.size() * 0.125); // 15% of the total to each thread, expect from the last one that accumulates all the rest
         int currentTransactionIndex = 0;
         int currentThread = 1;
         for (RskAddress address : groupedTransactions.keySet()) {
