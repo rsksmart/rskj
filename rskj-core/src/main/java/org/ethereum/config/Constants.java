@@ -247,10 +247,6 @@ public class Constants {
         );
     }
 
-    public static Constants testnet() {
-        return testnet(null);
-    }
-
     public static Constants testnet(ActivationConfig activationConfig) {
         return new Constants(
                 TESTNET_CHAIN_ID,

@@ -304,7 +304,7 @@ public class RemascStorageProviderTest {
 
     @Test
     public void doesntPayFedBelowMinimumRewardAfterRFS() throws IOException {
-        Constants constants = spy(Constants.testnet());
+        Constants constants = spy(Constants.testnet(null));
         // we need to pass chain id check, and make believe that testnet config has same chain id as cow account
         when(constants.getChainId()).thenReturn(Constants.REGTEST_CHAIN_ID);
         when(constants.getMinimumPayableGas()).thenReturn(BigInteger.valueOf(0));
@@ -330,7 +330,7 @@ public class RemascStorageProviderTest {
 
     @Test
     public void doesntPayBelowMinimumRewardAfterRFS() throws IOException {
-        Constants constants = spy(Constants.testnet());
+        Constants constants = spy(Constants.testnet(null));
         // we need to pass chain id check, and make believe that testnet config has same chain id as cow account
         when(constants.getChainId()).thenReturn(Constants.REGTEST_CHAIN_ID);
         when(constants.getMinimumPayableGas()).thenReturn(BigInteger.valueOf(10000L));
@@ -353,7 +353,7 @@ public class RemascStorageProviderTest {
 
     @Test
     public void paysFedWhenHigherThanMinimumRewardAfterRFS() throws IOException {
-        Constants constants = spy(Constants.testnet());
+        Constants constants = spy(Constants.testnet(null));
         // we need to pass chain id check, and make believe that testnet config has same chain id as cow account
         when(constants.getChainId()).thenReturn(Constants.REGTEST_CHAIN_ID);
         when(constants.getMinimumPayableGas()).thenReturn(BigInteger.valueOf(0));
@@ -381,7 +381,7 @@ public class RemascStorageProviderTest {
 
     @Test
     public void paysWhenHigherThanMinimumRewardAfterRFS() throws IOException {
-        Constants constants = spy(Constants.testnet());
+        Constants constants = spy(Constants.testnet(null));
         // we need to pass chain id check, and make believe that testnet config has same chain id as cow account
         when(constants.getChainId()).thenReturn(Constants.REGTEST_CHAIN_ID);
         when(constants.getMinimumPayableGas()).thenReturn(BigInteger.valueOf(21000L));
@@ -406,7 +406,7 @@ public class RemascStorageProviderTest {
 
     @Test
     public void paysOnlyBlocksWithEnoughBalanceAccumulatedAfterRFS() throws IOException {
-        Constants constants = spy(Constants.testnet());
+        Constants constants = spy(Constants.testnet(null));
         // we need to pass chain id check, and make believe that testnet config has same chain id as cow account
         when(constants.getChainId()).thenReturn(Constants.REGTEST_CHAIN_ID);
         when(constants.getMinimumPayableGas()).thenReturn(BigInteger.valueOf(21000L));

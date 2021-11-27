@@ -170,7 +170,7 @@ public class RskContextTest {
         doReturn(1L).when(testProperties).getPeerScoringSummaryTime();
         doReturn(mock(ActivationConfig.class)).when(testProperties).getActivationConfig();
         doReturn(mock(ECKey.class)).when(testProperties).getMyKey();
-        doReturn(Constants.testnet()).when(testProperties).getNetworkConstants();
+        doReturn(Constants.testnet(null)).when(testProperties).getNetworkConstants();
 
         rskContext.buildInternalServices();
 
