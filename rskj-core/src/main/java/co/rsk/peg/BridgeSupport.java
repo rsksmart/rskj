@@ -1134,38 +1134,41 @@ public class BridgeSupport {
 
         if (currentBlockNumber >= nextPegoutCreationBlockNumber) {
             List<ReleaseRequestQueue.Entry> pegoutEntries = releaseRequestQueue.getEntries();
-            // batch pegout transactions
-            Optional<ReleaseTransactionBuilder.BuildResult> result = txBuilder.buildBatchedPegouts(pegoutEntries);
 
-            Coin totalPegoutValue = pegoutEntries
-                .stream()
-                .map(ReleaseRequestQueue.Entry::getAmount)
-                .reduce(Coin.ZERO, Coin::add);
+            if (!pegoutEntries.isEmpty()) {
+                Optional<ReleaseTransactionBuilder.BuildResult> result = txBuilder.buildBatchedPegouts(pegoutEntries);
 
-            if (!result.isPresent()) {
-                logger.warn(
-                    "Couldn't build a pegout BTC tx for {} pending requests (total amount: {})",
-                    pegoutEntries.size(),
-                    totalPegoutValue);
-                return;
+                Coin totalPegoutValue = pegoutEntries
+                    .stream()
+                    .map(ReleaseRequestQueue.Entry::getAmount)
+                    .reduce(Coin.ZERO, Coin::add);
+
+                if (!result.isPresent()) {
+                    logger.warn(
+                        "Couldn't build a pegout BTC tx for {} pending requests (total amount: {})",
+                        pegoutEntries.size(),
+                        totalPegoutValue);
+                    return;
+                }
+
+                BtcTransaction generatedTransaction = result.get().getBtcTx();
+                // TODO: Update to call addPegoutTxToReleaseTransactionSet with the RskHash that calls the updateCollections
+                releaseTransactionSet.add(generatedTransaction, rskExecutionBlock.getNumber());
+
+                // TODO: Update this if all requests are not batched at once i.e partial batching
+                // Remove All requests on the queue after successfully batching pegouts
+                releaseRequestQueue.removeEntries(pegoutEntries);
+
+                // Mark UTXOs as spent
+                List<UTXO> selectedUTXOs = result.get().getSelectedUTXOs();
+                availableUTXOs.removeAll(selectedUTXOs);
+
+                adjustBalancesIfChangeOutputWasDust(generatedTransaction, totalPegoutValue, wallet);
             }
 
-            BtcTransaction generatedTransaction = result.get().getBtcTx();
-            // TODO: Update to call addPegoutTxToReleaseTransactionSet with the RskHash that calls the updateCollections
-            releaseTransactionSet.add(generatedTransaction, rskExecutionBlock.getNumber());
-
-            // Remove All requests on the queue after successfully batching pegouts
-            releaseRequestQueue.removeEntries(pegoutEntries);
-
-            // Mark UTXOs as spent
-            List<UTXO> selectedUTXOs = result.get().getSelectedUTXOs();
-            availableUTXOs.removeAll(selectedUTXOs);
-
-            // update next Pegout height
+            // update next Pegout height even if there were no request in queue
             long nextPegoutHeight = currentBlockNumber + bridgeConstants.getNumberOfBlocksBetweenPegouts();
             provider.setNextPegoutHeight(nextPegoutHeight);
-
-            adjustBalancesIfChangeOutputWasDust(generatedTransaction, totalPegoutValue, wallet);
         }
     }
 

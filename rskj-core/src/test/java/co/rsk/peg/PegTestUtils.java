@@ -30,6 +30,7 @@ import co.rsk.bitcoinj.wallet.RedeemData;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 
+import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -186,5 +187,31 @@ public class PegTestUtils {
             false,
             ScriptBuilder.createOutputScript(new BtcECKey())
         );
+    }
+
+    public static UTXO createUTXO(int nHash, Coin value, Address address) {
+        return new UTXO(
+            createHash(nHash),
+            1,
+            value,
+            0,
+            false,
+            ScriptBuilder.createOutputScript(address));
+    }
+
+    public static List<UTXO> createTestUtxos(int size, Address address) {
+        List<UTXO> utxoList = new ArrayList<>();
+        SecureRandom random = new SecureRandom();
+        for (int i = 0; i < size; i++) {
+            utxoList.add(createUTXO(random.nextInt(size), Coin.COIN, address));
+        }
+        return utxoList;
+    }
+
+    public static Address createP2SHAddress(NetworkParameters networkParameters, int keysCount) {
+        List<BtcECKey> keyList = PegTestUtils.createBtcECKeys(keysCount);
+        Script redeemScript = ScriptBuilder.createRedeemScript((keyList.size() / 2) + 1, keyList);
+        Script outputScript = ScriptBuilder.createP2SHOutputScript(redeemScript);
+        return Address.fromP2SHScript(networkParameters, outputScript);
     }
 }

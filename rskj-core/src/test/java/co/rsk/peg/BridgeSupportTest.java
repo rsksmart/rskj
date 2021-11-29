@@ -7841,6 +7841,86 @@ public class BridgeSupportTest {
         assertEquals(Coin.ZERO, bridgeSupport.getEstimatedFeesForNextPegOutEvent());
     }
 
+    @Test
+    public void test_processPegoutsIndividually_before_RSKIP271_activation() throws IOException {
+
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(false);
+
+        BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
+        when(provider.getReleaseRequestQueue())
+            .thenReturn(new ReleaseRequestQueue(Collections.singletonList(
+                new ReleaseRequestQueue.Entry(PegTestUtils.createRandomBtcAddress(), Coin.MILLICOIN))));
+        when(provider.getReleaseTransactionSet()).thenReturn(new ReleaseTransactionSet(Collections.emptySet()));
+
+        BridgeSupport bridgeSupport = bridgeSupportBuilder
+            .withBridgeConstants(bridgeConstants)
+            .withProvider(provider)
+            .withActivations(activations)
+            .build();
+
+        Transaction tx = Transaction
+            .builder()
+            .nonce(NONCE)
+            .gasPrice(GAS_PRICE)
+            .gasLimit(GAS_LIMIT)
+            .destination(Hex.decode(TO_ADDRESS))
+            .data(Hex.decode(DATA))
+            .chainId(Constants.REGTEST_CHAIN_ID)
+            .value(DUST_AMOUNT)
+            .build();
+
+        bridgeSupport.updateCollections(tx);
+
+        verify(provider, never()).getNextPegoutHeight();
+        verify(provider, never()).setNextPegoutHeight(any(Long.class));
+    }
+
+    @Test
+    public void test_processPegoutsInBatch_after_RSKIP271_activation_next_pegout_height_not_reached() throws IOException {
+
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
+
+        Block executionBlock = mock(Block.class);
+        when(executionBlock.getNumber()).thenReturn(100L);
+
+        long executionBlockNumber = executionBlock.getNumber();
+
+        BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
+        when(provider.getNextPegoutHeight()).thenReturn(Optional.of(executionBlockNumber + bridgeConstants.getNumberOfBlocksBetweenPegouts() - 1));
+        when(provider.getReleaseRequestQueue())
+            .thenReturn(new ReleaseRequestQueue(Collections.singletonList(
+                new ReleaseRequestQueue.Entry(PegTestUtils.createRandomBtcAddress(), Coin.MILLICOIN))));
+        when(provider.getReleaseTransactionSet()).thenReturn(new ReleaseTransactionSet(Collections.emptySet()));
+
+        BridgeSupport bridgeSupport = bridgeSupportBuilder
+            .withBridgeConstants(bridgeConstants)
+            .withProvider(provider)
+            .withExecutionBlock(executionBlock)
+            .withActivations(activations)
+            .build();
+
+        Transaction tx = Transaction
+            .builder()
+            .nonce(NONCE)
+            .gasPrice(GAS_PRICE)
+            .gasLimit(GAS_LIMIT)
+            .destination(Hex.decode(TO_ADDRESS))
+            .data(Hex.decode(DATA))
+            .chainId(Constants.REGTEST_CHAIN_ID)
+            .value(DUST_AMOUNT)
+            .build();
+
+        bridgeSupport.updateCollections(tx);
+
+        verify(provider, times(1)).getNextPegoutHeight();
+        verify(provider, never()).setNextPegoutHeight(any(Long.class));
+
+        assertEquals(1, provider.getReleaseRequestQueue().getEntries().size());
+        assertEquals(0, provider.getReleaseTransactionSet().getEntries().size());
+    }
+
     private Address getFastBridgeFederationAddress() {
         Script fastBridgeRedeemScript = FastBridgeRedeemScriptParser.createMultiSigFastBridgeRedeemScript(
             bridgeConstants.getGenesisFederation().getRedeemScript(),
