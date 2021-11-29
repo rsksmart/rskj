@@ -175,13 +175,13 @@ public class NestedContractsTest {
     }
 
     private String getContractAddressString(String contractTx) {
-        return getContractAddress(contractTx).toHexString();
+        return "0x" + getContractAddress(contractTx).toHexString();
     }
 
     private CallArguments buildArgs(String toAddress, String data) {
         final CallArguments args = new CallArguments();
         args.setTo(toAddress);
-        args.setData(data); // call to contract
+        args.setData("0x" + data); // call to contract
         args.setValue("0");
         args.setNonce("1");
         args.setGas("10000000");

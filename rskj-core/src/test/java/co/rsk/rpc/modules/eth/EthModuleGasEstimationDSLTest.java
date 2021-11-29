@@ -59,7 +59,7 @@ public class EthModuleGasEstimationDSLTest {
         Block block = world.getBlockChain().getBestBlock();
 
         final CallArguments args = new CallArguments();
-        args.setTo("6252703f5ba322ec64d3ac45e56241b7d9e481ad"); // some address;
+        args.setTo("0x6252703f5ba322ec64d3ac45e56241b7d9e481ad"); // some address;
         args.setValue(TypeConverter.toQuantityJsonHex(0)); // no value
         args.setNonce(TypeConverter.toQuantityJsonHex(0));
         args.setGas(TypeConverter.toQuantityJsonHex(BLOCK_GAS_LIMIT));
@@ -111,7 +111,7 @@ public class EthModuleGasEstimationDSLTest {
         assertNotNull(status);
         assertEquals(1, status.length);
         assertEquals(0x01, status[0]);
-        assertEquals("6252703f5ba322ec64d3ac45e56241b7d9e481ad", contractAddress.toHexString());
+        assertEquals("0x6252703f5ba322ec64d3ac45e56241b7d9e481ad", "0x" + contractAddress.toHexString());
 
         TransactionReceipt callWithValueReceipt = world.getTransactionReceiptByName("tx02");
         byte[] status2 = callWithValueReceipt.getStatus();
@@ -124,8 +124,8 @@ public class EthModuleGasEstimationDSLTest {
         EthModuleTestUtils.EthModuleGasEstimation eth = EthModuleTestUtils.buildBasicEthModuleForGasEstimation(world);
 
         final CallArguments args = new CallArguments();
-        args.setTo(contractAddress.toHexString());
-        args.setData("c3cefd36"); // callWithValue()
+        args.setTo("0x" + contractAddress.toHexString());
+        args.setData("0xc3cefd36"); // callWithValue()
         args.setValue(TypeConverter.toQuantityJsonHex(10_000)); // some value
         args.setNonce(TypeConverter.toQuantityJsonHex(3));
         args.setGas(TypeConverter.toQuantityJsonHex(BLOCK_GAS_LIMIT));
@@ -167,7 +167,7 @@ public class EthModuleGasEstimationDSLTest {
         World world = World.processedWorld("dsl/eth_module/estimateGas/updateStorage.txt");
 
         TransactionReceipt deployTransactionReceipt = world.getTransactionReceiptByName("tx01");
-        String contractAddress = deployTransactionReceipt.getTransaction().getContractAddress().toHexString();
+        String contractAddress = "0x" + deployTransactionReceipt.getTransaction().getContractAddress().toHexString();
         byte[] status = deployTransactionReceipt.getStatus();
 
         assertNotNull(status);
@@ -191,7 +191,7 @@ public class EthModuleGasEstimationDSLTest {
         args.setValue(TypeConverter.toQuantityJsonHex(0));
         args.setNonce(TypeConverter.toQuantityJsonHex(1));
         args.setGas(TypeConverter.toQuantityJsonHex(BLOCK_GAS_LIMIT));
-        args.setData("7b8d56e3" +
+        args.setData("0x7b8d56e3" +
                 "0000000000000000000000000000000000000000000000000000000000000001" +
                 "0000000000000000000000000000000000000000000000000000000000000000"); // setValue(1,0)
 
@@ -218,7 +218,7 @@ public class EthModuleGasEstimationDSLTest {
 
         // estimate gas for updating a storage cell from non-zero to non-zero
         args.setGas(TypeConverter.toQuantityJsonHex(BLOCK_GAS_LIMIT));
-        args.setData("7b8d56e3" +
+        args.setData("0x7b8d56e3" +
                 "0000000000000000000000000000000000000000000000000000000000000001" +
                 "0000000000000000000000000000000000000000000000000000000000000001"); // setValue(1,1)
         long updateStorageGasUsed = eth.callConstant(args, block).getGasUsed();
@@ -232,11 +232,11 @@ public class EthModuleGasEstimationDSLTest {
         assertEquals(updateStoreageEstimatedGas, updateStorageGasUsed);
 
         // Call same transaction with estimated gas
-        args.setGas(Long.toString(updateStoreageEstimatedGas, 16));
+        args.setGas("0x" + Long.toString(updateStoreageEstimatedGas, 16));
         assertTrue(runWithArgumentsAndBlock(eth, args, block));
 
         // Call same transaction with estimated gas minus 1
-        args.setGas(Long.toString(updateStoreageEstimatedGas - 1, 16));
+        args.setGas("0x" + Long.toString(updateStoreageEstimatedGas - 1, 16));
         assertFalse(runWithArgumentsAndBlock(eth, args, block));
 
         // Check against another already initialized (2,42) storage cell
@@ -249,7 +249,7 @@ public class EthModuleGasEstimationDSLTest {
         assertEquals(0x01, status3[0]);
 
         // Change this storage cell to zero and compare
-        args.setData("7b8d56e3" +
+        args.setData("0x7b8d56e3" +
                 "0000000000000000000000000000000000000000000000000000000000000002" +
                 "0000000000000000000000000000000000000000000000000000000000000000");
         args.setGas(TypeConverter.toQuantityJsonHex(BLOCK_GAS_LIMIT));
@@ -273,8 +273,8 @@ public class EthModuleGasEstimationDSLTest {
         World world = World.processedWorld("dsl/eth_module/estimateGas/gasCap.txt");
 
         TransactionReceipt deployTransactionReceipt = world.getTransactionReceiptByName("tx01");
-        String sender = deployTransactionReceipt.getTransaction().getSender().toHexString();
-        String contractAddress = deployTransactionReceipt.getTransaction().getContractAddress().toHexString();
+        String sender = "0x" + deployTransactionReceipt.getTransaction().getSender().toHexString();
+        String contractAddress = "0x" + deployTransactionReceipt.getTransaction().getContractAddress().toHexString();
         byte[] status = deployTransactionReceipt.getStatus();
 
         assertNotNull(status);
@@ -288,7 +288,7 @@ public class EthModuleGasEstimationDSLTest {
         callArguments.setFrom(sender); // the creator
         callArguments.setTo(contractAddress);  // deployed contract
         callArguments.setGas(TypeConverter.toQuantityJsonHex(gasEstimationCap + 1_000_000_000)); // exceeding the gas cap
-        callArguments.setData("31fe52e8"); // call outOfGas()
+        callArguments.setData("0x31fe52e8"); // call outOfGas()
 
         String estimatedGas = eth.estimateGas(callArguments);
 
@@ -303,7 +303,7 @@ public class EthModuleGasEstimationDSLTest {
         World world = World.processedWorld("dsl/eth_module/estimateGas/callWithValuePlusSstoreRefund.txt");
 
         TransactionReceipt contractDeployReceipt = world.getTransactionReceiptByName("tx01");
-        String contractAddress = contractDeployReceipt.getTransaction().getContractAddress().toHexString();
+        String contractAddress = "0x" + contractDeployReceipt.getTransaction().getContractAddress().toHexString();
         byte[] status = contractDeployReceipt.getStatus();
 
         assertNotNull(status);
@@ -319,7 +319,7 @@ public class EthModuleGasEstimationDSLTest {
         args.setValue(TypeConverter.toQuantityJsonHex(1));
         args.setNonce(TypeConverter.toQuantityJsonHex(1));
         args.setGas(TypeConverter.toQuantityJsonHex(BLOCK_GAS_LIMIT));
-        args.setData("5b3f8140"); // clearStorageAndSendValue()
+        args.setData("0x5b3f8140"); // clearStorageAndSendValue()
 
         ProgramResult callConstant = eth.callConstant(args, block);
         long callConstantGasUsed = callConstant.getGasUsed();
@@ -349,31 +349,31 @@ public class EthModuleGasEstimationDSLTest {
         World world = World.processedWorld("dsl/eth_module/estimateGas/nestedCallsWithValue.txt");
 
         TransactionReceipt contractDeployA = world.getTransactionReceiptByName("tx01");
-        String contractAddressA = contractDeployA.getTransaction().getContractAddress().toHexString();
+        String contractAddressA = "0x" + contractDeployA.getTransaction().getContractAddress().toHexString();
         byte[] status = contractDeployA.getStatus();
 
         assertNotNull(status);
         assertEquals(1, status.length);
         assertEquals(0x01, status[0]);
-        assertEquals("6252703f5ba322ec64d3ac45e56241b7d9e481ad", contractAddressA);
+        assertEquals("0x6252703f5ba322ec64d3ac45e56241b7d9e481ad", contractAddressA);
 
         TransactionReceipt contractDeployB = world.getTransactionReceiptByName("tx02");
-        String contractAddressB = contractDeployB.getTransaction().getContractAddress().toHexString();
+        String contractAddressB = "0x" + contractDeployB.getTransaction().getContractAddress().toHexString();
         byte[] status2 = contractDeployB.getStatus();
 
         assertNotNull(status2);
         assertEquals(1, status2.length);
         assertEquals(0x01, status2[0]);
-        assertEquals("56aa252dd82173789984fa164ee26ce2da9336ff", contractAddressB);
+        assertEquals("0x56aa252dd82173789984fa164ee26ce2da9336ff", contractAddressB);
 
         TransactionReceipt contractDeployC = world.getTransactionReceiptByName("tx03");
-        String contractAddressC = contractDeployC.getTransaction().getContractAddress().toHexString();
+        String contractAddressC = "0x" + contractDeployC.getTransaction().getContractAddress().toHexString();
         byte[] status3 = contractDeployC.getStatus();
 
         assertNotNull(status3);
         assertEquals(1, status3.length);
         assertEquals(0x01, status3[0]);
-        assertEquals("27444fbce96cb2d27b94e116d1506d7739c05862", contractAddressC);
+        assertEquals("0x27444fbce96cb2d27b94e116d1506d7739c05862", contractAddressC);
 
         EthModuleTestUtils.EthModuleGasEstimation eth = EthModuleTestUtils.buildBasicEthModuleForGasEstimation(world);
         Block block = world.getBlockChain().getBestBlock();
@@ -384,7 +384,7 @@ public class EthModuleGasEstimationDSLTest {
         args.setValue(TypeConverter.toQuantityJsonHex(1));
         args.setNonce(TypeConverter.toQuantityJsonHex(6));
         args.setGas(TypeConverter.toQuantityJsonHex(BLOCK_GAS_LIMIT));
-        args.setData("fb60f709"); // callAddressWithValue()
+        args.setData("0xfb60f709"); // callAddressWithValue()
 
         ProgramResult callConstant = eth.callConstant(args, block);
         List<InternalTransaction> internalTransactions = callConstant.getInternalTransactions();
@@ -425,31 +425,31 @@ public class EthModuleGasEstimationDSLTest {
         World world = World.processedWorld("dsl/eth_module/estimateGas/nestedCallsWithValueAndStorageRefund.txt");
 
         TransactionReceipt contractDeployA = world.getTransactionReceiptByName("tx01");
-        String contractAddressA = contractDeployA.getTransaction().getContractAddress().toHexString();
+        String contractAddressA = "0x" + contractDeployA.getTransaction().getContractAddress().toHexString();
         byte[] status = contractDeployA.getStatus();
 
         assertNotNull(status);
         assertEquals(1, status.length);
         assertEquals(0x01, status[0]);
-        assertEquals("6252703f5ba322ec64d3ac45e56241b7d9e481ad", contractAddressA);
+        assertEquals("0x6252703f5ba322ec64d3ac45e56241b7d9e481ad", contractAddressA);
 
         TransactionReceipt contractDeployB = world.getTransactionReceiptByName("tx02");
-        String contractAddressB = contractDeployB.getTransaction().getContractAddress().toHexString();
+        String contractAddressB = "0x" + contractDeployB.getTransaction().getContractAddress().toHexString();
         byte[] status2 = contractDeployB.getStatus();
 
         assertNotNull(status2);
         assertEquals(1, status2.length);
         assertEquals(0x01, status2[0]);
-        assertEquals("56aa252dd82173789984fa164ee26ce2da9336ff", contractAddressB);
+        assertEquals("0x56aa252dd82173789984fa164ee26ce2da9336ff", contractAddressB);
 
         TransactionReceipt contractDeployC = world.getTransactionReceiptByName("tx03");
-        String contractAddressC = contractDeployC.getTransaction().getContractAddress().toHexString();
+        String contractAddressC = "0x" + contractDeployC.getTransaction().getContractAddress().toHexString();
         byte[] status3 = contractDeployC.getStatus();
 
         assertNotNull(status3);
         assertEquals(1, status3.length);
         assertEquals(0x01, status3[0]);
-        assertEquals("27444fbce96cb2d27b94e116d1506d7739c05862", contractAddressC);
+        assertEquals("0x27444fbce96cb2d27b94e116d1506d7739c05862", contractAddressC);
 
         EthModuleTestUtils.EthModuleGasEstimation eth = EthModuleTestUtils.buildBasicEthModuleForGasEstimation(world);
         Block block = world.getBlockChain().getBestBlock();
@@ -460,7 +460,7 @@ public class EthModuleGasEstimationDSLTest {
         args.setValue(TypeConverter.toQuantityJsonHex(1));
         args.setNonce(TypeConverter.toQuantityJsonHex(6));
         args.setGas(TypeConverter.toQuantityJsonHex(BLOCK_GAS_LIMIT));
-        args.setData("fb60f709"); // callAddressWithValue()
+        args.setData("0xfb60f709"); // callAddressWithValue()
 
         ProgramResult callConstant = eth.callConstant(args, block);
         List<InternalTransaction> internalTransactions = callConstant.getInternalTransactions();
@@ -502,31 +502,31 @@ public class EthModuleGasEstimationDSLTest {
         World world = World.processedWorld("dsl/eth_module/estimateGas/nestedCallsWithValueStorageRefundAndFixedGas.txt");
 
         TransactionReceipt contractDeployA = world.getTransactionReceiptByName("tx01");
-        String contractAddressA = contractDeployA.getTransaction().getContractAddress().toHexString();
+        String contractAddressA = "0x" + contractDeployA.getTransaction().getContractAddress().toHexString();
         byte[] status = contractDeployA.getStatus();
 
         assertNotNull(status);
         assertEquals(1, status.length);
         assertEquals(0x01, status[0]);
-        assertEquals("6252703f5ba322ec64d3ac45e56241b7d9e481ad", contractAddressA);
+        assertEquals("0x6252703f5ba322ec64d3ac45e56241b7d9e481ad", contractAddressA);
 
         TransactionReceipt contractDeployB = world.getTransactionReceiptByName("tx02");
-        String contractAddressB = contractDeployB.getTransaction().getContractAddress().toHexString();
+        String contractAddressB = "0x" + contractDeployB.getTransaction().getContractAddress().toHexString();
         byte[] status2 = contractDeployB.getStatus();
 
         assertNotNull(status2);
         assertEquals(1, status2.length);
         assertEquals(0x01, status2[0]);
-        assertEquals("56aa252dd82173789984fa164ee26ce2da9336ff", contractAddressB);
+        assertEquals("0x56aa252dd82173789984fa164ee26ce2da9336ff", contractAddressB);
 
         TransactionReceipt contractDeployC = world.getTransactionReceiptByName("tx03");
-        String contractAddressC = contractDeployC.getTransaction().getContractAddress().toHexString();
+        String contractAddressC = "0x" + contractDeployC.getTransaction().getContractAddress().toHexString();
         byte[] status3 = contractDeployC.getStatus();
 
         assertNotNull(status3);
         assertEquals(1, status3.length);
         assertEquals(0x01, status3[0]);
-        assertEquals("27444fbce96cb2d27b94e116d1506d7739c05862", contractAddressC);
+        assertEquals("0x27444fbce96cb2d27b94e116d1506d7739c05862", contractAddressC);
 
         EthModuleTestUtils.EthModuleGasEstimation eth = EthModuleTestUtils.buildBasicEthModuleForGasEstimation(world);
         Block block = world.getBlockChain().getBestBlock();
@@ -537,7 +537,7 @@ public class EthModuleGasEstimationDSLTest {
         args.setValue(TypeConverter.toQuantityJsonHex(1));
         args.setNonce(TypeConverter.toQuantityJsonHex(6));
         args.setGas(TypeConverter.toQuantityJsonHex(BLOCK_GAS_LIMIT));
-        args.setData("fb60f709"); // callAddressWithValue()
+        args.setData("0xfb60f709"); // callAddressWithValue()
 
         ProgramResult callConstant = eth.callConstant(args, block);
         List<InternalTransaction> internalTransactions = callConstant.getInternalTransactions();
