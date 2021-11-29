@@ -9,10 +9,7 @@ import org.ethereum.vm.trace.ProgramTraceProcessor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.Callable;
 
 public class TransactionConcurrentExecutor implements Callable<List<TransactionExecutionResult>> {
@@ -28,13 +25,12 @@ public class TransactionConcurrentExecutor implements Callable<List<TransactionE
     private boolean discardInvalidTxs;
     private ProgramTraceProcessor programTraceProcessor;
     private Coin totalPaidFees;
-    private int i;
     private List<TransactionReceipt> receipts;
-    private final List<Transaction> txs;
+    private final Map<Integer, Transaction> txs;
     private final TransactionExecutorFactory transactionExecutorFactory;
 
 
-    public TransactionConcurrentExecutor(List<Transaction> txs,
+    public TransactionConcurrentExecutor(Map<Integer, Transaction> txs,
                                          TransactionExecutorFactory transactionExecutorFactory,
                                          Repository track,
                                          Block block,
@@ -42,8 +38,7 @@ public class TransactionConcurrentExecutor implements Callable<List<TransactionE
                                          int vmTraceOptions,
                                          boolean acceptInvalidTransactions,
                                          boolean discardInvalidTxs,
-                                         ProgramTraceProcessor programTraceProcessor,
-                                         int index) {
+                                         ProgramTraceProcessor programTraceProcessor) {
         this.txs = txs;
         this.track = track;
         this.block = block;
@@ -55,7 +50,6 @@ public class TransactionConcurrentExecutor implements Callable<List<TransactionE
         this.discardInvalidTxs = discardInvalidTxs;
         this.programTraceProcessor = programTraceProcessor;
         this.totalPaidFees = Coin.ZERO;
-        this.i = index;
         this.transactionExecutorFactory = transactionExecutorFactory;
         receipts = new ArrayList<>();
     }
@@ -63,11 +57,13 @@ public class TransactionConcurrentExecutor implements Callable<List<TransactionE
     @Override
     public List<TransactionExecutionResult> call() throws TransactionException {
         List<TransactionExecutionResult> results = new ArrayList<>();
-        for (Transaction tx :
-                txs) {
+        for (Map.Entry<Integer, Transaction> txMap :
+                txs.entrySet()) {
+            Transaction tx = txMap.getValue();
+            Integer txIndex = txMap.getKey();
             TransactionExecutor txExecutor = transactionExecutorFactory.newInstance(
                     tx,
-                    i,
+                    txIndex,
                     block.getCoinbase(),
                     track,
                     block,
@@ -118,9 +114,7 @@ public class TransactionConcurrentExecutor implements Callable<List<TransactionE
 
             logger.trace("block: [{}] executed tx: [{}]", block.getNumber(), tx.getHash());
 
-            logger.trace("tx[{}].receipt", i);
-
-            i++;
+            logger.trace("tx[{}].receipt", tx.getKey());
 
             receipts.add(receipt);
 

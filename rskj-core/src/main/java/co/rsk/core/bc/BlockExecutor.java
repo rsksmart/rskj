@@ -270,7 +270,6 @@ public class BlockExecutor {
 
         maintainPrecompiledContractStorageRoots(track, activationConfig.forBlock(block.getNumber()));
 
-        AtomicInteger i = new AtomicInteger(1);
         long totalGasUsed = 0;
         Coin totalPaidFees = Coin.ZERO;
         List<TransactionReceipt> receipts = new ArrayList<>();
@@ -278,17 +277,17 @@ public class BlockExecutor {
         Set<DataWord> deletedAccounts = new HashSet<>();
         int threadCount = 8;
 
-        Map<Integer, List<Transaction>> transactionsMap = getSplitTransactionsByThread(block.getTransactionsList(), threadCount);
-        int txindex = 0;
+        Map<Integer, Map<Integer, Transaction>> transactionsMap = getSplitTransactionsByThread(block.getTransactionsList(), threadCount);
         Metric metric = profiler.start(Profiler.PROFILING_TYPE.BLOCK_EXECUTE);
 
             Metric parallelMetric = profiler.start(Profiler.PROFILING_TYPE.BLOCK_EXECUTE_PARALLEL);
             ExecutorService msgQueue = Executors.newFixedThreadPool(threadCount);
             CompletionService<List<TransactionExecutionResult>> completionService = new ExecutorCompletionService<>(msgQueue);
-            for (Map.Entry<Integer, List<Transaction>> threadSet : transactionsMap.entrySet()) {
+            for (Map.Entry<Integer, Map<Integer, Transaction>> threadSet : transactionsMap.entrySet()) {
                 if (threadSet.getKey() == threadCount) {
                     continue;
                 }
+                logger.warn("Parallel run of [{}] transactions for block: [{}] thread: [{}]", block.getNumber(), threadSet.getValue().size(), threadSet.getKey());
                 TransactionConcurrentExecutor concurrentExecutor = new TransactionConcurrentExecutor(
                         threadSet.getValue(),
                         transactionExecutorFactory,
@@ -298,8 +297,7 @@ public class BlockExecutor {
                         vmTraceOptions,
                         acceptInvalidTransactions,
                         discardInvalidTxs,
-                        programTraceProcessor,
-                        i.getAndIncrement());
+                        programTraceProcessor);
                 completionService.submit(concurrentExecutor);
             }
 
@@ -332,12 +330,10 @@ public class BlockExecutor {
             }
             profiler.stop(parallelMetric);
 
-        List<Transaction> pendingTxs = transactionsMap.get(transactionsMap.size()); // get the last sub set of transactions, those that wa
+        Map<Integer, Transaction> pendingTxs = transactionsMap.get(transactionsMap.size()); // get the last sub set of transactions, those that wa
         executePendingTransactions(
                 pendingTxs,
                 block,
-                i.get(),
-                txindex,
                 track,
                 totalGasUsed,
                 vmTrace,
@@ -374,10 +370,8 @@ public class BlockExecutor {
     }
 
     private BlockResult executePendingTransactions(
-            List<Transaction> transactions,
+            Map<Integer, Transaction> transactions,
             Block block,
-            int i,
-            int txindex,
             Repository track,
             long totalGasUsed,
             boolean vmTrace,
@@ -391,10 +385,13 @@ public class BlockExecutor {
             Coin totalPaidFees,
             List<TransactionReceipt> receipts
             ) {
-        for (Transaction tx : transactions) {
+        logger.warn("sequentially run transactions for block: [{}] count: [{}]", block.getNumber(), transactions.size());
+        for (Map.Entry<Integer, Transaction> txEntry : transactions.entrySet()) {
+            Transaction tx = txEntry.getValue();
+            Integer txIndex = txEntry.getKey();
             TransactionExecutor txExecutor = transactionExecutorFactory.newInstance(
                     tx,
-                    txindex++,
+                    txIndex,
                     block.getCoinbase(),
                     track,
                     block,
@@ -452,9 +449,7 @@ public class BlockExecutor {
 
             logger.trace("block: [{}] executed tx: [{}]", block.getNumber(), tx.getHash());
 
-            logger.trace("tx[{}].receipt", i);
-
-            i++;
+            logger.trace("tx[{}].receipt", txIndex);
 
             receipts.add(receipt);
 
@@ -463,11 +458,20 @@ public class BlockExecutor {
         return null;
     }
 
-    private Map<Integer, List<Transaction>> getSplitTransactionsByThread(List<Transaction> transactionsList, int threadCount) {
-        Map<RskAddress, Set<Transaction>> groupedTransactions = new LinkedHashMap<>();
-        Map<Integer, List<Transaction>> result = new HashMap<>();
-        transactionsList.forEach(transaction ->
-                groupedTransactions.computeIfAbsent(transaction.getSender(), k -> new LinkedHashSet<>()).add(transaction));
+    private Map<Integer, Map<Integer, Transaction>> getSplitTransactionsByThread(List<Transaction> transactionsList, int threadCount) {
+        Map<RskAddress, Map<Integer, Transaction>> groupedTransactions = new LinkedHashMap<>();
+        Map<Integer, Transaction> indexedTxs = new HashMap<>();
+        Map<Integer, Map<Integer, Transaction>> result = new HashMap<>();
+        int i = 1;
+        for (Transaction tx: transactionsList) {
+            indexedTxs.put(i, tx);
+            i++;
+        }
+        for (Map.Entry<Integer, Transaction> txEntry :
+                indexedTxs.entrySet()) {
+            groupedTransactions.computeIfAbsent(txEntry.getValue().getSender(), k -> new LinkedHashMap<>()).put(txEntry.getKey(), txEntry.getValue());
+        }
+
         int amountOfTransactionsPerConcurrentThread = (int) (transactionsList.size() * 0.125); // 15% of the total to each thread, expect from the last one that accumulates all the rest
         int currentTransactionIndex = 0;
         int currentThread = 1;
@@ -479,26 +483,10 @@ public class BlockExecutor {
                 currentThread++;
             }
             // add all the transactions belonging to that address, in order. It assumes transactions are already ordered (nonce).
-            result.computeIfAbsent(currentThread, k -> new ArrayList<>()).addAll(groupedTransactions.get(address));
+            result.computeIfAbsent(currentThread, k -> new LinkedHashMap<>()).putAll(groupedTransactions.get(address));
         }
         return result;
     }
-
-//    private static List<Transaction> sortBySenderAndNonce(List<Transaction> transactions) {
-//
-//        transactions.sort((Comparator) (o1, o2) -> {
-//            int senderComparison = ((Transaction) o1).compareTo(((Transaction) o2));
-//
-//            if (senderComparison != 0) {
-//                return senderComparison;
-//            }
-//
-//            BigInteger x1 = ((Transaction) o1).getNonceAsInteger();
-//            BigInteger x2 = ((Transaction) o2).getNonceAsInteger();
-//            return x1.compareTo(x2);
-//        });
-//        return transactions;
-//    }
 
     /**
      * Precompiled contracts storage is setup like any other contract for consistency. Here, we apply this logic on the
