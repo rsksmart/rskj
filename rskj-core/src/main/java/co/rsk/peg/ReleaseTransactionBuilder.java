@@ -102,6 +102,19 @@ public class ReleaseTransactionBuilder {
         }, String.format("sending %s to %s", amount, to));
     }
 
+    public Optional<BuildResult> buildBatchedPegouts(List<ReleaseRequestQueue.Entry> entries) {
+        if (entries.isEmpty()) {
+            return Optional.empty();
+        }
+
+        return buildWithConfiguration((SendRequest sr) -> {
+            for (ReleaseRequestQueue.Entry entry : entries) {
+                sr.tx.addOutput(entry.getAmount(), entry.getDestination());
+            }
+            sr.changeAddress = changeAddress;
+        }, String.format("batching %d pegouts", entries.size()));
+    }
+
     public Optional<BuildResult> buildEmptyWalletTo(Address to) {
         return buildWithConfiguration((SendRequest sr) -> {
             sr.tx.addOutput(Coin.ZERO, to);
@@ -167,19 +180,6 @@ public class ReleaseTransactionBuilder {
             // panicProcessor.panic("utxoprovider", "UTXO provider exception " + rskTxHash + " " + btcTx);
             return Optional.empty();
         }
-    }
-
-    public Optional<BuildResult> buildBatchedPegouts(List<ReleaseRequestQueue.Entry> entries) {
-        if (entries.isEmpty()) {
-            return Optional.empty();
-        }
-
-        return buildWithConfiguration((SendRequest sr) -> {
-            for (ReleaseRequestQueue.Entry entry : entries) {
-                sr.tx.addOutput(entry.getAmount(), entry.getDestination());
-            }
-            sr.changeAddress = changeAddress;
-        }, String.format("batching pegout for %s pegouts", entries.size()));
     }
 
     private final SendRequestConfigurator defaultSettingsConfigurator = (SendRequest sr) -> {
