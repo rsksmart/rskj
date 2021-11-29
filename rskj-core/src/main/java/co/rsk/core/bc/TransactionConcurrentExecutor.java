@@ -114,7 +114,7 @@ public class TransactionConcurrentExecutor implements Callable<List<TransactionE
 
             logger.trace("block: [{}] executed tx: [{}]", block.getNumber(), tx.getHash());
 
-            logger.trace("tx[{}].receipt", tx.getKey());
+            logger.trace("tx[{}].receipt", txIndex);
 
             receipts.add(receipt);
 
