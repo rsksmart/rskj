@@ -332,6 +332,25 @@ public class BlockExecutor {
                 return BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT;
             }
         }
+
+        if(sequentialPart > 0){
+            Map<Integer, Transaction> pendingTxs = transactionsMap.get(transactionsMap.size()); // get the last sub set of transactions, those that wa
+            executePendingTransactions(
+                    pendingTxs,
+                    block,
+                    track,
+                    totalGasUsed,
+                    vmTrace,
+                    vmTraceOptions,
+                    deletedAccounts,
+                    acceptInvalidTransactions,
+                    discardInvalidTxs,
+                    executedTransactions,
+                    metric,
+                    programTraceProcessor,
+                    totalPaidFees,
+                    receipts);
+        }
         profiler.stop(parallelMetric);
 
         logger.trace("End txs executions.");
