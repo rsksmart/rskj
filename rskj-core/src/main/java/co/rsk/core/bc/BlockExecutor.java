@@ -276,76 +276,63 @@ public class BlockExecutor {
         List<Transaction> executedTransactions = new ArrayList<>();
         Set<DataWord> deletedAccounts = new HashSet<>();
         int threadCount = 8;
-
-        Map<Integer, Map<Integer, Transaction>> transactionsMap = getSplitTransactionsByThread(block.getTransactionsList(), threadCount);
+        double sequentialPart = 0.0D;
+        if(sequentialPart > 0){
+            threadCount += 1;
+        }
+        double threadPercentage = (1.00 - sequentialPart) / threadCount;
+        Map<Integer, Map<Integer, Transaction>> transactionsMap = getSplitTransactionsByThread(block.getTransactionsList(), threadCount, threadPercentage);
         Metric metric = profiler.start(Profiler.PROFILING_TYPE.BLOCK_EXECUTE);
 
-            Metric parallelMetric = profiler.start(Profiler.PROFILING_TYPE.BLOCK_EXECUTE_PARALLEL);
-            ExecutorService msgQueue = Executors.newFixedThreadPool(threadCount);
-            CompletionService<List<TransactionExecutionResult>> completionService = new ExecutorCompletionService<>(msgQueue);
-            for (Map.Entry<Integer, Map<Integer, Transaction>> threadSet : transactionsMap.entrySet()) {
-                if (threadSet.getKey() == threadCount) {
-                    continue;
-                }
-                logger.warn("Parallel run of [{}] transactions for block: [{}] thread: [{}]", block.getNumber(), threadSet.getValue().size(), threadSet.getKey());
-                TransactionConcurrentExecutor concurrentExecutor = new TransactionConcurrentExecutor(
-                        threadSet.getValue(),
-                        transactionExecutorFactory,
-                        track,
-                        block,
-                        vmTrace,
-                        vmTraceOptions,
-                        acceptInvalidTransactions,
-                        discardInvalidTxs,
-                        programTraceProcessor);
-                completionService.submit(concurrentExecutor);
+        Metric parallelMetric = profiler.start(Profiler.PROFILING_TYPE.BLOCK_EXECUTE_PARALLEL);
+        ExecutorService msgQueue = Executors.newFixedThreadPool(threadCount);
+        CompletionService<List<TransactionExecutionResult>> completionService = new ExecutorCompletionService<>(msgQueue);
+        for (Map.Entry<Integer, Map<Integer, Transaction>> threadSet : transactionsMap.entrySet()) {
+            if (threadSet.getKey() == threadCount) {
+                continue;
             }
+            logger.warn("Parallel run of [{}] transactions for block: [{}] thread: [{}]", block.getNumber(), threadSet.getValue().size(), threadSet.getKey());
+            TransactionConcurrentExecutor concurrentExecutor = new TransactionConcurrentExecutor(
+                    threadSet.getValue(),
+                    transactionExecutorFactory,
+                    track,
+                    block,
+                    vmTrace,
+                    vmTraceOptions,
+                    acceptInvalidTransactions,
+                    discardInvalidTxs,
+                    programTraceProcessor);
+            completionService.submit(concurrentExecutor);
+        }
 
-            msgQueue.shutdown();
-            int received = 0;
+        msgQueue.shutdown();
+        int received = 0;
 
-            while(received < transactionsMap.entrySet().size()) {
-                try {
-                    Future<List<TransactionExecutionResult>> resultFuture = completionService.take();
-                    List<TransactionExecutionResult> results = resultFuture.get();
-                    received ++;
-                    for (TransactionExecutionResult result : results) {
-                        deletedAccounts.addAll(result.getDeletedAccounts());
-                        executedTransactions.add(result.getExecutedTransaction());
-                        receipts.add(result.getReceipt());
-                        if (this.registerProgramResults) {
-                            transactionResults.put(result.getTxHash(), result.getResult());
-                        }
-                        totalPaidFees.add(result.getTotalPaidFees());
-                        totalGasUsed += result.getTotalGasUsed();
+        while(received < transactionsMap.entrySet().size()) {
+            try {
+                Future<List<TransactionExecutionResult>> resultFuture = completionService.take();
+                List<TransactionExecutionResult> results = resultFuture.get();
+                received ++;
+                for (TransactionExecutionResult result : results) {
+                    deletedAccounts.addAll(result.getDeletedAccounts());
+                    executedTransactions.add(result.getExecutedTransaction());
+                    receipts.add(result.getReceipt());
+                    if (this.registerProgramResults) {
+                        transactionResults.put(result.getTxHash(), result.getResult());
                     }
-                }
-                catch (InterruptedException | ExecutionException e) {
-                    profiler.stop(parallelMetric);
-                    e.printStackTrace();
-                } catch (TransactionException e) {
-                    profiler.stop(parallelMetric);
-                    return BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT;
+                    totalPaidFees.add(result.getTotalPaidFees());
+                    totalGasUsed += result.getTotalGasUsed();
                 }
             }
-            profiler.stop(parallelMetric);
-
-        Map<Integer, Transaction> pendingTxs = transactionsMap.get(transactionsMap.size()); // get the last sub set of transactions, those that wa
-        executePendingTransactions(
-                pendingTxs,
-                block,
-                track,
-                totalGasUsed,
-                vmTrace,
-                vmTraceOptions,
-                deletedAccounts,
-                acceptInvalidTransactions,
-                discardInvalidTxs,
-                executedTransactions,
-                metric,
-                programTraceProcessor,
-                totalPaidFees,
-                receipts);
+            catch (InterruptedException | ExecutionException e) {
+                profiler.stop(parallelMetric);
+                e.printStackTrace();
+            } catch (TransactionException e) {
+                profiler.stop(parallelMetric);
+                return BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT;
+            }
+        }
+        profiler.stop(parallelMetric);
 
         logger.trace("End txs executions.");
 
@@ -458,7 +445,7 @@ public class BlockExecutor {
         return null;
     }
 
-    private Map<Integer, Map<Integer, Transaction>> getSplitTransactionsByThread(List<Transaction> transactionsList, int threadCount) {
+    private Map<Integer, Map<Integer, Transaction>> getSplitTransactionsByThread(List<Transaction> transactionsList, int threadCount, double threadPercentage) {
         Map<RskAddress, Map<Integer, Transaction>> groupedTransactions = new LinkedHashMap<>();
         Map<Integer, Transaction> indexedTxs = new HashMap<>();
         Map<Integer, Map<Integer, Transaction>> result = new HashMap<>();
@@ -472,7 +459,7 @@ public class BlockExecutor {
             groupedTransactions.computeIfAbsent(txEntry.getValue().getSender(), k -> new LinkedHashMap<>()).put(txEntry.getKey(), txEntry.getValue());
         }
 
-        int amountOfTransactionsPerConcurrentThread = (int) (transactionsList.size() * 0.125); // 15% of the total to each thread, expect from the last one that accumulates all the rest
+        int amountOfTransactionsPerConcurrentThread = (int) (transactionsList.size() * threadPercentage);
         int currentTransactionIndex = 0;
         int currentThread = 1;
         for (RskAddress address : groupedTransactions.keySet()) {
