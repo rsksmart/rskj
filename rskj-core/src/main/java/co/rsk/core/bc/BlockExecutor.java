@@ -275,7 +275,7 @@ public class BlockExecutor {
         List<TransactionReceipt> receipts = new ArrayList<>();
         List<Transaction> executedTransactions = new ArrayList<>();
         Set<DataWord> deletedAccounts = new HashSet<>();
-        int threadCount = 8;
+        int threadCount = 4;
         double sequentialPart = 0.0D;
         if(sequentialPart > 0){
             threadCount += 1;
@@ -307,7 +307,7 @@ public class BlockExecutor {
 
         msgQueue.shutdown();
         int received = 0;
-
+        logger.warn("totalThreads: {}", transactionsMap.entrySet().size());
         while(received < transactionsMap.entrySet().size()) {
             try {
                 Future<List<TransactionExecutionResult>> resultFuture = completionService.take();
