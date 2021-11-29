@@ -170,7 +170,16 @@ public class ReleaseTransactionBuilder {
     }
 
     public Optional<BuildResult> buildBatchedPegouts(List<ReleaseRequestQueue.Entry> entries) {
-        return Optional.empty();
+        if (entries.isEmpty()) {
+            return Optional.empty();
+        }
+
+        return buildWithConfiguration((SendRequest sr) -> {
+            for (ReleaseRequestQueue.Entry entry : entries) {
+                sr.tx.addOutput(entry.getAmount(), entry.getDestination());
+            }
+            sr.changeAddress = changeAddress;
+        }, String.format("batching pegout for %s pegouts", entries.size()));
     }
 
     private final SendRequestConfigurator defaultSettingsConfigurator = (SendRequest sr) -> {
