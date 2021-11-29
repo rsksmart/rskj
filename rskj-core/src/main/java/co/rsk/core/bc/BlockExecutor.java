@@ -291,7 +291,7 @@ public class BlockExecutor {
             if (threadSet.getKey() == threadCount) {
                 continue;
             }
-            logger.warn("Parallel run of [{}] transactions for block: [{}] thread: [{}]", block.getNumber(), threadSet.getValue().size(), threadSet.getKey());
+            logger.warn("Parallel run of [{}] transactions for block: [{}] thread: [{}]", threadSet.getValue().size(), block.getNumber(), threadSet.getKey());
             TransactionConcurrentExecutor concurrentExecutor = new TransactionConcurrentExecutor(
                     threadSet.getValue(),
                     transactionExecutorFactory,
@@ -479,6 +479,7 @@ public class BlockExecutor {
         }
 
         int amountOfTransactionsPerConcurrentThread = (int) (transactionsList.size() * threadPercentage);
+        logger.warn("amountOfTransactionsPerConcurrentThread: [{}]", amountOfTransactionsPerConcurrentThread);
         int currentTransactionIndex = 0;
         int currentThread = 1;
         for (RskAddress address : groupedTransactions.keySet()) {
@@ -488,8 +489,11 @@ public class BlockExecutor {
             if(amountOfTransactionsPerConcurrentThread * currentThread < currentTransactionIndex && currentThread < threadCount){
                 currentThread++;
             }
+            Map<Integer, Transaction> senderTxs = groupedTransactions.get(address);
             // add all the transactions belonging to that address, in order. It assumes transactions are already ordered (nonce).
-            result.computeIfAbsent(currentThread, k -> new LinkedHashMap<>()).putAll(groupedTransactions.get(address));
+            result.computeIfAbsent(currentThread, k -> new LinkedHashMap<>()).putAll(senderTxs);
+            logger.warn("sender: {}, txs: {}", address.toString(), senderTxs.size());
+            currentTransactionIndex += senderTxs.size();
         }
         return result;
     }
