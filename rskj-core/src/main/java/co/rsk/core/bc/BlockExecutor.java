@@ -323,6 +323,7 @@ public class BlockExecutor {
                     totalPaidFees.add(result.getTotalPaidFees());
                     totalGasUsed += result.getTotalGasUsed();
                 }
+                logger.warn("Completed thread {} of {}", received, transactionsMap.entrySet().size());
             }
             catch (InterruptedException | ExecutionException e) {
                 profiler.stop(parallelMetric);
