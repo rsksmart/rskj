@@ -1114,10 +1114,11 @@ public class BridgeSupport {
         long nextPegoutCreationBlockNumber = getNextPegoutCreationBlockNumber();
 
         if (currentBlockNumber >= nextPegoutCreationBlockNumber) {
+            List<ReleaseRequestQueue.Entry> pegoutEntries = releaseRequestQueue.getEntries();
             // batch pegout transactions
-            Optional<ReleaseTransactionBuilder.BuildResult> result = txBuilder.buildBatchedPegouts(releaseRequestQueue.getEntries());
+            Optional<ReleaseTransactionBuilder.BuildResult> result = txBuilder.buildBatchedPegouts(pegoutEntries);
 
-            Coin totalPegoutValue = releaseRequestQueue.getEntries()
+            Coin totalPegoutValue = pegoutEntries
                 .stream()
                 .map(ReleaseRequestQueue.Entry::getAmount)
                 .reduce(Coin.ZERO, Coin::add);
@@ -1125,7 +1126,7 @@ public class BridgeSupport {
             if (!result.isPresent()) {
                 logger.warn(
                     "Couldn't build a pegout BTC tx for {} pending requests (total amount: {})",
-                    releaseRequestQueue.getEntries().size(),
+                    pegoutEntries.size(),
                     totalPegoutValue);
                 return;
             }
@@ -1133,6 +1134,9 @@ public class BridgeSupport {
             BtcTransaction generatedTransaction = result.get().getBtcTx();
             // TODO: Update to call addPegoutTxToReleaseTransactionSet with the RskHash that calls the updateCollections
             releaseTransactionSet.add(generatedTransaction, rskExecutionBlock.getNumber());
+
+            // Remove All requests on the queue after successfully batching pegouts
+            releaseRequestQueue.removeEntries(pegoutEntries);
 
             // Mark UTXOs as spent
             List<UTXO> selectedUTXOs = result.get().getSelectedUTXOs();

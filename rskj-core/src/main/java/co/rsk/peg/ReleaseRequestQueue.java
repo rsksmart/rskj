@@ -105,6 +105,10 @@ public class ReleaseRequestQueue {
         return new ArrayList<>(entries);
     }
 
+    public void removeEntries(List<Entry> entriesToRemove) {
+        entries.removeAll(entriesToRemove);
+    }
+
     public void add(Address destination, Coin amount, Keccak256 rskTxHash) {
         entries.add(new Entry(destination, amount, rskTxHash));
     }
