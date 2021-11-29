@@ -168,4 +168,14 @@ public class PegTestUtils {
         }
         return keys;
     }
+
+    public static UTXO createUTXO(int nHash, Coin value, Address address) {
+        return new UTXO(
+            createHash(nHash),
+            1,
+            value,
+            0,
+            false,
+            ScriptBuilder.createOutputScript(address));
+    }
 }
