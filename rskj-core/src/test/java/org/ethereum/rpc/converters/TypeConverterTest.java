@@ -59,7 +59,14 @@ public class TypeConverterTest {
 
     @Test
     public void strHexOrStrNumberToByteArrayParseToHexBytesWhenContainingAHexLetter() {
-        Assert.assertArrayEquals(new byte[] { 2, -80 }, TypeConverter.strHexOrStrNumberToByteArray("2b0"));
+        Exception exception = TestUtils.assertThrows(RskJsonRpcRequestException.class, () -> {
+            Assert.assertArrayEquals(new byte[] { 2, -80 }, TypeConverter.strHexOrStrNumberToByteArray("2b0"));
+        });
+
+        String expectedMessage = "Number values should not contain letters or hex values should start with 0x.";
+        String actualMessage = exception.getMessage();
+
+        Assert.assertEquals(expectedMessage, actualMessage);
     }
 
     @Test
@@ -78,7 +85,7 @@ public class TypeConverterTest {
             TypeConverter.strHexOrStrNumberToBigInteger("100a");
         });
 
-        String expectedMessage = "Numbers should not contain letters and hex should start with 0x.";
+        String expectedMessage = "Number values should not contain letters or hex values should start with 0x.";
         String actualMessage = exception.getMessage();
 
         Assert.assertEquals(expectedMessage, actualMessage);

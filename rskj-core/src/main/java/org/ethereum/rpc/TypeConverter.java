@@ -78,8 +78,8 @@ public class TypeConverter {
         try {
             BigInteger number = new BigInteger(strHexOrStrNumber);
             return ByteUtil.bigIntegerToBytes(number);
-        } catch (NumberFormatException e) {
-            return stringHexToByteArray(strHexOrStrNumber);
+        } catch (Exception e) {
+            throw RskJsonRpcRequestException.invalidParamError("Number values should not contain letters or hex values should start with 0x.");
         }
     }
 
