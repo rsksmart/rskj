@@ -385,4 +385,8 @@ public class RskSystemProperties extends SystemProperties {
     public boolean fastBlockPropagation() {
         return configFromFiles.getBoolean("peer.fastBlockPropagation");
     }
+
+    public Integer getMessageQueueMaxSize() {
+    	return configFromFiles.getInt("peer.messageQueue.maxSizePerPeer");
+    }
 }

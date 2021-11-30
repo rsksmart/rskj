@@ -30,6 +30,7 @@ import co.rsk.peg.BridgeSupport;
 import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.rpc.ExecutionBlockRetriever;
 import co.rsk.trie.TrieStoreImpl;
+import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.*;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.MutableRepository;
@@ -71,7 +72,7 @@ public class EthModule
     private final BridgeConstants bridgeConstants;
     private final BridgeSupportFactory bridgeSupportFactory;
     private final byte chainId;
-
+    private final long gasEstimationCap;
 
     public EthModule(
             BridgeConstants bridgeConstants,
@@ -83,7 +84,8 @@ public class EthModule
             RepositoryLocator repositoryLocator,
             EthModuleWallet ethModuleWallet,
             EthModuleTransaction ethModuleTransaction,
-            BridgeSupportFactory bridgeSupportFactory) {
+            BridgeSupportFactory bridgeSupportFactory,
+            long gasEstimationCap) {
         this.chainId = chainId;
         this.blockchain = blockchain;
         this.transactionPool = transactionPool;
@@ -94,6 +96,7 @@ public class EthModule
         this.ethModuleTransaction = ethModuleTransaction;
         this.bridgeConstants = bridgeConstants;
         this.bridgeSupportFactory = bridgeSupportFactory;
+        this.gasEstimationCap = gasEstimationCap;
     }
 
     @Override
@@ -144,13 +147,36 @@ public class EthModule
     }
 
     public String estimateGas(CallArguments args) {
-        String s = null;
+        String estimation = null;
+        Block bestBlock = blockchain.getBestBlock();
         try {
-            ProgramResult res = callConstant(args, blockchain.getBestBlock());
-            return s = TypeConverter.toQuantityJsonHex(res.getGasUsed());
+            CallArgumentsToByteArray hexArgs = new CallArgumentsToByteArray(args);
+
+            TransactionExecutor executor = reversibleTransactionExecutor.estimateGas(
+                    bestBlock,
+                    bestBlock.getCoinbase(),
+                    hexArgs.getGasPrice(),
+                    hexArgs.gasLimitForGasEstimation(gasEstimationCap),
+                    hexArgs.getToAddress(),
+                    hexArgs.getValue(),
+                    hexArgs.getData(),
+                    hexArgs.getFromAddress()
+            );
+
+            estimation = internalEstimateGas(executor.getResult());
+
+            return estimation;
         } finally {
-            LOGGER.debug("eth_estimateGas(): {}", s);
+            LOGGER.debug("eth_estimateGas(): {}", estimation);
         }
+    }
+
+    protected String internalEstimateGas(ProgramResult reversibleExecutionResult) {
+        long estimatedGas = reversibleExecutionResult.getMovedRemainingGasToChild() ?
+                reversibleExecutionResult.getGasUsed() + reversibleExecutionResult.getDeductedRefund() :
+                reversibleExecutionResult.getMaxGasUsed();
+
+        return TypeConverter.toQuantityJsonHex(estimatedGas);
     }
 
     @Override
@@ -224,7 +250,8 @@ public class EthModule
         }
     }
 
-    private ProgramResult callConstant(CallArguments args, Block executionBlock) {
+    @VisibleForTesting
+    public ProgramResult callConstant(CallArguments args, Block executionBlock) {
         CallArgumentsToByteArray hexArgs = new CallArgumentsToByteArray(args);
         return reversibleTransactionExecutor.executeTransaction(
                 executionBlock,

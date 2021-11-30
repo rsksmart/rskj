@@ -15,7 +15,7 @@ public class CacheElementTest {
         CacheElement<String> cacheElement1 = new CacheElement<>("value.1", 1L);
         CacheElement<String> cacheElement2 = new CacheElement<>("value.2", 10000L);
 
-        await().atMost(200L, TimeUnit.MILLISECONDS).untilAsserted(() -> assertTrue(cacheElement1.hasExpired()));
+        await().atMost(500L, TimeUnit.MILLISECONDS).untilAsserted(() -> assertTrue(cacheElement1.hasExpired()));
         assertFalse(cacheElement2.hasExpired());
     }
 

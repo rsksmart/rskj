@@ -88,7 +88,7 @@ public class NetworkStateExporterTest {
 
     @Test
     public void testEmptyRepo() throws Exception {
-        Map result = writeAndReadJson();
+        Map result = writeAndReadJson("",true,true);
 
         Assert.assertEquals(0, result.keySet().size());
     }
@@ -126,7 +126,7 @@ public class NetworkStateExporterTest {
         repository.addBalance(PrecompiledContracts.REMASC_ADDR, Coin.valueOf(10L));
         repository.increaseNonce(PrecompiledContracts.REMASC_ADDR);
 
-        Map result = writeAndReadJson();
+        Map result = writeAndReadJson("",true,true);
         Assert.assertEquals(3, result.keySet().size());
 
         Map address1Value = (Map) result.get(address1String);
@@ -144,6 +144,7 @@ public class NetworkStateExporterTest {
         Assert.assertEquals("10",remascValue.get("balance"));
         Assert.assertEquals("1",remascValue.get("nonce"));
     }
+
     @Test
     public void testContracts() throws Exception {
         String address1String = "1000000000000000000000000000000000000000";
@@ -152,6 +153,7 @@ public class NetworkStateExporterTest {
         repository.addBalance(addr1, Coin.valueOf(1L));
         repository.increaseNonce(addr1);
 
+        repository.setupContract(addr1); // necessary for isContract() to return true.
         repository.saveCode(addr1, new byte[]{1, 2, 3, 4});
         repository.addStorageRow(addr1, DataWord.ZERO, DataWord.ONE);
         repository.addStorageBytes(addr1, DataWord.ONE, new byte[]{5, 6, 7, 8});
@@ -159,7 +161,7 @@ public class NetworkStateExporterTest {
         AccountState accountState = repository.getAccountState(addr1);
         repository.updateAccountState(addr1, accountState);
 
-        Map result = writeAndReadJson();
+        Map result = writeAndReadJson("",true,true);
 
         Assert.assertEquals(1, result.keySet().size());
 
@@ -169,7 +171,9 @@ public class NetworkStateExporterTest {
         Assert.assertEquals("1",address1Value.get("balance"));
         Assert.assertEquals("1",address1Value.get("nonce"));
         Map contract = (Map) address1Value.get("contract");
-        Assert.assertEquals(2, contract.keySet().size());
+        Assert.assertEquals(3, contract.keySet().size());
+        String codeHash =(String) contract.get("codeHash");
+        Assert.assertEquals("a6885b3731702da62e8e4a8f584ac46a7f6822f4e2ba50fba902f67b1588d23b", codeHash);
         Assert.assertEquals("01020304",contract.get("code"));
         Map data = (Map) contract.get("data");
         Assert.assertEquals(2, data.keySet().size());
@@ -181,8 +185,44 @@ public class NetworkStateExporterTest {
         Assert.assertEquals("05060708", data.get(ByteUtil.toHexString(DataWord.ONE.getData())));
     }
 
-    private Map writeAndReadJson() throws Exception {
-        Assert.assertTrue(nse.exportStatus(jsonFileName));
+    @Test
+    public void testSingleAccount() throws Exception {
+        String address1String = "1000000000000000000000000000000000000000";
+        RskAddress addr1 = new RskAddress(address1String);
+        repository.createAccount(addr1);
+        repository.addBalance(addr1, Coin.valueOf(1L));
+        repository.increaseNonce(addr1);
+
+        repository.setupContract(addr1); // necessary for isContract() to return true.
+        repository.saveCode(addr1, new byte[]{1, 2, 3, 4});
+        repository.addStorageRow(addr1, DataWord.ZERO, DataWord.ONE);
+        repository.addStorageBytes(addr1, DataWord.ONE, new byte[]{5, 6, 7, 8});
+
+        AccountState accountState = repository.getAccountState(addr1);
+        repository.updateAccountState(addr1, accountState);
+
+        String address2String = "2000000000000000000000000000000000000000";
+        RskAddress addr2 = new RskAddress(address2String);
+        repository.createAccount(addr2);
+
+        Map result = writeAndReadJson(addr1.toHexString(),false,false);
+
+        Assert.assertEquals(1, result.keySet().size());
+
+        // Getting address1String only works if the Trie is not secure.
+        Map address1Value = (Map) result.get(address1String);
+        Assert.assertEquals(3, address1Value.keySet().size());
+        Assert.assertEquals("1",address1Value.get("balance"));
+        Assert.assertEquals("1",address1Value.get("nonce"));
+        Map contract = (Map) address1Value.get("contract");
+        // "data" section and "code" must not be present (only "codeHash")
+        Assert.assertEquals(1, contract.keySet().size());
+        String codeHash =(String) contract.get("codeHash");
+        Assert.assertEquals("a6885b3731702da62e8e4a8f584ac46a7f6822f4e2ba50fba902f67b1588d23b", codeHash);
+    }
+
+    private Map writeAndReadJson(String singleAccount,boolean exportStorageKeys,boolean exportCode) throws Exception {
+        Assert.assertTrue(nse.exportStatus(jsonFileName,singleAccount,exportStorageKeys,exportCode));
 
         InputStream inputStream = new FileInputStream(jsonFileName);
         String json = new String(ByteStreams.toByteArray(inputStream));

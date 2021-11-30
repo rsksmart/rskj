@@ -1,0 +1,10 @@
+account_new acc1 20000000
+
+# Create an empty world
+
+block_build b01
+    parent g00
+    build
+
+block_connect b01
+assert_best b01

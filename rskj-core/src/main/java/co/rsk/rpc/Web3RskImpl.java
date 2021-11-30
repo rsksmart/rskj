@@ -20,6 +20,7 @@ package co.rsk.rpc;
 
 import co.rsk.config.RskSystemProperties;
 import co.rsk.core.NetworkStateExporter;
+import co.rsk.core.RskAddress;
 import co.rsk.logfilter.BlocksBloomStore;
 import co.rsk.metrics.HashRateCalculator;
 import co.rsk.mine.MinerClient;
@@ -35,6 +36,7 @@ import co.rsk.rpc.modules.rsk.RskModule;
 import co.rsk.rpc.modules.trace.TraceModule;
 import co.rsk.rpc.modules.txpool.TxPoolModule;
 import co.rsk.scoring.PeerScoringManager;
+import org.bouncycastle.util.encoders.DecoderException;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Blockchain;
@@ -104,10 +106,30 @@ public class Web3RskImpl extends Web3Impl {
         this.blockStore = blockStore;
     }
 
-    public void ext_dumpState() {
+    public void ext_dumpState(String account,boolean exportStorageKeys,boolean exportCode) {
         Block bestBlcock = blockStore.getBestBlock();
-        logger.info("Dumping state for block hash {}, block number {}", bestBlcock.getHash(), bestBlcock.getNumber());
-        networkStateExporter.exportStatus(System.getProperty("user.dir") + "/" + "rskdump.json");
+        logger.info("Dumping state for block hash {}, block number {}, account {}",
+                bestBlcock.getHash(), bestBlcock.getNumber(),account);
+        String name = "rskdump";
+        if (account.length()!=0) {
+            RskAddress addrToCheck;
+            try {
+                addrToCheck = new RskAddress(account);
+
+                // Now make sure we don't enable path-traversal vulnerabilities in case
+                // the address format is ever changed.
+                if (account.indexOf(File.separatorChar)>=0) {
+                    return;
+                }
+            } catch (DecoderException e) {
+                return;
+            }
+            name = name +"-"+addrToCheck.toHexString();
+        }
+        String filename = System.getProperty("user.dir") +  File.separatorChar + name+".json";
+        logger.info("Dumping in file: {} ",filename);
+        networkStateExporter.exportStatus(filename,account,exportStorageKeys,exportCode);
+        logger.info("Dump finished");
     }
 
     /**

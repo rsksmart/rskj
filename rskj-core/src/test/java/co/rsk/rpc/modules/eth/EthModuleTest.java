@@ -25,9 +25,21 @@ import static org.mockito.ArgumentMatchers.anyByte;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
+import co.rsk.config.BridgeConstants;
+import co.rsk.config.TestSystemProperties;
+import co.rsk.core.ReversibleTransactionExecutor;
+import co.rsk.core.RskAddress;
+import co.rsk.core.Wallet;
+import co.rsk.core.bc.BlockResult;
+import co.rsk.core.bc.PendingState;
+import co.rsk.db.RepositoryLocator;
+import co.rsk.net.TransactionGateway;
+import co.rsk.peg.BridgeSupportFactory;
+import co.rsk.rpc.ExecutionBlockRetriever;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.TestUtils;
 import org.ethereum.config.Constants;
+import org.ethereum.core.*;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.Transaction;
@@ -44,18 +56,16 @@ import org.hamcrest.Matchers;
 import org.junit.Assert;
 import org.junit.Test;
 
-import co.rsk.config.BridgeConstants;
-import co.rsk.core.ReversibleTransactionExecutor;
-import co.rsk.core.RskAddress;
-import co.rsk.core.Wallet;
-import co.rsk.core.bc.BlockResult;
-import co.rsk.core.bc.PendingState;
-import co.rsk.db.RepositoryLocator;
-import co.rsk.net.TransactionGateway;
-import co.rsk.peg.BridgeSupportFactory;
-import co.rsk.rpc.ExecutionBlockRetriever;
+import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
 public class EthModuleTest {
+
+    private TestSystemProperties config = new TestSystemProperties();
+    private String anyAddress = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
 
     @Test
     public void callSmokeTest() {
@@ -87,7 +97,8 @@ public class EthModuleTest {
                 null,
                 null,
                 new BridgeSupportFactory(
-                        null, null, null));
+                        null, null, null),
+                config.getGasEstimationCap());
 
         String expectedResult = TypeConverter.toUnformattedJsonHex(hReturn);
         String actualResult = eth.call(args, "latest");
@@ -125,7 +136,8 @@ public class EthModuleTest {
                 null,
                 null,
                 new BridgeSupportFactory(
-                        null, null, null));
+                        null, null, null),
+                config.getGasEstimationCap());
 
         String expectedResult = TypeConverter.toUnformattedJsonHex(hReturn);
         String actualResult = eth.call(args, "latest");
@@ -168,7 +180,8 @@ public class EthModuleTest {
                 null,
                 null,
                 new BridgeSupportFactory(
-                        null, null, null));
+                        null, null, null),
+                config.getGasEstimationCap());
 
         try {
             eth.call(args, "latest");
@@ -206,6 +219,9 @@ public class EthModuleTest {
 
 		assertEquals(txExpectedResult, txResult);
 	}
+
+
+
 
     @Test
     public void sendTransaction_invalidSenderAccount_throwsRskJsonRpcRequestException() {
@@ -255,7 +271,8 @@ public class EthModuleTest {
                         null,
                         null,
                         null
-                )
+                ),
+                config.getGasEstimationCap()
         );
 
         String addr = eth.getCode(TestUtils.randomAddress().toHexString(), "pending");
@@ -274,7 +291,8 @@ public class EthModuleTest {
                 mock(RepositoryLocator.class),
                 mock(EthModuleWallet.class),
                 mock(EthModuleTransaction.class),
-                mock(BridgeSupportFactory.class)
+                mock(BridgeSupportFactory.class),
+                config.getGasEstimationCap()
         );
         assertThat(eth.chainId(), is("0x21"));
     }
