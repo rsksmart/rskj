@@ -405,7 +405,7 @@ public class TransactionExecutor {
     }
 
     private void execError(String err) {
-        logger.trace(err);
+        logger.warn(err);
         executionError = err;
     }
 
