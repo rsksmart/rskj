@@ -469,10 +469,9 @@ public class BlockExecutor {
         Map<RskAddress, Map<Integer, Transaction>> groupedTransactions = new LinkedHashMap<>();
         Map<Integer, Transaction> indexedTxs = new HashMap<>();
         Map<Integer, Map<Integer, Transaction>> result = new HashMap<>();
-        int i = 1;
+        int i = 0;
         for (Transaction tx: transactionsList) {
-            indexedTxs.put(i, tx);
-            i++;
+            indexedTxs.put(i++, tx);
         }
         for (Map.Entry<Integer, Transaction> txEntry :
                 indexedTxs.entrySet()) {
