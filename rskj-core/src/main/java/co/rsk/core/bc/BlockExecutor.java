@@ -362,7 +362,8 @@ public class BlockExecutor {
 
         // execute remasc tx.
         Map<Integer, Transaction> remasc = new LinkedHashMap<>();
-        remasc.put(0, block.getTransactionsList().get(block.getTransactionsList().size() - 1));
+        int index = block.getTransactionsList().size() - 1;
+        remasc.put(index, block.getTransactionsList().get(index));
         executePendingTransactions(
                 remasc,
                 block,
@@ -481,7 +482,7 @@ public class BlockExecutor {
 
             logger.trace("block: [{}] executed tx: [{}]", block.getNumber(), tx.getHash());
 
-            logger.trace("tx[{}].receipt", txIndex);
+            logger.trace("tx[{}].receipt", txIndex + 1);
 
             receipts.add(receipt);
 
