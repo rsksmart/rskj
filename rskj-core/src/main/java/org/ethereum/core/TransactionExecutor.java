@@ -160,7 +160,7 @@ public class TransactionExecutor {
         long curBlockGasLimit = GasCost.toGas(executionBlock.getGasLimit());
 
         if (!gasIsValid(txGasLimit, curBlockGasLimit)) {
-            logger.warn("GAS IS INVALID");
+            logger.warn("GAS IS INVALID. txGasLimit: {}, currentBlockGasLimit: {}", txGasLimit, curBlockGasLimit);
             return false;
         }
 
