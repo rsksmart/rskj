@@ -253,6 +253,10 @@ public class TransactionExecutor {
         // less than the theoretical max gas on blocks.
         long cumulativeGas = GasCost.add(txGasLimit, gasUsedInTheBlock);
 
+        logger.warn("cumulative gas: {}", cumulativeGas);
+        logger.warn("curBlockGasLimit: {}", curBlockGasLimit);
+        logger.warn("cumulativeGas: {}", cumulativeGas);
+
         boolean cumulativeGasReached = cumulativeGas > curBlockGasLimit || cumulativeGas == GasCost.MAX_GAS;
         if (cumulativeGasReached) {
             execError(String.format("Too much gas used in this block: available in block: %s tx sent: %s",
