@@ -58,15 +58,6 @@ public interface RepositorySnapshot extends AccountInformationProvider {
     Keccak256 getCodeHashNonStandard(RskAddress addr);
 
     /**
-     * This method can retrieve the hash code without actually retrieving the code
-     * in some cases.
-     * This is the POST RSKIP169 implementation which fixes the bug
-     * @param addr of the account
-     * @return hash of the contract code
-     */
-    Keccak256 getCodeHashStandard(RskAddress addr);
-
-    /**
      * @param addr - account to check
      * @return - true if account exist,
      *           false otherwise

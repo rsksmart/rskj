@@ -20,6 +20,7 @@ package co.rsk.core.bc;
 
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
+import co.rsk.crypto.Keccak256;
 import org.ethereum.vm.DataWord;
 
 import javax.annotation.Nullable;
@@ -95,4 +96,14 @@ public interface AccountInformationProvider {
      * @return value of the nonce
      */
     BigInteger getNonce(RskAddress addr);
+
+    /**
+     * This method can retrieve the hash code without actually retrieving the code
+     * in some cases.
+     * This is the PRE RSKIP169 implementation, which has a bug we need to preserve
+     * before the implementation
+     * @param addr of the account
+     * @return hash of the contract code
+     */
+    Keccak256 getCodeHashStandard(RskAddress addr);
 }

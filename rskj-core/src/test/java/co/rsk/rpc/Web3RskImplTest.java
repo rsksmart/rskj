@@ -18,29 +18,13 @@
 
 package co.rsk.rpc;
 
-import co.rsk.config.TestSystemProperties;
-import co.rsk.core.NetworkStateExporter;
-import co.rsk.core.Wallet;
-import co.rsk.core.WalletFactory;
-import co.rsk.core.bc.MiningMainchainView;
 import co.rsk.crypto.Keccak256;
-import co.rsk.peg.BridgeSupportFactory;
-import co.rsk.peg.PegTestUtils;
-import co.rsk.rpc.modules.debug.DebugModule;
-import co.rsk.rpc.modules.debug.DebugModuleImpl;
-import co.rsk.rpc.modules.eth.EthModule;
-import co.rsk.rpc.modules.eth.EthModuleWalletEnabled;
-import co.rsk.rpc.modules.personal.PersonalModule;
-import co.rsk.rpc.modules.personal.PersonalModuleWalletEnabled;
-import co.rsk.rpc.modules.txpool.TxPoolModule;
-import co.rsk.rpc.modules.txpool.TxPoolModuleImpl;
 import org.ethereum.core.Block;
-import org.ethereum.core.Blockchain;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.HashUtil;
-import org.ethereum.db.BlockStore;
-import org.ethereum.facade.Ethereum;
-import org.ethereum.rpc.*;
+import org.ethereum.rpc.CallArguments;
+import org.ethereum.rpc.FilterRequest;
+import org.ethereum.rpc.LogFilterElement;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.LogInfo;
 import org.junit.Test;
@@ -53,67 +37,6 @@ import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 
 public class Web3RskImplTest {
-
-    @Test
-    public void web3_ext_dumpState() {
-        Ethereum rsk = mock(Ethereum.class);
-        Blockchain blockchain = mock(Blockchain.class);
-        MiningMainchainView mainchainView = mock(MiningMainchainView.class);
-
-        NetworkStateExporter networkStateExporter = mock(NetworkStateExporter.class);
-        Mockito.when(networkStateExporter.exportStatus(Mockito.anyString())).thenReturn(true);
-
-        Block block = mock(Block.class);
-        Mockito.when(block.getHash()).thenReturn(PegTestUtils.createHash3());
-        Mockito.when(block.getNumber()).thenReturn(1L);
-
-        BlockStore blockStore = mock(BlockStore.class);
-        Mockito.when(blockStore.getBestBlock()).thenReturn(block);
-        Mockito.when(networkStateExporter.exportStatus(Mockito.anyString())).thenReturn(true);
-
-        Mockito.when(blockchain.getBestBlock()).thenReturn(block);
-
-        Wallet wallet = WalletFactory.createWallet();
-        TestSystemProperties config = new TestSystemProperties();
-        PersonalModule pm = new PersonalModuleWalletEnabled(config, rsk, wallet, null);
-        EthModule em = new EthModule(
-                config.getNetworkConstants().getBridgeConstants(), config.getNetworkConstants().getChainId(), blockchain, null,
-                null, new ExecutionBlockRetriever(mainchainView, blockchain, null, null),
-                null, new EthModuleWalletEnabled(wallet), null,
-                new BridgeSupportFactory(
-                        null, config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig()),
-                config.getGasEstimationCap()
-        );
-        TxPoolModule tpm = new TxPoolModuleImpl(Web3Mocks.getMockTransactionPool());
-        DebugModule dm = new DebugModuleImpl(null, null, Web3Mocks.getMockMessageHandler(), null);
-        Web3RskImpl web3 = new Web3RskImpl(
-                rsk,
-                blockchain,
-                config,
-                Web3Mocks.getMockMinerClient(),
-                Web3Mocks.getMockMinerServer(),
-                pm,
-                em,
-                null,
-                tpm,
-                null,
-                dm,
-                null, null,
-                Web3Mocks.getMockChannelManager(),
-                null,
-                networkStateExporter,
-                blockStore,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null);
-        web3.ext_dumpState();
-    }
 
     @Test
     public void web3_LogFilterElementNullAddress_toString() {

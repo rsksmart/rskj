@@ -299,7 +299,7 @@ public class MutableRepository implements Repository {
         //TODO(diegoll): this is needed when trie is a MutableTrieCache, check if makes sense to commit here
         mutableTrie.commit();
         Trie trie = mutableTrie.getTrie();
-        Iterator<Trie.IterationElement> preOrderIterator = trie.getPreOrderIterator();
+        Iterator<Trie.IterationElement> preOrderIterator = trie.getPreOrderIterator(true);
         while (preOrderIterator.hasNext()) {
             TrieKeySlice nodeKey = preOrderIterator.next().getNodeKey();
             int nodeKeyLength = nodeKey.length();
