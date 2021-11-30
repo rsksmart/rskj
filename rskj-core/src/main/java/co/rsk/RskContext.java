@@ -1986,7 +1986,8 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                             rskSystemProperties.getTargetGasLimit(),
                             rskSystemProperties.getForceTargetGasLimit()
                     ),
-                    rskSystemProperties.isMinerServerFixedClock()
+                    rskSystemProperties.isMinerServerFixedClock(),
+                    rskSystemProperties.workSubmissionRateLimitInMills()
             );
         }
 
