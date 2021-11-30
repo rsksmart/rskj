@@ -26,6 +26,7 @@ import co.rsk.db.RepositoryLocator;
 import co.rsk.metrics.profilers.Metric;
 import co.rsk.metrics.profilers.Profiler;
 import co.rsk.metrics.profilers.ProfilerFactory;
+import co.rsk.remasc.RemascTransaction;
 import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -495,8 +496,9 @@ public class BlockExecutor {
         Map<Integer, Map<Integer, Transaction>> result = new HashMap<>();
         for (int i = 0; i < transactionsList.size(); i++) {
             // skip REMASC transaction as it will be executed at the end.
-            if (!transactionsList.get(i).isRemascTransaction(i, transactionsList.size())){
-                indexedTxs.put(i++, transactionsList.get(i));
+            Transaction tx = transactionsList.get(i);
+            if (!(tx instanceof RemascTransaction)){
+                indexedTxs.put(i, tx);
             }
 
         }
