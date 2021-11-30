@@ -371,7 +371,7 @@ public class PeerExplorer {
 
     private void resendExpiredPing(List<PeerDiscoveryRequest> peerDiscoveryRequests) {
         peerDiscoveryRequests.stream().filter(r -> r.getAttemptNumber() < RETRIES_COUNT)
-                .forEach(r -> sendPing(r.getAddress(), r.getAttemptNumber() + 1));
+                .forEach(r -> sendPing(r.getAddress(), r.getAttemptNumber() + 1, r.getRelatedNode()));
     }
 
     private void removeConnections(List<PeerDiscoveryRequest> expiredRequests) {
