@@ -298,6 +298,7 @@ public class BlockExecutor {
                 TransactionConcurrentExecutor concurrentExecutor = new TransactionConcurrentExecutor(
                         threadSet.getValue(),
                         transactionExecutorFactory,
+                        totalGasUsed,
                         track,
                         block,
                         vmTrace,

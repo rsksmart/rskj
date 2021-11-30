@@ -32,6 +32,7 @@ public class TransactionConcurrentExecutor implements Callable<List<TransactionE
 
     public TransactionConcurrentExecutor(Map<Integer, Transaction> txs,
                                          TransactionExecutorFactory transactionExecutorFactory,
+                                         long totalGasUsed,
                                          Repository track,
                                          Block block,
                                          boolean vmTrace,
@@ -42,7 +43,7 @@ public class TransactionConcurrentExecutor implements Callable<List<TransactionE
         this.txs = txs;
         this.track = track;
         this.block = block;
-        this.totalGasUsed = 0;
+        this.totalGasUsed = totalGasUsed;
         this.vmTrace = vmTrace;
         this.vmTraceOptions = vmTraceOptions;
         this.deletedAccounts = new HashSet<>();
