@@ -23,7 +23,9 @@ import co.rsk.bitcoinj.crypto.TransactionSignature;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.config.BridgeConstants;
+import co.rsk.config.BridgeMainNetConstants;
 import co.rsk.config.BridgeRegTestConstants;
+import co.rsk.config.BridgeTestNetConstants;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
@@ -79,11 +81,14 @@ import static org.mockito.Mockito.*;
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({ BridgeSerializationUtils.class, RskAddress.class })
 public class BridgeStorageProviderTest {
+    private static final byte FAST_BRIDGE_FEDERATION_SCRIPT_HASH_TRUE_VALUE_TEST = (byte) 1;
+    private static final DataWord NEW_FEDERATION_BTC_UTXOS_KEY = DataWord.fromString("newFederationBtcUTXOs");
+    private static final DataWord NEW_FEDERATION_BTC_UTXOS_KEY_FOR_TESTNET = DataWord.fromString("newFederationBtcUTXOsForTestnet");
+
     private final TestSystemProperties config = new TestSystemProperties();
     private final ActivationConfig.ForBlock activationsBeforeFork = ActivationConfigsForTest.genesis().forBlock(0L);
     private final ActivationConfig.ForBlock activationsAllForks = ActivationConfigsForTest.all().forBlock(0);
     private final NetworkParameters networkParameters = config.getNetworkConstants().getBridgeConstants().getBtcParams();
-    private static final byte FAST_BRIDGE_FEDERATION_SCRIPT_HASH_TRUE_VALUE_TEST = (byte) 1;
 
     private int transactionOffset;
 
@@ -3207,6 +3212,69 @@ public class BridgeStorageProviderTest {
         );
     }
 
+    @Test
+    public void getNewFederationBtcUTXOs_before_RSKIP284_activation_testnet() throws IOException {
+        testGetNewFederationBtcUTXOs(false, NetworkParameters.ID_TESTNET);
+    }
+
+    @Test
+    public void getNewFederationBtcUTXOs_after_RSKIP284_activation_testnet() throws IOException {
+        testGetNewFederationBtcUTXOs(true, NetworkParameters.ID_TESTNET);
+    }
+
+    @Test
+    public void getNewFederationBtcUTXOs_before_RSKIP284_activation_mainnet() throws IOException {
+        testGetNewFederationBtcUTXOs(false, NetworkParameters.ID_MAINNET);
+    }
+
+    @Test
+    public void getNewFederationBtcUTXOs_after_RSKIP284_activation_mainnet() throws IOException {
+        testGetNewFederationBtcUTXOs(true, NetworkParameters.ID_MAINNET);
+    }
+
+    @Test
+    public void saveNewFederationBtcUTXOs_no_data() throws IOException {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(false);
+
+        Repository repository = mock(Repository.class);
+
+        BridgeStorageProvider provider = new BridgeStorageProvider(
+            repository,
+            PrecompiledContracts.BRIDGE_ADDR,
+            BridgeTestNetConstants.getInstance(),
+            activations
+        );
+
+        provider.saveNewFederationBtcUTXOs();
+
+        verify(repository, times(0)).addStorageBytes(
+            eq(PrecompiledContracts.BRIDGE_ADDR),
+            eq(NEW_FEDERATION_BTC_UTXOS_KEY),
+            any()
+        );
+    }
+
+    @Test
+    public void saveNewFederationBtcUTXOs_before_RSKIP284_activation_testnet() throws IOException {
+        testSaveNewFederationBtcUTXOs(false, NetworkParameters.ID_TESTNET);
+    }
+
+    @Test
+    public void saveNewFederationBtcUTXOs_after_RSKIP284_activation_testnet() throws IOException {
+        testSaveNewFederationBtcUTXOs(true, NetworkParameters.ID_TESTNET);
+    }
+
+    @Test
+    public void saveNewFederationBtcUTXOs_before_RSKIP284_activation_mainnet() throws IOException {
+        testSaveNewFederationBtcUTXOs(false, NetworkParameters.ID_MAINNET);
+    }
+
+    @Test
+    public void saveNewFederationBtcUTXOs_after_RSKIP284_activation_mainnet() throws IOException {
+        testSaveNewFederationBtcUTXOs(true, NetworkParameters.ID_MAINNET);
+    }
+
     private void testGetOldFederation(Federation oldFederation, ForBlock activations) {
         BridgeConstants bridgeConstants = config.getNetworkConstants().getBridgeConstants();
         List<Integer> storageCalls = new ArrayList<>();
@@ -3397,6 +3465,113 @@ public class BridgeStorageProviderTest {
         storageProvider.saveNewFederation();
         Assert.assertEquals(2, storageBytesCalls.size());
         Assert.assertEquals(1, serializeCalls.size());
+    }
+
+    private void testGetNewFederationBtcUTXOs(boolean isRskip284Active, String networkId) throws IOException {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(isRskip284Active);
+
+        BridgeConstants bridgeConstants = networkId.equals(NetworkParameters.ID_MAINNET) ?
+            BridgeMainNetConstants.getInstance() :
+            BridgeTestNetConstants.getInstance();
+
+        Repository repository = mock(Repository.class);
+        List<UTXO> federationUtxos = Arrays.asList(
+            PegTestUtils.createUTXO(1, 0, Coin.COIN),
+            PegTestUtils.createUTXO(2, 2, Coin.COIN.divide(2)),
+            PegTestUtils.createUTXO(3, 0, Coin.COIN.multiply(3))
+        );
+        when(repository.getStorageBytes(
+            PrecompiledContracts.BRIDGE_ADDR,
+            NEW_FEDERATION_BTC_UTXOS_KEY
+        )).thenReturn(BridgeSerializationUtils.serializeUTXOList(federationUtxos));
+
+        List<UTXO> federationUtxosAfterRskipActivation = Arrays.asList(
+            PegTestUtils.createUTXO(4, 0, Coin.FIFTY_COINS),
+            PegTestUtils.createUTXO(5, 2, Coin.COIN.multiply(2))
+        );
+        when(repository.getStorageBytes(
+            PrecompiledContracts.BRIDGE_ADDR,
+            NEW_FEDERATION_BTC_UTXOS_KEY_FOR_TESTNET
+        )).thenReturn(BridgeSerializationUtils.serializeUTXOList(federationUtxosAfterRskipActivation));
+
+        BridgeStorageProvider provider = new BridgeStorageProvider(
+            repository,
+            PrecompiledContracts.BRIDGE_ADDR,
+            bridgeConstants,
+            activations
+        );
+
+        List<UTXO> obtainedUtxos = provider.getNewFederationBtcUTXOs();
+
+        if (isRskip284Active && networkId.equals(NetworkParameters.ID_TESTNET)) {
+            Assert.assertEquals(federationUtxosAfterRskipActivation, obtainedUtxos);
+        } else {
+            Assert.assertEquals(federationUtxos, obtainedUtxos);
+        }
+    }
+
+    private void testSaveNewFederationBtcUTXOs(boolean isRskip284Active, String networkId) throws IOException {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(isRskip284Active);
+
+        BridgeConstants bridgeConstants = networkId.equals(NetworkParameters.ID_MAINNET) ?
+            BridgeMainNetConstants.getInstance() :
+            BridgeTestNetConstants.getInstance();
+
+        Repository repository = mock(Repository.class);
+        List<UTXO> federationUtxos = Arrays.asList(
+            PegTestUtils.createUTXO(1, 0, Coin.COIN),
+            PegTestUtils.createUTXO(2, 2, Coin.COIN.divide(2)),
+            PegTestUtils.createUTXO(3, 0, Coin.COIN.multiply(3))
+        );
+        when(repository.getStorageBytes(
+            PrecompiledContracts.BRIDGE_ADDR,
+            NEW_FEDERATION_BTC_UTXOS_KEY
+        )).thenReturn(BridgeSerializationUtils.serializeUTXOList(federationUtxos));
+
+        List<UTXO> federationUtxosAfterRskipActivation = Arrays.asList(
+            PegTestUtils.createUTXO(4, 0, Coin.FIFTY_COINS),
+            PegTestUtils.createUTXO(5, 2, Coin.COIN.multiply(2))
+        );
+        when(repository.getStorageBytes(
+            PrecompiledContracts.BRIDGE_ADDR,
+            NEW_FEDERATION_BTC_UTXOS_KEY_FOR_TESTNET
+        )).thenReturn(BridgeSerializationUtils.serializeUTXOList(federationUtxosAfterRskipActivation));
+
+        BridgeStorageProvider provider = new BridgeStorageProvider(
+            repository,
+            PrecompiledContracts.BRIDGE_ADDR,
+            bridgeConstants,
+            activations
+        );
+
+        provider.getNewFederationBtcUTXOs(); // Ensure there are elements in the UTXOs list
+        provider.saveNewFederationBtcUTXOs();
+
+        if (isRskip284Active && networkId.equals(NetworkParameters.ID_TESTNET)) {
+            verify(repository, never()).addStorageBytes(
+                eq(PrecompiledContracts.BRIDGE_ADDR),
+                eq(NEW_FEDERATION_BTC_UTXOS_KEY),
+                any()
+            );
+            verify(repository, times(1)).addStorageBytes(
+                PrecompiledContracts.BRIDGE_ADDR,
+                NEW_FEDERATION_BTC_UTXOS_KEY_FOR_TESTNET,
+                BridgeSerializationUtils.serializeUTXOList(federationUtxosAfterRskipActivation)
+            );
+        } else {
+            verify(repository, times(1)).addStorageBytes(
+                PrecompiledContracts.BRIDGE_ADDR,
+                NEW_FEDERATION_BTC_UTXOS_KEY,
+                BridgeSerializationUtils.serializeUTXOList(federationUtxos)
+            );
+            verify(repository, never()).addStorageBytes(
+                eq(PrecompiledContracts.BRIDGE_ADDR),
+                eq(NEW_FEDERATION_BTC_UTXOS_KEY_FOR_TESTNET),
+                any()
+            );
+        }
     }
 
     private BtcTransaction createTransaction() {
