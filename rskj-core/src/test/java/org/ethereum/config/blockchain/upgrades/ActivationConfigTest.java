@@ -38,7 +38,7 @@ public class ActivationConfigTest {
             "    papyrus200: 0",
             "    twoToThree: 0",
             "    iris300: 0",
-            "    iris310: 0",
+            "    hop400: 0",
             "},",
             "consensusRules: {",
             "    areBridgeTxsPaid: afterBridgeSync,",
@@ -92,7 +92,7 @@ public class ActivationConfigTest {
             "    rskip218: iris300",
             "    rskip219: iris300",
             "    rskip220: iris300",
-            "    rskip284: iris310",
+            "    rskip284: hop400",
             "}"
     ));
 
