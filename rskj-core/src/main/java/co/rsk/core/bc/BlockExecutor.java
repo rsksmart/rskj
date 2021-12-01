@@ -270,7 +270,7 @@ public class BlockExecutor {
         Repository track = repositoryLocator.startTrackingAt(parent);
 
         maintainPrecompiledContractStorageRoots(track, activationConfig.forBlock(block.getNumber()));
-        long totalGasUsed = 0;
+        LongAccumulator totalGasUsed = new LongAccumulator(Long::max, 0L);
         Coin totalPaidFees = Coin.ZERO;
         List<TransactionReceipt> receipts = new ArrayList<>();
         List<Transaction> executedTransactions = new ArrayList<>();
@@ -324,7 +324,7 @@ public class BlockExecutor {
                             transactionResults.put(result.getTxHash(), result.getResult());
                         }
                         totalPaidFees.add(result.getTotalPaidFees());
-                        totalGasUsed += result.getTotalGasUsed();
+                        totalGasUsed.accumulate(result.getTotalGasUsed());
                     }
                     logger.warn("Completed thread {} of {}", received, transactionsMap.entrySet().size());
                 }
@@ -373,7 +373,7 @@ public class BlockExecutor {
                 block,
                 executedTransactions,
                 receipts,
-                totalGasUsed,
+                totalGasUsed.get(),
                 totalPaidFees,
                 vmTrace ? null : track.getTrie()
         );
@@ -381,7 +381,7 @@ public class BlockExecutor {
         return result;
     }
 
-    private void executeRemascTransaction(ProgramTraceProcessor programTraceProcessor, int vmTraceOptions, Block block, boolean discardInvalidTxs, boolean acceptInvalidTransactions, boolean vmTrace, Repository track, long totalGasUsed, Coin totalPaidFees, List<TransactionReceipt> receipts, List<Transaction> executedTransactions, Set<DataWord> deletedAccounts) {
+    private void executeRemascTransaction(ProgramTraceProcessor programTraceProcessor, int vmTraceOptions, Block block, boolean discardInvalidTxs, boolean acceptInvalidTransactions, boolean vmTrace, Repository track, LongAccumulator totalGasUsed, Coin totalPaidFees, List<TransactionReceipt> receipts, List<Transaction> executedTransactions, Set<DataWord> deletedAccounts) {
         Metric metric = profiler.start(Profiler.PROFILING_TYPE.BLOCK_EXECUTE);
 
         // execute remasc tx.
@@ -410,7 +410,7 @@ public class BlockExecutor {
             Map<Integer, Transaction> transactions,
             Block block,
             Repository track,
-            long totalGasUsed,
+            LongAccumulator totalGasUsed,
             boolean vmTrace,
             int vmTraceOptions,
             Set<DataWord> deletedAccounts,
@@ -432,7 +432,7 @@ public class BlockExecutor {
                     block.getCoinbase(),
                     track,
                     block,
-                    totalGasUsed,
+                    totalGasUsed.get(),
                     vmTrace,
                     vmTraceOptions,
                     deletedAccounts);
@@ -462,12 +462,10 @@ public class BlockExecutor {
 
             logger.trace("tx executed");
 
-            // No need to commit the changes here. track.commit();
-
             logger.trace("track commit");
 
             long gasUsed = txExecutor.getGasUsed();
-            totalGasUsed += gasUsed;
+            totalGasUsed.accumulate(gasUsed);
             Coin paidFees = txExecutor.getPaidFees();
             if (paidFees != null) {
                 totalPaidFees = totalPaidFees.add(paidFees);
@@ -477,7 +475,7 @@ public class BlockExecutor {
 
             TransactionReceipt receipt = new TransactionReceipt();
             receipt.setGasUsed(gasUsed);
-            receipt.setCumulativeGas(totalGasUsed);
+            receipt.setCumulativeGas(totalGasUsed.get());
 
             receipt.setTxStatus(txExecutor.getReceipt().isSuccessful());
             receipt.setTransaction(tx);

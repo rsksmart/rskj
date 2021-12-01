@@ -11,13 +11,14 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.concurrent.Callable;
+import java.util.concurrent.atomic.LongAccumulator;
 
 public class TransactionConcurrentExecutor implements Callable<List<TransactionExecutionResult>> {
     private static final Logger logger = LoggerFactory.getLogger("transactionconcurrentexecutor");
 
     private final Repository track;
     private Block block;
-    private long totalGasUsed;
+    private LongAccumulator totalGasUsed;
     private boolean vmTrace;
     private int vmTraceOptions;
     private Set<DataWord> deletedAccounts;
@@ -32,7 +33,7 @@ public class TransactionConcurrentExecutor implements Callable<List<TransactionE
 
     public TransactionConcurrentExecutor(Map<Integer, Transaction> txs,
                                          TransactionExecutorFactory transactionExecutorFactory,
-                                         long totalGasUsed,
+                                         LongAccumulator totalGasUsed,
                                          Repository track,
                                          Block block,
                                          boolean vmTrace,
@@ -68,7 +69,7 @@ public class TransactionConcurrentExecutor implements Callable<List<TransactionE
                     block.getCoinbase(),
                     track,
                     block,
-                    totalGasUsed,
+                    totalGasUsed.get(),
                     vmTrace,
                     vmTraceOptions,
                     deletedAccounts);
@@ -96,7 +97,7 @@ public class TransactionConcurrentExecutor implements Callable<List<TransactionE
             logger.trace("track commit");
 
             long gasUsed = txExecutor.getGasUsed();
-            totalGasUsed += gasUsed;
+            totalGasUsed.accumulate(gasUsed);
             Coin paidFees = txExecutor.getPaidFees();
             if (paidFees != null) {
                 totalPaidFees = totalPaidFees.add(paidFees);
@@ -106,7 +107,7 @@ public class TransactionConcurrentExecutor implements Callable<List<TransactionE
 
             TransactionReceipt receipt = new TransactionReceipt();
             receipt.setGasUsed(gasUsed);
-            receipt.setCumulativeGas(totalGasUsed);
+            receipt.setCumulativeGas(totalGasUsed.get());
 
             receipt.setTxStatus(txExecutor.getReceipt().isSuccessful());
             receipt.setTransaction(tx);
@@ -123,7 +124,7 @@ public class TransactionConcurrentExecutor implements Callable<List<TransactionE
             results.add(new TransactionExecutionResult(
                     tx,
                     deletedAccounts,
-                    totalGasUsed,
+                    totalGasUsed.get(),
                     totalPaidFees,
                     receipt,
                     txExecutor.getResult()));
