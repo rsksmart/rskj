@@ -18,14 +18,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class ErpFederation extends Federation {
+    private static final Logger logger = LoggerFactory.getLogger(ErpFederation.class);
+
     private final List<BtcECKey> erpPubKeys;
     private final long activationDelay;
     private final ActivationConfig.ForBlock activations;
 
     private Script standardRedeemScript;
     private Script standardP2SHScript;
-
-    private static final Logger logger = LoggerFactory.getLogger(ErpFederation.class);
 
     public ErpFederation(
         List<FederationMember> members,
