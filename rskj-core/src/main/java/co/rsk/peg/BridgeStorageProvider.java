@@ -48,6 +48,7 @@ import static org.ethereum.config.blockchain.upgrades.ConsensusRule.*;
  */
 public class BridgeStorageProvider {
     private static final DataWord NEW_FEDERATION_BTC_UTXOS_KEY = DataWord.fromString("newFederationBtcUTXOs");
+    private static final DataWord NEW_FEDERATION_BTC_UTXOS_KEY_FOR_TESTNET = DataWord.fromString("newFederationBtcUTXOsForTestnet");
     private static final DataWord OLD_FEDERATION_BTC_UTXOS_KEY = DataWord.fromString("oldFederationBtcUTXOs");
     private static final DataWord BTC_TX_HASHES_ALREADY_PROCESSED_KEY = DataWord.fromString("btcTxHashesAP");
     private static final DataWord RELEASE_REQUEST_QUEUE = DataWord.fromString("releaseRequestQueue");
@@ -138,7 +139,6 @@ public class BridgeStorageProvider {
         RskAddress contractAddress,
         BridgeConstants bridgeConstants,
         ActivationConfig.ForBlock activations) {
-
         this.repository = repository;
         this.contractAddress = contractAddress;
         this.networkParameters = bridgeConstants.getBtcParams();
@@ -152,7 +152,11 @@ public class BridgeStorageProvider {
             return newFederationBtcUTXOs;
         }
 
-        newFederationBtcUTXOs = getFromRepository(NEW_FEDERATION_BTC_UTXOS_KEY, BridgeSerializationUtils::deserializeUTXOList);
+        DataWord key = NEW_FEDERATION_BTC_UTXOS_KEY;
+        if (activations.isActive(RSKIP284) && networkParameters.getId().equals(NetworkParameters.ID_TESTNET)) {
+            key = NEW_FEDERATION_BTC_UTXOS_KEY_FOR_TESTNET;
+        }
+        newFederationBtcUTXOs = getFromRepository(key, BridgeSerializationUtils::deserializeUTXOList);
         return newFederationBtcUTXOs;
     }
 
@@ -161,7 +165,11 @@ public class BridgeStorageProvider {
             return;
         }
 
-        saveToRepository(NEW_FEDERATION_BTC_UTXOS_KEY, newFederationBtcUTXOs, BridgeSerializationUtils::serializeUTXOList);
+        DataWord key = NEW_FEDERATION_BTC_UTXOS_KEY;
+        if (activations.isActive(RSKIP284) && networkParameters.getId().equals(NetworkParameters.ID_TESTNET)) {
+            key = NEW_FEDERATION_BTC_UTXOS_KEY_FOR_TESTNET;
+        }
+        saveToRepository(key, newFederationBtcUTXOs, BridgeSerializationUtils::serializeUTXOList);
     }
 
     public List<UTXO> getOldFederationBtcUTXOs() throws IOException {
