@@ -282,8 +282,8 @@ public class BlockExecutor {
             if(sequentialPart > 0){
                 threadCount += 1;
             }
-            double threadPercentage = (1.00 - sequentialPart) / threadCount;
-            Map<Integer, Map<Integer, Transaction>> transactionsMap = getSplitTransactionsByThread(block.getTransactionsList(), threadCount, threadPercentage);
+            double threadSliceFromTotal = (1.00 - sequentialPart) / threadCount;
+            Map<Integer, Map<Integer, Transaction>> transactionsMap = getSplitTransactionsByThread(block.getTransactionsList(), threadCount, threadSliceFromTotal);
 
             Metric metric = profiler.start(Profiler.PROFILING_TYPE.BLOCK_EXECUTE);
             Metric parallelMetric = profiler.start(Profiler.PROFILING_TYPE.BLOCK_EXECUTE_PARALLEL);
@@ -293,7 +293,7 @@ public class BlockExecutor {
                 if (threadSet.getKey() == threadCount) {
                     continue;
                 }
-                logger.warn("Parallel run of [{}] transactions for block: [{}] thread: [{}]", threadSet.getValue().size(), block.getNumber(), threadSet.getKey());
+                logger.warn("Parallel run of [{}] transactions for block: [{}] thread: [{}] of [{}]", threadSet.getValue().size(), block.getNumber(), threadSet.getKey());
                 TransactionConcurrentExecutor concurrentExecutor = new TransactionConcurrentExecutor(
                         threadSet.getValue(),
                         transactionExecutorFactory,
@@ -313,6 +313,7 @@ public class BlockExecutor {
             logger.warn("totalThreads: {}", transactionsMap.entrySet().size());
             while(received < transactionsMap.entrySet().size()) {
                 try {
+                    logger.warn("Processing thread {} of {}", received, transactionsMap.entrySet().size());
                     Future<List<TransactionExecutionResult>> resultFuture = completionService.take();
                     List<TransactionExecutionResult> results = resultFuture.get();
                     received ++;
@@ -339,7 +340,7 @@ public class BlockExecutor {
             profiler.stop(parallelMetric);
 
             if(sequentialPart > 0){
-                Map<Integer, Transaction> pendingTxs = transactionsMap.get(transactionsMap.size()); // get the last sub set of transactions, those that wa
+                Map<Integer, Transaction> pendingTxs = transactionsMap.get(transactionsMap.size()); // get the last sub set of transactions
                 executeTransactionsSequentially(
                         pendingTxs,
                         block,

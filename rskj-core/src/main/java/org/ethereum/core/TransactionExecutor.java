@@ -160,12 +160,10 @@ public class TransactionExecutor {
         long curBlockGasLimit = GasCost.toGas(executionBlock.getGasLimit());
 
         if (!gasIsValid(txGasLimit, curBlockGasLimit)) {
-            logger.warn("GAS IS INVALID. txGasLimit: {}, currentBlockGasLimit: {}", txGasLimit, curBlockGasLimit);
             return false;
         }
 
         if (!nonceIsValid()) {
-            logger.warn("NONCE IS INVALID");
             return false;
         }
 
@@ -187,13 +185,11 @@ public class TransactionExecutor {
             logger.warn("Tx Included in the following block: {}", this.executionBlock);
 
             execError(String.format("Not enough cash: Require: %s, Sender cash: %s", totalCost, senderBalance));
-            logger.warn("NOT ENOUGH GAS");
 
             return false;
         }
 
         if (!transactionAddressesAreValid()) {
-            logger.warn("ADDRESSES ARE INVALID");
             return false;
         }
 
@@ -252,10 +248,6 @@ public class TransactionExecutor {
         // as the current gas limit on blocks is 6.8M... several orders of magnitude
         // less than the theoretical max gas on blocks.
         long cumulativeGas = GasCost.add(txGasLimit, gasUsedInTheBlock);
-
-        logger.warn("cumulative gas: {}", cumulativeGas);
-        logger.warn("curBlockGasLimit: {}", curBlockGasLimit);
-        logger.warn("cumulativeGas: {}", cumulativeGas);
 
         boolean cumulativeGasReached = cumulativeGas > curBlockGasLimit || cumulativeGas == GasCost.MAX_GAS;
         if (cumulativeGasReached) {
@@ -409,7 +401,7 @@ public class TransactionExecutor {
     }
 
     private void execError(String err) {
-        logger.warn(err);
+        logger.trace(err);
         executionError = err;
     }
 
