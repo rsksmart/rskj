@@ -41,7 +41,7 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.Nullable;
 import java.util.*;
 import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.LongAccumulator;
 
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP126;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP85;
@@ -270,14 +270,13 @@ public class BlockExecutor {
         Repository track = repositoryLocator.startTrackingAt(parent);
 
         maintainPrecompiledContractStorageRoots(track, activationConfig.forBlock(block.getNumber()));
-
         long totalGasUsed = 0;
         Coin totalPaidFees = Coin.ZERO;
         List<TransactionReceipt> receipts = new ArrayList<>();
         List<Transaction> executedTransactions = new ArrayList<>();
         Set<DataWord> deletedAccounts = new HashSet<>();
 
-        if (block.getTransactionsList().size() > 1){
+        if (block.getTransactionsList().size() > 1) {
             int threadCount = 4;
             double sequentialPart = 0.0D;
             if(sequentialPart > 0){
@@ -341,7 +340,7 @@ public class BlockExecutor {
 
             if(sequentialPart > 0){
                 Map<Integer, Transaction> pendingTxs = transactionsMap.get(transactionsMap.size()); // get the last sub set of transactions, those that wa
-                executePendingTransactions(
+                executeTransactionsSequentially(
                         pendingTxs,
                         block,
                         track,
@@ -359,28 +358,7 @@ public class BlockExecutor {
             }
             profiler.stop(metric);
         }
-        Metric metric = profiler.start(Profiler.PROFILING_TYPE.BLOCK_EXECUTE);
-
-        // execute remasc tx.
-        Map<Integer, Transaction> remasc = new LinkedHashMap<>();
-        int index = block.getTransactionsList().size() - 1;
-        remasc.put(index, block.getTransactionsList().get(index));
-        executePendingTransactions(
-                remasc,
-                block,
-                track,
-                totalGasUsed,
-                vmTrace,
-                vmTraceOptions,
-                deletedAccounts,
-                acceptInvalidTransactions,
-                discardInvalidTxs,
-                executedTransactions,
-                metric,
-                programTraceProcessor,
-                totalPaidFees,
-                receipts);
-        profiler.stop(metric);
+        executeRemascTransaction(programTraceProcessor, vmTraceOptions, block, discardInvalidTxs, acceptInvalidTransactions, vmTrace, track, totalGasUsed, totalPaidFees, receipts, executedTransactions, deletedAccounts);
 
         logger.trace("End txs executions.");
 
@@ -403,7 +381,32 @@ public class BlockExecutor {
         return result;
     }
 
-    private BlockResult executePendingTransactions(
+    private void executeRemascTransaction(ProgramTraceProcessor programTraceProcessor, int vmTraceOptions, Block block, boolean discardInvalidTxs, boolean acceptInvalidTransactions, boolean vmTrace, Repository track, long totalGasUsed, Coin totalPaidFees, List<TransactionReceipt> receipts, List<Transaction> executedTransactions, Set<DataWord> deletedAccounts) {
+        Metric metric = profiler.start(Profiler.PROFILING_TYPE.BLOCK_EXECUTE);
+
+        // execute remasc tx.
+        Map<Integer, Transaction> remasc = new LinkedHashMap<>();
+        int index = block.getTransactionsList().size() - 1;
+        remasc.put(index, block.getTransactionsList().get(index));
+        executeTransactionsSequentially(
+                remasc,
+                block,
+                track,
+                totalGasUsed,
+                vmTrace,
+                vmTraceOptions,
+                deletedAccounts,
+                acceptInvalidTransactions,
+                discardInvalidTxs,
+                executedTransactions,
+                metric,
+                programTraceProcessor,
+                totalPaidFees,
+                receipts);
+        profiler.stop(metric);
+    }
+
+    private BlockResult executeTransactionsSequentially(
             Map<Integer, Transaction> transactions,
             Block block,
             Repository track,
