@@ -276,6 +276,7 @@ public class BlockExecutor {
         List<Transaction> executedTransactions = new ArrayList<>();
         Set<DataWord> deletedAccounts = new HashSet<>();
 
+        // skip this when there's no need to split
         if (block.getTransactionsList().size() > 1) {
             int threadCount = 4;
             double sequentialPart = 0.0D;
@@ -290,10 +291,7 @@ public class BlockExecutor {
             ExecutorService msgQueue = Executors.newFixedThreadPool(threadCount);
             CompletionService<List<TransactionExecutionResult>> completionService = new ExecutorCompletionService<>(msgQueue);
             for (Map.Entry<Integer, Map<Integer, Transaction>> threadSet : transactionsMap.entrySet()) {
-                if (threadSet.getKey() == threadCount) {
-                    continue;
-                }
-                logger.warn("Parallel run of [{}] transactions for block: [{}] thread: [{}] of [{}]", threadSet.getValue().size(), block.getNumber(), threadSet.getKey());
+                logger.warn("Parallel run of [{}] transactions for block: [{}] thread: [{}] of [{}]", threadSet.getValue().size(), block.getNumber(), threadSet.getKey(), transactionsMap.size());
                 TransactionConcurrentExecutor concurrentExecutor = new TransactionConcurrentExecutor(
                         threadSet.getValue(),
                         transactionExecutorFactory,
@@ -506,8 +504,7 @@ public class BlockExecutor {
             }
 
         }
-        for (Map.Entry<Integer, Transaction> txEntry :
-                indexedTxs.entrySet()) {
+        for (Map.Entry<Integer, Transaction> txEntry : indexedTxs.entrySet()) {
             groupedTransactions.computeIfAbsent(txEntry.getValue().getSender(), k -> new LinkedHashMap<>()).put(txEntry.getKey(), txEntry.getValue());
         }
 
@@ -525,7 +522,6 @@ public class BlockExecutor {
             Map<Integer, Transaction> senderTxs = groupedTransactions.get(address);
             // add all the transactions belonging to that address, in order. It assumes transactions are already ordered (nonce).
             result.computeIfAbsent(currentThread, k -> new LinkedHashMap<>()).putAll(senderTxs);
-            logger.warn("sender: {}, txs: {}", address.toString(), senderTxs.size());
             currentTransactionIndex += senderTxs.size();
         }
         return result;
