@@ -29,7 +29,7 @@ import java.util.stream.Collectors;
  * Created by mario on 21/02/17.
  */
 public class NodeDistanceTable {
-    private Map<Integer, Bucket> buckets = new ConcurrentHashMap<>();
+    private final Map<Integer, Bucket> buckets = new ConcurrentHashMap<>();
     private final Node localNode;
     private final DistanceCalculator distanceCalculator;
 

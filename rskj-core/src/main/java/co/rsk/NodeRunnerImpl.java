@@ -33,7 +33,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-public class FullNodeRunner implements NodeRunner {
+public class NodeRunnerImpl implements NodeRunner {
 
     private static final Logger logger = LoggerFactory.getLogger("fullnoderunner");
 
@@ -44,7 +44,7 @@ public class FullNodeRunner implements NodeRunner {
 
     private volatile ExecState state = ExecState.CREATED;
 
-    public FullNodeRunner(
+    public NodeRunnerImpl(
             NodeContext nodeContext,
             List<InternalService> internalServices,
             RskSystemProperties rskSystemProperties,
