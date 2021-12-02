@@ -151,12 +151,12 @@ public class TypeConverterTest {
 
     @Test
     public void toJsonHexCoin() {
-        Assert.assertEquals("1234", TypeConverter.toJsonHex(new Coin(new BigInteger("1234"))));
+        Assert.assertEquals("0x1234", TypeConverter.toJsonHex(new Coin(new BigInteger("1234"))));
     }
 
     @Test
     public void toJsonHexNullCoin() {
-        Assert.assertEquals("", TypeConverter.toJsonHex((Coin) null));
+        Assert.assertEquals("0x00", TypeConverter.toJsonHex((Coin) null));
     }
 
 

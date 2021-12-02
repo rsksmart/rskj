@@ -25,6 +25,7 @@ import org.ethereum.util.ByteUtil;
 
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
@@ -34,6 +35,7 @@ import java.util.regex.Pattern;
 @Deprecated
 public class TypeConverter {
     private static final Pattern LEADING_ZEROS_PATTERN = Pattern.compile("0x(0)+");
+    private static final Pattern HEXADECIMAL_PATTERN = Pattern.compile("\\p{XDigit}+");
 
     private TypeConverter() {
         throw new IllegalAccessError("Utility class");
@@ -112,12 +114,21 @@ public class TypeConverter {
         return result;
     }
 
+    public static boolean isHexadecimal(String input) {
+        final Matcher matcher = HEXADECIMAL_PATTERN.matcher(input);
+        return matcher.matches();
+    }
+
     public static String toJsonHex(Coin x) {
-        return x != null ? x.asBigInteger().toString() : "";
+        return toJsonHex(x != null ? x.asBigInteger().toString() : "00");
     }
 
     public static String toJsonHex(String x) {
-        return "0x" + x;
+        if (isHexadecimal(x)) {
+            return "0x" + x;
+        }
+
+        throw RskJsonRpcRequestException.invalidParamError("Not a valid hex number.");
     }
 
     /**
