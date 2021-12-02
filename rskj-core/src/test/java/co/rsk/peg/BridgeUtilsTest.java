@@ -2071,176 +2071,110 @@ public class BridgeUtilsTest {
 
     @Test
     public void serializeBtcAddressWithVersion_p2pkh_testnet_before_rskip284() {
-        when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(false);
-
         Address address = Address.fromBase58(networkParameters, "mmWFbkYYKCT9jvCUzJD9XoVjSkfachVpMs");
+        byte[] serializedVersion = Hex.decode("6f"); // Testnet pubkey hash
+        byte[] serializedAddress = Hex.decode("41aec8ca3fcf17e62077e9f35961385360d6a570");
 
-        byte[] addressWithVersionBytes = BridgeUtils.serializeBtcAddressWithVersion(activations, address);
-        Assert.assertEquals(21, addressWithVersionBytes.length);
-
-        byte[] versionBytes = new byte[]{addressWithVersionBytes[0]};
-        byte[] addressBytes = new byte[20];
-        System.arraycopy(addressWithVersionBytes, 1, addressBytes, 0, 20);
-
-        Assert.assertEquals("6f", Hex.toHexString(versionBytes));  // Testnet pubkey hash
-        Assert.assertEquals("41aec8ca3fcf17e62077e9f35961385360d6a570", Hex.toHexString(addressBytes));
+        test_serializeBtcAddressWithVersion(false, address, serializedVersion, serializedAddress);
     }
 
     @Test
     public void serializeBtcAddressWithVersion_p2sh_testnet_before_rskip284() {
-        when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(false);
-
         Address address = Address.fromBase58(networkParameters, "2MyEXHyt2fXqdFm3r4xXEkTdbwdZm7qFiDP");
+        byte[] serializedVersion = Hex.decode("00c4"); // Testnet script hash, with leading zeroes
+        byte[] serializedAddress = Hex.decode("41aec8ca3fcf17e62077e9f35961385360d6a570");
 
-        byte[] addressWithVersionBytes = BridgeUtils.serializeBtcAddressWithVersion(activations, address);
-        Assert.assertEquals(22, addressWithVersionBytes.length);
-
-        byte[] versionBytes = new byte[2];
-        System.arraycopy(addressWithVersionBytes, 0, versionBytes, 0, 2);
-
-        byte[] addressBytes = new byte[20];
-        System.arraycopy(addressWithVersionBytes, 2, addressBytes, 0, 20);
-
-        Assert.assertEquals("00c4", Hex.toHexString(versionBytes));  // Testnet script hash, with leading zeroes
-        Assert.assertEquals("41aec8ca3fcf17e62077e9f35961385360d6a570", Hex.toHexString(addressBytes));
+        test_serializeBtcAddressWithVersion(false, address, serializedVersion, serializedAddress);
     }
 
     @Test
     public void serializeBtcAddressWithVersion_p2pkh_mainnet_before_rskip284() {
-        when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(false);
-
         Address address = Address.fromBase58(bridgeConstantsMainnet.getBtcParams(), "16zJJhTZWB1txoisGjEmhtHQam4sikpTd2");
+        byte[] serializedVersion = Hex.decode("00"); // Mainnet pubkey hash
+        byte[] serializedAddress = Hex.decode("41aec8ca3fcf17e62077e9f35961385360d6a570");
 
-        byte[] addressWithVersionBytes = BridgeUtils.serializeBtcAddressWithVersion(activations, address);
-        Assert.assertEquals(21, addressWithVersionBytes.length);
-
-        byte[] versionBytes = new byte[]{addressWithVersionBytes[0]};
-        byte[] addressBytes = new byte[20];
-        System.arraycopy(addressWithVersionBytes, 1, addressBytes, 0, 20);
-
-        Assert.assertEquals("00", Hex.toHexString(versionBytes));  // Mainnet pubkey hash
-        Assert.assertEquals("41aec8ca3fcf17e62077e9f35961385360d6a570", Hex.toHexString(addressBytes));
+        test_serializeBtcAddressWithVersion(false, address, serializedVersion, serializedAddress);
     }
 
     @Test
     public void serializeBtcAddressWithVersion_p2sh_mainnet_before_rskip284() {
-        when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(false);
-
         Address address = Address.fromBase58(bridgeConstantsMainnet.getBtcParams(), "37gKEEx145LH3yRJPpuN8WeLjHMbJJo8vn");
+        byte[] serializedVersion = Hex.decode("05"); // Mainnet script hash
+        byte[] serializedAddress = Hex.decode("41aec8ca3fcf17e62077e9f35961385360d6a570");
 
-        byte[] addressWithVersionBytes = BridgeUtils.serializeBtcAddressWithVersion(activations, address);
-        Assert.assertEquals(21, addressWithVersionBytes.length);
-
-        byte[] versionBytes = new byte[]{addressWithVersionBytes[0]};
-        byte[] addressBytes = new byte[20];
-        System.arraycopy(addressWithVersionBytes, 1, addressBytes, 0, 20);
-
-        Assert.assertEquals("05", Hex.toHexString(versionBytes));  // Mainnet script hash
-        Assert.assertEquals("41aec8ca3fcf17e62077e9f35961385360d6a570", Hex.toHexString(addressBytes));
+        test_serializeBtcAddressWithVersion(false, address, serializedVersion, serializedAddress);
     }
 
     @Test
     public void serializeBtcAddressWithVersion_p2pkh_testnet_after_rskip284() {
-        when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
-
         Address address = Address.fromBase58(networkParameters, "mmWFbkYYKCT9jvCUzJD9XoVjSkfachVpMs");
+        byte[] serializedVersion = Hex.decode("6f"); // Testnet pubkey hash
+        byte[] serializedAddress = Hex.decode("41aec8ca3fcf17e62077e9f35961385360d6a570");
 
-        byte[] addressWithVersionBytes = BridgeUtils.serializeBtcAddressWithVersion(activations, address);
-        Assert.assertEquals(21, addressWithVersionBytes.length);
-
-        byte[] versionBytes = new byte[]{addressWithVersionBytes[0]};
-        byte[] addressBytes = new byte[20];
-        System.arraycopy(addressWithVersionBytes, 1, addressBytes, 0, 20);
-
-        Assert.assertEquals("6f", Hex.toHexString(versionBytes));  // Testnet pubkey hash
-        Assert.assertEquals("41aec8ca3fcf17e62077e9f35961385360d6a570", Hex.toHexString(addressBytes));
+        test_serializeBtcAddressWithVersion(true, address, serializedVersion, serializedAddress);
     }
 
     @Test
     public void serializeBtcAddressWithVersion_p2sh_testnet_after_rskip284() {
-        when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
-
         Address address = Address.fromBase58(networkParameters, "2MyEXHyt2fXqdFm3r4xXEkTdbwdZm7qFiDP");
+        byte[] serializedVersion = Hex.decode("c4"); // Testnet script hash, no leading zeroes after HF activation
+        byte[] serializedAddress = Hex.decode("41aec8ca3fcf17e62077e9f35961385360d6a570");
 
-        byte[] addressWithVersionBytes = BridgeUtils.serializeBtcAddressWithVersion(activations, address);
-        Assert.assertEquals(21, addressWithVersionBytes.length);
-
-        byte[] versionBytes = new byte[]{addressWithVersionBytes[0]};
-        byte[] addressBytes = new byte[20];
-        System.arraycopy(addressWithVersionBytes, 1, addressBytes, 0, 20);
-
-        Assert.assertEquals("c4", Hex.toHexString(versionBytes));  // Testnet script hash, no leading zeroes after HF activation
-        Assert.assertEquals("41aec8ca3fcf17e62077e9f35961385360d6a570", Hex.toHexString(addressBytes));
+        test_serializeBtcAddressWithVersion(true, address, serializedVersion, serializedAddress);
     }
 
     @Test
     public void serializeBtcAddressWithVersion_p2pkh_mainnet_after_rskip284() {
-        when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
-
         Address address = Address.fromBase58(bridgeConstantsMainnet.getBtcParams(), "16zJJhTZWB1txoisGjEmhtHQam4sikpTd2");
+        byte[] serializedVersion = Hex.decode("00"); // Mainnet pubkey hash
+        byte[] serializedAddress = Hex.decode("41aec8ca3fcf17e62077e9f35961385360d6a570");
 
-        byte[] addressWithVersionBytes = BridgeUtils.serializeBtcAddressWithVersion(activations, address);
-        Assert.assertEquals(21, addressWithVersionBytes.length);
-
-        byte[] versionBytes = new byte[]{addressWithVersionBytes[0]};
-        byte[] addressBytes = new byte[20];
-        System.arraycopy(addressWithVersionBytes, 1, addressBytes, 0, 20);
-
-        Assert.assertEquals("00", Hex.toHexString(versionBytes));  // Mainnet pubkey hash
-        Assert.assertEquals("41aec8ca3fcf17e62077e9f35961385360d6a570", Hex.toHexString(addressBytes));
+        test_serializeBtcAddressWithVersion(true, address, serializedVersion, serializedAddress);
     }
 
     @Test
     public void serializeBtcAddressWithVersion_p2sh_mainnet_after_rskip284() {
-        when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
-
         Address address = Address.fromBase58(bridgeConstantsMainnet.getBtcParams(), "37gKEEx145LH3yRJPpuN8WeLjHMbJJo8vn");
+        byte[] serializedVersion = Hex.decode("05"); // Mainnet script hash
+        byte[] serializedAddress = Hex.decode("41aec8ca3fcf17e62077e9f35961385360d6a570");
 
-        byte[] addressWithVersionBytes = BridgeUtils.serializeBtcAddressWithVersion(activations, address);
-        Assert.assertEquals(21, addressWithVersionBytes.length);
-
-        byte[] versionBytes = new byte[]{addressWithVersionBytes[0]};
-        byte[] addressBytes = new byte[20];
-        System.arraycopy(addressWithVersionBytes, 1, addressBytes, 0, 20);
-
-        Assert.assertEquals("05", Hex.toHexString(versionBytes));  // Mainnet script hash
-        Assert.assertEquals("41aec8ca3fcf17e62077e9f35961385360d6a570", Hex.toHexString(addressBytes));
+        test_serializeBtcAddressWithVersion(true, address, serializedVersion, serializedAddress);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void deserializeBtcAddressWithVersion_before_rskip284_p2sh_testnet() throws BridgeIllegalArgumentException {
-        when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(false);
-
         String addressVersionHex = "c4"; // Testnet script hash
         String addressHash160Hex = "41aec8ca3fcf17e62077e9f35961385360d6a570";
         byte[] addressBytes = Hex.decode(addressVersionHex.concat(addressHash160Hex));
 
         // Should use the legacy method and fail for using testnet script hash
-        BridgeUtils.deserializeBtcAddressWithVersion(
-            bridgeConstantsRegtest.getBtcParams(),
-            activations,
-            addressBytes
+        test_deserializeBtcAddressWithVersion(
+            false,
+            NetworkParameters.ID_TESTNET,
+            addressBytes,
+            0,
+            new byte[]{},
+            ""
         );
     }
 
     @Test
     public void deserializeBtcAddressWithVersion_before_rskip284_p2pkh_testnet() throws BridgeIllegalArgumentException {
-        when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(false);
-
+        int addressVersion = 111;
         String addressVersionHex = "6f"; // Testnet pubkey hash
         String addressHash160Hex = "41aec8ca3fcf17e62077e9f35961385360d6a570";
         byte[] addressBytes = Hex.decode(addressVersionHex.concat(addressHash160Hex));
+        String addressBase58 = "mmWFbkYYKCT9jvCUzJD9XoVjSkfachVpMs";
 
         // Should use the legacy method and deserialize correctly if using testnet p2pkh
-        Address address = BridgeUtils.deserializeBtcAddressWithVersion(
-            bridgeConstantsRegtest.getBtcParams(),
-            activations,
-            addressBytes
+        test_deserializeBtcAddressWithVersion(
+            false,
+            NetworkParameters.ID_TESTNET,
+            addressBytes,
+            addressVersion,
+            Hex.decode(addressHash160Hex),
+            addressBase58
         );
-
-        Assert.assertEquals(111, address.getVersion());
-        Assert.assertArrayEquals(Hex.decode(addressHash160Hex), address.getHash160());
-        Assert.assertEquals("mmWFbkYYKCT9jvCUzJD9XoVjSkfachVpMs", address.toBase58());
     }
 
     @Test(expected = BridgeIllegalArgumentException.class)
@@ -2267,174 +2201,172 @@ public class BridgeUtilsTest {
 
     @Test
     public void deserializeBtcAddressWithVersion_p2pkh_testnet() throws BridgeIllegalArgumentException {
-        when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
-
+        int addressVersion = 111;
         String addressVersionHex = "6f"; // Testnet pubkey hash
         String addressHash160Hex = "41aec8ca3fcf17e62077e9f35961385360d6a570";
         byte[] addressBytes = Hex.decode(addressVersionHex.concat(addressHash160Hex));
+        String addressBase58 = "mmWFbkYYKCT9jvCUzJD9XoVjSkfachVpMs";
 
-        Address address = BridgeUtils.deserializeBtcAddressWithVersion(
-            bridgeConstantsRegtest.getBtcParams(),
-            activations,
-            addressBytes
+        test_deserializeBtcAddressWithVersion(
+            true,
+            NetworkParameters.ID_TESTNET,
+            addressBytes,
+            addressVersion,
+            Hex.decode(addressHash160Hex),
+            addressBase58
         );
-
-        Assert.assertEquals(111, address.getVersion());
-        Assert.assertArrayEquals(Hex.decode(addressHash160Hex), address.getHash160());
-        Assert.assertEquals("mmWFbkYYKCT9jvCUzJD9XoVjSkfachVpMs", address.toBase58());
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void deserializeBtcAddressWithVersion_p2pkh_testnet_wrong_network() throws BridgeIllegalArgumentException {
-        when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
-
         String addressVersionHex = "6f"; // Testnet pubkey hash
         String addressHash160Hex = "41aec8ca3fcf17e62077e9f35961385360d6a570";
         byte[] addressBytes = Hex.decode(addressVersionHex.concat(addressHash160Hex));
 
-        BridgeUtils.deserializeBtcAddressWithVersion(
-            bridgeConstantsMainnet.getBtcParams(),
-            activations,
-            addressBytes
+        test_deserializeBtcAddressWithVersion(
+            true,
+            NetworkParameters.ID_MAINNET,
+            addressBytes,
+            0,
+            new byte[]{},
+            ""
         );
     }
 
     @Test
     public void deserializeBtcAddressWithVersion_p2sh_testnet() throws BridgeIllegalArgumentException {
-        when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
-
+        int addressVersion = 196;
         String addressVersionHex = "c4"; // Testnet script hash
         String addressHash160Hex = "41aec8ca3fcf17e62077e9f35961385360d6a570";
         byte[] addressBytes = Hex.decode(addressVersionHex.concat(addressHash160Hex));
+        String addressBase58 = "2MyEXHyt2fXqdFm3r4xXEkTdbwdZm7qFiDP";
 
-        Address address = BridgeUtils.deserializeBtcAddressWithVersion(
-            bridgeConstantsRegtest.getBtcParams(),
-            activations,
-            addressBytes
+        test_deserializeBtcAddressWithVersion(
+            true,
+            NetworkParameters.ID_TESTNET,
+            addressBytes,
+            addressVersion,
+            Hex.decode(addressHash160Hex),
+            addressBase58
         );
-
-        Assert.assertEquals(196, address.getVersion());
-        Assert.assertArrayEquals(Hex.decode(addressHash160Hex), address.getHash160());
-        Assert.assertEquals("2MyEXHyt2fXqdFm3r4xXEkTdbwdZm7qFiDP", address.toBase58());
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void deserializeBtcAddressWithVersion_p2sh_testnet_wrong_network() throws BridgeIllegalArgumentException {
-        when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
-
         String addressVersionHex = "c4"; // Testnet script hash
         String addressHash160Hex = "41aec8ca3fcf17e62077e9f35961385360d6a570";
         byte[] addressBytes = Hex.decode(addressVersionHex.concat(addressHash160Hex));
 
-        BridgeUtils.deserializeBtcAddressWithVersion(
-            bridgeConstantsMainnet.getBtcParams(),
-            activations,
-            addressBytes
+        test_deserializeBtcAddressWithVersion(
+            true,
+            NetworkParameters.ID_MAINNET,
+            addressBytes,
+            0,
+            new byte[]{},
+            ""
         );
     }
 
     @Test
     public void deserializeBtcAddressWithVersion_p2pkh_mainnet() throws BridgeIllegalArgumentException {
-        when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
-
+        int addressVersion = 0;
         String addressVersionHex = "00"; // Mainnet pubkey hash
         String addressHash160Hex = "41aec8ca3fcf17e62077e9f35961385360d6a570";
         byte[] addressBytes = Hex.decode(addressVersionHex.concat(addressHash160Hex));
+        String addressBase58 = "16zJJhTZWB1txoisGjEmhtHQam4sikpTd2";
 
-        Address address = BridgeUtils.deserializeBtcAddressWithVersion(
-            bridgeConstantsMainnet.getBtcParams(),
-            activations,
-            addressBytes
+        test_deserializeBtcAddressWithVersion(
+            true,
+            NetworkParameters.ID_MAINNET,
+            addressBytes,
+            addressVersion,
+            Hex.decode(addressHash160Hex),
+            addressBase58
         );
-
-        Assert.assertEquals(0, address.getVersion());
-        Assert.assertArrayEquals(Hex.decode(addressHash160Hex), address.getHash160());
-        Assert.assertEquals("16zJJhTZWB1txoisGjEmhtHQam4sikpTd2", address.toBase58());
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void deserializeBtcAddressWithVersion_p2pkh_mainnet_wrong_network() throws BridgeIllegalArgumentException {
-        when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
-
         String addressVersionHex = "00"; // Mainnet pubkey hash
         String addressHash160Hex = "41aec8ca3fcf17e62077e9f35961385360d6a570";
         byte[] addressBytes = Hex.decode(addressVersionHex.concat(addressHash160Hex));
 
-        BridgeUtils.deserializeBtcAddressWithVersion(
-            bridgeConstantsRegtest.getBtcParams(),
-            activations,
-            addressBytes
+        test_deserializeBtcAddressWithVersion(
+            true,
+            NetworkParameters.ID_TESTNET,
+            addressBytes,
+            0,
+            new byte[]{},
+            ""
         );
     }
 
     @Test
     public void deserializeBtcAddressWithVersion_p2sh_mainnet() throws BridgeIllegalArgumentException {
-        when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
-
+        int addressVersion = 5;
         String addressVersionHex = "05"; // Mainnet script hash
         String addressHash160Hex = "41aec8ca3fcf17e62077e9f35961385360d6a570";
         byte[] addressBytes = Hex.decode(addressVersionHex.concat(addressHash160Hex));
+        String addressBase58 = "37gKEEx145LH3yRJPpuN8WeLjHMbJJo8vn";
 
-        Address address = BridgeUtils.deserializeBtcAddressWithVersion(
-            bridgeConstantsMainnet.getBtcParams(),
-            activations,
-            addressBytes
+        test_deserializeBtcAddressWithVersion(
+            true,
+            NetworkParameters.ID_MAINNET,
+            addressBytes,
+            addressVersion,
+            Hex.decode(addressHash160Hex),
+            addressBase58
         );
-
-        Assert.assertEquals(5, address.getVersion());
-        Assert.assertArrayEquals(Hex.decode(addressHash160Hex), address.getHash160());
-        Assert.assertEquals("37gKEEx145LH3yRJPpuN8WeLjHMbJJo8vn", address.toBase58());
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void deserializeBtcAddressWithVersion_p2sh_mainnet_wrong_network() throws BridgeIllegalArgumentException {
-        when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
-
         String addressVersionHex = "05"; // Mainnet script hash
         String addressHash160Hex = "41aec8ca3fcf17e62077e9f35961385360d6a570";
         byte[] addressBytes = Hex.decode(addressVersionHex.concat(addressHash160Hex));
 
-        Address address = BridgeUtils.deserializeBtcAddressWithVersion(
-            bridgeConstantsRegtest.getBtcParams(),
-            activations,
-            addressBytes
+        test_deserializeBtcAddressWithVersion(
+            true,
+            NetworkParameters.ID_TESTNET,
+            addressBytes,
+            0,
+            new byte[]{},
+            ""
         );
-
-        Assert.assertEquals(5, address.getVersion());
-        Assert.assertArrayEquals(Hex.decode(addressHash160Hex), address.getHash160());
-        Assert.assertEquals("37gKEEx145LH3yRJPpuN8WeLjHMbJJo8vn", address.toBase58());
     }
 
     @Test(expected = BridgeIllegalArgumentException.class)
     public void deserializeBtcAddressWithVersion_with_extra_bytes() throws BridgeIllegalArgumentException {
-        when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
-
         String addressVersionHex = "6f"; // Testnet pubkey hash
         String addressHash160Hex = "41aec8ca3fcf17e62077e9f35961385360d6a570";
         String extraData = "0000aaaaeeee1111ffff";
         byte[] addressBytes = Hex.decode(addressVersionHex.concat(addressHash160Hex).concat(extraData));
 
         // Should fail for having more than 21 bytes
-        BridgeUtils.deserializeBtcAddressWithVersion(
-            bridgeConstantsRegtest.getBtcParams(),
-            activations,
-            addressBytes
+        test_deserializeBtcAddressWithVersion(
+            true,
+            NetworkParameters.ID_TESTNET,
+            addressBytes,
+            0,
+            new byte[]{},
+            ""
         );
     }
 
     @Test(expected = BridgeIllegalArgumentException.class)
     public void deserializeBtcAddressWithVersion_invalid_address_hash() throws BridgeIllegalArgumentException {
-        when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
-
         String addressVersionHex = "6f"; // Testnet pubkey hash
         String addressHash160Hex = "41";
         byte[] addressBytes = Hex.decode(addressVersionHex.concat(addressHash160Hex));
 
         // Should fail for having less than 21 bytes
-        BridgeUtils.deserializeBtcAddressWithVersion(
-            bridgeConstantsRegtest.getBtcParams(),
-            activations,
-            addressBytes
+        test_deserializeBtcAddressWithVersion(
+            true,
+            NetworkParameters.ID_TESTNET,
+            addressBytes,
+            0,
+            new byte[]{},
+            ""
         );
     }
 
@@ -2592,6 +2524,43 @@ public class BridgeUtilsTest {
         }
 
         assertIsWatching(federation.getAddress(), wallet, networkParameters);
+    }
+
+    private void test_serializeBtcAddressWithVersion(boolean isRskip284Active, Address address, byte[] serializedVersion, byte[] serializedAddress) {
+        when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(isRskip284Active);
+
+        byte[] addressWithVersionBytes = BridgeUtils.serializeBtcAddressWithVersion(activations, address);
+        int expectedLength = serializedVersion.length + serializedAddress.length;
+        Assert.assertEquals(expectedLength, addressWithVersionBytes.length);
+
+        byte[] versionBytes = new byte[serializedVersion.length];
+        System.arraycopy(addressWithVersionBytes, 0, versionBytes, 0, serializedVersion.length);
+
+        byte[] addressBytes = new byte[serializedAddress.length];
+        System.arraycopy(addressWithVersionBytes, serializedVersion.length, addressBytes, 0, serializedAddress.length);
+
+        Assert.assertArrayEquals(serializedVersion, versionBytes);
+        Assert.assertArrayEquals(serializedAddress, addressBytes);
+    }
+
+    private void test_deserializeBtcAddressWithVersion(boolean isRskip284Active, String networkId, byte[] serializedAddress,
+        int expectedVersion, byte[] expectedHash, String expectedAddress) throws BridgeIllegalArgumentException {
+
+        when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(isRskip284Active);
+
+        BridgeConstants bridgeConstants = networkId.equals(NetworkParameters.ID_MAINNET) ?
+            BridgeMainNetConstants.getInstance() :
+            BridgeRegTestConstants.getInstance();
+
+        Address address = BridgeUtils.deserializeBtcAddressWithVersion(
+            bridgeConstants.getBtcParams(),
+            activations,
+            serializedAddress
+        );
+
+        Assert.assertEquals(expectedVersion, address.getVersion());
+        Assert.assertArrayEquals(expectedHash, address.getHash160());
+        Assert.assertEquals(expectedAddress, address.toBase58());
     }
 
     private void assertIsWatching(Address address, Wallet wallet, NetworkParameters parameters) {
