@@ -42,6 +42,7 @@ import javax.annotation.Nullable;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.LongAccumulator;
+import java.util.stream.Collectors;
 
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP126;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP85;
@@ -277,7 +278,7 @@ public class BlockExecutor {
         Set<DataWord> deletedAccounts = new HashSet<>();
 
         // skip this when there's no need to split
-        if (block.getTransactionsList().size() > 1) {
+        if (anyRelevantTransaction(block)) {
             int threadCount = 4;
             double sequentialPart = 0.0D;
             if(sequentialPart > 0){
@@ -357,6 +358,7 @@ public class BlockExecutor {
             }
             profiler.stop(metric);
         }
+        
         executeRemascTransaction(programTraceProcessor, vmTraceOptions, block, discardInvalidTxs, acceptInvalidTransactions, vmTrace, track, totalGasUsed, totalPaidFees, receipts, executedTransactions, deletedAccounts);
 
         logger.trace("End txs executions.");
@@ -370,8 +372,8 @@ public class BlockExecutor {
         logger.trace("Building execution results.");
         BlockResult result = new BlockResult(
                 block,
-                executedTransactions,
-                receipts,
+                getSortedExecutedTransactions(executedTransactions, block.getTransactionsList()),
+                getSortedTransactionReceipts(receipts, block.getTransactionsList()),
                 totalGasUsed.get(),
                 totalPaidFees,
                 vmTrace ? null : track.getTrie()
@@ -380,28 +382,55 @@ public class BlockExecutor {
         return result;
     }
 
+    private List<TransactionReceipt> getSortedTransactionReceipts(List<TransactionReceipt> transactionReceipts, List<Transaction> transactionsList){
+        List<TransactionReceipt> sortedReceipts = new ArrayList<>();
+        for (Transaction tx: transactionsList) {
+            List<TransactionReceipt> receipt = transactionReceipts.stream().filter(x -> x.getTransaction().equals(tx)).collect(Collectors.toList());
+            sortedReceipts.add(receipt.get(0));
+        }
+        return sortedReceipts;
+    }
+
+    private List<Transaction> getSortedExecutedTransactions(List<Transaction> executedTransactions, List<Transaction> transactionsList) {
+        List<Transaction> result = new ArrayList<>();
+        for (Transaction tx :
+                transactionsList) {
+            if (executedTransactions.contains(tx)){
+                result.add(tx);
+            }
+        }
+        return result;
+    }
+
+    private boolean anyRelevantTransaction(Block block) {
+        return block.getTransactionsList().stream().anyMatch(n -> !(n instanceof RemascTransaction));
+    }
+
     private void executeRemascTransaction(ProgramTraceProcessor programTraceProcessor, int vmTraceOptions, Block block, boolean discardInvalidTxs, boolean acceptInvalidTransactions, boolean vmTrace, Repository track, LongAccumulator totalGasUsed, Coin totalPaidFees, List<TransactionReceipt> receipts, List<Transaction> executedTransactions, Set<DataWord> deletedAccounts) {
         Metric metric = profiler.start(Profiler.PROFILING_TYPE.BLOCK_EXECUTE);
 
-        // execute remasc tx.
         Map<Integer, Transaction> remasc = new LinkedHashMap<>();
         int index = block.getTransactionsList().size() - 1;
-        remasc.put(index, block.getTransactionsList().get(index));
-        executeTransactionsSequentially(
-                remasc,
-                block,
-                track,
-                totalGasUsed,
-                vmTrace,
-                vmTraceOptions,
-                deletedAccounts,
-                acceptInvalidTransactions,
-                discardInvalidTxs,
-                executedTransactions,
-                metric,
-                programTraceProcessor,
-                totalPaidFees,
-                receipts);
+        Transaction tx = block.getTransactionsList().get(index);
+        if (tx instanceof RemascTransaction){
+            // execute remasc tx.
+            remasc.put(index, tx);
+            executeTransactionsSequentially(
+                    remasc,
+                    block,
+                    track,
+                    totalGasUsed,
+                    vmTrace,
+                    vmTraceOptions,
+                    deletedAccounts,
+                    acceptInvalidTransactions,
+                    discardInvalidTxs,
+                    executedTransactions,
+                    metric,
+                    programTraceProcessor,
+                    totalPaidFees,
+                    receipts);
+        }
         profiler.stop(metric);
     }
 
