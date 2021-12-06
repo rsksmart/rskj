@@ -22,9 +22,8 @@ import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.wallet.SendRequest;
 import co.rsk.bitcoinj.wallet.Wallet;
+import co.rsk.config.BridgeConstants;
 import co.rsk.config.BridgeRegTestConstants;
-import java.time.Instant;
-import java.util.Collections;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.junit.Assert;
@@ -37,10 +36,13 @@ import org.powermock.modules.junit4.PowerMockRunner;
 
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @RunWith(PowerMockRunner.class)
@@ -49,14 +51,23 @@ public class ReleaseTransactionBuilderTest {
     private Address changeAddress;
     private ReleaseTransactionBuilder builder;
     private ActivationConfig.ForBlock activations;
+    private Context btcContext;
+    private NetworkParameters networkParameters;
+    private BridgeConstants bridgeConstants;
+    private Federation federation;
 
     @Before
-    public void createBuilder() {
+    public void setup() {
         wallet = mock(Wallet.class);
         changeAddress = mockAddress(1000);
         activations = mock(ActivationConfig.ForBlock.class);
+        bridgeConstants = BridgeRegTestConstants.getInstance();
+        networkParameters = bridgeConstants.getBtcParams();
+        btcContext = new Context(networkParameters);
+        federation = bridgeConstants.getGenesisFederation();
+
         builder = new ReleaseTransactionBuilder(
-            NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
+            networkParameters,
             wallet,
             changeAddress,
             Coin.MILLICOIN.multiply(2),
@@ -125,7 +136,6 @@ public class ReleaseTransactionBuilderTest {
 
     @Test
     public void buildAmountTo_ok() throws InsufficientMoneyException, UTXOProviderException {
-        Context btcContext = new Context(NetworkParameters.fromID(NetworkParameters.ID_REGTEST));
         Address to = mockAddress(123);
         Coin amount = Coin.CENT.multiply(3);
 
@@ -194,7 +204,6 @@ public class ReleaseTransactionBuilderTest {
 
     @Test
     public void buildAmountTo_insufficientMoneyException() throws InsufficientMoneyException, UTXOProviderException {
-        Context btcContext = new Context(NetworkParameters.fromID(NetworkParameters.ID_REGTEST));
         Address to = mockAddress(123);
         Coin amount = Coin.CENT.multiply(3);
 
@@ -209,7 +218,6 @@ public class ReleaseTransactionBuilderTest {
 
     @Test
     public void buildAmountTo_walletCouldNotAdjustDownwards() throws InsufficientMoneyException, UTXOProviderException {
-        Context btcContext = new Context(NetworkParameters.fromID(NetworkParameters.ID_REGTEST));
         Address to = mockAddress(123);
         Coin amount = Coin.CENT.multiply(3);
 
@@ -224,7 +232,6 @@ public class ReleaseTransactionBuilderTest {
 
     @Test
     public void buildAmountTo_walletExceededMaxTransactionSize() throws InsufficientMoneyException, UTXOProviderException {
-        Context btcContext = new Context(NetworkParameters.fromID(NetworkParameters.ID_REGTEST));
         Address to = mockAddress(123);
         Coin amount = Coin.CENT.multiply(3);
 
@@ -239,17 +246,16 @@ public class ReleaseTransactionBuilderTest {
 
     @Test
     public void buildAmountTo_utxoProviderException() throws InsufficientMoneyException, UTXOProviderException {
-        Context btcContext = new Context(NetworkParameters.fromID(NetworkParameters.ID_REGTEST));
         Address to = mockAddress(123);
         Coin amount = Coin.CENT.multiply(3);
 
         List<UTXO> availableUTXOs = Arrays.asList(
-                mockUTXO("one", 0, Coin.COIN),
-                mockUTXO("one", 1, Coin.COIN.multiply(2)),
-                mockUTXO("two", 1, Coin.COIN.divide(2)),
-                mockUTXO("two", 2, Coin.FIFTY_COINS),
-                mockUTXO("two", 0, Coin.MILLICOIN.times(7)),
-                mockUTXO("three", 0, Coin.CENT.times(3))
+            mockUTXO("one", 0, Coin.COIN),
+            mockUTXO("one", 1, Coin.COIN.multiply(2)),
+            mockUTXO("two", 1, Coin.COIN.divide(2)),
+            mockUTXO("two", 2, Coin.FIFTY_COINS),
+            mockUTXO("two", 0, Coin.MILLICOIN.times(7)),
+            mockUTXO("three", 0, Coin.CENT.times(3))
         );
 
         UTXOProvider utxoProvider = mock(UTXOProvider.class);
@@ -301,8 +307,7 @@ public class ReleaseTransactionBuilderTest {
     }
 
     @Test
-    public void buildEmptyWalletTo_insufficientMoneyException() throws InsufficientMoneyException, UTXOProviderException {
-        Context btcContext = new Context(NetworkParameters.fromID(NetworkParameters.ID_REGTEST));
+    public void buildEmptyWalletTo_insufficientMoneyException() throws InsufficientMoneyException {
         Address to = mockAddress(123);
 
         mockCompleteTxWithThrowForEmptying(wallet, to, new InsufficientMoneyException(Coin.valueOf(1234)));
@@ -315,8 +320,7 @@ public class ReleaseTransactionBuilderTest {
     }
 
     @Test
-    public void buildEmptyWalletTo_walletCouldNotAdjustDownwards() throws InsufficientMoneyException, UTXOProviderException {
-        Context btcContext = new Context(NetworkParameters.fromID(NetworkParameters.ID_REGTEST));
+    public void buildEmptyWalletTo_walletCouldNotAdjustDownwards() throws InsufficientMoneyException {
         Address to = mockAddress(123);
 
         mockCompleteTxWithThrowForEmptying(wallet, to, new Wallet.CouldNotAdjustDownwards());
@@ -330,7 +334,6 @@ public class ReleaseTransactionBuilderTest {
 
     @Test
     public void buildEmptyWalletTo_walletExceededMaxTransactionSize() throws InsufficientMoneyException, UTXOProviderException {
-        Context btcContext = new Context(NetworkParameters.fromID(NetworkParameters.ID_REGTEST));
         Address to = mockAddress(123);
 
         mockCompleteTxWithThrowForEmptying(wallet, to, new Wallet.ExceededMaxTransactionSize());
@@ -344,12 +347,11 @@ public class ReleaseTransactionBuilderTest {
 
     @Test
     public void buildEmptyWalletTo_utxoProviderException() throws InsufficientMoneyException, UTXOProviderException {
-        Context btcContext = new Context(NetworkParameters.fromID(NetworkParameters.ID_REGTEST));
         Address to = mockAddress(123);
 
         List<UTXO> availableUTXOs = Arrays.asList(
-                mockUTXO("two", 2, Coin.FIFTY_COINS),
-                mockUTXO("three", 0, Coin.CENT.times(3))
+            mockUTXO("two", 2, Coin.FIFTY_COINS),
+            mockUTXO("three", 0, Coin.CENT.times(3))
         );
 
         UTXOProvider utxoProvider = mock(UTXOProvider.class);
@@ -390,9 +392,118 @@ public class ReleaseTransactionBuilderTest {
         Assert.assertFalse(result.isPresent());
     }
 
+    @Test
+    public void test_verifyTXFeeIsSpentEquallyForBatchedPegouts_two_pegouts() {
+        List<UTXO> utxos = Arrays.asList(
+            new UTXO(mockUTXOHash("1"), 0, Coin.COIN, 0, false, federation.getP2SHScript()),
+            new UTXO(mockUTXOHash("2"), 0, Coin.COIN, 0, false, federation.getP2SHScript())
+        );
+
+        Wallet thisWallet = BridgeUtils.getFederationSpendWallet(
+            Context.getOrCreate(networkParameters),
+            federation,
+            utxos,
+            false,
+            mock(BridgeStorageProvider.class)
+        );
+
+        ReleaseTransactionBuilder rtb = new ReleaseTransactionBuilder(
+            networkParameters,
+            thisWallet,
+            federation.address,
+            Coin.SATOSHI.multiply(1000),
+            activations
+        );
+
+        ReleaseRequestQueue.Entry testEntry1 = createTestEntry(123, 3);
+        ReleaseRequestQueue.Entry testEntry2 = createTestEntry(456, 4);
+        List<ReleaseRequestQueue.Entry> entries = Arrays.asList(testEntry1, testEntry2);
+
+        Optional<ReleaseTransactionBuilder.BuildResult> result = rtb.buildBatchedPegouts(entries);
+
+        Assert.assertTrue(result.isPresent());
+
+        BtcTransaction btcTx = result.get().getBtcTx();
+
+        int outputSize = btcTx.getOutputs().size();
+        Coin totalFee = btcTx.getFee();
+        Coin feeForEachOutput = totalFee.div(outputSize - 1); // minus change output
+
+        Assert.assertEquals(testEntry1.getAmount().minus(feeForEachOutput), btcTx.getOutput(0).getValue());
+        Assert.assertEquals(testEntry2.getAmount().minus(feeForEachOutput), btcTx.getOutput(1).getValue());
+        Assert.assertEquals(testEntry1.getAmount().minus(btcTx.getOutput(0).getValue())
+            .add(testEntry2.getAmount().minus(btcTx.getOutput(1).getValue())), totalFee);
+
+        ReleaseTransactionBuilder.BuildResult builtTx = result.get();
+        Coin inputsValue = builtTx.getSelectedUTXOs().stream().map(UTXO::getValue).reduce(Coin.ZERO, Coin::add);
+        Coin totalPegoutAmount = entries.stream().map(ReleaseRequestQueue.Entry::getAmount).reduce(Coin.ZERO, Coin::add);
+
+        TransactionOutput changeOutput = btcTx.getOutput(outputSize - 1); // last output
+
+        // Last output should be the change output to the Federation
+        Assert.assertEquals(federation.getAddress(), changeOutput.getAddressFromP2SH(networkParameters));
+        Assert.assertEquals(inputsValue.minus(totalPegoutAmount), changeOutput.getValue());
+    }
+
+    @Test
+    public void test_VerifyTXFeeIsSpentEquallyForBatchedPegouts_three_pegouts() {
+        List<UTXO> utxos = Arrays.asList(
+            new UTXO(mockUTXOHash("1"), 0, Coin.COIN, 0, false, federation.getP2SHScript()),
+            new UTXO(mockUTXOHash("2"), 0, Coin.COIN, 0, false, federation.getP2SHScript())
+        );
+
+        Wallet thisWallet = BridgeUtils.getFederationSpendWallet(
+            Context.getOrCreate(networkParameters),
+            federation,
+            utxos,
+            false,
+            mock(BridgeStorageProvider.class)
+        );
+
+        ReleaseTransactionBuilder rtb = new ReleaseTransactionBuilder(
+            networkParameters,
+            thisWallet,
+            federation.address,
+            Coin.SATOSHI.multiply(1000),
+            activations
+        );
+
+        ReleaseRequestQueue.Entry testEntry1 = createTestEntry(123, 3);
+        ReleaseRequestQueue.Entry testEntry2 = createTestEntry(456, 4);
+        ReleaseRequestQueue.Entry testEntry3 = createTestEntry(789, 5);
+        List<ReleaseRequestQueue.Entry> entries = Arrays.asList(testEntry1, testEntry2, testEntry3);
+
+        Optional<ReleaseTransactionBuilder.BuildResult> result = rtb.buildBatchedPegouts(entries);
+
+        Assert.assertTrue(result.isPresent());
+
+        BtcTransaction btcTx = result.get().getBtcTx();
+
+        int outputSize = btcTx.getOutputs().size();
+        Coin totalFee = btcTx.getFee();
+        Coin feeForEachOutput = totalFee.div(outputSize - 1); // minus change output
+
+        // First Output Pays An Extra Satoshi Because Fee Is Even, And Outputs Is Odd
+        Assert.assertEquals(testEntry1.getAmount().minus(feeForEachOutput), btcTx.getOutput(0).getValue().add(Coin.valueOf(1)));
+        Assert.assertEquals(testEntry2.getAmount().minus(feeForEachOutput), btcTx.getOutput(1).getValue());
+        Assert.assertEquals(testEntry3.getAmount().minus(feeForEachOutput), btcTx.getOutput(2).getValue());
+        Assert.assertEquals(testEntry1.getAmount().minus(btcTx.getOutput(0).getValue())
+            .add(testEntry2.getAmount().minus(btcTx.getOutput(1).getValue()))
+            .add(testEntry3.getAmount().minus(btcTx.getOutput(2).getValue())), totalFee);
+
+        ReleaseTransactionBuilder.BuildResult builtTx = result.get();
+        Coin inputsValue = builtTx.getSelectedUTXOs().stream().map(UTXO::getValue).reduce(Coin.ZERO, Coin::add);
+        Coin totalPegoutAmount = entries.stream().map(ReleaseRequestQueue.Entry::getAmount).reduce(Coin.ZERO, Coin::add);
+
+        TransactionOutput changeOutput = btcTx.getOutput(outputSize - 1); // last output
+
+        // Last output should be the change output to the Federation
+        Assert.assertEquals(federation.getAddress(), changeOutput.getAddressFromP2SH(networkParameters));
+        Assert.assertEquals(inputsValue.minus(totalPegoutAmount), changeOutput.getValue());
+    }
+
     private void test_buildEmptyWalletTo_ok(boolean isRSKIPActive, int expectedTxVersion)
         throws InsufficientMoneyException, UTXOProviderException {
-        Context btcContext = new Context(NetworkParameters.fromID(NetworkParameters.ID_REGTEST));
         when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(isRSKIPActive);
         Address to = mockAddress(123);
 
