@@ -55,12 +55,36 @@ public class LocalBasicTest {
     }
 
     @Test
+    public void runDifficultyTestBeforeRSKIP290() throws IOException {
+        activationConfig = ActivationConfigsForTest.allBut(ConsensusRule.RSKIP290);
+        Constants networkConstants = Constants.testnet(activationConfig);
+        String jsonName = "difficulty";
+        runJsonTest(jsonName, activationConfig, networkConstants);
+    }
+
+    @Test
+    public void runDifficultyTestAfterRSKIP290() throws IOException {
+        activationConfig = ActivationConfigsForTest.all();
+        Constants networkConstants = Constants.testnet(activationConfig);
+        String jsonName = "difficulty1";
+        runJsonTest(jsonName, activationConfig, networkConstants);
+    }
+
+    @Test
     public void runDifficultyTest() throws IOException {
         String jsonName = "difficulty";
         runJsonTest(jsonName);
     }
 
     private void runJsonTest(String jsonName) throws IOException {
+        runJsonTest(jsonName, activationConfig, this.networkConstants);
+    }
+
+    private void runJsonTest(
+            String jsonName,
+            ActivationConfig activationConfig,
+            Constants networkConstants
+            ) throws IOException {
         BlockFactory blockFactory = new BlockFactory(activationConfig);
 
         String json = getJSON(jsonName);
@@ -75,16 +99,15 @@ public class LocalBasicTest {
             BlockHeader parent = testCase.getParent(blockFactory);
             BlockDifficulty calc = new DifficultyCalculator(activationConfig, networkConstants).calcDifficulty(current, parent);
             int c = calc.compareTo(parent.getDifficulty());
-            if (c>0)
+            if (c > 0)
                 logger.info(" Difficulty increase test\n");
-            else
-            if (c<0)
+            else if (c < 0)
                 logger.info(" Difficulty decrease test\n");
             else
                 logger.info(" Difficulty without change test\n");
 
 
-            assertEquals(testCase.getExpectedDifficulty(),calc);
+            assertEquals(testCase.getExpectedDifficulty(), calc);
         }
     }
 

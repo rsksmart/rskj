@@ -41,7 +41,7 @@ public class DifficultyCalculator {
         if (!rskip97Active) {
             // If more than 10 minutes, reset to minimum difficulty to allow private mining
             if (header.getTimestamp() >= parentHeader.getTimestamp() + 600) {
-                return constants.getMinimumDifficulty();
+                return constants.getMinimumDifficulty(header.getNumber());
             }
         }
 
@@ -57,7 +57,7 @@ public class DifficultyCalculator {
         long curBlockTS = curBlockHeader.getTimestamp();
         int duration = constants.getDurationLimit();
         BigInteger difDivisor = constants.getDifficultyBoundDivisor(activationConfig.forBlock(curBlockHeader.getNumber()));
-        BlockDifficulty minDif = constants.getMinimumDifficulty();
+        BlockDifficulty minDif = constants.getMinimumDifficulty(curBlockHeader.getNumber());
         return calcDifficultyWithTimeStamps(curBlockTS, parentBlockTS, pd, uncleCount, duration, difDivisor, minDif);
     }
 
