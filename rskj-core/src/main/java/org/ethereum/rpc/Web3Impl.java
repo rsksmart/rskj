@@ -42,6 +42,8 @@ import co.rsk.rpc.modules.trace.TraceModule;
 import co.rsk.rpc.modules.txpool.TxPoolModule;
 import co.rsk.scoring.*;
 import com.google.common.annotations.VisibleForTesting;
+import co.rsk.util.HexUtils;
+
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
@@ -74,7 +76,7 @@ import java.util.function.Function;
 import java.util.function.UnaryOperator;
 
 import static java.lang.Math.max;
-import static org.ethereum.rpc.TypeConverter.*;
+import static co.rsk.util.HexUtils.*;
 import static org.ethereum.rpc.exception.RskJsonRpcRequestException.*;
 
 public class Web3Impl implements Web3 {
@@ -183,14 +185,6 @@ public class Web3Impl implements Web3 {
         hashRateCalculator.stop();
     }
 
-    private int JSonHexToInt(String x) {
-        if (!x.startsWith("0x")) {
-            throw invalidParamError("Incorrect hex syntax");
-        }
-        x = x.substring(2);
-        return Integer.parseInt(x, 16);
-    }
-
     @Override
     public String web3_clientVersion() {
         String clientVersion = CLIENT_VERSION_PREFIX + "/" + config.projectVersion() + "/" +
@@ -206,15 +200,29 @@ public class Web3Impl implements Web3 {
 
     @Override
     public String web3_sha3(String data) throws Exception {
-        String s = null;
+    	
+        String hash = null;
+        
         try {
-            byte[] result = HashUtil.keccak256(data.getBytes(StandardCharsets.UTF_8));
-            return s = TypeConverter.toJsonHex(result);
+
+            if (HexUtils.isHexWithPrefix(data)) {
+
+                byte[] dataBytes = data.getBytes(StandardCharsets.UTF_8);
+                byte[] result = HashUtil.keccak256(HexUtils.decode(dataBytes));
+                hash = HexUtils.toJsonHex(result);
+
+                return hash;
+
+            } else {
+                throw invalidParamError("Parameter must be hexadecimal encoded with the '0x' prefix.");
+            }
+
         } finally {
             if (logger.isDebugEnabled()) {
-                logger.debug("web3_sha3({}): {}", data, s);
+                logger.debug("web3_sha3({}): {}", data, hash);
             }
         }
+
     }
 
     @Override
@@ -236,7 +244,7 @@ public class Web3Impl implements Web3 {
         String s = null;
         try {
             int n = channelManager.getActivePeers().size();
-            return s = TypeConverter.toQuantityJsonHex(n);
+            return s = HexUtils.toQuantityJsonHex(n);
         } finally {
             if (logger.isDebugEnabled()) {
                 logger.debug("net_peerCount(): {}", s);
@@ -294,10 +302,9 @@ public class Web3Impl implements Web3 {
 
         SyncingResult s = new SyncingResult();
         try {
-            s.setStartingBlock(TypeConverter.toQuantityJsonHex(initialBlockNum));
-            s.setCurrentBlock(TypeConverter.toQuantityJsonHex(currentBlockNum));
+            s.setStartingBlock(HexUtils.toQuantityJsonHex(initialBlockNum));
+            s.setCurrentBlock(HexUtils.toQuantityJsonHex(currentBlockNum));
             s.setHighestBlock(toQuantityJsonHex(highestBlockNum));
-
             return s;
         } finally {
             logger.debug("eth_syncing(): starting {}, current {}, highest {} ", s.getStartingBlock(), s.getCurrentBlock(), s.getHighestBlock());
@@ -363,7 +370,7 @@ public class Web3Impl implements Web3 {
     public String eth_gasPrice() {
         String gasPrice = null;
         try {
-            gasPrice = TypeConverter.toQuantityJsonHex(eth.getGasPrice().asBigInteger().longValue());
+            gasPrice = HexUtils.toQuantityJsonHex(eth.getGasPrice().asBigInteger().longValue());
             return gasPrice;
         } finally {
             if (logger.isDebugEnabled()) {
@@ -531,7 +538,7 @@ public class Web3Impl implements Web3 {
 
             long n = b.getTransactionsList().size();
 
-            s = TypeConverter.toQuantityJsonHex(n);
+            s = HexUtils.toQuantityJsonHex(n);
             return s;
         } finally {
             if (logger.isDebugEnabled()) {
@@ -550,7 +557,7 @@ public class Web3Impl implements Web3 {
         } else if ("pending".equals(bnOrId)) {
             throw unimplemented("The method don't support 'pending' as a parameter yet");
         } else {
-            long bn = JSonHexToLong(bnOrId);
+            long bn = jsonHexToLong(bnOrId);
             b = blockchain.getBlockByNumber(bn);
         }
 
@@ -589,7 +596,7 @@ public class Web3Impl implements Web3 {
         return web3InformationRetriever.getBlock(bnOrId)
                 .map(Block::getUncleList)
                 .map(List::size)
-                .map(TypeConverter::toQuantityJsonHex)
+                .map(HexUtils::toQuantityJsonHex)
                 .orElseThrow(() -> blockNotFound(String.format("Block %s not found", bnOrId)));
     }
 
@@ -610,7 +617,7 @@ public class Web3Impl implements Web3 {
         long blockNumber;
 
         try {
-            blockNumber = TypeConverter.stringNumberAsBigInt(number).longValue();
+            blockNumber = HexUtils.stringNumberAsBigInt(number).longValue();
         } catch (NumberFormatException | StringIndexOutOfBoundsException e) {
             throw invalidParamError(String.format("invalid blocknumber %s", number));
         }
@@ -704,7 +711,7 @@ public class Web3Impl implements Web3 {
                 return null;
             }
 
-            int idx = JSonHexToInt(index);
+            int idx = jsonHexToInt(index);
 
             if (idx >= b.getTransactionsList().size()) {
                 return null;
@@ -729,7 +736,7 @@ public class Web3Impl implements Web3 {
                 return null;
             }
 
-            int idx = JSonHexToInt(index);
+            int idx = jsonHexToInt(index);
             List<Transaction> txs = web3InformationRetriever.getTransactions(bnOrId);
             if (idx >= txs.size()) {
                 return null;
@@ -785,7 +792,7 @@ public class Web3Impl implements Web3 {
     }
 
     private BlockResultDTO getUncleResultDTO(String uncleIdx, Block block) {
-        int idx = JSonHexToInt(uncleIdx);
+        int idx = jsonHexToInt(uncleIdx);
 
         if (idx >= block.getUncleList().size()) {
             return null;
