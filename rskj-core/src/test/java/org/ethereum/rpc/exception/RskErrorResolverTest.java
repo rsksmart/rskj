@@ -1,8 +1,10 @@
 package org.ethereum.rpc.exception;
 
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
+import com.fasterxml.jackson.databind.ser.DefaultSerializerProvider;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -191,6 +193,66 @@ public class RskErrorResolverTest {
         Assert.assertNotNull(result);
         Assert.assertEquals(-32603, result.code);
         Assert.assertEquals("Internal server error", result.message);
+        Assert.assertNull(result.data);
+    }
+
+    @Test
+    public void test_resolveError_givenJsonMappingException_returnsJsonErrorAsExpected() throws NoSuchMethodException {
+        // Given
+        Integer code = -32602;
+        String message = "Can not construct instance";
+        JsonMappingException exception = JsonMappingException.from(new DefaultSerializerProvider.Impl(), message);
+
+        Method methodMock = this.getClass().getMethod("mockMethod");
+        List<JsonNode> jsonNodeListMock = new ArrayList<>();
+
+        // When
+        JsonError result = rskErrorResolver.resolveError(exception, methodMock, jsonNodeListMock);
+
+        // Then
+        Assert.assertNotNull(result);
+        Assert.assertEquals(code, (Integer) result.code);
+        Assert.assertEquals("Could not deserialize arguments to handle: mockMethod. Verify the structure and data types of the arguments you are passing.", result.message);
+        Assert.assertNull(result.data);
+    }
+
+    @Test
+    public void test_resolveError_givenUnsupportedOperationException_returnsJsonErrorAsExpected() throws NoSuchMethodException {
+        // Given
+        Integer code = -32603;
+        String message = "message";
+        UnsupportedOperationException exception = new UnsupportedOperationException(message);
+
+        Method methodMock = this.getClass().getMethod("mockMethod");
+        List<JsonNode> jsonNodeListMock = new ArrayList<>();
+
+        // When
+        JsonError result = rskErrorResolver.resolveError(exception, methodMock, jsonNodeListMock);
+
+        // Then
+        Assert.assertNotNull(result);
+        Assert.assertEquals(code, (Integer) result.code);
+        Assert.assertEquals("In this moment we are not supporting: mockMethod", result.message);
+        Assert.assertNull(result.data);
+    }
+
+    @Test
+    public void test_resolveError_givenMethodNotSupportedExceptionMsg_returnsJsonErrorAsExpected() throws NoSuchMethodException {
+        // Given
+        Integer code = -32603;
+        String message = "method not supported";
+        Exception exception = new Exception(message);
+
+        Method methodMock = this.getClass().getMethod("mockMethod");
+        List<JsonNode> jsonNodeListMock = new ArrayList<>();
+
+        // When
+        JsonError result = rskErrorResolver.resolveError(exception, methodMock, jsonNodeListMock);
+
+        // Then
+        Assert.assertNotNull(result);
+        Assert.assertEquals(code, (Integer) result.code);
+        Assert.assertEquals("In this moment we are not supporting: mockMethod", result.message);
         Assert.assertNull(result.data);
     }
 

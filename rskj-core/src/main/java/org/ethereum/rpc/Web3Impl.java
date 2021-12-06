@@ -200,9 +200,9 @@ public class Web3Impl implements Web3 {
 
     @Override
     public String web3_sha3(String data) throws Exception {
-    	
+
         String hash = null;
-        
+
         try {
 
             if (HexUtils.isHexWithPrefix(data)) {
@@ -523,7 +523,16 @@ public class Web3Impl implements Web3 {
 
     public Block getBlockByJSonHash(String blockHash) {
         byte[] bhash = stringHexToByteArray(blockHash);
-        return this.blockchain.getBlockByHash(bhash);
+
+        try {
+            return this.blockchain.getBlockByHash(bhash);
+        } catch (Exception e) {
+            if (e instanceof IllegalArgumentException && e.getMessage() == null ) {
+                throw invalidParamError("Invalid input format. Make sure you hash is correct");
+            }
+
+            throw e;
+        }
     }
 
     @Override

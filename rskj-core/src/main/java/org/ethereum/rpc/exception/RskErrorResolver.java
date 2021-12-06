@@ -1,6 +1,7 @@
 package org.ethereum.rpc.exception;
 
 import co.rsk.jsonrpc.JsonRpcError;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
@@ -30,6 +31,16 @@ public class RskErrorResolver implements ErrorResolver {
             error = new JsonError(
                     JsonRpcError.INVALID_PARAMS,
                     getExceptionMessage((UnrecognizedPropertyException) t),
+                    null);
+        } else if (t instanceof JsonMappingException && t.getMessage().contains("Can not construct instance")) {
+            error = new JsonError(
+                    JsonRpcError.INVALID_PARAMS,
+                    "Could not deserialize arguments to handle: " + method.getName() + ". Verify the structure and data types of the arguments you are passing.",
+                    null);
+        } else if (t instanceof UnsupportedOperationException || (t.getMessage() != null && t.getMessage().toLowerCase().contains("method not supported"))) {
+            error = new JsonError(
+                    JsonRpcError.INTERNAL_ERROR,
+                    "In this moment we are not supporting: " + method.getName(),
                     null);
         } else {
             logger.error("JsonRPC error when for method {} with arguments {}", method, arguments, t);
