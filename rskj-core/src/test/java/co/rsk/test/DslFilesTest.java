@@ -192,6 +192,14 @@ public class DslFilesTest {
     }
 
     @Test
+    public void runMultiThreadExecutionsResource() throws FileNotFoundException, DslProcessorException {
+        DslParser parser = DslParser.fromResource("dsl/contract_multithread_deposits.txt");
+        World world = new World();
+        WorldDslProcessor processor = new WorldDslProcessor(world);
+        processor.processCommands(parser);
+    }
+
+    @Test
     public void runContracts02Resource() throws FileNotFoundException, DslProcessorException {
         DslParser parser = DslParser.fromResource("dsl/contracts02.txt");
         World world = new World();
