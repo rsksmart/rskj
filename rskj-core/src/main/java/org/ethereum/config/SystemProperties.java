@@ -167,7 +167,7 @@ public abstract class SystemProperties {
                     constants = Constants.mainnet();
                     break;
                 case "testnet":
-                    constants = Constants.testnet();
+                    constants = Constants.testnet(getActivationConfig());
                     break;
                 case "devnet":
                     constants = Constants.devnetWithFederation(
