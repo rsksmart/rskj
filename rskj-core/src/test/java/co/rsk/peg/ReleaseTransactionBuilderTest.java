@@ -179,7 +179,7 @@ public class ReleaseTransactionBuilderTest {
         );
 
         Wallet thisWallet = BridgeUtils.getFederationSpendWallet(
-            Context.getOrCreate(NetworkParameters.fromID(NetworkParameters.ID_REGTEST)),
+            new Context(bridgeConstants.getBtcParams()),
             erpFederation,
             utxos,
             false,
