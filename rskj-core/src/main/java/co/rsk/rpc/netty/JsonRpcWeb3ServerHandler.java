@@ -34,6 +34,7 @@ import org.ethereum.rpc.exception.RskErrorResolver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -57,10 +58,18 @@ public class JsonRpcWeb3ServerHandler extends SimpleChannelInboundHandler<ByteBu
     protected void channelRead0(ChannelHandlerContext ctx, ByteBufHolder request) throws Exception {
         ByteBuf responseContent = Unpooled.buffer();
         int responseCode;
+
         try (ByteBufOutputStream os = new ByteBufOutputStream(responseContent);
-             ByteBufInputStream is = new ByteBufInputStream(request.content().retain())){
-            
+             ByteBufInputStream is = new ByteBufInputStream(request.content().retain());
+             ByteBufInputStream isToValidate = new ByteBufInputStream(request.content().duplicate().retain())) {
+
+            validateRequestContent(isToValidate);
+
             responseCode = jsonRpcServer.handleRequest(is, os);
+        } catch (IllegalArgumentException e) {
+            int errorCode = ErrorResolver.JsonError.PARSE_ERROR.code;
+            responseContent = buildErrorContent(errorCode, e.getMessage());
+            responseCode = ErrorResolver.JsonError.OK.code;
         } catch (Exception e) {
             String unexpectedErrorMsg = "Unexpected error";
             LOGGER.error(unexpectedErrorMsg, e);
@@ -79,6 +88,19 @@ public class JsonRpcWeb3ServerHandler extends SimpleChannelInboundHandler<ByteBu
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
         LOGGER.error("Unexpected exception", cause);
         ctx.close();
+    }
+
+    private void validateRequestContent(ByteBufInputStream is) throws IOException {
+        try {
+            final ReadContext readContext = ReadContext.getReadContext(is, mapper);
+            final JsonNode jsonNode = readContext.nextValue();
+
+            if (jsonNode.get("id") == null) {
+                throw new IllegalArgumentException("missing request id");
+            }
+        } catch (IOException e) {
+             throw e;
+        }
     }
 
     private ByteBuf buildErrorContent(int errorCode, String errorMessage) throws JsonProcessingException {

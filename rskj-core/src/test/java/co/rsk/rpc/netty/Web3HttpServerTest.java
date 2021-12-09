@@ -21,6 +21,7 @@ import java.security.cert.X509Certificate;
 import java.util.*;
 
 import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 
 public class Web3HttpServerTest {
@@ -78,12 +79,25 @@ public class Web3HttpServerTest {
         smokeTest(APPLICATION_JSON, google.getHostAddress(), google, new ArrayList<>());
     }
 
+    @Test
+    public void smokeTestUsingJsonContentWithoutId() throws Exception {
+        smokeTest(APPLICATION_JSON, true);
+    }
+
 
     private void smokeTest(String contentType, String host) throws Exception {
-        smokeTest(contentType, host, InetAddress.getLoopbackAddress(), new ArrayList<>());
+        smokeTest(contentType, host, false);
+    }
+
+    private void smokeTest(String contentType, String host, boolean excludeJsonRequestId) throws Exception {
+        smokeTest(contentType, host, InetAddress.getLoopbackAddress(), new ArrayList<>(), excludeJsonRequestId);
     }
 
     private void smokeTest(String contentType, String host, InetAddress rpcAddress, List<String> rpcHost) throws Exception {
+        smokeTest(contentType, host, rpcAddress, rpcHost, false);
+    }
+
+    private void smokeTest(String contentType, String host, InetAddress rpcAddress, List<String> rpcHost, boolean excludeJsonRequestId) throws Exception {
         Web3 web3Mock = Mockito.mock(Web3.class);
         String mockResult = "output";
         Mockito.when(web3Mock.web3_sha3(Mockito.anyString())).thenReturn(mockResult);
@@ -99,24 +113,39 @@ public class Web3HttpServerTest {
         Web3HttpServer server = new Web3HttpServer(InetAddress.getLoopbackAddress(), randomPort, 0, Boolean.TRUE, mockCorsConfiguration, filterHandler, serverHandler);
         server.start();
         try {
-            Response response = sendJsonRpcMessage(randomPort, contentType, host);
-            JsonNode jsonRpcResponse = OBJECT_MAPPER.readTree(response.body().string());
+            Response response = sendJsonRpcMessage(randomPort, contentType, host, excludeJsonRequestId);
+            String strResponse = response.body().string();
+            JsonNode jsonRpcResponse = OBJECT_MAPPER.readTree(strResponse);
 
             assertThat(response.code(), is(HttpResponseStatus.OK.code()));
-            assertThat(jsonRpcResponse.at("/result").asText(), is(mockResult));
+
+            if (excludeJsonRequestId) {
+                assertEquals(jsonRpcResponse.get("error").get("code").asLong(), -32700L);
+                assertEquals(jsonRpcResponse.get("error").get("message").asText(), "missing request id");
+            } else {
+                assertThat(jsonRpcResponse.at("/result").asText(), is(mockResult));
+            }
         } finally {
             server.stop();
         }
     }
 
     private void smokeTest(String contentType) throws Exception {
-        smokeTest(contentType, "127.0.0.1");
+        smokeTest(contentType, false);
     }
 
-    private Response sendJsonRpcMessage(int port, String contentType, String host) throws IOException {
+    private void smokeTest(String contentType, boolean excludeJsonRequestId) throws Exception {
+        smokeTest(contentType, "127.0.0.1", excludeJsonRequestId);
+    }
+
+    private Response sendJsonRpcMessage(int port, String contentType, String host, boolean excludeId) throws IOException {
         Map<String, JsonNode> jsonRpcRequestProperties = new HashMap<>();
         jsonRpcRequestProperties.put("jsonrpc", JSON_NODE_FACTORY.textNode("2.0"));
-        jsonRpcRequestProperties.put("id", JSON_NODE_FACTORY.numberNode(13));
+
+        if (!excludeId) {
+            jsonRpcRequestProperties.put("id", JSON_NODE_FACTORY.numberNode(13));
+        }
+
         jsonRpcRequestProperties.put("method", JSON_NODE_FACTORY.textNode("web3_sha3"));
         jsonRpcRequestProperties.put("params", JSON_NODE_FACTORY.arrayNode().add("value"));
 
