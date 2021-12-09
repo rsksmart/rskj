@@ -22,9 +22,11 @@ import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.config.BridgeConstants;
-import co.rsk.config.BridgeRegTestConstants;
+import co.rsk.config.BridgeMainNetConstants;
+import co.rsk.config.BridgeTestNetConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.peg.bitcoin.CoinbaseInformation;
+import co.rsk.peg.resources.TestConstants;
 import co.rsk.peg.utils.MerkleTreeUtils;
 import co.rsk.peg.fastbridge.FastBridgeFederationInformation;
 import co.rsk.peg.whitelist.LockWhitelist;
@@ -34,6 +36,8 @@ import com.google.common.collect.Lists;
 import com.google.common.primitives.UnsignedBytes;
 import org.apache.commons.lang3.tuple.Pair;
 import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
@@ -231,13 +235,23 @@ public class BridgeSerializationUtilsTest {
     }
 
     @Test
-    public void serializeAndDeserializeFederation() {
-        testSerializeAndDeserializeFederation(false);
+    public void serializeAndDeserializeFederation_beforeRskip284_testnet() {
+        testSerializeAndDeserializeFederation(false, NetworkParameters.ID_TESTNET);
     }
 
     @Test
-    public void serializeAndDeserializeErpFederation() {
-        testSerializeAndDeserializeFederation(true);
+    public void serializeAndDeserializeFederation_beforeRskip284_mainnet() {
+        testSerializeAndDeserializeFederation(false, NetworkParameters.ID_MAINNET);
+    }
+
+    @Test
+    public void serializeAndDeserializeFederation_afterRskip284_testnet() {
+        testSerializeAndDeserializeFederation(true, NetworkParameters.ID_TESTNET);
+    }
+
+    @Test
+    public void serializeAndDeserializeFederation_afterRskip284_mainnet() {
+        testSerializeAndDeserializeFederation(true, NetworkParameters.ID_MAINNET);
     }
 
     @Test
@@ -1059,119 +1073,89 @@ public class BridgeSerializationUtilsTest {
     }
 
     @Test
-    public void deserializeFastBridge_no_data() {
-        Assert.assertNull(BridgeSerializationUtils.deserializeFastBridgeInformation(new byte[]{}, new byte[]{}));
+    public void deserializeFastBridgeFederationInformation_no_data() {
+        FastBridgeFederationInformation result = BridgeSerializationUtils.deserializeFastBridgeFederationInformation(
+            new byte[]{},
+            new byte[]{}
+        );
+
+        Assert.assertNull(result);
     }
 
     @Test
-    public void deserializeFastBridge_null_data() {
-        Assert.assertNull(BridgeSerializationUtils.deserializeFastBridgeInformation(null, null));
+    public void deserializeFastBridgeFederationInformation_null_data() {
+        FastBridgeFederationInformation result = BridgeSerializationUtils.deserializeFastBridgeFederationInformation(
+            null,
+            null
+        );
+
+        Assert.assertNull(result);
     }
 
     @Test(expected = RuntimeException.class)
-    public void deserializeFastBridge_one_data() {
+    public void deserializeFastBridgeFederationInformation_one_data() {
         byte[][] rlpElements = new byte[1][];
         rlpElements[0] = RLP.encodeElement(new byte[]{(byte)0x11});
 
-        BridgeSerializationUtils.deserializeFastBridgeInformation(
-            RLP.encodeList(rlpElements), new byte[]{(byte)0x23});
+        BridgeSerializationUtils.deserializeFastBridgeFederationInformation(
+            RLP.encodeList(rlpElements),
+            new byte[]{(byte)0x23}
+        );
     }
 
     @Test
-    public void deserializeFastBridge_Ok() {
+    public void deserializeFastBridgeFederationInformation_ok() {
         byte[][] rlpElements = new byte[2][];
         rlpElements[0] = RLP.encodeElement(Sha256Hash.wrap("0000000000000000000000000000000000000000000000000000000000000002").getBytes());
         rlpElements[1] = RLP.encodeElement(new byte[]{(byte)0x22});
 
-        FastBridgeFederationInformation result =
-            BridgeSerializationUtils.deserializeFastBridgeInformation(
-                RLP.encodeList(rlpElements),
-                new byte[]{(byte)0x23}
-            );
+        FastBridgeFederationInformation result = BridgeSerializationUtils.deserializeFastBridgeFederationInformation(
+            RLP.encodeList(rlpElements),
+            new byte[]{(byte)0x23}
+        );
 
         Assert.assertNotNull(result);
         Assert.assertArrayEquals(
-                Sha256Hash.wrap("0000000000000000000000000000000000000000000000000000000000000002").getBytes(),
-                result.getDerivationHash().getBytes()
+            Sha256Hash.wrap("0000000000000000000000000000000000000000000000000000000000000002").getBytes(),
+            result.getDerivationHash().getBytes()
         );
-        Assert.assertArrayEquals(new byte[]{(byte)0x22}, result.getFederationScriptHash());
-        Assert.assertArrayEquals(new byte[]{(byte)0x23}, result.getFastBridgeScriptHash());
+        Assert.assertArrayEquals(new byte[]{(byte)0x22}, result.getFederationRedeemScriptHash());
+        Assert.assertArrayEquals(new byte[]{(byte)0x23}, result.getFastBridgeFederationRedeemScriptHash());
     }
 
     @Test
-    public void serializeFastBridgeInformation_no_data() {
-        Assert.assertEquals(0, BridgeSerializationUtils.serializeFastBridgeInformation(null).length);
+    public void serializeFastBridgeFederationInformation_no_data() {
+        byte[] result = BridgeSerializationUtils.serializeFastBridgeFederationInformation(null);
+
+        Assert.assertEquals(0, result.length);
     }
 
     @Test
-    public void serializeFastBridgeInformation_Ok() {
-        byte[] fastBridgeScriptHash = new byte[]{(byte)0x23};
-        FastBridgeFederationInformation fastBridge = new FastBridgeFederationInformation(
-                PegTestUtils.createHash3(2),
-                new byte[]{(byte)0x22},
-                fastBridgeScriptHash
+    public void serializeFastBridgeFederationInformation_Ok() {
+        byte[] fastBridgeFederationRedeemScriptHash = new byte[]{(byte)0x23};
+        FastBridgeFederationInformation fastBridgeFederationInformation = new FastBridgeFederationInformation(
+            PegTestUtils.createHash3(2),
+            new byte[]{(byte)0x22},
+            fastBridgeFederationRedeemScriptHash
         );
 
-        FastBridgeFederationInformation result =
-            BridgeSerializationUtils.deserializeFastBridgeInformation(
-                BridgeSerializationUtils.serializeFastBridgeInformation(fastBridge),
-                fastBridgeScriptHash
-            );
+        FastBridgeFederationInformation result = BridgeSerializationUtils.deserializeFastBridgeFederationInformation(
+            BridgeSerializationUtils.serializeFastBridgeFederationInformation(fastBridgeFederationInformation),
+            fastBridgeFederationRedeemScriptHash
+        );
 
-        Assert.assertArrayEquals(fastBridge.getDerivationHash().getBytes(), result.getDerivationHash().getBytes());
-        Assert.assertArrayEquals(fastBridge.getFederationScriptHash(), result.getFederationScriptHash());
-        Assert.assertArrayEquals(fastBridge.getFastBridgeScriptHash(), result.getFastBridgeScriptHash());
-    }
-
-    private void testSerializeAndDeserializeFederation(boolean isErpFed) {
-        final int NUM_CASES = 20;
-        final NetworkParameters networkParameters = NetworkParameters.fromID(NetworkParameters.ID_REGTEST);
-        final BridgeConstants bridgeConstants = BridgeRegTestConstants.getInstance();
-
-        for (int i = 0; i < NUM_CASES; i++) {
-            int numMembers = randomInRange(2, 14);
-            List<FederationMember> members = new ArrayList<>();
-
-            for (int j = 0; j < numMembers; j++) {
-                members.add(new FederationMember(new BtcECKey(), new ECKey(), new ECKey()));
-            }
-
-            Federation testFederation;
-
-            if (isErpFed) {
-                 testFederation = new ErpFederation(
-                    members,
-                    Instant.now(),
-                    123,
-                    networkParameters,
-                    bridgeConstants.getErpFedPubKeysList(),
-                    bridgeConstants.getErpFedActivationDelay()
-                );
-            } else {
-                testFederation = new Federation(
-                    members,
-                    Instant.now(),
-                    123,
-                    networkParameters
-                );
-            }
-
-            byte[] serializedTestFederation = BridgeSerializationUtils.serializeFederation(testFederation);
-            Federation deserializedTestFederation;
-
-            if (isErpFed) {
-                deserializedTestFederation = BridgeSerializationUtils.deserializeErpFederation(
-                    serializedTestFederation,
-                    networkParameters,
-                    bridgeConstants
-                );
-            } else {
-                deserializedTestFederation = BridgeSerializationUtils.deserializeFederation(
-                    serializedTestFederation, networkParameters);
-            }
-
-            Assert.assertEquals(testFederation, deserializedTestFederation);
-        }
+        Assert.assertArrayEquals(
+            fastBridgeFederationInformation.getDerivationHash().getBytes(),
+            result.getDerivationHash().getBytes()
+        );
+        Assert.assertArrayEquals(
+            fastBridgeFederationInformation.getFederationRedeemScriptHash(),
+            result.getFederationRedeemScriptHash()
+        );
+        Assert.assertArrayEquals(
+            fastBridgeFederationInformation.getFastBridgeFederationRedeemScriptHash(),
+            result.getFastBridgeFederationRedeemScriptHash()
+        );
     }
 
     @Test
@@ -1203,6 +1187,68 @@ public class BridgeSerializationUtilsTest {
         byte[] serializedCoinbaseInformation = BridgeSerializationUtils.serializeCoinbaseInformation(coinbaseInformation);
 
         Assert.assertEquals(witnessRoot, BridgeSerializationUtils.deserializeCoinbaseInformation(serializedCoinbaseInformation).getWitnessMerkleRoot());
+    }
+
+    private void testSerializeAndDeserializeFederation(boolean isRskip284Active, String networkId) {
+        final int NUM_CASES = 20;
+
+        BridgeConstants bridgeConstants;
+        if (networkId.equals(NetworkParameters.ID_MAINNET)) {
+            bridgeConstants = BridgeMainNetConstants.getInstance();
+        } else {
+            bridgeConstants = BridgeTestNetConstants.getInstance();
+        }
+
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(isRskip284Active);
+
+        for (int i = 0; i < NUM_CASES; i++) {
+            int numMembers = randomInRange(2, 14);
+            List<FederationMember> members = new ArrayList<>();
+
+            for (int j = 0; j < numMembers; j++) {
+                members.add(new FederationMember(new BtcECKey(), new ECKey(), new ECKey()));
+            }
+
+            Federation testFederation = new Federation(
+                members,
+                Instant.now(),
+                123,
+                bridgeConstants.getBtcParams()
+            );
+            byte[] serializedTestFederation = BridgeSerializationUtils.serializeFederation(testFederation);
+
+            Federation deserializedTestFederation = BridgeSerializationUtils.deserializeFederation(
+                serializedTestFederation,
+                bridgeConstants.getBtcParams()
+            );
+
+            Federation testErpFederation = new ErpFederation(
+                members,
+                Instant.now(),
+                123,
+                bridgeConstants.getBtcParams(),
+                bridgeConstants.getErpFedPubKeysList(),
+                bridgeConstants.getErpFedActivationDelay(),
+                activations
+            );
+            byte[] serializedTestErpFederation = BridgeSerializationUtils.serializeFederation(testErpFederation);
+
+            Federation deserializedTestErpFederation = BridgeSerializationUtils.deserializeErpFederation(
+                serializedTestErpFederation,
+                bridgeConstants,
+                activations
+            );
+
+            Assert.assertEquals(testFederation, deserializedTestFederation);
+            Assert.assertEquals(testErpFederation, deserializedTestErpFederation);
+            Assert.assertNotEquals(testFederation, deserializedTestErpFederation);
+            Assert.assertNotEquals(testErpFederation, deserializedTestFederation);
+
+            if (!isRskip284Active && networkId.equals(NetworkParameters.ID_TESTNET)) {
+                Assert.assertEquals(TestConstants.ERP_TESTNET_REDEEM_SCRIPT, testErpFederation.getRedeemScript());
+            }
+        }
     }
 
     private Address mockAddressHash160(String hash160) {

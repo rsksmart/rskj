@@ -29,6 +29,7 @@ import co.rsk.peg.whitelist.OneOffWhiteListEntry;
 import co.rsk.peg.whitelist.UnlimitedWhiteListEntry;
 import org.apache.commons.lang3.tuple.Pair;
 import org.bouncycastle.util.BigIntegers;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.util.RLP;
 import org.ethereum.util.RLPElement;
@@ -59,8 +60,9 @@ public class BridgeSerializationUtils {
     private static final int FEDERATION_MEMBER_RSK_KEY_INDEX = 1;
     private static final int FEDERATION_MEMBER_MST_KEY_INDEX = 2;
 
-
-    private BridgeSerializationUtils(){}
+    private BridgeSerializationUtils() {
+        throw new IllegalAccessError("Utility class, do not instantiate it");
+    }
 
     public static byte[] serializeMap(SortedMap<Keccak256, BtcTransaction> map) {
         int ntxs = map.size();
@@ -312,12 +314,12 @@ public class BridgeSerializationUtils {
 
     public static ErpFederation deserializeErpFederation(
         byte[] data,
-        NetworkParameters networkParameters,
-        BridgeConstants bridgeConstants
+        BridgeConstants bridgeConstants,
+        ActivationConfig.ForBlock activations
     ) {
         Federation federation = deserializeFederationWithDeserializer(
             data,
-            networkParameters,
+            bridgeConstants.getBtcParams(),
             BridgeSerializationUtils::deserializeFederationMember
         );
 
@@ -327,7 +329,8 @@ public class BridgeSerializationUtils {
             federation.getCreationBlockNumber(),
             federation.getBtcParams(),
             bridgeConstants.getErpFedPubKeysList(),
-            bridgeConstants.getErpFedActivationDelay()
+            bridgeConstants.getErpFedActivationDelay(),
+            activations
         );
     }
 
@@ -802,8 +805,8 @@ public class BridgeSerializationUtils {
         return new Script(rlpList.get(0).getRLPRawData());
     }
 
-    public static FastBridgeFederationInformation deserializeFastBridgeInformation(byte[] data, byte[] fastBridgeScriptHash) {
-        if ((data == null) || (data.length == 0)) {
+    public static FastBridgeFederationInformation deserializeFastBridgeFederationInformation(byte[] data, byte[] fastBridgeScriptHash) {
+        if (data == null || data.length == 0) {
             return null;
         }
 
@@ -818,13 +821,13 @@ public class BridgeSerializationUtils {
         return new FastBridgeFederationInformation(derivationHash, federationP2SH, fastBridgeScriptHash);
     }
 
-    public static byte[] serializeFastBridgeInformation(FastBridgeFederationInformation fastBridgeFederationP2SH) {
-        if (fastBridgeFederationP2SH == null) {
+    public static byte[] serializeFastBridgeFederationInformation(FastBridgeFederationInformation fastBridgeFederationInformation) {
+        if (fastBridgeFederationInformation == null) {
             return new byte[]{};
         }
         byte[][] rlpElements = new byte[2][];
-        rlpElements[0] = RLP.encodeElement(fastBridgeFederationP2SH.getDerivationHash().getBytes());
-        rlpElements[1] = RLP.encodeElement(fastBridgeFederationP2SH.getFederationScriptHash());
+        rlpElements[0] = RLP.encodeElement(fastBridgeFederationInformation.getDerivationHash().getBytes());
+        rlpElements[1] = RLP.encodeElement(fastBridgeFederationInformation.getFederationRedeemScriptHash());
 
         return RLP.encodeList(rlpElements);
     }

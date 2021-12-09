@@ -48,6 +48,7 @@ import static org.ethereum.config.blockchain.upgrades.ConsensusRule.*;
  */
 public class BridgeStorageProvider {
     private static final DataWord NEW_FEDERATION_BTC_UTXOS_KEY = DataWord.fromString("newFederationBtcUTXOs");
+    private static final DataWord NEW_FEDERATION_BTC_UTXOS_KEY_FOR_TESTNET = DataWord.fromString("newFederationBtcUTXOsForTestnet");
     private static final DataWord OLD_FEDERATION_BTC_UTXOS_KEY = DataWord.fromString("oldFederationBtcUTXOs");
     private static final DataWord BTC_TX_HASHES_ALREADY_PROCESSED_KEY = DataWord.fromString("btcTxHashesAP");
     private static final DataWord RELEASE_REQUEST_QUEUE = DataWord.fromString("releaseRequestQueue");
@@ -128,9 +129,9 @@ public class BridgeStorageProvider {
     private Long nextFederationCreationBlockHeight; // if -1, then clear value
     private Script lastRetiredFederationP2SHScript;
 
-    private Keccak256 fastBridgeDerivationArgumentsHashToSave = null;
-    private Sha256Hash fastBridgeBtcTxHashToSave = null;
-    private FastBridgeFederationInformation fastBridgeFederationInformationsToSave = null;
+    private Keccak256 fastBridgeDerivationArgumentsHash;
+    private Sha256Hash fastBridgeBtcTxHash;
+    private FastBridgeFederationInformation fastBridgeFederationInformation;
     private long receiveHeadersLastTimestamp = 0;
 
     public BridgeStorageProvider(
@@ -138,7 +139,6 @@ public class BridgeStorageProvider {
         RskAddress contractAddress,
         BridgeConstants bridgeConstants,
         ActivationConfig.ForBlock activations) {
-
         this.repository = repository;
         this.contractAddress = contractAddress;
         this.networkParameters = bridgeConstants.getBtcParams();
@@ -152,7 +152,11 @@ public class BridgeStorageProvider {
             return newFederationBtcUTXOs;
         }
 
-        newFederationBtcUTXOs = getFromRepository(NEW_FEDERATION_BTC_UTXOS_KEY, BridgeSerializationUtils::deserializeUTXOList);
+        DataWord key = NEW_FEDERATION_BTC_UTXOS_KEY;
+        if (activations.isActive(RSKIP284) && networkParameters.getId().equals(NetworkParameters.ID_TESTNET)) {
+            key = NEW_FEDERATION_BTC_UTXOS_KEY_FOR_TESTNET;
+        }
+        newFederationBtcUTXOs = getFromRepository(key, BridgeSerializationUtils::deserializeUTXOList);
         return newFederationBtcUTXOs;
     }
 
@@ -161,7 +165,11 @@ public class BridgeStorageProvider {
             return;
         }
 
-        saveToRepository(NEW_FEDERATION_BTC_UTXOS_KEY, newFederationBtcUTXOs, BridgeSerializationUtils::serializeUTXOList);
+        DataWord key = NEW_FEDERATION_BTC_UTXOS_KEY;
+        if (activations.isActive(RSKIP284) && networkParameters.getId().equals(NetworkParameters.ID_TESTNET)) {
+            key = NEW_FEDERATION_BTC_UTXOS_KEY_FOR_TESTNET;
+        }
+        saveToRepository(key, newFederationBtcUTXOs, BridgeSerializationUtils::serializeUTXOList);
     }
 
     public List<UTXO> getOldFederationBtcUTXOs() throws IOException {
@@ -788,52 +796,54 @@ public class BridgeStorageProvider {
     }
 
     public boolean isFastBridgeFederationDerivationHashUsed(Sha256Hash btcTxHash, Keccak256 derivationArgsHash) {
-        if (!activations.isActive(RSKIP176)) {
-            return false;
-        }
-
-        if (btcTxHash == null || derivationArgsHash == null) {
+        if (!activations.isActive(RSKIP176) || btcTxHash == null || derivationArgsHash == null) {
             return false;
         }
 
         byte[] data = repository.getStorageBytes(
-                contractAddress,
-                getStorageKeyForDerivationArgumentsHash(btcTxHash, derivationArgsHash)
+            contractAddress,
+            getStorageKeyForDerivationArgumentsHash(btcTxHash, derivationArgsHash)
         );
 
-        return ((data != null) && (data.length == 1) && (data[0] == FAST_BRIDGE_FEDERATION_DERIVATION_ARGUMENTS_HASH_TRUE_VALUE));
+        return data != null &&
+            data.length == 1 &&
+            data[0] == FAST_BRIDGE_FEDERATION_DERIVATION_ARGUMENTS_HASH_TRUE_VALUE;
     }
 
-    public void markFastBridgeFederationDerivationHashAsUsed(Sha256Hash btcTxHashToSave, Keccak256 derivationArgsHash) {
+    public void markFastBridgeFederationDerivationHashAsUsed(Sha256Hash btcTxHash, Keccak256 derivationArgsHash) {
         if (activations.isActive(RSKIP176)) {
-            fastBridgeBtcTxHashToSave = btcTxHashToSave;
-            fastBridgeDerivationArgumentsHashToSave = derivationArgsHash;
+            fastBridgeBtcTxHash = btcTxHash;
+            fastBridgeDerivationArgumentsHash = derivationArgsHash;
         }
     }
 
     private void saveDerivationArgumentsHash() {
-        if (fastBridgeDerivationArgumentsHashToSave == null || fastBridgeBtcTxHashToSave == null) {
+        if (fastBridgeDerivationArgumentsHash == null || fastBridgeBtcTxHash == null) {
             return;
         }
+
         repository.addStorageBytes(
-                contractAddress,
-                getStorageKeyForDerivationArgumentsHash(fastBridgeBtcTxHashToSave, fastBridgeDerivationArgumentsHashToSave),
-                new byte[]{FAST_BRIDGE_FEDERATION_DERIVATION_ARGUMENTS_HASH_TRUE_VALUE}
+            contractAddress,
+            getStorageKeyForDerivationArgumentsHash(
+                fastBridgeBtcTxHash,
+                fastBridgeDerivationArgumentsHash
+            ),
+            new byte[]{FAST_BRIDGE_FEDERATION_DERIVATION_ARGUMENTS_HASH_TRUE_VALUE}
         );
     }
 
-    public Optional<FastBridgeFederationInformation> getFastBridgeFederationInformation(byte[] fastBridgeScriptHash) {
+    public Optional<FastBridgeFederationInformation> getFastBridgeFederationInformation(byte[] fastBridgeFederationRedeemScriptHash) {
         if (!activations.isActive(RSKIP176)) {
             return Optional.empty();
         }
 
-        if (fastBridgeScriptHash == null || fastBridgeScriptHash.length == 0) {
+        if (fastBridgeFederationRedeemScriptHash == null || fastBridgeFederationRedeemScriptHash.length == 0) {
             return Optional.empty();
         }
 
         FastBridgeFederationInformation fastBridgeFederationInformation = this.safeGetFromRepository(
-                getStorageKeyForfastBridgeFederationInformation(fastBridgeScriptHash),
-            data -> BridgeSerializationUtils.deserializeFastBridgeInformation(data, fastBridgeScriptHash)
+            getStorageKeyForfastBridgeFederationInformation(fastBridgeFederationRedeemScriptHash),
+            data -> BridgeSerializationUtils.deserializeFastBridgeFederationInformation(data, fastBridgeFederationRedeemScriptHash)
         );
         if (fastBridgeFederationInformation == null) {
             return Optional.empty();
@@ -844,31 +854,32 @@ public class BridgeStorageProvider {
 
     public void setFastBridgeFederationInformation(FastBridgeFederationInformation fastBridgeFederationInformation) {
         if (activations.isActive(RSKIP176)) {
-            this.fastBridgeFederationInformationsToSave = fastBridgeFederationInformation;
+            this.fastBridgeFederationInformation = fastBridgeFederationInformation;
         }
     }
 
     private void saveFastBridgeFederationInformation() {
-        if (fastBridgeFederationInformationsToSave == null) {
+        if (fastBridgeFederationInformation == null) {
             return;
         }
 
         safeSaveToRepository(
-                getStorageKeyForfastBridgeFederationInformation(
-                    fastBridgeFederationInformationsToSave.getFastBridgeScriptHash()
-                ),
-                fastBridgeFederationInformationsToSave,
-                BridgeSerializationUtils::serializeFastBridgeInformation
+            getStorageKeyForfastBridgeFederationInformation(
+                fastBridgeFederationInformation.getFastBridgeFederationRedeemScriptHash()
+            ),
+            fastBridgeFederationInformation,
+            BridgeSerializationUtils::serializeFastBridgeFederationInformation
         );
     }
 
     public Optional<Long> getReceiveHeadersLastTimestamp() {
         if (activations.isActive(RSKIP200)) {
             return safeGetFromRepository(
-                    RECEIVE_HEADERS_TIMESTAMP,
-                    BridgeSerializationUtils::deserializeOptionalLong
+                RECEIVE_HEADERS_TIMESTAMP,
+                BridgeSerializationUtils::deserializeOptionalLong
             );
         }
+
         return Optional.empty();
     }
 
@@ -940,8 +951,8 @@ public class BridgeStorageProvider {
         return DataWord.fromLongString("fastBridgeHashUsedInBtcTx-" + btcTxHash.toString() + derivationHash.toString());
     }
 
-    private DataWord getStorageKeyForfastBridgeFederationInformation(byte[] fastBridgeScriptHash) {
-        return DataWord.fromLongString("fastBridgeFederationInformation-" + Hex.toHexString(fastBridgeScriptHash));
+    private DataWord getStorageKeyForfastBridgeFederationInformation(byte[] fastBridgeFederationRedeemScriptHash) {
+        return DataWord.fromLongString("fastBridgeFederationInformation-" + Hex.toHexString(fastBridgeFederationRedeemScriptHash));
     }
 
     private Optional<Integer> getStorageVersion(DataWord versionKey) {
@@ -974,8 +985,8 @@ public class BridgeStorageProvider {
         if (version.equals(ERP_FEDERATION_FORMAT_VERSION)) {
             return BridgeSerializationUtils.deserializeErpFederation(
                 data,
-                networkParameters,
-                bridgeConstants
+                bridgeConstants,
+                activations
             );
         }
 

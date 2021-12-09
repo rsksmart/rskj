@@ -20,7 +20,9 @@ package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.Address;
 import co.rsk.bitcoinj.core.BtcECKey;
+import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.Sha256Hash;
+import co.rsk.bitcoinj.core.UTXO;
 import co.rsk.bitcoinj.params.RegTestParams;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
@@ -158,5 +160,16 @@ public class PegTestUtils {
     public static Address createRandomBtcAddress() {
         BtcECKey key = new BtcECKey();
         return key.toAddress(RegTestParams.get());
+    }
+
+    public static UTXO createUTXO(int nHash, long index, Coin value) {
+        return new UTXO(
+            createHash(nHash),
+            index,
+            value,
+            10,
+            false,
+            ScriptBuilder.createOutputScript(new BtcECKey())
+        );
     }
 }
