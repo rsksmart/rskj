@@ -132,9 +132,9 @@ public class PendingFederationTest {
     }
 
     @Test
-    public void buildFederation_ok_6_members_before_RSKIP_199_activation() {
+    public void buildFederation_ok_6_members_before_RSKIP_201_activation() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-        when(activations.isActive(ConsensusRule.RSKIP199)).thenReturn(false);
+        when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(false);
 
         Integer[] privateKeys = new Integer[]{100, 200, 300, 400, 500, 600};
         Instant creationTime = Instant.ofEpochMilli(1234L);
@@ -153,16 +153,16 @@ public class PendingFederationTest {
             FederationTestUtils.getFederationMembersFromPks(privateKeys),
             creationTime,
             0L,
-            NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
+            bridgeConstants.getBtcParams()
         );
 
         Assert.assertEquals(expectedFederation, builtFederation);
     }
 
     @Test
-    public void buildFederation_ok_9_members_before_RSKIP_199_activation() {
+    public void buildFederation_ok_9_members_before_RSKIP_201_activation() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-        when(activations.isActive(ConsensusRule.RSKIP199)).thenReturn(false);
+        when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(false);
 
         Integer[] privateKeys = new Integer[]{100, 200, 300, 400, 500, 600, 700, 800, 900};
         Instant creationTime = Instant.ofEpochMilli(1234L);
@@ -181,7 +181,7 @@ public class PendingFederationTest {
             FederationTestUtils.getFederationMembersFromPks(privateKeys),
             creationTime,
         0L,
-            NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
+            bridgeConstants.getBtcParams()
         );
 
         Assert.assertEquals(expectedFederation, builtFederation);
