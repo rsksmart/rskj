@@ -38,10 +38,7 @@ import org.powermock.modules.junit4.PowerMockRunner;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -499,9 +496,8 @@ public class ReleaseTransactionBuilderTest {
     @Test
     public void test_verifyTXFeeIsSpentEquallyForBatchedPegouts_two_pegouts() {
         List<UTXO> utxos = Arrays.asList(
-            new UTXO(mockUTXOHash("1"), 0, Coin.COIN, 0, false, federation.getP2SHScript()),
-            new UTXO(mockUTXOHash("2"), 0, Coin.COIN, 0, false, federation.getP2SHScript())
-        );
+            PegTestUtils.createUTXO(1, Coin.COIN, federation.getAddress()),
+            PegTestUtils.createUTXO(2, Coin.COIN, federation.getAddress()));
 
         Wallet thisWallet = BridgeUtils.getFederationSpendWallet(
             Context.getOrCreate(networkParameters),
@@ -533,10 +529,14 @@ public class ReleaseTransactionBuilderTest {
         Coin totalFee = btcTx.getFee();
         Coin feeForEachOutput = totalFee.div(outputSize - 1); // minus change output
 
-        Assert.assertEquals(testEntry1.getAmount().minus(feeForEachOutput), btcTx.getOutput(0).getValue());
-        Assert.assertEquals(testEntry2.getAmount().minus(feeForEachOutput), btcTx.getOutput(1).getValue());
-        Assert.assertEquals(testEntry1.getAmount().minus(btcTx.getOutput(0).getValue())
-            .add(testEntry2.getAmount().minus(btcTx.getOutput(1).getValue())), totalFee);
+        Coin firstOutputValue =  testEntry1.getAmount().minus(feeForEachOutput);
+        Coin secondOutputValue =  testEntry2.getAmount().minus(feeForEachOutput);
+        Assert.assertEquals(firstOutputValue, btcTx.getOutput(0).getValue());
+        Assert.assertEquals(secondOutputValue, btcTx.getOutput(1).getValue());
+
+        Coin firstOutputFee = testEntry1.getAmount().minus(btcTx.getOutput(0).getValue());
+        Coin secondOutputFee = testEntry2.getAmount().minus(btcTx.getOutput(1).getValue());
+        Assert.assertEquals(firstOutputFee.add(secondOutputFee), totalFee);
 
         ReleaseTransactionBuilder.BuildResult builtTx = result.get();
         Coin inputsValue = builtTx.getSelectedUTXOs().stream().map(UTXO::getValue).reduce(Coin.ZERO, Coin::add);
@@ -552,9 +552,8 @@ public class ReleaseTransactionBuilderTest {
     @Test
     public void test_VerifyTXFeeIsSpentEquallyForBatchedPegouts_three_pegouts() {
         List<UTXO> utxos = Arrays.asList(
-            new UTXO(mockUTXOHash("1"), 0, Coin.COIN, 0, false, federation.getP2SHScript()),
-            new UTXO(mockUTXOHash("2"), 0, Coin.COIN, 0, false, federation.getP2SHScript())
-        );
+            PegTestUtils.createUTXO(1, Coin.COIN, federation.getAddress()),
+            PegTestUtils.createUTXO(2, Coin.COIN, federation.getAddress()));
 
         Wallet thisWallet = BridgeUtils.getFederationSpendWallet(
             Context.getOrCreate(networkParameters),
@@ -588,12 +587,19 @@ public class ReleaseTransactionBuilderTest {
         Coin feeForEachOutput = totalFee.div(outputSize - 1); // minus change output
 
         // First Output Pays An Extra Satoshi Because Fee Is Even, And Outputs Is Odd
-        Assert.assertEquals(testEntry1.getAmount().minus(feeForEachOutput), btcTx.getOutput(0).getValue().add(Coin.valueOf(1)));
-        Assert.assertEquals(testEntry2.getAmount().minus(feeForEachOutput), btcTx.getOutput(1).getValue());
-        Assert.assertEquals(testEntry3.getAmount().minus(feeForEachOutput), btcTx.getOutput(2).getValue());
-        Assert.assertEquals(testEntry1.getAmount().minus(btcTx.getOutput(0).getValue())
-            .add(testEntry2.getAmount().minus(btcTx.getOutput(1).getValue()))
-            .add(testEntry3.getAmount().minus(btcTx.getOutput(2).getValue())), totalFee);
+        Coin firstOutputValue =  testEntry1.getAmount().minus(feeForEachOutput.add(Coin.valueOf(1)));
+        Coin secondOutputValue =  testEntry2.getAmount().minus(feeForEachOutput);
+        Coin thirdOutputValue =  testEntry3.getAmount().minus(feeForEachOutput);
+
+        Assert.assertEquals(firstOutputValue, btcTx.getOutput(0).getValue());
+        Assert.assertEquals(secondOutputValue, btcTx.getOutput(1).getValue());
+        Assert.assertEquals(thirdOutputValue, btcTx.getOutput(2).getValue());
+
+        Coin firstOutputFee = testEntry1.getAmount().minus(btcTx.getOutput(0).getValue());
+        Coin secondOutputFee = testEntry2.getAmount().minus(btcTx.getOutput(1).getValue());
+        Coin thirdOutputFee = testEntry3.getAmount().minus(btcTx.getOutput(2).getValue());
+
+        Assert.assertEquals(firstOutputFee.add(secondOutputFee.add(thirdOutputFee)), totalFee);
 
         ReleaseTransactionBuilder.BuildResult builtTx = result.get();
         Coin inputsValue = builtTx.getSelectedUTXOs().stream().map(UTXO::getValue).reduce(Coin.ZERO, Coin::add);
