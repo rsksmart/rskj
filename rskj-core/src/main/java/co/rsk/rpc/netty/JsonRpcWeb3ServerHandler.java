@@ -20,6 +20,7 @@ package co.rsk.rpc.netty;
 
 import co.rsk.rpc.JsonRpcMethodFilter;
 import co.rsk.rpc.ModuleDescription;
+import co.rsk.util.CustomJsonRpcBasicServer;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -34,7 +35,6 @@ import org.ethereum.rpc.exception.RskErrorResolver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -49,7 +49,7 @@ public class JsonRpcWeb3ServerHandler extends SimpleChannelInboundHandler<ByteBu
     private final JsonRpcBasicServer jsonRpcServer;
 
     public JsonRpcWeb3ServerHandler(Web3 service, List<ModuleDescription> filteredModules) {
-        this.jsonRpcServer = new JsonRpcBasicServer(service, service.getClass());
+        this.jsonRpcServer = new CustomJsonRpcBasicServer(service, service.getClass());
         jsonRpcServer.setRequestInterceptor(new JsonRpcMethodFilter(filteredModules));
         jsonRpcServer.setErrorResolver(new MultipleErrorResolver(new RskErrorResolver(), AnnotationsErrorResolver.INSTANCE, DefaultErrorResolver.INSTANCE));
     }
@@ -60,10 +60,7 @@ public class JsonRpcWeb3ServerHandler extends SimpleChannelInboundHandler<ByteBu
         int responseCode;
 
         try (ByteBufOutputStream os = new ByteBufOutputStream(responseContent);
-             ByteBufInputStream is = new ByteBufInputStream(request.content().retain());
-             ByteBufInputStream isToValidate = new ByteBufInputStream(request.content().duplicate().retain())) {
-
-            validateRequestContent(isToValidate);
+             ByteBufInputStream is = new ByteBufInputStream(request.content().retain())) {
 
             responseCode = jsonRpcServer.handleRequest(is, os);
         } catch (IllegalArgumentException e) {
@@ -88,19 +85,6 @@ public class JsonRpcWeb3ServerHandler extends SimpleChannelInboundHandler<ByteBu
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
         LOGGER.error("Unexpected exception", cause);
         ctx.close();
-    }
-
-    private void validateRequestContent(ByteBufInputStream is) throws IOException {
-        try {
-            final ReadContext readContext = ReadContext.getReadContext(is, mapper);
-            final JsonNode jsonNode = readContext.nextValue();
-
-            if (jsonNode.get("id") == null) {
-                throw new IllegalArgumentException("missing request id");
-            }
-        } catch (IOException e) {
-             throw e;
-        }
     }
 
     private ByteBuf buildErrorContent(int errorCode, String errorMessage) throws JsonProcessingException {
