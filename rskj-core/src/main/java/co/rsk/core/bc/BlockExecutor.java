@@ -312,10 +312,10 @@ public class BlockExecutor {
             logger.warn("totalThreads: {}", transactionsMap.entrySet().size());
             while(received < transactionsMap.entrySet().size()) {
                 try {
-                    logger.warn("Processing thread {} of {}", received, transactionsMap.entrySet().size());
                     Future<List<TransactionExecutionResult>> resultFuture = completionService.take();
                     List<TransactionExecutionResult> results = resultFuture.get();
                     received ++;
+                    logger.warn("Processing thread {} of {}", received, transactionsMap.entrySet().size());
                     for (TransactionExecutionResult result : results) {
                         deletedAccounts.addAll(result.getDeletedAccounts());
                         executedTransactions.add(result.getExecutedTransaction());
