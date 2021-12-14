@@ -56,4 +56,6 @@ public interface BridgeEventLogger {
     void logReleaseBtcRequestReceived(String sender, byte[] btcDestinationAddress, Coin amount);
 
     void logReleaseBtcRequestRejected(String sender, Coin amount, RejectedPegoutReason reason);
+
+    void logBatchPegoutCreated(BtcTransaction btcTx, byte[] rskTxHash);
 }

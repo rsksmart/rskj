@@ -1152,6 +1152,8 @@ public class BridgeSupport {
             BtcTransaction generatedTransaction = result.get().getBtcTx();
             // TODO: Update to call addPegoutTxToReleaseTransactionSet with the RskHash that calls the updateCollections
             releaseTransactionSet.add(generatedTransaction, rskExecutionBlock.getNumber());
+            Keccak256 rskTxHash = releaseRequestQueue.getEntries().get(0).getRskTxHash();
+            eventLogger.logBatchPegoutCreated(generatedTransaction, rskTxHash.getBytes());
 
             // Mark UTXOs as spent
             List<UTXO> selectedUTXOs = result.get().getSelectedUTXOs();
