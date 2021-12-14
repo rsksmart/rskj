@@ -84,7 +84,7 @@ public enum BridgeEvents {
     BATCH_PEGOUT_CREATED("batch_pegout_created",
         new CallTransaction.Param[]{
             new CallTransaction.Param(true, Fields.BTC_TX_HASH, SolidityType.getType(SolidityType.BYTES32)),
-            new CallTransaction.Param(false, Fields.RELEASE_RSK_TX_HASH, SolidityType.getType(SolidityType.BYTES32))
+            new CallTransaction.Param(false, Fields.RELEASE_RSK_TX_HASHES, SolidityType.getType(SolidityType.BYTES))
         }
     );
 
@@ -107,5 +107,6 @@ public enum BridgeEvents {
         private static final String REASON = "reason";
         private static final String BTC_TX_HASH = "btcTxHash";
         private static final String RELEASE_RSK_TX_HASH = "releaseRskTxHash";
+        private static final String RELEASE_RSK_TX_HASHES = "releaseRskTxHashes";
     }
 }
