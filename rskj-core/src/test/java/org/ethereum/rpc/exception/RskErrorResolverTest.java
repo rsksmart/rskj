@@ -212,14 +212,14 @@ public class RskErrorResolverTest {
         // Then
         Assert.assertNotNull(result);
         Assert.assertEquals(code, (Integer) result.code);
-        Assert.assertEquals("Could not deserialize arguments to handle: mockMethod. Verify the structure and data types of the arguments you are passing.", result.message);
+        Assert.assertEquals("invalid argument 0: json: cannot unmarshal string into Go value of type filters.input", result.message);
         Assert.assertNull(result.data);
     }
 
     @Test
     public void test_resolveError_givenUnsupportedOperationException_returnsJsonErrorAsExpected() throws NoSuchMethodException {
         // Given
-        Integer code = -32603;
+        Integer code = -32601;
         String message = "message";
         UnsupportedOperationException exception = new UnsupportedOperationException(message);
 
@@ -232,14 +232,14 @@ public class RskErrorResolverTest {
         // Then
         Assert.assertNotNull(result);
         Assert.assertEquals(code, (Integer) result.code);
-        Assert.assertEquals("In this moment we are not supporting: mockMethod", result.message);
+        Assert.assertEquals("the method mockMethod does not exist/is not available", result.message);
         Assert.assertNull(result.data);
     }
 
     @Test
     public void test_resolveError_givenMethodNotSupportedExceptionMsg_returnsJsonErrorAsExpected() throws NoSuchMethodException {
         // Given
-        Integer code = -32603;
+        Integer code = -32601;
         String message = "method not supported";
         Exception exception = new Exception(message);
 
@@ -252,7 +252,7 @@ public class RskErrorResolverTest {
         // Then
         Assert.assertNotNull(result);
         Assert.assertEquals(code, (Integer) result.code);
-        Assert.assertEquals("In this moment we are not supporting: mockMethod", result.message);
+        Assert.assertEquals("the method mockMethod does not exist/is not available", result.message);
         Assert.assertNull(result.data);
     }
 

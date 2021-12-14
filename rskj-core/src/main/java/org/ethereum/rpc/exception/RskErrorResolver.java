@@ -22,9 +22,10 @@ public class RskErrorResolver implements ErrorResolver {
 
     @Override
     public JsonError resolveError(Throwable t, Method method, List<JsonNode> arguments) {
-        JsonError error = null;
-        if(t instanceof  RskJsonRpcRequestException) {
-            error =  new JsonError(((RskJsonRpcRequestException) t).getCode(), t.getMessage(), null);
+        JsonError error;
+
+        if (t instanceof RskJsonRpcRequestException) {
+            error = new JsonError(((RskJsonRpcRequestException) t).getCode(), t.getMessage(), null);
         } else if (t instanceof InvalidFormatException) {
             error = new JsonError(JsonRpcError.INTERNAL_ERROR, "Internal server error, probably due to invalid parameter type", null);
         } else if (t instanceof UnrecognizedPropertyException) {
@@ -32,15 +33,20 @@ public class RskErrorResolver implements ErrorResolver {
                     JsonRpcError.INVALID_PARAMS,
                     getExceptionMessage((UnrecognizedPropertyException) t),
                     null);
+        } else if (t.getMessage() != null && t.getMessage().contains("An RSK address must be")) {
+            error = new JsonError(
+                    JsonRpcError.INVALID_PARAMS,
+                    "invalid argument 0: hex string has length " + arguments.get(0).asText().replace("0x", "").length() + ", want 40 for common.Address",
+                    null);
         } else if (t instanceof JsonMappingException && t.getMessage().contains("Can not construct instance")) {
             error = new JsonError(
                     JsonRpcError.INVALID_PARAMS,
-                    "Could not deserialize arguments to handle: " + method.getName() + ". Verify the structure and data types of the arguments you are passing.",
+                    "invalid argument 0: json: cannot unmarshal string into Go value of type filters.input",
                     null);
         } else if (t instanceof UnsupportedOperationException || (t.getMessage() != null && t.getMessage().toLowerCase().contains("method not supported"))) {
             error = new JsonError(
-                    JsonRpcError.INTERNAL_ERROR,
-                    "In this moment we are not supporting: " + method.getName(),
+                    JsonRpcError.METHOD_NOT_FOUND,
+                    "the method " + method.getName() + " does not exist/is not available",
                     null);
         } else {
             logger.error("JsonRPC error when for method {} with arguments {}", method, arguments, t);

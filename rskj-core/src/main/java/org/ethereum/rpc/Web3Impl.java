@@ -524,15 +524,11 @@ public class Web3Impl implements Web3 {
     public Block getBlockByJSonHash(String blockHash) {
         byte[] bhash = stringHexToByteArray(blockHash);
 
-        try {
-            return this.blockchain.getBlockByHash(bhash);
-        } catch (Exception e) {
-            if (e instanceof IllegalArgumentException && e.getMessage() == null ) {
-                throw invalidParamError("Invalid input format. Make sure you hash is correct");
-            }
-
-            throw e;
+        if (bhash.length != Keccak256.HASH_LEN) {
+            throw invalidParamError("invalid argument 0: hex string has length " + (bhash.length * 2) + ", want " + (Keccak256.HASH_LEN * 2) + " for common.Hash");
         }
+
+        return this.blockchain.getBlockByHash(bhash);
     }
 
     @Override
