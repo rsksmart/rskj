@@ -127,6 +127,7 @@ import org.mapdb.DBMaker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.*;
 import java.net.InetSocketAddress;
@@ -150,6 +151,8 @@ import java.util.stream.Stream;
 public class RskContext implements NodeContext, NodeBootstrapper {
 
     private static final Logger logger = LoggerFactory.getLogger(RskContext.class);
+
+    private static final String CACHE_FILE_NAME = "rskcache";
 
     private final CliArgs<NodeCliOptions, NodeCliFlags> cliArgs;
 
@@ -1168,10 +1171,26 @@ public class RskContext implements NodeContext, NodeBootstrapper {
 
     /***** Protected Methods ******************************************************************************************/
 
+    @Nonnull
+    protected Path resolveCacheSnapshotPath(@Nonnull Path baseStorePath) {
+        return baseStorePath.resolve(CACHE_FILE_NAME);
+    }
+
     protected synchronized KeyValueDataSource buildBlocksBloomDataSource() {
         checkIfNotClosed();
 
-        return LevelDbDataSource.makeDataSource(Paths.get(getRskSystemProperties().databaseDir(), "blooms"));
+        int bloomsCacheSize = getRskSystemProperties().getBloomsCacheSize();
+        Path bloomsStorePath = Paths.get(getRskSystemProperties().databaseDir(), "blooms");
+        KeyValueDataSource ds = LevelDbDataSource.makeDataSource(bloomsStorePath);
+
+        if (bloomsCacheSize != 0) {
+            CacheSnapshotHandler cacheSnapshotHandler = getRskSystemProperties().shouldPersistBloomsCacheSnapshot()
+                    ? new CacheSnapshotHandler(resolveCacheSnapshotPath(bloomsStorePath))
+                    : null;
+            ds = new DataSourceWithCache(ds, bloomsCacheSize, cacheSnapshotHandler);
+        }
+
+        return ds;
     }
 
     protected synchronized NodeRunner buildNodeRunner() {
@@ -1285,7 +1304,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
 
         if (statesCacheSize != 0) {
             CacheSnapshotHandler cacheSnapshotHandler = getRskSystemProperties().shouldPersistStatesCacheSnapshot()
-                    ? new CacheSnapshotHandler(trieStorePath.resolve("cache"))
+                    ? new CacheSnapshotHandler(resolveCacheSnapshotPath(trieStorePath))
                     : null;
             ds = new DataSourceWithCache(ds, statesCacheSize, cacheSnapshotHandler);
         }

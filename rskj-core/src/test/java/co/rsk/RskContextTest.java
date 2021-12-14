@@ -42,6 +42,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -82,6 +83,18 @@ public class RskContextTest {
         assertThat(devnetContext.getCliArgs(), notNullValue());
         assertThat(devnetContext.getCliArgs().getFlags(), contains(NodeCliFlags.NETWORK_DEVNET));
         devnetContext.close();
+    }
+
+    @Test
+    public void shouldResolveCacheSnapshotPath() {
+        Path baseStorePath = Paths.get("./db");
+
+        Path resolvedPath = rskContext.resolveCacheSnapshotPath(baseStorePath);
+
+        assertNotNull(resolvedPath);
+
+        String pathSuffix = resolvedPath.toString().replace(baseStorePath.toString(), "");
+        assertEquals("/rskcache", pathSuffix);
     }
 
     @Test
@@ -228,6 +241,7 @@ public class RskContextTest {
 
         Set<String> methodsToSkip = new HashSet<String>() {{
             add("getCliArgs");
+            add("resolveCacheSnapshotPath");
             add("isClosed");
             add("close");
         }};

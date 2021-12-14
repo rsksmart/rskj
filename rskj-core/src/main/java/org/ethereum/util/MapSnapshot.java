@@ -129,11 +129,13 @@ public abstract class MapSnapshot<T extends Closeable> implements Closeable {
             }
             for (int i = 0; i < entryCount; i++) {
                 int keySize = dataInput.readInt();
-                if (keySize < 1) {
+                if (keySize < 0) {
                     throw new IOException("Invalid data: key size");
                 }
                 byte[] key = new byte[keySize];
-                dataInput.readFully(key);
+                if (keySize > 0) {
+                    dataInput.readFully(key);
+                }
 
                 int valueSize = dataInput.readInt();
                 if (valueSize < -1) {

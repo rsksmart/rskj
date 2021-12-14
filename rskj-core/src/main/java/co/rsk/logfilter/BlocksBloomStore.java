@@ -24,8 +24,8 @@ import org.ethereum.vm.DataWord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashMap;
-import java.util.Map;
+import javax.annotation.Nonnull;
+import java.util.Objects;
 
 /**
  * Block blooms store
@@ -45,13 +45,13 @@ public class BlocksBloomStore {
 
     private final int noBlocks;
     private final int noConfirmations;
-    private final Map<Long, BlocksBloom> blocksBloomCache = new HashMap<>();
+
     private final KeyValueDataSource dataSource;
 
-    public BlocksBloomStore(int noBlocks, int noConfirmations, KeyValueDataSource dataSource) {
+    public BlocksBloomStore(int noBlocks, int noConfirmations, @Nonnull KeyValueDataSource dataSource) {
         this.noBlocks = noBlocks;
         this.noConfirmations = noConfirmations;
-        this.dataSource = dataSource;
+        this.dataSource = Objects.requireNonNull(dataSource);
     }
 
     /**
@@ -61,19 +61,14 @@ public class BlocksBloomStore {
      * @param blockNumber block number to query
      * @return true if the block number is in some record, false if not
      */
-    public synchronized boolean hasBlockNumber(long blockNumber) {
+    public boolean hasBlockNumber(long blockNumber) {
         long key = this.firstNumberInRange(blockNumber);
 
-        return hasBlockNumberInCache(key)
-            || hasBlockNumberInStore(key);
+        return hasBlockNumberInStore(key);
     }
 
     private boolean hasBlockNumberInStore(long key) {
-        return this.dataSource != null && this.dataSource.get(longToKey(key)) != null;
-    }
-
-    private boolean hasBlockNumberInCache(long key) {
-        return this.blocksBloomCache.containsKey(key);
+        return this.dataSource.get(longToKey(key)) != null;
     }
 
     /**
@@ -85,21 +80,11 @@ public class BlocksBloomStore {
      *
      * If it is found in the store, it is added to the cache
      *
-     * @param number
+     * @param number block number
      * @return the BlocksBloom that contains that block number, null if absent
      */
-    public synchronized BlocksBloom getBlocksBloomByNumber(long number) {
+    public BlocksBloom getBlocksBloomByNumber(long number) {
         long key = firstNumberInRange(number);
-
-        BlocksBloom blocksBloom = this.blocksBloomCache.get(key);
-
-        if (blocksBloom != null) {
-            return blocksBloom;
-        }
-
-        if (this.dataSource == null) {
-            return null;
-        }
 
         byte[] data = this.dataSource.get(longToKey(key));
 
@@ -107,11 +92,7 @@ public class BlocksBloomStore {
             return null;
         }
 
-        blocksBloom = BlocksBloomEncoder.decode(data);
-
-        this.blocksBloomCache.put(key, blocksBloom);
-
-        return blocksBloom;
+        return BlocksBloomEncoder.decode(data);
     }
 
     /**
@@ -120,14 +101,10 @@ public class BlocksBloomStore {
      *
      * @param blocksBloom the record to add
      */
-    public synchronized void addBlocksBloom(BlocksBloom blocksBloom) {
+    public void addBlocksBloom(BlocksBloom blocksBloom) {
         logger.trace("set blocks bloom: height {}", blocksBloom.fromBlock());
 
-        this.blocksBloomCache.put(blocksBloom.fromBlock(), blocksBloom);
-
-        if (this.dataSource != null) {
-            this.dataSource.put(longToKey(blocksBloom.fromBlock()), BlocksBloomEncoder.encode(blocksBloom));
-        }
+        this.dataSource.put(longToKey(blocksBloom.fromBlock()), BlocksBloomEncoder.encode(blocksBloom));
     }
 
     public long firstNumberInRange(long number) {
@@ -163,14 +140,10 @@ public class BlocksBloomStore {
     }
 
     public void flush() {
-        if (this.dataSource != null) {
-            this.dataSource.flush();
-        }
+        this.dataSource.flush();
     }
 
     public void close() {
-        if (this.dataSource != null) {
-            this.dataSource.close();
-        }
+        this.dataSource.close();
     }
 }
