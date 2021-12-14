@@ -566,6 +566,18 @@ public class BridgeEventLoggerImplTest {
         assertEvent(eventLogs, 0, BridgeEvents.RELEASE_REQUEST_REJECTED.getEvent(), new Object[]{sender}, new Object[]{amount.value, reason.getValue()});
     }
 
+    @Test
+    public void logBatchPegoutCreated() {
+        Keccak256 rskTxHash = PegTestUtils.createHash3(0);
+
+        eventLogger.logBatchPegoutCreated(btcTx, rskTxHash.getBytes());
+
+        commonAssertLogs(eventLogs);
+
+        assertTopics(2, eventLogs);
+
+        assertEvent(eventLogs, 0, BridgeEvents.BATCH_PEGOUT_CREATED.getEvent(), new Object[]{btcTx.getHash().getBytes()}, new Object[]{rskTxHash.getBytes()});
+    }
 
     /**********************************
      *  -------     UTILS     ------- *

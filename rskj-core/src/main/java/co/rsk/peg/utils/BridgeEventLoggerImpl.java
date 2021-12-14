@@ -261,9 +261,9 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
     @Override
     public void logBatchPegoutCreated(BtcTransaction btcTx, byte[] rskTxHash) {
         CallTransaction.Function event = BridgeEvents.BATCH_PEGOUT_CREATED.getEvent();
-        byte[][] encodedTopicsInBytes = event.encodeEventTopics(rskTxHash);
+        byte[][] encodedTopicsInBytes = event.encodeEventTopics(btcTx.getHash().getBytes());
         List<DataWord> encodedTopics = LogInfo.byteArrayToList(encodedTopicsInBytes);
-        byte[] encodedData = event.encodeEventData(btcTx.bitcoinSerialize());
+        byte[] encodedData = event.encodeEventData(rskTxHash);
 
         this.logs.add(new LogInfo(BRIDGE_CONTRACT_ADDRESS, encodedTopics, encodedData));
     }
