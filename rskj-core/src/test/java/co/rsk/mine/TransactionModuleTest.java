@@ -437,7 +437,7 @@ public class TransactionModuleTest {
 
             encoded = func.encode();
         }
-        data = Hex.toHexString(encoded);
+        data = "0x" + Hex.toHexString(encoded);
         CallArguments args = new CallArguments();
         args.setFrom(TypeConverter.toJsonHex(addr1.getBytes()));
         args.setTo(TypeConverter.toJsonHex(destContract.getBytes()));

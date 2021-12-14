@@ -20,10 +20,12 @@ package org.ethereum.rpc;
 
 import co.rsk.core.Coin;
 import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.util.ByteUtil;
 
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
@@ -33,6 +35,7 @@ import java.util.regex.Pattern;
 @Deprecated
 public class TypeConverter {
     private static final Pattern LEADING_ZEROS_PATTERN = Pattern.compile("0x(0)+");
+    private static final Pattern HEXADECIMAL_PATTERN = Pattern.compile("\\p{XDigit}+");
 
     private TypeConverter() {
         throw new IllegalAccessError("Utility class");
@@ -47,7 +50,7 @@ public class TypeConverter {
     }
 
     public static BigInteger stringHexToBigInteger(String input) {
-        if(!input.startsWith("0x")) {
+        if (!input.startsWith("0x")) {
             throw new NumberFormatException("Invalid hex number, expected 0x prefix");
         }
         String hexa = input.substring(2);
@@ -69,6 +72,31 @@ public class TypeConverter {
         return Hex.decode(result);
     }
 
+    public static byte[] strHexOrStrNumberToByteArray(String strHexOrStrNumber) {
+        if (strHexOrStrNumber.startsWith("0x")) {
+            return stringHexToByteArray(strHexOrStrNumber);
+        }
+
+        try {
+            BigInteger number = new BigInteger(strHexOrStrNumber);
+            return ByteUtil.bigIntegerToBytes(number);
+        } catch (Exception e) {
+            throw RskJsonRpcRequestException.invalidParamError("Number values should not contain letters or hex values should start with 0x.");
+        }
+    }
+
+    public static BigInteger strHexOrStrNumberToBigInteger(String strHexOrStrNumber) {
+        if (strHexOrStrNumber.startsWith("0x")) {
+            return stringHexToBigInteger(strHexOrStrNumber);
+        }
+
+        try {
+            return new BigInteger(strHexOrStrNumber);
+        } catch (Exception e) {
+            throw RskJsonRpcRequestException.invalidParamError("Number values should not contain letters or hex values should start with 0x.");
+        }
+    }
+
     public static byte[] stringToByteArray(String input) {
         return input.getBytes(StandardCharsets.UTF_8);
     }
@@ -86,12 +114,21 @@ public class TypeConverter {
         return result;
     }
 
+    public static boolean isHexadecimal(String input) {
+        final Matcher matcher = HEXADECIMAL_PATTERN.matcher(input);
+        return matcher.matches();
+    }
+
     public static String toJsonHex(Coin x) {
-        return x != null ? x.asBigInteger().toString() : "" ;
+        return toJsonHex(x != null ? x.asBigInteger().toString() : "00");
     }
 
     public static String toJsonHex(String x) {
-        return "0x"+x;
+        if (isHexadecimal(x)) {
+            return "0x" + x;
+        }
+
+        throw RskJsonRpcRequestException.invalidParamError("Not a valid hex number.");
     }
 
     /**
@@ -105,7 +142,7 @@ public class TypeConverter {
      * @return A Hex representation of n WITHOUT leading zeroes
      */
     public static String toQuantityJsonHex(BigInteger n) {
-        return "0x"+ n.toString(16);
+        return "0x" + n.toString(16);
     }
 
     /**
@@ -126,6 +163,7 @@ public class TypeConverter {
      * 0x000AEF -> 0x2AEF
      * <p>
      * 0x00 -> 0x0
+     *
      * @param x A hex string with or without leading zeroes ("0x00AEF"). If null, it is considered as zero.
      * @return A hex string without leading zeroes ("0xAEF")
      */

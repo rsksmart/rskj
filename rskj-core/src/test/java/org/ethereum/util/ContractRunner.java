@@ -63,7 +63,7 @@ public class ContractRunner {
         Account contractAccount = new AccountBuilder(blockchain, blockStore, repositoryLocator)
                         .name(runtimeBytecode)
                         .balance(Coin.valueOf(10))
-                        .code(TypeConverter.stringHexToByteArray(runtimeBytecode))
+                        .code(TypeConverter.strHexOrStrNumberToByteArray(runtimeBytecode))
                         .build();
 
         return contractAccount.getAddress();

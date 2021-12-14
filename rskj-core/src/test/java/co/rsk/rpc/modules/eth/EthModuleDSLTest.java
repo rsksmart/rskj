@@ -56,8 +56,8 @@ public class EthModuleDSLTest {
         EthModule eth = EthModuleTestUtils.buildBasicEthModule(world);
         final Transaction tx01 = world.getTransactionByName("tx01");
         final CallArguments args = new CallArguments();
-        args.setTo(tx01.getContractAddress().toHexString()); //"6252703f5ba322ec64d3ac45e56241b7d9e481ad";
-        args.setData("d96a094a0000000000000000000000000000000000000000000000000000000000000000"); // call to contract with param value = 0
+        args.setTo("0x" + tx01.getContractAddress().toHexString()); //"6252703f5ba322ec64d3ac45e56241b7d9e481ad";
+        args.setData("0xd96a094a0000000000000000000000000000000000000000000000000000000000000000"); // call to contract with param value = 0
         args.setValue("0");
         args.setNonce("1");
         args.setGas("10000000");
@@ -68,7 +68,7 @@ public class EthModuleDSLTest {
             assertThat(e.getMessage(), Matchers.containsString("Negative value."));
         }
 
-        args.setData("d96a094a0000000000000000000000000000000000000000000000000000000000000001"); // call to contract with param value = 1
+        args.setData("0xd96a094a0000000000000000000000000000000000000000000000000000000000000001"); // call to contract with param value = 1
         final String call = eth.call(args, "0x2");
         assertEquals("0x", call);
     }
