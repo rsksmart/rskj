@@ -32,13 +32,12 @@ import org.ethereum.vm.program.Program;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.ArgumentCaptor;
 
 import java.io.IOException;
 import java.math.BigInteger;
 import java.time.Instant;
 import java.util.*;
-
-import org.mockito.ArgumentCaptor;
 
 import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -187,7 +186,7 @@ public class BridgeSupportReleaseBtcTest {
         assertEquals(1, provider.getReleaseTransactionSet().getEntries().size());
         assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
         ReleaseTransactionSet.Entry entry = (ReleaseTransactionSet.Entry) provider.getReleaseTransactionSet().getEntries().toArray()[0];
-        verify(eventLogger,times(1)).logReleaseBtcRequested(any(byte[].class), any(BtcTransaction.class), any(Coin.class));
+        verify(eventLogger, times(1)).logReleaseBtcRequested(any(byte[].class), any(BtcTransaction.class), any(Coin.class));
     }
 
     @Test
@@ -212,9 +211,9 @@ public class BridgeSupportReleaseBtcTest {
         ReleaseTransactionSet.Entry entry = (ReleaseTransactionSet.Entry) provider.getReleaseTransactionSet().getEntries().toArray()[0];
 
         assertEquals(3, logInfo.size());
-        verify(eventLogger,times(1)).logReleaseBtcRequested(any(byte[].class), any(BtcTransaction.class), any(Coin.class));
-        verify(eventLogger,times(1)).logReleaseBtcRequestReceived(any(), any(), any());
-        verify(eventLogger,times(1)).logUpdateCollections(any());
+        verify(eventLogger, times(1)).logReleaseBtcRequested(any(byte[].class), any(BtcTransaction.class), any(Coin.class));
+        verify(eventLogger, times(1)).logReleaseBtcRequestReceived(any(), any(), any());
+        verify(eventLogger, times(1)).logUpdateCollections(any());
     }
 
     @Test
@@ -242,7 +241,7 @@ public class BridgeSupportReleaseBtcTest {
 
         assertEquals(1, logInfo.size());
 
-        verify(eventLogger,times(1)).logUpdateCollections(any());
+        verify(eventLogger, times(1)).logUpdateCollections(any());
     }
 
     @Test
@@ -263,9 +262,9 @@ public class BridgeSupportReleaseBtcTest {
         bridgeSupport.updateCollections(rskTx);
 
         verify(repository, times(1)).transfer(
-                argThat((a) -> a.equals(PrecompiledContracts.BRIDGE_ADDR)),
-                argThat((a) -> a.equals(new RskAddress(SENDER.getAddress()))),
-                argThat((a) -> a.equals(co.rsk.core.Coin.fromBitcoin(Coin.ZERO)))
+            argThat((a) -> a.equals(PrecompiledContracts.BRIDGE_ADDR)),
+            argThat((a) -> a.equals(new RskAddress(SENDER.getAddress()))),
+            argThat((a) -> a.equals(co.rsk.core.Coin.fromBitcoin(Coin.ZERO)))
         );
 
         assertEquals(0, provider.getReleaseTransactionSet().getEntries().size());
@@ -273,8 +272,8 @@ public class BridgeSupportReleaseBtcTest {
 
         assertEquals(2, logInfo.size());
         verify(eventLogger, never()).logReleaseBtcRequestReceived(any(), any(), any());
-        verify(eventLogger,times(1)).logReleaseBtcRequestRejected(any(), any(), any());
-        verify(eventLogger,times(1)).logUpdateCollections(any());
+        verify(eventLogger, times(1)).logReleaseBtcRequestRejected(any(), any(), any());
+        verify(eventLogger, times(1)).logUpdateCollections(any());
     }
 
 
@@ -297,7 +296,7 @@ public class BridgeSupportReleaseBtcTest {
         bridgeSupport.updateCollections(rskTx);
 
         verify(repository, never()).transfer(
-                any(), any(), any()
+            any(), any(), any()
         );
 
         assertEquals(0, provider.getReleaseTransactionSet().getEntries().size());
@@ -306,8 +305,8 @@ public class BridgeSupportReleaseBtcTest {
 
         assertEquals(2, logInfo.size());
 
-        verify(eventLogger,times(1)).logReleaseBtcRequestRejected(any(), any(), any());
-        verify(eventLogger,times(1)).logUpdateCollections(any());
+        verify(eventLogger, times(1)).logReleaseBtcRequestRejected(any(), any(), any());
+        verify(eventLogger, times(1)).logUpdateCollections(any());
     }
 
     @Test
@@ -324,7 +323,7 @@ public class BridgeSupportReleaseBtcTest {
         try {
             bridgeSupport.releaseBtc(releaseTx);
             fail();
-        }catch (Program.OutOfGasException e) {
+        } catch (Program.OutOfGasException e) {
             assertTrue(e.getMessage().contains("Contract calling releaseBTC"));
         }
     }
@@ -354,7 +353,7 @@ public class BridgeSupportReleaseBtcTest {
         assertEquals(1, provider.getReleaseRequestQueue().getEntries().size());
 
         assertEquals(1, logInfo.size());
-        verify(eventLogger,times(1)).logReleaseBtcRequestReceived(any(), any(), any());
+        verify(eventLogger, times(1)).logReleaseBtcRequestReceived(any(), any(), any());
     }
 
     @Test
@@ -380,7 +379,7 @@ public class BridgeSupportReleaseBtcTest {
         assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
 
         assertEquals(1, logInfo.size());
-        verify(eventLogger,never()).logReleaseBtcRequestReceived(any(), any(), any());
+        verify(eventLogger, never()).logReleaseBtcRequestReceived(any(), any(), any());
         verify(eventLogger, times(1)).logReleaseBtcRequestRejected(any(), any(), any());
     }
 
@@ -404,7 +403,7 @@ public class BridgeSupportReleaseBtcTest {
         assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
 
         assertEquals(1, logInfo.size());
-        verify(eventLogger,never()).logReleaseBtcRequestReceived(any(), any(), any());
+        verify(eventLogger, never()).logReleaseBtcRequestReceived(any(), any(), any());
         verify(eventLogger, times(1)).logReleaseBtcRequestRejected(any(), any(), any());
     }
 
@@ -430,7 +429,7 @@ public class BridgeSupportReleaseBtcTest {
         assertEquals(1, provider.getReleaseRequestQueue().getEntries().size());
 
         assertEquals(1, logInfo.size());
-        verify(eventLogger,times(1)).logReleaseBtcRequestReceived(any(), any(), any());
+        verify(eventLogger, times(1)).logReleaseBtcRequestReceived(any(), any(), any());
     }
 
     @Test
@@ -477,20 +476,41 @@ public class BridgeSupportReleaseBtcTest {
     }
 
     @Test
-    public void test_processPegoutsInBatch_before_rskip_271_processPegoutsIndividually() throws IOException {
+    public void test_processPegoutsIndividually_before_RSKIP271_activation() throws IOException {
+
         when(activationMock.isActive(ConsensusRule.RSKIP271)).thenReturn(false);
 
-        bridgeSupport.releaseBtc(releaseTx);
+        Federation federation = bridgeConstants.getGenesisFederation();
+        List<UTXO> utxos = new ArrayList<>();
+        utxos.add(PegTestUtils.createUTXO(1, Coin.COIN.multiply(3), federation.getAddress()));
+
+        BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
+        when(provider.getNewFederationBtcUTXOs()).thenReturn(utxos);
+        when(provider.getReleaseRequestQueue())
+            .thenReturn(new ReleaseRequestQueue(Arrays.asList(
+                new ReleaseRequestQueue.Entry(PegTestUtils.createRandomBtcAddress(), Coin.COIN),
+                new ReleaseRequestQueue.Entry(PegTestUtils.createRandomBtcAddress(), Coin.COIN))));
+        when(provider.getReleaseTransactionSet()).thenReturn(new ReleaseTransactionSet(Collections.emptySet()));
+
+        BridgeSupport bridgeSupport = bridgeSupportBuilder
+            .withBridgeConstants(bridgeConstants)
+            .withProvider(provider)
+            .withActivations(activationMock)
+            .build();
 
         Transaction rskTx = buildUpdateTx();
         bridgeSupport.updateCollections(rskTx);
 
-        assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
+        // assert pegouts were not batched
+        assertEquals(1, provider.getReleaseRequestQueue().getEntries().size());
         assertEquals(1, provider.getReleaseTransactionSet().getEntries().size());
+
+        verify(provider, never()).getNextPegoutHeight();
+        verify(provider, never()).setNextPegoutHeight(any(Long.class));
     }
 
     @Test
-    public void test_processPegoutsInBatch_after_rskip_271() throws IOException {
+    public void test_processPegoutsInBatch_after_RSKIP271() throws IOException {
         when(activationMock.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
 
         Federation federation = bridgeConstants.getGenesisFederation();
@@ -522,6 +542,42 @@ public class BridgeSupportReleaseBtcTest {
 
         verify(provider, times(1)).getNextPegoutHeight();
         verify(provider, times(1)).setNextPegoutHeight(any(Long.class));
+    }
+
+    @Test
+    public void test_processPegoutsInBatch_after_RSKIP271_activation_next_pegout_height_not_reached() throws IOException {
+
+        when(activationMock.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
+
+        Block executionBlock = mock(Block.class);
+        when(executionBlock.getNumber()).thenReturn(100L);
+
+        long executionBlockNumber = executionBlock.getNumber();
+
+        BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
+        when(provider.getNextPegoutHeight()).thenReturn(Optional.of(executionBlockNumber + bridgeConstants.getNumberOfBlocksBetweenPegouts() - 1));
+        when(provider.getReleaseRequestQueue())
+            .thenReturn(new ReleaseRequestQueue(
+                Arrays.asList(
+                    new ReleaseRequestQueue.Entry(PegTestUtils.createRandomBtcAddress(), Coin.MILLICOIN),
+                    new ReleaseRequestQueue.Entry(PegTestUtils.createRandomBtcAddress(), Coin.MILLICOIN))));
+        when(provider.getReleaseTransactionSet()).thenReturn(new ReleaseTransactionSet(Collections.emptySet()));
+
+        BridgeSupport bridgeSupport = bridgeSupportBuilder
+            .withBridgeConstants(bridgeConstants)
+            .withProvider(provider)
+            .withExecutionBlock(executionBlock)
+            .withActivations(activationMock)
+            .build();
+
+        Transaction rskTx = buildUpdateTx();
+        bridgeSupport.updateCollections(rskTx);
+
+        verify(provider, times(1)).getNextPegoutHeight();
+        verify(provider, never()).setNextPegoutHeight(any(Long.class));
+
+        assertEquals(2, provider.getReleaseRequestQueue().getEntries().size());
+        assertEquals(0, provider.getReleaseTransactionSet().getEntries().size());
     }
 
     @Test
@@ -608,7 +664,7 @@ public class BridgeSupportReleaseBtcTest {
         // if shouldPegout false then value should be smaller than any of those minimums
         assertEquals(!shouldPegout,
             value.isLessThan(minValueWithGapAboveFee) ||
-            value.isLessThan(bridgeConstants.getMinimumPegoutTxValueInSatoshis())
+                value.isLessThan(bridgeConstants.getMinimumPegoutTxValueInSatoshis())
         );
 
         bridgeSupport.releaseBtc(buildReleaseRskTx(value));
@@ -649,53 +705,53 @@ public class BridgeSupportReleaseBtcTest {
 
     private Transaction buildReleaseRskTx(Coin coin) {
         Transaction releaseTx = Transaction
-                .builder()
-                .nonce(NONCE)
-                .gasPrice(GAS_PRICE)
-                .gasLimit(GAS_LIMIT)
-                .destination(PrecompiledContracts.BRIDGE_ADDR.toHexString())
-                .data(Hex.decode(DATA))
-                .chainId(Constants.REGTEST_CHAIN_ID)
-                .value(co.rsk.core.Coin.fromBitcoin(coin).asBigInteger())
-                .build();
+            .builder()
+            .nonce(NONCE)
+            .gasPrice(GAS_PRICE)
+            .gasLimit(GAS_LIMIT)
+            .destination(PrecompiledContracts.BRIDGE_ADDR.toHexString())
+            .data(Hex.decode(DATA))
+            .chainId(Constants.REGTEST_CHAIN_ID)
+            .value(co.rsk.core.Coin.fromBitcoin(coin).asBigInteger())
+            .build();
         releaseTx.sign(SENDER.getPrivKeyBytes());
         return releaseTx;
     }
 
     private Transaction buildReleaseRskTx_fromContract(Coin coin) {
         Transaction releaseTx = Transaction
-                .builder()
-                .nonce(NONCE)
-                .gasPrice(GAS_PRICE)
-                .gasLimit(GAS_LIMIT)
-                .destination(PrecompiledContracts.BRIDGE_ADDR.toHexString())
-                .data(Hex.decode(DATA))
-                .chainId(Constants.REGTEST_CHAIN_ID)
-                .value(co.rsk.core.Coin.fromBitcoin(Coin.COIN).asBigInteger())
-                .build();
+            .builder()
+            .nonce(NONCE)
+            .gasPrice(GAS_PRICE)
+            .gasLimit(GAS_LIMIT)
+            .destination(PrecompiledContracts.BRIDGE_ADDR.toHexString())
+            .data(Hex.decode(DATA))
+            .chainId(Constants.REGTEST_CHAIN_ID)
+            .value(co.rsk.core.Coin.fromBitcoin(Coin.COIN).asBigInteger())
+            .build();
         releaseTx.sign(SENDER.getPrivKeyBytes());
         return new InternalTransaction(releaseTx.getHash().getBytes(), 400, 0, NONCE.toByteArray(),
-                DataWord.valueOf(GAS_PRICE.intValue()), DataWord.valueOf(GAS_LIMIT.intValue()), SENDER.getAddress(),
-                PrecompiledContracts.BRIDGE_ADDR.getBytes(), co.rsk.core.Coin.fromBitcoin(Coin.COIN).getBytes(),
-                Hex.decode(DATA), "");
+            DataWord.valueOf(GAS_PRICE.intValue()), DataWord.valueOf(GAS_LIMIT.intValue()), SENDER.getAddress(),
+            PrecompiledContracts.BRIDGE_ADDR.getBytes(), co.rsk.core.Coin.fromBitcoin(Coin.COIN).getBytes(),
+            Hex.decode(DATA), "");
     }
 
     private Transaction buildUpdateTx() {
         return Transaction
-                .builder()
-                .nonce(NONCE)
-                .gasPrice(GAS_PRICE)
-                .gasLimit(GAS_LIMIT)
-                .destination(Hex.decode(TO_ADDRESS))
-                .data(Hex.decode(DATA))
-                .chainId(Constants.REGTEST_CHAIN_ID)
-                .value(DUST_AMOUNT)
-                .build();
+            .builder()
+            .nonce(NONCE)
+            .gasPrice(GAS_PRICE)
+            .gasLimit(GAS_LIMIT)
+            .destination(Hex.decode(TO_ADDRESS))
+            .data(Hex.decode(DATA))
+            .chainId(Constants.REGTEST_CHAIN_ID)
+            .value(DUST_AMOUNT)
+            .build();
     }
 
     private BridgeSupport initBridgeSupport(BridgeEventLogger eventLogger, ActivationConfig.ForBlock activationMock) {
         return getBridgeSupport(
-                bridgeConstants, provider, repository, eventLogger, mock(Block.class), null, activationMock);
+            bridgeConstants, provider, repository, eventLogger, mock(Block.class), null, activationMock);
     }
 
     private BridgeStorageProvider initProvider(Repository repository, ActivationConfig.ForBlock activationMock) throws IOException {
@@ -714,14 +770,14 @@ public class BridgeSupportReleaseBtcTest {
                                            BtcBlockStoreWithCache.Factory blockStoreFactory,
                                            ActivationConfig.ForBlock activations) {
         return getBridgeSupport(
-                constants,
-                provider,
-                track,
-                eventLogger,
-                new BtcLockSenderProvider(),
-                executionBlock,
-                blockStoreFactory,
-                activations
+            constants,
+            provider,
+            track,
+            eventLogger,
+            new BtcLockSenderProvider(),
+            executionBlock,
+            blockStoreFactory,
+            activations
         );
     }
 
@@ -737,26 +793,26 @@ public class BridgeSupportReleaseBtcTest {
             blockStoreFactory = mock(BtcBlockStoreWithCache.Factory.class);
         }
         return new BridgeSupport(
-                constants,
-                provider,
-                eventLogger,
-                btcLockSenderProvider,
-                mock(PeginInstructionsProvider.class),
-                track,
-                executionBlock,
-                new Context(constants.getBtcParams()),
-                new FederationSupport(constants, provider, executionBlock),
-                blockStoreFactory,
-                activations
+            constants,
+            provider,
+            eventLogger,
+            btcLockSenderProvider,
+            mock(PeginInstructionsProvider.class),
+            track,
+            executionBlock,
+            new Context(constants.getBtcParams()),
+            new FederationSupport(constants, provider, executionBlock),
+            blockStoreFactory,
+            activations
         );
     }
 
     private static Federation getFederation() {
         return new Federation(
-                FederationTestUtils.getFederationMembers(3),
-                Instant.ofEpochMilli(1000),
-                0L,
-                NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
+            FederationTestUtils.getFederationMembers(3),
+            Instant.ofEpochMilli(1000),
+            0L,
+            NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
         );
     }
 

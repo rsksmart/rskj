@@ -20,7 +20,6 @@ package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.script.Script;
-import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.wallet.SendRequest;
 import co.rsk.bitcoinj.wallet.Wallet;
 import co.rsk.config.BridgeTestNetConstants;
@@ -34,7 +33,6 @@ import org.mockito.invocation.InvocationOnMock;
 
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
-import java.security.SecureRandom;
 import java.time.Instant;
 import java.util.*;
 
@@ -382,123 +380,115 @@ public class ReleaseTransactionBuilderTest {
     }
 
     @Test
-    public void test_BuildBatchedPegouts_ok() throws UTXOProviderException, InsufficientMoneyException {
+    public void test_BuildBatchedPegouts_ok() {
         ReleaseRequestQueue.Entry testEntry1 = createTestEntry(123, 2);
         ReleaseRequestQueue.Entry testEntry2 = createTestEntry(456, 4);
         ReleaseRequestQueue.Entry testEntry3 = createTestEntry(789, 5);
         List<ReleaseRequestQueue.Entry> pegoutRequests = Arrays.asList(testEntry1, testEntry2, testEntry3);
 
-        UTXO utxo1 = mockUTXO("one", 0, Coin.COIN);
-        UTXO utxo2 = mockUTXO("two", 2, Coin.FIFTY_COINS);
-        UTXO utxo3 = mockUTXO("three", 0, Coin.CENT.times(3));
-        List<UTXO> availableUTXOs = Arrays.asList(utxo1, utxo2, utxo3);
+        List<UTXO> utxos = Arrays.asList(
+            new UTXO(mockUTXOHash("1"), 0, Coin.COIN, 0, false, federation.getP2SHScript()),
+            new UTXO(mockUTXOHash("2"), 2, Coin.FIFTY_COINS, 0, false, federation.getP2SHScript()),
+            new UTXO(mockUTXOHash("3"), 0, Coin.CENT.times(3), 0, false, federation.getP2SHScript())
+        );
 
-        UTXOProvider utxoProvider = mock(UTXOProvider.class);
-        when(wallet.getUTXOProvider()).thenReturn(utxoProvider);
-        when(wallet.getWatchedAddresses()).thenReturn(Collections.singletonList(changeAddress));
-        when(utxoProvider.getOpenTransactionOutputs(any(List.class))).then((InvocationOnMock m) -> {
-            List<Address> addresses = m.<List>getArgument(0);
-            Assert.assertEquals(Collections.singletonList(changeAddress), addresses);
-            return availableUTXOs;
-        });
+        Wallet thisWallet = BridgeUtils.getFederationSpendWallet(
+            Context.getOrCreate(networkParameters),
+            federation,
+            utxos,
+            false,
+            mock(BridgeStorageProvider.class)
+        );
 
-        Mockito.doAnswer((InvocationOnMock m) -> {
-            SendRequest sr = m.<SendRequest>getArgument(0);
+        ReleaseTransactionBuilder rtb = new ReleaseTransactionBuilder(
+            networkParameters,
+            thisWallet,
+            federation.address,
+            Coin.MILLICOIN,
+            activations
+        );
 
-            BtcTransaction tx = sr.tx;
-
-            tx.addInput(utxo2.getHash(), utxo2.getIndex(), mock(Script.class));
-            tx.addInput(utxo3.getHash(), utxo3.getIndex(), mock(Script.class));
-
-            return null;
-        }).when(wallet).completeTx(any(SendRequest.class));
-
-        Optional<ReleaseTransactionBuilder.BuildResult> result = builder.buildBatchedPegouts(pegoutRequests);
+        Optional<ReleaseTransactionBuilder.BuildResult> result = rtb.buildBatchedPegouts(pegoutRequests);
 
         Assert.assertTrue(result.isPresent());
 
         BtcTransaction tx = result.get().getBtcTx();
         List<UTXO> selectedUTXOs = result.get().getSelectedUTXOs();
 
-        Assert.assertEquals(3, tx.getOutputs().size());
-        Assert.assertEquals(testEntry1.getAmount(), tx.getOutput(0).getValue());
-        Assert.assertEquals(testEntry2.getAmount(), tx.getOutput(1).getValue());
-        Assert.assertEquals(testEntry3.getAmount(), tx.getOutput(2).getValue());
-        Assert.assertEquals(testEntry1.getDestination(), tx.getOutput(0).getAddressFromP2PKHScript(NetworkParameters.fromID(NetworkParameters.ID_REGTEST)));
-        Assert.assertEquals(testEntry2.getDestination(), tx.getOutput(1).getAddressFromP2PKHScript(NetworkParameters.fromID(NetworkParameters.ID_REGTEST)));
-        Assert.assertEquals(testEntry3.getDestination(), tx.getOutput(2).getAddressFromP2PKHScript(NetworkParameters.fromID(NetworkParameters.ID_REGTEST)));
+        Assert.assertEquals(2, selectedUTXOs.size());
+
+        Assert.assertEquals(4, tx.getOutputs().size());
+
+        Address firstOutputAddress = testEntry1.getDestination();
+        Address secondOutputAddress = testEntry2.getDestination();
+        Address thirdOutputAddress = testEntry3.getDestination();
+        Assert.assertEquals(firstOutputAddress, tx.getOutput(0).getAddressFromP2PKHScript(networkParameters));
+        Assert.assertEquals(secondOutputAddress, tx.getOutput(1).getAddressFromP2PKHScript(networkParameters));
+        Assert.assertEquals(thirdOutputAddress, tx.getOutput(2).getAddressFromP2PKHScript(networkParameters));
+
+        Sha256Hash firstUtxoHash = utxos.get(0).getHash();
+        Sha256Hash thirdUtxoHash = utxos.get(2).getHash();
 
         Assert.assertEquals(2, tx.getInputs().size());
-        Assert.assertEquals(utxo2.getHash(), tx.getInput(0).getOutpoint().getHash());
-        Assert.assertEquals(utxo2.getIndex(), tx.getInput(0).getOutpoint().getIndex());
-        Assert.assertEquals(utxo3.getHash(), tx.getInput(1).getOutpoint().getHash());
-        Assert.assertEquals(utxo3.getIndex(), tx.getInput(1).getOutpoint().getIndex());
-
-        Assert.assertEquals(2, selectedUTXOs.size());
-        Assert.assertEquals(utxo2.getHash(), selectedUTXOs.get(0).getHash());
-        Assert.assertEquals(utxo2.getIndex(), selectedUTXOs.get(0).getIndex());
-        Assert.assertEquals(utxo3.getHash(), selectedUTXOs.get(1).getHash());
-        Assert.assertEquals(utxo3.getIndex(), selectedUTXOs.get(1).getIndex());
+        Assert.assertEquals(firstUtxoHash, tx.getInput(1).getOutpoint().getHash());
+        Assert.assertEquals(thirdUtxoHash, tx.getInput(0).getOutpoint().getHash());
     }
 
     @Test
-    public void test_BuildBatchedPegouts_ok_P2SHAddress() throws UTXOProviderException, InsufficientMoneyException {
+    public void test_BuildBatchedPegouts_ok_P2SHAddress() {
         ReleaseRequestQueue.Entry testEntry1 = createTestEntry(123, 2);
-        ReleaseRequestQueue.Entry testEntry2 = new ReleaseRequestQueue.Entry(mockAddress(networkParameters, 3), Coin.COIN);
-        ReleaseRequestQueue.Entry testEntry3 = new ReleaseRequestQueue.Entry(mockAddress(networkParameters, 3), Coin.COIN);
+        ReleaseRequestQueue.Entry testEntry2 = new ReleaseRequestQueue.Entry(PegTestUtils.createP2SHAddress(networkParameters, 3), Coin.COIN);
+        ReleaseRequestQueue.Entry testEntry3 = new ReleaseRequestQueue.Entry(PegTestUtils.createP2SHAddress(networkParameters, 3), Coin.COIN);
         List<ReleaseRequestQueue.Entry> pegoutRequests = Arrays.asList(testEntry1, testEntry2, testEntry3);
 
-        UTXO utxo1 = mockUTXO("one", 0, Coin.COIN);
-        UTXO utxo2 = mockUTXO("two", 2, Coin.FIFTY_COINS);
-        UTXO utxo3 = mockUTXO("three", 0, Coin.CENT.times(3));
-        List<UTXO> availableUTXOs = Arrays.asList(utxo1, utxo2, utxo3);
+        List<UTXO> utxos = Arrays.asList(
+            new UTXO(mockUTXOHash("1"), 0, Coin.COIN, 0, false, federation.getP2SHScript()),
+            new UTXO(mockUTXOHash("2"), 2, Coin.FIFTY_COINS, 0, false, federation.getP2SHScript()),
+            new UTXO(mockUTXOHash("3"), 0, Coin.CENT.times(3), 0, false, federation.getP2SHScript())
+        );
 
-        UTXOProvider utxoProvider = mock(UTXOProvider.class);
-        when(wallet.getUTXOProvider()).thenReturn(utxoProvider);
-        when(wallet.getWatchedAddresses()).thenReturn(Collections.singletonList(changeAddress));
-        when(utxoProvider.getOpenTransactionOutputs(any(List.class))).then((InvocationOnMock m) -> {
-            List<Address> addresses = m.<List>getArgument(0);
-            Assert.assertEquals(Collections.singletonList(changeAddress), addresses);
-            return availableUTXOs;
-        });
+        Wallet thisWallet = BridgeUtils.getFederationSpendWallet(
+            Context.getOrCreate(networkParameters),
+            federation,
+            utxos,
+            false,
+            mock(BridgeStorageProvider.class)
+        );
 
-        Mockito.doAnswer((InvocationOnMock m) -> {
-            SendRequest sr = m.<SendRequest>getArgument(0);
+        ReleaseTransactionBuilder rtb = new ReleaseTransactionBuilder(
+            networkParameters,
+            thisWallet,
+            federation.address,
+            Coin.MILLICOIN,
+            activations
+        );
 
-            BtcTransaction tx = sr.tx;
-
-            tx.addInput(utxo2.getHash(), utxo2.getIndex(), mock(Script.class));
-            tx.addInput(utxo3.getHash(), utxo3.getIndex(), mock(Script.class));
-
-            return null;
-        }).when(wallet).completeTx(any(SendRequest.class));
-
-        Optional<ReleaseTransactionBuilder.BuildResult> result = builder.buildBatchedPegouts(pegoutRequests);
+        Optional<ReleaseTransactionBuilder.BuildResult> result = rtb.buildBatchedPegouts(pegoutRequests);
 
         Assert.assertTrue(result.isPresent());
 
         BtcTransaction tx = result.get().getBtcTx();
         List<UTXO> selectedUTXOs = result.get().getSelectedUTXOs();
 
-        Assert.assertEquals(3, tx.getOutputs().size());
-        Assert.assertEquals(testEntry1.getAmount(), tx.getOutput(0).getValue());
-        Assert.assertEquals(testEntry2.getAmount(), tx.getOutput(1).getValue());
-        Assert.assertEquals(testEntry3.getAmount(), tx.getOutput(2).getValue());
-        Assert.assertEquals(testEntry1.getDestination(), tx.getOutput(0).getAddressFromP2PKHScript(networkParameters));
-        Assert.assertEquals(testEntry2.getDestination(), tx.getOutput(1).getAddressFromP2SH(networkParameters));
-        Assert.assertEquals(testEntry3.getDestination(), tx.getOutput(2).getAddressFromP2SH(networkParameters));
+        Assert.assertEquals(3, selectedUTXOs.size());
 
-        Assert.assertEquals(2, tx.getInputs().size());
-        Assert.assertEquals(utxo2.getHash(), tx.getInput(0).getOutpoint().getHash());
-        Assert.assertEquals(utxo2.getIndex(), tx.getInput(0).getOutpoint().getIndex());
-        Assert.assertEquals(utxo3.getHash(), tx.getInput(1).getOutpoint().getHash());
-        Assert.assertEquals(utxo3.getIndex(), tx.getInput(1).getOutpoint().getIndex());
+        Assert.assertEquals(4, tx.getOutputs().size());
 
-        Assert.assertEquals(2, selectedUTXOs.size());
-        Assert.assertEquals(utxo2.getHash(), selectedUTXOs.get(0).getHash());
-        Assert.assertEquals(utxo2.getIndex(), selectedUTXOs.get(0).getIndex());
-        Assert.assertEquals(utxo3.getHash(), selectedUTXOs.get(1).getHash());
-        Assert.assertEquals(utxo3.getIndex(), selectedUTXOs.get(1).getIndex());
+        Address firstOutputAddress = testEntry1.getDestination();
+        Address secondOutputAddress = testEntry2.getDestination();
+        Address thirdOutputAddress = testEntry3.getDestination();
+        Assert.assertEquals(firstOutputAddress, tx.getOutput(0).getAddressFromP2PKHScript(networkParameters));
+        Assert.assertEquals(secondOutputAddress, tx.getOutput(1).getAddressFromP2SH(networkParameters));
+        Assert.assertEquals(thirdOutputAddress, tx.getOutput(2).getAddressFromP2SH(networkParameters));
+
+        Sha256Hash firstUtxoHash = utxos.get(0).getHash();
+        Sha256Hash secondUtxoHash = utxos.get(1).getHash();
+        Sha256Hash thirdUtxoHash = utxos.get(2).getHash();
+
+        Assert.assertEquals(3, tx.getInputs().size());
+        Assert.assertEquals(firstUtxoHash, tx.getInput(1).getOutpoint().getHash());
+        Assert.assertEquals(secondUtxoHash, tx.getInput(2).getOutpoint().getHash());
+        Assert.assertEquals(thirdUtxoHash, tx.getInput(0).getOutpoint().getHash());
     }
 
     @Test
@@ -532,8 +522,6 @@ public class ReleaseTransactionBuilderTest {
         Optional<ReleaseTransactionBuilder.BuildResult> result = rtb.buildBatchedPegouts(pegoutRequests);
 
         Assert.assertFalse(result.isPresent());
-        verify(wallet, never()).getWatchedAddresses();
-        verify(wallet, never()).getUTXOProvider();
     }
 
     @Test
@@ -569,8 +557,6 @@ public class ReleaseTransactionBuilderTest {
         Optional<ReleaseTransactionBuilder.BuildResult> result = rtb.buildBatchedPegouts(pegoutRequests);
 
         Assert.assertFalse(result.isPresent());
-        verify(wallet, never()).getWatchedAddresses();
-        verify(wallet, never()).getUTXOProvider();
     }
 
     @Test
@@ -578,7 +564,7 @@ public class ReleaseTransactionBuilderTest {
 
         List<ReleaseRequestQueue.Entry> pegoutRequests = createTestEntries(600);
 
-        List<UTXO> utxos = createTestUtxos(600);
+        List<UTXO> utxos = PegTestUtils.createTestUtxos(600, federation.address);
 
         Wallet thisWallet = BridgeUtils.getFederationSpendWallet(
             Context.getOrCreate(networkParameters),
@@ -599,8 +585,6 @@ public class ReleaseTransactionBuilderTest {
         Optional<ReleaseTransactionBuilder.BuildResult> result = rtb.buildBatchedPegouts(pegoutRequests);
 
         Assert.assertFalse(result.isPresent());
-        verify(wallet, never()).getWatchedAddresses();
-        verify(wallet, never()).getUTXOProvider();
     }
 
     @Test
@@ -766,13 +750,6 @@ public class ReleaseTransactionBuilderTest {
         return BtcECKey.fromPrivate(BigInteger.valueOf(pk)).toAddress(NetworkParameters.fromID(NetworkParameters.ID_REGTEST));
     }
 
-    private Address mockAddress(NetworkParameters networkParameters, int keysCount) {
-        List<BtcECKey> keyList = PegTestUtils.createBtcECKeys(keysCount);
-        Script redeemScript = ScriptBuilder.createRedeemScript((keyList.size() / 2) + 1, keyList);
-        Script outputScript = ScriptBuilder.createP2SHOutputScript(redeemScript);
-        return Address.fromP2SHScript(networkParameters, outputScript);
-    }
-
     private UTXO mockUTXO(String generator, long index, Coin value) {
         return new UTXO(
             mockUTXOHash(generator),
@@ -802,14 +779,5 @@ public class ReleaseTransactionBuilderTest {
             pegoutRequests.add(createTestEntry(123, Coin.COIN));
         }
         return pegoutRequests;
-    }
-
-    private List<UTXO> createTestUtxos(int size) {
-        List<UTXO> utxoList = new ArrayList<>();
-        SecureRandom random = new SecureRandom();
-        for (int i = 0; i < size; i++) {
-            utxoList.add(new UTXO(mockUTXOHash(String.valueOf(random.nextInt(size))), 0, Coin.COIN, 0, false, federation.getP2SHScript()));
-        }
-        return utxoList;
     }
 }
