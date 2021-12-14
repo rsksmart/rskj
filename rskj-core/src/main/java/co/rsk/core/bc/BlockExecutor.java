@@ -279,7 +279,7 @@ public class BlockExecutor {
 
         // skip this when there's no need to split
         if (anyRelevantTransaction(block)) {
-            int threadCount = 4;
+            int threadCount = 2;
             double sequentialPart = 0.0D;
             if(sequentialPart > 0){
                 threadCount += 1;
