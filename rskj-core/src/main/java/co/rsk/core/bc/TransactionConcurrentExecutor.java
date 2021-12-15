@@ -3,6 +3,8 @@ package co.rsk.core.bc;
 import co.rsk.core.Coin;
 import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.metrics.profilers.Metric;
+import co.rsk.metrics.profilers.Profiler;
+import co.rsk.metrics.profilers.ProfilerFactory;
 import org.ethereum.core.*;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.trace.ProgramTraceProcessor;
@@ -15,8 +17,10 @@ import java.util.concurrent.atomic.LongAccumulator;
 
 public class TransactionConcurrentExecutor implements Callable<List<TransactionExecutionResult>> {
     private static final Logger logger = LoggerFactory.getLogger("transactionconcurrentexecutor");
+    private static final Profiler profiler = ProfilerFactory.getInstance();
 
     private final Repository track;
+    private final int thread;
     private Block block;
     private LongAccumulator totalGasUsed;
     private boolean vmTrace;
@@ -40,7 +44,8 @@ public class TransactionConcurrentExecutor implements Callable<List<TransactionE
                                          int vmTraceOptions,
                                          boolean acceptInvalidTransactions,
                                          boolean discardInvalidTxs,
-                                         ProgramTraceProcessor programTraceProcessor) {
+                                         ProgramTraceProcessor programTraceProcessor,
+                                         int thread) {
         this.txs = txs;
         this.track = track;
         this.block = block;
@@ -52,12 +57,15 @@ public class TransactionConcurrentExecutor implements Callable<List<TransactionE
         this.discardInvalidTxs = discardInvalidTxs;
         this.programTraceProcessor = programTraceProcessor;
         this.totalPaidFees = Coin.ZERO;
+        this.thread = thread;
         this.transactionExecutorFactory = transactionExecutorFactory;
         receipts = new ArrayList<>();
     }
 
     @Override
     public List<TransactionExecutionResult> call() throws TransactionException {
+        Metric parallelMetric = profiler.start(thread == 1 ? Profiler.PROFILING_TYPE.BLOCK_EXECUTE_PARALLEL_T1: Profiler.PROFILING_TYPE.BLOCK_EXECUTE_PARALLEL_T2);
+
         List<TransactionExecutionResult> results = new ArrayList<>();
         for (Map.Entry<Integer, Transaction> txMap :
                 txs.entrySet()) {
@@ -130,6 +138,7 @@ public class TransactionConcurrentExecutor implements Callable<List<TransactionE
                     txExecutor.getResult()));
 
         }
+        profiler.stop(parallelMetric);
 
         return results;
     }

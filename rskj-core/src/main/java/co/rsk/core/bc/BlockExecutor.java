@@ -288,7 +288,7 @@ public class BlockExecutor {
             Map<Integer, Map<Integer, Transaction>> transactionsMap = getSplitTransactionsByThread(block.getTransactionsList(), threadCount, threadSliceFromTotal);
 
             Metric metric = profiler.start(Profiler.PROFILING_TYPE.BLOCK_EXECUTE);
-            Metric parallelMetric = profiler.start(Profiler.PROFILING_TYPE.BLOCK_EXECUTE_PARALLEL);
+//            Metric parallelMetric = profiler.start(Profiler.PROFILING_TYPE.BLOCK_EXECUTE_PARALLEL);
             ExecutorService msgQueue = Executors.newFixedThreadPool(threadCount);
             CompletionService<List<TransactionExecutionResult>> completionService = new ExecutorCompletionService<>(msgQueue);
             for (Map.Entry<Integer, Map<Integer, Transaction>> threadSet : transactionsMap.entrySet()) {
@@ -303,7 +303,8 @@ public class BlockExecutor {
                         vmTraceOptions,
                         acceptInvalidTransactions,
                         discardInvalidTxs,
-                        programTraceProcessor);
+                        programTraceProcessor,
+                        threadSet.getKey());
                 completionService.submit(concurrentExecutor);
             }
 
@@ -329,14 +330,14 @@ public class BlockExecutor {
                     logger.warn("Completed thread {} of {}", received, transactionsMap.entrySet().size());
                 }
                 catch (InterruptedException | ExecutionException e) {
-                    profiler.stop(parallelMetric);
+//                    profiler.stop(parallelMetric);
                     e.printStackTrace();
                 } catch (TransactionException e) {
-                    profiler.stop(parallelMetric);
+//                    profiler.stop(parallelMetric);
                     return BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT;
                 }
             }
-            profiler.stop(parallelMetric);
+//            profiler.stop(parallelMetric);
 
             if(sequentialPart > 0){
                 Map<Integer, Transaction> pendingTxs = transactionsMap.get(transactionsMap.size()); // get the last sub set of transactions
