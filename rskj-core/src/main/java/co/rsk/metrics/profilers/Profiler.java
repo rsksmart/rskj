@@ -37,7 +37,8 @@ public interface Profiler {
         TRIE_TO_MESSAGE, //Currently inactive, to measure, add the hooks in Trie::toMessage() and Trie::toMessageOrchid()
         TRIE_CONVERTER_GET_ACCOUNT_ROOT,
         BLOCKCHAIN_FLUSH,
-        BLOCK_EXECUTE_PARALLEL
+        BLOCK_EXECUTE_PARALLEL_T1,
+        BLOCK_EXECUTE_PARALLEL_T2,
     }
 
 
