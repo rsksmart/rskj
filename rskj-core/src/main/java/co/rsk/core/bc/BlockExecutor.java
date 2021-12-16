@@ -39,6 +39,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
+import java.math.BigInteger;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.LongAccumulator;
@@ -63,7 +64,7 @@ public class BlockExecutor {
     private final TransactionExecutorFactory transactionExecutorFactory;
     private final ActivationConfig activationConfig;
 
-    private final Map<Keccak256, ProgramResult> transactionResults = new HashMap<>();
+    private final Map<Keccak256, ProgramResult> transactionResults = new ConcurrentHashMap<>();
     private boolean registerProgramResults;
 
     public BlockExecutor(
@@ -272,10 +273,10 @@ public class BlockExecutor {
 
         maintainPrecompiledContractStorageRoots(track, activationConfig.forBlock(block.getNumber()));
         LongAccumulator totalGasUsed = new LongAccumulator(Long::max, 0L);
-        Coin totalPaidFees = Coin.ZERO;
-        List<TransactionReceipt> receipts = new ArrayList<>();
-        List<Transaction> executedTransactions = new ArrayList<>();
-        Set<DataWord> deletedAccounts = new HashSet<>();
+        LongAccumulator totalPaidFees = new LongAccumulator(Long::max, 0L);
+        Queue<TransactionReceipt> receipts = new ConcurrentLinkedQueue<>();
+        Queue<Transaction> executedTransactions = new ConcurrentLinkedQueue<>();
+        Set<DataWord> deletedAccounts = Collections.synchronizedSet(new HashSet<>());
 
         // skip this when there's no need to split
         if (anyRelevantTransaction(block)) {
@@ -290,7 +291,7 @@ public class BlockExecutor {
             Metric metric = profiler.start(Profiler.PROFILING_TYPE.BLOCK_EXECUTE);
 //            Metric parallelMetric = profiler.start(Profiler.PROFILING_TYPE.BLOCK_EXECUTE_PARALLEL);
             ExecutorService msgQueue = Executors.newFixedThreadPool(threadCount);
-            CompletionService<List<TransactionExecutionResult>> completionService = new ExecutorCompletionService<>(msgQueue);
+            CompletionService completionService = new ExecutorCompletionService<>(msgQueue);
             for (Map.Entry<Integer, Map<Integer, Transaction>> threadSet : transactionsMap.entrySet()) {
                 logger.warn("Parallel run of [{}] transactions for block: [{}] thread: [{}] of [{}]", threadSet.getValue().size(), block.getNumber(), threadSet.getKey(), transactionsMap.size());
                 TransactionConcurrentExecutor concurrentExecutor = new TransactionConcurrentExecutor(
@@ -304,40 +305,30 @@ public class BlockExecutor {
                         acceptInvalidTransactions,
                         discardInvalidTxs,
                         programTraceProcessor,
-                        threadSet.getKey());
+                        threadSet.getKey(),
+                        receipts,
+                        executedTransactions,
+                        deletedAccounts,
+                        totalPaidFees,
+                        this.registerProgramResults,
+                        this.transactionResults);
                 completionService.submit(concurrentExecutor);
             }
 
-            msgQueue.shutdown();
-            int received = 0;
             logger.warn("totalThreads: {}", transactionsMap.entrySet().size());
-            while(received < transactionsMap.entrySet().size()) {
-                try {
-                    Future<List<TransactionExecutionResult>> resultFuture = completionService.take();
-                    List<TransactionExecutionResult> results = resultFuture.get();
-                    received ++;
-                    logger.warn("Processing thread {} of {}", received, transactionsMap.entrySet().size());
-                    for (TransactionExecutionResult result : results) {
-                        deletedAccounts.addAll(result.getDeletedAccounts());
-                        executedTransactions.add(result.getExecutedTransaction());
-                        receipts.add(result.getReceipt());
-                        if (this.registerProgramResults) {
-                            transactionResults.put(result.getTxHash(), result.getResult());
-                        }
-                        totalPaidFees.add(result.getTotalPaidFees());
-                        totalGasUsed.accumulate(result.getTotalGasUsed());
-                    }
-                    logger.warn("Completed thread {} of {}", received, transactionsMap.entrySet().size());
-                }
-                catch (InterruptedException | ExecutionException e) {
-//                    profiler.stop(parallelMetric);
-                    e.printStackTrace();
-                } catch (TransactionException e) {
-//                    profiler.stop(parallelMetric);
-                    return BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT;
-                }
+
+            msgQueue.shutdown();
+            try {
+                msgQueue.awaitTermination(500,TimeUnit.MILLISECONDS);
             }
-//            profiler.stop(parallelMetric);
+            catch (TransactionException e) {
+                e.printStackTrace();
+                return BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT;
+            }
+            catch (InterruptedException e) {
+                e.printStackTrace();
+                return BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT;
+            }
 
             if(sequentialPart > 0){
                 Map<Integer, Transaction> pendingTxs = transactionsMap.get(transactionsMap.size()); // get the last sub set of transactions
@@ -371,19 +362,20 @@ public class BlockExecutor {
         }
 
         logger.trace("Building execution results.");
+        Coin paidFees = new Coin(BigInteger.valueOf(totalPaidFees.longValue()));
         BlockResult result = new BlockResult(
                 block,
                 getSortedExecutedTransactions(executedTransactions, block.getTransactionsList()),
                 getSortedTransactionReceipts(receipts, block.getTransactionsList()),
                 totalGasUsed.get(),
-                totalPaidFees,
+                paidFees,
                 vmTrace ? null : track.getTrie()
         );
         logger.trace("End executeInternal.");
         return result;
     }
 
-    private List<TransactionReceipt> getSortedTransactionReceipts(List<TransactionReceipt> transactionReceipts, List<Transaction> transactionsList){
+    private List<TransactionReceipt> getSortedTransactionReceipts(Queue<TransactionReceipt> transactionReceipts, List<Transaction> transactionsList){
         List<TransactionReceipt> sortedReceipts = new ArrayList<>();
         for (Transaction tx: transactionsList) {
             List<TransactionReceipt> receipt = transactionReceipts.stream().filter(x -> x.getTransaction().equals(tx)).collect(Collectors.toList());
@@ -392,7 +384,7 @@ public class BlockExecutor {
         return sortedReceipts;
     }
 
-    private List<Transaction> getSortedExecutedTransactions(List<Transaction> executedTransactions, List<Transaction> transactionsList) {
+    private List<Transaction> getSortedExecutedTransactions(Queue<Transaction> executedTransactions, List<Transaction> transactionsList) {
         List<Transaction> result = new ArrayList<>();
         for (Transaction tx :
                 transactionsList) {
@@ -407,7 +399,7 @@ public class BlockExecutor {
         return block.getTransactionsList().stream().anyMatch(n -> !(n instanceof RemascTransaction));
     }
 
-    private void executeRemascTransaction(ProgramTraceProcessor programTraceProcessor, int vmTraceOptions, Block block, boolean discardInvalidTxs, boolean acceptInvalidTransactions, boolean vmTrace, Repository track, LongAccumulator totalGasUsed, Coin totalPaidFees, List<TransactionReceipt> receipts, List<Transaction> executedTransactions, Set<DataWord> deletedAccounts) {
+    private void executeRemascTransaction(ProgramTraceProcessor programTraceProcessor, int vmTraceOptions, Block block, boolean discardInvalidTxs, boolean acceptInvalidTransactions, boolean vmTrace, Repository track, LongAccumulator totalGasUsed, LongAccumulator totalPaidFees, Queue<TransactionReceipt> receipts, Queue<Transaction> executedTransactions, Set<DataWord> deletedAccounts) {
         Metric metric = profiler.start(Profiler.PROFILING_TYPE.BLOCK_EXECUTE);
 
         Map<Integer, Transaction> remasc = new LinkedHashMap<>();
@@ -445,11 +437,11 @@ public class BlockExecutor {
             Set<DataWord> deletedAccounts,
             boolean acceptInvalidTransactions,
             boolean discardInvalidTxs,
-            List<Transaction> executedTransactions,
+            Queue<Transaction> executedTransactions,
             Metric metric,
             ProgramTraceProcessor programTraceProcessor,
-            Coin totalPaidFees,
-            List<TransactionReceipt> receipts
+            LongAccumulator totalPaidFees,
+            Queue<TransactionReceipt> receipts
             ) {
         logger.warn("sequentially run transactions for block: [{}] count: [{}]", block.getNumber(), transactions.size());
         for (Map.Entry<Integer, Transaction> txEntry : transactions.entrySet()) {
@@ -497,7 +489,7 @@ public class BlockExecutor {
             totalGasUsed.accumulate(gasUsed);
             Coin paidFees = txExecutor.getPaidFees();
             if (paidFees != null) {
-                totalPaidFees = totalPaidFees.add(paidFees);
+                totalPaidFees.accumulate(paidFees.asBigInteger().longValue());
             }
 
             deletedAccounts.addAll(txExecutor.getResult().getDeleteAccounts());

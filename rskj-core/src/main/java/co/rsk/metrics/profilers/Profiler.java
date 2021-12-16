@@ -39,6 +39,8 @@ public interface Profiler {
         BLOCKCHAIN_FLUSH,
         BLOCK_EXECUTE_PARALLEL_T1,
         BLOCK_EXECUTE_PARALLEL_T2,
+        BLOCK_PROCESS_T1,
+        BLOCK_PROCESS_T2,
     }
 
 

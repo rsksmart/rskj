@@ -1,26 +1,31 @@
 package co.rsk.core.bc;
 
-import co.rsk.core.Coin;
 import co.rsk.core.TransactionExecutorFactory;
+import co.rsk.crypto.Keccak256;
 import co.rsk.metrics.profilers.Metric;
 import co.rsk.metrics.profilers.Profiler;
 import co.rsk.metrics.profilers.ProfilerFactory;
 import org.ethereum.core.*;
 import org.ethereum.vm.DataWord;
+import org.ethereum.vm.program.ProgramResult;
 import org.ethereum.vm.trace.ProgramTraceProcessor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.math.BigInteger;
 import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.LongAccumulator;
 
-public class TransactionConcurrentExecutor implements Callable<List<TransactionExecutionResult>> {
+public class TransactionConcurrentExecutor implements Callable<Void> {
     private static final Logger logger = LoggerFactory.getLogger("transactionconcurrentexecutor");
     private static final Profiler profiler = ProfilerFactory.getInstance();
 
     private final Repository track;
     private final int thread;
+    private final Queue<Transaction> executedTransactions;
+    private final Map<Keccak256, ProgramResult> transactionResults;
+    private final boolean registerProgramResults;
     private Block block;
     private LongAccumulator totalGasUsed;
     private boolean vmTrace;
@@ -29,8 +34,8 @@ public class TransactionConcurrentExecutor implements Callable<List<TransactionE
     private boolean acceptInvalidTransactions;
     private boolean discardInvalidTxs;
     private ProgramTraceProcessor programTraceProcessor;
-    private Coin totalPaidFees;
-    private List<TransactionReceipt> receipts;
+    private LongAccumulator totalPaidFees;
+    private Queue<TransactionReceipt> receipts;
     private final Map<Integer, Transaction> txs;
     private final TransactionExecutorFactory transactionExecutorFactory;
 
@@ -45,28 +50,36 @@ public class TransactionConcurrentExecutor implements Callable<List<TransactionE
                                          boolean acceptInvalidTransactions,
                                          boolean discardInvalidTxs,
                                          ProgramTraceProcessor programTraceProcessor,
-                                         int thread) {
+                                         int thread,
+                                         Queue<TransactionReceipt> receipts,
+                                         Queue<Transaction> executedTransactions,
+                                         Set<DataWord> deletedAccounts,
+                                         LongAccumulator totalPaidFees,
+                                         boolean registerProgramResults,
+                                         Map<Keccak256, ProgramResult> transactionResults) {
         this.txs = txs;
         this.track = track;
         this.block = block;
         this.totalGasUsed = totalGasUsed;
         this.vmTrace = vmTrace;
         this.vmTraceOptions = vmTraceOptions;
-        this.deletedAccounts = new HashSet<>();
         this.acceptInvalidTransactions = acceptInvalidTransactions;
         this.discardInvalidTxs = discardInvalidTxs;
         this.programTraceProcessor = programTraceProcessor;
-        this.totalPaidFees = Coin.ZERO;
         this.thread = thread;
         this.transactionExecutorFactory = transactionExecutorFactory;
-        receipts = new ArrayList<>();
+        this.receipts = receipts;
+        this.executedTransactions = executedTransactions;
+        this.deletedAccounts = deletedAccounts;
+        this.totalPaidFees = totalPaidFees;
+        this.registerProgramResults = registerProgramResults;
+        this.transactionResults = transactionResults;
     }
 
     @Override
-    public List<TransactionExecutionResult> call() throws TransactionException {
+    public Void call() throws TransactionException {
         Metric parallelMetric = profiler.start(thread == 1 ? Profiler.PROFILING_TYPE.BLOCK_EXECUTE_PARALLEL_T1: Profiler.PROFILING_TYPE.BLOCK_EXECUTE_PARALLEL_T2);
 
-        List<TransactionExecutionResult> results = new ArrayList<>();
         for (Map.Entry<Integer, Transaction> txMap :
                 txs.entrySet()) {
             Transaction tx = txMap.getValue();
@@ -86,12 +99,19 @@ public class TransactionConcurrentExecutor implements Callable<List<TransactionE
             if (!acceptInvalidTransactions && !transactionExecuted) {
                 if (discardInvalidTxs) {
                     logger.warn("block: [{}] discarded tx: [{}]", block.getNumber(), tx.getHash());
-                    return null;
+                    continue;
                 } else {
                     logger.warn("block: [{}] execution interrupted because of invalid tx: [{}]",
                             block.getNumber(), tx.getHash());
-                    throw new TransactionException("Invalid transaction.");
+                    profiler.stop(parallelMetric);
+                    throw new TransactionException("Block execution interrupted.");
                 }
+            }
+
+            executedTransactions.add(tx);
+
+            if (registerProgramResults) {
+                this.transactionResults.put(tx.getHash(), txExecutor.getResult());
             }
 
             if (vmTrace) {
@@ -100,15 +120,13 @@ public class TransactionConcurrentExecutor implements Callable<List<TransactionE
 
             logger.trace("tx executed");
 
-            // No need to commit the changes here. track.commit();
-
             logger.trace("track commit");
 
             long gasUsed = txExecutor.getGasUsed();
             totalGasUsed.accumulate(gasUsed);
-            Coin paidFees = txExecutor.getPaidFees();
+            BigInteger paidFees = txExecutor.getPaidFees().asBigInteger();
             if (paidFees != null) {
-                totalPaidFees = totalPaidFees.add(paidFees);
+                totalPaidFees.accumulate(paidFees.longValue());
             }
 
             deletedAccounts.addAll(txExecutor.getResult().getDeleteAccounts());
@@ -124,22 +142,13 @@ public class TransactionConcurrentExecutor implements Callable<List<TransactionE
 
             logger.trace("block: [{}] executed tx: [{}]", block.getNumber(), tx.getHash());
 
-            logger.trace("tx[{}].receipt", txIndex);
+            logger.trace("tx[{}].receipt", txIndex + 1);
 
             receipts.add(receipt);
 
             logger.trace("tx done");
-            results.add(new TransactionExecutionResult(
-                    tx,
-                    deletedAccounts,
-                    totalGasUsed.get(),
-                    totalPaidFees,
-                    receipt,
-                    txExecutor.getResult()));
-
         }
         profiler.stop(parallelMetric);
-
-        return results;
+        return null;
     }
 }
