@@ -94,7 +94,7 @@ public class PongPeerMessage extends PeerDiscoveryMessage {
     }
 
     @Override
-    public final void parse(byte[] data) {
+    protected final void parse(byte[] data) {
         RLPList dataList = (RLPList) RLP.decode2OneItem(data, 0);
         if (dataList.size() < 3) {
             throw new PeerDiscoveryException(MORE_DATA);
@@ -110,8 +110,7 @@ public class PongPeerMessage extends PeerDiscoveryMessage {
         this.port = ByteUtil.byteArrayToInt(fromList.get(1).getRLPData());
 
         RLPItem chk = (RLPItem) dataList.get(2);
-
-        this.messageId = new String(chk.getRLPData(), Charset.forName("UTF-8"));
+        this.messageId = extractMessageId(chk);
 
         //Message from nodes that do not have this
         this.setNetworkIdWithRLP(dataList.size()>3?dataList.get(3):null);

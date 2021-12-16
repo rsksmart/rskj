@@ -26,7 +26,6 @@ import org.ethereum.util.RLP;
 import org.ethereum.util.RLPItem;
 import org.ethereum.util.RLPList;
 
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
@@ -53,7 +52,7 @@ public class NeighborsPeerMessage extends PeerDiscoveryMessage {
     }
 
     @Override
-    public final void parse(byte[] data) {
+    protected final void parse(byte[] data) {
         RLPList list = (RLPList) RLP.decode2OneItem(data, 0);
 
         if (list.size() < 2) {
@@ -69,8 +68,7 @@ public class NeighborsPeerMessage extends PeerDiscoveryMessage {
         }
 
         RLPItem chk = (RLPItem) list.get(1);
-
-        this.messageId = new String(chk.getRLPData(), Charset.forName("UTF-8"));
+        this.messageId = extractMessageId(chk);
 
         this.setNetworkIdWithRLP(list.size()>2?list.get(2):null);
     }
