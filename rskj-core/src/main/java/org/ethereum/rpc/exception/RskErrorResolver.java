@@ -41,7 +41,7 @@ public class RskErrorResolver implements ErrorResolver {
         } else if (t instanceof JsonMappingException && t.getMessage().contains("Can not construct instance")) {
             error = new JsonError(
                     JsonRpcError.INVALID_PARAMS,
-                    "invalid argument 0: json: cannot unmarshal string into Go value of type filters.input",
+                    "invalid argument 0: json: cannot unmarshal string into value of type filters.input",
                     null);
         } else if (t instanceof UnsupportedOperationException || (t.getMessage() != null && t.getMessage().toLowerCase().contains("method not supported"))) {
             error = new JsonError(
