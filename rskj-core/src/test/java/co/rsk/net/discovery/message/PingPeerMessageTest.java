@@ -57,6 +57,6 @@ public class PingPeerMessageTest {
 
         byte[] data = RLP.encodeList(rlpFromList, rlpToList, rlpCheck, rlpNetworkId);
 
-        return new PingPeerMessage(wirePingPeerMessage, mdcPingPeerMessage, signaturePingPeerMessage, type, data);
+        return PingPeerMessage.buildFromReceived(wirePingPeerMessage, mdcPingPeerMessage, signaturePingPeerMessage, type, data);
     }
 }

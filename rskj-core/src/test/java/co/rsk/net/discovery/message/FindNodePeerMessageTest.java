@@ -54,6 +54,6 @@ public class FindNodePeerMessageTest {
 
         byte[] data = RLP.encodeList(rlpNodeId, rlpCheck, rlpNetworkId);
 
-        return new FindNodePeerMessage(wireFindNodePeerMessage, mdcFindNodePeerMessage, signatureFindNodePeerMessage, type, data);
+        return FindNodePeerMessage.buildFromReceived(wireFindNodePeerMessage, mdcFindNodePeerMessage, signatureFindNodePeerMessage, type, data);
     }
 }

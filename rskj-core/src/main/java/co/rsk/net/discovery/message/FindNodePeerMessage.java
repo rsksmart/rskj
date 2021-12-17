@@ -41,12 +41,16 @@ public class FindNodePeerMessage extends PeerDiscoveryMessage {
     private byte[] nodeId;
     private String messageId;
 
-    public FindNodePeerMessage(byte[] wire, byte[] mdc, byte[] signature, byte[] type, byte[] data) {
+    private FindNodePeerMessage(byte[] wire, byte[] mdc, byte[] signature, byte[] type, byte[] data) {
         super(wire, mdc, signature, type, data);
         this.parse(data);
     }
 
     private FindNodePeerMessage() {
+    }
+    
+    public static FindNodePeerMessage buildFromReceived(byte[] wire, byte[] mdc, byte[] signature, byte[] type, byte[] data) {
+        return new FindNodePeerMessage(wire, mdc, signature, type, data);
     }
 
     public static FindNodePeerMessage create(byte[] nodeId, String check, ECKey privKey, Integer networkId) {

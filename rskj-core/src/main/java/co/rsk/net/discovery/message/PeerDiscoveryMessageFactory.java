@@ -22,23 +22,24 @@ package co.rsk.net.discovery.message;
  * Created by mario on 13/02/17.
  */
 public class PeerDiscoveryMessageFactory {
-    private PeerDiscoveryMessageFactory() {}
+    private PeerDiscoveryMessageFactory() {
+    }
 
     public static PeerDiscoveryMessage createMessage(byte[] wire, byte[] mdc, byte[] signature, byte[] type, byte[] data) {
         DiscoveryMessageType msgType = DiscoveryMessageType.valueOfType(type[0]);
 
         if (msgType == DiscoveryMessageType.PING) {
-            return new PingPeerMessage(wire, mdc, signature, type, data);
+            return PingPeerMessage.buildFromReceived(wire, mdc, signature, type, data);
         }
 
         if (msgType == DiscoveryMessageType.PONG) {
-            return new PongPeerMessage(wire, mdc, signature, type, data);
+            return PongPeerMessage.buildFromReceived(wire, mdc, signature, type, data);
         }
 
         if (msgType == DiscoveryMessageType.FIND_NODE) {
-            return new FindNodePeerMessage(wire, mdc, signature, type, data);
+            return FindNodePeerMessage.buildFromReceived(wire, mdc, signature, type, data);
         }
 
-        return new NeighborsPeerMessage(wire, mdc, signature, type, data);
+        return NeighborsPeerMessage.buildFromReceived(wire, mdc, signature, type, data);
     }
 }

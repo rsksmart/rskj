@@ -57,6 +57,6 @@ public class PongPeerMessageTest {
 
         byte[] data = RLP.encodeList(rlpFromList, rlpToList, rlpCheck, rlpNetworkId);
 
-        return new PongPeerMessage(wirePongPeerMessage, mdcPongPeerMessage, signaturePongPeerMessage, type, data);
+        return PongPeerMessage.buildFromReceived(wirePongPeerMessage, mdcPongPeerMessage, signaturePongPeerMessage, type, data);
     }
 }

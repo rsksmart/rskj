@@ -49,6 +49,6 @@ public class NeighborsPeerMessageTest {
         byte[] rlpListNodes = RLP.encodeList();
         byte[] data = RLP.encodeList(rlpListNodes, rlpCheck, rlpNetworkId);
 
-        return new NeighborsPeerMessage(wireNeighborsPeerMessage, mdcNeighborsPeerMessage, signatureNeighborsPeerMessage, type, data);
+        return NeighborsPeerMessage.buildFromReceived(wireNeighborsPeerMessage, mdcNeighborsPeerMessage, signatureNeighborsPeerMessage, type, data);
     }
 }

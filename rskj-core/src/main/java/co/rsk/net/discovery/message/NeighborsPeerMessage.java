@@ -42,7 +42,7 @@ public class NeighborsPeerMessage extends PeerDiscoveryMessage {
     private List<Node> nodes;
     private String messageId;
 
-    public NeighborsPeerMessage(byte[] wire, byte[] mdc, byte[] signature, byte[] type, byte[] data) {
+    private NeighborsPeerMessage(byte[] wire, byte[] mdc, byte[] signature, byte[] type, byte[] data) {
         super(wire, mdc, signature, type, data);
         this.nodes = new ArrayList<>();
         this.parse(data);
@@ -51,26 +51,8 @@ public class NeighborsPeerMessage extends PeerDiscoveryMessage {
     private NeighborsPeerMessage() {
     }
 
-    @Override
-    protected final void parse(byte[] data) {
-        RLPList list = (RLPList) RLP.decode2OneItem(data, 0);
-
-        if (list.size() < 2) {
-            throw new PeerDiscoveryException(MORE_DATA);
-        }
-
-        RLPList nodesRLP = (RLPList) list.get(0);
-
-        for (int i = 0; i < nodesRLP.size(); ++i) {
-            RLPList nodeRLP = (RLPList) nodesRLP.get(i);
-            Node node = new Node(nodeRLP.getRLPData());
-            nodes.add(node);
-        }
-
-        RLPItem chk = (RLPItem) list.get(1);
-        this.messageId = extractMessageId(chk);
-
-        this.setNetworkIdWithRLP(list.size()>2?list.get(2):null);
+    public static NeighborsPeerMessage buildFromReceived(byte[] wire, byte[] mdc, byte[] signature, byte[] type, byte[] data) {
+        return new NeighborsPeerMessage(wire, mdc, signature, type, data);
     }
 
     public static NeighborsPeerMessage create(List<Node> nodes, String check, ECKey privKey, Integer networkId) {
@@ -101,6 +83,28 @@ public class NeighborsPeerMessage extends PeerDiscoveryMessage {
         neighborsMessage.messageId = check;
 
         return neighborsMessage;
+    }
+
+    @Override
+    protected final void parse(byte[] data) {
+        RLPList list = (RLPList) RLP.decode2OneItem(data, 0);
+
+        if (list.size() < 2) {
+            throw new PeerDiscoveryException(MORE_DATA);
+        }
+
+        RLPList nodesRLP = (RLPList) list.get(0);
+
+        for (int i = 0; i < nodesRLP.size(); ++i) {
+            RLPList nodeRLP = (RLPList) nodesRLP.get(i);
+            Node node = new Node(nodeRLP.getRLPData());
+            nodes.add(node);
+        }
+
+        RLPItem chk = (RLPItem) list.get(1);
+        this.messageId = extractMessageId(chk);
+
+        this.setNetworkIdWithRLP(list.size() > 2 ? list.get(2) : null);
     }
 
     public List<Node> getNodes() {
