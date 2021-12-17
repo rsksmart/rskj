@@ -205,6 +205,7 @@ public class GenesisLoaderImpl implements GenesisLoader {
     }
 
     private Trie loadGenesisTrie(Genesis genesis) {
+        // todo(techdebt) shouldn't instantiate Trie objects from this class
         Repository repository = new MutableRepository(trieStore, new Trie(trieStore));
         loadGenesisInitalState(repository, genesis);
 

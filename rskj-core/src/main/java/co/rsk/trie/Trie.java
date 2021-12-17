@@ -126,18 +126,22 @@ public class Trie {
         this(null);
     }
 
+    // root node
     public Trie(TrieStore store) {
         this(store, TrieKeySlice.empty(), null);
     }
 
+    // leaf node
     private Trie(TrieStore store, TrieKeySlice sharedPath, byte[] value) {
         this(store, sharedPath, value, NodeReference.empty(), NodeReference.empty(), getDataLength(value), null, new VarInt(0));
     }
 
+    // todo(techdebt) this constructor it's only called once, call the right constructor and avoid creating a new one for just one use
     public Trie(TrieStore store, TrieKeySlice sharedPath, byte[] value, NodeReference left, NodeReference right, Uint24 valueLength, Keccak256 valueHash) {
         this(store, sharedPath, value, left, right, valueLength, valueHash, null);
     }
 
+    // todo(techdebt) nonsense constructor, checkout full constructor
     private Trie(TrieStore store, TrieKeySlice sharedPath, byte[] value, NodeReference left, NodeReference right, Uint24 valueLength, Keccak256 valueHash, VarInt childrenSize) {
         this(store, sharedPath, value, left, right, valueLength, valueHash, childrenSize, exitStatus -> System.exit(exitStatus));
     }
@@ -152,6 +156,7 @@ public class Trie {
         this.valueLength = valueLength;
         this.valueHash = valueHash;
         this.childrenSize = childrenSize;
+        // todo(techdebt) this is always 'exitStatus -> System.exit(exitStatus)'
         this.nodeStopper = Objects.requireNonNull(nodeStopper);
         checkValueLength();
     }

@@ -87,6 +87,7 @@ public class RepositoryLocator {
         Keccak256 stateRoot = stateRootHandler.translate(header);
 
         if (EMPTY_HASH.equals(stateRoot)) {
+            // todo(techdebt), shouldn't instantiate Trie objects from this class
             return Optional.of(new MutableTrieImpl(trieStore, new Trie(trieStore)));
         }
 
