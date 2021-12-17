@@ -136,18 +136,8 @@ public class Trie {
         this(store, sharedPath, value, NodeReference.empty(), NodeReference.empty(), getDataLength(value), null, new VarInt(0));
     }
 
-    // todo(techdebt) this constructor it's only called once, call the right constructor and avoid creating a new one for just one use
-    public Trie(TrieStore store, TrieKeySlice sharedPath, byte[] value, NodeReference left, NodeReference right, Uint24 valueLength, Keccak256 valueHash) {
-        this(store, sharedPath, value, left, right, valueLength, valueHash, null);
-    }
-
-    // todo(techdebt) nonsense constructor, checkout full constructor
-    private Trie(TrieStore store, TrieKeySlice sharedPath, byte[] value, NodeReference left, NodeReference right, Uint24 valueLength, Keccak256 valueHash, VarInt childrenSize) {
-        this(store, sharedPath, value, left, right, valueLength, valueHash, childrenSize, exitStatus -> System.exit(exitStatus));
-    }
-
     // full constructor
-    private Trie(TrieStore store, TrieKeySlice sharedPath, byte[] value, NodeReference left, NodeReference right, Uint24 valueLength, Keccak256 valueHash, VarInt childrenSize, @Nonnull NodeStopper nodeStopper) {
+    private Trie(TrieStore store, TrieKeySlice sharedPath, byte[] value, NodeReference left, NodeReference right, Uint24 valueLength, Keccak256 valueHash, VarInt childrenSize) {
         this.value = value;
         this.left = left;
         this.right = right;
@@ -157,7 +147,7 @@ public class Trie {
         this.valueHash = valueHash;
         this.childrenSize = childrenSize;
         // todo(techdebt) this is always 'exitStatus -> System.exit(exitStatus)'
-        this.nodeStopper = Objects.requireNonNull(nodeStopper);
+        this.nodeStopper = exitStatus -> System.exit(exitStatus);
         checkValueLength();
     }
 
@@ -257,9 +247,7 @@ public class Trie {
         }
 
         // it doesn't need to clone value since it's retrieved from store or created from message
-        Trie trie = new Trie(store, sharedPath, value, left, right, lvalue, valueHash);
-
-        return trie;
+        return new Trie(store, sharedPath, value, left, right, lvalue, valueHash, null);
     }
 
     private static Trie fromMessageRskip107(ByteBuffer message, TrieStore store) {
