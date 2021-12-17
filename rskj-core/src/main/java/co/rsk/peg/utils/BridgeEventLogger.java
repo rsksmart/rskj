@@ -23,9 +23,12 @@ import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.BtcTransaction;
 import co.rsk.bitcoinj.core.Coin;
 import co.rsk.core.RskAddress;
+import co.rsk.crypto.Keccak256;
 import co.rsk.peg.Federation;
 import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
+
+import java.util.List;
 
 /**
  * Responsible for logging events triggered by BridgeContract.
@@ -52,10 +55,9 @@ public interface BridgeEventLogger {
 
     void logUnrefundablePegin(BtcTransaction btcTx, UnrefundablePeginReason reason);
 
-
     void logReleaseBtcRequestReceived(String sender, byte[] btcDestinationAddress, Coin amount);
 
     void logReleaseBtcRequestRejected(String sender, Coin amount, RejectedPegoutReason reason);
 
-    void logBatchPegoutCreated(BtcTransaction btcTx, byte[] rskTxHash);
+    void logBatchPegoutCreated(BtcTransaction btcTx, List<Keccak256> rskTxHashes);
 }

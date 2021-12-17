@@ -24,6 +24,7 @@ import co.rsk.bitcoinj.core.BtcTransaction;
 import co.rsk.bitcoinj.core.Coin;
 import co.rsk.config.BridgeConstants;
 import co.rsk.core.RskAddress;
+import co.rsk.crypto.Keccak256;
 import co.rsk.peg.Bridge;
 import co.rsk.peg.BridgeEvents;
 import co.rsk.peg.Federation;
@@ -259,11 +260,13 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
     }
 
     @Override
-    public void logBatchPegoutCreated(BtcTransaction btcTx, byte[] rskTxHash) {
+    public void logBatchPegoutCreated(BtcTransaction btcTx, List<Keccak256> rskTxHashes) {
         CallTransaction.Function event = BridgeEvents.BATCH_PEGOUT_CREATED.getEvent();
         byte[][] encodedTopicsInBytes = event.encodeEventTopics(btcTx.getHash().getBytes());
         List<DataWord> encodedTopics = LogInfo.byteArrayToList(encodedTopicsInBytes);
-        byte[] encodedData = event.encodeEventData(rskTxHash);
+
+        byte[] serializedRskTxHashes = serializeRskTxHashes(rskTxHashes);
+        byte[] encodedData = event.encodeEventData(serializedRskTxHashes);
 
         this.logs.add(new LogInfo(BRIDGE_CONTRACT_ADDRESS, encodedTopics, encodedData));
     }
@@ -290,5 +293,21 @@ public class BridgeEventLoggerImpl implements BridgeEventLogger {
 
     private byte[] flatKeysAsByteArray(List<BtcECKey> keys) {
         return flatKeys(keys, BtcECKey::getPubKey);
+    }
+
+    private byte[] serializeRskTxHashes(List<Keccak256> rskTxHashes) {
+        List<byte[]> rskTxHashesList = rskTxHashes.stream()
+            .map(Keccak256::getBytes)
+            .collect(Collectors.toList());
+        int rskTxHashesLength = rskTxHashesList.stream().mapToInt(key -> key.length).sum();
+
+        byte[] serializedRskTxHashes = new byte[rskTxHashesLength];
+        int copyPos = 0;
+        for (byte[] rskTxHash : rskTxHashesList) {
+            System.arraycopy(rskTxHash, 0, serializedRskTxHashes, copyPos, rskTxHash.length);
+            copyPos += rskTxHash.length;
+        }
+
+        return serializedRskTxHashes;
     }
 }
