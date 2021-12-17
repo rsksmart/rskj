@@ -281,45 +281,45 @@ public class BlockExecutor {
         // skip this when there's no need to split
         if (anyRelevantTransaction(block)) {
             int threadCount = 2;
-            double sequentialPart = 0.0D;
+            double sequentialPart = 0.33D;
+            int totalParts = threadCount;
             if(sequentialPart > 0){
-                threadCount += 1;
+                totalParts += 1;
             }
             double threadSliceFromTotal = (1.00 - sequentialPart) / threadCount;
-            Map<Integer, Map<Integer, Transaction>> transactionsMap = getSplitTransactionsByThread(block.getTransactionsList(), threadCount, threadSliceFromTotal);
+            Map<Integer, Map<Integer, Transaction>> transactionsMap = getSplitTransactionsByThread(block.getTransactionsList(), totalParts, threadSliceFromTotal);
 
             Metric metric = profiler.start(Profiler.PROFILING_TYPE.BLOCK_EXECUTE);
-//            Metric parallelMetric = profiler.start(Profiler.PROFILING_TYPE.BLOCK_EXECUTE_PARALLEL);
-            ExecutorService msgQueue = Executors.newFixedThreadPool(threadCount);
-            CompletionService completionService = new ExecutorCompletionService<>(msgQueue);
+            ExecutorService executionService = Executors.newFixedThreadPool(threadCount);
             for (Map.Entry<Integer, Map<Integer, Transaction>> threadSet : transactionsMap.entrySet()) {
-                logger.warn("Parallel run of [{}] transactions for block: [{}] thread: [{}] of [{}]", threadSet.getValue().size(), block.getNumber(), threadSet.getKey(), transactionsMap.size());
-                TransactionConcurrentExecutor concurrentExecutor = new TransactionConcurrentExecutor(
-                        threadSet.getValue(),
-                        transactionExecutorFactory,
-                        totalGasUsed,
-                        track,
-                        block,
-                        vmTrace,
-                        vmTraceOptions,
-                        acceptInvalidTransactions,
-                        discardInvalidTxs,
-                        programTraceProcessor,
-                        threadSet.getKey(),
-                        receipts,
-                        executedTransactions,
-                        deletedAccounts,
-                        totalPaidFees,
-                        this.registerProgramResults,
-                        this.transactionResults);
-                completionService.submit(concurrentExecutor);
+                if (threadSet.getKey() <= threadCount){
+//                logger.warn("Parallel run of [{}] transactions for block: [{}] thread: [{}] of [{}]", threadSet.getValue().size(), block.getNumber(), threadSet.getKey(), transactionsMap.size());
+                    TransactionConcurrentExecutor concurrentExecutor = new TransactionConcurrentExecutor(
+                            threadSet.getValue(),
+                            transactionExecutorFactory,
+                            totalGasUsed,
+                            track,
+                            block,
+                            vmTrace,
+                            vmTraceOptions,
+                            acceptInvalidTransactions,
+                            discardInvalidTxs,
+                            programTraceProcessor,
+                            threadSet.getKey(),
+                            receipts,
+                            executedTransactions,
+                            deletedAccounts,
+                            totalPaidFees,
+                            this.registerProgramResults,
+                            this.transactionResults);
+                    executionService.submit(concurrentExecutor);
+                }
             }
 
             logger.warn("totalThreads: {}", transactionsMap.entrySet().size());
 
-            msgQueue.shutdown();
             try {
-                msgQueue.awaitTermination(500,TimeUnit.MILLISECONDS);
+                executionService.awaitTermination(500,TimeUnit.MILLISECONDS);
             }
             catch (TransactionException e) {
                 e.printStackTrace();
@@ -330,8 +330,8 @@ public class BlockExecutor {
                 return BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT;
             }
 
-            if(sequentialPart > 0){
-                Map<Integer, Transaction> pendingTxs = transactionsMap.get(transactionsMap.size()); // get the last sub set of transactions
+            if(sequentialPart > 0 && transactionsMap.containsKey(totalParts)){
+                Map<Integer, Transaction> pendingTxs = transactionsMap.get(totalParts); // get the last sub set of transactions
                 executeTransactionsSequentially(
                         pendingTxs,
                         block,
