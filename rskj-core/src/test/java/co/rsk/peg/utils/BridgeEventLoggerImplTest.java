@@ -568,15 +568,15 @@ public class BridgeEventLoggerImplTest {
 
     @Test
     public void logBatchPegoutCreated() {
-        Keccak256 rskTxHash = PegTestUtils.createHash3(0);
+        List<Keccak256> rskTxHashes = Arrays.asList(PegTestUtils.createHash3(0), PegTestUtils.createHash3(1), PegTestUtils.createHash3(2));
 
-        eventLogger.logBatchPegoutCreated(btcTx, rskTxHash.getBytes());
+        eventLogger.logBatchPegoutCreated(btcTx, rskTxHashes);
 
         commonAssertLogs(eventLogs);
 
         assertTopics(2, eventLogs);
 
-        assertEvent(eventLogs, 0, BridgeEvents.BATCH_PEGOUT_CREATED.getEvent(), new Object[]{btcTx.getHash().getBytes()}, new Object[]{rskTxHash.getBytes()});
+        assertEvent(eventLogs, 0, BridgeEvents.BATCH_PEGOUT_CREATED.getEvent(), new Object[]{btcTx.getHash().getBytes()}, new Object[]{serializeRskTxHashes(rskTxHashes)});
     }
 
     /**********************************
@@ -616,6 +616,22 @@ public class BridgeEventLoggerImplTest {
         }
 
         return flatPubKeys;
+    }
+
+    private byte[] serializeRskTxHashes(List<Keccak256> rskTxHashes) {
+        List<byte[]> rskTxHashesList = rskTxHashes.stream()
+            .map(Keccak256::getBytes)
+            .collect(Collectors.toList());
+        int rskTxHashesLength = rskTxHashesList.stream().mapToInt(key -> key.length).sum();
+
+        byte[] serializedRskTxHashes = new byte[rskTxHashesLength];
+        int copyPos = 0;
+        for (byte[] rskTxHash : rskTxHashesList) {
+            System.arraycopy(rskTxHash, 0, serializedRskTxHashes, copyPos, rskTxHash.length);
+            copyPos += rskTxHash.length;
+        }
+
+        return serializedRskTxHashes;
     }
 
 }
