@@ -212,7 +212,7 @@ public class RskErrorResolverTest {
         // Then
         Assert.assertNotNull(result);
         Assert.assertEquals(code, (Integer) result.code);
-        Assert.assertEquals("invalid argument 0: json: cannot unmarshal string into value of type filters.input", result.message);
+        Assert.assertEquals("invalid argument 0: json: cannot unmarshal string into value of input", result.message);
         Assert.assertNull(result.data);
     }
 

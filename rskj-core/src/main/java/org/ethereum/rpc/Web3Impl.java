@@ -525,7 +525,7 @@ public class Web3Impl implements Web3 {
         byte[] bhash = stringHexToByteArray(blockHash);
 
         if (bhash.length != Keccak256.HASH_LEN) {
-            throw invalidParamError("invalid argument 0: hex string has length " + (bhash.length * 2) + ", want " + (Keccak256.HASH_LEN * 2) + " for common.Hash");
+            throw invalidParamError("invalid argument 0: hex string has length " + (bhash.length * 2) + ", want " + (Keccak256.HASH_LEN * 2) + " for hash");
         }
 
         return this.blockchain.getBlockByHash(bhash);
