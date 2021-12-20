@@ -54,6 +54,7 @@ public class NodeReference {
         this.nodeStopper = Objects.requireNonNull(nodeStopper);
     }
 
+    // todo(techdebt) this doesn't make sense, the node stoper it's always the same, let's initialize it in the full constructor
     public NodeReference(TrieStore store, @Nullable Trie node, @Nullable Keccak256 hash) {
         this(store, node, hash, exitStatus -> System.exit(exitStatus));
     }

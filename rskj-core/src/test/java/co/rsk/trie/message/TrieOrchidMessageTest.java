@@ -16,18 +16,24 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package co.rsk.trie;
+package co.rsk.trie.message;
 
+import co.rsk.core.types.ints.Uint24;
+import co.rsk.trie.Trie;
+import co.rsk.trie.TrieValueTest;
 import org.ethereum.crypto.Keccak256Helper;
 import org.junit.Assert;
 import org.junit.Test;
+
+import static org.bouncycastle.util.encoders.Hex.decode;
 
 /**
  * Created by ajlopez on 11/01/2017.
  */
 public class TrieOrchidMessageTest {
+
     @Test
-    public void emptyTrieToMessage() {
+    public void emptyTrieToMessageOrchid() {
         Trie trie = new Trie();
 
         byte[] message = trie.toMessageOrchid(false);
@@ -43,8 +49,8 @@ public class TrieOrchidMessageTest {
     }
 
     @Test
-    public void trieWithValueToMessage() {
-        Trie trie = new Trie().put(new byte[0], new byte[] { 1, 2, 3, 4 });
+    public void trieWithValueToMessageOrchid() {
+        Trie trie = new Trie().put(new byte[0], new byte[]{1, 2, 3, 4});
 
         byte[] message = trie.toMessageOrchid(false);
 
@@ -63,7 +69,7 @@ public class TrieOrchidMessageTest {
     }
 
     @Test
-    public void trieWithLongValueToMessage() {
+    public void trieWithLongValueToMessageOrchid() {
         Trie trie = new Trie().put(new byte[0], TrieValueTest.makeValue(33));
 
         byte[] message = trie.toMessageOrchid(false);
@@ -85,8 +91,8 @@ public class TrieOrchidMessageTest {
     }
 
     @Test
-    public void trieWithSubtrieAndNoValueToMessage() {
-        Trie trie = new Trie().put(new byte[] { 0x2 }, new byte[] { 1, 2, 3, 4 });
+    public void trieWithSubtrieAndNoValueToMessageOrchid() {
+        Trie trie = new Trie().put(new byte[]{0x2}, new byte[]{1, 2, 3, 4});
 
         byte[] message = trie.toMessageOrchid(false);
 
@@ -109,9 +115,9 @@ public class TrieOrchidMessageTest {
     }
 
     @Test
-    public void trieWithSubtriesAndNoValueToMessage() {
-        Trie trie = new Trie().put(new byte[] { 0x2 }, new byte[] { 1, 2, 3, 4 })
-                .put(new byte[] { 0x12 }, new byte[] { 1, 2, 3, 4 });
+    public void trieWithSubtriesAndNoValueToMessageOrchid() {
+        Trie trie = new Trie().put(new byte[]{0x2}, new byte[]{1, 2, 3, 4})
+                .put(new byte[]{0x12}, new byte[]{1, 2, 3, 4});
 
         byte[] message = trie.toMessageOrchid(false);
 
@@ -127,7 +133,7 @@ public class TrieOrchidMessageTest {
     }
 
     @Test
-    public void emptyTrieToMessageSecure() {
+    public void emptyTrieToMessageOrchidSecure() {
         Trie trie = new Trie();
 
         byte[] message = trie.toMessageOrchid(true);
@@ -143,11 +149,11 @@ public class TrieOrchidMessageTest {
     }
 
     @Test
-    public void trieWithValueToMessageSecure() {
+    public void trieWithValueToMessageOrchidSecure() {
         byte[] oldKey = new byte[0];
         byte[] key = Keccak256Helper.keccak256(oldKey);
 
-        Trie trie = new Trie().put(key, new byte[] { 1, 2, 3, 4 });
+        Trie trie = new Trie().put(key, new byte[]{1, 2, 3, 4});
 
         byte[] message = trie.toMessageOrchid(true);
 
@@ -170,7 +176,7 @@ public class TrieOrchidMessageTest {
     }
 
     @Test
-    public void trieWithLongValueToMessageSecure() {
+    public void trieWithLongValueToMessageOrchidSecure() {
         byte[] oldKey = new byte[0];
         byte[] key = Keccak256Helper.keccak256(oldKey);
 
@@ -198,11 +204,11 @@ public class TrieOrchidMessageTest {
     }
 
     @Test
-    public void trieWithSubtrieAndNoValueToMessageSecure() {
-        byte[] oldKey = new byte[] { 0x02 };
+    public void trieWithSubtrieAndNoValueToMessageOrchidSecure() {
+        byte[] oldKey = new byte[]{0x02};
         byte[] key = Keccak256Helper.keccak256(oldKey);
 
-        Trie trie = new Trie().put(key, new byte[] { 1, 2, 3, 4 });
+        Trie trie = new Trie().put(key, new byte[]{1, 2, 3, 4});
 
         byte[] message = trie.toMessageOrchid(true);
 
@@ -225,10 +231,10 @@ public class TrieOrchidMessageTest {
     }
 
     @Test
-    public void trieWithSubtriesAndNoValueToMessageSecure() {
+    public void trieWithSubtriesAndNoValueToMessageOrchidSecure() {
         Trie trie = new Trie()
-                .put(Keccak256Helper.keccak256(new byte[] { 0x2 }), new byte[] { 1, 2, 3, 4 })
-                .put(Keccak256Helper.keccak256(new byte[] { 0x12 }), new byte[] { 1, 2, 3, 4 });
+                .put(Keccak256Helper.keccak256(new byte[]{0x2}), new byte[]{1, 2, 3, 4})
+                .put(Keccak256Helper.keccak256(new byte[]{0x12}), new byte[]{1, 2, 3, 4});
 
         byte[] message = trie.toMessageOrchid(true);
 

@@ -24,7 +24,6 @@ import org.ethereum.rpc.TypeConverter;
 import org.ethereum.util.ByteUtil;
 import org.junit.Assert;
 import org.junit.Test;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 /**
  * Created by martin.medina on 3/7/17.
