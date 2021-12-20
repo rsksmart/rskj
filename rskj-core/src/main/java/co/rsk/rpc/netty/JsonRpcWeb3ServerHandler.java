@@ -64,6 +64,7 @@ public class JsonRpcWeb3ServerHandler extends SimpleChannelInboundHandler<ByteBu
 
             responseCode = jsonRpcServer.handleRequest(is, os);
         } catch (IllegalArgumentException e) {
+            LOGGER.error(ErrorResolver.JsonError.PARSE_ERROR.message, e);
             int errorCode = ErrorResolver.JsonError.PARSE_ERROR.code;
             responseContent = buildErrorContent(errorCode, e.getMessage());
             responseCode = ErrorResolver.JsonError.OK.code;
