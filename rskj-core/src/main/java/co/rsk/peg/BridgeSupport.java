@@ -1134,7 +1134,6 @@ public class BridgeSupport {
 
         if (currentBlockNumber >= nextPegoutCreationBlockNumber) {
             List<ReleaseRequestQueue.Entry> pegoutEntries = releaseRequestQueue.getEntries();
-
             if (!pegoutEntries.isEmpty()) {
                 Optional<ReleaseTransactionBuilder.BuildResult> result = txBuilder.buildBatchedPegouts(pegoutEntries);
 
@@ -1162,6 +1161,9 @@ public class BridgeSupport {
                 // Mark UTXOs as spent
                 List<UTXO> selectedUTXOs = result.get().getSelectedUTXOs();
                 availableUTXOs.removeAll(selectedUTXOs);
+
+                eventLogger.logBatchPegoutCreated(generatedTransaction,
+                    pegoutEntries.stream().map(ReleaseRequestQueue.Entry::getRskTxHash).collect(Collectors.toList()));
 
                 adjustBalancesIfChangeOutputWasDust(generatedTransaction, totalPegoutValue, wallet);
             }
