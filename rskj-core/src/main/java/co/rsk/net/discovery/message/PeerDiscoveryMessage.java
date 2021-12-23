@@ -32,7 +32,7 @@ import org.ethereum.util.RLPItem;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.security.SignatureException;
 import java.util.Optional;
 import java.util.OptionalInt;
@@ -184,10 +184,11 @@ public abstract class PeerDiscoveryMessage {
     }
 
     protected String extractMessageId(RLPItem chk) {
-        String rawMessageId = new String(chk.getRLPData(), Charset.forName("UTF-8"));
+        String rawMessageId = new String(chk.getRLPData(), StandardCharsets.UTF_8);
         try {
             return UUID.fromString(rawMessageId).toString();
-        } catch (IllegalArgumentException exception) {
+        } catch (IllegalArgumentException iae) {
+            logger.error("Received message '{}' is not an UUID", rawMessageId, iae);
             String concreteMessageType = this.getClass().getSimpleName();
             throw new PeerDiscoveryException(String.format(INVALID_MESSAGE_ID, concreteMessageType));
         }
