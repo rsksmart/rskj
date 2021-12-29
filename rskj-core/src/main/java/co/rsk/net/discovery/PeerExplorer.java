@@ -23,8 +23,8 @@ import co.rsk.net.discovery.message.*;
 import co.rsk.net.discovery.table.NodeDistanceTable;
 import co.rsk.net.discovery.table.OperationResult;
 import co.rsk.net.discovery.table.PeerDiscoveryRequestBuilder;
-import co.rsk.util.ExecState;
 import co.rsk.scoring.PeerScoringManager;
+import co.rsk.util.ExecState;
 import co.rsk.util.IpUtils;
 import com.google.common.annotations.VisibleForTesting;
 import org.apache.commons.lang3.StringUtils;
@@ -60,6 +60,10 @@ public class PeerExplorer {
     private final Map<String, PeerDiscoveryRequest> pendingFindNodeRequests = new ConcurrentHashMap<>();
 
     private final Map<NodeID, Node> establishedConnections = new ConcurrentHashMap<>();
+
+    private final Map<String, NodeID> knownHosts;
+    private final boolean allowMultipleConnectionsPerHost;
+
     private final Integer networkId;
 
     private final ECKey key;
@@ -85,7 +89,7 @@ public class PeerExplorer {
     public PeerExplorer(List<String> initialBootNodes,
                         Node localNode, NodeDistanceTable distanceTable, ECKey key,
                         long reqTimeOut, long updatePeriod, long cleanPeriod, Integer networkId,
-                        PeerScoringManager peerScoringManager) {
+                        PeerScoringManager peerScoringManager, boolean allowMultipleConnectionsPerHost) {
         this.localNode = localNode;
         this.key = key;
         this.distanceTable = distanceTable;
@@ -98,6 +102,9 @@ public class PeerExplorer {
         this.requestTimeout = reqTimeOut;
 
         this.peerScoringManager = peerScoringManager;
+
+        this.knownHosts = new ConcurrentHashMap<>();
+        this.allowMultipleConnectionsPerHost = allowMultipleConnectionsPerHost;
     }
 
     void start() {
@@ -226,7 +233,7 @@ public class PeerExplorer {
             PeerDiscoveryRequest request = this.pendingFindNodeRequests.remove(message.getMessageId());
 
             if (request != null && request.validateMessageResponse(neighborsResponseAddress, message)) {
-                List<Node> nodes = (message.countNodes() > MAX_NODES_PER_MSG) ? message.getNodes().subList(0, MAX_NODES_PER_MSG -1) : message.getNodes();
+                List<Node> nodes = (message.countNodes() > MAX_NODES_PER_MSG) ? message.getNodes().subList(0, MAX_NODES_PER_MSG - 1) : message.getNodes();
                 nodes.stream().filter(n -> !StringUtils.equals(n.getHexId(), this.localNode.getHexId()) && !isBanned(n))
                         .forEach(node -> this.bootNodes.add(node.getAddress()));
                 this.startConversationWithNewNodes();
@@ -268,7 +275,7 @@ public class PeerExplorer {
     }
 
     private void updateEntry(Node connectedNode) {
-        try{
+        try {
             updateEntryLock.lock();
             this.distanceTable.updateEntry(connectedNode);
         } finally {
@@ -379,24 +386,46 @@ public class PeerExplorer {
             Node node = req.getRelatedNode();
 
             if (node != null) {
-                this.establishedConnections.remove(node.getId());
-                this.distanceTable.removeNode(node);
+                removeConnection(node);
             }
         }
     }
 
+    private void removeConnection(Node node) {
+        this.establishedConnections.remove(node.getId());
+        this.distanceTable.removeNode(node);
+        this.knownHosts.remove(node.getAddressAsString());
+    }
+
     private void addConnection(PongPeerMessage message, String ip, int port) {
         Node senderNode = new Node(message.getNodeId().getID(), ip, port);
-        if (!StringUtils.equals(senderNode.getHexId(), this.localNode.getHexId())) {
-            OperationResult result = this.distanceTable.addNode(senderNode);
+        boolean isLocalNode = StringUtils.equals(senderNode.getHexId(), this.localNode.getHexId());
+        if (isLocalNode) {
+            return;
+        }
 
-            if (result.isSuccess()) {
-                NodeID senderId = senderNode.getId();
-                this.establishedConnections.put(senderId, senderNode);
-                logger.debug("New Peer found ip:[{}] port[{}]", ip, port);
-            } else {
-                this.challengeManager.startChallenge(result.getAffectedEntry().getNode(), senderNode, this);
-            }
+        if (!this.allowMultipleConnectionsPerHost) {
+            disconnectPeerIfDuplicatedByNodeId(senderNode, ip, port);
+            // add only if flag set to false
+            this.knownHosts.put(senderNode.getAddressAsString(), senderNode.getId());
+        }
+
+        OperationResult result = this.distanceTable.addNode(senderNode);
+        if (result.isSuccess()) {
+            this.establishedConnections.put(senderNode.getId(), senderNode);
+            logger.debug("New Peer found or id changed: ip[{}] port[{}] id [{}]", ip, port, senderNode.getId());
+        } else {
+            this.challengeManager.startChallenge(result.getAffectedEntry().getNode(), senderNode, this);
+        }
+    }
+
+    private void disconnectPeerIfDuplicatedByNodeId(Node senderNode, String ip, int port) {
+        NodeID oldNodeIdForHost = this.knownHosts.get(senderNode.getAddressAsString());
+        boolean existsWithDifferentId = oldNodeIdForHost != null && !oldNodeIdForHost.equals(senderNode.getId());
+        if (existsWithDifferentId) {
+            logger.debug("Disconnecting peer with old id: ip[{}] port[{}] id [{}]", ip, port, oldNodeIdForHost);
+            Node oldNodeForHost = new Node(oldNodeIdForHost.getID(), ip, port);
+            removeConnection(oldNodeForHost);
         }
     }
 
