@@ -69,14 +69,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigInteger;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import org.apache.commons.lang3.tuple.Pair;
@@ -1118,6 +1111,11 @@ public class BridgeSupport {
 
             if (!pegoutEntries.isEmpty()) {
                 Optional<ReleaseTransactionBuilder.BuildResult> result = txBuilder.buildBatchedPegouts(pegoutEntries);
+                while (result.isPresent() && result.get().getResponseCode().equals("03")) {
+                    int firstHalfSize = pegoutEntries.size() / 2;
+                    pegoutEntries = pegoutEntries.subList(0, firstHalfSize);
+                    result = txBuilder.buildBatchedPegouts(pegoutEntries);
+                }
 
                 Coin totalPegoutValue = pegoutEntries
                     .stream()

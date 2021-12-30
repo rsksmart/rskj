@@ -42,10 +42,12 @@ public class ReleaseTransactionBuilder {
     public class BuildResult {
         private final BtcTransaction btcTx;
         private final List<UTXO> selectedUTXOs;
+        private final String responseCode;
 
-        public BuildResult(BtcTransaction btcTx, List<UTXO> selectedUTXOs) {
+        public BuildResult(BtcTransaction btcTx, List<UTXO> selectedUTXOs, String responseCode) {
             this.btcTx = btcTx;
             this.selectedUTXOs = selectedUTXOs;
+            this.responseCode = responseCode;
         }
 
         public BtcTransaction getBtcTx() {
@@ -54,6 +56,10 @@ public class ReleaseTransactionBuilder {
 
         public List<UTXO> getSelectedUTXOs() {
             return selectedUTXOs;
+        }
+
+        public String getResponseCode() {
+            return responseCode;
         }
     }
 
@@ -158,27 +164,27 @@ public class ReleaseTransactionBuilder {
                 )
                 .collect(Collectors.toList());
 
-            return Optional.of(new BuildResult(btcTx, selectedUTXOs));
-        } catch (InsufficientMoneyException e) {
+            return Optional.of(new BuildResult(btcTx, selectedUTXOs, "00"));
+        } catch (InsufficientMoneyException e) { // responseCode 01
             logger.warn(String.format("Not enough BTC in the wallet to complete %s", operationDescription), e);
             // Comment out panic logging for now
             // panicProcessor.panic("nomoney", "Not enough confirmed BTC in the federation wallet to complete " + rskTxHash + " " + btcTx);
-            return Optional.empty();
-        } catch (Wallet.CouldNotAdjustDownwards e) {
+            return Optional.of(new BuildResult(null, null, "01"));
+        } catch (Wallet.CouldNotAdjustDownwards e) { // responseCode 02
             logger.warn(String.format("A user output could not be adjusted downwards to pay tx fees %s", operationDescription), e);
             // Comment out panic logging for now
             // panicProcessor.panic("couldnotadjustdownwards", "A user output could not be adjusted downwards to pay tx fees " + rskTxHash + " " + btcTx);
-            return Optional.empty();
-        } catch (Wallet.ExceededMaxTransactionSize e) {
+            return Optional.of(new BuildResult(null, null, "02"));
+        } catch (Wallet.ExceededMaxTransactionSize e) { // responseCode 03
             logger.warn(String.format("Tx size too big %s", operationDescription), e);
             // Comment out panic logging for now
             // panicProcessor.panic("exceededmaxtransactionsize", "Tx size too big " + rskTxHash + " " + btcTx);
-            return Optional.empty();
-        } catch (UTXOProviderException e) {
+            return Optional.of(new BuildResult(null, null, "03"));
+        } catch (UTXOProviderException e) { // responseCode 04
             logger.warn(String.format("UTXO provider exception sending %s", operationDescription), e);
             // Comment out panic logging for now
             // panicProcessor.panic("utxoprovider", "UTXO provider exception " + rskTxHash + " " + btcTx);
-            return Optional.empty();
+            return Optional.of(new BuildResult(null, null, "04"));
         }
     }
 
@@ -188,4 +194,17 @@ public class ReleaseTransactionBuilder {
         sr.shuffleOutputs = false;
         sr.recipientsPayFees = true;
     };
+
+    protected enum Response {
+        INSUFFICIENT("01"),
+        COULDNOTADJUSTDOWNWARDS("02"),
+        EXCEEDMAXTRANSACTIONSIZE("03"),
+        UTXOPROVIDER("04");
+
+        private String code;
+
+        Response(String code) {
+            this.code = code;
+        }
+    }
 }
