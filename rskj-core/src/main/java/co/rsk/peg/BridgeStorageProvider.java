@@ -66,8 +66,8 @@ public class BridgeStorageProvider {
     private static final DataWord RELEASE_TX_SET_WITH_TXHASH = DataWord.fromString("releaseTransactionSetWithTxHash");
     private static final DataWord RECEIVE_HEADERS_TIMESTAMP = DataWord.fromString("receiveHeadersLastTimestamp");
 
-    private static final DataWord UTXO_EXPIRATION_CHECK_POINT_RSK_BLOCK_HEIGHT = DataWord.fromString("utxoExpirationCheckpointRskBlkH");
-    private static final DataWord UTXO_EXPIRATION_CHECK_POINT_TIMESTAMP = DataWord.fromString("utxoExpirationCheckpointTS");
+    private static final DataWord NEXT_UTXO_EXPIRATION_CHECKPOINT_HEIGHT = DataWord.fromString("nextUtxoExpirationCheckpointH");
+    private static final DataWord NEXT_UTXO_EXPIRATION_CHECKPOINT_TIMESTAMP = DataWord.fromString("nextUtxoExpirationCheckpointTS");
 
     // Federation creation keys
     private static final DataWord ACTIVE_FEDERATION_CREATION_BLOCK_HEIGHT_KEY = DataWord.fromString("activeFedCreationBlockHeight");
@@ -136,8 +136,8 @@ public class BridgeStorageProvider {
     private FastBridgeFederationInformation fastBridgeFederationInformationsToSave = null;
     private long receiveHeadersLastTimestamp = 0;
 
-    private Integer utxoExpirationCheckpointRskBlockHeight;
-    private Long utxoExpirationCheckpointTimestamp = 0L;
+    private Long nextUtxoExpirationCheckpointHeight;
+    private Long nextUtxoExpirationCheckpointTimestamp;
 
     public BridgeStorageProvider(
         Repository repository,
@@ -890,50 +890,50 @@ public class BridgeStorageProvider {
         }
     }
 
-    public Optional<Integer> getUtxoExpirationCheckpointRskBlockHeight() {
+    public Optional<Long> getNextUtxoExpirationCheckpointHeight() {
         if (!activations.isActive(RSKIP264)) {
             return Optional.empty();
         }
 
-        if (utxoExpirationCheckpointRskBlockHeight == null) {
-            utxoExpirationCheckpointRskBlockHeight = safeGetFromRepository(UTXO_EXPIRATION_CHECK_POINT_RSK_BLOCK_HEIGHT, BridgeSerializationUtils::deserializeInteger);
+        if (nextUtxoExpirationCheckpointHeight == null) {
+            nextUtxoExpirationCheckpointHeight = safeGetFromRepository(NEXT_UTXO_EXPIRATION_CHECKPOINT_HEIGHT, BridgeSerializationUtils::deserializeOptionalLong).orElse(0L);
         }
 
-        return Optional.of(utxoExpirationCheckpointRskBlockHeight);
+        return Optional.of(nextUtxoExpirationCheckpointHeight);
     }
 
-    public void setUtxoExpirationCheckpointRskBlockHeight(Integer utxoExpirationCheckpointRskBlockHeight) {
+    public void setNextUtxoExpirationCheckpointHeight(Long nextUtxoExpirationCheckpointHeight) {
+        if (activations.isActive(RSKIP264) && nextUtxoExpirationCheckpointHeight != null) {
+            this.nextUtxoExpirationCheckpointHeight = nextUtxoExpirationCheckpointHeight;
+        }
+    }
+
+    protected void saveNextUtxoExpirationCheckpointHeight() {
         if (activations.isActive(RSKIP264)) {
-            this.utxoExpirationCheckpointRskBlockHeight = utxoExpirationCheckpointRskBlockHeight;
+            safeSaveToRepository(NEXT_UTXO_EXPIRATION_CHECKPOINT_HEIGHT, this.nextUtxoExpirationCheckpointHeight, BridgeSerializationUtils::serializeLong);
         }
     }
 
-    protected void saveUtxoExpirationCheckpointRskBlockHeight() {
-        if (activations.isActive(RSKIP264) && this.utxoExpirationCheckpointRskBlockHeight != null) {
-            safeSaveToRepository(UTXO_EXPIRATION_CHECK_POINT_RSK_BLOCK_HEIGHT, this.utxoExpirationCheckpointRskBlockHeight, BridgeSerializationUtils::serializeInteger);
-        }
-    }
-
-    public Optional<Long> getUtxoExpirationCheckpointTimestamp() {
+    public Optional<Long> getNextUtxoExpirationCheckpointTimestamp() {
         if (!activations.isActive(RSKIP264)) {
             return Optional.empty();
         }
 
-        if (utxoExpirationCheckpointTimestamp == null) {
-            utxoExpirationCheckpointTimestamp = safeGetFromRepository(UTXO_EXPIRATION_CHECK_POINT_TIMESTAMP, BridgeSerializationUtils::deserializeOptionalLong).orElse(0L);
+        if (nextUtxoExpirationCheckpointTimestamp == null) {
+            nextUtxoExpirationCheckpointTimestamp = safeGetFromRepository(NEXT_UTXO_EXPIRATION_CHECKPOINT_TIMESTAMP, BridgeSerializationUtils::deserializeOptionalLong).orElse(0L);
         }
-        return Optional.of(utxoExpirationCheckpointTimestamp);
+        return Optional.of(nextUtxoExpirationCheckpointTimestamp);
     }
 
-    public void setUtxoExpirationCheckpointTimestamp(Long utxoExpirationCheckpointTimestamp) {
+    public void setNextUtxoExpirationCheckpointTimestamp(Long nextUtxoExpirationCheckpointTimestamp) {
+        if (activations.isActive(RSKIP264) && nextUtxoExpirationCheckpointTimestamp > 0) {
+            this.nextUtxoExpirationCheckpointTimestamp = nextUtxoExpirationCheckpointTimestamp;
+        }
+    }
+
+    protected void saveNextUtxoExpirationCheckpointTimestamp() {
         if (activations.isActive(RSKIP264)) {
-            this.utxoExpirationCheckpointTimestamp = utxoExpirationCheckpointTimestamp;
-        }
-    }
-
-    protected void saveUtxoExpirationCheckpointTimestamp() {
-        if (activations.isActive(RSKIP264) && this.utxoExpirationCheckpointTimestamp > 0) {
-            safeSaveToRepository(UTXO_EXPIRATION_CHECK_POINT_TIMESTAMP, this.utxoExpirationCheckpointTimestamp, BridgeSerializationUtils::serializeLong);
+            safeSaveToRepository(NEXT_UTXO_EXPIRATION_CHECKPOINT_TIMESTAMP, this.nextUtxoExpirationCheckpointTimestamp, BridgeSerializationUtils::serializeLong);
         }
     }
 
@@ -976,8 +976,8 @@ public class BridgeStorageProvider {
 
         saveReceiveHeadersLastTimestamp();
 
-        saveUtxoExpirationCheckpointRskBlockHeight();
-        saveUtxoExpirationCheckpointTimestamp();
+        saveNextUtxoExpirationCheckpointHeight();
+        saveNextUtxoExpirationCheckpointTimestamp();
     }
 
     private DataWord getStorageKeyForBtcTxHashAlreadyProcessed(Sha256Hash btcTxHash) {
