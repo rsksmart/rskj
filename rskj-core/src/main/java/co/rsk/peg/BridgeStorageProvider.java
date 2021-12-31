@@ -66,6 +66,9 @@ public class BridgeStorageProvider {
     private static final DataWord RELEASE_TX_SET_WITH_TXHASH = DataWord.fromString("releaseTransactionSetWithTxHash");
     private static final DataWord RECEIVE_HEADERS_TIMESTAMP = DataWord.fromString("receiveHeadersLastTimestamp");
 
+    private static final DataWord UTXO_EXPIRATION_CHECK_POINT_RSK_BLOCK_HEIGHT = DataWord.fromString("utxoExpirationCheckpointRskBlkH");
+    private static final DataWord UTXO_EXPIRATION_CHECK_POINT_TIMESTAMP = DataWord.fromString("utxoExpirationCheckpointTS");
+
     // Federation creation keys
     private static final DataWord ACTIVE_FEDERATION_CREATION_BLOCK_HEIGHT_KEY = DataWord.fromString("activeFedCreationBlockHeight");
     private static final DataWord NEXT_FEDERATION_CREATION_BLOCK_HEIGHT_KEY = DataWord.fromString("nextFedCreationBlockHeight");
@@ -132,6 +135,9 @@ public class BridgeStorageProvider {
     private Sha256Hash fastBridgeBtcTxHashToSave = null;
     private FastBridgeFederationInformation fastBridgeFederationInformationsToSave = null;
     private long receiveHeadersLastTimestamp = 0;
+
+    private Integer utxoExpirationCheckpointRskBlockHeight;
+    private Long utxoExpirationCheckpointTimestamp = 0L;
 
     public BridgeStorageProvider(
         Repository repository,
@@ -884,6 +890,53 @@ public class BridgeStorageProvider {
         }
     }
 
+    public Optional<Integer> getUtxoExpirationCheckpointRskBlockHeight() {
+        if (!activations.isActive(RSKIP264)) {
+            return Optional.empty();
+        }
+
+        if (utxoExpirationCheckpointRskBlockHeight == null) {
+            utxoExpirationCheckpointRskBlockHeight = safeGetFromRepository(UTXO_EXPIRATION_CHECK_POINT_RSK_BLOCK_HEIGHT, BridgeSerializationUtils::deserializeInteger);
+        }
+
+        return Optional.of(utxoExpirationCheckpointRskBlockHeight);
+    }
+
+    public void setUtxoExpirationCheckpointRskBlockHeight(Integer utxoExpirationCheckpointRskBlockHeight) {
+        if (activations.isActive(RSKIP264)) {
+            this.utxoExpirationCheckpointRskBlockHeight = utxoExpirationCheckpointRskBlockHeight;
+        }
+    }
+
+    protected void saveUtxoExpirationCheckpointRskBlockHeight() {
+        if (activations.isActive(RSKIP264) && this.utxoExpirationCheckpointRskBlockHeight != null) {
+            safeSaveToRepository(UTXO_EXPIRATION_CHECK_POINT_RSK_BLOCK_HEIGHT, this.utxoExpirationCheckpointRskBlockHeight, BridgeSerializationUtils::serializeInteger);
+        }
+    }
+
+    public Optional<Long> getUtxoExpirationCheckpointTimestamp() {
+        if (!activations.isActive(RSKIP264)) {
+            return Optional.empty();
+        }
+
+        if (utxoExpirationCheckpointTimestamp == null) {
+            utxoExpirationCheckpointTimestamp = safeGetFromRepository(UTXO_EXPIRATION_CHECK_POINT_TIMESTAMP, BridgeSerializationUtils::deserializeOptionalLong).orElse(0L);
+        }
+        return Optional.of(utxoExpirationCheckpointTimestamp);
+    }
+
+    public void setUtxoExpirationCheckpointTimestamp(Long utxoExpirationCheckpointTimestamp) {
+        if (activations.isActive(RSKIP264)) {
+            this.utxoExpirationCheckpointTimestamp = utxoExpirationCheckpointTimestamp;
+        }
+    }
+
+    protected void saveUtxoExpirationCheckpointTimestamp() {
+        if (activations.isActive(RSKIP264) && this.utxoExpirationCheckpointTimestamp > 0) {
+            safeSaveToRepository(UTXO_EXPIRATION_CHECK_POINT_TIMESTAMP, this.utxoExpirationCheckpointTimestamp, BridgeSerializationUtils::serializeLong);
+        }
+    }
+
     public void save() throws IOException {
         saveBtcTxHashesAlreadyProcessed();
 
@@ -922,6 +975,9 @@ public class BridgeStorageProvider {
         saveFastBridgeFederationInformation();
 
         saveReceiveHeadersLastTimestamp();
+
+        saveUtxoExpirationCheckpointRskBlockHeight();
+        saveUtxoExpirationCheckpointTimestamp();
     }
 
     private DataWord getStorageKeyForBtcTxHashAlreadyProcessed(Sha256Hash btcTxHash) {
