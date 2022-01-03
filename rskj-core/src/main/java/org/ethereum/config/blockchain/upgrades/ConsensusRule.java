@@ -70,6 +70,7 @@ public enum ConsensusRule {
     RSKIP218("rskip218"), // New rewards fee adddress
     RSKIP219("rskip219"),
     RSKIP220("rskip220"),
+    RSKIP264("rskip264"), // Utxos recycling
     RSKIP290("rskip290"); // Testnet difficulty should drop to a higher difficulty
 
     private String configKey;
