@@ -26,6 +26,7 @@ import co.rsk.db.StateRootsStoreImpl;
 import co.rsk.trie.TrieStore;
 import co.rsk.util.TimeProvider;
 import co.rsk.validators.*;
+import org.ethereum.core.SignatureCache;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.BlockStore;
 import org.mockito.Mockito;
@@ -76,7 +77,7 @@ public class BlockValidatorBuilder {
         this.blockTxsValidationRule = new BlockTxsValidationRule(new RepositoryLocator(
                 trieStore,
                 new StateRootHandler(config.getActivationConfig(), new StateRootsStoreImpl(new HashMapDB()))
-        ));
+        ), null); // TODO -> Set a useful mock here
         return this;
     }
 
