@@ -148,6 +148,10 @@ public class BridgeMainNetConstants extends BridgeConstants {
         maxDepthBlockchainAccepted = 25;
 
         minimumPegoutValuePercentageToReceiveAfterFee = 80;
+
+        utxoExpirationCheckpointPeriodInBlocks = 40_000; // rounded 2 weeks of RSK blocks
+        utxoExpirationCheckpointPeriodTimestamp = 1_209_600_000L; // 2 weeks timestamp in milliseconds.
+        maxUtxosToRecycleAtOnce = 40;
     }
 
     public static BridgeMainNetConstants getInstance() {

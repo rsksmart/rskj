@@ -159,6 +159,10 @@ public class BridgeRegTestConstants extends BridgeConstants {
         oldFederationAddress = "2N7ZgQyhFKm17RbaLqygYbS7KLrQfapyZzu";
 
         minimumPegoutValuePercentageToReceiveAfterFee = 20;
+
+        utxoExpirationCheckpointPeriodInBlocks = 20_000; // rounded 1 week of RSK blocks
+        utxoExpirationCheckpointPeriodTimestamp = 604_800_000L; // 1 week timestamp in milliseconds.
+        maxUtxosToRecycleAtOnce = 20;
     }
 
     public static BridgeRegTestConstants getInstance() {

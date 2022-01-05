@@ -78,6 +78,10 @@ public class BridgeConstants {
 
     protected int minimumPegoutValuePercentageToReceiveAfterFee;
 
+    protected long utxoExpirationCheckpointPeriodInBlocks;
+    protected long utxoExpirationCheckpointPeriodTimestamp;
+    protected int maxUtxosToRecycleAtOnce;
+
     public NetworkParameters getBtcParams() {
         return NetworkParameters.fromID(btcParamsString);
     }
@@ -162,5 +166,17 @@ public class BridgeConstants {
 
     public int getMinimumPegoutValuePercentageToReceiveAfterFee() {
         return minimumPegoutValuePercentageToReceiveAfterFee;
+    }
+
+    public long getUtxoExpirationCheckpointPeriodInBlocks() {
+        return utxoExpirationCheckpointPeriodInBlocks;
+    }
+
+    public long getUtxoExpirationCheckpointPeriodTimestamp() {
+        return utxoExpirationCheckpointPeriodTimestamp;
+    }
+
+    public int getMaxUtxosToRecycleAtOnce() {
+        return maxUtxosToRecycleAtOnce;
     }
 }
