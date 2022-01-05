@@ -102,6 +102,7 @@ import org.slf4j.LoggerFactory;
 import static co.rsk.peg.BridgeUtils.getRegularPegoutTxSize;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP186;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP219;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP264;
 
 /**
  * Helper class to move funds from btc to rsk and rsk to btc
@@ -2497,6 +2498,17 @@ public class BridgeSupport {
 
         Optional<Long> activeFederationCreationBlockHeightOpt = provider.getActiveFederationCreationBlockHeight();
         return activeFederationCreationBlockHeightOpt.orElse(0L);
+    }
+
+    protected void checktimeLockExpiration() {
+        if (activations.isActive(RSKIP264)) {
+            long height = provider.getNextUtxoExpirationCheckpointHeight().orElse(0L);
+            long timestamp = provider.getNextUtxoExpirationCheckpointTimestamp().orElse(0L);
+            if ((rskExecutionBlock.getNumber() >= height) || (rskExecutionBlock.getTimestamp() >= timestamp)) {
+                // TODO: Select Utxos, Build Transaction, Update CheckPoints
+            }
+
+        }
     }
 
     public BigInteger registerFastBridgeBtcTransaction(
