@@ -28,7 +28,19 @@ import org.ethereum.vm.PrecompiledContracts;
 import static org.ethereum.rpc.TypeConverter.toUnformattedJsonHex;
 
 /**
+ * <p>
  * Tx that invokes Remasc's processMinersFees method.
+ * </p>
+ * <p>
+ * If you would like an easier to know if a transaction is a Remasc transaction rather than using
+ * #{@link Transaction#isRemascTransaction(int, int)}, you could use:
+ * <blockquote>obj instanceOf RemascTransaction</blockquote>
+ * </p>
+ * <p>
+ * <b>NOTE:</b> Consider that this only will work if you create an instance of this class, otherwise using
+ * #{@link Transaction#isRemascTransaction(int, int)} is more safe.
+ * </p>
+ *
  * @author Oscar Guindzberg
  */
 public class RemascTransaction extends Transaction {
