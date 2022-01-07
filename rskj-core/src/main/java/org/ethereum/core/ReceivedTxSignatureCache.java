@@ -21,25 +21,23 @@ package org.ethereum.core;
 
 import co.rsk.core.RskAddress;
 import co.rsk.remasc.RemascTransaction;
-import co.rsk.util.MaxSizeHashMap;
-
 
 public class ReceivedTxSignatureCache extends SignatureCache {
 
     private static final int MAX_CACHE_SIZE = 6000; //Txs in three blocks
 
     public ReceivedTxSignatureCache() {
-        addressesCache = new MaxSizeHashMap<>(MAX_CACHE_SIZE,true);
+        super(MAX_CACHE_SIZE, true);
     }
 
     @Override
-    public RskAddress getSender(Transaction transaction) {
+    public synchronized RskAddress getSender(Transaction transaction) {
 
         if (transaction instanceof RemascTransaction) {
             return RemascTransaction.REMASC_ADDRESS;
         }
 
-        RskAddress address = addressesCache.get(transaction);
+        RskAddress address = addressesCache.get(transaction.getHash());
 
         if (address == null) {
             return transaction.getSender();
@@ -49,12 +47,12 @@ public class ReceivedTxSignatureCache extends SignatureCache {
     }
 
     @Override
-    public void storeSender(Transaction transaction) {
+    public synchronized void storeSender(Transaction transaction) {
 
-        if (!hasToComputeSender(transaction)) {
+        if (maySkipSenderStore(transaction)) {
             return;
         }
 
-        addressesCache.put(transaction, transaction.getSender());
+        addressesCache.put(transaction.getHash(), transaction.getSender());
     }
 }
