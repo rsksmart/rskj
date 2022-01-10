@@ -46,6 +46,8 @@ public abstract class PeerDiscoveryMessage {
 
     private static final String INVALID_MESSAGE_ID = "%s needs valid messageId";
 
+    private static final int UUID_VERSION_4 = 4;
+
     private byte[] wire;
 
     private byte[] mdc;
@@ -186,9 +188,13 @@ public abstract class PeerDiscoveryMessage {
     protected String extractMessageId(RLPItem chk) {
         String rawMessageId = new String(chk.getRLPData(), StandardCharsets.UTF_8);
         try {
-            return UUID.fromString(rawMessageId).toString();
+            UUID uuid = UUID.fromString(rawMessageId);
+            if (uuid.version() != UUID_VERSION_4) {
+                throw new IllegalArgumentException("Received an UUID with version != 4");
+            }
+            return uuid.toString();
         } catch (IllegalArgumentException iae) {
-            logger.error("Received message '{}' is not an UUID", rawMessageId, iae);
+            logger.error("Received message '{}' is not a v4 UUID", rawMessageId, iae);
             String concreteMessageType = this.getClass().getSimpleName();
             throw new PeerDiscoveryException(String.format(INVALID_MESSAGE_ID, concreteMessageType));
         }

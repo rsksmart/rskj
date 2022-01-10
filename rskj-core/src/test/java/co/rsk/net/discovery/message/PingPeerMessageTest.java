@@ -31,6 +31,17 @@ public class PingPeerMessageTest {
     }
 
     @Test
+    public void parseUUIDV1MessageId() {
+        try {
+            String uuidV1 = "06ce06f8-7230-11ec-90d6-0242ac120003";
+            createPingPeerMessageWithCheck(uuidV1);
+            Assert.fail("Invalid messageId exception should've been thrown");
+        } catch (PeerDiscoveryException pde) {
+            Assert.assertEquals(PingPeerMessage.class.getSimpleName() + " needs valid messageId", pde.getMessage());
+        }
+    }
+
+    @Test
     public void parseValidMessageId() {
         try {
             PingPeerMessage message = createPingPeerMessageWithCheck(UUID.randomUUID().toString());
