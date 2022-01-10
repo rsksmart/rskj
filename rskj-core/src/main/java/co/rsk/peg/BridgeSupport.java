@@ -3053,4 +3053,20 @@ public class BridgeSupport {
 
         return header;
     }
+
+    protected List<UTXO> getUTXOsToRecycle() throws IOException, BlockStoreException {
+        List<UTXO> utxosToRecycle = new ArrayList<>();
+        List<UTXO> utxoList = getActiveFederationBtcUTXOs();
+        for (UTXO utxo : utxoList) {
+            if (getBtcBlockchainBestChainHeight() - utxo.getHeight() > bridgeConstants.getUtxoRecyclingHeightCheck()) {
+                utxosToRecycle.add(utxo);
+            }
+        }
+
+        if (utxosToRecycle.size() <= bridgeConstants.getMaxUtxosToRecycleAtOnce()) {
+            return utxosToRecycle;
+        } else {
+            return utxosToRecycle.subList(0, bridgeConstants.getMaxUtxosToRecycleAtOnce());
+        }
+    }
 }

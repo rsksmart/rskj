@@ -18,15 +18,16 @@
 
 package co.rsk.peg;
 
-import co.rsk.bitcoinj.core.Address;
-import co.rsk.bitcoinj.core.BtcECKey;
-import co.rsk.bitcoinj.core.Sha256Hash;
+import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.params.RegTestParams;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.wallet.RedeemData;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
+
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import org.bouncycastle.util.encoders.Hex;
 
@@ -158,5 +159,13 @@ public class PegTestUtils {
     public static Address createRandomBtcAddress() {
         BtcECKey key = new BtcECKey();
         return key.toAddress(RegTestParams.get());
+    }
+
+    public static List<UTXO> createUTXOs(int amount) {
+        List<UTXO> utxosList = new ArrayList<>();
+        for (int i = 0; i < amount; i++) {
+            utxosList.add(new UTXO(createHash(i + 1), i, Coin.COIN, i + 1, false, new Script(new byte[]{})));
+        }
+        return utxosList;
     }
 }

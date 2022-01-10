@@ -7548,6 +7548,78 @@ public class BridgeSupportTest {
         Assert.assertArrayEquals(expectedBytes, obtainedBytes);
     }
 
+    @Test
+    public void getUTXOsToRecycle_OK() throws IOException, BlockStoreException {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP264)).thenReturn(true);
+
+        int height = bridgeConstants.getUtxoRecyclingHeightCheck();
+
+        StoredBlock storedBlock = mock(StoredBlock.class);
+        when(storedBlock.getHeight()).thenReturn(height + 1);
+        BtcBlock btcBlock = mock(BtcBlock.class);
+        when(btcBlock.getHash()).thenReturn(Sha256Hash.of(Hex.decode("aa")));
+        when(storedBlock.getHeader()).thenReturn(btcBlock);
+        BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
+        when(btcBlockStore.getChainHead()).thenReturn(storedBlock);
+        BtcBlockStoreWithCache.Factory mockFactory = mock(BtcBlockStoreWithCache.Factory.class);
+        when(mockFactory.newInstance(any(), any(), any(), any())).thenReturn(btcBlockStore);
+
+        BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
+        Federation federation = bridgeConstants.getGenesisFederation();
+
+        BridgeSupport bridgeSupport = bridgeSupportBuilder
+            .withBridgeConstants(bridgeConstants)
+            .withProvider(provider)
+            .withBtcBlockStoreFactory(mockFactory)
+            .withActivations(activations)
+            .build();
+
+        UTXO utxo = new UTXO(PegTestUtils.createHash(1), 0, Coin.COIN, 0, false, federation.getP2SHScript());
+        UTXO utxo2 = new UTXO(PegTestUtils.createHash(2), 0, Coin.COIN, 1, false, federation.getP2SHScript());
+        UTXO utxo3 = new UTXO(PegTestUtils.createHash(3), 0, Coin.COIN, 2, false, federation.getP2SHScript());
+        List<UTXO> utxoList = Arrays.asList(utxo, utxo2, utxo3);
+
+        when(provider.getNewFederationBtcUTXOs()).thenReturn(utxoList);
+
+        Assert.assertEquals(1, bridgeSupport.getUTXOsToRecycle().size());
+        Assert.assertTrue(bridgeSupport.getUTXOsToRecycle().contains(utxo));
+    }
+
+    @Test
+    public void getUTXOsToRecycle_more_than_maxUtxosToRecycleAtOnce() throws IOException, BlockStoreException {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP264)).thenReturn(true);
+
+        int height = bridgeConstants.getUtxoRecyclingHeightCheck();
+
+        StoredBlock storedBlock = mock(StoredBlock.class);
+        when(storedBlock.getHeight()).thenReturn(height + 100);
+        BtcBlock btcBlock = mock(BtcBlock.class);
+        when(btcBlock.getHash()).thenReturn(Sha256Hash.of(Hex.decode("aa")));
+        when(storedBlock.getHeader()).thenReturn(btcBlock);
+        BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
+        when(btcBlockStore.getChainHead()).thenReturn(storedBlock);
+        BtcBlockStoreWithCache.Factory mockFactory = mock(BtcBlockStoreWithCache.Factory.class);
+        when(mockFactory.newInstance(any(), any(), any(), any())).thenReturn(btcBlockStore);
+
+        BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
+
+        BridgeSupport bridgeSupport = bridgeSupportBuilder
+            .withBridgeConstants(bridgeConstants)
+            .withProvider(provider)
+            .withBtcBlockStoreFactory(mockFactory)
+            .withActivations(activations)
+            .build();
+
+        List<UTXO> utxoList = PegTestUtils.createUTXOs(bridgeConstants.getMaxUtxosToRecycleAtOnce() + 10);
+
+        when(provider.getNewFederationBtcUTXOs()).thenReturn(utxoList);
+
+        // MaxUtxosToRecycleAtOnce is returned if the utxoList is more
+        Assert.assertEquals(bridgeConstants.getMaxUtxosToRecycleAtOnce(), bridgeSupport.getUTXOsToRecycle().size());
+    }
+
     private Address getFastBridgeFederationAddress() {
         Script fastBridgeRedeemScript = FastBridgeRedeemScriptParser.createMultiSigFastBridgeRedeemScript(
             bridgeConstants.getGenesisFederation().getRedeemScript(),
