@@ -163,6 +163,8 @@ public class BridgeRegTestConstants extends BridgeConstants {
         utxoExpirationCheckpointPeriodInBlocks = 20_000; // rounded 1 week of RSK blocks
         utxoExpirationCheckpointPeriodTimestamp = 604_800_000L; // 1 week timestamp in milliseconds.
         maxUtxosToRecycleAtOnce = 20;
+
+        utxoRecyclingHeightCheck = 13_000; // 3 months in BTC blocks
     }
 
     public static BridgeRegTestConstants getInstance() {

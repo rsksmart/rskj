@@ -152,6 +152,8 @@ public class BridgeMainNetConstants extends BridgeConstants {
         utxoExpirationCheckpointPeriodInBlocks = 40_000; // rounded 2 weeks of RSK blocks
         utxoExpirationCheckpointPeriodTimestamp = 1_209_600_000L; // 2 weeks timestamp in milliseconds.
         maxUtxosToRecycleAtOnce = 40;
+
+        utxoRecyclingHeightCheck = 26_000; // 6 months in BTC blocks
     }
 
     public static BridgeMainNetConstants getInstance() {

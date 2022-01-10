@@ -81,6 +81,7 @@ public class BridgeConstants {
     protected long utxoExpirationCheckpointPeriodInBlocks;
     protected long utxoExpirationCheckpointPeriodTimestamp;
     protected int maxUtxosToRecycleAtOnce;
+    protected int utxoRecyclingHeightCheck;
 
     public NetworkParameters getBtcParams() {
         return NetworkParameters.fromID(btcParamsString);
@@ -178,5 +179,9 @@ public class BridgeConstants {
 
     public int getMaxUtxosToRecycleAtOnce() {
         return maxUtxosToRecycleAtOnce;
+    }
+
+    public int getUtxoRecyclingHeightCheck() {
+        return utxoRecyclingHeightCheck;
     }
 }
