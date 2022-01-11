@@ -59,7 +59,7 @@ public class DataSourceWithCache implements KeyValueDataSource {
                                @Nullable CacheSnapshotHandler cacheSnapshotHandler) {
         this.cacheSize = cacheSize;
         this.base = Objects.requireNonNull(base);
-        this.uncommittedCache = new LinkedHashMap<>(cacheSize / 8, (float)0.75, false);
+        this.uncommittedCache = new LinkedHashMap<>(cacheSize / 8, (float) 0.75, false);
         this.committedCache = Collections.synchronizedMap(makeCommittedCache(cacheSize, cacheSnapshotHandler));
         this.cacheSnapshotHandler = cacheSnapshotHandler;
     }
@@ -91,8 +91,7 @@ public class DataSourceWithCache implements KeyValueDataSource {
 
             //null value, as expected, is allowed here to be stored in committedCache
             committedCache.put(wrappedKey, value);
-        }
-        finally {
+        } finally {
             if (traceEnabled) {
                 numOfGets.incrementAndGet();
             }
@@ -125,8 +124,7 @@ public class DataSourceWithCache implements KeyValueDataSource {
 
             committedCache.remove(wrappedKey);
             this.putKeyValue(wrappedKey, value);
-        }
-        finally {
+        } finally {
             if (logger.isTraceEnabled()) {
                 numOfPuts.incrementAndGet();
             }
@@ -167,14 +165,13 @@ public class DataSourceWithCache implements KeyValueDataSource {
                 this.putKeyValue(wrappedKey, null);
                 committedCache.remove(wrappedKey);
             }
-        }
-        finally {
+        } finally {
             this.lock.writeLock().unlock();
         }
     }
 
     @Override
-    public Set<byte[]> keys() {
+    public Set<ByteArrayWrapper> keys() {
         Stream<ByteArrayWrapper> baseKeys;
         Stream<ByteArrayWrapper> committedKeys;
         Stream<ByteArrayWrapper> uncommittedKeys;
@@ -183,7 +180,7 @@ public class DataSourceWithCache implements KeyValueDataSource {
         this.lock.readLock().lock();
 
         try {
-            baseKeys = base.keys().stream().map(ByteArrayWrapper::new);
+            baseKeys = base.keys().stream();
             committedKeys = committedCache.entrySet().stream()
                     .filter(e -> e.getValue() != null)
                     .map(Map.Entry::getKey);
@@ -194,19 +191,13 @@ public class DataSourceWithCache implements KeyValueDataSource {
                     .filter(e -> e.getValue() == null)
                     .map(Map.Entry::getKey)
                     .collect(Collectors.toSet());
-        }
-        finally {
+        } finally {
             this.lock.readLock().unlock();
         }
 
-        Set<ByteArrayWrapper> knownKeys = Stream.concat(Stream.concat(baseKeys, committedKeys), uncommittedKeys)
-                .collect(Collectors.toSet());
-        knownKeys.removeAll(uncommittedKeysToRemove);
-
-        // note that toSet doesn't work with byte[], so we have to do this extra step
-        return knownKeys.stream()
-                .map(ByteArrayWrapper::getData)
-                .collect(Collectors.toSet());
+        Stream<ByteArrayWrapper> knownKeys = Stream.concat(Stream.concat(baseKeys, committedKeys), uncommittedKeys);
+        return knownKeys.filter(k -> !uncommittedKeysToRemove.contains(k))
+                .collect(Collectors.toCollection(HashSet::new));
     }
 
     @Override
@@ -223,8 +214,7 @@ public class DataSourceWithCache implements KeyValueDataSource {
         try {
             rows.forEach(this::put);
             keysToRemove.forEach(this::delete);
-        }
-        finally {
+        } finally {
             this.lock.writeLock().unlock();
         }
     }
@@ -254,8 +244,7 @@ public class DataSourceWithCache implements KeyValueDataSource {
             if (logger.isTraceEnabled()) {
                 logger.trace("datasource flush: [{}]seconds", FormatUtils.formatNanosecondsToSeconds(totalTime));
             }
-        }
-        finally {
+        } finally {
             this.lock.writeLock().unlock();
         }
     }
@@ -283,8 +272,7 @@ public class DataSourceWithCache implements KeyValueDataSource {
             }
             uncommittedCache.clear();
             committedCache.clear();
-        }
-        finally {
+        } finally {
             this.lock.writeLock().unlock();
         }
     }
@@ -301,8 +289,7 @@ public class DataSourceWithCache implements KeyValueDataSource {
                     numOfGets.getAndSet(0),
                     numOfPuts.getAndSet(0),
                     numOfGetsFromStore.getAndSet(0));
-        }
-        finally {
+        } finally {
             this.lock.writeLock().unlock();
         }
     }

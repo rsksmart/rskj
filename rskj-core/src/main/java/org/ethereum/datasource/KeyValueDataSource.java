@@ -37,7 +37,7 @@ public interface KeyValueDataSource extends DataSource {
 
     void delete(byte[] key);
 
-    Set<byte[]> keys();
+    Set<ByteArrayWrapper> keys();
 
     /**
      * Note that updateBatch() does not imply the operation is atomic:

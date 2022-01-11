@@ -24,7 +24,6 @@ import org.iq80.leveldb.DBException;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 
 import static org.ethereum.util.ByteUtil.wrap;
 
@@ -69,10 +68,8 @@ public class HashMapDB implements KeyValueDataSource {
     }
 
     @Override
-    public synchronized Set<byte[]> keys() {
-        return storage.keySet().stream()
-                .map(ByteArrayWrapper::getData)
-                .collect(Collectors.toSet());
+    public synchronized Set<ByteArrayWrapper> keys() {
+        return new HashSet<>(storage.keySet());
     }
 
     @Override
