@@ -532,6 +532,7 @@ public class BridgeSupportReleaseBtcTest {
             .withActivations(activationMock)
             .withBridgeConstants(bridgeConstants)
             .withProvider(provider)
+            .withEventLogger(eventLogger)
             .build();
 
         Transaction rskTx = buildUpdateTx();
@@ -542,6 +543,8 @@ public class BridgeSupportReleaseBtcTest {
 
         verify(provider, times(1)).getNextPegoutHeight();
         verify(provider, times(1)).setNextPegoutHeight(any(Long.class));
+
+        verify(eventLogger, times(1)).logBatchPegoutCreated(any(), any());
     }
 
     @Test
