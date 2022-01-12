@@ -85,6 +85,9 @@ public class BridgeStorageProviderTest {
     private final NetworkParameters networkParameters = config.getNetworkConstants().getBridgeConstants().getBtcParams();
     private static final byte FAST_BRIDGE_FEDERATION_SCRIPT_HASH_TRUE_VALUE_TEST = (byte) 1;
 
+    private static final DataWord NEXT_UTXO_EXPIRATION_CHECKPOINT_HEIGHT = DataWord.fromString("nextUtxoExpirationCheckpointH");
+    private static final DataWord NEXT_UTXO_EXPIRATION_CHECKPOINT_TIMESTAMP = DataWord.fromString("nextUtxoExpirationCheckpointTS");
+
     private int transactionOffset;
 
     @Test
@@ -3188,6 +3191,373 @@ public class BridgeStorageProviderTest {
                 eq(PrecompiledContracts.BRIDGE_ADDR),
                 eq(DataWord.fromString("receiveHeadersLastTimestamp")),
                 any(byte[].class)
+        );
+    }
+
+    @Test
+    public void getNextUtxoExpirationCheckpointHeight_before_RSKIP264() {
+        Repository repository = mock(Repository.class);
+
+        when(repository.getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, NEXT_UTXO_EXPIRATION_CHECKPOINT_HEIGHT)).thenReturn(new byte[]{1});
+
+        BridgeStorageProvider provider = new BridgeStorageProvider(
+            repository, PrecompiledContracts.BRIDGE_ADDR,
+            config.getNetworkConstants().getBridgeConstants(), activationsBeforeFork
+        );
+
+        assertEquals(Optional.empty(), provider.getNextUtxoExpirationCheckpointHeight());
+
+        verify(repository, never()).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, NEXT_UTXO_EXPIRATION_CHECKPOINT_HEIGHT);
+    }
+
+    @Test
+    public void getNextUtxoExpirationCheckpointHeight_after_RSKIP264() {
+        Repository repository = mock(Repository.class);
+
+        when(repository.getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, NEXT_UTXO_EXPIRATION_CHECKPOINT_HEIGHT)).thenReturn(new byte[]{1});
+
+        BridgeStorageProvider provider = new BridgeStorageProvider(
+            repository, PrecompiledContracts.BRIDGE_ADDR,
+            config.getNetworkConstants().getBridgeConstants(), activationsAllForks
+        );
+
+        assertEquals(Optional.of(1L), provider.getNextUtxoExpirationCheckpointHeight());
+
+        verify(repository, atLeastOnce()).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, NEXT_UTXO_EXPIRATION_CHECKPOINT_HEIGHT);
+    }
+
+    @Test
+    public void setNextUtxoExpirationCheckpointHeight_before_RSKIP264() {
+        Repository repository = createRepository();
+        Repository track = repository.startTracking();
+
+        BridgeStorageProvider provider1 = new BridgeStorageProvider(
+            track, PrecompiledContracts.BRIDGE_ADDR,
+            config.getNetworkConstants().getBridgeConstants(), activationsBeforeFork
+        );
+
+        provider1.setNextUtxoExpirationCheckpointHeight(123);
+        provider1.saveNextUtxoExpirationCheckpointHeight();
+        track.commit();
+
+        track = repository.startTracking();
+
+        BridgeStorageProvider provider2 = new BridgeStorageProvider(
+            track, PrecompiledContracts.BRIDGE_ADDR,
+            config.getNetworkConstants().getBridgeConstants(), activationsBeforeFork
+        );
+
+        assertThat(provider2.getNextUtxoExpirationCheckpointHeight(), is(Optional.empty()));
+    }
+
+    @Test
+    public void setNextUtxoExpirationCheckpointHeight_after_RSKIP264() {
+        Repository repository = createRepository();
+        Repository track = repository.startTracking();
+
+        BridgeStorageProvider provider1 = new BridgeStorageProvider(
+            track, PrecompiledContracts.BRIDGE_ADDR,
+            config.getNetworkConstants().getBridgeConstants(), activationsAllForks
+        );
+
+        provider1.setNextUtxoExpirationCheckpointHeight(123);
+        provider1.saveNextUtxoExpirationCheckpointHeight();
+        track.commit();
+
+        track = repository.startTracking();
+
+        BridgeStorageProvider provider2 = new BridgeStorageProvider(
+            track, PrecompiledContracts.BRIDGE_ADDR,
+            config.getNetworkConstants().getBridgeConstants(), activationsAllForks
+        );
+
+        assertThat(provider2.getNextUtxoExpirationCheckpointHeight(), is(Optional.of(123L)));
+    }
+
+    @Test
+    public void setNextUtxoExpirationCheckpointHeight_after_RSKIP264_when_height_is_negative() {
+        Repository repository = mock(Repository.class);
+
+        BridgeStorageProvider provider = new BridgeStorageProvider(
+            repository, PrecompiledContracts.BRIDGE_ADDR,
+            config.getNetworkConstants().getBridgeConstants(), activationsAllForks
+        );
+
+        provider.setNextUtxoExpirationCheckpointHeight(-123);
+        provider.saveNextUtxoExpirationCheckpointHeight();
+
+        assertThat(provider.getNextUtxoExpirationCheckpointHeight(), is(Optional.of(0L)));
+        verify(repository, never()).addStorageBytes(
+            eq(PrecompiledContracts.BRIDGE_ADDR),
+            eq(NEXT_UTXO_EXPIRATION_CHECKPOINT_HEIGHT),
+            any()
+        );
+    }
+
+    @Test
+    public void setNextUtxoExpirationCheckpointHeight_after_RSKIP264_when_height_is_zero() {
+        Repository repository = mock(Repository.class);
+
+        BridgeStorageProvider provider = new BridgeStorageProvider(
+            repository, PrecompiledContracts.BRIDGE_ADDR,
+            config.getNetworkConstants().getBridgeConstants(), activationsAllForks
+        );
+
+        provider.setNextUtxoExpirationCheckpointHeight(0);
+        provider.saveNextUtxoExpirationCheckpointHeight();
+
+        assertThat(provider.getNextUtxoExpirationCheckpointHeight(), is(Optional.of(0L)));
+        verify(repository, never()).addStorageBytes(
+            eq(PrecompiledContracts.BRIDGE_ADDR),
+            eq(NEXT_UTXO_EXPIRATION_CHECKPOINT_HEIGHT),
+            any()
+        );
+    }
+
+    @Test
+    public void saveNextUtxoExpirationCheckpointHeight_before_RSKIP264() {
+        Repository repository = mock(Repository.class);
+
+        BridgeStorageProvider provider = new BridgeStorageProvider(
+            repository, PrecompiledContracts.BRIDGE_ADDR,
+            config.getNetworkConstants().getBridgeConstants(), activationsBeforeFork
+        );
+
+        provider.setNextUtxoExpirationCheckpointHeight(123);
+        provider.saveNextUtxoExpirationCheckpointHeight();
+
+        verify(repository, never()).addStorageBytes(
+            eq(PrecompiledContracts.BRIDGE_ADDR),
+            eq(NEXT_UTXO_EXPIRATION_CHECKPOINT_HEIGHT),
+            any()
+        );
+    }
+
+    @Test
+    public void saveNextUtxoExpirationCheckpointHeight_after_RSKIP264() {
+        Repository repository = mock(Repository.class);
+
+        BridgeStorageProvider provider = new BridgeStorageProvider(
+            repository, PrecompiledContracts.BRIDGE_ADDR,
+            config.getNetworkConstants().getBridgeConstants(), activationsAllForks
+        );
+
+        provider.setNextUtxoExpirationCheckpointHeight(123);
+        provider.saveNextUtxoExpirationCheckpointHeight();
+
+        verify(repository, times(1)).addStorageBytes(
+            PrecompiledContracts.BRIDGE_ADDR,
+            NEXT_UTXO_EXPIRATION_CHECKPOINT_HEIGHT,
+            BridgeSerializationUtils.serializeLong(123)
+        );
+    }
+
+    @Test
+    public void saveNextUtxoExpirationCheckpointHeight_not_set() throws IOException {
+        Repository repository = mock(Repository.class);
+
+        BridgeStorageProvider provider = new BridgeStorageProvider(
+            repository, PrecompiledContracts.BRIDGE_ADDR,
+            config.getNetworkConstants().getBridgeConstants(), activationsAllForks
+        );
+
+        provider.save();
+        verify(repository, never()).addStorageBytes(
+            eq(PrecompiledContracts.BRIDGE_ADDR),
+            eq(NEXT_UTXO_EXPIRATION_CHECKPOINT_HEIGHT),
+            any(byte[].class)
+        );
+    }
+
+    @Test
+    public void getNextUtxoExpirationCheckpointTimestamp_before_RSKIP264() {
+        Repository repository = mock(Repository.class);
+
+        BridgeStorageProvider provider = new BridgeStorageProvider(
+            repository, PrecompiledContracts.BRIDGE_ADDR,
+            config.getNetworkConstants().getBridgeConstants(), activationsBeforeFork
+        );
+
+        assertFalse(provider.getNextUtxoExpirationCheckpointTimestamp().isPresent());
+        verify(repository, never()).getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, NEXT_UTXO_EXPIRATION_CHECKPOINT_TIMESTAMP);
+    }
+
+    @Test
+    public void getNextUtxoExpirationCheckpointTimestamp_after_RSKIP264() {
+        Repository repository = mock(Repository.class);
+
+        long actualTimeStamp = System.currentTimeMillis();
+        byte[] encodedTimeStamp = RLP.encodeBigInteger(BigInteger.valueOf(actualTimeStamp));
+        when(repository.getStorageBytes(PrecompiledContracts.BRIDGE_ADDR, NEXT_UTXO_EXPIRATION_CHECKPOINT_TIMESTAMP))
+            .thenReturn(encodedTimeStamp);
+
+        BridgeStorageProvider provider = new BridgeStorageProvider(
+            repository, PrecompiledContracts.BRIDGE_ADDR,
+            config.getNetworkConstants().getBridgeConstants(), activationsAllForks
+        );
+
+        Optional<Long> result = provider.getNextUtxoExpirationCheckpointTimestamp();
+
+        assertTrue(result.isPresent());
+        assertEquals(actualTimeStamp, (long) result.get());
+    }
+
+    @Test
+    public void getNextUtxoExpirationCheckpointTimestamp_not_in_repository() {
+        Repository repository = mock(Repository.class);
+
+        BridgeStorageProvider provider = new BridgeStorageProvider(
+            repository, PrecompiledContracts.BRIDGE_ADDR,
+            config.getNetworkConstants().getBridgeConstants(), activationsAllForks
+        );
+
+        Optional<Long> result = provider.getNextUtxoExpirationCheckpointTimestamp();
+
+        assertTrue(result.isPresent());
+        assertEquals(0L, (long) result.get());
+    }
+
+    @Test
+    public void setNextUtxoExpirationCheckpointTimestamp_before_RSKIP264() {
+        Repository repository = createRepository();
+        Repository track = repository.startTracking();
+
+        BridgeStorageProvider provider1 = new BridgeStorageProvider(
+            track, PrecompiledContracts.BRIDGE_ADDR,
+            config.getNetworkConstants().getBridgeConstants(), activationsBeforeFork
+        );
+
+        provider1.setNextUtxoExpirationCheckpointTimestamp(123);
+        provider1.saveNextUtxoExpirationCheckpointTimestamp();
+        track.commit();
+
+        track = repository.startTracking();
+
+        BridgeStorageProvider provider2 = new BridgeStorageProvider(
+            track, PrecompiledContracts.BRIDGE_ADDR,
+            config.getNetworkConstants().getBridgeConstants(), activationsBeforeFork
+        );
+
+        assertThat(provider2.getNextUtxoExpirationCheckpointTimestamp(), is(Optional.empty()));
+    }
+
+    @Test
+    public void setNextUtxoExpirationCheckpointTimestamp_after_RSKIP264() {
+        Repository repository = createRepository();
+        Repository track = repository.startTracking();
+
+        BridgeStorageProvider provider1 = new BridgeStorageProvider(
+            track, PrecompiledContracts.BRIDGE_ADDR,
+            config.getNetworkConstants().getBridgeConstants(), activationsAllForks
+        );
+
+        provider1.setNextUtxoExpirationCheckpointTimestamp(123);
+        provider1.saveNextUtxoExpirationCheckpointTimestamp();
+        track.commit();
+
+        track = repository.startTracking();
+
+        BridgeStorageProvider provider2 = new BridgeStorageProvider(
+            track, PrecompiledContracts.BRIDGE_ADDR,
+            config.getNetworkConstants().getBridgeConstants(), activationsAllForks
+        );
+
+        assertThat(provider2.getNextUtxoExpirationCheckpointTimestamp(), is(Optional.of(123L)));
+    }
+
+    @Test
+    public void setNextUtxoExpirationCheckpointTimestamp_after_RSKIP264_when_timestamp_is_negative() {
+        Repository repository = mock(Repository.class);
+
+        BridgeStorageProvider provider = new BridgeStorageProvider(
+            repository, PrecompiledContracts.BRIDGE_ADDR,
+            config.getNetworkConstants().getBridgeConstants(), activationsAllForks
+        );
+
+        provider.setNextUtxoExpirationCheckpointTimestamp(-123);
+        provider.saveNextUtxoExpirationCheckpointTimestamp();
+
+        assertThat(provider.getNextUtxoExpirationCheckpointTimestamp(), is(Optional.of(0L)));
+        verify(repository, never()).addStorageBytes(
+            eq(PrecompiledContracts.BRIDGE_ADDR),
+            eq(NEXT_UTXO_EXPIRATION_CHECKPOINT_TIMESTAMP),
+            any()
+        );
+    }
+
+    @Test
+    public void setNextUtxoExpirationCheckpointTimestamp_after_RSKIP264_when_timestamp_is_zero() {
+        Repository repository = mock(Repository.class);
+
+        BridgeStorageProvider provider = new BridgeStorageProvider(
+            repository, PrecompiledContracts.BRIDGE_ADDR,
+            config.getNetworkConstants().getBridgeConstants(), activationsAllForks
+        );
+
+        provider.setNextUtxoExpirationCheckpointTimestamp(0);
+        provider.saveNextUtxoExpirationCheckpointTimestamp();
+
+        assertThat(provider.getNextUtxoExpirationCheckpointTimestamp(), is(Optional.of(0L)));
+        verify(repository, never()).addStorageBytes(
+            eq(PrecompiledContracts.BRIDGE_ADDR),
+            eq(NEXT_UTXO_EXPIRATION_CHECKPOINT_TIMESTAMP),
+            any()
+        );
+    }
+
+    @Test
+    public void saveNextUtxoExpirationCheckpointTimestamp_before_RSKIP264() throws IOException {
+        Repository repository = mock(Repository.class);
+
+        BridgeStorageProvider provider = new BridgeStorageProvider(
+            repository, PrecompiledContracts.BRIDGE_ADDR,
+            config.getNetworkConstants().getBridgeConstants(), activationsBeforeFork
+        );
+
+        provider.setNextUtxoExpirationCheckpointTimestamp(System.currentTimeMillis());
+
+        provider.save();
+        verify(repository, never()).addStorageBytes(
+            eq(PrecompiledContracts.BRIDGE_ADDR),
+            eq(NEXT_UTXO_EXPIRATION_CHECKPOINT_TIMESTAMP),
+            any(byte[].class)
+        );
+    }
+
+    @Test
+    public void saveNextUtxoExpirationCheckpointTimestamp_after_RSKIP264() throws IOException {
+        Repository repository = mock(Repository.class);
+
+        BridgeStorageProvider provider = new BridgeStorageProvider(
+            repository, PrecompiledContracts.BRIDGE_ADDR,
+            config.getNetworkConstants().getBridgeConstants(), activationsAllForks
+        );
+
+        long timeInMillis = System.currentTimeMillis();
+        provider.setNextUtxoExpirationCheckpointTimestamp(timeInMillis);
+
+        provider.save();
+        verify(repository, times(1)).addStorageBytes(
+            PrecompiledContracts.BRIDGE_ADDR,
+            NEXT_UTXO_EXPIRATION_CHECKPOINT_TIMESTAMP,
+            BridgeSerializationUtils.serializeLong(timeInMillis)
+        );
+    }
+
+    @Test
+    public void saveNextUtxoExpirationCheckpointTimestamp_not_set() throws IOException {
+        Repository repository = mock(Repository.class);
+
+        BridgeStorageProvider provider = new BridgeStorageProvider(
+            repository, PrecompiledContracts.BRIDGE_ADDR,
+            config.getNetworkConstants().getBridgeConstants(), activationsAllForks
+        );
+
+        provider.save();
+        verify(repository, never()).addStorageBytes(
+            eq(PrecompiledContracts.BRIDGE_ADDR),
+            eq(NEXT_UTXO_EXPIRATION_CHECKPOINT_TIMESTAMP),
+            any(byte[].class)
         );
     }
 
