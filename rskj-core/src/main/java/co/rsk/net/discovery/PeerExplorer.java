@@ -423,7 +423,7 @@ public class PeerExplorer {
         NodeID oldNodeIdForHost = this.knownHosts.get(senderNode.getAddressAsString());
         boolean existsWithDifferentId = oldNodeIdForHost != null && !oldNodeIdForHost.equals(senderNode.getId());
         if (existsWithDifferentId) {
-            logger.debug("Disconnecting peer with old id: ip[{}] port[{}] id [{}]", ip, port, oldNodeIdForHost);
+            logger.warn("Disconnecting peer with old id: ip[{}] port[{}] id [{}]", ip, port, oldNodeIdForHost);
             Node oldNodeForHost = new Node(oldNodeIdForHost.getID(), ip, port);
             removeConnection(oldNodeForHost);
         }
