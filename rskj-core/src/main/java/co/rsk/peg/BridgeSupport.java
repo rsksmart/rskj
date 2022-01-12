@@ -1097,15 +1097,17 @@ public class BridgeSupport {
                 releaseRequest.getAmount()
             );
 
-            if (!result.isPresent()) {
+            if (result.isPresent() &&
+                !result.get().getResponseCode().equals(ReleaseTransactionBuilder.Response.SUCCESS)) {
             // Couldn't build a transaction to release these funds
             // Log the event and return false so that the request remains in the
             // queue for future processing.
             // Further logging is done at the tx builder level.
                 logger.warn(
-                    "Couldn't build a release BTC tx for <{}, {}>",
+                    "Couldn't build a release BTC tx for <{}, {}>. Reason: {}",
                     releaseRequest.getDestination().toBase58(),
-                    releaseRequest.getAmount());
+                    releaseRequest.getAmount(),
+                    result.get().getResponseCode());
                 return false;
             }
 
@@ -1142,11 +1144,13 @@ public class BridgeSupport {
                     .map(ReleaseRequestQueue.Entry::getAmount)
                     .reduce(Coin.ZERO, Coin::add);
 
-                if (!result.isPresent()) {
+                if (result.isPresent() &&
+                    !result.get().getResponseCode().equals(ReleaseTransactionBuilder.Response.SUCCESS)) {
                     logger.warn(
-                        "Couldn't build a pegout BTC tx for {} pending requests (total amount: {})",
+                        "Couldn't build a pegout BTC tx for {} pending requests (total amount: {}), Reason: {}",
                         pegoutEntries.size(),
-                        totalPegoutValue);
+                        totalPegoutValue,
+                        result.get().getResponseCode());
                     return;
                 }
 
@@ -2954,17 +2958,17 @@ public class BridgeSupport {
         );
 
         Optional<ReleaseTransactionBuilder.BuildResult> buildReturnResult = txBuilder.buildEmptyWalletTo(btcRefundAddress);
-        if (buildReturnResult.isPresent()) {
+        if (buildReturnResult.isPresent() && buildReturnResult.get().getResponseCode().equals(ReleaseTransactionBuilder.Response.SUCCESS)) {
             if (activations.isActive(ConsensusRule.RSKIP146)) {
                 provider.getReleaseTransactionSet().add(buildReturnResult.get().getBtcTx(), rskExecutionBlock.getNumber(), rskTxHash);
                 eventLogger.logReleaseBtcRequested(rskTxHash.getBytes(), buildReturnResult.get().getBtcTx(), totalAmount);
             } else {
                 provider.getReleaseTransactionSet().add(buildReturnResult.get().getBtcTx(), rskExecutionBlock.getNumber());
             }
-            logger.info("Rejecting peg-in: return tx build successful to {}. Tx {}. Value {}.", btcRefundAddress, rskTxHash, totalAmount);
+            logger.info("Rejecting peg-in due to {}: return tx build successful to {}. Tx {}. Value {}.", buildReturnResult.get().getResponseCode(), btcRefundAddress, rskTxHash, totalAmount);
         } else {
-            logger.warn("Rejecting peg-in: return tx build for btc tx {} error. Return was to {}. Tx {}. Value {}", btcTx.getHash(), btcRefundAddress, rskTxHash, totalAmount);
-            panicProcessor.panic("peg-in-refund", String.format("peg-in money return tx build for btc tx %s error. Return was to %s. Tx %s. Value %s", btcTx.getHash(), btcRefundAddress, rskTxHash, totalAmount));
+            logger.warn("Rejecting peg-in due to {}: return tx build for btc tx {} error. Return was to {}. Tx {}. Value {}", buildReturnResult.get().getResponseCode(), btcTx.getHash(), btcRefundAddress, rskTxHash, totalAmount);
+            panicProcessor.panic("peg-in-refund", String.format("peg-in money return tx build for btc tx %s error. Return was to %s. Tx %s. Value %s. Reason %s", btcTx.getHash(), btcRefundAddress, rskTxHash, totalAmount, buildReturnResult.get().getResponseCode()));
         }
     }
 
