@@ -648,6 +648,40 @@ public class BridgeSupportReleaseBtcTest {
         assertEquals(0, provider.getReleaseTransactionSet().getEntries().size());
     }
 
+    @Test
+    public void test_processPegoutsInBatch_after_rskip_271_divide_transaction_when_max_size_exceeded() throws IOException {
+        when(activationMock.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
+
+        Federation federation = bridgeConstants.getGenesisFederation();
+        List<UTXO> utxos = PegTestUtils.createTestUtxos(610, federation.getAddress());
+
+        BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
+
+        when(provider.getNewFederationBtcUTXOs()).thenReturn(utxos);
+        when(provider.getReleaseRequestQueue()).thenReturn(new ReleaseRequestQueue(PegTestUtils.createTestEntries(600)));
+        when(provider.getReleaseTransactionSet()).thenReturn(new ReleaseTransactionSet(Collections.emptySet()));
+
+        BridgeSupport bridgeSupport = bridgeSupportBuilder
+            .withActivations(activationMock)
+            .withBridgeConstants(bridgeConstants)
+            .withProvider(provider)
+            .build();
+
+        Transaction rskTx = buildUpdateTx();
+        bridgeSupport.updateCollections(rskTx);
+
+        // First Half of the PegoutRequests 600 / 2 = 300 Is Batched For The First Time
+        assertEquals(300, provider.getReleaseRequestQueue().getEntries().size());
+        assertEquals(1, provider.getReleaseTransactionSet().getEntries().size());
+
+        rskTx = buildUpdateTx();
+        bridgeSupport.updateCollections(rskTx);
+
+        // The Rest PegoutRequests 600 / 2 = 300 Is Batched The 2nd Time updateCollections Is Called
+        assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
+        assertEquals(2, provider.getReleaseTransactionSet().getEntries().size());
+    }
+
     private void testPegoutMinimumWithFeeVerification(Coin feePerKB, Coin value, boolean shouldPegout)
         throws IOException {
         when(activationMock.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
