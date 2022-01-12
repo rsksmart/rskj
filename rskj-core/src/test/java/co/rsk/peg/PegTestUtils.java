@@ -201,9 +201,8 @@ public class PegTestUtils {
 
     public static List<UTXO> createTestUtxos(int size, Address address) {
         List<UTXO> utxoList = new ArrayList<>();
-        SecureRandom random = new SecureRandom();
         for (int i = 0; i < size; i++) {
-            utxoList.add(createUTXO(random.nextInt(size), Coin.COIN, address));
+            utxoList.add(createUTXO(i + 1, Coin.COIN, address));
         }
         return utxoList;
     }
@@ -213,5 +212,21 @@ public class PegTestUtils {
         Script redeemScript = ScriptBuilder.createRedeemScript((keyList.size() / 2) + 1, keyList);
         Script outputScript = ScriptBuilder.createP2SHOutputScript(redeemScript);
         return Address.fromP2SHScript(networkParameters, outputScript);
+    }
+
+    public static List<ReleaseRequestQueue.Entry> createTestEntries(int size) {
+        List<ReleaseRequestQueue.Entry> pegoutRequests = new ArrayList<>();
+        for (int i = 0; i < size; i++) {
+            pegoutRequests.add(createTestEntry(new BtcECKey(), Coin.COIN.add(Coin.valueOf(i))));
+        }
+        return pegoutRequests;
+    }
+
+    public static ReleaseRequestQueue.Entry createTestEntry(BtcECKey addressPk, Coin amount) {
+        return new ReleaseRequestQueue.Entry(mockAddress(addressPk), amount);
+    }
+
+    public static Address mockAddress(BtcECKey pk) {
+        return pk.toAddress(NetworkParameters.fromID(NetworkParameters.ID_REGTEST));
     }
 }

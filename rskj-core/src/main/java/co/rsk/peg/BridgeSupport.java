@@ -1139,6 +1139,12 @@ public class BridgeSupport {
             if (!pegoutEntries.isEmpty()) {
                 Optional<ReleaseTransactionBuilder.BuildResult> result = txBuilder.buildBatchedPegouts(pegoutEntries);
 
+                while (result.isPresent() && result.get().getResponseCode().equals(ReleaseTransactionBuilder.Response.EXCEED_MAX_TRANSACTION_SIZE)) {
+                    int firstHalfSize = pegoutEntries.size() / 2;
+                    pegoutEntries = pegoutEntries.subList(0, firstHalfSize);
+                    result = txBuilder.buildBatchedPegouts(pegoutEntries);
+                }
+
                 Coin totalPegoutValue = pegoutEntries
                     .stream()
                     .map(ReleaseRequestQueue.Entry::getAmount)
@@ -1158,8 +1164,7 @@ public class BridgeSupport {
                 // TODO: Update to call addPegoutTxToReleaseTransactionSet with the RskHash that calls the updateCollections
                 releaseTransactionSet.add(generatedTransaction, rskExecutionBlock.getNumber());
 
-                // TODO: Update this if all requests are not batched at once i.e partial batching
-                // Remove All requests on the queue after successfully batching pegouts
+                // Remove batched requests from the queue after successfully batching pegouts
                 releaseRequestQueue.removeEntries(pegoutEntries);
 
                 // Mark UTXOs as spent
@@ -1173,8 +1178,10 @@ public class BridgeSupport {
             }
 
             // update next Pegout height even if there were no request in queue
-            long nextPegoutHeight = currentBlockNumber + bridgeConstants.getNumberOfBlocksBetweenPegouts();
-            provider.setNextPegoutHeight(nextPegoutHeight);
+            if (releaseRequestQueue.getEntries().isEmpty()) {
+                long nextPegoutHeight = currentBlockNumber + bridgeConstants.getNumberOfBlocksBetweenPegouts();
+                provider.setNextPegoutHeight(nextPegoutHeight);
+            }
         }
     }
 
