@@ -2502,9 +2502,10 @@ public class BridgeSupport {
 
     protected void checktimeLockExpiration() {
         if (activations.isActive(RSKIP264)) {
-            long height = provider.getNextUtxoExpirationCheckpointHeight().orElse(0L);
-            long timestamp = provider.getNextUtxoExpirationCheckpointTimestamp().orElse(0L);
-            if ((rskExecutionBlock.getNumber() >= height) || (rskExecutionBlock.getTimestamp() >= timestamp)) {
+            long nextUtxoExpirationCheckpointHeight = provider.getNextUtxoExpirationCheckpointHeight().orElse(0L);
+            long nextUtxoExpirationCheckpointTimestamp = provider.getNextUtxoExpirationCheckpointTimestamp().orElse(0L);
+            if ((rskExecutionBlock.getNumber() >= nextUtxoExpirationCheckpointHeight) ||
+                (rskExecutionBlock.getTimestamp() >= nextUtxoExpirationCheckpointTimestamp)) {
                 // TODO: Select Utxos, Build Transaction, Update CheckPoints
             }
 
