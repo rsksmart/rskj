@@ -20,46 +20,49 @@
 package co.rsk.rpc.modules.debug;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class TraceOptions {
 
-    private Set<String> disabledFields;
-    private Set<String> unsupportedOptions;
+    private final List<String> supportedOptions;
+    private final Set<String> disabledFields;
+    private final Set<String> unsupportedOptions;
 
-    private TraceOptions() {}
+    public TraceOptions() {
+        supportedOptions = Arrays.stream(DisableOption.values()).map(option -> option.option)
+                .collect(Collectors.toList());
+
+        this.disabledFields = new HashSet<>();
+        this.unsupportedOptions = new HashSet<>();
+    }
 
     public TraceOptions(Map<String, String> traceOptions) {
-        disabledFields = new HashSet<>();
-        unsupportedOptions = new HashSet<>();
-        if (traceOptions != null) {
-            if (traceOptions.containsKey("disableStorage")) {
-                if (Boolean.parseBoolean(traceOptions.get("disableStorage"))) {
-                    disabledFields.add("storage");
-                }
-                traceOptions.remove("disableStorage");
+        this();
+
+        if (traceOptions == null || traceOptions.isEmpty()) return;
+
+        // Disabled Fields Parsing
+
+        for (DisableOption disableOption : DisableOption.values()) {
+            if (Boolean.parseBoolean(traceOptions.get(disableOption.option))) {
+                this.disabledFields.add(disableOption.value);
             }
-            if (traceOptions.containsKey("disableMemory")) {
-                if (Boolean.parseBoolean(traceOptions.get("disableMemory"))) {
-                    disabledFields.add("memory");
-                }
-                traceOptions.remove("disableMemory");
-            }
-            if (traceOptions.containsKey("disableStack")) {
-                if (Boolean.parseBoolean(traceOptions.get("disableStack"))) {
-                    disabledFields.add("stack");
-                }
-                traceOptions.remove("disableStack");
-            }
-            unsupportedOptions = traceOptions.keySet();
         }
+
+        // Unsupported Options
+
+        traceOptions.keySet()
+                .stream()
+                .filter(key -> supportedOptions.stream().noneMatch(option -> option.equals(key)))
+                .forEach(unsupportedOptions::add);
     }
 
     public Set<String> getDisabledFields() {
-        return disabledFields;
+        return Collections.unmodifiableSet(disabledFields);
     }
 
     public Set<String> getUnsupportedOptions() {
-        return unsupportedOptions;
+        return Collections.unmodifiableSet(unsupportedOptions);
     }
 
 }

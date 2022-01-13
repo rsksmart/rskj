@@ -70,7 +70,7 @@ public class DebugModuleImpl implements DebugModule {
 
         TraceOptions options = new TraceOptions(traceOptions);
 
-        if (options.getUnsupportedOptions().size() > 0) {
+        if (!options.getUnsupportedOptions().isEmpty()) {
             // TODO: implement the logic that takes into account the remaining trace options.
             logger.warn(
                     "Received {} unsupported trace options.",
@@ -102,7 +102,7 @@ public class DebugModuleImpl implements DebugModule {
 
         TraceOptions options = new TraceOptions(traceOptions);
 
-        if (options.getUnsupportedOptions().size() > 0) {
+        if (!options.getUnsupportedOptions().isEmpty()) {
             // TODO: implement the logic that takes into account the remaining trace options.
             logger.warn(
                     "Received {} unsupported trace options.",

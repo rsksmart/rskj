@@ -35,18 +35,15 @@ import java.util.stream.Collectors;
  */
 public class ProgramTraceProcessor {
 
-    private static final ObjectMapper OBJECT_MAPPER = makeObjectMapper();
-
     private final Map<Keccak256, ProgramTrace> traces = new HashMap<>();
 
-    private TraceOptions traceOptions;
+    private final TraceOptions traceOptions;
 
     public ProgramTraceProcessor() {
-        traceOptions = new TraceOptions(Collections.emptyMap());
+        traceOptions = new TraceOptions();
     }
 
     public ProgramTraceProcessor(TraceOptions options) {
-        this();
         traceOptions = options;
     }
 
@@ -68,7 +65,7 @@ public class ProgramTraceProcessor {
         filterProvider.addFilter("opFilter",
                 SimpleBeanPropertyFilter.serializeAllExcept(traceOptions.getDisabledFields()));
 
-        return OBJECT_MAPPER.setFilterProvider(filterProvider).valueToTree(txTraces);
+        return makeObjectMapper().setFilterProvider(filterProvider).valueToTree(txTraces);
     }
 
     public JsonNode getProgramTraceAsJsonNode(Keccak256 txHash) {

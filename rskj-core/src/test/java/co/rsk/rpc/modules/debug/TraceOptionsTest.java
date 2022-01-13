@@ -22,6 +22,7 @@ package co.rsk.rpc.modules.debug;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -85,6 +86,16 @@ public class TraceOptionsTest {
     public void testTraceOptions_nullTraceOptionsGiven_disabledFieldsAndUnsupportedOptionsShouldReturnEmptySet() {
         // When
         TraceOptions options = new TraceOptions(null);
+
+        // Then
+        Assert.assertEquals(0, options.getDisabledFields().size());
+        Assert.assertEquals(0, options.getUnsupportedOptions().size());
+    }
+
+    @Test
+    public void testTraceOptions_emptyTraceOptionsGiven_disabledFieldsAndUnsupportedOptionsShouldReturnEmptySet() {
+        // When
+        TraceOptions options = new TraceOptions(Collections.emptyMap());
 
         // Then
         Assert.assertEquals(0, options.getDisabledFields().size());
