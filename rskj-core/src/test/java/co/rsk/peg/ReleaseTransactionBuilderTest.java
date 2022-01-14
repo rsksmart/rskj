@@ -120,16 +120,15 @@ public class ReleaseTransactionBuilderTest {
         Address pegoutRecipient = mockAddress(123);
         Coin pegoutAmount = Coin.COIN.add(Coin.SATOSHI);
 
-        Optional<ReleaseTransactionBuilder.BuildResult> result = rtb.buildAmountTo(
+        ReleaseTransactionBuilder.BuildResult result = rtb.buildAmountTo(
             pegoutRecipient,
             pegoutAmount
         );
-        Assert.assertTrue(result.isPresent() && result.get().getResponseCode().equals(ReleaseTransactionBuilder.Response.SUCCESS));
-        ReleaseTransactionBuilder.BuildResult builtTx = result.get();
+        Assert.assertEquals(ReleaseTransactionBuilder.Response.SUCCESS, result.getResponseCode());
 
-        Coin inputsValue = builtTx.getSelectedUTXOs().stream().map(UTXO::getValue).reduce(Coin.ZERO, Coin::add);
+        Coin inputsValue = result.getSelectedUTXOs().stream().map(UTXO::getValue).reduce(Coin.ZERO, Coin::add);
 
-        TransactionOutput changeOutput = builtTx.getBtcTx().getOutput(1);
+        TransactionOutput changeOutput = result.getBtcTx().getOutput(1);
 
         // Second output should be the change output to the Federation
         Assert.assertEquals(federation.getAddress(), changeOutput.getAddressFromP2SH(networkParameters));
@@ -256,12 +255,12 @@ public class ReleaseTransactionBuilderTest {
             return null;
         }).when(wallet).completeTx(any(SendRequest.class));
 
-        Optional<ReleaseTransactionBuilder.BuildResult> result = builder.buildAmountTo(to, amount);
+        ReleaseTransactionBuilder.BuildResult result = builder.buildAmountTo(to, amount);
 
-        Assert.assertTrue(result.isPresent() && result.get().getResponseCode().equals(ReleaseTransactionBuilder.Response.SUCCESS));
+        Assert.assertEquals(ReleaseTransactionBuilder.Response.SUCCESS, result.getResponseCode());
 
-        BtcTransaction tx = result.get().getBtcTx();
-        List<UTXO> selectedUTXOs = result.get().getSelectedUTXOs();
+        BtcTransaction tx = result.getBtcTx();
+        List<UTXO> selectedUTXOs = result.getSelectedUTXOs();
 
         Assert.assertEquals(1, tx.getOutputs().size());
         Assert.assertEquals(amount, tx.getOutput(0).getValue());
@@ -287,9 +286,9 @@ public class ReleaseTransactionBuilderTest {
 
         mockCompleteTxWithThrowForBuildToAmount(wallet, amount, to, new InsufficientMoneyException(Coin.valueOf(1234)));
 
-        Optional<ReleaseTransactionBuilder.BuildResult> result = builder.buildAmountTo(to, amount);
+        ReleaseTransactionBuilder.BuildResult result = builder.buildAmountTo(to, amount);
 
-        Assert.assertTrue(result.isPresent() && result.get().getResponseCode().equals(ReleaseTransactionBuilder.Response.INSUFFICIENT_MONEY));
+        Assert.assertEquals(ReleaseTransactionBuilder.Response.INSUFFICIENT_MONEY, result.getResponseCode());
         verify(wallet, never()).getWatchedAddresses();
         verify(wallet, never()).getUTXOProvider();
     }
@@ -301,9 +300,9 @@ public class ReleaseTransactionBuilderTest {
 
         mockCompleteTxWithThrowForBuildToAmount(wallet, amount, to, new Wallet.CouldNotAdjustDownwards());
 
-        Optional<ReleaseTransactionBuilder.BuildResult> result = builder.buildAmountTo(to, amount);
+        ReleaseTransactionBuilder.BuildResult result = builder.buildAmountTo(to, amount);
 
-        Assert.assertTrue(result.isPresent() && result.get().getResponseCode().equals(ReleaseTransactionBuilder.Response.COULD_NOT_ADJUST_DOWNWARDS));
+        Assert.assertEquals(ReleaseTransactionBuilder.Response.COULD_NOT_ADJUST_DOWNWARDS, result.getResponseCode());
         verify(wallet, never()).getWatchedAddresses();
         verify(wallet, never()).getUTXOProvider();
     }
@@ -315,9 +314,9 @@ public class ReleaseTransactionBuilderTest {
 
         mockCompleteTxWithThrowForBuildToAmount(wallet, amount, to, new Wallet.ExceededMaxTransactionSize());
 
-        Optional<ReleaseTransactionBuilder.BuildResult> result = builder.buildAmountTo(to, amount);
+        ReleaseTransactionBuilder.BuildResult result = builder.buildAmountTo(to, amount);
 
-        Assert.assertTrue(result.isPresent() && result.get().getResponseCode().equals(ReleaseTransactionBuilder.Response.EXCEED_MAX_TRANSACTION_SIZE));
+        Assert.assertEquals(ReleaseTransactionBuilder.Response.EXCEED_MAX_TRANSACTION_SIZE, result.getResponseCode());
         verify(wallet, never()).getWatchedAddresses();
         verify(wallet, never()).getUTXOProvider();
     }
@@ -366,10 +365,10 @@ public class ReleaseTransactionBuilderTest {
             return null;
         }).when(wallet).completeTx(any(SendRequest.class));
 
-        Optional<ReleaseTransactionBuilder.BuildResult> result = builder.buildAmountTo(to, amount);
+        ReleaseTransactionBuilder.BuildResult result = builder.buildAmountTo(to, amount);
         verify(wallet, times(1)).completeTx(any(SendRequest.class));
 
-        Assert.assertTrue(result.isPresent() && result.get().getResponseCode().equals(ReleaseTransactionBuilder.Response.UTXO_PROVIDER));
+        Assert.assertEquals(ReleaseTransactionBuilder.Response.UTXO_PROVIDER_EXCEPTION, result.getResponseCode());
     }
 
     @Test
@@ -409,9 +408,9 @@ public class ReleaseTransactionBuilderTest {
 
         mockCompleteTxWithThrowForEmptying(wallet, to, new InsufficientMoneyException(Coin.valueOf(1234)));
 
-        Optional<ReleaseTransactionBuilder.BuildResult> result = builder.buildEmptyWalletTo(to);
+        ReleaseTransactionBuilder.BuildResult result = builder.buildEmptyWalletTo(to);
 
-        Assert.assertTrue(result.isPresent() && result.get().getResponseCode().equals(ReleaseTransactionBuilder.Response.INSUFFICIENT_MONEY));
+        Assert.assertEquals(ReleaseTransactionBuilder.Response.INSUFFICIENT_MONEY, result.getResponseCode());
         verify(wallet, never()).getWatchedAddresses();
         verify(wallet, never()).getUTXOProvider();
     }
@@ -422,9 +421,9 @@ public class ReleaseTransactionBuilderTest {
 
         mockCompleteTxWithThrowForEmptying(wallet, to, new Wallet.CouldNotAdjustDownwards());
 
-        Optional<ReleaseTransactionBuilder.BuildResult> result = builder.buildEmptyWalletTo(to);
+        ReleaseTransactionBuilder.BuildResult result = builder.buildEmptyWalletTo(to);
 
-        Assert.assertTrue(result.isPresent() && result.get().getResponseCode().equals(ReleaseTransactionBuilder.Response.COULD_NOT_ADJUST_DOWNWARDS));
+        Assert.assertEquals(ReleaseTransactionBuilder.Response.COULD_NOT_ADJUST_DOWNWARDS, result.getResponseCode());
         verify(wallet, never()).getWatchedAddresses();
         verify(wallet, never()).getUTXOProvider();
     }
@@ -435,9 +434,9 @@ public class ReleaseTransactionBuilderTest {
 
         mockCompleteTxWithThrowForEmptying(wallet, to, new Wallet.ExceededMaxTransactionSize());
 
-        Optional<ReleaseTransactionBuilder.BuildResult> result = builder.buildEmptyWalletTo(to);
+        ReleaseTransactionBuilder.BuildResult result = builder.buildEmptyWalletTo(to);
 
-        Assert.assertTrue(result.isPresent() && result.get().getResponseCode().equals(ReleaseTransactionBuilder.Response.EXCEED_MAX_TRANSACTION_SIZE));
+        Assert.assertEquals(ReleaseTransactionBuilder.Response.EXCEED_MAX_TRANSACTION_SIZE, result.getResponseCode());
         verify(wallet, never()).getWatchedAddresses();
         verify(wallet, never()).getUTXOProvider();
     }
@@ -483,10 +482,10 @@ public class ReleaseTransactionBuilderTest {
             return null;
         }).when(wallet).completeTx(any(SendRequest.class));
 
-        Optional<ReleaseTransactionBuilder.BuildResult> result = builder.buildEmptyWalletTo(to);
+        ReleaseTransactionBuilder.BuildResult result = builder.buildEmptyWalletTo(to);
         verify(wallet, times(1)).completeTx(any(SendRequest.class));
 
-        Assert.assertTrue(result.isPresent() && result.get().getResponseCode().equals(ReleaseTransactionBuilder.Response.UTXO_PROVIDER));
+        Assert.assertEquals(ReleaseTransactionBuilder.Response.UTXO_PROVIDER_EXCEPTION, result.getResponseCode());
     }
 
     @Test
@@ -518,12 +517,12 @@ public class ReleaseTransactionBuilderTest {
             activations
         );
 
-        Optional<ReleaseTransactionBuilder.BuildResult> result = rtb.buildBatchedPegouts(pegoutRequests);
+        ReleaseTransactionBuilder.BuildResult result = rtb.buildBatchedPegouts(pegoutRequests);
 
-        Assert.assertTrue(result.isPresent() && result.get().getResponseCode().equals(ReleaseTransactionBuilder.Response.SUCCESS));
+        Assert.assertEquals(ReleaseTransactionBuilder.Response.SUCCESS, result.getResponseCode());
 
-        BtcTransaction tx = result.get().getBtcTx();
-        List<UTXO> selectedUTXOs = result.get().getSelectedUTXOs();
+        BtcTransaction tx = result.getBtcTx();
+        List<UTXO> selectedUTXOs = result.getSelectedUTXOs();
 
         Assert.assertEquals(2, selectedUTXOs.size());
 
@@ -573,12 +572,12 @@ public class ReleaseTransactionBuilderTest {
             activations
         );
 
-        Optional<ReleaseTransactionBuilder.BuildResult> result = rtb.buildBatchedPegouts(pegoutRequests);
+        ReleaseTransactionBuilder.BuildResult result = rtb.buildBatchedPegouts(pegoutRequests);
 
-        Assert.assertTrue(result.isPresent() && result.get().getResponseCode().equals(ReleaseTransactionBuilder.Response.SUCCESS));
+        Assert.assertEquals(ReleaseTransactionBuilder.Response.SUCCESS, result.getResponseCode());
 
-        BtcTransaction tx = result.get().getBtcTx();
-        List<UTXO> selectedUTXOs = result.get().getSelectedUTXOs();
+        BtcTransaction tx = result.getBtcTx();
+        List<UTXO> selectedUTXOs = result.getSelectedUTXOs();
 
         Assert.assertEquals(3, selectedUTXOs.size());
 
@@ -629,9 +628,9 @@ public class ReleaseTransactionBuilderTest {
             activations
         );
 
-        Optional<ReleaseTransactionBuilder.BuildResult> result = rtb.buildBatchedPegouts(pegoutRequests);
+        ReleaseTransactionBuilder.BuildResult result = rtb.buildBatchedPegouts(pegoutRequests);
 
-        Assert.assertTrue(result.isPresent() && result.get().getResponseCode().equals(ReleaseTransactionBuilder.Response.INSUFFICIENT_MONEY));
+        Assert.assertEquals(ReleaseTransactionBuilder.Response.INSUFFICIENT_MONEY, result.getResponseCode());
     }
 
     @Test
@@ -664,9 +663,9 @@ public class ReleaseTransactionBuilderTest {
             activations
         );
 
-        Optional<ReleaseTransactionBuilder.BuildResult> result = rtb.buildBatchedPegouts(pegoutRequests);
+        ReleaseTransactionBuilder.BuildResult result = rtb.buildBatchedPegouts(pegoutRequests);
 
-        Assert.assertTrue(result.isPresent() && result.get().getResponseCode().equals(ReleaseTransactionBuilder.Response.COULD_NOT_ADJUST_DOWNWARDS));
+        Assert.assertEquals(ReleaseTransactionBuilder.Response.COULD_NOT_ADJUST_DOWNWARDS, result.getResponseCode());
     }
 
     @Test
@@ -692,9 +691,9 @@ public class ReleaseTransactionBuilderTest {
             activations
         );
 
-        Optional<ReleaseTransactionBuilder.BuildResult> result = rtb.buildBatchedPegouts(pegoutRequests);
+        ReleaseTransactionBuilder.BuildResult result = rtb.buildBatchedPegouts(pegoutRequests);
 
-        Assert.assertTrue(result.isPresent() && result.get().getResponseCode().equals(ReleaseTransactionBuilder.Response.EXCEED_MAX_TRANSACTION_SIZE));
+        Assert.assertEquals(ReleaseTransactionBuilder.Response.EXCEED_MAX_TRANSACTION_SIZE, result.getResponseCode());
     }
 
     @Test
@@ -729,9 +728,9 @@ public class ReleaseTransactionBuilderTest {
             return null;
         }).when(wallet).completeTx(any(SendRequest.class));
 
-        Optional<ReleaseTransactionBuilder.BuildResult> result = builder.buildBatchedPegouts(pegoutRequests);
+        ReleaseTransactionBuilder.BuildResult result = builder.buildBatchedPegouts(pegoutRequests);
 
-        Assert.assertTrue(result.isPresent() && result.get().getResponseCode().equals(ReleaseTransactionBuilder.Response.UTXO_PROVIDER));
+        Assert.assertEquals(ReleaseTransactionBuilder.Response.UTXO_PROVIDER_EXCEPTION, result.getResponseCode());
         verify(wallet, times(1)).completeTx(any(SendRequest.class));
     }
 
@@ -763,11 +762,11 @@ public class ReleaseTransactionBuilderTest {
         ReleaseRequestQueue.Entry testEntry2 = createTestEntry(456, 4);
         List<ReleaseRequestQueue.Entry> entries = Arrays.asList(testEntry1, testEntry2);
 
-        Optional<ReleaseTransactionBuilder.BuildResult> result = rtb.buildBatchedPegouts(entries);
+        ReleaseTransactionBuilder.BuildResult result = rtb.buildBatchedPegouts(entries);
 
-        Assert.assertTrue(result.isPresent() && result.get().getResponseCode().equals(ReleaseTransactionBuilder.Response.SUCCESS));
+        Assert.assertEquals(ReleaseTransactionBuilder.Response.SUCCESS, result.getResponseCode());
 
-        BtcTransaction btcTx = result.get().getBtcTx();
+        BtcTransaction btcTx = result.getBtcTx();
 
         int outputSize = btcTx.getOutputs().size();
         Coin totalFee = btcTx.getFee();
@@ -778,8 +777,7 @@ public class ReleaseTransactionBuilderTest {
         Assert.assertEquals(testEntry1.getAmount().minus(btcTx.getOutput(0).getValue())
             .add(testEntry2.getAmount().minus(btcTx.getOutput(1).getValue())), totalFee);
 
-        ReleaseTransactionBuilder.BuildResult builtTx = result.get();
-        Coin inputsValue = builtTx.getSelectedUTXOs().stream().map(UTXO::getValue).reduce(Coin.ZERO, Coin::add);
+        Coin inputsValue = result.getSelectedUTXOs().stream().map(UTXO::getValue).reduce(Coin.ZERO, Coin::add);
         Coin totalPegoutAmount = entries.stream().map(ReleaseRequestQueue.Entry::getAmount).reduce(Coin.ZERO, Coin::add);
 
         TransactionOutput changeOutput = btcTx.getOutput(outputSize - 1); // last output
@@ -817,11 +815,11 @@ public class ReleaseTransactionBuilderTest {
         ReleaseRequestQueue.Entry testEntry3 = createTestEntry(789, 5);
         List<ReleaseRequestQueue.Entry> entries = Arrays.asList(testEntry1, testEntry2, testEntry3);
 
-        Optional<ReleaseTransactionBuilder.BuildResult> result = rtb.buildBatchedPegouts(entries);
+        ReleaseTransactionBuilder.BuildResult result = rtb.buildBatchedPegouts(entries);
 
-        Assert.assertTrue(result.isPresent() && result.get().getResponseCode().equals(ReleaseTransactionBuilder.Response.SUCCESS));
+        Assert.assertEquals(ReleaseTransactionBuilder.Response.SUCCESS, result.getResponseCode());
 
-        BtcTransaction btcTx = result.get().getBtcTx();
+        BtcTransaction btcTx = result.getBtcTx();
 
         int outputSize = btcTx.getOutputs().size();
         Coin totalFee = btcTx.getFee();
@@ -835,8 +833,7 @@ public class ReleaseTransactionBuilderTest {
             .add(testEntry2.getAmount().minus(btcTx.getOutput(1).getValue()))
             .add(testEntry3.getAmount().minus(btcTx.getOutput(2).getValue())), totalFee);
 
-        ReleaseTransactionBuilder.BuildResult builtTx = result.get();
-        Coin inputsValue = builtTx.getSelectedUTXOs().stream().map(UTXO::getValue).reduce(Coin.ZERO, Coin::add);
+        Coin inputsValue = result.getSelectedUTXOs().stream().map(UTXO::getValue).reduce(Coin.ZERO, Coin::add);
         Coin totalPegoutAmount = entries.stream().map(ReleaseRequestQueue.Entry::getAmount).reduce(Coin.ZERO, Coin::add);
 
         TransactionOutput changeOutput = btcTx.getOutput(outputSize - 1); // last output
@@ -892,12 +889,12 @@ public class ReleaseTransactionBuilderTest {
             return null;
         }).when(wallet).completeTx(any(SendRequest.class));
 
-        Optional<ReleaseTransactionBuilder.BuildResult> result = builder.buildEmptyWalletTo(to);
+        ReleaseTransactionBuilder.BuildResult result = builder.buildEmptyWalletTo(to);
 
-        Assert.assertTrue(result.isPresent() && result.get().getResponseCode().equals(ReleaseTransactionBuilder.Response.SUCCESS));
+        Assert.assertEquals(ReleaseTransactionBuilder.Response.SUCCESS, result.getResponseCode());
 
-        BtcTransaction tx = result.get().getBtcTx();
-        List<UTXO> selectedUTXOs = result.get().getSelectedUTXOs();
+        BtcTransaction tx = result.getBtcTx();
+        List<UTXO> selectedUTXOs = result.getSelectedUTXOs();
 
         Assert.assertEquals(1, tx.getOutputs().size());
         Assert.assertEquals(Coin.FIFTY_COINS, tx.getOutput(0).getValue());
