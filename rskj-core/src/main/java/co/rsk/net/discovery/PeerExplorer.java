@@ -62,7 +62,7 @@ public class PeerExplorer {
     private final Map<NodeID, Node> establishedConnections = new ConcurrentHashMap<>();
 
     private final Map<String, NodeID> knownHosts;
-    private final boolean allowMultipleConnectionsPerHost;
+    private final boolean allowMultipleConnectionsPerHostPort;
 
     private final Integer networkId;
 
@@ -89,7 +89,7 @@ public class PeerExplorer {
     public PeerExplorer(List<String> initialBootNodes,
                         Node localNode, NodeDistanceTable distanceTable, ECKey key,
                         long reqTimeOut, long updatePeriod, long cleanPeriod, Integer networkId,
-                        PeerScoringManager peerScoringManager, boolean allowMultipleConnectionsPerHost) {
+                        PeerScoringManager peerScoringManager, boolean allowMultipleConnectionsPerHostPort) {
         this.localNode = localNode;
         this.key = key;
         this.distanceTable = distanceTable;
@@ -104,7 +104,7 @@ public class PeerExplorer {
         this.peerScoringManager = peerScoringManager;
 
         this.knownHosts = new ConcurrentHashMap<>();
-        this.allowMultipleConnectionsPerHost = allowMultipleConnectionsPerHost;
+        this.allowMultipleConnectionsPerHostPort = allowMultipleConnectionsPerHostPort;
     }
 
     void start() {
@@ -404,7 +404,7 @@ public class PeerExplorer {
             return;
         }
 
-        if (!this.allowMultipleConnectionsPerHost) {
+        if (!this.allowMultipleConnectionsPerHostPort) {
             disconnectPeerIfDuplicatedByNodeId(senderNode, ip, port);
         }
 
