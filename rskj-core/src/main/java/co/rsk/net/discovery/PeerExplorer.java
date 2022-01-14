@@ -406,12 +406,11 @@ public class PeerExplorer {
 
         if (!this.allowMultipleConnectionsPerHost) {
             disconnectPeerIfDuplicatedByNodeId(senderNode, ip, port);
-            // add only if flag set to false
-            this.knownHosts.put(senderNode.getAddressAsString(), senderNode.getId());
         }
 
         OperationResult result = this.distanceTable.addNode(senderNode);
         if (result.isSuccess()) {
+            this.knownHosts.put(senderNode.getAddressAsString(), senderNode.getId());
             this.establishedConnections.put(senderNode.getId(), senderNode);
             logger.debug("New Peer found or id changed: ip[{}] port[{}] id [{}]", ip, port, senderNode.getId());
         } else {
