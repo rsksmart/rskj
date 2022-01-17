@@ -899,7 +899,7 @@ public class BridgeSupport {
 
         processFundsMigration(rskTx);
 
-        processReleaseRequests();
+        processReleaseRequests(rskTx);
 
         processReleaseTransactions(rskTx);
 
@@ -1009,8 +1009,9 @@ public class BridgeSupport {
      * and failed attempts are kept in the release queue for future
      * processing.
      *
+     * @param rskTx
      */
-    private void processReleaseRequests() {
+    private void processReleaseRequests(Transaction rskTx) {
         final Wallet activeFederationWallet;
         final ReleaseRequestQueue releaseRequestQueue;
         final List<UTXO> availableUTXOs;
@@ -1038,7 +1039,7 @@ public class BridgeSupport {
         );
 
         if (activations.isActive(RSKIP271)) {
-            processPegoutsInBatch(releaseRequestQueue, txBuilder, availableUTXOs, releaseTransactionSet, activeFederationWallet);
+            processPegoutsInBatch(releaseRequestQueue, txBuilder, availableUTXOs, releaseTransactionSet, activeFederationWallet, rskTx);
         } else {
             processPegoutsIndividually(releaseRequestQueue, txBuilder, availableUTXOs, releaseTransactionSet, activeFederationWallet);
         }
@@ -1047,10 +1048,10 @@ public class BridgeSupport {
     private void addPegoutTxToReleaseTransactionSet(
         BtcTransaction generatedTransaction,
         ReleaseTransactionSet releaseTransactionSet,
-        ReleaseRequestQueue.Entry releaseRequest
+        Keccak256 rskTxHash,
+        Coin amount
     ) {
         if (activations.isActive(ConsensusRule.RSKIP146)) {
-            Keccak256 rskTxHash = releaseRequest.getRskTxHash();
             // Add the TX
             releaseTransactionSet.add(generatedTransaction, rskExecutionBlock.getNumber(), rskTxHash);
             // For a short time period, there could be items in the release request queue that don't have the rskTxHash
@@ -1058,7 +1059,7 @@ public class BridgeSupport {
             // We shouldn't generate the event for those releases
             if (rskTxHash != null) {
                 // Log the Release request
-                eventLogger.logReleaseBtcRequested(rskTxHash.getBytes(), generatedTransaction, releaseRequest.getAmount());
+                eventLogger.logReleaseBtcRequested(rskTxHash.getBytes(), generatedTransaction, amount);
             }
         } else {
             releaseTransactionSet.add(generatedTransaction, rskExecutionBlock.getNumber());
@@ -1092,7 +1093,7 @@ public class BridgeSupport {
             }
 
             BtcTransaction generatedTransaction = result.getBtcTx();
-            addPegoutTxToReleaseTransactionSet(generatedTransaction, releaseTransactionSet, releaseRequest);
+            addPegoutTxToReleaseTransactionSet(generatedTransaction, releaseTransactionSet, releaseRequest.getRskTxHash(), releaseRequest.getAmount());
 
             // Mark UTXOs as spent
             List<UTXO> selectedUTXOs = result.getSelectedUTXOs();
@@ -1109,8 +1110,8 @@ public class BridgeSupport {
         ReleaseTransactionBuilder txBuilder,
         List<UTXO> availableUTXOs,
         ReleaseTransactionSet releaseTransactionSet,
-        Wallet wallet
-    ) {
+        Wallet wallet,
+        Transaction rskTx) {
         long currentBlockNumber = rskExecutionBlock.getNumber();
         long nextPegoutCreationBlockNumber = getNextPegoutCreationBlockNumber();
 
@@ -1140,8 +1141,7 @@ public class BridgeSupport {
                 }
 
                 BtcTransaction generatedTransaction = result.getBtcTx();
-                // TODO: Update to call addPegoutTxToReleaseTransactionSet with the RskHash that calls the updateCollections
-                releaseTransactionSet.add(generatedTransaction, rskExecutionBlock.getNumber());
+                addPegoutTxToReleaseTransactionSet(generatedTransaction, releaseTransactionSet, rskTx.getHash(), totalPegoutValue);
 
                 // Remove batched requests from the queue after successfully batching pegouts
                 releaseRequestQueue.removeEntries(pegoutEntries);
