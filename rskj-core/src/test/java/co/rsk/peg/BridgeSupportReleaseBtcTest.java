@@ -4,6 +4,7 @@ import co.rsk.bitcoinj.core.*;
 import co.rsk.config.BridgeConstants;
 import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.core.RskAddress;
+import co.rsk.crypto.Keccak256;
 import co.rsk.db.MutableTrieCache;
 import co.rsk.db.MutableTrieImpl;
 import co.rsk.peg.btcLockSender.BtcLockSenderProvider;
@@ -38,6 +39,7 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.time.Instant;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -512,21 +514,32 @@ public class BridgeSupportReleaseBtcTest {
     @Test
     public void test_processPegoutsInBatch_after_RSKIP271() throws IOException {
         when(activationMock.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
+        when(activationMock.isActive(ConsensusRule.RSKIP146)).thenReturn(true);
 
         Federation federation = bridgeConstants.getGenesisFederation();
         List<UTXO> utxos = new ArrayList<>();
         utxos.add(PegTestUtils.createUTXO(1, Coin.COIN.multiply(4), federation.getAddress()));
 
-        BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
+        ReleaseRequestQueue releaseRequestQueue = new ReleaseRequestQueue(
+            Arrays.asList(
+                new ReleaseRequestQueue.Entry(PegTestUtils.createRandomBtcAddress(), Coin.MILLICOIN),
+                new ReleaseRequestQueue.Entry(PegTestUtils.createRandomBtcAddress(), Coin.MILLICOIN),
+                new ReleaseRequestQueue.Entry(PegTestUtils.createRandomBtcAddress(), Coin.MILLICOIN)));
 
+        BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
         when(provider.getNewFederationBtcUTXOs()).thenReturn(utxos);
-        when(provider.getReleaseRequestQueue())
-            .thenReturn(new ReleaseRequestQueue(
-                Arrays.asList(
-                    new ReleaseRequestQueue.Entry(PegTestUtils.createRandomBtcAddress(), Coin.MILLICOIN),
-                    new ReleaseRequestQueue.Entry(PegTestUtils.createRandomBtcAddress(), Coin.MILLICOIN),
-                    new ReleaseRequestQueue.Entry(PegTestUtils.createRandomBtcAddress(), Coin.MILLICOIN))));
+        when(provider.getReleaseRequestQueue()).thenReturn(releaseRequestQueue);
         when(provider.getReleaseTransactionSet()).thenReturn(new ReleaseTransactionSet(Collections.emptySet()));
+
+        Coin totalValue = releaseRequestQueue.getEntries()
+            .stream()
+            .map(ReleaseRequestQueue.Entry::getAmount)
+            .reduce(Coin.ZERO, Coin::add);
+
+        List<Keccak256> rskHashesList = releaseRequestQueue.getEntries()
+            .stream()
+            .map(ReleaseRequestQueue.Entry::getRskTxHash)
+            .collect(Collectors.toList());
 
         BridgeSupport bridgeSupport = bridgeSupportBuilder
             .withActivations(activationMock)
@@ -541,10 +554,13 @@ public class BridgeSupportReleaseBtcTest {
         assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
         assertEquals(1, provider.getReleaseTransactionSet().getEntries().size());
 
+        BtcTransaction generatedTransaction = provider.getReleaseTransactionSet().getEntries().iterator().next().getTransaction();
+
         verify(provider, times(1)).getNextPegoutHeight();
         verify(provider, times(1)).setNextPegoutHeight(any(Long.class));
 
-        verify(eventLogger, times(1)).logBatchPegoutCreated(any(), any());
+        verify(eventLogger, times(1)).logBatchPegoutCreated(generatedTransaction, rskHashesList);
+        verify(eventLogger, times(1)).logReleaseBtcRequested(rskTx.getHash().getBytes(), generatedTransaction, totalValue);
     }
 
     @Test
