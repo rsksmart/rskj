@@ -119,7 +119,9 @@ public class ConfigLoader {
             config = entry.getKey().withConfig(config, entry.getValue());
         }
 
-        config = config.withFallback(ConfigFactory.parseMap(cliArgs.getParamValueMap()));
+        if (!cliArgs.getParamValueMap().isEmpty()) {
+            config = config.withFallback(ConfigFactory.parseMap(cliArgs.getParamValueMap()));
+        }
 
         return config;
     }
