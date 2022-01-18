@@ -95,13 +95,14 @@ public class CliArgs<O, F> {
                         if (args[i].length() < 2) {
                             throw new IllegalArgumentException("You must provide an option name, e.g. -d");
                         }
-                        if (args[i].charAt(1) == '-') {
+                        char currentChar = Character.toLowerCase(args[i].charAt(1));
+                        if (currentChar == '-') {
                             if (args[i].length() < 3) {
                                 throw new IllegalArgumentException("You must provide a flag name, e.g. --quiet");
                             }
                             flags.add(getFlagByName(args[i].substring(2, args[i].length())));
-                        } else if (args[i].charAt(1) == 'X' || args[i].charAt(1) == 'x') {
-                            String arg = args[i].replace("-X", "").replace("-x", "");
+                        } else if (currentChar == 'x') {
+                            String arg = args[i].substring(2);
                             paramValueMap.putAll(parseArgToMap(arg));
                         } else {
                             if (args.length - 1 == i) {
@@ -175,17 +176,14 @@ public class CliArgs<O, F> {
             String[] paramParts = param.split("\\.");
 
             Map<String, Object> paramValueMap = new HashMap<>();
+            paramValueMap.put(paramParts[0], value);
 
-            for (int i = 0; i < paramParts.length; i++) {
-                if (i == 0) {
-                    paramValueMap.put(paramParts[i], value);
-                } else {
-                    Map<String, Object> newParamValueMap = new HashMap<>();
-                    newParamValueMap.put(paramParts[i], value);
+            for (int i = 1; i < paramParts.length; i++) {
+                Map<String, Object> newParamValueMap = new HashMap<>();
+                newParamValueMap.put(paramParts[i], value);
 
-                    String previousPart = paramParts[i - 1];
-                    paramValueMap.put(previousPart, newParamValueMap);
-                }
+                String previousPart = paramParts[i - 1];
+                paramValueMap.put(previousPart, newParamValueMap);
             }
 
             return paramValueMap;
