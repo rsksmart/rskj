@@ -1035,6 +1035,7 @@ public class BridgeSupport {
         final ReleaseRequestQueue releaseRequestQueue;
         final List<UTXO> availableUTXOs;
         final ReleaseTransactionSet releaseTransactionSet;
+        final Coin estimatedFeesForNextPegOutEvent;
 
         try {
             // (any of these could fail and would invalidate both the tx build and utxo selection, so treat as atomic)
@@ -1042,6 +1043,7 @@ public class BridgeSupport {
             releaseRequestQueue = provider.getReleaseRequestQueue();
             availableUTXOs = getActiveFederationBtcUTXOs();
             releaseTransactionSet = provider.getReleaseTransactionSet();
+            estimatedFeesForNextPegOutEvent = getEstimatedFeesForNextPegOutEvent();
         } catch (IOException e) {
             logger.error("Unexpected error accessing storage while attempting to process release requests", e);
             return;
@@ -1092,6 +1094,14 @@ public class BridgeSupport {
         ReleaseTransactionSet releaseTransactionSet,
         Wallet wallet
     ) {
+        Coin walletBalance = wallet.getBalance();
+        boolean canProcessAtLeastOnePegout = releaseRequestQueue.getEntries()
+            .stream()
+            .anyMatch(entry -> walletBalance.isGreaterThan(entry.getAmount()) || walletBalance.equals(entry.getAmount()));
+        if (!canProcessAtLeastOnePegout) {
+            return;
+        }
+
         releaseRequestQueue.process(MAX_RELEASE_ITERATIONS, (ReleaseRequestQueue.Entry releaseRequest) -> {
             ReleaseTransactionBuilder.BuildResult result = txBuilder.buildAmountTo(
                 releaseRequest.getDestination(),
@@ -1136,6 +1146,15 @@ public class BridgeSupport {
 
         if (currentBlockNumber >= nextPegoutCreationBlockNumber) {
             List<ReleaseRequestQueue.Entry> pegoutEntries = releaseRequestQueue.getEntries();
+            Coin totalPegoutValue = pegoutEntries
+                .stream()
+                .map(ReleaseRequestQueue.Entry::getAmount)
+                .reduce(Coin.ZERO, Coin::add);
+
+            if (wallet.getBalance().isLessThan(totalPegoutValue)) {
+                return;
+            }
+
             if (!pegoutEntries.isEmpty()) {
                 ReleaseTransactionBuilder.BuildResult result = txBuilder.buildBatchedPegouts(pegoutEntries);
 
@@ -1144,11 +1163,6 @@ public class BridgeSupport {
                     pegoutEntries = pegoutEntries.subList(0, firstHalfSize);
                     result = txBuilder.buildBatchedPegouts(pegoutEntries);
                 }
-
-                Coin totalPegoutValue = pegoutEntries
-                    .stream()
-                    .map(ReleaseRequestQueue.Entry::getAmount)
-                    .reduce(Coin.ZERO, Coin::add);
 
                 if (result.getResponseCode() != ReleaseTransactionBuilder.Response.SUCCESS) {
                     logger.warn(
