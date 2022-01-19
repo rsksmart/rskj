@@ -7534,6 +7534,77 @@ public class BridgeSupportTest {
     }
 
     @Test
+    public void migrating_many_utxos_works() throws IOException {
+        List<FederationMember> oldFedMembers = new ArrayList<>();
+        int oldFedMembersAmount = 13;
+        for (int i = 0; i < oldFedMembersAmount; i++) {
+            oldFedMembers.add(FederationMember.getFederationMemberFromKey(new BtcECKey()));
+        }
+
+        Federation oldFed = new Federation(
+            oldFedMembers,
+            Instant.now(),
+            0,
+            btcParams
+        );
+        Federation newFed = new Federation(
+            Arrays.asList(
+                FederationMember.getFederationMemberFromKey(new BtcECKey()),
+                FederationMember.getFederationMemberFromKey(new BtcECKey()),
+                FederationMember.getFederationMemberFromKey(new BtcECKey())
+            ),
+            Instant.now(),
+            1,
+            btcParams
+        );
+
+        Block block = mock(Block.class);
+        // Set block right after the migration should start
+        when(block.getNumber()).thenReturn(
+            newFed.getCreationBlockNumber() +
+            bridgeConstants.getFederationActivationAge() +
+            bridgeConstants.getFundsMigrationAgeSinceActivationBegin() +
+            1
+        );
+
+        List<UTXO> utxosToMigrate = new ArrayList<>();
+        int utxosToCreate = 400;
+        for (int i = 0; i < utxosToCreate; i++) {
+            utxosToMigrate.add(new UTXO(
+                Sha256Hash.of(new byte[]{(byte)i}),
+                0,
+                Coin.COIN,
+                0,
+                false,
+                oldFed.getP2SHScript())
+            );
+        }
+
+        ReleaseTransactionSet releaseTransactionSet = new ReleaseTransactionSet(Collections.emptySet());
+        BridgeStorageProvider bridgeStorageProvider = mock(BridgeStorageProvider.class);
+        when(bridgeStorageProvider.getReleaseTransactionSet()).thenReturn(releaseTransactionSet);
+        when(bridgeStorageProvider.getReleaseRequestQueue()).thenReturn(new ReleaseRequestQueue(new ArrayList<>()));
+        when(bridgeStorageProvider.getNewFederation()).thenReturn(newFed);
+        when(bridgeStorageProvider.getOldFederation()).thenReturn(oldFed);
+        when(bridgeStorageProvider.getOldFederationBtcUTXOs()).thenReturn(utxosToMigrate);
+
+        BridgeSupport bridgeSupport = bridgeSupportBuilder
+            .withBridgeConstants(bridgeConstants)
+            .withProvider(bridgeStorageProvider)
+            .withExecutionBlock(block)
+            .build();
+
+        bridgeSupport.updateCollections(mock(Transaction.class));
+
+        Assert.assertEquals(releaseTransactionSet.getEntries().size(), 1);
+        // As the size exceeds the max size for a btc tx it should have just half of the inputs
+        Assert.assertEquals(
+            utxosToCreate / 2,
+            new ArrayList<>(releaseTransactionSet.getEntries()).get(0).getTransaction().getInputs().size()
+        );
+    }
+
+    @Test
     public void getBytesFromBtcAddress() {
         BridgeSupport bridgeSupport = getBridgeSupport(bridgeConstants, mock(BridgeStorageProvider.class));
 
