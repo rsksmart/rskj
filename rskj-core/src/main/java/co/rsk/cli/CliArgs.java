@@ -28,9 +28,9 @@ public class CliArgs<O, F> {
     private final List<String> arguments;
     private final Map<O, String> options;
     private final Set<F> flags;
-    private final Map<String, Object> paramValueMap;
+    private final Map<String, String> paramValueMap;
 
-    private CliArgs(List<String> arguments, Map<O, String> options, Set<F> flags, Map<String, Object> paramValueMap) {
+    private CliArgs(List<String> arguments, Map<O, String> options, Set<F> flags, Map<String, String> paramValueMap) {
         this.arguments = Collections.unmodifiableList(arguments);
         this.options = Collections.unmodifiableMap(options);
         this.flags = Collections.unmodifiableSet(flags);
@@ -58,7 +58,7 @@ public class CliArgs<O, F> {
         return flags;
     }
 
-    public Map<String, Object> getParamValueMap() {
+    public Map<String, String> getParamValueMap() {
         return paramValueMap;
     }
 
@@ -87,7 +87,7 @@ public class CliArgs<O, F> {
             List<String> arguments = new LinkedList<>();
             Map<O, String> options = new HashMap<>();
             Set<F> flags = new HashSet<>();
-            Map<String, Object> paramValueMap = new HashMap<>();
+            Map<String, String> paramValueMap = new HashMap<>();
 
             for (int i = 0; i < args.length; i++) {
                 switch (args[i].charAt(0)) {
@@ -164,7 +164,7 @@ public class CliArgs<O, F> {
          * @param arg to parse
          * @return a string arg parsed to an equivalent map having the same structure system properties would have.
          */
-        private Map<String, Object> parseArgToMap(String arg) {
+        private Map<String, String> parseArgToMap(String arg) {
             String[] paramValue = arg.split("=", 2);
 
             if (paramValue.length != 2) {
@@ -173,18 +173,9 @@ public class CliArgs<O, F> {
 
             String param = paramValue[0];
             String value = paramValue[1];
-            String[] paramParts = param.split("\\.");
 
-            Map<String, Object> paramValueMap = new HashMap<>();
-            paramValueMap.put(paramParts[0], value);
-
-            for (int i = 1; i < paramParts.length; i++) {
-                Map<String, Object> newParamValueMap = new HashMap<>();
-                newParamValueMap.put(paramParts[i], value);
-
-                String previousPart = paramParts[i - 1];
-                paramValueMap.put(previousPart, newParamValueMap);
-            }
+            Map<String, String> paramValueMap = new HashMap<>();
+            paramValueMap.put(param, value);
 
             return paramValueMap;
         }

@@ -5,8 +5,6 @@ import co.rsk.config.NodeCliOptions;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.util.Map;
-
 public class CliArgsTest {
 
     @Test
@@ -20,7 +18,7 @@ public class CliArgsTest {
 
         Assert.assertEquals(cliArgs.getFlags().size(), 1);
         Assert.assertEquals(cliArgs.getParamValueMap().size(), 1);
-        Assert.assertEquals(((Map<String, String>)cliArgs.getParamValueMap().get("database")).get("dir"), "/home/rsk/data");
+        Assert.assertEquals(cliArgs.getParamValueMap().get("database.dir"), "/home/rsk/data");
         Assert.assertEquals(cliArgs.getFlags().iterator().next().getName(), "regtest");
     }
 

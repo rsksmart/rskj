@@ -120,7 +120,10 @@ public class ConfigLoader {
         }
 
         if (!cliArgs.getParamValueMap().isEmpty()) {
-            config = config.withFallback(ConfigFactory.parseMap(cliArgs.getParamValueMap()));
+            for (String param: cliArgs.getParamValueMap().keySet()) {
+                ConfigValue configValue = ConfigValueFactory.fromAnyRef(cliArgs.getParamValueMap().get(param));
+                config = config.withValue(param, configValue);
+            }
         }
 
         return config;
