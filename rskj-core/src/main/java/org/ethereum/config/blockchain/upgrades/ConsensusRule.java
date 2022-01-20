@@ -70,7 +70,8 @@ public enum ConsensusRule {
     RSKIP218("rskip218"), // New rewards fee adddress
     RSKIP219("rskip219"),
     RSKIP220("rskip220"),
-    RSKIP290("rskip290"); // Testnet difficulty should drop to a higher difficulty
+    RSKIP290("rskip290"), // Testnet difficulty should drop to a higher difficulty
+    RSKIP293("rskip293"); // Flyover improvements
 
     private String configKey;
 
