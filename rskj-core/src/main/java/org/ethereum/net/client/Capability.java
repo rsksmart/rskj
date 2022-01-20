@@ -19,6 +19,8 @@
 
 package org.ethereum.net.client;
 
+import java.util.Objects;
+
 /**
  * The protocols and versions of those protocols that this peer support
  */
@@ -27,8 +29,8 @@ public class Capability implements Comparable<Capability> {
     public static final String P2P = "p2p";
     public static final String RSK = "rsk";
 
-    private String name;
-    private byte version;
+    private final String name;
+    private final byte version;
 
     public Capability(String name, byte version) {
         this.name = name;
@@ -66,12 +68,17 @@ public class Capability implements Comparable<Capability> {
     }
 
     @Override
+    public int hashCode() {
+        return Objects.hash(name, version);
+    }
+
+    @Override
     public int compareTo(Capability o) {
         int cmp = this.name.compareTo(o.name);
         if (cmp != 0) {
             return cmp;
         } else {
-            return Byte.valueOf(this.version).compareTo(o.version);
+            return Byte.compare(this.version, o.version);
         }
     }
 
