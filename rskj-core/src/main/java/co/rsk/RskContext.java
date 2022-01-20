@@ -1736,9 +1736,10 @@ public class RskContext implements NodeContext, NodeBootstrapper {
             MessageFilter filter = new MessageFilter(rskSystemProperties.getMessageRecorderCommands());
 
             try {
+                // This resource needs to remain open when method returns, so LGTM warning is disabled.
                 writerMessageRecorder = new WriterMessageRecorder(
                         new BufferedWriter(
-                                new OutputStreamWriter(new FileOutputStream(fullFilename), StandardCharsets.UTF_8)
+                                new OutputStreamWriter(new FileOutputStream(fullFilename), StandardCharsets.UTF_8) // lgtm [java/output-resource-leak]
                         ),
                         filter
                 );
