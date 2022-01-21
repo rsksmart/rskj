@@ -1016,7 +1016,6 @@ public class BridgeSupport {
         final ReleaseRequestQueue releaseRequestQueue;
         final List<UTXO> availableUTXOs;
         final ReleaseTransactionSet releaseTransactionSet;
-        final Coin estimatedFeesForNextPegOutEvent;
 
         try {
             // (any of these could fail and would invalidate both the tx build and utxo selection, so treat as atomic)
@@ -1024,7 +1023,6 @@ public class BridgeSupport {
             releaseRequestQueue = provider.getReleaseRequestQueue();
             availableUTXOs = getActiveFederationBtcUTXOs();
             releaseTransactionSet = provider.getReleaseTransactionSet();
-            estimatedFeesForNextPegOutEvent = getEstimatedFeesForNextPegOutEvent();
         } catch (IOException e) {
             logger.error("Unexpected error accessing storage while attempting to process release requests", e);
             return;
