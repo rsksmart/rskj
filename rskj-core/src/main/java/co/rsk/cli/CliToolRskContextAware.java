@@ -86,4 +86,12 @@ public abstract class CliToolRskContextAware {
      * Actual execution should be implemented in this method in derived classes.
      */
     protected abstract void onExecute(@Nonnull String[] args, @Nonnull RskContext ctx) throws Exception;
+
+    /**
+     * Handy interface for printing strings.
+     */
+    @FunctionalInterface
+    public interface Printer {
+        void println(String x);
+    }
 }

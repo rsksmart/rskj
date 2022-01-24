@@ -20,12 +20,15 @@ package co.rsk.core.bc;
 
 import co.rsk.RskContext;
 import co.rsk.blockchain.utils.BlockGenerator;
+import co.rsk.config.RskSystemProperties;
 import co.rsk.core.genesis.TestGenesisLoader;
 import co.rsk.test.builders.BlockBuilder;
 import co.rsk.trie.TrieStore;
 import co.rsk.validators.BlockValidator;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
 import org.ethereum.core.genesis.GenesisLoader;
 import org.ethereum.crypto.HashUtil;
@@ -41,6 +44,11 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.spy;
+
 public class BlockChainImplInvalidTest {
     private Blockchain blockChain;
     private RskContext objects;
@@ -48,6 +56,19 @@ public class BlockChainImplInvalidTest {
     @Before
     public void setup() {
         objects = new RskTestContext(new String[0]) {
+            @Override
+            protected synchronized RskSystemProperties buildRskSystemProperties() {
+                RskSystemProperties rskSystemProperties = super.buildRskSystemProperties();
+
+                ActivationConfig activationConfigSpy = spy(rskSystemProperties.getActivationConfig());
+                RskSystemProperties rskSystemPropertiesSpy = spy(rskSystemProperties);
+
+                doReturn(true).when(activationConfigSpy).isActive(eq(ConsensusRule.RSKIP126), anyLong());
+                doReturn(activationConfigSpy).when(rskSystemPropertiesSpy).getActivationConfig();
+
+                return rskSystemPropertiesSpy;
+            }
+
             @Override
             protected GenesisLoader buildGenesisLoader() {
                 return new TestGenesisLoader(getTrieStore(), "rsk-unittests.json", BigInteger.ZERO, true, true, true);
