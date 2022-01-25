@@ -1,9 +1,11 @@
 package org.ethereum.rpc.exception;
 
+import co.rsk.core.exception.RpcInvalidRskAddressException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.ser.DefaultSerializerProvider;
 import org.junit.Assert;
 import org.junit.Before;
@@ -253,6 +255,27 @@ public class RskErrorResolverTest {
         Assert.assertNotNull(result);
         Assert.assertEquals(code, (Integer) result.code);
         Assert.assertEquals("the method mockMethod does not exist/is not available", result.message);
+        Assert.assertNull(result.data);
+    }
+
+    @Test
+    public void test_resolveError_givenInvalidRskAddressExceptionMsg_returnsJsonErrorAsExpected() throws NoSuchMethodException {
+        // Given
+        Integer code = -32602;
+        String message = "An RSK address must be 20 bytes long";
+        Exception exception = new RpcInvalidRskAddressException(message);
+
+        Method methodMock = this.getClass().getMethod("mockMethod");
+        List<JsonNode> jsonNodeListMock = new ArrayList<>();
+        jsonNodeListMock.add(JsonNodeFactory.instance.textNode("0x123456789"));
+
+        // When
+        JsonError result = rskErrorResolver.resolveError(exception, methodMock, jsonNodeListMock);
+
+        // Then
+        Assert.assertNotNull(result);
+        Assert.assertEquals(code, (Integer) result.code);
+        Assert.assertEquals("invalid argument 0: hex string has length 9, want 40 for RSK address", result.message);
         Assert.assertNull(result.data);
     }
 
