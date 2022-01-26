@@ -17,23 +17,30 @@
  */
 package co.rsk.cli.tools;
 
+import co.rsk.NodeRunner;
 import co.rsk.RskContext;
 import co.rsk.config.RskSystemProperties;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.BlockDifficulty;
 import co.rsk.crypto.Keccak256;
 import co.rsk.db.HashMapBlocksIndex;
+import co.rsk.db.RepositoryLocator;
+import co.rsk.db.RepositorySnapshot;
+import co.rsk.logfilter.BlocksBloom;
+import co.rsk.logfilter.BlocksBloomStore;
 import co.rsk.test.World;
 import co.rsk.test.dsl.DslParser;
 import co.rsk.test.dsl.DslProcessorException;
 import co.rsk.test.dsl.WorldDslProcessor;
 import co.rsk.trie.Trie;
 import co.rsk.util.NodeStopper;
+import co.rsk.util.PreflightChecksUtils;
 import org.ethereum.TestUtils;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.core.Blockchain;
+import org.ethereum.core.Bloom;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.datasource.KeyValueDataSource;
@@ -47,6 +54,7 @@ import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
+import org.mockito.ArgumentCaptor;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
@@ -58,7 +66,7 @@ import java.util.Random;
 import static co.rsk.core.BlockDifficulty.ZERO;
 import static org.ethereum.TestUtils.randomHash;
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
 /**
@@ -346,34 +354,235 @@ public class CliToolsTest {
                 keyValueDataSource,
                 new HashMapBlocksIndex());
 
-        long blocksToGenerate = 14;
+        int blocksToGenerate = 14;
 
+        Keccak256 parentHash = Keccak256.ZERO_HASH;
         for (long i = 0; i < blocksToGenerate; i++) {
             Block block = mock(Block.class);
             Keccak256 blockHash = randomHash();
             when(block.getHash()).thenReturn(blockHash);
+            when(block.getParentHash()).thenReturn(parentHash);
             when(block.getNumber()).thenReturn(i);
             when(block.getEncoded()).thenReturn(TestUtils.randomBytes(128));
 
             indexedBlockStore.saveBlock(block, ZERO, true);
+            parentHash = blockHash;
         }
 
         Block bestBlock = indexedBlockStore.getBestBlock();
-        assertThat(bestBlock.getNumber(), is(blocksToGenerate - 1));
-
-        long blockToRewind = blocksToGenerate / 2;
-        String[] args = new String[] { String.valueOf(blockToRewind) };
+        assertThat(bestBlock.getNumber(), is((long) blocksToGenerate - 1));
 
         RskContext rskContext = mock(RskContext.class);
         doReturn(indexedBlockStore).when(rskContext).getBlockStore();
+        RepositoryLocator repositoryLocator = mock(RepositoryLocator.class);
+        doReturn(Optional.of(mock(RepositorySnapshot.class))).when(repositoryLocator).findSnapshotAt(any());
+        doReturn(repositoryLocator).when(rskContext).getRepositoryLocator();
         NodeStopper stopper = mock(NodeStopper.class);
 
-        RewindBlocks rewindBlocksCliTool = new RewindBlocks();
-        rewindBlocksCliTool.execute(args, () -> rskContext, stopper);
+        StringBuilder output = new StringBuilder();
+        RewindBlocks rewindBlocksCliTool = new RewindBlocks(output::append);
+        rewindBlocksCliTool.execute(new String[] { "fmi" }, () -> rskContext, stopper);
+
+        String data = output.toString();
+        Assert.assertTrue(data.contains("No inconsistent block has been found"));
+
+        verify(stopper).stop(0);
+
+        clearInvocations(stopper);
+
+        long blockToRewind = blocksToGenerate / 2;
+
+        output = new StringBuilder();
+        rewindBlocksCliTool = new RewindBlocks(output::append);
+        rewindBlocksCliTool.execute(new String[] { String.valueOf(blockToRewind) }, () -> rskContext, stopper);
 
         bestBlock = indexedBlockStore.getBestBlock();
         assertThat(bestBlock.getNumber(), is(blockToRewind));
 
+        data = output.toString();
+        Assert.assertTrue(data.contains("New highest block number stored in db: " + blockToRewind));
+
         verify(stopper).stop(0);
+
+        clearInvocations(stopper);
+
+        output = new StringBuilder();
+        rewindBlocksCliTool = new RewindBlocks(output::append);
+        rewindBlocksCliTool.execute(new String[] { String.valueOf(blocksToGenerate + 1) }, () -> rskContext, stopper);
+
+        bestBlock = indexedBlockStore.getBestBlock();
+        assertThat(bestBlock.getNumber(), is(blockToRewind));
+
+        data = output.toString();
+        Assert.assertTrue(data.contains("No need to rewind"));
+
+        verify(stopper).stop(0);
+
+        clearInvocations(stopper);
+
+        doReturn(Optional.empty()).when(repositoryLocator).findSnapshotAt(any());
+
+        output = new StringBuilder();
+        rewindBlocksCliTool = new RewindBlocks(output::append);
+        rewindBlocksCliTool.execute(new String[] { "fmi" }, () -> rskContext, stopper);
+
+        data = output.toString();
+        Assert.assertTrue(data.contains("Min inconsistent block number: 0"));
+
+        verify(stopper).stop(0);
+
+        clearInvocations(stopper);
+
+        output = new StringBuilder();
+        rewindBlocksCliTool = new RewindBlocks(output::append);
+        rewindBlocksCliTool.execute(new String[] { "rbc" }, () -> rskContext, stopper);
+
+        data = output.toString();
+        Assert.assertTrue(data.contains("Min inconsistent block number: 0"));
+        Assert.assertTrue(data.contains("New highest block number stored in db: -1"));
+
+        verify(stopper).stop(0);
+    }
+
+    @Test
+    public void startBootstrap() throws Exception {
+        // check thread setup
+        Thread thread = new Thread(() -> {});
+
+        StartBootstrap.setUpThread(thread);
+
+        assertEquals("main", thread.getName());
+
+        // check happy flow of bootstrap node start
+        ArgumentCaptor<Thread> threadCaptor = ArgumentCaptor.forClass(Thread.class);
+        NodeRunner runner = mock(NodeRunner.class);
+        RskContext ctx = mock(RskContext.class);
+        doReturn(runner).when(ctx).getNodeRunner();
+        PreflightChecksUtils preflightChecks = mock(PreflightChecksUtils.class);
+        Runtime runtime = mock(Runtime.class);
+        NodeStopper nodeStopper = mock(NodeStopper.class);
+
+        StartBootstrap.runBootstrapNode(ctx, preflightChecks, runtime, nodeStopper);
+
+        verify(preflightChecks, times(1)).runChecks();
+        verify(runner, times(1)).run();
+        verify(runtime, times(1)).addShutdownHook(threadCaptor.capture());
+        assertEquals("stopper", threadCaptor.getValue().getName());
+
+        // check unhappy flow of bootstrap node start
+        doThrow(new RuntimeException()).when(preflightChecks).runChecks();
+
+        StartBootstrap.runBootstrapNode(ctx, preflightChecks, runtime, nodeStopper);
+
+        verify(preflightChecks, times(2)).runChecks();
+        verify(runner, times(1)).run();
+        verify(runtime, times(1)).addShutdownHook(any());
+        verify(ctx, times(1)).close();
+        verify(nodeStopper, times(1)).stop(1);
+    }
+
+    @Test
+    public void makeBlockRange() {
+        BlockStore blockStore = mock(BlockStore.class);
+        doReturn(5L).when(blockStore).getMinNumber();
+        doReturn(10L).when(blockStore).getMaxNumber();
+
+        try {
+            IndexBlooms.makeBlockRange(new String[]{}, blockStore);
+            fail();
+        } catch (IllegalArgumentException ignored) { /* ignored */ }
+
+        try {
+            IndexBlooms.makeBlockRange(new String[]{ "0" }, blockStore);
+            fail();
+        } catch (IllegalArgumentException ignored) { /* ignored */ }
+
+        try {
+            IndexBlooms.makeBlockRange(new String[]{ "0", "abc" }, blockStore);
+            fail();
+        } catch (NumberFormatException ignored) { /* ignored */ }
+
+        try {
+            IndexBlooms.makeBlockRange(new String[]{ "-1", "1" }, blockStore);
+            fail();
+        } catch (IllegalArgumentException e) {
+            assertEquals("Invalid 'from' and/or 'to' block number", e.getMessage());
+        }
+
+        try {
+            IndexBlooms.makeBlockRange(new String[]{ "2", "1" }, blockStore);
+            fail();
+        } catch (IllegalArgumentException e) {
+            assertEquals("Invalid 'from' and/or 'to' block number", e.getMessage());
+        }
+
+        doReturn(2L).when(blockStore).getMinNumber();
+
+        try {
+            IndexBlooms.makeBlockRange(new String[]{ "1", "10" }, blockStore); // min block num is 10
+            fail();
+        } catch (IllegalArgumentException e) {
+            assertEquals("'from' block number is lesser than the min block number stored", e.getMessage());
+        }
+
+        try {
+            IndexBlooms.makeBlockRange(new String[]{ "5", "11" }, blockStore); // best block num is 10
+            fail();
+        } catch (IllegalArgumentException e) {
+            assertEquals("'to' block number is greater than the best block number", e.getMessage());
+        }
+
+        IndexBlooms.Range range = IndexBlooms.makeBlockRange(new String[]{"5", "10"}, blockStore);
+
+        assertEquals(5, range.fromBlockNumber);
+        assertEquals(10, range.toBlockNumber);
+    }
+
+    @Test
+    public void indexBlooms() {
+        Block block = mock(Block.class);
+        BlockStore blockStore = mock(BlockStore.class);
+        BlocksBloomStore blocksBloomStore = mock(BlocksBloomStore.class);
+        ArgumentCaptor<BlocksBloom> captor = ArgumentCaptor.forClass(BlocksBloom.class);
+
+        doReturn(new byte[Bloom.BLOOM_BYTES]).when(block).getLogBloom();
+        doReturn(block).when(blockStore).getChainBlockByNumber(anyLong());
+        doAnswer(i -> {
+            long num = i.getArgument(0);
+            return num - (num % 64);
+        }).when(blocksBloomStore).firstNumberInRange(anyLong());
+        doAnswer(i -> {
+            long num = i.getArgument(0);
+            return num - (num % 64) + 64 - 1;
+        }).when(blocksBloomStore).lastNumberInRange(anyLong());
+
+        IndexBlooms.execute(new IndexBlooms.Range(0, 63), blockStore, blocksBloomStore);
+
+        verify(blocksBloomStore, times(1)).addBlocksBloom(captor.capture());
+        verify(blockStore, times(64)).getChainBlockByNumber(anyLong());
+
+        BlocksBloom blocksBloom = captor.getValue();
+        assertEquals(0, blocksBloom.fromBlock());
+        assertEquals(63, blocksBloom.toBlock());
+        assertArrayEquals(new byte[Bloom.BLOOM_BYTES], blocksBloom.getBloom().getData());
+
+        clearInvocations(blocksBloomStore, blockStore);
+
+        IndexBlooms.execute(new IndexBlooms.Range(60, 300), blockStore, blocksBloomStore);
+
+        // saved 3 block blooms in range [60..300]
+        verify(blocksBloomStore, times(3)).addBlocksBloom(captor.capture());
+
+        int i = 0;
+        for (BlocksBloom bb : captor.getAllValues()) {
+            assertEquals(i * 64L, bb.fromBlock());
+            assertEquals(i * 64L + 63L, bb.toBlock());
+            assertArrayEquals(new byte[Bloom.BLOOM_BYTES], bb.getBloom().getData());
+            i++;
+        }
+
+        // [60..63] - ignored, [64..300] - processed
+        // 192 (3*64) processed and saved, and 45 processed but not saved
+        verify(blockStore, times(192 + 45)).getChainBlockByNumber(anyLong());
     }
 }

@@ -19,10 +19,12 @@
 
 package org.ethereum.core.genesis;
 
+import co.rsk.cli.tools.RewindBlocks;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.genesis.TestGenesisLoader;
+import co.rsk.db.RepositoryLocator;
 import co.rsk.db.RepositorySnapshot;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -33,13 +35,18 @@ import org.ethereum.vm.PrecompiledContracts;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.io.IOException;
 import java.math.BigInteger;
+import java.util.Objects;
+import java.util.Optional;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
+import static org.mockito.Mockito.*;
 
 public class BlockchainLoaderTest {
 
     @Test
-    public void testLoadBlockchainEmptyBlockchain() throws IOException {
+    public void testLoadBlockchainEmptyBlockchain() {
         RskTestFactory objects = new RskTestFactory() {
             @Override
             protected GenesisLoader buildGenesisLoader() {
@@ -74,8 +81,34 @@ public class BlockchainLoaderTest {
         Assert.assertEquals(BigInteger.valueOf(25), repository.getNonce(address));
         Assert.assertEquals(DataWord.ONE, repository.getStorageValue(address, DataWord.ZERO));
         Assert.assertEquals(DataWord.valueOf(3), repository.getStorageValue(address, DataWord.ONE));
-        Assert.assertEquals(274, repository.getCode(address).length);
-
+        Assert.assertEquals(274, Objects.requireNonNull(repository.getCode(address)).length);
     }
 
+    @Test
+    public void testLoadBlockchainWithInconsistentBlock() {
+        RskTestFactory objects = new RskTestFactory() {
+            @Override
+            protected synchronized RepositoryLocator buildRepositoryLocator() {
+                RepositoryLocator repositoryLocatorSpy = spy(super.buildRepositoryLocator());
+
+                doReturn(Optional.empty()).when(repositoryLocatorSpy).findSnapshotAt(any());
+
+                return repositoryLocatorSpy;
+            }
+
+            @Override
+            protected GenesisLoader buildGenesisLoader() {
+                return new TestGenesisLoader(getTrieStore(), "blockchain_loader_genesis.json", BigInteger.ZERO, true, true, true);
+            }
+        };
+
+        try {
+            objects.getBlockchain(); // calls loadBlockchain
+            fail();
+        } catch (RuntimeException e) {
+            String errorMessage = String.format("Best block is not consistent with the state db. Consider using `%s` cli tool to rewind inconsistent blocks",
+                    RewindBlocks.class.getSimpleName());
+            assertEquals(errorMessage, e.getMessage());
+        }
+    }
 }

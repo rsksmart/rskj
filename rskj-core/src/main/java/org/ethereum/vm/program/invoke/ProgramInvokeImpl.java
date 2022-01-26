@@ -27,6 +27,7 @@ import org.ethereum.vm.program.Program;
 import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * @author Roman Mandeleil
@@ -380,6 +381,13 @@ public class ProgramInvokeImpl implements ProgramInvoke {
         }
 
         return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = Objects.hash(address, origin, caller, balance, gasPrice, callValue, gas, prevHash, coinbase, timestamp, number, difficulty, gaslimit, storage, repository, byTransaction, byTestingSuite);
+        result = 31 * result + Arrays.hashCode(msgData);
+        return result;
     }
 
     @Override

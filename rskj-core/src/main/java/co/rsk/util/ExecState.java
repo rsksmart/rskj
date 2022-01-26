@@ -18,5 +18,13 @@
 package co.rsk.util;
 
 public enum ExecState {
-    CREATED, RUNNING, FINISHED
+    CREATED, RUNNING, FINISHED;
+
+    public boolean isCreated() {
+        return this == CREATED;
+    }
+
+    public boolean isRunning() {
+        return this == RUNNING;
+    }
 }

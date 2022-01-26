@@ -238,7 +238,8 @@ public class BlockChainBuilder {
                 blockValidator,
                 blockExecutor,
                 genesis,
-                stateRootHandler
+                stateRootHandler,
+                repositoryLocator
         ).loadBlockchain();
 
         if (this.testing) {

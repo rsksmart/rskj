@@ -22,6 +22,7 @@ import co.rsk.cli.CliToolRskContextAware;
 import co.rsk.trie.NodeReference;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStore;
+import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.Block;
 import org.ethereum.db.BlockStore;
 import org.ethereum.util.ByteUtil;
@@ -51,7 +52,8 @@ public class ShowStateInfo extends CliToolRskContextAware {
         this(ShowStateInfo::printInfo);
     }
 
-    public ShowStateInfo(@Nonnull Printer printer) {
+    @VisibleForTesting
+    ShowStateInfo(@Nonnull Printer printer) {
         this.printer = Objects.requireNonNull(printer);
     }
 
@@ -139,11 +141,6 @@ public class ShowStateInfo extends CliToolRskContextAware {
             stateInfo.nvalues++;
             stateInfo.nbytes += trie.getValue().length;
         }
-    }
-
-    @FunctionalInterface
-    public interface Printer {
-        void println(String x);
     }
 
     private static class StateInfo {

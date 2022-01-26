@@ -186,6 +186,8 @@ public class IndexedBlockStore implements BlockStore {
     }
 
     public synchronized void close() {
+        flush();
+
         index.close();
         blocks.close();
     }

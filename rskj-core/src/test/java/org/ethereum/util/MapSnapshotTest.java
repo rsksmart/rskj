@@ -106,17 +106,22 @@ public class MapSnapshotTest {
         }
     }
 
-    @Test(expected = IOException.class)
-    public void readSnapshot_WhenInvalidKeySize_ThrowError() throws IOException {
+    @Test
+    public void readSnapshot_WhenInvalidKeySize_ThrowError() {
         InputStream inputStream = makeInputStream(out -> {
             out.writeInt(1);
-            out.writeInt(0);
+            out.writeInt(-1);
         });
         MapSnapshot.In inSnapshot = new MapSnapshot.In(inputStream);
-        inSnapshot.read(new HashMap<>());
+        try {
+            inSnapshot.read(new HashMap<>());
+            fail();
+        } catch (IOException e) {
+            assertEquals("Invalid data: key size", e.getMessage());
+        }
     }
 
-    @Test(expected = IOException.class)
+    @Test(expected = EOFException.class)
     public void readSnapshot_WhenInvalidKeyLength_ThrowError() throws IOException {
         InputStream inputStream = makeInputStream(out -> {
             out.writeInt(1);
@@ -126,8 +131,8 @@ public class MapSnapshotTest {
         inSnapshot.read(new HashMap<>());
     }
 
-    @Test(expected = IOException.class)
-    public void readSnapshot_WhenInvalidValueSize_ThrowError() throws IOException {
+    @Test
+    public void readSnapshot_WhenInvalidValueSize_ThrowError() {
         InputStream inputStream = makeInputStream(out -> {
             out.writeInt(1);
             out.writeInt(1);
@@ -135,10 +140,15 @@ public class MapSnapshotTest {
             out.writeInt(-2);
         });
         MapSnapshot.In inSnapshot = new MapSnapshot.In(inputStream);
-        inSnapshot.read(new HashMap<>());
+        try {
+            inSnapshot.read(new HashMap<>());
+            fail();
+        } catch (IOException e) {
+            assertEquals("Invalid data: value size", e.getMessage());
+        }
     }
 
-    @Test(expected = IOException.class)
+    @Test(expected = EOFException.class)
     public void readSnapshot_WhenInvalidValueLength_ThrowError() throws IOException {
         InputStream inputStream = makeInputStream(out -> {
             out.writeInt(1);
@@ -200,6 +210,7 @@ public class MapSnapshotTest {
     @Test
     public void writeAndReadSnapshot_WhenReadWritten_ShouldMatch() throws IOException {
         Map<ByteArrayWrapper, byte[]> outMap = new HashMap<>();
+        outMap.put(ByteUtil.wrap(new byte[0]), new byte[0]); // empty-byte keys and values are allowed
         for (int i = 0; i < 10; i++) {
             byte[] key = new byte[] {(byte) i, (byte) (i + 1), (byte) (i + 2), (byte) (i + 3), (byte) (i + 4)};
             byte[] value = new byte[] {(byte) (i + 5), (byte) (i + 6), (byte) (i + 7), (byte) (i + 8), (byte) (i + 9)};
@@ -217,7 +228,7 @@ public class MapSnapshotTest {
             inSnapshot.read(inMap);
         }
 
-        assertEquals(10, inMap.size());
+        assertEquals(11, inMap.size());
         for (Map.Entry<ByteArrayWrapper, byte[]> entry : inMap.entrySet()) {
             assertArrayEquals(entry.getValue(), outMap.get(entry.getKey()));
         }

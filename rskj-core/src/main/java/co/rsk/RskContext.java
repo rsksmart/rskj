@@ -127,6 +127,7 @@ import org.mapdb.DBMaker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.*;
 import java.net.InetSocketAddress;
@@ -150,6 +151,8 @@ import java.util.stream.Stream;
 public class RskContext implements NodeContext, NodeBootstrapper {
 
     private static final Logger logger = LoggerFactory.getLogger(RskContext.class);
+
+    private static final String CACHE_FILE_NAME = "rskcache";
 
     private final CliArgs<NodeCliOptions, NodeCliFlags> cliArgs;
 
@@ -1129,10 +1132,10 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         }
 
         // then close data stores
-        if (blockStore != null) {
-            logger.trace("closing blockStore.");
-            blockStore.close();
-            logger.trace("blockStore closed.");
+        if (trieStore != null) {
+            logger.trace("disposing trieStore.");
+            trieStore.dispose();
+            logger.trace("trieStore disposed.");
         }
 
         if (stateRootsStore != null) {
@@ -1141,16 +1144,16 @@ public class RskContext implements NodeContext, NodeBootstrapper {
             logger.trace("stateRootsStore closed.");
         }
 
-        if (trieStore != null) {
-            logger.trace("disposing trieStore.");
-            trieStore.dispose();
-            logger.trace("trieStore disposed.");
-        }
-
         if (receiptStore != null) {
             logger.trace("closing receiptStore.");
             receiptStore.close();
             logger.trace("receiptStore closed.");
+        }
+
+        if (blockStore != null) {
+            logger.trace("closing blockStore.");
+            blockStore.close();
+            logger.trace("blockStore closed.");
         }
 
         if (blocksBloomStore != null) {
@@ -1168,16 +1171,32 @@ public class RskContext implements NodeContext, NodeBootstrapper {
 
     /***** Protected Methods ******************************************************************************************/
 
+    @Nonnull
+    protected Path resolveCacheSnapshotPath(@Nonnull Path baseStorePath) {
+        return baseStorePath.resolve(CACHE_FILE_NAME);
+    }
+
     protected synchronized KeyValueDataSource buildBlocksBloomDataSource() {
         checkIfNotClosed();
 
-        return LevelDbDataSource.makeDataSource(Paths.get(getRskSystemProperties().databaseDir(), "blooms"));
+        int bloomsCacheSize = getRskSystemProperties().getBloomsCacheSize();
+        Path bloomsStorePath = Paths.get(getRskSystemProperties().databaseDir(), "blooms");
+        KeyValueDataSource ds = LevelDbDataSource.makeDataSource(bloomsStorePath);
+
+        if (bloomsCacheSize != 0) {
+            CacheSnapshotHandler cacheSnapshotHandler = getRskSystemProperties().shouldPersistBloomsCacheSnapshot()
+                    ? new CacheSnapshotHandler(resolveCacheSnapshotPath(bloomsStorePath))
+                    : null;
+            ds = new DataSourceWithCache(ds, bloomsCacheSize, cacheSnapshotHandler);
+        }
+
+        return ds;
     }
 
     protected synchronized NodeRunner buildNodeRunner() {
         checkIfNotClosed();
 
-        return new FullNodeRunner(
+        return new NodeRunnerImpl(
                 this,
                 buildInternalServices(),
                 getRskSystemProperties(),
@@ -1285,7 +1304,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
 
         if (statesCacheSize != 0) {
             CacheSnapshotHandler cacheSnapshotHandler = getRskSystemProperties().shouldPersistStatesCacheSnapshot()
-                    ? new CacheSnapshotHandler(trieStorePath.resolve("cache"))
+                    ? new CacheSnapshotHandler(resolveCacheSnapshotPath(trieStorePath))
                     : null;
             ds = new DataSourceWithCache(ds, statesCacheSize, cacheSnapshotHandler);
         }
@@ -1451,7 +1470,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         );
     }
 
-    private PeerExplorer getPeerExplorer() {
+    protected PeerExplorer getPeerExplorer() {
         if (peerExplorer == null) {
             RskSystemProperties rskSystemProperties = getRskSystemProperties();
             ECKey key = rskSystemProperties.getMyKey();
@@ -1494,7 +1513,8 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     getBlockValidator(),
                     getBlockExecutor(),
                     getGenesis(),
-                    getStateRootHandler()
+                    getStateRootHandler(),
+                    getRepositoryLocator()
             );
         }
 
@@ -1717,9 +1737,10 @@ public class RskContext implements NodeContext, NodeBootstrapper {
             MessageFilter filter = new MessageFilter(rskSystemProperties.getMessageRecorderCommands());
 
             try {
+                // This resource needs to remain open when method returns, so LGTM warning is disabled.
                 writerMessageRecorder = new WriterMessageRecorder(
                         new BufferedWriter(
-                                new OutputStreamWriter(new FileOutputStream(fullFilename), StandardCharsets.UTF_8)
+                                new OutputStreamWriter(new FileOutputStream(fullFilename), StandardCharsets.UTF_8) // lgtm [java/output-resource-leak]
                         ),
                         filter
                 );

@@ -19,7 +19,9 @@
 package org.ethereum.rpc.converters;
 
 import co.rsk.core.Coin;
+import org.ethereum.TestUtils;
 import org.ethereum.rpc.TypeConverter;
+import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -38,6 +40,55 @@ public class TypeConverterTest {
     @Test
     public void stringHexToByteArrayStartsWithZeroX() {
         Assert.assertArrayEquals(new byte[] { 32 }, TypeConverter.stringHexToByteArray("0x20"));
+    }
+
+    @Test
+    public void stringHexToByteArrayReturnsHexDecodedValueInsteadOfBytesOfNumber() {
+        Assert.assertArrayEquals(new byte[] { 16, 0 }, TypeConverter.stringHexToByteArray("1000"));
+    }
+
+    @Test
+    public void strHexOrStrNumberToByteArrayParseNonHexToBytesOfNumber() {
+        Assert.assertArrayEquals(new byte[] { 3, -24 }, TypeConverter.strHexOrStrNumberToByteArray("1000"));
+    }
+
+    @Test
+    public void strHexOrStrNumberToByteArrayParseToHexBytes() {
+        Assert.assertArrayEquals(new byte[] { 32 }, TypeConverter.strHexOrStrNumberToByteArray("0x20"));
+    }
+
+    @Test
+    public void strHexOrStrNumberToByteArrayParseToHexBytesWhenContainingAHexLetter() {
+        Exception exception = TestUtils.assertThrows(RskJsonRpcRequestException.class, () -> {
+            Assert.assertArrayEquals(new byte[] { 2, -80 }, TypeConverter.strHexOrStrNumberToByteArray("2b0"));
+        });
+
+        String expectedMessage = "Number values should not contain letters or hex values should start with 0x.";
+        String actualMessage = exception.getMessage();
+
+        Assert.assertEquals(expectedMessage, actualMessage);
+    }
+
+    @Test
+    public void strHexOrStrNumberToBigIntegerParseNonHexToBigInteger() {
+        Assert.assertEquals(new BigInteger("1000"), TypeConverter.strHexOrStrNumberToBigInteger("1000"));
+    }
+
+    @Test
+    public void strHexOrStrNumberToBigIntegerParseHexToBigInteger() {
+        Assert.assertEquals(new BigInteger("4106"), TypeConverter.strHexOrStrNumberToBigInteger("0x100a"));
+    }
+
+    @Test
+    public void strHexOrStrNumberToBigIntegerThrowsExceptionHexWithoutPrefixToBigInteger() {
+        Exception exception = TestUtils.assertThrows(RskJsonRpcRequestException.class, () -> {
+            TypeConverter.strHexOrStrNumberToBigInteger("100a");
+        });
+
+        String expectedMessage = "Number values should not contain letters or hex values should start with 0x.";
+        String actualMessage = exception.getMessage();
+
+        Assert.assertEquals(expectedMessage, actualMessage);
     }
 
     @Test
@@ -100,12 +151,12 @@ public class TypeConverterTest {
 
     @Test
     public void toJsonHexCoin() {
-        Assert.assertEquals("1234", TypeConverter.toJsonHex(new Coin(new BigInteger("1234"))));
+        Assert.assertEquals("0x1234", TypeConverter.toJsonHex(new Coin(new BigInteger("1234"))));
     }
 
     @Test
     public void toJsonHexNullCoin() {
-        Assert.assertEquals("", TypeConverter.toJsonHex((Coin) null));
+        Assert.assertEquals("0x00", TypeConverter.toJsonHex((Coin) null));
     }
 
 

@@ -31,10 +31,10 @@ import java.util.List;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
-public class FullNodeRunnerTest {
+public class NodeRunnerImplTest {
     private NodeContext nodeContext;
     private List<InternalService> internalServices;
-    private FullNodeRunner runner;
+    private NodeRunnerImpl runner;
 
     @Before
     public void setup() {
@@ -44,7 +44,7 @@ public class FullNodeRunnerTest {
                 mock(InternalService.class)
         );
 
-        runner = new FullNodeRunner(nodeContext, internalServices, mock(RskSystemProperties.class), mock(BuildInfo.class));
+        runner = new NodeRunnerImpl(nodeContext, internalServices, mock(RskSystemProperties.class), mock(BuildInfo.class));
     }
 
     @Test

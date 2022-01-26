@@ -27,6 +27,7 @@ import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Genesis;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.util.RskTestContext;
@@ -42,6 +43,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -82,6 +84,18 @@ public class RskContextTest {
         assertThat(devnetContext.getCliArgs(), notNullValue());
         assertThat(devnetContext.getCliArgs().getFlags(), contains(NodeCliFlags.NETWORK_DEVNET));
         devnetContext.close();
+    }
+
+    @Test
+    public void shouldResolveCacheSnapshotPath() {
+        Path baseStorePath = Paths.get("./db");
+
+        Path resolvedPath = rskContext.resolveCacheSnapshotPath(baseStorePath);
+
+        assertNotNull(resolvedPath);
+
+        String pathSuffix = resolvedPath.toString().replace(baseStorePath.toString(), "");
+        assertEquals("/rskcache", pathSuffix);
     }
 
     @Test
@@ -186,6 +200,7 @@ public class RskContextTest {
         doReturn(true).when(testProperties).fastBlockPropagation();
 
         ActivationConfig config = mock(ActivationConfig.class);
+        doReturn(true).when(config).isActive(eq(ConsensusRule.RSKIP126), anyLong());
         doReturn(config).when(testProperties).getActivationConfig();
 
         Constants constants = mock(Constants.class);
@@ -228,6 +243,7 @@ public class RskContextTest {
 
         Set<String> methodsToSkip = new HashSet<String>() {{
             add("getCliArgs");
+            add("resolveCacheSnapshotPath");
             add("isClosed");
             add("close");
         }};
