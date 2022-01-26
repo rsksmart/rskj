@@ -1,5 +1,6 @@
 package co.rsk.peg;
 
+import co.rsk.bitcoinj.core.Address;
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.config.BridgeConstants;
 import co.rsk.config.BridgeMainNetConstants;
@@ -241,12 +242,12 @@ public class BridgeUtilsLegacyTest {
     public void calculatePegoutTxSize_before_rskip_271() {
         when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(false);
 
-        List<BtcECKey> keys = PegTestUtils.createBtcECKeys(13);
+        List<BtcECKey> keys = PegTestUtils.createRandomBtcECKeys(13);
         Federation federation = new Federation(
             FederationMember.getFederationMembersFromKeys(keys),
             Instant.now(),
             0,
-            networkParameters
+            bridgeConstantsRegtest.getBtcParams()
         );
 
         int pegoutTxSize = BridgeUtilsLegacy.calculatePegoutTxSize(activations, federation, 2, 2);
@@ -263,12 +264,12 @@ public class BridgeUtilsLegacyTest {
     public void calculatePegoutTxSize_after_rskip_271() {
         when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
 
-        List<BtcECKey> keys = PegTestUtils.createBtcECKeys(13);
+        List<BtcECKey> keys = PegTestUtils.createRandomBtcECKeys(13);
         Federation federation = new Federation(
             FederationMember.getFederationMembersFromKeys(keys),
             Instant.now(),
             0,
-            networkParameters
+            bridgeConstantsRegtest.getBtcParams()
         );
 
         BridgeUtilsLegacy.calculatePegoutTxSize(activations, federation, 2, 2);
@@ -278,12 +279,12 @@ public class BridgeUtilsLegacyTest {
     public void calculatePegoutTxSize_ZeroInput_ZeroOutput() {
         when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(false);
 
-        List<BtcECKey> keys = PegTestUtils.createBtcECKeys(13);
+        List<BtcECKey> keys = PegTestUtils.createRandomBtcECKeys(13);
         Federation federation = new Federation(
             FederationMember.getFederationMembersFromKeys(keys),
             Instant.now(),
             0,
-            networkParameters
+            bridgeConstantsRegtest.getBtcParams()
         );
 
         BridgeUtilsLegacy.calculatePegoutTxSize(activations, federation, 0, 0);

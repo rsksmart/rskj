@@ -1143,7 +1143,7 @@ public class BridgeUtilsTest {
             activations
         ));
 
-        Address randomAddress = PegTestUtils.createRandomBtcAddress();
+        Address randomAddress = PegTestUtils.createRandomP2PKHBtcAddress();
         BtcTransaction fromRetiringFederationTx = new BtcTransaction(networkParameters);
         fromRetiringFederationTx.addOutput(Coin.COIN, randomAddress);
         TransactionInput fromRetiringFederationTxInput = new TransactionInput(
@@ -1239,7 +1239,7 @@ public class BridgeUtilsTest {
             bridgeConstantsRegtest.getBtcParams()
         );
         List<BtcECKey> federationPrivateKeys = BridgeRegTestConstants.REGTEST_FEDERATION_PRIVATE_KEYS;
-        Address randomAddress = PegTestUtils.createRandomBtcAddress();
+        Address randomAddress = PegTestUtils.createRandomP2PKHBtcAddress();
 
         BtcTransaction pegOutTx1 = new BtcTransaction(networkParameters);
         pegOutTx1.addOutput(Coin.COIN, randomAddress);
@@ -1279,7 +1279,7 @@ public class BridgeUtilsTest {
         Federation standardFederation = bridgeConstantsRegtest.getGenesisFederation();
 
         // Create a tx from the fast bridge fed to a random address
-        Address randomAddress = PegTestUtils.createRandomBtcAddress();
+        Address randomAddress = PegTestUtils.createRandomP2PKHBtcAddress();
         BtcTransaction pegOutTx1 = new BtcTransaction(networkParameters);
         pegOutTx1.addOutput(Coin.COIN, randomAddress);
         TransactionInput pegOutInput1 = new TransactionInput(
@@ -1356,7 +1356,7 @@ public class BridgeUtilsTest {
         Federation standardFederation = bridgeConstantsRegtest.getGenesisFederation();
 
         // Create a tx from the erp fed to a random address
-        Address randomAddress = PegTestUtils.createRandomBtcAddress();
+        Address randomAddress = PegTestUtils.createRandomP2PKHBtcAddress();
         BtcTransaction pegOutTx1 = new BtcTransaction(networkParameters);
         pegOutTx1.addOutput(Coin.COIN, randomAddress);
         TransactionInput pegOutInput1 = new TransactionInput(
@@ -1434,7 +1434,7 @@ public class BridgeUtilsTest {
         Federation standardFederation = bridgeConstantsRegtest.getGenesisFederation();
 
         // Create a tx from the fast bridge erp fed to a random address
-        Address randomAddress = PegTestUtils.createRandomBtcAddress();
+        Address randomAddress = PegTestUtils.createRandomP2PKHBtcAddress();
         BtcTransaction pegOutTx1 = new BtcTransaction(networkParameters);
         pegOutTx1.addOutput(Coin.COIN, randomAddress);
         TransactionInput pegOutInput1 = new TransactionInput(
@@ -1477,7 +1477,7 @@ public class BridgeUtilsTest {
     @Test
     public void testIsPegOutTx_noRedeemScript() {
         Federation federation = bridgeConstantsRegtest.getGenesisFederation();
-        Address randomAddress = PegTestUtils.createRandomBtcAddress();
+        Address randomAddress = PegTestUtils.createRandomP2PKHBtcAddress();
 
         BtcTransaction pegOutTx1 = new BtcTransaction(networkParameters);
         pegOutTx1.addOutput(Coin.COIN, randomAddress);
@@ -1495,7 +1495,7 @@ public class BridgeUtilsTest {
     @Test
     public void testIsPegOutTx_invalidRedeemScript() {
         Federation federation = bridgeConstantsRegtest.getGenesisFederation();
-        Address randomAddress = PegTestUtils.createRandomBtcAddress();
+        Address randomAddress = PegTestUtils.createRandomP2PKHBtcAddress();
         Script invalidRedeemScript = ScriptBuilder.createRedeemScript(2, Arrays.asList(new BtcECKey(), new BtcECKey()));
 
         BtcTransaction pegOutTx1 = new BtcTransaction(networkParameters);
@@ -1513,7 +1513,7 @@ public class BridgeUtilsTest {
 
     @Test
     public void testChangeBetweenFederations() {
-        Address randomAddress = PegTestUtils.createRandomBtcAddress();
+        Address randomAddress = PegTestUtils.createRandomP2PKHBtcAddress();
         Context btcContext = new Context(networkParameters);
 
         List<BtcECKey> federation1Keys = Stream.of("fa01", "fa02")
@@ -2375,7 +2375,7 @@ public class BridgeUtilsTest {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
 
-        List<BtcECKey> keys = PegTestUtils.createBtcECKeys(13);
+        List<BtcECKey> keys = PegTestUtils.createRandomBtcECKeys(13);
         Federation federation = new Federation(
             FederationMember.getFederationMembersFromKeys(keys),
             Instant.now(),
@@ -2391,7 +2391,7 @@ public class BridgeUtilsTest {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
 
-        List<BtcECKey> keys = PegTestUtils.createBtcECKeys(13);
+        List<BtcECKey> keys = PegTestUtils.createRandomBtcECKeys(13);
         Federation federation = new Federation(
             FederationMember.getFederationMembersFromKeys(keys),
             Instant.now(),
@@ -2416,7 +2416,7 @@ public class BridgeUtilsTest {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
 
-        List<BtcECKey> keys = PegTestUtils.createBtcECKeys(13);
+        List<BtcECKey> keys = PegTestUtils.createRandomBtcECKeys(13);
         Federation federation = new Federation(
             FederationMember.getFederationMembersFromKeys(keys),
             Instant.now(),
@@ -2441,7 +2441,7 @@ public class BridgeUtilsTest {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
 
-        List<BtcECKey> keys = PegTestUtils.createBtcECKeys(13);
+        List<BtcECKey> keys = PegTestUtils.createRandomBtcECKeys(13);
         Federation federation = new Federation(
             FederationMember.getFederationMembersFromKeys(keys),
             Instant.now(),
@@ -2469,7 +2469,7 @@ public class BridgeUtilsTest {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
 
-        List<BtcECKey> keys = PegTestUtils.createBtcECKeys(13);
+        List<BtcECKey> keys = PegTestUtils.createRandomBtcECKeys(13);
         Federation federation = new Federation(
             FederationMember.getFederationMembersFromKeys(keys),
             Instant.now(),
@@ -2515,9 +2515,10 @@ public class BridgeUtilsTest {
             FederationTestUtils.getFederationMembersWithBtcKeys(defaultFederationKeys),
             Instant.ofEpochMilli(1000L),
             0L,
-            bridgeConstants.getBtcParams(),
+            networkParameters,
             erpFederationPublicKeys,
-            500L
+            500L,
+            activations
         );
 
         // Create a pegout tx with 50 inputs and 200 outputs
@@ -2560,7 +2561,8 @@ public class BridgeUtilsTest {
             0L,
             networkParameters,
             erpFederationPublicKeys,
-            500L
+            500L,
+            activations
         );
 
         // Create a pegout tx with 100 inputs and 50 outputs
@@ -2626,7 +2628,7 @@ public class BridgeUtilsTest {
     @Test
     public void scriptCorrectlySpends_fromGenesisFederation_ok() {
         Federation genesisFederation = bridgeConstantsRegtest.getGenesisFederation();
-        Address destinationAddress = PegTestUtils.createRandomBtcAddress();
+        Address destinationAddress = PegTestUtils.createRandomP2PKHBtcAddress();
 
         BtcTransaction tx = new BtcTransaction(networkParameters);
         tx.addOutput(Coin.COIN, destinationAddress);
@@ -2645,7 +2647,7 @@ public class BridgeUtilsTest {
     @Test
     public void scriptCorrectlySpends_invalidScript() {
         Federation genesisFederation = bridgeConstantsRegtest.getGenesisFederation();
-        Address destinationAddress = PegTestUtils.createRandomBtcAddress();
+        Address destinationAddress = PegTestUtils.createRandomP2PKHBtcAddress();
 
         BtcTransaction tx = new BtcTransaction(networkParameters);
         tx.addOutput(Coin.COIN, destinationAddress);
@@ -2895,7 +2897,7 @@ public class BridgeUtilsTest {
     }
 
     private BtcTransaction createPegOutTx(int inputSize, int outputSize, Federation federation, List<BtcECKey> keys) {
-        Address randomAddress = PegTestUtils.createRandomBtcAddress();
+        Address randomAddress = PegTestUtils.createRandomP2PKHBtcAddress();
 
         BtcTransaction btcTx = new BtcTransaction(networkParameters);
 

@@ -7787,26 +7787,27 @@ public class BridgeSupportTest {
         when(provider.getFeePerKb()).thenReturn(feePerKB);
 
         List<BtcECKey> defaultFederationKeys = Arrays.asList(
-                BtcECKey.fromPrivate(Hex.decode("fa01")),
-                BtcECKey.fromPrivate(Hex.decode("fa02")),
-                BtcECKey.fromPrivate(Hex.decode("fa03"))
+            BtcECKey.fromPrivate(Hex.decode("fa01")),
+            BtcECKey.fromPrivate(Hex.decode("fa02")),
+            BtcECKey.fromPrivate(Hex.decode("fa03"))
         );
         defaultFederationKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
 
         List<BtcECKey> erpFederationPublicKeys = Arrays.asList(
-                BtcECKey.fromPrivate(Hex.decode("fa03")),
-                BtcECKey.fromPrivate(Hex.decode("fa04")),
-                BtcECKey.fromPrivate(Hex.decode("fa05"))
+            BtcECKey.fromPrivate(Hex.decode("fa03")),
+            BtcECKey.fromPrivate(Hex.decode("fa04")),
+            BtcECKey.fromPrivate(Hex.decode("fa05"))
         );
         erpFederationPublicKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
 
         Federation erpFederation = new ErpFederation(
-                FederationTestUtils.getFederationMembersWithBtcKeys(defaultFederationKeys),
-                Instant.ofEpochMilli(1000L),
-                0L,
-                bridgeConstants.getBtcParams(),
-                erpFederationPublicKeys,
-                500L
+            FederationTestUtils.getFederationMembersWithBtcKeys(defaultFederationKeys),
+            Instant.ofEpochMilli(1000L),
+            0L,
+            bridgeConstants.getBtcParams(),
+            erpFederationPublicKeys,
+            500L,
+            activations
         );
 
         when(provider.getNewFederation()).thenReturn(erpFederation);
