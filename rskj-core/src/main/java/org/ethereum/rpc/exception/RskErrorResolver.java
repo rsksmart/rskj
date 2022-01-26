@@ -1,6 +1,6 @@
 package org.ethereum.rpc.exception;
 
-import co.rsk.core.exception.RpcInvalidRskAddressException;
+import co.rsk.core.exception.InvalidRskAddressException;
 import co.rsk.jsonrpc.JsonRpcError;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -25,7 +25,7 @@ public class RskErrorResolver implements ErrorResolver {
     public JsonError resolveError(Throwable t, Method method, List<JsonNode> arguments) {
         JsonError error;
 
-        if (t instanceof RpcInvalidRskAddressException) {
+        if (t instanceof InvalidRskAddressException) {
             error = new JsonError(
                     JsonRpcError.INVALID_PARAMS,
                     "invalid argument 0: hex string has length " + arguments.get(0).asText().replace("0x", "").length() + ", want 40 for RSK address",

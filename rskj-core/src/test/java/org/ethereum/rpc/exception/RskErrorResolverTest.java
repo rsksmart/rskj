@@ -1,6 +1,6 @@
 package org.ethereum.rpc.exception;
 
-import co.rsk.core.exception.RpcInvalidRskAddressException;
+import co.rsk.core.exception.InvalidRskAddressException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
@@ -263,7 +263,7 @@ public class RskErrorResolverTest {
         // Given
         Integer code = -32602;
         String message = "An RSK address must be 20 bytes long";
-        Exception exception = new RpcInvalidRskAddressException(message);
+        Exception exception = new InvalidRskAddressException(message);
 
         Method methodMock = this.getClass().getMethod("mockMethod");
         List<JsonNode> jsonNodeListMock = new ArrayList<>();

@@ -18,15 +18,13 @@
 
 package co.rsk.core.exception;
 
-import org.ethereum.rpc.exception.RskJsonRpcRequestException;
-
 /**
  * @author rmorel
  * @since  10.23.17
  */
-public class RpcInvalidRskAddressException extends RskJsonRpcRequestException {
+public class InvalidRskAddressException extends RuntimeException {
 
-    public RpcInvalidRskAddressException(String msg) {
-        super(-32602, msg);
+    public InvalidRskAddressException(String msg) {
+        super(msg);
     }
 }
