@@ -187,8 +187,11 @@ public class BridgeSupportReleaseBtcTest {
         verify(repository, never()).transfer(any(), any(), any());
         assertEquals(1, provider.getReleaseTransactionSet().getEntries().size());
         assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
-        ReleaseTransactionSet.Entry entry = (ReleaseTransactionSet.Entry) provider.getReleaseTransactionSet().getEntries().toArray()[0];
-        verify(eventLogger, times(1)).logReleaseBtcRequested(any(byte[].class), any(BtcTransaction.class), any(Coin.class));
+        verify(eventLogger, times(1)).logReleaseBtcRequested(
+            any(byte[].class),
+            any(BtcTransaction.class),
+            any(Coin.class)
+        );
     }
 
     @Test
@@ -210,10 +213,13 @@ public class BridgeSupportReleaseBtcTest {
 
         assertEquals(1, provider.getReleaseTransactionSet().getEntries().size());
         assertEquals(0, provider.getReleaseRequestQueue().getEntries().size());
-        ReleaseTransactionSet.Entry entry = (ReleaseTransactionSet.Entry) provider.getReleaseTransactionSet().getEntries().toArray()[0];
 
         assertEquals(3, logInfo.size());
-        verify(eventLogger, times(1)).logReleaseBtcRequested(any(byte[].class), any(BtcTransaction.class), any(Coin.class));
+        verify(eventLogger, times(1)).logReleaseBtcRequested(
+            any(byte[].class),
+            any(BtcTransaction.class),
+            any(Coin.class)
+        );
         verify(eventLogger, times(1)).logReleaseBtcRequestReceived(any(), any(), any());
         verify(eventLogger, times(1)).logUpdateCollections(any());
     }
@@ -484,14 +490,14 @@ public class BridgeSupportReleaseBtcTest {
 
         Federation federation = bridgeConstants.getGenesisFederation();
         List<UTXO> utxos = new ArrayList<>();
-        utxos.add(PegTestUtils.createUTXO(1, Coin.COIN.multiply(3), federation.getAddress()));
+        utxos.add(PegTestUtils.createUTXO(1, 0, Coin.COIN.multiply(3), federation.getAddress()));
 
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
         when(provider.getNewFederationBtcUTXOs()).thenReturn(utxos);
         when(provider.getReleaseRequestQueue())
             .thenReturn(new ReleaseRequestQueue(Arrays.asList(
-                new ReleaseRequestQueue.Entry(PegTestUtils.createRandomBtcAddress(), Coin.COIN),
-                new ReleaseRequestQueue.Entry(PegTestUtils.createRandomBtcAddress(), Coin.COIN))));
+                new ReleaseRequestQueue.Entry(PegTestUtils.createRandomP2PKHBtcAddress(), Coin.COIN),
+                new ReleaseRequestQueue.Entry(PegTestUtils.createRandomP2PKHBtcAddress(), Coin.COIN))));
         when(provider.getReleaseTransactionSet()).thenReturn(new ReleaseTransactionSet(Collections.emptySet()));
 
         BridgeSupport bridgeSupport = bridgeSupportBuilder
@@ -518,13 +524,13 @@ public class BridgeSupportReleaseBtcTest {
 
         Federation federation = bridgeConstants.getGenesisFederation();
         List<UTXO> utxos = new ArrayList<>();
-        utxos.add(PegTestUtils.createUTXO(1, Coin.COIN.multiply(4), federation.getAddress()));
+        utxos.add(PegTestUtils.createUTXO(1, 0, Coin.COIN.multiply(4), federation.getAddress()));
 
         ReleaseRequestQueue releaseRequestQueue = new ReleaseRequestQueue(
             Arrays.asList(
-                new ReleaseRequestQueue.Entry(PegTestUtils.createRandomBtcAddress(), Coin.MILLICOIN),
-                new ReleaseRequestQueue.Entry(PegTestUtils.createRandomBtcAddress(), Coin.MILLICOIN),
-                new ReleaseRequestQueue.Entry(PegTestUtils.createRandomBtcAddress(), Coin.MILLICOIN)));
+                new ReleaseRequestQueue.Entry(PegTestUtils.createRandomP2PKHBtcAddress(), Coin.MILLICOIN),
+                new ReleaseRequestQueue.Entry(PegTestUtils.createRandomP2PKHBtcAddress(), Coin.MILLICOIN),
+                new ReleaseRequestQueue.Entry(PegTestUtils.createRandomP2PKHBtcAddress(), Coin.MILLICOIN)));
 
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
         when(provider.getNewFederationBtcUTXOs()).thenReturn(utxos);
@@ -578,8 +584,8 @@ public class BridgeSupportReleaseBtcTest {
         when(provider.getReleaseRequestQueue())
             .thenReturn(new ReleaseRequestQueue(
                 Arrays.asList(
-                    new ReleaseRequestQueue.Entry(PegTestUtils.createRandomBtcAddress(), Coin.MILLICOIN),
-                    new ReleaseRequestQueue.Entry(PegTestUtils.createRandomBtcAddress(), Coin.MILLICOIN))));
+                    new ReleaseRequestQueue.Entry(PegTestUtils.createRandomP2PKHBtcAddress(), Coin.MILLICOIN),
+                    new ReleaseRequestQueue.Entry(PegTestUtils.createRandomP2PKHBtcAddress(), Coin.MILLICOIN))));
         when(provider.getReleaseTransactionSet()).thenReturn(new ReleaseTransactionSet(Collections.emptySet()));
 
         BridgeSupport bridgeSupport = bridgeSupportBuilder
@@ -634,7 +640,7 @@ public class BridgeSupportReleaseBtcTest {
 
         Federation federation = bridgeConstants.getGenesisFederation();
         List<UTXO> utxos = new ArrayList<>();
-        utxos.add(PegTestUtils.createUTXO(2, Coin.COIN.multiply(4), federation.getAddress()));
+        utxos.add(PegTestUtils.createUTXO(2, 0, Coin.COIN.multiply(4), federation.getAddress()));
 
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
 
@@ -642,11 +648,11 @@ public class BridgeSupportReleaseBtcTest {
         when(provider.getReleaseRequestQueue())
             .thenReturn(new ReleaseRequestQueue(
                 Arrays.asList(
-                    new ReleaseRequestQueue.Entry(PegTestUtils.createRandomBtcAddress(), Coin.COIN),
-                    new ReleaseRequestQueue.Entry(PegTestUtils.createRandomBtcAddress(), Coin.COIN),
-                    new ReleaseRequestQueue.Entry(PegTestUtils.createRandomBtcAddress(), Coin.COIN),
-                    new ReleaseRequestQueue.Entry(PegTestUtils.createRandomBtcAddress(), Coin.COIN),
-                    new ReleaseRequestQueue.Entry(PegTestUtils.createRandomBtcAddress(), Coin.COIN))));
+                    new ReleaseRequestQueue.Entry(PegTestUtils.createRandomP2PKHBtcAddress(), Coin.COIN),
+                    new ReleaseRequestQueue.Entry(PegTestUtils.createRandomP2PKHBtcAddress(), Coin.COIN),
+                    new ReleaseRequestQueue.Entry(PegTestUtils.createRandomP2PKHBtcAddress(), Coin.COIN),
+                    new ReleaseRequestQueue.Entry(PegTestUtils.createRandomP2PKHBtcAddress(), Coin.COIN),
+                    new ReleaseRequestQueue.Entry(PegTestUtils.createRandomP2PKHBtcAddress(), Coin.COIN))));
         when(provider.getReleaseTransactionSet()).thenReturn(new ReleaseTransactionSet(Collections.emptySet()));
 
         BridgeSupport bridgeSupport = bridgeSupportBuilder
@@ -669,12 +675,12 @@ public class BridgeSupportReleaseBtcTest {
         when(activationMock.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
 
         Federation federation = bridgeConstants.getGenesisFederation();
-        List<UTXO> utxos = PegTestUtils.createTestUtxos(610, federation.getAddress());
+        List<UTXO> utxos = PegTestUtils.createUTXOs(610, federation.getAddress());
 
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
 
         when(provider.getNewFederationBtcUTXOs()).thenReturn(utxos);
-        when(provider.getReleaseRequestQueue()).thenReturn(new ReleaseRequestQueue(PegTestUtils.createTestEntries(600)));
+        when(provider.getReleaseRequestQueue()).thenReturn(new ReleaseRequestQueue(PegTestUtils.createReleaseRequestQueueEntries(600)));
         when(provider.getReleaseTransactionSet()).thenReturn(new ReleaseTransactionSet(Collections.emptySet()));
 
         BridgeSupport bridgeSupport = bridgeSupportBuilder
@@ -780,7 +786,7 @@ public class BridgeSupportReleaseBtcTest {
             .destination(PrecompiledContracts.BRIDGE_ADDR.toHexString())
             .data(Hex.decode(DATA))
             .chainId(Constants.REGTEST_CHAIN_ID)
-            .value(co.rsk.core.Coin.fromBitcoin(Coin.COIN).asBigInteger())
+            .value(co.rsk.core.Coin.fromBitcoin(coin).asBigInteger())
             .build();
         releaseTx.sign(SENDER.getPrivKeyBytes());
         return new InternalTransaction(releaseTx.getHash().getBytes(), 400, 0, NONCE.toByteArray(),
