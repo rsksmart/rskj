@@ -197,11 +197,11 @@ public class ReleaseTransactionBuilderTest {
         Address pegoutRecipient = mockAddress(123);
         Coin pegoutAmount = Coin.COIN.add(Coin.SATOSHI);
 
-        Optional<ReleaseTransactionBuilder.BuildResult> result = releaseTransactionBuilder.buildAmountTo(
+        ReleaseTransactionBuilder.BuildResult result = releaseTransactionBuilder.buildAmountTo(
             pegoutRecipient,
             pegoutAmount
         );
-        Assert.assertTrue(result.isPresent());
+        Assert.assertEquals(ReleaseTransactionBuilder.Response.SUCCESS, result.getResponseCode());
     }
 
     @Test
@@ -373,21 +373,19 @@ public class ReleaseTransactionBuilderTest {
 
     @Test
     public void buildAmountTo_illegalStateException() throws InsufficientMoneyException {
-        Context btcContext = new Context(NetworkParameters.fromID(NetworkParameters.ID_REGTEST));
         Address to = mockAddress(123);
         Coin amount = Coin.CENT.multiply(3);
 
         doThrow(new IllegalStateException()).when(wallet).completeTx(any(SendRequest.class));
 
-        Optional<ReleaseTransactionBuilder.BuildResult> result = Optional.empty();
+        ReleaseTransactionBuilder.BuildResult result = null;
         try {
             result = builder.buildAmountTo(to, amount);
         } catch (Exception e) {
             Assert.assertTrue(e instanceof IllegalStateException);
         }
-
         verify(wallet, times(1)).completeTx(any(SendRequest.class));
-        Assert.assertFalse(result.isPresent());
+        Assert.assertNull(result);
     }
 
     @Test
@@ -546,8 +544,8 @@ public class ReleaseTransactionBuilderTest {
     @Test
     public void test_BuildBatchedPegouts_ok_P2SHAddress() {
         ReleaseRequestQueue.Entry testEntry1 = createTestEntry(123, 2);
-        ReleaseRequestQueue.Entry testEntry2 = new ReleaseRequestQueue.Entry(PegTestUtils.createP2SHAddress(networkParameters, 3), Coin.COIN);
-        ReleaseRequestQueue.Entry testEntry3 = new ReleaseRequestQueue.Entry(PegTestUtils.createP2SHAddress(networkParameters, 3), Coin.COIN);
+        ReleaseRequestQueue.Entry testEntry2 = new ReleaseRequestQueue.Entry(PegTestUtils.createRandomP2SHMultisigAddress(networkParameters, 3), Coin.COIN);
+        ReleaseRequestQueue.Entry testEntry3 = new ReleaseRequestQueue.Entry(PegTestUtils.createRandomP2SHMultisigAddress(networkParameters, 3), Coin.COIN);
         List<ReleaseRequestQueue.Entry> pegoutRequests = Arrays.asList(testEntry1, testEntry2, testEntry3);
 
         List<UTXO> utxos = Arrays.asList(
@@ -673,7 +671,7 @@ public class ReleaseTransactionBuilderTest {
 
         List<ReleaseRequestQueue.Entry> pegoutRequests = createTestEntries(600);
 
-        List<UTXO> utxos = PegTestUtils.createTestUtxos(600, federation.getAddress());
+        List<UTXO> utxos = PegTestUtils.createUTXOs(600, federation.getAddress());
 
         Wallet thisWallet = BridgeUtils.getFederationSpendWallet(
             Context.getOrCreate(networkParameters),
