@@ -1,23 +1,12 @@
 package co.rsk.peg;
 
-import co.rsk.bitcoinj.core.BtcECKey;
-import co.rsk.bitcoinj.core.Address;
-import co.rsk.bitcoinj.core.Coin;
-import co.rsk.bitcoinj.core.NetworkParameters;
-import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;
-
-import java.io.IOException;
-import java.time.Instant;
-import java.util.Arrays;
-import java.util.List;
 import co.rsk.crypto.Keccak256;
-
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -32,16 +21,20 @@ import org.ethereum.vm.exception.VMException;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.io.IOException;
 import java.math.BigInteger;
+import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
 
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.*;
 import static org.junit.Assert.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.anyBoolean;
+import static org.mockito.Mockito.anyInt;
 import static org.mockito.Mockito.*;
-import static org.mockito.Mockito.mock;
 
 public class BridgeTest {
 
@@ -56,6 +49,36 @@ public class BridgeTest {
         when(config.getNetworkConstants()).thenReturn(constants);
         activationConfig = spy(ActivationConfigsForTest.genesis());
         when(config.getActivationConfig()).thenReturn(activationConfig);
+    }
+
+    @Test
+    public void getActivePowpegRedeemScript_before_RSKIP293_activation() throws VMException {
+        doReturn(false).when(activationConfig).isActive(eq(RSKIP293), anyLong());
+
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        Bridge bridge = getBridgeInstance(bridgeSupportMock, activationConfig);
+
+        byte[] data = BridgeMethods.GET_ACTIVE_POWPEG_REDEEM_SCRIPT.getFunction().encode(new Object[]{});
+
+        assertNull(bridge.execute(data));
+    }
+
+    @Test
+    public void getActivePowpegRedeemScript_after_RSKIP293_activation() throws VMException {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        doReturn(true).when(activationConfig).isActive(eq(RSKIP293), anyLong());
+
+        BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
+        when(bridgeSupportMock.getActivePowpegRedeemScript()).thenReturn(
+                Optional.of(BridgeRegTestConstants.getInstance().getGenesisFederation().getRedeemScript())
+        );
+
+        Bridge bridge = getBridgeInstance(bridgeSupportMock, activationConfig);
+
+        byte[] data = BridgeMethods.GET_ACTIVE_POWPEG_REDEEM_SCRIPT.getFunction().encode(new Object[]{});
+        byte[] result = (byte[]) BridgeMethods.GET_ACTIVE_POWPEG_REDEEM_SCRIPT.getFunction().decodeResult(bridge.execute(data))[0];
+
+        assertArrayEquals(constants.bridgeConstants.getGenesisFederation().getRedeemScript().getProgram(), result);
     }
 
     @Test
