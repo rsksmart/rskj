@@ -450,6 +450,17 @@ public enum BridgeMethods {
             activations -> activations.isActive(RSKIP134),
             fixedPermission(true)
     ),
+    GET_ACTIVE_POWPEG_REDEEM_SCRIPT(
+            CallTransaction.Function.fromSignature(
+                    "getActivePowpegRedeemScript",
+                    new String[]{},
+                    new String[]{"bytes"}
+            ),
+            fixedCost(3_000L), // TODO: DEFINE THE CORRECT FIXED COST FOR THS METHOD
+            (BridgeMethodExecutorTyped) Bridge::getActivePowpegRedeemScript,
+            activations -> activations.isActive(RSKIP293),
+            fixedPermission(false)
+    ),
     GET_ACTIVE_FEDERATION_CREATION_BLOCK_HEIGHT(
             CallTransaction.Function.fromSignature(
                     "getActiveFederationCreationBlockHeight",

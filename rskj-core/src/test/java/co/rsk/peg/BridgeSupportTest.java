@@ -324,6 +324,35 @@ public class BridgeSupportTest {
     }
 
     @Test
+    public void getActivePowpegRedeemScript_before_RSKIP293_activation() {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(false);
+
+        BridgeSupport bridgeSupport = bridgeSupportBuilder
+                .withBridgeConstants(bridgeConstants)
+                .withActivations(activations)
+                .build();
+
+        assertEquals(Optional.empty(), bridgeSupport.getActivePowpegRedeemScript());
+    }
+
+    @Test
+    public void getActivePowpegRedeemScript_after_RSKIP293_activation() {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
+
+        BridgeSupport bridgeSupport = bridgeSupportBuilder
+                .withBridgeConstants(bridgeConstants)
+                .withActivations(activations)
+                .build();
+
+        assertEquals(
+                bridgeConstants.getGenesisFederation().getRedeemScript(),
+                bridgeSupport.getActivePowpegRedeemScript().get()
+        );
+    }
+
+    @Test
     public void increaseLockingCap_unauthorized() {
         AddressBasedAuthorizer authorizer = mock(AddressBasedAuthorizer.class);
         when(authorizer.isAuthorized(any(Transaction.class))).thenReturn(false);
