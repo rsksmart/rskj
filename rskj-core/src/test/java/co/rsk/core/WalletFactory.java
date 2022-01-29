@@ -22,12 +22,13 @@ import co.rsk.config.TestSystemProperties;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.datasource.LevelDbDataSource;
+import org.ethereum.datasource.RocksDbDataSource;
 
 public class WalletFactory {
 
     public static Wallet createPersistentWallet(String storeName) {
         final TestSystemProperties config = new TestSystemProperties();
-        KeyValueDataSource ds = new LevelDbDataSource(storeName, config.databaseDir());
+        RocksDbDataSource ds = new RocksDbDataSource(storeName, config.databaseDir());
         ds.init();
         return new Wallet(ds);
     }

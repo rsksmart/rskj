@@ -45,6 +45,7 @@ import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.datasource.LevelDbDataSource;
+import org.ethereum.datasource.RocksDbDataSource;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.IndexedBlockStore;
 import org.ethereum.db.ReceiptStore;
@@ -333,7 +334,7 @@ public class CliToolsTest {
         importStateCliTool.execute(args, () -> rskContext, stopper);
 
         byte[] key = new Keccak256(Keccak256Helper.keccak256(value)).getBytes();
-        KeyValueDataSource trieDB = LevelDbDataSource.makeDataSource(Paths.get(databaseDir, "unitrie"));
+        KeyValueDataSource trieDB = RocksDbDataSource.makeDataSource(Paths.get(databaseDir, "unitrie"));
         byte[] result = trieDB.get(key);
         trieDB.close();
 
