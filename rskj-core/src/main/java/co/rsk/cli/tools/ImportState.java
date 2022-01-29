@@ -23,7 +23,7 @@ import co.rsk.crypto.Keccak256;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.datasource.KeyValueDataSource;
-import org.ethereum.datasource.LevelDbDataSource;
+import org.ethereum.datasource.RocksDbDataSource;
 
 import javax.annotation.Nonnull;
 import java.io.BufferedReader;
@@ -48,7 +48,7 @@ public class ImportState extends CliToolRskContextAware {
     @Override
     protected void onExecute(@Nonnull String[] args, @Nonnull RskContext ctx) throws Exception {
         String databaseDir = ctx.getRskSystemProperties().databaseDir();
-        KeyValueDataSource trieDB = LevelDbDataSource.makeDataSource(Paths.get(databaseDir, "unitrie"));
+        KeyValueDataSource trieDB = RocksDbDataSource.makeDataSource(Paths.get(databaseDir, "unitrie"));
 
         String filename = args[0];
 

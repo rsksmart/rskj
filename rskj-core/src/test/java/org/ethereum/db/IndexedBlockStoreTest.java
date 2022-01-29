@@ -30,6 +30,7 @@ import org.ethereum.core.BlockFactory;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.datasource.LevelDbDataSource;
+import org.ethereum.datasource.RocksDbDataSource;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.FileUtil;
 import org.ethereum.util.RskTestFactory;
@@ -430,7 +431,7 @@ public class IndexedBlockStoreTest {
 
         DB indexDB = createMapDB(testDir);
 
-        KeyValueDataSource blocksDB = new LevelDbDataSource("blocks", config.databaseDir());
+        KeyValueDataSource blocksDB = new RocksDbDataSource("blocks", config.databaseDir());
         blocksDB.init();
 
         IndexedBlockStore indexedBlockStore = new IndexedBlockStore(blockFactory, blocksDB, new MapDBBlocksIndex(indexDB));
@@ -544,7 +545,7 @@ public class IndexedBlockStoreTest {
 
         indexDB = createMapDB(testDir);
 
-        blocksDB = new LevelDbDataSource("blocks", config.databaseDir());
+        blocksDB = new RocksDbDataSource("blocks", config.databaseDir());
         blocksDB.init();
 
         indexedBlockStore = new IndexedBlockStore(blockFactory, blocksDB, new MapDBBlocksIndex(indexDB));
@@ -574,7 +575,7 @@ public class IndexedBlockStoreTest {
 
         DB indexDB = createMapDB(testDir);
 
-        KeyValueDataSource blocksDB = new LevelDbDataSource("blocks", config.databaseDir());
+        KeyValueDataSource blocksDB = new RocksDbDataSource("blocks", config.databaseDir());
         blocksDB.init();
 
         try {
@@ -701,7 +702,7 @@ public class IndexedBlockStoreTest {
 
             indexDB = createMapDB(testDir);
 
-            blocksDB = new LevelDbDataSource("blocks", config.databaseDir());
+            blocksDB = new RocksDbDataSource("blocks", config.databaseDir());
             blocksDB.init();
 
             indexedBlockStore = new IndexedBlockStore(blockFactory, blocksDB, new MapDBBlocksIndex(indexDB));
@@ -733,7 +734,7 @@ public class IndexedBlockStoreTest {
 
         DB indexDB = createMapDB(testDir);
 
-        KeyValueDataSource blocksDB = new LevelDbDataSource("blocks", config.databaseDir());
+        KeyValueDataSource blocksDB = new RocksDbDataSource("blocks", config.databaseDir());
         blocksDB.init();
 
         try {
@@ -836,7 +837,7 @@ public class IndexedBlockStoreTest {
 
         DB indexDB = createMapDB(testDir);
 
-        KeyValueDataSource blocksDB = new LevelDbDataSource("blocks", config.databaseDir());
+        KeyValueDataSource blocksDB = new RocksDbDataSource("blocks", config.databaseDir());
         blocksDB.init();
 
         try {
@@ -889,7 +890,7 @@ public class IndexedBlockStoreTest {
 
         DB indexDB = createMapDB(testDir);
 
-        KeyValueDataSource blocksDB = new LevelDbDataSource("blocks", config.databaseDir());
+        KeyValueDataSource blocksDB = new RocksDbDataSource("blocks", config.databaseDir());
         blocksDB.init();
 
         try {
