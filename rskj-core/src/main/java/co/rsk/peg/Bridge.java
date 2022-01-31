@@ -1102,21 +1102,21 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             Keccak256 derivationArgumentsHash = new Keccak256((byte[]) args[3]);
             // Parse data to create BTC user refund address with version and hash
             byte[] refundAddressInfo = (byte[]) args[4];
-            Address userRefundAddress = new Address(
+            Address userRefundAddress = BridgeUtils.deserializeBtcAddressWithVersion(
                 bridgeConstants.getBtcParams(),
-                BridgeUtils.extractAddressVersionFromBytes(refundAddressInfo),
-                BridgeUtils.extractHash160FromBytes(refundAddressInfo)
+                activations,
+                refundAddressInfo
             );
             // A DataWord cast is used because a SolidityType "address" is decoded using this specific type.
             RskAddress lbcAddress = new RskAddress((DataWord) args[5]);
             // Parse data to create BTC liquidity provider address with version and hash
             byte[] lpAddressInfo = (byte[]) args[6];
-            Address lpBtcAddress = new Address(
+            Address lpBtcAddress = BridgeUtils.deserializeBtcAddressWithVersion(
                 bridgeConstants.getBtcParams(),
-                BridgeUtils.extractAddressVersionFromBytes(lpAddressInfo),
-                BridgeUtils.extractHash160FromBytes(lpAddressInfo)
+                activations,
+                lpAddressInfo
             );
-            boolean shouldTransferToContract = ((boolean) args[7]);
+            boolean shouldTransferToContract = (boolean) args[7];
 
             return bridgeSupport.registerFastBridgeBtcTransaction(
                 rskTx,

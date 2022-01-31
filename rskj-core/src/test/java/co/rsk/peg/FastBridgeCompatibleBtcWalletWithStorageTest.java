@@ -22,35 +22,49 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 
 public class FastBridgeCompatibleBtcWalletWithStorageTest {
-    private final Federation federation = new Federation(
-        FederationTestUtils.getFederationMembers(3),
-        Instant.ofEpochMilli(1000),
-        0L,
-        NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
-    );
-
     private static final List<BtcECKey> erpFedKeys = Arrays.stream(new String[]{
         "03b9fc46657cf72a1afa007ecf431de1cd27ff5cc8829fa625b66ca47b967e6b24",
         "029cecea902067992d52c38b28bf0bb2345bda9b21eca76b16a17c477a64e43301",
         "03284178e5fbcc63c54c3b38e3ef88adf2da6c526313650041b0ef955763634ebd",
-    }).map(hex -> BtcECKey.fromPublicOnly(Hex.decode(hex))).collect(Collectors.toList()
-    );
+    }).map(hex -> BtcECKey.fromPublicOnly(Hex.decode(hex))).collect(Collectors.toList());
 
-    private final ErpFederation erpFederation = new ErpFederation(
-        FederationTestUtils.getFederationMembers(3),
-        Instant.ofEpochMilli(1000),
-        0L,
-        NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
-        erpFedKeys,
-        5063
-    );
+    private Federation federation;
+    private ErpFederation erpFederation;
+    private List<Federation> federationList;
+    private List<Federation> erpFederationList;
 
-    private final List<Federation> federationList = Collections.singletonList(federation);
-    private final List<Federation> erpFederationList = Collections.singletonList(erpFederation);
+    @Before
+    public void setup() {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
+
+        federation = new Federation(
+            FederationTestUtils.getFederationMembers(3),
+            Instant.ofEpochMilli(1000),
+            0L,
+            NetworkParameters.fromID(NetworkParameters.ID_REGTEST)
+        );
+
+        erpFederation = new ErpFederation(
+            FederationTestUtils.getFederationMembers(3),
+            Instant.ofEpochMilli(1000),
+            0L,
+            NetworkParameters.fromID(NetworkParameters.ID_REGTEST),
+            erpFedKeys,
+            5063,
+            activations
+        );
+
+        federationList = Collections.singletonList(federation);
+        erpFederationList = Collections.singletonList(erpFederation);
+    }
 
     @Test
     public void findRedeemDataFromScriptHash_with_no_fastBridgeInformation_in_storage_call_super() {

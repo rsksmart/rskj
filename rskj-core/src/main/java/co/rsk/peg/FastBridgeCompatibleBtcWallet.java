@@ -15,10 +15,8 @@ import java.util.Optional;
 import javax.annotation.Nullable;
 
 public abstract class FastBridgeCompatibleBtcWallet extends BridgeBtcWallet {
-    protected FastBridgeCompatibleBtcWallet(
-        Context btcContext,
-        List<Federation> federations
-    ) {
+
+    protected FastBridgeCompatibleBtcWallet(Context btcContext, List<Federation> federations) {
         super(btcContext, federations);
     }
 
@@ -35,7 +33,7 @@ public abstract class FastBridgeCompatibleBtcWallet extends BridgeBtcWallet {
                 fastBridgeFederationInformation.get();
 
             Optional<Federation> destinationFederation = getDestinationFederation(
-                fastBridgeFederationInformationInstance.getFederationScriptHash()
+                fastBridgeFederationInformationInstance.getFederationRedeemScriptHash()
             );
 
             if (!destinationFederation.isPresent()) {
@@ -57,10 +55,13 @@ public abstract class FastBridgeCompatibleBtcWallet extends BridgeBtcWallet {
                     )
                 );
             } else {
-                fastBridgeRedeemScript = FastBridgeRedeemScriptParser
-                    .createMultiSigFastBridgeRedeemScript(fedRedeemScript,
-                        Sha256Hash.wrap(fastBridgeFederationInformationInstance.getDerivationHash()
-                            .getBytes()));
+                fastBridgeRedeemScript = FastBridgeRedeemScriptParser.createMultiSigFastBridgeRedeemScript(
+                    fedRedeemScript,
+                    Sha256Hash.wrap(fastBridgeFederationInformationInstance
+                        .getDerivationHash()
+                        .getBytes()
+                    )
+                );
             }
 
             return RedeemData.of(destinationFederationInstance.getBtcPublicKeys(), fastBridgeRedeemScript);

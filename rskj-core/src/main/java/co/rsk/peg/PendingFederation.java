@@ -106,7 +106,8 @@ public final class PendingFederation {
                 blockNumber,
                 bridgeConstants.getBtcParams(),
                 bridgeConstants.getErpFedPubKeysList(),
-                bridgeConstants.getErpFedActivationDelay()
+                bridgeConstants.getErpFedActivationDelay(),
+                activations
             );
         }
 

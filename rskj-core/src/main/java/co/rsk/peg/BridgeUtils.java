@@ -18,6 +18,8 @@
 
 package co.rsk.peg;
 
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP284;
+
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.crypto.TransactionSignature;
 import co.rsk.bitcoinj.script.RedeemScriptParser;
@@ -37,6 +39,7 @@ import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Transaction;
+import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.PrecompiledContracts;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,6 +54,8 @@ import java.util.stream.Stream;
 public class BridgeUtils {
 
     private static final Logger logger = LoggerFactory.getLogger("BridgeUtils");
+
+    private BridgeUtils() {}
 
     public static Wallet getFederationNoSpendWallet(
         Context btcContext,
@@ -540,21 +545,45 @@ public class BridgeUtils {
         return false;
     }
 
-    public static int extractAddressVersionFromBytes(byte[] addressBytes) throws BridgeIllegalArgumentException {
-        if (addressBytes == null || addressBytes.length == 0) {
-            throw new BridgeIllegalArgumentException("Can't get an address version if the bytes are empty");
+    public static byte[] serializeBtcAddressWithVersion(ActivationConfig.ForBlock activations, Address btcAddress) {
+        byte[] hash160 = btcAddress.getHash160();
+        byte[] version = BigInteger.valueOf(btcAddress.getVersion()).toByteArray();
+        if (activations.isActive(RSKIP284)) {
+            // BigInteger adds a leading byte to indicate the sign,
+            // but we need the version number to be 1 byte only.
+            // Use new serialization after HF activation
+            version = btcAddress.getVersion() != 0 ?
+                ByteUtil.intToBytesNoLeadZeroes(btcAddress.getVersion()) :
+                new byte[]{0};
         }
-        return addressBytes[0];
+
+        byte[] btcAddressBytes = new byte[version.length + hash160.length];
+        System.arraycopy(version, 0, btcAddressBytes, 0, version.length);
+        System.arraycopy(hash160, 0, btcAddressBytes, version.length, hash160.length);
+
+        return btcAddressBytes;
     }
 
-    public static byte[] extractHash160FromBytes(byte[] addressBytes)
-        throws BridgeIllegalArgumentException {
-        if (addressBytes == null || addressBytes.length == 0) {
-            throw new BridgeIllegalArgumentException("Can't get an address hash160 if the bytes are empty");
+    public static Address deserializeBtcAddressWithVersion(
+        NetworkParameters networkParameters,
+        ActivationConfig.ForBlock activations,
+        byte[] addressBytes) throws BridgeIllegalArgumentException {
+
+        if (!activations.isActive(ConsensusRule.RSKIP284)) {
+            return BridgeUtilsLegacy.deserializeBtcAddressWithVersionLegacy(networkParameters, activations, addressBytes);
         }
+
+        // We expect 1 byte for the address version and 20 for the script hash / pub key hash
+        if (addressBytes == null || addressBytes.length != 21) {
+            throw new BridgeIllegalArgumentException("Invalid address, expected 21 bytes long array");
+        }
+
+        int version = ByteUtil.byteArrayToInt(new byte[]{addressBytes[0]});
+
         byte[] hashBytes = new byte[20];
         System.arraycopy(addressBytes, 1, hashBytes, 0, 20);
-        return hashBytes;
+
+        return new Address(networkParameters, version, hashBytes);
     }
 
     public static int getRegularPegoutTxSize(@Nonnull Federation federation) {

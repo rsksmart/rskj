@@ -179,7 +179,8 @@ public class Federation {
                 this.getCreationTime().equals(otherFederation.getCreationTime()) &&
                 this.creationBlockNumber == otherFederation.creationBlockNumber &&
                 this.btcParams.equals(otherFederation.btcParams) &&
-                this.members.equals(otherFederation.members);
+                this.members.equals(otherFederation.members) &&
+                this.getRedeemScript().equals(otherFederation.getRedeemScript());
     }
 
     @Override

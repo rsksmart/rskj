@@ -7369,7 +7369,7 @@ public class BridgeSupportTest {
     }
 
     @Test
-    public void getFastBridgeWallet_OK() {
+    public void getFastBridgeWallet_ok() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(true);
 
@@ -7423,36 +7423,36 @@ public class BridgeSupportTest {
     }
 
     @Test
-    public void getFastBridgeDerivationHash_Ok() throws BridgeIllegalArgumentException {
-        BridgeSupport bridgeSupport = getBridgeSupport(bridgeConstants, mock(BridgeStorageProvider.class));
+    public void getFastBridgeDerivationHash_ok() {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
+
+        BridgeSupport bridgeSupport = bridgeSupportBuilder
+            .withBridgeConstants(bridgeConstants)
+            .withActivations(activations)
+            .build();
 
         Address userRefundBtcAddress = Address.fromBase58(
             bridgeConstants.getBtcParams(),
             "mgy8yiUZYB7o9vvCu2Yi8GB3Vr32MQsyQJ"
         );
-
-        byte[] userRefundBtcAddressBytes = bridgeSupport.getBytesFromBtcAddress(userRefundBtcAddress);
-        int refundVersion = BridgeUtils.extractAddressVersionFromBytes(userRefundBtcAddressBytes);
-        byte[] refundHash160 = BridgeUtils.extractHash160FromBytes(userRefundBtcAddressBytes);
+        byte[] userRefundBtcAddressBytes = BridgeUtils.serializeBtcAddressWithVersion(activations, userRefundBtcAddress);
 
         Address lpBtcAddress = Address.fromBase58(
             bridgeConstants.getBtcParams(),
             "mhoDGMzHHDq2ZD6cFrKV9USnMfpxEtLwGm"
         );
-
-        byte[] lpBtcAddressBytes = bridgeSupport.getBytesFromBtcAddress(lpBtcAddress);
-        int lpVersion = BridgeUtils.extractAddressVersionFromBytes(lpBtcAddressBytes);
-        byte[] lpHash160 = BridgeUtils.extractHash160FromBytes(lpBtcAddressBytes);
+        byte[] lpBtcAddressBytes = BridgeUtils.serializeBtcAddressWithVersion(activations, lpBtcAddress);
 
         byte[] derivationArgumentsHash = ByteUtil.leftPadBytes(new byte[]{0x01}, 32);
         byte[] lbcAddress = ByteUtil.leftPadBytes(new byte[]{0x03}, 20);
         byte[] result = ByteUtil.merge(derivationArgumentsHash, userRefundBtcAddressBytes, lbcAddress, lpBtcAddressBytes);
 
         Keccak256 fastBridgeDerivationHash = bridgeSupport.getFastBridgeDerivationHash(
-                new Keccak256(derivationArgumentsHash),
-                new Address(btcParams, refundVersion, refundHash160),
-                new Address(btcParams, lpVersion, lpHash160),
-                new RskAddress(lbcAddress)
+            new Keccak256(derivationArgumentsHash),
+            userRefundBtcAddress,
+            lpBtcAddress,
+            new RskAddress(lbcAddress)
         );
 
         Assert.assertArrayEquals(HashUtil.keccak256(result), fastBridgeDerivationHash.getBytes());
@@ -7500,17 +7500,22 @@ public class BridgeSupportTest {
             repository,
             PrecompiledContracts.BRIDGE_ADDR,
             bridgeConstants,
-            activationsAfterForks);
-        BridgeSupport bridgeSupport = getBridgeSupport(bridgeConstants, provider, activationsAfterForks);
+            activationsAfterForks
+        );
+        BridgeSupport bridgeSupport = bridgeSupportBuilder
+            .withBridgeConstants(bridgeConstants)
+            .withProvider(provider)
+            .withActivations(activationsAfterForks)
+            .build();
 
         Sha256Hash btcTxHash = PegTestUtils.createHash(1);
         Keccak256 derivationHash = PegTestUtils.createHash3(1);
 
         byte[] fastBridgeScriptHash = new byte[]{0x1};
         FastBridgeFederationInformation fastBridgeFederationInformation = new FastBridgeFederationInformation(
-                PegTestUtils.createHash3(2),
-                new byte[]{0x1},
-                fastBridgeScriptHash
+            PegTestUtils.createHash3(2),
+            new byte[]{0x1},
+            fastBridgeScriptHash
         );
 
         List<UTXO> utxos = new ArrayList<>();
@@ -7530,7 +7535,7 @@ public class BridgeSupportTest {
         Assert.assertTrue(optionalFastBridgeFederationInformation.isPresent());
         FastBridgeFederationInformation obtainedFastBridgeFederationInformation = optionalFastBridgeFederationInformation.get();
         Assert.assertEquals(fastBridgeFederationInformation.getDerivationHash(), obtainedFastBridgeFederationInformation.getDerivationHash() );
-        Assert.assertArrayEquals(fastBridgeFederationInformation.getFederationScriptHash(), obtainedFastBridgeFederationInformation.getFederationScriptHash() );
+        Assert.assertArrayEquals(fastBridgeFederationInformation.getFederationRedeemScriptHash(), obtainedFastBridgeFederationInformation.getFederationRedeemScriptHash() );
     }
 
     @Test
@@ -7562,9 +7567,9 @@ public class BridgeSupportTest {
         // Set block right after the migration should start
         when(block.getNumber()).thenReturn(
             newFed.getCreationBlockNumber() +
-            bridgeConstants.getFederationActivationAge() +
-            bridgeConstants.getFundsMigrationAgeSinceActivationBegin() +
-            1
+                bridgeConstants.getFederationActivationAge() +
+                bridgeConstants.getFundsMigrationAgeSinceActivationBegin() +
+                1
         );
 
         List<UTXO> utxosToMigrate = new ArrayList<>();
@@ -7602,21 +7607,6 @@ public class BridgeSupportTest {
             utxosToCreate / 2,
             new ArrayList<>(releaseTransactionSet.getEntries()).get(0).getTransaction().getInputs().size()
         );
-    }
-
-    @Test
-    public void getBytesFromBtcAddress() {
-        BridgeSupport bridgeSupport = getBridgeSupport(bridgeConstants, mock(BridgeStorageProvider.class));
-
-        Address btcAddress = Address.fromBase58(
-            bridgeConstants.getBtcParams(),
-            "mgy8yiUZYB7o9vvCu2Yi8GB3Vr32MQsyQJ"
-        );
-
-        byte[] expectedBytes = Hex.decode("6f0febdbf4739e9fe6724370a7e99cb25d7be5ca99");
-        byte[] obtainedBytes = bridgeSupport.getBytesFromBtcAddress(btcAddress);
-
-        Assert.assertArrayEquals(expectedBytes, obtainedBytes);
     }
 
     private Address getFastBridgeFederationAddress() {
