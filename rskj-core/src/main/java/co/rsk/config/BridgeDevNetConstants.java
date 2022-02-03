@@ -157,5 +157,7 @@ public class BridgeDevNetConstants extends BridgeConstants {
         maxDepthBlockchainAccepted = 25;
 
         minimumPegoutValuePercentageToReceiveAfterFee = 20;
+
+        maxInputsPerPegoutTransaction = 150;
     }
 }

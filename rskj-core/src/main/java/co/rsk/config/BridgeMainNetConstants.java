@@ -148,6 +148,8 @@ public class BridgeMainNetConstants extends BridgeConstants {
         maxDepthBlockchainAccepted = 25;
 
         minimumPegoutValuePercentageToReceiveAfterFee = 80;
+
+        maxInputsPerPegoutTransaction = 150;
     }
 
     public static BridgeMainNetConstants getInstance() {
