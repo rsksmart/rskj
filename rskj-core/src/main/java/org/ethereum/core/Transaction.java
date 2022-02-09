@@ -532,6 +532,20 @@ public class Transaction {
         this.isLocalCall = isLocalCall;
     }
 
+    /**
+     * <p>
+     * Returns true if the current transaction is a Remasc transaction by checking if the transaction position is the
+     * last one, if receive address is equals to #PrecompiledContracts.REMASC_ADDR and finally if there is a signature
+     * and data having value, gas limit and gas price equals to 0, otherwise returns false.
+     * </p>
+     * <p>
+     * Use this method when you don't know if the transaction is a remasc transaction from the parameters given above.
+     * </p>
+     *
+     * @param txPosition transaction position
+     * @param txsSize    transaction size
+     * @return true if the current transaction is a Remasc transaction, otherwise returns false.
+     */
     public boolean isRemascTransaction(int txPosition, int txsSize) {
         return isLastTx(txPosition, txsSize) && checkRemascAddress() && checkRemascTxZeroValues();
     }
