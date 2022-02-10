@@ -7539,7 +7539,26 @@ public class BridgeSupportTest {
     }
 
     @Test
-    public void migrating_many_utxos_works() throws IOException {
+    public void migrating_many_utxos_works_before_rskip294_divide_in_2() throws IOException {
+        test_migrating_many_utxos(false, 380, 2);
+    }
+
+    @Test
+    public void migrating_many_utxos_works_before_rskip294_divide_in_4() throws IOException {
+        test_migrating_many_utxos(false, 600, 4);
+    }
+
+    @Test
+    public void migrating_many_utxos_works_after_rskip294() throws IOException {
+        int utxosToCreate = 400;
+        int expectedTransactions = (int) Math.ceil((double) utxosToCreate / bridgeConstants.getMaxInputsPerPegoutTransaction());
+        test_migrating_many_utxos(true, utxosToCreate, expectedTransactions);
+    }
+
+    private void test_migrating_many_utxos(boolean isRskip294Active, int utxosToCreate, int expectedTransactions) throws IOException {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP294)).thenReturn(isRskip294Active);
+
         List<FederationMember> oldFedMembers = new ArrayList<>();
         int oldFedMembersAmount = 13;
         for (int i = 0; i < oldFedMembersAmount; i++) {
@@ -7567,13 +7586,12 @@ public class BridgeSupportTest {
         // Set block right after the migration should start
         when(block.getNumber()).thenReturn(
             newFed.getCreationBlockNumber() +
-                bridgeConstants.getFederationActivationAge() +
-                bridgeConstants.getFundsMigrationAgeSinceActivationBegin() +
-                1
+            bridgeConstants.getFederationActivationAge() +
+            bridgeConstants.getFundsMigrationAgeSinceActivationBegin() +
+            1
         );
 
         List<UTXO> utxosToMigrate = new ArrayList<>();
-        int utxosToCreate = 400;
         for (int i = 0; i < utxosToCreate; i++) {
             utxosToMigrate.add(new UTXO(
                 Sha256Hash.of(new byte[]{(byte)i}),
@@ -7594,19 +7612,29 @@ public class BridgeSupportTest {
         when(bridgeStorageProvider.getOldFederationBtcUTXOs()).thenReturn(utxosToMigrate);
 
         BridgeSupport bridgeSupport = bridgeSupportBuilder
+            .withActivations(activations)
             .withBridgeConstants(bridgeConstants)
             .withProvider(bridgeStorageProvider)
             .withExecutionBlock(block)
             .build();
 
-        bridgeSupport.updateCollections(mock(Transaction.class));
+        // Ensure a new transaction is created after each call to updateCollections
+        // until the expected number is reached
+        for (int i = 0; i < expectedTransactions; i++) {
+            bridgeSupport.updateCollections(mock(Transaction.class));
 
-        Assert.assertEquals(releaseTransactionSet.getEntries().size(), 1);
-        // As the size exceeds the max size for a btc tx it should have just half of the inputs
-        Assert.assertEquals(
-            utxosToCreate / 2,
-            new ArrayList<>(releaseTransactionSet.getEntries()).get(0).getTransaction().getInputs().size()
-        );
+            Assert.assertEquals(i+1, releaseTransactionSet.getEntries().size());
+            // As the size exceeds the max size for a btc tx
+            // it should have just half of the inputs before rskip294
+            // or the max inputs defined after rskip294
+            int expectedSize = isRskip294Active ?
+                bridgeConstants.getMaxInputsPerPegoutTransaction() :
+                utxosToCreate / expectedTransactions;
+            Assert.assertEquals(
+                expectedSize,
+                new ArrayList<>(releaseTransactionSet.getEntries()).get(0).getTransaction().getInputs().size()
+            );
+        }
     }
 
     private Address getFastBridgeFederationAddress() {
