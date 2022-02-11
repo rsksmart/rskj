@@ -19,9 +19,11 @@
 package co.rsk.core.bc;
 
 import co.rsk.blockchain.utils.BlockGenerator;
+import co.rsk.config.RskSystemProperties;
 import co.rsk.core.Coin;
 import co.rsk.core.genesis.TestGenesisLoader;
 import co.rsk.db.RepositoryLocator;
+import co.rsk.net.handler.quota.TxQuotaChecker;
 import co.rsk.remasc.RemascTransaction;
 import co.rsk.test.builders.BlockBuilder;
 import org.ethereum.core.*;
@@ -32,6 +34,7 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.powermock.reflect.Whitebox;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -53,6 +56,7 @@ public class TransactionPoolImplTest {
     private TransactionPoolImpl transactionPool;
     private Repository repository;
     private ReceivedTxSignatureCache signatureCache;
+    private TxQuotaChecker quotaChecker;
 
     @Before
     public void setUp() {
@@ -67,12 +71,17 @@ public class TransactionPoolImplTest {
                 return spy(super.buildRepositoryLocator());
             }
         };
+
         blockChain = rskTestContext.getBlockchain();
         RepositoryLocator repositoryLocator = rskTestContext.getRepositoryLocator();
         repository = repositoryLocator.startTrackingAt(blockChain.getBestBlock().getHeader());
         signatureCache = spy(rskTestContext.getReceivedTxSignatureCache());
+
+        RskSystemProperties rskSystemProperties = spy(rskTestContext.getRskSystemProperties());
+        when(rskSystemProperties.isAccountTxRateLimitEnabled()).thenReturn(true);
+
         transactionPool = new TransactionPoolImpl(
-                rskTestContext.getRskSystemProperties(),
+                rskSystemProperties,
                 repositoryLocator,
                 rskTestContext.getBlockStore(),
                 rskTestContext.getBlockFactory(),
@@ -81,6 +90,11 @@ public class TransactionPoolImplTest {
                 signatureCache,
                 10,
                 100);
+
+        quotaChecker = mock(TxQuotaChecker.class);
+        when(quotaChecker.acceptTx(any(), any(), any())).thenReturn(true);
+        Whitebox.setInternalState(transactionPool, "quotaChecker", quotaChecker);
+
         // don't call start to avoid creating threads
         transactionPool.processBest(blockChain.getBestBlock());
 
@@ -451,7 +465,7 @@ public class TransactionPoolImplTest {
         txs.add(tx3);
         txs.add(tx4);
 
-        Block block = new BlockBuilder(null, null,null)
+        Block block = new BlockBuilder(null, null, null)
                 .parent(new BlockGenerator().getGenesisBlock()).transactions(txs).build();
 
         transactionPool.retractBlock(block);
@@ -571,6 +585,31 @@ public class TransactionPoolImplTest {
     }
 
     @Test
+    public void checkTxQuotaValidatorAccepted() {
+        Coin balance = Coin.valueOf(1000000);
+        createTestAccounts(2, balance);
+        Transaction tx = createSampleTransaction(1, 0, 1000, 0);
+
+        when(quotaChecker.acceptTx(eq(tx), any(), any())).thenReturn(true);
+        TransactionPoolAddResult result = transactionPool.addTransaction(tx);
+
+        Assert.assertTrue(result.transactionsWereAdded());
+    }
+
+    @Test
+    public void checkTxQuotaValidatorRejected() {
+        Coin balance = Coin.valueOf(1000000);
+        createTestAccounts(2, balance);
+        Transaction tx = createSampleTransaction(1, 0, 1000, 0);
+
+        when(quotaChecker.acceptTx(eq(tx), any(), any())).thenReturn(false);
+        TransactionPoolAddResult result = transactionPool.addTransaction(tx);
+
+        Assert.assertFalse(result.transactionsWereAdded());
+        Assert.assertEquals("account exceeds quota", result.getErrorMessage());
+    }
+
+    @Test
     public void checkTxWithSameNonceBumpedIsAccepted() {
         Coin balance = Coin.valueOf(1000000);
         createTestAccounts(2, balance);
@@ -644,7 +683,7 @@ public class TransactionPoolImplTest {
 
     @Test
     public void checkTxWithLowGasPriceIsRejected() {
-        Block newBest = new BlockBuilder(null, null,null)
+        Block newBest = new BlockBuilder(null, null, null)
                 .parent(transactionPool.getBestBlock()).minGasPrice(BigInteger.valueOf(100)).build();
         transactionPool.processBest(newBest);
 
@@ -722,7 +761,7 @@ public class TransactionPoolImplTest {
     }
 
     @Test
-    public void aNewTxIsAddedInTxPoolAndShouldBeAddedInCache(){
+    public void aNewTxIsAddedInTxPoolAndShouldBeAddedInCache() {
         Coin balance = Coin.valueOf(1000000);
         createTestAccounts(2, balance);
         Account account1 = createAccount(1);
@@ -734,7 +773,7 @@ public class TransactionPoolImplTest {
     }
 
     @Test
-    public void twoTxsAreAddedInTxPoolAndShouldBeAddedInCache(){
+    public void twoTxsAreAddedInTxPoolAndShouldBeAddedInCache() {
         Coin balance = Coin.valueOf(1000000);
         Account account1 = createAccount(1);
         createTestAccounts(2, balance);
@@ -751,7 +790,7 @@ public class TransactionPoolImplTest {
     }
 
     @Test
-    public void invalidTxsIsSentAndShouldntBeInCache(){
+    public void invalidTxsIsSentAndShouldntBeInCache() {
         Coin balance = Coin.valueOf(0);
         createTestAccounts(2, balance);
         Transaction tx1 = createSampleTransaction(1, 2, 1000, 1);
@@ -782,7 +821,7 @@ public class TransactionPoolImplTest {
             if (i == MAX_CACHE_SIZE - 1) {
                 Assert.assertNotNull(signatureCache.getSender(tx));
             }
-            Transaction sampleTransaction = createSampleTransaction(i+2, 2, 1, 1);
+            Transaction sampleTransaction = createSampleTransaction(i + 2, 2, 1, 1);
             TransactionPoolAddResult result = transactionPool.addTransaction(sampleTransaction);
             Assert.assertTrue(result.transactionsWereAdded());
         }
