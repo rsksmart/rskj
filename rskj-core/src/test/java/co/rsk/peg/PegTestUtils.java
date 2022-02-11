@@ -71,7 +71,11 @@ public class PegTestUtils {
 
     public static Sha256Hash createHash(int nHash) {
         byte[] bytes = new byte[32];
-        bytes[0] = (byte) nHash;
+        bytes[0] = (byte) (0xFF & nHash);
+        bytes[1] = (byte) (0xFF & nHash >> 8);
+        bytes[2] = (byte) (0xFF & nHash >> 16);
+        bytes[3] = (byte) (0xFF & nHash >> 24);
+
         return Sha256Hash.wrap(bytes);
     }
 
