@@ -7603,7 +7603,7 @@ public class BridgeSupportTest {
         List<UTXO> utxosToMigrate = new ArrayList<>();
         for (int i = 0; i < utxosToCreate; i++) {
             utxosToMigrate.add(new UTXO(
-                Sha256Hash.of(new byte[]{(byte)i}),
+                PegTestUtils.createHash(i),
                 0,
                 Coin.COIN,
                 0,
@@ -7641,7 +7641,7 @@ public class BridgeSupportTest {
                 utxosToCreate / expectedTransactions;
             Assert.assertEquals(
                 expectedSize,
-                new ArrayList<>(releaseTransactionSet.getEntries()).get(0).getTransaction().getInputs().size()
+                new ArrayList<>(releaseTransactionSet.getEntries()).get(i).getTransaction().getInputs().size()
             );
         }
     }
