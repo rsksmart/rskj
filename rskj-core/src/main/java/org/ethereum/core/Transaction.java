@@ -141,7 +141,7 @@ public class Transaction {
     }
 
     protected Transaction(byte[] nonce, byte[] gasPriceRaw, byte[] gasLimit, byte[] receiveAddress, byte[] valueRaw, byte[] data,
-                       byte chainId) {
+                          byte chainId) {
         this(
                 nonce,
                 RLP.parseCoinNonNullZero(ByteUtil.cloneBytes(gasPriceRaw)),
@@ -155,7 +155,7 @@ public class Transaction {
     }
 
     protected Transaction(byte[] nonce, Coin gasPriceRaw, byte[] gasLimit, RskAddress receiveAddress, Coin valueRaw, byte[] data,
-                byte chainId, final boolean localCall) {
+                          byte chainId, final boolean localCall) {
         this.nonce = ByteUtil.cloneBytes(nonce);
         this.gasPrice = gasPriceRaw;
         this.gasLimit = ByteUtil.cloneBytes(gasLimit);
@@ -408,8 +408,8 @@ public class Transaction {
 
     public byte getEncodedV() {
         return this.chainId == 0
-            ? this.signature.getV()
-            : (byte)(this.signature.getV() - LOWER_REAL_V + CHAIN_ID_INC + this.chainId * 2);
+                ? this.signature.getV()
+                : (byte) (this.signature.getV() - LOWER_REAL_V + CHAIN_ID_INC + this.chainId * 2);
     }
 
     @Override
@@ -469,6 +469,10 @@ public class Transaction {
         }
 
         return ByteUtil.cloneBytes(this.rlpEncoding);
+    }
+
+    public long getSize() {
+        return this.getEncoded().length;
     }
 
     private byte[] encode(byte[] v, byte[] r, byte[] s) {

@@ -39,8 +39,9 @@ import java.util.List;
  * Created by ajlopez on 3/3/2016.
  */
 public class RskSystemProperties extends SystemProperties {
-    /** while timeout period is lower than clean period it doesn't affect much since
-    requests will be checked after a clean period.
+    /**
+     * while timeout period is lower than clean period it doesn't affect much since
+     * requests will be checked after a clean period.
      **/
     private static final int PD_DEFAULT_CLEAN_PERIOD = 15000; //miliseconds
     private static final int PD_DEFAULT_TIMEOUT_MESSAGE = PD_DEFAULT_CLEAN_PERIOD - 1; //miliseconds
@@ -91,7 +92,7 @@ public class RskSystemProperties extends SystemProperties {
         // Regtest always has MINER_COINBASE_SECRET_CONFIG set in regtest.conf file. When MINER_REWARD_ADDRESS_CONFIG is set both values exist
         // and that does not pass the checks below. If MINER_REWARD_ADDRESS_CONFIG exists, that value must be used so consider that
         // special regtest case by adding this guard.
-        if(configFromFiles.getString(PROPERTY_BC_CONFIG_NAME).equals(REGTEST_BLOCKCHAIN_CONFIG) &&
+        if (configFromFiles.getString(PROPERTY_BC_CONFIG_NAME).equals(REGTEST_BLOCKCHAIN_CONFIG) &&
                 configFromFiles.hasPath(MINER_REWARD_ADDRESS_CONFIG)) {
             return null;
         }
@@ -221,7 +222,7 @@ public class RskSystemProperties extends SystemProperties {
     }
 
     public boolean skipRemasc() {
-            return getBoolean("rpc.skipRemasc", false);
+        return getBoolean("rpc.skipRemasc", false);
     }
 
     public long peerDiscoveryMessageTimeOut() {
@@ -231,7 +232,7 @@ public class RskSystemProperties extends SystemProperties {
     public long peerDiscoveryRefreshPeriod() {
         long period = getLong("peer.discovery.refresh.period", PD_DEFAULT_REFRESH_PERIOD);
 
-        return (period < PD_DEFAULT_REFRESH_PERIOD)? PD_DEFAULT_REFRESH_PERIOD : period;
+        return (period < PD_DEFAULT_REFRESH_PERIOD) ? PD_DEFAULT_REFRESH_PERIOD : period;
     }
 
     public boolean allowMultipleConnectionsPerHostPort() {
@@ -276,7 +277,7 @@ public class RskSystemProperties extends SystemProperties {
     }
 
     public boolean hasMessageRecorderEnabled() {
-        return getBoolean("messages.recorder.enabled",false);
+        return getBoolean("messages.recorder.enabled", false);
     }
 
     public List<String> getMessageRecorderCommands() {
@@ -288,7 +289,7 @@ public class RskSystemProperties extends SystemProperties {
     }
 
     public long getTargetGasLimit() {
-        return getLong("targetgaslimit",6_800_000L);
+        return getLong("targetgaslimit", 6_800_000L);
     }
 
     public boolean getForceTargetGasLimit() {
@@ -342,7 +343,7 @@ public class RskSystemProperties extends SystemProperties {
         return PD_DEFAULT_CLEAN_PERIOD;
     }
 
-    public int getPeerP2PPingInterval(){
+    public int getPeerP2PPingInterval() {
         return configFromFiles.getInt("peer.p2p.pingInterval");
     }
 
@@ -352,6 +353,10 @@ public class RskSystemProperties extends SystemProperties {
 
     public Integer getNumOfAccountSlots() {
         return configFromFiles.getInt("transaction.accountSlots");
+    }
+
+    public boolean isAccountTxRateLimitEnabled() {
+        return configFromFiles.getBoolean("transaction.accountRateLimitEnabled");
     }
 
     public int getStatesCacheSize() {
@@ -399,6 +404,6 @@ public class RskSystemProperties extends SystemProperties {
     }
 
     public Integer getMessageQueueMaxSize() {
-    	return configFromFiles.getInt("peer.messageQueue.maxSizePerPeer");
+        return configFromFiles.getInt("peer.messageQueue.maxSizePerPeer");
     }
 }
