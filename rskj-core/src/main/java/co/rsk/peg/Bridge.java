@@ -19,6 +19,7 @@
 package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.*;
+import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.config.BridgeConstants;
 import co.rsk.core.RskAddress;
@@ -1055,6 +1056,18 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
         Coin lockingCap = bridgeSupport.getLockingCap();
 
         return lockingCap.getValue();
+    }
+
+    public byte[] getActivePowpegRedeemScript(Object[] args) {
+        logger.debug("[getActivePowpegRedeemScript] started");
+        try {
+            Optional<Script> redeemScript = bridgeSupport.getActivePowpegRedeemScript();
+            logger.debug("[getActivePowpegRedeemScript] finished");
+            return redeemScript.orElse(new Script(new byte[]{})).getProgram();
+        } catch (Exception ex) {
+            logger.warn("[getActivePowpegRedeemScript] something failed", ex);
+            throw ex;
+        }
     }
 
     public boolean increaseLockingCap(Object[] args) throws BridgeIllegalArgumentException {
