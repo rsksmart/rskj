@@ -371,6 +371,35 @@ public class BlockExecutor {
         return result;
     }
 
+    public void fetchProgramProcessorByBlock(ProgramTraceProcessor programTraceProcessor, Block block, Block parent, int vmTraceOptions) {
+        Repository track = repositoryLocator.startTrackingAt(parent.getHeader());
+
+        long totalGasUsed = 0;
+        Set<DataWord> deletedAccounts = new HashSet<>();
+
+        int txindex = 0;
+
+        for (Transaction tx : block.getTransactionsList()) {
+            TransactionExecutor txExecutor = transactionExecutorFactory.newInstance(
+                    tx,
+                    txindex++,
+                    block.getCoinbase(),
+                    track,
+                    block,
+                    totalGasUsed,
+                    true,
+                    vmTraceOptions,
+                    deletedAccounts);
+
+            txExecutor.extractTrace(programTraceProcessor);
+
+            long gasUsed = txExecutor.getGasUsed();
+            totalGasUsed += gasUsed;
+
+            deletedAccounts.addAll(txExecutor.getResult().getDeleteAccounts());
+        }
+    }
+
     /**
      * Precompiled contracts storage is setup like any other contract for consistency. Here, we apply this logic on the
      * exact activation block.

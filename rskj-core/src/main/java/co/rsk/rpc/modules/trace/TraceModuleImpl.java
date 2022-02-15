@@ -20,6 +20,7 @@ package co.rsk.rpc.modules.trace;
 
 import co.rsk.config.VmConfig;
 import co.rsk.core.bc.BlockExecutor;
+import co.rsk.util.HexUtils;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.ethereum.core.Block;
@@ -35,9 +36,13 @@ import org.ethereum.vm.trace.SummarizedProgramTrace;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.ethereum.rpc.TypeConverter.stringHexToBigInteger;
 import static org.ethereum.rpc.TypeConverter.stringHexToByteArray;
@@ -85,7 +90,7 @@ public class TraceModuleImpl implements TraceModule {
         ProgramTraceProcessor programTraceProcessor = new ProgramTraceProcessor();
         this.blockExecutor.traceBlock(programTraceProcessor, VmConfig.LIGHT_TRACE, block, parent.getHeader(), false, false);
 
-        SummarizedProgramTrace programTrace = (SummarizedProgramTrace)programTraceProcessor.getProgramTrace(tx.getHash());
+        SummarizedProgramTrace programTrace = (SummarizedProgramTrace) programTraceProcessor.getProgramTrace(tx.getHash());
 
         if (programTrace == null) {
             return null;
@@ -107,30 +112,40 @@ public class TraceModuleImpl implements TraceModule {
             return null;
         }
 
-        Block parent = this.blockchain.getBlockByHash(block.getParentHash().getBytes());
+        List<TransactionTrace> blockTraces = buildBlockTraces(block);
+
+        return blockTraces == null ? null : OBJECT_MAPPER.valueToTree(blockTraces);
+    }
+
+    @Override
+    public JsonNode traceFilter(Map<String, Object> request) throws Exception {
+        TraceFilterRequest traceFilterRequest = TraceFilterRequest.buildFrom(request);
+
+        if (!traceFilterRequest.isValid()) {
+            return null;
+        }
 
         List<TransactionTrace> blockTraces = new ArrayList<>();
 
-        if (block.getNumber() != 0) {
-            ProgramTraceProcessor programTraceProcessor = new ProgramTraceProcessor();
-            this.blockExecutor.traceBlock(programTraceProcessor, VmConfig.LIGHT_TRACE, block, parent.getHeader(), false, false);
+        long fromBlockNumber = traceFilterRequest.getFromBlockNumber().longValue();
+        long toBlockNumber = traceFilterRequest.getToBlockNumber().longValue();
 
-            for (Transaction tx : block.getTransactionsList()) {
-                TransactionInfo txInfo = receiptStore.getInMainChain(tx.getHash().getBytes(), this.blockStore).orElse(null);
-                Objects.requireNonNull(txInfo);
-                txInfo.setTransaction(tx);
-
-                SummarizedProgramTrace programTrace = (SummarizedProgramTrace) programTraceProcessor.getProgramTrace(tx.getHash());
-
-                if (programTrace == null) {
-                    return null;
-                }
-
-                List<TransactionTrace> traces = TraceTransformer.toTraces(programTrace, txInfo, block.getNumber());
-
-                blockTraces.addAll(traces);
-            }
+        for (long currentBlockNumber = fromBlockNumber; currentBlockNumber <= toBlockNumber; currentBlockNumber++) {
+            Block block = this.blockchain.getBlockByNumber(currentBlockNumber);
+            blockTraces.addAll(buildBlockTraces(block, traceFilterRequest));
         }
+
+        Stream<TransactionTrace> txTraceStream = blockTraces.stream();
+
+        if (traceFilterRequest.getAfter() != null) {
+            txTraceStream = txTraceStream.skip(traceFilterRequest.getAfter());
+        }
+
+        if (traceFilterRequest.getCount() != null) {
+            txTraceStream = txTraceStream.limit(traceFilterRequest.getCount());
+        }
+
+        blockTraces = txTraceStream.collect(Collectors.toList());
 
         return OBJECT_MAPPER.valueToTree(blockTraces);
     }
@@ -138,8 +153,7 @@ public class TraceModuleImpl implements TraceModule {
     private Block getByJsonArgument(String arg) {
         if (arg.length() < 20) {
             return this.getByJsonBlockId(arg);
-        }
-        else {
+        } else {
             return this.getByJsonBlockHash(arg);
         }
     }
@@ -165,5 +179,66 @@ public class TraceModuleImpl implements TraceModule {
                 throw RskJsonRpcRequestException.invalidParamError("invalid blocknumber " + id);
             }
         }
+    }
+
+    private List<TransactionTrace> buildBlockTraces(Block block) {
+        return buildBlockTraces(block, null, true);
+    }
+
+    private List<TransactionTrace> buildBlockTraces(Block block, TraceFilterRequest traceFilterRequest) {
+        List<TransactionTrace> blockTraces = buildBlockTraces(block, traceFilterRequest, false);
+        return blockTraces == null ? new ArrayList<>() : blockTraces;
+    }
+
+    private List<TransactionTrace> buildBlockTraces(Block block, TraceFilterRequest traceFilterRequest, boolean register) {
+        List<TransactionTrace> blockTraces = new ArrayList<>();
+
+        if (block != null && block.getNumber() != 0) {
+            List<Transaction> txList = block.getTransactionsList();
+
+            ProgramTraceProcessor programTraceProcessor = new ProgramTraceProcessor();
+            Block parent = this.blockchain.getBlockByHash(block.getParentHash().getBytes());
+
+            if (register) {
+                this.blockExecutor.traceBlock(programTraceProcessor, VmConfig.LIGHT_TRACE, block, parent.getHeader(), false, false);
+            } else {
+                this.blockExecutor.fetchProgramProcessorByBlock(programTraceProcessor, block, parent, VmConfig.LIGHT_TRACE);
+            }
+
+            if (traceFilterRequest != null) {
+                Stream<Transaction> txStream = block.getTransactionsList().stream();
+
+                if (traceFilterRequest.getFromAddress() != null && !traceFilterRequest.getFromAddress().isEmpty()) {
+                    List<BigInteger> addresses = traceFilterRequest.getFromAddressAsBigIntegers();
+                    txStream = txStream.filter(tx -> tx.getSender().getBytes().length > 0 && addresses.contains(HexUtils.forceParseStringHexToBigInteger(tx.getSender().toHexString())));
+                }
+
+                if (traceFilterRequest.getToAddress() != null && !traceFilterRequest.getToAddress().isEmpty()) {
+                    List<BigInteger> addresses = traceFilterRequest.getToAddressAsBigIntegers();
+                    txStream = txStream.filter(tx -> tx.getReceiveAddress().getBytes().length > 0 && addresses.contains(HexUtils.forceParseStringHexToBigInteger(tx.getReceiveAddress().toHexString())));
+                }
+
+                txList = txStream.collect(Collectors.toList());
+            }
+
+            for (Transaction tx : txList) {
+                TransactionInfo txInfo = receiptStore.getInMainChain(tx.getHash().getBytes(), this.blockStore).orElse(null);
+                Objects.requireNonNull(txInfo);
+                txInfo.setTransaction(tx);
+
+                SummarizedProgramTrace programTrace = (SummarizedProgramTrace) programTraceProcessor.getProgramTrace(tx.getHash());
+
+                if (programTrace == null) {
+                    blockTraces.clear();
+                    return null;
+                }
+
+                List<co.rsk.rpc.modules.trace.TransactionTrace> traces = TraceTransformer.toTraces(programTrace, txInfo, block.getNumber());
+
+                blockTraces.addAll(traces);
+            }
+        }
+
+        return blockTraces;
     }
 }

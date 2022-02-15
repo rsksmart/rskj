@@ -35,6 +35,10 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.FileNotFoundException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class TraceModuleImplTest {
     @Test
@@ -142,6 +146,20 @@ public class TraceModuleImplTest {
         retrieveSuicideInvocationTrace(world, receiptStore, "tx04");
 
         retrieveSuicideInvocationBlockTrace(world, receiptStore, "latest");
+    }
+
+    @Test
+    public void retrieveTraces() throws Exception {
+        ReceiptStore receiptStore = new ReceiptStoreImpl(new HashMapDB());
+        World world = executeMultiContract(receiptStore);
+
+        retrieveTraceFilterEmpty(world, receiptStore);
+        retrieveTraceFilter1Record(world, receiptStore);
+        retrieveTraceFilter3Records(world, receiptStore);
+        retrieveTraceFilterNext3RecordsAndOnly1Remains(world, receiptStore);
+        retrieveTraceFilterByAddress(world, receiptStore);
+        retrieveTraceFilterNullWhenBlockRangeIsNotSpecified(world, receiptStore);
+        retrieveTraceFilterNullWhenCountIsNotSpecified(world, receiptStore);
     }
 
     private static void retrieveEmptyBlockTrace(World world, ReceiptStore receiptStore, String blkname) throws Exception {
@@ -315,6 +333,169 @@ public class TraceModuleImplTest {
         Assert.assertNotNull(oresult.get("action").get("address"));
         Assert.assertNotNull(oresult.get("action").get("refundAddress"));
         Assert.assertNotNull(oresult.get("action").get("balance"));
+    }
+
+    private static void retrieveTraceFilterEmpty(World world, ReceiptStore receiptStore) throws Exception {
+        TraceModuleImpl traceModule = new TraceModuleImpl(world.getBlockChain(), world.getBlockStore(), receiptStore, world.getBlockExecutor());
+
+        Map<String, Object> traceFilterRequestMap = new HashMap<>();
+
+        traceFilterRequestMap.put(TraceFilterRequest.FROM_BLOCK_KEY, "0x12300");
+        traceFilterRequestMap.put(TraceFilterRequest.TO_BLOCK_KEY, "0x12301");
+        traceFilterRequestMap.put(TraceFilterRequest.COUNT_KEY, 5);
+
+        JsonNode result = traceModule.traceFilter(traceFilterRequestMap);
+
+        Assert.assertNotNull(result);
+        Assert.assertTrue(result.isArray());
+
+        ArrayNode aresult = (ArrayNode)result;
+
+        Assert.assertEquals(0, aresult.size());
+    }
+
+    private static void retrieveTraceFilter1Record(World world, ReceiptStore receiptStore) throws Exception {
+        TraceModuleImpl traceModule = new TraceModuleImpl(world.getBlockChain(), world.getBlockStore(), receiptStore, world.getBlockExecutor());
+
+        Map<String, Object> traceFilterRequestMap = new HashMap<>();
+
+        traceFilterRequestMap.put(TraceFilterRequest.FROM_BLOCK_KEY, "0x00");
+        traceFilterRequestMap.put(TraceFilterRequest.TO_BLOCK_KEY, "0x10");
+        traceFilterRequestMap.put(TraceFilterRequest.COUNT_KEY, 1);
+
+        JsonNode result = traceModule.traceFilter(traceFilterRequestMap);
+
+        Assert.assertNotNull(result);
+        Assert.assertTrue(result.isArray());
+
+        ArrayNode aresult = (ArrayNode)result;
+
+        Assert.assertEquals(1, aresult.size());
+
+        ObjectNode oresult = (ObjectNode) result.get(0);
+
+        Assert.assertNotNull(oresult.get("type"));
+        Assert.assertEquals("\"create\"", oresult.get("type").toString());
+
+        Assert.assertNotNull(oresult.get("action"));
+        Assert.assertNull(oresult.get("action").get("creationMethod"));
+        Assert.assertNotNull(oresult.get("action").get("init"));
+        Assert.assertNull(oresult.get("action").get("input"));
+    }
+
+    private static void retrieveTraceFilter3Records(World world, ReceiptStore receiptStore) throws Exception {
+        TraceModuleImpl traceModule = new TraceModuleImpl(world.getBlockChain(), world.getBlockStore(), receiptStore, world.getBlockExecutor());
+
+        Map<String, Object> traceFilterRequestMap = new HashMap<>();
+
+        traceFilterRequestMap.put(TraceFilterRequest.FROM_BLOCK_KEY, "0x00");
+        traceFilterRequestMap.put(TraceFilterRequest.TO_BLOCK_KEY, "0x10");
+        traceFilterRequestMap.put(TraceFilterRequest.COUNT_KEY, 3);
+
+        JsonNode result = traceModule.traceFilter(traceFilterRequestMap);
+
+        Assert.assertNotNull(result);
+        Assert.assertTrue(result.isArray());
+
+        ArrayNode aresult = (ArrayNode)result;
+
+        Assert.assertEquals(3, aresult.size());
+
+        ObjectNode oresult = (ObjectNode) result.get(0);
+
+        Assert.assertNotNull(oresult.get("type"));
+        Assert.assertEquals("\"create\"", oresult.get("type").toString());
+
+        Assert.assertNotNull(oresult.get("action"));
+        Assert.assertNull(oresult.get("action").get("creationMethod"));
+        Assert.assertNotNull(oresult.get("action").get("init"));
+        Assert.assertNull(oresult.get("action").get("input"));
+
+        oresult = (ObjectNode) result.get(1);
+
+        Assert.assertNotNull(oresult.get("type"));
+        Assert.assertEquals("\"call\"", oresult.get("type").toString());
+
+        oresult = (ObjectNode) result.get(2);
+
+        Assert.assertNotNull(oresult.get("type"));
+        Assert.assertEquals("\"call\"", oresult.get("type").toString());
+    }
+
+    private static void retrieveTraceFilterNext3RecordsAndOnly1Remains(World world, ReceiptStore receiptStore) throws Exception {
+        TraceModuleImpl traceModule = new TraceModuleImpl(world.getBlockChain(), world.getBlockStore(), receiptStore, world.getBlockExecutor());
+
+        Map<String, Object> traceFilterRequestMap = new HashMap<>();
+
+        traceFilterRequestMap.put(TraceFilterRequest.FROM_BLOCK_KEY, "0x00");
+        traceFilterRequestMap.put(TraceFilterRequest.TO_BLOCK_KEY, "0x10");
+        traceFilterRequestMap.put(TraceFilterRequest.COUNT_KEY, 3);
+        traceFilterRequestMap.put(TraceFilterRequest.AFTER_KEY, 3);
+
+        JsonNode result = traceModule.traceFilter(traceFilterRequestMap);
+
+        Assert.assertNotNull(result);
+        Assert.assertTrue(result.isArray());
+
+        ArrayNode aresult = (ArrayNode)result;
+
+        Assert.assertEquals(1, aresult.size());
+
+        ObjectNode oresult = (ObjectNode) result.get(0);
+
+        Assert.assertNotNull(oresult.get("type"));
+        Assert.assertEquals("\"call\"", oresult.get("type").toString());
+
+        Assert.assertNotNull(oresult.get("action"));
+        Assert.assertNull(oresult.get("action").get("creationMethod"));
+    }
+
+    private static void retrieveTraceFilterByAddress(World world, ReceiptStore receiptStore) throws Exception {
+        TraceModuleImpl traceModule = new TraceModuleImpl(world.getBlockChain(), world.getBlockStore(), receiptStore, world.getBlockExecutor());
+        Map<String, Object> traceFilterRequestMap = new HashMap<>();
+
+        traceFilterRequestMap.put(TraceFilterRequest.FROM_BLOCK_KEY, "0x00");
+        traceFilterRequestMap.put(TraceFilterRequest.TO_BLOCK_KEY, "0x10");
+        traceFilterRequestMap.put(TraceFilterRequest.COUNT_KEY, 3);
+        traceFilterRequestMap.put(TraceFilterRequest.AFTER_KEY, 3);
+        traceFilterRequestMap.put(TraceFilterRequest.FROM_ADDRESS_KEY, Stream.of("0xa0663f719962ec10bb57865532bef522059dfd96").collect(Collectors.toList()));
+
+        JsonNode result = traceModule.traceFilter(traceFilterRequestMap);
+
+        Assert.assertNotNull(result);
+        Assert.assertTrue(result.isArray());
+
+        ArrayNode aresult = (ArrayNode)result;
+
+        Assert.assertEquals(1, aresult.size());
+
+        ObjectNode oresult = (ObjectNode) result.get(0);
+
+        Assert.assertNotNull(oresult.get("type"));
+        Assert.assertEquals("\"call\"", oresult.get("type").toString());
+    }
+
+    private static void retrieveTraceFilterNullWhenBlockRangeIsNotSpecified(World world, ReceiptStore receiptStore) throws Exception {
+        TraceModuleImpl traceModule = new TraceModuleImpl(world.getBlockChain(), world.getBlockStore(), receiptStore, world.getBlockExecutor());
+        Map<String, Object> traceFilterRequestMap = new HashMap<>();
+
+        traceFilterRequestMap.put(TraceFilterRequest.FROM_BLOCK_KEY, "0x00");
+
+        JsonNode result = traceModule.traceFilter(traceFilterRequestMap);
+
+        Assert.assertNull(result);
+    }
+
+    private static void retrieveTraceFilterNullWhenCountIsNotSpecified(World world, ReceiptStore receiptStore) throws Exception {
+        TraceModuleImpl traceModule = new TraceModuleImpl(world.getBlockChain(), world.getBlockStore(), receiptStore, world.getBlockExecutor());
+        Map<String, Object> traceFilterRequestMap = new HashMap<>();
+
+        traceFilterRequestMap.put(TraceFilterRequest.FROM_BLOCK_KEY, "0x00");
+        traceFilterRequestMap.put(TraceFilterRequest.TO_BLOCK_KEY, "0x00");
+
+        JsonNode result = traceModule.traceFilter(traceFilterRequestMap);
+
+        Assert.assertNull(result);
     }
 
     @Test
