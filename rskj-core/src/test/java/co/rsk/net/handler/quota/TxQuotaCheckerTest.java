@@ -11,6 +11,7 @@ import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
+import org.ethereum.rpc.Web3;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -103,7 +104,10 @@ public class TxQuotaCheckerTest {
         PendingState state = mock(PendingState.class);
         when(state.getNonce(any())).thenReturn(BigInteger.valueOf(accountNonce));
 
-        currentContext = new TxQuotaChecker.CurrentContext(block, state, repository);
+        Web3 web3 = mock(Web3.class);
+        when(web3.eth_gasPrice()).thenReturn("0x" + Long.toHexString(BLOCK_AVG_GAS_PRICE));
+
+        currentContext = new TxQuotaChecker.CurrentContext(block, state, repository, web3);
     }
 
     @Test
@@ -141,11 +145,8 @@ public class TxQuotaCheckerTest {
 
     private static Block block() {
         Block block = mock(Block.class);
-
         when(block.getGasLimitAsInteger()).thenReturn(BigInteger.valueOf(BLOCK_GAS_LIMIT));
-        when(block.getAverageGasPrice()).thenReturn(Coin.valueOf(BLOCK_AVG_GAS_PRICE));
         when(block.getMinimumGasPrice()).thenReturn(Coin.valueOf(BLOCK_MIN_GAS_PRICE));
-
         return block;
     }
 

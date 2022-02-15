@@ -2,7 +2,6 @@ package co.rsk.net.handler.quota;
 
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
-import co.rsk.core.bc.PendingState;
 import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.TransactionBuilder;
 import org.bouncycastle.util.encoders.Hex;
@@ -10,7 +9,6 @@ import org.ethereum.core.Account;
 import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -21,7 +19,6 @@ import java.util.Collection;
 import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @RunWith(Parameterized.class)
@@ -31,10 +28,6 @@ public class TxVirtualGasCalculatorTest {
     private static final long BLOCK_AVG_GAS_PRICE = 65164000;
     private static final long BLOCK_GAS_LIMIT = 6800000;
     private static final long DEFAULT_NONCE = 100;
-
-    private Block currentBlock;
-
-    private PendingState state;
 
     @Parameterized.Parameter(value = 0)
     public String description;
@@ -91,17 +84,9 @@ public class TxVirtualGasCalculatorTest {
         });
     }
 
-    @Before
-    public void setUp() {
-        currentBlock = block();
-
-        state = mock(PendingState.class);
-        when(state.getNonce(any())).thenReturn(BigInteger.valueOf(accountNonce));
-    }
-
     @Test
     public void calculate() {
-        TxVirtualGasCalculator txVirtualGasCalculator = new TxVirtualGasCalculator(state, currentBlock);
+        TxVirtualGasCalculator txVirtualGasCalculator = new TxVirtualGasCalculator(accountNonce, BLOCK_GAS_LIMIT, BLOCK_MIN_GAS_PRICE, BLOCK_AVG_GAS_PRICE);
         double expected = newTransaction.getGasLimitAsInteger().longValue() * futureNonceFactor * lowGasPriceFactor * nonceFactor * sizeFactor * replacementFactor * gasLimitFactor;
         double actual = txVirtualGasCalculator.calculate(newTransaction, replacedTransaction);
         assertEquals(expected, actual, expected * 0.0000005 * 6);
@@ -130,11 +115,8 @@ public class TxVirtualGasCalculatorTest {
 
     private static Block block() {
         Block block = mock(Block.class);
-
         when(block.getGasLimitAsInteger()).thenReturn(BigInteger.valueOf(BLOCK_GAS_LIMIT));
-        when(block.getAverageGasPrice()).thenReturn(Coin.valueOf(BLOCK_AVG_GAS_PRICE));
         when(block.getMinimumGasPrice()).thenReturn(Coin.valueOf(BLOCK_MIN_GAS_PRICE));
-
         return block;
     }
 

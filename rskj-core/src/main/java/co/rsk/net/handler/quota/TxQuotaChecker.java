@@ -1,12 +1,13 @@
 package co.rsk.net.handler.quota;
 
-import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.PendingState;
 import co.rsk.db.RepositorySnapshot;
+import co.rsk.util.HexUtils;
 import co.rsk.util.MaxSizeHashMap;
 import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
+import org.ethereum.rpc.Web3;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,8 +40,7 @@ public class TxQuotaChecker {
             updateQuota(newTx.getReceiveAddress(), currentContext.bestBlock);
         }
 
-        TxVirtualGasCalculator txVirtualGasCalculator = new TxVirtualGasCalculator(currentContext.state, currentContext.bestBlock);
-        double consumedVirtualGas = txVirtualGasCalculator.calculate(newTx, replacedTx);
+        double consumedVirtualGas = calculateConsumedVirtualGas(newTx, replacedTx, currentContext);
 
         boolean wasAccepted = senderQuota.acceptVirtualGasConsumption(consumedVirtualGas);
         logger.trace("tx {} {} after quota check", newTx.getHash(), wasAccepted ? "accepted" : "rejected");
@@ -69,15 +69,27 @@ public class TxQuotaChecker {
         return Math.round(blockGasLimit.longValue() * MAX_GAS_PER_SECOND_PERCENT);
     }
 
+    private double calculateConsumedVirtualGas(Transaction newTx, Optional<Transaction> replacedTx, CurrentContext currentContext) {
+        long accountNonce = currentContext.state.getNonce(newTx.getSender()).longValue();
+        long blockGasLimit = currentContext.bestBlock.getGasLimitAsInteger().longValue();
+        long blockMinGasPrice = currentContext.bestBlock.getMinimumGasPrice().asBigInteger().longValue();
+        long avgGasPrice = HexUtils.stringHexToBigInteger(currentContext.web3.eth_gasPrice()).longValue();
+
+        TxVirtualGasCalculator calculator = new TxVirtualGasCalculator(accountNonce, blockGasLimit, blockMinGasPrice, avgGasPrice);
+        return calculator.calculate(newTx, replacedTx);
+    }
+
     public static class CurrentContext {
         private final Block bestBlock;
         private final PendingState state;
         private final RepositorySnapshot repository;
+        private final Web3 web3;
 
-        public CurrentContext(Block bestBlock, PendingState state, RepositorySnapshot repository) {
+        public CurrentContext(Block bestBlock, PendingState state, RepositorySnapshot repository, Web3 web3) {
             this.bestBlock = bestBlock;
             this.state = state;
             this.repository = repository;
+            this.web3 = web3;
         }
     }
 

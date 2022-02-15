@@ -30,8 +30,6 @@ import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
 import java.math.BigInteger;
@@ -53,8 +51,6 @@ import java.util.List;
 public class Block {
     private static final PanicProcessor panicProcessor = new PanicProcessor();
 
-    private static final Logger logger = LoggerFactory.getLogger(Block.class);
-
     private BlockHeader header;
 
     private List<Transaction> transactionsList;
@@ -66,8 +62,6 @@ public class Block {
 
     /* Indicates if this block can or cannot be changed */
     private volatile boolean sealed;
-
-    private Coin avgGasPrice;
 
     public static Block createBlockFromHeader(BlockHeader header, boolean isRskip126Enabled) {
         return new Block(header, Collections.emptyList(), Collections.emptyList(), isRskip126Enabled, true, false);
@@ -388,25 +382,5 @@ public class Block {
 
     public void flushRLP() {
         this.rlpEncoded = null;
-    }
-
-    public Coin getAverageGasPrice() {
-        // TODO:I I think this should be calculated like in the rpc call "eth_gasPrice"
-        if (this.avgGasPrice == null) {
-            Double calculatedAvgGasPrice = this.getTransactionsList().stream()
-                    .map(Transaction::getGasPrice)
-                    .map(Coin::asBigInteger)
-                    .mapToDouble(BigInteger::doubleValue)
-                    .average()
-                    .orElse(0);
-
-            if (calculatedAvgGasPrice == 0) {
-                logger.error("could not calculate average gas price for block {}", this.getHash());
-            }
-
-            this.avgGasPrice = new Coin(BigInteger.valueOf(calculatedAvgGasPrice.longValue()));
-        }
-
-        return this.avgGasPrice;
     }
 }

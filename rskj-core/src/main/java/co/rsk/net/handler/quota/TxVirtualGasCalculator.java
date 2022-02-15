@@ -1,8 +1,5 @@
 package co.rsk.net.handler.quota;
 
-import co.rsk.core.Coin;
-import co.rsk.core.bc.PendingState;
-import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,23 +15,28 @@ class TxVirtualGasCalculator {
 
     private static final Logger logger = LoggerFactory.getLogger(TxVirtualGasCalculator.class);
 
-    private final PendingState state;
+    private final long accountNonce;
 
-    private final Block bestBlock;
+    private final long blockGasLimit;
 
-    TxVirtualGasCalculator(PendingState state, Block bestBlock) {
-        this.state = state;
-        this.bestBlock = bestBlock;
+    private final long blockMinGasPrice;
+
+    private final long avgGasPrice;
+
+    TxVirtualGasCalculator(long accountNonce, long blockGasLimit, long blockMinGasPrice, long avgGasPrice) {
+        this.accountNonce = accountNonce;
+        this.blockGasLimit = blockGasLimit;
+        this.blockMinGasPrice = blockMinGasPrice;
+        this.avgGasPrice = avgGasPrice;
     }
 
     public double calculate(Transaction newTx, Optional<Transaction> replacedTx) {
-        long accountNonce = state.getNonce(newTx.getSender()).longValue();
         long txGasLimit = newTx.getGasLimitAsInteger().longValue();
 
         long newTxNonce = newTx.getNonceAsInteger().longValue();
         long futureNonceFactor = newTxNonce == accountNonce ? 1 : 2;
 
-        double lowGasPriceFactor = calculateLowGasPriceFactor(newTx.getGasPrice(), bestBlock);
+        double lowGasPriceFactor = calculateLowGasPriceFactor(newTx);
 
         double nonceFactor = 1 + NONCE_WEIGHT / (accountNonce + 1);
 
@@ -42,20 +44,18 @@ class TxVirtualGasCalculator {
 
         double replacementFactor = calculateReplacementFactor(newTx, replacedTx);
 
-        double gasLimitFactor = calculateGasLimitFactor(bestBlock, txGasLimit);
+        double gasLimitFactor = calculateGasLimitFactor(txGasLimit);
 
         double compositeFactor = futureNonceFactor * lowGasPriceFactor * nonceFactor * sizeFactor * replacementFactor * gasLimitFactor;
         logger.debug("virtualGasConsumed calculation: txGasLimit {}, compositeFactor {} (futureNonceFactor {}, lowGasPriceFactor {}, nonceFactor {}, sizeFactor {}, replacementFactor {}, gasLimitFactor {})", txGasLimit, compositeFactor, futureNonceFactor, lowGasPriceFactor, nonceFactor, sizeFactor, replacementFactor, gasLimitFactor);
         return txGasLimit * compositeFactor;
     }
 
-    private double calculateLowGasPriceFactor(Coin gasPrice, Block block) {
-        long txGasPrice = gasPrice.asBigInteger().longValue();
-        long averageGasPrice = block.getAverageGasPrice().asBigInteger().longValue();
+    private double calculateLowGasPriceFactor(Transaction newTx) {
+        long txGasPrice = newTx.getGasPrice().asBigInteger().longValue();
 
-        if (txGasPrice < averageGasPrice) {
-            double minimumGasPrice = block.getMinimumGasPrice().asBigInteger().doubleValue();
-            double factor = (averageGasPrice - txGasPrice) / (averageGasPrice - minimumGasPrice);
+        if (txGasPrice < this.avgGasPrice) {
+            double factor = (this.avgGasPrice - txGasPrice) / (this.avgGasPrice - (double) this.blockMinGasPrice);
             return 1 + LOW_GAS_PRICE_WEIGH * factor;
         } else {
             return 1;
@@ -72,9 +72,8 @@ class TxVirtualGasCalculator {
         return replacementRatio > 0 ? (1 + 1 / replacementRatio) : 1;
     }
 
-    private double calculateGasLimitFactor(Block block, long txGasLimit) {
-        long blockGasLimit = block.getGasLimitAsInteger().longValue();
-        return 1 + GAS_LIMIT_WEIGHT * txGasLimit / blockGasLimit;
+    private double calculateGasLimitFactor(long txGasLimit) {
+        return 1 + GAS_LIMIT_WEIGHT * txGasLimit / this.blockGasLimit;
     }
 
 }
