@@ -70,6 +70,7 @@ import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 import org.junit.Assert;
 import org.junit.Test;
+import org.mockito.Mockito;
 
 import java.math.BigInteger;
 import java.time.Clock;
@@ -94,7 +95,7 @@ public class TransactionModuleTest {
         BlockStore blockStore = world.getBlockStore();
 
         TransactionPool transactionPool = new TransactionPoolImpl(config, repositoryLocator, blockStore, blockFactory, null, buildTransactionExecutorFactory(blockStore, null, world.getBlockTxSignatureCache()),
-                world.getReceivedTxSignatureCache(), 10, 100);
+                world.getReceivedTxSignatureCache(), 10, 100, Mockito.mock(Web3.class));
         TransactionGateway transactionGateway = new TransactionGateway(new SimpleChannelManager(), transactionPool);
 
         Web3Impl web3 = createEnvironment(blockchain, null, trieStore, transactionPool, blockStore, false, world.getBlockTxSignatureCache(), transactionGateway);
@@ -121,7 +122,7 @@ public class TransactionModuleTest {
         BlockStore blockStore = world.getBlockStore();
 
         TransactionPool transactionPool = new TransactionPoolImpl(config, repositoryLocator, blockStore, blockFactory, null, buildTransactionExecutorFactory(blockStore, null, world.getBlockTxSignatureCache()),
-                world.getReceivedTxSignatureCache(), 10, 100);
+                world.getReceivedTxSignatureCache(), 10, 100, Mockito.mock(Web3.class));
         TransactionGateway transactionGateway = new TransactionGateway(new SimpleChannelManager(), transactionPool);
 
 
@@ -186,7 +187,7 @@ public class TransactionModuleTest {
         BlockStore blockStore = world.getBlockStore();
 
         TransactionPool transactionPool = new TransactionPoolImpl(config, repositoryLocator, blockStore, blockFactory, null, buildTransactionExecutorFactory(blockStore, receiptStore, world.getBlockTxSignatureCache()),
-                world.getReceivedTxSignatureCache(), 10, 100);
+                world.getReceivedTxSignatureCache(), 10, 100, Mockito.mock(Web3.class));
         TransactionGateway transactionGateway = new TransactionGateway(new SimpleChannelManager(), transactionPool);
 
         Web3Impl web3 = createEnvironment(blockchain, receiptStore, trieStore, transactionPool, blockStore, true, world.getBlockTxSignatureCache(), transactionGateway);
@@ -215,7 +216,7 @@ public class TransactionModuleTest {
         BlockStore blockStore = world.getBlockStore();
 
         TransactionPool transactionPool = new TransactionPoolImpl(config, repositoryLocator, blockStore, blockFactory, null, buildTransactionExecutorFactory(blockStore, receiptStore, world.getBlockTxSignatureCache()),
-                world.getReceivedTxSignatureCache(), 10, 100);
+                world.getReceivedTxSignatureCache(), 10, 100, Mockito.mock(Web3.class));
         TransactionGateway transactionGateway = new TransactionGateway(new SimpleChannelManager(), transactionPool);
 
         Web3Impl web3 = createEnvironment(blockchain, receiptStore, trieStore, transactionPool, blockStore, false, world.getBlockTxSignatureCache(), transactionGateway);
@@ -251,7 +252,8 @@ public class TransactionModuleTest {
                 transactionExecutorFactory,
                 receivedTxSignatureCache,
                 10,
-                100
+                100,
+                Mockito.mock(Web3.class)
         );
         TransactionGateway transactionGateway = new TransactionGateway(new SimpleChannelManager(), transactionPool);
 

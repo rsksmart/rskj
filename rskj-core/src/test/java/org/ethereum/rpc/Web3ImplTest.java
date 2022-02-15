@@ -82,6 +82,7 @@ import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mockito;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
@@ -151,13 +152,13 @@ public class Web3ImplTest {
 
     @Test
     public void web3_sha3() throws Exception {
-                
+
     	String toHashInHex = "0x696e7465726e6574"; // 'internet' in hexa
 
         Web3 web3 = createWeb3();
 
-        String resultFromHex = web3.web3_sha3(toHashInHex);        
-        
+        String resultFromHex = web3.web3_sha3(toHashInHex);
+
         // Function must apply the Keccak-256 algorithm
         // Result taken from https://emn178.github.io/online-tools/keccak_256.html
         assertEquals("hash does not match", "0x2949b355406e040cb594c48726db3cf34bd8f963605e2c39a6b0b862e46825a5", resultFromHex);
@@ -166,11 +167,11 @@ public class Web3ImplTest {
 
     @Test(expected = RskJsonRpcRequestException.class)
     public void web3_sha3_expect_exception() throws Exception {
-    	
+
     	Web3 web3 = createWeb3();
-    	
-    	web3.web3_sha3("internet");        
-    	
+
+    	web3.web3_sha3("internet");
+
     }
 
     @Test
@@ -826,7 +827,7 @@ public class Web3ImplTest {
         BlockChainImpl blockChain = world.getBlockChain();
         BlockStore blockStore = world.getBlockStore();
         TransactionExecutorFactory transactionExecutorFactory = buildTransactionExecutorFactory(blockStore, world.getBlockTxSignatureCache());
-        TransactionPool transactionPool = new TransactionPoolImpl(config, world.getRepositoryLocator(), blockStore, blockFactory, null, transactionExecutorFactory, world.getReceivedTxSignatureCache(), 10, 100);
+        TransactionPool transactionPool = new TransactionPoolImpl(config, world.getRepositoryLocator(), blockStore, blockFactory, null, transactionExecutorFactory, world.getReceivedTxSignatureCache(), 10, 100, Mockito.mock(Web3.class));
         transactionPool.processBest(blockChain.getBestBlock());
         Web3Impl web3 = createWeb3(world, transactionPool, receiptStore);
 
@@ -2221,7 +2222,7 @@ public class Web3ImplTest {
         BlockChainImpl blockChain = world.getBlockChain();
         BlockStore blockStore = world.getBlockStore();
         TransactionExecutorFactory transactionExecutorFactory = buildTransactionExecutorFactory(blockStore, world.getBlockTxSignatureCache());
-        TransactionPool transactionPool = new TransactionPoolImpl(config, world.getRepositoryLocator(), blockStore, blockFactory, null, transactionExecutorFactory, world.getReceivedTxSignatureCache(), 10, 100);
+        TransactionPool transactionPool = new TransactionPoolImpl(config, world.getRepositoryLocator(), blockStore, blockFactory, null, transactionExecutorFactory, world.getReceivedTxSignatureCache(), 10, 100, Mockito.mock(Web3.class));
         Web3Impl web3 = createWeb3(world, transactionPool, receiptStore);
 
         // **** Initializes data ******************
@@ -2400,7 +2401,7 @@ public class Web3ImplTest {
         BlockStore blockStore = world.getBlockStore();
         TransactionExecutorFactory transactionExecutorFactory = buildTransactionExecutorFactory(blockStore, world.getBlockTxSignatureCache());
         TransactionPool transactionPool = new TransactionPoolImpl(config, world.getRepositoryLocator(), blockStore,
-                                                                  blockFactory, null, transactionExecutorFactory, world.getReceivedTxSignatureCache(), 10, 100);
+                                                                  blockFactory, null, transactionExecutorFactory, world.getReceivedTxSignatureCache(), 10, 100, Mockito.mock(Web3.class));
         return createWeb3(eth, world, transactionPool, receiptStore);
     }
 
@@ -2408,7 +2409,7 @@ public class Web3ImplTest {
         BlockStore blockStore = world.getBlockStore();
         TransactionExecutorFactory transactionExecutorFactory = buildTransactionExecutorFactory(blockStore, null);
         TransactionPool transactionPool = new TransactionPoolImpl(config, world.getRepositoryLocator(), blockStore,
-                blockFactory, null, transactionExecutorFactory, null, 10, 100);
+                blockFactory, null, transactionExecutorFactory, null, 10, 100, Mockito.mock(Web3.class));
         return createWeb3CallNoReturn(eth, world, transactionPool, receiptStore);
     }
 
@@ -2433,7 +2434,7 @@ public class Web3ImplTest {
         BlockStore blockStore = world.getBlockStore();
         TransactionExecutorFactory transactionExecutorFactory = buildTransactionExecutorFactory(blockStore, world.getBlockTxSignatureCache());
         TransactionPool transactionPool = new TransactionPoolImpl(config, world.getRepositoryLocator(),
-                                                                  blockStore, blockFactory, null, transactionExecutorFactory, world.getReceivedTxSignatureCache(), 10, 100);
+                                                                  blockStore, blockFactory, null, transactionExecutorFactory, world.getReceivedTxSignatureCache(), 10, 100, Mockito.mock(Web3.class));
         RepositoryLocator repositoryLocator = new RepositoryLocator(world.getTrieStore(), world.getStateRootHandler());
         return createWeb3(
                 Web3Mocks.getMockEthereum(), blockChain, repositoryLocator, transactionPool,

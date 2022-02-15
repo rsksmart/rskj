@@ -382,7 +382,8 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     getTransactionExecutorFactory(),
                     getReceivedTxSignatureCache(),
                     rskSystemProperties.txOutdatedThreshold(),
-                    rskSystemProperties.txOutdatedTimeout());
+                    rskSystemProperties.txOutdatedTimeout(),
+                    web3);
         }
 
         return transactionPool;

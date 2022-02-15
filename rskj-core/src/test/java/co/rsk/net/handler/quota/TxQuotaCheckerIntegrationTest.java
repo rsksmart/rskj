@@ -1,6 +1,5 @@
 package co.rsk.net.handler.quota;
 
-import co.rsk.core.RskAddress;
 import co.rsk.core.bc.PendingState;
 import co.rsk.core.bc.TransactionPoolImpl;
 import co.rsk.core.genesis.TestGenesisLoader;
@@ -10,7 +9,7 @@ import co.rsk.test.builders.TransactionBuilder;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.*;
 import org.ethereum.core.genesis.GenesisLoader;
-import org.ethereum.crypto.ECKey;
+import org.ethereum.rpc.Web3;
 import org.ethereum.util.RskTestContext;
 import org.junit.After;
 import org.junit.Before;
@@ -53,6 +52,10 @@ public class TxQuotaCheckerIntegrationTest {
         RepositoryLocator repositoryLocator = rskTestContext.getRepositoryLocator();
         repository = repositoryLocator.startTrackingAt(blockChain.getBestBlock().getHeader());
         ReceivedTxSignatureCache signatureCache = spy(rskTestContext.getReceivedTxSignatureCache());
+
+        Web3 web3 = mock(Web3.class);
+        when(web3.eth_gasPrice()).thenReturn("0x" + Long.toHexString(BLOCK_AVG_GAS_PRICE));
+
         TransactionPoolImpl transactionPool = new TransactionPoolImpl(
                 rskTestContext.getRskSystemProperties(),
                 repositoryLocator,
@@ -62,7 +65,8 @@ public class TxQuotaCheckerIntegrationTest {
                 rskTestContext.getTransactionExecutorFactory(),
                 signatureCache,
                 10,
-                100);
+                100,
+                web3);
         // don't call start to avoid creating threads
         transactionPool.processBest(blockChain.getBestBlock());
 
@@ -72,7 +76,7 @@ public class TxQuotaCheckerIntegrationTest {
 
         Block currentBlock = blockChain.getBestBlock();
         PendingState pendingState = transactionPool.getPendingState();
-        currentContext = new TxQuotaChecker.CurrentContext(currentBlock, pendingState, repository);
+        currentContext = new TxQuotaChecker.CurrentContext(currentBlock, pendingState, repository, web3);
         quotaChecker = new TxQuotaChecker();
 
         sender = new AccountBuilder().name("sender").build();

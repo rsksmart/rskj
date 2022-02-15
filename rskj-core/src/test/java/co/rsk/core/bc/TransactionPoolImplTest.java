@@ -28,12 +28,14 @@ import co.rsk.remasc.RemascTransaction;
 import co.rsk.test.builders.BlockBuilder;
 import org.ethereum.core.*;
 import org.ethereum.core.genesis.GenesisLoader;
+import org.ethereum.rpc.Web3;
 import org.ethereum.util.RskTestContext;
 import org.ethereum.vm.DataWord;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mockito;
 import org.powermock.reflect.Whitebox;
 
 import java.math.BigInteger;
@@ -89,7 +91,8 @@ public class TransactionPoolImplTest {
                 rskTestContext.getTransactionExecutorFactory(),
                 signatureCache,
                 10,
-                100);
+                100,
+                Mockito.mock(Web3.class));
 
         quotaChecker = mock(TxQuotaChecker.class);
         when(quotaChecker.acceptTx(any(), any(), any())).thenReturn(true);
