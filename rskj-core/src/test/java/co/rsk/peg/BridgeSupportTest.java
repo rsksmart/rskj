@@ -7558,8 +7558,15 @@ public class BridgeSupportTest {
     }
 
     @Test
-    public void migrating_many_utxos_works_after_rskip294() throws IOException {
+    public void migrating_many_utxos_works_after_rskip294_even_utxos_distribution() throws IOException {
         int utxosToCreate = 400;
+        int expectedTransactions = (int) Math.ceil((double) utxosToCreate / bridgeConstants.getMaxInputsPerPegoutTransaction());
+        test_migrating_many_utxos(true, utxosToCreate, expectedTransactions);
+    }
+
+    @Test
+    public void migrating_many_utxos_works_after_rskip294_uneven_utxos_distribution() throws IOException {
+        int utxosToCreate = 410;
         int expectedTransactions = (int) Math.ceil((double) utxosToCreate / bridgeConstants.getMaxInputsPerPegoutTransaction());
         test_migrating_many_utxos(true, utxosToCreate, expectedTransactions);
     }
@@ -7631,19 +7638,36 @@ public class BridgeSupportTest {
         // until the expected number is reached
         for (int i = 0; i < expectedTransactions; i++) {
             bridgeSupport.updateCollections(mock(Transaction.class));
-
             Assert.assertEquals(i+1, releaseTransactionSet.getEntries().size());
-            // As the size exceeds the max size for a btc tx
-            // it should have just half of the inputs before rskip294
-            // or the max inputs defined after rskip294
-            int expectedSize = isRskip294Active ?
-                bridgeConstants.getMaxInputsPerPegoutTransaction() :
-                utxosToCreate / expectedTransactions;
-            Assert.assertEquals(
-                expectedSize,
-                new ArrayList<>(releaseTransactionSet.getEntries()).get(i).getTransaction().getInputs().size()
-            );
         }
+        Assert.assertTrue(utxosToMigrate.isEmpty()); // Migrated UTXOs are removed from the list
+
+        // Assert inputs size of each transaction
+        List<Integer> expectedInputSizes = new ArrayList<>();
+        int remainingUtxos = utxosToCreate;
+        while (remainingUtxos > 0) {
+            int expectedSize;
+            if (isRskip294Active) {
+                int maxInputsPerTransaction = bridgeConstants.getMaxInputsPerPegoutTransaction();
+                expectedSize = remainingUtxos > maxInputsPerTransaction ?
+                    maxInputsPerTransaction :
+                    remainingUtxos;
+            } else {
+                expectedSize = remainingUtxos;
+                while (expectedSize > 200) { // Approximately 200 inputs fit in a release transaction with this federation size
+                    expectedSize = (int) Math.ceil((double) expectedSize / 2);
+                }
+            }
+            expectedInputSizes.add(expectedSize);
+            remainingUtxos -= expectedSize;
+        }
+
+        releaseTransactionSet.getEntries().forEach(e -> {
+            Integer inputsSize = e.getTransaction().getInputs().size();
+            expectedInputSizes.remove(inputsSize);
+        });
+
+        Assert.assertTrue(expectedInputSizes.isEmpty()); // All expected sizes should have been found and removed
     }
 
     private Address getFastBridgeFederationAddress() {
