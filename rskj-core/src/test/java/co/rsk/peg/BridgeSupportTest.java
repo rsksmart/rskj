@@ -71,6 +71,8 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static co.rsk.peg.BridgeSupport.FAST_BRIDGE_UNPROCESSABLE_TX_ALREADY_PROCESSED_ERROR_CODE;
+import static co.rsk.peg.BridgeSupport.FAST_BRIDGE_UNPROCESSABLE_TX_VALUE_ZERO_ERROR;
 import static co.rsk.peg.PegTestUtils.createBaseInputScriptThatSpendsFromTheFederation;
 import static co.rsk.peg.PegTestUtils.createBaseRedeemScriptThatSpendsFromTheFederation;
 import static org.hamcrest.Matchers.hasItem;
@@ -6589,6 +6591,318 @@ public class BridgeSupportTest {
         Assert.assertFalse(provider.getHeightIfBtcTxhashIsAlreadyProcessed(btcTx.getHash()).isPresent());
     }
 
+    private Address getFastBridgeAddressFromRedeemScript(Script redeemScript, Sha256Hash derivationArgumentHash) {
+        Script fastBridgeRedeemScript = FastBridgeRedeemScriptParser.createMultiSigFastBridgeRedeemScript(
+            redeemScript,
+            derivationArgumentHash
+        );
+
+        Script fastBridgeP2SH = ScriptBuilder.createP2SHOutputScript(fastBridgeRedeemScript);
+        return Address.fromP2SHScript(bridgeConstants.getBtcParams(), fastBridgeP2SH);
+    }
+
+    private BigInteger registerFastBridgeBtcTransaction_RSKIP293(
+            ActivationConfig.ForBlock activations,
+            Coin valueToSend,
+            boolean includeActiveFederation,
+            boolean includeRetiringFederation,
+            boolean retiringFederationExists) throws IOException, BlockStoreException, BridgeIllegalArgumentException {
+
+        Context btcContext = mock(Context.class);
+        when(btcContext.getParams()).thenReturn(bridgeConstants.getBtcParams());
+
+        Federation activeFederation = getFederation(bridgeConstants, "fa03", "fa04");
+        Federation retiringFederation = getFederation(bridgeConstants, "fa01", "fa02");
+
+        Repository repository = spy(createRepository());
+
+        BridgeStorageProvider provider = spy(new BridgeStorageProvider(repository, contractAddress, bridgeConstants, activations));
+        provider.setNewFederation(activeFederation);
+        if (retiringFederationExists) {
+            provider.setOldFederation(retiringFederation);
+        }
+
+        Address userRefundBtcAddress = Address.fromBase58(
+                btcParams,
+                "n3PLxDiwWqa5uH7fSbHCxS6VAjD9Y7Rwkj"
+        );
+
+        Address lpBtcAddress = Address.fromBase58(
+            btcParams,
+            "mipcBbFg9gMiCh81Kj8tqqdgoZub1ZJRfn"
+        );
+
+
+
+        ECKey key = ECKey.fromPublicOnly(new BtcECKey().getPubKey());
+        RskAddress lbcAddress = new RskAddress(key.getAddress());
+
+        BtcTransaction tx = new BtcTransaction(bridgeConstants.getBtcParams());
+
+        BtcECKey srcKey = new BtcECKey();
+
+        int height = 1;
+        // Create header and PMT
+        byte[] bits = new byte[1];
+        bits[0] = 0x3f;
+
+        BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
+        BtcBlockStoreWithCache.Factory mockFactory = mock(BtcBlockStoreWithCache.Factory.class);
+        when(mockFactory.newInstance(repository, bridgeConstants, provider, activations)).thenReturn(btcBlockStore);
+        Block executionBlock = Mockito.mock(Block.class);
+        when(executionBlock.getNumber()).thenReturn(10L);
+
+        BridgeSupport bridgeSupport = bridgeSupportBuilder
+                .withProvider(provider)
+                .withBridgeConstants(bridgeConstants)
+                .withActivations(activations)
+                .withBtcBlockStoreFactory(mockFactory)
+                .withExecutionBlock(executionBlock)
+                .withRepository(repository)
+                .build();
+        bridgeSupport = spy(bridgeSupport);
+
+        Keccak256 derivationArgumentsHash = PegTestUtils.createHash3(0);
+        Keccak256 fastBridgeDerivationHash = bridgeSupport.getFastBridgeDerivationHash(
+                derivationArgumentsHash,
+                userRefundBtcAddress,
+                lpBtcAddress,
+                lbcAddress
+        );
+
+        if (includeActiveFederation) {
+            Address activeFederationAddress = getFastBridgeAddressFromRedeemScript(
+                    activeFederation.getRedeemScript(),
+                    Sha256Hash.wrap(fastBridgeDerivationHash.getBytes())
+            );
+            tx.addOutput(valueToSend, activeFederationAddress);
+        }
+
+        if (includeRetiringFederation) {
+            Address retiringFederationAddress = getFastBridgeAddressFromRedeemScript(
+                    retiringFederation.getRedeemScript(),
+                    Sha256Hash.wrap(fastBridgeDerivationHash.getBytes())
+            );
+            tx.addOutput(valueToSend, retiringFederationAddress);
+        }
+        tx.addInput(
+                Sha256Hash.wrap(fastBridgeDerivationHash.getBytes()),
+                0, ScriptBuilder.createInputScript(null, srcKey));
+
+        List<Sha256Hash> hashes = new ArrayList<>();
+        hashes.add(tx.getHash());
+        PartialMerkleTree pmt = new PartialMerkleTree(bridgeConstants.getBtcParams(), bits, hashes, 1);
+        Sha256Hash merkleRoot = pmt.getTxnHashAndMerkleRoot(new ArrayList<>());
+        co.rsk.bitcoinj.core.BtcBlock registerHeader = new co.rsk.bitcoinj.core.BtcBlock(
+                bridgeConstants.getBtcParams(),
+                1,
+                PegTestUtils.createHash(2),
+                merkleRoot,
+                1,
+                1,
+                1,
+                new ArrayList<BtcTransaction>()
+        );
+        // simulate blockchain
+        mockChainOfStoredBlocks(
+                btcBlockStore,
+                registerHeader,
+                height + bridgeConstants.getBtc2RskMinimumAcceptableConfirmations(),
+                height
+        );
+
+        InternalTransaction rskTx = new InternalTransaction(
+                Keccak256.ZERO_HASH.getBytes(),
+                0,
+                0,
+                null,
+                null,
+                null,
+                lbcAddress.getBytes(),
+                null,
+                null,
+                null,
+                null
+        );
+
+        co.rsk.core.Coin preCallLbcAddressBalance = repository.getBalance(lbcAddress);
+
+        BigInteger result = bridgeSupport.registerFastBridgeBtcTransaction(
+                rskTx,
+                tx.bitcoinSerialize(),
+                height,
+                pmt.bitcoinSerialize(),
+                derivationArgumentsHash,
+                userRefundBtcAddress,
+                lbcAddress,
+                lpBtcAddress,
+                true
+        );
+
+        if (includeActiveFederation && !includeRetiringFederation) {
+            co.rsk.core.Coin postCallLbcAddressBalance = repository.getBalance(lbcAddress);
+            Assert.assertEquals(
+                    preCallLbcAddressBalance.add(co.rsk.core.Coin.fromBitcoin(valueToSend)),
+                    postCallLbcAddressBalance
+            );
+            bridgeSupport.save();
+
+            Assert.assertTrue(
+                    provider.isFastBridgeFederationDerivationHashUsed(
+                            tx.getHash(),
+                            bridgeSupport.getFastBridgeDerivationHash(
+                                PegTestUtils.createHash3(0),
+                                userRefundBtcAddress,
+                                lpBtcAddress,
+                                lbcAddress)
+                    )
+            );
+            Assert.assertEquals(1, provider.getNewFederationBtcUTXOs().size());
+
+            // Trying to register the same transaction again fails
+            BigInteger resultForSecondRegisterAttempt = bridgeSupport.registerFastBridgeBtcTransaction(
+                    rskTx,
+                    tx.bitcoinSerialize(),
+                    100,
+                    Hex.decode("ab"),
+                    PegTestUtils.createHash3(0),
+                    userRefundBtcAddress,
+                    lbcAddress,
+                    lpBtcAddress,
+                    true
+            );
+
+            Assert.assertEquals(BigInteger.valueOf(FAST_BRIDGE_UNPROCESSABLE_TX_ALREADY_PROCESSED_ERROR_CODE), resultForSecondRegisterAttempt);
+        }
+        return result;
+    }
+
+    @Test
+    public void registerFastBridgeBtcTransaction_before_RSKIP293_activation() throws IOException, BlockStoreException, BridgeIllegalArgumentException {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(false);
+        Coin valueToSend = Coin.COIN;
+
+        BigInteger result = registerFastBridgeBtcTransaction_RSKIP293(
+                activations,
+                valueToSend,
+                true,
+                true,
+                true
+        );
+        Assert.assertEquals(co.rsk.core.Coin.fromBitcoin(valueToSend).asBigInteger(), result);
+
+        result = registerFastBridgeBtcTransaction_RSKIP293(
+                activations,
+                valueToSend,
+                true,
+                true,
+                false
+        );
+        Assert.assertEquals(co.rsk.core.Coin.fromBitcoin(valueToSend).asBigInteger(), result);
+
+        result = registerFastBridgeBtcTransaction_RSKIP293(
+                activations,
+                valueToSend,
+                false,
+                true,
+                true
+        );
+        Assert.assertEquals(FAST_BRIDGE_UNPROCESSABLE_TX_VALUE_ZERO_ERROR, result.longValue());
+
+        result = registerFastBridgeBtcTransaction_RSKIP293(
+                activations,
+                valueToSend,
+                true,
+                false,
+                false
+        );
+        Assert.assertEquals(co.rsk.core.Coin.fromBitcoin(valueToSend).asBigInteger(), result);
+    }
+
+    @Test
+    public void registerFastBridgeBtcTransaction__after_RSKIP293_activation() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
+        Coin valueToSend = Coin.COIN;
+
+        BigInteger result = registerFastBridgeBtcTransaction_RSKIP293(
+                activations,
+                valueToSend,
+                true,
+                true,
+                true
+        );
+        Assert.assertEquals(co.rsk.core.Coin.fromBitcoin(valueToSend.multiply(2)).asBigInteger(), result);
+    }
+
+    @Test
+    public void registerFastBridgeBtcTransaction_no_retiring_federation() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
+        Coin valueToSend = Coin.COIN;
+
+        BigInteger result = registerFastBridgeBtcTransaction_RSKIP293(
+                activations,
+                valueToSend,
+                true,
+                false,
+                false
+        );
+        Assert.assertEquals(co.rsk.core.Coin.fromBitcoin(valueToSend).asBigInteger(), result);
+
+        // test when amount is sent to the active federation and also to a retiring federation that doesn't exist
+        result = registerFastBridgeBtcTransaction_RSKIP293(
+                activations,
+                valueToSend,
+                true,
+                true,
+                false
+        );
+        Assert.assertEquals(co.rsk.core.Coin.fromBitcoin(valueToSend).asBigInteger(), result);
+
+        // test when amount is sent to a retiring federation that doesn't exist
+        result = registerFastBridgeBtcTransaction_RSKIP293(
+                activations,
+                valueToSend,
+                false,
+                true,
+                false
+        );
+        Assert.assertEquals(FAST_BRIDGE_UNPROCESSABLE_TX_VALUE_ZERO_ERROR, result.longValue());
+    }
+
+    @Test
+    public void registerFastBridgeBtcTransaction_funds_sent_to_retiring_federation() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
+        Coin valueToSend = Coin.COIN;
+
+        BigInteger result = registerFastBridgeBtcTransaction_RSKIP293(
+                activations,
+                valueToSend,
+                true,
+                false,
+                false
+        );
+        Assert.assertEquals(co.rsk.core.Coin.fromBitcoin(valueToSend).asBigInteger(), result);
+
+        // test when send zero amount to retiring federation
+        valueToSend = Coin.ZERO;
+        result = registerFastBridgeBtcTransaction_RSKIP293(
+                activations,
+                valueToSend,
+                false,
+                true,
+                true
+        );
+        Assert.assertEquals(FAST_BRIDGE_UNPROCESSABLE_TX_VALUE_ZERO_ERROR, result.longValue());
+    }
+
     @Test
     public void registerFastBridgeBtcTransaction_is_not_contract()
         throws IOException, BlockStoreException, BridgeIllegalArgumentException {
@@ -6834,7 +7148,7 @@ public class BridgeSupportTest {
             false
         );
 
-        Assert.assertEquals(BigInteger.valueOf(BridgeSupport.FAST_BRIDGE_UNPROCESSABLE_TX_VALUE_ZERO_ERROR), result);
+        Assert.assertEquals(BigInteger.valueOf(FAST_BRIDGE_UNPROCESSABLE_TX_VALUE_ZERO_ERROR), result);
     }
 
     @Test
@@ -7497,41 +7811,6 @@ public class BridgeSupportTest {
     }
 
     @Test
-    public void getAmountSentToAddress_coin() {
-        BridgeSupport bridgeSupport = getBridgeSupport(bridgeConstants, mock(BridgeStorageProvider.class));
-
-        Coin valueToTransfer = Coin.COIN;
-        Address receiver = bridgeConstants.getGenesisFederation().getAddress();
-
-        BtcTransaction btcTx = new BtcTransaction(bridgeConstants.getBtcParams());
-        btcTx.addOutput(valueToTransfer, receiver);
-
-        Assert.assertEquals(Coin.COIN, bridgeSupport.getAmountSentToAddress(btcTx, receiver));
-    }
-
-    @Test
-    public void getAmountSentToAddress_no_output_for_address() {
-        BridgeSupport bridgeSupport = getBridgeSupport(bridgeConstants, mock(BridgeStorageProvider.class));
-        Address receiver = bridgeConstants.getGenesisFederation().getAddress();
-        BtcTransaction btcTx = new BtcTransaction(bridgeConstants.getBtcParams());
-
-        Assert.assertEquals(Coin.ZERO, bridgeSupport.getAmountSentToAddress(btcTx, receiver));
-    }
-
-    @Test
-    public void getAmountSentToAddress_output_value_is_0() {
-        BridgeSupport bridgeSupport = getBridgeSupport(bridgeConstants, mock(BridgeStorageProvider.class));
-
-        Coin valueToTransfer = Coin.ZERO;
-        Address receiver = bridgeConstants.getGenesisFederation().getAddress();
-
-        BtcTransaction btcTx = new BtcTransaction(bridgeConstants.getBtcParams());
-        btcTx.addOutput(valueToTransfer, receiver);
-
-        Assert.assertEquals(Coin.ZERO, bridgeSupport.getAmountSentToAddress(btcTx, receiver));
-    }
-
-    @Test
     public void saveFastBridgeDataInStorage_OK() throws IOException {
         Repository repository = createRepository();
         BridgeStorageProvider provider = new BridgeStorageProvider(
@@ -7886,7 +8165,7 @@ public class BridgeSupportTest {
         tx.addOutput(amount, btcAddress);
         BtcECKey srcKey = new BtcECKey();
         tx.addInput(PegTestUtils.createHash(1),
-            0, ScriptBuilder.createInputScript(null, srcKey));
+                0, ScriptBuilder.createInputScript(null, srcKey));
         return tx;
     }
 
@@ -8184,12 +8463,12 @@ public class BridgeSupportTest {
     }
 
     private Federation getFederation(BridgeConstants bridgeConstants) {
-        List<BtcECKey> defaultFederationKeys = Arrays.asList(
-            BtcECKey.fromPrivate(Hex.decode("fa01")),
-            BtcECKey.fromPrivate(Hex.decode("fa02"))
-        );
+        return getFederation(bridgeConstants, "fa01", "fa02");
+    }
 
-        return getFederation(bridgeConstants, defaultFederationKeys);
+    private Federation getFederation(BridgeConstants bridgeConstants, String... fedKeys) {
+        List<BtcECKey> federationKeys = Arrays.stream(fedKeys).map(s -> BtcECKey.fromPrivate(Hex.decode(s))).collect(Collectors.toList());
+        return getFederation(bridgeConstants, federationKeys);
     }
 
     private Federation getFederation(BridgeConstants bridgeConstants, List<BtcECKey> federationKeys) {
