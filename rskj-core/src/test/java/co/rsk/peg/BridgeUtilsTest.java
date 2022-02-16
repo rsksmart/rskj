@@ -18,36 +18,10 @@
 
 package co.rsk.peg;
 
-import static org.junit.Assert.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.when;
-
-import co.rsk.bitcoinj.core.Address;
-import co.rsk.bitcoinj.core.BtcECKey;
-import co.rsk.bitcoinj.core.BtcTransaction;
-import co.rsk.bitcoinj.core.Coin;
-import co.rsk.bitcoinj.core.Context;
-import co.rsk.bitcoinj.core.NetworkParameters;
-import co.rsk.bitcoinj.core.PartialMerkleTree;
-import co.rsk.bitcoinj.core.Sha256Hash;
-import co.rsk.bitcoinj.core.TransactionInput;
-import co.rsk.bitcoinj.core.TransactionOutPoint;
-import co.rsk.bitcoinj.core.TransactionOutput;
-import co.rsk.bitcoinj.core.UTXO;
-import co.rsk.bitcoinj.core.UTXOProvider;
-import co.rsk.bitcoinj.core.UTXOProviderException;
-import co.rsk.bitcoinj.core.VerificationException;
+import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.crypto.TransactionSignature;
 import co.rsk.bitcoinj.params.RegTestParams;
-import co.rsk.bitcoinj.script.ErpFederationRedeemScriptParser;
-import co.rsk.bitcoinj.script.FastBridgeErpRedeemScriptParser;
-import co.rsk.bitcoinj.script.FastBridgeRedeemScriptParser;
-import co.rsk.bitcoinj.script.Script;
-import co.rsk.bitcoinj.script.ScriptBuilder;
-import co.rsk.bitcoinj.script.ScriptChunk;
-import co.rsk.bitcoinj.script.ScriptOpCodes;
+import co.rsk.bitcoinj.script.*;
 import co.rsk.bitcoinj.wallet.CoinSelector;
 import co.rsk.bitcoinj.wallet.RedeemData;
 import co.rsk.bitcoinj.wallet.Wallet;
@@ -65,6 +39,20 @@ import co.rsk.peg.btcLockSender.BtcLockSender.TxSenderAddressType;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
+import org.bouncycastle.util.BigIntegers;
+import org.bouncycastle.util.encoders.Hex;
+import org.ethereum.config.Constants;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
+import org.ethereum.core.*;
+import org.ethereum.datasource.HashMapDB;
+import org.ethereum.db.MutableRepository;
+import org.ethereum.vm.PrecompiledContracts;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+
 import java.math.BigInteger;
 import java.security.SecureRandom;
 import java.time.Instant;
@@ -74,24 +62,10 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import org.bouncycastle.util.BigIntegers;
-import org.bouncycastle.util.encoders.Hex;
-import org.ethereum.config.Constants;
-import org.ethereum.config.blockchain.upgrades.ActivationConfig;
-import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
-import org.ethereum.config.blockchain.upgrades.ConsensusRule;
-import org.ethereum.core.Block;
-import org.ethereum.core.CallTransaction;
-import org.ethereum.core.Genesis;
-import org.ethereum.core.ImmutableTransaction;
-import org.ethereum.core.Repository;
-import org.ethereum.core.Transaction;
-import org.ethereum.datasource.HashMapDB;
-import org.ethereum.db.MutableRepository;
-import org.ethereum.vm.PrecompiledContracts;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+
+import static org.junit.Assert.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
 
 public class BridgeUtilsTest {
     private static final String TO_ADDRESS = "0000000000000000000000000000000000000006";
@@ -2721,6 +2695,114 @@ public class BridgeUtilsTest {
         }
 
         assertIsWatching(federation.getAddress(), wallet, networkParameters);
+    }
+
+    public void testGetAmountSentToAddress(BridgeConstants constants, Coin valueToTransfer, Boolean includeOutput) {
+        Address receiver = constants.getGenesisFederation().getAddress();
+        BtcTransaction btcTx = new BtcTransaction(constants.getBtcParams());
+        if (includeOutput){
+            btcTx.addOutput(valueToTransfer, receiver);
+        }
+        Assert.assertEquals(valueToTransfer, BridgeUtils.getAmountSentToAddress(constants, btcTx, receiver));
+    }
+
+    @Test
+    public void getAmountSentToAddress_coin() {
+        Coin valueToTransfer = Coin.COIN;
+        testGetAmountSentToAddress(bridgeConstantsRegtest, valueToTransfer, true);
+        testGetAmountSentToAddress(bridgeConstantsMainnet, valueToTransfer, true);
+    }
+
+    @Test
+    public void getAmountSentToAddress_no_output_for_address() {
+        Coin valueToTransfer = Coin.ZERO;
+        testGetAmountSentToAddress(bridgeConstantsRegtest, valueToTransfer, false);
+        testGetAmountSentToAddress(bridgeConstantsMainnet, valueToTransfer, false);
+    }
+
+    @Test
+    public void getAmountSentToAddress_output_value_is_0() {
+        Coin valueToTransfer = Coin.ZERO;
+        testGetAmountSentToAddress(bridgeConstantsRegtest, valueToTransfer, true);
+        testGetAmountSentToAddress(bridgeConstantsMainnet, valueToTransfer, true);
+    }
+
+    private Federation getFederation(BridgeConstants bridgeConstants, String... fedKeys) {
+        List<BtcECKey> keys = Arrays.stream(fedKeys).map(s -> BtcECKey.fromPrivate(Hex.decode(s)))
+                .collect(Collectors.toList());
+        keys.sort(BtcECKey.PUBKEY_COMPARATOR);
+
+        return new Federation(FederationTestUtils.getFederationMembersWithBtcKeys(keys), Instant.ofEpochMilli(1000L), 0L, bridgeConstants.getBtcParams());
+    }
+
+    private void getAmountSentToAddresses_coin_by_network(BridgeConstants bridgeConstants) {
+        Federation activeFederation = getFederation(bridgeConstants, "fa03", "fa04");
+        Address activeFederationAddress = activeFederation.getAddress();
+
+        Federation retiringFederation = getFederation(bridgeConstants, "fa01", "fa02");
+        Address retiringFederationAddress = retiringFederation.getAddress();
+
+        Coin valueToTransfer = Coin.COIN;
+        BtcTransaction btcTx = new BtcTransaction(bridgeConstants.getBtcParams());
+        btcTx.addOutput(valueToTransfer, activeFederationAddress);
+        btcTx.addOutput(valueToTransfer, retiringFederationAddress);
+
+        Coin totalAmountExpected = valueToTransfer.multiply(2);
+
+        Assert.assertEquals(totalAmountExpected, BridgeUtils.getAmountSentToAddresses(new Context(bridgeConstants.getBtcParams()), btcTx, activeFederationAddress, retiringFederationAddress));
+
+        btcTx = new BtcTransaction(bridgeConstants.getBtcParams());
+        btcTx.addOutput(valueToTransfer, activeFederationAddress);
+        totalAmountExpected = Coin.COIN;
+        Assert.assertEquals(totalAmountExpected, BridgeUtils.getAmountSentToAddresses(new Context(bridgeConstants.getBtcParams()), btcTx, activeFederationAddress, retiringFederationAddress));
+
+        btcTx = new BtcTransaction(bridgeConstants.getBtcParams());
+        btcTx.addOutput(valueToTransfer, activeFederationAddress);
+        totalAmountExpected = Coin.COIN;
+        Assert.assertEquals(totalAmountExpected, BridgeUtils.getAmountSentToAddresses(new Context(bridgeConstants.getBtcParams()), btcTx, activeFederationAddress));
+
+        btcTx = new BtcTransaction(bridgeConstants.getBtcParams());
+        btcTx.addOutput(valueToTransfer, retiringFederationAddress);
+        totalAmountExpected = Coin.COIN;
+        Assert.assertEquals(totalAmountExpected, BridgeUtils.getAmountSentToAddresses(new Context(bridgeConstants.getBtcParams()), btcTx, retiringFederationAddress));
+    }
+
+    @Test
+    public void getAmountSentToAddresses_coin() {
+        getAmountSentToAddresses_coin_by_network(bridgeConstantsMainnet);
+        getAmountSentToAddresses_coin_by_network(bridgeConstantsRegtest);
+    }
+
+    private void getAmountSentToAddresses_no_output_for_address_by_network(BridgeConstants bridgeConstants) {
+        Federation genesisFederation = bridgeConstants.getGenesisFederation();
+        Address receiver = genesisFederation.getAddress();
+        BtcTransaction btcTx = new BtcTransaction(bridgeConstants.getBtcParams());
+
+        Assert.assertEquals(Coin.ZERO, BridgeUtils.getAmountSentToAddresses(new Context(bridgeConstants.getBtcParams()), btcTx, receiver));
+    }
+
+    @Test
+    public void getAmountSentToAddresses_no_output_for_address() {
+        getAmountSentToAddresses_no_output_for_address_by_network(bridgeConstantsMainnet);
+        getAmountSentToAddresses_no_output_for_address_by_network(bridgeConstantsRegtest);
+    }
+
+    private void getAmountSentToAddresses_output_value_is_0_by_network(BridgeConstants bridgeConstants) {
+        Federation genesisFederation = bridgeConstants.getGenesisFederation();
+        Address receiver = genesisFederation.getAddress();
+
+        Coin valueToTransfer = Coin.ZERO;
+
+        BtcTransaction btcTx = new BtcTransaction(bridgeConstants.getBtcParams());
+        btcTx.addOutput(valueToTransfer, receiver);
+
+        Assert.assertEquals(Coin.ZERO, BridgeUtils.getAmountSentToAddresses(new Context(bridgeConstants.getBtcParams()), btcTx, receiver));
+    }
+
+    @Test
+    public void getAmountSentToAddresses_output_value_is_0() {
+        getAmountSentToAddresses_output_value_is_0_by_network(bridgeConstantsMainnet);
+        getAmountSentToAddresses_output_value_is_0_by_network(bridgeConstantsRegtest);
     }
 
     private void test_serializeBtcAddressWithVersion(boolean isRskip284Active, Address address, byte[] serializedVersion, byte[] serializedAddress) {
