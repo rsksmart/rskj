@@ -36,6 +36,7 @@ import co.rsk.db.MutableTrieCache;
 import co.rsk.db.MutableTrieImpl;
 import co.rsk.peg.bitcoin.RskAllowUnconfirmedCoinSelector;
 import co.rsk.peg.btcLockSender.BtcLockSender.TxSenderAddressType;
+import co.rsk.peg.fastbridge.FastBridgeTxResponseCodes;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
@@ -2860,7 +2861,142 @@ public class BridgeUtilsTest {
         Wallet wallet = new BridgeBtcWallet(btcContext, Collections.singletonList(federation));
         Address federationAddress = federation.getAddress();
         wallet.addWatchedAddress(federationAddress, federation.getCreationTime().toEpochMilli());
-
         return federation;
+    }
+
+    @Test
+    public void getMinimumPegInTxValue() {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        // Before RSKIP219 activation
+        when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP219)).thenReturn(false);
+
+        BridgeConstants bridgeConstants = bridgeConstantsRegtest;
+        Coin minimumPeginTxValue = bridgeConstants.getLegacyMinimumPeginTxValueInSatoshis();
+        assertEquals(
+                minimumPeginTxValue,
+                BridgeUtils.getMinimumPegInTxValue(activations, bridgeConstants)
+        );
+
+        bridgeConstants = bridgeConstantsMainnet;
+        minimumPeginTxValue = bridgeConstants.getLegacyMinimumPeginTxValueInSatoshis();
+        assertEquals(
+                minimumPeginTxValue,
+                BridgeUtils.getMinimumPegInTxValue(activations, bridgeConstants)
+        );
+
+        // After RSKIP219 activation
+        when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP219)).thenReturn(true);
+
+        bridgeConstants = bridgeConstantsRegtest;
+        minimumPeginTxValue = bridgeConstantsRegtest.getMinimumPeginTxValueInSatoshis();
+        assertEquals(
+                minimumPeginTxValue,
+                BridgeUtils.getMinimumPegInTxValue(activations, bridgeConstants)
+        );
+
+        bridgeConstants = bridgeConstantsMainnet;
+        minimumPeginTxValue = bridgeConstants.getMinimumPeginTxValueInSatoshis();
+        assertEquals(
+                minimumPeginTxValue,
+                BridgeUtils.getMinimumPegInTxValue(activations, bridgeConstants)
+        );
+    }
+
+    private void isTotalAmountSentOverMinimum_by_network(BridgeConstants bridgeConstants) {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+
+        when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP219)).thenReturn(true);
+
+        assertFalse(BridgeUtils.isTotalAmountSentOverMinimum(
+                bridgeConstants.getMinimumPeginTxValueInSatoshis().minus(Coin.CENT),
+                activations,
+                bridgeConstants));
+
+        assertFalse(BridgeUtils.isTotalAmountSentOverMinimum(
+                Coin.ZERO,
+                activations,
+                bridgeConstants));
+
+        assertTrue(BridgeUtils.isTotalAmountSentOverMinimum(
+                bridgeConstants.getMinimumPeginTxValueInSatoshis(),
+                activations,
+                bridgeConstants)
+        );
+
+        assertTrue(BridgeUtils.isTotalAmountSentOverMinimum(
+                Coin.COIN,
+                activations,
+                bridgeConstants));
+
+    }
+
+    @Test
+    public void isTotalAmountSentOverMinimum() {
+        isTotalAmountSentOverMinimum_by_network(bridgeConstantsRegtest);
+        isTotalAmountSentOverMinimum_by_network(bridgeConstantsMainnet);
+    }
+
+    private void testValidateFastBridgePeginValue_by_network(BridgeConstants bridgeConstants, ActivationConfig.ForBlock activations) {
+        Assert.assertEquals(
+                FastBridgeTxResponseCodes.UNPROCESSABLE_TX_AMOUNT_SENT_BELOW_MINIMUM_ERROR,
+                BridgeUtils.validateFastBridgePeginValue(
+                        activations,
+                        bridgeConstants,
+                        bridgeConstants.getMinimumPeginTxValueInSatoshis().minus(Coin.CENT)
+                )
+        );
+
+        Assert.assertEquals(
+                FastBridgeTxResponseCodes.UNPROCESSABLE_TX_VALUE_ZERO_ERROR,
+                BridgeUtils.validateFastBridgePeginValue(
+                        activations,
+                        bridgeConstants,
+                        Coin.ZERO
+                )
+        );
+
+        Coin value;
+        if (activations.isActive(ConsensusRule.RSKIP293)){
+            value = bridgeConstants.getMinimumPeginTxValueInSatoshis();
+        } else {
+            value = bridgeConstants.getLegacyMinimumPeginTxValueInSatoshis();
+        }
+
+        Assert.assertEquals(
+                FastBridgeTxResponseCodes.VALID_TX,
+                BridgeUtils.validateFastBridgePeginValue(
+                        activations,
+                        bridgeConstants,
+                        value
+                )
+        );
+
+        Assert.assertEquals(
+                FastBridgeTxResponseCodes.VALID_TX,
+                BridgeUtils.validateFastBridgePeginValue(
+                        activations,
+                        bridgeConstants,
+                        value.add(Coin.COIN)
+                )
+        );
+    }
+
+    @Test
+    public void testValidateFastBridgePeginValue() {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP219)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(false);
+
+        testValidateFastBridgePeginValue_by_network(bridgeConstantsMainnet, activations);
+        testValidateFastBridgePeginValue_by_network(bridgeConstantsRegtest, activations);
+
+        when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
+
+        testValidateFastBridgePeginValue_by_network(bridgeConstantsMainnet, activations);
+        testValidateFastBridgePeginValue_by_network(bridgeConstantsRegtest, activations);
     }
 }

@@ -237,7 +237,7 @@ public class BridgeUtilsLegacyTest {
         );
     }
 
-    public void testGetAmountSentToAddress(BridgeConstants constants, Coin valueToTransfer, Boolean includeOutput) {
+    private void testGetAmountSentToAddress(BridgeConstants constants, Coin valueToTransfer, Boolean includeOutput) {
         Address receiver = constants.getGenesisFederation().getAddress();
         BtcTransaction btcTx = new BtcTransaction(constants.getBtcParams());
         if (includeOutput){

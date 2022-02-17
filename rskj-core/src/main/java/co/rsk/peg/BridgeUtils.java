@@ -27,6 +27,7 @@ import co.rsk.config.BridgeConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.peg.bitcoin.RskAllowUnconfirmedCoinSelector;
 import co.rsk.peg.btcLockSender.BtcLockSender.TxSenderAddressType;
+import co.rsk.peg.fastbridge.FastBridgeTxResponseCodes;
 import co.rsk.peg.utils.BtcTransactionFormatUtils;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -135,6 +136,51 @@ public class BridgeUtils {
     }
 
     /**
+     * @param activations     the network HF activations configuration
+     * @param bridgeConstants the Bridge constants
+     * @return the minimum amount value defined for a pegin transaction
+     */
+    public static Coin getMinimumPegInTxValue(ActivationConfig.ForBlock activations, BridgeConstants bridgeConstants) {
+        return activations.isActive(ConsensusRule.RSKIP219) ?
+                bridgeConstants.getMinimumPeginTxValueInSatoshis() :
+                bridgeConstants.getLegacyMinimumPeginTxValueInSatoshis();
+    }
+
+    /**
+     * @param amountSent      amount sent
+     * @param activations     the network HF activations configuration
+     * @param bridgeConstants the Bridge constants
+     * @return true if amount sent is over the minimum for a pegin transaction
+     */
+    public static boolean isTotalAmountSentOverMinimum(Coin amountSent, ActivationConfig.ForBlock activations, BridgeConstants bridgeConstants) {
+        return !amountSent.isLessThan(getMinimumPegInTxValue(activations, bridgeConstants));
+    }
+
+    /**
+     * @param activations     the network HF activations configuration
+     * @param bridgeConstants the Bridge constants
+     * @param totalAmount the pegin value to be validated
+     * @return {@link FastBridgeTxResponseCodes#VALID_TX} if it is a valid tx, in case it is not, it returns the proper error code.
+     */
+    public static FastBridgeTxResponseCodes validateFastBridgePeginValue(
+            ActivationConfig.ForBlock activations,
+            BridgeConstants bridgeConstants,
+            Coin totalAmount
+    ) {
+        if (totalAmount.equals(Coin.ZERO)) {
+            logger.debug("[isFastPeginTxValid] Amount sent can't be 0");
+            return FastBridgeTxResponseCodes.UNPROCESSABLE_TX_VALUE_ZERO_ERROR;
+        }
+
+        if(!BridgeUtils.isTotalAmountSentOverMinimum(totalAmount, activations, bridgeConstants)) {
+            logger.debug("[isFastPeginTxValid] Amount sent can't be below the minimum {}.",
+                    getMinimumPegInTxValue(activations, bridgeConstants).value);
+            return FastBridgeTxResponseCodes.UNPROCESSABLE_TX_AMOUNT_SENT_BELOW_MINIMUM_ERROR;
+        }
+        return FastBridgeTxResponseCodes.VALID_TX;
+    }
+
+    /**
      *
      * @param context
      * @param btcTx
@@ -227,12 +273,14 @@ public class BridgeUtils {
             null
         );
         Coin valueSentToMe = tx.getValueSentToMe(federationsWallet);
-        Coin minimumPegInTxValue = activations.isActive(ConsensusRule.RSKIP219) ?
-            bridgeConstants.getMinimumPeginTxValueInSatoshis() :
-            bridgeConstants.getLegacyMinimumPeginTxValueInSatoshis();
+        Coin minimumPegInTxValue = getMinimumPegInTxValue(activations, bridgeConstants);
 
-        if (valueSentToMe.isLessThan(minimumPegInTxValue)) {
-            logger.warn("[btctx:{}] Someone sent to the federation less than {} satoshis", tx.getHash(), minimumPegInTxValue);
+        if (isTotalAmountSentOverMinimum(valueSentToMe, activations, bridgeConstants)) {
+            logger.warn(
+                    "[btctx:{}] Someone sent to the federation less than {} satoshis",
+                    tx.getHash(),
+                    minimumPegInTxValue
+            );
         }
 
         return valueSentToMe.isPositive() && !valueSentToMe.isLessThan(minimumPegInTxValue);
