@@ -705,6 +705,62 @@ public class BridgeSupportReleaseBtcTest {
     }
 
     @Test
+    public void test_processPegoutsInBatch_after_rskip_271_when_max_size_exceeded_for_one_pegout() throws IOException {
+        when(activationMock.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
+
+        Federation federation = bridgeConstants.getGenesisFederation();
+        List<UTXO> utxos = PegTestUtils.createUTXOs(700, federation.getAddress());
+
+        BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
+
+        when(provider.getNewFederationBtcUTXOs()).thenReturn(utxos);
+        when(provider.getReleaseRequestQueue()).thenReturn(
+            new ReleaseRequestQueue(Collections.singletonList(
+                new ReleaseRequestQueue.Entry(PegTestUtils.createRandomP2PKHBtcAddress(), Coin.COIN.multiply(700)))));
+        when(provider.getReleaseTransactionSet()).thenReturn(new ReleaseTransactionSet(Collections.emptySet()));
+
+        BridgeSupport bridgeSupport = bridgeSupportBuilder
+            .withActivations(activationMock)
+            .withBridgeConstants(bridgeConstants)
+            .withProvider(provider)
+            .build();
+
+        Transaction rskTx = buildUpdateTx();
+        bridgeSupport.updateCollections(rskTx);
+
+        assertEquals(1, provider.getReleaseRequestQueue().getEntries().size());
+        assertEquals(0, provider.getReleaseTransactionSet().getEntries().size());
+    }
+
+    @Test
+    public void test_processPegoutsInBatch_after_rskip_271_when_max_size_exceeded_for_two_pegout() throws IOException {
+        when(activationMock.isActive(ConsensusRule.RSKIP271)).thenReturn(true);
+
+        Federation federation = bridgeConstants.getGenesisFederation();
+        List<UTXO> utxos = PegTestUtils.createUTXOs(1400, federation.getAddress());
+
+        BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
+
+        when(provider.getNewFederationBtcUTXOs()).thenReturn(utxos);
+        when(provider.getReleaseRequestQueue()).thenReturn(new ReleaseRequestQueue(Arrays.asList(
+            new ReleaseRequestQueue.Entry(PegTestUtils.createRandomP2PKHBtcAddress(), Coin.COIN.multiply(700)),
+            new ReleaseRequestQueue.Entry(PegTestUtils.createRandomP2PKHBtcAddress(), Coin.COIN.multiply(700)))));
+        when(provider.getReleaseTransactionSet()).thenReturn(new ReleaseTransactionSet(Collections.emptySet()));
+
+        BridgeSupport bridgeSupport = bridgeSupportBuilder
+            .withActivations(activationMock)
+            .withBridgeConstants(bridgeConstants)
+            .withProvider(provider)
+            .build();
+
+        Transaction rskTx = buildUpdateTx();
+        bridgeSupport.updateCollections(rskTx);
+
+        assertEquals(2, provider.getReleaseRequestQueue().getEntries().size());
+        assertEquals(0, provider.getReleaseTransactionSet().getEntries().size());
+    }
+
+    @Test
     public void test_check_wallet_balance_before_rskip_271_process_no_requests() throws IOException {
         when(activationMock.isActive(ConsensusRule.RSKIP271)).thenReturn(false);
 
