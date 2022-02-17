@@ -634,15 +634,15 @@ public class ReleaseTransactionBuilderTest {
     @Test
     public void test_BuildBatchedPegouts_WalletCouldNotAdjustDownwardsException() {
         // A user output could not be adjusted downwards to pay tx fees
-        ReleaseRequestQueue.Entry testEntry1 = createTestEntry(123, Coin.COIN);
-        ReleaseRequestQueue.Entry testEntry2 = createTestEntry(456, Coin.COIN);
+        ReleaseRequestQueue.Entry testEntry1 = createTestEntry(123, Coin.MILLICOIN);
+        ReleaseRequestQueue.Entry testEntry2 = createTestEntry(456, Coin.MILLICOIN);
         ReleaseRequestQueue.Entry testEntry3 = createTestEntry(789, Coin.MILLICOIN);
         List<ReleaseRequestQueue.Entry> pegoutRequests = Arrays.asList(testEntry1, testEntry2, testEntry3);
 
         List<UTXO> utxos = Arrays.asList(
-            new UTXO(mockUTXOHash("1"), 0, Coin.COIN, 0, false, federation.getP2SHScript()),
-            new UTXO(mockUTXOHash("2"), 0, Coin.COIN, 0, false, federation.getP2SHScript()),
-            new UTXO(mockUTXOHash("3"), 0, Coin.COIN, 0, false, federation.getP2SHScript())
+            new UTXO(mockUTXOHash("1"), 0, Coin.MILLICOIN, 0, false, federation.getP2SHScript()),
+            new UTXO(mockUTXOHash("2"), 0, Coin.MILLICOIN, 0, false, federation.getP2SHScript()),
+            new UTXO(mockUTXOHash("3"), 0, Coin.MILLICOIN, 0, false, federation.getP2SHScript())
         );
 
         Wallet thisWallet = BridgeUtils.getFederationSpendWallet(
@@ -664,6 +664,33 @@ public class ReleaseTransactionBuilderTest {
         ReleaseTransactionBuilder.BuildResult result = rtb.buildBatchedPegouts(pegoutRequests);
 
         Assert.assertEquals(ReleaseTransactionBuilder.Response.COULD_NOT_ADJUST_DOWNWARDS, result.getResponseCode());
+
+        List<UTXO> newUtxos = Arrays.asList(
+            new UTXO(mockUTXOHash("1"), 0, Coin.MILLICOIN, 0, false, federation.getP2SHScript()),
+            new UTXO(mockUTXOHash("2"), 0, Coin.MILLICOIN, 0, false, federation.getP2SHScript()),
+            new UTXO(mockUTXOHash("3"), 0, Coin.MILLICOIN, 0, false, federation.getP2SHScript()),
+            new UTXO(mockUTXOHash("4"), 0, Coin.CENT, 0, false, federation.getP2SHScript())
+        );
+
+        Wallet newWallet = BridgeUtils.getFederationSpendWallet(
+            Context.getOrCreate(networkParameters),
+            federation,
+            newUtxos,
+            false,
+            mock(BridgeStorageProvider.class)
+        );
+
+        ReleaseTransactionBuilder releaseTransactionBuilder = new ReleaseTransactionBuilder(
+            networkParameters,
+            newWallet,
+            federation.getAddress(),
+            Coin.MILLICOIN.multiply(3),
+            activations
+        );
+
+        ReleaseTransactionBuilder.BuildResult newResult = releaseTransactionBuilder.buildBatchedPegouts(pegoutRequests);
+
+        Assert.assertEquals(ReleaseTransactionBuilder.Response.SUCCESS, newResult.getResponseCode());
     }
 
     @Test

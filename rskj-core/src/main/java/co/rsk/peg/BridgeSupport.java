@@ -1159,7 +1159,7 @@ public class BridgeSupport {
                 logger.info("[processPegoutsInBatch] going to create a batched pegout transaction for {} requests, total amount {}", pegoutEntries.size(), totalPegoutValue);
                 ReleaseTransactionBuilder.BuildResult result = txBuilder.buildBatchedPegouts(pegoutEntries);
 
-                while (result.getResponseCode() == ReleaseTransactionBuilder.Response.EXCEED_MAX_TRANSACTION_SIZE) {
+                while (pegoutEntries.size() > 1 && result.getResponseCode() == ReleaseTransactionBuilder.Response.EXCEED_MAX_TRANSACTION_SIZE) {
                     logger.info("[processPegoutsInBatch] Max size exceeded, going to divide {} requests in half", pegoutEntries.size());
                     int firstHalfSize = pegoutEntries.size() / 2;
                     pegoutEntries = pegoutEntries.subList(0, firstHalfSize);
@@ -1169,7 +1169,7 @@ public class BridgeSupport {
                 if (result.getResponseCode() != ReleaseTransactionBuilder.Response.SUCCESS) {
                     logger.warn(
                         "Couldn't build a pegout BTC tx for {} pending requests (total amount: {}), Reason: {}",
-                        pegoutEntries.size(),
+                        releaseRequestQueue.getEntries().size(),
                         totalPegoutValue,
                         result.getResponseCode());
                     return;
