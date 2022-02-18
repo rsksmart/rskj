@@ -6614,7 +6614,7 @@ public class BridgeSupportTest {
         Federation activeFederation = getFederation(bridgeConstants, "fa03", "fa04");
         Federation retiringFederation = getFederation(bridgeConstants, "fa01", "fa02");
 
-        Repository repository = spy(createRepository());
+        Repository repository = createRepository();
 
         BridgeStorageProvider provider = spy(new BridgeStorageProvider(repository, contractAddress, bridgeConstants, activations));
         provider.setNewFederation(activeFederation);
@@ -6631,8 +6631,6 @@ public class BridgeSupportTest {
             btcParams,
             "mipcBbFg9gMiCh81Kj8tqqdgoZub1ZJRfn"
         );
-
-
 
         ECKey key = ECKey.fromPublicOnly(new BtcECKey().getPubKey());
         RskAddress lbcAddress = new RskAddress(key.getAddress());
