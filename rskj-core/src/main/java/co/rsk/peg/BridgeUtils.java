@@ -25,7 +25,6 @@ import co.rsk.bitcoinj.script.RedeemScriptParser.MultiSigType;
 import co.rsk.bitcoinj.wallet.Wallet;
 import co.rsk.config.BridgeConstants;
 import co.rsk.core.RskAddress;
-import co.rsk.crypto.Keccak256;
 import co.rsk.peg.bitcoin.RskAllowUnconfirmedCoinSelector;
 import co.rsk.peg.btcLockSender.BtcLockSender.TxSenderAddressType;
 import co.rsk.peg.utils.BtcTransactionFormatUtils;
@@ -133,24 +132,6 @@ public class BridgeUtils {
 
         wallet.setCoinSelector(new RskAllowUnconfirmedCoinSelector());
         return wallet;
-    }
-
-    /**
-     * Legacy version for getting the amount sent to a btc address. This is used in {@link BridgeSupport#registerFastBridgeBtcTransaction(Transaction, byte[], int, byte[], Keccak256, Address, RskAddress, Address, boolean)}
-     *
-     * @param constants
-     * @param btcTx
-     * @param btcAddress
-     * @return
-     */
-    protected static Coin getAmountSentToAddress(BridgeConstants constants, BtcTransaction btcTx, Address btcAddress) {
-        Coin v = Coin.ZERO;
-        for (TransactionOutput o : btcTx.getOutputs()) {
-            if (o.getScriptPubKey().getToAddress(constants.getBtcParams()).equals(btcAddress)) {
-                v = v.add(o.getValue());
-            }
-        }
-        return v;
     }
 
     /**

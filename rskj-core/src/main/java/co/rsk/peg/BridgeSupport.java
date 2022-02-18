@@ -2535,7 +2535,6 @@ public class BridgeSupport {
 
         Address fastBridgeFedAddress = fastBridgeFederationInformation.getFastBridgeFederationAddress(bridgeConstants.getBtcParams());
 
-
         Coin totalAmount;
         Federation retiringFederation = getRetiringFederation();
         if (activations.isActive(ConsensusRule.RSKIP293) && retiringFederation != null) {
@@ -2543,7 +2542,7 @@ public class BridgeSupport {
             Address fastBridgeRetiringFedAddress = fastBridgeRetiringFederationInformation.getFastBridgeFederationAddress(bridgeConstants.getBtcParams());
             totalAmount = BridgeUtils.getAmountSentToAddresses(btcContext, btcTx, fastBridgeFedAddress, fastBridgeRetiringFedAddress);
         } else {
-            totalAmount = BridgeUtils.getAmountSentToAddress(bridgeConstants, btcTx, fastBridgeFedAddress);
+            totalAmount = BridgeUtilsLegacy.getAmountSentToAddress(bridgeConstants, btcTx, fastBridgeFedAddress);
         }
 
         if (totalAmount.equals(Coin.ZERO)) {
