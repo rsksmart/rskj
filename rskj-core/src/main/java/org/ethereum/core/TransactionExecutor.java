@@ -116,7 +116,7 @@ public class TransactionExecutor {
         this.txindex = txindex;
         this.coinbase = coinbase;
         this.track = track;
-        this.cacheTrack = track.startTracking();
+        this.cacheTrack = track.startTracking(); //TODO(JULI): Devuelve un new MutableRepository(new MutableTrieCache(mutableTrie)); cuyo mutable trie es el trie de track
         this.blockStore = blockStore;
         this.receiptStore = receiptStore;
         this.blockFactory = blockFactory;
@@ -271,7 +271,7 @@ public class TransactionExecutor {
     private void execute() {
         logger.trace("Execute transaction {} {}", toBI(tx.getNonce()), tx.getHash());
 
-        if (!localCall) {
+        if (!localCall) {   //TODO(JULI): Averiguar cuando es localCall!
 
             track.increaseNonce(tx.getSender());
 

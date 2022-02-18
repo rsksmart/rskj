@@ -26,6 +26,7 @@ import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.db.MutableRepository;
+import org.ethereum.db.WrapperMutableRepository;
 import org.ethereum.util.RLP;
 
 import java.util.Optional;
@@ -49,7 +50,7 @@ public class RepositoryLocator {
      * @return an optional {@link RepositorySnapshot}
      */
     public Optional<RepositorySnapshot> findSnapshotAt(BlockHeader header) {
-        return mutableTrieSnapshotAt(header).map(MutableRepository::new);
+        return mutableTrieSnapshotAt(header).map(MutableRepository::new).map(WrapperMutableRepository::new);
     }
 
     /**
@@ -61,6 +62,7 @@ public class RepositoryLocator {
     public RepositorySnapshot snapshotAt(BlockHeader header) {
         return mutableTrieSnapshotAt(header)
                 .map(MutableRepository::new)
+                .map(WrapperMutableRepository::new)
                 .orElseThrow(() -> trieNotFoundException(header));
     }
 
@@ -74,6 +76,7 @@ public class RepositoryLocator {
         return mutableTrieSnapshotAt(header)
                 .map(MutableTrieCache::new)
                 .map(MutableRepository::new)
+                .map(WrapperMutableRepository::new)
                 .orElseThrow(() -> trieNotFoundException(header));
     }
 

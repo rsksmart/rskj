@@ -468,7 +468,7 @@ public class BlockExecutor {
         // the state prior execution again.
         Metric metric = profiler.start(Profiler.PROFILING_TYPE.BLOCK_EXECUTE);
 
-        Repository track = repositoryLocator.startTrackingAt(parent);
+        Repository track = repositoryLocator.startTrackingAt(parent); //TODO(JULI): Devuelve un MutableTrie(MutableTrieCache(Trie snapshot at parent))
 
         maintainPrecompiledContractStorageRoots(track, activationConfig.forBlock(block.getNumber()));
 
