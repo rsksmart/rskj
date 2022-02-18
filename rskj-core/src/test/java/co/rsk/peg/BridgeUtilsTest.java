@@ -2697,36 +2697,6 @@ public class BridgeUtilsTest {
         assertIsWatching(federation.getAddress(), wallet, networkParameters);
     }
 
-    public void testGetAmountSentToAddress(BridgeConstants constants, Coin valueToTransfer, Boolean includeOutput) {
-        Address receiver = constants.getGenesisFederation().getAddress();
-        BtcTransaction btcTx = new BtcTransaction(constants.getBtcParams());
-        if (includeOutput){
-            btcTx.addOutput(valueToTransfer, receiver);
-        }
-        Assert.assertEquals(valueToTransfer, BridgeUtils.getAmountSentToAddress(constants, btcTx, receiver));
-    }
-
-    @Test
-    public void getAmountSentToAddress_coin() {
-        Coin valueToTransfer = Coin.COIN;
-        testGetAmountSentToAddress(bridgeConstantsRegtest, valueToTransfer, true);
-        testGetAmountSentToAddress(bridgeConstantsMainnet, valueToTransfer, true);
-    }
-
-    @Test
-    public void getAmountSentToAddress_no_output_for_address() {
-        Coin valueToTransfer = Coin.ZERO;
-        testGetAmountSentToAddress(bridgeConstantsRegtest, valueToTransfer, false);
-        testGetAmountSentToAddress(bridgeConstantsMainnet, valueToTransfer, false);
-    }
-
-    @Test
-    public void getAmountSentToAddress_output_value_is_0() {
-        Coin valueToTransfer = Coin.ZERO;
-        testGetAmountSentToAddress(bridgeConstantsRegtest, valueToTransfer, true);
-        testGetAmountSentToAddress(bridgeConstantsMainnet, valueToTransfer, true);
-    }
-
     private Federation getFederation(BridgeConstants bridgeConstants, String... fedKeys) {
         List<BtcECKey> keys = Arrays.stream(fedKeys).map(s -> BtcECKey.fromPrivate(Hex.decode(s)))
                 .collect(Collectors.toList());
