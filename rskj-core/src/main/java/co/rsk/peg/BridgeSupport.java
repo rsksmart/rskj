@@ -2570,7 +2570,12 @@ public class BridgeSupport {
 
         transferTo(lbcAddress, co.rsk.core.Coin.fromBitcoin(totalAmount));
 
-        saveFastBridgeDataInStorage(btcTxHashWithoutWitness, fastBridgeDerivationHash, fastBridgeFederationInformation, getUTXOsForAddress(btcTx, fastBridgeFedAddress));
+        saveFastBridgeDataInStorage(
+                btcTxHashWithoutWitness,
+                fastBridgeDerivationHash,
+                fastBridgeFederationInformation,
+                getUTXOsForAddress(btcTx, fastBridgeFedAddress)
+        );
 
         logger.info("[registerFastBridgeBtcTransaction] (btcTx:{}) transaction registered successfully", btcTxHashWithoutWitness);
 
