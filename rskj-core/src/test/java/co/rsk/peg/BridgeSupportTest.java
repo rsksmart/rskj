@@ -71,7 +71,6 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static co.rsk.peg.BridgeSupport.FAST_BRIDGE_UNPROCESSABLE_TX_ALREADY_PROCESSED_ERROR_CODE;
 import static co.rsk.peg.BridgeSupport.FAST_BRIDGE_UNPROCESSABLE_TX_VALUE_ZERO_ERROR;
 import static co.rsk.peg.PegTestUtils.createBaseInputScriptThatSpendsFromTheFederation;
 import static co.rsk.peg.PegTestUtils.createBaseRedeemScriptThatSpendsFromTheFederation;
@@ -6616,10 +6615,12 @@ public class BridgeSupportTest {
 
         Repository repository = createRepository();
 
-        BridgeStorageProvider provider = spy(new BridgeStorageProvider(repository, contractAddress, bridgeConstants, activations));
-        provider.setNewFederation(activeFederation);
-        if (retiringFederationExists) {
-            provider.setOldFederation(retiringFederation);
+        BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
+        when(provider.getNewFederation()).thenReturn(activeFederation);
+        if (retiringFederationExists){
+            when(provider.getOldFederation()).thenReturn(retiringFederation);
+        } else {
+            when(provider.getOldFederation()).thenReturn(null);
         }
 
         Address userRefundBtcAddress = Address.fromBase58(
@@ -6658,7 +6659,6 @@ public class BridgeSupportTest {
                 .withExecutionBlock(executionBlock)
                 .withRepository(repository)
                 .build();
-        bridgeSupport = spy(bridgeSupport);
 
         Keccak256 derivationArgumentsHash = PegTestUtils.createHash3(0);
         Keccak256 fastBridgeDerivationHash = bridgeSupport.getFastBridgeDerivationHash(
@@ -6743,34 +6743,15 @@ public class BridgeSupportTest {
                     preCallLbcAddressBalance.add(co.rsk.core.Coin.fromBitcoin(valueToSend)),
                     postCallLbcAddressBalance
             );
-            bridgeSupport.save();
 
-            Assert.assertTrue(
-                    provider.isFastBridgeFederationDerivationHashUsed(
-                            tx.getHash(),
-                            bridgeSupport.getFastBridgeDerivationHash(
-                                PegTestUtils.createHash3(0),
-                                userRefundBtcAddress,
-                                lpBtcAddress,
-                                lbcAddress)
-                    )
-            );
-            Assert.assertEquals(1, provider.getNewFederationBtcUTXOs().size());
-
-            // Trying to register the same transaction again fails
-            BigInteger resultForSecondRegisterAttempt = bridgeSupport.registerFastBridgeBtcTransaction(
-                    rskTx,
-                    tx.bitcoinSerialize(),
-                    100,
-                    Hex.decode("ab"),
-                    PegTestUtils.createHash3(0),
-                    userRefundBtcAddress,
-                    lbcAddress,
-                    lpBtcAddress,
-                    true
+            verify(provider, times(1)).markFastBridgeFederationDerivationHashAsUsed(
+                    tx.getHash(false),
+                    fastBridgeDerivationHash
             );
 
-            Assert.assertEquals(BigInteger.valueOf(FAST_BRIDGE_UNPROCESSABLE_TX_ALREADY_PROCESSED_ERROR_CODE), resultForSecondRegisterAttempt);
+            verify(provider, times(1)).setFastBridgeFederationInformation(
+                    any()
+            );
         }
         return result;
     }
