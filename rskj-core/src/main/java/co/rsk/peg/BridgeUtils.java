@@ -41,6 +41,7 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.Nonnull;
 import java.math.BigInteger;
 import java.util.*;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP284;
@@ -192,6 +193,28 @@ public class BridgeUtils {
         long now = Utils.currentTimeMillis() / 1000L;
         wallet.addWatchedAddresses(Arrays.asList(addresses), now);
         return btcTx.getValueSentToMe(wallet);
+    }
+
+    /**
+     * @param context
+     * @param btcTx
+     * @param addresses
+     * @return the list of UTXOs in the given btcTx sent to the given list of address
+     */
+    protected static List<UTXO> getUTXOsForAddresses(Context context, BtcTransaction btcTx, Address ... addresses) {
+        long now = Utils.currentTimeMillis() / 1000L;
+        Wallet wallet = new SimpleWallet(context);
+        wallet.addWatchedAddresses(Arrays.asList(addresses), now);
+        return btcTx.getWalletOutputs(wallet).stream().map(
+                txOutput -> new UTXO(
+                        btcTx.getHash(),
+                        txOutput.getIndex(),
+                        txOutput.getValue(),
+                        0,
+                        btcTx.isCoinBase(),
+                        txOutput.getScriptPubKey()
+                )
+        ).collect(Collectors.toList());
     }
 
     public static boolean scriptCorrectlySpendsTx(BtcTransaction tx, int index, Script script) {

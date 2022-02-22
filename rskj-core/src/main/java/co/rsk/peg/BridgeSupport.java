@@ -2523,8 +2523,8 @@ public class BridgeSupport {
             return BigInteger.valueOf(FastBridgeTxResponseCodes.UNPROCESSABLE_TX_ALREADY_PROCESSED_ERROR.value());
         }
 
-        FastBridgeFederationInformation fastBridgeFederationInformation = createFastBridgeFederationInformation(fastBridgeDerivationHash);
-        Address fbActiveFederationAddress = fastBridgeFederationInformation.getFastBridgeFederationAddress(bridgeConstants.getBtcParams());
+        FastBridgeFederationInformation fbActiveFederationInformation = createFastBridgeFederationInformation(fastBridgeDerivationHash);
+        Address fbActiveFederationAddress = fbActiveFederationInformation.getFastBridgeFederationAddress(bridgeConstants.getBtcParams());
 
         Coin totalAmount;
         FastBridgeTxResponseCodes txResponse = FastBridgeTxResponseCodes.VALID_TX;
@@ -2533,8 +2533,8 @@ public class BridgeSupport {
             List<Address> addresses = new ArrayList<>(2);
             addresses.add(fbActiveFederationAddress);
             if (retiringFederation != null) {
-                FastBridgeFederationInformation fastBridgeRetiringFederationInformation = createFastBridgeFederationInformation(fastBridgeDerivationHash, retiringFederation);
-                Address fbRetiringFederationAddress = fastBridgeRetiringFederationInformation.getFastBridgeFederationAddress(bridgeConstants.getBtcParams());
+                FastBridgeFederationInformation fbRetiringFederationInformation = createFastBridgeFederationInformation(fastBridgeDerivationHash, retiringFederation);
+                Address fbRetiringFederationAddress = fbRetiringFederationInformation.getFastBridgeFederationAddress(bridgeConstants.getBtcParams());
                 addresses.add(fbRetiringFederationAddress);
             }
 
@@ -2550,11 +2550,6 @@ public class BridgeSupport {
             );
         } else {
             totalAmount = BridgeUtilsLegacy.getAmountSentToAddress(bridgeConstants, btcTx, fbActiveFederationAddress);
-            /*
-                TODO: Discuss if this legacy code should be fixed or not
-                    determine if there are any possible consequences if this comparison is change to
-                    a value comparison instead of an instance as it was before: if (totalAmount != Coin.ZERO)
-             */
             if (totalAmount.equals(Coin.ZERO)) {
                 logger.debug("[isFastPeginTxValid] Amount sent can't be 0");
                 txResponse = FastBridgeTxResponseCodes.UNPROCESSABLE_TX_VALUE_ZERO_ERROR;
@@ -2568,7 +2563,7 @@ public class BridgeSupport {
         if (!verifyLockDoesNotSurpassLockingCap(btcTx, totalAmount)) {
             InternalTransaction internalTx = (InternalTransaction) rskTx;
             logger.info("[registerFastBridgeBtcTransaction] Locking cap surpassed, going to return funds!");
-            WalletProvider walletProvider = createFastBridgeWalletProvider(fastBridgeFederationInformation);
+            WalletProvider walletProvider = createFastBridgeWalletProvider(fbActiveFederationInformation);
 
             provider.markFastBridgeFederationDerivationHashAsUsed(btcTxHash, fastBridgeDerivationHash);
 
@@ -2584,13 +2579,19 @@ public class BridgeSupport {
         }
 
         transferTo(lbcAddress, co.rsk.core.Coin.fromBitcoin(totalAmount));
+        List<UTXO> utxosList;
+        if (activations.isActive(ConsensusRule.RSKIP293)){
+            utxosList = BridgeUtils.getUTXOsForAddresses(btcContext, btcTx, fbActiveFederationAddress);
+        } else {
+            utxosList = BridgeUtilsLegacy.getUTXOsForAddress(bridgeConstants, btcTx, fbActiveFederationAddress);
+        }
+
         saveFastBridgeDataInStorage(
                 btcTxHashWithoutWitness,
                 fastBridgeDerivationHash,
-                fastBridgeFederationInformation,
-                getUTXOsForAddress(btcTx, fbActiveFederationAddress)
+                fbActiveFederationInformation,
+                utxosList
         );
-
         logger.info("[registerFastBridgeBtcTransaction] (btcTx:{}) transaction registered successfully", btcTxHashWithoutWitness);
 
         return co.rsk.core.Coin.fromBitcoin(totalAmount).asBigInteger();
@@ -2613,29 +2614,14 @@ public class BridgeSupport {
     private WalletProvider createFastBridgeWalletProvider(
         FastBridgeFederationInformation fastBridgeFederationInformation) {
         return (BtcTransaction a, Address b) -> {
-            List<UTXO> utxosList = getUTXOsForAddress(a, b);
+            List<UTXO> utxosList;
+            if (activations.isActive(ConsensusRule.RSKIP293)){
+                utxosList = BridgeUtils.getUTXOsForAddresses(btcContext, a, b);
+            } else {
+                utxosList = BridgeUtilsLegacy.getUTXOsForAddress(bridgeConstants,a, b);
+            }
             return getFastBridgeWallet(btcContext, utxosList, fastBridgeFederationInformation);
         };
-    }
-
-    protected List<UTXO> getUTXOsForAddress(BtcTransaction btcTx, Address btcAddress) {
-        List<UTXO> utxosList = new ArrayList<>();
-        for (TransactionOutput o : btcTx.getOutputs()) {
-            if (o.getScriptPubKey().getToAddress(bridgeConstants.getBtcParams()).equals(btcAddress)) {
-                utxosList.add(
-                    new UTXO(
-                        btcTx.getHash(),
-                        o.getIndex(),
-                        o.getValue(),
-                        0,
-                        btcTx.isCoinBase(),
-                        o.getScriptPubKey()
-                    )
-                );
-            }
-        }
-
-        return utxosList;
     }
 
     protected Wallet getFastBridgeWallet(Context btcContext, List<UTXO> utxos, FastBridgeFederationInformation fb) {

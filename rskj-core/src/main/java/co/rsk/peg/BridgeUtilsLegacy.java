@@ -1,12 +1,16 @@
 package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.*;
+import co.rsk.bitcoinj.wallet.Wallet;
 import co.rsk.config.BridgeConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Transaction;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @deprecated Methods included in this class are to be used only prior to the latest HF activation
@@ -56,5 +60,34 @@ public class BridgeUtilsLegacy {
             }
         }
         return v;
+    }
+
+    /**
+     * @param bridgeConstants
+     * @param btcTx
+     * @param btcAddress
+     * @return the list of UTXOs in a given btcTx for a given address
+     */
+    @Deprecated
+    protected static List<UTXO> getUTXOsForAddress(BridgeConstants bridgeConstants, BtcTransaction btcTx, Address btcAddress) {
+        Wallet wallet = new SimpleWallet(new Context(bridgeConstants.getBtcParams()));
+        btcTx.getWalletOutputs(wallet);
+        List<UTXO> utxosList = new ArrayList<>();
+        for (TransactionOutput o : btcTx.getOutputs()) {
+            if (o.getScriptPubKey().getToAddress(bridgeConstants.getBtcParams()).equals(btcAddress)) {
+                utxosList.add(
+                        new UTXO(
+                                btcTx.getHash(),
+                                o.getIndex(),
+                                o.getValue(),
+                                0,
+                                btcTx.isCoinBase(),
+                                o.getScriptPubKey()
+                        )
+                );
+            }
+        }
+
+        return utxosList;
     }
 }
