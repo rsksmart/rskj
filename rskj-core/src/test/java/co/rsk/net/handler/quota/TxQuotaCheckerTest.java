@@ -113,7 +113,7 @@ public class TxQuotaCheckerTest {
     @Test
     public void acceptTx() {
         TxQuotaChecker quotaChecker = new TxQuotaChecker();
-        assertEquals(accepted, quotaChecker.acceptTx(newTransaction, replacedTransaction, currentContext));
+        assertEquals(description + " should be " + (accepted ? "accepted" : "rejected"), accepted, quotaChecker.acceptTx(newTransaction, replacedTransaction, currentContext));
 
         TxQuota txQuotaSender = quotaChecker.getTxQuota(newTransaction.getSender());
         assertNotNull("Sender address quota should exist when contract", txQuotaSender);

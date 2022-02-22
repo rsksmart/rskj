@@ -1,12 +1,10 @@
 package co.rsk.net.handler.quota;
 
-import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.TransactionBuilder;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.Account;
-import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.ECKey;
 import org.junit.Test;
@@ -19,7 +17,8 @@ import java.util.Collection;
 import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.when;
 
 @RunWith(Parameterized.class)
 public class TxVirtualGasCalculatorTest {
@@ -69,8 +68,10 @@ public class TxVirtualGasCalculatorTest {
         Transaction highSizeFactorTx = tx(DEFAULT_NONCE, 100_000, smallGasPrice, 100_000);
         Transaction highLowGasPriceFactorTx = tx(DEFAULT_NONCE, 100_000, BLOCK_MIN_GAS_PRICE, 1024);
         Transaction highGasLimitFactorTx = tx(DEFAULT_NONCE, BLOCK_GAS_LIMIT, smallGasPrice, 1024);
-        Transaction highReplacementFactorTx = tx(DEFAULT_NONCE, 100_000, smallGasPrice, 1024);
-        Transaction allHighFactorsTx = tx(smallNonce + 3, BLOCK_GAS_LIMIT, BLOCK_MIN_GAS_PRICE, 100_000);
+        Transaction highReplacementFactorTx = tx(DEFAULT_NONCE, 100_000, Double.valueOf(smallGasPrice * 1.1).longValue(), 1024);
+        Transaction highReplacementFactorTxReplaced = tx(DEFAULT_NONCE, 100_000, smallGasPrice, 1024);
+        Transaction allHighFactorsTx = tx(smallNonce + 3, BLOCK_GAS_LIMIT, Double.valueOf(BLOCK_MIN_GAS_PRICE * 1.1).longValue(), 100_000);
+        Transaction allHighFactorsTxReplaced = tx(smallNonce + 3, BLOCK_GAS_LIMIT, BLOCK_MIN_GAS_PRICE, 100_000);
 
         return Arrays.asList(new Object[][]{
                 {"Small factor", smallFactorsTx, Optional.empty(), DEFAULT_NONCE, 1, 1, 1.039604, 1.04096, 1, 1.058824},
@@ -79,8 +80,8 @@ public class TxVirtualGasCalculatorTest {
                 {"High size factor", highSizeFactorTx, Optional.empty(), DEFAULT_NONCE, 1, 1, 1.039604, 5, 1, 1.058824},
                 {"High low gasPrice factor", highLowGasPriceFactorTx, Optional.empty(), DEFAULT_NONCE, 1, 4, 1.039604, 1.04096, 1, 1.058824},
                 {"High gasLimit factor", highGasLimitFactorTx, Optional.empty(), DEFAULT_NONCE, 1, 1, 1.039604, 1.04096, 1, 5},
-                {"High replacement factor", highReplacementFactorTx, Optional.of(highReplacementFactorTx), DEFAULT_NONCE, 1, 1, 1.039604, 1.04096, 2, 1.058824},
-                {"All high factors", allHighFactorsTx, Optional.of(allHighFactorsTx), smallNonce, 2, 4, 5, 5, 2, 5},
+                {"High replacement factor", highReplacementFactorTx, Optional.of(highReplacementFactorTxReplaced), DEFAULT_NONCE, 1, 1, 1.039604, 1.04096, 1.90909, 1.058824},
+                {"All high factors", allHighFactorsTx, Optional.of(allHighFactorsTxReplaced), smallNonce, 2, 3.999727, 5, 5, 1.90909, 5},
         });
     }
 
@@ -111,13 +112,6 @@ public class TxVirtualGasCalculatorTest {
         when(mockedTx.getSize()).thenReturn(size);
 
         return mockedTx;
-    }
-
-    private static Block block() {
-        Block block = mock(Block.class);
-        when(block.getGasLimitAsInteger()).thenReturn(BigInteger.valueOf(BLOCK_GAS_LIMIT));
-        when(block.getMinimumGasPrice()).thenReturn(Coin.valueOf(BLOCK_MIN_GAS_PRICE));
-        return block;
     }
 
 }
