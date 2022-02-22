@@ -88,7 +88,9 @@ public class BlockChainBuilder {
         return this;
     }
 
-    /** @param genesis a non-finalized genesis info */
+    /**
+     * @param genesis a non-finalized genesis info
+     */
     public BlockChainBuilder setGenesis(Genesis genesis) {
         this.genesis = genesis;
         return this;
@@ -153,7 +155,7 @@ public class BlockChainBuilder {
     public BlockChainImpl build() {
         BlocksIndex blocksIndex = new HashMapBlocksIndex();
 
-        if (config == null){
+        if (config == null) {
             config = new TestSystemProperties();
         }
 
@@ -274,7 +276,7 @@ public class BlockChainBuilder {
         if (size > 0) {
             List<Block> blocks = mining ? blockGenerator.getMinedBlockChain(genesis, size) : blockGenerator.getBlockChain(genesis, size);
 
-            for (Block block: blocks)
+            for (Block block : blocks)
                 Assert.assertEquals(ImportResult.IMPORTED_BEST, blockChain.tryToConnect(block));
         }
 
@@ -316,7 +318,7 @@ public class BlockChainBuilder {
     private static void extend(Blockchain blockchain, int size, boolean withUncles, boolean mining, Block initialBlock) {
         List<Block> blocks = new BlockGenerator().getBlockChain(initialBlock, size, 0, withUncles, mining, null);
 
-        for (Block block: blocks)
+        for (Block block : blocks)
             blockchain.tryToConnect(block);
     }
 }

@@ -85,7 +85,7 @@ public class TraceModuleImpl implements TraceModule {
         ProgramTraceProcessor programTraceProcessor = new ProgramTraceProcessor();
         this.blockExecutor.traceBlock(programTraceProcessor, VmConfig.LIGHT_TRACE, block, parent.getHeader(), false, false);
 
-        SummarizedProgramTrace programTrace = (SummarizedProgramTrace)programTraceProcessor.getProgramTrace(tx.getHash());
+        SummarizedProgramTrace programTrace = (SummarizedProgramTrace) programTraceProcessor.getProgramTrace(tx.getHash());
 
         if (programTrace == null) {
             return null;
@@ -138,8 +138,7 @@ public class TraceModuleImpl implements TraceModule {
     private Block getByJsonArgument(String arg) {
         if (arg.length() < 20) {
             return this.getByJsonBlockId(arg);
-        }
-        else {
+        } else {
             return this.getByJsonBlockHash(arg);
         }
     }

@@ -959,7 +959,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
             ));
         }
 
-        if(getRskSystemProperties().isPeerScoringStatsReportEnabled()) {
+        if (getRskSystemProperties().isPeerScoringStatsReportEnabled()) {
             internalServices.add(getPeerScoringReporterService());
         }
 
@@ -1090,7 +1090,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
     public synchronized PeerScoringReporterService getPeerScoringReporterService() {
         checkIfNotClosed();
 
-        if(peerScoringReporterService == null) {
+        if (peerScoringReporterService == null) {
             this.peerScoringReporterService = PeerScoringReporterService.withScheduler(getRskSystemProperties().getPeerScoringSummaryTime(), getPeerScoringManager());
         }
 
@@ -1103,10 +1103,10 @@ public class RskContext implements NodeContext, NodeBootstrapper {
 
     /**
      * This method closes this RSK context.
-     *
+     * <p>
      * Internally it stops a node runner, if started,
      * and closes / disposes data storages (db instances), if some has already been instantiated.
-     *
+     * <p>
      * Note that this method is idempotent, which means that calling this method more than once does not have any
      * visible side effect.
      */

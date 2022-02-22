@@ -451,7 +451,7 @@ public class TransactionPoolImplTest {
         txs.add(tx3);
         txs.add(tx4);
 
-        Block block = new BlockBuilder(null, null,null)
+        Block block = new BlockBuilder(null, null, null)
                 .parent(new BlockGenerator().getGenesisBlock()).transactions(txs).build();
 
         transactionPool.retractBlock(block);
@@ -644,7 +644,7 @@ public class TransactionPoolImplTest {
 
     @Test
     public void checkTxWithLowGasPriceIsRejected() {
-        Block newBest = new BlockBuilder(null, null,null)
+        Block newBest = new BlockBuilder(null, null, null)
                 .parent(transactionPool.getBestBlock()).minGasPrice(BigInteger.valueOf(100)).build();
         transactionPool.processBest(newBest);
 
@@ -722,7 +722,7 @@ public class TransactionPoolImplTest {
     }
 
     @Test
-    public void aNewTxIsAddedInTxPoolAndShouldBeAddedInCache(){
+    public void aNewTxIsAddedInTxPoolAndShouldBeAddedInCache() {
         Coin balance = Coin.valueOf(1000000);
         createTestAccounts(2, balance);
         Account account1 = createAccount(1);
@@ -734,7 +734,7 @@ public class TransactionPoolImplTest {
     }
 
     @Test
-    public void twoTxsAreAddedInTxPoolAndShouldBeAddedInCache(){
+    public void twoTxsAreAddedInTxPoolAndShouldBeAddedInCache() {
         Coin balance = Coin.valueOf(1000000);
         Account account1 = createAccount(1);
         createTestAccounts(2, balance);
@@ -751,7 +751,7 @@ public class TransactionPoolImplTest {
     }
 
     @Test
-    public void invalidTxsIsSentAndShouldntBeInCache(){
+    public void invalidTxsIsSentAndShouldntBeInCache() {
         Coin balance = Coin.valueOf(0);
         createTestAccounts(2, balance);
         Transaction tx1 = createSampleTransaction(1, 2, 1000, 1);
@@ -782,7 +782,7 @@ public class TransactionPoolImplTest {
             if (i == MAX_CACHE_SIZE - 1) {
                 Assert.assertTrue(signatureCache.containsTx(tx));
             }
-            Transaction sampleTransaction = createSampleTransaction(i+2, 2, 1, 1);
+            Transaction sampleTransaction = createSampleTransaction(i + 2, 2, 1, 1);
             TransactionPoolAddResult result = transactionPool.addTransaction(sampleTransaction);
             Assert.assertTrue(result.transactionsWereAdded());
         }

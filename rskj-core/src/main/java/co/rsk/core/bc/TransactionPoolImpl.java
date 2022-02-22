@@ -127,9 +127,13 @@ public class TransactionPoolImpl implements TransactionPool {
         this.removeObsoleteTransactions(timestampSeconds - this.outdatedTimeout);
     }
 
-    public int getOutdatedThreshold() { return outdatedThreshold; }
+    public int getOutdatedThreshold() {
+        return outdatedThreshold;
+    }
 
-    public int getOutdatedTimeout() { return outdatedTimeout; }
+    public int getOutdatedTimeout() {
+        return outdatedTimeout;
+    }
 
     public Block getBestBlock() {
         return bestBlock;
@@ -277,7 +281,7 @@ public class TransactionPoolImpl implements TransactionPool {
 
         if (!internalResult.transactionsWereAdded()) {
             return internalResult;
-        } else if(internalResult.pendingTransactionsWereAdded()) {
+        } else if (internalResult.pendingTransactionsWereAdded()) {
             pendingTransactionsAdded.add(tx);
             pendingTransactionsAdded.addAll(this.addSuccessors(tx)); // addSuccessors only retrieves pending successors
         }
@@ -292,7 +296,7 @@ public class TransactionPoolImpl implements TransactionPool {
                 .filter(t -> t.getNonceAsInteger().equals(tx.getNonceAsInteger()))
                 .findFirst();
 
-        if (oldTxWithNonce.isPresent()){
+        if (oldTxWithNonce.isPresent()) {
             //oldGasPrice * (100 + priceBump) / 100
             Coin oldGasPrice = oldTxWithNonce.get().getGasPrice();
             Coin gasPriceBumped = oldGasPrice
@@ -316,7 +320,7 @@ public class TransactionPoolImpl implements TransactionPool {
         //or else the transactions would be validated against outdated account state.
         this.bestBlock = newBlock;
 
-        if(fork != null) {
+        if (fork != null) {
             for (Block blk : fork.getOldBlocks()) {
                 retractBlock(blk);
             }
@@ -337,8 +341,7 @@ public class TransactionPoolImpl implements TransactionPool {
         if (oldBestBlock != null) {
             BlockchainBranchComparator branchComparator = new BlockchainBranchComparator(blockStore);
             return branchComparator.calculateFork(oldBestBlock, newBestBlock);
-        }
-        else {
+        } else {
             return null;
         }
     }
@@ -460,12 +463,12 @@ public class TransactionPoolImpl implements TransactionPool {
         // creating fake lightweight calculated block with no hashes calculations
         return blockFactory.newBlock(
                 blockFactory.getBlockHeaderBuilder()
-                    .setParentHash(best.getHash().getBytes())
-                    .setDifficulty(best.getDifficulty())
-                    .setNumber(best.getNumber() + 1)
-                    .setGasLimit(ByteUtil.longToBytesNoLeadZeroes(Long.MAX_VALUE))
-                    .setTimestamp(best.getTimestamp() + 1)
-                    .build()
+                        .setParentHash(best.getHash().getBytes())
+                        .setDifficulty(best.getDifficulty())
+                        .setNumber(best.getNumber() + 1)
+                        .setGasLimit(ByteUtil.longToBytesNoLeadZeroes(Long.MAX_VALUE))
+                        .setTimestamp(best.getTimestamp() + 1)
+                        .build()
                 ,
                 Collections.emptyList(),
                 Collections.emptyList()
@@ -478,7 +481,7 @@ public class TransactionPoolImpl implements TransactionPool {
     }
 
     /**
-     * @param newTx a transaction to be added to the pending list (nonce = last pending nonce + 1)
+     * @param newTx             a transaction to be added to the pending list (nonce = last pending nonce + 1)
      * @param currentRepository
      * @return whether the sender balance is enough to pay for all pending transactions + newTx
      */
