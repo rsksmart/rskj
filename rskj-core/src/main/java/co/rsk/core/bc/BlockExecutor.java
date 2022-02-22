@@ -31,6 +31,7 @@ import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
+import org.ethereum.db.WrapperMutableRepository;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.ProgramResult;
@@ -468,7 +469,8 @@ public class BlockExecutor {
         // the state prior execution again.
         Metric metric = profiler.start(Profiler.PROFILING_TYPE.BLOCK_EXECUTE);
 
-        Repository track = repositoryLocator.startTrackingAt(parent); //TODO(JULI): Devuelve un MutableTrie(MutableTrieCache(Trie snapshot at parent))
+        Repository track = repositoryLocator.startTrackingAt(parent);
+        ReadWrittenKeysTracker readWrittenKeysTracker = new ReadWrittenKeysTracker();
 
         maintainPrecompiledContractStorageRoots(track, activationConfig.forBlock(block.getNumber()));
 
@@ -479,6 +481,7 @@ public class BlockExecutor {
         List<Transaction> executedTransactions = new ArrayList<>();
         Set<DataWord> deletedAccounts = new HashSet<>();
         LongAccumulator remascFees = new LongAccumulator(Long::sum, 0);
+        WrapperMutableRepository wrapperMutableRepository = new WrapperMutableRepository(track, readWrittenKeysTracker);
 
         int txindex = 0;
 
@@ -489,7 +492,7 @@ public class BlockExecutor {
                     tx,
                     txindex++,
                     block.getCoinbase(),
-                    track,
+                    wrapperMutableRepository,
                     block,
                     totalGasUsed,
                     vmTrace,
@@ -511,6 +514,7 @@ public class BlockExecutor {
             }
 
             executedTransactions.add(tx);
+            readWrittenKeysTracker.clear();
 
             if (this.registerProgramResults) {
                 this.transactionResults.put(tx.getHash(), txExecutor.getResult());
