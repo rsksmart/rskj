@@ -50,7 +50,7 @@ public class RepositoryLocator {
      * @return an optional {@link RepositorySnapshot}
      */
     public Optional<RepositorySnapshot> findSnapshotAt(BlockHeader header) {
-        return mutableTrieSnapshotAt(header).map(MutableRepository::new).map(WrapperMutableRepository::new);
+        return mutableTrieSnapshotAt(header).map(MutableRepository::new);
     }
 
     /**
@@ -62,7 +62,6 @@ public class RepositoryLocator {
     public RepositorySnapshot snapshotAt(BlockHeader header) {
         return mutableTrieSnapshotAt(header)
                 .map(MutableRepository::new)
-                .map(WrapperMutableRepository::new)
                 .orElseThrow(() -> trieNotFoundException(header));
     }
 
@@ -76,7 +75,6 @@ public class RepositoryLocator {
         return mutableTrieSnapshotAt(header)
                 .map(MutableTrieCache::new)
                 .map(MutableRepository::new)
-                .map(WrapperMutableRepository::new)
                 .orElseThrow(() -> trieNotFoundException(header));
     }
 
