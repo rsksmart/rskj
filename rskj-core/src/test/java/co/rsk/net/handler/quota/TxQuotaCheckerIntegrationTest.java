@@ -1,5 +1,6 @@
 package co.rsk.net.handler.quota;
 
+import co.rsk.core.Coin;
 import co.rsk.core.bc.PendingState;
 import co.rsk.core.bc.TransactionPoolImpl;
 import co.rsk.core.genesis.TestGenesisLoader;
@@ -19,6 +20,7 @@ import org.powermock.reflect.Whitebox;
 import java.math.BigInteger;
 import java.util.Optional;
 
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.*;
 
@@ -67,16 +69,20 @@ public class TxQuotaCheckerIntegrationTest {
                 10,
                 100,
                 web3);
+
         // don't call start to avoid creating threads
         transactionPool.processBest(blockChain.getBestBlock());
 
-        // this is to workaround the current test structure, which abuses the Repository by
-        // modifying it in place
+        // this is to work around the current test structure, which abuses the Repository by modifying it in place
         doReturn(repository).when(repositoryLocator).snapshotAt(any());
 
         Block currentBlock = blockChain.getBestBlock();
+        Block mockedBlock = spy(currentBlock);
+        when(mockedBlock.getGasLimitAsInteger()).thenReturn(BigInteger.valueOf(6_800_000));
+        when(mockedBlock.getMinimumGasPrice()).thenReturn(Coin.valueOf(59_240));
+
         PendingState pendingState = transactionPool.getPendingState();
-        currentContext = new TxQuotaChecker.CurrentContext(currentBlock, pendingState, repository, web3);
+        currentContext = new TxQuotaChecker.CurrentContext(mockedBlock, pendingState, repository, web3);
         quotaChecker = new TxQuotaChecker();
 
         sender = new AccountBuilder().name("sender").build();
@@ -90,27 +96,43 @@ public class TxQuotaCheckerIntegrationTest {
 
     @Test
     public void acceptTxAfterRefresh() {
+        long blockMinGasPrice = 59240;
         long smallGasPrice = BLOCK_AVG_GAS_PRICE - 100_000;
+        long bigGasPrice = BLOCK_AVG_GAS_PRICE + 1_000_000;
         long accountNonce = repository.getNonce(sender.getAddress()).longValue();
 
         Transaction smallTx = tx(accountNonce, 200_000, smallGasPrice, 12_500);
-
+        long approximateLastTxTime = System.currentTimeMillis();
         assertTrue("Initial small tx should've been accepted", quotaChecker.acceptTx(smallTx, Optional.empty(), currentContext));
 
-        long bigGasPrice = BLOCK_AVG_GAS_PRICE + 1_000_000;
-        Transaction bigTx = tx(accountNonce, 1_000_000, (long) (bigGasPrice * 1.1), 100_000);
-        assertTrue("Big tx should've been accepted after a small one", quotaChecker.acceptTx(smallTx, Optional.empty(), currentContext));
+        Transaction bigTx = tx(accountNonce, 3_000_000, bigGasPrice, 50_000);
+        simulateLastTransactionRunAt(approximateLastTxTime - 50); // 1 second ago
+        approximateLastTxTime = System.currentTimeMillis();
+        assertTrue("Big tx should've been accepted after a small one some milliseconds afterwards", quotaChecker.acceptTx(smallTx, Optional.empty(), currentContext));
 
-        // TODO:I update when behavior is clarified: with the current implementation even the most factored tx will be accepted within milliseconds because we are granting the maxQuota to the sender on every refresh
-        Transaction bigTxReplaced = tx(accountNonce, 1_000_000, bigGasPrice, 100_000);
-        long approximateLastTxTime = System.currentTimeMillis();
-        assertTrue("Big replaced tx should've been rejected when almost no quite time after last big tx", quotaChecker.acceptTx(bigTx, Optional.of(bigTxReplaced), currentContext));
+        Transaction bigTxReplacing = tx(accountNonce, 3_000_000, (long) (bigGasPrice * 1.1), 50_000);
+        simulateLastTransactionRunAt(approximateLastTxTime - 1000); // 1 second ago
+        approximateLastTxTime = System.currentTimeMillis();
+        assertFalse("Big replacing tx should've been rejected 1 second after the replaced tx", quotaChecker.acceptTx(bigTxReplacing, Optional.of(bigTx), currentContext));
 
-        // TODO:I update when behavior is clarified: calculate "enough" time for this transaction to be accepted
+        simulateLastTransactionRunAt(approximateLastTxTime - 2 * 60 * 1000); // 2 minutes ago
+        assertTrue("Big replacing tx should've been accepted 2 minutes after the last replace attempt", quotaChecker.acceptTx(bigTxReplacing, Optional.of(bigTx), currentContext));
+
+        Transaction topFactorTx = tx(accountNonce + 3, 6_800_000, blockMinGasPrice, 92_750); // TODO:I adjust this and other values when max factor is clarified (1900 seems too high)
+        simulateLastTransactionRunAt(approximateLastTxTime - 60 * 1000); // 1 minute ago
+        assertFalse("Top factor tx should've been rejected 1 minute after last big tx", quotaChecker.acceptTx(topFactorTx, Optional.empty(), currentContext));
+
+        Transaction topFactorTxReplacing = tx(accountNonce + 3, 6_800_000, (long) (blockMinGasPrice * 1.1), 92_750); // TODO:I adjust this and other values when max factor is clarified (1900 seems too high)
+        simulateLastTransactionRunAt(approximateLastTxTime - 20 * 60 * 1000); // 20 minutes ago
+        assertFalse("Top factor replacing tx should've been rejected 10 minutes after last big tx", quotaChecker.acceptTx(topFactorTxReplacing, Optional.of(topFactorTx), currentContext));
+
+        simulateLastTransactionRunAt(approximateLastTxTime - 21 * 60 * 1000); // 21 minutes ago
+        assertTrue("Top factor replacing tx should've been accepted 30 minutes after last big tx", quotaChecker.acceptTx(topFactorTxReplacing, Optional.of(topFactorTx), currentContext));
+    }
+
+    private void simulateLastTransactionRunAt(long simulatedLastTxTime) {
         TxQuota senderQuota = quotaChecker.getTxQuota(sender.getAddress());
-        long simulatedOldLastTxTime = approximateLastTxTime - 60 * 1000; // simulate last tx was processed 1 minute ago
-        Whitebox.setInternalState(senderQuota, "timestamp", simulatedOldLastTxTime);
-        assertTrue("Big replaced tx should've been accepted when enough quite time", quotaChecker.acceptTx(bigTx, Optional.of(bigTxReplaced), currentContext));
+        Whitebox.setInternalState(senderQuota, "timestamp", simulatedLastTxTime);
     }
 
     private Transaction tx(long nonce, long gasLimit, long gasPrice, long size) {

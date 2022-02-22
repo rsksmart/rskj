@@ -70,8 +70,8 @@ public class TxVirtualGasCalculatorTest {
         Transaction highGasLimitFactorTx = tx(DEFAULT_NONCE, BLOCK_GAS_LIMIT, smallGasPrice, 1024);
         Transaction highReplacementFactorTx = tx(DEFAULT_NONCE, 100_000, Double.valueOf(smallGasPrice * 1.1).longValue(), 1024);
         Transaction highReplacementFactorTxReplaced = tx(DEFAULT_NONCE, 100_000, smallGasPrice, 1024);
-        Transaction allHighFactorsTx = tx(smallNonce + 3, BLOCK_GAS_LIMIT, Double.valueOf(BLOCK_MIN_GAS_PRICE * 1.1).longValue(), 100_000);
-        Transaction allHighFactorsTxReplaced = tx(smallNonce + 3, BLOCK_GAS_LIMIT, BLOCK_MIN_GAS_PRICE, 100_000);
+        Transaction topFactorsTx = tx(smallNonce + 3, BLOCK_GAS_LIMIT, Double.valueOf(BLOCK_MIN_GAS_PRICE * 1.1).longValue(), 100_000);
+        Transaction topFactorsTxReplaced = tx(smallNonce + 3, BLOCK_GAS_LIMIT, BLOCK_MIN_GAS_PRICE, 100_000);
 
         return Arrays.asList(new Object[][]{
                 {"Small factor", smallFactorsTx, Optional.empty(), DEFAULT_NONCE, 1, 1, 1.039604, 1.04096, 1, 1.058824},
@@ -81,7 +81,7 @@ public class TxVirtualGasCalculatorTest {
                 {"High low gasPrice factor", highLowGasPriceFactorTx, Optional.empty(), DEFAULT_NONCE, 1, 4, 1.039604, 1.04096, 1, 1.058824},
                 {"High gasLimit factor", highGasLimitFactorTx, Optional.empty(), DEFAULT_NONCE, 1, 1, 1.039604, 1.04096, 1, 5},
                 {"High replacement factor", highReplacementFactorTx, Optional.of(highReplacementFactorTxReplaced), DEFAULT_NONCE, 1, 1, 1.039604, 1.04096, 1.90909, 1.058824},
-                {"All high factors", allHighFactorsTx, Optional.of(allHighFactorsTxReplaced), smallNonce, 2, 3.999727, 5, 5, 1.90909, 5},
+                {"Top factors", topFactorsTx, Optional.of(topFactorsTxReplaced), smallNonce, 2, 3.999727, 5, 5, 1.90909, 5},
         });
     }
 
