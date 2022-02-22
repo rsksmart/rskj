@@ -21,12 +21,14 @@ package co.rsk.net.handler;
 import co.rsk.core.Coin;
 import co.rsk.net.TransactionValidationResult;
 import co.rsk.net.handler.txvalidator.*;
+import org.bouncycastle.util.BigIntegers;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
-import org.ethereum.core.*;
+import org.ethereum.core.AccountState;
+import org.ethereum.core.Block;
+import org.ethereum.core.Transaction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.bouncycastle.util.BigIntegers;
 
 import javax.annotation.Nullable;
 import java.math.BigInteger;
@@ -35,11 +37,13 @@ import java.util.List;
 
 /**
  * Validator for using in pending state.
- *
+ * <p>
  * Add/remove checks here.
  */
 public class TxPendingValidator {
     private static final Logger logger = LoggerFactory.getLogger("txpendingvalidator");
+
+    private static final long TX_MAX_SIZE = 128 * 1024; // 128KB
 
     private final List<TxValidatorStep> validatorSteps = new LinkedList<>();
 
@@ -69,6 +73,10 @@ public class TxPendingValidator {
         if (state == null && basicTxCost != 0) {
             logger.trace("[tx={}, sender={}] account doesn't exist", tx.getHash(), tx.getSender());
             return TransactionValidationResult.withError("the sender account doesn't exist");
+        }
+
+        if (tx.getSize() > TX_MAX_SIZE) {
+            return TransactionValidationResult.withError(String.format("transaction's size is higher than defined maximum: %s > %s", tx.getSize(), TX_MAX_SIZE));
         }
 
         for (TxValidatorStep step : validatorSteps) {

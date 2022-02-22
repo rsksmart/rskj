@@ -613,6 +613,33 @@ public class TransactionPoolImplTest {
     }
 
     @Test
+    public void checkTxMaxSizeAccepted() {
+        Coin balance = Coin.valueOf(1000000);
+        createTestAccounts(2, balance);
+
+        Transaction mockedTx = spy(createSampleTransaction(1, 0, 1000, 0));
+        long txMaxSize = 128L * 1024;
+        when(mockedTx.getSize()).thenReturn(txMaxSize);
+
+        TransactionPoolAddResult result = transactionPool.addTransaction(mockedTx);
+        Assert.assertTrue(result.transactionsWereAdded());
+    }
+
+    @Test
+    public void checkTxMaxSizeRejected() {
+        Coin balance = Coin.valueOf(1000000);
+        createTestAccounts(2, balance);
+
+        Transaction mockedTx = spy(createSampleTransaction(1, 0, 1000, 0));
+        long txMaxSize = 128L * 1024;
+        when(mockedTx.getSize()).thenReturn(txMaxSize + 1);
+
+        TransactionPoolAddResult result = transactionPool.addTransaction(mockedTx);
+        Assert.assertFalse(result.transactionsWereAdded());
+        Assert.assertTrue(result.getErrorMessage().contains("transaction's size is higher than defined maximum"));
+    }
+
+    @Test
     public void checkTxWithSameNonceBumpedIsAccepted() {
         Coin balance = Coin.valueOf(1000000);
         createTestAccounts(2, balance);
