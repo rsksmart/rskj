@@ -47,8 +47,6 @@ public class TxQuotaChecker {
         return wasAccepted;
     }
 
-    // TODO:I Doc mentions: "First we assume that a transaction is not broadcast if... size greater than 100 Kbytes" => I can't find this size filter in codebase
-
     private TxQuota updateQuota(RskAddress sender, Block bestBlock) {
         BigInteger blockGasLimit = bestBlock.getGasLimitAsInteger();
         long maxGasPerSecond = getMaxGasPerSecond(blockGasLimit);

@@ -28,9 +28,9 @@ public class TxQuota {
         long currentTimestamp = System.currentTimeMillis();
 
         double timeDiffSeconds = (currentTimestamp - this.timestamp) / 1000d;
-        double addToQuota = timeDiffSeconds * maxGasPerSecond; // TODO:I I don't understand the "1 second reset", then having this timeDiffSeconds and how gas is going to be accumulated for big factored txs
+        double addToQuota = timeDiffSeconds * maxGasPerSecond;
 
         this.timestamp = currentTimestamp;
-        this.availableVirtualGas = Math.max(maxQuota, this.availableVirtualGas + addToQuota);
+        this.availableVirtualGas = Math.min(maxQuota, this.availableVirtualGas + addToQuota);
     }
 }
