@@ -37,10 +37,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -118,22 +115,27 @@ public class TraceModuleImpl implements TraceModule {
     }
 
     @Override
-    public JsonNode traceFilter(Map<String, Object> request) throws Exception {
-        TraceFilterRequest traceFilterRequest = TraceFilterRequest.buildFrom(request);
-
-        if (!traceFilterRequest.isValid()) {
-            return null;
-        }
-
+    public JsonNode traceFilter(TraceFilterRequest traceFilterRequest) throws Exception {
         List<TransactionTrace> blockTraces = new ArrayList<>();
 
         long fromBlockNumber = traceFilterRequest.getFromBlockNumber().longValue();
-        long toBlockNumber = traceFilterRequest.getToBlockNumber().longValue();
+        Block block;
 
-        for (long currentBlockNumber = fromBlockNumber; currentBlockNumber <= toBlockNumber; currentBlockNumber++) {
-            Block block = this.blockchain.getBlockByNumber(currentBlockNumber);
-            blockTraces.addAll(buildBlockTraces(block, traceFilterRequest));
+        if (traceFilterRequest.getToBlock().equalsIgnoreCase("latest")) {
+            block = this.blockchain.getBestBlock();
+        } else {
+            long toBlockNumber = traceFilterRequest.getToBlockNumber().longValue();
+            block = this.blockchain.getBlockByNumber(toBlockNumber);
         }
+
+        while (block != null && block.getNumber() >= fromBlockNumber) {
+            List<TransactionTrace> builtTraces = buildBlockTraces(block, traceFilterRequest);
+            blockTraces.addAll(builtTraces == null ? new ArrayList<>() : builtTraces);
+
+            block = this.blockchain.getBlockByHash(block.getParentHash().getBytes());
+        }
+
+        Collections.reverse(blockTraces);
 
         Stream<TransactionTrace> txTraceStream = blockTraces.stream();
 
@@ -145,9 +147,9 @@ public class TraceModuleImpl implements TraceModule {
             txTraceStream = txTraceStream.limit(traceFilterRequest.getCount());
         }
 
-        blockTraces = txTraceStream.collect(Collectors.toList());
+        List<TransactionTrace> traces = txTraceStream.collect(Collectors.toList());
 
-        return OBJECT_MAPPER.valueToTree(blockTraces);
+        return OBJECT_MAPPER.valueToTree(traces);
     }
 
     private Block getByJsonArgument(String arg) {
@@ -182,15 +184,10 @@ public class TraceModuleImpl implements TraceModule {
     }
 
     private List<TransactionTrace> buildBlockTraces(Block block) {
-        return buildBlockTraces(block, null, true);
+        return buildBlockTraces(block, null);
     }
 
     private List<TransactionTrace> buildBlockTraces(Block block, TraceFilterRequest traceFilterRequest) {
-        List<TransactionTrace> blockTraces = buildBlockTraces(block, traceFilterRequest, false);
-        return blockTraces == null ? new ArrayList<>() : blockTraces;
-    }
-
-    private List<TransactionTrace> buildBlockTraces(Block block, TraceFilterRequest traceFilterRequest, boolean register) {
         List<TransactionTrace> blockTraces = new ArrayList<>();
 
         if (block != null && block.getNumber() != 0) {
@@ -198,12 +195,7 @@ public class TraceModuleImpl implements TraceModule {
 
             ProgramTraceProcessor programTraceProcessor = new ProgramTraceProcessor();
             Block parent = this.blockchain.getBlockByHash(block.getParentHash().getBytes());
-
-            if (register) {
-                this.blockExecutor.traceBlock(programTraceProcessor, VmConfig.LIGHT_TRACE, block, parent.getHeader(), false, false);
-            } else {
-                this.blockExecutor.fetchProgramProcessorByBlock(programTraceProcessor, block, parent, VmConfig.LIGHT_TRACE);
-            }
+            this.blockExecutor.traceBlock(programTraceProcessor, VmConfig.LIGHT_TRACE, block, parent.getHeader(), false, false);
 
             if (traceFilterRequest != null) {
                 Stream<Transaction> txStream = block.getTransactionsList().stream();

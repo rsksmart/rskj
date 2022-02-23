@@ -23,71 +23,45 @@ import co.rsk.util.HexUtils;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 public class TraceFilterRequest {
-    public static final String FROM_BLOCK_KEY = "fromBlock";
-    public static final String TO_BLOCK_KEY = "toBlock";
-    public static final String FROM_ADDRESS_KEY = "fromAddress";
-    public static final String TO_ADDRESS_KEY = "toAddress";
-    public static final String AFTER_KEY = "after";
-    public static final String COUNT_KEY = "count";
-    public static final Integer COUNT_LIMIT = 1000;
-
-    private String fromBlock;
-    private String toBlock;
+    private String fromBlock = "earliest";
+    private String toBlock = "latest";
     private List<String> fromAddress;
     private List<String> toAddress;
     private Integer after;
     private Integer count;
 
-    public TraceFilterRequest(String fromBlock, String toBlock, List<String> fromAddress, List<String> toAddress, Integer after, Integer count) {
+    public void setFromBlock(String fromBlock) {
         this.fromBlock = fromBlock;
+    }
+
+    public void setToBlock(String toBlock) {
         this.toBlock = toBlock;
+    }
+
+    public void setFromAddress(List<String> fromAddress) {
         this.fromAddress = fromAddress;
+    }
+
+    public void setToAddress(List<String> toAddress) {
         this.toAddress = toAddress;
+    }
+
+    public void setAfter(Integer after) {
         this.after = after;
+    }
+
+    public void setCount(Integer count) {
         this.count = count;
     }
 
-    public static TraceFilterRequest buildFrom(Map<String, Object> map) {
-        String fromBlock = null;
-        String toBlock = null;
-        List<String> fromAddress = null;
-        List<String> toAddress = null;
-        Integer after = null;
-        Integer count = null;
-
-        if (map.containsKey(FROM_BLOCK_KEY)) {
-            fromBlock = map.get(FROM_BLOCK_KEY).toString();
-        }
-
-        if (map.containsKey(TO_BLOCK_KEY)) {
-            toBlock = map.get(TO_BLOCK_KEY).toString();
-        }
-
-        if (map.containsKey(FROM_ADDRESS_KEY)) {
-            fromAddress = (List<String>) map.get(FROM_ADDRESS_KEY);
-        }
-
-        if (map.containsKey(TO_ADDRESS_KEY)) {
-            toAddress = (List<String>) map.get(TO_ADDRESS_KEY);
-        }
-
-        if (map.containsKey(AFTER_KEY)) {
-            after = (Integer) map.get(AFTER_KEY);
-        }
-
-        if (map.containsKey(COUNT_KEY)) {
-            count = (Integer) map.get(COUNT_KEY);
-        }
-
-        return new TraceFilterRequest(fromBlock, toBlock, fromAddress, toAddress, after, count);
-    }
-
-
     public BigInteger getFromBlockNumber() {
+        if ("earliest".equalsIgnoreCase(this.fromBlock)) {
+            return new BigInteger("0");
+        }
+
         return HexUtils.stringHexToBigInteger(this.fromBlock);
     }
 
@@ -96,6 +70,10 @@ public class TraceFilterRequest {
     }
 
     public BigInteger getToBlockNumber() {
+        if ("latest".equalsIgnoreCase(this.toBlock)) {
+            return null;
+        }
+
         return HexUtils.stringHexToBigInteger(this.toBlock);
     }
 
@@ -133,9 +111,5 @@ public class TraceFilterRequest {
 
     public Integer getCount() {
         return count;
-    }
-
-    public Boolean isValid() {
-        return fromBlock != null && toBlock != null && count != null && count <= COUNT_LIMIT;
     }
 }

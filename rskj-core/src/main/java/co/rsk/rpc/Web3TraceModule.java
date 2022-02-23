@@ -18,10 +18,9 @@
 
 package co.rsk.rpc;
 
+import co.rsk.rpc.modules.trace.TraceFilterRequest;
 import co.rsk.rpc.modules.trace.TraceModule;
 import com.fasterxml.jackson.databind.JsonNode;
-
-import java.util.Map;
 
 public interface Web3TraceModule {
 
@@ -33,7 +32,7 @@ public interface Web3TraceModule {
         return getTraceModule().traceBlock(blockHash);
     }
 
-    default JsonNode trace_filter(Map<String, Object> request) throws Exception {
+    default JsonNode trace_filter(TraceFilterRequest request) throws Exception {
         return getTraceModule().traceFilter(request);
     }
 

@@ -20,12 +20,10 @@ package co.rsk.rpc.modules.trace;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
-import java.util.Map;
-
 public interface TraceModule {
     JsonNode traceTransaction(String transactionHash) throws Exception;
 
     JsonNode traceBlock(String blockHash) throws Exception;
 
-    JsonNode traceFilter(Map<String, Object> request) throws Exception;
+    JsonNode traceFilter(TraceFilterRequest request) throws Exception;
 }
