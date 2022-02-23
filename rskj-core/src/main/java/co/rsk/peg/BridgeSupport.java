@@ -2527,7 +2527,7 @@ public class BridgeSupport {
         Address fbActiveFederationAddress = fbActiveFederationInformation.getFastBridgeFederationAddress(bridgeConstants.getBtcParams());
 
         Coin totalAmount;
-        FastBridgeTxResponseCodes txResponse = FastBridgeTxResponseCodes.VALID_TX;
+        FastBridgeTxResponseCodes txResponse;
         if (activations.isActive(ConsensusRule.RSKIP293)) {
             Federation retiringFederation = getRetiringFederation();
             List<Address> addresses = new ArrayList<>(2);
@@ -2537,27 +2537,28 @@ public class BridgeSupport {
                 Address fbRetiringFederationAddress = fbRetiringFederationInformation.getFastBridgeFederationAddress(bridgeConstants.getBtcParams());
                 addresses.add(fbRetiringFederationAddress);
             }
-
-            totalAmount = BridgeUtils.getAmountSentToAddresses(
+            txResponse = BridgeUtils.validateFastBridgePeginValue(
+                    activations,
+                    bridgeConstants,
                     btcContext,
                     btcTx,
                     addresses.toArray(addresses.toArray(new Address[addresses.size()]))
             );
-            txResponse = BridgeUtils.validateFastBridgePeginValue(
-                    activations,
-                    bridgeConstants,
-                    totalAmount
+            if (txResponse != FastBridgeTxResponseCodes.VALID_TX){
+                return BigInteger.valueOf(txResponse.value());
+            }
+            totalAmount = BridgeUtils.getAmountSentToAddresses(
+                    btcContext,
+                    btcTx,
+                    addresses.toArray(addresses.toArray(new Address[addresses.size()]))
             );
         } else {
             totalAmount = BridgeUtilsLegacy.getAmountSentToAddress(bridgeConstants, btcTx, fbActiveFederationAddress);
             if (totalAmount.equals(Coin.ZERO)) {
                 logger.debug("[isFastPeginTxValid] Amount sent can't be 0");
                 txResponse = FastBridgeTxResponseCodes.UNPROCESSABLE_TX_VALUE_ZERO_ERROR;
+                return BigInteger.valueOf(txResponse.value());
             }
-        }
-
-        if (txResponse != FastBridgeTxResponseCodes.VALID_TX){
-            return BigInteger.valueOf(txResponse.value());
         }
 
         if (!verifyLockDoesNotSurpassLockingCap(btcTx, totalAmount)) {

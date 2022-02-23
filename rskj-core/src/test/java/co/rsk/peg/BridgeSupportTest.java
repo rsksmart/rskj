@@ -6754,6 +6754,7 @@ public class BridgeSupportTest {
         if (result.longValue() >= 0) {
             co.rsk.core.Coin postCallLbcAddressBalance = repository.getBalance(lbcAddress);
             if (activations.isActive(ConsensusRule.RSKIP293) &&
+                    includeActiveFederation &&
                     includeRetiringFederation &&
                     retiringFederationExists
             )
@@ -7363,11 +7364,12 @@ public class BridgeSupportTest {
         );
 
         // After RSKIP 293
+
         testRegisterFastBridgeBtcTransaction(
                 regTestConstants,
                 true,
-                valueToSend.add(Coin.CENT).add(Coin.SATOSHI).multiply(2),
-                Arrays.asList(valueToSend, Coin.ZERO, Coin.CENT, Coin.SATOSHI),
+                valueToSend.multiply(6),
+                Arrays.asList(valueToSend, Coin.COIN, Coin.COIN),
                 true,
                 true,
                 true,
@@ -7379,11 +7381,12 @@ public class BridgeSupportTest {
         testRegisterFastBridgeBtcTransaction(
                 regTestConstants,
                 true,
-                valueToSend.add(Coin.CENT).add(Coin.SATOSHI),
-                Arrays.asList(valueToSend, Coin.ZERO, Coin.CENT, Coin.SATOSHI),
-                true,
+                valueToSend.multiply(2),
+                Arrays.asList(valueToSend, Coin.COIN),
                 true,
                 false,
+                true,
+                regTestBech32Output,
                 regTestP2pkhOutput,
                 regTestP2shOutput
         );
@@ -7391,11 +7394,23 @@ public class BridgeSupportTest {
         testRegisterFastBridgeBtcTransaction(
                 regTestConstants,
                 true,
-                valueToSend.add(Coin.CENT).add(Coin.SATOSHI),
-                Arrays.asList(valueToSend, Coin.ZERO, Coin.CENT, Coin.SATOSHI),
-                true,
+                valueToSend.multiply(2),
+                Arrays.asList(valueToSend, Coin.COIN),
                 false,
                 true,
+                true,
+                regTestP2pkhOutput,
+                regTestP2shOutput
+        );
+
+        testRegisterFastBridgeBtcTransaction(
+                regTestConstants,
+                true,
+                valueToSend.multiply(2),
+                Arrays.asList(valueToSend, Coin.COIN),
+                true,
+                true,
+                false,
                 regTestP2shOutput
         );
     }
@@ -7696,7 +7711,8 @@ public class BridgeSupportTest {
         );
         Assert.assertEquals(co.rsk.core.Coin.fromBitcoin(valueToSend).asBigInteger(), result);
 
-        // test when amount is sent to the active federation and also to a retiring federation that doesn't exist
+        // test when the amount is sent to the active federation and also to a retiring federation
+        // that is not present anymore
         result = testRegisterFastBridgeBtcTransaction_RSKIP293(
                 activations,
                 valueToSend,
@@ -7706,7 +7722,7 @@ public class BridgeSupportTest {
         );
         Assert.assertEquals(co.rsk.core.Coin.fromBitcoin(valueToSend).asBigInteger(), result);
 
-        // test when amount is sent to a retiring federation that doesn't exist
+        // test when the amount is sent to a retiring federation but there is not currently retiring federation
         result = testRegisterFastBridgeBtcTransaction_RSKIP293(
                 activations,
                 valueToSend,
@@ -7734,7 +7750,7 @@ public class BridgeSupportTest {
         );
         Assert.assertEquals(co.rsk.core.Coin.fromBitcoin(valueToSend).asBigInteger(), result);
 
-        // test when send zero amount to retiring federation
+        // test when zero amount is sent to the retiring federation
         valueToSend = Coin.ZERO;
         result = testRegisterFastBridgeBtcTransaction_RSKIP293(
                 activations,

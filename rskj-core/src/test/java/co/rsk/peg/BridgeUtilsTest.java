@@ -2904,82 +2904,140 @@ public class BridgeUtilsTest {
         );
     }
 
-    private void isTotalAmountSentOverMinimum_by_network(BridgeConstants bridgeConstants) {
-        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+    private void isAnyUTXOAmountBelowMinimum_by_network(
+            ActivationConfig.ForBlock activations,
+            BridgeConstants bridgeConstants
+    ) {
 
-        when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(true);
-        when(activations.isActive(ConsensusRule.RSKIP219)).thenReturn(true);
+        Federation activeFederation = getFederation(bridgeConstants, "fa03", "fa04");
+        Address activeFederationAddress = activeFederation.getAddress();
+        Federation retiringFederation = getFederation(bridgeConstants, "fa01", "fa02");
+        Address retiringFederationAddress = retiringFederation.getAddress();
 
-        assertFalse(BridgeUtils.isTotalAmountSentOverMinimum(
-                bridgeConstants.getMinimumPeginTxValueInSatoshis().minus(Coin.CENT),
-                activations,
-                bridgeConstants));
+        Coin minimumPegInTxValue = BridgeUtils.getMinimumPegInTxValue(activations, bridgeConstants);
 
-        assertFalse(BridgeUtils.isTotalAmountSentOverMinimum(
-                Coin.ZERO,
-                activations,
-                bridgeConstants));
+        Coin value = minimumPegInTxValue.minus(Coin.SATOSHI);
+        BtcTransaction btcTx = new BtcTransaction(bridgeConstants.getBtcParams());
+        btcTx.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
+        btcTx.addOutput(value, activeFederationAddress);
+        btcTx.addOutput(value, retiringFederationAddress);
 
-        assertTrue(BridgeUtils.isTotalAmountSentOverMinimum(
-                bridgeConstants.getMinimumPeginTxValueInSatoshis(),
-                activations,
-                bridgeConstants)
+        Context context = new Context(bridgeConstantsMainnet.getBtcParams());
+        assertTrue(
+                BridgeUtils.isAnyUTXOAmountBelowMinimum(
+                    activations,
+                    bridgeConstants,
+                    context,
+                    btcTx,
+                    activeFederationAddress, retiringFederationAddress
+                )
         );
 
-        assertTrue(BridgeUtils.isTotalAmountSentOverMinimum(
-                Coin.COIN,
-                activations,
-                bridgeConstants));
+        value = minimumPegInTxValue;
+        btcTx = new BtcTransaction(bridgeConstants.getBtcParams());
+        btcTx.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
+        btcTx.addOutput(value, activeFederationAddress);
+        btcTx.addOutput(value, retiringFederationAddress);
 
+        assertFalse(
+                BridgeUtils.isAnyUTXOAmountBelowMinimum(
+                        activations,
+                        bridgeConstants,
+                        context,
+                        btcTx,
+                        activeFederationAddress, retiringFederationAddress
+                )
+        );
+
+        value = minimumPegInTxValue.add(minimumPegInTxValue);
+        btcTx = new BtcTransaction(bridgeConstants.getBtcParams());
+        btcTx.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
+        btcTx.addOutput(value, activeFederationAddress);
+        btcTx.addOutput(value, retiringFederationAddress);
+
+        assertFalse(
+                BridgeUtils.isAnyUTXOAmountBelowMinimum(
+                        activations,
+                        bridgeConstants,
+                        context,
+                        btcTx,
+                        activeFederationAddress, retiringFederationAddress
+                )
+        );
     }
 
     @Test
-    public void isTotalAmountSentOverMinimum() {
-        isTotalAmountSentOverMinimum_by_network(bridgeConstantsRegtest);
-        isTotalAmountSentOverMinimum_by_network(bridgeConstantsMainnet);
+    public void isAnyUTXOAmountBelowMinimum() {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP219)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(false);
+
+        isAnyUTXOAmountBelowMinimum_by_network(activations, bridgeConstantsMainnet);
+        isAnyUTXOAmountBelowMinimum_by_network(activations, bridgeConstantsRegtest);
+
+        when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
+
+        isAnyUTXOAmountBelowMinimum_by_network(activations, bridgeConstantsMainnet);
+        isAnyUTXOAmountBelowMinimum_by_network(activations, bridgeConstantsRegtest);
     }
 
     private void testValidateFastBridgePeginValue_by_network(BridgeConstants bridgeConstants, ActivationConfig.ForBlock activations) {
+        Federation activeFederation = getFederation(bridgeConstants, "fa03", "fa04");
+        Address activeFederationAddress = activeFederation.getAddress();
+        Federation retiringFederation = getFederation(bridgeConstants, "fa01", "fa02");
+        Address retiringFederationAddress = retiringFederation.getAddress();
+        Context btcContext = new Context(bridgeConstants.getBtcParams());
+
+        Coin minimumPegInTxValue = BridgeUtils.getMinimumPegInTxValue(activations, bridgeConstants);
+        Coin value = minimumPegInTxValue.minus(Coin.SATOSHI);
+        BtcTransaction btcTx = new BtcTransaction(bridgeConstants.getBtcParams());
+        btcTx.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
+        btcTx.addOutput(value, activeFederationAddress);
+        btcTx.addOutput(value, retiringFederationAddress);
+
         Assert.assertEquals(
                 FastBridgeTxResponseCodes.UNPROCESSABLE_TX_AMOUNT_SENT_BELOW_MINIMUM_ERROR,
                 BridgeUtils.validateFastBridgePeginValue(
                         activations,
                         bridgeConstants,
-                        bridgeConstants.getMinimumPeginTxValueInSatoshis().minus(Coin.CENT)
+                        btcContext,
+                        btcTx,
+                        activeFederationAddress
                 )
         );
 
-        Assert.assertEquals(
-                FastBridgeTxResponseCodes.UNPROCESSABLE_TX_VALUE_ZERO_ERROR,
-                BridgeUtils.validateFastBridgePeginValue(
-                        activations,
-                        bridgeConstants,
-                        Coin.ZERO
-                )
-        );
-
-        Coin value;
-        if (activations.isActive(ConsensusRule.RSKIP293)){
-            value = bridgeConstants.getMinimumPeginTxValueInSatoshis();
-        } else {
-            value = bridgeConstants.getLegacyMinimumPeginTxValueInSatoshis();
-        }
-
+        value = minimumPegInTxValue;
+        btcTx = new BtcTransaction(bridgeConstants.getBtcParams());
+        btcTx.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
+        btcTx.addOutput(value, activeFederationAddress);
+        btcTx.addOutput(value, retiringFederationAddress);
         Assert.assertEquals(
                 FastBridgeTxResponseCodes.VALID_TX,
                 BridgeUtils.validateFastBridgePeginValue(
                         activations,
                         bridgeConstants,
-                        value
+                        btcContext,
+                        btcTx,
+                        activeFederationAddress,
+                        retiringFederationAddress
                 )
         );
 
+        value = minimumPegInTxValue.add(minimumPegInTxValue);
+        btcTx = new BtcTransaction(bridgeConstants.getBtcParams());
+        btcTx.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
+        btcTx.addOutput(value, activeFederationAddress);
+        btcTx.addOutput(value, retiringFederationAddress);
         Assert.assertEquals(
                 FastBridgeTxResponseCodes.VALID_TX,
                 BridgeUtils.validateFastBridgePeginValue(
                         activations,
                         bridgeConstants,
-                        value.add(Coin.COIN)
+                        btcContext,
+                        btcTx,
+                        activeFederationAddress,
+                        retiringFederationAddress
                 )
         );
     }
