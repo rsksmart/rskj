@@ -18,6 +18,7 @@
 
 package co.rsk.rpc.modules.trace;
 
+import co.rsk.core.RskAddress;
 import co.rsk.util.HexUtils;
 
 import java.math.BigInteger;
@@ -81,12 +82,12 @@ public class TraceFilterRequest {
         return toBlock;
     }
 
-    public List<BigInteger> getFromAddressAsBigIntegers() {
+    public List<RskAddress> getFromAddressAsRskAddresses() {
         if (this.fromAddress == null) {
             return new ArrayList<>();
         }
 
-        return this.fromAddress.stream().map(HexUtils::stringHexToBigInteger).collect(Collectors.toList());
+        return this.fromAddress.stream().map(RskAddress::new).collect(Collectors.toList());
     }
 
     public List<String> getFromAddress() {
@@ -97,12 +98,12 @@ public class TraceFilterRequest {
         return toAddress;
     }
 
-    public List<BigInteger> getToAddressAsBigIntegers() {
+    public List<RskAddress> getToAddressAsRskAddresses() {
         if (this.toAddress == null) {
             return new ArrayList<>();
         }
 
-        return this.toAddress.stream().map(HexUtils::stringHexToBigInteger).collect(Collectors.toList());
+        return this.toAddress.stream().map(RskAddress::new).collect(Collectors.toList());
     }
 
     public Integer getAfter() {

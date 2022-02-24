@@ -19,8 +19,8 @@
 package co.rsk.rpc.modules.trace;
 
 import co.rsk.config.VmConfig;
+import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockExecutor;
-import co.rsk.util.HexUtils;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.ethereum.core.Block;
@@ -36,7 +36,6 @@ import org.ethereum.vm.trace.SummarizedProgramTrace;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.math.BigInteger;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -201,13 +200,13 @@ public class TraceModuleImpl implements TraceModule {
                 Stream<Transaction> txStream = block.getTransactionsList().stream();
 
                 if (traceFilterRequest.getFromAddress() != null && !traceFilterRequest.getFromAddress().isEmpty()) {
-                    List<BigInteger> addresses = traceFilterRequest.getFromAddressAsBigIntegers();
-                    txStream = txStream.filter(tx -> tx.getSender().getBytes().length > 0 && addresses.contains(HexUtils.forceParseStringHexToBigInteger(tx.getSender().toHexString())));
+                    List<RskAddress> addresses = traceFilterRequest.getFromAddressAsRskAddresses();
+                    txStream = txStream.filter(tx -> tx.getSender().getBytes().length > 0 && addresses.contains(tx.getSender()));
                 }
 
                 if (traceFilterRequest.getToAddress() != null && !traceFilterRequest.getToAddress().isEmpty()) {
-                    List<BigInteger> addresses = traceFilterRequest.getToAddressAsBigIntegers();
-                    txStream = txStream.filter(tx -> tx.getReceiveAddress().getBytes().length > 0 && addresses.contains(HexUtils.forceParseStringHexToBigInteger(tx.getReceiveAddress().toHexString())));
+                    List<RskAddress> addresses = traceFilterRequest.getToAddressAsRskAddresses();
+                    txStream = txStream.filter(tx -> tx.getReceiveAddress().getBytes().length > 0 && addresses.contains(tx.getReceiveAddress()));
                 }
 
                 txList = txStream.collect(Collectors.toList());
