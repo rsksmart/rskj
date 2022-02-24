@@ -20,18 +20,14 @@ package co.rsk.core;
 
 import co.rsk.config.RskMiningConstants;
 import co.rsk.crypto.Keccak256;
-import co.rsk.peg.PegTestUtils;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.TestUtils;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.BlockFactory;
 import org.ethereum.core.BlockHeader;
-import org.ethereum.core.Bloom;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.RLP;
-import org.ethereum.util.RLPElement;
-import org.ethereum.util.RLPItem;
 import org.ethereum.util.RLPList;
 import org.junit.Before;
 import org.junit.Test;
@@ -69,7 +65,7 @@ public class BlockFactoryTest {
         long number = 20L;
         enableRulesAt(number, RSKIP92, RSKIP110);
 
-        BlockHeader header = createBlockHeader(number, new byte[0], new byte[0]);
+        BlockHeader header = createBlockHeader(number, new byte[0], new byte[0], null);
 
         Keccak256 hash = header.getHash();
         byte[] hashForMergedMining = header.getHashForMergedMining();
@@ -82,7 +78,7 @@ public class BlockFactoryTest {
         long number = 20L;
         enableRulesAt(number, RSKIP92, RSKIP110);
 
-        BlockHeader header = createBlockHeaderWithMergedMiningFields(number, new byte[0], null);
+        BlockHeader header = createBlockHeaderWithMergedMiningFields(number, new byte[0], null, null);
 
         byte[] encodedHeader = header.getFullEncoded();
         RLPList headerRLP = RLP.decodeList(encodedHeader);
@@ -98,7 +94,7 @@ public class BlockFactoryTest {
         long number = 20L;
         enableRulesAt(number, RSKIP92);
 
-        BlockHeader header = createBlockHeaderWithMergedMiningFields(number, new byte[0], null);
+        BlockHeader header = createBlockHeaderWithMergedMiningFields(number, new byte[0], null, null);
 
         byte[] encodedHeader = header.getFullEncoded();
         RLPList headerRLP = RLP.decodeList(encodedHeader);
@@ -114,7 +110,7 @@ public class BlockFactoryTest {
         long number = 457L;
         enableRulesAt(number, RSKIP92);
 
-        BlockHeader header = createBlockHeaderWithMergedMiningFields(number, new byte[0], null);
+        BlockHeader header = createBlockHeaderWithMergedMiningFields(number, new byte[0], null, null);
 
         byte[] encodedHeader = header.getFullEncoded();
         RLPList headerRLP = RLP.decodeList(encodedHeader);
@@ -131,7 +127,7 @@ public class BlockFactoryTest {
         enableRulesAt(number, RSKIP92, RSKIP110);
         byte[] forkDetectionData = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 };
 
-        BlockHeader header = createBlockHeaderWithMergedMiningFields(number, forkDetectionData, null);
+        BlockHeader header = createBlockHeaderWithMergedMiningFields(number, forkDetectionData, null, null);
 
         byte[] encodedBlock = header.getEncoded(false, false);
         byte[] hashForMergedMining = Arrays.copyOfRange(HashUtil.keccak256(encodedBlock), 0, 20);
@@ -158,7 +154,7 @@ public class BlockFactoryTest {
         long number = 20L;
         enableRulesAt(number, RSKIP92);
 
-        BlockHeader header = createBlockHeader(number, new byte[0], null);
+        BlockHeader header = createBlockHeader(number, new byte[0], null, null);
 
         byte[] encodedHeader = header.getEncoded(false, false);
         RLPList headerRLP = RLP.decodeList(encodedHeader);
@@ -179,7 +175,7 @@ public class BlockFactoryTest {
         enableRulesAt(number, RSKIP92);
 
         byte[] forkDetectionData = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 };
-        BlockHeader header = createBlockHeader(number, forkDetectionData, null);
+        BlockHeader header = createBlockHeader(number, forkDetectionData, null, null);
 
         byte[] encodedHeader = header.getEncoded(false, false);
         RLPList headerRLP = RLP.decodeList(encodedHeader);
@@ -195,7 +191,7 @@ public class BlockFactoryTest {
         enableRulesAt(number, RSKIP92, RSKIPUMM);
 
         byte[] ummRoot = new byte[]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19};
-        BlockHeader header = createBlockHeader(number, new byte[0], ummRoot);
+        BlockHeader header = createBlockHeader(number, new byte[0], ummRoot, null);
 
         byte[] encodedHeader = header.getEncoded();
         RLPList headerRLP = RLP.decodeList(encodedHeader);
@@ -212,7 +208,7 @@ public class BlockFactoryTest {
         long number = 500L;
         enableRulesAt(number, RSKIP92, RSKIPUMM);
 
-        BlockHeader header = createBlockHeader(number, new byte[0], new byte[0]);
+        BlockHeader header = createBlockHeader(number, new byte[0], new byte[0], null);
 
         byte[] encodedHeader = header.getEncoded();
         RLPList headerRLP = RLP.decodeList(encodedHeader);
@@ -231,7 +227,7 @@ public class BlockFactoryTest {
 
         // this should not be possible after the activation of UMM
         // blocks are expected to have an empty byte array
-        BlockHeader header = createBlockHeader(number, new byte[0], null);
+        BlockHeader header = createBlockHeader(number, new byte[0], null, null);
 
         byte[] encodedHeader = header.getEncoded();
         RLPList headerRLP = RLP.decodeList(encodedHeader);
@@ -249,7 +245,7 @@ public class BlockFactoryTest {
         enableRulesAt(number, RSKIP92, RSKIPUMM);
 
         byte[] ummRoot = new byte[]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19};
-        BlockHeader header = createBlockHeaderWithMergedMiningFields(number, new byte[0], ummRoot);
+        BlockHeader header = createBlockHeaderWithMergedMiningFields(number, new byte[0], ummRoot, null);
 
         byte[] encodedHeader = header.getFullEncoded();
         RLPList headerRLP = RLP.decodeList(encodedHeader);
@@ -266,7 +262,7 @@ public class BlockFactoryTest {
         long number = 500L;
         enableRulesAt(number, RSKIP92, RSKIPUMM);
 
-        BlockHeader header = createBlockHeaderWithMergedMiningFields(number, new byte[0], new byte[0]);
+        BlockHeader header = createBlockHeaderWithMergedMiningFields(number, new byte[0], new byte[0], null);
 
         byte[] encodedHeader = header.getFullEncoded();
         RLPList headerRLP = RLP.decodeList(encodedHeader);
@@ -285,7 +281,7 @@ public class BlockFactoryTest {
 
         // this should not be possible after the activation of UMM
         // blocks are expected to have an empty byte array
-        BlockHeader header = createBlockHeaderWithMergedMiningFields(number, new byte[0], null);
+        BlockHeader header = createBlockHeaderWithMergedMiningFields(number, new byte[0], null, null);
 
         byte[] encodedHeader = header.getFullEncoded();
         RLPList headerRLP = RLP.decodeList(encodedHeader);
@@ -297,6 +293,78 @@ public class BlockFactoryTest {
         assertArrayEquals(new byte[0], decodedHeader.getUmmRoot());
     }
 
+    @Test
+    public void decodeBlockRskip144OnRskipUMMOnAndMergedMiningFields() {
+        long number = 500L;
+        enableRulesAt(number, RSKIPUMM, RSKIP144);
+        short[] edges = TestUtils.randomShortArray(4);
+
+        BlockHeader header = createBlockHeaderWithMergedMiningFields(number, new byte[0], new byte[0], edges);
+
+        byte[] encodedHeader = header.getEncoded();
+        RLPList headerRLP = RLP.decodeList(encodedHeader);
+        assertThat(headerRLP.size(), is(21));
+
+        BlockHeader decodedHeader = factory.decodeHeader(encodedHeader);
+
+        assertThat(header.getHash(), is(decodedHeader.getHash()));
+        assertThat(header.getTxExecutionListsEdges(), is(edges));
+    }
+
+    @Test
+    public void decodeBlockRskip144OnRskipUMMOnAndNoMergedMiningFields() {
+        long number = 500L;
+        enableRulesAt(number, RSKIPUMM, RSKIP144);
+        short[] edges = TestUtils.randomShortArray(4);
+
+        BlockHeader header = createBlockHeader(number, new byte[0], new byte[0], edges);
+
+        byte[] encodedHeader = header.getEncoded();
+        RLPList headerRLP = RLP.decodeList(encodedHeader);
+        assertThat(headerRLP.size(), is(18));
+
+        BlockHeader decodedHeader = factory.decodeHeader(encodedHeader);
+
+        assertThat(header.getHash(), is(decodedHeader.getHash()));
+        assertThat(header.getTxExecutionListsEdges(), is(edges));
+    }
+
+    @Test
+    public void decodeBlockRskip144OnRskipUMMOffAndMergedMiningFields() {
+        long number = 500L;
+        enableRulesAt(number, RSKIP144);
+        short[] edges = TestUtils.randomShortArray(4);
+
+        BlockHeader header = createBlockHeaderWithMergedMiningFields(number, new byte[0], null, edges);
+
+        byte[] encodedHeader = header.getEncoded();
+        RLPList headerRLP = RLP.decodeList(encodedHeader);
+        assertThat(headerRLP.size(), is(20));
+
+        BlockHeader decodedHeader = factory.decodeHeader(encodedHeader);
+
+        assertThat(header.getHash(), is(decodedHeader.getHash()));
+        assertThat(header.getTxExecutionListsEdges(), is(edges));
+    }
+
+    @Test
+    public void decodeBlockRskip144OnRskipUMMOffAndNoMergedMiningFields() {
+        long number = 500L;
+        enableRulesAt(number, RSKIP144);
+        short[] edges = TestUtils.randomShortArray(4);
+
+        BlockHeader header = createBlockHeader(number, new byte[0], null, edges);
+
+        byte[] encodedHeader = header.getEncoded();
+        RLPList headerRLP = RLP.decodeList(encodedHeader);
+        assertThat(headerRLP.size(), is(17));
+
+        BlockHeader decodedHeader = factory.decodeHeader(encodedHeader);
+
+        assertThat(header.getHash(), is(decodedHeader.getHash()));
+        assertThat(header.getTxExecutionListsEdges(), is(edges));
+    }
+
     private void enableRulesAt(long number, ConsensusRule... consensusRules) {
         for (ConsensusRule consensusRule : consensusRules) {
             when(activationConfig.isActive(eq(consensusRule), geq(number))).thenReturn(true);
@@ -306,7 +374,8 @@ public class BlockFactoryTest {
     private BlockHeader createBlockHeaderWithMergedMiningFields(
             long number,
             byte[] forkDetectionData,
-            byte[] ummRoot) {
+            byte[] ummRoot,
+            short[] edges) {
         byte[] difficulty = BigInteger.ONE.toByteArray();
         byte[] gasLimit = BigInteger.valueOf(6800000).toByteArray();
         long timestamp = 7731067; // Friday, 10 May 2019 6:04:05
@@ -333,13 +402,15 @@ public class BlockFactoryTest {
                 .setUncleCount(0)
                 .setCreateUmmCompliantHeader(ummRoot != null)
                 .setUmmRoot(ummRoot)
+                .setTxExecutionListsEdges(edges)
                 .build();
     }
 
     private BlockHeader createBlockHeader(
             long number,
             byte[] forkDetectionData,
-            byte[] ummRoot) {
+            byte[] ummRoot,
+            short[] edges) {
         byte[] difficulty = BigInteger.ONE.toByteArray();
         byte[] gasLimit = BigInteger.valueOf(6800000).toByteArray();
         long timestamp = 7731067; // Friday, 10 May 2019 6:04:05
@@ -363,6 +434,7 @@ public class BlockFactoryTest {
                 .setUncleCount(0)
                 .setCreateUmmCompliantHeader(ummRoot != null)
                 .setUmmRoot(ummRoot)
+                .setTxExecutionListsEdges(edges)
                 .build();
     }
 

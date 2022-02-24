@@ -19,12 +19,14 @@
 
 package co.rsk.util;
 
+import java.util.Locale;
+
 public class FormatUtils {
     private FormatUtils() {
 
     }
 
     public static String formatNanosecondsToSeconds(long nanoseconds) {
-        return String.format("%.6f", nanoseconds / 1_000_000_000.0);
+        return String.format(Locale.ROOT, "%.6f", nanoseconds / 1_000_000_000.0);
     }
 }

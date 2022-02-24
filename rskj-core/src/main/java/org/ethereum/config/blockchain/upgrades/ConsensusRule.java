@@ -71,7 +71,8 @@ public enum ConsensusRule {
     RSKIP219("rskip219"),
     RSKIP220("rskip220"),
     RSKIP284("rskip284"),
-    RSKIP290("rskip290"); // Testnet difficulty should drop to a higher difficulty
+    RSKIP290("rskip290"), // Testnet difficulty should drop to a higher difficulty
+    RSKIP144("rskip144"); // Parallel tx execution
 
     private String configKey;
 

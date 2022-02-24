@@ -24,6 +24,8 @@ import static junit.framework.TestCase.assertNotNull;
 
 import java.io.File;
 import java.math.BigInteger;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -62,6 +64,14 @@ public final class TestUtils {
     public static byte[] randomBytes(int length) {
         byte[] result = new byte[length];
         getRandom().nextBytes(result);
+        return result;
+    }
+
+    public static short[] randomShortArray(int length) {
+        short[] result = new short[length];
+        byte[] bytes = new byte[length * 2];
+        getRandom().nextBytes(bytes);
+        ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN).asShortBuffer().put(result);
         return result;
     }
 
