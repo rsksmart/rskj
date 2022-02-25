@@ -19,6 +19,7 @@
 package co.rsk.net.discovery.message;
 
 import co.rsk.net.NodeID;
+import co.rsk.net.discovery.PeerDiscoveryException;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.bouncycastle.util.BigIntegers;
 import org.ethereum.crypto.ECKey;
@@ -27,18 +28,25 @@ import org.ethereum.crypto.signature.ECDSASignature;
 import org.ethereum.crypto.signature.Secp256k1;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLPElement;
+import org.ethereum.util.RLPItem;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.nio.charset.StandardCharsets;
 import java.security.SignatureException;
 import java.util.Optional;
 import java.util.OptionalInt;
+import java.util.UUID;
 
 import static org.ethereum.crypto.HashUtil.keccak256;
 import static org.ethereum.util.ByteUtil.merge;
 
 public abstract class PeerDiscoveryMessage {
     private static final Logger logger = LoggerFactory.getLogger(PeerDiscoveryMessage.class);
+
+    private static final String INVALID_MESSAGE_ID = "%s needs valid messageId";
+
+    private static final int UUID_VERSION_4 = 4;
 
     private byte[] wire;
 
@@ -48,9 +56,10 @@ public abstract class PeerDiscoveryMessage {
     private byte[] data;
     private OptionalInt networkId;
 
-    public PeerDiscoveryMessage() {}
+    protected PeerDiscoveryMessage() {
+    }
 
-    public PeerDiscoveryMessage(byte[] wire, byte[] mdc, byte[] signature, byte[] type, byte[] data){
+    protected PeerDiscoveryMessage(byte[] wire, byte[] mdc, byte[] signature, byte[] type, byte[] data) {
         this.mdc = mdc;
         this.signature = signature;
         this.type = type;
@@ -68,7 +77,7 @@ public abstract class PeerDiscoveryMessage {
         /* [2] Crate signature*/
         ECDSASignature ecdsaSignature = ECDSASignature.fromSignature(privKey.sign(forSig));
 
-        ecdsaSignature.setV((byte)(ecdsaSignature.getV() - 27));
+        ecdsaSignature.setV((byte) (ecdsaSignature.getV() - 27));
 
         byte[] sigBytes =
                 merge(BigIntegers.asUnsignedByteArray(32, ecdsaSignature.getR()),
@@ -161,7 +170,7 @@ public abstract class PeerDiscoveryMessage {
         return data;
     }
 
-    public abstract void parse(byte[] data);
+    protected abstract void parse(byte[] data);
 
     public DiscoveryMessageType getMessageType() {
         return null;
@@ -174,5 +183,20 @@ public abstract class PeerDiscoveryMessage {
                 .append("signature", ByteUtil.toHexString(signature))
                 .append("type", ByteUtil.toHexString(type))
                 .append("data", ByteUtil.toHexString(data)).toString();
+    }
+
+    protected String extractMessageId(RLPItem chk) {
+        String rawMessageId = new String(chk.getRLPData(), StandardCharsets.UTF_8);
+        try {
+            UUID uuid = UUID.fromString(rawMessageId);
+            if (uuid.version() != UUID_VERSION_4) {
+                throw new IllegalArgumentException("Received an UUID with version != 4");
+            }
+            return uuid.toString();
+        } catch (IllegalArgumentException iae) {
+            logger.error("Received message '{}' is not a v4 UUID", rawMessageId, iae);
+            String concreteMessageType = this.getClass().getSimpleName();
+            throw new PeerDiscoveryException(String.format(INVALID_MESSAGE_ID, concreteMessageType));
+        }
     }
 }

@@ -7,7 +7,7 @@ import co.rsk.net.discovery.message.PongPeerMessage;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.util.*;
+import java.util.Arrays;
 
 public class PeerMessagesTest {
 
@@ -32,7 +32,7 @@ public class PeerMessagesTest {
 
     @Test
     public void testParsePongPeerMessageWithoutNetworkId(){
-        PongPeerMessage pongPeerMessage = new PongPeerMessage(wirePingPongPeerMessage, mdcPingPongPeerMessage, signaturePingPongPeerMessage, typePong, dataWithoutNetworkIdPingPongPeerMessage);
+        PongPeerMessage pongPeerMessage = PongPeerMessage.buildFromReceived(wirePingPongPeerMessage, mdcPingPongPeerMessage, signaturePingPongPeerMessage, typePong, dataWithoutNetworkIdPingPongPeerMessage);
         Assert.assertFalse(pongPeerMessage.getNetworkId().isPresent());
         Assert.assertEquals("7481c139-bcfc-4542-a770-5ca49a4eaa7a",pongPeerMessage.getMessageId());
         Assert.assertEquals(GOOD_HOST,pongPeerMessage.getHost());
@@ -42,7 +42,7 @@ public class PeerMessagesTest {
 
     @Test
     public void testParsePongPeerMessageWithNetworkId() {
-        PongPeerMessage pongPeerMessage = new PongPeerMessage(wirePingPongPeerMessage, mdcPingPongPeerMessage, signaturePingPongPeerMessage, typePong, dataWithNetworkIdPingPongPeerMessage);
+        PongPeerMessage pongPeerMessage = PongPeerMessage.buildFromReceived(wirePingPongPeerMessage, mdcPingPongPeerMessage, signaturePingPongPeerMessage, typePong, dataWithNetworkIdPingPongPeerMessage);
         Assert.assertTrue(pongPeerMessage.getNetworkId().isPresent());
         Assert.assertEquals(-989608247,pongPeerMessage.getNetworkId().getAsInt());
         Assert.assertEquals("0a967855-cfba-4b1b-9890-f6c931a4a7a0",pongPeerMessage.getMessageId());
@@ -53,7 +53,7 @@ public class PeerMessagesTest {
 
     @Test
     public void testParsePingPeerMessageWithoutNetworkId(){
-        PingPeerMessage pingPeerMessage = new PingPeerMessage(wirePingPongPeerMessage, mdcPingPongPeerMessage, signaturePingPongPeerMessage,typePing, dataWithoutNetworkIdPingPongPeerMessage);
+        PingPeerMessage pingPeerMessage = PingPeerMessage.buildFromReceived(wirePingPongPeerMessage, mdcPingPongPeerMessage, signaturePingPongPeerMessage,typePing, dataWithoutNetworkIdPingPongPeerMessage);
         Assert.assertFalse(pingPeerMessage.getNetworkId().isPresent());
         Assert.assertEquals("7481c139-bcfc-4542-a770-5ca49a4eaa7a",pingPeerMessage.getMessageId());
         Assert.assertEquals(GOOD_HOST,pingPeerMessage.getHost());
@@ -63,7 +63,7 @@ public class PeerMessagesTest {
 
     @Test
     public void testParsePingPeerMessageWithNetworkId() {
-        PingPeerMessage pingPeerMessage = new PingPeerMessage(wirePingPongPeerMessage, mdcPingPongPeerMessage, signaturePingPongPeerMessage,typePing, dataWithNetworkIdPingPongPeerMessage);
+        PingPeerMessage pingPeerMessage = PingPeerMessage.buildFromReceived(wirePingPongPeerMessage, mdcPingPongPeerMessage, signaturePingPongPeerMessage,typePing, dataWithNetworkIdPingPongPeerMessage);
         Assert.assertTrue(pingPeerMessage.getNetworkId().isPresent());
         Assert.assertEquals(-989608247,pingPeerMessage.getNetworkId().getAsInt());
         Assert.assertEquals("0a967855-cfba-4b1b-9890-f6c931a4a7a0",pingPeerMessage.getMessageId());
@@ -74,7 +74,7 @@ public class PeerMessagesTest {
 
     @Test
     public void testParseFindNodePeerMessageWithoutNetworkId() {
-        FindNodePeerMessage findNodePeerMessageExpected = new FindNodePeerMessage(wireFindNodePeerMessage,mdcFindNodePeerMessage,signatureFindNodePeerMessage,typeFindNodePeerMessage,dataWithoutNetworkId);
+        FindNodePeerMessage findNodePeerMessageExpected = FindNodePeerMessage.buildFromReceived(wireFindNodePeerMessage,mdcFindNodePeerMessage,signatureFindNodePeerMessage,typeFindNodePeerMessage,dataWithoutNetworkId);
         Assert.assertFalse(findNodePeerMessageExpected.getNetworkId().isPresent());
         Assert.assertEquals("be04abbb-602f-4c12-8c08-e74e31e660aa", findNodePeerMessageExpected.getMessageId());
         Assert.assertTrue(Arrays.equals(findNodePeerMessageExpected.getMdc(), mdcFindNodePeerMessage));
@@ -85,7 +85,7 @@ public class PeerMessagesTest {
 
     @Test
     public void testParseFindNodePeerMessage() {
-        FindNodePeerMessage findNodePeerMessageExpected = new FindNodePeerMessage(wireFindNodePeerMessage,mdcFindNodePeerMessage,signatureFindNodePeerMessage,typeFindNodePeerMessage,dataWithNetworkId);
+        FindNodePeerMessage findNodePeerMessageExpected = FindNodePeerMessage.buildFromReceived(wireFindNodePeerMessage,mdcFindNodePeerMessage,signatureFindNodePeerMessage,typeFindNodePeerMessage,dataWithNetworkId);
         Assert.assertTrue(findNodePeerMessageExpected.getNetworkId().isPresent());
         Assert.assertEquals(-1869051373,findNodePeerMessageExpected.getNetworkId().getAsInt());
         Assert.assertEquals("65b469c6-ba69-4238-bf5a-a485c024e3ce", findNodePeerMessageExpected.getMessageId());

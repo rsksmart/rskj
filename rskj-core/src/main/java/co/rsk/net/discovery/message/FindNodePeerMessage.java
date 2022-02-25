@@ -26,7 +26,6 @@ import org.ethereum.util.RLP;
 import org.ethereum.util.RLPItem;
 import org.ethereum.util.RLPList;
 
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.OptionalInt;
 
@@ -42,12 +41,16 @@ public class FindNodePeerMessage extends PeerDiscoveryMessage {
     private byte[] nodeId;
     private String messageId;
 
-    public FindNodePeerMessage(byte[] wire, byte[] mdc, byte[] signature, byte[] type, byte[] data) {
+    private FindNodePeerMessage(byte[] wire, byte[] mdc, byte[] signature, byte[] type, byte[] data) {
         super(wire, mdc, signature, type, data);
         this.parse(data);
     }
 
     private FindNodePeerMessage() {
+    }
+    
+    public static FindNodePeerMessage buildFromReceived(byte[] wire, byte[] mdc, byte[] signature, byte[] type, byte[] data) {
+        return new FindNodePeerMessage(wire, mdc, signature, type, data);
     }
 
     public static FindNodePeerMessage create(byte[] nodeId, String check, ECKey privKey, Integer networkId) {
@@ -73,22 +76,21 @@ public class FindNodePeerMessage extends PeerDiscoveryMessage {
     }
 
     @Override
-    public final void parse(byte[] data) {
+    protected final void parse(byte[] data) {
         RLPList dataList = (RLPList) RLP.decode2OneItem(data, 0);
         if (dataList.size() < 2) {
             throw new PeerDiscoveryException(MORE_DATA);
         }
         RLPItem chk = (RLPItem) dataList.get(1);
 
-        this.messageId = new String(chk.getRLPData(), Charset.forName("UTF-8"));
+        this.messageId = extractMessageId(chk);
 
         RLPItem nodeRlp = (RLPItem) dataList.get(0);
 
         this.nodeId = nodeRlp.getRLPData();
 
-        this.setNetworkIdWithRLP(dataList.size()>2?dataList.get(2):null);
+        this.setNetworkIdWithRLP(dataList.size() > 2 ? dataList.get(2) : null);
     }
-
 
     public String getMessageId() {
         return this.messageId;
