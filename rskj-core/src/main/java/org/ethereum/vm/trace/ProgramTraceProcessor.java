@@ -28,6 +28,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 /**
@@ -37,7 +38,7 @@ public class ProgramTraceProcessor {
 
     private static final ObjectMapper OBJECT_MAPPER = makeObjectMapper();
 
-    private final Map<Keccak256, ProgramTrace> traces = new HashMap<>();
+    private final Map<Keccak256, ProgramTrace> traces = new ConcurrentHashMap<>();
 
     public void processProgramTrace(ProgramTrace programTrace, Keccak256 txHash) {
         this.traces.put(txHash, programTrace);
