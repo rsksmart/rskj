@@ -20,6 +20,7 @@ package co.rsk.rpc.netty;
 
 import co.rsk.rpc.JsonRpcMethodFilter;
 import co.rsk.rpc.ModuleDescription;
+import co.rsk.util.CustomJsonRpcBasicServer;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -48,7 +49,7 @@ public class JsonRpcWeb3ServerHandler extends SimpleChannelInboundHandler<ByteBu
     private final JsonRpcBasicServer jsonRpcServer;
 
     public JsonRpcWeb3ServerHandler(Web3 service, List<ModuleDescription> filteredModules) {
-        this.jsonRpcServer = new JsonRpcBasicServer(service, service.getClass());
+        this.jsonRpcServer = new CustomJsonRpcBasicServer(service, service.getClass());
         jsonRpcServer.setRequestInterceptor(new JsonRpcMethodFilter(filteredModules));
         jsonRpcServer.setErrorResolver(new MultipleErrorResolver(new RskErrorResolver(), AnnotationsErrorResolver.INSTANCE, DefaultErrorResolver.INSTANCE));
     }
@@ -57,10 +58,16 @@ public class JsonRpcWeb3ServerHandler extends SimpleChannelInboundHandler<ByteBu
     protected void channelRead0(ChannelHandlerContext ctx, ByteBufHolder request) throws Exception {
         ByteBuf responseContent = Unpooled.buffer();
         int responseCode;
+
         try (ByteBufOutputStream os = new ByteBufOutputStream(responseContent);
-             ByteBufInputStream is = new ByteBufInputStream(request.content().retain())){
-            
+             ByteBufInputStream is = new ByteBufInputStream(request.content().retain())) {
+
             responseCode = jsonRpcServer.handleRequest(is, os);
+        } catch (IllegalArgumentException e) {
+            LOGGER.error(ErrorResolver.JsonError.PARSE_ERROR.message, e);
+            int errorCode = ErrorResolver.JsonError.PARSE_ERROR.code;
+            responseContent = buildErrorContent(errorCode, e.getMessage());
+            responseCode = ErrorResolver.JsonError.OK.code;
         } catch (Exception e) {
             String unexpectedErrorMsg = "Unexpected error";
             LOGGER.error(unexpectedErrorMsg, e);
