@@ -2719,22 +2719,46 @@ public class BridgeUtilsTest {
 
         Coin totalAmountExpected = valueToTransfer.multiply(2);
 
-        Assert.assertEquals(totalAmountExpected, BridgeUtils.getAmountSentToAddresses(new Context(bridgeConstants.getBtcParams()), btcTx, activeFederationAddress, retiringFederationAddress));
+        Assert.assertEquals(totalAmountExpected, BridgeUtils.getAmountSentToAddresses(
+            new Context(bridgeConstants.getBtcParams()),
+            btcTx,
+            activeFederationAddress,
+            retiringFederationAddress)
+        );
 
         btcTx = new BtcTransaction(bridgeConstants.getBtcParams());
         btcTx.addOutput(valueToTransfer, activeFederationAddress);
         totalAmountExpected = Coin.COIN;
-        Assert.assertEquals(totalAmountExpected, BridgeUtils.getAmountSentToAddresses(new Context(bridgeConstants.getBtcParams()), btcTx, activeFederationAddress, retiringFederationAddress));
+        Assert.assertEquals(totalAmountExpected, BridgeUtils.getAmountSentToAddresses(
+            new Context(bridgeConstants.getBtcParams()),
+            btcTx,
+            activeFederationAddress,
+            retiringFederationAddress)
+        );
 
         btcTx = new BtcTransaction(bridgeConstants.getBtcParams());
         btcTx.addOutput(valueToTransfer, activeFederationAddress);
         totalAmountExpected = Coin.COIN;
-        Assert.assertEquals(totalAmountExpected, BridgeUtils.getAmountSentToAddresses(new Context(bridgeConstants.getBtcParams()), btcTx, activeFederationAddress));
+        Assert.assertEquals(
+            totalAmountExpected,
+            BridgeUtils.getAmountSentToAddresses(new Context(
+                bridgeConstants.getBtcParams()),
+                btcTx,
+                activeFederationAddress
+            )
+        );
 
         btcTx = new BtcTransaction(bridgeConstants.getBtcParams());
         btcTx.addOutput(valueToTransfer, retiringFederationAddress);
         totalAmountExpected = Coin.COIN;
-        Assert.assertEquals(totalAmountExpected, BridgeUtils.getAmountSentToAddresses(new Context(bridgeConstants.getBtcParams()), btcTx, retiringFederationAddress));
+        Assert.assertEquals(
+            totalAmountExpected,
+            BridgeUtils.getAmountSentToAddresses(
+                new Context(bridgeConstants.getBtcParams()),
+                btcTx,
+                retiringFederationAddress
+            )
+        );
     }
 
     @Test
