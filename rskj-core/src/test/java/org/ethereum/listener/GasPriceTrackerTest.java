@@ -3,7 +3,9 @@ package org.ethereum.listener;
 import co.rsk.core.Coin;
 import co.rsk.peg.simples.SimpleRskTransaction;
 import org.ethereum.core.Block;
+import org.ethereum.core.Blockchain;
 import org.ethereum.core.Transaction;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Collections;
@@ -18,17 +20,37 @@ import static org.mockito.Mockito.when;
 
 public class GasPriceTrackerTest {
 
-    private final GasPriceTracker gasPriceTracker = new GasPriceTracker();
+    private GasPriceTracker gasPriceTracker;
+    private Blockchain blockchain;
+    private Block bestBlock;
+
+    @Before
+    public void setUp() throws Exception {
+        blockchain = mock(Blockchain.class);
+        bestBlock = mock(Block.class);
+        when(blockchain.getBestBlock()).thenReturn(bestBlock);
+        gasPriceTracker = new GasPriceTracker(blockchain);
+    }
 
     @Test
-    public void getGasPrice_TrackerNotTriggered_ReturnsDefaultPrice() {
+    public void getGasPrice_TrackerNotTriggered_NoBestBlockOnDB_ReturnsDefaultPrice() {
+        when(blockchain.getBestBlock()).thenReturn(null);
         Coin actualResult = gasPriceTracker.getGasPrice();
-
         assertEquals(Coin.valueOf(20_000_000_000L), actualResult);
     }
 
     @Test
-    public void getGasPrice_PriceWindowNotFilled_ReturnsBlockPrice() {
+    public void getGasPrice_TrackerNotTriggered_BestBlockOnDB_ReturnsDBPrice() {
+        long price = 25_000_000_000L;
+        when(bestBlock.getMinimumGasPrice()).thenReturn(Coin.valueOf(price));
+        Coin actualResult = gasPriceTracker.getGasPrice();
+        assertEquals(Coin.valueOf(price), actualResult);
+    }
+
+    @Test
+    public void getGasPrice_PriceWindowNotFilled_NoBestBlockOnDB_ReturnsBlockPrice() {
+        when(blockchain.getBestBlock()).thenReturn(null);
+
         Block block = makeBlock(Coin.valueOf(30_000_000_000L), 511, i -> makeTx(Coin.valueOf(40_000_000_000L)));
 
         gasPriceTracker.onBlock(block, Collections.emptyList());
@@ -36,6 +58,21 @@ public class GasPriceTrackerTest {
         Coin actualResult = gasPriceTracker.getGasPrice();
 
         assertEquals(Coin.valueOf(30_000_000_000L), actualResult);
+    }
+
+    @Test
+    public void getGasPrice_PriceWindowNotFilled_BestBlockOnDB_ReturnsDBPrice() {
+        long price = 25_000_000_000L;
+
+        when(bestBlock.getMinimumGasPrice()).thenReturn(Coin.valueOf(price));
+
+        Block block = makeBlock(Coin.valueOf(30_000_000_000L), 511, i -> makeTx(Coin.valueOf(40_000_000_000L)));
+
+        gasPriceTracker.onBlock(block, Collections.emptyList());
+
+        Coin actualResult = gasPriceTracker.getGasPrice();
+
+        assertEquals(Coin.valueOf(price), actualResult);
     }
 
     @Test

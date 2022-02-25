@@ -22,6 +22,7 @@ package org.ethereum.listener;
 import co.rsk.core.Coin;
 import co.rsk.remasc.RemascTransaction;
 import org.ethereum.core.Block;
+import org.ethereum.core.Blockchain;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionReceipt;
 import org.slf4j.Logger;
@@ -30,6 +31,7 @@ import org.slf4j.LoggerFactory;
 import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -51,11 +53,16 @@ public class GasPriceTracker extends EthereumListenerAdapter {
 
     private final Coin[] window = new Coin[WINDOW_SIZE];
     private final AtomicReference<Coin> bestBlockPriceRef = new AtomicReference<>();
+    private final Blockchain blockchain;
 
     private Coin defaultPrice = Coin.valueOf(20_000_000_000L);
     private int idx = WINDOW_SIZE - 1;
 
     private Coin lastVal;
+
+    public GasPriceTracker(Blockchain blockchain) {
+        this.blockchain = blockchain;
+    }
 
     @Override
     public void onBestBlock(Block block, List<TransactionReceipt> receipts) {
@@ -90,7 +97,9 @@ public class GasPriceTracker extends EthereumListenerAdapter {
 
     public synchronized Coin getGasPrice() {
         if (window[0] == null) { // not filled yet
-            return defaultPrice;
+            return Optional.ofNullable(blockchain.getBestBlock())
+                    .map(Block::getMinimumGasPrice)
+                    .orElse(defaultPrice);
         } else {
             if (lastVal == null) {
                 Coin[] values = Arrays.copyOf(window, WINDOW_SIZE);
