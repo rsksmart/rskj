@@ -146,7 +146,7 @@ public class LevelDbDataSource implements KeyValueDataSource {
         resetDbLock.readLock().lock();
         try {
             if (logger.isTraceEnabled()) {
-                logger.trace("~> LevelDbDataSource.get(): {}, key: {}", name,  ByteUtil.toHexString(key));
+                logger.trace("~> LevelDbDataSource.get(): {}, key: {}", name, ByteUtil.toHexString(key));
             }
 
             try {
@@ -222,7 +222,7 @@ public class LevelDbDataSource implements KeyValueDataSource {
     }
 
     @Override
-    public Set<byte[]> keys() {
+    public Set<ByteArrayWrapper> keys() {
         Metric metric = profiler.start(Profiler.PROFILING_TYPE.DB_READ);
         resetDbLock.readLock().lock();
         try {
@@ -231,9 +231,10 @@ public class LevelDbDataSource implements KeyValueDataSource {
             }
 
             try (DBIterator iterator = db.iterator()) {
-                Set<byte[]> result = new HashSet<>();
+                Set<ByteArrayWrapper> result = new HashSet<>();
                 for (iterator.seekToFirst(); iterator.hasNext(); iterator.next()) {
-                    result.add(iterator.peekNext().getKey());
+                    byte[] key = iterator.peekNext().getKey();
+                    result.add(ByteUtil.wrap(key));
                 }
                 if (logger.isTraceEnabled()) {
                     logger.trace("<~ LevelDbDataSource.keys(): {}, {}", name, result.size());
@@ -335,7 +336,7 @@ public class LevelDbDataSource implements KeyValueDataSource {
     }
 
     @Override
-    public void flush(){
+    public void flush() {
         // All is flushed immediately: there is no uncommittedCache to flush
     }
 
@@ -343,9 +344,7 @@ public class LevelDbDataSource implements KeyValueDataSource {
         Map<ByteArrayWrapper, byte[]> mergedStores = new HashMap<>();
         for (Path originPath : originPaths) {
             KeyValueDataSource singleOriginDataSource = makeDataSource(originPath);
-            for (byte[] key : singleOriginDataSource.keys()) {
-                mergedStores.put(ByteUtil.wrap(key), singleOriginDataSource.get(key));
-            }
+            singleOriginDataSource.keys().forEach(kw -> mergedStores.put(kw, singleOriginDataSource.get(kw.getData())));
             singleOriginDataSource.close();
         }
         KeyValueDataSource destinationDataSource = makeDataSource(destinationPath);

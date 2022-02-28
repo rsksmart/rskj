@@ -29,6 +29,7 @@ import org.junit.rules.TemporaryFolder;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.ethereum.TestUtils.randomBytes;
 import static org.hamcrest.Matchers.equalTo;
@@ -48,11 +49,11 @@ public class LevelDbDataSourceTest {
 
         final int batchSize = 100;
         Map<ByteArrayWrapper, byte[]> batch = createBatch(batchSize);
-        
+
         dataSource.updateBatch(batch, Collections.emptySet());
 
         assertEquals(batchSize, dataSource.keys().size());
-        
+
         dataSource.close();
     }
 
@@ -66,12 +67,12 @@ public class LevelDbDataSourceTest {
 
         assertNotNull(dataSource.get(key));
         assertEquals(1, dataSource.keys().size());
-        
+
         dataSource.close();
     }
 
     @Test
-    public void mergeMultiTrieStoreDBs() throws IOException {
+    public void mergeMultiTrieStoreDBs() {
         Path testDatabasesDirectory = databaseDir.getRoot().toPath();
 
         List<Path> sourcePaths = new ArrayList<>();
@@ -91,7 +92,9 @@ public class LevelDbDataSourceTest {
         LevelDbDataSource.mergeDataSources(destination, sourcePaths);
         KeyValueDataSource destinationDataSource = LevelDbDataSource.makeDataSource(destination);
         try {
-            Set<byte[]> destinationKeys = destinationDataSource.keys();
+            Set<byte[]> destinationKeys = destinationDataSource.keys().stream()
+                    .map(ByteArrayWrapper::getData)
+                    .collect(Collectors.toCollection(HashSet::new));
             Assert.assertThat(destinationKeys, hasSize(sourcesCount));
 
             for (byte[] destinationKey : destinationKeys) {
@@ -111,7 +114,7 @@ public class LevelDbDataSourceTest {
                     }
                     sourceKeysToString.delete(sourceKeysToString.length() - 2, sourceKeysToString.length());
                     sourceKeysToString.append("]");
-                    Assert.fail(String.format("%s wasn't found in %s", Arrays.toString(destinationKey), sourceKeysToString.toString()));
+                    Assert.fail(String.format("%s wasn't found in %s", Arrays.toString(destinationKey), sourceKeysToString));
                 }
             }
         } finally {
