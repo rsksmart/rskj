@@ -22,13 +22,15 @@ import co.rsk.core.RskAddress;
 import co.rsk.util.HexUtils;
 
 import java.math.BigInteger;
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
 public class TraceFilterRequest {
-    private String fromBlock = "earliest";
-    private String toBlock = "latest";
+    private static final String EARLIEST_BLOCK = "earliest";
+    private static final String LATEST_BLOCK = "latest";
+    private String fromBlock = EARLIEST_BLOCK;
+    private String toBlock = LATEST_BLOCK;
     private List<String> fromAddress;
     private List<String> toAddress;
     private Integer after;
@@ -59,11 +61,13 @@ public class TraceFilterRequest {
     }
 
     public BigInteger getFromBlockNumber() {
-        if ("earliest".equalsIgnoreCase(this.fromBlock)) {
-            return new BigInteger("0");
+        String hexBlockNum = this.getBlockHexNumberByTag(this.fromBlock);
+
+        if (hexBlockNum == null) {
+            return null;
         }
 
-        return HexUtils.stringHexToBigInteger(this.fromBlock);
+        return HexUtils.stringHexToBigInteger(hexBlockNum);
     }
 
     public String getFromBlock() {
@@ -71,11 +75,13 @@ public class TraceFilterRequest {
     }
 
     public BigInteger getToBlockNumber() {
-        if ("latest".equalsIgnoreCase(this.toBlock)) {
+        String hexBlockNum = this.getBlockHexNumberByTag(this.toBlock);
+
+        if (hexBlockNum == null) {
             return null;
         }
 
-        return HexUtils.stringHexToBigInteger(this.toBlock);
+        return HexUtils.stringHexToBigInteger(hexBlockNum);
     }
 
     public String getToBlock() {
@@ -84,7 +90,7 @@ public class TraceFilterRequest {
 
     public List<RskAddress> getFromAddressAsRskAddresses() {
         if (this.fromAddress == null) {
-            return new ArrayList<>();
+            return Collections.emptyList();
         }
 
         return this.fromAddress.stream().map(RskAddress::new).collect(Collectors.toList());
@@ -100,7 +106,7 @@ public class TraceFilterRequest {
 
     public List<RskAddress> getToAddressAsRskAddresses() {
         if (this.toAddress == null) {
-            return new ArrayList<>();
+            return Collections.emptyList();
         }
 
         return this.toAddress.stream().map(RskAddress::new).collect(Collectors.toList());
@@ -112,5 +118,17 @@ public class TraceFilterRequest {
 
     public Integer getCount() {
         return count;
+    }
+
+    private String getBlockHexNumberByTag(String block) {
+        if (EARLIEST_BLOCK.equalsIgnoreCase(block)) {
+            return "0x0";
+        }
+
+        if (LATEST_BLOCK.equalsIgnoreCase(block)) {
+            return null;
+        }
+
+        return block;
     }
 }

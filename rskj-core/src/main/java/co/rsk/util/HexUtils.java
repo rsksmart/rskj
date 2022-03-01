@@ -75,20 +75,6 @@ public class HexUtils {
     }
 
     /**
-     * Convert hex encoded string, even if it doesn't have the prefix 0x, to decoded BigInteger
-     */
-    public static BigInteger forceParseStringHexToBigInteger(final String input) {
-        String inputWithPrefix = input;
-
-        if(!hasHexPrefix(input)) {
-            inputWithPrefix = "0x" + input;
-        }
-
-        String hexa = inputWithPrefix.substring(2);
-        return new BigInteger(hexa, 16);
-    }
-
-    /**
      * Convert hex encoded string to decoded byte array
      */
     public static byte[] stringHexToByteArray(final String param) {

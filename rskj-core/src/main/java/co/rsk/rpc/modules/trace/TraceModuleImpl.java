@@ -36,6 +36,7 @@ import org.ethereum.vm.trace.SummarizedProgramTrace;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.math.BigInteger;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -45,6 +46,8 @@ import static org.ethereum.rpc.TypeConverter.stringHexToByteArray;
 
 public class TraceModuleImpl implements TraceModule {
 
+    private static final String EARLIEST_BLOCK = "earliest";
+    private static final String LATEST_BLOCK = "latest";
     private static final Logger logger = LoggerFactory.getLogger("web3");
 
     private static final ObjectMapper OBJECT_MAPPER = Serializers.createMapper(true);
@@ -117,17 +120,12 @@ public class TraceModuleImpl implements TraceModule {
     public JsonNode traceFilter(TraceFilterRequest traceFilterRequest) throws Exception {
         List<List<TransactionTrace>> blockTracesGroup = new ArrayList<>();
 
-        long fromBlockNumber = traceFilterRequest.getFromBlockNumber().longValue();
-        Block block;
+        Block fromBlock = getBlockByTagOrNumber(traceFilterRequest.getFromBlock(), traceFilterRequest.getFromBlockNumber());
+        Block block = getBlockByTagOrNumber(traceFilterRequest.getToBlock(), traceFilterRequest.getToBlockNumber());
 
-        if (traceFilterRequest.getToBlock().equalsIgnoreCase("latest")) {
-            block = this.blockchain.getBestBlock();
-        } else {
-            long toBlockNumber = traceFilterRequest.getToBlockNumber().longValue();
-            block = this.blockchain.getBlockByNumber(toBlockNumber);
-        }
+        block = block == null ? blockchain.getBestBlock() : block;
 
-        while (block != null && block.getNumber() >= fromBlockNumber) {
+        while (block != null && block.getNumber() >= fromBlock.getNumber()) {
             List<TransactionTrace> builtTraces = buildBlockTraces(block, traceFilterRequest);
 
             if (builtTraces != null) {
@@ -171,9 +169,9 @@ public class TraceModuleImpl implements TraceModule {
     }
 
     private Block getByJsonBlockId(String id) {
-        if ("earliest".equalsIgnoreCase(id)) {
+        if (EARLIEST_BLOCK.equalsIgnoreCase(id)) {
             return this.blockchain.getBlockByNumber(0);
-        } else if ("latest".equalsIgnoreCase(id)) {
+        } else if (LATEST_BLOCK.equalsIgnoreCase(id)) {
             return this.blockchain.getBestBlock();
         } else if ("pending".equalsIgnoreCase(id)) {
             throw RskJsonRpcRequestException.unimplemented("The method don't support 'pending' as a parameter yet");
@@ -236,5 +234,16 @@ public class TraceModuleImpl implements TraceModule {
         }
 
         return blockTraces;
+    }
+
+    private Block getBlockByTagOrNumber(String strBlock, BigInteger biBlock) {
+        if (strBlock.equalsIgnoreCase(LATEST_BLOCK)) {
+            return this.blockchain.getBestBlock();
+        } else if (strBlock.equalsIgnoreCase(EARLIEST_BLOCK)) {
+            return this.blockchain.getBlockByNumber(0);
+        } else {
+            long toBlockNumber = biBlock.longValue();
+            return this.blockchain.getBlockByNumber(toBlockNumber);
+        }
     }
 }
