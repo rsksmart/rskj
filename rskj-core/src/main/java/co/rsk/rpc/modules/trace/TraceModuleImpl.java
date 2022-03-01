@@ -115,7 +115,7 @@ public class TraceModuleImpl implements TraceModule {
 
     @Override
     public JsonNode traceFilter(TraceFilterRequest traceFilterRequest) throws Exception {
-        List<TransactionTrace> blockTraces = new ArrayList<>();
+        List<List<TransactionTrace>> blockTracesGroup = new ArrayList<>();
 
         long fromBlockNumber = traceFilterRequest.getFromBlockNumber().longValue();
         Block block;
@@ -129,12 +129,17 @@ public class TraceModuleImpl implements TraceModule {
 
         while (block != null && block.getNumber() >= fromBlockNumber) {
             List<TransactionTrace> builtTraces = buildBlockTraces(block, traceFilterRequest);
-            blockTraces.addAll(builtTraces == null ? new ArrayList<>() : builtTraces);
+
+            if (builtTraces != null) {
+                blockTracesGroup.add(builtTraces);
+            }
 
             block = this.blockchain.getBlockByHash(block.getParentHash().getBytes());
         }
 
-        Collections.reverse(blockTraces);
+        Collections.reverse(blockTracesGroup);
+
+        List<TransactionTrace> blockTraces = blockTracesGroup.stream().flatMap(Collection::stream).collect(Collectors.toList());
 
         Stream<TransactionTrace> txTraceStream = blockTraces.stream();
 

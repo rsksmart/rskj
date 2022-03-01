@@ -373,7 +373,7 @@ public class TraceModuleImplTest {
         Assert.assertEquals("\"create\"", oresult.get("type").toString());
 
         Assert.assertNotNull(oresult.get("action"));
-        Assert.assertNotNull(oresult.get("action").get("creationMethod"));
+        Assert.assertNotNull(oresult.get("action").get("from"));
         Assert.assertNotNull(oresult.get("action").get("init"));
         Assert.assertNull(oresult.get("action").get("input"));
     }
@@ -400,7 +400,7 @@ public class TraceModuleImplTest {
         Assert.assertEquals("\"create\"", oresult.get("type").toString());
 
         Assert.assertNotNull(oresult.get("action"));
-        Assert.assertNotNull(oresult.get("action").get("creationMethod"));
+        Assert.assertNotNull(oresult.get("action").get("from"));
         Assert.assertNotNull(oresult.get("action").get("init"));
         Assert.assertNull(oresult.get("action").get("input"));
 
@@ -438,7 +438,7 @@ public class TraceModuleImplTest {
         Assert.assertEquals("\"create\"", oresult.get("type").toString());
 
         Assert.assertNotNull(oresult.get("action"));
-        Assert.assertNull(oresult.get("action").get("creationMethod"));
+        Assert.assertNotNull(oresult.get("action").get("creationMethod"));
     }
 
     private static void retrieveTraceFilterByAddress(World world, ReceiptStore receiptStore) throws Exception {
