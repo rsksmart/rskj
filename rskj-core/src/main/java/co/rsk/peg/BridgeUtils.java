@@ -146,7 +146,7 @@ public class BridgeUtils {
      * @return total amount sent to the given list of addresses.
      */
     protected static Coin getAmountSentToAddresses(Context context, BtcTransaction btcTx, Address... addresses) {
-        Wallet wallet = new SimpleWallet(context);
+        Wallet wallet = new BtcWallet(context);
         long now = Utils.currentTimeMillis() / 1000L;
         wallet.addWatchedAddresses(Arrays.asList(addresses), now);
         return btcTx.getValueSentToMe(wallet);

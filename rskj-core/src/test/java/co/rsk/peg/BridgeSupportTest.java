@@ -6723,9 +6723,11 @@ public class BridgeSupportTest {
     public void registerFastBridgeBtcTransaction_before_RSKIP293_activation() throws IOException, BlockStoreException, BridgeIllegalArgumentException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP219)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(false);
         Coin valueToSend = Coin.COIN;
 
+        // test sending values to both federations, the active federation and also the retiring federation
         BigInteger result = registerFastBridgeBtcTransaction_RSKIP293(
             activations,
             valueToSend,
@@ -6735,6 +6737,8 @@ public class BridgeSupportTest {
         );
         Assert.assertEquals(co.rsk.core.Coin.fromBitcoin(valueToSend).asBigInteger(), result);
 
+        // test sending values to the active federation, and also to the retiring federation
+        // when there is not currently retiring fed
         result = registerFastBridgeBtcTransaction_RSKIP293(
             activations,
             valueToSend,
@@ -6744,6 +6748,7 @@ public class BridgeSupportTest {
         );
         Assert.assertEquals(co.rsk.core.Coin.fromBitcoin(valueToSend).asBigInteger(), result);
 
+        // test sending values to a retiring federation
         result = registerFastBridgeBtcTransaction_RSKIP293(
             activations,
             valueToSend,
@@ -6753,6 +6758,7 @@ public class BridgeSupportTest {
         );
         Assert.assertEquals(FAST_BRIDGE_UNPROCESSABLE_TX_VALUE_ZERO_ERROR, result.longValue());
 
+        // test sending values to the active federation when there is a currently retiring federation
         result = registerFastBridgeBtcTransaction_RSKIP293(
             activations,
             valueToSend,
@@ -6767,9 +6773,11 @@ public class BridgeSupportTest {
     public void registerFastBridgeBtcTransaction__after_RSKIP293_activation() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP219)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
         Coin valueToSend = Coin.COIN;
 
+        // test sending values to both federations, the active federation and also the retiring federation
         BigInteger result = registerFastBridgeBtcTransaction_RSKIP293(
             activations,
             valueToSend,
@@ -6784,30 +6792,12 @@ public class BridgeSupportTest {
     public void registerFastBridgeBtcTransaction_no_retiring_federation() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP219)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
         Coin valueToSend = Coin.COIN;
 
+        // test sending values to a retiring federation when there is not currently one
         BigInteger result = registerFastBridgeBtcTransaction_RSKIP293(
-            activations,
-            valueToSend,
-            true,
-            false,
-            false
-        );
-        Assert.assertEquals(co.rsk.core.Coin.fromBitcoin(valueToSend).asBigInteger(), result);
-
-        // test when amount is sent to the active federation and also to a retiring federation that doesn't exist
-        result = registerFastBridgeBtcTransaction_RSKIP293(
-            activations,
-            valueToSend,
-            true,
-            true,
-            false
-        );
-        Assert.assertEquals(co.rsk.core.Coin.fromBitcoin(valueToSend).asBigInteger(), result);
-
-        // test when amount is sent to a retiring federation that doesn't exist
-        result = registerFastBridgeBtcTransaction_RSKIP293(
             activations,
             valueToSend,
             false,
@@ -6815,25 +6805,48 @@ public class BridgeSupportTest {
             false
         );
         Assert.assertEquals(FAST_BRIDGE_UNPROCESSABLE_TX_VALUE_ZERO_ERROR, result.longValue());
+
+        // test sending values to the active federation, and also to a retiring federation
+        // when there is not currently one
+         result = registerFastBridgeBtcTransaction_RSKIP293(
+            activations,
+            valueToSend,
+            true,
+            true,
+            false
+        );
+        Assert.assertEquals(co.rsk.core.Coin.fromBitcoin(valueToSend).asBigInteger(), result);
     }
 
     @Test
     public void registerFastBridgeBtcTransaction_funds_sent_to_retiring_federation() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP219)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
         Coin valueToSend = Coin.COIN;
 
+        // test sending value to the currently retiring federation
         BigInteger result = registerFastBridgeBtcTransaction_RSKIP293(
             activations,
             valueToSend,
-            true,
             false,
-            false
+            true,
+            true
         );
         Assert.assertEquals(co.rsk.core.Coin.fromBitcoin(valueToSend).asBigInteger(), result);
 
-        // test when send zero amount to retiring federation
+        // test sending value to the currently retiring federation and also to the active federation
+        result = registerFastBridgeBtcTransaction_RSKIP293(
+            activations,
+            valueToSend,
+            true,
+            true,
+            true
+        );
+        Assert.assertEquals(co.rsk.core.Coin.fromBitcoin(valueToSend.multiply(2)).asBigInteger(), result);
+
+        // test when zero amount is sent to the retiring federation
         valueToSend = Coin.ZERO;
         result = registerFastBridgeBtcTransaction_RSKIP293(
             activations,
