@@ -28,18 +28,21 @@ public class CliArgs<O, F> {
     private final List<String> arguments;
     private final Map<O, String> options;
     private final Set<F> flags;
+    private final Map<String, String> paramValueMap;
 
-    private CliArgs(List<String> arguments, Map<O, String> options, Set<F> flags) {
+    private CliArgs(List<String> arguments, Map<O, String> options, Set<F> flags, Map<String, String> paramValueMap) {
         this.arguments = Collections.unmodifiableList(arguments);
         this.options = Collections.unmodifiableMap(options);
         this.flags = Collections.unmodifiableSet(flags);
+        this.paramValueMap = Collections.unmodifiableMap(paramValueMap);
     }
 
     public static <O, F> CliArgs<O, F> empty() {
         return new CliArgs<>(
                 Collections.emptyList(),
                 Collections.emptyMap(),
-                Collections.emptySet()
+                Collections.emptySet(),
+                Collections.emptyMap()
         );
     }
 
@@ -53,6 +56,10 @@ public class CliArgs<O, F> {
 
     public Set<F> getFlags() {
         return flags;
+    }
+
+    public Map<String, String> getParamValueMap() {
+        return paramValueMap;
     }
 
     /**
@@ -80,6 +87,7 @@ public class CliArgs<O, F> {
             List<String> arguments = new LinkedList<>();
             Map<O, String> options = new HashMap<>();
             Set<F> flags = new HashSet<>();
+            Map<String, String> paramValueMap = new HashMap<>();
 
             for (int i = 0; i < args.length; i++) {
                 switch (args[i].charAt(0)) {
@@ -87,11 +95,15 @@ public class CliArgs<O, F> {
                         if (args[i].length() < 2) {
                             throw new IllegalArgumentException("You must provide an option name, e.g. -d");
                         }
-                        if (args[i].charAt(1) == '-') {
+                        char currentChar = Character.toLowerCase(args[i].charAt(1));
+                        if (currentChar == '-') {
                             if (args[i].length() < 3) {
                                 throw new IllegalArgumentException("You must provide a flag name, e.g. --quiet");
                             }
                             flags.add(getFlagByName(args[i].substring(2, args[i].length())));
+                        } else if (currentChar == 'x') {
+                            String arg = args[i].substring(2);
+                            paramValueMap.putAll(parseArgToMap(arg));
                         } else {
                             if (args.length - 1 == i) {
                                 throw new IllegalArgumentException(
@@ -118,7 +130,7 @@ public class CliArgs<O, F> {
                 );
             }
 
-            return new CliArgs<>(arguments, options, flags);
+            return new CliArgs<>(arguments, options, flags, paramValueMap);
         }
 
         private F getFlagByName(String flagName) {
@@ -137,6 +149,35 @@ public class CliArgs<O, F> {
                     .orElseThrow(
                             () -> new NoSuchElementException(String.format("-%s is not a valid option", optionName))
                     );
+        }
+
+        /**
+         * Parses a string argument in the format e.g <i>database.dir=/home/rsk/core<i/> to a map in the following
+         * structure:
+         * <blockquote>
+         *     {
+         *         "database": {
+         *             "dir": "/home/rsk/core"
+         *         }
+         *     }
+         * </blockquote>
+         * @param arg to parse
+         * @return a string arg parsed to an equivalent map having the same structure system properties would have.
+         */
+        private Map<String, String> parseArgToMap(String arg) {
+            String[] paramValue = arg.split("=", 2);
+
+            if (paramValue.length != 2) {
+                throw new IllegalArgumentException("You must provide a valid arg, e.g. -Xparam.part1.part2=value");
+            }
+
+            String param = paramValue[0];
+            String value = paramValue[1];
+
+            Map<String, String> paramValueMap = new HashMap<>();
+            paramValueMap.put(param, value);
+
+            return paramValueMap;
         }
     }
 }

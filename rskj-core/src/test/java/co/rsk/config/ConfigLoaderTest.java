@@ -217,6 +217,15 @@ public class ConfigLoaderTest {
                 .forEach(pair -> checkTypeMismatchProblem.accept(pair.getLeft(), pair.getRight()));
     }
 
+    @Test
+    public void cliParamValueMapOverrideBaseConfig() {
+        when(cliArgs.getParamValueMap())
+                .thenReturn(Collections.singletonMap("database.dir", "/home/rsk/data"));
+        Config config = loader.getConfig();
+
+        assertThat(config.getString("database.dir"), is("/home/rsk/data"));
+    }
+
     private static void mockConfigFactory(Config defaultConfig, Config expectedConfig) {
         mockStatic(ConfigFactory.class);
         when(ConfigFactory.empty()).thenReturn(EMPTY_CONFIG);

@@ -119,6 +119,13 @@ public class ConfigLoader {
             config = entry.getKey().withConfig(config, entry.getValue());
         }
 
+        if (!cliArgs.getParamValueMap().isEmpty()) {
+            for (String param: cliArgs.getParamValueMap().keySet()) {
+                ConfigValue configValue = ConfigValueFactory.fromAnyRef(cliArgs.getParamValueMap().get(param));
+                config = config.withValue(param, configValue);
+            }
+        }
+
         return config;
     }
 
