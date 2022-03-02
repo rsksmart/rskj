@@ -18,10 +18,16 @@
 
 package co.rsk.peg;
 
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP284;
+
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.crypto.TransactionSignature;
-import co.rsk.bitcoinj.script.*;
+import co.rsk.bitcoinj.script.RedeemScriptParser;
 import co.rsk.bitcoinj.script.RedeemScriptParser.MultiSigType;
+import co.rsk.bitcoinj.script.RedeemScriptParserFactory;
+import co.rsk.bitcoinj.script.Script;
+import co.rsk.bitcoinj.script.ScriptBuilder;
+import co.rsk.bitcoinj.script.ScriptChunk;
 import co.rsk.bitcoinj.wallet.Wallet;
 import co.rsk.config.BridgeConstants;
 import co.rsk.core.RskAddress;
@@ -29,6 +35,7 @@ import co.rsk.peg.bitcoin.RskAllowUnconfirmedCoinSelector;
 import co.rsk.peg.btcLockSender.BtcLockSender.TxSenderAddressType;
 import co.rsk.peg.fastbridge.FastBridgeTxResponseCodes;
 import co.rsk.peg.utils.BtcTransactionFormatUtils;
+import javax.annotation.Nonnull;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -38,12 +45,9 @@ import org.ethereum.vm.PrecompiledContracts;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.Nonnull;
 import java.math.BigInteger;
 import java.util.*;
 import java.util.stream.Stream;
-
-import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP284;
 
 /**
  * @author Oscar Guindzberg
@@ -160,7 +164,8 @@ public class BridgeUtils {
      * @param activations     the network HF activations configuration
      * @param bridgeConstants the Bridge constants
      * @param totalAmount the pegin value to be validated
-     * @return {@link FastBridgeTxResponseCodes#VALID_TX} if it is a valid tx, in case it is not, it returns the proper error code.
+     * @return {@link FastBridgeTxResponseCodes#VALID_TX} if it is a valid tx, in case it is not,
+     * it returns the proper error code.
      */
     public static FastBridgeTxResponseCodes validateFastBridgePeginValue(
             ActivationConfig.ForBlock activations,
