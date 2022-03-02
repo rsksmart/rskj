@@ -7281,7 +7281,7 @@ public class BridgeSupportTest {
             false
         );
 
-        Assert.assertEquals(BigInteger.valueOf(BridgeSupport.FAST_BRIDGE_UNPROCESSABLE_TX_VALIDATIONS_ERROR), result);
+        Assert.assertEquals(BigInteger.valueOf(FastBridgeTxResponseCodes.UNPROCESSABLE_TX_VALIDATIONS_ERROR.value()), result);
     }
 
     @Test
