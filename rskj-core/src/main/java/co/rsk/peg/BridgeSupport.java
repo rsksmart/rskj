@@ -2589,11 +2589,6 @@ public class BridgeSupport {
             );
         } else {
             totalAmount = BridgeUtilsLegacy.getAmountSentToAddress(bridgeConstants, btcTx, fbActiveFederationAddress);
-            /*
-                TODO: Discuss if this legacy code should be fixed or not
-                    determine if there are any possible consequences if this comparison is change to
-                    a value comparison instead of an instance as it was before: if (totalAmount != Coin.ZERO)
-             */
             if (totalAmount.equals(Coin.ZERO)) {
                 logger.debug("[isFastPeginTxValid] Amount sent can't be 0");
                 txResponse = FastBridgeTxResponseCodes.UNPROCESSABLE_TX_VALUE_ZERO_ERROR;
