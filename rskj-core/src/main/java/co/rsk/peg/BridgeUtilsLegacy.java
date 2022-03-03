@@ -67,7 +67,7 @@ public class BridgeUtilsLegacy {
      */
     @Deprecated
     protected static List<UTXO> getUTXOsForAddress(BridgeConstants bridgeConstants, BtcTransaction btcTx, Address btcAddress) {
-        Wallet wallet = new SimpleWallet(new Context(bridgeConstants.getBtcParams()));
+        Wallet wallet = new BtcWallet(new Context(bridgeConstants.getBtcParams()));
         btcTx.getWalletOutputs(wallet);
         List<UTXO> utxosList = new ArrayList<>();
         for (TransactionOutput o : btcTx.getOutputs()) {

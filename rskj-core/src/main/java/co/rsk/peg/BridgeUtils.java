@@ -148,8 +148,8 @@ public class BridgeUtils {
      */
     public static Coin getMinimumPegInTxValue(ActivationConfig.ForBlock activations, BridgeConstants bridgeConstants) {
         return activations.isActive(ConsensusRule.RSKIP219) ?
-            bridgeConstants.getMinimumPeginTxValueInSatoshis() :
-            bridgeConstants.getLegacyMinimumPeginTxValueInSatoshis();
+                bridgeConstants.getMinimumPeginTxValueInSatoshis() :
+                bridgeConstants.getLegacyMinimumPeginTxValueInSatoshis();
     }
 
     /**
