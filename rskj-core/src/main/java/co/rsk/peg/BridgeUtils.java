@@ -170,7 +170,7 @@ public class BridgeUtils {
                 activations,
                 bridgeConstants,
                 btcTx,
-                createSimpleWalletFrom(
+                createBtcWalletFrom(
                     context,
                     addresses
                 )
@@ -212,7 +212,7 @@ public class BridgeUtils {
         BtcTransaction btcTx,
         Address ... addresses
     ) {
-        Wallet wallet = createSimpleWalletFrom(context, addresses);
+        Wallet wallet = createBtcWalletFrom(context, addresses);
         Coin totalAmount = getAmountSentToWallet(btcTx, wallet);
 
         if (totalAmount.equals(Coin.ZERO)) {
@@ -240,8 +240,8 @@ public class BridgeUtils {
      * @param addresses
      * @return a simple wallet instance with the give list of address added as watched addresses
      */
-    protected static SimpleWallet createSimpleWalletFrom(Context context, Address... addresses) {
-        SimpleWallet wallet = new SimpleWallet(context);
+    protected static BtcWallet createBtcWalletFrom(Context context, Address... addresses) {
+        BtcWallet wallet = new BtcWallet(context);
         long now = Utils.currentTimeMillis() / 1000L;
         wallet.addWatchedAddresses(Arrays.asList(addresses), now);
         return wallet;
@@ -255,7 +255,7 @@ public class BridgeUtils {
      * @return total amount sent to the given list of addresses.
      */
     protected static Coin getAmountSentToAddresses(Context context, BtcTransaction btcTx, Address... addresses) {
-        return getAmountSentToWallet(btcTx, createSimpleWalletFrom(context, addresses));
+        return getAmountSentToWallet(btcTx, createBtcWalletFrom(context, addresses));
     }
 
     /**
@@ -275,9 +275,7 @@ public class BridgeUtils {
      * @return the list of UTXOs in the given btcTx sent to the given list of address
      */
     protected static List<UTXO> getUTXOsForAddresses(Context context, BtcTransaction btcTx, Address ... addresses) {
-        long now = Utils.currentTimeMillis() / 1000L;
-        Wallet wallet = new SimpleWallet(context);
-        wallet.addWatchedAddresses(Arrays.asList(addresses), now);
+        Wallet wallet = BridgeUtils.createBtcWalletFrom(context, addresses);
         return btcTx.getWalletOutputs(wallet).stream().map(
             txOutput -> new UTXO(
                 btcTx.getHash(),
