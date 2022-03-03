@@ -125,7 +125,7 @@ public class TraceModuleImpl implements TraceModule {
 
         block = block == null ? blockchain.getBestBlock() : block;
 
-        while (block != null && block.getNumber() >= fromBlock.getNumber()) {
+        while (fromBlock !=null && block != null && block.getNumber() >= fromBlock.getNumber()) {
             List<TransactionTrace> builtTraces = buildBlockTraces(block, traceFilterRequest);
 
             if (builtTraces != null) {
