@@ -3,11 +3,8 @@ package co.rsk.peg;
 import co.rsk.bitcoinj.core.*;
 import co.rsk.bitcoinj.wallet.Wallet;
 import co.rsk.config.BridgeConstants;
-import co.rsk.core.RskAddress;
-import co.rsk.crypto.Keccak256;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
-import org.ethereum.core.Transaction;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -44,7 +41,7 @@ public class BridgeUtilsLegacy {
     }
 
     /**
-     * Legacy version for getting the amount sent to a btc address. This is used in {@link BridgeSupport#registerFastBridgeBtcTransaction(Transaction, byte[], int, byte[], Keccak256, Address, RskAddress, Address, boolean)}
+     * Legacy version for getting the amount sent to a btc address.
      *
      * @param constants
      * @param btcTx
@@ -53,13 +50,13 @@ public class BridgeUtilsLegacy {
      */
     @Deprecated
     protected static Coin getAmountSentToAddress(BridgeConstants constants, BtcTransaction btcTx, Address btcAddress) {
-        Coin v = Coin.ZERO;
-        for (TransactionOutput o : btcTx.getOutputs()) {
-            if (o.getScriptPubKey().getToAddress(constants.getBtcParams()).equals(btcAddress)) {
-                v = v.add(o.getValue());
+        Coin value = Coin.ZERO;
+        for (TransactionOutput output : btcTx.getOutputs()) {
+            if (output.getScriptPubKey().getToAddress(constants.getBtcParams()).equals(btcAddress)) {
+                value = value.add(output.getValue());
             }
         }
-        return v;
+        return value;
     }
 
     /**

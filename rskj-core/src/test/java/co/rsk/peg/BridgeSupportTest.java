@@ -7441,7 +7441,7 @@ public class BridgeSupportTest {
         when(activations.isActive(ConsensusRule.RSKIP219)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
         valueToSend = BridgeUtils.getMinimumPegInTxValue(activations, bridgeConstants).minus(Coin.CENT);
-        
+
         result = testRegisterFastBridgeBtcTransaction_RSKIP293(
                 activations,
                 valueToSend,
@@ -8726,7 +8726,7 @@ public class BridgeSupportTest {
         tx.addOutput(amount, btcAddress);
         BtcECKey srcKey = new BtcECKey();
         tx.addInput(PegTestUtils.createHash(1),
-                0, ScriptBuilder.createInputScript(null, srcKey));
+            0, ScriptBuilder.createInputScript(null, srcKey));
         return tx;
     }
 
