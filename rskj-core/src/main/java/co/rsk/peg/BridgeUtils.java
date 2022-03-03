@@ -208,7 +208,7 @@ public class BridgeUtils {
      */
     protected static List<UTXO> getUTXOsForAddresses(Context context, BtcTransaction btcTx, Address ... addresses) {
         long now = Utils.currentTimeMillis() / 1000L;
-        Wallet wallet = new SimpleWallet(context);
+        Wallet wallet = new BtcWallet(context);
         wallet.addWatchedAddresses(Arrays.asList(addresses), now);
         return btcTx.getWalletOutputs(wallet).stream().map(
                 txOutput -> new UTXO(
