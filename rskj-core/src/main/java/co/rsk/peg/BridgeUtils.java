@@ -147,8 +147,8 @@ public class BridgeUtils {
      */
     public static Coin getMinimumPegInTxValue(ActivationConfig.ForBlock activations, BridgeConstants bridgeConstants) {
         return activations.isActive(ConsensusRule.RSKIP219) ?
-                bridgeConstants.getMinimumPeginTxValueInSatoshis() :
-                bridgeConstants.getLegacyMinimumPeginTxValueInSatoshis();
+            bridgeConstants.getMinimumPeginTxValueInSatoshis() :
+            bridgeConstants.getLegacyMinimumPeginTxValueInSatoshis();
     }
 
     /**
@@ -180,7 +180,7 @@ public class BridgeUtils {
 
         if(!BridgeUtils.isTotalAmountSentOverMinimum(totalAmount, activations, bridgeConstants)) {
             logger.debug("[isFastPeginTxValid] Amount sent can't be below the minimum {}.",
-                    getMinimumPegInTxValue(activations, bridgeConstants).value);
+                getMinimumPegInTxValue(activations, bridgeConstants).value);
             return FastBridgeTxResponseCodes.UNPROCESSABLE_TX_AMOUNT_SENT_BELOW_MINIMUM_ERROR;
         }
         return FastBridgeTxResponseCodes.VALID_TX;
@@ -211,21 +211,20 @@ public class BridgeUtils {
         Wallet wallet = new BtcWallet(context);
         wallet.addWatchedAddresses(Arrays.asList(addresses), now);
         return btcTx.getWalletOutputs(wallet).stream().map(
-                txOutput -> new UTXO(
-                        btcTx.getHash(),
-                        txOutput.getIndex(),
-                        txOutput.getValue(),
-                        0,
-                        btcTx.isCoinBase(),
-                        txOutput.getScriptPubKey()
-                )
+            txOutput -> new UTXO(
+                btcTx.getHash(),
+                txOutput.getIndex(),
+                txOutput.getValue(),
+                0,
+                btcTx.isCoinBase(),
+                txOutput.getScriptPubKey()
+            )
         ).collect(Collectors.toList());
     }
 
     public static boolean scriptCorrectlySpendsTx(BtcTransaction tx, int index, Script script) {
         try {
             TransactionInput txInput = tx.getInput(index);
-
             // Check the input does not contain script op codes
             List<ScriptChunk> chunks = txInput.getScriptSig().getChunks();
             Iterator it = chunks.iterator();
