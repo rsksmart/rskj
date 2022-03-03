@@ -2570,7 +2570,7 @@ public class BridgeSupport {
                 createFastBridgeFederationInformation(fastBridgeDerivationHash, retiringFederation);
             Address fastBridgeRetiringFedAddress =
                 fastBridgeRetiringFederationInformation.getFastBridgeFederationAddress(
-                        bridgeConstants.getBtcParams()
+                    bridgeConstants.getBtcParams()
                 );
             totalAmount = BridgeUtils.getAmountSentToAddresses(
                 btcContext,
