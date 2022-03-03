@@ -282,9 +282,9 @@ public class BridgeUtils {
 
         if (isTotalAmountSentOverMinimum(valueSentToMe, activations, bridgeConstants)) {
             logger.warn(
-                    "[btctx:{}] Someone sent to the federation less than {} satoshis",
-                    tx.getHash(),
-                    minimumPegInTxValue
+                "[btctx:{}] Someone sent to the federation less than {} satoshis",
+                tx.getHash(),
+                minimumPegInTxValue
             );
         }
 
