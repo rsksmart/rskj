@@ -6818,44 +6818,6 @@ public class BridgeSupportTest {
         );
     }
 
-    @Test
-    public void testBtcTransactionWithBech32Addresses() {
-        byte[] rawTx = Hex.decode("020000000001011719b6f052d77e495e3cb0a8cab2c01eae4e219658a8c52ff202e2bc029146960000000017160014a9f7d9cb68743b8603d1805e662c961a8c0d637efeffffff0200e1f50500000000160014ef57424d0d625cf82fabe4fd7657d24a5f13dfb230d4f50500000000160014f1b2c51b99b816388034efdbf821e139d498c68a02473044022052a9a1d76f426786b486dc0377803fb935334903e25f3f64b3f201a3483194e4022003c81779ca8259757d128bb0e79f17e4674b5b63dd7283a609a48075a86c14fe012102d2731e7b7d4fa716798371f072f5bdba3fbe79b1de74d354f083bdd6ab2944b500000000");
-        BtcTransaction btcTransaction = new BtcTransaction(BridgeRegTestConstants.getInstance().getBtcParams(), rawTx);
-        btcTransaction.getOutputs().get(0).getScriptPubKey();
-
-        TransactionInput txInput = btcTransaction.getInput(0);
-        txInput.getScriptSig();
-
-        NetworkParameters networkParameters = BridgeRegTestConstants.getInstance().getBtcParams();
-        BtcTransaction btcTx = new BtcTransaction(networkParameters);
-        btcTx.setVersion(2);
-        // Bech32 like input (p2sh)
-        TransactionInput input = btcTx.addInput(
-                Sha256Hash.wrap("96469102bce202f22fc5a85896214eae1ec0b2caa8b03c5e497ed752f0b61917"),
-                0,
-                // TODO: this should be an empty script
-
-                new Script(Hex.decode("160014a9f7d9cb68743b8603d1805e662c961a8c0d637e"))
-        );
-
-        input.setSequenceNumber(4294967294L);
-
-        TransactionWitness transactionWitness = new TransactionWitness(2);
-        // TODO: add a comment specifying this is a mock signature
-        transactionWitness.setPush(0, Hex.decode("3044022052a9a1d76f426786b486dc0377803fb935334903e25f3f64b3f201a3483194e4022003c81779ca8259757d128bb0e79f17e4674b5b63dd7283a609a48075a86c14fe01")); // This would be the signature
-        transactionWitness.setPush(1, Hex.decode("02d2731e7b7d4fa716798371f072f5bdba3fbe79b1de74d354f083bdd6ab2944b5"));
-        btcTx.setWitness(0, transactionWitness);
-
-        // Bech32 output
-        btcTx.addOutput(Coin.COIN, new Script(Hex.decode("0014ef57424d0d625cf82fabe4fd7657d24a5f13dfb2")));
-
-        // Bech32 output
-        btcTx.addOutput(Coin.valueOf(99996720), new Script(Hex.decode("0014f1b2c51b99b816388034efdbf821e139d498c68a")));
-
-        assertEquals(btcTx.getHash(), btcTransaction.getHash());
-    }
-
     private void testRegisterFastBridgeBtcTransaction(
             BridgeConstants bridgeConstants,
             boolean isRSKIP293Active,
