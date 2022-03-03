@@ -259,7 +259,7 @@ public class BridgeUtilsLegacyTest {
     }
 
     @Test
-    public void getAmountSentToAddress_no_output_for_address() {
+    public void getAmountSentToAddress_no_output() {
         Coin valueToTransfer = Coin.ZERO;
         testGetAmountSentToAddress(bridgeConstantsRegtest, valueToTransfer, false);
         testGetAmountSentToAddress(bridgeConstantsMainnet, valueToTransfer, false);

@@ -18,7 +18,25 @@
 
 package co.rsk.peg;
 
-import co.rsk.bitcoinj.core.*;
+import co.rsk.bitcoinj.core.Address;
+import co.rsk.bitcoinj.core.AddressFormatException;
+import co.rsk.bitcoinj.core.BtcBlock;
+import co.rsk.bitcoinj.core.BtcBlockChain;
+import co.rsk.bitcoinj.core.BtcECKey;
+import co.rsk.bitcoinj.core.BtcTransaction;
+import co.rsk.bitcoinj.core.CheckpointManager;
+import co.rsk.bitcoinj.core.Coin;
+import co.rsk.bitcoinj.core.Context;
+import co.rsk.bitcoinj.core.InsufficientMoneyException;
+import co.rsk.bitcoinj.core.NetworkParameters;
+import co.rsk.bitcoinj.core.PartialMerkleTree;
+import co.rsk.bitcoinj.core.Sha256Hash;
+import co.rsk.bitcoinj.core.StoredBlock;
+import co.rsk.bitcoinj.core.TransactionInput;
+import co.rsk.bitcoinj.core.TransactionOutput;
+import co.rsk.bitcoinj.core.UTXO;
+import co.rsk.bitcoinj.core.UTXOProviderException;
+import co.rsk.bitcoinj.core.VerificationException;
 import co.rsk.bitcoinj.crypto.TransactionSignature;
 import co.rsk.bitcoinj.script.FastBridgeRedeemScriptParser;
 import co.rsk.bitcoinj.script.Script;
@@ -48,6 +66,20 @@ import co.rsk.peg.whitelist.UnlimitedWhiteListEntry;
 import co.rsk.rpc.modules.trace.CallType;
 import co.rsk.rpc.modules.trace.ProgramSubtrace;
 import com.google.common.annotations.VisibleForTesting;
+import java.io.IOException;
+import java.io.InputStream;
+import java.math.BigInteger;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+import javax.annotation.Nullable;
 import org.apache.commons.lang3.tuple.Pair;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -67,14 +99,6 @@ import org.ethereum.vm.program.ProgramResult;
 import org.ethereum.vm.program.invoke.TransferInvoke;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import javax.annotation.Nullable;
-import java.io.IOException;
-import java.io.InputStream;
-import java.math.BigInteger;
-import java.time.Instant;
-import java.util.*;
-import java.util.stream.Collectors;
 
 import static co.rsk.peg.BridgeUtils.getRegularPegoutTxSize;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP186;
@@ -2354,8 +2378,8 @@ public class BridgeSupport {
      */
     public Optional<Script> getActivePowpegRedeemScript() {
         return activations.isActive(ConsensusRule.RSKIP293) ?
-                Optional.of(getActiveFederation().getRedeemScript()) :
-                Optional.empty();
+            Optional.of(getActiveFederation().getRedeemScript()) :
+            Optional.empty();
     }
 
     public boolean increaseLockingCap(Transaction tx, Coin newCap) {
@@ -2479,15 +2503,15 @@ public class BridgeSupport {
     }
 
     public BigInteger registerFastBridgeBtcTransaction(
-            Transaction rskTx,
-            byte[] btcTxSerialized,
-            int height,
-            byte[] pmtSerialized,
-            Keccak256 derivationArgumentsHash,
-            Address userRefundAddress,
-            RskAddress lbcAddress,
-            Address lpBtcAddress,
-            boolean shouldTransferToContract
+        Transaction rskTx,
+        byte[] btcTxSerialized,
+        int height,
+        byte[] pmtSerialized,
+        Keccak256 derivationArgumentsHash,
+        Address userRefundAddress,
+        RskAddress lbcAddress,
+        Address lpBtcAddress,
+        boolean shouldTransferToContract
     ) throws BlockStoreException, IOException, BridgeIllegalArgumentException {
         if (!BridgeUtils.isContractTx(rskTx)) {
             logger.debug("[registerFastBridgeBtcTransaction] (rskTx:{}) Sender not a contract", rskTx.getHash());
@@ -2495,14 +2519,23 @@ public class BridgeSupport {
         }
 
         if (!rskTx.getSender().equals(lbcAddress)) {
-            logger.debug("[registerFastBridgeBtcTransaction] Expected sender to be the same as lbcAddress. (sender: " + "{}) (lbcAddress:{})", rskTx.getSender(), lbcAddress);
+            logger.debug(
+                "[registerFastBridgeBtcTransaction] Expected sender to be the same as lbcAddress. (sender: {}) (lbcAddress:{})",
+                rskTx.getSender(),
+                lbcAddress
+            );
             return BigInteger.valueOf(FastBridgeTxResponseCodes.UNPROCESSABLE_TX_INVALID_SENDER_ERROR.value());
         }
 
         Context.propagate(btcContext);
         Sha256Hash btcTxHash = BtcTransactionFormatUtils.calculateBtcTxHash(btcTxSerialized);
 
-        Keccak256 fastBridgeDerivationHash = getFastBridgeDerivationHash(derivationArgumentsHash, userRefundAddress, lpBtcAddress, lbcAddress);
+        Keccak256 fastBridgeDerivationHash = getFastBridgeDerivationHash(
+            derivationArgumentsHash,
+            userRefundAddress,
+            lpBtcAddress,
+            lbcAddress
+        );
 
         if (provider.isFastBridgeFederationDerivationHashUsed(btcTxHash, fastBridgeDerivationHash)) {
             logger.debug("[registerFastBridgeBtcTransaction] Transaction and derivation hash already used");
@@ -2510,7 +2543,10 @@ public class BridgeSupport {
         }
 
         if (!validationsForRegisterBtcTransaction(btcTxHash, height, pmtSerialized, btcTxSerialized)) {
-            logger.debug("[registerFastBridgeBtcTransaction] (btcTx:{}) error during " + "validationsForRegisterBtcTransaction", btcTxHash);
+            logger.debug(
+                "[registerFastBridgeBtcTransaction] (btcTx:{}) error during validationsForRegisterBtcTransaction",
+                btcTxHash
+            );
             return BigInteger.valueOf(FastBridgeTxResponseCodes.UNPROCESSABLE_TX_VALIDATIONS_ERROR.value());
         }
 
@@ -2518,16 +2554,19 @@ public class BridgeSupport {
         btcTx.verify();
 
         Sha256Hash btcTxHashWithoutWitness = btcTx.getHash(false);
-        if (!btcTxHashWithoutWitness.equals(btcTxHash) && provider.isFastBridgeFederationDerivationHashUsed(btcTxHashWithoutWitness, derivationArgumentsHash)) {
+        if (!btcTxHashWithoutWitness.equals(btcTxHash) &&
+            provider.isFastBridgeFederationDerivationHashUsed(btcTxHashWithoutWitness, derivationArgumentsHash)) {
             logger.debug("[registerFastBridgeBtcTransaction] Transaction and derivation hash already used");
             return BigInteger.valueOf(FastBridgeTxResponseCodes.UNPROCESSABLE_TX_ALREADY_PROCESSED_ERROR.value());
         }
 
-        FastBridgeFederationInformation fbActiveFederationInformation = createFastBridgeFederationInformation(fastBridgeDerivationHash);
-        Address fbActiveFederationAddress = fbActiveFederationInformation.getFastBridgeFederationAddress(bridgeConstants.getBtcParams());
+        FastBridgeFederationInformation fbActiveFederationInformation =
+            createFastBridgeFederationInformation(fastBridgeDerivationHash);
+        Address fbActiveFederationAddress =
+            fbActiveFederationInformation.getFastBridgeFederationAddress(bridgeConstants.getBtcParams());
 
         Coin totalAmount;
-        FastBridgeTxResponseCodes txResponse;
+        FastBridgeTxResponseCodes txResponse = FastBridgeTxResponseCodes.VALID_TX;
         if (activations.isActive(ConsensusRule.RSKIP293)) {
             Federation retiringFederation = getRetiringFederation();
             List<Address> addresses = new ArrayList<>(2);
@@ -2548,9 +2587,9 @@ public class BridgeSupport {
                 return BigInteger.valueOf(txResponse.value());
             }
             totalAmount = BridgeUtils.getAmountSentToAddresses(
-                    btcContext,
-                    btcTx,
-                    addresses.toArray(addresses.toArray(new Address[addresses.size()]))
+                btcContext,
+                btcTx,
+                addresses.toArray(addresses.toArray(new Address[addresses.size()]))
             );
         } else {
             totalAmount = BridgeUtilsLegacy.getAmountSentToAddress(bridgeConstants, btcTx, fbActiveFederationAddress);
