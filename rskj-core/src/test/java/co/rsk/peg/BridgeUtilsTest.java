@@ -2874,15 +2874,15 @@ public class BridgeUtilsTest {
         BridgeConstants bridgeConstants = bridgeConstantsRegtest;
         Coin minimumPeginTxValue = bridgeConstants.getLegacyMinimumPeginTxValueInSatoshis();
         assertEquals(
-                minimumPeginTxValue,
-                BridgeUtils.getMinimumPegInTxValue(activations, bridgeConstants)
+            minimumPeginTxValue,
+            BridgeUtils.getMinimumPegInTxValue(activations, bridgeConstants)
         );
 
         bridgeConstants = bridgeConstantsMainnet;
         minimumPeginTxValue = bridgeConstants.getLegacyMinimumPeginTxValueInSatoshis();
         assertEquals(
-                minimumPeginTxValue,
-                BridgeUtils.getMinimumPegInTxValue(activations, bridgeConstants)
+            minimumPeginTxValue,
+            BridgeUtils.getMinimumPegInTxValue(activations, bridgeConstants)
         );
 
         // After RSKIP219 activation
@@ -2892,15 +2892,15 @@ public class BridgeUtilsTest {
         bridgeConstants = bridgeConstantsRegtest;
         minimumPeginTxValue = bridgeConstantsRegtest.getMinimumPeginTxValueInSatoshis();
         assertEquals(
-                minimumPeginTxValue,
-                BridgeUtils.getMinimumPegInTxValue(activations, bridgeConstants)
+            minimumPeginTxValue,
+            BridgeUtils.getMinimumPegInTxValue(activations, bridgeConstants)
         );
 
         bridgeConstants = bridgeConstantsMainnet;
         minimumPeginTxValue = bridgeConstants.getMinimumPeginTxValueInSatoshis();
         assertEquals(
-                minimumPeginTxValue,
-                BridgeUtils.getMinimumPegInTxValue(activations, bridgeConstants)
+            minimumPeginTxValue,
+            BridgeUtils.getMinimumPegInTxValue(activations, bridgeConstants)
         );
     }
 
@@ -2911,25 +2911,25 @@ public class BridgeUtilsTest {
         when(activations.isActive(ConsensusRule.RSKIP219)).thenReturn(true);
 
         assertFalse(BridgeUtils.isTotalAmountSentOverMinimum(
-                bridgeConstants.getMinimumPeginTxValueInSatoshis().minus(Coin.CENT),
-                activations,
-                bridgeConstants));
+            bridgeConstants.getMinimumPeginTxValueInSatoshis().minus(Coin.CENT),
+            activations,
+            bridgeConstants));
 
         assertFalse(BridgeUtils.isTotalAmountSentOverMinimum(
-                Coin.ZERO,
-                activations,
-                bridgeConstants));
+            Coin.ZERO,
+            activations,
+            bridgeConstants));
 
         assertTrue(BridgeUtils.isTotalAmountSentOverMinimum(
-                bridgeConstants.getMinimumPeginTxValueInSatoshis(),
-                activations,
-                bridgeConstants)
+            bridgeConstants.getMinimumPeginTxValueInSatoshis(),
+            activations,
+            bridgeConstants)
         );
 
         assertTrue(BridgeUtils.isTotalAmountSentOverMinimum(
-                Coin.COIN,
-                activations,
-                bridgeConstants));
+            Coin.COIN,
+            activations,
+            bridgeConstants));
 
     }
 
@@ -2941,21 +2941,21 @@ public class BridgeUtilsTest {
 
     private void testValidateFastBridgePeginValue_by_network(BridgeConstants bridgeConstants, ActivationConfig.ForBlock activations) {
         Assert.assertEquals(
-                FastBridgeTxResponseCodes.UNPROCESSABLE_TX_AMOUNT_SENT_BELOW_MINIMUM_ERROR,
-                BridgeUtils.validateFastBridgePeginValue(
-                        activations,
-                        bridgeConstants,
-                        bridgeConstants.getMinimumPeginTxValueInSatoshis().minus(Coin.CENT)
-                )
+            FastBridgeTxResponseCodes.UNPROCESSABLE_TX_AMOUNT_SENT_BELOW_MINIMUM_ERROR,
+            BridgeUtils.validateFastBridgePeginValue(
+                activations,
+                bridgeConstants,
+                bridgeConstants.getMinimumPeginTxValueInSatoshis().minus(Coin.CENT)
+            )
         );
 
         Assert.assertEquals(
-                FastBridgeTxResponseCodes.UNPROCESSABLE_TX_VALUE_ZERO_ERROR,
-                BridgeUtils.validateFastBridgePeginValue(
-                        activations,
-                        bridgeConstants,
-                        Coin.ZERO
-                )
+            FastBridgeTxResponseCodes.UNPROCESSABLE_TX_VALUE_ZERO_ERROR,
+            BridgeUtils.validateFastBridgePeginValue(
+                activations,
+                bridgeConstants,
+                Coin.ZERO
+            )
         );
 
         Coin value;
@@ -2966,21 +2966,21 @@ public class BridgeUtilsTest {
         }
 
         Assert.assertEquals(
-                FastBridgeTxResponseCodes.VALID_TX,
-                BridgeUtils.validateFastBridgePeginValue(
-                        activations,
-                        bridgeConstants,
-                        value
-                )
+            FastBridgeTxResponseCodes.VALID_TX,
+            BridgeUtils.validateFastBridgePeginValue(
+                activations,
+                bridgeConstants,
+                value
+            )
         );
 
         Assert.assertEquals(
-                FastBridgeTxResponseCodes.VALID_TX,
-                BridgeUtils.validateFastBridgePeginValue(
-                        activations,
-                        bridgeConstants,
-                        value.add(Coin.COIN)
-                )
+            FastBridgeTxResponseCodes.VALID_TX,
+            BridgeUtils.validateFastBridgePeginValue(
+                activations,
+                bridgeConstants,
+                value.add(Coin.COIN)
+            )
         );
     }
 
