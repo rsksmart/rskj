@@ -2874,15 +2874,15 @@ public class BridgeUtilsTest {
         BridgeConstants bridgeConstants = bridgeConstantsRegtest;
         Coin minimumPeginTxValue = bridgeConstants.getLegacyMinimumPeginTxValueInSatoshis();
         assertEquals(
-                minimumPeginTxValue,
-                BridgeUtils.getMinimumPegInTxValue(activations, bridgeConstants)
+            minimumPeginTxValue,
+            BridgeUtils.getMinimumPegInTxValue(activations, bridgeConstants)
         );
 
         bridgeConstants = bridgeConstantsMainnet;
         minimumPeginTxValue = bridgeConstants.getLegacyMinimumPeginTxValueInSatoshis();
         assertEquals(
-                minimumPeginTxValue,
-                BridgeUtils.getMinimumPegInTxValue(activations, bridgeConstants)
+            minimumPeginTxValue,
+            BridgeUtils.getMinimumPegInTxValue(activations, bridgeConstants)
         );
 
         // After RSKIP219 activation
@@ -2892,15 +2892,15 @@ public class BridgeUtilsTest {
         bridgeConstants = bridgeConstantsRegtest;
         minimumPeginTxValue = bridgeConstantsRegtest.getMinimumPeginTxValueInSatoshis();
         assertEquals(
-                minimumPeginTxValue,
-                BridgeUtils.getMinimumPegInTxValue(activations, bridgeConstants)
+            minimumPeginTxValue,
+            BridgeUtils.getMinimumPegInTxValue(activations, bridgeConstants)
         );
 
         bridgeConstants = bridgeConstantsMainnet;
         minimumPeginTxValue = bridgeConstants.getMinimumPeginTxValueInSatoshis();
         assertEquals(
-                minimumPeginTxValue,
-                BridgeUtils.getMinimumPegInTxValue(activations, bridgeConstants)
+            minimumPeginTxValue,
+            BridgeUtils.getMinimumPegInTxValue(activations, bridgeConstants)
         );
     }
 
@@ -2924,13 +2924,13 @@ public class BridgeUtilsTest {
 
         Context context = new Context(bridgeConstantsMainnet.getBtcParams());
         assertTrue(
-                BridgeUtils.isAnyUTXOAmountBelowMinimum(
-                    activations,
-                    bridgeConstants,
-                    context,
-                    btcTx,
-                    activeFederationAddress, retiringFederationAddress
-                )
+            BridgeUtils.isAnyUTXOAmountBelowMinimum(
+                activations,
+                bridgeConstants,
+                context,
+                btcTx,
+                activeFederationAddress, retiringFederationAddress
+            )
         );
 
         value = minimumPegInTxValue;
@@ -2940,13 +2940,13 @@ public class BridgeUtilsTest {
         btcTx.addOutput(value, retiringFederationAddress);
 
         assertFalse(
-                BridgeUtils.isAnyUTXOAmountBelowMinimum(
-                        activations,
-                        bridgeConstants,
-                        context,
-                        btcTx,
-                        activeFederationAddress, retiringFederationAddress
-                )
+            BridgeUtils.isAnyUTXOAmountBelowMinimum(
+                activations,
+                bridgeConstants,
+                context,
+                btcTx,
+                activeFederationAddress, retiringFederationAddress
+            )
         );
 
         value = minimumPegInTxValue.add(minimumPegInTxValue);
@@ -2956,13 +2956,13 @@ public class BridgeUtilsTest {
         btcTx.addOutput(value, retiringFederationAddress);
 
         assertFalse(
-                BridgeUtils.isAnyUTXOAmountBelowMinimum(
-                        activations,
-                        bridgeConstants,
-                        context,
-                        btcTx,
-                        activeFederationAddress, retiringFederationAddress
-                )
+            BridgeUtils.isAnyUTXOAmountBelowMinimum(
+                activations,
+                bridgeConstants,
+                context,
+                btcTx,
+                activeFederationAddress, retiringFederationAddress
+            )
         );
     }
 
@@ -2997,14 +2997,14 @@ public class BridgeUtilsTest {
         btcTx.addOutput(value, retiringFederationAddress);
 
         Assert.assertEquals(
-                FastBridgeTxResponseCodes.UNPROCESSABLE_TX_AMOUNT_SENT_BELOW_MINIMUM_ERROR,
-                BridgeUtils.validateFastBridgePeginValue(
-                        activations,
-                        bridgeConstants,
-                        btcContext,
-                        btcTx,
-                        activeFederationAddress
-                )
+            FastBridgeTxResponseCodes.UNPROCESSABLE_TX_AMOUNT_SENT_BELOW_MINIMUM_ERROR,
+            BridgeUtils.validateFastBridgePeginValue(
+                activations,
+                bridgeConstants,
+                btcContext,
+                btcTx,
+                activeFederationAddress
+            )
         );
 
         value = minimumPegInTxValue;
@@ -3013,15 +3013,15 @@ public class BridgeUtilsTest {
         btcTx.addOutput(value, activeFederationAddress);
         btcTx.addOutput(value, retiringFederationAddress);
         Assert.assertEquals(
-                FastBridgeTxResponseCodes.VALID_TX,
-                BridgeUtils.validateFastBridgePeginValue(
-                        activations,
-                        bridgeConstants,
-                        btcContext,
-                        btcTx,
-                        activeFederationAddress,
-                        retiringFederationAddress
-                )
+            FastBridgeTxResponseCodes.VALID_TX,
+            BridgeUtils.validateFastBridgePeginValue(
+                activations,
+                bridgeConstants,
+                btcContext,
+                btcTx,
+                activeFederationAddress,
+                retiringFederationAddress
+            )
         );
 
         value = minimumPegInTxValue.add(minimumPegInTxValue);
@@ -3030,15 +3030,15 @@ public class BridgeUtilsTest {
         btcTx.addOutput(value, activeFederationAddress);
         btcTx.addOutput(value, retiringFederationAddress);
         Assert.assertEquals(
-                FastBridgeTxResponseCodes.VALID_TX,
-                BridgeUtils.validateFastBridgePeginValue(
-                        activations,
-                        bridgeConstants,
-                        btcContext,
-                        btcTx,
-                        activeFederationAddress,
-                        retiringFederationAddress
-                )
+            FastBridgeTxResponseCodes.VALID_TX,
+            BridgeUtils.validateFastBridgePeginValue(
+                activations,
+                bridgeConstants,
+                btcContext,
+                btcTx,
+                activeFederationAddress,
+                retiringFederationAddress
+            )
         );
     }
 

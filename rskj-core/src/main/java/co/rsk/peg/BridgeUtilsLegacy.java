@@ -73,14 +73,14 @@ public class BridgeUtilsLegacy {
         for (TransactionOutput o : btcTx.getOutputs()) {
             if (o.getScriptPubKey().getToAddress(bridgeConstants.getBtcParams()).equals(btcAddress)) {
                 utxosList.add(
-                        new UTXO(
-                                btcTx.getHash(),
-                                o.getIndex(),
-                                o.getValue(),
-                                0,
-                                btcTx.isCoinBase(),
-                                o.getScriptPubKey()
-                        )
+                    new UTXO(
+                        btcTx.getHash(),
+                        o.getIndex(),
+                        o.getValue(),
+                        0,
+                        btcTx.isCoinBase(),
+                        o.getScriptPubKey()
+                    )
                 );
             }
         }
