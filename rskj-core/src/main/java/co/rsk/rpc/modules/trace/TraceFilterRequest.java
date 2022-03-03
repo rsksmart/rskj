@@ -29,6 +29,7 @@ import java.util.stream.Collectors;
 public class TraceFilterRequest {
     private static final String EARLIEST_BLOCK = "earliest";
     private static final String LATEST_BLOCK = "latest";
+    private static final String PENDING_BLOCK = "pending";
     private String fromBlock = EARLIEST_BLOCK;
     private String toBlock = LATEST_BLOCK;
     private List<String> fromAddress;
@@ -125,7 +126,7 @@ public class TraceFilterRequest {
             return "0x0";
         }
 
-        if (LATEST_BLOCK.equalsIgnoreCase(block)) {
+        if (LATEST_BLOCK.equalsIgnoreCase(block) || PENDING_BLOCK.equalsIgnoreCase(block)) {
             return null;
         }
 

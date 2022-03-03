@@ -21,9 +21,10 @@ package co.rsk.rpc.modules.trace;
 import co.rsk.config.VmConfig;
 import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockExecutor;
+import co.rsk.rpc.ExecutionBlockRetriever;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.ethereum.core.Block;
+import org.ethereum.core.Block;;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.Transaction;
 import org.ethereum.db.BlockStore;
@@ -48,6 +49,7 @@ public class TraceModuleImpl implements TraceModule {
 
     private static final String EARLIEST_BLOCK = "earliest";
     private static final String LATEST_BLOCK = "latest";
+    private static final String PENDING_BLOCK = "pending";
     private static final Logger logger = LoggerFactory.getLogger("web3");
 
     private static final ObjectMapper OBJECT_MAPPER = Serializers.createMapper(true);
@@ -57,16 +59,19 @@ public class TraceModuleImpl implements TraceModule {
     private final ReceiptStore receiptStore;
 
     private final BlockExecutor blockExecutor;
+    private final ExecutionBlockRetriever executionBlockRetriever;
 
     public TraceModuleImpl(
             Blockchain blockchain,
             BlockStore blockStore,
             ReceiptStore receiptStore,
-            BlockExecutor blockExecutor) {
+            BlockExecutor blockExecutor,
+            ExecutionBlockRetriever executionBlockRetriever) {
         this.blockchain = blockchain;
         this.blockStore = blockStore;
         this.receiptStore = receiptStore;
         this.blockExecutor = blockExecutor;
+        this.executionBlockRetriever = executionBlockRetriever;
     }
 
     @Override
@@ -125,7 +130,7 @@ public class TraceModuleImpl implements TraceModule {
 
         block = block == null ? blockchain.getBestBlock() : block;
 
-        while (fromBlock !=null && block != null && block.getNumber() >= fromBlock.getNumber()) {
+        while (fromBlock != null && block != null && block.getNumber() >= fromBlock.getNumber()) {
             List<TransactionTrace> builtTraces = buildBlockTraces(block, traceFilterRequest);
 
             if (builtTraces != null) {
@@ -137,9 +142,7 @@ public class TraceModuleImpl implements TraceModule {
 
         Collections.reverse(blockTracesGroup);
 
-        List<TransactionTrace> blockTraces = blockTracesGroup.stream().flatMap(Collection::stream).collect(Collectors.toList());
-
-        Stream<TransactionTrace> txTraceStream = blockTraces.stream();
+        Stream<TransactionTrace> txTraceStream = blockTracesGroup.stream().flatMap(Collection::stream);
 
         if (traceFilterRequest.getAfter() != null) {
             txTraceStream = txTraceStream.skip(traceFilterRequest.getAfter());
@@ -241,6 +244,8 @@ public class TraceModuleImpl implements TraceModule {
             return this.blockchain.getBestBlock();
         } else if (strBlock.equalsIgnoreCase(EARLIEST_BLOCK)) {
             return this.blockchain.getBlockByNumber(0);
+        } else if (strBlock.equalsIgnoreCase(PENDING_BLOCK)) {
+            return this.executionBlockRetriever.retrieveExecutionBlock(PENDING_BLOCK).getBlock();
         } else {
             long toBlockNumber = biBlock.longValue();
             return this.blockchain.getBlockByNumber(toBlockNumber);
