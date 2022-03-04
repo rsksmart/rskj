@@ -73,6 +73,6 @@ public class SimpleEthereum implements Ethereum {
 
     @Override
     public Coin getGasPrice() {
-        return new GasPriceTracker(blockchain).getGasPrice();
+        return GasPriceTracker.create(blockchain).getGasPrice();
     }
 }

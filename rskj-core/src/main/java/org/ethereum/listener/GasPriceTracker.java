@@ -20,6 +20,7 @@
 package org.ethereum.listener;
 
 import co.rsk.core.Coin;
+import co.rsk.crypto.Keccak256;
 import co.rsk.remasc.RemascTransaction;
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
@@ -29,9 +30,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.math.BigInteger;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -60,7 +59,13 @@ public class GasPriceTracker extends EthereumListenerAdapter {
 
     private Coin lastVal;
 
-    public GasPriceTracker(Blockchain blockchain) {
+    public static GasPriceTracker create(Blockchain blockchain) {
+        GasPriceTracker gasPriceTracker = new GasPriceTracker(blockchain);
+        gasPriceTracker.initializeWindowFromDB();
+        return gasPriceTracker;
+    }
+
+    private GasPriceTracker(Blockchain blockchain) {
         this.blockchain = blockchain;
     }
 
@@ -96,10 +101,8 @@ public class GasPriceTracker extends EthereumListenerAdapter {
     }
 
     public synchronized Coin getGasPrice() {
-        if (window[0] == null) { // not filled yet
-            return Optional.ofNullable(blockchain.getBestBlock())
-                    .map(Block::getMinimumGasPrice)
-                    .orElse(defaultPrice);
+        if (window[0] == null) { // for some reason, not filled yet (i.e. not enough blocks on DB)
+            return defaultPrice;
         } else {
             if (lastVal == null) {
                 Coin[] values = Arrays.copyOf(window, WINDOW_SIZE);
@@ -115,4 +118,37 @@ public class GasPriceTracker extends EthereumListenerAdapter {
             }
         }
     }
+
+    private void initializeWindowFromDB() {
+        List<Block> blocks = getRequiredBlocksToFillWindowFromDB();
+        if (blocks.size() == 0) {
+            return;
+        }
+
+        onBestBlock(blocks.get(0), Collections.emptyList());
+        blocks.forEach(b -> onBlock(b, Collections.emptyList()));
+    }
+
+    private List<Block> getRequiredBlocksToFillWindowFromDB() {
+        List<Block> blocks = new ArrayList<>();
+
+        Optional<Block> block = Optional.ofNullable(blockchain.getBestBlock());
+
+        int txCount = 0;
+        while (txCount < WINDOW_SIZE && block.isPresent()) {
+            blocks.add(block.get());
+            txCount += block.get().getTransactionsList().stream().filter(tx -> !(tx instanceof RemascTransaction)).count();
+            block = block.map(Block::getParentHash).map(Keccak256::getBytes).map(blockchain::getBlockByHash);
+        }
+
+        if (txCount < WINDOW_SIZE) {
+            logger.warn("Not enough blocks ({}) found on DB to fill window", blocks.size());
+        }
+
+        // to simulate processing order
+        Collections.reverse(blocks);
+
+        return blocks;
+    }
+
 }

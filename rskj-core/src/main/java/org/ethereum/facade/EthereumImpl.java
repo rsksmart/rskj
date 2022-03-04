@@ -49,7 +49,7 @@ public class EthereumImpl implements Ethereum {
         this.compositeEthereumListener = compositeEthereumListener;
         this.blockchain = blockchain;
 
-        this.gasPriceTracker = new GasPriceTracker(blockchain);
+        this.gasPriceTracker = GasPriceTracker.create(blockchain);
         compositeEthereumListener.addListener(this.gasPriceTracker);
     }
 
