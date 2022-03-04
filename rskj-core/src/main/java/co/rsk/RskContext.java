@@ -1015,7 +1015,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     commonConstants.getNewBlockMaxSecondsInTheFuture(),
                     rskSystemProperties.getActivationConfig()
             );
-            blockValidationRule = new BlockValidatorRule(
+            blockValidationRule = new BlockCompositeRule(
                     new TxsMinGasPriceRule(),
                     new BlockUnclesValidationRule(
                             getBlockStore(),
@@ -1041,7 +1041,8 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     blockTimeStampValidationRule,
                     new GasLimitRule(commonConstants.getMinGasLimit()),
                     new ExtraDataRule(commonConstants.getMaximumExtraDataSize()),
-                    getForkDetectionDataRule()
+                    getForkDetectionDataRule(),
+                    new ValidTxExecutionListsEdgesRule()
             );
         }
 
