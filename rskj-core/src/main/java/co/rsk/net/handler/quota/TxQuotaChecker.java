@@ -47,14 +47,14 @@ public class TxQuotaChecker {
         return wasAccepted;
     }
 
-    private TxQuota updateQuota(RskAddress sender, Block bestBlock) {
+    private TxQuota updateQuota(RskAddress address, Block bestBlock) {
         BigInteger blockGasLimit = bestBlock.getGasLimitAsInteger();
         long maxGasPerSecond = getMaxGasPerSecond(blockGasLimit);
 
-        TxQuota quotaForAddress = this.accountQuotas.get(sender);
+        TxQuota quotaForAddress = this.accountQuotas.get(address);
         if (quotaForAddress == null) {
             quotaForAddress = TxQuota.createNew(maxGasPerSecond);
-            this.accountQuotas.put(sender, quotaForAddress);
+            this.accountQuotas.put(address, quotaForAddress);
         } else {
             long maxQuota = maxGasPerSecond * TxQuotaChecker.MAX_QUOTA_GAS_MULTIPLIER;
             quotaForAddress.refresh(maxGasPerSecond, maxQuota);
