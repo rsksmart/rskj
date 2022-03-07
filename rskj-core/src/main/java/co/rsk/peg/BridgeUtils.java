@@ -138,6 +138,27 @@ public class BridgeUtils {
         return wallet;
     }
 
+    protected static Coin getAmountSentToAddresses(
+        ActivationConfig.ForBlock activations,
+        NetworkParameters networkParameters,
+        Context context,
+        BtcTransaction btcTx,
+        Address... addresses
+    ) {
+        if (addresses == null || addresses.length == 0){
+            return Coin.ZERO;
+        }
+        if (activations.isActive(ConsensusRule.RSKIP293)){
+            return getAmountSentToAddresses(
+                context,
+                btcTx,
+                addresses
+            );
+        } else {
+            return BridgeUtilsLegacy.getAmountSentToAddress(activations, networkParameters, btcTx, addresses[0]);
+        }
+    }
+
     /**
      *
      * @param context
@@ -145,8 +166,8 @@ public class BridgeUtils {
      * @param addresses
      * @return total amount sent to the given list of addresses.
      */
-    protected static Coin getAmountSentToAddresses(Context context, BtcTransaction btcTx, Address... addresses) {
-        Wallet wallet = new BtcWallet(context);
+    private static Coin getAmountSentToAddresses(Context context, BtcTransaction btcTx, Address... addresses) {
+        Wallet wallet = new SimpleBtcWallet(context);
         long now = Utils.currentTimeMillis() / 1000L;
         wallet.addWatchedAddresses(Arrays.asList(addresses), now);
         return btcTx.getValueSentToMe(wallet);
