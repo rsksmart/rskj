@@ -33,7 +33,6 @@ public class WrapperMutableRepository implements Repository {
         return mutableRepository.getBalance(addr);
     }
 
-
     @Nullable
     @Override
     public DataWord getStorageValue(RskAddress addr, DataWord key) {

@@ -33,6 +33,7 @@ import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.*;
 import org.ethereum.db.WrapperMutableRepository;
 import org.ethereum.vm.DataWord;
+import org.ethereum.vm.GasCost;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.ProgramResult;
 import org.ethereum.vm.trace.ProgramTraceProcessor;
@@ -482,6 +483,8 @@ public class BlockExecutor {
         Set<DataWord> deletedAccounts = new HashSet<>();
         LongAccumulator remascFees = new LongAccumulator(Long::sum, 0);
         WrapperMutableRepository wrapperMutableRepository = new WrapperMutableRepository(track, readWrittenKeysTracker);
+        int buckets = 2;
+        ParallelizeTransactionHandler parallelizeTransactionHandler = new ParallelizeTransactionHandler(buckets, GasCost.toGas(block.getGasLimit()));
 
         int txindex = 0;
 
@@ -513,8 +516,9 @@ public class BlockExecutor {
                 }
             }
 
-            executedTransactions.add(tx);
+            parallelizeTransactionHandler.addTransaction(tx, readWrittenKeysTracker.getTemporalReadKeys(), readWrittenKeysTracker.getTemporalWrittenKeys(), txExecutor.getGasUsed());
             readWrittenKeysTracker.clear();
+            executedTransactions.add(tx);
 
             if (this.registerProgramResults) {
                 this.transactionResults.put(tx.getHash(), txExecutor.getResult());
