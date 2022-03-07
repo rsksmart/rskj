@@ -7,10 +7,10 @@ import co.rsk.bitcoinj.wallet.Wallet;
 import javax.annotation.Nullable;
 
 /**
- * Btc wallet class implementation use to watch address
+ * Simple Btc wallet class implementation use to watch addresses
  */
-public class BtcWallet extends Wallet {
-    public BtcWallet(Context context) {
+public class SimpleBtcWallet extends Wallet {
+    public SimpleBtcWallet(Context context) {
         super(context);
     }
 
