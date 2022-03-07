@@ -2565,6 +2565,9 @@ public class BridgeSupport {
 
         Coin totalAmount;
         Federation retiringFederation = getRetiringFederation();
+        List<Address> addresses = new ArrayList<>();
+        addresses.add(fastBridgeFedAddress);
+
         if (activations.isActive(ConsensusRule.RSKIP293) && retiringFederation != null) {
             FastBridgeFederationInformation fastBridgeRetiringFederationInformation =
                 createFastBridgeFederationInformation(fastBridgeDerivationHash, retiringFederation);
@@ -2572,15 +2575,16 @@ public class BridgeSupport {
                 fastBridgeRetiringFederationInformation.getFastBridgeFederationAddress(
                     bridgeConstants.getBtcParams()
                 );
-            totalAmount = BridgeUtils.getAmountSentToAddresses(
-                btcContext,
-                btcTx,
-                fastBridgeFedAddress,
-                fastBridgeRetiringFedAddress
-            );
-        } else {
-            totalAmount = BridgeUtilsLegacy.getAmountSentToAddress(bridgeConstants, btcTx, fastBridgeFedAddress);
+            addresses.add(fastBridgeRetiringFedAddress);
         }
+
+        totalAmount = BridgeUtils.getAmountSentToAddresses(
+            activations,
+            bridgeConstants.getBtcParams(),
+            btcContext,
+            btcTx,
+            addresses.toArray(new Address[addresses.size()])
+        );
 
         if (totalAmount.equals(Coin.ZERO)) {
             logger.debug("[registerFastBridgeBtcTransaction] Amount sent can't be 0");

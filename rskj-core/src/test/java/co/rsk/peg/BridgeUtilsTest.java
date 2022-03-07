@@ -2508,7 +2508,7 @@ public class BridgeUtilsTest {
         return new Federation(FederationTestUtils.getFederationMembersWithBtcKeys(keys), Instant.ofEpochMilli(1000L), 0L, bridgeConstants.getBtcParams());
     }
 
-    private void getAmountSentToAddresses_coin_by_network(BridgeConstants bridgeConstants) {
+    private void getAmountSentToAddresses_ok_by_network(BridgeConstants bridgeConstants) {
         Federation activeFederation = getFederation(bridgeConstants, "fa03", "fa04");
         Address activeFederationAddress = activeFederation.getAddress();
 
@@ -2522,21 +2522,16 @@ public class BridgeUtilsTest {
 
         Coin totalAmountExpected = valueToTransfer.multiply(2);
 
-        Assert.assertEquals(totalAmountExpected, BridgeUtils.getAmountSentToAddresses(
-            new Context(bridgeConstants.getBtcParams()),
-            btcTx,
-            activeFederationAddress,
-            retiringFederationAddress)
-        );
-
-        btcTx = new BtcTransaction(bridgeConstants.getBtcParams());
-        btcTx.addOutput(valueToTransfer, activeFederationAddress);
-        totalAmountExpected = Coin.COIN;
-        Assert.assertEquals(totalAmountExpected, BridgeUtils.getAmountSentToAddresses(
-            new Context(bridgeConstants.getBtcParams()),
-            btcTx,
-            activeFederationAddress,
-            retiringFederationAddress)
+        Assert.assertEquals(
+            totalAmountExpected,
+            BridgeUtils.getAmountSentToAddresses(
+                activations,
+                bridgeConstants.getBtcParams(),
+                new Context(bridgeConstants.getBtcParams()),
+                btcTx,
+                activeFederationAddress,
+                retiringFederationAddress
+            )
         );
 
         btcTx = new BtcTransaction(bridgeConstants.getBtcParams());
@@ -2544,8 +2539,25 @@ public class BridgeUtilsTest {
         totalAmountExpected = Coin.COIN;
         Assert.assertEquals(
             totalAmountExpected,
-            BridgeUtils.getAmountSentToAddresses(new Context(
-                bridgeConstants.getBtcParams()),
+            BridgeUtils.getAmountSentToAddresses(
+                activations,
+                bridgeConstants.getBtcParams(),
+                new Context(bridgeConstants.getBtcParams()),
+                btcTx,
+                activeFederationAddress,
+                retiringFederationAddress
+            )
+        );
+
+        btcTx = new BtcTransaction(bridgeConstants.getBtcParams());
+        btcTx.addOutput(valueToTransfer, activeFederationAddress);
+        totalAmountExpected = Coin.COIN;
+        Assert.assertEquals(
+            totalAmountExpected,
+            BridgeUtils.getAmountSentToAddresses(
+                activations,
+                bridgeConstants.getBtcParams(),
+                new Context(bridgeConstants.getBtcParams()),
                 btcTx,
                 activeFederationAddress
             )
@@ -2557,6 +2569,8 @@ public class BridgeUtilsTest {
         Assert.assertEquals(
             totalAmountExpected,
             BridgeUtils.getAmountSentToAddresses(
+                activations,
+                bridgeConstants.getBtcParams(),
                 new Context(bridgeConstants.getBtcParams()),
                 btcTx,
                 retiringFederationAddress
@@ -2565,9 +2579,10 @@ public class BridgeUtilsTest {
     }
 
     @Test
-    public void getAmountSentToAddresses_coin() {
-        getAmountSentToAddresses_coin_by_network(bridgeConstantsMainnet);
-        getAmountSentToAddresses_coin_by_network(bridgeConstantsRegtest);
+    public void getAmountSentToAddresses_ok() {
+        when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
+        getAmountSentToAddresses_ok_by_network(bridgeConstantsMainnet);
+        getAmountSentToAddresses_ok_by_network(bridgeConstantsRegtest);
     }
 
     private void getAmountSentToAddresses_no_output_for_address_by_network(BridgeConstants bridgeConstants) {
@@ -2575,11 +2590,21 @@ public class BridgeUtilsTest {
         Address receiver = genesisFederation.getAddress();
         BtcTransaction btcTx = new BtcTransaction(bridgeConstants.getBtcParams());
 
-        Assert.assertEquals(Coin.ZERO, BridgeUtils.getAmountSentToAddresses(new Context(bridgeConstants.getBtcParams()), btcTx, receiver));
+        Assert.assertEquals(
+            Coin.ZERO,
+            BridgeUtils.getAmountSentToAddresses(
+                activations,
+                bridgeConstants.getBtcParams(),
+                new Context(bridgeConstants.getBtcParams()),
+                btcTx,
+                receiver
+            )
+        );
     }
 
     @Test
     public void getAmountSentToAddresses_no_output_for_address() {
+        when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
         getAmountSentToAddresses_no_output_for_address_by_network(bridgeConstantsMainnet);
         getAmountSentToAddresses_no_output_for_address_by_network(bridgeConstantsRegtest);
     }
@@ -2593,11 +2618,21 @@ public class BridgeUtilsTest {
         BtcTransaction btcTx = new BtcTransaction(bridgeConstants.getBtcParams());
         btcTx.addOutput(valueToTransfer, receiver);
 
-        Assert.assertEquals(Coin.ZERO, BridgeUtils.getAmountSentToAddresses(new Context(bridgeConstants.getBtcParams()), btcTx, receiver));
+        Assert.assertEquals(
+            Coin.ZERO,
+            BridgeUtils.getAmountSentToAddresses(
+                activations,
+                bridgeConstants.getBtcParams(),
+                new Context(bridgeConstants.getBtcParams()),
+                btcTx,
+                receiver
+            )
+        );
     }
 
     @Test
     public void getAmountSentToAddresses_output_value_is_0() {
+        when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
         getAmountSentToAddresses_output_value_is_0_by_network(bridgeConstantsMainnet);
         getAmountSentToAddresses_output_value_is_0_by_network(bridgeConstantsRegtest);
     }
