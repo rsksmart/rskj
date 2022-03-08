@@ -27,9 +27,16 @@ import co.rsk.bitcoinj.params.RegTestParams;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.wallet.RedeemData;
+import co.rsk.config.BridgeConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
+
+import java.time.Instant;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
+
 import org.bouncycastle.util.encoders.Hex;
 
 /**
@@ -171,5 +178,13 @@ public class PegTestUtils {
             false,
             ScriptBuilder.createOutputScript(new BtcECKey())
         );
+    }
+
+    public static Federation createFederation(BridgeConstants bridgeConstants, String... fedKeys) {
+        List<BtcECKey> keys = Arrays.stream(fedKeys).map(s -> BtcECKey.fromPrivate(Hex.decode(s)))
+            .collect(Collectors.toList());
+        keys.sort(BtcECKey.PUBKEY_COMPARATOR);
+
+        return new Federation(FederationTestUtils.getFederationMembersWithBtcKeys(keys), Instant.ofEpochMilli(1000L), 0L, bridgeConstants.getBtcParams());
     }
 }
