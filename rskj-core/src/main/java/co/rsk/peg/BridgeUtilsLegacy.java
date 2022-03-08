@@ -59,7 +59,7 @@ public class BridgeUtilsLegacy {
     ) {
         if (activations.isActive(ConsensusRule.RSKIP293)) {
             throw new DeprecatedMethodCallException(
-                "Calling BridgeUtils. getAmountSentToAddress method after RSKIP293 activation"
+                "Calling BridgeUtils.getAmountSentToAddress method after RSKIP293 activation"
             );
         }
         Coin value = Coin.ZERO;
@@ -72,18 +72,26 @@ public class BridgeUtilsLegacy {
     }
 
     /**
-     * @param bridgeConstants
+     * @param networkParameters
      * @param btcTx
      * @param btcAddress
      * @return the list of UTXOs in a given btcTx for a given address
      */
     @Deprecated
-    protected static List<UTXO> getUTXOsForAddress(BridgeConstants bridgeConstants, BtcTransaction btcTx, Address btcAddress) {
-        Wallet wallet = new WatchedBtcWallet(new Context(bridgeConstants.getBtcParams()));
-        btcTx.getWalletOutputs(wallet);
+    protected static List<UTXO> getUTXOsForAddress(
+        ActivationConfig.ForBlock activations,
+        NetworkParameters networkParameters,
+        BtcTransaction btcTx,
+        Address btcAddress
+    ) {
+        if (activations.isActive(ConsensusRule.RSKIP293)) {
+            throw new DeprecatedMethodCallException(
+                "Calling BridgeUtils.getUTXOsForAddress method after RSKIP293 activation"
+            );
+        }
         List<UTXO> utxosList = new ArrayList<>();
         for (TransactionOutput o : btcTx.getOutputs()) {
-            if (o.getScriptPubKey().getToAddress(bridgeConstants.getBtcParams()).equals(btcAddress)) {
+            if (o.getScriptPubKey().getToAddress(networkParameters).equals(btcAddress)) {
                 utxosList.add(
                     new UTXO(
                         btcTx.getHash(),
@@ -96,7 +104,6 @@ public class BridgeUtilsLegacy {
                 );
             }
         }
-
         return utxosList;
     }
 }

@@ -299,12 +299,20 @@ public class BridgeUtilsLegacyTest {
         testGetAmountSentToAddress(activations, bridgeConstantsMainnet, valueToTransfer, true);
     }
 
-    private void getUTXOsForAddress_no_utxos_for_address_by_network(BridgeConstants bridgeConstants, Address btcAddress) {
+    private void getUTXOsForAddress_no_utxos_for_address_by_network(BridgeConstants bridgeConstants, Address address) {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(true);
 
         BtcTransaction tx = new BtcTransaction(bridgeConstants.getBtcParams());
-        Assert.assertEquals(Collections.emptyList(), BridgeUtilsLegacy.getUTXOsForAddress(bridgeConstants, tx, btcAddress));
+        Assert.assertEquals(
+            Collections.emptyList(),
+            BridgeUtilsLegacy.getUTXOsForAddress(
+                activations,
+                bridgeConstants.getBtcParams(),
+                tx,
+                address
+            )
+        );
     }
 
     @Test
@@ -346,7 +354,10 @@ public class BridgeUtilsLegacyTest {
         UTXO utxo = new UTXO(tx.getHash(), 0, Coin.COIN, 0, false, fastBridgeP2SH);
         utxoList.add(utxo);
 
-        Assert.assertEquals(utxoList, BridgeUtilsLegacy.getUTXOsForAddress(bridgeConstants, tx, fastBridgeFedAddress));
+        Assert.assertEquals(
+            utxoList,
+            BridgeUtilsLegacy.getUTXOsForAddress(activations, bridgeConstants.getBtcParams(), tx, fastBridgeFedAddress)
+        );
     }
     @Test
     public void getUTXOsForAddress_OK() {

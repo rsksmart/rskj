@@ -2522,8 +2522,10 @@ public class BridgeUtilsTest {
                 bridgeConstants.getBtcParams(),
                 new Context(bridgeConstants.getBtcParams()),
                 btcTx,
-                activeFederationAddress,
-                retiringFederationAddress
+                Arrays.asList(
+                    activeFederationAddress,
+                    retiringFederationAddress
+                )
             )
         );
 
@@ -2537,8 +2539,10 @@ public class BridgeUtilsTest {
                 bridgeConstants.getBtcParams(),
                 new Context(bridgeConstants.getBtcParams()),
                 btcTx,
-                activeFederationAddress,
-                retiringFederationAddress
+                Arrays.asList(
+                    activeFederationAddress,
+                    retiringFederationAddress
+                )
             )
         );
 
@@ -2552,7 +2556,7 @@ public class BridgeUtilsTest {
                 bridgeConstants.getBtcParams(),
                 new Context(bridgeConstants.getBtcParams()),
                 btcTx,
-                activeFederationAddress
+                Arrays.asList(activeFederationAddress)
             )
         );
 
@@ -2566,7 +2570,7 @@ public class BridgeUtilsTest {
                 bridgeConstants.getBtcParams(),
                 new Context(bridgeConstants.getBtcParams()),
                 btcTx,
-                retiringFederationAddress
+                Arrays.asList(retiringFederationAddress)
             )
         );
     }
@@ -2590,7 +2594,7 @@ public class BridgeUtilsTest {
                 bridgeConstants.getBtcParams(),
                 new Context(bridgeConstants.getBtcParams()),
                 btcTx,
-                receiver
+                Arrays.asList(receiver)
             )
         );
     }
@@ -2618,7 +2622,7 @@ public class BridgeUtilsTest {
                 bridgeConstants.getBtcParams(),
                 new Context(bridgeConstants.getBtcParams()),
                 btcTx,
-                receiver
+                Arrays.asList(receiver)
             )
         );
     }
@@ -2961,9 +2965,9 @@ public class BridgeUtilsTest {
             BridgeConstants bridgeConstants
     ) {
 
-        Federation activeFederation = getFederation(bridgeConstants, "fa03", "fa04");
+        Federation activeFederation = PegTestUtils.createFederation(bridgeConstants, "fa03", "fa04");
         Address activeFederationAddress = activeFederation.getAddress();
-        Federation retiringFederation = getFederation(bridgeConstants, "fa01", "fa02");
+        Federation retiringFederation = PegTestUtils.createFederation(bridgeConstants, "fa01", "fa02");
         Address retiringFederationAddress = retiringFederation.getAddress();
 
         Coin minimumPegInTxValue = BridgeUtils.getMinimumPegInTxValue(activations, bridgeConstants);
@@ -2981,7 +2985,7 @@ public class BridgeUtilsTest {
                 bridgeConstants,
                 context,
                 btcTx,
-                activeFederationAddress, retiringFederationAddress
+                Arrays.asList(activeFederationAddress, retiringFederationAddress)
             )
         );
 
@@ -2997,7 +3001,7 @@ public class BridgeUtilsTest {
                 bridgeConstants,
                 context,
                 btcTx,
-                activeFederationAddress, retiringFederationAddress
+                Arrays.asList(activeFederationAddress, retiringFederationAddress)
             )
         );
 
@@ -3013,7 +3017,7 @@ public class BridgeUtilsTest {
                 bridgeConstants,
                 context,
                 btcTx,
-                activeFederationAddress, retiringFederationAddress
+                Arrays.asList(activeFederationAddress, retiringFederationAddress)
             )
         );
     }
@@ -3034,10 +3038,18 @@ public class BridgeUtilsTest {
         isAnyUTXOAmountBelowMinimum_by_network(activations, bridgeConstantsRegtest);
     }
 
-    private void testValidateFastBridgePeginValue_by_network(BridgeConstants bridgeConstants, ActivationConfig.ForBlock activations) {
-        Federation activeFederation = getFederation(bridgeConstants, "fa03", "fa04");
+    private void testValidateFastBridgePeginValue_by_network(
+        boolean isRskip293Active,
+        BridgeConstants bridgeConstants
+    ) {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP219)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(isRskip293Active);
+
+        Federation activeFederation = PegTestUtils.createFederation(bridgeConstants, "fa03", "fa04");
         Address activeFederationAddress = activeFederation.getAddress();
-        Federation retiringFederation = getFederation(bridgeConstants, "fa01", "fa02");
+        Federation retiringFederation = PegTestUtils.createFederation(bridgeConstants, "fa01", "fa02");
         Address retiringFederationAddress = retiringFederation.getAddress();
         Context btcContext = new Context(bridgeConstants.getBtcParams());
 
@@ -3047,15 +3059,18 @@ public class BridgeUtilsTest {
         btcTx.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
         btcTx.addOutput(value, activeFederationAddress);
         btcTx.addOutput(value, retiringFederationAddress);
+        FastBridgeTxResponseCodes expectedResult =
+            isRskip293Active? FastBridgeTxResponseCodes.UNPROCESSABLE_TX_AMOUNT_SENT_BELOW_MINIMUM_ERROR :
+                FastBridgeTxResponseCodes.VALID_TX;
 
         Assert.assertEquals(
-            FastBridgeTxResponseCodes.UNPROCESSABLE_TX_AMOUNT_SENT_BELOW_MINIMUM_ERROR,
+            expectedResult,
             BridgeUtils.validateFastBridgePeginValue(
                 activations,
                 bridgeConstants,
                 btcContext,
                 btcTx,
-                activeFederationAddress
+                Arrays.asList(activeFederationAddress)
             )
         );
 
@@ -3071,8 +3086,10 @@ public class BridgeUtilsTest {
                 bridgeConstants,
                 btcContext,
                 btcTx,
-                activeFederationAddress,
-                retiringFederationAddress
+                Arrays.asList(
+                    activeFederationAddress,
+                    retiringFederationAddress
+                )
             )
         );
 
@@ -3088,25 +3105,20 @@ public class BridgeUtilsTest {
                 bridgeConstants,
                 btcContext,
                 btcTx,
-                activeFederationAddress,
-                retiringFederationAddress
+                Arrays.asList(
+                    activeFederationAddress,
+                    retiringFederationAddress
+                )
             )
         );
     }
 
     @Test
     public void testValidateFastBridgePeginValue() {
-        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-        when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(true);
-        when(activations.isActive(ConsensusRule.RSKIP219)).thenReturn(true);
-        when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(false);
+        testValidateFastBridgePeginValue_by_network(false, bridgeConstantsMainnet);
+        testValidateFastBridgePeginValue_by_network(false, bridgeConstantsRegtest);
 
-        testValidateFastBridgePeginValue_by_network(bridgeConstantsMainnet, activations);
-        testValidateFastBridgePeginValue_by_network(bridgeConstantsRegtest, activations);
-
-        when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
-
-        testValidateFastBridgePeginValue_by_network(bridgeConstantsMainnet, activations);
-        testValidateFastBridgePeginValue_by_network(bridgeConstantsRegtest, activations);
+        testValidateFastBridgePeginValue_by_network(true, bridgeConstantsMainnet);
+        testValidateFastBridgePeginValue_by_network(true, bridgeConstantsRegtest);
     }
 }

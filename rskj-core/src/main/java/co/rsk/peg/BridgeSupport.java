@@ -2584,7 +2584,7 @@ public class BridgeSupport {
             bridgeConstants,
             btcContext,
             btcTx,
-            addresses.toArray(addresses.toArray(new Address[addresses.size()]))
+            addresses
         );
 
         if (txResponse != FastBridgeTxResponseCodes.VALID_TX){
@@ -2596,7 +2596,7 @@ public class BridgeSupport {
             bridgeConstants.getBtcParams(),
             btcContext,
             btcTx,
-            addresses.toArray(new Address[addresses.size()])
+            addresses
         );
 
         if (!verifyLockDoesNotSurpassLockingCap(btcTx, totalAmount)) {
@@ -2608,22 +2608,23 @@ public class BridgeSupport {
 
             if (shouldTransferToContract) {
                 logger.debug("[registerFastBridgeBtcTransaction] Returning to liquidity provider");
-                generateRejectionRelease(btcTx, lpBtcAddress, fbActiveFederationAddress, new Keccak256(internalTx.getOriginHash()), totalAmount, walletProvider);
+                generateRejectionRelease(btcTx, lpBtcAddress, Arrays.asList(fbActiveFederationAddress), new Keccak256(internalTx.getOriginHash()), totalAmount, walletProvider);
                 return BigInteger.valueOf(FastBridgeTxResponseCodes.REFUNDED_LP_ERROR.value());
             } else {
                 logger.debug("[registerFastBridgeBtcTransaction] Returning to user");
-                generateRejectionRelease(btcTx, userRefundAddress, fbActiveFederationAddress, new Keccak256(internalTx.getOriginHash()), totalAmount, walletProvider);
+                generateRejectionRelease(btcTx, userRefundAddress, Arrays.asList(fbActiveFederationAddress), new Keccak256(internalTx.getOriginHash()), totalAmount, walletProvider);
                 return BigInteger.valueOf(FastBridgeTxResponseCodes.REFUNDED_USER_ERROR.value());
             }
         }
 
         transferTo(lbcAddress, co.rsk.core.Coin.fromBitcoin(totalAmount));
-        List<UTXO> utxosList;
-        if (activations.isActive(ConsensusRule.RSKIP293)){
-            utxosList = BridgeUtils.getUTXOsForAddresses(btcContext, btcTx, fbActiveFederationAddress);
-        } else {
-            utxosList = BridgeUtilsLegacy.getUTXOsForAddress(bridgeConstants, btcTx, fbActiveFederationAddress);
-        }
+        List<UTXO> utxosList = BridgeUtils.getUTXOsForAddresses(
+            activations,
+            bridgeConstants.getBtcParams(),
+            btcContext,
+            btcTx,
+            addresses
+        );
 
         saveFastBridgeDataInStorage(
             btcTxHashWithoutWitness,
@@ -2660,13 +2661,14 @@ public class BridgeSupport {
 
     private WalletProvider createFastBridgeWalletProvider(
         FastBridgeFederationInformation fastBridgeFederationInformation) {
-        return (BtcTransaction a, Address b) -> {
-            List<UTXO> utxosList;
-            if (activations.isActive(ConsensusRule.RSKIP293)){
-                utxosList = BridgeUtils.getUTXOsForAddresses(btcContext, a, b);
-            } else {
-                utxosList = BridgeUtilsLegacy.getUTXOsForAddress(bridgeConstants,a, b);
-            }
+        return (BtcTransaction btcTx, List<Address> addresses) -> {
+            List<UTXO> utxosList = BridgeUtils.getUTXOsForAddresses(
+                activations,
+                bridgeConstants.getBtcParams(),
+                btcContext,
+                btcTx,
+                addresses
+            );
             return getFastBridgeWallet(btcContext, utxosList, fastBridgeFederationInformation);
         };
     }
@@ -2851,14 +2853,14 @@ public class BridgeSupport {
     private void generateRejectionRelease(
         BtcTransaction btcTx,
         Address btcRefundAddress,
-        Address spendingAddress,
+        List<Address> spendingAddresses,
         Keccak256 rskTxHash,
         Coin totalAmount,
         WalletProvider walletProvider) throws IOException {
 
         ReleaseTransactionBuilder txBuilder = new ReleaseTransactionBuilder(
             btcContext.getParams(),
-            walletProvider.provide(btcTx, spendingAddress),
+            walletProvider.provide(btcTx, spendingAddresses),
             btcRefundAddress,
             getFeePerKb(),
             activations
@@ -2885,7 +2887,7 @@ public class BridgeSupport {
         Transaction rskTx,
         Coin totalAmount
     ) throws IOException {
-        WalletProvider createWallet = (BtcTransaction a, Address b) -> {
+        WalletProvider createWallet = (BtcTransaction btcTransaction, List<Address> addresses) -> {
             // Build the list of UTXOs in the BTC transaction sent to either the active
             // or retiring federation
             List<UTXO> utxosToUs = btcTx.getWalletOutputs(
