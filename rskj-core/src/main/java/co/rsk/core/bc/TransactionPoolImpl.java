@@ -92,7 +92,7 @@ public class TransactionPoolImpl implements TransactionPool {
 
         this.validator = new TxPendingValidator(config.getNetworkConstants(), config.getActivationConfig(), config.getNumOfAccountSlots());
 
-        this.quotaChecker = new TxQuotaChecker();
+        this.quotaChecker = new TxQuotaChecker(System::currentTimeMillis);
 
         if (this.outdatedTimeout > 0) {
             this.cleanerTimer = Executors.newSingleThreadScheduledExecutor(r -> new Thread(r, "TransactionPoolCleanerTimer"));
