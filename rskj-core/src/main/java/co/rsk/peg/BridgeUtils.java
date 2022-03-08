@@ -141,6 +141,27 @@ public class BridgeUtils {
         return wallet;
     }
 
+    protected static Coin getAmountSentToAddresses(
+        ActivationConfig.ForBlock activations,
+        NetworkParameters networkParameters,
+        Context context,
+        BtcTransaction btcTx,
+        Address... addresses
+    ) {
+        if (addresses == null || addresses.length == 0){
+            return Coin.ZERO;
+        }
+        if (activations.isActive(ConsensusRule.RSKIP293)){
+            return getAmountSentToAddresses(
+                context,
+                btcTx,
+                addresses
+            );
+        } else {
+            return BridgeUtilsLegacy.getAmountSentToAddress(activations, networkParameters, btcTx, addresses[0]);
+        }
+    }
+
     /**
      * @param activations     the network HF activations configuration
      * @param bridgeConstants the Bridge constants
@@ -148,8 +169,8 @@ public class BridgeUtils {
      */
     public static Coin getMinimumPegInTxValue(ActivationConfig.ForBlock activations, BridgeConstants bridgeConstants) {
         return activations.isActive(ConsensusRule.RSKIP219) ?
-                bridgeConstants.getMinimumPeginTxValueInSatoshis() :
-                bridgeConstants.getLegacyMinimumPeginTxValueInSatoshis();
+            bridgeConstants.getMinimumPeginTxValueInSatoshis() :
+            bridgeConstants.getLegacyMinimumPeginTxValueInSatoshis();
     }
 
     /**
@@ -254,7 +275,7 @@ public class BridgeUtils {
      * @param addresses
      * @return total amount sent to the given list of addresses.
      */
-    protected static Coin getAmountSentToAddresses(Context context, BtcTransaction btcTx, Address... addresses) {
+    private static Coin getAmountSentToAddresses(Context context, BtcTransaction btcTx, Address... addresses) {
         return getAmountSentToWallet(btcTx, createBtcWalletFrom(context, addresses));
     }
 
@@ -264,7 +285,7 @@ public class BridgeUtils {
      * @param wallet
      * @return total amount sent to a given wallet.
      */
-    protected static Coin getAmountSentToWallet(BtcTransaction btcTx, Wallet wallet) {
+    private static Coin getAmountSentToWallet(BtcTransaction btcTx, Wallet wallet) {
         return btcTx.getValueSentToMe(wallet);
     }
 

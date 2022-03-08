@@ -43,16 +43,28 @@ public class BridgeUtilsLegacy {
     /**
      * Legacy version for getting the amount sent to a btc address.
      *
-     * @param constants
+     *
+     * @param activations
+     * @param networkParameters
      * @param btcTx
      * @param btcAddress
      * @return total amount sent to the given address.
      */
     @Deprecated
-    protected static Coin getAmountSentToAddress(BridgeConstants constants, BtcTransaction btcTx, Address btcAddress) {
+    protected static Coin getAmountSentToAddress(
+        ActivationConfig.ForBlock activations,
+        NetworkParameters networkParameters,
+        BtcTransaction btcTx,
+        Address btcAddress
+    ) {
+        if (activations.isActive(ConsensusRule.RSKIP293)) {
+            throw new DeprecatedMethodCallException(
+                "Calling BridgeUtils. getAmountSentToAddress method after RSKIP293 activation"
+            );
+        }
         Coin value = Coin.ZERO;
         for (TransactionOutput output : btcTx.getOutputs()) {
-            if (output.getScriptPubKey().getToAddress(constants.getBtcParams()).equals(btcAddress)) {
+            if (output.getScriptPubKey().getToAddress(networkParameters).equals(btcAddress)) {
                 value = value.add(output.getValue());
             }
         }
@@ -67,7 +79,7 @@ public class BridgeUtilsLegacy {
      */
     @Deprecated
     protected static List<UTXO> getUTXOsForAddress(BridgeConstants bridgeConstants, BtcTransaction btcTx, Address btcAddress) {
-        Wallet wallet = new BtcWallet(new Context(bridgeConstants.getBtcParams()));
+        Wallet wallet = new WatchedBtcWallet(new Context(bridgeConstants.getBtcParams()));
         btcTx.getWalletOutputs(wallet);
         List<UTXO> utxosList = new ArrayList<>();
         for (TransactionOutput o : btcTx.getOutputs()) {
