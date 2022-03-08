@@ -2704,7 +2704,7 @@ public class BridgeSupport {
         Address fastBridgeFedAddress =
             fastBridgeFederationInformation.getFastBridgeFederationAddress(bridgeConstants.getBtcParams());
 
-        Coin totalAmount;
+
         Federation retiringFederation = getRetiringFederation();
         List<Address> addresses = new ArrayList<>();
         addresses.add(fastBridgeFedAddress);
@@ -2719,7 +2719,7 @@ public class BridgeSupport {
             addresses.add(fastBridgeRetiringFedAddress);
         }
 
-        totalAmount = BridgeUtils.getAmountSentToAddresses(
+        Coin totalAmount = BridgeUtils.getAmountSentToAddresses(
             activations,
             bridgeConstants.getBtcParams(),
             btcContext,

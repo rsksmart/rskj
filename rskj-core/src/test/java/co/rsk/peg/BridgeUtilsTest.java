@@ -2697,19 +2697,11 @@ public class BridgeUtilsTest {
         assertIsWatching(federation.getAddress(), wallet, networkParameters);
     }
 
-    private Federation getFederation(BridgeConstants bridgeConstants, String... fedKeys) {
-        List<BtcECKey> keys = Arrays.stream(fedKeys).map(s -> BtcECKey.fromPrivate(Hex.decode(s)))
-                .collect(Collectors.toList());
-        keys.sort(BtcECKey.PUBKEY_COMPARATOR);
-
-        return new Federation(FederationTestUtils.getFederationMembersWithBtcKeys(keys), Instant.ofEpochMilli(1000L), 0L, bridgeConstants.getBtcParams());
-    }
-
     private void getAmountSentToAddresses_ok_by_network(BridgeConstants bridgeConstants) {
-        Federation activeFederation = getFederation(bridgeConstants, "fa03", "fa04");
+        Federation activeFederation = PegTestUtils.createFederation(bridgeConstants, "fa03", "fa04");
         Address activeFederationAddress = activeFederation.getAddress();
 
-        Federation retiringFederation = getFederation(bridgeConstants, "fa01", "fa02");
+        Federation retiringFederation = PegTestUtils.createFederation(bridgeConstants, "fa01", "fa02");
         Address retiringFederationAddress = retiringFederation.getAddress();
 
         Coin valueToTransfer = Coin.COIN;

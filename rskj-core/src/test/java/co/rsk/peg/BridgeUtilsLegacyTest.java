@@ -240,7 +240,7 @@ public class BridgeUtilsLegacyTest {
         );
     }
 
-    public void testGetAmountSentToAddress(
+    private void testGetAmountSentToAddress(
         ActivationConfig.ForBlock activations,
         BridgeConstants constants,
         Coin valueToTransfer,
@@ -284,11 +284,16 @@ public class BridgeUtilsLegacyTest {
     }
 
     @Test(expected = DeprecatedMethodCallException.class)
-    public void getAmountSentToAddress_after_RSKIP293() {
+    public void getAmountSentToAddress_for_regtest_after_RSKIP293() {
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
         Coin valueToTransfer = Coin.COIN;
-
         testGetAmountSentToAddress(activations, bridgeConstantsRegtest, valueToTransfer, true);
+    }
+
+    @Test(expected = DeprecatedMethodCallException.class)
+    public void getAmountSentToAddress_for_mainnet_after_RSKIP293() {
+        when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
+        Coin valueToTransfer = Coin.COIN;
         testGetAmountSentToAddress(activations, bridgeConstantsMainnet, valueToTransfer, true);
     }
 
