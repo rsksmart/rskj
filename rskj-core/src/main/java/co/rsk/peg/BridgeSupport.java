@@ -2496,8 +2496,7 @@ public class BridgeSupport {
         RskAddress lbcAddress,
         Address lpBtcAddress,
         boolean shouldTransferToContract
-    )
-        throws BlockStoreException, IOException, BridgeIllegalArgumentException {
+    ) throws BlockStoreException, IOException, BridgeIllegalArgumentException {
         if (!BridgeUtils.isContractTx(rskTx)) {
             logger.debug("[registerFastBridgeBtcTransaction] (rskTx:{}) Sender not a contract", rskTx.getHash());
             return BigInteger.valueOf(FAST_BRIDGE_UNPROCESSABLE_TX_NOT_CONTRACT_ERROR_CODE);
@@ -2551,9 +2550,30 @@ public class BridgeSupport {
         Address fastBridgeFedAddress =
             fastBridgeFederationInformation.getFastBridgeFederationAddress(bridgeConstants.getBtcParams());
 
-        Coin totalAmount = getAmountSentToAddress(btcTx, fastBridgeFedAddress);
 
-        if (totalAmount == Coin.ZERO) {
+        Federation retiringFederation = getRetiringFederation();
+        List<Address> addresses = new ArrayList<>();
+        addresses.add(fastBridgeFedAddress);
+
+        if (activations.isActive(ConsensusRule.RSKIP293) && retiringFederation != null) {
+            FastBridgeFederationInformation fastBridgeRetiringFederationInformation =
+                createFastBridgeFederationInformation(fastBridgeDerivationHash, retiringFederation);
+            Address fastBridgeRetiringFedAddress =
+                fastBridgeRetiringFederationInformation.getFastBridgeFederationAddress(
+                    bridgeConstants.getBtcParams()
+                );
+            addresses.add(fastBridgeRetiringFedAddress);
+        }
+
+        Coin totalAmount = BridgeUtils.getAmountSentToAddresses(
+            activations,
+            bridgeConstants.getBtcParams(),
+            btcContext,
+            btcTx,
+            addresses.toArray(new Address[addresses.size()])
+        );
+
+        if (totalAmount.equals(Coin.ZERO)) {
             logger.debug("[registerFastBridgeBtcTransaction] Amount sent can't be 0");
             return BigInteger.valueOf(FAST_BRIDGE_UNPROCESSABLE_TX_VALUE_ZERO_ERROR);
         }
@@ -2591,8 +2611,12 @@ public class BridgeSupport {
     }
 
     protected FastBridgeFederationInformation createFastBridgeFederationInformation(Keccak256 fastBridgeDerivationHash) {
+        return createFastBridgeFederationInformation(fastBridgeDerivationHash, getActiveFederation());
+    }
+
+    protected FastBridgeFederationInformation createFastBridgeFederationInformation(Keccak256 fastBridgeDerivationHash, Federation federation) {
         Script fastBridgeScript = FastBridgeRedeemScriptParser.createMultiSigFastBridgeRedeemScript(
-            getActiveFederation().getRedeemScript(),
+            federation.getRedeemScript(),
             Sha256Hash.wrap(fastBridgeDerivationHash.getBytes())
         );
 
@@ -2600,7 +2624,7 @@ public class BridgeSupport {
 
         return new FastBridgeFederationInformation(
             fastBridgeDerivationHash,
-            getActiveFederation().getP2SHScript().getPubKeyHash(),
+            federation.getP2SHScript().getPubKeyHash(),
             fastBridgeScriptHash.getPubKeyHash()
         );
     }
@@ -2696,16 +2720,6 @@ public class BridgeSupport {
         );
 
         return new Keccak256(HashUtil.keccak256(result));
-    }
-
-    protected Coin getAmountSentToAddress(BtcTransaction btcTx, Address btcAddress) {
-        Coin v = Coin.ZERO;
-        for (TransactionOutput o : btcTx.getOutputs()) {
-            if (o.getScriptPubKey().getToAddress(bridgeConstants.getBtcParams()).equals(btcAddress)) {
-                v = v.add(o.getValue());
-            }
-        }
-        return v;
     }
 
    // This method will be used by registerBtcTransfer to save all the data required on storage (utxos, btcTxHash-derivationHash),

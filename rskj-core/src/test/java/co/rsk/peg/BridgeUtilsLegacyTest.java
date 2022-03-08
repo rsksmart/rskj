@@ -1,9 +1,8 @@
 package co.rsk.peg;
 
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
 import co.rsk.bitcoinj.core.Address;
+import co.rsk.bitcoinj.core.BtcTransaction;
+import co.rsk.bitcoinj.core.Coin;
 import co.rsk.config.BridgeConstants;
 import co.rsk.config.BridgeMainNetConstants;
 import co.rsk.config.BridgeRegTestConstants;
@@ -13,6 +12,9 @@ import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class BridgeUtilsLegacyTest {
 
@@ -234,4 +236,63 @@ public class BridgeUtilsLegacyTest {
             addressBytes
         );
     }
+
+    private void testGetAmountSentToAddress(
+        ActivationConfig.ForBlock activations,
+        BridgeConstants constants,
+        Coin valueToTransfer,
+        Boolean includeOutput
+    ) {
+        Address receiver = constants.getGenesisFederation().getAddress();
+        BtcTransaction btcTx = new BtcTransaction(constants.getBtcParams());
+        if (includeOutput){
+            btcTx.addOutput(valueToTransfer, receiver);
+        }
+        Assert.assertEquals(
+            valueToTransfer,
+            BridgeUtilsLegacy.getAmountSentToAddress(
+                activations,
+                constants.getBtcParams(),
+                btcTx,
+                receiver
+            )
+        );
+    }
+
+    @Test
+    public void getAmountSentToAddress_coin() {
+        Coin valueToTransfer = Coin.COIN;
+        testGetAmountSentToAddress(activations, bridgeConstantsRegtest, valueToTransfer, true);
+        testGetAmountSentToAddress(activations, bridgeConstantsMainnet, valueToTransfer, true);
+    }
+
+    @Test
+    public void getAmountSentToAddress_no_output_for_address() {
+        Coin valueToTransfer = Coin.ZERO;
+        testGetAmountSentToAddress(activations, bridgeConstantsRegtest, valueToTransfer, false);
+        testGetAmountSentToAddress(activations, bridgeConstantsMainnet, valueToTransfer, false);
+    }
+
+    @Test
+    public void getAmountSentToAddress_output_value_is_0() {
+        Coin valueToTransfer = Coin.ZERO;
+        testGetAmountSentToAddress(activations, bridgeConstantsRegtest, valueToTransfer, true);
+        testGetAmountSentToAddress(activations, bridgeConstantsMainnet, valueToTransfer, true);
+    }
+
+    @Test(expected = DeprecatedMethodCallException.class)
+    public void getAmountSentToAddress_for_regtest_after_RSKIP293() {
+        when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
+        Coin valueToTransfer = Coin.COIN;
+        testGetAmountSentToAddress(activations, bridgeConstantsRegtest, valueToTransfer, true);
+    }
+
+    @Test(expected = DeprecatedMethodCallException.class)
+    public void getAmountSentToAddress_for_mainnet_after_RSKIP293() {
+        when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
+        Coin valueToTransfer = Coin.COIN;
+        testGetAmountSentToAddress(activations, bridgeConstantsMainnet, valueToTransfer, true);
+    }
+
+
 }
