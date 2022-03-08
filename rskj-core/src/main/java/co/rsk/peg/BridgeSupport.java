@@ -2567,33 +2567,33 @@ public class BridgeSupport {
 
         Coin totalAmount;
         FastBridgeTxResponseCodes txResponse = FastBridgeTxResponseCodes.VALID_TX;
-        if (activations.isActive(ConsensusRule.RSKIP293)) {
-            Federation retiringFederation = getRetiringFederation();
-            List<Address> addresses = new ArrayList<>(2);
-            addresses.add(fbActiveFederationAddress);
-            if (retiringFederation != null) {
-                FastBridgeFederationInformation fastBridgeRetiringFederationInformation = createFastBridgeFederationInformation(fastBridgeDerivationHash, retiringFederation);
-                Address fbRetiringFederationAddress = fastBridgeRetiringFederationInformation.getFastBridgeFederationAddress(bridgeConstants.getBtcParams());
-                addresses.add(fbRetiringFederationAddress);
-            }
+        Federation retiringFederation = getRetiringFederation();
+        List<Address> addresses = new ArrayList<>(2);
+        addresses.add(fbActiveFederationAddress);
 
-            totalAmount = BridgeUtils.getAmountSentToAddresses(
-                btcContext,
-                btcTx,
-                addresses.toArray(addresses.toArray(new Address[addresses.size()]))
-            );
-            txResponse = BridgeUtils.validateFastBridgePeginValue(
-                activations,
-                bridgeConstants,
-                totalAmount
-            );
-        } else {
-            totalAmount = BridgeUtilsLegacy.getAmountSentToAddress(bridgeConstants, btcTx, fbActiveFederationAddress);
-            if (totalAmount.equals(Coin.ZERO)) {
-                logger.debug("[isFastPeginTxValid] Amount sent can't be 0");
-                txResponse = FastBridgeTxResponseCodes.UNPROCESSABLE_TX_VALUE_ZERO_ERROR;
-            }
+        if (activations.isActive(ConsensusRule.RSKIP293) && retiringFederation != null) {
+            FastBridgeFederationInformation fastBridgeRetiringFederationInformation =
+                createFastBridgeFederationInformation(fastBridgeDerivationHash, retiringFederation);
+            Address fbRetiringFederationAddress =
+                fastBridgeRetiringFederationInformation.getFastBridgeFederationAddress(
+                    bridgeConstants.getBtcParams()
+                );
+            addresses.add(fbRetiringFederationAddress);
         }
+
+        totalAmount = BridgeUtils.getAmountSentToAddresses(
+            activations,
+            bridgeConstants.getBtcParams(),
+            btcContext,
+            btcTx,
+            addresses.toArray(new Address[addresses.size()])
+        );
+
+        txResponse = BridgeUtils.validateFastBridgePeginValue(
+            activations,
+            bridgeConstants,
+            totalAmount
+        );
 
         if (txResponse != FastBridgeTxResponseCodes.VALID_TX){
             return BigInteger.valueOf(txResponse.value());
