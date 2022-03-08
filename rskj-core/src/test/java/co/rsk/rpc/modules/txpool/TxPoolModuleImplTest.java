@@ -17,24 +17,30 @@
  */
 package co.rsk.rpc.modules.txpool;
 
-import co.rsk.test.builders.AccountBuilder;
-import co.rsk.test.builders.TransactionBuilder;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import static org.mockito.Mockito.when;
+
+import java.math.BigInteger;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+
 import org.ethereum.core.Account;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionPool;
-import org.ethereum.rpc.TypeConverter;
 import org.ethereum.rpc.Web3Mocks;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.io.IOException;
-import java.math.BigInteger;
-import java.util.*;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 
-import static org.mockito.Mockito.when;
+import co.rsk.test.builders.AccountBuilder;
+import co.rsk.test.builders.TransactionBuilder;
+import co.rsk.util.HexUtils;
 
 public class TxPoolModuleImplTest {
 
@@ -397,27 +403,27 @@ public class TxPoolModuleImplTest {
         Assert.assertTrue(transactionNode.has("blockNumber"));
         Assert.assertEquals(transactionNode.get("blockNumber"), jsonNodeFactory.nullNode());
         Assert.assertTrue(transactionNode.has("from"));
-        Assert.assertEquals(transactionNode.get("from").asText(), TypeConverter.toJsonHex(tx.getSender().getBytes()));
+        Assert.assertEquals(transactionNode.get("from").asText(), HexUtils.toJsonHex(tx.getSender().getBytes()));
         Assert.assertTrue(transactionNode.has("gas"));
-        Assert.assertEquals(transactionNode.get("gas").asText(), TypeConverter.toQuantityJsonHex(tx.getGasLimitAsInteger()));
+        Assert.assertEquals(transactionNode.get("gas").asText(), HexUtils.toQuantityJsonHex(tx.getGasLimitAsInteger()));
         Assert.assertTrue(transactionNode.has("gasPrice"));
-        Assert.assertEquals(transactionNode.get("gasPrice").asText(), TypeConverter.toJsonHex(tx.getGasPrice().getBytes()));
+        Assert.assertEquals(transactionNode.get("gasPrice").asText(), HexUtils.toJsonHex(tx.getGasPrice().getBytes()));
         Assert.assertTrue(transactionNode.has("hash"));
-        Assert.assertEquals(transactionNode.get("hash").asText(), TypeConverter.toJsonHex(tx.getHash().toHexString()));
+        Assert.assertEquals(transactionNode.get("hash").asText(), HexUtils.toJsonHex(tx.getHash().toHexString()));
         Assert.assertTrue(transactionNode.has("input"));
-        Assert.assertEquals(transactionNode.get("input").asText(), TypeConverter.toUnformattedJsonHex(tx.getData()));
+        Assert.assertEquals(transactionNode.get("input").asText(), HexUtils.toUnformattedJsonHex(tx.getData()));
         Assert.assertTrue(transactionNode.has("nonce"));
-        Assert.assertEquals(transactionNode.get("nonce").asText(), TypeConverter.toQuantityJsonHex(tx.getNonceAsInteger()));
+        Assert.assertEquals(transactionNode.get("nonce").asText(), HexUtils.toQuantityJsonHex(tx.getNonceAsInteger()));
         Assert.assertTrue(transactionNode.has("to"));
-        Assert.assertEquals(transactionNode.get("to").asText(), TypeConverter.toJsonHex(tx.getReceiveAddress().getBytes()));
+        Assert.assertEquals(transactionNode.get("to").asText(), HexUtils.toJsonHex(tx.getReceiveAddress().getBytes()));
         Assert.assertTrue(transactionNode.has("transactionIndex"));
         Assert.assertEquals(transactionNode.get("transactionIndex"), jsonNodeFactory.nullNode());
         Assert.assertTrue(transactionNode.has("value"));
-        Assert.assertEquals(transactionNode.get("value").asText(), TypeConverter.toJsonHex(tx.getValue().getBytes()));
+        Assert.assertEquals(transactionNode.get("value").asText(), HexUtils.toJsonHex(tx.getValue().getBytes()));
 
         if (tx.getData() != null && tx.getData().length > 0) {
             Assert.assertTrue(transactionNode.has("data"));
-            Assert.assertEquals(transactionNode.get("data").asText(), TypeConverter.toUnformattedJsonHex(tx.getData()));
+            Assert.assertEquals(transactionNode.get("data").asText(), HexUtils.toUnformattedJsonHex(tx.getData()));
         }
         else {
             Assert.assertFalse(transactionNode.has("data"));

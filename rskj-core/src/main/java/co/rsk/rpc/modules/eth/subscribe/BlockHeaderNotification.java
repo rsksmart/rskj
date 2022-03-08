@@ -19,7 +19,8 @@
 package co.rsk.rpc.modules.eth.subscribe;
 
 import org.ethereum.core.Block;
-import org.ethereum.rpc.TypeConverter;
+
+import co.rsk.util.HexUtils;
 
 /**
  * The block header DTO for JSON serialization purposes.
@@ -41,19 +42,19 @@ public class BlockHeaderNotification implements EthSubscriptionNotificationDTO {
     private final String hash;
 
     public BlockHeaderNotification(Block block) {
-        difficulty = TypeConverter.toQuantityJsonHex(block.getDifficulty().getBytes());
-        extraData = TypeConverter.toUnformattedJsonHex(block.getExtraData());
-        gasLimit = TypeConverter.toQuantityJsonHex(block.getGasLimit());
-        gasUsed = TypeConverter.toQuantityJsonHex(block.getGasUsed());
-        logsBloom = TypeConverter.toJsonHex(block.getLogBloom());
-        miner = TypeConverter.toJsonHex(block.getCoinbase().getBytes());
-        number = TypeConverter.toQuantityJsonHex(block.getNumber());
+        difficulty = HexUtils.toQuantityJsonHex(block.getDifficulty().getBytes());
+        extraData = HexUtils.toUnformattedJsonHex(block.getExtraData());
+        gasLimit = HexUtils.toQuantityJsonHex(block.getGasLimit());
+        gasUsed = HexUtils.toQuantityJsonHex(block.getGasUsed());
+        logsBloom = HexUtils.toJsonHex(block.getLogBloom());
+        miner = HexUtils.toJsonHex(block.getCoinbase().getBytes());
+        number = HexUtils.toQuantityJsonHex(block.getNumber());
         parentHash = block.getParentHashJsonString();
-        receiptsRoot = TypeConverter.toJsonHex(block.getReceiptsRoot());
-        sha3Uncles = TypeConverter.toJsonHex(block.getUnclesHash());
-        stateRoot = TypeConverter.toJsonHex(block.getStateRoot());
-        timestamp = TypeConverter.toQuantityJsonHex(block.getTimestamp());
-        transactionsRoot = TypeConverter.toJsonHex(block.getTxTrieRoot());
+        receiptsRoot = HexUtils.toJsonHex(block.getReceiptsRoot());
+        sha3Uncles = HexUtils.toJsonHex(block.getUnclesHash());
+        stateRoot = HexUtils.toJsonHex(block.getStateRoot());
+        timestamp = HexUtils.toQuantityJsonHex(block.getTimestamp());
+        transactionsRoot = HexUtils.toJsonHex(block.getTxTrieRoot());
         hash = block.getHashJsonString();
     }
 

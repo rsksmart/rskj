@@ -17,20 +17,27 @@
  */
 package co.rsk.net.sync;
 
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Deque;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
+
+import org.ethereum.core.BlockHeader;
+import org.ethereum.core.BlockIdentifier;
+import org.ethereum.util.ByteUtil;
+import org.ethereum.validator.DependentBlockHeaderRule;
+
+import com.google.common.annotations.VisibleForTesting;
+
 import co.rsk.core.bc.ConsensusValidationMainchainView;
 import co.rsk.crypto.Keccak256;
 import co.rsk.net.Peer;
 import co.rsk.scoring.EventType;
+import co.rsk.util.HexUtils;
 import co.rsk.validators.BlockHeaderValidationRule;
-import com.google.common.annotations.VisibleForTesting;
-import org.ethereum.core.BlockHeader;
-import org.ethereum.core.BlockIdentifier;
-import org.ethereum.rpc.TypeConverter;
-import org.ethereum.util.ByteUtil;
-import org.ethereum.validator.DependentBlockHeaderRule;
-
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 
 public class DownloadingHeadersSyncState extends BaseSyncState {
 
@@ -81,7 +88,7 @@ public class DownloadingHeadersSyncState extends BaseSyncState {
                     selectedPeer.getPeerNodeID(),
                     "Invalid chunk received from node {} {}", EventType.INVALID_MESSAGE,
                     selectedPeer.getPeerNodeID(),
-                    TypeConverter.toUnformattedJsonHex(currentChunk.getHash()));
+                    HexUtils.toUnformattedJsonHex(currentChunk.getHash()));
             return;
         }
 

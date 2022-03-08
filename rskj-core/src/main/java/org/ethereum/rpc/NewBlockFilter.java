@@ -20,7 +20,7 @@ package org.ethereum.rpc;
 
 import org.ethereum.core.Block;
 
-import static org.ethereum.rpc.TypeConverter.toJsonHex;
+import co.rsk.util.HexUtils;
 
 /**
  * Created by ajlopez on 17/01/2018.
@@ -36,7 +36,7 @@ public class NewBlockFilter extends Filter {
 
         @Override
         public String getJsonEventObject() {
-            return toJsonHex(b.getHash().getBytes());
+            return HexUtils.toJsonHex(b.getHash().getBytes());
         }
     }
 

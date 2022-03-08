@@ -18,15 +18,17 @@
 
 package co.rsk.crypto;
 
-import co.rsk.bitcoinj.core.Utils;
-import com.google.common.primitives.Ints;
-import org.ethereum.rpc.TypeConverter;
-import org.ethereum.util.ByteUtil;
+import static com.google.common.base.Preconditions.checkArgument;
 
 import java.io.Serializable;
 import java.util.Arrays;
 
-import static com.google.common.base.Preconditions.checkArgument;
+import org.ethereum.util.ByteUtil;
+
+import com.google.common.primitives.Ints;
+
+import co.rsk.bitcoinj.core.Utils;
+import co.rsk.util.HexUtils;
 
 /**
  * A Keccak256 just wraps a byte[] so that equals and hashcode work correctly, allowing it to be used as keys in a
@@ -49,7 +51,7 @@ public class Keccak256 implements Serializable, Comparable<Keccak256> {
     }
 
     public String toJsonString() {
-        return TypeConverter.toUnformattedJsonHex(this.bytes);
+        return HexUtils.toUnformattedJsonHex(this.bytes);
     }
 
     public String toHexString() {

@@ -19,18 +19,19 @@
 
 package co.rsk.rpc.modules.trace;
 
-import co.rsk.core.RskAddress;
+import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.List;
+
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.db.TransactionInfo;
-import org.ethereum.rpc.TypeConverter;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.program.ProgramResult;
 import org.ethereum.vm.program.invoke.InvokeData;
 import org.ethereum.vm.trace.SummarizedProgramTrace;
 
-import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.List;
+import co.rsk.core.RskAddress;
+import co.rsk.util.HexUtils;
 
 public class TraceTransformer {
     private TraceTransformer() {
@@ -109,7 +110,7 @@ public class TraceTransformer {
             }
         }
 
-        String blockHash = TypeConverter.toUnformattedJsonHex(txInfo.getBlockHash());
+        String blockHash = HexUtils.toUnformattedJsonHex(txInfo.getBlockHash());
         String transactionHash = txInfo.getReceipt().getTransaction().getHash().toJsonString();
         int transactionPosition = txInfo.getIndex();
         String type = traceType.name().toLowerCase();
@@ -129,17 +130,17 @@ public class TraceTransformer {
     }
 
     public static TraceResult toResult(ProgramResult programResult, byte[] createdCode, RskAddress createdAddress) {
-        String gasUsed = TypeConverter.toQuantityJsonHex(programResult.getGasUsed());
+        String gasUsed = HexUtils.toQuantityJsonHex(programResult.getGasUsed());
         String output = null;
         String address = null;
         String code = null;
 
         if (createdCode != null && createdAddress != null) {
-            code = TypeConverter.toUnformattedJsonHex(createdCode);
+            code = HexUtils.toUnformattedJsonHex(createdCode);
             address = createdAddress.toJsonString();
         }
         else {
-            output = TypeConverter.toUnformattedJsonHex(programResult.getHReturn());
+            output = HexUtils.toUnformattedJsonHex(programResult.getHReturn());
         }
 
         return new TraceResult(gasUsed, output, code, address);
@@ -168,14 +169,14 @@ public class TraceTransformer {
         String init = null;
 
         if (traceType == TraceType.CREATE) {
-            init = TypeConverter.toUnformattedJsonHex(creationInput);
-            value = TypeConverter.toQuantityJsonHex(callValue.getData());
-            gas = TypeConverter.toQuantityJsonHex(invoke.getGas());
+            init = HexUtils.toUnformattedJsonHex(creationInput);
+            value = HexUtils.toQuantityJsonHex(callValue.getData());
+            gas = HexUtils.toQuantityJsonHex(invoke.getGas());
         }
 
         if (traceType == TraceType.CALL) {
-            input = TypeConverter.toUnformattedJsonHex(invoke.getDataCopy(DataWord.ZERO, invoke.getDataSize()));;
-            value = TypeConverter.toQuantityJsonHex(callValue.getData());
+            input = HexUtils.toUnformattedJsonHex(invoke.getDataCopy(DataWord.ZERO, invoke.getDataSize()));;
+            value = HexUtils.toQuantityJsonHex(callValue.getData());
 
             if (callType == CallType.DELEGATECALL) {
                 // The code address should not be null in a DELEGATECALL case
@@ -188,13 +189,13 @@ public class TraceTransformer {
                 to = new RskAddress(invoke.getOwnerAddress().getLast20Bytes()).toJsonString();
             }
 
-            gas = TypeConverter.toQuantityJsonHex(invoke.getGas());
+            gas = HexUtils.toQuantityJsonHex(invoke.getGas());
         }
 
         if (traceType == TraceType.SUICIDE) {
             address = from;
             from = null;
-            balance = TypeConverter.toQuantityJsonHex(callValue.getData());
+            balance = HexUtils.toQuantityJsonHex(callValue.getData());
             refundAddress = new RskAddress(invoke.getOwnerAddress().getLast20Bytes()).toJsonString();
         }
 

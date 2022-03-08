@@ -18,7 +18,6 @@
 
 package co.rsk.rpc.modules.eth;
 
-import static org.ethereum.rpc.TypeConverter.stringHexToByteArray;
 import static org.ethereum.rpc.exception.RskJsonRpcRequestException.invalidParamError;
 
 import co.rsk.util.RLPException;
@@ -38,6 +37,7 @@ import org.slf4j.LoggerFactory;
 import co.rsk.core.RskAddress;
 import co.rsk.core.Wallet;
 import co.rsk.net.TransactionGateway;
+import co.rsk.util.HexUtils;
 
 public class EthModuleTransactionBase implements EthModuleTransaction {
 
@@ -100,7 +100,7 @@ public class EthModuleTransactionBase implements EthModuleTransaction {
 	public String sendRawTransaction(String rawData) {
 		String s = null;
 		try {
-			Transaction tx = new ImmutableTransaction(stringHexToByteArray(rawData));
+			Transaction tx = new ImmutableTransaction(HexUtils.stringHexToByteArray(rawData));
 
 			if (null == tx.getGasLimit() || null == tx.getGasPrice() || null == tx.getValue()) {
 				throw invalidParamError("Missing parameter, gasPrice, gas or value");

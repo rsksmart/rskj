@@ -18,18 +18,18 @@
 
 package co.rsk.rpc.modules.eth.subscribe;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonInclude;
-import org.ethereum.core.Block;
-import org.ethereum.core.Transaction;
-import org.ethereum.vm.LogInfo;
-
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static org.ethereum.rpc.TypeConverter.toJsonHex;
-import static org.ethereum.rpc.TypeConverter.toQuantityJsonHex;
+import org.ethereum.core.Block;
+import org.ethereum.core.Transaction;
+import org.ethereum.vm.LogInfo;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
+
+import co.rsk.util.HexUtils;
 
 /**
  * The logs DTO for JSON serialization purposes.
@@ -63,14 +63,14 @@ public class LogsNotification implements EthSubscriptionNotificationDTO {
 
     public String getLogIndex() {
         if (lazyLogIndex == null) {
-            lazyLogIndex = toQuantityJsonHex(logInfoIndex);
+            lazyLogIndex = HexUtils.toQuantityJsonHex(logInfoIndex);
         }
         return lazyLogIndex;
     }
 
     public String getBlockNumber() {
         if (lazyBlockNumber == null) {
-            lazyBlockNumber = toQuantityJsonHex(block.getNumber());
+            lazyBlockNumber = HexUtils.toQuantityJsonHex(block.getNumber());
         }
         return lazyBlockNumber;
     }
@@ -91,21 +91,21 @@ public class LogsNotification implements EthSubscriptionNotificationDTO {
 
     public String getTransactionIndex() {
         if (lazyTransactionIndex == null) {
-            lazyTransactionIndex = toQuantityJsonHex(transactionIndex);
+            lazyTransactionIndex = HexUtils.toQuantityJsonHex(transactionIndex);
         }
         return lazyTransactionIndex;
     }
 
     public String getAddress() {
         if (lazyAddress == null) {
-            lazyAddress = toJsonHex(logInfo.getAddress());
+            lazyAddress = HexUtils.toJsonHex(logInfo.getAddress());
         }
         return lazyAddress;
     }
 
     public String getData() {
         if (lazyData == null) {
-            lazyData = toJsonHex(logInfo.getData());
+            lazyData = HexUtils.toJsonHex(logInfo.getData());
         }
         return lazyData;
     }
@@ -113,7 +113,7 @@ public class LogsNotification implements EthSubscriptionNotificationDTO {
     public List<String> getTopics() {
         if (lazyTopics == null) {
             lazyTopics = logInfo.getTopics().stream()
-                    .map(t -> toJsonHex(t.getData()))
+                    .map(t -> HexUtils.toJsonHex(t.getData()))
                     .collect(Collectors.toList());
         }
         return Collections.unmodifiableList(lazyTopics);

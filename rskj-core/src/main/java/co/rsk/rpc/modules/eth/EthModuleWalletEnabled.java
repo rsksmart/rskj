@@ -18,22 +18,23 @@
 
 package co.rsk.rpc.modules.eth;
 
-import co.rsk.core.RskAddress;
-import co.rsk.core.Wallet;
+import static org.ethereum.rpc.exception.RskJsonRpcRequestException.invalidParamError;
+
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+
 import org.bouncycastle.util.BigIntegers;
 import org.ethereum.core.Account;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.crypto.signature.ECDSASignature;
-import org.ethereum.rpc.TypeConverter;
 import org.ethereum.util.ByteUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
-
-import static org.ethereum.rpc.exception.RskJsonRpcRequestException.invalidParamError;
+import co.rsk.core.RskAddress;
+import co.rsk.core.Wallet;
+import co.rsk.util.HexUtils;
 
 public class EthModuleWalletEnabled implements EthModuleWallet {
 
@@ -71,7 +72,7 @@ public class EthModuleWalletEnabled implements EthModuleWallet {
     }
 
     private String sign(String data, ECKey ecKey) {
-        byte[] dataHash = TypeConverter.stringHexToByteArray(data);
+        byte[] dataHash = HexUtils.stringHexToByteArray(data);
         // 0x19 = 25, length should be an ascii decimals, message - original
         String prefix = (char) 25 + "Ethereum Signed Message:\n" + dataHash.length;
 
@@ -81,7 +82,7 @@ public class EthModuleWalletEnabled implements EthModuleWallet {
         ));
         ECDSASignature signature = ECDSASignature.fromSignature(ecKey.sign(messageHash));
 
-        return TypeConverter.toJsonHex(ByteUtil.merge(
+        return HexUtils.toJsonHex(ByteUtil.merge(
                 BigIntegers.asUnsignedByteArray(32, signature.getR()),
                 BigIntegers.asUnsignedByteArray(32, signature.getS()),
                 new byte[]{signature.getV()}

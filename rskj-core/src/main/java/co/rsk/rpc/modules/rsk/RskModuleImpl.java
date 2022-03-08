@@ -1,9 +1,10 @@
 package co.rsk.rpc.modules.rsk;
 
-import co.rsk.core.bc.BlockHashesHelper;
-import co.rsk.crypto.Keccak256;
-import co.rsk.rpc.Web3InformationRetriever;
-import co.rsk.trie.Trie;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
+
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.Transaction;
@@ -11,17 +12,15 @@ import org.ethereum.core.TransactionReceipt;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.db.TransactionInfo;
-import org.ethereum.rpc.TypeConverter;
 import org.ethereum.util.RLP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
-
-import static org.ethereum.rpc.TypeConverter.stringHexToByteArray;
+import co.rsk.core.bc.BlockHashesHelper;
+import co.rsk.crypto.Keccak256;
+import co.rsk.rpc.Web3InformationRetriever;
+import co.rsk.trie.Trie;
+import co.rsk.util.HexUtils;
 
 public class RskModuleImpl implements RskModule {
     private static final Logger logger = LoggerFactory.getLogger("web3");
@@ -45,14 +44,14 @@ public class RskModuleImpl implements RskModule {
     public String getRawTransactionReceiptByHash(String transactionHash) {
         String s = null;
         try {
-            byte[] hash = stringHexToByteArray(transactionHash);
+            byte[] hash = HexUtils.stringHexToByteArray(transactionHash);
             TransactionInfo txInfo = receiptStore.getInMainChain(hash, blockStore).orElse(null);
 
             if (txInfo == null) {
                 logger.trace("No transaction info for {}", transactionHash);
                 return null;
             }
-            return TypeConverter.toUnformattedJsonHex(txInfo.getReceipt().getEncoded());
+            return HexUtils.toUnformattedJsonHex(txInfo.getReceipt().getEncoded());
         } finally {
             if (logger.isDebugEnabled()) {
                 logger.debug("rsk_getRawTransactionReceiptByHash({}): {}", transactionHash, s);
@@ -65,8 +64,8 @@ public class RskModuleImpl implements RskModule {
         String[] encodedNodes = null;
 
         try {
-            Keccak256 txHash = new Keccak256(stringHexToByteArray(transactionHash));
-            Keccak256 bhash = new Keccak256(stringHexToByteArray(blockHash));
+            Keccak256 txHash = new Keccak256(HexUtils.stringHexToByteArray(transactionHash));
+            Keccak256 bhash = new Keccak256(HexUtils.stringHexToByteArray(blockHash));
             Block block = this.blockchain.getBlockByHash(bhash.getBytes());
             List<Transaction> transactions = block.getTransactionsList();
             List<TransactionReceipt> receipts = new ArrayList<>();
@@ -101,7 +100,7 @@ public class RskModuleImpl implements RskModule {
             encodedNodes = new String[nodes.size()];
 
             for (int k = 0; k < encodedNodes.length; k++) {
-                encodedNodes[k] = TypeConverter.toUnformattedJsonHex(nodes.get(k).toMessage());
+                encodedNodes[k] = HexUtils.toUnformattedJsonHex(nodes.get(k).toMessage());
             }
 
             return encodedNodes;
@@ -117,9 +116,9 @@ public class RskModuleImpl implements RskModule {
     public String getRawBlockHeaderByHash(String blockHash) {
         String s = null;
         try {
-            byte[] bhash = stringHexToByteArray(blockHash);
+            byte[] bhash = HexUtils.stringHexToByteArray(blockHash);
             Block b = this.blockchain.getBlockByHash(bhash);
-            return s = (b == null ? null : TypeConverter.toUnformattedJsonHex(b.getHeader().getEncoded()));
+            return s = (b == null ? null : HexUtils.toUnformattedJsonHex(b.getHeader().getEncoded()));
         } finally {
             if (logger.isDebugEnabled()) {
                 logger.debug("rsk_getRawBlockHeaderByHash({}): {}", blockHash, s);
@@ -132,7 +131,7 @@ public class RskModuleImpl implements RskModule {
         String s = null;
         try {
             return s = web3InformationRetriever.getBlock(bnOrId)
-                    .map(b -> TypeConverter.toUnformattedJsonHex(b.getHeader().getEncoded()))
+                    .map(b -> HexUtils.toUnformattedJsonHex(b.getHeader().getEncoded()))
                     .orElse(null);
         } finally {
             if (logger.isDebugEnabled()) {

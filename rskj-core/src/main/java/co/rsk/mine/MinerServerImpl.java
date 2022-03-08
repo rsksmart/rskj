@@ -18,6 +18,40 @@
 
 package co.rsk.mine;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
+
+import javax.annotation.Nonnull;
+import javax.annotation.concurrent.GuardedBy;
+
+import org.bouncycastle.crypto.digests.SHA256Digest;
+import org.bouncycastle.util.Arrays;
+import org.ethereum.config.blockchain.upgrades.ActivationConfig;
+import org.ethereum.core.Block;
+import org.ethereum.core.BlockFactory;
+import org.ethereum.core.BlockHeader;
+import org.ethereum.core.ImportResult;
+import org.ethereum.core.TransactionReceipt;
+import org.ethereum.facade.Ethereum;
+import org.ethereum.listener.EthereumListenerAdapter;
+import org.ethereum.util.BuildInfo;
+import org.ethereum.util.RLP;
+import org.ethereum.util.RLPList;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.google.common.annotations.VisibleForTesting;
+
 import co.rsk.bitcoinj.core.BtcBlock;
 import co.rsk.bitcoinj.core.BtcTransaction;
 import co.rsk.config.MiningConfig;
@@ -30,29 +64,9 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.net.BlockProcessor;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.util.DifficultyUtils;
+import co.rsk.util.HexUtils;
 import co.rsk.util.ListArrayUtil;
 import co.rsk.validators.ProofOfWorkRule;
-import com.google.common.annotations.VisibleForTesting;
-import org.bouncycastle.crypto.digests.SHA256Digest;
-import org.bouncycastle.util.Arrays;
-import org.ethereum.config.blockchain.upgrades.ActivationConfig;
-import org.ethereum.core.*;
-import org.ethereum.facade.Ethereum;
-import org.ethereum.listener.EthereumListenerAdapter;
-import org.ethereum.rpc.TypeConverter;
-import org.ethereum.util.BuildInfo;
-import org.ethereum.util.RLP;
-import org.ethereum.util.RLPList;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.annotation.Nonnull;
-import javax.annotation.concurrent.GuardedBy;
-import java.math.BigDecimal;
-import java.math.BigInteger;
-import java.util.*;
-import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
 
 /**
  * The MinerServer provides support to components that perform the actual mining.
@@ -279,7 +293,7 @@ public class MinerServerImpl implements MinerServer {
             Function<MerkleProofBuilder, byte[]> proofBuilderFunction,
             boolean lastTag) {
         Block newBlock;
-        Keccak256 key = new Keccak256(TypeConverter.removeZeroX(blockHashForMergedMining));
+        Keccak256 key = new Keccak256(HexUtils.removeHexPrefix(blockHashForMergedMining));
 
         synchronized (lock) {
             if (!submissionRateLimitHandler.isSubmissionAllowed()) {
@@ -414,7 +428,7 @@ public class MinerServerImpl implements MinerServer {
         System.arraycopy(targetUnknownLengthArray, 0, targetArray, 32 - targetUnknownLengthArray.length, targetUnknownLengthArray.length);
 
         logger.debug("Sending work for merged mining. Hash: {}", block.getPrintableHashForMergedMining());
-        return new MinerWork(blockMergedMiningHash.toJsonString(), TypeConverter.toJsonHex(targetArray), String.valueOf(block.getFeesPaidToMiner()), notify, block.getParentHashJsonString());
+        return new MinerWork(blockMergedMiningHash.toJsonString(), HexUtils.toJsonHex(targetArray), String.valueOf(block.getFeesPaidToMiner()), notify, block.getParentHashJsonString());
     }
 
     public void setExtraData(byte[] clientExtraData) {

@@ -18,21 +18,32 @@
 
 package co.rsk.core;
 
-import co.rsk.bitcoinj.core.Sha256Hash;
-import co.rsk.crypto.EncryptedData;
-import co.rsk.crypto.KeyCrypterAes;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import javax.annotation.concurrent.GuardedBy;
+
+import org.bouncycastle.crypto.params.KeyParameter;
 import org.ethereum.core.Account;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.datasource.KeyValueDataSource;
 import org.ethereum.db.ByteArrayWrapper;
-import org.ethereum.rpc.TypeConverter;
-import org.bouncycastle.crypto.params.KeyParameter;
 
-import javax.annotation.concurrent.GuardedBy;
-import java.io.*;
-import java.nio.charset.StandardCharsets;
-import java.util.*;
+import co.rsk.bitcoinj.core.Sha256Hash;
+import co.rsk.crypto.EncryptedData;
+import co.rsk.crypto.KeyCrypterAes;
+import co.rsk.util.HexUtils;
 
 public class Wallet {
     @GuardedBy("accessLock")
@@ -77,7 +88,7 @@ public class Wallet {
 
     public String[] getAccountAddressesAsHex() {
         return getAccountAddresses().stream()
-                .map(TypeConverter::toJsonHex)
+                .map(HexUtils::toJsonHex)
                 .toArray(String[]::new);
     }
 

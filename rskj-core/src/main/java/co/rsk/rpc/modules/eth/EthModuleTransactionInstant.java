@@ -18,25 +18,26 @@
 
 package co.rsk.rpc.modules.eth;
 
+import static org.ethereum.rpc.exception.RskJsonRpcRequestException.transactionRevertedExecutionError;
+import static org.ethereum.rpc.exception.RskJsonRpcRequestException.unknownError;
+
+import java.util.Optional;
+
+import org.ethereum.config.Constants;
+import org.ethereum.core.Blockchain;
+import org.ethereum.core.TransactionPool;
+import org.ethereum.db.TransactionInfo;
+import org.ethereum.rpc.CallArguments;
+import org.ethereum.rpc.exception.RskJsonRpcRequestException;
+import org.ethereum.vm.program.ProgramResult;
+
 import co.rsk.core.Wallet;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.crypto.Keccak256;
 import co.rsk.mine.MinerClient;
 import co.rsk.mine.MinerServer;
 import co.rsk.net.TransactionGateway;
-import org.ethereum.config.Constants;
-import org.ethereum.core.Blockchain;
-import org.ethereum.core.TransactionPool;
-import org.ethereum.db.TransactionInfo;
-import org.ethereum.rpc.CallArguments;
-import org.ethereum.rpc.TypeConverter;
-import org.ethereum.rpc.exception.RskJsonRpcRequestException;
-import org.ethereum.vm.program.ProgramResult;
-
-import java.util.Optional;
-
-import static org.ethereum.rpc.exception.RskJsonRpcRequestException.transactionRevertedExecutionError;
-import static org.ethereum.rpc.exception.RskJsonRpcRequestException.unknownError;
+import co.rsk.util.HexUtils;
 
 public class EthModuleTransactionInstant extends EthModuleTransactionBase {
 
@@ -104,7 +105,7 @@ public class EthModuleTransactionInstant extends EthModuleTransactionBase {
      * This does not apply during regular operation because queued transactions are not immediately executed.
      */
     private String getReturnMessage(String txHash) {
-        TransactionInfo transactionInfo = blockchain.getTransactionInfo(TypeConverter.stringHexToByteArray(txHash));
+        TransactionInfo transactionInfo = blockchain.getTransactionInfo(HexUtils.stringHexToByteArray(txHash));
         if (transactionInfo == null) {
             throw unknownError("Unknown error when sending transaction: transaction wasn't mined");
         }

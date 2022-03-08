@@ -18,10 +18,10 @@
 
 package co.rsk.rpc.modules.personal;
 
-import co.rsk.config.RskSystemProperties;
-import co.rsk.config.WalletAccount;
-import co.rsk.core.RskAddress;
-import co.rsk.core.Wallet;
+import static org.ethereum.rpc.exception.RskJsonRpcRequestException.invalidParamError;
+
+import java.util.Arrays;
+
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.Account;
 import org.ethereum.core.Transaction;
@@ -29,15 +29,16 @@ import org.ethereum.core.TransactionArguments;
 import org.ethereum.core.TransactionPool;
 import org.ethereum.facade.Ethereum;
 import org.ethereum.rpc.CallArguments;
-import org.ethereum.rpc.TypeConverter;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.TransactionArgumentsUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Arrays;
-
-import static org.ethereum.rpc.exception.RskJsonRpcRequestException.invalidParamError;
+import co.rsk.config.RskSystemProperties;
+import co.rsk.config.WalletAccount;
+import co.rsk.core.RskAddress;
+import co.rsk.core.Wallet;
+import co.rsk.util.HexUtils;
 
 public class PersonalModuleWalletEnabled implements PersonalModule {
 
@@ -89,7 +90,7 @@ public class PersonalModuleWalletEnabled implements PersonalModule {
         try {
             byte[] address = this.wallet.addAccountWithSeed(seed);
 
-            return s = TypeConverter.toJsonHex(address);
+            return s = HexUtils.toJsonHex(address);
         } finally {
             LOGGER.debug("personal_newAccountWithSeed(*****): {}", s);
         }
@@ -176,7 +177,7 @@ public class PersonalModuleWalletEnabled implements PersonalModule {
                 throw new Exception("Address private key is locked or could not be found in this node");
             }
 
-            return s = TypeConverter.toJsonHex(ByteUtil.toHexString(account.getEcKey().getPrivKeyBytes()));
+            return s = HexUtils.toJsonHex(ByteUtil.toHexString(account.getEcKey().getPrivKeyBytes()));
         } finally {
             LOGGER.debug("personal_dumpRawKey(*****): {}", s);
         }

@@ -18,35 +18,21 @@
 
 package co.rsk.mine;
 
-import co.rsk.config.ConfigUtils;
-import co.rsk.config.MiningConfig;
-import co.rsk.config.TestSystemProperties;
-import co.rsk.core.*;
-import co.rsk.core.bc.*;
-import co.rsk.db.RepositoryLocator;
-import co.rsk.db.RepositorySnapshot;
-import co.rsk.db.StateRootHandler;
-import co.rsk.db.StateRootsStoreImpl;
-import co.rsk.net.TransactionGateway;
-import co.rsk.peg.BridgeSupportFactory;
-import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
-import co.rsk.rpc.ExecutionBlockRetriever;
-import co.rsk.rpc.Web3RskImpl;
-import co.rsk.rpc.modules.debug.DebugModule;
-import co.rsk.rpc.modules.debug.DebugModuleImpl;
-import co.rsk.rpc.modules.eth.*;
-import co.rsk.rpc.modules.personal.PersonalModuleWalletEnabled;
-import co.rsk.rpc.modules.txpool.TxPoolModule;
-import co.rsk.rpc.modules.txpool.TxPoolModuleImpl;
-import co.rsk.test.World;
-import co.rsk.test.builders.AccountBuilder;
-import co.rsk.test.builders.TransactionBuilder;
-import co.rsk.trie.TrieStore;
-import co.rsk.validators.BlockUnclesValidationRule;
-import co.rsk.validators.ProofOfWorkRule;
+import static org.mockito.Mockito.mock;
+
+import java.math.BigInteger;
+import java.time.Clock;
+
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.encoders.Hex;
-import org.ethereum.core.*;
+import org.ethereum.core.Account;
+import org.ethereum.core.BlockFactory;
+import org.ethereum.core.BlockTxSignatureCache;
+import org.ethereum.core.Blockchain;
+import org.ethereum.core.CallTransaction;
+import org.ethereum.core.ReceivedTxSignatureCache;
+import org.ethereum.core.Transaction;
+import org.ethereum.core.TransactionPool;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.crypto.Keccak256Helper;
@@ -60,7 +46,9 @@ import org.ethereum.listener.CompositeEthereumListener;
 import org.ethereum.net.client.ConfigCapabilities;
 import org.ethereum.net.server.ChannelManager;
 import org.ethereum.net.server.ChannelManagerImpl;
-import org.ethereum.rpc.*;
+import org.ethereum.rpc.CallArguments;
+import org.ethereum.rpc.Web3Impl;
+import org.ethereum.rpc.Web3Mocks;
 import org.ethereum.rpc.Simples.SimpleChannelManager;
 import org.ethereum.rpc.Simples.SimpleConfigCapabilities;
 import org.ethereum.sync.SyncPool;
@@ -71,11 +59,47 @@ import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.math.BigInteger;
-import java.time.Clock;
-
-import static org.hamcrest.CoreMatchers.is;
-import static org.mockito.Mockito.mock;
+import co.rsk.config.ConfigUtils;
+import co.rsk.config.MiningConfig;
+import co.rsk.config.TestSystemProperties;
+import co.rsk.core.Coin;
+import co.rsk.core.DifficultyCalculator;
+import co.rsk.core.ReversibleTransactionExecutor;
+import co.rsk.core.RskAddress;
+import co.rsk.core.TransactionExecutorFactory;
+import co.rsk.core.Wallet;
+import co.rsk.core.WalletFactory;
+import co.rsk.core.bc.BlockChainImpl;
+import co.rsk.core.bc.BlockExecutor;
+import co.rsk.core.bc.MiningMainchainView;
+import co.rsk.core.bc.MiningMainchainViewImpl;
+import co.rsk.core.bc.TransactionPoolImpl;
+import co.rsk.db.RepositoryLocator;
+import co.rsk.db.RepositorySnapshot;
+import co.rsk.db.StateRootHandler;
+import co.rsk.db.StateRootsStoreImpl;
+import co.rsk.net.TransactionGateway;
+import co.rsk.peg.BridgeSupportFactory;
+import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
+import co.rsk.rpc.ExecutionBlockRetriever;
+import co.rsk.rpc.Web3RskImpl;
+import co.rsk.rpc.modules.debug.DebugModule;
+import co.rsk.rpc.modules.debug.DebugModuleImpl;
+import co.rsk.rpc.modules.eth.EthModule;
+import co.rsk.rpc.modules.eth.EthModuleTransaction;
+import co.rsk.rpc.modules.eth.EthModuleTransactionBase;
+import co.rsk.rpc.modules.eth.EthModuleTransactionInstant;
+import co.rsk.rpc.modules.eth.EthModuleWalletEnabled;
+import co.rsk.rpc.modules.personal.PersonalModuleWalletEnabled;
+import co.rsk.rpc.modules.txpool.TxPoolModule;
+import co.rsk.rpc.modules.txpool.TxPoolModuleImpl;
+import co.rsk.test.World;
+import co.rsk.test.builders.AccountBuilder;
+import co.rsk.test.builders.TransactionBuilder;
+import co.rsk.trie.TrieStore;
+import co.rsk.util.HexUtils;
+import co.rsk.validators.BlockUnclesValidationRule;
+import co.rsk.validators.ProofOfWorkRule;
 
 public class TransactionModuleTest {
     private final TestSystemProperties config = new TestSystemProperties();
@@ -399,11 +423,11 @@ public class TransactionModuleTest {
         String data = "0x608060405261001261001760201b60201c565b610096565b6001600080600181526020019081526020016000208190555060026000806002815260200190815260200160002081905550600360008060038152602001908152602001600020819055506004600080600481526020019081526020016000208190555060056000806005815260200190815260200160002081905550565b6102a7806100a56000396000f3fe60806040526004361061004a5760003560e01c8063742392c51461004c5780639a1e180f14610077578063c3cefd361461008e578063d9c55ce114610098578063dfd2d2c2146100af575b005b34801561005857600080fd5b506100616100c6565b6040518082815260200191505060405180910390f35b34801561008357600080fd5b5061008c6100e1565b005b610096610133565b005b3480156100a457600080fd5b506100ad61017d565b005b3480156100bb57600080fd5b506100c46101fc565b005b60008060006001815260200190815260200160002054905090565b3073ffffffffffffffffffffffffffffffffffffffff166108fc60649081150290604051600060405180830381858888f19350505050158015610128573d6000803e3d6000fd5b506101316101fc565b565b3073ffffffffffffffffffffffffffffffffffffffff166108fc60649081150290604051600060405180830381858888f1935050505015801561017a573d6000803e3d6000fd5b50565b6001600080600181526020019081526020016000208190555060026000806002815260200190815260200160002081905550600360008060038152602001908152602001600020819055506004600080600481526020019081526020016000208190555060056000806005815260200190815260200160002081905550565b600080600060018152602001908152602001600020819055506000806000600281526020019081526020016000208190555060008060006003815260200190815260200160002081905550600080600060048152602001908152602001600020819055506000806000600581526020019081526020016000208190555056fea165627a7a72305820545214f6b1b9d3a4928fb579044851ba06a9ff28b7d588b175847b7116d7b7c00029";
 
         CallArguments args = new CallArguments();
-        args.setFrom(TypeConverter.toJsonHex(addr1.getBytes()));
+        args.setFrom(HexUtils.toJsonHex(addr1.getBytes()));
         args.setTo(""); // null?
         args.setData(data);
-        args.setGas(TypeConverter.toQuantityJsonHex(gasLimit));
-        args.setGasPrice(TypeConverter.toQuantityJsonHex(gasPrice));
+        args.setGas(HexUtils.toQuantityJsonHex(gasLimit));
+        args.setGasPrice(HexUtils.toQuantityJsonHex(gasPrice));
         args.setValue(value.toString());
         args.setNonce(repository.getAccountState(addr1).getNonce().toString());
 
@@ -439,11 +463,11 @@ public class TransactionModuleTest {
         }
         data = "0x" + Hex.toHexString(encoded);
         CallArguments args = new CallArguments();
-        args.setFrom(TypeConverter.toJsonHex(addr1.getBytes()));
-        args.setTo(TypeConverter.toJsonHex(destContract.getBytes()));
+        args.setFrom(HexUtils.toJsonHex(addr1.getBytes()));
+        args.setTo(HexUtils.toJsonHex(destContract.getBytes()));
         args.setData(data);
-        args.setGas(TypeConverter.toQuantityJsonHex(gasLimit));
-        args.setGasPrice(TypeConverter.toQuantityJsonHex(gasPrice));
+        args.setGas(HexUtils.toQuantityJsonHex(gasLimit));
+        args.setGasPrice(HexUtils.toQuantityJsonHex(gasPrice));
         args.setValue(value.toString());
         args.setNonce(repository.getAccountState(addr1).getNonce().toString());
 
@@ -460,14 +484,14 @@ public class TransactionModuleTest {
         byte chainId = config.getNetworkConstants().getChainId();
 
         CallArguments args = new CallArguments();
-        args.setFrom(TypeConverter.toJsonHex(addr1.getBytes()));
+        args.setFrom(HexUtils.toJsonHex(addr1.getBytes()));
         args.setTo(addr2);
         args.setData(data);
-        args.setGas(TypeConverter.toQuantityJsonHex(gasLimit));
-        args.setGasPrice(TypeConverter.toQuantityJsonHex(gasPrice));
+        args.setGas(HexUtils.toQuantityJsonHex(gasLimit));
+        args.setGasPrice(HexUtils.toQuantityJsonHex(gasPrice));
         args.setValue(value.toString());
         args.setNonce(repository.getAccountState(addr1).getNonce().toString());
-        args.setChainId(TypeConverter.toJsonHex(new byte[]{chainId}));
+        args.setChainId(HexUtils.toJsonHex(new byte[]{chainId}));
 
         return args;
     }

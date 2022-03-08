@@ -18,14 +18,13 @@
 
 package org.ethereum.rpc;
 
+import java.util.Arrays;
+
 import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
 import org.ethereum.vm.LogInfo;
 
-import java.util.Arrays;
-
-import static org.ethereum.rpc.TypeConverter.toJsonHex;
-import static org.ethereum.rpc.TypeConverter.toUnformattedJsonHex;
+import co.rsk.util.HexUtils;
 
 /**
  * Created by ajlopez on 5/4/2016.
@@ -41,16 +40,16 @@ public class LogFilterElement {
     public String[] topics;
 
     public LogFilterElement(LogInfo logInfo, Block b, int txIndex, Transaction tx, int logIdx) {
-        logIndex = TypeConverter.toQuantityJsonHex(logIdx);
-        blockNumber = b == null ? null : TypeConverter.toQuantityJsonHex(b.getNumber());
-        blockHash = b == null ? null : toJsonHex(b.getHash().getBytes());
-        transactionIndex = b == null ? null : TypeConverter.toQuantityJsonHex(txIndex);
+        logIndex = HexUtils.toQuantityJsonHex(logIdx);
+        blockNumber = b == null ? null : HexUtils.toQuantityJsonHex(b.getNumber());
+        blockHash = b == null ? null : HexUtils.toJsonHex(b.getHash().getBytes());
+        transactionIndex = b == null ? null : HexUtils.toQuantityJsonHex(txIndex);
         transactionHash = tx.getHash().toJsonString();
-        address = toUnformattedJsonHex(logInfo.getAddress());
-        data = toUnformattedJsonHex(logInfo.getData());
+        address = HexUtils.toUnformattedJsonHex(logInfo.getAddress());
+        data = HexUtils.toUnformattedJsonHex(logInfo.getData());
         topics = new String[logInfo.getTopics().size()];
         for (int i = 0; i < topics.length; i++) {
-            topics[i] = toUnformattedJsonHex(logInfo.getTopics().get(i).getData());
+            topics[i] = HexUtils.toUnformattedJsonHex(logInfo.getTopics().get(i).getData());
         }
     }
 

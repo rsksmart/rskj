@@ -18,12 +18,13 @@
 
 package org.ethereum.rpc.dto;
 
-import co.rsk.core.Coin;
-import co.rsk.remasc.RemascTransaction;
 import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
 import org.ethereum.crypto.signature.ECDSASignature;
-import org.ethereum.rpc.TypeConverter;
+
+import co.rsk.core.Coin;
+import co.rsk.remasc.RemascTransaction;
+import co.rsk.util.HexUtils;
 
 /**
  * Created by Ruben on 8/1/2016.
@@ -48,33 +49,33 @@ public class TransactionResultDTO {
     public TransactionResultDTO(Block b, Integer index, Transaction tx) {
         hash = tx.getHash().toJsonString();
 
-        nonce = TypeConverter.toQuantityJsonHex(tx.getNonce());
+        nonce = HexUtils.toQuantityJsonHex(tx.getNonce());
 
         blockHash = b != null ? b.getHashJsonString() : null;
-        blockNumber = b != null ? TypeConverter.toQuantityJsonHex(b.getNumber()) : null;
-        transactionIndex = index != null ? TypeConverter.toQuantityJsonHex(index) : null;
+        blockNumber = b != null ? HexUtils.toQuantityJsonHex(b.getNumber()) : null;
+        transactionIndex = index != null ? HexUtils.toQuantityJsonHex(index) : null;
 
         from = tx.getSender().toJsonString();
         to = tx.getReceiveAddress().toJsonString();
-        gas = TypeConverter.toQuantityJsonHex(tx.getGasLimit());
+        gas = HexUtils.toQuantityJsonHex(tx.getGasLimit());
 
-        gasPrice = TypeConverter.toQuantityJsonHex(tx.getGasPrice().getBytes());
+        gasPrice = HexUtils.toQuantityJsonHex(tx.getGasPrice().getBytes());
 
         if (Coin.ZERO.equals(tx.getValue())) {
             value = "0x0";
         } else {
-            value = TypeConverter.toQuantityJsonHex(tx.getValue().getBytes());
+            value = HexUtils.toQuantityJsonHex(tx.getValue().getBytes());
         }
 
-        input = TypeConverter.toUnformattedJsonHex(tx.getData());
+        input = HexUtils.toUnformattedJsonHex(tx.getData());
 
         if (!(tx instanceof RemascTransaction)) {
             ECDSASignature signature = tx.getSignature();
 
             v = String.format("0x%02x", tx.getEncodedV());
 
-            r = TypeConverter.toQuantityJsonHex(signature.getR());
-            s = TypeConverter.toQuantityJsonHex(signature.getS());
+            r = HexUtils.toQuantityJsonHex(signature.getR());
+            s = HexUtils.toQuantityJsonHex(signature.getS());
         }
     }
 

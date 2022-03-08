@@ -18,20 +18,21 @@
 
 package co.rsk.rpc;
 
-import co.rsk.core.bc.AccountInformationProvider;
-import co.rsk.db.RepositoryLocator;
+import static org.ethereum.rpc.exception.RskJsonRpcRequestException.blockNotFound;
+import static org.ethereum.rpc.exception.RskJsonRpcRequestException.invalidParamError;
+
+import java.util.List;
+import java.util.Optional;
+
 import org.ethereum.core.Block;
 import org.ethereum.core.Blockchain;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionPool;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 
-import java.util.List;
-import java.util.Optional;
-
-import static org.ethereum.rpc.TypeConverter.stringHexToBigInteger;
-import static org.ethereum.rpc.exception.RskJsonRpcRequestException.blockNotFound;
-import static org.ethereum.rpc.exception.RskJsonRpcRequestException.invalidParamError;
+import co.rsk.core.bc.AccountInformationProvider;
+import co.rsk.db.RepositoryLocator;
+import co.rsk.util.HexUtils;
 
 /**
  * Retrieves information requested by web3 based on the block identifier:
@@ -128,7 +129,7 @@ public class Web3InformationRetriever {
     private long getBlockNumber(String identifier) {
         long blockNumber;
         try {
-            blockNumber = stringHexToBigInteger(identifier).longValue();
+            blockNumber = HexUtils.stringHexToBigInteger(identifier).longValue();
         } catch (NumberFormatException | StringIndexOutOfBoundsException e) {
             throw invalidParamError(String.format("invalid blocknumber %s", identifier));
         }

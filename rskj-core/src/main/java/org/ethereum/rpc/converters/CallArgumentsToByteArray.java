@@ -18,13 +18,13 @@
 
 package org.ethereum.rpc.converters;
 
-import co.rsk.core.RskAddress;
 import org.ethereum.rpc.CallArguments;
 import org.ethereum.util.ByteUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.ethereum.rpc.TypeConverter.strHexOrStrNumberToByteArray;
+import co.rsk.core.RskAddress;
+import co.rsk.util.HexUtils;
 
 /**
  * Created by martin.medina on 3/7/17.
@@ -41,7 +41,7 @@ public class CallArgumentsToByteArray {
     public byte[] getGasPrice() {
         byte[] gasPrice = new byte[] {0};
         if (args.getGasPrice() != null && args.getGasPrice().length() != 0) {
-            gasPrice = strHexOrStrNumberToByteArray(args.getGasPrice());
+            gasPrice = HexUtils.strHexOrStrNumberToByteArray(args.getGasPrice());
         }
 
         return gasPrice;
@@ -50,9 +50,9 @@ public class CallArgumentsToByteArray {
     public byte[] getGasLimit() {
         // maxGasLimit value is 100000000000000
         String maxGasLimit = "0x5AF3107A4000";
-        byte[] gasLimit = strHexOrStrNumberToByteArray(maxGasLimit);
+        byte[] gasLimit = HexUtils.strHexOrStrNumberToByteArray(maxGasLimit);
         if (args.getGas() != null && args.getGas().length() != 0) {
-            gasLimit = strHexOrStrNumberToByteArray(args.getGas());
+            gasLimit = HexUtils.strHexOrStrNumberToByteArray(args.getGas());
         }
 
         return gasLimit;
@@ -61,7 +61,7 @@ public class CallArgumentsToByteArray {
     public byte[] getToAddress() {
         byte[] toAddress = null;
         if (args.getTo() != null) {
-            toAddress = strHexOrStrNumberToByteArray(args.getTo());
+            toAddress = HexUtils.strHexOrStrNumberToByteArray(args.getTo());
         }
 
         return toAddress;
@@ -70,7 +70,7 @@ public class CallArgumentsToByteArray {
     public byte[] getValue() {
         byte[] value = new byte[] { 0 };
         if (args.getValue() != null && args.getValue().length() != 0) {
-            value = strHexOrStrNumberToByteArray(args.getValue());
+            value = HexUtils.strHexOrStrNumberToByteArray(args.getValue());
         }
 
         return value;
@@ -80,7 +80,7 @@ public class CallArgumentsToByteArray {
         byte[] data = null;
 
         if (args.getData() != null && args.getData().length() != 0) {
-            data = strHexOrStrNumberToByteArray(args.getData());
+            data = HexUtils.strHexOrStrNumberToByteArray(args.getData());
         }
 
         return data;
@@ -92,7 +92,7 @@ public class CallArgumentsToByteArray {
             return RskAddress.nullAddress();
         }
 
-        return new RskAddress(strHexOrStrNumberToByteArray(args.getFrom()));
+        return new RskAddress(HexUtils.strHexOrStrNumberToByteArray(args.getFrom()));
     }
 
     public byte[] gasLimitForGasEstimation(long gasCap) {

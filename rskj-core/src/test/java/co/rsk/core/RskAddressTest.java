@@ -21,6 +21,7 @@ package co.rsk.core;
 import org.junit.Assert;
 import org.junit.Test;
 import org.bouncycastle.util.encoders.DecoderException;
+import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 
 public class RskAddressTest {
     @Test
@@ -91,7 +92,7 @@ public class RskAddressTest {
         new RskAddress((byte[]) null);
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test(expected = RskJsonRpcRequestException.class)
     public void invalidNullAddressString() {
         new RskAddress((String) null);
     }

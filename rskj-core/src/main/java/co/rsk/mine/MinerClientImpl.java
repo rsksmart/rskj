@@ -18,17 +18,19 @@
 
 package co.rsk.mine;
 
-import co.rsk.net.NodeBlockProcessor;
-import co.rsk.panic.PanicProcessor;
-import org.ethereum.rpc.TypeConverter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.annotation.Nonnull;
 import java.math.BigInteger;
 import java.time.Duration;
 import java.util.Timer;
 import java.util.TimerTask;
+
+import javax.annotation.Nonnull;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import co.rsk.net.NodeBlockProcessor;
+import co.rsk.panic.PanicProcessor;
+import co.rsk.util.HexUtils;
 
 /**
  * MinerClient mines new blocks.
@@ -128,7 +130,7 @@ public class MinerClientImpl implements MinerClient {
         co.rsk.bitcoinj.core.BtcTransaction bitcoinMergedMiningCoinbaseTransaction = MinerUtils.getBitcoinMergedMiningCoinbaseTransaction(bitcoinNetworkParameters, work);
         co.rsk.bitcoinj.core.BtcBlock bitcoinMergedMiningBlock = MinerUtils.getBitcoinMergedMiningBlock(bitcoinNetworkParameters, bitcoinMergedMiningCoinbaseTransaction);
 
-        BigInteger target = new BigInteger(1, TypeConverter.stringHexToByteArray(work.getTarget()));
+        BigInteger target = new BigInteger(1, HexUtils.stringHexToByteArray(work.getTarget()));
         boolean foundNonce = findNonce(bitcoinMergedMiningBlock, target);
 
         if (newBestBlockArrivedFromAnotherNode) {

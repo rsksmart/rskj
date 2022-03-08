@@ -17,13 +17,14 @@
  */
 package co.rsk.rpc.modules.eth.subscribe;
 
-import co.rsk.jsonrpc.JsonRpcResult;
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonValue;
-import org.ethereum.rpc.TypeConverter;
-
 import java.security.SecureRandom;
 import java.util.Arrays;
+
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonValue;
+
+import co.rsk.jsonrpc.JsonRpcResult;
+import co.rsk.util.HexUtils;
 
 /**
  * The subscription id DTO for JSON serialization purposes.
@@ -33,7 +34,7 @@ public class SubscriptionId extends JsonRpcResult {
 
     @JsonCreator
     public SubscriptionId(String hexId) {
-        this.id = TypeConverter.strHexOrStrNumberToByteArray(hexId);
+        this.id = HexUtils.strHexOrStrNumberToByteArray(hexId);
     }
 
     public SubscriptionId() {
@@ -67,6 +68,6 @@ public class SubscriptionId extends JsonRpcResult {
     @JsonValue
     @SuppressWarnings("unused")
     private String serialize() {
-        return TypeConverter.toJsonHex(id);
+        return HexUtils.toJsonHex(id);
     }
 }

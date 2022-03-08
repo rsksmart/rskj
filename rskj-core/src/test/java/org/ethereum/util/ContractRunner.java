@@ -1,5 +1,16 @@
 package org.ethereum.util;
 
+import java.math.BigInteger;
+
+import org.ethereum.core.Account;
+import org.ethereum.core.Block;
+import org.ethereum.core.Blockchain;
+import org.ethereum.core.Repository;
+import org.ethereum.core.Transaction;
+import org.ethereum.core.TransactionExecutor;
+import org.ethereum.db.BlockStore;
+import org.ethereum.vm.program.ProgramResult;
+
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.core.TransactionExecutorFactory;
@@ -9,12 +20,7 @@ import co.rsk.test.builders.AccountBuilder;
 import co.rsk.test.builders.BlockBuilder;
 import co.rsk.test.builders.TransactionBuilder;
 import co.rsk.trie.TrieStore;
-import org.ethereum.core.*;
-import org.ethereum.db.BlockStore;
-import org.ethereum.rpc.TypeConverter;
-import org.ethereum.vm.program.ProgramResult;
-
-import java.math.BigInteger;
+import co.rsk.util.HexUtils;
 
 /**
  * Helper methods to easily run contracts.
@@ -63,7 +69,7 @@ public class ContractRunner {
         Account contractAccount = new AccountBuilder(blockchain, blockStore, repositoryLocator)
                         .name(runtimeBytecode)
                         .balance(Coin.valueOf(10))
-                        .code(TypeConverter.strHexOrStrNumberToByteArray(runtimeBytecode))
+                        .code(HexUtils.strHexOrStrNumberToByteArray(runtimeBytecode))
                         .build();
 
         return contractAccount.getAddress();

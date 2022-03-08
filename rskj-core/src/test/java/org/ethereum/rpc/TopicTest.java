@@ -21,6 +21,7 @@ package org.ethereum.rpc;
 import org.junit.Assert;
 import org.junit.Test;
 import org.bouncycastle.util.encoders.DecoderException;
+import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 
 /**
  * Created by ajlopez on 18/01/2018.
@@ -66,7 +67,7 @@ public class TopicTest {
         new Topic((byte[]) null);
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test(expected = RskJsonRpcRequestException.class)
     public void invalidNullTopicString() {
         new Topic((String) null);
     }

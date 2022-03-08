@@ -20,7 +20,9 @@ package co.rsk.core;
 
 import co.rsk.core.exception.InvalidRskAddressException;
 import com.google.common.primitives.UnsignedBytes;
-import org.ethereum.rpc.TypeConverter;
+
+import co.rsk.util.HexUtils;
+
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
 
@@ -62,7 +64,7 @@ public class RskAddress {
      * @param address the hex-encoded 20 bytes long address, with or without 0x prefix.
      */
     public RskAddress(String address) {
-        this(TypeConverter.stringHexToByteArray(address));
+        this(HexUtils.stringHexToByteArray(address));
     }
 
     /**
@@ -129,6 +131,6 @@ public class RskAddress {
         if (NULL_ADDRESS.equals(this)) {
             return null;
         }
-        return TypeConverter.toUnformattedJsonHex(this.getBytes());
+        return HexUtils.toUnformattedJsonHex(this.getBytes());
     }
 }

@@ -18,12 +18,13 @@
 
 package co.rsk.mine;
 
-import co.rsk.bitcoinj.core.BtcBlock;
-import org.ethereum.rpc.TypeConverter;
+import java.math.BigInteger;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.math.BigInteger;
+import co.rsk.bitcoinj.core.BtcBlock;
+import co.rsk.util.HexUtils;
 
 /**
  * MinerClient for automine setting
@@ -63,7 +64,7 @@ public class AutoMinerClient implements MinerClient {
         co.rsk.bitcoinj.core.BtcTransaction bitcoinMergedMiningCoinbaseTransaction = MinerUtils.getBitcoinMergedMiningCoinbaseTransaction(bitcoinNetworkParameters, work);
         co.rsk.bitcoinj.core.BtcBlock bitcoinMergedMiningBlock = MinerUtils.getBitcoinMergedMiningBlock(bitcoinNetworkParameters, bitcoinMergedMiningCoinbaseTransaction);
 
-        BigInteger target = new BigInteger(1, TypeConverter.stringHexToByteArray(work.getTarget()));
+        BigInteger target = new BigInteger(1, HexUtils.stringHexToByteArray(work.getTarget()));
         findNonce(bitcoinMergedMiningBlock, target);
 
         logger.info("Mined block: {}", work.getBlockHashForMergedMining());

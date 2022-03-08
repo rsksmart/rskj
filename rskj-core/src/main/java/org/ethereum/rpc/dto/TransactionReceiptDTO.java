@@ -18,14 +18,14 @@
 
 package org.ethereum.rpc.dto;
 
-import co.rsk.core.RskAddress;
 import org.ethereum.core.Block;
 import org.ethereum.core.TransactionReceipt;
 import org.ethereum.db.TransactionInfo;
 import org.ethereum.rpc.LogFilterElement;
 import org.ethereum.vm.LogInfo;
 
-import static org.ethereum.rpc.TypeConverter.*;
+import co.rsk.core.RskAddress;
+import co.rsk.util.HexUtils;
 
 /**
  * Created by Ruben on 5/1/2016.
@@ -47,18 +47,18 @@ public class TransactionReceiptDTO {
     public TransactionReceiptDTO(Block block, TransactionInfo txInfo) {
         TransactionReceipt receipt = txInfo.getReceipt();
 
-        status = toQuantityJsonHex(txInfo.getReceipt().getStatus());
-        blockHash = toUnformattedJsonHex(txInfo.getBlockHash());
-        blockNumber = toQuantityJsonHex(block.getNumber());
+        status = HexUtils.toQuantityJsonHex(txInfo.getReceipt().getStatus());
+        blockHash = HexUtils.toUnformattedJsonHex(txInfo.getBlockHash());
+        blockNumber = HexUtils.toQuantityJsonHex(block.getNumber());
 
         RskAddress contractAddress = receipt.getTransaction().getContractAddress();
         if (contractAddress != null) {
             this.contractAddress = contractAddress.toJsonString();
         }
 
-        cumulativeGasUsed = toQuantityJsonHex(receipt.getCumulativeGas());
+        cumulativeGasUsed = HexUtils.toQuantityJsonHex(receipt.getCumulativeGas());
         from = receipt.getTransaction().getSender().toJsonString();
-        gasUsed = toQuantityJsonHex(receipt.getGasUsed());
+        gasUsed = HexUtils.toQuantityJsonHex(receipt.getGasUsed());
 
         logs = new LogFilterElement[receipt.getLogInfoList().size()];
         for (int i = 0; i < logs.length; i++) {
@@ -69,8 +69,8 @@ public class TransactionReceiptDTO {
 
         to = receipt.getTransaction().getReceiveAddress().toJsonString();
         transactionHash = receipt.getTransaction().getHash().toJsonString();
-        transactionIndex = toQuantityJsonHex(txInfo.getIndex());
-        logsBloom = toUnformattedJsonHex(txInfo.getReceipt().getBloomFilter().getData());
+        transactionIndex = HexUtils.toQuantityJsonHex(txInfo.getIndex());
+        logsBloom = HexUtils.toUnformattedJsonHex(txInfo.getReceipt().getBloomFilter().getData());
     }
 
     public String getTransactionHash() {

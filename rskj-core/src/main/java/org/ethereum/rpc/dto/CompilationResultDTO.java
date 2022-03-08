@@ -18,8 +18,9 @@
 
 package org.ethereum.rpc.dto;
 
-import org.ethereum.rpc.TypeConverter;
 import org.ethereum.solidity.compiler.CompilationResult;
+
+import co.rsk.util.HexUtils;
 
 /**
  * Created by martin.medina on 9/7/2016.
@@ -30,7 +31,7 @@ public class CompilationResultDTO {
     public CompilationInfoDTO info;
 
     public CompilationResultDTO(CompilationResult.ContractMetadata contractMetadata, CompilationInfoDTO compilationInfo) {
-        code = TypeConverter.toJsonHex(contractMetadata.bin);
+        code = HexUtils.toJsonHex(contractMetadata.bin);
         info = compilationInfo;
     }
 

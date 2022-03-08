@@ -26,9 +26,10 @@ import org.ethereum.core.Account;
 import org.ethereum.core.TransactionArguments;
 import org.ethereum.core.TransactionPool;
 import org.ethereum.rpc.CallArguments;
-import org.ethereum.rpc.TypeConverter;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.vm.GasCost;
+
+import co.rsk.util.HexUtils;
 
 public class TransactionArgumentsUtil {
 
@@ -76,14 +77,14 @@ public class TransactionArgumentsUtil {
 
 	private static byte[] stringHexToByteArray(String value) {
 
-		byte[] ret = Optional.ofNullable(value).map(TypeConverter::stringHexToByteArray).orElse(null);
+		byte[] ret = Optional.ofNullable(value).map(HexUtils::stringHexToByteArray).orElse(null);
 
 		return ret;
 	}
 
 	private static BigInteger strHexOrStrNumberToBigInteger(String value, Supplier<BigInteger> getDefaultValue) {
 
-		BigInteger ret = Optional.ofNullable(value).map(TypeConverter::strHexOrStrNumberToBigInteger).orElseGet(getDefaultValue);
+		BigInteger ret = Optional.ofNullable(value).map(HexUtils::strHexOrStrNumberToBigInteger).orElseGet(getDefaultValue);
 
 		return ret;
 	}
@@ -93,7 +94,7 @@ public class TransactionArgumentsUtil {
 			return 0;
 		}
 		try {
-			byte[] bytes = TypeConverter.strHexOrStrNumberToByteArray(hex);
+			byte[] bytes = HexUtils.strHexOrStrNumberToByteArray(hex);
 			if (bytes.length != 1) {
 				throw RskJsonRpcRequestException.invalidParamError(ERR_INVALID_CHAIN_ID + hex);
 			}

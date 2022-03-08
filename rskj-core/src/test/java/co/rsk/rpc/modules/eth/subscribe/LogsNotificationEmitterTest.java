@@ -17,15 +17,23 @@
  */
 package co.rsk.rpc.modules.eth.subscribe;
 
-import co.rsk.core.RskAddress;
-import co.rsk.core.bc.BlockFork;
-import co.rsk.core.bc.BlockchainBranchComparator;
-import co.rsk.jsonrpc.JsonRpcMessage;
-import co.rsk.rpc.JsonRpcSerializer;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import io.netty.buffer.ByteBufHolder;
-import io.netty.channel.Channel;
-import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.clearInvocations;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.when;
+
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Optional;
+import java.util.function.BiConsumer;
+
 import org.ethereum.TestUtils;
 import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
@@ -34,21 +42,22 @@ import org.ethereum.db.ReceiptStore;
 import org.ethereum.db.TransactionInfo;
 import org.ethereum.facade.Ethereum;
 import org.ethereum.listener.EthereumListener;
-import org.ethereum.rpc.TypeConverter;
 import org.ethereum.vm.LogInfo;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Optional;
-import java.util.function.BiConsumer;
+import com.fasterxml.jackson.core.JsonProcessingException;
 
-import static org.hamcrest.Matchers.hasSize;
-import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertThat;
-import static org.mockito.Mockito.*;
+import co.rsk.core.RskAddress;
+import co.rsk.core.bc.BlockFork;
+import co.rsk.core.bc.BlockchainBranchComparator;
+import co.rsk.jsonrpc.JsonRpcMessage;
+import co.rsk.rpc.JsonRpcSerializer;
+import co.rsk.util.HexUtils;
+import io.netty.buffer.ByteBufHolder;
+import io.netty.channel.Channel;
+import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
 
 public class LogsNotificationEmitterTest {
     private LogsNotificationEmitter emitter;
@@ -190,7 +199,7 @@ public class LogsNotificationEmitterTest {
     }
 
     private void verifyLogsData(byte[]... results) throws JsonProcessingException {
-        verifyLogs((ln, d) -> assertThat(ln.getData(), is(TypeConverter.toJsonHex(d))), results);
+        verifyLogs((ln, d) -> assertThat(ln.getData(), is(HexUtils.toJsonHex(d))), results);
     }
 
     private void verifyLogsRemovedStatus(Boolean... results) throws JsonProcessingException {

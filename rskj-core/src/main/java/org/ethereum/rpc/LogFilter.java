@@ -18,18 +18,22 @@
 
 package org.ethereum.rpc;
 
-import co.rsk.core.RskAddress;
-import co.rsk.crypto.Keccak256;
-import co.rsk.logfilter.BlocksBloom;
-import co.rsk.logfilter.BlocksBloomStore;
-import org.ethereum.core.*;
+import java.util.Collection;
+
+import org.ethereum.core.Block;
+import org.ethereum.core.Blockchain;
+import org.ethereum.core.Bloom;
+import org.ethereum.core.Transaction;
+import org.ethereum.core.TransactionReceipt;
 import org.ethereum.db.TransactionInfo;
 import org.ethereum.rpc.exception.RskJsonRpcRequestException;
 import org.ethereum.vm.LogInfo;
 
-import java.util.Collection;
-
-import static org.ethereum.rpc.TypeConverter.stringHexToByteArray;
+import co.rsk.core.RskAddress;
+import co.rsk.crypto.Keccak256;
+import co.rsk.logfilter.BlocksBloom;
+import co.rsk.logfilter.BlocksBloomStore;
+import co.rsk.util.HexUtils;
 
 /**
  * Created by ajlopez on 17/01/2018.
@@ -116,14 +120,14 @@ public class LogFilter extends Filter {
         Topic[][] topics;
 
         if (fr.getAddress() instanceof String) {
-            addresses = new RskAddress[] { new RskAddress(stringHexToByteArray((String) fr.getAddress())) };
+            addresses = new RskAddress[] { new RskAddress(HexUtils.stringHexToByteArray((String) fr.getAddress())) };
         } else if (fr.getAddress() instanceof Collection<?>) {
             Collection<?> iterable = (Collection<?>)fr.getAddress();
 
             addresses = iterable.stream()
                     .filter(String.class::isInstance)
                     .map(String.class::cast)
-                    .map(TypeConverter::stringHexToByteArray)
+                    .map(HexUtils::stringHexToByteArray)
                     .map(RskAddress::new)
                     .toArray(RskAddress[]::new);
         }
@@ -149,7 +153,7 @@ public class LogFilter extends Filter {
                     topics[nt] = iterable.stream()
                             .filter(String.class::isInstance)
                             .map(String.class::cast)
-                            .map(TypeConverter::stringHexToByteArray)
+                            .map(HexUtils::stringHexToByteArray)
                             .map(Topic::new)
                             .toArray(Topic[]::new);
                 }
@@ -221,7 +225,7 @@ public class LogFilter extends Filter {
     }
 
     private static void processSingleBlockByHash(String blockHash, Blockchain blockchain, LogFilter filter, BlocksBloomStore blocksBloomStore) {
-        Keccak256 keccak256BlockHash = new Keccak256(stringHexToByteArray(blockHash));
+        Keccak256 keccak256BlockHash = new Keccak256(HexUtils.stringHexToByteArray(blockHash));
         Block blockByHash = blockchain.getBlockByHash(keccak256BlockHash.getBytes());
         if (blockByHash == null) {
             return;
