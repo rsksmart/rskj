@@ -1,10 +1,8 @@
 package co.rsk.peg;
 
-import co.rsk.bitcoinj.core.Address;
-import co.rsk.bitcoinj.core.BtcTransaction;
-import co.rsk.bitcoinj.core.Coin;
-import co.rsk.bitcoinj.core.NetworkParameters;
-import co.rsk.bitcoinj.core.TransactionOutput;
+import co.rsk.bitcoinj.core.*;
+import co.rsk.bitcoinj.wallet.Wallet;
+import co.rsk.config.BridgeConstants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 
@@ -81,7 +79,7 @@ public class BridgeUtilsLegacy {
      */
     @Deprecated
     protected static List<UTXO> getUTXOsForAddress(BridgeConstants bridgeConstants, BtcTransaction btcTx, Address btcAddress) {
-        Wallet wallet = new BtcWallet(new Context(bridgeConstants.getBtcParams()));
+        Wallet wallet = new WatchedBtcWallet(new Context(bridgeConstants.getBtcParams()));
         btcTx.getWalletOutputs(wallet);
         List<UTXO> utxosList = new ArrayList<>();
         for (TransactionOutput o : btcTx.getOutputs()) {
