@@ -141,7 +141,7 @@ public class BridgeUtils {
         return wallet;
     }
 
-    protected static Coin getAmountSentToAddresses(
+    public static Coin getAmountSentToAddresses(
         ActivationConfig.ForBlock activations,
         NetworkParameters networkParameters,
         Context context,
