@@ -2565,8 +2565,7 @@ public class BridgeSupport {
         Address fbActiveFederationAddress =
             fastBridgeFederationInformation.getFastBridgeFederationAddress(bridgeConstants.getBtcParams());
 
-        Coin totalAmount;
-        FastBridgeTxResponseCodes txResponse = FastBridgeTxResponseCodes.VALID_TX;
+
         Federation retiringFederation = getRetiringFederation();
         List<Address> addresses = new ArrayList<>(2);
         addresses.add(fbActiveFederationAddress);
@@ -2581,7 +2580,7 @@ public class BridgeSupport {
             addresses.add(fbRetiringFederationAddress);
         }
 
-        totalAmount = BridgeUtils.getAmountSentToAddresses(
+        Coin totalAmount = BridgeUtils.getAmountSentToAddresses(
             activations,
             bridgeConstants.getBtcParams(),
             btcContext,
@@ -2589,7 +2588,7 @@ public class BridgeSupport {
             addresses.toArray(new Address[addresses.size()])
         );
 
-        txResponse = BridgeUtils.validateFastBridgePeginValue(
+        FastBridgeTxResponseCodes txResponse = BridgeUtils.validateFastBridgePeginValue(
             activations,
             bridgeConstants,
             totalAmount
