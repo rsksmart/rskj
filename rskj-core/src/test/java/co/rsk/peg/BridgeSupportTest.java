@@ -6733,7 +6733,7 @@ public class BridgeSupportTest {
             true
         );
 
-        if (result.compareTo(BigInteger.ZERO)>0) {
+        if (result.signum() == 1) {
             co.rsk.core.Coin expectedBalance;
             if (
                 activations.isActive(ConsensusRule.RSKIP293) &&
@@ -6827,7 +6827,7 @@ public class BridgeSupportTest {
     }
 
     @Test
-    public void registerFastBridgeBtcTransaction_after_RSKIP293_activation() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+    public void registerFastBridgeBtcTransaction_funds_sent_to_active_and_currently_retiring_fed_after_RSKIP293_activation() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
         Coin valueToSend = Coin.COIN;
         // send funds to both federations, the active federation and current retiring federation
         BigInteger result = registerFastBridgeBtcTransaction_RSKIP293(
@@ -6841,7 +6841,7 @@ public class BridgeSupportTest {
     }
 
     @Test
-    public void registerFastBridgeBtcTransaction_no_retiring_federation() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+    public void registerFastBridgeBtcTransaction_no_retiring_federation_after_RSKIP293_activation() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
         Coin valueToSend = Coin.COIN;
         // send funds to a retiring federation that is not active anymore
         BigInteger result = registerFastBridgeBtcTransaction_RSKIP293(
@@ -6865,7 +6865,7 @@ public class BridgeSupportTest {
     }
 
     @Test
-    public void registerFastBridgeBtcTransaction_funds_sent_to_retiring_federation() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+    public void registerFastBridgeBtcTransaction_funds_sent_to_retiring_federation_after_RSKIP293_activation() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
         Coin valueToSend = Coin.COIN;
         // sent funds to current retiring federation
         BigInteger result = registerFastBridgeBtcTransaction_RSKIP293(
