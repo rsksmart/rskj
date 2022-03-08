@@ -198,7 +198,10 @@ public class BridgeUtils {
             return FastBridgeTxResponseCodes.UNPROCESSABLE_TX_VALUE_ZERO_ERROR;
         }
 
-        if(!BridgeUtils.isTotalAmountSentOverMinimum(totalAmount, activations, bridgeConstants)) {
+        if(
+            activations.isActive(ConsensusRule.RSKIP293) &&
+            !BridgeUtils.isTotalAmountSentOverMinimum(totalAmount, activations, bridgeConstants)
+        ) {
             logger.debug("[isFastPeginTxValid] Amount sent can't be below the minimum {}.",
                     getMinimumPegInTxValue(activations, bridgeConstants).value);
             return FastBridgeTxResponseCodes.UNPROCESSABLE_TX_AMOUNT_SENT_BELOW_MINIMUM_ERROR;

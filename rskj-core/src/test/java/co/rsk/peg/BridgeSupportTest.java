@@ -6757,14 +6757,13 @@ public class BridgeSupportTest {
     @Test
     public void registerFastBridgeBtcTransaction_amount_sent_is_below_minimum() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-        // Before RSKIP293 ACTIVATION
         when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP219)).thenReturn(true);
-        when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(false);
+        // Before RSKIP293 ACTIVATION
         Coin valueToSend = BridgeUtils.getMinimumPegInTxValue(activations, bridgeConstants).minus(Coin.CENT);
 
-        BigInteger result = testRegisterFastBridgeBtcTransaction_RSKIP293(
-                activations,
+        BigInteger result = registerFastBridgeBtcTransaction_RSKIP293(
+                false,
                 valueToSend,
                 true,
                 false,
@@ -6772,8 +6771,8 @@ public class BridgeSupportTest {
         );
         Assert.assertEquals(co.rsk.core.Coin.fromBitcoin(valueToSend).asBigInteger(), result);
 
-        result = testRegisterFastBridgeBtcTransaction_RSKIP293(
-                activations,
+        result = registerFastBridgeBtcTransaction_RSKIP293(
+                false,
                 valueToSend,
                 true,
                 true,
@@ -6781,8 +6780,8 @@ public class BridgeSupportTest {
         );
         Assert.assertEquals(co.rsk.core.Coin.fromBitcoin(valueToSend).asBigInteger(), result);
 
-        result = testRegisterFastBridgeBtcTransaction_RSKIP293(
-                activations,
+        result = registerFastBridgeBtcTransaction_RSKIP293(
+                false,
                 valueToSend,
                 true,
                 true,
@@ -6791,13 +6790,10 @@ public class BridgeSupportTest {
         Assert.assertEquals(co.rsk.core.Coin.fromBitcoin(valueToSend).asBigInteger(), result);
 
         // After RSKIP293 ACTIVATION
-        when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(true);
-        when(activations.isActive(ConsensusRule.RSKIP219)).thenReturn(true);
-        when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
         valueToSend = BridgeUtils.getMinimumPegInTxValue(activations, bridgeConstants).minus(Coin.CENT);
 
-        result = testRegisterFastBridgeBtcTransaction_RSKIP293(
-                activations,
+        result = registerFastBridgeBtcTransaction_RSKIP293(
+                true,
                 valueToSend,
                 true,
                 false,
@@ -6807,8 +6803,8 @@ public class BridgeSupportTest {
                 FastBridgeTxResponseCodes.UNPROCESSABLE_TX_AMOUNT_SENT_BELOW_MINIMUM_ERROR.value()
                 , result.longValue());
 
-        result = testRegisterFastBridgeBtcTransaction_RSKIP293(
-                activations,
+        result = registerFastBridgeBtcTransaction_RSKIP293(
+                true,
                 valueToSend,
                 true,
                 true,
@@ -6827,12 +6823,8 @@ public class BridgeSupportTest {
         Coin valueToSend = BridgeUtils.getMinimumPegInTxValue(activations, bridgeConstants);
 
         // Before RSKIP293 ACTIVATION
-        when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(true);
-        when(activations.isActive(ConsensusRule.RSKIP219)).thenReturn(true);
-        when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(false);
-
-        BigInteger result = testRegisterFastBridgeBtcTransaction_RSKIP293(
-                activations,
+        BigInteger result = registerFastBridgeBtcTransaction_RSKIP293(
+                false,
                 valueToSend,
                 true,
                 false,
@@ -6840,8 +6832,8 @@ public class BridgeSupportTest {
         );
         Assert.assertEquals(co.rsk.core.Coin.fromBitcoin(valueToSend).asBigInteger(), result);
 
-        result = testRegisterFastBridgeBtcTransaction_RSKIP293(
-                activations,
+        result = registerFastBridgeBtcTransaction_RSKIP293(
+                false,
                 valueToSend,
                 true,
                 true,
@@ -6849,8 +6841,8 @@ public class BridgeSupportTest {
         );
         Assert.assertEquals(co.rsk.core.Coin.fromBitcoin(valueToSend).asBigInteger(), result);
 
-        result = testRegisterFastBridgeBtcTransaction_RSKIP293(
-                activations,
+        result = registerFastBridgeBtcTransaction_RSKIP293(
+                false,
                 valueToSend,
                 true,
                 true,
@@ -6859,12 +6851,8 @@ public class BridgeSupportTest {
         Assert.assertEquals(co.rsk.core.Coin.fromBitcoin(valueToSend).asBigInteger(), result);
 
         // After RSKIP293 ACTIVATION
-        when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(true);
-        when(activations.isActive(ConsensusRule.RSKIP219)).thenReturn(true);
-        when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
-
-        result = testRegisterFastBridgeBtcTransaction_RSKIP293(
-                activations,
+        result = registerFastBridgeBtcTransaction_RSKIP293(
+                true,
                 valueToSend,
                 true,
                 false,
@@ -6874,8 +6862,8 @@ public class BridgeSupportTest {
                 co.rsk.core.Coin.fromBitcoin(valueToSend).asBigInteger()
                 , result);
 
-        result = testRegisterFastBridgeBtcTransaction_RSKIP293(
-                activations,
+        result = registerFastBridgeBtcTransaction_RSKIP293(
+                true,
                 valueToSend,
                 true,
                 true,
@@ -6885,8 +6873,8 @@ public class BridgeSupportTest {
                 co.rsk.core.Coin.fromBitcoin(valueToSend).asBigInteger()
                 , result);
 
-        result = testRegisterFastBridgeBtcTransaction_RSKIP293(
-                activations,
+        result = registerFastBridgeBtcTransaction_RSKIP293(
+                true,
                 valueToSend,
                 true,
                 true,
@@ -7049,7 +7037,7 @@ public class BridgeSupportTest {
             true,
             false
         );
-        Assert.assertEquals(co.rsk.core.Coin.fromBitcoin(valueToSend).asBigInteger(), result);
+        Assert.assertEquals(FastBridgeTxResponseCodes.UNPROCESSABLE_TX_VALUE_ZERO_ERROR.value(), result.longValue());
 
         // send funds to the active federation, and also to a retiring federation that is not active anymore
          result = registerFastBridgeBtcTransaction_RSKIP293(
