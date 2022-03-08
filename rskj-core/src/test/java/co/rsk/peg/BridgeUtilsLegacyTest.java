@@ -283,28 +283,13 @@ public class BridgeUtilsLegacyTest {
         testGetAmountSentToAddress(activations, bridgeConstantsMainnet, valueToTransfer, true);
     }
 
-    @Test
+    @Test(expected = DeprecatedMethodCallException.class)
     public void getAmountSentToAddress_after_RSKIP293() {
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
-        Coin valueToTransfer = Coin.ZERO;
+        Coin valueToTransfer = Coin.COIN;
 
-        DeprecatedMethodCallException ex = null;
-        try {
-            testGetAmountSentToAddress(activations, bridgeConstantsRegtest, valueToTransfer, true);
-        } catch (DeprecatedMethodCallException deprecatedMethodCallException){
-            ex = deprecatedMethodCallException;
-        } finally {
-            Assert.assertNotNull(ex);
-        }
-
-        ex = null;
-        try {
-            testGetAmountSentToAddress(activations, bridgeConstantsMainnet, valueToTransfer, true);
-        } catch (DeprecatedMethodCallException deprecatedMethodCallException){
-            ex = deprecatedMethodCallException;
-        } finally {
-            Assert.assertNotNull(ex);
-        }
+        testGetAmountSentToAddress(activations, bridgeConstantsRegtest, valueToTransfer, true);
+        testGetAmountSentToAddress(activations, bridgeConstantsMainnet, valueToTransfer, true);
     }
 
     @Test
