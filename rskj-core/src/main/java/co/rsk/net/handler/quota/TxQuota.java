@@ -1,17 +1,20 @@
 package co.rsk.net.handler.quota;
 
+import co.rsk.util.TimeProvider;
+
 public class TxQuota {
 
+    private final TimeProvider timeProvider;
     private long timestamp;
     private double availableVirtualGas;
 
-    public static TxQuota createNew(long maxGasPerSecond) {
-        long timestamp = System.currentTimeMillis();
-        return new TxQuota(timestamp, maxGasPerSecond);
+    public static TxQuota createNew(long maxGasPerSecond, TimeProvider timeProvider) {
+        return new TxQuota(maxGasPerSecond, timeProvider);
     }
 
-    private TxQuota(long timestamp, long availableVirtualGas) {
-        this.timestamp = timestamp;
+    private TxQuota(long availableVirtualGas, TimeProvider timeProvider) {
+        this.timeProvider = timeProvider;
+        this.timestamp = this.timeProvider.currentTimeMillis();
         this.availableVirtualGas = availableVirtualGas;
     }
 
@@ -25,11 +28,10 @@ public class TxQuota {
     }
 
     public void refresh(long maxGasPerSecond, long maxQuota) {
-        long currentTimestamp = System.currentTimeMillis();
+        long currentTimestamp = this.timeProvider.currentTimeMillis();
 
         double timeDiffSeconds = (currentTimestamp - this.timestamp) / 1000d;
         double addToQuota = timeDiffSeconds * maxGasPerSecond;
-
         this.timestamp = currentTimestamp;
         this.availableVirtualGas = Math.min(maxQuota, this.availableVirtualGas + addToQuota);
     }

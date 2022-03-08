@@ -48,6 +48,7 @@ class TxVirtualGasCalculator {
 
         double compositeFactor = futureNonceFactor * lowGasPriceFactor * nonceFactor * sizeFactor * replacementFactor * gasLimitFactor;
         logger.debug("virtualGasConsumed calculation: txGasLimit {}, compositeFactor {} (futureNonceFactor {}, lowGasPriceFactor {}, nonceFactor {}, sizeFactor {}, replacementFactor {}, gasLimitFactor {})", txGasLimit, compositeFactor, futureNonceFactor, lowGasPriceFactor, nonceFactor, sizeFactor, replacementFactor, gasLimitFactor);
+
         return txGasLimit * compositeFactor;
     }
 
