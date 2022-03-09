@@ -2623,7 +2623,7 @@ public class BridgeSupport {
             bridgeConstants.getBtcParams(),
             btcContext,
             btcTx,
-            addresses
+            Arrays.asList(fbActiveFederationAddress)
         );
 
         saveFastBridgeDataInStorage(
