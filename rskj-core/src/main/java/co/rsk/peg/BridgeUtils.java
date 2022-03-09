@@ -148,7 +148,7 @@ public class BridgeUtils {
         BtcTransaction btcTx,
         List<Address> addresses
     ) {
-        if (addresses == null || addresses.size() == 0){
+        if (addresses == null || addresses.isEmpty()){
             return Coin.ZERO;
         }
         if (activations.isActive(ConsensusRule.RSKIP293)){
