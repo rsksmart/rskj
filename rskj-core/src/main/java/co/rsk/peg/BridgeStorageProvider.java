@@ -132,6 +132,7 @@ public class BridgeStorageProvider {
     private Keccak256 fastBridgeDerivationArgumentsHash;
     private Sha256Hash fastBridgeBtcTxHash;
     private FastBridgeFederationInformation fastBridgeFederationInformation;
+    private FastBridgeFederationInformation fastBridgeRetiringFederationInformation;
     private long receiveHeadersLastTimestamp = 0;
 
     public BridgeStorageProvider(
@@ -872,6 +873,26 @@ public class BridgeStorageProvider {
         );
     }
 
+    public void setFastBridgeRetiringFederationInformation(FastBridgeFederationInformation fastBridgeRetiringFederationInformation) {
+        if (activations.isActive(RSKIP176)) {
+            this.fastBridgeRetiringFederationInformation = fastBridgeRetiringFederationInformation;
+        }
+    }
+
+    private void saveFastBridgeRetiringFederationInformation() {
+        if (fastBridgeRetiringFederationInformation == null) {
+            return;
+        }
+
+        safeSaveToRepository(
+            getStorageKeyForfastBridgeFederationInformation(
+                fastBridgeRetiringFederationInformation.getFastBridgeFederationRedeemScriptHash()
+            ),
+            fastBridgeRetiringFederationInformation,
+            BridgeSerializationUtils::serializeFastBridgeFederationInformation
+        );
+    }
+
     public Optional<Long> getReceiveHeadersLastTimestamp() {
         if (activations.isActive(RSKIP200)) {
             return safeGetFromRepository(
@@ -931,6 +952,7 @@ public class BridgeStorageProvider {
 
         saveDerivationArgumentsHash();
         saveFastBridgeFederationInformation();
+        saveFastBridgeRetiringFederationInformation();
 
         saveReceiveHeadersLastTimestamp();
     }
