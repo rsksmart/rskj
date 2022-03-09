@@ -7,6 +7,7 @@ import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.config.TestSystemProperties;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
+import co.rsk.peg.fastbridge.FastBridgeTxResponseCodes;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -65,7 +66,6 @@ public class BridgeTest {
 
     @Test
     public void getActivePowpegRedeemScript_after_RSKIP293_activation() throws VMException {
-        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         doReturn(true).when(activationConfig).isActive(eq(RSKIP293), anyLong());
 
         BridgeSupport bridgeSupportMock = mock(BridgeSupport.class);
@@ -545,7 +545,7 @@ public class BridgeTest {
             any(RskAddress.class),
             any(Address.class),
             anyBoolean()
-        )).thenReturn(BigInteger.valueOf(BridgeSupport.FAST_BRIDGE_GENERIC_ERROR));
+        )).thenReturn(BigInteger.valueOf(FastBridgeTxResponseCodes.GENERIC_ERROR.value()));
 
         byte[] value = Sha256Hash.ZERO_HASH.getBytes();
         BtcECKey btcECKeyRefund = new BtcECKey();
@@ -567,7 +567,7 @@ public class BridgeTest {
         );
         byte[] result = bridge.execute(data);
 
-        assertEquals(BridgeSupport.FAST_BRIDGE_GENERIC_ERROR,
+        assertEquals(FastBridgeTxResponseCodes.GENERIC_ERROR.value(),
             ((BigInteger)Bridge.REGISTER_FAST_BRIDGE_BTC_TRANSACTION.decodeResult(result)[0]).longValue());
     }
 

@@ -878,7 +878,7 @@ public class BridgeStorageProvider {
     }
 
     public void setFastBridgeRetiringFederationInformation(FastBridgeFederationInformation fastBridgeRetiringFederationInformation) {
-        if (activations.isActive(RSKIP176)) {
+        if (activations.isActive(RSKIP293)) {
             this.fastBridgeRetiringFederationInformation = fastBridgeRetiringFederationInformation;
         }
     }

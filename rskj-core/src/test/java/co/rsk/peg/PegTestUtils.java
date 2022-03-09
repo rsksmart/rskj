@@ -25,6 +25,7 @@ import co.rsk.bitcoinj.core.NetworkParameters;
 import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.bitcoinj.core.UTXO;
 import co.rsk.bitcoinj.params.RegTestParams;
+import co.rsk.bitcoinj.script.FastBridgeRedeemScriptParser;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.wallet.RedeemData;
@@ -220,11 +221,35 @@ public class PegTestUtils {
         return entries;
     }
 
-    public static Federation createFederation(BridgeConstants bridgeConstants, String... fedKeys) {
-        List<BtcECKey> keys = Arrays.stream(fedKeys).map(s -> BtcECKey.fromPrivate(Hex.decode(s)))
-            .collect(Collectors.toList());
-        keys.sort(BtcECKey.PUBKEY_COMPARATOR);
+    public static Address getFastBridgeAddressFromRedeemScript(BridgeConstants bridgeConstants, Script redeemScript, Sha256Hash derivationArgumentHash) {
+        Script fastBridgeRedeemScript = FastBridgeRedeemScriptParser.createMultiSigFastBridgeRedeemScript(
+            redeemScript,
+            derivationArgumentHash
+        );
+        Script fastBridgeP2SH = ScriptBuilder.createP2SHOutputScript(fastBridgeRedeemScript);
+        return Address.fromP2SHScript(bridgeConstants.getBtcParams(), fastBridgeP2SH);
+    }
 
-        return new Federation(FederationTestUtils.getFederationMembersWithBtcKeys(keys), Instant.ofEpochMilli(1000L), 0L, bridgeConstants.getBtcParams());
+    public static Federation createSimpleActiveFederation(BridgeConstants bridgeConstants) {
+        return createFederation(bridgeConstants, "fa01", "fa02");
+    }
+
+    public static Federation createSimpleRetiringFederation(BridgeConstants bridgeConstants) {
+        return createFederation(bridgeConstants, "fa03", "fa04");
+    }
+
+    public static Federation createFederation(BridgeConstants bridgeConstants, String... fedKeys) {
+        List<BtcECKey> federationKeys = Arrays.stream(fedKeys).map(s -> BtcECKey.fromPrivate(Hex.decode(s))).collect(Collectors.toList());
+        return createFederation(bridgeConstants, federationKeys);
+    }
+
+    public static Federation createFederation(BridgeConstants bridgeConstants, List<BtcECKey> federationKeys) {
+        federationKeys.sort(BtcECKey.PUBKEY_COMPARATOR);
+        return new Federation(
+            FederationTestUtils.getFederationMembersWithBtcKeys(federationKeys),
+            Instant.ofEpochMilli(1000L),
+            0L,
+            bridgeConstants.getBtcParams()
+        );
     }
 }

@@ -4,6 +4,9 @@ import co.rsk.bitcoinj.core.Address;
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.BtcTransaction;
 import co.rsk.bitcoinj.core.Coin;
+import co.rsk.bitcoinj.script.FastBridgeRedeemScriptParser;
+import co.rsk.bitcoinj.script.Script;
+import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.config.BridgeConstants;
 import co.rsk.config.BridgeMainNetConstants;
 import co.rsk.config.BridgeRegTestConstants;
@@ -15,6 +18,10 @@ import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -270,7 +277,7 @@ public class BridgeUtilsLegacyTest {
     }
 
     @Test
-    public void getAmountSentToAddress_no_output_for_address() {
+    public void getAmountSentToAddress_no_output() {
         Coin valueToTransfer = Coin.ZERO;
         testGetAmountSentToAddress(activations, bridgeConstantsRegtest, valueToTransfer, false);
         testGetAmountSentToAddress(activations, bridgeConstantsMainnet, valueToTransfer, false);
@@ -295,6 +302,72 @@ public class BridgeUtilsLegacyTest {
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
         Coin valueToTransfer = Coin.COIN;
         testGetAmountSentToAddress(activations, bridgeConstantsMainnet, valueToTransfer, true);
+    }
+
+    private void getUTXOsForAddress_no_utxos_for_address_by_network(BridgeConstants bridgeConstants, Address address) {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(true);
+
+        BtcTransaction tx = new BtcTransaction(bridgeConstants.getBtcParams());
+        Assert.assertEquals(
+            Collections.emptyList(),
+            BridgeUtilsLegacy.getUTXOsForAddress(
+                activations,
+                bridgeConstants.getBtcParams(),
+                tx,
+                address
+            )
+        );
+    }
+
+    @Test
+    public void getUTXOsForAddress_no_utxos_for_address() {
+        Address btcAddress = Address.fromBase58(
+                bridgeConstantsMainnet.getBtcParams(),
+                "17VZNX1SN5NtKa8UQFxwQbFeFc3iqRYhem"
+        );
+        getUTXOsForAddress_no_utxos_for_address_by_network(bridgeConstantsRegtest, btcAddress);
+
+        btcAddress = Address.fromBase58(
+                bridgeConstantsRegtest.getBtcParams(),
+                "n3PLxDiwWqa5uH7fSbHCxS6VAjD9Y7Rwkj"
+        );
+        getUTXOsForAddress_no_utxos_for_address_by_network(bridgeConstantsRegtest, btcAddress);
+    }
+
+    private void getUTXOsForAddress_OK_by_network(BridgeConstants bridgeConstants) {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(true);
+
+        Script fastBridgeRedeemScript = FastBridgeRedeemScriptParser.createMultiSigFastBridgeRedeemScript(
+                bridgeConstants.getGenesisFederation().getRedeemScript(),
+                Sha256Hash.of(new byte[1])
+        );
+
+        Script fastBridgeP2SH = ScriptBuilder.createP2SHOutputScript(fastBridgeRedeemScript);
+
+        Address fastBridgeFedAddress =
+                Address.fromP2SHScript(bridgeConstants.getBtcParams(), fastBridgeP2SH);
+
+        BtcTransaction tx = new BtcTransaction(bridgeConstants.getBtcParams());
+        tx.addOutput(Coin.COIN, fastBridgeFedAddress);
+        BtcECKey srcKey = new BtcECKey();
+        tx.addInput(PegTestUtils.createHash(1),
+                0, ScriptBuilder.createInputScript(null, srcKey));
+
+        List<UTXO> utxoList = new ArrayList<>();
+        UTXO utxo = new UTXO(tx.getHash(), 0, Coin.COIN, 0, false, fastBridgeP2SH);
+        utxoList.add(utxo);
+
+        Assert.assertEquals(
+            utxoList,
+            BridgeUtilsLegacy.getUTXOsForAddress(activations, bridgeConstants.getBtcParams(), tx, fastBridgeFedAddress)
+        );
+    }
+    @Test
+    public void getUTXOsForAddress_OK() {
+        getUTXOsForAddress_OK_by_network(bridgeConstantsRegtest);
+        getUTXOsForAddress_OK_by_network(bridgeConstantsMainnet);
     }
 
     @Test
