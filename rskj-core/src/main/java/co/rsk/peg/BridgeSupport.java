@@ -2772,7 +2772,7 @@ public class BridgeSupport {
                 bridgeConstants.getBtcParams(),
                 btcContext,
                 btcTx,
-                Arrays.asList(fbRetiringFederationAddress)
+                Collections.singletonList(fbRetiringFederationAddress)
             );
 
             if (!utxosForRetiringFed.isEmpty()){
@@ -2901,9 +2901,7 @@ public class BridgeSupport {
     ) throws IOException {
         provider.markFastBridgeFederationDerivationHashAsUsed(btcTxHash, derivationHash);
         provider.setFastBridgeFederationInformation(fastBridgeFederationInformation);
-        for (UTXO utxo : utxosList) {
-            getActiveFederationBtcUTXOs().add(utxo);
-        }
+        getActiveFederationBtcUTXOs().addAll(utxosList);
     }
 
     protected void saveFastBridgeRetiringFederationDataInStorage(
@@ -2914,9 +2912,7 @@ public class BridgeSupport {
     ) throws IOException {
         provider.markFastBridgeFederationDerivationHashAsUsed(btcTxHash, derivationHash);
         provider.setFastBridgeRetiringFederationInformation(fastBridgeRetiringFederationInformation);
-        for (UTXO utxo : utxosList) {
-            getRetiringFederationBtcUTXOs().add(utxo);
-        }
+        getRetiringFederationBtcUTXOs().addAll(utxosList);
     }
 
     private StoredBlock getBtcBlockchainChainHead() throws IOException, BlockStoreException {
