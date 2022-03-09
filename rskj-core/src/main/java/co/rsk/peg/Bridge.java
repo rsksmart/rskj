@@ -26,6 +26,7 @@ import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.peg.bitcoin.MerkleBranch;
+import co.rsk.peg.fastbridge.FastBridgeTxResponseCodes;
 import co.rsk.peg.utils.BtcTransactionFormatUtils;
 import co.rsk.peg.whitelist.LockWhitelistEntry;
 import co.rsk.peg.whitelist.OneOffWhiteListEntry;
@@ -1144,7 +1145,7 @@ public class Bridge extends PrecompiledContracts.PrecompiledContract {
             );
         } catch (Exception e) {
             logger.warn("Exception in registerFastBridgeBtcTransaction", e);
-            return BigInteger.valueOf(BridgeSupport.FAST_BRIDGE_GENERIC_ERROR);
+            return BigInteger.valueOf(FastBridgeTxResponseCodes.GENERIC_ERROR.value());
         }
     }
 
