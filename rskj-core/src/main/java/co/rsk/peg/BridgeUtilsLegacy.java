@@ -1,12 +1,11 @@
 package co.rsk.peg;
 
-import co.rsk.bitcoinj.core.Address;
-import co.rsk.bitcoinj.core.BtcTransaction;
-import co.rsk.bitcoinj.core.Coin;
-import co.rsk.bitcoinj.core.NetworkParameters;
-import co.rsk.bitcoinj.core.TransactionOutput;
+import co.rsk.bitcoinj.core.*;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @deprecated Methods included in this class are to be used only prior to the latest HF activation
@@ -92,7 +91,7 @@ public class BridgeUtilsLegacy {
     ) {
         if (activations.isActive(ConsensusRule.RSKIP293)) {
             throw new DeprecatedMethodCallException(
-                "Calling BridgeUtils. getAmountSentToAddress method after RSKIP293 activation"
+                "Calling BridgeUtils.getAmountSentToAddress method after RSKIP293 activation"
             );
         }
         Coin value = Coin.ZERO;
@@ -102,5 +101,41 @@ public class BridgeUtilsLegacy {
             }
         }
         return value;
+    }
+
+    /**
+     * @param networkParameters
+     * @param btcTx
+     * @param btcAddress
+     * @return the list of UTXOs in a given btcTx for a given address
+     */
+    @Deprecated
+    protected static List<UTXO> getUTXOsForAddress(
+        ActivationConfig.ForBlock activations,
+        NetworkParameters networkParameters,
+        BtcTransaction btcTx,
+        Address btcAddress
+    ) {
+        if (activations.isActive(ConsensusRule.RSKIP293)) {
+            throw new DeprecatedMethodCallException(
+                "Calling BridgeUtils.getUTXOsForAddress method after RSKIP293 activation"
+            );
+        }
+        List<UTXO> utxosList = new ArrayList<>();
+        for (TransactionOutput o : btcTx.getOutputs()) {
+            if (o.getScriptPubKey().getToAddress(networkParameters).equals(btcAddress)) {
+                utxosList.add(
+                    new UTXO(
+                        btcTx.getHash(),
+                        o.getIndex(),
+                        o.getValue(),
+                        0,
+                        btcTx.isCoinBase(),
+                        o.getScriptPubKey()
+                    )
+                );
+            }
+        }
+        return utxosList;
     }
 }
