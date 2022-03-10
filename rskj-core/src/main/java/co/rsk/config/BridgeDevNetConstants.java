@@ -158,6 +158,6 @@ public class BridgeDevNetConstants extends BridgeConstants {
 
         minimumPegoutValuePercentageToReceiveAfterFee = 20;
 
-        maxInputsPerPegoutTransaction = 150;
+        maxInputsPerPegoutTransaction = 10;
     }
 }

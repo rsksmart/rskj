@@ -152,7 +152,7 @@ public class BridgeTestNetConstants extends BridgeConstants {
 
         minimumPegoutValuePercentageToReceiveAfterFee = 80;
 
-        maxInputsPerPegoutTransaction = 150;
+        maxInputsPerPegoutTransaction = 50;
     }
 
     public static BridgeTestNetConstants getInstance() {
