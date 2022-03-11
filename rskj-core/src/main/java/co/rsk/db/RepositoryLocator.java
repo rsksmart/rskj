@@ -18,6 +18,7 @@
 
 package co.rsk.db;
 
+import co.rsk.core.bc.IReadWrittenKeysTracker;
 import co.rsk.crypto.Keccak256;
 import co.rsk.trie.MutableTrie;
 import co.rsk.trie.Trie;
@@ -26,7 +27,6 @@ import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.db.MutableRepository;
-import org.ethereum.db.WrapperMutableRepository;
 import org.ethereum.util.RLP;
 
 import java.util.Optional;
@@ -75,6 +75,13 @@ public class RepositoryLocator {
         return mutableTrieSnapshotAt(header)
                 .map(MutableTrieCache::new)
                 .map(MutableRepository::new)
+                .orElseThrow(() -> trieNotFoundException(header));
+    }
+
+    public Repository startTrackingAt(BlockHeader header, IReadWrittenKeysTracker tracker) {
+        return mutableTrieSnapshotAt(header)
+                .map(MutableTrieCache::new)
+                .map(mutableTrieCache -> new MutableRepository(mutableTrieCache, tracker))
                 .orElseThrow(() -> trieNotFoundException(header));
     }
 

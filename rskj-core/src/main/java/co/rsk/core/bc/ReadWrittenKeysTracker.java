@@ -26,7 +26,7 @@ import java.util.Set;
 //TODO(JULI):
 // * Next step should be to check whether a key is written in the cache but also deleted in the same transaction. This key shouldn't be considered as a written key.
 
-public class ReadWrittenKeysTracker {
+public class ReadWrittenKeysTracker implements IReadWrittenKeysTracker {
     private Set<ByteArrayWrapper> temporalReadKeys;
     private Set<ByteArrayWrapper> temporalWrittenKeys;
 
@@ -35,22 +35,27 @@ public class ReadWrittenKeysTracker {
         this.temporalWrittenKeys = new HashSet<>();
     }
 
+    @Override
     public Set<ByteArrayWrapper> getTemporalReadKeys(){
         return this.temporalReadKeys;
     }
 
+    @Override
     public Set<ByteArrayWrapper> getTemporalWrittenKeys(){
         return this.temporalWrittenKeys;
     }
 
+    @Override
     public void addNewReadKey(ByteArrayWrapper key) {
         temporalReadKeys.add(key);
     }
 
+    @Override
     public void addNewWrittenKey(ByteArrayWrapper key) {
         temporalWrittenKeys.add(key);
     }
 
+    @Override
     public void clear() {
         this.temporalReadKeys = new HashSet<>();
         this.temporalWrittenKeys = new HashSet<>();
