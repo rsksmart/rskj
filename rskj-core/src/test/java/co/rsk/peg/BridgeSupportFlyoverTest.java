@@ -54,6 +54,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 
+import static co.rsk.peg.PegTestUtils.createBech32Output;
+import static co.rsk.peg.PegTestUtils.createP2pkhOutput;
+import static co.rsk.peg.PegTestUtils.createP2shOutput;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -68,34 +71,8 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
         bridgeSupportBuilder = new BridgeSupportBuilder();
     }
 
-    private TransactionOutput createBech32Output(NetworkParameters networkParameters, Coin valuesToSend) {
-        byte[] scriptBytes = networkParameters.getId().equals(NetworkParameters.ID_MAINNET)?
-                                 Hex.decode("001437c383ea78269585c73289daa36d7b7014b65294") :
-                                 Hex.decode("0014ef57424d0d625cf82fabe4fd7657d24a5f13dfb2");
-        return new TransactionOutput(networkParameters, null,
-            valuesToSend,
-            scriptBytes
-        );
-    }
-
-    private TransactionOutput createP2pkhOutput(NetworkParameters networkParameters, Coin valuesToSend) {
-        Address address = networkParameters.getId().equals(NetworkParameters.ID_MAINNET)?
-                              Address.fromBase58(networkParameters, "1JMaBRALrJQArLrqe5zRSn3bVk1z9RGzML") :
-                              Address.fromBase58(networkParameters, "mipcBbFg9gMiCh81Kj8tqqdgoZub1ZJRfn");
-        return new TransactionOutput(networkParameters, null,
-            valuesToSend,
-            address
-        );
-    }
-
-    private TransactionOutput createP2shOutput(NetworkParameters networkParameters, Coin valuesToSend) {
-        Address address = networkParameters.getId().equals(NetworkParameters.ID_MAINNET)?
-                              Address.fromBase58(networkParameters, "3FiMaJinRy86WgJZDfAfRUt2ZLEBGZSfLL") :
-                              Address.fromBase58(networkParameters, "2N7TdMZSYfwFMUwyr8YADSKUhLUyH6eqohz");
-        return new TransactionOutput(networkParameters, null,
-            valuesToSend,
-            address
-        );
+    private BtcTransaction createBtcTransactionWithOutputToAddress(Coin amount, Address btcAddress) {
+        return PegTestUtils.createBtcTransactionWithOutputToAddress(btcParams, amount, btcAddress);
     }
 
     private BigInteger testRegisterFastBridgeBtcTransaction(
@@ -871,6 +848,7 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
         );
     }
 
+    @Test()
     public void registerFastBridgeBtcTransaction_with_output_to_all_type_address_after_RSKIP293_mainnet() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
         boolean isRSKIP293Active = true;
         Coin valueToSend = Coin.COIN;
@@ -878,8 +856,8 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
         testRegisterFastBridgeBtcTransaction(
             isRSKIP293Active,
             bridgeConstants,
-            valueToSend.add(Coin.CENT).add(Coin.SATOSHI),
-            Arrays.asList(valueToSend, Coin.ZERO, Coin.CENT, Coin.SATOSHI),
+            valueToSend.multiply(12),
+            Arrays.asList(valueToSend, valueToSend.multiply(2), valueToSend.multiply(3)),
             true,
             true,
             true,

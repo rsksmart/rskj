@@ -80,6 +80,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
+
 import org.apache.commons.lang3.tuple.Pair;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -2695,17 +2696,16 @@ public class BridgeSupport {
         Address fbActiveFederationAddress =
             fbActiveFederationInformation.getFastBridgeFederationAddress(bridgeConstants.getBtcParams());
         Federation retiringFederation = getRetiringFederation();
-        FastBridgeFederationInformation fbRetiringFederationInformation = null;
-        Address fbRetiringFederationAddress = null;
+        Optional<FastBridgeFederationInformation> fbRetiringFederationInformation = Optional.empty();
 
         List<Address> addresses = new ArrayList<>(2);
         addresses.add(fbActiveFederationAddress);
 
         if (activations.isActive(ConsensusRule.RSKIP293) && retiringFederation != null) {
             fbRetiringFederationInformation =
-                createFastBridgeFederationInformation(fastBridgeDerivationHash, retiringFederation);
-            fbRetiringFederationAddress =
-                fbRetiringFederationInformation.getFastBridgeFederationAddress(
+                Optional.of(createFastBridgeFederationInformation(fastBridgeDerivationHash, retiringFederation));
+            Address fbRetiringFederationAddress =
+                fbRetiringFederationInformation.get().getFastBridgeFederationAddress(
                     bridgeConstants.getBtcParams()
                 );
             addresses.add(fbRetiringFederationAddress);
@@ -2751,7 +2751,7 @@ public class BridgeSupport {
 
         transferTo(lbcAddress, co.rsk.core.Coin.fromBitcoin(totalAmount));
 
-        List<UTXO> utxosForFbActiveFed = BridgeUtils.getUTXOsForAddresses(
+        List<UTXO> utxosForFbActiveFed = BridgeUtils.getUTXOsSentToAddresses(
             activations,
             bridgeConstants.getBtcParams(),
             btcContext,
@@ -2766,20 +2766,26 @@ public class BridgeSupport {
             utxosForFbActiveFed
         );
 
-        if (activations.isActive(RSKIP293) && fbRetiringFederationAddress != null){
-            List<UTXO> utxosForRetiringFed = BridgeUtils.getUTXOsForAddresses(
+        if (activations.isActive(RSKIP293) && fbRetiringFederationInformation.isPresent()){
+            List<UTXO> utxosForRetiringFed = BridgeUtils.getUTXOsSentToAddresses(
                 activations,
                 bridgeConstants.getBtcParams(),
                 btcContext,
                 btcTx,
-                Collections.singletonList(fbRetiringFederationAddress)
+                Collections.singletonList(
+                    fbRetiringFederationInformation.get().getFastBridgeFederationAddress(bridgeConstants.getBtcParams())
+                )
             );
 
             if (!utxosForRetiringFed.isEmpty()){
+                logger.info(
+                    "[registerFastBridgeBtcTransaction]  going to register {} utxos for retiring fast bridge federation",
+                    utxosForRetiringFed.size()
+                );
                 saveFastBridgeRetiringFederationDataInStorage(
                     btcTxHashWithoutWitness,
                     fastBridgeDerivationHash,
-                    fbRetiringFederationInformation,
+                    fbRetiringFederationInformation.get(),
                     utxosForRetiringFed
                 );
             }
@@ -2815,7 +2821,7 @@ public class BridgeSupport {
     private WalletProvider createFastBridgeWalletProvider(
         FastBridgeFederationInformation fastBridgeFederationInformation) {
         return (BtcTransaction btcTx, List<Address> addresses) -> {
-            List<UTXO> utxosList = BridgeUtils.getUTXOsForAddresses(
+            List<UTXO> utxosList = BridgeUtils.getUTXOsSentToAddresses(
                 activations,
                 bridgeConstants.getBtcParams(),
                 btcContext,

@@ -4,6 +4,8 @@ import co.rsk.bitcoinj.core.Address;
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.BtcTransaction;
 import co.rsk.bitcoinj.core.Coin;
+import co.rsk.bitcoinj.core.Sha256Hash;
+import co.rsk.bitcoinj.core.UTXO;
 import co.rsk.bitcoinj.script.FastBridgeRedeemScriptParser;
 import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
@@ -250,6 +252,7 @@ public class BridgeUtilsLegacyTest {
     private void testGetAmountSentToAddress(
         ActivationConfig.ForBlock activations,
         BridgeConstants constants,
+        Coin expectedValue,
         Coin valueToTransfer,
         Boolean includeOutput
     ) {
@@ -259,7 +262,7 @@ public class BridgeUtilsLegacyTest {
             btcTx.addOutput(valueToTransfer, receiver);
         }
         Assert.assertEquals(
-            valueToTransfer,
+            expectedValue,
             BridgeUtilsLegacy.getAmountSentToAddress(
                 activations,
                 constants.getBtcParams(),
@@ -270,48 +273,47 @@ public class BridgeUtilsLegacyTest {
     }
 
     @Test
-    public void getAmountSentToAddress_coin() {
+    public void getAmountSentToAddress_one_coin() {
         Coin valueToTransfer = Coin.COIN;
-        testGetAmountSentToAddress(activations, bridgeConstantsRegtest, valueToTransfer, true);
-        testGetAmountSentToAddress(activations, bridgeConstantsMainnet, valueToTransfer, true);
+        testGetAmountSentToAddress(activations, bridgeConstantsRegtest, valueToTransfer, valueToTransfer, true);
+        testGetAmountSentToAddress(activations, bridgeConstantsMainnet, valueToTransfer, valueToTransfer, true);
     }
 
     @Test
-    public void getAmountSentToAddress_no_output() {
-        Coin valueToTransfer = Coin.ZERO;
-        testGetAmountSentToAddress(activations, bridgeConstantsRegtest, valueToTransfer, false);
-        testGetAmountSentToAddress(activations, bridgeConstantsMainnet, valueToTransfer, false);
+    public void getAmountSentToAddress_no_outputs() {
+        Coin valueToTransfer = Coin.COIN;
+        testGetAmountSentToAddress(activations, bridgeConstantsRegtest, Coin.ZERO, valueToTransfer, false);
+        testGetAmountSentToAddress(activations, bridgeConstantsMainnet, Coin.ZERO, valueToTransfer, false);
     }
 
     @Test
-    public void getAmountSentToAddress_output_value_is_0() {
+    public void getAmountSentToAddress_zero_amount() {
         Coin valueToTransfer = Coin.ZERO;
-        testGetAmountSentToAddress(activations, bridgeConstantsRegtest, valueToTransfer, true);
-        testGetAmountSentToAddress(activations, bridgeConstantsMainnet, valueToTransfer, true);
+        testGetAmountSentToAddress(activations, bridgeConstantsRegtest, valueToTransfer, valueToTransfer, true);
+        testGetAmountSentToAddress(activations, bridgeConstantsMainnet, valueToTransfer, valueToTransfer, true);
     }
 
     @Test(expected = DeprecatedMethodCallException.class)
-    public void getAmountSentToAddress_for_regtest_after_RSKIP293() {
+    public void getAmountSentToAddress_after_RSKIP293_testnet() {
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
         Coin valueToTransfer = Coin.COIN;
-        testGetAmountSentToAddress(activations, bridgeConstantsRegtest, valueToTransfer, true);
+        testGetAmountSentToAddress(activations, bridgeConstantsRegtest, Coin.COIN, valueToTransfer, true);
     }
 
     @Test(expected = DeprecatedMethodCallException.class)
-    public void getAmountSentToAddress_for_mainnet_after_RSKIP293() {
-        when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
-        Coin valueToTransfer = Coin.COIN;
-        testGetAmountSentToAddress(activations, bridgeConstantsMainnet, valueToTransfer, true);
-    }
-
-    private void getUTXOsForAddress_no_utxos_for_address_by_network(BridgeConstants bridgeConstants, Address address) {
+    public void getAmountSentToAddress_after_RSKIP293_mainnet() {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-        when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
+        Coin valueToTransfer = Coin.COIN;
+        testGetAmountSentToAddress(activations, bridgeConstantsMainnet, valueToTransfer, valueToTransfer, true);
+    }
 
+    private void testGetUTXOsSentToAddress_no_utxos(BridgeConstants bridgeConstants, Address address) {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         BtcTransaction tx = new BtcTransaction(bridgeConstants.getBtcParams());
         Assert.assertEquals(
             Collections.emptyList(),
-            BridgeUtilsLegacy.getUTXOsForAddress(
+            BridgeUtilsLegacy.getUTXOsSentToAddress(
                 activations,
                 bridgeConstants.getBtcParams(),
                 tx,
@@ -321,23 +323,28 @@ public class BridgeUtilsLegacyTest {
     }
 
     @Test
-    public void getUTXOsForAddress_no_utxos_for_address() {
+    public void getUTXOsSentToAddress_no_utxos_for_address() {
+        BridgeConstants bridgeConstants = bridgeConstantsRegtest;
         Address btcAddress = Address.fromBase58(
-                bridgeConstantsMainnet.getBtcParams(),
-                "17VZNX1SN5NtKa8UQFxwQbFeFc3iqRYhem"
+            bridgeConstants.getBtcParams(),
+            "n3PLxDiwWqa5uH7fSbHCxS6VAjD9Y7Rwkj"
         );
-        getUTXOsForAddress_no_utxos_for_address_by_network(bridgeConstantsRegtest, btcAddress);
+        testGetUTXOsSentToAddress_no_utxos(bridgeConstants, btcAddress);
 
+        bridgeConstants = bridgeConstantsMainnet;
         btcAddress = Address.fromBase58(
-                bridgeConstantsRegtest.getBtcParams(),
-                "n3PLxDiwWqa5uH7fSbHCxS6VAjD9Y7Rwkj"
+            bridgeConstants.getBtcParams(),
+            "17VZNX1SN5NtKa8UQFxwQbFeFc3iqRYhem"
         );
-        getUTXOsForAddress_no_utxos_for_address_by_network(bridgeConstantsRegtest, btcAddress);
+        testGetUTXOsSentToAddress_no_utxos(bridgeConstants, btcAddress);
     }
 
-    private void getUTXOsForAddress_OK_by_network(BridgeConstants bridgeConstants) {
+    private void testGetUTXOsSentToAddress(
+        boolean isRSKIP293Active,
+        BridgeConstants bridgeConstants
+    ) {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-        when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(isRSKIP293Active);
 
         Script fastBridgeRedeemScript = FastBridgeRedeemScriptParser.createMultiSigFastBridgeRedeemScript(
                 bridgeConstants.getGenesisFederation().getRedeemScript(),
@@ -361,13 +368,25 @@ public class BridgeUtilsLegacyTest {
 
         Assert.assertEquals(
             utxoList,
-            BridgeUtilsLegacy.getUTXOsForAddress(activations, bridgeConstants.getBtcParams(), tx, fastBridgeFedAddress)
+            BridgeUtilsLegacy.getUTXOsSentToAddress(activations, bridgeConstants.getBtcParams(), tx, fastBridgeFedAddress)
         );
     }
     @Test
-    public void getUTXOsForAddress_OK() {
-        getUTXOsForAddress_OK_by_network(bridgeConstantsRegtest);
-        getUTXOsForAddress_OK_by_network(bridgeConstantsMainnet);
+    public void getUTXOsSentToAddress_OK() {
+        testGetUTXOsSentToAddress(false, bridgeConstantsRegtest);
+        testGetUTXOsSentToAddress(false, bridgeConstantsMainnet);
+    }
+
+    @Test(expected = DeprecatedMethodCallException.class)
+    public void getUTXOsSentToAddress_after_RSKIP293_testnet() {
+        when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
+        testGetUTXOsSentToAddress(true, bridgeConstantsRegtest);
+    }
+
+    @Test(expected = DeprecatedMethodCallException.class)
+    public void getUTXOsSentToAddress_after_RSKIP293_mainnet() {
+        when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
+        testGetUTXOsSentToAddress(true, bridgeConstantsMainnet);
     }
 
     @Test
