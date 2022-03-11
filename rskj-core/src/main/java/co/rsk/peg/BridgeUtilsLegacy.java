@@ -1,6 +1,11 @@
 package co.rsk.peg;
 
-import co.rsk.bitcoinj.core.*;
+import co.rsk.bitcoinj.core.Address;
+import co.rsk.bitcoinj.core.BtcTransaction;
+import co.rsk.bitcoinj.core.Coin;
+import co.rsk.bitcoinj.core.NetworkParameters;
+import co.rsk.bitcoinj.core.TransactionOutput;
+import co.rsk.bitcoinj.core.UTXO;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 
@@ -91,7 +96,7 @@ public class BridgeUtilsLegacy {
     ) {
         if (activations.isActive(ConsensusRule.RSKIP293)) {
             throw new DeprecatedMethodCallException(
-                "Calling BridgeUtils.getAmountSentToAddress method after RSKIP293 activation"
+                "Calling BridgeUtilsLegacy.getAmountSentToAddress method after RSKIP293 activation"
             );
         }
         Coin value = Coin.ZERO;
@@ -110,7 +115,7 @@ public class BridgeUtilsLegacy {
      * @return the list of UTXOs in a given btcTx for a given address
      */
     @Deprecated
-    protected static List<UTXO> getUTXOsForAddress(
+    protected static List<UTXO> getUTXOsSentToAddress(
         ActivationConfig.ForBlock activations,
         NetworkParameters networkParameters,
         BtcTransaction btcTx,
@@ -118,7 +123,7 @@ public class BridgeUtilsLegacy {
     ) {
         if (activations.isActive(ConsensusRule.RSKIP293)) {
             throw new DeprecatedMethodCallException(
-                "Calling BridgeUtils.getUTXOsForAddress method after RSKIP293 activation"
+                "Calling BridgeUtilsLegacy.getUTXOsSentToAddress method after RSKIP293 activation"
             );
         }
         List<UTXO> utxosList = new ArrayList<>();

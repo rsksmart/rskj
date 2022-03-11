@@ -8,17 +8,20 @@ import co.rsk.bitcoinj.script.ScriptChunk;
 import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.blockchain.utils.BlockGenerator;
 import co.rsk.config.BridgeConstants;
+import co.rsk.config.BridgeMainNetConstants;
 import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.peg.BridgeSupport.TxType;
 import co.rsk.peg.bitcoin.CoinbaseInformation;
 import co.rsk.peg.bitcoin.MerkleBranch;
+import co.rsk.peg.btcLockSender.BtcLockSender;
 import co.rsk.peg.btcLockSender.BtcLockSender.TxSenderAddressType;
 import co.rsk.peg.btcLockSender.BtcLockSenderProvider;
 import co.rsk.peg.pegininstructions.PeginInstructions;
 import co.rsk.peg.pegininstructions.PeginInstructionsException;
 import co.rsk.peg.pegininstructions.PeginInstructionsProvider;
+import co.rsk.peg.pegininstructions.PeginInstructionsVersion1;
 import co.rsk.peg.utils.*;
 import co.rsk.peg.whitelist.LockWhitelist;
 import co.rsk.peg.whitelist.OneOffWhiteListEntry;
@@ -72,11 +75,26 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.*;
 
 public class BridgeSupportTest extends BridgeSupportTestBase {
+    protected static final String TO_ADDRESS = "0000000000000000000000000000000000000006";
+    protected static final BigInteger DUST_AMOUNT = new BigInteger("1");
+    protected static final BigInteger NONCE = new BigInteger("0");
+    protected static final BigInteger GAS_PRICE = new BigInteger("100");
+    protected static final BigInteger GAS_LIMIT = new BigInteger("1000");
+    protected static final String DATA = "80af2871";
+    protected static final co.rsk.core.Coin LIMIT_MONETARY_BASE = new co.rsk.core.Coin(new BigInteger("21000000000000000000000000"));
+    protected static final RskAddress contractAddress = PrecompiledContracts.BRIDGE_ADDR;
+    protected static final List<BtcECKey> REGTEST_OLD_FEDERATION_PRIVATE_KEYS = Arrays.asList(
+        BtcECKey.fromPrivate(Hex.decode("47129ffed2c0273c75d21bb8ba020073bb9a1638df0e04853407461fdd9e8b83")),
+        BtcECKey.fromPrivate(Hex.decode("9f72d27ba603cfab5a0201974a6783ca2476ec3d6b4e2625282c682e0e5f1c35")),
+        BtcECKey.fromPrivate(Hex.decode("e1b17fcd0ef1942465eee61b20561b16750191143d365e71de08b33dd84a9788"))
+    );
     protected ActivationConfig.ForBlock activationsBeforeForks;
     protected ActivationConfig.ForBlock activationsAfterForks;
 
     @Before
     public void setUpOnEachTest() {
+        bridgeConstantsRegtest = BridgeRegTestConstants.getInstance();
+        bridgeConstantsMainnet = BridgeMainNetConstants.getInstance();
         bridgeConstants = BridgeRegTestConstants.getInstance();
         btcParams = bridgeConstants.getBtcParams();
         activationsBeforeForks = ActivationConfigsForTest.genesis().forBlock(0);
@@ -1016,9 +1034,9 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
         int height = 30;
         mockChainOfStoredBlocks(btcBlockStore, registerHeader, 35, height);
 
-        Transaction rskTx1 = getMockedRskTxWithHash("aa");
-        Transaction rskTx2 = getMockedRskTxWithHash("bb");
-        Transaction rskTx3 = getMockedRskTxWithHash("cc");
+        Transaction rskTx1 = PegTestUtils.getMockedRskTxWithHash("aa");
+        Transaction rskTx2 = PegTestUtils.getMockedRskTxWithHash("bb");
+        Transaction rskTx3 = PegTestUtils.getMockedRskTxWithHash("cc");
 
         bridgeSupport.registerBtcTransaction(rskTx1, tx1.bitcoinSerialize(), height, pmt.bitcoinSerialize());
         bridgeSupport.registerBtcTransaction(rskTx2, tx2.bitcoinSerialize(), height, pmt.bitcoinSerialize());
@@ -1186,9 +1204,9 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
         int height = 30;
         mockChainOfStoredBlocks(btcBlockStore, registerHeader, 35, height);
 
-        Transaction rskTx1 = getMockedRskTxWithHash("aa");
-        Transaction rskTx2 = getMockedRskTxWithHash("bb");
-        Transaction rskTx3 = getMockedRskTxWithHash("cc");
+        Transaction rskTx1 = PegTestUtils.getMockedRskTxWithHash("aa");
+        Transaction rskTx2 = PegTestUtils.getMockedRskTxWithHash("bb");
+        Transaction rskTx3 = PegTestUtils.getMockedRskTxWithHash("cc");
 
         bridgeSupport.registerBtcTransaction(rskTx1, tx1.bitcoinSerialize(), height, pmt.bitcoinSerialize());
         bridgeSupport.registerBtcTransaction(rskTx2, tx2.bitcoinSerialize(), height, pmt.bitcoinSerialize());
@@ -6942,7 +6960,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
             for (ReleaseTransactionSet.Entry e : releaseTransactionSet.getEntries()) {
                 BtcTransaction refundTx = e.getTransaction();
                 if (refundTx.getInput(0).getOutpoint().getHash() == btcTx.getHash() &&
-                    refundTx.getOutput(0).getScriptPubKey().getToAddress(btcParams).equals(btcRefundAddress.get())) {
+                        refundTx.getOutput(0).getScriptPubKey().getToAddress(btcParams).equals(btcRefundAddress.get())) {
                     successfulRejection = true;
                     break;
                 }
@@ -7184,17 +7202,17 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
         List<LogInfo> logs = new ArrayList<>();
         BridgeEventLogger eventLogger = new BridgeEventLoggerImpl(bridgeConstants, activations, logs);
         BridgeSupport bridgeSupport = getBridgeSupport(
-                bridgeConstants,
-                new BridgeStorageProvider(
-                        track,
-                        contractAddress,
-                        bridgeConstants,
-                        activationsAfterForks
-                ),
+            bridgeConstants,
+            new BridgeStorageProvider(
                 track,
-                eventLogger,
-                mock(Block.class),
-                null
+                contractAddress,
+                bridgeConstants,
+                activationsAfterForks
+            ),
+            track,
+            eventLogger,
+            mock(Block.class),
+            null
         );
 
         Script inputScript = t.getInputs().get(0).getScriptSig();
@@ -7272,17 +7290,17 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
         return pk;
     }
 
-    protected BridgeSupport getBridgeSupport(BridgeConstants constants, BridgeStorageProvider provider) {
+    private BridgeSupport getBridgeSupport(BridgeConstants constants, BridgeStorageProvider provider) {
         return getBridgeSupport(constants, provider, null, mock(BridgeEventLogger.class), null, null, null);
     }
 
-    protected BridgeSupport getBridgeSupport(BridgeConstants constants, BridgeStorageProvider provider, ActivationConfig.ForBlock activations) {
+    private BridgeSupport getBridgeSupport(BridgeConstants constants, BridgeStorageProvider provider, ActivationConfig.ForBlock activations) {
         return getBridgeSupport(constants, provider, null, mock(BridgeEventLogger.class), null, null, activations);
     }
 
-    protected BridgeSupport getBridgeSupport(BridgeConstants constants, BridgeStorageProvider provider, Repository track,
-                                             BtcLockSenderProvider btcLockSenderProvider, PeginInstructionsProvider peginInstructionsProvider,
-                                             Block executionBlock, BtcBlockStoreWithCache.Factory blockStoreFactory) {
+    private BridgeSupport getBridgeSupport(BridgeConstants constants, BridgeStorageProvider provider, Repository track,
+                                           BtcLockSenderProvider btcLockSenderProvider, PeginInstructionsProvider peginInstructionsProvider,
+                                           Block executionBlock, BtcBlockStoreWithCache.Factory blockStoreFactory) {
         return getBridgeSupport(constants,
             provider,
             track,
@@ -7294,20 +7312,6 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
         );
     }
 
-    protected BridgeSupport getBridgeSupport(BridgeConstants constants, BridgeStorageProvider provider, Repository track,
-                                             BridgeEventLogger eventLogger, Block executionBlock,
-                                             BtcBlockStoreWithCache.Factory blockStoreFactory,
-                                             ActivationConfig.ForBlock activations) {
-        return getBridgeSupport(
-            constants,
-            provider,
-            track,
-            eventLogger,
-            new BtcLockSenderProvider(),
-            executionBlock,
-            blockStoreFactory,
-            activations
-        );
     private BridgeSupport getBridgeSupport(BridgeConstants constants, BridgeStorageProvider provider, Repository track,
                                            BridgeEventLogger eventLogger, Block executionBlock,
                                            BtcBlockStoreWithCache.Factory blockStoreFactory,
@@ -7324,10 +7328,10 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
             .build();
     }
 
-    protected BridgeSupport getBridgeSupport(BridgeConstants constants, BridgeStorageProvider provider, Repository track,
-                                             BtcLockSenderProvider btcLockSenderProvider, PeginInstructionsProvider peginInstructionsProvider,
-                                             Block executionBlock, BtcBlockStoreWithCache.Factory blockStoreFactory,
-                                             ActivationConfig.ForBlock activations) {
+    private BridgeSupport getBridgeSupport(BridgeConstants constants, BridgeStorageProvider provider, Repository track,
+                                           BtcLockSenderProvider btcLockSenderProvider, PeginInstructionsProvider peginInstructionsProvider,
+                                           Block executionBlock, BtcBlockStoreWithCache.Factory blockStoreFactory,
+                                           ActivationConfig.ForBlock activations) {
 
         if (btcLockSenderProvider == null) {
             btcLockSenderProvider = mock(BtcLockSenderProvider.class);
@@ -7367,7 +7371,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
             .build();
     }
 
-    protected BridgeSupport getBridgeSupportConfiguredToTestReceiveHeader(
+    private BridgeSupport getBridgeSupportConfiguredToTestReceiveHeader(
         BtcBlock btcBlock,
         BtcBlockStoreWithCache btcBlockStore,
         BridgeStorageProvider provider,
@@ -7384,7 +7388,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
         );
     }
 
-    protected BridgeSupport getBridgeSupportConfiguredToTestReceiveHeader(
+    private BridgeSupport getBridgeSupportConfiguredToTestReceiveHeader(
         BtcBlock btcBlock,
         BtcBlockStoreWithCache btcBlockStore,
         BridgeStorageProvider provider,
@@ -7418,5 +7422,30 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
             mockFactory,
             activation
         );
+    }
+
+    private BtcLockSenderProvider getBtcLockSenderProvider(BtcLockSender.TxSenderAddressType txSenderAddressType, Address btcAddress, RskAddress rskAddress) {
+        BtcLockSender btcLockSender = mock(BtcLockSender.class);
+        when(btcLockSender.getTxSenderAddressType()).thenReturn(txSenderAddressType);
+        when(btcLockSender.getBTCAddress()).thenReturn(btcAddress);
+        when(btcLockSender.getRskAddress()).thenReturn(rskAddress);
+
+        BtcLockSenderProvider btcLockSenderProvider = mock(BtcLockSenderProvider.class);
+        when(btcLockSenderProvider.tryGetBtcLockSender(any())).thenReturn(Optional.of(btcLockSender));
+
+        return btcLockSenderProvider;
+    }
+
+    private PeginInstructionsProvider getPeginInstructionsProviderForVersion1(RskAddress rskDestinationAddress, Optional<Address> btcRefundAddress)
+        throws PeginInstructionsException {
+        PeginInstructionsVersion1 peginInstructions = mock(PeginInstructionsVersion1.class);
+        when(peginInstructions.getProtocolVersion()).thenReturn(1);
+        when(peginInstructions.getRskDestinationAddress()).thenReturn(rskDestinationAddress);
+        when(peginInstructions.getBtcRefundAddress()).thenReturn(btcRefundAddress);
+
+        PeginInstructionsProvider peginInstructionsProvider = mock(PeginInstructionsProvider.class);
+        when(peginInstructionsProvider.buildPeginInstructions(any())).thenReturn(Optional.of(peginInstructions));
+
+        return peginInstructionsProvider;
     }
 }
