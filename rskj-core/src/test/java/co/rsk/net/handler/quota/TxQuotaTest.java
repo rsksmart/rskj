@@ -23,7 +23,7 @@ public class TxQuotaTest {
 
     @Test
     public void acceptVirtualGasConsumption() {
-        TxQuota txQuota = TxQuota.createNew(10, System::currentTimeMillis);
+        TxQuota txQuota = TxQuota.createNew("tx1", 10, System::currentTimeMillis);
 
         assertTrue(txQuota.acceptVirtualGasConsumption(9));
         assertFalse(txQuota.acceptVirtualGasConsumption(2));
@@ -35,7 +35,7 @@ public class TxQuotaTest {
         long currentTime = System.currentTimeMillis();
         when(timeProvider.currentTimeMillis()).thenReturn(currentTime);
 
-        TxQuota txQuota = TxQuota.createNew(MAX_QUOTA, timeProvider);
+        TxQuota txQuota = TxQuota.createNew("tx1", MAX_QUOTA, timeProvider);
         assertFalse("should reject tx over initial limit", txQuota.acceptVirtualGasConsumption(MAX_QUOTA + 1));
         assertTrue("should accept tx below initial limit", txQuota.acceptVirtualGasConsumption(MAX_QUOTA - 1));
 
