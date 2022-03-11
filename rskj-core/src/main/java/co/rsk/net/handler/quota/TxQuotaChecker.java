@@ -37,31 +37,35 @@ public class TxQuotaChecker {
     }
 
     public synchronized boolean acceptTx(Transaction newTx, Optional<Transaction> replacedTx, CurrentContext currentContext) {
-        TxQuota senderQuota = updateQuota(newTx.getSender(), true, currentContext);
+        TxQuota senderQuota = updateQuota(newTx, true, currentContext);
 
         boolean existsDestination = currentContext.repository.getAccountState(newTx.getReceiveAddress()) != null;
         boolean isEOA = !currentContext.repository.isContract(newTx.getReceiveAddress());
         if (!existsDestination || isEOA) {
-            updateQuota(newTx.getReceiveAddress(), false, currentContext);
+            updateQuota(newTx, false, currentContext);
         }
 
         double consumedVirtualGas = calculateConsumedVirtualGas(newTx, replacedTx, currentContext);
 
         boolean wasAccepted = senderQuota.acceptVirtualGasConsumption(consumedVirtualGas);
-        logger.trace("tx {} {} after quota check", newTx.getHash(), wasAccepted ? "accepted" : "rejected");
+
+        logger.trace("tx [{}] was [{}] after quota check", newTx.getHash(), wasAccepted ? "accepted" : "rejected");
+
         return wasAccepted;
     }
 
-    private TxQuota updateQuota(RskAddress address, boolean isTxSource, CurrentContext currentContext) {
+    private TxQuota updateQuota(Transaction newTx, boolean isTxSource, CurrentContext currentContext) {
         BigInteger blockGasLimit = currentContext.bestBlock.getGasLimitAsInteger();
         long maxGasPerSecond = getMaxGasPerSecond(blockGasLimit);
         long maxQuota = maxGasPerSecond * TxQuotaChecker.MAX_QUOTA_GAS_MULTIPLIER;
+
+        RskAddress address = isTxSource ? newTx.getSender() : newTx.getReceiveAddress();
 
         TxQuota quotaForAddress = this.accountQuotas.get(address);
         if (quotaForAddress == null) {
             long accountNonce = currentContext.state.getNonce(address).longValue();
             long initialQuota = calculateNewItemQuota(accountNonce, isTxSource, maxGasPerSecond, maxQuota);
-            quotaForAddress = TxQuota.createNew(initialQuota, timeProvider);
+            quotaForAddress = TxQuota.createNew(newTx.getHash().toHexString(), initialQuota, timeProvider);
             this.accountQuotas.put(address, quotaForAddress);
         } else {
             quotaForAddress.refresh(maxGasPerSecond, maxQuota);

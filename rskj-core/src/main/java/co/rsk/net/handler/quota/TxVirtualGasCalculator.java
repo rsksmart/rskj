@@ -47,9 +47,12 @@ class TxVirtualGasCalculator {
         double gasLimitFactor = calculateGasLimitFactor(txGasLimit);
 
         double compositeFactor = futureNonceFactor * lowGasPriceFactor * nonceFactor * sizeFactor * replacementFactor * gasLimitFactor;
-        logger.debug("virtualGasConsumed calculation: txGasLimit {}, compositeFactor {} (futureNonceFactor {}, lowGasPriceFactor {}, nonceFactor {}, sizeFactor {}, replacementFactor {}, gasLimitFactor {})", txGasLimit, compositeFactor, futureNonceFactor, lowGasPriceFactor, nonceFactor, sizeFactor, replacementFactor, gasLimitFactor);
 
-        return txGasLimit * compositeFactor;
+        double result = txGasLimit * compositeFactor;
+
+        logger.trace("virtualGasConsumed calculation for tx [{}] result = [{}] (txGasLimit {}, compositeFactor {}, futureNonceFactor {}, lowGasPriceFactor {}, nonceFactor {}, sizeFactor {}, replacementFactor {}, gasLimitFactor {})", newTx.getHash(), result, txGasLimit, compositeFactor, futureNonceFactor, lowGasPriceFactor, nonceFactor, sizeFactor, replacementFactor, gasLimitFactor);
+
+        return result;
     }
 
     private double calculateLowGasPriceFactor(Transaction newTx) {
