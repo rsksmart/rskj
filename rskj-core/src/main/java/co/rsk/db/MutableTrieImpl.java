@@ -21,10 +21,7 @@ package co.rsk.db;
 import co.rsk.core.RskAddress;
 import co.rsk.core.types.ints.Uint24;
 import co.rsk.crypto.Keccak256;
-import co.rsk.trie.MutableTrie;
-import co.rsk.trie.Trie;
-import co.rsk.trie.TrieKeySlice;
-import co.rsk.trie.TrieStore;
+import co.rsk.trie.*;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.db.TrieKeyMapper;
 import org.ethereum.vm.DataWord;
@@ -99,7 +96,7 @@ public class MutableTrieImpl implements MutableTrie {
         Trie storageTrie = trie.find(accountStorageKey);
 
         if (storageTrie != null) {
-            Iterator<Trie.IterationElement> storageIterator = storageTrie.getPreOrderIterator();
+            Iterator<IterationElement> storageIterator = storageTrie.getPreOrderIterator();
             storageIterator.next(); // skip storage root
             return new StorageKeysIterator(storageIterator, storageKeyOffset);
         }
@@ -134,11 +131,11 @@ public class MutableTrieImpl implements MutableTrie {
     }
 
     private static class StorageKeysIterator implements Iterator<DataWord> {
-        private final Iterator<Trie.IterationElement> storageIterator;
+        private final Iterator<IterationElement> storageIterator;
         private final int storageKeyOffset;
         private DataWord currentStorageKey;
 
-        StorageKeysIterator(Iterator<Trie.IterationElement> storageIterator, int storageKeyOffset) {
+        StorageKeysIterator(Iterator<IterationElement> storageIterator, int storageKeyOffset) {
             this.storageIterator = storageIterator;
             this.storageKeyOffset = storageKeyOffset;
         }
@@ -149,7 +146,7 @@ public class MutableTrieImpl implements MutableTrie {
                 return true;
             }
             while (storageIterator.hasNext()) {
-                Trie.IterationElement iterationElement = storageIterator.next();
+                IterationElement iterationElement = storageIterator.next();
                 if (iterationElement.getNode().getValue() != null) {
                     TrieKeySlice nodeKey = iterationElement.getNodeKey();
                     byte[] storageExpandedKeySuffix = nodeKey.slice(storageKeyOffset, nodeKey.length()).encode();

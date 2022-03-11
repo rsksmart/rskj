@@ -31,10 +31,10 @@ import static org.hamcrest.Matchers.*;
 @RunWith(Parameterized.class)
 public class TrieIteratorTest {
 
-    private final Iterator<Trie.IterationElement> iterator;
+    private final Iterator<IterationElement> iterator;
     private final byte[] expectedValues;
 
-    public TrieIteratorTest(Iterator<Trie.IterationElement> iterator, byte[] expectedValues) {
+    public TrieIteratorTest(Iterator<IterationElement> iterator, byte[] expectedValues) {
         this.iterator = iterator;
         this.expectedValues = expectedValues;
     }

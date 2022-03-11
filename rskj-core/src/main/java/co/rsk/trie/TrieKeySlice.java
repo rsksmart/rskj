@@ -121,4 +121,9 @@ public class TrieKeySlice {
     public static TrieKeySlice empty() {
         return new TrieKeySlice(new byte[0], 0, 0);
     }
+
+    // Returns the key slice in expanded form (byte array of ones and zeros)
+    public byte[] expand() {
+        return Arrays.copyOfRange(expandedKey, offset, limit);
+    }
 }
