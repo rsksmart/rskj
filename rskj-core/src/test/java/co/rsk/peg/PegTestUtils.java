@@ -175,6 +175,11 @@ public class PegTestUtils {
         return key.toAddress(RegTestParams.get());
     }
 
+    public static Address createRandomBtcAddress(NetworkParameters networkParameters) {
+        BtcECKey key = new BtcECKey();
+        return key.toAddress(networkParameters);
+    }
+
     public static UTXO createUTXO(int nHash, long index, Coin value) {
         return new UTXO(
             createHash(nHash),
