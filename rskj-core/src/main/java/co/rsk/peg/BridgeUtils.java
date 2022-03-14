@@ -418,28 +418,26 @@ public class BridgeUtils {
         Coin minimumPegInTxValue = getMinimumPegInTxValue(activations, bridgeConstants);
 
         if (activations.isActive(RSKIP293)
-            && isAnyUTXOAmountBelowMinimum(
+            && !isAnyUTXOAmountBelowMinimum(
                 activations,
                 bridgeConstants,
                 tx,
                 federationsWallet
             )
-        ){
-            logger.warn(
-                "[btctx:{}] Someone sent to the federation UTXOs amount less than {} satoshis",
-                tx.getHash(),
-                minimumPegInTxValue
-            );
-            return false;
-        }  else if (valueSentToMe.isLessThan(minimumPegInTxValue)) {
-            logger.warn(
-                "[btctx:{}] Someone sent to the federation less than {} satoshis",
-                tx.getHash(),
-                minimumPegInTxValue
-            );
-            return false;
+        ) {
+            return true;
+        } else if (!valueSentToMe.isLessThan(minimumPegInTxValue)) {
+            return valueSentToMe.isPositive();
         }
-        return valueSentToMe.isPositive();
+
+        logger.warn(
+            activations.isActive(RSKIP293)?
+                "[btctx:{}] Someone sent to the federation UTXOs amount less than {} satoshis":
+                "[btctx:{}] Someone sent to the federation less than {} satoshis",
+            tx.getHash(),
+            minimumPegInTxValue
+        );
+        return false;
     }
 
     /**
