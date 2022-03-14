@@ -4,10 +4,7 @@ import co.rsk.bitcoinj.core.Address;
 import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.BtcTransaction;
 import co.rsk.bitcoinj.core.Coin;
-import co.rsk.bitcoinj.core.Sha256Hash;
 import co.rsk.bitcoinj.core.UTXO;
-import co.rsk.bitcoinj.script.FastBridgeRedeemScriptParser;
-import co.rsk.bitcoinj.script.Script;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.config.BridgeConstants;
 import co.rsk.config.BridgeMainNetConstants;
@@ -22,8 +19,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.Optional;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -258,7 +254,7 @@ public class BridgeUtilsLegacyTest {
     ) {
         Address receiver = constants.getGenesisFederation().getAddress();
         BtcTransaction btcTx = new BtcTransaction(constants.getBtcParams());
-        if (includeOutput){
+        if (includeOutput) {
             btcTx.addOutput(valueToTransfer, receiver);
         }
         Assert.assertEquals(
@@ -308,85 +304,248 @@ public class BridgeUtilsLegacyTest {
         testGetAmountSentToAddress(activations, bridgeConstantsMainnet, valueToTransfer, valueToTransfer, true);
     }
 
-    private void testGetUTXOsSentToAddress_no_utxos(BridgeConstants bridgeConstants, Address address) {
+    private void getUTXOsSentToAddress_has_utxos_to_given_address(
+        Boolean isRSKIP293Active
+        , BridgeConstants bridgeConstants
+        , Address address) {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(isRSKIP293Active);
+
         BtcTransaction tx = new BtcTransaction(bridgeConstants.getBtcParams());
+        tx.addOutput(Coin.COIN, address);
+        BtcECKey srcKey = new BtcECKey();
+        tx.addInput(PegTestUtils.createHash(1),
+            0, ScriptBuilder.createInputScript(null, srcKey));
+
+        List<UTXO> utxoListExpected = new ArrayList<>();
+        UTXO utxo = new UTXO(
+            tx.getHash(), 0, Coin.COIN, 0, false, ScriptBuilder.createOutputScript(address)
+        );
+        utxoListExpected.add(utxo);
+
+        List<UTXO> utxosFound = BridgeUtilsLegacy.getUTXOsSentToAddress(activations, bridgeConstants.getBtcParams(), tx, address);
+
         Assert.assertEquals(
-            Collections.emptyList(),
-            BridgeUtilsLegacy.getUTXOsSentToAddress(
-                activations,
-                bridgeConstants.getBtcParams(),
-                tx,
-                address
-            )
+            utxoListExpected.size(), utxosFound.size()
+        );
+
+        Assert.assertTrue(
+            utxoListExpected.get(0).getValue().equals(utxosFound.get(0).getValue())
         );
     }
 
     @Test
-    public void getUTXOsSentToAddress_no_utxos_for_address() {
-        BridgeConstants bridgeConstants = bridgeConstantsRegtest;
-        Address btcAddress = Address.fromBase58(
-            bridgeConstants.getBtcParams(),
-            "n3PLxDiwWqa5uH7fSbHCxS6VAjD9Y7Rwkj"
+    public void getUTXOsSentToAddress_has_utxos_to_given_address() {
+        getUTXOsSentToAddress_has_utxos_to_given_address(
+            false,
+            bridgeConstantsRegtest,
+            PegTestUtils.createRandomBtcAddress(bridgeConstantsRegtest.getBtcParams())
         );
-        testGetUTXOsSentToAddress_no_utxos(bridgeConstants, btcAddress);
-
-        bridgeConstants = bridgeConstantsMainnet;
-        btcAddress = Address.fromBase58(
-            bridgeConstants.getBtcParams(),
-            "17VZNX1SN5NtKa8UQFxwQbFeFc3iqRYhem"
+        getUTXOsSentToAddress_has_utxos_to_given_address(
+            false,
+            bridgeConstantsMainnet,
+            PegTestUtils.createRandomBtcAddress(bridgeConstantsMainnet.getBtcParams())
         );
-        testGetUTXOsSentToAddress_no_utxos(bridgeConstants, btcAddress);
     }
 
-    private void testGetUTXOsSentToAddress(
-        boolean isRSKIP293Active,
-        BridgeConstants bridgeConstants
+    private void getUTXOsSentToAddress_no_utxos_to_given_address(
+        Boolean isRSKIP293Active,
+        BridgeConstants bridgeConstants,
+        Address address,
+        Boolean includeOutputToAddress
     ) {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(isRSKIP293Active);
 
-        Script fastBridgeRedeemScript = FastBridgeRedeemScriptParser.createMultiSigFastBridgeRedeemScript(
-                bridgeConstants.getGenesisFederation().getRedeemScript(),
-                Sha256Hash.of(new byte[1])
-        );
-
-        Script fastBridgeP2SH = ScriptBuilder.createP2SHOutputScript(fastBridgeRedeemScript);
-
-        Address fastBridgeFedAddress =
-                Address.fromP2SHScript(bridgeConstants.getBtcParams(), fastBridgeP2SH);
-
         BtcTransaction tx = new BtcTransaction(bridgeConstants.getBtcParams());
-        tx.addOutput(Coin.COIN, fastBridgeFedAddress);
+        if (includeOutputToAddress) {
+            tx.addOutput(Coin.COIN, PegTestUtils.createRandomBtcAddress(bridgeConstants.getBtcParams()));
+        }
         BtcECKey srcKey = new BtcECKey();
         tx.addInput(PegTestUtils.createHash(1),
-                0, ScriptBuilder.createInputScript(null, srcKey));
+            0, ScriptBuilder.createInputScript(null, srcKey));
 
-        List<UTXO> utxoList = new ArrayList<>();
-        UTXO utxo = new UTXO(tx.getHash(), 0, Coin.COIN, 0, false, fastBridgeP2SH);
-        utxoList.add(utxo);
+        List<UTXO> utxoListExpected = new ArrayList<>();
+        UTXO utxo = new UTXO(
+            tx.getHash(),
+            0,
+            Coin.COIN,
+            0,
+            false,
+            ScriptBuilder.createOutputScript(address)
+        );
+        utxoListExpected.add(utxo);
 
-        Assert.assertEquals(
-            utxoList,
-            BridgeUtilsLegacy.getUTXOsSentToAddress(activations, bridgeConstants.getBtcParams(), tx, fastBridgeFedAddress)
+        List<UTXO> utxosFound = BridgeUtilsLegacy.getUTXOsSentToAddress(
+            activations,
+            bridgeConstants.getBtcParams(),
+            tx,
+            address
+        );
+
+        Assert.assertTrue(
+            utxosFound.isEmpty()
         );
     }
+
     @Test
-    public void getUTXOsSentToAddress_OK() {
-        testGetUTXOsSentToAddress(false, bridgeConstantsRegtest);
-        testGetUTXOsSentToAddress(false, bridgeConstantsMainnet);
+    public void getUTXOsSentToAddress_no_utxos_to_given_address() {
+        getUTXOsSentToAddress_no_utxos_to_given_address(
+            false,
+            bridgeConstantsRegtest,
+            PegTestUtils.createRandomBtcAddress(bridgeConstantsRegtest.getBtcParams()),
+            true
+        );
+        getUTXOsSentToAddress_no_utxos_to_given_address(
+            false,
+            bridgeConstantsRegtest,
+            PegTestUtils.createRandomBtcAddress(bridgeConstantsRegtest.getBtcParams()),
+            false
+        );
+
+        getUTXOsSentToAddress_no_utxos_to_given_address(
+            false,
+            bridgeConstantsMainnet,
+            PegTestUtils.createRandomBtcAddress(bridgeConstantsMainnet.getBtcParams()),
+            true
+        );
+        getUTXOsSentToAddress_no_utxos_to_given_address(
+            false,
+            bridgeConstantsMainnet,
+            PegTestUtils.createRandomBtcAddress(bridgeConstantsMainnet.getBtcParams()),
+            false
+        );
+    }
+
+    private void getUTXOsSentToAddress_has_multiple_utxos(
+        Boolean isRSKIP293Active,
+        BridgeConstants bridgeConstants,
+        Address address,
+        boolean includeOutputToAddress
+    ) {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(isRSKIP293Active);
+
+        BtcTransaction tx = new BtcTransaction(bridgeConstants.getBtcParams());
+
+        // Create n random outputs to simulate a btc transaction with outputs to multiple addresses
+        byte utxosQty = 5;
+        for (int i = 0; i < utxosQty; i++) {
+            tx.addOutput(Coin.COIN, PegTestUtils.createRandomBtcAddress(bridgeConstants.getBtcParams()));
+        }
+
+        if (includeOutputToAddress) {
+            // Add multiple to the given address
+            for (int i = 0; i < utxosQty; i++) {
+                tx.addOutput(Coin.COIN, address);
+            }
+        }
+
+        BtcECKey srcKey = new BtcECKey();
+        tx.addInput(PegTestUtils.createHash(1),
+            0, ScriptBuilder.createInputScript(null, srcKey));
+
+        List<UTXO> utxoListExpected = new ArrayList<>();
+        if (includeOutputToAddress){
+            for (int i = 0; i < utxosQty; i++) {
+                UTXO utxo = new UTXO(
+                    tx.getHash(),
+                    0,
+                    Coin.COIN,
+                    0,
+                    false,
+                    ScriptBuilder.createOutputScript(address)
+                );
+                utxoListExpected.add(utxo);
+            }
+        }
+
+        List<UTXO> utxosFound = BridgeUtilsLegacy.getUTXOsSentToAddress(
+            activations,
+            bridgeConstants.getBtcParams(),
+            tx,
+            address
+        );
+
+        if (includeOutputToAddress){
+            Assert.assertEquals(
+                utxoListExpected.size(), utxosFound.size()
+            );
+
+            Optional<Coin> expectedValue = utxoListExpected.stream().map(UTXO::getValue).reduce(
+                Coin::add
+             );
+
+            Optional<Coin> result = utxosFound.stream().map(UTXO::getValue).reduce(
+                Coin::add
+            );
+
+            Assert.assertTrue(
+                expectedValue.isPresent()
+            );
+
+            Assert.assertEquals(
+                utxoListExpected.size(), utxosFound.size()
+            );
+
+            Assert.assertTrue(
+                expectedValue.equals(result)
+            );
+
+        } else {
+            Assert.assertTrue(
+                utxosFound.isEmpty()
+            );
+        }
+    }
+
+    @Test
+    public void getUTXOsSentToAddress_has_multiple_utxos() {
+        getUTXOsSentToAddress_has_multiple_utxos(
+            false,
+            bridgeConstantsRegtest,
+            PegTestUtils.createRandomBtcAddress(bridgeConstantsRegtest.getBtcParams()),
+            true
+        );
+        getUTXOsSentToAddress_has_multiple_utxos(
+            false,
+            bridgeConstantsRegtest,
+            PegTestUtils.createRandomBtcAddress(bridgeConstantsRegtest.getBtcParams()),
+            false
+        );
+
+        getUTXOsSentToAddress_has_multiple_utxos(
+            false,
+            bridgeConstantsMainnet,
+            PegTestUtils.createRandomBtcAddress(bridgeConstantsMainnet.getBtcParams()),
+            true
+        );
+        getUTXOsSentToAddress_has_multiple_utxos(
+            false,
+            bridgeConstantsMainnet,
+            PegTestUtils.createRandomBtcAddress(bridgeConstantsMainnet.getBtcParams()),
+            false
+        );
     }
 
     @Test(expected = DeprecatedMethodCallException.class)
     public void getUTXOsSentToAddress_after_RSKIP293_testnet() {
-        when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
-        testGetUTXOsSentToAddress(true, bridgeConstantsRegtest);
+        getUTXOsSentToAddress_has_multiple_utxos(
+            true,
+            bridgeConstantsRegtest,
+            PegTestUtils.createRandomBtcAddress(bridgeConstantsRegtest.getBtcParams()),
+            true
+        );
     }
 
     @Test(expected = DeprecatedMethodCallException.class)
     public void getUTXOsSentToAddress_after_RSKIP293_mainnet() {
-        when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
-        testGetUTXOsSentToAddress(true, bridgeConstantsMainnet);
+        getUTXOsSentToAddress_has_multiple_utxos(
+            true,
+            bridgeConstantsMainnet,
+            PegTestUtils.createRandomBtcAddress(bridgeConstantsMainnet.getBtcParams()),
+            true
+        );
     }
 
     @Test
