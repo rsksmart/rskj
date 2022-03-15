@@ -1097,6 +1097,7 @@ public class BridgeSupport {
             .stream()
             .anyMatch(entry -> walletBalance.isGreaterThan(entry.getAmount()) || walletBalance.equals(entry.getAmount()));
         if (!canProcessAtLeastOnePegout) {
+            logger.warn("[processPegoutsIndividually] wallet balance {} cannot process at least one pegout", walletBalance);
             return;
         }
 
@@ -1150,13 +1151,16 @@ public class BridgeSupport {
                 .reduce(Coin.ZERO, Coin::add);
 
             if (wallet.getBalance().isLessThan(totalPegoutValue)) {
+                logger.warn("[processPegoutsInBatch] wallet balance {} is less than the totalPegoutValue {}", wallet.getBalance(), totalPegoutValue);
                 return;
             }
 
             if (!pegoutEntries.isEmpty()) {
+                logger.info("[processPegoutsInBatch] going to create a batched pegout transaction for {} requests, total amount {}", pegoutEntries.size(), totalPegoutValue);
                 ReleaseTransactionBuilder.BuildResult result = txBuilder.buildBatchedPegouts(pegoutEntries);
 
                 while (result.getResponseCode() == ReleaseTransactionBuilder.Response.EXCEED_MAX_TRANSACTION_SIZE) {
+                    logger.info("[processPegoutsInBatch] Max size exceeded, going to divide {} requests in half", pegoutEntries.size());
                     int firstHalfSize = pegoutEntries.size() / 2;
                     pegoutEntries = pegoutEntries.subList(0, firstHalfSize);
                     result = txBuilder.buildBatchedPegouts(pegoutEntries);
@@ -1191,6 +1195,7 @@ public class BridgeSupport {
             if (releaseRequestQueue.getEntries().isEmpty()) {
                 long nextPegoutHeight = currentBlockNumber + bridgeConstants.getNumberOfBlocksBetweenPegouts();
                 provider.setNextPegoutHeight(nextPegoutHeight);
+                logger.info("[processPegoutsInBatch] Next Pegout Height updated from {} to {}", currentBlockNumber, nextPegoutHeight);
             }
         }
     }
