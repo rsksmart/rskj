@@ -85,6 +85,9 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
         boolean retiringFederationExists
     ) throws IOException, BlockStoreException, BridgeIllegalArgumentException {
         BridgeConstants bridgeConstants = spy(constants);
+        // For the sake of simplicity, this set the fed activation age value equal to the value in the bridgeRegTestConstants
+        // in order to be able to always get the current retiring federation when it's been mock with no need of creating
+        // unnecessary blocks when testing on mainnet.
         doReturn(BridgeRegTestConstants.getInstance().getFederationActivationAge()).when(bridgeConstants).getFederationActivationAge();
 
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
