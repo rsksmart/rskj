@@ -274,7 +274,6 @@ public class MutableRepository implements Repository {
     @Override
     public Iterator<DataWord> getStorageKeys(RskAddress addr) {
         // -1 b/c the first bit is implicit in the storage node
-        //TODO(JULI): Check whether storageKeys is used for some opCode or not. So far it seems that it isn't...
         return mutableTrie.getStorageKeys(addr);
     }
 

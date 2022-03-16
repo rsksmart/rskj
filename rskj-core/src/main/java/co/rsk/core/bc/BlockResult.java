@@ -35,7 +35,7 @@ public class BlockResult {
             null,
             Collections.emptyList(),
             Collections.emptyList(),
-            0,
+            Collections.emptyList(), 0,
             Coin.ZERO,
             null
     );
@@ -49,12 +49,13 @@ public class BlockResult {
     // It is for optimizing switching between states. Instead of using the "stateRoot" field,
     // which requires regenerating the trie, using the finalState field does not.
     private final Trie finalState;
+    private final List<Integer> bucketOrder;
 
     public BlockResult(
             Block block,
             List<Transaction> executedTransactions,
             List<TransactionReceipt> transactionReceipts,
-            long gasUsed,
+            List<Integer> bucketOrder, long gasUsed,
             Coin paidFees,
             Trie finalState) {
         this.block = block;
@@ -63,11 +64,14 @@ public class BlockResult {
         this.gasUsed = gasUsed;
         this.paidFees = paidFees;
         this.finalState = finalState;
+        this.bucketOrder = bucketOrder;
     }
 
     public Block getBlock() {
         return block;
     }
+
+    public List<Integer> getBucketOrder() { return bucketOrder; }
 
     public List<Transaction> getExecutedTransactions() { return executedTransactions; }
 
