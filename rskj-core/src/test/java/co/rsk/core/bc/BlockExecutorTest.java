@@ -491,7 +491,7 @@ public class BlockExecutorTest {
         Block block = new BlockGenerator(Constants.regtest(), activationConfig).getBlock(1);
         block.setStateRoot(trie.getHash().getBytes());
 
-        BlockResult blockResult = new BlockResult(block, Collections.emptyList(), Collections.emptyList(), 0,
+        BlockResult blockResult = new BlockResult(block, Collections.emptyList(), Collections.emptyList(), Collections.emptyList(), 0,
                 Coin.ZERO, trie);
 
         RskSystemProperties cfg = spy(CONFIG);
@@ -516,7 +516,7 @@ public class BlockExecutorTest {
         Block block = new BlockGenerator(Constants.regtest(), activationConfig).getBlock(1);
         block.setStateRoot(new byte[] { 1, 2, 3, 4 });
 
-        BlockResult blockResult = new BlockResult(block, Collections.emptyList(), Collections.emptyList(), 0,
+        BlockResult blockResult = new BlockResult(block, Collections.emptyList(), Collections.emptyList(), Collections.emptyList(), 0,
                 Coin.ZERO, trie);
 
         RskSystemProperties cfg = spy(CONFIG);

@@ -121,7 +121,7 @@ public class ExecutionBlockRetriever {
                 block,
                 Collections.emptyList(),
                 Collections.emptyList(),
-                0,
+                Collections.emptyList(), 0,
                 Coin.ZERO,
                 null
         );
