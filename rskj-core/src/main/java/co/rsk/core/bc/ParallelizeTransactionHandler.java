@@ -52,8 +52,6 @@ public class ParallelizeTransactionHandler {
 
     public Optional<Short> addTransaction(Transaction tx, Set<ByteArrayWrapper> newReadKeys, Set<ByteArrayWrapper> newWrittenKeys, long gasUsedByTx) {
 
-        //TODO(JULI): Check whether the tx is remasc.
-
         Set<Short> bucketCandidates = getBucketCandidates(newReadKeys, newWrittenKeys);
         long txGasLimit = GasCost.toGas(tx.getGasLimit());
 
@@ -81,6 +79,10 @@ public class ParallelizeTransactionHandler {
                 return addTransactionInParallelBucketAndGetId(tx, newReadKeys, newWrittenKeys, gasUsedByTx, bucketId);
             }
         }
+        return addTransactionInSequentialBucketAndGetId(tx, newReadKeys, newWrittenKeys, gasUsedByTx);
+    }
+
+    public Optional<Short> addRemascTransaction(Transaction tx, Set<ByteArrayWrapper> newReadKeys, Set<ByteArrayWrapper> newWrittenKeys, long gasUsedByTx) {
         return addTransactionInSequentialBucketAndGetId(tx, newReadKeys, newWrittenKeys, gasUsedByTx);
     }
 
