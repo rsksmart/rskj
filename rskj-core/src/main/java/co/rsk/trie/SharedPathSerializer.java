@@ -68,6 +68,9 @@ public class SharedPathSerializer {
         buffer.put(sharedPath.encode());
     }
 
+    // Returns the size of the path prefix when path needs encoding.
+    // The prefix indicates the length of the shared path in bits.
+    // TO DO: Rename to something like getEncodedPathBitlengthSize()
     private static int lsharedSize(TrieKeySlice sharedPath) {
         if (!isPresent(sharedPath)) {
             return 0;
@@ -88,11 +91,7 @@ public class SharedPathSerializer {
         return lsharedSize(this.sharedPath);
     }
 
-    public static TrieKeySlice deserialize(ByteBuffer message, boolean sharedPrefixPresent) {
-        if (!sharedPrefixPresent) {
-            return TrieKeySlice.empty();
-        }
-
+    public static int getPathBitsLength(ByteBuffer message) {
         int lshared; // this is a bit length
 
         // upgrade to int so we can compare positive values
@@ -106,12 +105,21 @@ public class SharedPathSerializer {
         } else {
             lshared = (int) readVarInt(message).value;
         }
+        return lshared;
+    }
+    public static TrieKeySlice deserialize(ByteBuffer message, boolean sharedPrefixPresent) {
+        if (!sharedPrefixPresent) {
+            return TrieKeySlice.empty();
+        }
+
+        int lshared = getPathBitsLength(message);
 
         int lencoded = PathEncoder.calculateEncodedLength(lshared);
         byte[] encodedKey = new byte[lencoded];
         message.get(encodedKey);
         return TrieKeySlice.fromEncoded(encodedKey, 0, lshared, lencoded);
     }
+
     private static VarInt readVarInt(ByteBuffer message) {
         // read without touching the buffer position so when we read into bytes it contains the header
         int first = Byte.toUnsignedInt(message.get(message.position()));

@@ -28,7 +28,7 @@ public class TrieKeySlice {
     private final int offset;
     private final int limit;
 
-    private TrieKeySlice(byte[] expandedKey, int offset, int limit) {
+    public TrieKeySlice(byte[] expandedKey, int offset, int limit) {
         this.expandedKey = expandedKey;
         this.offset = offset;
         this.limit = limit;

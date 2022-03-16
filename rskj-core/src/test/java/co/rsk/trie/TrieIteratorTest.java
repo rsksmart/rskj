@@ -50,6 +50,16 @@ public class TrieIteratorTest {
     }
 
     @Test
+    public void testIterationElement() {
+        byte[] expandedKey = new byte[]{0,1,1,0,1,1,0,0,0,1};
+
+        IterationElement ie = new IterationElement(
+                new TrieKeySlice(expandedKey,1,7),new Trie());
+        String dump = ie.toString();
+        Assert.assertEquals("110110",dump);
+    }
+
+    @Test
     public void testIterator() {
         int nodeCount = 0;
         while (iterator.hasNext()) {

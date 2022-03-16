@@ -19,7 +19,6 @@
 package co.rsk.trie;
 
 import co.rsk.bitcoinj.core.VarInt;
-import co.rsk.core.RskAddress;
 import co.rsk.core.types.ints.Uint16;
 import co.rsk.core.types.ints.Uint24;
 import co.rsk.core.types.ints.Uint8;
@@ -30,7 +29,6 @@ import co.rsk.metrics.profilers.ProfilerFactory;
 import co.rsk.util.NodeStopper;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.db.ByteArrayWrapper;
-import org.ethereum.db.TrieKeyMapper;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.util.RLP;
 import org.slf4j.Logger;
