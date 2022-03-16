@@ -454,7 +454,8 @@ public class BlockExecutor {
             boolean acceptInvalidTransactions) {
         boolean vmTrace = programTraceProcessor != null;
         logger.trace("Start executeInternal.");
-        logger.trace("applyBlock: block: [{}] tx.list: [{}]", block.getNumber(), block.getTransactionsList().size());
+        List<Transaction> transactionsList = block.getTransactionsList();
+        logger.trace("applyBlock: block: [{}] tx.list: [{}]", block.getNumber(), transactionsList.size());
 
         // Forks the repo, does not change "repository". It will have a completely different
         // image of the repo, where the middle caches are immediately ignored.
@@ -485,7 +486,7 @@ public class BlockExecutor {
 
         int txindex = 0;
 
-        for (Transaction tx : block.getTransactionsList()) {
+        for (Transaction tx : transactionsList) {
             logger.trace("apply block: [{}] tx: [{}] ", block.getNumber(), i);
             if (!parallelizeTransactionHandler.sequentialBucketHasGasAvailable(tx)) {
                 if (discardInvalidTxs) {
@@ -524,7 +525,12 @@ public class BlockExecutor {
                 }
             }
 
-            Optional<Short> bucketId = parallelizeTransactionHandler.addTransaction(tx, readWrittenKeysTracker.getTemporalReadKeys(), readWrittenKeysTracker.getTemporalWrittenKeys(), txExecutor.getGasUsed());
+            Optional<Short> bucketId;
+            if (tx.isRemascTransaction(txindex, transactionsList.size())) {
+                bucketId = parallelizeTransactionHandler.addRemascTransaction(tx, readWrittenKeysTracker.getTemporalReadKeys(), readWrittenKeysTracker.getTemporalWrittenKeys(), txExecutor.getGasUsed());
+            } else {
+                bucketId = parallelizeTransactionHandler.addTransaction(tx, readWrittenKeysTracker.getTemporalReadKeys(), readWrittenKeysTracker.getTemporalWrittenKeys(), txExecutor.getGasUsed());
+            }
             readWrittenKeysTracker.clear();
 
             if (this.registerProgramResults) {
