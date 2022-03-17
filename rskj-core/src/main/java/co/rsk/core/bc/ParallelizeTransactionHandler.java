@@ -174,10 +174,12 @@ public class ParallelizeTransactionHandler {
         return txs;
     }
 
-    public List<Integer> getBucketOrder() {
-        List<Integer> txs = new ArrayList<>();
+    public short[] getBucketOrder() {
+        short[] txs = new short[this.parallelBuckets.size()];
+        short i = 0;
         for (TransactionBucket bucket: this.parallelBuckets) {
-            txs.add(bucket.getNumberOfTransactions());
+            txs[i] = bucket.getNumberOfTransactions();
+            i++;
         }
 
         return txs;
@@ -188,7 +190,7 @@ public class ParallelizeTransactionHandler {
         final Short id;
         final long gasLimit;
         final List<Transaction> transactions;
-        private int numberOfTransactions;
+        private short numberOfTransactions;
         long gasUsedInBucket;
 
         public TransactionBucket(Short id, long bucketGasLimit) {
@@ -226,7 +228,7 @@ public class ParallelizeTransactionHandler {
             return this.transactions;
         }
 
-        public int getNumberOfTransactions() {
+        public short getNumberOfTransactions() {
             return numberOfTransactions;
         }
     }

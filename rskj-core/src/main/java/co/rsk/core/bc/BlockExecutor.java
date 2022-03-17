@@ -150,6 +150,7 @@ public class BlockExecutor {
         header.setGasUsed(result.getGasUsed());
         header.setPaidFees(result.getPaidFees());
         header.setLogsBloom(calculateLogsBloom(result.getTransactionReceipts()));
+        header.setTxExecutionListsEdges(result.getBucketOrder());
 
         block.flushRLP();
         profiler.stop(metric);
@@ -429,6 +430,7 @@ public class BlockExecutor {
                 block,
                 new LinkedList(executedTransactions.values()),
                 new LinkedList(receipts.values()),
+                new short[0],
                 totalGasUsed.longValue(),
                 Coin.valueOf(totalPaidFees.longValue()),
                 vmTrace ? null : track.getTrie()
@@ -590,7 +592,7 @@ public class BlockExecutor {
         logger.trace("Building execution results.");
 
         List<Transaction> executedTransactions = parallelizeTransactionHandler.getTransactionsInOrder();
-        List<Integer> bucketOrder = parallelizeTransactionHandler.getBucketOrder();
+        short[] bucketOrder = parallelizeTransactionHandler.getBucketOrder();
         List<TransactionReceipt> receipts = new ArrayList<>();
 
         for (Transaction tx : executedTransactions) {
