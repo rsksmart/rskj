@@ -417,17 +417,19 @@ public class BridgeUtils {
         Coin valueSentToMe = tx.getValueSentToMe(federationsWallet);
         Coin minimumPegInTxValue = getMinimumPegInTxValue(activations, bridgeConstants);
 
-        if (activations.isActive(RSKIP293)
-            && !isAnyUTXOAmountBelowMinimum(
-                activations,
-                bridgeConstants,
-                tx,
-                federationsWallet
+        if ((activations.isActive(RSKIP293)
+                &&
+                !isAnyUTXOAmountBelowMinimum(
+                    activations,
+                    bridgeConstants,
+                    tx,
+                    federationsWallet
+                )
             )
+            // Legacy minimum validation against the total amount
+            || !valueSentToMe.isLessThan(minimumPegInTxValue)
         ) {
             return true;
-        } else if (!valueSentToMe.isLessThan(minimumPegInTxValue)) {
-            return valueSentToMe.isPositive();
         }
 
         logger.warn(
