@@ -10,6 +10,8 @@ import co.rsk.bitcoinj.core.UTXO;
 import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.bitcoinj.store.BlockStoreException;
 import co.rsk.config.BridgeConstants;
+import co.rsk.config.BridgeMainNetConstants;
+import co.rsk.config.BridgeRegTestConstants;
 import co.rsk.db.MutableTrieCache;
 import co.rsk.db.MutableTrieImpl;
 import co.rsk.test.builders.BridgeSupportBuilder;
@@ -26,10 +28,9 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class BridgeSupportTestBase {
-    protected BridgeConstants bridgeConstantsRegtest;
-    protected BridgeConstants bridgeConstantsMainnet;
-    protected BridgeConstants bridgeConstants;
-    protected NetworkParameters btcParams;
+    protected final BridgeConstants bridgeConstantsRegtest = BridgeRegTestConstants.getInstance();
+    protected final BridgeConstants bridgeConstantsMainnet = BridgeMainNetConstants.getInstance();
+    protected final NetworkParameters btcRegTestParams = bridgeConstantsRegtest.getBtcParams();
     protected BridgeSupportBuilder bridgeSupportBuilder;
     protected ActivationConfig.ForBlock activations;
 
