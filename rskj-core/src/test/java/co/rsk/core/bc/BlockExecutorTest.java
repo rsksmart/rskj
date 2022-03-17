@@ -31,7 +31,6 @@ import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import org.bouncycastle.util.BigIntegers;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
@@ -491,7 +490,7 @@ public class BlockExecutorTest {
         Block block = new BlockGenerator(Constants.regtest(), activationConfig).getBlock(1);
         block.setStateRoot(trie.getHash().getBytes());
 
-        BlockResult blockResult = new BlockResult(block, Collections.emptyList(), Collections.emptyList(), Collections.emptyList(), 0,
+        BlockResult blockResult = new BlockResult(block, Collections.emptyList(), Collections.emptyList(), new short[0], 0,
                 Coin.ZERO, trie);
 
         RskSystemProperties cfg = spy(CONFIG);
@@ -516,7 +515,7 @@ public class BlockExecutorTest {
         Block block = new BlockGenerator(Constants.regtest(), activationConfig).getBlock(1);
         block.setStateRoot(new byte[] { 1, 2, 3, 4 });
 
-        BlockResult blockResult = new BlockResult(block, Collections.emptyList(), Collections.emptyList(), Collections.emptyList(), 0,
+        BlockResult blockResult = new BlockResult(block, Collections.emptyList(), Collections.emptyList(), new short[0], 0,
                 Coin.ZERO, trie);
 
         RskSystemProperties cfg = spy(CONFIG);
