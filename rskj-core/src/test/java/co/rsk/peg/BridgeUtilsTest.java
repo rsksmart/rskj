@@ -3148,16 +3148,10 @@ public class BridgeUtilsTest {
     public void getMinimumPegInTxValue_before_RSKIP219() {
         when(activations.isActive(ConsensusRule.RSKIP219)).thenReturn(false);
 
-        Coin minimumPeginTxValue = bridgeConstantsMainnet.getLegacyMinimumPeginTxValueInSatoshis();
+        Coin minimumPeginTxValue = bridgeConstantsRegtest.getLegacyMinimumPeginTxValueInSatoshis();
         assertEquals(
             minimumPeginTxValue,
-            BridgeUtils.getMinimumPegInTxValue(activations, bridgeConstantsMainnet)
-        );
-
-        minimumPeginTxValue = bridgeConstantsMainnet.getLegacyMinimumPeginTxValueInSatoshis();
-        assertEquals(
-            minimumPeginTxValue,
-            BridgeUtils.getMinimumPegInTxValue(activations, bridgeConstantsMainnet)
+            BridgeUtils.getMinimumPegInTxValue(activations, bridgeConstantsRegtest)
         );
     }
 
@@ -3165,215 +3159,99 @@ public class BridgeUtilsTest {
     public void getMinimumPegInTxValue_after_RSKIP219() {
         when(activations.isActive(ConsensusRule.RSKIP219)).thenReturn(true);
 
-        Coin minimumPeginTxValue = bridgeConstantsMainnet.getMinimumPeginTxValueInSatoshis();
+        Coin minimumPeginTxValue = bridgeConstantsRegtest.getMinimumPeginTxValueInSatoshis();
         assertEquals(
             minimumPeginTxValue,
-            BridgeUtils.getMinimumPegInTxValue(activations, bridgeConstantsMainnet)
-        );
-
-        minimumPeginTxValue = bridgeConstantsMainnet.getMinimumPeginTxValueInSatoshis();
-        assertEquals(
-            minimumPeginTxValue,
-            BridgeUtils.getMinimumPegInTxValue(activations, bridgeConstantsMainnet)
-        );
-    }
-
-    private void testIsAnyUTXOAmountBelowMinimum_has_utxos_below_minimum(
-        boolean isRSKIP293Active,
-        BridgeConstants bridgeConstants,
-        List<Address> addresses
-    ) {
-        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-        when(activations.isActive(ConsensusRule.RSKIP219)).thenReturn(true);
-        when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(isRSKIP293Active);
-
-        Coin minimumPegInTxValue = BridgeUtils.getMinimumPegInTxValue(activations, bridgeConstants);
-        Coin valueBelowMinimum = minimumPegInTxValue.minus(Coin.SATOSHI);
-
-        BtcTransaction btcTx = new BtcTransaction(bridgeConstants.getBtcParams());
-        btcTx.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
-        if (!addresses.isEmpty()){
-            // Add utxo below the minimum sent to the first given address in the list
-            btcTx.addOutput(valueBelowMinimum, addresses.get(0));
-
-            // Add utxos equal to the minimum sent to the rest of the addresses
-            for (int i = 1; i < addresses.size(); i++) {
-                btcTx.addOutput(minimumPegInTxValue, addresses.get(i));
-            }
-        }
-
-        // Add some utxos equal to the minimum sent to random addresses
-        for (int i = 0; i < 3; i++) {
-            btcTx.addOutput(minimumPegInTxValue,PegTestUtils.createRandomBtcAddress(networkParameters));
-        }
-
-        Coin valueAboveMinimum = minimumPegInTxValue.add(Coin.COIN);
-        // Add some utxos above the minimum sent to random addresses
-        for (int i = 0; i < 3; i++) {
-            btcTx.addOutput(valueAboveMinimum,PegTestUtils.createRandomBtcAddress(networkParameters));
-        }
-
-        assertTrue(
-            BridgeUtils.isAnyUTXOAmountBelowMinimum(
-                activations,
-                bridgeConstants,
-                new Context(bridgeConstants.getBtcParams()),
-                btcTx,
-                addresses
-            )
+            BridgeUtils.getMinimumPegInTxValue(activations, bridgeConstantsRegtest)
         );
     }
 
     @Test
     public void testIsAnyUTXOAmountBelowMinimum_has_utxos_below_minimum() {
-        testIsAnyUTXOAmountBelowMinimum_has_utxos_below_minimum(false,
-            bridgeConstantsRegtest,
-            Arrays.asList(
-                PegTestUtils.createRandomBtcAddress(bridgeConstantsRegtest.getBtcParams()),
-                PegTestUtils.createRandomBtcAddress(bridgeConstantsRegtest.getBtcParams()),
-                PegTestUtils.createRandomBtcAddress(bridgeConstantsRegtest.getBtcParams())
-            )
-        );
-
-        testIsAnyUTXOAmountBelowMinimum_has_utxos_below_minimum(true,
-            bridgeConstantsRegtest,
-            Arrays.asList(
-                PegTestUtils.createRandomBtcAddress(bridgeConstantsRegtest.getBtcParams()),
-                PegTestUtils.createRandomBtcAddress(bridgeConstantsRegtest.getBtcParams())
-            )
-        );
-
-        testIsAnyUTXOAmountBelowMinimum_has_utxos_below_minimum(false,
-            bridgeConstantsMainnet,
-            Arrays.asList(
-                PegTestUtils.createRandomBtcAddress(bridgeConstantsMainnet.getBtcParams()),
-                PegTestUtils.createRandomBtcAddress(bridgeConstantsMainnet.getBtcParams())
-            )
-        );
-
-        testIsAnyUTXOAmountBelowMinimum_has_utxos_below_minimum(true,
-            bridgeConstantsMainnet,
-            Arrays.asList(
-                PegTestUtils.createRandomBtcAddress(bridgeConstantsRegtest.getBtcParams()),
-                PegTestUtils.createRandomBtcAddress(bridgeConstantsMainnet.getBtcParams()),
-                PegTestUtils.createRandomBtcAddress(bridgeConstantsMainnet.getBtcParams())
-            )
-        );
-    }
-
-    private void testIsAnyUTXOAmountBelowMinimum_has_utxos_equal_to_minimum(
-        boolean isRSKIP293Active,
-        BridgeConstants bridgeConstants,
-        List<Address> addresses
-    ) {
-        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-        when(activations.isActive(ConsensusRule.RSKIP219)).thenReturn(true);
-        when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(isRSKIP293Active);
-
-        Coin minimumPegInTxValue = BridgeUtils.getMinimumPegInTxValue(activations, bridgeConstants);
+        Coin minimumPegInTxValue = BridgeUtils.getMinimumPegInTxValue(activations, bridgeConstantsRegtest);
         Coin valueBelowMinimum = minimumPegInTxValue.minus(Coin.SATOSHI);
+        Coin valueAboveMinimum = minimumPegInTxValue.plus(Coin.SATOSHI);
 
-        BtcTransaction btcTx = new BtcTransaction(bridgeConstants.getBtcParams());
+        BtcTransaction btcTx = new BtcTransaction(bridgeConstantsRegtest.getBtcParams());
         btcTx.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
 
-        if (!addresses.isEmpty()){
-            // Add utxo equal to minimum sent to the first given address in the list
-            btcTx.addOutput(minimumPegInTxValue, addresses.get(0));
-        }
-        // Add some utxos below the minimum sent to random addresses
-        for (int i = 0; i < 3; i++) {
-            btcTx.addOutput(valueBelowMinimum,PegTestUtils.createRandomBtcAddress(networkParameters));
-        }
+        List<Address> addresses = Arrays.asList(
+            PegTestUtils.createRandomBtcAddress(bridgeConstantsRegtest.getBtcParams()),
+            PegTestUtils.createRandomBtcAddress(bridgeConstantsRegtest.getBtcParams()),
+            PegTestUtils.createRandomBtcAddress(bridgeConstantsRegtest.getBtcParams())
+        );
 
-        Coin valueAboveMinimum = minimumPegInTxValue.add(Coin.COIN);
-        // Add some utxos above the minimum sent to random addresses
-        for (int i = 0; i < 3; i++) {
-            btcTx.addOutput(valueAboveMinimum,PegTestUtils.createRandomBtcAddress(networkParameters));
-        }
+        btcTx.addOutput(valueBelowMinimum, addresses.get(0));
+        btcTx.addOutput(minimumPegInTxValue, addresses.get(1));
+        btcTx.addOutput(valueBelowMinimum, addresses.get(2));
+        btcTx.addOutput(valueAboveMinimum, addresses.get(2));
 
-        assertFalse(
+        assertTrue(
             BridgeUtils.isAnyUTXOAmountBelowMinimum(
                 activations,
-                bridgeConstants,
-                new Context(bridgeConstants.getBtcParams()),
+                bridgeConstantsRegtest,
+                new Context(bridgeConstantsRegtest.getBtcParams()),
                 btcTx,
-                addresses
+                Arrays.asList(addresses.get(0), addresses.get(2))
             )
         );
     }
 
     @Test
-    public void testIsAnyUTXOAmountBelowMinimum_has_utxos_equal_to_minimum() {
-        testIsAnyUTXOAmountBelowMinimum_has_utxos_equal_to_minimum(false,
-            bridgeConstantsRegtest,
-            Arrays.asList(
-                PegTestUtils.createRandomBtcAddress(bridgeConstantsRegtest.getBtcParams()),
-                PegTestUtils.createRandomBtcAddress(bridgeConstantsRegtest.getBtcParams()),
-                PegTestUtils.createRandomBtcAddress(bridgeConstantsRegtest.getBtcParams())
-            )
+    public void testIsAnyUTXOAmountBelowMinimum_has_utxo_below_minimum_among_multiple_outputs() {
+        Coin minimumPegInTxValue = BridgeUtils.getMinimumPegInTxValue(activations, bridgeConstantsRegtest);
+        Coin valueBelowMinimum = minimumPegInTxValue.minus(Coin.SATOSHI);
+        Coin valueAboveMinimum = minimumPegInTxValue.plus(Coin.SATOSHI);
+
+        BtcTransaction btcTx = new BtcTransaction(bridgeConstantsRegtest.getBtcParams());
+        btcTx.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
+
+        List<Address> addresses = Arrays.asList(
+            PegTestUtils.createRandomBtcAddress(bridgeConstantsRegtest.getBtcParams()),
+            PegTestUtils.createRandomBtcAddress(bridgeConstantsRegtest.getBtcParams()),
+            PegTestUtils.createRandomBtcAddress(bridgeConstantsRegtest.getBtcParams())
         );
 
-        testIsAnyUTXOAmountBelowMinimum_has_utxos_equal_to_minimum(true,
-            bridgeConstantsRegtest,
-            Arrays.asList(
-                PegTestUtils.createRandomBtcAddress(bridgeConstantsRegtest.getBtcParams()),
-                PegTestUtils.createRandomBtcAddress(bridgeConstantsRegtest.getBtcParams())
-            )
-        );
+        btcTx.addOutput(valueBelowMinimum, addresses.get(0));
+        btcTx.addOutput(minimumPegInTxValue, addresses.get(0));
+        btcTx.addOutput(minimumPegInTxValue, addresses.get(1));
+        btcTx.addOutput(valueAboveMinimum, addresses.get(1));
+        btcTx.addOutput(valueAboveMinimum, addresses.get(2));
 
-        testIsAnyUTXOAmountBelowMinimum_has_utxos_equal_to_minimum(false,
-            bridgeConstantsMainnet,
-            Arrays.asList(
-                PegTestUtils.createRandomBtcAddress(bridgeConstantsMainnet.getBtcParams()),
-                PegTestUtils.createRandomBtcAddress(bridgeConstantsMainnet.getBtcParams())
-            )
-        );
-
-        testIsAnyUTXOAmountBelowMinimum_has_utxos_equal_to_minimum(true,
-            bridgeConstantsMainnet,
-            Arrays.asList(
-                PegTestUtils.createRandomBtcAddress(bridgeConstantsRegtest.getBtcParams()),
-                PegTestUtils.createRandomBtcAddress(bridgeConstantsMainnet.getBtcParams()),
-                PegTestUtils.createRandomBtcAddress(bridgeConstantsMainnet.getBtcParams())
+        assertTrue(
+            BridgeUtils.isAnyUTXOAmountBelowMinimum(
+                activations,
+                bridgeConstantsRegtest,
+                new Context(bridgeConstantsRegtest.getBtcParams()),
+                btcTx,
+                Arrays.asList(addresses.get(0), addresses.get(2))
             )
         );
     }
 
-    private void testIsAnyUTXOAmountBelowMinimum_has_utxos_above_to_minimum(
-        boolean isRSKIP293Active,
-        BridgeConstants bridgeConstants,
-        List<Address> addresses
-    ) {
-        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-        when(activations.isActive(ConsensusRule.RSKIP219)).thenReturn(true);
-        when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(isRSKIP293Active);
+    @Test
+    public void testIsAnyUTXOAmountBelowMinimum_has_utxo_equal_to_minimum() {
+        Coin minimumPegInTxValue = BridgeUtils.getMinimumPegInTxValue(activations, bridgeConstantsRegtest);
+        Coin valueAboveMinimum = minimumPegInTxValue.plus(Coin.SATOSHI);
 
-        Coin minimumPegInTxValue = BridgeUtils.getMinimumPegInTxValue(activations, bridgeConstants);
-        Coin valueBelowMinimum = minimumPegInTxValue.minus(Coin.SATOSHI);
-
-        BtcTransaction btcTx = new BtcTransaction(bridgeConstants.getBtcParams());
+        BtcTransaction btcTx = new BtcTransaction(bridgeConstantsRegtest.getBtcParams());
         btcTx.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
 
-        Coin valueAboveMinimum = minimumPegInTxValue.add(Coin.COIN);
+        List<Address> addresses = Arrays.asList(
+            PegTestUtils.createRandomBtcAddress(bridgeConstantsRegtest.getBtcParams()),
+            PegTestUtils.createRandomBtcAddress(bridgeConstantsRegtest.getBtcParams()),
+            PegTestUtils.createRandomBtcAddress(bridgeConstantsRegtest.getBtcParams())
+        );
 
-        // Add utxo above the minimum sent to each given address
-        for (Address address: addresses) {
-            btcTx.addOutput(valueAboveMinimum, address);
-        }
-        // Add some utxos below the minimum sent to random addresses
-        for (int i = 0; i < 3; i++) {
-            btcTx.addOutput(valueBelowMinimum,PegTestUtils.createRandomBtcAddress(networkParameters));
-        }
+        btcTx.addOutput(minimumPegInTxValue, addresses.get(0));
+        btcTx.addOutput(valueAboveMinimum, addresses.get(1));
+        btcTx.addOutput(valueAboveMinimum, addresses.get(2));
 
-        // Add some utxos above the minimum sent to random addresses
-        for (int i = 0; i < 3; i++) {
-            btcTx.addOutput(valueAboveMinimum,PegTestUtils.createRandomBtcAddress(networkParameters));
-        }
         assertFalse(
             BridgeUtils.isAnyUTXOAmountBelowMinimum(
                 activations,
-                bridgeConstants,
-                new Context(bridgeConstants.getBtcParams()),
+                bridgeConstantsRegtest,
+                new Context(bridgeConstantsRegtest.getBtcParams()),
                 btcTx,
                 addresses
             )
@@ -3382,119 +3260,210 @@ public class BridgeUtilsTest {
 
     @Test
     public void testIsAnyUTXOAmountBelowMinimum_has_utxos_above_to_minimum() {
-        testIsAnyUTXOAmountBelowMinimum_has_utxos_above_to_minimum(false,
-            bridgeConstantsRegtest,
-            Arrays.asList(
-                PegTestUtils.createRandomBtcAddress(bridgeConstantsRegtest.getBtcParams()),
-                PegTestUtils.createRandomBtcAddress(bridgeConstantsRegtest.getBtcParams())
-            )
-        );
+        Coin minimumPegInTxValue = BridgeUtils.getMinimumPegInTxValue(activations, bridgeConstantsRegtest);
+        Coin valueAboveMinimum = minimumPegInTxValue.plus(Coin.SATOSHI);
 
-        testIsAnyUTXOAmountBelowMinimum_has_utxos_above_to_minimum(true,
-            bridgeConstantsRegtest,
-            Arrays.asList(
-                PegTestUtils.createRandomBtcAddress(bridgeConstantsRegtest.getBtcParams()),
-                PegTestUtils.createRandomBtcAddress(bridgeConstantsRegtest.getBtcParams())
-            )
-        );
-
-        testIsAnyUTXOAmountBelowMinimum_has_utxos_above_to_minimum(false,
-            bridgeConstantsMainnet,
-            Arrays.asList(
-                PegTestUtils.createRandomBtcAddress(bridgeConstantsMainnet.getBtcParams()),
-                PegTestUtils.createRandomBtcAddress(bridgeConstantsMainnet.getBtcParams())
-            )
-        );
-
-        testIsAnyUTXOAmountBelowMinimum_has_utxos_above_to_minimum(true,
-            bridgeConstantsMainnet,
-            Arrays.asList(
-                PegTestUtils.createRandomBtcAddress(bridgeConstantsMainnet.getBtcParams()),
-                PegTestUtils.createRandomBtcAddress(bridgeConstantsMainnet.getBtcParams())
-            )
-        );
-    }
-
-    private void testValidateFastBridgePeginValue_by_network(
-        boolean isRskip293Active,
-        BridgeConstants bridgeConstants
-    ) {
-        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-        when(activations.isActive(ConsensusRule.RSKIP219)).thenReturn(true);
-        when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(isRskip293Active);
-
-        Federation activeFederation = PegTestUtils.createFederation(bridgeConstants, "fa03", "fa04");
-        Address activeFederationAddress = activeFederation.getAddress();
-        Federation retiringFederation = PegTestUtils.createFederation(bridgeConstants, "fa01", "fa02");
-        Address retiringFederationAddress = retiringFederation.getAddress();
-        Context btcContext = new Context(bridgeConstants.getBtcParams());
-
-        Coin minimumPegInTxValue = BridgeUtils.getMinimumPegInTxValue(activations, bridgeConstants);
-        Coin valueBelowMinimum = minimumPegInTxValue.minus(Coin.SATOSHI);
-        BtcTransaction btcTx = new BtcTransaction(bridgeConstants.getBtcParams());
+        BtcTransaction btcTx = new BtcTransaction(bridgeConstantsRegtest.getBtcParams());
         btcTx.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
-        btcTx.addOutput(valueBelowMinimum, activeFederationAddress);
-        btcTx.addOutput(valueBelowMinimum, retiringFederationAddress);
-        FastBridgeTxResponseCodes expectedResult =
-            isRskip293Active? FastBridgeTxResponseCodes.UNPROCESSABLE_TX_AMOUNT_SENT_BELOW_MINIMUM_ERROR :
-                FastBridgeTxResponseCodes.VALID_TX;
 
-        Assert.assertEquals(
-            expectedResult,
-            BridgeUtils.validateFastBridgePeginValue(
-                activations,
-                bridgeConstants,
-                btcContext,
-                btcTx,
-                Collections.singletonList(activeFederationAddress)
-            )
+        List<Address> addresses = Arrays.asList(
+            PegTestUtils.createRandomBtcAddress(bridgeConstantsRegtest.getBtcParams()),
+            PegTestUtils.createRandomBtcAddress(bridgeConstantsRegtest.getBtcParams()),
+            PegTestUtils.createRandomBtcAddress(bridgeConstantsRegtest.getBtcParams())
         );
 
-        valueBelowMinimum = minimumPegInTxValue;
-        btcTx = new BtcTransaction(bridgeConstants.getBtcParams());
-        btcTx.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
-        btcTx.addOutput(valueBelowMinimum, activeFederationAddress);
-        btcTx.addOutput(valueBelowMinimum, retiringFederationAddress);
-        Assert.assertEquals(
-            FastBridgeTxResponseCodes.VALID_TX,
-            BridgeUtils.validateFastBridgePeginValue(
-                activations,
-                bridgeConstants,
-                btcContext,
-                btcTx,
-                Arrays.asList(
-                    activeFederationAddress,
-                    retiringFederationAddress
-                )
-            )
-        );
+        btcTx.addOutput(minimumPegInTxValue, addresses.get(0));
+        btcTx.addOutput(valueAboveMinimum, addresses.get(1));
+        btcTx.addOutput(valueAboveMinimum, addresses.get(2));
 
-        valueBelowMinimum = minimumPegInTxValue.add(minimumPegInTxValue);
-        btcTx = new BtcTransaction(bridgeConstants.getBtcParams());
-        btcTx.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
-        btcTx.addOutput(valueBelowMinimum, activeFederationAddress);
-        btcTx.addOutput(valueBelowMinimum, retiringFederationAddress);
-        Assert.assertEquals(
-            FastBridgeTxResponseCodes.VALID_TX,
-            BridgeUtils.validateFastBridgePeginValue(
+        assertFalse(
+            BridgeUtils.isAnyUTXOAmountBelowMinimum(
                 activations,
-                bridgeConstants,
-                btcContext,
+                bridgeConstantsRegtest,
+                new Context(bridgeConstantsRegtest.getBtcParams()),
                 btcTx,
-                Arrays.asList(
-                    activeFederationAddress,
-                    retiringFederationAddress
-                )
+                addresses
             )
         );
     }
 
     @Test
-    public void testValidateFastBridgePeginValue() {
-        testValidateFastBridgePeginValue_by_network(false, bridgeConstantsMainnet);
-        testValidateFastBridgePeginValue_by_network(false, bridgeConstantsRegtest);
+    public void testValidateFastBridgePeginValue_sent_zero_amount() {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(false);
 
-        testValidateFastBridgePeginValue_by_network(true, bridgeConstantsMainnet);
-        testValidateFastBridgePeginValue_by_network(true, bridgeConstantsRegtest);
+        Federation activeFederation = PegTestUtils.createFederation(bridgeConstantsRegtest, "fa03", "fa04");
+        Address activeFederationAddress = activeFederation.getAddress();
+        Federation retiringFederation = PegTestUtils.createFederation(bridgeConstantsRegtest, "fa01", "fa02");
+        Address retiringFederationAddress = retiringFederation.getAddress();
+        Context btcContext = new Context(bridgeConstantsRegtest.getBtcParams());
+
+        BtcTransaction btcTx = new BtcTransaction(bridgeConstantsRegtest.getBtcParams());
+        btcTx.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
+        btcTx.addOutput(Coin.ZERO, activeFederationAddress);
+        btcTx.addOutput(Coin.ZERO, retiringFederationAddress);
+
+        Assert.assertEquals(
+            FastBridgeTxResponseCodes.UNPROCESSABLE_TX_VALUE_ZERO_ERROR,
+            BridgeUtils.validateFastBridgePeginValue(
+                activations,
+                bridgeConstantsRegtest,
+                btcContext,
+                btcTx,
+                Arrays.asList(activeFederationAddress, retiringFederationAddress)
+            )
+        );
+    }
+
+    @Test
+    public void testValidateFastBridgePeginValue_before_RSKIP293() {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(false);
+
+        Federation activeFederation = PegTestUtils.createFederation(bridgeConstantsRegtest, "fa03", "fa04");
+        Address activeFederationAddress = activeFederation.getAddress();
+        Federation retiringFederation = PegTestUtils.createFederation(bridgeConstantsRegtest, "fa01", "fa02");
+        Address retiringFederationAddress = retiringFederation.getAddress();
+        Context btcContext = new Context(bridgeConstantsRegtest.getBtcParams());
+
+        Coin valueBelowMinimum = BridgeUtils
+            .getMinimumPegInTxValue(activations, bridgeConstantsRegtest)
+            .minus(Coin.SATOSHI);
+
+        BtcTransaction btcTx = new BtcTransaction(bridgeConstantsRegtest.getBtcParams());
+        btcTx.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
+        btcTx.addOutput(valueBelowMinimum, activeFederationAddress);
+        btcTx.addOutput(Coin.COIN, retiringFederationAddress);
+
+        Assert.assertEquals(
+            FastBridgeTxResponseCodes.VALID_TX,
+            BridgeUtils.validateFastBridgePeginValue(
+                activations,
+                bridgeConstantsRegtest,
+                btcContext,
+                btcTx,
+                Arrays.asList(activeFederationAddress, retiringFederationAddress)
+            )
+        );
+    }
+
+    @Test
+    public void testValidateFastBridgePeginValue_after_RSKIP293() {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
+
+        Federation activeFederation = PegTestUtils.createFederation(bridgeConstantsRegtest, "fa03", "fa04");
+        Address activeFederationAddress = activeFederation.getAddress();
+        Federation retiringFederation = PegTestUtils.createFederation(bridgeConstantsRegtest, "fa01", "fa02");
+        Address retiringFederationAddress = retiringFederation.getAddress();
+        Context btcContext = new Context(bridgeConstantsRegtest.getBtcParams());
+
+        BtcTransaction btcTx = new BtcTransaction(bridgeConstantsRegtest.getBtcParams());
+        btcTx.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
+
+        Coin valueBelowMinimum = BridgeUtils
+            .getMinimumPegInTxValue(activations, bridgeConstantsRegtest)
+            .minus(Coin.SATOSHI);
+        btcTx.addOutput(valueBelowMinimum, activeFederationAddress);
+        btcTx.addOutput(Coin.COIN, retiringFederationAddress);
+
+        Assert.assertEquals(
+            FastBridgeTxResponseCodes.UNPROCESSABLE_TX_UTXO_AMOUNT_SENT_BELOW_MINIMUM_ERROR,
+            BridgeUtils.validateFastBridgePeginValue(
+                activations,
+                bridgeConstantsRegtest,
+                btcContext,
+                btcTx,
+                Arrays.asList(activeFederationAddress, retiringFederationAddress)
+            )
+        );
+    }
+
+    @Test
+    public void testValidateFastBridgePeginValue_equal_to_minimum() {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
+
+        Federation activeFederation = PegTestUtils.createFederation(bridgeConstantsRegtest, "fa03", "fa04");
+        Address activeFederationAddress = activeFederation.getAddress();
+        Federation retiringFederation = PegTestUtils.createFederation(bridgeConstantsRegtest, "fa01", "fa02");
+        Address retiringFederationAddress = retiringFederation.getAddress();
+        Context btcContext = new Context(bridgeConstantsRegtest.getBtcParams());
+
+        Coin minimumPegInTxValue = BridgeUtils
+            .getMinimumPegInTxValue(activations, bridgeConstantsRegtest);
+
+        BtcTransaction btcTx = new BtcTransaction(bridgeConstantsRegtest.getBtcParams());
+        btcTx.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
+        btcTx.addOutput(minimumPegInTxValue, activeFederationAddress);
+
+
+        Assert.assertEquals(
+            FastBridgeTxResponseCodes.VALID_TX,
+            BridgeUtils.validateFastBridgePeginValue(
+                activations,
+                bridgeConstantsRegtest,
+                btcContext,
+                btcTx,
+                Arrays.asList(activeFederationAddress, retiringFederationAddress)
+            )
+        );
+
+        // test including output sending values over the minimum to another address
+        btcTx.addOutput(Coin.COIN, retiringFederationAddress);
+        Assert.assertEquals(
+            FastBridgeTxResponseCodes.VALID_TX,
+            BridgeUtils.validateFastBridgePeginValue(
+                activations,
+                bridgeConstantsRegtest,
+                btcContext,
+                btcTx,
+                Arrays.asList(activeFederationAddress, retiringFederationAddress)
+            )
+        );
+    }
+
+    @Test
+    public void testValidateFastBridgePeginValue_above_minimum() {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
+
+        Federation activeFederation = PegTestUtils.createFederation(bridgeConstantsRegtest, "fa03", "fa04");
+        Address activeFederationAddress = activeFederation.getAddress();
+        Federation retiringFederation = PegTestUtils.createFederation(bridgeConstantsRegtest, "fa01", "fa02");
+        Address retiringFederationAddress = retiringFederation.getAddress();
+        Context btcContext = new Context(bridgeConstantsRegtest.getBtcParams());
+
+        Coin aboveMinimumPegInTxValue = BridgeUtils
+            .getMinimumPegInTxValue(activations, bridgeConstantsRegtest).plus(Coin.SATOSHI);
+
+        BtcTransaction btcTx = new BtcTransaction(bridgeConstantsRegtest.getBtcParams());
+        btcTx.addInput(Sha256Hash.ZERO_HASH, 0, new Script(new byte[]{}));
+        btcTx.addOutput(aboveMinimumPegInTxValue, activeFederationAddress);
+
+
+        Assert.assertEquals(
+            FastBridgeTxResponseCodes.VALID_TX,
+            BridgeUtils.validateFastBridgePeginValue(
+                activations,
+                bridgeConstantsRegtest,
+                btcContext,
+                btcTx,
+                Arrays.asList(activeFederationAddress, retiringFederationAddress)
+            )
+        );
+
+        // test including output sending values over the minimum to another address
+        btcTx.addOutput(Coin.COIN, retiringFederationAddress);
+        Assert.assertEquals(
+            FastBridgeTxResponseCodes.VALID_TX,
+            BridgeUtils.validateFastBridgePeginValue(
+                activations,
+                bridgeConstantsRegtest,
+                btcContext,
+                btcTx,
+                Arrays.asList(activeFederationAddress, retiringFederationAddress)
+            )
+        );
     }
 }
