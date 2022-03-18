@@ -222,7 +222,7 @@ public abstract class Secp256k1ServiceTest {
         byte[] s = Arrays.concatenate(new byte[]{1}, ByteUtil.bigIntegerToBytes(this.s, 64));
         byte[] r = Arrays.concatenate(new byte[]{1}, ByteUtil.bigIntegerToBytes(this.r, 64));
         ECDSASignature signature = ECDSASignature.fromComponents(r, s, v);
-        ECKey key = this.getSecp256k1().recoverFromSignature(v, signature, messageHash, true);
+        ECKey key = this.getSecp256k1().recoverFromSignature(v - 27, signature, messageHash, true);
         assertNull(key);
     }
 

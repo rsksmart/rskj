@@ -19,6 +19,7 @@
 
 package org.ethereum.vm.trace;
 
+import com.fasterxml.jackson.annotation.JsonFilter;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.OpCode;
 import org.ethereum.vm.program.Memory;
@@ -29,6 +30,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+@JsonFilter("opFilter")
 public class Op {
 
     private OpCode op;
