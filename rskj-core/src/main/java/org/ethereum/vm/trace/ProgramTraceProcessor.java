@@ -20,14 +20,14 @@
 package org.ethereum.vm.trace;
 
 import co.rsk.crypto.Keccak256;
+import co.rsk.rpc.modules.debug.TraceOptions;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ser.impl.SimpleBeanPropertyFilter;
+import com.fasterxml.jackson.databind.ser.impl.SimpleFilterProvider;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -35,9 +35,17 @@ import java.util.stream.Collectors;
  */
 public class ProgramTraceProcessor {
 
-    private static final ObjectMapper OBJECT_MAPPER = makeObjectMapper();
-
     private final Map<Keccak256, ProgramTrace> traces = new HashMap<>();
+
+    private final TraceOptions traceOptions;
+
+    public ProgramTraceProcessor() {
+        traceOptions = new TraceOptions();
+    }
+
+    public ProgramTraceProcessor(TraceOptions options) {
+        traceOptions = options;
+    }
 
     public void processProgramTrace(ProgramTrace programTrace, Keccak256 txHash) {
         this.traces.put(txHash, programTrace);
@@ -53,7 +61,11 @@ public class ProgramTraceProcessor {
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
 
-        return OBJECT_MAPPER.valueToTree(txTraces);
+        SimpleFilterProvider filterProvider = new SimpleFilterProvider();
+        filterProvider.addFilter("opFilter",
+                SimpleBeanPropertyFilter.serializeAllExcept(traceOptions.getDisabledFields()));
+
+        return makeObjectMapper().setFilterProvider(filterProvider).valueToTree(txTraces);
     }
 
     public JsonNode getProgramTraceAsJsonNode(Keccak256 txHash) {
@@ -63,7 +75,11 @@ public class ProgramTraceProcessor {
             return null;
         }
 
-        return OBJECT_MAPPER.valueToTree(trace);
+        SimpleFilterProvider filterProvider = new SimpleFilterProvider();
+        filterProvider.addFilter("opFilter",
+                SimpleBeanPropertyFilter.serializeAllExcept(traceOptions.getDisabledFields()));
+
+        return makeObjectMapper().setFilterProvider(filterProvider).valueToTree(trace);
     }
 
     private static ObjectMapper makeObjectMapper() {
