@@ -1,0 +1,412 @@
+package co.rsk.db;
+
+import co.rsk.core.RskAddress;
+import co.rsk.trie.Trie;
+import org.ethereum.core.AccountState;
+import org.ethereum.crypto.Keccak256Helper;
+import org.ethereum.db.ByteArrayWrapper;
+import org.ethereum.db.OperationType;
+import org.ethereum.db.TrackedNode;
+import org.ethereum.vm.DataWord;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Random;
+import java.util.Set;
+
+import static org.ethereum.db.OperationType.READ_OPERATION;
+import static org.ethereum.db.OperationType.WRITE_OPERATION;
+import static org.junit.Assert.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
+
+public class MutableRepositoryTrackedTest {
+
+    private static final String TRANSACTION_HASH = Keccak256Helper.keccak256String("something".getBytes(StandardCharsets.UTF_8));
+    private MutableRepositoryTestable spyRepository;
+
+    @Before
+    public void setup() {
+        spyRepository = newMutableRepositoryTestable();
+    }
+
+    // Testing internalGet calls: getCode, isContract, getStorageBytes, getStorageValue, getAccountState
+
+    @Test
+    public void internalGet_getCode_shouldTriggerNodeTrackingIfValueItsPresent() {
+        RskAddress accAddress1 = randomAccountAddress();
+
+        // a nonexistent account
+        spyRepository.getCode(randomAccountAddress());
+        // todo(fedejinich) explain invokes
+        verifyNodeTracking(1, 0);
+
+        spyRepository = newMutableRepositoryTestable();
+
+        spyRepository.createAccount(accAddress1);
+        spyRepository.setupContract(accAddress1);
+        spyRepository.saveCode(accAddress1, "someCode".getBytes(StandardCharsets.UTF_8));
+
+        spyRepository.getCode(accAddress1);
+        // todo(fedejinich) explain invokes
+        verifyNodeTracking(4, 3);
+    }
+
+    @Test
+    public void internalGet_isContract_shouldTriggerNodeTrackingIfValueItsPresent() {
+        // a nonexistent account
+        spyRepository.isContract(randomAccountAddress());
+        // todo(fedejinich) explain invokes
+        verifyNodeTracking(1, 0);
+
+        spyRepository = newMutableRepositoryTestable();
+
+        RskAddress accAddress1 = randomAccountAddress();
+
+        spyRepository.createAccount(accAddress1);
+        spyRepository.setupContract(accAddress1);
+        spyRepository.saveCode(accAddress1, "someCode".getBytes(StandardCharsets.UTF_8));
+
+        spyRepository.isContract(accAddress1);
+        // todo(fedejinich) explain invokes
+        verifyNodeTracking(2, 3);
+    }
+
+    @Test
+    public void internalGet_getStorageBytes_shouldTriggerNodeTrackingIfValueItsPresent() {
+        RskAddress accAddress1 = randomAccountAddress();
+
+        // should track a nonexistent storage key
+        spyRepository.getStorageBytes(accAddress1, DataWord.ZERO);
+        // todo(fedejinich) explain invokes
+        verifyNodeTracking(1, 0);
+
+        spyRepository = newMutableRepositoryTestable();
+
+        // should track a nonexistent account
+        spyRepository.getStorageBytes(randomAccountAddress(), DataWord.ONE);
+        // todo(fedejinich) explain invokes
+        verifyNodeTracking(1, 0);
+
+        spyRepository = newMutableRepositoryTestable();
+
+        spyRepository.createAccount(accAddress1);
+        spyRepository.setupContract(accAddress1);
+        spyRepository.saveCode(accAddress1, "someCode".getBytes(StandardCharsets.UTF_8));
+        spyRepository.addStorageBytes(accAddress1, DataWord.ONE,
+                "something".getBytes(StandardCharsets.UTF_8));
+
+        spyRepository.getStorageBytes(accAddress1, DataWord.ONE);
+        // todo(fedejinich) explain invokes
+        verifyNodeTracking(3, 4);
+    }
+
+    @Test
+    public void internalGet_getStorageValue_shouldTriggerNodeTrackingIfValueItsPresent() {
+        RskAddress accAddress1 = randomAccountAddress();
+
+        // nonexistent storage key
+        spyRepository.getStorageValue(accAddress1, DataWord.valueOf(2));
+        // todo(fedejinich) explain invokes
+        verifyNodeTracking(1, 0);
+
+        spyRepository = newMutableRepositoryTestable();
+
+        // nonexistent account
+        spyRepository.getStorageValue(randomAccountAddress(), DataWord.ONE);
+        // todo(fedejinich) explain invokes
+        verifyNodeTracking(1, 0);
+
+        spyRepository = newMutableRepositoryTestable();
+
+        // existent account & storage key
+        spyRepository.createAccount(accAddress1);
+        spyRepository.setupContract(accAddress1);
+        spyRepository.saveCode(accAddress1, "someCode".getBytes(StandardCharsets.UTF_8));
+        spyRepository.addStorageBytes(accAddress1, DataWord.ONE,
+                "something".getBytes(StandardCharsets.UTF_8));
+
+        spyRepository.getStorageValue(accAddress1, DataWord.ONE);
+
+        // todo(fedejinich) explain invokes
+        verifyNodeTracking(3, 4);
+    }
+
+    @Test
+    public void internalGet_getAccountState_shouldTriggerNodeTrackingIfValueItsPresent() {
+        // should track a nonexistent account state
+        spyRepository.getAccountState(randomAccountAddress());
+        // todo(fedejinich) explain invokes
+        verifyNodeTracking(1, 0);
+
+        spyRepository = newMutableRepositoryTestable();
+
+        RskAddress accAddress1 = randomAccountAddress();
+
+        spyRepository.createAccount(accAddress1);
+        spyRepository.setupContract(accAddress1);
+        spyRepository.saveCode(accAddress1, "someCode".getBytes(StandardCharsets.UTF_8));
+        spyRepository.addStorageBytes(accAddress1, DataWord.ONE,
+                "something".getBytes(StandardCharsets.UTF_8));
+
+        spyRepository.getAccountState(accAddress1);
+        // todo(fedejinich) explain invokes
+        verifyNodeTracking(3, 4);
+    }
+
+    // Testing internalPut calls: setupContract, saveCode, addStorageBytes, updateAccountState
+
+    @Test
+    public void internalPut_setupContract_shouldTrackNodesIfValueItsPresent() {
+        spyRepository.setupContract(randomAccountAddress());
+        // todo(fedejinich) explain invokes
+        verifyNodeTracking(0, 1);
+    }
+
+    @Test
+    public void internalPut_saveCode_shouldTrackNodesIfValueItsPresent() {
+        spyRepository.saveCode(randomAccountAddress(), "something".getBytes(StandardCharsets.UTF_8));
+        // todo(fedejinich) explain invokes
+        verifyNodeTracking(1, 2);
+    }
+
+    @Test
+    public void internalPut_addStorageBytes_shouldTrackNodesIfValueItsPresent() {
+        RskAddress accAddress1 = randomAccountAddress();
+
+        spyRepository.createAccount(accAddress1);
+
+        spyRepository.addStorageBytes(accAddress1, DataWord.ONE, "something".getBytes(StandardCharsets.UTF_8));
+        // todo(fedejinich) explain invokes
+        verifyNodeTracking(1, 2);
+    }
+
+    @Test
+    public void internalPut_updateAccountState_shouldTrackNodesIfValueItsPresent() {
+        RskAddress accAddress1 = randomAccountAddress();
+
+        spyRepository.createAccount(accAddress1);
+
+        spyRepository.updateAccountState(accAddress1, new AccountState());
+
+        // todo(fedejinich) explain invokes
+        verifyNodeTracking(0, 2);
+    }
+
+    // Testing internalGetValueHash calls: getCodeHashStandard, getCodeHashNonStandard
+
+    @Test
+    public void internalGetValueHash_getCodeHashStandard_shouldTrackNodesIfValueItsPresent() {
+        // track a nonexistent account state
+        spyRepository.getCodeHashStandard(randomAccountAddress());
+        // todo(fedejinich) explain invokes
+        verifyNodeTracking(1, 0);
+
+        spyRepository = newMutableRepositoryTestable();
+
+        RskAddress accAddress1 = randomAccountAddress();
+
+        spyRepository.createAccount(accAddress1);
+
+        spyRepository.getCodeHashStandard(accAddress1);
+
+        // todo(fedejinich) explain invokes
+        verifyNodeTracking(2, 1);
+    }
+
+    @Test
+    public void internalGetValueHash_getCodeHashNonStandard_shouldTrackNodesIfValueItsPresent() {
+        // a nonexistent account state
+        spyRepository.getCodeHashNonStandard(randomAccountAddress());
+
+        // READ: isExist (MutableRepository:210), WRITE: 0
+        verifyNodeTracking(1, 0);
+
+        spyRepository = newMutableRepositoryTestable();
+
+        // an existent account
+        RskAddress accAddress1 = randomAccountAddress();
+
+        spyRepository.createAccount(accAddress1);
+
+        spyRepository.getCodeHashNonStandard(accAddress1);
+
+        // todo(fedejinich) explain invokes
+        verifyNodeTracking(2, 1);
+    }
+
+    private void verifyNodeTracking(int invokedReads, int invokedWrites) {
+        verify(spyRepository, times(invokedReads)).trackNodeReadOperation(any(), anyBoolean());
+        verify(spyRepository, times(invokedWrites)).trackNodeWriteOperation(any(), anyBoolean());
+    }
+
+    // Testing internalGetValueLength calls: isExist, getCodeLength
+
+    @Test
+    public void internalGetValueLength_isExist_shouldTrackNodesIfValueItsPresent() {
+        // should track a nonexistent account state
+        spyRepository.isExist(randomAccountAddress());
+        // todo(fedejinich) explain invokes
+        verifyNodeTracking(1, 0);
+
+        spyRepository = newMutableRepositoryTestable();
+
+        RskAddress accAddress1 = randomAccountAddress();
+
+        spyRepository.createAccount(accAddress1);
+
+        spyRepository.isExist(accAddress1);
+
+        // one at createAccount(), the other one at isExist()
+        // todo(fedejinich) explain invokes
+        verifyNodeTracking(1, 1);
+    }
+
+    @Test
+    public void internalGetValueLength_getCodeLength_shouldTrackNodesIfValueItsPresent() {
+        // should track a nonexistent account state
+        spyRepository.getCodeLength(randomAccountAddress());
+        // todo(fedejinich) explain invokes
+        verifyNodeTracking(1, 0);
+
+        spyRepository = newMutableRepositoryTestable();
+
+        RskAddress accAddress1 = randomAccountAddress();
+
+        spyRepository.createAccount(accAddress1);
+        spyRepository.setupContract(accAddress1);
+        spyRepository.saveCode(accAddress1, "something".getBytes(StandardCharsets.UTF_8));
+
+        spyRepository.getCodeLength(accAddress1);
+        // todo(fedejinich) explain invokes
+        verifyNodeTracking(3, 3);
+
+        spyRepository = newMutableRepositoryTestable();
+
+        RskAddress accAddress2 = randomAccountAddress();
+        spyRepository.createAccount(accAddress2);
+
+        spyRepository.getCodeLength(accAddress2);
+
+        // because it's an address that doesn't have any code
+        // todo(fedejinich) explain invokes
+        verifyNodeTracking(2, 1);
+    }
+
+    // Testing internalGetStorageKeys calls: getStorageKeys
+
+    @Test
+    public void internalGetStorageKeys_getStorageKeys_shouldTrackNodesIfValueItsPresent() {
+        // should track on nonexistent account state
+        spyRepository.getStorageKeys(randomAccountAddress());
+        // todo(fedejinich) explain invokes
+        verifyNodeTracking(1, 0);
+
+        spyRepository = newMutableRepositoryTestable();
+
+        RskAddress accAddress1 = randomAccountAddress();
+
+        spyRepository.createAccount(accAddress1);
+        spyRepository.setupContract(accAddress1);
+        spyRepository.saveCode(accAddress1, "something".getBytes(StandardCharsets.UTF_8));
+
+        spyRepository.getStorageKeys(accAddress1);
+        // todo(fedejinich) explain invokes
+        verifyNodeTracking(2, 3);
+    }
+
+    // testing trackNode
+
+    @Test
+    public void trackNode_shouldTrackNodesWithoutDuplicates() {
+        List<TrackedNode> testNodes = Arrays.asList(
+                trackedNodeReadOperation("key1", false),
+                trackedNodeWriteOperation("key1", false),
+                trackedNodeReadOperation("key1", true),
+                trackedNodeReadOperation("key1", true),
+                trackedNodeWriteOperation("key2", false),
+                trackedNodeReadOperation("key2", true),
+                trackedNodeWriteOperation("key2", true),
+                trackedNodeReadOperation("key3", true),
+                trackedNodeWriteOperation("key3", false),
+                trackedNodeReadOperation("key4", true),
+                trackedNodeReadOperation("key4", true),
+                trackedNodeReadOperation("key4", true),
+                trackedNodeReadOperation("key4", true),
+                trackedNodeWriteOperation("key5", false),
+                trackedNodeReadOperation("key6", true),
+                trackedNodeWriteOperation("key6", false),
+                trackedNodeReadOperation("key7", false)
+        );
+
+        MutableRepositoryTestable repository = MutableRepositoryTestable
+                .trackedRepository(new MutableTrieImpl(null, new Trie()));
+        repository.setTrackedTransactionHash(TRANSACTION_HASH);
+
+        // track nodes
+        testNodes.forEach(v -> {
+            if(v.getOperationType().equals(READ_OPERATION)) {
+                repository.trackNodeReadOperation(v.getKey().getData(), v.getResult());
+            } else if(v.getOperationType().equals(WRITE_OPERATION)) {
+                repository.trackNodeWriteOperation(v.getKey().getData(), v.isDelete());
+            } else {
+                fail("shouldn't reach here");
+            }
+        });
+
+        Set<TrackedNode> trackedNodes = repository.getTrackedNodes(TRANSACTION_HASH);
+
+        // all new nodes, they should be tracked normally
+        assertEquals(11, trackedNodes.size());
+        assertTrue(trackedNodes.contains(trackedNodeReadOperation("key1",false)));
+        assertTrue(trackedNodes.contains(trackedNodeWriteOperation("key1", false)));
+        assertTrue(trackedNodes.contains(trackedNodeReadOperation("key1", true)));
+        assertTrue(trackedNodes.contains(trackedNodeWriteOperation("key2", false)));
+        assertTrue(trackedNodes.contains(trackedNodeReadOperation("key2", true)));
+        assertTrue(trackedNodes.contains(trackedNodeWriteOperation("key2", true)));
+        assertTrue(trackedNodes.contains(trackedNodeReadOperation("key3",true)));
+        assertTrue(trackedNodes.contains(trackedNodeWriteOperation("key3", false)));
+        assertTrue(trackedNodes.contains(trackedNodeReadOperation("key4", true)));
+        assertTrue(trackedNodes.contains(trackedNodeWriteOperation("key5", false)));
+        assertTrue(trackedNodes.contains(trackedNodeReadOperation("key6", true)));
+        assertTrue(trackedNodes.contains(trackedNodeWriteOperation("key6", false)));
+        assertTrue(trackedNodes.contains(trackedNodeReadOperation("key7", false)));
+    }
+
+    private TrackedNode trackedNodeWriteOperation(String key, boolean isDelete) {
+        return trackedNode(key, WRITE_OPERATION, true, isDelete);
+    }
+
+    private TrackedNode trackedNodeReadOperation(String key, boolean result) {
+        return trackedNode(key, READ_OPERATION, result, false);
+    }
+
+    private static TrackedNode trackedNode(String key, OperationType operationType, boolean result, boolean isDelete) {
+        return new TrackedNode(
+                new ByteArrayWrapper(key.getBytes(StandardCharsets.UTF_8)),
+                operationType,
+                TRANSACTION_HASH,
+                result,
+                isDelete
+        );
+    }
+
+    private static RskAddress randomAccountAddress() {
+        byte[] bytes = new byte[20];
+
+        new Random().nextBytes(bytes);
+
+        return new RskAddress(bytes);
+    }
+
+    private MutableRepositoryTestable newMutableRepositoryTestable() {
+        MutableTrieCache mutableTrie = new MutableTrieCache(new MutableTrieImpl(null, new Trie()));
+        MutableRepositoryTestable repositoryTestable = MutableRepositoryTestable.trackedRepository(mutableTrie);
+        repositoryTestable.setTrackedTransactionHash(TRANSACTION_HASH);
+
+        return spy(repositoryTestable);
+    }
+}
