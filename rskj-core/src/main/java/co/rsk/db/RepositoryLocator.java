@@ -94,4 +94,17 @@ public class RepositoryLocator {
 
         return trie.map(t -> new MutableTrieImpl(trieStore, t));
     }
+
+    /**
+     * Retrieves a repository with node tracking capabilities.
+     * @param header the header to retrieve the state from
+     * @return a modifiable {@link Repository}
+     * @throws IllegalArgumentException if the state is not found.
+     * */
+    public MutableRepository trackedRepositoryAt(BlockHeader header) {
+        return mutableTrieSnapshotAt(header)
+                .map(MutableTrieCache::new)
+                .map(MutableRepository::trackedRepository)
+                .orElseThrow(() -> trieNotFoundException(header));
+    }
 }
