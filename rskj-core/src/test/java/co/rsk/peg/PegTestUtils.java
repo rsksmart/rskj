@@ -45,6 +45,7 @@ import java.util.stream.Collectors;
 import co.rsk.peg.simples.SimpleRskTransaction;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.Transaction;
+import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.Keccak256Helper;
 
 /**
@@ -188,6 +189,11 @@ public class PegTestUtils {
             keys.add(new BtcECKey());
         }
         return keys;
+    }
+
+    public static RskAddress createRandomRskAddress() {
+        ECKey key = ECKey.fromPublicOnly(new BtcECKey().getPubKey());
+        return new RskAddress(key.getAddress());
     }
 
     public static UTXO createUTXO(int nHash, long index, Coin value) {
