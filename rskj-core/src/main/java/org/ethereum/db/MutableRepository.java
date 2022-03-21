@@ -37,23 +37,64 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.Nonnull;
 import java.math.BigInteger;
 import java.util.*;
+import java.util.stream.Collectors;
 
+import static org.ethereum.db.OperationType.*;
+
+// todo(fedejinich) Currently MutableRepository has the capability of tracking trie involved nodes,
+//  this is useful for storage rent and parallel txs processing.
+//  NOTE: tracking capability might be extracted into a MutableRepositoryTracked
 public class MutableRepository implements Repository {
     private static final Logger logger = LoggerFactory.getLogger("repository");
     private static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
     public static final Keccak256 KECCAK_256_OF_EMPTY_ARRAY = new Keccak256(Keccak256Helper.keccak256(EMPTY_BYTE_ARRAY));
     private static final byte[] ONE_BYTE_ARRAY = new byte[] { 0x01 };
 
-    private final TrieKeyMapper trieKeyMapper;
-    private final MutableTrie mutableTrie;
+    protected final TrieKeyMapper trieKeyMapper;
+    protected final MutableTrie mutableTrie;
 
-    public MutableRepository(TrieStore trieStore, Trie trie) {
-        this(new MutableTrieImpl(trieStore, trie));
-    }
+    // todo(fedejinich) ALL THIS MEMBERS MIGHT BE MOVED TO MutableRepositoryTracked
+    // enables node tracking feature
+    private final boolean enableTracking;
+    // a set to track all the used trie-value-containing nodes in this repository (and its children repositories)
+    protected final Set<TrackedNode> trackedNodes; // todo(fedejinich) this might be moved to MutableRepositoryTracked
+    // a list of nodes tracked nodes that were rolled back (due to revert or OOG)
+    protected final List<TrackedNode> rollbackNodes; // todo(fedejinich) this might be moved to MutableRepositoryTracked
+    // parent repository to commit tracked nodes
+    protected final MutableRepository parentRepository; // todo(fedejinich) this might be moved to MutableRepositoryTracked
+    // this contains the hash of the ongoing tracked transaction
+    protected String trackedTransactionHash = "NO_TRANSACTION_HASH";  // todo(fedejinich) this might be moved to MutableRepositoryTracked
 
-    public MutableRepository(MutableTrie mutableTrie) {
+    // default constructor
+    protected MutableRepository(MutableTrie mutableTrie, MutableRepository parentRepository,
+                                Set<TrackedNode> trackedNodes, List<TrackedNode> rollbackNodes,
+                                boolean enableTracking) {
         this.trieKeyMapper = new TrieKeyMapper();
         this.mutableTrie = mutableTrie;
+        this.parentRepository = parentRepository;
+        this.trackedNodes = trackedNodes;
+        this.rollbackNodes = rollbackNodes;
+        this.enableTracking = enableTracking;
+    }
+
+    // creates a new repository (tracking disabled)
+    public MutableRepository(MutableTrie mutableTrie) {
+        this(mutableTrie,  null, Collections.emptySet(), Collections.emptyList(), false);
+    }
+
+    // another way to create a repository (tracking disabled)
+    public MutableRepository(TrieStore trieStore, Trie trie) {
+        this(new MutableTrieImpl(trieStore, trie), null, new HashSet<>(), new ArrayList<>(), false);
+    }
+
+    // useful for key tracking, it connects between repositories. the root Repository will contain a null parentRepository
+    protected MutableRepository(MutableTrie mutableTrie, MutableRepository parentRepository, boolean enableTracking) {
+        this(mutableTrie, parentRepository, new HashSet<>(), new ArrayList<>(), enableTracking);
+    }
+
+    // creates a tracked repository, all the child repositories (created with startTracking()) will also be tracked
+    public static MutableRepository trackedRepository(MutableTrie mutableTrieCache) {
+        return new MutableRepository(mutableTrieCache, null, true);
     }
 
     @Override
@@ -71,13 +112,14 @@ public class MutableRepository implements Repository {
     @Override
     public synchronized void setupContract(RskAddress addr) {
         byte[] prefix = trieKeyMapper.getAccountStoragePrefixKey(addr);
-        mutableTrie.put(prefix, ONE_BYTE_ARRAY);
+        internalPut(prefix, ONE_BYTE_ARRAY);
     }
 
     @Override
     public synchronized boolean isExist(RskAddress addr) {
         // Here we assume size != 0 means the account exists
-        return mutableTrie.getValueLength(trieKeyMapper.getAccountKey(addr)).compareTo(Uint24.ZERO) > 0;
+        return internalGetValueLength(trieKeyMapper.getAccountKey(addr))
+                .compareTo(Uint24.ZERO) > 0;
     }
 
     @Override
@@ -94,7 +136,7 @@ public class MutableRepository implements Repository {
 
     @Override
     public synchronized void delete(RskAddress addr) {
-        mutableTrie.deleteRecursive(trieKeyMapper.getAccountKey(addr));
+        internalDeleteRecursive(trieKeyMapper.getAccountKey(addr));
     }
 
     @Override
@@ -137,7 +179,7 @@ public class MutableRepository implements Repository {
     @Override
     public synchronized void saveCode(RskAddress addr, byte[] code) {
         byte[] key = trieKeyMapper.getCodeKey(addr);
-        mutableTrie.put(key, code);
+        internalPut(key, code);
 
         if (code != null && code.length != 0 && !isExist(addr)) {
             createAccount(addr);
@@ -152,7 +194,7 @@ public class MutableRepository implements Repository {
         }
 
         byte[] key = trieKeyMapper.getCodeKey(addr);
-        return mutableTrie.getValueLength(key).intValue();
+        return internalGetValueLength(key).intValue();
     }
 
     @Override
@@ -167,7 +209,7 @@ public class MutableRepository implements Repository {
         }
 
         byte[] key = trieKeyMapper.getCodeKey(addr);
-        Optional<Keccak256> valueHash = mutableTrie.getValueHash(key);
+        Optional<Keccak256> valueHash = internalGetValueHash(key);
 
         //Returning ZERO_HASH is the non standard implementation we had pre RSKIP169 implementation
         //and thus me must honor it.
@@ -187,7 +229,7 @@ public class MutableRepository implements Repository {
 
         byte[] key = trieKeyMapper.getCodeKey(addr);
 
-        return mutableTrie.getValueHash(key).orElse(KECCAK_256_OF_EMPTY_ARRAY);
+        return internalGetValueHash(key).orElse(KECCAK_256_OF_EMPTY_ARRAY);
     }
 
     @Override
@@ -202,13 +244,13 @@ public class MutableRepository implements Repository {
         }
 
         byte[] key = trieKeyMapper.getCodeKey(addr);
-        return mutableTrie.get(key);
+        return internalGet(key);
     }
 
     @Override
     public boolean isContract(RskAddress addr) {
         byte[] prefix = trieKeyMapper.getAccountStoragePrefixKey(addr);
-        return mutableTrie.get(prefix) != null;
+        return internalGet(prefix) != null;
     }
 
     @Override
@@ -233,16 +275,16 @@ public class MutableRepository implements Repository {
         // conversion here only applies if this is called directly. If suppose this only occurs in tests, but it can
         // also occur in precompiled contracts that store data directly using this method.
         if (value == null || value.length == 0) {
-            mutableTrie.put(triekey, null);
+            internalPut(triekey, null); // todo(fedejinich) why put(key, null) and not deleteRecursive(key) ?
         } else {
-            mutableTrie.put(triekey, value);
+            internalPut(triekey, value);
         }
     }
 
     @Override
     public synchronized DataWord getStorageValue(RskAddress addr, DataWord key) {
         byte[] triekey = trieKeyMapper.getAccountStorageKey(addr, key);
-        byte[] value = mutableTrie.get(triekey);
+        byte[] value = internalGet(triekey);
         if (value == null) {
             return null;
         }
@@ -253,13 +295,13 @@ public class MutableRepository implements Repository {
     @Override
     public synchronized byte[] getStorageBytes(RskAddress addr, DataWord key) {
         byte[] triekey = trieKeyMapper.getAccountStorageKey(addr, key);
-        return mutableTrie.get(triekey);
+        return internalGet(triekey);
     }
 
     @Override
     public Iterator<DataWord> getStorageKeys(RskAddress addr) {
         // -1 b/c the first bit is implicit in the storage node
-        return mutableTrie.getStorageKeys(addr);
+        return internalGetStorageKeys(addr);
     }
 
     @Override
@@ -309,24 +351,38 @@ public class MutableRepository implements Repository {
     }
 
     // To start tracking, a new repository is created, with a MutableTrieCache in the middle
+    // todo(fedejinich) to me this should be named as newChildRepository()
     @Override
     public synchronized Repository startTracking() {
-        return new MutableRepository(new MutableTrieCache(mutableTrie));
+        MutableRepository mutableRepository = new MutableRepository(new MutableTrieCache(this.mutableTrie), this, this.enableTracking);
+        mutableRepository.setTrackedTransactionHash(trackedTransactionHash); // todo(fedejinich) this will be moved to MutableRepositoryTracked
+        return mutableRepository;
     }
 
     @Override
     public void save() {
-        mutableTrie.save();
+        this.mutableTrie.save();
     }
 
     @Override
     public synchronized void commit() {
-        mutableTrie.commit();
+        this.mutableTrie.commit();
+
+        if(this.parentRepository != null) {
+            this.parentRepository.mergeTrackedNodes(this.trackedNodes);
+            this.parentRepository.addRollbackNodes(this.rollbackNodes);
+        }
     }
 
     @Override
     public synchronized void rollback() {
-        mutableTrie.rollback();
+        this.mutableTrie.rollback();
+
+        if(parentRepository != null) {
+            this.parentRepository.addRollbackNodes(this.trackedNodes);
+            this.trackedNodes.clear();
+            this.rollbackNodes.clear();
+        }
     }
 
     @Override
@@ -341,10 +397,20 @@ public class MutableRepository implements Repository {
     @Override
     public synchronized void updateAccountState(RskAddress addr, final AccountState accountState) {
         byte[] accountKey = trieKeyMapper.getAccountKey(addr);
-        mutableTrie.put(accountKey, accountState.getEncoded());
+        internalPut(accountKey, accountState.getEncoded());
     }
 
-    @VisibleForTesting
+    @Nonnull
+    private synchronized AccountState getAccountStateOrCreateNew(RskAddress addr) {
+        AccountState account = getAccountState(addr);
+        return (account == null) ? createAccount(addr) : account;
+    }
+
+    private byte[] getAccountData(RskAddress addr) {
+        return internalGet(trieKeyMapper.getAccountKey(addr));
+    }
+
+    @VisibleForTesting // todo(techdebt) this method shouldn't be here
     public byte[] getStorageStateRoot(RskAddress addr) {
         byte[] prefix = trieKeyMapper.getAccountStoragePrefixKey(addr);
 
@@ -360,13 +426,102 @@ public class MutableRepository implements Repository {
         return storageRootNode.getHash().getBytes();
     }
 
-    @Nonnull
-    private synchronized AccountState getAccountStateOrCreateNew(RskAddress addr) {
-        AccountState account = getAccountState(addr);
-        return (account == null) ? createAccount(addr) : account;
+    // todo(fedejinich) all the content below might be extracted to MutableRepositoryTracked
+
+    public Set<TrackedNode> getTrackedNodes(String transactionHash) {
+        return this.trackedNodes.stream()
+                .filter(trackedNode -> trackedNode.getTransactionHash().equals(transactionHash))
+                .collect(Collectors.toSet());
     }
 
-    private byte[] getAccountData(RskAddress addr) {
-        return mutableTrie.get(trieKeyMapper.getAccountKey(addr));
+    public List<TrackedNode> getRollBackNodes(String transactionHash) {
+        return this.rollbackNodes.stream()
+                .filter(trackedNode -> trackedNode.getTransactionHash().equals(transactionHash))
+                .collect(Collectors.toList());
+    }
+
+    public void setTrackedTransactionHash(String trackedTransactionHash) {
+        this.trackedTransactionHash = trackedTransactionHash;
+    }
+
+    // Internal methods contains node tracking
+
+    protected void internalPut(byte[] key, byte[] value) {
+        mutableTrie.put(key, value);
+        // todo(fedejinich) should track delete operation (value == null)
+        trackNodeWriteOperation(key, value == null);
+    }
+
+    protected void internalDeleteRecursive(byte[] key) {
+        // todo(fedejinich) what happens for non existing keys? should track with false result?
+        mutableTrie.deleteRecursive(key);
+        trackNodeWriteOperation(key, true);
+    }
+
+    protected byte[] internalGet(byte[] key) {
+        byte[] value = mutableTrie.get(key);
+
+        // todo(fedejinich) should track get() success with a bool (value != null)
+        trackNodeReadOperation(key, value != null);
+
+        return value;
+    }
+
+    protected Optional<Keccak256> internalGetValueHash(byte[] key) {
+        Optional<Keccak256> valueHash = mutableTrie.getValueHash(key);
+
+        trackNodeReadOperation(key, valueHash.isPresent());
+
+        return valueHash;
+    }
+
+    protected Uint24 internalGetValueLength(byte[] key) {
+        Uint24 valueLength = mutableTrie.getValueLength(key);
+
+        trackNodeReadOperation(key, valueLength != Uint24.ZERO);
+
+        return valueLength;
+    }
+
+    protected Iterator<DataWord> internalGetStorageKeys(RskAddress addr) {
+        Iterator<DataWord> storageKeys = mutableTrie.getStorageKeys(addr);
+
+        // todo(fedejinich) how should I track the right key/s?
+        boolean result = !storageKeys.equals(Collections.emptyIterator());
+        byte[] accountStoragePrefixKey = trieKeyMapper.getAccountStoragePrefixKey(addr);
+
+        trackNodeReadOperation(accountStoragePrefixKey, result);
+
+        return storageKeys;
+    }
+
+    protected void trackNodeWriteOperation(byte[] key, boolean isDelete) {
+        trackNode(key, WRITE_OPERATION, true, isDelete);
+    }
+
+    protected void trackNodeReadOperation(byte[] key, boolean result) {
+        trackNode(key, READ_OPERATION, result, false);
+    }
+
+    protected void trackNode(byte[] key, OperationType operationType, boolean result, boolean isDelete) {
+        if(this.enableTracking) {
+            // todo(fedejinich) NEED TO DEFINE WHEN/HOW TRACK CONTRACT CODES OPERATIONS
+            TrackedNode trackedNode = new TrackedNode(
+                new ByteArrayWrapper(key),
+                operationType,
+                this.trackedTransactionHash,
+                result,
+                isDelete
+            );
+            this.trackedNodes.add(trackedNode);
+        }
+    }
+
+    private void mergeTrackedNodes(Set<TrackedNode> trackedNodes) {
+        this.trackedNodes.addAll(trackedNodes);
+    }
+
+    private void addRollbackNodes(Collection<TrackedNode> trackedNodes) {
+        this.rollbackNodes.addAll(trackedNodes);
     }
 }
