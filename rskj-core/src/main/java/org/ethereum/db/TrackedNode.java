@@ -3,6 +3,9 @@ package org.ethereum.db;
 import static org.ethereum.db.OperationType.READ_OPERATION;
 import static org.ethereum.db.OperationType.WRITE_OPERATION;
 
+/**
+ * A presentational class, used (by MutableRepository) to track relevant data for trie accesses
+ * */
 public class TrackedNode {
     protected final ByteArrayWrapper key; // a trie key
     protected final OperationType operationType; // an operation type
@@ -42,6 +45,14 @@ public class TrackedNode {
         return transactionHash;
     }
 
+    public boolean getResult() {
+        return this.result;
+    }
+
+    public boolean isDelete() {
+        return this.isDelete;
+    }
+
     @Override
     public String toString() { // todo(fedejinich) this was used for debugging purposes, might be removed before production
         String s = this.key.toString();
@@ -77,13 +88,5 @@ public class TrackedNode {
         result = 31 * result + operationType.hashCode();
         result = 31 * result + transactionHash.hashCode();
         return result;
-    }
-
-    public boolean getResult() {
-        return this.result;
-    }
-
-    public boolean isDelete() {
-        return this.isDelete;
     }
 }
