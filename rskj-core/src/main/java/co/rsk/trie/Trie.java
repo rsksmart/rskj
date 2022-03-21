@@ -27,6 +27,7 @@ import co.rsk.metrics.profilers.Metric;
 import co.rsk.metrics.profilers.Profiler;
 import co.rsk.metrics.profilers.ProfilerFactory;
 import co.rsk.util.NodeStopper;
+import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.util.ByteUtil;
@@ -466,6 +467,7 @@ public class Trie {
      * @return the new top node of the trie with the association removed
      *
      */
+    @VisibleForTesting
     public Trie delete(byte[] key) {
         return put(key, null);
     }
@@ -485,6 +487,7 @@ public class Trie {
      *
      * @return the new top node of the trie with the key removed
      */
+    @VisibleForTesting
     public Trie delete(String key) {
         return delete(key.getBytes(StandardCharsets.UTF_8));
     }
