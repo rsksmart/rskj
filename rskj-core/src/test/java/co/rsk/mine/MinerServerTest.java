@@ -81,6 +81,32 @@ import co.rsk.remasc.RemascTransaction;
 import co.rsk.util.HexUtils;
 import co.rsk.validators.BlockUnclesValidationRule;
 import co.rsk.validators.ProofOfWorkRule;
+import org.ethereum.TestUtils;
+import org.ethereum.core.*;
+import org.ethereum.db.BlockStore;
+import org.ethereum.db.MutableRepository;
+import org.ethereum.facade.EthereumImpl;
+import org.ethereum.util.BuildInfo;
+import org.ethereum.util.RLP;
+import org.ethereum.util.RLPList;
+import org.ethereum.util.RskTestFactory;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
+
+import java.math.BigInteger;
+import java.nio.ByteBuffer;
+import java.time.Clock;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+
+import static org.hamcrest.CoreMatchers.instanceOf;
+import static org.junit.Assert.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
 
 /**
  * Created by adrian.eidelman on 3/16/2016.
@@ -129,7 +155,7 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
         when(tx1.getEncoded()).thenReturn(new byte[32]);
 
         Repository repository = repositoryLocator.startTrackingAt(blockStore.getBestBlock().getHeader());
-        Repository track = mock(Repository.class);
+        MutableRepository track = mock(MutableRepository.class);
         BlockTxSignatureCache blockTxSignatureCache = mock(BlockTxSignatureCache.class);
         Mockito.doReturn(repository.getRoot()).when(track).getRoot();
         Mockito.doReturn(repository.getTrie()).when(track).getTrie();
@@ -138,7 +164,11 @@ public class MinerServerTest extends ParameterizedNetworkUpgradeTest {
         when(track.getNonce(RemascTransaction.REMASC_ADDRESS)).thenReturn(BigInteger.ZERO);
         when(track.getBalance(tx1.getSender())).thenReturn(Coin.valueOf(4200000L));
         when(track.getBalance(RemascTransaction.REMASC_ADDRESS)).thenReturn(Coin.valueOf(4200000L));
-        Mockito.doReturn(track).when(repositoryLocator).startTrackingAt(any());
+        // todo(fedejinich) this test was relying in startTracking() method to create a new repository,
+        //  but after this PR the BlockExecutor:268 creates a new tracked repository with trackedRepositoryAt().
+        //  THIS SHOULD BE REMOVED
+//         Mockito.doReturn(track).when(repositoryLocator).startTrackingAt(any());
+        Mockito.doReturn(track).when(repositoryLocator).trackedRepositoryAt(any());
         Mockito.doReturn(track).when(track).startTracking();
 
         List<Transaction> txs = new ArrayList<>(Collections.singletonList(tx1));
