@@ -251,6 +251,22 @@ public class PeerScoringManager {
         return list;
     }
 
+    public void clearPeerScoring(InetAddress address) {
+        if (this.peersByAddress.remove(address) != null) {
+            logger.debug("Address {} scoring correctly cleared", address.getHostName());
+        } else {
+            logger.debug("Could not clear address {} scoring", address.getHostName());
+        }
+    }
+
+    public void clearPeerScoring(NodeID nodeID) {
+        if (this.peersByNodeID.remove(nodeID) != null) {
+            logger.debug("nodeID {} scoring correctly cleared", nodeID);
+        } else {
+            logger.debug("Could not clear nodeID {} scoring", nodeID);
+        }
+    }
+
     @VisibleForTesting
     public boolean isEmpty() {
         synchronized (accessLock) {
