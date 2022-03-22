@@ -28,6 +28,7 @@ import co.rsk.metrics.HashRateCalculator;
 import co.rsk.mine.MinerClient;
 import co.rsk.mine.MinerServer;
 import co.rsk.net.BlockProcessor;
+import co.rsk.net.NodeID;
 import co.rsk.net.Peer;
 import co.rsk.net.SyncProcessor;
 import co.rsk.rpc.ModuleDescription;
@@ -69,6 +70,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.math.BigInteger;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.*;
@@ -1171,5 +1174,29 @@ public class Web3Impl implements Web3 {
      */
     public PeerScoringReputationSummary sco_reputationSummary() {
         return PeerScoringReporterUtil.buildReputationSummary(peerScoringManager.getPeersInformation());
+    }
+
+    /**
+     * Clears scoring for the received id
+     *
+     * @param id peer identifier: firstly tried as an InetAddress, used as a NodeId otherwise
+     *
+     * @return the list of scoring information, per node id and address
+     */
+    @Override
+    public PeerScoringInformation[] sco_clearPeerScoring(String id) {
+        if (this.peerScoringManager == null) {
+            return null;
+        }
+
+        try {
+            InetAddress address = InetAddress.getByName(id);
+            this.peerScoringManager.clearPeerScoring(address);
+        } catch (UnknownHostException uhe) {
+            logger.debug("Received id '{}' is not an InetAddress, using it as nodeId", id);
+            this.peerScoringManager.clearPeerScoring(NodeID.ofHexString(id));
+        }
+
+        return sco_peerList();
     }
 }
