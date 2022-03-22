@@ -146,12 +146,11 @@ public class PeerScoring {
     }
 
     /**
-     * Returns <tt>true</tt> if the peer has good reputation.
-     * Returns <tt>false</tt> if not.
+     * Refreshes peer reputation finishing punishment if enough time has passed
      *
-     * @return <tt>true</tt> or <tt>false</tt>
+     * @return <tt>true</tt> if reputation is good after refresh or <tt>false</tt> otherwise
      */
-    public boolean hasGoodReputation() {
+    public boolean refreshReputationAndPunishment() {
         try {
             rwlock.writeLock().lock();
             if (this.goodReputation) {

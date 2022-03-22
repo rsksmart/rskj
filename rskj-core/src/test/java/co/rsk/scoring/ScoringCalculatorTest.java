@@ -12,7 +12,7 @@ public class ScoringCalculatorTest {
         ScoringCalculator calculator = new ScoringCalculator();
         PeerScoring scoring = new PeerScoring();
 
-        Assert.assertTrue(calculator.hasGoodReputation(scoring));
+        Assert.assertTrue(calculator.hasGoodScore(scoring));
     }
 
     @Test
@@ -21,7 +21,7 @@ public class ScoringCalculatorTest {
         PeerScoring scoring = new PeerScoring();
         scoring.recordEvent(EventType.VALID_BLOCK);
 
-        Assert.assertTrue(calculator.hasGoodReputation(scoring));
+        Assert.assertTrue(calculator.hasGoodScore(scoring));
     }
 
     @Test
@@ -30,7 +30,7 @@ public class ScoringCalculatorTest {
         PeerScoring scoring = new PeerScoring();
         scoring.recordEvent(EventType.VALID_TRANSACTION);
 
-        Assert.assertTrue(calculator.hasGoodReputation(scoring));
+        Assert.assertTrue(calculator.hasGoodScore(scoring));
     }
 
     @Test
@@ -39,7 +39,7 @@ public class ScoringCalculatorTest {
         PeerScoring scoring = new PeerScoring();
         scoring.recordEvent(EventType.INVALID_BLOCK);
 
-        Assert.assertFalse(calculator.hasGoodReputation(scoring));
+        Assert.assertFalse(calculator.hasGoodScore(scoring));
     }
 
     @Test
@@ -48,6 +48,6 @@ public class ScoringCalculatorTest {
         PeerScoring scoring = new PeerScoring();
         scoring.recordEvent(EventType.INVALID_TRANSACTION);
 
-        Assert.assertTrue(calculator.hasGoodReputation(scoring));
+        Assert.assertTrue(calculator.hasGoodScore(scoring));
     }
 }

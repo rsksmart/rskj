@@ -119,7 +119,7 @@ public class RskWireProtocol extends SimpleChannelInboundHandler<EthMessage> imp
             this.messageRecorder.recordMessage(channel.getPeerNodeID(), msg);
         }
 
-        if (!hasGoodReputation(ctx)) {
+        if (!checkGoodReputation(ctx)) {
             ctx.disconnect();
             return;
         }
@@ -210,7 +210,7 @@ public class RskWireProtocol extends SimpleChannelInboundHandler<EthMessage> imp
         }
     }
 
-    private boolean hasGoodReputation(ChannelHandlerContext ctx) {
+    private boolean checkGoodReputation(ChannelHandlerContext ctx) {
         SocketAddress socketAddress = ctx.channel().remoteAddress();
 
         //TODO(mmarquez): and if not ???

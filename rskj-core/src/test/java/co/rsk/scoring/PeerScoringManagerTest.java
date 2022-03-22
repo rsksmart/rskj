@@ -337,7 +337,7 @@ public class PeerScoringManagerTest {
 
         manager.recordEvent(node1, null, EventType.INVALID_BLOCK);
 
-        Assert.assertFalse(manager.getPeerScoring(node1).hasGoodReputation());
+        Assert.assertFalse(manager.getPeerScoring(node1).refreshReputationAndPunishment());
         manager.recordEvent(node2, null, EventType.INVALID_BLOCK);
         manager.recordEvent(node3, null, EventType.INVALID_BLOCK);
 
@@ -345,10 +345,10 @@ public class PeerScoringManagerTest {
 
         manager.recordEvent(node4, null, EventType.INVALID_BLOCK);
 
-        Assert.assertTrue(manager.getPeerScoring(node1).hasGoodReputation());
-        Assert.assertFalse(manager.getPeerScoring(node2).hasGoodReputation());
-        Assert.assertFalse(manager.getPeerScoring(node3).hasGoodReputation());
-        Assert.assertFalse(manager.getPeerScoring(node4).hasGoodReputation());
+        Assert.assertTrue(manager.getPeerScoring(node1).refreshReputationAndPunishment());
+        Assert.assertFalse(manager.getPeerScoring(node2).refreshReputationAndPunishment());
+        Assert.assertFalse(manager.getPeerScoring(node3).refreshReputationAndPunishment());
+        Assert.assertFalse(manager.getPeerScoring(node4).refreshReputationAndPunishment());
     }
 
     @Test
