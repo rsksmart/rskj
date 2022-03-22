@@ -36,6 +36,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.net.InetAddress;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -370,8 +371,8 @@ public class SyncProcessor implements SyncEventsHandler {
     }
 
     @Override
-    public void onErrorSyncing(NodeID peerId, String message, EventType eventType, Object... arguments) {
-        peersInformation.reportErrorEvent(peerId, message, eventType, arguments);
+    public void onErrorSyncing(NodeID peerId, InetAddress peerAddress, String message, EventType eventType, Object... arguments) {
+        peersInformation.reportErrorEvent(peerId, peerAddress, message, eventType, arguments);
         stopSyncing();
     }
 

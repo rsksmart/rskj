@@ -54,6 +54,7 @@ public class CheckingBestHeaderSyncState extends BaseSyncState implements SyncSt
                 !blockHeaderValidationRule.isValid(header)) {
             syncEventsHandler.onErrorSyncing(
                     selectedPeer.getPeerNodeID(),
+                    selectedPeer.getAddress(),
                     "Invalid chunk received from node {}", EventType.INVALID_HEADER,
                     this.getClass());
             return;
@@ -69,6 +70,7 @@ public class CheckingBestHeaderSyncState extends BaseSyncState implements SyncSt
     @Override
     protected void onMessageTimeOut() {
         syncEventsHandler.onErrorSyncing(selectedPeer.getPeerNodeID(),
+                selectedPeer.getAddress(),
                 "Timeout waiting requests {}",
                 EventType.TIMEOUT_MESSAGE,
                 this.getClass(),
