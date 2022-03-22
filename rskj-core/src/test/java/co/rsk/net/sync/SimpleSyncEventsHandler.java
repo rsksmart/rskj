@@ -8,6 +8,7 @@ import org.ethereum.core.BlockHeader;
 import org.ethereum.core.BlockIdentifier;
 
 import javax.annotation.Nullable;
+import java.net.InetAddress;
 import java.util.Deque;
 import java.util.List;
 import java.util.Map;
@@ -70,7 +71,7 @@ public class SimpleSyncEventsHandler implements SyncEventsHandler {
     }
 
     @Override
-    public void onErrorSyncing(NodeID peerId, String message, EventType eventType, Object... arguments) {
+    public void onErrorSyncing(NodeID peerId, InetAddress peerAddress, String message, EventType eventType, Object... arguments) {
         stopSyncing();
     }
 

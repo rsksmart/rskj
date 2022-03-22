@@ -79,6 +79,7 @@ public class DownloadingHeadersSyncState extends BaseSyncState {
                 || !ByteUtil.fastEquals(chunk.get(0).getHash().getBytes(), currentChunk.getHash())) {
             syncEventsHandler.onErrorSyncing(
                     selectedPeer.getPeerNodeID(),
+                    selectedPeer.getAddress(),
                     "Invalid chunk received from node {} {}", EventType.INVALID_MESSAGE,
                     selectedPeer.getPeerNodeID(),
                     TypeConverter.toUnformattedJsonHex(currentChunk.getHash()));
@@ -99,6 +100,7 @@ public class DownloadingHeadersSyncState extends BaseSyncState {
             if (!blockHeaderIsValid(header, parentHeader)) {
                 syncEventsHandler.onErrorSyncing(
                         selectedPeer.getPeerNodeID(),
+                        selectedPeer.getAddress(),
                         "Invalid header received from node {} {} {}", EventType.INVALID_HEADER,
                         header.getNumber(), header.getPrintableHash());
                 return;
@@ -138,6 +140,7 @@ public class DownloadingHeadersSyncState extends BaseSyncState {
     protected void onMessageTimeOut() {
         syncEventsHandler.onErrorSyncing(
                 selectedPeer.getPeerNodeID(),
+                selectedPeer.getAddress(),
                 "Timeout waiting requests {}",
                 EventType.TIMEOUT_MESSAGE,
                 this.getClass(),

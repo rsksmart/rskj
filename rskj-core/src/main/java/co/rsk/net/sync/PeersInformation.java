@@ -30,6 +30,7 @@ import org.ethereum.net.server.ChannelManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.net.InetAddress;
 import java.time.Instant;
 import java.util.*;
 import java.util.function.Predicate;
@@ -79,10 +80,10 @@ public class PeersInformation {
         peerScoringManager.recordEvent(peerId, null, eventType);
     }
 
-    public void reportErrorEvent(NodeID peerId, String message, EventType eventType, Object... arguments) {
+    public void reportErrorEvent(NodeID peerId, InetAddress peerAddress, String message, EventType eventType, Object... arguments) {
         logger.trace(message, arguments);
         failedPeers.put(peerId, Instant.now());
-        peerScoringManager.recordEvent(peerId, null, eventType);
+        peerScoringManager.recordEvent(peerId, peerAddress, eventType);
     }
 
     private int getScore(NodeID peerId) {
