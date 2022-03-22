@@ -117,7 +117,7 @@ public class PeerScoringManager {
         }
 
         synchronized (accessLock) {
-            return this.getPeerScoring(id).hasGoodReputation();
+            return this.getPeerScoring(id).refreshReputationAndPunishment();
         }
     }
 
@@ -133,7 +133,7 @@ public class PeerScoringManager {
         }
 
         synchronized (accessLock) {
-            return this.getPeerScoring(address).hasGoodReputation();
+            return this.getPeerScoring(address).refreshReputationAndPunishment();
         }
     }
 
@@ -290,7 +290,12 @@ public class PeerScoringManager {
     private void recordEventAndStartPunishment(PeerScoring peerScoring, EventType event, PunishmentCalculator punishmentCalculator, NodeID nodeID) {
         peerScoring.recordEvent(event);
 
-        boolean shouldStartPunishment = !scoringCalculator.hasGoodReputation(peerScoring) && peerScoring.hasGoodReputation();
+        boolean hasBadReputationAlready = !peerScoring.refreshReputationAndPunishment();
+        if (hasBadReputationAlready) {
+            return;
+        }
+
+        boolean shouldStartPunishment = !scoringCalculator.hasGoodScore(peerScoring);
         if (shouldStartPunishment) {
             long punishmentTime = punishmentCalculator.calculate(peerScoring.getPunishmentCounter(), peerScoring.getScore());
             peerScoring.startPunishment(punishmentTime);
