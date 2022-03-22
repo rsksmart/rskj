@@ -270,14 +270,13 @@ public class PeerScoringManagerTest {
         Assert.assertEquals("TimeLostGoodReputation value should remain the same after event is received while punished", scoring.getTimeLostGoodReputation(), initialTimeLostGoodReputation);
         Assert.assertEquals("PunishmentTime value should remain the same after event is received while punished", scoring.getPunishmentTime(), initialPunishmentTime);
 
-        // simulate enough time to forgive has passed
-        int simulatePunishedTimePassedValue = 1;
-        Whitebox.setInternalState(scoring, "punishmentTime", simulatePunishedTimePassedValue);
+        // simulate node was punished earlier so enough time has passed for node to be forgiven
+        Whitebox.setInternalState(scoring, "timeLostGoodReputation", initialTimeLostGoodReputation - 2 * 60 * 1000);
 
         manager.recordEvent(null, address, EventType.SUCCESSFUL_HANDSHAKE);
         Assert.assertTrue("Reputation should be good after enough time has passed", manager.hasGoodReputation(address));
         Assert.assertEquals("TimeLostGoodReputation value should be 0 after good reputation is recovered", scoring.getTimeLostGoodReputation(), 0);
-        Assert.assertEquals("PunishmentTime value should remain the same after good reputation is recovered, it is not reset", scoring.getPunishmentTime(), simulatePunishedTimePassedValue);
+        Assert.assertEquals("PunishmentTime value should remain the same after good reputation is recovered, it is not reset", scoring.getPunishmentTime(), initialPunishmentTime);
     }
 
     @Test
