@@ -460,6 +460,41 @@ public class PeerScoringManagerTest {
         Assert.assertTrue(info.getScore() > 0);
     }
 
+    @Test
+    public void clearPeerInformationByAddress() throws UnknownHostException {
+        PeerScoringManager manager = createPeerScoringManager();
+        NodeID node = generateNodeID();
+        InetAddress address = generateIPAddressV4();
+
+        manager.recordEvent(node, address, EventType.VALID_BLOCK);
+        manager.recordEvent(node, address, EventType.VALID_TRANSACTION);
+        manager.recordEvent(node, address, EventType.VALID_BLOCK);
+
+        List<PeerScoringInformation> result = manager.getPeersInformation();
+
+        Assert.assertNotNull(result);
+        Assert.assertFalse(result.isEmpty());
+        Assert.assertEquals(2, result.size());
+        Assert.assertTrue(ByteUtil.toHexString(node.getID()).startsWith(result.get(0).getId()));
+        Assert.assertEquals(address.getHostName(), result.get(1).getId());
+
+        // clear by nodeId
+        manager.clearPeerScoring(node);
+
+        result = manager.getPeersInformation();
+        Assert.assertNotNull(result);
+        Assert.assertFalse(result.isEmpty());
+        Assert.assertEquals(1, result.size());
+        Assert.assertEquals(address.getHostName(), result.get(0).getId());
+
+        // clear by address
+        manager.clearPeerScoring(address);
+
+        result = manager.getPeersInformation();
+        Assert.assertNotNull(result);
+        Assert.assertTrue(result.isEmpty());
+    }
+
     private NodeID generateNodeID() {
         byte[] bytes = new byte[32];
 
