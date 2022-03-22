@@ -108,6 +108,7 @@ public class DownloadingSkeletonSyncState extends BaseSyncState {
     protected void onMessageTimeOut() {
         syncEventsHandler.onErrorSyncing(
                 selectedPeer.getPeerNodeID(),
+                selectedPeer.getAddress(),
                 "Timeout waiting requests {}",
                 EventType.TIMEOUT_MESSAGE,
                 this.getClass(),

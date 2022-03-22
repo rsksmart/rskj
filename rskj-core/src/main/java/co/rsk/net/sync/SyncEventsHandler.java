@@ -25,6 +25,7 @@ import org.ethereum.core.BlockHeader;
 import org.ethereum.core.BlockIdentifier;
 
 import javax.annotation.Nullable;
+import java.net.InetAddress;
 import java.util.Deque;
 import java.util.List;
 import java.util.Map;
@@ -52,7 +53,7 @@ public interface SyncEventsHandler {
 
     void onLongSyncUpdate(boolean isSyncing, @Nullable Long peerBestBlockNumber);
 
-    void onErrorSyncing(NodeID peerId, String message, EventType eventType, Object... arguments);
+    void onErrorSyncing(NodeID peerId, InetAddress peerAddress, String message, EventType eventType, Object... arguments);
 
     void onSyncIssue(String message, Object... arguments);
 
