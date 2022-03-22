@@ -66,7 +66,7 @@ public class PeerScoringInformation {
         int invalidHeader = scoring.getEventCounter(EventType.INVALID_HEADER);
         int score = scoring.getScore();
         int punishments = scoring.getPunishmentCounter();
-        boolean goodReputation = scoring.hasGoodReputation();
+        boolean goodReputation = scoring.refreshReputationAndPunishment();
 
         return new PeerScoringInformation(successfulHandshakes, failedHandshakes, invalidNetworks,
                 repeatedMessages, validBlocks, validTransactions, invalidBlocks, invalidTransactions,
