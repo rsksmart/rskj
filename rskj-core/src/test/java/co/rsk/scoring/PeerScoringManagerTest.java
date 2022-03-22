@@ -4,6 +4,7 @@ import co.rsk.net.NodeID;
 import org.ethereum.util.ByteUtil;
 import org.junit.Assert;
 import org.junit.Test;
+import org.powermock.reflect.Whitebox;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -250,6 +251,33 @@ public class PeerScoringManagerTest {
         Assert.assertEquals(1, manager.getPeerScoring(address).getPunishmentCounter());
         Assert.assertEquals(10, manager.getPeerScoring(address).getPunishmentTime());
         Assert.assertFalse(manager.hasGoodReputation(address));
+    }
+
+    @Test
+    public void finishPunishment() throws UnknownHostException {
+        InetAddress address = generateIPAddressV4();
+        PeerScoringManager manager = createPeerScoringManager();
+
+        manager.recordEvent(null, address, EventType.INVALID_BLOCK);
+        Assert.assertFalse(manager.hasGoodReputation(address));
+
+        PeerScoring scoring = manager.getPeerScoring(address);
+        long initialTimeLostGoodReputation = scoring.getTimeLostGoodReputation();
+        long initialPunishmentTime = scoring.getPunishmentTime();
+
+        manager.recordEvent(null, address, EventType.SUCCESSFUL_HANDSHAKE);
+        Assert.assertFalse("Reputation should still be bad after event is received while punished", manager.hasGoodReputation(address));
+        Assert.assertEquals("TimeLostGoodReputation value should remain the same after event is received while punished", scoring.getTimeLostGoodReputation(), initialTimeLostGoodReputation);
+        Assert.assertEquals("PunishmentTime value should remain the same after event is received while punished", scoring.getPunishmentTime(), initialPunishmentTime);
+
+        // simulate enough time to forgive has passed
+        int simulatePunishedTimePassedValue = 1;
+        Whitebox.setInternalState(scoring, "punishmentTime", simulatePunishedTimePassedValue);
+
+        manager.recordEvent(null, address, EventType.SUCCESSFUL_HANDSHAKE);
+        Assert.assertTrue("Reputation should be good after enough time has passed", manager.hasGoodReputation(address));
+        Assert.assertEquals("TimeLostGoodReputation value should be 0 after good reputation is recovered", scoring.getTimeLostGoodReputation(), 0);
+        Assert.assertEquals("PunishmentTime value should remain the same after good reputation is recovered, it is not reset", scoring.getPunishmentTime(), simulatePunishedTimePassedValue);
     }
 
     @Test
