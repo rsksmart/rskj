@@ -1,0 +1,31 @@
+block_build b01
+    parent g00
+    gasLimit 6800000
+    build
+
+block_connect b01
+assert_best b01
+
+block_build b02
+    parent b01
+    gasLimit 6800000
+    build
+
+block_connect b02
+assert_best b02
+
+block_build b03
+    parent b02
+    gasLimit 6800000
+    build
+
+block_connect b03
+assert_best b03
+
+block_build b04
+    parent b03
+    gasLimit 6800000
+    build
+
+block_connect b04
+assert_best b04

@@ -1,0 +1,49 @@
+account_new acc1 10000000
+account_new acc2 0
+
+transaction_build tx01
+    sender acc1
+    nonce 0
+    receiver acc2
+    value 10
+    gas 1000000
+    build
+
+block_build b01
+    parent g00
+    transactions tx01
+    gasLimit 6800000
+    build
+
+block_connect b01
+assert_best b01
+
+assert_tx_success tx01
+
+transaction_build tx02
+    sender acc1
+    nonce 1
+    receiver acc2
+    value 10
+    gas 1000000
+    build
+
+transaction_build tx03
+    sender acc1
+    nonce 2
+    receiver acc2
+    value 10
+    gas 1000000
+    build
+
+block_build b02
+    parent b01
+    transactions tx02 tx03
+    gasLimit 6800000
+    build
+
+block_connect b02
+assert_best b02
+
+assert_tx_success tx02
+assert_tx_success tx03
