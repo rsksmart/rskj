@@ -22,17 +22,18 @@ package org.ethereum.vm.program;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
+import co.rsk.storagerent.RentedNode;
 import co.rsk.trie.Trie;
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Repository;
+import org.ethereum.db.TrackedNode;
 import org.ethereum.vm.DataWord;
 import org.ethereum.vm.program.invoke.ProgramInvoke;
 import org.ethereum.vm.program.listener.ProgramListener;
 import org.ethereum.vm.program.listener.ProgramListenerAware;
 
 import java.math.BigInteger;
-import java.util.Iterator;
-import java.util.Set;
+import java.util.*;
 
 /*
  * A Storage is a proxy class for Repository. It encapsulates a repository providing tracing services.
@@ -222,5 +223,29 @@ public class Storage implements Repository, ProgramListenerAware {
     @Override
     public void updateAccountState(RskAddress addr, AccountState accountState) {
         throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void setTrackedTransactionHash(String transactionHash) {
+        repository.setTrackedTransactionHash(transactionHash);
+    }
+
+    @Override
+    public Set<TrackedNode> getStorageRentNodes(String transactionHash) {
+        return repository.getStorageRentNodes(transactionHash);
+    }
+
+    public List<TrackedNode> getRollBackNodes(String transactionHash) {
+        return repository.getRollBackNodes(transactionHash);
+    }
+
+    @Override
+    public RentedNode getRentedNode(TrackedNode trackedNode) {
+        return repository.getRentedNode(trackedNode);
+    }
+
+    @Override
+    public void updateRents(Set<RentedNode> rentedNodes, long executionBlockTimestamp) {
+        repository.updateRents(rentedNodes, executionBlockTimestamp);
     }
 }
