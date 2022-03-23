@@ -37,6 +37,7 @@ import java.util.Random;
 import java.util.Set;
 
 import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Created by ajlopez on 29/03/2017.
@@ -178,7 +179,7 @@ public class RepositoryImplTest {
 
         repository.createAccount(accAddress);
 
-        Assert.assertTrue(repository.isExist(accAddress));
+        assertTrue(repository.isExist(accAddress));
     }
 
     @Test
@@ -236,7 +237,7 @@ public class RepositoryImplTest {
         AccountState accState = repository.getAccountState(accAddress);
 
         Assert.assertNotNull(accState);
-        Assert.assertTrue(accState.isHibernated());
+        assertTrue(accState.isHibernated());
     }
 
     @Test
@@ -277,7 +278,7 @@ public class RepositoryImplTest {
         track.createAccount(accAddress);
         track.commit();
 
-        Assert.assertTrue(repository.isExist(accAddress));
+        assertTrue(repository.isExist(accAddress));
     }
 
     @Test
@@ -390,7 +391,7 @@ public class RepositoryImplTest {
         Set<RskAddress> keys = repository.getAccountsKeys();
 
         Assert.assertNotNull(keys);
-        Assert.assertTrue(keys.isEmpty());
+        assertTrue(keys.isEmpty());
     }
 
     @Test
@@ -407,8 +408,8 @@ public class RepositoryImplTest {
         Assert.assertNotNull(keys);
         Assert.assertFalse(keys.isEmpty());
         Assert.assertEquals(2, keys.size());
-        Assert.assertTrue(keys.contains(accAddress1));
-        Assert.assertTrue(keys.contains(accAddress2));
+        assertTrue(keys.contains(accAddress1));
+        assertTrue(keys.contains(accAddress2));
     }
 
     @Test
