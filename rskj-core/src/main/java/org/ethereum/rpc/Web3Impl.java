@@ -1183,10 +1183,11 @@ public class Web3Impl implements Web3 {
      *
      * @return the list of scoring information, per node id and address
      */
+    @SuppressWarnings("squid:S1166")
     @Override
     public PeerScoringInformation[] sco_clearPeerScoring(String id) {
         if (this.peerScoringManager == null) {
-            return null;
+            return new PeerScoringInformation[]{};
         }
 
         try {
