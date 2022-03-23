@@ -1302,9 +1302,9 @@ public class Trie {
      * updates the rent timestamp from an existing key
      *
      * @param key a trie key
-     * @param lastRentPaidTimestamp a new rent timestamp
+     * @param newRentPaidTimestamp a new rent timestamp
      */
-    public Trie updateLastRentPaidTimestamp(TrieKeySlice key, long lastRentPaidTimestamp) {
+    public Trie updateLastRentPaidTimestamp(TrieKeySlice key, long newRentPaidTimestamp) {
         // key found
         if (sharedPath.length() >= key.length()) {
             // updates last rent paid timestamp
@@ -1317,7 +1317,7 @@ public class Trie {
                     getDataLength(this.value),
                     null,
                     this.childrenSize,
-                    lastRentPaidTimestamp); // updated timestamp
+                    newRentPaidTimestamp); // updated timestamp
         }
 
         // in the following part it goes down to the next child and tries to update the timestamp (if the key is found)
@@ -1333,7 +1333,7 @@ public class Trie {
         }
 
         TrieKeySlice subKey = key.slice(sharedPath.length() + 1, key.length());
-        Trie newNode = node.updateLastRentPaidTimestamp(subKey, lastRentPaidTimestamp);
+        Trie newNode = node.updateLastRentPaidTimestamp(subKey, newRentPaidTimestamp);
 
         // reference equality
         if (newNode == node) {
