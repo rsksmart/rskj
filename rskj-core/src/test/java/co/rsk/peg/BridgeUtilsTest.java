@@ -3319,6 +3319,7 @@ public class BridgeUtilsTest {
         btcTx.addOutput(valueBelowMinimum, addresses.get(2));
         btcTx.addOutput(valueAboveMinimum, addresses.get(2));
 
+
         assertTrue(
             BridgeUtils.isAnyUTXOAmountBelowMinimum(
                 activations,
@@ -3326,6 +3327,46 @@ public class BridgeUtilsTest {
                 new Context(bridgeConstantsRegtest.getBtcParams()),
                 btcTx,
                 Arrays.asList(addresses.get(0), addresses.get(2))
+            )
+        );
+
+        assertTrue(
+            BridgeUtils.isAnyUTXOAmountBelowMinimum(
+                activations,
+                bridgeConstantsRegtest,
+                new Context(bridgeConstantsRegtest.getBtcParams()),
+                btcTx,
+                Arrays.asList(addresses.get(0), addresses.get(1))
+            )
+        );
+
+        assertTrue(
+            BridgeUtils.isAnyUTXOAmountBelowMinimum(
+                activations,
+                bridgeConstantsRegtest,
+                new Context(bridgeConstantsRegtest.getBtcParams()),
+                btcTx,
+                Arrays.asList(addresses.get(0))
+            )
+        );
+
+        assertTrue(
+            BridgeUtils.isAnyUTXOAmountBelowMinimum(
+                activations,
+                bridgeConstantsRegtest,
+                new Context(bridgeConstantsRegtest.getBtcParams()),
+                btcTx,
+                Arrays.asList(addresses.get(2))
+            )
+        );
+
+        assertFalse(
+            BridgeUtils.isAnyUTXOAmountBelowMinimum(
+                activations,
+                bridgeConstantsRegtest,
+                new Context(bridgeConstantsRegtest.getBtcParams()),
+                btcTx,
+                Arrays.asList(addresses.get(1))
             )
         );
     }
