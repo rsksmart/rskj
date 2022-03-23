@@ -24,6 +24,7 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.trie.MutableTrie;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieKeySlice;
+import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.db.TrieKeyMapper;
@@ -37,10 +38,14 @@ public class MutableTrieCache implements MutableTrie {
 
     private final TrieKeyMapper trieKeyMapper = new TrieKeyMapper();
 
+    // this is a MutableTrieImpl instance, it is the access point to the real Trie
     private MutableTrie trie;
+
     // We use a single cache to mark both changed elements and removed elements.
     // null value means the element has been removed.
     private final Map<ByteArrayWrapper, Map<ByteArrayWrapper, byte[]>> cache;
+
+    private final Map<ByteArrayWrapper, Long> cacheTimestamps;
 
     // this logs recursive delete operations to be performed at commit time
     private final Set<ByteArrayWrapper> deleteRecursiveLog;
@@ -49,6 +54,7 @@ public class MutableTrieCache implements MutableTrie {
         trie = parentTrie;
         cache = new HashMap<>();
         deleteRecursiveLog = new HashSet<>();
+        cacheTimestamps = new HashMap<>();
     }
 
     @Override
@@ -74,7 +80,6 @@ public class MutableTrieCache implements MutableTrie {
             Function<byte[], T> cacheTransformer) {
         ByteArrayWrapper wrapper = new ByteArrayWrapper(key);
         ByteArrayWrapper accountWrapper = getAccountWrapper(wrapper);
-
         Map<ByteArrayWrapper, byte[]> accountItems = cache.get(accountWrapper);
         boolean isDeletedAccount = deleteRecursiveLog.contains(accountWrapper);
         if (accountItems == null || !accountItems.containsKey(wrapper)) {
@@ -94,6 +99,28 @@ public class MutableTrieCache implements MutableTrie {
         // cached account key
         return Optional.ofNullable(cacheTransformer.apply(cacheItem));
     }
+
+    public Optional<Long> getRentTimestamp(byte[] key) {
+        ByteArrayWrapper wrappedKey = new ByteArrayWrapper(key);
+
+        boolean isDeletedAccount = deleteRecursiveLog.contains(getAccountWrapper(wrappedKey));
+        if (isDeletedAccount) {
+            return Optional.empty();
+        }
+
+        Long lastRentPaidTimestamp = cacheTimestamps.get(wrappedKey);
+        if(lastRentPaidTimestamp != null) {
+            return Optional.of(lastRentPaidTimestamp);
+        }
+
+        return this.trie.getRentTimestamp(wrappedKey.getData());
+    }
+
+//        return internalGet(key,
+//                k -> trie.getLastRentPaidTimestamp(k).orElse(null),
+//                cachedTimestamp -> ByteUtil.byteArrayToLong(cachedTimestamp),
+//                true);
+
 
     public Iterator<DataWord> getStorageKeys(RskAddress addr) {
         byte[] accountStoragePrefixKey = trieKeyMapper.getAccountStoragePrefixKey(addr);
@@ -143,7 +170,7 @@ public class MutableTrieCache implements MutableTrie {
         accountMap.put(wrapper, value);
     }
 
-    @Override
+    @Override @VisibleForTesting
     public void put(String key, byte[] value) {
         byte[] keybytes = key.getBytes(StandardCharsets.UTF_8);
         put(keybytes, value);
@@ -182,9 +209,12 @@ public class MutableTrieCache implements MutableTrie {
                 accountData.forEach((realKey, value) -> this.trie.put(realKey, value));
             }
         });
-
+        cacheTimestamps.forEach((key, timestamp) ->
+            this.trie.putRentTimestamp(key.getData(), timestamp)
+        );
         deleteRecursiveLog.clear();
         cache.clear();
+        cacheTimestamps.clear();
     }
 
     @Override
@@ -197,6 +227,7 @@ public class MutableTrieCache implements MutableTrie {
     public void rollback() {
         cache.clear();
         deleteRecursiveLog.clear();
+        cacheTimestamps.clear();
     }
 
     @Override
@@ -238,6 +269,23 @@ public class MutableTrieCache implements MutableTrie {
         return internalGet(key,
                 keyB -> trie.getValueHash(keyB).orElse(null),
                 cachedBytes -> new Keccak256(Keccak256Helper.keccak256(cachedBytes)));
+    }
+
+
+    @Override
+    public void putRentTimestamp(byte[] key, long updatedTimestamp) {
+        this.cacheTimestamps.put(new ByteArrayWrapper(key), updatedTimestamp);
+    }
+
+    @Override
+    public MutableTrie find(byte[] key) {
+        // todo(fedejinich) I'm not using any cache
+        return this.trie.find(key);
+    }
+
+    @Override
+    public long getNodeSize() {
+        return this.trie.getNodeSize();
     }
 
     private static class StorageKeysIterator implements Iterator<DataWord> {
