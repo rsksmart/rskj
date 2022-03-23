@@ -1025,6 +1025,139 @@ public class BridgeUtilsTest {
     }
 
     @Test
+    public void testIsValidPegInTx_has_multiple_utxos_below_minimum_but_total_amount_is_ok_before_RSKIP293() {
+        Context btcContext = new Context(networkParameters);
+        Federation activeFederation = bridgeConstantsRegtest.getGenesisFederation();
+        when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(false);
+
+        Coin minimumTxValue = BridgeUtils.getMinimumPegInTxValue(activations, bridgeConstantsRegtest);
+        // Create a tx with multiple utxos below the minimum but the sum each utxos is equal to the minimum
+        BtcTransaction tx = new BtcTransaction(networkParameters);
+        tx.addOutput(minimumTxValue.div(4), activeFederation.getAddress());
+        tx.addOutput(minimumTxValue.div(4), activeFederation.getAddress());
+        tx.addOutput(minimumTxValue.div(4), activeFederation.getAddress());
+        tx.addOutput(minimumTxValue.div(4), activeFederation.getAddress());
+
+        TransactionInput txInput = new TransactionInput(
+            networkParameters,
+            tx,
+            new byte[0],
+            new TransactionOutPoint(networkParameters, 0, Sha256Hash.ZERO_HASH)
+        );
+        tx.addInput(txInput);
+
+        assertTrue(BridgeUtils.isValidPegInTx(
+            tx,
+            Collections.singletonList(activeFederation),
+            null,
+            btcContext,
+            bridgeConstantsRegtest,
+            activations
+        ));
+    }
+
+    @Test
+    public void testIsValidPegInTx_has_utxos_below_minimum_and_total_amount_as_well_before_RSKIP293() {
+        Context btcContext = new Context(networkParameters);
+        Federation activeFederation = bridgeConstantsRegtest.getGenesisFederation();
+        when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(false);
+
+        Coin minimumTxValue = BridgeUtils.getMinimumPegInTxValue(activations, bridgeConstantsRegtest);
+        // Create a tx with multiple utxos below the minimum but the sum each utxos is equal to the minimum
+        BtcTransaction tx = new BtcTransaction(networkParameters);
+        tx.addOutput(minimumTxValue.div(4), activeFederation.getAddress());
+        tx.addOutput(minimumTxValue.div(4), activeFederation.getAddress());
+        tx.addOutput(minimumTxValue.div(4), activeFederation.getAddress());
+        tx.addOutput(minimumTxValue.div(5), activeFederation.getAddress());
+
+        TransactionInput txInput = new TransactionInput(
+            networkParameters,
+            tx,
+            new byte[0],
+            new TransactionOutPoint(networkParameters, 0, Sha256Hash.ZERO_HASH)
+        );
+        tx.addInput(txInput);
+
+        assertFalse(BridgeUtils.isValidPegInTx(
+            tx,
+            Collections.singletonList(activeFederation),
+            null,
+            btcContext,
+            bridgeConstantsRegtest,
+            activations
+        ));
+    }
+
+    @Test
+    public void testIsValidPegInTx_has_utxos_below_minimum_after_RSKIP293() {
+        Context btcContext = new Context(networkParameters);
+        Federation activeFederation = bridgeConstantsRegtest.getGenesisFederation();
+        when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
+
+        Coin minimumTxValue = BridgeUtils.getMinimumPegInTxValue(activations, bridgeConstantsRegtest);
+        // Create a tx with multiple utxos below the minimum but the sum each utxos is equal to the minimum
+        BtcTransaction tx = new BtcTransaction(networkParameters);
+        tx.addOutput(minimumTxValue.div(4), activeFederation.getAddress());
+        tx.addOutput(minimumTxValue.div(4), activeFederation.getAddress());
+        tx.addOutput(minimumTxValue.div(4), activeFederation.getAddress());
+        tx.addOutput(minimumTxValue.div(4), activeFederation.getAddress());
+
+        TransactionInput txInput = new TransactionInput(
+            networkParameters,
+            tx,
+            new byte[0],
+            new TransactionOutPoint(networkParameters, 0, Sha256Hash.ZERO_HASH)
+        );
+        tx.addInput(txInput);
+
+        assertFalse(BridgeUtils.isValidPegInTx(
+            tx,
+            Collections.singletonList(activeFederation),
+            null,
+            btcContext,
+            bridgeConstantsRegtest,
+            activations
+        ));
+    }
+
+    @Test
+    public void testIsValidPegInTx_utxo_equal_to_minimum_after_RSKIP293() {
+        Context btcContext = new Context(networkParameters);
+        Federation activeFederation = bridgeConstantsRegtest.getGenesisFederation();
+        when(activations.isActive(ConsensusRule.RSKIP201)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP284)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
+
+        Coin minimumTxValue = BridgeUtils.getMinimumPegInTxValue(activations, bridgeConstantsRegtest);
+        // Create a tx with multiple utxos below the minimum but the sum each utxos is equal to the minimum
+        BtcTransaction tx = new BtcTransaction(networkParameters);
+        tx.addOutput(minimumTxValue, activeFederation.getAddress());
+
+        TransactionInput txInput = new TransactionInput(
+            networkParameters,
+            tx,
+            new byte[0],
+            new TransactionOutPoint(networkParameters, 0, Sha256Hash.ZERO_HASH)
+        );
+        tx.addInput(txInput);
+
+        assertTrue(BridgeUtils.isValidPegInTx(
+            tx,
+            Collections.singletonList(activeFederation),
+            null,
+            btcContext,
+            bridgeConstantsRegtest,
+            activations
+        ));
+    }
+
+    @Test
     public void testTxIsProcessableInLegacyVersion() {
         // Before hard fork
         when(activations.isActive(ConsensusRule.RSKIP143)).thenReturn(false);
