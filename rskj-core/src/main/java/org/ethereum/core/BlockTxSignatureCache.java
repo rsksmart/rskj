@@ -21,35 +21,33 @@ package org.ethereum.core;
 
 import co.rsk.core.RskAddress;
 import co.rsk.remasc.RemascTransaction;
-import co.rsk.util.MaxSizeHashMap;
-
 
 public class BlockTxSignatureCache extends SignatureCache {
 
     private static final int MAX_CACHE_SIZE = 900;
 
-    private SignatureCache internalCache;
+    private final SignatureCache internalCache;
 
     public BlockTxSignatureCache(SignatureCache internalCache) {
+        super(MAX_CACHE_SIZE, false);
         this.internalCache = internalCache;
-        addressesCache = new MaxSizeHashMap<>(MAX_CACHE_SIZE,false);
     }
 
     @Override
-    public RskAddress getSender(Transaction transaction) {
+    public synchronized RskAddress getSender(Transaction transaction) {
 
         if (transaction instanceof RemascTransaction) {
             return RemascTransaction.REMASC_ADDRESS;
         }
 
-        RskAddress address = addressesCache.get(transaction);
+        RskAddress address = addressesCache.get(transaction.getHash());
         if (address != null) {
             return address;
         }
 
-        if (internalCache.containsTx(transaction)) {
-            RskAddress sender = internalCache.getSender(transaction);
-            addressesCache.put(transaction, sender);
+        RskAddress sender = internalCache.getSender(transaction);
+        if (sender != null) {
+            addressesCache.put(transaction.getHash(), sender);
             return sender;
         }
 
@@ -57,17 +55,17 @@ public class BlockTxSignatureCache extends SignatureCache {
     }
 
     @Override
-    public void storeSender(Transaction transaction) {
+    public synchronized void storeSender(Transaction transaction) {
 
-        if (!hasToComputeSender(transaction)) {
+        if (maySkipSenderStore(transaction)) {
             return;
         }
 
-        if (internalCache.containsTx(transaction)) {
-            RskAddress sender = internalCache.getSender(transaction);
-            addressesCache.put(transaction, sender);
+        RskAddress sender = internalCache.getSender(transaction);
+        if (sender != null) {
+            addressesCache.put(transaction.getHash(), sender);
         }
 
-        addressesCache.put(transaction, transaction.getSender());
+        addressesCache.put(transaction.getHash(), transaction.getSender());
     }
 }

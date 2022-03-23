@@ -729,7 +729,7 @@ public class TransactionPoolImplTest {
         Transaction tx = createSampleTransaction(1, 2, 1000, 0);
         transactionPool.addTransaction(tx);
 
-        Assert.assertTrue(signatureCache.containsTx(tx));
+        Assert.assertNotNull(signatureCache.getSender(tx));
         Assert.assertArrayEquals(signatureCache.getSender(tx).getBytes(), account1.getAddress().getBytes());
     }
 
@@ -744,8 +744,8 @@ public class TransactionPoolImplTest {
         transactionPool.addTransaction(tx1);
         transactionPool.addTransaction(tx2);
 
-        Assert.assertTrue(signatureCache.containsTx(tx1));
-        Assert.assertTrue(signatureCache.containsTx(tx2));
+        Assert.assertNotNull(signatureCache.getSender(tx1));
+        Assert.assertNotNull(signatureCache.getSender(tx2));
         Assert.assertArrayEquals(signatureCache.getSender(tx1).getBytes(), account1.getAddress().getBytes());
         Assert.assertArrayEquals(signatureCache.getSender(tx2).getBytes(), account1.getAddress().getBytes());
     }
@@ -756,7 +756,7 @@ public class TransactionPoolImplTest {
         createTestAccounts(2, balance);
         Transaction tx1 = createSampleTransaction(1, 2, 1000, 1);
         transactionPool.addTransaction(tx1);
-        Assert.assertFalse(signatureCache.containsTx(tx1));
+        Assert.assertNotNull(signatureCache.getSender(tx1));
     }
 
     @Test
@@ -764,11 +764,11 @@ public class TransactionPoolImplTest {
         RemascTransaction tx = new RemascTransaction(10);
         transactionPool.addTransaction(tx);
 
-        Assert.assertFalse(signatureCache.containsTx(tx));
+        Assert.assertNotNull(signatureCache.getSender(tx));
         verify(signatureCache, times(0)).storeSender(tx);
 
         signatureCache.storeSender(tx);
-        Assert.assertFalse(signatureCache.containsTx(tx));
+        Assert.assertNotNull(signatureCache.getSender(tx));
     }
 
     @Test
@@ -780,14 +780,14 @@ public class TransactionPoolImplTest {
 
         for (int i = 0; i < MAX_CACHE_SIZE; i++) {
             if (i == MAX_CACHE_SIZE - 1) {
-                Assert.assertTrue(signatureCache.containsTx(tx));
+                Assert.assertNotNull(signatureCache.getSender(tx));
             }
             Transaction sampleTransaction = createSampleTransaction(i+2, 2, 1, 1);
             TransactionPoolAddResult result = transactionPool.addTransaction(sampleTransaction);
             Assert.assertTrue(result.transactionsWereAdded());
         }
 
-        Assert.assertFalse(signatureCache.containsTx(tx));
+        Assert.assertNotNull(signatureCache.getSender(tx));
     }
 
     private void createTestAccounts(int naccounts, Coin balance) {
@@ -819,7 +819,7 @@ public class TransactionPoolImplTest {
         Assert.assertEquals(1, transactionPool.getQueuedTransactions().size());
         Assert.assertEquals(tx2, transactionPool.getQueuedTransactions().get(0));
         Assert.assertEquals(0, transactionPool.getPendingTransactions().size());
-        Assert.assertTrue(signatureCache.containsTx(tx2));
+        Assert.assertNotNull(signatureCache.getSender(tx2));
 
         TransactionPoolAddResult result2 = transactionPool.addTransaction(tx1);
 
@@ -832,8 +832,8 @@ public class TransactionPoolImplTest {
         Assert.assertEquals(2, transactionPool.getPendingTransactions().size());
         Assert.assertEquals(tx1, transactionPool.getPendingTransactions().get(0));
         Assert.assertEquals(tx2, transactionPool.getPendingTransactions().get(1));
-        Assert.assertTrue(signatureCache.containsTx(tx1));
-        Assert.assertTrue(signatureCache.containsTx(tx2));
+        Assert.assertNotNull(signatureCache.getSender(tx1));
+        Assert.assertNotNull(signatureCache.getSender(tx2));
     }
 
     @Test
@@ -851,7 +851,7 @@ public class TransactionPoolImplTest {
         Assert.assertEquals(2, transactionPool.getPendingTransactions().size());
         Assert.assertEquals(tx1, transactionPool.getPendingTransactions().get(0));
         Assert.assertEquals(tx2, transactionPool.getPendingTransactions().get(1));
-        Assert.assertTrue(signatureCache.containsTx(tx1));
-        Assert.assertTrue(signatureCache.containsTx(tx2));
+        Assert.assertNotNull(signatureCache.getSender(tx1));
+        Assert.assertNotNull(signatureCache.getSender(tx2));
     }
 }

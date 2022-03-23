@@ -20,27 +20,33 @@
 package org.ethereum.core;
 
 import co.rsk.core.RskAddress;
+import co.rsk.crypto.Keccak256;
 import co.rsk.remasc.RemascTransaction;
+import co.rsk.util.MaxSizeHashMap;
 
 import java.util.Map;
 
 public abstract class SignatureCache {
-    protected Map<Transaction, RskAddress> addressesCache;
+
+    protected final Map<Keccak256, RskAddress> addressesCache;
+
+    protected SignatureCache(int maxCacheSize, boolean accessOrder) {
+        addressesCache = new MaxSizeHashMap<>(maxCacheSize, accessOrder);
+    }
+
+    protected boolean maySkipSenderStore(Transaction transaction) {
+        if (transaction instanceof RemascTransaction) {
+            return true;
+        }
+
+        RskAddress sender = addressesCache.get(transaction.getHash());
+        return sender != null;
+    }
+
+    // Abstract Methods
 
     public abstract RskAddress getSender(Transaction transaction);
 
-    public boolean containsTx(Transaction transaction) {
-        return addressesCache.containsKey(transaction);
-    }
-
     public abstract void storeSender(Transaction tx);
 
-    protected boolean hasToComputeSender(Transaction transaction) {
-        if (transaction instanceof RemascTransaction) {
-            return false;
-        }
-
-        RskAddress sender = addressesCache.get(transaction);
-        return sender == null;
-    }
 }
