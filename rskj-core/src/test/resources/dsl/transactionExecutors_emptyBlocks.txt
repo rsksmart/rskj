@@ -1,0 +1,17 @@
+block_build b01
+    parent g00
+    transactions
+    gasLimit 6800000
+    build
+
+block_connect b01
+assert_best b01
+
+block_build b02
+    parent b01
+    transactions
+    gasLimit 6800000
+    build
+
+block_connect b02
+assert_best b02
