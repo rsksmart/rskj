@@ -28,6 +28,7 @@ import co.rsk.crypto.Keccak256;
 import co.rsk.mine.MinimumGasPriceCalculator;
 import co.rsk.peg.PegTestUtils;
 import co.rsk.peg.simples.SimpleRskTransaction;
+import co.rsk.test.World;
 import org.bouncycastle.pqc.math.linearalgebra.ByteUtils;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.config.Constants;
@@ -45,7 +46,6 @@ import java.math.BigInteger;
 import java.util.*;
 
 import static org.ethereum.core.Genesis.getZeroHash;
-import static org.ethereum.crypto.HashUtil.EMPTY_TRIE_HASH;
 
 /**
  * Created by ajlopez on 5/10/2016.
@@ -166,7 +166,7 @@ public class BlockGenerator {
                 .setNumber(parent.getNumber()+1)
                 .setGasLimit(parent.getGasLimit())
                 .setGasUsed( parent.getGasUsed()) // why ? I just copied the value before
-                .setTimestamp(parent.getTimestamp() + ++count)
+                .setTimestamp(getUpdatedTimestamp(parent, World.TIME_BETWEEN_BLOCKS_DISABLED))
                 .setPaidFees(Coin.valueOf(fees))
                 .setEmptyMergedMiningForkDetectionData()
                 .setUncleCount(uncles.size())
@@ -178,6 +178,26 @@ public class BlockGenerator {
                 Collections.emptyList(),
                 uncles
         );
+    }
+
+    /**
+     * Given a block parent and a customTime, returns a new block timestamp.
+     * Now the user can provide a custom frequency, just by passing it as customTime
+     *
+     * @param parent the parent block
+     * @param customTimeBetweenBlocks a custom time to set delay between blocks (expressed in milliseconds)
+     * @return updated timestamp
+     * */
+    private long getUpdatedTimestamp(Block parent, long customTimeBetweenBlocks) {
+        boolean customTimeEnabled = customTimeBetweenBlocks != World.TIME_BETWEEN_BLOCKS_DISABLED;
+        if(customTimeEnabled) {
+            if(customTimeBetweenBlocks <= 0) {
+                throw new IllegalArgumentException("customTimeBetweenBlocks should be positive");
+            }
+            return parent.getTimestamp() + customTimeBetweenBlocks;
+        }
+
+        return parent.getTimestamp() + ++count;
     }
 
     public Block createChildBlock(Block parent, List<Transaction> txs, byte[] stateRoot) {
@@ -204,7 +224,7 @@ public class BlockGenerator {
                 .setNumber(parent.getNumber()+1)
                 .setGasLimit(parent.getGasLimit())
                 .setGasUsed( parent.getGasUsed()) // why ? I just copied the value before
-                .setTimestamp(parent.getTimestamp() + ++count)
+                .setTimestamp(getUpdatedTimestamp(parent, World.TIME_BETWEEN_BLOCKS_DISABLED))
                 .setEmptyMergedMiningForkDetectionData()
                 .setUmmRoot(ummRoot)
                 .build();
@@ -242,9 +262,31 @@ public class BlockGenerator {
         return createChildBlock(parent, txs, uncles, difficulty, minGasPrice, parent.getGasLimit());
     }
 
+    public Block createChildBlock(Block parent, List<Transaction> txs, List<BlockHeader> uncles,
+                                  long difficulty, BigInteger minGasPrice, byte[] gasLimit,
+                                  RskAddress coinbase, long customTimeBetweenBlocks) {
+        return internalCreateChildBlock(parent, txs, uncles, difficulty,
+                minGasPrice, gasLimit, coinbase, customTimeBetweenBlocks);
+    }
 
+
+    // without custom time between blocks
     public Block createChildBlock(Block parent, List<Transaction> txs, List<BlockHeader> uncles,
                                   long difficulty, BigInteger minGasPrice, byte[] gasLimit, RskAddress coinbase) {
+        return internalCreateChildBlock(parent, txs, uncles, difficulty,
+                minGasPrice, gasLimit, coinbase, World.TIME_BETWEEN_BLOCKS_DISABLED);
+    }
+
+    public Block createChildBlock(Block parent, List<Transaction> txs, List<BlockHeader> uncles,
+                                  long difficulty, BigInteger minGasPrice, byte[] gasLimit, long customTimeBetweenBlocks) {
+        return internalCreateChildBlock(parent, txs, uncles, difficulty,
+                minGasPrice, gasLimit, parent.getCoinbase(), customTimeBetweenBlocks);
+    }
+
+    private Block internalCreateChildBlock(Block parent, List<Transaction> txs,
+                                           List<BlockHeader> uncles, long difficulty,
+                                           BigInteger minGasPrice, byte[] gasLimit, RskAddress coinbase,
+                                           long customTimeBetweenBlocks) {
         if (txs == null) {
             txs = new ArrayList<>();
         }
@@ -273,7 +315,7 @@ public class BlockGenerator {
                 .setNumber(parent.getNumber()+1)
                 .setGasLimit(gasLimit)
                 .setGasUsed(0)
-                .setTimestamp(parent.getTimestamp() + ++count)
+                .setTimestamp(getUpdatedTimestamp(parent, customTimeBetweenBlocks))
                 .setMergedMiningForkDetectionData(miningForkDetectionData)
                 .setMinimumGasPrice(coinMinGasPrice)
                 .setUncleCount(uncles.size())
@@ -331,7 +373,7 @@ public class BlockGenerator {
                 .setNumber(number)
                 .setGasLimit(parent.getGasLimit())
                 .setGasUsed( parent.getGasUsed()) // why ? I just copied the value before
-                .setTimestamp(parent.getTimestamp() + ++count)
+                .setTimestamp(getUpdatedTimestamp(parent, World.TIME_BETWEEN_BLOCKS_DISABLED))
                 .setEmptyMergedMiningForkDetectionData()
                 .setMinimumGasPrice(minimumGasPrice)
                 .setUmmRoot(ummRoot)
@@ -368,7 +410,7 @@ public class BlockGenerator {
                 .setNumber(parent.getNumber() + 1)
                 .setGasLimit(parent.getGasLimit())
                 .setGasUsed( parent.getGasUsed()) // why ? I just copied the value before
-                .setTimestamp(parent.getTimestamp() + ++count)
+                .setTimestamp(getUpdatedTimestamp(parent, World.TIME_BETWEEN_BLOCKS_DISABLED))
                 .setEmptyMergedMiningForkDetectionData()
                 .setMinimumGasPrice(Coin.valueOf(10))
                 .setUmmRoot(ummRoot)

@@ -32,13 +32,14 @@ import java.util.List;
  * Created by ajlopez on 8/16/2016.
  */
 public class BlockBuildDslProcessor {
-    private World world;
-    private String name;
-    private BlockBuilder builder = new BlockBuilder(null, null, null);
+    private final World world;
+    private final String name;
+    private final BlockBuilder builder;
 
     public BlockBuildDslProcessor(World world, String name) {
         this.world = world;
         this.name = name;
+        this.builder = new BlockBuilder(null, null, null);
     }
 
     public void processCommands(DslParser parser) throws DslProcessorException {
@@ -55,7 +56,12 @@ public class BlockBuildDslProcessor {
         else if (cmd.isCommand("gasLimit"))
             this.builder.gasLimit(BigInteger.valueOf(Long.parseLong(cmd.getArgument(0))));
         else if (cmd.isCommand("build")) {
-            Block block = this.builder.build();
+            Block block;
+            if(this.world.useCustomTimeBetweenBlocks()) {
+                block = this.builder.buildWithCustomTimeBetweenBlocks(this.world.getCustomTimeBetweenBlocks());
+            } else {
+                block = this.builder.build();
+            }
             this.world.saveBlock(this.name, block);
         }
         else if (cmd.isCommand("uncles")) {
