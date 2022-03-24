@@ -28,6 +28,7 @@ public interface Profiler {
         DB_WRITE,
         FILLING_EXECUTED_BLOCK,
         LEVEL_DB_INIT,
+        ROCKS_DB_INIT,
         LEVEL_DB_CLOSE,
         LEVEL_DB_DESTROY,
         TRIE_GET_VALUE_FROM_KEY,

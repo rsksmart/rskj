@@ -41,6 +41,8 @@ import static java.lang.System.getProperty;
 
 public class RocksDbDataSource implements KeyValueDataSource {
 
+    private static final Long GENERAL_SIZE = 10L * 1024L * 1024L;
+
     private static final Logger logger = LoggerFactory.getLogger("db");
     private static final Profiler profiler = ProfilerFactory.getInstance();
     private static final PanicProcessor panicProcessor = new PanicProcessor();
@@ -73,7 +75,7 @@ public class RocksDbDataSource implements KeyValueDataSource {
     @Override
     public void init() {
         resetDbLock.writeLock().lock();
-        Metric metric = profiler.start(Profiler.PROFILING_TYPE.LEVEL_DB_INIT);
+        Metric metric = profiler.start(Profiler.PROFILING_TYPE.ROCKS_DB_INIT);
         try (Options options = new Options()) {
             logger.debug("~> RocksDbDataSource.init(): {}", name);
 
@@ -83,31 +85,26 @@ public class RocksDbDataSource implements KeyValueDataSource {
 
             Objects.requireNonNull(name, "no name set to the db");
 
-            long generalSize = 10L * 1024L * 1024L;
-
             options.setCreateIfMissing(true);
             options.setCompressionType(CompressionType.NO_COMPRESSION);
-            options.setArenaBlockSize(generalSize);
-            options.setWriteBufferSize(generalSize);
-            // options.cacheSize(0);
+            options.setArenaBlockSize(GENERAL_SIZE);
+            options.setWriteBufferSize(GENERAL_SIZE);
+
             options.setParanoidChecks(true);
-            // options.verifyChecksums(true);
 
-            try {
-                logger.debug("Opening database");
-                Path dbPath = getPathForName(name, databaseDir);
+            logger.debug("Opening database");
+            Path dbPath = getPathForName(name, databaseDir);
 
-                Files.createDirectories(dbPath.getParent());
+            Files.createDirectories(dbPath.getParent());
 
-                logger.debug("Initializing new or existing database: '{}'", name);
-                openDb(options, dbPath);
-            } catch (IOException ioe) {
-                logger.error(ioe.getMessage(), ioe);
-                panicProcessor.panic("rocksdb", ioe.getMessage());
-                throw new RuntimeException("Can't initialize database");
-            }
+            logger.debug("Initializing new or existing database: '{}'", name);
+            openDb(options, dbPath);
 
             logger.debug("<~ RocksDbDataSource.init(): {}", name);
+        } catch (IOException ioe) {
+            logger.error(ioe.getMessage(), ioe);
+            panicProcessor.panic("rocksdb", ioe.getMessage());
+            throw new RuntimeException("Can't initialize database");
         } finally {
             profiler.stop(metric);
             resetDbLock.writeLock().unlock();
