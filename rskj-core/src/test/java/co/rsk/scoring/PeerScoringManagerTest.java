@@ -476,7 +476,7 @@ public class PeerScoringManagerTest {
         Assert.assertFalse(result.isEmpty());
         Assert.assertEquals(2, result.size());
         Assert.assertTrue(ByteUtil.toHexString(node.getID()).startsWith(result.get(0).getId()));
-        Assert.assertEquals(address.getHostName(), result.get(1).getId());
+        Assert.assertEquals(address.getHostAddress(), result.get(1).getId());
 
         // clear by nodeId
         manager.clearPeerScoring(node);
@@ -485,7 +485,7 @@ public class PeerScoringManagerTest {
         Assert.assertNotNull(result);
         Assert.assertFalse(result.isEmpty());
         Assert.assertEquals(1, result.size());
-        Assert.assertEquals(address.getHostName(), result.get(0).getId());
+        Assert.assertEquals(address.getHostAddress(), result.get(0).getId());
 
         // clear by address
         manager.clearPeerScoring(address);
