@@ -284,12 +284,12 @@ public class Web3ImplUnitTest {
         RskJsonRpcRequestException exception = TestUtils
                 .assertThrows(RskJsonRpcRequestException.class, () -> target.eth_getUncleCountByBlockHash(hash));
 
-        assertEquals(-32600, (int) exception.getCode());
+        assertEquals(-32602, (int) exception.getCode());
     }
 
     @Test
     public void eth_getUncleCountByBlockHash() {
-        String hash = "0x4A54";
+        String hash = "0x0000000000000000000000000000000000000000000000000000000000004A54";
         byte[] bytesHash = TypeConverter.stringHexToByteArray(hash);
         List<BlockHeader> uncles = new LinkedList<>();
         uncles.add(mock(BlockHeader.class));

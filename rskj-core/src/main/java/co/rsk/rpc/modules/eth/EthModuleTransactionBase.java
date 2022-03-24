@@ -21,6 +21,7 @@ package co.rsk.rpc.modules.eth;
 import static org.ethereum.rpc.TypeConverter.stringHexToByteArray;
 import static org.ethereum.rpc.exception.RskJsonRpcRequestException.invalidParamError;
 
+import co.rsk.util.RLPException;
 import org.ethereum.config.Constants;
 import org.ethereum.core.Account;
 import org.ethereum.core.ImmutableTransaction;
@@ -111,6 +112,8 @@ public class EthModuleTransactionBase implements EthModuleTransaction {
 			}
 
 			return s = tx.getHash().toJsonString();
+		} catch (RLPException e) {
+			throw invalidParamError("Invalid input: " + e.getMessage(), e);
 		} finally {
 			if (LOGGER.isDebugEnabled()) {
 				LOGGER.debug("eth_sendRawTransaction({}): {}", rawData, s);

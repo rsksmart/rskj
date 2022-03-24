@@ -18,6 +18,7 @@
 
 package co.rsk.core;
 
+import co.rsk.core.exception.InvalidRskAddressException;
 import com.google.common.primitives.UnsignedBytes;
 import org.ethereum.rpc.TypeConverter;
 import org.ethereum.util.ByteUtil;
@@ -69,7 +70,7 @@ public class RskAddress {
      */
     public RskAddress(byte[] bytes) {
         if (bytes.length != LENGTH_IN_BYTES) {
-            throw new RuntimeException(String.format("An RSK address must be %d bytes long", LENGTH_IN_BYTES));
+            throw new InvalidRskAddressException(String.format("An RSK address must be %d bytes long", LENGTH_IN_BYTES));
         }
 
         this.bytes = bytes;
