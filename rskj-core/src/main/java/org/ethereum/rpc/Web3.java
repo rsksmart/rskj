@@ -31,6 +31,7 @@ import co.rsk.rpc.Web3TxPoolModule;
 import co.rsk.scoring.PeerScoringInformation;
 import co.rsk.scoring.PeerScoringReputationSummary;
 
+@java.lang.SuppressWarnings("squid:S100")
 public interface Web3 extends InternalService, Web3TxPoolModule, Web3EthModule, Web3EvmModule, Web3MnrModule, Web3DebugModule, Web3TraceModule, Web3RskModule {
 
     String web3_clientVersion();
@@ -64,5 +65,5 @@ public interface Web3 extends InternalService, Web3TxPoolModule, Web3EthModule, 
     PeerScoringInformation[] sco_peerList();
     String[] sco_bannedAddresses();
     PeerScoringReputationSummary sco_reputationSummary();
-    PeerScoringInformation[] sco_clearPeerScoring(String id); // NOSONAR
+    PeerScoringInformation[] sco_clearPeerScoring(String id);
 }
