@@ -36,8 +36,6 @@ import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.function.Consumer;
-import java.util.function.Supplier;
 
 import static java.lang.System.getProperty;
 
@@ -153,34 +151,46 @@ public class RocksDbDataSource implements KeyValueDataSource {
     public byte[] get(byte[] key) {
         Objects.requireNonNull(key);
 
-        return executeOperation(
-                MAX_RETRIES,
-                Profiler.PROFILING_TYPE.DB_READ,
-                () -> {
-                    try {
-                        if (logger.isTraceEnabled()) {
-                            logger.trace("~> RocksDbDataSource.get(): {}, key: {}", name, ByteUtil.toHexString(key));
-                        }
+        byte[] result = null;
 
-                        byte[] ret = db.get(key);
+        Metric metric = profiler.start(Profiler.PROFILING_TYPE.DB_READ);
+        resetDbLock.readLock().lock();
 
-                        if (logger.isTraceEnabled()) {
-                            logger.trace("<~ RocksDbDataSource.get(): {}, key: {}, return length: {}", name, ByteUtil.toHexString(key), (ret == null ? "null" : ret.length));
-                        }
+        int retries = 0;
+        Exception exCaught = null;
 
-                        return ret;
-                    } catch (RocksDBException e) {
-                        logger.error("Exception. Retrying again...", e);
-
-                        throw new RuntimeException(e);
-                    }
-                },
-                exCaught -> {
-                    logger.error("Exception. Not retrying.", exCaught);
-                    panicProcessor.panic("rocksdb", String.format("Exception. Not retrying. %s", exCaught.getMessage()));
-                    throw new RuntimeException("Couldn't get the data back for the given key");
+        while (retries < MAX_RETRIES) {
+            try {
+                if (logger.isTraceEnabled()) {
+                    logger.trace("~> RocksDbDataSource.get(): {}, key: {}", name, ByteUtil.toHexString(key));
                 }
-        );
+
+                byte[] ret = db.get(key);
+
+                if (logger.isTraceEnabled()) {
+                    logger.trace("<~ RocksDbDataSource.get(): {}, key: {}, return length: {}", name, ByteUtil.toHexString(key), (ret == null ? "null" : ret.length));
+                }
+
+                result = ret;
+                break;
+            } catch (RocksDBException e) {
+                logger.error("Exception. Retrying again...", e);
+                exCaught = e;
+            }
+
+            retries++;
+        }
+
+        resetDbLock.readLock().unlock();
+        profiler.stop(metric);
+
+        if (exCaught != null && retries > 1 ) {
+            logger.error("Exception. Not retrying.", exCaught);
+            panicProcessor.panic("rocksdb", String.format("Exception. Not retrying. %s", exCaught.getMessage()));
+            throw new RuntimeException("Couldn't get the data back for the given key");
+        }
+
+        return result;
     }
 
     @Override
@@ -188,52 +198,51 @@ public class RocksDbDataSource implements KeyValueDataSource {
         Objects.requireNonNull(key);
         Objects.requireNonNull(value);
 
-        return executeOperation(
-                Profiler.PROFILING_TYPE.DB_WRITE,
-                () -> {
-                    try {
-                        if (logger.isTraceEnabled()) {
-                            logger.trace("~> RocksDbDataSource.put(): {}, key: {}, return length: {}", name, ByteUtil.toHexString(key), value.length);
-                        }
+        Metric metric = profiler.start(Profiler.PROFILING_TYPE.DB_WRITE);
+        resetDbLock.readLock().lock();
 
-                        db.put(key, value);
+        try {
+            if (logger.isTraceEnabled()) {
+                logger.trace("~> RocksDbDataSource.put(): {}, key: {}, return length: {}", name, ByteUtil.toHexString(key), value.length);
+            }
 
-                        if (logger.isTraceEnabled()) {
-                            logger.trace("<~ RocksDbDataSource.put(): {}, key: {}, return length: {}", name, ByteUtil.toHexString(key), value.length);
-                        }
+            db.put(key, value);
 
-                        return value;
-                    } catch (RocksDBException e) {
-                        logger.error("Exception. Not retrying.", e);
-                        return value;
-                    }
-                }
-        );
+            if (logger.isTraceEnabled()) {
+                logger.trace("<~ RocksDbDataSource.put(): {}, key: {}, return length: {}", name, ByteUtil.toHexString(key), value.length);
+            }
+        } catch (RocksDBException e) {
+            logger.error("Exception. Not retrying.", e);
+        }
+
+        resetDbLock.readLock().unlock();
+        profiler.stop(metric);
+
+        return value;
     }
 
     @Override
     public void delete(byte[] key) {
-        executeOperation(
-                Profiler.PROFILING_TYPE.DB_WRITE,
-                () -> {
-                    try {
-                        if (logger.isTraceEnabled()) {
-                            logger.trace("~> RocksDbDataSource.delete(): {}, key: {}", name, ByteUtil.toHexString(key));
-                        }
+        Metric metric = profiler.start(Profiler.PROFILING_TYPE.DB_WRITE);
+        resetDbLock.readLock().lock();
 
-                        db.delete(key);
-                        if (logger.isTraceEnabled()) {
-                            logger.trace("<~ RocksDbDataSource.delete(): {}, key: {}", name, ByteUtil.toHexString(key));
-                        }
+        try {
+            if (logger.isTraceEnabled()) {
+                logger.trace("~> RocksDbDataSource.delete(): {}, key: {}", name, ByteUtil.toHexString(key));
+            }
 
-                    } catch (RocksDBException e) {
-                        logger.error("Exception. Not retrying.", e);
-                        throw new RuntimeException(e);
-                    }
+            db.delete(key);
+            if (logger.isTraceEnabled()) {
+                logger.trace("<~ RocksDbDataSource.delete(): {}, key: {}", name, ByteUtil.toHexString(key));
+            }
 
-                    return null;
-                }
-        );
+        } catch (RocksDBException e) {
+            logger.error("Exception. Not retrying.", e);
+            throw new RuntimeException(e);
+        }
+
+        resetDbLock.readLock().unlock();
+        profiler.stop(metric);
     }
 
     @Override
@@ -242,24 +251,25 @@ public class RocksDbDataSource implements KeyValueDataSource {
             logger.trace("~> RocksDbDataSource.keys(): {}", name);
         }
 
-        return executeOperation(
-                Profiler.PROFILING_TYPE.DB_READ,
-                () -> {
-                    try (RocksIterator iterator = db.newIterator()) {
-                        Set<ByteArrayWrapper> result = new HashSet<>();
+        Set<ByteArrayWrapper> result = new HashSet<>();
 
-                        for (iterator.seekToFirst(); iterator.isValid(); iterator.next()) {
-                            result.add(ByteUtil.wrap(iterator.key()));
-                        }
+        Metric metric = profiler.start(Profiler.PROFILING_TYPE.DB_READ);
 
-                        if (logger.isTraceEnabled()) {
-                            logger.trace("<~ RocksDbDataSource.keys(): {}, {}", name, result.size());
-                        }
+        try (RocksIterator iterator = db.newIterator()) {
 
-                        return result;
-                    }
-                }
-        );
+            for (iterator.seekToFirst(); iterator.isValid(); iterator.next()) {
+                result.add(ByteUtil.wrap(iterator.key()));
+            }
+
+            if (logger.isTraceEnabled()) {
+                logger.trace("<~ RocksDbDataSource.keys(): {}, {}", name, result.size());
+            }
+        }
+
+        resetDbLock.readLock().unlock();
+        profiler.stop(metric);
+
+        return result;
     }
 
     private void updateBatchInternal(Map<ByteArrayWrapper, byte[]> rows, Set<ByteArrayWrapper> deleteKeys) {
@@ -294,28 +304,35 @@ public class RocksDbDataSource implements KeyValueDataSource {
             logger.trace("~> RocksDbDataSource.updateBatch(): {}, {}", name, rows.size());
         }
 
-        executeOperation(
-                MAX_RETRIES,
-                () -> {
-                    try {
-                        updateBatchInternal(rows, deleteKeys);
+        resetDbLock.readLock().lock();
 
-                        if (logger.isTraceEnabled()) {
-                            logger.trace("<~ RocksDbDataSource.updateBatch(): {}, {}", name, rows.size());
-                        }
-                    } catch (Exception e) {
-                        logger.error("Exception. Retrying again...", e);
-                        throw e;
-                    }
+        int retries = 0;
+        Exception exCaught = null;
 
-                    return null;
-                },
-                exCaught -> {
-                    logger.error("Exception. Not retrying.", exCaught);
-                    panicProcessor.panic("rocksdb", String.format("Error %s", exCaught.getMessage()));
-                    throw new RuntimeException(exCaught);
+        while (retries < MAX_RETRIES) {
+            try {
+                updateBatchInternal(rows, deleteKeys);
+
+                if (logger.isTraceEnabled()) {
+                    logger.trace("<~ RocksDbDataSource.updateBatch(): {}, {}", name, rows.size());
                 }
-        );
+
+                break;
+            } catch (Exception e) {
+                logger.error("Exception. Retrying again...", e);
+                exCaught = e;
+            }
+
+            retries++;
+        }
+
+        resetDbLock.readLock().unlock();
+
+        if (exCaught != null && retries > 1) {
+            logger.error("Exception. Not retrying.", exCaught);
+            panicProcessor.panic("rocksdb", String.format("Error %s", exCaught.getMessage()));
+            throw new RuntimeException(exCaught);
+        }
     }
 
     @Override
@@ -352,63 +369,5 @@ public class RocksDbDataSource implements KeyValueDataSource {
         KeyValueDataSource destinationDataSource = makeDataSource(destinationPath);
         destinationDataSource.updateBatch(mergedStores, Collections.emptySet());
         destinationDataSource.close();
-    }
-
-    private <R> R executeOperation(Profiler.PROFILING_TYPE profilingType, Supplier<R> fn) {
-        return executeOperation(
-                1,
-                profilingType,
-                fn,
-                exCaught -> {
-                    throw new RuntimeException(exCaught);
-                }
-        );
-    }
-
-    private <R> R executeOperation(int maxRetires, Supplier<R> fn, Consumer<Exception> afterFailedRetries) {
-        return executeOperation(
-                maxRetires,
-                null,
-                fn,
-                afterFailedRetries
-        );
-    }
-
-    private <R> R executeOperation(int maxRetires, Profiler.PROFILING_TYPE profilingType, Supplier<R> fn, Consumer<Exception> afterFailedRetries) {
-        R result = null;
-
-        Metric metric = null;
-
-        if (profilingType != null) {
-            metric = profiler.start(profilingType);
-        }
-
-        resetDbLock.readLock().lock();
-
-        int retries = 0;
-        Exception exCaught = null;
-
-        while (retries < maxRetires) {
-            try {
-                result = fn.get();
-                break;
-            } catch (Exception e) {
-                exCaught = e;
-            }
-
-            retries++;
-        }
-
-        resetDbLock.readLock().unlock();
-
-        if (profilingType != null) {
-            profiler.stop(metric);
-        }
-
-        if (exCaught != null && retries > 1 && afterFailedRetries != null) {
-            afterFailedRetries.accept(exCaught);
-        }
-
-        return result;
     }
 }
