@@ -67,7 +67,7 @@ public class TopicTest {
         new Topic((byte[]) null);
     }
 
-    @Test(expected = RskJsonRpcRequestException.class)
+    @Test(expected = NullPointerException.class)
     public void invalidNullTopicString() {
         new Topic((String) null);
     }

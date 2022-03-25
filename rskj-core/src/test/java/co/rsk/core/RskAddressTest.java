@@ -92,7 +92,7 @@ public class RskAddressTest {
         new RskAddress((byte[]) null);
     }
 
-    @Test(expected = RskJsonRpcRequestException.class)
+    @Test(expected = NullPointerException.class)
     public void invalidNullAddressString() {
         new RskAddress((String) null);
     }

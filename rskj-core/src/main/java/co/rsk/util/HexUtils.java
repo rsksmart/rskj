@@ -81,10 +81,6 @@ public class HexUtils {
      */
     public static byte[] stringHexToByteArray(final String param) {
 
-        if (param == null) {
-            throw invalidParamError(INPUT_CANT_BE_NULL);
-        }
-
         String result = removeHexPrefix(param);
 
         if (result.length() % 2 != 0) {
@@ -92,7 +88,11 @@ public class HexUtils {
         }
         return Hex.decode(result);
     }
-
+    
+    public static void main(String[] args) {
+        stringHexToByteArray(null);
+    }
+    
     /**
      * Convert hex encoded string or integer in string format to decoded byte array
      */
