@@ -115,13 +115,7 @@ public class MutableTrieCache implements MutableTrie {
 
         return this.trie.getRentTimestamp(wrappedKey.getData());
     }
-
-//        return internalGet(key,
-//                k -> trie.getLastRentPaidTimestamp(k).orElse(null),
-//                cachedTimestamp -> ByteUtil.byteArrayToLong(cachedTimestamp),
-//                true);
-
-
+    
     public Iterator<DataWord> getStorageKeys(RskAddress addr) {
         byte[] accountStoragePrefixKey = trieKeyMapper.getAccountStoragePrefixKey(addr);
         ByteArrayWrapper accountWrapper = getAccountWrapper(new ByteArrayWrapper(accountStoragePrefixKey));
@@ -281,11 +275,6 @@ public class MutableTrieCache implements MutableTrie {
     public MutableTrie find(byte[] key) {
         // todo(fedejinich) I'm not using any cache
         return this.trie.find(key);
-    }
-
-    @Override
-    public long getNodeSize() {
-        return this.trie.getNodeSize();
     }
 
     private static class StorageKeysIterator implements Iterator<DataWord> {

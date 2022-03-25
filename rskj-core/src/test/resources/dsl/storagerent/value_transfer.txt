@@ -1,0 +1,22 @@
+# acc1 = "0xa0663f719962ec10bb57865532bef522059dfd96"
+account_new acc1 20000000
+
+account_new noFunds 0
+
+transaction_build tx01
+    sender acc1
+    nonce 0
+    receiver noFunds
+    value 10
+    gas 21000
+    build
+
+block_build b01
+    parent g00
+    transactions tx01
+    gasLimit 6800000
+    build
+
+block_connect b01
+assert_best b01
+assert_tx_success tx01

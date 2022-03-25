@@ -29,14 +29,10 @@ import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.db.TrieKeyMapper;
 import org.ethereum.vm.DataWord;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
 public class MutableTrieImpl implements MutableTrie {
-    private static final Logger LOGGER_FEDE = LoggerFactory.getLogger("fede");
-
     private Trie trie;
     private TrieKeyMapper trieKeyMapper = new TrieKeyMapper();
     private TrieStore trieStore;
@@ -125,27 +121,14 @@ public class MutableTrieImpl implements MutableTrie {
     }
 
     @Override
-    public long getNodeSize() {
-        return trie.getMessageLength();
-    }
-
-    @Override
     public Optional<Long> getRentTimestamp(byte[] key) {
-        String s = new ByteArrayWrapper(key).toString();
-        String printableKey = s.substring(s.length() - 5);
-        // LOGGER_FEDE.error("retrieving lastRentPaidTimestamp from the real trie. key: {}", printableKey);
-
         Trie trie = this.trie.find(key);
 
         if(trie == null) {
-            // LOGGER_FEDE.error("key {} is not present in the real trie", printableKey);
             return Optional.empty();
         }
 
-        // LOGGER_FEDE.error("key: {} isTerminalNode ? {}", printableKey, trie.isTerminal());
-
         long lastRentPaidTimestamp = trie.getLastRentPaidTimestamp();
-        // LOGGER_FEDE.error("retrieved lastRentPaidTimestamp from the real trie. " + "key: {}, lastRentPaidTimestamp: {}", printableKey, lastRentPaidTimestamp);
 
         return Optional.of(lastRentPaidTimestamp);
     }

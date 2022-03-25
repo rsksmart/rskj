@@ -92,7 +92,7 @@ public class TransactionExecutorFactory {
             );
         }
 
-        return new TransactionExecutor(
+        TransactionExecutor transactionExecutor = new TransactionExecutor(
                 config.getNetworkConstants(),
                 config.getActivationConfig(),
                 tx,
@@ -111,5 +111,9 @@ public class TransactionExecutorFactory {
                 deletedAccounts,
                 blockTxSignatureCache
         );
+
+        transactionExecutor.setStorageRentEnabled(config.getStorageRentEnabled());
+
+        return transactionExecutor;
     }
 }

@@ -100,7 +100,7 @@ public class BlockToMineBuilder {
         this.minimumGasPriceCalculator = minimumGasPriceCalculator;
         this.minerUtils = minerUtils;
     }
-
+    
     /**
      * Creates a new block to mine based on the previous mainchain blocks.
      *

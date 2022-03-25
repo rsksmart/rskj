@@ -21,10 +21,10 @@ public class TrackedNodeTest {
     @Test
     public void createValidTrackedNodes() {
         List<TrackedNode> validElements = Arrays.asList(
-            new TrackedNode(VALID_KEY, READ_OPERATION,  TRANSACTION_HASH, true, false),
-            new TrackedNode(VALID_KEY, READ_OPERATION,  TRANSACTION_HASH, false, false),
-            new TrackedNode(VALID_KEY, WRITE_OPERATION, TRANSACTION_HASH, true, false),
-            new TrackedNode(VALID_KEY, WRITE_OPERATION, TRANSACTION_HASH, true, true)
+            new TrackedNode(VALID_KEY, READ_OPERATION,  TRANSACTION_HASH, true),
+            new TrackedNode(VALID_KEY, READ_OPERATION,  TRANSACTION_HASH, false),
+            new TrackedNode(VALID_KEY, WRITE_OPERATION, TRANSACTION_HASH, true),
+            new TrackedNode(VALID_KEY, WRITE_OPERATION, TRANSACTION_HASH, true)
         );
 
         assertEquals(4, validElements.size());
@@ -33,21 +33,15 @@ public class TrackedNodeTest {
     @Test
     public void invalidTrackedNode() {
         try {
-            new TrackedNode(VALID_KEY, WRITE_OPERATION, TRANSACTION_HASH, false, true);
+            new TrackedNode(VALID_KEY, WRITE_OPERATION, TRANSACTION_HASH, false);
         } catch (IllegalArgumentException e) {
             assertEquals("a WRITE_OPERATION should always have a true result", e.getMessage());
-        }
-
-        try {
-            new TrackedNode(VALID_KEY, READ_OPERATION, TRANSACTION_HASH, false, true);
-        } catch (IllegalArgumentException e) {
-            assertEquals("a READ_OPERATION shouldn't have an isDelete", e.getMessage());
         }
 
         OperationType[] values = OperationType.values();
         for(int i = 0; i < values.length; i++) {
             try {
-                new TrackedNode(VALID_KEY, values[i], "", true, false);
+                new TrackedNode(VALID_KEY, values[i], "", true);
             } catch (IllegalArgumentException e) {
                 assertEquals("transaction hash can not be empty", e.getMessage());
             }
