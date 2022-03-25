@@ -205,7 +205,7 @@ public class GenesisLoaderImpl implements GenesisLoader {
     }
 
     private Trie loadGenesisTrie(Genesis genesis) {
-        Repository repository = new MutableRepository(trieStore, new Trie(trieStore));
+        Repository repository = new MutableRepository(trieStore);
         loadGenesisInitalState(repository, genesis);
 
         setupPrecompiledContractsStorage(repository);

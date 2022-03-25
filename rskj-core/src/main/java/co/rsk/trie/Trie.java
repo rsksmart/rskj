@@ -277,96 +277,6 @@ public class Trie {
         return new Trie(store, sharedPath, value, left, right, lvalue, valueHash, null, NO_RENT_TIMESTAMP);
     }
 
-//    private static Trie fromMessageRskip107(ByteBuffer message, TrieStore store) {
-//        byte flags = message.get();
-//        // if we reached here, we don't need to check the version flag
-//        boolean hasLongVal = (flags & 0b00100000) == 0b00100000;
-//        boolean sharedPrefixPresent = (flags & 0b00010000) == 0b00010000;
-//        boolean leftNodePresent = (flags & 0b00001000) == 0b00001000;
-//        boolean rightNodePresent = (flags & 0b00000100) == 0b00000100;
-//        boolean leftNodeEmbedded = (flags & 0b00000010) == 0b00000010;
-//        boolean rightNodeEmbedded = (flags & 0b00000001) == 0b00000001;
-//
-//        TrieKeySlice sharedPath = SharedPathSerializer.deserialize(message, sharedPrefixPresent);
-//
-//        NodeReference left = NodeReference.empty();
-//        NodeReference right = NodeReference.empty();
-//        if (leftNodePresent) {
-//            if (leftNodeEmbedded) {
-//                byte[] lengthBytes = new byte[Uint8.BYTES];
-//                message.get(lengthBytes);
-//                Uint8 length = Uint8.decode(lengthBytes, 0);
-//
-//                byte[] serializedNode = new byte[length.intValue()];
-//                message.get(serializedNode);
-//                Trie node = fromMessageRskip107(ByteBuffer.wrap(serializedNode), store);
-//                left = new NodeReference(store, node, null);
-//            } else {
-//                byte[] valueHash = new byte[Keccak256Helper.DEFAULT_SIZE_BYTES];
-//                message.get(valueHash);
-//                Keccak256 nodeHash = new Keccak256(valueHash);
-//                left = new NodeReference(store, null, nodeHash);
-//            }
-//        }
-//
-//        if (rightNodePresent) {
-//            if (rightNodeEmbedded) {
-//                byte[] lengthBytes = new byte[Uint8.BYTES];
-//                message.get(lengthBytes);
-//                Uint8 length = Uint8.decode(lengthBytes, 0);
-//
-//                byte[] serializedNode = new byte[length.intValue()];
-//                message.get(serializedNode);
-//                Trie node = fromMessageRskip107(ByteBuffer.wrap(serializedNode), store);
-//                right = new NodeReference(store, node, null);
-//            } else {
-//                byte[] valueHash = new byte[Keccak256Helper.DEFAULT_SIZE_BYTES];
-//                message.get(valueHash);
-//                Keccak256 nodeHash = new Keccak256(valueHash);
-//                right = new NodeReference(store, null, nodeHash);
-//            }
-//        }
-//
-//        VarInt childrenSize = new VarInt(0);
-//        if (leftNodePresent || rightNodePresent) {
-//            childrenSize = readVarInt(message);
-//        }
-//
-//        byte[] value;
-//        Uint24 lvalue;
-//        Keccak256 valueHash;
-//
-//        if (hasLongVal) {
-//            value = null;
-//            byte[] valueHashBytes = new byte[Keccak256Helper.DEFAULT_SIZE_BYTES];
-//            message.get(valueHashBytes);
-//            valueHash = new Keccak256(valueHashBytes);
-//            byte[] lvalueBytes = new byte[Uint24.BYTES];
-//            message.get(lvalueBytes);
-//            lvalue = Uint24.decode(lvalueBytes, 0);
-//        } else {
-//            int remaining = message.remaining();
-//            if (remaining != 0) {
-//                value = new byte[remaining];
-//                message.get(value);
-//                valueHash = new Keccak256(Keccak256Helper.keccak256(value));
-//                lvalue = new Uint24(remaining);
-//            } else {
-//                value = null;
-//                valueHash = null;
-//                lvalue = Uint24.ZERO;
-//            }
-//        }
-//
-//        if (message.hasRemaining()) {
-//            throw new IllegalArgumentException("The message had more data than expected");
-//        }
-//
-//        Trie trie = new Trie(store, sharedPath, value, left, right, lvalue, valueHash, childrenSize);
-//
-//        return trie;
-//    }
-
     private static Trie internalFromMessage(ByteBuffer message, TrieStore store) {
         byte flags = message.get();
         TrieSerializer trieSerializer = new RSKIP107Serializer();
@@ -1333,7 +1243,9 @@ public class Trie {
         }
 
         TrieKeySlice subKey = key.slice(sharedPath.length() + 1, key.length());
-        Trie newNode = node.updateLastRentPaidTimestamp(subKey, newRentPaidTimestamp);
+        // sonarcloud refuses because 'node' is nullable, but it's handled in Trie:1334,
+        // therefore we have to disable it for this line
+        Trie newNode = node.updateLastRentPaidTimestamp(subKey, newRentPaidTimestamp); // NOSONAR
 
         // reference equality
         if (newNode == node) {

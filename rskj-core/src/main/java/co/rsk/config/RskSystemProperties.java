@@ -410,4 +410,8 @@ public class RskSystemProperties extends SystemProperties {
     public Integer getMessageQueueMaxSize() {
         return configFromFiles.getInt("peer.messageQueue.maxSizePerPeer");
     }
+
+    public boolean getStorageRentEnabled() {
+        return configFromFiles.getBoolean("storageRent.enabled");
+    }
 }

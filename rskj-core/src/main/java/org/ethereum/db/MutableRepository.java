@@ -52,8 +52,6 @@ import static co.rsk.trie.Trie.NO_RENT_TIMESTAMP;
 //  Storage rent uses a subset of all the tracked nodes, while parallel txs processing will use the entire set.
 //  NOTE: tracking capability might be extracted into a MutableRepositoryTracked
 public class MutableRepository implements Repository {
-    private static final Logger LOGGER_FEDE = LoggerFactory.getLogger("fede");
-
     private static final Logger logger = LoggerFactory.getLogger("repository");
     private static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
     public static final Keccak256 KECCAK_256_OF_EMPTY_ARRAY = new Keccak256(Keccak256Helper.keccak256(EMPTY_BYTE_ARRAY));
@@ -66,13 +64,13 @@ public class MutableRepository implements Repository {
     // enables node tracking feature
     private final boolean enableTracking;
     // a set to track all the used trie-value-containing nodes in this repository (and its children repositories)
-    protected final Set<TrackedNode> trackedNodes; // todo(fedejinich) this might be moved to MutableRepositoryTracked
+    protected final Set<TrackedNode> trackedNodes;
     // a list of nodes tracked nodes that were rolled back (due to revert or OOG)
-    protected final List<TrackedNode> rollbackNodes; // todo(fedejinich) this might be moved to MutableRepositoryTracked
+    protected final List<TrackedNode> rollbackNodes;
     // parent repository to commit tracked nodes
-    protected final MutableRepository parentRepository; // todo(fedejinich) this might be moved to MutableRepositoryTracked
+    protected final MutableRepository parentRepository;
     // this contains the hash of the ongoing tracked transaction
-    protected String trackedTransactionHash = "NO_TRANSACTION_HASH";  // todo(fedejinich) this might be moved to MutableRepositoryTracked
+    protected String trackedTransactionHash = "NO_TRANSACTION_HASH";
 
     // default constructor
     protected MutableRepository(MutableTrie mutableTrie, MutableRepository parentRepository,
@@ -107,7 +105,8 @@ public class MutableRepository implements Repository {
         this(mutableTrie, parentRepository, new HashSet<>(), new ArrayList<>(), enableTracking);
     }
 
-    // creates a tracked repository, all the child repositories (created with startTracking()) will also be tracked
+    // creates a tracked repository, all the child repositories (created with startTracking()) will also be tracked.
+    // this should be only called from RepositoryLocator.trackedRepository
     public static MutableRepository trackedRepository(MutableTrie mutableTrieCache) {
         return new MutableRepository(mutableTrieCache, null, true);
     }
@@ -259,13 +258,13 @@ public class MutableRepository implements Repository {
         }
 
         byte[] key = trieKeyMapper.getCodeKey(addr);
-        return internalGet(key);
+        return internalGet(key, true);
     }
 
     @Override
     public boolean isContract(RskAddress addr) {
         byte[] prefix = trieKeyMapper.getAccountStoragePrefixKey(addr);
-        return internalGet(prefix) != null;
+        return internalGet(prefix, false) != null;
     }
 
     @Override
@@ -299,24 +298,17 @@ public class MutableRepository implements Repository {
     @Override
     public synchronized DataWord getStorageValue(RskAddress addr, DataWord key) {
         byte[] triekey = trieKeyMapper.getAccountStorageKey(addr, key);
-        byte[] value = internalGet(triekey);
+        byte[] value = internalGet(triekey, false);
         if (value == null) {
             return null;
         }
-
-        DataWord dataWord = DataWord.valueOf(value);
-
-        String s = new ByteArrayWrapper(triekey).toString();
-        String arg2 = dataWord.toString();
-        LOGGER_FEDE.error("getStorageValue(key: {}), value: {}", s.substring(s.length() - 5), arg2.substring(arg2.length() - 5));
-
-        return dataWord;
+        return DataWord.valueOf(value);
     }
 
     @Override
     public synchronized byte[] getStorageBytes(RskAddress addr, DataWord key) {
         byte[] triekey = trieKeyMapper.getAccountStorageKey(addr, key);
-        return internalGet(triekey);
+        return internalGet(triekey, false);
     }
 
     @Override
@@ -427,7 +419,7 @@ public class MutableRepository implements Repository {
     }
 
     private byte[] getAccountData(RskAddress addr) {
-        return internalGet(trieKeyMapper.getAccountKey(addr));
+        return internalGet(trieKeyMapper.getAccountKey(addr), false);
     }
 
     @VisibleForTesting // todo(techdebt) this method shouldn't be here
@@ -448,15 +440,14 @@ public class MutableRepository implements Repository {
 
     // todo(fedejinich) all the content below might be extracted to MutableRepositoryTracked
 
-    public Set<TrackedNode> getTrackedNodes(String transactionHash) {
-        return this.trackedNodes.stream()
-                .filter(trackedNode -> trackedNode.getTransactionHash().equals(transactionHash))
-                .collect(Collectors.toSet());
+    @VisibleForTesting
+    public Set<TrackedNode> getTrackedNodes() {
+        return this.trackedNodes;
     }
 
     public List<TrackedNode> getRollBackNodes(String transactionHash) {
         return this.rollbackNodes.stream()
-                .filter(trackedNode -> trackedNode.getTransactionHash().equals(transactionHash))
+                .filter(trackedNode -> trackedNode.useForStorageRent(transactionHash))
                 .collect(Collectors.toList());
     }
 
@@ -478,18 +469,10 @@ public class MutableRepository implements Repository {
     @Override
     public void updateRents(Set<RentedNode> rentedNodes, long executionBlockTimestamp) {
         rentedNodes.forEach(node -> {
-            long oldTimestamp = node.getRentTimestamp();
             long updatedRentTimestamp = node.getUpdatedRentTimestamp(executionBlockTimestamp);
 
             this.mutableTrie.putRentTimestamp(node.getKey().getData(), updatedRentTimestamp);
-
-            LOGGER_FEDE.error("updated timestamp - node: {}, oldTimestamp: {}, updatedRentTimestamp: {}", printableKey(node), oldTimestamp, updatedRentTimestamp);
         });
-    }
-
-    private String printableKey(RentedNode rentedNode) {
-        String s = rentedNode.getKey().toString();
-        return s.substring(s.length() - 5);
     }
 
     public void setTrackedTransactionHash(String trackedTransactionHash) {
@@ -499,32 +482,35 @@ public class MutableRepository implements Repository {
     // Internal methods contains node tracking
 
     protected void internalPut(byte[] key, byte[] value) {
-        LOGGER_FEDE.error("internalPut");
-
         mutableTrie.put(key, value);
-        // todo(fedejinich) should track delete operation (value == null)
-        trackNodeWriteOperation(key, value == null);
+        if(value == null) {
+            trackNodeDeleteOperation(key);
+        } else {
+            trackNodeWriteOperation(key);
+        }
     }
 
     protected void internalDeleteRecursive(byte[] key) {
-        LOGGER_FEDE.error("internalDeleteRecursive");
         // todo(fedejinich) what happens for non existing keys? should track with false result?
         mutableTrie.deleteRecursive(key);
-        trackNodeWriteOperation(key, true);
+        trackNodeDeleteOperation(key);
     }
 
-    protected byte[] internalGet(byte[] key) {
-        LOGGER_FEDE.error("internalGet");
+    protected byte[] internalGet(byte[] key, boolean readsContractCode) {
         byte[] value = mutableTrie.get(key);
+        boolean isSuccessful = value != null;
 
-        // todo(fedejinich) should track get() success with a bool (value != null)
-        trackNodeReadOperation(key, value != null);
+        if(readsContractCode) {
+            trackNodeReadContractOperation(key, isSuccessful);
+        } else {
+            // todo(fedejinich) should track get() success with a bool (value != null)
+            trackNodeReadOperation(key, isSuccessful);
+        }
 
         return value;
     }
 
     protected Optional<Keccak256> internalGetValueHash(byte[] key) {
-        LOGGER_FEDE.error("internalGetValueHash");
         Optional<Keccak256> valueHash = mutableTrie.getValueHash(key);
 
         trackNodeReadOperation(key, valueHash.isPresent());
@@ -533,7 +519,6 @@ public class MutableRepository implements Repository {
     }
 
     protected Uint24 internalGetValueLength(byte[] key) {
-        LOGGER_FEDE.error("internalGetValueLength");
         Uint24 valueLength = mutableTrie.getValueLength(key);
 
         trackNodeReadOperation(key, valueLength != Uint24.ZERO);
@@ -542,7 +527,6 @@ public class MutableRepository implements Repository {
     }
 
     protected Iterator<DataWord> internalGetStorageKeys(RskAddress addr) {
-        LOGGER_FEDE.error("internalGetStorageKeys");
         Iterator<DataWord> storageKeys = mutableTrie.getStorageKeys(addr);
 
         // todo(fedejinich) how should I track the right key/s?
@@ -554,31 +538,31 @@ public class MutableRepository implements Repository {
         return storageKeys;
     }
 
-    protected void trackNodeWriteOperation(byte[] key, boolean isDelete) {
-        trackNode(key, WRITE_OPERATION, true, isDelete);
+    protected void trackNodeWriteOperation(byte[] key) {
+        trackNode(key, WRITE_OPERATION, true);
+    }
+
+    protected void trackNodeDeleteOperation(byte[] key) {
+        trackNode(key, DELETE_OPERATION, true);
     }
 
     protected void trackNodeReadOperation(byte[] key, boolean result) {
-        trackNode(key, READ_OPERATION, result, false);
+        trackNode(key, READ_OPERATION, result);
     }
 
-    protected void trackNode(byte[] key, OperationType operationType, boolean result, boolean isDelete) {
+    protected void trackNodeReadContractOperation(byte[] key, boolean result) {
+        trackNode(key, READ_CONTRACT_CODE_OPERATION, result);
+    }
+
+    protected void trackNode(byte[] key, OperationType operationType, boolean isSuccessful) {
         if(this.enableTracking) {
-            // todo(fedejinich) NEED TO DEFINE WHEN/HOW TRACK CONTRACT CODES OPERATIONS
             TrackedNode trackedNode = new TrackedNode(
                 new ByteArrayWrapper(key),
                 operationType,
                 this.trackedTransactionHash,
-                result,
-                isDelete
+                isSuccessful
             );
-            if(this.trackedNodes.add(trackedNode)) {
-                LOGGER_FEDE.error("tracked node {}", trackedNode);
-            } else {
-                LOGGER_FEDE.error("node already tracked {}", trackedNode);
-            }
-        } else {
-            LOGGER_FEDE.error("node tracking is disabled on this repository");
+            this.trackedNodes.add(trackedNode);
         }
     }
 
@@ -590,22 +574,22 @@ public class MutableRepository implements Repository {
         this.rollbackNodes.addAll(trackedNodes);
     }
 
-    // todo(fedejinich) this should return Set<TrackedNode>, storage rent filtering should be done by the StorageRentManager
     @Override
     public Set<TrackedNode> getStorageRentNodes(String transactionHash) {
         Map<ByteArrayWrapper, TrackedNode> storageRentNodes = new HashMap<>();
         this.trackedNodes.stream()
-                .filter(trackedNode -> trackedNode.getTransactionHash().equals(transactionHash) &&
-//                        trackedNode.getResult()) // nodes with failed operations are excluded
-                        trackedNode.useForStorageRent()) // nodes with failed operations are excluded
-//                        trackedNode.getResult() && !trackedNode.isDelete()) // nodes with failed operations are excluded
+                .filter(trackedNode -> trackedNode.useForStorageRent(transactionHash))
                 .forEach(trackedNode -> {
                     ByteArrayWrapper key = new ByteArrayWrapper(trackedNode.getKey().getData());
                     TrackedNode containedNode = storageRentNodes.get(key);
 
                     boolean isContainedNode = containedNode != null;
                     if(isContainedNode) {
-                        if(shouldBeReplaced(containedNode, trackedNode)) {
+                        long notRelevant = -1;
+                        RentedNode nodeToBeReplaced = new RentedNode(containedNode, notRelevant, notRelevant);
+                        RentedNode newNode = new RentedNode(trackedNode, notRelevant, notRelevant);
+                        if(nodeToBeReplaced.shouldBeReplaced(newNode)) {
+                            // we pass the TrackedNode instance because we don't need a populated RentedNode yet
                             storageRentNodes.put(key, trackedNode);
                         }
                     } else {
@@ -614,15 +598,5 @@ public class MutableRepository implements Repository {
                 });
 
         return new HashSet<>(storageRentNodes.values());
-    }
-
-    /**
-     * Determines if a node should be replaced by another one due to different operation types,
-     * the operation with the lowest threshold it's the one that leads the storage rent payment.
-     * In this case READ_OPERATION < WRITE_OPERATION
-     * */
-    private boolean shouldBeReplaced(TrackedNode nodeToBeReplaced, TrackedNode newNode) {
-        return nodeToBeReplaced.getOperationType().equals(READ_OPERATION) &&
-                newNode.getOperationType().equals(WRITE_OPERATION);
     }
 }
