@@ -461,6 +461,23 @@ public class PeerScoringManagerTest {
     }
 
     @Test
+    public void recordTimeoutIsNeutralEvent() throws UnknownHostException {
+        InetAddress address = generateIPAddressV6();
+        PeerScoringManager manager = createPeerScoringManager();
+
+        manager.recordEvent(null, address, EventType.TIMEOUT_MESSAGE);
+
+        PeerScoring result = manager.getPeerScoring(address);
+
+        Assert.assertNotNull(result);
+        Assert.assertFalse(result.isEmpty());
+        Assert.assertEquals(1, result.getEventCounter(EventType.TIMEOUT_MESSAGE));
+        Assert.assertEquals(1, result.getTotalEventCounter());
+        Assert.assertEquals(0, result.getScore());
+        Assert.assertTrue(result.refreshReputationAndPunishment());
+    }
+
+    @Test
     public void clearPeerInformationByAddress() throws UnknownHostException {
         PeerScoringManager manager = createPeerScoringManager();
         NodeID node = generateNodeID();
