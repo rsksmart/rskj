@@ -21,15 +21,18 @@ package co.rsk.db;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
+import co.rsk.trie.MutableTrie;
 import co.rsk.trie.Trie;
 import co.rsk.trie.TrieStore;
 import co.rsk.trie.TrieStoreImpl;
+import com.google.common.annotations.VisibleForTesting;
 import org.bouncycastle.util.encoders.Hex;
 import org.ethereum.core.Repository;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.crypto.Keccak256Helper;
 import org.ethereum.datasource.HashMapDB;
 import org.ethereum.db.MutableRepository;
+import org.ethereum.db.TrieKeyMapper;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.DataWord;
 import org.junit.jupiter.api.*;
@@ -66,7 +69,7 @@ class RepositoryTest {
     void testStorageRoot() {
         repository.createAccount(COW);
         repository.setupContract(COW);
-        byte[] stateRoot1 = repository.getStorageStateRoot(COW);
+        byte[] stateRoot1 = getStorageStateRoot(COW);
 
         byte[] cow1Key = Hex.decode("A1A2A3");
         byte[] cow1Value = Hex.decode("A4A5A6");
@@ -75,25 +78,25 @@ class RepositoryTest {
 
         repository.addStorageBytes(COW, DataWord.valueOf(cow1Key), cow1Value);
 
-        byte[] stateRoot2 = repository.getStorageStateRoot(COW);
+        byte[] stateRoot2 = getStorageStateRoot(COW);
         assertFalse(Arrays.equals(stateRoot1,stateRoot2));
 
         repository.addStorageBytes(COW, DataWord.valueOf(cow2Key), cow2Value);
 
-        byte[] stateRoot3 = repository.getStorageStateRoot(COW);
+        byte[] stateRoot3 = getStorageStateRoot(COW);
         assertFalse(Arrays.equals(stateRoot1,stateRoot3));
         assertFalse(Arrays.equals(stateRoot2,stateRoot3));
 
         // Now delete the last item
         repository.addStorageBytes(COW, DataWord.valueOf(cow2Key), ByteUtil.EMPTY_BYTE_ARRAY);
 
-        byte[] stateRoot4 = repository.getStorageStateRoot(COW);
+        byte[] stateRoot4 = getStorageStateRoot(COW);
         assertArrayEquals(stateRoot2, stateRoot4);
 
         // Now delete the last item
         repository.addStorageBytes(COW, DataWord.valueOf(cow1Key), ByteUtil.EMPTY_BYTE_ARRAY);
 
-        byte[] stateRoot5 = repository.getStorageStateRoot(COW);
+        byte[] stateRoot5 = getStorageStateRoot(COW);
         assertArrayEquals(stateRoot1, stateRoot5);
     }
 
@@ -580,4 +583,18 @@ class RepositoryTest {
         return new Keccak256(Keccak256Helper.keccak256(emptyCode));
     }
 
+    public byte[] getStorageStateRoot(RskAddress addr) {
+        byte[] prefix = new TrieKeyMapper().getAccountStoragePrefixKey(addr);
+
+        // The value should be ONE_BYTE_ARRAY, but we don't need to check nothing else could be there.
+        MutableTrie storageRootNode = mutableTrie.find(prefix);
+        if (storageRootNode == null) {
+            return HashUtil.EMPTY_TRIE_HASH;
+        }
+
+        // Now it's a bit tricky what to return: if I return the storageRootNode hash then it's counting the "0x01"
+        // value, so the try one gets will never match the trie one gets if creating the trie without any other data.
+        // Unless the PDV trie is used. The best we can do is to return storageRootNode hash
+        return storageRootNode.getHash().getBytes();
+    }
 }

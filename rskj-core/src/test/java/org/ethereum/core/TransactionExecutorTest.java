@@ -17,25 +17,30 @@
  */
 package org.ethereum.core;
 
+import co.rsk.config.TestSystemProperties;
 import co.rsk.config.VmConfig;
 import co.rsk.core.Coin;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
+import co.rsk.test.builders.AccountBuilder;
 import org.ethereum.TestUtils;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ActivationConfigsForTest;
+import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.MutableRepository;
 import org.ethereum.db.ReceiptStore;
 import org.ethereum.vm.DataWord;
+import org.ethereum.vm.GasCost;
 import org.ethereum.vm.PrecompiledContracts;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -43,7 +48,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
-class TransactionExecutorTest {
+public class TransactionExecutorTest {
 
     private static final int MAX_CACHE_SIZE = 900;
     private ActivationConfig activationConfig;
@@ -83,7 +88,7 @@ class TransactionExecutorTest {
     }
 
     @Test
-    void testInitHandlesFreeTransactionsOK() {
+    public void testInitHandlesFreeTransactionsOK() {
 
         BlockTxSignatureCache blockTxSignatureCache = mock(BlockTxSignatureCache.class);
         Transaction transaction = mock(Transaction.class);
@@ -116,7 +121,7 @@ class TransactionExecutorTest {
     }
 
     @Test
-    void txInBlockIsExecutedAndShouldBeAddedInCache(){
+    public void txInBlockIsExecutedAndShouldBeAddedInCache(){
         ReceivedTxSignatureCache receivedTxSignatureCache = mock(ReceivedTxSignatureCache.class);
         BlockTxSignatureCache blockTxSignatureCache = new BlockTxSignatureCache(receivedTxSignatureCache);
         MutableRepository cacheTrack = mock(MutableRepository.class);
@@ -140,7 +145,7 @@ class TransactionExecutorTest {
     }
 
     @Test
-    void TwoTxsAreInBlockAndThemShouldBeContainedInCache() {
+    public void TwoTxsAreInBlockAndThemShouldBeContainedInCache() {
         ReceivedTxSignatureCache receivedTxSignatureCache = mock(ReceivedTxSignatureCache.class);
         BlockTxSignatureCache blockTxSignatureCache = new BlockTxSignatureCache(receivedTxSignatureCache);
         MutableRepository cacheTrack = mock(MutableRepository.class);
@@ -174,7 +179,7 @@ class TransactionExecutorTest {
     }
 
     @Test
-    void InvalidTxsIsInBlockAndShouldntBeInCache(){
+    public void InvalidTxsIsInBlockAndShouldntBeInCache(){
         ReceivedTxSignatureCache receivedTxSignatureCache = mock(ReceivedTxSignatureCache.class);
         BlockTxSignatureCache blockTxSignatureCache = new BlockTxSignatureCache(receivedTxSignatureCache);
         MutableRepository cacheTrack = mock(MutableRepository.class);
@@ -207,7 +212,7 @@ class TransactionExecutorTest {
     }
 
     @Test
-    void remascTxIsReceivedAndShouldntBeInCache(){
+    public void remascTxIsReceivedAndShouldntBeInCache(){
         ReceivedTxSignatureCache receivedTxSignatureCache = mock(ReceivedTxSignatureCache.class);
         BlockTxSignatureCache blockTxSignatureCache = new BlockTxSignatureCache(receivedTxSignatureCache);
         MutableRepository cacheTrack = mock(MutableRepository.class);
@@ -240,7 +245,7 @@ class TransactionExecutorTest {
     }
 
     @Test
-    void txInBlockIsReceivedAndShouldBeUsedInTxExecutorInsteadOfComputeSender(){
+    public void txInBlockIsReceivedAndShouldBeUsedInTxExecutorInsteadOfComputeSender(){
         ReceivedTxSignatureCache receivedTxSignatureCache = mock(ReceivedTxSignatureCache.class);
         BlockTxSignatureCache blockTxSignatureCache = new BlockTxSignatureCache(receivedTxSignatureCache);
         MutableRepository cacheTrack = mock(MutableRepository.class);
@@ -266,7 +271,7 @@ class TransactionExecutorTest {
     }
 
     @Test
-    void firstTxIsRemovedWhenTheCacheLimitSizeIsExceeded() {
+    public void firstTxIsRemovedWhenTheCacheLimitSizeIsExceeded() {
         ReceivedTxSignatureCache receivedTxSignatureCache = mock(ReceivedTxSignatureCache.class);
         BlockTxSignatureCache blockTxSignatureCache = new BlockTxSignatureCache(receivedTxSignatureCache);
         MutableRepository cacheTrack = mock(MutableRepository.class);
@@ -297,6 +302,60 @@ class TransactionExecutorTest {
         }
 
         assertNotNull(blockTxSignatureCache.getSender(transaction));
+    }
+
+    @Test @Ignore // todo(fedejinich) right now we're ignoring this test, it will be enabled when the major test refactor it's done
+    public void isStorageRentEnabled() {
+        Transaction transaction = new TransactionBuilder()
+                // a simple call
+                .gasLimit(new BigInteger(String.valueOf(GasCost.TRANSACTION + 1))) // over the expected limit
+                .data("someData".getBytes(StandardCharsets.UTF_8))
+                .build();
+        checkStorageRentEnabled(transaction, true);
+
+        transaction = new TransactionBuilder()
+                // just a value transfer (no data)
+                .gasLimit(new BigInteger(String.valueOf(GasCost.TRANSACTION)))
+                .destination(new AccountBuilder().name("another").build().getAddress())
+                .value(BigInteger.ONE)
+                .build();
+        checkStorageRentEnabled(transaction, false);
+
+        transaction = new TransactionBuilder()
+                // just a value transfer (no data)
+                .gasLimit(new BigInteger(String.valueOf(GasCost.TRANSACTION + 1))) // over the expected limit
+                .destination(new AccountBuilder().name("another").build().getAddress())
+                .value(BigInteger.ONE)
+                .build();
+        checkStorageRentEnabled(transaction, true);
+
+        transaction = new TransactionBuilder()
+                // a value transfer (with data)
+                .gasLimit(new BigInteger(String.valueOf(GasCost.TRANSACTION)))
+                .value(BigInteger.ONE)
+                .data("something".getBytes(StandardCharsets.UTF_8))
+                .build();
+        checkStorageRentEnabled(transaction, true);
+    }
+
+    private void checkStorageRentEnabled(Transaction transaction, boolean shouldBeEnabled) {
+        TransactionExecutor transactionExecutor = buildTransactionExecutor(transaction, activationConfig);
+        assertEquals(shouldBeEnabled, transactionExecutor.isStorageRentEnabled());
+
+        // now disable storage rent
+        TransactionExecutor transactionExecutorBeforeStorageRent = buildTransactionExecutor(transaction,
+                ActivationConfigsForTest.allBut(ConsensusRule.RSKIP240));
+        assertFalse(transactionExecutorBeforeStorageRent.isStorageRentEnabled());
+    }
+
+    private TransactionExecutor buildTransactionExecutor(Transaction transaction, ActivationConfig activationConfig) {
+        return new TransactionExecutor(
+                constants, activationConfig, transaction, txIndex, rskAddress,
+                repository, blockStore, receiptStore, blockFactory,
+                programInvokeFactory, executionBlock, gasUsedInTheBlock, vmConfig,
+                true, precompiledContracts, deletedAccounts,
+                mock(SignatureCache.class)
+        );
     }
 
     private boolean executeValidTransaction(Transaction transaction, BlockTxSignatureCache blockTxSignatureCache) {

@@ -8,14 +8,13 @@ import org.ethereum.db.TrackedNode;
 import org.junit.Test;
 
 import java.nio.charset.StandardCharsets;
-import java.sql.Time;
 import java.util.GregorianCalendar;
 import java.util.concurrent.TimeUnit;
 
 import static co.rsk.storagerent.StorageRentComputation.*;
-import static org.ethereum.db.OperationType.READ_OPERATION;
-import static org.ethereum.db.OperationType.WRITE_OPERATION;
-import static org.junit.Assert.*;
+import static org.ethereum.db.OperationType.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Test ValueContainingNode public methods:
@@ -45,42 +44,36 @@ public class RentedNodeTest {
         long limit = ONE_DAY_AGO_TIMESTAMP - TimeUnit.DAYS.toMillis(11);
         int expectedRent = 2551;
         checkPayableRent(READ_OPERATION,
-            false,
             limit, // 12 days ago
             expectedRent
         );
         assertTrue(expectedRent > READ_THRESHOLD);
 
         checkPayableRent(READ_OPERATION,
-            false,
             limit + TimeUnit.DAYS.toMillis(1), // 11 days ago
             0
         );
         checkPayableRent(READ_OPERATION,
-            false,
             limit - TimeUnit.DAYS.toMillis(12), // 24 days ago
             RENT_CAP
         );
     }
 
     @Test
-    public void payableRent_readOperationLoadsContractCode() {
+    public void payableRent_readOperationReadsContractCode() {
         long limit = ONE_DAY_AGO_TIMESTAMP - TimeUnit.DAYS.toMillis(70);
         int expectedRent = 15093;
-        checkPayableRent(READ_OPERATION,
-            true,
+        checkPayableRent(READ_CONTRACT_CODE_OPERATION,
             limit, // 71 days ago
             expectedRent
         );
-        assertTrue(expectedRent > READ_THRESHOLD);
+        assertTrue(expectedRent > READ_THRESHOLD_CONTRACT_CODE);
 
-        checkPayableRent(READ_OPERATION,
-            true,
+        checkPayableRent(READ_CONTRACT_CODE_OPERATION,
             limit + TimeUnit.DAYS.toMillis(1), // 70 days ago
             0
         );
-        checkPayableRent(READ_OPERATION,
-            true,
+        checkPayableRent(READ_CONTRACT_CODE_OPERATION,
             limit - TimeUnit.DAYS.toMillis(71), // 142 days ago
             RENT_CAP_CONTRACT_CODE
         );
@@ -91,46 +84,38 @@ public class RentedNodeTest {
         long limit = ONE_DAY_AGO_TIMESTAMP - TimeUnit.DAYS.toMillis(4);
         int expectedRent = 1062;
         checkPayableRent(WRITE_OPERATION,
-            false,
             limit, // 5 days ago
             expectedRent
         );
         assertTrue(expectedRent > WRITE_THRESHOLD);
 
         checkPayableRent(WRITE_OPERATION,
-            false,
             limit + TimeUnit.DAYS.toMillis(1), // 4 days ago
             0
         );
 
         checkPayableRent(WRITE_OPERATION,
-            false,
             limit - TimeUnit.DAYS.toMillis(19), // 24 days ago
             RENT_CAP
         );
     }
 
-    private void checkPayableRent(OperationType operationType, boolean loadsContractCode,
-                                  Long lastRentPaidTimestamp, long expected) {
-        RentedNode rentedNode = rentedNode(SOME_KEY, operationType,
-                loadsContractCode, lastRentPaidTimestamp);
-
+    private void checkPayableRent(OperationType operationType, Long lastRentPaidTimestamp, long expected) {
+        RentedNode rentedNode = rentedNode(SOME_KEY, operationType, lastRentPaidTimestamp);
         assertEquals(expected, rentedNode.payableRent(CURRENT_BLOCK_TIMESTAMP));
     }
 
     @Test
     public void updatedTimestamp_readOperation() {
         checkUpdatedRentTimestamp(READ_OPERATION,
-                false,
                 ONE_DAY_AGO_TIMESTAMP,
                 ONE_DAY_AGO_TIMESTAMP
         );
     }
 
     @Test
-    public void updatedTimestamp_readOperationLoadsContractCode() {
-        checkUpdatedRentTimestamp(READ_OPERATION,
-                true,
+    public void updatedTimestamp_readOperationReadsContractCode() {
+        checkUpdatedRentTimestamp(READ_CONTRACT_CODE_OPERATION,
                 ONE_DAY_AGO_TIMESTAMP,
                 ONE_DAY_AGO_TIMESTAMP
         );
@@ -139,7 +124,6 @@ public class RentedNodeTest {
     @Test
     public void updatedTimestamp_writeOperation() {
         checkUpdatedRentTimestamp(WRITE_OPERATION,
-                false,
                 ONE_DAY_AGO_TIMESTAMP,
                 ONE_DAY_AGO_TIMESTAMP
         );
@@ -147,35 +131,28 @@ public class RentedNodeTest {
 
     @Test
     public void rollbackFee_shouldBe25OfPayableRent() {
-        RentedNode rentedNode = rentedNode(SOME_KEY, READ_OPERATION, false,
-                ONE_MONTH_AGO_TIMESTAMP);
+        RentedNode rentedNode = rentedNode(SOME_KEY, READ_OPERATION, ONE_MONTH_AGO_TIMESTAMP);
 
         long payableRent = rentedNode.payableRent(CURRENT_BLOCK_TIMESTAMP);
         assertEquals(5000, payableRent);
         assertEquals((long) (payableRent * 0.25), rentedNode.rollbackFee(CURRENT_BLOCK_TIMESTAMP));
     }
 
-    private void checkUpdatedRentTimestamp(OperationType operationType, boolean loadsContractCode,
-                                           Long lastRentPaidTimestamp, long expected) {
-        RentedNode rentedNode = rentedNode(SOME_KEY, operationType, loadsContractCode,
-                lastRentPaidTimestamp);
-
+    private void checkUpdatedRentTimestamp(OperationType operationType, Long lastRentPaidTimestamp, long expected) {
+        RentedNode rentedNode = rentedNode(SOME_KEY, operationType, lastRentPaidTimestamp);
         assertEquals(expected, rentedNode.getUpdatedRentTimestamp(CURRENT_BLOCK_TIMESTAMP));
     }
 
-    private RentedNode rentedNode(ByteArrayWrapper someKey, OperationType operationType,
-                                  boolean loadsContractCode, Long lastRentPaidTimestamp) {
+    private RentedNode rentedNode(ByteArrayWrapper someKey, OperationType operationType, Long lastRentPaidTimestamp) {
         RentedNode rentedNode = new RentedNode(
             new TrackedNode(
                 someKey,
                 operationType,
                 new Keccak256(HashUtil.keccak256("something".getBytes(StandardCharsets.UTF_8))).toHexString(),
-                true,
-                false
+                true
             ),
             NODE_SIZE,
-            lastRentPaidTimestamp,
-            loadsContractCode
+            lastRentPaidTimestamp
         );
         return rentedNode;
     }

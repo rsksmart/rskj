@@ -295,7 +295,6 @@ public class WorldDslProcessor {
         }
         return diff;
     }
-
     private void processBlockChainCommand(DslCommand cmd) {
         Block parent = world.getBlockByName(cmd.getArgument(0));
 

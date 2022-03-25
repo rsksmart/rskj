@@ -418,4 +418,8 @@ public class RskSystemProperties extends SystemProperties {
     public boolean rpcZeroSignatureIfRemasc() {
         return configFromFiles.getBoolean("rpc.zeroSignatureIfRemasc");
     }
+
+    public boolean getStorageRentEnabled() {
+        return configFromFiles.getBoolean("storageRent.enabled");
+    }
 }
