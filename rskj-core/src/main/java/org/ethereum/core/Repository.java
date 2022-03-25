@@ -29,7 +29,6 @@ import org.ethereum.vm.DataWord;
 
 import java.math.BigInteger;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 public interface Repository extends RepositorySnapshot {
@@ -152,8 +151,6 @@ public interface Repository extends RepositorySnapshot {
     void updateRents(Set<RentedNode> rentedNodes, long executionBlockTimestamp);
 
     // todo(fedejinich) this methods will only be included in MutableRepositoryTracked
-
-    void setTrackedTransactionHash(String transactionHash);
 
     Set<TrackedNode> getStorageRentNodes(String transactionHash);
 

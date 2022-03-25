@@ -27,6 +27,8 @@ import co.rsk.metrics.profilers.Profiler;
 import co.rsk.metrics.profilers.ProfilerFactory;
 import co.rsk.panic.PanicProcessor;
 import co.rsk.rpc.modules.trace.ProgramSubtrace;
+import co.rsk.storagerent.StorageRentManager;
+import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.config.Constants;
 import org.ethereum.config.blockchain.upgrades.ActivationConfig;
 import org.ethereum.config.blockchain.upgrades.ConsensusRule;
@@ -51,6 +53,7 @@ import java.util.*;
 import static co.rsk.util.ListArrayUtil.getLength;
 import static co.rsk.util.ListArrayUtil.isEmpty;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP174;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP240;
 import static org.ethereum.util.BIUtil.*;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 
@@ -59,7 +62,6 @@ import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
  * @since 19.12.2014
  */
 public class TransactionExecutor {
-
     private static final Logger logger = LoggerFactory.getLogger("execute");
     private static final Profiler profiler = ProfilerFactory.getInstance();
     private static final PanicProcessor panicProcessor = new PanicProcessor();
@@ -89,6 +91,7 @@ public class TransactionExecutor {
 
     private TransactionReceipt receipt;
     private ProgramResult result = new ProgramResult();
+    private StorageRentManager storageRentManager;
     private final Block executionBlock;
 
     private VM vm;
@@ -104,6 +107,7 @@ public class TransactionExecutor {
     private SignatureCache signatureCache;
 
     private boolean localCall = false;
+    private boolean storageRentEnabled; // todo(fedejinich) this is a workaround to enable storage rent just in StorageRentDSLTest, it will be removed
 
     public TransactionExecutor(
             Constants constants, ActivationConfig activationConfig, Transaction tx, int txindex, RskAddress coinbase,
@@ -130,6 +134,7 @@ public class TransactionExecutor {
 
         this.blockTrack = blockTrack;
         this.transactionTrack = this.blockTrack.startTracking();
+        this.storageRentManager = new StorageRentManager();
     }
 
     /**
@@ -229,7 +234,6 @@ public class TransactionExecutor {
     }
 
     private boolean nonceIsValid() {
-        // todo(fedejinich) so the TX is a mock and it doesn't have any sender, then NULLPOINTER
         BigInteger reqNonce = blockTrack.getNonce(tx.getSender(signatureCache));
         BigInteger txNonce = toBI(tx.getNonce());
 
@@ -497,6 +501,8 @@ public class TransactionExecutor {
         return receipt;
     }
 
+    // todo(fedejinich) According to the rskip240, the payment it's done at the end of the tx execution
+    //  rent payment should be included right before cacheTrack.commit, that's the last place to consume gas from the execution
     private void finalization() {
         // RSK if local call gas balances must not be changed
         if (localCall) {
@@ -506,6 +512,12 @@ public class TransactionExecutor {
         }
 
         logger.trace("Finalize transaction {} {}", toBI(tx.getNonce()), tx.getHash());
+
+        if(isStorageRentEnabled()) {
+            // pay storage rent
+            gasLeftover = storageRentManager.pay(gasLeftover, executionBlock.getTimestamp(), blockTrack, transactionTrack, tx.getHash().toHexString());
+            // todo(fedejinich) blockTrack should stop tracking here
+        }
 
         // todo(fedejinich) if it's a precompiled execution, it commits cache twice, here and at 422, is that ok?
         transactionTrack.commit();
@@ -525,7 +537,7 @@ public class TransactionExecutor {
 
         TransactionExecutionSummary summary = buildTransactionExecutionSummary(summaryBuilder, gasRefund);
 
-        // Refund for gas leftover
+        // Refund remaining gas
         blockTrack.addBalance(tx.getSender(), summary.getLeftover().add(summary.getRefund()));
         logger.trace("Pay total refund to sender: [{}], refund val: [{}]", tx.getSender(), summary.getRefund());
 
@@ -594,6 +606,14 @@ public class TransactionExecutor {
         logger.trace("tx listener for gas estimation done");
 
         logger.trace("tx finalization for gas estimation done");
+    }
+
+    @VisibleForTesting
+    public boolean isStorageRentEnabled() {
+        // todo(fedejinich) should i add a check for remasc transaction?
+        return activations.isActive(RSKIP240) &&
+                (!isEmpty(tx.getData()) || GasCost.toGas(tx.getGasLimit()) != GasCost.TRANSACTION) &&
+                storageRentEnabled; // todo(fedejinich) this is a workaround to enable storageRent just in DSL test
     }
 
     private TransactionExecutionSummary buildTransactionExecutionSummary(TransactionExecutionSummary.Builder summaryBuilder, long gasRefund) {
@@ -676,4 +696,13 @@ public class TransactionExecutor {
     }
 
     public Coin getPaidFees() { return paidFees; }
+
+    @VisibleForTesting
+    public StorageRentManager getStorageRentManager() {
+        return this.storageRentManager;
+    }
+
+    public void setStorageRentEnabled(boolean storageRentEnabled) {
+        this.storageRentEnabled = storageRentEnabled;
+    }
 }

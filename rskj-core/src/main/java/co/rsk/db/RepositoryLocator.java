@@ -87,7 +87,7 @@ public class RepositoryLocator {
         Keccak256 stateRoot = stateRootHandler.translate(header);
 
         if (EMPTY_HASH.equals(stateRoot)) {
-            return Optional.of(new MutableTrieImpl(trieStore, new Trie(trieStore)));
+            return Optional.of(new MutableTrieImpl(trieStore));
         }
 
         Optional<Trie> trie = trieStore.retrieve(stateRoot.getBytes());

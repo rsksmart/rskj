@@ -226,11 +226,6 @@ public class Storage implements Repository, ProgramListenerAware {
     }
 
     @Override
-    public void setTrackedTransactionHash(String transactionHash) {
-        repository.setTrackedTransactionHash(transactionHash);
-    }
-
-    @Override
     public Set<TrackedNode> getStorageRentNodes(String transactionHash) {
         return repository.getStorageRentNodes(transactionHash);
     }
