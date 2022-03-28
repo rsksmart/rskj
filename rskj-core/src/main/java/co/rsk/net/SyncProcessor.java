@@ -124,7 +124,7 @@ public class SyncProcessor implements SyncEventsHandler {
             removePendingMessage(messageId, messageType);
             syncState.newSkeleton(message.getBlockIdentifiers(), peer);
         } else {
-            peersInformation.reportEvent(peer.getPeerNodeID(), EventType.UNEXPECTED_MESSAGE);
+            peersInformation.reportEvent(peer.getPeerNodeID(), peer.getAddress(), EventType.UNEXPECTED_MESSAGE);
         }
     }
 
@@ -139,7 +139,7 @@ public class SyncProcessor implements SyncEventsHandler {
             removePendingMessage(messageId, messageType);
             syncState.newConnectionPointData(message.getHash());
         } else {
-            peersInformation.reportEvent(peer.getPeerNodeID(), EventType.UNEXPECTED_MESSAGE);
+            peersInformation.reportEvent(peer.getPeerNodeID(), peer.getAddress(), EventType.UNEXPECTED_MESSAGE);
         }
     }
 
@@ -153,7 +153,7 @@ public class SyncProcessor implements SyncEventsHandler {
             removePendingMessage(messageId, messageType);
             syncState.newBlockHeaders(message.getBlockHeaders());
         } else {
-            peersInformation.reportEvent(peer.getPeerNodeID(), EventType.UNEXPECTED_MESSAGE);
+            peersInformation.reportEvent(peer.getPeerNodeID(), peer.getAddress(), EventType.UNEXPECTED_MESSAGE);
         }
     }
 
@@ -167,7 +167,7 @@ public class SyncProcessor implements SyncEventsHandler {
             removePendingMessage(messageId, messageType);
             syncState.newBody(message, peer);
         } else {
-            peersInformation.reportEvent(peer.getPeerNodeID(), EventType.UNEXPECTED_MESSAGE);
+            peersInformation.reportEvent(peer.getPeerNodeID(), peer.getAddress(), EventType.UNEXPECTED_MESSAGE);
         }
     }
 
@@ -193,7 +193,7 @@ public class SyncProcessor implements SyncEventsHandler {
             removePendingMessage(messageId, messageType);
             blockSyncService.processBlock(message.getBlock(), peer, false);
         } else {
-            peersInformation.reportEvent(peer.getPeerNodeID(), EventType.UNEXPECTED_MESSAGE);
+            peersInformation.reportEvent(peer.getPeerNodeID(), peer.getAddress(), EventType.UNEXPECTED_MESSAGE);
         }
     }
 
