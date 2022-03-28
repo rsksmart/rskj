@@ -161,7 +161,7 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
     private void handleInvalidBlock(Peer peer, BlockHeader header) {
         peersInformation.reportEventWithLog(
                 "Invalid block received from node {} {} {}",
-                peer.getPeerNodeID(), EventType.INVALID_BLOCK,
+                peer.getPeerNodeID(), peer.getAddress(), EventType.INVALID_BLOCK,
                 peer.getPeerNodeID(), header.getNumber(), header.getPrintableHash());
 
         clearPeerInfo(peer);
@@ -177,7 +177,7 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
     private void handleInvalidMessage(Peer peer, BlockHeader header) {
         peersInformation.reportEventWithLog(
                 "Invalid body received from node {} {} {}",
-                peer.getPeerNodeID(), EventType.INVALID_MESSAGE,
+                peer.getPeerNodeID(), peer.getAddress(), EventType.INVALID_MESSAGE,
                 peer.getPeerNodeID(), header.getNumber(), header.getPrintableHash());
 
         clearPeerInfo(peer);
@@ -193,7 +193,7 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
     private void handleUnexpectedBody(Peer peer) {
         peersInformation.reportEventWithLog(
                 "Unexpected body received from node {}",
-                peer.getPeerNodeID(), EventType.UNEXPECTED_MESSAGE, peer.getPeerNodeID());
+                peer.getPeerNodeID(), peer.getAddress(), EventType.UNEXPECTED_MESSAGE, peer.getPeerNodeID());
 
         clearPeerInfo(peer);
         if (suitablePeers.isEmpty()) {
@@ -309,7 +309,7 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
 
     private void handleTimeoutMessage(Peer peer) {
         peersInformation.reportEventWithLog("Timeout waiting body from node {}",
-                peer.getPeerNodeID(), EventType.TIMEOUT_MESSAGE, peer);
+                peer.getPeerNodeID(), peer.getAddress(), EventType.TIMEOUT_MESSAGE, peer);
         Long messageId = messagesByPeers.remove(peer);
         BlockHeader header = pendingBodyResponses.remove(messageId).header;
         clearPeerInfo(peer);

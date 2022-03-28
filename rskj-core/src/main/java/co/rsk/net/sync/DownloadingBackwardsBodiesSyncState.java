@@ -90,7 +90,7 @@ public class DownloadingBackwardsBodiesSyncState extends BaseSyncState {
     public void newBody(BodyResponseMessage body, Peer peer) {
         BlockHeader requestedHeader = inTransit.get(body.getId());
         if (requestedHeader == null) {
-            peersInformation.reportEvent(peer.getPeerNodeID(), EventType.INVALID_MESSAGE);
+            peersInformation.reportEvent(peer.getPeerNodeID(), peer.getAddress(), EventType.INVALID_MESSAGE);
             return;
         }
 
@@ -98,7 +98,7 @@ public class DownloadingBackwardsBodiesSyncState extends BaseSyncState {
         block.seal();
 
         if (!block.getHash().equals(requestedHeader.getHash())) {
-            peersInformation.reportEvent(peer.getPeerNodeID(), EventType.INVALID_MESSAGE);
+            peersInformation.reportEvent(peer.getPeerNodeID(), peer.getAddress(), EventType.INVALID_MESSAGE);
             return;
         }
 
