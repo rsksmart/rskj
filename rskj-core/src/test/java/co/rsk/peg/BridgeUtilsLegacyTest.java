@@ -305,9 +305,10 @@ public class BridgeUtilsLegacyTest {
     }
 
     private void getUTXOsSentToAddress_has_utxos_to_given_address(
-        Boolean isRSKIP293Active
-        , BridgeConstants bridgeConstants
-        , Address address) {
+        boolean isRSKIP293Active,
+        BridgeConstants bridgeConstants,
+        Address address)
+    {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(isRSKIP293Active);
 
@@ -325,13 +326,9 @@ public class BridgeUtilsLegacyTest {
 
         List<UTXO> utxosFound = BridgeUtilsLegacy.getUTXOsSentToAddress(activations, bridgeConstants.getBtcParams(), tx, address);
 
-        Assert.assertEquals(
-            utxoListExpected.size(), utxosFound.size()
-        );
+        Assert.assertEquals(utxoListExpected, utxosFound);
 
-        Assert.assertTrue(
-            utxoListExpected.get(0).getValue().equals(utxosFound.get(0).getValue())
-        );
+        Assert.assertEquals(utxoListExpected.get(0).getValue(), utxosFound.get(0).getValue());
     }
 
     @Test
@@ -488,9 +485,7 @@ public class BridgeUtilsLegacyTest {
                 utxoListExpected.size(), utxosFound.size()
             );
 
-            Assert.assertTrue(
-                expectedValue.equals(result)
-            );
+            Assert.assertEquals(expectedValue, result);
 
         } else {
             Assert.assertTrue(
@@ -529,7 +524,7 @@ public class BridgeUtilsLegacyTest {
     }
 
     @Test(expected = DeprecatedMethodCallException.class)
-    public void getUTXOsSentToAddress_after_RSKIP293_testnet() {
+    public void getUTXOsSentToAddress_after_RSKIP293() {
         getUTXOsSentToAddress_has_multiple_utxos(
             true,
             bridgeConstantsRegtest,
