@@ -61,6 +61,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -3497,5 +3498,295 @@ public class BridgeUtilsTest {
                 Arrays.asList(btcAddressReceivingFundsEqualToMin, btcAddressReceivingFundsAboveMin)
             )
         );
+    }
+
+    @Test(expected = ScriptException.class)
+    public void testGetUTXOsSentToAddresses_multiple_utxos_sent_to_random_address_and_one_utxo_sent_to_bech32_address_before_RSKIP293() {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(false);
+
+        Context btcContext = new Context(bridgeConstantsRegtest.getBtcParams());
+        Address btcAddress = PegTestUtils.createRandomBtcAddress();
+
+        TransactionOutput bech32Output = PegTestUtils.createBech32Output(networkParameters, Coin.COIN);
+        BtcTransaction btcTx = new BtcTransaction(bridgeConstantsRegtest.getBtcParams());
+        btcTx.addOutput(bech32Output);
+        btcTx.addOutput(Coin.COIN, btcAddress);
+        btcTx.addOutput(Coin.ZERO, btcAddress);
+        btcTx.addOutput(Coin.COIN, PegTestUtils.createRandomBtcAddress());
+
+        BridgeUtils.getUTXOsSentToAddresses(
+            activations,
+            networkParameters,
+            btcContext,
+            btcTx,
+            Arrays.asList(btcAddress)
+        );
+    }
+
+    @Test()
+    public void testGetUTXOsSentToAddresses_multiple_utxo_sent_to_multiple_addresses_before_RSKIP293() {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(false);
+
+        Context btcContext = new Context(bridgeConstantsRegtest.getBtcParams());
+        Address btcAddress1 = PegTestUtils.createRandomBtcAddress();
+        Address btcAddress2 = PegTestUtils.createRandomBtcAddress();
+        Address btcAddress3 = PegTestUtils.createRandomBtcAddress();
+        Address btcAddress4 = PegTestUtils.createRandomBtcAddress();
+
+        BtcTransaction btcTx = new BtcTransaction(bridgeConstantsRegtest.getBtcParams());
+        btcTx.addOutput(Coin.COIN, btcAddress1);
+        btcTx.addOutput(Coin.ZERO, btcAddress1);
+        btcTx.addOutput(Coin.COIN, btcAddress2);
+        btcTx.addOutput(Coin.COIN, btcAddress2);
+        btcTx.addOutput(Coin.COIN, btcAddress3);
+        btcTx.addOutput(Coin.COIN, btcAddress4);
+
+        List<UTXO> utxosExpected = new ArrayList<>();
+        utxosExpected.add(new UTXO(
+            btcTx.getHash(),
+            0,
+            Coin.COIN,
+            0,
+            false,
+            ScriptBuilder.createOutputScript(btcAddress1)
+        ));
+        utxosExpected.add(new UTXO(
+            btcTx.getHash(),
+            0,
+            Coin.ZERO,
+            0,
+            false,
+            ScriptBuilder.createOutputScript(btcAddress1)
+        ));
+
+        List<UTXO> utxosFound = BridgeUtils.getUTXOsSentToAddresses(
+            activations,
+            networkParameters,
+            btcContext,
+            btcTx,
+            /* Even we are passing three address, only the first one in the list will be use to pick the utxos sent to
+            it. This is due the legacy logic before RSKIP293 */
+            Arrays.asList(btcAddress1, btcAddress2, btcAddress3)
+        );
+
+        Assert.assertEquals(
+            utxosExpected.size(), utxosFound.size()
+        );
+
+        Coin expectedValue = utxosExpected.stream().map(UTXO::getValue).reduce(Coin.ZERO,
+            Coin::add
+        );
+
+        Coin result = utxosFound.stream().map(UTXO::getValue).reduce(Coin.ZERO,
+            Coin::add
+        );
+
+        Assert.assertEquals(expectedValue, result);
+    }
+
+    @Test()
+    public void testGetUTXOsSentToAddresses_no_utxo_sent_to_given_address_before_RSKIP293() {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(false);
+
+        Context btcContext = new Context(bridgeConstantsRegtest.getBtcParams());
+        Address btcAddress1 = PegTestUtils.createRandomBtcAddress();
+        Address btcAddress3 = PegTestUtils.createRandomBtcAddress();
+        Address btcAddress4 = PegTestUtils.createRandomBtcAddress();
+
+        BtcTransaction btcTx = new BtcTransaction(bridgeConstantsRegtest.getBtcParams());
+        btcTx.addOutput(Coin.COIN, btcAddress1);
+        btcTx.addOutput(Coin.ZERO, btcAddress1);
+        btcTx.addOutput(Coin.COIN, btcAddress3);
+        btcTx.addOutput(Coin.COIN, btcAddress4);
+
+        List<UTXO> utxosFound = BridgeUtils.getUTXOsSentToAddresses(
+            activations,
+            networkParameters,
+            btcContext,
+            btcTx,
+            /* Even we are passing three address, only the first one in the list will be use to pick the utxos sent to
+            it. This is due the legacy logic before RSKIP293 */
+            Arrays.asList(PegTestUtils.createRandomBtcAddress(), btcAddress1, btcAddress3)
+        );
+
+        Assert.assertTrue(utxosFound.isEmpty());
+    }
+
+    @Test()
+    public void testGetUTXOsSentToAddresses_multiple_utxos_sent_to_random_address_and_one_utxo_sent_to_bech32_address_after_RSKIP293() {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
+
+        Context btcContext = new Context(bridgeConstantsRegtest.getBtcParams());
+        Address btcAddress = PegTestUtils.createRandomBtcAddress();
+
+        TransactionOutput bech32Output = PegTestUtils.createBech32Output(networkParameters, Coin.COIN);
+        BtcTransaction btcTx = new BtcTransaction(bridgeConstantsRegtest.getBtcParams());
+        btcTx.addOutput(bech32Output);
+        btcTx.addOutput(Coin.COIN, btcAddress);
+        btcTx.addOutput(Coin.ZERO, btcAddress);
+        btcTx.addOutput(Coin.COIN, PegTestUtils.createRandomBtcAddress());
+
+        List<UTXO> utxosExpected = new ArrayList<>();
+        utxosExpected.add(new UTXO(
+            btcTx.getHash(),
+            0,
+            Coin.COIN,
+            0,
+            false,
+            ScriptBuilder.createOutputScript(btcAddress)
+        ));
+        utxosExpected.add(new UTXO(
+            btcTx.getHash(),
+            0,
+            Coin.ZERO,
+            0,
+            false,
+            ScriptBuilder.createOutputScript(btcAddress)
+        ));
+        List<UTXO> utxosFound = BridgeUtils.getUTXOsSentToAddresses(
+            activations,
+            networkParameters,
+            btcContext,
+            btcTx,
+            Arrays.asList(btcAddress)
+        );
+
+        Assert.assertEquals(
+            utxosExpected.size(), utxosFound.size()
+        );
+
+        Coin expectedValue = utxosExpected.stream().map(UTXO::getValue).reduce(Coin.ZERO,
+            Coin::add
+        );
+
+        Coin result = utxosFound.stream().map(UTXO::getValue).reduce(Coin.ZERO,
+            Coin::add
+        );
+
+        Assert.assertEquals(expectedValue, result);
+    }
+
+    @Test()
+    public void testGetUTXOsSentToAddresses_multiple_utxo_sent_to_multiple_addresses_after_RSKIP293() {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
+
+        Context btcContext = new Context(bridgeConstantsRegtest.getBtcParams());
+        Address btcAddress1 = PegTestUtils.createRandomBtcAddress();
+        Address btcAddress2 = PegTestUtils.createRandomBtcAddress();
+        Address btcAddress3 = PegTestUtils.createRandomBtcAddress();
+        Address btcAddress4 = PegTestUtils.createRandomBtcAddress();
+
+        BtcTransaction btcTx = new BtcTransaction(bridgeConstantsRegtest.getBtcParams());
+        btcTx.addOutput(Coin.COIN, btcAddress1);
+        btcTx.addOutput(Coin.ZERO, btcAddress1);
+        btcTx.addOutput(Coin.COIN, btcAddress2);
+        btcTx.addOutput(Coin.COIN, btcAddress2);
+        btcTx.addOutput(Coin.COIN, btcAddress3);
+        btcTx.addOutput(Coin.COIN, btcAddress4);
+
+        List<UTXO> utxosExpected = new ArrayList<>();
+        utxosExpected.add(new UTXO(
+            btcTx.getHash(),
+            0,
+            Coin.COIN,
+            0,
+            false,
+            ScriptBuilder.createOutputScript(btcAddress1)
+        ));
+        utxosExpected.add(new UTXO(
+            btcTx.getHash(),
+            0,
+            Coin.ZERO,
+            0,
+            false,
+            ScriptBuilder.createOutputScript(btcAddress1)
+        ));
+        utxosExpected.add(new UTXO(
+            btcTx.getHash(),
+            0,
+            Coin.COIN,
+            0,
+            false,
+            ScriptBuilder.createOutputScript(btcAddress2)
+        ));
+        utxosExpected.add(new UTXO(
+            btcTx.getHash(),
+            0,
+            Coin.COIN,
+            0,
+            false,
+            ScriptBuilder.createOutputScript(btcAddress2)
+        ));
+        utxosExpected.add(new UTXO(
+            btcTx.getHash(),
+            0,
+            Coin.COIN,
+            0,
+            false,
+            ScriptBuilder.createOutputScript(btcAddress3)
+        ));
+
+        List<UTXO> utxosFound = BridgeUtils.getUTXOsSentToAddresses(
+            activations,
+            networkParameters,
+            btcContext,
+            btcTx,
+            Arrays.asList(btcAddress1,
+                btcAddress2,
+                btcAddress3,
+                PegTestUtils.createRandomBtcAddress(),
+                PegTestUtils.createRandomBtcAddress())
+        );
+
+        Assert.assertEquals(
+            utxosExpected.size(), utxosFound.size()
+        );
+
+        Coin expectedValue = utxosExpected.stream().map(UTXO::getValue).reduce(Coin.ZERO,
+            Coin::add
+        );
+
+        Coin result = utxosFound.stream().map(UTXO::getValue).reduce(Coin.ZERO,
+            Coin::add
+        );
+
+        Assert.assertEquals(expectedValue, result);
+    }
+
+    @Test()
+    public void testGetUTXOsSentToAddresses_no_utxo_sent_to_given_address_after_RSKIP293() {
+        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+        when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(false);
+
+        Context btcContext = new Context(bridgeConstantsRegtest.getBtcParams());
+        Address btcAddress1 = PegTestUtils.createRandomBtcAddress();
+        Address btcAddress2 = PegTestUtils.createRandomBtcAddress();
+        Address btcAddress3 = PegTestUtils.createRandomBtcAddress();
+        Address btcAddress4 = PegTestUtils.createRandomBtcAddress();
+
+        BtcTransaction btcTx = new BtcTransaction(bridgeConstantsRegtest.getBtcParams());
+        btcTx.addOutput(Coin.COIN, btcAddress1);
+        btcTx.addOutput(Coin.ZERO, btcAddress1);
+        btcTx.addOutput(Coin.COIN, btcAddress2);
+        btcTx.addOutput(Coin.COIN, btcAddress2);
+        btcTx.addOutput(Coin.COIN, btcAddress3);
+        btcTx.addOutput(Coin.COIN, btcAddress4);
+
+        List<UTXO> utxosFound = BridgeUtils.getUTXOsSentToAddresses(
+            activations,
+            networkParameters,
+            btcContext,
+            btcTx,
+            /* Even we are passing three address, only the first one in the list will be use to pick the utxos sent to
+            it. This is due the legacy logic before RSKIP293 */
+            Arrays.asList(PegTestUtils.createRandomBtcAddress())
+        );
+
+        Assert.assertTrue(utxosFound.isEmpty());
     }
 }
