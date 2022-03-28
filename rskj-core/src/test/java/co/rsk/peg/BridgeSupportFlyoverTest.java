@@ -75,19 +75,17 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
         return PegTestUtils.createBtcTransactionWithOutputToAddress(btcRegTestParams, amount, btcAddress);
     }
 
-    private ActivationConfig.ForBlock createActivation(boolean isRskip293Active) {
-        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
+    private void setActivationsForRegisterFastBridgeBtcTx(boolean isRskip293Active) {
         when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP219)).thenReturn(true);
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(isRskip293Active);
-        return activations;
     }
 
     private BigInteger sendFundsToActiveFederation(
         boolean isRskip293Active,
         Coin valueToSend
     ) throws BlockStoreException, BridgeIllegalArgumentException, IOException {
-        ActivationConfig.ForBlock activations = createActivation(isRskip293Active);
+        setActivationsForRegisterFastBridgeBtcTx(isRskip293Active);
 
         BridgeConstants bridgeConstants = spy(bridgeConstantsRegtest);
         // For the sake of simplicity, this set the fed activation age value equal to the value in the bridgeRegTestConstants
@@ -228,7 +226,7 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
         boolean isRskip293Active,
         Coin valueToSend
     ) throws BlockStoreException, BridgeIllegalArgumentException, IOException {
-        ActivationConfig.ForBlock activations = createActivation(isRskip293Active);
+        setActivationsForRegisterFastBridgeBtcTx(isRskip293Active);
 
         BridgeConstants bridgeConstants = spy(bridgeConstantsRegtest);
         // For the sake of simplicity, this set the fed activation age value equal to the value in the bridgeRegTestConstants
@@ -354,7 +352,7 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
                 postCallLbcAddressBalance
             );
 
-            // when RSKIP293 is active, the method setFastBridgeRetiringFederationInformation should be called twice.
+            // when RSKIP293 is active, the method markFastBridgeFederationDerivationHashAsUsed should be called twice.
             verify(provider, times(isRskip293Active ? 2 : 1)).markFastBridgeFederationDerivationHashAsUsed(
                 btcTx.getHash(false),
                 fastBridgeDerivationHash
@@ -371,7 +369,7 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
         boolean isRskip293Active,
         Coin valueToSend
     ) throws BlockStoreException, BridgeIllegalArgumentException, IOException {
-        ActivationConfig.ForBlock activations = createActivation(isRskip293Active);
+        setActivationsForRegisterFastBridgeBtcTx(isRskip293Active);
 
         BridgeConstants bridgeConstants = spy(bridgeConstantsRegtest);
         // For the sake of simplicity, this set the fed activation age value equal to the value in the bridgeRegTestConstants
@@ -538,7 +536,7 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
         boolean isRskip293Active,
         BtcTransactionProvider btcTransactionProvider
     ) throws BlockStoreException, BridgeIllegalArgumentException, IOException {
-        ActivationConfig.ForBlock activations = createActivation(isRskip293Active);
+        setActivationsForRegisterFastBridgeBtcTx(isRskip293Active);
 
         BridgeConstants bridgeConstants = spy(constants);
         // For the sake of simplicity, this set the fed activation age value equal to the value in the bridgeRegTestConstants
@@ -1129,7 +1127,8 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
 
     @Test
     public void registerFastBridgeBtcTransaction_amount_sent_is_below_minimum_after_RSKIP293_activation() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
-        Coin valueBelowMinimum = BridgeUtils.getMinimumPegInTxValue(createActivation(true), bridgeConstantsRegtest).minus(Coin.CENT);
+        setActivationsForRegisterFastBridgeBtcTx(true);
+        Coin valueBelowMinimum = BridgeUtils.getMinimumPegInTxValue(activations, bridgeConstantsRegtest).minus(Coin.CENT);
         BigInteger result = sendFundsToActiveFederation(
             true,
             valueBelowMinimum
@@ -1201,8 +1200,8 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
     @Test
     public void registerFastBridgeBtcTransaction_amount_sent_is_equal_to_minimum()
         throws BlockStoreException, IOException, BridgeIllegalArgumentException {
-
-        Coin minimumPegInTxValue = BridgeUtils.getMinimumPegInTxValue(createActivation(true), bridgeConstantsRegtest);
+        setActivationsForRegisterFastBridgeBtcTx(true);
+        Coin minimumPegInTxValue = BridgeUtils.getMinimumPegInTxValue(activations, bridgeConstantsRegtest);
         BigInteger result = sendFundsToActiveFederation(
             true,
             minimumPegInTxValue
@@ -1216,7 +1215,8 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
     @Test
     public void registerFastBridgeBtcTransaction_amount_sent_is_over_minimum()
         throws BlockStoreException, IOException, BridgeIllegalArgumentException {
-        Coin valueOverMinimum = BridgeUtils.getMinimumPegInTxValue(createActivation(true), bridgeConstantsRegtest).add(Coin.CENT);
+        setActivationsForRegisterFastBridgeBtcTx(true);
+        Coin valueOverMinimum = BridgeUtils.getMinimumPegInTxValue(activations, bridgeConstantsRegtest).add(Coin.CENT);
         BigInteger result = sendFundsToActiveFederation(
             true,
             valueOverMinimum
@@ -1265,7 +1265,7 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void registerFastBridgeBtcTransaction_funds_sent_to_active_fed() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+    public void registerFastBridgeBtcTransaction_funds_sent_to_active_fed_after_RSKIP293() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
         Coin valueToSend = Coin.COIN;
         BigInteger result  = sendFundsToActiveFederation(
             true,
@@ -1276,7 +1276,7 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
     }
 
     @Test
-    public void registerFastBridgeBtcTransaction_funds_sent_to_retiring_fed() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+    public void registerFastBridgeBtcTransaction_funds_sent_to_retiring_fed_after_RSKIP293() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
         Coin valueToSend = Coin.COIN;
         BigInteger result = sendFundsToRetiringFederation(
             true,
