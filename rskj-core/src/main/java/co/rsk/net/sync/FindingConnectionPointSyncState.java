@@ -95,6 +95,7 @@ public class FindingConnectionPointSyncState extends BaseSyncState {
                 "Timeout waiting requests {}",
                 EventType.TIMEOUT_MESSAGE,
                 this.getClass(),
-                selectedPeer.getPeerNodeID());
+                selectedPeer.getPeerNodeID(),
+                selectedPeer.getAddress());
     }
 }
