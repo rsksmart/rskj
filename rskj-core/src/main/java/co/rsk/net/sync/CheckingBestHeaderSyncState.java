@@ -74,6 +74,7 @@ public class CheckingBestHeaderSyncState extends BaseSyncState implements SyncSt
                 "Timeout waiting requests {}",
                 EventType.TIMEOUT_MESSAGE,
                 this.getClass(),
-                selectedPeer.getPeerNodeID());
+                selectedPeer.getPeerNodeID(),
+                selectedPeer.getAddress());
     }
 }

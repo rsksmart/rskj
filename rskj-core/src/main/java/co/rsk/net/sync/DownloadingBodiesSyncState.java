@@ -390,7 +390,8 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
         pendingBodyResponses.put(requestId, new PendingBodyResponse(nodeID, header));
     }
 
-    private static class PendingBodyResponse {
+    @VisibleForTesting
+    protected static class PendingBodyResponse {
         private NodeID nodeID;
         private BlockHeader header;
 
