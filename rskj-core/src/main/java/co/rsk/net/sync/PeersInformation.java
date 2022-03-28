@@ -71,13 +71,13 @@ public class PeersInformation {
                 .thenComparing(this::comparePeerTotalDifficulty);
     }
 
-    public void reportEventWithLog(String message, NodeID peerId, EventType eventType, Object... arguments) {
+    public void reportEventWithLog(String message, NodeID peerId, InetAddress peerAddress, EventType eventType, Object... arguments) {
         logger.trace(message, arguments);
-        peerScoringManager.recordEvent(peerId, null, eventType);
+        peerScoringManager.recordEvent(peerId, peerAddress, eventType);
     }
 
-    public void reportEvent(NodeID peerId, EventType eventType) {
-        peerScoringManager.recordEvent(peerId, null, eventType);
+    public void reportEvent(NodeID peerId, InetAddress peerAddress, EventType eventType) {
+        peerScoringManager.recordEvent(peerId, peerAddress, eventType);
     }
 
     public void reportErrorEvent(NodeID peerId, InetAddress peerAddress, String message, EventType eventType, Object... arguments) {
