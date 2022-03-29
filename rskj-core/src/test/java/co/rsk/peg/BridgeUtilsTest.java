@@ -1053,7 +1053,7 @@ public class BridgeUtilsTest {
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(false);
 
         Coin minimumPeginValue = BridgeUtils.getMinimumPegInTxValue(activations, bridgeConstantsRegtest);
-        // Create a tx with multiple utxos below the minimum but the sum of each utxos is equal to the minimum
+        // Create a tx with multiple utxos below the minimum, and the sum of each utxos as well is below the minimum
         BtcTransaction tx = new BtcTransaction(networkParameters);
         tx.addOutput(minimumPeginValue.div(4), activeFederation.getAddress());
         tx.addOutput(minimumPeginValue.div(4), activeFederation.getAddress());
@@ -1078,12 +1078,14 @@ public class BridgeUtilsTest {
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
 
         Coin minimumPeginValue = BridgeUtils.getMinimumPegInTxValue(activations, bridgeConstantsRegtest);
+        Coin belowMinimumPeginValue = minimumPeginValue.divide(2);
+
         Coin aboveMinimumPeginValue = minimumPeginValue.add(Coin.COIN);
         // Create a tx with multiple utxos below, one equal to, and one above, the minimum.
         BtcTransaction tx = new BtcTransaction(networkParameters);
-        tx.addOutput(minimumPeginValue.div(4), activeFederation.getAddress());
-        tx.addOutput(minimumPeginValue.div(4), activeFederation.getAddress());
-        tx.addOutput(minimumPeginValue.div(4), activeFederation.getAddress());
+        tx.addOutput(belowMinimumPeginValue, activeFederation.getAddress());
+        tx.addOutput(belowMinimumPeginValue, activeFederation.getAddress());
+        tx.addOutput(belowMinimumPeginValue, activeFederation.getAddress());
         tx.addOutput(minimumPeginValue, activeFederation.getAddress());
         tx.addOutput(aboveMinimumPeginValue, activeFederation.getAddress());
 
@@ -1105,7 +1107,7 @@ public class BridgeUtilsTest {
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
 
         Coin minimumPeginValue = BridgeUtils.getMinimumPegInTxValue(activations, bridgeConstantsRegtest);
-        // Create a tx with multiple utxos below the minimum but the sum of each utxos is equal to the minimum
+
         BtcTransaction tx = new BtcTransaction(networkParameters);
         tx.addOutput(minimumPeginValue, activeFederation.getAddress());
 
@@ -3132,11 +3134,11 @@ public class BridgeUtilsTest {
         ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(false);
 
-        Address randomBtcAddress = PegTestUtils.createRandomBtcAddress();
+        Address btcAddressReceivingFunds = PegTestUtils.createRandomBtcAddress();
         Context btcContext = new Context(bridgeConstantsRegtest.getBtcParams());
 
         BtcTransaction btcTx = new BtcTransaction(bridgeConstantsRegtest.getBtcParams());
-        btcTx.addOutput(Coin.ZERO, randomBtcAddress);
+        btcTx.addOutput(Coin.ZERO, btcAddressReceivingFunds);
 
         Assert.assertEquals(
             FastBridgeTxResponseCodes.UNPROCESSABLE_TX_VALUE_ZERO_ERROR,
@@ -3145,7 +3147,7 @@ public class BridgeUtilsTest {
                 bridgeConstantsRegtest,
                 btcContext,
                 btcTx,
-                Arrays.asList(randomBtcAddress)
+                Collections.singletonList(btcAddressReceivingFunds)
             )
         );
     }
@@ -3186,14 +3188,14 @@ public class BridgeUtilsTest {
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
 
         Context btcContext = new Context(bridgeConstantsRegtest.getBtcParams());
-        Address randomBtcAddress = PegTestUtils.createRandomBtcAddress();
+        Address btcAddressReceivingFunds = PegTestUtils.createRandomBtcAddress();
 
         BtcTransaction btcTx = new BtcTransaction(bridgeConstantsRegtest.getBtcParams());
         Coin valueBelowMinimum = BridgeUtils
             .getMinimumPegInTxValue(activations, bridgeConstantsRegtest)
             .minus(Coin.SATOSHI);
-        btcTx.addOutput(valueBelowMinimum, randomBtcAddress);
-        btcTx.addOutput(Coin.COIN, randomBtcAddress);
+        btcTx.addOutput(valueBelowMinimum, btcAddressReceivingFunds);
+        btcTx.addOutput(Coin.COIN, btcAddressReceivingFunds);
 
         Assert.assertEquals(
             FastBridgeTxResponseCodes.UNPROCESSABLE_TX_UTXO_AMOUNT_SENT_BELOW_MINIMUM_ERROR,
@@ -3202,7 +3204,7 @@ public class BridgeUtilsTest {
                 bridgeConstantsRegtest,
                 btcContext,
                 btcTx,
-                Arrays.asList(randomBtcAddress)
+                Arrays.asList(btcAddressReceivingFunds)
             )
         );
     }
@@ -3213,15 +3215,15 @@ public class BridgeUtilsTest {
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
 
         Context btcContext = new Context(bridgeConstantsRegtest.getBtcParams());
-        Address randomBtcAddress1 = PegTestUtils.createRandomBtcAddress();
-        Address randomBtcAddress2 = PegTestUtils.createRandomBtcAddress();
+        Address btcAddressReceivingFundsEqualToMin = PegTestUtils.createRandomBtcAddress();
+        Address secondBtcAddressReceivingFundsEqualToMin = PegTestUtils.createRandomBtcAddress();
 
         Coin minimumPegInTxValue = BridgeUtils
             .getMinimumPegInTxValue(activations, bridgeConstantsRegtest);
 
         BtcTransaction btcTx = new BtcTransaction(bridgeConstantsRegtest.getBtcParams());
-        btcTx.addOutput(minimumPegInTxValue, randomBtcAddress1);
-        btcTx.addOutput(minimumPegInTxValue, randomBtcAddress2);
+        btcTx.addOutput(minimumPegInTxValue, btcAddressReceivingFundsEqualToMin);
+        btcTx.addOutput(minimumPegInTxValue, secondBtcAddressReceivingFundsEqualToMin);
 
         Assert.assertEquals(
             FastBridgeTxResponseCodes.VALID_TX,
@@ -3230,7 +3232,7 @@ public class BridgeUtilsTest {
                 bridgeConstantsRegtest,
                 btcContext,
                 btcTx,
-                Arrays.asList(randomBtcAddress1, randomBtcAddress2)
+                Arrays.asList(btcAddressReceivingFundsEqualToMin, secondBtcAddressReceivingFundsEqualToMin)
             )
         );
     }
@@ -3307,47 +3309,25 @@ public class BridgeUtilsTest {
         btcTx.addOutput(Coin.COIN, btcAddress3);
         btcTx.addOutput(Coin.COIN, btcAddress4);
 
-        List<UTXO> utxosExpected = new ArrayList<>();
-        utxosExpected.add(new UTXO(
-            btcTx.getHash(),
-            0,
-            Coin.COIN,
-            0,
-            false,
-            ScriptBuilder.createOutputScript(btcAddress1)
-        ));
-        utxosExpected.add(new UTXO(
-            btcTx.getHash(),
-            0,
-            Coin.ZERO,
-            0,
-            false,
-            ScriptBuilder.createOutputScript(btcAddress1)
-        ));
+        List<UTXO> expectedResult = new ArrayList<>();
+        expectedResult.add(PegTestUtils.createUTXO(btcTx.getHash(), 0, Coin.COIN));
+        expectedResult.add(PegTestUtils.createUTXO(btcTx.getHash(), 1, Coin.ZERO));
 
-        List<UTXO> utxosFound = BridgeUtils.getUTXOsSentToAddresses(
+        List<UTXO> foundUTXOs = BridgeUtils.getUTXOsSentToAddresses(
             activations,
             networkParameters,
             btcContext,
             btcTx,
-            /* Even we are passing three address, only the first one in the list will be use to pick the utxos sent to
-            it. This is due the legacy logic before RSKIP293 */
+            /* Only the first address in the list is used to pick the utxos sent.
+            This is due the legacy logic before RSKIP293 */
             Arrays.asList(btcAddress1, btcAddress2, btcAddress3)
         );
 
-        Assert.assertEquals(
-            utxosExpected.size(), utxosFound.size()
-        );
+        Assert.assertArrayEquals(expectedResult.toArray(), foundUTXOs.toArray());
 
-        Coin expectedValue = utxosExpected.stream().map(UTXO::getValue).reduce(Coin.ZERO,
-            Coin::add
-        );
-
-        Coin result = utxosFound.stream().map(UTXO::getValue).reduce(Coin.ZERO,
-            Coin::add
-        );
-
-        Assert.assertEquals(expectedValue, result);
+        Coin amount = foundUTXOs.stream().map(UTXO::getValue).reduce(Coin.ZERO, Coin::add);
+        Coin expectedAmount = expectedResult.stream().map(UTXO::getValue).reduce(Coin.ZERO, Coin::add);
+        Assert.assertEquals(amount, expectedAmount);
     }
 
     @Test()
@@ -3366,7 +3346,7 @@ public class BridgeUtilsTest {
         btcTx.addOutput(Coin.COIN, btcAddress3);
         btcTx.addOutput(Coin.COIN, btcAddress4);
 
-        List<UTXO> utxosFound = BridgeUtils.getUTXOsSentToAddresses(
+        List<UTXO> foundUTXOs = BridgeUtils.getUTXOsSentToAddresses(
             activations,
             networkParameters,
             btcContext,
@@ -3376,7 +3356,7 @@ public class BridgeUtilsTest {
             Arrays.asList(PegTestUtils.createRandomBtcAddress(), btcAddress1, btcAddress3)
         );
 
-        Assert.assertTrue(utxosFound.isEmpty());
+        Assert.assertTrue(foundUTXOs.isEmpty());
     }
 
     @Test()
@@ -3394,44 +3374,23 @@ public class BridgeUtilsTest {
         btcTx.addOutput(Coin.ZERO, btcAddress);
         btcTx.addOutput(Coin.COIN, PegTestUtils.createRandomBtcAddress());
 
-        List<UTXO> utxosExpected = new ArrayList<>();
-        utxosExpected.add(new UTXO(
-            btcTx.getHash(),
-            0,
-            Coin.COIN,
-            0,
-            false,
-            ScriptBuilder.createOutputScript(btcAddress)
-        ));
-        utxosExpected.add(new UTXO(
-            btcTx.getHash(),
-            0,
-            Coin.ZERO,
-            0,
-            false,
-            ScriptBuilder.createOutputScript(btcAddress)
-        ));
-        List<UTXO> utxosFound = BridgeUtils.getUTXOsSentToAddresses(
+        List<UTXO> expectedResult = new ArrayList<>();
+        expectedResult.add(PegTestUtils.createUTXO(btcTx.getHash(), 1, Coin.COIN));
+        expectedResult.add(PegTestUtils.createUTXO(btcTx.getHash(), 2, Coin.ZERO));
+
+        List<UTXO> foundUTXOs = BridgeUtils.getUTXOsSentToAddresses(
             activations,
             networkParameters,
             btcContext,
             btcTx,
-            Arrays.asList(btcAddress)
+            Collections.singletonList(btcAddress)
         );
 
-        Assert.assertEquals(
-            utxosExpected.size(), utxosFound.size()
-        );
+        Assert.assertArrayEquals(expectedResult.toArray(), foundUTXOs.toArray());
 
-        Coin expectedValue = utxosExpected.stream().map(UTXO::getValue).reduce(Coin.ZERO,
-            Coin::add
-        );
-
-        Coin result = utxosFound.stream().map(UTXO::getValue).reduce(Coin.ZERO,
-            Coin::add
-        );
-
-        Assert.assertEquals(expectedValue, result);
+        Coin amount = foundUTXOs.stream().map(UTXO::getValue).reduce(Coin.ZERO, Coin::add);
+        Coin expectedAmount = expectedResult.stream().map(UTXO::getValue).reduce(Coin.ZERO, Coin::add);
+        Assert.assertEquals(amount, expectedAmount);
     }
 
     @Test()
@@ -3453,73 +3412,32 @@ public class BridgeUtilsTest {
         btcTx.addOutput(Coin.COIN, btcAddress3);
         btcTx.addOutput(Coin.COIN, btcAddress4);
 
-        List<UTXO> utxosExpected = new ArrayList<>();
-        utxosExpected.add(new UTXO(
-            btcTx.getHash(),
-            0,
-            Coin.COIN,
-            0,
-            false,
-            ScriptBuilder.createOutputScript(btcAddress1)
-        ));
-        utxosExpected.add(new UTXO(
-            btcTx.getHash(),
-            0,
-            Coin.ZERO,
-            0,
-            false,
-            ScriptBuilder.createOutputScript(btcAddress1)
-        ));
-        utxosExpected.add(new UTXO(
-            btcTx.getHash(),
-            0,
-            Coin.COIN,
-            0,
-            false,
-            ScriptBuilder.createOutputScript(btcAddress2)
-        ));
-        utxosExpected.add(new UTXO(
-            btcTx.getHash(),
-            0,
-            Coin.COIN,
-            0,
-            false,
-            ScriptBuilder.createOutputScript(btcAddress2)
-        ));
-        utxosExpected.add(new UTXO(
-            btcTx.getHash(),
-            0,
-            Coin.COIN,
-            0,
-            false,
-            ScriptBuilder.createOutputScript(btcAddress3)
-        ));
+        List<UTXO> expectedResult = new ArrayList<>();
+        expectedResult.add(PegTestUtils.createUTXO(btcTx.getHash(), 0, Coin.COIN));
+        expectedResult.add(PegTestUtils.createUTXO(btcTx.getHash(), 1, Coin.ZERO));
+        expectedResult.add(PegTestUtils.createUTXO(btcTx.getHash(), 2, Coin.COIN));
+        expectedResult.add(PegTestUtils.createUTXO(btcTx.getHash(), 3, Coin.COIN));
+        expectedResult.add(PegTestUtils.createUTXO(btcTx.getHash(), 4, Coin.COIN));
 
-        List<UTXO> utxosFound = BridgeUtils.getUTXOsSentToAddresses(
+        List<UTXO> foundUTXOs = BridgeUtils.getUTXOsSentToAddresses(
             activations,
             networkParameters,
             btcContext,
             btcTx,
-            Arrays.asList(btcAddress1,
+            Arrays.asList(
+                btcAddress1,
                 btcAddress2,
                 btcAddress3,
                 PegTestUtils.createRandomBtcAddress(),
-                PegTestUtils.createRandomBtcAddress())
+                PegTestUtils.createRandomBtcAddress()
+            )
         );
 
-        Assert.assertEquals(
-            utxosExpected.size(), utxosFound.size()
-        );
+        Assert.assertArrayEquals(expectedResult.toArray(), foundUTXOs.toArray());
 
-        Coin expectedValue = utxosExpected.stream().map(UTXO::getValue).reduce(Coin.ZERO,
-            Coin::add
-        );
-
-        Coin result = utxosFound.stream().map(UTXO::getValue).reduce(Coin.ZERO,
-            Coin::add
-        );
-
-        Assert.assertEquals(expectedValue, result);
+        Coin amount = foundUTXOs.stream().map(UTXO::getValue).reduce(Coin.ZERO, Coin::add);
+        Coin expectedAmount = expectedResult.stream().map(UTXO::getValue).reduce(Coin.ZERO, Coin::add);
+        Assert.assertEquals(amount, expectedAmount);
     }
 
     @Test()
@@ -3541,16 +3459,14 @@ public class BridgeUtilsTest {
         btcTx.addOutput(Coin.COIN, btcAddress3);
         btcTx.addOutput(Coin.COIN, btcAddress4);
 
-        List<UTXO> utxosFound = BridgeUtils.getUTXOsSentToAddresses(
+        List<UTXO> foundUTXOs = BridgeUtils.getUTXOsSentToAddresses(
             activations,
             networkParameters,
             btcContext,
             btcTx,
-            /* Even we are passing three address, only the first one in the list will be use to pick the utxos sent to
-            it. This is due the legacy logic before RSKIP293 */
             Arrays.asList(PegTestUtils.createRandomBtcAddress())
         );
 
-        Assert.assertTrue(utxosFound.isEmpty());
+        Assert.assertTrue(foundUTXOs.isEmpty());
     }
 }

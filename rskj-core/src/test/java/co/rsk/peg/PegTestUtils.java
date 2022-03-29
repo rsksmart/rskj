@@ -197,6 +197,17 @@ public class PegTestUtils {
         );
     }
 
+    public static UTXO createUTXO(Sha256Hash btcHash, long index, Coin value) {
+        return new UTXO(
+            btcHash,
+            index,
+            value,
+            10,
+            false,
+            ScriptBuilder.createOutputScript(new BtcECKey())
+        );
+    }
+
     public static Address getFastBridgeAddressFromRedeemScript(BridgeConstants bridgeConstants, Script redeemScript, Sha256Hash derivationArgumentHash) {
         Script fastBridgeRedeemScript = FastBridgeRedeemScriptParser.createMultiSigFastBridgeRedeemScript(
             redeemScript,
