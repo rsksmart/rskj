@@ -1,14 +1,13 @@
 package co.rsk.peg;
 
 import co.rsk.bitcoinj.core.Address;
-import co.rsk.bitcoinj.core.BtcECKey;
 import co.rsk.bitcoinj.core.BtcTransaction;
 import co.rsk.bitcoinj.core.Coin;
 import co.rsk.bitcoinj.core.UTXO;
-import co.rsk.bitcoinj.script.ScriptBuilder;
 import co.rsk.config.BridgeConstants;
 import co.rsk.config.BridgeMainNetConstants;
 import co.rsk.config.BridgeRegTestConstants;
+import org.apache.commons.lang3.tuple.Pair;
 import java.time.Instant;
 import java.util.List;
 import org.bouncycastle.util.encoders.Hex;
@@ -19,7 +18,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.util.ArrayList;
-import java.util.Optional;
+import java.util.function.Function;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -246,290 +245,204 @@ public class BridgeUtilsLegacyTest {
     }
 
     private void testGetAmountSentToAddress(
-        ActivationConfig.ForBlock activations,
         BridgeConstants constants,
-        Coin expectedValue,
-        Coin valueToTransfer,
-        Boolean includeOutput
+        BtcTransactionProvider btcTransactionProvider,
+        Coin expectedValue
     ) {
-        Address receiver = constants.getGenesisFederation().getAddress();
-        BtcTransaction btcTx = new BtcTransaction(constants.getBtcParams());
-        if (includeOutput) {
-            btcTx.addOutput(valueToTransfer, receiver);
-        }
+        Pair<BtcTransaction, Address> pair = btcTransactionProvider.provide(constants);
+        BtcTransaction btcTx = pair.getLeft();
+        Address address = pair.getRight();
+        // Add output to a random btc address to test that only output sent to the given address
+        // are being taken into account
+        btcTx.addOutput(Coin.COIN, PegTestUtils.createRandomBtcAddress());
         Assert.assertEquals(
             expectedValue,
             BridgeUtilsLegacy.getAmountSentToAddress(
                 activations,
                 constants.getBtcParams(),
                 btcTx,
-                receiver
+                address
             )
         );
     }
 
     @Test
-    public void getAmountSentToAddress_one_coin() {
-        Coin valueToTransfer = Coin.COIN;
-        testGetAmountSentToAddress(activations, bridgeConstantsRegtest, valueToTransfer, valueToTransfer, true);
-        testGetAmountSentToAddress(activations, bridgeConstantsMainnet, valueToTransfer, valueToTransfer, true);
+    public void getAmountSentToAddress_ok() {
+        Coin expectedResult = Coin.COIN.multiply(2);
+        BtcTransactionProvider btcTransactionProvider = bridgeConstants -> {
+            BtcTransaction btcTx = new BtcTransaction(bridgeConstants.getBtcParams());
+            Address btcAddress = PegTestUtils.createRandomBtcAddress(bridgeConstants.getBtcParams());
+            btcTx.addOutput(Coin.COIN, btcAddress);
+            btcTx.addOutput(Coin.COIN, btcAddress);
+            return Pair.of(btcTx, btcAddress);
+        };
+        testGetAmountSentToAddress(bridgeConstantsRegtest, btcTransactionProvider, expectedResult);
+        testGetAmountSentToAddress(bridgeConstantsMainnet, btcTransactionProvider, expectedResult);
     }
 
     @Test
     public void getAmountSentToAddress_no_outputs() {
-        Coin valueToTransfer = Coin.COIN;
-        testGetAmountSentToAddress(activations, bridgeConstantsRegtest, Coin.ZERO, valueToTransfer, false);
-        testGetAmountSentToAddress(activations, bridgeConstantsMainnet, Coin.ZERO, valueToTransfer, false);
+        BtcTransactionProvider btcTransactionProvider = bridgeConstants -> {
+            BtcTransaction btcTx = new BtcTransaction(bridgeConstants.getBtcParams());
+            Address btcAddress = PegTestUtils.createRandomBtcAddress(bridgeConstants.getBtcParams());
+            return Pair.of(btcTx, btcAddress);
+        };
+        testGetAmountSentToAddress(bridgeConstantsRegtest, btcTransactionProvider, Coin.ZERO);
+        testGetAmountSentToAddress(bridgeConstantsMainnet, btcTransactionProvider, Coin.ZERO);
     }
 
     @Test
     public void getAmountSentToAddress_zero_amount() {
-        Coin valueToTransfer = Coin.ZERO;
-        testGetAmountSentToAddress(activations, bridgeConstantsRegtest, valueToTransfer, valueToTransfer, true);
-        testGetAmountSentToAddress(activations, bridgeConstantsMainnet, valueToTransfer, valueToTransfer, true);
+        BtcTransactionProvider btcTransactionProvider = bridgeConstants -> {
+            BtcTransaction btcTx = new BtcTransaction(bridgeConstants.getBtcParams());
+            Address btcAddress = PegTestUtils.createRandomBtcAddress(bridgeConstants.getBtcParams());
+            btcTx.addOutput(Coin.ZERO, btcAddress);
+            return Pair.of(btcTx, btcAddress);
+        };
+        testGetAmountSentToAddress(bridgeConstantsRegtest, btcTransactionProvider, Coin.ZERO);
+        testGetAmountSentToAddress(bridgeConstantsMainnet, btcTransactionProvider, Coin.ZERO);
     }
 
     @Test(expected = DeprecatedMethodCallException.class)
-    public void getAmountSentToAddress_after_RSKIP293_testnet() {
+    public void getAmountSentToAddress_after_RSKIP293() {
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
-        Coin valueToTransfer = Coin.COIN;
-        testGetAmountSentToAddress(activations, bridgeConstantsRegtest, Coin.COIN, valueToTransfer, true);
+        BtcTransactionProvider btcTransactionProvider = bridgeConstants -> {
+            BtcTransaction btcTx = new BtcTransaction(bridgeConstants.getBtcParams());
+            Address btcAddress = PegTestUtils.createRandomBtcAddress(bridgeConstants.getBtcParams());
+            btcTx.addOutput(Coin.ZERO, btcAddress);
+            return Pair.of(btcTx, btcAddress);
+        };
+        testGetAmountSentToAddress(bridgeConstantsRegtest, btcTransactionProvider, null);
     }
 
-    @Test(expected = DeprecatedMethodCallException.class)
-    public void getAmountSentToAddress_after_RSKIP293_mainnet() {
-        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-        when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
-        Coin valueToTransfer = Coin.COIN;
-        testGetAmountSentToAddress(activations, bridgeConstantsMainnet, valueToTransfer, valueToTransfer, true);
-    }
-
-    private void getUTXOsSentToAddress_has_utxos_to_given_address(
-        boolean isRSKIP293Active,
+    private void testGetUTXOsSentToAddress(
         BridgeConstants bridgeConstants,
-        Address address)
-    {
-        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-        when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(isRSKIP293Active);
-
-        BtcTransaction tx = new BtcTransaction(bridgeConstants.getBtcParams());
-        tx.addOutput(Coin.COIN, address);
-        BtcECKey srcKey = new BtcECKey();
-        tx.addInput(PegTestUtils.createHash(1),
-            0, ScriptBuilder.createInputScript(null, srcKey));
-
-        List<UTXO> utxoListExpected = new ArrayList<>();
-        UTXO utxo = new UTXO(
-            tx.getHash(), 0, Coin.COIN, 0, false, ScriptBuilder.createOutputScript(address)
-        );
-        utxoListExpected.add(utxo);
-
-        List<UTXO> utxosFound = BridgeUtilsLegacy.getUTXOsSentToAddress(activations, bridgeConstants.getBtcParams(), tx, address);
-
-        Assert.assertEquals(utxoListExpected, utxosFound);
-
-        Assert.assertEquals(utxoListExpected.get(0).getValue(), utxosFound.get(0).getValue());
-    }
-
-    @Test
-    public void getUTXOsSentToAddress_has_utxos_to_given_address() {
-        getUTXOsSentToAddress_has_utxos_to_given_address(
-            false,
-            bridgeConstantsRegtest,
-            PegTestUtils.createRandomBtcAddress(bridgeConstantsRegtest.getBtcParams())
-        );
-        getUTXOsSentToAddress_has_utxos_to_given_address(
-            false,
-            bridgeConstantsMainnet,
-            PegTestUtils.createRandomBtcAddress(bridgeConstantsMainnet.getBtcParams())
-        );
-    }
-
-    private void getUTXOsSentToAddress_no_utxos_to_given_address(
-        Boolean isRSKIP293Active,
-        BridgeConstants bridgeConstants,
-        Address address,
-        Boolean includeOutputToAddress
+        BtcTransactionProvider btcTransactionProvider,
+        Function<BtcTransaction, List<UTXO>> expectedResult
     ) {
-        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-        when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(isRSKIP293Active);
+        Pair<BtcTransaction, Address> pair = btcTransactionProvider.provide(bridgeConstants);
+        BtcTransaction btcTx = pair.getLeft();
+        Address address = pair.getRight();
 
-        BtcTransaction tx = new BtcTransaction(bridgeConstants.getBtcParams());
-        if (includeOutputToAddress) {
-            tx.addOutput(Coin.COIN, PegTestUtils.createRandomBtcAddress(bridgeConstants.getBtcParams()));
-        }
-        BtcECKey srcKey = new BtcECKey();
-        tx.addInput(PegTestUtils.createHash(1),
-            0, ScriptBuilder.createInputScript(null, srcKey));
-
-        List<UTXO> utxoListExpected = new ArrayList<>();
-        UTXO utxo = new UTXO(
-            tx.getHash(),
-            0,
-            Coin.COIN,
-            0,
-            false,
-            ScriptBuilder.createOutputScript(address)
-        );
-        utxoListExpected.add(utxo);
-
-        List<UTXO> utxosFound = BridgeUtilsLegacy.getUTXOsSentToAddress(
+        // Add output to a random btc address to test that only utxos sent to the given address are being returned
+        btcTx.addOutput(Coin.COIN, PegTestUtils.createRandomBtcAddress());
+        List<UTXO> foundUTXOs = BridgeUtilsLegacy.getUTXOsSentToAddress(
             activations,
             bridgeConstants.getBtcParams(),
-            tx,
+            btcTx,
             address
         );
 
-        Assert.assertTrue(
-            utxosFound.isEmpty()
+        List<UTXO> expectedUTXOs = expectedResult.apply(btcTx);
+        Assert.assertArrayEquals(expectedUTXOs.toArray(), foundUTXOs.toArray());
+
+        Coin amount = foundUTXOs.stream().map(UTXO::getValue).reduce(Coin.ZERO, Coin::add);
+        Coin expectedAmount = expectedUTXOs.stream().map(UTXO::getValue).reduce(Coin.ZERO, Coin::add);
+        Assert.assertEquals(amount, expectedAmount);
+    }
+
+    @Test
+    public void getUTXOsSentToAddress_one_utxo_sent_to_given_address() {
+        Function<BtcTransaction, List<UTXO>> expectedResult = btcTx -> {
+            List<UTXO> expectedUTXOs = new ArrayList<>();
+            expectedUTXOs.add(PegTestUtils.createUTXO(btcTx.getHash(), 0, Coin.COIN));
+            return expectedUTXOs;
+        };
+
+        BtcTransactionProvider btcTransactionProvider = bridgeConstants -> {
+            BtcTransaction btcTx = new BtcTransaction(bridgeConstants.getBtcParams());
+            Address btcAddress = PegTestUtils.createRandomBtcAddress(bridgeConstants.getBtcParams());
+            btcTx.addOutput(Coin.COIN, btcAddress);
+            return Pair.of(btcTx, btcAddress);
+        };
+        testGetUTXOsSentToAddress(
+            bridgeConstantsRegtest,
+            btcTransactionProvider,
+            expectedResult
+        );
+        testGetUTXOsSentToAddress(
+            bridgeConstantsMainnet,
+            btcTransactionProvider,
+            expectedResult
         );
     }
 
     @Test
     public void getUTXOsSentToAddress_no_utxos_to_given_address() {
-        getUTXOsSentToAddress_no_utxos_to_given_address(
-            false,
+        Function<BtcTransaction, List<UTXO>> expectedResult = btcTx -> {
+            List<UTXO> expectedUTXOs = new ArrayList<>();
+            return expectedUTXOs;
+        };
+        BtcTransactionProvider btcTransactionProvider = bridgeConstants -> {
+            BtcTransaction btcTx = new BtcTransaction(bridgeConstants.getBtcParams());
+            Address btcAddress = PegTestUtils.createRandomBtcAddress(bridgeConstants.getBtcParams());
+            return Pair.of(btcTx, btcAddress);
+        };
+        testGetUTXOsSentToAddress(
             bridgeConstantsRegtest,
-            PegTestUtils.createRandomBtcAddress(bridgeConstantsRegtest.getBtcParams()),
-            true
+            btcTransactionProvider,
+            expectedResult
         );
-        getUTXOsSentToAddress_no_utxos_to_given_address(
-            false,
-            bridgeConstantsRegtest,
-            PegTestUtils.createRandomBtcAddress(bridgeConstantsRegtest.getBtcParams()),
-            false
-        );
-
-        getUTXOsSentToAddress_no_utxos_to_given_address(
-            false,
+        testGetUTXOsSentToAddress(
             bridgeConstantsMainnet,
-            PegTestUtils.createRandomBtcAddress(bridgeConstantsMainnet.getBtcParams()),
-            true
+            btcTransactionProvider,
+            expectedResult
         );
-        getUTXOsSentToAddress_no_utxos_to_given_address(
-            false,
-            bridgeConstantsMainnet,
-            PegTestUtils.createRandomBtcAddress(bridgeConstantsMainnet.getBtcParams()),
-            false
-        );
-    }
-
-    private void getUTXOsSentToAddress_has_multiple_utxos(
-        Boolean isRSKIP293Active,
-        BridgeConstants bridgeConstants,
-        Address address,
-        boolean includeOutputToAddress
-    ) {
-        ActivationConfig.ForBlock activations = mock(ActivationConfig.ForBlock.class);
-        when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(isRSKIP293Active);
-
-        BtcTransaction tx = new BtcTransaction(bridgeConstants.getBtcParams());
-
-        // Create n random outputs to simulate a btc transaction with outputs to multiple addresses
-        byte utxosQty = 5;
-        for (int i = 0; i < utxosQty; i++) {
-            tx.addOutput(Coin.COIN, PegTestUtils.createRandomBtcAddress(bridgeConstants.getBtcParams()));
-        }
-
-        if (includeOutputToAddress) {
-            // Add multiple to the given address
-            for (int i = 0; i < utxosQty; i++) {
-                tx.addOutput(Coin.COIN, address);
-            }
-        }
-
-        BtcECKey srcKey = new BtcECKey();
-        tx.addInput(PegTestUtils.createHash(1),
-            0, ScriptBuilder.createInputScript(null, srcKey));
-
-        List<UTXO> utxoListExpected = new ArrayList<>();
-        if (includeOutputToAddress){
-            for (int i = 0; i < utxosQty; i++) {
-                UTXO utxo = new UTXO(
-                    tx.getHash(),
-                    0,
-                    Coin.COIN,
-                    0,
-                    false,
-                    ScriptBuilder.createOutputScript(address)
-                );
-                utxoListExpected.add(utxo);
-            }
-        }
-
-        List<UTXO> utxosFound = BridgeUtilsLegacy.getUTXOsSentToAddress(
-            activations,
-            bridgeConstants.getBtcParams(),
-            tx,
-            address
-        );
-
-        if (includeOutputToAddress){
-            Assert.assertEquals(
-                utxoListExpected.size(), utxosFound.size()
-            );
-
-            Optional<Coin> expectedValue = utxoListExpected.stream().map(UTXO::getValue).reduce(
-                Coin::add
-             );
-
-            Optional<Coin> result = utxosFound.stream().map(UTXO::getValue).reduce(
-                Coin::add
-            );
-
-            Assert.assertTrue(
-                expectedValue.isPresent()
-            );
-
-            Assert.assertEquals(
-                utxoListExpected.size(), utxosFound.size()
-            );
-
-            Assert.assertEquals(expectedValue, result);
-
-        } else {
-            Assert.assertTrue(
-                utxosFound.isEmpty()
-            );
-        }
     }
 
     @Test
-    public void getUTXOsSentToAddress_has_multiple_utxos() {
-        getUTXOsSentToAddress_has_multiple_utxos(
-            false,
-            bridgeConstantsRegtest,
-            PegTestUtils.createRandomBtcAddress(bridgeConstantsRegtest.getBtcParams()),
-            true
-        );
-        getUTXOsSentToAddress_has_multiple_utxos(
-            false,
-            bridgeConstantsRegtest,
-            PegTestUtils.createRandomBtcAddress(bridgeConstantsRegtest.getBtcParams()),
-            false
-        );
+    public void getUTXOsSentToAddress_multiple_utxos_sent_to_given_address() {
+        Function<BtcTransaction, List<UTXO>> expectedResult = btcTx -> {
+            List<UTXO> expectedUTXOs = new ArrayList<>();
+            expectedUTXOs.add(PegTestUtils.createUTXO(btcTx.getHash(), 6, Coin.COIN));
+            expectedUTXOs.add(PegTestUtils.createUTXO(btcTx.getHash(), 7, Coin.COIN));
+            expectedUTXOs.add(PegTestUtils.createUTXO(btcTx.getHash(), 8, Coin.COIN));
+            return expectedUTXOs;
+        };
 
-        getUTXOsSentToAddress_has_multiple_utxos(
-            false,
-            bridgeConstantsMainnet,
-            PegTestUtils.createRandomBtcAddress(bridgeConstantsMainnet.getBtcParams()),
-            true
+        BtcTransactionProvider btcTransactionProvider = bridgeConstants -> {
+            BtcTransaction btcTx = new BtcTransaction(bridgeConstants.getBtcParams());
+
+            btcTx.addOutput(Coin.COIN, PegTestUtils.createRandomBtcAddress(bridgeConstants.getBtcParams()));
+            btcTx.addOutput(Coin.COIN, PegTestUtils.createRandomBtcAddress(bridgeConstants.getBtcParams()));
+            btcTx.addOutput(Coin.COIN, PegTestUtils.createRandomBtcAddress(bridgeConstants.getBtcParams()));
+            btcTx.addOutput(Coin.COIN, PegTestUtils.createRandomBtcAddress(bridgeConstants.getBtcParams()));
+            btcTx.addOutput(Coin.COIN, PegTestUtils.createRandomBtcAddress(bridgeConstants.getBtcParams()));
+            btcTx.addOutput(Coin.COIN, PegTestUtils.createRandomBtcAddress(bridgeConstants.getBtcParams()));
+
+            Address btcAddress = PegTestUtils.createRandomBtcAddress(bridgeConstants.getBtcParams());
+            btcTx.addOutput(Coin.COIN, btcAddress);
+            btcTx.addOutput(Coin.COIN, btcAddress);
+            btcTx.addOutput(Coin.COIN, btcAddress);
+
+            return Pair.of(btcTx, btcAddress);
+        };
+        testGetUTXOsSentToAddress(
+            bridgeConstantsRegtest,
+            btcTransactionProvider,
+            expectedResult
         );
-        getUTXOsSentToAddress_has_multiple_utxos(
-            false,
+        testGetUTXOsSentToAddress(
             bridgeConstantsMainnet,
-            PegTestUtils.createRandomBtcAddress(bridgeConstantsMainnet.getBtcParams()),
-            false
+            btcTransactionProvider,
+            expectedResult
         );
     }
 
     @Test(expected = DeprecatedMethodCallException.class)
     public void getUTXOsSentToAddress_after_RSKIP293() {
-        getUTXOsSentToAddress_has_multiple_utxos(
-            true,
+        when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
+
+        BtcTransactionProvider btcTransactionProvider = bridgeConstants -> {
+            BtcTransaction btcTx = new BtcTransaction(bridgeConstants.getBtcParams());
+            Address btcAddress = PegTestUtils.createRandomBtcAddress(bridgeConstants.getBtcParams());
+            btcTx.addOutput(Coin.COIN, btcAddress);
+            return Pair.of(btcTx, btcAddress);
+        };
+        testGetUTXOsSentToAddress(
             bridgeConstantsRegtest,
-            PegTestUtils.createRandomBtcAddress(bridgeConstantsRegtest.getBtcParams()),
-            true
+            btcTransactionProvider,
+            null
         );
     }
 
@@ -593,5 +506,9 @@ public class BridgeUtilsLegacyTest {
         );
 
         BridgeUtilsLegacy.calculatePegoutTxSize(activations, federation, 0, 0);
+    }
+
+    private interface BtcTransactionProvider {
+        Pair<BtcTransaction, Address> provide(BridgeConstants bridgeConstants);
     }
 }
