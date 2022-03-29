@@ -22,6 +22,8 @@ import co.rsk.rpc.modules.trace.TraceFilterRequest;
 import co.rsk.rpc.modules.trace.TraceModule;
 import com.fasterxml.jackson.databind.JsonNode;
 
+import java.util.List;
+
 public interface Web3TraceModule {
 
     default JsonNode trace_transaction(String transactionHash) throws Exception {
@@ -34,6 +36,10 @@ public interface Web3TraceModule {
 
     default JsonNode trace_filter(TraceFilterRequest request) throws Exception {
         return getTraceModule().traceFilter(request);
+    }
+
+    default JsonNode trace_get(String transactionHash, List<String> positions) throws Exception {
+        return getTraceModule().traceGet(transactionHash, positions);
     }
 
     TraceModule getTraceModule();
