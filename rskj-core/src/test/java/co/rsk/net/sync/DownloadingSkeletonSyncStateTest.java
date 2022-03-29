@@ -44,13 +44,8 @@ public class DownloadingSkeletonSyncStateTest {
 
         target.onMessageTimeOut();
         verify(syncEventsHandler, times(1))
-                .onErrorSyncing(selectedPeer.getPeerNodeID(),
-                        selectedPeer.getAddress(),
-                        "Timeout waiting requests {}",
-                        EventType.TIMEOUT_MESSAGE,
-                        DownloadingSkeletonSyncState.class,
-                        selectedPeer.getPeerNodeID(),
-                        selectedPeer.getAddress());
+                .onErrorSyncing(selectedPeer, EventType.TIMEOUT_MESSAGE,
+                        "Timeout waiting requests from node [{}] on {}", DownloadingSkeletonSyncState.class);
     }
 
 }

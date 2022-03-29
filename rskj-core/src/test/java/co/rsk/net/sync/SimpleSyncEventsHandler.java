@@ -71,7 +71,7 @@ public class SimpleSyncEventsHandler implements SyncEventsHandler {
     }
 
     @Override
-    public void onErrorSyncing(NodeID peerId, InetAddress peerAddress, String message, EventType eventType, Object... arguments) {
+    public void onErrorSyncing(Peer peer, EventType eventType, String message, Object... arguments) {
         stopSyncing();
     }
 

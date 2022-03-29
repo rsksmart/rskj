@@ -71,19 +71,15 @@ public class PeersInformation {
                 .thenComparing(this::comparePeerTotalDifficulty);
     }
 
-    public void reportEventWithLog(String message, NodeID peerId, InetAddress peerAddress, EventType eventType, Object... arguments) {
-        logger.trace(message, arguments);
-        peerScoringManager.recordEvent(peerId, peerAddress, eventType);
+    public void reportEventToPeerScoring(Peer peer, EventType eventType, String message, Object... arguments) {
+        String nodeInfo = peer.getPeerNodeID() + " - " + Optional.ofNullable(peer.getAddress()).map(InetAddress::getHostAddress).orElse("unknown");
+        logger.trace(message, nodeInfo, arguments);
+        peerScoringManager.recordEvent(peer.getPeerNodeID(), peer.getAddress(), eventType);
     }
 
-    public void reportEvent(NodeID peerId, InetAddress peerAddress, EventType eventType) {
-        peerScoringManager.recordEvent(peerId, peerAddress, eventType);
-    }
-
-    public void reportErrorEvent(NodeID peerId, InetAddress peerAddress, String message, EventType eventType, Object... arguments) {
-        logger.trace(message, arguments);
-        failedPeers.put(peerId, Instant.now());
-        peerScoringManager.recordEvent(peerId, peerAddress, eventType);
+    public void reportSyncingErrorToPeerScoring(Peer peer, EventType eventType, String message, Object... arguments) {
+        failedPeers.put(peer.getPeerNodeID(), Instant.now());
+        reportEventToPeerScoring(peer, eventType, message, arguments);
     }
 
     private int getScore(NodeID peerId) {

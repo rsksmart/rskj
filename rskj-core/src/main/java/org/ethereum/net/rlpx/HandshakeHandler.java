@@ -353,14 +353,14 @@ public class HandshakeHandler extends ByteToMessageDecoder {
     }
 
     private void recordFailedHandshake(ChannelHandlerContext ctx) {
-        recordEvent(ctx, EventType.FAILED_HANDSHAKE);
+        reportEventToPeerScoring(ctx, EventType.FAILED_HANDSHAKE);
     }
 
     private void recordSuccessfulHandshake(ChannelHandlerContext ctx) {
-        recordEvent(ctx, EventType.SUCCESSFUL_HANDSHAKE);
+        reportEventToPeerScoring(ctx, EventType.SUCCESSFUL_HANDSHAKE);
     }
 
-    private void recordEvent(ChannelHandlerContext ctx, EventType event) {
+    private void reportEventToPeerScoring(ChannelHandlerContext ctx, EventType event) {
         SocketAddress socketAddress = ctx.channel().remoteAddress();
 
         //TODO(mmarquez): what if it is not ??
