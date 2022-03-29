@@ -19,7 +19,7 @@ public class ScoringCalculatorTest {
     public void scoringWithOneValidBlockHasGoodReputation() {
         ScoringCalculator calculator = new ScoringCalculator();
         PeerScoring scoring = new PeerScoring();
-        scoring.recordEvent(EventType.VALID_BLOCK);
+        scoring.updateScoring(EventType.VALID_BLOCK);
 
         Assert.assertTrue(calculator.hasGoodScore(scoring));
     }
@@ -28,7 +28,7 @@ public class ScoringCalculatorTest {
     public void scoringWithOneValidTransactionHasGoodReputation() {
         ScoringCalculator calculator = new ScoringCalculator();
         PeerScoring scoring = new PeerScoring();
-        scoring.recordEvent(EventType.VALID_TRANSACTION);
+        scoring.updateScoring(EventType.VALID_TRANSACTION);
 
         Assert.assertTrue(calculator.hasGoodScore(scoring));
     }
@@ -37,7 +37,7 @@ public class ScoringCalculatorTest {
     public void scoringWithOneInvalidBlockHasBadReputation() {
         ScoringCalculator calculator = new ScoringCalculator();
         PeerScoring scoring = new PeerScoring();
-        scoring.recordEvent(EventType.INVALID_BLOCK);
+        scoring.updateScoring(EventType.INVALID_BLOCK);
 
         Assert.assertFalse(calculator.hasGoodScore(scoring));
     }
@@ -46,7 +46,7 @@ public class ScoringCalculatorTest {
     public void scoringWithOneInvalidTransactionHasNoBadReputation() {
         ScoringCalculator calculator = new ScoringCalculator();
         PeerScoring scoring = new PeerScoring();
-        scoring.recordEvent(EventType.INVALID_TRANSACTION);
+        scoring.updateScoring(EventType.INVALID_TRANSACTION);
 
         Assert.assertTrue(calculator.hasGoodScore(scoring));
     }

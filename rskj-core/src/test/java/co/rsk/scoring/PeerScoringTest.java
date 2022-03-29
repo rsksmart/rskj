@@ -48,8 +48,8 @@ public class PeerScoringTest {
     public void getInformationFromScoringWithTwoValidBlocks() {
         PeerScoring scoring = new PeerScoring();
 
-        scoring.recordEvent(EventType.VALID_BLOCK);
-        scoring.recordEvent(EventType.VALID_BLOCK);
+        scoring.updateScoring(EventType.VALID_BLOCK);
+        scoring.updateScoring(EventType.VALID_BLOCK);
 
         PeerScoringInformation info = PeerScoringInformation.buildByScoring(scoring, "nodeid", "node");
 
@@ -65,9 +65,9 @@ public class PeerScoringTest {
     public void getInformationFromScoringWithThreeInvalidBlocks() {
         PeerScoring scoring = new PeerScoring();
 
-        scoring.recordEvent(EventType.INVALID_BLOCK);
-        scoring.recordEvent(EventType.INVALID_BLOCK);
-        scoring.recordEvent(EventType.INVALID_BLOCK);
+        scoring.updateScoring(EventType.INVALID_BLOCK);
+        scoring.updateScoring(EventType.INVALID_BLOCK);
+        scoring.updateScoring(EventType.INVALID_BLOCK);
 
         PeerScoringInformation info = PeerScoringInformation.buildByScoring(scoring, "node", "nodeid");
 
@@ -83,8 +83,8 @@ public class PeerScoringTest {
     public void getInformationFromScoringWithTwoValidTransactions() {
         PeerScoring scoring = new PeerScoring();
 
-        scoring.recordEvent(EventType.VALID_TRANSACTION);
-        scoring.recordEvent(EventType.VALID_TRANSACTION);
+        scoring.updateScoring(EventType.VALID_TRANSACTION);
+        scoring.updateScoring(EventType.VALID_TRANSACTION);
 
         PeerScoringInformation info = PeerScoringInformation.buildByScoring(scoring, "nodeid", "node");
 
@@ -100,9 +100,9 @@ public class PeerScoringTest {
     public void getInformationFromScoringWithThreeInvalidTransactions() {
         PeerScoring scoring = new PeerScoring();
 
-        scoring.recordEvent(EventType.INVALID_TRANSACTION);
-        scoring.recordEvent(EventType.INVALID_TRANSACTION);
-        scoring.recordEvent(EventType.INVALID_TRANSACTION);
+        scoring.updateScoring(EventType.INVALID_TRANSACTION);
+        scoring.updateScoring(EventType.INVALID_TRANSACTION);
+        scoring.updateScoring(EventType.INVALID_TRANSACTION);
 
         PeerScoringInformation info = PeerScoringInformation.buildByScoring(scoring, "nodeid", "node");
 
@@ -125,7 +125,7 @@ public class PeerScoringTest {
     public void recordEvent() {
         PeerScoring scoring = new PeerScoring();
 
-        scoring.recordEvent(EventType.INVALID_BLOCK);
+        scoring.updateScoring(EventType.INVALID_BLOCK);
 
         Assert.assertEquals(1, scoring.getEventCounter(EventType.INVALID_BLOCK));
         Assert.assertEquals(0, scoring.getEventCounter(EventType.INVALID_TRANSACTION));
@@ -136,9 +136,9 @@ public class PeerScoringTest {
     public void recordManyEvent() {
         PeerScoring scoring = new PeerScoring();
 
-        scoring.recordEvent(EventType.INVALID_BLOCK);
-        scoring.recordEvent(EventType.INVALID_BLOCK);
-        scoring.recordEvent(EventType.INVALID_BLOCK);
+        scoring.updateScoring(EventType.INVALID_BLOCK);
+        scoring.updateScoring(EventType.INVALID_BLOCK);
+        scoring.updateScoring(EventType.INVALID_BLOCK);
 
         Assert.assertEquals(3, scoring.getEventCounter(EventType.INVALID_BLOCK));
         Assert.assertEquals(0, scoring.getEventCounter(EventType.INVALID_TRANSACTION));
@@ -149,11 +149,11 @@ public class PeerScoringTest {
     public void recordManyEventOfDifferentType() {
         PeerScoring scoring = new PeerScoring();
 
-        scoring.recordEvent(EventType.INVALID_BLOCK);
-        scoring.recordEvent(EventType.INVALID_BLOCK);
-        scoring.recordEvent(EventType.INVALID_BLOCK);
-        scoring.recordEvent(EventType.INVALID_TRANSACTION);
-        scoring.recordEvent(EventType.INVALID_TRANSACTION);
+        scoring.updateScoring(EventType.INVALID_BLOCK);
+        scoring.updateScoring(EventType.INVALID_BLOCK);
+        scoring.updateScoring(EventType.INVALID_BLOCK);
+        scoring.updateScoring(EventType.INVALID_TRANSACTION);
+        scoring.updateScoring(EventType.INVALID_TRANSACTION);
 
         Assert.assertEquals(3, scoring.getEventCounter(EventType.INVALID_BLOCK));
         Assert.assertEquals(2, scoring.getEventCounter(EventType.INVALID_TRANSACTION));
@@ -171,7 +171,7 @@ public class PeerScoringTest {
     public void getPositiveScoreWhenValidBlock() {
         PeerScoring scoring = new PeerScoring();
 
-        scoring.recordEvent(EventType.VALID_BLOCK);
+        scoring.updateScoring(EventType.VALID_BLOCK);
 
         Assert.assertTrue(scoring.getScore() > 0);
     }
@@ -180,7 +180,7 @@ public class PeerScoringTest {
     public void getNegativeScoreWhenInvalidBlock() {
         PeerScoring scoring = new PeerScoring();
 
-        scoring.recordEvent(EventType.INVALID_BLOCK);
+        scoring.updateScoring(EventType.INVALID_BLOCK);
 
         Assert.assertTrue(scoring.getScore() < 0);
     }
@@ -189,7 +189,7 @@ public class PeerScoringTest {
     public void getPositiveScoreWhenValidTransaction() {
         PeerScoring scoring = new PeerScoring();
 
-        scoring.recordEvent(EventType.VALID_TRANSACTION);
+        scoring.updateScoring(EventType.VALID_TRANSACTION);
 
         Assert.assertTrue(scoring.getScore() > 0);
     }
@@ -198,7 +198,7 @@ public class PeerScoringTest {
     public void getNegativeScoreWhenInvalidTransaction() {
         PeerScoring scoring = new PeerScoring();
 
-        scoring.recordEvent(EventType.INVALID_TRANSACTION);
+        scoring.updateScoring(EventType.INVALID_TRANSACTION);
 
         Assert.assertTrue(scoring.getScore() < 0);
     }
@@ -207,8 +207,8 @@ public class PeerScoringTest {
     public void getNegativeScoreWhenValidAndInvalidTransaction() {
         PeerScoring scoring = new PeerScoring();
 
-        scoring.recordEvent(EventType.VALID_TRANSACTION);
-        scoring.recordEvent(EventType.INVALID_TRANSACTION);
+        scoring.updateScoring(EventType.VALID_TRANSACTION);
+        scoring.updateScoring(EventType.INVALID_TRANSACTION);
 
         Assert.assertTrue(scoring.getScore() < 0);
     }
@@ -217,8 +217,8 @@ public class PeerScoringTest {
     public void getNegativeScoreWhenInvalidAndValidTransaction() {
         PeerScoring scoring = new PeerScoring();
 
-        scoring.recordEvent(EventType.INVALID_TRANSACTION);
-        scoring.recordEvent(EventType.VALID_TRANSACTION);
+        scoring.updateScoring(EventType.INVALID_TRANSACTION);
+        scoring.updateScoring(EventType.VALID_TRANSACTION);
 
         Assert.assertTrue(scoring.getScore() < 0);
     }
@@ -228,10 +228,10 @@ public class PeerScoringTest {
         PeerScoring scoring1 = new PeerScoring();
         PeerScoring scoring2 = new PeerScoring();
 
-        scoring1.recordEvent(EventType.VALID_TRANSACTION);
-        scoring1.recordEvent(EventType.VALID_TRANSACTION);
+        scoring1.updateScoring(EventType.VALID_TRANSACTION);
+        scoring1.updateScoring(EventType.VALID_TRANSACTION);
 
-        scoring2.recordEvent(EventType.VALID_TRANSACTION);
+        scoring2.updateScoring(EventType.VALID_TRANSACTION);
 
         Assert.assertTrue(scoring1.getScore() > scoring2.getScore());
     }

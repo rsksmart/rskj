@@ -64,14 +64,8 @@ public class FindingConnectionPointSyncStateTest {
                 10L);
 
         target.onMessageTimeOut();
-        verify(syncEventsHandler, times(1))
-                .onErrorSyncing(peer.getPeerNodeID(),
-                        peer.getAddress(),
-                        "Timeout waiting requests {}",
-                        EventType.TIMEOUT_MESSAGE,
-                        FindingConnectionPointSyncState.class,
-                        peer.getPeerNodeID(),
-                        peer.getAddress());
+        verify(syncEventsHandler, times(1)).onErrorSyncing(peer, EventType.TIMEOUT_MESSAGE,
+                        "Timeout waiting requests from node [{}] on {}", FindingConnectionPointSyncState.class);
     }
 
 }

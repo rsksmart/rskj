@@ -64,11 +64,8 @@ public class CheckingBestHeaderSyncStateTest {
         state.newBlockHeaders(Collections.singletonList(header));
 
         verify(syncEventsHandler, times(1))
-                .onErrorSyncing(peer.getPeerNodeID(),
-                        peer.getAddress(),
-                        "Invalid chunk received from node {}",
-                        EventType.INVALID_HEADER,
-                        CheckingBestHeaderSyncState.class);
+                .onErrorSyncing(peer, EventType.INVALID_HEADER,
+                        "Invalid header received from node [{}] on {}", CheckingBestHeaderSyncState.class);
     }
 
     @Test
@@ -80,23 +77,15 @@ public class CheckingBestHeaderSyncStateTest {
         state.newBlockHeaders(Collections.singletonList(header));
 
         verify(syncEventsHandler, times(1))
-                .onErrorSyncing(peer.getPeerNodeID(),
-                        peer.getAddress(),
-                        "Invalid chunk received from node {}",
-                        EventType.INVALID_HEADER,
-                        CheckingBestHeaderSyncState.class);
+                .onErrorSyncing(peer, EventType.INVALID_HEADER,
+                        "Unexpected header received from node [{}] on {}", CheckingBestHeaderSyncState.class);
     }
 
     @Test
     public void onMessageTimeOut() {
         state.onMessageTimeOut();
         verify(syncEventsHandler, times(1))
-                .onErrorSyncing(peer.getPeerNodeID(),
-                        peer.getAddress(),
-                        "Timeout waiting requests {}",
-                        EventType.TIMEOUT_MESSAGE,
-                        CheckingBestHeaderSyncState.class,
-                        peer.getPeerNodeID(),
-                        peer.getAddress());
+                .onErrorSyncing(peer, EventType.TIMEOUT_MESSAGE,
+                        "Timeout waiting requests from node [{}] on {}", CheckingBestHeaderSyncState.class);
     }
 }
