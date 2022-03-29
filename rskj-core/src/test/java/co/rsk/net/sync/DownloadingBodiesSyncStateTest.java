@@ -70,11 +70,8 @@ public class DownloadingBodiesSyncStateTest {
         BodyResponseMessage message = new BodyResponseMessage(33L, Collections.emptyList(), Collections.emptyList());
         state.newBody(message, peer);
         verify(peersInformation, times(1))
-                .reportEventWithLog("Unexpected body received from node {}",
-                        peer.getPeerNodeID(),
-                        peer.getAddress(),
-                        EventType.UNEXPECTED_MESSAGE,
-                        peer.getPeerNodeID());
+                .reportEventToPeerScoring(peer, EventType.UNEXPECTED_MESSAGE,
+                        "Unexpected body received from node [{}] on {}", DownloadingBodiesSyncState.class);
     }
 
     @Test
@@ -99,11 +96,8 @@ public class DownloadingBodiesSyncStateTest {
         BodyResponseMessage message = new BodyResponseMessage(messageId, Collections.emptyList(), Collections.emptyList());
         state.newBody(message, peer);
         verify(peersInformation, times(1))
-                .reportEventWithLog("Unexpected body received from node {}",
-                        peer.getPeerNodeID(),
-                        peer.getAddress(),
-                        EventType.UNEXPECTED_MESSAGE,
-                        peer.getPeerNodeID());
+                .reportEventToPeerScoring(peer, EventType.UNEXPECTED_MESSAGE,
+                        "Unexpected body received from node [{}] on {}", DownloadingBodiesSyncState.class);
     }
 
     @Test
@@ -157,10 +151,7 @@ public class DownloadingBodiesSyncStateTest {
 
         state.tick(Duration.ofSeconds(1));
         verify(peersInformation, times(1))
-                .reportEventWithLog("Timeout waiting body from node {}",
-                        peer.getPeerNodeID(),
-                        peer.getAddress(),
-                        EventType.TIMEOUT_MESSAGE,
-                        peer);
+                .reportEventToPeerScoring(peer, EventType.TIMEOUT_MESSAGE,
+                        "Timeout waiting body from node [{}] on {}", DownloadingBodiesSyncState.class);
     }
 }

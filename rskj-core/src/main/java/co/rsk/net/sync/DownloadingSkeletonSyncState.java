@@ -18,18 +18,16 @@
 package co.rsk.net.sync;
 
 import co.rsk.net.Peer;
-import co.rsk.net.NodeID;
 import co.rsk.scoring.EventType;
 import org.ethereum.core.BlockIdentifier;
 
 import java.time.Duration;
 import java.util.*;
 
-public class DownloadingSkeletonSyncState extends BaseSyncState {
+public class DownloadingSkeletonSyncState extends BaseSelectedPeerSyncState {
 
     private final PeersInformation peersInformation;
     private final Map<Peer, List<BlockIdentifier>> skeletons;
-    private final Peer selectedPeer;
     private final List<Peer> candidates;
     private long connectionPoint;
     private long expectedSkeletons;
@@ -41,8 +39,7 @@ public class DownloadingSkeletonSyncState extends BaseSyncState {
                                         PeersInformation peersInformation,
                                         Peer peer,
                                         long connectionPoint) {
-        super(syncEventsHandler, syncConfiguration);
-        this.selectedPeer = peer;
+        super(syncEventsHandler, syncConfiguration, peer);
         this.connectionPoint = connectionPoint;
         this.skeletons = new HashMap<>();
         this.selectedPeerAnswered = false;
@@ -53,13 +50,12 @@ public class DownloadingSkeletonSyncState extends BaseSyncState {
 
     @Override
     public void newSkeleton(List<BlockIdentifier> skeleton, Peer peer) {
-        NodeID peerId = peer.getPeerNodeID();
         boolean isSelectedPeer = peer.equals(selectedPeer);
 
         // defensive programming: this should never happen
         if (skeleton.size() < 2) {
-            peersInformation.reportEventWithLog("Invalid skeleton received from node {}",
-                    peerId, peer.getAddress(), EventType.INVALID_MESSAGE, peerId);
+            peersInformation.reportEventToPeerScoring(peer, EventType.INVALID_MESSAGE,
+                    "Invalid skeleton received from node [{}] on {}", this.getClass());
 
             // when the selected peer fails automatically all process restarts
             if (isSelectedPeer){
@@ -89,10 +85,8 @@ public class DownloadingSkeletonSyncState extends BaseSyncState {
             candidates.stream()
                     .filter(c -> !skeletons.containsKey(c))
                     .forEach(p ->
-                            peersInformation.reportEventWithLog(
-                                    "Timeout waiting skeleton from node {}",
-                                    p.getPeerNodeID(), p.getAddress(),
-                                    EventType.TIMEOUT_MESSAGE, p));
+                            peersInformation.reportEventToPeerScoring(p, EventType.TIMEOUT_MESSAGE,
+                                    "Timeout waiting skeleton from node [{}] on {}", this.getClass()));
 
             // when the selected peer fails automatically all process restarts
             if (!selectedPeerAnswered){
@@ -102,18 +96,6 @@ public class DownloadingSkeletonSyncState extends BaseSyncState {
 
             syncEventsHandler.startDownloadingHeaders(skeletons, connectionPoint, selectedPeer);
         }
-    }
-
-    @Override
-    protected void onMessageTimeOut() {
-        syncEventsHandler.onErrorSyncing(
-                selectedPeer.getPeerNodeID(),
-                selectedPeer.getAddress(),
-                "Timeout waiting requests {}",
-                EventType.TIMEOUT_MESSAGE,
-                this.getClass(),
-                selectedPeer.getPeerNodeID(),
-                selectedPeer.getAddress());
     }
 
     @Override

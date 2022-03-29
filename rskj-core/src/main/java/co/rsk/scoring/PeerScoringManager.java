@@ -304,7 +304,7 @@ public class PeerScoringManager {
      * @param nodeID a node id
      */
     private void recordEventAndStartPunishment(PeerScoring peerScoring, EventType event, PunishmentCalculator punishmentCalculator, NodeID nodeID) {
-        peerScoring.recordEvent(event);
+        peerScoring.updateScoring(event);
 
         boolean hasBadReputationAlready = !peerScoring.refreshReputationAndPunishment();
         if (hasBadReputationAlready) {

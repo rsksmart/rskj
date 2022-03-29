@@ -34,7 +34,7 @@ import java.time.Duration;
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class DownloadingBodiesSyncState  extends BaseSyncState {
+public class DownloadingBodiesSyncState extends BaseSyncState {
 
     private static final Logger logger = LoggerFactory.getLogger("syncprocessor");
 
@@ -121,12 +121,12 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
             block = blockFactory.newBlock(header, message.getTransactions(), message.getUncles());
             block.seal();
         } catch (IllegalArgumentException ex) {
-            handleInvalidMessage(peer, header);
+            handleInvalidBody(peer, header);
             return;
         }
 
         if (!blockValidationRule.isValid(block)) {
-            handleInvalidMessage(peer, header);
+            handleInvalidBody(peer, header);
             return;
         }
 
@@ -159,10 +159,10 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
     }
 
     private void handleInvalidBlock(Peer peer, BlockHeader header) {
-        peersInformation.reportEventWithLog(
-                "Invalid block received from node {} {} {}",
-                peer.getPeerNodeID(), peer.getAddress(), EventType.INVALID_BLOCK,
-                peer.getPeerNodeID(), header.getNumber(), header.getPrintableHash());
+        peersInformation.reportEventToPeerScoring(
+                peer, EventType.INVALID_BLOCK,
+                "Invalid block received from node [{}] on {}, no {}, hash {}",
+                this.getClass(), header.getNumber(), header.getPrintableHash());
 
         clearPeerInfo(peer);
         if (suitablePeers.isEmpty()){
@@ -174,11 +174,11 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
         startDownloading(getInactivePeers());
     }
 
-    private void handleInvalidMessage(Peer peer, BlockHeader header) {
-        peersInformation.reportEventWithLog(
-                "Invalid body received from node {} {} {}",
-                peer.getPeerNodeID(), peer.getAddress(), EventType.INVALID_MESSAGE,
-                peer.getPeerNodeID(), header.getNumber(), header.getPrintableHash());
+    private void handleInvalidBody(Peer peer, BlockHeader header) {
+        peersInformation.reportEventToPeerScoring(
+                peer, EventType.INVALID_MESSAGE,
+                "Invalid body received from node [{}] on {}, no {}, hash {}",
+                this.getClass(), header.getNumber(), header.getPrintableHash());
 
         clearPeerInfo(peer);
         if (suitablePeers.isEmpty()){
@@ -191,9 +191,8 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
     }
 
     private void handleUnexpectedBody(Peer peer) {
-        peersInformation.reportEventWithLog(
-                "Unexpected body received from node {}",
-                peer.getPeerNodeID(), peer.getAddress(), EventType.UNEXPECTED_MESSAGE, peer.getPeerNodeID());
+        peersInformation.reportEventToPeerScoring(peer, EventType.UNEXPECTED_MESSAGE,
+                "Unexpected body received from node [{}] on {}", this.getClass());
 
         clearPeerInfo(peer);
         if (suitablePeers.isEmpty()) {
@@ -308,8 +307,8 @@ public class DownloadingBodiesSyncState  extends BaseSyncState {
     }
 
     private void handleTimeoutMessage(Peer peer) {
-        peersInformation.reportEventWithLog("Timeout waiting body from node {}",
-                peer.getPeerNodeID(), peer.getAddress(), EventType.TIMEOUT_MESSAGE, peer);
+        peersInformation.reportEventToPeerScoring(peer, EventType.TIMEOUT_MESSAGE,
+                "Timeout waiting body from node [{}] on {}", this.getClass());
         Long messageId = messagesByPeers.remove(peer);
         BlockHeader header = pendingBodyResponses.remove(messageId).header;
         clearPeerInfo(peer);

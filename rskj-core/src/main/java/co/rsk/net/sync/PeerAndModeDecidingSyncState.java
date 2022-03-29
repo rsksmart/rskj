@@ -26,17 +26,17 @@ import org.slf4j.LoggerFactory;
 import java.time.Duration;
 import java.util.Optional;
 
-public class DecidingSyncState extends BaseSyncState {
+public class PeerAndModeDecidingSyncState extends BaseSyncState {
 
-    private static final Logger logger = LoggerFactory.getLogger(DecidingSyncState.class);
+    private static final Logger logger = LoggerFactory.getLogger(PeerAndModeDecidingSyncState.class);
 
     private final PeersInformation peersInformation;
     private final BlockStore blockStore;
 
-    public DecidingSyncState(SyncConfiguration syncConfiguration,
-                             SyncEventsHandler syncEventsHandler,
-                             PeersInformation peersInformation,
-                             BlockStore blockStore) {
+    public PeerAndModeDecidingSyncState(SyncConfiguration syncConfiguration,
+                                        SyncEventsHandler syncEventsHandler,
+                                        PeersInformation peersInformation,
+                                        BlockStore blockStore) {
         super(syncEventsHandler, syncConfiguration);
 
         this.peersInformation = peersInformation;

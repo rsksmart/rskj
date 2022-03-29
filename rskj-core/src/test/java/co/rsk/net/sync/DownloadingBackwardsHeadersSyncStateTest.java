@@ -27,7 +27,7 @@ public class DownloadingBackwardsHeadersSyncStateTest {
     private Peer selectedPeer;
 
     @Before
-    public void setUp () throws UnknownHostException {
+    public void setUp() throws UnknownHostException {
         syncConfiguration = SyncConfiguration.IMMEDIATE_FOR_TESTING;
         syncEventsHandler = mock(SyncEventsHandler.class);
         blockStore = mock(BlockStore.class);
@@ -94,12 +94,7 @@ public class DownloadingBackwardsHeadersSyncStateTest {
 
         target.onMessageTimeOut();
         verify(syncEventsHandler, times(1))
-                .onErrorSyncing(selectedPeer.getPeerNodeID(),
-                        selectedPeer.getAddress(),
-                        "Timeout waiting requests {}",
-                        EventType.TIMEOUT_MESSAGE,
-                        DownloadingBackwardsHeadersSyncState.class,
-                        selectedPeer.getPeerNodeID(),
-                        selectedPeer.getAddress());
+                .onErrorSyncing(selectedPeer, EventType.TIMEOUT_MESSAGE,
+                        "Timeout waiting requests from node [{}] on {}", DownloadingBackwardsHeadersSyncState.class);
     }
 }

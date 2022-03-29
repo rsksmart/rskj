@@ -18,15 +18,13 @@
 package co.rsk.net.sync;
 
 import co.rsk.net.Peer;
-import co.rsk.scoring.EventType;
 import org.ethereum.db.BlockStore;
 
 import java.util.Optional;
 
-public class FindingConnectionPointSyncState extends BaseSyncState {
+public class FindingConnectionPointSyncState extends BaseSelectedPeerSyncState {
 
     private final BlockStore blockStore;
-    private final Peer selectedPeer;
     private final ConnectionPointFinder connectionPointFinder;
 
     public FindingConnectionPointSyncState(SyncConfiguration syncConfiguration,
@@ -34,11 +32,10 @@ public class FindingConnectionPointSyncState extends BaseSyncState {
                                            BlockStore blockStore,
                                            Peer selectedPeer,
                                            long peerBestBlockNumber) {
-        super(syncEventsHandler, syncConfiguration);
+        super(syncEventsHandler, syncConfiguration, selectedPeer);
         long minNumber = blockStore.getMinNumber();
 
         this.blockStore = blockStore;
-        this.selectedPeer = selectedPeer;
         this.connectionPointFinder = new ConnectionPointFinder(
                 minNumber,
                 peerBestBlockNumber);
@@ -85,17 +82,5 @@ public class FindingConnectionPointSyncState extends BaseSyncState {
     @Override
     public void onEnter() {
         trySendRequest();
-    }
-
-    @Override
-    protected void onMessageTimeOut() {
-        syncEventsHandler.onErrorSyncing(
-                selectedPeer.getPeerNodeID(),
-                selectedPeer.getAddress(),
-                "Timeout waiting requests {}",
-                EventType.TIMEOUT_MESSAGE,
-                this.getClass(),
-                selectedPeer.getPeerNodeID(),
-                selectedPeer.getAddress());
     }
 }

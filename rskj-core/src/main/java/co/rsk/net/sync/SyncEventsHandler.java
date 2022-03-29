@@ -17,7 +17,6 @@
  */
 package co.rsk.net.sync;
 
-import co.rsk.net.NodeID;
 import co.rsk.net.Peer;
 import co.rsk.scoring.EventType;
 import org.ethereum.core.Block;
@@ -25,7 +24,6 @@ import org.ethereum.core.BlockHeader;
 import org.ethereum.core.BlockIdentifier;
 
 import javax.annotation.Nullable;
-import java.net.InetAddress;
 import java.util.Deque;
 import java.util.List;
 import java.util.Map;
@@ -53,7 +51,7 @@ public interface SyncEventsHandler {
 
     void onLongSyncUpdate(boolean isSyncing, @Nullable Long peerBestBlockNumber);
 
-    void onErrorSyncing(NodeID peerId, InetAddress peerAddress, String message, EventType eventType, Object... arguments);
+    void onErrorSyncing(Peer peer, EventType eventType, String message, Object... arguments);
 
     void onSyncIssue(String message, Object... arguments);
 

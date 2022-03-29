@@ -35,15 +35,15 @@ public class PeerScoring {
     }
 
     /**
-     * Records an event.
+     * Updates scoring according to the received event
      * Current implementation has a counter by event type.
-     * The score is incremented or decremented, acoording to the kind of the event.
+     * The score is incremented or decremented, according to the kind of the event.
      * Some negative events alters the score to a negative level, without
      * taking into account its previous positive value
      *
      * @param evt       An event type @see EventType
      */
-    public void recordEvent(EventType evt) {
+    public void updateScoring(EventType evt) {
         try {
             rwlock.writeLock().lock();
 
