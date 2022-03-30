@@ -75,7 +75,7 @@ public class DownloadingHeadersSyncState extends BaseSelectedPeerSyncState {
         boolean unexpectedChunkSize = chunk.size() != currentChunk.getCount();
         if (unexpectedChunkSize) {
             syncEventsHandler.onErrorSyncing(selectedPeer, EventType.INVALID_MESSAGE,
-                    "Unexpected chunk size received from node [{}] on {}: hash: {}",
+                    "Unexpected chunk size received on {}: hash: {}",
                     this.getClass(), HashUtil.toPrintableHash(currentChunk.getHash()));
             return;
         }
@@ -83,7 +83,7 @@ public class DownloadingHeadersSyncState extends BaseSelectedPeerSyncState {
         boolean unexpectedHeader = !ByteUtil.fastEquals(chunk.get(0).getHash().getBytes(), currentChunk.getHash());
         if (unexpectedHeader) {
             syncEventsHandler.onErrorSyncing(selectedPeer, EventType.INVALID_MESSAGE,
-                    "Unexpected chunk header hash received from node [{}] on {}: hash: {}",
+                    "Unexpected chunk header hash received on {}: hash: {}",
                     this.getClass(), HashUtil.toPrintableHash(currentChunk.getHash()));
             return;
         }
@@ -101,7 +101,7 @@ public class DownloadingHeadersSyncState extends BaseSelectedPeerSyncState {
 
             if (!blockHeaderIsValid(header, parentHeader)) {
                 syncEventsHandler.onErrorSyncing(selectedPeer, EventType.INVALID_HEADER,
-                        "Invalid header received from node [{}] on {}, no: {}, hash: {}",
+                        "Invalid header received on {}, no: {}, hash: {}",
                         this.getClass(), header.getNumber(), header.getPrintableHash());
                 return;
             }

@@ -89,7 +89,7 @@ public class DownloadingBackwardsBodiesSyncState extends BaseSelectedPeerSyncSta
         BlockHeader requestedHeader = inTransit.get(body.getId());
         if (requestedHeader == null) {
             peersInformation.reportEventToPeerScoring(peer, EventType.INVALID_MESSAGE,
-                    "Invalid body response (header not found inTransit) received from node [{}] on {}",
+                    "Invalid body response (header not found inTransit) received on {}",
                     this.getClass());
             return;
         }
@@ -100,7 +100,7 @@ public class DownloadingBackwardsBodiesSyncState extends BaseSelectedPeerSyncSta
         boolean unexpectedBlock = !block.getHash().equals(requestedHeader.getHash());
         if (unexpectedBlock) {
             peersInformation.reportEventToPeerScoring(peer, EventType.INVALID_MESSAGE,
-                    "Invalid body response (block hash != requestHeader hash) received from node [{}] on {}",
+                    "Invalid body response (block hash != requestHeader hash) received on {}",
                     this.getClass());
             return;
         }

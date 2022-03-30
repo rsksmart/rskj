@@ -143,7 +143,7 @@ public class DownloadingHeadersSyncStateTest {
         syncState.newBlockHeaders(chunk);
 
         verify(syncEventsHandler, times(1)).onErrorSyncing(selectedPeer, EventType.INVALID_MESSAGE,
-                "Unexpected chunk size received from node [{}] on {}: hash: {}", DownloadingHeadersSyncState.class, HashUtil.toPrintableHash(currentChunk.getHash()));
+                "Unexpected chunk size received on {}: hash: {}", DownloadingHeadersSyncState.class, HashUtil.toPrintableHash(currentChunk.getHash()));
     }
 
     @Test
@@ -176,6 +176,6 @@ public class DownloadingHeadersSyncStateTest {
         syncState.newBlockHeaders(chunk);
 
         verify(syncEventsHandler, times(1)).onErrorSyncing(selectedPeer, EventType.INVALID_MESSAGE,
-                "Unexpected chunk header hash received from node [{}] on {}: hash: {}", DownloadingHeadersSyncState.class, HashUtil.toPrintableHash(currentChunk.getHash()));
+                "Unexpected chunk header hash received on {}: hash: {}", DownloadingHeadersSyncState.class, HashUtil.toPrintableHash(currentChunk.getHash()));
     }
 }

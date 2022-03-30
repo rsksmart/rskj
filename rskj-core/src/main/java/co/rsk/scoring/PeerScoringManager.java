@@ -2,6 +2,7 @@ package co.rsk.scoring;
 
 import co.rsk.net.NodeID;
 import com.google.common.annotations.VisibleForTesting;
+import org.apache.commons.lang3.ArrayUtils;
 import org.ethereum.util.ByteUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -84,11 +85,13 @@ public class PeerScoringManager {
      * In some events we don't have the node id, yet. The rationale to have both, is to collect events for the
      * same node_id, but maybe with different address along the time. Or same address with different node id.
      *
-     * @param id        node id or null
-     * @param address   address or null
-     * @param event     event type (@see EventType)
+     * @param id            node id or null
+     * @param address       address or null
+     * @param event         event type (@see EventType)
+     * @param message       message template for logging
+     * @param messageArgs   message template arguments for logging
      */
-    public void recordEvent(NodeID id, InetAddress address, EventType event) {
+    public void recordEvent(NodeID id, InetAddress address, EventType event, String message, Object... messageArgs) {
         //todo(techdebt) this method encourages null params, this is not desirable
         synchronized (accessLock) {
             if (id != null) {
@@ -101,8 +104,23 @@ public class PeerScoringManager {
                 recordEventAndStartPunishment(scoring, event, this.ipPunishmentCalculator, id);
             }
 
-            logger.debug("Recorded {}. {}, Address: {}", event, nodeIdForLog(id),  addressForLog(address));
+            logRecordedEvent(id, address, event, message, messageArgs);
         }
+    }
+
+    /**
+     * Record the event, given the node id and/or the network address
+     *
+     * Usually we collected the events TWICE, if possible: by node id and by address.
+     * In some events we don't have the node id, yet. The rationale to have both, is to collect events for the
+     * same node_id, but maybe with different address along the time. Or same address with different node id.
+     *
+     * @param id            node id or null
+     * @param address       address or null
+     * @param event         event type (@see EventType)
+     */
+    public void recordEvent(NodeID id, InetAddress address, EventType event) {
+        recordEvent(id, address, event, null);
     }
 
     /**
@@ -328,6 +346,20 @@ public class PeerScoringManager {
             logger.debug("NodeID {} has been punished for {} milliseconds. Last event {}", nodeIDFormatted, punishmentTime, event);
             logger.debug("{}", PeerScoringInformation.buildByScoring(peerScoring, nodeIDFormatted, ""));
         }
+    }
+
+    private void logRecordedEvent(NodeID id, InetAddress address, EventType event, String message, Object[] messageArgs) {
+        String completeMessage = "Recorded {} from node [{}]";
+        if (message != null) {
+            completeMessage += " => " + message;
+        }
+
+        Object[] completeArguments = ArrayUtils.add(messageArgs, 0, event);
+
+        String nodeInfo = nodeIdForLog(id) + " | " + addressForLog(address);
+        completeArguments = ArrayUtils.add(completeArguments, 1, nodeInfo);
+
+        logger.debug(completeMessage, completeArguments);
     }
 
     private String nodeIdForLog(NodeID id) {

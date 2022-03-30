@@ -161,7 +161,7 @@ public class DownloadingBodiesSyncState extends BaseSyncState {
     private void handleInvalidBlock(Peer peer, BlockHeader header) {
         peersInformation.reportEventToPeerScoring(
                 peer, EventType.INVALID_BLOCK,
-                "Invalid block received from node [{}] on {}, no {}, hash {}",
+                "Invalid block received on {}, no {}, hash {}",
                 this.getClass(), header.getNumber(), header.getPrintableHash());
 
         clearPeerInfo(peer);
@@ -177,7 +177,7 @@ public class DownloadingBodiesSyncState extends BaseSyncState {
     private void handleInvalidBody(Peer peer, BlockHeader header) {
         peersInformation.reportEventToPeerScoring(
                 peer, EventType.INVALID_MESSAGE,
-                "Invalid body received from node [{}] on {}, no {}, hash {}",
+                "Invalid body received on {}, no {}, hash {}",
                 this.getClass(), header.getNumber(), header.getPrintableHash());
 
         clearPeerInfo(peer);
@@ -192,7 +192,7 @@ public class DownloadingBodiesSyncState extends BaseSyncState {
 
     private void handleUnexpectedBody(Peer peer) {
         peersInformation.reportEventToPeerScoring(peer, EventType.UNEXPECTED_MESSAGE,
-                "Unexpected body received from node [{}] on {}", this.getClass());
+                "Unexpected body received on {}", this.getClass());
 
         clearPeerInfo(peer);
         if (suitablePeers.isEmpty()) {
@@ -308,7 +308,7 @@ public class DownloadingBodiesSyncState extends BaseSyncState {
 
     private void handleTimeoutMessage(Peer peer) {
         peersInformation.reportEventToPeerScoring(peer, EventType.TIMEOUT_MESSAGE,
-                "Timeout waiting body from node [{}] on {}", this.getClass());
+                "Timeout waiting body on {}", this.getClass());
         Long messageId = messagesByPeers.remove(peer);
         BlockHeader header = pendingBodyResponses.remove(messageId).header;
         clearPeerInfo(peer);

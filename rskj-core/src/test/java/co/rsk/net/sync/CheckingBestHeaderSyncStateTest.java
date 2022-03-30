@@ -65,7 +65,7 @@ public class CheckingBestHeaderSyncStateTest {
 
         verify(syncEventsHandler, times(1))
                 .onErrorSyncing(peer, EventType.INVALID_HEADER,
-                        "Invalid header received from node [{}] on {}", CheckingBestHeaderSyncState.class);
+                        "Invalid header received on {}", CheckingBestHeaderSyncState.class);
     }
 
     @Test
@@ -78,7 +78,7 @@ public class CheckingBestHeaderSyncStateTest {
 
         verify(syncEventsHandler, times(1))
                 .onErrorSyncing(peer, EventType.INVALID_HEADER,
-                        "Unexpected header received from node [{}] on {}", CheckingBestHeaderSyncState.class);
+                        "Unexpected header received on {}", CheckingBestHeaderSyncState.class);
     }
 
     @Test
@@ -86,6 +86,6 @@ public class CheckingBestHeaderSyncStateTest {
         state.onMessageTimeOut();
         verify(syncEventsHandler, times(1))
                 .onErrorSyncing(peer, EventType.TIMEOUT_MESSAGE,
-                        "Timeout waiting requests from node [{}] on {}", CheckingBestHeaderSyncState.class);
+                        "Timeout waiting requests on {}", CheckingBestHeaderSyncState.class);
     }
 }
