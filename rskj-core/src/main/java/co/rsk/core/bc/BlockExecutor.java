@@ -483,7 +483,7 @@ public class BlockExecutor {
         Map<Transaction, TransactionReceipt> receiptsByTx = new HashMap<>();
         Set<DataWord> deletedAccounts = new HashSet<>();
         LongAccumulator remascFees = new LongAccumulator(Long::sum, 0);
-        int buckets = 2;
+        short buckets = 2;
         ParallelizeTransactionHandler parallelizeTransactionHandler = new ParallelizeTransactionHandler(buckets, GasCost.toGas(block.getGasLimit()));
 
         int txindex = 0;
@@ -592,7 +592,7 @@ public class BlockExecutor {
         logger.trace("Building execution results.");
 
         List<Transaction> executedTransactions = parallelizeTransactionHandler.getTransactionsInOrder();
-        short[] bucketOrder = parallelizeTransactionHandler.getBucketOrder();
+        short[] bucketOrder = parallelizeTransactionHandler.getTransactionsPerBucketInOrder();
         List<TransactionReceipt> receipts = new ArrayList<>();
 
         for (Transaction tx : executedTransactions) {
