@@ -27,9 +27,9 @@ import java.util.*;
 
 public class ParallelizeTransactionHandler {
     private final TransactionBucket sequentialBucket;
-    private final HashMap<ByteArrayWrapper, Short> bucketByWrittenKey;
+    private final HashMap<ByteArrayWrapper, Set<Short>> bucketByWrittenKey;
     private final HashMap<ByteArrayWrapper, Set<Short>> bucketByReadKey;
-    private final Map<RskAddress, Short> bucketBySender;
+    private final Map<RskAddress, Set<Short>> bucketBySender;
     private final List<TransactionBucket> parallelBuckets;
 
     public ParallelizeTransactionHandler(short buckets, long blockGasLimit) {
@@ -137,19 +137,25 @@ public class ParallelizeTransactionHandler {
 
     private void addNewKeysToMaps(RskAddress sender, Short bucketId, Set<ByteArrayWrapper> newReadKeys, Set<ByteArrayWrapper> newWrittenKeys) {
         for (ByteArrayWrapper key : newReadKeys) {
-            Set<Short> bucketIds = bucketByReadKey.getOrDefault(key, new HashSet<>());
-            bucketIds.add(bucketId);
-            bucketByReadKey.put(key, bucketIds);
+            addNewKeyInTheBucket(bucketByReadKey, key, bucketId);
         }
 
         for (ByteArrayWrapper key: newWrittenKeys) {
-            bucketByWrittenKey.put(key, bucketId);
+            addNewKeyInTheBucket(bucketByWrittenKey, key, bucketId);
         }
 
-        bucketBySender.put(sender, bucketId);
+        Set<Short> bucketIdsBySender = bucketBySender.getOrDefault(sender, new HashSet<>());
+        bucketIdsBySender.add(bucketId);
+        bucketBySender.put(sender, bucketIdsBySender);
     }
 
-    private Optional<Short> getBucketBySender(Transaction tx) {
+    private void addNewKeyInTheBucket(HashMap<ByteArrayWrapper, Set<Short>> bucketMap, ByteArrayWrapper key, Short bucketId) {
+        Set<Short> bucketIds = bucketMap.getOrDefault(key, new HashSet<>());
+        bucketIds.add(bucketId);
+        bucketMap.put(key, bucketIds);
+    }
+
+    private Optional<Set<Short>> getBucketBySender(Transaction tx) {
         return Optional.ofNullable(bucketBySender.get(tx.getSender()));
     }
 
@@ -172,12 +178,12 @@ public class ParallelizeTransactionHandler {
     private Set<Short> getBucketCandidates(Transaction tx, Set<ByteArrayWrapper> newReadKeys, Set<ByteArrayWrapper> newWrittenKeys) {
         Set<Short> bucketCandidates = new HashSet<>();
 
-        getBucketBySender(tx).ifPresent(bucketCandidates::add);
+        getBucketBySender(tx).ifPresent(bucketCandidates::addAll);
 
         // read - written
         for (ByteArrayWrapper newReadKey : newReadKeys) {
             if (bucketByWrittenKey.containsKey(newReadKey)) {
-                bucketCandidates.add(bucketByWrittenKey.get(newReadKey));
+                bucketCandidates.addAll(bucketByWrittenKey.get(newReadKey));
             }
         }
 
@@ -185,7 +191,7 @@ public class ParallelizeTransactionHandler {
         // written - written
         for (ByteArrayWrapper newWrittenKey : newWrittenKeys) {
             if (bucketByWrittenKey.containsKey(newWrittenKey)) {
-                bucketCandidates.add(bucketByWrittenKey.get(newWrittenKey));
+                bucketCandidates.addAll(bucketByWrittenKey.get(newWrittenKey));
             }
 
             if (bucketByReadKey.containsKey(newWrittenKey)) {
