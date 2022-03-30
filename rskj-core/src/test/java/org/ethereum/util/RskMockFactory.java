@@ -12,7 +12,7 @@ public class RskMockFactory {
     public static PeerScoringManager getPeerScoringManager() {
         PeerScoringManager peerScoringManager = mock(PeerScoringManager.class);
         when(peerScoringManager.hasGoodReputation(isA(NodeID.class))).thenReturn(true);
-        when(peerScoringManager.getPeerScoring(isA(NodeID.class))).thenReturn(new PeerScoring());
+        when(peerScoringManager.getPeerScoring(isA(NodeID.class))).thenReturn(new PeerScoring("id1"));
         return peerScoringManager;
     }
 
