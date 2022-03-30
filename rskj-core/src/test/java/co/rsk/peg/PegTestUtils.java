@@ -192,7 +192,7 @@ public class PegTestUtils {
     }
 
     public static RskAddress createRandomRskAddress() {
-        ECKey key = ECKey.fromPublicOnly(new BtcECKey().getPubKey());
+        ECKey key = new ECKey();
         return new RskAddress(key.getAddress());
     }
 
