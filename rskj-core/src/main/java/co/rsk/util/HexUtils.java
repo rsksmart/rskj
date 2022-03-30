@@ -83,16 +83,12 @@ public class HexUtils {
 
         String result = removeHexPrefix(param);
 
-        if (result.length() % 2 != 0) {
+        if (result.length() % 2 != 0) { //NOSONAR
             result = ZERO_STR + result;
         }
         return Hex.decode(result);
     }
-    
-    public static void main(String[] args) {
-        stringHexToByteArray(null);
-    }
-    
+        
     /**
      * Convert hex encoded string or integer in string format to decoded byte array
      */
