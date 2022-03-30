@@ -66,7 +66,7 @@ public class FindingConnectionPointSyncStateTest {
 
         target.onMessageTimeOut();
         verify(syncEventsHandler, times(1)).onErrorSyncing(peer, EventType.TIMEOUT_MESSAGE,
-                        "Timeout waiting requests from node [{}] on {}", FindingConnectionPointSyncState.class);
+                        "Timeout waiting requests on {}", FindingConnectionPointSyncState.class);
     }
 
 }

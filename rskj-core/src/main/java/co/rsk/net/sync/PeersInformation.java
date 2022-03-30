@@ -30,7 +30,6 @@ import org.ethereum.net.server.ChannelManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.net.InetAddress;
 import java.time.Instant;
 import java.util.*;
 import java.util.function.Predicate;
@@ -72,9 +71,7 @@ public class PeersInformation {
     }
 
     public void reportEventToPeerScoring(Peer peer, EventType eventType, String message, Object... arguments) {
-        String nodeInfo = peer.getPeerNodeID() + " - " + Optional.ofNullable(peer.getAddress()).map(InetAddress::getHostAddress).orElse("unknown");
-        logger.trace(message, nodeInfo, arguments);
-        peerScoringManager.recordEvent(peer.getPeerNodeID(), peer.getAddress(), eventType);
+        this.peerScoringManager.recordEvent(peer.getPeerNodeID(), peer.getAddress(), eventType, message, arguments);
     }
 
     public void reportSyncingErrorToPeerScoring(Peer peer, EventType eventType, String message, Object... arguments) {

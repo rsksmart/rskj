@@ -92,12 +92,12 @@ public class MessageVisitor {
             return;
         }
 
-        if (blockProcessor.canBeIgnoredForUnclesRewards(block.getNumber())){
+        if (blockProcessor.canBeIgnoredForUnclesRewards(block.getNumber())) {
             logger.trace("Block ignored: too far from best block {} {}", blockNumber, block.getPrintableHash());
             return;
         }
 
-        if (blockProcessor.hasBlockInSomeBlockchain(block.getHash().getBytes())){
+        if (blockProcessor.hasBlockInSomeBlockchain(block.getHash().getBytes())) {
             logger.trace("Block ignored: it's included in blockchain {} {}", blockNumber, block.getPrintableHash());
             return;
         }
@@ -105,8 +105,7 @@ public class MessageVisitor {
         BlockProcessResult result = this.blockProcessor.processBlock(sender, block);
 
         if (result.isInvalidBlock()) {
-            logger.trace("Invalid block {} {}", blockNumber, block.getPrintableHash());
-            recordEventForPeerScoring(sender, EventType.INVALID_BLOCK);
+            reportEventToPeerScoring(sender, EventType.INVALID_BLOCK, "Invalid block {} {} at {}", blockNumber, block.getPrintableHash(), this.getClass());
             return;
         }
 
@@ -114,7 +113,7 @@ public class MessageVisitor {
 
         sender.imported(result.isBest());
 
-        recordEventForPeerScoring(sender, EventType.VALID_BLOCK);
+        reportEventToPeerScoring(sender, EventType.VALID_BLOCK, "Valid block {} {} at {}", blockNumber, block.getPrintableHash(), this.getClass());
     }
 
     public void apply(StatusMessage message) {
@@ -199,10 +198,10 @@ public class MessageVisitor {
 
         for (Transaction tx : messageTxs) {
             if (!tx.acceptTransactionSignature(config.getNetworkConstants().getChainId())) {
-                recordEventForPeerScoring(sender, EventType.INVALID_TRANSACTION);
+                reportEventToPeerScoring(sender, EventType.INVALID_TRANSACTION, "Invalid transaction {} at {}", tx.getHash().toString(), this.getClass());
             } else {
                 txs.add(tx);
-                recordEventForPeerScoring(sender, EventType.VALID_TRANSACTION);
+                reportEventToPeerScoring(sender, EventType.VALID_TRANSACTION, "Valid transaction {} at {}", tx.getHash().toString(), this.getClass());
             }
         }
 
@@ -213,15 +212,15 @@ public class MessageVisitor {
         }
     }
 
-    private void recordEventForPeerScoring(Peer sender, EventType event) { // TODO:I improve these logs
-        if (sender == null) {
+    private void reportEventToPeerScoring(Peer peer, EventType eventType, String message, Object... arguments) {
+        if (peer == null) {
             return;
         }
 
-        this.peerScoringManager.recordEvent(sender.getPeerNodeID(), sender.getAddress(), event);
+        this.peerScoringManager.recordEvent(peer.getPeerNodeID(), peer.getAddress(), eventType, message, arguments);
     }
 
-    private void  tryRelayBlock(Block block, BlockProcessResult result) {
+    private void tryRelayBlock(Block block, BlockProcessResult result) {
         // is new block and it is not orphan, it is in some blockchain
         if ((result.isScheduledForProcessing() || result.wasBlockAdded(block)) && !this.blockProcessor.hasBetterBlockToSync()) {
             relayBlock(block);

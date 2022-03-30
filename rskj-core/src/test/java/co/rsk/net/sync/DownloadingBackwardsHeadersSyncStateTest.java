@@ -95,6 +95,6 @@ public class DownloadingBackwardsHeadersSyncStateTest {
         target.onMessageTimeOut();
         verify(syncEventsHandler, times(1))
                 .onErrorSyncing(selectedPeer, EventType.TIMEOUT_MESSAGE,
-                        "Timeout waiting requests from node [{}] on {}", DownloadingBackwardsHeadersSyncState.class);
+                        "Timeout waiting requests on {}", DownloadingBackwardsHeadersSyncState.class);
     }
 }

@@ -18,7 +18,6 @@
 
 package co.rsk.net;
 
-import java.net.InetAddress;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.PriorityBlockingQueue;
@@ -221,7 +220,7 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
             }
 
         } else {
-            reportEventToPeerScoring(sender, EventType.REPEATED_MESSAGE);
+            reportEventToPeerScoring(sender, EventType.REPEATED_MESSAGE, "Received repeated message on {}, not added to the queue");
         }
 
         return !contains;
@@ -332,15 +331,13 @@ public class NodeMessageHandler implements MessageHandler, InternalService, Runn
         }
     }
 
-    private void reportEventToPeerScoring(Peer sender, @SuppressWarnings("SameParameterValue") EventType event) {
+    @SuppressWarnings("SameParameterValue")
+    private void reportEventToPeerScoring(Peer sender, EventType event, String message) {
         if (sender == null) {
             return;
         }
 
-        String nodeInfo = sender.getPeerNodeID() + " - " + Optional.ofNullable(sender.getAddress()).map(InetAddress::getHostAddress).orElse("unknown");
-        logger.trace("Received repeated message from node [{}] on {}, not added to the queue", nodeInfo, this.getClass());
-
-        this.peerScoringManager.recordEvent(sender.getPeerNodeID(), sender.getAddress(), event);
+        this.peerScoringManager.recordEvent(sender.getPeerNodeID(), sender.getAddress(), event, message, this.getClass());
     }
 
     private static class MessageTask {
