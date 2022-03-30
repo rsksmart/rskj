@@ -92,12 +92,12 @@ public class PeerScoringManager {
         //todo(techdebt) this method encourages null params, this is not desirable
         synchronized (accessLock) {
             if (id != null) {
-                PeerScoring scoring = peersByNodeID.computeIfAbsent(id, k -> peerScoringFactory.newInstance());
+                PeerScoring scoring = peersByNodeID.computeIfAbsent(id, k -> peerScoringFactory.newInstance(id.toString()));
                 recordEventAndStartPunishment(scoring, event, this.nodePunishmentCalculator, id);
             }
 
             if (address != null) {
-                PeerScoring scoring = peersByAddress.computeIfAbsent(address, k -> peerScoringFactory.newInstance());
+                PeerScoring scoring = peersByAddress.computeIfAbsent(address, k -> peerScoringFactory.newInstance(address.getHostAddress()));
                 recordEventAndStartPunishment(scoring, event, this.ipPunishmentCalculator, id);
             }
 
@@ -113,6 +113,7 @@ public class PeerScoringManager {
      */
     public boolean hasGoodReputation(NodeID id) {
         if (isNodeIDBanned(id)) {
+            logger.debug("Node {} is banned, reputation is bad", id);
             return false;
         }
 
@@ -129,6 +130,7 @@ public class PeerScoringManager {
      */
     public boolean hasGoodReputation(InetAddress address) {
         if (isAddressBanned(address)) {
+            logger.debug("Address {} is banned, reputation is bad", address.getHostAddress());
             return false;
         }
 
@@ -152,6 +154,7 @@ public class PeerScoringManager {
      */
     public void banAddress(InetAddress address) {
         this.addressTable.addAddress(address);
+        logger.debug("Banned address {}", address.getHostAddress());
     }
 
     /**
@@ -180,6 +183,7 @@ public class PeerScoringManager {
      */
     public void unbanAddress(InetAddress address) {
         this.addressTable.removeAddress(address);
+        logger.debug("Unbanned address {}", address.getHostAddress());
     }
 
     /**
@@ -208,6 +212,7 @@ public class PeerScoringManager {
      */
     public void banAddressBlock(InetAddressCidrBlock addressBlock) {
         this.addressTable.addAddressBlock(addressBlock);
+        logger.debug("Banned address block {}", addressBlock.getDescription());
     }
 
     /**
@@ -217,6 +222,7 @@ public class PeerScoringManager {
      */
     public void unbanAddressBlock(InetAddressCidrBlock addressBlock) {
         this.addressTable.removeAddressBlock(addressBlock);
+        logger.debug("Unbanned address block {}", addressBlock.getDescription());
     }
 
     /**
@@ -281,7 +287,8 @@ public class PeerScoringManager {
                 return peersByNodeID.get(id);
             }
 
-            return peerScoringFactory.newInstance();
+            logger.trace("Creating new PeerScoring for node with id {}", id);
+            return peerScoringFactory.newInstance(id.toString());
         }
     }
 
@@ -292,7 +299,8 @@ public class PeerScoringManager {
                 return peersByAddress.get(address);
             }
 
-            return peerScoringFactory.newInstance();
+            logger.trace("Creating new PeerScoring for node with address {}", address.getHostAddress());
+            return peerScoringFactory.newInstance(address.getHostAddress());
         }
     }
 
@@ -316,9 +324,9 @@ public class PeerScoringManager {
             long punishmentTime = punishmentCalculator.calculate(peerScoring.getPunishmentCounter(), peerScoring.getScore());
             peerScoring.startPunishment(punishmentTime);
 
-            String nodeIDFormated = nodeIdForLog(nodeID);
-            logger.debug("NodeID {} has been punished for {} milliseconds. Last event {}", nodeIDFormated, punishmentTime, event);
-            logger.debug("{}", PeerScoringInformation.buildByScoring(peerScoring, nodeIDFormated, ""));
+            String nodeIDFormatted = nodeIdForLog(nodeID);
+            logger.debug("NodeID {} has been punished for {} milliseconds. Last event {}", nodeIDFormatted, punishmentTime, event);
+            logger.debug("{}", PeerScoringInformation.buildByScoring(peerScoring, nodeIDFormatted, ""));
         }
     }
 

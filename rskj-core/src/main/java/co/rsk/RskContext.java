@@ -598,12 +598,12 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         checkIfNotClosed();
 
         if (peerScoringManager == null) {
-            RskSystemProperties rskSystemProperties = getRskSystemProperties();
+            RskSystemProperties rskSystemProperties = getRskSystemProperties(); // TODO:I rename to refresh?
             List<String> bannedPeerIPs = rskSystemProperties.bannedPeerIPList();
             List<String> bannedPeerIDs = rskSystemProperties.bannedPeerIDList();
 
             peerScoringManager = new PeerScoringManager(
-                    () -> new PeerScoring(rskSystemProperties.scoringPunishmentEnabled()),
+                    (String id) -> new PeerScoring(id, rskSystemProperties.scoringPunishmentEnabled()),
                     rskSystemProperties.scoringNumberOfNodes(),
                     new PunishmentParameters(
                             rskSystemProperties.scoringNodesPunishmentDuration(),

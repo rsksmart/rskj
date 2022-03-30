@@ -10,7 +10,7 @@ public class ScoringCalculatorTest {
     @Test
     public void emptyScoringHasGoodReputation() {
         ScoringCalculator calculator = new ScoringCalculator();
-        PeerScoring scoring = new PeerScoring();
+        PeerScoring scoring = new PeerScoring("id1");
 
         Assert.assertTrue(calculator.hasGoodScore(scoring));
     }
@@ -18,7 +18,7 @@ public class ScoringCalculatorTest {
     @Test
     public void scoringWithOneValidBlockHasGoodReputation() {
         ScoringCalculator calculator = new ScoringCalculator();
-        PeerScoring scoring = new PeerScoring();
+        PeerScoring scoring = new PeerScoring("id1");
         scoring.updateScoring(EventType.VALID_BLOCK);
 
         Assert.assertTrue(calculator.hasGoodScore(scoring));
@@ -27,7 +27,7 @@ public class ScoringCalculatorTest {
     @Test
     public void scoringWithOneValidTransactionHasGoodReputation() {
         ScoringCalculator calculator = new ScoringCalculator();
-        PeerScoring scoring = new PeerScoring();
+        PeerScoring scoring = new PeerScoring("id1");
         scoring.updateScoring(EventType.VALID_TRANSACTION);
 
         Assert.assertTrue(calculator.hasGoodScore(scoring));
@@ -36,7 +36,7 @@ public class ScoringCalculatorTest {
     @Test
     public void scoringWithOneInvalidBlockHasBadReputation() {
         ScoringCalculator calculator = new ScoringCalculator();
-        PeerScoring scoring = new PeerScoring();
+        PeerScoring scoring = new PeerScoring("id1");
         scoring.updateScoring(EventType.INVALID_BLOCK);
 
         Assert.assertFalse(calculator.hasGoodScore(scoring));
@@ -45,7 +45,7 @@ public class ScoringCalculatorTest {
     @Test
     public void scoringWithOneInvalidTransactionHasNoBadReputation() {
         ScoringCalculator calculator = new ScoringCalculator();
-        PeerScoring scoring = new PeerScoring();
+        PeerScoring scoring = new PeerScoring("id1");
         scoring.updateScoring(EventType.INVALID_TRANSACTION);
 
         Assert.assertTrue(calculator.hasGoodScore(scoring));

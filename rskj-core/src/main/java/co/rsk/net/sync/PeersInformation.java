@@ -73,7 +73,7 @@ public class PeersInformation {
 
     public void reportEventToPeerScoring(Peer peer, EventType eventType, String message, Object... arguments) {
         String nodeInfo = peer.getPeerNodeID() + " - " + Optional.ofNullable(peer.getAddress()).map(InetAddress::getHostAddress).orElse("unknown");
-        logger.trace(message, nodeInfo, arguments);
+        logger.trace(message, nodeInfo, arguments); // TODO:I check if this is working
         peerScoringManager.recordEvent(peer.getPeerNodeID(), peer.getAddress(), eventType);
     }
 
