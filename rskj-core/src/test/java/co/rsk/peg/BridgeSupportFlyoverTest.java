@@ -1358,9 +1358,7 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
         when(provider.isFastBridgeFederationDerivationHashUsed(any(), any())).thenReturn(true);
         BtcTransaction tx = new BtcTransaction(bridgeConstantsRegtest.getBtcParams());
 
-        ECKey key = ECKey.fromPublicOnly(new BtcECKey().getPubKey());
-        RskAddress lbcAddress = new RskAddress(key.getAddress());
-
+        RskAddress lbcAddress = PegTestUtils.createRandomRskAddress();
 
         BridgeSupport bridgeSupport = spy(bridgeSupportBuilder
             .withProvider(provider)
@@ -1410,8 +1408,7 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
         BtcTransaction tx = new BtcTransaction(bridgeConstantsRegtest.getBtcParams());
 
-        ECKey key = ECKey.fromPublicOnly(new BtcECKey().getPubKey());
-        RskAddress lbcAddress = new RskAddress(key.getAddress());
+        RskAddress lbcAddress = PegTestUtils.createRandomRskAddress();
 
         BridgeSupport bridgeSupport = spy(bridgeSupportBuilder
             .withProvider(provider)
@@ -1461,8 +1458,7 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
         Context btcContext = mock(Context.class);
         when(btcContext.getParams()).thenReturn(bridgeConstantsRegtest.getBtcParams());
 
-        ECKey key = ECKey.fromPublicOnly(new BtcECKey().getPubKey());
-        RskAddress lbcAddress = new RskAddress(key.getAddress());
+        RskAddress lbcAddress = PegTestUtils.createRandomRskAddress();
 
         BridgeSupport bridgeSupport = spy(new BridgeSupport(
             bridgeConstantsRegtest,
@@ -1529,8 +1525,7 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
         BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
         when(provider.isFastBridgeFederationDerivationHashUsed(any(), any())).thenReturn(false).thenReturn(true);
 
-        ECKey key = ECKey.fromPublicOnly(new BtcECKey().getPubKey());
-        RskAddress lbcAddress = new RskAddress(key.getAddress());
+        RskAddress lbcAddress = PegTestUtils.createRandomRskAddress();
 
         BridgeSupport bridgeSupport = spy(new BridgeSupport(
             bridgeConstantsRegtest,
@@ -1639,8 +1634,7 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
             "n3PLxDiwWqa5uH7fSbHCxS6VAjD9Y7Rwkj"
         );
 
-        ECKey key = ECKey.fromPublicOnly(new BtcECKey().getPubKey());
-        RskAddress lbcAddress = new RskAddress(key.getAddress());
+        RskAddress lbcAddress = PegTestUtils.createRandomRskAddress();
 
         BtcTransaction tx = createBtcTransactionWithOutputToAddress(Coin.COIN, getFastBridgeFederationAddress());
         byte[] pmtSerialized = Hex.decode("ab");
@@ -1725,8 +1719,7 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
             "n3PLxDiwWqa5uH7fSbHCxS6VAjD9Y7Rwkj"
         );
 
-        ECKey key = ECKey.fromPublicOnly(new BtcECKey().getPubKey());
-        RskAddress lbcAddress = new RskAddress(key.getAddress());
+        RskAddress lbcAddress = PegTestUtils.createRandomRskAddress();
 
         BtcTransaction tx = createBtcTransactionWithOutputToAddress(Coin.COIN, getFastBridgeFederationAddress());
         byte[] pmtSerialized = Hex.decode("ab");
@@ -1815,8 +1808,7 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
             "n3PLxDiwWqa5uH7fSbHCxS6VAjD9Y7Rwkj"
         );
 
-        ECKey key = ECKey.fromPublicOnly(new BtcECKey().getPubKey());
-        RskAddress lbcAddress = new RskAddress(key.getAddress());
+        RskAddress lbcAddress = PegTestUtils.createRandomRskAddress();
 
         BtcTransaction tx = createBtcTransactionWithOutputToAddress(Coin.COIN, getFastBridgeFederationAddress());
         byte[] pmtSerialized = Hex.decode("ab");
@@ -1916,8 +1908,7 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
             "n3PLxDiwWqa5uH7fSbHCxS6VAjD9Y7Rwkj"
         );
 
-        ECKey key = ECKey.fromPublicOnly(new BtcECKey().getPubKey());
-        RskAddress lbcAddress = new RskAddress(key.getAddress());
+        RskAddress lbcAddress = PegTestUtils.createRandomRskAddress();
 
         Coin valueToSend = Coin.COIN;
         BtcTransaction tx = createBtcTransactionWithOutputToAddress(valueToSend, getFastBridgeFederationAddress());
