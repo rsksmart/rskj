@@ -75,7 +75,7 @@ public class DownloadingHeadersSyncState extends BaseSelectedPeerSyncState {
         ChunkDescriptor currentChunk = currentChunkOpt.get();
 
         boolean unexpectedChunkSize = chunk.size() != currentChunk.getCount();
-        if (unexpectedChunkSize) {
+        if (unexpectedChunkSize) { // TODO:I add a test
             syncEventsHandler.onErrorSyncing(selectedPeer, EventType.INVALID_MESSAGE,
                     "Unexpected chunk size received from node [{}] on {}: hash: {}",
                     this.getClass(), HashUtil.toPrintableHash(currentChunk.getHash()));
@@ -83,7 +83,7 @@ public class DownloadingHeadersSyncState extends BaseSelectedPeerSyncState {
         }
 
         boolean unexpectedHeader = !ByteUtil.fastEquals(chunk.get(0).getHash().getBytes(), currentChunk.getHash());
-        if (unexpectedHeader) {
+        if (unexpectedHeader) { // TODO:I add a test
             syncEventsHandler.onErrorSyncing(selectedPeer, EventType.INVALID_MESSAGE,
                     "Unexpected chunk header hash received from node [{}] on {}: hash: {}",
                     this.getClass(), HashUtil.toPrintableHash(currentChunk.getHash()));
