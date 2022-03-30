@@ -3363,6 +3363,10 @@ public class BridgeUtilsTest {
 
         BtcTransaction btcTx = new BtcTransaction(bridgeConstantsRegtest.getBtcParams());
         btcTx.addOutput(Coin.ZERO, btcAddressReceivingFunds);
+        /* Send funds also to random addresses in order to assure the method distinguishes that those funds
+        were not sent to the given address(normally the federation address */
+        btcTx.addOutput(Coin.COIN, PegTestUtils.createRandomBtcAddress());
+        btcTx.addOutput(Coin.COIN, PegTestUtils.createRandomBtcAddress());
 
         Assert.assertEquals(
             FastBridgeTxResponseCodes.UNPROCESSABLE_TX_VALUE_ZERO_ERROR,
