@@ -24,14 +24,15 @@ public class PeerScoringInformation {
     private final int score;
     private final int punishments;
     private final boolean goodReputation;
+    private final long punishedUntil;
     private final String id;
     private final String type; //todo(techdebt) use an enum or constants
 
-    public PeerScoringInformation(int successfulHandshakes, int failedHandshakes, int invalidNetworks,
+    PeerScoringInformation(int successfulHandshakes, int failedHandshakes, int invalidNetworks,
                                   int repeatedMessages, int validBlocks, int validTransactions, int invalidBlocks,
                                   int invalidTransactions, int invalidMessages, int timeoutMessages,
                                   int unexpectedMessages, int invalidHeader, int score, int punishments,
-                                  boolean goodReputation, String id, String type) {
+                                  boolean goodReputation, long punishedUntil, String id, String type) {
         this.successfulHandshakes = successfulHandshakes;
         this.failedHandshakes = failedHandshakes;
         this.invalidNetworks = invalidNetworks;
@@ -47,6 +48,7 @@ public class PeerScoringInformation {
         this.score = score;
         this.punishments = punishments;
         this.goodReputation = goodReputation;
+        this.punishedUntil = punishedUntil;
         this.id = id;
         this.type = type;
     }
@@ -67,11 +69,12 @@ public class PeerScoringInformation {
         int score = scoring.getScore();
         int punishments = scoring.getPunishmentCounter();
         boolean goodReputation = scoring.refreshReputationAndPunishment();
+        long punishedUntil = scoring.getPunishedUntil();
 
         return new PeerScoringInformation(successfulHandshakes, failedHandshakes, invalidNetworks,
                 repeatedMessages, validBlocks, validTransactions, invalidBlocks, invalidTransactions,
                 invalidMessages, timeoutMessages, unexpectedMessages, invalidHeader, score, punishments,
-                goodReputation, id, type);
+                goodReputation, punishedUntil, id, type);
     }
 
     public String getId() {
@@ -79,19 +82,29 @@ public class PeerScoringInformation {
     }
 
     @VisibleForTesting
-    public String getType() { return this.type; }
+    public String getType() {
+        return this.type;
+    }
 
     public boolean getGoodReputation() {
         return this.goodReputation;
     }
 
-    public int getSuccessfulHandshakes() { return this.successfulHandshakes; }
+    public int getSuccessfulHandshakes() {
+        return this.successfulHandshakes;
+    }
 
-    public int getFailedHandshakes() { return this.failedHandshakes; }
+    public int getFailedHandshakes() {
+        return this.failedHandshakes;
+    }
 
-    public int getInvalidNetworks() { return this.invalidNetworks; }
+    public int getInvalidNetworks() {
+        return this.invalidNetworks;
+    }
 
-    public int getRepeatedMessages() { return this.repeatedMessages; }
+    public int getRepeatedMessages() {
+        return this.repeatedMessages;
+    }
 
     public int getValidBlocks() {
         return this.validBlocks;
@@ -129,7 +142,9 @@ public class PeerScoringInformation {
         return this.invalidHeader;
     }
 
-    public int getPunishments() { return this.punishments; }
+    public int getPunishments() {
+        return this.punishments;
+    }
 
     public int goodReputationCount() {
         return getGoodReputation() ? 1 : 0;
@@ -137,6 +152,10 @@ public class PeerScoringInformation {
 
     public int badReputationCount() {
         return !getGoodReputation() ? 1 : 0;
+    }
+
+    public long getPunishedUntil() {
+        return punishedUntil;
     }
 }
 

@@ -213,7 +213,7 @@ public class MessageVisitor {
         }
     }
 
-    private void recordEventForPeerScoring(Peer sender, EventType event) {
+    private void recordEventForPeerScoring(Peer sender, EventType event) { // TODO:I improve these logs
         if (sender == null) {
             return;
         }

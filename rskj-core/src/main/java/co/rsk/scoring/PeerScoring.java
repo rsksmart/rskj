@@ -164,8 +164,7 @@ public class PeerScoring {
                 return true;
             }
 
-            if (this.punishmentTime > 0 && this.timeLostGoodReputation > 0
-                    && this.punishmentTime + this.timeLostGoodReputation <= System.currentTimeMillis()) {
+            if (this.punishmentTime > 0 && this.timeLostGoodReputation > 0 && getPunishedUntil() <= System.currentTimeMillis()) {
                 this.endPunishment();
             }
 
@@ -218,6 +217,7 @@ public class PeerScoring {
             this.counters[i] = 0;
         }
         this.goodReputation = true;
+        this.punishmentTime = 0;
         this.timeLostGoodReputation = 0;
         this.score = 0;
     }
@@ -239,6 +239,14 @@ public class PeerScoring {
     @VisibleForTesting
     public long getTimeLostGoodReputation() {
         return this.timeLostGoodReputation;
+    }
+
+    /**
+     * Gets the timestamp (ms) for the punishment to finish
+     * @return the timestamp for the punishment to finish, 0 if not punished or punishment disabled
+     */
+    public long getPunishedUntil() { // TODO:I add test
+        return this.punishmentTime + this.timeLostGoodReputation;
     }
 
     public interface Factory {
