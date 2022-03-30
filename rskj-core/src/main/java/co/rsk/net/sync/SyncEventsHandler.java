@@ -53,7 +53,7 @@ public interface SyncEventsHandler {
 
     void onErrorSyncing(Peer peer, EventType eventType, String message, Object... arguments);
 
-    void onSyncIssue(String message, Object... arguments);
+    void onSyncIssue(Peer peer, String message, Object... arguments);
 
     void startFindingConnectionPoint(Peer peer);
 

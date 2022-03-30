@@ -51,7 +51,8 @@ public class FindingConnectionPointSyncStateTest {
             target.newConnectionPointData(new byte[32]);
         }
 
-        verify(syncEventsHandler, times(1)).onSyncIssue(any(), any());
+        verify(syncEventsHandler, times(1))
+                .onSyncIssue(peer, "Connection point not found with node [{}] on {}", FindingConnectionPointSyncState.class);
     }
 
     @Test

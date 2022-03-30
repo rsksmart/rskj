@@ -67,15 +67,13 @@ public class DownloadingHeadersSyncState extends BaseSelectedPeerSyncState {
     public void newBlockHeaders(List<BlockHeader> chunk) {
         Optional<ChunkDescriptor> currentChunkOpt = chunksDownloadHelper.getCurrentChunk();
         if (!currentChunkOpt.isPresent()) {
-            syncEventsHandler.onSyncIssue(
-                    "Current chunk not present. Node {}",
-                    selectedPeer.getPeerNodeID());
+            syncEventsHandler.onSyncIssue(selectedPeer, "Current chunk not present for node [{}] on {}", this.getClass());
             return;
         }
         ChunkDescriptor currentChunk = currentChunkOpt.get();
 
         boolean unexpectedChunkSize = chunk.size() != currentChunk.getCount();
-        if (unexpectedChunkSize) { // TODO:I add a test
+        if (unexpectedChunkSize) {
             syncEventsHandler.onErrorSyncing(selectedPeer, EventType.INVALID_MESSAGE,
                     "Unexpected chunk size received from node [{}] on {}: hash: {}",
                     this.getClass(), HashUtil.toPrintableHash(currentChunk.getHash()));
@@ -83,7 +81,7 @@ public class DownloadingHeadersSyncState extends BaseSelectedPeerSyncState {
         }
 
         boolean unexpectedHeader = !ByteUtil.fastEquals(chunk.get(0).getHash().getBytes(), currentChunk.getHash());
-        if (unexpectedHeader) { // TODO:I add a test
+        if (unexpectedHeader) {
             syncEventsHandler.onErrorSyncing(selectedPeer, EventType.INVALID_MESSAGE,
                     "Unexpected chunk header hash received from node [{}] on {}: hash: {}",
                     this.getClass(), HashUtil.toPrintableHash(currentChunk.getHash()));

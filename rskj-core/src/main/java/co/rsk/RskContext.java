@@ -598,7 +598,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
         checkIfNotClosed();
 
         if (peerScoringManager == null) {
-            RskSystemProperties rskSystemProperties = getRskSystemProperties(); // TODO:I rename to refresh?
+            RskSystemProperties rskSystemProperties = getRskSystemProperties();
             List<String> bannedPeerIPs = rskSystemProperties.bannedPeerIPList();
             List<String> bannedPeerIDs = rskSystemProperties.bannedPeerIDList();
 
