@@ -51,14 +51,14 @@ public class CheckingBestHeaderSyncState extends BaseSelectedPeerSyncState {
         boolean unexpectedHeader = !ByteUtil.fastEquals(header.getHash().getBytes(), miniChunk.getHash());
         if (unexpectedHeader) {
             syncEventsHandler.onErrorSyncing(selectedPeer, EventType.INVALID_HEADER,
-                    "Unexpected header received from node [{}] on {}", this.getClass());
+                    "Unexpected header received on {}", this.getClass());
             return;
         }
 
         boolean invalidHeader = !blockHeaderValidationRule.isValid(header);
         if (invalidHeader) {
             syncEventsHandler.onErrorSyncing(selectedPeer, EventType.INVALID_HEADER,
-                    "Invalid header received from node [{}] on {}", this.getClass());
+                    "Invalid header received on {}", this.getClass());
             return;
         }
 

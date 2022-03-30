@@ -302,7 +302,7 @@ public class DownloadingBackwardsBodiesSyncStateTest {
         target.newBody(body, peer);
 
         verify(peersInformation, times(1)).reportEventToPeerScoring(peer, EventType.INVALID_MESSAGE,
-                "Invalid body response (header not found inTransit) received from node [{}] on {}", DownloadingBackwardsBodiesSyncState.class);
+                "Invalid body response (header not found inTransit) received on {}", DownloadingBackwardsBodiesSyncState.class);
     }
 
     @Test
@@ -341,7 +341,7 @@ public class DownloadingBackwardsBodiesSyncStateTest {
         target.newBody(body, peer);
 
         verify(peersInformation, times(1)).reportEventToPeerScoring(peer, EventType.INVALID_MESSAGE,
-                "Invalid body response (block hash != requestHeader hash) received from node [{}] on {}", DownloadingBackwardsBodiesSyncState.class);
+                "Invalid body response (block hash != requestHeader hash) received on {}", DownloadingBackwardsBodiesSyncState.class);
     }
 
     @Test
@@ -361,6 +361,6 @@ public class DownloadingBackwardsBodiesSyncStateTest {
         target.onMessageTimeOut();
         verify(syncEventsHandler, times(1))
                 .onErrorSyncing(peer, EventType.TIMEOUT_MESSAGE,
-                        "Timeout waiting requests from node [{}] on {}", DownloadingBackwardsBodiesSyncState.class);
+                        "Timeout waiting requests on {}", DownloadingBackwardsBodiesSyncState.class);
     }
 }

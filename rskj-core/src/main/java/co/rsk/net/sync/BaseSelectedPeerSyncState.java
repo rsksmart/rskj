@@ -15,7 +15,7 @@ public abstract class BaseSelectedPeerSyncState extends BaseSyncState {
     @Override
     protected void onMessageTimeOut() {
         syncEventsHandler.onErrorSyncing(selectedPeer, EventType.TIMEOUT_MESSAGE,
-                "Timeout waiting requests from node [{}] on {}", this.getClass());
+                "Timeout waiting requests on {}", this.getClass());
     }
 
 }

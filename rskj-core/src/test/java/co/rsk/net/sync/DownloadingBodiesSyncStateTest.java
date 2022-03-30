@@ -71,7 +71,7 @@ public class DownloadingBodiesSyncStateTest {
         state.newBody(message, peer);
         verify(peersInformation, times(1))
                 .reportEventToPeerScoring(peer, EventType.UNEXPECTED_MESSAGE,
-                        "Unexpected body received from node [{}] on {}", DownloadingBodiesSyncState.class);
+                        "Unexpected body received on {}", DownloadingBodiesSyncState.class);
     }
 
     @Test
@@ -97,7 +97,7 @@ public class DownloadingBodiesSyncStateTest {
         state.newBody(message, peer);
         verify(peersInformation, times(1))
                 .reportEventToPeerScoring(peer, EventType.UNEXPECTED_MESSAGE,
-                        "Unexpected body received from node [{}] on {}", DownloadingBodiesSyncState.class);
+                        "Unexpected body received on {}", DownloadingBodiesSyncState.class);
     }
 
     @Test
@@ -152,6 +152,6 @@ public class DownloadingBodiesSyncStateTest {
         state.tick(Duration.ofSeconds(1));
         verify(peersInformation, times(1))
                 .reportEventToPeerScoring(peer, EventType.TIMEOUT_MESSAGE,
-                        "Timeout waiting body from node [{}] on {}", DownloadingBodiesSyncState.class);
+                        "Timeout waiting body on {}", DownloadingBodiesSyncState.class);
     }
 }

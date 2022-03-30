@@ -55,7 +55,7 @@ public class DownloadingSkeletonSyncState extends BaseSelectedPeerSyncState {
         // defensive programming: this should never happen
         if (skeleton.size() < 2) {
             peersInformation.reportEventToPeerScoring(peer, EventType.INVALID_MESSAGE,
-                    "Invalid skeleton received from node [{}] on {}", this.getClass());
+                    "Invalid skeleton received on {}", this.getClass());
 
             // when the selected peer fails automatically all process restarts
             if (isSelectedPeer){
@@ -86,7 +86,7 @@ public class DownloadingSkeletonSyncState extends BaseSelectedPeerSyncState {
                     .filter(c -> !skeletons.containsKey(c))
                     .forEach(p ->
                             peersInformation.reportEventToPeerScoring(p, EventType.TIMEOUT_MESSAGE,
-                                    "Timeout waiting skeleton from node [{}] on {}", this.getClass()));
+                                    "Timeout waiting skeleton on {}", this.getClass()));
 
             // when the selected peer fails automatically all process restarts
             if (!selectedPeerAnswered){

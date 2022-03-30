@@ -397,7 +397,7 @@ public class SyncProcessor implements SyncEventsHandler {
     }
 
     private void notifyUnexpectedMessageToPeerScoring(Peer peer, String messageType) {
-        String message = "Unexpected " + messageType + " response received from node [{}] on {}";
+        String message = "Unexpected " + messageType + " response received on {}";
         peersInformation.reportEventToPeerScoring(peer, EventType.UNEXPECTED_MESSAGE,
                 message, this.getClass());
     }
