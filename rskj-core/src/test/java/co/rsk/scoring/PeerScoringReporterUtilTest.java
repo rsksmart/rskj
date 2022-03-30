@@ -58,6 +58,6 @@ public class PeerScoringReporterUtilTest {
         return new PeerScoringInformation(4, 0, 0,
                 5, 3, 9, 1,
                 0, 0, 0, 0,
-                4, 0, 0, goodReputation, id, "node");
+                4, 0, 0, goodReputation,  0, id, "node");
     }
 }

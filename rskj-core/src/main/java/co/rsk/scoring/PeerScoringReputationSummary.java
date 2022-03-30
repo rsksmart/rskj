@@ -7,23 +7,23 @@ import java.util.Arrays;
  * It's used to expose a json rpc message (sco_reputationSummary())
  */
 public class PeerScoringReputationSummary {
-    private int count;
-    private int successfulHandshakes;
-    private int failedHandshakes;
-    private int invalidHeader;
-    private int validBlocks;
-    private int invalidBlocks;
-    private int validTransactions;
-    private int invalidTransactions;
-    private int invalidNetworks;
-    private int invalidMessages;
-    private int repeatedMessages;
-    private int timeoutMessages;
-    private int unexpectedMessages;
-    private int peersTotalScore;
-    private int punishments;
-    private int goodReputationCount;
-    private int badReputationCount;
+    private final int count;
+    private final int successfulHandshakes;
+    private final int failedHandshakes;
+    private final int invalidHeader;
+    private final int validBlocks;
+    private final int invalidBlocks;
+    private final int validTransactions;
+    private final int invalidTransactions;
+    private final int invalidNetworks;
+    private final int invalidMessages;
+    private final int repeatedMessages;
+    private final int timeoutMessages;
+    private final int unexpectedMessages;
+    private final int peersTotalScore;
+    private final int punishments;
+    private final int goodReputationCount;
+    private final int badReputationCount;
 
     public PeerScoringReputationSummary(int count,
                                         int successfulHandshakes,
