@@ -76,7 +76,7 @@ public class SimpleSyncEventsHandler implements SyncEventsHandler {
     }
 
     @Override
-    public void onSyncIssue(String message, Object... arguments) {
+    public void onSyncIssue(Peer peer, String message, Object... arguments) {
 
     }
 
