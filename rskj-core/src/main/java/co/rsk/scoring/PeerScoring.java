@@ -245,7 +245,7 @@ public class PeerScoring {
      * Gets the timestamp (ms) for the punishment to finish
      * @return the timestamp for the punishment to finish, 0 if not punished or punishment disabled
      */
-    public long getPunishedUntil() { // TODO:I add test
+    public long getPunishedUntil() {
         return this.punishmentTime + this.timeLostGoodReputation;
     }
 

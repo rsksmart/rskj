@@ -243,15 +243,18 @@ public class PeerScoringTest {
         Assert.assertEquals(0, scoring.getPunishmentTime());
         Assert.assertEquals(0, scoring.getPunishmentCounter());
 
-        scoring.startPunishment(1000);
+        int expirationTime = 1000;
+        scoring.startPunishment(expirationTime);
 
         Assert.assertEquals(1, scoring.getPunishmentCounter());
         Assert.assertFalse(scoring.refreshReputationAndPunishment());
-        Assert.assertEquals(1000, scoring.getPunishmentTime());
+        Assert.assertEquals(expirationTime, scoring.getPunishmentTime());
+        Assert.assertEquals(scoring.getTimeLostGoodReputation() + expirationTime, scoring.getPunishedUntil());
         TimeUnit.MILLISECONDS.sleep(10);
         Assert.assertFalse(scoring.refreshReputationAndPunishment());
         TimeUnit.MILLISECONDS.sleep(2000);
         Assert.assertTrue(scoring.refreshReputationAndPunishment());
         Assert.assertEquals(1, scoring.getPunishmentCounter());
+        Assert.assertEquals(0, scoring.getPunishedUntil());
     }
 }

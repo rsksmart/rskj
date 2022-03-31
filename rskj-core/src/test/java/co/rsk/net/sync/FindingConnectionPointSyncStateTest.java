@@ -52,7 +52,7 @@ public class FindingConnectionPointSyncStateTest {
         }
 
         verify(syncEventsHandler, times(1))
-                .onSyncIssue(peer, "Connection point not found with node [{}] on {}", FindingConnectionPointSyncState.class);
+                .onSyncIssue(peer, "Connection point not found on {}", FindingConnectionPointSyncState.class);
     }
 
     @Test
