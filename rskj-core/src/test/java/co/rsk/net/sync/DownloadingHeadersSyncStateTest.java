@@ -112,7 +112,7 @@ public class DownloadingHeadersSyncStateTest {
         syncState.newBlockHeaders(new ArrayList<>());
 
         verify(syncEventsHandler, times(1)).onSyncIssue(selectedPeer,
-                "Current chunk not present for node [{}] on {}", DownloadingHeadersSyncState.class);
+                "Current chunk not present on {}", DownloadingHeadersSyncState.class);
     }
 
     @Test

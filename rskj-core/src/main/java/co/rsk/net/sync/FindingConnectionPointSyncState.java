@@ -49,7 +49,7 @@ public class FindingConnectionPointSyncState extends BaseSelectedPeerSyncState {
             if (knownBlock) {
                 syncEventsHandler.startDownloadingSkeleton(cp.get(), selectedPeer);
             } else {
-                syncEventsHandler.onSyncIssue(selectedPeer, "Connection point not found with node [{}] on {}", this.getClass());
+                syncEventsHandler.onSyncIssue(selectedPeer, "Connection point not found on {}", this.getClass());
             }
              return;
         }

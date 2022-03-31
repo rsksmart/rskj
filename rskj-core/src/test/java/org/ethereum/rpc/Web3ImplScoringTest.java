@@ -263,6 +263,7 @@ public class Web3ImplScoringTest {
         Assert.assertEquals(1, info.getValidTransactions());
         Assert.assertEquals(0, info.getInvalidTransactions());
         Assert.assertTrue(info.getScore() > 0);
+        Assert.assertEquals(0, info.getPunishedUntil());
 
         info = result[1];
         Assert.assertEquals(address.getHostAddress(), info.getId());
@@ -271,6 +272,16 @@ public class Web3ImplScoringTest {
         Assert.assertEquals(1, info.getValidTransactions());
         Assert.assertEquals(0, info.getInvalidTransactions());
         Assert.assertTrue(info.getScore() > 0);
+        Assert.assertEquals(0, info.getPunishedUntil());
+
+        // punishment started
+        peerScoringManager.recordEvent(node, address, EventType.INVALID_BLOCK);
+        result = web3.sco_peerList();
+        info = result[0];
+        Assert.assertEquals(1, info.getInvalidBlocks());
+        Assert.assertTrue(info.getScore() < 0);
+        Assert.assertTrue(info.getPunishedUntil() > 0);
+        Assert.assertFalse(info.getGoodReputation());
     }
 
     @Test
