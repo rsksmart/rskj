@@ -75,6 +75,7 @@ public class BridgeUtilsLegacy {
     }
 
     /**
+     * @param activations
      * @param networkParameters
      * @param btcTx
      * @param btcAddress
