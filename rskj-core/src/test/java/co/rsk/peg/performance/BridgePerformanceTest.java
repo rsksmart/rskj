@@ -46,7 +46,8 @@ import org.junit.runners.Suite;
         GetBtcBlockchainBlockHeaderByHashTest.class,
         GetBtcBlockchainBlockHeaderByHeightTest.class,
         GetBtcBlockchainParentBlockHeaderByHashTest.class,
-        PowpegRedeemScriptTest.class
+        PowpegRedeemScriptTest.class,
+        PegoutBatchingBridgeMethodsTest.class
 })
 
 //-------------- COMMENT THIS TO RUN THE TEST AND EACH CLASS --------------
