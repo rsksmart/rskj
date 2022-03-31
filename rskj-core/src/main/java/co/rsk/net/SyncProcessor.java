@@ -26,6 +26,7 @@ import co.rsk.scoring.EventType;
 import co.rsk.validators.BlockHeaderValidationRule;
 import co.rsk.validators.SyncBlockValidatorRule;
 import com.google.common.annotations.VisibleForTesting;
+import org.apache.commons.lang3.ArrayUtils;
 import org.ethereum.core.*;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.BlockStore;
@@ -379,9 +380,8 @@ public class SyncProcessor implements SyncEventsHandler {
     }
 
     @Override
-    public void onSyncIssue(Peer peer, String message, Object... arguments) {
-        String nodeInfo = peer.getPeerNodeID() + " - " + Optional.ofNullable(peer.getAddress()).map(InetAddress::getHostAddress).orElse("unknown");
-        logger.trace(message, nodeInfo, arguments);
+    public void onSyncIssue(Peer peer, String message, Object... messageArgs) {
+        logSyncIssue(peer, message, messageArgs);
         stopSyncing();
     }
 
@@ -442,5 +442,12 @@ public class SyncProcessor implements SyncEventsHandler {
     private void removePendingMessage(long messageId, MessageType messageType) {
         pendingMessages.remove(messageId);
         logger.trace("Pending {}@{} REMOVED", messageType, messageId);
+    }
+
+    private void logSyncIssue(Peer peer, String message, Object[] messageArgs) {
+        String completeMessage = "Node [{}] " + message;
+        String nodeInfo = peer.getPeerNodeID() + " - " + Optional.ofNullable(peer.getAddress()).map(InetAddress::getHostAddress).orElse("unknown");
+        Object[] completeArguments = ArrayUtils.add(messageArgs, 0, nodeInfo);
+        logger.trace(completeMessage, completeArguments);
     }
 }
