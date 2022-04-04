@@ -102,6 +102,7 @@ import org.slf4j.LoggerFactory;
 import static co.rsk.peg.BridgeUtils.getRegularPegoutTxSize;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP186;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP219;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP294;
 
 /**
  * Helper class to move funds from btc to rsk and rsk to btc
@@ -328,13 +329,24 @@ public class BridgeSupport {
      * @param shouldConsiderFastBridgeUTXOs
      */
     public Wallet getRetiringFederationWallet(boolean shouldConsiderFastBridgeUTXOs) throws IOException {
+        List<UTXO> retiringFederationBtcUTXOs = getRetiringFederationBtcUTXOs();
+        return getRetiringFederationWallet(shouldConsiderFastBridgeUTXOs, retiringFederationBtcUTXOs.size());
+    }
+
+    public Wallet getRetiringFederationWallet(boolean shouldConsiderFastBridgeUTXOs, int utxosSizeLimit) throws IOException {
         Federation federation = getRetiringFederation();
         if (federation == null) {
+            logger.debug("[getRetiringFederationWallet] No retiring federation found");
             return null;
         }
 
         List<UTXO> utxos = getRetiringFederationBtcUTXOs();
+        if (utxos.size() > utxosSizeLimit) {
+            logger.debug("[getRetiringFederationWallet] Going to limit the amount of UTXOs to {}", utxosSizeLimit);
+            utxos = utxos.subList(0, utxosSizeLimit);
+        }
 
+        logger.debug("[getRetiringFederationWallet] Fetching retiring federation spend wallet");
         return BridgeUtils.getFederationSpendWallet(
             btcContext,
             federation,
@@ -471,7 +483,6 @@ public class BridgeSupport {
 
         return false;
     }
-
 
     protected void processPegIn(
         BtcTransaction btcTx,
@@ -905,6 +916,58 @@ public class BridgeSupport {
         updateFederationCreationBlockHeights();
     }
 
+    private void processFundsMigration(Transaction rskTx) throws IOException {
+        Wallet retiringFederationWallet = activations.isActive(RSKIP294) ?
+            getRetiringFederationWallet(true, bridgeConstants.getMaxInputsPerPegoutTransaction()) :
+            getRetiringFederationWallet(true);
+
+        List<UTXO> availableUTXOs = getRetiringFederationBtcUTXOs();
+        Federation activeFederation = getActiveFederation();
+
+        if (federationIsInMigrationAge(activeFederation) && hasMinimumFundsToMigrate(retiringFederationWallet)) {
+            logger.info(
+                "Active federation (age={}) is in migration age and retiring federation has funds to migrate: {}.",
+                rskExecutionBlock.getNumber() - activeFederation.getCreationBlockNumber(),
+                retiringFederationWallet.getBalance().toFriendlyString()
+            );
+
+            migrateFunds(
+                rskTx.getHash(),
+                retiringFederationWallet,
+                activeFederation.getAddress(),
+                availableUTXOs
+            );
+        }
+
+        if (retiringFederationWallet != null && federationIsPastMigrationAge(activeFederation)) {
+            if (retiringFederationWallet.getBalance().isGreaterThan(Coin.ZERO)) {
+                logger.info(
+                    "Federation is past migration age and will try to migrate remaining balance: {}.",
+                    retiringFederationWallet.getBalance().toFriendlyString()
+                );
+
+                try {
+                    migrateFunds(
+                        rskTx.getHash(),
+                        retiringFederationWallet,
+                        activeFederation.getAddress(),
+                        availableUTXOs
+                    );
+                } catch (Exception e) {
+                    logger.error(
+                        "Unable to complete retiring federation migration. Balance left: {} in {}",
+                        retiringFederationWallet.getBalance().toFriendlyString(),
+                        getRetiringFederationAddress()
+                    );
+                    panicProcessor.panic("updateCollection", "Unable to complete retiring federation migration.");
+                }
+            }
+
+            logger.info("Retiring federation migration finished. Available UTXOs left: {}.", availableUTXOs.size());
+            provider.setOldFederation(null);
+        }
+    }
+
     private boolean federationIsInMigrationAge(Federation federation) {
         long federationAge = rskExecutionBlock.getNumber() - federation.getCreationBlockNumber();
         long ageBegin = bridgeConstants.getFederationActivationAge() + bridgeConstants.getFundsMigrationAgeSinceActivationBegin();
@@ -927,77 +990,33 @@ public class BridgeSupport {
                 && retiringFederationWallet.getBalance().isGreaterThan(minimumFundsToMigrate);
     }
 
-    private void processFundsMigration(Transaction rskTx) throws IOException {
-        Wallet retiringFederationWallet = getRetiringFederationWallet(true);
-        List<UTXO> availableUTXOs = getRetiringFederationBtcUTXOs();
+    private void migrateFunds(
+        Keccak256 rskTxHash,
+        Wallet retiringFederationWallet,
+        Address activeFederationAddress,
+        List<UTXO> availableUTXOs) throws IOException {
+
         ReleaseTransactionSet releaseTransactionSet = provider.getReleaseTransactionSet();
-        Federation activeFederation = getActiveFederation();
+        Pair<BtcTransaction, List<UTXO>> createResult = createMigrationTransaction(retiringFederationWallet, activeFederationAddress);
+        BtcTransaction btcTx = createResult.getLeft();
+        List<UTXO> selectedUTXOs = createResult.getRight();
 
-        if (federationIsInMigrationAge(activeFederation)
-                && hasMinimumFundsToMigrate(retiringFederationWallet)) {
-            logger.info("Active federation (age={}) is in migration age and retiring federation has funds to migrate: {}.",
-                    rskExecutionBlock.getNumber() - activeFederation.getCreationBlockNumber(),
-                    retiringFederationWallet.getBalance().toFriendlyString());
-
-            Pair<BtcTransaction, List<UTXO>> createResult = createMigrationTransaction(retiringFederationWallet, activeFederation.getAddress());
-            BtcTransaction btcTx = createResult.getLeft();
-            List<UTXO> selectedUTXOs = createResult.getRight();
-
-            // Add the TX to the release set
-            if (activations.isActive(ConsensusRule.RSKIP146)) {
-                Coin amountMigrated = selectedUTXOs.stream().map(UTXO::getValue)
-                        .reduce(Coin.ZERO, Coin::add);
-                releaseTransactionSet.add(btcTx, rskExecutionBlock.getNumber(), rskTx.getHash());
-                // Log the Release request
-                eventLogger.logReleaseBtcRequested(rskTx.getHash().getBytes(), btcTx, amountMigrated);
-            } else {
-                releaseTransactionSet.add(btcTx, rskExecutionBlock.getNumber());
-            }
-
-            // Mark UTXOs as spent
-            availableUTXOs.removeIf(utxo -> selectedUTXOs.stream().anyMatch(selectedUtxo ->
-                    utxo.getHash().equals(selectedUtxo.getHash()) &&
-                            utxo.getIndex() == selectedUtxo.getIndex()
-            ));
+        // Add the TX to the release set
+        if (activations.isActive(ConsensusRule.RSKIP146)) {
+            Coin amountMigrated = selectedUTXOs.stream()
+                .map(UTXO::getValue)
+                .reduce(Coin.ZERO, Coin::add);
+            releaseTransactionSet.add(btcTx, rskExecutionBlock.getNumber(), rskTxHash);
+            // Log the Release request
+            eventLogger.logReleaseBtcRequested(rskTxHash.getBytes(), btcTx, amountMigrated);
+        } else {
+            releaseTransactionSet.add(btcTx, rskExecutionBlock.getNumber());
         }
 
-        if (retiringFederationWallet != null && federationIsPastMigrationAge(activeFederation)) {
-            if (retiringFederationWallet.getBalance().isGreaterThan(Coin.ZERO)) {
-                logger.info("Federation is past migration age and will try to migrate remaining balance: {}.",
-                        retiringFederationWallet.getBalance().toFriendlyString());
-
-                try {
-                    Pair<BtcTransaction, List<UTXO>> createResult = createMigrationTransaction(retiringFederationWallet, activeFederation.getAddress());
-                    BtcTransaction btcTx = createResult.getLeft();
-                    List<UTXO> selectedUTXOs = createResult.getRight();
-
-                    // Add the TX to the release set
-                    if (activations.isActive(ConsensusRule.RSKIP146)) {
-                        Coin amountMigrated = selectedUTXOs.stream().map(UTXO::getValue)
-                                .reduce(Coin.ZERO, Coin::add);
-                        releaseTransactionSet.add(btcTx, rskExecutionBlock.getNumber(), rskTx.getHash());
-                        // Log the Release request
-                        eventLogger.logReleaseBtcRequested(rskTx.getHash().getBytes(), btcTx, amountMigrated);
-                    } else {
-                        releaseTransactionSet.add(btcTx, rskExecutionBlock.getNumber());
-                    }
-
-                    // Mark UTXOs as spent
-                    availableUTXOs.removeIf(utxo -> selectedUTXOs.stream().anyMatch(selectedUtxo ->
-                            utxo.getHash().equals(selectedUtxo.getHash()) &&
-                                    utxo.getIndex() == selectedUtxo.getIndex()
-                    ));
-                } catch (Exception e) {
-                    logger.error("Unable to complete retiring federation migration. Balance left: {} in {}",
-                            retiringFederationWallet.getBalance().toFriendlyString(),
-                            getRetiringFederationAddress());
-                    panicProcessor.panic("updateCollection", "Unable to complete retiring federation migration.");
-                }
-            }
-
-            logger.info("Retiring federation migration finished. Available UTXOs left: {}.", availableUTXOs.size());
-            provider.setOldFederation(null);
-        }
+        // Mark UTXOs as spent
+        availableUTXOs.removeIf(utxo -> selectedUTXOs.stream().anyMatch(selectedUtxo ->
+            utxo.getHash().equals(selectedUtxo.getHash()) && utxo.getIndex() == selectedUtxo.getIndex()
+        ));
     }
 
     /**
