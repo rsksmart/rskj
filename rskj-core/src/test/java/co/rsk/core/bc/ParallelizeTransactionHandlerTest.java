@@ -24,7 +24,6 @@ import org.ethereum.core.Account;
 import org.ethereum.core.Transaction;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.vm.GasCost;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -410,6 +409,29 @@ public class ParallelizeTransactionHandlerTest {
         Optional<Short> bucketId2 = handler.addTransaction(bigTx2, new HashSet<>(), new HashSet<>(), GasCost.toGas(bigTx2.getGasLimit()));
         Optional<Short> bucketId3 = handler.addTransaction(tx, new HashSet<>(), new HashSet<>(), GasCost.toGas(tx.getGasLimit()));
 
+        assertEquals((short) 0, (short) bucketId.get());
+        assertEquals((short) 1, (short) bucketId2.get());
+        assertEquals((short) 2, (short) bucketId3.get());
+
+        assertEquals(expectedListOfTxs, handler.getTransactionsInOrder());
+        assertArrayEquals(expectedTransactionEdgeList, handler.getTransactionsPerBucketInOrder());
+    }
+
+    @Test
+    public void ifAllTheBucketsAreFullTheNewTxShouldntBeIncluded() {
+        short[] expectedTransactionEdgeList = new short[]{1,2};
+
+        List<Transaction> expectedListOfTxs = new ArrayList<>();
+        expectedListOfTxs.add(bigTx);
+        expectedListOfTxs.add(bigTx2);
+        expectedListOfTxs.add(bigTx);
+
+        Optional<Short> bucketId = handler.addTransaction(bigTx, new HashSet<>(), new HashSet<>(), GasCost.toGas(bigTx.getGasLimit()));
+        Optional<Short> bucketId2 = handler.addTransaction(bigTx2, new HashSet<>(), new HashSet<>(), GasCost.toGas(bigTx2.getGasLimit()));
+        Optional<Short> bucketId3 = handler.addTransaction(bigTx, new HashSet<>(), new HashSet<>(), GasCost.toGas(bigTx.getGasLimit()));
+        Optional<Short> emptyBucket = handler.addTransaction(tx, new HashSet<>(), new HashSet<>(), GasCost.toGas(tx.getGasLimit()));
+
+        assertFalse(emptyBucket.isPresent());
         assertEquals((short) 0, (short) bucketId.get());
         assertEquals((short) 1, (short) bucketId2.get());
         assertEquals((short) 2, (short) bucketId3.get());
