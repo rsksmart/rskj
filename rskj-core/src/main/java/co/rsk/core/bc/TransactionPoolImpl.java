@@ -43,6 +43,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 
 import static org.ethereum.util.BIUtil.toBI;
 
@@ -67,7 +68,7 @@ public class TransactionPoolImpl implements TransactionPool {
     private final SignatureCache signatureCache;
     private final int outdatedThreshold;
     private final int outdatedTimeout;
-    private final Web3 web3;
+    private final Supplier<Web3> getWeb3;
 
     private ScheduledExecutorService cleanerTimer;
     private ScheduledFuture<?> cleanerFuture;
@@ -81,7 +82,7 @@ public class TransactionPoolImpl implements TransactionPool {
 
     private final TxQuotaChecker quotaChecker;
 
-    public TransactionPoolImpl(RskSystemProperties config, RepositoryLocator repositoryLocator, BlockStore blockStore, BlockFactory blockFactory, EthereumListener listener, TransactionExecutorFactory transactionExecutorFactory, SignatureCache signatureCache, int outdatedThreshold, int outdatedTimeout, Web3 web3) {
+    public TransactionPoolImpl(RskSystemProperties config, RepositoryLocator repositoryLocator, BlockStore blockStore, BlockFactory blockFactory, EthereumListener listener, TransactionExecutorFactory transactionExecutorFactory, SignatureCache signatureCache, int outdatedThreshold, int outdatedTimeout, Supplier<Web3> getWeb3Deferred) {
         this.config = config;
         this.blockStore = blockStore;
         this.repositoryLocator = repositoryLocator;
@@ -91,7 +92,7 @@ public class TransactionPoolImpl implements TransactionPool {
         this.signatureCache = signatureCache;
         this.outdatedThreshold = outdatedThreshold;
         this.outdatedTimeout = outdatedTimeout;
-        this.web3 = web3;
+        this.getWeb3 = getWeb3Deferred;
 
         this.validator = new TxPendingValidator(config.getNetworkConstants(), config.getActivationConfig(), config.getNumOfAccountSlots());
 
@@ -250,7 +251,7 @@ public class TransactionPoolImpl implements TransactionPool {
         }
 
         if (this.config.isAccountTxRateLimitEnabled()) {
-            TxQuotaChecker.CurrentContext currentContext = new TxQuotaChecker.CurrentContext(getBestBlock(), getPendingState(), getCurrentRepository(), this.web3);
+            TxQuotaChecker.CurrentContext currentContext = new TxQuotaChecker.CurrentContext(getBestBlock(), getPendingState(), getCurrentRepository(), this.getWeb3.get());
             if (!this.quotaChecker.acceptTx(tx, replacedTx, currentContext)) {
                 return TransactionPoolAddResult.withError("account exceeds quota");
             }
