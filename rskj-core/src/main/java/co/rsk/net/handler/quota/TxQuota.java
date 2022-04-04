@@ -13,9 +13,7 @@ public class TxQuota {
     private long timestamp;
     private double availableVirtualGas;
 
-    public static TxQuota createNew(String txHash, long initialQuota, TimeProvider timeProvider) {
-        return new TxQuota(txHash, initialQuota, timeProvider);
-    }
+    // TODO:I añadir info de address para logs!!!
 
     private TxQuota(String txHash, long availableVirtualGas, TimeProvider timeProvider) {
         this.txHash = txHash;
@@ -26,7 +24,16 @@ public class TxQuota {
         logger.trace("quota created for tx [{}] with value [{}]", this.txHash, this.availableVirtualGas);
     }
 
-    public boolean acceptVirtualGasConsumption(double virtualGasToConsume) {
+    public static TxQuota createNew(String txHash, long initialQuota, TimeProvider timeProvider) {
+        return new TxQuota(txHash, initialQuota, timeProvider);
+    }
+
+    /**
+     * Checks whether the accumulated virtual gas is greater than the received gas to consume. If enough, received gas is discounted from accumulated.
+     * @param virtualGasToConsume Gas to be consumed
+     * @return True if there was enough accumulated gas
+     */
+    public synchronized boolean acceptVirtualGasConsumption(double virtualGasToConsume) {
         if (this.availableVirtualGas < virtualGasToConsume) {
             return false;
         }
@@ -35,7 +42,13 @@ public class TxQuota {
         return true;
     }
 
-    public void refresh(long maxGasPerSecond, long maxQuota) {
+    /**
+     * Refreshes availableVirtualGas according to inactivity period
+     * @param maxGasPerSecond Gas to accumulate for each second of inactivity
+     * @param maxQuota Max virtual gas to provide even if accumulated gas is greater
+     * @return The new accumulated virtual gas
+     */
+    public synchronized double refresh(long maxGasPerSecond, long maxQuota) {
         long currentTimestamp = this.timeProvider.currentTimeMillis();
 
         double timeDiffSeconds = (currentTimestamp - this.timestamp) / 1000d;
@@ -44,5 +57,7 @@ public class TxQuota {
         this.availableVirtualGas = Math.min(maxQuota, this.availableVirtualGas + addToQuota);
 
         logger.trace("quota refreshed for tx [{}] to [{}] (addToQuota [{}])", this.txHash, this.availableVirtualGas, addToQuota);
+
+        return this.availableVirtualGas;
     }
 }

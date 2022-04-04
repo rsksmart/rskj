@@ -72,6 +72,9 @@ public class TransactionPoolImpl implements TransactionPool {
     private ScheduledExecutorService cleanerTimer;
     private ScheduledFuture<?> cleanerFuture;
 
+    private final long accountTxRateLimitCleanerPeriod;
+    private ScheduledExecutorService accountTxRateLimitCleanerTimer;
+
     private Block bestBlock;
 
     private final TxPendingValidator validator;
@@ -97,23 +100,34 @@ public class TransactionPoolImpl implements TransactionPool {
         if (this.outdatedTimeout > 0) {
             this.cleanerTimer = Executors.newSingleThreadScheduledExecutor(r -> new Thread(r, "TransactionPoolCleanerTimer"));
         }
+
+        this.accountTxRateLimitCleanerPeriod = this.config.accountTxRateLimitCleanerPeriod();
+        if (this.config.isAccountTxRateLimitEnabled() && this.accountTxRateLimitCleanerPeriod > 0) {
+            this.accountTxRateLimitCleanerTimer = Executors.newSingleThreadScheduledExecutor(r -> new Thread(r, "TxQuotaCleanerTimer"));
+        }
     }
 
     @Override
     public void start() {
         processBest(blockStore.getBestBlock());
 
-        if (this.outdatedTimeout <= 0 || this.cleanerTimer == null) {
-            return;
+        if (this.outdatedTimeout > 0 && this.cleanerTimer != null) {
+            this.cleanerFuture = this.cleanerTimer.scheduleAtFixedRate(this::cleanUp, this.outdatedTimeout, this.outdatedTimeout, TimeUnit.SECONDS);
         }
 
-        this.cleanerFuture = this.cleanerTimer.scheduleAtFixedRate(this::cleanUp, this.outdatedTimeout, this.outdatedTimeout, TimeUnit.SECONDS);
+        if (this.accountTxRateLimitCleanerTimer != null) {
+            this.accountTxRateLimitCleanerTimer.scheduleAtFixedRate(this.quotaChecker::cleanMaxQuotas, this.accountTxRateLimitCleanerPeriod, this.accountTxRateLimitCleanerPeriod, TimeUnit.MINUTES);
+        }
     }
 
     @Override
     public void stop() {
         if (cleanerTimer != null) {
             cleanerTimer.shutdown();
+        }
+
+        if (accountTxRateLimitCleanerTimer != null) {
+            accountTxRateLimitCleanerTimer.shutdown();
         }
     }
 
