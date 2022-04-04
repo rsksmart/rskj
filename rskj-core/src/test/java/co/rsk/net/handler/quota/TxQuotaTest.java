@@ -1,3 +1,21 @@
+/*
+ * This file is part of RskJ
+ * Copyright (C) 2022 RSK Labs Ltd.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package co.rsk.net.handler.quota;
 
 import co.rsk.util.TimeProvider;
@@ -23,11 +41,12 @@ public class TxQuotaTest {
 
     @Test
     public void acceptVirtualGasConsumption() {
-        TxQuota txQuota = TxQuota.createNew("tx1", 10, System::currentTimeMillis);
+        String txHash = "tx1";
+        TxQuota txQuota = TxQuota.createNew("addr1", txHash, 10, System::currentTimeMillis);
 
-        assertTrue(txQuota.acceptVirtualGasConsumption(9));
-        assertFalse(txQuota.acceptVirtualGasConsumption(2));
-        assertTrue(txQuota.acceptVirtualGasConsumption(1));
+        assertTrue(txQuota.acceptVirtualGasConsumption(9, txHash));
+        assertFalse(txQuota.acceptVirtualGasConsumption(2, txHash));
+        assertTrue(txQuota.acceptVirtualGasConsumption(1, txHash));
     }
 
     @Test
@@ -35,20 +54,21 @@ public class TxQuotaTest {
         long currentTime = System.currentTimeMillis();
         when(timeProvider.currentTimeMillis()).thenReturn(currentTime);
 
-        TxQuota txQuota = TxQuota.createNew("tx1", MAX_QUOTA, timeProvider);
-        assertFalse("should reject tx over initial limit", txQuota.acceptVirtualGasConsumption(MAX_QUOTA + 1));
-        assertTrue("should accept tx below initial limit", txQuota.acceptVirtualGasConsumption(MAX_QUOTA - 1));
+        String txHash = "tx1";
+        TxQuota txQuota = TxQuota.createNew("addr1", txHash, MAX_QUOTA, timeProvider);
+        assertFalse("should reject tx over initial limit", txQuota.acceptVirtualGasConsumption(MAX_QUOTA + 1, txHash));
+        assertTrue("should accept tx below initial limit", txQuota.acceptVirtualGasConsumption(MAX_QUOTA - 1, txHash));
 
         long timeElapsed = 1;
         double accumulatedGasApprox = timeElapsed / 1000d * MAX_GAS_PER_SECOND;
         when(timeProvider.currentTimeMillis()).thenReturn(currentTime += timeElapsed);
         txQuota.refresh(MAX_GAS_PER_SECOND, MAX_QUOTA);
-        assertFalse("should reject tx over refreshed limit (not enough quiet time)", txQuota.acceptVirtualGasConsumption(accumulatedGasApprox + 1000));
+        assertFalse("should reject tx over refreshed limit (not enough quiet time)", txQuota.acceptVirtualGasConsumption(accumulatedGasApprox + 1000, txHash));
 
         timeElapsed = 30;
         accumulatedGasApprox = timeElapsed / 1000d * MAX_GAS_PER_SECOND;
         when(timeProvider.currentTimeMillis()).thenReturn(currentTime += timeElapsed);
         txQuota.refresh(MAX_GAS_PER_SECOND, MAX_QUOTA);
-        assertTrue("should accept tx when enough gas accumulated (enough quiet time)", txQuota.acceptVirtualGasConsumption(accumulatedGasApprox));
+        assertTrue("should accept tx when enough gas accumulated (enough quiet time)", txQuota.acceptVirtualGasConsumption(accumulatedGasApprox, txHash));
     }
 }

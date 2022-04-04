@@ -356,7 +356,7 @@ public class RskSystemProperties extends SystemProperties {
     }
 
     public boolean isAccountTxRateLimitEnabled() {
-        return configFromFiles.getBoolean("transaction.accountRateLimitEnabled");
+        return configFromFiles.getBoolean("transaction.accountTxRateLimitEnabled");
     }
 
     public Integer accountTxRateLimitCleanerPeriod() {
