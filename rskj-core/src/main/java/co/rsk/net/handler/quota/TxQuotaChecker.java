@@ -1,3 +1,21 @@
+/*
+ * This file is part of RskJ
+ * Copyright (C) 2022 RSK Labs Ltd.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package co.rsk.net.handler.quota;
 
 import co.rsk.core.RskAddress;
@@ -18,6 +36,10 @@ import java.math.BigInteger;
 import java.util.Iterator;
 import java.util.Optional;
 
+/**
+ * This class hosts a map with the available virtualGas for a set of addresses and validates or rejects a transaction accordingly.
+ * The underlying map has auto-clean capabilities so, when filled, the item with an older access date is removed to make room for a new one.
+ */
 public class TxQuotaChecker {
 
     private static final int MAX_QUOTAS_SIZE = 10000;
@@ -37,6 +59,13 @@ public class TxQuotaChecker {
         this.timeProvider = timeProvider;
     }
 
+    /**
+     * Tries to accept a transaction under a certain context
+     * @param newTx The tx to accept
+     * @param replacedTx The tx being replaced by <code>newTx</code>, if any
+     * @param currentContext Some contextual information of the time <code>newTx</code> is being processed
+     * @return true if the <code>newTx</code> was accepted, false otherwise
+     */
     public synchronized boolean acceptTx(Transaction newTx, Optional<Transaction> replacedTx, CurrentContext currentContext) {
         updateLastBlockGasLimit(currentContext.bestBlock.getGasLimitAsInteger());
 
@@ -50,13 +79,13 @@ public class TxQuotaChecker {
 
         double consumedVirtualGas = calculateConsumedVirtualGas(newTx, replacedTx, currentContext);
 
-        boolean wasAccepted = senderQuota.acceptVirtualGasConsumption(consumedVirtualGas);
-
-        logger.trace("tx [{}] was [{}] after quota check", newTx.getHash(), wasAccepted ? "accepted" : "rejected");
-
-        return wasAccepted;
+        return senderQuota.acceptVirtualGasConsumption(consumedVirtualGas, newTx.getHash().toHexString());
     }
 
+    /**
+     * Cleans from the underlying map those entries that have <code>maxQuota</code> after being refreshed
+     * This method is intended to be called periodically with a rate similar to the time needed for an account to get <code>maxQuota</code>
+     */
     public synchronized void cleanMaxQuotas() {
         long maxGasPerSecond = getMaxGasPerSecond(lastBlockGasLimit);
         long maxQuota = getMaxGasPerSecond(maxGasPerSecond);
@@ -67,6 +96,7 @@ public class TxQuotaChecker {
             double accumulatedVirtualGas = quota.refresh(maxGasPerSecond, maxQuota);
             boolean maxQuotaGranted = BigDecimal.valueOf(maxQuota).compareTo(BigDecimal.valueOf(accumulatedVirtualGas)) == 0;
             if (maxQuotaGranted) {
+                logger.debug("Cleared {}, it has maxQuota", quota);
                 quotaIterator.remove();
             }
         }
@@ -88,7 +118,7 @@ public class TxQuotaChecker {
         if (quotaForAddress == null) {
             long accountNonce = currentContext.state.getNonce(address).longValue();
             long initialQuota = calculateNewItemQuota(accountNonce, isTxSource, maxGasPerSecond, maxQuota);
-            quotaForAddress = TxQuota.createNew(newTx.getHash().toHexString(), initialQuota, timeProvider);
+            quotaForAddress = TxQuota.createNew(address.toHexString(), newTx.getHash().toHexString(), initialQuota, timeProvider);
             this.accountQuotas.put(address, quotaForAddress);
         } else {
             quotaForAddress.refresh(maxGasPerSecond, maxQuota);
@@ -125,6 +155,9 @@ public class TxQuotaChecker {
         return calculator.calculate(newTx, replacedTx);
     }
 
+    /**
+     * Helper class holding contextual information of the time the tx is being processed (bestBlock, state, repository, etc)
+     */
     public static class CurrentContext {
         private final Block bestBlock;
         private final PendingState state;
