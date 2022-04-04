@@ -104,6 +104,7 @@ import org.slf4j.LoggerFactory;
 import static co.rsk.peg.BridgeUtils.getRegularPegoutTxSize;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP186;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP219;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP293;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP271;
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP294;
 
@@ -2474,7 +2475,7 @@ public class BridgeSupport {
      * @return Returns the redeemScript of the current active federation
      */
     public Optional<Script> getActivePowpegRedeemScript() {
-        return activations.isActive(ConsensusRule.RSKIP293) ?
+        return activations.isActive(RSKIP293) ?
             Optional.of(getActiveFederation().getRedeemScript()) :
             Optional.empty();
     }
@@ -2701,7 +2702,7 @@ public class BridgeSupport {
         List<Address> addresses = new ArrayList<>(2);
         addresses.add(fbActiveFederationAddress);
 
-        if (activations.isActive(ConsensusRule.RSKIP293) && retiringFederation != null) {
+        if (activations.isActive(RSKIP293) && retiringFederation != null) {
             fbRetiringFederationInformation =
                 Optional.of(createFastBridgeFederationInformation(fastBridgeDerivationHash, retiringFederation));
             Address fbRetiringFederationAddress =

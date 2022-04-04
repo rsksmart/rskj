@@ -325,13 +325,14 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
         when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
 
         BridgeSupport bridgeSupport = bridgeSupportBuilder
-                .withBridgeConstants(bridgeConstantsRegtest)
-                .withActivations(activations)
-                .build();
+            .withBridgeConstants(bridgeConstantsRegtest)
+            .withActivations(activations)
+            .build();
 
+        assertTrue(bridgeSupport.getActivePowpegRedeemScript().isPresent());
         assertEquals(
-                bridgeConstantsRegtest.getGenesisFederation().getRedeemScript(),
-                bridgeSupport.getActivePowpegRedeemScript().get()
+            bridgeConstantsRegtest.getGenesisFederation().getRedeemScript(),
+            bridgeSupport.getActivePowpegRedeemScript().get()
         );
     }
 
@@ -3035,7 +3036,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
         when(mockFactory.newInstance(any(), any(), any(), any())).thenReturn(btcBlockStore);
 
         BridgeSupport bridgeSupport = bridgeSupportBuilder
-            .withBridgeConstants(bridgeConstants)
+            .withBridgeConstants(bridgeConstantsRegtest)
             .withRepository(repository)
             .withBtcBlockStoreFactory(mockFactory)
             .build();
@@ -4026,7 +4027,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
         when(mockFactory.newInstance(any(), any(), any(), any())).thenReturn(btcBlockStore);
 
         BridgeSupport bridgeSupport = bridgeSupportBuilder
-            .withBridgeConstants(bridgeConstants)
+            .withBridgeConstants(bridgeConstantsRegtest)
             .withBtcBlockStoreFactory(mockFactory)
             .withActivations(activations)
             .build();
@@ -4967,7 +4968,12 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
         BtcTransaction tx = new BtcTransaction(btcRegTestParams);
         BtcBlockStoreWithCache.Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(bridgeConstantsRegtest.getBtcParams());
         Repository repository = createRepository();
-        BridgeStorageProvider provider = new BridgeStorageProvider(repository, PrecompiledContracts.BRIDGE_ADDR, bridgeConstants, activationsBeforeForks);
+        BridgeStorageProvider provider = new BridgeStorageProvider(
+            repository,
+            PrecompiledContracts.BRIDGE_ADDR,
+            bridgeConstantsRegtest,
+            activationsBeforeForks
+        );
         BridgeSupport bridgeSupport = bridgeSupportBuilder
             .withBridgeConstants(bridgeConstantsRegtest)
             .withProvider(provider)
@@ -5064,11 +5070,6 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
         BtcTransaction btcTx = new BtcTransaction(btcRegTestParams);
         BridgeConstants bridgeConstants = mock(BridgeConstants.class);
 
-        byte[] bits = new byte[1];
-        bits[0] = 0x01;
-        List<Sha256Hash> hashes = new ArrayList<>();
-        hashes.add(PegTestUtils.createHash(0));
-
         PartialMerkleTree pmt = mock(PartialMerkleTree.class);
         when(pmt.getTxnHashAndMerkleRoot(anyList())).thenReturn(Sha256Hash.ZERO_HASH).thenThrow(VerificationException.class);
 
@@ -5087,12 +5088,12 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
         when(mockFactory.newInstance(any(), any(), any(), any())).thenReturn(btcBlockStore);
 
         BridgeSupport bridgeSupport = getBridgeSupport(
-                bridgeConstants,
-                mock(BridgeStorageProvider.class),
-                mock(Repository.class),
-                mock(BridgeEventLogger.class),
-                null,
-                mockFactory
+            bridgeConstants,
+            mock(BridgeStorageProvider.class),
+            mock(Repository.class),
+            mock(BridgeEventLogger.class),
+            null,
+            mockFactory
         );
 
         Assert.assertFalse(bridgeSupport.validationsForRegisterBtcTransaction(btcTx.getHash(), 0, pmt.bitcoinSerialize(), btcTx.bitcoinSerialize()));
@@ -5711,8 +5712,8 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
         BridgeSupport bridgeSupport = bridgeSupportBuilder
             .withBridgeConstants(bridgeConstantsRegtest)
             .build();
-        BtcTransaction btcTx = new BtcTransaction(btcParams);
-        btcTx.addOutput(Coin.COIN.multiply(10), bridgeConstants.getGenesisFederation().getAddress());
+        BtcTransaction btcTx = new BtcTransaction(btcRegTestParams);
+        btcTx.addOutput(Coin.COIN.multiply(10), bridgeConstantsRegtest.getGenesisFederation().getAddress());
         btcTx.addInput(PegTestUtils.createHash(1), 0, new Script(new byte[]{}));
 
         Assert.assertEquals(TxType.PEGIN, bridgeSupport.getTransactionType(btcTx));
@@ -6454,7 +6455,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
             storedBlock,
             activationsAfterForks
         );
-        ;
+
         when(storedBlock.getHeight()).thenReturn(10, 5000, 10);
 
         int result = bridgeSupport.receiveHeader(btcBlock2);
@@ -6585,14 +6586,14 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
     @Test
     public void migrating_many_utxos_works_after_rskip294_even_utxos_distribution() throws IOException {
         int utxosToCreate = 400;
-        int expectedTransactions = (int) Math.ceil((double) utxosToCreate / bridgeConstants.getMaxInputsPerPegoutTransaction());
+        int expectedTransactions = (int) Math.ceil((double) utxosToCreate / bridgeConstantsRegtest.getMaxInputsPerPegoutTransaction());
         test_migrating_many_utxos(true, utxosToCreate, expectedTransactions);
     }
 
     @Test
     public void migrating_many_utxos_works_after_rskip294_uneven_utxos_distribution() throws IOException {
         int utxosToCreate = 410;
-        int expectedTransactions = (int) Math.ceil((double) utxosToCreate / bridgeConstants.getMaxInputsPerPegoutTransaction());
+        int expectedTransactions = (int) Math.ceil((double) utxosToCreate / bridgeConstantsRegtest.getMaxInputsPerPegoutTransaction());
         test_migrating_many_utxos(true, utxosToCreate, expectedTransactions);
     }
 
@@ -6673,10 +6674,8 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
         while (remainingUtxos > 0) {
             int expectedSize;
             if (isRskip294Active) {
-                int maxInputsPerTransaction = bridgeConstants.getMaxInputsPerPegoutTransaction();
-                expectedSize = remainingUtxos > maxInputsPerTransaction ?
-                    maxInputsPerTransaction :
-                    remainingUtxos;
+                int maxInputsPerTransaction = bridgeConstantsRegtest.getMaxInputsPerPegoutTransaction();
+                expectedSize = Math.min(remainingUtxos, maxInputsPerTransaction);
             } else {
                 expectedSize = remainingUtxos;
                 while (expectedSize > 200) { // Approximately 200 inputs fit in a release transaction with this federation size
@@ -7081,7 +7080,7 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
             1,
             1,
             1,
-            new ArrayList<BtcTransaction>()
+            new ArrayList<>()
         );
 
         BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
@@ -7262,17 +7261,14 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
             BtcTransaction releaseTx = new BtcTransaction(btcRegTestParams, ((RLPList) RLP.decode2(releaseTxEvent.getData()).get(0)).get(1).getRLPData());
             Script retrievedScriptSig = releaseTx.getInput(0).getScriptSig();
             Assert.assertEquals(4, retrievedScriptSig.getChunks().size());
-            Assert.assertEquals(true, retrievedScriptSig.getChunks().get(1).data.length > 0);
-            Assert.assertEquals(true, retrievedScriptSig.getChunks().get(2).data.length > 0);
+            assertTrue(retrievedScriptSig.getChunks().get(1).data.length > 0);
+            assertTrue(retrievedScriptSig.getChunks().get(2).data.length > 0);
         } else {
             Script retrievedScriptSig = provider.getRskTxsWaitingForSignatures().get(keccak256).getInput(0).getScriptSig();
             Assert.assertEquals(4, retrievedScriptSig.getChunks().size());
-            boolean expectSignatureToBePersisted = false; // for "InvalidParameters"
-            if ("PartiallySigned".equals(expectedResult)) {
-                expectSignatureToBePersisted = true;
-            }
+            boolean expectSignatureToBePersisted = "PartiallySigned".equals(expectedResult); // for "InvalidParameters"
             Assert.assertEquals(expectSignatureToBePersisted, retrievedScriptSig.getChunks().get(1).data.length > 0);
-            Assert.assertEquals(false, retrievedScriptSig.getChunks().get(2).data.length > 0);
+            assertFalse(retrievedScriptSig.getChunks().get(2).data.length > 0);
         }
     }
 
@@ -7291,20 +7287,6 @@ public class BridgeSupportTest extends BridgeSupportTestBase {
 
     private BridgeSupport getBridgeSupport(BridgeConstants constants, BridgeStorageProvider provider, ActivationConfig.ForBlock activations) {
         return getBridgeSupport(constants, provider, null, mock(BridgeEventLogger.class), null, null, activations);
-    }
-
-    private BridgeSupport getBridgeSupport(BridgeConstants constants, BridgeStorageProvider provider, Repository track,
-                                           BtcLockSenderProvider btcLockSenderProvider, PeginInstructionsProvider peginInstructionsProvider,
-                                           Block executionBlock, BtcBlockStoreWithCache.Factory blockStoreFactory) {
-        return getBridgeSupport(constants,
-            provider,
-            track,
-            btcLockSenderProvider,
-            peginInstructionsProvider,
-            executionBlock,
-            blockStoreFactory,
-            mock(ActivationConfig.ForBlock.class)
-        );
     }
 
     private BridgeSupport getBridgeSupport(BridgeConstants constants, BridgeStorageProvider provider, Repository track,

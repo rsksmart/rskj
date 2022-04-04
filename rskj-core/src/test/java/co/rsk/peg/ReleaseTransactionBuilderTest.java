@@ -102,7 +102,7 @@ public class ReleaseTransactionBuilderTest {
         );
 
         Wallet thisWallet = BridgeUtils.getFederationSpendWallet(
-            Context.getOrCreate(networkParameters),
+            new Context(networkParameters),
             federation,
             utxos,
             false,
