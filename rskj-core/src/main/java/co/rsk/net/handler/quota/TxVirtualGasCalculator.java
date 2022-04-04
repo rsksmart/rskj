@@ -53,9 +53,10 @@ class TxVirtualGasCalculator {
 
     /**
      * Calculates the virtualGas consumed by a transaction taking into account several factors of the transaction and the moment it is being executed
-     * @param newTx The tx being executed
+     *
+     * @param newTx      The tx being executed
      * @param replacedTx The tx replaced by <code>newTx</code> if any
-     * @return
+     * @return The virtualGas consumed by the provided <code>newTx</code>
      */
     public double calculate(Transaction newTx, Optional<Transaction> replacedTx) {
         long txGasLimit = newTx.getGasLimitAsInteger().longValue();
@@ -75,7 +76,7 @@ class TxVirtualGasCalculator {
 
         double compositeFactor = futureNonceFactor * lowGasPriceFactor * nonceFactor * sizeFactor * replacementFactor * gasLimitFactor;
 
-        double result = txGasLimit * compositeFactor;
+        double result = safeMultiply(txGasLimit, compositeFactor);
 
         logger.trace("virtualGasConsumed calculation for tx [{}]: result = [{}] (txGasLimit {}, compositeFactor {}, futureNonceFactor {}, lowGasPriceFactor {}, nonceFactor {}, sizeFactor {}, replacementFactor {}, gasLimitFactor {})", newTx.getHash(), result, txGasLimit, compositeFactor, futureNonceFactor, lowGasPriceFactor, nonceFactor, sizeFactor, replacementFactor, gasLimitFactor);
 
@@ -105,6 +106,17 @@ class TxVirtualGasCalculator {
 
     private double calculateGasLimitFactor(long txGasLimit) {
         return 1 + GAS_LIMIT_WEIGHT * txGasLimit / this.blockGasLimit;
+    }
+
+    @SuppressWarnings("squid:S1244")
+    private double safeMultiply(double op1, double op2) {
+        double result = op1 * op2;
+
+        if (Double.POSITIVE_INFINITY == result) {
+            throw new ArithmeticException("Overflow detected on virtualGas calculation");
+        }
+
+        return result;
     }
 
 }
