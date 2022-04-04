@@ -6,13 +6,16 @@ import co.rsk.db.RepositorySnapshot;
 import co.rsk.util.HexUtils;
 import co.rsk.util.MaxSizeHashMap;
 import co.rsk.util.TimeProvider;
+import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
 import org.ethereum.rpc.Web3;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.Iterator;
 import java.util.Optional;
 
 public class TxQuotaChecker {
@@ -23,6 +26,8 @@ public class TxQuotaChecker {
 
     private static final Logger logger = LoggerFactory.getLogger(TxQuotaChecker.class);
 
+    private static long lastBlockGasLimit;
+
     private final MaxSizeHashMap<RskAddress, TxQuota> accountQuotas;
 
     private final TimeProvider timeProvider;
@@ -32,11 +37,9 @@ public class TxQuotaChecker {
         this.timeProvider = timeProvider;
     }
 
-    public TxQuota getTxQuota(RskAddress address) {
-        return this.accountQuotas.get(address);
-    }
-
     public synchronized boolean acceptTx(Transaction newTx, Optional<Transaction> replacedTx, CurrentContext currentContext) {
+        updateLastBlockGasLimit(currentContext.bestBlock.getGasLimitAsInteger());
+
         TxQuota senderQuota = updateQuota(newTx, true, currentContext);
 
         boolean existsDestination = currentContext.repository.getAccountState(newTx.getReceiveAddress()) != null;
@@ -54,10 +57,30 @@ public class TxQuotaChecker {
         return wasAccepted;
     }
 
+    public synchronized void cleanMaxQuotas() {
+        long maxGasPerSecond = getMaxGasPerSecond(lastBlockGasLimit);
+        long maxQuota = getMaxGasPerSecond(maxGasPerSecond);
+
+        Iterator<TxQuota> quotaIterator = accountQuotas.values().iterator();
+        while (quotaIterator.hasNext()) {
+            TxQuota quota = quotaIterator.next();
+            double accumulatedVirtualGas = quota.refresh(maxGasPerSecond, maxQuota);
+            boolean maxQuotaGranted = BigDecimal.valueOf(maxQuota).compareTo(BigDecimal.valueOf(accumulatedVirtualGas)) == 0;
+            if (maxQuotaGranted) {
+                quotaIterator.remove();
+            }
+        }
+    }
+
+    @VisibleForTesting
+    TxQuota getTxQuota(RskAddress address) {
+        return this.accountQuotas.get(address);
+    }
+
     private TxQuota updateQuota(Transaction newTx, boolean isTxSource, CurrentContext currentContext) {
         BigInteger blockGasLimit = currentContext.bestBlock.getGasLimitAsInteger();
         long maxGasPerSecond = getMaxGasPerSecond(blockGasLimit);
-        long maxQuota = maxGasPerSecond * TxQuotaChecker.MAX_QUOTA_GAS_MULTIPLIER;
+        long maxQuota = getMaxGasPerSecond(maxGasPerSecond);
 
         RskAddress address = isTxSource ? newTx.getSender() : newTx.getReceiveAddress();
 
@@ -74,14 +97,22 @@ public class TxQuotaChecker {
         return quotaForAddress;
     }
 
+    private static void updateLastBlockGasLimit(BigInteger blockGasLimit) {
+        lastBlockGasLimit = blockGasLimit.longValue();
+    }
+
     private long calculateNewItemQuota(long accountNonce, boolean isTxSource, long maxGasPerSecond, long maxQuota) {
         boolean isNewAccount = accountNonce == 0;
         boolean grantMaxQuota = isTxSource && !isNewAccount;
         return grantMaxQuota ? maxQuota : maxGasPerSecond;
     }
 
-    private static long getMaxGasPerSecond(BigInteger blockGasLimit) {
+    private long getMaxGasPerSecond(BigInteger blockGasLimit) {
         return Math.round(blockGasLimit.longValue() * MAX_GAS_PER_SECOND_PERCENT);
+    }
+
+    private long getMaxGasPerSecond(long maxGasPerSecond) {
+        return maxGasPerSecond * TxQuotaChecker.MAX_QUOTA_GAS_MULTIPLIER;
     }
 
     private double calculateConsumedVirtualGas(Transaction newTx, Optional<Transaction> replacedTx, CurrentContext currentContext) {

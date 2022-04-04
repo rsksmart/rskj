@@ -164,7 +164,30 @@ public class TxQuotaCheckerIntegrationTest {
         Transaction txToContractB = txFromAccountCToContractB(0, 200_000, BLOCK_AVG_GAS_PRICE - 100_000, 9_000);
         assertTrue("txToContractB should've been accepted", quotaChecker.acceptTx(txToContractB, Optional.empty(), currentContext));
         assertNull("contractB should not create a quota when receiving a transaction", quotaChecker.getTxQuota(contractB.getAddress()));
+    }
 
+    @Test
+    public void cleanMaxQuotas() {
+        long elapsedTime = 0;
+        when(timeProvider.currentTimeMillis()).thenReturn(elapsedTime);
+
+        Transaction txFromAccountAToB = txFromAccountAToAccountB(0, 250_000, BLOCK_AVG_GAS_PRICE - 100_000, 9_000);
+        assertTrue("txFromAccountAToB should've been accepted", quotaChecker.acceptTx(txFromAccountAToB, Optional.empty(), currentContext));
+
+        Transaction txFromAccountBToC = txFromAccountBToAccountC(0, 250_000, BLOCK_AVG_GAS_PRICE - 100_000, 13_250);
+        assertTrue("txFromAccountBToC consuming almost ~MAX_GAS_PER_SECOND*2 should've been accepted", quotaChecker.acceptTx(txFromAccountBToC, Optional.empty(), currentContext));
+
+        when(timeProvider.currentTimeMillis()).thenReturn(elapsedTime += 33L * 60 * 1000); // 33 minutes after last tx
+
+        Transaction tx2FromAccountBToC = txFromAccountBToAccountC(1, 450_000, BLOCK_AVG_GAS_PRICE - 100_000, 9_000);
+        assertTrue("tx2FromAccountBToC should've been accepted", quotaChecker.acceptTx(tx2FromAccountBToC, Optional.empty(), currentContext));
+
+        when(timeProvider.currentTimeMillis()).thenReturn(elapsedTime += 30 * 1000); // 30 seconds after last tx
+
+        this.quotaChecker.cleanMaxQuotas();
+
+        assertNull("AccountA should've been removed with maxQuota after inactivity", this.quotaChecker.getTxQuota(accountA.getAddress()));
+        assertNotNull("AccountB should not have been removed, less than maxQuota after inactivity", this.quotaChecker.getTxQuota(accountB.getAddress()));
     }
 
     private Transaction txFromAccountAToAccountB(long nonce, long gasLimit, long gasPrice, long size) {
