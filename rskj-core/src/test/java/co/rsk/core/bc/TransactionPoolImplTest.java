@@ -42,6 +42,7 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Supplier;
 
 import static org.ethereum.util.TransactionFactoryHelper.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -92,7 +93,7 @@ public class TransactionPoolImplTest {
                 signatureCache,
                 10,
                 100,
-                Mockito.mock(Web3.class));
+                Mockito.mock(Supplier.class));
 
         quotaChecker = mock(TxQuotaChecker.class);
         when(quotaChecker.acceptTx(any(), any(), any())).thenReturn(true);

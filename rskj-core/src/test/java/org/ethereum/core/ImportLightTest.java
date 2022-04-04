@@ -42,6 +42,7 @@ import org.ethereum.vm.program.invoke.ProgramInvokeFactoryImpl;
 import org.mockito.Mockito;
 
 import java.util.Map;
+import java.util.function.Supplier;
 
 /**
  * Created by Anton Nashatyrev on 29.12.2015.
@@ -74,7 +75,7 @@ public class ImportLightTest {
         StateRootHandler stateRootHandler = new StateRootHandler(config.getActivationConfig(), new StateRootsStoreImpl(new HashMapDB()));
         RepositoryLocator repositoryLocator = new RepositoryLocator(trieStore, stateRootHandler);
 
-        TransactionPoolImpl transactionPool = new TransactionPoolImpl(config, repositoryLocator, null, blockFactory, listener, transactionExecutorFactory, receivedTxSignatureCache, 10, 100, Mockito.mock(Web3.class));
+        TransactionPoolImpl transactionPool = new TransactionPoolImpl(config, repositoryLocator, null, blockFactory, listener, transactionExecutorFactory, receivedTxSignatureCache, 10, 100, Mockito.mock(Supplier.class));
 
         BlockChainImpl blockchain = new BlockChainImpl(
                 blockStore,
