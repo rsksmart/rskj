@@ -32,7 +32,6 @@ import org.ethereum.config.blockchain.upgrades.ConsensusRule;
 import org.ethereum.core.Block;
 import org.ethereum.core.Repository;
 import org.ethereum.core.Transaction;
-import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.PrecompiledContracts;
@@ -52,6 +51,7 @@ import java.util.Optional;
 import static co.rsk.peg.PegTestUtils.createBech32Output;
 import static co.rsk.peg.PegTestUtils.createP2pkhOutput;
 import static co.rsk.peg.PegTestUtils.createP2shOutput;
+import static co.rsk.peg.PegTestUtils.createRandomBtcAddress;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -643,6 +643,139 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
             lbcAddress,
             lpBtcAddress,
             true
+        );
+    }
+
+    private BigInteger sendFundsSurpassesLockingCapToAnyAddress(
+        BtcTransactionProvider btcTransactionProvider,
+        boolean shouldTransferToContract,
+        Coin lockingCap
+    ) throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+        when(activations.isActive(ConsensusRule.RSKIP134)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP176)).thenReturn(true);
+        when(activations.isActive(ConsensusRule.RSKIP293)).thenReturn(true);
+
+        BridgeConstants bridgeConstants = spy(bridgeConstantsRegtest);
+
+        Context btcContext = mock(Context.class);
+        doReturn(bridgeConstants.getBtcParams()).when(btcContext).getParams();
+
+        Federation activeFederation = PegTestUtils.createFederation(bridgeConstants, "fa03", "fa04");
+        Federation retiringFederation = PegTestUtils.createFederation(bridgeConstants, "fa01", "fa02");
+
+        BridgeStorageProvider provider = mock(BridgeStorageProvider.class);
+        when(provider.getNewFederation()).thenReturn(activeFederation);
+        when(provider.getOldFederation()).thenReturn(retiringFederation);
+        ReleaseTransactionSet releaseTransactionSet = new ReleaseTransactionSet(new HashSet<>());
+        when(provider.getReleaseTransactionSet()).thenReturn(releaseTransactionSet);
+
+        Address userRefundBtcAddress = PegTestUtils.createRandomBtcAddress(bridgeConstants.getBtcParams());
+        Address lpBtcAddress = PegTestUtils.createRandomBtcAddress(bridgeConstants.getBtcParams());
+
+        Repository repository = spy(createRepository());
+        // Set current bridge balance in order to create the condition to surpass the locking cap when needed
+        doReturn(co.rsk.core.Coin.valueOf(1)).when(repository).getBalance(any());
+
+        BtcBlockStoreWithCache btcBlockStore = mock(BtcBlockStoreWithCache.class);
+        BtcBlockStoreWithCache.Factory mockFactory = mock(BtcBlockStoreWithCache.Factory.class);
+        when(mockFactory.newInstance(repository, bridgeConstants, provider, activations)).thenReturn(btcBlockStore);
+        Block executionBlock = Mockito.mock(Block.class);
+        when(executionBlock.getNumber()).thenReturn(10L);
+
+        BtcLockSender btcLockSender = mock(BtcLockSender.class);
+        BtcLockSenderProvider btcLockSenderProvider = mock(BtcLockSenderProvider.class);
+        when(btcLockSenderProvider.tryGetBtcLockSender(any())).thenReturn(Optional.of(btcLockSender));
+
+        BridgeSupport bridgeSupport = bridgeSupportBuilder
+            .withProvider(provider)
+            .withBridgeConstants(bridgeConstants)
+            .withBtcLockSenderProvider(btcLockSenderProvider)
+            .withActivations(activations)
+            .withBtcBlockStoreFactory(mockFactory)
+            .withExecutionBlock(executionBlock)
+            .withRepository(repository)
+            .build();
+
+        bridgeSupport = spy(bridgeSupport);
+        doReturn(lockingCap).when(bridgeSupport).getLockingCap();
+
+        Keccak256 derivationArgumentsHash = PegTestUtils.createHash3(0);
+        RskAddress lbcAddress = PegTestUtils.createRandomRskAddress();
+        Keccak256 fastBridgeDerivationHash = bridgeSupport.getFastBridgeDerivationHash(
+            derivationArgumentsHash,
+            userRefundBtcAddress,
+            lpBtcAddress,
+            lbcAddress
+        );
+
+        Address activeFederationAddress = PegTestUtils.getFastBridgeAddressFromRedeemScript(
+            bridgeConstants,
+            activeFederation.getRedeemScript(),
+            Sha256Hash.wrap(fastBridgeDerivationHash.getBytes())
+        );
+
+        Address retiringFederationAddress = PegTestUtils.getFastBridgeAddressFromRedeemScript(
+            bridgeConstants,
+            retiringFederation.getRedeemScript(),
+            Sha256Hash.wrap(fastBridgeDerivationHash.getBytes())
+        );
+
+        BtcTransaction btcTx = btcTransactionProvider.provide(bridgeConstants, activeFederationAddress, retiringFederationAddress);
+        btcTx.addInput(
+            Sha256Hash.wrap(fastBridgeDerivationHash.getBytes()),
+            0, ScriptBuilder.createInputScript(null, new BtcECKey())
+        );
+
+        List<Sha256Hash> hashes = new ArrayList<>();
+        hashes.add(btcTx.getHash());
+        // Create header and PMT
+        byte[] bits = new byte[1];
+        bits[0] = 0x3f;
+        PartialMerkleTree pmt = new PartialMerkleTree(bridgeConstants.getBtcParams(), bits, hashes, 1);
+        Sha256Hash merkleRoot = pmt.getTxnHashAndMerkleRoot(new ArrayList<>());
+        co.rsk.bitcoinj.core.BtcBlock registerHeader = new co.rsk.bitcoinj.core.BtcBlock(
+            bridgeConstants.getBtcParams(),
+            1,
+            PegTestUtils.createHash(2),
+            merkleRoot,
+            1,
+            1,
+            1,
+            new ArrayList<>()
+        );
+        int height = 1;
+        // simulate blockchain
+        mockChainOfStoredBlocks(
+            btcBlockStore,
+            registerHeader,
+            height + bridgeConstants.getBtc2RskMinimumAcceptableConfirmations(),
+            height
+        );
+
+        InternalTransaction rskTx = new InternalTransaction(
+            Keccak256.ZERO_HASH.getBytes(),
+            0,
+            0,
+            null,
+            null,
+            null,
+            lbcAddress.getBytes(),
+            null,
+            null,
+            null,
+            null
+        );
+
+        return bridgeSupport.registerFastBridgeBtcTransaction(
+            rskTx,
+            btcTx.bitcoinSerialize(),
+            height,
+            pmt.bitcoinSerialize(),
+            derivationArgumentsHash,
+            userRefundBtcAddress,
+            lbcAddress,
+            lpBtcAddress,
+            shouldTransferToContract
         );
     }
 
@@ -1278,6 +1411,99 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
         );
 
         Assert.assertEquals(co.rsk.core.Coin.fromBitcoin(valueToSend).asBigInteger(), result);
+    }
+
+    @Test
+    public void registerFastBridgeBtcTransaction_funds_sent_to_retiring_fed_surpasses_locking_cap_after_RSKIP293() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+        // Refund should be transfer to the user
+        BigInteger result = sendFundsSurpassesLockingCapToAnyAddress(
+            (bridgeConstants, activeFederationAddress, retiringFederationAddress) -> {
+                Coin valueToSend = Coin.COIN;
+                BtcTransaction tx = new BtcTransaction(bridgeConstants.getBtcParams());
+                tx.addOutput(valueToSend, retiringFederationAddress);
+                return tx;
+            },
+            false,
+            bridgeConstantsRegtest.getMaxRbtc()
+        );
+        Assert.assertEquals(FastBridgeTxResponseCodes.REFUNDED_USER_ERROR.value(), result.longValue());
+
+        // Refund should be transfer to the liquidity provider
+        result = sendFundsSurpassesLockingCapToAnyAddress(
+            (bridgeConstants, activeFederationAddress, retiringFederationAddress) -> {
+                Coin valueToSend = Coin.COIN;
+                BtcTransaction tx = new BtcTransaction(bridgeConstants.getBtcParams());
+                tx.addOutput(valueToSend, retiringFederationAddress);
+                return tx;
+            },
+            true,
+            bridgeConstantsRegtest.getMaxRbtc()
+        );
+        Assert.assertEquals(FastBridgeTxResponseCodes.REFUNDED_LP_ERROR.value(), result.longValue());
+    }
+
+    @Test
+    public void registerFastBridgeBtcTransaction_funds_sent_to_active_and_retiring_fed_surpasses_locking_cap_after_RSKIP293() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+        // Refund should be transfer to the user
+        BigInteger result = sendFundsSurpassesLockingCapToAnyAddress(
+            (bridgeConstants, activeFederationAddress, retiringFederationAddress) -> {
+                Coin valueToSend = Coin.COIN;
+                BtcTransaction tx = new BtcTransaction(bridgeConstants.getBtcParams());
+                tx.addOutput(valueToSend, activeFederationAddress);
+                tx.addOutput(valueToSend, retiringFederationAddress);
+                return tx;
+            },
+            false,
+            bridgeConstantsRegtest.getMaxRbtc()
+        );
+        Assert.assertEquals(FastBridgeTxResponseCodes.REFUNDED_USER_ERROR.value(), result.longValue());
+
+        // Refund should be transfer to the liquidity provider
+        result = sendFundsSurpassesLockingCapToAnyAddress(
+            (bridgeConstants, activeFederationAddress, retiringFederationAddress) -> {
+                Coin valueToSend = Coin.COIN;
+                BtcTransaction tx = new BtcTransaction(bridgeConstants.getBtcParams());
+                tx.addOutput(valueToSend, activeFederationAddress);
+                tx.addOutput(valueToSend, createRandomBtcAddress());
+                return tx;
+            },
+            true,
+            bridgeConstantsRegtest.getMaxRbtc()
+        );
+        Assert.assertEquals(FastBridgeTxResponseCodes.REFUNDED_LP_ERROR.value(), result.longValue());
+    }
+
+    @Test
+    public void registerFastBridgeBtcTransaction_sent_many_utxos_but_funds_sent_to_fed_no_surpasses_locking_cap_after_RSKIP293() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+        BigInteger result = sendFundsSurpassesLockingCapToAnyAddress(
+            (bridgeConstants, activeFederationAddress, retiringFederationAddress) -> {
+                Coin valueToSend = Coin.COIN;
+                BtcTransaction tx = new BtcTransaction(bridgeConstants.getBtcParams());
+                tx.addOutput(valueToSend, activeFederationAddress);
+                tx.addOutput(valueToSend, retiringFederationAddress);
+                tx.addOutput(valueToSend, createRandomBtcAddress());
+                return tx;
+            },
+            false,
+            bridgeConstantsRegtest.getMaxRbtc().plus(Coin.COIN.multiply(3))
+        );
+        Assert.assertEquals(co.rsk.core.Coin.fromBitcoin(Coin.COIN.multiply(2)).asBigInteger(), result);
+    }
+
+    @Test
+    public void registerFastBridgeBtcTransaction_funds_sent_to_random_addresses_trying_to_surpass_locking_cap_after_RSKIP293() throws BlockStoreException, BridgeIllegalArgumentException, IOException {
+        BigInteger result = sendFundsSurpassesLockingCapToAnyAddress(
+            (bridgeConstants, activeFederationAddress, retiringFederationAddress) -> {
+                Coin valueToSend = Coin.COIN;
+                BtcTransaction tx = new BtcTransaction(bridgeConstants.getBtcParams());
+                tx.addOutput(valueToSend, createRandomBtcAddress());
+                tx.addOutput(valueToSend, createRandomBtcAddress());
+                return tx;
+            },
+            false,
+            bridgeConstantsRegtest.getMaxRbtc().plus(Coin.COIN.multiply(2))
+        );
+        Assert.assertEquals(FastBridgeTxResponseCodes.UNPROCESSABLE_TX_VALUE_ZERO_ERROR.value(), result.longValue());
     }
 
     @Test

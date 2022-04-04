@@ -2741,11 +2741,11 @@ public class BridgeSupport {
 
             if (shouldTransferToContract) {
                 logger.debug("[registerFastBridgeBtcTransaction] Returning to liquidity provider");
-                generateRejectionRelease(btcTx, lpBtcAddress, Collections.singletonList(fbActiveFederationAddress), new Keccak256(internalTx.getOriginHash()), totalAmount, walletProvider);
+                generateRejectionRelease(btcTx, lpBtcAddress, addresses, new Keccak256(internalTx.getOriginHash()), totalAmount, walletProvider);
                 return BigInteger.valueOf(FastBridgeTxResponseCodes.REFUNDED_LP_ERROR.value());
             } else {
                 logger.debug("[registerFastBridgeBtcTransaction] Returning to user");
-                generateRejectionRelease(btcTx, userRefundAddress, Collections.singletonList(fbActiveFederationAddress), new Keccak256(internalTx.getOriginHash()), totalAmount, walletProvider);
+                generateRejectionRelease(btcTx, userRefundAddress, addresses, new Keccak256(internalTx.getOriginHash()), totalAmount, walletProvider);
                 return BigInteger.valueOf(FastBridgeTxResponseCodes.REFUNDED_USER_ERROR.value());
             }
         }
