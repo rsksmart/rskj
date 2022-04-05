@@ -19,6 +19,7 @@
 package co.rsk.net.handler.quota;
 
 import co.rsk.util.TimeProvider;
+import org.ethereum.core.Transaction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -59,16 +60,16 @@ public class TxQuota {
      * Checks whether the accumulated virtual gas is greater than the received gas to consume. If enough, received gas is discounted from accumulated.
      *
      * @param virtualGasToConsume Gas to be consumed
-     * @param txHash Hash of the tx for logging purposes
+     * @param tx Tx being executed, used for logging purposes only
      * @return True if there was enough accumulated gas
      */
-    public synchronized boolean acceptVirtualGasConsumption(double virtualGasToConsume, String txHash) {
+    public synchronized boolean acceptVirtualGasConsumption(double virtualGasToConsume, Transaction tx) {
         if (this.availableVirtualGas < virtualGasToConsume) {
-            logger.warn("NOT enough virtualGas for address [{}] and tx [{}]: availableVirtualGas=[{}], virtualGasToConsume=[{}]", this.addressHex, this.availableVirtualGas, txHash, virtualGasToConsume);
+            logger.warn("NOT enough virtualGas for address [{}] and tx [{}]: availableVirtualGas=[{}], virtualGasToConsume=[{}]", this.addressHex, tx, this.availableVirtualGas, virtualGasToConsume);
             return false;
         }
 
-        logger.trace("Enough virtualGas for address [{}]: availableVirtualGas=[{}], virtualGasToConsume=[{}]", this.addressHex, this.availableVirtualGas, virtualGasToConsume);
+        logger.trace("Enough virtualGas for address [{}] and tx [{}]: availableVirtualGas=[{}], virtualGasToConsume=[{}]", this.addressHex, tx, this.availableVirtualGas, virtualGasToConsume);
         this.availableVirtualGas -= virtualGasToConsume;
         return true;
     }

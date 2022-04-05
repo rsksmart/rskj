@@ -79,7 +79,7 @@ public class TxQuotaChecker {
 
         double consumedVirtualGas = calculateConsumedVirtualGas(newTx, replacedTx, currentContext);
 
-        return senderQuota.acceptVirtualGasConsumption(consumedVirtualGas, newTx.getHash().toHexString());
+        return senderQuota.acceptVirtualGasConsumption(consumedVirtualGas, newTx);
     }
 
     /**
@@ -90,16 +90,20 @@ public class TxQuotaChecker {
         long maxGasPerSecond = getMaxGasPerSecond(lastBlockGasLimit);
         long maxQuota = getMaxGasPerSecond(maxGasPerSecond);
 
+        logger.debug("Clearing quota map, size before {}", this.accountQuotas.size());
+
         Iterator<TxQuota> quotaIterator = accountQuotas.values().iterator();
         while (quotaIterator.hasNext()) {
             TxQuota quota = quotaIterator.next();
             double accumulatedVirtualGas = quota.refresh(maxGasPerSecond, maxQuota);
             boolean maxQuotaGranted = BigDecimal.valueOf(maxQuota).compareTo(BigDecimal.valueOf(accumulatedVirtualGas)) == 0;
             if (maxQuotaGranted) {
-                logger.debug("Cleared {}, it has maxQuota", quota);
+                logger.trace("Clearing {}, it has maxQuota", quota);
                 quotaIterator.remove();
             }
         }
+
+        logger.debug("Clearing quota map, size after {}", this.accountQuotas.size());
     }
 
     @VisibleForTesting
