@@ -28,10 +28,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 import static org.junit.Assert.*;
 
@@ -306,7 +303,6 @@ public class ParallelizeTransactionHandlerTest {
 
     @Test
     public void addABigTxAndAnotherWithTheSameWrittenReadKeyAndShouldGoToSequential() {
-        long gasUsedByBigTx = GasCost.toGas(bigTx.getGasLimit());
         short[] expectedTransactionEdgeList = new short[]{1};
 
         HashSet<ByteArrayWrapper> writtenKeys = createAMapAndAddAKey(aWrappedKey);
@@ -361,7 +357,7 @@ public class ParallelizeTransactionHandlerTest {
         assertNotEquals(bucketId2, bucketId3);
 
         assertTrue(bucketId3.isPresent());
-        assertEquals((short) 2, (short) bucketId3.get());
+        assertEquals(sequentialBucketNumber, (short) bucketId3.get());
 
         List<Transaction> expectedListOfTxs = new ArrayList<>();
         expectedListOfTxs.add(tx);
@@ -389,7 +385,7 @@ public class ParallelizeTransactionHandlerTest {
 
         assertEquals((short) 0, (short) bucketId.get());
         assertEquals((short) 1, (short) bucketId2.get());
-        assertEquals((short) 2, (short) bucketId3.get());
+        assertEquals(sequentialBucketNumber, (short) bucketId3.get());
         assertFalse(bucketId4.isPresent());
 
         assertEquals(expectedListOfTxs, handler.getTransactionsInOrder());
@@ -411,7 +407,7 @@ public class ParallelizeTransactionHandlerTest {
 
         assertEquals((short) 0, (short) bucketId.get());
         assertEquals((short) 1, (short) bucketId2.get());
-        assertEquals((short) 2, (short) bucketId3.get());
+        assertEquals(sequentialBucketNumber, (short) bucketId3.get());
 
         assertEquals(expectedListOfTxs, handler.getTransactionsInOrder());
         assertArrayEquals(expectedTransactionEdgeList, handler.getTransactionsPerBucketInOrder());
@@ -434,10 +430,24 @@ public class ParallelizeTransactionHandlerTest {
         assertFalse(emptyBucket.isPresent());
         assertEquals((short) 0, (short) bucketId.get());
         assertEquals((short) 1, (short) bucketId2.get());
-        assertEquals((short) 2, (short) bucketId3.get());
+        assertEquals(sequentialBucketNumber, (short) bucketId3.get());
 
         assertEquals(expectedListOfTxs, handler.getTransactionsInOrder());
         assertArrayEquals(expectedTransactionEdgeList, handler.getTransactionsPerBucketInOrder());
+    }
+
+    @Test
+    public void aRemasTxAddedShouldBeInTheSequentialBucket() {
+        List<Transaction> expectedListOfTxs = Collections.singletonList(tx);
+        Optional<Short> bucketId = handler.addRemascTransaction(tx, new HashSet<>(), new HashSet<>(), GasCost.toGas(bigTx.getGasLimit()));
+        assertEquals(sequentialBucketNumber, (short) bucketId.get());
+        assertEquals(expectedListOfTxs, handler.getTransactionsInOrder());
+    }
+
+    @Test
+    public void ifItsSequentialTheEdgesListShouldHaveSizeZero() {
+        handler.addRemascTransaction(tx, new HashSet<>(), new HashSet<>(), GasCost.toGas(bigTx.getGasLimit()));
+        assertEquals(0, handler.getTransactionsPerBucketInOrder().length);
     }
 
     private HashSet<ByteArrayWrapper> createAMapAndAddAKey(ByteArrayWrapper aKey) {
