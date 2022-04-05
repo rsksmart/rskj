@@ -89,7 +89,7 @@ public class TxQuota {
         this.timestamp = currentTimestamp;
         this.availableVirtualGas = Math.min(maxQuota, this.availableVirtualGas + addToQuota);
 
-        logger.debug("Quota refreshed for account [{}], new value [{}] (addToQuota [{}])", this.addressHex, this.availableVirtualGas, addToQuota);
+        logger.trace("Quota refreshed for account [{}], new value [{}] (addToQuota [{}])", this.addressHex, this.availableVirtualGas, addToQuota);
 
         return this.availableVirtualGas;
     }
