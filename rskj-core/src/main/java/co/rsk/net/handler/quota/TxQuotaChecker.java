@@ -95,7 +95,7 @@ public class TxQuotaChecker {
         }
 
         long maxGasPerSecond = getMaxGasPerSecond(lastBlockGasLimit);
-        long maxQuota = getMaxGasPerSecond(maxGasPerSecond);
+        long maxQuota = getMaxQuota(maxGasPerSecond);
 
         logger.debug("Clearing quota map, size before {}", this.accountQuotas.size());
 
@@ -122,8 +122,8 @@ public class TxQuotaChecker {
 
     private TxQuota updateQuota(Transaction newTx, boolean isTxSource, CurrentContext currentContext) {
         BigInteger blockGasLimit = currentContext.bestBlock.getGasLimitAsInteger();
-        long maxGasPerSecond = getMaxGasPerSecond(blockGasLimit);
-        long maxQuota = getMaxGasPerSecond(maxGasPerSecond);
+        long maxGasPerSecond = getMaxGasPerSecond(blockGasLimit.longValue());
+        long maxQuota = getMaxQuota(maxGasPerSecond);
 
         RskAddress address = isTxSource ? newTx.getSender() : newTx.getReceiveAddress();
 
@@ -154,11 +154,11 @@ public class TxQuotaChecker {
         return grantMaxQuota ? maxQuota : maxGasPerSecond;
     }
 
-    private long getMaxGasPerSecond(BigInteger blockGasLimit) {
-        return Math.round(blockGasLimit.longValue() * MAX_GAS_PER_SECOND_PERCENT);
+    private long getMaxGasPerSecond(long blockGasLimit) {
+        return Math.round(blockGasLimit * MAX_GAS_PER_SECOND_PERCENT);
     }
 
-    private long getMaxGasPerSecond(long maxGasPerSecond) {
+    private long getMaxQuota(long maxGasPerSecond) {
         return maxGasPerSecond * TxQuotaChecker.MAX_QUOTA_GAS_MULTIPLIER;
     }
 

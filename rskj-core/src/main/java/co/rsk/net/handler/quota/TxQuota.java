@@ -91,7 +91,8 @@ public class TxQuota {
         this.timestamp = currentTimestamp;
         this.availableVirtualGas = Math.min(maxQuota, this.availableVirtualGas + addToQuota);
 
-        logger.trace("Quota refreshed for account [{}], new value [{}] (addToQuota [{}])", address.toHexString(), this.availableVirtualGas, addToQuota);
+        String addressHex = address.toHexString();
+        logger.trace("Quota refreshed for account [{}], new value [{}] (addToQuota [{}])", addressHex, this.availableVirtualGas, addToQuota);
 
         return this.availableVirtualGas;
     }

@@ -167,7 +167,7 @@ public class TxQuotaCheckerIntegrationTest {
 
         // contractA does not exist on state, therefore a quota will be added for it in the map (even being it a contract)
         // therefore accountA will be removed from the map, that is full, as the least recently accessed one
-        Transaction txToContractA = txFromAccountB2ContractA(0, 200_000, BLOCK_AVG_GAS_PRICE - 100_000, 9_000);
+        Transaction txToContractA = txFromAccountCToContractA(0, 200_000, BLOCK_AVG_GAS_PRICE - 100_000, 9_000);
         assertTrue("txToContractA should've been accepted", quotaChecker.acceptTx(txToContractA, Optional.empty(), currentContext));
         assertNotNull("contractA should create a quota when receiving a transaction", quotaChecker.getTxQuota(contractA.getAddress()));
 
@@ -192,31 +192,47 @@ public class TxQuotaCheckerIntegrationTest {
         Transaction txFromAccountAToB = txFromAccountAToAccountB(0, 250_000, BLOCK_AVG_GAS_PRICE - 100_000, 9_000);
         assertTrue("txFromAccountAToB should've been accepted", quotaChecker.acceptTx(txFromAccountAToB, Optional.empty(), currentContext));
 
-        Transaction txFromAccountBToC = txFromAccountBToAccountC(0, 250_000, BLOCK_AVG_GAS_PRICE - 100_000, 13_250);
-        assertTrue("txFromAccountBToC consuming almost ~MAX_GAS_PER_SECOND*2 should've been accepted", quotaChecker.acceptTx(txFromAccountBToC, Optional.empty(), currentContext));
+        when(timeProvider.currentTimeMillis()).thenReturn(elapsedTime += 60L * 1000); // 1 minute after last tx
+
+        Transaction txFromAccountBToAccountA = txFromAccountBToAccountA(0, 250_000, BLOCK_AVG_GAS_PRICE - 100_000, 13_250);
+        assertTrue("txFromAccountBToAccountA should've been accepted", quotaChecker.acceptTx(txFromAccountBToAccountA, Optional.empty(), currentContext));
 
         when(timeProvider.currentTimeMillis()).thenReturn(elapsedTime += 33L * 60 * 1000); // 33 minutes after last tx
 
-        Transaction tx2FromAccountBToC = txFromAccountBToAccountC(1, 450_000, BLOCK_AVG_GAS_PRICE - 100_000, 9_000);
-        assertTrue("tx2FromAccountBToC should've been accepted", quotaChecker.acceptTx(tx2FromAccountBToC, Optional.empty(), currentContext));
+        // Now both accountA and accountB have maxQuota
 
-        when(timeProvider.currentTimeMillis()).thenReturn(elapsedTime += 30 * 1000); // 30 seconds after last tx
+        Transaction tx2FromAccountBToAccountA = txFromAccountBToAccountA(1, 750_000, BLOCK_AVG_GAS_PRICE - 100_000, 15_250);
+        assertTrue("tx2FromAccountBToAccountA should've been accepted", quotaChecker.acceptTx(tx2FromAccountBToAccountA, Optional.empty(), currentContext));
+
+        when(timeProvider.currentTimeMillis()).thenReturn(elapsedTime += 1000); // 1 second after last tx
+
+        Transaction txFromAccountCToContractB = txFromAccountCToContractB(1, 250_000, BLOCK_AVG_GAS_PRICE - 100_000, 9_000);
+        assertTrue("txFromAccountCToContractB should've been accepted", quotaChecker.acceptTx(txFromAccountCToContractB, Optional.empty(), currentContext));
+
+        when(timeProvider.currentTimeMillis()).thenReturn(elapsedTime += 1000); // 1 second after last tx
+
+        // Now accountA has maxQuota, accountB has less than maxQuota (not recovered yet) and accountC has less than maxQuota (maxGasPerSecond as newly created)
 
         this.quotaChecker.cleanMaxQuotas();
 
         assertNull("AccountA should've been removed with maxQuota after inactivity", this.quotaChecker.getTxQuota(accountA.getAddress()));
         assertNotNull("AccountB should not have been removed, less than maxQuota after inactivity", this.quotaChecker.getTxQuota(accountB.getAddress()));
+        assertNotNull("AccountC should not have been removed, less than maxQuota as recently created", this.quotaChecker.getTxQuota(accountC.getAddress()));
     }
 
     private Transaction txFromAccountAToAccountB(long nonce, long gasLimit, long gasPrice, long size) {
         return txFrom(accountA, accountB, nonce, gasLimit, gasPrice, size);
     }
 
+    private Transaction txFromAccountBToAccountA(long nonce, long gasLimit, long gasPrice, long size) {
+        return txFrom(accountB, accountA, nonce, gasLimit, gasPrice, size);
+    }
+
     private Transaction txFromAccountBToAccountC(long nonce, long gasLimit, long gasPrice, long size) {
         return txFrom(accountB, accountC, nonce, gasLimit, gasPrice, size);
     }
 
-    private Transaction txFromAccountB2ContractA(long nonce, long gasLimit, long gasPrice, long size) {
+    private Transaction txFromAccountCToContractA(long nonce, long gasLimit, long gasPrice, long size) {
         return txFrom(accountC, contractA, nonce, gasLimit, gasPrice, size);
     }
 
