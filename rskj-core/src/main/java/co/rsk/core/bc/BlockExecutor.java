@@ -295,8 +295,146 @@ public class BlockExecutor {
         if (block.getHeader().getTxExecutionListsEdges() != null) {
             return executeParallel(programTraceProcessor, vmTraceOptions, block, parent, discardInvalidTxs, acceptInvalidTransactions);
         } else {
-            return executeSequential(programTraceProcessor, vmTraceOptions, block, parent, discardInvalidTxs, acceptInvalidTransactions);
+            boolean rskip144Active = activationConfig.isActive(ConsensusRule.RSKIP144, block.getHeader().getNumber());
+            if (rskip144Active) {
+                return executeSequential(programTraceProcessor, vmTraceOptions, block, parent, discardInvalidTxs, acceptInvalidTransactions);
+            }
+            return executeOldSequential(programTraceProcessor, vmTraceOptions, block, parent, discardInvalidTxs, acceptInvalidTransactions);
         }
+    }
+
+    private BlockResult executeOldSequential(
+            @Nullable ProgramTraceProcessor programTraceProcessor,
+            int vmTraceOptions,
+            Block block,
+            BlockHeader parent,
+            boolean discardInvalidTxs,
+            boolean acceptInvalidTransactions) {
+        boolean vmTrace = programTraceProcessor != null;
+        logger.trace("Start executeInternal.");
+        logger.trace("applyBlock: block: [{}] tx.list: [{}]", block.getNumber(), block.getTransactionsList().size());
+
+        // Forks the repo, does not change "repository". It will have a completely different
+        // image of the repo, where the middle caches are immediately ignored.
+        // In fact, while cloning everything, it asserts that no cache elements remains.
+        // (see assertNoCache())
+        // Which means that you must commit changes and save them to be able to recover
+        // in the next block processed.
+        // Note that creating a snapshot is important when the block is executed twice
+        // (e.g. once while building the block in tests/mining, and the other when trying
+        // to conect the block). This is because the first execution will change the state
+        // of the repository to the state post execution, so it's necessary to get it to
+        // the state prior execution again.
+        Metric metric = profiler.start(Profiler.PROFILING_TYPE.BLOCK_EXECUTE);
+
+        Repository track = repositoryLocator.startTrackingAt(parent);
+
+        maintainPrecompiledContractStorageRoots(track, activationConfig.forBlock(block.getNumber()));
+
+        int i = 1;
+        long totalGasUsed = 0;
+        Coin totalPaidFees = Coin.ZERO;
+        List<TransactionReceipt> receipts = new ArrayList<>();
+        List<Transaction> executedTransactions = new ArrayList<>();
+        Set<DataWord> deletedAccounts = new HashSet<>();
+        LongAccumulator remascFees = new LongAccumulator(Long::sum, 0);
+
+        int txindex = 0;
+
+        for (Transaction tx : block.getTransactionsList()) {
+            logger.trace("apply block: [{}] tx: [{}] ", block.getNumber(), i);
+
+            TransactionExecutor txExecutor = transactionExecutorFactory.newInstance(
+                    tx,
+                    txindex++,
+                    block.getCoinbase(),
+                    track,
+                    block,
+                    totalGasUsed,
+                    vmTrace,
+                    vmTraceOptions,
+                    deletedAccounts,
+                    remascFees);
+            boolean transactionExecuted = txExecutor.executeTransaction();
+
+            if (!acceptInvalidTransactions && !transactionExecuted) {
+                if (discardInvalidTxs) {
+                    logger.warn("block: [{}] discarded tx: [{}]", block.getNumber(), tx.getHash());
+                    continue;
+                } else {
+                    logger.warn("block: [{}] execution interrupted because of invalid tx: [{}]",
+                            block.getNumber(), tx.getHash());
+                    profiler.stop(metric);
+                    return BlockResult.INTERRUPTED_EXECUTION_BLOCK_RESULT;
+                }
+            }
+
+            executedTransactions.add(tx);
+
+            if (this.registerProgramResults) {
+                this.transactionResults.put(tx.getHash(), txExecutor.getResult());
+            }
+
+            if (vmTrace) {
+                txExecutor.extractTrace(programTraceProcessor);
+            }
+
+            logger.trace("tx executed");
+
+            // No need to commit the changes here. track.commit();
+
+            logger.trace("track commit");
+
+            long gasUsed = txExecutor.getGasUsed();
+            totalGasUsed += gasUsed;
+            Coin paidFees = txExecutor.getPaidFees();
+            if (paidFees != null) {
+                totalPaidFees = totalPaidFees.add(paidFees);
+            }
+
+            deletedAccounts.addAll(txExecutor.getResult().getDeleteAccounts());
+
+            TransactionReceipt receipt = new TransactionReceipt();
+            receipt.setGasUsed(gasUsed);
+            receipt.setCumulativeGas(totalGasUsed);
+
+            receipt.setTxStatus(txExecutor.getReceipt().isSuccessful());
+            receipt.setTransaction(tx);
+            receipt.setLogInfoList(txExecutor.getVMLogs());
+            receipt.setStatus(txExecutor.getReceipt().getStatus());
+
+            logger.trace("block: [{}] executed tx: [{}]", block.getNumber(), tx.getHash());
+
+            logger.trace("tx[{}].receipt", i);
+
+            i++;
+
+            receipts.add(receipt);
+
+            logger.trace("tx done");
+        }
+
+        logger.trace("End txs executions.");
+        if (!vmTrace) {
+            logger.trace("Saving track.");
+            track.save();
+            logger.trace("End saving track.");
+        }
+
+        logger.trace("Building execution results.");
+        BlockResult result = new BlockResult(
+                block,
+                executedTransactions,
+                receipts,
+                null,
+                totalGasUsed,
+                totalPaidFees,
+                vmTrace ? null : track.getTrie()
+
+        );
+        profiler.stop(metric);
+        logger.trace("End executeInternal.");
+        return result;
     }
 
     private BlockResult executeParallel(
@@ -512,7 +650,7 @@ public class BlockExecutor {
                     vmTrace,
                     vmTraceOptions,
                     deletedAccounts,
-                    remascFees);
+                    remascFees); //TODO(Juli): Check how to differ this behavior between RSKIPs
             boolean transactionExecuted = txExecutor.executeTransaction();
 
             if (!acceptInvalidTransactions && !transactionExecuted) {

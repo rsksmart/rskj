@@ -61,6 +61,7 @@ import java.math.BigInteger;
 import java.util.*;
 
 import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP126;
+import static org.ethereum.config.blockchain.upgrades.ConsensusRule.RSKIP144;
 import static org.ethereum.util.ByteUtil.EMPTY_BYTE_ARRAY;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
@@ -76,13 +77,15 @@ public class BlockExecutorTest {
     private static final TestSystemProperties CONFIG = new TestSystemProperties();
     private static final ActivationConfig activationConfig = spy(CONFIG.getActivationConfig());
     private static final BlockFactory BLOCK_FACTORY = new BlockFactory(activationConfig);
+    public static final boolean RSKIP_126_IS_ACTIVE = true;
 
     private Blockchain blockchain;
     private BlockExecutor executor;
     private TrieStore trieStore;
     private RepositorySnapshot repository;
 
-    private Boolean activeRskip144;
+    private final Boolean activeRskip144;
+    private RskSystemProperties cfg;
 
     public BlockExecutorTest(Boolean activeRskip144) {
         this.activeRskip144 = activeRskip144;
@@ -98,12 +101,14 @@ public class BlockExecutorTest {
 
     @Before
     public void setUp() {
-        doReturn(activeRskip144).when(activationConfig).isActive(eq(ConsensusRule.RSKIP144), anyLong());
+        cfg = spy(CONFIG);
+        doReturn(activationConfig).when(cfg).getActivationConfig();
+        doReturn(activeRskip144).when(activationConfig).isActive(eq(RSKIP144), anyLong());
         RskTestFactory objects = new RskTestFactory(CONFIG);
         blockchain = objects.getBlockchain();
-        executor = objects.getBlockExecutor();
         trieStore = objects.getTrieStore();
         repository = objects.getRepositoryLocator().snapshotAt(blockchain.getBestBlock().getHeader());
+        executor = buildBlockExecutor(trieStore, activeRskip144, RSKIP_126_IS_ACTIVE);
     }
 
     @Test
@@ -287,10 +292,10 @@ public class BlockExecutorTest {
 
     @Test
     public void executeAndFillBlockWithOneTransaction() {
-        TestObjects objects = generateBlockWithOneTransaction();
+        TestObjects objects = generateBlockWithOneTransaction(activeRskip144, RSKIP_126_IS_ACTIVE);
         Block parent = objects.getParent();
         Block block = objects.getBlock();
-        BlockExecutor executor = buildBlockExecutor(objects.getTrieStore());
+        BlockExecutor executor = buildBlockExecutor(objects.getTrieStore(), activeRskip144, RSKIP_126_IS_ACTIVE);
 
         BlockResult result = executor.execute(block, parent.getHeader(), false);
         executor.executeAndFill(block, parent.getHeader());
@@ -323,7 +328,7 @@ public class BlockExecutorTest {
 
         Assert.assertFalse(Arrays.equals(EMPTY_TRIE_HASH, repository.getRoot()));
 
-        BlockExecutor executor = buildBlockExecutor(trieStore);
+        BlockExecutor executor = buildBlockExecutor(trieStore, activeRskip144, RSKIP_126_IS_ACTIVE);
 
         Transaction tx3 = Transaction
                 .builder()
@@ -389,7 +394,7 @@ public class BlockExecutorTest {
 
         Assert.assertFalse(Arrays.equals(EMPTY_TRIE_HASH, repository.getRoot()));
 
-        BlockExecutor executor = buildBlockExecutor(trieStore);
+        BlockExecutor executor = buildBlockExecutor(trieStore, activeRskip144, RSKIP_126_IS_ACTIVE);
 
         Transaction tx3 = Transaction
                 .builder()
@@ -493,13 +498,13 @@ public class BlockExecutorTest {
         BlockResult blockResult = new BlockResult(block, Collections.emptyList(), Collections.emptyList(), new short[0], 0,
                 Coin.ZERO, trie);
 
-        RskSystemProperties cfg = spy(CONFIG);
+//        RskSystemProperties cfg = spy(CONFIG);
 
         ActivationConfig activationConfig = spy(cfg.getActivationConfig());
         doReturn(false).when(activationConfig).isActive(eq(RSKIP126), anyLong());
         doReturn(activationConfig).when(cfg).getActivationConfig();
 
-        BlockExecutor executor = buildBlockExecutor(trieStore, cfg);
+        BlockExecutor executor = buildBlockExecutor(trieStore, cfg, activeRskip144, false);
 
         short[] expectedEdges = activeRskip144 ? new short[0] : null;
 
@@ -518,13 +523,13 @@ public class BlockExecutorTest {
         BlockResult blockResult = new BlockResult(block, Collections.emptyList(), Collections.emptyList(), new short[0], 0,
                 Coin.ZERO, trie);
 
-        RskSystemProperties cfg = spy(CONFIG);
+//        RskSystemProperties cfg = spy(CONFIG);
 
-        ActivationConfig activationConfig = spy(cfg.getActivationConfig());
-        doReturn(false).when(activationConfig).isActive(eq(RSKIP126), anyLong());
-        doReturn(activationConfig).when(cfg).getActivationConfig();
+//        ActivationConfig activationConfig = spy(cfg.getActivationConfig());
+        boolean rskip126IsActive = false;
+//        doReturn(activationConfig).when(cfg).getActivationConfig();
 
-        BlockExecutor executor = buildBlockExecutor(trieStore, cfg);
+        BlockExecutor executor = buildBlockExecutor(trieStore, activeRskip144, rskip126IsActive);
 
         short[] expectedEdges = activeRskip144 ? new short[0] : null;
 
@@ -534,10 +539,10 @@ public class BlockExecutorTest {
 
     @Test
     public void validateBlock() {
-        TestObjects objects = generateBlockWithOneTransaction();
+        TestObjects objects = generateBlockWithOneTransaction(activeRskip144, RSKIP_126_IS_ACTIVE);
         Block parent = objects.getParent();
         Block block = objects.getBlock();
-        BlockExecutor executor = buildBlockExecutor(objects.getTrieStore());
+        BlockExecutor executor = buildBlockExecutor(objects.getTrieStore(), activeRskip144, RSKIP_126_IS_ACTIVE);
 
         short[] expectedEdges = activeRskip144 ? new short[0] : null;
 
@@ -547,10 +552,10 @@ public class BlockExecutorTest {
 
     @Test
     public void invalidBlockBadStateRoot() {
-        TestObjects objects = generateBlockWithOneTransaction();
+        TestObjects objects = generateBlockWithOneTransaction(activeRskip144, RSKIP_126_IS_ACTIVE);
         Block parent = objects.getParent();
         Block block = objects.getBlock();
-        BlockExecutor executor = buildBlockExecutor(objects.getTrieStore());
+        BlockExecutor executor = buildBlockExecutor(objects.getTrieStore(), activeRskip144, RSKIP_126_IS_ACTIVE);
 
         byte[] stateRoot = block.getStateRoot();
         stateRoot[0] = (byte) ((stateRoot[0] + 1) % 256);
@@ -562,10 +567,10 @@ public class BlockExecutorTest {
 
     @Test
     public void invalidBlockBadReceiptsRoot() {
-        TestObjects objects = generateBlockWithOneTransaction();
+        TestObjects objects = generateBlockWithOneTransaction(activeRskip144, RSKIP_126_IS_ACTIVE);
         Block parent = objects.getParent();
         Block block = objects.getBlock();
-        BlockExecutor executor = buildBlockExecutor(objects.getTrieStore());
+        BlockExecutor executor = buildBlockExecutor(objects.getTrieStore(), activeRskip144, RSKIP_126_IS_ACTIVE);
 
         byte[] receiptsRoot = block.getReceiptsRoot();
         receiptsRoot[0] = (byte) ((receiptsRoot[0] + 1) % 256);
@@ -577,10 +582,10 @@ public class BlockExecutorTest {
 
     @Test
     public void invalidBlockBadGasUsed() {
-        TestObjects objects = generateBlockWithOneTransaction();
+        TestObjects objects = generateBlockWithOneTransaction(activeRskip144, RSKIP_126_IS_ACTIVE);
         Block parent = objects.getParent();
         Block block = objects.getBlock();
-        BlockExecutor executor = buildBlockExecutor(objects.getTrieStore());
+        BlockExecutor executor = buildBlockExecutor(objects.getTrieStore(), activeRskip144, RSKIP_126_IS_ACTIVE);
 
         block.getHeader().setGasUsed(0);
         short[] expectedEdges = activeRskip144 ? new short[0] : null;
@@ -591,10 +596,10 @@ public class BlockExecutorTest {
 
     @Test
     public void invalidBlockBadPaidFees() {
-        TestObjects objects = generateBlockWithOneTransaction();
+        TestObjects objects = generateBlockWithOneTransaction(activeRskip144, RSKIP_126_IS_ACTIVE);
         Block parent = objects.getParent();
         Block block = objects.getBlock();
-        BlockExecutor executor = buildBlockExecutor(objects.getTrieStore());
+        BlockExecutor executor = buildBlockExecutor(objects.getTrieStore(), activeRskip144, RSKIP_126_IS_ACTIVE);
 
         block.getHeader().setPaidFees(Coin.ZERO);
         short[] expectedEdges = activeRskip144 ? new short[0] : null;
@@ -605,10 +610,10 @@ public class BlockExecutorTest {
 
     @Test
     public void invalidBlockBadLogsBloom() {
-        TestObjects objects = generateBlockWithOneTransaction();
+        TestObjects objects = generateBlockWithOneTransaction(activeRskip144, RSKIP_126_IS_ACTIVE);
         Block parent = objects.getParent();
         Block block = objects.getBlock();
-        BlockExecutor executor = buildBlockExecutor(objects.getTrieStore());
+        BlockExecutor executor = buildBlockExecutor(objects.getTrieStore(), activeRskip144, RSKIP_126_IS_ACTIVE);
 
         byte[] logBloom = block.getLogBloom();
         logBloom[0] = (byte) ((logBloom[0] + 1) % 256);
@@ -618,7 +623,7 @@ public class BlockExecutorTest {
         Assert.assertFalse(executor.executeAndValidate(block, parent.getHeader()));
     }
 
-    private static TestObjects generateBlockWithOneTransaction() {
+    private static TestObjects generateBlockWithOneTransaction(Boolean activeRskip144, boolean rskip126IsActive) {
         TrieStore trieStore = new TrieStoreImpl(new HashMapDB());
         Repository repository = new MutableRepository(trieStore, new Trie(trieStore));
 
@@ -631,7 +636,7 @@ public class BlockExecutorTest {
 
         Assert.assertFalse(Arrays.equals(EMPTY_TRIE_HASH, repository.getRoot()));
 
-        BlockExecutor executor = buildBlockExecutor(trieStore);
+        BlockExecutor executor = buildBlockExecutor(trieStore, activeRskip144, rskip126IsActive);
 
         Transaction tx1 = Transaction
                 .builder()
@@ -826,7 +831,7 @@ public class BlockExecutorTest {
         Block parent = objects.getParent();
         Block block = objects.getBlock();
         TrieStore trieStore = objects.getTrieStore();
-        BlockExecutor executor = buildBlockExecutor(trieStore);
+        BlockExecutor executor = buildBlockExecutor(trieStore, activeRskip144, RSKIP_126_IS_ACTIVE);
         Repository repository = new MutableRepository(trieStore,
                 trieStore.retrieve(objects.getParent().getStateRoot()).get());
         Transaction tx = objects.getTransaction();
@@ -896,7 +901,7 @@ public class BlockExecutorTest {
 
         Assert.assertFalse(Arrays.equals(EMPTY_TRIE_HASH, repository.getRoot()));
 
-        BlockExecutor executor = buildBlockExecutor(trieStore);
+        BlockExecutor executor = buildBlockExecutor(trieStore, activeRskip144, RSKIP_126_IS_ACTIVE);
 
         List<Transaction> txs = new ArrayList<>();
         Transaction tx = createStrangeTransaction(
@@ -965,29 +970,35 @@ public class BlockExecutorTest {
         return digest.digest();
     }
 
-    private static BlockExecutor buildBlockExecutor(TrieStore store) {
-        return buildBlockExecutor(store, CONFIG);
+    private static BlockExecutor buildBlockExecutor(TrieStore store, Boolean activeRskip144, boolean rskip126IsActive) {
+        return buildBlockExecutor(store, CONFIG, activeRskip144, rskip126IsActive);
     }
 
-    private static BlockExecutor buildBlockExecutor(TrieStore store, RskSystemProperties config) {
-        StateRootHandler stateRootHandler = new StateRootHandler(config.getActivationConfig(), new StateRootsStoreImpl(new HashMapDB()));
+    private static BlockExecutor buildBlockExecutor(TrieStore store, RskSystemProperties config, Boolean activeRskip144, Boolean activeRskip126) {
+        RskSystemProperties cfg = spy(config);
+        doReturn(activationConfig).when(cfg).getActivationConfig();
+        doReturn(activeRskip144).when(activationConfig).isActive(eq(RSKIP144), anyLong());
+        doReturn(activeRskip126).when(activationConfig).isActive(eq(RSKIP126), anyLong());
+
+
+        StateRootHandler stateRootHandler = new StateRootHandler(cfg.getActivationConfig(), new StateRootsStoreImpl(new HashMapDB()));
 
         Factory btcBlockStoreFactory = new RepositoryBtcBlockStoreWithCache.Factory(
-                config.getNetworkConstants().getBridgeConstants().getBtcParams());
+                cfg.getNetworkConstants().getBridgeConstants().getBtcParams());
 
         BridgeSupportFactory bridgeSupportFactory = new BridgeSupportFactory(
-                btcBlockStoreFactory, config.getNetworkConstants().getBridgeConstants(), config.getActivationConfig());
+                btcBlockStoreFactory, cfg.getNetworkConstants().getBridgeConstants(), cfg.getActivationConfig());
 
         return new BlockExecutor(
-                config.getActivationConfig(),
+                cfg.getActivationConfig(),
                 new RepositoryLocator(store, stateRootHandler),
                 new TransactionExecutorFactory(
-                        config,
+                        cfg,
                         null,
                         null,
                         BLOCK_FACTORY,
                         new ProgramInvokeFactoryImpl(),
-                        new PrecompiledContracts(config, bridgeSupportFactory),
+                        new PrecompiledContracts(cfg, bridgeSupportFactory),
                         new BlockTxSignatureCache(new ReceivedTxSignatureCache())
                 )
         );
