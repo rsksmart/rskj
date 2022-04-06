@@ -49,7 +49,7 @@ public class TxQuotaChecker {
 
     private static final Logger logger = LoggerFactory.getLogger(TxQuotaChecker.class);
 
-    private static long lastBlockGasLimit;
+    private static long lastBlockGasLimit = -1;
 
     private final MaxSizeHashMap<RskAddress, TxQuota> accountQuotas;
 
@@ -62,8 +62,9 @@ public class TxQuotaChecker {
 
     /**
      * Tries to accept a transaction under a certain context
-     * @param newTx The tx to accept
-     * @param replacedTx The tx being replaced by <code>newTx</code>, if any
+     *
+     * @param newTx          The tx to accept
+     * @param replacedTx     The tx being replaced by <code>newTx</code>, if any
      * @param currentContext Some contextual information of the time <code>newTx</code> is being processed
      * @return true if the <code>newTx</code> was accepted, false otherwise
      */
@@ -88,6 +89,11 @@ public class TxQuotaChecker {
      * This method is intended to be called periodically with a rate similar to the time needed for an account to get <code>maxQuota</code>
      */
     public synchronized void cleanMaxQuotas() {
+        if (lastBlockGasLimit == -1) {
+            // no transactions yet processed
+            return;
+        }
+
         long maxGasPerSecond = getMaxGasPerSecond(lastBlockGasLimit);
         long maxQuota = getMaxGasPerSecond(maxGasPerSecond);
 
@@ -134,6 +140,10 @@ public class TxQuotaChecker {
         return quotaForAddress;
     }
 
+    /**
+     * We need this static since, when {@link #cleanMaxQuotas() cleanMaxQuotas} is called, we have no transaction
+     * context to get <code>blockGasLimit</code> value from, so we should keep track of it during tx processing
+     */
     private static void updateLastBlockGasLimit(BigInteger blockGasLimit) {
         lastBlockGasLimit = blockGasLimit.longValue();
     }
