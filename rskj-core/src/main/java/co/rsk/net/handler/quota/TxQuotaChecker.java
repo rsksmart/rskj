@@ -34,6 +34,7 @@ import org.slf4j.LoggerFactory;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -42,7 +43,7 @@ import java.util.Optional;
  */
 public class TxQuotaChecker {
 
-    private static final int MAX_QUOTAS_SIZE = 10000;
+    private static final int MAX_QUOTAS_SIZE = 400_000;
     private static final int MAX_QUOTA_GAS_MULTIPLIER = 2000;
     private static final double MAX_GAS_PER_SECOND_PERCENT = 0.9;
 
@@ -92,10 +93,12 @@ public class TxQuotaChecker {
 
         logger.debug("Clearing quota map, size before {}", this.accountQuotas.size());
 
-        Iterator<TxQuota> quotaIterator = accountQuotas.values().iterator();
+        Iterator<Map.Entry<RskAddress, TxQuota>> quotaIterator = accountQuotas.entrySet().iterator();
         while (quotaIterator.hasNext()) {
-            TxQuota quota = quotaIterator.next();
-            double accumulatedVirtualGas = quota.refresh(maxGasPerSecond, maxQuota);
+            Map.Entry<RskAddress, TxQuota> quotaEntry = quotaIterator.next();
+            RskAddress address = quotaEntry.getKey();
+            TxQuota quota = quotaEntry.getValue();
+            double accumulatedVirtualGas = quota.refresh(address, maxGasPerSecond, maxQuota);
             boolean maxQuotaGranted = BigDecimal.valueOf(maxQuota).compareTo(BigDecimal.valueOf(accumulatedVirtualGas)) == 0;
             if (maxQuotaGranted) {
                 logger.trace("Clearing {}, it has maxQuota", quota);
@@ -122,10 +125,10 @@ public class TxQuotaChecker {
         if (quotaForAddress == null) {
             long accountNonce = currentContext.state.getNonce(address).longValue();
             long initialQuota = calculateNewItemQuota(accountNonce, isTxSource, maxGasPerSecond, maxQuota);
-            quotaForAddress = TxQuota.createNew(address.toHexString(), newTx.getHash().toHexString(), initialQuota, timeProvider);
+            quotaForAddress = TxQuota.createNew(address, newTx.getHash(), initialQuota, timeProvider);
             this.accountQuotas.put(address, quotaForAddress);
         } else {
-            quotaForAddress.refresh(maxGasPerSecond, maxQuota);
+            quotaForAddress.refresh(address, maxGasPerSecond, maxQuota);
         }
 
         return quotaForAddress;
