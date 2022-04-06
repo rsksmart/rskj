@@ -44,9 +44,12 @@ import org.mockito.Mockito;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import static co.rsk.peg.PegTestUtils.createBech32Output;
 import static co.rsk.peg.PegTestUtils.createP2pkhOutput;
@@ -133,7 +136,7 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
         btcTx.addOutput(valueToSend, activeFederationAddress);
 
         btcTx.addInput(
-            Sha256Hash.wrap(fastBridgeDerivationHash.getBytes()),
+            Sha256Hash.ZERO_HASH,
             0, ScriptBuilder.createInputScript(null, new BtcECKey())
         );
 
@@ -275,7 +278,7 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
         btcTx.addOutput(valueToSend, retiringFederationAddress);
 
         btcTx.addInput(
-            Sha256Hash.wrap(fastBridgeDerivationHash.getBytes()),
+            Sha256Hash.ZERO_HASH,
             0, ScriptBuilder.createInputScript(null, new BtcECKey())
         );
 
@@ -426,7 +429,7 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
         btcTx.addOutput(valueToSend, retiringFederationAddress);
 
         btcTx.addInput(
-            Sha256Hash.wrap(fastBridgeDerivationHash.getBytes()),
+            Sha256Hash.ZERO_HASH,
             0, ScriptBuilder.createInputScript(null, new BtcECKey())
         );
 
@@ -589,7 +592,7 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
 
         BtcTransaction btcTx = btcTransactionProvider.provide(bridgeConstants, activeFederationAddress, retiringFederationAddress);
         btcTx.addInput(
-            Sha256Hash.wrap(fastBridgeDerivationHash.getBytes()),
+            Sha256Hash.ZERO_HASH,
             0, ScriptBuilder.createInputScript(null, new BtcECKey())
         );
 
@@ -722,7 +725,7 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
 
         BtcTransaction btcTx = btcTransactionProvider.provide(bridgeConstants, activeFederationAddress, retiringFederationAddress);
         btcTx.addInput(
-            Sha256Hash.wrap(fastBridgeDerivationHash.getBytes()),
+            Sha256Hash.ZERO_HASH,
             0, ScriptBuilder.createInputScript(null, new BtcECKey())
         );
 
@@ -766,7 +769,7 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
             null
         );
 
-        return bridgeSupport.registerFastBridgeBtcTransaction(
+        BigInteger result = bridgeSupport.registerFastBridgeBtcTransaction(
             rskTx,
             btcTx.bitcoinSerialize(),
             height,
@@ -777,6 +780,35 @@ public class BridgeSupportFlyoverTest extends BridgeSupportTestBase {
             lpBtcAddress,
             shouldTransferToContract
         );
+
+        if (result.longValue() == FastBridgeTxResponseCodes.REFUNDED_LP_ERROR.value() || result.longValue() == FastBridgeTxResponseCodes.REFUNDED_USER_ERROR.value()){
+            List<BtcTransaction> releaseTxs = provider.getReleaseTransactionSet().getEntries()
+                .stream()
+                .map(ReleaseTransactionSet.Entry::getTransaction)
+                .sorted(Comparator.comparing(BtcTransaction::getOutputSum))
+                .collect(Collectors.toList());
+
+            assertEquals(1, releaseTxs.size());
+            BtcTransaction releaseTx = releaseTxs.get(0);
+            Assert.assertEquals(1, releaseTx.getOutputs().size());
+
+            Coin amountSent = BridgeUtils.getAmountSentToAddresses(activations,
+                bridgeConstants.getBtcParams(),
+                btcContext,
+                btcTx,
+                Arrays.asList(activeFederationAddress, retiringFederationAddress));
+            Coin amountToRefund = BridgeUtils.getAmountSentToAddresses(activations,
+                bridgeConstants.getBtcParams(),
+                btcContext,
+                releaseTx,
+                Arrays.asList(
+                    result.longValue() == FastBridgeTxResponseCodes.REFUNDED_LP_ERROR.value()? lpBtcAddress: userRefundBtcAddress
+                ));
+
+            Assert.assertTrue("Pegout value should be bigger than zero and smaller than pegin value", amountToRefund.isGreaterThan(Coin.ZERO) && amountToRefund.isLessThan(amountSent));
+        }
+
+        return result;
     }
 
     @Test(expected = ScriptException.class)
