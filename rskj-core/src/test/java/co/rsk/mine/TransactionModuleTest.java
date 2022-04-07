@@ -28,6 +28,7 @@ import co.rsk.db.RepositorySnapshot;
 import co.rsk.db.StateRootHandler;
 import co.rsk.db.StateRootsStoreImpl;
 import co.rsk.net.TransactionGateway;
+import co.rsk.net.handler.quota.TxQuotaChecker;
 import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
 import co.rsk.rpc.ExecutionBlockRetriever;
@@ -95,7 +96,7 @@ public class TransactionModuleTest {
         BlockStore blockStore = world.getBlockStore();
 
         TransactionPool transactionPool = new TransactionPoolImpl(config, repositoryLocator, blockStore, blockFactory, null, buildTransactionExecutorFactory(blockStore, null, world.getBlockTxSignatureCache()),
-                world.getReceivedTxSignatureCache(), 10, 100, Mockito.mock(Supplier.class));
+                world.getReceivedTxSignatureCache(), 10, 100, Mockito.mock(TxQuotaChecker.class), Mockito.mock(Supplier.class));
         TransactionGateway transactionGateway = new TransactionGateway(new SimpleChannelManager(), transactionPool);
 
         Web3Impl web3 = createEnvironment(blockchain, null, trieStore, transactionPool, blockStore, false, world.getBlockTxSignatureCache(), transactionGateway);
@@ -122,7 +123,7 @@ public class TransactionModuleTest {
         BlockStore blockStore = world.getBlockStore();
 
         TransactionPool transactionPool = new TransactionPoolImpl(config, repositoryLocator, blockStore, blockFactory, null, buildTransactionExecutorFactory(blockStore, null, world.getBlockTxSignatureCache()),
-                world.getReceivedTxSignatureCache(), 10, 100, Mockito.mock(Supplier.class));
+                world.getReceivedTxSignatureCache(), 10, 100, Mockito.mock(TxQuotaChecker.class), Mockito.mock(Supplier.class));
         TransactionGateway transactionGateway = new TransactionGateway(new SimpleChannelManager(), transactionPool);
 
 
@@ -187,7 +188,7 @@ public class TransactionModuleTest {
         BlockStore blockStore = world.getBlockStore();
 
         TransactionPool transactionPool = new TransactionPoolImpl(config, repositoryLocator, blockStore, blockFactory, null, buildTransactionExecutorFactory(blockStore, receiptStore, world.getBlockTxSignatureCache()),
-                world.getReceivedTxSignatureCache(), 10, 100, Mockito.mock(Supplier.class));
+                world.getReceivedTxSignatureCache(), 10, 100, Mockito.mock(TxQuotaChecker.class), Mockito.mock(Supplier.class));
         TransactionGateway transactionGateway = new TransactionGateway(new SimpleChannelManager(), transactionPool);
 
         Web3Impl web3 = createEnvironment(blockchain, receiptStore, trieStore, transactionPool, blockStore, true, world.getBlockTxSignatureCache(), transactionGateway);
@@ -216,7 +217,7 @@ public class TransactionModuleTest {
         BlockStore blockStore = world.getBlockStore();
 
         TransactionPool transactionPool = new TransactionPoolImpl(config, repositoryLocator, blockStore, blockFactory, null, buildTransactionExecutorFactory(blockStore, receiptStore, world.getBlockTxSignatureCache()),
-                world.getReceivedTxSignatureCache(), 10, 100, Mockito.mock(Supplier.class));
+                world.getReceivedTxSignatureCache(), 10, 100, Mockito.mock(TxQuotaChecker.class), Mockito.mock(Supplier.class));
         TransactionGateway transactionGateway = new TransactionGateway(new SimpleChannelManager(), transactionPool);
 
         Web3Impl web3 = createEnvironment(blockchain, receiptStore, trieStore, transactionPool, blockStore, false, world.getBlockTxSignatureCache(), transactionGateway);
@@ -253,6 +254,7 @@ public class TransactionModuleTest {
                 receivedTxSignatureCache,
                 10,
                 100,
+                Mockito.mock(TxQuotaChecker.class),
                 Mockito.mock(Supplier.class)
         );
         TransactionGateway transactionGateway = new TransactionGateway(new SimpleChannelManager(), transactionPool);
@@ -637,7 +639,7 @@ public class TransactionModuleTest {
                 config.getGasEstimationCap()
         );
         TxPoolModule txPoolModule = new TxPoolModuleImpl(transactionPool);
-        DebugModule debugModule = new DebugModuleImpl(null, null, Web3Mocks.getMockMessageHandler(), null);
+        DebugModule debugModule = new DebugModuleImpl(null, null, Web3Mocks.getMockMessageHandler(), null, null);
 
         ChannelManager channelManager = new SimpleChannelManager();
         return new Web3RskImpl(

@@ -25,6 +25,7 @@ import co.rsk.core.RskAddress;
 import co.rsk.core.TransactionExecutorFactory;
 import co.rsk.core.bc.*;
 import co.rsk.db.*;
+import co.rsk.net.handler.quota.TxQuotaChecker;
 import co.rsk.peg.BridgeSupportFactory;
 import co.rsk.peg.BtcBlockStoreWithCache;
 import co.rsk.peg.RepositoryBtcBlockStoreWithCache;
@@ -227,7 +228,7 @@ public class BlockChainBuilder {
 
         transactionPool = new TransactionPoolImpl(
                 config, repositoryLocator, this.blockStore, blockFactory, new TestCompositeEthereumListener(),
-                transactionExecutorFactory, new ReceivedTxSignatureCache(), 10, 100, Mockito.mock(Supplier.class));
+                transactionExecutorFactory, new ReceivedTxSignatureCache(), 10, 100, Mockito.mock(TxQuotaChecker.class), Mockito.mock(Supplier.class));
         BlockExecutor blockExecutor = new BlockExecutor(
                 config.getActivationConfig(),
                 repositoryLocator,

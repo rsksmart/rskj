@@ -18,9 +18,12 @@
 
 package co.rsk.rpc.modules.debug;
 
+import co.rsk.core.RskAddress;
 import co.rsk.core.bc.BlockExecutor;
 import co.rsk.crypto.Keccak256;
 import co.rsk.net.MessageHandler;
+import co.rsk.net.handler.quota.TxQuota;
+import co.rsk.net.handler.quota.TxQuotaChecker;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
@@ -47,15 +50,19 @@ public class DebugModuleImpl implements DebugModule {
     private final MessageHandler messageHandler;
     private final BlockExecutor blockExecutor;
 
+    private final TxQuotaChecker txQuotaChecker;
+
     public DebugModuleImpl(
             BlockStore blockStore,
             ReceiptStore receiptStore,
             MessageHandler messageHandler,
-            BlockExecutor blockExecutor) {
+            BlockExecutor blockExecutor,
+            TxQuotaChecker txQuotaChecker) {
         this.blockStore = blockStore;
         this.receiptStore = receiptStore;
         this.messageHandler = messageHandler;
         this.blockExecutor = blockExecutor;
+        this.txQuotaChecker = txQuotaChecker;
     }
 
     @Override
@@ -126,5 +133,12 @@ public class DebugModuleImpl implements DebugModule {
                 .collect(Collectors.toList());
 
         return programTraceProcessor.getProgramTracesAsJsonNode(txHashes);
+    }
+
+    @Override
+    public TxQuota accountTransactionQuota(String address) {
+        logger.trace("debug_accountTransactionQuota({})", address);
+        RskAddress rskAddress = new RskAddress(address);
+        return this.txQuotaChecker.getTxQuota(rskAddress);
     }
 }

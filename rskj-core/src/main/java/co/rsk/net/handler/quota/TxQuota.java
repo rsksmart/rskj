@@ -21,6 +21,7 @@ package co.rsk.net.handler.quota;
 import co.rsk.core.RskAddress;
 import co.rsk.crypto.Keccak256;
 import co.rsk.util.TimeProvider;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.ethereum.core.Transaction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,7 +34,11 @@ public class TxQuota {
     private static final Logger logger = LoggerFactory.getLogger(TxQuota.class);
 
     private final TimeProvider timeProvider;
+
+    @JsonProperty
     private long timestamp;
+
+    @JsonProperty
     private double availableVirtualGas;
 
     private TxQuota(String addressHex, String txHash, long availableVirtualGas, TimeProvider timeProvider) {

@@ -174,7 +174,7 @@ public class Web3ImplSnapshotTest {
         );
         PersonalModule pm = new PersonalModuleWalletDisabled();
         TxPoolModule tpm = new TxPoolModuleImpl(Web3Mocks.getMockTransactionPool());
-        DebugModule dm = new DebugModuleImpl(null, null, Web3Mocks.getMockMessageHandler(), null);
+        DebugModule dm = new DebugModuleImpl(null, null, Web3Mocks.getMockMessageHandler(), null, null);
 
         ethereum.blockchain = blockchain;
 

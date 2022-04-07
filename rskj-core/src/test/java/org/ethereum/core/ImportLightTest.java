@@ -28,6 +28,7 @@ import co.rsk.core.bc.TransactionPoolImpl;
 import co.rsk.db.RepositoryLocator;
 import co.rsk.db.StateRootHandler;
 import co.rsk.db.StateRootsStoreImpl;
+import co.rsk.net.handler.quota.TxQuotaChecker;
 import co.rsk.trie.TrieStore;
 import co.rsk.validators.DummyBlockValidator;
 import org.ethereum.datasource.HashMapDB;
@@ -75,7 +76,7 @@ public class ImportLightTest {
         StateRootHandler stateRootHandler = new StateRootHandler(config.getActivationConfig(), new StateRootsStoreImpl(new HashMapDB()));
         RepositoryLocator repositoryLocator = new RepositoryLocator(trieStore, stateRootHandler);
 
-        TransactionPoolImpl transactionPool = new TransactionPoolImpl(config, repositoryLocator, null, blockFactory, listener, transactionExecutorFactory, receivedTxSignatureCache, 10, 100, Mockito.mock(Supplier.class));
+        TransactionPoolImpl transactionPool = new TransactionPoolImpl(config, repositoryLocator, null, blockFactory, listener, transactionExecutorFactory, receivedTxSignatureCache, 10, 100, Mockito.mock(TxQuotaChecker.class), Mockito.mock(Supplier.class));
 
         BlockChainImpl blockchain = new BlockChainImpl(
                 blockStore,
