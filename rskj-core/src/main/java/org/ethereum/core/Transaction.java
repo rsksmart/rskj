@@ -418,6 +418,7 @@ public class Transaction {
                 "  nonce=" + ByteUtil.toHexStringOrEmpty(nonce) +
                 ", gasPrice=" + gasPrice +
                 ", gas=" + ByteUtil.toHexStringOrEmpty(gasLimit) +
+                ", sender=" + sender +
                 ", receiveAddress=" + receiveAddress +
                 ", value=" + value +
                 ", data=" + ByteUtil.toHexStringOrEmpty(data) +

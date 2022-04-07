@@ -58,7 +58,7 @@ class TxVirtualGasCalculator {
      * @param replacedTx The tx replaced by <code>newTx</code> if any
      * @return The virtualGas consumed by the provided <code>newTx</code>
      */
-    public double calculate(Transaction newTx, Optional<Transaction> replacedTx) {
+    double calculate(Transaction newTx, Optional<Transaction> replacedTx) {
         long txGasLimit = newTx.getGasLimitAsInteger().longValue();
 
         long newTxNonce = newTx.getNonceAsInteger().longValue();
