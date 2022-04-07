@@ -68,12 +68,10 @@ public class TransactionPoolImpl implements TransactionPool {
     private final SignatureCache signatureCache;
     private final int outdatedThreshold;
     private final int outdatedTimeout;
-    private final Supplier<Web3> getWeb3;
 
     private ScheduledExecutorService cleanerTimer;
     private ScheduledFuture<?> cleanerFuture;
 
-    private final long accountTxRateLimitCleanerPeriod;
     private ScheduledExecutorService accountTxRateLimitCleanerTimer;
 
     private Block bestBlock;
@@ -82,7 +80,9 @@ public class TransactionPoolImpl implements TransactionPool {
 
     private final TxQuotaChecker quotaChecker;
 
-    public TransactionPoolImpl(RskSystemProperties config, RepositoryLocator repositoryLocator, BlockStore blockStore, BlockFactory blockFactory, EthereumListener listener, TransactionExecutorFactory transactionExecutorFactory, SignatureCache signatureCache, int outdatedThreshold, int outdatedTimeout, Supplier<Web3> getWeb3Deferred) {
+    private final Supplier<Web3> getWeb3;
+
+    public TransactionPoolImpl(RskSystemProperties config, RepositoryLocator repositoryLocator, BlockStore blockStore, BlockFactory blockFactory, EthereumListener listener, TransactionExecutorFactory transactionExecutorFactory, SignatureCache signatureCache, int outdatedThreshold, int outdatedTimeout, TxQuotaChecker txQuotaChecker, Supplier<Web3> getWeb3Deferred) {
         this.config = config;
         this.blockStore = blockStore;
         this.repositoryLocator = repositoryLocator;
@@ -92,18 +92,16 @@ public class TransactionPoolImpl implements TransactionPool {
         this.signatureCache = signatureCache;
         this.outdatedThreshold = outdatedThreshold;
         this.outdatedTimeout = outdatedTimeout;
+        this.quotaChecker = txQuotaChecker;
         this.getWeb3 = getWeb3Deferred;
 
         this.validator = new TxPendingValidator(config.getNetworkConstants(), config.getActivationConfig(), config.getNumOfAccountSlots());
-
-        this.quotaChecker = new TxQuotaChecker(System::currentTimeMillis);
 
         if (this.outdatedTimeout > 0) {
             this.cleanerTimer = Executors.newSingleThreadScheduledExecutor(r -> new Thread(r, "TransactionPoolCleanerTimer"));
         }
 
-        this.accountTxRateLimitCleanerPeriod = this.config.accountTxRateLimitCleanerPeriod();
-        if (this.config.isAccountTxRateLimitEnabled() && this.accountTxRateLimitCleanerPeriod > 0) {
+        if (this.quotaChecker != null && this.config.accountTxRateLimitCleanerPeriod() > 0) {
             this.accountTxRateLimitCleanerTimer = Executors.newSingleThreadScheduledExecutor(r -> new Thread(r, "TxQuotaCleanerTimer"));
         }
     }
@@ -117,7 +115,7 @@ public class TransactionPoolImpl implements TransactionPool {
         }
 
         if (this.accountTxRateLimitCleanerTimer != null) {
-            this.accountTxRateLimitCleanerTimer.scheduleAtFixedRate(this.quotaChecker::cleanMaxQuotas, this.accountTxRateLimitCleanerPeriod, this.accountTxRateLimitCleanerPeriod, TimeUnit.MINUTES);
+            this.accountTxRateLimitCleanerTimer.scheduleAtFixedRate(this.quotaChecker::cleanMaxQuotas, this.config.accountTxRateLimitCleanerPeriod(), this.config.accountTxRateLimitCleanerPeriod(), TimeUnit.MINUTES);
         }
     }
 

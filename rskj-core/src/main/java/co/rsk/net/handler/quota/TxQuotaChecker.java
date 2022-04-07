@@ -24,7 +24,6 @@ import co.rsk.db.RepositorySnapshot;
 import co.rsk.util.HexUtils;
 import co.rsk.util.MaxSizeHashMap;
 import co.rsk.util.TimeProvider;
-import com.google.common.annotations.VisibleForTesting;
 import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
 import org.ethereum.rpc.Web3;
@@ -115,8 +114,7 @@ public class TxQuotaChecker {
         logger.debug("Clearing quota map, size after {}", this.accountQuotas.size());
     }
 
-    @VisibleForTesting
-    TxQuota getTxQuota(RskAddress address) {
+    public TxQuota getTxQuota(RskAddress address) {
         return this.accountQuotas.get(address);
     }
 
@@ -141,8 +139,8 @@ public class TxQuotaChecker {
     }
 
     /**
-     * We need this static since, when {@link #cleanMaxQuotas() cleanMaxQuotas} is called, we have no transaction
-     * context to get <code>blockGasLimit</code> value from, so we should keep track of it during tx processing
+     * We need this static since, when {@link #cleanMaxQuotas() cleanMaxQuotas} is called, we have no context
+     * to get <code>blockGasLimit</code> value from, so we should keep track of it during tx processing
      */
     private static void updateLastBlockGasLimit(BigInteger blockGasLimit) {
         lastBlockGasLimit = blockGasLimit.longValue();

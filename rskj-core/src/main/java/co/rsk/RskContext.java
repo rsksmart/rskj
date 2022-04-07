@@ -49,6 +49,7 @@ import co.rsk.net.eth.MessageFilter;
 import co.rsk.net.eth.MessageRecorder;
 import co.rsk.net.eth.RskWireProtocol;
 import co.rsk.net.eth.WriterMessageRecorder;
+import co.rsk.net.handler.quota.TxQuotaChecker;
 import co.rsk.net.sync.PeersInformation;
 import co.rsk.net.sync.SyncConfiguration;
 import co.rsk.peg.BridgeSupportFactory;
@@ -244,6 +245,7 @@ public class RskContext implements NodeContext, NodeBootstrapper {
     private ReceivedTxSignatureCache receivedTxSignatureCache;
     private BlockTxSignatureCache blockTxSignatureCache;
     private PeerScoringReporterService peerScoringReporterService;
+    private TxQuotaChecker txQuotaChecker;
 
     private volatile boolean closed;
 
@@ -380,10 +382,18 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     getReceivedTxSignatureCache(),
                     rskSystemProperties.txOutdatedThreshold(),
                     rskSystemProperties.txOutdatedTimeout(),
-                    () -> web3); // Supplier to bypass issue with initialization order and cyclic dependencies
+                    getTxQuotaChecker(),
+                    this::getWeb3); // Supplier to bypass cyclic dependency: TransactionPool needs Web3 and Web3 needs TransactionPool
         }
 
         return transactionPool;
+    }
+
+    private TxQuotaChecker getTxQuotaChecker() {
+        if (this.txQuotaChecker == null) {
+            this.txQuotaChecker = new TxQuotaChecker(System::currentTimeMillis);
+        }
+        return txQuotaChecker;
     }
 
     public synchronized ReceivedTxSignatureCache getReceivedTxSignatureCache() {
@@ -755,7 +765,8 @@ public class RskContext implements NodeContext, NodeBootstrapper {
                     getBlockStore(),
                     getReceiptStore(),
                     getNodeMessageHandler(),
-                    getBlockExecutor()
+                    getBlockExecutor(),
+                    getTxQuotaChecker()
             );
         }
 

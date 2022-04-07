@@ -18,6 +18,7 @@
 
 package co.rsk.rpc;
 
+import co.rsk.net.handler.quota.TxQuota;
 import co.rsk.rpc.modules.debug.DebugModule;
 import com.fasterxml.jackson.databind.JsonNode;
 
@@ -43,6 +44,10 @@ public interface Web3DebugModule {
 
     default JsonNode debug_traceBlockByHash(String blockHash, Map<String, String> traceOptions) throws Exception {
         return getDebugModule().traceBlock(blockHash, traceOptions);
+    }
+
+    default TxQuota debug_accountTransactionQuota(String address) {
+        return getDebugModule().accountTransactionQuota(address);
     }
 
     DebugModule getDebugModule();
