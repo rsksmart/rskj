@@ -373,7 +373,7 @@ public class SyncProcessor implements SyncEventsHandler {
 
     @Override
     public void onErrorSyncing(Peer peer, EventType eventType, String message, Object... arguments) {
-        peersInformation.reportSyncingErrorToPeerScoring(peer, eventType, message, arguments);
+        peersInformation.processSyncingError(peer, eventType, message, arguments);
         stopSyncing();
     }
 

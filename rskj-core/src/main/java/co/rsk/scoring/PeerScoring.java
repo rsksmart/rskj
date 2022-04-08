@@ -38,7 +38,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 public class PeerScoring {
     private static final Logger logger = LoggerFactory.getLogger("peerScoring");
 
-    private final String peerKey;
+    private final String peerId; // either nodeId or address
     private final boolean punishmentEnabled;
 
     private final ReadWriteLock rwlock = new ReentrantReadWriteLock();
@@ -49,12 +49,12 @@ public class PeerScoring {
     private int punishmentCounter;
     private int score;
 
-    public PeerScoring(String peerKey) {
-        this(peerKey, true);
+    public PeerScoring(String peerId) {
+        this(peerId, true);
     }
 
-    public PeerScoring(String peerKey, boolean punishmentEnabled) {
-        this.peerKey = peerKey;
+    public PeerScoring(String peerId, boolean punishmentEnabled) {
+        this.peerId = peerId;
         this.punishmentEnabled = punishmentEnabled;
     }
 
@@ -98,7 +98,7 @@ public class PeerScoring {
                     break;
             }
 
-            logger.trace("New score for node {} after {} is {} ", evt, peerKey, score);
+            logger.trace("New score for node {} after {} is {} ", evt, peerId, score);
         } finally {
             rwlock.writeLock().unlock();
         }
@@ -186,7 +186,7 @@ public class PeerScoring {
                 this.endPunishment();
             }
 
-            logger.trace("Reputation for node {} is {}", peerKey, this.goodReputation ? "good" : "bad");
+            logger.trace("Reputation for node {} is {}", peerId, this.goodReputation ? "good" : "bad");
 
             return this.goodReputation;
         } finally {
@@ -206,7 +206,7 @@ public class PeerScoring {
             return;
         }
 
-        logger.debug("Punishing node {} for {} min", peerKey, expirationTime / 1000 / 60);
+        logger.debug("Punishing node {} for {} min", peerId, expirationTime / 1000 / 60);
 
         try {
             rwlock.writeLock().lock();
@@ -228,7 +228,7 @@ public class PeerScoring {
             return;
         }
 
-        logger.debug("Finishing punishment for node {}", peerKey);
+        logger.debug("Finishing punishment for node {}", peerId);
 
         //Check locks before doing this function public
         for (int i = 0; i < counters.length; i++) {
